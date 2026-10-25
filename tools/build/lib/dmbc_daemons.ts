@@ -28,6 +28,20 @@ const LEASE_BEAT_MS = 60 * 1000;
 const LOCK_STALE_MS = 2 * 60 * 1000;
 /** A caller-namespace daemon used within this long is never retired for the count: retirement is for idleness and memory. */
 const NAMESPACE_MIN_IDLE_MS = 10 * 60 * 1000;
+/** Memory a cold compile of a fresh namespace grows by (matches the daemon's cold growth default), and the reserve the shared daemon keeps free. */
+const COLD_GROWTH_BYTES = 12e9;
+function freeReserveBytes(): number {
+  const gb = Number(process.env.DMB_DAEMON_FREE_RESERVE_GB ?? '12');
+  return (Number.isFinite(gb) && gb >= 0 ? gb : 12) * 1e9;
+}
+/**
+ * Memory-aware cap: a caller namespace that would start a cold session while free memory is under reserve + growth makes the
+ * shared daemon shed its sessions (every game/test alternation then recompiles in full). Idle caller namespaces are retired
+ * first, whatever their recency, least recently used first, until the new one fits; busy ones (live lease) are kept.
+ */
+export function memoryShortfallBytes(freeBytes: number = os.freemem()): number {
+  return Math.max(0, freeReserveBytes() + COLD_GROWTH_BYTES - freeBytes);
+}
 
 export function daemonRegistryDir(): string {
   if (process.env.DQ_DMBC_DAEMON_DIR) return process.env.DQ_DMBC_DAEMON_DIR;
@@ -146,6 +160,20 @@ export function enterDaemonScope(root: string, executable: string): DaemonScope 
         if (outcome.startsWith('failed')) continue; // still resident as far as we know: keep it registered
         try { fs.unlinkSync(path.join(dir, `${entry.namespace}.json`)); } catch { /* raced away */ }
         resident--;
+      }
+      if (cap > 0 && memoryShortfallBytes() > 0) {
+        for (const entry of others) {
+          if (memoryShortfallBytes() <= 0) break;
+          if (!fs.existsSync(path.join(dir, `${entry.namespace}.json`))) continue; // already retired above
+          if (liveLeases(dir, entry.namespace) > 0) continue;
+          const outcome = retire(executable, entry.namespace);
+          log(`free memory ${(os.freemem() / 1e9).toFixed(1)} GB is under reserve + cold growth: retired idle ${entry.namespace} (${entry.root}): ${outcome}`);
+          if (outcome.startsWith('failed')) continue;
+          try { fs.unlinkSync(path.join(dir, `${entry.namespace}.json`)); } catch { /* raced away */ }
+          resident--;
+          break; // the daemon exits asynchronously: one retirement per start, the next start re-checks
+        }
+        if (memoryShortfallBytes() > 0) log(`warning: free memory is ${(os.freemem() / 1e9).toFixed(1)} GB, under the ${(freeReserveBytes() / 1e9).toFixed(0)} GB reserve plus a cold compile; the shared session may be evicted`);
       }
       if (resident > cap) log(`${resident} daemons resident, cap ${cap}: the rest are busy; the cap is soft until they finish`);
     });

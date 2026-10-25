@@ -68,7 +68,7 @@ impl MetadataQuery {
         }
     }
 }
-enum EffectiveOwner {
+pub(crate) enum EffectiveOwner {
     MemberName {
         version: u128,
     },
@@ -105,7 +105,98 @@ impl EffectiveOwner {
         }
     }
 }
-type Store = ObservedArtifactStore<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
+type SharedStore = ObservedArtifactStore<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
+type Lease = dm_session::ObservedArtifactLease<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
+type StorageView<'a> = dm_session::ObservedArtifactStorageView<'a, EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
+type Reads = Vec<dm_session::Observation<MetadataQuery, MetadataAnswer, MetadataDomain>>;
+/// The engine-scoped store every define variant of a session publishes effective owner metadata into: an owner whose
+/// recorded reads still hold under another variant's world is one allocation, not two.
+pub(crate) type SharedMetadataStore = SharedStore;
+/// A host's metadata artifacts: its own current-revision store, or a lease on the engine-shared store (union of host rosters).
+enum Store {
+    Local(SharedStore),
+    Shared { owner: Arc<SharedStore>, lease: Lease },
+}
+impl Store {
+    fn current_revision() -> Self {
+        Self::Local(SharedStore::current_revision())
+    }
+    fn shared(owner: Arc<SharedStore>) -> Self {
+        let lease = owner.lease();
+        Self::Shared { owner, lease }
+    }
+    fn fresh(&self) -> Self {
+        match self {
+            Self::Local(_) => Self::current_revision(),
+            Self::Shared { owner, .. } => Self::shared(Arc::clone(owner)),
+        }
+    }
+    fn visit_storage(&self, visit: impl FnMut(StorageView<'_>)) {
+        match self {
+            Self::Local(store) => store.visit_storage(visit),
+            Self::Shared { lease, .. } => lease.visit_storage(visit),
+        }
+    }
+    fn retain_current_keys<'a>(&self, keys: impl IntoIterator<Item = &'a [u8]>) {
+        match self {
+            Self::Local(store) => store.retain_current_keys(keys),
+            Self::Shared { lease, .. } => lease.retain_current_keys(keys),
+        }
+    }
+    fn retain_where(&self, keep: impl FnMut(&[u8]) -> bool) {
+        match self {
+            Self::Local(store) => store.retain_where(keep),
+            Self::Shared { lease, .. } => lease.retain_where(keep),
+        }
+    }
+    fn lookup<R: ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain>>(
+        &self,
+        key: &[u8],
+        host: &R,
+    ) -> Option<Arc<EffectiveOwner>> {
+        match self {
+            Self::Local(store) => store.lookup(key, host),
+            Self::Shared { lease, .. } => lease.visit_explained(key, host, &mut |_| true).0,
+        }
+    }
+    fn visit_explained<R: ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain>>(
+        &self,
+        key: &[u8],
+        host: &R,
+        accept: &mut dyn FnMut(&Arc<EffectiveOwner>) -> bool,
+    ) -> (Option<Arc<EffectiveOwner>>, Option<MetadataQuery>) {
+        match self {
+            Self::Local(store) => store.visit_explained(key, host, accept),
+            Self::Shared { lease, .. } => lease.visit_explained(key, host, accept),
+        }
+    }
+    fn insert_with(
+        &self,
+        key: Arc<[u8]>,
+        reads: Reads,
+        versions: Vec<(MetadataDomain, u128)>,
+        weight: usize,
+        create: impl FnOnce() -> EffectiveOwner,
+    ) -> bool {
+        match self {
+            Self::Local(store) => store.insert_with(key, reads, versions, weight, create),
+            Self::Shared { lease, .. } => lease.insert_with(key, reads, versions, weight, create),
+        }
+    }
+    fn insert_with_owned(
+        &self,
+        key: Arc<[u8]>,
+        reads: Reads,
+        versions: Vec<(MetadataDomain, u128)>,
+        weight: usize,
+        create: impl FnOnce() -> EffectiveOwner,
+    ) -> Option<Arc<EffectiveOwner>> {
+        match self {
+            Self::Local(store) => store.insert_with_owned(key, reads, versions, weight, create),
+            Self::Shared { lease, .. } => lease.insert_with_owned(key, reads, versions, weight, create),
+        }
+    }
+}
 /// Cumulative diagnostic counts for the effective metadata artifact stage.
 /// Stable-roster updates outside this stage are not included.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -121,6 +212,14 @@ pub struct RetainedMetadata {
     common_resolved_members: AtomicUsize,
     structurally_reused_members: AtomicUsize,
     structurally_dirty_members: AtomicUsize,
+}
+impl RetainedMetadata {
+    pub(crate) fn with_shared(owner: Arc<SharedMetadataStore>) -> Self {
+        Self { store: Store::shared(owner), ..Self::default() }
+    }
+    pub(crate) fn fresh(&self) -> Self {
+        Self { store: self.store.fresh(), ..Self::default() }
+    }
 }
 impl Default for RetainedMetadata {
     fn default() -> Self {

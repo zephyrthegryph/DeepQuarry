@@ -24,7 +24,7 @@ pub(in crate::daemon) fn dump_sites(label: &str) {
 {}",
             dm_profile::allocator_commit_bytes(),
             requested_live(),
-            dm_profile::allocation_sites::report(400)
+            dm_profile::allocation_sites::report(3000)
         );
         if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
             let _ = file.write_all(text.as_bytes());

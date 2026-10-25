@@ -329,6 +329,7 @@ impl SessionSymbolicMemo {
             publication: Some(Arc::new(symbolic_publication::Owner::default())),
             shared_code: Some(owner.lease()),
             shared_code_pool: Some(Arc::clone(owner)),
+            receipt_groups: owner.receipt_groups(),
             ..Self::default()
         }
     }
