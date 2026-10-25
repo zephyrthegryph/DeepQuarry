@@ -1,3 +1,4 @@
+use super::prepared_source::PreparedLineView;
 use super::*;
 use crate::{expand_traced, DiagnosticKind, ExpandLocation};
 use dm_syntax::{lex_spans, SpanToken};
@@ -211,7 +212,7 @@ fn expand_regions_inner(
 
 /// The line `__LINE__` reads on a logical line (measured against DreamMaker 516.1687): the physical line it ends on,
 /// plus one for every line a still-open parenthesis joined to it (a backslash join adds nothing).
-fn end_line(line: &RegionLine, source: &str) -> usize {
+fn end_line(line: PreparedLineView<'_>, source: &str) -> usize {
     line.source_line + line.source_lines.saturating_sub(1) + source.matches('\n').count()
 }
 
@@ -236,8 +237,8 @@ pub(super) fn expand_region(
         // (DreamMaker accepts this); a call never closed by the end of the segment
         // (or within MAX_OPEN_CALL_LINES) is expanded line by line, diagnostics
         // included, exactly as before.
-        let mut held: Vec<&RegionLine> = Vec::new();
-        for line in &segment.lines {
+        let mut held: Vec<PreparedLineView<'_>> = Vec::new();
+        for line in segment.lines.iter() {
             let mut macro_expansions = Vec::new();
             let mut trace = |name: &str, invocation_span: Span, chain: &[&str]| {
                 macro_expansions.push(MacroExpansion {
@@ -262,7 +263,7 @@ pub(super) fn expand_region(
             // Empty indentation cannot contain a macro, interpolation, lexical
             // error or traced invocation. Keep the original source slice instead
             // of lexing and copying it; recorder input ordinals still advance.
-            let (text, meta): (Cow<str>, &RegionLine) =
+            let (text, meta): (Cow<str>, PreparedLineView<'_>) =
                 if held.is_empty() && source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
                     (Cow::Borrowed(source), line)
                 } else if !held.is_empty() {
@@ -382,7 +383,7 @@ pub(super) fn expand_region(
 /// time with its own diagnostic: the behaviour before calls could span directives.
 #[allow(clippy::too_many_arguments)]
 fn flush_held(
-    held: &mut Vec<&RegionLine>,
+    held: &mut Vec<PreparedLineView<'_>>,
     macros: &MacroEnvironment,
     file_name: &str,
     plan: &DirectivePlan,
@@ -465,7 +466,7 @@ mod tests {
             let mut origins = Vec::new();
             let mut traces = Vec::new();
             for segment in region.segments.iter() {
-                for line in &segment.lines {
+                for line in segment.lines.iter() {
                     let source = line.text.trim_end_matches(['\r', '\n']);
                     if source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
                         blank_count += 1;

@@ -450,8 +450,7 @@ impl SemanticTree {
                     .inventory
                     .unique_certificates
                     .get(&name)
-                    .copied()
-                    .map(u128::from);
+                    .copied();
             }
             let (owner, name) = match query {
                 dm_ir::ResolveQuery::HasMemberVar { owner, name }

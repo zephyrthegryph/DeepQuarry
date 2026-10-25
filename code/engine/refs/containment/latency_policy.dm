@@ -4,11 +4,9 @@
 // event-driven (the existing triggers, containment.md Â§4.3, plus a viewer
 // arriving); this only ever collapses.
 
-/// Per-atom idle clock: world.time of the last materialize, move into a
+/// Per-atom idle clock (the stamp latent_touched_at): world.time of the last materialize, move into a
 /// holder, or interaction. Reset on every one of those, so the sweep only
 /// offers atoms that have genuinely sat untouched.
-/atom/movable
-	EXPIRY_TMP_DECLARE(latent_touched_at)
 
 /// world.time before which the sweep will not offer this atom again, set when
 /// latent_collapse() refused it although can_be_latent() passed. A refusal is a
@@ -38,7 +36,7 @@
  */
 /proc/dq_latent_touch(atom/movable/A)
 	if(A)
-		EXPIRY_STAMP(A, latent_touched_at, CLOCK_WORLD)
+		STAMP(A, latent_touched_at, CLOCK_WORLD)
 
 // ---- Policy ----
 
@@ -96,7 +94,7 @@ GLOBAL_VAR_INIT(latency_last_ineligible, "")
 		GLOB.latency_last_ineligible = "[A.type] is in a stock slot"
 		return
 	var/delay = A.loc?.latent_idle_delay_value()
-	var/idle = ELAPSED(A, latent_touched_at, CLOCK_WORLD)
+	var/idle = STAMP_ELAPSED(A, latent_touched_at, CLOCK_WORLD)
 	if(idle < delay)
 		GLOB.latency_last_ineligible = "[A.type] idle [idle] of [delay]"
 		return

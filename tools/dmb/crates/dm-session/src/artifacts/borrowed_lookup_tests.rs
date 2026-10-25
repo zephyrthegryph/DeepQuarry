@@ -71,6 +71,7 @@ fn colliding_or_forged_locator_never_validates_or_claims_an_inexact_key() {
             versions: Arc::from([]),
             value: Arc::new(99),
             weight: 0,
+            holders: Default::default(),
         });
     let current = store.lease();
     let mut visits = 0;
