@@ -185,7 +185,13 @@ for round in 1 2 3; do
 	stamped() { # <kind>: did the gates pass this check on exactly this HEAD?
 		[ "${DQ_PUSH_FULL:-0}" != "1" ] && [ -f "data/merge-gates/${sha:0:12}.$1.ok" ] && [ "$(cat "data/merge-gates/${sha:0:12}.$1.ok")" = "$sha" ]
 	}
-	if stamped dm; then
+	gate_sha_ok() { [ -f "data/merge-gates/${sha:0:12}.ok" ] && [ "$(sed -n 's/^sha=//p' "data/merge-gates/${sha:0:12}.ok" | tail -n 1)" = "$sha" ]; }
+	if ! stamped dm && [ "${DQ_PUSH_TRUST_GATE_DM:-0}" = "1" ] && [ "${DQ_PUSH_FULL:-0}" != "1" ] && stamped ratchets && stamped dreamchecker && gate_sha_ok; then
+		# The train gates run --no-dm on purpose: the test build compile proved the code compiles on this exact tree, so a second full
+		# native compile here only repeats it. DreamChecker is NOT trusted without its own stamp: the gate's dreamchecker job stamps the exact
+		# HEAD (data/merge-gates/<sha>.dreamchecker.ok); a gate without it falls through to the full build below. CI keeps the DreamMaker compile.
+		echo "== build.sh dm: skipped; the train's gates (test-build compile, DreamChecker, ratchets) passed on exactly this HEAD ${sha:0:12}; CI keeps the DreamMaker compile"
+	elif stamped dm; then
 		echo "== build.sh dm: passed (compiler 0 errors, DreamChecker 0 diagnostics) on exactly this HEAD in tools/dq_merge_gates.sh; not repeated"
 	else
 		echo "== build.sh dm on ${sha:0:12} (log $log.dm.log)"
@@ -233,6 +239,7 @@ for round in 1 2 3; do
 	fi
 	lap "stamp and expected tips"
 	echo "== pushing ${sha:0:12} to origin/master"
+	pre_push_master="$(git rev-parse origin/master 2>/dev/null || true)"
 	if DQ_PUSH_VERIFIED="$sha" git push origin "$sha:refs/heads/master"; then
 		lap "git push (pre-push hook included)"
 		verify_landed "$sha"
@@ -240,6 +247,11 @@ for round in 1 2 3; do
 		# The push landed: free the merge lock BEFORE the disk cleanup, which can take minutes and needs no lock (a next batch must not wait for it).
 		release_batch
 		echo "== dq_push_master: merge lock released; the disk cleanup below runs without it"
+		# A push that changed the compiler or the analyzer publishes the new binaries now, detached, so the next gate or focused run
+		# finds them in the shared caches instead of running a 10 minute cargo build on its critical path (tools/dq_prebuild_tools.sh).
+		if [ -n "$pre_push_master" ]; then
+			bash tools/dq_prebuild_tools.sh "$pre_push_master" "$sha" || echo "dq_push_master: tool prebuild not started (non-fatal)"
+		fi
 		# Reclaim disk: every other worktree that is now clean and merged goes (build targets deleted first). Best effort.
 		bash tools/dq_worktree.sh gc || echo "dq_push_master: worktree cleanup failed (non-fatal); run tools/dq_worktree.sh gc"
 		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"

@@ -6,6 +6,8 @@ use std::collections::BTreeSet;
 use std::fmt;
 
 mod portable_answer;
+mod portable_meaning;
+pub use portable_meaning::{Names as PortableNames, PortableMeaning};
 pub use portable_answer::PortableResolvedAnswer;
 mod warnings;
 pub mod builtin_names;

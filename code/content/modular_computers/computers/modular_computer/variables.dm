@@ -77,6 +77,7 @@
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 
 CAPABILITIES(/obj/item/modular_computer)
+	setup(PROC_REF(install_presets))
 	configure(item_handling(center_x = 0, center_y = 0, randpixel = 0))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0),
 		asks(/datum/prompt/choice, fields = list("question" = "Which component do you want to uninstall?", "title" = "Computer maintenance", "choices" = computed(PROC_REF(component_names))), step = "component", when = PROC_REF(has_components)),

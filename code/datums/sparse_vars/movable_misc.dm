@@ -21,6 +21,9 @@
 
 // The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
 sparse(/atom/movable, belly_cycles, type = num)
+sparse(/atom/movable, icon_rotation, type = num)
+sparse(/atom/movable, listening_recursive, type = num)
+sparse(/atom/movable, move_resist, type = num)
 sparse(/atom/movable, recursive_listeners, type = list)
 sparse(/atom/movable, moved_recently, type = num)
 sparse(/atom/movable, dynamic_lights, type = list)

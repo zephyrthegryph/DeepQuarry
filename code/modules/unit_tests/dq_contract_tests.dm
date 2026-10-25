@@ -677,11 +677,11 @@
 	var/list/available_indications = medical_trial_qualifying_indications(list(healthy, affected), FALSE)
 	TEST_ASSERT("respiratory" in available_indications, "an actually present qualifying respiratory condition did not enable its indication")
 	TEST_ASSERT(!("neurological" in available_indications), "an absent neurological condition incorrectly enabled a conditional offer")
-	TEST_ASSERT("respiratory" in affected.contract_medical_indications, "afflicting did not publish eligibility through its mutation signal")
+	TEST_ASSERT("respiratory" in sparse_get(affected, contract_medical_indications), "afflicting did not publish eligibility through its mutation signal")
 	illness.set_severity(10)
-	TEST_ASSERT(!("respiratory" in affected.contract_medical_indications), "central severity mutation did not withdraw cohort eligibility below threshold")
+	TEST_ASSERT(!("respiratory" in sparse_get(affected, contract_medical_indications)), "central severity mutation did not withdraw cohort eligibility below threshold")
 	illness.set_severity(30)
-	TEST_ASSERT("respiratory" in affected.contract_medical_indications, "central severity mutation did not republish cohort eligibility above threshold")
+	TEST_ASSERT("respiratory" in sparse_get(affected, contract_medical_indications), "central severity mutation did not republish cohort eligibility above threshold")
 	var/list/one_case_availability = list(
 		"indication_counts" = list("respiratory" = 1),
 		"healthy_count" = 2,
@@ -756,7 +756,7 @@
 	qdel(mixed)
 	qdel(preventative)
 	illness.cure()
-	TEST_ASSERT(!("respiratory" in affected.contract_medical_indications), "curing did not withdraw eligibility through its mutation signal")
+	TEST_ASSERT(!("respiratory" in sparse_get(affected, contract_medical_indications)), "curing did not withdraw eligibility through its mutation signal")
 	qdel(healthy)
 	qdel(healthy_two)
 	qdel(affected)

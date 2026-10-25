@@ -48,23 +48,10 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     build_with_executor(project, provider, defines, config, memo, &executor)
 }
 
-/// `DMB_FRONTEND_REVISION`: `0` builds every pass in full; `verify` also derives the plan and
-/// expansion from the previous revision and logs any difference (the full result is used); `1` or
-/// unset (the default since 2026-10-18) uses the derived ones whenever their preconditions hold.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum RevisionMode {
-    Off,
-    Verify,
-    On,
-}
-impl RevisionMode {
-    fn from_env() -> Self {
-        match std::env::var("DMB_FRONTEND_REVISION").as_deref() {
-            Ok("0") => Self::Off,
-            Ok("verify") => Self::Verify,
-            _ => Self::On,
-        }
-    }
+/// `DMB_FRONTEND_VERIFY=1` also runs the full directive pass and the full expansion and logs any
+/// difference from the incremental ones (the full results are used). Off by default.
+fn verify_enabled() -> bool {
+    std::env::var_os("DMB_FRONTEND_VERIFY").is_some_and(|value| value == "1")
 }
 
 /// Build the frontend on the request's borrowed executor, including expansion
@@ -108,49 +95,74 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         0,
     );
     let profile_stage = dm_profile::stage("frontend.directive_planning");
-    let mode = RevisionMode::from_env();
-    let previous = match mode {
-        RevisionMode::Off => None,
-        _ => semantic_state
-            .as_ref()
-            .and_then(|state| state.previous_frontend(project, defines)),
-    };
-    // Changed leaf files edit the previous plan in place (doc/retained_frontend.md, step F1).
-    // Every provider read the full planner makes is repeated, so the input capture is the same.
-    let mut edited = previous
+    // The previous request's frontend, when this session built one for the same project and
+    // defines: every unchanged include subtree of its plan is adopted, not interpreted again.
+    let previous = semantic_state
         .as_ref()
-        .and_then(|previous| dm_preprocess::regions::plan_regions_edit(&previous.plan, &captured));
-    let full_plan = || match memo {
-        Some(memo) => {
-            dm_preprocess::regions::plan_regions_with_memo(project, &captured, defines, memo)
-        }
-        None => plan_regions(project, &captured, defines),
-    };
-    let mut edit_regions = None;
-    let plan = match (mode, edited.take()) {
-        (RevisionMode::On, Some(edit)) => {
-            edit_regions = Some(edit.regions);
-            edit.plan
-        }
-        (RevisionMode::Verify, Some(edit)) => {
-            let full = full_plan();
-            match dm_preprocess::regions::plans_equal(&edit.plan, &full, &edit.regions) {
-                Ok(()) => {
-                    eprintln!("frontend revision verify: plan edit equals the full plan");
-                    edit_regions = Some(edit.regions);
-                }
-                Err(why) => eprintln!("frontend revision verify: PLAN MISMATCH: {why}"),
+        .and_then(|state| state.previous_frontend(project, defines));
+    let (mut plan, mut plan_reuse) = dm_preprocess::regions::plan_regions_incremental(
+        project,
+        &captured,
+        defines,
+        memo,
+        previous.as_ref().map(|previous| &previous.plan),
+    );
+    if verify_enabled() && previous.is_some() {
+        let full = match memo {
+            Some(memo) => {
+                dm_preprocess::regions::plan_regions_with_memo(project, provider, defines, memo)
             }
-            full
+            None => plan_regions(project, provider, defines),
+        };
+        match dm_preprocess::regions::plans_equal(&plan, &full) {
+            Ok(()) => crate::change_set::record_outcome(
+                "frontend verify: incremental plan equals the full plan".into(),
+            ),
+            Err(why) => {
+                eprintln!("frontend verify: PLAN MISMATCH: {why}");
+                crate::change_set::record_outcome(format!("frontend verify: PLAN MISMATCH: {why}"));
+                // The full plan is the authority; nothing of it is a copy of the previous one.
+                plan = full;
+                plan_reuse = dm_preprocess::regions::PlanReuse::default();
+            }
         }
-        (_, _) => full_plan(),
-    };
-    if mode != RevisionMode::Off {
-        eprintln!(
-            "frontend revision: plan {}",
-            if edit_regions.is_some() { "edited" } else { "full" }
-        );
     }
+    // Files a patched or adopted plan did not request from the provider are the previous plan's.
+    let seed_started = Instant::now();
+    if plan_reuse.replanned > 0 || plan_reuse.subtrees > 0 {
+        // The plan holds the text of every file it read, whether it asked the provider again or
+        // adopted the previous plan's reads; a clone has no path comparisons to make.
+        *captured.sources.borrow_mut() = plan.source_texts.clone();
+    }
+    let seeded = seed_started.elapsed();
+    crate::change_set::record_outcome(format!(
+        "frontend plan: {} replanned, {} subtrees adopted ({} occurrences, {} regions of {} copied, {} more matched); declined files={} state={} context={} visits={}; {:.3}s",
+        plan_reuse.replanned,
+        plan_reuse.subtrees,
+        plan_reuse.occurrences,
+        plan_reuse.copied_regions,
+        plan.regions.len(),
+        plan_reuse.matched_regions,
+        plan_reuse.declined.files,
+        plan_reuse.declined.state,
+        plan_reuse.declined.context,
+        plan_reuse.declined.visits,
+        stage_start.elapsed().as_secs_f64()
+    ));
+    let t = plan_reuse.timings;
+    crate::change_set::record_outcome(format!(
+        "frontend plan detail: seed={:.3}s adopt={:.3}s (touch={:.3}s state={:.3}s copy={:.3}s) occurrences={:.3}s visit={:.3}s matching={:.3}s patch (replan={:.3}s assemble={:.3}s)",
+        seeded.as_secs_f64(),
+        t.adopt.as_secs_f64(),
+        t.touch.as_secs_f64(),
+        t.state.as_secs_f64(),
+        t.copy.as_secs_f64(),
+        t.occurrences.as_secs_f64(),
+        t.visit.as_secs_f64(),
+        t.matching.as_secs_f64(),
+        t.replan.as_secs_f64(),
+        t.assemble.as_secs_f64(),
+    ));
     dm_profile::request_mark("frontend.plan_done");
     timings.directive_planning = stage_start.elapsed();
     observe(
@@ -174,33 +186,57 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let profile_stage = dm_profile::stage("frontend.expansion");
     let full_expansion =
         || dm_preprocess::regions::expand_regions_text_with_executor(&plan, executor, memo);
-    let edited_expansion = match (&edit_regions, previous.as_ref(), memo) {
-        (Some(regions), Some(previous), Some(memo)) => {
-            dm_preprocess::regions::expand_regions_edit(&previous.expanded, &plan, regions, memo)
-        }
+    let reusing = match (previous.as_ref(), memo) {
+        (Some(previous), Some(memo)) => dm_preprocess::regions::expand_regions_reusing(
+            &previous.expanded,
+            &plan,
+            &plan_reuse,
+            memo,
+            executor,
+        ),
         _ => None,
     };
-    let expanded = match (mode, edited_expansion) {
-        (RevisionMode::On, Some(expansion)) => {
-            eprintln!("frontend revision: expansion edited");
-            expansion
-        }
-        (RevisionMode::Verify, Some(expansion)) => {
-            let full = full_expansion();
-            match dm_preprocess::regions::expansions_equal(&expansion, &full) {
-                Ok(()) => eprintln!("frontend revision verify: expansion edit equals the full expansion"),
-                Err(why) => eprintln!("frontend revision verify: EXPANSION MISMATCH: {why}"),
+    let (expanded, expansion_reuse) = match reusing {
+        Some((expansion, stats)) => {
+            if verify_enabled() {
+                let full = full_expansion();
+                match dm_preprocess::regions::expansions_equal(&expansion, &full) {
+                    Ok(()) => crate::change_set::record_outcome(
+                        "frontend verify: reusing expansion equals the full expansion".into(),
+                    ),
+                    Err(why) => {
+                        eprintln!("frontend verify: EXPANSION MISMATCH: {why}");
+                        crate::change_set::record_outcome(format!(
+                            "frontend verify: EXPANSION MISMATCH: {why}"
+                        ));
+                    }
+                }
+                (full, Some(stats))
+            } else {
+                (expansion, Some(stats))
             }
-            full
         }
-        _ => {
-            if mode != RevisionMode::Off {
-                eprintln!("frontend revision: expansion full");
-            }
-            full_expansion()
-        }
+        None => (full_expansion(), None),
     };
     timings.expansion = stage_start.elapsed();
+    crate::change_set::record_outcome(match expansion_reuse {
+        Some(stats) => format!(
+            "frontend expansion: {} regions reused ({} rows moved), {} expanded; prepare={:.3}s expand={:.3}s text={:.3}s rows={:.3}s; {:.3}s",
+            stats.reused,
+            stats.rows_moved,
+            stats.expanded,
+            stats.prepare.as_secs_f64(),
+            stats.expand.as_secs_f64(),
+            stats.text.as_secs_f64(),
+            stats.rows.as_secs_f64(),
+            timings.expansion.as_secs_f64()
+        ),
+        None => format!(
+            "frontend expansion: full ({} regions); {:.3}s",
+            plan.regions.len(),
+            timings.expansion.as_secs_f64()
+        ),
+    });
     observe(
         config,
         FrontendStage::Expansion,
@@ -221,39 +257,57 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     );
     let profile_stage = dm_profile::stage("frontend.source_indexing");
     let sources = captured.sources.into_inner();
-    let mut files = Vec::new();
-    let mut by_path = HashMap::new();
-    for occurrence in &plan.occurrences {
-        if by_path.contains_key(occurrence.path.as_ref()) {
-            continue;
+    // A patched plan has the previous plan's occurrences at the same places, so the previous
+    // source index stands except for the files that were requested again.
+    let index_started = Instant::now();
+    let reused_index = previous.as_ref().and_then(|previous| {
+        let rebuilt = plan_reuse.rebuilt_files.as_ref()?;
+        let same_places = plan.occurrences.len() == previous.plan.occurrences.len()
+            && plan
+                .occurrences
+                .iter()
+                .zip(&previous.plan.occurrences)
+                .all(|(now, was)| Arc::ptr_eq(&now.path, &was.path) || now.path == was.path);
+        if !same_places {
+            return None;
         }
-        let id = FileId(
-            u32::try_from(files.len()).map_err(|_| vec![internal("too many source files")])?,
-        );
-        let text = sources
-            .get(occurrence.path.as_ref())
-            .cloned()
-            .unwrap_or_else(|| dm_preprocess::SourceText::from(""));
-        let starts = plan
-            .source_line_starts
-            .get(occurrence.path.as_ref())
-            .cloned()
-            .unwrap_or_else(|| Arc::from([0_usize]));
-        by_path.insert(occurrence.path.as_ref().clone(), id);
-        files.push(SourceFile {
-            id,
-            path: occurrence.path.clone(),
-            captured: sources.contains_key(occurrence.path.as_ref()),
-            text,
-            line_starts: starts,
-        });
-    }
+        let mut files = previous.files.to_vec();
+        for path in rebuilt {
+            let id = *previous.source_by_path.get(path)?;
+            files[id.index()] = SourceFile {
+                id,
+                path: Arc::clone(&files[id.index()].path),
+                captured: sources.contains_key(path),
+                text: sources
+                    .get(path)
+                    .cloned()
+                    .unwrap_or_else(|| dm_preprocess::SourceText::from("")),
+                line_starts: plan
+                    .source_line_starts
+                    .get(path)
+                    .cloned()
+                    .unwrap_or_else(|| Arc::from([0_usize])),
+            };
+        }
+        Some((files, Arc::clone(&previous.source_by_path)))
+    });
+    let source_index_reused = reused_index.is_some();
+    let (files, by_path) = match reused_index {
+        Some(index) => index,
+        None => build_source_index(&plan, &sources)?,
+    };
+    crate::change_set::record_outcome(format!(
+        "frontend source index {}: {:.3}s",
+        if source_index_reused { "reused" } else { "built" },
+        index_started.elapsed().as_secs_f64()
+    ));
     let mapping = Mapping {
         projection: Default::default(),
         plan: &plan,
         expanded: &expanded,
         files: &files,
         by_path: &by_path,
+        hints: Default::default(),
     };
     let mut text_expression_files = std::collections::HashSet::new();
     let mut diagnostics: Vec<_> = expanded
@@ -414,8 +468,8 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         // Declaration provenance needs the source span and occurrence, not a
         // complete diagnostic location (which also allocates an include chain).
         // Reuse the expansion lookup above instead of building that temporary.
-        let file = *by_path
-            .get(expanded_origin.origin.path.as_ref())
+        let file = mapping
+            .file_of(expanded_origin.origin.path)
             .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
         declaration_regions.push(expanded_origin.region);
         let span = source_span(file, expanded_origin.source_span)?;
@@ -568,7 +622,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         })
         .collect();
     let files: Arc<[SourceFile]> = files.into();
-    let source_by_path = Arc::new(by_path);
+    let source_by_path = by_path;
     let source_export_mapping = Arc::new(source_export_mapping::SourceExportMapping::capture(
         &plan,
         &expanded,
@@ -612,6 +666,42 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         bodies,
         emission_order: emission_order.into(),
     })
+}
+
+/// Every distinct file of the plan, in the order its first occurrence appears, with the text the
+/// provider served for it.
+fn build_source_index(
+    plan: &DirectivePlan,
+    sources: &BTreeMap<PathBuf, dm_preprocess::SourceText>,
+) -> Result<(Vec<SourceFile>, Arc<HashMap<PathBuf, FileId>>), Vec<Diagnostic>> {
+    let mut files = Vec::new();
+    let mut by_path = HashMap::new();
+    for occurrence in &plan.occurrences {
+        if by_path.contains_key(occurrence.path.as_ref()) {
+            continue;
+        }
+        let id = FileId(
+            u32::try_from(files.len()).map_err(|_| vec![internal("too many source files")])?,
+        );
+        let text = sources
+            .get(occurrence.path.as_ref())
+            .cloned()
+            .unwrap_or_else(|| dm_preprocess::SourceText::from(""));
+        let starts = plan
+            .source_line_starts
+            .get(occurrence.path.as_ref())
+            .cloned()
+            .unwrap_or_else(|| Arc::from([0_usize]));
+        by_path.insert(occurrence.path.as_ref().clone(), id);
+        files.push(SourceFile {
+            id,
+            path: occurrence.path.clone(),
+            captured: sources.contains_key(occurrence.path.as_ref()),
+            text,
+            line_starts: starts,
+        });
+    }
+    Ok((files, Arc::new(by_path)))
 }
 
 /// A `"text [expression"` that never closes its `[`: DreamMaker reads the rest of the file as the expression, so the error

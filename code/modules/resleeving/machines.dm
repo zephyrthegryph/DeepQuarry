@@ -505,7 +505,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 		nif.set_durability(MR.nif_durability) //Restore backed up durability after restoring the softs.
 
 	// If it was a custom sleeve (not owned by anyone), update namification sequences
-	if(!occupant.original_player)
+	if(!sparse_get(occupant, original_player))
 		occupant.set_real_name(occupant.mind.name)
 		occupant.name = occupant.real_name
 		occupant.dna.real_name = occupant.real_name
@@ -529,7 +529,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 		log_runtime("[occupant] didn't have a mind to check for vore_death, which may be problematic.")
 
 	if(occupant.mind)
-		if(occupant.original_player && ckey(occupant.mind.key) != occupant.original_player)
+		if(sparse_get(occupant, original_player) && ckey(occupant.mind.key) != sparse_get(occupant, original_player))
 			log_and_message_admins("is now a cross-sleeved character. Body originally belonged to [occupant.real_name]. Mind is now [occupant.mind.name].",occupant)
 		var/datum/antagonist/antag_data = SSantag.get_antag_data(occupant.mind.special_role)
 		if(antag_data)

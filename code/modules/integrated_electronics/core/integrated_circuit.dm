@@ -31,7 +31,12 @@ a creative player the means to solve many problems.  Circuits are held inside an
 /obj/item/integrated_circuit/proc/any_examine(mob/user)
 	return
 
+/// The pins a circuit type declares before they are built (names -> pin types into inputs/outputs/activators); the default declares none.
+/obj/item/integrated_circuit/proc/declare_pins()
+	return
+
 /obj/item/integrated_circuit/proc/item_integrated_circuit_setup()
+	declare_pins()
 	set_displayed_name(name)
 	if(!size) set_size(w_class)
 	if(size == -1) set_size(0)

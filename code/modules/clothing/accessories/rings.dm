@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/reagent)
 			if(H.reagents)
 				var/contained = reagents.get_reagents()
 				var/trans = reagents.trans_to_mob(H, 15, CHEM_BLOOD)
-				add_attack_logs(usr, H, "Injected with [name] containing [contained] transferred [trans] units")
+				add_attack_logs(H, H, "Injected with [name] containing [contained] transferred [trans] units")
 	return
 
 //Sleepy Ring

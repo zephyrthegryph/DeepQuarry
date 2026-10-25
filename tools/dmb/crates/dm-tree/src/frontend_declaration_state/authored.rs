@@ -205,6 +205,7 @@ impl DeclarationClaims {
                     let mut replacement = current.value.as_ref().clone();
                     replacement.skeletons = skeletons;
                     current.value = Arc::new(replacement);
+                    current.stored = false;
                 }
             }
             // Sharing the previous leaf backing does not transfer its lease.
@@ -260,6 +261,7 @@ impl DeclarationClaims {
                 origin_max: old.origin_max,
             };
             current.value = Arc::new(replacement);
+            current.stored = false;
         }
         if rows.next().is_some() {
             return None;
@@ -274,8 +276,11 @@ impl DeclarationClaims {
     ) -> Option<()> {
         let mut leaves = Vec::with_capacity(currents.len());
         for current in currents {
-            let key = RetainedDeclarations::key(&current.value.source);
-            self.values.publish(&key, current)?;
+            // A value the store already holds under its key needs no second publication.
+            if !current.stored {
+                let key = RetainedDeclarations::key(&current.value.source);
+                self.values.publish(&key, current)?;
+            }
             leaves.push(current.skeletons());
         }
         *self

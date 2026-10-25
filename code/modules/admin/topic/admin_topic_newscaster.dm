@@ -34,7 +34,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /datum/admins/proc/topic_ac_set_channel_name(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_channel().channel_name = sanitizeSafe(A.step_value("answer"))
+	admincaster_feed_channel().channel_name = text_or_null(sanitizeSafe(A.step_value("answer")))
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_channel_lock(datum/act/op/A)
@@ -72,17 +72,17 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /datum/admins/proc/topic_ac_set_channel_receiving(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_channel().channel_name = A.step_value("answer")
+	admincaster_feed_channel().channel_name = text_or_null(A.step_value("answer"))
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_new_title(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_message.title = A.step_value("answer")
+	admincaster_feed_message.title = text_or_null(A.step_value("answer"))
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_new_message(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_message.body = A.step_value("answer")
+	admincaster_feed_message.body = text_or_null(A.step_value("answer"))
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_submit_new_message(datum/act/op/A)
@@ -123,12 +123,12 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /datum/admins/proc/topic_ac_set_wanted_name(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_message.author = A.step_value("answer")
+	admincaster_feed_message.author = text_or_null(A.step_value("answer"))
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_wanted_desc(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_message.body = A.step_value("answer")
+	admincaster_feed_message.body = text_or_null(A.step_value("answer"))
 	admincaster_refresh(user)
 
 /// A Wanted issue can be issued when it has a name and a description.

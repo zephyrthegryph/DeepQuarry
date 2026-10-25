@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Mecha drills and bores can drill things again"
+  - code_imp: "Hit pins list sparse slots by name instead of counting them"

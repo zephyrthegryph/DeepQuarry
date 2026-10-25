@@ -38,6 +38,7 @@ pub mod request_runner;
 pub mod resource_journal_coverage;
 pub mod resource_manifest;
 pub mod runner_host;
+pub(crate) mod shared_store;
 mod runner_retained_census;
 pub mod session;
 pub mod telemetry;
@@ -109,6 +110,7 @@ pub mod declaration_patch;
 mod request_lease;
 pub mod required_types;
 pub mod retained_output;
+pub mod variant_spill;
 pub mod skin;
 
 #[cfg(test)]

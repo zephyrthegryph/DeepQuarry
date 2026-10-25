@@ -675,7 +675,7 @@ proc, and `nameof(call().var)`). Two guards now stop that:
 
 | Class | Slots | Use it for | Gets |
 |---|---|---|---|
-| general (default) | `pool-1..8` (`DQ_LANE_POOL_SIZE`) | game work: any `.dm`, maps, icons, tgui | the normal queue; DM compile 2, test worlds 3 |
+| general (default) | `pool-1..3` (`DQ_LANE_POOL_SIZE`) | game work: any `.dm`, maps, icons, tgui | the normal queue; DM compile 2, test worlds 3 |
 | compiler (`tools/dmb*` branches are detected; or `--class compiler`) | `pool-c1`, `pool-c2` (reserved, general lanes never take them; a third compiler lane may use a free general slot) | compiler/daemon work and its fixes | served ahead of the general queue; first claim on the machine slots (priority 0 like the merge worktree) and ONE cargo slot beyond the cap |
 | light (`--class light`) | `pool-light` (one shared, own queue) | docs, lane/tooling scripts, Rust/compiler-only changes | edit, commit, `bash tools/dq_land.sh --light`, release: minutes. Never runs a DM compile or a test world (`dq_machine_slots.sh` refuses with exit 64) |
 

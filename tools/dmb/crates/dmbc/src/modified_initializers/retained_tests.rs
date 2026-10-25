@@ -110,6 +110,7 @@ fn nested_modified_replay_reissues_current_fields_and_preserves_fifo_and_fresh_c
         current[0].0,
         &current[0].1.descriptor,
         None,
+        true,
     );
     let mut roots = retained::CurrentFields::new(current[0].1.descriptor.fields(), None);
     assert_eq!(roots.prepared_indexes().count(), 0);

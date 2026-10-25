@@ -91,6 +91,7 @@ mod tests {
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &first_paths,
+            hints: Default::default(),
         };
         let first = mapping.expansion_stack(&trace).unwrap();
         let same = mapping.expansion_stack(&trace).unwrap();
@@ -114,6 +115,7 @@ mod tests {
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &second_paths,
+            hints: Default::default(),
         };
         let rebound = current.expansion_stack(&trace).unwrap();
         assert_eq!(rebound[0].file, FileId(2));
@@ -130,6 +132,7 @@ mod tests {
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &paths,
+            hints: Default::default(),
         };
         let trace = Arc::new(vec![MacroExpansion {
             name: Arc::from("VALUE"),

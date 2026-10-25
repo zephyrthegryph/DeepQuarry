@@ -6,11 +6,7 @@ emp 1 | refresh_queued: DEP_ALL -> 0
 emp 2 | nothing
 explosion 1 | deleted
 explosion 2 | atom_integrity: down
-explosion 2 | sparse_slots: list(1) -> list(2)
 explosion 3 | atom_integrity: down
-explosion 3 | sparse_slots: list(1) -> list(2)
 projectile | atom_integrity: down
-projectile | sparse_slots: list(1) -> list(2)
 thrown | atom_integrity: down
-thrown | sparse_slots: list(1) -> list(2)
 

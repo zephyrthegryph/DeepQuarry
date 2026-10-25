@@ -92,7 +92,7 @@
 /obj/proc/handle_deconstruct(disassembled = TRUE)
 	SHOULD_CALL_PARENT(FALSE)
 
-	if(!(obj_flags & NO_DEBRIS_AFTER_DECONSTRUCTION))
+	if(!(sparse_get_or(src, obj_flags, CAN_BE_HIT) & NO_DEBRIS_AFTER_DECONSTRUCTION))
 		atom_deconstruct(disassembled)
 
 /obj/proc/deconstruct(disassembled = TRUE)

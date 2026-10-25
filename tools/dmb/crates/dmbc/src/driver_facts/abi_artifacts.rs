@@ -38,7 +38,7 @@ pub struct AbiArtifacts {
     /// Strong owner of the transport of a one-shot store (`with_disk`); retained stores leave it empty.
     #[allow(dead_code)]
     pinned_disk: Option<Arc<disk::Transport>>,
-    groups: dm_session::ReceiptGroupPool<Query, Answer, Domain>,
+    groups: Arc<dm_session::ReceiptGroupPool<Query, Answer, Domain>>,
     pub(super) reused: AtomicUsize,
     recomputed: AtomicUsize,
     pub(super) provisional_reused: AtomicUsize,
@@ -63,7 +63,7 @@ impl Default for AbiArtifacts {
             engine_owner: None,
             disk: std::sync::RwLock::new(std::sync::Weak::new()),
             pinned_disk: None,
-            groups: Default::default(),
+            groups: crate::shared_store::receipt_pool("abi"),
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
             provisional_reused: AtomicUsize::new(0),
@@ -397,6 +397,7 @@ pub(super) fn prepare(
         // A row hydrated from disk is already there: staging it again would only grow its bucket.
         if let Some(disk) = disk.filter(|_| !was_transported) {
             let _timer = DISK_STAGE.time();
+            let observer = recording.transparent_receipt_observer();
             disk.stage(
                 &key,
                 issued_identity,
@@ -408,6 +409,7 @@ pub(super) fn prepare(
                     abi: Arc::clone(&abi),
                 },
                 &semantic_reads,
+                observer.as_ref().map(|observer| observer.provider()),
             );
         }
         let reads = observations::reads(current.inputs, semantic_reads);

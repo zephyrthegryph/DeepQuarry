@@ -13,13 +13,14 @@ CAPABILITIES(/obj/item/motiontracker)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	setup(PROC_REF(listen_for_motion))
 	setup(PROC_REF(subscribe_holder))
 
 
 
-/obj/item/motiontracker/Initialize(mapload)
+/// Its setup hook: it listens to the motion tracker system's pings.
+/obj/item/motiontracker/proc/listen_for_motion()
 	observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
-	return ..()
 
 /// A tracker made in a hand or a pocket subscribes its holder to the motion pings.
 /obj/item/motiontracker/proc/subscribe_holder()

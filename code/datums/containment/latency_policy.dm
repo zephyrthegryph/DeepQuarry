@@ -16,7 +16,7 @@
 /// dq_latency_sweep_register() the first time a holder's ledger is built
 /// (dq_ledger(), ledger.dm); a holder with nothing left simply contributes no
 /// candidates on its turn, rather than being torn out of the list.
-GLOBAL_LIST_EMPTY(latency_sweep_holders)
+GLOBAL_LIST_EMPTY(latency_sweep_holders) // a declared many relation of GLOB: a deleted holder leaves it by itself
 
 PROC_SUMMARY(/proc/dq_latency_sweep_register) // bookkeeping for the sweep's work list, not an input of any value
 /proc/dq_latency_sweep_register(atom/holder)
@@ -25,11 +25,11 @@ PROC_SUMMARY(/proc/dq_latency_sweep_register) // bookkeeping for the sweep's wor
 	if(!(holder.flags & ATOM_MATERIALIZED))
 		return
 	if(holder?.latent_contents_enabled())
-		GLOB.latency_sweep_holders[holder] = TRUE
+		rel_add(GLOB, nameof(GLOB.latency_sweep_holders), holder)
 		GLOB.latency_sweep.set_sweeping(TRUE)
 
 /proc/dq_latency_sweep_unregister(atom/holder)
-	GLOB.latency_sweep_holders -= holder
+	rel_remove(GLOB, nameof(GLOB.latency_sweep_holders), holder)
 
 /// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/latency_sweep)
@@ -101,8 +101,8 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			// delay instead of re-offering it (and re-running its refusal) every frame.
 			COOLDOWN_START(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(COOLDOWN_TIMELEFT(A, latent_refused_until))]: [GLOB.latent_last_refusal]")
-	if(dead)
-		holders -= dead
+	for(var/atom/gone as anything in dead)
+		rel_remove(GLOB, nameof(GLOB.latency_sweep_holders), gone)
 	cursor = index % max(length(holders), 1)
 
 #undef LATENCY_SWEEP_BUDGET

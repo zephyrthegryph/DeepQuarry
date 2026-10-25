@@ -105,6 +105,7 @@
 	return null
 
 CAPABILITIES(/obj/item/spell)
+	setup(PROC_REF(link_to_core), mapload = TRUE)
 	ref_one(nameof(owner))
 	ref_one(nameof(core))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
@@ -117,12 +118,8 @@ CAPABILITIES(/obj/item/spell)
 /// A spell that needs no core (its constructor param).
 /obj/item/spell/var/coreless = FALSE
 
-// Proc: New()
-// Parameters: 0
-// Description: Sets owner to equal its loc, links to the owner's core, then applies overlays if needed.
-// ALLOW(init/INSTANCE_STATE): a spell belongs to the caster it is made on, and needs their core unless coreless
-/obj/item/spell/Initialize(mapload)
-	. = ..()
+/// A spell belongs to the caster it is made on, and needs their core unless coreless: without one it is discarded.
+/obj/item/spell/proc/link_to_core(mapload)
 	if(isliving(loc))
 		rel_set(src, nameof(owner), loc)
 	if(owner_ref() && !coreless)

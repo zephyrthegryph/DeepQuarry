@@ -24,6 +24,22 @@ pub(crate) struct PatchRecord {
 /// Named digests, compared part by part so a fallback can say what changed.
 pub(crate) type Footprint = Vec<(&'static str, u128)>;
 
+/// Every part name a footprint can carry (`PatchRecord::footprint` plus the sidecar part of `PreparedPatchRecord`), so a
+/// stored footprint can name its parts by position. A test keeps this list equal to what the footprint builds.
+pub(crate) const FOOTPRINT_NAMES: [&str; 11] = [
+    "identity",
+    "frame",
+    "abi",
+    "features",
+    "inventory",
+    "strings",
+    "value_strings",
+    "debug_paths",
+    "instances",
+    "helpers",
+    "sidecars",
+];
+
 impl Contribution {
     pub(in crate::symbolic) fn patch_record(&self) -> PatchRecord {
         PatchRecord {

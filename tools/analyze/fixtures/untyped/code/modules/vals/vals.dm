@@ -290,3 +290,78 @@
 /datum/keyed_f/proc/read(datum/keyed_d/D, datum/keyed_e/E)
 	from_d = D.get()
 	from_e = E.get()
+
+// builtin value forms: a literal pick, a list method with no definition in the tree, a number/flag/string config read.
+/datum/controller/configuration
+	var/entries = 0
+	var/list/entries_by_type = list()
+
+/datum/controller/configuration/proc/Get(entry_type)
+	var/datum/config_entry/E = entries_by_type[entry_type]
+	return E.config_entry_value
+
+/datum/config_entry
+	var/config_entry_value
+
+/datum/config_entry/proc/ValidateAndSet(str_val)
+	return TRUE
+
+/datum/config_entry/number
+
+/datum/config_entry/number/ValidateAndSet(str_val)
+	config_entry_value = text2num(str_val)
+	return TRUE
+
+/datum/config_entry/number/limit
+/datum/config_entry/number/overridden
+
+/datum/config_entry/number/overridden/ValidateAndSet(str_val)
+	config_entry_value = new /datum/thing
+	return TRUE
+
+/datum/config_entry/other
+/datum/config_entry/other/thing
+
+var/datum/controller/configuration/config = new
+
+/proc/pick_literals()
+	return pick("small", "medium", 3)
+
+/proc/pick_weighted()
+	return pickweight(list("a" = 1, "b" = 2))
+
+/proc/pick_mixed()
+	return pick("small", new /datum/thing)
+
+/proc/pick_list(list/L)
+	return pick(L)
+
+/proc/index_of(list/L)
+	return L.Find("x")
+
+/proc/joined_of(list/L)
+	return L.Join(", ")
+
+/datum/builtin_values
+	var/picked_literals
+	var/picked_weighted
+	var/picked_mixed
+	var/picked_list
+	var/found_index
+	var/joined
+	var/config_number
+	var/config_overridden
+	var/config_other
+	var/config_unknown
+
+/datum/builtin_values/proc/use(list/L)
+	picked_literals = pick_literals()
+	picked_weighted = pick_weighted()
+	picked_mixed = pick_mixed()
+	picked_list = pick_list(L)
+	found_index = index_of(L)
+	joined = joined_of(L)
+	config_number = global.config.Get(/datum/config_entry/number/limit)
+	config_overridden = global.config.Get(/datum/config_entry/number/overridden)
+	config_other = global.config.Get(/datum/config_entry/other/thing)
+	config_unknown = global.config.Get(config_number)

@@ -84,6 +84,8 @@ impl Shared {
             // Never under the roster lock: a host drop joins pools and can take seconds.
             let Ok(mut host) = slot.host.try_lock() else { continue };
             let before = transport::private_bytes();
+            // A retiring daemon is replaced by one that will compile the same variants: store what it would patch from.
+            host.spill_patch_bases();
             self.reset_host(&mut host);
             slot.idle_tier.store(SESSION_RELEASE, Ordering::Release);
             note_eviction(&key, "daemon-retiring");
@@ -238,6 +240,7 @@ impl Shared {
                 let requested_before = allocations::requested_live();
                 let started = Instant::now();
                 // Pool joins and artifact destructors never run under slot roster lock.
+                host.spill_patch_bases();
                 drop(host);
                 drop(removed);
                 drop(slot);
@@ -258,6 +261,7 @@ impl Shared {
                 // state; replace only idle compiler ownership outside roster lock.
                 let before = transport::private_bytes();
                 let requested_before = allocations::requested_live();
+                host.spill_patch_bases();
                 self.reset_host(&mut host);
                 note_eviction(&key, if hard { "hard-memory-limit" } else if pressured { "memory-pressure" } else { "idle" });
                 super::super::emit_stderr(format_args!(
@@ -352,6 +356,7 @@ mod tests {
             engines: Arc::new(Default::default()),
             executors: Arc::new(Default::default()),
             procedures: Arc::new(Default::default()),
+            store: Arc::new(Default::default()),
             compiler: 1,
             retiring: AtomicBool::new(false),
             slots: Mutex::new(BTreeMap::new()),
@@ -383,6 +388,7 @@ mod tests {
             engines: Arc::new(Default::default()),
             executors: Arc::new(Default::default()),
             procedures: Arc::new(Default::default()),
+            store: Arc::new(Default::default()),
             compiler: 1,
             retiring: AtomicBool::new(false),
             slots: Mutex::new(BTreeMap::new()),

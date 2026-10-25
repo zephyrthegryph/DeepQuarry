@@ -90,6 +90,45 @@ impl ListRowImage {
     pub fn image(&self) -> &EncodedDmb {
         &self.image
     }
+    /// Byte range of every list row, in table order (for persisting the image beside its rows).
+    pub fn ranges(&self) -> &[Range<usize>] {
+        &self.ranges
+    }
+    /// Word width of the image's lists (2 or 4 bytes).
+    pub fn width(&self) -> usize {
+        self.width
+    }
+    /// Rebuild an image stored by `ranges()`/`width()`. The bytes must hash to `content_hash` (the digest the writer
+    /// stamped) and every range must be an exact list record of that width, in order and inside the image: a stored image
+    /// that fails any of this is refused rather than spliced.
+    pub fn from_stored(
+        bytes: Vec<u8>,
+        content_hash: u128,
+        ranges: Vec<Range<usize>>,
+        width: usize,
+    ) -> io::Result<Self> {
+        if !matches!(width, 2 | 4) {
+            return Err(io::Error::other("list width differs"));
+        }
+        let image = EncodedDmb::from_stored(bytes, content_hash)?;
+        let data = image.bytes();
+        let mut through = 0usize;
+        for range in &ranges {
+            let row = data
+                .get(range.clone())
+                .filter(|_| range.start >= through)
+                .ok_or_else(|| io::Error::other("stored list row outside the image or out of order"))?;
+            let count = row
+                .get(..2)
+                .map(|head| u16::from_le_bytes([head[0], head[1]]) as usize)
+                .ok_or_else(|| io::Error::other("stored list row has no count"))?;
+            if row.len() != 2 + count * width {
+                return Err(io::Error::other("stored list row differs from its count"));
+            }
+            through = range.end;
+        }
+        Ok(Self::new(image, ranges, width))
+    }
     pub fn len(&self) -> usize {
         self.ranges.len()
     }

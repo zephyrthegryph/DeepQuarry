@@ -254,6 +254,7 @@ fn run_build_attempt(
     // input pass as speculative candidates (see NativeInputs::prepare_with_hints).
     let mut recorded_source_paths: Vec<PathBuf> = Vec::new();
     let mut memo_policy = 0;
+    let mut facts_policy = 0;
     drop(input_context_profile);
     dm_profile::detail_mark("input_context", total);
     let session_profile = dm_profile::stage("session_validation");
@@ -273,6 +274,10 @@ fn run_build_attempt(
         // DbgFile/DbgLine are emitted only under DEBUG, so a DEBUG flip must not reuse memoized code.
         policy_bytes.push(u8::from(defines.contains_key("DEBUG")));
         memo_policy = xxhash_rust::xxh3::xxh3_128(&policy_bytes);
+        // Facts caches (classification, modifier facts) do not read the DEBUG flag: without that byte the game and the
+        // test variant, and any other define set, claim the same artifacts.
+        policy_bytes.pop();
+        facts_policy = xxhash_rust::xxh3::xxh3_128(&policy_bytes);
         Some(compiler)
     } else {
         None
@@ -439,6 +444,17 @@ fn run_build_attempt(
     if engine_capture.is_none() {
         host.clear_regions();
     }
+    // The variant's stored patch base (`dmbc::variant_spill`): this cache root's spill directory and this project, defines
+    // and compiler policy's file.
+    let spill_target = (executable && !no_cache && dmbc::variant_spill::enabled())
+        .then(|| cache_root.clone().map_or_else(dm_cache::Cache::default_root, Ok).ok())
+        .flatten()
+        .map(|root| {
+            (
+                dmbc::variant_spill::directory(&root),
+                dmbc::variant_spill::key(&project, &defines, memo_policy),
+            )
+        });
     let memo_cache = if executable && !no_cache {
         match cache_root.map_or_else(dm_cache::Cache::default_root, Ok) {
             Ok(root) => Some(Arc::new(dmbc::runner_disk::LazyDisk::new(root))),
@@ -462,7 +478,7 @@ fn run_build_attempt(
     let procedure_memo = host
         .procedure_memo(memo_policy, cache_snapshot.clone(), publishable_artifacts)
         .map(|memo| {
-            let memo = memo.with_explanation_limit(131072);
+            let memo = memo.with_explanation_limit(131072).with_facts_policy(facts_policy);
             match &cache_publisher {
                 Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
                 None => memo,
@@ -501,8 +517,12 @@ fn run_build_attempt(
     // One request-local execution boundary spans input capture, parsing, ABI,
     // lowering and linking. Its Drop joins workers before the CLI profiler ends.
     let generation = if executable {
-        host.generation(memo_policy)
-            .map(|owner| owner.for_request(publishable_artifacts))
+        host.generation(memo_policy).map(|owner| {
+            if let Some((directory, key)) = &spill_target {
+                owner.attach_spill(directory.clone(), *key);
+            }
+            owner.for_request(publishable_artifacts)
+        })
     } else {
         None
     };
@@ -537,7 +557,7 @@ fn run_build_attempt(
     // One-shot compilation uses the same named declaration receipt issuer as
     // retained sessions. This owner lasts for this request only: disabling
     // caches must not change which semantic answers the compiler can prove.
-    let mut request_semantic = dm_tree::frontend::RetainedSemanticTree::default();
+    let mut request_semantic = dm_tree::frontend::RetainedSemanticTree::one_shot();
     let semantic_state = semantic_state
         .as_deref_mut()
         .unwrap_or(&mut request_semantic);
@@ -593,7 +613,14 @@ fn run_build_attempt(
         }
         let empty = dm_preprocess::regions::prepared_source::PreparedSources::default();
         let provider = match &inputs {
-            Some(inputs) => inputs.provider(&inputs_capture),
+            Some(inputs) => {
+                let provider = inputs.provider(&inputs_capture);
+                match &query_db {
+                    // The frontend asks the database which sources changed since its last plan.
+                    Some(db) => provider.with_changes(&**db),
+                    None => provider,
+                }
+            }
             None => dm_preprocess::regions::prepared_source::PreparedSourceProvider::new(
                 &empty,
                 &inputs_capture,
@@ -640,7 +667,7 @@ fn run_build_attempt(
     });
     dm_profile::request_mark("frontend.revision");
     if retains_query_owners {
-        // The next request derives its plan and expansion from this revision (DMB_FRONTEND_REVISION).
+        // The next request adopts this revision's unchanged include subtrees and regions.
         let _timer = dm_profile::detail_timer("frontend.remember");
         semantic_state.remember_frontend(&project, &defines, frontend.clone());
     }
@@ -1253,6 +1280,7 @@ fn run_build_attempt(
                 procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answers_version()),
                 procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answers_context()),
                 procedure_memo.as_ref().and_then(|memo| Some(memo.query_db()?.mark_published())),
+                procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answer_facts()),
                 output.dmb.content_hash(),
             ) {
                 Some(base) => {

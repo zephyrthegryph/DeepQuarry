@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# NOTICE: lanes land on the batch train by default (tools/dq_train.sh, agent_workflow.md section 29); this per-lane script is kept for now.
+# Retired 2026-10-24: the batch train (tools/dq_train.sh) is the only path to master. Per-lane proofs re-ran on every master move,
+# queued for the one DM compile slot and took lanes 2-3 h to land. A lane runs its focused tests, enqueues and releases its slot.
+if [ "${DQ_LEGACY_LAND:-0}" != 1 ]; then
+	echo "dq_land: retired; land with: bash tools/dq_train.sh enqueue --tests \"<your tests>\" (or --light), then release your slot" >&2
+	exit 2
+fi
 # Land a lane on master with the merge lock held only for the cheap part: prove OUTSIDE the lock, lock only to merge and push.
 #
 #   export DQ_MERGE_SESSION=<the lane branch>   # optional: defaults to the current branch

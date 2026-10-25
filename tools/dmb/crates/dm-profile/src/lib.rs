@@ -1019,9 +1019,50 @@ pub fn request_marks_end(label: &'static str) {
 /// Prints `detail rmark <label>: <seconds since request arrival>` when
 /// `DMB_TIMINGS_DETAIL=1`. Consecutive marks attribute the whole request wall.
 pub fn request_mark(label: &'static str) {
+    memory_mark(label);
     if detail_enabled() {
         if let Some(origin) = *REQUEST_ORIGIN.lock().unwrap_or_else(|e| e.into_inner()) {
             eprintln!("detail rmark {label}: {:.3}s", origin.elapsed().as_secs_f64());
+        }
+    }
+}
+
+/// Diagnostic memory accounting at every request mark (`DMB_MEM_MARKS=1`, needs the `allocation-counting` feature for
+/// the live figure): prints `mem mark <label>: live=<MB> peak=<MB> commit=<MB>`. With the `allocation-sites` feature and
+/// `DMB_ALLOC_SITES_PATH`, the marks named in `DMB_ALLOC_SITES_MARKS` (comma separated, `*` for all) also append the
+/// live-bytes-by-call-site report, so one cold compile can be broken down by stage without a daemon.
+fn memory_mark(label: &'static str) {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    if !*ENABLED.get_or_init(|| std::env::var_os("DMB_MEM_MARKS").is_some_and(|v| v == "1")) {
+        return;
+    }
+    #[cfg(feature = "allocation-counting")]
+    let (live, peak) = (
+        allocator::CountingAllocator::live_requested_bytes() / 1_000_000,
+        allocator::peak() / 1_000_000,
+    );
+    #[cfg(not(feature = "allocation-counting"))]
+    let (live, peak) = (0u64, 0u64);
+    let commit = allocator_commit_bytes().unwrap_or(0) / 1_000_000;
+    #[cfg(windows)]
+    let private = clock::current_private_bytes().unwrap_or(0) / 1_000_000;
+    #[cfg(not(windows))]
+    let private = 0u64;
+    eprintln!("mem mark {label}: live={live}MB peak={peak}MB commit={commit}MB private={private}MB");
+    #[cfg(feature = "allocation-sites")]
+    if let (Some(path), Ok(marks)) = (
+        std::env::var_os("DMB_ALLOC_SITES_PATH").filter(|path| !path.is_empty()),
+        std::env::var("DMB_ALLOC_SITES_MARKS"),
+    ) {
+        if marks == "*" || marks.split(',').any(|mark| mark == label) {
+            use std::io::Write;
+            let text = format!(
+                "######## mark.{label} live={live}MB commit={commit}MB\n{}",
+                allocation_sites::report(3000)
+            );
+            if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+                let _ = file.write_all(text.as_bytes());
+            }
         }
     }
 }

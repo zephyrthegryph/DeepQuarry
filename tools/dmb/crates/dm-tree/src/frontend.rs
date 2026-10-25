@@ -398,6 +398,7 @@ impl ColdFrontend {
             expanded: &self.expanded,
             files: &self.files,
             by_path: &self.source_by_path,
+            hints: Default::default(),
         }
         .output(expanded_offset)
     }
@@ -411,6 +412,7 @@ impl ColdFrontend {
             expanded: &self.expanded,
             files: &self.files,
             by_path: &self.source_by_path,
+            hints: Default::default(),
         }
         .debug_site(expanded_offset)
     }
@@ -617,6 +619,12 @@ impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
         );
         Ok(source)
     }
+    fn revision(&self) -> Option<u64> {
+        self.provider.revision()
+    }
+    fn changes_since(&self, revision: u64) -> Option<Arc<std::collections::BTreeSet<PathBuf>>> {
+        self.provider.changes_since(revision)
+    }
 }
 
 /// Build a resolved source model from a captured provider. Map/resource consumers
@@ -718,6 +726,14 @@ struct Mapping<'a> {
     expanded: &'a ExpandedRegions,
     files: &'a [SourceFile],
     by_path: &'a HashMap<PathBuf, FileId>,
+    /// Where the last two questions were answered: declarations and bodies are asked about in
+    /// source order, so the next answer is almost always the same file and the same or a nearby row.
+    hints: MappingHints,
+}
+#[derive(Default)]
+struct MappingHints {
+    file: std::cell::Cell<Option<(usize, FileId)>>,
+    row: std::cell::Cell<usize>,
 }
 
 impl Mapping<'_> {
@@ -725,16 +741,30 @@ impl Mapping<'_> {
         let index = self
             .expanded
             .origins
-            .partition_point(|origin| origin.output_span.end <= offset);
+            .partition_point_near(self.hints.row.get(), |origin| origin.output_span.end <= offset);
+        self.hints.row.set(index);
         self.expanded
             .origins
             .get(index)
             .or_else(|| self.expanded.origins.last())
     }
+    /// The file of a path, remembering the last answer by the path allocation (every row of a
+    /// file shares one).
+    fn file_of(&self, path: &Arc<PathBuf>) -> Option<FileId> {
+        let pointer = Arc::as_ptr(path) as usize;
+        if let Some((known, file)) = self.hints.file.get() {
+            if known == pointer {
+                return Some(file);
+            }
+        }
+        let file = *self.by_path.get(path.as_ref())?;
+        self.hints.file.set(Some((pointer, file)));
+        Some(file)
+    }
     fn debug_site(&self, offset: usize) -> Option<(Arc<str>, usize)> {
         let origin = self.origin(offset)?;
         let occurrence = self.plan.regions[origin.region].occurrence;
-        let file = *self.by_path.get(origin.origin.path.as_ref())?;
+        let file = self.file_of(origin.origin.path)?;
         source_span(file, origin.source_span).ok()?;
         Some((
             self.plan.occurrences[occurrence].semantic_path.clone(),
@@ -744,14 +774,14 @@ impl Mapping<'_> {
     fn output(&self, offset: usize) -> Option<SourceLocation> {
         let origin = self.origin(offset)?;
         let occurrence = self.plan.regions[origin.region].occurrence;
-        source_export_mapping::source_location(
+        source_export_mapping::source_location_in(
+            self.file_of(origin.origin.path)?,
             origin,
             &self.plan.occurrences[occurrence].path,
             &self.plan.occurrences[occurrence].semantic_path,
             self.plan.regions[origin.region].encounter_ordinal,
             occurrence,
             self.include_chain(occurrence),
-            self.by_path,
         )
     }
 

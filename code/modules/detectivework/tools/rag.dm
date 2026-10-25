@@ -1,5 +1,7 @@
+/// Blood on the bare hands, in blood units (sparse slot bloody_hands, default 0).
+sparse(/mob, bloody_hands, type = num)
+
 /mob
-	var/bloody_hands = 0
 	var/track_blood = 0
 	var/list/feet_blood_DNA
 	var/feet_blood_color

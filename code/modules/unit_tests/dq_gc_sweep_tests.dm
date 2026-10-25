@@ -167,7 +167,7 @@
 			continue
 		var/key = ref(D)
 		deleted[key] = labels[i]
-		if(GLOB.latency_sweep_holders[D])
+		if(D in GLOB.latency_sweep_holders)
 			latency_registered++
 		qdel(D)
 		if(isnull(D.gc_destroyed))

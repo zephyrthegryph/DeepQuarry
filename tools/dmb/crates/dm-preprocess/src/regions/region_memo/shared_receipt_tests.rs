@@ -4,7 +4,7 @@ struct Legacy<'a> {
     key: u128,
     #[serde(with = "source_wire")]
     source: crate::SourceText,
-    control: Arc<[u8]>,
+    control: u128,
     #[serde(with = "source_wire")]
     text: crate::SourceText,
     reads: &'a Vec<MacroRead>,
@@ -30,9 +30,9 @@ struct LegacyLine {
 #[test]
 fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
     let source: crate::SourceText = "X".to_owned().into();
-    let control: Arc<[u8]> = Arc::from(EXPANSION_VERSION.to_le_bytes());
+    let control: u128 = 7;
     let value = ExpansionRecord {
-        key: framed_key(&source, &control),
+        key: framed_key(&source, control),
         source,
         control,
         text: "Ω".to_owned().into(),
@@ -82,7 +82,7 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
     let legacy = Legacy {
         key: value.key,
         source: value.source.clone(),
-        control: value.control.clone(),
+        control: value.control,
         text: value.text.clone(),
         reads: &value.reads,
         locations: &value.locations,

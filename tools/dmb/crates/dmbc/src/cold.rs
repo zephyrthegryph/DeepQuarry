@@ -762,7 +762,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
                             crate::initializer_policy::InitializerReuse {
                                 store: store.as_ref(),
                                 resolver,
-                                policy: memo.policy,
+                                policy: memo.facts_policy,
                                 resource_search_context: declarations.resource_search_context,
                             }
                         })

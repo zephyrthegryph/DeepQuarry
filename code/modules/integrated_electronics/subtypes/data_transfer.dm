@@ -16,12 +16,17 @@
 	power_draw_per_use = 4
 	var/number_of_inputs = 2
 
-/obj/item/integrated_circuit/transfer/multiplexer/Initialize(mapload)
+CAPABILITIES(/obj/item/integrated_circuit/transfer/multiplexer)
+	setup(PROC_REF(describe_inputs))
+
+/// The pins are named strings: they get built right after this.
+/obj/item/integrated_circuit/transfer/multiplexer/declare_pins()
 	for(var/i = 1 to number_of_inputs)
-		inputs["input [i]"] = IC_PINTYPE_ANY // This is just a string since pins don't get built until ..() is called.
-//		inputs += "input [i]"
-	complexity = number_of_inputs
-	. = ..()
+		inputs["input [i]"] = IC_PINTYPE_ANY
+	set_complexity(number_of_inputs)
+
+/// Once its pins are built the multiplexer says how many inputs it has.
+/obj/item/integrated_circuit/transfer/multiplexer/proc/describe_inputs()
 	desc += " It has [number_of_inputs] input pins."
 	extended_desc += " This multiplexer has a range from 1 to [inputs.len - 1]."
 
@@ -64,13 +69,10 @@
 	power_draw_per_use = 4
 	var/number_of_outputs = 2
 
-/obj/item/integrated_circuit/transfer/demultiplexer/Initialize(mapload)
+/obj/item/integrated_circuit/transfer/demultiplexer/declare_pins()
 	for(var/i = 1 to number_of_outputs)
-	//	outputs += "output [i]"
 		outputs["output [i]"] = IC_PINTYPE_ANY
-	complexity = number_of_outputs
-
-	return ..()
+	set_complexity(number_of_outputs)
 
 CAPABILITIES(/obj/item/integrated_circuit/transfer/demultiplexer)
 	setup(PROC_REF(describe_outputs))
@@ -118,13 +120,10 @@ CAPABILITIES(/obj/item/integrated_circuit/transfer/demultiplexer)
 	power_draw_per_use = 4
 	var/number_of_outputs = 2
 
-/obj/item/integrated_circuit/transfer/pulsedemultiplexer/Initialize(mapload)
+/obj/item/integrated_circuit/transfer/pulsedemultiplexer/declare_pins()
 	for(var/i = 1 to number_of_outputs)
-	//	outputs += "output [i]"
 		activators["output [i]"] = IC_PINTYPE_PULSE_OUT
-	complexity = number_of_outputs
-
-	return ..()
+	set_complexity(number_of_outputs)
 
 CAPABILITIES(/obj/item/integrated_circuit/transfer/pulsedemultiplexer)
 	setup(PROC_REF(describe_pulse_outputs))

@@ -44,7 +44,8 @@ OpenDream-output translator (`od_lower`, `od_emit`, `translate`), the structural
 (`cargo run -p dmb-opendream --example NAME`). There are no Cargo features to select.
 
 On Windows, pairs share `%LOCALAPPDATA%/dmbd/pairs` on that drive and
-`<drive>:\.dmbd\pairs` on other drives.
+`<drive>:\dq-cache\dmbd\pairs` on other drives (it used to be `<drive>:\.dmbd\pairs`; the first
+compile moves an existing one).
 `--output-store PATH` selects an alternative store and is required for network
 volumes. Other platforms currently use `.dmbc/outputs` beside the project.
 One worktree's complete capture/compile/install

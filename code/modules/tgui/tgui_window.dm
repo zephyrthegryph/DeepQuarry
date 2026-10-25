@@ -66,7 +66,9 @@
 /datum/tgui_window/New(client/client, id, pooled = FALSE)
 	src.id = id
 	rel_set(src, nameof(client), client)
-	src.client().tgui_windows[id] = src
+	var/client/owner = src.client()
+	if(owner?.session)
+		rel_add(owner.session, nameof(owner.session.tgui_windows), src, id)
 	src.pooled = pooled
 	if(pooled)
 		src.pool_index = TGUI_WINDOW_INDEX(id)
