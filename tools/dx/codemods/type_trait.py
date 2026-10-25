@@ -123,7 +123,7 @@ SPECS = {
     "footstep_rules": dict(
         base="/mob/living", ctor="footstep_rules", reader="footstep_of", type_reader="footstep_of_type",
         fields={"footstep_volume": "footstep_volume", "footstep_e_range": "footstep_e_range"},
-        skip={"code/datums/behaviours/footstep_rules.dm"},
+        skip={"code/content/behaviours/footstep_rules.dm"},
         skip_refs=r"(^|\.)species$",
     ),
     "machine_rules": dict(

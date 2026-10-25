@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "Moved 207 fully migrated files from game/objects/items into code/content/items"
+  - refactor: "Moved 364 fully migrated files from game/objects/items, game/gamemodes, datums/behaviours, datums/uplink and modules/instruments into code/content"
