@@ -148,3 +148,19 @@ CAPABILITIES(/obj/item/dq_instead_probe)
 	TEST_ASSERT(QDELETED(dropped), "an instance whose condition fails is discarded")
 	TEST_ASSERT_EQUAL(length(GLOB.dq_instead_log), 1, "instead = runs once for the discarded instance")
 	TEST_ASSERT_EQUAL(GLOB.dq_instead_log[1], "[/obj/item/dq_instead_probe]@[T]", "instead = runs while the instance is still in place")
+
+// ---- the AI that keeps_if(instead =) discards runs the whole init chain and leaves nothing behind ----
+
+/datum/unit_test/dq_ai_empty_core_discard
+
+/datum/unit_test/dq_ai_empty_core_discard/Run()
+	var/turf/T = dq_containment_floor()
+	var/cores_before = REGISTRY_COUNT(REGISTRY_EMPTY_AI_CORES)
+	var/mobs_before = REGISTRY_COUNT(REGISTRY_MOBS)
+	var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(T)
+	TEST_ASSERT(QDELETED(A), "an AI made with no brain is discarded")
+	TEST_ASSERT_EQUAL(REGISTRY_COUNT(REGISTRY_EMPTY_AI_CORES), cores_before + 1, "it leaves an empty core registered")
+	TEST_ASSERT_EQUAL(REGISTRY_COUNT(REGISTRY_MOBS), mobs_before, "the discarded AI holds no mob registry slot")
+	var/obj/structure/AIcore/deactivated/core = locate() in T
+	if(core)
+		own(core)

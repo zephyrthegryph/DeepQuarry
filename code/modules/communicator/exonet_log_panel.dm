@@ -4,7 +4,7 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 CAPABILITIES(/mob/observer/dead)
-	param(nameof(from_body), schema_ref(/mob), keep = FALSE, apply = PROC_REF(copy_from_body))
+	param(nameof(from_body), schema_ref(/mob), keep = FALSE, apply = PROC_REF(copy_from_body), early = TRUE) // phase 0: /atom/Initialize() reads the copied colour
 	setup(PROC_REF(place_ghost), with_params = TRUE)
 	setup(PROC_REF(make_exonet_address))
 	setup(PROC_REF(join_ghostnet))

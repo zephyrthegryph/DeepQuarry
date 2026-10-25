@@ -74,8 +74,8 @@ CAPABILITIES(/mob/observer)
 	/// The body this ghost was made from: read by copy_from_body() and place_ghost(), then dropped (keep = FALSE).
 	var/mob/from_body
 
-// Its CAPABILITIES entries param(from_body, apply = copy_from_body) and setup(place_ghost, with_params = TRUE) are in code/modules/communicator/exonet_log_panel.dm.
-/// Its from_body param (apply): the ghost looks, is named and is gendered like the body it leaves, and keeps a reference to the body's mind
+// Its CAPABILITIES entries param(from_body, apply = copy_from_body, early = TRUE) and setup(place_ghost, with_params = TRUE) are in code/modules/communicator/exonet_log_panel.dm.
+/// Its from_body param (apply, early: before the Initialize() chain, where the old override copied it): the ghost looks, is named and is gendered like the body it leaves, and keeps a reference to the body's mind
 /// (the mind is not transferred).
 /mob/observer/dead/proc/copy_from_body(mob/M)
 	if(!M)
