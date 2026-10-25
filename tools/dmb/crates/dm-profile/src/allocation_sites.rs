@@ -118,13 +118,15 @@ pub fn report(limit: usize) -> String {
                         || name.contains("core::")
                         || name.contains("__rust")
                         || name.contains("mimalloc")
+                        || name.contains("hashbrown::")
+                        || name.contains("rayon")
                         || !name.chars().next().is_some_and(|c| c.is_ascii_digit())
                     {
                         continue;
                     }
                     out.push_str(&format!("   {name} {location}\n"));
                     shown += 1;
-                    if shown >= 5 {
+                    if shown >= 9 {
                         break;
                     }
                 }

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { effectiveNamespace, enterDaemonScope } from './dmbc_daemons';
+import { effectiveNamespace, enterDaemonScope, memoryShortfallBytes } from './dmbc_daemons';
 
 const saved = { ...process.env };
 afterEach(() => { process.env = { ...saved }; });
@@ -39,5 +39,12 @@ describe('dmbc daemon namespaces', () => {
     expect(left).toContain('wt-old.json'); // retire failed (no dmbc): stays registered
     scope.release();
     fs.rmSync(dir, { recursive: true, force: true });
+  });
+  test('memory shortfall is reserve plus a cold compile minus free memory', () => {
+    process.env.DMB_DAEMON_FREE_RESERVE_GB = '12';
+    expect(memoryShortfallBytes(30e9)).toBe(0);
+    expect(memoryShortfallBytes(20e9)).toBe(4e9);
+    process.env.DMB_DAEMON_FREE_RESERVE_GB = '0';
+    expect(memoryShortfallBytes(12e9)).toBe(0);
   });
 });
