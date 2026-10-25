@@ -243,7 +243,7 @@ separate_object_health_pools	code/game/objects/items/weapons/tanks/tank.dm	2
 separate_object_health_pools	code/game/objects/items/weapons/tanks/tank.dm	3
 separate_object_health_pools	code/game/objects/items/weapons/tanks/tank.dm	4
 separate_object_health_pools	code/game/objects/items/weapons/tanks/tank.dm	5
-separate_object_health_pools	code/game/objects/items/weapons/traps.dm	2
+separate_object_health_pools	code/content/items/weapons/traps.dm	2
 separate_object_health_pools	code/game/turfs/simulated/wall_x.dm	1
 separate_object_health_pools	code/game/turfs/simulated/wall_x.dm	2
 separate_object_health_pools	code/modules/blob/b1.dm	2

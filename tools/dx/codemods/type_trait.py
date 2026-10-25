@@ -43,19 +43,19 @@ SPECS = {
     "item_thrown": dict(
         base="/obj/item", ctor="item_thrown", reader="thrown_of", type_reader="thrown_of_type",
         fields={"throwforce": "force", "catchable": "catchable"},
-        skip={"code/game/objects/items/item_thrown.dm"},
+        skip={"code/content/items/item_thrown.dm"},
     ),
     "item_worn": dict(
         base="/obj/item", ctor="item_worn", reader="worn_of", type_reader="worn_of_type",
         fields={"slot_flags": "slots", "flags_inv": "hides", "body_parts_covered": "covers", "item_flags": "flags", "default_worn_icon": "worn_icon"},
-        skip={"code/game/objects/items/item_worn.dm"},
+        skip={"code/content/items/item_worn.dm"},
     ),
     "item_handling": dict(
         base="/obj/item", ctor="item_handling", reader="handling_of", type_reader="handling_of_type",
         fields={"center_of_mass_x": "center_x", "center_of_mass_y": "center_y", "randpixel": "randpixel", "preserve_item": "preserve",
                 "no_attack_log": "no_attack_log", "no_random_knockdown": "no_random_knockdown", "zoomdevicename": "zoom_name",
                 "cavity_implantable": "cavity_implantable"},
-        skip={"code/game/objects/items/item_handling.dm"},
+        skip={"code/content/items/item_handling.dm"},
     ),
     "obj_rules": dict(
         base="/obj", ctor="obj_rules", reader="rules_of", type_reader="rules_of_type",
@@ -135,13 +135,13 @@ SPECS = {
     "item_rules": dict(
         base="/obj/item", ctor="item_rules", reader="item_rules_of", type_reader="item_rules_of_type",
         fields={"sprite_sheets_obj": "sprite_sheets_obj", "actions_types": "actions_types"},
-        skip={"code/game/objects/items/item_rules.dm"},
+        skip={"code/content/items/item_rules.dm"},
         skip_refs=r"(^|\.)species$",
     ),
     "item_tooling": dict(
         base="/obj/item", ctor="item_tooling", reader="tooling_of", type_reader="tooling_of_type",
         fields={"toolspeed": "speed", "pry": "pry", "rock_climbing": "climbing"},
-        skip={"code/game/objects/items/item_tooling.dm"},
+        skip={"code/content/items/item_tooling.dm"},
     ),
     "mob_movement": dict(
         base="/mob", ctor="mob_movement", reader="movement_of", type_reader="movement_of_type",
@@ -166,7 +166,7 @@ SPECS = {
         fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",
                 "melee_windup": "windup", "melee_recovery": "recovery", "melee_sweep": "sweep", "can_cleave": "can_cleave",
                 "attackspeed": "attack_speed", "reach": "reach", "attack_verb": "attack_verbs"},
-        skip={"code/game/objects/items/item_combat.dm"},
+        skip={"code/content/items/item_combat.dm"},
         skip_refs=r"(^|\.)def$",  # a wire definition's own reach  # items.dm is rewritten too: its base declarations are deleted by hand
     ),
 }

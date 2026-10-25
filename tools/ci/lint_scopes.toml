@@ -430,6 +430,7 @@ legacy_forms_converted = [
   "code/content/mecha/",
   "code/game/objects/effects/",
   "code/game/objects/items/",
+  "code/content/items/",
   "code/game/objects/random/",
   "code/game/objects/structures/",
   "code/game/turfs/flooring/",
@@ -664,7 +665,7 @@ timer_handles_allow = ["code/datums/om/", "code/engine/time/handles.dm", "code/e
 revive_allow = [
   "code/modules/unit_tests/", "code/modules/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
   "code/_helpers/unsorted.dm", "code/modules/mob/living/carbon/human/human_species.dm",
-  "code/modules/mob/living/silicon/ai/ai.dm", "code/game/objects/items/weapons/autopsy.dm",
+  "code/modules/mob/living/silicon/ai/ai.dm", "code/content/items/weapons/autopsy.dm",
 ]
 thermal_allow = ["code/__defines/verdigris/_bindings.dm"]
 input_ladder_allow = ["code/modules/keybindings/router.dm", "code/engine/parts/inputs.dm"]
