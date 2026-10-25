@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export DQ_LEGACY_LAND=1 # the retired per-lane scripts are still tested until they are deleted
 # Exercise the real lane-ready wrapper with controlled gate outputs, no build.
 set -euo pipefail
 source_root="$(git rev-parse --show-toplevel)"

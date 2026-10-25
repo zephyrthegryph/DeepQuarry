@@ -275,6 +275,20 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 	set +f
 }
 
+settle_shrink_leftovers() {
+	# A gate whose tests fail leaves its in-job baseline shrink (dq_merge_gates.sh, shrink_after) uncommitted in the train worktree,
+	# and dq_merge_batch.sh then refuses every later cycle ("uncommitted tracked changes"). That shrink is the gate's own output, never
+	# a lane's work: put such files back to HEAD's content. Any other tracked change still stops the cycle as before.
+	[ -d "$WT" ] || return 0
+	local f dirty
+	dirty="$(git -C "$WT" diff --name-only HEAD 2>/dev/null)"
+	[ -n "$dirty" ] || return 0
+	if printf '%s\n' "$dirty" | grep -qv -E '^tools/ci/([a-z_]+_baseline\.txt|sys_baseline/[A-Za-z0-9_.-]+)$'; then return 0; fi
+	while IFS= read -r f; do
+		git -C "$WT" show "HEAD:$f" >"$WT/$f" && tlog "reset a gate's leftover baseline shrink in the train worktree: $f"
+	done <<<"$dirty"
+}
+
 light_cycle() { # CHOSEN are all light
 	local b out lq lstate rc unlanded=() sha lg
 	lstate="$STATE/light-state"
@@ -401,6 +415,7 @@ cycle() {
 	CYCLE_PROGRESS=0
 	phase "fetch"
 	G fetch -q origin 2>/dev/null || tlog "warning: git fetch failed"
+	settle_shrink_leftovers
 	mapfile -t all < <(queue_branches)
 	[ ${#all[@]} -gt 0 ] || return 10
 	VALID=()

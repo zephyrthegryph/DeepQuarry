@@ -302,17 +302,13 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   12 GB of RAM free (`DQ_SLOTS_DM_COMPILE`, `DQ_SLOTS_TEST_WORLD`,
   `DQ_SLOTS_CARGO`); a waiter prints who holds them, the merge worktree goes first, a crashed
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
-- **A finished lane runs `bash tools/dq_lane_ready.sh --tests "<its tests>"`** (section 11 of the same document): it merges
-  master, proves the lane once and stamps it, so the merge agent tests only the combination.
-- **A lane lands on the batch train: `bash tools/dq_train.sh enqueue --tests "<its tests>"`** (section 29 of that document; `--light` for
-  docs/tooling/Rust-only work). Commit first, with the focused tests green and `bash tools/ci/check_ratchets.sh --changed-only` clean; enqueue
-  records the branch, tip and tests and returns at once; then `bash tools/dq_lane_pool.sh release <branch>` (the branch ref stays in the repo).
-  One detached integrator takes every queued lane, merges them onto origin/master, runs ONE gate on the combination (analyze gen + ratchets, a
-  native production compile with no DreamMaker, a native test compile, the union of the lanes' tests plus the smoke set, test phase capped at 10
-  minutes), bisects a failure to the culprit lane(s) and bounces them, and pushes the rest. `bash tools/dq_train.sh status` shows the queue and
-  any bounced lane with its report (`dq_train.sh report <branch>`); a lane that is neither queued nor bounced has landed. A test that fails and
-  passes alone is a flake: ledgered (`bash tools/dq_flake_log.sh`), nobody is bounced. `tools/dq_land.sh` still works (it prints a notice) but
-  re-proves on every master move. The shared dmbc is immutable per version (`E:/dq-cache/dmb-bin/v/<id>`).
+- **A lane lands only through the batch train** (`tools/dq_train.sh`, `doc/rewrite/agent_workflow.md` section 29): after its focused
+  tests and `bash tools/ci/check_ratchets.sh --changed-only`, it runs `bash tools/dq_merge_master.sh`, then
+  `bash tools/dq_train.sh enqueue --tests "<its tests>"` (`--light` for a change with no DM), and releases its slot. One integrator
+  merges the ready lanes, runs one gate (test build only; CI keeps the production compile cross-check), pushes, and bisects to bounce
+  only a culprit. `dq_land.sh` and `dq_lane_ready.sh` are retired (they refuse): per-lane proofs re-ran on every master move and took
+  lanes hours. At most 3 general lanes run at once (`DQ_LANE_POOL_SIZE`): one DM compile slot serves about three lanes plus the train,
+  and the train's dmbc session is kept resident (`DQ_DMBC_KEEP_ROOTS`) so its gate compiles stay incremental.
 
 ### 4a. Testing (full reference: `doc/testing.md`)
 
