@@ -489,7 +489,8 @@ impl PairStore {
             bytes: pair.rsc_bytes,
             hash: pair.rsc_hash,
         };
-        let resource_stamp = if resource.exists() {
+        let resource_is_new = !resource.exists();
+        let resource_stamp = if !resource_is_new {
             self.authenticate_resource(&resource, identity, exact)?
         } else {
             let rsc =
@@ -550,6 +551,7 @@ impl PairStore {
         self.record_session(session, pair.id)?;
         #[cfg(test)]
         publication_fault("pair_session_committed")?;
+        crate::cache_maintenance::note_written(pair.dmb_bytes.saturating_add(if resource_is_new { pair.rsc_bytes } else { 0 }));
         Ok(pair)
     }
 
