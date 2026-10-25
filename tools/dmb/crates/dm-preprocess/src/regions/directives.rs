@@ -294,7 +294,7 @@ fn same_region(a: &IncludeRegion, b: &IncludeRegion) -> bool {
     a.segments.iter().zip(b.segments.iter()).all(|(x, y)| {
         x.macros.same_bindings(&y.macros)
             && x.lines.len() == y.lines.len()
-            && x.lines.iter().zip(&y.lines).all(|(l, m)| {
+            && x.lines.iter().zip(y.lines.iter()).all(|(l, m)| {
                 l.source_span == m.source_span
                     && l.source_line == m.source_line
                     && l.source_lines == m.source_lines
@@ -392,7 +392,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             evaluate(word, rest, &self.environment)
         }
     }
-    fn finish_recording(&mut self, region: usize, pending: &mut Vec<RegionLine>) {
+    fn finish_recording(&mut self, region: usize, pending: &mut super::segment_lines::PendingLines) {
         self.freeze_lines(region, pending);
         if let Some(recording) = self.recording.take() {
             if let Some(memo) = self.memo {
@@ -406,7 +406,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         region: usize,
         lines: prepared_source::PreparedLines<'_>,
         record: &DirectiveRecord,
-        pending: &mut Vec<RegionLine>,
+        pending: &mut super::segment_lines::PendingLines,
         recoveries: &mut BTreeSet<usize>,
     ) {
         for action in record.actions() {
@@ -419,12 +419,8 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     let line = lines
                         .get(*input)
                         .expect("recorded directive input outside range");
-                    pending.push(RegionLine {
-                        source_span: line.source_span,
-                        source_line: line.source_line,
-                        source_lines: line.source_lines,
-                        text: crate::SourceText::clone(line.text),
-                    });
+                    let _ = line;
+                    pending.push(lines.offset() + *input);
                 }
                 directive_memo::Action::Freeze => self.freeze_lines(region, pending),
                 directive_memo::Action::Multiple => {
@@ -659,7 +655,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         index
     }
 
-    fn freeze_lines(&mut self, region: usize, pending: &mut Vec<RegionLine>) {
+    fn freeze_lines(&mut self, region: usize, pending: &mut super::segment_lines::PendingLines) {
         if pending.is_empty() {
             return;
         }
@@ -670,7 +666,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         // roots and Arc bindings share unchanged entries across define epochs;
         // token-pasted names require no pruning guess and no full-table clone.
         Arc::make_mut(&mut self.plan.regions[region].segments).push(ExpansionSegment {
-            lines: std::mem::take(pending),
+            lines: pending.take(),
             macros: self.environment.clone(),
         });
     }
@@ -1059,7 +1055,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         let mut recoveries = BTreeSet::new();
         let diagnostic_start = self.plan.diagnostics.len();
         let mut region = self.begin_region(occurrence, 0);
-        let mut pending = Vec::new();
+        let mut pending = super::segment_lines::PendingLines::new(Arc::clone(&prepared));
         let lines = prepared.lines();
         let mut cursor = 0;
         while cursor < lines.len() {
@@ -1147,12 +1143,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                             .actions
                             .push(directive_memo::Action::Text(recording.current));
                     }
-                    pending.push(RegionLine {
-                        source_span: span,
-                        source_line,
-                        source_lines: logical.source_lines,
-                        text: crate::SourceText::clone(logical.text),
-                    });
+                    pending.push(cursor - 1);
                 }
                 continue;
             };

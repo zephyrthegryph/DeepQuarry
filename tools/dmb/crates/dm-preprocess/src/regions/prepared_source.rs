@@ -427,7 +427,7 @@ mod tests {
                 .regions
                 .iter()
                 .flat_map(|region| region.segments.iter())
-                .flat_map(|segment| &segment.lines)
+                .flat_map(|segment| segment.lines.iter())
                 .find(|line| line.text.contains("var/before"))
                 .unwrap();
             let prepared_before = parent
