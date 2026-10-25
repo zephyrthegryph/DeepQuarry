@@ -142,7 +142,7 @@
 	if(!transfer_bellies)
 		return
 	for(var/atom/movable/M in contents)
-		if(!M || !M.autotransferable)
+		if(!M || !sparse_get_or(M, autotransferable, TRUE))
 			continue
 		// If the prey can't pass the filter of at least one transfer location, skip it
 		if(ismob(M) && !(autotransfer_filter(M, autotransfer_secondary_whitelist, autotransfer_secondary_blacklist) || autotransfer_filter(M, autotransfer_whitelist, autotransfer_blacklist))) continue
