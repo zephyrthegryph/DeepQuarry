@@ -1787,7 +1787,7 @@
 #include "code\content\items\devices\scanners\halogen.dm"
 #include "code\game\objects\items\devices\scanners\health.dm"
 #include "code\content\items\devices\scanners\mass_spectrometer.dm"
-#include "code\content\items\devices\scanners\motion_tracker.dm"
+#include "code\game\objects\items\devices\scanners\motion_tracker.dm"
 #include "code\game\objects\items\devices\scanners\motiontracker_service.dm"
 #include "code\game\objects\items\devices\scanners\motiontracker_api.dm"
 #include "code\content\items\devices\scanners\reagents.dm"
