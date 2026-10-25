@@ -579,6 +579,46 @@ without `DEBUG` would make lowering records variant-independent (the strip is a 
 instructions does not depend on them), and is the largest remaining owner for the test variant. Sharing the answer table needs the
 bookkeeping (`request`, `born`, `changed`, `base`) split from the content-defined value (`hash`, `positive`, `query`) of a slot.
 
+### Shared store, part 2 (lane `compiler/shared-store-2`, 2026-10-25)
+
+Target of the user: each extra session (a second root, the test variant) at most about 1 GB. Measured with `bench/shared_store_probe.sh`
+(requested-live of one private daemon; root A production, then A's test world, then root B production), release build with
+`allocation-sites`, fresh output store per request, no spill files of an earlier run (`DMB_VARIANT_SPILL=0` or a new compiler build). One
+probe differs from another by about 0.15 GB without any change of code, so only larger moves are real.
+
+| Step | root A | + test variant | + root B |
+|---|---|---|---|
+| part 1 (above) | 7.19 | +4.82 | +2.89 |
+| 1. variant-independent lowering | 7.21 | +4.69 | +3.20 |
+| 2. answer values shared, slots compacted (32 B) | 7.13 | +4.07 | +2.75 |
+| 2b. rebound records keep predecessor debug anchors and domain receipts | 7.33 | +4.07 | +2.73 |
+
+* **Lowering is variant-independent.** `FrontendDebugProvider` always emits `DbgFile`/`DbgLine`; the lowering record keys use
+  `ProcedureMemo::facts_policy` (the policy without the `DEBUG` byte). A source without `DEBUG` drops the two instructions from its final
+  words in `LatestImage::wire_image` (`symbolic/debug_strip.rs`: the removed words are compacted out and every branch destination,
+  switch case and pick target is shifted; a destination naming a removed instruction names the next kept one). The words are stripped
+  after type-path wiring and never cached stripped, and the certificate's `debug` feature is cleared (`BytecodeFeatures::composed_under`),
+  so the header flag matches. `LinkTables::strips_debug_ops` (set from `LinkInventory::strip_debug_ops`, restored with the spilled patch
+  base, `variant_spill` version 2) carries the choice to every relink, including body patches. Initializer, map and modified-instance
+  lowering still decide on `DEBUG` themselves and still key on the full policy.
+* **Answer table.** A slot is `{value: Arc<AnswerValue>, base: Option<Arc<AnswerValue>>, request, born, changed, stamp}` (32 B, was 144 B);
+  the value (query, answer hash, positive) is interned daemon-wide by query id (`shared_store::answer_values`), the (tree, world) pair is
+  an index into the request's stamp list, request numbers are the low 32 bits.
+* **Not shared (tried).** Interning each body's origin roster by content (`FrozenDebugOrigins`) removed nothing from the probe and was
+  dropped.
+
+What is left per extra session, by owner (MB, root B after part 2): `leased` roster/bookkeeping 160 to 440, the symbolic record rebinding
+in `SessionSymbolicMemo::lookup_record` 150 (allocated inline; the profile cannot split it further, inlining hides the callees), preprocessor
+directive plan 137 (`DirectivePass::visit`, per source line), initializer classification 119, `ObservedArtifactStore` 82 to 110, ABI
+artifacts 81 plus `CapturedProcedurePolicy` 58, `RequestAnswers` 67 to 80, `OutputBase` 145, `dmb::codec` 75, input snapshot reads 69,
+prepared source and joined text 120, domain-version memo 56, `RetainedMetadata` 59. None of these is one allocation that can be removed:
+each is a per-session index over shared content, so reaching 1 GB needs those indexes themselves to become shared (a design change of the
+retained directive plan, the artifact leases and the ABI/initializer receipts), not another interning pass.
+
+Tools: `bench/alloc_sites_diff.py` (growth by call path between two probe blocks; run the probe with the exe in `target/release` so the
+frames are symbolised). `bench/shared_store_equiv.sh` now fails on a byte difference (it only noted one before) and takes `BASE_DIR`, the
+outputs of an earlier compiler build of root A, as a second oracle.
+
 ## Memory diet (lane `compiler/memory-diet`, 2026-10-24)
 
 Question from the user: why does the compiler keep the whole source in memory? Measured answer: it does not. One production
