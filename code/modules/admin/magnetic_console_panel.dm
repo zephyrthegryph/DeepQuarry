@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 		i++
 		magnet_rows += list(list(
 			"index" = i,
-			"ref" = "\ref[M]",
+			"ref" = ref_token(M),
 			"on" = !!M.on,
 			"electricity_level" = M.electricity_level,
 			"magnetic_field" = M.magnetic_field,
