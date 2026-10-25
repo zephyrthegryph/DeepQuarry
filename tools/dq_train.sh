@@ -355,7 +355,7 @@ heavy_cycle() {
 	(
 		cd "$WT" || exit 99
 		export DQ_MERGE_BRANCH="$TBRANCH" DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN"
-		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_BATCH_DEADLINE="$deadline"
+		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1 DQ_BATCH_DEADLINE="$deadline"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
 		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" --tests "$tests_union" --no-dm
@@ -387,7 +387,7 @@ heavy_cycle() {
 	pushlog="$LOGS/cycle-$stamp.push.log"
 	(
 		cd "$WT" || exit 99
-		export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1
+		export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1
 		[ "${DQ_TRAIN_DRY_RUN:-0}" = 1 ] && export DQ_PUSH_DRY_RUN=1
 		bash tools/dq_push_master.sh --expect "$good"
 	) >"$pushlog" 2>&1

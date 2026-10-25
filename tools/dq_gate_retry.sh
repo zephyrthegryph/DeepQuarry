@@ -59,6 +59,13 @@ gate_ensure_result() {
 	echo "$line" >>"$1"
 }
 
+# gate_result_is_verdict <log>: the last FOCUSED RESULT line is a real verdict: "N passed, M failed" or the rerun guard's "(not rerun)".
+gate_result_is_verdict() {
+	local res
+	res="$(grep -h '^FOCUSED RESULT:' "$1" 2>/dev/null | tail -n 1)"
+	[[ "$res" =~ ^FOCUSED\ RESULT:\ [0-9]+\ passed,\ [0-9]+\ failed ]] || [[ "$res" == "FOCUSED RESULT: (not rerun)"* ]]
+}
+
 gate_tests_with_retry() {
 	local focused="${DQ_FOCUSED_TEST_CMD:-bash tools/dq_focused_test.sh}" log rc json names n first_line res passed failed rlog
 	log="$(mktemp)"
@@ -66,6 +73,11 @@ gate_tests_with_retry() {
 	DQ_GATE_FOCUSED_MAX_MIN="$(gate_cap_minutes $#)" $focused "$@" 2>&1 | tee "$log"
 	rc=${PIPESTATUS[0]}
 	gate_ensure_result "$log" "$rc"
+	# A zero exit without a pass/fail count (a cap or kill that left no result, "no results", CAPPED) is not a pass.
+	if [ "$rc" -eq 0 ] && ! gate_result_is_verdict "$log"; then
+		echo "== GATE: the focused run exited 0 but printed no pass/fail result; treating it as a failure (never a pass)"
+		rc=1
+	fi
 	if [ "$rc" -eq 0 ] || [ "${DQ_GATE_RETRY:-1}" = 0 ]; then rm -f "$log"; return "$rc"; fi
 	# A run killed at its wall-clock cap is a verdict on the size of the list: another run would only spend the cap again
 	# (the batch train, tools/dq_train.sh, reads the cap line and shrinks the batch instead).
