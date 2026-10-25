@@ -10,7 +10,9 @@
 #   dmb-bin/v/<id>/                        compiler versions: keep `current` and the newest DQ_DMB_VERSION_KEEP (default 1) other; a version a running
 #                                            daemon or compile holds cannot be deleted on Windows and stays until the next run
 #   dmbd/cache (per-file dmbc caches)       `dmbc --cache-gc`: size cap DMB_CACHE_BUDGET_GB (default 16), age cap DMB_CACHE_MAX_AGE_DAYS (default 14),
-#                                            least recently used first (a dmbc daemon runs the same pass every 6 hours by itself)
+#                                            least recently used first (a dmbc daemon runs the same pass every 10 minutes by itself, and every process that wrote past DMB_CACHE_PASS_WRITE_MB runs one)
+#   cargo-targets/<worktree>/<name>/       the cargo targets gates, pushes and prebuilds use (tools/dq_cargo_target.sh): incremental state is always removed, and a
+#                                            target over DQ_CARGO_TARGET_MAX_GB (default 12) or idle DQ_CARGO_TARGET_DAYS (default 3) days is removed whole
 #   dmb-dev/<hash>/                        private compiler-development builds untouched for DQ_DMB_DEV_DAYS (default 14)
 # Run by hand or from the pool's release; nothing here touches a worktree, .git or a lock.
 set -uo pipefail
@@ -86,6 +88,18 @@ if [ "$dry" -eq 0 ] && [ -f "$bin/current" ]; then
 	exe="$bin/v/$(cat "$bin/current" | tr -d '\r\n')/dmbc.exe"
 	[ -f "$exe" ] || exe="$bin/v/$(cat "$bin/current" | tr -d '\r\n')/dmbc"
 	[ -f "$exe" ] && "$exe" --cache-gc 2>&1 | tail -1
+fi
+# Cargo targets of gates/pushes/prebuilds (measured by summing file sizes, never du).
+ct="${DQ_CARGO_TARGETS:-$CACHE/cargo-targets}"
+if [ -d "$ct" ]; then
+	find "$ct" -mindepth 3 -maxdepth 5 -type d -name incremental 2>/dev/null | while read -r d; do rm_path "$d"; done
+	for d in "$ct"/*/*/; do
+		d="${d%/}"; [ -d "$d" ] || continue
+		kb="$(find "$d" -type f -printf '%s\n' 2>/dev/null | awk '{s+=$1} END {printf "%d", s/1024}')"
+		if [ "${kb:-0}" -gt $(( ${DQ_CARGO_TARGET_MAX_GB:-12} * 1024 * 1024 )) ] || [ -n "$(find "$d" -maxdepth 0 -mtime +"${DQ_CARGO_TARGET_DAYS:-3}" 2>/dev/null)" ]; then
+			echo "cargo-targets: removing $d ($(( ${kb:-0} / 1024 )) MB)"; rm_path "$d"
+		fi
+	done
 fi
 dd="${DQ_DMB_DEV_ROOT:-$CACHE/dmb-dev}"
 if [ -d "$dd" ]; then

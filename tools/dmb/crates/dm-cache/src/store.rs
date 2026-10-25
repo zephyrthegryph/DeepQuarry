@@ -27,6 +27,16 @@ use std::{
     },
 };
 static NEXT: AtomicU64 = AtomicU64::new(0);
+static WRITE_OBSERVER: std::sync::OnceLock<fn(u64)> = std::sync::OnceLock::new();
+/// Register the process-wide callback told how many bytes each newly published segment added (amortized budget passes run from it).
+pub fn set_write_observer(observer: fn(u64)) {
+    let _ = WRITE_OBSERVER.set(observer);
+}
+fn observe_write(bytes: u64) {
+    if let Some(observer) = WRITE_OBSERVER.get() {
+        observer(bytes);
+    }
+}
 #[derive(Clone, Debug)]
 pub struct RejectedSegment {
     pub path: PathBuf,
@@ -237,6 +247,9 @@ impl Cache {
             // identical publisher may win; compare exact bytes before accepting it.
             self.publish_staged_file(id, &temporary, extension)
         })();
+        if result.is_ok() {
+            observe_write(bytes.len() as u64);
+        }
         let _ = fs::remove_file(&temporary);
         result
     }
@@ -278,7 +291,10 @@ impl Cache {
             };
         }
         match fs::rename(temporary, &destination) {
-            Ok(()) => Ok(id),
+            Ok(()) => {
+                observe_write(fs::metadata(&destination).map(|meta| meta.len()).unwrap_or(0));
+                Ok(id)
+            }
             Err(error) if destination.exists() => {
                 if same()? {
                     Ok(id)
