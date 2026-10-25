@@ -282,7 +282,7 @@
 	if(!E)
 		CRASH("Missing config entry for [entry_type]!")
 	if((E.protection & CONFIG_ENTRY_HIDDEN) && IsAdminAdvancedProcCall() && GLOB.LastAdminCalledProc == "Get" && GLOB.LastAdminCalledTargetRef == "[REF(src)]")
-		log_admin("Config access of [entry_type] attempted by [key_name(usr)]")
+		log_admin("Config access of [entry_type] attempted by [key_name(GLOB.AdminProcCaller)]")
 		return
 	return E.config_entry_value
 
@@ -295,7 +295,7 @@
 	if(!E)
 		CRASH("Missing config entry for [entry_type]!")
 	if((E.protection & CONFIG_ENTRY_LOCKED) && IsAdminAdvancedProcCall() && GLOB.LastAdminCalledProc == "Set" && GLOB.LastAdminCalledTargetRef == "[REF(src)]")
-		log_admin("Config rewrite of [entry_type] to [new_val] attempted by [key_name(usr)]")
+		log_admin("Config rewrite of [entry_type] to [new_val] attempted by [key_name(GLOB.AdminProcCaller)]")
 		return
 	return E.ValidateAndSet("[new_val]")
 

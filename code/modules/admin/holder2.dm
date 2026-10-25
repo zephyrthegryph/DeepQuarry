@@ -211,7 +211,7 @@ CAPABILITIES(/datum/admins)
 
 /datum/admins/New(list/datum/admin_rank/ranks, ckey, force_active = FALSE, protected)
 	if(IsAdminAdvancedProcCall())
-		alert_to_permissions_elevation_attempt(usr)
+		alert_to_permissions_elevation_attempt()
 		if (!target) //only del if this is a true creation (and not just a New() proc call), other wise trialmins/coders could abuse this to deadmin other admins
 			expire(0)
 			CRASH("Admin proc call creation of admin datum")
@@ -235,12 +235,12 @@ CAPABILITIES(/datum/admins)
 /datum/admins/lifecycle_keep(force)
 	if(!IsAdminAdvancedProcCall())
 		return FALSE
-	alert_to_permissions_elevation_attempt(usr)
+	alert_to_permissions_elevation_attempt()
 	return TRUE
 
 /datum/admins/proc/activate()
 	if(IsAdminAdvancedProcCall())
-		alert_to_permissions_elevation_attempt(usr)
+		alert_to_permissions_elevation_attempt()
 		return
 	GLOB.deadmins -= target
 	GLOB.admin_datums[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
@@ -250,7 +250,7 @@ CAPABILITIES(/datum/admins)
 
 /datum/admins/proc/deactivate()
 	if(IsAdminAdvancedProcCall())
-		alert_to_permissions_elevation_attempt(usr)
+		alert_to_permissions_elevation_attempt()
 		return
 	GLOB.deadmins[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	GLOB.admin_datums -= target
@@ -264,7 +264,7 @@ CAPABILITIES(/datum/admins)
 
 /datum/admins/proc/associate(client/client)
 	if(IsAdminAdvancedProcCall())
-		alert_to_permissions_elevation_attempt(usr)
+		alert_to_permissions_elevation_attempt()
 		return
 
 	if(!istype(client))
@@ -290,7 +290,7 @@ CAPABILITIES(/datum/admins)
 
 /datum/admins/proc/disassociate()
 	if(IsAdminAdvancedProcCall())
-		alert_to_permissions_elevation_attempt(usr)
+		alert_to_permissions_elevation_attempt()
 		return
 	if(owner())
 		GLOB.admins -= owner()
