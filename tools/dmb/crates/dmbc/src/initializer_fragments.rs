@@ -385,6 +385,7 @@ impl InitializerFragments {
                 fragment.code(),
                 None,
                 &mut disk_attempt,
+                &recorder,
             );
         }
         let reads = receipts::reads(key, semantic_reads);

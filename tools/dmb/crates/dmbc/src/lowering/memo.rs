@@ -612,6 +612,9 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                         Arc::clone(&versions),
                         relative_debug.clone(),
                         compact,
+                        memo.dep_index()
+                            .filter(|_| compact)
+                            .and_then(|_| crate::dep_index::DepIndex::world_of(host)),
                     );
                 }
                 if !compact {

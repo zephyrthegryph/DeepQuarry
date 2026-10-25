@@ -4,7 +4,7 @@ use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{borrow::Cow, sync::Arc};
 // Includes the certified src-cache operand encoding policy.
-pub(crate) const SCHEMA: u32 = 0x0206_0025;
+pub(crate) const SCHEMA: u32 = 0x0206_0026;
 #[path = "lowering_memo_compact_typed.rs"]
 mod typed;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
@@ -204,13 +204,13 @@ pub(crate) struct Payload<'a> {
     recipes: BoundedVec<crate::modified_initializers::RecipeWire<'a>>,
     instances: BoundedVec<(SymbolId, SymbolId)>,
 }
-pub(crate) fn encode<'a>(
+pub(crate) fn encode_with_id<'a>(
     key: &[u8],
     reads: impl IntoIterator<Item = &'a ResolverRead>,
     versions: &[(ReadDomain, u128)],
     value: &crate::symbolic::PreparedContribution,
     debug: &[crate::debug_sources::RelativeDebugAnchor],
-) -> Option<Vec<u8>> {
+) -> Option<(Vec<u8>, u128)> {
     let recipes = value.modified_recipes()?;
     let artifact = value.shared_artifact();
     let requests = artifact.disk_type_requests_with_modified(
@@ -228,10 +228,10 @@ pub(crate) fn encode<'a>(
     let typed_answers = BoundedVec(
         reads
             .iter()
-            .map(|r| dm_ir::PortableResolvedAnswer::capture(&r.answer))
+            .map(|r| dm_ir::PortableResolvedAnswer::capture_declared(&r.answer))
             .collect(),
     );
-    let payload = Payload {
+    let mut payload = Payload {
         verified_answers: Default::default(),
         world_certified: false,
         typed_answers,
@@ -267,7 +267,30 @@ pub(crate) fn encode<'a>(
         instances: BoundedVec(artifact.disk_instances().to_vec()),
     };
     mandatory_declaration_reads(payload.identity, &payload.reads.0).then_some(())?;
-    dm_wire::encode_bounded(SCHEMA, &payload, MAX_RECORD).ok()
+    let id = payload.record_id();
+    dm_wire::encode_bounded(SCHEMA, &payload, MAX_RECORD)
+        .or_else(|_| {
+            // Declaration chains made the record too large: keep it with scalar answers only.
+            for answer in payload.typed_answers.0.iter_mut() {
+                if answer.as_ref().is_some_and(|answer| !typed::is_scalar(answer)) {
+                    *answer = None;
+                }
+            }
+            dm_wire::encode_bounded(SCHEMA, &payload, MAX_RECORD)
+        })
+        .ok()
+        .map(|bytes| (bytes, id))
+}
+/// The record bytes only; `encode_with_id` also names the dependency-index id they carry.
+#[cfg(test)]
+pub(crate) fn encode<'a>(
+    key: &[u8],
+    reads: impl IntoIterator<Item = &'a ResolverRead>,
+    versions: &[(ReadDomain, u128)],
+    value: &crate::symbolic::PreparedContribution,
+    debug: &[crate::debug_sources::RelativeDebugAnchor],
+) -> Option<Vec<u8>> {
+    encode_with_id(key, reads, versions, value, debug).map(|(bytes, _)| bytes)
 }
 pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
     let mut value: Payload<'_> = dm_wire::decode_borrowed(SCHEMA, bytes, MAX_RECORD)?;
@@ -399,6 +422,7 @@ impl Payload<'_> {
                 read.query,
                 &read.answer,
                 self.covered(&matching, read.query.domain()),
+                &self.typed_answers.0,
                 provider,
             );
             if answer.canonical() != read.answer.as_ref() {

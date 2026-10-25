@@ -92,7 +92,8 @@ impl<'host> CurrentReads<'host> {
     ) -> Option<(&[ResolverRead], &[(ReadDomain, Option<u128>)])> {
         // Borrowed identity cannot outlive the request provider. No persisted
         // pointer, token or hash can authorize this handoff.
-        if !std::ptr::eq(self.host, host)
+        // Compare the object, not the vtable: one provider type has a vtable per codegen unit.
+        if !std::ptr::addr_eq(self.host, host)
             || self
                 .versions
                 .iter()

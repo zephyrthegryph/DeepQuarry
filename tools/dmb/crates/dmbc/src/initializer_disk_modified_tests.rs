@@ -92,6 +92,7 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
         &code,
         Some(proof),
         &mut attempt,
+        &recorder,
     );
     assert_eq!(
         attempt.captures, 1,
@@ -105,7 +106,7 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
     assert!(writer
         .lookup_attempt(&key, &refs, &host, &symbols, None, &mut declined)
         .is_none());
-    writer.stage_attempt(&key, &refs, &recorder.reads(), &code, None, &mut declined);
+    writer.stage_attempt(&key, &refs, &recorder.reads(), &code, None, &mut declined, &recorder);
     assert_eq!(
         declined.captures, 1,
         "an uncovered recipe is not serialized twice"
