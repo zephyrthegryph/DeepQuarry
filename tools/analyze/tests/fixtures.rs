@@ -78,3 +78,25 @@ fn runtime_capability_payload_keeps_holder_identity() {
     assert_eq!(runtime.len(), 1, "only the foreign holder's payload is an untracked read");
     assert_eq!(runtime[0].line, 9);
 }
+
+/// The `untyped` lint names every line that assigns an offending value, not only the declaration.
+#[test]
+fn untyped_findings_list_every_assigning_line() {
+    use dq_analyze::run::{Engine, Options};
+    let root = repo_root();
+    let dir = fixture_dir(&root, "untyped");
+    let opts = Options { root: dir, lints: vec!["untyped".to_string()], no_cache: true, raw: true, scopes_from: Some(root.clone()), ..Default::default() };
+    let engine = Engine::new(dq_analyze::run::registry(), opts).expect("engine");
+    let lint = engine.reg.find("untyped").expect("untyped lint");
+    let (run, _, _) = engine.scan(lint);
+    let msg_of = |var: &str| run.sites.iter().find(|s| s.ident.ends_with(var)).map(|s| s.msg.clone()).unwrap_or_default();
+    let two = msg_of("::two_writes");
+    for line in [420, 424, 425] {
+        assert!(two.contains(&format!("vals.dm:{}", line)), "two_writes should list line {}: {}", line, two);
+    }
+    // declared value returns and `as text` parameters are typed as values; a text parameter fed an entity is not
+    for var in ["::declared_ret", "::declared_num", "::echoed", "::interpolated"] {
+        assert!(msg_of(var).is_empty(), "{} must not be reported", var);
+    }
+    assert!(!msg_of("::echoed_bad").is_empty(), "echoed_bad must be reported");
+}

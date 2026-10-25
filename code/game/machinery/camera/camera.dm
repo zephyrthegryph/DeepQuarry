@@ -318,7 +318,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		assembly.forceMove(loc)
 		assembly.set_anchored(TRUE)
 		assembly.camera_name = c_tag
-		assembly.camera_network = english_list(network, NETWORK_DEFAULT, ",", ",")
+		assembly.camera_network = text_or_null(english_list(network, NETWORK_DEFAULT, ",", ","))
 		assembly.set_dir(dir)
 		if(broken_now())
 			assembly.set_state(2)

@@ -28,7 +28,7 @@ TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/o
 	var/name_prefix = R.choose(list("strange","anomalous","exotic","atypical","unusual","incongruous","weird","aberrant","eccentric"))
 	var/name_suffix		//blank because it's randomized per sample appearance
 	var/sample_icon = R.number(1, 11)
-	hazard_type = R.choose(list("BRUTE","BURN","TOX","OXY","EMP","PAIN"))
+	hazard_type = text_or_null(R.choose(list("BRUTE","BURN","TOX","OXY","EMP","PAIN")))
 	//per-state tweaks, like glows/light emission or narrower valid tech defs, if desired
 	switch(sample_icon)
 		if(1)	//prism
