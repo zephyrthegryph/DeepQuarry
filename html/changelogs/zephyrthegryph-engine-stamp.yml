@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added STAMP (a lazy per-instance stamp table) and moved last_bumped, latent_touched_at and last_move_time off the base types"
