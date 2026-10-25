@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Circuit pins, fences, lava, slimes, filing cabinets and airlocks set up through setup() hooks instead of Initialize() overrides"
