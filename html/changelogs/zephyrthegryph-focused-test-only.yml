@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Focused and lane test runs compile only the test build; the production compile moves to integration. Test caps are 10 minutes."

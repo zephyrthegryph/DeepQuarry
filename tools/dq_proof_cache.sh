@@ -25,7 +25,6 @@ proof_find() {
 	shift 3
 	f="$(proof_dir)/$tree.proof"
 	[ -f "$f" ] || return 1
-	[ "$(sed -n 's/^dm=//p' "$f")" = 1 ] || return 1
 	[ "$(sed -n 's/^new_failed=//p' "$f")" = 0 ] || return 1
 	[ "$ntgui" -eq 0 ] || [ "$(sed -n 's/^tgui=//p' "$f")" = 1 ] || return 1
 	[ "$nan" -eq 0 ] || [ "$(sed -n 's/^analyze_tests=//p' "$f")" = 1 ] || return 1
@@ -35,7 +34,7 @@ proof_find() {
 	inh="$(sed -n 's/^inherits=//p' "$f")"
 	if [ -n "$inh" ] && [ -f "$(proof_dir)/$inh.proof" ]; then
 		g="$(proof_dir)/$inh.proof"
-		if [ "$(sed -n 's/^dm=//p' "$g")" = 1 ] && [ "$(sed -n 's/^new_failed=//p' "$g")" = 0 ]; then have="$have $(sed -n 's/^tests=//p' "$g") "; fi
+		if [ "$(sed -n 's/^new_failed=//p' "$g")" = 0 ]; then have="$have $(sed -n 's/^tests=//p' "$g") "; fi
 	fi
 	for t in "$@"; do
 		case "$have" in *" $t "*) ;; *) return 1 ;; esac
@@ -60,7 +59,7 @@ proof_store() {
 		echo "new_failed=$6"
 		echo "tgui=$7"
 		echo "analyze_tests=$8"
-		echo "dm=1"
+		echo "dm=${DQ_PROOF_DM:-1}" # 0: a lane proof (tools/dq_merge_gates.sh --no-dm); the production compile was not run for this tree
 		echo "tests_json=$copy"
 		[ -z "${10:-}" ] || echo "inherits=${10}"
 		echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"

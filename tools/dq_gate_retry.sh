@@ -40,13 +40,13 @@ gate_infra_failure() { # <log>
 	grep -qiE 'Native executable changed during compilation|daemon startup deadline expired|no method named `evict_to_budget`|watchdog|world did not start|FOCUSED RESULT: no results' "$1"
 }
 
-# gate_cap_minutes <test count>: the wall-clock cap a gate gives dq_focused_test.sh (base 25 min plus 1 min per test, ceiling 60).
+# gate_cap_minutes <test count>: the wall-clock cap a gate gives dq_focused_test.sh (base 5 min plus 1 min per test, ceiling 10).
 # Gate-only: it travels as DQ_GATE_FOCUSED_MAX_MIN, which dq_focused_test.sh honours instead of the agent cap (DQ_FOCUSED_MAX_MIN).
 gate_cap_minutes() {
 	local n="${1:-0}" cap
 	case "$n" in '' | *[!0-9]*) n=0 ;; esac
-	cap=$(( 25 + n ))
-	[ "$cap" -gt 60 ] && cap=60
+	cap=$(( 5 + n ))
+	[ "$cap" -gt 10 ] && cap=10
 	echo "$cap"
 }
 
@@ -67,6 +67,9 @@ gate_tests_with_retry() {
 	rc=${PIPESTATUS[0]}
 	gate_ensure_result "$log" "$rc"
 	if [ "$rc" -eq 0 ] || [ "${DQ_GATE_RETRY:-1}" = 0 ]; then rm -f "$log"; return "$rc"; fi
+	# A run killed at its wall-clock cap is a verdict on the size of the list: another run would only spend the cap again
+	# (the batch train, tools/dq_train.sh, reads the cap line and shrinks the batch instead).
+	if grep -q '^FOCUSED RUN CAPPED' "$log"; then echo "== GATE: the test run hit its wall-clock cap; no retry (the batch is too big for it)"; rm -f "$log"; return "$rc"; fi
 	res="$(grep -h '^FOCUSED RESULT:' "$log" | tail -n 1)"
 	json="$(sed -n 's/.*(json: \([^)]*\)).*/\1/p' <<<"$res")"
 	names=()
