@@ -328,6 +328,38 @@ pub(crate) fn answer_hash(answer: &dm_ir::ResolvedMeaning) -> u128 {
     dm_query::hash_bytes(&answer.canonical_bytes())
 }
 
+/// The parts of an answer version: the declarations' identity, the answer world and every
+/// resource search the table held with its answer hash. `version` and `context` hash them exactly
+/// as `QueryDb::answers_version` and `answers_context` always have, so a retained output that keeps
+/// its facts can prove its answers in a later process, where the table starts empty and holds
+/// only the searches that process asked.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct AnswerFacts {
+    pub tree: u128,
+    pub world: u128,
+    /// Sorted by (query id, answer hash).
+    pub searches: Vec<(dm_ir::ResolveQuery, u128)>,
+}
+impl AnswerFacts {
+    pub(crate) fn context(&self) -> u128 {
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-answers-context-v1\0");
+        hash.update(&self.world.to_le_bytes());
+        for (query, answer) in &self.searches {
+            hash.update(&query_id(query).to_le_bytes());
+            hash.update(&answer.to_le_bytes());
+        }
+        hash.digest128()
+    }
+    pub(crate) fn version(&self) -> u128 {
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-answers-version-v2\0");
+        hash.update(&self.tree.to_le_bytes());
+        hash.update(&self.context().to_le_bytes());
+        hash.digest128()
+    }
+}
+
 /// One request's view of the answer table: the resolver that answers a query not yet proven in
 /// this request. Every stage of a request uses the same semantic resolver.
 pub(crate) struct RequestAnswers<'a> {
@@ -548,50 +580,65 @@ impl QueryDb {
     /// Equal versions at two points mean every answer read in between and still held is equal,
     /// so a stage whose other inputs are equal too may reuse its whole earlier output.
     pub(crate) fn answers_version(&self) -> Option<u128> {
-        let identity = {
-            let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
-            current.tree.as_ref()?.declaration_identity()
-        };
-        let context = self.answers_context()?;
-        let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dm-answers-version-v2 ");
-        hash.update(&identity.to_le_bytes());
-        hash.update(&context.to_le_bytes());
-        Some(hash.digest128())
+        self.answer_facts().map(|facts| facts.version())
     }
     /// What `answers_version` holds besides the tree: the answer world and each resource
     /// search's current answer. Two requests with equal contexts and different trees may still
     /// give every answer the same value; [`Self::prove_against_base`] decides that per answer.
     pub(crate) fn answers_context(&self) -> Option<u128> {
-        let world = {
+        self.answer_facts().map(|facts| facts.context())
+    }
+    /// The parts `answers_version` and `answers_context` hash, so an output retained with them can
+    /// prove the same thing in another process (see [`AnswerFacts`]). None when the resolver does
+    /// not version its answers or no tree is bound.
+    pub(crate) fn answer_facts(&self) -> Option<AnswerFacts> {
+        let (tree, world) = {
             let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
-            current.tree.as_ref()?;
-            current.world
+            (current.tree.as_ref()?.declaration_identity(), current.world)
         };
         if world == 0 {
             return None;
         }
-        let mut resources: Vec<(u128, u128)> = {
+        let mut searches: Vec<(u128, dm_ir::ResolveQuery, u128)> = {
             let queries =
                 self.answers.resource_queries.lock().unwrap_or_else(|error| error.into_inner());
             queries
-                .keys()
-                .map(|id| {
+                .iter()
+                .map(|(id, query)| {
                     let shard = &self.answers.shards[(*id as usize) % ANSWER_SHARDS];
                     let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
-                    (*id, slots.get(id).map_or(0, |slot| slot.hash))
+                    (*id, *query, slots.get(id).map_or(0, |slot| slot.hash))
                 })
                 .collect()
         };
-        resources.sort_unstable();
-        let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dm-answers-context-v1 ");
-        hash.update(&world.to_le_bytes());
-        for (id, answer) in resources {
-            hash.update(&id.to_le_bytes());
-            hash.update(&answer.to_le_bytes());
+        searches.sort_unstable_by_key(|(id, _, hash)| (*id, *hash));
+        Some(AnswerFacts {
+            tree,
+            world,
+            searches: searches.into_iter().map(|(_, query, hash)| (query, hash)).collect(),
+        })
+    }
+    /// Prove, in this request, the answers an output restored from storage was built from: the
+    /// declarations and the answer world are the stored ones (so every answer they determine is
+    /// equal), and each stored resource search still answers as it did. Asking a search holds it
+    /// in the table, so the table afterwards holds every search the stored output read.
+    pub(crate) fn prove_facts(&self, answers: &RequestAnswers<'_>, facts: &AnswerFacts) -> Result<usize, String> {
+        static PROVE: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.prove_facts");
+        let _timer = PROVE.time();
+        {
+            let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
+            if current.tree.as_ref().map(|tree| tree.declaration_identity()) != Some(facts.tree) {
+                return Err("the declarations differ from the stored output's".into());
+            }
+            if current.world == 0 || current.world != facts.world {
+                return Err("the answer world differs from the stored output's".into());
+            }
         }
-        Some(hash.digest128())
+        let differing = facts.searches.iter().filter(|(query, hash)| !answers.unchanged_hash(query, *hash)).count();
+        if differing > 0 {
+            return Err(format!("{differing} of {} resource searches answer differently", facts.searches.len()));
+        }
+        Ok(facts.searches.len())
     }
     /// Record every held answer as the answer of the output that was just published. Called
     /// once the request's output is the retained one (its tree is the current tree, so each
@@ -1003,6 +1050,73 @@ mod tests {
         assert!(prove(&db, BASE, second).is_ok());
         db.answers.clear();
         assert!(prove(&db, BASE, second).unwrap_err().contains("dropped"));
+    }
+
+    /// A request on `text` in answer world `world`, whose resource searches all answer `present`; asks `asked` and `searches`.
+    fn open_with_searches(
+        db: &QueryDb,
+        text: &str,
+        world: u128,
+        present: bool,
+        asked: &[dm_ir::ResolveQuery],
+        searches: &[&str],
+    ) -> (Arc<dm_tree::SemanticTree>, Box<dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning + Sync>) {
+        let tree = tree(text);
+        let resolver_tree = Arc::clone(&tree);
+        let resolve = move |query: &dm_ir::ResolveQuery| match query {
+            dm_ir::ResolveQuery::Resource(_) => dm_ir::ResolvedMeaning::Presence(present),
+            other => dm_ir::Resolver::resolve(resolver_tree.as_ref(), *other),
+        };
+        db.next_request();
+        db.begin_answers(&tree, Some(world), &resolve);
+        {
+            let answers = db.request_answers(&resolve);
+            for query in asked {
+                answers.current(query_id(query), query);
+            }
+            for path in searches {
+                let query = dm_ir::ResolveQuery::Resource(symbol(path));
+                answers.current(query_id(&query), &query);
+            }
+        }
+        (tree, Box::new(resolve))
+    }
+
+    #[test]
+    fn facts_prove_a_stored_output_in_a_table_that_starts_empty() {
+        let searches = ["icons/a.dmi", "icons/b.dmi"];
+        // The build the output was retained from: every query asked, two resource searches held.
+        let built = QueryDb::default();
+        open_with_searches(&built, BASE, 9, true, &asked(), &searches);
+        let facts = built.answer_facts().expect("a bound tree and a versioned world");
+        assert_eq!(facts.searches.len(), 2);
+        assert_eq!(Some(facts.version()), built.answers_version());
+        assert_eq!(Some(facts.context()), built.answers_context());
+        // A later process asked less before its patch admission: the version differs only by the searches it held.
+        let later = QueryDb::default();
+        let (_, resolve) = open_with_searches(&later, BASE, 9, true, &asked()[..3], &[]);
+        assert_ne!(later.answers_version(), built.answers_version());
+        assert_eq!(later.prove_facts(&later.request_answers(&resolve), &facts), Ok(2));
+        // Asking the stored searches holds them: the table now describes the same answers as the stored output.
+        assert_eq!(later.answers_context(), built.answers_context());
+        assert_eq!(later.answer_facts().map(|facts| facts.searches), Some(facts.searches.clone()));
+        // A search that answers differently, other declarations and another answer world are each refused.
+        let moved = QueryDb::default();
+        let (_, resolve) = open_with_searches(&moved, BASE, 9, false, &asked()[..3], &[]);
+        let error = moved.prove_facts(&moved.request_answers(&resolve), &facts).unwrap_err();
+        assert!(error.starts_with("2 of 2 resource searches"), "{error}");
+        let edited = QueryDb::default();
+        let (_, resolve) = open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
+        assert!(edited.prove_facts(&edited.request_answers(&resolve), &facts).unwrap_err().contains("declarations"));
+        let other_world = QueryDb::default();
+        let (_, resolve) = open_with_searches(&other_world, BASE, 10, true, &[], &[]);
+        assert!(other_world.prove_facts(&other_world.request_answers(&resolve), &facts).unwrap_err().contains("world"));
+        // No world, no facts: the table cannot version its answers.
+        let unversioned = QueryDb::default();
+        let tree = tree(BASE);
+        unversioned.next_request();
+        unversioned.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
+        assert!(unversioned.answer_facts().is_none() && unversioned.answers_version().is_none());
     }
 
     #[test]

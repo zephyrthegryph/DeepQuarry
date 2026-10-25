@@ -223,6 +223,7 @@ version = "0.1.0"
 dependencies = [
  "dm-ir",
  "dm-session",
+ "serde",
 ]
 
 [[package]]

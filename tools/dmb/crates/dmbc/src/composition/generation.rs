@@ -84,11 +84,15 @@ pub struct RetainedGeneration {
     /// Symbolic header decisions share the session generation's policy and lifetime.
     /// Values and dense table IDs are always bound from the current model.
     pub(super) header_recipes: Arc<crate::class_projection::HeaderRecipes>,
+    /// The variant's stored patch base (see `crate::variant_spill`), shared by every request of the generation.
+    spill: Arc<Mutex<spill::SpillState>>,
 }
 struct Generation {
     inputs: CertifiedGenerationInputs,
     encoded: byond_dmb::dmb::EncodedDmb,
 }
+#[path = "generation_spill.rs"]
+mod spill;
 #[path = "generation_publication.rs"]
 mod publication;
 use publication::Pending;
@@ -585,12 +589,14 @@ impl RetainedGeneration {
         self.publication
             .with_published(|old| old.patch.lock().unwrap_or_else(|e| e.into_inner()).base.is_some())
             .unwrap_or(false)
+            || self.stored_image_hash().is_some()
     }
     /// Hash of the DMB image the published patch base describes; None without a base.
     pub(crate) fn patch_base_image_hash(&self) -> Option<u128> {
         self.publication
             .with_published(|old| old.patch.lock().unwrap_or_else(|e| e.into_inner()).base.as_ref().map(|base| base.dmb_hash()))
             .flatten()
+            .or_else(|| self.stored_image_hash())
     }
     /// Make the patch base `wanted` accepts current: the current one if it does, else the most recent
     /// alternate that does, which swaps with the current base. Returns whether an alternate was swapped in.

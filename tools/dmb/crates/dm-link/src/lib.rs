@@ -41,7 +41,7 @@ pub enum Table {
 }
 /// Anonymous executable initialization domains. A map descriptor has its own
 /// occurrence identity even when it initializes the same receiver class.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub enum InitializerIdentity {
     Global,
     Class(SymbolId),
@@ -49,7 +49,7 @@ pub enum InitializerIdentity {
     Modified(SymbolId),
 }
 /// Proc and verb semantic namespaces remain distinct even when sharing a wire table.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub enum Key {
     ProcedureStatic(dm_ir::ProcedureStaticIdentity),
     String(SymbolId),
@@ -280,6 +280,33 @@ impl LinkTables {
     pub fn binding_tables(&self) -> BindingTables {
         self.bindings.clone()
     }
+    /// Variable slot aliases (`slot symbol -> (owner, name)`).
+    pub fn slots(&self) -> &BTreeMap<SymbolId, (SymbolId, SymbolId)> {
+        self.bindings.slots()
+    }
+    /// Every string table entry's bytes, for persisting the tables beside a retained output.
+    pub fn string_contents(&self) -> impl Iterator<Item = (SymbolId, &[u8])> {
+        self.content.iter().filter_map(|(key, content)| match key {
+            Key::String(id) => Some((*id, content.as_ref())),
+            _ => None,
+        })
+    }
+    /// Tables restored from storage: the numbering and the string contents only. A restored table holds no content for any
+    /// other key, so `extended` refuses to re-supply one it already numbers (it cannot prove the content equal).
+    pub fn from_stored(
+        indexes: BTreeMap<Key, u32>,
+        slots: BTreeMap<SymbolId, (SymbolId, SymbolId)>,
+        strings: impl IntoIterator<Item = (SymbolId, Arc<[u8]>)>,
+    ) -> Self {
+        let content = strings
+            .into_iter()
+            .map(|(id, bytes)| (Key::String(id), EntryContent::from(bytes)))
+            .collect();
+        Self {
+            bindings: BindingTables::validated(indexes, slots, None),
+            content: Arc::new(content),
+        }
+    }
     /// Append-only extension for stable incremental numbering
     /// (doc/structural_change_set.md, addendum). Keys already bound keep
     /// their index and must carry identical content; each new key takes
@@ -302,6 +329,10 @@ impl LinkTables {
                     return Err(LinkError::ContentCollision(key));
                 }
                 continue;
+            }
+            if indexes.contains_key(&key) {
+                // Numbered without retained content (restored tables): equality cannot be shown.
+                return Err(LinkError::ContentCollision(key));
             }
             let table = key.table();
             let counter = counters

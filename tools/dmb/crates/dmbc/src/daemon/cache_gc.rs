@@ -48,6 +48,11 @@ pub(super) fn run_once(budget: u64, min_age: Duration, max_age: Option<Duration>
         .and_then(|cache| cache.evict_to_limits(SystemTime::now(), budget, min_age, max_age));
     let stores = crate::cache_maintenance::evict_known_pair_stores();
     let stores = if stores.is_empty() { String::new() } else { format!("\n{}", stores.join("\n")) };
+    // Spilled patch bases (`variant_spill`) share the pass: the same cadence, with their own size and age caps.
+    let spill = dm_cache::Cache::default_root()
+        .map(|root| crate::variant_spill::evict(&crate::variant_spill::directory(&root), None))
+        .unwrap_or_default();
+    let stores = if spill.is_empty() { stores } else { format!("{stores}\n{spill}") };
     match outcome {
         Ok(report) => format!(
             "dmbd cache budget: {:.1} GB -> {:.1} GB of {:.1} GB, deleted {} of {} leaves ({:.1} GB, {} for age), deferred {}, protected {}, {:.2}s",

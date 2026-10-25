@@ -361,7 +361,7 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
                 && body.source.line == source.line
                 && shape.bodies[index].text == base.shape.bodies[base_index[&index]].text
         });
-        if (record.modified || old.modified) && !moved_only {
+        if (record.modified || old.modified()) && !moved_only {
             return Err(format!("unit {identity:?} has modified instances"));
         }
         let words = record
@@ -575,7 +575,7 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     let mut units = (*base.units).clone();
     let mut new_procedures = Vec::new();
     for (_, record, procedure) in procedures {
-        units.insert(record.record.identity(), record);
+        units.insert(record.record.identity(), crate::retained_output::UnitBase::Record(record));
         new_procedures.push(procedure);
     }
     let next = OutputBase {
@@ -587,6 +587,8 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         answers: lowered_answers,
         answers_context: None,
         marks: None,
+        facts: None,
+        restored: base.restored,
         dmb_hash: 0,
     };
     dm_profile::request_mark("append.linked");
