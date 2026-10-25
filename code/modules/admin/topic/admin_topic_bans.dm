@@ -452,7 +452,7 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 /// Writes a permanent ban of `M` (with their address too when `ip_ban`) and tells the player and the admins.
 /datum/admins/proc/ban_commit_perm(mob/user, mob/M, reason, ip_ban)
 	if(ip_ban)
-		AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, M.lastKnownIP, user)
+		AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, sparse_get(M, lastKnownIP), user)
 	else
 		AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, user = user)
 	to_chat(M, span_filter_system(span_critical("You have been banned by [user.ckey].\nReason: [reason].")))

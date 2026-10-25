@@ -20,7 +20,7 @@ GLOBAL_PROTECT(protected_ranks)
 
 /datum/admin_rank/New(init_name, init_source, init_rights, init_exclude_rights, init_edit_rights)
 	if(IsAdminAdvancedProcCall())
-		alert_to_permissions_elevation_attempt(usr)
+		alert_to_permissions_elevation_attempt()
 		if (name == "NoRank") //only del if this is a true creation (and not just a New() proc call), other wise trialmins/coders could abuse this to deadmin other admins
 			expire(0)
 			CRASH("Admin proc call creation of admin datum")
@@ -46,7 +46,7 @@ GLOBAL_PROTECT(protected_ranks)
 /datum/admin_rank/lifecycle_keep(force)
 	if(!IsAdminAdvancedProcCall())
 		return FALSE
-	alert_to_permissions_elevation_attempt(usr)
+	alert_to_permissions_elevation_attempt()
 	return TRUE
 
 /datum/admin_rank/vv_edit_var(var_name, var_value)
@@ -55,7 +55,7 @@ GLOBAL_PROTECT(protected_ranks)
 // Adds/removes rights to this admin_rank
 /datum/admin_rank/proc/process_keyword(group, group_count, datum/admin_rank/previous_rank)
 	if(IsAdminAdvancedProcCall())
-		alert_to_permissions_elevation_attempt(usr)
+		alert_to_permissions_elevation_attempt()
 		return
 	var/list/keywords = splittext(group, " ")
 	var/flag = 0

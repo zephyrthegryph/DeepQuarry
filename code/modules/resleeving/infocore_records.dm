@@ -3,7 +3,8 @@
 //// for the resleeving tech
 ////////////////////////////////
 
-/mob/living/carbon/human/var/original_player
+/// The ckey this body originally belonged to (sparse slot original_player; null for a custom sleeve).
+sparse(/mob/living/carbon/human, original_player, type = text)
 
 /////// Mind-backup record ///////
 /datum/transhuman/mind_record
@@ -323,7 +324,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 		rel_set(mydna, nameof(mydna.dna), new /datum/dna())
 	own_clear(H, nameof(H.dna), OWN_DELETE)
 	rel_set(H, nameof(H.dna), mydna.dna.Clone())
-	H.original_player = ckey
+	sparse_set(H, original_player, ckey)
 
 	//Update appearance, remake icons
 	H.UpdateAppearance()

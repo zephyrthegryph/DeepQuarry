@@ -102,7 +102,7 @@ CAPABILITIES(/datum/system/job)
 	return occupations_by_name[rank]
 
 /datum/system/job/proc/get_player_alt_title(mob/new_player/player, rank)
-	return player.client.prefs.GetPlayerAltTitle(get_job(rank))
+	return text_or_null(player.client.prefs.GetPlayerAltTitle(get_job(rank)))
 
 /datum/system/job/proc/get_job_type(jobtype)
 	return type_occupations[jobtype]

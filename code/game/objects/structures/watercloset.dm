@@ -1102,7 +1102,7 @@ MSG_DEF_SELF(sink/washing_hands, span_notice("You start washing your hands."))
 				H.get_equipped_item(SLOT_ID_HAND_R).wash(CLEAN_SCRUB)
 			if(H.get_equipped_item(SLOT_ID_HAND_L))
 				H.get_equipped_item(SLOT_ID_HAND_L).wash(CLEAN_SCRUB)
-			H.bloody_hands = 0
+			sparse_set_or(H, bloody_hands, 0, 0)
 			H.germ_level = 0
 			H.set_hand_blood_color(null)
 			H.forensic_data?.wash(CLEAN_SCRUB)
@@ -1247,9 +1247,9 @@ CAPABILITIES(/obj/structure/toilet/item)
 	var/mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
 	var/obj/machinery/recycling/crusher/crusher //Bluespace connection for recyclables
 
-/obj/structure/biowaste_tank/Initialize(mapload)
+/// Its setup hook (setup() in the tank's CAPABILITIES): the tank finds the crusher it feeds.
+/obj/structure/biowaste_tank/proc/find_crusher()
 	rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher))
-	return ..()
 
 /// The tank's monster is named for the console and gets its belly once the tank is made.
 /obj/structure/biowaste_tank/proc/prepare_muffinmonster()
@@ -1329,6 +1329,7 @@ READS_AS(/obj/structure/biowaste_tank/proc/caught_count, BIOWASTE_CAUGHT_KEY)
 
 CAPABILITIES(/obj/structure/biowaste_tank)
 	ref_one(nameof(crusher))
+	setup(PROC_REF(find_crusher))
 	setup(PROC_REF(prepare_muffinmonster))
 	owns_one(nameof(muffinmonster), /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster, starts = /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)

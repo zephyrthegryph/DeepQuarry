@@ -442,7 +442,7 @@ impl SemanticTree {
                 .owner_callable_selections
                 .get(&selection)
                 .copied()
-                .or_else(|| self.owner_callables.get(&selection.0).copied());
+                .or_else(|| self.owner_callable_certificates().get(&selection.0).copied());
         }
         if let dm_ir::ReadDomain::OwnerVariable(query) = domain {
             if let dm_ir::ResolveQuery::UniqueStaticVar(name) = query {

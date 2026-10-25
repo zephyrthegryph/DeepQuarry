@@ -8,8 +8,12 @@ use std::{
     path::{Path, PathBuf},
     time::{Duration, SystemTime},
 };
+/// A session that published this recently keeps its newest pair even when the byte cap is exceeded.
+const LIVE_SESSION: Duration = Duration::from_secs(600);
 #[derive(Debug, Default)]
 pub struct EvictionResult {
+    pub bytes_before: u64,
+    pub bytes_after: u64,
     pub pairs: usize,
     pub resources: usize,
     pub protected_pairs: usize,
@@ -33,6 +37,9 @@ impl PairStore {
     ) -> io::Result<EvictionResult> {
         let _lock = self.lock()?;
         let mut roots = BTreeSet::new();
+        // Newest pair of each session that published within `LIVE_SESSION`: a build may be about to boot it, so even the size cap
+        // spares it. Every other root yields to the cap, oldest first,.
+        let mut live_newest = BTreeSet::new();
         for entry in fs::read_dir(self.root.join("sessions"))? {
             let entry = entry?;
             if !entry.file_type()?.is_file()
@@ -40,12 +47,18 @@ impl PairStore {
             {
                 continue;
             }
+            let idle = now
+                .duration_since(entry.metadata()?.modified()?)
+                .unwrap_or_default();
             let ids: Vec<u128> =
                 serde_json::from_slice(&read_small(&entry.path())?).map_err(invalid)?;
             if ids.len() > 3 {
                 return Err(invalid(
                     "pair session root count exceeds last-three contract",
                 ));
+            }
+            if idle <= LIVE_SESSION {
+                live_newest.extend(ids.first().copied());
             }
             roots.extend(ids);
         }
@@ -87,36 +100,44 @@ impl PairStore {
             pairs.push((entry.path(), pair, old, entry.metadata()?.modified()?));
         }
         let mut size_pruned = false;
-        if let Some(cap) = max_bytes {
-            // Oldest first; whatever the age pass keeps counts against the cap.
-            pairs.sort_by_key(|entry| entry.3);
+        let mut forced = BTreeSet::new();
+        let pair_bytes = |pair: &OutputPair| pair.dmb_bytes.saturating_add(pair.rsc_bytes);
+        let bytes_before: u64 = pairs.iter().map(|entry| pair_bytes(&entry.1)).sum();
+                if let Some(cap) = max_bytes {
+            // Unprotected pairs first, then roots that are not a live session's newest pair; each tier oldest first.
+            pairs.sort_by_key(|entry| (roots.contains(&entry.1.id), entry.3));
             let mut total: u64 = pairs
                 .iter()
-                .filter(|entry| !entry.2 || roots.contains(&entry.1.id))
-                .map(|entry| entry.1.dmb_bytes.saturating_add(entry.1.rsc_bytes))
+                .filter(|entry| !entry.2)
+                .map(|entry| pair_bytes(&entry.1))
                 .sum();
             for entry in pairs.iter_mut() {
                 if total <= cap {
                     break;
                 }
-                if !entry.2 && !roots.contains(&entry.1.id) {
+                if !entry.2 && !live_newest.contains(&entry.1.id) {
                     entry.2 = true;
                     size_pruned = true;
-                    total = total.saturating_sub(entry.1.dmb_bytes.saturating_add(entry.1.rsc_bytes));
+                    if roots.contains(&entry.1.id) {
+                        forced.insert(entry.1.id);
+                    }
+                    total = total.saturating_sub(pair_bytes(&entry.1));
                 }
             }
         }
         let archive_retention = if size_pruned { Duration::ZERO } else { retention };
-        let mut result = EvictionResult::default();
+        let mut result = EvictionResult { bytes_before, ..Default::default() };
         let mut archives = BTreeSet::new();
+        let mut freed = 0u64;
         for (path, pair, old, _) in pairs {
-            let protected = roots.contains(&pair.id);
+            let protected = roots.contains(&pair.id) && !forced.contains(&pair.id);
             if protected {
                 result.protected_pairs += 1;
             }
             if old && !protected {
                 if unlink_pair(&path).is_ok() {
                     result.pairs += 1;
+                    freed = freed.saturating_add(pair_bytes(&pair));
                     let _ = fs::remove_file(
                         self.root
                             .join("verified")
@@ -175,6 +196,7 @@ impl PairStore {
                 Err(_) => result.deferred.push(entry.path()),
             }
         }
+        result.bytes_after = bytes_before.saturating_sub(freed);
         Ok(result)
     }
 }
@@ -259,11 +281,7 @@ mod tests {
             let sequence =
                 super::super::TEMP_SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             Self(
-                PairStore::open(
-                    std::env::temp_dir()
-                        .join(format!("dmb-eviction-{}-{sequence}", std::process::id())),
-                )
-                .unwrap(),
+                PairStore::open(crate::test_scratch::dir(&format!("eviction-{sequence}"))).unwrap(),
             )
         }
     }
@@ -402,14 +420,42 @@ mod tests {
         assert_eq!(one.pairs, 1);
         assert!(store.verify(published[0].id, true).is_err());
         store.verify(published[1].id, true).unwrap();
-        // A cap below what the roots alone need removes every unprotected pair and keeps the roots.
+        // A cap below what the roots need removes every pair but a live session's newest.
         let rest = store
             .evict_to_budget(now, Duration::from_secs(7 * 86400), Some(1))
             .unwrap();
-        assert_eq!(rest.pairs, 1);
-        assert_eq!(rest.protected_pairs, 3);
-        for pair in &published[2..] {
-            store.verify(pair.id, true).unwrap();
+        assert_eq!(rest.pairs, 3);
+        assert_eq!(rest.protected_pairs, 1);
+        assert_eq!(rest.bytes_after, 1000);
+        store.verify(published[4].id, true).unwrap();
+    }
+    #[test]
+    fn many_sessions_of_pairs_written_past_the_cap_are_evicted_under_it() {
+        let root = Temp::new();
+        let store = &root.0;
+        // Twenty sessions, three 1000 byte pairs each: 60000 bytes, every pair a last-three root of some session.
+        for session in 0..20u8 {
+            for number in 0..3u8 {
+                let world = vec![session.wrapping_mul(3).wrapping_add(number); 600];
+                let resource = vec![session.wrapping_add(200).wrapping_sub(number); 400];
+                store.publish(session as u128 + 1, &world, &resource).unwrap();
+            }
         }
+        // An hour later no session is live, so only the cap decides.
+        let later = SystemTime::now() + Duration::from_secs(3600);
+        let cap = 10_000;
+        let report = store
+            .evict_to_budget(later, Duration::from_secs(7 * 86400), Some(cap))
+            .unwrap();
+        assert_eq!(report.bytes_before, 60_000);
+        assert!(report.bytes_after <= cap, "{report:?}");
+        assert_eq!(report.pairs, 50);
+        // A pair published seconds before the pass is a live session's newest and survives any cap.
+        let fresh = store.publish(99, b"fresh-world", b"fresh-resource").unwrap();
+        let report = store
+            .evict_to_budget(SystemTime::now(), Duration::from_secs(7 * 86400), Some(1))
+            .unwrap();
+        assert!(report.protected_pairs >= 1);
+        store.verify(fresh.id, true).unwrap();
     }
 }

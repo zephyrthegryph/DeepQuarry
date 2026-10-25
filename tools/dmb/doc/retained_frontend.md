@@ -302,6 +302,8 @@ Steps, each landing alone with `verify` proof:
 
 ### F1 results (plan and expansion edited in place)
 
+*Superseded 2026-10-25 (`incremental_core.md`, "Frontend queries, step 3"): the single-file edit path and `DMB_FRONTEND_REVISION` are deleted; the plan is patched from the query database's change log (any changed subtree, directives included) and adopted subtree by subtree, expansion copies the regions the plan copied. What follows is the history.*
+
 Landed behind `DMB_FRONTEND_REVISION` (`0`/unset: off, the default for now; `verify`; `1`).
 `dm_preprocess::regions::{plan_regions_edit, expand_regions_edit}` (`regions/edit.rs`), the origin
 arena splice (`ExpandedOriginArena::spliced`), the previous revision kept in `RetainedSemanticTree`
@@ -671,3 +673,26 @@ directive interval holds a second copy of the comment-stripped line text (about 
 key, so it needs a record version bump. The resident record store (`runner_host_memo.rs`, 8 GB budget) keeps a decoded copy of every
 record accepted from the mmapped disk cache; a smaller budget trades the decode on the next request for memory, so it needs a
 measured edit-latency decision. A one-shot compile builds receipts for the name-demand store that nothing reads again.
+
+### Memory diet 2 (lane `compiler/memory-diet-2`, 2026-10-25)
+
+Plain release build, 4 workers, a fresh isolated `DMB_CACHE_DIR` per run (cold, forced full compile), `DMB_MEM_MARKS=1`. Output is
+byte-identical (sha256 of `.dmb` and `.rsc`), the pair ids are unchanged, and `dmb-equiv --all --ignore-debug` reports EQUIVALENT
+for both worlds.
+
+| Measure | before | after |
+|---|---|---|
+| one-shot peak private, `deepquarry.dme` (pair `187541544b62ca3e0347da5da9c40350`) | 5,523 MB | 4,758 MB |
+| one-shot peak private, `-DCIBUILDING -DCITESTING` (pair `4baef5b1e135e47d209d2b4b4637638b`) | 5,983 MB | 5,031 MB |
+| daemon session private after a cold full compile | 7,712 MB | 7,453 MB |
+
+- **One-shot compiles store no name-demand receipts.** `RetainedSemanticTree::one_shot()` (the request-local owner in
+  `request_runner.rs`) builds a `RetainedMetadata` with `retain_receipts = false`: `demanded_name` and the member-name selector
+  still issue and cache the token per tree, but skip the store lookup and insert. Daemon sessions keep the receipts.
+- **Region and directive memo records keep a control digest, not the bytes.** `control` is the xxh3-128 of the comment-stripped line
+  stream (`region_memo/control.rs::digest`, `directive_memo::context`); the record key frames that digest. `EXPANSION_VERSION` is 5
+  and `DIRECTIVE_VERSION` is 7, so older records are ignored (one cold compile).
+- **Not done:** the observation store `leased` bookkeeping (`dm-session/src/artifacts*`). It is the shared-roster store of daemon
+  sessions only (a one-shot compile never leases), keyed by variant pointer, with deferred claims and a generation check through
+  the held key owner, and about a dozen tests read `buckets` directly. A flat slab with hash index would save an estimated 300-400
+  MB per daemon session; it needs its own lane.

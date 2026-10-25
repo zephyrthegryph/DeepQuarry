@@ -28,4 +28,4 @@
 			client_screen_add(client, HUD.adding)
 		if(length(HUD.other))
 			client_screen_add(client, HUD.other)
-		client_screen_add(client, client.void)
+		client_screen_add(client, GLOB.click_catcher)

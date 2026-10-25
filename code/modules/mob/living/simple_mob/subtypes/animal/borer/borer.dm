@@ -249,31 +249,31 @@
 
 		// host -> self
 		var/h2s_id = host.computer_id
-		var/h2s_ip= host.lastKnownIP
+		var/h2s_ip= sparse_get(host, lastKnownIP)
 		host.computer_id = null
-		host.lastKnownIP = null
+		sparse_set(host, lastKnownIP, null)
 
 		move_player(host, src, "borer [src] released control of [host]")
 
 		if(!src.computer_id)
 			src.computer_id = h2s_id
 
-		if(!host_brain.lastKnownIP)
-			src.lastKnownIP = h2s_ip
+		if(!sparse_get(host_brain, lastKnownIP))
+			sparse_set(src, lastKnownIP, h2s_ip)
 
 		// brain -> host
 		var/b2h_id = host_brain.computer_id
-		var/b2h_ip= host_brain.lastKnownIP
+		var/b2h_ip= sparse_get(host_brain, lastKnownIP)
 		host_brain.computer_id = null
-		host_brain.lastKnownIP = null
+		sparse_set(host_brain, lastKnownIP, null)
 
 		move_player_mind(host_brain.mind, host, "regained control of [host] from borer [src]")
 
 		if(!host.computer_id)
 			host.computer_id = b2h_id
 
-		if(!host.lastKnownIP)
-			host.lastKnownIP = b2h_ip
+		if(!sparse_get(host, lastKnownIP))
+			sparse_set(host, lastKnownIP, b2h_ip)
 
 	rel_clear(src, nameof(host_brain))
 	// End horrible ip swapping code for bans

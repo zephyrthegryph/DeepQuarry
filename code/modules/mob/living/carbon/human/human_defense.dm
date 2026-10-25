@@ -472,7 +472,7 @@ emp_act
 		gl.transfer_blood = amount
 	else
 		add_blood(source)
-		bloody_hands = amount
+		sparse_set_or(src, bloody_hands, amount, 0)
 
 /mob/living/carbon/human/proc/bloody_body(mob/living/source)
 	if(get_equipped_item(SLOT_ID_SUIT))

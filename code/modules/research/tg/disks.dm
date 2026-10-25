@@ -17,9 +17,12 @@ MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	name = "\improper CentCom technology disk"
 	desc = "A debug item for research"
 
-/obj/item/disk/tech_disk/debug/Initialize(mapload)
+CAPABILITIES(/obj/item/disk/tech_disk/debug)
+	setup(PROC_REF(link_admin_techweb))
+
+/// Its setup hook: the debug disk holds the admin techweb.
+/obj/item/disk/tech_disk/debug/proc/link_admin_techweb()
 	proto_set(src, nameof(stored_research_static), locate_in_list(SSresearch.techwebs, /datum/techweb/admin))
-	return ..()
 
 MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/design_disk

@@ -140,8 +140,8 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 					ooc_notes += "\n\nDISLIKES\n\n[H.identity().ooc_notes_dislikes]"
 			if(LAZYLEN(H.bio.flavor_texts))
 				flavor_text = H.bio.flavor_texts["general"]
-			if(H.custom_link)
-				custom_link = H.custom_link
+			if(sparse_get(H, custom_link))
+				custom_link = sparse_get(H, custom_link)
 
 		if(isAI(C.mob))
 			var/mob/living/silicon/ai/A = C.mob
@@ -381,13 +381,13 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			if (can_set_prefs)
 				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_tag, new_value)
 			if (can_set_mind)
-				user.mind.directory_tag = new_value
+				user.mind.directory_tag = text_or_null(new_value)
 			return TRUE
 		if ("setErpTag")
 			if (can_set_prefs)
 				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_erptag, new_value)
 			if (can_set_mind)
-				user.mind.directory_erptag = new_value
+				user.mind.directory_erptag = text_or_null(new_value)
 			return TRUE
 		if ("setVisible")
 			if (can_set_prefs)
@@ -401,23 +401,23 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 				// mirror that here so the mind write can't store raw markup.
 				user.client.prefs.update_preference_by_type(/datum/preference/text/human/directory_ad, new_value)
 			if (can_set_mind)
-				user.mind.directory_ad = STRIP_HTML_SIMPLE(new_value, MAX_MESSAGE_LEN)
+				user.mind.directory_ad = text_or_null(STRIP_HTML_SIMPLE(new_value, MAX_MESSAGE_LEN))
 			return TRUE
 		if ("setEventTag")
 			if (can_set_prefs)
 				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/vantag_preference, new_value)
 			if (can_set_mind)
-				user.mind.vantag_preference = new_value
+				user.mind.vantag_preference = text_or_null(new_value)
 		if ("setGenderTag")
 			if (can_set_prefs)
 				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_gendertag, new_value)
 			if (can_set_mind)
-				user.mind.directory_gendertag = new_value
+				user.mind.directory_gendertag = text_or_null(new_value)
 		if ("setSexualityTag")
 			if (can_set_prefs)
 				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_sexualitytag, new_value)
 			if (can_set_mind)
-				user.mind.directory_sexualitytag = new_value
+				user.mind.directory_sexualitytag = text_or_null(new_value)
 
 /datum/character_directory/proc/open_directory_choice(mob/user, action, overwrite_prefs, question, title, list/choices, default_value)
 	open_request(src, /datum/prompt/choice/directory_setting, PROC_REF(directory_choice_entered), answerer = user, directory_action = action, overwrite_prefs = overwrite_prefs, question = question, title = title, choices = choices, default = default_value)

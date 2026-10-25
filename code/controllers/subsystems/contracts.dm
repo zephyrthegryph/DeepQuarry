@@ -306,7 +306,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		return
 	if(subject.mind)
 		subject_identity(subject)
-	subject.contract_medical_indications = null
+	sparse_set(subject, contract_medical_indications, null)
 	subject.refresh_contract_medical_eligibility()
 	reconcile_medical_trial_offers()
 	reconcile_offer_eligibility("Crew availability changed")
@@ -332,7 +332,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 /datum/system/contracts/proc/on_medical_subject_revived(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/subject = A.target
-	subject.contract_medical_indications = null
+	sparse_set(subject, contract_medical_indications, null)
 	subject.refresh_contract_medical_eligibility()
 
 /datum/system/contracts/proc/reconcile_medical_trial_offers(list/availability = medical_trial_station_availability())

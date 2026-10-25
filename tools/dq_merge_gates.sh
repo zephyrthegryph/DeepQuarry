@@ -9,6 +9,8 @@
 #   3. in parallel, each with its own log under data/merge-gates/<sha>.<job>.log:
 #        tests      tools/dq_focused_test.sh <the test list>       (the test compile, the boot gate and the tests, one world)
 #        dm         tools/build/build.sh dm (production native compile + DreamChecker); no local DreamMaker compile (CI cross-checks with DreamMaker)
+#        dreamchecker  build.sh dream-checker over the whole tree (only with --no-dm and DQ_GATE_DREAMCHECKER=1: the train's heavy cycles;
+#                   the native compiler accepts what DreamChecker rejects, so the train needs its verdict in the gate, where a failure bisects)
 #        ratchets   tools/ci/check_ratchets.sh, then build.sh analyze
 #        tgui       tools/build/build.sh tgui-lint                 (only when the batch touches tgui/, or with --tgui)
 #        analyze_tests  cargo test in tools/analyze, in a cargo slot (only when the batch touches tools/analyze/)
@@ -143,7 +145,7 @@ sha="$(git rev-parse HEAD)"
 short="${sha:0:12}"
 mkdir -p data/merge-gates
 timings="data/merge-gates/$short.timings"
-rm -f "data/merge-gates/$short".{ok,ratchets.ok,dm.ok,analyze.ok}
+rm -f "data/merge-gates/$short".{ok,ratchets.ok,dm.ok,dreamchecker.ok,analyze.ok}
 : >"$timings"
 wall_start=$(date +%s)
 
@@ -266,6 +268,7 @@ gate() { # <name> <command...>: one step in the foreground
 names=()
 failed=()
 dm_ok=0
+dc_ok=0
 declare -A pid start
 if [ "$reused" -eq 0 ]; then
 gate gen tools/build/build.sh gen
@@ -285,6 +288,10 @@ job_dm() {
 	# Never "up to date": DreamChecker runs inside the dm target and the push script's checks read this log.
 	rm -f deepquarry.dmb
 	DQ_DREAMCHECKER=1 DQ_DREAMCHECKER_AFTER=1 tools/build/build.sh dm || return 1 # the verdict the push requires; local builds skip it
+}
+job_dreamchecker() {
+	# DQ_DREAMCHECKER=1 makes a missing DreamChecker an error the verdict below catches (no 'dream-checker: passed' line), never a silent pass.
+	DQ_DREAMCHECKER=1 tools/build/build.sh dream-checker
 }
 job_ratchets() {
 	# The analyze caches are content-addressed and stamped with the engine's own source hash and lint_scopes.toml (tools/analyze/README.md,
@@ -313,11 +320,12 @@ job_ratchets() {
 job_tgui() { tools/build/build.sh tgui-lint; }
 job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
 	# Compiled harnesses are cached by source hash (tools/build/lib/analyze_test_cache.md); every harness still runs.
-	tools/build/build.sh analyze-test
+	CARGO_TARGET_DIR="$(bash tools/dq_cargo_target.sh analyze-test)" tools/build/build.sh analyze-test
 }
 
 [ "$run_tests" -eq 1 ] && names+=(tests)
 [ "$no_dm" -eq 1 ] && names+=(ratchets) || names+=(dm ratchets)
+if [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then names+=(dreamchecker); fi
 [ "$tgui" -eq 1 ] && names+=(tgui)
 [ "$analyze_tests" -eq 1 ] && names+=(analyze_tests)
 echo "== gates in parallel: ${names[*]}$([ "$run_tests" -eq 1 ] && echo " (${#tests[@]} test(s): ${tests[*]:0:6}$([ ${#tests[@]} -gt 6 ] && echo ' ...'))")"
@@ -362,6 +370,17 @@ if printf '%s\n' "${names[@]}" | grep -qx dm && [[ " ${failed[*]-} " != *" dm "*
 	else
 		echo "dq_merge_gates: the production build ran but DreamChecker/the compiler did not report a clean result; see $dm_log" >&2
 		failed+=(dm)
+	fi
+fi
+
+# The standalone DreamChecker job (the train's gate): a clean result needs its own pass line and zero diagnostics.
+if printf '%s\n' "${names[@]}" | grep -qx dreamchecker && [[ " ${failed[*]-} " != *" dreamchecker "* ]]; then
+	dc_log="data/merge-gates/$short.dreamchecker.log"
+	if grep -q "dream-checker: passed" "$dc_log" && grep -q "Found 0 diagnostics" "$dc_log"; then
+		dc_ok=1
+	else
+		echo "dq_merge_gates: DreamChecker ran but did not report a clean result (or did not run); see $dc_log" >&2
+		failed+=(dreamchecker)
 	fi
 fi
 
@@ -415,6 +434,7 @@ fi
 echo "$sha" >"data/merge-gates/$short.ratchets.ok"
 echo "$sha" >"data/merge-gates/$short.analyze.ok"
 if [ "$dm_ok" -eq 1 ]; then echo "$sha" >"data/merge-gates/$short.dm.ok"; fi
+if [ "$dc_ok" -eq 1 ]; then echo "$sha" >"data/merge-gates/$short.dreamchecker.ok"; fi
 tests_json=""
 passed=0
 nfailed=0

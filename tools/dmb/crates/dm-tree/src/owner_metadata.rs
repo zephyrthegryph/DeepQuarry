@@ -208,6 +208,9 @@ pub struct MetadataResolutionStats {
 pub struct RetainedMetadata {
     store: Store,
     current_demands: demanded_selections::CurrentDemands,
+    /// False for a one-shot compile: name-demand tokens are issued but their receipts are not stored, because nothing
+    /// outlives the request to read them.
+    retain_receipts: bool,
     hits: AtomicUsize,
     common_resolved_members: AtomicUsize,
     structurally_reused_members: AtomicUsize,
@@ -218,7 +221,15 @@ impl RetainedMetadata {
         Self { store: Store::shared(owner), ..Self::default() }
     }
     pub(crate) fn fresh(&self) -> Self {
-        Self { store: self.store.fresh(), ..Self::default() }
+        Self { store: self.store.fresh(), retain_receipts: self.retain_receipts, ..Self::default() }
+    }
+    /// Issue name-demand tokens without storing their receipts (a one-shot compile).
+    pub(crate) fn without_receipts(mut self) -> Self {
+        self.retain_receipts = false;
+        self
+    }
+    pub(super) fn retains_receipts(&self) -> bool {
+        self.retain_receipts
     }
 }
 impl Default for RetainedMetadata {
@@ -226,6 +237,7 @@ impl Default for RetainedMetadata {
         Self {
             store: Store::current_revision(),
             current_demands: Default::default(),
+            retain_receipts: true,
             hits: AtomicUsize::new(0),
             common_resolved_members: AtomicUsize::new(0),
             structurally_reused_members: AtomicUsize::new(0),

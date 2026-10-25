@@ -712,6 +712,13 @@ lease_once() {
 	echo "$wt"
 }
 
+train_watchdog() { # restart the train's integrator when lanes are queued and none is running (a fast no-op otherwise); detached, never blocks
+	[ "${DQ_TRAIN_NO_START:-0}" = 1 ] && return 0
+	[ -f "$REPO/tools/dq_train.sh" ] || return 0
+	( nohup bash "$REPO/tools/dq_train.sh" ensure >/dev/null 2>&1 & ) >/dev/null 2>&1
+	return 0
+}
+
 cmd_release() {
 	local target="" force=0 keep=0 i found="" tphys="" sphys="" old="$PWD"
 	while [ $# -gt 0 ]; do
@@ -847,8 +854,8 @@ cmd_path() {
 cmd="${1:-}"
 [ $# -gt 0 ] && shift
 case "$cmd" in
-	lease) cmd_lease "$@" ;;
-	release) cmd_release "$@" ;;
+	lease) cmd_lease "$@"; rc=$?; train_watchdog; exit "$rc" ;;
+	release) cmd_release "$@"; rc=$?; train_watchdog; exit "$rc" ;;
 	status) cmd_status ;;
 	path) cmd_path "$@" ;;
 	cancel) cmd_cancel "$@" ;;

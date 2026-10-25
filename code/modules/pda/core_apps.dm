@@ -458,8 +458,8 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 		EXPIRY_STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
 		newjob.current_positions++
-		user.mind.assigned_role = pda().id.rank
-		user.mind.role_alt_title = pda().id.assignment
+		user.mind.assigned_role = text_or_null(pda().id.rank)
+		user.mind.role_alt_title = text_or_null(pda().id.assignment)
 		announce.autosay("[pda().id.registered_name] has moved On-Duty as [pda().id.assignment].", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))
 	return
 

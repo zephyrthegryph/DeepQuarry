@@ -417,7 +417,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 
 	dna?.base_species = bodytype
 	species?.set_base_species(bodytype)
-	species?.vanity_base_fit = bodytype
+	species?.vanity_base_fit = text_or_null(bodytype)
 	if(istype(species, /datum/species/shapeshifter))
 		set_wrapped_bodytype(bodytype)
 

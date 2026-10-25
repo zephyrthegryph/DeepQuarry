@@ -123,7 +123,7 @@
 	return H.has_status(STAT_PARALYZED)
 
 /datum/unit_test/life_om/breath_hazard/proc/suffocating()
-	return H.alerts?["oxy"] || H.failed_last_breath
+	return H.alerts?["oxy"] || sparse_get_or(H, failed_last_breath, 0)
 
 /datum/unit_test/life_om/breath_hazard/proc/short_of_breath()
 	var/datum/physiology/P = H.body?.physiology
