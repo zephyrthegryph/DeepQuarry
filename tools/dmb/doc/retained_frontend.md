@@ -621,6 +621,75 @@ Tools: `bench/alloc_sites_diff.py` (growth by call path between two probe blocks
 frames are symbolised). `bench/shared_store_equiv.sh` now fails on a byte difference (it only noted one before) and takes `BASE_DIR`, the
 outputs of an earlier compiler build of root A, as a second oracle.
 
+### Shared store, part 3 (lane `compiler/shared-store-3`, 2026-10-25)
+
+Target of the user unchanged: at most about 1 GB per extra session (second worktree root, test variant). The method of part 2
+(per-session indexes over shared content must themselves be shared, a session keeping only what differs) was applied to every owner whose
+content is a pure function of shared content; measured with `bench/shared_store_probe.sh` on the allocation-sites release build (requested
+live, GB; root A production, then the A test world `-DCBT -DCIBUILDING -DCITESTING -DDEBUG`, then root B production; root B is a copy of
+A with a comment line in two files), the oracle of every step being `bench/shared_store_equiv.sh` with `BASE_DIR` set to the outputs of
+the build before this lane (byte identical `.dmb` and `.rsc`, pair ids, both worlds, interleaved roots, no marker leak). One probe differs
+from another by about 0.05 GB on its own.
+
+| Step | root A | + test variant | + root B | sum |
+|---|---|---|---|---|
+| part 2 tip (`e14bb82ba4`) | 7.10 | +3.96 | +2.69 | 13.75 |
+| 1. lease rosters are one bit per claim | 6.85 | +3.77 | +2.50 | 13.13 |
+| 2. prepared sources and modifier locators shared by content | 6.87 | +3.68 | +2.25 | 12.80 |
+| 3. segment lines are runs over the prepared source | 6.78 | +3.56 | +2.16 | 12.50 |
+| 4. leaf proofs 32 B; procedure word pools | 6.78 | +3.52 | +2.10 | 12.40 |
+| 5. (master merged, new tree) owner storage facts and expansion inputs shared | 6.81 | +3.48 | +1.99 | 12.28 |
+
+The target is not met: a second root now costs about 2.0 GB and the test variant about 3.5 GB. Step 5 was measured on a tree that
+master had changed (354 files), so its row is not comparable with step 4's; its own effect on root B is about -0.1 GB.
+
+* **Lease rosters (`dm-session/src/artifacts/leased.rs`).** The per-lease `BTreeMap<key, pointer>`, the global claim index
+  `BTreeMap<pointer, (hash, count)>` and the deferred claim list are gone. Each `Variant` carries `Holders`, the set of lease slots
+  (128 per core, two atomic words) claiming it; a lease's roster is the variants naming its slot, at most one per exact key. A claim of a
+  stored variant is `fetch_or` of one bit under the read lock (no deferral, nothing pending); a claim that replaces another variant of
+  the same key takes the write lock and frees the replaced variant when no other lease holds it. A lease drop or `retain_*` walks the
+  buckets once. Cost per variant: 16 bytes whatever the number of sessions, so a session whose claims equal the base costs one bit per
+  claim. The pressure model no longer charges a roster entry per claim (a claim adds no index bytes); three pressure tests that asserted
+  claim growth changing the charge now assert it does not.
+* **Prepared sources (`prepared_source::shared_prepared`).** Lexical preparation is a pure function of the decoded text, so every
+  producer (capture workers, the directive pass fallback, the native input scan, the prepared input store) goes through a weak
+  process-wide pool keyed by the text digest and verified by the text: the text, its comment-stripped view and the line tables exist once
+  per distinct file. Modifier locators (`shared_locator`) are pooled the same way by their key bytes: each write keeps one key and one
+  input allocation across sessions.
+* **Segment lines (`dm-preprocess/src/regions/segment_lines.rs`).** An `ExpansionSegment` held a copy of every active logical line (56
+  bytes each, 1.7 million lines per plan, held again by every session and variant). It now holds the shared `PreparedSource` and the runs
+  of line indexes it took (conditional directives break a run); iteration yields `PreparedLineView`s. `expansion.rs`, `region_memo.rs`
+  and the directive plan comparison read views instead of `&RegionLine`.
+* **Procedure words (`symbolic/image_pool.rs`, `debug_strip.rs`).** Linked and wired words are interned by content in a daemon-only
+  weak pool (`shared_store::active()` gates it; one-shot compiles and unit tests keep private words), which also makes the wire cache of
+  a shared artifact, keyed on the identity of its base words, hit across sessions. A shared image stripped of its debug ops for a build
+  without `DEBUG` is stripped once (by image address) instead of once per session.
+* **Leaf proofs.** A derived entry no longer carries the query it already holds in its leaf: 64 to 32 bytes per read.
+* **Owner storage facts and expansion inputs.** `RetainedStorage` keeps the per-owner facts in a lease on a core of
+  `SharedNormalizedDeclarations` (the engine-scoped owner dm-tree already shares its normalized rows through); the uniqueness
+  certificates stay private because their tokens are issued by the process for one tree. `ExpansionInputs` leases a core that
+  `shared_store::activate` creates through `dm_preprocess::regions::share_expansion_inputs()` (`DMB_SHARED_STORE_PRIVATE=expansion`
+  keeps it private); every hit is still replayed against the asking plan.
+
+What was looked at and not done, with the growth of root B it would address (MB, step 4 probe):
+
+* **Domain version tokens.** The `versions` list of every rebound lowering record (124, the largest remaining site, in
+  `SessionSymbolicMemo::lookup_record`: 64 bytes per read domain), the domain memo (55), `RetainedMetadata` name demand (62) and
+  `MetadataDependencies` (59) hold tokens issued by process-wide counters (`NEXT.fetch_update` in `owner_metadata`, `storage_uniqueness`,
+  `procedure_static_layout`, `constant_resolution_artifacts`), so two sessions with identical declarations get different tokens and a rebound
+  record cannot reuse its predecessor's list. Issuing tokens as a digest of what they certify (as `query_db` answers already are) would
+  make them equal across sessions and let all four owners share; it changes the meaning of every certificate and needs its own design.
+  A `(domain, token)` list stored as a shared domain list plus a token array would save about 75 percent of the 124 but touches 470 sites.
+* **Whole-project vectors of the preprocessor** (plan items and regions 119, joined text 60, origin arena 44, macro environments 39, region
+  outputs 54): single allocations per plan, so two plans of nearly equal trees share nothing unless they are chunked per file. The
+  joined text is one `Emission` equality away from reuse only for identical trees.
+* **Output buffers** (`dmb::codec` 75, word lists 36): the retained encoded output of each session.
+* **ABI units hydrated from disk** (109): built from the session's own metadata.
+
+Tools: `bench/shared_store_probe.sh` and `bench/alloc_sites_diff.py` as before. Reading an allocation site: the report names the
+innermost frame with a line number; an inlined callee shows as its caller (`lookup_record` held the `versions` conversion), so the line
+number, not the function, names the site.
+
 ## Memory diet (lane `compiler/memory-diet`, 2026-10-24)
 
 Question from the user: why does the compiler keep the whole source in memory? Measured answer: it does not. One production
