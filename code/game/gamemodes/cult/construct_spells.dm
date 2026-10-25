@@ -437,12 +437,12 @@ CAPABILITIES(/obj/effect/forcefield/cult)
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
 CAPABILITIES(/obj/item/spell/construct)
+	setup(PROC_REF(require_owner), mapload = TRUE)
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 
-// ALLOW(init/INSTANCE_STATE): a construct spell made without an owner mob is refused at creation
-/obj/item/spell/construct/Initialize(mapload)
-	. = ..()
+/// A construct spell made without an owner mob is discarded at creation.
+/obj/item/spell/construct/proc/require_owner(mapload)
 	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export DQ_LEGACY_LAND=1 # the retired per-lane scripts are still tested until they are deleted
 # Self-test of tools/dq_land.sh in a scratch repository with stub merge tools (no compiler, no world, no machine slots):
 #   1. master unmoved: one proof outside the lock, the lock held only for the merge + gates + push, the lane lands;
 #   2. master moves while the lane is proved: the lock is NOT taken for the stale proof, the lane is proved again, then lands;

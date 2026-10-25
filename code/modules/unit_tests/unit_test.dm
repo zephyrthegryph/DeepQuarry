@@ -1280,7 +1280,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 			touched[declared.loc] = TRUE
 	unit_test_air_guard(air_before, hotspots_before, test_path, found = state_leaks, touched = touched)
 	cost_mark = guard.spend("air", cost_mark)
-	unit_test_solid_guard(solids_before, test_path, state_leaks, touched)
+	unit_test_solid_guard(solids_before, test_path, state_leaks, touched, guard)
 	cost_mark = guard.spend("floors", cost_mark)
 	guard.judge_machines(test_path, touched, state_leaks)
 	cost_mark = guard.spend("machines", cost_mark)
@@ -1598,7 +1598,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 
 /// Logs "STATE LEAK" for turfs whose solid temperature the test changed (and adds it to `found`, which fails the test). One batched read and one pass find the floors
 /// that moved at all; those are judged (the map's cryogenic rooms, colder than UNIT_TEST_SOLID_COLD_ROOM_KELVIN, are not) and then taken as the session's baseline.
-/proc/unit_test_solid_guard(list/before, test_path, list/found, list/touched)
+/proc/unit_test_solid_guard(list/before, test_path, list/found, list/touched, datum/unit_test_guard/guard)
 	var/list/turfs = before["turfs"]
 	var/list/was = before["k"]
 	var/list/moved = unit_test_solid_changed(before)
@@ -1615,6 +1615,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		var/kelvin = now[k]
 		// The map's cryogenic rooms (the processing strata, ~100 K) warm toward room temperature on their own on an idle world, as the pumps there do.
 		if(kelvin < 0 || was[i] <= UNIT_TEST_SOLID_COLD_ROOM_KELVIN || abs(kelvin - was[i]) <= UNIT_TEST_SOLID_LEAK_KELVIN)
+			continue
+		// A floor in a room whose air drifted on its own (the telecomms rooms cool by themselves) follows the room: a long test sees it move, it did not cause it.
+		if(guard?.is_drifted_floor(T))
+			log_test("FLOOR GUARD: [T] ([T.x],[T.y],[T.z]) in [get_area(T)] followed its room's drift: [round(was[i], 0.1)] -> [round(kelvin, 0.1)] K (not a leak)")
 			continue
 		leaked++
 		moves["[T] ([T.x],[T.y],[T.z]) in [get_area(T)]: [round(was[i], 0.1)] -> [round(kelvin, 0.1)] K"] = abs(kelvin - was[i])

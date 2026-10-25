@@ -59,6 +59,13 @@ gate_ensure_result() {
 	echo "$line" >>"$1"
 }
 
+# gate_result_is_verdict <log>: the last FOCUSED RESULT line is a real verdict: "N passed, M failed" or the rerun guard's "(not rerun)".
+gate_result_is_verdict() {
+	local res
+	res="$(grep -h '^FOCUSED RESULT:' "$1" 2>/dev/null | tail -n 1)"
+	[[ "$res" =~ ^FOCUSED\ RESULT:\ [0-9]+\ passed,\ [0-9]+\ failed ]] || [[ "$res" == "FOCUSED RESULT: (not rerun)"* ]]
+}
+
 gate_tests_with_retry() {
 	local focused="${DQ_FOCUSED_TEST_CMD:-bash tools/dq_focused_test.sh}" log rc json names n first_line res passed failed rlog
 	log="$(mktemp)"
@@ -66,6 +73,11 @@ gate_tests_with_retry() {
 	DQ_GATE_FOCUSED_MAX_MIN="$(gate_cap_minutes $#)" $focused "$@" 2>&1 | tee "$log"
 	rc=${PIPESTATUS[0]}
 	gate_ensure_result "$log" "$rc"
+	# A zero exit without a pass/fail count (a cap or kill that left no result, "no results", CAPPED) is not a pass.
+	if [ "$rc" -eq 0 ] && ! gate_result_is_verdict "$log"; then
+		echo "== GATE: the focused run exited 0 but printed no pass/fail result; treating it as a failure (never a pass)"
+		rc=1
+	fi
 	if [ "$rc" -eq 0 ] || [ "${DQ_GATE_RETRY:-1}" = 0 ]; then rm -f "$log"; return "$rc"; fi
 	# A run killed at its wall-clock cap is a verdict on the size of the list: another run would only spend the cap again
 	# (the batch train, tools/dq_train.sh, reads the cap line and shrinks the batch instead).
@@ -86,7 +98,22 @@ gate_tests_with_retry() {
 			n=${#names[@]}
 			echo "GATE FLAKE: ${names[*]} failed once and passed in isolation; recorded in $(flake_ledger); needs a fix lane (tools/dq_flake_log.sh)"
 			flake_record flake "${names[*]}" "$first_line"
-			echo "FOCUSED RESULT: $(( ${passed:-0} + n )) passed, $(( ${failed:-0} - n )) failed (json: ${json:-none}) [recovered by an isolated rerun: ${names[*]}]"
+			# The first run's record still says "failed": write a merged record beside it (same commit, the recovered tests moved from
+			# failed to passed, the flaked names kept under "recovered") so the counts on the result line match the JSON it names.
+			rjson="$json"
+			if [ -n "$json" ] && [ -f "$json" ]; then
+				rjson="${json%.json}.recovered.json"
+				node -e '
+					const fs = require("fs");
+					const r = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+					const names = process.argv[3].split(" ").filter(Boolean);
+					const set = new Set(names.map(n => "/datum/unit_test/" + n));
+					r.failed = (r.failed || []).filter(t => !set.has(t));
+					r.recovered = names;
+					r.counts = Object.assign({}, r.counts, { passed: r.counts.passed + names.length, failed: r.counts.failed - names.length });
+					fs.writeFileSync(process.argv[2], JSON.stringify(r));' "$json" "$rjson" "${names[*]}" || rjson="$json"
+			fi
+			echo "FOCUSED RESULT: $(( ${passed:-0} + n )) passed, $(( ${failed:-0} - n )) failed (json: ${rjson:-none}) [recovered by an isolated rerun: ${names[*]}]"
 			echo "KNOWN FAILURES CHECK: 0 NEW, 0 KNOWN (the failures above passed in an isolated rerun: flakes)"
 			rm -f "$log" "$rlog"
 			return 0

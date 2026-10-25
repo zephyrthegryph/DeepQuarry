@@ -462,6 +462,14 @@ focused_cap_minutes() {
 	fi
 	echo "$cap"
 }
+# Tools are prep, not test time: a compiler missing from the shared cache (a push changed tools/dmb and nothing published it yet) is
+# built here, before the wall-clock guard starts, so a 10+ minute cargo build can never eat the run's cap. A cache hit costs about 2 s.
+case "${DQ_COMPILER:-}" in dreammaker | byond) ;; *)
+	if [ "${DQ_FOCUSED_NO_TOOL_PREBUILD:-0}" != "1" ] && [ -f tools/build/build.sh ]; then
+		echo "dq_focused_test: preparing the compiler (shared cache; not counted against the cap)"
+		bash tools/build/build.sh dmbc || echo "dq_focused_test: compiler prebuild failed; the run builds it itself" >&2
+	fi ;;
+esac
 CAP_MIN="$(focused_cap_minutes "$allow_exhaustive")"
 CAP_MARKER="data/focused-runs/cap.$$.marker"
 GUARD_LOG="data/focused-runs/guard.$$.log"

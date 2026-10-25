@@ -34,6 +34,8 @@ case "$STUB_MODE" in
 	twice)
 		echo '{"failed":["/datum/unit_test/dq_real_bug"],"counts":{"passed":4,"failed":1,"skipped":0}}' >run.json
 		echo "FOCUSED RESULT: 4 passed, 1 failed (json: run.json)"; exit 1 ;;
+	capped0) echo "FOCUSED RUN CAPPED: the 10 minute wall-clock cap was hit"; echo "FOCUSED RESULT: CAPPED (run) after 10 min of the 10 min cap, 0s queued and not counted; the tests did not finish"; exit 0 ;;
+	silent0) echo "killed before a result"; exit 0 ;;
 	infra)
 		if [ "$n" -eq 1 ]; then echo "Native executable changed during compilation."; echo "FOCUSED RESULT: no results (exit code 1; the world died or the build failed)"; exit 1; fi
 		echo "FOCUSED RESULT: 5 passed, 0 failed (json: none)"; exit 0 ;;
@@ -56,6 +58,10 @@ rc="$(run twice)"
 check "a test that fails twice is a failure" '[ "$rc" = 1 ] && [ "$(wc -l <calls.log)" = 2 ] && [ ! -f "$DQ_FLAKE_LEDGER" ]'
 rc="$(run infra)"
 check "an infrastructure failure reruns the whole list once" '[ "$rc" = 0 ] && [ "$(wc -l <calls.log)" = 2 ] && sed -n 2p calls.log | grep -q -- "--force a b c" && grep -q "infra" "$DQ_FLAKE_LEDGER"'
+rc="$(run capped0)"
+check "a CAPPED result with exit 0 is a failure, not a pass" '[ "$rc" = 1 ] && [ "$(wc -l <calls.log)" = 1 ]'
+rc="$(run silent0)"
+check "an exit 0 with no result line is a failure, not a pass" '[ "$rc" = 1 ] && grep -q "^FOCUSED RESULT: CAPPED or killed before a result" out.log'
 rc="$(DQ_GATE_RETRY=0 run twice)"
 check "DQ_GATE_RETRY=0 turns the retry off" '[ "$rc" = 1 ] && [ "$(wc -l <calls.log)" = 1 ]'
 
