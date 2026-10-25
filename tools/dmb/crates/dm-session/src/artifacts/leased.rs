@@ -238,6 +238,36 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
         drop(detached);
         drop(removed);
     }
+    /// Keep this lease's claims on keys the predicate accepts and release the rest; sibling leases are untouched.
+    /// For rosters that are "everything except" a computable set.
+    pub fn retain_where(&self, mut keep_key: impl FnMut(&[u8]) -> bool) {
+        self.flush_deferred();
+        let mut state = self
+            .store
+            .state
+            .write()
+            .unwrap_or_else(|error| error.into_inner());
+        let roster = state.leases.get_mut(&self.id).expect("live lease");
+        let doomed: Vec<_> = roster
+            .keys()
+            .filter(|key| !keep_key(key.as_ref()))
+            .cloned()
+            .collect();
+        let removed: Vec<_> = doomed
+            .into_iter()
+            .map(|key| {
+                let pointer = roster.remove(&key).expect("current claim");
+                (key, pointer)
+            })
+            .collect();
+        let detached: Vec<_> = removed
+            .iter()
+            .filter_map(|(_, pointer)| release(&mut state, *pointer))
+            .collect();
+        drop(state);
+        drop(detached);
+        drop(removed);
+    }
     /// This visits the shared core, including sibling leases. Addresses identify
     /// actual common allocations; private lease/index nodes remain unreported.
     pub fn visit_storage(&self, visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>)) {

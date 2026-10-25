@@ -302,3 +302,25 @@ fn bounded_shared_roster_callbacks_can_admit_in_parallel_outside_core_lock() {
 
 #[path = "rebind_tests.rs"]
 mod rebind_tests;
+#[test]
+fn retain_where_releases_only_this_leases_rejected_keys() {
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
+    let a = store.lease();
+    let b = store.lease();
+    let keep: Arc<[u8]> = Arc::from(b"keep-1".as_slice());
+    let drop_key: Arc<[u8]> = Arc::from(b"drop-1".as_slice());
+    a.insert_with_owned(Arc::clone(&keep), reads(1), vec![], 3, || 1).unwrap();
+    let doomed = a.insert_with_owned(Arc::clone(&drop_key), reads(1), vec![], 5, || 2).unwrap();
+    let shared = b.insert_with_owned(Arc::clone(&drop_key), reads(1), vec![], 5, || 2).unwrap();
+    assert!(Arc::ptr_eq(&doomed, &shared));
+    assert_eq!(store.admitted_bytes(), 8);
+    a.retain_where(|key| key.starts_with(b"keep"));
+    // The sibling lease still holds the shared variant; only `a` let go of it.
+    assert_eq!(store.admitted_bytes(), 8);
+    b.retain_where(|key| key.starts_with(b"keep"));
+    drop(doomed);
+    drop(shared);
+    assert_eq!(store.admitted_bytes(), 3);
+    assert!(a.visit_explained(&keep, &Host(1), &mut |_| true).0.is_some());
+    assert!(a.visit_explained(&drop_key, &Host(1), &mut |_| true).0.is_none());
+}
