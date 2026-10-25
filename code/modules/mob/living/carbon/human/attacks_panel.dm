@@ -35,7 +35,7 @@ CAPABILITIES(/datum/attacks_panel)
 	var/list/rows = list()
 	for(var/datum/unarmed_attack/u_attack in host.species.unarmed_attacks)
 		rows += list(list(
-			"ref" = "\ref[u_attack]",
+			"ref" = ref_token(u_attack),
 			"name" = u_attack.attack_name,
 			"is_default" = (u_attack == host.default_attack),
 		))

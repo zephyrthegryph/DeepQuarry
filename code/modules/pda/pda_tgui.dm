@@ -36,7 +36,7 @@
 				cat = list()
 				set_shortcut_cache_at(P.category, cat)
 				add_shortcut_cat_order(P.category)
-			cat |= list(list(name = P.name, icon = P.icon, notify_icon = P.notify_icon, ref = "\ref[P]"))
+			cat |= list(list(name = P.name, icon = P.icon, notify_icon = P.notify_icon, ref = ref_token(P)))
 
 		// force the order of a few core categories
 		set_shortcut_cat_order(list("General") \
