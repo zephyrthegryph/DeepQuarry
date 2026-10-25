@@ -496,6 +496,89 @@ target compared source mtimes against `dmb-bin/current`, which every checkout's 
 was "up to date" and `current` stayed on an old compiler (23d9d283) while newer dmbc changes landed; the target now decides by the
 source content key alone.
 
+## Shared store: one in-memory copy of every immutable value (lane `compiler/shared-store`, 2026-10-25)
+
+Sharing used to exist only on disk (the content-addressed dm-cache, shared by every worktree). In memory each retained session (one per
+compile root, and the test variant inside a session) decoded and owned a private copy of everything. The machine already ran one daemon
+(`tools/build/lib/dmbc_daemons.ts` has had no per-worktree namespace since `96f987daf0`; only a development build or an explicit
+`DMB_DAEMON_NAMESPACE` gets its own), so the duplication was between sessions inside one daemon, not between daemons.
+
+### Measurement
+
+`DMB_MEM_MARKS=1` (stage marks, see "Memory diet" below) also logs, in a daemon, what the shared store holds after every request, next
+to the allocation-sites report. Tools: `bench/shared_store_probe.sh` (one private daemon, roots compiled in order, retention policies that never
+shed a session, one `retained.after_request` block per request), `bench/alloc_sites_by_owner.py` (owner summary, `--diff A B` for growth),
+`bench/shared_store_equiv.sh` (equivalence), `bench/shared_store_bisect.sh` (which owner changed an output). Counting build, production
+`deepquarry.dme`, 4 workers, root A and root B two copies of the tree differing by a few comment lines (so what B adds is, to within those
+lines, byte-identical to what A already holds), then the test world (`-DCBT -DCIBUILDING -DCITESTING -DDEBUG`) of root A:
+
+| One daemon, requested-live (private), peak, wall | Before (`999733b646`) | After |
+|---|---|---|
+| root A, production | 7.17 GB (8.97), peak 10.9 GB, 179 s | 7.19 GB (8.93), peak 10.9 GB, 143 s |
+| + test variant of root A | +5.02 GB (15.09), peak 17.2 GB, 187 s | +4.82 GB (14.78), peak 16.7 GB, 129 s |
+| + root B, production | +4.63 GB (20.59), peak 22.6 GB, 103 s | +2.89 GB (18.11), peak 20.0 GB, 67 s |
+
+The target of at most 1 GB per extra session is not met: a second root now costs 2.9 GB instead of 4.6 GB and the test variant is nearly
+unchanged. What B added before, by owner (MB): preprocessor memo records 750 (`region_memo` 471, `directive_memo` 279), artifact stores
+(`leased`, `ObservedArtifactStore`, receipts) 580, initializer classification 221, lowering records and artifacts 220, PublicationStore 126,
+portable meanings 134, directives 124, link relocations 103. After: the memo records are gone, classification and the lowering records are
+claimed, not copied; what B still adds is per-session machinery (below).
+
+### Design as built (`dmbc/src/shared_store.rs`)
+
+One `SharedStore` lives in the daemon (`Shared`); `activate()` makes it the process store at daemon start, and unit tests and one-shot
+compiles never activate it, so their owners stay private. It holds:
+
+* **Memo records** (`SharedRecords`, was the per-session `ResidentMemo` store): decoded expansion, directive and fragment records, keyed by
+  content, one byte budget for the daemon (the old 8 GB cap). A session's `ResidentMemo` keeps only its own expansion admissions; releasing a
+  session clears the records only when it is the last holder.
+* **Artifact cores**: the `ObservedArtifactStore` behind each `PublicationStore::shared_current_revision(name)` (class projection owners and
+  types, header recipes, initializer classification, modifier facts, fragments, assemblies, startup artifacts, required types, type
+  creation order) and the class-projection and lowering-record stores. Each session keeps its own `ObservedArtifactLease` on the core (its
+  claim roster); a variant lives while any session's lease claims it, so the last session to release frees it. A shared variant is found
+  by exact key and validated against the asking session's own reads and local inputs exactly as a candidate read from disk is, so sharing
+  changes memory, never output. `with_limit(bytes)` owners (explicit aggregate budget) stay private.
+* **Receipt pools** (`receipt_pool(name)`): classification and ABI intern equal read groups daemon-wide (lowering already did).
+* **Per-leaf proof lists** (`query_db::LeafProofs`): the derived (query id, query, answer hash) list of a unit proof is computed once per
+  interned read leaf instead of once per unit and session (about 190 MB per session before).
+* `DMB_SHARED_STORE=0` keeps everything private, `DMB_SHARED_STORE_PRIVATE=name,name` keeps named owners private (`records`, `pools`,
+  `proofs`, core name prefixes), `DMB_MEM_MARKS=1` logs the store.
+* **Facts policy**: `ProcedureMemo::facts_policy` is the memo policy without the `DEBUG` byte, used by initializer classification and
+  modifier facts (which hold facts, not generated code) so the game and test variants claim the same artifacts. Code-holding caches keep the
+  full policy.
+* The default pair store moves from the drive root (`E:\.dmbd\pairs`) to `E:\dq-cache\dmbd\pairs`; the first compile moves an existing one
+  (`publish::migrate_store`), and the age sweep still covers the old location.
+
+Rule for sharing an owner: its key must name everything the value depends on (policy, build flags), because a shared core is read by sessions
+and variants whose per-variant stores used to keep unequal keys apart. Two owners broke that rule and were caught by the equivalence run, not
+by dmb-equiv: the lowered modified-instance initializer code carries DbgFile/DbgLine ops only when `DEBUG` is defined and its binding key did
+not say so (the test variant claimed the game variant's op-free code; 93 initializer procs lost their debug ops, bytes differed by 1,488 and
+`dmb-equiv` called it EQUIVALENT because it does not compare those ops). `Binding::modified` now carries the flag; fragment and assembly
+bindings carry the policy in their key.
+
+### Equivalence
+
+`bench/shared_store_equiv.sh` compiles every (root, flavour) cold in its own daemon with sharing off, then the same list through ONE daemon
+with sharing on, interleaved (A game, B game, A test, B test, B game, A game), each phase with its own pair store so no stored record answers
+the shared run. Required per output: the reference pair id, byte identity of `.dmb` and `.rsc`, `dmb-equiv --all --ignore-debug`
+EQUIVALENT, and the other root's marker proc absent (each root carries `MARKER-A`/`MARKER-B`, read back with `dmb-equiv dump-proc`). Result,
+final tree: all six outputs byte-identical to their cold references for both worlds (production and `-DCBT -DCIBUILDING -DCITESTING
+-DDEBUG`), no marker leak. In-tree test: `shared_store_tests.rs` (child process with the store active, fresh oracles with sharing off,
+alternating edits of two roots); `leases_of_two_sessions_share_one_variant` pins the lease semantics. `cargo test` of dmbc, dm-session,
+dm-query and dm-preprocess pass.
+
+### What is left, by size
+
+Per-session owners that still duplicate content-identical data (B's growth after this change, MB): answer table `RequestAnswers` 338 (one
+144-byte slot per answered query, about 1.6 million per session), lowering record shells `symbolic_input` 146 plus their stores 178 (each
+session rebinds a claimed record with its own local certificate and key), directive plans 127, classification receipts 113, domain version
+memo 85, retained image `codec` 75, link relocations 100 (production) to 300 (test), joined text and prepared sources 120. The test variant
+cannot share its lowered code with the game variant while `DEBUG` selects whether debug ops are emitted during lowering: the lowering policy
+carries the flag, so all 93,000 bodies are recomputed and stored twice. Emitting the ops always and stripping them at link time for builds
+without `DEBUG` would make lowering records variant-independent (the strip is a removal of opcode 0x84/0x85 instructions; emission of other
+instructions does not depend on them), and is the largest remaining owner for the test variant. Sharing the answer table needs the
+bookkeeping (`request`, `born`, `changed`, `base`) split from the content-defined value (`hash`, `positive`, `query`) of a slot.
+
 ## Memory diet (lane `compiler/memory-diet`, 2026-10-24)
 
 Question from the user: why does the compiler keep the whole source in memory? Measured answer: it does not. One production

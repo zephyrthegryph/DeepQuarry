@@ -21,7 +21,7 @@ pub(crate) struct SelectedRosters {
 impl Default for SelectedRosters {
     fn default() -> Self {
         Self {
-            values: ObservedArtifactStore::current_revision(),
+            values: ObservedArtifactStore::shared_current_revision("required_types.selected_roster"),
         }
     }
 }

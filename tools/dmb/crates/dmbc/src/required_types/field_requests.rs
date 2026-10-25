@@ -12,7 +12,7 @@ pub(crate) struct FieldRequests {
 impl Default for FieldRequests {
     fn default() -> Self {
         Self {
-            values: ObservedArtifactStore::current_revision(),
+            values: ObservedArtifactStore::shared_current_revision("required_types.field_requests"),
         }
     }
 }

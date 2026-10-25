@@ -65,7 +65,7 @@ pub fn pair_max_age() -> Duration {
     Duration::from_secs(days * 86400)
 }
 /// The per-machine pair stores a build can publish into without `--output-store`: `%LOCALAPPDATA%/dmbd/pairs` and
-/// `<drive>:/.dmbd/pairs` on each drive (see `publish::default_store_path`). Only existing directories are returned.
+/// `<drive>:/dq-cache/dmbd/pairs` (and the legacy `<drive>:/.dmbd/pairs`) on each drive (see `publish::default_store_path`). Only existing directories are returned.
 pub fn known_pair_stores() -> Vec<std::path::PathBuf> {
     let mut stores = Vec::new();
     #[cfg(windows)]
@@ -74,6 +74,8 @@ pub fn known_pair_stores() -> Vec<std::path::PathBuf> {
             stores.push(std::path::PathBuf::from(local).join("dmbd/pairs"));
         }
         for letter in b'A'..=b'Z' {
+            stores.push(std::path::PathBuf::from(format!("{}:/dq-cache/dmbd/pairs", letter as char)));
+            // Legacy drive-root location, still swept so old pairs age out.
             stores.push(std::path::PathBuf::from(format!("{}:/.dmbd/pairs", letter as char)));
         }
     }
