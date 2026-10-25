@@ -226,6 +226,11 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   namespaces are registered under `DQ_DMBC_DAEMON_DIR`, and `DQ_DMBC_MAX_DAEMONS` (default 2, `0` = off) caps only those: starting a
   compile asks the least recently used ones with no live compile and idle over 10 minutes to retire (`dmbc --daemon-retire`, which
   drains builds first). Never kill a daemon process by hand; an evicted session just pays one full compile.
+  **Sessions share their values in memory.** One daemon-wide store (`tools/dmb/crates/dmbc/src/shared_store.rs`) holds the decoded memo
+  records and the artifact cores that every `PublicationStore` uses, content-keyed and validated by each consumer against its own inputs, so
+  a second worktree session or the test variant claims what the first one built instead of decoding a private copy. `DMB_SHARED_STORE=0`
+  turns it off, `DMB_SHARED_STORE_PRIVATE=<names>` keeps named owners private (bisection), `DMB_MEM_MARKS=1` logs what it holds. Design,
+  measurements and the rule for adding an owner: `tools/dmb/doc/retained_frontend.md` "Shared store".
 - **Icon repack** (`tools/dq_icons/`): `png` + `dmi.toml` into `icons/gen/`, dirty-checked.
   A fresh worktree seeds `icons/gen/` from the main checkout's copy (or `DQ_ICON_SEED`), so only
   changed icons repack. The repack pool is 4 workers (`DQ_ICON_WORKERS`), and the repack exits with
