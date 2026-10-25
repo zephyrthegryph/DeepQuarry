@@ -6,10 +6,6 @@
 /datum/persistent/paintings/SetFilename()
 	filename = "data/persistent/paintings.json"
 
-/datum/persistent/paintings/Initialize()
-	. = ..()
-	load_database()
-
 /// Reads the painting database from disk into the persistence system and loads the frames from it.
 /datum/persistent/paintings/proc/load_database()
 	if(fexists(filename))

@@ -4,6 +4,8 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 CAPABILITIES(/mob/observer/dead)
+	param(nameof(from_body), schema_ref(/mob), keep = FALSE, apply = PROC_REF(copy_from_body))
+	setup(PROC_REF(place_ghost), with_params = TRUE)
 	setup(PROC_REF(make_exonet_address))
 	setup(PROC_REF(join_ghostnet))
 	// a ghost acts only as an observer: its clicks and menu picks reach the observer() ops of what it looks at, nothing else (no hands, no interface)

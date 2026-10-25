@@ -233,13 +233,22 @@ SYSTEM_DEF(research)
 	// Initialize all freshly-created nodes (converts list vars to associative form).
 	for(var/id in techweb_nodes)
 		var/datum/techweb_node/TN = techweb_nodes[id]
-		TN.Initialize()
+		normalize_node_lists(TN)
 	if(!verify_techweb_nodes()) //Verify all nodes have ids and such.
 		CRASH("Invalid techweb nodes detected after initial registration")
 	calculate_techweb_nodes()
 	calculate_techweb_item_unlocking_requirements()
 	if(!verify_techweb_nodes()) //Verify nodes and designs have been crosslinked properly.
 		CRASH("Invalid techweb nodes detected after cross-linking")
+
+/// Boot step: makes a node's prereq, design and unlock id lists associative for lookup.
+/datum/system/research/proc/normalize_node_lists(datum/techweb_node/TN)
+	for(var/id in TN.prereq_ids)
+		LAZYSET(TN.prereq_ids, id, TRUE)
+	for(var/id in TN.design_ids)
+		LAZYSET(TN.design_ids, id, TRUE)
+	for(var/id in TN.unlock_ids)
+		TN.unlock_ids[id] = TRUE
 
 /datum/system/research/proc/initialize_all_techweb_designs(clearall = FALSE)
 	if(islist(techweb_designs) && clearall)

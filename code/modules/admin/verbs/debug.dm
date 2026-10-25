@@ -324,7 +324,7 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 		to_chat(user, span_warning("The target mob no longer exists."))
 		return
 
-	var/mob/observer/dead/ghost = new/mob/observer/dead(M,1)
+	var/mob/observer/dead/ghost = make(/mob/observer/dead, at = M, from_body = M, admin_ghosted = TRUE)
 	bind_player(ghost, M.ckey, as_ckey = TRUE)
 
 	message_admins(span_blue("[key_name_admin(user)] assumed direct control of [M]."))

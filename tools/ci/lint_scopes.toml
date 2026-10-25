@@ -177,6 +177,17 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/", "code/modules/benc
 # The codes an ALLOW(init/CODE) keep may carry (the lint holds the same list: tools/analyze/src/lints/init.rs REASON_CODES).
 reason_codes = ["INSTANCE_STATE", "CTOR_ARGS", "FRAMEWORK"]
 
+[lint.init.lists]
+# The closed list of types that ARE the Initialize() chain (doc/rewrite/proposals/init_phase0.md D1): no form runs before the chain they define, so
+# their Initialize() has no init_lines or world_reads sites and takes no ALLOW(init/...). Each entry is "/type = why". Adding one is a design change.
+init_roots = [
+  "/atom = the root of every Initialize() chain: it runs the double-init guard and calls the lifecycle forms (lifecycle_decls_init, caps_init) that every other type's forms depend on",
+  "/atom/movable = the movable layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom's Initialize()",
+  "/obj = the obj layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom/movable's Initialize()",
+  "/turf = the turf layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom's Initialize()",
+  "/datum/controller/global_vars = the boot step that makes GLOB: it runs before any type table exists, so no declared form can run first",
+]
+
 [lint.instance_list]
 # instance_list_lint.py: allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES): unit tests and
 # benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept verbatim.

@@ -29,6 +29,11 @@
 		own_init_starts(A, early_table, length(arguments) ? arguments[1] : FALSE, TRUE)
 		if(QDELETED(A))
 			return TRUE
+	// Then the early params: a setter whose output the chain reads (param(apply =, early = TRUE), code/engine/lifeforms/params.dm).
+	if((type_table_cache()[A.type] || table_of(A)).hook_flags & ENGINE_HOOK_LIFEFORMS)
+		params_early(A, length(arguments) ? arguments[1] : FALSE)
+		if(QDELETED(A))
+			return TRUE
 
 	// Type-table fast path (atom_type_table.dm): an Initialize-free type skips the proc chain.
 	// A mapper-set colour needs /atom/Initialize()'s colour handling, and extra New() args an override.

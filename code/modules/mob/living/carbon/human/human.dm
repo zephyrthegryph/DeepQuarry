@@ -27,7 +27,7 @@
 
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
-/// A human is named by its species, for its gender (rolls(), after set_species() ran before its parents' init).
+/// A human is named by its species, for its gender (rolls(), after set_species() ran in phase 0, before the Initialize() chain).
 /mob/living/carbon/human/proc/roll_species_name(datum/roller/R, target)
 	if(target == "name")
 		return real_name
@@ -41,17 +41,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
 /// The species a human is made as (its constructor param, or a species subtype's own), or null for the default.
 /mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
-
-// ALLOW(init/INSTANCE_STATE): a human sets its species before its parents' init build the body and the name
-/mob/living/carbon/human/Initialize(mapload)
-	// its DNA exists already (an early starting occupant): set_species() writes into it
-	if(!species)
-		if(species_at_make)
-			set_species(species_at_make)
-		else
-			set_species()
-
-	return ..()
 
 /// Its setup hook (setup() in the human's CAPABILITIES): its DNA, blood and alternate look, once its parents' init is done.
 /mob/living/carbon/human/proc/finish_human_init()

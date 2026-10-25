@@ -77,8 +77,8 @@ CAPABILITIES(/mob/living/carbon/human)
 	owns_many(nameof(side_effects), /datum/medical_effect)
 	owns_many(nameof(teleporters))
 	owns_one(nameof(crafting), starts = /datum/personal_crafting)
-	param(nameof(species_at_make), pos = 1)
-	owns_one(nameof(dna), /datum/dna, starts = /datum/dna, starts_args = NO_LOC, early = TRUE) // set_species() writes it before the parents' init
+	owns_one(nameof(dna), /datum/dna, starts = /datum/dna, starts_args = NO_LOC, early = TRUE) // set_species() writes it in phase 0
+	param(nameof(species_at_make), pos = 1, apply = PROC_REF(set_species), early = TRUE) // the species builds the body every init line of the human reads: phase 0, after the DNA
 	rolls(nameof(real_name), PROC_REF(roll_species_name))
 	rolls(nameof(name), PROC_REF(roll_species_name), from = list(nameof(real_name)))
 	derives(nameof(hide_underwear), PROC_REF(underwear_all_shown))

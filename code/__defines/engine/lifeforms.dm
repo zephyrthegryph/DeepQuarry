@@ -6,6 +6,7 @@
 
 // ---- entry kinds ----
 #define ENTRY_ROLLS "rolls"
+#define ENTRY_PRESET "preset"
 #define ENTRY_PARAM "param"
 #define ENTRY_BUILT_FROM "built_from"
 #define ENTRY_REGISTRY "registry"

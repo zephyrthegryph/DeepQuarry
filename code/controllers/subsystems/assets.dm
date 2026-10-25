@@ -35,7 +35,7 @@ CAPABILITIES(/datum/system/assets)
 	// get_asset_datum() builds an asset on first use, which is what the
 	// spritesheets and asset tests call. The full suite still loads everything.
 	if(unit_test_is_focused_run())
-		transport.Initialize(cache)
+		boot_transport()
 		return
 	#endif
 	for(var/type in typesof(/datum/asset))
@@ -44,5 +44,14 @@ CAPABILITIES(/datum/system/assets)
 			load_asset_datum(type)
 
 	asset_cache_save_hashes()
-	transport.Initialize(cache)
+	boot_transport()
 
+
+/// Boot step: hands the transport its preload list and, when configured, staggers the first asset send to each connected client.
+/datum/system/assets/proc/boot_transport()
+	transport.preload = cache.Copy()
+	log_world("Asset transport booted: [length(transport.preload)] assets, simple preload [CONFIG_GET(flag/asset_simple_preload) ? "on" : "off"].")
+	if (!CONFIG_GET(flag/asset_simple_preload))
+		return
+	for(var/client/C in GLOB.clients)
+		after(transport, 1 SECONDS, TYPE_PROC_REF(/datum/asset_transport, send_assets_slow), with = list(C, transport.preload))

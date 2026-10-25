@@ -55,14 +55,6 @@ CAPABILITIES(/datum/instrument)
 		id = "[type]"
 
 /**
- * Initializes the instrument, calculating its samples if necessary.
- */
-/datum/instrument/proc/Initialize()
-	if(instrument_flags & (INSTRUMENT_LEGACY | INSTRUMENT_DO_NOT_AUTOSAMPLE))
-		return
-	calculate_samples()
-
-/**
  * Checks if this instrument is ready to play.
  */
 /datum/instrument/proc/ready()

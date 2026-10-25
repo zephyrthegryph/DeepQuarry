@@ -5909,6 +5909,7 @@
 #include "code\engine\stats\activation.dm"
 #include "code\engine\lifeforms\forms.dm"
 #include "code\engine\lifeforms\rolls.dm"
+#include "code\engine\lifeforms\preset.dm"
 #include "code\engine\lifeforms\params.dm"
 #include "code\library\construction\transport.dm"
 #include "code\engine\lifeforms\registry.dm"

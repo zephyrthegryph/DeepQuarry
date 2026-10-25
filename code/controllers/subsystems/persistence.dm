@@ -19,7 +19,20 @@ SYSTEM_DEF(persistence)
 		if(initial(P.name))
 			P = new P
 			persistence_datums[P.type] = P
-			P.Initialize()
+			boot_persistent(P)
+
+/// Boot step for one persistence datum: reads its save file, drops insane tokens and applies the rest to the world.
+/datum/system/persistence/proc/boot_persistent(datum/persistent/P)
+	if(fexists(P.filename))
+		var/list/tokens = json_decode(file2text(P.filename))
+		for(var/list/token in tokens)
+			if(!P.CheckTokenSanity(token))
+				tokens -= token
+		P.ProcessAndApplyTokens(tokens)
+	if(istype(P, /datum/persistent/paintings))
+		var/datum/persistent/paintings/PP = P
+		PP.load_database()
+	log_world("Persistence booted: [P.type] ([P.filename])")
 
 /datum/system/persistence/on_shutdown()
 	for(var/thing in persistence_datums)

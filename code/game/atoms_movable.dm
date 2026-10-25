@@ -30,7 +30,6 @@
 	// recursive_listeners lives in code/datums/sparse_vars/movable_misc.dm
 	// listening_recursive lives in code/datums/sparse_vars/movable_misc.dm
 
-// ALLOW(init/FRAMEWORK): the movable base of the init chain runs its per-instance setup
 /atom/movable/Initialize(mapload)
 	. = ..()
 	movable_instance_setup()
