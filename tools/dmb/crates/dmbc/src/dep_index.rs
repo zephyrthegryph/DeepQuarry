@@ -60,6 +60,10 @@ pub struct StageCounts {
     /// Reads of a certified record answered by the typed sidecar, and reads that had none.
     pub typed: AtomicU64,
     pub untyped: AtomicU64,
+    /// Records computed (not replayed) this request and noted as current when they were staged.
+    pub staged: AtomicU64,
+    /// Untyped reads by query kind and the answer's kind (`DMB_DEP_INDEX_KINDS=1`).
+    kinds: Mutex<std::collections::BTreeMap<(String, &'static str), u64>>,
 }
 
 struct WorldSet {
@@ -82,6 +86,12 @@ pub struct DepIndex {
 pub fn verify() -> bool {
     static VERIFY: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *VERIFY.get_or_init(|| std::env::var_os("DMB_DEP_INDEX_VERIFY").is_some_and(|value| value == "1"))
+}
+
+/// `DMB_DEP_INDEX_KINDS=1`: break the reads without a portable answer down by query and answer kind.
+fn kinds_enabled() -> bool {
+    static KINDS: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *KINDS.get_or_init(|| std::env::var_os("DMB_DEP_INDEX_KINDS").is_some_and(|value| value == "1"))
 }
 
 /// Disabled by `DMB_DEP_INDEX=0`.
@@ -184,11 +194,12 @@ pub fn replay_reads(
     let mut current = Vec::with_capacity(reads.len());
     for (position, (query, expected)) in reads.iter().enumerate() {
         let domain = query.domain();
+        let mut counted_untyped: Option<&DepIndex> = None;
         if trusted && world_determines(domain) {
             let answer = typed
                 .get(position)
                 .and_then(Option::as_ref)
-                .map(dm_ir::PortableResolvedAnswer::restore)
+                .and_then(dm_ir::PortableResolvedAnswer::restore)
                 .filter(|answer| answer.canonical_bytes() == *expected);
             if let Some(answer) = answer {
                 if let Some((index, ..)) = certificate {
@@ -203,9 +214,13 @@ pub fn replay_reads(
             }
             if let Some((index, ..)) = certificate {
                 index.stage(scope).untyped.fetch_add(1, Ordering::Relaxed);
+                counted_untyped = Some(index);
             }
         }
         let answer = provider.resolve(*query);
+        if let Some(index) = counted_untyped.take().filter(|_| kinds_enabled()) {
+            index.stage(scope).note_kind(query, &answer);
+        }
         if !crate::lowering_memo_wire::initializer::portable(&answer)
             || answer.canonical_bytes() != *expected
         {
@@ -232,6 +247,31 @@ pub fn replay_reads(
     Some(current)
 }
 
+/// A record of `scope` was just computed by resolving through `provider`, so its reads are
+/// current under the provider's world: note it now, and the very next session certifies it
+/// instead of waiting for a replay to pass first.
+pub fn staged(
+    index: Option<&DepIndex>,
+    scope: Scope,
+    provider: Option<&dyn Resolver>,
+    key: &[u8],
+    reads: &[(ResolveQuery, Vec<u8>)],
+) {
+    let (Some(index), Some(provider)) = (index, provider) else {
+        return;
+    };
+    let Some(world) = DepIndex::world_of(provider) else {
+        return;
+    };
+    let id = record_id_in(
+        scope,
+        key,
+        reads.iter().map(|(query, answer)| (query, answer.as_slice())),
+    );
+    index.stage(scope).staged.fetch_add(1, Ordering::Relaxed);
+    index.note(world, id);
+}
+
 /// What `adopt` decided about one record.
 pub enum Adoption {
     /// Nothing to do: no world, already carrying the world's receipt, or no room for one.
@@ -240,6 +280,36 @@ pub enum Adoption {
     Certified { world: u128 },
     /// Not certified: if its reads pass, `DepIndex::note` records it.
     Pending { world: u128, id: u128 },
+}
+
+impl StageCounts {
+    fn note_kind(&self, query: &ResolveQuery, answer: &dm_ir::ResolvedMeaning) {
+        use dm_ir::ResolvedMeaning as M;
+        let text = format!("{query:?}");
+        let end = text
+            .find(|c: char| c == '(' || c == ' ' || c == '{')
+            .unwrap_or(text.len());
+        let answer = match answer {
+            M::ProcedureStatic(_) => "ProcedureStatic",
+            M::Unsupported(_) => "Unsupported",
+            M::Missing => "Missing",
+            M::Presence(_) => "Presence",
+            M::DeclaredType(_) => "DeclaredType",
+            M::InstanceField { .. } => "InstanceField",
+            M::Value(_) => "Value",
+            M::Slot { .. } => "Slot",
+            M::Symbol(_) => "Symbol",
+            M::Symbols(_) => "Symbols",
+            M::Members(_) => "Members",
+            M::IntrinsicProc { .. } => "IntrinsicProc",
+            M::RetainedProc { .. } => "RetainedProc",
+            M::Member { .. } => "Member",
+            M::Resource { .. } => "Resource",
+            M::Declaration { .. } => "Declaration",
+        };
+        let mut kinds = self.kinds.lock().unwrap_or_else(|error| error.into_inner());
+        *kinds.entry((text[..end].to_owned(), answer)).or_default() += 1;
+    }
 }
 
 impl DepIndex {
@@ -451,13 +521,21 @@ impl DepIndex {
     }
     pub fn summary(&self) -> String {
         let stage = |name: &str, counts: &StageCounts| {
+            let kinds = counts
+                .kinds
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .iter()
+                .map(|((query, answer), count)| format!(" {query}->{answer}:{count}"))
+                .collect::<String>();
             format!(
-                " {name}[certified={} replayed={} contradicted={} typed={} untyped={}]",
+                " {name}[certified={} replayed={} contradicted={} typed={} untyped={} staged={}{kinds}]",
                 counts.certified.load(Ordering::Relaxed),
                 counts.replayed.load(Ordering::Relaxed),
                 counts.contradicted.load(Ordering::Relaxed),
                 counts.typed.load(Ordering::Relaxed),
-                counts.untyped.load(Ordering::Relaxed)
+                counts.untyped.load(Ordering::Relaxed),
+                counts.staged.load(Ordering::Relaxed)
             )
         };
         format!(

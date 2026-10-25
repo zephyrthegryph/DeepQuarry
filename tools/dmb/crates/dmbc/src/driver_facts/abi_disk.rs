@@ -15,7 +15,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     sync::{Arc, OnceLock},
 };
-const SCHEMA: u32 = 0x0204_0014;
+const SCHEMA: u32 = 0x0204_0015;
 const ENGINE_SCHEMA: u32 = 0x0204_0011;
 const LIMIT: usize = 1024 * 1024;
 const VERSION: u32 = 4;
@@ -279,6 +279,7 @@ impl Transport {
         pure: Option<&[u8]>,
         artifact: &UnitArtifact,
         reads: &[dm_session::ResolverRead],
+        provider: Option<&dyn Resolver>,
     ) {
         if !observations::same_engine(&current.engine, &Arc::downgrade(&self.engine_owner)) {
             return;
@@ -300,7 +301,7 @@ impl Transport {
         if reads.iter().any(|read| !portable(&read.answer)) {
             return;
         }
-        let wire = UnitWire {
+        let mut wire = UnitWire {
             identity,
             key: key.to_vec(),
             proof,
@@ -312,14 +313,33 @@ impl Transport {
                 .collect(),
             typed: reads
                 .iter()
-                .map(|read| dm_ir::PortableResolvedAnswer::capture(&read.answer))
+                .map(|read| dm_ir::PortableResolvedAnswer::capture_declared(&read.answer))
                 .collect(),
         };
         if wire.validate().is_err() {
             return;
         }
-        let Ok(bytes) = dm_wire::encode_bounded(SCHEMA, &wire, LIMIT) else {
-            return;
+        // The reads were just computed through `provider`: the record is current under its world.
+        crate::dep_index::staged(
+            self.index.as_deref(),
+            crate::dep_index::Scope::Abi,
+            provider,
+            key,
+            &wire.reads,
+        );
+        let bytes = match dm_wire::encode_bounded(SCHEMA, &wire, LIMIT) {
+            Ok(bytes) => bytes,
+            Err(_) => {
+                // Declaration chains made the record too large: keep it with scalar answers only.
+                wire.typed = reads
+                    .iter()
+                    .map(|read| dm_ir::PortableResolvedAnswer::capture(&read.answer))
+                    .collect();
+                let Ok(bytes) = dm_wire::encode_bounded(SCHEMA, &wire, LIMIT) else {
+                    return;
+                };
+                bytes
+            }
         };
         let Ok(payload) = dm_cache::encode_variants(&[bytes]) else {
             return;

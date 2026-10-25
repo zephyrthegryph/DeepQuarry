@@ -90,6 +90,8 @@ pub(crate) struct Admission {
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
+    /// The dependency-index world the reads were computed under (a freshly lowered unit only).
+    world: Option<u128>,
 }
 impl Admission {
     pub(super) fn with_local(mut self, local: Option<local::Certificate>) -> Self {
@@ -279,6 +281,7 @@ impl CompletedInput {
                     &admission.versions,
                     &value,
                     &admission.relative_debug,
+                    admission.world,
                 );
             }
             if let Some(store) = admission.store {
@@ -634,6 +637,7 @@ impl SessionSymbolicMemo {
                 reads: receipt_groups::grouped(&self.receipt_groups, observer.reads()),
                 versions: observer.domain_receipts().into(),
                 relative_debug: record.relative_debug.clone(),
+                world: None,
             });
         }
         Some(input)
@@ -766,6 +770,7 @@ pub(super) fn admission(
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
     write_compact: bool,
+    world: Option<u128>,
 ) -> Option<Admission> {
     let store = memo.symbolic.clone();
     let disk = write_compact.then(|| memo.completion_writer()).flatten();
@@ -786,6 +791,7 @@ pub(super) fn admission(
         reads,
         versions,
         relative_debug,
+        world,
     })
 }
 pub(super) fn disk_admission<R: Resolver>(
@@ -807,6 +813,7 @@ pub(super) fn disk_admission<R: Resolver>(
         reads,
         versions: versions.into(),
         relative_debug: promotion.relative_debug.clone(),
+        world: None,
     })
 }
 pub(super) fn remember_selections<R: Resolver>(
@@ -863,6 +870,7 @@ pub(super) fn accepted_admission<R: Resolver>(
         reads,
         versions: current.domain_receipts().into(),
         relative_debug: accepted.value.relative_debug.clone(),
+        world: None,
     })
 }
 

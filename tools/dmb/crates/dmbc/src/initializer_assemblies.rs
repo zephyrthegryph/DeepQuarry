@@ -493,7 +493,7 @@ impl InitializerAssemblies {
         let semantic_reads = recorder.reads();
         if let Some(disk) = &self.disk {
             let roots = roots.iter().map(|root| root.value).collect::<Vec<_>>();
-            disk.stage_attempt(key, &roots, &semantic_reads, code, None, disk_attempt);
+            disk.stage_attempt(key, &roots, &semantic_reads, code, None, disk_attempt, recorder);
         }
         let reads = receipts::reads(key, semantic_reads);
         let versions = receipts::versions(recorder.domain_receipts());

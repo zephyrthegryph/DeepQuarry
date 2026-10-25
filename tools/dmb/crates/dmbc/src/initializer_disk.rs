@@ -281,6 +281,7 @@ impl Transport {
         code: &dm_codegen_byond::lower_resolver::ResolverProc,
         modified_policy: Option<&[u8]>,
         attempt: &mut TransportAttempt,
+        provider: &dyn dm_ir::Resolver,
     ) {
         if !self.writable {
             return;
@@ -327,6 +328,25 @@ impl Transport {
         ) else {
             return;
         };
+        // The reads were just computed through `provider`: the record is current under its world.
+        if self.index.is_some() {
+            let observer = provider.transparent_receipt_observer();
+            let world_source: Option<&dyn dm_ir::Resolver> = match &observer {
+                Some(observer) => Some(observer.provider()),
+                None if !provider.observes_reads() => Some(provider),
+                None => None,
+            };
+            crate::dep_index::staged(
+                self.index.as_deref(),
+                crate::dep_index::Scope::Initializer,
+                world_source,
+                &recipe.bytes,
+                &reads
+                    .iter()
+                    .map(|read| (read.query, read.answer.canonical_bytes()))
+                    .collect::<Vec<_>>(),
+            );
+        }
         // The same cache spool and terminal request publication own every record.
         if let Some(record) = self
             .policy

@@ -4,7 +4,7 @@ use super::{CodeWire, ResolverProc};
 use dm_codegen_byond::initializer::AssignmentFragment;
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 use serde::{Deserialize, Serialize};
-const SCHEMA: u32 = 0x0206_0021;
+const SCHEMA: u32 = 0x0206_0027;
 pub(crate) const LIMIT: usize = 8 * 1024 * 1024;
 #[derive(Serialize, Deserialize)]
 struct Payload {
@@ -151,7 +151,7 @@ pub(crate) fn encode_current_program(
     }
     let typed = reads
         .iter()
-        .map(|r| dm_ir::PortableResolvedAnswer::capture(&r.answer))
+        .map(|r| dm_ir::PortableResolvedAnswer::capture_declared(&r.answer))
         .collect::<Vec<_>>();
     let reads = reads
         .iter()
@@ -160,22 +160,36 @@ pub(crate) fn encode_current_program(
     if !valid_reads(&reads, &mandatory) {
         return None;
     }
-    dm_wire::encode_bounded(
-        SCHEMA,
-        &Payload {
-            recipe,
-            assembly,
-            modified_only,
-            roots,
-            mandatory,
-            reads,
-            typed,
-            code,
-            modified,
-        },
-        LIMIT,
+    let mut payload = Payload {
+        recipe,
+        assembly,
+        modified_only,
+        roots,
+        mandatory,
+        reads,
+        typed,
+        code,
+        modified,
+    };
+    dm_wire::encode_bounded(SCHEMA, &payload, LIMIT)
+        .or_else(|_| {
+            // Declaration chains made the record too large: keep it with scalar answers only.
+            payload.typed = payload
+                .typed
+                .iter()
+                .map(|answer| answer.clone().filter(is_scalar))
+                .collect();
+            dm_wire::encode_bounded(SCHEMA, &payload, LIMIT)
+        })
+        .ok()
+}
+/// Whether a typed answer is one `PortableResolvedAnswer::capture` would have produced.
+fn is_scalar(answer: &dm_ir::PortableResolvedAnswer) -> bool {
+    use dm_ir::PortableResolvedAnswer as A;
+    !matches!(
+        answer,
+        A::Symbols(_) | A::Members(_) | A::Member { .. } | A::Declaration { .. }
     )
-    .ok()
 }
 #[cfg(test)]
 pub(crate) fn omit_mandatory(bytes: &[u8]) -> Vec<u8> {
