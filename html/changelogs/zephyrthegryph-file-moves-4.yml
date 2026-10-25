@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved 150 fully migrated files from game/machinery, game/turfs, game/jobs and modules/emotes into code/content"
