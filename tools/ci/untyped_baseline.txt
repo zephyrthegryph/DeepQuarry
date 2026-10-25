@@ -14,9 +14,7 @@ call	code/contracts/acts/context.dm	@/datum/act/action::reason
 call	code/contracts/acts/context.dm	@/datum/act/action::reply
 call	code/contracts/acts/context.dm	@/datum/op_result::reason
 call	code/controllers/configuration/config_entry.dm	@/datum/config_entry::config_entry_value
-call	code/controllers/configuration/configuration.dm	@/datum/controller/configuration::motd
 call	code/controllers/configuration/configuration.dm	@/datum/controller/configuration::policy
-call	code/controllers/kernel/host.dm	@/datum/controller/kernel::processing
 call	code/controllers/subsystems/internal_wiki.dm	@/datum/system/internal_wiki::highest_cached_donator
 call	code/datums/beam.dm	@/datum/beam::target_oldloc
 call	code/datums/beam.dm	@/datum/beam::origin_oldloc
