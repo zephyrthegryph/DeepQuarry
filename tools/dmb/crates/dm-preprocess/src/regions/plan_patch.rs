@@ -31,7 +31,6 @@ struct Segment {
     occurrences: Range<usize>,
     regions: Range<usize>,
     items: Range<usize>,
-    entry: TraceEntry,
     sub: SubPlan,
 }
 impl Segment {
@@ -119,7 +118,6 @@ pub(super) fn patch<P: SourceProvider>(
             occurrences: index..index + entry.record.occurrences,
             regions: entry.region..entry.region + entry.record.regions,
             items: entry.item..entry.item + entry.record.items,
-            entry,
             sub,
         });
     }

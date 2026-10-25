@@ -289,6 +289,7 @@ impl RetainedSemanticTree {
     pub fn rebuilds(&self) -> u64 {
         self.rebuilds
     }
+    #[allow(unused_assignments)] // the stage timer is re-armed after the last tick of each path
     pub(super) fn resolve(
         &mut self,
         adapted: impl Into<crate::SharedAdaptedDeclarations>,

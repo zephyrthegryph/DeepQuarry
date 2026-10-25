@@ -33,6 +33,9 @@ pub struct Revision {
 }
 
 pub struct QueryDb {
+    /// Names this database inside a revision token (see `SourceChanges`): a token from another
+    /// database, or from before a restart, is not one this log can answer for.
+    id: u64,
     db: Db,
     /// Current answers of every query a stored unit read (see `answer` below).
     answers: Answers,
@@ -71,7 +74,9 @@ impl Default for QueryDb {
             let hash = hasher.digest128();
             Ok(Outcome::new(hash, hash, 16))
         });
+        static NEXT_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
+            id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             db,
             answers: Answers::default(),
             unit_proofs: UnitProofs::default(),
@@ -150,13 +155,19 @@ impl QueryDb {
     }
 }
 
+/// Bits of a token that hold the database revision; the rest name the database.
+const TOKEN_REVISION_BITS: u32 = 40;
 impl dm_preprocess::SourceChanges for QueryDb {
     fn revision(&self) -> u64 {
-        self.db.revision()
+        (self.id << TOKEN_REVISION_BITS) | self.db.revision()
     }
     /// The sources changed or removed by every request after `revision`; `None` when the log no
     /// longer reaches back to it, or `revision` is not one this database has had.
-    fn changes_since(&self, revision: u64) -> Option<Arc<std::collections::BTreeSet<PathBuf>>> {
+    fn changes_since(&self, token: u64) -> Option<Arc<std::collections::BTreeSet<PathBuf>>> {
+        if token >> TOKEN_REVISION_BITS != self.id {
+            return None;
+        }
+        let revision = token & ((1 << TOKEN_REVISION_BITS) - 1);
         let current = self.db.revision();
         if revision > current {
             return None;
@@ -1195,8 +1206,8 @@ mod tests {
     fn the_change_log_answers_which_sources_changed_since_a_revision() {
         use dm_preprocess::SourceChanges;
         let db = QueryDb::default();
-        let first = db.revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1).unwrap();
-        let at_first = first.revision;
+        db.revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1).unwrap();
+        let at_first = db.revision();
         assert!(db.changes_since(at_first).unwrap().is_empty());
         db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y")]), 1).unwrap();
         let after_a = db.revision();
@@ -1214,8 +1225,9 @@ mod tests {
             vec![path("b.dm"), path("c.dm")]
         );
         assert!(db.changes_since(db.revision()).unwrap().is_empty());
-        // A revision the database never had, or one the log no longer reaches.
+        // A revision the database never had, one of another database, or one the log no longer reaches.
         assert!(db.changes_since(db.revision() + 1).is_none());
+        assert!(QueryDb::default().changes_since(at_first).is_none());
         for step in 0..(CHANGE_LOG + 2) {
             db.revise(&sources(&[("a.dm", &format!("v{step}")), ("c.dm", "z")]), 1).unwrap();
         }

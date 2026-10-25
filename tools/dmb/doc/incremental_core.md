@@ -563,3 +563,62 @@ initializer classification record their reads through `RecordingResolver::resolv
 the directive and expansion records are already persisted by content (`DiskExpansionMemo`, stage 4/1), and what remains is the
 sequential replay of 5,956 directive lookups on the planning thread (`native directive lookups: disk=` 1.6 s idle machine,
 3.7-6.3 s loaded), not missing persistence; moving it needs a parallel pre-decode keyed by the previous plan's regions.
+
+## Frontend queries, step 3 (2026-10-25, lane `compiler/frontend-queries`)
+
+What a hot one-file edit used to cost in the frontend (production tree, resident daemon, quiet machine): directive planning 0.57 s
+(full replay, or 0.11 s for a directive-free leaf file through the single-file edit path), expansion 0.3 s, declaration parsing
+0.7-0.9 s (of which 0.5 s was the client pipe: a progress line per 8 chunk results stalled every parse worker), origins 0.15 s,
+tree resolution 0.04 s for a body edit and 0.7-1.1 s for a declaration edit, body indexing 0.1 s.
+
+**What landed**
+
+- *Source changes are a database query.* `QueryDb::revise` keeps a log of what each revision changed or removed
+  (`RevisionChange`, 64 requests) and implements `dm_preprocess::SourceChanges`: `revision()` is a token naming the database
+  and its revision, `changes_since(token)` is the union of every later request's changed sources, or `None` when the log does
+  not reach back, the token is another database's, or a restart renumbered it. The provider the frontend reads
+  (`PreparedSourceProvider::with_changes`) serves both through `SourceProvider::{revision, changes_since}`, and a plan records the
+  revision it was made at. The O(files) comparison of every source against the previous plan is gone.
+- *The ordered directive pass is memoized by include subtree.* Every include subtree it visits leaves a `SubtreeRecord`
+  (`regions/plan_trace.rs`): the occurrences, regions and ordered items it made (as counts; positions live in the plan's
+  `PlanTrace`), the pass state it started in and ended in (macro environment with an incremental order-independent
+  fingerprint, open conditionals, `FILE_DIR` stack, `#pragma multiple` set), every include-once decision, the files it read
+  and the dependencies it added. Two ways to use the previous plan, one result (`plans_equal`, unit tests and
+  `DMB_FRONTEND_VERIFY=1` check it against a full pass):
+  - *Patch* (`regions/plan_patch.rs`): with the change log, only the outermost changed subtree of each changed file is planned
+    again, from its recorded start state; it replaces the old subtree when it visits the same files, reads the same includes
+    and ends in the same state (early cutoff: nothing after it can differ, so no later position moves). Otherwise `None`.
+  - *Adoption* (`adopt_previous`): the ordered pass itself adopts every subtree whose files (same text), start state, include
+    context and include-once decisions are unchanged, copying its occurrences, regions and items renumbered; the others run.
+    A manifest edit or a `#define` that changes the state every later subtree starts from takes this path.
+- *Expansion copies what the plan copied* (`regions/reuse.rs`): a region that is a verbatim copy (the plan says which, and a
+  post-pass finds the manifest's own regions that equal the previous ones) keeps its text, receipt and origin rows, moved in
+  runs; only the other regions go through the expansion memo. Admission keys travel with the regions.
+- *Smaller passes that no longer visit everything*: the source index is reused for a patched plan; origin and body lookups
+  follow a row hint and a file hint (`partition_point_near`); the symbol table updates by delta when a few leaves changed; a
+  stored declaration is not published again; whole-owner callable certificates (read by nothing in a build) are computed when
+  asked; the progress line per 8 chunks became a time-driven one (250 ms).
+- *Deleted*: `DMB_FRONTEND_REVISION` (`RevisionMode`), `plan_regions_edit`, `expand_regions_edit`, `RowEdit`/`spliced`.
+  `DMB_FRONTEND_VERIFY=1` replaces the verify mode.
+
+**Measured** (pool-c2, one resident daemon per compiler, stage times of the request log, machine shared with other lanes):
+
+| Frontend stage, hot | before | after |
+|---|---|---|
+| body edit in a file with directives | 2.2 s | 0.41 s |
+| body edit, directive-free file | 1.23 s | 0.38 s |
+| default edit (one var) | 2.1 s | 1.2 s |
+| added var | 2.4-3.0 s | 1.3 s |
+| `#define` edit | 5.4 s | 3.2 s (planning 0.47, expansion 0.72: every later subtree starts from a different state) |
+
+**Not done, and why**
+
+- `file_decls`, `type_node` and `tree_group` as database queries. The tree is dense: member ids follow declaration order, so
+  a spliced declaration renumbers every later member and the splice, the dependency graph capture and the demand-token carry
+  each walk all 342k members (0.13-0.4 s each). A key-based `tree_group` needs the stable-id tables of step 5 first.
+- Deleting the demand-token carry and selection pruning. `issue_domain_version` still issues 109k domain versions per request
+  (`native domain memo: issued=...`) and their consumers compare tokens across requests; without the carry every token changes
+  and everything those versions guard is redone. They go when the remaining domain-version consumers move to answer hashes
+  (step 4's last deletion). The carry itself is 0.13-0.28 s of a declaration edit.
+- Declaration chunk cells (parse 0.11 s, origins 0.07 s and body indexing 0.07 s still visit every chunk or declaration).
+

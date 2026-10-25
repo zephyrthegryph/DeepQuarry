@@ -338,6 +338,75 @@ fn rebase(
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn symbols_contribution(text: &str) -> Arc<Contribution> {
+        let mut ast = dm_syntax::parse_declaration_skeleton(text);
+        ast.items = compact_declarations(ast.items, 0);
+        let adapted_ast = dm_syntax::AstFile {
+            items: ast.items.clone(),
+            tokens: Vec::new(),
+            diagnostics: ast.diagnostics.clone(),
+        };
+        let mut facts =
+            crate::from_ast(&adapted_ast, SymbolTable::default(), FileId(0), 0, 0).unwrap();
+        let ledger =
+            crate::allocation_ledger::capture(&ast.items, "/", &mut facts.symbols).unwrap();
+        Arc::new(Contribution::capture(text, 0, &ast.items, &facts, &ledger).unwrap())
+    }
+    #[test]
+    fn a_small_replacement_updates_the_spelling_table_like_a_full_rebuild() {
+        let texts = [
+            "/obj/alpha\n    var/shared = 1\n    var/only_alpha = 2\n",
+            "/obj/beta\n    var/shared = 1\n    proc/run()\n        return 1\n",
+            "/obj/gamma\n    var/shared = 3\n",
+            "/obj/delta\n    var/other = 4\n",
+            // Same spellings as the second, different body: nothing appears or vanishes.
+            "/obj/beta\n    var/shared = 1\n    proc/run()\n        return 2\n",
+            "/obj/epsilon\n    var/fresh_name = 5\n",
+        ];
+        let all: Vec<_> = texts.iter().map(|text| symbols_contribution(text)).collect();
+        let mut active = ActiveSymbols::default();
+        active.update(&all[..4]).unwrap();
+        let ordered = |table: &SymbolTable| {
+            table
+                .ordered()
+                .into_iter()
+                .map(|(id, text)| (id, text.to_owned()))
+                .collect::<Vec<_>>()
+        };
+        let mut roster: Vec<_> = all[..4].to_vec();
+        let steps: Vec<Box<dyn Fn(&mut Vec<Arc<Contribution>>)>> = vec![
+            // Equal spellings: the table is the same allocation.
+            Box::new({
+                let replacement = Arc::clone(&all[4]);
+                move |roster| roster[1] = Arc::clone(&replacement)
+            }),
+            // A spelling vanishes and another appears.
+            Box::new({
+                let replacement = Arc::clone(&all[5]);
+                move |roster| roster[0] = Arc::clone(&replacement)
+            }),
+            // One leaf removed, then added back.
+            Box::new(|roster| {
+                roster.pop();
+            }),
+            Box::new({
+                let leaf = Arc::clone(&all[3]);
+                move |roster| roster.push(Arc::clone(&leaf))
+            }),
+        ];
+        for (index, step) in steps.iter().enumerate() {
+            let before = Arc::clone(&active.symbols);
+            step(&mut roster);
+            let delta = active.update(&roster).unwrap();
+            let mut fresh = ActiveSymbols::default();
+            let expected = fresh.update(&roster).unwrap();
+            assert_eq!(ordered(&delta), ordered(&expected), "step {index}");
+            assert_eq!(active.counts, fresh.counts, "step {index}");
+            if index == 0 {
+                assert!(Arc::ptr_eq(&before, &delta), "equal spellings keep the table");
+            }
+        }
+    }
     #[test]
     fn declaration_capture_shares_checked_region_view_and_rebinds_current_origins() {
         let text = "/obj/probe\n    var/display = \"café\"\n";
