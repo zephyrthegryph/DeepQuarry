@@ -77,7 +77,7 @@
 /atom/movable/proc/buckle_link(mob/living/M)
 	if(!link_make(M, LK_BUCKLED_TO, src))
 		return FALSE
-	M.facing_dir = null
+	sparse_set(M, facing_dir, null)
 	M.set_dir(buckle_of(src).dir ? buckle_of(src).dir : dir)
 	M.update_canmove()
 	M.update_floating(M.Check_Dense_Object())

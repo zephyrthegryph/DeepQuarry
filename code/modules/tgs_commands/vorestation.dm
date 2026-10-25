@@ -88,32 +88,37 @@
 // before one) answers through Run() as usual; one that waited sends its reply to the channel
 // the command came from when it finishes. The sender is held here until then.
 
-/// Senders of commands whose flow is waiting on a query, by key: list(sender, started).
-GLOBAL_LIST_EMPTY(tgs_flow_senders)
+/// Senders of commands whose flow is waiting on a query, key -> sender (a declared keyed relation of GLOB), and when each started.
+GLOBAL_ALIST_EMPTY(tgs_flow_senders)
+GLOBAL_ALIST_EMPTY(tgs_flow_started)
 GLOBAL_VAR_INIT(tgs_flow_seq, 0)
 
+/// Drops one waiting flow's sender and its start time.
+/proc/tgs_flow_release(key)
+	rel_add(GLOB, nameof(GLOB.tgs_flow_senders), null, key)
+	GLOB.tgs_flow_started -= key
+
 /datum/tgs_chat_command/proc/run_as_flow(datum/tgs_chat_user/sender, params)
-	for(var/stale in GLOB.tgs_flow_senders) // a flow dropped on the way never collects its sender
-		var/list/held = GLOB.tgs_flow_senders[stale]
-		if(ELAPSED_SINCE(src, held[2], CLOCK_WORLD) > 10 MINUTES)
-			GLOB.tgs_flow_senders -= stale
+	for(var/stale in GLOB.tgs_flow_started) // a flow dropped on the way never collects its sender
+		if(ELAPSED_SINCE(src, GLOB.tgs_flow_started[stale], CLOCK_WORLD) > 10 MINUTES)
+			tgs_flow_release(stale)
 	var/key = "[++GLOB.tgs_flow_seq]"
-	GLOB.tgs_flow_senders[key] = list(sender, world.time)
+	rel_add(GLOB, nameof(GLOB.tgs_flow_senders), sender, key)
+	GLOB.tgs_flow_started[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 	. = flow_entry(key, params)
 	if(!isnull(.))
-		GLOB.tgs_flow_senders -= key
+		tgs_flow_release(key)
 
 /datum/tgs_chat_command/proc/flow_entry(key, params)
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(flow_entry), args)
-	var/list/held = GLOB.tgs_flow_senders[key]
-	if(!held)
+	var/datum/tgs_chat_user/sender = GLOB.tgs_flow_senders[key]
+	if(!sender)
 		return
-	var/datum/tgs_chat_user/sender = held[1]
 	var/reply = flow_run(sender, params)
 	if(!prompt_flow_answers()) // finished on its first run: Run() returns the reply
 		return reply
-	GLOB.tgs_flow_senders -= key
+	tgs_flow_release(key)
 	if(isnull(reply))
 		return
 	var/datum/tgs_message_content/message = istext(reply) ? new /datum/tgs_message_content(reply) : reply

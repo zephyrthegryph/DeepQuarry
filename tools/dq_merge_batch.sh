@@ -137,17 +137,23 @@ while [ ${#remaining[@]} -gt 0 ]; do
 		good=(); remaining=(); break
 	fi
 	# Bisect: the smallest prefix of `remaining` that fails on top of `good` names the culprit.
-	lo=1; hi=${#remaining[@]}
+	lo=1; hi=${#remaining[@]}; passed=0
 	while [ "$lo" -lt "$hi" ]; do
 		mid=$(( (lo + hi) / 2 ))
 		attempt "${good[@]+"${good[@]}"}" "${remaining[@]:0:mid}"; prc=$?
 		if [ "$prc" -eq 92 ] || [ "$prc" -eq 93 ]; then abort_rc=$prc; break; fi
-		if [ "$prc" -eq 0 ]; then lo=$((mid + 1)); elif [ "$prc" -eq 91 ]; then hi=$mid; else hi=$mid; fi
+		if [ "$prc" -eq 0 ]; then lo=$((mid + 1)); passed=$mid; elif [ "$prc" -eq 91 ]; then hi=$mid; else hi=$mid; fi
 	done
 	if [ "${abort_rc:-0}" -ne 0 ]; then
 		# the deadline passed, or the test phase was capped, in the middle of the bisect: what is not judged yet waits for the next cycle
+		# A prefix that already passed on top of `good` is proved: keep it (it lands this cycle) instead of throwing a green gate away.
 		[ "$abort_rc" -eq 93 ] && capped=1
-		deferred+=("${remaining[@]}"); remaining=()
+		if [ "$passed" -gt 0 ]; then
+			echo "== keeping the proved prefix (${remaining[*]:0:passed}); deferring the rest"
+			good+=("${remaining[@]:0:passed}")
+			remaining=("${remaining[@]:passed}")
+		fi
+		deferred+=("${remaining[@]+"${remaining[@]}"}"); remaining=()
 		abort_rc=0
 		continue
 	fi

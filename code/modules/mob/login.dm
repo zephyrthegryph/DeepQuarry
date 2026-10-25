@@ -12,7 +12,7 @@
 					if (ip_whitelist[source.key] == ip_whitelist[M.key])
 						continue
 				// end
-				if( (M.lastKnownIP == source.client.address) )
+				if( (sparse_get(M, lastKnownIP) == source.client.address) )
 					matches += "IP ([source.client.address])"
 				if( (source.client.connection != "web") && (M.computer_id == source.client.computer_id) )
 					if(matches)	matches += " and "
@@ -35,7 +35,7 @@
 	client.persistent_client.set_mob(src)
 
 	registry_join(REGISTRY_PLAYERS, src)
-	lastKnownIP	= client.address
+	sparse_set(src, lastKnownIP, client.address)
 	computer_id	= client.computer_id
 	log_access("Mob Login: [key_name(src)] was assigned to a [type] ([tag])")
 	update_Login_details(src)

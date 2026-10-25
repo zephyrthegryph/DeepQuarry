@@ -42,7 +42,8 @@
 	set name = "Refresh TGUI"
 	set category = VERB_CAT_OOC_DEBUG
 
-	for(var/window_id in tgui_windows)
-		var/datum/tgui_window/window = tgui_windows[window_id]
+	var/alist/windows = session?.tgui_windows || alist()
+	for(var/window_id in windows)
+		var/datum/tgui_window/window = windows[window_id]
 		window.reinitialize()
 

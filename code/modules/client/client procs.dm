@@ -371,9 +371,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	send_resources()
 
-	if(!void)
-		void = new /atom/movable/screen/click_catcher() // ALLOW(ownership): /client is not a datum; it holds these directly
-	screen += void
+	if(!GLOB.click_catcher)
+		rel_set(GLOB, nameof(GLOB.click_catcher), new /atom/movable/screen/click_catcher())
+	screen += GLOB.click_catcher
 
 	attempt_auto_fit_viewport()
 	fully_created = TRUE

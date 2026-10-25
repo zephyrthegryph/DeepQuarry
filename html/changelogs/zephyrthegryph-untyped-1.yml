@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Typed text and number vars in vore, mind, species, newscaster and preferences; belly reset-to-default now restores the fullness message lists"
