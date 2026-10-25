@@ -44,7 +44,7 @@ pub struct UniqueStorageInputs {
 }
 pub struct StorageOwner {
     pub facts: Arc<[(DeclarationKey, StorageFact)]>,
-    pub unique_token: Option<u64>,
+    pub unique_token: Option<u128>,
 }
 pub(crate) type Store = ObservedArtifactStore<StorageOwner, StorageQuery, StorageAnswer, ()>;
 type Lease = dm_session::ObservedArtifactLease<StorageOwner, StorageQuery, StorageAnswer, ()>;

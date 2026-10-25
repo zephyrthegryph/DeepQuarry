@@ -1,6 +1,7 @@
 //! Owner-local callable facts, linked by exact parent certificates. No ancestor
 //! member roster is copied into descendants.
 use super::*;
+use crate::token_digest::{self, TokenDigest};
 type MemberKey = (SymbolId, SymbolId, bool, u32);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CallableFact {
@@ -19,14 +20,38 @@ pub struct CallableInputs {
     pub complete: bool,
     pub hierarchy_certified: bool,
 }
-pub(super) fn issue_token() -> Option<u64> {
-    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
-    NEXT.fetch_update(
-        std::sync::atomic::Ordering::Relaxed,
-        std::sync::atomic::Ordering::Relaxed,
-        |value| value.checked_add(1),
-    )
-    .ok()
+impl CallableInputs {
+    /// The token of this exact input state under the artifact `key`: parent token, local members (key, definition,
+    /// content, metadata fingerprint, predecessor), engine intrinsics and both completeness gates. See `token_digest`.
+    pub(super) fn token(&self, key: &[u8]) -> u128 {
+        let mut digest = TokenDigest::new(b"owner-callable-token-v1");
+        digest.bytes(key);
+        digest.len(self.members.len());
+        for fact in self.members.iter() {
+            member_key(&mut digest, fact.key);
+            digest
+                .u8(token_digest::definition_byte(fact.definition))
+                .u128(fact.content)
+                .u128(crate::tree_identity::metadata_fingerprint(&fact.metadata))
+                .bool(fact.previous.is_some());
+            if let Some(previous) = fact.previous {
+                member_key(&mut digest, previous);
+            }
+        }
+        digest.len(self.intrinsic.len());
+        for member in self.intrinsic.iter() {
+            token_digest::intrinsic(&mut digest, member);
+        }
+        digest
+            .opt_symbol(self.parent)
+            .opt_u128(self.parent_certificate)
+            .bool(self.complete)
+            .bool(self.hierarchy_certified)
+            .finish()
+    }
+}
+fn member_key(digest: &mut TokenDigest, (owner, name, verb, occurrence): MemberKey) {
+    digest.symbol(owner).symbol(name).bool(verb).u32(occurrence);
 }
 pub(super) fn key(owner: SymbolId) -> Arc<[u8]> {
     let mut bytes = b"owner-callable-certificate-v1".to_vec();
@@ -117,10 +142,7 @@ impl RetainedMetadata {
                     continue;
                 }
             }
-            let Some(version) = issue_token() else {
-                continue;
-            };
-            let version = u128::from(version);
+            let version = inputs[&node.path].token(&key(node.path));
             let query = MetadataQuery::CallableLocal(node.path);
             let ledger = ObservationLedger::default();
             ledger.record(query, host.answer(&query), query.domain(), None);

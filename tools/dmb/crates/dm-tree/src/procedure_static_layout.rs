@@ -1,11 +1,11 @@
 //! Process-local receipt of an exact captured procedure static declaration roster.
 use super::*;
-use std::sync::atomic::{AtomicU64, Ordering};
+use crate::token_digest::TokenDigest;
 #[derive(Debug)]
 pub struct StaticLayout {
     procedure: ProcedureIdentity,
     declarations: Arc<[Arc<ProcedureStaticDeclaration>]>,
-    token: u64,
+    token: u128,
 }
 impl StaticLayout {
     /// Called by the admitted artifact producer, after current syntax capture.
@@ -20,12 +20,20 @@ impl StaticLayout {
         }) {
             return None;
         }
-        static NEXT: AtomicU64 = AtomicU64::new(1);
-        let token = NEXT
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
-                value.checked_add(1)
-            })
-            .ok()?;
+        // The digest of the procedure and its exact declaration roster (see `token_digest`).
+        let token = {
+            let mut digest = TokenDigest::new(b"procedure-static-layout-token-v1");
+            digest
+                .symbol(procedure.owner)
+                .symbol(procedure.name)
+                .bool(procedure.verb)
+                .u32(procedure.occurrence)
+                .len(declarations.len());
+            for declaration in declarations.iter() {
+                digest.bytes(&declaration.canonical_bytes());
+            }
+            digest.finish()
+        };
         Some(Self {
             procedure,
             declarations,
@@ -43,6 +51,6 @@ impl StaticLayout {
         self.procedure == procedure && self.declarations.as_ref() == declarations
     }
     pub(super) fn certificate(&self) -> u128 {
-        u128::from(self.token)
+        self.token
     }
 }
