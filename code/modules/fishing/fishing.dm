@@ -289,3 +289,5 @@ GLOBAL_LIST_INIT(ocean_fishing_common_list, list(
 #undef FISHING_COMMON
 #undef FISHING_JUNK
 #undef FISHING_NOTHING
+
+SCHEMA(/turf/simulated/floor/water, fish_type, schema_path(/atom/movable))
