@@ -1,53 +1,70 @@
 //! Shared current rosters own exact admitted variants, never another host's keys.
+//!
+//! A lease's roster is not a map of its own: every variant carries the set of lease slots claiming it ([`Holders`]), and a
+//! lease's roster is the variants naming its slot (at most one per exact key). A session whose claims equal another
+//! session's therefore adds one bit per variant instead of a map entry per key, and nothing is deferred: a claim of a
+//! variant already stored sets its bit under the shared read lock; a claim that replaces another variant of the same key
+//! (or stores a new one) takes the write lock and frees the replaced variant when nobody else holds it.
 use super::*;
+use std::sync::atomic::{AtomicU64, Ordering::AcqRel, Ordering::Acquire};
 
 pub struct ObservedArtifactLease<T, Q, A, D> {
     store: Arc<ObservedArtifactStore<T, Q, A, D>>,
-    id: u64,
-    /// Claims of variants already stored, deferred off the shared write lock
-    /// and applied in claim order before any roster read or mutation.
-    deferred: DeferredClaims,
+    slot: u32,
 }
-const DEFERRED_SHARDS: usize = 16;
-struct DeferredClaim {
-    sequence: u64,
-    key: Arc<[u8]>,
-    hash: u128,
-    /// Held key owner: with ptr_eq on it, a matching entry is this variant.
-    pointer: usize,
-}
-struct DeferredClaims {
-    shards: Box<[Mutex<Vec<DeferredClaim>>]>,
-    sequence: std::sync::atomic::AtomicU64,
-}
-impl Default for DeferredClaims {
-    fn default() -> Self {
-        Self {
-            shards: (0..DEFERRED_SHARDS).map(|_| Mutex::new(Vec::new())).collect(),
-            sequence: std::sync::atomic::AtomicU64::new(0),
-        }
+/// Most leases one core can have at once (a lease per session and variant of the daemon).
+const SLOTS: u32 = 128;
+/// The lease slots claiming one variant. Atomic so an existing claim is made under the shared read lock.
+#[derive(Default)]
+pub(super) struct Holders([AtomicU64; 2]);
+impl Clone for Holders {
+    fn clone(&self) -> Self {
+        Self([
+            AtomicU64::new(self.0[0].load(Acquire)),
+            AtomicU64::new(self.0[1].load(Acquire)),
+        ])
     }
 }
-impl DeferredClaims {
-    fn push(&self, key: Arc<[u8]>, hash: u128, pointer: usize) {
-        let sequence = self.sequence.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        self.shards[(hash as usize) % DEFERRED_SHARDS]
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .push(DeferredClaim {
-                sequence,
-                key,
-                hash,
-                pointer,
-            });
+impl Holders {
+    fn position(slot: u32) -> (usize, u64) {
+        ((slot / 64) as usize, 1u64 << (slot % 64))
     }
-    fn take(&self) -> Vec<DeferredClaim> {
-        let mut claims = Vec::new();
-        for shard in self.shards.iter() {
-            claims.append(&mut shard.lock().unwrap_or_else(|error| error.into_inner()));
-        }
-        claims.sort_unstable_by_key(|claim| claim.sequence);
-        claims
+    fn set(&self, slot: u32) {
+        let (word, bit) = Self::position(slot);
+        self.0[word].fetch_or(bit, AcqRel);
+    }
+    fn clear(&self, slot: u32) {
+        let (word, bit) = Self::position(slot);
+        self.0[word].fetch_and(!bit, AcqRel);
+    }
+    fn has(&self, slot: u32) -> bool {
+        let (word, bit) = Self::position(slot);
+        self.0[word].load(Acquire) & bit != 0
+    }
+    pub(super) fn is_empty(&self) -> bool {
+        self.0.iter().all(|word| word.load(Acquire) == 0)
+    }
+    pub(super) fn count(&self) -> usize {
+        self.0
+            .iter()
+            .map(|word| word.load(Acquire).count_ones() as usize)
+            .sum()
+    }
+}
+#[cfg(test)]
+impl<T, Q, A, D> Resident<T, Q, A, D> {
+    /// Variants at least one lease claims.
+    pub(super) fn claimed_variants(&self) -> usize {
+        self.claim_counts().len()
+    }
+    /// The number of leases claiming each claimed variant.
+    pub(super) fn claim_counts(&self) -> Vec<usize> {
+        self.buckets
+            .values()
+            .flatten()
+            .map(|entry| entry.holders.count())
+            .filter(|count| *count > 0)
+            .collect()
     }
 }
 impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
@@ -64,9 +81,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             state: std::sync::RwLock::new(Resident {
                 buckets: BTreeMap::new(),
                 bytes: 0,
-                leases: BTreeMap::new(),
-                next_lease: 0,
-                claims: BTreeMap::new(),
+                slots: 0,
             }),
             retention: Retention::SharedCurrentRosters(limit),
         })
@@ -74,210 +89,127 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     pub fn lease(self: &Arc<Self>) -> ObservedArtifactLease<T, Q, A, D> {
         assert!(matches!(self.retention, Retention::SharedCurrentRosters(_)));
         let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
-        let id = state.next_lease;
-        state.next_lease = id
-            .checked_add(1)
-            .expect("artifact lease identity exhausted");
-        state.leases.insert(id, BTreeMap::new());
+        let slot = (!state.slots).trailing_zeros();
+        assert!(
+            slot < SLOTS,
+            "more than {SLOTS} live leases on one artifact core"
+        );
+        state.slots |= 1u128 << slot;
         ObservedArtifactLease {
             store: Arc::clone(self),
-            id,
-            deferred: DeferredClaims::default(),
+            slot,
         }
     }
 }
-// Claim counts index exact live value allocations; addresses never authorize reuse.
-// Removed variants are returned to the caller for destruction AFTER unlocking.
-fn release<T, Q, A, D>(
+/// Release `slot`'s claim on every variant whose key `doomed` accepts; a variant nobody else holds is removed. The removed
+/// variants are returned for destruction AFTER unlocking.
+fn release_matching<T, Q, A, D>(
     state: &mut Resident<T, Q, A, D>,
-    pointer: usize,
-) -> Option<Variant<T, Q, A, D>> {
-    let (hash, count) = state.claims.get_mut(&pointer).expect("claimed variant");
-    let current = *count.get_mut();
-    if current > 1 {
-        *count.get_mut() = current - 1;
-        return None;
-    }
-    let hash = *hash;
-    state.claims.remove(&pointer);
-    let bucket = state.buckets.get_mut(&hash).expect("claimed bucket");
-    let index = bucket
-        .iter()
-        .position(|entry| Arc::as_ptr(&entry.value) as usize == pointer)
-        .expect("claimed value");
-    let removed = bucket.remove(index);
-    if bucket.is_empty() {
-        state.buckets.remove(&hash);
-    }
-    state.bytes = state.bytes.saturating_sub(removed.weight);
-    Some(removed)
+    slot: u32,
+    mut doomed: impl FnMut(&[u8]) -> bool,
+) -> Vec<Variant<T, Q, A, D>> {
+    let mut detached = Vec::new();
+    let mut freed = 0usize;
+    state.buckets.retain(|_, bucket| {
+        let mut index = 0;
+        while index < bucket.len() {
+            let entry = &bucket[index];
+            if entry.holders.has(slot) && doomed(&entry.key) {
+                entry.holders.clear(slot);
+                if entry.holders.is_empty() {
+                    let removed = bucket.remove(index);
+                    freed += removed.weight;
+                    detached.push(removed);
+                    continue;
+                }
+            }
+            index += 1;
+        }
+        !bucket.is_empty()
+    });
+    state.bytes = state.bytes.saturating_sub(freed);
+    detached
 }
+/// Make the stored variant `pointer` of `key` this lease's claim for the key: the lease's other variant of the same exact
+/// key (its previous claim) is released, and removed when nobody else holds it. Returns what was removed.
 fn assign<T, Q, A, D>(
     state: &mut Resident<T, Q, A, D>,
-    id: u64,
-    key: Arc<[u8]>,
+    slot: u32,
+    key: &[u8],
     hash: u128,
     pointer: usize,
-) -> Option<Variant<T, Q, A, D>> {
-    let previous = state
-        .leases
-        .get_mut(&id)
-        .expect("live lease")
-        .insert(key, pointer);
-    if previous == Some(pointer) {
-        return None;
+) -> Vec<Variant<T, Q, A, D>> {
+    let mut detached = Vec::new();
+    let Some(bucket) = state.buckets.get_mut(&hash) else {
+        return detached;
+    };
+    let mut freed = 0usize;
+    let mut index = 0;
+    while index < bucket.len() {
+        let entry = &bucket[index];
+        if entry.key.as_ref() == key {
+            if Arc::as_ptr(&entry.value) as usize == pointer {
+                entry.holders.set(slot);
+            } else if entry.holders.has(slot) {
+                entry.holders.clear(slot);
+                if entry.holders.is_empty() {
+                    let removed = bucket.remove(index);
+                    freed += removed.weight;
+                    detached.push(removed);
+                    continue;
+                }
+            }
+        }
+        index += 1;
     }
-    let claim = state
-        .claims
-        .entry(pointer)
-        .or_insert((hash, std::sync::atomic::AtomicUsize::new(0)));
-    let count = claim.1.get_mut();
-    *count = count.checked_add(1).expect("variant claim count exhausted");
-    previous.and_then(|old| release(state, old))
-}
-/// Roster half of a claim whose count was already taken under the read lock.
-fn assign_counted<T, Q, A, D>(
-    state: &mut Resident<T, Q, A, D>,
-    id: u64,
-    key: Arc<[u8]>,
-    pointer: usize,
-) -> Option<Variant<T, Q, A, D>> {
-    let previous = state
-        .leases
-        .get_mut(&id)
-        .expect("live lease")
-        .insert(key, pointer);
-    match previous {
-        // Already held by this roster: undo the extra count (it is > 1).
-        Some(old) if old == pointer => release(state, pointer),
-        Some(old) => release(state, old),
-        None => None,
-    }
+    state.bytes = state.bytes.saturating_sub(freed);
+    detached
 }
 impl<T, Q, A, D> Drop for ObservedArtifactLease<T, Q, A, D> {
     fn drop(&mut self) {
-        self.flush_deferred();
         let mut state = self
             .store
             .state
             .write()
             .unwrap_or_else(|error| error.into_inner());
-        let roster = state.leases.remove(&self.id).expect("live lease");
-        let detached: Vec<_> = roster
-            .values()
-            .filter_map(|pointer| release(&mut state, *pointer))
-            .collect();
+        let detached = release_matching(&mut state, self.slot, |_| true);
+        state.slots &= !(1u128 << self.slot);
         drop(state);
         drop(detached);
-        drop(roster);
     }
 }
 impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
-    /// Apply deferred claims in claim order under one write lock. A variant
-    /// another operation evicted meanwhile is not reattached (a later miss).
-    pub(super) fn flush_deferred(&self) {
-        let claims = self.deferred.take();
-        if claims.is_empty() {
-            return;
-        }
-        let mut state = self
-            .store
-            .state
-            .write()
-            .unwrap_or_else(|error| error.into_inner());
-        let mut detached = Vec::new();
-        for claim in &claims {
-            // A detached variant lost its claim entry (and our count with it);
-            // its address may since belong to a new variant, which the held
-            // key owner distinguishes.
-            let same_variant = state.buckets.get(&claim.hash).is_some_and(|bucket| {
-                bucket.iter().any(|entry| {
-                    Arc::as_ptr(&entry.value) as usize == claim.pointer
-                        && Arc::ptr_eq(&entry.key, &claim.key)
-                })
-            });
-            if same_variant && state.claims.contains_key(&claim.pointer) {
-                detached.extend(assign_counted(
-                    &mut state,
-                    self.id,
-                    Arc::clone(&claim.key),
-                    claim.pointer,
-                ));
-            }
-        }
-        drop(state);
-        drop(detached);
-        drop(claims);
-    }
     pub fn retain_current_keys<'a>(&self, keys: impl IntoIterator<Item = &'a [u8]>) {
-        self.flush_deferred();
         let keys: std::collections::BTreeSet<_> = keys.into_iter().collect();
         let mut state = self
             .store
             .state
             .write()
             .unwrap_or_else(|error| error.into_inner());
-        let roster = state.leases.get_mut(&self.id).expect("live lease");
-        let removed: Vec<_> = roster
-            .keys()
-            .filter(|key| !keys.contains(key.as_ref()))
-            .cloned()
-            .collect();
-        let removed: Vec<_> = removed
-            .into_iter()
-            .map(|key| {
-                let pointer = roster.remove(&key).expect("current claim");
-                (key, pointer)
-            })
-            .collect();
-        let detached: Vec<_> = removed
-            .iter()
-            .filter_map(|(_, pointer)| release(&mut state, *pointer))
-            .collect();
+        let detached = release_matching(&mut state, self.slot, |key| !keys.contains(key));
         drop(state);
         drop(detached);
-        drop(removed);
     }
     /// Keep this lease's claims on keys the predicate accepts and release the rest; sibling leases are untouched.
     /// For rosters that are "everything except" a computable set.
     pub fn retain_where(&self, mut keep_key: impl FnMut(&[u8]) -> bool) {
-        self.flush_deferred();
         let mut state = self
             .store
             .state
             .write()
             .unwrap_or_else(|error| error.into_inner());
-        let roster = state.leases.get_mut(&self.id).expect("live lease");
-        let doomed: Vec<_> = roster
-            .keys()
-            .filter(|key| !keep_key(key.as_ref()))
-            .cloned()
-            .collect();
-        let removed: Vec<_> = doomed
-            .into_iter()
-            .map(|key| {
-                let pointer = roster.remove(&key).expect("current claim");
-                (key, pointer)
-            })
-            .collect();
-        let detached: Vec<_> = removed
-            .iter()
-            .filter_map(|(_, pointer)| release(&mut state, *pointer))
-            .collect();
+        let detached = release_matching(&mut state, self.slot, |key| !keep_key(key));
         drop(state);
         drop(detached);
-        drop(removed);
     }
     /// This visits the shared core, including sibling leases. Addresses identify
     /// actual common allocations; private lease/index nodes remain unreported.
     pub fn visit_storage(&self, visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>)) {
-        self.flush_deferred();
         self.store.visit_storage(visit);
     }
     /// Whole shared-core accounting, including sibling leases. This is neither
     /// this lease's private byte charge nor complete heap coverage.
     pub fn storage_accounting(&self) -> ArtifactStorageAccounting {
-        self.flush_deferred();
         self.store.storage_accounting()
     }
 }
@@ -292,6 +224,7 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
     ) -> Option<Arc<T>> {
         self.claim_key(&key, Some(Arc::clone(&key)), receipt)
     }
+    #[inline(never)]
     fn claim_key(
         &self,
         key: &[u8],
@@ -309,23 +242,25 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
                 .state
                 .read()
                 .unwrap_or_else(|error| error.into_inner());
-            let stored = state
-                .buckets
-                .get(&hash)
-                .into_iter()
-                .flatten()
-                .find(|entry| Arc::ptr_eq(&entry.value, &receipt.value) && entry.key.as_ref() == key)
-                .map(|entry| Arc::clone(&entry.key));
-            if let Some(stored) = stored {
-                if let Some((_, count)) = state.claims.get(&pointer) {
-                    count.fetch_add(1, std::sync::atomic::Ordering::AcqRel);
-                    drop(state);
-                    self.deferred.push(stored, hash, pointer);
-                    return Some(receipt.value);
+            if let Some(bucket) = state.buckets.get(&hash) {
+                let target = bucket
+                    .iter()
+                    .find(|entry| Arc::ptr_eq(&entry.value, &receipt.value) && entry.key.as_ref() == key);
+                if let Some(target) = target {
+                    // Replacing this lease's claim on another variant of the key needs the write lock (that variant may
+                    // be freed); an unchanged or first claim of a stored variant is one bit under the read lock.
+                    let replacing = bucket.iter().any(|entry| {
+                        !std::ptr::eq(entry, target)
+                            && entry.key.as_ref() == key
+                            && entry.holders.has(self.slot)
+                    });
+                    if !replacing {
+                        target.holders.set(self.slot);
+                        return Some(receipt.value);
+                    }
                 }
             }
         }
-        self.flush_deferred();
         let mut state = self
             .store
             .state
@@ -358,11 +293,12 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
                 versions: receipt.versions,
                 value: Arc::clone(&receipt.value),
                 weight: receipt.weight,
+                holders: Default::default(),
             });
             state.bytes = state.bytes.saturating_add(receipt.weight);
         }
         let assign_timer = ASSIGN.time();
-        let detached = assign(&mut state, self.id, key, hash, pointer);
+        let detached = assign(&mut state, self.slot, &key, hash, pointer);
         drop(assign_timer);
         drop(state);
         drop(detached);
@@ -584,7 +520,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         fresh: bool,
         produce: &mut dyn FnMut() -> T,
     ) -> Option<Arc<T>> {
-        self.flush_deferred();
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self
             .store
@@ -631,11 +566,12 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 versions,
                 value: Arc::clone(&value),
                 weight,
+                holders: Default::default(),
             });
             state.bytes = state.bytes.saturating_add(weight);
             (value, key)
         };
-        let detached = assign(&mut state, self.id, key, hash, Arc::as_ptr(&value) as usize);
+        let detached = assign(&mut state, self.slot, &key, hash, Arc::as_ptr(&value) as usize);
         drop(state);
         drop(detached);
         Some(value)

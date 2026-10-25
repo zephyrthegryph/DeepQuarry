@@ -140,6 +140,7 @@ pub struct CachedProcedure {
     pub unit: crate::lowering::LoweredUnit,
     pub relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
 }
+#[inline(never)]
 pub(crate) fn rebase_debug(
     frontend: &dm_tree::frontend::ColdFrontend,
     body: &dm_tree::frontend::BodyOccurrence,

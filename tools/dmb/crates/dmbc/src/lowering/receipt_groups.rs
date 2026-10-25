@@ -71,6 +71,7 @@ fn family(query: ResolveQuery) -> (Family, Option<SymbolId>) {
 fn domain_family(domain: ReadDomain) -> std::mem::Discriminant<ReadDomain> {
     std::mem::discriminant(&domain)
 }
+#[inline(never)]
 pub(super) fn grouped(pool: &ProcedureGroups, reads: Vec<ResolverRead>) -> ProcedureReceipt {
     // The recorder is canonical. Unexpected noncanonical callers retain all
     // observations in ordinary flat storage, without issuing a grouped proof.

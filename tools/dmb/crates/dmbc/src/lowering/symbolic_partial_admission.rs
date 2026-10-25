@@ -14,6 +14,7 @@ pub(super) fn matching_domains<R: Resolver>(
     }
 }
 
+#[inline(never)]
 pub(super) fn changed<R: Resolver>(
     admission: &RequestAdmission<'_, R>,
     reads: &receipt_groups::ProcedureReceipt,

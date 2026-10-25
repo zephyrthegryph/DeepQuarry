@@ -636,7 +636,16 @@ impl SessionSymbolicMemo {
                 store: None,
                 disk: None,
                 key: record.key.clone(),
-                reads: receipt_groups::grouped(&self.receipt_groups, observer.reads()),
+                reads: {
+                    // A body that re-admits exactly its predecessor's reads (the common case: another session's
+                    // identical tree) keeps the predecessor's receipt, not a regrouped copy per session.
+                    let current = observer.reads();
+                    if record.reads.len() == current.len() && record.reads.iter().eq(current.iter()) {
+                        record.reads.clone()
+                    } else {
+                        receipt_groups::grouped(&self.receipt_groups, current)
+                    }
+                },
                 versions: {
                     // Equal domain receipts are the predecessor's allocation, not a copy per session.
                     let current = observer.domain_receipts();
@@ -653,6 +662,7 @@ impl SessionSymbolicMemo {
         Some(input)
     }
     #[allow(clippy::too_many_arguments)]
+    #[inline(never)]
     fn rebind_record<R: Resolver>(
         &self,
         record: &Arc<Record>,
