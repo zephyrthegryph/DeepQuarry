@@ -17,5 +17,8 @@ grep -q '^tools/analyze/' <<<"$changed" && want+=(analyze-build)
 mkdir -p data/prebuild-tools
 log="data/prebuild-tools/${new:0:12}.log"
 echo "dq_prebuild_tools: publishing ${want[*]} for ${new:0:12} in the background; log $log"
+# The analyzer builds in a cache-root target (tools/dq_cargo_target.sh), never in this checkout's tools/analyze/target, so the merge
+# worktree keeps no multi-GB build directory; dmbc already builds in the shared dmb-build target. Pruned by tools/dq_cache_prune.sh.
+export DQ_ANALYZE_TARGET="${DQ_ANALYZE_TARGET:-$(bash tools/dq_cargo_target.sh analyze)}"
 ( nohup bash -c 'for t in "$@"; do echo "== build.sh $t $(date -u +%FT%TZ)"; bash tools/build/build.sh "$t" || echo "prebuild $t failed rc=$?"; done; echo "== done $(date -u +%FT%TZ)"' _ "${want[@]}" >"$log" 2>&1 & ) 
 exit 0

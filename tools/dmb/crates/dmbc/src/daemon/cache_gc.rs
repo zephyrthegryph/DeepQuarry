@@ -1,7 +1,7 @@
 //! Keeps the shared cache directory inside a byte budget, least recently used segments first.
 //!
 //! `DMB_CACHE_BUDGET_GB` (default 16, `0` disables) and `DMB_CACHE_MAX_AGE_DAYS` (default 14, `0` turns the age cap off) bound `dm_cache::Cache::default_root()`. The daemon runs one pass shortly
-//! after it starts and one every six hours while it lives; leaves modified within `DMB_CACHE_MIN_AGE_MINUTES` (default 120) are
+//! after it starts and one every ten minutes while it lives; leaves modified within `DMB_CACHE_MIN_AGE_MINUTES` (default 120) are
 //! never deleted. Why it exists and why recency is trustworthy: `dm-cache/src/store_budget.rs`. Every request opens the index of
 //! every segment in the directory, so the budget bounds that memory and open time as well as the disk.
 use std::{
@@ -13,7 +13,7 @@ const DEFAULT_BUDGET_GB: u64 = 16;
 const DEFAULT_MAX_AGE_DAYS: u64 = 14;
 const DEFAULT_MIN_AGE_MINUTES: u64 = 120;
 const FIRST_PASS_DELAY: Duration = Duration::from_secs(120);
-const PASS_INTERVAL: Duration = Duration::from_secs(6 * 3600);
+const PASS_INTERVAL: Duration = Duration::from_secs(10 * 60);
 
 /// Budget in bytes; None when disabled. An unparseable value keeps the default (and says so).
 pub(super) fn budget_bytes(value: Option<&str>) -> Option<u64> {

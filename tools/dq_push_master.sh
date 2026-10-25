@@ -37,6 +37,9 @@ cd "$(git rev-parse --show-toplevel)"
 # The analyzer is the local dev-fast build unless DQ_ANALYZE_PROFILE says otherwise: release and dev-fast are the same source
 # (the findings are identical; CI builds release), and a release build is a 2-4 minute non-incremental compile.
 
+# The merge worktree's analyzer builds into a cache-root target, not tools/analyze/target (tools/dq_cargo_target.sh).
+export DQ_ANALYZE_TARGET="${DQ_ANALYZE_TARGET:-$(bash tools/dq_cargo_target.sh analyze)}"
+
 die() { echo "dq_push_master: REFUSED: $*" >&2; exit 1; }
 _lap_t=$(date +%s)
 lap() { echo "== dq_push_master: $1 $(( $(date +%s) - _lap_t ))s"; _lap_t=$(date +%s); } # where the lock-held seconds go
