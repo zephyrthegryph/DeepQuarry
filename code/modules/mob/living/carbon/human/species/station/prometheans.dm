@@ -194,7 +194,7 @@
 
 /datum/species/shapeshifter/promethean/get_additional_examine_text(mob/living/carbon/human/H)
 
-	if(!GLOB.stored_shock_by_ref["\ref[H]"])
+	if(!GLOB.stored_shock_by_ref[ref_token(H)])
 		return
 
 	var/t_she = "She is"
@@ -207,7 +207,7 @@
 	else if(H.identifying_gender == HERM)
 		t_she = "Shi is"
 
-	switch(GLOB.stored_shock_by_ref["\ref[H]"])
+	switch(GLOB.stored_shock_by_ref[ref_token(H)])
 		if(1 to 10)
 			return "[t_she] flickering gently with a little electrical activity."
 		if(11 to 20)

@@ -14,7 +14,7 @@
 		belly_data += list(
 			"name" = B.name,
 			"display_name" = B.display_name,
-			"ref" = "\ref[B]"
+			"ref" = ref_token(B)
 		)
 		if(full_data)
 			belly_data += list(
@@ -54,7 +54,7 @@
 		"belly_mode" = inside_belly.digest_mode,
 		"desc" = inside_desc,
 		"pred" = pred,
-		"ref" = "\ref[inside_belly]",
+		"ref" = ref_token(inside_belly),
 		"liq_lvl" = inside_belly.reagents.total_volume,
 		"liq_reagent_type" = inside_belly.reagent_chosen,
 		"liuq_name" = inside_belly.reagent_name,
@@ -74,7 +74,7 @@
 			"name" = "[O]",
 			"absorbed" = FALSE,
 			"stat" = 0,
-			"ref" = "\ref[O]",
+			"ref" = ref_token(O),
 			"outside" = FALSE,
 			"our_type" = our_type
 		)
@@ -344,7 +344,7 @@
 					"name" = "[O]",
 					"absorbed" = FALSE,
 					"stat" = 0,
-					"ref" = "\ref[O]",
+					"ref" = ref_token(O),
 					"outside" = TRUE,
 					"our_type" = our_type
 				)

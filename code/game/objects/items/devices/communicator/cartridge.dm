@@ -480,7 +480,7 @@ CAPABILITIES(/obj/item/commcard/head/captain)
 		door_status[++door_status.len] += list(
 				"open" = B.density,
 				"name" = B.name,
-				"ref" = "\ref[B]"
+				"ref" = ref_token(B)
 			)
 
 	return list(
