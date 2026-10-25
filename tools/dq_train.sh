@@ -123,6 +123,11 @@ cmd_enqueue() {
 	ahead="$(git rev-list --count origin/master..HEAD)"
 	[ "$ahead" -gt 0 ] || die "$branch holds nothing origin/master lacks: there is nothing to land"
 	tip="$(git rev-parse HEAD)"
+	if [ -n "$tests" ]; then
+		. "$SELF_DIR/dq_declared_tests.sh"
+		# shellcheck disable=SC2086
+		validate_enqueue_tests HEAD $tests || die "REFUSED: fix the --tests list above (names must be declared runnable /datum/unit_test leaves in this tree)"
+	fi
 	if [ "$light" -eq 1 ]; then
 		. "$SELF_DIR/dq_light_paths.sh"
 		heavy="$(light_heavy_in origin/master HEAD)"
