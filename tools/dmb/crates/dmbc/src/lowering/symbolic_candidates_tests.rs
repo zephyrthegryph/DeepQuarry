@@ -45,7 +45,7 @@ fn query_database_proves_stored_units_by_their_recorded_answers() {
                 facts: Arc::new(Default::default()),
                 abi: vec![1]
             },
-            relative_debug: vec![],
+            relative_debug: vec![].into(),
             required_types: Arc::from([]),
             modified_recipes: Arc::from([]),
         }

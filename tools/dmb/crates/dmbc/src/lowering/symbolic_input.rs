@@ -69,7 +69,8 @@ struct Record {
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     value: RecordValue,
-    relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
+    /// Shared by every session's record of the same body: a rebound record keeps its predecessor's allocation.
+    relative_debug: Arc<[crate::debug_sources::RelativeDebugAnchor]>,
     required_types: Arc<[dm_ir::SymbolId]>,
     modified_recipes: Arc<[crate::modified_initializers::SourceRecipe]>,
 }
@@ -89,7 +90,7 @@ pub(crate) struct Admission {
     key: SharedKey,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
-    relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
+    relative_debug: Arc<[crate::debug_sources::RelativeDebugAnchor]>,
     /// The dependency-index world the reads were computed under (a freshly lowered unit only).
     world: Option<u128>,
 }
@@ -636,8 +637,16 @@ impl SessionSymbolicMemo {
                 disk: None,
                 key: record.key.clone(),
                 reads: receipt_groups::grouped(&self.receipt_groups, observer.reads()),
-                versions: observer.domain_receipts().into(),
-                relative_debug: record.relative_debug.clone(),
+                versions: {
+                    // Equal domain receipts are the predecessor's allocation, not a copy per session.
+                    let current = observer.domain_receipts();
+                    if record.versions[..] == current[..] {
+                        Arc::clone(&record.versions)
+                    } else {
+                        current.into()
+                    }
+                },
+                relative_debug: Arc::clone(&record.relative_debug),
                 world: None,
             });
         }
@@ -791,7 +800,7 @@ pub(super) fn admission(
         key: key.into(),
         reads,
         versions,
-        relative_debug,
+        relative_debug: relative_debug.into(),
         world,
     })
 }
@@ -813,7 +822,7 @@ pub(super) fn disk_admission<R: Resolver>(
         key: key.into(),
         reads,
         versions: versions.into(),
-        relative_debug: promotion.relative_debug.clone(),
+        relative_debug: promotion.relative_debug.as_slice().into(),
         world: None,
     })
 }
@@ -845,7 +854,7 @@ pub(super) fn remember_selections<R: Resolver>(
             facts: Arc::clone(facts),
             abi: abi.canonical_bytes(),
         },
-        relative_debug: Vec::new(),
+        relative_debug: Arc::from([]),
         required_types: Arc::from([]),
         modified_recipes: Arc::from([]),
     };
@@ -870,7 +879,7 @@ pub(super) fn accepted_admission<R: Resolver>(
         key: key.into(),
         reads,
         versions: current.domain_receipts().into(),
-        relative_debug: accepted.value.relative_debug.clone(),
+        relative_debug: accepted.value.relative_debug.as_slice().into(),
         world: None,
     })
 }

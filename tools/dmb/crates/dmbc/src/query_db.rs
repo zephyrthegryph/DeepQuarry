@@ -134,25 +134,67 @@ impl QueryDb {
 
 const ANSWER_SHARDS: usize = 64;
 
-#[derive(Clone, Copy)]
-struct AnswerSlot {
-    /// Request that last proved the slot.
-    request: u64,
-    /// Declaration identity of the tree it was proven under (0: unknown, never carried).
-    tree: u128,
-    /// Answer-world version it was proven under (0: unknown, never carried by world).
-    world: u128,
+/// What an answer is, apart from when and under which tree a session proved it: the question (so the whole table can
+/// be asked again, see [`QueryDb::prove_against_base`]), the hash of its answer and whether it was positive. Equal
+/// values of two sessions (the same declarations in two worktrees, the game and the test variant) are one allocation,
+/// held by every slot that names it; a slot keeps only its own bookkeeping.
+pub(crate) struct AnswerValue {
     hash: u128,
     positive: bool,
-    /// Request that first held this id (the slot is `fresh` in that request).
-    born: u64,
-    /// Request in which the hash last differed from the slot it replaced (0: never).
-    changed: u64,
-    /// The hash this slot had when the retained output was last published (0: the slot did not
-    /// exist then, or no output is published). See [`QueryDb::mark_published`].
-    base: u128,
-    /// The question, so the whole table can be asked again (see [`QueryDb::prove_against_base`]).
     query: dm_ir::ResolveQuery,
+}
+const VALUE_SHARDS: usize = 64;
+/// The intern pool of answer values by query id: weak, so nothing is kept alive by it. A value whose id is already
+/// pooled with another hash (two sessions disagreeing about one answer) is simply not pooled.
+pub(crate) struct AnswerValues {
+    shards: Box<[Mutex<std::collections::HashMap<u128, std::sync::Weak<AnswerValue>>>]>,
+}
+impl Default for AnswerValues {
+    fn default() -> Self {
+        Self { shards: (0..VALUE_SHARDS).map(|_| Mutex::new(Default::default())).collect() }
+    }
+}
+impl AnswerValues {
+    fn intern(&self, id: u128, query: &dm_ir::ResolveQuery, meaning: &dm_ir::ResolvedMeaning) -> Arc<AnswerValue> {
+        let hash = answer_hash(meaning);
+        let mut pooled = self.shards[(id as usize) % VALUE_SHARDS].lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(held) = pooled.get(&id).and_then(std::sync::Weak::upgrade) {
+            if held.hash == hash {
+                return held;
+            }
+        }
+        let value = Arc::new(AnswerValue { hash, positive: positive_answer(meaning), query: *query });
+        pooled.insert(id, Arc::downgrade(&value));
+        value
+    }
+    /// Drop entries whose last slot is gone (a weak entry would otherwise keep its allocation).
+    fn prune(&self) {
+        for shard in self.shards.iter() {
+            shard.lock().unwrap_or_else(|error| error.into_inner()).retain(|_, value| value.strong_count() > 0);
+        }
+    }
+}
+/// Requests are numbered per table and a slot keeps the low 32 bits: a slot is compared with the request that is open,
+/// and a table would need four billion requests for a stale slot to be mistaken for a current one.
+fn slot_request(request: u64) -> u32 {
+    request as u32
+}
+#[derive(Clone)]
+struct AnswerSlot {
+    /// Request that last proved the slot (`slot_request`).
+    request: u32,
+    /// Request that first held this id (the slot is `fresh` in that request).
+    born: u32,
+    /// Request in which the hash last differed from the slot it replaced (0: never).
+    changed: u32,
+    /// The declaration identity of the tree and the answer-world version the slot was proven under, as an index into
+    /// `AnswerRequest::stamps` (identity 0: unknown, never carried; world 0: never carried by world). A table holds a
+    /// handful of distinct pairs, so a slot does not carry the 32 bytes itself.
+    stamp: u32,
+    value: Arc<AnswerValue>,
+    /// The value this slot had when the retained output was last published (None: the slot did not
+    /// exist then, or no output is published). See [`QueryDb::mark_published`].
+    base: Option<Arc<AnswerValue>>,
 }
 impl AnswerSlot {
     /// The slot `proved` becomes when it replaces `self`: the same id, so `born` is kept and
@@ -162,14 +204,13 @@ impl AnswerSlot {
             Some(prior) => {
                 proved.born = prior.born;
                 proved.base = prior.base;
-                proved.changed = if prior.hash != proved.hash { proved.request } else { prior.changed };
+                proved.changed = if prior.value.hash != proved.value.hash { proved.request } else { prior.changed };
             }
             None => proved.born = proved.request,
         }
         proved
     }
 }
-#[derive(Default)]
 struct AnswerRequest {
     request: u64,
     tree: Option<Arc<dm_tree::SemanticTree>>,
@@ -177,8 +218,37 @@ struct AnswerRequest {
     /// `ReadDomain::Tree` version: declarations, procedure statics, engine configuration and
     /// catalogs); 0 when the resolver cannot version its answers.
     world: u128,
+    /// Index of this request's (declaration identity, world) pair in `stamps`.
+    stamp: u32,
+    /// Every (declaration identity, world) pair a slot of the table may name; index 0 is (0, 0). Only grows, except
+    /// when the table is cleared.
+    stamps: Vec<(u128, u128)>,
+}
+impl Default for AnswerRequest {
+    fn default() -> Self {
+        Self { request: 0, tree: None, world: 0, stamp: 0, stamps: vec![(0, 0)] }
+    }
+}
+impl AnswerRequest {
+    fn identity(&self) -> u128 {
+        self.tree.as_ref().map_or(0, |tree| tree.declaration_identity())
+    }
+    /// Make `(identity, world)` this request's stamp.
+    fn bind(&mut self, tree: Option<Arc<dm_tree::SemanticTree>>, world: u128) {
+        self.tree = tree;
+        self.world = world;
+        let pair = (self.identity(), world);
+        self.stamp = match self.stamps.iter().rposition(|held| *held == pair) {
+            Some(index) => index as u32,
+            None => {
+                self.stamps.push(pair);
+                (self.stamps.len() - 1) as u32
+            }
+        };
+    }
 }
 struct Answers {
+    values: Arc<AnswerValues>,
     shards: Box<[Mutex<std::collections::HashMap<u128, AnswerSlot>>]>,
     current: std::sync::RwLock<AnswerRequest>,
     requests: std::sync::atomic::AtomicU64,
@@ -202,6 +272,7 @@ struct Answers {
 impl Default for Answers {
     fn default() -> Self {
         Self {
+            values: crate::shared_store::answer_values(),
             shards: (0..ANSWER_SHARDS).map(|_| Mutex::new(Default::default())).collect(),
             current: Default::default(),
             requests: std::sync::atomic::AtomicU64::new(0),
@@ -220,8 +291,9 @@ impl Answers {
     fn next_request(&self) {
         use std::sync::atomic::Ordering;
         let request = self.requests.fetch_add(1, Ordering::SeqCst) + 1;
-        *self.current.write().unwrap_or_else(|error| error.into_inner()) =
-            AnswerRequest { request, tree: None, world: 0 };
+        let mut current = self.current.write().unwrap_or_else(|error| error.into_inner());
+        current.request = request;
+        current.bind(None, 0);
         self.resolved.store(0, Ordering::Relaxed);
         self.carried.store(0, Ordering::Relaxed);
     }
@@ -233,6 +305,19 @@ impl Answers {
             shard.lock().unwrap_or_else(|error| error.into_inner()).clear();
         }
         self.resource_queries.lock().unwrap_or_else(|error| error.into_inner()).clear();
+        {
+            // No slot names a stamp now: keep only the open request's.
+            let mut current = self.current.write().unwrap_or_else(|error| error.into_inner());
+            let open = current.stamps[current.stamp as usize];
+            current.stamps = vec![(0, 0)];
+            if open != (0, 0) {
+                current.stamps.push(open);
+                current.stamp = 1;
+            } else {
+                current.stamp = 0;
+            }
+        }
+        self.values.prune();
     }
     fn len(&self) -> usize {
         self.shards
@@ -371,15 +456,15 @@ impl RequestAnswers<'_> {
     fn current(&self, id: u128, query: &dm_ir::ResolveQuery) -> u128 {
         let answers = &self.db.answers;
         let current = answers.current.read().unwrap_or_else(|error| error.into_inner());
-        let identity = current.tree.as_ref().map_or(0, |tree| tree.declaration_identity());
+        let identity = current.identity();
         let shard = &answers.shards[(id as usize) % ANSWER_SHARDS];
-        let prior;
+        let open = slot_request(current.request);
         {
             let mut slots = shard.lock().unwrap_or_else(|error| error.into_inner());
-            prior = slots.get(&id).copied();
             if let Some(slot) = slots.get_mut(&id) {
-                if slot.request == current.request && slot.tree == identity {
-                    let hash = slot.hash;
+                let (slot_tree, slot_world) = current.stamps[slot.stamp as usize];
+                if slot.request == open && slot_tree == identity {
+                    let hash = slot.value.hash;
                     drop(slots);
                     if verify_answers() {
                         self.verify(query, hash, "proven earlier in this request");
@@ -389,12 +474,12 @@ impl RequestAnswers<'_> {
                 // The same resolver inputs give the same answer: carry it without resolving.
                 // Resource searches read the filesystem, which the world version does not cover.
                 let same_world = current.world != 0
-                    && slot.world == current.world
-                    && slot.tree == identity
+                    && slot_world == current.world
+                    && slot_tree == identity
                     && !matches!(query.domain(), dm_ir::ReadDomain::ResourceSearch);
                 if same_world {
-                    slot.request = current.request;
-                    let hash = slot.hash;
+                    slot.request = open;
+                    let hash = slot.value.hash;
                     drop(slots);
                     answers.carried.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     if verify_answers() {
@@ -402,9 +487,9 @@ impl RequestAnswers<'_> {
                     }
                     return hash;
                 }
-                let carried = slot.positive
+                let carried = slot.value.positive
                     && identity != 0
-                    && slot.tree != 0
+                    && slot_tree != 0
                     && current.tree.as_ref().is_some_and(|tree| {
                         // The same declarations are an empty structural change.
                         static UNCHANGED: std::sync::LazyLock<dm_tree::change_set::ChangeSince> =
@@ -412,19 +497,18 @@ impl RequestAnswers<'_> {
                                 from_identity: 0,
                                 set: Default::default(),
                             });
-                        if slot.tree == identity {
+                        if slot_tree == identity {
                             return !answer_reachable(&UNCHANGED, tree, query);
                         }
                         tree.change_since().is_some_and(|change| {
-                            change.from_identity == slot.tree && !answer_reachable(change, tree, query)
+                            change.from_identity == slot_tree && !answer_reachable(change, tree, query)
                         })
                     });
                 if carried {
-                    slot.request = current.request;
-                    slot.tree = identity;
-                    slot.world = current.world;
+                    slot.request = open;
+                    slot.stamp = current.stamp;
                     answers.carried.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                    return slot.hash;
+                    return slot.value.hash;
                 }
             }
         }
@@ -432,18 +516,17 @@ impl RequestAnswers<'_> {
         let timer = RESOLVE.time();
         let meaning = (self.answer)(query);
         drop(timer);
+        let value = answers.values.intern(id, query, &meaning);
+        let prior = shard.lock().unwrap_or_else(|error| error.into_inner()).get(&id).cloned();
         let slot = AnswerSlot::replaced_by(
             prior,
             AnswerSlot {
-                request: current.request,
-                tree: identity,
-                world: current.world,
-                hash: answer_hash(&meaning),
-                positive: positive_answer(&meaning),
+                request: open,
+                stamp: current.stamp,
+                value,
                 born: 0,
                 changed: 0,
-                base: 0,
-                query: *query,
+                base: None,
             },
         );
         answers.resolved.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -454,8 +537,9 @@ impl RequestAnswers<'_> {
                 .unwrap_or_else(|error| error.into_inner())
                 .insert(id, *query);
         }
+        let hash = slot.value.hash;
         shard.lock().unwrap_or_else(|error| error.into_inner()).insert(id, slot);
-        slot.hash
+        hash
     }
     /// Every stage shares one answer per query, so every stage's resolver must give it: a
     /// stage reading an answer another stage proved (or one carried from an earlier request)
@@ -483,7 +567,7 @@ impl RequestAnswers<'_> {
             return true;
         }
         let answers = &self.db.answers;
-        let request = answers.current.read().unwrap_or_else(|error| error.into_inner()).request;
+        let request = slot_request(answers.current.read().unwrap_or_else(|error| error.into_inner()).request);
         let shard = &answers.shards[(id as usize) % ANSWER_SHARDS];
         if let Some(slot) = shard.lock().unwrap_or_else(|error| error.into_inner()).get_mut(&id) {
             slot.changed = request;
@@ -572,13 +656,11 @@ impl QueryDb {
         resolve: &dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning,
     ) {
         let world = world.unwrap_or(0);
-        let identity = tree.declaration_identity();
-        let request = {
+        let (request, stamp) = {
             let mut current =
                 self.answers.current.write().unwrap_or_else(|error| error.into_inner());
-            current.tree = Some(Arc::clone(tree));
-            current.world = world;
-            current.request
+            current.bind(Some(Arc::clone(tree)), world);
+            (current.request, current.stamp)
         };
         let queries: Vec<(u128, dm_ir::ResolveQuery)> = self
             .answers
@@ -590,24 +672,15 @@ impl QueryDb {
             .collect();
         for (id, query) in queries {
             let meaning = resolve(&query);
+            let value = self.answers.values.intern(id, &query, &meaning);
             let shard = &self.answers.shards[(id as usize) % ANSWER_SHARDS];
             let mut slots = shard.lock().unwrap_or_else(|error| error.into_inner());
-            let prior = slots.get(&id).copied();
+            let prior = slots.get(&id).cloned();
             slots.insert(
                 id,
                 AnswerSlot::replaced_by(
                     prior,
-                    AnswerSlot {
-                        request,
-                        tree: identity,
-                        world,
-                        hash: answer_hash(&meaning),
-                        positive: positive_answer(&meaning),
-                        born: 0,
-                        changed: 0,
-                        base: 0,
-                        query,
-                    },
+                    AnswerSlot { request: slot_request(request), stamp, value, born: 0, changed: 0, base: None },
                 ),
             );
         }
@@ -644,7 +717,7 @@ impl QueryDb {
                 .map(|(id, query)| {
                     let shard = &self.answers.shards[(*id as usize) % ANSWER_SHARDS];
                     let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
-                    (*id, *query, slots.get(id).map_or(0, |slot| slot.hash))
+                    (*id, *query, slots.get(id).map_or(0, |slot| slot.value.hash))
                 })
                 .collect()
         };
@@ -685,9 +758,10 @@ impl QueryDb {
         use std::sync::atomic::Ordering::Relaxed;
         for shard in self.answers.shards.iter() {
             for slot in shard.lock().unwrap_or_else(|error| error.into_inner()).values_mut() {
-                slot.base = slot.hash;
+                slot.base = Some(Arc::clone(&slot.value));
             }
         }
+        self.answers.values.prune();
         self.answers.marked_drops.store(self.answers.drops.load(Relaxed), Relaxed);
         self.answers.epoch.fetch_add(1, Relaxed) + 1
     }
@@ -719,7 +793,9 @@ impl QueryDb {
         for shard in self.answers.shards.iter() {
             let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
             held.extend(
-                slots.iter().filter(|(_, slot)| slot.base != 0).map(|(id, slot)| (*id, slot.query, slot.base)),
+                slots
+                    .iter()
+                    .filter_map(|(id, slot)| slot.base.as_ref().map(|base| (*id, base.query, base.hash))),
             );
         }
         let threads = workers.clamp(1, 16);
@@ -752,14 +828,15 @@ impl QueryDb {
         use std::sync::atomic::Ordering;
         let request = self.answers.current.read().unwrap_or_else(|error| error.into_inner()).request;
         let cleared = self.answers.cleared.load(Ordering::Relaxed) == request;
+        let open = slot_request(request);
         let mut diff = AnswerDiff { request, cleared, ..Default::default() };
         for shard in self.answers.shards.iter() {
             let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
             diff.held += slots.len();
             for (id, slot) in slots.iter() {
-                if slot.changed == request {
+                if slot.changed == open {
                     diff.changed.push(*id);
-                } else if slot.born == request {
+                } else if slot.born == open {
                     diff.fresh += 1;
                 }
             }

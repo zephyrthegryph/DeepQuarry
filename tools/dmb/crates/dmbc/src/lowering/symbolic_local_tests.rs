@@ -93,7 +93,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
             facts: Arc::new(Default::default()),
             abi: vec![],
         },
-        relative_debug: vec![],
+        relative_debug: vec![].into(),
         required_types: Arc::from([]),
         modified_recipes: Arc::from([]),
     };
@@ -152,7 +152,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     .unwrap();
     record.value = RecordValue::Executable(value.shared_artifact());
     record.required_types = Arc::clone(value.required_types_owner());
-    record.relative_debug = capture.borrow().debug.clone();
+    record.relative_debug = capture.borrow().debug.clone().into();
     let mut expired = record.local.clone().unwrap();
     expired.inputs = std::sync::Weak::new();
     let db = Arc::new(crate::query_db::QueryDb::default());

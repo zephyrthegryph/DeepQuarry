@@ -18,7 +18,7 @@ fn record(key: &[u8], reads: Vec<ResolverRead>) -> Record {
             facts: Arc::new(Default::default()),
             abi: vec![7],
         },
-        relative_debug: Vec::new(),
+        relative_debug: Vec::new().into(),
         required_types: Arc::from([]),
         modified_recipes: Arc::from([]),
     }

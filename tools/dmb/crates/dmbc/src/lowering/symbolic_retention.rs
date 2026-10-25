@@ -142,7 +142,7 @@ fn census_record(record: &std::sync::Arc<super::Record>, mut census: &mut HeapCe
             }
         }
     }
-    census.vec_payload("session_symbolic.debug_offsets", &record.relative_debug);
+    census.slice("session_symbolic.debug_offsets", &record.relative_debug, true);
     census.slice(
         "session_symbolic.required_types",
         &record.required_types,
