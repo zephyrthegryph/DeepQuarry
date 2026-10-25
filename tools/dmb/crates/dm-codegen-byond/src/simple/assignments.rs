@@ -206,6 +206,7 @@ impl Compiler<'_> {
                 via_colon,
             } = &target.kind
             {
+                self.validate_member_var(target, statement)?;
                 if self.variable_expr(target, statement).is_err() {
                     self.expression(value, statement)?;
                     self.expression(object, statement)?;
@@ -253,6 +254,7 @@ impl Compiler<'_> {
             _ => return Err(error(statement, "unsupported assignment operator")),
         };
         self.expression(value, statement)?;
+        self.validate_member_var(target, statement)?;
         let variable = match self.variable_expr(target, statement) {
             Ok(variable) => variable,
             Err(_) => {
@@ -380,6 +382,7 @@ impl Compiler<'_> {
         expr: &Expr,
         statement: &str,
     ) -> Result<VariableWord, LowerError> {
+        self.validate_member_var(expr, statement)?;
         let word = self.variable_expr_inner(expr, statement)?;
         self.source_feature_reference(
             expr,
@@ -498,6 +501,7 @@ impl Compiler<'_> {
             self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
             return Ok(VariableWord::CacheIndex);
         }
+        self.validate_member_var(target, statement)?;
         match self.variable_expr(target, statement) {
             Ok(variable) => {
                 self.ensure_writable(&variable, statement)?;
@@ -612,6 +616,7 @@ impl Compiler<'_> {
             self.emit(opcode, vec![Word::Variable(VariableWord::CacheIndex)]);
             return Ok(());
         }
+        self.validate_member_var(target, statement)?;
         let variable = match self.variable_expr(target, statement) {
             Ok(variable) => variable,
             Err(_) => {

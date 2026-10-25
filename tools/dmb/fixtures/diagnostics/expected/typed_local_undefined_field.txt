@@ -1,0 +1,2 @@
+typed_local_undefined_field.dm:7:error: returnH.eggs: undefined var
+typed_local_undefined_field.dmb - 1 error, 0 warnings
