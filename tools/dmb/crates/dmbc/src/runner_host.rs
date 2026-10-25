@@ -255,7 +255,7 @@ impl BuildHost {
         let mut host = Self::with_shared_engines(engines);
         host.shared_executors = Some(executors);
         host.shared_procedure_code = Some(procedures);
-        if crate::shared_store::enabled() {
+        if crate::shared_store::records_shared() {
             host.memo = Some(memo::ResidentMemo::sharing(&store.records));
             host.shared_store = Some(store);
         }

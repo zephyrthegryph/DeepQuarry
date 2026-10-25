@@ -469,17 +469,54 @@ impl dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning> for R
     }
 }
 
-/// A stored unit's recorded reads as (query id, query, recorded answer hash).
+type ReadLeaf = Arc<[dm_session::Observation<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>]>;
+/// One interned read leaf as (query id, query, recorded answer hash). Equal leaves are one allocation in every unit,
+/// session and variant (the receipt pool interns them), so their proof lists are derived once.
+struct LeafReads {
+    _owner: ReadLeaf,
+    reads: Vec<(u128, dm_ir::ResolveQuery, u128)>,
+}
+/// A stored unit's recorded reads: its receipt's leaves, each with its derived list.
 struct UnitReads {
     _owner: Arc<dyn std::any::Any + Send + Sync>,
-    reads: Vec<(u128, dm_ir::ResolveQuery, u128)>,
+    leaves: Vec<Arc<LeafReads>>,
+}
+/// Derived read lists by leaf address (the held leaf keeps the address from being reused while an entry is alive; entries
+/// die with their last unit). Daemon-wide when the daemon runs.
+#[derive(Default)]
+pub(crate) struct LeafProofs {
+    leaves: Mutex<std::collections::HashMap<usize, std::sync::Weak<LeafReads>>>,
+}
+impl LeafProofs {
+    fn proof(&self, leaf: &ReadLeaf) -> Arc<LeafReads> {
+        let address = Arc::as_ptr(leaf) as *const () as usize;
+        let mut leaves = self.leaves.lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(held) = leaves.get(&address).and_then(std::sync::Weak::upgrade) {
+            return held;
+        }
+        let proof = Arc::new(LeafReads {
+            _owner: Arc::clone(leaf),
+            reads: leaf.iter().map(|read| (query_id(&read.query), read.query, answer_hash(&read.answer))).collect(),
+        });
+        leaves.insert(address, Arc::downgrade(&proof));
+        proof
+    }
+    /// Drop entries whose last unit is gone.
+    fn prune(&self) {
+        self.leaves.lock().unwrap_or_else(|error| error.into_inner()).retain(|_, proof| proof.strong_count() > 0);
+    }
 }
 
 /// Read lists of stored units, by stored value address; the held owner keeps the address from
 /// being reused while the entry lives.
-#[derive(Default)]
 pub(crate) struct UnitProofs {
     units: Mutex<std::collections::HashMap<usize, Arc<UnitReads>>>,
+    leaves: Arc<LeafProofs>,
+}
+impl Default for UnitProofs {
+    fn default() -> Self {
+        Self { units: Default::default(), leaves: crate::shared_store::leaf_proofs() }
+    }
 }
 
 pub(crate) type Stored<T> = (
@@ -727,13 +764,9 @@ impl QueryDb {
                 .map(|(_, artifact)| {
                     let address = Arc::as_ptr(&artifact.value) as *const () as usize;
                     let unit = cache.remove(&address).unwrap_or_else(|| {
-                        let reads = artifact
-                            .reads
-                            .iter()
-                            .map(|read| (query_id(&read.query), read.query, answer_hash(&read.answer)))
-                            .collect();
+                        let leaves = artifact.reads.leaves().map(|leaf| self.unit_proofs.leaves.proof(leaf)).collect();
                         let owner: Arc<dyn std::any::Any + Send + Sync> = artifact.value.clone();
-                        Arc::new(UnitReads { _owner: owner, reads })
+                        Arc::new(UnitReads { _owner: owner, leaves })
                     });
                     live.insert(address, Arc::clone(&unit));
                     unit
@@ -742,6 +775,7 @@ impl QueryDb {
             *cache = live;
             units
         };
+        self.unit_proofs.leaves.prune();
         let after_units = started.elapsed();
         let threads = workers.clamp(1, 16);
         let chunk = units.len().div_ceil(threads).max(1);
@@ -752,9 +786,9 @@ impl QueryDb {
                     scope.spawn(move || {
                         part.iter()
                             .map(|unit| {
-                                unit.reads
-                                    .iter()
-                                    .all(|(id, query, recorded)| answers.matches(*id, query, *recorded))
+                                unit.leaves.iter().all(|leaf| {
+                                    leaf.reads.iter().all(|(id, query, recorded)| answers.matches(*id, query, *recorded))
+                                })
                             })
                             .collect::<Vec<_>>()
                     })

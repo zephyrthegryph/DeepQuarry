@@ -18,7 +18,7 @@
 //! records, ...). A core is shared and each session keeps its own `ObservedArtifactLease` on it: the lease is that session's
 //! claim roster (what it currently uses), and a variant lives while any session's lease claims it.
 use crate::runner_host::SharedRecords;
-use dm_session::ObservedArtifactStore;
+use dm_session::{ObservedArtifactStore, ReceiptGroupPool};
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -29,8 +29,12 @@ use std::{
 pub(crate) struct SharedStore {
     /// Decoded preprocessor memo records (expansion, directive plan, fragment).
     pub(crate) records: Arc<SharedRecords>,
+    /// Derived per-leaf read lists of the unit proofs (`query_db`), interned with the read leaves they come from.
+    pub(crate) leaf_proofs: Arc<crate::query_db::LeafProofs>,
     /// Artifact cores by purpose name and exact store type.
     cores: Mutex<HashMap<(&'static str, TypeId), Core>>,
+    /// Read-ledger interning pools by purpose name and exact pool type (weak: nothing is kept alive by a pool).
+    pools: Mutex<HashMap<(&'static str, TypeId), Arc<dyn Any + Send + Sync>>>,
 }
 struct Core {
     store: Arc<dyn Any + Send + Sync>,
@@ -78,6 +82,21 @@ impl SharedStore {
             .downcast::<ObservedArtifactStore<T, Q, A, D>>()
             .unwrap_or_else(|_| unreachable!("a core is registered under its exact store type"))
     }
+    /// The one interning pool named `name`: equal read groups of every session are one allocation.
+    pub(crate) fn receipt_pool<Q, A, D>(&self, name: &'static str) -> Arc<ReceiptGroupPool<Q, A, D>>
+    where
+        Q: Send + Sync + 'static,
+        A: Send + Sync + 'static,
+        D: Send + Sync + 'static,
+    {
+        let mut pools = self.pools.lock().unwrap_or_else(|e| e.into_inner());
+        let pool = pools
+            .entry((name, TypeId::of::<ReceiptGroupPool<Q, A, D>>()))
+            .or_insert_with(|| Arc::new(ReceiptGroupPool::<Q, A, D>::default()));
+        Arc::clone(pool)
+            .downcast::<ReceiptGroupPool<Q, A, D>>()
+            .unwrap_or_else(|_| unreachable!("a pool is registered under its exact type"))
+    }
     /// One line per owner: what the daemon-wide store holds (`DMB_MEM_MARKS=1`, after every request).
     pub(crate) fn report(&self) -> String {
         let (record_bytes, records) = self.records.usage();
@@ -105,6 +124,23 @@ pub(crate) fn enabled() -> bool {
     *ENABLED.get_or_init(|| std::env::var("DMB_SHARED_STORE").map_or(true, |value| value != "0"))
 }
 
+/// `DMB_SHARED_STORE_PRIVATE=name,name` keeps the named owners private (a core name or a name prefix, `records`, `pools`,
+/// `proofs`) while the rest stay shared: bisection of a difference between a shared and a private run.
+fn private(name: &str) -> bool {
+    static LIST: OnceLock<Vec<String>> = OnceLock::new();
+    LIST.get_or_init(|| {
+        std::env::var("DMB_SHARED_STORE_PRIVATE")
+            .map(|list| list.split(',').filter(|part| !part.is_empty()).map(str::to_owned).collect())
+            .unwrap_or_default()
+    })
+    .iter()
+    .any(|prefix| name.starts_with(prefix.as_str()))
+}
+/// Whether the decoded memo records are shared (see [`private`]).
+pub(crate) fn records_shared() -> bool {
+    enabled() && !private("records")
+}
+
 static ACTIVE: OnceLock<Arc<SharedStore>> = OnceLock::new();
 /// Make `store` the process's store: artifact owners created from now on take their cores from it. The daemon calls this once
 /// at start; unit tests and one-shot compiles never do, and their owners keep private cores.
@@ -115,6 +151,25 @@ pub(crate) fn activate(store: &Arc<SharedStore>) {
 }
 pub(crate) fn active() -> Option<&'static Arc<SharedStore>> {
     ACTIVE.get()
+}
+/// The per-leaf proof lists a session's unit proofs share: the daemon-wide ones, else private.
+pub(crate) fn leaf_proofs() -> Arc<crate::query_db::LeafProofs> {
+    match active().filter(|_| !private("proofs")) {
+        Some(store) => Arc::clone(&store.leaf_proofs),
+        None => Arc::default(),
+    }
+}
+/// The interning pool a read-ledger producer of this purpose uses: the daemon-wide one, else a private one.
+pub(crate) fn receipt_pool<Q, A, D>(name: &'static str) -> Arc<ReceiptGroupPool<Q, A, D>>
+where
+    Q: Send + Sync + 'static,
+    A: Send + Sync + 'static,
+    D: Send + Sync + 'static,
+{
+    match active().filter(|_| !private("pools") && !private(name)) {
+        Some(store) => store.receipt_pool(name),
+        None => Arc::default(),
+    }
 }
 /// The core an artifact owner of this purpose uses: the daemon-wide one, else a private one.
 pub(crate) fn artifact_core<T, Q, A, D>(
@@ -127,7 +182,7 @@ where
     A: Send + Sync + 'static,
     D: Send + Sync + 'static,
 {
-    match active() {
+    match active().filter(|_| !private(name)) {
         Some(store) => store.core(name, limit),
         None => match limit {
             Some(limit) => ObservedArtifactStore::shared_current_rosters_with_limit(limit),
@@ -146,6 +201,7 @@ mod tests {
         let again = store.core::<u32, (), u32, ()>("purpose.a", None);
         let other = store.core::<u32, (), u32, ()>("purpose.b", None);
         let typed = store.core::<u64, (), u32, ()>("purpose.a", None);
+        assert_eq!(typed.admitted_bytes(), 0);
         assert!(Arc::ptr_eq(&first, &again));
         assert!(!Arc::ptr_eq(&first, &other));
         assert_eq!(store.core_count(), 3);

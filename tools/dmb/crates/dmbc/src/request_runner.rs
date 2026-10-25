@@ -254,6 +254,7 @@ fn run_build_attempt(
     // input pass as speculative candidates (see NativeInputs::prepare_with_hints).
     let mut recorded_source_paths: Vec<PathBuf> = Vec::new();
     let mut memo_policy = 0;
+    let mut facts_policy = 0;
     drop(input_context_profile);
     dm_profile::detail_mark("input_context", total);
     let session_profile = dm_profile::stage("session_validation");
@@ -273,6 +274,10 @@ fn run_build_attempt(
         // DbgFile/DbgLine are emitted only under DEBUG, so a DEBUG flip must not reuse memoized code.
         policy_bytes.push(u8::from(defines.contains_key("DEBUG")));
         memo_policy = xxhash_rust::xxh3::xxh3_128(&policy_bytes);
+        // Facts caches (classification, modifier facts) do not read the DEBUG flag: without that byte the game and the
+        // test variant, and any other define set, claim the same artifacts.
+        policy_bytes.pop();
+        facts_policy = xxhash_rust::xxh3::xxh3_128(&policy_bytes);
         Some(compiler)
     } else {
         None
@@ -462,7 +467,7 @@ fn run_build_attempt(
     let procedure_memo = host
         .procedure_memo(memo_policy, cache_snapshot.clone(), publishable_artifacts)
         .map(|memo| {
-            let memo = memo.with_explanation_limit(131072);
+            let memo = memo.with_explanation_limit(131072).with_facts_policy(facts_policy);
             match &cache_publisher {
                 Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
                 None => memo,

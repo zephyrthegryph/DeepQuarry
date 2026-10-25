@@ -55,7 +55,7 @@ pub(super) fn lower<R: Resolver>(
         Some(calls) => calls.immutable_policy_identity().map(Some),
     };
     let binding = policy.map(|policy| {
-        crate::initializer_lowering::receipts::Binding::modified(symbol, descriptor, policy)
+        crate::initializer_lowering::receipts::Binding::modified(symbol, descriptor, policy, source.ops)
     });
     // Exact provider evidence is independent of resident policy identity.
     // Unknown custom PureCalls still use the common fresh/resident producer.

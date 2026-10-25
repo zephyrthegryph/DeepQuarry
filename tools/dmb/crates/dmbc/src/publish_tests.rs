@@ -443,3 +443,21 @@ fn both_certified_images_publish_without_detaching_their_hashes() {
     assert_eq!(pair, OutputPair::from_bytes(image.bytes(), archive.bytes()));
     assert_eq!(store.verify(pair.id, true).unwrap(), pair);
 }
+
+#[test]
+fn legacy_drive_root_store_moves_under_the_cache_root_once() {
+    let scratch = crate::test_scratch::dir("pair-store-migration");
+    let legacy = scratch.join(".dmbd/pairs");
+    let new = scratch.join("dq-cache/dmbd/pairs");
+    // Nothing to move.
+    assert!(!migrate_store(&legacy, &new).unwrap());
+    fs::create_dir_all(legacy.join("pairs")).unwrap();
+    fs::write(legacy.join("pairs/marker"), b"kept").unwrap();
+    assert!(migrate_store(&legacy, &new).unwrap());
+    assert!(!legacy.exists());
+    assert_eq!(fs::read(new.join("pairs/marker")).unwrap(), b"kept");
+    // An existing new store is never replaced, and the legacy one stays for the age sweep.
+    fs::create_dir_all(legacy.join("pairs")).unwrap();
+    assert!(!migrate_store(&legacy, &new).unwrap());
+    assert!(legacy.exists());
+}

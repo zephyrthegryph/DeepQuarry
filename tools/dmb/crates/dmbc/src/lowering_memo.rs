@@ -88,6 +88,9 @@ pub(crate) use verify_policy::VerifyPolicy;
 pub struct ProcedureMemo {
     pub(crate) verification: verify_policy::VerifyPolicy,
     pub policy: u128,
+    /// The policy of caches that hold facts, not generated code (initializer classification, modifier facts): `policy`
+    /// without the build flags that only change emitted code (`DEBUG`), so the game and test variants share them.
+    pub facts_policy: u128,
     resident_retention: ResidentRetention,
     rich_attempt: Option<
         dm_session::ArtifactAttempt<
@@ -228,6 +231,10 @@ impl ProcedureMemo {
             .map(|store| crate::heap_census::initializer_assembly_census(store))
     }
 
+    pub fn with_facts_policy(mut self, policy: u128) -> Self {
+        self.facts_policy = policy;
+        self
+    }
     pub fn with_explanation_limit(mut self, limit: usize) -> Self {
         self.explanation_limit = limit.min(131072);
         self
@@ -282,6 +289,7 @@ impl ProcedureMemo {
         Self {
             verification: verify_policy::VerifyPolicy::from_environment(),
             policy,
+            facts_policy: policy,
             resident_retention: ResidentRetention::Enabled,
             rich_attempt: None,
             publishable: true,
@@ -340,6 +348,7 @@ impl ProcedureMemo {
         Self {
             verification: verify_policy::VerifyPolicy::from_environment(),
             policy,
+            facts_policy: policy,
             resident_retention: ResidentRetention::Enabled,
             rich_attempt: None,
             publishable: true,
