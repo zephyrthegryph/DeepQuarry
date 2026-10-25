@@ -26,7 +26,7 @@ git clone -q "$tmp/origin.git" "$tmp/repo" 2>/dev/null
 cd "$tmp/repo"
 git config user.email t@t; git config user.name t
 mkdir -p tools/ci lanes docs
-cp "$here/tools/dq_train.sh" "$here/tools/dq_train_estimate.js" "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" "$here/tools/dq_light_paths.sh" "$here/tools/dq_gate_retry.sh" tools/
+cp "$here/tools/dq_train.sh" "$here/tools/dq_train_estimate.js" "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" "$here/tools/dq_light_paths.sh" "$here/tools/dq_gate_retry.sh" "$here/tools/dq_declared_tests.sh" tools/
 echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
 cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
@@ -100,6 +100,31 @@ back
 out="$(train run 2>&1)"; rc=$?
 check "the integrator lands a light lane" '[ "$rc" = 0 ] && in_master lane/doc && grep -q "LANDED lane/doc" <<<"$out"'
 check "status lists it as landed and the queue is empty" 'status_has "landed (latest" && status_has "  (empty)" && ! status_has "tests: "'
+
+# ---- enqueue validates --tests names against the tree being enqueued ------------------------------------------------------------
+git fetch -q origin; git switch -q -c lane/names origin/master
+mkdir -p code/modules/unit_tests
+cat >code/modules/unit_tests/names.dm <<'DM'
+/datum/unit_test/solo_leaf/Run()
+	return
+
+/datum/unit_test/parent_only
+/datum/unit_test/parent_only/kid_one/Run()
+	return
+/datum/unit_test/parent_only/kid_two/Run()
+	return
+DM
+git add -A; git commit -q -m names
+out="$(train enqueue --tests "solo_leaf" 2>&1)"; rc=$?
+check "enqueue accepts a declared runnable leaf" '[ "$rc" = 0 ] && grep -q "is queued" <<<"$out"'
+out="$(train enqueue --tests "solo_leef" 2>&1)"; rc=$?
+check "enqueue refuses an unknown test and lists the nearest" '[ "$rc" != 0 ] && grep -q "not declared" <<<"$out" && grep -q "unit_test/solo_leaf" <<<"$out"'
+out="$(train enqueue --tests "parent_only" 2>&1)"; rc=$?
+check "enqueue refuses an abstract parent and lists its subtests" '[ "$rc" != 0 ] && grep -q "abstract parent" <<<"$out" && grep -q "parent_only/kid_one" <<<"$out" && grep -q "parent_only/kid_two" <<<"$out"'
+out="$(train enqueue --tests "parent_only/kid_one /datum/unit_test/solo_leaf" 2>&1)"; rc=$?
+check "enqueue accepts leaf names given as paths or under a parent" '[ "$rc" = 0 ]'
+train dequeue lane/names >/dev/null 2>&1 || rm -f "$DQ_TRAIN_STATE"/queue/lane_names.q 2>/dev/null
+back
 
 # ---- a heavy batch: good, bad, good, a lane that moves after enqueue, two lanes that conflict -----------------------------------------
 mk lane/a lanes/a.txt fine; train enqueue --tests "ta1 ta2" >/dev/null 2>&1; back
