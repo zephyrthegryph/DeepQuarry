@@ -296,21 +296,15 @@ CAPABILITIES(/obj/item/aiModule/oneHuman)
 	desc = "A 'freeform' AI module: '<freeform>'"
 
 CAPABILITIES(/obj/item/aiModule/freeform)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(),
+		asks(/datum/prompt/number, fields = list("title" = "Law Priority (15+)", "question" = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", "default" = nameof(lawpos), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "position"),
+		asks(/datum/prompt/text/ai_law_freeform, fields = list("question" = "Please enter a new law for the AI."), step = "law", when = PROC_REF(law_position_valid)),
+		then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
-/obj/item/aiModule/freeform/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/number, PROC_REF(law_position_entered), answerer = user, title = "Law Priority (15+)", question = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", default = lawpos, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/item/aiModule/freeform/proc/law_position_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value < MIN_SUPPLIED_LAW_NUMBER)
-		return
-	lawpos = min(A.answer.value, MAX_SUPPLIED_LAW_NUMBER)
-	open_request(src, /datum/prompt/text/ai_law_freeform, PROC_REF(law_entered), answerer = A.request.answerer, question = "Please enter a new law for the AI.")
+/// The priority answered can be written to (15 and above); only then is the law text asked.
+/obj/item/aiModule/freeform/proc/law_position_valid(datum/act/op/A)
+	var/position = A.step_value("position")
+	return isnum(position) && position >= MIN_SUPPLIED_LAW_NUMBER
 
 /// Freeform law text: the existing numeric stage and this stage use the same carried/capable rechecks.
 /datum/prompt/text/ai_law_freeform
@@ -319,16 +313,21 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 	timeout = 0
 
-/obj/item/aiModule/freeform/proc/law_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	newFreeFormLaw = A.answer.value
+/// Old attack_self: the priority and the law the questions were answered with.
+/obj/item/aiModule/freeform/proc/interaction_self(datum/act/op/A)
+	if(!law_position_valid(A))
+		return TRUE
+	var/datum/prompt/law_answer = A.answer
+	if(!law_answer)
+		return TRUE
+	set_lawpos(min(A.step_value("position"), MAX_SUPPLIED_LAW_NUMBER))
+	newFreeFormLaw = law_answer.value
 	desc = "A 'freeform' AI module: ([lawpos]) '[newFreeFormLaw]'"
 
 /obj/item/aiModule/freeform/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "[newFreeFormLaw]"
 	if(!lawpos || lawpos < MIN_SUPPLIED_LAW_NUMBER)
-		lawpos = MIN_SUPPLIED_LAW_NUMBER
+		set_lawpos(MIN_SUPPLIED_LAW_NUMBER)
 	target.add_supplied_law(lawpos, law)
 	GLOB.lawchanges.Add("The law was '[newFreeFormLaw]'")
 

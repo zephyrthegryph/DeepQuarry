@@ -42,7 +42,9 @@ CAPABILITIES(/obj/item/stack)
 	op("make", ui_act("make", arg("multiplier", num()), arg("ref", schema_ref(/datum/xform))), then(PROC_REF(ui_act_make)))
 	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
 	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
-	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
+	op("split", hand(), ungated(), label("Split"), when(PROC_REF(split_askable)),
+		asks(/datum/prompt/number, fields = list("title" = "Split stacks", "question" = computed(PROC_REF(split_question)), "default" = 1, "max_value" = computed(PROC_REF(split_max)), "min_value" = 1, "step" = 0.01, "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "amount"),
+		then(PROC_REF(split_asked)))
 	// A recipe takes its build time (none: at once); the stack is claimed meanwhile, and what the recipe asked for comes from produce_recipe().
 	op("build", ai(), claims(CLAIM_TARGET), takes("recipe", "required", "produced"), wait(PROC_REF(build_time), keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(produce_recipe_done)))
 	param(nameof(amount_at_make), pos = 1)
@@ -434,21 +436,25 @@ CAPABILITIES(/obj/item/stack)
 			break
 
 /// Touching the stack in the other hand asks how many to split off; otherwise the touch goes on to the pickup.
+/obj/item/stack/proc/split_askable(datum/act/op/A)
+	return A.actor.get_inactive_hand() == src
+
+/obj/item/stack/proc/split_question(datum/act/op/A)
+	return "How many stacks of [src] would you like to split off?  There are currently [amount]."
+
+/obj/item/stack/proc/split_max(datum/act/op/A)
+	return amount
+
+/// The answered count is split off into the hands.
 /obj/item/stack/proc/split_asked(datum/act/op/A)
 	var/mob/user = A.actor
-	if (user.get_inactive_hand() != src)
-		return OP_DECLINE
-	open_request(src, /datum/prompt/number, PROC_REF(split_amount_chosen), answerer = user, title = "Split stacks", question = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max_value = amount, min_value = 1, step = 0.01, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-	return OP_OK
-
-/obj/item/stack/proc/split_amount_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/N = A.answer.value
+	var/datum/prompt/answer = A.answer
+	if(!answer)
+		return OP_OK
+	var/N = answer.value
 	if(N != round(N))
 		to_chat(user, span_warning("You cannot separate a non-whole number of stacks!"))
-		return
+		return OP_OK
 	if(N)
 		var/obj/item/stack/F = src.split(N)
 		if (F)
@@ -457,6 +463,7 @@ CAPABILITIES(/obj/item/stack)
 			F.add_fingerprint(user)
 			if (!QDELETED(src) && user.check_current_machine(src))
 				src.interact(user)
+	return OP_OK
 
 /// A cyborg's gripper gathers the stacks around it into this one.
 /obj/item/stack/proc/consolidated(datum/act/op/A)

@@ -313,7 +313,7 @@ CAPABILITIES(/obj/item/lightreplacer/dogborg)
 		asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)),
 		then(PROC_REF(dogborg_chosen)))
 	op("pick_colour", ai(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked)))
-	op("fabricate", ai(), needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full))), wait(5 SECONDS), then(PROC_REF(fabricated)))
+	op("fabricate", ai(), needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full)), req(PROC_REF(enough_reserves))), wait(5 SECONDS), then(PROC_REF(fabricated)))
 
 /obj/item/lightreplacer/dogborg/proc/has_reserves()
 	return glass && glass.energy >= 125
@@ -335,10 +335,15 @@ CAPABILITIES(/obj/item/lightreplacer/dogborg)
 	perform_op(user, src, "fabricate", null, ORIGIN_AI, AUTH_AI)
 	return OP_OK
 
+MSG_DEF_SELF(lightreplacer/no_reserves, "Insufficient material reserves.")
+
+/obj/item/lightreplacer/dogborg/proc/enough_reserves(datum/act/op/A)
+	return has_reserves() ? null : MSG(lightreplacer/no_reserves)
+
 /obj/item/lightreplacer/dogborg/proc/fabricated(datum/act/op/A)
 	if(!has_reserves())
-		to_chat(A.actor, span_warning("Insufficient material reserves."))
-		return OP_REFUSED
+		log_world("DOGBORG: [src] fabricate ran without reserves")
+		return OP_FAILED
 	glass.use_charge(125)
 	add_uses(1)
 	return OP_OK

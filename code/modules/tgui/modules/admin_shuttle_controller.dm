@@ -2,18 +2,19 @@
 
 /datum/tgui_module/admin_shuttle_controller
 	name = "Admin Shuttle Controller"
-	/// The shuttle a destination question was asked about (a view: the shuttles own themselves).
-	var/tmp/datum/shuttle/moving
 
 /datum/tgui_module/admin_shuttle_controller/tgui_close(mob/user)
 	. = ..()
 	spent(src, user)
 
 CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
-	ref_one(nameof(moving), /datum/shuttle)
 	interface("AdminShuttleController", rights = R_ADMIN|R_EVENT|R_DEBUG)
 	op("adminobserve", ui_act("adminobserve", arg("ref", schema_ref(/datum/shuttle))), then(PROC_REF(ui_act_adminobserve)))
-	op("classicmove", ui_act("classicmove", arg("ref", schema_ref(/datum/shuttle))), then(PROC_REF(ui_act_classicmove)))
+	op("classicmove", ui_act("classicmove", arg("ref", schema_ref(/datum/shuttle))),
+		asks(/datum/prompt/choice, fields = list("title" = "Shuttle Destination", "question" = "Choose shuttle destination", "choices" = computed(PROC_REF(multi_destinations)), "timeout" = 0), step = "multi", when = PROC_REF(asks_multi)),
+		asks(/datum/prompt/choice, fields = list("title" = "Shuttle Destination", "question" = "Choose shuttle destination", "choices" = computed(PROC_REF(overmap_destinations)), "timeout" = 0), step = "overmap", when = PROC_REF(asks_overmap)),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Launching Shuttle", "question" = computed(PROC_REF(launch_question)), "timeout" = 0), step = "launch", when = PROC_REF(asks_launch)),
+		then(PROC_REF(ui_act_classicmove)))
 	op("overmap_control", ui_act("overmap_control", arg("ref", schema_ref(/obj/effect/overmap/visitable/ship))), then(PROC_REF(ui_act_overmap_control)))
 
 /datum/tgui_module/admin_shuttle_controller/ui_data(datum/act/eval/A)
@@ -68,76 +69,73 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 			SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/jumptoturf, T)
 	return TRUE
 
+/// The shuttle a classic-move button names.
+/datum/tgui_module/admin_shuttle_controller/proc/classic_shuttle(datum/act/op/A)
+	return A.args["ref"]
+
+/datum/tgui_module/admin_shuttle_controller/proc/asks_multi(datum/act/op/A)
+	return istype(classic_shuttle(A), /datum/shuttle/autodock/multi)
+
+/// A multi-destination shuttle has no overmap step; an overmap shuttle with nowhere to go is refused in the effect.
+/datum/tgui_module/admin_shuttle_controller/proc/asks_overmap(datum/act/op/A)
+	var/datum/shuttle/S = classic_shuttle(A)
+	if(!istype(S, /datum/shuttle/autodock/overmap) || istype(S, /datum/shuttle/autodock/multi))
+		return FALSE
+	var/datum/shuttle/autodock/overmap/shuttle = S
+	return LAZYLEN(shuttle.get_possible_destinations()) > 0
+
+/datum/tgui_module/admin_shuttle_controller/proc/asks_launch(datum/act/op/A)
+	var/datum/shuttle/S = classic_shuttle(A)
+	return istype(S, /datum/shuttle/autodock) && !istype(S, /datum/shuttle/autodock/multi) && !istype(S, /datum/shuttle/autodock/overmap)
+
+/datum/tgui_module/admin_shuttle_controller/proc/multi_destinations(datum/act/op/A)
+	var/datum/shuttle/autodock/multi/shuttle = classic_shuttle(A)
+	return shuttle.get_destinations()
+
+/datum/tgui_module/admin_shuttle_controller/proc/overmap_destinations(datum/act/op/A)
+	var/datum/shuttle/autodock/overmap/shuttle = classic_shuttle(A)
+	return shuttle.get_possible_destinations()
+
+/datum/tgui_module/admin_shuttle_controller/proc/launch_question(datum/act/op/A)
+	return "Are you sure you want to launch [classic_shuttle(A)]?"
+
 /datum/tgui_module/admin_shuttle_controller/proc/ui_act_classicmove(datum/act/op/A, ref)
 	var/mob/user = A.actor
 	var/datum/shuttle/S = ref
 	if(istype(S, /datum/shuttle/autodock/multi))
 		var/datum/shuttle/autodock/multi/shuttle = S
-		rel_set(src, nameof(moving), shuttle)
-		open_request(src, /datum/prompt/choice, PROC_REF(multi_destination_chosen), valid = PROC_REF(request_usable), rights = R_ADMIN | R_EVENT | R_DEBUG, answerer = user, question = "Choose shuttle destination", title = "Shuttle Destination", choices = shuttle.get_destinations(), timeout = 0)
+		if(!A.answer)
+			return OP_OK
+		var/dest_key = A.step_value("multi")
+		if(dest_key)
+			shuttle.set_destination(dest_key, user)
+			shuttle.launch(src, user)
+		to_chat(user, span_notice("Launching shuttle [shuttle]."))
 	else if(istype(S, /datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/shuttle = S
 		var/list/possible_d = shuttle.get_possible_destinations()
 		if(!LAZYLEN(possible_d))
 			to_chat(user, span_warning("There are no possible destinations for [shuttle] ([shuttle.type])"))
-			return FALSE
-		rel_set(src, nameof(moving), shuttle)
-		open_request(src, /datum/prompt/choice, PROC_REF(overmap_destination_chosen), valid = PROC_REF(request_usable), rights = R_ADMIN | R_EVENT | R_DEBUG, answerer = user, question = "Choose shuttle destination", title = "Shuttle Destination", choices = possible_d, timeout = 0)
+			return OP_OK
+		if(!A.answer)
+			return OP_OK
+		var/D = A.step_value("overmap")
+		if(D)
+			shuttle.set_destination(possible_d[D])
+			shuttle.launch()
+		to_chat(user, span_notice("Launching shuttle [shuttle]."))
 	else if(istype(S, /datum/shuttle/autodock))
-		rel_set(src, nameof(moving), S)
-		open_request(src, /datum/prompt/yes_no, PROC_REF(launch_confirmed), valid = PROC_REF(request_usable), rights = R_ADMIN | R_EVENT | R_DEBUG, answerer = user, question = "Are you sure you want to launch [S]?", title = "Launching Shuttle", timeout = 0)
+		var/datum/shuttle/autodock/shuttle = S
+		if(!A.answer)
+			return OP_OK
+		if(A.step_value("launch"))
+			shuttle.launch(src)
+		to_chat(user, span_notice("Launching shuttle [shuttle]."))
 	else
 		to_chat(user, span_notice("The shuttle control panel isn't quite sure how to move [S] ([S?.type])."))
-		return FALSE
-	return TRUE
-
-/datum/tgui_module/admin_shuttle_controller/proc/multi_destination_chosen(datum/act/request/A)
-	multi_destination_chosen_apply(A)
+		return OP_OK
 	SStgui.update_uis(src)
-
-/datum/tgui_module/admin_shuttle_controller/proc/multi_destination_chosen_apply(datum/act/request/A)
-	var/datum/shuttle/autodock/multi/shuttle = moving()
-	if(!A.answer || !istype(shuttle))
-		return
-	var/mob/user = A.request.answerer
-	var/dest_key = A.answer.value
-	if(dest_key)
-		shuttle.set_destination(dest_key, user)
-		shuttle.launch(src, user)
-	to_chat(user, span_notice("Launching shuttle [shuttle]."))
-
-/datum/tgui_module/admin_shuttle_controller/proc/overmap_destination_chosen(datum/act/request/A)
-	overmap_destination_chosen_apply(A)
-	SStgui.update_uis(src)
-
-/datum/tgui_module/admin_shuttle_controller/proc/overmap_destination_chosen_apply(datum/act/request/A)
-	var/datum/shuttle/autodock/overmap/shuttle = moving()
-	if(!A.answer || !istype(shuttle))
-		return
-	var/mob/user = A.request.answerer
-	var/list/possible_d = shuttle.get_possible_destinations()
-	var/D = A.answer.value
-	if(D)
-		shuttle.set_destination(possible_d[D])
-		shuttle.launch()
-	to_chat(user, span_notice("Launching shuttle [shuttle]."))
-
-/datum/tgui_module/admin_shuttle_controller/proc/launch_confirmed(datum/act/request/A)
-	launch_confirmed_apply(A)
-	SStgui.update_uis(src)
-
-/datum/tgui_module/admin_shuttle_controller/proc/launch_confirmed_apply(datum/act/request/A)
-	var/datum/shuttle/autodock/shuttle = moving()
-	if(!A.answer || !istype(shuttle))
-		return
-	var/mob/user = A.request.answerer
-	if(A.answer.value)
-		shuttle.launch(src)
-	to_chat(user, span_notice("Launching shuttle [shuttle]."))
-
-/// The shuttle the pending destination question is about.
-/datum/tgui_module/admin_shuttle_controller/proc/moving() as /datum/shuttle
-	return moving
+	return OP_OK
 
 /datum/tgui_module/admin_shuttle_controller/proc/ui_act_overmap_control(datum/act/op/A, ref)
 	var/mob/user = A.actor

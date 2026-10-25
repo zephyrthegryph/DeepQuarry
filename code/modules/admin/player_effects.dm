@@ -87,8 +87,12 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	section(admin, "The admin tools of the Player Effects panel: size, teleport, gib, narrate, AI control, quests, orbits")
 	op("resize", ui_act("resize"), then(PROC_REF(ui_act_resize)))
 	op("teleport", ui_act("teleport"), asks(/datum/prompt/choice, fields = list("title" = "Where?", "question" = "Where to teleport?", "choices" = list("To Me", "To Mob", "To Area", "Cancel")), step = "where"), asks(/datum/prompt/choice, fields = list("title" = "Jump to mob", "question" = computed(PROC_REF(teleport_mob_question)), "choices" = computed(PROC_REF(teleport_mobs))), step = "mob", when = PROC_REF(teleport_to_mob)), asks(/datum/prompt/choice, fields = list("title" = "Jump to Area", "question" = computed(PROC_REF(teleport_area_question)), "choices" = computed(PROC_REF(teleport_areas))), step = "area", when = PROC_REF(teleport_to_area)), then(PROC_REF(ui_act_teleport)))
-	op("gib", ui_act("gib"), then(PROC_REF(ui_act_gib)))
-	op("dust", ui_act("dust"), then(PROC_REF(ui_act_dust)))
+	op("gib", ui_act("gib"),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(destroy_question)), "title" = "Gib?", "choices" = list("KILL", "Cancel"), "timeout" = 0), step = "death"),
+		then(PROC_REF(ui_act_gib)))
+	op("dust", ui_act("dust"),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(destroy_question)), "title" = "Dust?", "choices" = list("KILL", "Cancel"), "timeout" = 0), step = "death"),
+		then(PROC_REF(ui_act_dust)))
 	op("paralyse", ui_act("paralyse"), then(PROC_REF(ui_act_paralyse)))
 	op("subtle_message", ui_act("subtle_message"), then(PROC_REF(ui_act_subtle_message)))
 	op("direct_narrate", ui_act("direct_narrate"), then(PROC_REF(ui_act_direct_narrate)))
@@ -99,7 +103,9 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("cloaking", ui_act("cloaking"), then(PROC_REF(ui_act_cloaking)))
 	op("give_quest", ui_act("give_quest"), needs(req(PROC_REF(has_target))), asks(/datum/prompt/choice, fields = list("title" = "Quest!", "question" = "Do you want to give a random quest or a personalised one?", "choices" = list("Random", "Personalised", "Cancel")), step = "kind"), asks(/datum/prompt/text, fields = list("title" = "Quest!!!", "question" = "What is their quest?"), step = "quest", when = PROC_REF(quest_personalised)), then(PROC_REF(ui_act_give_quest)))
 	op("rejuvenate", ui_act("rejuvenate"), then(PROC_REF(ui_act_rejuvenate)))
-	op("popup-box", ui_act("popup-box"), then(PROC_REF(ui_act_popup_box)))
+	op("popup-box", ui_act("popup-box"),
+		asks(/datum/prompt/text, fields = list("question" = "Write a message to send to the user with a space for them to reply without using the text box:", "title" = "Message", "timeout" = 0), step = "message"),
+		then(PROC_REF(ui_act_popup_box)))
 	op("stop-orbits", ui_act("stop-orbits"), then(PROC_REF(ui_act_stop_orbits)))
 	op("revert-mob-tf", ui_act("revert-mob-tf"), then(PROC_REF(ui_act_revert_mob_tf)))
 
@@ -907,24 +913,15 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 		target().forceMove(pick(get_area_turfs(where_to)))
 		log_admin("[key_name(user)] jumped [target()] to [where_to]")
 
-/datum/eventkit/player_effects/proc/ui_act_gib(datum/act/op/A)
-	open_request(src, /datum/prompt/choice, PROC_REF(gib_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Are you sure you want to destroy [target()]?", title = "Gib?", choices = list("KILL", "Cancel"), timeout = 0)
+/datum/eventkit/player_effects/proc/destroy_question(datum/act/op/A)
+	return "Are you sure you want to destroy [target()]?"
 
-/datum/eventkit/player_effects/proc/gib_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/death = A.answer.value
-	if(death == "KILL")
+/datum/eventkit/player_effects/proc/ui_act_gib(datum/act/op/A)
+	if(A.step_value("death") == "KILL")
 		target().gib()
 
 /datum/eventkit/player_effects/proc/ui_act_dust(datum/act/op/A)
-	open_request(src, /datum/prompt/choice, PROC_REF(dust_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Are you sure you want to destroy [target()]?", title = "Dust?", choices = list("KILL", "Cancel"), timeout = 0)
-
-/datum/eventkit/player_effects/proc/dust_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/death = A.answer.value
-	if(death == "KILL")
+	if(A.step_value("death") == "KILL")
 		target().dust()
 
 /datum/eventkit/player_effects/proc/ui_act_paralyse(datum/act/op/A)
@@ -1019,17 +1016,15 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 	Tar.rejuvenate()
 
 /datum/eventkit/player_effects/proc/ui_act_popup_box(datum/act/op/A)
-	open_request(src, /datum/prompt/text, PROC_REF(popup_box_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Write a message to send to the user with a space for them to reply without using the text box:", title = "Message", timeout = 0)
-
-/datum/eventkit/player_effects/proc/popup_box_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/message = A.answer.value
+	var/message = A.step_value("message")
 	if(!message)
 		return
+	var/mob/user = A.actor
 	log_admin("[key_name(user)] sent message to [target()]: [message]")
-	// The player answers in their own time; the reply doesn't need this panel open.
+	popup_message_target(user, message)
+
+/// The player answers in their own time; the reply doesn't need this panel (or the op that sent it) open, so this question is a request of its own.
+/datum/eventkit/player_effects/proc/popup_message_target(mob/user, message)
 	open_request(src, /datum/prompt/text/admin_popup, PROC_REF(popup_replied), answerer = target(), question = "An admin has sent you a message: [message]", admin_name = key_name(user))
 
 /datum/eventkit/player_effects/proc/ui_act_stop_orbits(datum/act/op/A)
@@ -1043,10 +1038,6 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 
 /// The target of the effects (a relation view: null once that is deleted).
 /// The target's organs (every organ a player effect may pick), for the organ questions.
-/// The answer to a question a button asked still counts (its window is still open and interactive for the one who answers).
-/datum/eventkit/player_effects/proc/request_usable(datum/request/R)
-	return window_request_usable(src, R)
-
 /datum/eventkit/player_effects/proc/organ_choices(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	var/list/organs = list()

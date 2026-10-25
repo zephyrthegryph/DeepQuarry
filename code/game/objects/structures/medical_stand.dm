@@ -27,8 +27,12 @@ CAPABILITIES(/obj/structure/medical_stand)
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	op("toggle_iv_mode", menu(), label("Toggle IV Mode"), needs(req(PROC_REF(actor_is_living))), then(PROC_REF(medical_stand_toggle_mode_effect)))
-	op("set_iv_transfer", menu(), label("Set IV transfer amount"), then(PROC_REF(set_APTFT_effect)))
-	op("medical_stand_interaction_hand", hand(), ungated(), then(PROC_REF(medical_stand_interaction_hand)))
+	op("set_iv_transfer", menu(), label("Set IV transfer amount"),
+		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(stand_title)), "question" = "Amount per transfer from this:", "choices" = computed(PROC_REF(transfer_amount_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "amount"),
+		then(PROC_REF(set_APTFT_effect)))
+	op("medical_stand_interaction_hand", hand(), ungated(),
+		asks(/datum/prompt/choice, fields = list("title" = "Stand Choice", "question" = "What do you want to do?", "choices" = computed(PROC_REF(hand_options)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action", when = PROC_REF(hand_options_many)),
+		then(PROC_REF(medical_stand_interaction_hand)))
 	op("medical_stand_interaction_item", item(/obj/item), then(PROC_REF(medical_stand_interaction_item)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	// What a drag of a patient onto the stand (and the choice it asks) starts; the patient comes with the call.
@@ -212,26 +216,29 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	return OP_OK
 
 /// Old attack_hand (it never reached the structure gate).
-/obj/structure/medical_stand/proc/medical_stand_interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
+/// What a hand on the stand can do now.
+/obj/structure/medical_stand/proc/hand_options(datum/act/op/A)
 	var/list/available_options = list()
 	if (tank)
 		available_options += "Toggle valve"
 		available_options += "Remove tank"
 	if (beaker)
 		available_options += "Remove vessel"
+	return available_options
 
-	if(available_options.len > 1)
-		open_request(src, /datum/prompt/choice, PROC_REF(stand_action_chosen), answerer = user, title = "Stand Choice", question = "What do you want to do?", choices = available_options, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-		return TRUE
-	if(available_options.len)
-		stand_action(user, available_options[1])
+/// More than one thing to do: the hand asks which.
+/obj/structure/medical_stand/proc/hand_options_many(datum/act/op/A)
+	return length(hand_options(A)) > 1
+
+/obj/structure/medical_stand/proc/medical_stand_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	var/list/available_options = hand_options(A)
+	var/choice = A.step_value("action")
+	if(isnull(choice) && length(available_options) == 1)
+		choice = available_options[1]
+	if(choice)
+		stand_action(user, choice)
 	return TRUE
-
-/obj/structure/medical_stand/proc/stand_action_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	stand_action(A.request.answerer, A.answer.value)
 
 /obj/structure/medical_stand/proc/stand_action(mob/user, action_type)
 	switch (action_type)
@@ -281,16 +288,21 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	to_chat(user, "The IV drip is now [mode ? "injecting" : "taking blood"].")
 	return OP_OK
 
-/obj/structure/medical_stand/proc/set_APTFT_effect(datum/act/op/A)
-	open_request(src, /datum/prompt/choice, PROC_REF(transfer_amount_chosen), answerer = A.actor, title = "[src]", question = "Amount per transfer from this:", choices = transfer_amounts, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return OP_OK
+/obj/structure/medical_stand/proc/stand_title(datum/act/op/A)
+	return "[src]"
 
-/obj/structure/medical_stand/proc/transfer_amount_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/N = A.answer.value
+/obj/structure/medical_stand/proc/transfer_amount_choices(datum/act/op/A)
+	return transfer_amounts
+
+/// The amount per transfer the question was answered with.
+/obj/structure/medical_stand/proc/set_APTFT_effect(datum/act/op/A)
+	var/datum/prompt/answer = A.answer
+	if(!answer)
+		return OP_OK
+	var/N = answer.value
 	if(N)
 		transfer_amount = N
+	return OP_OK
 
 /obj/structure/medical_stand/proc/attach_mask(mob/living/carbon/C)
 	if(C && istype(C))

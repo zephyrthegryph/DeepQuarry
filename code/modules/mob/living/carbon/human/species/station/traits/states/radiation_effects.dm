@@ -264,7 +264,9 @@
 ///TGUI below here
 CAPABILITIES(/datum/trait_state/radiation_effects)
 	interface("RadiationConfig", title = "Radiation Config")
-	op("toggle_color", ui_act("toggle_color"), then(PROC_REF(ui_act_toggle_color)))
+	op("toggle_color", ui_act("toggle_color"),
+		asks(/datum/prompt/color, fields = list("question" = "Select a color you wish your radioactive glow to be!", "default" = computed(PROC_REF(radiation_color_default)), "title" = "Color Selector", "timeout" = 0), step = "color"),
+		then(PROC_REF(ui_act_toggle_color)))
 	op("toggle_glow", ui_act("toggle_glow"), then(PROC_REF(ui_act_toggle_glow)))
 	op("toggle_nutrition", ui_act("toggle_nutrition"), then(PROC_REF(ui_act_toggle_nutrition)))
 
@@ -295,17 +297,15 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 
 	return data
 
-/datum/trait_state/radiation_effects/proc/radiation_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
+/datum/trait_state/radiation_effects/proc/radiation_color_default(datum/act/op/A)
+	return radiation_color
+
+/// The colour the question was answered with becomes the glow's.
+/datum/trait_state/radiation_effects/proc/ui_act_toggle_color(datum/act/op/A)
 	var/datum/prompt/color/ask = A.answer
-	if(ask.value)
+	if(ask?.value)
 		set_radiation_color(ask.value)
 	SStgui.update_uis(src)
-
-/datum/trait_state/radiation_effects/proc/ui_act_toggle_color(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/color, PROC_REF(radiation_color_picked), answerer = user, question = "Select a color you wish your radioactive glow to be!", default = radiation_color, title = "Color Selector", timeout = 0)
 	return FALSE
 
 /datum/trait_state/radiation_effects/proc/ui_act_toggle_glow(datum/act/op/A)

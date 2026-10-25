@@ -55,7 +55,7 @@ CAPABILITY_TYPE(storage, CAP_STORAGE, /datum/capability/lib/storage, key = NONE,
 		op("toggle_open", hand(), answers(INTENT_TOGGLE), label("Open"), then(CAP_PROC(toggle_window))),
 		op("empty_out", in_hand(), priority(OP_PRIORITY_PART), when(CAP_PROC(empties_in_hand)), label("Empty out"), then(CAP_PROC(empty_it))),
 		op("empty", menu(), when(CAP_PROC(empties_by_menu)), label("Empty contents"), then(CAP_PROC(empty_it))),
-		op("gather_mode", menu(), when(CAP_PROC(switches_gathering)), label("Switch gathering method"), needs(carried()), then(CAP_PROC(switch_gathering))), 		op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(small_self_drag)), label("Climb in"), then(CAP_PROC(climb_in))))
+		op("gather_mode", menu(), when(CAP_PROC(switches_gathering)), label("Switch gathering method"), needs(carried()), then(CAP_PROC(switch_gathering))), 		op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(small_self_drag)), label("Climb in"), needs(req(CAP_PROC(creature_fits))), then(CAP_PROC(climb_in))))
 
 // ---- a micro climbing in ----
 
@@ -79,22 +79,30 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 /obj/item/size_probe
 	name = "creature"
 
+/// Why the storage would not take a held creature of the climber's kind (a stand-in of its size is asked), or null.
+/datum/capability/lib/storage/proc/creature_refusal(atom/holder, mob/living/user)
+	var/obj/item/size_probe/probe = new
+	probe.set_w_class(ismouse(user) ? ITEMSIZE_TINY : ITEMSIZE_SMALL)
+	var/refused = entry_refusal(holder, probe, user)
+	qdel(probe) // ALLOW(lifecycle): a probe made to measure the fit is dropped at once, it never held anything
+	return refused
+
+/// needs: the storage would take a held creature of the climber's kind.
+/datum/capability/lib/storage/proc/creature_fits(datum/act/op/A)
+	return creature_refusal(A.holder, A.actor) ? MSG(storage/too_big_to_climb) : null
+
 /// The mob is scooped into a holder the size of its kind, which goes into the storage, if the storage would take one.
 /datum/capability/lib/storage/proc/climb_in(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/storage/bag = A.holder
 	bag.make_contents_real()
-	var/obj/item/size_probe/probe = new
-	probe.set_w_class(ismouse(user) ? ITEMSIZE_TINY : ITEMSIZE_SMALL)
-	var/refused = bag.insert_refusal(probe, user)
-	qdel(probe) // ALLOW(lifecycle): a probe made to measure the fit is dropped at once, it never held anything
-	if(refused)
-		A.reason = /datum/msg/storage/too_big_to_climb
-		return OP_REFUSED
+	if(creature_refusal(bag, user))
+		log_world("STORAGE: [bag] refused [user] as a creature after the fit check")
+		return OP_FAILED
 	var/obj/item/holder/H = new user.holder_type(get_turf(user), user)
 	if(!bag.insert_item(H, null, TRUE))
-		A.reason = /datum/msg/storage/too_big_to_climb
-		return OP_REFUSED
+		log_world("STORAGE: [bag] would not take the holder of [user] after the fit check")
+		return OP_FAILED
 	to_chat(user, span_notice("You climb into \the [bag]."))
 	return OP_OK
 

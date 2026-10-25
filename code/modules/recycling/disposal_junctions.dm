@@ -284,7 +284,7 @@ CAPABILITIES(/obj/structure/disposalpipe/sortjunction)
 /obj/structure/disposalpipe/sortjunction/proc/scan_wire_pulsed(datum/act/A)
 	if(sort_scan)
 		sort_scan = FALSE
-	after(src, 10 SECONDS, PROC_REF(reset_scan))
+	after(src, 10 SECONDS, PROC_REF(reset_scan), key = "reset_scan")
 
 /// A frozen sorter sends things forward.
 /obj/structure/disposalpipe/sortjunction/proc/forward_wire_pulsed(datum/act/A)
