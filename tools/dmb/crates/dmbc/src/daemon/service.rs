@@ -274,6 +274,7 @@ struct Shared {
     engines: Arc<crate::runner_host::EnginePayloads>,
     executors: Arc<crate::runner_host::ExecutorPools>,
     procedures: Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>,
+    store: Arc<crate::shared_store::SharedStore>,
     compiler: u128,
     retiring: AtomicBool,
     slots: Mutex<BTreeMap<SessionKey, Arc<Slot>>>,
@@ -448,7 +449,10 @@ impl Shared {
             Arc::clone(&self.engines),
             Arc::clone(&self.executors),
             Arc::clone(&self.procedures),
+            Arc::clone(&self.store),
         );
+        // The replacement holds one handle; with no other session the released session's records have no user left.
+        self.store.records.clear_if_held_by_at_most(1);
     }
     /// What the daemon holds for `key` right now: a usable retained session (hot) or the reason there is none.
     fn probe(&self, key: &SessionKey) -> crate::compile_stats::SessionState {
@@ -494,6 +498,7 @@ impl Shared {
                         Arc::clone(&self.engines),
                         Arc::clone(&self.executors),
                         Arc::clone(&self.procedures),
+                        Arc::clone(&self.store),
                     )),
                     newest: Mutex::new(BTreeMap::new()),
                     last: Mutex::new(Instant::now()),
@@ -677,6 +682,7 @@ pub(super) fn serve() -> io::Result<()> {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
         procedures: Arc::new(Default::default()),
+        store: Arc::new(Default::default()),
         compiler,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),
@@ -1115,6 +1121,7 @@ mod tests {
             engines: Arc::new(Default::default()),
             executors: Arc::new(Default::default()),
             procedures: Arc::new(Default::default()),
+            store: Arc::new(Default::default()),
             compiler: 1,
             retiring: AtomicBool::new(false),
             slots: Mutex::new(BTreeMap::new()),

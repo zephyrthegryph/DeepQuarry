@@ -38,6 +38,7 @@ pub mod request_runner;
 pub mod resource_journal_coverage;
 pub mod resource_manifest;
 pub mod runner_host;
+pub(crate) mod shared_store;
 mod runner_retained_census;
 pub mod session;
 pub mod telemetry;

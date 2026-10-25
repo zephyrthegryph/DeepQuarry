@@ -159,7 +159,7 @@ fn output_store_is_shared_by_destination_drive() {
     let first = windows_store_path(Path::new("E:/work/a/project.dme"), local).unwrap();
     let second = windows_store_path(Path::new("E:/work/b/project.dme"), local).unwrap();
     assert_eq!(first, second);
-    assert_eq!(first, Path::new("E:/").join(".dmbd/pairs"));
+    assert_eq!(first, Path::new("E:/").join("dq-cache/dmbd/pairs"));
     assert!(windows_store_path(Path::new("//server/share/project.dme"), local).is_err());
 }
 

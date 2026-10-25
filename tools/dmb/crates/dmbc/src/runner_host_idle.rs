@@ -79,9 +79,7 @@ impl BuildHost {
             );
         }
         // Payload-free resource/demand proofs remain with the semantic owner.
-        if self.memo.is_some() {
-            self.memo = Some(Default::default());
-        }
+        self.reset_memo();
         if self.prepared_sources.is_some() {
             self.prepared_sources = Some(Arc::new(Default::default()));
         }

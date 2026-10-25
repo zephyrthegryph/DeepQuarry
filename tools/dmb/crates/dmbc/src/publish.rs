@@ -98,7 +98,9 @@ fn windows_store_path(project: &Path, local: &Path) -> io::Result<PathBuf> {
     if drive(local) == Some(destination) {
         Ok(local.join("dmbd/pairs"))
     } else {
-        Ok(PathBuf::from(format!("{}:\\", destination as char)).join(".dmbd/pairs"))
+        // A drive other than the local-app-data drive keeps its pairs beside the other disposable compiler caches
+        // (`E:/dq-cache/dmbd/...`), never at the drive root.
+        Ok(PathBuf::from(format!("{}:\\", destination as char)).join("dq-cache/dmbd/pairs"))
     }
 }
 

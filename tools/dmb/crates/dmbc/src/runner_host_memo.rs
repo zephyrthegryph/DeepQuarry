@@ -199,17 +199,91 @@ impl Store {
         self.count += 1;
     }
 }
-#[derive(Default)]
+/// The decoded memo records of the whole daemon, content-keyed and immutable (`Arc` records, equality by content), shared by
+/// every session and every variant: a record a session decoded from the disk cache or computed is found by any other session
+/// instead of being decoded again into a private copy. Consumers still validate every candidate against their own inputs
+/// (`ExpansionMemo` contract), so what a session sees is what the disk cache would have given it; only the decoded memory is
+/// stored once. One byte budget (`TOTAL_BUDGET`) covers all sessions.
+pub(crate) struct SharedRecords {
+    store: Mutex<Store>,
+    /// Live `ResidentMemo` handles: a session releasing its state clears the records only when it is the last holder.
+    handles: std::sync::atomic::AtomicUsize,
+}
+impl Default for SharedRecords {
+    fn default() -> Self {
+        Self {
+            store: Mutex::default(),
+            handles: std::sync::atomic::AtomicUsize::new(0),
+        }
+    }
+}
+impl SharedRecords {
+    /// Decoded bytes and record count currently held (diagnostic and tests).
+    pub(crate) fn usage(&self) -> (usize, usize) {
+        let store = self.store.lock().unwrap_or_else(|e| e.into_inner());
+        (store.total, store.count)
+    }
+    /// Drop every record when at most `holders` memo handles remain (a released session keeps its own replacement).
+    pub(crate) fn clear_if_held_by_at_most(&self, holders: usize) {
+        if self.handles.load(std::sync::atomic::Ordering::Acquire) <= holders {
+            self.clear();
+        }
+    }
+    fn clear(&self) {
+        *self.store.lock().unwrap_or_else(|e| e.into_inner()) = Store::default();
+    }
+}
 pub(super) struct ResidentMemo {
     inputs: dm_preprocess::regions::ExpansionInputs,
-    store: Mutex<Store>,
+    records: Arc<SharedRecords>,
+}
+impl Default for ResidentMemo {
+    /// A memo with a private store: one-shot callers and tests. A daemon session uses [`ResidentMemo::sharing`].
+    fn default() -> Self {
+        Self::sharing(&Arc::default())
+    }
+}
+impl Drop for ResidentMemo {
+    fn drop(&mut self) {
+        self.records
+            .handles
+            .fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
+    }
 }
 impl ResidentMemo {
+    /// This session's memo over the daemon-wide record store; its expansion admissions stay its own.
+    pub(super) fn sharing(records: &Arc<SharedRecords>) -> Self {
+        records
+            .handles
+            .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+        Self {
+            inputs: Default::default(),
+            records: Arc::clone(records),
+        }
+    }
+    /// Drop this session's resident state (idle release, engine change). The shared records go only when no other session
+    /// holds the store: they are other sessions' hot data, bounded by the store's own budget.
+    pub(super) fn released(self) -> Self {
+        let records = Arc::clone(&self.records);
+        let others = records
+            .handles
+            .load(std::sync::atomic::Ordering::Acquire)
+            .saturating_sub(1);
+        drop(self);
+        if others == 0 {
+            records.clear();
+        }
+        Self::sharing(&records)
+    }
+    pub(super) fn shared_records(&self) -> &Arc<SharedRecords> {
+        &self.records
+    }
     pub(super) fn input_census(&self) -> crate::heap_census::HeapCensusReport {
         crate::heap_census::expansion_input_census(&self.inputs)
     }
     fn records(&self, kind: usize, key: u128) -> Vec<Record> {
-        self.store
+        self.records
+            .store
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .records
@@ -220,7 +294,8 @@ impl ResidentMemo {
     }
 
     fn insert(&self, record: Record) {
-        self.store
+        self.records
+            .store
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .insert(record);
@@ -477,6 +552,40 @@ mod tests {
         assert_eq!(disk.reads.load(Ordering::Relaxed), 0);
         assert!(view.visit_fragment_candidates(key, &mut |_| true));
         assert_eq!(disk.reads.load(Ordering::Relaxed), 1);
+    }
+    #[test]
+    fn sessions_over_one_store_hold_a_decoded_record_once() {
+        let records = Arc::new(SharedRecords::default());
+        let first = ResidentMemo::sharing(&records);
+        let second = ResidentMemo::sharing(&records);
+        let disk = Disk {
+            record: fragment(b"decoded once"),
+            reads: AtomicUsize::new(0),
+        };
+        let key = disk.record.key();
+        let mut from_first = None;
+        assert!(first.with_disk(Some(&disk)).with_resident_only(0).visit_fragment_candidates(key, &mut |record| {
+            from_first = Some(Arc::clone(record));
+            true
+        }));
+        assert_eq!(disk.reads.load(Ordering::Relaxed), 1);
+        // The other session finds the same allocation resident, with no disk read at all.
+        let mut from_second = None;
+        assert!(second.with_disk(None).visit_fragment_candidates(key, &mut |record| {
+            from_second = Some(Arc::clone(record));
+            true
+        }));
+        assert!(Arc::ptr_eq(&from_first.unwrap(), &from_second.unwrap()));
+        assert_eq!(disk.reads.load(Ordering::Relaxed), 1);
+        assert_eq!(records.usage().1, 1);
+        // Releasing one session leaves a record another session still holds; the last release drops it.
+        let first = first.released();
+        assert_eq!(records.usage().1, 1);
+        drop(second);
+        let first = first.released();
+        assert_eq!(records.usage().1, 0);
+        drop(first);
+        assert_eq!(records.handles.load(Ordering::Relaxed), 0);
     }
     #[test]
     fn oversized_record_preserves_existing_candidates_and_variant_order_is_bounded() {
