@@ -601,15 +601,32 @@ tree resolution 0.04 s for a body edit and 0.7-1.1 s for a declaration edit, bod
 - *Deleted*: `DMB_FRONTEND_REVISION` (`RevisionMode`), `plan_regions_edit`, `expand_regions_edit`, `RowEdit`/`spliced`.
   `DMB_FRONTEND_VERIFY=1` replaces the verify mode.
 
-**Measured** (pool-c2, one resident daemon per compiler, stage times of the request log, machine shared with other lanes):
+**Measured** (pool-c2, interleaved A/B: the published compiler and this branch's, each with its own resident daemon started from
+a real compile, every source state compiled by both in alternating order; stage times of the request log; the machine was shared
+with other lanes, so a round with a loaded machine is dropped from the ranges):
 
-| Frontend stage, hot | before | after |
-|---|---|---|
-| body edit in a file with directives | 2.2 s | 0.41 s |
-| body edit, directive-free file | 1.23 s | 0.38 s |
-| default edit (one var) | 2.1 s | 1.2 s |
-| added var | 2.4-3.0 s | 1.3 s |
-| `#define` edit | 5.4 s | 3.2 s (planning 0.47, expansion 0.72: every later subtree starts from a different state) |
+| One-file edit, hot | frontend before | frontend after | request wall before | request wall after |
+|---|---|---|---|---|
+| body edit in a file with directives | 1.7-2.1 s | 0.31-0.36 s | 5.3-6.4 s | 3.9-4.4 s |
+| body edit in a directive-free file | 1.06-1.18 s | 0.29-0.32 s | 4.4-4.9 s | 3.7-4.0 s |
+| declaration edit (added var, then one default) | 1.85-1.98 s | 0.88-0.97 s | 5.6-6.6 s | 4.4-5.0 s |
+| `#define` edit | 4.3-6.8 s | 4.1-4.9 s | 17-20 s | 17-21 s |
+
+A `#define` edit changes the state every later include subtree starts from, so the ordered pass replays them (the same work as
+before, minus the expansion rows it moves); its request is dominated by the full relowering the compile stage does ("program text
+outside bodies changed"), not by the frontend.
+
+Where a hot leaf body edit spends its 0.3 s now: plan 0.01 s, expansion 0.03-0.08 s, source index 0.0, declaration parsing
+0.11 s (leaf claims 0.07 s, one chunk parsed), origins 0.07 s, tree 0.04 s, body indexing 0.07 s.
+
+**Equivalence** (production tree; the same sequence in the production world and the `-DCIBUILDING -DCITESTING` world: cold, body
+edit, body edit adding a reference, added var, changed default, added proc, added type, `#define` edit, then the reverts): the
+incremental output of this branch has the same pair id, `.dmb` hash and size and `.rsc` hash as the incremental output of the
+published compiler at all 22 steps; against a cold `--no-daemon --no-cache` compile of the same source the pair id is identical
+for the body edits and every revert, and `dmb-equiv --all --ignore-debug --ignore-order` says EQUIVALENT at all 22 (the
+declaration, proc, type and define steps differ from a cold compile in table order only, as the append numbering does in the
+published compiler). `DMB_FRONTEND_VERIFY=1` on the production-world sequence logged "incremental plan equals the full plan" and "reusing
+expansion equals the full expansion" on every request that had a previous plan, and no mismatch.
 
 **Not done, and why**
 
