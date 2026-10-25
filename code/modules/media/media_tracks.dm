@@ -30,4 +30,4 @@
 	return str
 
 /datum/track/proc/toTguiList()
-	return list("ref" = "\ref[src]", "title" = title, "artist" = artist, "genre" = genre, "duration" = duration)
+	return list("ref" = ref_token(src), "title" = title, "artist" = artist, "genre" = genre, "duration" = duration)

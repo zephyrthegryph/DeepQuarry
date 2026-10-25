@@ -50,7 +50,7 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 		if(UWI)
 			for(var/datum/gear_tweak/gt in UWI.tweaks)
 				tweaks += list(list(
-					"ref" = "\ref[gt]",
+					"ref" = ref_token(gt),
 					"label" = gt.get_contents(get_metadata(H, UWC.name, gt)),
 				))
 		cats += list(list(

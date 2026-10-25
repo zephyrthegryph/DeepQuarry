@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/stack)
 		"res_amount" = R.result_amount,
 		"max_res_amount" = R.max_made,
 		"req_amount" = R.cost,
-		"ref" = "\ref[R]",
+		"ref" = ref_token(R),
 	)
 
 /// The window's build button: `ref` is the recipe, `multiplier` how many batches.

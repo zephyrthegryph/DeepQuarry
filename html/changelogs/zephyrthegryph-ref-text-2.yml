@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Window payload refs in the robot modifier, event manager, cataloguer, memory editor, player panel, library, stacks, underwear wardrobe, and jukebox/walkpod tracks are ref_token() handles"
