@@ -214,6 +214,11 @@ impl<'a> Cx<'a> {
     pub fn list(&self, key: &str) -> &'a [String] {
         self.scope.list(key)
     }
+
+    /// A named string table (`[lint.<name>.tables.<key>]`), empty when absent.
+    pub fn table(&self, key: &str) -> std::collections::BTreeMap<String, String> {
+        self.scope.table(key).cloned().unwrap_or_default()
+    }
 }
 
 /// A finished run of one lint, ready for the policy to judge.

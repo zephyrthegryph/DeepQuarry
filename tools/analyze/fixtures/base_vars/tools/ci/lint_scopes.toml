@@ -1,0 +1,13 @@
+[lint.base_vars.lists]
+list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+list_init_exempt_files = ["code/__defines/tgs.dm"]
+base_var_home_macros = ["TRACKED", "TRACKED_SCHEMA", "TRACKED_DATA", "SETTER", "STAT"]
+base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/datum/cooldown_table"]
+hot_ceiling = ["4"]
+record_accessor_prefixes = ["set_", "get_"]
+
+[lint.base_vars.tables.base_var_home_hot]
+"/atom/hot_listed" = "read on every move of every atom in code/game/atoms_movable.dm Move()"
+"/atom/hot_gone" = "read on every move of every atom in code/game/atoms_movable.dm Move()"
+"/atom/hot_short" = "hot"
+"/mob/hot_tracked" = "read on every move of every atom in code/game/atoms_movable.dm Move()"

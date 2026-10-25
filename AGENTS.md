@@ -186,6 +186,8 @@ it. Don't annotate new debt to get under a ceiling; use the form the lint points
 the vendored TGS DMAPI are exempt by path from the lints whose `lint_scopes.toml` section lists them (instance_list,
 ownership, silent_catch, spatial, lifecycle_counts, tracked, cache, scheduler, ...): don't annotate there.
 
+A hot per-tick base var that must stay on its base type is a `"<type>/<var>" = "<justification>"` row in `[lint.base_vars.tables.base_var_home_hot]` of `tools/ci/lint_scopes.toml` (the justification names the .dm file and proc that read it every tick, move or turf update; the `base_vars` lint fails a row whose var is gone or whose justification is under 40 characters).
+
 The declared UI model (`DECLARE_UI`, `UI_ACT`, `UI_DATA`, `UI_SUBACT`, `act_ask`, `ui_act_allowed()`, ...) is deleted and hard-banned
 (`[lint.legacy_forms.lists] banned`): a window is `interface()` in `CAPABILITIES`, its buttons are `op(..., ui_act(...))`, its data is
 `ui_data(datum/act/eval/A)`, its questions are `asks()`. The old `dx_old_forms` sys rules were deleted because each named a replacement
