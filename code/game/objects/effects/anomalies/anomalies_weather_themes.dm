@@ -32,7 +32,7 @@ CAPABILITIES(/datum/anomalous_weather)
 	if(reagent_id)
 		rel_set(src, nameof(reagent_holder), new /datum/reagents(10000, null))
 		reagent_holder.add_reagent(reagent_id, 10000)
-		weather_colour = reagent_holder.get_color()
+		weather_colour = text_or_null(reagent_holder.get_color())
 
 	if(weather_colour)
 		visuals.color = weather_colour

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Wrapped unknown call results stored in text and number vars so the untyped ratchet shrinks"

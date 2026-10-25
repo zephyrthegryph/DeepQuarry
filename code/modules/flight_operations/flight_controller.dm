@@ -94,7 +94,7 @@ CAPABILITIES(/datum/system/flight)
 		destination.orbit_inclination = 4
 	else
 		destination.kind = istype(target, /obj/effect/overmap/visitable/ship) ? FLIGHT_DEST_VESSEL : (target.base ? FLIGHT_DEST_STATION : FLIGHT_DEST_ORBIT)
-		destination.orbit_parent_id = first_planet_id()
+		destination.orbit_parent_id = text_or_null(first_planet_id())
 		destination.body_radius = destination.kind == FLIGHT_DEST_STATION ? 1.8 : 1.15
 		destination.body_color = destination.kind == FLIGHT_DEST_STATION ? "#bda5ff" : "#62d5ff"
 		destination.orbit_radius = destination.kind == FLIGHT_DEST_STATION ? 14 : 19

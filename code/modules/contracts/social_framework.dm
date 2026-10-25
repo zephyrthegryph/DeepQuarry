@@ -78,8 +78,8 @@ CAPABILITIES(/datum/contract/social)
 
 /datum/contract/social/on_negotiated_terms_changed()
 	..()
-	minimum_grade_ratio = negotiated_effect("minimum_grade_ratio", CONTRACT_GRADE_MINIMUM_RATIO)
-	success_grade_ratio = negotiated_effect("success_grade_ratio", CONTRACT_GRADE_SUCCESS_RATIO)
+	minimum_grade_ratio = num_or_null(negotiated_effect("minimum_grade_ratio", CONTRACT_GRADE_MINIMUM_RATIO))
+	success_grade_ratio = num_or_null(negotiated_effect("success_grade_ratio", CONTRACT_GRADE_SUCCESS_RATIO))
 
 /datum/contract/social/on_accepted(mob/living/user, atom/source)
 	lock_stakeholder_requirements()
