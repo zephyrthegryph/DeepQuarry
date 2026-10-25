@@ -158,3 +158,59 @@ fn unpublished_link_binding_changes_cannot_replace_published_recipe() {
     first.build(changed_inventory()).unwrap();
     assert!(original.same_owner(&first.current.lock().unwrap().as_ref().unwrap().bindings));
 }
+#[test]
+fn restored_tables_keep_the_numbering_and_strings_and_refuse_what_they_cannot_prove() {
+    let owner = SymbolId::of("/datum/a");
+    let proc_name = SymbolId::of("run");
+    let string = SymbolId::of("name");
+    let proc_key = Key::Proc {
+        owner,
+        name: proc_name,
+        occurrence: 0,
+    };
+    let mut full = LinkInventory::default();
+    for (id, text) in [(owner, "/datum/a"), (proc_name, "run"), (string, "name")] {
+        full.spellings.push((id, Arc::from(text.as_bytes())));
+    }
+    full.entries.push(Entry {
+        key: Key::String(string),
+        content: b"name".to_vec().into(),
+    });
+    full.entries.push(Entry {
+        key: proc_key,
+        content: b"code".to_vec().into(),
+    });
+    let built = LinkTables::build(full).unwrap();
+    let restored = LinkTables::from_stored(
+        built.assignments().clone(),
+        built.slots().clone(),
+        built.string_contents().map(|(id, bytes)| (id, Arc::<[u8]>::from(bytes))),
+    );
+    assert_eq!(restored.assignments(), built.assignments());
+    assert_eq!(restored.index(proc_key), built.index(proc_key));
+    assert_eq!(restored.content(Key::String(string)), Some(&b"name"[..]));
+    assert_eq!(restored.content(proc_key), None, "only strings are stored");
+    let starts = BTreeMap::from([(Table::String, 10), (Table::Procedure, 20)]);
+    // A string already numbered with equal bytes is not numbered again; a new one appends.
+    let extra = SymbolId::of("extra");
+    let (extended, added) = restored
+        .extended(
+            [
+                (Key::String(string), b"name".to_vec().into()),
+                (Key::String(extra), b"extra".to_vec().into()),
+            ],
+            &starts,
+        )
+        .unwrap();
+    assert_eq!(added, vec![(Key::String(extra), 10)]);
+    assert_eq!(extended.index(Key::String(string)), built.index(Key::String(string)));
+    // The same string with other bytes, and a key numbered without stored content, cannot be shown equal.
+    assert!(matches!(
+        restored.extended([(Key::String(string), b"other".to_vec().into())], &starts),
+        Err(LinkError::ContentCollision(_))
+    ));
+    assert!(matches!(
+        restored.extended([(proc_key, b"code".to_vec().into())], &starts),
+        Err(LinkError::ContentCollision(_))
+    ));
+}

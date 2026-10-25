@@ -470,6 +470,46 @@ Proof: `cargo test -p dmbc` (1088 tests, new: `replay_reads_certifies_the_second
 evicted-session output against a cold `--no-daemon --no-cache` compile: EQUIVALENT; a `DMB_DEP_INDEX_VERIFY=1` run: 0 contradicted.
 
 
+## Model persistence: a variant's patch base on disk (2026-10-24, lane `compiler/variant-spill`)
+
+A variant (project, defines, compiler policy) keeps its last output as a patch base: the published image with its list rows
+(`PatchImage`), the link answers (`PatchLink`: numbering, string contents, mob bindings, initializer code), the field records and the
+source half (`OutputBase`: body roster, row lines, unit link footprints, inputs, archive, warnings, answer version). It is most of
+what turns an edit into a body patch, and it is gone whenever a variant stash, an idle tier, a retire or a daemon exit drops it.
+`variant_spill.rs` now writes it, one file per variant under `<cache root>/variant-spill/` (checksummed frames, the image raw and
+verified against its digest, written aside and renamed), before each of those drops (`BuildHost::spill_patch_bases`, called by
+`release_stashed_variants`, the compiler-artifacts tier, variant eviction, session release, retire, and a drop guard at daemon exit).
+A base whose image is already stored is not written again. The directory is bounded by `DMB_SPILL_BUDGET_GB` (4) and
+`DMB_SPILL_MAX_AGE_DAYS` (7) on every write and in the daemon's cache pass; `DMB_VARIANT_SPILL=0` turns it off.
+
+The next request of the variant attaches the file (`attach_spill`, header only) and `admit` restores it lazily
+(`restore_patch_base`) when the header's program text matches the request. Nothing is trusted: the admission compares the restored
+source half with the request exactly as it compares a live one. What is not stored and how admission copes:
+- unit symbolic records: a patch compares footprints only, so units are stored as footprint digests (`UnitBase::Digest`);
+- the retained model: recovered from the image when a string patch needs it (`recover_model`);
+- the expanded program text: row source lines are stored (`RowLines`), numeric default edits are not admitted on a restored output;
+- the answer marks: a restored output proves its answers from `AnswerFacts` (declarations identity, answer world, every resource
+  search with its answer hash; `QueryDb::answer_facts`, `prove_facts`). Its version and facts are retaken after the proof, and
+  no marking is made for an output restored or patched from a restored one (the table of this process is not a complete record).
+  A declaration edit therefore compiles whole, as before.
+
+Measured on the production tree (pool-c2, machine shared with other lanes, so only ratios mean something; a body constant edited
+before each compile): with the stash dropped under pressure the master compiler recompiled the dropped variant whole (test 89-96 s,
+game 79-175 s), while the same drop with the spill restored it (restore of a 104 MB image 1.6 s, whole compile 60 s of which startup
+and ABI preparation were 23 s under heavier load); a stash still resident patches in 10-20 s either way. Files were 123 MB (game) and
+164 MB (test), written in 2-3 s.
+
+Proof: `cargo test -p dmbc` (new: `variant_spill_tests` through the real request pipeline, restore after release, moved lines and new
+strings, declaration edit, damaged/truncated/foreign files, retire and idle pass; `facts_prove_a_stored_output_in_a_table_that_starts_empty`),
+`dm-link` and `byond-dmb` unit tests for the restored tables and row image.
+
+Daemon restart (own namespace, retire between steps, same output directory): after game 70 s and test 153 s whole compiles, a
+retired daemon stored 123 MB and 164 MB; the restarted daemon restored them in 0.7 and 0.8 s and compiled the edited game in 28 s and
+the edited test in 33 s (a whole compile after a restart was 70-190 s; 280-310 s on a cold file cache). `dmb-equiv --all --ignore-debug`
+of each restored-and-patched output (game, test) against a cold `--no-daemon --no-cache` compile of the same tree: EQUIVALENT.
+The stored `generated_outputs` input record names the output location, so a request that writes elsewhere (another
+`--artifact-directory`) is declined by admission and compiles whole. Remaining cost of a restored patch is the frontend
+and startup/ABI preparation (the next lanes: persisted frontend facts, dependency index). `cargo test -p dmbc` 1096 passed.
 ## Persisted dependency index, step 4: portable declaration answers and stage-time certification (2026-10-24, lane `compiler/dep-index-3`)
 
 Broken down first (`DMB_DEP_INDEX_KINDS=1` adds the untyped reads by query and answer kind to the `native dependency index` line):

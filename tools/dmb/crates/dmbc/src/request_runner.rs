@@ -444,6 +444,17 @@ fn run_build_attempt(
     if engine_capture.is_none() {
         host.clear_regions();
     }
+    // The variant's stored patch base (`dmbc::variant_spill`): this cache root's spill directory and this project, defines
+    // and compiler policy's file.
+    let spill_target = (executable && !no_cache && dmbc::variant_spill::enabled())
+        .then(|| cache_root.clone().map_or_else(dm_cache::Cache::default_root, Ok).ok())
+        .flatten()
+        .map(|root| {
+            (
+                dmbc::variant_spill::directory(&root),
+                dmbc::variant_spill::key(&project, &defines, memo_policy),
+            )
+        });
     let memo_cache = if executable && !no_cache {
         match cache_root.map_or_else(dm_cache::Cache::default_root, Ok) {
             Ok(root) => Some(Arc::new(dmbc::runner_disk::LazyDisk::new(root))),
@@ -506,8 +517,12 @@ fn run_build_attempt(
     // One request-local execution boundary spans input capture, parsing, ABI,
     // lowering and linking. Its Drop joins workers before the CLI profiler ends.
     let generation = if executable {
-        host.generation(memo_policy)
-            .map(|owner| owner.for_request(publishable_artifacts))
+        host.generation(memo_policy).map(|owner| {
+            if let Some((directory, key)) = &spill_target {
+                owner.attach_spill(directory.clone(), *key);
+            }
+            owner.for_request(publishable_artifacts)
+        })
     } else {
         None
     };
@@ -1258,6 +1273,7 @@ fn run_build_attempt(
                 procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answers_version()),
                 procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answers_context()),
                 procedure_memo.as_ref().and_then(|memo| Some(memo.query_db()?.mark_published())),
+                procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answer_facts()),
                 output.dmb.content_hash(),
             ) {
                 Some(base) => {

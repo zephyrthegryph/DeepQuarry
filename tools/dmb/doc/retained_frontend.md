@@ -505,8 +505,8 @@ compile root, and the test variant inside a session) decoded and owned a private
 
 ### Measurement
 
-`DMB_MEM_MARKS` did not exist; `DMB_MEM_MARKS=1` now logs what the shared store holds after every request, next to the existing
-allocation-sites report. Tools: `bench/shared_store_probe.sh` (one private daemon, roots compiled in order, retention policies that never
+`DMB_MEM_MARKS=1` (stage marks, see "Memory diet" below) also logs, in a daemon, what the shared store holds after every request, next
+to the allocation-sites report. Tools: `bench/shared_store_probe.sh` (one private daemon, roots compiled in order, retention policies that never
 shed a session, one `retained.after_request` block per request), `bench/alloc_sites_by_owner.py` (owner summary, `--diff A B` for growth),
 `bench/shared_store_equiv.sh` (equivalence), `bench/shared_store_bisect.sh` (which owner changed an output). Counting build, production
 `deepquarry.dme`, 4 workers, root A and root B two copies of the tree differing by a few comment lines (so what B adds is, to within those
@@ -578,3 +578,56 @@ carries the flag, so all 93,000 bodies are recomputed and stored twice. Emitting
 without `DEBUG` would make lowering records variant-independent (the strip is a removal of opcode 0x84/0x85 instructions; emission of other
 instructions does not depend on them), and is the largest remaining owner for the test variant. Sharing the answer table needs the
 bookkeeping (`request`, `born`, `changed`, `base`) split from the content-defined value (`hash`, `positive`, `query`) of a slot.
+
+## Memory diet (lane `compiler/memory-diet`, 2026-10-24)
+
+Question from the user: why does the compiler keep the whole source in memory? Measured answer: it does not. One production
+compile has about 65 MB of source text; the retained set is derived data keyed by 87,000 procedures (observation receipts, memos,
+decoded records). The measurements below are for the plain release build, 4 workers, an isolated warm disk cache
+(`DMB_CACHE_DIR`), `deepquarry.dme`, byte-identical output (pair `663ace59970f1694972a1dfcd6eb9fe6`; the `-DCIBUILDING -DCITESTING`
+world `ec9bf1cd6a29d642cf6eedc8f2a53c63`, both unchanged).
+
+### How to measure one compile by stage (new)
+
+`DMB_MEM_MARKS=1` prints `mem mark <stage>: live=<MB> peak=<MB> commit=<MB> private=<MB>` at every `request_mark` stage of a
+one-shot or daemon build (`live` and `peak` need a build with `--features allocation-counting`). With `--features allocation-sites`,
+`DMB_ALLOC_SITES_PATH=<file>` and `DMB_ALLOC_SITES_MARKS=<stage,stage|*>` also append the live-bytes-by-call-site report at those
+stages, so a one-shot (`--no-daemon`) compile can be broken down without a daemon. Compare two stages by diffing the per-site lists.
+
+### What the stage curve looks like (counting build, shared 36 GB disk cache)
+
+| Stage | Live MB |
+|---|---|
+| frontend ready (plan, expansion, declarations, tree) | 2,505 |
+| ABI waves | 2,905 (+500) |
+| initializers done | 3,813 (+900) |
+| lowered | 4,666 (+850) |
+| sealed (peak) | 5,423 |
+| frontend dropped | 4,389 |
+| end of the one-shot compile | 3,940 |
+
+### Cuts landed
+
+| Holder | Before | After | Change |
+|---|---|---|---|
+| Disk-cache index per `Segment` (`BTreeMap<RecordKey, Entry>`, ~90 B per record) and per snapshot (`BTreeMap<RecordKey, Vec<usize>>`) | 575 MB at frontend (shared cache: 49 segments, 36 GB) | about 80 MB | `Segment` keeps a `Vec<u32>` of descriptor slots sorted by key and reads the descriptor (key, offset, length, checksum) from the mapping; the snapshot keeps two flat arrays (key hash, segment ordinal), 12 B per record, and confirms every hit against the segment. Index memory now scales at 16 B per cached record instead of ~160 B. |
+| Decoded memo records (`ExpansionRecord`, `DirectiveRecord`) | every macro read, trace name, replacement chain and definition a fresh allocation per record | shared through `regions/intern_wire.rs` pools | Retained region and directive memo records fell from 1,044 MB to 554 MB in the sampled daemon session. Wire form and every comparison are unchanged (a freshly expanded record already shared the plan's `Arc`s). |
+| `DomainMemo` entries | 40-byte domain enum key, ~80 B per entry | 128-bit digest key, 48 B per entry | estimated 100 MB of the 200 MB at peak (not measured separately) |
+
+Result (same inputs, isolated warm cache, external private-bytes sampling for one-shot, `native compile:` log for the daemon):
+
+| | before | after |
+|---|---|---|
+| one-shot compile peak private (warm 2.6 GB cache, 1 segment) | 4,717 / 4,699 MB | 4,480 / 4,460 MB |
+| one-shot compile live peak, shared 36 GB cache (counting build, cache index change only) | 5,423 MB | 4,897 MB |
+| daemon session after a full compile (private) | 8,330 MB (peak 8.34 GB) | 8,020 MB (peak 8.03 GB) |
+
+### Where the rest is (retained daemon session, 7.0 GB live)
+
+Observation store `leased` bookkeeping 830 MB (four `BTreeMap`s and a `Vec` per entry for about 2.5 million artifacts), receipt
+groups 400 MB, receipts 320 MB, `RetainedMetadata` 300 MB, directive plan 285 MB (`RegionLine` is 56 bytes per source line),
+resident memo records 550 MB, declaration parse payloads 226 MB, lowering memo 270 MB. The `control` byte string of every region and
+directive interval holds a second copy of the comment-stripped line text (about 100 MB each): shrinking it changes the record
+key, so it needs a record version bump. The resident record store (`runner_host_memo.rs`, 8 GB budget) keeps a decoded copy of every
+record accepted from the mmapped disk cache; a smaller budget trades the decode on the next request for memory, so it needs a
+measured edit-latency decision. A one-shot compile builds receipts for the name-demand store that nothing reads again.

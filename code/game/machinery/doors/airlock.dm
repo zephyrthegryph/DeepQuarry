@@ -130,6 +130,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	setup(PROC_REF(secure_admin_wires))
 	configure(atom_shielding(rad_material = MAT_STEEL, rad_thickness_mm = RAD_AIRLOCK_THICKNESS_MM))
 	setup(PROC_REF(join_close_group))
 	name_prefix("\improper")
@@ -1094,13 +1095,11 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	name = assembly.created_name || "[istext(assembly.glass) ? "[assembly.glass] airlock" : assembly.base_name]"
 	set_dir(assembly.dir)
 
-// ALLOW(init/INSTANCE_STATE): a door on an admin level has secure wires, and every airlock joins its close group and tunes its radio
-/obj/machinery/door/airlock/Initialize(mapload)
-	// A door on an admin level gets the secure wires (wire_count(), wires_randomized()), made on first use.
+/// A door on an admin level gets the secure wires (wire_count(), wires_randomized()), made on first use.
+/obj/machinery/door/airlock/proc/secure_admin_wires()
 	var/turf/T = get_turf(src)
 	if(T && (T.z in using_map.admin_levels))
 		secured_wires = 1
-	. = ..()
 
 /// The airlocks of each closeOtherId, so a door joins its group at init without a scan of every machine (an airlock is keyed by its id_tag
 /// already, and a type has one key var: this index is the second key).

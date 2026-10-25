@@ -33,8 +33,12 @@ pub fn take_request_counts() -> String {
 }
 
 pub(crate) struct DomainMemo {
-    shards: Box<[Mutex<HashMap<ReadDomain, Option<u128>>>]>,
+    /// Keyed by a 128-bit digest of the domain rather than the domain itself: a domain is a 40-byte enum and the
+    /// memo holds millions, so the digest key halves the entry (the two independently keyed 64-bit hashes make a
+    /// collision, which would return another domain's version, a 2^-128 event per pair).
+    shards: Box<[Mutex<HashMap<u128, Option<u128>>>]>,
     hasher: std::collections::hash_map::RandomState,
+    second: std::collections::hash_map::RandomState,
     hits: AtomicU64,
     misses: AtomicU64,
 }
@@ -44,6 +48,7 @@ impl Default for DomainMemo {
         Self {
             shards: (0..SHARDS).map(|_| Mutex::new(HashMap::new())).collect(),
             hasher: Default::default(),
+            second: Default::default(),
             hits: AtomicU64::new(0),
             misses: AtomicU64::new(0),
         }
@@ -76,11 +81,15 @@ impl DomainMemo {
     ) -> Option<u128> {
         let mut hasher = self.hasher.build_hasher();
         domain.hash(&mut hasher);
-        let shard = &self.shards[(hasher.finish() as usize) % SHARDS];
+        let low = hasher.finish();
+        let mut hasher = self.second.build_hasher();
+        domain.hash(&mut hasher);
+        let digest = (u128::from(hasher.finish()) << 64) | u128::from(low);
+        let shard = &self.shards[(low as usize) % SHARDS];
         let cached = shard
             .lock()
             .unwrap_or_else(|error| error.into_inner())
-            .get(&domain)
+            .get(&digest)
             .copied();
         if let Some(version) = cached {
             self.hits.fetch_add(1, Relaxed);
@@ -101,7 +110,7 @@ impl DomainMemo {
         shard
             .lock()
             .unwrap_or_else(|error| error.into_inner())
-            .insert(domain, version);
+            .insert(digest, version);
         version
     }
     pub(crate) fn counts(&self) -> (u64, u64) {

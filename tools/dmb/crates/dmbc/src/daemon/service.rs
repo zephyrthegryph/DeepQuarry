@@ -650,6 +650,31 @@ impl Drop for Permit {
         self.0.capacity.notify_all();
     }
 }
+/// Stores the patch base of every idle session when the daemon's serve loop ends.
+struct SpillOnExit(Arc<Shared>);
+impl Drop for SpillOnExit {
+    fn drop(&mut self) {
+        let slots: Vec<(SessionKey, Arc<Slot>)> = self
+            .0
+            .slots
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .map(|(key, slot)| (key.clone(), Arc::clone(slot)))
+            .collect();
+        for (key, slot) in slots {
+            // A host that is building has nothing to store yet, and the exit conditions admit no running build.
+            let Ok(host) = slot.host.try_lock() else { continue };
+            let started = Instant::now();
+            host.spill_patch_bases();
+            super::emit_stderr(format_args!(
+                "dmbd exit: stored the patch bases of project={} in {:.2}s",
+                key.manifest.display(),
+                started.elapsed().as_secs_f64()
+            ));
+        }
+    }
+}
 struct Connection(Arc<Shared>);
 impl Drop for Connection {
     fn drop(&mut self) {
@@ -699,6 +724,9 @@ pub(super) fn serve() -> io::Result<()> {
         capacity: Condvar::new(),
         connections: AtomicUsize::new(0),
     });
+    // Whatever way the daemon leaves (retired while idle, superseded, idle limit), the session it takes away is stored first: the
+    // daemon that replaces it patches from the stored patch base instead of compiling the whole program.
+    let _spill_on_exit = SpillOnExit(Arc::clone(&shared));
     let mut activity = Instant::now();
     // Housekeeping (allocator reclaim, tier releases that can take tens of
     // seconds) runs on its own thread so it can never stall request acceptance.

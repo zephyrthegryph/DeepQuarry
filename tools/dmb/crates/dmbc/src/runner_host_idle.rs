@@ -13,6 +13,8 @@ impl BuildHost {
     /// their consumers finish, but cannot repopulate these detached host slots.
     pub(crate) fn release_idle_compiler_artifacts(&mut self) {
         self.emit_idle_census("before-compiler-release");
+        // The active variant's patch base is stored before its generation goes (stashed variants store theirs below).
+        Self::spill_generation(self.generation.as_ref());
         // Stashed variants are recomputable; they go before the active variant degrades.
         self.release_stashed_variants();
         self.release_idle_executor();
