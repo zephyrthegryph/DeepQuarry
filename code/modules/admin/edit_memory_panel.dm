@@ -135,7 +135,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 	target_mind.ambitions = text_or_null(new_amb)
 	if(target_mind.current)
 		to_chat(target_mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [target_mind.ambitions]"))
-	log_and_message_admins("made [key_name(target_mind.current)]'s ambitions be '[target_mind.ambitions]'.")
+	log_and_message_admins("made [key_name(target_mind.current)]'s ambitions be '[target_mind.ambitions]'.", A.actor)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_obj_toggle_complete(datum/act/op/A, ref)

@@ -131,6 +131,7 @@ CAPABILITIES(/obj/structure/bed/chair/wheelchair)
 	click_order(BIND_HAND, "touch", "buckle.unbuckle")
 	configure(buckle(smallest = nameof(min_mob_buckle_size), largest = nameof(max_mob_buckle_size)))
 	op("touch", hand(), label("Use"), then(PROC_REF(touched)))
+	drag_onto(PROC_REF(chair_dropped))
 
 /// A hand on the chair: drops the one pulling it, or frees whoever is sitting in it.
 /obj/structure/bed/chair/wheelchair/proc/touched(datum/act/op/A)
@@ -211,20 +212,23 @@ CAPABILITIES(/obj/structure/bed/chair/wheelchair)
 		B.set_dir(newdir)
 	bloodiness--
 
-/obj/structure/bed/chair/wheelchair/MouseDrop(over_object, src_location, over_location)
-	..()
-	var/mob/user = usr
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm): dragged onto oneself, a person folds the
+/// chair up; then the native drop goes on.
+/obj/structure/bed/chair/wheelchair/proc/chair_dropped(datum/act/input/A)
+	var/mob/user = A.actor
 	if(!istype(user))
-		return
-	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))
-		if(!ishuman(user))	return
-		if(has_buckled_mobs())	return 0
+		return INPUT_FALLTHROUGH
+	if((A.over == user && (in_range(src, user) || user.contents.Find(src))))
+		if(!ishuman(user))
+			return INPUT_FALLTHROUGH
+		if(has_buckled_mobs())
+			return INPUT_FALLTHROUGH
 		act_message(user, null, others = "%U% collapses \the [src.name].")
 		var/obj/item/wheelchair/R = new folded_type(get_turf(src))
 		R.name = src.name
 		R.set_color(src.color)
 		expire(0)
-		return
+	return INPUT_FALLTHROUGH
 
 /obj/structure/bed/chair/wheelchair/proc/check_pulled_along()
 	var/mob/living/pulling = src?.pulling_target()

@@ -84,4 +84,4 @@
 	to_chat(target, span_boldnotice("[complete_quest]"))
 	to_chat(target, span_notice(span_small("Please note that this is just a bit of fun, you should not use this an excuse to break rules or cause major disruptions for other players.")))
 
-	log_and_message_admins("[target.ckey] playing as [target.name] has been given the quest: [complete_quest]")
+	log_and_message_admins("[target.ckey] playing as [target.name] has been given the quest: [complete_quest]", null)

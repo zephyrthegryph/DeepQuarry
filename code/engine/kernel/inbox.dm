@@ -127,9 +127,13 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	var/atom/over
 	/// What the legacy chain takes on (the locations, the controls and the params of the drag).
 	var/list/legacy_args
+	/// TRUE for a drop BYOND handed over (atom/MouseDrop, code/engine/kernel/entry.dm): the drop must be within reach of the actor when it resolves,
+	/// which a drop an adapter already checked (adapter.drag()) is not asked twice.
+	var/native = FALSE
 
-/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/legacy)
+/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/legacy, native_drop = FALSE)
 	..(user)
+	native = native_drop
 	if(dragged_atom)
 		dragged = dragged_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	if(dropped_on)
@@ -149,6 +153,92 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 
 /datum/input_event/drag/resolve()
 	return input_resolve_drag(src)
+
+/// A double click on a target. Repeated ones on one target keep only the latest.
+/datum/input_event/click/double
+	metered_as_click = FALSE
+
+/datum/input_event/click/double/coalesce_key()
+	return target ? "double:[REF(target)]" : null
+
+/datum/input_event/click/double/event_key()
+	return "input.double_click"
+
+/datum/input_event/click/double/resolve()
+	actor.input_double_click(target, params)
+	return null
+
+/// The mouse wheel over a target. Every notch counts: it never coalesces.
+/datum/input_event/click/wheel
+	metered_as_click = FALSE
+	var/delta_x = 0
+	var/delta_y = 0
+
+/datum/input_event/click/wheel/New(mob/user, atom/over, location, control, params, delta_x, delta_y)
+	..(user, over, location, control, params)
+	src.delta_x = delta_x
+	src.delta_y = delta_y
+
+/datum/input_event/click/wheel/coalesce_key()
+	return null
+
+/datum/input_event/click/wheel/event_key()
+	return "input.wheel"
+
+/datum/input_event/click/wheel/resolve()
+	actor.input_wheel(target, delta_x, delta_y, params)
+	return null
+
+/// The mouse entering a target. Only the latest hover is worth keeping.
+/datum/input_event/click/hover
+	metered_as_click = FALSE
+
+/datum/input_event/click/hover/coalesce_key()
+	return "hover"
+
+/datum/input_event/click/hover/event_key()
+	return "input.hover"
+
+/datum/input_event/click/hover/resolve()
+	actor.input_hover(target, params)
+	return null
+
+/// A mouse button pressed on a target (atom/MouseDown). A press and its release are a pair: it never coalesces.
+/datum/input_event/click/pressed
+	metered_as_click = FALSE
+
+/datum/input_event/click/pressed/event_key()
+	return "input.pressed"
+
+/datum/input_event/click/pressed/coalesce_key()
+	return null
+
+/datum/input_event/click/pressed/resolve()
+	actor.input_pressed(target, params)
+	return null
+
+/// The client's own mouse procs (client/MouseDown, MouseUp, MouseDrag): INPUT_MOUSE_*, what the pointer is on, and for a drag what it is over.
+/datum/input_event/click/client_mouse
+	metered_as_click = FALSE
+	var/kind = INPUT_MOUSE_DOWN
+	var/atom/over
+
+/datum/input_event/click/client_mouse/New(mob/user, mouse_kind, atom/pointed, atom/dragged_over, location, control, params)
+	..(user, pointed, location, control, params)
+	kind = mouse_kind
+	if(dragged_over)
+		over = dragged_over // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+
+/// A drag keeps only its latest position; a press and a release never coalesce.
+/datum/input_event/click/client_mouse/coalesce_key()
+	return kind == INPUT_MOUSE_DRAG ? "mouse_drag" : null
+
+/datum/input_event/click/client_mouse/event_key()
+	return "input.[kind]"
+
+/datum/input_event/click/client_mouse/resolve()
+	actor.input_client_mouse(kind, target, over, params)
+	return null
 
 /// A pick from a target's context menu (origin ORIGIN_MENU).
 /datum/input_event/menu
@@ -218,9 +308,15 @@ CAPABILITIES(/datum/input_event/ui_act)
 	var/datum/hsrc
 	var/href
 	var/list/href_list
+	/// TRUE for a link BYOND already carried to the datum's own Topic() (/datum/Topic, code/engine/kernel/entry.dm): the dispatch answers it, and the
+	/// client's chain is not walked again.
+	var/at_datum = FALSE
+	/// What the datum dispatch answered (TRUE when an op took the link), for the Topic() that submitted it.
+	var/answered
 
-/datum/input_event/topic/New(mob/user, datum/source, link, list/link_list)
+/datum/input_event/topic/New(mob/user, datum/source, link, list/link_list, reached_datum = FALSE)
 	..(user)
+	at_datum = reached_datum
 	if(source)
 		hsrc = source // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	href = link
@@ -233,6 +329,9 @@ CAPABILITIES(/datum/input_event/ui_act)
 	return "input.topic"
 
 /datum/input_event/topic/resolve()
+	if(at_datum)
+		answered = hsrc.input_topic_dispatch(actor, href_list)
+		return null
 	// The op that names the href answers it, through the same Match, Require and Do as a click; what no op names is the legacy Topic() chain's.
 	var/datum/op_result/answered = op_topic_href(actor, hsrc, href_list)
 	if(answered)
@@ -278,6 +377,36 @@ CAPABILITIES(/datum/input_event/ui_act)
 
 /datum/input_event/point/resolve()
 	actor.input_point(pointing_at)
+	return null
+
+/// world.Reboot(): who asked, and whether the world goes on to reboot (the hook, input_reboot()). It resolves on arrival whatever the tick says:
+/// a reboot waits for no drain, and a server-side one has no actor.
+/datum/input_event/reboot
+	resolve_threshold = 1000
+	var/reason = 0
+	var/fast_track = FALSE
+	/// What the hook answered: TRUE when the native reboot goes on.
+	var/proceed = FALSE
+	/// TRUE once the hook returned (an input that sleeps detaches in input_run(), so a hook that slept has not).
+	var/finished = FALSE
+
+/datum/input_event/reboot/New(mob/user, reboot_reason, reboot_fast_track)
+	..(user)
+	reason = reboot_reason
+	fast_track = reboot_fast_track
+
+/datum/input_event/reboot/lane_key()
+	return "reboot"
+
+/datum/input_event/reboot/gate()
+	return null
+
+/datum/input_event/reboot/event_key()
+	return "input.reboot"
+
+/datum/input_event/reboot/resolve()
+	proceed = world.input_reboot(actor, reason, fast_track)
+	finished = TRUE
 	return null
 
 // ---------------------------------------------------------------- the system

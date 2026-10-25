@@ -46,7 +46,7 @@
 	to_chat(M, span_warning("You may be a spooky space monster, but your role is to facilitate spooky space monster roleplay, not to fight the station and kill people. You can of course eat and/or digest people as you like if OOC prefs align, but this should be done as part of roleplay. If you intend to fight the station and kill people and such, you need permission from the staff team. GENERALLY, this role should avoid well populated areas. You’re a weird spooky space monster, so the bar is probably not where you’d want to go if you intend to survive. Of course, you’re welcome to try to make friends and roleplay how you will in this regard, but something to keep in mind."))
 	bind_player(newPred, M.ckey, as_ckey = TRUE)
 	act_message(newPred, null, others = span_warning("%U% emerges from somewhere!"))
-	log_and_message_admins("successfully entered \a [src] and became a [newPred].")
+	log_and_message_admins("successfully entered \a [src] and became a [newPred].", M)
 	newPred.offer_load_bellies()
 	spent(src, M)
 
@@ -83,7 +83,7 @@
 
 	bind_player(newMorph, M.ckey, as_ckey = TRUE)
 	newMorph.visible_message(span_warning("A morph appears to crawl out of somewhere."))
-	log_and_message_admins("successfully entered \a [src] and became a Morph.")
+	log_and_message_admins("successfully entered \a [src] and became a Morph.", M)
 	newMorph.offer_load_bellies()
 	spent(src, M)
 
@@ -144,7 +144,7 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 		to_chat(M, span_warning("Something went wrong and spawning failed. Please check your character slot doesn't have any obvious errors, then either try again or send an adminhelp!"))
 		reset_ghostpod()
 		return
-	log_and_message_admins("successfully used a Maintenance Lurker spawnpoint and became their loaded character.")
+	log_and_message_admins("successfully used a Maintenance Lurker spawnpoint and became their loaded character.", M)
 
 	M.client.prefs.copy_to(new_character)
 	new_character.dna.ResetUIFrom(new_character)

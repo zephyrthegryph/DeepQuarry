@@ -5778,6 +5778,7 @@
 #include "code\engine\time\timers.dm"
 #include "code\engine\time\after.dm"
 #include "code\engine\kernel\inbox.dm"
+#include "code\engine\kernel\entry.dm"
 #include "code\library\input\dispatch.dm"
 #include "code\engine\kernel\input_hooks.dm"
 #include "code\engine\kernel\jobs.dm"

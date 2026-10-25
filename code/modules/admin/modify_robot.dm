@@ -105,7 +105,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/New()
 	. = ..()
-	log_and_message_admins("has used modify robot and is modifying [target()]")
+	log_and_message_admins("has used modify robot and is modifying [target()]", null)
 	var/list/laws = list()
 	init_subtypes(/datum/ai_laws, laws)
 	for(var/datum/ai_laws/laws_entry as anything in dd_sortedObjectList(laws))
@@ -243,7 +243,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	var/new_target = new_target_arg
 	if(new_target != target())
 		rel_set(src, nameof(/datum/eventkit/modify_robot::target), new_target_arg)
-		log_and_message_admins("changed robot modifictation target to [target()]")
+		log_and_message_admins("changed robot modifictation target to [target()]", A.actor)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_toggle_crisis(datum/act/op/A)
