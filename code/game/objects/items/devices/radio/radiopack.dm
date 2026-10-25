@@ -8,11 +8,12 @@
 	w_class = ITEMSIZE_LARGE
 	var/handset_path = /obj/item/radio/bluespacehandset/linked
 
-/obj/item/bluespaceradio/Initialize(mapload)
+/// Its setup hook: the pack makes its handset.
+/obj/item/bluespaceradio/proc/tether_handset()
 	make_tethered(handset_path)
-	. = ..()
 
 CAPABILITIES(/obj/item/bluespaceradio)
+	setup(PROC_REF(tether_handset))
 	configure(item_handling(preserve = 1))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))

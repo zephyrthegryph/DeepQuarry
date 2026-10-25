@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Tethered-item hosts, persistence, instruments, techweb nodes, asset transport and RnD fabricators lose their Initialize() overrides"

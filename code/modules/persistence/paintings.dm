@@ -6,7 +6,7 @@
 /datum/persistent/paintings/SetFilename()
 	filename = "data/persistent/paintings.json"
 
-/datum/persistent/paintings/Initialize()
+/datum/persistent/paintings/load_saved()
 	. = ..()
 	load_database()
 

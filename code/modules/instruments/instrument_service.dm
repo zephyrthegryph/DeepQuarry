@@ -46,7 +46,7 @@ SYSTEM_DEF(instruments)
 		if(initial(I.abstract_type) == path)
 			continue
 		I = new path
-		I.Initialize()
+		I.prepare_samples()
 		if(!I.id)
 			spent(I)
 			continue
