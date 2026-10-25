@@ -257,6 +257,13 @@ impl RetainedSemanticTree {
     pub fn splices(&self) -> u64 {
         self.splices
     }
+    /// The request-local owner of a one-shot compile: nothing outlives the request to read name-demand receipts, so
+    /// tokens are issued without storing them.
+    pub fn one_shot() -> Self {
+        let mut state = Self::default();
+        state.normalization = std::mem::take(&mut state.normalization).without_name_receipts();
+        state
+    }
     pub fn with_shared_normalized(
         owner: Arc<crate::owner_normalization::SharedNormalizedDeclarations>,
     ) -> Self {

@@ -9,7 +9,7 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const DIRECTIVE_VERSION: u32 = 6;
+pub const DIRECTIVE_VERSION: u32 = 7;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(super) enum Action {
     Text(usize),
@@ -51,7 +51,8 @@ struct Read {
 pub struct DirectiveRecord {
     key: u128,
     source: Arc<str>,
-    control: Arc<[u8]>,
+    /// Digest of the interval's line shape and comment-stripped text; the bytes are not kept.
+    control: u128,
     incoming: Vec<Conditional>,
     outgoing: Vec<Conditional>,
     reads: Vec<Read>,
@@ -65,7 +66,6 @@ impl DirectiveRecord {
     pub fn retained_size_bytes(&self) -> usize {
         record::<Self>()
             .saturating_add(slice::<u8>(self.source.len()))
-            .saturating_add(slice::<u8>(self.control.len()))
             .saturating_add(vector(&self.incoming, |_| 0))
             .saturating_add(vector(&self.outgoing, |_| 0))
             .saturating_add(vector(&self.reads, |read| {
@@ -108,8 +108,7 @@ impl DirectiveRecord {
     }
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
         let value: Self = dm_wire::decode(DIRECTIVE_VERSION, bytes, bytes.len())?;
-        if value.control.get(..4) != Some(DIRECTIVE_VERSION.to_le_bytes().as_slice())
-            || key(&value.source, &value.control) != value.key
+        if key(&value.source, value.control) != value.key
             || value.actions.iter().any(|action| match action {
                 Action::Text(input)
                 | Action::Define { input, .. }
@@ -127,7 +126,7 @@ impl DirectiveRecord {
     pub(super) fn matches(
         &self,
         source: &str,
-        control: &[u8],
+        control: u128,
         inputs: usize,
         environment: &MacroEnvironment,
         conditionals: &[Conditional],
@@ -135,7 +134,7 @@ impl DirectiveRecord {
     ) -> bool {
         self.inputs == inputs
             && self.source.as_ref() == source
-            && self.control.as_ref() == control
+            && self.control == control
             && self.incoming == conditionals
             && self.reads.iter().all(|read| {
                 let current = environment.shared_definition(&read.name);
@@ -157,21 +156,22 @@ impl DirectiveRecord {
         &self.outgoing
     }
 }
-fn key(source: &str, control: &[u8]) -> u128 {
+fn key(source: &str, control: u128) -> u128 {
     let mut hash = Xxh3::new();
     hash.update(&(source.len() as u64).to_le_bytes());
     hash.update(source.as_bytes());
-    hash.update(control);
+    hash.update(&control.to_le_bytes());
     hash.digest128()
 }
 pub(super) fn context<'a>(
     original: &'a str,
     lines: PreparedLines<'_>,
-) -> Option<(&'a str, Arc<[u8]>, u128)> {
+) -> Option<(&'a str, u128, u128)> {
     let first = lines.first()?;
     let end = lines.last()?.source_span.end;
     let source = original.get(first.source_span.start..end)?;
-    let mut control = DIRECTIVE_VERSION.to_le_bytes().to_vec();
+    let mut control = Xxh3::new();
+    control.update(&DIRECTIVE_VERSION.to_le_bytes());
     for line in lines.iter() {
         for number in [
             line.source_span.start - first.source_span.start,
@@ -180,12 +180,13 @@ pub(super) fn context<'a>(
             line.source_lines,
             line.text.len(),
         ] {
-            control.extend_from_slice(&(number as u64).to_le_bytes());
+            control.update(&(number as u64).to_le_bytes());
         }
-        control.extend_from_slice(line.text.as_bytes());
+        control.update(line.text.as_bytes());
     }
-    let identity = key(source, &control);
-    Some((source, control.into(), identity))
+    let control = control.digest128();
+    let identity = key(source, control);
+    Some((source, control, identity))
 }
 pub(super) struct Recording {
     pub start: usize,
@@ -195,7 +196,7 @@ pub(super) struct Recording {
     pub local: BTreeSet<String>,
     reads: RefCell<BTreeMap<String, Read>>,
     source: Arc<str>,
-    control: Arc<[u8]>,
+    control: u128,
     key: u128,
     incoming: Vec<Conditional>,
     file_dirs: Option<(Vec<std::path::PathBuf>, Vec<Macro>)>,
@@ -205,7 +206,7 @@ impl Recording {
     pub fn new(
         start: usize,
         end: usize,
-        context: (&str, Arc<[u8]>, u128),
+        context: (&str, u128, u128),
         conditionals: &[Conditional],
         dirs: &[std::path::PathBuf],
         definitions: &[Macro],
@@ -291,7 +292,7 @@ mod tests {
         let mut value = DirectiveRecord {
             key: 0,
             source: Arc::from(""),
-            control: Arc::from([]),
+            control: 0,
             incoming: Vec::new(),
             outgoing: Vec::new(),
             reads: Vec::new(),
@@ -325,12 +326,12 @@ mod tests {
     fn streamed_directive_memo_key_preserves_exact_previous_framing() {
         for length in [0, 1, 16, 127, 128, 239, 240, 241, 1024, 32768] {
             let source = "x".repeat(length);
-            let control = "line\n\u{b5}\0".repeat(length / 7 + 1).into_bytes();
+            let control = 0x0123_4567_89ab_cdef_u128 << (length % 64);
             let mut previous = (source.len() as u64).to_le_bytes().to_vec();
             previous.extend_from_slice(source.as_bytes());
-            previous.extend_from_slice(&control);
+            previous.extend_from_slice(&control.to_le_bytes());
             assert_eq!(
-                key(&source, &control),
+                key(&source, control),
                 xxhash_rust::xxh3::xxh3_128(&previous)
             );
         }

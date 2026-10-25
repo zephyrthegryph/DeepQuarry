@@ -552,7 +552,7 @@ fn run_build_attempt(
     // One-shot compilation uses the same named declaration receipt issuer as
     // retained sessions. This owner lasts for this request only: disabling
     // caches must not change which semantic answers the compiler can prove.
-    let mut request_semantic = dm_tree::frontend::RetainedSemanticTree::default();
+    let mut request_semantic = dm_tree::frontend::RetainedSemanticTree::one_shot();
     let semantic_state = semantic_state
         .as_deref_mut()
         .unwrap_or(&mut request_semantic);

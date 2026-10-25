@@ -293,11 +293,15 @@ impl RetainedMetadata {
             _ => None,
         };
         let token = if let Some(token) = self
-            .store
-            .lookup(&key(selection), &host)
+            .retains_receipts()
+            .then(|| self.store.lookup(&key(selection), &host))
+            .flatten()
             .and_then(|v| token_of(&v))
         {
             token
+        } else if !self.retains_receipts() {
+            // A one-shot compile never reads the receipt again: the token alone is the issued answer.
+            u128::from(callables::issue_token()?)
         } else {
             let token = u128::from(callables::issue_token()?);
             let ledger = ObservationLedger::default();
@@ -535,12 +539,16 @@ impl RetainedMetadata {
                     }
                 };
                 let existing = raced.or_else(|| {
-                    self.store
-                        .lookup(&key(selection), &host)
+                    self.retains_receipts()
+                        .then(|| self.store.lookup(&key(selection), &host))
+                        .flatten()
                         .and_then(|entry| token_of(&entry))
                 });
                 let token = if let Some(token) = existing {
                     token
+                } else if !self.retains_receipts() {
+                    // A one-shot compile never reads the receipt again: the token alone is the issued answer.
+                    u128::from(callables::issue_token()?)
                 } else {
                     let token = u128::from(callables::issue_token()?);
                     let ledger = ObservationLedger::default();

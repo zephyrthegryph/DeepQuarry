@@ -19,7 +19,7 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const EXPANSION_VERSION: u32 = 4;
+pub const EXPANSION_VERSION: u32 = 5;
 pub const FRAGMENT_VERSION: u32 = 1;
 #[cfg(test)]
 mod fragment_tests {
@@ -243,7 +243,8 @@ pub struct ExpansionRecord {
     key: u128,
     #[serde(with = "source_wire")]
     source: crate::SourceText,
-    control: Arc<[u8]>,
+    /// Digest of the comment-stripped line text the expansion was proven against; the bytes are not kept.
+    control: u128,
     #[serde(with = "source_wire")]
     text: crate::SourceText,
     reads: Arc<Vec<MacroRead>>,
@@ -259,7 +260,6 @@ impl ExpansionRecord {
     pub fn retained_size_bytes(&self) -> usize {
         record::<Self>()
             .saturating_add(source_wire::retained_size(&self.source))
-            .saturating_add(slice::<u8>(self.control.len()))
             .saturating_add(source_wire::retained_size(&self.text))
             .saturating_add(record::<Vec<MacroRead>>())
             .saturating_add(record::<Vec<(usize, bool, String)>>())
@@ -337,10 +337,7 @@ impl ExpansionRecord {
     }
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
         let record: Self = dm_wire::decode(EXPANSION_VERSION, bytes, bytes.len())?;
-        if record.control.get(..4) != Some(EXPANSION_VERSION.to_le_bytes().as_slice()) {
-            return Err("expansion record version mismatch".into());
-        }
-        if framed_key(&record.source, &record.control) != record.key {
+        if framed_key(&record.source, record.control) != record.key {
             return Err("expansion record key mismatch".into());
         }
         if record.lines.iter().any(|line| {
@@ -416,23 +413,22 @@ fn inputs(plan: &DirectivePlan, index: usize) -> Vec<(usize, &super::RegionLine)
         .flat_map(|(segment, value)| value.lines.iter().map(move |line| (segment, line)))
         .collect()
 }
-fn framed_key(source: &str, control: &[u8]) -> u128 {
+fn framed_key(source: &str, control: u128) -> u128 {
     let mut hash = Xxh3::new();
     hash.update(&(source.len() as u64).to_le_bytes());
     hash.update(source.as_bytes());
-    hash.update(control);
+    hash.update(&control.to_le_bytes());
     hash.digest128()
 }
-fn context(plan: &DirectivePlan, index: usize) -> Option<(crate::SourceText, Arc<[u8]>, u128)> {
+fn context(plan: &DirectivePlan, index: usize) -> Option<(crate::SourceText, u128, u128)> {
     let region = &plan.regions[index];
     let path = &plan.occurrences[region.occurrence].path;
     let owner = plan.source_texts.get(path.as_ref())?;
     owner.get(region.source_span.range())?;
     let source = owner.view(region.source_span.range());
-    let mut control = Vec::new();
-    control::write(plan, index, |bytes| control.extend_from_slice(bytes))?;
-    let identity = framed_key(&source, &control);
-    Some((source, control.into(), identity))
+    let control = control::digest(plan, index)?;
+    let identity = framed_key(&source, control);
+    Some((source, control, identity))
 }
 pub(super) fn expand(
     plan: &DirectivePlan,
@@ -668,12 +664,12 @@ mod tests {
     fn streamed_region_memo_key_preserves_exact_previous_framing() {
         for length in [0, 1, 16, 127, 128, 239, 240, 241, 1024, 32768] {
             let source = "x".repeat(length);
-            let control = "line\n\u{b5}\0".repeat(length / 7 + 1).into_bytes();
+            let control = 0x0123_4567_89ab_cdef_u128 << (length % 64);
             let mut previous = (source.len() as u64).to_le_bytes().to_vec();
             previous.extend_from_slice(source.as_bytes());
-            previous.extend_from_slice(&control);
+            previous.extend_from_slice(&control.to_le_bytes());
             assert_eq!(
-                framed_key(&source, &control),
+                framed_key(&source, control),
                 xxhash_rust::xxh3::xxh3_128(&previous)
             );
         }
@@ -734,14 +730,14 @@ mod tests {
                 legacy.extend_from_slice(line.text.as_bytes());
             }
         }
-        assert_eq!(record.control.as_ref(), legacy.as_slice());
+        assert_eq!(record.control, xxhash_rust::xxh3::xxh3_128(&legacy));
         assert!(record.matches_current_input(&plan, 0));
         let mut malformed = record.as_ref().clone();
         legacy.push(0);
-        malformed.control = legacy.clone().into();
+        malformed.control = xxhash_rust::xxh3::xxh3_128(&legacy);
         assert!(!malformed.matches_current_input(&plan, 0));
         legacy.truncate(legacy.len() - 2);
-        malformed.control = legacy.into();
+        malformed.control = xxhash_rust::xxh3::xxh3_128(&legacy);
         assert!(!malformed.matches_current_input(&plan, 0));
     }
     #[test]
