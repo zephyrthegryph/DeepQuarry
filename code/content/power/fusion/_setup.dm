@@ -47,7 +47,7 @@
 
 		// SETUP PHASE
 		for(var/obj/effect/engine_setup/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-			var/result = S.activate(0)
+			var/result = S.activate(0, A.request.answerer)
 			switch(result)
 				if(SETUP_OK)
 					success++
@@ -65,7 +65,7 @@
 
 		if(!errors)
 			for(var/obj/effect/engine_setup/S in delayed_objects)
-				var/result = S.activate(1)
+				var/result = S.activate(1, A.request.answerer)
 				switch(result)
 					if(SETUP_OK)
 						success++

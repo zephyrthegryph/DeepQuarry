@@ -205,7 +205,7 @@ CAPABILITIES(/obj/item/aiModule/safeguard)
 
 /obj/item/aiModule/safeguard/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = text("Safeguard []. Anyone threatening or attempting to harm [] is no longer to be considered a crew member, and is a threat which must be neutralized.", targetName, targetName)
-	target.add_supplied_law(9, law)
+	target.add_supplied_law(9, law, actor = sender)
 	GLOB.lawchanges.Add("The law specified [targetName]")
 
 
@@ -235,7 +235,7 @@ CAPABILITIES(/obj/item/aiModule/oneHuman)
 /obj/item/aiModule/oneHuman/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "Only [targetName] is an crew member."
 	to_chat(target, law)
-	target.add_supplied_law(16, law)
+	target.add_supplied_law(16, law, actor = sender)
 
 /******************** ProtectStation ********************/
 
@@ -245,7 +245,7 @@ CAPABILITIES(/obj/item/aiModule/oneHuman)
 
 /obj/item/aiModule/protectStation/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "Protect the space station against damage. Anyone you see harming the station is no longer to be considered a crew member, and is a threat which must be neutralized."
-	target.add_supplied_law(10, law)
+	target.add_supplied_law(10, law, actor = sender)
 
 /******************** PrototypeEngineOffline ********************/
 
@@ -255,7 +255,7 @@ CAPABILITIES(/obj/item/aiModule/oneHuman)
 
 /obj/item/aiModule/prototypeEngineOffline/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "Keep the prototype engine offline at all costs. This overrides all inherent laws if necessary."
-	target.add_supplied_law(11, law)
+	target.add_supplied_law(11, law, actor = sender)
 
 /******************** TeleporterOffline ********************/
 
@@ -265,7 +265,7 @@ CAPABILITIES(/obj/item/aiModule/oneHuman)
 
 /obj/item/aiModule/teleporterOffline/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "Keep the teleporter offline at all costs. Anything attempting to access or activate the teleporter is no longer to be considered a crew member."
-	target.add_supplied_law(12, law)
+	target.add_supplied_law(12, law, actor = sender)
 
 /******************** Quarantine ********************/
 
@@ -275,7 +275,7 @@ CAPABILITIES(/obj/item/aiModule/oneHuman)
 
 /obj/item/aiModule/quarantine/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "The station is under a quarantine. Do not permit anyone to leave. Prevent, by any means necessary, crew members from leaving. It is impossible to harm crew members while preventing them from leaving."
-	target.add_supplied_law(13, law)
+	target.add_supplied_law(13, law, actor = sender)
 
 /******************** OxygenIsToxicToCrewMembers ********************/
 
@@ -285,7 +285,7 @@ CAPABILITIES(/obj/item/aiModule/oneHuman)
 
 /obj/item/aiModule/oxygen/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "Oxygen is highly toxic to crew members, and must be purged from the station. Prevent, by any means necessary, anyone from exposing the station to this toxic gas. Extreme cold is the most effective method of healing the damage Oxygen does to a crew member."
-	target.add_supplied_law(14, law)
+	target.add_supplied_law(14, law, actor = sender)
 
 /****************** New Freeform ******************/
 
@@ -329,7 +329,7 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	var/law = "[newFreeFormLaw]"
 	if(!lawpos || lawpos < MIN_SUPPLIED_LAW_NUMBER)
 		lawpos = MIN_SUPPLIED_LAW_NUMBER
-	target.add_supplied_law(lawpos, law)
+	target.add_supplied_law(lawpos, law, actor = sender)
 	GLOB.lawchanges.Add("The law was '[newFreeFormLaw]'")
 
 /obj/item/aiModule/freeform/install(obj/machinery/computer/C, mob/living/user)
@@ -354,7 +354,7 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	log_law_changes(target, sender)
 
 	if (!target.is_malf_or_traitor())
-		target.set_zeroth_law("")
+		target.set_zeroth_law("", actor = sender)
 	target.laws.clear_supplied_laws()
 	target.laws.clear_ion_laws()
 
@@ -371,7 +371,7 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	log_law_changes(target, sender)
 
 	if (!target.is_malf_or_traitor())
-		target.set_zeroth_law("")
+		target.set_zeroth_law("", actor = sender)
 	target.laws.clear_supplied_laws()
 	target.laws.clear_ion_laws()
 	target.laws.clear_inherent_laws()
@@ -439,7 +439,7 @@ CAPABILITIES(/obj/item/aiModule/freeformcore)
 
 /obj/item/aiModule/freeformcore/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "[newFreeFormLaw]"
-	target.add_inherent_law(law)
+	target.add_inherent_law(law, actor = sender)
 	GLOB.lawchanges.Add("The law is '[newFreeFormLaw]'")
 
 /obj/item/aiModule/freeformcore/install(obj/machinery/computer/C, mob/living/user)
@@ -470,7 +470,7 @@ CAPABILITIES(/obj/item/aiModule/syndicate)
 	GLOB.lawchanges.Add("The law is '[newFreeFormLaw]'")
 	to_chat(target, span_danger("BZZZZT"))
 	var/law = "[newFreeFormLaw]"
-	target.add_ion_law(law)
+	target.add_ion_law(law, actor = sender)
 	target.show_laws()
 
 /obj/item/aiModule/syndicate/install(obj/machinery/computer/C, mob/living/user)

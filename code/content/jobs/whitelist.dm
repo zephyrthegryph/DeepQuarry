@@ -300,7 +300,7 @@ MSG_DEF_SELF(join/not_whitelisted_job, "You are not whitelisted for that job.")
 	if(rank == JOB_ALT_VISITOR)
 		return null
 	// Let R_ADMIN permission bypass the whitelist
-	if(check_rights(R_ADMIN, 0))
+	if(admin_can(M?.client, R_ADMIN))
 		return null
 	if(GLOB.job_whitelist && M && M.client && rank)
 		var/list/our_whitelists = GLOB.job_whitelist[M.client.ckey]

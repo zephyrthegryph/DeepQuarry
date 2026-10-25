@@ -45,9 +45,9 @@
 
 	return bought_items
 
-/datum/uplink_item/item/badassery/random_many/purchase_log(obj/item/uplink/U)
+/datum/uplink_item/item/badassery/random_many/purchase_log(mob/M)
 	feedback_add_details("traitor_uplink_items_bought", "[src]")
-	log_and_message_admins("used \the [U.loc] to buy \a [src] at random", null)
+	log_and_message_admins("bought \a [src] at random through the uplink", M)
 
 /****************
 * Surplus Crate *

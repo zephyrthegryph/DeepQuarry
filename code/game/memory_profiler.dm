@@ -7,9 +7,10 @@
 /proc/cmp_numeric_desc(a,b)
 	return b - a
 
-/proc/profile_memory()
-	if(usr?.client)
-		open_request(usr, /datum/prompt/yes_no/profile_memory, TYPE_PROC_REF(/mob, profile_memory_confirmed), answerer = usr)
+/// `user` is the admin asking (proc-called from the admin call-proc window); with no client behind it the profile runs at once.
+/proc/profile_memory(mob/user)
+	if(user?.client)
+		open_request(user, /datum/prompt/yes_no/profile_memory, TYPE_PROC_REF(/mob, profile_memory_confirmed), answerer = user)
 		return
 	profile_memory_run()
 

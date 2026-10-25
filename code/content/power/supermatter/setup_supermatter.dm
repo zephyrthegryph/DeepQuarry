@@ -67,7 +67,7 @@
 	var/list/delayed_objects = list()
 	// SETUP PHASE
 	for(var/obj/effect/engine_setup/S in REGISTRY_MEMBERS(REGISTRY_ENGINE_SETUP_MARKERS))
-		var/result = S.activate(0)
+		var/result = S.activate(0, A.request.answerer)
 		switch(result)
 			if(SETUP_OK)
 				success++
@@ -85,7 +85,7 @@
 
 	if(!errors)
 		for(var/obj/effect/engine_setup/S in delayed_objects)
-			var/result = S.activate(1)
+			var/result = S.activate(1, A.request.answerer)
 			switch(result)
 				if(SETUP_OK)
 					success++
@@ -115,7 +115,7 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 
-/obj/effect/engine_setup/proc/activate(last = 0)
+/obj/effect/engine_setup/proc/activate(last = 0, mob/actor)
 	return 1
 
 
@@ -124,11 +124,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 /obj/effect/engine_setup/pump_max/
 	name = "Pump Setup Marker"
 
-/obj/effect/engine_setup/pump_max/activate()
+/obj/effect/engine_setup/pump_max/activate(last = 0, mob/actor)
 	..()
 	var/obj/machinery/atmospherics/binary/pump/P = locate_within(get_turf(src), /obj/machinery/atmospherics/binary/pump)
 	if(!P)
-		log_and_message_admins("## WARNING: Unable to locate pump at [x] [y] [z]!", null)
+		log_and_message_admins("## WARNING: Unable to locate pump at [x] [y] [z]!", actor)
 		return SETUP_WARNING
 	P.set_target_pressure(P.max_pressure_setting)
 	P.set_on(TRUE)
@@ -141,11 +141,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 /obj/effect/engine_setup/empty_canister/
 	name = "Empty Canister Marker"
 
-/obj/effect/engine_setup/empty_canister/activate()
+/obj/effect/engine_setup/empty_canister/activate(last = 0, mob/actor)
 	..()
 	var/obj/machinery/atmospherics/portables_connector/P = locate_within(get_turf(src), /obj/machinery/atmospherics/portables_connector)
 	if(!P)
-		log_and_message_admins("## WARNING: Unable to locate connector port at [x] [y] [z]!", null)
+		log_and_message_admins("## WARNING: Unable to locate connector port at [x] [y] [z]!", actor)
 		return SETUP_WARNING
 	new/obj/machinery/portable_atmospherics/canister(get_turf(src)) // Canisters automatically connect to connectors in New()
 	return SETUP_OK
@@ -159,14 +159,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	name = "Coolant Canister Marker"
 	var/canister_type = null
 
-/obj/effect/engine_setup/coolant_canister/activate()
+/obj/effect/engine_setup/coolant_canister/activate(last = 0, mob/actor)
 	..()
 	var/obj/machinery/atmospherics/portables_connector/P = locate_within(get_turf(src), /obj/machinery/atmospherics/portables_connector)
 	if(!P)
-		log_and_message_admins("## ERROR: Unable to locate coolant connector port at [x] [y] [z]!", null)
+		log_and_message_admins("## ERROR: Unable to locate coolant connector port at [x] [y] [z]!", actor)
 		return SETUP_ERROR
 	if(!canister_type)
-		log_and_message_admins("## ERROR: Canister type unset at [x] [y] [z]!", null)
+		log_and_message_admins("## ERROR: Canister type unset at [x] [y] [z]!", actor)
 		return SETUP_ERROR
 	new canister_type(get_turf(src))
 	return SETUP_OK
@@ -178,16 +178,16 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	name = "Supermatter Core Marker"
 	var/energy_setting = 0
 
-/obj/effect/engine_setup/core/activate(last = 0)
+/obj/effect/engine_setup/core/activate(last = 0, mob/actor)
 	if(!last)
 		return SETUP_DELAYED
 	..()
 	var/obj/machinery/power/supermatter/SM = locate_within(get_turf(src), /obj/machinery/power/supermatter)
 	if(!SM)
-		log_and_message_admins("## ERROR: Unable to locate supermatter core at [x] [y] [z]!", null)
+		log_and_message_admins("## ERROR: Unable to locate supermatter core at [x] [y] [z]!", actor)
 		return SETUP_ERROR
 	if(!energy_setting)
-		log_and_message_admins("## ERROR: Energy setting unset at [x] [y] [z]!", null)
+		log_and_message_admins("## ERROR: Energy setting unset at [x] [y] [z]!", actor)
 		return SETUP_ERROR
 	SM.power = energy_setting
 	return SETUP_OK
@@ -204,11 +204,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	target_input_level = 750000
 	target_output_level = 750000
 
-/obj/effect/engine_setup/smes/activate()
+/obj/effect/engine_setup/smes/activate(last = 0, mob/actor)
 	..()
 	var/obj/machinery/power/smes/S = locate_within(get_turf(src), /obj/machinery/power/smes)
 	if(!S)
-		log_and_message_admins("## WARNING: Unable to locate SMES unit at [x] [y] [z]!", null)
+		log_and_message_admins("## WARNING: Unable to locate SMES unit at [x] [y] [z]!", actor)
 		return SETUP_WARNING
 	S.set_input_attempt(1)
 	S.set_output_attempt(1)
@@ -237,14 +237,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	name = "Omni Filter Marker"
 	var/coolant = null
 
-/obj/effect/engine_setup/atmo_filter/activate()
+/obj/effect/engine_setup/atmo_filter/activate(last = 0, mob/actor)
 	..()
 	var/obj/machinery/atmospherics/omni/atmos_filter/F = locate_within(get_turf(src), /obj/machinery/atmospherics/omni/atmos_filter)
 	if(!F)
-		log_and_message_admins("## WARNING: Unable to locate omni filter at [x] [y] [z]!", null)
+		log_and_message_admins("## WARNING: Unable to locate omni filter at [x] [y] [z]!", actor)
 		return SETUP_WARNING
 	if(!coolant)
-		log_and_message_admins("## WARNING: No coolant type set at [x] [y] [z]!", null)
+		log_and_message_admins("## WARNING: No coolant type set at [x] [y] [z]!", actor)
 		return SETUP_WARNING
 
 	// Non-nitrogen coolant, adjust the filter's config first.
@@ -259,7 +259,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 				P.set_mode(ATM_CO2)
 				break
 			else
-				log_and_message_admins("## WARNING: Inapropriate filter coolant type set at [x] [y] [z]!", null)
+				log_and_message_admins("## WARNING: Inapropriate filter coolant type set at [x] [y] [z]!", actor)
 				return SETUP_WARNING
 		F.wake_for_state_change()
 
@@ -271,9 +271,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	name = "Shutter Button Marker"
 	var/target_button = "Engine Monitoring Room Blast Doors"	// This needs to be set to whatever the shutter button is called
 
-/obj/effect/engine_setup/shutters/activate()
+/obj/effect/engine_setup/shutters/activate(last = 0, mob/actor)
 	if(!target_button)
-		log_and_message_admins("## WARNING: No button type set at [x] [y] [z]!", null)
+		log_and_message_admins("## WARNING: No button type set at [x] [y] [z]!", actor)
 		return SETUP_WARNING
 
 	var/obj/machinery/button/remote/blast_door/found = null
@@ -284,7 +284,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 			break
 
 	if(!found)
-		log_and_message_admins("## WARNING: Unable to locate button at [x] [y] [z]!", null)
+		log_and_message_admins("## WARNING: Unable to locate button at [x] [y] [z]!", actor)
 		return SETUP_WARNING
 
 	found.trigger()

@@ -203,6 +203,77 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	actor.input_hover(target, params)
 	return null
 
+/// A native input (click, drop, drag-over, mouse-over) of a type whose CAPABILITIES declares click_on(), drag_onto(), drag_over(), hover() or tooltip()
+/// (the generated overrides in code/engine/_generated/declare.dm reach it through input_declared(), code/engine/kernel/entry.dm). It resolves the type's
+/// declared entry as `actor`. One that waited in the inbox and found no entry to take it goes on to the native handling afterwards, as the override's
+/// own ..() would have.
+/datum/input_event/declared
+	var/atom/holder
+	/// INPUT_CLICK_ON, INPUT_DRAG_ONTO, INPUT_DRAG_OVER or INPUT_HOVER.
+	var/input
+	var/params
+	var/atom/over
+	/// A hover: TRUE on enter, FALSE on exit.
+	var/entered = FALSE
+	/// The native hook's own arguments by name.
+	var/list/native
+	/// TRUE when the type declares a tooltip: a hover opens or closes it before the hover entry runs.
+	var/tooltip = FALSE
+	/// TRUE when the type declares an entry for this input (a type with only a tooltip has none).
+	var/dispatch = TRUE
+	/// TRUE when a declared handler took the input.
+	var/taken = FALSE
+	/// TRUE when the input waited in the inbox: the override that built it has already returned.
+	var/deferred = FALSE
+
+/datum/input_event/declared/New(mob/user, atom/declared_on, input_kind, input_params, atom/over_atom, entered_flag, list/native_args, with_tooltip, with_dispatch)
+	..(user)
+	holder = declared_on // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	input = input_kind
+	params = input_params
+	if(over_atom)
+		over = over_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	entered = entered_flag
+	native = native_args
+	tooltip = with_tooltip
+	dispatch = with_dispatch
+	if(input != INPUT_HOVER)
+		resolve_threshold = INPUT_CLICK_THRESHOLD
+		metered_as_click = TRUE
+
+/// Only a hover coalesces: the latest mouse-over of a holder is the one that matters (apart from the plain hover event, which has its own key).
+/datum/input_event/declared/coalesce_key()
+	return input == INPUT_HOVER ? "declared_hover" : null
+
+/datum/input_event/declared/subject()
+	return holder
+
+/datum/input_event/declared/event_key()
+	return "input.declared.[input]"
+
+/datum/input_event/declared/resolve()
+	if(tooltip)
+		input_tooltip(holder, actor, entered, params)
+	if(dispatch)
+		taken = input_dispatch(holder, actor, input, params, over, entered, native)
+	if(!deferred)
+		return null
+	// The override returned long ago, so its native chain and its end-of-fall mark are this event's to finish.
+	if(!taken)
+		input_native_fall()
+	input_fell(holder)
+	return null
+
+/// What the declaring override's ..() would have done for an input that was not taken: the click and the drop go on as the plain events; a hover's
+/// override went on at once, and a drag-over has no native handling.
+/datum/input_event/declared/proc/input_native_fall()
+	switch(input)
+		if(INPUT_CLICK_ON)
+			input_submit(new /datum/input_event/click(actor, holder, native?["location"], native?["control"], params))
+		if(INPUT_DRAG_ONTO)
+			if(over)
+				input_submit(new /datum/input_event/drag(actor, holder, over, list(native?["src_location"], native?["over_location"], native?["src_control"], native?["over_control"], params), TRUE))
+
 /// A mouse button pressed on a target (atom/MouseDown). A press and its release are a pair: it never coalesces.
 /datum/input_event/click/pressed
 	metered_as_click = FALSE

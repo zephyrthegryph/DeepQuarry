@@ -30,6 +30,23 @@
 	if(src)
 		input_submit(new /datum/input_event/click/hover(usr, src, location, control, params))
 
+/// The generated native overrides of a type that declares click_on(), drag_onto(), drag_over(), hover() or tooltip() call this with `usr`, read there once as
+/// the actor: the input is a typed event that goes through the inbox like every other. TRUE means the override must not go on to its native chain now:
+/// a declared handler took the input, or the input waits for the drain (it goes on to the native handling itself when it resolves and nothing takes it).
+/proc/input_declared(atom/holder, mob/actor, input, params = null, atom/over = null, entered = FALSE, list/native = null, tooltip = FALSE, dispatch = TRUE)
+	if(!holder || QDELETED(holder))
+		return FALSE
+	if(input_falling && entity_handle_is(input_falling[1], holder) && input_falling[2] == input)
+		// A subtype's override already ran this holder's entry and fell through to its parent: the parent does not run the entry again (its tooltip still opens).
+		if(!tooltip)
+			return FALSE
+		dispatch = FALSE
+	var/datum/input_event/declared/E = new(actor, holder, input, params, over, entered, native, tooltip, dispatch)
+	if(input_submit(E))
+		return E.taken
+	E.deferred = TRUE
+	return TRUE
+
 /// A press closes the tooltip of what declares one; nothing else wants it, so nothing else is queued.
 /atom/MouseDown(location, control, params)
 	if(src && input_declares_tooltip(src))

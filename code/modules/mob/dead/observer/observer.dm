@@ -711,7 +711,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		if(length(antag_cult().current_antagonists) > CONFIG_GET(number/cult_ghostwriter_req_cultists))
 			ghosts_can_write = 1
 
-	if(!ghosts_can_write && !check_rights(R_ADMIN|R_EVENT|R_FUN, 0)) //Let's allow for admins to write in blood for events and the such.
+	if(!ghosts_can_write && !admin_can(client, R_ADMIN|R_EVENT|R_FUN)) //Let's allow for admins to write in blood for events and the such.
 		to_chat(src, span_filter_notice(span_red("The veil is not thin enough for you to do that.")))
 		return
 

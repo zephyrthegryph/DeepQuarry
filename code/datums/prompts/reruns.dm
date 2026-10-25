@@ -146,7 +146,8 @@ GLOBAL_VAR(prompt_flow)
 		GLOB.prompt_flow["sql_error"] = "[stored["error"]]"
 		log_sql("[stored["error"]] | Query used: [sql] | Arguments: [json_encode(arguments)]")
 		if(warn)
-			to_chat(GLOB.directory[GLOB.prompt_flow["ckey"]]?.mob, span_danger("A SQL error occurred during this operation, check the server logs."))
+			var/client/flow_client = GLOB.directory[GLOB.prompt_flow["ckey"]]
+			to_chat(flow_client?.mob, span_danger("A SQL error occurred during this operation, check the server logs."))
 		return null
 	return stored["rows"] || list()
 
