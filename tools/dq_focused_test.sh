@@ -44,7 +44,7 @@
 # REFUSED unless --allow-exhaustive is passed; the message names its /representative when there is one. The whole run has a hard
 # wall-clock cap: DQ_FOCUSED_MAX_MIN minutes of RUN time (the clock starts when the run first holds a machine slot; queueing behind other
 # lanes' compiles is reported as "queued N min" and not counted; a run that gets no slot in DQ_FOCUSED_QUEUE_MAX_SEC, default 5400, is
-# stopped. Do not wrap this tool in `timeout`: the built-in cap replaces it) (default 20; above 30 it is clamped to 30 unless --allow-exhaustive). tools/dq_run_guard.js
+# stopped. Do not wrap this tool in `timeout`: the built-in cap replaces it) (default 10; above 10 it is clamped to 10 unless --allow-exhaustive). tools/dq_run_guard.js
 # watches the run: at the cap it kills the run's DreamDaemon worlds (and the runner that would start more; worlds register in
 # $DQ_WORLD_REGISTRY) and reaps their machine slots, and it does the same the moment this shell dies or is killed, so a stopped task leaves no orphaned worlds.
 #
@@ -431,34 +431,34 @@ if [ "$allow_exhaustive" -eq 0 ]; then
 		{
 			echo "dq_focused_test: REFUSED: exhaustive-tier tests are whole-type sweeps that run for hours; a lane never starts one."
 			echo "$refused"
-			echo "  Nothing was compiled or started. A person who really wants the sweep passes --allow-exhaustive (and DQ_FOCUSED_MAX_MIN above 30 for a cap past half an hour)."
+			echo "  Nothing was compiled or started. A person who really wants the sweep passes --allow-exhaustive (and DQ_FOCUSED_MAX_MIN above 10 for a longer cap, up to the 30-minute shell limit)."
 		} >&2
 		exit 3
 	fi
 fi
 
 # ---- the wall-clock cap -------------------------------------------------------------------------------------------------------
-# focused_cap_minutes <allow_exhaustive>: prints the cap in minutes (DQ_FOCUSED_MAX_MIN, default 20; clamped to 30 without --allow-exhaustive).
+# focused_cap_minutes <allow_exhaustive>: prints the cap in minutes (DQ_FOCUSED_MAX_MIN, default 10; clamped to 10 without --allow-exhaustive).
 focused_cap_minutes() {
 	# The merge gates (tools/dq_gate_retry.sh) pass DQ_GATE_FOCUSED_MAX_MIN, sized to the gate's test count; it replaces the agent cap
-	# and its 30-minute clamp, and has its own firm ceiling of 60. It is for the gates only: ad-hoc runs use DQ_FOCUSED_MAX_MIN.
+	# and its 10-minute clamp, and has its own firm ceiling of 10. It is for the gates only: ad-hoc runs use DQ_FOCUSED_MAX_MIN.
 	if [ -n "${DQ_GATE_FOCUSED_MAX_MIN:-}" ]; then
 		case "$DQ_GATE_FOCUSED_MAX_MIN" in
 			*[!0-9]* | 0) echo "dq_focused_test: DQ_GATE_FOCUSED_MAX_MIN='$DQ_GATE_FOCUSED_MAX_MIN' is not a positive integer; ignoring it" >&2 ;;
 			*)
 				local gcap="$DQ_GATE_FOCUSED_MAX_MIN"
-				[ "$gcap" -gt 60 ] && gcap=60
-				echo "dq_focused_test: gate cap $gcap min (DQ_GATE_FOCUSED_MAX_MIN, ceiling 60)" >&2
+				[ "$gcap" -gt 10 ] && gcap=10
+				echo "dq_focused_test: gate cap $gcap min (DQ_GATE_FOCUSED_MAX_MIN, ceiling 10)" >&2
 				echo "$gcap"
 				return 0
 				;;
 		esac
 	fi
-	local cap="${DQ_FOCUSED_MAX_MIN:-20}"
-	case "$cap" in '' | *[!0-9]* | 0) echo "dq_focused_test: DQ_FOCUSED_MAX_MIN='$cap' is not a positive integer; using 20" >&2; cap=20 ;; esac
-	if [ "$cap" -gt 30 ] && [ "${1:-0}" -eq 0 ]; then
-		echo "dq_focused_test: DQ_FOCUSED_MAX_MIN=$cap is above 30 and --allow-exhaustive was not passed; using 30" >&2
-		cap=30
+	local cap="${DQ_FOCUSED_MAX_MIN:-10}"
+	case "$cap" in '' | *[!0-9]* | 0) echo "dq_focused_test: DQ_FOCUSED_MAX_MIN='$cap' is not a positive integer; using 10" >&2; cap=10 ;; esac
+	if [ "$cap" -gt 10 ] && [ "${1:-0}" -eq 0 ]; then
+		echo "dq_focused_test: DQ_FOCUSED_MAX_MIN=$cap is above 10 and --allow-exhaustive was not passed; using 10" >&2
+		cap=10
 	fi
 	echo "$cap"
 }
