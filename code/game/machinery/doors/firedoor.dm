@@ -514,7 +514,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	var/signature = firedoor_atmos_signature()
 	if(signature != sleeping_signature)
 		sleeping_signature = signature
-		SSmachines.gas_woken_last++
+		SSmachines.note_gas_woken()
 		sparse_set(src, gas_dependency_wake_count, sparse_get_or(src, gas_dependency_wake_count, 0) + 1)
 		wake_from_air()
 

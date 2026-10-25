@@ -260,20 +260,6 @@ CAPABILITIES(/obj/item/pipe)
 	T.set_mirrored(mirrored)
 	. = ..()
 
-// Lookup the initialize_directions for a given atmos machinery instance facing dir.
-// TODO - Right now this determines the answer by instantiating an instance and checking!
-// There has to be a better way... ~Leshana
-/datum/system/machines/proc/get_init_dirs(type, dir)
-	return CACHED2(pipe_init_dirs, type, dir)
-
-DECLARE_SHARED_CACHE(pipe_init_dirs, GLOBAL_PROC_REF(build_pipe_init_dirs), SC_NEVER)
-
-/// Builder for pipe_init_dirs: instantiates a probe of `type` facing `dir`.
-/proc/build_pipe_init_dirs(type, dir)
-	var/obj/machinery/atmospherics/temp = new type(null, dir)
-	. = temp.get_init_dirs()
-	spent(temp)
-
 //
 // Meters are special - not like any other pipes or components
 //

@@ -1,4 +1,4 @@
-// The machine system's API (code/game/machinery/machine_service.dm declares the system).
+// The machine system's API (code/content/machinery/machine_service.dm declares the system).
 //
 //   SSmachines.queue_pump_transfer(...)                   a pump queues its gas transfer for the batched commit
 
@@ -39,3 +39,21 @@
 
 /datum/system/machines/proc/cycles_run()
 	return times_fired
+
+// Lookup the initialize_directions for a given atmos machinery instance facing dir.
+// TODO - Right now this determines the answer by instantiating an instance and checking!
+// There has to be a better way... ~Leshana
+/datum/system/machines/proc/get_init_dirs(type, dir)
+	return CACHED2(pipe_init_dirs, type, dir)
+
+DECLARE_SHARED_CACHE(pipe_init_dirs, GLOBAL_PROC_REF(build_pipe_init_dirs), SC_NEVER)
+
+/// Builder for pipe_init_dirs: instantiates a probe of `type` facing `dir`.
+/proc/build_pipe_init_dirs(type, dir)
+	var/obj/machinery/atmospherics/temp = new type(null, dir)
+	. = temp.get_init_dirs()
+	spent(temp)
+
+/// A door or firedoor woke from a gas change: counted for the machine profile.
+/datum/system/machines/proc/note_gas_woken()
+	gas_woken_last++
