@@ -62,15 +62,17 @@
 	var/list/read_tree = read_parser.parse(actor)
 	var/datum/SDQL2_query/reader = allocate(/datum/SDQL2_query, read_tree, FALSE, TRUE, defaults.options, FALSE, actor)
 	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("special_voice")), "Before", "SDQL reads a slot by its bare name")
-	var/datum/SDQL_parser/parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("UPDATE /mob/living/carbon/human/dq_sparse_probe SET special_voice = 'After'", actor))
+	var/datum/SDQL_parser/parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("UPDATE /mob/living/carbon/human/dq_sparse_probe FROM usr.loc.contents SET special_voice = 'After'", actor))
 	var/list/tree = parser.parse(actor)
 	TEST_ASSERT(!parser.error, "the real parser accepts an update that names a slot")
 	var/datum/SDQL2_query/query = allocate(/datum/SDQL2_query, tree, FALSE, TRUE, defaults.options, FALSE, actor)
-	query.admin_run(actor)
-	TEST_ASSERT(run_until(CALLBACK(src, PROC_REF(query_finished), query)), "the update query finishes")
+	rel_set(query, nameof(query.requester), actor)
+	// The FROM bounds the scan to the actor's turf, so Run() spans few ticks and the world does not drift under it. Run() is what admin_run starts asynchronously; a scan yields to the tick budget (CHECK_TICK), so the ticks it needs depend on
+	// the world and the load of the test before it: calling Run() here waits for the query however long that is, with no fixed tick cap, and
+	// a runtime inside the query fails this test with its message instead of reading as a query that never finishes.
+	query.Run()
+	TEST_ASSERT(query.finished, "the update query finishes")
 	TEST_ASSERT_EQUAL(sparse_get(H, special_voice), "After", "SDQL UPDATE writes the slot through the sparse path")
 
-/datum/unit_test/dq_sparse_slot_sdql/proc/query_finished(datum/SDQL2_query/query)
-	return !QDELETED(query) && query.finished
 
 #endif

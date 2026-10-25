@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Outdoor grass, seasonal grass and Sif rock turfs roll their starting spawns through after_init instead of Initialize()"

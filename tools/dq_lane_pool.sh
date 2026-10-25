@@ -18,7 +18,7 @@
 # light branch in one batched merge (tools/dq_land_batch.sh). Compiler holders also get first claim on the machine slots.
 #
 # Why: a fresh worktree is a 24k-file checkout (minutes), cold caches (analyzer, icons, node_modules, compile cache) and about 1.5 GB
-# of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 8) under E:/projects/dq-wt/pool-N, created
+# of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 3: one DM compile slot serves about three lanes plus the train) under E:/projects/dq-wt/pool-N, created
 # once and reused for the life of the machine. At most DQ_LANE_POOL_SIZE general lanes run at once: one more lease is refused.
 #
 # lease <branch>
@@ -57,7 +57,7 @@ set -uo pipefail
 _dq_dir="${BASH_SOURCE[0]%/*}"; [ "$_dq_dir" = "${BASH_SOURCE[0]}" ] && _dq_dir=.   # no dirname fork: a fork costs a few hundred ms on a loaded host
 . "$_dq_dir/dq_git_safe.sh"
 
-POOL_SIZE="${DQ_LANE_POOL_SIZE:-8}"
+POOL_SIZE="${DQ_LANE_POOL_SIZE:-3}"
 COMPILER_SLOTS="${DQ_LANE_POOL_COMPILER:-2}"
 POOL_DIR="${DQ_LANE_POOL_DIR:-E:/projects/dq-wt}"
 STATE_DIR="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}"

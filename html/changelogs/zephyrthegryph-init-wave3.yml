@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Spell objects (technomancer and construct) set up through setup() hooks instead of Initialize() overrides"

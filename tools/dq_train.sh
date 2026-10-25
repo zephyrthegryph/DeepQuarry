@@ -275,6 +275,20 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 	set +f
 }
 
+settle_shrink_leftovers() {
+	# A gate whose tests fail leaves its in-job baseline shrink (dq_merge_gates.sh, shrink_after) uncommitted in the train worktree,
+	# and dq_merge_batch.sh then refuses every later cycle ("uncommitted tracked changes"). That shrink is the gate's own output, never
+	# a lane's work: put such files back to HEAD's content. Any other tracked change still stops the cycle as before.
+	[ -d "$WT" ] || return 0
+	local f dirty
+	dirty="$(git -C "$WT" diff --name-only HEAD 2>/dev/null)"
+	[ -n "$dirty" ] || return 0
+	if printf '%s\n' "$dirty" | grep -qv -E '^tools/ci/([a-z_]+_baseline\.txt|sys_baseline/[A-Za-z0-9_.-]+)$'; then return 0; fi
+	while IFS= read -r f; do
+		git -C "$WT" show "HEAD:$f" >"$WT/$f" && tlog "reset a gate's leftover baseline shrink in the train worktree: $f"
+	done <<<"$dirty"
+}
+
 light_cycle() { # CHOSEN are all light
 	local b out lq lstate rc unlanded=() sha lg
 	lstate="$STATE/light-state"
@@ -341,7 +355,7 @@ heavy_cycle() {
 	(
 		cd "$WT" || exit 99
 		export DQ_MERGE_BRANCH="$TBRANCH" DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN"
-		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_BATCH_DEADLINE="$deadline"
+		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1 DQ_BATCH_DEADLINE="$deadline"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
 		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" --tests "$tests_union" --no-dm
@@ -373,7 +387,7 @@ heavy_cycle() {
 	pushlog="$LOGS/cycle-$stamp.push.log"
 	(
 		cd "$WT" || exit 99
-		export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1
+		export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1
 		[ "${DQ_TRAIN_DRY_RUN:-0}" = 1 ] && export DQ_PUSH_DRY_RUN=1
 		bash tools/dq_push_master.sh --expect "$good"
 	) >"$pushlog" 2>&1
@@ -401,6 +415,7 @@ cycle() {
 	CYCLE_PROGRESS=0
 	phase "fetch"
 	G fetch -q origin 2>/dev/null || tlog "warning: git fetch failed"
+	settle_shrink_leftovers
 	mapfile -t all < <(queue_branches)
 	[ ${#all[@]} -gt 0 ] || return 10
 	VALID=()

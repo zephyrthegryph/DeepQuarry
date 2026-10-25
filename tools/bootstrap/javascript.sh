@@ -34,7 +34,13 @@ test_symlink_support() {
     fi
 }
 
-test_symlink_support
+# The probe costs several process spawns on Windows and its answer does not change for a checkout:
+# a marker under the gitignored data/ skips it after the first pass.
+SymlinkMarker="$(dirname "$0")/../../data/.symlink_ok"
+if [ ! -f "$SymlinkMarker" ]; then
+    test_symlink_support
+    mkdir -p "$(dirname "$SymlinkMarker")" 2>/dev/null && : > "$SymlinkMarker" 2>/dev/null || true
+fi
 
 # If Bun is not present, install using the official installer.
 if ! command -v bun >/dev/null 2>&1; then
@@ -48,7 +54,7 @@ if ! command -v bun >/dev/null 2>&1; then
     fi
 fi
 
-echo "Using Bun $(bun --version)"
+echo "Using Bun (pinned $BunVersion)"
 # Shared transpiler cache can resolve across identical worktrees; keep it off.
 export BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
 exec bun "$@"

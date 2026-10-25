@@ -127,6 +127,16 @@ function retire(executable: string, namespace: string): string {
 export type DaemonScope = { namespace: string | undefined; release(): void };
 
 /**
+ * Roots whose daemon is never evicted for the cap: the batch train's worktree compiles every cycle, and an evicted train session
+ * turns each gate's compile from incremental (seconds) into a full one (minutes). `DQ_DMBC_KEEP_ROOTS` is a ';'-separated list.
+ */
+function keptRoot(root: string): boolean {
+  const raw = process.env.DQ_DMBC_KEEP_ROOTS ?? 'E:/projects/dq-wt/train-base';
+  const norm = (p: string) => path.resolve(p).replace(/\\/g, '/').toLowerCase();
+  return raw.split(';').filter(Boolean).some((keep) => norm(keep) === norm(root));
+}
+
+/**
  * Enter the compile's daemon scope. Every native dmbc spawn goes through here. Without a caller namespace the compile uses
  * the one machine-wide daemon and there is nothing to bookkeep (the daemon caps and retires itself). With a namespace it takes
  * a lease and evicts least-recently-used idle namespaces beyond the cap. Never throws: bookkeeping failure only loses the cap.
@@ -153,6 +163,7 @@ export function enterDaemonScope(root: string, executable: string): DaemonScope 
       let resident = others.length + 1;
       for (const entry of others) {
         if (resident <= cap) break;
+        if (keptRoot(entry.root)) { log(`keeping ${entry.namespace} (${entry.root}): DQ_DMBC_KEEP_ROOTS`); continue; }
         if (Date.now() - entry.lastUsed < NAMESPACE_MIN_IDLE_MS) { log(`keeping ${entry.namespace} (${entry.root}): used within the last ${NAMESPACE_MIN_IDLE_MS / 60000} minutes`); continue; }
         if (liveLeases(dir, entry.namespace) > 0) { log(`keeping ${entry.namespace} (${entry.root}): a build is running`); continue; }
         const outcome = retire(executable, entry.namespace);
@@ -165,7 +176,7 @@ export function enterDaemonScope(root: string, executable: string): DaemonScope 
         for (const entry of others) {
           if (memoryShortfallBytes() <= 0) break;
           if (!fs.existsSync(path.join(dir, `${entry.namespace}.json`))) continue; // already retired above
-          if (liveLeases(dir, entry.namespace) > 0) continue;
+          if (liveLeases(dir, entry.namespace) > 0 || keptRoot(entry.root)) continue;
           const outcome = retire(executable, entry.namespace);
           log(`free memory ${(os.freemem() / 1e9).toFixed(1)} GB is under reserve + cold growth: retired idle ${entry.namespace} (${entry.root}): ${outcome}`);
           if (outcome.startsWith('failed')) continue;

@@ -139,25 +139,28 @@
 	test_driver_begin()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
-	sparse_set(H, lying_prev, 7)
+	// voice_freq, not lying_prev: update_canmove() rewrites lying_prev from the mob's lying on every tick the world runs during Run(), which cleared the slot (the flake).
+	sparse_set(H, voice_freq, 7)
 	vars_write(H, "meat_amount", 6)
 	var/datum/SDQL2_query/defaults = allocate(/datum/SDQL2_query, list())
 	var/datum/SDQL_parser/read_parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("SELECT /mob/living/carbon/human/dq_sparse_probe", actor))
 	var/list/read_tree = read_parser.parse(actor)
 	var/datum/SDQL2_query/reader = allocate(/datum/SDQL2_query, read_tree, FALSE, TRUE, defaults.options, FALSE, actor)
-	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("lying_prev")), 7, "SDQL reads a wave 3 slot by its old var name")
+	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("voice_freq")), 7, "SDQL reads a wave 3 slot by its old var name")
 	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("meat_amount")), 6, "SDQL reads a wave 3 trait var by its old var name")
-	var/datum/SDQL_parser/parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("UPDATE /mob/living/carbon/human/dq_sparse_probe SET max_nutrition = 55", actor))
+	var/datum/SDQL_parser/parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("UPDATE /mob/living/carbon/human/dq_sparse_probe FROM usr.loc.contents SET max_nutrition = 55", actor))
 	var/list/tree = parser.parse(actor)
 	TEST_ASSERT(!parser.error, "the real parser accepts an update that names a slot and a trait var")
 	var/datum/SDQL2_query/query = allocate(/datum/SDQL2_query, tree, FALSE, TRUE, defaults.options, FALSE, actor)
-	query.admin_run(actor)
-	TEST_ASSERT(run_until(CALLBACK(src, PROC_REF(query_finished), query)), "the update query finishes")
-	TEST_ASSERT_EQUAL(sparse_get(H, lying_prev), 7, "the slot is as it was")
+	rel_set(query, nameof(query.requester), actor)
+	// The FROM bounds the scan to the actor's turf, so Run() spans few ticks and the world does not drift under it. Run() is what admin_run starts asynchronously; a scan yields to the tick budget (CHECK_TICK), so the ticks it needs depend on
+	// the world and the load of the test before it: calling Run() here waits for the query however long that is, with no fixed tick cap, and
+	// a runtime inside the query fails this test with its message instead of reading as a query that never finishes.
+	query.Run()
+	TEST_ASSERT(query.finished, "the update query finishes")
+	TEST_ASSERT_EQUAL(sparse_get(H, voice_freq), 7, "the slot is as it was")
 	TEST_ASSERT_EQUAL(living_rules_of(H).max_nutrition, 55, "and the trait var")
 
-/datum/unit_test/dq_base_vars_wave3_sdql/proc/query_finished(datum/SDQL2_query/query)
-	return !QDELETED(query) && query.finished
 
 /// The behaviour the vars carried: a type's declared value is read by an instance, a write is the instance's own, and the slots read the old defaults.
 /datum/unit_test/dq_base_vars_wave3_behaviour
@@ -178,5 +181,35 @@
 	TEST_ASSERT_EQUAL(sparse_get_or(H, wants_to_see_motion_echos, TRUE), TRUE, "a mob sees motion echos until it says otherwise")
 	H.toggle_motion_echo_vis()
 	TEST_ASSERT_EQUAL(sparse_get_or(H, wants_to_see_motion_echos, TRUE), FALSE, "the verb turns them off")
+
+/// Butchering one mob must not change what another of its type gives: the loot table and the meat count are the type's, each butchering counts down its own.
+/datum/unit_test/dq_base_vars_wave3_butchery_isolated
+
+/datum/unit_test/dq_base_vars_wave3_butchery_isolated/Run()
+	var/turf/T = dq_containment_floor()
+	var/mob/living/simple_mob/animal/passive/cow/first = allocate(/mob/living/simple_mob/animal/passive/cow, T)
+	var/mob/living/simple_mob/animal/passive/cow/second = allocate(/mob/living/simple_mob/animal/passive/cow, T)
+	var/list/type_loot = butchery_of_type(first.type).butchery_loot
+	var/hides = type_loot[/obj/item/stack/animalhide]
+	var/meat = butchery_of_type(first.type).meat_amount
+	TEST_ASSERT(hides > 0 && meat > 0, "a cow declares loot and meat")
+	var/list/loot_before = type_loot.Copy()
+	first.set_meat_amount(butchery_of(first).meat_amount - 1)
+	first.butcher_loot(null, null)
+	TEST_ASSERT_EQUAL(butchery_of(first).meat_amount, meat - 1, "the first cow's meat count is its own")
+	TEST_ASSERT_NULL(butchery_of(first).butchery_loot, "the first cow's loot is spent")
+	TEST_ASSERT_EQUAL(butchery_of(second).meat_amount, meat, "the second cow keeps its meat")
+	TEST_ASSERT_EQUAL(butchery_of(second).butchery_loot[/obj/item/stack/animalhide], hides, "the second cow keeps its full loot")
+	TEST_ASSERT_EQUAL(butchery_of_type(second.type).butchery_loot[/obj/item/stack/animalhide], hides, "and the type's table is whole")
+	TEST_ASSERT_EQUAL(length(type_loot), length(loot_before), "the type's table has the same entries")
+	var/hides_before = 0
+	for(var/obj/item/stack/animalhide/H in T)
+		hides_before += H.amount
+	second.butcher_loot(null, null)
+	var/hides_after = 0
+	for(var/obj/item/stack/animalhide/H in T)
+		hides_after += H.amount
+	TEST_ASSERT(hides_after - hides_before >= hides, "the second cow drops its full loot after the first was butchered")
+	own_turf_contents(T)
 
 #endif
