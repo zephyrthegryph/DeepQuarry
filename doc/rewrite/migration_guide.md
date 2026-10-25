@@ -971,7 +971,7 @@ Current implementation excerpt ([code/game/objects/items/devices/laserpointer.dm
 	set_icon_state(initial(icon_state))
 ```
 
-Another observation replaces the same keyed geiger-reset timer ([code/game/objects/items/devices/geiger.dm](../../code/game/objects/items/devices/geiger.dm)); kept lines are verbatim, with surrounding code omitted.
+Another observation replaces the same keyed geiger-reset timer ([code/content/items/devices/geiger.dm](../../code/content/items/devices/geiger.dm)); kept lines are verbatim, with surrounding code omitted.
 
 ```dm fragment
 	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "geiger_perceived_danger_reset")
