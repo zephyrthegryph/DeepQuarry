@@ -129,6 +129,53 @@ impl PreparedSource {
     }
 }
 
+/// Prepared sources by exact text, process-wide (the daemon holds one pool for all its sessions). Preparation is a pure
+/// function of the decoded text, so two sessions reading the same file (two worktrees, the game and the test variant of one
+/// tree) share one `PreparedSource` instead of each holding its own copy of the text, its comment-stripped view and its
+/// line tables. The pool is weak: it keeps nothing alive, and a source dies with its last session.
+pub fn shared_prepared(text: SourceText) -> Arc<PreparedSource> {
+    const SHARDS: usize = 64;
+    struct Shard {
+        sources: std::collections::HashMap<u128, std::sync::Weak<PreparedSource>>,
+        /// Length at which the shard next drops its dead entries.
+        prune_at: usize,
+    }
+    static POOL: std::sync::OnceLock<Box<[Mutex<Shard>]>> = std::sync::OnceLock::new();
+    let pool = POOL.get_or_init(|| {
+        (0..SHARDS)
+            .map(|_| {
+                Mutex::new(Shard {
+                    sources: Default::default(),
+                    prune_at: 4096,
+                })
+            })
+            .collect()
+    });
+    let digest = xxhash_rust::xxh3::xxh3_128(text.as_str().as_bytes());
+    let shard = &pool[(digest as usize) % SHARDS];
+    if let Some(held) = shard
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .sources
+        .get(&digest)
+        .and_then(std::sync::Weak::upgrade)
+    {
+        // The digest names the text; the text itself decides.
+        if held.original().as_str() == text.as_str() {
+            return held;
+        }
+        return Arc::new(PreparedSource::from_text(text));
+    }
+    let prepared = Arc::new(PreparedSource::from_text(text));
+    let mut shard = shard.lock().unwrap_or_else(|error| error.into_inner());
+    shard.sources.insert(digest, Arc::downgrade(&prepared));
+    if shard.sources.len() >= shard.prune_at {
+        shard.sources.retain(|_, source| source.strong_count() > 0);
+        shard.prune_at = (shard.sources.len() * 2).max(4096);
+    }
+    prepared
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PreparationError {
     DuplicatePath(PathBuf),
@@ -184,7 +231,7 @@ impl PreparedSources {
                         if index >= captures.len() {
                             break;
                         }
-                        let prepared = Arc::new(PreparedSource::new(captures[index].1.clone()));
+                        let prepared = shared_prepared(captures[index].1.clone().into());
                         let Ok(mut outputs) = outputs.lock() else {
                             break;
                         };
@@ -480,6 +527,21 @@ mod tests {
                 prepared.line_starts()[line.source_line - 1]
             );
         }
+    }
+    #[test]
+    fn equal_texts_share_one_preparation_while_any_holder_lives() {
+        let text = "#define SHARED_PREPARATION 1\n/proc/a()\n\treturn SHARED_PREPARATION\n";
+        let first = shared_prepared(String::from(text).into());
+        let second = shared_prepared(String::from(text).into());
+        assert!(Arc::ptr_eq(&first, &second));
+        let other = shared_prepared(String::from("/proc/b()\n\treturn 2\n").into());
+        assert!(!Arc::ptr_eq(&first, &other));
+        assert_eq!(first.original().as_str(), text);
+        drop((first, second));
+        // Nothing is kept alive by the pool: the text is prepared again, to the same result.
+        let again = shared_prepared(String::from(text).into());
+        assert_eq!(again.original().as_str(), text);
+        assert_eq!(again.lines().len(), PreparedSource::new(Arc::from(text)).lines().len());
     }
     #[test]
     fn issued_preparations_reuse_bytes_and_exact_access_path_policy() {

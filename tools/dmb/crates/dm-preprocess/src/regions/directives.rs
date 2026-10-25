@@ -1008,7 +1008,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         let prepared = match self.provider.prepared_source(&path) {
             Some(prepared) => prepared,
             None => match self.provider.read(&path) {
-                Ok(source) => Arc::new(prepared_source::PreparedSource::from_text(source.into())),
+                Ok(source) => prepared_source::shared_prepared(source.into()),
                 Err(error) => {
                     // DreamMaker reports an unreadable include at its #include
                     // directive, naming the authored operand.
