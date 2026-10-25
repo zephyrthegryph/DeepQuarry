@@ -21,7 +21,7 @@
 		//Bit of a roundabout typecheck, in order to test for two variables from two different mob types in one line.
 		if(isanimal(L))
 			SM = L
-		if(L.summoned || (SM && SM.supernatural) )
+		if(sparse_get(L, summoned) || (SM && SM.supernatural) )
 			if(L.client) // Player-controlled mobs are immune to being killed by this.
 				to_chat(user, span_warning("\The [L] resists your attempt to banish it!"))
 				to_chat(L, span_warning("\The [user] tried to teleport you far away, but failed."))

@@ -1,6 +1,3 @@
-/mob/living/
-	var/summoned = 0
-
 /obj/item/spell/summon
 	name = "summon template"
 	desc = "Chitter chitter."
@@ -24,7 +21,7 @@
 	if(owner_ref()) // We might've been dropped.
 		var/mob/living/L = new summoned_mob_type(T)
 		rel_add(core, nameof(core.summoned_mobs), L)
-		L.summoned = 1
+		sparse_set(L, summoned, TRUE)
 		var/image/summon_underlay = image('icons/obj/objects.dmi',"anom")
 		summon_underlay.alpha = 127
 		L.underlays |= summon_underlay

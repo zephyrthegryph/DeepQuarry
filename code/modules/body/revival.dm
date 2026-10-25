@@ -119,7 +119,7 @@
 	if(!(flags & REVIVE_KEEP_TIMEOFDEATH))
 		EXPIRY_CLEAR(src, timeofdeath)
 		sparse_set(src, tod, null)
-	failed_last_breath = 0
+	sparse_set_or(src, failed_last_breath, 0, 0)
 
 	// 4. The one stat transition back.
 	sparse_set(src, revival_in_progress, TRUE)

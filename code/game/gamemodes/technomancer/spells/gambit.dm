@@ -69,7 +69,7 @@
 			var/mob/living/simple_mob/SM = L
 			if(!is_ally(SM) && (SM.ai_brain != null) && SM.ai_brain.hostile)
 				hostile_mobs++
-				if(SM.summoned || SM.supernatural) // Our creations might be trying to kill us.
+				if(sparse_get(SM, summoned) || SM.supernatural) // Our creations might be trying to kill us.
 					potential_spells |= /obj/item/spell/abjuration
 
 		// Always assume borgs are hostile.

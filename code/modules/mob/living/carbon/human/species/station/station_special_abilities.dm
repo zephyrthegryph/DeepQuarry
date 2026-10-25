@@ -1643,20 +1643,20 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 /mob/living/proc/mobegglaying_living_done(datum/act/op/A)
 	var/mob/living/carbon/human/C = src
 	var/choice = A.step_value("choice")
-	if(choice == "Make a Egg" && eggs > 5)
+	if(choice == "Make a Egg" && sparse_get_or(src, eggs, 0) > 5)
 		src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
 		return 0
 	else if(choice == "Make a Egg")
 		src.show_message(span_warning("You feel your belly bulging a bit, you made an egg!"))
 		C.adjust_nutrition(-(150))
-		eggs += 1
+		sparse_set_or(src, eggs, sparse_get_or(src, eggs, 0) + 1, 0)
 		return 0
-	else if(choice == "lay your Eggs" && eggs > 0)
+	else if(choice == "lay your Eggs" && sparse_get_or(src, eggs, 0) > 0)
 		act_message(src, null, others = span_infoplain(span_white("%U% freezes and vissibly tries to squat down")))
 
-		while(eggs > 0)
+		while(sparse_get_or(src, eggs, 0) > 0)
 			src.show_message(span_warning("You lay a egg!"))
-			eggs--
+			sparse_set_or(src, eggs, sparse_get_or(src, eggs, 0) - 1, 0)
 			var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
 			E.set_pixel_x(rand(-6,6))
 			E.set_pixel_y(rand(-6,6))

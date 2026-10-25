@@ -49,7 +49,7 @@
 	return H.reagents.get_reagent_amount(REAGENT_ID_TOXIN) > 0 || H.bloodstr?.get_reagent_amount(REAGENT_ID_TOXIN) > 0
 
 /datum/unit_test/dq_gameplay/breathing/proc/suffocating(mob/living/carbon/human/H)
-	return H.alerts?["oxy"] || H.failed_last_breath
+	return H.alerts?["oxy"] || sparse_get_or(H, failed_last_breath, 0)
 
 /// Standing in phoron: toxin in the blood, and the toxin warning.
 /datum/unit_test/dq_gameplay/breathing/phoron_poisons

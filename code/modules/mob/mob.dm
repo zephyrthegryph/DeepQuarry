@@ -842,7 +842,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return 0
 
 /mob/proc/Resting(amount)
-	facing_dir = null
+	sparse_set(src, facing_dir, null)
 	set_resting(max(max(resting,amount),0))
 	update_canmove()
 	return
@@ -1003,29 +1003,29 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	set_face_dir()
 
-	if(!facing_dir)
+	if(!sparse_get(src, facing_dir))
 		to_chat(src, span_filter_notice("You are now not facing anything."))
 	else
-		to_chat(src, span_filter_notice("You are now facing [dir2text(facing_dir)]."))
+		to_chat(src, span_filter_notice("You are now facing [dir2text(sparse_get(src, facing_dir))]."))
 
 /mob/proc/set_face_dir(newdir)
-	if(newdir == facing_dir)
-		facing_dir = null
+	if(newdir == sparse_get(src, facing_dir))
+		sparse_set(src, facing_dir, null)
 	else if(newdir)
 		set_dir(newdir)
-		facing_dir = newdir
-	else if(facing_dir)
-		facing_dir = null
+		sparse_set(src, facing_dir, newdir)
+	else if(sparse_get(src, facing_dir))
+		sparse_set(src, facing_dir, null)
 	else
 		set_dir(dir)
-		facing_dir = dir
+		sparse_set(src, facing_dir, dir)
 
 /mob/set_dir()
-	if(facing_dir)
+	if(sparse_get(src, facing_dir))
 		if(!canface() || lying || src?.buckled_to() || restrained())
-			facing_dir = null
-		else if(dir != facing_dir)
-			return ..(facing_dir)
+			sparse_set(src, facing_dir, null)
+		else if(dir != sparse_get(src, facing_dir))
+			return ..(sparse_get(src, facing_dir))
 	else
 		return ..()
 
@@ -1565,35 +1565,40 @@ MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..(var_name, viewer)
 
-/obj/item
-	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
-	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
-
+/// What this item changes on its wearer while it is worn (sparse slot user_vars_to_edit: variable name -> value, set by an admin or a spawner), and the
+/// originals it remembers to put back (sparse slot user_vars_remembered).
 /obj/item/dropped(mob/living/user)
 	. = ..()
 	if (!istype(user))
 		return
-	if(LAZYLEN(user_vars_remembered))
-		for(var/variable in user_vars_remembered)
-			if(variable in user.vars)
-				if(user.vars[variable] == user_vars_to_edit[variable])
-					user.vars[variable] = user_vars_remembered[variable] // ALLOW(api): remembered user vars restored by name (admin possession)
-		user_vars_remembered = initial(user_vars_remembered)
+	item_restore_user_vars(user)
+
+/// Puts back the wearer vars this item remembered, those still holding the value the item set.
+/obj/item/proc/item_restore_user_vars(mob/living/user)
+	var/list/remembered = sparse_get(src, user_vars_remembered)
+	if(!LAZYLEN(remembered))
+		return
+	var/list/to_edit = sparse_get(src, user_vars_to_edit)
+	for(var/variable in remembered)
+		if(variable in user.vars)
+			if(user.vars[variable] == to_edit?[variable])
+				user.vars[variable] = remembered[variable] // ALLOW(api): remembered user vars restored by name (admin possession)
+	sparse_set(src, user_vars_remembered, null)
 
 /obj/item/equipped(mob/living/user, slot_equipped)
 	. = ..()
 	if (!istype(user))
 		return
 	if(dq_item_fits_slot_flags(src, slot_equipped))
-		if (LAZYLEN(user_vars_to_edit))
-			for(var/variable in user_vars_to_edit)
+		var/list/to_edit = sparse_get(src, user_vars_to_edit)
+		if (LAZYLEN(to_edit))
+			for(var/variable in to_edit)
 				if(variable in user.vars)
-					LAZYSET(user_vars_remembered, variable, user.vars[variable])
-					user.vv_edit_var(variable, user_vars_to_edit[variable])
+					var/list/remembered = sparse_get(src, user_vars_remembered)
+					if(!remembered)
+						remembered = list()
+						sparse_set(src, user_vars_remembered, remembered)
+					remembered[variable] = user.vars[variable]
+					user.vv_edit_var(variable, to_edit[variable])
 	else
-		if(LAZYLEN(user_vars_remembered))
-			for(var/variable in user_vars_remembered)
-				if(variable in user.vars)
-					if(user.vars[variable] == user_vars_to_edit[variable])
-						user.vars[variable] = user_vars_remembered[variable] // ALLOW(api): remembered user vars restored by name (admin possession)
-			user_vars_remembered = initial(user_vars_remembered)
+		item_restore_user_vars(user)
