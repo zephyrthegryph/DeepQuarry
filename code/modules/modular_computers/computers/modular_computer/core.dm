@@ -64,13 +64,13 @@
 	return 1
 
 
-/obj/item/modular_computer/Initialize(mapload)
+/// Its setup hook (setup() in the computer's CAPABILITIES): the screen overlay icon, the preset's hardware and, with a hard drive, its programs.
+/obj/item/modular_computer/proc/install_presets()
 	if(!overlay_icon)
-		overlay_icon = icon
+		set_overlay_icon(icon)
 	install_default_hardware()
 	if(hard_drive)
 		install_default_programs()
-	. = ..()
 
 // its program is killed and hardware uninstalled.
 /obj/item/modular_computer/on_destroy(force)

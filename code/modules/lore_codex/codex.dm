@@ -11,10 +11,9 @@
 
 	special_handling = TRUE
 
-/obj/item/book/codex/Initialize(mapload)
-	// the tree is shared by every codex of this root type (the codex_trees shared cache holds it): we only view it
+/// Its setup hook (setup() in the codex's CAPABILITIES): the tree is shared by every codex of this root type (the codex_trees shared cache holds it): we only view it.
+/obj/item/book/codex/proc/view_tree()
 	rel_set(src, nameof(tree), CACHED_KEY(codex_trees, root_type, src, root_type))
-	. = ..()
 
 /// One codex_tree per root type, shared by every codex of that type for the round (never invalidated,
 /// never owned by a book: a codex dying doesn't take the others' tree with it).
@@ -24,6 +23,7 @@ DECLARE_SHARED_CACHE(codex_trees, GLOBAL_PROC_REF(build_codex_tree), SC_NEVER)
 	return new /datum/codex_tree(first_holder, root_type)
 
 CAPABILITIES(/obj/item/book/codex)
+	setup(PROC_REF(view_tree))
 	ref_one(nameof(tree), /datum/codex_tree)
 	op("read_codex", in_hand(), label("Read"), then(PROC_REF(interaction_read_codex)))
 
