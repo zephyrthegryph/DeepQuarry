@@ -567,6 +567,7 @@ GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
 
 /proc/medical_trial_snapshot(mob/living/carbon/human/subject)
 	var/list/conditions = list()
+	var/list/exposure_history = sparse_get(subject, clinical_exposure_history)
 	for(var/datum/affliction/condition as anything in subject.get_afflictions())
 		var/list/symptoms = list()
 		for(var/datum/affliction_symptom/symptom as anything in affliction_symptoms_of(condition))
@@ -594,7 +595,7 @@ GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
 			"toxin" = round(subject.injury_load(INJURY_CATEGORY_TOXIC), 0.1),
 			"oxygen" = round(subject.oxygen_debt(), 0.1),
 		),
-		"exposures" = sparse_get(subject, clinical_exposure_history)?.Copy() || list(),
+		"exposures" = exposure_history?.Copy() || list(),
 	)
 
 /// Machine-recorded medication exposure provenance (sparse slot clinical_exposure_history, a list of entries). Conditions remain normal
