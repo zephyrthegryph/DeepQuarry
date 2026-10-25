@@ -81,17 +81,14 @@ fn replacing_one_host_variant_updates_only_its_claim_and_bytes() {
     assert_eq!(store.admitted_bytes(), 8);
     {
         let state = store.state.write().unwrap();
-        assert_eq!(state.claims.len(), 2);
-        assert!(state
-            .claims
-            .values()
-            .all(|(_, count)| count.load(std::sync::atomic::Ordering::Acquire) == 1));
+        assert_eq!(state.claimed_variants(), 2);
+        assert!(state.claim_counts().iter().all(|count| *count == 1));
     }
     b.retain_current_keys(std::iter::empty());
     assert_eq!(store.admitted_bytes(), 5);
     drop(a);
     assert_eq!(store.admitted_bytes(), 0);
-    assert!(store.state.write().unwrap().claims.is_empty());
+    assert_eq!(store.state.write().unwrap().claimed_variants(), 0);
 }
 struct DropProbe {
     store: std::sync::Weak<ObservedArtifactStore<DropProbe, u8, u32, u8>>,
@@ -323,4 +320,34 @@ fn retain_where_releases_only_this_leases_rejected_keys() {
     assert_eq!(store.admitted_bytes(), 3);
     assert!(a.visit_explained(&keep, &Host(1), &mut |_| true).0.is_some());
     assert!(a.visit_explained(&drop_key, &Host(1), &mut |_| true).0.is_none());
+}
+
+#[test]
+fn lease_slots_hold_every_claim_as_a_bit_and_are_reused_after_drop() {
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
+    let leases: Vec<_> = (0..128).map(|_| store.lease()).collect();
+    let key: Arc<[u8]> = Arc::from(b"owner".as_slice());
+    let first = leases[0].insert_with_owned(Arc::clone(&key), reads(1), vec![], 3, || 1).unwrap();
+    for lease in &leases[1..] {
+        let (found, _) = lease.visit_explained(&key, &Host(1), &mut |_| true);
+        assert!(Arc::ptr_eq(&found.unwrap(), &first));
+    }
+    assert_eq!(store.storage_accounting().claims, 128);
+    assert_eq!(store.storage_accounting().claimed_variants, 1);
+    assert_eq!(store.storage_accounting().leases, 128);
+    // The variant lives until the last of the 128 claims goes.
+    let mut leases = leases;
+    while leases.len() > 1 {
+        leases.pop();
+        assert_eq!(store.admitted_bytes(), 3);
+    }
+    drop(leases);
+    assert_eq!(store.admitted_bytes(), 0);
+    assert_eq!(store.storage_accounting().leases, 0);
+    // A freed slot is handed out again.
+    let again = store.lease();
+    again.insert_with(Arc::clone(&key), reads(1), vec![], 3, || 2);
+    assert_eq!(store.storage_accounting().claims, 1);
+    drop(again);
+    assert_eq!(store.admitted_bytes(), 0);
 }

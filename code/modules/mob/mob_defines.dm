@@ -192,6 +192,7 @@ CAPABILITIES(/mob)
 	configure(movable_motion(unacidable = FALSE))
 	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
 	cooldowns(next_emote, next_emote_refresh)
+	stamps(last_move_time) // when the client last moved this mob, for movement smoothing
 	ref_one(nameof(lastattacker), /mob, weak = TRUE) // the last mob to hit this one with a weapon (attack logs and death records); a gone attacker reads as none
 	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)

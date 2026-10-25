@@ -102,7 +102,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 			var/bearing = round(90 - ATAN2(O.x - linked().x, O.y - linked().y),5)
 			if(bearing < 0)
 				bearing += 360
-			contacts.Add(list(list("name"=O.name, "ref"="\ref[O]", "bearing"=bearing)))
+			contacts.Add(list(list("name"=O.name, "ref"=ref_token(O), "bearing"=bearing)))
 		data["contacts"] = contacts
 
 	return data

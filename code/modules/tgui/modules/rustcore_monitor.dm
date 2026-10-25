@@ -44,7 +44,7 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 	SStgui.update_uis(src)
 
 /datum/tgui_module/rustcore_monitor/proc/ui_act_set_fieldstr(datum/act/op/A, core, fieldstr)
-	var/obj/machinery/power/fusion_core/C = core
+	var/obj/machinery/power/fusion_core/C = ui_member(core, listed_cores(), /obj/machinery/power/fusion_core)
 	var/new_strength = fieldstr
 	if(C)
 		C.target_field_strength = new_strength

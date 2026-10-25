@@ -194,7 +194,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         let prepare_started = std::time::Instant::now();
         let source = {
             let _stage = dm_profile::stage("input_scan.lexical_prepare");
-            Arc::new(PreparedSource::from_text(decode_owned_source(bytes).into()))
+            dm_preprocess::regions::prepared_source::shared_prepared(decode_owned_source(bytes).into())
         };
         counters::PREPARE_NS.fetch_add(
             prepare_started.elapsed().as_nanos() as u64,

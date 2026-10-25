@@ -365,10 +365,10 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		def_zone = pick(BP_L_HAND, BP_R_HAND)
 
 	if(species.siemens_coefficient == -1)
-		if(GLOB.stored_shock_by_ref["\ref[src]"])
-			GLOB.stored_shock_by_ref["\ref[src]"] += shock_damage
+		if(GLOB.stored_shock_by_ref[ref_token(src)])
+			GLOB.stored_shock_by_ref[ref_token(src)] += shock_damage
 		else
-			GLOB.stored_shock_by_ref["\ref[src]"] = shock_damage
+			GLOB.stored_shock_by_ref[ref_token(src)] = shock_damage
 		return
 
 	var/obj/item/organ/external/affected_organ = get_organ(check_zone(def_zone))
