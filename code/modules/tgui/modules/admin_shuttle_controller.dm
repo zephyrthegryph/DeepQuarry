@@ -10,10 +10,10 @@
 CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 	interface("AdminShuttleController", rights = R_ADMIN|R_EVENT|R_DEBUG)
 	op("adminobserve", ui_act("adminobserve", arg("ref", schema_ref(/datum/shuttle))), then(PROC_REF(ui_act_adminobserve)))
-	op("classicmove", ui_act("classicmove", arg("ref", schema_ref(/datum/shuttle))),
-		asks(/datum/prompt/choice, fields = list("title" = "Shuttle Destination", "question" = "Choose shuttle destination", "choices" = computed(PROC_REF(multi_destinations)), "timeout" = 0), step = "multi", when = PROC_REF(asks_multi)),
-		asks(/datum/prompt/choice, fields = list("title" = "Shuttle Destination", "question" = "Choose shuttle destination", "choices" = computed(PROC_REF(overmap_destinations)), "timeout" = 0), step = "overmap", when = PROC_REF(asks_overmap)),
-		asks(/datum/prompt/yes_no, fields = list("title" = "Launching Shuttle", "question" = computed(PROC_REF(launch_question)), "timeout" = 0), step = "launch", when = PROC_REF(asks_launch)),
+	op("classicmove", ui_act("classicmove", arg("ref", schema_ref(/datum/shuttle))), needs(req_rights(R_ADMIN|R_EVENT|R_DEBUG)),
+		asks(/datum/prompt/choice, fields = list("title" = "Shuttle Destination", "question" = "Choose shuttle destination", "choices" = computed(PROC_REF(multi_destinations)), "timeout" = 0, "rights" = R_ADMIN|R_EVENT|R_DEBUG), step = "multi", when = PROC_REF(asks_multi)),
+		asks(/datum/prompt/choice, fields = list("title" = "Shuttle Destination", "question" = "Choose shuttle destination", "choices" = computed(PROC_REF(overmap_destinations)), "timeout" = 0, "rights" = R_ADMIN|R_EVENT|R_DEBUG), step = "overmap", when = PROC_REF(asks_overmap)),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Launching Shuttle", "question" = computed(PROC_REF(launch_question)), "timeout" = 0, "rights" = R_ADMIN|R_EVENT|R_DEBUG), step = "launch", when = PROC_REF(asks_launch)),
 		then(PROC_REF(ui_act_classicmove)))
 	op("overmap_control", ui_act("overmap_control", arg("ref", schema_ref(/obj/effect/overmap/visitable/ship))), then(PROC_REF(ui_act_overmap_control)))
 

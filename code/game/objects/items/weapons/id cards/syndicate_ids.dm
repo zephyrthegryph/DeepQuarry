@@ -24,8 +24,8 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	without("show") // its own self-use edits or shows the card
 	// The card registers its first user; then, for its registered user, the same use asks whether to edit or show it.
 	op("agent_card_register", in_hand(), label("Register"), priority(OP_PRIORITY_DEFAULT + 1), passes(), when(PROC_REF(agent_card_unregistered)), then(PROC_REF(agent_card_register)))
-	op("agent_card", in_hand(), label("Edit or show"), when(PROC_REF(agent_card_owned)),
-		asks(/datum/prompt/choice/agent_id_mode, step = "mode"),
+	op("agent_card", in_hand(), label("Edit or show"),
+		asks(/datum/prompt/choice/agent_id_mode, step = "mode", when = PROC_REF(agent_card_owned)),
 		then(PROC_REF(interaction_agent_card)))
 	ref_one(nameof(registered_user), /mob)
 

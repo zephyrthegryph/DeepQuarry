@@ -156,7 +156,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
 	see_in_dark = max(2, round(see_in_dark * 0.6))
 
 	if(poison_per_bite)
-		poison_per_bite *= 1.3
+		set_poison_per_bite(poison_per_bite * 1.3)
 
 // A different type of much weaker bite with different effects for event spawned spiders before becoming hostile
 /mob/living/simple_mob/animal/giant_spider/proc/warning_bite(mob/living/A)

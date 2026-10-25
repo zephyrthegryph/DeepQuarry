@@ -30,8 +30,8 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 CAPABILITIES(/obj/item/stack/marker_beacon)
 	without("ui_open")
 	op("place", in_hand(), label("Place"), needs(req(PROC_REF(can_place))), then(PROC_REF(marker_beacon_self)))
-	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), when(PROC_REF(recolor_askable)),
-		asks(/datum/prompt/choice, fields = list("title" = "Beacon Color", "question" = "Choose a color.", "choices" = computed(PROC_REF(color_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "color"),
+	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"),
+		asks(/datum/prompt/choice, fields = list("title" = "Beacon Color", "question" = "Choose a color.", "choices" = computed(PROC_REF(color_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "color", when = PROC_REF(recolor_askable)),
 		then(PROC_REF(recolor_asked)))
 
 MSG_DEF_SELF(marker_beacon/no_space, "You need more space to place a marker beacon here.")
@@ -118,8 +118,8 @@ CAPABILITIES(/obj/structure/marker_beacon)
 	configure(light_glow(range = 2, power = 0.8))
 	op("pick_up", hand(), ungated(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_by_hand)))
 	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_into_stack)))
-	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), when(PROC_REF(recolor_askable)),
-		asks(/datum/prompt/choice, fields = list("title" = "Beacon Color", "question" = "Choose a color.", "choices" = computed(PROC_REF(color_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "color"),
+	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"),
+		asks(/datum/prompt/choice, fields = list("title" = "Beacon Color", "question" = "Choose a color.", "choices" = computed(PROC_REF(color_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "color", when = PROC_REF(recolor_askable)),
 		then(PROC_REF(recolor_asked)))
 	param(nameof(color_at_make), pos = 1, apply = PROC_REF(light_beacon))
 

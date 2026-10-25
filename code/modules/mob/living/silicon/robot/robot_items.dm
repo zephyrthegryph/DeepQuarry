@@ -154,7 +154,7 @@ CAPABILITIES(/obj/item/pen/robopen)
 		if("Colour")
 			var/chosen_colour = A.step_value("colour")
 			if(!isnull(chosen_colour))
-				colour = chosen_colour
+				colour = text_or_null(chosen_colour)
 
 		if("Mode")
 			if (mode == 1)

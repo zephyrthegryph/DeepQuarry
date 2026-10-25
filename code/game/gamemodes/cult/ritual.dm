@@ -497,7 +497,7 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	var/cultistsonly = 1
 CAPABILITIES(/obj/item/book/tome/imbued)
 	op("imbued", in_hand(), label("Scribe a rune"),
-		asks(/datum/prompt/choice/imbued_rune, fields = list("question" = "Choose a rune to scribe", "choices" = computed(PROC_REF(imbued_rune_choices))), step = "rune", when = PROC_REF(imbued_askable)),
+		asks(/datum/prompt/choice/imbued_rune/pick, fields = list("question" = "Choose a rune to scribe", "choices" = computed(PROC_REF(imbued_rune_choices))), step = "rune", when = PROC_REF(imbued_askable)),
 		asks(/datum/prompt/choice/imbued_rune, fields = list("question" = "Select the last rune", "choices" = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri")), step = "beacon", when = PROC_REF(imbued_needs_beacon)),
 		then(PROC_REF(interaction_imbued)))
 
@@ -516,21 +516,35 @@ GLOBAL_LIST_INIT(imbued_rune_choices, list("teleport", "itemport", "tome", "armo
 	var/rune = A.step_value("rune")
 	return rune == "teleport" || rune == "itemport"
 
+/// The moment the rune question opens (before it is answered, as the old self-use did): the rune words are set and a lack of room is told.
+/obj/item/book/tome/imbued/proc/rune_question_opening(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!GLOB.cultwords["travel"])
+		runerandom()
+	if(!istype(user.loc, /turf))
+		to_chat(user, span_notice("You do not have enough space to write a proper rune."))
+
 /obj/item/book/tome/imbued/proc/interaction_imbued(datum/act/op/A)
 	var/mob/user = A.actor
 	var/rune = A.step_value("rune")
 	if(isnull(rune) || !imbued_askable(A))
 		return
-	if(!GLOB.cultwords["travel"])
-		runerandom()
-	if (!istype(user.loc,/turf))
-		to_chat(user, span_notice("You do not have enough space to write a proper rune."))
 	imbued_rune_chosen(user, rune, A.step_value("beacon"))
 
 /// The admin tome's rune pick, then (for a teleport rune) its last word. `rune` carries the first answer.
 /datum/prompt/choice/imbued_rune
 	title = "Rune Scribing"
 	timeout = 30 SECONDS
+
+/// The first rune question: opening it sets the rune words and tells a lack of room, before the answer.
+/datum/prompt/choice/imbued_rune/pick
+
+/datum/prompt/choice/imbued_rune/pick/prepare(datum/act/A)
+	. = ..()
+	var/datum/act/op/O = A
+	var/obj/item/book/tome/imbued/tome = istype(O) ? O.holder : null
+	if(istype(tome))
+		tome.rune_question_opening(O)
 
 /obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, r, beacon)
 	var/obj/effect/rune/R = new /obj/effect/rune

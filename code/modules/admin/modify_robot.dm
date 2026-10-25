@@ -640,7 +640,17 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /// The law the window named, when the target has it.
 /datum/eventkit/modify_robot/proc/edited_law(datum/act/op/A)
-	return ui_ref(A.args["edit_law"], ui_source_target_laws_all_laws(), /datum/ai_law)
+	var/value = A.args["edit_law"]
+	if(!istext(value))
+		return null
+	var/datum/ai_law/AL = resolve_window_ref(value)
+	if(!istype(AL))
+		return null
+	// the target's own lists, read as they are (all_laws() sorts and caches, which a condition may not)
+	var/datum/ai_laws/laws = target().laws
+	if(AL == laws.zeroth_law || (AL in laws.ion_laws) || (AL in laws.inherent_laws) || (AL in laws.supplied_laws))
+		return AL
+	return null
 
 /datum/eventkit/modify_robot/proc/edited_law_exists(datum/act/op/A)
 	return !isnull(edited_law(A))

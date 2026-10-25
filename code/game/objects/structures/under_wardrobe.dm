@@ -9,8 +9,8 @@ CAPABILITIES(/obj/structure/undies_wardrobe)
 	climb()
 	interface("UndiesWardrobe", title = "Underwear Dresser")
 	op("remove_underwear", ui_act("remove_underwear", arg("category")), then(PROC_REF(ui_act_remove_underwear)))
-	op("change_underwear", ui_act("change_underwear", arg("category")), needs(req(PROC_REF(wardrobe_usable))), when(PROC_REF(underwear_category_exists)),
-		asks(/datum/prompt/choice/underwear, fields = list("choices" = computed(PROC_REF(underwear_names)), "default" = computed(PROC_REF(underwear_current)), "category" = arg_of("category"), "timeout" = 0), step = "item"),
+	op("change_underwear", ui_act("change_underwear", arg("category")), needs(req(PROC_REF(wardrobe_usable))),
+		asks(/datum/prompt/choice/underwear, fields = list("choices" = computed(PROC_REF(underwear_names)), "default" = computed(PROC_REF(underwear_current)), "category" = arg_of("category"), "timeout" = 0), step = "item", when = PROC_REF(underwear_category_exists)),
 		then(PROC_REF(ui_act_change_underwear)))
 	op("tweak", ui_act("tweak", arg("category"), arg("tweak")), then(PROC_REF(ui_act_tweak)))
 	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(undies_wardrobe/not_human))))

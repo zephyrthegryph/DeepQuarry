@@ -134,13 +134,16 @@ CAPABILITIES(/obj/item/pinpointer)
 		itemlist = new
 	return itemlist.possible_items?.Copy()
 
-/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(datum/act/op/A)
-	var/mob/user = A.actor
-
+/// The moment the mode question opens (before it is answered, as the old verb did): the pinpointer goes off and forgets what it pointed at.
+/obj/item/pinpointer/advpinpointer/proc/mode_question_opening(datum/act/op/A)
+	log_game("pinpointer: [src] mode question opened for [key_name(A.actor)], the pinpointer is switched off")
 	set_active(FALSE)
 	set_icon_state("pinoff")
 	rel_clear(src, nameof(target))
 	rel_clear(src, nameof(location))
+
+/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	switch(A.step_value("mode"))
 		if("Location")
@@ -347,7 +350,7 @@ CAPABILITIES(/obj/item/pinpointer/shuttle)
 CAPABILITIES(/obj/item/pinpointer/advpinpointer)
 	ref_one(nameof(target))
 	op("advpinpointer_toggle_mode_effect", menu(), label("Toggle Pinpointer Mode"),
-		asks(/datum/prompt/choice/pinpointer_carried, fields = list("title" = "Pinpointer Mode Select", "question" = "Please select the mode you want to put the pinpointer in.", "choices" = list("Location", "Disk Recovery", "Other Signature"), "buttons" = TRUE), step = "mode"),
+		asks(/datum/prompt/choice/pinpointer_carried/mode, fields = list("title" = "Pinpointer Mode Select", "question" = "Please select the mode you want to put the pinpointer in.", "choices" = list("Location", "Disk Recovery", "Other Signature"), "buttons" = TRUE), step = "mode"),
 		asks(/datum/prompt/number/pinpointer_coordinate, fields = list("question" = "Please input the x coordinate to search for."), step = "location_x", when = PROC_REF(mode_is_location)),
 		asks(/datum/prompt/number/pinpointer_coordinate, fields = list("question" = "Please input the y coordinate to search for."), step = "location_y", when = PROC_REF(mode_is_location)),
 		asks(/datum/prompt/choice/pinpointer_carried, fields = list("title" = "Signature Mode Select", "question" = "Search for item signature or DNA fragment?", "choices" = list("Item", "DNA"), "buttons" = TRUE), step = "signature", when = PROC_REF(mode_is_signature)),
@@ -364,6 +367,16 @@ CAPABILITIES(/obj/item/pinpointer/advpinpointer)
 /datum/prompt/choice/pinpointer_carried/recheck_extra()
 	var/mob/user = answerer
 	return !istype(user) || QDELETED(user) ? "gone" : null
+
+/// The mode question: opening it switches the pinpointer off, before the answer, as the old verb did.
+/datum/prompt/choice/pinpointer_carried/mode
+
+/datum/prompt/choice/pinpointer_carried/mode/prepare(datum/act/A)
+	. = ..()
+	var/datum/act/op/O = A
+	var/obj/item/pinpointer/advpinpointer/device = istype(O) ? O.holder : null
+	if(istype(device))
+		device.mode_question_opening(O)
 
 /datum/prompt/number/pinpointer_coordinate
 	title = "Location?"

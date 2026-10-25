@@ -373,8 +373,8 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	configure(item_rules(actions_types = list(/datum/action/item_action/hands_free/redraw_design)))
 	configure(item_worn(covers = FACE))
 	per_type(nameof(papermask_designs), PROC_REF(build_papermask_designs))
-	op("paper_mask_design_self", in_hand(), label("Change design"), when(PROC_REF(design_changeable)),
-		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(papermask_choices)), "anchor" = computed(PROC_REF(design_anchor)), "radius" = 36, "require_near" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "design"),
+	op("paper_mask_design_self", in_hand(), label("Change design"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(papermask_choices)), "anchor" = computed(PROC_REF(design_anchor)), "radius" = 36, "require_near" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "design", when = PROC_REF(design_changeable)),
 		then(PROC_REF(paper_mask_design_self)))
 
 /// Only someone able to act changes a mask's design.
@@ -433,8 +433,8 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	configure(item_rules(actions_types = list(/datum/action/item_action/hands_free/redraw_design)))
 	configure(item_worn(covers = FACE))
 	per_type(nameof(joymask_designs), PROC_REF(build_joymask_designs))
-	op("emotion_mask_design_self", in_hand(), label("Change emotion"), when(PROC_REF(design_changeable)),
-		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(joymask_choices)), "anchor" = computed(PROC_REF(design_anchor)), "radius" = 36, "require_near" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "design"),
+	op("emotion_mask_design_self", in_hand(), label("Change emotion"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(joymask_choices)), "anchor" = computed(PROC_REF(design_anchor)), "radius" = 36, "require_near" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "design", when = PROC_REF(design_changeable)),
 		then(PROC_REF(emotion_mask_design_self)))
 
 /obj/item/clothing/mask/emotions/proc/joymask_choices(datum/act/op/A)

@@ -454,8 +454,8 @@ CAPABILITIES(/obj/item/rectape)
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 1))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
-	op("item", item(/obj/item/pen), label("Label"), when(PROC_REF(labelable)),
-		asks(/datum/prompt/text, fields = list("title" = "Tape labeling", "question" = "What would you like to label the tape?", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "label"),
+	op("item", item(/obj/item/pen), label("Label"),
+		asks(/datum/prompt/text, fields = list("title" = "Tape labeling", "question" = "What would you like to label the tape?", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "label", when = PROC_REF(labelable)),
 		then(PROC_REF(label_entered)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req(PROC_REF(screwdriver_refusal), silent = TRUE)), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(12 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
