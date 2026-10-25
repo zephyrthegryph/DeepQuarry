@@ -974,7 +974,7 @@ CAPABILITIES(/obj/belly)
 
 //Autotransfer callback
 /obj/belly/proc/check_autotransfer(atom/movable/prey, list/transfer_locations)
-	if(!(prey in contents) || !prey.autotransferable)
+	if(!(prey in contents) || !sparse_get_or(prey, autotransferable, TRUE))
 		return FALSE
 	var/obj/belly/dest_belly
 	if(length(transfer_locations["secondary"]))

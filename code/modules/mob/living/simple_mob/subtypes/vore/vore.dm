@@ -63,7 +63,7 @@
 	vore_prefs.receive_reagents = client.prefs_vr.receive_reagents
 	vore_prefs.give_reagents = client.prefs_vr.give_reagents
 	vore_prefs.apply_reagents = client.prefs_vr.apply_reagents
-	autotransferable = client.prefs_vr.autotransferable
+	sparse_set_or(src, autotransferable, client.prefs_vr.autotransferable, TRUE)
 	vore_prefs.noisy_full = client.prefs_vr.noisy_full
 	vore_prefs.set_strip_pref(client.prefs_vr.strip_pref)
 	vore_prefs.set_contaminate_pref(client.prefs_vr.contaminate_pref)

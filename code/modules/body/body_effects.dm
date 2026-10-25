@@ -126,8 +126,9 @@
 	/// Next timed-stack serial (names only, never a timer id).
 	/// Body effect type -> an owned /datum/body_effect_origin naming whoever applied it. Lazy.
 	var/list/body_effect_origins
-	/// Body effect type -> per-application state (anything the definition keeps). Lazy.
-	var/list/body_effect_data
+
+// Body effect type -> per-application state (anything the definition keeps): sparse slot body_effect_data (a list).
+sparse(/mob/living, body_effect_data, type = list)
 
 /// type -> stacks for every body effect on the mob (read only; empty list when none).
 /mob/living/proc/body_effects()
@@ -174,15 +175,18 @@
 	rel_add(src, nameof(body_effect_origins), O, path)
 
 /mob/living/proc/body_effect_state(path)
-	return body_effect_data?[path]
+	var/list/state = sparse_get(src, body_effect_data)
+	return state?[path]
 
 /mob/living/proc/set_body_effect_state(path, value)
+	var/list/state = sparse_get(src, body_effect_data)
 	if(isnull(value))
-		if(body_effect_data)
-			body_effect_data -= path
-			UNSETEMPTY(body_effect_data)
+		if(state)
+			state -= path
+			sparse_set(src, body_effect_data, length(state) ? state : null)
 		return
-	LAZYSET(body_effect_data, path, value)
+	LAZYSET(state, path, value)
+	sparse_set(src, body_effect_data, state)
 
 /// Replaces the factor table of the running application of `path` (charge- or strength-dependent
 /// effects). Pass a static alist; null means no factors. Swapping between static tables keeps
