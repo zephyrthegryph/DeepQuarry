@@ -1,4 +1,4 @@
-
+sparse(/obj/item, climbing_delay, type = num)
 
 /obj/item
 	name = "item"

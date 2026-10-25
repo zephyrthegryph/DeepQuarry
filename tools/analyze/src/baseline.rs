@@ -201,7 +201,11 @@ pub fn check_sites(
             let key = (fp.site.rel.clone(), fp.fp.clone());
             match budget.get_mut(&key) {
                 Some(b) if *b > 0 => *b -= 1,
-                _ => fresh.push((fp.site.rel.clone(), fp.site.line, fp.text)),
+                _ => {
+                    // A declaration site carries its own message (the lines that offend); the declaration line alone does not help.
+                    let shown = if fp.site.msg.is_empty() || fp.site.ident.is_empty() { fp.text } else { fp.site.msg.clone() };
+                    fresh.push((fp.site.rel.clone(), fp.site.line, shown))
+                }
             }
         }
         let gone: i64 = budget.values().filter(|v| **v > 0).sum();

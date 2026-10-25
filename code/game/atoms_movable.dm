@@ -25,7 +25,7 @@
 	// dq_get_cloaked(src) lives in code/datums/sparse_vars/movable_misc.dm
 	// cloaked_selfimage lives in code/datums/sparse_vars/movable_misc.dm
 	// belly_cycles lives in code/datums/sparse_vars/movable_misc.dm
-	var/autotransferable = TRUE // Toggle for autotransfer mechanics.
+	// autotransferable (toggle for autotransfer mechanics, default TRUE) lives in code/datums/sparse_vars/movable_misc.dm
 	// recursive_listeners lives in code/datums/sparse_vars/movable_misc.dm
 	// listening_recursive lives in code/datums/sparse_vars/movable_misc.dm
 
