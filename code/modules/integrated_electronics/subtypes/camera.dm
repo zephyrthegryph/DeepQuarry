@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 	var/new_name = get_pin_data(IC_INPUT, 1)
 	if(!new_name || !istext(new_name))
 		new_name = "IC Camera"
-	camera.c_tag = new_name
+	camera.c_tag = text_or_null(new_name)
 	camera.name = new_name
 
 /obj/item/integrated_circuit/output/video_camera/proc/update_camera_status()

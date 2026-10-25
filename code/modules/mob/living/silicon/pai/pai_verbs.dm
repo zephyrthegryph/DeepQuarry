@@ -106,7 +106,7 @@
 	message = capitalize(message)
 	if (stat == DEAD)
 		return
-	card.screen_msg = message
+	card.screen_msg = text_or_null(message)
 	var/logmsg = "(CARD SCREEN)[message]"
 	log_talk(logmsg, LOG_SAY)
 	to_chat(src, span_filter_say(span_cult("You print a message to your screen, \"[message]\"")))

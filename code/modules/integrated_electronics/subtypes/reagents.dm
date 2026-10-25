@@ -107,7 +107,7 @@ CAPABILITIES(/obj/item/integrated_circuit/reagent/injector)
 		direc = 1
 	if(isnum(new_amount))
 		new_amount = CLAMP(new_amount, 0, volume)
-		transfer_amount = new_amount
+		transfer_amount = num_or_null(new_amount)
 
 
 /// The injection, 3 seconds after do_work() announced it.
@@ -251,7 +251,7 @@ CAPABILITIES(/obj/item/integrated_circuit/reagent/injector)
 		direc = 1
 	if(isnum(new_amount))
 		new_amount = CLAMP(new_amount, 0, 50)
-		transfer_amount = new_amount
+		transfer_amount = num_or_null(new_amount)
 
 /obj/item/integrated_circuit/reagent/pump/do_work()
 	var/atom/movable/source = get_pin_data_as_type(IC_INPUT, 1, /atom/movable)
@@ -371,7 +371,7 @@ CAPABILITIES(/obj/item/integrated_circuit/reagent/storage)
 		direc = 1
 	if(isnum(new_amount))
 		new_amount = CLAMP(new_amount, 0, 50)
-		transfer_amount = new_amount
+		transfer_amount = num_or_null(new_amount)
 
 /obj/item/integrated_circuit/reagent/filter/do_work()
 	var/atom/movable/source = get_pin_data_as_type(IC_INPUT, 1, /atom/movable)

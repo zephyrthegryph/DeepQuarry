@@ -381,7 +381,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 		return
 	switch(field)
 		if("Supply Pack")
-			O.name = new_val
+			O.name = text_or_null(new_val)
 		if("Cost")
 			O.cost = ui_number(new_val, 0) || O.cost
 		if("Index")
@@ -484,7 +484,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 		return
 	switch(field)
 		if("Name")
-			E.name = new_val
+			E.name = text_or_null(new_val)
 		if("Value")
 			E.set_value(ui_number(new_val, 0) || E.value)
 	return TRUE
