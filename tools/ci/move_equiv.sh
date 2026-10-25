@@ -57,9 +57,10 @@ mkdir -p "$out"
 out=$(cd "$out" && pwd)
 
 # 1. dmb-equiv from the worktree.
-bash tools/dq_machine_slots.sh run cargo -- cargo build --release --manifest-path tools/dmb/Cargo.toml -p dmb-equiv || exit 2
-equiv_src=tools/dmb/target/release/dmb-equiv
-[ -x "$equiv_src" ] || equiv_src=tools/dmb/target/release/dmb-equiv.exe
+equiv_target="$(bash tools/dq_cargo_target.sh dmb-equiv)"
+CARGO_TARGET_DIR="$equiv_target" bash tools/dq_machine_slots.sh run cargo -- cargo build --release --manifest-path tools/dmb/Cargo.toml -p dmb-equiv || exit 2
+equiv_src="$equiv_target/release/dmb-equiv"
+[ -x "$equiv_src" ] || equiv_src="$equiv_target/release/dmb-equiv.exe"
 [ -x "$equiv_src" ] || { echo "move_equiv: no dmb-equiv binary" >&2; exit 2; }
 equiv="$out/$(basename "$equiv_src")"
 cp "$equiv_src" "$equiv"
