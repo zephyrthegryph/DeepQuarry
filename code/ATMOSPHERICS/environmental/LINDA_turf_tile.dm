@@ -334,10 +334,11 @@ CAPABILITIES(/turf/open)
 	var/const/PROBABILITY_BASE_PRECENT = 75
 	var/max_force = sqrt(pressure_difference) * (MOVE_FORCE_DEFAULT / 5)
 	var/move_prob = 100
+	var/resistance = sparse_get_or(src, move_resist, MOVE_RESIST_DEFAULT)
 	if (pressure_resistance > 0)
 		move_prob = (pressure_difference / pressure_resistance * PROBABILITY_BASE_PRECENT) - PROBABILITY_OFFSET
 	move_prob += pressure_resistance_prob_delta
-	if (move_prob > PROBABILITY_OFFSET && prob(move_prob) && (move_resist != INFINITY) && (!anchored && (max_force >= (move_resist * MOVE_FORCE_PUSH_RATIO))) || (anchored && (max_force >= (move_resist * MOVE_FORCE_FORCEPUSH_RATIO))))
+	if (move_prob > PROBABILITY_OFFSET && prob(move_prob) && (resistance != INFINITY) && (!anchored && (max_force >= (resistance * MOVE_FORCE_PUSH_RATIO))) || (anchored && (max_force >= (resistance * MOVE_FORCE_FORCEPUSH_RATIO))))
 		step(src, direction)
 		sparse_set(src, last_high_pressure_movement_air_cycle, SSair.times_fired)
 

@@ -16,7 +16,7 @@
 	var/item_state = null // Used to specify the item state for the on-mob overlays.
 	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
 	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
-	var/icon_rotation = DEFAULT_ICON_ROTATION // Used to rotate icons in update_transform()
+	// icon_rotation (rotates icons in update_transform()) lives in code/datums/sparse_vars/movable_misc.dm
 	var/icon_expected_width = 32
 	var/old_x = 0
 	var/old_y = 0
@@ -28,7 +28,7 @@
 	// belly_cycles lives in code/datums/sparse_vars/movable_misc.dm
 	var/autotransferable = TRUE // Toggle for autotransfer mechanics.
 	// recursive_listeners lives in code/datums/sparse_vars/movable_misc.dm
-	var/listening_recursive = NON_LISTENING_ATOM
+	// listening_recursive lives in code/datums/sparse_vars/movable_misc.dm
 
 // ALLOW(init/FRAMEWORK): the movable base of the init chain runs its per-instance setup
 /atom/movable/Initialize(mapload)
@@ -53,7 +53,7 @@
 
 	if(opacity)
 		start_blocking_light()
-	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || icon_rotation != DEFAULT_ICON_ROTATION)
+	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || sparse_get_or(src, icon_rotation, DEFAULT_ICON_ROTATION) != DEFAULT_ICON_ROTATION)
 		update_transform()
 	switch(atom_rules_of(src).light_system)
 		if(MOVABLE_LIGHT)
@@ -71,8 +71,8 @@
 		update_light()
 	// Unchanged from Initialize(): set_recursive_listening() is a no-op when the var is
 	// already set, so this never registered anything. Destroy() clears it.
-	if (listening_recursive)
-		set_recursive_listening(listening_recursive)
+	if (sparse_get_or(src, listening_recursive, NON_LISTENING_ATOM))
+		set_recursive_listening(sparse_get_or(src, listening_recursive, NON_LISTENING_ATOM))
 	// R10 bind (doc/rewrite/rust_bindings.md Â§4): one call creates the Rust
 	// entity and every component this type declares (vg_gas, and future
 	// vg_power/vg_heat/...), from the init_* values and the current inputs.
@@ -685,7 +685,7 @@ CAPABILITIES(/atom/movable/overlay)
 /atom/movable/proc/update_transform()
 	var/matrix/M = matrix()
 	M.Scale(icon_scale_x, icon_scale_y)
-	M.Turn(icon_rotation)
+	M.Turn(sparse_get_or(src, icon_rotation, DEFAULT_ICON_ROTATION))
 	src.transform = M
 
 // Use this to set the object's scale.
@@ -699,7 +699,7 @@ CAPABILITIES(/atom/movable/overlay)
 	update_transform()
 
 /atom/movable/proc/adjust_rotation(new_rotation)
-	icon_rotation = new_rotation
+	sparse_set_or(src, icon_rotation, new_rotation, DEFAULT_ICON_ROTATION)
 	update_transform()
 
 // Called when touching a lava tile.
@@ -822,16 +822,17 @@ CAPABILITIES(/atom/movable/overlay)
 	return
 
 /atom/movable/proc/set_recursive_listening(set_to)
-	if (listening_recursive && !set_to)
+	var/listening = sparse_get_or(src, listening_recursive, NON_LISTENING_ATOM)
+	if (listening && !set_to)
 		dq_recursive_listeners_remove(src, src)
 		if (!dq_recursive_listeners_len(src))
 			for (var/atom/movable/location as anything in get_nested_locs(src))
 				dq_recursive_listeners_remove(location, src)
-	if (!listening_recursive && set_to)
+	if (!listening && set_to)
 		dq_recursive_listeners_or(src, src)
 		for (var/atom/movable/location as anything in get_nested_locs(src))
 			dq_recursive_listeners_or(location, src)
-	listening_recursive = set_to
+	sparse_set_or(src, listening_recursive, set_to, NON_LISTENING_ATOM)
 
 ///Returns a list of all locations (except the area) the movable is within.
 /proc/get_nested_locs(atom/movable/atom_on_location, include_turf = FALSE)

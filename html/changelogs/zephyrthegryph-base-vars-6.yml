@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved rare per-instance state (omen damage and evil flag, original player, bloody hands, pallor, contract medical indications, clinical exposure history, faction affiliations, machine material manifest and EMP resistance, move resistance, icon rotation, recursive listening, object flags) from base-type vars to sparse slots."
