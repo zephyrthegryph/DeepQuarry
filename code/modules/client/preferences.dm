@@ -451,7 +451,7 @@ CAPABILITIES(/datum/preferences)
 
 	// Size-trait overlay still needs to run for the vanity case (the trait_synthesis
 	// apply_hook is intentionally NOT called here — we don't want produceCopy()).
-	character.species?.blood_color = read_preference(/datum/preference/color/human/blood_color)
+	character.species?.blood_color = text_or_null(read_preference(/datum/preference/color/human/blood_color))
 
 	var/static/list/traits_to_copy = list(/datum/trait/neutral/tall,
 									/datum/trait/neutral/taller,
@@ -497,7 +497,7 @@ CAPABILITIES(/datum/preferences)
 	private_species.set_base_species(bodytype_selected)
 	private_species.icobase = private_species.get_icobase()
 	private_species.deform = private_species.get_icobase(get_deform = TRUE)
-	private_species.vanity_base_fit = bodytype_selected
+	private_species.vanity_base_fit = text_or_null(bodytype_selected)
 	if(istype(character.species, /datum/species/shapeshifter))
 		character.set_wrapped_bodytype(bodytype_selected)
 

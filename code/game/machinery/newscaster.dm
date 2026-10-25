@@ -748,7 +748,7 @@ CAPABILITIES(/datum/news_photo)
 		var/mob/living/carbon/human/human_user = user
 		var/obj/item/card/id/I = human_user.GetIdCard()
 		if(I)
-			scanned_user = GetNameAndAssignmentFromId(I)
+			scanned_user = text_or_null(GetNameAndAssignmentFromId(I))
 		else
 			scanned_user = "Unknown"
 	else
