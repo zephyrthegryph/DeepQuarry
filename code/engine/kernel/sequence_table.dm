@@ -283,7 +283,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_table)
 			positions = list()
 			T.by_key[k] = positions
 		positions += S.pos
-	S.slot = slot_for(S.key)
+	S.slot = num_or_null(slot_for(S.key))
 	if(!S.handler)
 		T.error("[S.key]: a step needs a handler")
 

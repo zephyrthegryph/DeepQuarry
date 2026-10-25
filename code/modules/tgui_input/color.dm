@@ -67,7 +67,7 @@
 		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 		expire(timeout)
 	if(user)
-		src.preset_colors = user.read_preference(/datum/preference/text/preset_colors)
+		src.preset_colors = text_or_null(user.read_preference(/datum/preference/text/preset_colors))
 
 /**
  * Waits for a user's response to the tgui_color_picker's prompt before returning. Returns early if

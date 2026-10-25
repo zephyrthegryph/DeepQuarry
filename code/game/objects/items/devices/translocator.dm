@@ -176,7 +176,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	var/obj/item/perfect_tele_beacon/nb = new beacon_type(get_turf(src))
-	nb.tele_name = new_name
+	nb.tele_name = text_or_null(new_name)
 	rel_set(nb, nameof(nb.tele_hand), src)
 	nb.creator = user.ckey
 	rel_add(src, nameof(beacons), nb)

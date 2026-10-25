@@ -25,12 +25,12 @@ CAPABILITIES(/datum/data/pda/app/status_display)
 			var/_answer_k26 = A.step_value("k26")
 			if(isnull(_answer_k26))
 				return
-			message1 = _answer_k26
+			message1 = text_or_null(_answer_k26)
 		if("setmsg2")
 			var/_answer_k28 = A.step_value("k28")
 			if(isnull(_answer_k28))
 				return
-			message2 = _answer_k28
+			message2 = text_or_null(_answer_k28)
 		else
 			post_status(statdisp)
 	return TRUE

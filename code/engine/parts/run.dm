@@ -581,7 +581,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	rel_set(P, nameof(P.held), A.held_provider())
 	P.act = A // ALLOW(handlers, ownership): the pending op carries its act across a wait on purpose, and the act is released when the op ends (end_pending)
 	A.pending = P // ALLOW(ownership): a pooled transient: reset on release
-	P.claim_mask = op_claim_hold(A.oplan, A.binding)
+	P.claim_mask = num_or_null(op_claim_hold(A.oplan, A.binding))
 	if(A.actor)
 		P.registered = TRUE
 		P.registered_ref = "[REF(A.actor)]"

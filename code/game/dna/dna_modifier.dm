@@ -694,7 +694,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			play_sfx(src, SFX_KEYBOARD)
 			var/label = A.step_value("label")
 			if(!isnull(label))
-				buffer.mydna.name = label // Traitgenes Use bodyrecords
+				buffer.mydna.name = text_or_null(label) // Traitgenes Use bodyrecords
 			return TRUE
 		if("transfer")
 			var/mob/living/carbon/WC = connected()?.get_occupant()

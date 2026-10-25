@@ -181,7 +181,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 		var/new_tag = A.step_value("tag")
 		if(!new_tag)
 			return
-		id_tag = new_tag
+		id_tag = text_or_null(new_tag)
 		var/obj/item/multitool/M = A.held
 		if(istype(M) && M.loc == user)
 			rel_set(M, nameof(M.connectable), src)
