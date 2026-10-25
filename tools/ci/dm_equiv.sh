@@ -40,11 +40,12 @@ compile() { # flavor compiler destination
   cp deepquarry.dmb deepquarry.rsc "$dest/"
 }
 
-if [ ! -x tools/dmb/target/release/dmb-equiv ] && [ ! -x tools/dmb/target/release/dmb-equiv.exe ]; then
-  (cd tools/dmb && cargo build --release -p dmb-equiv) || exit 1
+equiv_target="$(bash tools/dq_cargo_target.sh dmb-equiv)"
+if [ ! -x "$equiv_target/release/dmb-equiv" ] && [ ! -x "$equiv_target/release/dmb-equiv.exe" ]; then
+  (cd tools/dmb && CARGO_TARGET_DIR="$equiv_target" cargo build --release -p dmb-equiv) || exit 1
 fi
-equiv=tools/dmb/target/release/dmb-equiv
-[ -x "$equiv" ] || equiv=tools/dmb/target/release/dmb-equiv.exe
+equiv="$equiv_target/release/dmb-equiv"
+[ -x "$equiv" ] || equiv="$equiv_target/release/dmb-equiv.exe"
 
 status=0
 for flavor in $flavors; do
