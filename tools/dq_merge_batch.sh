@@ -13,8 +13,14 @@
 #   3. on failure, bisects by lane: the smallest prefix of the batch that fails names the bad lane (log N attempts, and an attempt on a
 #      tree already proved is answered from the proof cache in seconds), that lane is bounced (named, with its log), and the rest is
 #      merged and proved again,
+#   3b. DQ_BATCH_DEADLINE=<epoch seconds> (the batch train sets it): an attempt that has not started by then is not started; the lanes
+#      not yet judged are DEFERRED (neither proved nor bounced) and the proved prefix still lands. A gate whose test phase was killed at its
+#      wall-clock cap ("FOCUSED RUN CAPPED") says the batch is too big, not that a lane is bad: the lanes not yet judged are deferred and the
+#      batch is reported CAPPED (a single lane that is capped alone is bounced: its own tests do not fit),
 #   4. leaves rewrite/integ-current on the proved combination (push it with tools/dq_push_master.sh) or on origin/master when nothing
 #      passed. Exit 0: every lane is in; 1: some lane was bounced (listed); 2: usage.
+# Machine-readable result lines at the end (tools/dq_train.sh reads them): BATCH_GOOD: <lanes>, BATCH_DEFERRED: <lanes>, BATCH_CAPPED: 1|,
+# and one BATCH_BOUNCED: <lane>|<reason>|<attempt log> per bounced lane.
 # Attempts run on a detached HEAD, so the branch only ever moves to a proved tip, with `git switch -C` from a clean tree (the previous
 # value of the branch is origin/master, nothing is lost). Nothing here runs checkout, reset, restore, stash or cherry-pick.
 set -uo pipefail
@@ -48,8 +54,13 @@ done
 mkdir -p data/merge-batch
 stamp="$(date +%Y%m%dT%H%M%S)"
 declare -A tried_rc
+declare -A attempt_log
+DEADLINE="${DQ_BATCH_DEADLINE:-}"
 bounced=()
 reasons=()
+blogs=()
+deferred=()
+capped=""
 n_attempts=0
 
 ref_of() { git rev-parse -q --verify "$1^{commit}" >/dev/null 2>&1 && echo "$1" || echo "origin/$1"; }
@@ -60,9 +71,14 @@ current_key=""
 attempt() {
 	local key="$*" l log
 	if [ -z "${NOCACHE:-}" ] && [ -n "${tried_rc[$key]+x}" ]; then return "${tried_rc[$key]}"; fi
+	if [ -z "${NOCACHE:-}" ] && [ -n "$DEADLINE" ] && [ "$(date +%s)" -gt "$DEADLINE" ]; then
+		echo "== batch attempt not started ($key): the cycle deadline passed; the lanes not yet judged are deferred"
+		return 92
+	fi
 	current_key="$key"
 	n_attempts=$((n_attempts + 1))
 	log="data/merge-batch/$stamp.attempt$n_attempts.log"
+	attempt_log[$key]="$log"
 	echo "== batch attempt $n_attempts: $key (log $log)"
 	CONFLICT=""
 	git switch -q --detach origin/master || return 90
@@ -79,12 +95,14 @@ attempt() {
 	bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
 	local rc=$?
 	tail -n 3 "$log" | sed 's/^/   /'
+	# A killed test phase is a verdict on the size of the batch, not on a lane.
+	if [ "$rc" -ne 0 ] && grep -q 'FOCUSED RUN CAPPED' "$log"; then rc=93; echo "   the test phase hit its wall-clock cap (the batch is too big for it)"; fi
 	tried_rc[$key]=$rc
 	return "$rc"
 }
 
-bounce() { # <lane> <why>
-	bounced+=("$1"); reasons+=("$2")
+bounce() { # <lane> <why> [<attempt log>]
+	bounced+=("$1"); reasons+=("$2"); blogs+=("${3:-}")
 	echo "== BOUNCED $1: $2"
 }
 
@@ -95,7 +113,7 @@ while [ ${#remaining[@]} -gt 0 ]; do
 	attempt "${set[@]}"; rc=$?
 	if [ "$rc" -eq 91 ]; then
 		# a lane that cannot even merge: bounce it and retry without it
-		bounce "$CONFLICT" "merge conflict with the batch or master (rebase it: bash tools/dq_merge_master.sh, then dq_lane_ready.sh)"
+		bounce "$CONFLICT" "merge conflict with the batch or master (rebase it: bash tools/dq_merge_master.sh in the lane, then enqueue again)" "${attempt_log[$current_key]:-}"
 		new=()
 		for l in "${remaining[@]}"; do [ "$l" = "$CONFLICT" ] || new+=("$l"); done
 		remaining=("${new[@]+"${new[@]}"}")
@@ -105,8 +123,17 @@ while [ ${#remaining[@]} -gt 0 ]; do
 		continue
 	fi
 	if [ "$rc" -eq 0 ]; then good=("${set[@]}"); remaining=(); break; fi
+	if [ "$rc" -eq 92 ] || { [ "$rc" -eq 93 ] && [ ${#set[@]} -gt 1 ]; }; then
+		[ "$rc" -eq 93 ] && capped=1
+		deferred+=("${remaining[@]}"); remaining=()
+		break
+	fi
 	if [ ${#set[@]} -eq 1 ]; then
-		bounce "${set[0]}" "gates failed alone on master (logs data/merge-batch/$stamp.attempt$n_attempts.log and data/merge-gates/)"
+		if [ "$rc" -eq 93 ]; then
+			bounce "${set[0]}" "its tests do not fit the gate's test-phase cap alone (the run was killed at the cap): trim or split the lane's tests" "${attempt_log[${set[*]}]:-}"
+		else
+			bounce "${set[0]}" "gates failed alone on master (logs data/merge-batch/$stamp.attempt$n_attempts.log and data/merge-gates/)" "${attempt_log[${set[*]}]:-}"
+		fi
 		good=(); remaining=(); break
 	fi
 	# Bisect: the smallest prefix of `remaining` that fails on top of `good` names the culprit.
@@ -114,10 +141,19 @@ while [ ${#remaining[@]} -gt 0 ]; do
 	while [ "$lo" -lt "$hi" ]; do
 		mid=$(( (lo + hi) / 2 ))
 		attempt "${good[@]+"${good[@]}"}" "${remaining[@]:0:mid}"; prc=$?
+		if [ "$prc" -eq 92 ] || [ "$prc" -eq 93 ]; then abort_rc=$prc; break; fi
 		if [ "$prc" -eq 0 ]; then lo=$((mid + 1)); elif [ "$prc" -eq 91 ]; then hi=$mid; else hi=$mid; fi
 	done
+	if [ "${abort_rc:-0}" -ne 0 ]; then
+		# the deadline passed, or the test phase was capped, in the middle of the bisect: what is not judged yet waits for the next cycle
+		[ "$abort_rc" -eq 93 ] && capped=1
+		deferred+=("${remaining[@]}"); remaining=()
+		abort_rc=0
+		continue
+	fi
 	culprit="${remaining[$((lo - 1))]}"
-	bounce "$culprit" "the batch fails once it is merged (bisected; logs data/merge-batch/$stamp.attempt*.log)"
+	pre=("${good[@]+"${good[@]}"}" "${remaining[@]:0:lo}")
+	bounce "$culprit" "the batch fails once it is merged (bisected; logs data/merge-batch/$stamp.attempt*.log)" "${attempt_log[${pre[*]}]:-}"
 	good+=("${remaining[@]:0:$((lo - 1))}")
 	remaining=("${remaining[@]:$lo}")
 	# the loop retries good+remaining; a set already tried is answered from tried_rc
@@ -128,6 +164,10 @@ if [ ${#good[@]} -gt 0 ] && [ "$current_key" != "${good[*]}" ]; then
 	NOCACHE=1 attempt "${good[@]}" || { echo "dq_merge_batch: the proved combination (${good[*]}) failed on the rebuild; not moving $BRANCH" >&2; good=(); }
 fi
 
+echo "BATCH_GOOD: ${good[*]-}"
+echo "BATCH_DEFERRED: ${deferred[*]-}"
+echo "BATCH_CAPPED: ${capped}"
+for i in "${!bounced[@]}"; do echo "BATCH_BOUNCED: ${bounced[$i]}|${reasons[$i]}|${blogs[$i]}"; done
 if [ ${#good[@]} -eq 0 ]; then
 	echo "dq_merge_batch: nothing passed; $BRANCH stays at origin/master"
 	git switch -q -C "$BRANCH" origin/master 2>/dev/null

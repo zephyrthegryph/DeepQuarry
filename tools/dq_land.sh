@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# NOTICE: lanes land on the batch train by default (tools/dq_train.sh, agent_workflow.md section 29); this per-lane script is kept for now.
 # Land a lane on master with the merge lock held only for the cheap part: prove OUTSIDE the lock, lock only to merge and push.
 #
 #   export DQ_MERGE_SESSION=<the lane branch>   # optional: defaults to the current branch
@@ -38,6 +39,7 @@ here="$(pwd)"
 . "$here/tools/dq_machine_slots.sh"
 . "$here/tools/dq_run_lock.sh"
 
+echo "dq_land: NOTICE: the batch train is the default way to land a lane now: 'bash tools/dq_train.sh enqueue --tests \"<tests>\"' (add --light for docs/tooling/Rust-only work), then release your slot. One detached integrator gates every waiting lane together. dq_land.sh still works, but it re-proves on every master move; see doc/rewrite/agent_workflow.md section 29." >&2
 # A light lane (docs, tooling scripts, Rust/compiler-only; pool-light) lands in a batch: no DM proof, no per-lane lock hold.
 if [ "${1:-}" = "--light" ]; then shift; exec bash "$here/tools/dq_land_batch.sh" submit --run "$@"; fi
 

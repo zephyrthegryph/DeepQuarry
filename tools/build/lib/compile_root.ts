@@ -55,7 +55,8 @@ export function rootKey(dme: string): string {
 }
 
 /**
- * The compile root a worktree compiles in. The merge worktree (DQ_MERGE_WT, default E:/projects/dq-wt/merge-base) has its own:
+ * The compile root a worktree compiles in. The merge worktree (DQ_MERGE_WT, default E:/projects/dq-wt/merge-base) and the batch train's
+ * worktree (DQ_TRAIN_WT, default E:/projects/dq-wt/train-base; tools/dq_train.sh) share one of their own (both only ever hold master plus a batch):
  * every gate there compiles master plus a batch, so its session patches from the previous gate's tree, and it never waits behind
  * (or is reset to) a lane's tree. Measured 2026-10-17: a gate's test compile waited 315 s for the shared root and then ran a full
  * compile ("declaration skeleton changed") because lanes with different declarations took turns in it.
@@ -63,7 +64,8 @@ export function rootKey(dme: string): string {
 export function rootKeyFor(dme: string, worktree: string, env: NodeJS.ProcessEnv = process.env): string {
   const norm = (p: string) => path.resolve(p).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
   const merge = env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base';
-  return norm(worktree) === norm(merge) ? `${rootKey(dme)}-merge` : rootKey(dme);
+  const train = env.DQ_TRAIN_WT ?? 'E:/projects/dq-wt/train-base';
+  return norm(worktree) === norm(merge) || norm(worktree) === norm(train) ? `${rootKey(dme)}-merge` : rootKey(dme);
 }
 
 function normalizeTarget(target: string): string {
