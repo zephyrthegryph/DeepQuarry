@@ -121,7 +121,7 @@ git diff --quiet || no "the checks changed tracked files"
 
 # record: a proof for the merged tree that inherits master's proof, and a lane-ready note on the merge so the push is a fast-forward
 tests="$(printf '%s' "$stamp_json" | json_field tests)"
-proof_store "$(proof_tree HEAD)" "$mtip" "$tests" 0 0 0 0 0 "" "$mtree"
+DQ_PROOF_DM=0 proof_store "$(proof_tree HEAD)" "$mtip" "$tests" 0 0 0 0 0 "" "$mtree"
 new_json="$(printf '%s' "$stamp_json" | HEAD_SHA="$head" MASTER="$mtip" STAMPC="$stamp_commit" node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);j.branch_commit=process.env.HEAD_SHA;j.tested_commit=process.env.HEAD_SHA;j.master_commit=process.env.MASTER;j.disjoint_accept={stamp_commit:process.env.STAMPC,created:new Date().toISOString()};console.log(JSON.stringify(j))})')"
 git notes --ref=lane-ready add -f -m "$new_json" HEAD || no "could not write the lane-ready note"
 if [ "${DQ_LANE_NOTES_PUSH:-1}" != "0" ]; then

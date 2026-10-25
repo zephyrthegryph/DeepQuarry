@@ -19,6 +19,8 @@
 # changed nothing it depends on), and what remains to be proved is the combination, which the smoke set, the compile and the
 # ratchets on the merged HEAD cover. A lane without a stamp needs its tests named with --tests.
 #   --no-smoke   leave the smoke set out (tools/dq_lane_ready.sh runs the lane's own list)
+#   --no-dm      skip the production compile + DreamChecker job (lane proofs: the test build is a superset; the integration push
+#                (tools/dq_push_master.sh, no dm.ok) or the batch train runs the production compile)
 #   --no-tests   no test world at all (gen, dm, ratchets only)
 #   --serial     run the jobs one after another (to read one job's output)
 #
@@ -67,6 +69,7 @@ while [ $# -gt 0 ]; do
 		--snapshot-output) snapshot_output=1 ;;
 		--no-smoke) smoke=0 ;;
 		--no-tests|--no-boot) run_tests=0 ;;
+		--no-dm) no_dm=1 ;;
 		--tgui) tgui=1 ;;
 		--serial) serial=1 ;;
 		--reproof) reproof=1 ;;
@@ -289,7 +292,7 @@ job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/ana
 }
 
 [ "$run_tests" -eq 1 ] && names+=(tests)
-names+=(dm ratchets)
+[ "$no_dm" -eq 1 ] && names+=(ratchets) || names+=(dm ratchets)
 [ "$tgui" -eq 1 ] && names+=(tgui)
 [ "$analyze_tests" -eq 1 ] && names+=(analyze_tests)
 echo "== gates in parallel: ${names[*]}$([ "$run_tests" -eq 1 ] && echo " (${#tests[@]} test(s): ${tests[*]:0:6}$([ ${#tests[@]} -gt 6 ] && echo ' ...'))")"
@@ -341,13 +344,14 @@ if [ ${#failed[@]} -gt 0 ]; then
 	for n in "${failed[@]}"; do
 		echo "---- $n: last lines of data/merge-gates/$short.$n.log" >&2
 		tail -n 40 "data/merge-gates/$short.$n.log" >&2
-		grep -h '^FOCUSED RESULT:\|^dq_focused_test: REFUSED' "data/merge-gates/$short.$n.log" >&2 || true
+		grep -h '^FOCUSED RESULT:\|^FOCUSED RUN CAPPED\|^dq_focused_test: REFUSED' "data/merge-gates/$short.$n.log" >&2 || true
 	done
 	echo "dq_merge_gates: FAILED: ${failed[*]} (logs data/merge-gates/$short.<job>.log); fix it, recommit, rerun" >&2
 	exit 1
 fi
 else
-	dm_ok=1
+	dm_ok="$(sed -n 's/^dm=//p' "$proof_file" 2>/dev/null)" # a lane proof (dm=0) leaves the production compile to the push
+	[ "$dm_ok" = 1 ] || dm_ok=0
 	echo "proof-reused 0s" >>"$timings"
 fi
 
@@ -427,8 +431,8 @@ fi
 	echo "flakes=$(grep -h '^GATE FLAKE: ' "data/merge-gates/$short.tests.log" 2>/dev/null | sed 's/^GATE FLAKE: \(.*\) failed once.*/\1/' | tr '\n' ' ')"
 } >"data/merge-gates/$short.ok"
 # The proof for this tree (tools/dq_proof_cache.sh): what lets the merge of an unmoved-master lane skip every gate above.
-if [ "$reused" -eq 0 ] && [ "$run_tests" -eq 1 ] && [ "$dm_ok" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
-	proof_store "$tree" "$base_master" "${tests[*]-}" "${passed:-0}" "${nfailed:-0}" 0 "$tgui" "$analyze_tests" "$tests_json" "${DQ_PROOF_INHERITS:-}"
+if [ "$reused" -eq 0 ] && [ "$run_tests" -eq 1 ] && { [ "$dm_ok" -eq 1 ] || [ "$no_dm" -eq 1 ]; } && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
+	DQ_PROOF_DM=$((1 - no_dm)) proof_store "$tree" "$base_master" "${tests[*]-}" "${passed:-0}" "${nfailed:-0}" 0 "$tgui" "$analyze_tests" "$tests_json" "${DQ_PROOF_INHERITS:-}"
 	proof_alias_baseline_shrink "$pre_shrink_tree" "$tree"
 	proof_prune
 fi

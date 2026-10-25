@@ -704,3 +704,64 @@ checked) and refuse to start when another live run holds the worktree, naming th
 a second run. Overlapping runs used to change the tree under each other ("the tree changed during the gates; not stamping").
 
 Tests: `bash tools/ci/test_lane_pool.sh`, `bash tools/ci/test_light_checks.sh`, `bun test tools/build/lib/machine_slots.test.ts`.
+
+## 29. The batch train (24 October 2026, `tools/batch-train`)
+
+**The default way to land a lane.** Per-lane landing (`dq_land.sh`) proved every lane on its own merge and proved it again whenever master moved:
+with 25-40 minute gate rounds and frequent landings a lane needed 2-2.5 hours. Audit of one day's logs: gate rounds median 23 min (production
+compile 1184 s, test phase 1055 s), 13 of 14 focused runs at 10 minutes or more, 86 full test-dme compiles = 8146 s. The train gates every waiting lane
+**once, together**, and a lane's own wait is the queue plus one cycle.
+
+```sh
+# in the lane's worktree, everything committed, focused tests green, `bash tools/ci/check_ratchets.sh --changed-only` clean:
+bash tools/dq_train.sh enqueue --tests "dq_foo dq_bar"     # records branch + tip + tests, starts the integrator if none runs, returns at once
+bash tools/dq_lane_pool.sh release <branch>                 # the slot is free now; the branch ref stays in the shared repository
+bash tools/dq_train.sh status                               # later: integrator, queue, bounced lanes (+ report paths), recent landings
+bash tools/dq_train.sh report <branch>                      # why a lane was bounced (also reports/<branch>.md under E:/dq-cache/train)
+bash tools/dq_train.sh enqueue --light                      # docs/tooling/Rust-only lanes: no DM compile, no test world (refused when a heavy path changed)
+bash tools/dq_train.sh dequeue <branch>                     # withdraw a lane
+```
+
+A lane that is neither queued nor bounced has landed (`status` lists the last landings). The train lands **exactly the tip that was enqueued**:
+a branch that moved afterwards is bounced ("enqueue the new tip"). A bounced lane gets a report (the reason, the failing tests, the last 70 lines of the
+gate output, the next step); fix it in a freshly leased slot, commit, enqueue again. Nothing is ever merged for a bounced lane.
+
+**The integrator** (`dq_train.sh run`) is one detached process: `ensure` (called by `enqueue`) starts it through PowerShell `Start-Process`, outside the
+shell's process group, so the 30-minute kill of whatever shell enqueued does not take it along. One at a time: a lock directory under
+`E:/dq-cache/train/run.lock` with the pid and a liveness check (a dead holder's lock is replaced). It runs from a snapshot of `dq_train.sh`
+(`train/self/`), exits when the queue is empty, and the next `enqueue` starts a fresh one with that lane's copy. It repeats cycles:
+
+1. Fetch; validate every queued lane (branch exists, tip unchanged, not already in master).
+2. Choose the batch: queue order, at most `DQ_TRAIN_MAX_LANES` (8) and a union of tests (the lanes' tests plus smoke and gameplay) estimated at no more
+   than `DQ_TRAIN_TEST_BUDGET_SEC` (420 s) from the recorded per-test times (`tools/dq_train_estimate.js` over `data/test-runs/`; an unknown test counts 20 s);
+   a lane that does not fit waits for the next cycle. A test phase that hits its cap halves the batch limit for the next cycle; it doubles back after clean landings.
+3. All lanes light: `tools/dq_land_batch.sh` (cheap checks, no DM build; one lane at a time if the batch cannot attribute a failure). Otherwise one gate on the
+   combined tree in the train's own worktree (`E:/projects/dq-wt/train-base`, branch `train/integ`, created by the first heavy cycle; own compile root shared
+   with the merge worktree), through `tools/dq_merge_batch.sh`: merge every lane onto current origin/master in order (a conflicting lane is bounced), then
+   `dq_merge_gates.sh` once: analyze gen + ratchets, the production compile as a **native** `build.sh dm` plus DreamChecker (`DQ_DREAMMAKER_GATE=0`: CI keeps the
+   DreamMaker cross-check), one native test compile, the union of tests and the smoke set. On a failure it bisects by lane (prefix halving; an attempt on a tree
+   already proved is answered from the proof cache), bounces the culprit(s) and proves the rest again. A test that fails and then passes alone is a flake: the gate's
+   retry ledgers it (`tools/dq_flake_log.sh`) and nobody is bounced.
+4. Push with `tools/dq_push_master.sh --expect "<lanes>"` (strict: refused when master moved since the gate started; the merge-gates stamp on the batch's HEAD is
+   what `dq_push_stamp.sh` and the pre-push hook check). Master moving under a gate is not the lanes' fault: they stay queued and the next cycle repeats; after
+   `DQ_TRAIN_STALL_CYCLES` (3) cycles without a landing or a bounce the integrator stops (`STALLED` in the log) and the next enqueue restarts it.
+
+**Time limits.** Testing never runs over 10 minutes: the gate's test-phase cap is `gate_cap_minutes` (5 min plus 1 min per test, ceiling 10; the train also sets `DQ_FOCUSED_MAX_MIN` to `DQ_TRAIN_TEST_MAX_MIN`, 10), and a run killed at the cap is never retried (another run would only spend the cap again)
+and is not blamed on a lane: the batch is reported CAPPED, the lanes not yet judged are deferred, the batch limit halves; a single lane whose tests exceed the
+cap alone is bounced. No new gate attempt starts after `DQ_TRAIN_CYCLE_MAX_MIN` (20) minutes into a cycle (`DQ_BATCH_DEADLINE`): lanes not yet judged are
+deferred, the proved prefix still lands. The shell that starts the integrator returns in about 20 seconds; no Bash command ever has to outlive 30 minutes.
+**Nothing heavy runs under the merge lock**: the train works in its own worktree and never takes it (compiles and tests hold machine slots with priority 0, as the
+merge worktree does). Compiles per batch: one test compile and one production compile; the test phase and a bisect attempt on an identical tree reuse the tree
+proof, and a bisect attempt on a different tree is an incremental compile in the same daemon session, not a cold one.
+
+**The smoke set was trimmed** (`tools/ci/smoke_tests.txt`): measured over 99 recorded runs the smoke set averages 90 s and the gameplay set 27 s; `dx_menu_order`
+(33 s mean, 250 s worst) was removed (`dx_menu_order_static`, 11 s, stays; the full golden sweep runs in the full suite). Together they are about 2 minutes of tests,
+inside the 3 minute target, so the 10 minute cap leaves room for the lanes' own tests. Add a test to the smoke set only when it is fast.
+
+**State and logs** (disposable, `E:/dq-cache/train`, or `DQ_TRAIN_STATE`): `queue/`, `bounced/`, `landed/`, `reports/`, `log/train.log` (every decision, with times),
+`log/cycle-*.log` (a cycle's gate output) and `log/cycle-*.push.log`, `cycle.txt` (the phase now), `batch_limit`. The attempt logs of a batch are in
+`train-base/data/merge-batch/` and the gates' job logs in `train-base/data/merge-gates/`.
+
+`DQ_TRAIN_DRY_RUN=1 DQ_TRAIN_ONCE=1 bash tools/dq_train.sh run` runs one cycle through every push check and stops before the push (lanes stay queued).
+`bash tools/dq_land.sh` still works and prints a notice; `dq_land.sh --light` is the old light path (the train's `--light` is the same machinery behind the same queue
+discipline). Tests (stub gates, stub push, a scratch origin): `bash tools/ci/test_train.sh`; the batch driver's own: `bash tools/ci/test_merge_batch.sh`.
