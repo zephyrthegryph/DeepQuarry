@@ -13,16 +13,25 @@ impl PartialEq for CodeOwner {
 impl Eq for CodeOwner {}
 type Store = dm_session::ObservedArtifactStore<CodeOwner, (), CodeOwner, ()>;
 pub(crate) type Lease = dm_session::ObservedArtifactLease<CodeOwner, (), CodeOwner, ()>;
-pub(crate) struct SharedProcedureCode(Arc<Store>);
+pub(crate) struct SharedProcedureCode(
+    Arc<Store>,
+    /// Procedure read leaves interned across every define variant of the session: equal observations are one allocation.
+    Arc<dm_session::ReceiptGroupPool<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>>,
+);
 impl Default for SharedProcedureCode {
     fn default() -> Self {
-        Self(Store::shared_current_rosters())
+        Self(Store::shared_current_rosters(), Arc::default())
     }
 }
 impl SharedProcedureCode {
     /// Optional physical-sharing index; surviving artifacts own their code.
     pub(crate) fn release_for_pressure(&self) -> dm_session::PressurePrune {
         self.0.prune_for_pressure(0, |_, _, _, _| None)
+    }
+    pub(crate) fn receipt_groups(
+        &self,
+    ) -> Arc<dm_session::ReceiptGroupPool<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>> {
+        Arc::clone(&self.1)
     }
     pub(crate) fn lease(&self) -> Lease {
         self.0.lease()

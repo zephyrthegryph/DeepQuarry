@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Lanes land on a batch train (tools/dq_train.sh): enqueue, release the slot, one integrator gates every waiting lane together"

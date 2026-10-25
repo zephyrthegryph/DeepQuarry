@@ -151,7 +151,7 @@ if [ ${#list[@]} -eq 0 ]; then echo "dq_lane_ready: no --tests given: proving th
 tested="$(git rev-parse HEAD)"
 evidence_alt=""
 echo "== lane-ready: gates on ${tested:0:10} (master ${master:0:10}): ${list[*]:-the smoke set}"
-gate_args=(--snapshot-output ${gate_extra[@]+"${gate_extra[@]}"})
+gate_args=(--snapshot-output --no-dm ${gate_extra[@]+"${gate_extra[@]}"})
 if [ ${#list[@]} -gt 0 ]; then gate_args+=(--tests "${list[*]}"); fi
 if [ "$reuse_gates" -eq 0 ]; then
 	bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
@@ -193,7 +193,7 @@ if [ "$reuse_gates" -eq 1 ]; then
 		esac
 	done
 fi
-for marker in dm ratchets analyze; do
+for marker in ratchets analyze; do # no dm: lane proofs skip the production compile (dq_push_master.sh runs it at integration)
 	[ "$(cat "data/merge-gates/${tested:0:12}.${marker}.ok" 2>/dev/null)" = "$tested" ] || die "missing $marker evidence; nothing was stamped"
 done
 

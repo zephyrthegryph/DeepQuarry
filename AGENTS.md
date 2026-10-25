@@ -304,10 +304,15 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
 - **A finished lane runs `bash tools/dq_lane_ready.sh --tests "<its tests>"`** (section 11 of the same document): it merges
   master, proves the lane once and stamps it, so the merge agent tests only the combination.
-- **A lane lands with `bash tools/dq_land.sh --tests "<its tests>"`** (section 25 of that document): it proves the lane on the current
-  master outside the merge lock (a lite re-proof when master moved under a valid stamp), takes the lock only to merge and push (about a
-  minute), and gives the lock back and proves again if master moved while it queued. A gate failure that passes alone is a flake:
-  ledgered (`bash tools/dq_flake_log.sh`), not a failure. The shared dmbc is immutable per version (`E:/dq-cache/dmb-bin/v/<id>`).
+- **A lane lands on the batch train: `bash tools/dq_train.sh enqueue --tests "<its tests>"`** (section 29 of that document; `--light` for
+  docs/tooling/Rust-only work). Commit first, with the focused tests green and `bash tools/ci/check_ratchets.sh --changed-only` clean; enqueue
+  records the branch, tip and tests and returns at once; then `bash tools/dq_lane_pool.sh release <branch>` (the branch ref stays in the repo).
+  One detached integrator takes every queued lane, merges them onto origin/master, runs ONE gate on the combination (analyze gen + ratchets, a
+  native production compile with no DreamMaker, a native test compile, the union of the lanes' tests plus the smoke set, test phase capped at 10
+  minutes), bisects a failure to the culprit lane(s) and bounces them, and pushes the rest. `bash tools/dq_train.sh status` shows the queue and
+  any bounced lane with its report (`dq_train.sh report <branch>`); a lane that is neither queued nor bounced has landed. A test that fails and
+  passes alone is a flake: ledgered (`bash tools/dq_flake_log.sh`), nobody is bounced. `tools/dq_land.sh` still works (it prints a notice) but
+  re-proves on every master move. The shared dmbc is immutable per version (`E:/dq-cache/dmb-bin/v/<id>`).
 
 ### 4a. Testing (full reference: `doc/testing.md`)
 
@@ -322,7 +327,8 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps with a small normal-tier
   `.../representative`; `dq_focused_test.sh` refuses an exhaustive test (or one with exhaustive subtypes) unless `--allow-exhaustive`,
   and names the `/representative` to run instead.
-- **Every focused run is capped.** Hard wall-clock limit `DQ_FOCUSED_MAX_MIN` (default 20, clamped to 30 without `--allow-exhaustive`);
+- **A focused or lane run compiles only the test build** (`deepquarry.test.dme`: the game plus `UNIT_TESTS` code, a superset), never `deepquarry.dme` as well; `dq_lane_ready.sh` runs the gates with `--no-dm`. The production compile + DreamChecker (`build.sh dm`, unchanged for explicit use) runs at integration (`dq_push_master.sh`, the batch train) and in CI.
+- **Every focused run is capped.** Hard wall-clock limit `DQ_FOCUSED_MAX_MIN` (default 10, clamped to 10 without `--allow-exhaustive`; testing never runs past 10 minutes, and every agent shell has a hard 30-minute limit);
   at the cap, or when the run's shell dies or is killed, `tools/dq_run_guard.js` kills the run's own DreamDaemon worlds and frees
   their test-world slots. The cap counts run time, not time queued for a slot (reported as "queued N min"): never wrap the tool in
   `timeout`. A native compile refused with exit 75 (daemon capacity) queues again up to 30 min instead of failing. Never start a long run; test: `bash tools/ci/test_focused_caps.sh`.
