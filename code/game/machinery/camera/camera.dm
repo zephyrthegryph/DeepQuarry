@@ -45,6 +45,7 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	setup(PROC_REF(validate_network))
 	configure(atom_shielding(deflection = 5))
 	setup(PROC_REF(install_viewer_hud))
 	setup(PROC_REF(configure_initial_upgrades))
@@ -79,7 +80,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
-/obj/machinery/camera/Initialize(mapload)
+/// A bomb-proof camera, and a network list checked and shared with the cameras of the same network set (a setup() hook, once its init chain has returned).
+/obj/machinery/camera/proc/validate_network()
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
 
@@ -91,8 +93,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		ASSERT(src.network)
 		ASSERT(src.network.len > 0)
 	network = camera_network_intern(network)
-
-	. = ..()
 
 /// Configure the mapped facing and installed camera upgrades after initialization.
 /obj/machinery/camera/proc/configure_initial_upgrades()

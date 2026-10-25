@@ -72,6 +72,7 @@
 	var/check_timer = 0
 
 CAPABILITIES(/mob/living/simple_mob/shadekin)
+	setup(PROC_REF(replace_prototype), mapload = TRUE)
 	ref_one(nameof(henlo_human), /mob/living/carbon/human)
 	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID, death_message = "phases to somewhere far away!"))
 	configure(mob_movement(bump = HUMAN))
@@ -82,25 +83,24 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 	rolls(nameof(eye_icon_state), PROC_REF(eye_icon_for))
 	rolls(nameof(desc), PROC_REF(desc_with_eyes))
 
-// The prototype spawns a weighted random kind of shadekin in its place
-/mob/living/simple_mob/shadekin/Initialize(mapload)
+/// The prototype spawns a weighted random kind of shadekin in its place (setup hook: x(mapload) answers a discard).
+/mob/living/simple_mob/shadekin/proc/replace_prototype(mapload)
 	//You spawned the prototype, and want a totally random one.
-	if(type == /mob/living/simple_mob/shadekin)
+	if(type != /mob/living/simple_mob/shadekin)
+		return INITIALIZE_HINT_NORMAL
 
-		//I'm told by VerySoft these are the liklihood values
-		var/list/sk_types = list(
-			/mob/living/simple_mob/shadekin/red = 20,	//Actively seek people out to nom, so fairly common to see (relatively speaking),
-			/mob/living/simple_mob/shadekin/blue = 15,	//Explorers that like to interact with people, so still fairly common,
-			/mob/living/simple_mob/shadekin/purple = 15,	//Also explorers that may or may not homf people,
-			/mob/living/simple_mob/shadekin/green = 5,
-			/mob/living/simple_mob/shadekin/yellow = 1	//Very rare, usually never leaves their home
-		)
-		var/new_type = pickweight(sk_types)
+	//I'm told by VerySoft these are the liklihood values
+	var/list/sk_types = list(
+		/mob/living/simple_mob/shadekin/red = 20,	//Actively seek people out to nom, so fairly common to see (relatively speaking),
+		/mob/living/simple_mob/shadekin/blue = 15,	//Explorers that like to interact with people, so still fairly common,
+		/mob/living/simple_mob/shadekin/purple = 15,	//Also explorers that may or may not homf people,
+		/mob/living/simple_mob/shadekin/green = 5,
+		/mob/living/simple_mob/shadekin/yellow = 1	//Very rare, usually never leaves their home
+	)
+	var/new_type = pickweight(sk_types)
 
-		new new_type(loc)
-		flags |= ATOM_INITIALIZED
-		return INITIALIZE_HINT_QDEL
-	return ..()
+	new new_type(loc)
+	return INITIALIZE_HINT_QDEL
 
 /// Its shadekin state, its energy tuned to its eyes (owns_one(starts =)).
 /mob/living/simple_mob/shadekin/proc/start_shadekin(current, mapload)

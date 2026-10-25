@@ -23,7 +23,6 @@ init_lines	code/datums/repositories/decls.dm	@/datum/decl::Initialize::SHOULD_CA
 init_lines	code/datums/repositories/decls.dm	@/datum/decl::Initialize::SHOULD_NOT_SLEEP
 init_lines	code/datums/variants/crayon_variants.dm	@/obj/item/pen/crayon::Initialize::apply_variant
 init_lines	code/game/area/areas.dm	@/area::Initialize::apply_ceiling
-init_lines	code/game/area/areas.dm	@/area::Initialize::luminosity
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::SHOULD_NOT_SLEEP
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::SHOULD_CALL_PARENT
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::if
@@ -57,16 +56,6 @@ init_lines	code/game/gamemodes/technomancer/spells/flame_tongue.dm	@/obj/item/sp
 init_lines	code/game/gamemodes/technomancer/spells/radiance.dm	@/obj/item/spell/radiance::Initialize::log_and_message_admins
 init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	@/obj/item/spell/reflect::Initialize::to_chat
 init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	@/obj/item/spell/reflect::Initialize::expire
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::if
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::resistance_flags
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::if
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::if
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::log_world
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::else
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::log_world
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::ASSERT
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::ASSERT
-init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::network
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::T
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::if
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::secured_wires
@@ -154,12 +143,7 @@ init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initiali
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::languages
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::if
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::default_language_static
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::color
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::if
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::blob_core
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/suit::Initialize::MakeHood
-init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::if
-init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::initialize_ai_brain
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::if
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::LAZYSET
 init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Initialize::proto_set
@@ -227,10 +211,6 @@ init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/hum
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::species
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::else
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::species
-init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::if
-init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::rel_clear
-init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::hud_list
-init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::make_hud_overlays
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::rel_set
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::if
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::if
@@ -253,24 +233,9 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/r
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::update_mood
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::glow_color
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::refresh_glow
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::if
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::sk_types
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::expr
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::expr
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::expr
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::expr
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::expr
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::expr
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::new_type
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::expr
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::flags
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::return
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::PUBLISH_LEGACY
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::lastarea
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::focus
-init_lines	code/modules/mob/mob.dm	@/mob::Initialize::update_transform
-init_lines	code/modules/mob/mob.dm	@/mob::Initialize::publish_mob_chunk
-init_lines	code/modules/mob/mob.dm	@/mob::Initialize::log_mob_tag
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::if
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::overlay_icon
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::install_default_hardware
@@ -305,9 +270,6 @@ init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_no
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::original_name
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::landmark_tag
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists
-init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::storage_slots
-init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::for
-init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::expr
 world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
 world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])

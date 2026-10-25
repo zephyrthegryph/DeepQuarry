@@ -8,11 +8,17 @@
 	storage_slots = 7
 	var/list/has_items
 
-/obj/item/storage/box/fluff/Initialize(mapload)
-	storage_slots = length(has_items)
-	for(var/P in has_items)
-		new P(src)
-	. = ..()
+CAPABILITIES(/obj/item/storage/box/fluff)
+	rolls(nameof(storage_slots), PROC_REF(roll_storage_slots))
+	initial_contents(PROC_REF(roll_fluff_items))
+
+/// A kit has a slot for each of its items.
+/obj/item/storage/box/fluff/proc/roll_storage_slots(datum/roller/R)
+	return length(has_items)
+
+/// A kit holds the items it lists.
+/obj/item/storage/box/fluff/proc/roll_fluff_items(datum/roller/R)
+	return has_items
 // END - DO NOT EDIT PROTOTYPE
 
 

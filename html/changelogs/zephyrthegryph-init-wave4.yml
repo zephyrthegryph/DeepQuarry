@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Init wave 4: mob, living, shadekin, overmind, camera, area and fluff box Initialize() code moved into setup(), rolls() and initial_contents()"

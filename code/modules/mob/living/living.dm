@@ -1240,13 +1240,8 @@ CAPABILITIES(/datum/character_setup_button)
 	if(reopen)
 		ooc_notes_window(user)
 
-/mob/living/Initialize(mapload)
-	. = ..()
-	// Brain creation is handled by the combat AI integration's
-	// /mob/living/Initialize re-open (code/modules/combat_ai/integration/mob_living.dm),
-	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.
-
-	//Prime this list if we need it.
+/// Its HUD slot table, for the types that have HUDs (a setup() hook of the living capabilities).
+/mob/living/proc/prime_hud_list()
 	if(living_rules_of(src).has_huds)
 		rel_clear(src, nameof(hud_list))
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()

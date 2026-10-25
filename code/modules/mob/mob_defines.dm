@@ -191,6 +191,7 @@
 
 
 CAPABILITIES(/mob)
+	setup(PROC_REF(finish_mob_setup))
 	mob_rules(universal_understand = 0, forced_psay = FALSE, vent_crawl_time = 4.5 SECONDS)
 	configure(movable_motion(unacidable = FALSE))
 	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
