@@ -54,7 +54,6 @@ base_var	code/game/atoms_movable.dm	@/atom/movable::old_x
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_y
 base_var	code/game/atoms_movable.dm	@/atom/movable::riding_datum
 base_var	code/game/atoms_movable.dm	@/atom/movable::movement_type
-base_var	code/game/atoms_movable.dm	@/atom/movable::autotransferable
 base_var	code/game/gamemodes/changeling/state/changeling.dm	@/mob/living::changeling_state
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::component_parts
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::circuit
@@ -66,7 +65,6 @@ base_var	code/game/objects/items.dm	@/obj/item::actions
 base_var	code/game/objects/items.dm	@/obj/item::slowdown
 base_var	code/game/objects/items.dm	@/obj/item::zoom
 base_var	code/game/objects/items.dm	@/obj/item::embed_chance
-base_var	code/game/objects/items.dm	@/obj/item::climbing_delay
 base_var	code/game/objects/items.dm	@/obj/item::digestable
 base_var	code/game/objects/items.dm	@/obj/item::possessed_voice
 base_var	code/game/objects/items.dm	@/obj/item::my_augment
@@ -74,7 +72,6 @@ base_var	code/game/objects/items.dm	@/obj/item::identity
 base_var	code/game/objects/items.dm	@/obj/item::identity_type
 base_var	code/game/objects/items.dm	@/obj/item::init_hide_identity
 base_var	code/game/objects/items/devices/paicard.dm	@/obj/machinery::paicard
-base_var	code/game/objects/items/weapons/capture_crystal.dm	@/mob/living::capture_crystal
 base_var	code/game/objects/obj_defense.dm	@/obj::debris_type
 base_var	code/game/objects/objs.dm	@/obj::can_speak
 base_var	code/game/objects/objs.dm	@/obj::show_examine
@@ -84,9 +81,7 @@ base_var	code/modules/belly_overlay/belly_overlay_tgui.dm	@/mob::belly_overlay_t
 base_var	code/modules/body/body.dm	@/mob/living::body
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_timers
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_origins
-base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_data
 base_var	code/modules/body/factors.dm	@/obj/item::worn_factors
-base_var	code/modules/body/injury.dm	@/mob/living::injury_trace
 base_var	code/modules/body/injury.dm	@/obj/item::injury_kind
 base_var	code/modules/body/injury.dm	@/obj/item::injury_kinds
 base_var	code/modules/body/organs/blood.dm	@/mob/living/carbon/human::vessel
