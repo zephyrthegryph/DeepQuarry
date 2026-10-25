@@ -95,7 +95,7 @@ mod tests {
     }
 
     #[test]
-    fn pressure_cap_rechecks_claims_added_during_unlocked_payload_charge() {
+    fn claims_added_during_unlocked_payload_charge_cost_no_index_bytes() {
         let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
         let first = store.lease();
         let escaped = first
@@ -117,9 +117,11 @@ mod tests {
                 Some(value.capacity())
             },
         );
-        assert_eq!(rejected.retained_entries, 0);
-        assert_eq!(rejected.evicted_entries, 1);
-        assert_eq!(store.admitted_bytes(), 0);
+        // A claim is one bit inside the variant, so a second lease claiming it leaves the charge unchanged.
+        assert_eq!(rejected.retained_entries, 1);
+        assert_eq!(rejected.evicted_entries, 0);
+        assert_eq!(rejected.charged_bytes, original.charged_bytes);
+        assert_eq!(store.admitted_bytes(), original.charged_bytes);
         assert_eq!(escaped.as_slice(), &[1; 8]);
         drop((first, second));
     }
@@ -208,7 +210,7 @@ mod tests {
     }
 
     #[test]
-    fn final_reconciliation_rechecks_claim_growth_after_streaming_charge() {
+    fn final_reconciliation_charge_does_not_grow_with_claims() {
         let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
         let first = store.lease();
         let value = first
@@ -228,14 +230,13 @@ mod tests {
         let detached = {
             let mut state = store.state.write().unwrap();
             let wave = reconcile(&mut state, &retained, original.charged_bytes, 0);
-            assert!(wave.complete.is_none());
-            let (hash, weak) = &wave.victims[0];
-            let detached = detach_weak(&mut state, *hash, weak).unwrap();
-            assert!(state.claims.is_empty());
-            assert!(state.leases.values().all(|roster| roster.is_empty()));
-            detached
+            let complete = wave.complete.expect("a claim adds no index charge");
+            assert_eq!(complete.charged_bytes, original.charged_bytes);
+            assert_eq!(complete.retained_entries, 1);
+            assert!(wave.victims.is_empty());
+            state.claimed_variants()
         };
-        drop(detached);
+        assert_eq!(detached, 1);
         assert_eq!(value.as_slice(), &[1; 8]);
         drop((first, second));
     }
@@ -644,26 +645,14 @@ pub(super) fn scalar_slot<K, V>() -> usize {
 fn entry_index_charge<T, Q, A, D: Copy + Ord>(
     state: &Resident<T, Q, A, D>,
     hash: u128,
-    position: usize,
+    _position: usize,
 ) -> usize {
     let bucket = &state.buckets[&hash];
-    let pointer = Arc::as_ptr(&bucket[position].value) as usize;
-    let mut bytes = bucket
+    // A lease's claim is one bit inside the variant itself, so the entry and its index slot are the whole charge.
+    bucket
         .capacity()
         .saturating_mul(std::mem::size_of::<Variant<T, Q, A, D>>())
-        .saturating_add(scalar_slot::<u128, Vec<Variant<T, Q, A, D>>>());
-    if let Some((_, claims)) = state.claims.get(&pointer) {
-        let claims = claims.load(std::sync::atomic::Ordering::Acquire);
-        bytes = bytes
-            .saturating_add(
-                claims.saturating_mul(
-                    scalar_slot::<Arc<[u8]>, usize>()
-                        .saturating_add(scalar_slot::<u64, BTreeMap<Arc<[u8]>, usize>>()),
-                ),
-            )
-            .saturating_add(scalar_slot::<usize, (u128, usize)>());
-    }
-    bytes
+        .saturating_add(scalar_slot::<u128, Vec<Variant<T, Q, A, D>>>())
 }
 
 fn detach<T, Q, A, D>(
@@ -676,13 +665,6 @@ fn detach<T, Q, A, D>(
     if bucket.is_empty() {
         state.buckets.remove(&hash);
     }
-    let pointer = Arc::as_ptr(&entry.value) as usize;
-    for roster in state.leases.values_mut() {
-        if roster.get(&entry.key) == Some(&pointer) {
-            roster.remove(&entry.key);
-        }
-    }
-    state.claims.remove(&pointer);
     state.bytes = state.bytes.saturating_sub(entry.weight);
     Some(entry)
 }

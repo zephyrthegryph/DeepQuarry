@@ -22,6 +22,8 @@ pub struct LintScope {
     pub exempt_contains: Vec<String>,
     pub exempt_files: Vec<String>,
     pub lists: HashMap<String, Vec<String>>,
+    /// `[lint.<name>.tables.<key>]`: named string-to-string tables (a key and the reason it is listed).
+    pub tables: HashMap<String, std::collections::BTreeMap<String, String>>,
     /// `[lint.<name>.ceilings]`: per-rule count ceilings. A rule with a ceiling is judged by its
     /// count (more sites than the ceiling fails) instead of the lint's baseline; `analyze baseline
     /// --update` lowers it, never raises it.
@@ -42,6 +44,10 @@ impl LintScope {
 
     pub fn list(&self, key: &str) -> &[String] {
         self.lists.get(key).unwrap_or(&EMPTY)
+    }
+
+    pub fn table(&self, key: &str) -> Option<&std::collections::BTreeMap<String, String>> {
+        self.tables.get(key)
     }
 }
 
@@ -82,6 +88,7 @@ impl Scopes {
                     exempt_contains: strings(section.get("exempt_contains")),
                     exempt_files: strings(section.get("exempt_files")),
                     lists: HashMap::new(),
+                    tables: HashMap::new(),
                     ceilings: Default::default(),
                     reason_codes: strings(section.get("reason_codes")),
                 };
@@ -95,6 +102,14 @@ impl Scopes {
                 if let Some(lists) = section.get("lists").and_then(|v| v.as_table()) {
                     for (k, v) in lists {
                         scope.lists.insert(k.clone(), strings(Some(v)));
+                    }
+                }
+                if let Some(tables) = section.get("tables").and_then(|v| v.as_table()) {
+                    for (k, v) in tables {
+                        if let Some(t) = v.as_table() {
+                            let rows = t.iter().filter_map(|(a, b)| b.as_str().map(|b| (a.clone(), b.to_string()))).collect();
+                            scope.tables.insert(k.clone(), rows);
+                        }
                     }
                 }
                 s.lints.insert(name.clone(), scope);
@@ -205,6 +220,13 @@ core = ["a", "b"]
         assert!(!sc.exempt("code/x/a.dm"));
         assert_eq!(sc.list("core"), &["a".to_string(), "b".to_string()]);
         assert_eq!(s.known_allow, vec!["x".to_string()]);
+    }
+
+    #[test]
+    fn tables_parse() {
+        let s = Scopes::parse("[lint.x.tables.hot]\n\"/atom/a\" = \"why\"\n").unwrap();
+        assert_eq!(s.for_lint("x", "").table("hot").unwrap()["/atom/a"], "why");
+        assert!(s.for_lint("x", "").table("none").is_none());
     }
 
     #[test]

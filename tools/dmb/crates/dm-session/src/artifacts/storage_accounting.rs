@@ -69,14 +69,15 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             exclusions: EXCLUSIONS,
             buckets: state.buckets.len(),
             variants: state.buckets.values().map(Vec::len).sum(),
-            leases: state.leases.len(),
-            roster_keys: state.leases.values().map(BTreeMap::len).sum(),
-            claimed_variants: state.claims.len(),
-            claims: state
-                .claims
+            leases: state.slots.count_ones() as usize,
+            roster_keys: state.buckets.values().flatten().map(|entry| entry.holders.count()).sum(),
+            claimed_variants: state
+                .buckets
                 .values()
-                .map(|(_, claims)| claims.load(std::sync::atomic::Ordering::Acquire))
-                .sum(),
+                .flatten()
+                .filter(|entry| !entry.holders.is_empty())
+                .count(),
+            claims: state.buckets.values().flatten().map(|entry| entry.holders.count()).sum(),
         }
     }
 }

@@ -407,7 +407,7 @@ impl MacroLookup for RecordingLookup<'_> {
             .insert((self.input, file));
     }
 }
-fn inputs(plan: &DirectivePlan, index: usize) -> Vec<(usize, &super::RegionLine)> {
+fn inputs(plan: &DirectivePlan, index: usize) -> Vec<(usize, super::prepared_source::PreparedLineView<'_>)> {
     plan.regions[index]
         .segments
         .iter()
@@ -593,7 +593,7 @@ pub(super) fn expand(
 fn hydrate(
     plan: &DirectivePlan,
     index: usize,
-    input: &[(usize, &super::RegionLine)],
+    input: &[(usize, super::prepared_source::PreparedLineView<'_>)],
     record: &Arc<ExpansionRecord>,
 ) -> super::expansion::RegionOutput {
     let region = &plan.regions[index];
