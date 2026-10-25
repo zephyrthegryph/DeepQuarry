@@ -6,7 +6,6 @@ call	code/modules/vals/vals.dm	92
 call	code/modules/vals/vals.dm	94
 call	code/modules/vals/vals.dm	98
 call	code/modules/vals/vals.dm	99
-typed	code/modules/vals/vals.dm	126
 call	code/modules/vals/vals.dm	147
 call	code/modules/vals/vals.dm	191
 call	code/modules/vals/vals.dm	192
@@ -17,10 +16,13 @@ call	code/modules/vals/vals.dm	230
 call	code/modules/vals/vals.dm	265
 call	code/modules/vals/vals.dm	287
 call	code/modules/vals/vals.dm	288
-call	code/modules/vals/vals.dm	348
-call	code/modules/vals/vals.dm	349
-call	code/modules/vals/vals.dm	353
-call	code/modules/vals/vals.dm	354
-call	code/modules/vals/vals.dm	355
+call	code/modules/vals/vals.dm	357
+call	code/modules/vals/vals.dm	358
+call	code/modules/vals/vals.dm	362
+call	code/modules/vals/vals.dm	366
+call	code/modules/vals/vals.dm	367
+call	code/modules/vals/vals.dm	390
+typed	code/modules/vals/vals.dm	126
 typed	code/modules/vals/vals.dm	255
 typed	code/modules/vals/vals.dm	304
+typed	code/modules/vals/vals.dm	391

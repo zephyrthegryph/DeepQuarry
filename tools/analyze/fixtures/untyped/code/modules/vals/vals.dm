@@ -314,6 +314,15 @@
 
 /datum/config_entry/number/limit
 /datum/config_entry/number/overridden
+/datum/config_entry/number/benign
+/datum/config_entry/number/benign/ValidateAndSet(str_val)
+	. = ..()
+	if(.)
+		note_set()
+
+/datum/config_entry/number/benign/proc/note_set()
+	return 1
+
 
 /datum/config_entry/number/overridden/ValidateAndSet(str_val)
 	config_entry_value = new /datum/thing
@@ -351,6 +360,9 @@ var/datum/controller/configuration/config = new
 	var/joined
 	var/config_number
 	var/config_overridden
+	var/config_benign
+	var/from_regex
+	var/from_regex_find
 	var/config_other
 	var/config_unknown
 
@@ -363,5 +375,51 @@ var/datum/controller/configuration/config = new
 	joined = joined_of(L)
 	config_number = global.config.Get(/datum/config_entry/number/limit)
 	config_overridden = global.config.Get(/datum/config_entry/number/overridden)
+	config_benign = global.config.Get(/datum/config_entry/number/benign)
+	var/regex/R = regex("a")
+	from_regex = R.Replace("abc", "b")
+	from_regex_find = R.Find("abc")
 	config_other = global.config.Get(/datum/config_entry/other/thing)
 	config_unknown = global.config.Get(config_number)
+
+// A declared `as text` / `as num` return, an `as text` parameter, and a finding listing every assigning line.
+/datum/declared
+	var/declared_ret
+	var/declared_num
+	var/echoed
+	var/echoed_bad
+	var/two_writes
+	var/interpolated
+
+/datum/declared/proc/id_text()
+	return "[type]"
+
+/datum/declared/proc/declared_text() as text
+	return mixed(1)
+
+/datum/declared/proc/declared_number() as num
+	return mixed(0)
+
+/datum/declared/proc/declared_thing() as /datum/thing
+	return mixed(1)
+
+/proc/echo_text(table as text)
+	return table
+
+/proc/echo_bad(table as text)
+	return table
+
+/proc/feed_bad()
+	return echo_bad(new /datum/thing)
+
+/datum/declared/proc/use()
+	declared_ret = declared_text()
+	declared_num = declared_number()
+	echoed = echo_text("x")
+	echoed_bad = echo_bad("x")
+	two_writes = mixed(1)
+	interpolated = id_text()
+
+/datum/declared/proc/use_again(flag)
+	two_writes = mixed(flag)
+	two_writes = declared_thing()

@@ -32,7 +32,7 @@
 		"liq_rec" = owner.vore_prefs.receive_reagents,
 		"liq_giv" = owner.vore_prefs.give_reagents,
 		"liq_apply" = owner.vore_prefs.apply_reagents,
-		"autotransferable" = owner.autotransferable,
+		"autotransferable" = sparse_get_or(owner, autotransferable, TRUE),
 		"noisy_full" = owner.vore_prefs.noisy_full, //Belching while full
 
 		"allow_mind_transfer" = owner.vore_prefs.allow_mind_transfer,

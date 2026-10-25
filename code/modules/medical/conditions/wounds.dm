@@ -128,7 +128,7 @@
 	apply_current_stage()
 
 /datum/affliction/wound/proc/apply_current_stage()
-	min_damage = stage_damage(current_stage)
+	min_damage = num_or_null(stage_damage(current_stage))
 	set_desc(stage_desc(current_stage))
 	set_name(desc)
 

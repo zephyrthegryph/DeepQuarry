@@ -19,7 +19,8 @@
 //! type) finds; an assignment through a receiver of unknown type counts against every var of that name. The proof does not see a write
 //! through `vars[...]` or a map instance var; the lint's own rules do not either.
 //!
-//! A parameter is a value when it is untyped, takes a literal default, and every call of a proc of that name in the tree passes a value in
+//! A proc whose declaration says `as text` / `as num` returns a value. A parameter is a value when it has no type path (an `as text` input type is
+//! allowed: DM does not enforce it for a plain call, so the call sites below still decide), takes a literal default, and every call of a proc of that name in the tree passes a value in
 //! its position (a call may reach any proc of its name, so this is judged by name). A name is ruled out when a definition is a verb or
 //! overrides a DM builtin (a player or the engine supplies the arguments), when the name appears as a bare identifier, a string or a type
 //! path anywhere (`PROC_REF(x)`, `call(o, "x")`: a call nothing here sees), and when any call of it uses a named argument or `arglist()`.
@@ -56,6 +57,9 @@ pub const BUILTIN_VALUE_CALLS: &[&str] = &[
 /// Methods of the DM builtin types (`list.Find`, `list.Join`, `regex.Replace`) whose result is a number or text. Used for a method call
 /// on a receiver of unknown type, and only when no proc of the tree has that name (so the call can reach nothing but the builtin).
 pub const BUILTIN_VALUE_METHODS: &[&str] = &["Find", "Join", "Replace"];
+
+/// Methods of the builtin `/regex` type that return a number (`Find`) or text (`Replace`); used when the receiver is statically a regex.
+const REGEX_VALUE_METHODS: &[&str] = &["Find", "Replace"];
 
 /// The config entry classes whose stored value is a number, flag or text (`ValidateAndSet` of the class is the only writer): a
 /// `global.config.Get(/datum/config_entry/number/x)` read is then a value.
@@ -267,7 +271,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                         Follow::Call(_, name, _) => {
                             let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
                             match self.w.type_of(ctx.sc, &recv) {
-                                Some(t) if !t.is_empty() => self.call_value(&t, name, false) || (BUILTIN_VALUE_METHODS.contains(&name.as_str()) && !self.tree_names.contains(name.as_str())),
+                                Some(t) if !t.is_empty() => self.call_value(&t, name, false) || (t == "/regex" && REGEX_VALUE_METHODS.contains(&name.as_str()) && self.sem.proc_ref("/regex", name).is_none_or(|r| r.is_builtin())) || (BUILTIN_VALUE_METHODS.contains(&name.as_str()) && !self.tree_names.contains(name.as_str())),
                                 _ => self.any_receiver_value(name),
                             }
                         }
@@ -344,9 +348,38 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             return false;
         }
         let Some(class) = CONFIG_VALUE_CLASSES.iter().find(|c| path == **c || path.starts_with(&format!("{c}/"))) else { return false };
-        match self.sem.proc_ref(&path, "ValidateAndSet") {
-            Some(r) => type_key(&r.ty().get().path) == *class,
-            None => false,
+        self.config_class_clean(&path, class)
+    }
+
+    /// No type from `path` up to (not including) `class` assigns `config_entry_value`: the class's `ValidateAndSet` stays its one writer, so a
+    /// subtype that only adds a side effect (`. = ..()` then a call) still holds a number, flag or text.
+    fn config_class_clean(&self, path: &str, class: &str) -> bool {
+        let Some(mut cur) = self.sem.ty(path) else { return false };
+        loop {
+            if type_key(&cur.get().path) == class {
+                return true;
+            }
+            for (_, tp) in cur.get().procs.iter() {
+                for v in tp.value.iter() {
+                    let Some(code) = v.code.as_ref() else { continue };
+                    let mut writes = false;
+                    for_each_expr(code, &mut |e| {
+                        let Expression::AssignOp { lhs, .. } = e else { return };
+                        let Expression::Base { term, follow } = strip_parens(lhs) else { return };
+                        writes |= match follow.last() {
+                            Some(last) => matches!(&last.elem, Follow::Field(_, n) if n == "config_entry_value"),
+                            None => matches!(&term.elem, Term::Ident(n) if n == "config_entry_value"),
+                        };
+                    });
+                    if writes {
+                        return false;
+                    }
+                }
+            }
+            match cur.parent_type() {
+                Some(p) => cur = p,
+                None => return false,
+            }
         }
     }
 
@@ -514,7 +547,8 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         let ctx = Ctx { sc: &sc, locals: &value_locals, def: Some(id) };
         self.scan_var_writes(&ctx, code);
         self.scan_calls(&ctx, code, &self.def_names[id]);
-        self.returns_ok(&ctx, code)
+        // The body is still scanned above (its calls narrow the parameters); a declared `as text` / `as num` return then settles the answer.
+        declared_value_return(r) || self.returns_ok(&ctx, code)
     }
 
     /// The locals of a proc whose every assignment is a value.
@@ -653,7 +687,20 @@ fn literal_expr(e: &Expression) -> bool {
 /// The procs whose untyped parameters could receive only values: per name and position, true unless something rules it out here. A name is
 /// ruled out when a definition is a verb (a player supplies the arguments), overrides a DM builtin (the engine calls it), or is named by a
 /// reference or a string anywhere (`PROC_REF(x)`, `/proc/x`, `call(o, "x")`: called with arguments nothing here can see). A position is ruled
-/// out when its parameter has a type, an input type or a non-literal default. The call sites then narrow it (`call_site`).
+/// out when its parameter has a type, an input type that is not text/num/null kinds or a non-literal default. The call sites then narrow it (`call_site`).
+/// An input type made only of number, text and null kinds (`as text`, `as num|null`): never a reference.
+fn value_input(t: dreammaker::ast::InputType) -> bool {
+    use dreammaker::ast::InputType as I;
+    let allowed = I::TEXT | I::NUM | I::NULL | I::MESSAGE | I::PASSWORD | I::COMMAND_TEXT | I::COLOR | I::KEY;
+    !t.is_empty() && t.difference(allowed).is_empty()
+}
+
+/// The proc's declaration says it returns only numbers and text (`/proc/f() as text`). A pointer-ish declared type never counts.
+fn declared_value_return(r: ProcRef) -> bool {
+    use dreammaker::ast::ProcReturnType;
+    r.get_declaration().is_some_and(|d| matches!(&d.return_type, ProcReturnType::InputType(t) if value_input(*t)))
+}
+
 fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> HashMap<String, Vec<bool>> {
     use dreammaker::constants::Constant;
     let mut named: HashSet<String> = HashSet::new();
@@ -674,7 +721,7 @@ fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> HashMap<String, Vec<bool>> {
             slot.resize(v.parameters.len(), true);
         }
         for (i, p) in v.parameters.iter().enumerate() {
-            if !p.var_type.type_path.is_empty() || p.input_type.is_some() || p.in_list.is_some() || p.default.as_ref().is_some_and(|d| !literal_expr(d)) {
+            if !p.var_type.type_path.is_empty() || p.input_type.is_some_and(|t| !value_input(t)) || p.in_list.is_some() || p.default.as_ref().is_some_and(|d| !literal_expr(d)) {
                 slot[i] = false;
             }
         }

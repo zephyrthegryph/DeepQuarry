@@ -85,7 +85,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	return get_ai_emotions(A.actor.ckey)
 
 /obj/machinery/ai_status_display/proc/emotion_selected(datum/act/op/A)
-	emotion = A.step_value("emotion")
+	emotion = text_or_null(A.step_value("emotion"))
 	return OP_OK
 
 /obj/machinery/ai_status_display/proc/update()

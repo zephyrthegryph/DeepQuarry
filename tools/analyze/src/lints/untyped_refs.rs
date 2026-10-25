@@ -46,6 +46,9 @@ static META: Meta = Meta {
     lists: &["exempt_types"],
 };
 
+/// How many offending assignment lines one finding lists.
+const MAX_SHOWN: usize = 8;
+
 struct Untyped;
 
 fn walk_block(b: &dreammaker::ast::Block, f: &mut dyn FnMut(&Expression, u32)) {
@@ -92,8 +95,8 @@ impl Lint for Untyped {
         let w = Walker { sem, kinds: &kinds };
         let values = ValueProcs::build(sem, &w);
         let root = &cx.tree.root;
-        // (declaring type, var) -> (rule, "file:line of the first assignment")
-        let mut found: BTreeMap<(String, String), (&'static str, String)> = BTreeMap::new();
+        // (declaring type, var) -> (rule, every "file:line" that assigns it an offending value)
+        let mut found: BTreeMap<(String, String), (&'static str, Vec<String>)> = BTreeMap::new();
         for ty in sem.objtree.iter_types() {
             let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
             for (_, tp) in ty.get().procs.iter() {
@@ -129,9 +132,12 @@ impl Lint for Untyped {
                                 None => return,
                             };
                             let at = format!("{}:{}", rel, engine_line(root, rel, line));
-                            let slot = found.entry((o, name)).or_insert((rule, at));
+                            let slot = found.entry((o, name)).or_insert((rule, Vec::new()));
                             if rule == "typed" && slot.0 == "call" {
                                 slot.0 = "typed";
+                            }
+                            if !slot.1.contains(&at) {
+                                slot.1.push(at);
                             }
                         });
                     });
@@ -142,7 +148,9 @@ impl Lint for Untyped {
         for ((o, name), (rule, at)) in found {
             let Some(sig) = sem.var_decl(&o, &name) else { continue };
             let what = if rule == "typed" { "an atom or datum" } else { "a call's result" };
-            rows.push((sig.file.clone(), sig.line, rule, format!("{}/var/{} has no type and is assigned {} (e.g. {})", if o == "/" { "" } else { o.as_str() }, name, what, at), format!("{}::{}", o, name)));
+            let shown = at.iter().take(MAX_SHOWN).cloned().collect::<Vec<_>>().join(", ");
+            let more = if at.len() > MAX_SHOWN { format!(" and {} more", at.len() - MAX_SHOWN) } else { String::new() };
+            rows.push((sig.file.clone(), sig.line, rule, format!("{}/var/{} has no type and is assigned {} at {}{}", if o == "/" { "" } else { o.as_str() }, name, what, shown, more), format!("{}::{}", o, name)));
         }
         rows.sort();
         for (rel, line, rule, msg, ident) in rows {

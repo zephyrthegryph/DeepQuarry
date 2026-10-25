@@ -722,9 +722,11 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_autotransferable(datum/act/op/A)
-	host().autotransferable = !host().autotransferable
-	if(host().client.prefs_vr)
-		host().client.prefs_vr.autotransferable = host().autotransferable
+	var/mob/vore_host = host()
+	var/new_autotransfer = !sparse_get_or(vore_host, autotransferable, TRUE)
+	sparse_set_or(vore_host, autotransferable, new_autotransfer, TRUE)
+	if(vore_host.client.prefs_vr)
+		vore_host.client.prefs_vr.autotransferable = new_autotransfer
 	set_unsaved_changes(TRUE)
 	return TRUE
 //Belch code

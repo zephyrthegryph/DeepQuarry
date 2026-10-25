@@ -121,7 +121,7 @@ TYPE_TABLE(/datum/preference/choiced/human/directory_erptag, pref_choices, GLOB.
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/capture_crystal/apply_to_human(mob/living/carbon/human/target, value)
-	target.capture_crystal = value
+	sparse_set_or(target, capture_crystal, value ? TRUE : FALSE, TRUE)
 
 
 // --- auto_backup_implant ---------------------------------------------------

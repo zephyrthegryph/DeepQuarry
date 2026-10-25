@@ -1,5 +1,8 @@
 
 
+// Rock-climbing speed of the item (default 1; lower is better): sparse slot climbing_delay.
+sparse(/obj/item, climbing_delay, type = num)
+
 /obj/item
 	name = "item"
 	icon = 'icons/obj/weapons.dmi' //'icons/obj/items.dmi' //It was accidentally set to weapons.dmi 11 months ago...leaving it as is until further analysis
@@ -63,7 +66,7 @@
 
 
 
-	var/climbing_delay = 1 //If rock_climbing, lower better.
+	// climbing_delay (default 1; if rock_climbing, lower better) is the sparse slot declared above this block.
 	var/digestable = TRUE
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
