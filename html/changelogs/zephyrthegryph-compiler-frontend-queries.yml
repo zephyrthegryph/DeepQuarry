@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiler frontend: the directive plan and expansion adopt the previous request's unchanged include subtrees and regions, driven by the query database's source change log; a hot one-file edit spends 0.4 s in the frontend instead of 1.2-2.2 s."
+  - qol: "Native compiler: declaration parsing no longer stalls behind a progress line for every few chunks (about 0.5 s per request)."

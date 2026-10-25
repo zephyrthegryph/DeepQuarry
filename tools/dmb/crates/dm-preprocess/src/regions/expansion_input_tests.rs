@@ -86,18 +86,17 @@ fn current_locations_and_prepared_control_shape_cannot_inherit_admission() {
     let original = plan(source, &[("USED", "3")]);
     expand_regions_text_with_memo(&original, 1, &memo);
     let mut shifted = original.clone();
-    shifted.regions[0].segments[0].lines[1].source_line += 10;
+    Arc::make_mut(&mut shifted.regions[0].segments)[0].lines[1].source_line += 10;
     assert!(memo.inputs.lookup(&shifted, 0).is_none());
     let mut renamed = original.clone();
     // __FILE__ is not observed, so a semantic spelling change alone is harmless.
     renamed.occurrences[0].semantic_path = Arc::from("other.dme");
     assert!(memo.inputs.lookup(&renamed, 0).is_some());
     let mut masked = original.clone();
-    masked.regions[0].segments[0].lines[1].text = "    return 99\n".into();
+    Arc::make_mut(&mut masked.regions[0].segments)[0].lines[1].text = "    return 99\n".into();
     assert!(memo.inputs.lookup(&masked, 0).is_none());
     let mut segmented = original.clone();
-    segmented.regions[0]
-        .segments
+    Arc::make_mut(&mut segmented.regions[0].segments)
         .push(crate::regions::ExpansionSegment {
             lines: Vec::new(),
             macros: Default::default(),

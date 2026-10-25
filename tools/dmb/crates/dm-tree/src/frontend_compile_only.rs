@@ -11,8 +11,8 @@ impl FrontendRevision {
         match Arc::try_unwrap(self.0) {
             Ok(mut frontend) => {
                 for region in &mut frontend.plan.regions {
-                    region.segments = Vec::new();
-                    region.effects = Vec::new();
+                    region.segments = Arc::new(Vec::new());
+                    region.effects = Arc::new(Vec::new());
                 }
                 Ok(Self::new(frontend))
             }

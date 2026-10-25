@@ -87,3 +87,29 @@ fn clearing_one_clone_preserves_other_owner_and_iterator_boundaries() {
     assert_eq!(retained.partition_point(|_| false), 0);
     assert_eq!(retained.partition_point(|_| true), 3);
 }
+
+#[test]
+fn a_search_from_any_hint_finds_the_same_row_as_the_full_search() {
+    let path = Arc::new(PathBuf::from("included.dm"));
+    let traces = Arc::new(Vec::new());
+    let mut builder = OriginArenaBuilder::default();
+    // Lines of varying length, with some empty ones.
+    let mut end = 0usize;
+    for line in 1..=300usize {
+        let mut origin = row(line, path.clone(), traces.clone());
+        let length = (line * 7) % 5;
+        origin.output_span = Span::new(end, end + length);
+        end += length + 1;
+        builder.push(origin);
+    }
+    let arena = builder.finish();
+    for offset in (0..end + 5).step_by(3) {
+        let expected = arena.partition_point(|view| view.output_span.end <= offset);
+        for hint in [0usize, 1, 7, 150, 299, 300, 301, 10_000] {
+            let found = arena.partition_point_near(hint, |view| view.output_span.end <= offset);
+            assert_eq!(found, expected, "offset {offset} hint {hint}");
+        }
+    }
+    let empty = ExpandedOriginArena::default();
+    assert_eq!(empty.partition_point_near(5, |_| true), 0);
+}

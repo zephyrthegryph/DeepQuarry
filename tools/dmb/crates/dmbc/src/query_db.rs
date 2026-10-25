@@ -33,6 +33,9 @@ pub struct Revision {
 }
 
 pub struct QueryDb {
+    /// Names this database inside a revision token (see `SourceChanges`): a token from another
+    /// database, or from before a restart, is not one this log can answer for.
+    id: u64,
     db: Db,
     /// Current answers of every query a stored unit read (see `answer` below).
     answers: Answers,
@@ -41,7 +44,18 @@ pub struct QueryDb {
     /// Sources of the previous revision by path: key, the prepared owner (held, so an unchanged
     /// capture is recognised by identity without rehashing) and its content hash.
     sources: Mutex<BTreeMap<PathBuf, (Key, Arc<PreparedSource>, u128)>>,
+    /// What each recent revision changed, so a consumer that last saw revision `r` can ask which
+    /// sources differ now (`SourceChanges::changes_since`).
+    changes: Mutex<std::collections::VecDeque<RevisionChange>>,
 }
+/// The sources one request changed or removed, between two revisions of the database.
+struct RevisionChange {
+    before: u64,
+    after: u64,
+    paths: Arc<Vec<PathBuf>>,
+}
+/// Requests whose changes are kept; a consumer older than this asks for a full comparison.
+const CHANGE_LOG: usize = 64;
 impl Default for QueryDb {
     fn default() -> Self {
         let db = Db::new();
@@ -60,11 +74,14 @@ impl Default for QueryDb {
             let hash = hasher.digest128();
             Ok(Outcome::new(hash, hash, 16))
         });
+        static NEXT_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
+            id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             db,
             answers: Answers::default(),
             unit_proofs: UnitProofs::default(),
             sources: Mutex::new(BTreeMap::new()),
+            changes: Mutex::new(std::collections::VecDeque::new()),
         }
     }
 }
@@ -79,6 +96,8 @@ impl QueryDb {
         project: u128,
     ) -> Result<Revision, QueryError> {
         let computed_before = self.db.stats(PROGRAM).computed;
+        let revision_before = self.db.revision();
+        let mut changed_paths = Vec::new();
         // A new request: every answer is proven again (or carried) before it is used.
         self.answers.next_request();
         let mut previous = self.sources.lock().unwrap_or_else(|error| error.into_inner());
@@ -94,6 +113,7 @@ impl QueryDb {
             };
             if self.db.set_input(key, (), hash) {
                 changed += 1;
+                changed_paths.push(path.clone());
             }
             current.insert(path.clone(), (key, Arc::clone(source), hash));
         }
@@ -101,6 +121,7 @@ impl QueryDb {
         for (path, (key, _, _)) in previous.iter() {
             if !current.contains_key(path) && self.db.remove(*key) {
                 removed += 1;
+                changed_paths.push(path.clone());
             }
         }
         if self.db.set_input(PROJECT_KEY, (), project) {
@@ -113,6 +134,17 @@ impl QueryDb {
         drop(previous);
         let params: Value = Arc::new(keys);
         self.db.hash(PROGRAM_KEY, params)?;
+        {
+            let mut log = self.changes.lock().unwrap_or_else(|error| error.into_inner());
+            log.push_back(RevisionChange {
+                before: revision_before,
+                after: self.db.revision(),
+                paths: Arc::new(changed_paths),
+            });
+            while log.len() > CHANGE_LOG {
+                log.pop_front();
+            }
+        }
         Ok(Revision {
             revision: self.db.revision(),
             sources: count,
@@ -120,6 +152,41 @@ impl QueryDb {
             removed,
             green: self.db.stats(PROGRAM).computed == computed_before,
         })
+    }
+}
+
+/// Bits of a token that hold the database revision; the rest name the database.
+const TOKEN_REVISION_BITS: u32 = 40;
+impl dm_preprocess::SourceChanges for QueryDb {
+    fn revision(&self) -> u64 {
+        (self.id << TOKEN_REVISION_BITS) | self.db.revision()
+    }
+    /// The sources changed or removed by every request after `revision`; `None` when the log no
+    /// longer reaches back to it, or `revision` is not one this database has had.
+    fn changes_since(&self, token: u64) -> Option<Arc<std::collections::BTreeSet<PathBuf>>> {
+        if token >> TOKEN_REVISION_BITS != self.id {
+            return None;
+        }
+        let revision = token & ((1 << TOKEN_REVISION_BITS) - 1);
+        let current = self.db.revision();
+        if revision > current {
+            return None;
+        }
+        if revision == current {
+            return Some(Arc::new(std::collections::BTreeSet::new()));
+        }
+        let log = self.changes.lock().unwrap_or_else(|error| error.into_inner());
+        let mut entries = log.iter().skip_while(|entry| entry.after <= revision);
+        let first = entries.next()?;
+        // The log must reach back to `revision`: its first later entry starts at or before it.
+        if first.before > revision {
+            return None;
+        }
+        let mut changed: std::collections::BTreeSet<PathBuf> = first.paths.iter().cloned().collect();
+        for entry in entries {
+            changed.extend(entry.paths.iter().cloned());
+        }
+        Some(Arc::new(changed))
     }
 }
 
@@ -1167,5 +1234,37 @@ mod tests {
         let novel = dm_ir::ResolveQuery::HasMemberVar { owner: symbol("/datum/a"), name: symbol("novel") };
         answers.current(query_id(&novel), &novel);
         assert_eq!(db.prove_against_base(&answers, marks, 1), Ok(asked().len()));
+    }
+
+    #[test]
+    fn the_change_log_answers_which_sources_changed_since_a_revision() {
+        use dm_preprocess::SourceChanges;
+        let db = QueryDb::default();
+        db.revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1).unwrap();
+        let at_first = db.revision();
+        assert!(db.changes_since(at_first).unwrap().is_empty());
+        db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y")]), 1).unwrap();
+        let after_a = db.revision();
+        db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y"), ("c.dm", "z")]), 1).unwrap();
+        db.revise(&sources(&[("a.dm", "x2"), ("c.dm", "z")]), 1).unwrap();
+        let path = |name: &str| PathBuf::from(name);
+        let since_first = db.changes_since(at_first).unwrap();
+        assert_eq!(
+            since_first.iter().cloned().collect::<Vec<_>>(),
+            vec![path("a.dm"), path("b.dm"), path("c.dm")]
+        );
+        let since_a = db.changes_since(after_a).unwrap();
+        assert_eq!(
+            since_a.iter().cloned().collect::<Vec<_>>(),
+            vec![path("b.dm"), path("c.dm")]
+        );
+        assert!(db.changes_since(db.revision()).unwrap().is_empty());
+        // A revision the database never had, one of another database, or one the log no longer reaches.
+        assert!(db.changes_since(db.revision() + 1).is_none());
+        assert!(QueryDb::default().changes_since(at_first).is_none());
+        for step in 0..(CHANGE_LOG + 2) {
+            db.revise(&sources(&[("a.dm", &format!("v{step}")), ("c.dm", "z")]), 1).unwrap();
+        }
+        assert!(db.changes_since(at_first).is_none());
     }
 }

@@ -7,6 +7,9 @@ use std::sync::Mutex;
 
 #[derive(Clone, Debug, Default)]
 pub struct ExpandedRegions {
+    /// Admission key of every region of the plan this expanded (see `ExpansionInputs`), kept so a
+    /// later expansion that copies a region copies its key too.
+    pub input_keys: Arc<Vec<Option<[u8; 16]>>>,
     pub text: crate::SourceText,
     /// Lex the joined stream once: declarations and expressions may cross
     /// include boundaries and cannot be parsed as independent file programs.
@@ -79,9 +82,9 @@ fn expand_regions_inner(
     retain_tokens: bool,
     memo: Option<&dyn region_memo::ExpansionMemo>,
 ) -> ExpandedRegions {
-    if let Some(admissions) = memo.and_then(|memo| memo.input_admissions()) {
-        admissions.retain_current(plan);
-    }
+    let input_keys = memo
+        .and_then(|memo| memo.input_admissions())
+        .map(|admissions| admissions.retain_current(plan));
     let count = plan.regions.len();
     let worker_count = executor.workers().min(count.max(1));
     let outputs = if worker_count == 1 {
@@ -146,6 +149,7 @@ fn expand_regions_inner(
     };
     let mut output_offset = 0usize;
     let mut result = ExpandedRegions {
+        input_keys: Arc::new(input_keys.unwrap_or_default()),
         origins: ExpandedOriginArena::default(),
         diagnostics: diagnostics
             .into_iter()
@@ -174,6 +178,7 @@ fn expand_regions_inner(
                 region: *index,
                 output: Span::new(output_start, output_offset),
                 record,
+                rows: output.lines.len(),
             });
         }
         for (relative_span, source_line, source_span, macro_expansions) in output.lines {
@@ -459,7 +464,7 @@ mod tests {
             let mut expected = String::new();
             let mut origins = Vec::new();
             let mut traces = Vec::new();
-            for segment in &region.segments {
+            for segment in region.segments.iter() {
                 for line in &segment.lines {
                     let source = line.text.trim_end_matches(['\r', '\n']);
                     if source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
