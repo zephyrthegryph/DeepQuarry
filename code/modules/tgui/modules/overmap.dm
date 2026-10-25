@@ -189,7 +189,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 /datum/tgui_module/ship/fullmonty/New(host, obj/effect/overmap/visitable/ship/new_linked)
 	. = ..()
 	if(!istype(new_linked))
-		CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
+		CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong!")
 	rel_set(src, nameof(linked), new_linked)
 	name = initial(name) + " ([linked().name])"
 	// HELM

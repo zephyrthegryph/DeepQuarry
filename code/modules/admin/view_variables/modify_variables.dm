@@ -356,15 +356,15 @@ GLOBAL_PROTECT(VVpixelmovement)
 	log_admin("[key_name(src)] modified [original_name]'s [objectvar]: [original_var]=[new_var]")
 	message_admins("[key_name_admin(src)] modified [original_name]'s varlist [objectvar]: [original_var]=[new_var]")
 
-/proc/vv_varname_lockcheck(param_var_name)
+/proc/vv_varname_lockcheck(client/user, param_var_name)
 	if(param_var_name in GLOB.VVlocked)
-		if(!check_rights(R_DEBUG))
+		if(!admin_can(user, R_DEBUG))
 			return FALSE
 	if(param_var_name in GLOB.VVckey_edit)
-		if(!check_rights(R_SPAWN|R_DEBUG))
+		if(!admin_can(user, R_SPAWN|R_DEBUG))
 			return FALSE
 	if(param_var_name in GLOB.VVicon_edit_lock)
-		if(!check_rights(R_FUN|R_DEBUG))
+		if(!admin_can(user, R_FUN|R_DEBUG))
 			return FALSE
 	return TRUE
 
@@ -427,7 +427,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 		return ASK_STOP
 
 	var/var_value = vv_var_value(O, variable)
-	if(!vv_varname_lockcheck(variable))
+	if(!vv_varname_lockcheck(src, variable))
 		return ASK_STOP
 
 	var/default = vv_get_class(variable, var_value)

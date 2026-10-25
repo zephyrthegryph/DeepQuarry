@@ -204,7 +204,7 @@ CAPABILITIES(/datum/permissions_panel)
 		var/list/rank_info = all_ranks[rank_name]
 		var/can_modify = FALSE
 		var/can_delete = FALSE
-		if((rank_datum.source == RANK_SOURCE_DB && check_rights(R_DBRANKS)) || rank_datum.source == RANK_SOURCE_TEMPORARY)
+		if((rank_datum.source == RANK_SOURCE_DB && holder().check_for_rights(R_DBRANKS)) || rank_datum.source == RANK_SOURCE_TEMPORARY)
 			can_modify = TRUE
 			can_delete = TRUE
 		if(length(admins_by_rank[rank_name]) != 0)
@@ -224,7 +224,7 @@ CAPABILITIES(/datum/permissions_panel)
 		))
 	data["rows"] = rows
 	data["loading"] = !db_rows || isnull(db_rows["admins"]) || isnull(db_rows["ranks"])
-	data["can_create"] = check_rights(R_PERMISSIONS) && holder().can_edit_rights_flags() != NONE
+	data["can_create"] = holder().check_for_rights(R_PERMISSIONS) && holder().can_edit_rights_flags() != NONE
 	return data
 
 /datum/permissions_panel/proc/page_data_logging()
@@ -295,7 +295,7 @@ CAPABILITIES(/datum/permissions_panel)
 		var/datum/admin_rank/rank_datum = rank_datums[1]
 		var/list/rank_info = all_db_ranks[unused_rank]
 		var/can_delete = FALSE
-		if(rank_datum.source == RANK_SOURCE_DB && check_rights(R_DBRANKS))
+		if(rank_datum.source == RANK_SOURCE_DB && holder().check_for_rights(R_DBRANKS))
 			can_delete = TRUE
 		if((holder().can_edit_rights_flags() & rank_datum.rights) == rank_datum.rights)
 			can_delete = FALSE

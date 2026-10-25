@@ -127,6 +127,7 @@
 					src.forceMove(occupant.loc) // Failsafe to make sure the wheelchair stays beneath the occupant after driving
 
 CAPABILITIES(/obj/structure/bed/chair/wheelchair)
+	drag_onto(PROC_REF(drop_input))
 	configure(buckle_rules(movable = 1))
 	click_order(BIND_HAND, "touch", "buckle.unbuckle")
 	configure(buckle(smallest = nameof(min_mob_buckle_size), largest = nameof(max_mob_buckle_size)))
@@ -136,7 +137,7 @@ CAPABILITIES(/obj/structure/bed/chair/wheelchair)
 /obj/structure/bed/chair/wheelchair/proc/touched(datum/act/op/A)
 	var/mob/living/user = A.actor
 	if (src?.pulling_target())
-		MouseDrop(user)
+		collapse_for(user, user)
 	else
 		if(has_buckled_mobs())
 			for(var/mob/living/occupant in src.buckled_mob_list())
@@ -211,20 +212,25 @@ CAPABILITIES(/obj/structure/bed/chair/wheelchair)
 		B.set_dir(newdir)
 	bloodiness--
 
-/obj/structure/bed/chair/wheelchair/MouseDrop(over_object, src_location, over_location)
-	..()
-	var/mob/user = usr
+/// The native drop's actor and target, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/structure/bed/chair/wheelchair/proc/drop_input(datum/act/input/A)
+	collapse_for(A.actor, A.over)
+	return INPUT_FALLTHROUGH
+
+/// The mob that dragged the chair onto itself collapses it into its folded form.
+/obj/structure/bed/chair/wheelchair/proc/collapse_for(mob/user, over_object)
 	if(!istype(user))
 		return
 	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))
-		if(!ishuman(user))	return
-		if(has_buckled_mobs())	return 0
+		if(!ishuman(user))
+			return
+		if(has_buckled_mobs())
+			return
 		act_message(user, null, others = "%U% collapses \the [src.name].")
 		var/obj/item/wheelchair/R = new folded_type(get_turf(src))
 		R.name = src.name
 		R.set_color(src.color)
 		expire(0)
-		return
 
 /obj/structure/bed/chair/wheelchair/proc/check_pulled_along()
 	var/mob/living/pulling = src?.pulling_target()
