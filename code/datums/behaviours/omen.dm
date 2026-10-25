@@ -26,11 +26,10 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 
 #define OMEN_TRAIT_SOURCE "omen"
 
-/mob/living
-	/// Base damage from negative events. Cursed take 25% of this damage.
-	var/omen_damage = 1
-	/// If we want to do more evil events, such as spontaneous combustion
-	var/omen_evil = TRUE
+/// Base damage from negative events (sparse slot omen_damage, default 1). Cursed take 25% of this damage.
+sparse(/mob/living, omen_damage, type = num)
+/// If we want to do more evil events, such as spontaneous combustion (sparse slot omen_evil, default TRUE).
+sparse(/mob/living, omen_evil, type = bool)
 
 /// TRUE while the mob carries an omen.
 /mob/living/proc/has_omen()
@@ -45,8 +44,8 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 	if(!has_omen())
 		sparse_set(src, omen_incidents, incidents_left)
 		sparse_set(src, omen_luck, luck_mod)
-		omen_damage = damage_mod
-		omen_evil = evil
+		sparse_set_or(src, omen_damage, damage_mod, 1)
+		sparse_set_or(src, omen_evil, evil, TRUE)
 		sparse_set(src, omen_safe_disposals, safe_disposals)
 		sparse_set(src, omen_vorish, vorish)
 		grant(src, /datum/capability/omen, src)
@@ -58,11 +57,11 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 	// The new omen is weaker than our current omen? Let's split the difference.
 	if(sparse_get_or(src, omen_luck, 1) > luck_mod)
 		sparse_set(src, omen_luck, sparse_get_or(src, omen_luck, 1) + (luck_mod * 0.5))
-	if(omen_damage > damage_mod)
-		omen_damage += damage_mod * 0.5
+	if(sparse_get_or(src, omen_damage, 1) > damage_mod)
+		sparse_set_or(src, omen_damage, sparse_get_or(src, omen_damage, 1) + damage_mod * 0.5, 1)
 	// If the new omen has special modifiers, we take them on forever!
 	if(evil)
-		omen_evil = TRUE
+		sparse_set_or(src, omen_evil, TRUE, TRUE)
 	if(safe_disposals)
 		sparse_set(src, omen_safe_disposals, TRUE)
 	if(vorish)
@@ -131,7 +130,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 	if(living_guy.is_incorporeal()) //no being unlucky if you don't even exist on the same plane.
 		return
 
-	if(omen_evil && prob(0.0001) && (living_guy.stat != DEAD)) // 1 in a million
+	if(sparse_get_or(src, omen_evil, TRUE) && prob(0.0001) && (living_guy.stat != DEAD)) // 1 in a million
 		act_message(living_guy, null, MSG_SELF(span_danger("You suddenly burst into flames!")), MSG_OTHERS(span_danger("%U% suddenly bursts into flames!")))
 		living_guy.emote("scream")
 		living_guy.adjust_fire_stacks(20)
@@ -158,7 +157,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 	var/turf/our_guy_pos = get_turf(our_guy)
 	if(!our_guy_pos)
 		return
-	if(omen_evil)
+	if(sparse_get_or(src, omen_evil, TRUE))
 		for(var/obj/machinery/door/airlock/darth_airlock in turf_contents_of_type(our_guy_pos, /obj/machinery/door/airlock))
 			if(is_bolted(darth_airlock) || !darth_airlock.power_systems_on())
 				continue
@@ -199,11 +198,11 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 				move_into(evil_washer, nameof(evil_washer.washing), our_guy)
 				evil_washer.set_state(4)
 				evil_washer.visible_message(span_danger("[evil_washer] begins its spin cycle!"))
-				evil_washer.start(TRUE, omen_damage)
+				evil_washer.start(TRUE, sparse_get_or(src, omen_damage, 1))
 				omen_consume()
 				return
 
-		if((omen_evil || sparse_get_or(src, omen_safe_disposals, FALSE)) && living_guy.m_intent == I_RUN) //On servers without safe disposals, this is a death sentence. With servers with safe disposals, it's just funny. Either way, walk near disposals.
+		if((sparse_get_or(src, omen_evil, TRUE) || sparse_get_or(src, omen_safe_disposals, FALSE)) && living_guy.m_intent == I_RUN) //On servers without safe disposals, this is a death sentence. With servers with safe disposals, it's just funny. Either way, walk near disposals.
 			for(var/obj/machinery/disposal/evil_disposal in the_turf)
 				if(!evil_disposal.operable())
 					continue
@@ -216,7 +215,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 				omen_consume()
 				return
 
-		if(omen_evil && prob(33)) //This has an additional 2 in 3 chance to not happen as there's a LOT of lights on stations. This should be rarer.
+		if(sparse_get_or(src, omen_evil, TRUE) && prob(33)) //This has an additional 2 in 3 chance to not happen as there's a LOT of lights on stations. This should be rarer.
 			for(var/obj/machinery/light/evil_light in the_turf)
 				if((evil_light.status == LIGHT_BURNED || evil_light.status == LIGHT_BROKEN) || (living_guy.get_shock_protection() == 1)) // we can't do anything :(
 					to_chat(living_guy, span_warning("[evil_light] sparks weakly for a second."))
@@ -228,7 +227,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 				evil_light.visible_message(span_boldwarning("[evil_light] suddenly flares brightly and sparks!"))
 				//evil_light.broken(skip_sound_and_sparks = FALSE) //Let's not break it actually.
 				evil_light.Beam(living_guy, icon_state = "lightning[rand(1,12)]", time = 0.5 SECONDS)
-				living_guy.electrocute_act(35 * (omen_damage * 0.5), evil_light, stun = TRUE) //Stun is binary and scales on damage..Lame.
+				living_guy.electrocute_act(35 * (sparse_get_or(src, omen_damage, 1) * 0.5), evil_light, stun = TRUE) //Stun is binary and scales on damage..Lame.
 				living_guy.emote("scream")
 				omen_consume()
 				return
@@ -247,7 +246,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 				to_chat(living_guy, span_notice("You feel lucky, somehow."))
 				return
 			var/mirror_rand
-			if(omen_evil)
+			if(sparse_get_or(src, omen_evil, TRUE))
 				mirror_rand = rand(1,5)
 			else
 				mirror_rand = rand(1,3)
@@ -263,13 +262,13 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 					evil_mirror.shatter()
 					if(prob(50 * effective_luck)) // sometimes
 						sparse_set(src, omen_luck, sparse_get_or(src, omen_luck, 1) + (0.25))
-						omen_damage += 0.25
+						sparse_set_or(src, omen_damage, sparse_get_or(src, omen_damage, 1) + 0.25, 1)
 					var/max_health_coefficient = (living_guy.get_endurance() * 0.06)
 					for(var/obj/item/organ/external/limb in living_guy.organs)
-						living_guy.injure(INJURY_CUT, max_health_coefficient * omen_damage, limb.organ_tag, evil_mirror)
+						living_guy.injure(INJURY_CUT, max_health_coefficient * sparse_get_or(src, omen_damage, 1), limb.organ_tag, evil_mirror)
 
 			living_guy.status_adjust(STAT_JITTERY, 250)
-			if(omen_evil && prob(7 * effective_luck))
+			if(sparse_get_or(src, omen_evil, TRUE) && prob(7 * effective_luck))
 				to_chat(living_guy, span_warning("You are completely shocked by this turn of events!"))
 				if(ishuman(living_guy))
 					var/mob/living/carbon/human/human_guy = living_guy
@@ -280,7 +279,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 
 			omen_consume()
 			return
-		if(omen_evil)
+		if(sparse_get_or(src, omen_evil, TRUE))
 			for(var/obj/item/reagent_containers/glass/beaker/evil_beaker in the_turf)
 				if(!evil_beaker.is_open_container() && (evil_beaker.reagents.total_volume > 0)) //A closed beaker is a safe beaker!
 					continue
@@ -298,7 +297,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 				continue
 			act_message(living_guy, evil_table, MSG_SELF(span_bolddanger("You stub your toe on %T%!")), \
 				MSG_OTHERS(span_danger("%U% stubs %THEIR% toe on %T%!")))
-			living_guy.injure(INJURY_BLUNT, 2 * omen_damage, pick(BP_L_FOOT, BP_R_FOOT), evil_table)
+			living_guy.injure(INJURY_BLUNT, 2 * sparse_get_or(src, omen_damage, 1), pick(BP_L_FOOT, BP_R_FOOT), evil_table)
 			living_guy.injure(INJURY_PAIN, 25) //It REALLY hurts.
 			living_guy.status_at_least(STAT_WEAKENED, 3)
 			omen_consume()
@@ -332,12 +331,12 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 		act_message(our_guy, null, MSG_SELF(span_bolddanger("You hit your head really badly falling down!")), \
 			MSG_OTHERS(span_danger("%U% hits %THEIR% head really badly falling down!")))
 		var/max_health_coefficient = (our_guy.get_endurance() * 0.5)
-		our_guy.injure(INJURY_BLUNT, max_health_coefficient * omen_damage, BP_HEAD)
+		our_guy.injure(INJURY_BLUNT, max_health_coefficient * sparse_get_or(src, omen_damage, 1), BP_HEAD)
 		if(ishuman(our_guy))
 			var/mob/living/carbon/human/human_guy = our_guy
 			if(human_guy.should_have_organ(O_BRAIN))
 				for(var/obj/item/organ/internal/brain/brain in human_guy.internal_organ_list())
-					human_guy.injure(INJURY_NEURAL, 30 * omen_damage, brain, src) //60 damage kills.
+					human_guy.injure(INJURY_NEURAL, 30 * sparse_get_or(src, omen_damage, 1), brain, src) //60 damage kills.
 			if(human_guy.get_equipped_item(SLOT_ID_EYES) && human_guy.canUnEquip(human_guy.get_equipped_item(SLOT_ID_EYES)))
 				var/turf/T = get_turf(human_guy)
 				if(T)
@@ -450,7 +449,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 			return
 
 		act_message(unlucky_human, null, others = span_danger("%U% accidentally [injury_verb] %THEIR% hand on [item]!"))
-		unlucky_human.injure(injury_kind, damage_to_inflict * omen_damage, current_hand, item)
+		unlucky_human.injure(injury_kind, damage_to_inflict * sparse_get_or(src, omen_damage, 1), current_hand, item)
 
 /mob/living/proc/omen_check_stairs(mob/living/unlucky_soul)
 	if(prob(3 * sparse_get_or(src, omen_luck, 1))) /// Bonk!
@@ -459,12 +458,12 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 			MSG_OTHERS(span_danger("One of the stairs give way as %U% steps onto it, tumbling them down to the bottom!")))
 		var/max_health_coefficient = (unlucky_soul.get_endurance() * 0.09)
 		for(var/obj/item/organ/external/limb in unlucky_soul.organs) //In total, you should have 11 limbs (generally, unless you have an amputation). The full omen variant we want to leave you at 1 hp, the trait version less. As of writing, the trait version is 25% of the damage, so you take 24.75 across all limbs.
-			unlucky_soul.injure(INJURY_BLUNT, max_health_coefficient * omen_damage, limb.organ_tag)
+			unlucky_soul.injure(INJURY_BLUNT, max_health_coefficient * sparse_get_or(src, omen_damage, 1), limb.organ_tag)
 		unlucky_soul.status_at_least(STAT_WEAKENED, 5)
 		omen_consume()
 
 /mob/living/proc/omen_check_taser(mob/living/unlucky_soul, stun_amount, agony_amount, def_zone, used_weapon, electric)
-	if(!electric || !omen_evil) //If it's not electric we don't care! Likewise, if we don't have the omen_evil variant, don't care!
+	if(!electric || !sparse_get_or(src, omen_evil, TRUE)) //If it's not electric we don't care! Likewise, if we don't have the evil omen variant, don't care!
 		return
 	if(!ishuman(unlucky_soul))
 		return
@@ -474,8 +473,8 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 			for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organ_list())
 				if(heart.robotic)
 					continue //Robotic hearts are immune to this.
-				human_guy.injure(INJURY_BLUNT, 10 * stun_amount * omen_damage, heart, src)
-				human_guy.injure(INJURY_BLUNT, 0.25 * agony_amount * omen_damage, heart, src)
+				human_guy.injure(INJURY_BLUNT, 10 * stun_amount * sparse_get_or(src, omen_damage, 1), heart, src)
+				human_guy.injure(INJURY_BLUNT, 0.25 * agony_amount * sparse_get_or(src, omen_damage, 1), heart, src)
 			play_sfx(src, SFX_EFFECTS_SINGLEBEAT)
 			to_chat(unlucky_soul, span_bolddanger("You feel as though your heart stopped"))
 			human_guy.status_at_least(STAT_STUNNED, 5)

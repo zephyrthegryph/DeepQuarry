@@ -84,7 +84,7 @@ impl Default for InitializerFragments {
     fn default() -> Self {
         Self {
             disk: None,
-            values: receipts::Store::current_revision(),
+            values: receipts::Store::shared_current_revision("initializer.fragments"),
             roster: Default::default(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),

@@ -26,7 +26,7 @@ git clone -q "$tmp/origin.git" "$tmp/repo" 2>/dev/null
 cd "$tmp/repo"
 git config user.email t@t; git config user.name t
 mkdir -p tools/ci lanes docs
-cp "$here/tools/dq_train.sh" "$here/tools/dq_train_estimate.js" "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" "$here/tools/dq_light_paths.sh" "$here/tools/dq_gate_retry.sh" tools/
+cp "$here/tools/dq_train.sh" "$here/tools/dq_train_estimate.js" "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" "$here/tools/dq_light_paths.sh" "$here/tools/dq_gate_retry.sh" "$here/tools/dq_declared_tests.sh" tools/
 echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
 cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
@@ -35,12 +35,13 @@ if grep -rq BAD lanes 2>/dev/null; then echo "stub gates: BAD present"; exit 1; 
 n="$(git diff --name-only origin/master HEAD -- lanes | wc -l)"
 if [ -n "${DQ_STUB_CAP_ABOVE:-}" ] && [ "$n" -gt "$DQ_STUB_CAP_ABOVE" ]; then echo "FOCUSED RUN CAPPED: the 10 minute wall-clock cap was hit"; exit 1; fi
 echo "$*" >>"${DQ_STUB_ARGS_LOG:-/dev/null}"
+echo "dc=${DQ_GATE_DREAMCHECKER:-}" >>"${DQ_STUB_DC_LOG:-/dev/null}"
 echo "stub gates: ok (tests: $*)"
 STUB
 cat >tools/dq_push_master.sh <<'STUB'
 #!/usr/bin/env bash
 # stub push: fails on DQ_STUB_PUSH_FAIL, checks the train's environment, then a plain fast-forward push to origin/master
-[ -z "${DQ_STUB_PUSH_FAIL:-}" ] || { echo "stub push: REFUSED (master moved)"; exit 1; }
+[ -z "${DQ_STUB_PUSH_FAIL:-}" ] || { echo "stub push: REFUSED (${DQ_STUB_PUSH_MSG:-origin/master moved})"; exit 1; }
 [ "${DQ_DREAMMAKER_GATE:-}" = 0 ] && [ "${DQ_PUSH_STRICT:-}" = 1 ] && [ -n "${DQ_MERGE_SESSION:-}" ] || { echo "stub push: the train did not set its environment"; exit 1; }
 [ "${DQ_PUSH_DRY_RUN:-0}" = 1 ] && { echo "stub push: dry run"; exit 0; }
 git push -q origin "HEAD:refs/heads/master" || exit 1
@@ -101,6 +102,31 @@ out="$(train run 2>&1)"; rc=$?
 check "the integrator lands a light lane" '[ "$rc" = 0 ] && in_master lane/doc && grep -q "LANDED lane/doc" <<<"$out"'
 check "status lists it as landed and the queue is empty" 'status_has "landed (latest" && status_has "  (empty)" && ! status_has "tests: "'
 
+# ---- enqueue validates --tests names against the tree being enqueued ------------------------------------------------------------
+git fetch -q origin; git switch -q -c lane/names origin/master
+mkdir -p code/modules/unit_tests
+cat >code/modules/unit_tests/names.dm <<'DM'
+/datum/unit_test/solo_leaf/Run()
+	return
+
+/datum/unit_test/parent_only
+/datum/unit_test/parent_only/kid_one/Run()
+	return
+/datum/unit_test/parent_only/kid_two/Run()
+	return
+DM
+git add -A; git commit -q -m names
+out="$(train enqueue --tests "solo_leaf" 2>&1)"; rc=$?
+check "enqueue accepts a declared runnable leaf" '[ "$rc" = 0 ] && grep -q "is queued" <<<"$out"'
+out="$(train enqueue --tests "solo_leef" 2>&1)"; rc=$?
+check "enqueue refuses an unknown test and lists the nearest" '[ "$rc" != 0 ] && grep -q "not declared" <<<"$out" && grep -q "unit_test/solo_leaf" <<<"$out"'
+out="$(train enqueue --tests "parent_only" 2>&1)"; rc=$?
+check "enqueue refuses an abstract parent and lists its subtests" '[ "$rc" != 0 ] && grep -q "abstract parent" <<<"$out" && grep -q "parent_only/kid_one" <<<"$out" && grep -q "parent_only/kid_two" <<<"$out"'
+out="$(train enqueue --tests "parent_only/kid_one /datum/unit_test/solo_leaf" 2>&1)"; rc=$?
+check "enqueue accepts leaf names given as paths or under a parent" '[ "$rc" = 0 ]'
+train dequeue lane/names >/dev/null 2>&1 || rm -f "$DQ_TRAIN_STATE"/queue/lane_names.q 2>/dev/null
+back
+
 # ---- a heavy batch: good, bad, good, a lane that moves after enqueue, two lanes that conflict -----------------------------------------
 mk lane/a lanes/a.txt fine; train enqueue --tests "ta1 ta2" >/dev/null 2>&1; back
 mk lane/b lanes/b.txt BAD; train enqueue --tests "tb1" >/dev/null 2>&1; back
@@ -123,6 +149,8 @@ check "the integrator released its lock" '[ ! -d "$DQ_TRAIN_STATE/run.lock" ]'
 
 # ---- heavy cycles skip the duplicate production compile ----------------------------------------------------------------------------------
 export DQ_STUB_ARGS_LOG="$tmp/gate-args.log"; : >"$DQ_STUB_ARGS_LOG"
+export DQ_STUB_DC_LOG="$tmp/gate-dc.log"; : >"$DQ_STUB_DC_LOG"
+export DQ_TRAIN_STALL_BACKOFF_SEC=0
 
 # ---- a capped test phase halves the batch; every lane still lands ----------------------------------------------------------------------
 mk lane/g lanes/g.txt fine; train enqueue --tests tg >/dev/null 2>&1; back
@@ -143,10 +171,26 @@ check "a lane that would push the test estimate over the budget waits for the ne
 
 # ---- a refused push keeps the lanes queued, bounces nobody -------------------------------------------------------------------------------
 mk lane/l lanes/l.txt fine; train enqueue --tests tl >/dev/null 2>&1; back
-out="$(DQ_STUB_PUSH_FAIL=1 DQ_TRAIN_STALL_CYCLES=2 train run 2>&1)"; rc=$?
-check "a refused push leaves the lane queued and not bounced" '[ "$rc" = 1 ] && grep -q "push FAILED" <<<"$out" && grep -q "STALLED" <<<"$out" && status_has "lane/l  tip" && ! grep -q "BOUNCED lane/l" <<<"$out"'
+out="$(DQ_STUB_PUSH_FAIL=1 DQ_TRAIN_STALL_CYCLES=2 DQ_TRAIN_STALL_EXIT_AFTER=2 train run 2>&1)"; rc=$?
+check "a push refused because master moved leaves the lane queued and not bounced" '[ "$rc" = 1 ] && grep -q "push FAILED" <<<"$out" && grep -q "STALLED" <<<"$out" && status_has "lane/l  tip" && ! grep -q "BOUNCED lane/l" <<<"$out"'
+check "a stall backs off and the integrator keeps running (it only stops at the test hook's second stall)" '[ "$(grep -c "STALLED" <<<"$out")" = 2 ] && grep -q "keeps running" <<<"$out"'
 out="$(train run 2>&1)"
 check "the next integrator lands it" 'in_master lane/l'
+check "every heavy gate ran with DQ_GATE_DREAMCHECKER=1 (DreamChecker is a gate job)" '[ -s "$DQ_STUB_DC_LOG" ] && ! grep -qv "dc=1" "$DQ_STUB_DC_LOG"'
+
+# ---- a refusal that is not "master moved" bounces the lane after 2 attempts, with the refusal line as the reason --------------------------
+mk lane/stallpush lanes/stallpush.txt fine; train enqueue --tests tsp >/dev/null 2>&1; back
+out="$(DQ_STUB_PUSH_FAIL=1 DQ_STUB_PUSH_MSG="the test stamp is missing on this HEAD" DQ_TRAIN_STALL_CYCLES=5 DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "the first non-master-moved refusal keeps the lane queued" 'grep -q "push refusal 1 of 2 for lane/stallpush" <<<"$out" && status_has "lane/stallpush  tip" && ! grep -q "BOUNCED lane/stallpush" <<<"$out"'
+out="$(DQ_STUB_PUSH_FAIL=1 DQ_STUB_PUSH_MSG="the test stamp is missing on this HEAD" DQ_TRAIN_STALL_CYCLES=5 DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "the second one bounces it with the refusal line as the reason" 'grep -q "BOUNCED lane/stallpush" <<<"$out" && grep -q "test stamp is missing" "$DQ_TRAIN_STATE/reports/lane_stallpush.md" && ! status_has "lane/stallpush  tip"'
+
+# ---- the watchdog: ensure is a no-op with an empty queue ---------------------------------------------------------------------------------
+out="$(train ensure 2>&1)"; rc=$?
+check "ensure with nothing queued starts nothing" '[ "$rc" = 0 ] && ! status_has "integrator: RUNNING"'
+check "dq_lane_pool.sh calls the train's ensure after lease and release" 'grep -q "train_watchdog; exit" "$here/tools/dq_lane_pool.sh" && grep -q "dq_train.sh\" ensure" "$here/tools/dq_lane_pool.sh"'
+check "the push trusts the gate's DreamChecker only with the gate's stamp on the exact HEAD" 'grep -q "stamped ratchets && stamped dreamchecker && gate_sha_ok" "$here/tools/dq_push_master.sh"'
+check "the gates run a dreamchecker job in --no-dm mode and fail on its verdict" 'grep -q "names+=(dreamchecker)" "$here/tools/dq_merge_gates.sh" && grep -q "failed+=(dreamchecker)" "$here/tools/dq_merge_gates.sh" && grep -q "dreamchecker.ok" "$here/tools/dq_merge_gates.sh"'
 
 # ---- the lock ----------------------------------------------------------------------------------------------------------------------------
 sleep 60 & holder=$!

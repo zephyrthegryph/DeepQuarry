@@ -18,7 +18,7 @@
 # light branch in one batched merge (tools/dq_land_batch.sh). Compiler holders also get first claim on the machine slots.
 #
 # Why: a fresh worktree is a 24k-file checkout (minutes), cold caches (analyzer, icons, node_modules, compile cache) and about 1.5 GB
-# of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 8) under E:/projects/dq-wt/pool-N, created
+# of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 3: one DM compile slot serves about three lanes plus the train) under E:/projects/dq-wt/pool-N, created
 # once and reused for the life of the machine. At most DQ_LANE_POOL_SIZE general lanes run at once: one more lease is refused.
 #
 # lease <branch>
@@ -57,7 +57,7 @@ set -uo pipefail
 _dq_dir="${BASH_SOURCE[0]%/*}"; [ "$_dq_dir" = "${BASH_SOURCE[0]}" ] && _dq_dir=.   # no dirname fork: a fork costs a few hundred ms on a loaded host
 . "$_dq_dir/dq_git_safe.sh"
 
-POOL_SIZE="${DQ_LANE_POOL_SIZE:-8}"
+POOL_SIZE="${DQ_LANE_POOL_SIZE:-3}"
 COMPILER_SLOTS="${DQ_LANE_POOL_COMPILER:-2}"
 POOL_DIR="${DQ_LANE_POOL_DIR:-E:/projects/dq-wt}"
 STATE_DIR="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}"
@@ -712,6 +712,13 @@ lease_once() {
 	echo "$wt"
 }
 
+train_watchdog() { # restart the train's integrator when lanes are queued and none is running (a fast no-op otherwise); detached, never blocks
+	[ "${DQ_TRAIN_NO_START:-0}" = 1 ] && return 0
+	[ -f "$REPO/tools/dq_train.sh" ] || return 0
+	( nohup bash "$REPO/tools/dq_train.sh" ensure >/dev/null 2>&1 & ) >/dev/null 2>&1
+	return 0
+}
+
 cmd_release() {
 	local target="" force=0 keep=0 i found="" tphys="" sphys="" old="$PWD"
 	while [ $# -gt 0 ]; do
@@ -847,8 +854,8 @@ cmd_path() {
 cmd="${1:-}"
 [ $# -gt 0 ] && shift
 case "$cmd" in
-	lease) cmd_lease "$@" ;;
-	release) cmd_release "$@" ;;
+	lease) cmd_lease "$@"; rc=$?; train_watchdog; exit "$rc" ;;
+	release) cmd_release "$@"; rc=$?; train_watchdog; exit "$rc" ;;
 	status) cmd_status ;;
 	path) cmd_path "$@" ;;
 	cancel) cmd_cancel "$@" ;;

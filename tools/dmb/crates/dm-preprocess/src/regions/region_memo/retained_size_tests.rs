@@ -10,7 +10,7 @@ fn retained_records_charge_owned_capacity_and_duplicate_shared_backings() {
     let mut value = ExpansionRecord {
         key: 0,
         source: "source".to_owned().into(),
-        control: Arc::from([1u8]),
+        control: 1,
         text: "expanded".to_owned().into(),
         reads: Arc::new(Vec::new()),
         locations: Arc::new(Vec::new()),

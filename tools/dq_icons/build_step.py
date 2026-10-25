@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import sys
 import time
@@ -215,6 +216,54 @@ def _repack_one(args: tuple[Path, Path, str]) -> tuple[Path, str | None]:
         return toml, f"{type(e).__name__}: {e}"
 
 
+# Stat fingerprint fast path. Hashing every PNG on every build reads hundreds of MB to learn that
+# nothing changed. After a pair passes the content-hash check (or is repacked) its source and output
+# stats are recorded in <output>/.stat-manifest.json; a later run whose stats are identical skips the
+# read. Any difference (a branch switch rewrites mtimes, an edit changes size or mtime) falls back to
+# the BLAKE2b check above, which stays the authority. DQ_ICON_FORCE_HASH=1 ignores the manifest.
+_MANIFEST_NAME = ".stat-manifest.json"
+_MANIFEST_VERSION = 1
+
+
+def _stat_sig(path: Path) -> str | None:
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    return f"{st.st_size}:{st.st_mtime_ns}"
+
+
+def _fingerprint(toml: Path, out_dmi: Path) -> str | None:
+    png = toml.with_suffix("").with_suffix(".png")
+    sigs = [_stat_sig(png), _stat_sig(toml), _stat_sig(out_dmi), _stat_sig(_hash_sidecar_path(out_dmi))]
+    if any(x is None for x in sigs):
+        return None
+    return "|".join(sigs)  # type: ignore[arg-type]
+
+
+def _load_manifest(output_root: Path) -> dict[str, str]:
+    if os.environ.get("DQ_ICON_FORCE_HASH") == "1":
+        return {}
+    try:
+        data = json.loads((output_root / _MANIFEST_NAME).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict) or data.get("version") != _MANIFEST_VERSION:
+        return {}
+    entries = data.get("entries")
+    return entries if isinstance(entries, dict) else {}
+
+
+def _save_manifest(output_root: Path, entries: dict[str, str]) -> None:
+    try:
+        output_root.mkdir(parents=True, exist_ok=True)
+        tmp = output_root / (_MANIFEST_NAME + f".{os.getpid()}.tmp")
+        tmp.write_text(json.dumps({"version": _MANIFEST_VERSION, "entries": entries}), encoding="utf-8")
+        os.replace(tmp, output_root / _MANIFEST_NAME)
+    except OSError:
+        pass  # a missing manifest only costs the next run a hash pass
+
+
 def _gather_tomls(roots: list[Path], output_root: Path) -> list[Path]:
     tomls: list[Path] = []
     for r in roots:
@@ -248,9 +297,15 @@ def _sweep_stale(output_root: Path, live_dmis: set[Path]) -> int:
     """
     if not output_root.exists():
         return 0
+    live = {os.path.normcase(str(p)) for p in live_dmis}
     removed = 0
-    for f in output_root.rglob("*.dmi"):
-        if f not in live_dmis:
+    for dirpath, _dirs, files in os.walk(output_root):
+        for name in files:
+            if not name.endswith(".dmi"):
+                continue
+            f = Path(dirpath) / name
+            if os.path.normcase(str(f)) in live:
+                continue
             sidecar = _hash_sidecar_path(f)
             try:
                 f.unlink()
@@ -259,16 +314,13 @@ def _sweep_stale(output_root: Path, live_dmis: set[Path]) -> int:
                 removed += 1
             except OSError:
                 pass
-    # Sweep empty dirs bottom-up. rglob gives us depth-first when we
-    # reverse-sort by path length.
+    # Sweep empty dirs bottom-up (os.walk topdown=False visits children first).
     if removed:
-        dirs = sorted(
-            (p for p in output_root.rglob("*") if p.is_dir()),
-            key=lambda p: -len(p.parts),
-        )
-        for d in dirs:
+        for dirpath, _dirs, _files in os.walk(output_root, topdown=False):
+            if Path(dirpath) == output_root:
+                continue
             try:
-                d.rmdir()  # only succeeds if empty
+                Path(dirpath).rmdir()  # only succeeds if empty
             except OSError:
                 pass
     return removed
@@ -286,11 +338,22 @@ def run(roots: list[Path], output_root: Path) -> int:
     check_inputs = [(t, _output_dmi_path(t, output_root)) for t in tomls]
     dirty: list[tuple[Path, Path, str]] = []
     skipped = 0
+    manifest = _load_manifest(output_root)
+    new_manifest: dict[str, str] = {}
+    pending: list[tuple[Path, Path]] = []
+    for toml, out_dmi in check_inputs:
+        fp = _fingerprint(toml, out_dmi)
+        if fp is not None and manifest.get(toml.as_posix()) == fp:
+            new_manifest[toml.as_posix()] = fp
+            skipped += 1
+        else:
+            pending.append((toml, out_dmi))
+    stat_skipped = skipped
     # 4x CPUs is a sweet spot for I/O bound work with cheap CPU per item.
     check_workers = (os.cpu_count() or 4) * 4
     with ThreadPoolExecutor(max_workers=check_workers) as pool:
         for toml, out_dmi, is_dirty, current_hash in pool.map(
-            _check_one, check_inputs, chunksize=32
+            _check_one, pending, chunksize=32
         ):
             if current_hash is None:
                 continue  # missing PNG sibling — ignored
@@ -328,15 +391,26 @@ def run(roots: list[Path], output_root: Path) -> int:
                     else:
                         repacked += 1
 
+    # Record fingerprints of everything now known good (failed repacks stay out so they are retried).
+    failed = {t for t, _ in failures}
+    for toml, out_dmi in pending:
+        if toml in failed:
+            continue
+        fp = _fingerprint(toml, out_dmi)
+        if fp is not None:
+            new_manifest[toml.as_posix()] = fp
+    if new_manifest != manifest:
+        _save_manifest(output_root, new_manifest)
+
     # Pass 3: sweep stale outputs whose source has been deleted. Cheap
     # bookkeeping — runs after every build, no-ops when nothing's stale.
-    live_dmis = {out_dmi.resolve() for _, out_dmi in check_inputs}
+    live_dmis = {out_dmi for _, out_dmi in check_inputs}
     pruned = _sweep_stale(output_root, live_dmis)
 
     dt = time.monotonic() - t0
     print(
         f"icon-repack: {repacked} regenerated into {output_root}, "
-        f"{skipped} up-to-date, {pruned} stale pruned, "
+        f"{skipped} up-to-date ({stat_skipped} by stat), {pruned} stale pruned, "
         f"{len(failures)} failed in {dt:.1f}s "
         f"(dirty-check {check_dt:.1f}s)"
     )

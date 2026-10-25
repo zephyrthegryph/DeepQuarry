@@ -156,6 +156,10 @@ impl SymbolTable {
     pub fn retain_local(&mut self, mut keep: impl FnMut(SymbolId) -> bool) {
         self.texts.retain(|&id, _| keep(id));
     }
+    /// Drop one local spelling (an inherited one is the parent's and stays).
+    pub fn remove_local(&mut self, id: SymbolId) -> bool {
+        self.texts.remove(&id).is_some()
+    }
 
     fn insert(&mut self, id: SymbolId, text: &str) -> Result<SymbolId, SymbolCollision> {
         if let Some(existing) = self.parent.as_ref().and_then(|parent| parent.text(id)) {

@@ -4761,7 +4761,43 @@ var compareFiles = (sources, targets) => {
   }
   return false;
 };
+var FAST_GLOB_RE = /^([^*?\[\]{}()!+@\\]+)\/\*\*\/\*(\.[A-Za-z0-9]+)$/;
+var fastGlob = (globPath) => {
+  const m = FAST_GLOB_RE.exec(globPath);
+  if (!m) {
+    return null;
+  }
+  const root = m[1].replace(/\/+$/, "");
+  const ext = m[2];
+  const out = [];
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = import_fs3.default.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (e.name.charCodeAt(0) === 46) {
+        continue;
+      }
+      const full = dir + "/" + e.name;
+      if (e.isDirectory()) {
+        walk(full);
+      } else if (e.name.endsWith(ext)) {
+        out.push(full);
+      }
+    }
+  };
+  walk(root);
+  out.sort((a, b) => a.localeCompare(b, "en"));
+  return out;
+};
 var glob = (globPath) => {
+  const fast = fastGlob(globPath);
+  if (fast) {
+    return fast;
+  }
   const unsafePaths = import_glob.glob.sync(globPath, {
     strict: false,
     silent: true

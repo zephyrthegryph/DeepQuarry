@@ -786,6 +786,7 @@ pub use prepared_contribution::{
     PreparedContribution, PreparedModifiedSeed, ReusableProcedureArtifact,
 };
 pub(crate) use prepared_contribution::PreparedPatchRecord;
+pub(crate) use procedure_artifact::patch::{Footprint, FOOTPRINT_NAMES};
 
 #[cfg(test)]
 #[path = "symbolic_tests.rs"]
@@ -850,6 +851,107 @@ impl PositionedCode {
                 image_owner: Arc::clone(&self.image_owner),
             },
         )))
+    }
+}
+/// The initializer procedures of a retained output as stored data: each one's symbolic code (words, relocations and labels,
+/// checked again by the independent decoder grammar when restored) and its debug origins. Restoring rebuilds the same
+/// `PositionedCode`, so a patch that moves lines relinks initializers of a restored output exactly as of a live one.
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+pub(crate) struct PositionedList {
+    paths: Vec<String>,
+    codes: Vec<StoredCode>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+struct StoredCode {
+    key: Key,
+    words: Vec<u32>,
+    /// `(offset, reference, packed value tag)`.
+    relocations: Vec<(u32, SymRef, Option<u8>)>,
+    labels: Vec<Option<u32>>,
+    /// `(path position, line)` of each origin entry, in order.
+    origins: Vec<(u32, u32)>,
+}
+impl PositionedList {
+    pub(crate) fn of(codes: &[PositionedCode]) -> Self {
+        let mut paths: Vec<String> = Vec::new();
+        let mut at: std::collections::HashMap<Arc<str>, u32> = std::collections::HashMap::new();
+        let codes = codes
+            .iter()
+            .map(|code| {
+                let symbolic = code.frozen.code();
+                StoredCode {
+                    key: code.key,
+                    words: symbolic.words().into_owned(),
+                    relocations: symbolic
+                        .relocations()
+                        .map(|site| {
+                            let tag = match site.encoding {
+                                dm_ir::RelocationEncoding::Direct => None,
+                                dm_ir::RelocationEncoding::PackedValue24 { tag } => Some(tag),
+                            };
+                            (site.offset, site.reference, tag)
+                        })
+                        .collect(),
+                    labels: code.frozen.labels().to_vec(),
+                    origins: code
+                        .origins
+                        .to_owned_origins()
+                        .entries
+                        .into_iter()
+                        .map(|origin| {
+                            let next = paths.len() as u32;
+                            let id = *at.entry(Arc::clone(&origin.semantic_path)).or_insert_with(|| {
+                                paths.push(origin.semantic_path.to_string());
+                                next
+                            });
+                            (id, origin.line)
+                        })
+                        .collect(),
+                }
+            })
+            .collect();
+        Self { paths, codes }
+    }
+    /// The codes, or `None` when any stored one is not valid code.
+    pub(crate) fn restore(self) -> Option<Vec<PositionedCode>> {
+        let paths: Vec<Arc<str>> = self.paths.iter().map(|path| Arc::from(path.as_str())).collect();
+        self.codes
+            .into_iter()
+            .map(|stored| {
+                let relocations = stored
+                    .relocations
+                    .into_iter()
+                    .map(|(offset, reference, tag)| dm_ir::Relocation {
+                        offset,
+                        reference,
+                        encoding: match tag {
+                            None => dm_ir::RelocationEncoding::Direct,
+                            Some(tag) => dm_ir::RelocationEncoding::PackedValue24 { tag },
+                        },
+                    })
+                    .collect();
+                let code = dm_ir::SymbolicCode::new(stored.words, relocations).ok()?;
+                let frozen = FrozenProc::restore(code, stored.labels).ok()?;
+                let origins = crate::debug_sources::DebugOrigins {
+                    entries: stored
+                        .origins
+                        .into_iter()
+                        .map(|(path, line)| {
+                            Some(crate::debug_sources::DebugOrigin {
+                                semantic_path: Arc::clone(paths.get(path as usize)?),
+                                line,
+                            })
+                        })
+                        .collect::<Option<Vec<_>>>()?,
+                };
+                Some(PositionedCode {
+                    key: stored.key,
+                    frozen: Arc::new(frozen),
+                    origins: origins.into(),
+                    image_owner: Arc::new(latest_image::LatestImage::default()),
+                })
+            })
+            .collect()
     }
 }
 impl FrozenBatch {

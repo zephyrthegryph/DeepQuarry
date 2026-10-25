@@ -245,7 +245,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	if(morphed)
 		var/matrix/M = matrix()
 		M.Scale(icon_scale_x, icon_scale_y)
-		M.Turn(icon_rotation)
+		M.Turn(sparse_get_or(src, icon_rotation, DEFAULT_ICON_ROTATION))
 		src.transform = M
 	else
 		..()

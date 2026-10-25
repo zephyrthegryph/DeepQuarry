@@ -10,8 +10,6 @@ explosion 3 | deleted
 explosion 3 | turf: +/obj/item/stack/material/wood x1
 projectile | atom_integrity: down
 projectile | refresh_queued: DEP_ALL -> 0
-projectile | sparse_slots: null -> list(1)
 thrown | atom_integrity: down
 thrown | refresh_queued: DEP_ALL -> 0
-thrown | sparse_slots: null -> list(1)
 

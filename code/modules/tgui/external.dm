@@ -189,7 +189,13 @@
  *
  * Tracks open windows for a user.
  */
-/client/var/list/tgui_windows = list()
+/client/proc/tgui_window_of(window_id)
+	return session?.tgui_windows?[window_id]
+
+/// Forgets one window id (the window datum is not deleted).
+/client/proc/tgui_window_drop(window_id)
+	if(session)
+		rel_add(session, nameof(session.tgui_windows), null, window_id)
 
 /// Last successfully revealed native size and position by interface.
 /client/var/list/tgui_resolved_geometries
@@ -301,7 +307,7 @@
 		// Mark as reloaded
 		user.client.tgui_cache_reloaded = TRUE
 		// Notify windows
-		var/list/windows = user.client.tgui_windows
+		var/alist/windows = user.client.session?.tgui_windows || alist()
 		for(var/window_id in windows)
 			var/datum/tgui_window/window = windows[window_id]
 			if (window.status == TGUI_WINDOW_READY)
@@ -311,7 +317,7 @@
 	var/window_id = href_list["window_id"]
 	var/datum/tgui_window/window
 	if(window_id)
-		window = user.client.tgui_windows[window_id]
+		window = user.client.tgui_window_of(window_id)
 		if(!window)
 			log_tgui(user,
 				"Error: Couldn't find the window datum, force closing.",

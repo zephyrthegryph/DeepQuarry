@@ -237,7 +237,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         debug_defined,
         reuse.map(|reuse| reuse.store.roster.as_ref()),
     );
-    let receipt_pool = reuse.map(|_| artifact::ReceiptPool::default());
+    let receipt_pool = reuse.map(|_| crate::shared_store::receipt_pool::<_, _, _>("initializer.classification"));
     let classified = map_buckets(buckets, evaluator, executor, |index, bucket, worker| {
         let mut ordinal = 0;
         let result = if let Some(reuse) = reuse {
@@ -256,7 +256,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                         evaluator,
                         reuse,
                         locators.as_ref().map(|keys| &keys[global]),
-                        receipt_pool.as_ref().filter(|_| bucket.ordinals.len() > 1),
+                        receipt_pool.as_deref().filter(|_| bucket.ordinals.len() > 1),
                         modifier_keys
                             .as_ref()
                             .map(|keys| keys[global].shared_input()),

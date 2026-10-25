@@ -41,13 +41,57 @@ pub struct CacheSnapshot {
     pub(crate) segments: Vec<(PathBuf, Arc<Segment>)>,
     groups: Vec<(PathBuf, group_manifest::GroupManifest)>,
     rejected: Mutex<Vec<RejectedSegment>>,
-    index: BTreeMap<RecordKey, Vec<usize>>,
+    index: KeyIndex,
     superseded: Arc<BTreeSet<u128>>,
     rejection_generation: AtomicU64,
     revised_superseded: Mutex<(u64, Arc<BTreeSet<u128>>)>,
     used_keys: Mutex<BTreeSet<RecordKey>>,
     /// Ordinals (into `segments`) of segments that served a record in this snapshot's life; see `touch_used_segments`.
     pub(crate) used_segments: Mutex<BTreeSet<usize>>,
+}
+/// Which segments hold a key, without a per-record heap node: a record's key hash and its segment ordinal in two flat
+/// arrays (12 bytes per record) sorted by hash then ordinal. A lookup binary-searches the hash and confirms each hit
+/// against the segment itself, so a hash collision costs one extra probe and never a wrong answer. The map this
+/// replaced (`BTreeMap<RecordKey, Vec<usize>>`) was about 70 bytes per record plus a heap vector per key.
+struct KeyIndex {
+    hashes: Vec<u64>,
+    ordinals: Vec<u32>,
+}
+impl KeyIndex {
+    fn hash(key: RecordKey) -> u64 {
+        let content = (key.content as u64) ^ ((key.content >> 64) as u64);
+        let tag = ((key.stage as u64) << 32) | key.version as u64;
+        (content ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15)).wrapping_mul(0xD6E8_FEB8_6659_FD93)
+    }
+    fn build(segments: &[(PathBuf, Arc<Segment>)]) -> Self {
+        let total: usize = segments.iter().map(|(_, segment)| segment.record_count()).sum();
+        let mut pairs: Vec<(u64, u32)> = Vec::with_capacity(total);
+        for (ordinal, (_, segment)) in segments.iter().enumerate() {
+            for key in segment.keys() {
+                pairs.push((Self::hash(key), ordinal as u32));
+            }
+        }
+        pairs.sort_unstable();
+        let hashes = pairs.iter().map(|pair| pair.0).collect();
+        let ordinals = pairs.iter().map(|pair| pair.1).collect();
+        Self { hashes, ordinals }
+    }
+    /// Ordinals of the segments holding `key`, ascending.
+    fn get(&self, key: RecordKey, segments: &[(PathBuf, Arc<Segment>)]) -> Vec<usize> {
+        let hash = Self::hash(key);
+        let start = self.hashes.partition_point(|candidate| *candidate < hash);
+        let mut found = Vec::new();
+        for at in start..self.hashes.len() {
+            if self.hashes[at] != hash {
+                break;
+            }
+            let ordinal = self.ordinals[at] as usize;
+            if found.last() != Some(&ordinal) && segments[ordinal].1.contains(key) {
+                found.push(ordinal);
+            }
+        }
+        found
+    }
 }
 #[derive(Debug)]
 pub struct CompactResult {
@@ -131,12 +175,7 @@ impl Cache {
                 }),
             }
         }
-        let mut index: BTreeMap<RecordKey, Vec<usize>> = BTreeMap::new();
-        for (ordinal, (_, segment)) in segments.iter().enumerate() {
-            for key in segment.keys() {
-                index.entry(key).or_default().push(ordinal);
-            }
-        }
+        let index = KeyIndex::build(&segments);
         let groups = self.read_groups(&mut rejected)?;
         let superseded = groups::superseded(&segments, &groups);
         Ok(CacheSnapshot {

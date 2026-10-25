@@ -67,7 +67,7 @@ pub(crate) struct OwnerProjection {
 impl Default for ClassProjections {
     fn default() -> Self {
         let types = super::type_roster::TypeRoster::default();
-        let values = dm_session::ArtifactStore::shared_current_rosters();
+        let values = crate::shared_store::artifact_core("class_projection.owners", None);
         let publication = Arc::new(dm_session::ArtifactPublication::default());
         let attempt = Arc::new(publication.begin(ProjectionLeases {
             values: values.lease(),

@@ -171,7 +171,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/breath_profile)
 /datum/breath_profile/skin/proc/skin_exchange(mob/living/carbon/human/H, datum/gas_mixture/breath)
 	var/breath_total = breath ? xgm_total_moles(breath) : 0
 	if(!breath_total)
-		H.failed_last_breath = 1
+		sparse_set_or(H, failed_last_breath, 1, 0)
 		sparse_set(H, photosynthesis_boost, 0)
 		H.body?.set_breath_quality(0)
 		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
@@ -214,7 +214,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/breath_profile)
 	H.breathe_poison(breath, S.poison_type, breath_total, breath_pressure)
 	H.breathe_sleeping_gas(breath, breath_total, breath_pressure)
 
-	H.failed_last_breath = failed ? 1 : 0
+	sparse_set_or(H, failed_last_breath, failed ? 1 : 0, 0)
 	H.body?.set_breath_quality(quality)
 	skin_temperature(H, breath, breath_total)
 

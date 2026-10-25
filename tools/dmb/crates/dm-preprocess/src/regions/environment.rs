@@ -21,8 +21,57 @@ impl Eq for Binding {}
 #[derive(Clone, Debug, Default)]
 pub struct MacroEnvironment {
     bindings: im::OrdMap<Arc<str>, Arc<Binding>>,
+    /// Order independent digest of every binding (name, definition, origin), kept up to date by
+    /// `insert` and `remove`: two environments with equal length and fingerprint hold the same
+    /// bindings, which lets a planner prove an incoming state unchanged without comparing maps.
+    fingerprint: u128,
+}
+/// Digest of one binding: its name, the whole definition and the definition site.
+fn binding_digest(name: &str, binding: &Binding) -> u128 {
+    use xxhash_rust::xxh3::Xxh3;
+    let mut hash = Xxh3::new();
+    hash.update(&(name.len() as u64).to_le_bytes());
+    hash.update(name.as_bytes());
+    let definition = &*binding.definition;
+    match &definition.parameters {
+        None => hash.update(&[0]),
+        Some(parameters) => {
+            hash.update(&[1]);
+            hash.update(&(parameters.len() as u64).to_le_bytes());
+            for parameter in parameters {
+                hash.update(&(parameter.len() as u64).to_le_bytes());
+                hash.update(parameter.as_bytes());
+            }
+        }
+    }
+    hash.update(&[u8::from(definition.variadic)]);
+    hash.update(&(definition.replacement.len() as u64).to_le_bytes());
+    hash.update(definition.replacement.as_bytes());
+    match &binding.origin {
+        None => hash.update(&[0]),
+        Some(origin) => {
+            hash.update(&[1]);
+            let path = origin.path.as_os_str().as_encoded_bytes();
+            hash.update(&(path.len() as u64).to_le_bytes());
+            hash.update(path);
+            hash.update(&(origin.source_span.start as u64).to_le_bytes());
+            hash.update(&(origin.source_span.end as u64).to_le_bytes());
+            hash.update(&(origin.source_line as u64).to_le_bytes());
+        }
+    }
+    hash.digest128()
 }
 impl MacroEnvironment {
+    /// Digest of every binding; equal digests and lengths mean equal environments (a 128-bit
+    /// collision aside, which `DMB_FRONTEND_VERIFY` would expose by comparing against a full pass).
+    pub fn fingerprint(&self) -> u128 {
+        self.fingerprint
+    }
+    /// Whether both environments hold the same bindings, definitions and definition sites.
+    pub fn same_bindings(&self, other: &Self) -> bool {
+        self.shares_storage_with(other)
+            || (self.len() == other.len() && self.fingerprint == other.fingerprint)
+    }
     /// Exact persistent-root sharing, for opt-in diagnostics without cloning maps.
     pub fn shares_storage_with(&self, other: &Self) -> bool {
         self.bindings.ptr_eq(&other.bindings)
@@ -74,16 +123,19 @@ impl MacroEnvironment {
         definition: Macro,
         origin: Option<DefinitionOrigin>,
     ) {
-        self.bindings.insert(
-            Arc::from(name),
-            Arc::new(Binding {
-                definition: Arc::new(definition),
-                origin,
-            }),
-        );
+        let binding = Arc::new(Binding {
+            definition: Arc::new(definition),
+            origin,
+        });
+        self.fingerprint ^= binding_digest(name, &binding);
+        if let Some(old) = self.bindings.insert(Arc::from(name), binding) {
+            self.fingerprint ^= binding_digest(name, &old);
+        }
     }
     pub(super) fn remove(&mut self, name: &str) {
-        self.bindings.remove(name);
+        if let Some(old) = self.bindings.remove(name) {
+            self.fingerprint ^= binding_digest(name, &old);
+        }
     }
     pub fn definition_origin(&self, name: &str) -> Option<&DefinitionOrigin> {
         self.bindings.get(name)?.origin.as_ref()
@@ -146,6 +198,38 @@ mod tests {
             }
         });
         assert_eq!(previous.get("KEEP"), environment.get("KEEP"));
+    }
+    #[test]
+    fn fingerprint_follows_bindings_not_history() {
+        let definition = |text: &str| Macro {
+            parameters: None,
+            variadic: false,
+            replacement: text.into(),
+        };
+        let origin = |line| DefinitionOrigin {
+            path: Arc::new(std::path::PathBuf::from("a.dm")),
+            source_span: dm_syntax::Span::new(0, 4),
+            source_line: line,
+        };
+        let mut left = MacroEnvironment::default();
+        let mut right = MacroEnvironment::default();
+        left.insert("A", definition("1"), Some(origin(1)));
+        left.insert("B", definition("2"), None);
+        right.insert("B", definition("2"), None);
+        right.insert("A", definition("9"), None);
+        right.insert("A", definition("1"), Some(origin(1)));
+        assert!(left.same_bindings(&right));
+        assert_eq!(left.fingerprint(), right.fingerprint());
+        right.insert("A", definition("1"), Some(origin(2)));
+        assert!(!left.same_bindings(&right), "a moved definition site differs");
+        right.insert("A", definition("1"), Some(origin(1)));
+        right.insert("C", definition("3"), None);
+        assert!(!left.same_bindings(&right));
+        right.remove("C");
+        assert!(left.same_bindings(&right));
+        left.remove("A");
+        left.remove("B");
+        assert_eq!(left.fingerprint(), MacroEnvironment::default().fingerprint());
     }
     #[test]
     fn snapshots_share_replacement_bodies_and_freeze_definition_epochs() {

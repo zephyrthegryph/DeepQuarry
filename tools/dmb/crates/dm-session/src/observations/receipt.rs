@@ -89,6 +89,15 @@ impl<Q, A, D> Receipt<Q, A, D> {
             }
         }
     }
+    /// The shared leaves in order: one for flat storage, each group otherwise. Leaves are interned across receipts, so a
+    /// per-leaf derivation can be done once and shared.
+    pub fn leaves(&self) -> impl Iterator<Item = &Arc<[Observation<Q, A, D>]>> {
+        let (flat, groups) = match &self.storage {
+            Storage::Flat(value) => (Some(value), None),
+            Storage::Groups(groups) => (None, Some(groups.iter())),
+        };
+        flat.into_iter().chain(groups.into_iter().flatten())
+    }
     pub fn iter(&self) -> ReceiptIter<'_, Q, A, D> {
         match &self.storage {
             Storage::Flat(value) => ReceiptIter {

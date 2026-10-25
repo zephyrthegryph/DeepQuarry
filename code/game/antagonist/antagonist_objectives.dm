@@ -61,7 +61,7 @@
 		return
 	if(isnull(new_ambitions))
 		return
-	mind.ambitions = new_ambitions
+	mind.ambitions = text_or_null(new_ambitions)
 	if(new_ambitions)
 		to_chat(src, span_notice("You've set your goal to be '[new_ambitions]'."))
 	else

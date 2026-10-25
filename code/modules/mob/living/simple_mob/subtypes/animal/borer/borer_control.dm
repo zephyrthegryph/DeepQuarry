@@ -36,9 +36,9 @@
 
 	// host -> brain
 	var/h2b_id = host.computer_id
-	var/h2b_ip= host.lastKnownIP
+	var/h2b_ip= sparse_get(host, lastKnownIP)
 	host.computer_id = null
-	host.lastKnownIP = null
+	sparse_set(host, lastKnownIP, null)
 
 	rel_set(src, nameof(host_brain), new /mob/living/captive_brain(src)) // replaces (and deletes) any old one
 	host_brain.name = host.name
@@ -48,22 +48,22 @@
 	if(!host_brain.computer_id)
 		host_brain.computer_id = h2b_id
 
-	if(!host_brain.lastKnownIP)
-		host_brain.lastKnownIP = h2b_ip
+	if(!sparse_get(host_brain, lastKnownIP))
+		sparse_set(host_brain, lastKnownIP, h2b_ip)
 
 	// self -> host
 	var/s2h_id = src.computer_id
-	var/s2h_ip= src.lastKnownIP
+	var/s2h_ip= sparse_get(src, lastKnownIP)
 	src.computer_id = null
-	src.lastKnownIP = null
+	sparse_set(src, lastKnownIP, null)
 
 	// The borer wears the host's body without rewriting the host's identity.
 	move_player(src, host, "borer [src] took control of [host]", share = TRUE)
 
 	if(!host.computer_id)
 		host.computer_id = s2h_id
-	if(!host.lastKnownIP)
-		host.lastKnownIP = s2h_ip
+	if(!sparse_get(host, lastKnownIP))
+		sparse_set(host, lastKnownIP, s2h_ip)
 	controlling = TRUE
 
 	grant(host, granted_verb(/mob/living/carbon/proc/release_control), src)

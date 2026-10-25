@@ -11,11 +11,10 @@
 	power_draw_per_use = 1
 	var/number_of_pins = 1
 
-/obj/item/integrated_circuit/memory/Initialize(mapload)
+/obj/item/integrated_circuit/memory/declare_pins()
 	for(var/i = 1 to number_of_pins)
-		inputs["input [i]"] = IC_PINTYPE_ANY // This is just a string since pins don't get built until ..() is called.
+		inputs["input [i]"] = IC_PINTYPE_ANY
 		outputs["output [i]"] = IC_PINTYPE_ANY
-	return ..()
 
 CAPABILITIES(/obj/item/integrated_circuit/memory)
 	setup(PROC_REF(size_memory))

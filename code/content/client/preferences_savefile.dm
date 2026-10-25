@@ -31,12 +31,12 @@
 
 // General preferences, have to be preloaded
 /datum/preferences/proc/load_early_prefs()
-	lastchangelog	= savefile.get_entry("lastchangelog", lastchangelog)
+	lastchangelog	= text_or_null(savefile.get_entry("lastchangelog", lastchangelog))
 	set_default_slot(savefile.get_entry("default_slot", default_slot))
-	lastnews		= savefile.get_entry("lastnews", lastnews)
-	lastlorenews	= savefile.get_entry("lastlorenews", lastlorenews)
+	lastnews		= text_or_null(savefile.get_entry("lastnews", lastnews))
+	lastlorenews	= text_or_null(savefile.get_entry("lastlorenews", lastlorenews))
 	key_bindings	= savefile.get_entry("key_bindings", key_bindings)
-	right_click_binding	= savefile.get_entry("right_click_binding", right_click_binding)
+	right_click_binding	= text_or_null(savefile.get_entry("right_click_binding", right_click_binding))
 
 /datum/preferences/proc/sanitize_early_prefs()
 	lastchangelog	= sanitize_text(lastchangelog, initial(lastchangelog))
@@ -44,7 +44,7 @@
 	lastnews		= sanitize_text(lastnews, initial(lastnews))
 	lastlorenews	= sanitize_text(lastlorenews, initial(lastlorenews))
 	key_bindings	= sanitize_keybinding_overrides(key_bindings)
-	right_click_binding	= sanitize_inlist(right_click_binding, RIGHT_CLICK_BINDINGS, initial(right_click_binding))
+	right_click_binding	= text_or_null(sanitize_inlist(right_click_binding, RIGHT_CLICK_BINDINGS, initial(right_click_binding)))
 
 /datum/preferences/proc/save_early_prefs()
 	savefile.set_entry("lastchangelog",	lastchangelog)
