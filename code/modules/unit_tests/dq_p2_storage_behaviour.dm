@@ -32,7 +32,7 @@
 
 /// Narrow a storage to `limit` things (a test tuning a fixture, not a player input).
 /proc/sb_set_slot_limit(obj/item/storage/S, limit)
-	S.storage_slots = limit
+	S.set_storage_slots(limit)
 
 /// The storage's window is open for this viewer.
 /proc/sb_is_open(mob/M, obj/item/storage/S)

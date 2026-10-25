@@ -1,6 +1,5 @@
-// /mob/living/Initialize is defined twice (modules/mob/living/living.dm, modules/combat_ai/integration/mob_living.dm).
-// DM keeps both: the last-included body runs first and its ..() calls the earlier definition. So the effects land as
-// living.dm (after ..(): the HUD slot table), mob_living.dm (after ..(): the AI brain). The body is the owns_one(starts =) of the combat AI block.
+// /mob/living's setup() hooks run once its Initialize() chain has returned: the HUD slot table (living.dm), then the AI brain (combat_ai/integration/mob_living.dm).
+// The body is the owns_one(starts =) of the combat AI block.
 
 /datum/unit_test/dq_mob_living_init_chain
 
@@ -9,8 +8,8 @@
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	TEST_ASSERT(istype(M.body, M.body_type), "the declared starting body was made: the body plan exists")
 	TEST_ASSERT_EQUAL(M.body.owner, M, "and belongs to the mob")
-	TEST_ASSERT(living_rules_of(M).has_huds && islist(M.hud_list) && length(M.hud_list) == TOTAL_HUDS, "living.dm's Initialize body ran: the HUD slot table exists")
-	TEST_ASSERT(living_rules_of(M).use_modern_ai && istype(M.ai_brain, /datum/ai_brain), "mob_living.dm's Initialize body ran: the AI brain exists")
+	TEST_ASSERT(living_rules_of(M).has_huds && islist(M.hud_list) && length(M.hud_list) == TOTAL_HUDS, "the HUD setup hook ran: the HUD slot table exists")
+	TEST_ASSERT(living_rules_of(M).use_modern_ai && istype(M.ai_brain, /datum/ai_brain), "mob_the HUD setup hook ran: the AI brain exists")
 
 // Body creation order: the declared starting body (owns_one(starts =) of the combat AI block) is made inside /mob/living/Initialize's chain,
 // so a type's own Initialize code that runs before its ..() sees no body and code after ..() sees it. A human is the exception: it runs

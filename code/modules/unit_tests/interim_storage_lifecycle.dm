@@ -3,7 +3,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/storage/box/box = allocate(/obj/item/storage/box, T)
-	box.storage_slots = 1
+	box.set_storage_slots(1)
 	var/obj/item/pen/filler = allocate(/obj/item/pen, T)
 	var/obj/item/pen/candidate = allocate(/obj/item/pen, T)
 	TEST_ASSERT(box.insert_item(filler), "the box's single slot can be filled")

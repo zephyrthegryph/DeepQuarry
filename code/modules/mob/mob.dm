@@ -50,8 +50,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
 	lastarea = get_area(src)
 	set_focus(src) // Key Handling
-	. = ..()
-	// after ..(): a rolled size_multiplier or icon scale (rolls()) is in place by then
+	return ..()
+
+/// Its size, mob chunk and creation log, once its Initialize() chain has returned (a setup() hook of /mob): a rolled size_multiplier or icon scale (rolls()) is in place by then.
+/mob/proc/finish_mob_setup()
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")

@@ -27,6 +27,7 @@
 	var/tmp/datum/language/default_language_static
 
 CAPABILITIES(/mob/observer/blob)
+	setup(PROC_REF(tint_overmind))
 	configure(mob_rules(universal_understand = TRUE))
 	ref_one(nameof(blob_core), /obj/structure/blob/core)
 	owns_one(nameof(blob_type), /datum/blob_type, starts = PROC_REF(make_blob_type))
@@ -53,7 +54,10 @@ TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 	if(languages.len)
 		default_language_static = languages[1]
 
-	. = ..()
+	return ..()
+
+/// It takes its blob type's colour, and its core draws the same (a setup() hook, once its blob type exists).
+/mob/observer/blob/proc/tint_overmind()
 	color = blob_type.complementary_color
 	if(blob_core())
 		blob_core().sync_overmind_look() // the core draws the new type's colour
