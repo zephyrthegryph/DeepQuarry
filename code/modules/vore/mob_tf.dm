@@ -147,7 +147,7 @@
 	rel_set(new_mob, nameof(spont_belly_left), spont_belly_left)
 	rel_set(new_mob, nameof(spont_belly_front), spont_belly_front)
 	rel_set(new_mob, nameof(spont_belly_right), spont_belly_right)
-	new_mob.autotransferable = autotransferable
+	sparse_set_or(new_mob, autotransferable, sparse_get_or(src, autotransferable, TRUE), TRUE)
 
 // Requires a /mob/living type path for transformation. Returns the new mob on success, null in all other cases.
 // Just handles mob TF right now, but maybe we'll want to do something similar for items in the future.

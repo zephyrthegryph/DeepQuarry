@@ -345,7 +345,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 
 //The basic capture command does most of the registration work.
 /obj/item/capture_crystal/proc/capture(mob/living/M, mob/living/U)
-	if(!M.capture_crystal || sparse_get_or(M, capture_caught, FALSE))
+	if(!sparse_get_or(M, capture_crystal, TRUE) || sparse_get_or(M, capture_caught, FALSE))
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
@@ -411,7 +411,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 	if(jobban_isbanned(M, JOB_GHOSTROLES))
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
-	else if(!M.capture_crystal || sparse_get_or(M, capture_caught, FALSE))
+	else if(!sparse_get_or(M, capture_crystal, TRUE) || sparse_get_or(M, capture_caught, FALSE))
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else
@@ -450,7 +450,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	if(!istype(M) || M.stat != CONSCIOUS)
 		return "not conscious"
 	var/obj/item/capture_crystal/crystal = owner
-	if(crystal.bound_mob || !M.capture_crystal || sparse_get_or(M, capture_caught, FALSE) || get_dist(capturer, M) > 7)
+	if(crystal.bound_mob || !sparse_get_or(M, capture_crystal, TRUE) || sparse_get_or(M, capture_caught, FALSE) || get_dist(capturer, M) > 7)
 		return "not catchable"
 	return null
 
@@ -998,8 +998,8 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 /obj/item/capture_crystal/random/proc/roll_mob_type(datum/roller/R)
 	return R.weighted(R.weighted(possible_mob_types))
 
-/mob/living
-	var/capture_crystal = TRUE		//If TRUE, the mob is capturable. Otherwise it isn't.
+/// If TRUE (the default), the mob is capturable. Otherwise it isn't.
+sparse(/mob/living, capture_crystal, type = bool)
 
 /obj/item/capture_crystal/loadout
 	active = TRUE
@@ -1022,7 +1022,7 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 
 //The basic capture command does most of the registration work.
 /obj/item/capture_crystal/cheap/capture(mob/living/M, mob/living/U)
-	if(!M.capture_crystal || sparse_get_or(M, capture_caught, FALSE))
+	if(!sparse_get_or(M, capture_crystal, TRUE) || sparse_get_or(M, capture_caught, FALSE))
 		to_chat(U, span_warning("This creature is not suitable for capture with this crystal."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
