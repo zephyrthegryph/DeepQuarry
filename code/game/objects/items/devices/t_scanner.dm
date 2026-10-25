@@ -92,8 +92,10 @@ CAPABILITIES(/obj/item/t_scanner)
 /obj/item/t_scanner/proc/get_overlay(obj/scanned)
 	//Use a cache so we don't create a whole bunch of new images just because someone's walking back and forth in a room.
 	//Also means that images are reused if multiple people are using t-rays to look at the same objects.
-	if(scanned in GLOB.overlay_cache)
-		. = GLOB.overlay_cache[scanned]
+	// Keyed by the scanned object's handle: a cache entry never keeps a deleted object alive.
+	var/scanned_token = ref_token(scanned)
+	if(scanned_token && (scanned_token in GLOB.overlay_cache))
+		. = GLOB.overlay_cache[scanned_token]
 	else
 		var/image/I = image(loc = scanned, icon = scanned.icon, icon_state = scanned.icon_state, layer = HUD_LAYER)
 
@@ -108,7 +110,8 @@ CAPABILITIES(/obj/item/t_scanner)
 		. = I
 
 	// Add it to cache, cutting old entries if the list is too long
-	GLOB.overlay_cache[scanned] = .
+	if(scanned_token)
+		GLOB.overlay_cache[scanned_token] = .
 	if(GLOB.overlay_cache.len > overlay_cache_LEN)
 		GLOB.overlay_cache.Cut(1, GLOB.overlay_cache.len-overlay_cache_LEN-1)
 

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Cleared the dx_raw_delay ratchet: burst fire and synthesizer step delays name their factors."

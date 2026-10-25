@@ -25,9 +25,23 @@ where
             .is_none_or(ArtifactAttempt::publish_successful)
     }
 }
-impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
+impl<T, Q, A, D> PublicationStore<T, Q, A, D>
+where
+    T: Send + Sync + 'static,
+    Q: Send + Sync + 'static,
+    A: Send + Sync + 'static,
+    D: Send + Sync + 'static,
+{
+    /// A store over the daemon-wide core named `name` (shared by every session and variant, each with its own lease) when
+    /// the daemon runs, else over a private core. `name` is the purpose: two purposes never share keys.
+    pub(crate) fn shared_current_revision(name: &'static str) -> Self {
+        Self::over(crate::shared_store::artifact_core(name, None))
+    }
+    /// A store over a private core: tests and owners whose artifacts are not content-defined.
     pub(crate) fn current_revision() -> Self {
-        let core = ObservedArtifactStore::shared_current_rosters();
+        Self::over(ObservedArtifactStore::shared_current_rosters())
+    }
+    fn over(core: Arc<ObservedArtifactStore<T, Q, A, D>>) -> Self {
         let publication = Arc::new(ArtifactPublication::default());
         let attempt = Some(publication.begin(core.lease()));
         Self {
@@ -36,6 +50,7 @@ impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
             attempt,
         }
     }
+    /// An owner with its own explicit aggregate budget: always a private core, never the daemon-wide one.
     pub(crate) fn with_limit(bytes: usize) -> Self {
         let core = ObservedArtifactStore::shared_current_rosters_with_limit(bytes);
         let publication = Arc::new(ArtifactPublication::default());
@@ -46,6 +61,8 @@ impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
             attempt,
         }
     }
+}
+impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
     pub(crate) fn for_request(&self, publishable: bool) -> Self {
         let attempt = self.publication.as_ref().map(|owner| {
             if publishable {

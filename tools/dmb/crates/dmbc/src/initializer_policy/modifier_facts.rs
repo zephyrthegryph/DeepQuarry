@@ -159,7 +159,7 @@ impl Default for ModifierArtifacts {
     fn default() -> Self {
         Self {
             values:
-                crate::initializer_lowering::receipts::publication_store::Store::current_revision(),
+                crate::initializer_lowering::receipts::publication_store::Store::shared_current_revision("initializer.modifiers"),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
         }

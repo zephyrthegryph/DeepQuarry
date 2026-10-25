@@ -95,6 +95,14 @@ impl<'a> Cursor<'a> {
         Ok(u128::from_le_bytes(self.take(16)?.try_into().unwrap()))
     }
 }
+fn descriptor_key(map: &[u8], descriptors: usize, slot: u32) -> RecordKey {
+    let at = descriptors + slot as usize * DESCRIPTOR;
+    RecordKey {
+        stage: u32::from_le_bytes(map[at..at + 4].try_into().unwrap()),
+        version: u32::from_le_bytes(map[at + 4..at + 8].try_into().unwrap()),
+        content: u128::from_le_bytes(map[at + 8..at + 24].try_into().unwrap()),
+    }
+}
 #[derive(Clone, Copy)]
 struct Entry {
     offset: usize,
@@ -105,7 +113,12 @@ pub struct Segment {
     map: Arc<Mmap>,
     id: u128,
     supersedes: Vec<u128>,
-    index: BTreeMap<RecordKey, Entry>,
+    /// Byte offset of the first record descriptor in the mapping.
+    descriptors: usize,
+    /// Descriptor slots ordered by record key: 4 bytes per record on the heap. The descriptor itself (key, offset, length,
+    /// checksum) is read from the validated mapping on demand; an entry-per-record `BTreeMap` held about 90 bytes per
+    /// record, which for a multi-gigabyte shared cache was hundreds of megabytes of every compile.
+    order: Vec<u32>,
     rejected: AtomicBool,
 }
 pub struct RecordView<'a> {
@@ -163,19 +176,16 @@ impl Segment {
             }
             supersedes.push(value);
         }
-        let mut index = BTreeMap::new();
+        let descriptors = HEADER + superseded as usize * 16;
         let mut next = HEADER + metadata_len;
         for _ in 0..count {
-            let key = RecordKey {
-                stage: meta.u32()?,
-                version: meta.u32()?,
-                content: meta.u128()?,
-            };
+            // Key fields are re-read from the mapping on lookup; here only the bounds are validated.
+            meta.take(24)?;
             let offset =
                 usize::try_from(meta.u64()?).map_err(|_| invalid("record offset overflow"))?;
             let length =
                 usize::try_from(meta.u64()?).map_err(|_| invalid("record length overflow"))?;
-            let checksum = meta.u128()?;
+            meta.take(16)?;
             let end = offset
                 .checked_add(length)
                 .ok_or_else(|| invalid("record bounds overflow"))?;
@@ -183,30 +193,50 @@ impl Segment {
                 return Err(invalid("record bounds or ordering invalid"));
             }
             next = end;
-            if index
-                .insert(
-                    key,
-                    Entry {
-                        offset,
-                        length,
-                        checksum,
-                    },
-                )
-                .is_some()
-            {
-                return Err(invalid("duplicate record key"));
-            }
         }
         if next != map.len() {
             return Err(invalid("unindexed segment bytes"));
+        }
+        let mut order: Vec<u32> = (0..count).collect();
+        order.sort_unstable_by_key(|slot| descriptor_key(&map, descriptors, *slot));
+        if order.windows(2).any(|pair| {
+            descriptor_key(&map, descriptors, pair[0]) == descriptor_key(&map, descriptors, pair[1])
+        }) {
+            return Err(invalid("duplicate record key"));
         }
         Ok(Self {
             map: Arc::new(map),
             id,
             supersedes,
-            index,
+            descriptors,
+            order,
             rejected: AtomicBool::new(false),
         })
+    }
+    /// Descriptor of a record slot; the mapping's framing was validated by `open`.
+    fn entry_at(&self, slot: u32) -> Entry {
+        let at = self.descriptors + slot as usize * DESCRIPTOR;
+        let bytes = &self.map[at + 24..at + DESCRIPTOR];
+        Entry {
+            offset: u64::from_le_bytes(bytes[0..8].try_into().unwrap()) as usize,
+            length: u64::from_le_bytes(bytes[8..16].try_into().unwrap()) as usize,
+            checksum: u128::from_le_bytes(bytes[16..32].try_into().unwrap()),
+        }
+    }
+    fn find(&self, key: RecordKey) -> Option<Entry> {
+        let at = self
+            .order
+            .binary_search_by_key(&key, |slot| descriptor_key(&self.map, self.descriptors, *slot))
+            .ok()?;
+        Some(self.entry_at(self.order[at]))
+    }
+    /// Whether the segment holds a record with this key (no payload validation).
+    pub fn contains(&self, key: RecordKey) -> bool {
+        self.find(key).is_some()
+    }
+    /// Number of records in the segment.
+    pub fn record_count(&self) -> usize {
+        self.order.len()
     }
     pub fn id(&self) -> u128 {
         self.id
@@ -218,7 +248,9 @@ impl Segment {
         &self.supersedes
     }
     pub fn keys(&self) -> impl Iterator<Item = RecordKey> + '_ {
-        self.index.keys().copied()
+        self.order
+            .iter()
+            .map(|slot| descriptor_key(&self.map, self.descriptors, *slot))
     }
     pub fn is_rejected(&self) -> bool {
         self.rejected.load(Ordering::Acquire)
@@ -233,7 +265,7 @@ impl Segment {
         if self.is_rejected() {
             return Ok(None);
         }
-        let Some(entry) = self.index.get(&key) else {
+        let Some(entry) = self.find(key) else {
             return Ok(None);
         };
         let result = (|| {

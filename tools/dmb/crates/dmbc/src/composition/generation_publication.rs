@@ -28,6 +28,7 @@ impl Default for RetainedGeneration {
             publication,
             attempt,
             wire_evictions: Arc::new(AtomicU64::new(0)),
+            spill: Arc::default(),
         }
     }
 }
@@ -73,6 +74,7 @@ impl RetainedGeneration {
             publication: Arc::clone(&self.publication),
             attempt,
             wire_evictions: Arc::clone(&self.wire_evictions),
+            spill: Arc::clone(&self.spill),
         })
     }
     pub(crate) fn publish_successful(&self) -> bool {

@@ -79,7 +79,7 @@ enum FileDirChange {
     Pop,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct Macro {
     pub parameters: Option<Vec<String>>,
     pub variadic: bool,
@@ -139,6 +139,13 @@ impl RetainedText {
     }
 }
 
+/// Where a provider learns what changed between two input revisions (the session's query
+/// database).
+pub trait SourceChanges {
+    fn revision(&self) -> u64;
+    fn changes_since(&self, revision: u64) -> Option<Arc<BTreeSet<PathBuf>>>;
+}
+
 pub trait SourceProvider {
     fn read(&self, path: &Path) -> Result<String, String>;
 
@@ -159,6 +166,19 @@ pub trait SourceProvider {
         &self,
         _path: &Path,
     ) -> Option<std::sync::Arc<regions::prepared_source::PreparedSource>> {
+        None
+    }
+
+    /// A monotone token for the input state this provider serves (a query-database revision).
+    /// A plan records it; a later request asks `changes_since` with it.
+    fn revision(&self) -> Option<u64> {
+        None
+    }
+
+    /// The files whose text may differ from what this provider served at `revision`, or `None`
+    /// when it cannot say. Lets a planner re-plan only what changed instead of comparing every
+    /// file it read.
+    fn changes_since(&self, _revision: u64) -> Option<Arc<BTreeSet<PathBuf>>> {
         None
     }
 

@@ -76,7 +76,7 @@ CAPABILITIES(/datum/player_panel)
 			"job" = job,
 			"is_antagonist" = is_special_character(M),
 			"ref" = ref_token(M),
-			"ip" = M.lastKnownIP,
+			"ip" = sparse_get(M, lastKnownIP),
 		))
 	set_shown_players(players)
 

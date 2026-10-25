@@ -13,9 +13,6 @@
 
 #define HUMAN_COMBUSTION_TEMP 524 //524k is the sustained combustion temperature of human fat
 
-/mob/living/carbon/human
-	var/heartbeat = 0
-
 // Human Life (doc/rewrite/life_sequences.md; declared in life_steps.dm). The living core runs first; the human-only
 // steps that followed ..() in the old Life() run in the LIFE_TAIL band below, in their old order (the HUD and its
 // periodic full refresh are reactions: life_hud_pass() below and living_systems.dm):
@@ -574,13 +571,13 @@
 
 	if(sparse_get_or(src, suiciding, 0))
 		// Holding the breath: nothing is drawn in.
-		src.failed_last_breath = 1
+		sparse_set_or(src, failed_last_breath, 1, 0)
 		src.body?.set_breath_quality(0)
 		sparse_set(src, suiciding, sparse_get_or(src, suiciding, 0) - 1)
 		return 0
 
 	if(src.get_equipped_item(SLOT_ID_MASK) && (worn_of(src.get_equipped_item(SLOT_ID_MASK)).flags & INFINITE_AIR))
-		src.failed_last_breath = 0
+		sparse_set_or(src, failed_last_breath, 0, 0)
 		src.body?.set_breath_quality(1)
 		return
 
@@ -589,7 +586,7 @@
 	var/breath_moles = breath ? breath.total_moles() : 0
 	if(!breath_moles)
 		// Nothing to breathe: a closed airway, apnea, or vacuum.
-		src.failed_last_breath = 1
+		sparse_set_or(src, failed_last_breath, 1, 0)
 		src.body?.set_breath_quality(0)
 		src.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
 		return 0
@@ -608,7 +605,7 @@
 	// Were we able to breathe?
 	var/failed_inhale = inhale_quality < 1
 	var/failed_exhale = exhale_quality < 1
-	src.failed_last_breath = (failed_inhale || failed_exhale) ? 1 : 0
+	sparse_set_or(src, failed_last_breath, (failed_inhale || failed_exhale) ? 1 : 0, 0)
 	src.body?.set_breath_quality(quality)
 
 	life_breathing_suit_breath_sounds(failed_inhale, failed_exhale)
@@ -2026,11 +2023,11 @@
 		//Divided by 2, otherwise it is too slow.
 		var/rate = (PULSE_THREADY - src.pulse)/2
 
-		if(src.heartbeat >= rate)
-			src.heartbeat = 0
+		if(sparse_get_or(src, heartbeat, 0) >= rate)
+			sparse_set_or(src, heartbeat, 0, 0)
 			src << sound('sound/effects/singlebeat.ogg',0,0,0,50)
 		else
-			src.heartbeat++
+			sparse_set_or(src, heartbeat, sparse_get_or(src, heartbeat, 0) + 1, 0)
 
 /*
 	Called by life(), instead of having the individual hud items update icons each tick and check for status changes

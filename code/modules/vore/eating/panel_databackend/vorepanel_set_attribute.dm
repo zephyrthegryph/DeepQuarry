@@ -1441,11 +1441,11 @@
 		vore_selected_of(panel.host()).emote_lists = vore_selected_of(panel.host()).belly_shared_list("emote_lists")
 		vore_selected_of(panel.host()).trash_eater_in = vore_selected_of(panel.host()).belly_shared_list("trash_eater_in")
 		vore_selected_of(panel.host()).trash_eater_out = vore_selected_of(panel.host()).belly_shared_list("trash_eater_out")
-		vore_selected_of(panel.host()).liquid_fullness1_messages = vore_selected_of(panel.host()).belly_shared_list("fullness1_messages")
-		vore_selected_of(panel.host()).liquid_fullness2_messages = vore_selected_of(panel.host()).belly_shared_list("fullness2_messages")
-		vore_selected_of(panel.host()).liquid_fullness3_messages = vore_selected_of(panel.host()).belly_shared_list("fullness3_messages")
-		vore_selected_of(panel.host()).liquid_fullness4_messages = vore_selected_of(panel.host()).belly_shared_list("fullness4_messages")
-		vore_selected_of(panel.host()).liquid_fullness5_messages = vore_selected_of(panel.host()).belly_shared_list("fullness5_messages")
+		vore_selected_of(panel.host()).fullness1_messages = vore_selected_of(panel.host()).belly_shared_list("fullness1_messages")
+		vore_selected_of(panel.host()).fullness2_messages = vore_selected_of(panel.host()).belly_shared_list("fullness2_messages")
+		vore_selected_of(panel.host()).fullness3_messages = vore_selected_of(panel.host()).belly_shared_list("fullness3_messages")
+		vore_selected_of(panel.host()).fullness4_messages = vore_selected_of(panel.host()).belly_shared_list("fullness4_messages")
+		vore_selected_of(panel.host()).fullness5_messages = vore_selected_of(panel.host()).belly_shared_list("fullness5_messages")
 		panel.set_unsaved_changes(TRUE)
 
 /datum/prompt/choice/vore_delete_belly

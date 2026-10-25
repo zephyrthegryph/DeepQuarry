@@ -118,8 +118,8 @@ impl CacheSnapshot {
             let superseded = self.current_superseded();
             let mut values = Vec::new();
             let mut retry = false;
-            for ordinal in self.index.get(&key).into_iter().flatten() {
-                let (path, segment) = &self.segments[*ordinal];
+            for ordinal in self.index.get(key, &self.segments) {
+                let (path, segment) = &self.segments[ordinal];
                 if segment.is_rejected() || superseded.contains(&segment.id()) {
                     continue;
                 }

@@ -57,6 +57,18 @@ pub(super) fn source_location(
     by_path: &HashMap<PathBuf, FileId>,
 ) -> Option<SourceLocation> {
     let file = *by_path.get(origin.origin.path.as_ref())?;
+    source_location_in(file, origin, path, semantic_path, encounter, occurrence, chain)
+}
+/// `source_location` for a caller that already knows the row's file.
+pub(super) fn source_location_in(
+    file: FileId,
+    origin: ExpandedOriginView<'_>,
+    path: &Arc<PathBuf>,
+    semantic_path: &Arc<str>,
+    encounter: usize,
+    occurrence: usize,
+    chain: Arc<[usize]>,
+) -> Option<SourceLocation> {
     Some(SourceLocation {
         span: source_span(file, origin.source_span).ok()?,
         path: Arc::clone(path),

@@ -20,6 +20,7 @@ pub(crate) mod query_snapshot;
 #[path = "runner_host_resources.rs"]
 pub(crate) mod resources;
 pub(crate) use engine_payload::{EnginePayload, EnginePayloads};
+pub(crate) use memo::SharedRecords;
 #[path = "runner_executor_pool.rs"]
 mod executor_pool;
 pub(crate) use executor_pool::ExecutorPools;
@@ -49,6 +50,7 @@ pub struct BuildHost {
     shared_engines: Option<Arc<EnginePayloads>>,
     shared_executors: Option<Arc<ExecutorPools>>,
     shared_procedure_code: Option<Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>>,
+    shared_store: Option<Arc<crate::shared_store::SharedStore>>,
     engine: Option<Arc<RetainedEngine>>,
     memo: Option<memo::ResidentMemo>,
     executor: Option<dm_exec::BuildExecutor>,
@@ -86,6 +88,8 @@ pub struct BuildHost {
 
 /// Everything `BuildHost::engine` used to discard when only the project path or the defines changed.
 const MAX_STASHED_VARIANTS: usize = 3;
+/// Threads a store of a patch base may use for its footprints (the machine is also a desktop).
+const SPILL_WORKERS: usize = 2;
 
 struct VariantState {
     engine: Arc<RetainedEngine>,
@@ -147,6 +151,7 @@ impl Default for BuildHost {
             shared_engines: None,
             shared_executors: None,
             shared_procedure_code: None,
+            shared_store: None,
             engine: None,
             executor: None,
             procedures: None,
@@ -247,10 +252,15 @@ impl BuildHost {
         engines: Arc<EnginePayloads>,
         executors: Arc<ExecutorPools>,
         procedures: Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>,
+        store: Arc<crate::shared_store::SharedStore>,
     ) -> Self {
         let mut host = Self::with_shared_engines(engines);
         host.shared_executors = Some(executors);
         host.shared_procedure_code = Some(procedures);
+        if crate::shared_store::records_shared() {
+            host.memo = Some(memo::ResidentMemo::sharing(&store.records));
+            host.shared_store = Some(store);
+        }
         host
     }
     pub(crate) fn with_shared_engines(shared_engines: Arc<EnginePayloads>) -> Self {
@@ -272,6 +282,7 @@ impl BuildHost {
             shared_engines: None,
             shared_executors: None,
             shared_procedure_code: None,
+            shared_store: None,
             engine: None,
             executor: None,
             procedures: None,
@@ -606,13 +617,17 @@ impl BuildHost {
             );
         }
     }
+    /// A fresh session memo: its own expansion admissions over the daemon-wide records (kept for other sessions).
+    fn reset_memo(&mut self) {
+        if let Some(memo) = self.memo.take() {
+            self.memo = Some(memo.released());
+        }
+    }
     pub(crate) fn clear_regions(&mut self) {
         if let Some((_, startup)) = &self.startup {
             startup.clear_callable_index();
         }
-        if self.memo.is_some() {
-            self.memo = Some(memo::ResidentMemo::default());
-        }
+        self.reset_memo();
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
             *self
@@ -694,7 +709,9 @@ impl BuildHost {
             let Some(victim) = self.variants.keys().find(|key| **key != configuration).cloned() else {
                 break;
             };
-            self.variants.remove(&victim);
+            if let Some(state) = self.variants.remove(&victim) {
+                Self::spill_generation(state.generation.as_ref());
+            }
         }
         let retained = if let Some(state) = self.variants.remove(&configuration) {
             let engine = Arc::clone(&state.engine);
@@ -751,11 +768,30 @@ impl BuildHost {
     pub(crate) fn stashed_variants(&self) -> usize {
         self.variants.len()
     }
-    /// Drop every stashed variant (their state is recomputable). Returns how many were dropped.
+    /// Drop every stashed variant (their state is recomputable, and each one's patch base is stored first so the next
+    /// compile of that variant patches). Returns how many were dropped.
     pub(crate) fn release_stashed_variants(&mut self) -> usize {
+        self.spill_stashed_patch_bases();
         let dropped = self.variants.len();
         self.variants.clear();
         dropped
+    }
+    /// Store one generation's patch base (`variant_spill`), for a state about to be dropped.
+    fn spill_generation(generation: Option<&(u128, Arc<crate::composition::RetainedGeneration>)>) {
+        if let Some((_, generation)) = generation {
+            generation.spill_patch_base(SPILL_WORKERS);
+        }
+    }
+    fn spill_stashed_patch_bases(&self) {
+        for state in self.variants.values() {
+            Self::spill_generation(state.generation.as_ref());
+        }
+    }
+    /// Store the patch base of the active variant and of every stashed one, before the session or its compiler artifacts
+    /// are released. A base already stored is not written again.
+    pub(crate) fn spill_patch_bases(&self) {
+        Self::spill_generation(self.generation.as_ref());
+        self.spill_stashed_patch_bases();
     }
 
     pub(crate) fn engine(
@@ -807,9 +843,7 @@ impl BuildHost {
             configuration,
             payload,
         });
-        if self.memo.is_some() {
-            self.memo = Some(memo::ResidentMemo::default());
-        }
+        self.reset_memo();
         self.engine_generation = self.engine_generation.saturating_add(1);
         self.rich_generation = self.rich_generation.saturating_add(1);
         self.procedures = None;
@@ -960,6 +994,7 @@ mod tests {
                 BuildHost::with_daemon_owners(
                     Arc::clone(&engines),
                     Arc::clone(&pools),
+                    Arc::new(Default::default()),
                     Arc::new(Default::default()),
                 )
             })

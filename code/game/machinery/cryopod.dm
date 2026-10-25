@@ -756,8 +756,8 @@ CAPABILITIES(/obj/machinery/cryopod)
 	// Best effort key aquisition
 	if(ishuman(to_despawn))
 		var/mob/living/carbon/human/H = to_despawn
-		if(H.original_player)
-			loaded_from_key = H.original_player
+		if(sparse_get(H, original_player))
+			loaded_from_key = sparse_get(H, original_player)
 
 	if(!loaded_from_key && to_despawn.mind && to_despawn.mind.loaded_from_ckey)
 		loaded_from_key = to_despawn.mind.loaded_from_ckey

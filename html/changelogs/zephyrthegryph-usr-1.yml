@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Admin proc-call guards and config-lock logs name the caller from AdminProcCaller instead of reading usr"

@@ -38,6 +38,16 @@ impl EncodedDmb {
 impl EncodedDmb {
     /// Owner for bytes produced by splicing a validated canonical image; the
     /// digest is the same one-pass xxh3-128 the canonical writer streams.
+    /// Owner for bytes stored by an earlier process, accepted only when they hash to the digest stored with them.
+    pub fn from_stored(bytes: Vec<u8>, content_hash: u128) -> std::io::Result<Self> {
+        if xxhash_rust::xxh3::xxh3_128(&bytes) != content_hash {
+            return Err(std::io::Error::other("stored image differs from its digest"));
+        }
+        Ok(Self {
+            bytes: std::sync::Arc::new(bytes),
+            content_hash,
+        })
+    }
     pub(super) fn from_spliced(bytes: Vec<u8>) -> Self {
         let content_hash = xxhash_rust::xxh3::xxh3_128(&bytes);
         Self {

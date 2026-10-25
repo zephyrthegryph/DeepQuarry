@@ -68,7 +68,12 @@ impl DeclarationValues {
                     .0?;
                 // The generic source replay and coordinate binding both succeeded
                 // for this exact admitted owner; do not bind the same leaf twice.
-                bound.filter(|current| Arc::ptr_eq(&current.value, &admitted))
+                bound
+                    .filter(|current| Arc::ptr_eq(&current.value, &admitted))
+                    .map(|mut current| {
+                        current.stored = true;
+                        current
+                    })
             }
         }
     }
@@ -92,6 +97,7 @@ impl DeclarationValues {
             return None;
         }
         current.value = value;
+        current.stored = true;
         Some(())
     }
     pub(super) fn visit_storage(&self, mut visit: impl FnMut(DeclarationStorageView<'_>)) {

@@ -26,6 +26,7 @@
 
 
 CAPABILITIES(/obj/structure/filingcabinet)
+	setup(PROC_REF(gather_papers))
 	climb()
 	op("interaction_hand", hand(), ungated(), needs(req(PROC_REF(has_files), because = MSG(filingcabinet/empty))), then(PROC_REF(interaction_hand)))
 	op("interaction_item", item(/obj/item), then(PROC_REF(interaction_item)))
@@ -36,12 +37,11 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Take apart"), starts(PROC_REF(dismantle_started)), begins(PROC_REF(dismantle_begins)), wait(1 SECOND), then(PROC_REF(screwdriver_act_tool_done)))
 
-// ALLOW(init/INSTANCE_STATE): gathers the papers the map placed on its tile
-/obj/structure/filingcabinet/Initialize(mapload)
+/// Gathers the papers the map placed on its tile.
+/obj/structure/filingcabinet/proc/gather_papers()
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/paper) || istype(I, /obj/item/folder) || istype(I, /obj/item/photo) || istype(I, /obj/item/paper_bundle))
 			I.forceMove(src)
-	. = ..()
 
 /// Old attackby.
 /obj/structure/filingcabinet/proc/interaction_item(datum/act/op/A)

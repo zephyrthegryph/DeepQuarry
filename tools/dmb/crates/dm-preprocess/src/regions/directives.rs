@@ -1,37 +1,45 @@
+use super::plan_trace::{trace_key, PassState, PlanTrace, SubtreeRecord, TraceEntry, VisitEntry};
 use super::*;
 use crate::{
     directive_identifier, eval_condition, macro_defined, parse_include, Conditional, DiagnosticKind,
 };
+use std::collections::HashMap;
 
 pub(super) fn plan<P: SourceProvider>(
     project: &Path,
     provider: &P,
     defines: &BTreeMap<String, String>,
 ) -> DirectivePlan {
-    plan_with_memo(project, provider, defines, None)
+    plan_with_memo(project, provider, defines, None).0
 }
 pub(super) fn plan_with_memo<P: SourceProvider>(
     project: &Path,
     provider: &P,
     defines: &BTreeMap<String, String>,
     memo: Option<&dyn ExpansionMemo>,
-) -> DirectivePlan {
-    let mut pass = DirectivePass {
+) -> (DirectivePlan, PlanReuse) {
+    plan_incremental(project, provider, defines, memo, None)
+}
+pub(super) fn plan_incremental<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    memo: Option<&dyn ExpansionMemo>,
+    previous: Option<&DirectivePlan>,
+) -> (DirectivePlan, PlanReuse) {
+    let previous = previous.filter(|previous| previous.trace.is_some());
+    // Only the include subtrees whose files changed run again, when the provider can say which.
+    if let Some(previous) = previous {
+        if let Some(patched) = patch::patch(provider, memo, previous) {
+            return patched;
+        }
+    }
+    let mut pass = DirectivePass::new(
         provider,
         memo,
-        recording: None,
-        plan: DirectivePlan {
-            project_dir: canonical_path(project.parent().unwrap_or(Path::new(""))),
-            ..DirectivePlan::default()
-        },
-        visited: BTreeSet::new(),
-        repeatable: BTreeSet::new(),
-        file_dir_definitions: Vec::new(),
-        environment: MacroEnvironment::default(),
-        file_dir_origins: Vec::new(),
-        conditionals: Vec::new(),
-        detail: PassDetail::default(),
-    };
+        previous,
+        canonical_path(project.parent().unwrap_or(Path::new(""))),
+    );
     for (name, replacement) in [
         ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
         ("REGEX_QUOTE", "regex(message, 1)"),
@@ -228,6 +236,30 @@ pub(super) fn plan_with_memo<P: SourceProvider>(
     let occurrence = pass.occurrence(project, None, None, Span::default(), 1);
     let started = std::time::Instant::now();
     pass.visit(occurrence);
+    if let Some(previous) = pass.previous {
+        let started = std::time::Instant::now();
+        pass.match_fresh_regions(previous);
+        pass.reuse.timings.matching = started.elapsed();
+    }
+    // A reused subtree skipped its macro mutations; the final macros are what the environment
+    // holds (the pass keeps the two in step, and the unit tests pin that).
+    if pass.reuse.subtrees > 0 {
+        let mut finals = BTreeMap::new();
+        pass.environment
+            .visit_storage(|name, _, _, definition, _| {
+                finals.insert(name.to_string(), (**definition).clone());
+            });
+        pass.plan.final_macros = finals;
+    }
+    #[cfg(test)]
+    {
+        let mut finals = BTreeMap::new();
+        pass.environment
+            .visit_storage(|name, _, _, definition, _| {
+                finals.insert(name.to_string(), (**definition).clone());
+            });
+        assert_eq!(finals, pass.plan.final_macros, "the environment and the terminal macros differ");
+    }
     if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1") {
         let d = &pass.detail;
         eprintln!(
@@ -242,7 +274,33 @@ pub(super) fn plan_with_memo<P: SourceProvider>(
             d.hits,
         );
     }
-    pass.plan
+    pass.reuse.regions = std::mem::take(&mut pass.region_map);
+    pass.plan.trace = Some(Arc::new(PlanTrace::new(std::mem::take(&mut pass.trace))));
+    pass.plan.input_revision = provider.revision();
+    (pass.plan, pass.reuse)
+}
+
+/// Whether two regions hold the same span, effects, lines and macro environments: what an
+/// expansion reads, apart from the file's identity.
+fn same_region(a: &IncludeRegion, b: &IncludeRegion) -> bool {
+    if a.source_span != b.source_span
+        || a.manifest_source != b.manifest_source
+        || a.segments.len() != b.segments.len()
+        || a.effects.len() != b.effects.len()
+        || (!a.effects.is_empty() && format!("{:?}", a.effects) != format!("{:?}", b.effects))
+    {
+        return false;
+    }
+    a.segments.iter().zip(b.segments.iter()).all(|(x, y)| {
+        x.macros.same_bindings(&y.macros)
+            && x.lines.len() == y.lines.len()
+            && x.lines.iter().zip(&y.lines).all(|(l, m)| {
+                l.source_span == m.source_span
+                    && l.source_line == m.source_line
+                    && l.source_lines == m.source_lines
+                    && (l.text.same_view(&m.text) || l.text.as_str() == m.text.as_str())
+            })
+    })
 }
 
 /// Diagnostic wall-time split of the ordered pass (DMB_TIMINGS_DETAIL=1).
@@ -257,9 +315,23 @@ struct PassDetail {
     hits: usize,
 }
 
+#[path = "plan_patch.rs"]
+mod patch;
+
 struct DirectivePass<'a, P> {
     provider: &'a P,
     memo: Option<&'a dyn ExpansionMemo>,
+    /// The plan this pass may adopt subtrees from (it carries a trace).
+    previous: Option<&'a DirectivePlan>,
+    /// Per occurrence: how many occurrences of its file the pass had created before it.
+    nth: Vec<u32>,
+    occurrence_counts: HashMap<PathBuf, u32>,
+    journal: Vec<VisitEntry>,
+    dependency_log: Vec<PathBuf>,
+    trace: Vec<TraceEntry>,
+    /// For every region created so far: the previous plan's region it copies, if any.
+    region_map: Vec<Option<usize>>,
+    reuse: PlanReuse,
     recording: Option<directive_memo::Recording>,
     plan: DirectivePlan,
     visited: BTreeSet<PathBuf>,
@@ -272,6 +344,39 @@ struct DirectivePass<'a, P> {
     detail: PassDetail,
 }
 
+impl<'a, P: SourceProvider> DirectivePass<'a, P> {
+    fn new(
+        provider: &'a P,
+        memo: Option<&'a dyn ExpansionMemo>,
+        previous: Option<&'a DirectivePlan>,
+        project_dir: PathBuf,
+    ) -> Self {
+        DirectivePass {
+            provider,
+            memo,
+            previous,
+            nth: Vec::new(),
+            occurrence_counts: HashMap::new(),
+            journal: Vec::new(),
+            dependency_log: Vec::new(),
+            trace: Vec::new(),
+            region_map: Vec::new(),
+            reuse: PlanReuse::default(),
+            recording: None,
+            plan: DirectivePlan {
+                project_dir,
+                ..DirectivePlan::default()
+            },
+            visited: BTreeSet::new(),
+            repeatable: BTreeSet::new(),
+            file_dir_definitions: Vec::new(),
+            environment: MacroEnvironment::default(),
+            file_dir_origins: Vec::new(),
+            conditionals: Vec::new(),
+            detail: PassDetail::default(),
+        }
+    }
+}
 impl<P: SourceProvider> DirectivePass<'_, P> {
     fn evaluate(&self, word: &str, rest: &str) -> Result<bool, String> {
         if let Some(recording) = self.recording.as_ref() {
@@ -398,14 +503,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         {
             let path = self.push_file_dir(&definition);
             self.file_dir_origins.push(Some(origin.clone()));
-            self.plan.regions[region]
-                .effects
-                .push(MacroEffect::PushFileDir {
+            Arc::make_mut(&mut self.plan.regions[region].effects).push(
+                MacroEffect::PushFileDir {
                     path,
                     definition: definition.clone(),
-                });
+                },
+            );
         }
-        self.plan.regions[region].effects.push(MacroEffect::Define {
+        Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::Define {
             name: name.clone(),
             definition: definition.clone(),
         });
@@ -424,7 +529,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 recording.directory_read();
             }
         }
-        self.plan.regions[region].effects.push(MacroEffect::Undef {
+        Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::Undef {
             name: name.to_owned(),
         });
         self.plan.final_macros.remove(name);
@@ -433,9 +538,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             self.plan.file_dirs.pop();
             self.file_dir_definitions.pop();
             self.file_dir_origins.pop();
-            self.plan.regions[region]
-                .effects
-                .push(MacroEffect::PopFileDir);
+            Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::PopFileDir);
             if let Some(restored) = self.file_dir_definitions.last() {
                 self.plan
                     .final_macros
@@ -456,6 +559,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         directive_line: usize,
     ) -> usize {
         let index = self.plan.occurrences.len();
+        let counted = self.occurrence_counts.entry(canonical_path(path)).or_insert(0);
+        self.nth.push(*counted);
+        *counted += 1;
         let semantic_path = if let Some(parent) = parent {
             let parent_occurrence = &self.plan.occurrences[parent];
             // Preserve the authored include operand. Recovering it from an
@@ -545,9 +651,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 .path
                 .extension()
                 .is_some_and(|extension| extension.eq_ignore_ascii_case("dme")),
-            segments: Vec::new(),
-            effects: Vec::new(),
+            segments: Arc::new(Vec::new()),
+            effects: Arc::new(Vec::new()),
         });
+        self.region_map.push(None);
         self.plan.items.push(OrderedItem::Text(index));
         index
     }
@@ -562,7 +669,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         // Every segment sees its exact full incoming environment. Persistent
         // roots and Arc bindings share unchanged entries across define epochs;
         // token-pasted names require no pruning guess and no full-table clone.
-        self.plan.regions[region].segments.push(ExpansionSegment {
+        Arc::make_mut(&mut self.plan.regions[region].segments).push(ExpansionSegment {
             lines: std::mem::take(pending),
             macros: self.environment.clone(),
         });
@@ -581,11 +688,298 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         path
     }
 
+    /// A region the pass built again (the manifest's own, between its includes) can still be a
+    /// verbatim copy of the previous plan's region at the same place: the same file occurrence,
+    /// the same ordinal inside it, the same span, lines and macro environments. Its expansion is
+    /// then the previous one too.
+    fn match_fresh_regions(&mut self, previous: &DirectivePlan) {
+        let mut counts: HashMap<&Path, u32> = HashMap::new();
+        let mut previous_occurrence: HashMap<u128, usize> =
+            HashMap::with_capacity(previous.occurrences.len());
+        for (index, occurrence) in previous.occurrences.iter().enumerate() {
+            let nth = counts.entry(occurrence.path.as_path()).or_insert(0);
+            previous_occurrence.insert(trace_key(occurrence.path.as_path(), *nth), index);
+            *nth += 1;
+        }
+        let mut previous_regions: Vec<Vec<usize>> = vec![Vec::new(); previous.occurrences.len()];
+        for (index, region) in previous.regions.iter().enumerate() {
+            previous_regions[region.occurrence].push(index);
+        }
+        let mut ordinals = vec![0usize; self.plan.occurrences.len()];
+        for index in 0..self.plan.regions.len() {
+            let occurrence = self.plan.regions[index].occurrence;
+            let ordinal = ordinals[occurrence];
+            ordinals[occurrence] += 1;
+            if self.region_map[index].is_some() {
+                continue;
+            }
+            let key = trace_key(self.plan.occurrences[occurrence].path.as_path(), self.nth[occurrence]);
+            let Some(&before) = previous_occurrence.get(&key) else {
+                continue;
+            };
+            let Some(&candidate) = previous_regions[before].get(ordinal) else {
+                continue;
+            };
+            if previous.occurrences[before].semantic_path
+                == self.plan.occurrences[occurrence].semantic_path
+                && same_region(&self.plan.regions[index], &previous.regions[candidate])
+            {
+                self.region_map[index] = Some(candidate);
+                self.reuse.matched_regions += 1;
+            }
+        }
+    }
+
+    fn depend(&mut self, path: &Path) {
+        self.plan.dependencies.insert(path.to_path_buf());
+        self.dependency_log.push(path.to_path_buf());
+    }
+    fn snapshot(&self) -> PassState {
+        PassState {
+            environment: self.environment.clone(),
+            conditionals: self.conditionals.clone(),
+            file_dirs: self.plan.file_dirs.clone(),
+            file_dir_definitions: self.file_dir_definitions.clone(),
+            file_dir_origins: self.file_dir_origins.clone(),
+            repeatable: self.repeatable.clone(),
+        }
+    }
+    fn restore(&mut self, state: &PassState) {
+        self.environment = state.environment.clone();
+        self.conditionals = state.conditionals.clone();
+        self.plan.file_dirs = state.file_dirs.clone();
+        self.file_dir_definitions = state.file_dir_definitions.clone();
+        self.file_dir_origins = state.file_dir_origins.clone();
+        self.repeatable = state.repeatable.clone();
+    }
+
+    /// Visit an include subtree and leave a record of it, unless it reported anything.
+    fn visit_recording(&mut self, occurrence: usize) {
+        let region = self.plan.regions.len();
+        let item = self.plan.items.len();
+        let journal = self.journal.len();
+        let dependencies = self.dependency_log.len();
+        let diagnostics = self.plan.diagnostics.len();
+        let warnings = self.plan.warnings.len();
+        let state_in = self.snapshot();
+        self.visit(occurrence);
+        let entry = &self.plan.occurrences[occurrence];
+        if entry.suppressed
+            || self.plan.diagnostics.len() != diagnostics
+            || self.plan.warnings.len() != warnings
+            || entry.eof_cursor_line.is_none()
+        {
+            return;
+        }
+        let visits = self.journal[journal..].to_vec();
+        let reads = visits
+            .iter()
+            .filter(|visit| visit.proceeded)
+            .map(|visit| Arc::clone(&visit.path))
+            .collect();
+        let record = SubtreeRecord {
+            occurrences: self.plan.occurrences.len() - occurrence,
+            regions: self.plan.regions.len() - region,
+            items: self.plan.items.len() - item,
+            state_in,
+            state_out: self.snapshot(),
+            root_semantic_path: Arc::clone(&entry.semantic_path),
+            visits,
+            reads,
+            dependencies: self.dependency_log[dependencies..].to_vec(),
+        };
+        self.trace.push(TraceEntry {
+            key: trace_key(entry.path.as_ref(), self.nth[occurrence]),
+            occurrence,
+            region,
+            item,
+            record: Arc::new(record),
+        });
+    }
+
+    /// Adopt the previous plan's subtree for this include when everything it depends on is
+    /// unchanged: the same files with the same text, the same incoming state, the same include
+    /// context and the same include-once decisions. Returns whether it did.
+    fn adopt_previous(&mut self, occurrence: usize) -> bool {
+        let started = std::time::Instant::now();
+        let adopted = self.adopt_previous_inner(occurrence);
+        self.reuse.timings.adopt += started.elapsed();
+        adopted
+    }
+    fn adopt_previous_inner(&mut self, occurrence: usize) -> bool {
+        let Some(previous) = self.previous else {
+            return false;
+        };
+        let Some(trace) = previous.trace.as_ref() else {
+            return false;
+        };
+        let path = self.plan.occurrences[occurrence].path.clone();
+        let key = trace_key(path.as_ref(), self.nth[occurrence]);
+        let Some(entry) = trace.get(key).cloned() else {
+            return false;
+        };
+        let record = Arc::clone(&entry.record);
+        let context_matches = previous.occurrences.get(entry.occurrence).is_some_and(|before| {
+            before.path == path
+                && before.semantic_path == self.plan.occurrences[occurrence].semantic_path
+                && before.semantic_path == record.root_semantic_path
+        });
+        if !context_matches {
+            self.reuse.declined.context += 1;
+            return false;
+        }
+        // The include-once set decides whether this visit proceeds at all.
+        if self.visited.contains(path.as_ref()) && !self.repeatable.contains(path.as_ref()) {
+            return false;
+        }
+        // A repeated ancestor means the bounded-recursion check may trip: interpret it.
+        let mut ancestor = self.plan.occurrences[occurrence].parent;
+        while let Some(parent) = ancestor {
+            if self.plan.occurrences[parent].path == path {
+                self.reuse.declined.context += 1;
+                return false;
+            }
+            ancestor = self.plan.occurrences[parent].parent;
+        }
+        let state_started = std::time::Instant::now();
+        let state_same = self.snapshot().same(&record.state_in);
+        self.reuse.timings.state += state_started.elapsed();
+        if !state_same {
+            self.reuse.declined.state += 1;
+            return false;
+        }
+        let mut seen = BTreeSet::new();
+        for visit in &record.visits {
+            if seen.insert(visit.path.as_ref())
+                && self.visited.contains(visit.path.as_ref()) != visit.was_visited
+            {
+                self.reuse.declined.visits += 1;
+                return false;
+            }
+        }
+        // Same text for every file the subtree read; each is requested from the provider so the
+        // caller's input capture sees the same reads a full pass makes.
+        let touch_started = std::time::Instant::now();
+        let mut touched = Vec::with_capacity(record.reads.len());
+        for read in &record.reads {
+            let Some(prepared) = self.provider.prepared_source(read) else {
+                self.reuse.declined.files += 1;
+                return false;
+            };
+            let unchanged = previous.source_texts.get(read.as_ref()).is_some_and(|old| {
+                prepared.original().same_view(old) || prepared.original().as_str() == old.as_str()
+            });
+            if !unchanged {
+                self.reuse.declined.files += 1;
+                return false;
+            }
+            touched.push((read, prepared));
+        }
+        self.reuse.timings.touch += touch_started.elapsed();
+        let copy_started = std::time::Instant::now();
+        let occ_delta = occurrence as isize - entry.occurrence as isize;
+        let region_base = self.plan.regions.len();
+        let item_base = self.plan.items.len();
+        let region_delta = region_base as isize - entry.region as isize;
+        let item_delta = item_base as isize - entry.item as isize;
+        let shift = |value: usize, delta: isize| (value as isize + delta) as usize;
+        for (read, prepared) in touched {
+            self.plan
+                .source_line_starts
+                .insert(read.as_ref().clone(), prepared.line_starts().clone());
+            self.plan
+                .source_texts
+                .insert(read.as_ref().clone(), prepared.original().clone());
+        }
+        // The root was created by the include directive just handled; it takes the recorded
+        // end-of-file cursor and every descendant follows it, renumbered.
+        let old_root = &previous.occurrences[entry.occurrence];
+        {
+            let root = &mut self.plan.occurrences[occurrence];
+            root.eof_cursor_line = old_root.eof_cursor_line;
+            root.eof_cursor_encounter = old_root
+                .eof_cursor_encounter
+                .map(|encounter| shift(encounter, item_delta));
+        }
+        let descendants = entry.occurrence + 1..entry.occurrence + record.occurrences;
+        for old in &previous.occurrences[descendants] {
+            let mut copy = old.clone();
+            copy.parent = copy.parent.map(|parent| shift(parent, occ_delta));
+            if let Some(cursor) = &mut copy.return_cursor {
+                cursor.parent_occurrence = shift(cursor.parent_occurrence, occ_delta);
+                cursor.encounter_ordinal = cursor
+                    .encounter_ordinal
+                    .map(|ordinal| shift(ordinal, item_delta));
+            }
+            copy.eof_cursor_encounter = copy
+                .eof_cursor_encounter
+                .map(|encounter| shift(encounter, item_delta));
+            // Each descendant counts as an occurrence of its file created by this pass.
+            let counted = self
+                .occurrence_counts
+                .entry(copy.path.as_ref().clone())
+                .or_insert(0);
+            self.nth.push(*counted);
+            *counted += 1;
+            self.plan.occurrences.push(copy);
+        }
+        for (offset, old) in previous.regions[entry.region..entry.region + record.regions]
+            .iter()
+            .enumerate()
+        {
+            let mut copy = old.clone();
+            copy.occurrence = shift(copy.occurrence, occ_delta);
+            copy.encounter_ordinal = shift(copy.encounter_ordinal, item_delta);
+            self.plan.regions.push(copy);
+            self.region_map.push(Some(entry.region + offset));
+        }
+        for old in &previous.items[entry.item..entry.item + record.items] {
+            self.plan.items.push(match old {
+                OrderedItem::Text(region) => OrderedItem::Text(shift(*region, region_delta)),
+                OrderedItem::NonText { occurrence, kind } => OrderedItem::NonText {
+                    occurrence: shift(*occurrence, occ_delta),
+                    kind: *kind,
+                },
+            });
+        }
+        for dependency in &record.dependencies {
+            self.depend(dependency);
+        }
+        for visit in &record.visits {
+            self.visited.insert(visit.path.as_ref().clone());
+            self.journal.push(visit.clone());
+        }
+        self.restore(&record.state_out);
+        // Carry the subtree's records forward, renumbered, for the next pass.
+        for carried in trace.within(entry.occurrence, record.occurrences) {
+            self.trace.push(TraceEntry {
+                key: carried.key,
+                occurrence: shift(carried.occurrence, occ_delta),
+                region: shift(carried.region, region_delta),
+                item: shift(carried.item, item_delta),
+                record: Arc::clone(&carried.record),
+            });
+        }
+        self.reuse.subtrees += 1;
+        self.reuse.occurrences += record.occurrences;
+        self.reuse.copied_regions += record.regions;
+        self.reuse.timings.copy += copy_started.elapsed();
+        true
+    }
+
+
     fn visit(&mut self, occurrence: usize) {
         let path = self.plan.occurrences[occurrence].path.clone();
         // Ordinary files are included once; an active #pragma multiple opts
         // this exact file path into subsequent inclusion under current macros.
-        if !self.visited.insert(path.as_ref().clone()) && !self.repeatable.contains(path.as_ref()) {
+        let inserted = self.visited.insert(path.as_ref().clone());
+        let proceeded = inserted || self.repeatable.contains(path.as_ref());
+        self.journal.push(VisitEntry {
+            path: Arc::clone(&path),
+            was_visited: !inserted,
+            proceeded,
+        });
+        if !proceeded {
             self.plan.occurrences[occurrence].suppressed = true;
             return;
         }
@@ -609,7 +1003,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             }
             ancestor = self.plan.occurrences[parent].parent;
         }
-        self.plan.dependencies.insert(path.as_ref().clone());
+        self.depend(path.as_ref());
         let source_started = std::time::Instant::now();
         let prepared = match self.provider.prepared_source(&path) {
             Some(prepared) => prepared,
@@ -692,7 +1086,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         memo.visit_directive_candidates(context.2, &mut |record| {
                             let accepted = record.matches(
                                 context.0,
-                                &context.1,
+                                context.1,
                                 end - cursor,
                                 &self.environment,
                                 &self.conditionals,
@@ -958,7 +1352,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             .parent()
             .unwrap_or(Path::new(""))
             .join(&relative);
+        let created = std::time::Instant::now();
         let occurrence = self.occurrence(&child, Some(parent), Some(&relative), span, line);
+        self.reuse.timings.occurrences += created.elapsed();
         let kind = match child.extension().and_then(|extension| extension.to_str()) {
             Some(extension) if extension.eq_ignore_ascii_case("dmm") => Some(NonTextKind::Map),
             Some(extension) if extension.eq_ignore_ascii_case("dmf") => Some(NonTextKind::Skin),
@@ -980,12 +1376,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         };
         if let Some(kind) = kind {
             let path = self.plan.occurrences[occurrence].path.as_ref().clone();
-            self.plan.dependencies.insert(path);
+            self.depend(&path);
             self.plan
                 .items
                 .push(OrderedItem::NonText { occurrence, kind });
-        } else {
-            self.visit(occurrence);
+        } else if !self.adopt_previous(occurrence) {
+            let started = std::time::Instant::now();
+            self.visit_recording(occurrence);
+            self.reuse.timings.visit += started.elapsed();
         }
     }
 

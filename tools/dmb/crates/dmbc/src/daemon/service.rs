@@ -274,6 +274,7 @@ struct Shared {
     engines: Arc<crate::runner_host::EnginePayloads>,
     executors: Arc<crate::runner_host::ExecutorPools>,
     procedures: Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>,
+    store: Arc<crate::shared_store::SharedStore>,
     compiler: u128,
     retiring: AtomicBool,
     slots: Mutex<BTreeMap<SessionKey, Arc<Slot>>>,
@@ -440,6 +441,9 @@ impl Shared {
         if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
             dm_profile::print_allocator_stats();
         }
+        if std::env::var_os("DMB_MEM_MARKS").is_some_and(|value| value != "0") {
+            super::emit_stderr(format_args!("{}", self.store.report()));
+        }
         housekeeping::allocations::dump_sites(&format!("after_request private={after:?}"));
         after
     }
@@ -448,7 +452,10 @@ impl Shared {
             Arc::clone(&self.engines),
             Arc::clone(&self.executors),
             Arc::clone(&self.procedures),
+            Arc::clone(&self.store),
         );
+        // The replacement holds one handle; with no other session the released session's records have no user left.
+        self.store.records.clear_if_held_by_at_most(1);
     }
     /// What the daemon holds for `key` right now: a usable retained session (hot) or the reason there is none.
     fn probe(&self, key: &SessionKey) -> crate::compile_stats::SessionState {
@@ -494,6 +501,7 @@ impl Shared {
                         Arc::clone(&self.engines),
                         Arc::clone(&self.executors),
                         Arc::clone(&self.procedures),
+                        Arc::clone(&self.store),
                     )),
                     newest: Mutex::new(BTreeMap::new()),
                     last: Mutex::new(Instant::now()),
@@ -642,6 +650,31 @@ impl Drop for Permit {
         self.0.capacity.notify_all();
     }
 }
+/// Stores the patch base of every idle session when the daemon's serve loop ends.
+struct SpillOnExit(Arc<Shared>);
+impl Drop for SpillOnExit {
+    fn drop(&mut self) {
+        let slots: Vec<(SessionKey, Arc<Slot>)> = self
+            .0
+            .slots
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .map(|(key, slot)| (key.clone(), Arc::clone(slot)))
+            .collect();
+        for (key, slot) in slots {
+            // A host that is building has nothing to store yet, and the exit conditions admit no running build.
+            let Ok(host) = slot.host.try_lock() else { continue };
+            let started = Instant::now();
+            host.spill_patch_bases();
+            super::emit_stderr(format_args!(
+                "dmbd exit: stored the patch bases of project={} in {:.2}s",
+                key.manifest.display(),
+                started.elapsed().as_secs_f64()
+            ));
+        }
+    }
+}
 struct Connection(Arc<Shared>);
 impl Drop for Connection {
     fn drop(&mut self) {
@@ -673,10 +706,14 @@ pub(super) fn serve() -> io::Result<()> {
     }
     let compiler = super::compiler_identity()?;
     let mut listeners = super::generation_listeners::Listeners::new(compiler)?;
+    let store: Arc<crate::shared_store::SharedStore> = Arc::new(Default::default());
+    // Every artifact owner created from here on shares its core with the other sessions (`shared_store.rs`).
+    crate::shared_store::activate(&store);
     let shared = Arc::new(Shared {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
         procedures: Arc::new(Default::default()),
+        store,
         compiler,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),
@@ -687,6 +724,9 @@ pub(super) fn serve() -> io::Result<()> {
         capacity: Condvar::new(),
         connections: AtomicUsize::new(0),
     });
+    // Whatever way the daemon leaves (retired while idle, superseded, idle limit), the session it takes away is stored first: the
+    // daemon that replaces it patches from the stored patch base instead of compiling the whole program.
+    let _spill_on_exit = SpillOnExit(Arc::clone(&shared));
     let mut activity = Instant::now();
     // Housekeeping (allocator reclaim, tier releases that can take tens of
     // seconds) runs on its own thread so it can never stall request acceptance.
@@ -1115,6 +1155,7 @@ mod tests {
             engines: Arc::new(Default::default()),
             executors: Arc::new(Default::default()),
             procedures: Arc::new(Default::default()),
+            store: Arc::new(Default::default()),
             compiler: 1,
             retiring: AtomicBool::new(false),
             slots: Mutex::new(BTreeMap::new()),

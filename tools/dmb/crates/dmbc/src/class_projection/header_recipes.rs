@@ -129,8 +129,8 @@ pub struct HeaderRecipes {
 impl Default for HeaderRecipes {
     fn default() -> Self {
         Self {
-            values: crate::initializer_lowering::receipts::publication_store::PublicationStore::current_revision(),
-            defaults: crate::initializer_lowering::receipts::publication_store::PublicationStore::current_revision(),
+            values: crate::initializer_lowering::receipts::publication_store::PublicationStore::shared_current_revision("class_projection.header_values"),
+            defaults: crate::initializer_lowering::receipts::publication_store::PublicationStore::shared_current_revision("class_projection.header_defaults"),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
         }

@@ -3,7 +3,8 @@
 //	return !isnull(GLOB.admin_datums[client.ckey]) || !isnull(GLOB.deadmins[client.ckey])
 
 /// Sends a message in the event that someone attempts to elevate their permissions through invoking a certain proc.
-/proc/alert_to_permissions_elevation_attempt(mob/user)
+/// The offender is the admin whose advanced proc call is running (GLOB.AdminProcCaller, a ckey), not an ambient usr.
+/proc/alert_to_permissions_elevation_attempt()
 	var/message = " has tried to elevate permissions!"
-	message_admins(key_name_admin(user) + message)
-	log_admin(key_name(user) + message)
+	message_admins(key_name_admin(GLOB.AdminProcCaller) + message)
+	log_admin(key_name(GLOB.AdminProcCaller) + message)

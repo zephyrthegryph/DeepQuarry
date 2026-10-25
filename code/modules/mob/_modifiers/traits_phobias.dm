@@ -132,7 +132,7 @@
 				var/mob/living/carbon/human/H = thing
 				var/self_multiplier = H == holder ? 2 : 1
 				var/human_blood_fear_amount = 0
-				if(!H.get_equipped_item(SLOT_ID_GLOVES) && H.bloody_hands && H.hand_blood_color != SYNTH_BLOOD_COLOUR)
+				if(!H.get_equipped_item(SLOT_ID_GLOVES) && sparse_get_or(H, bloody_hands, 0) && H.hand_blood_color != SYNTH_BLOOD_COLOUR)
 					human_blood_fear_amount += 1
 				if(!H.get_equipped_item(SLOT_ID_SHOES) && H.feet_blood_color && H.feet_blood_color != SYNTH_BLOOD_COLOUR)
 					human_blood_fear_amount += 1

@@ -48,10 +48,10 @@
 	return default
 
 /proc/sanitize_hexcolor(color, default="#000000")
-	if(!istext(color)) return default
+	if(!istext(color)) return text_or_null(default)
 	var/len = length(color)
-	if(len != 7 && len !=4) return default
-	if(text2ascii(color,1) != 35) return default	//35 is the ascii code for "#"
+	if(len != 7 && len !=4) return text_or_null(default)
+	if(text2ascii(color,1) != 35) return text_or_null(default)	//35 is the ascii code for "#"
 	. = "#"
 	for(var/i=2,i<=len,i++)
 		var/ascii = text2ascii(color,i)
@@ -59,7 +59,7 @@
 			if(48 to 57)	. += ascii2text(ascii)		//numbers 0 to 9
 			if(97 to 102)	. += ascii2text(ascii)		//letters a to f
 			if(65 to 70)	. += ascii2text(ascii+32)	//letters A to F - translates to lowercase
-			else			return default
+			else			return text_or_null(default)
 	return .
 
 //Valid format codes: YY, YEAR, MM, DD, hh, mm, ss, :, -. " " (space). Invalid format will return default.

@@ -396,7 +396,7 @@ impl HeapCensus {
         for region in &frontend.plan.regions {
             self.vec_payload("frontend.directive_plan", &region.effects);
             self.vec_payload("frontend.directive_plan", &region.segments);
-            for segment in &region.segments {
+            for segment in region.segments.iter() {
                 self.vec_payload("frontend.directive_plan", &segment.lines);
                 for line in &segment.lines {
                     self.source_text("frontend.directive_plan", &line.text);

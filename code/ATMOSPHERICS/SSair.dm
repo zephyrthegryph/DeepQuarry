@@ -561,6 +561,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 // (code/modules/admin/verbs/debug.dm: "Debug Atmospherics").
 CAPABILITIES(/datum/system/air)
 	ref_many(nameof(networks), /datum/pipe_network)
+	ref_many(nameof(rust_pipe_region_networks), /datum/pipe_network)
 	interface("AtmosControlPanel", title = "Atmospherics Debug", rights = R_DEBUG)
 	op("move-to-target", ui_act("move-to-target", arg("spot")), then(PROC_REF(ui_move_to_target)))
 	op("toggle-freeze", ui_act("toggle-freeze"), then(PROC_REF(ui_toggle_freeze)))

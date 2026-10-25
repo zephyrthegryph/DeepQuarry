@@ -24,6 +24,13 @@ pub(super) fn write(plan: &DirectivePlan, index: usize, mut emit: impl FnMut(&[u
     Some(())
 }
 
+/// Digest of the control stream: what a record stores in place of the bytes.
+pub(super) fn digest(plan: &DirectivePlan, index: usize) -> Option<u128> {
+    let mut hash = xxhash_rust::xxh3::Xxh3::new();
+    write(plan, index, |bytes| hash.update(bytes))?;
+    Some(hash.digest128())
+}
+
 impl ExpansionRecord {
     pub(in crate::regions) fn matches_current_input(
         &self,
@@ -42,16 +49,6 @@ impl ExpansionRecord {
         if owner.get(region.source_span.range()) != Some(self.source.as_str()) {
             return false;
         }
-        let mut remaining = self.control.as_ref();
-        let mut equal = true;
-        let complete = write(plan, index, |bytes| {
-            if let Some(rest) = remaining.strip_prefix(bytes) {
-                remaining = rest;
-            } else {
-                equal = false;
-            }
-        })
-        .is_some();
-        complete && equal && remaining.is_empty()
+        digest(plan, index) == Some(self.control)
     }
 }

@@ -33,6 +33,9 @@ pub struct Revision {
 }
 
 pub struct QueryDb {
+    /// Names this database inside a revision token (see `SourceChanges`): a token from another
+    /// database, or from before a restart, is not one this log can answer for.
+    id: u64,
     db: Db,
     /// Current answers of every query a stored unit read (see `answer` below).
     answers: Answers,
@@ -41,7 +44,18 @@ pub struct QueryDb {
     /// Sources of the previous revision by path: key, the prepared owner (held, so an unchanged
     /// capture is recognised by identity without rehashing) and its content hash.
     sources: Mutex<BTreeMap<PathBuf, (Key, Arc<PreparedSource>, u128)>>,
+    /// What each recent revision changed, so a consumer that last saw revision `r` can ask which
+    /// sources differ now (`SourceChanges::changes_since`).
+    changes: Mutex<std::collections::VecDeque<RevisionChange>>,
 }
+/// The sources one request changed or removed, between two revisions of the database.
+struct RevisionChange {
+    before: u64,
+    after: u64,
+    paths: Arc<Vec<PathBuf>>,
+}
+/// Requests whose changes are kept; a consumer older than this asks for a full comparison.
+const CHANGE_LOG: usize = 64;
 impl Default for QueryDb {
     fn default() -> Self {
         let db = Db::new();
@@ -60,11 +74,14 @@ impl Default for QueryDb {
             let hash = hasher.digest128();
             Ok(Outcome::new(hash, hash, 16))
         });
+        static NEXT_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
+            id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             db,
             answers: Answers::default(),
             unit_proofs: UnitProofs::default(),
             sources: Mutex::new(BTreeMap::new()),
+            changes: Mutex::new(std::collections::VecDeque::new()),
         }
     }
 }
@@ -79,6 +96,8 @@ impl QueryDb {
         project: u128,
     ) -> Result<Revision, QueryError> {
         let computed_before = self.db.stats(PROGRAM).computed;
+        let revision_before = self.db.revision();
+        let mut changed_paths = Vec::new();
         // A new request: every answer is proven again (or carried) before it is used.
         self.answers.next_request();
         let mut previous = self.sources.lock().unwrap_or_else(|error| error.into_inner());
@@ -94,6 +113,7 @@ impl QueryDb {
             };
             if self.db.set_input(key, (), hash) {
                 changed += 1;
+                changed_paths.push(path.clone());
             }
             current.insert(path.clone(), (key, Arc::clone(source), hash));
         }
@@ -101,6 +121,7 @@ impl QueryDb {
         for (path, (key, _, _)) in previous.iter() {
             if !current.contains_key(path) && self.db.remove(*key) {
                 removed += 1;
+                changed_paths.push(path.clone());
             }
         }
         if self.db.set_input(PROJECT_KEY, (), project) {
@@ -113,6 +134,17 @@ impl QueryDb {
         drop(previous);
         let params: Value = Arc::new(keys);
         self.db.hash(PROGRAM_KEY, params)?;
+        {
+            let mut log = self.changes.lock().unwrap_or_else(|error| error.into_inner());
+            log.push_back(RevisionChange {
+                before: revision_before,
+                after: self.db.revision(),
+                paths: Arc::new(changed_paths),
+            });
+            while log.len() > CHANGE_LOG {
+                log.pop_front();
+            }
+        }
         Ok(Revision {
             revision: self.db.revision(),
             sources: count,
@@ -120,6 +152,41 @@ impl QueryDb {
             removed,
             green: self.db.stats(PROGRAM).computed == computed_before,
         })
+    }
+}
+
+/// Bits of a token that hold the database revision; the rest name the database.
+const TOKEN_REVISION_BITS: u32 = 40;
+impl dm_preprocess::SourceChanges for QueryDb {
+    fn revision(&self) -> u64 {
+        (self.id << TOKEN_REVISION_BITS) | self.db.revision()
+    }
+    /// The sources changed or removed by every request after `revision`; `None` when the log no
+    /// longer reaches back to it, or `revision` is not one this database has had.
+    fn changes_since(&self, token: u64) -> Option<Arc<std::collections::BTreeSet<PathBuf>>> {
+        if token >> TOKEN_REVISION_BITS != self.id {
+            return None;
+        }
+        let revision = token & ((1 << TOKEN_REVISION_BITS) - 1);
+        let current = self.db.revision();
+        if revision > current {
+            return None;
+        }
+        if revision == current {
+            return Some(Arc::new(std::collections::BTreeSet::new()));
+        }
+        let log = self.changes.lock().unwrap_or_else(|error| error.into_inner());
+        let mut entries = log.iter().skip_while(|entry| entry.after <= revision);
+        let first = entries.next()?;
+        // The log must reach back to `revision`: its first later entry starts at or before it.
+        if first.before > revision {
+            return None;
+        }
+        let mut changed: std::collections::BTreeSet<PathBuf> = first.paths.iter().cloned().collect();
+        for entry in entries {
+            changed.extend(entry.paths.iter().cloned());
+        }
+        Some(Arc::new(changed))
     }
 }
 
@@ -328,6 +395,38 @@ pub(crate) fn answer_hash(answer: &dm_ir::ResolvedMeaning) -> u128 {
     dm_query::hash_bytes(&answer.canonical_bytes())
 }
 
+/// The parts of an answer version: the declarations' identity, the answer world and every
+/// resource search the table held with its answer hash. `version` and `context` hash them exactly
+/// as `QueryDb::answers_version` and `answers_context` always have, so a retained output that keeps
+/// its facts can prove its answers in a later process, where the table starts empty and holds
+/// only the searches that process asked.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct AnswerFacts {
+    pub tree: u128,
+    pub world: u128,
+    /// Sorted by (query id, answer hash).
+    pub searches: Vec<(dm_ir::ResolveQuery, u128)>,
+}
+impl AnswerFacts {
+    pub(crate) fn context(&self) -> u128 {
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-answers-context-v1\0");
+        hash.update(&self.world.to_le_bytes());
+        for (query, answer) in &self.searches {
+            hash.update(&query_id(query).to_le_bytes());
+            hash.update(&answer.to_le_bytes());
+        }
+        hash.digest128()
+    }
+    pub(crate) fn version(&self) -> u128 {
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-answers-version-v2\0");
+        hash.update(&self.tree.to_le_bytes());
+        hash.update(&self.context().to_le_bytes());
+        hash.digest128()
+    }
+}
+
 /// One request's view of the answer table: the resolver that answers a query not yet proven in
 /// this request. Every stage of a request uses the same semantic resolver.
 pub(crate) struct RequestAnswers<'a> {
@@ -469,17 +568,54 @@ impl dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning> for R
     }
 }
 
-/// A stored unit's recorded reads as (query id, query, recorded answer hash).
+type ReadLeaf = Arc<[dm_session::Observation<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>]>;
+/// One interned read leaf as (query id, query, recorded answer hash). Equal leaves are one allocation in every unit,
+/// session and variant (the receipt pool interns them), so their proof lists are derived once.
+struct LeafReads {
+    _owner: ReadLeaf,
+    reads: Vec<(u128, dm_ir::ResolveQuery, u128)>,
+}
+/// A stored unit's recorded reads: its receipt's leaves, each with its derived list.
 struct UnitReads {
     _owner: Arc<dyn std::any::Any + Send + Sync>,
-    reads: Vec<(u128, dm_ir::ResolveQuery, u128)>,
+    leaves: Vec<Arc<LeafReads>>,
+}
+/// Derived read lists by leaf address (the held leaf keeps the address from being reused while an entry is alive; entries
+/// die with their last unit). Daemon-wide when the daemon runs.
+#[derive(Default)]
+pub(crate) struct LeafProofs {
+    leaves: Mutex<std::collections::HashMap<usize, std::sync::Weak<LeafReads>>>,
+}
+impl LeafProofs {
+    fn proof(&self, leaf: &ReadLeaf) -> Arc<LeafReads> {
+        let address = Arc::as_ptr(leaf) as *const () as usize;
+        let mut leaves = self.leaves.lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(held) = leaves.get(&address).and_then(std::sync::Weak::upgrade) {
+            return held;
+        }
+        let proof = Arc::new(LeafReads {
+            _owner: Arc::clone(leaf),
+            reads: leaf.iter().map(|read| (query_id(&read.query), read.query, answer_hash(&read.answer))).collect(),
+        });
+        leaves.insert(address, Arc::downgrade(&proof));
+        proof
+    }
+    /// Drop entries whose last unit is gone.
+    fn prune(&self) {
+        self.leaves.lock().unwrap_or_else(|error| error.into_inner()).retain(|_, proof| proof.strong_count() > 0);
+    }
 }
 
 /// Read lists of stored units, by stored value address; the held owner keeps the address from
 /// being reused while the entry lives.
-#[derive(Default)]
 pub(crate) struct UnitProofs {
     units: Mutex<std::collections::HashMap<usize, Arc<UnitReads>>>,
+    leaves: Arc<LeafProofs>,
+}
+impl Default for UnitProofs {
+    fn default() -> Self {
+        Self { units: Default::default(), leaves: crate::shared_store::leaf_proofs() }
+    }
 }
 
 pub(crate) type Stored<T> = (
@@ -548,50 +684,65 @@ impl QueryDb {
     /// Equal versions at two points mean every answer read in between and still held is equal,
     /// so a stage whose other inputs are equal too may reuse its whole earlier output.
     pub(crate) fn answers_version(&self) -> Option<u128> {
-        let identity = {
-            let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
-            current.tree.as_ref()?.declaration_identity()
-        };
-        let context = self.answers_context()?;
-        let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dm-answers-version-v2 ");
-        hash.update(&identity.to_le_bytes());
-        hash.update(&context.to_le_bytes());
-        Some(hash.digest128())
+        self.answer_facts().map(|facts| facts.version())
     }
     /// What `answers_version` holds besides the tree: the answer world and each resource
     /// search's current answer. Two requests with equal contexts and different trees may still
     /// give every answer the same value; [`Self::prove_against_base`] decides that per answer.
     pub(crate) fn answers_context(&self) -> Option<u128> {
-        let world = {
+        self.answer_facts().map(|facts| facts.context())
+    }
+    /// The parts `answers_version` and `answers_context` hash, so an output retained with them can
+    /// prove the same thing in another process (see [`AnswerFacts`]). None when the resolver does
+    /// not version its answers or no tree is bound.
+    pub(crate) fn answer_facts(&self) -> Option<AnswerFacts> {
+        let (tree, world) = {
             let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
-            current.tree.as_ref()?;
-            current.world
+            (current.tree.as_ref()?.declaration_identity(), current.world)
         };
         if world == 0 {
             return None;
         }
-        let mut resources: Vec<(u128, u128)> = {
+        let mut searches: Vec<(u128, dm_ir::ResolveQuery, u128)> = {
             let queries =
                 self.answers.resource_queries.lock().unwrap_or_else(|error| error.into_inner());
             queries
-                .keys()
-                .map(|id| {
+                .iter()
+                .map(|(id, query)| {
                     let shard = &self.answers.shards[(*id as usize) % ANSWER_SHARDS];
                     let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
-                    (*id, slots.get(id).map_or(0, |slot| slot.hash))
+                    (*id, *query, slots.get(id).map_or(0, |slot| slot.hash))
                 })
                 .collect()
         };
-        resources.sort_unstable();
-        let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dm-answers-context-v1 ");
-        hash.update(&world.to_le_bytes());
-        for (id, answer) in resources {
-            hash.update(&id.to_le_bytes());
-            hash.update(&answer.to_le_bytes());
+        searches.sort_unstable_by_key(|(id, _, hash)| (*id, *hash));
+        Some(AnswerFacts {
+            tree,
+            world,
+            searches: searches.into_iter().map(|(_, query, hash)| (query, hash)).collect(),
+        })
+    }
+    /// Prove, in this request, the answers an output restored from storage was built from: the
+    /// declarations and the answer world are the stored ones (so every answer they determine is
+    /// equal), and each stored resource search still answers as it did. Asking a search holds it
+    /// in the table, so the table afterwards holds every search the stored output read.
+    pub(crate) fn prove_facts(&self, answers: &RequestAnswers<'_>, facts: &AnswerFacts) -> Result<usize, String> {
+        static PROVE: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.prove_facts");
+        let _timer = PROVE.time();
+        {
+            let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
+            if current.tree.as_ref().map(|tree| tree.declaration_identity()) != Some(facts.tree) {
+                return Err("the declarations differ from the stored output's".into());
+            }
+            if current.world == 0 || current.world != facts.world {
+                return Err("the answer world differs from the stored output's".into());
+            }
         }
-        Some(hash.digest128())
+        let differing = facts.searches.iter().filter(|(query, hash)| !answers.unchanged_hash(query, *hash)).count();
+        if differing > 0 {
+            return Err(format!("{differing} of {} resource searches answer differently", facts.searches.len()));
+        }
+        Ok(facts.searches.len())
     }
     /// Record every held answer as the answer of the output that was just published. Called
     /// once the request's output is the retained one (its tree is the current tree, so each
@@ -727,13 +878,9 @@ impl QueryDb {
                 .map(|(_, artifact)| {
                     let address = Arc::as_ptr(&artifact.value) as *const () as usize;
                     let unit = cache.remove(&address).unwrap_or_else(|| {
-                        let reads = artifact
-                            .reads
-                            .iter()
-                            .map(|read| (query_id(&read.query), read.query, answer_hash(&read.answer)))
-                            .collect();
+                        let leaves = artifact.reads.leaves().map(|leaf| self.unit_proofs.leaves.proof(leaf)).collect();
                         let owner: Arc<dyn std::any::Any + Send + Sync> = artifact.value.clone();
-                        Arc::new(UnitReads { _owner: owner, reads })
+                        Arc::new(UnitReads { _owner: owner, leaves })
                     });
                     live.insert(address, Arc::clone(&unit));
                     unit
@@ -742,6 +889,7 @@ impl QueryDb {
             *cache = live;
             units
         };
+        self.unit_proofs.leaves.prune();
         let after_units = started.elapsed();
         let threads = workers.clamp(1, 16);
         let chunk = units.len().div_ceil(threads).max(1);
@@ -752,9 +900,9 @@ impl QueryDb {
                     scope.spawn(move || {
                         part.iter()
                             .map(|unit| {
-                                unit.reads
-                                    .iter()
-                                    .all(|(id, query, recorded)| answers.matches(*id, query, *recorded))
+                                unit.leaves.iter().all(|leaf| {
+                                    leaf.reads.iter().all(|(id, query, recorded)| answers.matches(*id, query, *recorded))
+                                })
                             })
                             .collect::<Vec<_>>()
                     })
@@ -1005,6 +1153,73 @@ mod tests {
         assert!(prove(&db, BASE, second).unwrap_err().contains("dropped"));
     }
 
+    /// A request on `text` in answer world `world`, whose resource searches all answer `present`; asks `asked` and `searches`.
+    fn open_with_searches(
+        db: &QueryDb,
+        text: &str,
+        world: u128,
+        present: bool,
+        asked: &[dm_ir::ResolveQuery],
+        searches: &[&str],
+    ) -> (Arc<dm_tree::SemanticTree>, Box<dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning + Sync>) {
+        let tree = tree(text);
+        let resolver_tree = Arc::clone(&tree);
+        let resolve = move |query: &dm_ir::ResolveQuery| match query {
+            dm_ir::ResolveQuery::Resource(_) => dm_ir::ResolvedMeaning::Presence(present),
+            other => dm_ir::Resolver::resolve(resolver_tree.as_ref(), *other),
+        };
+        db.next_request();
+        db.begin_answers(&tree, Some(world), &resolve);
+        {
+            let answers = db.request_answers(&resolve);
+            for query in asked {
+                answers.current(query_id(query), query);
+            }
+            for path in searches {
+                let query = dm_ir::ResolveQuery::Resource(symbol(path));
+                answers.current(query_id(&query), &query);
+            }
+        }
+        (tree, Box::new(resolve))
+    }
+
+    #[test]
+    fn facts_prove_a_stored_output_in_a_table_that_starts_empty() {
+        let searches = ["icons/a.dmi", "icons/b.dmi"];
+        // The build the output was retained from: every query asked, two resource searches held.
+        let built = QueryDb::default();
+        open_with_searches(&built, BASE, 9, true, &asked(), &searches);
+        let facts = built.answer_facts().expect("a bound tree and a versioned world");
+        assert_eq!(facts.searches.len(), 2);
+        assert_eq!(Some(facts.version()), built.answers_version());
+        assert_eq!(Some(facts.context()), built.answers_context());
+        // A later process asked less before its patch admission: the version differs only by the searches it held.
+        let later = QueryDb::default();
+        let (_, resolve) = open_with_searches(&later, BASE, 9, true, &asked()[..3], &[]);
+        assert_ne!(later.answers_version(), built.answers_version());
+        assert_eq!(later.prove_facts(&later.request_answers(&resolve), &facts), Ok(2));
+        // Asking the stored searches holds them: the table now describes the same answers as the stored output.
+        assert_eq!(later.answers_context(), built.answers_context());
+        assert_eq!(later.answer_facts().map(|facts| facts.searches), Some(facts.searches.clone()));
+        // A search that answers differently, other declarations and another answer world are each refused.
+        let moved = QueryDb::default();
+        let (_, resolve) = open_with_searches(&moved, BASE, 9, false, &asked()[..3], &[]);
+        let error = moved.prove_facts(&moved.request_answers(&resolve), &facts).unwrap_err();
+        assert!(error.starts_with("2 of 2 resource searches"), "{error}");
+        let edited = QueryDb::default();
+        let (_, resolve) = open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
+        assert!(edited.prove_facts(&edited.request_answers(&resolve), &facts).unwrap_err().contains("declarations"));
+        let other_world = QueryDb::default();
+        let (_, resolve) = open_with_searches(&other_world, BASE, 10, true, &[], &[]);
+        assert!(other_world.prove_facts(&other_world.request_answers(&resolve), &facts).unwrap_err().contains("world"));
+        // No world, no facts: the table cannot version its answers.
+        let unversioned = QueryDb::default();
+        let tree = tree(BASE);
+        unversioned.next_request();
+        unversioned.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
+        assert!(unversioned.answer_facts().is_none() && unversioned.answers_version().is_none());
+    }
+
     #[test]
     fn an_answer_first_asked_after_the_mark_is_not_compared() {
         let db = QueryDb::default();
@@ -1019,5 +1234,37 @@ mod tests {
         let novel = dm_ir::ResolveQuery::HasMemberVar { owner: symbol("/datum/a"), name: symbol("novel") };
         answers.current(query_id(&novel), &novel);
         assert_eq!(db.prove_against_base(&answers, marks, 1), Ok(asked().len()));
+    }
+
+    #[test]
+    fn the_change_log_answers_which_sources_changed_since_a_revision() {
+        use dm_preprocess::SourceChanges;
+        let db = QueryDb::default();
+        db.revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1).unwrap();
+        let at_first = db.revision();
+        assert!(db.changes_since(at_first).unwrap().is_empty());
+        db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y")]), 1).unwrap();
+        let after_a = db.revision();
+        db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y"), ("c.dm", "z")]), 1).unwrap();
+        db.revise(&sources(&[("a.dm", "x2"), ("c.dm", "z")]), 1).unwrap();
+        let path = |name: &str| PathBuf::from(name);
+        let since_first = db.changes_since(at_first).unwrap();
+        assert_eq!(
+            since_first.iter().cloned().collect::<Vec<_>>(),
+            vec![path("a.dm"), path("b.dm"), path("c.dm")]
+        );
+        let since_a = db.changes_since(after_a).unwrap();
+        assert_eq!(
+            since_a.iter().cloned().collect::<Vec<_>>(),
+            vec![path("b.dm"), path("c.dm")]
+        );
+        assert!(db.changes_since(db.revision()).unwrap().is_empty());
+        // A revision the database never had, one of another database, or one the log no longer reaches.
+        assert!(db.changes_since(db.revision() + 1).is_none());
+        assert!(QueryDb::default().changes_since(at_first).is_none());
+        for step in 0..(CHANGE_LOG + 2) {
+            db.revise(&sources(&[("a.dm", &format!("v{step}")), ("c.dm", "z")]), 1).unwrap();
+        }
+        assert!(db.changes_since(at_first).is_none());
     }
 }

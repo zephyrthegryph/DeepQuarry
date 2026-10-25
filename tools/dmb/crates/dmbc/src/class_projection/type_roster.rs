@@ -36,7 +36,7 @@ pub(crate) struct TypeRoster {
 }
 impl Default for TypeRoster {
     fn default() -> Self {
-        let values = ObservedArtifactStore::shared_current_rosters();
+        let values = crate::shared_store::artifact_core("class_projection.types", None);
         let local = Some(Arc::new(values.lease()));
         Self {
             values,

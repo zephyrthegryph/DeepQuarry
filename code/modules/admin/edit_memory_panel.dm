@@ -120,7 +120,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 		return FALSE
 	var/new_memo = A.step_value("a2")
 	if(!isnull(new_memo))
-		target_mind.memory = new_memo
+		target_mind.memory = text_or_null(new_memo)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_edit_ambitions_a3_default(datum/act/op/A)
@@ -132,7 +132,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/new_amb = A.step_value("a3")
 	if(isnull(new_amb))
 		return TRUE
-	target_mind.ambitions = new_amb
+	target_mind.ambitions = text_or_null(new_amb)
 	if(target_mind.current)
 		to_chat(target_mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [target_mind.ambitions]"))
 	log_and_message_admins("made [key_name(target_mind.current)]'s ambitions be '[target_mind.ambitions]'.")
