@@ -89,11 +89,11 @@ CAPABILITIES(/obj/item/dq_acceptance_size_cache_probe)
 /datum/unit_test/dq_acceptance_tracking_wrapped_species/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/species/shapeshifter/S = allocate(/datum/species/shapeshifter)
-	var/map_key = "\ref[H]"
+	var/map_key = ref_token(H)
 	var/map_before = GLOB.wrapped_species_by_ref[map_key]
 	H.set_wrapped_bodytype(SPECIES_TESHARI)
 	TEST_ASSERT_EQUAL(H.wrapped_bodytype(), SPECIES_TESHARI, "Tracked selector stores the chosen wrapped species")
-	TEST_ASSERT_EQUAL(GLOB.wrapped_species_by_ref["\ref[H]"], SPECIES_TESHARI, "Existing compatibility map mirrors the setter")
+	TEST_ASSERT_EQUAL(GLOB.wrapped_species_by_ref[ref_token(H)], SPECIES_TESHARI, "Existing compatibility map mirrors the setter")
 	TEST_ASSERT_EQUAL(S.get_bodytype(H), GLOB.all_species[SPECIES_TESHARI].get_bodytype(H), "Real shapeshifter getter delegates to the selected species")
 	TEST_ASSERT(!H.set_wrapped_bodytype(SPECIES_TESHARI), "Unchanged scalar selector emits no write")
 	var/datum/cap_data/wrapped_species_form/form = H.wrapped_species_state()

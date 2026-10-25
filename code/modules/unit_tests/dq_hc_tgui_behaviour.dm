@@ -138,14 +138,14 @@
 	var/mob/living/carbon/human/H = hct_actor()
 	var/obj/machinery/atmospherics/valve/shutoff/V = allocate(/obj/machinery/atmospherics/valve/shutoff, hct_spot())
 	var/leaks = V.close_on_leaks
-	press(H, M, "toggle_enable", list("valve" = "\ref[V]"))
+	press(H, M, "toggle_enable", list("valve" = ref_token(V)))
 	TEST_ASSERT_NOTEQUAL(V.close_on_leaks, leaks, "the leak shutoff is toggled")
-	press(H, M, "toggle_enable", list("valve" = "\ref[H]"))
+	press(H, M, "toggle_enable", list("valve" = ref_token(H)))
 	TEST_ASSERT_NOTEQUAL(V.close_on_leaks, leaks, "a ref that is not a shutoff valve changes nothing")
 	var/list/data = data_of(M, H)
 	var/found = FALSE
 	for(var/list/row in data["valves"])
-		if(row["ref"] == "\ref[V]")
+		if(row["ref"] == ref_token(V))
 			found = TRUE
 	TEST_ASSERT(found, "the valve is listed")
 
@@ -162,7 +162,7 @@
 	TEST_ASSERT_EQUAL(M.fuel_tag, "fuel_a", "the tag is set")
 	var/list/data = data_of(M, H)
 	TEST_ASSERT_EQUAL(length(data["fuels"]), 1, "the injector with that tag is listed")
-	press(H, M, "toggle_active", list("fuel" = "\ref[H]"))
+	press(H, M, "toggle_active", list("fuel" = ref_token(H)))
 	TEST_ASSERT_EQUAL(M.fuel_tag, "fuel_a", "a ref that is not an injector does nothing")
 
 /datum/unit_test/dq_hc_tgui/rustcore_monitor_buttons
@@ -177,9 +177,9 @@
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(M.core_tag, "core_a", "the tag is set")
 	var/dump = C.reactant_dump
-	press(H, M, "toggle_reactantdump", list("core" = "\ref[C]"))
+	press(H, M, "toggle_reactantdump", list("core" = ref_token(C)))
 	TEST_ASSERT_NOTEQUAL(C.reactant_dump, dump, "the reactant dump is toggled")
-	press(H, M, "set_fieldstr", list("core" = "\ref[C]", "fieldstr" = 40))
+	press(H, M, "set_fieldstr", list("core" = ref_token(C), "fieldstr" = 40))
 	TEST_ASSERT_EQUAL(C.target_field_strength, 40, "the field strength is set")
 	var/list/data = data_of(M, H)
 	TEST_ASSERT_EQUAL(length(data["cores"]), 1, "the core with that tag is listed")
@@ -195,11 +195,11 @@
 	p2cl_answer(H, "gyro_a")
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(M.gyro_tag, "gyro_a", "the tag is set")
-	press(H, M, "set_str", list("gyro" = "\ref[G]", "str" = 3))
+	press(H, M, "set_str", list("gyro" = ref_token(G), "str" = 3))
 	TEST_ASSERT_EQUAL(G.mega_energy, 3, "the beam strength is set")
-	press(H, M, "set_rate", list("gyro" = "\ref[G]", "rate" = 12))
+	press(H, M, "set_rate", list("gyro" = ref_token(G), "rate" = 12))
 	TEST_ASSERT_EQUAL(G.rate, 12, "the fire rate is set")
-	press(H, M, "set_str", list("gyro" = "\ref[G]", "str" = 0))
+	press(H, M, "set_str", list("gyro" = ref_token(G), "str" = 0))
 	TEST_ASSERT_EQUAL(G.mega_energy, 3, "a zero strength changes nothing")
 	var/list/data = data_of(M, H)
 	TEST_ASSERT_EQUAL(length(data["gyros"]), 1, "the gyrotron with that tag is listed")
@@ -244,7 +244,7 @@
 	var/datum/tgui_module/atmos_control/M = hct_track(new /datum/tgui_module/atmos_control(hct_host(), null, null, null))
 	var/mob/living/carbon/human/H = hct_actor()
 	var/obj/machinery/alarm/A = allocate(/obj/machinery/alarm, hct_spot())
-	press(H, M, "alarm", list("alarm" = "\ref[A]"))
+	press(H, M, "alarm", list("alarm" = ref_token(A)))
 	TEST_ASSERT_NULL(M.ui_ref, "opening an alarm needs the console's own window")
 	var/list/data = data_of(M, H)
 	TEST_ASSERT(islist(data["map_levels"]), "the visible levels are sent")

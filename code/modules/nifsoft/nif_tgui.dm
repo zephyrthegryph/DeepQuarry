@@ -187,7 +187,7 @@ CAPABILITIES(/obj/item/nif)
 				"activates" = NS.activates,
 				"active" = NS.active,
 				"stat_text" = NS.stat_text(),
-				"ref" = REF(NS),
+				"ref" = ref_token(NS),
 			)))
 	data["modules"] = modules
 
