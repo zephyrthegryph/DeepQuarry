@@ -92,6 +92,14 @@ pub(crate) struct BytecodeFeatures {
     pub source_features: dm_codegen_byond::SourceFeatures,
 }
 impl BytecodeFeatures {
+    /// What a build reports of an image composed under `tables`: without `DEBUG` the debug instructions the
+    /// lowering emitted are dropped from the words (`debug_strip`), so the image has none.
+    pub(crate) fn composed_under(mut self, tables: &LinkTables) -> Self {
+        if tables.strips_debug_ops() {
+            self.debug = false;
+        }
+        self
+    }
     fn from_procedure(procedure: &dm_codegen_byond::SimpleProc) -> Self {
         Self {
             source_features: procedure.source_features,
@@ -765,6 +773,7 @@ trait InventorySink {
     fn string(&mut self, id: SymbolId, bytes: &[u8]);
     fn slot(&mut self, alias: SlotAlias);
 }
+pub(crate) mod debug_strip;
 mod current_images;
 mod freezing;
 mod initializer_contribution;

@@ -175,9 +175,16 @@ impl<'a> FrontendDebugProvider<'a> {
         self.collector.into_inner().finish()
     }
 }
+/// The source defines `DEBUG`: the composed output keeps `DbgFile`/`DbgLine`.
+pub fn defines_debug(frontend: &ColdFrontend) -> bool {
+    frontend.plan.final_macros.contains_key("DEBUG")
+}
 impl dm_codegen_byond::DebugSourceProvider for FrontendDebugProvider<'_> {
+    /// Procedure lowering always emits the two source-position instructions, whatever the build defines, so one
+    /// lowered record serves every variant; composition drops them for a source without `DEBUG`
+    /// (`composition::debug_strip`).
     fn emits_debug_ops(&self) -> bool {
-        self.frontend.plan.final_macros.contains_key("DEBUG")
+        true
     }
     fn diagnostic_ordinal(
         &self,

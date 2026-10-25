@@ -868,6 +868,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     let initializers = stage.elapsed();
     dm_profile::request_mark("cold.initializers_done");
     let mut inventory = links.inventory;
+    inventory.strip_debug_ops = !crate::debug_sources::defines_debug(frontend);
     crate::class_inventory::contribute_source_strings(frontend, &bodies, &mut inventory)
         .map_err(ColdError::Initializer)?;
     dm_profile::request_mark("cold.source_strings");

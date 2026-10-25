@@ -140,6 +140,9 @@ pub struct LinkInventory {
     /// The producer must consume these into a complete String append order;
     /// the numeric linker rejects unexpanded events rather than ignoring them.
     pub string_registration: Option<StringRegistration>,
+    /// The build does not define `DEBUG`: procedure words are composed without the `DbgFile`/`DbgLine`
+    /// instructions every lowered body carries, so one lowered record serves both kinds of build.
+    pub strip_debug_ops: bool,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LinkError {
@@ -181,6 +184,7 @@ pub use bindings::{BindingTables, RetainedBindings};
 pub struct LinkTables {
     bindings: BindingTables,
     content: Arc<BTreeMap<Key, EntryContent>>,
+    strip_debug_ops: bool,
 }
 fn link_lap(lap: &mut std::time::Instant, label: &str) {
     static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
@@ -305,7 +309,17 @@ impl LinkTables {
         Self {
             bindings: BindingTables::validated(indexes, slots, None),
             content: Arc::new(content),
+            strip_debug_ops: false,
         }
+    }
+    /// Whether procedure words are composed without their `DbgFile`/`DbgLine` instructions (a build without `DEBUG`).
+    pub fn strips_debug_ops(&self) -> bool {
+        self.strip_debug_ops
+    }
+    /// The same tables, composing words with or without the debug instructions (restored tables carry no flag).
+    pub fn with_strip_debug_ops(mut self, strip: bool) -> Self {
+        self.strip_debug_ops = strip;
+        self
     }
     /// Append-only extension for stable incremental numbering
     /// (doc/structural_change_set.md, addendum). Keys already bound keep
@@ -352,6 +366,7 @@ impl LinkTables {
             Self {
                 bindings: BindingTables::validated(indexes, slots, None),
                 content: Arc::new(content),
+                strip_debug_ops: self.strip_debug_ops,
             },
             added,
         ))
@@ -375,6 +390,7 @@ impl LinkTables {
         Self {
             bindings: BindingTables::validated(indexes, self.bindings.slots().clone(), None),
             content: Arc::clone(&self.content),
+            strip_debug_ops: self.strip_debug_ops,
         }
     }
     pub fn build(inventory: LinkInventory) -> Result<Self, LinkError> {
@@ -436,6 +452,7 @@ impl LinkTables {
                 Self {
                     bindings: previous.clone(),
                     content: Arc::new(content),
+                    strip_debug_ops: inventory.strip_debug_ops,
                 },
                 None,
             ));
@@ -583,6 +600,7 @@ impl LinkTables {
             Self {
                 bindings: BindingTables::validated(indexes, slots, previous),
                 content: Arc::new(content),
+                strip_debug_ops: inventory.strip_debug_ops,
             },
             captured,
         ))

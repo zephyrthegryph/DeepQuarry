@@ -76,7 +76,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         crate::lowering_memo::key_recipe::CurrentKey::from_prepared(
             frontend,
             row,
-            memo.policy,
+            memo.facts_policy,
             capture_references,
             selections_only,
         )
@@ -105,7 +105,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .with_local(
                 (!capture_references && !selections_only)
                     .then(|| {
-                        symbolic_input::local_certificate(local_inputs?, current_body, memo.policy)
+                        symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy)
                     })
                     .flatten(),
             )
@@ -257,7 +257,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                     input.refresh_local_admission(
                         store,
                         local_inputs.and_then(|roster| {
-                            symbolic_input::local_certificate(roster, current_body, memo.policy)
+                            symbolic_input::local_certificate(roster, current_body, memo.facts_policy)
                         }),
                     );
                 }
@@ -497,7 +497,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         // certificate a recompute would carry so the next resident request can
         // admit this body by its unchanged local inputs (warm disk, new daemon).
         let local = (!capture_references && !selections_only)
-            .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
+            .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy))
             .flatten();
         return Ok(Admission::Admitted(input.with_admission(
             admission.map(|admission| promote_admission(admission.with_local(local))),
@@ -539,7 +539,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
         let local = (!capture_references && !selections_only)
-            .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
+            .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy))
             .flatten();
         return Ok(Admission::Admitted(CompletedInput::lowered(unit).with_admission(
             admission.map(|admission| promote_admission(admission.with_local(local))),
@@ -557,7 +557,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         .recomputed
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let local_certificate = (!capture_references && !selections_only)
-        .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
+        .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy))
         .flatten();
     let current_source = current_body.source();
     let key = key

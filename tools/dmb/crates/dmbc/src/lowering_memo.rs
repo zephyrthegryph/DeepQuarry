@@ -88,8 +88,10 @@ pub(crate) use verify_policy::VerifyPolicy;
 pub struct ProcedureMemo {
     pub(crate) verification: verify_policy::VerifyPolicy,
     pub policy: u128,
-    /// The policy of caches that hold facts, not generated code (initializer classification, modifier facts): `policy`
-    /// without the build flags that only change emitted code (`DEBUG`), so the game and test variants share them.
+    /// The policy of caches whose content does not depend on the build flags that only change what is composed
+    /// (`DEBUG`): `policy` without them, so the game and test variants share them. It keys initializer classification
+    /// and modifier facts (facts, not generated code) and the lowered procedure bodies (which always carry
+    /// `DbgFile`/`DbgLine`; a build without `DEBUG` drops them when the words are composed).
     pub facts_policy: u128,
     resident_retention: ResidentRetention,
     rich_attempt: Option<

@@ -79,7 +79,23 @@ impl LatestImage {
     ) -> Result<Vec<u32>, IntegrationError> {
         Self::wire_image(owner, image, code, tables, mobs).map(ProcedureImage::into_words)
     }
+    /// The final words of one procedure: the linked image with its type-path words wired and, for a build without
+    /// `DEBUG`, the debug instructions the lowering emitted removed. Nothing here is cached as stripped: the retained
+    /// images stay the variant-independent ones, so the game and test builds share them.
     pub(crate) fn wire_image(
+        owner: &Arc<Self>,
+        image: ProcedureImage,
+        code: &dm_ir::SymbolicCode,
+        tables: &LinkTables,
+        mobs: &dm_link::MobBindings,
+    ) -> Result<ProcedureImage, IntegrationError> {
+        let mut wired = Self::wire_image_unstripped(owner, image, code, tables, mobs)?;
+        if tables.strips_debug_ops() {
+            super::debug_strip::strip_shared(&mut wired.words).map_err(IntegrationError::CurrentImageWorker)?;
+        }
+        Ok(wired)
+    }
+    fn wire_image_unstripped(
         owner: &Arc<Self>,
         image: ProcedureImage,
         code: &dm_ir::SymbolicCode,
