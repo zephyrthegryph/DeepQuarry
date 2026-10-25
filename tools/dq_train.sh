@@ -342,7 +342,9 @@ heavy_cycle() {
 		cd "$WT" || exit 99
 		export DQ_MERGE_BRANCH="$TBRANCH" DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN"
 		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_BATCH_DEADLINE="$deadline"
-		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" --tests "$tests_union"
+		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
+		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
+		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" --tests "$tests_union" --no-dm
 	) >"$out" 2>&1
 	rc=$?
 	good="$(sed -n 's/^BATCH_GOOD: //p' "$out" | tail -n 1)"
