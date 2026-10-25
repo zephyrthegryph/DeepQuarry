@@ -186,10 +186,11 @@ for round in 1 2 3; do
 		[ "${DQ_PUSH_FULL:-0}" != "1" ] && [ -f "data/merge-gates/${sha:0:12}.$1.ok" ] && [ "$(cat "data/merge-gates/${sha:0:12}.$1.ok")" = "$sha" ]
 	}
 	gate_sha_ok() { [ -f "data/merge-gates/${sha:0:12}.ok" ] && [ "$(sed -n 's/^sha=//p' "data/merge-gates/${sha:0:12}.ok" | tail -n 1)" = "$sha" ]; }
-	if ! stamped dm && [ "${DQ_PUSH_TRUST_GATE_DM:-0}" = "1" ] && [ "${DQ_PUSH_FULL:-0}" != "1" ] && stamped ratchets && gate_sha_ok; then
+	if ! stamped dm && [ "${DQ_PUSH_TRUST_GATE_DM:-0}" = "1" ] && [ "${DQ_PUSH_FULL:-0}" != "1" ] && stamped ratchets && stamped dreamchecker && gate_sha_ok; then
 		# The train gates run --no-dm on purpose: the test build compile proved the code compiles on this exact tree, so a second full
-		# native compile here only repeats it. The production compile + DreamChecker cross-check belongs to CI (tools/ci/compile_and_run.sh).
-		echo "== build.sh dm: skipped; the train's gates (test-build compile, ratchets) passed on exactly this HEAD ${sha:0:12}; CI keeps the production compile and DreamChecker"
+		# native compile here only repeats it. DreamChecker is NOT trusted without its own stamp: the gate's dreamchecker job stamps the exact
+		# HEAD (data/merge-gates/<sha>.dreamchecker.ok); a gate without it falls through to the full build below. CI keeps the DreamMaker compile.
+		echo "== build.sh dm: skipped; the train's gates (test-build compile, DreamChecker, ratchets) passed on exactly this HEAD ${sha:0:12}; CI keeps the DreamMaker compile"
 	elif stamped dm; then
 		echo "== build.sh dm: passed (compiler 0 errors, DreamChecker 0 diagnostics) on exactly this HEAD in tools/dq_merge_gates.sh; not repeated"
 	else
