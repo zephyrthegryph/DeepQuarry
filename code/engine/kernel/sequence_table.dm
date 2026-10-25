@@ -283,20 +283,20 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_table)
 			positions = list()
 			T.by_key[k] = positions
 		positions += S.pos
-	S.slot = num_or_null(slot_for(S.key))
+	S.slot = slot_for(S.key)
 	if(!S.handler)
 		T.error("[S.key]: a step needs a handler")
 
 /// The cost slot of step `key` (one per key across the sequence's tables).
 /datum/sequence/proc/slot_for(key)
-	var/slot = slot_of[key]
+	var/slot = slot_keys.Find(key)
 	if(slot)
 		return slot
 	slot_keys += key
 	step_ms += 0
 	step_calls += 0
 	slot = length(slot_keys)
-	slot_of[key] = slot
+	slot_of[key] = slot // the key => slot map the profile readers use
 	return slot
 
 /proc/seq_collect_list(datum/seq_table/T, list/decls, list/declared, list/entries, kind, datum/contributor, extra_slot)
