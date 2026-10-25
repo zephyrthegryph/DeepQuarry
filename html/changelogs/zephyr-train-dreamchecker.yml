@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "The train gate runs DreamChecker as a parallel job and fails on it; the push trusts the gate only with its DreamChecker stamp; the integrator never exits on a stall; repeated non-master-moved push refusals bounce the lane; lane pool lease/release restart the integrator"
