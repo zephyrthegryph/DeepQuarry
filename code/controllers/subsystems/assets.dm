@@ -29,15 +29,6 @@ CAPABILITIES(/datum/system/assets)
 	transport.Load()
 
 /datum/system/assets/initialize()
-	#ifdef UNIT_TESTS
-	// Focused unit-test runs skip generating every asset and spritesheet at boot
-	// (about 2.3 s on the test map). Anything that needs one still gets it:
-	// get_asset_datum() builds an asset on first use, which is what the
-	// spritesheets and asset tests call. The full suite still loads everything.
-	if(unit_test_is_focused_run())
-		transport.start(cache)
-		return
-	#endif
 	for(var/type in typesof(/datum/asset))
 		var/datum/asset/A = type
 		if (type != initial(A._abstract))

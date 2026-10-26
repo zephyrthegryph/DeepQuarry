@@ -1,33 +1,8 @@
 // Test-build-only definitions moved out of the game files (engine/test-guards-out): procs, vars and globals only tests and the
-// UNIT_TESTS-guarded hooks in those files use. This file is compiled only in test builds (code/tests/_tests.dm).
+// UNIT_TESTS-guarded hooks in those files use. Included near the end of deepquarry.dme (after every game file, so the macros those
+// files define are in scope); compiled only in test builds.
 
-// from code/ATMOSPHERICS/rust_pipenets.dm
-/// Test hook: steps every pipe device now, as a frame does once a period, and delivers their reports.
-/datum/system/air/proc/rust_step_pipe_devices()
-	if(!rust_pipe_device_count)
-		return
-	vg_frame_force_devices()
-	native_system().drain()
-
-// from code/datums/native/entities.dm
-/**
- * The drift audit: every bound atom's declared inputs against what Rust stores, in one call. The
- * test sandbox teardown and the binding fuzz test run it after every step (a repaired divergence
- * is a runtime that fails the test that caused it). Returns every finding (empty: no divergence).
- * Test builds only: production never sweeps.
- */
-/datum/system/native/proc/reconcile_all()
-	. = list()
-	for(var/atom/movable/mover as anything in bound.Copy())
-		if(QDELETED(mover) || !mover.vg_entity)
-			continue
-		var/list/mismatches = mover.vg_reconcile()
-		if(length(mismatches))
-			. += "[mover.type] [REF(mover)]: [jointext(mismatches, "; ")]"
-
-/// Global convenience: `vg_reconcile_all()` (called from the test sandbox teardown and the fuzz test).
-/proc/vg_reconcile_all()
-	return SSvg.reconcile_all()
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 // from code/engine/actions/periodic_dispatch.dm
 /datum/work_item/every_dispatch/test_reset()
@@ -377,11 +352,32 @@
 /// "type ref" -> hash of the instance's vars at boot.
 GLOBAL_LIST_EMPTY(def_freeze_snapshot)
 
-// from code/_global_vars/logging.dm
-DECLARE_LOG_NAMED(test_log, "tests", START_LOG)
-
 // from code/_helpers/logging/_logging.dm
 /proc/log_test(text)
 	WRITE_LOG(GLOB.test_log, text)
 	SEND_TEXT(world.log, text)
 
+// from code/engine/refs/shared.dm
+/// Boot (test builds): digest every registered instance.
+/proc/def_freeze_snapshot()
+	GLOB.def_freeze_snapshot = list()
+	for(var/datum/D as anything in def_freeze_instances())
+		GLOB.def_freeze_snapshot["[D.type] [ref(D)]"] = def_freeze_digest(D)
+
+/// Test end: every registered instance whose vars changed since boot, as report lines.
+/proc/def_freeze_verify()
+	. = list()
+	for(var/datum/D as anything in def_freeze_instances())
+		var/key = "[D.type] [ref(D)]"
+		var/list/old = GLOB.def_freeze_snapshot[key]
+		if(!islist(old))
+			continue
+		var/list/now = def_freeze_digest(D)
+		var/list/changed = list()
+		for(var/name in now)
+			if(old[name] != now[name])
+				changed += name
+		if(length(changed))
+			. += "DEF FROZEN: [D.type] ([ref(D)]) was written after boot: [jointext(changed, ", ")]"
+
+#endif

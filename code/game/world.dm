@@ -292,41 +292,12 @@ GLOBAL_VAR(restart_counter)
 
 /// Runs after the call to Kernel.boot_systems, but before the delay kicks in. Used to turn the world execution into some single function then exit
 /world/proc/RunUnattendedFunctions()
-	#ifdef UNIT_TESTS
-	HandleTestRun()
-	#endif
 
 	#ifdef AUTOWIKI
 	setup_autowiki()
 	#endif
 
 
-/world/proc/HandleTestRun()
-	//trigger things to run the whole process
-	Kernel.sleep_offline_after_initializations = FALSE
-	SSticker.request_immediate_start(TRUE)
-	CONFIG_SET(number/round_end_countdown, 0)
-	var/after_start
-#ifdef UNIT_TESTS
-	dq_test_shard_init()
-	after_start = GLOBAL_PROC_REF(start_unit_tests)
-#else
-	after_start = GLOBAL_PROC_REF(force_end_round)
-#endif
-	var/start_delay = 10 SECONDS
-#ifdef UNIT_TESTS
-	// The full suite keeps upstream's 10 s round-start settle so CI and local
-	// full runs see the same world. Focused runs are for iteration and start
-	// after 2 s; a test that only passes after the longer settle should wait
-	// for what it needs itself (see doc/testing.md).
-	if(unit_test_is_focused_run())
-		start_delay = 1 SECONDS
-		// --boot (only dq_boot_gate): the gate reads what the boot logged, so there is nothing to settle.
-		if(unit_test_is_boot_only_run())
-			start_delay = 0
-		log_world("Unit tests: round-start settle [start_delay / (1 SECONDS)] s ([unit_test_is_boot_only_run() ? "boot-only" : "focused"] run).")
-#endif
-	SSticker.OnRoundstart(null, after_start, delay = start_delay)
 
 /// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
@@ -661,39 +632,6 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				text2file("[++GLOB.restart_counter]", RESTART_COUNTER_PATH)
 				return FALSE
 
-/world/proc/FinishTestRun()
-	var/list/fail_reasons
-	if(GLOB)
-		if(GLOB.total_runtimes != 0)
-			fail_reasons = list("Total runtimes: [GLOB.total_runtimes]")
-#ifdef UNIT_TESTS
-		if(GLOB.failed_any_test)
-			LAZYADD(fail_reasons, "Unit Tests failed!")
-		if(GLOB.boot_unclean)
-			LAZYADD(fail_reasons, GLOB.boot_unclean)
-#endif
-		if(!GLOB.log_directory)
-			LAZYADD(fail_reasons, "Missing GLOB.log_directory!")
-	else
-		fail_reasons = list("Missing GLOB!")
-	log_world("Finishing the test run: writing the result markers ([fail_reasons ? "failed" : "clean"]).")
-	if(!fail_reasons)
-		text2file("Success!", "[GLOB.log_directory]/clean_run.lk")
-	else
-		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
-	// The marker the build's watchdog waits for (tools/build/lib/byond.ts, watchdogCleanFile): written for a failed run too, so a
-	// daemon that lingers after the world is done is killed within seconds, while a world still writing its logs on a busy machine
-	// is given time to finish before it is declared unclean.
-	if(GLOB && GLOB.log_directory)
-		text2file(fail_reasons ? "Failed" : "Finished", "[GLOB.log_directory]/finished_run.lk")
-		log_world("Result markers written (finished_run.lk).")
-	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
-	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
-	world_next_tick(GLOBAL_PROC_REF(world_finish_test_shutdown))
-
-/proc/world_finish_test_shutdown()
-	log_world("Test world: shutting down the world.")
-	spent(world) //shut it down
 
 /// Callbacks run at the start of the next world tick (/world/Tick()), in order. For world procs
 /// whose follow-up must run after they return, including after the MC has shut down.

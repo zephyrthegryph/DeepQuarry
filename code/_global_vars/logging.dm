@@ -43,6 +43,10 @@ DECLARE_LOG(perf_log, DONT_START_LOG) // Declared here but name is set in time_t
 DECLARE_LOG_NAMED(harddel_log, "harddels", START_LOG)
 #endif
 
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+DECLARE_LOG_NAMED(test_log, "tests", START_LOG)
+#endif
+
 /// All admin related log lines minus their categories
 GLOBAL_LIST_EMPTY(admin_activities)
 GLOBAL_PROTECT(admin_activities)

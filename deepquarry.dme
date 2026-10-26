@@ -5965,4 +5965,7 @@
 
 #include "code\library\operations\presentation.dm"
 #include "code\library\materialization\host.dm"
-
+// Test-only definitions that need the game's macros in scope (the file says why).
+#include "code\tests\engine\test_only_defs.dm"
+// The test build's appended overrides: keep this the last include (the file says why).
+#include "code\modules\unit_tests\_test_build_overrides.dm"
