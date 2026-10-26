@@ -1127,6 +1127,7 @@
 #include "interim_crate_sticky_electropack.dm"
 #include "interim_autopsy_snapshot_ownership.dm"
 #include "interim_living_inventory_drag_actor.dm"
+#include "dq_living_drag_onto.dm"
 #include "interim_assembly_holder_sticky_disassembly.dm"
 #include "interim_synth_native_recipe.dm"
 #include "interim_rcd_native_choices.dm"

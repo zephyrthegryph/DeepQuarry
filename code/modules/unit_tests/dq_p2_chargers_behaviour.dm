@@ -42,9 +42,6 @@
 
 /// A dragged item dropped onto the machine.
 /proc/p2c_drag(mob/living/carbon/human/H, obj/machinery/M, obj/item/dragged)
-	if(p2c_legacy(M))
-		M.MouseDrop_T(dragged, H)
-		return
 	test_click(H, M, dragged, GESTURE_DRAG)
 
 /// A cyborg beside the machine touches it with no module in hand.

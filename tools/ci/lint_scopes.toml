@@ -299,7 +299,6 @@ allowed = [
   "/atom/proc/attackby",
   "/atom/proc/attack_hand",
   "/atom/proc/click_alt",
-  "/atom/proc/MouseDrop_T",
   "/obj/item/proc/attack_self",
   "/client/verb/attack_self",
 ]
@@ -1789,3 +1788,7 @@ exempt_prefixes = ["code/engine/", "code/modules/unit_tests/", "code/modules/ben
 # weak_raw_read (tools/analyze/src/lints/weak_raw_read.rs; doc/rewrite/proposals/relations.md D5): a hard ban. The weak-reference store reads the handle by design; tests read it to prove the handle stays.
 [lint.weak_raw_read]
 exempt_prefixes = ["code/engine/refs/weak.dm", "code/engine/_generated/", "code/modules/unit_tests/", "code/tests/"]
+
+# duplicate_input_key: a hard ban with no baseline. A type's table holds one entry per input key, so a second click_on()/drag_onto()/... of the same type replaces the first.
+[lint.duplicate_input_key]
+exempt_prefixes = ["code/engine/_generated/"]
