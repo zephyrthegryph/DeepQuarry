@@ -185,6 +185,7 @@
 
 	var/custom_footstep = FOOTSTEP_MOB_SHOE
 
+SCHEMA(/mob, faction, schema_text())
 
 CAPABILITIES(/mob)
 	setup(PROC_REF(finish_mob_setup))
