@@ -210,8 +210,8 @@
 	if(isitem(source))
 		var/obj/item/O = source
 		/*var/miss_chance = 15
-		if (O.throw_source)
-			var/distance = get_dist(O.throw_source, loc)
+		if (movable_throw_source(O))
+			var/distance = get_dist(movable_throw_source(O), loc)
 			miss_chance = max(15*(distance-2), 0)
 
 		if (prob(miss_chance))

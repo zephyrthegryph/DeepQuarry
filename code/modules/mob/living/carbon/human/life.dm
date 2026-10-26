@@ -1467,7 +1467,7 @@
 		life_hud_sight_overlays()
 		if(!src.surrounding_belly() && !vore_previewing_of(src)) // Belly fullscreens safety
 			src.clear_fullscreen("belly")
-			src.belly_overlay_tgui?.hide() // hide TGUI belly overlay
+			src.belly_overlay_window()?.hide() // hide TGUI belly overlay
 		if(CONFIG_GET(flag/welder_vision) && life_hud_welder_vision())
 			src.claim_global_hud(GLOB.global_hud.darkMask)
 
@@ -1847,7 +1847,7 @@
 
 /// MED-6: no traumatic shock building and none to recover from.
 /mob/living/carbon/human/proc/life_shock_due()
-	return src.shock_stage > 0 || src.traumatic_shock >= 80
+	return src.shock_stage > 0 || src.current_pain() >= 80
 
 /// Pain and shock come through injure/mend and the body (MOB_KEY_HEALTH). This is the fallback.
 /mob/living/carbon/human/proc/life_shock_rewake()
@@ -1855,10 +1855,9 @@
 
 /// Traumatic shock stages from pain.
 /mob/living/carbon/human/proc/life_shock(datum/seq_frame/life/F)
-	src.updateshock()
 	if(in_godmode(src))
 		return 0	// Cancelled by a component
-	if(src.traumatic_shock >= 80 && src.can_feel_pain())
+	if(src.current_pain() >= 80 && src.can_feel_pain())
 		src.adjust_shock(1, "traumatic pain")
 	else
 		src.adjust_shock(-1, "recovery")
@@ -1868,32 +1867,32 @@
 		return 0
 
 	if(src.shock_stage == 10)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			src.custom_pain("[pick("It hurts so much", "You really need some painkillers", "Dear god, the pain")]!", 40)
 
 	if(src.shock_stage >= 30)
 		if(src.shock_stage == 30 && !isbelly(src.loc))
 			src.automatic_custom_emote(VISIBLE_MESSAGE, "is having trouble keeping their eyes open.", check_stat = TRUE)
 		src.status_at_least(STAT_BLURRY, 2)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			src.status_at_least(STAT_STUTTERING, 5)
 
 
 	if(src.shock_stage == 40)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 
 	if (src.shock_stage >= 60)
 		if(src.shock_stage == 60 && !isbelly(src.loc))
 			src.automatic_custom_emote(VISIBLE_MESSAGE, "'s body becomes limp.", check_stat = TRUE)
 		if (prob(2))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 			src.status_at_least(STAT_WEAKENED, 20)
 
 	if(src.shock_stage >= 80)
 		if (prob(5))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 				if(prob(20) && !isbelly(src.loc))
 					src.emote("pain")
@@ -1901,7 +1900,7 @@
 
 	if(src.shock_stage >= 120)
 		if (prob(2))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("You black out", "You feel like you could die any moment now", "You are about to lose consciousness")]!"))
 				if(prob(40) && !isbelly(src.loc))
 					src.emote("pain")
@@ -2232,7 +2231,6 @@
 /mob/living/carbon/human/rejuvenate()
 	restore_blood()
 	set_shock(0, "rejuvenate")
-	traumatic_shock = 0
 	..()
 
 // The defibrillation window needs no Life stage: the brain charges it on the body clock when

@@ -9,8 +9,10 @@
 #define GENERAL_TAB 3
 #define PREFERENCE_TAB 4
 
-/mob
-	var/tmp/datum/vore_look/vorePanel
+/// The mob's vore panel (LK_VORE_PANEL, gone with the mob), or null.
+/mob/proc/vore_panel()
+	RETURN_TYPE(/datum/vore_look)
+	return link_get(src, LK_VORE_PANEL)
 
 /mob/proc/insidePanel()
 	set name = "Vore Panel"
@@ -22,16 +24,19 @@
 	if(!isliving(src))
 		init_vore(TRUE)
 
-	if(!vorePanel)
+	var/datum/vore_look/panel = vore_panel()
+	if(!panel)
 		if(!isnewplayer(src))
 			log_vore("[src] ([type], [REF(src)]) didn't have a vorePanel and tried to use the verb.")
-		rel_set(src, nameof(vorePanel), new /datum/vore_look(src))
+		panel = new /datum/vore_look(src)
+		link_make(src, LK_VORE_PANEL, panel)
 
-	vorePanel.tgui_interact(src)
+	panel.tgui_interact(src)
 
 /mob/proc/updateVRPanel() //Panel popup update call from belly events.
-	if(vorePanel)
-		SStgui.update_uis(vorePanel)
+	var/datum/vore_look/panel = vore_panel()
+	if(panel)
+		SStgui.update_uis(panel)
 
 //
 // Callback Handler for the Inside form
@@ -677,7 +682,7 @@ CAPABILITIES(/datum/vore_look)
 		B.vore_fx(host())
 	else
 		host().clear_fullscreen("belly")
-		host().belly_overlay_tgui?.hide() // hide TGUI belly overlay
+		host().belly_overlay_window()?.hide() // hide TGUI belly overlay
 	if(!host().hud_used.hud_shown)
 		host().toggle_hud_vis()
 	set_unsaved_changes(TRUE)

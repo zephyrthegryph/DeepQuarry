@@ -178,9 +178,8 @@ sparse(/mob/living, temp_languages, type = list)
 		tabs = sparse_set(M, misc_tabs, list())
 	tabs[tab] = rows
 
-// base_vars wave 11: rare numeric state of a mob. Each reads 0 while unset and a write of 0 clears it.
+// base_vars wave 11: rare numeric state of a mob. Each reads 0 while unset and a write of 0 clears it. (losebreath, read by every breathing step, lives on the physiology.)
 sparse(/mob, disabilities, type = num)
-sparse(/mob, losebreath, type = num)
 sparse(/mob, accumulated_rads, type = num)
 
 /// The mob's disability bitfield (NEARSIGHTED, CLUMSY, BLIND, ...): 0 for nearly every mob, so it is a slot.
@@ -197,13 +196,6 @@ sparse(/mob, accumulated_rads, type = num)
 /// Takes the disability flags `flags` off the mob.
 /mob/proc/remove_disabilities(flags)
 	return set_disabilities(disabilities() & ~flags)
-
-/// How many breaths the mob cannot take (0 breathes normally): set while it chokes or is held by the throat.
-/mob/proc/losebreath()
-	return sparse_get_or(src, losebreath, 0)
-
-/mob/proc/set_losebreath(amount)
-	return sparse_set_or(src, losebreath, amount, 0)
 
 /// The long-term radiation dose that settles out of the acute one (radiation is the acute dose; the writers are in code/modules/body/injury.dm).
 /mob/proc/accumulated_rads()

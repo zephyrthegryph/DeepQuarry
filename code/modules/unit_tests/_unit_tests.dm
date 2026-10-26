@@ -1420,6 +1420,7 @@
 #include "dq_stamp_tests.dm"
 #include "dq_base_vars_wave5_tests.dm"
 #include "dq_base_vars_wave11_tests.dm"
+#include "dq_base_vars_wave12_tests.dm"
 #include "dq_a11_initialization_tests.dm"
 #include "dq_a3_initialization_tests.dm"
 #include "dq_a4_initialization_tests.dm"

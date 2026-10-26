@@ -98,7 +98,7 @@
 		return
 	if (newname)
 		name = newname
-		voice_name = newname
+		set_voice_name(newname)
 		nameset = 1
 
 /mob/living/simple_mob/proc/set_desc()

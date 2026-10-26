@@ -315,7 +315,7 @@ TYPE_TABLE(/mob/living/silicon/ai, special_mentions, list("AI"))
 
 	var/name = speaker.name
 	if(!say_understands(speaker))
-		name = speaker.voice_name
+		name = kind_of(speaker).voice_name
 
 	var/rendered = span_game(span_say(span_name(name) + " [message]"))
 	if(!speaker.client)

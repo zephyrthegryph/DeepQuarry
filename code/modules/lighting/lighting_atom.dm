@@ -41,7 +41,6 @@ CAPABILITIES(/atom/movable)
 	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(all_of(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
 	op("vv_get_movable", topic_in(VV_TOPIC, VV_HK_GET_MOVABLE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_get_movable)))
 	op("vv_edit_particles", topic_in(VV_TOPIC, VV_HK_EDIT_PARTICLES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_particles)))
-	ref_one(nameof(throw_source))
 	ref_one(nameof(throwing))
 
 

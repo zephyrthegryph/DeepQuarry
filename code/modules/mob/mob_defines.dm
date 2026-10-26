@@ -96,7 +96,6 @@
 	var/list/mutations //Carbon -- Doohl
 	//see: setup.dm for list of mutations
 
-	var/voice_name = "unidentifiable voice"
 
 
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
@@ -204,12 +203,12 @@ CAPABILITIES(/mob)
 	every(1 DECISECONDS, then(PROC_REF(dizzy_shake_tick)), when = nameof(dizzy_shaking))
 	every(1 DECISECONDS, then(PROC_REF(jittery_shake_tick)), when = nameof(jittery_shaking))
 	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
-	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
+	links(LINK_END(/mob, LK_BELLY_OVERLAY), LINK_END(/datum/belly_overlay_tgui, LK_BELLY_OVERLAY_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the belly overlay window datum, gone with the mob (belly_overlay_window())
 	owns_one(nameof(dna), /datum/dna)
 	owns_one(nameof(hud_used), /datum/hud)
-	owns_one(nameof(machine_shim), /datum/using_machine_shim)
+	links(LINK_END(/mob, LK_MACHINE_SHIM), LINK_END(/datum/using_machine_shim, LK_MACHINE_SHIM_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the helper that releases a used machine when the mob leaves it, gone with the mob (machine_shim())
 	owns_one(nameof(remote_view), /datum/remote_view)
-	owns_one(nameof(vorePanel), /datum/vore_look)
+	links(LINK_END(/mob, LK_VORE_PANEL), LINK_END(/datum/vore_look, LK_VORE_PANEL_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the vore panel window datum, gone with the mob (vore_panel())
 	owns_many(nameof(spell_masters), /atom/movable/screen/movable/spell_master)
 	owns_many(nameof(vore_organs))
 	owns_many(nameof(alerts))

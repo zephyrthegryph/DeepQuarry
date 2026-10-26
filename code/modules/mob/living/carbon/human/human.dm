@@ -1,7 +1,6 @@
 /mob/living/carbon/human
 	name = "unknown"
 	real_name = "unknown"
-	voice_name = "unknown"
 	icon = 'icons/effects/effects.dmi'	//We have an ultra-complex update icons that overlays everything, don't load some stupid random male human
 	icon_state = "nothing"
 

@@ -9,7 +9,6 @@
 	var/datum/say_list/say_list = null
 	var/datum/looping_sound/mob/deafened/deaf_loop //NYI
 	var/species_sounds = "None" // By default, we have nothing.
-	var/datum/looping_sound/mob/on_fire/firesoundloop
 
 // say_list creation lives in code/modules/combat_ai/integration/mob_living.dm
 // (the duplicate /mob/living/Initialize definitions all run, chained by ..()).

@@ -4,9 +4,9 @@
 
 STATIC_ENTRY(mob_kind)
 
-/proc/mob_kind(mob_class = null, attack_cooldown = null, self_surgery = null, inventory_panel = null, can_be_antagged = null, use_me = null, emote_type = null, death_message = null, attack_icon = null, attack_icon_state = null)
+/proc/mob_kind(mob_class = null, attack_cooldown = null, self_surgery = null, inventory_panel = null, can_be_antagged = null, use_me = null, emote_type = null, death_message = null, attack_icon = null, attack_icon_state = null, voice_name = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_MOB_KIND, null, list("mob_class" = mob_class, "attack_cooldown" = attack_cooldown, "self_surgery" = self_surgery, "inventory_panel" = inventory_panel, "can_be_antagged" = can_be_antagged, "use_me" = use_me, "emote_type" = emote_type, "death_message" = death_message, "attack_icon" = attack_icon, "attack_icon_state" = attack_icon_state))
+	return entry_make(ENTRY_MOB_KIND, null, list("mob_class" = mob_class, "attack_cooldown" = attack_cooldown, "self_surgery" = self_surgery, "inventory_panel" = inventory_panel, "can_be_antagged" = can_be_antagged, "use_me" = use_me, "emote_type" = emote_type, "death_message" = death_message, "attack_icon" = attack_icon, "attack_icon_state" = attack_icon_state, "voice_name" = voice_name))
 
 /datum/type_trait/mob_kind
 	var/mob_class	// MOB_CLASS_*: human, mechanical, animal, ... (projectile effects)
@@ -19,6 +19,7 @@ STATIC_ENTRY(mob_kind)
 	var/death_message = "seizes up and falls limp..."	// what others see when it dies
 	var/attack_icon	// the icon of its unarmed attack animation
 	var/attack_icon_state	// its state
+	var/voice_name = "unidentifiable voice"	// the name shown for it when its voice is not understood (radio, holopads)
 
 /datum/type_trait/mob_kind/copy_values(datum/type_trait/mob_kind/into)
 	into.mob_class = mob_class
@@ -31,13 +32,14 @@ STATIC_ENTRY(mob_kind)
 	into.death_message = death_message
 	into.attack_icon = attack_icon
 	into.attack_icon_state = attack_icon_state
+	into.voice_name = voice_name
 
 /datum/entry_engine/type_trait/mob_kind
 	kind = ENTRY_MOB_KIND
 	trait_type = /datum/type_trait/mob_kind
 	publish_key = MOB_KIND_KEY
 	base_type = /mob
-	var_names = list("mob_class" = "mob_class", "base_attack_cooldown" = "attack_cooldown", "allow_self_surgery" = "self_surgery", "inventory_panel_type" = "inventory_panel", "can_be_antagged" = "can_be_antagged", "use_me" = "use_me", "emote_type" = "emote_type", "death_message" = "death_message", "attack_icon" = "attack_icon", "attack_icon_state" = "attack_icon_state")
+	var_names = list("mob_class" = "mob_class", "base_attack_cooldown" = "attack_cooldown", "allow_self_surgery" = "self_surgery", "inventory_panel_type" = "inventory_panel", "can_be_antagged" = "can_be_antagged", "use_me" = "use_me", "emote_type" = "emote_type", "death_message" = "death_message", "attack_icon" = "attack_icon", "attack_icon_state" = "attack_icon_state", "voice_name" = "voice_name")
 
 /// The holder's mob_kind values (its own once one was set at run time). Read only.
 READS_AS(/proc/kind_of, MOB_KIND_KEY)
@@ -79,3 +81,6 @@ READS_AS(/proc/kind_of, MOB_KIND_KEY)
 
 /mob/proc/set_attack_icon_state(value)
 	return set_trait(src, ENTRY_MOB_KIND, "attack_icon_state", value)
+
+/mob/proc/set_voice_name(value)
+	return set_trait(src, ENTRY_MOB_KIND, "voice_name", value)

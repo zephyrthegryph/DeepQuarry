@@ -16,12 +16,15 @@ CAPABILITIES(/datum/using_machine_shim)
 	ref_one(nameof(linked_machine), /obj) // any object a mob set_machine()s: a spellbook is an item
 	ref_one(nameof(owner), /mob)
 
-/mob/var/datum/using_machine_shim/machine_shim
+/// The mob's shim (LK_MACHINE_SHIM, gone with the mob), or null.
+/mob/proc/machine_shim()
+	RETURN_TYPE(/datum/using_machine_shim)
+	return link_get(src, LK_MACHINE_SHIM)
 
 /datum/using_machine_shim/New(mob/new_owner, obj/machine)
 	..()
 	rel_set(src, nameof(owner), new_owner)
-	rel_set(owner, nameof(owner.machine_shim), src)
+	link_make(owner, LK_MACHINE_SHIM, src)
 	// Mob
 	seq_extra_add(host_mob(), /datum/sequence/life, src)
 	observe(host_mob(), /datum/notice/movable_attempted_move, src, then(PROC_REF(on_mob_moved)))
@@ -79,27 +82,27 @@ CAPABILITIES(/datum/using_machine_shim)
 /// deprecated, do not use
 /mob/proc/get_current_machine()
 	RETURN_TYPE(/obj)
-	var/datum/using_machine_shim/shim = machine_shim
+	var/datum/using_machine_shim/shim = machine_shim()
 	if(!shim)
 		return
 	return shim.linked_machine()
 
 /// deprecated, do not use
 /mob/proc/check_current_machine(obj/checking)
-	var/datum/using_machine_shim/shim = machine_shim
+	var/datum/using_machine_shim/shim = machine_shim()
 	if(!shim)
 		return FALSE
 	return (shim.linked_machine() == checking)
 
 /// deprecated, do not use
 /mob/proc/unset_machine()
-	var/datum/using_machine_shim/shim = machine_shim
+	var/datum/using_machine_shim/shim = machine_shim()
 	if(shim)
 		spent(shim)
 
 /// deprecated, do not use
 /mob/proc/set_machine(obj/O)
-	var/datum/using_machine_shim/shim = machine_shim
+	var/datum/using_machine_shim/shim = machine_shim()
 	if(shim)
 		if(shim.linked_machine() == O) // Already in use
 			return

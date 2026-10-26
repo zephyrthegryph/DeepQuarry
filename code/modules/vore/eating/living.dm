@@ -1438,13 +1438,16 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /**
  * Small helper datum to manage the vore panel HUD icon.
- * Owned by the mob's `vore_panel_button` var.
+ * Linked to its mob by LK_VORE_BUTTON (gone with it).
  */
 /datum/vore_panel_button
 	var/mob/living/owner
 	var/atom/movable/screen/vore_panel/screen_icon
 
-/mob/living/var/datum/vore_panel_button/vore_panel_button
+/// The mob's vore panel button datum (LK_VORE_BUTTON), or null.
+/mob/living/proc/vore_panel_button()
+	RETURN_TYPE(/datum/vore_panel_button)
+	return link_get(src, LK_VORE_BUTTON)
 
 /datum/vore_panel_button/New(mob/living/M)
 	..()
@@ -1453,8 +1456,8 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	if(owner.client)
 		create_mob_button(owner)
 	grant(owner, granted_verb(/mob/proc/insidePanel), src)
-	if(!owner.vorePanel)
-		rel_set(owner, nameof(owner.vorePanel), new /datum/vore_look(owner))
+	if(!owner.vore_panel())
+		link_make(owner, LK_VORE_PANEL, new /datum/vore_look(owner))
 
 // takes the panel back from its owner (the panel verb is granted with this button as
 // source, so its deletion revokes it). Hooks, the screen icon
@@ -1468,14 +1471,16 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		if(HUD)
 			own_remove(HUD, nameof(HUD.other_important), screen_icon)
 	if(M)
-		own_clear(M, nameof(M.vorePanel), OWN_DELETE)
+		spent(M.vore_panel())
 	..()
 
 /// Gives the mob its vore panel HUD button if it has none.
 /mob/living/proc/add_vore_panel_button()
-	if(!vore_panel_button)
-		rel_set(src, nameof(vore_panel_button), new /datum/vore_panel_button(src))
-	return vore_panel_button
+	var/datum/vore_panel_button/button = vore_panel_button()
+	if(!button)
+		button = new /datum/vore_panel_button(src)
+		link_make(src, LK_VORE_BUTTON, button)
+	return button
 
 /datum/vore_panel_button/proc/on_client_login(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -1505,7 +1510,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/click/event = A
 	var/mob/living/clicker = event.user
-	if(istype(clicker) && clicker.vorePanel)
+	if(istype(clicker) && clicker.vore_panel())
 		INVOKE_ASYNC(clicker, TYPE_PROC_REF(/mob/living, insidePanel), clicker) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 /**
  * Screen object for vore panel
@@ -1878,7 +1883,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		set_absorbed(FALSE)
 		sparse_set_or(src, muffled, FALSE, FALSE)
 		clear_fullscreen("belly")
-		belly_overlay_tgui?.hide() // hide TGUI belly overlay
+		belly_overlay_window()?.hide() // hide TGUI belly overlay
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 		stop_sound_channel(CHANNEL_PREYLOOP)
 

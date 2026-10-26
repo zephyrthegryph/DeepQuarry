@@ -256,6 +256,6 @@ CAPABILITIES(/datum/thrownthing)
 #undef MAX_THROWING_DIST
 #undef MAX_TICKS_TO_MAKE_UP
 
-/// Throw source (a relation view). A global helper keeps the proc off the base type.
+/// Where a thrown movable was thrown from (the weak throw_source slot: a bottle thrown in anger). A global helper keeps the proc off the base type.
 /proc/movable_throw_source(atom/movable/AM) as /turf
-	return AM?.throw_source
+	return sparse_ref(AM, throw_source)

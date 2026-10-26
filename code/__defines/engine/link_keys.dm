@@ -65,6 +65,44 @@
 #define LK_COZY_LOOP "cozy_loop"
 #define LK_COZY_LOOP_OF "cozy_loop_of"
 
+// base_vars wave 12: owned and borrowed datums a base type held in a var of its own.
+/// The helper datum a mob's set_machine() made (the shim that releases the machine when the mob leaves it): LK_MACHINE_SHIM on the mob, LK_MACHINE_SHIM_OF on the shim. Gone with the mob. Read machine_shim().
+#define LK_MACHINE_SHIM "machine_shim"
+#define LK_MACHINE_SHIM_OF "machine_shim_of"
+/// A mob's vore panel (the tgui window datum): LK_VORE_PANEL on the mob, LK_VORE_PANEL_OF on the panel. Gone with the mob. Read vore_panel().
+#define LK_VORE_PANEL "vore_panel"
+#define LK_VORE_PANEL_OF "vore_panel_of"
+/// A mob's belly overlay window datum: LK_BELLY_OVERLAY on the mob, LK_BELLY_OVERLAY_OF on the window. Gone with the mob. Read belly_overlay_window().
+#define LK_BELLY_OVERLAY "belly_overlay"
+#define LK_BELLY_OVERLAY_OF "belly_overlay_of"
+/// The slide a living mob is on across a slippery floor: LK_TURFSLIP on the mob, LK_TURFSLIP_OF on the slide. Gone with the mob. Read turfslip().
+#define LK_TURFSLIP "turfslip"
+#define LK_TURFSLIP_OF "turfslip_of"
+/// A living mob's character setup HUD button datum: LK_SETUP_BUTTON on the mob, LK_SETUP_BUTTON_OF on the button. Gone with the mob. Read character_setup_button().
+#define LK_SETUP_BUTTON "setup_button"
+#define LK_SETUP_BUTTON_OF "setup_button_of"
+/// A living mob's vore panel HUD button datum: LK_VORE_BUTTON on the mob, LK_VORE_BUTTON_OF on the button. Gone with the mob. Read vore_panel_button().
+#define LK_VORE_BUTTON "vore_button"
+#define LK_VORE_BUTTON_OF "vore_button_of"
+/// A living mob's inventory panel window datum: LK_INVENTORY_PANEL on the mob, LK_INVENTORY_PANEL_OF on the panel. Gone with the mob. Read inventory_panel().
+#define LK_INVENTORY_PANEL "inventory_panel"
+#define LK_INVENTORY_PANEL_OF "inventory_panel_of"
+/// The heat watch that puts out a burning object when it cools: LK_BURN_COOL_WATCH on the object, LK_BURN_COOL_WATCH_OF on the watch. Gone with the object.
+#define LK_BURN_COOL_WATCH "burn_cool_watch"
+#define LK_BURN_COOL_WATCH_OF "burn_cool_watch_of"
+/// The disposal network connection of an object: LK_DISPOSAL_CONNECTION on the object, LK_DISPOSAL_CONNECTION_OF on the connection. Gone with the object. Read disposal_connection().
+#define LK_DISPOSAL_CONNECTION "disposal_connection"
+#define LK_DISPOSAL_CONNECTION_OF "disposal_connection_of"
+/// The rules-engine node of an atom (its temperature as a rules value): LK_RX_NODE on the atom, LK_RX_NODE_OF on the node. Gone with the atom. Read rx_node_of().
+#define LK_RX_NODE "rx_node"
+#define LK_RX_NODE_OF "rx_node_of"
+/// A mob's faction reputation ledger (its own, or the stable personal one of its account): LK_FACTION_LEDGER on the mob, LK_FACTION_LEDGER_OF on the ledger (many). Read faction_reputation().
+#define LK_FACTION_LEDGER "faction_ledger"
+#define LK_FACTION_LEDGER_OF "faction_ledger_of"
+/// The unarmed attack a human uses by default: LK_DEFAULT_ATTACK on the human, LK_DEFAULT_ATTACK_OF on the attack (many). Read default_attack().
+#define LK_DEFAULT_ATTACK "default_attack"
+#define LK_DEFAULT_ATTACK_OF "default_attack_of"
+
 /// The pseudo segments of the turf and area hops (code/engine/refs/hops.dm): not vars. A reactive read of `get_turf(src).x` crosses HOP_TURF, of
 /// `get_area(src).x` crosses HOP_AREA; hop_step() resolves them and the movement choke point publishes them (hop_moved()).
 #define HOP_TURF "turf"

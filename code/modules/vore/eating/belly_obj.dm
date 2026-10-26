@@ -483,7 +483,7 @@ CAPABILITIES(/obj/belly)
 		for(var/mob/living/L in endfx)
 			if(L.surrounding_belly()) continue
 			L.clear_fullscreen("belly")
-			L.belly_overlay_tgui?.hide() // hide TGUI belly overlay
+			L.belly_overlay_window()?.hide() // hide TGUI belly overlay
 			if(L.hud_used)
 				if(!L.hud_used.hud_shown)
 					L.toggle_hud_vis()

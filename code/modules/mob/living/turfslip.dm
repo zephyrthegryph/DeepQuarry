@@ -1,5 +1,5 @@
 /// An ongoing slide across a slippery floor. (Was /datum/component/turfslip; now a plain datum
-/// owned by the sliding mob, /mob/living var turfslip.)
+/// linked to the sliding mob by LK_TURFSLIP, gone with it.)
 /datum/turfslip
 	/// The sliding mob.
 	var/mob/living/owner
@@ -10,8 +10,10 @@
 CAPABILITIES(/datum/turfslip)
 	ref_one(nameof(owner), /mob/living)
 
-/// Owned: the slide in progress, if any.
-/mob/living/var/datum/turfslip/turfslip
+/// The slide in progress (LK_TURFSLIP), or null.
+/mob/living/proc/current_turfslip()
+	RETURN_TYPE(/datum/turfslip)
+	return link_get(src, LK_TURFSLIP)
 
 
 /datum/turfslip/New(mob/living/new_owner)
@@ -22,15 +24,15 @@ CAPABILITIES(/datum/turfslip)
 
 /// The mob's slide, starting one if it has none (was LoadComponent).
 /mob/living/proc/get_or_start_turfslip() as /datum/turfslip
-	if(!turfslip)
-		rel_set(src, nameof(turfslip), new /datum/turfslip(src))
-	return turfslip
+	var/datum/turfslip/slide = current_turfslip()
+	if(!slide)
+		slide = new /datum/turfslip(src)
+		link_make(src, LK_TURFSLIP, slide)
+	return slide
 
 /// Ends the slide: detaches from the mob and deletes this datum (was qdel(src) on the component).
 /datum/turfslip/proc/end_slip()
-	if(owner?.turfslip == src)
-		rel_take(owner, nameof(owner.turfslip))
-	spent(src)
+	spent(src) // the link to the mob breaks with the datum
 
 /datum/turfslip/proc/start_slip(turf/simulated/start, is_dirt)
 	var/slip_stun = 6

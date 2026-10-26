@@ -35,6 +35,8 @@ sparse(/atom/movable, parachute, type = bool)
 sparse(/atom/movable, parachuting, type = bool)
 sparse(/atom/movable, softfall, type = bool)
 sparse(/atom/movable, hovering, type = bool)
+// Where a thrown movable was thrown from (a bottle thrown in anger): a weak slot, read through movable_throw_source().
+sparse(/atom/movable, throw_source, type = weak)
 
 // Lights affecting this movable, keyed by the light; dropped with the movable (the light side may be dying too).
 

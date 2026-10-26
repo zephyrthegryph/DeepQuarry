@@ -188,13 +188,16 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 /proc/get_belly_overlay_tgui(mob/M)
 	if(!M)
 		return null
-	if(!M.belly_overlay_tgui)
-		rel_set(M, nameof(/mob::belly_overlay_tgui), new /datum/belly_overlay_tgui(M))
-	return M.belly_overlay_tgui
+	var/datum/belly_overlay_tgui/window = M.belly_overlay_window()
+	if(!window)
+		window = new /datum/belly_overlay_tgui(M)
+		link_make(M, LK_BELLY_OVERLAY, window)
+	return window
 
-/mob
-	var/tmp/datum/belly_overlay_tgui/belly_overlay_tgui
-// /mob/Destroy() cleanup of belly_overlay_tgui folded into the canonical /mob/Destroy() in mob.dm
+/// The mob's belly overlay window (LK_BELLY_OVERLAY, gone with the mob), or null.
+/mob/proc/belly_overlay_window()
+	RETURN_TYPE(/datum/belly_overlay_tgui)
+	return link_get(src, LK_BELLY_OVERLAY)
 
 
 

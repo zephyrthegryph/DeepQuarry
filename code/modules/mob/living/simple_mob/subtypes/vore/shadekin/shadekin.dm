@@ -270,7 +270,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 		shadekin.in_dark_respite = TRUE
 		PUBLISH(belly.owner, belly_change)
 		clear_fullscreen("belly")
-		belly_overlay_tgui?.hide() // hide TGUI belly overlay
+		belly_overlay_window()?.hide() // hide TGUI belly overlay
 		if(hud_used)
 			if(!hud_used.hud_shown)
 				toggle_hud_vis()

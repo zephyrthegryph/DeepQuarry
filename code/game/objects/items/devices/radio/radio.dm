@@ -558,7 +558,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		"job" = jobname,		// the mob's job
 		"key" = mobkey,			// the mob's key
 		"vmessage" = message_to_multilingual(pick(M.speak_emote)), // the message to display if the voice wasn't understood
-		"vname" = M.voice_name, // the name to display if the voice wasn't understood
+		"vname" = kind_of(M).voice_name, // the name to display if the voice wasn't understood
 		"vmask" = voicemask,	// 1 if the mob is using a voice gas mask
 
 		// We store things that would otherwise be kept in the actual mob
@@ -654,7 +654,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 	//Nothing handled any sort of remote radio-ing and returned before now, just squawk on this zlevel.
 	return Broadcast_Message(connection, M, voicemask, pick(M.speak_emote),
-		src, message_pieces, displayname, jobname, real_name, M.voice_name,
+		src, message_pieces, displayname, jobname, real_name, kind_of(M).voice_name,
 		filter_type, signal.data["compression"], using_map.get_map_levels(pos_z), connection.frequency, verb)
 
 /obj/item/radio/hear_talk(mob/M as mob, list/message_pieces, verb = "says")

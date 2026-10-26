@@ -1,4 +1,4 @@
-///Disposal connection (owned by its /obj), allows an atom to recieve and send disposal packages if attached to a disposal trunk.
+///Disposal connection (linked to its /obj by LK_DISPOSAL_CONNECTION, gone with it), allows an atom to recieve and send disposal packages if attached to a disposal trunk.
 /datum/disposal_system_connection
 	//The connected trunk. Also determines if we're linked already or not.
 	var/obj/structure/disposalpipe/trunk/connected_trunk
@@ -8,15 +8,18 @@
 	/// The connected machine.
 	var/obj/owner
 
-/obj/var/tmp/datum/disposal_system_connection/disposal_connection
+/// The object's disposal connection (LK_DISPOSAL_CONNECTION), or null.
+/obj/proc/disposal_connection()
+	RETURN_TYPE(/datum/disposal_system_connection)
+	return link_get(src, LK_DISPOSAL_CONNECTION)
 
 /// Gives src a disposal network connection (owned; deleted with src). Returns it.
 /obj/proc/add_disposal_connection(visibly_connects = TRUE)
 	RETURN_TYPE(/datum/disposal_system_connection)
-	if(disposal_connection)
-		rel_clear(src, nameof(disposal_connection))
-	rel_set(src, nameof(disposal_connection), new /datum/disposal_system_connection(src, visibly_connects))
-	return disposal_connection
+	spent(disposal_connection()) // a replaced connection is retired
+	var/datum/disposal_system_connection/connection = new /datum/disposal_system_connection(src, visibly_connects)
+	link_make(src, LK_DISPOSAL_CONNECTION, connection)
+	return connection
 
 /datum/disposal_system_connection/New(obj/new_owner, visibly_connects = TRUE)
 	..()

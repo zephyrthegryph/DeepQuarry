@@ -28,7 +28,7 @@
 	. = ..()
 	if(istype(thrower) && thrower.combat_mode)
 		violent_throw = TRUE
-		rel_set(src, nameof(throw_source), get_turf(thrower))
+		sparse_ref_set(src, throw_source, get_turf(thrower))
 
 /obj/item/reagent_containers/food/drinks/bottle/throw_impact(atom/hit_atom)
 	..()
@@ -42,7 +42,7 @@
 			src.smash(loc, hit_atom)
 
 	violent_throw = FALSE
-	rel_clear(src, nameof(throw_source))
+	sparse_ref_set(src, throw_source, null)
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/smash_check(distance)
 	if(!isGlass || !smash_duration)

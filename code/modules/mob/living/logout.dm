@@ -6,8 +6,8 @@
 		if(!key)	//key and mind have become seperated.
 			mind.active = 0	//This is to stop say, a mind.transfer_to call on a corpse causing a ghost to re-enter its body.
 
-	rel_clear(src, nameof(character_setup_button))
-	rel_clear(src, nameof(vore_panel_button))
+	spent(character_setup_button()) // the HUD buttons are the mob's: they go when it logs out
+	spent(vore_panel_button())
 
 	after(src, 15 SECONDS, PROC_REF(logout_wake_ai)) //15 seconds to get back into the mob before it goes wild
 

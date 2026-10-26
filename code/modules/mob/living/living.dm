@@ -1142,7 +1142,7 @@ READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
 
 /**
  * Small helper datum to manage the character setup HUD icon (was
- * /datum/component/character_setup). Owned by the mob's `character_setup_button` var.
+ * /datum/component/character_setup). Linked to its mob by LK_SETUP_BUTTON (gone with it).
  */
 /datum/character_setup_button
 	var/mob/living/owner
@@ -1152,7 +1152,10 @@ CAPABILITIES(/datum/character_setup_button)
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(screen_icon), /atom/movable/screen/character_setup)
 
-/mob/living/var/datum/character_setup_button/character_setup_button
+/// The mob's character setup button datum (LK_SETUP_BUTTON), or null.
+/mob/living/proc/character_setup_button()
+	RETURN_TYPE(/datum/character_setup_button)
+	return link_get(src, LK_SETUP_BUTTON)
 
 /datum/character_setup_button/New(mob/living/M)
 	..()
@@ -1172,9 +1175,11 @@ CAPABILITIES(/datum/character_setup_button)
 
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()
-	if(!character_setup_button)
-		rel_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
-	return character_setup_button
+	var/datum/character_setup_button/button = character_setup_button()
+	if(!button)
+		button = new /datum/character_setup_button(src)
+		link_make(src, LK_SETUP_BUTTON, button)
+	return button
 
 /datum/character_setup_button/proc/on_client_login(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -1246,18 +1251,6 @@ CAPABILITIES(/datum/character_setup_button)
 		rel_clear(src, nameof(hud_list))
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
-
-/// Its burning loop, with one of the extinguish sounds at random (owns_one(starts =)).
-/mob/living/proc/start_fire_loop(current, mapload)
-	var/datum/looping_sound/mob/on_fire/loop = new /datum/looping_sound/mob/on_fire(src, FALSE)
-	if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
-		if(prob(30))
-			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
-		else if(prob(20))
-			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
-		else
-			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
-	return loop
 
 /// rolls(nameof(name), PROC_REF(roll_numbered_name)): "mouse" becomes "mouse (417)". The roll is skipped for a renamed or map-named instance.
 /mob/living/proc/roll_numbered_name(datum/roller/R)
