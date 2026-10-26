@@ -28,18 +28,18 @@
 	var/datum/admins/dq_dead_topic_fixture/holder = allocate(/datum/admins/dq_dead_topic_fixture, list(), fixture_key)
 	GLOB.admin_datums -= fixture_key
 	// MARK sets the marked datum
-	var/datum/op_result/marked = click(actor, holder, "mark_datum", list("mark_datum" = ref_token(target)))
+	var/datum/op_result/marked = click(actor, holder, "mark_datum", list("mark_datum" = target))
 	TEST_ASSERT_EQUAL(marked?.outcome, ACT_COMMITTED, "MARK runs")
 	TEST_ASSERT_EQUAL(holder.marked_datum(), target, "MARK sets the admin's marked datum")
 	// UNTAG removes the tag
 	holder.add_tagged_datum(target)
 	TEST_ASSERT(LAZYFIND(holder.tagged_datums, target), "the datum is tagged")
-	var/datum/op_result/untagged = click(actor, holder, "del_tag", list("del_tag" = ref_token(target)))
+	var/datum/op_result/untagged = click(actor, holder, "del_tag", list("del_tag" = target))
 	TEST_ASSERT_EQUAL(untagged?.outcome, ACT_COMMITTED, "UNTAG runs")
 	TEST_ASSERT(!LAZYFIND(holder.tagged_datums, target), "UNTAG removes the tag")
 	// rights: an actor without admin authority is refused
 	holder.add_tagged_datum(target)
-	var/datum/op_result/refused = click(actor, holder, "del_tag", list("del_tag" = ref_token(target)), AUTH_PHYSICAL)
+	var/datum/op_result/refused = click(actor, holder, "del_tag", list("del_tag" = target), AUTH_PHYSICAL)
 	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "UNTAG refuses an actor without rights")
 	TEST_ASSERT_EQUAL(refused?.reason, /datum/msg/req_no_rights, "with the rights message, so the key resolved to an op")
 	TEST_ASSERT(LAZYFIND(holder.tagged_datums, target), "and the tag stays")
