@@ -42,7 +42,6 @@
 
 CAPABILITIES(/datum/seed)
 	param(nameof(trait_values), default = PROC_REF(default_traits))
-	after_init(0.5 SECONDS, then(PROC_REF(growth_stages_due)))
 
 /// The seed's traits when it is made: each subtype sets its own after `. = ..()`. Returns the trait table.
 /datum/seed/proc/default_traits()
@@ -86,6 +85,7 @@ CAPABILITIES(/datum/seed)
 	set_trait(TRAIT_MUTAGENIC_REAG,       null)         // Reagents considered uniquely 'mutagenic' by a plant. This should be an associated list, or null. Examples in tray.dm
 	set_trait(TRAIT_TOXIC_REAG,           null)         // Reagents considered uniquely 'toxic' by a plant. This should be an associated list, or null. Examples in tray.dm
 
+	after(src, 0.5 SECONDS, PROC_REF(update_growth_stages)) // the plant icon a subtype sets is known by then
 	return trait_values
 
 /datum/seed/proc/get_trait(trait)
@@ -935,10 +935,6 @@ CAPABILITIES(/datum/seed)
 	if(!S || is_registered(S))
 		return proto_set(dest, dest_var, S)
 	return proto_set(dest, dest_var, proto_replace(source, source_var, null))
-
-/// after_init(): the plant icon is known now; count its growth stages.
-/datum/seed/proc/growth_stages_due(datum/act/timer/A)
-	update_growth_stages()
 
 /datum/seed/proc/update_growth_stages()
 	if(get_trait(TRAIT_PLANT_ICON))

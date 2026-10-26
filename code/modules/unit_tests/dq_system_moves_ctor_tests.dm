@@ -5,7 +5,7 @@
 	test_driver_begin()
 	var/datum/seed/apple/gold/S = new
 	TEST_ASSERT_EQUAL(S.get_trait(TRAIT_MATURATION), 10, "the subtype's own trait wins over its parent's")
-	TEST_ASSERT_EQUAL(S.get_trait(TRAIT_YIELD), 5, "a trait only the parent sets is kept")
+	TEST_ASSERT_EQUAL(S.get_trait(TRAIT_POTENCY), 10, "a trait only the parent sets is kept")
 	TEST_ASSERT_EQUAL(S.get_trait(TRAIT_REQUIRES_WATER), 1, "the base default is set")
 	TEST_ASSERT_EQUAL(S.get_trait(TRAIT_PLANT_ICON), "tree2", "the plant icon comes from the parent")
 	test_time(1 SECOND)
