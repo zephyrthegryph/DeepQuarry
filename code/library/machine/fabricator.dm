@@ -23,6 +23,7 @@
 //       knows = PROC_REF(knows_design), build_time = PROC_REF(design_build_time))
 
 MSG_DEF_SELF(fabricator/idle, "It isn't printing anything.")
+MSG_DEF_SELF(fabricator/drop_here_only, "Point it at another tile.")
 MSG_DEF_SELF(fabricator/busy, "It is busy. Wait for the current print run to finish.")
 MSG_DEF_SELF(fabricator/unknown_design, "It does not know that design.")
 MSG_DEF_SELF(fabricator/no_keys, "It does not have the necessary manipulation systems for that design.")
@@ -47,7 +48,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /datum/capability/lib/fabricator/entries()
 	. = list(
 		op("drop_here", at_target(), gesture(GESTURE_DRAG), reach(REACH_RANGE(2)), label("Drop printed things here"),
-			needs(req(CAP_PROC(beside)), req(CAP_PROC(idle))),
+			needs(req(CAP_PROC(beside)), req(CAP_PROC(idle)), req(CAP_PROC(drop_direction))),
 			then(CAP_PROC(drop_pointed))),
 		// an item used on it goes to its store (sheets, a sheet snatcher, a multitool linking an ore silo), through the store's own use gate
 		op("store", item(/obj/item), label("Put it in"), priority(OP_PRIORITY_DEFAULT + 1), when(CAP_PROC(store_reachable)), then(CAP_PROC(store_used))),
@@ -284,11 +285,15 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	return (A.actor && M.Adjacent(A.actor)) ? null : /datum/msg/fabricator/too_far
 
 /// Dragged onto a tile, the machine drops printed things toward it.
+/datum/capability/lib/fabricator/proc/drop_direction(datum/act/op/A)
+	var/atom/movable/M = A.holder
+	return get_dir(M, get_turf(A.target)) ? null : /datum/msg/fabricator/drop_here_only
+
 /datum/capability/lib/fabricator/proc/drop_pointed(datum/act/op/A)
 	var/atom/movable/M = A.holder
 	var/direction = get_dir(M, get_turf(A.target))
 	if(!direction)
-		return OP_REFUSED
+		return OP_FAILED
 	op_write_key(M, drop, direction)
 	M.balloon_alert(A.actor, "dropping [dir2text(direction)]")
 	return OP_OK

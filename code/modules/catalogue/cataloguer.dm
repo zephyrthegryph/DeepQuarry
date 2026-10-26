@@ -244,7 +244,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	for(var/atom/A as anything in scannable_atoms)
 		A.filters += filter
 	to_chat(user, span_notice("\The [src] is highlighting scannable objects in green, if any exist."))
-	after(src, 2 SECONDS, PROC_REF(pulse_scan_end), with = list(user, list(scannable_atoms, filter)))
+	after(src, 2 SECONDS, PROC_REF(pulse_scan_end), key = "scan_end", with = list(user, list(scannable_atoms, filter)))
 
 /obj/item/cataloguer/proc/pulse_scan_end(mob/user, list/state)
 	var/list/scannable_atoms = state[1]

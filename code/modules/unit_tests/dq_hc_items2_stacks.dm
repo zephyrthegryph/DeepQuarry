@@ -233,7 +233,7 @@
 	TEST_ASSERT_EQUAL(got?.picked_color, "Lime", "with its colour")
 	qdel(got)
 	var/obj/structure/marker_beacon/perm = allocate(/obj/structure/marker_beacon, tile(3, 3))
-	perm.perma = TRUE
+	perm.set_perma(TRUE)
 	hci_click(H, perm, null)
 	test_time(10 SECONDS)
 	TEST_ASSERT(!QDELETED(perm), "a permanent beacon stays")
