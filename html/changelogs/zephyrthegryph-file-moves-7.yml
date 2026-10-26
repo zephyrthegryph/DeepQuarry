@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved fully migrated integrated_electronics, overmap, lore_codex and a few event, hydroponics and xenoarcheaology files into the new code/content tree"
