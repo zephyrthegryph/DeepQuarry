@@ -98,6 +98,8 @@
 	// ALLOW(instance_list): d: per-mob req_access with starting entries, edited at runtime; mobs are few
 	var/list/req_access = list(ACCESS_ROBOTICS) // Interned per subtype in Initialize().
 	var/ident = 0
+	/// FALSE until finish_robot_setup() has run: the build's part and cell installs are not part changes to react to.
+	var/tmp/build_done = FALSE
 	var/viewalerts = 0
 	var/modtype = "Default"
 	var/sprite_type = null
@@ -150,6 +152,7 @@
 	resolve_sprite_datum()
 	recompute_power_demand()
 	update_senses()
+	build_done = TRUE
 
 /mob/living/silicon/robot/proc/setup_radio()
 	rel_set(src, nameof(radio), new /obj/item/radio/borg(src))
@@ -424,8 +427,8 @@
 /// A part was installed, removed, destroyed, toggled or its integrity
 /// changed. Everything derived from parts updates here, once.
 /mob/living/silicon/robot/proc/on_part_changed(datum/robot_component/C)
-	if(!body || QDELETED(src))
-		return
+	if(!build_done || !body || QDELETED(src))
+		return // its build steps install parts one by one (the cell last): finish_robot_setup() takes the demand and senses once they are all in
 	recompute_power_demand()
 	update_power_state()
 	update_canmove()

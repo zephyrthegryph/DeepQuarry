@@ -43,7 +43,7 @@
 	var/turf/T = dq_containment_floor()
 	var/mob/living/silicon/robot/drone/D = allocate(/mob/living/silicon/robot/drone, T)
 	dq_robot_built_checks(D, "drone")
-	TEST_ASSERT_EQUAL(D.name, "maintenance drone ([D.serial_number])", "a drone is named after its rolled serial number")
+	TEST_ASSERT_EQUAL(D.name, "[initial(D.name)] ([D.serial_number])", "a drone is named after its rolled serial number")
 	TEST_ASSERT(istype(D.laws, /datum/ai_laws/drone), "its laws are its law type")
 	TEST_ASSERT_NULL(D.additional_law_channels?["Binary"], "it does not state laws on binary")
 	TEST_ASSERT_EQUAL(D.additional_law_channels?["Drone"], ":d", "it states them on the drone channel")
@@ -57,7 +57,7 @@
 	TEST_ASSERT(istype(C.laws, /datum/ai_laws/construction_drone), "a construction drone has its own laws")
 	TEST_ASSERT(istype(C.module, /obj/item/robot_module/drone/construction), "and module")
 	TEST_ASSERT(findtext(C.bio.flavor_text, "bulky construction drone"), "and flavour text")
-	TEST_ASSERT_EQUAL(C.name, "construction drone ([C.serial_number])", "and its name follows its type")
+	TEST_ASSERT_EQUAL(C.name, "[initial(C.name)] ([C.serial_number])", "and its name follows its type")
 
 /datum/unit_test/dq_robot_init_syndicate
 
@@ -81,7 +81,7 @@
 	dq_robot_built_checks(P, "protector")
 	TEST_ASSERT(istype(P.module, /obj/item/robot_module/robot/syndicate/protector), "a protector has its module")
 	TEST_ASSERT_EQUAL(P.modtype, "Protector", "and its module type")
-	TEST_ASSERT_EQUAL(P.restrict_modules_to, list("Protector"), "and may pick nothing else")
+	TEST_ASSERT(length(P.restrict_modules_to) == 1 && P.restrict_modules_to[1] == "Protector", "and may pick nothing else")
 	TEST_ASSERT_EQUAL(P.name, "Syndicate Drone-[P.ident]", "its name was made before the module type was set, as before")
 
 /datum/unit_test/dq_robot_init_shell
