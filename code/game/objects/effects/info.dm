@@ -11,16 +11,14 @@
 
 CAPABILITIES(/obj/effect/abstract/info)
 	click_on(PROC_REF(info_clicked))
+	hover(PROC_REF(info_hovered))
 	param(nameof(info_text), pos = 1)
 
 /obj/effect/abstract/info/proc/info_clicked(datum/act/input/A)
-	input_submit(new /datum/input_event/click(A.actor, src, A.native?["location"], A.native?["control"], A.params))
+	input_resolve_click(new /datum/input_event/click(A.actor, src, A.native?["location"], A.native?["control"], A.params))
 	to_chat(A.actor, info_text)
+	return TRUE
 
-/obj/effect/abstract/info/MouseEntered(location, control, params)
-	. = ..()
-	set_icon_state("info_hovered")
-
-/obj/effect/abstract/info/MouseExited()
-	. = ..()
-	set_icon_state(initial(icon_state))
+/// The button lights up while the mouse is over it.
+/obj/effect/abstract/info/proc/info_hovered(datum/act/input/A)
+	set_icon_state(A.entered ? "info_hovered" : initial(icon_state))

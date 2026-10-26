@@ -24,15 +24,19 @@
 /mob/living/carbon/human/dq_entry_probe/input_client_mouse(kind, atom/target, atom/over, params)
 	entry_note(kind, target, over)
 
-/// Something dropped onto it records who dropped what.
+/// Dragged onto something, it records what it was dropped on and by whom.
 /obj/structure/dq_entry_target
 	name = "entry target"
 	var/atom/dropped = null
 	var/mob/dropped_by = null
 
-/obj/structure/dq_entry_target/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	dropped = dropping
-	dropped_by = user
+CAPABILITIES(/obj/structure/dq_entry_target)
+	drag_onto(PROC_REF(entry_dropped))
+
+/obj/structure/dq_entry_target/proc/entry_dropped(datum/act/input/A)
+	dropped = A.over
+	dropped_by = A.actor
+	return TRUE
 
 /datum/unit_test/proc/dq_entry_noted(mob/living/carbon/human/dq_entry_probe/user, what)
 	for(var/list/row as anything in user.entry_seen)
@@ -95,12 +99,12 @@
 /datum/unit_test/dq_input_entry_drop/Run()
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
-	var/obj/structure/dq_input_target/dragged = allocate(/obj/structure/dq_input_target, T)
-	var/obj/structure/dq_entry_target/target = allocate(/obj/structure/dq_entry_target, T)
+	var/obj/structure/dq_input_target/target = allocate(/obj/structure/dq_input_target, T)
+	var/obj/structure/dq_entry_target/dragged = allocate(/obj/structure/dq_entry_target, T)
 	test_driver_begin()
 	input_force_room(TRUE)
 
 	with_actor(user, dragged, "MouseDrop", target, T, T, null, null, "")
-	TEST_ASSERT_EQUAL(target.dropped, dragged, "a drop resolves through the inbox onto the target's MouseDrop_T")
-	TEST_ASSERT_EQUAL(target.dropped_by, user, "as the mob that dragged")
+	TEST_ASSERT_EQUAL(dragged.dropped, target, "a drop resolves through the inbox to the dragged type's drag_onto() entry, with what it was dropped on")
+	TEST_ASSERT_EQUAL(dragged.dropped_by, user, "as the mob that dragged")
 	test_driver_end()

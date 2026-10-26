@@ -2,8 +2,13 @@
 /obj/interim_backpack_drag_actor_click
 	var/obj/item/device
 
-/obj/interim_backpack_drag_actor_click/Click(location, control, params)
+CAPABILITIES(/obj/interim_backpack_drag_actor_click)
+	click_on(PROC_REF(probe_clicked))
+
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_backpack_drag_actor_click/proc/probe_clicked(datum/act/input/A)
 	device.MouseDrop()
+	return TRUE
 
 /datum/unit_test/interim_backpack_drag_actor
 	abstract_type = /datum/unit_test/interim_backpack_drag_actor
