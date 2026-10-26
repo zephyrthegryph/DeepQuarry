@@ -12,14 +12,15 @@
 	TEST_ASSERT(living_rules_of(M).use_modern_ai && istype(M.ai_brain, /datum/ai_brain), "mob_the HUD setup hook ran: the AI brain exists")
 
 // Body creation order: the declared starting body (owns_one(starts =) of the combat AI block) is made inside /mob/living/Initialize's chain,
-// so a type's own Initialize code that runs before its ..() sees no body and code after ..() sees it. A human is the exception: it runs
+// so a type's own Initialize code that runs before its ..() sees no body and code after ..() sees it. A robot has no Initialize(): its build steps are setup()
+// hooks, which run once the chain has returned, so the body is there for them. A human is the exception: it runs
 // set_species() before ..(), which builds the body there. The probes below record what they saw.
 /mob/living/silicon/robot/dq_body_order_probe
-	var/body_before_init_chain = "unset"
+	var/body_in_setup_radio = "unset"
 	var/body_after_init_chain = "unset"
 
 /mob/living/silicon/robot/dq_body_order_probe/setup_radio()
-	body_before_init_chain = body // ran before ..() in robot Initialize
+	body_in_setup_radio = body // a setup() hook of the robot: the chain has returned
 	return ..()
 
 /mob/living/silicon/robot/dq_body_order_probe/Initialize(mapload)
@@ -53,7 +54,7 @@
 /datum/unit_test/dq_body_creation_order/Run()
 	var/turf/T = dq_containment_floor()
 	var/mob/living/silicon/robot/dq_body_order_probe/R = allocate(/mob/living/silicon/robot/dq_body_order_probe, T)
-	TEST_ASSERT_NULL(R.body_before_init_chain, "a robot has no body in code that runs before ..()")
+	TEST_ASSERT(istype(R.body_in_setup_radio, /datum/body), "a robot has its body already in its setup steps in setup_radio")
 	TEST_ASSERT(istype(R.body_after_init_chain, /datum/body), "a robot has its body after ..()")
 	var/mob/living/simple_mob/animal/passive/mouse/dq_body_order_probe/M = allocate(/mob/living/simple_mob/animal/passive/mouse/dq_body_order_probe, T)
 	TEST_ASSERT_NULL(M.body_before_init_chain, "a mouse has no body in code that runs before ..()")

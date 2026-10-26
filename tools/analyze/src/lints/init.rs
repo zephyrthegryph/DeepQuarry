@@ -70,7 +70,7 @@ static META: Meta = Meta {
         RuleMeta { name: "table_init_overrides", hint: "set init_from_table = FALSE on a type that overrides Initialize()" },
     ],
     allow: &["init"],
-    lists: &[],
+    lists: &["init_roots"],
 };
 
 /// One file's part of the table-init pass: its `init_from_table` flags `(type, on)` in file order,
@@ -152,6 +152,7 @@ impl Lint for Init {
                     .collect()
             })
         });
+        let roots = init_roots(cx);
         match typed {
             Some(defs) => {
                 let mut by_rel: HashMap<&str, Vec<(u32, Def, String)>> = HashMap::new();
@@ -179,6 +180,9 @@ impl Lint for Init {
                         }
                     }
                     for (header, (kind, owner)) in defs {
+                        if kind == Def::Init && roots.contains(owner.as_str()) {
+                            continue;
+                        }
                         self.judge_def(f, &lines, header as usize, kind, &owner, out);
                     }
                 }
@@ -186,7 +190,7 @@ impl Lint for Init {
             None => {
                 for f in &files {
                     out.cur = f.rel.clone();
-                    self.scan_text(f, out);
+                    self.scan_text(f, &roots, out);
                 }
             }
         }
@@ -273,14 +277,24 @@ impl Init {
 
     /// The text rule, for a tree the model cannot parse: headers found by their `/type/Initialize(` text, a body every
     /// line up to the next column-0 line.
-    fn scan_text(&self, f: &SourceFile, out: &mut Sink) {
+    fn scan_text(&self, f: &SourceFile, roots: &std::collections::HashSet<&str>, out: &mut Sink) {
         let lines = py_splitlines(f.text());
         for (i, line) in lines.iter().enumerate() {
             if let Some(kind) = text_header(line) {
+                if kind == Def::Init && roots.contains(text_owner(line).as_str()) {
+                    continue;
+                }
                 self.judge_def(f, &lines, i + 1, kind, &text_owner(line), out);
             }
         }
     }
+}
+
+/// The types that *are* the Initialize() chain (`[lint.init] init_roots` in `tools/ci/lint_scopes.toml`, each entry `"/type = why"`): no form can
+/// run before the chain they define, so their `Initialize()` is not debt: it has no sites and needs no `ALLOW(init/...)`. A closed list; adding a
+/// type is a design change (doc/rewrite/proposals/init_phase0.md, D1).
+fn init_roots<'a>(cx: &Cx<'a>) -> std::collections::HashSet<&'a str> {
+    cx.list("init_roots").iter().filter_map(|e| e.split_once(" = ").map(|(t, _)| t.trim())).collect()
 }
 
 /// The owner a header line names (`/obj/x/Initialize(` is `/obj/x`); empty when the line writes none.
@@ -395,7 +409,7 @@ mod tests {
         let f = tree.get("code/a.dm").unwrap();
         let mut out = Sink::new();
         out.cur = f.rel.clone();
-        Init.scan_text(f, &mut out);
+        Init.scan_text(f, &std::collections::HashSet::new(), &mut out);
         let sites = out.sites.into_iter().filter(|s| s.rule == "init_lines").collect();
         (tree, sites)
     }

@@ -36,6 +36,9 @@ MSG_DEF(pipe/sealed, "You seal the fatigue crack in %T%.", "%U% seals the fatigu
 MSG_DEF_SELF(pipe/not_cracked, "It has no crack to seal.")
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe)
+	preset(nameof(level), PROC_REF(level_for_place))
+	preset(nameof(material_total), PROC_REF(drive_material_total), when = nameof(power_rating))
+	preset(nameof(material_template), PROC_REF(drive_material_template), from = list(nameof(material_total)), when = nameof(power_rating))
 	configure(buckle_rules(require_restraints = 1, lying = -1))
 	unpowered_machine() // a pipe draws nothing: it carries no has_power for an APC flip to re-evaluate
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
@@ -48,11 +51,12 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /obj/machinery/atmospherics/pipe/drain_power()
 	return -1
 
-// ALLOW(init/INSTANCE_STATE): level taken from where this instance is placed
-/obj/machinery/atmospherics/pipe/Initialize(mapload)
-	if(istype(get_turf(src), /turf/simulated/wall) || istype(get_turf(src), /turf/simulated/shuttle/wall) || istype(get_turf(src), /turf/unsimulated/wall))
-		level = 1
-	. = ..()
+/// A pipe set into a wall is level 1 (a mapped level on another turf is kept).
+/obj/machinery/atmospherics/pipe/proc/level_for_place(target)
+	var/turf/T = get_turf(src)
+	if(istype(T, /turf/simulated/wall) || istype(T, /turf/simulated/shuttle/wall) || istype(T, /turf/unsimulated/wall))
+		return 1
+	return level
 
 /obj/machinery/atmospherics/pipe/hides_under_flooring()
 	return level != 2
