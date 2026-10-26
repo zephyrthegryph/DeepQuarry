@@ -122,6 +122,17 @@ if [ "$early_reuse" -eq 0 ]; then
 	tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
 fi
 lap "gen and fetch"
+# The build's gen step regenerated deepquarry.dme (tools/build/gen_dme.py). On an unpushed merge commit (a batch) a changed manifest is
+# amended into it, like the baseline shrink below; anywhere else a stale committed manifest is the branch's to commit.
+if [ "$early_reuse" -eq 0 ] && ! git diff --quiet -- deepquarry.dme; then
+	if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null; then
+		git add -- deepquarry.dme && git commit -q --amend --no-edit
+		echo "dq_merge_gates: regenerated deepquarry.dme into the merge commit"
+	else
+		echo "dq_merge_gates: deepquarry.dme is stale on this commit: commit the regenerated one (python3 tools/build/gen_dme.py)" >&2
+		exit 1
+	fi
+fi
 pre_shrink_tree="$(proof_tree HEAD)" # the tree a plain merge makes; the shrink below changes it (proof_alias_baseline_shrink)
 # A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk into the merge commit, instead of a separate
 # repair commit. Only when HEAD is an unpushed merge commit (the merge worktree's batch): a lane-ready run or any other HEAD keeps
