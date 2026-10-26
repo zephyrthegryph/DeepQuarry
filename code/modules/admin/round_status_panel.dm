@@ -151,19 +151,19 @@ CAPABILITIES(/datum/round_status_panel)
 // Antag-row actions: PP / PM / TP for an antagonist's mob.
 
 /datum/round_status_panel/proc/act_antag_pp(mob/user, ref)
-	var/mob/M = ui_ref(ref, null, /mob)
+	var/mob/M = ui_token(ref, null, /mob)
 	if(M && user.client)
 		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, M)
 	return TRUE
 
 /datum/round_status_panel/proc/act_antag_pm(mob/user, ref)
-	var/mob/M = ui_ref(ref, null, /mob)
+	var/mob/M = ui_token(ref, null, /mob)
 	if(M && user.client)
 		user.client.cmd_admin_pm(M)
 	return TRUE
 
 /datum/round_status_panel/proc/act_antag_tp(mob/user, ref)
-	var/mob/M = ui_ref(ref, null, /mob)
+	var/mob/M = ui_token(ref, null, /mob)
 	if(!M)
 		return TRUE
 	if(!SSticker || !ticker_mode())

@@ -70,8 +70,8 @@ CAPABILITIES(/obj/item/capture_crystal)
 		if(isanimal(bound_mob))
 			. += span_notice("[round(bound_mob.vitality() * 100)]%")
 		if(bound_mob.identity().ooc_notes)
-			. += span_deptradio("OOC Notes:") + " <a href='byond://?src=\ref[bound_mob];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
-		. += span_deptradio("<a href='byond://?src=\ref[bound_mob];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>")
+			. += span_deptradio("OOC Notes:") + " <a href='byond://?src=[REF(bound_mob)];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=[REF(src)];print_ooc_notes_chat=1'>\[Print\]</a>"
+		. += span_deptradio("<a href='byond://?src=[REF(bound_mob)];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>")
 
 //Command! This lets the owner toggle hostile on AI controlled mobs, or send a silent command message to your bound mob, wherever they may be.
 /obj/item/capture_crystal/ui_action_click(mob/user, actiontype)

@@ -8,7 +8,7 @@
 	if(istype(thing, /obj/effect/decal/cleanable/crayon))
 		var/obj/effect/decal/cleanable/crayon/CRAY = thing
 		if(can_modify)
-			return "<td colspan = 3>[thing]</td><td>Loc:([CRAY.x],[CRAY.y],[CRAY.z]) P_X: [CRAY.pixel_x] P_Y: [CRAY.pixel_y] Color: [CRAY.art_color] Shading: [CRAY.art_shade] Type: [CRAY.art_type]</td><td><a href='byond://?src=\ref[src];caller=\ref[user];remove_entry=\ref[thing]'>Destroy</a></td>"
+			return "<td colspan = 3>[thing]</td><td>Loc:([CRAY.x],[CRAY.y],[CRAY.z]) P_X: [CRAY.pixel_x] P_Y: [CRAY.pixel_y] Color: [CRAY.art_color] Shading: [CRAY.art_shade] Type: [CRAY.art_type]</td><td><a href='byond://?src=[REF(src)];caller=[REF(user)];remove_entry=[REF(thing)]'>Destroy</a></td>"
 		return "<td colspan = 4>[thing]</td>"
 	return null
 
