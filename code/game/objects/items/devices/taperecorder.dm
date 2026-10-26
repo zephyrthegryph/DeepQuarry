@@ -454,7 +454,9 @@ CAPABILITIES(/obj/item/rectape)
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 1))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
-	op("item", item(/obj/item/pen), label("Label"), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item/pen), label("Label"),
+		asks(/datum/prompt/text, fields = list("title" = "Tape labeling", "question" = "What would you like to label the tape?", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "label", when = PROC_REF(labelable)),
+		then(PROC_REF(label_entered)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req(PROC_REF(screwdriver_refusal), silent = TRUE)), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(12 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
 /obj/item/rectape/proc/interaction_self(datum/act/op/A)
@@ -479,22 +481,23 @@ CAPABILITIES(/obj/item/rectape)
 	LAZYADD(storedinfo, "*\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
 
 
-/obj/item/rectape/proc/label_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/new_name = sanitizeSafe(A.answer.value)
+/// A pen labels the tape only while the tape is carried by someone able to write.
+/obj/item/rectape/proc/labelable(datum/act/op/A)
+	var/mob/user = A.actor
+	return loc == user && !user.incapacitated()
+
+/obj/item/rectape/proc/label_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/ask = A.answer
+	if(!ask)
+		return TRUE
+	var/new_name = sanitizeSafe(ask.value)
 	if(new_name)
 		name = "tape - '[new_name]'"
 		to_chat(user, span_notice("You label the tape '[new_name]'."))
 	else
 		name = "tape"
 		to_chat(user, span_notice("You scratch off the label."))
-
-/obj/item/rectape/proc/interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	if(loc == user && !user.incapacitated())
-		open_request(src, /datum/prompt/text, PROC_REF(label_entered), answerer = user, title = "Tape labeling", question = "What would you like to label the tape?", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
 /// When the screwdriver does nothing (the click is used up, nothing is said).

@@ -17,12 +17,15 @@ git clone -q "$tmp/origin.git" "$tmp/repo" 2>/dev/null
 cd "$tmp/repo"
 git config user.email t@t; git config user.name t
 mkdir -p tools
+cp "$here/tools/dq_gate_retry.sh" tools/
 cp "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" tools/
 echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
 cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
 # like the real gates' in-job baseline shrink: a tracked edit that is left behind when the gate fails afterwards
+echo "$*" >>"${DQ_STUB_ARGS:-/dev/null}"
 echo shrunk >>tools/ci/x_baseline.txt
+if [ -n "${DQ_STUB_USAGE_FAIL:-}" ] && grep -rq USAGEFAIL lanes 2>/dev/null; then . tools/dq_gate_retry.sh; echo x >"$DQ_STUB_ARGS.l"; gate_ensure_result "$DQ_STUB_ARGS.l" 2; exit 1; fi
 if grep -rq BAD lanes 2>/dev/null; then echo "stub gates: BAD present"; exit 1; fi
 git show HEAD:tools/ci/x_baseline.txt >tools/ci/x_baseline.txt
 echo "stub gates: ok"
@@ -53,6 +56,20 @@ rc="$(run "lb")"
 check "a lone bad lane leaves the branch at origin/master" '[ "$rc" = 1 ] && [ "$(git rev-parse rewrite/integ-current)" = "$(git rev-parse origin/master)" ]'
 rc="$(run "ld,le,la")"
 check "a conflicting lane is bounced, the rest merge" '[ "$rc" = 1 ] && grep -q "BOUNCED: le" "$tmp/out.log" && git merge-base --is-ancestor ld rewrite/integ-current && git merge-base --is-ancestor la rewrite/integ-current'
+
+# a test-phase failure that is not a cap (here: an unknown test name, exit 2, no result line) must not be read as a cap, and the
+# tests of a lane that is not in the attempt must not reach the gate (the train bounced healthy lanes both ways)
+mk lu u.txt USAGEFAIL
+export DQ_STUB_ARGS="$tmp/stub.args" DQ_STUB_USAGE_FAIL=1
+: >"$DQ_STUB_ARGS"
+rc="$(bash tools/dq_merge_batch.sh --lanes "lu" --lane-tests "lu=dq_t_u" >"$tmp/out.log" 2>&1; echo $?)"
+check "an exit-2 test failure is a gate failure, not a cap" '[ "$rc" = 1 ] && ! grep -q "hit its wall-clock cap" "$tmp/out.log" && ! grep -q "do not fit" "$tmp/out.log" && grep -q "gates failed alone" "$tmp/out.log" && grep -q "^BATCH_CAPPED: $" "$tmp/out.log"'
+check "the fallback result line does not contain the cap marker" '! grep -q "FOCUSED RUN CAPPED" "$tmp/out.log"'
+unset DQ_STUB_USAGE_FAIL
+: >"$DQ_STUB_ARGS"
+rc="$(bash tools/dq_merge_batch.sh --lanes "ld,le,la" --lane-tests "ld=dq_t_d" --lane-tests "le=dq_t_e" --lane-tests "la=dq_t_a" >"$tmp/out.log" 2>&1; echo $?)"
+check "a bounced lane's tests are not sent to the gate" '[ "$rc" = 1 ] && grep -q "dq_t_d" "$DQ_STUB_ARGS" && grep -q "dq_t_a" "$DQ_STUB_ARGS" && ! grep -q dq_t_e "$DQ_STUB_ARGS"'
+unset DQ_STUB_ARGS
 
 # the proof cache
 . tools/dq_proof_cache.sh

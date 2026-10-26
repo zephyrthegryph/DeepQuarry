@@ -50,44 +50,38 @@
 
 
 CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
-	op("shuttlecraft_paint", item(/obj/item), label("Paint hull"), then(PROC_REF(interaction_shuttlecraft_paint)))
+	op("shuttlecraft_paint", item(/obj/item), label("Paint hull"), when(PROC_REF(paintable_by_multitool)),
+		asks(/datum/prompt/choice, fields = list("title" = "Paint Zone", "question" = "Please select a target zone.", "choices" = list("Central", "Engine", "Base", "Front", "CANCEL"), "subject" = computed(PROC_REF(paint_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "zone"),
+		asks(/datum/prompt/color/mech_paint, fields = list("subject" = computed(PROC_REF(paint_subject))), step = "color", when = PROC_REF(paint_zone_chosen)),
+		then(PROC_REF(interaction_shuttlecraft_paint)))
 
-/// Old attackby: a multitool repaints the hull while the maintenance state is open.
+/// A multitool repaints the hull while the maintenance state is open.
+/obj/mecha/working/hoverpod/shuttlecraft/proc/paintable_by_multitool(datum/act/op/A)
+	return istype(A.held, /obj/item/multitool) && state == 1
+
+/// The question is about the multitool in the hand.
+/obj/mecha/working/hoverpod/shuttlecraft/proc/paint_subject(datum/act/op/A)
+	return A.held
+
+/// A zone other than CANCEL was picked, so a colour is asked.
+/obj/mecha/working/hoverpod/shuttlecraft/proc/paint_zone_chosen(datum/act/op/A)
+	var/zone = A.step_value("zone")
+	return !isnull(zone) && zone != "CANCEL"
+
+/// Old attackby: the colour answered for the zone answered.
 /obj/mecha/working/hoverpod/shuttlecraft/proc/interaction_shuttlecraft_paint(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(!istype(W,/obj/item/multitool) || state != 1)
-		return OP_DECLINE
-	open_request(src, /datum/prompt/choice, PROC_REF(ask_paint_color), answerer = user, subject = W, timeout = 0, choices = list("Central", "Engine", "Base", "Front", "CANCEL"), title = "Paint Zone", question = "Please select a target zone.", ask_flags = ASK_HELD | ASK_CAPABLE)
-	return TRUE
-
-/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(datum/act/request/context)
-	if(!context.answer)
-		return
-	return ask_paint_color_apply(context)
-
-/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color_apply(datum/act/request/context)
-	var/datum/prompt/choice/ask = context.answer
-	if(ask.value != "CANCEL")
-		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(hull_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.value)
-
-/obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted(datum/act/request/context)
-	if(!context.answer)
-		return
-	return hull_painted_apply(context)
-
-/obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted_apply(datum/act/request/context)
-	var/datum/prompt/color/mech_paint/ask = context.answer
 	if(state != 1)
-		return
-	if(ask.value)
-		switch(ask.zone)
+		return TRUE
+	var/color_value = A.step_value("color")
+	if(color_value)
+		switch(A.step_value("zone"))
 			if("Central")
-				set_central_paint(ask.value)
+				set_central_paint(color_value)
 			if("Engine")
-				set_engine_paint(ask.value)
+				set_engine_paint(color_value)
 			if("Front")
-				set_front_paint(ask.value)
+				set_front_paint(color_value)
 			if("Base")
-				set_base_paint(ask.value)
+				set_base_paint(color_value)
+	return TRUE
 

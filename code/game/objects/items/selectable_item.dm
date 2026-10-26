@@ -12,24 +12,33 @@ TYPE_TABLE_DECLARE(/obj/item/selectable_item, selectable_item_options, list("Gif
 									"Health Analyzer" = /obj/item/healthanalyzer))
 
 CAPABILITIES(/obj/item/selectable_item)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(),
+		asks(/datum/prompt/yes_no, fields = list("title" = computed(PROC_REF(preface_title_text)), "question" = computed(PROC_REF(preface_question_text)), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "preface", ends_on_no = TRUE),
+		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(selection_title_text)), "question" = computed(PROC_REF(selection_question_text)), "choices" = computed(PROC_REF(selection_options)), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "item"),
+		then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
+/obj/item/selectable_item/proc/preface_title_text(datum/act/op/A)
+	return preface_title
+
+/obj/item/selectable_item/proc/preface_question_text(datum/act/op/A)
+	return preface_string
+
+/obj/item/selectable_item/proc/selection_title_text(datum/act/op/A)
+	return selection_title
+
+/obj/item/selectable_item/proc/selection_question_text(datum/act/op/A)
+	return selection_string
+
+/obj/item/selectable_item/proc/selection_options(datum/act/op/A)
+	return TYPE_TABLE_GET(src, selectable_item_options)
+
+/// Old attack_self: the item picked after the preface was confirmed.
 /obj/item/selectable_item/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	open_request(src, /datum/prompt/yes_no, PROC_REF(preface_confirmed), answerer = user, title = preface_title, question = preface_string, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/item/selectable_item/proc/preface_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(item_selected), answerer = A.request.answerer, title = selection_title, question = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-
-/obj/item/selectable_item/proc/item_selected(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[A.answer.value]
+	var/picked = A.step_value("item")
+	if(isnull(picked))
+		return TRUE
+	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[picked]
 	if(chosen_item)
 		if(!consume(src, user))
 			return
