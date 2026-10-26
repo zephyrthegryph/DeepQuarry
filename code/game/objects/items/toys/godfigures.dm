@@ -41,8 +41,6 @@
 	options["Tajaran Figure"] = "catrobe"
 	return options
 
-	return options
-
 /// The icon the question was answered with.
 /obj/item/godfig/proc/resprite_figure_effect(datum/act/op/A)
 	var/datum/prompt/prompt = A.answer
