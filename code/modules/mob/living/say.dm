@@ -168,8 +168,8 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		return
 	//Maybe they are using say/whisper to do a quick emote, so do those
 	switch(copytext(message, 1, 2))
-		if("*") return emote(copytext(message, 2))
-		if("^") return custom_emote(VISIBLE_MESSAGE, copytext(message, 2))
+		if("*") return emote(copytext(message, 2), typed = TRUE)
+		if("^") return custom_emote(VISIBLE_MESSAGE, copytext(message, 2), typed = TRUE)
 	direct_say(message, speaking, whispering)
 
 /mob/living/direct_say(message, datum/language/speaking = null, whispering = 0)

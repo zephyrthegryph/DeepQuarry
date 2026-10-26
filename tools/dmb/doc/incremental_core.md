@@ -381,7 +381,38 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
    `try_default_patch`, `DMB_DEFAULT_PATCH`, `disable_default_patch` and the patch-count test are deleted; `reads_initial`
    stays in `retained_output` (the admission proof uses it), as does `DefaultEdits` in `dm-tree` (the frontend's proof).
 4. Same for appended callables (new link entries append), then delete `declaration_patch*.rs`.
+   **Landed 2026-10-26 (compiler/one-path-decl).** `retained_output::admit` takes an edit that only appended procs, verbs
+   or plain vars relative to the retained output's own tree (`tree.appended_callables()`): `retained_output_append.rs`
+   (the former append patch, split into `admit_appended` and `splice_appended`) proves the alignment, the mentions and the
+   line map; `cold::incremental_output` lowers the changed and appended bodies through the same selected-body lowering as a
+   body edit, and `splice` appends the new procedures, records and list entries to the retained model. No answers are
+   compared (every text naming an appended name is a relowered body or its own declaration) and no marking is made, as
+   before. Deleted: `declaration_patch.rs`, `declaration_patch_append.rs` (moved), `cold/selected_lowering.rs`
+   (`lower_selected`), the request runner's declaration-patch attempt, `RetainedGeneration::patch_variable_values` (dead
+   since the default patch went) and `applied_with_declaration_patches`. Measured, production tree, 4 workers, hot daemon
+   per arm, three edits per round (added proc, added proc, added `/datum/var` with a numeric default), arms interleaved six
+   times on a machine shared with other lanes: published compiler (patch) 5.2-8.8 s wall, compilation stage 1.47-2.26 s;
+   this branch 4.8-9.2 s, compilation 1.47-3.03 s (first edit of a session the slowest); the quietest pair: patch 5.24-5.56 s,
+   general path 4.83-5.22 s. `dmb-equiv --all --ignore-debug --ignore-order` of the general path's output after the edits
+   against a fresh `--no-daemon --no-cache` compile of the same tree: EQUIVALENT. Cargo tests `structural_change`,
+   `six_session`, `revert_rebase`, `variant_spill`, `retained_output` pass.
 5. Frontend queries (`file_decls`, `type_node`) and resources as queries lower the shared 9-11 s floor.
+6. **Alternate bases and model recovery deleted (2026-10-26, compiler/one-path-state).** The retained model is now a
+   function of the patch base's image: `RetainedGeneration::model_of` keeps the composed model when it encodes the base's
+   image and otherwise decodes the image (accepted only when it re-encodes to the same bytes; 0.12 s decode + 0.12 s
+   re-encode on the production image). That one rule replaces the model recovery after a release, the body-patch row
+   ledger (`model_rows`/`model_anchor`/`rows_synced`) and the per-alternate models. Alternate patch bases
+   (`DMB_PATCH_ALTERNATES`, `select_patch_base`) are replaced by the persisted state: when a full build replaces a base of
+   other program text, the replaced base is written on a background thread to a spill file keyed by the variant and that
+   text (`variant_spill::text_key`), and `admit` restores the stored base of the request's text (swapping out, and storing,
+   a live base of other text) unless the edit is relative to the live base. Needs the compiler cache (`no_cache` off), as
+   the daemon runs. Test `variant_spill_tests::lanes_with_different_declarations_build_on_their_own_stored_base` (each lane
+   switch builds on that lane's base). Measured, production tree, interleaved hot daemons, per round body edit, string
+   edit, appended proc, body edit, string edit: patch-path steps 4.2-9.1 s (step 1 compiler) against 4.6-8.4 s (this
+   branch) apart from one loaded round; `dmb-equiv` of the chain's output against a fresh `--no-daemon --no-cache` compile:
+   EQUIVALENT. Found, not changed: a body edit right after an appended-callable edit compiles whole ("answer world or
+   resource searches changed") on both compilers, because an appended output is retained without answer marks; that is
+   the next thing to absorb.
 
 
 ## Persisted dependency index, step 2 (2026-10-24, lane `compiler/dep-index`)
@@ -486,7 +517,7 @@ The next request of the variant attaches the file (`attach_spill`, header only) 
 (`restore_patch_base`) when the header's program text matches the request. Nothing is trusted: the admission compares the restored
 source half with the request exactly as it compares a live one. What is not stored and how admission copes:
 - unit symbolic records: a patch compares footprints only, so units are stored as footprint digests (`UnitBase::Digest`);
-- the retained model: recovered from the image when a string patch needs it (`recover_model`);
+- the retained model: decoded from the image when an edit needs one (`RetainedGeneration::model_of`);
 - the expanded program text: row source lines are stored (`RowLines`), numeric default edits are not admitted on a restored output;
 - the answer marks: a restored output proves its answers from `AnswerFacts` (declarations identity, answer world, every resource
   search with its answer hash; `QueryDb::answer_facts`, `prove_facts`). Its version and facts are retaken after the proof, and
@@ -704,6 +735,48 @@ daemon-wide pool (`dmbc/src/output_pool.rs`, installed through `byond_dmb::dmb::
 pool before any holder (`Generation`, the list-row encoding, the patch base) clones it, the digest is the one the writer
 already computed, and a hit is decided by the bytes. Two sessions that publish equal outputs (a second worktree at the same
 commit) retain one image; unequal outputs (the test variant) share nothing.
+
+
+## Test variant as an increment over the game build (design, 2026-10-26)
+
+**Today.** The unit-test world is a define set (`-DCBT -DCIBUILDING -DCITESTING -DDEBUG`; `CIBUILDING` defines `UNIT_TESTS`) on the
+same `deepquarry.dme`. `runner_host::switch_variant` stashes the define-dependent state and the test build retains its own copy of
+nearly everything: about +3.5 GB over the game session (audit 2026-10-26: link relocations 100-300 MB, codec output buffers 75,
+`OutputBase` 145, lowering leases 160-440, lowering rebinding 150, directive plan 137, initializer classification 119, ABI artifacts
+81, `RequestAnswers` 67-80, preprocessor plan items 119, joined text 60). Two things make it a near-duplicate rather than an
+increment: (1) every per-unit record is admitted under the answer world, which is keyed by the whole `Tree` domain version, and the
+test tree differs from the game tree (about 11k extra test bodies, 109 files with `#ifdef UNIT_TESTS` guards), so no game record's
+world certificate holds and every answer is asked again; (2) initializer, map and modified-instance lowering branch on `DEBUG`
+(`modified_initializers.rs` `source.ops`, `map_artifacts.rs` `ops`), so their records differ even where the source is equal.
+Procedure lowering is already `DEBUG`-independent: the memo key carries `facts_policy` without the `DEBUG` byte and debug ops are
+selected at link.
+
+**Target.** A test build after a game build of the same tree costs at most 1 GB more and compiles as an edit of the game build:
+every unit whose reads are equal in both worlds is the game unit (one record, two leases), and only units that read something the
+defines change (guarded bodies, the extra test types, answers that name them) are computed for the test variant.
+
+**Steps** (each lands alone, proven by `dmb-equiv` against a fresh `--no-daemon` compile of both variants and the six-session
+interleaving; memory by `bench/shared_store_probe.sh` game then test):
+
+1. *Answers keyed by what they read.* An `answer(read)` already hashes its value; admission of a stored unit should compare the
+   unit's recorded answers (per-answer, as `prove_against_base` does for the retained output) instead of requiring its world
+   certificate to equal the request's `Tree` version. With content-digest domain tokens (shared store part 4) two sessions on
+   different trees that give equal answers to a unit's reads hold equal tokens, so the record is admitted and claimed by both.
+   The dep index's world key (`dep_index.rs`) becomes a hint: a record whose world differs is checked by its answers, not
+   replayed from scratch.
+2. *`DEBUG`-independent initializer, map and modified-instance lowering.* Lower them without `DbgFile`/`DbgLine` and add the
+   debug ops at link from the positioned code (`PositionedCode` already carries origins), as procedure bodies do; the memo and
+   classification keys then use `facts_policy`. The test variant reuses every game initializer whose reads are equal.
+3. *Shared per-variant indexes by content.* The directive plan, preprocessor plan items and joined text are per-file
+   functions of (file bytes, start state); key them by that pair in the shared store so the two variants share every file whose
+   start state is equal (the files before the first `#ifdef UNIT_TESTS` that matters, and every file whose guards do not change
+   its state). `OutputBase`, link relocations and output buffers are per output and stay per variant, but the test variant's can
+   be stored as a delta over the game variant's (chunked image, roster delta; see retained_frontend.md "What is left").
+4. *Measure*: test-variant extra (target <= 1 GB) and the warm test build after a game build (target: the time of a
+   declaration edit of the size of the define's effect, not a full compile).
+
+**Coordination.** A DM-side lane reduces `#ifdef UNIT_TESTS` guards in engine code so fewer game bodies differ; it records its
+progress here. The compiler side does not depend on it: steps 1-3 share whatever is equal.
 
 ## Design option: the include spec as the project input (2026-10-27, lane `tools/generated-dme`)
 

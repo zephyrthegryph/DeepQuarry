@@ -181,7 +181,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 /obj/machinery/requests_console/proc/ui_act_sendannouncement(datum/act/op/A)
 	if(!announcementConsole)
 		return FALSE
-	announcement.Announce(message, msg_sanitized = 1)
+	announcement.Announce(message, msg_sanitized = 1, actor = A.actor)
 	reset_message(1)
 	. = TRUE
 

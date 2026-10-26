@@ -254,6 +254,6 @@
     {"file": "code/modules/vehicles/vehicle.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.cell), C, user = H))"},
     {"file": "code/modules/vore/eating/vorepanel.dm", "reason": "extra_args", "text": "own_set(R, nameof(R.mmi), MMI, into = TRUE)"},
     {"file": "code/modules/vore/fluffstuff/custom_clothes.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.translocator), T, user = user))"},
-    {"file": "code/modules/xenoarcheaology/tools/suspension_generator.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.cell), W, user = user))"}
+    {"file": "code/content/xenoarcheaology/tools/suspension_generator.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.cell), W, user = user))"}
   ]
 }

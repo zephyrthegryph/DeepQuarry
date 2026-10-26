@@ -39,10 +39,10 @@ CAPABILITIES(/datum/view_variables_panel)
 /// Parses the legacy "<option value='[link]'>[name]</option>" strings into
 /// typed (name, link) records. Separator rows ("---") and the empty-link
 /// "Select option" placeholder are tagged with is_separator/is_placeholder.
-/datum/view_variables_panel/proc/parse_dropdown_options(list/raw_options)
+/datum/view_variables_panel/proc/parse_dropdown_options(list/raw_options, mob/user)
 	var/list/out = list()
 	for(var/raw in raw_options)
-		var/text = "[raw]"
+		var/text = "[raw]" // the options' links carry HREF_TOKEN_PLACEHOLDER, filled when the window data is sent
 		if(!length(text))
 			continue
 		// "<option value='LINK'>NAME</option>" or "<option value selected>NAME</option>"
@@ -124,9 +124,9 @@ CAPABILITIES(/datum/view_variables_panel)
 			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_EXPOSE)]'>Show VV To Player</option>",
 			"---",
 		)
-		data["dropdown"] = parse_dropdown_options(raw_dropdown)
+		data["dropdown"] = parse_dropdown_options(raw_dropdown, user)
 	else
-		data["dropdown"] = parse_dropdown_options(thing_datum.vv_get_dropdown())
+		data["dropdown"] = parse_dropdown_options(thing_datum.vv_get_dropdown(), user)
 
 	// Variable list. Each entry's value_html comes from the legacy
 	// vv_get_var() / debug_variable() chain — we keep its rendering since

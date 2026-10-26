@@ -1057,10 +1057,6 @@ CAPABILITIES(/datum/prompt/number/export_item)
 	var/list/sales_producer_percentages
 	var/sales_eligible_value = 0
 
-/datum/exported_crate/New()
-	. = ..()
-	set_rows(list())
-
 /// The receipt's total. A hand-written setter: the generated one cannot be named for a var called `value` (the macro's own parameter).
 /datum/exported_crate/proc/set_value(new_value)
 	if(TRACKED_UNCHANGED(value, new_value))

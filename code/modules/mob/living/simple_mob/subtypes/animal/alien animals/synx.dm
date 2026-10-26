@@ -200,8 +200,8 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	can_self_harvest = 1
 	has_mob_product = null
 
-/datum/seed/hardlightseed/New()
-	..()
+/datum/seed/hardlightseed/default_traits()
+	. = ..()
 	set_trait(TRAIT_IMMUTABLE,1) //Normal genetics wont be able to do much with the mechanical parts, its more a machine than a real plant
 	set_trait(TRAIT_MATURATION,1)
 	set_trait(TRAIT_PRODUCTION,1)
