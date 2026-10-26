@@ -9,7 +9,7 @@
 	if(!ismovable(src))
 		var/turf/curturf = get_turf(src)
 		if(curturf)
-			. += "<option value='?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[curturf.x];Y=[curturf.y];Z=[curturf.z]'>Jump To</option>"
+			. += "<option value='?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[curturf.x];Y=[curturf.y];Z=[curturf.z]'>Jump To</option>"
 	VV_DROPDOWN_OPTION(VV_HK_MODIFY_TRANSFORM, "Modify Transform")
 	VV_DROPDOWN_OPTION(VV_HK_SPIN_ANIMATION, "SpinAnimation")
 	VV_DROPDOWN_OPTION(VV_HK_STOP_ALL_ANIMATIONS, "Stop All Animations")
@@ -216,7 +216,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	. = ..()
 	var/refid = REF(src)
 	. += "[VV_HREF_TARGETREF(refid, VV_HK_AUTO_RENAME, span_bold("<span id='name'>[src]</span>"))]"
-	. += "<br>" + span_small("<a href='byond://?_src_=vars;[HrefTokenWorld()];rotatedatum=[refid];rotatedir=left'><<</a> [VV_HREF_TARGETREF_1V(refid, VV_HK_BASIC_EDIT, "[dir2text(dir) || dir]", "dir")] <a href='byond://?_src_=vars;[HrefTokenWorld()];rotatedatum=[refid];rotatedir=right'>>></a>")
+	. += "<br>" + span_small("<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];rotatedatum=[refid];rotatedir=left'><<</a> [VV_HREF_TARGETREF_1V(refid, VV_HK_BASIC_EDIT, "[dir2text(dir) || dir]", "dir")] <a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];rotatedatum=[refid];rotatedir=right'>>></a>")
 
 /**
  * call back when a var is edited on this atom

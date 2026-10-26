@@ -10,7 +10,7 @@ GLOBAL_VAR_INIT(floorIsLava, 0)
 		if(check_rights_for(C, (R_ADMIN|R_MOD|R_SERVER)))
 			to_chat(C,
 					type = MESSAGE_TYPE_ADMINLOG,
-					html = admin_href_for(C, msg), // its links carry the world token until here
+					html = msg, // its links carry HREF_TOKEN_PLACEHOLDER, which the chat system fills with each admin's own token
 					confidential = TRUE)
 
 /proc/msg_admin_attack(text) //Toggleable Attack Messages
@@ -783,19 +783,19 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 			return span_bold("[key_name(C, link, name, highlight_special)]")
 
 		if(1)	//Private Messages
-			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=holder;[HrefTokenWorld()];adminmoreinfo=[REF(M)]'>?</a>)")
+			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[REF(M)]'>?</a>)")
 
 		if(2)	//Admins
 			var/ref_mob = "[REF(M)]"
-			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=holder;[HrefTokenWorld()];adminmoreinfo=[ref_mob]'>?</a>) (<a href='byond://?_src_=holder;[HrefTokenWorld()];adminplayeropts=[ref_mob]'>PP</a>) (<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[ref_mob]'>VV</a>) (<a href='byond://?_src_=holder;[HrefTokenWorld()];subtlemessage=[ref_mob]'>SM</a>) ([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HrefTokenWorld()];check_antagonist=1'>CA</a>) (<a href='byond://?_src_=holder;[HrefTokenWorld()];take_question=[REF(M)]'>TAKE</a>)")
+			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[ref_mob]'>?</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayeropts=[ref_mob]'>PP</a>) (<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[ref_mob]'>VV</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];subtlemessage=[ref_mob]'>SM</a>) ([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];check_antagonist=1'>CA</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];take_question=[REF(M)]'>TAKE</a>)")
 
 		if(3)	//Devs
 			var/ref_mob = "[REF(M)]"
-			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[ref_mob]'>VV</a>)([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HrefTokenWorld()];take_question=[REF(M)]'>TAKE</a>)")
+			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[ref_mob]'>VV</a>)([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];take_question=[REF(M)]'>TAKE</a>)")
 
 		if(4)	//Event Managers
 			var/ref_mob = "[REF(M)]"
-			return span_bold("[key_name(C, link, name, highlight_special)] (<a href='byond://?_src_=holder;[HrefTokenWorld()];adminmoreinfo=[REF(M)]'>?</a>) (<a href='byond://?_src_=holder;[HrefTokenWorld()];adminplayeropts=[ref_mob]'>PP</a>) (<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[ref_mob]'>VV</a>) (<a href='byond://?_src_=holder;[HrefTokenWorld()];subtlemessage=[ref_mob]'>SM</a>) ([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HrefTokenWorld()];take_question=[REF(M)]'>TAKE</a>)")
+			return span_bold("[key_name(C, link, name, highlight_special)] (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[REF(M)]'>?</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayeropts=[ref_mob]'>PP</a>) (<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[ref_mob]'>VV</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];subtlemessage=[ref_mob]'>SM</a>) ([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];take_question=[REF(M)]'>TAKE</a>)")
 
 
 /proc/ishost(whom)

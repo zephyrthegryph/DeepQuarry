@@ -656,7 +656,7 @@
 		status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
 		for(var/mob/living/simple_mob/SA in range(10))
 			rel_add(SA, nameof(SA.prey_excludes), src)
-		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
+		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
 
 		PUBLISH(B.owner, belly_change) //This is run whenever a belly's contents are changed.
 
@@ -674,7 +674,7 @@
 		if(confirm != "Okay" || loc != belly)
 			return
 		//Actual escaping
-		log_and_message_admins("used the OOC escape button to get out of [key_name(pred)] (BORG) ([pred ? "<a href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[pred.x];Y=[pred.y];Z=[pred.z]'>JMP</a>" : "null"])", src)
+		log_and_message_admins("used the OOC escape button to get out of [key_name(pred)] (BORG) ([pred ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[pred.x];Y=[pred.y];Z=[pred.z]'>JMP</a>" : "null"])", src)
 		belly.go_out(src) //Just force-ejects from the borg as if they'd clicked the eject button.
 
 	//You're in a capture crystal! ((It's not vore but close enough!))

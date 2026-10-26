@@ -364,29 +364,29 @@ CAPABILITIES(/datum/ticket)
 		ref_src = ref_token(src)
 
 	if(level == 1)
-		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=reject'>REJT</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=icissue'>IC</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=close'>CLOSE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=resolve'>RSLVE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=handleissue'>HANDLE</A>)"
+		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=reject'>REJT</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=icissue'>IC</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=close'>CLOSE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=handleissue'>HANDLE</A>)"
 	else
-		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=resolve'>RSLVE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=escalate'>ESCALATE</A>)"
+		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>)"
 
 //private
 /datum/ticket/proc/LinkedReplyName(ref_src)
 	if(!ref_src)
 		ref_src = ref_token(src)
-	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=reply'>[initiator_key_name]</A>"
+	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=reply'>[initiator_key_name]</A>"
 
 //private
 /datum/ticket/proc/TicketHref(msg, ref_src, action = "ticket")
 	if(!ref_src)
 		ref_src = ref_token(src)
-	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HrefTokenWorld()];ticket_action=[action]'>[msg]</A>"
+	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=[action]'>[msg]</A>"
 
 /*
-	var/chat_msg = span_notice("(<A href='byond://?_src_=holder;ahelp=[ref_src];[HrefTokenWorld()];ahelp_action=escalate'>ESCALATE</A>) Ticket [TicketHref("#[id]", ref_src)]" + span_bold(": [LinkedReplyName(ref_src)]:") + " [msg]")
+	var/chat_msg = span_notice("(<A href='byond://?_src_=holder;ahelp=[ref_src];[HREF_TOKEN_PLACEHOLDER];ahelp_action=escalate'>ESCALATE</A>) Ticket [TicketHref("#[id]", ref_src)]" + span_bold(": [LinkedReplyName(ref_src)]:") + " [msg]")
 	 */
 
 //message from the initiator without a target, all admins will see this
@@ -791,7 +791,7 @@ CAPABILITIES(/obj/effect/statclick/ticket)
 							if(found.mind && found.mind.special_role)
 								is_antag = 1
 							founds += "Name: [found.name]([found.real_name]) Ckey: [found.ckey] [is_antag ? "(Antag)" : null] "
-							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefTokenWorld()];adminmoreinfo=[url_encode(ref_token(found))]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefTokenWorld()];adminplayerobservefollow=[url_encode(ref_token(found))]'>F</A> "
+							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(ref_token(found))]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HREF_TOKEN_PLACEHOLDER];adminplayerobservefollow=[url_encode(ref_token(found))]'>F</A> "
 							msg += "[original_word]" + span_small((is_antag ? span_red(textentry) : span_black(textentry)))
 							continue
 		msg += "[original_word] "

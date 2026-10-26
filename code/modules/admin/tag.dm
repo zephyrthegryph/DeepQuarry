@@ -41,8 +41,8 @@
 		to_chat(owner(), span_warning("[target_datum] was not already tagged."))
 
 /// Quick define for readability
-#define TAG_DEL(X) span_bold("(<A href='byond://?_src_=holder;[HrefTokenWorld()];del_tag=[REF(X)]'>UNTAG</a>)")
-#define TAG_MARK(X) span_bold("(<A href='byond://?_src_=holder;[HrefTokenWorld()];mark_datum=[REF(X)]'>MARK</a>)")
+#define TAG_DEL(X) span_bold("(<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];del_tag=[REF(X)]'>UNTAG</a>)")
+#define TAG_MARK(X) span_bold("(<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];mark_datum=[REF(X)]'>MARK</a>)")
 #define TAG_SIMPLE_HEALTH(X) span_red(span_bold("Vitality: [round(X.vitality() * 100)]%"))
 #define TAG_CARBON_HEALTH(X) span_red(span_bold("Vitality: [round(X.vitality() * 100)]%")) +" (\
 					" + span_brute("[round(X.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)]") + " \
@@ -58,7 +58,7 @@ ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums
 	var/list/tagged_datums = user.holder.tagged_datums
 	var/list/marked_datum = user.holder.marked_datum()
 
-	dat += "<br><a href='byond://?_src_=holder;[HrefTokenWorld()];show_tags=1'>Refresh</a><br>"
+	dat += "<br><a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];show_tags=1'>Refresh</a><br>"
 	if(LAZYLEN(tagged_datums))
 		for(var/datum/iter_datum as anything in tagged_datums)
 			index++

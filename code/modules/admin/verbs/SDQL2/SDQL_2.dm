@@ -690,7 +690,7 @@ CAPABILITIES(/datum/SDQL2_query)
 
 /datum/SDQL2_query/proc/SDQL_print(object, list/text_list, print_nulls = TRUE)
 	if(is_proper_datum(object))
-		text_list += "<A href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[REF(object)]'>[REF(object)]</A> : [object]"
+		text_list += "<A href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(object)]'>[REF(object)]</A> : [object]"
 		if(istype(object, /atom))
 			var/atom/A = object
 			var/turf/T = A.loc

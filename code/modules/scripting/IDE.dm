@@ -16,7 +16,7 @@
 				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer()
 				var/msg="[mob.name] is adding script to server [Server]: [tcscode]"
 				log_world("## MISC [msg]")
-				message_admins("[mob.name] has uploaded a NTLS script to [Machine.SelectedServer()] ([mob.x],[mob.y],[mob.z] - <A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[mob.x];Y=[mob.y];Z=[mob.z]'>JMP</a>)")
+				message_admins("[mob.name] has uploaded a NTLS script to [Machine.SelectedServer()] ([mob.x],[mob.y],[mob.z] - <A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[mob.x];Y=[mob.y];Z=[mob.z]'>JMP</a>)")
 				Server.setcode( tcscode ) // this actually saves the code from input to the server
 				src << output(null, "tcserror") // clear the errors
 			else

@@ -225,7 +225,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	play_sfx(src, SFX_SHATTER, volume = 50)
 
 	message_admins("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]")
-	log_game("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]. (<A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", 1)
+	log_game("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", 1)
 
 	after(src, 6 SECONDS, PROC_REF(self_destruct_boom)) // GET OUT, GET OUT
 

@@ -42,7 +42,7 @@ CAPABILITIES(/datum/view_variables_panel)
 /datum/view_variables_panel/proc/parse_dropdown_options(list/raw_options, mob/user)
 	var/list/out = list()
 	for(var/raw in raw_options)
-		var/text = admin_href_for(user?.client, "[raw]") // the options' links carry the world token until here
+		var/text = href_deliver(user, "[raw]") // the options' links carry HREF_TOKEN_PLACEHOLDER
 		if(!length(text))
 			continue
 		// "<option value='LINK'>NAME</option>" or "<option value selected>NAME</option>"
@@ -143,7 +143,7 @@ CAPABILITIES(/datum/view_variables_panel)
 			variables += list(list(
 				"index" = i,
 				"name" = "[key]",
-				"value_html" = "[value_html]",
+				"value_html" = href_deliver(user, "[value_html]"),
 			))
 	else
 		var/list/names = list()
@@ -154,21 +154,21 @@ CAPABILITIES(/datum/view_variables_panel)
 			if(thing_datum.can_vv_get(varname))
 				variables += list(list(
 					"name" = varname,
-					"value_html" = "[thing_datum.vv_get_var(varname, user)]",
+					"value_html" = href_deliver(user, "[thing_datum.vv_get_var(varname, user)]"),
 				))
 		// Its sparse slots (every one its type declares, set or not), edited through the sparse writer.
 		var/list/slot_fields = sparse_slots_of(thing_datum)
 		for(var/slot_label in slot_fields)
 			variables += list(list(
 				"name" = slot_label,
-				"value_html" = "[debug_variable(slot_label, slot_fields[slot_label], 0, thing_datum, viewer = user)]",
+				"value_html" = href_deliver(user, "[debug_variable(slot_label, slot_fields[slot_label], 0, thing_datum, viewer = user)]"),
 			))
 		// Its trait blocks (doc/rewrite/proposals/base_vars.md): each field as `@kind.field`, edited through set_trait().
 		var/list/trait_fields = type_trait_fields_of(thing_datum)
 		for(var/field_name in trait_fields)
 			variables += list(list(
 				"name" = field_name,
-				"value_html" = "[debug_variable(field_name, trait_fields[field_name], 0, thing_datum, viewer = user)]",
+				"value_html" = href_deliver(user, "[debug_variable(field_name, trait_fields[field_name], 0, thing_datum, viewer = user)]"),
 			))
 	data["variables"] = variables
 

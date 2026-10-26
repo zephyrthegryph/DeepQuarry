@@ -245,7 +245,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 			to_chat(victim, span_danger("Searing hot oil scorches your [E ? E.name : "flesh"]!"))
 
 		add_attack_logs(user, victim, "has been [cook_type] with [src]")
-		msg_admin_attack("[key_name_admin(user)] [cook_type] \the [victim] ([victim.ckey]) in \a [src]. (<A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[user.x];Y=[user.y];Z=[user.z]'>JMP</a>)")
+		msg_admin_attack("[key_name_admin(user)] [cook_type] \the [victim] ([victim.ckey]) in \a [src]. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[user.x];Y=[user.y];Z=[user.z]'>JMP</a>)")
 
 	//Coat the victim in some oil
 	oil.trans_to(victim, 40)

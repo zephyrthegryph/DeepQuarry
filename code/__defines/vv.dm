@@ -38,18 +38,18 @@
 #define IS_VALID_ASSOC_KEY(V) (!isnum(V)) //hhmmm..
 
 //General helpers
-#define VV_HREF_TARGET_INTERNAL(target, href_key) "byond://?_src_=vars;[HrefTokenWorld()];[href_key]=TRUE;[VV_HK_TARGET]=[REF(target)]"
-#define VV_HREF_TARGETREF_INTERNAL(targetref, href_key) "byond://?_src_=vars;[HrefTokenWorld()];[href_key]=TRUE;[VV_HK_TARGET]=[targetref]"
+#define VV_HREF_TARGET_INTERNAL(target, href_key) "byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];[href_key]=TRUE;[VV_HK_TARGET]=[REF(target)]"
+#define VV_HREF_TARGETREF_INTERNAL(targetref, href_key) "byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];[href_key]=TRUE;[VV_HK_TARGET]=[targetref]"
 #define VV_HREF_TARGET(target, href_key, text) "<a href='[VV_HREF_TARGET_INTERNAL(target, href_key)]'>[text]</a>"
 #define VV_HREF_TARGETREF(targetref, href_key, text) "<a href='[VV_HREF_TARGETREF_INTERNAL(targetref, href_key)]'>[text]</a>"
 #define VV_HREF_TARGET_1V(target, href_key, text, varname) "<a href='[VV_HREF_TARGET_INTERNAL(target, href_key)];[VV_HK_VARNAME]=[varname]'>[text]</a>" //for stuff like basic varedits, one variable
 #define VV_HREF_TARGETREF_1V(targetref, href_key, text, varname) "<a href='[VV_HREF_TARGETREF_INTERNAL(targetref, href_key)];[VV_HK_VARNAME]=[varname]'>[text]</a>"
 
 //Helper for linking to a VV_TOPIC op (topic_in(VV_TOPIC, href_key)) in general
-#define VV_TOPIC_LINK(datum, href_key, text) "<a href='byond://?_src_=vars;[HrefTokenWorld()];[href_key]=TRUE;target=[REF(datum)]'>text</a>"
+#define VV_TOPIC_LINK(datum, href_key, text) "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];[href_key]=TRUE;target=[REF(datum)]'>text</a>"
 
 //Helpers for vv_get_dropdown()
-#define VV_DROPDOWN_OPTION(href_key, name) . += "<option value='?_src_=vars;[HrefTokenWorld()];[href_key]=TRUE;target=[REF(src)]'>[name]</option>"
+#define VV_DROPDOWN_OPTION(href_key, name) . += "<option value='?_src_=vars;[HREF_TOKEN_PLACEHOLDER];[href_key]=TRUE;target=[REF(src)]'>[name]</option>"
 
 // View Variables href actions (doc/rewrite/final_api.html section 13). A `_src_=vars` href reaches
 // /client/proc/vv_topic(), which checks R_VAREDIT and the admin href token, then

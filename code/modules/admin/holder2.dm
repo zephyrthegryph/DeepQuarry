@@ -429,7 +429,7 @@ CAPABILITIES(/datum/admins)
 		. += "[rand(10)]"
 
 /// The admin token a link carries: the `viewer`'s own (a client or a mob), the admin the panel is built for. The viewer is required: a link
-/// with no admin to show it to is HrefTokenWorld() (check_grep rejects a call with no argument).
+/// with no admin to show it to carries HREF_TOKEN_PLACEHOLDER (check_grep rejects a call with no argument).
 /proc/RawHrefToken(viewer)
 	var/client/C = viewer
 	if(ismob(viewer))
@@ -456,18 +456,28 @@ CAPABILITIES(/datum/admins)
 /proc/HrefTokenFormField(viewer)
 	return "<input type='hidden' name='admin_token' value='[RawHrefToken(viewer)]'>"
 
-/// The token part of a link that has no single admin to show it to: one written into a message for every admin, or into a `_src_=vars` page (its
-/// topic is checked by CheckAdminHref, which accepts the world token). The text carries the world token only until it is delivered:
-/// admin_href_for() puts each recipient's own token in its place, and a topic op refuses the world token from an admin that has a holder.
-/proc/HrefTokenWorld()
-	return "admin_token=[GLOB.href_token]"
-
-/// `text` for one admin client: the world token of its links replaced by that admin's own.
-/proc/admin_href_for(client/C, text)
-	var/datum/admins/holder = C?.holder
-	if(!holder || !istext(text))
+/// `text` as delivered to `viewer` (a client or a mob): the HREF_TOKEN_PLACEHOLDER of its links becomes the viewer's own admin token when it has a holder,
+/// and is stripped otherwise, so no token ever reaches a player. Every path that sends link text to a client goes through this (the chat system's
+/// generate_payload() for to_chat/message_admins, and the tgui text of the report and VV panels).
+/proc/href_deliver(viewer, text)
+	if(!istext(text) || !findtext(text, HREF_TOKEN_PLACEHOLDER))
 		return text
-	return replacetext(text, "admin_token=[GLOB.href_token]", "admin_token=[holder.href_token]")
+	var/client/C = viewer
+	if(ismob(viewer))
+		var/mob/M = viewer
+		C = M.client
+	return href_fill(C?.holder?.href_token, text)
+
+/// `text` with the HREF_TOKEN_PLACEHOLDER of its links filled with `token` (an admin's own), or stripped when `token` is null (a player).
+/proc/href_fill(token, text)
+	if(!istext(text) || !findtext(text, HREF_TOKEN_PLACEHOLDER))
+		return text
+	if(token)
+		return replacetext(text, HREF_TOKEN_PLACEHOLDER, "admin_token=[token]")
+	text = replacetext(text, ";[HREF_TOKEN_PLACEHOLDER];", ";")
+	text = replacetext(text, "[HREF_TOKEN_PLACEHOLDER];", "")
+	text = replacetext(text, ";[HREF_TOKEN_PLACEHOLDER]", "")
+	return replacetext(text, HREF_TOKEN_PLACEHOLDER, "")
 
 // Shared admin_rank registry entries.
 

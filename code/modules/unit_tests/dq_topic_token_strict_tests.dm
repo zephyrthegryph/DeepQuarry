@@ -51,3 +51,32 @@ CAPABILITIES(/datum/dq_token_strict_default)
 	TEST_ASSERT_EQUAL(D.bumped, 0, "a clicker with no holder is refused another admin's token")
 	inbox_topic(M, D, list("guarded" = 1, "admin_token" = GLOB.href_token))
 	TEST_ASSERT_EQUAL(D.bumped, 1, "and takes the world token, the one a holderless caller carries")
+
+// A link written with HREF_TOKEN_PLACEHOLDER carries the token of the admin it is delivered to, and none for a player.
+/datum/unit_test/dq_e2/href_token_delivery
+
+/// The value of the link's admin_token query part ("" when it has none).
+/datum/unit_test/dq_e2/href_token_delivery/proc/token_of(text)
+	var/at = findtext(text, "admin_token=")
+	if(!at)
+		return ""
+	var/start = at + length("admin_token=")
+	var/stop = findtext(text, ";", start) || findtext(text, "'", start)
+	return copytext(text, start, stop)
+
+/datum/unit_test/dq_e2/href_token_delivery/run_gate()
+	var/link = "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=1'>?</a>"
+	var/to_a = href_fill("admin-a-token", link)
+	TEST_ASSERT_EQUAL(token_of(to_a), "admin-a-token", "delivered to admin A, the link carries A's token")
+	var/to_b = href_fill("admin-b-token", link)
+	TEST_ASSERT_EQUAL(token_of(to_b), "admin-b-token", "delivered to admin B, the link carries B's token")
+	var/to_player = href_fill(null, link)
+	TEST_ASSERT(!findtext(to_player, "admin_token"), "delivered to a player, the link carries no token")
+	TEST_ASSERT(!findtext(to_player, HREF_TOKEN_PLACEHOLDER) && !findtext(to_player, ";;"), "and no placeholder or empty query part is left")
+	TEST_ASSERT_EQUAL(href_fill("tok", "no links here"), "no links here", "text without the placeholder is returned as it was")
+	var/mob/living/simple_mob/e0_fixture/M = actor()
+	var/datum/dq_token_strict_probe/P = new
+	inbox_topic(M, P, list("guarded" = 1, "admin_token" = token_of(to_a)))
+	TEST_ASSERT_EQUAL(P.bumped, 1, "the strict op accepts A's delivered link from A")
+	inbox_topic(M, P, list("guarded" = 1, "admin_token" = token_of(to_b)))
+	TEST_ASSERT_EQUAL(P.bumped, 1, "and refuses B's delivered link from A")

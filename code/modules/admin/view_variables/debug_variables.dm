@@ -18,10 +18,10 @@
 	var/name_part = VV_HTML_ENCODE(name)
 	if(level > 0 || islist(owner)) //handling keys in assoc lists
 		if(istype(name,/datum))
-			name_part = "<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[REF(name)]'>[VV_HTML_ENCODE(name)] [REF(name)]</a>"
+			name_part = "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(name)]'>[VV_HTML_ENCODE(name)] [REF(name)]</a>"
 		else if(islist(name))
 			var/list/list_value = name
-			name_part = "<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[REF(name)]'> /list ([length(list_value)]) [REF(name)]</a>"
+			name_part = "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(name)]'> /list ([length(list_value)]) [REF(name)]</a>"
 
 	. = "[.][name_part] = "
 
@@ -66,7 +66,7 @@
 		var/list/fields = list()
 		for(var/field in record_fields(record_value))
 			fields += debug_variable(field, record_value.vars[field], level + 1, record_value, sanitize, viewer = viewer)
-		return "<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[REF(record_value)]'>[record_value.type] [REF(record_value)]</a><ul>[fields.Join()]</ul>"
+		return "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(record_value)]'>[record_value.type] [REF(record_value)]</a><ul>[fields.Join()]</ul>"
 
 	if(isdatum(value))
 		var/datum/datum_value = value
@@ -79,7 +79,7 @@
 		for(var/key, val in alist_value)
 			items += debug_variable(key, val, level + 1, sanitize = sanitize, viewer = viewer)
 
-		return "<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[REF(alist_value)]'>/alist ([alist_value.len])</a><ul>[items.Join()]</ul>"
+		return "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(alist_value)]'>/alist ([alist_value.len])</a><ul>[items.Join()]</ul>"
 
 	if(islist(value) || (name in GLOB.vv_special_lists)) // Some special lists aren't detectable as a list through istype
 		var/list/list_value = value
@@ -102,8 +102,8 @@
 
 				items += debug_variable(key, val, level + 1, sanitize = sanitize, viewer = viewer)
 
-			return "<a href='byond://?_src_=vars;[HrefTokenWorld()];[link_vars]'>/list ([list_value.len])</a><ul>[items.Join()]</ul>"
-		return "<a href='byond://?_src_=vars;[HrefTokenWorld()];[link_vars]'>/list ([list_value.len])</a>"
+			return "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];[link_vars]'>/list ([list_value.len])</a><ul>[items.Join()]</ul>"
+		return "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];[link_vars]'>/list ([list_value.len])</a>"
 
 	// if it's a number, is it a bitflag?
 	var/list/valid_bitflags
@@ -123,9 +123,9 @@
 
 /datum/proc/debug_variable_value(name, level, datum/owner, sanitize, display_flags)
 	if("[src]" != "[type]") // If we have a name var, let's use it.
-		return "<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[REF(src)]'>[src] [type] [REF(src)]</a>"
+		return "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(src)]'>[src] [type] [REF(src)]</a>"
 	else
-		return "<a href='byond://?_src_=vars;[HrefTokenWorld()];Vars=[REF(src)]'>[type] [REF(src)]</a>"
+		return "<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(src)]'>[type] [REF(src)]</a>"
 
 /matrix/debug_variable_value(name, level, datum/owner, sanitize, display_flags)
 	return span_value("\

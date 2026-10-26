@@ -53,7 +53,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	if (linear)
 		back_to_param += ";viewruntime_linear=1"
 
-	return "<a href='byond://?_src_=holder;[HrefTokenWorld()];viewruntime=[REF(src)][back_to_param]'>[linktext]</a>"
+	return "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];viewruntime=[REF(src)][back_to_param]'>[linktext]</a>"
 
 /// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/error_viewer/error_cache)
