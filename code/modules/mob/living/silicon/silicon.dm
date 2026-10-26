@@ -376,7 +376,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 				to_chat(src, "\The [A.alarm_name()].")
 
 		if(alarm_raised)
-			to_chat(src, span_filter_notice("<A HREF='byond://?src=\ref[src];showalerts=1'>\[Show Alerts\]</A>"))
+			to_chat(src, span_filter_notice("<A HREF='byond://?src=[REF(src)];showalerts=1'>\[Show Alerts\]</A>"))
 
 		for(var/key in queued_alarms)
 			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
@@ -404,7 +404,7 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 /mob/living/silicon/ai/raised_alarm(datum/alarm/A)
 	var/cameratext = ""
 	for(var/obj/machinery/camera/C in A.cameras())
-		cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=\ref[src];switchcamera=\ref[C]'>[C.c_tag]</A>"
+		cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=[REF(src)];switchcamera=[REF(C)]'>[C.c_tag]</A>"
 	to_chat(src, span_filter_warning("[A.alarm_name()]! ([(cameratext)? cameratext : "No Camera"])"))
 
 /mob/living/silicon/proc/is_traitor()

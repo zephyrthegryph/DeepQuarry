@@ -1325,7 +1325,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		return // No point annoying the AI/s about renames and module resets for shells.
 	switch(notifytype)
 		if(ROBOT_NOTIFICATION_NEW_UNIT) //New Robot
-			to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - New [lowertext(braintype)] connection detected: <a href='byond://?src=\ref[connected_ai];track2=\ref[connected_ai];track=\ref[src]'>[name]</a>") + "<br>"))
+			to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - New [lowertext(braintype)] connection detected: <a href='byond://?src=[REF(connected_ai)];track2=[REF(connected_ai)];track=[REF(src)]'>[name]</a>") + "<br>"))
 		if(ROBOT_NOTIFICATION_NEW_MODULE) //New Module
 			to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - [braintype] module change detected: [name] has loaded the [first_arg].") + "<br>"))
 		if(ROBOT_NOTIFICATION_MODULE_RESET)

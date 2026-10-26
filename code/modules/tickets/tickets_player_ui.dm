@@ -14,7 +14,7 @@ CAPABILITIES(/datum/ticket_chat)
 	user.clear_alert("open ticket")
 
 /datum/ticket_chat/ui_title(mob/user)
-	return "Ticket #[T().id] - [T().LinkedReplyName("\ref[T()]")]"
+	return "Ticket #[T().id] - [T().LinkedReplyName(ref_token(T()))]"
 
 /datum/ticket_chat/tgui_close(mob/user)
 	. = ..()

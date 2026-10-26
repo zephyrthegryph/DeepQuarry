@@ -113,7 +113,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 /obj/item/technomancer_catalog/proc/show_categories(category)
 	if(category)
 		if(spell_tab != category)
-			return "<a href='byond://?src=\ref[src];spell_category=[category]'>[category]</a>"
+			return "<a href='byond://?src=[REF(src)];spell_category=[category]'>[category]</a>"
 		else
 			return span_bold("[category]")
 
