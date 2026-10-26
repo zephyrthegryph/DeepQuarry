@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added a disk budget (tools/ci/disk_budget.toml, tools/dq_disk_budget.sh): every directory under E:/dq-cache and every per-worktree growth dir has a size cap, an age cap and an eviction policy, the cache has a total cap and a free-space floor, and lease and the train refuse heavy work below the floor"
+  - bugfix: "The dmbc lowering cache now evicts past its budget regardless of segment age (only the newest segment is spared), and input-session records are trimmed to the newest 8 per namespace"

@@ -35,7 +35,7 @@
 		return
 	else
 		log_game("Hostile Runtime event: [picked_area()] as chosen. Locking down.")
-		log_and_message_admins("Hostile Runtime event: [picked_area()] was picked. Bolting airlocks.")
+		log_and_message_admins("Hostile Runtime event: [picked_area()] was picked. Bolting airlocks.", null)
 
 	announceWhen = rand(75, 105) SECONDS
 	releaseWhen = rand(60, 90) SECONDS

@@ -11,10 +11,6 @@ init_lines	code/game/machinery/doors/airlock_angled_bay.dm	@/obj/machinery/door/
 init_lines	code/game/machinery/embedded_controller/embedded_controller_base.dm	@/obj/machinery/embedded_controller/radio::Initialize::frequency
 init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::rel_take_all
 init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::RefreshParts
-init_lines	code/game/objects/items/devices/defib.dm	@/obj/item/defib_kit::Initialize::make_tethered
-init_lines	code/game/objects/items/devices/radio/radiopack.dm	@/obj/item/bluespaceradio::Initialize::make_tethered
-init_lines	code/game/objects/items/ghost_hunting/weapons.dm	@/obj/item/proton_pack::Initialize::make_tethered
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::make_tethered
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::new_name
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::name
@@ -42,9 +38,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/r
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::PUBLISH_LEGACY
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::lastarea
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::focus
-init_lines	code/modules/research/tg/machinery/_production.dm	@/obj/machinery/rnd/production::Initialize::available_designs
-init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::available_designs
-init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::illegal_local_designs
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::landmark_tag
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists
 world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]

@@ -5,7 +5,7 @@
 // the host's names its handheld (losing the handheld remakes it), the handheld's names its host
 // (the host's capability ending, with the host, deletes the handheld).
 //
-// Set up with host.make_tethered(handheld_path) before . = ..() in Initialize().
+// Set up with host.make_tethered(handheld_path) from a setup(PROC_REF(x)) hook of the host's type.
 
 /// The host side of a tether: the host and the handheld it made.
 /datum/cap_data/tether_host
@@ -102,11 +102,12 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 	var/obj/item/host_item = hand_held.tether_host()
 	host_item?.tether_check()
 
-/// Makes this item the host of a tethered `handheld_path`. Call before . = ..() in Initialize().
+/// Makes this item the host of a tethered `handheld_path`. Call from a setup() hook (it adds the swap action itself).
 /obj/item/proc/make_tethered(handheld_path)
 	sparse_set(src, tether_path, handheld_path)
 	grant(src, granted_verb(/obj/item/proc/toggle_tethered_handheld), src)
 	set_actions_types(item_rules_of(src).actions_types + (list(/datum/action/item_action/swap_tethered_item)))
+	add_item_action(/datum/action/item_action/swap_tethered_item) // the declared actions were made when the init chain returned, before this setup hook
 	grant(src, /datum/capability/tether_host, src)
 	tether_make_handheld()
 

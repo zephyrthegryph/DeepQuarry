@@ -50,10 +50,6 @@ CAPABILITIES(/obj/machinery/rnd/production)
 /obj/machinery/rnd/production/proc/make_remote_materials(current, mapload)
 	return new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert)))
 
-/obj/machinery/rnd/production/Initialize(mapload)
-	available_designs = list()
-	. = ..()
-
 /obj/machinery/rnd/production/proc/configure_initial_parts()
 	default_apply_parts()
 	RefreshParts()
@@ -108,13 +104,13 @@ CAPABILITIES(/obj/machinery/rnd/production)
 /// Updates the list of designs this fabricator can print.
 /obj/machinery/rnd/production/proc/update_designs()
 	PROTECTED_PROC(TRUE)
-	var/previous_design_count = available_designs.len
-	available_designs.Cut()
+	var/previous_design_count = LAZYLEN(available_designs)
+	LAZYCLEARLIST(available_designs)
 	for(var/design_id in stored_research.researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
 		if(design.build_type & allowed_buildtypes)
-			available_designs |= design
-	var/design_delta = available_designs.len - previous_design_count
+			LAZYOR(available_designs, design)
+	var/design_delta = LAZYLEN(available_designs) - previous_design_count
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
 		play_sfx(src, SFX_MACHINES_TWOBEEP)

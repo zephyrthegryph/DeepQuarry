@@ -46,8 +46,7 @@ SYSTEM_DEF(instruments)
 		if(initial(I.abstract_type) == path)
 			continue
 		I = new path
-		if(!(I.instrument_flags & (INSTRUMENT_LEGACY | INSTRUMENT_DO_NOT_AUTOSAMPLE)))
-			I.calculate_samples()
+		I.prepare_samples()
 		if(!I.id)
 			spent(I)
 			continue

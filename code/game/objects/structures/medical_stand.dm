@@ -26,6 +26,7 @@ CAPABILITIES(/obj/structure/medical_stand)
 	owns_one(nameof(contained), /obj/item/clothing/mask/breath, starts = nameof(mask_type))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
+	drag_onto(PROC_REF(stand_dropped), onto = /mob/living/carbon/human)
 	op("toggle_iv_mode", menu(), label("Toggle IV Mode"), needs(req(PROC_REF(actor_is_living))), then(PROC_REF(medical_stand_toggle_mode_effect)))
 	op("set_iv_transfer", menu(), label("Set IV transfer amount"), then(PROC_REF(set_APTFT_effect)))
 	op("medical_stand_interaction_hand", hand(), ungated(), then(PROC_REF(medical_stand_interaction_hand)))
@@ -101,22 +102,24 @@ MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 		breather().remove_from_mob(contained)
 		src.visible_message(span_notice("The mask rapidly retracts just before /the [src] is destroyed!"))
 
-/obj/structure/medical_stand/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
-	..()
-	if(istype(target))
-		var/mob/user = usr
-		if(!ismob(user) || user.stat == DEAD || !CanMouseDrop(target, user))
-			return
-		var/list/available_options = list()
-		if (tank)
-			available_options += "Gas mask"
-		if (beaker)
-			available_options += "Drip needle"
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm): dragged onto a patient, the stand attaches
+/// or detaches what the actor picks, then the native drop goes on.
+/obj/structure/medical_stand/proc/stand_dropped(datum/act/input/A)
+	var/mob/living/carbon/human/target = A.over
+	var/mob/user = A.actor
+	if(!ismob(user) || user.stat == DEAD || !CanMouseDrop(target, user))
+		return INPUT_FALLTHROUGH
+	var/list/available_options = list()
+	if (tank)
+		available_options += "Gas mask"
+	if (beaker)
+		available_options += "Drip needle"
 
-		if(available_options.len > 1)
-			open_request(src, /datum/prompt/choice/medical_stand_attach, PROC_REF(attach_choice_made), answerer = user, title = "Attach/Detach Choice", question = "What do you want to attach/detach?", choices = available_options, patient = target, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-		else if(available_options.len)
-			attach_action(user, available_options[1], target)
+	if(available_options.len > 1)
+		open_request(src, /datum/prompt/choice/medical_stand_attach, PROC_REF(attach_choice_made), answerer = user, title = "Attach/Detach Choice", question = "What do you want to attach/detach?", choices = available_options, patient = target, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+	else if(available_options.len)
+		attach_action(user, available_options[1], target)
+	return INPUT_FALLTHROUGH
 
 /// The choice of what to attach to or take off a patient: the patient is kept on the question.
 /datum/prompt/choice/medical_stand_attach

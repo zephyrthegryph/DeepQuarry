@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Admin logs name the admin or player again for law changes, modify robot, quest from above, engine setup markers and similar actions."
+  - code_imp: "Generated click, drop, drag-over and hover overrides submit typed events through the input inbox."
+  - code_imp: "Removed check_rights() and check_if_greater_rights_than(); callers pass their client to admin_can()."

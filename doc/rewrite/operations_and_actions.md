@@ -241,7 +241,7 @@ Handlers change from `(mob/user, obj/item/held, datum/interaction/I)` to `(mob/u
   SLOT_VIA_VERB, when_full = SLOT_FULL_PASS, ...)` (ops `insert_scan` and the ACT_NONE `eject_scan_menu`, the old
   "open the records on insert" a `slot_inserted()` hook); `INTERACT_HAND(null, TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint))`
   became `cap_op("Open records", ..., using = EMPTY_HAND, key = "open_records", entry = INTERACTION_ENTRY_HAND)`.
-- `code/game/objects/items/bells.dm`, the stance shapes: eight `INTERACT_HAND_AS` / `INTERACT_ITEM_AS` specs became
+- `code/content/items/bells.dm`, the stance shapes: eight `INTERACT_HAND_AS` / `INTERACT_ITEM_AS` specs became
   four ops: `ring` (`using = EMPTY_HAND, stance = list(I_HELP, I_DISARM, I_GRAB)`), `hammer` (`action = ACT_ATTACK,
   stance = I_HURT`) and their held-item twins, each with its own handler instead of reading `interaction.stance`.
 

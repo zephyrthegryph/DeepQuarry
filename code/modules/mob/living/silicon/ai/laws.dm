@@ -15,7 +15,7 @@
 	src.laws_sanity_check()
 	src.laws.show_laws(who)
 
-/mob/living/silicon/ai/add_ion_law(law)
+/mob/living/silicon/ai/add_ion_law(law, notify = TRUE, mob/actor)
 	..()
 	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(R.lawupdate && (R.connected_ai == src))

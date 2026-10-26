@@ -93,6 +93,9 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	var/params = E.legacy_args?[5]
 	if(E.driven)
 		return op_resolve_click_with_params(actor, over, dragged, GESTURE_DRAG, E.origin || ORIGIN_CLICK, params)
+	// A drop BYOND handed over (atom/MouseDrop): reach is asked here, as the actor's adapter would have when it submitted the drag itself.
+	if(E.native && (!actor || !actor.input_adapter().drag_reachable(actor, dragged, over)))
+		return null
 	if(over && (op_has_ops(over) || op_has_ops(dragged)))
 		var/datum/op_result/result = op_resolve_click_with_params(actor, over, dragged, GESTURE_DRAG, ORIGIN_CLICK, params, TRUE, TRUE)
 		if(result)

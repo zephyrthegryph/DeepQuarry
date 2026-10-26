@@ -51,6 +51,15 @@
 	description = "This usually means something in the database has corrupted. If it doesn't go away automatically, inform Central Command for their techs to fix it ASAP(tm)"
 	show_on_wiki = FALSE
 
+/datum/techweb_node/proc/index_ids()
+	//Make lists associative for lookup
+	for(var/id in prereq_ids)
+		LAZYSET(prereq_ids, id, TRUE)
+	for(var/id in design_ids)
+		LAZYSET(design_ids, id, TRUE)
+	for(var/id in unlock_ids)
+		unlock_ids[id] = TRUE
+
 // Nodes are immutable global datums registered at startup via SSresearch.
 // Destroying one at runtime would corrupt every techweb that references this node ID,
 // so qdel() refuses (the error_node sentinel may still be deleted).

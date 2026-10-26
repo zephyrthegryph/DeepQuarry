@@ -882,7 +882,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	else
 		new /obj/item/nif/authentic(H)
 
-	log_and_message_admins("[key_name(src)] Quick Authentic NIF'd [H.real_name].")
+	log_and_message_admins("[key_name(src)] Quick Authentic NIF'd [H.real_name].", A.request.answerer)
 	feedback_add_details("admin_verb","QANIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/prompt/choice/admin_delete_type

@@ -76,7 +76,7 @@ Of the 345 newly visible sites, **15** sit in engine-internal files (the directo
 | `code/datums/containment/latency_policy.dm` | 4 |
 | `code/datums/operations/req.dm` | 4 |
 | `code/datums/repositories/decls.dm` | 4 |
-| `code/game/objects/items/devices/holowarrant.dm` | 4 |
+| `code/content/items/devices/holowarrant.dm` | 4 |
 | `code/modules/clothing/clothing_icons.dm` | 4 |
 | `code/modules/heat/heat_bind_batch.dm` | 4 |
 | `code/modules/hydroponics/grown.dm` | 4 |
@@ -365,20 +365,20 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/game/machinery/computer/law.dm:37 | `using_map.contact_levels` | 1
 - stat_input_untracked | code/game/machinery/computer/skills.dm:229 | `using_map.contact_levels` | 1
 - stat_input_untracked | code/game/mecha/mecha.dm:1977 | `operation_req_access` | 1
-- stat_input_untracked | code/game/objects/items/devices/holowarrant.dm:29 | `GLOB.data_core` | 1
-- stat_input_untracked | code/game/objects/items/devices/holowarrant.dm:29 | `GLOB.data_core.general` | 1
-- stat_input_untracked | code/game/objects/items/devices/holowarrant.dm:30 | `GLOB.data_core` | 1
-- stat_input_untracked | code/game/objects/items/devices/holowarrant.dm:30 | `GLOB.data_core.warrants` | 1
+- stat_input_untracked | code/content/items/devices/holowarrant.dm:29 | `GLOB.data_core` | 1
+- stat_input_untracked | code/content/items/devices/holowarrant.dm:29 | `GLOB.data_core.general` | 1
+- stat_input_untracked | code/content/items/devices/holowarrant.dm:30 | `GLOB.data_core` | 1
+- stat_input_untracked | code/content/items/devices/holowarrant.dm:30 | `GLOB.data_core.warrants` | 1
 - stat_input_untracked | code/game/objects/items/devices/radio/radio.dm:319 | `on` | 1
-- stat_input_untracked | code/game/objects/items/devices/uplink.dm:96 | `?hop_not_relation` | 1
-- stat_input_untracked | code/game/objects/items/devices/uplink.dm:186 | `active` | 1
+- stat_input_untracked | code/content/items/devices/uplink.dm:96 | `?hop_not_relation` | 1
+- stat_input_untracked | code/content/items/devices/uplink.dm:186 | `active` | 1
 - stat_input_untracked | code/game/objects/items/weapons/RCD.dm:212 | `?hop_not_relation` | 1
 - stat_input_untracked | code/game/objects/items/weapons/RCD.dm:213 | `?hop_not_relation` | 1
 - stat_input_untracked | code/game/objects/items/weapons/RCD.dm:215 | `?hop_not_relation` | 1
 - stat_input_untracked | code/game/objects/items/weapons/RCD.dm:216 | `?hop_not_relation` | 1
 - stat_input_untracked | code/game/objects/items/weapons/RCD.dm:219 | `?hop_not_relation` | 1
 - stat_input_untracked | code/game/objects/items/weapons/RCD.dm:220 | `?hop_not_relation` | 1
-- stat_input_untracked | code/game/objects/items/weapons/scrolls.dm:32 | `GLOB.wizards` | 1
+- stat_input_untracked | code/content/items/weapons/scrolls.dm:32 | `GLOB.wizards` | 1
 - stat_input_untracked | code/game/objects/items/weapons/storage/wallets.dm:162 | `?hop_not_relation` | 8
 - stat_input_untracked | code/game/turfs/simulated/floor.dm:124 | `?hop_not_relation` | 1
 - stat_input_untracked | code/game/turfs/simulated/floor.dm:124 | `flooring.can_engrave` | 1

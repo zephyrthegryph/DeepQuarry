@@ -392,7 +392,7 @@
 	if(QDELETED(A))
 		return
 	A.Bumped(src)
-	EXPIRY_STAMP(A, last_bumped, CLOCK_WORLD)
+	STAMP(A, last_bumped, CLOCK_WORLD)
 
 /atom/movable/proc/forceMove(atom/destination, direction, movetime)
 	. = FALSE

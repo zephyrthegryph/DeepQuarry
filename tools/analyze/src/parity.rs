@@ -706,12 +706,14 @@ pub fn read_expected(path: &Path) -> Option<Vec<Finding>> {
 
 /// The engine's raw findings on a fixture tree rooted at `root` (no cache).
 pub fn engine_on_fixture(root: &Path, scopes_from: Option<&Path>, lint_name: &str) -> Result<Vec<Finding>, String> {
+    // A fixture that carries its own `tools/ci/lint_scopes.toml` is judged against that file, not the repo's.
+    let own = root.join("tools").join("ci").join("lint_scopes.toml").exists();
     let opts = Options {
         root: root.to_path_buf(),
         lints: vec![lint_name.to_string()],
         no_cache: true,
         raw: true,
-        scopes_from: scopes_from.map(|p| p.to_path_buf()),
+        scopes_from: if own { None } else { scopes_from.map(|p| p.to_path_buf()) },
         ..Default::default()
     };
     let engine = Engine::new(crate::run::registry(), opts)?;

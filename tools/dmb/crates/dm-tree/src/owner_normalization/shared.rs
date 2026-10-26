@@ -13,6 +13,7 @@ pub struct SharedNormalizedDeclarations {
     pub(crate) callables: Arc<crate::owner_callable::CallableStore>,
     pub(crate) local_shapes: Arc<crate::owner_local_shape::LocalShapeStore>,
     pub(crate) metadata: Arc<crate::owner_metadata::SharedMetadataStore>,
+    pub(crate) storage: Arc<crate::resolver::storage_inventory::Store>,
 }
 impl Default for SharedNormalizedDeclarations {
     fn default() -> Self {
@@ -23,6 +24,7 @@ impl Default for SharedNormalizedDeclarations {
             callables: crate::owner_callable::CallableStore::shared_current_rosters(),
             local_shapes: crate::owner_local_shape::LocalShapeStore::shared_current_rosters(),
             metadata: crate::owner_metadata::SharedMetadataStore::shared_current_rosters(),
+            storage: crate::resolver::storage_inventory::Store::shared_current_rosters(),
         }
     }
 }

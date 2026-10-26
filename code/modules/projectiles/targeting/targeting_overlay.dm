@@ -164,7 +164,7 @@ CAPABILITIES(/obj/aiming_overlay)
 		owner().visible_message(span_danger("\The [owner()] turns \the [thing] on \the [target]!"))
 	else
 		owner().visible_message(span_danger("\The [owner()] aims \the [thing] at \the [target]!"))
-	log_and_message_admins("aimed \a [thing] at [key_name(target)].")
+	log_and_message_admins("aimed \a [thing] at [key_name(target)].", owner())
 
 	if(owner().client)
 		owner().client.add_gun_icons()

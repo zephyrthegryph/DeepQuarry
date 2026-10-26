@@ -585,7 +585,7 @@ CAPABILITIES(/datum/secrets_menu)
 		return
 
 	if(new_cap)
-		GLOB.max_explosion_range = new_cap
+		GLOB.max_explosion_range = num_or_null(new_cap)
 
 	var/range_dev = GLOB.max_explosion_range *0.25
 	var/range_high = GLOB.max_explosion_range *0.5
@@ -603,10 +603,10 @@ CAPABILITIES(/datum/secrets_menu)
 	var/choice = A.step_value("a15")
 	if(choice == "CultStation13")
 		log_and_message_admins("has set narsie's behaviour to \"CultStation13\".", holder())
-		GLOB.narsie_behaviour = choice
+		GLOB.narsie_behaviour = text_or_null(choice)
 	if(choice == "Nar-Singulo")
 		log_and_message_admins("has set narsie's behaviour to \"Nar-Singulo\".", holder())
-		GLOB.narsie_behaviour = choice
+		GLOB.narsie_behaviour = text_or_null(choice)
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 

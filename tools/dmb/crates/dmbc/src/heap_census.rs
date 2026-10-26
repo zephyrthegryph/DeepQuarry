@@ -397,9 +397,16 @@ impl HeapCensus {
             self.vec_payload("frontend.directive_plan", &region.effects);
             self.vec_payload("frontend.directive_plan", &region.segments);
             for segment in region.segments.iter() {
-                self.vec_payload("frontend.directive_plan", &segment.lines);
-                for line in &segment.lines {
-                    self.source_text("frontend.directive_plan", &line.text);
+                // Indexed lines are a run table over a shared prepared source, which its own owner reports.
+                match segment.lines.run_table() {
+                    Some((address, bytes)) => {
+                        self.buffer("frontend.directive_plan", address, bytes, bytes);
+                    }
+                    None => {
+                        for line in segment.lines.iter() {
+                            self.source_text("frontend.directive_plan", line.text);
+                        }
+                    }
                 }
             }
         }

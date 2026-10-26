@@ -6,6 +6,10 @@
 /datum/persistent/paintings/SetFilename()
 	filename = "data/persistent/paintings.json"
 
+/datum/persistent/paintings/load_saved()
+	. = ..()
+	load_database()
+
 /// Reads the painting database from disk into the persistence system and loads the frames from it.
 /datum/persistent/paintings/proc/load_database()
 	if(fexists(filename))
@@ -42,7 +46,7 @@
 			if(SSpersistence.remove_painting(d))
 				log_admin("A painting was deleted")
 			else
-				log_and_message_admins("Attempted to delete a painting, but failed.")
+				log_and_message_admins("Attempted to delete a painting, but failed.", null)
 			over --
 
 	if(fexists(filename))

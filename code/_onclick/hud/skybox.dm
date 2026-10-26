@@ -16,7 +16,7 @@
 	plane = SKYBOX_PLANE
 	blend_mode = BLEND_MULTIPLY // You actually need to do it this way or you see it in occlusion.
 	/// The z-level's sky picture drawn on this screen.
-	var/sky_image
+	var/image/sky_image
 
 /atom/movable/screen/skybox/draw(datum/look/look)
 	..()

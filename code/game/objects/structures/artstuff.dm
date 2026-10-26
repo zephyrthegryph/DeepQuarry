@@ -698,7 +698,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 			rel_clear(P, nameof(P.current_canvas), OWN_DELETE)
 			P.update_appearance()
 	loaded = FALSE
-	log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))
+	log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."), A.actor)
 	return TRUE
 
 // The easel's painting sits on its turf (one-sided REL view).
