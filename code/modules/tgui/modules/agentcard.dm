@@ -114,7 +114,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		return OP_OK
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	var/new_age = A.step_value("value")
+	var/new_age = A.step_value("answer")
 	if(!isnull(new_age))
 		if(new_age < 0)
 			S.set_age(initial(S.age))
@@ -128,7 +128,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		return OP_OK
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	var/datum/card_state/choice = A.step_value("value")
+	var/datum/card_state/choice = A.step_value("answer")
 	if(choice)
 		S.set_icon_state(choice.icon_state)
 		S.set_item_state(choice.item_state)
@@ -141,7 +141,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		return OP_OK
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	var/new_job = A.step_value("value")
+	var/new_job = A.step_value("answer")
 	if(!isnull(new_job))
 		S.set_assignment(new_job)
 		to_chat(user, span_notice("Occupation changed to '[new_job]'."))
@@ -153,7 +153,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		return OP_OK
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	var/new_blood_type = A.step_value("value")
+	var/new_blood_type = A.step_value("answer")
 	if(!isnull(new_blood_type))
 		S.set_blood_type(new_blood_type)
 		to_chat(user, span_notice("Blood type changed to '[new_blood_type]'."))
@@ -164,7 +164,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		return OP_OK
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	var/new_dna_hash = A.step_value("value")
+	var/new_dna_hash = A.step_value("answer")
 	if(!isnull(new_dna_hash))
 		S.set_dna_hash(new_dna_hash)
 		to_chat(user, span_notice("DNA hash changed to '[new_dna_hash]'."))
@@ -175,7 +175,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		return OP_OK
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	var/new_fingerprint_hash = A.step_value("value")
+	var/new_fingerprint_hash = A.step_value("answer")
 	if(!isnull(new_fingerprint_hash))
 		S.set_fingerprint_hash(new_fingerprint_hash)
 		to_chat(user, span_notice("Fingerprint hash changed to '[new_fingerprint_hash]'."))
@@ -204,7 +204,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		return OP_OK
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	var/new_sex = A.step_value("value")
+	var/new_sex = A.step_value("answer")
 	if(!isnull(new_sex))
 		S.set_sex(new_sex)
 		to_chat(user, span_notice("Sex changed to '[new_sex]'."))
@@ -215,7 +215,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		return OP_OK
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	var/new_species = A.step_value("value")
+	var/new_species = A.step_value("answer")
 	if(!isnull(new_species))
 		S.set_species(new_species)
 		to_chat(user, span_notice("Species changed to '[new_species]'."))
