@@ -3711,6 +3711,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/A = pair[1]
 	var/turf/simulated/floor/other = pair[2]
 
+	// The breach bleeds heat from the plating around it into space; put every solid temperature back at the end.
+	var/list/solid_temperatures = list()
+	for(var/turf/near in range(2, A))
+		solid_temperatures[near] = near.get_temperature()
+
 	dq_atmos_test_isolate_pair(A, other)
 
 	var/turf/space/S = dq_atmos_test_open_to_space(A)
@@ -3761,6 +3766,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// to their original turf types so later tests see a clean sealed room.
 	A.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	dq_atmos_test_restore_walls()
+	for(var/turf/near as anything in solid_temperatures)
+		heat_set_solid(near, solid_temperatures[near])
 
 	TEST_ASSERT(final_pressure < initial_pressure, \
 		"pressurised floor adjacent to space didn't depressurize: [initial_pressure] → [final_pressure]")
