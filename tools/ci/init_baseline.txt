@@ -2,8 +2,6 @@
 # rule<TAB>file<TAB>text; an init_lines row is an identity (@owner::Initialize::target). Shrink-only: fix sites, then `analyze baseline --update --lint init`.
 init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics/pipe::Initialize::if
 init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics/pipe::Initialize::ensure_pump_materials
-init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::setup_open_air
-init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::register_open_air
 init_lines	code/ATMOSPHERICS/pipes/pipe_base.dm	@/obj/machinery/atmospherics/pipe::Initialize::if
 init_lines	code/ATMOSPHERICS/pipes/pipe_base.dm	@/obj/machinery/atmospherics/pipe::Initialize::level
 init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::gvars_datum_init_order
