@@ -619,19 +619,31 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 		sealed = TRUE,
 		settable = FALSE,
 		shows_contents = FALSE)
-	op("add", item(/obj/item/reagent_containers/food/snacks), label("Add it to the paper"), then(PROC_REF(plant_added)))
+	op("add", item(/obj/item/reagent_containers/food/snacks), label("Add it to the paper"), needs(req(PROC_REF(plant_dried)), req(PROC_REF(plant_fits))), then(PROC_REF(plant_added)))
 	op("roll", in_hand(), label("Roll it"), then(PROC_REF(rolled)))
+
+MSG_DEF_SELF(rollingpaper/not_dried, span_notice("%I% must be dried before you add it to %T%."))
+MSG_DEF_SELF(rollingpaper/too_full, span_warning("%T% is too full to add %I%."))
+
+/// needs: the plant is dried; this prevents people from just stuffing cheeseburgers into their joint.
+/obj/item/reagent_containers/rollingpaper/proc/plant_dried(datum/act/op/A)
+	var/obj/item/reagent_containers/food/snacks/grown/G = A.held
+	return (istype(G) && G.dry) ? null : MSG(rollingpaper/not_dried)
+
+/// needs: the paper has room for the plant's reagents.
+/obj/item/reagent_containers/rollingpaper/proc/plant_fits(datum/act/op/A)
+	var/obj/item/reagent_containers/food/snacks/grown/G = A.held
+	if(!istype(G) || !G.reagents)
+		return null
+	return (G.reagents.total_volume + src.reagents.total_volume > src.reagents.maximum_volume) ? MSG(rollingpaper/too_full) : null
 
 /// A plant is added (it must be dried, and fit).
 /obj/item/reagent_containers/rollingpaper/proc/plant_added(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/reagent_containers/food/snacks/grown/G = A.held
-	if (!G.dry)                                                                                          //This prevents people from just stuffing cheeseburgers into their joint
-		to_chat(user, span_notice("[G.name] must be dried before you add it to [src]."))
-		return OP_REFUSED
-	if (G.reagents.total_volume + src.reagents.total_volume > src.reagents.maximum_volume)               //Check that we don't have too much already in the paper before adding things
-		to_chat(user, span_warning("The [src] is too full to add [G.name]."))
-		return OP_REFUSED
+	if (!istype(G) || !G.dry || G.reagents.total_volume + src.reagents.total_volume > src.reagents.maximum_volume)
+		log_world("ROLLINGPAPER: [src] refused [A.held] after the dry and room checks")
+		return OP_FAILED
 	if (src.reagents.total_volume == 0)
 		if (istype(src, /obj/item/reagent_containers/rollingpaper/blunt))                         //update the icon if this is the first thing we're adding to the paper
 			set_icon_state("blunt_full")

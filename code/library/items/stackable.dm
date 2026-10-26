@@ -22,7 +22,7 @@ MSG_DEF(stackable/split, "You split %I% into two stacks.", "%U% splits a stack."
 			needs(req(CAP_PROC(target_has_room))),
 			costs(RES_STACK, CAP_PROC(merge_amount)), then(CAP_PROC(add_to_target)), says(MSG(stackable/merge))),
 		op("split", menu(), label("Split stack"),
-			asks(/datum/prompt/number, fields = list("question" = "How many to split off?")), then(CAP_PROC(do_split)), says(MSG(stackable/split))),
+			asks(/datum/prompt/number/split_count, fields = list("question" = "How many to split off?")), then(CAP_PROC(do_split)), says(MSG(stackable/split))),
 		examine_line(CAP_PROC(count_text)))
 
 /// The units of a stack item (its `amount`): 0 when it is no stack.
@@ -71,6 +71,24 @@ MSG_DEF(stackable/split, "You split %I% into two stacks.", "%U% splits a stack."
 	stack_add_units(A.target, n)
 	return OP_OK
 
+/// The count a split asks: a whole number from one up to one less than the stack holds. Any other answer is refused and the prompt stays open.
+/datum/prompt/number/split_count
+	step = 1
+	/// The handle of the stack being split, taken when the question is asked.
+	var/stack_token
+
+/datum/prompt/number/split_count/prepare(datum/act/A)
+	. = ..()
+	var/datum/act/op/O = A
+	if(istype(O))
+		stack_token = ref_token(O.holder)
+
+/datum/prompt/number/split_count/refusal(given)
+	var/obj/item/held_stack = resolve_token(stack_token)
+	if(!isnum(given) || given < 1 || given >= stack_units(held_stack))
+		return reason_text(/datum/msg/stackable/bad_split)
+	return null
+
 /// split: the answered count goes to a new stack in the actor's hands, or on their tile.
 /datum/capability/lib/stackable/proc/do_split(datum/act/op/A)
 	var/obj/item/stack_item = A.holder
@@ -78,8 +96,8 @@ MSG_DEF(stackable/split, "You split %I% into two stacks.", "%U% splits a stack."
 	var/n = isnull(R) ? null : round(text2num("[R.value]"))
 	var/have = stack_units(stack_item)
 	if(!isnum(n) || n < 1 || n >= have)
-		A.reason = /datum/msg/stackable/bad_split
-		return OP_REFUSED
+		log_world("STACK: [stack_item] split of [R?.value] refused after the prompt check (it holds [have])")
+		return OP_FAILED
 	var/obj/item/piece = stack_split(stack_item, n)
 	if(!piece)
 		return OP_FAILED

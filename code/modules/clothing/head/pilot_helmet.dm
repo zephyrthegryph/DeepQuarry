@@ -26,7 +26,9 @@ CAPABILITIES(/obj/item/clothing/head/pilot)
 	owns_one(nameof(pilot_hud), starts = /atom/movable/screen/pilot_hud)
 	derives(nameof(images), PROC_REF(build_hud_images))
 	derives(nameof(raw_images), PROC_REF(build_raw_images))
-	op("pilot_hud_colors_verb", menu(), label("Alter HUD color"), needs(carried()), then(PROC_REF(pilot_hud_colors_verb)))
+	op("pilot_hud_colors_verb", menu(), label("Alter HUD color"), needs(carried()),
+		asks(/datum/prompt/color, fields = list("title" = "HUD Color", "question" = "Pick a color!", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "color"),
+		then(PROC_REF(pilot_hud_colors_verb)))
 
 /// The helmet's HUD layers over its screen, by name: the bars and boxes stay hidden until the shuttle flies (update_hud()).
 /obj/item/clothing/head/pilot/proc/build_hud_images()
@@ -130,15 +132,12 @@ CAPABILITIES(/obj/item/clothing/head/pilot)
 
 /// Old verb "Alter HUD color".
 /obj/item/clothing/head/pilot/proc/pilot_hud_colors_verb(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/color, PROC_REF(hud_color_picked), answerer = user, title = "HUD Color", question = "Pick a color!", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-
-/obj/item/clothing/head/pilot/proc/hud_color_picked(datum/act/request/A)
-	if(!A.answer)
+	var/datum/prompt/answer = A.answer
+	if(!answer)
 		return
 	for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
 		var/image/I = images[img]
-		I.color = A.answer.value
+		I.color = answer.value
 
 
 // its HUD images are detached.

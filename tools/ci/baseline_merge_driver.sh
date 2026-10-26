@@ -6,8 +6,7 @@
 # A baseline only ever shrinks: a lane drops the rows it fixed and lowers the ceilings it improved. So the right merge of two sides
 # is the intersection of their rows, and for a ceiling line ("key N") the smaller N (a key one side removed, because it reached 0,
 # is removed). Supported format: '#' comment lines, blank lines, tab-separated rows, and ceiling lines "word number".
-# Anything else falls back to a normal text merge (git merge-file), which conflicts as before, as does a side that ADDED a row or
-# ceiling key (not in the base) or that changed the comment lines differently: the driver never guesses.
+# Anything else falls back to a normal text merge (git merge-file), which conflicts as before, as does a side that changed the comment lines differently: the driver never guesses.
 #
 # Installed per command, not per clone, by tools/dq_git_safe.sh (sourced by every merge tool), so a fresh worktree needs no setup.
 set -u
@@ -22,20 +21,49 @@ supported || fallback
 
 cmp -s <(grep -E '^#' "$A") <(grep -E '^#' "$B") || fallback
 
-# Any content line (not comment/blank) of $1 absent from base file $O means that side added something: fallback.
-for f in "$A" "$B"; do
-	grep -vE '^(#|[[:space:]]*$)' "$f" | LC_ALL=C awk -v base="$O" '
-		BEGIN { while ((getline l < base) > 0) { if (l ~ /^#/ || l ~ /^[ \t]*$/) continue; if (l ~ /^[A-Za-z0-9_.-]+ [0-9]+$/) { split(l, p, " "); k["C " p[1]] = 1 } else k["R " l] = 1 } }
-		{ if ($0 ~ /^[A-Za-z0-9_.-]+ [0-9]+$/) { split($0, p, " "); if (!(("C " p[1]) in k)) bad = 1 } else if (!(("R " $0) in k)) bad = 1 }
-		END { exit bad ? 1 : 0 }' || fallback
-done
-
+# The merge: the rows both sides kept, plus rows either side ADDED (not in the base: a new lint, or a lane that records a new site),
+# in ours' order, an added row of theirs placed after the nearest row before it that survives. A row one side dropped stays dropped.
+# A ceiling key: the smaller value; a key one side dropped (reached 0) stays dropped; a key only one side has and the base lacks is kept.
 tmp="$(mktemp)"
-LC_ALL=C awk -v theirs="$B" '
-	BEGIN { while ((getline l < theirs) > 0) { if (l ~ /^#/ || l ~ /^[ \t]*$/) continue; if (l ~ /^[A-Za-z0-9_.-]+ [0-9]+$/) { split(l, p, " "); c[p[1]] = p[2] + 0 } else r[l] = 1 } }
-	/^#/ || /^[ \t]*$/ { print; next }
-	/^[A-Za-z0-9_.-]+ [0-9]+$/ { split($0, p, " "); if (p[1] in c) print p[1], (c[p[1]] < p[2] + 0 ? c[p[1]] : p[2]); next }
-	($0 in r) { print }
+LC_ALL=C awk -v base="$O" -v theirs="$B" '
+	function iscomment(l) { return (l ~ /^#/ || l ~ /^[ \t]*$/) }
+	function isceil(l) { return (l ~ /^[A-Za-z0-9_.-]+ [0-9]+$/) }
+	BEGIN {
+		while ((getline l < base) > 0) { if (iscomment(l)) continue; if (isceil(l)) { split(l, p, " "); bc[p[1]] = 1 } else br[l] = 1 }
+		while ((getline l < theirs) > 0) {
+			if (iscomment(l)) continue
+			if (isceil(l)) { split(l, p, " "); tc[p[1]] = p[2] + 0; continue }
+			tn++; tl[tn] = l; tr[l] = 1
+		}
+	}
+	{ al[NR] = $0; if (!iscomment($0) && !isceil($0)) ar[$0] = 1 }
+	END {
+		for (i = 1; i <= NR; i++) { l = al[i]; if (!iscomment(l) && !isceil(l) && ((l in tr) || !(l in br))) keep[l] = 1 }
+		for (j = 1; j <= tn; j++) {
+			l = tl[j]
+			if ((l in br) || (l in ar)) continue
+			anchor = ""
+			for (k = j - 1; k >= 1; k--) if (tl[k] in keep) { anchor = tl[k]; break }
+			if (anchor == "") head[++nh] = l; else { aft[anchor, ++na[anchor]] = l }
+			keep[l] = 1
+		}
+		started = 0
+		for (i = 1; i <= NR; i++) {
+			l = al[i]
+			if (iscomment(l)) { print l; continue }
+			if (!started) { started = 1; for (h = 1; h <= nh; h++) print head[h] }
+			if (isceil(l)) {
+				split(l, p, " ")
+				if (p[1] in tc) print p[1], (tc[p[1]] < p[2] + 0 ? tc[p[1]] : p[2])
+				else if (!(p[1] in bc)) print l
+				seen[p[1]] = 1
+				continue
+			}
+			if (l in keep) { print l; for (m = 1; m <= na[l]; m++) print aft[l, m] }
+		}
+		if (!started) for (h = 1; h <= nh; h++) print head[h]
+		for (key in tc) if (!(key in seen) && !(key in bc)) print key, tc[key]
+	}
 ' "$A" >"$tmp" || { rm -f "$tmp"; fallback; }
 cat "$tmp" >"$A"; rm -f "$tmp"
 exit 0

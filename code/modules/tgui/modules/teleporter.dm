@@ -7,7 +7,7 @@
 
 CAPABILITIES(/datum/tgui_module/teleport_control)
 	interface("Teleporter")
-	op("select_target", ui_act("select_target"), then(PROC_REF(ui_act_select_target)))
+	op("select_target", ui_act("select_target"), asks(/datum/prompt/choice, fields = list("title" = "Locking Menu", "question" = "Please select a location to lock in.", "choices" = computed(PROC_REF(target_choices)), "timeout" = 0)), then(PROC_REF(ui_act_select_target)))
 	op("test_fire", ui_act("test_fire"), then(PROC_REF(ui_act_test_fire)))
 	op("toggle_on", ui_act("toggle_on"), then(PROC_REF(ui_act_toggle_on)))
 	ref_one(nameof(hub))
@@ -64,24 +64,22 @@ CAPABILITIES(/datum/tgui_module/teleport_control)
 			L[tmpname] = I
 	return L
 
+/datum/tgui_module/teleport_control/proc/target_choices(datum/act/A)
+	return teleport_targets()
+
 /datum/tgui_module/teleport_control/proc/ui_act_select_target(datum/act/op/A)
-	open_request(src, /datum/prompt/choice, PROC_REF(target_chosen), valid = PROC_REF(request_usable), answerer = A.actor, title = "Locking Menu", question = "Please select a location to lock in.", choices = teleport_targets(), timeout = 0)
-
-/datum/tgui_module/teleport_control/proc/target_chosen(datum/act/request/A)
-	target_chosen_apply(A)
-	SStgui.update_uis(src)
-
-/datum/tgui_module/teleport_control/proc/target_chosen_apply(datum/act/request/A)
 	if(!A.answer)
-		return
+		return OP_OK
 	var/desc = A.answer.value
 	if(!desc)
-		return
+		return OP_OK
 	var/list/L = teleport_targets()
 	if(!L[desc])
-		return
+		return OP_OK
 	rel_set(src, nameof(src.locked), L[desc])
 	set_locked_name(desc)
+	SStgui.update_uis(src)
+	return OP_OK
 
 /datum/tgui_module/teleport_control/proc/ui_act_test_fire(datum/act/op/A)
 	station()?.testfire()
