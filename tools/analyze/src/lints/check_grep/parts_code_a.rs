@@ -21,7 +21,7 @@ pub fn parts() -> Vec<Part> {
         .flt(vec![Flt::DropPaths("call_ext_allow"), drop(r":\s*//|:\s*\*|// .*call_ext")]),
         Part::new(
             "href_token_needs_a_viewer",
-            "href token: a viewer",
+            "href token needs a viewer",
             "HrefToken()/HrefTokenFormField() with no viewer. Pass the admin the link is built for (a client or a mob); a link written for every admin, or into a _src_=vars page, carries HREF_TOKEN_PLACEHOLDER.",
             Files::Code,
             line(r"HrefToken(FormField)?\([[:space:]]*\)"),
