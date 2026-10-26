@@ -286,7 +286,7 @@ GLOBAL_PROTECT(LastAdminCalledProc)
 
 	GLOB.LastAdminCalledProc = procname
 	if(target != GLOBAL_PROC)
-		GLOB.LastAdminCalledTargetRef = REF(target)
+		GLOB.LastAdminCalledTargetRef = ref_token(target)
 
 	if(!is_remote_handler)
 		GLOB.AdminProcCaller = user_identifier //if this runtimes, too bad for you

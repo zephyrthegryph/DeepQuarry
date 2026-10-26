@@ -379,13 +379,13 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 	if(!(C && C.prefs?.read_preference(/datum/preference/toggle/chat_tags)))
 		return tagdesc
 	if(!C.tgui_panel.is_ready() || C.tgui_panel.oldchat)
-		return "<IMG src='\ref[GLOB.text_tag_icons]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"
+		return "<IMG src='[REF(GLOB.text_tag_icons)]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"
 	return CACHED(text_tags, tagname)
 
 /proc/create_text_tag_old(tagname, tagdesc = tagname, client/C = null)
 	if(!(C && C.prefs?.read_preference(/datum/preference/toggle/chat_tags)))
 		return tagdesc
-	return "<IMG src='\ref[GLOB.text_tag_icons]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"
+	return "<IMG src='[REF(GLOB.text_tag_icons)]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"
 
 /proc/contains_az09(input)
 	for(var/i=1, i<=length(input), i++)
@@ -444,10 +444,10 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 	t = replacetext(t, "\[/grid\]", "</td></tr></table>")
 	t = replacetext(t, "\[row\]", "</td><tr>")
 	t = replacetext(t, "\[cell\]", "<td>")
-	t = replacetext(t, "\[logo\]", "<img src=\ref['html/images/ntlogo.png']")
-	t = replacetext(t, "\[talogo\]", "<img src=\ref['html/images/talonlogo.png']>")
-	t = replacetext(t, "\[redlogo\]", "<img src=\ref['html/images/redntlogo.png']>")
-	t = replacetext(t, "\[sglogo\]", "<img src=\ref['html/images/sglogo.png']")
+	t = replacetext(t, "\[logo\]", "<img src=[REF('html/images/ntlogo.png')]")
+	t = replacetext(t, "\[talogo\]", "<img src=[REF('html/images/talonlogo.png')]>")
+	t = replacetext(t, "\[redlogo\]", "<img src=[REF('html/images/redntlogo.png')]>")
+	t = replacetext(t, "\[sglogo\]", "<img src=[REF('html/images/sglogo.png')]")
 	t = replacetext(t, "\[editorbr\]", "")
 	return t
 
@@ -495,10 +495,10 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 	t = replacetext(t, "</table>", "\[/grid\]")
 	t = replacetext(t, "<tr>", "\[row\]")
 	t = replacetext(t, "<td>", "\[cell\]")
-	t = replacetext(t, "<img src=\ref['html/images/ntlogo.png']>", "\[logo\]")
-	t = replacetext(t, "<img src=\ref['html/images/redntlogo.png']>", "\[redlogo\]")
-	t = replacetext(t, "<img src=\ref['html/images/talonlogo.png']>", "\[talogo\]")
-	t = replacetext(t, "<img src=\ref['html/images/sglogo.png']>", "\[sglogo\]")
+	t = replacetext(t, "<img src=[REF('html/images/ntlogo.png')]>", "\[logo\]")
+	t = replacetext(t, "<img src=[REF('html/images/redntlogo.png')]>", "\[redlogo\]")
+	t = replacetext(t, "<img src=[REF('html/images/talonlogo.png')]>", "\[talogo\]")
+	t = replacetext(t, "<img src=[REF('html/images/sglogo.png')]>", "\[sglogo\]")
 	t = replacetext(t, "<span class=\"paper_field\"></span>", "\[field\]")
 	t = replacetext(t, "<span class=\"redacted\">R E D A C T E D</span>", "\[redacted\]")
 	t = strip_html_properly(t)
