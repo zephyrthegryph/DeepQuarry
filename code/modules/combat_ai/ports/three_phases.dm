@@ -76,7 +76,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 	else if(hp_frac <= 0.7)
 		stance = I_GRAB              // Phase two
 	brain.perform_attack_op(E, target, "mob_attacks.special", null, stance)
-	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
+	STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

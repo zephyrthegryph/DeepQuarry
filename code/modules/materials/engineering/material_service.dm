@@ -225,8 +225,8 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/datum/material_assembly/assembly = material_assembly(holder)
 	if(!assembly.assembly_id)
 		assembly.assembly_id = "ME-[++GLOB.next_material_assembly_id]"
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
-	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, chemical_last_update, CLOCK_WORLD)
 	initialize_thermal_stock()
 	register_diagnostics()
 	// Not scheduled here: material_service_event(), the only creator, schedules the first
@@ -301,7 +301,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	// Sleeping means the previous environment had no continuing effect. Do not
 	// charge minutes spent asleep against a newly hot or corrosive mixture.
 	if(!active && !timer)
-		EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+		STAMP(src, last_update, CLOCK_WORLD)
 	if(topology_changed)
 		watches_dirty = TRUE
 	schedule(active && !topology_changed ? MATERIAL_SERVICE_INTERVAL : 0)
@@ -415,7 +415,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 
 /datum/material_service/proc/settle_chemical()
 	var/elapsed = max(0, (world.time - chemical_last_update) / 10)
-	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
+	STAMP(src, chemical_last_update, CLOCK_WORLD)
 	if(chemical_rate && elapsed)
 		var/datum/material_assembly/wear = material_assembly(owner())
 		wear.liner_integrity = max(0, wear.liner_integrity - chemical_rate * elapsed)
@@ -580,7 +580,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/elapsed = has_sampled ? clamp((world.time - last_update) / 10, 0, MATERIAL_SERVICE_MAX_ELAPSED) : 0
 	has_sampled = TRUE
 	settle_chemical()
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
 	if(QDELETED(owner()))
 		updating = FALSE
 		return

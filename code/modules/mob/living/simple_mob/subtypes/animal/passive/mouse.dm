@@ -108,7 +108,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	set_layer(MOB_LAYER)
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
-		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
+		STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 	..()
 
 /mob/living/simple_mob/animal/passive/mouse/cannot_use_vents()
@@ -120,7 +120,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	set_icon_state("mouse_[body_color]_splat")
 	set_layer(MOB_LAYER)
 	if(client)
-		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
+		STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 /*
  * Mouse types
@@ -327,7 +327,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/mining)
 	set_icon_state("mouse_miner_splat")
 	set_layer(MOB_LAYER)
 	if(client)
-		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
+		STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 /mob/living/simple_mob/animal/passive/mouse/beastmode
 	body_color = "white" // Always set white so it can be easily recoloured

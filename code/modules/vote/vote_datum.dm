@@ -49,7 +49,7 @@
 		log_admin("[capitalize(vote_type_text)] vote started by [key_name(user)].")
 
 	log_vote(text)
-	EXPIRY_STAMP(src, started_time, CLOCK_WORLD)
+	STAMP(src, started_time, CLOCK_WORLD)
 	announce(text)
 
 /datum/vote/proc/remaining()

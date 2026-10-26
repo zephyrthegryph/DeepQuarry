@@ -292,7 +292,7 @@
 
 	// Update timers/cooldown stuff
 	move_speed = world.time - l_move_time
-	EXPIRY_STAMP(src, l_move_time, CLOCK_WORLD)
+	STAMP(src, l_move_time, CLOCK_WORLD)
 	last_move = direct // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary
 
@@ -393,7 +393,7 @@
 	if(QDELETED(A))
 		return
 	A.Bumped(src)
-	STAMP(A, last_bumped, CLOCK_WORLD)
+	stamp_now(A, last_bumped, CLOCK_WORLD)
 
 /atom/movable/proc/forceMove(atom/destination, direction, movetime)
 	. = FALSE

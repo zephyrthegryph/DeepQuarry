@@ -45,7 +45,7 @@
 	department = account.department_id
 	role_id = _role_id
 	requested_weight = clamp(round(_requested_weight), 1, 3)
-	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
+	STAMP(src, created_at, CLOCK_WORLD)
 
 /// Social contracts keep their exceptional target live until an authorized
 /// head finalizes the outcome or the deadline does so automatically. All

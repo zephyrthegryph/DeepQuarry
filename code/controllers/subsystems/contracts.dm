@@ -483,7 +483,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 			event_occurrence_order.Cut(1, 2)
 			seen_event_occurrences -= expired_key
 	event.id = "DQ-CE-[next_event_id++]"
-	EXPIRY_STAMP(event, occurred_at, CLOCK_WORLD)
+	STAMP(event, occurred_at, CLOCK_WORLD)
 	events_published++
 	rel_add(src, nameof(recent_events), event)
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)

@@ -42,7 +42,7 @@
 
 
 /datum/stockEvent/product/transition()
-	EXPIRY_STAMP(src, last_change, CLOCK_WORLD)
+	STAMP(src, last_change, CLOCK_WORLD)
 	switch (phase_id)
 		if (0)
 			EXPIRY_SET(src, next_phase, rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER), CLOCK_WORLD)

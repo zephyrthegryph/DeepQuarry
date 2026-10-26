@@ -198,16 +198,16 @@
 	var/paused = FALSE
 
 /datum/point/vector/processed/proc/start()
-	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
-	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+	STAMP(src, last_process, CLOCK_WORLD)
+	STAMP(src, last_move, CLOCK_WORLD)
 	SSpoint_steps.kernel_join(src)
 
 /datum/point/vector/processed/proc/point_step()
 	if(paused)
 		last_move += world.time - last_process
-		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+		STAMP(src, last_process, CLOCK_WORLD)
 		return
 	var/needed_time = world.time - last_move
-	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
-	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+	STAMP(src, last_process, CLOCK_WORLD)
+	STAMP(src, last_move, CLOCK_WORLD)
 	increment(needed_time) // was needed_time / SSprojectiles.wait, and that wait was 1

@@ -33,7 +33,7 @@ CAPABILITIES(/datum/event_container)
 	else if(ELAPSED_SINCE(src, next_event_time, CLOCK_WORLD) > 0)
 		start_event()
 
-	EXPIRY_STAMP(src, last_world_time, CLOCK_WORLD)
+	STAMP(src, last_world_time, CLOCK_WORLD)
 
 /datum/event_container/proc/start_event()
 	if(!next_event())	// If non-one has explicitly set an event, randomly pick one

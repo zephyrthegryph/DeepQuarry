@@ -377,7 +377,7 @@ CAPABILITIES(/datum/material_power_overlay)
 /// conductor any more (the caller drops the overlay).
 /datum/material_power_overlay/proc/process_material_network()
 	var/elapsed_seconds = last_material_process ? max((world.time - last_material_process) / 10, 0.1) : 1
-	EXPIRY_STAMP(src, last_material_process, CLOCK_WORLD)
+	STAMP(src, last_material_process, CLOCK_WORLD)
 	if(material_cache_dirty)
 		rebuild_material_cache()
 	if(!material_graph?.has_custom_conductors && !material_graph?.has_superconductors)

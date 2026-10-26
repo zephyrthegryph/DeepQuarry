@@ -232,7 +232,7 @@ SETTER(/datum/shuttle, process_state)
 		return	//someone cancelled the launch
 
 	EXPIRY_SET(src, arrive_time, travel_time*10, CLOCK_WORLD)
-	EXPIRY_STAMP(src, depart_time, CLOCK_WORLD)
+	STAMP(src, depart_time, CLOCK_WORLD)
 
 	set_moving_status(SHUTTLE_INTRANSIT)
 	on_shuttle_departure(start_location, destination)

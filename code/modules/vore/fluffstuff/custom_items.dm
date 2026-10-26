@@ -1555,7 +1555,7 @@ CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
 		set_icon_state("pandorba_d")
 		play_sfx(src, SFX_ITEMS_DROP_PLUSHIE, 0.5, vary = FALSE)
 		visible_message("[src] says, \"[pokephrase]\"")
-	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+	STAMP(src, last_message, CLOCK_WORLD)
 	return OP_OK
 
 //Yeehawguvnah - Cephyra

@@ -105,7 +105,7 @@ CAPABILITIES(/obj/singularity)
 			event()
 
 /obj/singularity/proc/admin_investigate_setup()
-	EXPIRY_STAMP(src, last_warning, CLOCK_WORLD)
+	STAMP(src, last_warning, CLOCK_WORLD)
 	var/count = locate_in_list(orange(30, src), /obj/machinery/containment_field)
 
 	if (!count)

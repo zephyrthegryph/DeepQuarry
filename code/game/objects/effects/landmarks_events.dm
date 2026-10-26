@@ -216,7 +216,7 @@ CAPABILITIES(/obj/effect/landmark/event_trigger)
 		return FALSE
 	if(!isRepeating && last_trigger) //Used to avoid spam if qdel(src) fires too slowly
 		return FALSE
-	EXPIRY_STAMP(src, last_trigger, CLOCK_WORLD)
+	STAMP(src, last_trigger, CLOCK_WORLD)
 	COOLDOWN_START(src, trigger_cooldown, cooldown)
 
 	if(!creator_ckey)	//For some reason, the user didn't have a ckey. Let's clean up

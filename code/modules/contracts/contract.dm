@@ -5,7 +5,7 @@
 
 /datum/contract_audit_entry/New(_category, _detail)
 	. = ..()
-	EXPIRY_STAMP(src, time, CLOCK_WORLD)
+	STAMP(src, time, CLOCK_WORLD)
 	category = _category
 	detail = _detail
 
@@ -442,7 +442,7 @@ CAPABILITIES(/datum/contract)
 		cancel_after(src, "offer_timer")
 	offer_expires_at = 0
 	state = CONTRACT_ACTIVE
-	EXPIRY_STAMP(src, accepted_at, CLOCK_WORLD)
+	STAMP(src, accepted_at, CLOCK_WORLD)
 	accepted_by_account = accepting_account?.account_number || contract_account_for_mob(user)?.account_number
 	if(deadline_duration > 0)
 		EXPIRY_SET(src, deadline, deadline_duration, CLOCK_WORLD)
@@ -665,7 +665,7 @@ CAPABILITIES(/datum/contract)
 	grace_until = 0
 	state = new_state
 	closure_code = _closure_code
-	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
+	STAMP(src, closed_at, CLOCK_WORLD)
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(category, detail)
 	SScontracts?.on_contract_closed(src)

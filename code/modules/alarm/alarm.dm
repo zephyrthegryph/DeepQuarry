@@ -10,7 +10,7 @@
 
 /datum/alarm_source/New(atom/source)
 	rel_set(src, nameof(source), source) // a relation: the framework clears it when the source dies
-	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+	STAMP(src, start_time, CLOCK_WORLD)
 	source_name = text_or_null(source.get_source_name())
 
 /datum/alarm

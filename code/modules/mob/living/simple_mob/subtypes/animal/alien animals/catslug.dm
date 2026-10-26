@@ -1038,7 +1038,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 	if(target && istype(target))
 		target.injure(INJURY_BLUNT, target.get_endurance() * 30, source = src, flags = INJURE_IGNORE_RESISTANCE)
 		act_message(src, target, null, MSG_OTHERS(span_warning("%U% kills %T%!")))
-		EXPIRY_STAMP(src, kill_cooldown, CLOCK_WORLD)
+		STAMP(src, kill_cooldown, CLOCK_WORLD)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/color
 	picked_color = TRUE

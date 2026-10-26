@@ -91,7 +91,7 @@
 
 	// 3. The one stat transition.
 	set_stat(DEAD)
-	EXPIRY_STAMP(src, timeofdeath, CLOCK_WORLD)
+	STAMP(src, timeofdeath, CLOCK_WORLD)
 	if(isliving(src))
 		var/mob/living/dead_living = src
 		dead_living.identity()?.time_of_death = EXPIRY_AT(null, CLOCK_WORLD, 0)

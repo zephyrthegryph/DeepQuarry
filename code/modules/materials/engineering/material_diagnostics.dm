@@ -90,7 +90,7 @@
 	monitor_last_input = input_joules
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
-	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
+	STAMP(src, monitor_last_time, CLOCK_WORLD)
 	monitor_configuration = material_assembly_view(owner()).configuration_revision
 	reset_observation()
 	schedule(0)
@@ -267,8 +267,8 @@ CAPABILITIES(/datum/material_service)
 	return TRUE
 
 /datum/material_service/proc/reset_observation()
-	EXPIRY_STAMP(src, monitor_started, CLOCK_WORLD)
-	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
+	STAMP(src, monitor_started, CLOCK_WORLD)
+	STAMP(src, monitor_last_time, CLOCK_WORLD)
 	monitor_input = input_joules
 	monitor_output = output_joules
 	monitor_moles = delivered_moles
@@ -320,7 +320,7 @@ CAPABILITIES(/datum/material_service)
 	monitor_last_input = input_joules
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
-	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
+	STAMP(src, monitor_last_time, CLOCK_WORLD)
 	var/duration = (world.time - monitor_started) / 10
 	var/consumed = input_joules - monitor_input + monitor_stored_energy - owner().material_operating_reservoir()
 	var/datum/money_account/observer_account = contract_account_for_mob(user)

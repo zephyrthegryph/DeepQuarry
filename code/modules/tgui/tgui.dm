@@ -124,7 +124,7 @@
 	#endif
 	if(!window())
 		return FALSE
-	EXPIRY_STAMP(src, opened_at, CLOCK_WORLD)
+	STAMP(src, opened_at, CLOCK_WORLD)
 	var/list/default_geometry = SStgui.get_default_geometry(interface)
 	window().acquire_lock(src, default_geometry)
 	if(!window().is_ready() && !preinitialized)

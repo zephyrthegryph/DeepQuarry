@@ -913,7 +913,7 @@ CAPABILITIES(/obj/structure/plushie/beepsky)
 			COOLDOWN_START(src, cooldown_timer, cooldown_length)
 	if(pokephrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		say_phrase()
-	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+	STAMP(src, last_message, CLOCK_WORLD)
 	return OP_OK
 
 /obj/item/toy/plushie/proc/found_inside(datum/act/op/A)

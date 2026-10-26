@@ -107,7 +107,7 @@ CAPABILITIES(/obj/structure/simple_door)
 		if(locked && state == 0)
 			to_chat(M,span_warning("It's locked!"))
 			return
-		if(STAMP_ELAPSED(src, last_bumped, CLOCK_WORLD) <= 6 SECONDS)
+		if(stamp_elapsed(src, last_bumped, CLOCK_WORLD) <= 6 SECONDS)
 			return
 		if(M.client)
 			if(iscarbon(M))

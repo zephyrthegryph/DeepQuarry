@@ -395,7 +395,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	var/datum/borrowbook/b = new
 	b.set_bookname(sanitizeSafe(buffer_book))
 	b.set_mobname(sanitize(buffer_mob))
-	EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
+	STAMP(b, getdate, CLOCK_WORLD)
 	EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
 	rel_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return OP_OK

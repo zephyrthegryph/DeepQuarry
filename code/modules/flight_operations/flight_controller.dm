@@ -330,7 +330,7 @@ CAPABILITIES(/datum/system/flight)
 			return
 		if(!plan.arrival_port() && !plan.destination().expedition()?.landing_waypoint)
 			plan.state = FLIGHT_PLAN_ARRIVED
-			EXPIRY_STAMP(plan, arrival_at, CLOCK_WORLD)
+			STAMP(plan, arrival_at, CLOCK_WORLD)
 			plan.release_leases()
 			finish_plan(plan)
 			return
@@ -343,7 +343,7 @@ CAPABILITIES(/datum/system/flight)
 		if(!plan.vessel.shuttle() || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE && plan.vessel.shuttle().current_location() == expected_landmark))
 			set_vessel_docked_port(plan.vessel, plan.arrival_port())
 			plan.state = FLIGHT_PLAN_ARRIVED
-			EXPIRY_STAMP(plan, arrival_at, CLOCK_WORLD)
+			STAMP(plan, arrival_at, CLOCK_WORLD)
 			plan.release_leases()
 			finish_plan(plan)
 			return
@@ -353,7 +353,7 @@ CAPABILITIES(/datum/system/flight)
 /datum/system/flight/proc/enter_transit(datum/flight_plan/plan)
 	set_vessel_docked_port(plan.vessel, null)
 	plan.state = FLIGHT_PLAN_TRANSIT
-	EXPIRY_STAMP(plan, departure_at, CLOCK_WORLD)
+	STAMP(plan, departure_at, CLOCK_WORLD)
 	EXPIRY_SET(plan, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME, CLOCK_WORLD)
 	if(plan.generation_state != FLIGHT_GENERATION_RUNNING)
 		return TRUE

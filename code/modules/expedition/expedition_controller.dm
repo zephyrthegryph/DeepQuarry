@@ -188,7 +188,7 @@ CAPABILITIES(/datum/system/expedition)
 			for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(L.z == site.z_level)
 					rel_add(site, nameof(site.participants), L)
-			EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
+			STAMP(site, last_occupied, CLOCK_WORLD)
 			continue
 		if(site.status >= EXP_STATUS_ACTIVE)
 			if(site.has_travel_lease())

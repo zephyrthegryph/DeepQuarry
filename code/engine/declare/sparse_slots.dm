@@ -20,7 +20,7 @@
 //
 // COOLDOWN_DECLARE on a base type is banned (base_vars lint); a subtype's own COOLDOWN_DECLARE stays a var.
 //
-// Stamps share that table: stamps(last_bumped) declares, STAMP(M, last_bumped, CLOCK_WORLD) writes, STAMP_ELAPSED(M, last_bumped, CLOCK_WORLD) reads.
+// Stamps share that table: stamps(last_bumped) declares, stamp_now(M, last_bumped, CLOCK_WORLD) writes, stamp_elapsed(M, last_bumped, CLOCK_WORLD) reads.
 
 /datum
 	/// Sparse slots of this instance (sparse()): slot name -> value. Null while every slot is unset.

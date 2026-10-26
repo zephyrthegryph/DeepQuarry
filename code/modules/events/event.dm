@@ -161,7 +161,7 @@
 		isRunning = 0
 		end()
 
-	EXPIRY_STAMP(src, endedAt, CLOCK_WORLD)
+	STAMP(src, endedAt, CLOCK_WORLD)
 	if(!external_use)
 		SSevents.event_complete(src)
 
@@ -191,7 +191,7 @@ CAPABILITIES(/datum/event)
 		if(severity < EVENT_LEVEL_MUNDANE) severity = EVENT_LEVEL_MUNDANE
 		if(severity > EVENT_LEVEL_MAJOR) severity = EVENT_LEVEL_MAJOR
 
-	EXPIRY_STAMP(src, startedAt, CLOCK_WORLD)
+	STAMP(src, startedAt, CLOCK_WORLD)
 
 	if(!affecting_z)
 		affecting_z = using_map.station_levels.Copy()

@@ -48,8 +48,7 @@
 	return LATENCY_L2
 
 /// A piece is due on every pass of its phase, on the live clock and on a test's injected one (its due date never moves).
-// ALLOW(sys_world_time_write): the kernel clock: the default is the pass's own timestamp, handed through; nothing stores it
-/datum/work_item/sched_piece/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now = world.time)
+/datum/work_item/sched_piece/run_sweep(datum/controller/kernel/K, datum/owner, limit_abs, now)
 	var/datum/time_scheduler/S = K.sched
 	next_run = 0
 	if(!S)

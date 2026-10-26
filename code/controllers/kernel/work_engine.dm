@@ -127,8 +127,7 @@
 /// Runs the due items of `phase`, in order. `lane` (phase P) restricts the run to that lane. `limit_abs` is the
 /// absolute tick usage to stay under; an item that runs out of budget mid-sweep resumes next pass. Returns TRUE
 /// when nothing was left unfinished. `now` is the time due dates are compared against (tests inject it).
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/controller/kernel/proc/work_run_phase(phase, limit_abs, lane = 0, now = world.time)
+/datum/controller/kernel/proc/work_run_phase(phase, limit_abs, lane = 0, now)
 	. = TRUE
 	if(work_dirty || !phase_items)
 		rebuild_work_graph()
@@ -189,8 +188,7 @@
 		test_due[i] = 0
 
 /// Runs one item if it is due and its latency class is admitted. Returns FALSE when it ran out of budget with work left.
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/controller/kernel/proc/run_item(datum/work_item/W, limit_abs, now = world.time)
+/datum/controller/kernel/proc/run_item(datum/work_item/W, limit_abs, now)
 	if(W.parked)
 		return TRUE
 	if(!W.cursor && !W.yielded && W.next_run > now)
@@ -215,7 +213,7 @@
 	var/saved_ticklimit = Kernel.current_ticklimit
 	Kernel.current_ticklimit = limit_abs
 	try
-		done = W.sweep(src, owner, limit_abs, now)
+		done = W.run_sweep(src, owner, limit_abs, now)
 		W.consecutive_faults = 0
 	catch(var/exception/e) // ALLOW(silent_catch): the fault is counted per work item and escalated by consecutive_faults
 		W.faults++

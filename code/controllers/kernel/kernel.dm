@@ -161,7 +161,7 @@
 	// The phase's work items first (the input inbox drains here, ahead of every host service), then the host services.
 	if(length(items_by_phase[KERNEL_PHASE_K]))
 		try
-			work_run_phase(KERNEL_PHASE_K, tick_limit)
+			work_run_phase(KERNEL_PHASE_K, tick_limit, 0, world.time)
 		catch(var/exception/k_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_K, k_e)
 	if(TICK_USAGE - k_start > KERNEL_INPUT_CAP)
@@ -173,7 +173,7 @@
 	var/s_start = TICK_USAGE
 	if(length(items_by_phase[KERNEL_PHASE_S]))
 		try
-			work_run_phase(KERNEL_PHASE_S, tick_limit)
+			work_run_phase(KERNEL_PHASE_S, tick_limit, 0, world.time)
 		catch(var/exception/s_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_S, s_e)
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_S, s_start)
@@ -191,7 +191,7 @@
 		try
 			// The phase's own systems first (the air system's atmos pass), then the one native frame.
 			if(length(items_by_phase[KERNEL_PHASE_N]))
-				work_run_phase(KERNEL_PHASE_N, tick_limit)
+				work_run_phase(KERNEL_PHASE_N, tick_limit, 0, world.time)
 			run_native(elapsed, sched.world_budget)
 		catch(var/exception/n_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_N, n_e)
@@ -200,28 +200,28 @@
 		var/u_start = TICK_USAGE
 		if(length(urgent_queue))
 			try
-				run_urgent(min(tick_limit, TICK_USAGE + sched.pass_avail * KERNEL_URGENT_SHARE))
+				run_urgent(min(tick_limit, TICK_USAGE + sched.pass_avail * KERNEL_URGENT_SHARE), world.time)
 			catch(var/exception/u_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 				phase_fault(KERNEL_PHASE_U, u_e)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_U, u_start)
 		// D
 		var/d_start = TICK_USAGE
 		try
-			run_deadline_phase(tick_limit)
+			run_deadline_phase(tick_limit, world.time)
 		catch(var/exception/d_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_D, d_e)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_D, d_start)
 		// P
 		var/p_start = TICK_USAGE
 		try
-			run_lane_phase(tick_limit)
+			run_lane_phase(tick_limit, world.time)
 		catch(var/exception/p_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_P, p_e)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_P, p_start)
 		// R
 		var/r_start = TICK_USAGE
 		try
-			run_leftover_phase(tick_limit)
+			run_leftover_phase(tick_limit, world.time)
 		catch(var/exception/r_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_R, r_e)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_R, r_start)
@@ -242,7 +242,7 @@
 		last_g_floor = world.time
 	if(length(items_by_phase[KERNEL_PHASE_G]))
 		try
-			work_run_phase(KERNEL_PHASE_G, g_limit)
+			work_run_phase(KERNEL_PHASE_G, g_limit, 0, world.time)
 		catch(var/exception/g_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_G, g_e)
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_G, g_start)
@@ -299,15 +299,13 @@
 
 /// D: the deadline wheel (the scheduler's sched_deadlines item runs first), then deadline-phase work items in what is left of the
 /// deadline share.
-// ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
-/datum/controller/kernel/proc/run_deadline_phase(tick_limit, now = world.time)
+/datum/controller/kernel/proc/run_deadline_phase(tick_limit, now)
 	stat_drain_point()
 	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * OM_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE), 0, now)
 
 /// P: each lane, in order. A lane's items start with the scheduler's pieces: the borrow pass (lane 1 only), then the lane's
 /// share of the pass (sched_lane); that lane's other work items follow.
-// ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
-/datum/controller/kernel/proc/run_lane_phase(tick_limit, now = world.time)
+/datum/controller/kernel/proc/run_lane_phase(tick_limit, now)
 	stat_drain_point()
 	var/datum/kernel_latency/latency = latency_state || (latency_state = kernel_latency())
 	for(var/lane in 1 to OM_LANE_COUNT)
@@ -320,8 +318,7 @@
 /// R: leftovers. The scheduler's leftovers (its sched_leftovers item runs first), R's own items, then phase P items that ran out of their lane's share with
 /// work left (p_carry), in the order they stopped: a backlog (lighting after a power change, a long fire()) drains with
 /// whatever the tick has spare instead of one lane share per tick.
-// ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
-/datum/controller/kernel/proc/run_leftover_phase(tick_limit, now = world.time)
+/datum/controller/kernel/proc/run_leftover_phase(tick_limit, now)
 	stat_drain_point()
 	work_run_phase(KERNEL_PHASE_R, tick_limit, 0, now)
 	if(!length(p_carry))
@@ -338,7 +335,7 @@
 
 /// The work items of a phase that has no scheduler piece of its own (K, N, G).
 /datum/controller/kernel/proc/run_work_phase(phase, tick_limit)
-	work_run_phase(phase, tick_limit)
+	work_run_phase(phase, tick_limit, 0, world.time)
 
 // ---------------------------------------------------------------- SSbehaviours' remaining duties
 

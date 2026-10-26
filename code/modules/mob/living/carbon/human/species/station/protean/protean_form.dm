@@ -105,7 +105,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	. = ..()
 	if(!.)
 		return
-	EXPIRY_STAMP(src, last_switch_time, CLOCK_WORLD)
+	STAMP(src, last_switch_time, CLOCK_WORLD)
 	if(previous_switch && ELAPSED_SINCE(src, previous_switch, CLOCK_WORLD) < NANITE_FORM_SWITCH_GRACE)
 		var/mob/living/carbon/human/H = owner
 		H.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_FAST_SWITCH)

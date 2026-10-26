@@ -83,7 +83,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 		category_map[category.category] = category_data
 
 	clear_data_cache()
-	EXPIRY_STAMP(src, last_data_update, CLOCK_WORLD)
+	STAMP(src, last_data_update, CLOCK_WORLD)
 
 	set_data_cache_at("categories", category_map)
 	set_data_cache_at("last_data_update", last_data_update)

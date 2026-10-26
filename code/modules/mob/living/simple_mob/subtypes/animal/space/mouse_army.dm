@@ -77,7 +77,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	set_layer(MOB_LAYER)
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
-		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
+		STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 	..()
 
 /mob/living/simple_mob/animal/space/mouse_army/cannot_use_vents()
@@ -89,7 +89,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	set_icon_state("mouse_[rank]_splat")
 	set_layer(MOB_LAYER)
 	if(client)
-		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
+		STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 //Base ported from vgstation. Operative Mice.
 //Icon artists: DeityLink and plosky1

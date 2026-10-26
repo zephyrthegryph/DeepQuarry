@@ -46,7 +46,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	system_owned = !holder_run
 	var/member_key = R.members
 	var/run_every = WORK_EVERY_TICK
-	var/run_urgent = FALSE
+	var/urgent_only = FALSE
 	var/list/run_after
 	switch(R.kind)
 		if(RXN_EVERY)
@@ -61,7 +61,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 		if(RXN_CROSS)
 			if(R.urgent)
 				// Runs only when requested: the cadence pass skips it (runnable() is FALSE without a pending crossing).
-				run_urgent = TRUE
+				urgent_only = TRUE
 				run_every = 10 MINUTES
 				holder_run = TRUE
 			else
@@ -73,7 +73,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	if(!holder_run)
 		var/datum/system/system_proto = owner_type
 		default_phase = initial(system_proto.phase)
-	..(R.handler, run_every, R.kind == RXN_EVERY ? R.when : null, member_key, R.phase || default_phase, run_after, R.budget || 0, R.lane || LANE_SIMULATION, run_urgent)
+	..(R.handler, run_every, R.kind == RXN_EVERY ? R.when : null, member_key, R.phase || default_phase, run_after, R.budget || 0, R.lane || LANE_SIMULATION, urgent_only)
 	name = "[R.kind == RXN_EVERY ? "every" : (R.kind == RXN_CROSS ? "on_cross" : "on_notice")] [R.handler]"
 
 /datum/work_item/reaction/item_key(owner_type)
@@ -134,14 +134,12 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 
 /// A crossing is a discrete event, not an interval of time: it carries no execution token (last_at) and always
 /// reports a positive dt to the urgent runner.
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/reaction/take_dt(datum/member, now = world.time)
+/datum/work_item/reaction/take_dt(datum/member, now)
 	if(reaction.kind == RXN_CROSS)
 		return world.tick_lag
 	return ..()
 
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/reaction/token_current(datum/member, now = world.time)
+/datum/work_item/reaction/token_current(datum/member, now)
 	if(reaction.kind == RXN_CROSS)
 		return FALSE
 	return ..()

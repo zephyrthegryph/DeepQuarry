@@ -31,7 +31,7 @@
 
 	if (timeout)
 		src.timeout = timeout
-		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+		STAMP(src, start_time, CLOCK_WORLD)
 		expire(timeout)
 
 /datum/tgui_checkbox_input/proc/wait()

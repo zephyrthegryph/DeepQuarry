@@ -418,7 +418,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 	var/mob/living/simple_mob/S = pair[1]
 	var/datum/ai_brain/B = S.ai_brain
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/evasive_juke), "juke scored before any attack")
-	EXPIRY_STAMP(B, last_attack_at, CLOCK_WORLD)
+	STAMP(B, last_attack_at, CLOCK_WORLD)
 	TEST_ASSERT_EQUAL(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/evasive_juke)), 70, "juke did not score 70 right after an attack")
 	var/datum/ai_behavior/evasive_juke/J = dq_get_behavior(/datum/ai_behavior/evasive_juke)
 	cooldown_set_end(S, next_move, 0)
@@ -433,7 +433,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 	var/mob/living/carbon/human/H = pair[2]
 	var/datum/ai_brain/B = S.ai_brain
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/hit_and_run), "hit and run scored before any attack")
-	EXPIRY_STAMP(B, last_attack_at, CLOCK_WORLD)
+	STAMP(B, last_attack_at, CLOCK_WORLD)
 	TEST_ASSERT_EQUAL(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/hit_and_run)), 75, "hit and run did not score 75 right after an attack")
 	var/datum/ai_behavior/hit_and_run/R = dq_get_behavior(/datum/ai_behavior/hit_and_run)
 	cooldown_set_end(S, next_move, 0)

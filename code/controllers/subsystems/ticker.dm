@@ -189,7 +189,7 @@ SYSTEM_DEF(ticker)
 
 			if (ELAPSED(src, last_restart_notify, CLOCK_WORLD) >= 1 MINUTE && !delay_end)
 				to_chat(world, span_boldannounce("Restarting in [round(restart_timeleft/600, 1)] minute\s."))
-				EXPIRY_STAMP(src, last_restart_notify, CLOCK_WORLD)
+				STAMP(src, last_restart_notify, CLOCK_WORLD)
 
 /datum/system/ticker/proc/setup()
 	to_chat(world, span_boldannounce("Starting game..."))
@@ -214,7 +214,7 @@ SYSTEM_DEF(ticker)
 	LAZYCLEARLIST(round_start_events)
 
 	//otherwise round_start_time would be 0 for the signals
-	EXPIRY_STAMP(src, round_start_time, CLOCK_WORLD)
+	STAMP(src, round_start_time, CLOCK_WORLD)
 	GLOB.round_start_time = REALTIMEOFDAY
 	SSserver_metrics.round_started()
 
@@ -356,7 +356,7 @@ SYSTEM_DEF(ticker)
 				restart_timeleft = 1 MINUTE // No point waiting five minutes if everyone's dead.
 				if(!delay_end)
 					to_chat(world, span_boldannounce("Rebooting due to destruction of [station_name()] in [round(restart_timeleft/600)] minute\s."))
-					EXPIRY_STAMP(src, last_restart_notify, CLOCK_WORLD)
+					STAMP(src, last_restart_notify, CLOCK_WORLD)
 			else
 				feedback_set_details("end_proper", "proper completion")
 				restart_timeleft = restart_timeout

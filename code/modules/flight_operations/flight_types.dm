@@ -163,7 +163,7 @@ CAPABILITIES(/datum/flight_plan)
 	rel_set(src, nameof(destination), new_destination)
 	if(destination())
 		rel_add(destination(), nameof(/datum/flight_destination::active_plans), src)
-	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
+	STAMP(src, created_at, CLOCK_WORLD)
 	id = "flight-[REF(src)]"
 	if(destination()?.expedition() && destination().expedition().z_level <= 0)
 		generation_state = FLIGHT_GENERATION_QUEUED

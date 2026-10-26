@@ -33,7 +33,7 @@ CAPABILITIES(/obj/machinery/auto_cloner)
 /// cloner sleeps until power returns (a power change runs a step).
 /obj/machinery/auto_cloner/proc/work_step(datum/act/timer/A)
 	if(!last_process)
-		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+		STAMP(src, last_process, CLOCK_WORLD)
 	if(powered(power_of(src).channel))
 		if(!previous_power_state)
 			previous_power_state = 1
@@ -77,4 +77,4 @@ CAPABILITIES(/obj/machinery/auto_cloner)
 			last_process = 0
 			return PROCESS_KILL
 
-	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+	STAMP(src, last_process, CLOCK_WORLD)

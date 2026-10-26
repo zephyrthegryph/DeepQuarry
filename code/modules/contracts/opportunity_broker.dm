@@ -122,8 +122,8 @@ CAPABILITIES(/datum/contract_opportunity_window)
 	. = ..()
 	key = _key
 	bucket = _bucket
-	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
-	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
+	STAMP(src, created_at, CLOCK_WORLD)
+	STAMP(src, last_event_at, CLOCK_WORLD)
 	facts_by_signal = list()
 	for(var/datum/contract_opportunity_signal/signal in rule.signals)
 		facts_by_signal[signal.id] = list()
@@ -161,7 +161,7 @@ CAPABILITIES(/datum/contract_opportunity_window)
 			return FALSE
 		facts -= fact_key
 		rel_remove(src, nameof(observations), previous)
-	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
+	STAMP(src, last_event_at, CLOCK_WORLD)
 	if(!event.fact_active || !signal.event_matches(event))
 		return TRUE
 	facts[fact_key] = rel_add(src, nameof(observations), new /datum/contract_opportunity_observation(fact_key, event, signal))
@@ -331,7 +331,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 
 /datum/contract_opportunity_history_entry/New(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, datum/contract_event/event, list/_snapshots)
 	. = ..()
-	EXPIRY_STAMP(src, time, CLOCK_WORLD)
+	STAMP(src, time, CLOCK_WORLD)
 	rule_id = rule.id
 	bucket = window.bucket
 	event_id = event.id

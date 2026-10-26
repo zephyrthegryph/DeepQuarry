@@ -35,7 +35,7 @@
 /datum/unit_test/om/sys_expiry_own_clock/run_om(list/made)
 	var/datum/om_test_entity/bio/E = entity(made, /datum/om_test_entity/bio)
 	EXPIRY_SET(E, test_until, 4 SECONDS, CLOCK_OWN)
-	EXPIRY_STAMP(E, test_started, CLOCK_OWN)
+	STAMP(E, test_started, CLOCK_OWN)
 	TEST_ASSERT_EQUAL(EXPIRY_LEFT(E, test_until, CLOCK_OWN), 4 SECONDS, "own-clock expiry starts full")
 	scheduler_advance(1)
 	TEST_ASSERT_EQUAL(EXPIRY_LEFT(E, test_until, CLOCK_OWN), 3 SECONDS, "own clock advances with the scheduler")

@@ -48,7 +48,7 @@ CAPABILITIES(/datum/feed_channel)
 	parent_channel().update()
 
 /datum/feed_channel/proc/update()
-	EXPIRY_STAMP(src, updated, CLOCK_WORLD)
+	STAMP(src, updated, CLOCK_WORLD)
 
 /datum/feed_channel/proc/clear()
 	set_channel_name("")

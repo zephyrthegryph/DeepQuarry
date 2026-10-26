@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/projectile)
 /obj/item/projectile/proc/pixel_move(trajectory_multiplier, hitscanning = FALSE)
 	if(!loc || !trajectory)
 		return
-	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
+	STAMP(src, last_projectile_move, CLOCK_WORLD)
 	if(homing)
 		process_homing()
 	var/forcemoved = FALSE
@@ -299,7 +299,7 @@ CAPABILITIES(/obj/item/projectile)
 		homing_offset_y = -homing_offset_y
 
 /obj/item/projectile/proc/projectile_step()
-	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+	STAMP(src, last_process, CLOCK_WORLD)
 	if(!loc || !fired || !trajectory)
 		fired = FALSE
 		return PROCESS_KILL
@@ -388,7 +388,7 @@ CAPABILITIES(/obj/item/projectile)
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
 	rel_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
-	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
+	STAMP(src, last_projectile_move, CLOCK_WORLD)
 	rel_clear(src, nameof(permutated))
 	originalRange = range
 	fired = TRUE

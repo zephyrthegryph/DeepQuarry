@@ -812,7 +812,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(istype(user,/mob/living/carbon/brain))
 			if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 				to_chat(user, span_warning("You try to move, but you are not the pilot! The exosuit doesn't respond."))
-				EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+				STAMP(src, last_message, CLOCK_WORLD)
 			return 0
 		user.forceMove(get_turf(src))
 		to_chat(user, "You climb out from [src]")
@@ -822,24 +822,24 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(!HC)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			occupant_message(span_notice("You can't operate an exosuit that doesn't have a hull!"))
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return
 
 	if(connected_port)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message(span_warning("Unable to move while connected to the air system port"))
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 	if(state)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			occupant_message(span_warning("Unable to move whilst in maintenance mode"))
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 /*
 	if(zoom)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while in zoom mode.")
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 */
 	return domove(direction)
@@ -912,13 +912,13 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(defence_mode)//Check if we are currently locked down
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message(span_red("Unable to move while in defence mode"))
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 
 	if(zoom)//:eyes:
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while in zoom mode.")
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 
 	if(!thrusters && (current_processes & MECHA_PROC_MOVEMENT)) //I think this mean 'if you try to move in space without thruster, u no move'

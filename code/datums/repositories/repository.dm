@@ -6,7 +6,7 @@
 	var/data
 
 /datum/cache_entry/New()
-	EXPIRY_STAMP(src, timestamp, CLOCK_WORLD)
+	STAMP(src, timestamp, CLOCK_WORLD)
 
 /datum/cache_entry/proc/is_valid()
 	return FALSE

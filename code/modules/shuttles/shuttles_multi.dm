@@ -45,7 +45,7 @@
 	return by_name
 
 /datum/shuttle/autodock/multi/proc/build_destinations_cache()
-	EXPIRY_STAMP(src, last_cache_rebuild_time, CLOCK_WORLD)
+	STAMP(src, last_cache_rebuild_time, CLOCK_WORLD)
 	rel_clear(src, nameof(destinations_cache))
 	for(var/destination_tag in destination_tags)
 		var/obj/effect/shuttle_landmark/landmark = SSshuttles.get_landmark(destination_tag)
@@ -54,7 +54,7 @@
 
 /datum/shuttle/autodock/multi/perform_shuttle_move()
 	..()
-	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+	STAMP(src, last_move, CLOCK_WORLD)
 
 /datum/shuttle/autodock/multi/proc/announce_departure()
 	if(cloaked || isnull(departure_message))

@@ -773,14 +773,14 @@ CAPABILITIES(/obj/machinery/light)
 	// Set the initial emergency appearance immediately, then account for charge in one batch when the light next has to change
 	// (emergency_discharge_wait()).
 	use_emergency_power(0)
-	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
+	STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	after(src, emergency_discharge_wait(), PROC_REF(continue_emergency_discharge), key = "discharge", clock = CLOCK_WORLD)
 
 /obj/machinery/light/proc/settle_emergency_discharge()
 	if(!emergency_discharge_started || !has_cell())
 		return
 	var/elapsed = max(0, world.time - emergency_discharge_started)
-	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
+	STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
 		// A sustained draw over `elapsed`, settled in one batch: the cell sees its rate, not one surge.

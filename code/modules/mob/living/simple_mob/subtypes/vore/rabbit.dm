@@ -80,7 +80,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
 
 	if(stance == I_HELP) // only patpet on help. :p
 		grumpiness = CLAMP(grumpiness + rand(5, 10), 0, 120)
-		EXPIRY_STAMP(src, last_pet, CLOCK_WORLD)
+		STAMP(src, last_pet, CLOCK_WORLD)
 
 	if(grumpiness > 90) // Annoyed bunbun :U
 		var/pounce_chance = CanPounceTarget(user)

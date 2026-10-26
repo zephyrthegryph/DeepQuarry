@@ -326,7 +326,7 @@
 		total_delay *= SQRT_2
 
 	//total_delay = DS2NEARESTTICK(total_delay) //Rounded to the next tick in equivalent ds
-	if(STAMP_ELAPSED(mob, last_move_time, CLOCK_WORLD) < total_delay * 1.25)
+	if(stamp_elapsed(mob, last_move_time, CLOCK_WORLD) < total_delay * 1.25)
 		cooldown_set_end(mob, next_move, DS2NEARESTTICK(old_delay + total_delay))
 	else
 		cooldown_set_end(mob, next_move, DS2NEARESTTICK(world.time + total_delay))
@@ -369,7 +369,7 @@
 
 	// We're not in the middle of a move anymore
 	moving = 0
-	STAMP(mob, last_move_time, CLOCK_WORLD)
+	stamp_now(mob, last_move_time, CLOCK_WORLD)
 
 /mob/proc/SelfMove(turf/n, direct, movetime)
 	return Move(n, direct, movetime)

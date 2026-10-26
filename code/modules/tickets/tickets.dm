@@ -280,7 +280,7 @@ CAPABILITIES(/datum/ticket)
 		return
 
 	id = ++ticket_counter
-	EXPIRY_STAMP(src, opened_at, CLOCK_WORLD)
+	STAMP(src, opened_at, CLOCK_WORLD)
 
 	name = msg
 
@@ -451,7 +451,7 @@ CAPABILITIES(/datum/ticket)
 /datum/ticket/proc/RemoveActive()
 	if(state != AHELP_ACTIVE)
 		return
-	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
+	STAMP(src, closed_at, CLOCK_WORLD)
 	rel_clear(src, nameof(statclick))
 	own_take_member(GLOB.tickets, nameof(/datum/tickets::active_tickets), src) // Close()/Resolve() re-adopt it via ListInsert()
 	if(initiator() && initiator().current_ticket() == src)
