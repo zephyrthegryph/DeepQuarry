@@ -4,15 +4,4 @@ init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initi
 init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::register_open_air
 init_lines	code/game/machinery/doors/airlock_angled_bay.dm	@/obj/machinery/door/airlock/angled_bay::Initialize::obtain_icon
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::ident
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::updatename
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_radio
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_camera
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_brain
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_laws
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_module
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::initialize_components
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_cell
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::if
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::grant
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists

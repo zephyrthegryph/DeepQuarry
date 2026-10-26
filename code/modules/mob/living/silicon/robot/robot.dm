@@ -139,22 +139,9 @@
 
 // --- Lifecycle ------------------------------------------------------------------------------
 
-/mob/living/silicon/robot/Initialize(mapload)
-	ident = rand(1, 999)
-	updatename(modtype)
-
-	setup_radio()
-	setup_camera()
-	setup_brain()
-	setup_laws()
-	setup_module()
-	initialize_components()
-	setup_cell()
-
-	if(may_pick_name())
-		grant(src, robot_naming(), src)
-
-	. = ..()
+// A robot has no Initialize() of its own. Its number is a roll; its build steps are the setup() hooks of its CAPABILITIES block (code/library/mob/hands.dm),
+// in this order, each a virtual proc a chassis overrides: updatename (the name from the number, and its PDA and communicator), setup_radio, setup_camera,
+// setup_brain, setup_laws, setup_module, initialize_components, setup_cell, then finish_robot_setup. A step reads what the one before it made.
 
 /// Its verbs, HUD images, sprite datum, power demand and senses, once its Initialize() chain has returned (setup()).
 /mob/living/silicon/robot/proc/finish_robot_setup()

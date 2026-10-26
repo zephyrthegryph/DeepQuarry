@@ -126,9 +126,9 @@ GLOBAL_LIST_EMPTY(dq_instead_log)
 
 CAPABILITIES(/obj/item/dq_instead_probe)
 	param(nameof(instead_allows))
-	keeps_if(PROC_REF(allowed), instead = PROC_REF(left_behind))
+	keeps_if(PROC_REF(instead_probe_allows), instead = PROC_REF(left_behind))
 
-/obj/item/dq_instead_probe/proc/allowed()
+/obj/item/dq_instead_probe/proc/instead_probe_allows()
 	return instead_allows
 
 /obj/item/dq_instead_probe/proc/left_behind()

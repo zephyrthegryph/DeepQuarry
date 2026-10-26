@@ -136,7 +136,7 @@ CAPABILITY_DEF(robot_naming, CAP_ROBOT_NAMING, key = NONE)
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_pick_name))))
 
 /// Whether the robot grants itself the pick-name ability.
-/mob/living/silicon/robot/proc/may_pick_name()
+/mob/living/silicon/robot/proc/may_pick_name(datum/act/A)
 	return TRUE
 
 /// TRUE while no custom name has been picked yet.
