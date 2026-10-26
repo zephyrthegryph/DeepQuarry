@@ -76,6 +76,8 @@
 	var/list/parts
 	/// The type make() was asked for: a plain datum's New() takes only a record of its own type.
 	var/made_type
+	/// Set by lifeform_datum_new() when the made plain datum declares after_init(): make() arms it once new() has returned.
+	var/after_init_due = FALSE
 
 /// The placeholder OWNER names (a type path, so it travels in a list): replaced by the creator wherever a make() or starts_args value holds it.
 /datum/lifeform_owner
@@ -124,6 +126,8 @@
 	GLOB.make_pending += M
 	var/datum/D = new type
 	GLOB.make_pending -= M
+	if(M.after_init_due && !QDELETED(D))
+		after_init_arm(D, FALSE) // a plain datum's init is complete when its whole New() chain has returned: params first, then every New()
 	return D
 
 /// make() records of plain datums being made now (innermost last): /datum/New() takes the top one for an instance of its type.

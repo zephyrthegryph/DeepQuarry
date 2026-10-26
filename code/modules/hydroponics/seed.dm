@@ -41,6 +41,14 @@
 
 	var/ai_mob_product = 0 //This variable determines whether or not a mob product is meant to be ai-controlled. If set to 0, mob products die without a player to control them.
 
+// A seed's growth stages come from its plant icon, which a subtype's New() sets after ..(): they are read once the whole New() chain has run
+// (make() arms the after_init(); a seed is always made with make()).
+CAPABILITIES(/datum/seed)
+	after_init(0, then(PROC_REF(seed_ready)))
+
+/datum/seed/proc/seed_ready(datum/act/timer/A)
+	update_growth_stages()
+
 /datum/seed/New()
 
 	set_trait(TRAIT_IMMUTABLE,            0)            // If set, plant will never mutate. If -1, plant is highly mutable.
@@ -83,7 +91,6 @@
 	set_trait(TRAIT_MUTAGENIC_REAG,       null)         // Reagents considered uniquely 'mutagenic' by a plant. This should be an associated list, or null. Examples in tray.dm
 	set_trait(TRAIT_TOXIC_REAG,           null)         // Reagents considered uniquely 'toxic' by a plant. This should be an associated list, or null. Examples in tray.dm
 
-	after(src, 0.5 SECONDS, PROC_REF(update_growth_stages))
 
 /datum/seed/proc/get_trait(trait)
 	return trait_values["[trait]"]
@@ -869,7 +876,7 @@
 	if(get_trait(TRAIT_IMMUTABLE) > 0) return
 
 	//Set up some basic information.
-	var/datum/seed/new_seed = new
+	var/datum/seed/new_seed = make(/datum/seed)
 	new_seed.name =            "new line"
 	new_seed.set_uid(0)
 	new_seed.roundstart =       0
@@ -895,7 +902,7 @@
 /// An exact, unregistered copy of this seed (same name and traits): a private copy for a holder
 /// (proto_copy()), or the registered instance register_line() files.
 /datum/seed/proc/copy_line()
-	var/datum/seed/new_seed = new
+	var/datum/seed/new_seed = make(/datum/seed)
 	new_seed.name =             name
 	new_seed.set_uid(uid)
 	new_seed.roundstart =       roundstart

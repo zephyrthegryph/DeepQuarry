@@ -339,6 +339,25 @@
 	SSplants.seeds -= random.name
 	qdel(random)
 
+/// A seed made with make() has its default traits and its growth stages the moment make() returns: the after_init() reads the plant icon its
+/// subtype's New() set after ..() (it used to be an after() half a second later, and a stage count of 0 divides by zero in the tray's draw).
+/datum/unit_test/dq_seed_default_traits
+
+/datum/unit_test/dq_seed_default_traits/Run()
+	SSplants.ready()
+	var/datum/seed/apple/S = make(/datum/seed/apple)
+	TEST_ASSERT_EQUAL(S.get_trait(TRAIT_POTENCY) > 0, TRUE, "the base New() set the default traits")
+	TEST_ASSERT_EQUAL(S.get_trait(TRAIT_PLANT_ICON), "tree2", "the subtype's New() set its plant icon")
+	TEST_ASSERT_EQUAL(S.growth_stages, SSplants.plant_sprites["tree2"], "the growth stages come from that icon when make() returns")
+	TEST_ASSERT(S.growth_stages > 0, "an apple tree has growth stages")
+	var/datum/seed/apple/filed = SSplants.seeds[PLANT_APPLE]
+	if(filed)
+		TEST_ASSERT_EQUAL(filed.growth_stages, S.growth_stages, "the boot seeds (made by make()) have theirs too")
+	var/datum/seed/copy = S.copy_line()
+	TEST_ASSERT_EQUAL(copy.growth_stages, S.growth_stages, "a copied line keeps its growth stages")
+	qdel(copy)
+	qdel(S)
+
 /// Sounds: a lazy system, channels are reserved for a datum and freed with it, random channels come from the free ones and the
 /// talk sound table is built.
 /datum/unit_test/dq_system_sounds

@@ -248,6 +248,19 @@ the macros: starting occupants in `lifecycle_decls_init()` (step 1, before gas a
 | Registry membership (was `DECLARE_REGISTRY`) | `capabilities()`: `membership(joins = REGISTRY_X)`; `joins` may list registry ids and `/datum/system` types | `library/membership.dm`: registry ids join `type_registries()` (so materialize joins, dematerialize leaves), a conditional registry is joined at materialize too; system types are the capability's `joins`. Worked example: the tape recorder. |
 | Start timer (was `DECLARE_START_TIMER`) | `reactions()`: `after_init(delay, PROC_REF(x))`; `delay` may be `nameof(var)` | `reactions/after_init.dm`: armed by `rx_enrol()` at init (the boot list marks the type `RXB_INIT`), an ordinary `rx_after()` on the holder. Armed at init where the macro armed at materialize: a latent (unmaterialized) instance's timer runs too. Worked example: the broken gun's self-check. |
 
+**`after_init()` on a plain datum (October 2026, `engine/after-init-datums`).** The entry is `after_init(delay, then(PROC_REF(x)))` in
+`CAPABILITIES` today (`code/engine/actions/after_init.dm`). For an atom it is armed when its `Initialize()` returns (at the close of the
+map-load frame for a mapped one). A plain datum has no `Initialize()`: its init is complete when its whole `New()` chain has returned, a
+moment only its creator sees. The contract: **a plain datum's `after_init()` is armed by `make(/T, ...)`**, the engine's creation path, as
+`new` returns inside `make()`: after the `make()` params (written before the first `New()` body) and after every subtype's code after
+`..()`. A delay of 0 runs before `make()` returns; a positive delay is an `after()` on the datum from then. A bare `new /T` of a type that
+declares it (or inherits it) never runs it and is refused: `/datum/New()` reports it (`declare_report`, which fails a test run), and the
+`lifeforms` lint's `after_init_bare_new` rule rejects a literal `new /T` or `var/T/x = new` at compile time (`new some_var` is left to the
+run-time report). `analyze gen declare` marks such a type `lifeform_declared`, so `/datum/New()` takes its `make()` record. Why not arm it
+from `/datum/New()`: that runs at the root of the chain, before the subtype's own code, so a delay of 0 read a half-built datum (the seeds'
+growth stages, set from the plant icon a subtype's `New()` writes, divided by zero). Worked example: `/datum/seed` (`seed_ready()`; every
+seed is made with `make()`). Tests: `dq_after_init/plain_datum*`, `dq_seed_default_traits`.
+
 **DECLARE_BEHAVIOUR audit** (4 real sites):
 
 | Site | Behaviour | Foundation form |
