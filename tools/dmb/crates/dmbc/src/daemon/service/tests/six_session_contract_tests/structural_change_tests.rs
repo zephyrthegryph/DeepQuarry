@@ -257,6 +257,7 @@ fn alternating_skeletons_patch_against_their_own_base_and_match_fresh_bytes() {
     let lane_a = TREE.to_string();
     let lane_b = TREE.replace("    var/own = 2\n", "    var/extra = 5\n    var/own = 2\n");
     let body_edit = |source: &str, value: &str| source.replace("        return 1\n", &format!("        return {value}\n"));
+    // Building on each lane's stored base is `variant_spill_tests::lanes_with_different_declarations_build_on_their_own_stored_base`.
     for source in [
         lane_a.clone(),
         lane_b.clone(),

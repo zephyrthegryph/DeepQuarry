@@ -105,7 +105,7 @@ fn edits_that_move_lines_or_change_strings_patch_the_restored_base() {
     let start = applied();
 
     // A comment line added inside a body moves every later line (the line map), and a new literal needs the string
-    // table's retained model, which is recovered from the restored image.
+    // table's retained model, which is decoded from the restored image.
     let edited = TREE
         .replace("    var/x = a * 2\n", "    // a comment moves every later line\n    var/x = a * 2\n")
         .replace("\"two\"", "\"fresh literal\"");
@@ -113,6 +113,26 @@ fn edits_that_move_lines_or_change_strings_patch_the_restored_base() {
     let patched = build(&shared, &roots);
     assert_eq!(applied(), start + 1, "moved lines and a new string patch the restored base");
     assert_equivalent_outputs(&patched, &fresh(&roots), "line and string edit after a release vs a fresh compile");
+}
+
+#[test]
+fn lanes_with_different_declarations_build_on_their_own_stored_base() {
+    // A compile root alternating between two lanes whose declarations differ: the full build of one lane replaces the
+    // other's base, which is stored by its program text, and the other lane's next edit builds on it again.
+    let (roots, shared) = started();
+    let applied = || crate::retained_output::applied(&roots.manifest(0));
+    let lane_b = format!("{TREE}/datum/added\n    var/n = 3\n    proc/n2()\n        return n * 2\n");
+    let body = |source: &str, value: &str| source.replace("return a + 1", &format!("return a + {value}"));
+    build(&shared, &roots);
+    roots.edit(0, &lane_b);
+    build(&shared, &roots);
+    for (step, source) in [body(TREE, "2"), body(&lane_b, "3"), body(TREE, "4"), lane_b.clone()].iter().enumerate() {
+        let start = applied();
+        roots.edit(0, source);
+        let built = build(&shared, &roots);
+        assert_eq!(applied(), start + 1, "lane switch {step} compiled the whole program");
+        assert_equivalent_outputs(&built, &fresh(&roots), "lane switch vs a fresh compile");
+    }
 }
 
 #[test]

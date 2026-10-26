@@ -727,16 +727,19 @@ pub(crate) fn admit(
     proof: Option<AnswerProof<'_>>,
 ) -> Result<Admitted, String> {
     let shape = retained.shape;
-    // A variant whose base was spilled to disk gets it back here, when the file describes this program text.
-    if retained.generation.restore_patch_base(shape.text_key()) {
-        crate::daemon_eprintln!("native incremental output: restored the stored patch base");
-    }
-    // Prefer a retained output of this build's program text (another lane's tree may be current).
-    if retained
-        .generation
-        .select_patch_base(|base| base.text_key() == shape.text_key())
-    {
-        crate::daemon_eprintln!("native incremental output: switched to the retained output with this program text");
+    // A live base of other program text is swapped for the stored base of this text (the variant's stored base, or the
+    // one a full build of another tree replaced), when there is one.
+    // A live base the edit is relative to (an appended-callable or numeric default edit proved against its tree) stays.
+    let tree = &frontend.snapshot.tree;
+    let edited_from = tree
+        .appended_callables()
+        .map(|appended| appended.from_identity)
+        .or_else(|| tree.default_edits().map(|edits| edits.from_identity));
+    let keeps_live = retained.generation.patch_base().is_some_and(|(live, _, _)| {
+        live.text_key() == shape.text_key() || Some(live.shape.tree_identity) == edited_from
+    });
+    if !keeps_live && retained.generation.restore_patch_base(shape.text_key()) {
+        crate::daemon_eprintln!("native incremental output: restored the stored patch base of this program text");
     }
     let (base, link, image) = retained
         .generation
