@@ -25,6 +25,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/km_synthetic)
 /// A no-op input in the synthetic lane.
 /datum/input_event/synthetic
 	driven = TRUE
+	rate_limited = FALSE
 
 /datum/input_event/synthetic/lane_key()
 	return GLOB.km_synthetic

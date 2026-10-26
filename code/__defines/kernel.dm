@@ -29,6 +29,30 @@
 #define KERNEL_INPUT_CAP 15
 /// Events one client's input inbox holds before it drops its oldest coalescible input (code/engine/kernel/inbox.dm).
 #define INPUT_CLIENT_MAX 64
+/// The most one client's inbox ever holds. Inputs that cannot be coalesced or dropped (a Topic, a tgui action, say, a press) pass INPUT_CLIENT_MAX, but a client
+/// that sends them faster than phase K serves them stops at this: the newest is refused (never a queued one), the player is told, admins are told once per burst.
+#define INPUT_CLIENT_HARD_MAX 256
+/// The most inputs that cannot coalesce one client may send in INPUT_RATE_WINDOW; past it the newest is refused. A person's own fastest input (a dragged tgui slider,
+/// a key-repeat Topic) stays well under it.
+#define INPUT_CLIENT_RATE_MAX 120
+#define INPUT_RATE_WINDOW (1 SECONDS)
+/// A player is told of a refusal at most this often, and an admin report opens a new burst after this long without a refusal.
+#define INPUT_REFUSE_NOTICE_EVERY (5 SECONDS)
+#define INPUT_REFUSE_BURST_GAP (10 SECONDS)
+/// A client holding at least this many events for INPUT_NEAR_CAP_WARN has the server log a warning (at most one per INPUT_NEAR_CAP_REPEAT).
+#define INPUT_CLIENT_NEAR_CAP 48
+#define INPUT_NEAR_CAP_WARN (5 SECONDS)
+#define INPUT_NEAR_CAP_REPEAT (60 SECONDS)
+// How long an input may wait in the inbox before it is too late to be what the player meant (a /datum/input_event's max_wait). Phase K serves a quiet inbox
+// within a tick (half a decisecond), so a wait this long means the server was overrun or the client flooded it, and the world the player aimed at has moved on.
+/// A click or a double click: the thing under the cursor has moved or gone.
+#define INPUT_MAX_WAIT_CLICK (0.4 SECONDS)
+/// A drop is a deliberate gesture that may be held a moment longer.
+#define INPUT_MAX_WAIT_DRAG (0.6 SECONDS)
+/// Drag-over, hover, and a press: feedback about where the pointer is now, worthless once it has moved.
+#define INPUT_MAX_WAIT_FEEDBACK (0.2 SECONDS)
+/// A wheel notch scrolls or zooms what is under the cursor now; a late one acts on something else.
+#define INPUT_MAX_WAIT_WHEEL (0.3 SECONDS)
 /// Tick usage under which a click resolves on the spot; above it the click waits for phase K.
 #define INPUT_CLICK_THRESHOLD 95
 /// The same for every other input (a verb, a Topic, a tgui action, say).
@@ -127,3 +151,11 @@
 /// The answerer is directly inside the subject (a tunnel, a closet, a vehicle).
 #define ASK_INSIDE (1<<8)
 
+
+// The rate limiters of a client's inputs: a list of this size, indexed by these (client/Click() in code/engine/kernel/entry.dm and client/Topic()).
+#define LIMITER_SIZE 12
+#define CURRENT_SECOND 1
+#define SECOND_COUNT 2
+#define CURRENT_MINUTE 3
+#define MINUTE_COUNT 4
+#define ADMINSWARNED_AT 5

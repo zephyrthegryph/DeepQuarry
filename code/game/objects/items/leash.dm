@@ -3,20 +3,30 @@
 	desc = "You're holding a leash, with someone on the end."
 	icon_state = "leash_master"
 
-/atom/movable/screen/alert/leash_dom/Click()
+CAPABILITIES(/atom/movable/screen/alert/leash_dom)
+	click_on(PROC_REF(dom_clicked))
+
+/// Clicking the alert lets the pet go.
+/atom/movable/screen/alert/leash_dom/proc/dom_clicked(datum/act/input/A)
 	var/obj/item/leash/owner = master_ref
 	if(owner)
 		owner.unleash()
+	return TRUE
 
 /atom/movable/screen/alert/leash_pet
 	name = "Leashed"
 	desc = "You're on the hook now!"
 	icon_state = "leash_pet"
 
-/atom/movable/screen/alert/leash_pet/Click()
+CAPABILITIES(/atom/movable/screen/alert/leash_pet)
+	click_on(PROC_REF(pet_clicked))
+
+/// Clicking the alert struggles against the leash.
+/atom/movable/screen/alert/leash_pet/proc/pet_clicked(datum/act/input/A)
 	var/obj/item/leash/owner = master_ref
 	if(owner)
 		owner.struggle_leash()
+	return TRUE
 
 ///// RELATIONS /////
 // A leash is two references, and they are its whole state: the pet (`pet`) and the mob holding it (`holder`). leash_pet(), leash_master() and

@@ -236,6 +236,7 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 	setup(PROC_REF(bind_module))
 	setup(PROC_REF(name_from_module))
 	click_on(PROC_REF(click_input))
+	double_click_on(PROC_REF(click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm): the stat-panel button runs
 /// its module's mode for the clicking mob.
@@ -261,9 +262,6 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 				charge_index = charge_index == module.charges.len ? 1 : charge_index + 1
 				module.charge_selected = module.charges[charge_index]
 	return TRUE
-
-/atom/movable/stat_rig_module/DblClick()
-	return Click()
 
 /atom/movable/stat_rig_module/activate/name_from_module()
 	name = module.activate_string
