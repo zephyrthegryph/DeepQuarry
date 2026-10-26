@@ -181,3 +181,17 @@
 				M.gauge("native/frame/[what]/us_per_s", per_s, METRICS_CAT_SERVER, "native", "us/s")
 		else
 			M.gauge("native/[findtext(name, "world.awake.") == 1 ? "awake" : "stepped"]/[what]", value, METRICS_CAT_SERVER, "native", "count")
+
+/// The input inbox (code/engine/kernel/inbox.dm): how deep clients' inboxes are (the deepest, and the 95th percentile over the clients with one waiting),
+/// and the totals since boot of inputs coalesced away, refused over a client's hard cap or rate limit, and expired past their max_wait. A flooding client
+/// shows as depth near INPUT_CLIENT_MAX and refusals; a server too busy to serve input shows as expiries.
+/datum/metrics_source/input
+
+/datum/metrics_source/input/collect(datum/system/server_metrics/M, dt)
+	var/list/input = input_metrics()
+	M.gauge("server/input/inbox_depth_max", input["depth_max"], METRICS_CAT_SERVER, "input", "events")
+	M.gauge("server/input/inbox_depth_p95", input["depth_p95"], METRICS_CAT_SERVER, "input", "events")
+	M.gauge("server/input/coalesced_total", input["coalesced"], METRICS_CAT_SERVER, "input", "events")
+	M.gauge("server/input/hard_cap_refused_total", input["hard_refused"], METRICS_CAT_SERVER, "input", "events")
+	M.gauge("server/input/rate_refused_total", input["rate_refused"], METRICS_CAT_SERVER, "input", "events")
+	M.gauge("server/input/expired_total", input["expired"], METRICS_CAT_SERVER, "input", "events")

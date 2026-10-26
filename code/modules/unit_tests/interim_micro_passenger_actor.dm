@@ -3,8 +3,13 @@
 	var/obj/mecha/micro/mech
 	var/mob/actor
 
-/obj/interim_micro_passenger_actor_click/Click(location, control, params)
+CAPABILITIES(/obj/interim_micro_passenger_actor_click)
+	click_on(PROC_REF(probe_clicked))
+
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_micro_passenger_actor_click/proc/probe_clicked(datum/act/input/A)
 	test_menu(actor, mech, "mecha_enter_passenger")
+	return TRUE
 
 /datum/unit_test/interim_micro_passenger_actor/Run()
 	test_driver_begin()

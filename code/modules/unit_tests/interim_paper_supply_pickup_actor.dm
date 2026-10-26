@@ -2,8 +2,10 @@
 	var/obj/item/item
 	var/mob/destination
 
-/obj/interim_paper_supply_pickup_actor_click/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_paper_supply_pickup_actor_click/proc/probe_clicked(datum/act/input/A)
 	item.MouseDrop(destination)
+	return TRUE
 
 /datum/unit_test/interim_paper_supply_pickup_actor
 	abstract_type = /datum/unit_test/interim_paper_supply_pickup_actor
@@ -81,5 +83,6 @@
 		TEST_ASSERT_NULL(pad.written_by, "actual pickup invents no writer attribution")
 
 CAPABILITIES(/obj/interim_paper_supply_pickup_actor_click)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(destination))
 	ref_one(nameof(item))

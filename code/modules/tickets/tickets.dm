@@ -87,9 +87,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/tickets)
 	if(!title)
 		return
 	var/list/dat = list("<html><head><title>[title]</title></head>")
-	dat += "<A href='byond://?_src_=holder;[HrefToken(user)];ahelp_tickets=[state]'>Refresh</A><br><br>"
+	dat += "<A href='byond://?_src_=holder;[HrefToken(user)];tickets=[state]'>Refresh</A><br><br>"
 	for(var/datum/ticket/T as anything in l2b)
-		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ahelp=[ref_token(T)];[HrefToken(user)];ahelp_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
+		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ticket=[ref_token(T)];[HrefToken(user)];ticket_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
 	dat += "</html>"
 	// structured TGUI AdminReport (fallback path; primary tickets
 	// UI is the dedicated TGUI module).
@@ -386,7 +386,7 @@ CAPABILITIES(/datum/ticket)
 	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=[action]'>[msg]</A>"
 
 /*
-	var/chat_msg = span_notice("(<A href='byond://?_src_=holder;ahelp=[ref_src];[HREF_TOKEN_PLACEHOLDER];ahelp_action=escalate'>ESCALATE</A>) Ticket [TicketHref("#[id]", ref_src)]" + span_bold(": [LinkedReplyName(ref_src)]:") + " [msg]")
+	var/chat_msg = span_notice("(<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>) Ticket [TicketHref("#[id]", ref_src)]" + span_bold(": [LinkedReplyName(ref_src)]:") + " [msg]")
 	 */
 
 //message from the initiator without a target, all admins will see this

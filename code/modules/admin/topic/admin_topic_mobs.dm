@@ -249,6 +249,16 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 	user.client.cmd_admin_toggle_block(H, href_block)
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, H)
 
+/// The tag menu's UNTAG: the datum leaves this admin's tagged list.
+/datum/admins/proc/topic_del_tag(datum/act/op/A, href_del_tag)
+	log_admin("[key_name(A.actor)] untagged [href_del_tag]")
+	remove_tagged_datum(href_del_tag)
+
+/// The tag menu's MARK: the datum becomes this admin's marked datum.
+/datum/admins/proc/topic_mark_datum(datum/act/op/A, href_mark_datum)
+	log_admin("[key_name(A.actor)] marked [href_mark_datum]")
+	mark_datum_for(href_mark_datum)
+
 /datum/admins/proc/topic_adminplayeropts(datum/act/op/A, href_adminplayeropts)
 	var/mob/user = A.actor
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, href_adminplayeropts)

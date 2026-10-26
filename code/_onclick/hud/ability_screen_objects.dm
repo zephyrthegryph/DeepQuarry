@@ -16,6 +16,8 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 	ref_one(nameof(my_mob))
 	setup(PROC_REF(prepare_ability_buttons))
 	owns_many(nameof(ability_objects), /atom/movable/screen/ability)
+	click_on(PROC_REF(master_clicked))
+	drag_onto(PROC_REF(master_dragged))
 
 /atom/movable/screen/movable/ability_master/proc/prepare_ability_buttons()
 	if(ismob(loc))
@@ -27,17 +29,17 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 
 // the mob owns us as its ability_master; my_mob is a plain relation back.
 
-/atom/movable/screen/movable/ability_master/MouseDrop()
+/// The drop of the master while its abilities are showing is nothing (it cannot be moved then); otherwise it is the movable screen's own drop.
+/atom/movable/screen/movable/ability_master/proc/master_dragged(datum/act/input/A)
 	if(showing)
-		return
+		return TRUE
+	return drop_input(A)
 
-	return ..()
-
-/atom/movable/screen/movable/ability_master/Click()
-	if(!length(ability_objects)) // If we're empty for some reason.
-		return
-
-	toggle_open()
+/// A click opens or closes the abilities; a master with none does nothing.
+/atom/movable/screen/movable/ability_master/proc/master_clicked(datum/act/input/A)
+	if(length(ability_objects)) // If we're empty for some reason.
+		toggle_open()
+	return TRUE
 
 /atom/movable/screen/movable/ability_master/proc/toggle_open(forced_state = 0)
 	if(showing && (forced_state != 2)) // We are closing the ability master, hide the abilities.
@@ -160,6 +162,7 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 
 
 CAPABILITIES(/atom/movable/screen/ability)
+	drag_onto(PROC_REF(ability_dropped))
 	ref_one(nameof(ability_master))
 	click_on(PROC_REF(click_input))
 
@@ -169,14 +172,17 @@ CAPABILITIES(/atom/movable/screen/ability)
 		activate_with_actor(A.actor)
 	return TRUE
 
-/atom/movable/screen/ability/MouseDrop(atom/A)
-	if(!A || A == src)
-		return
-	if(istype(A, /atom/movable/screen/ability))
-		var/atom/movable/screen/ability/ability = A
+/// An ability dropped on another of the same master swaps their places.
+/atom/movable/screen/ability/proc/ability_dropped(datum/act/input/A)
+	var/atom/dropped_on = A.over
+	if(!dropped_on || dropped_on == src)
+		return TRUE
+	if(istype(dropped_on, /atom/movable/screen/ability))
+		var/atom/movable/screen/ability/ability = dropped_on
 		if(ability.master_of() && ability.master_of() == src.master_of())
 			LAZYINITLIST(master_of().ability_objects); master_of().ability_objects.Swap(src.index, ability.index)
 			master_of().toggle_open(2) // To update the UI.
+	return TRUE
 
 // Makes the ability be triggered.  The subclasses of this are responsible for carrying it out in whatever way it needs to.
 /atom/movable/screen/ability/proc/activate()
