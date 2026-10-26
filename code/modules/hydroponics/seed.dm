@@ -42,6 +42,11 @@
 
 CAPABILITIES(/datum/seed)
 	param(nameof(trait_values), default = PROC_REF(default_traits))
+	// The growth stages follow the plant icon, which a subtype's default_traits() sets: read once the seed is made (make() arms it).
+	after_init(0, then(PROC_REF(seed_ready)))
+
+/datum/seed/proc/seed_ready(datum/act/timer/A)
+	update_growth_stages()
 
 /// The seed's traits when it is made: each subtype sets its own after `. = ..()`. Returns the trait table.
 /datum/seed/proc/default_traits()
@@ -85,7 +90,6 @@ CAPABILITIES(/datum/seed)
 	set_trait(TRAIT_MUTAGENIC_REAG,       null)         // Reagents considered uniquely 'mutagenic' by a plant. This should be an associated list, or null. Examples in tray.dm
 	set_trait(TRAIT_TOXIC_REAG,           null)         // Reagents considered uniquely 'toxic' by a plant. This should be an associated list, or null. Examples in tray.dm
 
-	after(src, 0.5 SECONDS, PROC_REF(update_growth_stages)) // the plant icon a subtype sets is known by then
 	return trait_values
 
 /datum/seed/proc/get_trait(trait)
@@ -872,7 +876,7 @@ CAPABILITIES(/datum/seed)
 	if(get_trait(TRAIT_IMMUTABLE) > 0) return
 
 	//Set up some basic information.
-	var/datum/seed/new_seed = new
+	var/datum/seed/new_seed = make(/datum/seed)
 	new_seed.name =            "new line"
 	new_seed.set_uid(0)
 	new_seed.roundstart =       0
@@ -898,7 +902,7 @@ CAPABILITIES(/datum/seed)
 /// An exact, unregistered copy of this seed (same name and traits): a private copy for a holder
 /// (proto_copy()), or the registered instance register_line() files.
 /datum/seed/proc/copy_line()
-	var/datum/seed/new_seed = new
+	var/datum/seed/new_seed = make(/datum/seed)
 	new_seed.name =             name
 	new_seed.set_uid(uid)
 	new_seed.roundstart =       roundstart
