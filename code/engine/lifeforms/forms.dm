@@ -323,13 +323,10 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 		made = make_pending_for(D) // a make() of this type: its params, before anything else
 	lifecycle_initialize(D) // preinit (rolls, params) and owns_one/owns_many starts =
 	var/datum/type_table/T = table_of(D)
-	if(T.hook_flags & ENGINE_HOOK_AFTER_INIT)
+	if((T.hook_flags & ENGINE_HOOK_AFTER_INIT) && !made)
 		// after_init() on a plain datum: its init is complete when the whole New() chain has returned, which only the creator sees. make()
 		// arms it then (make_build()); a bare new() never would, so it is refused here (and by the lifeforms lint where the type is literal).
-		if(made)
-			made.after_init_due = TRUE
-		else
-			declare_report("new [D.type]: the type declares after_init(), which a plain datum runs only when made with make([D.type]) (code/engine/actions/after_init.dm)")
+		declare_report("new [D.type]: the type declares after_init(), which a plain datum runs only when made with make([D.type]) (code/engine/actions/after_init.dm)")
 	if(T.hook_flags & ENGINE_HOOK_STATS)
 		stat_holder_init(D, FALSE) // a factors() entry's table lands on the entity its relation names once that relation is set
 	if(T.hook_flags & ENGINE_HOOK_MODES)

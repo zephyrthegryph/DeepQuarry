@@ -256,10 +256,12 @@ moment only its creator sees. The contract: **a plain datum's `after_init()` is 
 `..()`. A delay of 0 runs before `make()` returns; a positive delay is an `after()` on the datum from then. A bare `new /T` of a type that
 declares it (or inherits it) never runs it and is refused: `/datum/New()` reports it (`declare_report`, which fails a test run), and the
 `lifeforms` lint's `after_init_bare_new` rule rejects a literal `new /T` or `var/T/x = new` at compile time (`new some_var` is left to the
-run-time report). `analyze gen declare` marks such a type `lifeform_declared`, so `/datum/New()` takes its `make()` record. Why not arm it
+run-time report; a `New()` override that never calls `..()` does not reach `/datum/New()`, so only the lint sees its bare `new`, and its
+`make()` params are not written: chain `..()`). `analyze gen declare` marks such a type `lifeform_declared`, so `/datum/New()` takes its
+`make()` record; `make()` arms the entries whenever the made type's table has any. Why not arm it
 from `/datum/New()`: that runs at the root of the chain, before the subtype's own code, so a delay of 0 read a half-built datum (the seeds'
 growth stages, set from the plant icon a subtype's `New()` writes, divided by zero). Worked example: `/datum/seed` (`seed_ready()`; every
-seed is made with `make()`). Tests: `dq_after_init/plain_datum*`, `dq_seed_default_traits`.
+seed is made with `make()`; its `New()` had never called `..()`, which is why the first conversion saw no `after_init()` at all). Tests: `dq_after_init/plain_datum*`, `dq_seed_default_traits`.
 
 **DECLARE_BEHAVIOUR audit** (4 real sites):
 
