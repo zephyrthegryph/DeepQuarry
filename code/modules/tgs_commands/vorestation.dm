@@ -580,8 +580,6 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 
 /// A whitelist add or remove was written (or refused): the list is updated, the player told and the admins notified.
 /datum/tgs_chat_command/whitelist/proc/whitelist_edit_done(list/result, error, key, action, kind, ckey, role)
-	if(!tgs_held_sender(key))
-		return
 	var/datum/tgs_message_content/message = new("Invalid return message.")
 	if(error || !result)
 		log_sql("[error] | whitelist [action] of [ckey] for [role] [kind]")
@@ -594,6 +592,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 		tgs_reply_when_ready(key, message)
 		return
 
+	// the write happened: the lists and the admins follow it, whether or not the chat sender is still held
 	if(action == "add")
 		switch(kind)
 			if("job")

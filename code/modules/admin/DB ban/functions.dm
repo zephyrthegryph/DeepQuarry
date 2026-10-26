@@ -44,11 +44,19 @@
 		computerid = bancid
 		ip = banip
 
-	sql_ask(src, "SELECT id FROM erro_player WHERE ckey = :ckey", list("ckey" = ckey), PROC_REF(ban_record_player_checked), bantype, duration, reason, job, rounds, ckey, ip, computerid, unseen_ok, actor)
+	sql_ask(src, "SELECT id FROM erro_player WHERE ckey = :ckey", list("ckey" = ckey), PROC_REF(ban_record_player_checked), bantype, duration, reason, job, rounds, ckey, ip, computerid, unseen_ok, actor?.ckey)
 
-/// DB_ban_record()'s player lookup answered: a ckey the server has not seen is confirmed first, then the ban is written.
-/datum/admins/proc/ban_record_player_checked(list/result, error, bantype, duration, reason, job, rounds, ckey, ip, computerid, unseen_ok, mob/actor)
-	if(!admin_require(actor?.client, R_MOD, "check_rights in [callee?.proc]", FALSE) && !admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))	return
+/// DB_ban_record()'s player lookup answered: a ckey the server has not seen is confirmed first, then the ban is written. The admin comes
+/// as a ckey (a mob would be a weak argument, and a ban must not vanish because the admin's mob was deleted meanwhile): the client is found
+/// again and its rights checked again; an admin who has gone still gets the ban written, attributed to the ckey, and it is logged.
+/datum/admins/proc/ban_record_player_checked(list/result, error, bantype, duration, reason, job, rounds, ckey, ip, computerid, unseen_ok, actor_ckey)
+	var/client/actor_client = GLOB.directory[actor_ckey]
+	var/mob/actor = actor_client?.mob
+	if(actor_client)
+		if(!admin_require(actor_client, R_MOD, "check_rights in [callee?.proc]", FALSE) && !admin_require(actor_client, R_BAN, "check_rights in [callee?.proc]"))	return
+	else
+		log_admin("Ban of [ckey] by [actor_ckey]: the admin is no longer connected; the ban is written anyway, attributed to them.")
+	var/actor_label = actor_client ? key_name_admin(actor_client) : "[actor_ckey] (disconnected)"
 
 	if(!SSdbcore.IsConnected())
 		return
@@ -71,6 +79,9 @@
 		validckey = 1
 	if(!validckey && !unseen_ok)
 		// The answer records the ban again from the start.
+		if(!actor || QDELETED(actor))
+			log_admin("Ban of [ckey] by [actor_ckey] was not recorded: the ckey is unseen and the admin is gone, so it can't be confirmed.")
+			return
 		open_request(src, /datum/prompt/choice/unseen_ban, PROC_REF(unseen_ban_confirmed), answerer = actor, ban_args = list(bantype, null, duration, reason, job, rounds, ckey, ip, computerid))
 		return
 
@@ -82,6 +93,8 @@
 		a_ckey = src.owner():ckey
 		a_computerid = src.owner():computer_id
 		a_ip = src.owner():address
+	else
+		a_ckey = actor_ckey
 
 	var/who
 	for(var/client/C in GLOB.clients)
@@ -105,7 +118,7 @@
 	var/sql = "INSERT INTO erro_ban (`id`,`bantime`,`serverip`,`bantype`,`reason`,`job`,`duration`,`rounds`,`expiration_time`,`ckey`,`computerid`,`ip`,`a_ckey`,`a_computerid`,`a_ip`,`who`,`adminwho`,`edits`,`unbanned`,`unbanned_datetime`,`unbanned_ckey`,`unbanned_computerid`,`unbanned_ip`) VALUES (null, Now(), :serverip, :bantype_str, :reason, :job, :ban_duration_val, :ban_rounds_val, Now() + INTERVAL :ban_interval MINUTE, :ckey, :computerid, :ip, :a_ckey, :a_computerid, :a_ip, :who, :adminwho, '', null, null, null, null, null)"
 	sql_write(sql, list("serverip" = serverip, "bantype_str" = bantype_str, "reason" = reason, "job" = job, "ban_duration_val" = ban_duration_val, "ban_rounds_val" = ban_rounds_val, "ban_interval" = ban_interval, "ckey" = ckey, "computerid" = computerid, "ip" = ip, "a_ckey" = a_ckey, "a_computerid" = a_computerid, "a_ip" = a_ip, "who" = who, "adminwho" = adminwho))
 	to_chat(actor, span_filter_adminlog("[span_blue("Ban saved to database.")]"))
-	message_admins("[key_name_admin(actor)] has added a [bantype_str] for [ckey] [(job)?"([job])":""] [(duration > 0)?"([duration] minutes)":""] with the reason: \"[reason]\" to the ban database.")
+	message_admins("[actor_label] has added a [bantype_str] for [ckey] [(job)?"([job])":""] [(duration > 0)?"([duration] minutes)":""] with the reason: \"[reason]\" to the ban database.")
 
 
 /datum/admins/proc/DB_ban_unban(ckey, bantype, job = "", mob/actor)
@@ -149,12 +162,18 @@
 	if(!SSdbcore.IsConnected())
 		return
 
-	sql_ask(src, sql, sql_params, PROC_REF(ban_unban_found), actor)
+	sql_ask(src, sql, sql_params, PROC_REF(ban_unban_found), actor?.ckey)
 
-/// DB_ban_unban()'s lookup answered: exactly one matching ban is lifted.
-/datum/admins/proc/ban_unban_found(list/result, error, mob/actor)
-	if(!admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))
-		return
+/// DB_ban_unban()'s lookup answered: exactly one matching ban is lifted. The admin is a ckey like in ban_record_player_checked(): a gone
+/// admin does not lose the unban, it is attributed to the ckey and logged.
+/datum/admins/proc/ban_unban_found(list/result, error, actor_ckey)
+	var/client/actor_client = GLOB.directory[actor_ckey]
+	var/mob/actor = actor_client?.mob
+	if(actor_client)
+		if(!admin_require(actor_client, R_BAN, "check_rights in [callee?.proc]"))
+			return
+	else
+		log_admin("Unban lookup by [actor_ckey]: the admin is no longer connected; the unban goes ahead, attributed to them.")
 
 	var/ban_id
 	var/ban_number = 0 //failsafe
@@ -177,7 +196,7 @@
 		to_chat(actor, span_filter_adminlog("[span_red("Database update failed due to a ban ID mismatch. Contact the database admin.")]"))
 		return
 
-	DB_ban_unban_by_id(ban_id, actor)
+	ban_unban_by_id_lookup(ban_id, actor_ckey)
 
 /datum/prompt/choice/unseen_ban
 	title = "Confirm Badmin"
@@ -334,14 +353,23 @@
 /datum/admins/proc/DB_ban_unban_by_id(id, mob/actor)
 	if(!admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))	return
 
+	ban_unban_by_id_lookup(id, actor.ckey)
+
+/// Reads the ban `id` for the unban; the admin is carried as a ckey.
+/datum/admins/proc/ban_unban_by_id_lookup(id, actor_ckey)
 	if(!SSdbcore.IsConnected())
 		return
 
-	sql_ask(src, "SELECT ckey FROM erro_ban WHERE id = :id", list("id" = id), PROC_REF(ban_unban_id_found), id, actor)
+	sql_ask(src, "SELECT ckey FROM erro_ban WHERE id = :id", list("id" = id), PROC_REF(ban_unban_id_found), id, actor_ckey)
 
 /// DB_ban_unban_by_id()'s lookup answered: the one ban with that id is lifted.
-/datum/admins/proc/ban_unban_id_found(list/result, error, id, mob/actor)
-	if(!admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))	return
+/datum/admins/proc/ban_unban_id_found(list/result, error, id, actor_ckey)
+	var/client/actor_client = GLOB.directory[actor_ckey]
+	var/mob/actor = actor_client?.mob
+	if(actor_client)
+		if(!admin_require(actor_client, R_BAN, "check_rights in [callee?.proc]"))	return
+	else
+		log_admin("Unban of ban [id] by [actor_ckey]: the admin is no longer connected; the unban goes ahead, attributed to them.")
 
 	var/ban_number = 0 //failsafe
 
@@ -358,13 +386,14 @@
 		to_chat(actor, span_filter_adminlog("[span_red("Database update failed due to multiple bans having the same ID. Contact the database admin.")]"))
 		return
 
-	if(!src.owner() || !istype(src.owner(), /client))
-		return
-
-	var/unban_ckey = src.owner():ckey
-	var/unban_computerid = src.owner():computer_id
-	var/unban_ip = src.owner():address
-	message_admins("[key_name_admin(actor)] has lifted [pckey]'s ban.")
+	var/unban_ckey = actor_ckey
+	var/unban_computerid
+	var/unban_ip
+	if(src.owner() && istype(src.owner(), /client))
+		unban_ckey = src.owner():ckey
+		unban_computerid = src.owner():computer_id
+		unban_ip = src.owner():address
+	message_admins("[actor_client ? key_name_admin(actor_client) : "[actor_ckey] (disconnected)"] has lifted [pckey]'s ban.")
 
 	sql_write("UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = :unban_ckey, unbanned_computerid = :unban_computerid, unbanned_ip = :unban_ip WHERE id = :id", list("unban_ckey" = unban_ckey, "unban_computerid" = unban_computerid, "unban_ip" = unban_ip, "id" = id))
 

@@ -50,6 +50,28 @@
 		poll_browser_dialog.selected_pollid = pollid
 	poll_browser_dialog.tgui_interact(src)
 
+/// One poll write in flight per player and poll: a double-submit while the checks of the first are out would write the vote twice. Keys are
+/// "poll<id>" strings (a number would index the list); a guard is released when the chain ends, and a lost job's guard expires after
+/// POLL_INFLIGHT_STALE (the I/O lane abandons a job after five minutes).
+#define POLL_INFLIGHT_STALE (6 MINUTES)
+
+/mob/new_player/var/list/poll_inflight
+
+/// TRUE if this player has no write in flight on the poll, and then marks one; FALSE (logged) for a repeat.
+/mob/new_player/proc/poll_begin(pollid)
+	var/key = "poll[pollid]"
+	var/started = LAZYACCESS(poll_inflight, key)
+	if(started && REALTIMEOFDAY - started < POLL_INFLIGHT_STALE)
+		log_sql("poll: dropped a repeat submit on poll [pollid] by [ckey]: the first is still in flight")
+		return FALSE
+	LAZYSET(poll_inflight, key, REALTIMEOFDAY)
+	return TRUE
+
+/// The poll write of this player ended (written, refused or failed).
+/mob/new_player/proc/poll_release(pollid)
+	var/key = "poll[pollid]"
+	LAZYREMOVE(poll_inflight, key)
+
 /// A vote on an option poll: the poll, the option and the player's earlier votes are read in that order, then the vote is written.
 /mob/new_player/proc/vote_on_poll(pollid = -1, optionid = -1, multichoice = 0)
 	if(pollid == -1 || optionid == -1)
@@ -57,8 +79,9 @@
 
 	if(!isnum(pollid) || !isnum(optionid))
 		return
-	if(SSdbcore.IsConnected())
-		sql_ask(src, "SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid), PROC_REF(vote_poll_question_loaded), pollid, optionid, multichoice)
+	if(SSdbcore.IsConnected() && poll_begin(pollid))
+		if(!sql_ask(src, "SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid), PROC_REF(vote_poll_question_loaded), pollid, optionid, multichoice))
+			poll_release(pollid)
 
 /mob/new_player/proc/vote_poll_question_loaded(list/result, error, pollid, optionid, multichoice)
 	var/list/question_rows = sql_answer_rows(result, error, "poll vote: question [pollid]")
@@ -69,12 +92,14 @@
 	if(length(question_rows))
 		var/list/question_row = question_rows[1]
 		if(question_row[4] != "OPTION" && question_row[4] != "MULTICHOICE")
+			poll_release(pollid)
 			return
 		validpoll = 1
 		if(question_row[5])
 			multiplechoiceoptions = text2num(question_row[5])
 	if(!validpoll)
 		to_chat(src, span_red("Poll is not valid."))
+		poll_release(pollid)
 		return
 
 	sql_ask(src, "SELECT id FROM [format_table_name("erro_poll_option")] WHERE id = :optionid AND pollid = :pollid", list("optionid" = optionid, "pollid" = pollid), PROC_REF(vote_poll_option_loaded), pollid, optionid, multichoice, multiplechoiceoptions)
@@ -89,6 +114,7 @@
 
 	if(!validoption)
 		to_chat(src, span_red("Poll option is not valid."))
+		poll_release(pollid)
 		return
 
 	sql_ask(src, "SELECT id FROM [format_table_name("erro_poll_vote")] WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey), PROC_REF(vote_poll_earlier_votes_loaded), pollid, optionid, multichoice, multiplechoiceoptions)
@@ -98,10 +124,12 @@
 	var/alreadyvoted = multichoice ? length(voted_rows) : min(length(voted_rows), 1)
 	if(!multichoice && alreadyvoted)
 		to_chat(src, span_red("You already voted in this poll."))
+		poll_release(pollid)
 		return
 
 	if(multichoice && (alreadyvoted >= multiplechoiceoptions))
 		to_chat(src, span_red("You already have more than [multiplechoiceoptions] logged votes on this poll. Enough is enough. Contact the database admin if this is an error."))
+		poll_release(pollid)
 		return
 
 	var/adminrank = "Player"
@@ -110,12 +138,17 @@
 
 
 	if(!client)
+		poll_release(pollid)
 		return
-	sql_ask(src, "INSERT INTO [format_table_name("erro_poll_vote")] (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank)",
-		list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank), PROC_REF(poll_vote_written), pollid)
+	// conditional: a repeat that slipped past the checks inserts nothing (one vote per player on a poll, one per option on a multichoice poll)
+	var/repeat_test = multichoice ? "pollid = :pollid AND optionid = :optionid AND ckey = :ckey" : "pollid = :pollid AND ckey = :ckey"
+	if(!sql_ask(src, "INSERT INTO [format_table_name("erro_poll_vote")] (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) SELECT null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM [format_table_name("erro_poll_vote")] WHERE [repeat_test])",
+		list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank), PROC_REF(poll_vote_written), pollid))
+		poll_release(pollid)
 
 /// A poll vote's insert answered (an option, multichoice or rating vote): the voter is told and the poll window reloads.
 /mob/new_player/proc/poll_vote_written(list/result, error, pollid)
+	poll_release(pollid)
 	if(error)
 		log_sql("[error] | poll vote insert on [pollid] by [ckey]")
 		return
@@ -130,8 +163,9 @@
 
 	if(!isnum(pollid) || !istext(replytext))
 		return
-	if(SSdbcore.IsConnected())
-		sql_ask(src, "SELECT starttime, endtime, question, polltype FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid), PROC_REF(text_reply_question_loaded), pollid, replytext)
+	if(SSdbcore.IsConnected() && poll_begin(pollid))
+		if(!sql_ask(src, "SELECT starttime, endtime, question, polltype FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid), PROC_REF(text_reply_question_loaded), pollid, replytext))
+			poll_release(pollid)
 
 /mob/new_player/proc/text_reply_question_loaded(list/result, error, pollid, replytext)
 	var/list/question_rows = sql_answer_rows(result, error, "poll reply: question [pollid]")
@@ -141,10 +175,12 @@
 	if(length(question_rows))
 		var/list/question_row = question_rows[1]
 		if(question_row[4] != "TEXT")
+			poll_release(pollid)
 			return
 		validpoll = 1
 	if(!validpoll)
 		to_chat(src, span_red("Poll is not valid."))
+		poll_release(pollid)
 		return
 
 	sql_ask(src, "SELECT id FROM [format_table_name("erro_poll_textreply")] WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey), PROC_REF(text_reply_earlier_loaded), pollid, replytext)
@@ -156,6 +192,7 @@
 		alreadyvoted = 1
 	if(alreadyvoted)
 		to_chat(src, span_red("You already sent your feedback for this poll."))
+		poll_release(pollid)
 		return
 
 	var/adminrank = "Player"
@@ -170,14 +207,18 @@
 
 	if(!text_pass)
 		to_chat(src, "The text you entered was blank, contained illegal characters or was too long. Please correct the text and submit again.")
+		poll_release(pollid)
 		return
 
 	if(!client)
+		poll_release(pollid)
 		return
-	sql_ask(src, "INSERT INTO [format_table_name("erro_poll_textreply")] (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank)",
-		list("pollid" = pollid, "ckey" = src.ckey, "ip" = client.address, "replytext" = replytext, "adminrank" = adminrank), PROC_REF(text_reply_written), pollid)
+	if(!sql_ask(src, "INSERT INTO [format_table_name("erro_poll_textreply")] (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) SELECT null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM [format_table_name("erro_poll_textreply")] WHERE pollid = :pollid AND ckey = :ckey)",
+		list("pollid" = pollid, "ckey" = src.ckey, "ip" = client.address, "replytext" = replytext, "adminrank" = adminrank), PROC_REF(text_reply_written), pollid))
+		poll_release(pollid)
 
 /mob/new_player/proc/text_reply_written(list/result, error, pollid)
+	poll_release(pollid)
 	if(error)
 		log_sql("[error] | poll text reply insert on [pollid] by [ckey]")
 		return
@@ -192,8 +233,9 @@
 
 	if(!isnum(pollid) || !isnum(optionid))
 		return
-	if(SSdbcore.IsConnected())
-		sql_ask(src, "SELECT starttime, endtime, question, polltype FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid), PROC_REF(numval_question_loaded), pollid, optionid, rating)
+	if(SSdbcore.IsConnected() && poll_begin(pollid))
+		if(!sql_ask(src, "SELECT starttime, endtime, question, polltype FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid), PROC_REF(numval_question_loaded), pollid, optionid, rating))
+			poll_release(pollid)
 
 /mob/new_player/proc/numval_question_loaded(list/result, error, pollid, optionid, rating)
 	var/list/question_rows = sql_answer_rows(result, error, "poll rating: question [pollid]")
@@ -203,10 +245,12 @@
 	if(length(question_rows))
 		var/list/question_row = question_rows[1]
 		if(question_row[4] != "NUMVAL")
+			poll_release(pollid)
 			return
 		validpoll = 1
 	if(!validpoll)
 		to_chat(src, span_red("Poll is not valid."))
+		poll_release(pollid)
 		return
 
 	sql_ask(src, "SELECT id FROM [format_table_name("erro_poll_option")] WHERE id = :optionid AND pollid = :pollid", list("optionid" = optionid, "pollid" = pollid), PROC_REF(numval_option_loaded), pollid, optionid, rating)
@@ -220,6 +264,7 @@
 		validoption = 1
 	if(!validoption)
 		to_chat(src, span_red("Poll option is not valid."))
+		poll_release(pollid)
 		return
 
 	sql_ask(src, "SELECT id FROM [format_table_name("erro_poll_vote")] WHERE optionid = :optionid AND ckey = :ckey", list("optionid" = optionid, "ckey" = src.ckey), PROC_REF(numval_earlier_loaded), pollid, optionid, rating)
@@ -231,6 +276,7 @@
 		alreadyvoted = 1
 	if(alreadyvoted)
 		to_chat(src, span_red("You already voted in this poll."))
+		poll_release(pollid)
 		return
 
 	var/adminrank = "Player"
@@ -239,6 +285,8 @@
 
 
 	if(!client)
+		poll_release(pollid)
 		return
-	sql_ask(src, "INSERT INTO [format_table_name("erro_poll_vote")] (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating)",
-		list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank, "rating" = rating), PROC_REF(poll_vote_written), pollid)
+	if(!sql_ask(src, "INSERT INTO [format_table_name("erro_poll_vote")] (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) SELECT null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM [format_table_name("erro_poll_vote")] WHERE optionid = :optionid AND ckey = :ckey)",
+		list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank, "rating" = rating), PROC_REF(poll_vote_written), pollid))
+		poll_release(pollid)

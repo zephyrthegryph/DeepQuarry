@@ -24,6 +24,8 @@
 /datum/privacy_poll_dialog
 	var/mob/new_player/owner
 	var/answered = FALSE
+	/// TRUE while a vote's checks and insert are out: a double-submit is dropped.
+	var/record_inflight = FALSE
 
 /datum/privacy_poll_dialog/New(mob/new_player/owner)
 	rel_set(src, nameof(owner), owner)
@@ -72,20 +74,46 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 /datum/privacy_poll_dialog/proc/record_vote(option)
 	if(!owner || answered)
 		return
-	sql_ask(src, "SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey", list("t_ckey" = owner.ckey), PROC_REF(vote_checked), option)
+	if(record_inflight)
+		log_sql("privacy poll: dropped a repeat submit by [owner.ckey]: the first is still in flight")
+		return
+	record_inflight = TRUE
+	if(!sql_ask(src, "SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey", list("t_ckey" = owner.ckey), PROC_REF(vote_checked), option))
+		record_inflight = FALSE
 
 /datum/privacy_poll_dialog/proc/vote_checked(list/result, error, option)
 	if(!owner || answered)
+		record_inflight = FALSE
 		return
 	var/list/check_rows = sql_answer_rows(result, error, "privacy poll: earlier vote of [owner.ckey]")
-	var/voted = FALSE
+	if(isnull(check_rows))
+		record_inflight = FALSE
+		to_chat(owner, span_warning("Your vote could not be checked. Please try again later."))
+		return
+
 	if(length(check_rows))
-		voted = TRUE
+		// already voted: nothing to write
+		record_inflight = FALSE
+		set_answered(TRUE)
+		SStgui.close_uis(src)
+		spent(src)
+		return
 
-	if(!voted)
-		sql_write("INSERT INTO erro_privacy VALUES (null, Now(), :t_ckey, :t_option)", list("t_ckey" = owner.ckey, "t_option" = option))
-		to_chat(owner, span_bold("Thank you for your vote!"))
+	// conditional: a repeat that slipped past the check inserts nothing
+	if(!sql_ask(src, "INSERT INTO erro_privacy SELECT null, Now(), :t_ckey, :t_option FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey)", list("t_ckey" = owner.ckey, "t_option" = option), PROC_REF(vote_written), option))
+		record_inflight = FALSE
+		to_chat(owner, span_warning("Your vote could not be saved. Please try again later."))
 
+/// The privacy vote's insert answered: thanks and done only when it was written, else the player can try again.
+/datum/privacy_poll_dialog/proc/vote_written(list/result, error, option)
+	record_inflight = FALSE
+	if(!owner || answered)
+		return
+	if(error)
+		log_sql("[error] | privacy poll vote insert by [owner.ckey]")
+		to_chat(owner, span_warning("Your vote could not be saved. Please try again later."))
+		return
+	to_chat(owner, span_bold("Thank you for your vote!"))
 	set_answered(TRUE)
 	SStgui.close_uis(src)
 	spent(src)

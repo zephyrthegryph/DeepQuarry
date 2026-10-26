@@ -51,7 +51,13 @@
 /// Stands in for a connected client: the login answer dispatcher only looks it up by ckey, checks its computer id and calls a proc on it.
 /datum/login_probe_client
 	var/computer_id = "cid-1"
+	var/login_serial = 5
+	var/login_pending = TRUE
 	var/list/log
+
+/datum/login_probe_client/proc/login_admit()
+	login_pending = FALSE
+	LAZYADD(log, "admitted")
 
 /datum/login_probe_client/proc/login_probe_answer(list/result, error, tag, number)
 	LAZYADD(log, "[tag]:[number]:[length(result?["rows"])]:[error || "ok"]")
@@ -67,17 +73,81 @@
 	defer_cleanup(null, GLOBAL_PROC_REF(login_probe_forget))
 	var/datum/login_probe_client/probe = allocate(/datum/login_probe_client)
 	GLOB.directory[LOGIN_PROBE_CKEY] = probe
-	login_answered(list("rows" = list(list(1))), null, LOGIN_PROBE_CKEY, "cid-1", "login_probe_answer", "ban", 7)
+	login_answered(list("rows" = list(list(1))), null, LOGIN_PROBE_CKEY, "cid-1", 5, "login_probe_answer", "ban", 7)
 	TEST_ASSERT_EQUAL(jointext(probe.log || list(), ","), "ban:7:1:ok", "the step runs on the client with the answer and its context")
-	login_answered(null, "boom", LOGIN_PROBE_CKEY, "cid-1", "login_probe_answer", "ip", 8)
+	login_answered(null, "boom", LOGIN_PROBE_CKEY, "cid-1", 5, "login_probe_answer", "ip", 8)
 	TEST_ASSERT_EQUAL(probe.log[2], "ip:8:0:boom", "a failed read reaches the step as an error")
-	login_answered(list("rows" = list()), null, LOGIN_PROBE_CKEY, "cid-2", "login_probe_answer", "late", 9)
+	login_answered(list("rows" = list()), null, LOGIN_PROBE_CKEY, "cid-2", 5, "login_probe_answer", "late", 9)
 	TEST_ASSERT_EQUAL(length(probe.log), 2, "an answer started for another connection of the same ckey is dropped")
+	login_answered(list("rows" = list()), null, LOGIN_PROBE_CKEY, "cid-1", 4, "login_probe_answer", "stale", 11)
+	TEST_ASSERT_EQUAL(length(probe.log), 2, "an answer asked for an earlier connection of the same computer (another serial) is dropped")
 	GLOB.directory -= LOGIN_PROBE_CKEY
-	login_answered(list("rows" = list()), null, LOGIN_PROBE_CKEY, "cid-1", "login_probe_answer", "gone", 10)
+	login_answered(list("rows" = list()), null, LOGIN_PROBE_CKEY, "cid-1", 5, "login_probe_answer", "gone", 10)
 	TEST_ASSERT_EQUAL(length(probe.log), 2, "an answer for a client that left is dropped")
 
+/datum/unit_test/login_old_timer_does_not_admit_a_new_connection
+
+/datum/unit_test/login_old_timer_does_not_admit_a_new_connection/Run()
+	defer_cleanup(null, GLOBAL_PROC_REF(login_probe_forget))
+	var/datum/login_probe_client/probe = allocate(/datum/login_probe_client)
+	GLOB.directory[LOGIN_PROBE_CKEY] = probe
+	login_gate_timeout(LOGIN_PROBE_CKEY, "cid-1", 4)
+	TEST_ASSERT(probe.login_pending, "the timer of the connection before it does not open the new connection's gate")
+	TEST_ASSERT_NULL(probe.log, "and admits nothing")
+
+/datum/unit_test/login_gate_serials_are_unique
+
+/datum/unit_test/login_gate_serials_are_unique/Run()
+	var/before = GLOB.login_seq
+	var/first = ++GLOB.login_seq
+	var/second = ++GLOB.login_seq
+	TEST_ASSERT(first > before && second > first, "each connection takes the next number")
+	GLOB.login_seq = before
+
+/datum/unit_test/login_ban_row_refuses_even_if_it_cannot_be_described
+
+/datum/unit_test/login_ban_row_refuses_even_if_it_cannot_be_described/Run()
+	TEST_ASSERT_NULL(login_ban_refusal(list()), "no ban row: no refusal")
+	TEST_ASSERT_NULL(login_ban_refusal(null), "a failed read: no refusal, the documented fail-open for a read error")
+	TEST_ASSERT(login_ban_refusal(list(list("bob"))), "a ban row too short to describe still refuses")
+	TEST_ASSERT(login_ban_refusal(list("junk")), "a ban row that is not even a list still refuses")
+	var/refusal = login_ban_refusal(list(list("bob", "1.1.1.1", "7", "admin", "griefing", "later", "0", "now", "PERMABAN")))
+	TEST_ASSERT(findtext(refusal, "griefing") && findtext(refusal, "admin"), "a whole row gives the reason and the admin")
+
 #undef LOGIN_PROBE_CKEY
+
+// ---------------------------------------------------------------- in-flight guards on double-submitted writes
+
+/datum/unit_test/poll_inflight_guard_drops_a_repeat
+
+/datum/unit_test/poll_inflight_guard_drops_a_repeat/Run()
+	var/mob/new_player/voter = allocate(/mob/new_player)
+	TEST_ASSERT(voter.poll_begin(7), "the first submit on a poll goes ahead")
+	TEST_ASSERT(!voter.poll_begin(7), "a repeat while it is in flight is dropped")
+	TEST_ASSERT(voter.poll_begin(8), "another poll is not blocked")
+	voter.poll_release(7)
+	TEST_ASSERT(voter.poll_begin(7), "the poll is open again once the first is answered")
+	voter.poll_vote_written(list("rows" = list()), "boom", 7)
+	TEST_ASSERT(voter.poll_begin(7), "a failed write also releases the guard")
+
+/datum/unit_test/io_transport/privacy_vote_guard_and_result
+
+/datum/unit_test/io_transport/privacy_vote_guard_and_result/run_io()
+	var/mob/new_player/voter = allocate(/mob/new_player)
+	var/datum/privacy_poll_dialog/dialog = allocate(/datum/privacy_poll_dialog, voter)
+	dialog.record_vote("SIGNED")
+	TEST_ASSERT_EQUAL(io_job_count(/datum/io_backend/sql), 1, "the first submit reads the earlier vote")
+	dialog.record_vote("SIGNED")
+	TEST_ASSERT_EQUAL(io_job_count(/datum/io_backend/sql), 1, "a double-submit reads nothing more")
+	dialog.vote_checked(list("rows" = list()), null, "SIGNED")
+	TEST_ASSERT_EQUAL(io_job_count(/datum/io_backend/sql), 2, "no earlier vote: the vote is written")
+	dialog.vote_written(null, "boom", "SIGNED")
+	TEST_ASSERT(!dialog.answered, "a vote that failed to write is not thanked or marked answered")
+	TEST_ASSERT(!dialog.record_inflight, "and the player can try again")
+	dialog.vote_checked(null, "boom", "SIGNED")
+	TEST_ASSERT(!dialog.answered, "a failed earlier-vote read does not count as answered")
+	dialog.vote_written(list("rows" = list()), null, "SIGNED")
+	TEST_ASSERT(dialog.answered, "a written vote is answered")
 
 // ---------------------------------------------------------------- polls: each step reads the next only when the one before allows it
 
@@ -162,3 +232,5 @@
 	key = whitelist.tgs_hold_sender(sender)
 	whitelist.whitelist_edit_done(list("rows" = list(), "affected" = 1), null, key, "remove", "job", "dqwhitelistprobe", "Captain")
 	TEST_ASSERT(!("Captain" in GLOB.job_whitelist["dqwhitelistprobe"]), "a written remove leaves it")
+	whitelist.whitelist_edit_done(list("rows" = list(), "affected" = 1), null, "no-such-held-sender", "add", "job", "dqwhitelistprobe", "Warden")
+	TEST_ASSERT("Warden" in GLOB.job_whitelist["dqwhitelistprobe"], "a written add reaches the in-memory whitelist even when the chat sender is no longer held")
