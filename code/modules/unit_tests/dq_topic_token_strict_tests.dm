@@ -73,6 +73,10 @@ CAPABILITIES(/datum/dq_token_strict_default)
 	var/to_player = href_fill(null, link)
 	TEST_ASSERT(!findtext(to_player, "admin_token"), "delivered to a player, the link carries no token")
 	TEST_ASSERT(!findtext(to_player, HREF_TOKEN_PLACEHOLDER) && !findtext(to_player, ";;"), "and no placeholder or empty query part is left")
+	// the tgui push fills the JSON of its payload: the link survives encoding, and decodes with the admin's token
+	var/pushed = href_fill("admin-a-token", json_encode(list("value_html" = link)))
+	var/list/decoded = json_decode(pushed)
+	TEST_ASSERT_EQUAL(token_of(decoded["value_html"]), "admin-a-token", "a tgui payload's link carries A's token after the JSON is filled")
 	TEST_ASSERT_EQUAL(href_fill("tok", "no links here"), "no links here", "text without the placeholder is returned as it was")
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/datum/dq_token_strict_probe/P = new

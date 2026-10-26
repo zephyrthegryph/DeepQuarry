@@ -458,7 +458,8 @@ CAPABILITIES(/datum/admins)
 
 /// `text` as delivered to `viewer` (a client or a mob): the HREF_TOKEN_PLACEHOLDER of its links becomes the viewer's own admin token when it has a holder,
 /// and is stripped otherwise, so no token ever reaches a player. Every path that sends link text to a client goes through this (the chat system's
-/// generate_payload() for to_chat/message_admins, and the tgui text of the report and VV panels).
+/// generate_payload() for to_chat/message_admins, and /datum/tgui_window/send_message() for every tgui panel; browse() has no admin
+/// page left that carries a link).
 /proc/href_deliver(viewer, text)
 	if(!istext(text) || !findtext(text, HREF_TOKEN_PLACEHOLDER))
 		return text

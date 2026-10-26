@@ -4,3 +4,4 @@ changes:
   - bugfix: "Admin links written without a known viewer carry a placeholder that every chat message and report panel fills with the receiving admin's own token, so they work wherever they are shown"
   - bugfix: "Players no longer receive the world admin token in ticket links; the placeholder is stripped for anyone without admin rights"
   - refactor: "Removed HrefTokenWorld() and admin_href_for(); the world token is no longer accepted on admin hrefs"
+  - bugfix: "Admin links inside tgui panels (View Variables, reports, tickets) are filled with the viewing admin's own token when the window data is sent"

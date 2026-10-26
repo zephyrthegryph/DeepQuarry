@@ -78,7 +78,7 @@ CAPABILITIES(/datum/admin_report)
 		return
 	var/datum/admin_report/R = new(title, user, host)
 	R.set_lines(lines ? lines.Copy() : list())
-	R.set_intro_html(href_deliver(user, intro_html))
+	R.set_intro_html(intro_html)
 	R.tgui_interact(user)
 
 /// Show a report with a typed table.
@@ -88,7 +88,7 @@ CAPABILITIES(/datum/admin_report)
 	var/datum/admin_report/R = new(title, user, host)
 	R.set_columns(columns ? columns.Copy() : list())
 	R.set_rows(rows ? rows.Copy() : list())
-	R.set_intro_html(href_deliver(user, intro_html))
+	R.set_intro_html(intro_html)
 	R.tgui_interact(user)
 
 /// Show a report with a pre-formatted HTML body. The host receives any
@@ -97,7 +97,7 @@ CAPABILITIES(/datum/admin_report)
 	if(!user?.client)
 		return
 	var/datum/admin_report/R = new(title, user, host)
-	R.set_body_html(href_deliver(user, body_html)) // its links may carry HREF_TOKEN_PLACEHOLDER
+	R.set_body_html(body_html) // its links may carry HREF_TOKEN_PLACEHOLDER, filled when the window data is sent
 	R.tgui_interact(user)
 
 // StockChart — typed line/bar chart panel for stock share-value displays.
