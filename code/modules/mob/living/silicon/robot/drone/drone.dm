@@ -216,7 +216,7 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 	return (can_pick_shell) ? null : /datum/msg/req_failed
 
 /// A drone is never named by its player.
-/mob/living/silicon/robot/drone/may_pick_name()
+/mob/living/silicon/robot/drone/may_pick_name(datum/act/A)
 	return FALSE
 
 /mob/living/silicon/robot/drone/pick_module()

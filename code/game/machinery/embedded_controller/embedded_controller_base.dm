@@ -91,10 +91,7 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio)
 	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(channel = ENVIRON))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
-
-/obj/machinery/embedded_controller/radio/Initialize(mapload)
-	set_frequency(frequency) // Set it before parent instantiates program
-	. = ..()
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // tuned from init (a program reads no radio at construction)
 
 /// The state names of the controller's display ("<base>_off", "_standby", "_process").
 /obj/machinery/embedded_controller/radio/var/display_base = "airlock_control"

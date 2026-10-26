@@ -61,11 +61,11 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/random
 	seed_type = null
 
-// ALLOW(init/INSTANCE_STATE): creates a random seed for this packet
-/obj/item/seeds/random/Initialize(mapload)
+/// A random packet is a seed of its own making whatever it was given (the param's apply, at init).
+/obj/item/seeds/random/seed_made(given_type)
 	proto_set(src, nameof(seed_static), SSplants.create_random_seed())
-	seed_type = seed().name
-	. = ..()
+	set_seed_type(seed().name)
+	update_appearance()
 
 /obj/item/seeds/replicapod
 	seed_type = PLANT_DIONA
