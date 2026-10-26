@@ -1,29 +1,9 @@
 # Initialize() ratchet sites (the init lint, tools/analyze/src/lints/init.rs; doc/rewrite/final_api.html sections 6 and 17).
 # rule<TAB>file<TAB>text; an init_lines row is an identity (@owner::Initialize::target). Shrink-only: fix sites, then `analyze baseline --update --lint init`.
-init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics/pipe::Initialize::if
-init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics/pipe::Initialize::ensure_pump_materials
 init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::setup_open_air
 init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::register_open_air
-init_lines	code/datums/repositories/decls.dm	@/datum/decl::Initialize::SHOULD_CALL_PARENT
-init_lines	code/datums/repositories/decls.dm	@/datum/decl::Initialize::SHOULD_NOT_SLEEP
-init_lines	code/game/area/areas.dm	@/area::Initialize::apply_ceiling
 init_lines	code/game/machinery/doors/airlock_angled_bay.dm	@/obj/machinery/door/airlock/angled_bay::Initialize::obtain_icon
-init_lines	code/game/machinery/embedded_controller/embedded_controller_base.dm	@/obj/machinery/embedded_controller/radio::Initialize::frequency
-init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::rel_take_all
-init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::RefreshParts
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::new_name
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::name
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::real_name
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::for
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::languages
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::if
-init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::default_language_static
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/suit::Initialize::MakeHood
-init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::if
-init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::LAZYSET
-init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Initialize::proto_set
-init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Initialize::seed_type
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::ident
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::updatename
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_radio
@@ -35,10 +15,4 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/r
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_cell
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::if
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::grant
-init_lines	code/modules/mob/mob.dm	@/mob::Initialize::PUBLISH_LEGACY
-init_lines	code/modules/mob/mob.dm	@/mob::Initialize::lastarea
-init_lines	code/modules/mob/mob.dm	@/mob::Initialize::focus
-init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::landmark_tag
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists
-world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]
-world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)
