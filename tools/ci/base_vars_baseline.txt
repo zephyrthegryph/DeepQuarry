@@ -10,7 +10,6 @@ base_var	code/datums/behaviours/swarming.dm	@/atom/movable::swarm_members
 base_var	code/datums/character_identity.dm	@/mob/living::own_identity
 base_var	code/datums/character_identity.dm	@/mob/living::identity
 base_var	code/datums/properties/families/temperature_thresholds.dm	@/obj::insulation
-base_var	code/datums/reactive_icon_update.dm	@/obj::reactive_icon
 base_var	code/datums/recursive_move.dm	@/atom/movable::recursive_move
 base_var	code/datums/soul_link.dm	@/mob/living::owned_soul_links
 base_var	code/datums/soul_link.dm	@/mob/living::shared_soul_links
@@ -73,7 +72,6 @@ base_var	code/modules/lighting/overlay_lighting.dm	@/atom/movable::overlay_light
 base_var	code/modules/medical/stabilisation/stasis.dm	@/mob/living::stasis_sources
 base_var	code/modules/mob/inventory.dm	@/mob::s_active
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::species
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::antibodies
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::life_tick
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::bloodstr
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::ingested
@@ -104,7 +102,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::persistent_client
 base_var	code/modules/mob/mob_defines.dm	@/mob::mind
 base_var	code/modules/mob/mob_defines.dm	@/mob::spell_masters
 base_var	code/modules/mob/mob_defines.dm	@/mob::ability_master
-base_var	code/modules/mob/mob_defines.dm	@/mob::computer_id
 base_var	code/modules/mob/mob_defines.dm	@/mob::logging
 base_var	code/modules/mob/mob_defines.dm	@/mob::embedded
 base_var	code/modules/mob/mob_defines.dm	@/mob::bodytemperature
@@ -128,9 +125,6 @@ base_var	code/modules/vore/eating/mob.dm	@/mob::vore_icon_bellies
 base_var	code/modules/vore/eating/mob.dm	@/mob::soulgem
 base_var	code/modules/vore/eating/mob.dm	@/mob::voice_sounds_list
 base_var	code/modules/xenoarcheaology/effect_master.dm	@/atom::artifact_master
-base_var	code/modules/xenoarcheaology/finds/talking.dm	@/obj::talking_atom
-list_init	code/modules/body/organs/data.dm	@/datum/organ_data::cached_species_vars
-list_init	code/modules/flufftext/fake_attacker.dm	@/obj/effect/fake_attacker::dir_images
 list_init	code/modules/projectiles/targeting/targeting_mob.dm	@/mob/living::aimed
 list_init	code/modules/refinery/core/industrial_reagent_grinder.dm	@/obj/machinery/reagent_refinery/grinder::holdingitems
 list_init	code/modules/tgui/external.dm	@/mob::tgui_open_uis

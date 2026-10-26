@@ -147,8 +147,9 @@ sparse(/obj, obj_flags, type = num)
 	return 0
 
 /obj/proc/hear_talk(mob/M, list/message_pieces, verb)
-	if(talking_atom)
-		talking_atom.catchMessage(multilingual_to_message(message_pieces), M)
+	var/datum/talking_atom/talker = talking_atom()
+	if(talker)
+		talker.catchMessage(multilingual_to_message(message_pieces), M)
 /*
 	var/mob/mo = locate(/mob) in src
 	if(mo)

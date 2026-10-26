@@ -15,6 +15,8 @@ sparse(/mob, bhunger, type = num)
 sparse(/mob, lastareachange, type = num)
 sparse(/mob, facing_dir, type = num)
 sparse(/mob, lastKnownIP, type = text)
+// The computer id the mob's last client had, kept for the ban and multikey checks while it is offline.
+sparse(/mob, computer_id, type = text)
 sparse(/mob, skincmds, type = list)
 sparse(/mob, ajourn, type = num)
 sparse(/mob, is_slipping, type = bool)

@@ -35,7 +35,6 @@
 	*/
 
 
-	var/computer_id = null
 	var/list/logging
 
 	var/memory = ""

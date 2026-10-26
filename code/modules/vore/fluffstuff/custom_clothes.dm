@@ -2459,8 +2459,8 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
 		toggled = TRUE
 		to_chat(user, span_info("The coat's eyes open."))
 	else
-		if(reactive_icon)
-			spent(reactive_icon, user)
+		if(reactive_icon())
+			spent(reactive_icon(), user)
 		toggled = FALSE
 		set_icon_state(initial(icon_state))
 		set_item_state(initial(item_state))

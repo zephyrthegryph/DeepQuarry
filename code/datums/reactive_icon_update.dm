@@ -9,8 +9,6 @@
 	var/range
 	///What type of mobs trigger the icon change.
 	var/list/triggering_mobs = list(/mob/living) // ALLOW(instance_list): d: edited in place per instance (1 writers)
-	///The object whose icon we update.
-	var/obj/owner
 	///Turfs we are hooked on (atom_entered), and the containers we are nested in (moved).
 	/// Turfs hooked for atom_entered: a plain cache of hook targets rebuilt on every move (the
 	/// hooks themselves are OM-managed and die with either end; not a relation, since a turf
@@ -19,8 +17,13 @@
 	/// The owner and the containers it is nested in, hooked for moved: a relation list view.
 	var/list/atom/movable/watched_containers
 
-/// Not saved: rebuilt by Initialize() (or the toggle that adds it) on the materialised object.
-/obj/var/tmp/datum/reactive_icon_update/reactive_icon
+/// The object's reactive icon (LK_REACTIVE_ICON), or null. Not saved: rebuilt by Initialize() (or the toggle that adds it) on the materialised object.
+/obj/proc/reactive_icon() as /datum/reactive_icon_update
+	return link_get(src, LK_REACTIVE_ICON)
+
+/// The object whose icon we update (the other end of its LK_REACTIVE_ICON link), null once it is gone.
+/datum/reactive_icon_update/proc/owner() as /obj
+	return link_get(src, LK_REACTIVE_ICON_OF)
 
 /// Gives this object a reactive icon (was AddComponent(/datum/reactive_icon_update...)).
 /// Replaces any existing one. Returns null when the arguments are invalid.
@@ -28,14 +31,14 @@
 	if(!isnum(range) || (!directions || !LAZYLEN(directions)) || (triggering_mobs && !LAZYLEN(triggering_mobs)))
 		log_game("REACTIVE_ICON: invalid arguments for [src] ([type]); not added.")
 		return null
-	if(reactive_icon)
-		rel_clear(src, nameof(reactive_icon))
-	rel_set(src, nameof(reactive_icon), new type(src, icon_prefix, directions, range, triggering_mobs))
-	return reactive_icon
+	var/datum/reactive_icon_update/old = reactive_icon()
+	if(old)
+		spent(old)
+	return new type(src, icon_prefix, directions, range, triggering_mobs) // links itself to the object
 
 /datum/reactive_icon_update/New(obj/owner, icon_prefix, list/directions, range, triggering_mobs)
 	..()
-	rel_set(src, nameof(owner), owner)
+	link_make(owner, LK_REACTIVE_ICON, src)
 	src.icon_prefix = icon_prefix
 	src.directions = directions
 	src.range = range
@@ -46,9 +49,10 @@
 /// Re-hooks atom_entered on every turf in range of the owner, and Moved on the owner and every
 /// container it is nested in (what connect_range did for us).
 /datum/reactive_icon_update/proc/update_watch()
-	var/list/new_containers = list(owner)
-	if(ismovable(owner.loc))
-		new_containers += get_nested_locs(owner)
+	var/obj/host = owner()
+	var/list/new_containers = list(host)
+	if(ismovable(host.loc))
+		new_containers += get_nested_locs(host)
 	for(var/atom/movable/C as anything in watched_containers)
 		if(!(C in new_containers))
 			unobserve(C, /datum/notice/moved, src)
@@ -57,7 +61,7 @@
 	rel_clear(src, nameof(watched_containers))
 	for(var/atom/movable/C as anything in new_containers)
 		rel_add(src, nameof(watched_containers), C)
-	var/turf/T = get_turf(owner)
+	var/turf/T = get_turf(host)
 	var/list/new_turfs = T ? RANGE_TURFS(range, T) : list()
 	for(var/turf/old as anything in watched_turfs)
 		if(!(old in new_turfs))
@@ -77,7 +81,7 @@
 	update_proximity_icon(source, event.arrived, event.old_loc)
 
 /datum/reactive_icon_update/proc/update_proximity_icon(atom/current_loc, atom/movable/AM, atom/old_loc)
-	var/obj/our_item = owner
+	var/obj/our_item = owner()
 	if(!ismob(AM) || !mob_check(AM))
 		return
 	var/mob/M = AM
@@ -173,7 +177,7 @@
 /datum/reactive_icon_update/clothing/update_proximity_icon(atom/current_loc, atom/movable/AM, atom/old_loc)
 	. = ..()
 	//Code to actually update the mob wearing us
-	var/obj/our_object = owner
+	var/obj/our_object = owner()
 	if(ishuman(our_object.loc)) //If we're being worn
 		var/mob/living/carbon/human/wearing_mob = our_object.loc
 
@@ -200,7 +204,6 @@
 
 
 CAPABILITIES(/datum/reactive_icon_update)
-	ref_one(nameof(owner))
 	ref_many(nameof(watched_containers))
 
 /obj/item/tool/screwdriver/test_driver/draw(datum/look/look)

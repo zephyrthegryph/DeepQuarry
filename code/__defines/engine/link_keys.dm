@@ -103,6 +103,14 @@
 #define LK_DEFAULT_ATTACK "default_attack"
 #define LK_DEFAULT_ATTACK_OF "default_attack_of"
 
+// base_vars wave 13: owned datums an object held in a var of its own.
+/// The speech state of a talking xenoarch find: LK_TALKING_ATOM on the object, LK_TALKING_ATOM_OF on the state. Gone with the object. Read talking_atom().
+#define LK_TALKING_ATOM "talking_atom"
+#define LK_TALKING_ATOM_OF "talking_atom_of"
+/// The datum that swaps an object's icon state when a mob nears it: LK_REACTIVE_ICON on the object, LK_REACTIVE_ICON_OF on the datum. Gone with the object. Read reactive_icon().
+#define LK_REACTIVE_ICON "reactive_icon"
+#define LK_REACTIVE_ICON_OF "reactive_icon_of"
+
 /// The pseudo segments of the turf and area hops (code/engine/refs/hops.dm): not vars. A reactive read of `get_turf(src).x` crosses HOP_TURF, of
 /// `get_area(src).x` crosses HOP_AREA; hop_step() resolves them and the movement choke point publishes them (hop_moved()).
 #define HOP_TURF "turf"

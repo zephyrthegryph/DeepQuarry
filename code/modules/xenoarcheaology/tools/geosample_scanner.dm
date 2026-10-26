@@ -277,7 +277,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 			data = " - Mundane object (archaic xenos origins)<br>"
 
 			var/obj/item/archaeological_find/A = scanned_item()
-			if(A.talking_atom)
+			if(A.talking_atom())
 				data = " - Exhibits properties consistent with sonic reproduction and audio capture technologies.<br>"
 
 	var/anom_found = 0

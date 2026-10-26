@@ -1,7 +1,6 @@
 /mob/living/carbon
 	gender = MALE
 	var/datum/species/species //Contains icon generation and language information, set during New().
-	var/list/antibodies = list() // ALLOW(instance_list): d: per-mob antibodies, filled at runtime; mobs are few
 
 	var/life_tick = 0      // The amount of life ticks that have processed on this mob.
 

@@ -34,8 +34,8 @@ CAPABILITIES(/obj)
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
 	links(LINK_END(/obj, LK_BURN_COOL_WATCH), LINK_END(/datum/native_watch/heat, LK_BURN_COOL_WATCH_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the heat watch that puts the fire out when the object cools, gone with it
 	links(LINK_END(/obj, LK_DISPOSAL_CONNECTION), LINK_END(/datum/disposal_system_connection, LK_DISPOSAL_CONNECTION_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the disposal network connection, gone with the object (disposal_connection())
-	owns_one(nameof(reactive_icon), /datum/reactive_icon_update)
-	owns_one(nameof(talking_atom), /datum/talking_atom)
+	links(LINK_END(/obj, LK_REACTIVE_ICON), LINK_END(/datum/reactive_icon_update, LK_REACTIVE_ICON_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the reactive icon, gone with its object (reactive_icon())
+	links(LINK_END(/obj, LK_TALKING_ATOM), LINK_END(/datum/talking_atom, LK_TALKING_ATOM_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the speech state of a talking find, gone with it (talking_atom())
 	op("vv_mass_delete_type", topic_in(VV_TOPIC, VV_HK_MASS_DEL_TYPE), needs(req_rights(R_DEBUG|R_SERVER)), asks(/datum/prompt/choice/mass_delete_scope, step = "scope"), asks(/datum/prompt/yes_no/mass_delete, step = "sure", when = PROC_REF(mass_delete_not_cancelled)), asks(/datum/prompt/yes_no/mass_delete, fields = list("second" = TRUE), step = "again", when = PROC_REF(mass_delete_not_cancelled)), then(PROC_REF(vv_topic_mass_delete_type)))
 
 

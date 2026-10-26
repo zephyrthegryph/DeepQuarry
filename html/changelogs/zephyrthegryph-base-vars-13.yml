@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved 6 base-type var rows to their homes: the speech state of a talking find and an object's reactive icon are sparse links that go with the object, a mob's last computer id is a sparse text slot, the never-read antibodies list on carbon mobs is deleted, and the organ data species cache and the fake attacker's facing images are built on first use instead of for every instance."
