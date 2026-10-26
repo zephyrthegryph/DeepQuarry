@@ -26,17 +26,20 @@ CAPABILITIES(/obj/structure/blob)
 	rolls(nameof(dir), pick_one(list(NORTH, SOUTH, EAST, WEST)))
 	ref_one(nameof(overmind))
 	param(nameof(overmind), pos = 1)
+	preset(nameof(faction), PROC_REF(faction_of_overmind), when = nameof(overmind))
+	setup(PROC_REF(settle_blob))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(blob_on_emp)))
 
-// ALLOW(init/INSTANCE_STATE): a blob takes its overmind's faction, faces a random way and consumes its tile before its parents' init
-/obj/structure/blob/Initialize(mapload)
-	if(overmind)
-		faction = overmind.blob_type.faction
+/// A blob takes its overmind's faction (preset, when it has one).
+/obj/structure/blob/proc/faction_of_overmind(target)
+	return overmind.blob_type.faction
+
+/// Once its init ran: the blob consumes its tile and takes the overmind's look.
+/obj/structure/blob/proc/settle_blob()
 	consume_tile()
 	sync_overmind_look()
-	. = ..()
 
 DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
@@ -112,7 +115,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 		sync_overmind_look()
 		STAMP(src, pulsed_at, CLOCK_WORLD)
 		if(overmind)
-			faction = overmind.blob_type.faction
+			set_faction(overmind.blob_type.faction)
 			overmind.blob_type.on_pulse(src)
 		return TRUE //we did it, we were pulsed!
 	return FALSE //oh no we failed
@@ -199,7 +202,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 
 	if(make_blob) //well, can we?
 		var/obj/structure/blob/B = new /obj/structure/blob/normal(src.loc)
-		B.faction = faction
+		B.set_faction(faction)
 		if(controller)
 			rel_set(B, nameof(B.overmind), controller)
 		else
@@ -434,7 +437,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 				damage = overmind.blob_type.on_received_damage(src, damage, inc_damage_type, B)
 
 			else
-				faction = B.faction
+				set_faction(B.faction)
 				rel_set(src, nameof(overmind), B.overmind)
 				sync_overmind_look()
 				return

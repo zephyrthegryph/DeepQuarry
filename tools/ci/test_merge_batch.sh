@@ -71,6 +71,26 @@ rc="$(bash tools/dq_merge_batch.sh --lanes "ld,le,la" --lane-tests "ld=dq_t_d" -
 check "a bounced lane's tests are not sent to the gate" '[ "$rc" = 1 ] && grep -q "dq_t_d" "$DQ_STUB_ARGS" && grep -q "dq_t_a" "$DQ_STUB_ARGS" && ! grep -q dq_t_e "$DQ_STUB_ARGS"'
 unset DQ_STUB_ARGS
 
+# A bisect that only gets one attempt per cycle (the deadline is already past; the first real attempt of a run is still allowed) is
+# resumed from the saved verdicts: over successive cycles the bad lane of six is bounced and the other five land.
+for n in 1 2 3 4 5 6; do if [ "$n" = 4 ]; then mk "m$n" "m$n.txt" BAD; else mk "m$n" "m$n.txt" fine; fi; done
+export DQ_BATCH_CACHE="$tmp/bisect.cache" DQ_BATCH_DEADLINE=1
+set_lanes="m1 m2 m3 m4 m5 m6"; cycles=0; bounced_all=""; deferred_bad=0
+while [ -n "$set_lanes" ] && [ "$cycles" -lt 12 ]; do
+	cycles=$((cycles + 1))
+	bash tools/dq_merge_batch.sh --lanes "${set_lanes// /,}" >"$tmp/cyc$cycles.log" 2>&1
+	good="$(sed -n 's/^BATCH_GOOD: //p' "$tmp/cyc$cycles.log" | tail -n 1)"
+	bounced_all="$bounced_all $(sed -n 's/^BATCH_BOUNCED: \([^|]*\)|.*/\1/p' "$tmp/cyc$cycles.log" | tr '\n' ' ')"
+	set_lanes="$(sed -n 's/^BATCH_DEFERRED: //p' "$tmp/cyc$cycles.log" | tail -n 1)"
+	case " $set_lanes " in *" m4 "*) if grep -q '^BATCH_BOUNCED: m4|' "$tmp/cyc$cycles.log"; then deferred_bad=1; fi ;; esac
+	if [ -n "$good" ]; then git push -q origin rewrite/integ-current:master 2>/dev/null; git fetch -q origin; fi
+done
+unset DQ_BATCH_CACHE DQ_BATCH_DEADLINE
+check "a bisect cut to one attempt per cycle still ends" '[ -z "$set_lanes" ] && [ "$cycles" -lt 12 ]'
+check "the bad lane is bounced, never deferred" 'case " $bounced_all " in *" m4 "*) true ;; *) false ;; esac && [ "$deferred_bad" = 0 ]'
+check "the five good lanes landed over the cycles" 'for n in 1 2 3 5 6; do git merge-base --is-ancestor "m$n" origin/master || exit 1; done; ! git merge-base --is-ancestor m4 origin/master'
+check "a later cycle resumed from saved verdicts" 'grep -q "resuming the bisect" "$tmp/cyc2.log"'
+
 # the proof cache
 . tools/dq_proof_cache.sh
 export DQ_PROOF_DIR="$tmp/proofs"

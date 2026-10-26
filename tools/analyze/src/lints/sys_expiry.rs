@@ -98,7 +98,7 @@ fn not_a_cooldown(rel: &str, line: &str, stamp: Option<&Pat>) -> bool {
             return true;
         }
     }
-    rel.starts_with("code/modules/reagents/") && pat!(r"(?<![\w.])data\b").is_match(line)
+    (rel.starts_with("code/modules/reagents/") || rel.starts_with("code/content/reagents/")) && pat!(r"(?<![\w.])data\b").is_match(line)
 }
 
 fn pass_compares(f: &SourceFile, stamp: Option<&Pat>) -> Vec<usize> {

@@ -1,7 +1,7 @@
 //! `mouse_override`: BYOND's mouse and click procs are overridden in one place (doc/rewrite/final_api.html section 2 "The input inbox").
 //!
 //! `code/engine/kernel/entry.dm` overrides `Click`, `DblClick`, `MouseDrop`, `MouseDrag`, `MouseDown`, `MouseUp`, `MouseEntered`, `MouseExited`
-//! and `MouseWheel` on `/atom` and `/client`, and `MouseDrop_T` (the engine's default drop) with it: each reads `usr` once, builds a typed
+//! and `MouseWheel` on `/atom` and `/client`, with it (`MouseDrop_T` no longer exists, and a definition of it is rejected too): each reads `usr` once, builds a typed
 //! `/datum/input_event` and hands it to `input_submit()`. What a type does with its input is declared in its CAPABILITIES block (`click_on()`,
 //! `double_click_on()`, `drag_onto()`, `drag_over()`, `hover()`, `tooltip()`, an `op()`), and the resolver finds it when the event resolves, on the
 //! spot or from the inbox. A definition of any of those procs anywhere else (`/obj/x/Click()`, `/atom/movable/screen/y/proc/MouseDrop()`, a

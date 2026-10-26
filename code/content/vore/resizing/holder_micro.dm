@@ -24,17 +24,13 @@
 		set_item_state("teshariplushie_white")
 
 /obj/item/holder/micro/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null, mob/living/carbon/human/wearer = null)
+	. = ..()
 	var/mob/living/carbon/human/H = held_mob
-	// Only proceed if dealing with a tesh (or something shaped like a tesh)
+	// Only a tesh (or something shaped like one) is tinted by its skin colour; the worn image takes it, the holder's own colour (the hand-slot icon) is never written.
 	if(istype(H) && H.species.is_micro_carry(H))
-		var/colortemp = color //save original color var to a temp var
-		//convert numerical RGB to Hex #000000 format - is this necessary?
-		//then 'inject' changed color (from skin color) into original proc call
-		set_color(H.looks.skin_color)
-		. = ..()
-		set_color(colortemp) //reset color var to it's old value after original proc call before proceeding - otherwise we change hand-slot icon color too!
-	else
-		. = ..()
+		var/image/standing = .
+		if(standing)
+			standing.color = H.looks.skin_color
 
 /obj/item/holder/examine(mob/user)
 	SHOULD_CALL_PARENT(FALSE)

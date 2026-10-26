@@ -1210,11 +1210,6 @@ CAPABILITIES(/obj/item/light)
 	layer = BELOW_MOB_LAYER
 
 // ition, to override the New() proc further below, since this is a lamp.
-// ALLOW(init/INSTANCE_STATE): a floor lamp starts at its type's layer whatever the map set, before the light's own facing rule may raise it
-/obj/machinery/light/flamp/Initialize(mapload)
-	layer = initial(layer)
-	return ..()
-
 /// A floor lamp built from a frame starts without a cell or shade; a mapped one may get an emergency cell.
 /obj/machinery/light/flamp/proc/start_up_lamp()
 	if(construct_at_make)

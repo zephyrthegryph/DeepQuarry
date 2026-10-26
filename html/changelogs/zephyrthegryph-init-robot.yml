@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Cyborgs no longer have an Initialize() override: their number is a roll and their build steps are ordered setup hooks"

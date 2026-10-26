@@ -118,19 +118,25 @@ CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 CAPABILITIES(/obj/machinery/camera/intcircuit)
 	param(nameof(network_id), pos = 1, overrides = TRUE)
 	param(nameof(see_dark), pos = 2)
+	preset(nameof(network), PROC_REF(network_of_id))
+	rolls(nameof(c_tag), PROC_REF(roll_circuit_tag))
+	setup(PROC_REF(join_camera_net))
 
 /// The network a circuit camera is made on (its constructor param).
 /obj/machinery/camera/intcircuit/var/network_id
 
-// ALLOW(init/INSTANCE_STATE): a circuit camera is numbered and joins the camera net
-/obj/machinery/camera/intcircuit/Initialize(mapload)
-	if(network_id)
-		network = list(network_id)
-	// Skip the parent Initialize's assembly creation and network checks
-	c_tag = "IC Camera #[rand(1000, 9999)]"
+/// The camera's network is the one it was made on (its constructor param); with none it keeps its own.
+/obj/machinery/camera/intcircuit/proc/network_of_id(target)
+	return network_id ? list(network_id) : network
+
+/// A circuit camera is numbered, not named after its area.
+/obj/machinery/camera/intcircuit/proc/roll_circuit_tag(datum/roller/R)
+	return "IC Camera #[R.number(1000, 9999)]"
+
+/// Once its init ran: the camera is named by its tag and joins the camera net (it leaves in lifecycle_dematerialize()).
+/obj/machinery/camera/intcircuit/proc/join_camera_net()
 	name = c_tag
 	GLOB.cameranet.addCamera(src)
-	return ..()
 
 /// Phase 2: leaves the camera net.
 /obj/machinery/camera/intcircuit/lifecycle_dematerialize()

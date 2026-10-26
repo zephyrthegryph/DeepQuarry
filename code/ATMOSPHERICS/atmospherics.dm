@@ -97,10 +97,14 @@ Pipelines + Other Objects -> Pipe network
 /obj/machinery/atmospherics/pipe/supports_engineered_material()
 	return TRUE
 
-/obj/machinery/atmospherics/pipe/Initialize(mapload)
-	if(power_rating > 0)
-		ensure_pump_materials()
-	return ..()
+/// A pipe with a drive (a power rating) is built to the pump template with the drive train's three sheets added (presets: they run before the init chain reads them).
+/obj/machinery/atmospherics/pipe/proc/drive_material_total(target)
+	if(material_template == /datum/material_template/pump)
+		return material_total
+	return material_total + 3 * SHEET_MATERIAL_AMOUNT
+
+/obj/machinery/atmospherics/pipe/proc/drive_material_template(target)
+	return /datum/material_template/pump
 
 /obj/machinery/atmospherics/examine(mob/user)
 	. = ..()
