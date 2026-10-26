@@ -161,13 +161,14 @@
 
 CAPABILITIES(/mob)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = FALSE))
+	preset(nameof(lastarea), PROC_REF(start_lastarea))
 	setup(PROC_REF(finish_mob_setup))
 	mob_rules(universal_understand = 0, forced_psay = FALSE, vent_crawl_time = 4.5 SECONDS)
 	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
 	cooldowns(next_emote, next_emote_refresh)
 	stamps(last_move_time) // when the client last moved this mob, for movement smoothing
 	ref_one(nameof(hovered_atom_view), /atom)
-	ref_one(nameof(focus), /datum) // what receives the mob's keyboard input (itself by default)
+	ref_one(nameof(focus), /datum, starts = PROC_REF(start_focus)) // what receives the mob's keyboard input (itself by default)
 	ref_one(nameof(mind), /datum/mind)
 	// Who the character says they are (profile_records.dm).
 	profile(nameof(bio), /datum/record/identity)

@@ -14,15 +14,23 @@
 //
 // `cond` is a holder proc (a condition: it reads, never writes) asked once, at the start of the lifeform init (the root of the Initialize()
 // chain, after the capabilities' init), where the old check ran right after `. = ..()`. `warn =` logs a WARNING() with the place when the atom
-// is discarded (a map error). The discard is the atoms system's: InitAtom() turns the normal hint into INITIALIZE_HINT_QDEL when Initialize()
+// is discarded (a map error). `instead = PROC_REF(x)` names a holder proc run once when the instance is discarded, from InitAtom() where the
+// discard is decided (the effect the old override's branch had: an AI core that leaves an empty terminal behind):
+//
+//	keeps_if(PROC_REF(has_brain), instead = PROC_REF(leave_empty_core))
+//
+// x(): the instance is still whole (it is deleted when it returns). The discard is the atoms system's: InitAtom() turns the normal hint into INITIALIZE_HINT_QDEL when Initialize()
 // returns, so a subtype's code after `. = ..()` still runs, as it did when the parent returned the hint. Only an atom has an init hint; a plain
 // datum that declares it is reported.
 
-/proc/keeps_if(cond, warn = null)
+/proc/keeps_if(cond, warn = null, instead = null)
 	if(!istext(cond))
 		declare_report("keeps_if(): the condition is PROC_REF(x), got [cond]")
 		return null
-	return entry_make(ENTRY_KEEPS_IF, "keeps_if", list("cond" = cond, "warn" = warn))
+	if(!isnull(instead) && !istext(instead))
+		declare_report("keeps_if(): instead = is PROC_REF(x), got [instead]")
+		instead = null
+	return entry_make(ENTRY_KEEPS_IF, "keeps_if", list("cond" = cond, "warn" = warn, "instead" = instead))
 
 /// instance -> TRUE when its keeps_if() failed: InitAtom() discards it when Initialize() returns. A real global: atoms initialize while the
 /// globals are still being made.
@@ -44,12 +52,18 @@ GLOBAL_REAL_VAR(list/init_discard_pending)
 			WARNING("[warn]: ([T?.x], [T?.y], [T?.z])")
 		if(!init_discard_pending)
 			init_discard_pending = list()
-		init_discard_pending[holder] = TRUE
+		init_discard_pending[holder] = E.args["instead"] || TRUE
 		return
 
 /// InitAtom()'s question when Initialize() returned: did a keeps_if() fail? Clears the mark.
 /proc/keeps_if_discarded(atom/A)
-	if(!init_discard_pending?[A])
+	var/mark = init_discard_pending?[A]
+	if(!mark)
 		return FALSE
 	init_discard_pending -= A
+	if(istext(mark))
+		try
+			call(A, mark)()
+		catch(var/exception/e)
+			stack_trace("keeps_if(instead = [mark]) on [A.type]: [e] ([e.file]:[e.line])")
 	return TRUE

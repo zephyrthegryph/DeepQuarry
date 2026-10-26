@@ -19,9 +19,6 @@ GLOBAL_DATUM(input_compatibility, /datum/input_adapter)
 /mob/proc/input_adapter() as /datum/input_adapter
 	return input_compatibility()
 
-/datum/input_adapter/proc/drag_legacy(mob/user, atom/dragged, atom/over, list/legacy)
-	return
-
 /// Delivers a driver-built href that no native topic op answered through the downstream topic table.
 /datum/input_adapter/proc/compatibility_topic(datum/holder, mob/actor, list/href_list)
 	return

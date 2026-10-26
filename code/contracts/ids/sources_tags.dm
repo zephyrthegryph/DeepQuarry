@@ -26,7 +26,7 @@ SOURCE_DEF(damage)
 SOURCE_DEF(maintenance)
 /// A machine's own on/off switch.
 SOURCE_DEF(switch)
-/// The faction tables as AI base standings (code/modules/combat_ai/standings/standings.dm), and an admin's word on what a brain thinks of someone.
+/// The faction tables as AI base standings (code/domains/ai/standings/standings.dm), and an admin's word on what a brain thinks of someone.
 SOURCE_DEF(ai_faction)
 SOURCE_DEF(ai_lord)
 SOURCE_DEF(ai_alpha)

@@ -335,7 +335,7 @@ MATERIAL_MIX(/obj/item/stock_parts/micro_laser, list(MAT_STEEL = 10,MAT_GLASS = 
 // each part instance carries a `material_id` that points into
 // GLOB.name_to_material, and get_rating() derives the rating from a
 // per-part-type formula over the material's properties. See
-// code/modules/materials/material_stock_parts.dm for the
+// code/content/materials/material_stock_parts.dm for the
 // formulas and the imbue/crafting flow.
 
 // Subspace stock parts
