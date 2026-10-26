@@ -143,7 +143,7 @@ check "the bad lane is not landed and is bounced alone" '! in_master lane/b && g
 check "the bounce has a readable report with the reason and the next step" '[ -f "$DQ_TRAIN_STATE/reports/lane_b.md" ] && grep -q "was bounced" "$DQ_TRAIN_STATE/reports/lane_b.md" && grep -q "enqueue" "$DQ_TRAIN_STATE/reports/lane_b.md" && grep -q "BAD present" "$DQ_TRAIN_STATE/reports/lane_b.md"'
 check "status shows the bounced lane with its report" 'status_has "lane/b: " && status_has "report: "'
 check "the report command prints it" 'train report lane/b | grep -q "lane/b"'
-check "the union of the lanes tests went to the gate" 'grep -q "tests: .*ta1 ta2 tb1 tc1" "$DQ_TRAIN_STATE"/log/cycle-*.log'
+check "the gate gets only the tests of the lanes it merged (the bounced lane's tests are dropped)" 'grep -h "stub gates: ok" "$DQ_TRAIN_STATE"/log/cycle-*.log | grep "tests: " | grep -q "ta1 ta2 tc1" && ! grep -h "stub gates: ok" "$DQ_TRAIN_STATE"/log/cycle-*.log | grep -q "tb1"'
 check "the decisions are logged" 'grep -q "heavy cycle: 5 lane" "$DQ_TRAIN_STATE/log/train.log" && grep -q "merge_batch rc=1 good=" "$DQ_TRAIN_STATE/log/train.log"'
 check "a lane whose branch moved after enqueue is bounced" 'grep -q "BOUNCED lane/d: the branch moved" <<<"$out" && ! in_master lane/d'
 check "of two conflicting lanes one lands and one is bounced" '{ in_master lane/e && ! in_master lane/f && grep -q "BOUNCED lane/f" <<<"$out"; } || { in_master lane/f && ! in_master lane/e && grep -q "BOUNCED lane/e" <<<"$out"; }'
