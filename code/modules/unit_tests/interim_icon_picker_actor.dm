@@ -12,8 +12,10 @@
 /obj/interim_icon_picker_no_actor_probe
 	var/datum/interim_icon_picker_actor/picker
 
-/obj/interim_icon_picker_no_actor_probe/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_icon_picker_no_actor_probe/proc/probe_clicked(datum/act/input/A)
 	picker.choose(null)
+	return TRUE
 
 /datum/unit_test/om/interim_icon_picker_actor/run_om(list/made)
 	test_prompts_reset()
@@ -48,4 +50,5 @@
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "the actorless helper cannot adopt the native click's unrelated ambient actor")
 
 CAPABILITIES(/obj/interim_icon_picker_no_actor_probe)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(picker))

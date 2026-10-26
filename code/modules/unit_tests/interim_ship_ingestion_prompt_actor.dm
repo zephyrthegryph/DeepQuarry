@@ -6,8 +6,10 @@
 	var/obj/effect/overmap/visitable/ship/ship
 	var/mob/living/eater
 
-/obj/interim_ship_ingestion_prompt_actor_click/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_ship_ingestion_prompt_actor_click/proc/probe_clicked(datum/act/input/A)
 	ship.MouseDrop(eater)
+	return TRUE
 
 /datum/unit_test/om/interim_ship_ingestion_prompt_actor/run_om(list/made)
 	test_prompts_reset()
@@ -63,5 +65,6 @@
 	qdel(ship)
 
 CAPABILITIES(/obj/interim_ship_ingestion_prompt_actor_click)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(eater))
 	ref_one(nameof(ship))

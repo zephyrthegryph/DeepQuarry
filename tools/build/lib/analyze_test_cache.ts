@@ -6,8 +6,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { cargoIncrementalEnv, cargoTargetDir, clearIncremental, compilerPanicSignature } from './cargo_ice';
 
-type Result = { code: number; stdout: string };
+type Result = { code: number; stdout: string; stderr?: string };
 type RunOptions = { cwd: string; env: NodeJS.ProcessEnv; capture: boolean };
 export type TestCommand = (command: string, args: string[], options: RunOptions) => Promise<Result>;
 type Artifact = { file: string; sha256: string; run: boolean; name: string };
@@ -60,11 +61,14 @@ export function evictAnalyzeTestCache(cache: string, keep: string, budgetBytes: 
 }
 
 export const runTestCommand: TestCommand = (command, args, options) => new Promise((resolve, reject) => {
-  const child = spawn(command, args, { cwd: options.cwd, env: options.env, stdio: ['ignore', options.capture ? 'pipe' : 'inherit', 'inherit'] });
+  // stderr is piped and echoed so a compiler panic (rustc's ICE banner) can be recognised after the fact.
+  const child = spawn(command, args, { cwd: options.cwd, env: options.env, stdio: ['ignore', options.capture ? 'pipe' : 'inherit', 'pipe'] });
   let stdout = '';
+  let stderr = '';
   child.stdout?.on('data', (bytes) => { stdout += bytes.toString(); });
+  child.stderr?.on('data', (bytes) => { process.stderr.write(bytes); stderr = (stderr + bytes.toString()).slice(-200_000); });
   child.on('error', reject);
-  child.on('close', (code) => resolve({ code: code ?? 1, stdout }));
+  child.on('close', (code) => resolve({ code: code ?? 1, stdout, stderr }));
 });
 
 function filesUnder(dir: string): string[] {
@@ -120,7 +124,8 @@ function readManifest(dir: string, key: string, checkout: string): Manifest | nu
 export async function runAnalyzeTests(options: AnalyzeTestOptions): Promise<void> {
   const root = fs.realpathSync(options.root);
   const cwd = path.join(root, 'tools/analyze');
-  const env = { ...process.env, ...options.env, CARGO_BUILD_JOBS: '2' };
+  // One-shot gate builds are not incremental (lib/cargo_ice.ts): a corrupt incremental cache is what makes rustc panic.
+  const env = { ...process.env, ...cargoIncrementalEnv(), ...options.env, CARGO_BUILD_JOBS: '2' };
   const run = options.run ?? runTestCommand;
   const log = options.log ?? console.log;
   const profile = options.profile ?? env.DQ_ANALYZE_TEST_PROFILE ?? 'dev';
@@ -131,7 +136,15 @@ export async function runAnalyzeTests(options: AnalyzeTestOptions): Promise<void
   const cache = configuredCache === null || configuredCache === 'off' || configuredCache === '0' ? null
     : configuredCache || (process.platform === 'win32' ? 'E:/dq-cache/analyze-test' : path.join(os.homedir(), '.cache/dq/analyze-test'));
   const execute = async (command: string, args: string[], capture = true): Promise<string> => {
-    const result = await run(command, args, { cwd, env, capture });
+    let result = await run(command, args, { cwd, env, capture });
+    if (result.code !== 0 && command === 'cargo' && compilerPanicSignature(result.stderr ?? '')) {
+      // The classic corrupt-incremental-cache ICE: log it, drop this target's incremental directories, build once more. A retry
+      // also leaves RUSTC_WRAPPER out, so a wrapper (sccache) cannot be what panics the second time.
+      const target = cargoTargetDir(args, env, cwd);
+      const removed = clearIncremental(target);
+      log(`analyze tests: rustc panicked (cargo ${args[0]}); removed ${removed.length} incremental dir(s) under ${target} and retrying once`);
+      result = await run(command, args, { cwd, env: { ...env, RUSTC_WRAPPER: '', CARGO_BUILD_RUSTC_WRAPPER: '' }, capture });
+    }
     if (result.code !== 0) throw new Error(`analyze tests: ${command} failed (exit ${result.code})`);
     return result.stdout;
   };
@@ -166,6 +179,9 @@ export async function runAnalyzeTests(options: AnalyzeTestOptions): Promise<void
       configurationCandidates.push(file);
       if (fs.existsSync(file)) inputs.push(file);
     }
+    // The fixture tests read the repo's lint scopes (outside the package), so a scope change must miss the cache.
+    const scopesFile = path.join(root, 'tools/ci/lint_scopes.toml');
+    if (fs.existsSync(scopesFile)) inputs.push(scopesFile);
     inputs = [...new Set(inputs)].sort();
     if (executableDoctests(inputs)) throw new Error('executable or unclassified doctests');
     const toolchain = `${await execute('rustc', ['-vV'])}\0${await execute('cargo', ['--version'])}`;

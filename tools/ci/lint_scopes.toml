@@ -771,7 +771,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
 admin_rights_shrink_only_baseline_one_mechanism_admin_can = 2
-admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 104
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 102
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
 objects_ratchet_on_legacy_interactions = 0
 objects_ratchet_on_tool_act_overrides = 0
@@ -1796,6 +1796,12 @@ exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/d
 # untyped_member (doc/rewrite/native_compiler_issues.md, untyped receiver): a hard ban with no baseline. The vendored TGS DMAPI and generated output are exempt.
 [lint.untyped_member]
 exempt_prefixes = ["code/modules/tgs/", "code/engine/_generated/"]
+
+# mouse_override (doc/rewrite/final_api.html section 2): a hard ban with no baseline. BYOND's mouse and click procs are overridden only in the engine's entry file;
+# what a type does with its input is declared (click_on(), drag_onto(), hover(), ...) and found by the resolver.
+[lint.mouse_override]
+exempt_prefixes = ["code/engine/_generated/"]
+exempt_files = ["code/engine/kernel/entry.dm"]
 
 # player_link (doc/rewrite/proposals/relations.md D13): mob.key / mob.ckey are written only by bind_player().
 [lint.player_link]

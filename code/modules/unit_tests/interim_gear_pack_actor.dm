@@ -12,8 +12,10 @@
 	var/tmp/mob/actor
 	var/datum/op_result/result
 
-/obj/interim_gear_pack_actor_click/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_gear_pack_actor_click/proc/probe_clicked(datum/act/input/A)
 	result = op_topic_href(actor, dispenser, list("admin_add" = "1"), namespace = VV_TOPIC)
+	return TRUE
 
 /// Public VV dispatch refuses a clientless actor before its effect and rejects a missing actor at the transport boundary.
 /datum/unit_test/om/interim_gear_pack_actor_refusal
@@ -67,6 +69,7 @@
 		qdel(gear)
 
 CAPABILITIES(/obj/interim_gear_pack_actor_click)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(actor))
 	ref_one(nameof(dispenser))
 

@@ -10,6 +10,69 @@
 /client/input_key_loop()
 	return keyLoop()
 
+/// Staff hear of a client flooding its inbox, once per burst.
+/world/input_flood_report(mob/actor, kind, why)
+	var/who = actor ? key_name(actor) : "An unknown client"
+	var/report = "[who] is flooding the input inbox with [kind] inputs: [why]."
+	log_admin(report)
+	message_admins(report)
+
+/// The click limits (a minute's and a second's worth), the open interaction menu closing and the click notice on the client's mob.
+/client/input_click_allowed(atom/object, atom/location, control, params)
+	var/mcl = CONFIG_GET(number/minute_click_limit)
+	if (!check_rights_for(src, R_HOLDER) && mcl)
+		var/minute = round(world.time, 600)
+
+		if (!clicklimiter)
+			clicklimiter = new(LIMITER_SIZE)
+
+		if (minute != clicklimiter[CURRENT_MINUTE])
+			clicklimiter[CURRENT_MINUTE] = minute
+			clicklimiter[MINUTE_COUNT] = 0
+
+		clicklimiter[MINUTE_COUNT] += 1
+
+		if (clicklimiter[MINUTE_COUNT] > mcl)
+			var/msg = "Your previous click was ignored because you've done too many in a minute."
+			if (minute != clicklimiter[ADMINSWARNED_AT]) //only one admin message per-minute. (if they spam the admins can just boot/ban them)
+				clicklimiter[ADMINSWARNED_AT] = minute
+
+				msg += " Administrators have been informed."
+				log_and_message_admins("Has hit the per-minute click limit of [mcl] clicks in a given game minute", src)
+			to_chat(src, span_danger("[msg]"))
+			return FALSE
+
+	var/scl = CONFIG_GET(number/second_click_limit)
+	if (!check_rights_for(src, R_HOLDER) && scl)
+		var/second = round(world.time, 10)
+		if (!clicklimiter)
+			clicklimiter = new(LIMITER_SIZE)
+
+		if (second != clicklimiter[CURRENT_SECOND])
+			clicklimiter[CURRENT_SECOND] = second
+			clicklimiter[SECOND_COUNT] = 0
+
+		clicklimiter[SECOND_COUNT] += 1
+
+		if (clicklimiter[SECOND_COUNT] > scl)
+			to_chat(src, span_danger("Your previous click was ignored because you've done too many in a second"))
+			return FALSE
+	// Any click on the map dismisses an open interaction menu, as one dismisses BYOND's native popup
+	// (a right-click then opens the new one).
+	if(interaction_menu?.visible)
+		interaction_menu.hide()
+	// Clients cannot be hooked: the click event is emitted on the client's mob.
+	if(mob)
+		PUBLISH_LEGACY(mob, /datum/notice/client_click, object, location, control, params, mob)
+	return TRUE
+
+/// In build mode a drag on the map is the builder's.
+/client/input_map_drop(start_object, end_object, start_location, end_location, start_control, end_control, params)
+	if(buildmode && start_control == SKIN_MAP && start_control == end_control)
+		build_drag(src, buildmode, start_object, end_object, start_location, end_location, start_control, end_control, params)
+		return TRUE
+	return FALSE
+
 /mob/input_double_click(atom/target, params)
 	return DblClickOn(target, params)
 

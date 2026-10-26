@@ -5,8 +5,10 @@
 // the event (E.actor, and the hooks in input_hooks.dm take it as `src`); content never reads usr for an input. The client's own procs
 // (client/MouseDown, MouseUp, MouseDrag) act as the client's mob and need no usr at all.
 //
-// The generated native overrides of a type that declares click_on(), drag_onto(), hover() or tooltip() (code/engine/_generated/declare.dm) are the other
-// readers; they run before the callbacks here and go on to them with ..().
+// These are the ONLY overrides of BYOND's mouse procs: no type overrides Click(), MouseDrop(), MouseEntered() and the rest, and no generated code does either
+// (the `mouse_override` lint rejects a definition anywhere else). What a type does with its input is declared in its CAPABILITIES block (click_on(),
+// double_click_on(), drag_onto(), drag_over(), hover(), tooltip()) and found by the resolver, input_dispatch() (code/engine/lifeforms/input.dm), when the
+// event resolves: on the spot or from the inbox, the same code. An input no entry takes goes on to its default handling (code/engine/parts/inputs.dm).
 
 /atom/Click(location, control, params)
 	if(src)
@@ -26,31 +28,35 @@
 	if(src && over)
 		input_submit(new /datum/input_event/drag(usr, src, over, list(src_location, over_location, src_control, over_control, params), TRUE))
 
+/// Something dragged onto this, when no declared entry and no op took it: the engine's default drop. Nothing: a type declares what a drop does (drag_onto(), an op
+/// that takes the dragged atom as the held one).
+/atom/proc/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
+	return FALSE
+
 /atom/MouseEntered(location, control, params)
 	if(src)
 		input_submit(new /datum/input_event/click/hover(usr, src, location, control, params))
 
-/// The generated native overrides of a type that declares click_on(), drag_onto(), drag_over(), hover() or tooltip() call this with `usr`, read there once as
-/// the actor: the input is a typed event that goes through the inbox like every other. TRUE means the override must not go on to its native chain now:
-/// a declared handler took the input, or the input waits for the drain (it goes on to the native handling itself when it resolves and nothing takes it).
-/proc/input_declared(atom/holder, mob/actor, input, params = null, atom/over = null, entered = FALSE, list/native = null, tooltip = FALSE, dispatch = TRUE)
-	if(!holder || QDELETED(holder))
-		return FALSE
-	if(input_falling && entity_handle_is(input_falling[1], holder) && input_falling[2] == input)
-		// A subtype's override already ran this holder's entry and fell through to its parent: the parent does not run the entry again (its tooltip still opens).
-		if(!tooltip)
-			return FALSE
-		dispatch = FALSE
-	var/datum/input_event/declared/E = new(actor, holder, input, params, over, entered, native, tooltip, dispatch)
-	if(input_submit(E))
-		return E.taken
-	E.deferred = TRUE
-	return TRUE
+/// The mouse leaving a target: only a type that declares a hover() or a tooltip() has anything to do about it, so nothing else is queued.
+/atom/MouseExited(location, control, params)
+	if(src && input_declares_tooltip(src))
+		input_submit(new /datum/input_event/click/hover(usr, src, location, control, params, FALSE))
 
 /// A press closes the tooltip of what declares one; nothing else wants it, so nothing else is queued.
 /atom/MouseDown(location, control, params)
 	if(src && input_declares_tooltip(src))
 		input_submit(new /datum/input_event/click/pressed(usr, src, location, control, params))
+
+/// A drag-and-drop the client performs: the build mode's drag on the map is the builder's (input_map_drop()), any other goes on to the dragged atom's MouseDrop().
+/client/MouseDrop(start_object,end_object,start_location,end_location,start_control,end_control,params)
+	if(!input_map_drop(start_object, end_object, start_location, end_location, start_control, end_control, params))
+		. = ..()
+
+/// A click on the map or a screen object: the client's click limits, the dismissed menu and the click notice come first (input_click_allowed()); the click
+/// itself goes on to the clicked atom's Click(), which builds the input event.
+/client/Click(atom/object, atom/location, control, params)
+	if(input_click_allowed(object, location, control, params))
+		. = ..()
 
 /client/MouseDown(atom/object, atom/location, control, params)
 	. = ..()
