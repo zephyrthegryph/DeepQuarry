@@ -78,13 +78,9 @@ CAPABILITIES(/atom/movable/screen/radial/slice)
 	name = "Close Menu"
 	icon_state = "radial_center"
 
-/atom/movable/screen/radial/center/MouseEntered(location, control, params)
-	. = ..()
-	set_icon_state("radial_center_focus")
-
-/atom/movable/screen/radial/center/MouseExited(location, control, params)
-	. = ..()
-	set_icon_state("radial_center")
+/// The centre lights up while the mouse is over it.
+/atom/movable/screen/radial/center/proc/center_hovered(datum/act/input/A)
+	set_icon_state(A.entered ? "radial_center_focus" : "radial_center")
 
 /atom/movable/screen/radial/center/proc/center_clicked(datum/act/input/A)
 	if(A.actor.client == parent().current_user())
@@ -392,4 +388,5 @@ CAPABILITIES(/datum/radial_menu)
 	return anchor
 
 CAPABILITIES(/atom/movable/screen/radial/center)
+	hover(PROC_REF(center_hovered))
 	click_on(PROC_REF(center_clicked))

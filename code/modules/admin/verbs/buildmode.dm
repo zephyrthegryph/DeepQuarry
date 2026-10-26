@@ -68,7 +68,11 @@ CAPABILITIES(/obj/effect/bmode)
 	icon_state = "build"
 	screen_loc = "NORTH,WEST"
 
-/obj/effect/bmode/builddir/Click()
+CAPABILITIES(/obj/effect/bmode/builddir)
+	click_on(PROC_REF(dir_clicked))
+
+/// A click turns the build direction one step.
+/obj/effect/bmode/builddir/proc/dir_clicked(datum/act/input/A)
 	switch(dir)
 		if(NORTH)
 			set_dir(EAST)
@@ -80,7 +84,7 @@ CAPABILITIES(/obj/effect/bmode)
 			set_dir(NORTHWEST)
 		if(NORTHWEST)
 			set_dir(NORTH)
-	return 1
+	return TRUE
 
 /obj/effect/bmode/buildhelp
 	icon = 'icons/misc/buildmode.dmi'
@@ -197,9 +201,13 @@ CAPABILITIES(/obj/effect/bmode/buildhelp)
 	icon_state = "buildquit"
 	screen_loc = "NORTH,WEST+3"
 
-/obj/effect/bmode/buildquit/Click()
+CAPABILITIES(/obj/effect/bmode/buildquit)
+	click_on(PROC_REF(quit_clicked))
+
+/// A click leaves build mode.
+/obj/effect/bmode/buildquit/proc/quit_clicked(datum/act/input/A)
 	togglebuildmode(master().cl().mob)
-	return 1
+	return TRUE
 
 /obj/effect/bmode/buildholder
 	density = FALSE

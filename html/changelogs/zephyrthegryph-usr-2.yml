@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Admin rights checks, the reboot verb, the wheelchair and medical stand drops take their actor explicitly instead of reading usr"

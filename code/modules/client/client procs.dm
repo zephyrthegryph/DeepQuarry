@@ -9,12 +9,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 #define UPLOAD_LIMIT		10485760	//Restricts client uploads to the server to 10MB //Boosted this thing. What's the worst that can happen?
 #define MIN_CLIENT_VERSION	0		//Just an ambiguously low version for now, I don't want to suddenly stop people playing.
 									//I would just like the code ready should it ever need to be used.
-#define LIMITER_SIZE 12
-#define CURRENT_SECOND 1
-#define SECOND_COUNT 2
-#define CURRENT_MINUTE 3
-#define MINUTE_COUNT 4
-#define ADMINSWARNED_AT 5
 
 //# define TOPIC_DEBUGGING 1
 
@@ -912,13 +906,6 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	if(inactivity > duration)	return inactivity
 	return 0
 
-//Called when the client performs a drag-and-drop operation.
-/client/MouseDrop(start_object,end_object,start_location,end_location,start_control,end_control,params)
-	if(buildmode && start_control == SKIN_MAP && start_control == end_control)
-		build_drag(src,buildmode,start_object,end_object,start_location,end_location,start_control,end_control,params)
-	else
-		. = ..()
-
 /client/proc/last_activity_seconds()
 	return inactivity / 10
 
@@ -1080,55 +1067,6 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			stat_tab = payload["tab"]
 			SSstatpanels.immediate_send_stat_data(src)
 
-// Mouse stuff
-/client/Click(atom/object, atom/location, control, params)
-	var/mcl = CONFIG_GET(number/minute_click_limit)
-	if (!check_rights_for(src, R_HOLDER) && mcl)
-		var/minute = round(world.time, 600)
-
-		if (!clicklimiter)
-			clicklimiter = new(LIMITER_SIZE)
-
-		if (minute != clicklimiter[CURRENT_MINUTE])
-			clicklimiter[CURRENT_MINUTE] = minute
-			clicklimiter[MINUTE_COUNT] = 0
-
-		clicklimiter[MINUTE_COUNT] += 1
-
-		if (clicklimiter[MINUTE_COUNT] > mcl)
-			var/msg = "Your previous click was ignored because you've done too many in a minute."
-			if (minute != clicklimiter[ADMINSWARNED_AT]) //only one admin message per-minute. (if they spam the admins can just boot/ban them)
-				clicklimiter[ADMINSWARNED_AT] = minute
-
-				msg += " Administrators have been informed."
-				log_and_message_admins("Has hit the per-minute click limit of [mcl] clicks in a given game minute", src)
-			to_chat(src, span_danger("[msg]"))
-			return
-
-	var/scl = CONFIG_GET(number/second_click_limit)
-	if (!check_rights_for(src, R_HOLDER) && scl)
-		var/second = round(world.time, 10)
-		if (!clicklimiter)
-			clicklimiter = new(LIMITER_SIZE)
-
-		if (second != clicklimiter[CURRENT_SECOND])
-			clicklimiter[CURRENT_SECOND] = second
-			clicklimiter[SECOND_COUNT] = 0
-
-		clicklimiter[SECOND_COUNT] += 1
-
-		if (clicklimiter[SECOND_COUNT] > scl)
-			to_chat(src, span_danger("Your previous click was ignored because you've done too many in a second"))
-			return
-	// Any click on the map dismisses an open interaction menu, as one dismisses BYOND's native popup
-	// (a right-click then opens the new one).
-	if(interaction_menu?.visible)
-		interaction_menu.hide()
-	// Clients cannot be hooked: the click event is emitted on the client's mob.
-	if(mob)
-		PUBLISH_LEGACY(mob, /datum/notice/client_click, object, location, control, params, mob)
-	. = ..()
-
 /// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)
 /client/proc/acquire_dpi()
 	dx_winget(src, src, null, "dpi", PROC_REF(dpi_acquired))
@@ -1163,10 +1101,4 @@ GLOBAL_VAR_INIT(login_seq, 0)
 		return FALSE
 	return (client.eye != client.mob)
 
-#undef ADMINSWARNED_AT
-#undef CURRENT_MINUTE
-#undef CURRENT_SECOND
-#undef LIMITER_SIZE
-#undef MINUTE_COUNT
-#undef SECOND_COUNT
 

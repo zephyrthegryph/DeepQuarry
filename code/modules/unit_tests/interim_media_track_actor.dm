@@ -38,10 +38,12 @@
 	var/action
 	var/datum/op_result/result
 
-/obj/interim_jukebox_actor_click/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_jukebox_actor_click/proc/probe_clicked(datum/act/input/A)
 	var/list/href = list()
 	href[action] = "1"
 	result = op_topic_href(actor, jukebox, href, namespace = VV_TOPIC)
+	return TRUE
 
 /// A SYSTEM_DEF constructor points its SS global at whatever it builds, and the probe is a subtype: the running owner is put back after the test.
 /datum/unit_test/om/interim_media_track_actor_refusal/proc/restore_media_tracks_owner(datum/system/media_tracks/owner)
@@ -132,6 +134,7 @@ CAPABILITIES(/datum/system/media_tracks/interim_actor_probe)
 	ref_one(nameof(remove_actor))
 
 CAPABILITIES(/obj/interim_jukebox_actor_click)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(actor))
 	ref_one(nameof(jukebox))
 

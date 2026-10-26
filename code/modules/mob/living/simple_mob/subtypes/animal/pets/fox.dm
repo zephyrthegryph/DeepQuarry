@@ -73,15 +73,16 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
 	else
 		..()
 
-/mob/living/simple_mob/animal/passive/fox/MouseDrop(atom/over_object)
-	var/mob/living/carbon/H = over_object
-	if(!istype(H) || !Adjacent(H)) return ..()
+/// A fox dragged onto a human who is not in combat mode is scooped up; any other drop is the mob's own (drop_input()).
+/mob/living/simple_mob/animal/passive/fox/drop_input(datum/act/input/A)
+	var/mob/living/carbon/H = A.over
+	if(!istype(H) || !Adjacent(H))
+		return ..()
 
 	if(!H.combat_mode)
 		get_scooped(H)
-		return
-	else
-		return ..()
+		return TRUE
+	return ..()
 
 /mob/living/simple_mob/animal/passive/fox/get_scooped(mob/living/carbon/grabber)
 	if (stat >= DEAD)

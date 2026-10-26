@@ -13,8 +13,10 @@
 /obj/interim_ghost_query_alert_probe
 	var/datum/tgui_alert/async/alert
 
-/obj/interim_ghost_query_alert_probe/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_ghost_query_alert_probe/proc/probe_clicked(datum/act/input/A)
 	alert.set_choice("I'm Sure")
+	return TRUE
 
 /datum/unit_test/interim_ghost_query_async_actor/Run()
 	var/turf/T = run_loc_floor_bottom_left
@@ -66,4 +68,5 @@ CAPABILITIES(/datum/ghost_query/interim_actor_probe)
 	ref_one(nameof(reply_actor))
 
 CAPABILITIES(/obj/interim_ghost_query_alert_probe)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(alert))

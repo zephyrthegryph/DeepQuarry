@@ -1,0 +1,8 @@
+mouse_override	code/modules/a/a.dm	1
+mouse_override	code/modules/a/a.dm	4
+mouse_override	code/modules/a/a.dm	7
+mouse_override	code/modules/a/a.dm	11
+mouse_override	code/modules/a/a.dm	13
+mouse_override	code/modules/a/a.dm	15
+mouse_override	code/modules/a/a.dm	31
+mouse_override	code/modules/a/a.dm	34
