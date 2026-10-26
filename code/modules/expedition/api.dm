@@ -40,7 +40,7 @@
 		return null
 	var/mission_type = choices[choice]
 	var/datum/expedition_mission/mission = new mission_type(difficulty)
-	mission.faction_type = expedition_pick_faction(difficulty)
+	mission.faction_type = text_or_null(expedition_pick_faction(difficulty))
 	var/datum/expedition_site/site = create_site_descriptor(mission, difficulty, vessel.shuttle())
 	if(!site)
 		spent(mission, user)

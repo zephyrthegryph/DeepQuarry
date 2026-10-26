@@ -104,9 +104,6 @@
 /// `lifetime`, because a couple of existing effect types already declare
 /// their own unrelated `lifetime` var and this must not collide with them.
 /atom/movable/var/lifecycle_lifetime = 0
-/// The armed self-destruct (an OM timer id on this atom), or null: kept so expire() can re-arm
-/// with a new delay. The timer dies with the atom.
-/atom/movable/var/tmp/lifecycle_lifetime_timer
 
 /// Arms (or re-arms) this atom's self-destruct for `after` deciseconds from
 /// now, cancelling any previous one. `expire(after)` with no

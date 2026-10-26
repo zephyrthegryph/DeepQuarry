@@ -1,8 +1,9 @@
 //! Keeps the shared cache directory inside a byte budget, least recently used segments first.
 //!
 //! `DMB_CACHE_BUDGET_GB` (default 16, `0` disables) and `DMB_CACHE_MAX_AGE_DAYS` (default 14, `0` turns the age cap off) bound `dm_cache::Cache::default_root()`. The daemon runs one pass shortly
-//! after it starts and one every ten minutes while it lives; leaves modified within `DMB_CACHE_MIN_AGE_MINUTES` (default 120) are
-//! never deleted. Why it exists and why recency is trustworthy: `dm-cache/src/store_budget.rs`. Every request opens the index of
+//! after it starts and one every ten minutes while it lives; the newest leaf, while it is younger than `DMB_CACHE_MIN_AGE_MINUTES` (default 120), is the only
+//! one spared by age (every recent leaf used to be spared, and compiles keep rewriting multi-GB segments, so the cache sat at 22.7 GB on a 16 GB
+//! budget); a leaf a running process holds open cannot be deleted and is skipped. Why it exists and why recency is trustworthy: `dm-cache/src/store_budget.rs`. Every request opens the index of
 //! every segment in the directory, so the budget bounds that memory and open time as well as the disk.
 use std::{
     io,

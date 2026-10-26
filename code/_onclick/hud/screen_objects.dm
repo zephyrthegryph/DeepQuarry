@@ -162,7 +162,8 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	return set_selected_zone(choice, user)
 
 /atom/movable/screen/zone_sel/MouseMove(location, control, params)
-	if(isobserver(usr))
+	var/datum/hud/owner = src.hud
+	if(isobserver(owner?.mymob()))
 		return
 
 	return update_hover_position(params)

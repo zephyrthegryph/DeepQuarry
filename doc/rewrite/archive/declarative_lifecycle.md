@@ -91,7 +91,7 @@ Hazards:
   delete the `create_reagents()` line.
 - **Keep in Initialize:** amounts from `rand()` or per-instance picks, `add_reagent()` with a
   data argument, and reagents chosen by state set in `Initialize()` (see the MRE `seasoning`
-  var in `code/game/objects/items/weapons/storage/mre.dm`).
+  var in `code/content/items/weapons/storage/mre.dm`).
 - **Per-type list vars** that only feed `add_reagent` in a loop (`prefill`,
   `filled_reagents`) become a declaration, and the var goes. DM allocates a type-level
   `list(...)` initial value per instance, so these are a memory win too.

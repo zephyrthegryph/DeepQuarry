@@ -4,6 +4,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/datum/eventkit/modify_robot/modify_robot = new()
 	rel_set(modify_robot, nameof(/datum/eventkit/modify_robot::target), target)
 	modify_robot.selected_ai = target.is_slaved()
+	log_and_message_admins("has used modify robot and is modifying [target]", user.mob)
 	modify_robot.tgui_interact(user.mob)
 
 /datum/eventkit/modify_robot
@@ -105,7 +106,6 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/New()
 	. = ..()
-	log_and_message_admins("has used modify robot and is modifying [target()]")
 	var/list/laws = list()
 	init_subtypes(/datum/ai_laws, laws)
 	for(var/datum/ai_laws/laws_entry as anything in dd_sortedObjectList(laws))
@@ -243,7 +243,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	var/new_target = new_target_arg
 	if(new_target != target())
 		rel_set(src, nameof(/datum/eventkit/modify_robot::target), new_target_arg)
-		log_and_message_admins("changed robot modifictation target to [target()]")
+		log_and_message_admins("changed robot modifictation target to [target()]", A.actor)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_toggle_crisis(datum/act/op/A)
@@ -577,25 +577,25 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_add_zeroth_law(datum/act/op/A)
 	if(zeroth_law && !target().laws.zeroth_law)
-		target().set_zeroth_law(zeroth_law)
+		target().set_zeroth_law(zeroth_law, actor = A.actor)
 		target().lawsync()
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_ion_law(datum/act/op/A)
 	if(ion_law)
-		target().add_ion_law(ion_law)
+		target().add_ion_law(ion_law, actor = A.actor)
 		target().lawsync()
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_inherent_law(datum/act/op/A)
 	if(inherent_law)
-		target().add_inherent_law(inherent_law)
+		target().add_inherent_law(inherent_law, actor = A.actor)
 		target().lawsync()
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_supplied_law(datum/act/op/A)
 	if(supplied_law && supplied_law_position >= 1 && MIN_SUPPLIED_LAW_NUMBER <= MAX_SUPPLIED_LAW_NUMBER)
-		target().add_supplied_law(supplied_law_position, supplied_law)
+		target().add_supplied_law(supplied_law_position, supplied_law, actor = A.actor)
 		target().lawsync()
 	return OP_OK
 
@@ -675,7 +675,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/ui_act_delete_law(datum/act/op/A, delete_law)
 	var/datum/ai_law/AL = ui_ref(delete_law, ui_source_target_laws_all_laws(), /datum/ai_law)
 	if(AL)
-		target().delete_law(AL)
+		target().delete_law(AL, actor = A.actor)
 		target().lawsync()
 	return TRUE
 
@@ -733,8 +733,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/ui_act_toggle_emag(datum/act/op/A)
 	if(target().emagged)
 		target().emagged = FALSE
-		target().clear_supplied_laws()
-		target().clear_inherent_laws()
+		target().clear_supplied_laws(actor = A.actor)
+		target().clear_inherent_laws(actor = A.actor)
 		target().laws = new using_map.default_law_type
 		to_chat(target(), span_danger("Laws updated!\n") + target().laws.get_formatted_laws())
 		target().hud_used?.update_robot_modules_display()
@@ -742,8 +742,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 		target().emagged = TRUE
 		target().lawupdate = FALSE
 		target().disconnect_from_ai()
-		target().clear_supplied_laws()
-		target().clear_inherent_laws()
+		target().clear_supplied_laws(actor = A.actor)
+		target().clear_inherent_laws(actor = A.actor)
 		target().laws = new /datum/ai_laws/syndicate_override
 		if(target().bolt)
 			if(!target().bolt.malfunction)

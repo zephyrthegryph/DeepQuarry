@@ -239,7 +239,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 /////////////////////////////////////////FIFTH RUNE
 
 /obj/effect/rune/proc/emp(U,range_red,mob/living/user) //range_red - var which determines by which number to reduce the default emp range, U is the source loc, needed because of talisman emps which are held in hand at the moment of using and that apparently messes things up -- Urist
-	log_and_message_admins("activated an EMP rune.")
+	log_and_message_admins("activated an EMP rune.", user)
 	if(istype(src,/obj/effect/rune))
 		user.say("Ta'gh fara[pick("'","`")]qha fel d'amar det!")
 	else
@@ -520,7 +520,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		D.set_real_name(pick("Anguished", "Blasphemous", "Corrupt", "Cruel", "Depraved", "Despicable", "Disturbed", "Exacerbated", "Foul", "Hateful", "Inexorable", "Implacable", "Impure", "Malevolent", "Malignant", "Malicious", "Pained", "Profane", "Profligate", "Relentless", "Resentful", "Restless", "Spiteful", "Tormented", "Unclean", "Unforgiving", "Vengeful", "Vindictive", "Wicked", "Wronged"))
 		D.set_real_name(D.real_name + " " + pick("Apparition", "Aptrgangr", "Dis", "Draugr", "Dybbuk", "Eidolon", "Fetch", "Fylgja", "Ghast", "Ghost", "Gjenganger", "Haint", "Phantom", "Phantasm", "Poltergeist", "Revenant", "Shade", "Shadow", "Soul", "Spectre", "Spirit", "Spook", "Visitant", "Wraith"))
 
-	log_and_message_admins("used a manifest rune.")
+	log_and_message_admins("used a manifest rune.", user)
 	rel_set(this_rune, nameof(this_rune.manifest_dummy), D)
 	rel_set(this_rune, nameof(this_rune.manifest_user), user)
 	this_rune.set_manifesting(TRUE)
@@ -692,7 +692,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	else
 		user.whisper("O bidai nabora se[pick("'","`")]sma!")
 
-	log_and_message_admins("used a communicate rune to say '[input]'")
+	log_and_message_admins("used a communicate rune to say '[input]'", A.request.answerer)
 	for(var/datum/mind/H in antag_cult().current_antagonists)
 		if (H.current)
 			to_chat(H.current, span_cult("[input]"))

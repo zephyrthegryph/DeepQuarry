@@ -34,6 +34,7 @@
 
 
 CAPABILITIES(/obj/item/medigun_backpack)
+	setup(PROC_REF(tether_medigun))
 	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = TRUE))
 	configure(item_worn(slots = SLOT_BACK))
@@ -289,9 +290,9 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		medigun.set_base_icon_state("medblaster_cmo")
 
 
-/obj/item/medigun_backpack/Initialize(mapload)
+/// Its setup hook (before link_medigun): the backpack makes its gun.
+/obj/item/medigun_backpack/proc/tether_medigun()
 	make_tethered(medigun_path)
-	return ..()
 
 /// The backpack links its gun to itself and sets the gun up for a one-handed pack once it is made.
 /obj/item/medigun_backpack/proc/link_medigun()

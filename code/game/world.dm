@@ -720,12 +720,14 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	if(frame)
 		frame.callbacks += max(TICK_USAGE - started, 0)
 
-/world/Reboot(reason = 0, fast_track = FALSE)
+/// world.Reboot() as `actor` (code/engine/kernel/entry.dm: the input event says who asked; null when the server did). Closes the round down and
+/// answers TRUE when the native reboot goes on.
+/world/input_reboot(mob/actor, reason = 0, fast_track = FALSE)
 	if (reason || fast_track) //special reboot, do none of the normal stuff
-		if (usr)
-			log_admin("[key_name(usr)] Has requested an immediate world restart via client side debugging tools")
-			message_admins("[key_name_admin(usr)] Has requested an immediate world restart via client side debugging tools")
-			to_chat(world, span_boldannounce("[key_name_admin(usr)] has requested an immediate world restart via client side debugging tools"))
+		if (actor)
+			log_admin("[key_name(actor)] Has requested an immediate world restart via client side debugging tools")
+			message_admins("[key_name_admin(actor)] Has requested an immediate world restart via client side debugging tools")
+			to_chat(world, span_boldannounce("[key_name_admin(actor)] has requested an immediate world restart via client side debugging tools"))
 
 		else
 			to_chat(world, span_boldannounce("Rebooting world immediately due to host request"))
@@ -738,13 +740,13 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
 	#ifdef UNIT_TESTS
 	FinishTestRun()
-	return
+	return FALSE
 	#else
 	if(check_hard_reboot())
 		log_world("World hard rebooted at [time_stamp()]")
 		shutdown_logging() // See comment below.
 		TgsEndProcess()
-		return ..()
+		return TRUE
 
 	log_world("World rebooted at [time_stamp()]")
 
@@ -754,7 +756,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
 	TgsReboot() // TGS can decide to kill us right here, so it's important to do it last
 
-	..()
+	return TRUE
 	#endif
 
 /world/Del()

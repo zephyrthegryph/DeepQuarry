@@ -5,7 +5,7 @@
 	announceWhen = -1 // Never (setup may override)
 	var/botEmagChance = 0
 	var/ionBorgs = TRUE
-	var/cloud_hueshift
+	var/list/cloud_hueshift
 	var/list/players
 
 /datum/event/ionstorm/get_skybox_image()

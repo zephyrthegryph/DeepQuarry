@@ -92,11 +92,6 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 /obj/machinery/mecha_part_fabricator_tg/proc/make_remote_materials(current, mapload)
 	return new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert)))
 
-/obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
-	available_designs = list()
-	illegal_local_designs = list()
-	. = ..()
-
 /obj/machinery/mecha_part_fabricator_tg/proc/configure_initial_fabricator()
 	default_apply_parts()
 	RefreshParts()
@@ -158,19 +153,19 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
  * Updates the `final_sets` and `buildable_parts` for the current mecha fabricator.
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/update_menu_tech()
-	var/previous_design_count = available_designs.len
+	var/previous_design_count = LAZYLEN(available_designs)
 
-	available_designs.Cut()
+	LAZYCLEARLIST(available_designs)
 	for(var/v in stored_research().researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(v)
 
 		if(design.build_type & fab_type)
-			available_designs |= design
+			LAZYOR(available_designs, design)
 
 	for(var/datum/design_techweb/illegal_disign in illegal_local_designs)
-		available_designs |= illegal_disign
+		LAZYOR(available_designs, illegal_disign)
 
-	var/design_delta = available_designs.len - previous_design_count
+	var/design_delta = LAZYLEN(available_designs) - previous_design_count
 
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")

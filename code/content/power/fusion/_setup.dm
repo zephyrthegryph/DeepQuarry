@@ -35,7 +35,7 @@
 	var/warnings = 0
 	var/success = 0
 
-	log_and_message_admins("## FUSION CORE SETUP - Setup initiated by [user].")
+	log_and_message_admins("## FUSION CORE SETUP - Setup initiated by [user].", A.request.answerer)
 
 	for(var/obj/machinery/fusion_fuel_injector/mapped/injector in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		rel_set(injector, nameof(injector.cur_assembly), new /obj/item/fuel_assembly/deuterium(injector))
@@ -47,7 +47,7 @@
 
 		// SETUP PHASE
 		for(var/obj/effect/engine_setup/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-			var/result = S.activate(0)
+			var/result = S.activate(0, A.request.answerer)
 			switch(result)
 				if(SETUP_OK)
 					success++
@@ -57,7 +57,7 @@
 					continue
 				if(SETUP_ERROR)
 					errors++
-					log_and_message_admins("## FUSION CORE SETUP - Error encountered! Aborting.")
+					log_and_message_admins("## FUSION CORE SETUP - Error encountered! Aborting.", A.request.answerer)
 					break
 				if(SETUP_DELAYED)
 					delayed_objects.Add(S)
@@ -65,7 +65,7 @@
 
 		if(!errors)
 			for(var/obj/effect/engine_setup/S in delayed_objects)
-				var/result = S.activate(1)
+				var/result = S.activate(1, A.request.answerer)
 				switch(result)
 					if(SETUP_OK)
 						success++
@@ -75,13 +75,13 @@
 						continue
 					if(SETUP_ERROR)
 						errors++
-						log_and_message_admins("## FUSION CORE SETUP - Error encountered! Aborting.")
+						log_and_message_admins("## FUSION CORE SETUP - Error encountered! Aborting.", A.request.answerer)
 						break
 	else
-		log_and_message_admins("## FUSION CORE SETUP - Error encountered! Aborting.")
+		log_and_message_admins("## FUSION CORE SETUP - Error encountered! Aborting.", A.request.answerer)
 		errors++
 
-	log_and_message_admins("## FUSION CORE SETUP - Setup completed with [errors] errors, [warnings] warnings and [success] successful steps.")
+	log_and_message_admins("## FUSION CORE SETUP - Setup completed with [errors] errors, [warnings] warnings and [success] successful steps.", A.request.answerer)
 
 #undef SETUP_OK
 #undef SETUP_WARNING

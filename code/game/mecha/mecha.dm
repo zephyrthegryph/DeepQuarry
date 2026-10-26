@@ -2453,7 +2453,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/mob/user = A.actor
 	var/pressure = A.step_value("pressure")
 	if(pressure)
-		internal_tank_valve = pressure
+		internal_tank_valve = num_or_null(pressure)
 		to_chat(user, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
 
 /// The passengers a maintenance link can pull out: occupant name -> their compartment.

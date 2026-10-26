@@ -13,8 +13,8 @@
 		for(var/client/C in GLOB.clients)
 			after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
 
-/// Initialize - Called when SSassets initializes.
-/datum/asset_transport/proc/Initialize(list/assets)
+/// Called when SSassets initializes: keeps the preload list and sends it to the clients already connected.
+/datum/asset_transport/proc/start(list/assets)
 	preload = assets.Copy()
 	if (!CONFIG_GET(flag/asset_simple_preload))
 		return

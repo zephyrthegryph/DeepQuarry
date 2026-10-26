@@ -2,9 +2,6 @@
 	var/datum/managed_browser/feedback_viewer/feedback_viewer = null
 
 ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Feedback Viewer.", ADMIN_CATEGORY_MISC)
-	if(!check_rights())
-		return
-
 	if(user.feedback_viewer)
 		user.feedback_viewer.display()
 		return

@@ -196,7 +196,7 @@
 		return null
 	if(actor_acts_via(actor) & origin)
 		return null
-	return stat_hold_reason(actor, STAT_ACTS_VIA) || /datum/msg/req_not_capable
+	return reason_text(stat_hold_reason(actor, STAT_ACTS_VIA) || /datum/msg/req_not_capable)
 
 /// The strongest hold's reason on a stat of an entity, or null (the actor gate shows it: "You can't act from inside it").
 /proc/stat_hold_reason(datum/D, stat_id)

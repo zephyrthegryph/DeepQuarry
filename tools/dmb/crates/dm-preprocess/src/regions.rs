@@ -11,6 +11,7 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 mod directive_memo;
+mod segment_lines;
 mod intern_wire;
 mod directives;
 mod plan_trace;
@@ -20,12 +21,13 @@ pub use directive_memo::{DirectiveRecord, DIRECTIVE_VERSION};
 mod environment;
 pub mod prepared_source;
 pub use environment::MacroEnvironment;
+pub use segment_lines::SegmentLines;
 mod reuse;
 pub use reuse::{expand_regions_reusing, expansions_equal, plans_equal, ExpansionReuse};
 mod expansion;
 mod expansion_input;
 mod joined_text;
-pub use expansion_input::ExpansionInputs;
+pub use expansion_input::{share_expansion_inputs, ExpansionInputs};
 mod origin_arena;
 pub mod region_memo;
 pub use region_memo::storage::ExpansionStorageView;
@@ -111,7 +113,7 @@ pub struct RegionLine {
 /// contain multiple segments when a define/undef changes its state mid-region.
 #[derive(Clone, Debug)]
 pub struct ExpansionSegment {
-    pub lines: Vec<RegionLine>,
+    pub lines: SegmentLines,
     pub macros: MacroEnvironment,
 }
 

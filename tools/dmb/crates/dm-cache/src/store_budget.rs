@@ -60,8 +60,10 @@ impl CacheSnapshot {
 
 impl Cache {
     /// Delete the least recently modified segment and group leaves until the directory holds at most `budget_bytes`.
-    /// Leaves modified within `min_age` of `now` are never deleted (a build in progress is publishing them), and a leaf
-    /// that cannot be deleted (a Windows sharing violation: some process maps it) is skipped and counted. Takes the
+    /// Only the single newest leaf, and only while it is younger than `min_age`, is spared (a build in progress is
+    /// publishing it): a budget that exempted every recent leaf was never met, because compiles keep rewriting
+    /// multi-GB segments (22.7 GB on a 16 GB budget). A leaf some process holds open cannot be deleted (a Windows
+    /// sharing violation: it is in use right now) and is skipped and counted. Takes the
     /// maintenance lock without waiting; a compaction in progress yields `CacheError::Busy`.
     pub fn evict_to_budget(
         &self,
@@ -104,14 +106,16 @@ impl Cache {
         };
         report.total_after = report.total_before;
         leaves.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.2.cmp(&b.2)));
-        for (modified, bytes, path) in leaves {
+        let newest = leaves.len().saturating_sub(1);
+        for (index, (modified, bytes, path)) in leaves.into_iter().enumerate() {
             let aged = max_age.is_some_and(|limit| now.duration_since(modified).is_ok_and(|age| age > limit));
             if report.total_after <= budget_bytes && !aged {
                 // Oldest first: once a leaf is within the age cap and the size fits, every later one is too.
                 break;
             }
             // A modification time in the future counts as fresh.
-            if now.duration_since(modified).is_ok_and(|age| age < min_age) || modified > now {
+            let fresh = now.duration_since(modified).is_ok_and(|age| age < min_age) || modified > now;
+            if fresh && index == newest {
                 report.protected += 1;
                 continue;
             }
@@ -166,7 +170,7 @@ mod tests {
         assert_eq!((report.deleted, report.deferred), (2, 0), "{report:?}");
         assert!(!path(ids[2]).exists() && !path(ids[0]).exists());
         assert!(path(ids[3]).exists() && path(ids[1]).exists());
-        // A budget of zero still never touches a leaf younger than min_age.
+        // A budget of zero still spares the one newest leaf while it is younger than min_age, and nothing else.
         let report = cache.evict_to_budget(now, 0, Duration::from_secs(3600)).unwrap();
         assert_eq!(report.deleted, 1);
         assert!(path(ids[1]).exists());
@@ -218,7 +222,7 @@ mod tests {
         assert!(!path(ids[0]).exists() && path(ids[1]).exists() && path(ids[2]).exists());
         // No age cap: the same directory is left alone.
         assert_eq!(cache.evict_to_limits(now, u64::MAX, Duration::from_secs(3600), None).unwrap().deleted, 0);
-        // The fresh-leaf protection still wins over the age cap.
+        // The newest fresh leaf is still spared by the age cap.
         let report = cache.evict_to_limits(now, u64::MAX, Duration::from_secs(3600), Some(Duration::from_secs(1))).unwrap();
         assert_eq!(report.deleted, 1);
         assert!(path(ids[2]).exists());

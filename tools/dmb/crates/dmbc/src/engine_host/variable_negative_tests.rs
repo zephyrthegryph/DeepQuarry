@@ -22,7 +22,9 @@ impl crate::lowering::AbiPolicy for EmptyAbi {
 #[test]
 fn qualified_branch_tags_are_disjoint_and_never_truncate() {
     assert_ne!(qualified(7, 11, false), qualified(7, 11, true));
-    assert_eq!(qualified(u64::MAX, u64::MAX / 4, true), Some(u128::MAX - 2));
+    // Tree tokens are 128-bit digests: a full-width base keeps the branches apart and is never truncated.
+    assert_ne!(qualified(u128::MAX, u64::MAX / 4, true), qualified(u128::MAX, u64::MAX / 4, false));
+    assert_ne!(qualified(u128::MAX, 11, true), qualified(u128::MAX - 1, 11, true));
     assert!(qualified(7, u64::MAX / 4 + 1, false).is_none());
     assert!(qualified(7, u64::MAX / 4 + 1, true).is_none());
     assert_ne!(qualified_tag(7, 11, 2), qualified(7, 11, true));

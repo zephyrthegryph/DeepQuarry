@@ -114,7 +114,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve_continue(mob/observer/dead/ghost)
 	var/client/ghost_client = ghost.client
 
-	if(alien_whitelist_refusal(ghost.client, GLOB.all_species[ghost_client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !check_rights(R_ADMIN, 0)) // Prevents a ghost ghosting in on a slot and spawning via a resleever with race they're not whitelisted for, getting around normal join restrictions.
+	if(alien_whitelist_refusal(ghost.client, GLOB.all_species[ghost_client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !admin_can(ghost_client, R_ADMIN)) // Prevents a ghost ghosting in on a slot and spawning via a resleever with race they're not whitelisted for, getting around normal join restrictions.
 		to_chat(ghost, span_warning("You are not whitelisted to spawn as this species!"))
 		return
 

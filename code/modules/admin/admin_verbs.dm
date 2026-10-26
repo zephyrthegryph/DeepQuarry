@@ -75,12 +75,12 @@ ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the opt
 		if(build_mode)
 			togglebuildmode(body)
 			ghost = body.ghostize(1, TRUE)
-			log_and_message_admins("[key_name(user)] admin-ghosted.") // Add logging.
+			log_and_message_admins("[key_name(user)] admin-ghosted.", usr) // Add logging.
 			if(build_mode == "Yes")
 				togglebuildmode(ghost)
 		else
 			ghost = body.ghostize(1, TRUE)
-			log_and_message_admins("[key_name(user)] admin-ghosted.") // Add logging.
+			log_and_message_admins("[key_name(user)] admin-ghosted.", usr) // Add logging.
 		user.init_verbs()
 		if(body)
 			body.teleop = ghost
@@ -197,7 +197,7 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 			return
 		if(length(new_key) >= 26)
 			new_key = copytext(new_key, 1, 26)
-		user.holder.fakekey = new_key
+		user.holder.fakekey = text_or_null(new_key)
 		user.createStealthKey()
 		if(isnewplayer(user.mob))
 			user.mob.name = new_key

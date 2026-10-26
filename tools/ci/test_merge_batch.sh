@@ -21,10 +21,13 @@ cp "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_
 echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
 cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
+# like the real gates' in-job baseline shrink: a tracked edit that is left behind when the gate fails afterwards
+echo shrunk >>tools/ci/x_baseline.txt
 if grep -rq BAD lanes 2>/dev/null; then echo "stub gates: BAD present"; exit 1; fi
+git show HEAD:tools/ci/x_baseline.txt >tools/ci/x_baseline.txt
 echo "stub gates: ok"
 STUB
-mkdir lanes; echo base >lanes/base.txt; echo x >shared.txt
+mkdir -p tools/ci lanes; echo base >tools/ci/x_baseline.txt; echo base >lanes/base.txt; echo x >shared.txt
 git add -A; git commit -q -m init; git branch -M master; git push -q origin master 2>/dev/null; git fetch -q origin
 mk() { # <branch> <file> <content> [shared-line]
 	git switch -q -c "$1" origin/master
@@ -41,6 +44,11 @@ rc="$(run "la,lc")"
 check "a clean batch merges every lane" '[ "$rc" = 0 ] && git merge-base --is-ancestor la rewrite/integ-current && git merge-base --is-ancestor lc rewrite/integ-current'
 rc="$(run "la,lb,lc")"
 check "one bad lane is bounced alone" '[ "$rc" = 1 ] && grep -q "BOUNCED: lb" "$tmp/out.log" && git merge-base --is-ancestor la rewrite/integ-current && git merge-base --is-ancestor lc rewrite/integ-current && ! git merge-base --is-ancestor lb rewrite/integ-current'
+check "a failed attempt's tracked edit never reaches the next attempt" '! grep -q REFUSED "$tmp/out.log" && grep -q "failed gate left a tracked edit: tools/ci/x_baseline.txt restored" "$tmp/out.log" && [ -z "$(git status --porcelain --untracked-files=no)" ]'
+# a dirty tree at the start of a batch is logged and cleaned, not refused
+echo stray >>tools/ci/x_baseline.txt
+rc="$(run "la")"
+check "a dirty start is cleaned, not refused" '[ "$rc" = 0 ] && grep -q "start dirty: tools/ci/x_baseline.txt restored" "$tmp/out.log" && [ -z "$(git status --porcelain --untracked-files=no)" ]'
 rc="$(run "lb")"
 check "a lone bad lane leaves the branch at origin/master" '[ "$rc" = 1 ] && [ "$(git rev-parse rewrite/integ-current)" = "$(git rev-parse origin/master)" ]'
 rc="$(run "ld,le,la")"

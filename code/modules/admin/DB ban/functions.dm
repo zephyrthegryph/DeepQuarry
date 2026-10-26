@@ -14,7 +14,7 @@
 			if(IsGuestKey(banned_mob.key))
 				unseen_ok = TRUE
 			banned_mob = null
-		return prompt_flow(src, PROC_REF(DB_ban_record), list(bantype, null, duration, reason, job, rounds, banckey, banip, bancid, unseen_ok, actor))
+		return prompt_flow(src, PROC_REF(DB_ban_record), list(bantype, null, duration, reason, job, rounds, banckey, banip, bancid, unseen_ok, actor), actor = actor)
 
 	if(!admin_require(actor?.client, R_MOD, "check_rights in [callee?.proc]", FALSE) && !admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))	return
 
@@ -103,7 +103,7 @@
 
 /datum/admins/proc/DB_ban_unban(ckey, bantype, job = "", mob/actor)
 	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(DB_ban_unban), args)
+		return prompt_flow(src, PROC_REF(DB_ban_unban), args, actor = actor)
 
 	if(!admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))
 		return
@@ -190,11 +190,11 @@
 	var/mob/banned_mob = ask.subject
 	if(banned_mob && !QDELETED(banned_mob))
 		ban_args[2] = banned_mob
-	with_actor(arglist(list(admin, src, PROC_REF(DB_ban_record)) + ban_args + list(TRUE, admin)))
+	call(src, PROC_REF(DB_ban_record))(arglist(ban_args + list(TRUE, admin)))
 
 /datum/admins/proc/DB_ban_edit(client/user, banid = null, param = null, value = null)
 	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(DB_ban_edit), args)
+		return prompt_flow(src, PROC_REF(DB_ban_edit), args, actor = user?.mob)
 
 	if(!user || owner() != user || user.holder != src || !admin_require(user, R_BAN, "ban.edit")) // ALLOW(check_grep): identity check that the caller holds this very admin datum
 		return
@@ -313,11 +313,11 @@
 		value = unban_ask.value
 		banid = unban_ask.banid
 		param = unban_ask.param
-	with_actor(admin, src, PROC_REF(DB_ban_edit), admin.client, banid, param, value)
+	DB_ban_edit(admin.client, banid, param, value)
 
 /datum/admins/proc/DB_ban_unban_by_id(id, mob/actor)
 	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(DB_ban_unban_by_id), args)
+		return prompt_flow(src, PROC_REF(DB_ban_unban_by_id), args, actor = actor)
 
 	if(!admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))	return
 

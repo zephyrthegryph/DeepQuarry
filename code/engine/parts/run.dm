@@ -549,7 +549,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /// What an op holds while it waits (CLAIM_*): its claims(), else the mask op_derive_claims() computed from its parts when the table was built. An actor has any number
 /// of pending ops; only ops whose claims overlap conflict.
 /proc/op_claim_hold(datum/op_plan/P, datum/entry/part/bind/B)
-	return isnull(P.claim_mask) ? 0 : P.claim_mask
+	return P.claim_mask || 0
 
 /// What an op needs free when it starts: what it holds, and the hands for any physical input (a click works with them).
 /proc/op_claim_check(datum/op_plan/P, datum/entry/part/bind/B)

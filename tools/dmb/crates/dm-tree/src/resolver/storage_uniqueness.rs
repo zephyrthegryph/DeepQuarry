@@ -1,9 +1,8 @@
 //! Name-specific receipts of the already reduced global storage inventory.
 use super::*;
-use std::sync::atomic::AtomicU64;
+use crate::token_digest::TokenDigest;
 
 pub(super) const UNIQUE_PREFIX: &[u8] = b"unique-storage-name-v1\0";
-static NEXT: AtomicU64 = AtomicU64::new(1);
 pub(super) fn unique_inputs(tree: &SemanticTree, name: SymbolId) -> UniqueStorageInputs {
     UniqueStorageInputs {
         slot: tree.inventory.unique.get(&name).copied().flatten(),
@@ -115,11 +114,25 @@ fn unique_key(name: SymbolId) -> Arc<[u8]> {
     bytes.extend_from_slice(&name.bits().to_le_bytes());
     bytes.into()
 }
+fn unique_token(key: &[u8], answer: &StorageAnswer) -> u128 {
+    let StorageAnswer::Unique(inputs) = answer else {
+        unreachable!("uniqueness artifacts only record name inventory answers")
+    };
+    let mut digest = TokenDigest::new(b"unique-storage-token-v1");
+    digest.bytes(key).bool(inputs.slot.is_some());
+    let (owner, name) = inputs.slot.unwrap_or((SymbolId::of(""), SymbolId::of("")));
+    digest
+        .symbol(owner)
+        .symbol(name)
+        .bool(inputs.non_unique)
+        .bool(inputs.complete);
+    digest.finish()
+}
 impl RetainedStorage {
     pub(in crate::resolver) fn certify_uniqueness(
         &self,
         tree: &SemanticTree,
-    ) -> BTreeMap<SymbolId, u64> {
+    ) -> BTreeMap<SymbolId, u128> {
         let names: std::collections::BTreeSet<_> = tree
             .inventory
             .unique
@@ -128,28 +141,19 @@ impl RetainedStorage {
             .chain(tree.inventory.non_unique.iter().copied())
             .collect();
         let mut keys = Vec::<Arc<[u8]>>::new();
-        self.store.visit_storage(|view| {
-            if let ObservedArtifactStorageView::Entry { key, .. } = view {
-                if !key.starts_with(UNIQUE_PREFIX) {
-                    keys.push(Arc::clone(key));
-                }
-            }
-        });
         let host = UniqueHost(tree);
         let mut certificates = BTreeMap::new();
         for name in names {
             let key = unique_key(name);
             keys.push(Arc::clone(&key));
-            let owner = self.store.lookup(&key, &host).or_else(|| {
-                let token = NEXT
-                    .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
-                        value.checked_add(1)
-                    })
-                    .ok()?;
-                let ledger = ObservationLedger::default();
+            let owner = self.unique.lookup(&key, &host).or_else(|| {
                 let query = StorageQuery::Unique(name);
-                ledger.record(query, host.answer(&query), (), None);
-                self.store.insert_with_owned(
+                let answer = host.answer(&query);
+                // The digest of the name's exact reduced inputs (see `token_digest`).
+                let token = unique_token(&key, &answer);
+                let ledger = ObservationLedger::default();
+                ledger.record(query, answer, (), None);
+                self.unique.insert_with_owned(
                     key,
                     ledger.reads(),
                     ledger.domain_receipts(),
@@ -164,7 +168,7 @@ impl RetainedStorage {
                 certificates.insert(name, token);
             }
         }
-        self.store
+        self.unique
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         certificates
     }

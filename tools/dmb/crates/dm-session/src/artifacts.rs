@@ -8,7 +8,7 @@ use dm_ir::Resolver;
 use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 mod certified;
 #[cfg(test)]
@@ -62,14 +62,15 @@ struct Variant<T, Q = ResolveQuery, A = ResolvedMeaning, D = ReadDomain> {
     versions: Arc<[(D, u128)]>,
     value: Arc<T>,
     weight: usize,
+    /// The leases claiming this variant, one bit per lease slot. A lease's roster is the set of variants naming its slot
+    /// (at most one per exact key), so rosters cost one bit per claim instead of a map entry per lease and key.
+    holders: leased::Holders,
 }
 struct Resident<T, Q, A, D> {
     buckets: BTreeMap<u128, Vec<Variant<T, Q, A, D>>>,
     bytes: usize,
-    leases: BTreeMap<u64, BTreeMap<Arc<[u8]>, usize>>,
-    next_lease: u64,
-    /// Atomic so an existing claim can be counted under the shared read lock.
-    claims: BTreeMap<usize, (u128, std::sync::atomic::AtomicUsize)>,
+    /// Lease slots in use (bit set = held by a live lease).
+    slots: u128,
 }
 
 /// Hashes choose buckets only; exact key bytes and all semantic answers authorize
@@ -155,9 +156,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             state: std::sync::RwLock::new(Resident {
                 buckets: BTreeMap::new(),
                 bytes: 0,
-                leases: BTreeMap::new(),
-                next_lease: 0,
-                claims: BTreeMap::new(),
+                slots: 0,
             }),
             retention: Retention::Budgeted(limit),
         }
@@ -167,9 +166,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             state: std::sync::RwLock::new(Resident {
                 buckets: BTreeMap::new(),
                 bytes: 0,
-                leases: BTreeMap::new(),
-                next_lease: 0,
-                claims: BTreeMap::new(),
+                slots: 0,
             }),
             retention: Retention::RetainedCurrentRevision,
         }
@@ -399,6 +396,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     versions,
                     value: Arc::clone(&value),
                     weight,
+                    holders: Default::default(),
                 });
             state.bytes += weight;
             return Some(value);
@@ -435,6 +433,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     versions,
                     value: Arc::clone(&value),
                     weight,
+                    holders: Default::default(),
                 });
                 state.bytes = state.bytes - removed_weight + weight;
                 return Some(value);
@@ -447,6 +446,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             versions,
             value: Arc::clone(&value),
             weight,
+            holders: Default::default(),
         });
         state.bytes += weight;
         Some(value)
@@ -686,6 +686,7 @@ mod tests {
                 versions: Arc::from([]),
                 value: Arc::new(9),
                 weight: 3,
+                holders: Default::default(),
             });
         store.state.write().unwrap().bytes += 3;
         store.insert_with(key, vec![], vec![], 2, || 2u32);

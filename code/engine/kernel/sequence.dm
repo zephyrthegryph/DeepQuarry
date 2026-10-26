@@ -260,7 +260,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 	var/prev = state.last_at
 	if(isnull(prev))
 		prev = now - max(interval, world.tick_lag)
-	state.last_at = now
+	state.last_at = max(now, 0) // a timestamp is never negative; max() keeps it a plain number
 	return max(now - prev, 0)
 
 /datum/work_item/sequence/forget(datum/member)

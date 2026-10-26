@@ -17,6 +17,10 @@
 //!                        look is applied by the engine.
 //! - `undef_then_used`    a `#undef X` followed, in the same file, by a use of X that no later `#define X` covers.
 //!
+//! `effect_refusal` does not flag `return OP_REFUSED` inside an `if(... ACT_REFUSED_BY(x))` block (it relays an ACT_ATTEMPT hook's
+//! veto, section 8) or in the block of an `act_cancel(` (the commit failed after the action began): neither is
+//! known before the effect runs, so neither can be a requirement.
+//!
 //! Unit tests and the engine's own directories are exempt.
 
 use crate::dm::sys::{register_module, SysModule};
@@ -45,6 +49,15 @@ struct ProcCtx {
     /// draw(look) or look_parts(look): the look builder's procs, which change no atom either.
     look: bool,
     told: bool,
+    /// Indent of an `if(... ACT_REFUSED_BY(x) ...)` whose block is open: a refusal there relays the hook's veto (the doc's commit-time veto).
+    relay_indent: Option<usize>,
+    /// Indent of the block an `act_cancel(` ran in: the commit failed (a link did not take, the mob did not arrive) and the act was cancelled.
+    cancel_indent: Option<usize>,
+}
+
+/// Leading tabs of a line (DM source here is tab-indented).
+fn indent_of(code: &str) -> usize {
+    code.chars().take_while(|c| *c == '\t').count()
 }
 
 /// `/a/b/proc/name(args` or `/a/b/name(args` at column 0: (type, name, args).
@@ -93,7 +106,7 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
                 let effect = args.contains("datum/act/op/");
                 let look = matches!(name.as_str(), "draw" | "look_parts") && args.contains("look");
                 let output = look || matches!(name.as_str(), "ui_data" | "tgui_data" | "appearance_overlays" | "appearance_state");
-                ctx = Some(ProcCtx { type_path, name, effect, output, look, told: false });
+                ctx = Some(ProcCtx { type_path, name, effect, output, look, told: false, relay_indent: None, cancel_indent: None });
             }
             continue;
         }
@@ -131,7 +144,23 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
             if pat!(r"(?<![\w])(to_chat|atom_say|balloon_alert|act_message)\(|\bA\.reason\s*=").is_match(code) {
                 c.told = true;
             }
-            if c.told && pat!(r"\breturn\s+OP_REFUSED\b").is_match(code) {
+            let indent = indent_of(code);
+            if c.relay_indent.is_some_and(|r| indent <= r) {
+                c.relay_indent = None;
+            }
+            if c.cancel_indent.is_some_and(|k| indent < k) {
+                c.cancel_indent = None;
+            }
+            if pat!(r"^\s*(?:if|else if)\(.*\bACT_REFUSED_BY\(").is_match(code) {
+                c.relay_indent = Some(indent);
+            }
+            if pat!(r"(?<![\w.])act_cancel\(").is_match(code) {
+                c.cancel_indent = Some(indent);
+            }
+            // A refusal that relays an ACT_ATTEMPT hook's veto, or follows an act_cancel in its own block, is the doc's commit-time
+            // veto or a failed commit: it cannot be a requirement, because it is known only when the effect runs.
+            let relayed = c.relay_indent.is_some_and(|r| indent > r) || c.cancel_indent == Some(indent);
+            if c.told && !relayed && pat!(r"\breturn\s+OP_REFUSED\b").is_match(code) {
                 out.push(("effect_refusal", number));
             }
         }
@@ -184,9 +213,21 @@ fn selftest() -> Result<String, String> {
         "\tholder.update_inv_l_hand()",                         // 22 output_side_effect: another atom
         "\tloc.update_icon()",                                  // 23 output_side_effect
         "\tlook.glow(2, 1)",                                    // 24 fine
-        "/obj/item/x/proc/milk(datum/act/op/A)",               // 25
-        "\tact_message(A.actor, A.target, others = \"x\")",    // 26
-        "\treturn OP_REFUSED",                                 // 27 effect_refusal: told through act_message()
+        "/obj/x/proc/relay(datum/act/op/A)",                    // 25
+        "\tvar/B = ACT_ATTEMPT(src, buckle, A.actor)",          // 26
+        "\tif(ACT_REFUSED_BY(B))",                              // 27
+        "\t\tA.reason = /datum/msg/op/not_available",           // 28
+        "\t\treturn OP_REFUSED",                                // 29 a hook's veto relayed: fine
+        "\tif(!linked)",                                        // 30
+        "\t\tact_cancel(B)",                                    // 31
+        "\t\tA.reason = /datum/msg/op/failed",                  // 32
+        "\t\treturn OP_REFUSED",                                // 33 failed commit after act_cancel: fine
+        "\tif(!ready)",                                         // 34
+        "\t\tA.reason = /datum/msg/op/failed",                  // 35
+        "\t\treturn OP_REFUSED",                                // 36 effect_refusal: the block is past the relay
+        "/obj/item/x/proc/milk(datum/act/op/A)",               // 37
+        "\tact_message(A.actor, A.target, others = \"x\")",    // 38
+        "\treturn OP_REFUSED",                                 // 39 effect_refusal: told through act_message()
     ];
     let f = SourceFile::from_text("code/x.dm", &fixture.join("\n"));
     let mut v = Vec::new();
@@ -203,7 +244,8 @@ fn selftest() -> Result<String, String> {
         ("undef_then_used", 17),
         ("output_side_effect", 22),
         ("output_side_effect", 23),
-        ("effect_refusal", 27),
+        ("effect_refusal", 36),
+        ("effect_refusal", 39),
     ];
     if got != want {
         return Err(format!("dx_review selftest: got {:?}", got));

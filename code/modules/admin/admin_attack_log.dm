@@ -1,6 +1,7 @@
 /atom/var/tmp/lastattacker = null
 
-/proc/log_and_message_admins(message as text, mob/user = usr)
+/// `user` is who did it (null: the game did, logged as an EVENT).
+/proc/log_and_message_admins(message as text, mob/user)
 	log_admin(user ? "[key_name(user)] [message]" : "EVENT [message]")
 	message_admins(user ? "[key_name_admin(user)] [message]" : "EVENT [message]")
 
