@@ -30,6 +30,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import functools
 import heapq
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
@@ -75,6 +76,7 @@ class SpecError(Exception):
     pass
 
 
+@functools.lru_cache(maxsize=None)
 def glob_re(pattern: str) -> re.Pattern:
     """`*` is one path segment's characters, `**` any depth (also none), `?` one character; a pattern naming a directory matches its files."""
     out = []
@@ -153,8 +155,24 @@ def path_key(path: str) -> tuple:
     return tuple((1, p) for p in parts[:-1]) + ((0, parts[-1]),)
 
 
+def ignored_files(root: str, roots: list[str]) -> set[str]:
+    """Files git ignores under the scan roots (build output: the analyzer's and the Verdigris generated DM). They are included only
+    when a `file` line names them, so a stray generated file never joins the manifest. Outside a git work tree: none."""
+    import subprocess
+
+    try:
+        out = subprocess.run(["git", "-C", root, "ls-files", "--others", "--ignored", "--exclude-standard", "--", *roots],
+                             capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    if out.returncode != 0:
+        return set()
+    return {line.strip() for line in out.stdout.splitlines() if line.strip()}
+
+
 def collect(spec: Spec, root: str) -> list[str]:
     found: set[str] = set()
+    ignored = ignored_files(root, spec.scan) if os.path.isdir(os.path.join(root, ".git")) or os.path.isfile(os.path.join(root, ".git")) else set()
     for base in spec.scan:
         top = os.path.join(root, base)
         if not os.path.isdir(top):
@@ -166,7 +184,7 @@ def collect(spec: Spec, root: str) -> list[str]:
                     continue
                 rel = os.path.relpath(os.path.join(dirpath, name), root).replace("\\", "/")
                 spec.scanned.add(rel)
-                if any(p.match(rel) for p in spec.skip):
+                if rel in ignored or any(p.match(rel) for p in spec.skip):
                     continue
                 found.add(rel)
     for f in spec.files:
@@ -363,9 +381,10 @@ def generate(root: str = ROOT, spec_text: str | None = None) -> str:
 
     def matches(kind: str, g: str) -> bool:
         pool = spec.scanned if kind == "skip" else files
-        if any(glob_re(g).match(f) for f in spec.optional):
+        pattern = glob_re(g)
+        if any(pattern.match(f) for f in spec.optional):
             return True  # a rule for an `optional` file holds while the file is absent
-        return any(glob_re(g).match(f) for f in pool)
+        return any(pattern.match(f) for f in pool)
 
     unused = [f"{SPEC}:{n}: `{k} {g}` matches no file" for k, n, g in spec.patterns if not matches(k, g)]
     if unused:

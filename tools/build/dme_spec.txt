@@ -69,7 +69,10 @@ optional code/modules/unit_tests/_test_build_overrides.dm    # likewise
 skip code/modules/benchmarks/**   # code/modules/unit_tests/_unit_tests.dm includes them
 skip code/modules/balance/**      # likewise
 
-# Generated files (gitignored; analyze gen writes them before every compile, so a clean checkout lacks them: `file` includes them anyway).
+# Generated files (gitignored, so the scan never includes them; analyze gen and the Verdigris bindings step write them before every
+# compile, and a clean checkout lacks them: `file` includes them anyway).
+file code/__defines/verdigris/_bindings.dm         # tools/ci/gen_verdigris_bindings.sh
+file code/__defines/verdigris/_bindings_types.dm
 file code/engine/_generated/ids.dm
 file code/engine/_generated/reads.dm
 file code/engine/_generated/deps.dm
