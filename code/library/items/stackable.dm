@@ -22,7 +22,8 @@ MSG_DEF(stackable/split, "You split %I% into two stacks.", "%U% splits a stack."
 			needs(req(CAP_PROC(target_has_room))),
 			costs(RES_STACK, CAP_PROC(merge_amount)), then(CAP_PROC(add_to_target)), says(MSG(stackable/merge))),
 		op("split", menu(), label("Split stack"),
-			asks(/datum/prompt/number, fields = list("question" = "How many to split off?")), then(CAP_PROC(do_split)), says(MSG(stackable/split))),
+			asks(/datum/prompt/number, fields = list("question" = "How many to split off?"), step = "count"),
+			needs(req_answer(CAP_PROC(split_refusal), step = "count")), then(CAP_PROC(do_split)), says(MSG(stackable/split))),
 		examine_line(CAP_PROC(count_text)))
 
 /// The units of a stack item (its `amount`): 0 when it is no stack.
@@ -71,15 +72,20 @@ MSG_DEF(stackable/split, "You split %I% into two stacks.", "%U% splits a stack."
 	stack_add_units(A.target, n)
 	return OP_OK
 
+/// The units the split was asked for (null: no number).
+/datum/capability/lib/stackable/proc/split_count(datum/act/op/A)
+	var/asked = A.step_value("count")
+	return isnull(asked) ? null : round(text2num("[asked]"))
+
+/// A count that is not a number, is under one or takes the whole stack is refused.
+/datum/capability/lib/stackable/proc/split_refusal(datum/act/op/A)
+	var/n = split_count(A)
+	return (!isnum(n) || n < 1 || n >= stack_units(A.holder)) ? MSG(stackable/bad_split) : null
+
 /// split: the answered count goes to a new stack in the actor's hands, or on their tile.
 /datum/capability/lib/stackable/proc/do_split(datum/act/op/A)
 	var/obj/item/stack_item = A.holder
-	var/datum/prompt/R = A.answer
-	var/n = isnull(R) ? null : round(text2num("[R.value]"))
-	var/have = stack_units(stack_item)
-	if(!isnum(n) || n < 1 || n >= have)
-		A.reason = /datum/msg/stackable/bad_split
-		return OP_REFUSED
+	var/n = split_count(A)
 	var/obj/item/piece = stack_split(stack_item, n)
 	if(!piece)
 		return OP_FAILED

@@ -83,7 +83,7 @@ CAPABILITIES(/datum/pai_software/directives)
 	var/mob/living/silicon/pai/P = A.actor
 	var/mob/living/M = dna_carrier(P)
 	if(!M || !A.step_answer("dna"))
-		to_chat(src, span_infoplain("You are not being carried by anyone!"))
+		to_chat(A.actor, span_infoplain("You are not being carried by anyone!"))
 		return 0
 	if(A.step_value("dna"))
 		var/turf/T = get_turf(P.loc)

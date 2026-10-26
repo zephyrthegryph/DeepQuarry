@@ -5799,6 +5799,7 @@
 #include "code\engine\parts\resolve.dm"
 #include "code\engine\parts\resource.dm"
 #include "code\engine\parts\prompts.dm"
+#include "code\engine\parts\answers.dm"
 #include "code\engine\parts\run.dm"
 #include "code\engine\parts\transfer_requirements.dm"
 #include "code\engine\parts\inputs.dm"

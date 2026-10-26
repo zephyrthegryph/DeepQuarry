@@ -29,7 +29,8 @@ CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING, key = NONE)
 /datum/capability/def/glass_handling/entries()
 	return list(
 		op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"), \
-			asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, label_applied))),
+			asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:"), step = "label"), \
+			needs(req_answer(TYPE_PROC_REF(/obj/item/reagent_containers/glass, label_refusal), step = "label")), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, label_applied))),
 		op("dip", item(/obj/item), stance(I_DISARM, I_GRAB, I_HURT), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_fits)), label("Dip into it"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_applied))),
 		op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(req(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), label("Test the blood"), \
@@ -75,14 +76,18 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 
 // ---- the label ----
 
+/// The label the pen wrote, cleaned the way it is kept (empty when it wrote nothing).
+/obj/item/reagent_containers/glass/proc/label_written(datum/act/op/A)
+	return sanitizeSafe("[A.step_value("label")]", MAX_NAME_LEN) || ""
+
+/// A label of more than 50 letters is refused.
+/obj/item/reagent_containers/glass/proc/label_refusal(datum/act/op/A)
+	return length(label_written(A)) > 50 ? MSG(glass/label_too_long) : null
+
 /// The pen wrote `value`: the label (up to 50 letters; the name shows 20), or none when it is empty.
 /obj/item/reagent_containers/glass/proc/label_applied(datum/act/op/A)
-	var/datum/prompt/R = A.answer
 	var/mob/user = A.actor
-	var/tmp_label = sanitizeSafe("[R?.value]", MAX_NAME_LEN) || ""
-	if(length(tmp_label) > 50)
-		A.reason = /datum/msg/glass/label_too_long
-		return OP_REFUSED
+	var/tmp_label = label_written(A)
 	if(length(tmp_label) > 10)
 		balloon_alert(user, "label set")
 	else

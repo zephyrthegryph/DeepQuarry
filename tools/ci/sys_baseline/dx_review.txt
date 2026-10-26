@@ -1,18 +1,10 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_review.py (doc/rewrite/systems.md); shrink-only, target 0
-effect_refusal	code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm	return OP_REFUSED
-effect_refusal	code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm	return OP_REFUSED
-effect_refusal	code/game/objects/items/weapons/storage/firstaid.dm	return OP_REFUSED
 effect_refusal	code/library/containers/storage.dm	return OP_REFUSED
 effect_refusal	code/library/containers/storage.dm	return OP_REFUSED
-effect_refusal	code/library/items/stackable.dm	return OP_REFUSED
 effect_refusal	code/library/machine/fabricator.dm	return OP_REFUSED
-effect_refusal	code/library/reagents/edible.dm	return OP_REFUSED
 effect_refusal	code/library/reagents/injector.dm	return OP_REFUSED
 effect_refusal	code/library/reagents/needle.dm	return OP_REFUSED
-effect_refusal	code/library/reagents/reagent_container.dm	return OP_REFUSED
 effect_refusal	code/modules/reagents/reagent_containers/glass.dm	return OP_REFUSED
-effect_refusal	code/modules/reagents/reagent_containers/glass.dm	return OP_REFUSED
-request_in_effect	code/game/turfs/simulated/walls.dm	open_request(src, /datum/prompt/choice, PROC_REF(rcd_mode_chosen), answerer = user, choices = choices, anchor = user, radius = 42, tooltips = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 request_in_effect	code/modules/admin/player_effects.dm	open_request(src, /datum/prompt/text, PROC_REF(popup_box_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Write a message to send to the user with a space for them to reply without using the text box:", title = "Message", timeout = 0)
 unkeyed_wire_after	code/game/dna/dna_modifier.dm	after(src, radiation_duration SECONDS, PROC_REF(do_pulse), with = list(lock_state))
 unkeyed_wire_after	code/game/dna/dna_modifier.dm	after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), with = list(lock_state, block))

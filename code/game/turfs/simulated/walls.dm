@@ -469,10 +469,9 @@ CAPABILITIES(/turf/simulated/wall)
 	to_chat(user, span_warning("You can't insert any more [S.name] sheets into [src]!"))
 	return 0
 
-/// Old attack_self: the mode radial menu.
-/obj/item/rcd/proc/rcd_self(datum/act/op/A)
-	var/mob/living/user = A.actor
-	var/list/choices = list(
+/// The mode radial's ring: the modes, and the turrets once the RCD is emagged.
+/obj/item/rcd/proc/rcd_mode_choices(datum/act/op/A)
+	. = list(
 		"Floors & Walls" = radial_image_floorwall,
 		"Airlock" = radial_image_airlock,
 		"Windoor" = radial_image_windoor,
@@ -486,26 +485,75 @@ CAPABILITIES(/turf/simulated/wall)
 		"Conveyors" = radial_image_conveyor
 		)
 	if(emagged)
-		choices["Turrets"] = radial_image_turret
-	open_request(src, /datum/prompt/choice, PROC_REF(rcd_mode_chosen), answerer = user, choices = choices, anchor = user, radius = 42, tooltips = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
+		.["Turrets"] = radial_image_turret
 
-/obj/item/rcd/proc/rcd_mode_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/user = A.request.answerer
-	var/choice = A.answer.value
+/// The sub-radials are about the RCD in the user's hand, not about the user.
+/obj/item/rcd/proc/rcd_ring_anchor(datum/act/op/A)
+	return A.holder
+
+/// A ranged RCD's sub-radial answers from anywhere; the others only within reach.
+/obj/item/rcd/proc/rcd_ring_near(datum/act/op/A)
+	return !ranged
+
+/obj/item/rcd/proc/rcd_mode_is_walls(datum/act/op/A)
+	return A.step_value("mode") == "Floors & Walls"
+
+/obj/item/rcd/proc/rcd_mode_is_wallframes(datum/act/op/A)
+	return A.step_value("mode") == "WallFrames"
+
+/obj/item/rcd/proc/rcd_mode_is_turrets(datum/act/op/A)
+	return A.step_value("mode") == "Turrets"
+
+/obj/item/rcd/proc/rcd_girder_choices(datum/act/op/A)
+	. = list(
+	"DEFAULT" = image(icon = 'icons/mob/radial.dmi', icon_state = "default"),
+	"BAY" = image(icon = 'icons/mob/radial.dmi', icon_state = "bay"),
+	"ERIS" = image(icon = 'icons/mob/radial.dmi', icon_state = "eris")
+	)
+
+/obj/item/rcd/proc/rcd_wall_frame_choices(datum/act/op/A)
+	. = list(
+	"Air Alarm" = image(icon = 'icons/mob/radial.dmi', icon_state = "wallframe"),
+	"Light Bulb" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightbulb"),
+	"Light Tube" = image(icon = 'icons/mob/radial.dmi', icon_state = "lighttube"),
+	"Doorbell Chime" = image(icon = 'icons/mob/radial.dmi', icon_state = "doorbell"),
+	"Doorbell Button" = image(icon = 'icons/mob/radial.dmi', icon_state = "doorbellbutton"),
+	"Status Display" = image(icon = 'icons/mob/radial.dmi', icon_state = "status"),
+	"Supply Requests Console" = image(icon = 'icons/mob/radial.dmi', icon_state = "supply"),
+	"ATM" = image(icon = 'icons/mob/radial.dmi', icon_state = "atm"),
+	"Newscaster" = image(icon = 'icons/mob/radial.dmi', icon_state = "newscaster"),
+	"Wall Charger" = image(icon = 'icons/mob/radial.dmi', icon_state = "wallcharger"),
+	"Fire Alarm" = image(icon = 'icons/mob/radial.dmi', icon_state = "firealarm"),
+	"Guest Pass Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "guestpass"),
+	"Intercom" = image(icon = 'icons/mob/radial.dmi', icon_state = "intercom"),
+	"Keycard Authenticator" = image(icon = 'icons/mob/radial.dmi', icon_state = "keycardauth"),
+	"Geiger Counter" = image(icon = 'icons/mob/radial.dmi', icon_state = "geiger"),
+	"Electrochromic Window Button" = image(icon = 'icons/mob/radial.dmi', icon_state = "windowtint"),
+	"ID Restoration Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "idrestore"),
+	"Timeclock Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "timeclock"),
+	"Station Map" = image(icon = 'icons/mob/radial.dmi', icon_state = "stationmap"),
+	"AI Status Display" = image(icon = 'icons/mob/radial.dmi', icon_state = "status"),
+	"Light Switch" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightswitch"),
+	"Entertainment Monitor" = image(icon = 'icons/mob/radial.dmi', icon_state = "entertainment")
+	)
+
+/obj/item/rcd/proc/rcd_turret_choices(datum/act/op/A)
+	. = list(
+	"HOSTILE TO ALL" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret1"),
+	"HOSTILE TO ENEMIES" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret2")
+	)
+
+/// Old attack_self: the mode radial menu, then the sub-radial of the mode that has one. A cancelled sub-radial still switches the mode (optional steps,
+/// default: no pick); a cancelled mode radial ends the op.
+/obj/item/rcd/proc/rcd_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!check_menu(user))
-		return
+		return OP_OK
+	var/choice = A.step_value("mode")
 	switch(choice)
 		if("Floors & Walls")
-			var/list/wall_types = list(
-			"DEFAULT" = image(icon = 'icons/mob/radial.dmi', icon_state = "default"),
-			"BAY" = image(icon = 'icons/mob/radial.dmi', icon_state = "bay"),
-			"ERIS" = image(icon = 'icons/mob/radial.dmi', icon_state = "eris")
-			)
-			// optional: a cancelled sub-pick still switches the mode, as before.
-			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_girder_chosen), answerer = user, choices = wall_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional_pick = TRUE)
-			return
+			rcd_girder_chosen(user, A.step_value("girder"))
+			return OP_OK
 		if("Airlock")
 			mode_index = rcd_mode_index(RCD_AIRLOCK)
 		if("Windoor")
@@ -519,64 +567,32 @@ CAPABILITIES(/turf/simulated/wall)
 		if("Frames")
 			mode_index = rcd_mode_index(RCD_FRAME)
 		if("WallFrames")
-			var/list/wall_frame_types = list(
-			"Air Alarm" = image(icon = 'icons/mob/radial.dmi', icon_state = "wallframe"),
-			"Light Bulb" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightbulb"),
-			"Light Tube" = image(icon = 'icons/mob/radial.dmi', icon_state = "lighttube"),
-			"Doorbell Chime" = image(icon = 'icons/mob/radial.dmi', icon_state = "doorbell"),
-			"Doorbell Button" = image(icon = 'icons/mob/radial.dmi', icon_state = "doorbellbutton"),
-			"Status Display" = image(icon = 'icons/mob/radial.dmi', icon_state = "status"),
-			"Supply Requests Console" = image(icon = 'icons/mob/radial.dmi', icon_state = "supply"),
-			"ATM" = image(icon = 'icons/mob/radial.dmi', icon_state = "atm"),
-			"Newscaster" = image(icon = 'icons/mob/radial.dmi', icon_state = "newscaster"),
-			"Wall Charger" = image(icon = 'icons/mob/radial.dmi', icon_state = "wallcharger"),
-			"Fire Alarm" = image(icon = 'icons/mob/radial.dmi', icon_state = "firealarm"),
-			"Guest Pass Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "guestpass"),
-			"Intercom" = image(icon = 'icons/mob/radial.dmi', icon_state = "intercom"),
-			"Keycard Authenticator" = image(icon = 'icons/mob/radial.dmi', icon_state = "keycardauth"),
-			"Geiger Counter" = image(icon = 'icons/mob/radial.dmi', icon_state = "geiger"),
-			"Electrochromic Window Button" = image(icon = 'icons/mob/radial.dmi', icon_state = "windowtint"),
-			"ID Restoration Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "idrestore"),
-			"Timeclock Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "timeclock"),
-			"Station Map" = image(icon = 'icons/mob/radial.dmi', icon_state = "stationmap"),
-			"AI Status Display" = image(icon = 'icons/mob/radial.dmi', icon_state = "status"),
-			"Light Switch" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightswitch"),
-			"Entertainment Monitor" = image(icon = 'icons/mob/radial.dmi', icon_state = "entertainment")
-			)
-			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_wall_frame_chosen), answerer = user, choices = wall_frame_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional_pick = TRUE)
-			return
+			rcd_wall_frame_chosen(user, A.step_value("frame"))
+			return OP_OK
 		if("Change Access")
 			change_airlock_access(user)
-			return
+			return OP_OK
 		if("Change Airlock Type")
 			change_airlock_setting(user)
-			return
+			return OP_OK
 		if("Conveyors")
 			mode_index = rcd_mode_index(RCD_CONVEYOR)
 		if("Turrets")
-			var/list/turret_factions = list(
-			"HOSTILE TO ALL" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret1"),
-			"HOSTILE TO ENEMIES" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret2")
-			)
-			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_turret_faction_chosen), answerer = user, choices = turret_factions, anchor = src, require_near = ranged?FALSE:TRUE, tooltips = TRUE, optional_pick = TRUE)
-			return
+			rcd_turret_faction_chosen(user, A.step_value("faction"))
+			return OP_OK
 		else
-			return
+			return OP_OK
 	rcd_mode_changed(user, choice)
+	return OP_OK
 
 /// The mode radial's (and its sub-radials') last step.
 /obj/item/rcd/proc/rcd_mode_changed(mob/living/user, choice)
 	play_sfx(src, SFX_EFFECTS_POP)
 	to_chat(user, span_notice("You change RCD's mode to '[choice]'."))
 
-/obj/item/rcd/proc/rcd_girder_chosen(datum/act/request/context)
-	var/datum/prompt/choice/rcd_option_review/ask = context.request
-	if(!ask.deliver_pick())
-		return
-	var/mob/living/user = ask.answerer
-	if(!check_menu(user))
-		return
-	switch(ask.value)
+/// The pick of the sub-radial (null: it was cancelled, and the mode is still switched).
+/obj/item/rcd/proc/rcd_girder_chosen(mob/living/user, pick)
+	switch(pick)
 		if("DEFAULT")
 			girder_type = /obj/structure/girder
 		if("BAY")
@@ -586,14 +602,9 @@ CAPABILITIES(/turf/simulated/wall)
 	mode_index = rcd_mode_index(RCD_FLOORWALL)
 	rcd_mode_changed(user, "Floors & Walls")
 
-/obj/item/rcd/proc/rcd_wall_frame_chosen(datum/act/request/context)
-	var/datum/prompt/choice/rcd_option_review/ask = context.request
-	if(!ask.deliver_pick())
-		return
-	var/mob/living/user = ask.answerer
-	if(!check_menu(user))
-		return
-	switch(ask.value)
+/// The pick of the sub-radial (null: it was cancelled, and the mode is still switched).
+/obj/item/rcd/proc/rcd_wall_frame_chosen(mob/living/user, pick)
+	switch(pick)
 		if("Air Alarm")
 			wall_frame_type = /obj/machinery/alarm
 		if("Light Bulb")
@@ -642,14 +653,9 @@ CAPABILITIES(/turf/simulated/wall)
 	mode_index = rcd_mode_index(RCD_WALLFRAME)
 	rcd_mode_changed(user, "WallFrames")
 
-/obj/item/rcd/proc/rcd_turret_faction_chosen(datum/act/request/context)
-	var/datum/prompt/choice/rcd_option_review/ask = context.request
-	if(!ask.deliver_pick())
-		return
-	var/mob/living/user = ask.answerer
-	if(!check_menu(user))
-		return
-	switch(ask.value)
+/// The pick of the sub-radial (null: it was cancelled, and the mode is still switched).
+/obj/item/rcd/proc/rcd_turret_faction_chosen(mob/living/user, pick)
+	switch(pick)
 		if("HOSTILE TO ALL")
 			turret_faction = null
 		if("HOSTILE TO ENEMIES")

@@ -15,12 +15,15 @@ MSG_DEF_SELF(camera_board/broken, "Circuit lock does not respond.")
 MSG_DEF_SELF(camera_board/denied, "Access denied.")
 MSG_DEF_SELF(camera_board/locked, "Circuit controls are locked.")
 MSG_DEF_SELF(camera_board/already, "Circuit lock is already removed.")
+MSG_DEF_SELF(camera_board/no_input, "No input found please hang up and try your call again.")
+MSG_DEF_SELF(camera_board/no_network, "No network found please hang up and try your call again.")
 MSG_DEF_SELF(camera_board/emagged, "You override the circuit lock and open controls.")
 
 CAPABILITIES(/obj/item/circuitboard/security)
 	op("lock", item(/obj/item/card/id), needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/broken)), req_credential_in_hand(list(/obj/item/card/id), because = MSG(camera_board/denied))), label("Lock or unlock circuit controls"), then(PROC_REF(lock_toggled)), passes())
 	op("networks", tool(TOOL_MULTITOOL), needs(req_adjacent(), req_is(nameof(locked), FALSE, because = MSG(camera_board/locked))), label("Configure camera networks"), wait(0),
-		asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = computed(PROC_REF(networks_default)))), then(PROC_REF(networks_entered)), passes())
+		asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = computed(PROC_REF(networks_default))), step = "networks"),
+		needs(req_answer(PROC_REF(networks_refusal), step = "networks")), then(PROC_REF(networks_entered)), passes())
 	emag(then(PROC_REF(on_emag)), say = MSG(camera_board/emagged))
 	extend("emag.use", needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/already))))
 	extend("emag.subvert", needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/already))))
@@ -91,16 +94,20 @@ MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/bodycamera, list(MAT_STE
 /obj/item/circuitboard/security/proc/networks_default(datum/act/op/A)
 	return jointext(network, ",")
 
-/obj/item/circuitboard/security/proc/networks_entered(datum/act/op/A)
-	var/datum/prompt/R = A.answer
-	var/input = R?.value
+/// The networks an answer names: its comma-separated list without the restricted ones.
+/obj/item/circuitboard/security/proc/networks_of(input)
+	var/list/tempnetwork = splittext("[input]", ",")
+	return difflist(tempnetwork, GLOB.restricted_camera_networks, 1)
+
+/// An answer that names no network is refused with the line the old effect told.
+/obj/item/circuitboard/security/proc/networks_refusal(datum/act/op/A)
+	var/input = A.step_value("networks")
 	if(!input)
-		to_chat(A.actor, "No input found please hang up and try your call again.")
-		return OP_REFUSED
-	var/list/tempnetwork = splittext(input, ",")
-	tempnetwork = difflist(tempnetwork, GLOB.restricted_camera_networks, 1)
-	if(tempnetwork.len < 1)
-		to_chat(A.actor, "No network found please hang up and try your call again.")
-		return OP_REFUSED
-	set_network(tempnetwork)
+		return MSG(camera_board/no_input)
+	if(length(networks_of(input)) < 1)
+		return MSG(camera_board/no_network)
+	return null
+
+/obj/item/circuitboard/security/proc/networks_entered(datum/act/op/A)
+	set_network(networks_of(A.step_value("networks")))
 	return OP_OK

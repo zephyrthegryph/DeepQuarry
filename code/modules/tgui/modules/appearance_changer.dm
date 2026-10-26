@@ -109,7 +109,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	op("flavor_text", ui_act("flavor_text", arg("target", schema_text(4096))), asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(flavor_text_question)), "title" = "Flavor Text", "default" = computed(PROC_REF(flavor_text_default)), "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT, "timeout" = 0), step = "text", when = PROC_REF(flavor_text_askable)), then(PROC_REF(ui_act_flavor_text)))
 
 	section(records, "The save slots, body records and disks of the appearance changer")
-	op("load_saveslot", ui_act("load_saveslot"), asks(/datum/prompt/yes_no, fields = list("question" = "Are you certain you wish to load the currently selected savefile?", "title" = "Load Savefile", "timeout" = 0), step = "confirm", answerer = PROC_REF(saveslot_answerer), when = PROC_REF(saveslot_askable)), then(PROC_REF(ui_act_load_saveslot)))
+	op("load_saveslot", ui_act("load_saveslot"), asks(/datum/prompt/yes_no, fields = list("question" = "Are you certain you wish to load the currently selected savefile?", "title" = "Load Savefile", "timeout" = 0), step = "confirm", answerer = PROC_REF(saveslot_answerer), answerer_bound = FALSE, when = PROC_REF(saveslot_askable)), then(PROC_REF(ui_act_load_saveslot)))
 	op("view_brec", ui_act("view_brec", arg("view_brec", schema_ref(/datum/transhuman/body_record))), then(PROC_REF(ui_act_view_brec)))
 	op("view_stock_brec", ui_act("view_stock_brec", arg("view_stock_brec", schema_text(4096))), then(PROC_REF(ui_act_view_stock_brec)))
 	op("loadfromdisk", ui_act("loadfromdisk"), then(PROC_REF(ui_act_loadfromdisk)))
@@ -177,9 +177,14 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 		rel_clear(src, nameof(last_camera_turf))
 		cut_data()
 
-/// Buttons are answered at most twice a second: spamming them is laggy.
+/// Buttons are answered at most twice a second, and not while the actor's earlier button of this window still waits on a question: spamming them is laggy.
 /datum/tgui_module/appearance_changer/proc/ui_cooled(datum/act/op/A)
-	return COOLDOWN_FINISHED(src, cooldown) ? null : MSG(appearance_changer/too_fast)
+	if(!COOLDOWN_FINISHED(src, cooldown))
+		return MSG(appearance_changer/too_fast)
+	for(var/datum/pending_op/earlier as anything in op_pendings_of(A.actor))
+		if(earlier != A.pending && earlier.holder == src)
+			return MSG(appearance_changer/too_fast)
+	return null
 
 MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!")
 

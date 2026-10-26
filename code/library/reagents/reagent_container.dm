@@ -75,7 +75,8 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		click_order(BIND_AT_TARGET, "reagent_container.spray", "reagent_container.fill", "reagent_container.pour"),
 		(lid && lid_visible) ? op("lid", inputs(in_hand(), menu()), label("Open or close the lid"), toggles(REAGENT_CONTAINER_LID_OPEN), says(MSG(reagent_container/lid))) : null,
 		settable ? op("set_amount", inputs(menu(), hand()), answers(INTENT_TOGGLE), when(CAP_PROC(range_known)), label("Set transfer amount"),
-			asks(/datum/prompt/number, fields = list("question" = "Amount per transfer:")), then(CAP_PROC(apply_amount))) : null,
+			asks(/datum/prompt/number, fields = list("question" = "Amount per transfer:"), step = "amount"),
+			needs(req_answer(CAP_PROC(amount_refusal), step = "amount")), then(CAP_PROC(apply_amount))) : null,
 		(spray || needle) ? null : op("pour", at_target(), when(CAP_PROC(target_pourable)), priority(OP_PRIORITY_PART), label("Pour"),
 			needs(req_source_open(), req_source_has_reagents(),
 				req_sink_has_room()),
@@ -159,15 +160,19 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		return value >= low && value <= high
 	return value in transfer
 
+/// The amount set_amount was answered with, as a whole number (null: no number).
+/datum/capability/lib/reagent_container/proc/answered_amount(datum/act/op/A)
+	var/asked = A.step_value("amount")
+	var/value = isnull(asked) ? null : text2num("[asked]")
+	return isnum(value) ? round(value) : value
+
+/// An amount this container does not allow is refused.
+/datum/capability/lib/reagent_container/proc/amount_refusal(datum/act/op/A)
+	return amount_allowed(A.holder, answered_amount(A)) ? null : MSG(reagent_container/bad_amount)
+
 /// What set_amount answered.
 /datum/capability/lib/reagent_container/proc/apply_amount(datum/act/op/A)
-	var/datum/prompt/R = A.answer
-	var/value = isnull(R) ? null : text2num("[R.value]")
-	if(isnum(value))
-		value = round(value)
-	if(!amount_allowed(A.holder, value))
-		A.reason = /datum/msg/reagent_container/bad_amount
-		return OP_REFUSED
+	var/value = answered_amount(A)
 	var/datum/activation/act_state = cap_activation(A.holder, CAP_REAGENT_CONTAINER, null, TRUE)
 	var/datum/cap_data/reagent_container/D = activation_data(act_state)
 	D.transfer_amount = value
