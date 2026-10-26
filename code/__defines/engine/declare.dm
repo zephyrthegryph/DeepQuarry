@@ -148,6 +148,7 @@
 #define SCHEMA_TEXT "text"
 #define SCHEMA_REF "ref"
 #define SCHEMA_PATH "path"
+#define SCHEMA_MSG "msg"
 #define SCHEMA_LIST "list_of"
 #define SCHEMA_MAP "map_of"
 #define SCHEMA_ROW "row"

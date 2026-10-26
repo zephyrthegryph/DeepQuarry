@@ -272,3 +272,5 @@ REGISTRY_TYPE(/datum/design_techweb, GLOBAL_PROC_REF(registry_design_techweb))
 /proc/registry_design_techweb(datum/design_techweb/D)
 	var/datum/design_techweb/entry = SSresearch?.techweb_designs[D.id]
 	return entry == D ? D : null
+
+SCHEMA(/datum/design_techweb, material_template, schema_path(/datum/material_template))

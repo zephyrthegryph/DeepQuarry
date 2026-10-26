@@ -213,3 +213,5 @@ CAPABILITIES(/datum/event)
 /datum/event/proc/victim() as /obj/effect/overmap/visitable/ship
 	return victim
 
+
+SCHEMA(/datum/event_meta, event_type, schema_path(/datum/event))

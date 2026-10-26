@@ -1,3 +1,4 @@
+call	code/modules/schema/schema.dm	22
 call	code/modules/vals/vals.dm	18
 call	code/modules/vals/vals.dm	86
 call	code/modules/vals/vals.dm	87
@@ -22,6 +23,9 @@ call	code/modules/vals/vals.dm	362
 call	code/modules/vals/vals.dm	366
 call	code/modules/vals/vals.dm	367
 call	code/modules/vals/vals.dm	390
+schema	code/modules/schema/schema.dm	18
+schema	code/modules/schema/schema.dm	23
+schema	code/modules/schema/schema.dm	24
 typed	code/modules/vals/vals.dm	126
 typed	code/modules/vals/vals.dm	255
 typed	code/modules/vals/vals.dm	304

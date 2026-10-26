@@ -438,3 +438,5 @@ CAPABILITIES(/datum/system/requests)
 	else
 		request_end(R, outcome, value)
 	return waiting
+
+SCHEMA(/datum/request, last_error, schema_text())
