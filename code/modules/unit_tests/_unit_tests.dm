@@ -427,6 +427,7 @@
 #include "dq_power_wakes_tests.dm"
 #include "dq_power_tests.dm"
 #include "dq_power_plants_behaviour.dm"
+#include "dq_system_moves_ctor_tests.dm"
 #include "dq_om_wake_tests.dm"
 #include "dq_actor_adapter_tests.dm"
 #include "dq_combat_mode_tests.dm"

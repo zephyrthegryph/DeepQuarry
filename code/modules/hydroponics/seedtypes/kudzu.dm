@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_KUDZU
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,50), REAGENT_ID_ANTITOXIN = list(1,25))
 
-/datum/seed/kudzu/New()
-	..()
+/datum/seed/kudzu/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)
 	set_trait(TRAIT_YIELD,4)

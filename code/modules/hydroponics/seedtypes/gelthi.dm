@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_GELTHI
 	chems = list(REAGENT_ID_STOXIN = list(1,5),REAGENT_ID_CAPSAICIN = list(1,5),REAGENT_ID_NUTRIMENT = list(1,5))
 
-/datum/seed/gelthi/New()
-	..()
+/datum/seed/gelthi/default_traits()
+	. = ..()
 	set_trait(TRAIT_PLANT_ICON,"mushroom3")
 	set_trait(TRAIT_ENDURANCE,15)
 	set_trait(TRAIT_MATURATION,6)

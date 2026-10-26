@@ -2,8 +2,7 @@
 	var/name
 	var/amount
 	var/tmp/datum/seed/seed_type_static	// Keeps track of what our seed is
-	// ALLOW(instance_list): d: a seed pile holds seeds
-	var/list/obj/item/seeds/seeds = list() // Tracks actual objects contained in the pile
+	var/list/obj/item/seeds/seeds // Tracks actual objects contained in the pile
 	var/ID
 
 CAPABILITIES(/datum/seed_pile)
@@ -12,14 +11,17 @@ CAPABILITIES(/datum/seed_pile)
 
 // The seed objects sit in the storage machine's contents; the pile only indexes them.
 
-/datum/seed_pile/New(obj/item/seeds/O, ID)
-	name = O.name
-	amount = 1
+/// A new pile holding the packet `O`, numbered `ID`.
+/proc/seed_pile_of(obj/item/seeds/O, ID)
+	var/datum/seed_pile/P = new /datum/seed_pile
+	P.name = O.name
+	P.amount = 1
 	// The pile's own reference seed: the registered line, or a private snapshot of a packet's private copy.
 	var/datum/seed/S = O.seed()
-	proto_set(src, nameof(seed_type_static), (!S || is_registered(S)) ? S : S.copy_line())
-	rel_add(src, nameof(seeds), O)
-	src.ID = ID
+	proto_set(P, nameof(P.seed_type_static), (!S || is_registered(S)) ? S : S.copy_line())
+	rel_add(P, nameof(P.seeds), O)
+	P.ID = ID
+	return P
 
 /datum/seed_pile/proc/matches(obj/item/seeds/O)
 	if (O.seed() == seed_type())
@@ -36,7 +38,7 @@ CAPABILITIES(/datum/seed_pile)
 	use_power = USE_POWER_IDLE
 
 	var/seeds_initialized = 0 // Map-placed ones break if seeds are loaded right at the start of the round, so we do it on the first interaction
-	var/list/datum/seed_pile/piles = list() // ALLOW(instance_list): d: seed piles are filled at init and are the machine's stock
+	var/list/datum/seed_pile/piles // The machine's stock, filled at init
 	var/list/datum/seed_pile/piles_contra //Hacked.
 	var/list/starting_seeds
 	var/list/contraband_seeds //Seeds we only show if we've been hacked.
@@ -314,7 +316,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 
 	var/list/piles_to_check = piles
 	if(hacked || emagged())
-		piles_to_check = piles + piles_contra
+		piles_to_check = (piles || list()) + piles_contra
 
 	var/list/seeds = list()
 	for(var/datum/seed_pile/S in piles_to_check)
@@ -417,7 +419,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /obj/machinery/seed_storage/proc/pile_by_id(id)
 	var/list/piles_to_check = piles
 	if(hacked || emagged())
-		piles_to_check = piles + piles_contra
+		piles_to_check = (piles || list()) + piles_contra
 	for(var/datum/seed_pile/N in piles_to_check)
 		if(N.ID == id)
 			return N
@@ -431,7 +433,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	if(O)
 		--N.amount
 		own_take_member(N, nameof(/datum/seed_pile::seeds), O)
-		if(N.amount <= 0 || N.seeds.len <= 0)
+		if(N.amount <= 0 || length(N.seeds) <= 0)
 			own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
 			own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
 			spent(N)
@@ -504,8 +506,8 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	var/newID = 0
 
 	if(contraband)
-		if(piles.len)
-			var/datum/seed_pile/final_pile = piles[piles.len]
+		if(length(piles))
+			var/datum/seed_pile/final_pile = piles[length(piles)]
 			newID = final_pile.ID + 1
 		for (var/datum/seed_pile/N in piles_contra)
 			if (N.matches(O))
@@ -514,7 +516,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 				return
 			else if(N.ID >= newID)
 				newID = N.ID + 1
-		rel_add(src, nameof(piles_contra), new /datum/seed_pile(O, newID))
+		rel_add(src, nameof(piles_contra), seed_pile_of(O, newID))
 		return
 
 	for (var/datum/seed_pile/N in piles)
@@ -525,7 +527,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 		else if(N.ID >= newID)
 			newID = N.ID + 1
 
-	rel_add(src, nameof(piles), new /datum/seed_pile(O, newID))
+	rel_add(src, nameof(piles), seed_pile_of(O, newID))
 
 	return
 

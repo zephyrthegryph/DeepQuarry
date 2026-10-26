@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_SHAND
 	chems = list(REAGENT_ID_BICARIDINE = list(0,10))
 
-/datum/seed/shand/New()
-	..()
+/datum/seed/shand/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,3)
 	set_trait(TRAIT_PRODUCTION,5)
 	set_trait(TRAIT_YIELD,4)

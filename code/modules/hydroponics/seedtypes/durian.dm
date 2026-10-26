@@ -6,8 +6,8 @@
 	kitchen_tag = PLANT_DURIAN
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,5), REAGENT_ID_DURIANPASTE = list(1, 20))
 
-/datum/seed/durian/New()
-	..()
+/datum/seed/durian/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,5)

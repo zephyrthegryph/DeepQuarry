@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_SURIK
 	chems = list(REAGENT_ID_IMPEDREZENE = list(1,3),REAGENT_ID_SYNAPTIZINE = list(1,2),REAGENT_ID_NUTRIMENT = list(1,5))
 
-/datum/seed/surik/New()
-	..()
+/datum/seed/surik/default_traits()
+	. = ..()
 	set_trait(TRAIT_PLANT_ICON,"bush6")
 	set_trait(TRAIT_ENDURANCE,18)
 	set_trait(TRAIT_MATURATION,7)

@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_RHUBARB
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,15))
 
-/datum/seed/rhubarb/New()
-	..()
+/datum/seed/rhubarb/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,3)
 	set_trait(TRAIT_PRODUCTION,5)

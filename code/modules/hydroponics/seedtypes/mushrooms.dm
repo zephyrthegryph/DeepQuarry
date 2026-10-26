@@ -9,8 +9,8 @@
 	splat_type = /obj/effect/plant
 	kitchen_tag = PLANT_MUSHROOMS
 
-/datum/seed/mushroom/New()
-	..()
+/datum/seed/mushroom/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,7)
 	set_trait(TRAIT_PRODUCTION,1)
 	set_trait(TRAIT_YIELD,5)
@@ -29,8 +29,8 @@
 	display_name = "brown mold"
 	mutants = null
 
-/datum/seed/mushroom/mold/New()
-	..()
+/datum/seed/mushroom/mold/default_traits()
+	. = ..()
 	set_trait(TRAIT_SPREAD,1)
 	set_trait(TRAIT_MATURATION,10)
 	set_trait(TRAIT_YIELD,-1)
@@ -47,8 +47,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(5,10), REAGENT_ID_FUNGI = list(1,5))
 	kitchen_tag = PLANT_PLUMPHELMET
 
-/datum/seed/mushroom/plump/New()
-	..()
+/datum/seed/mushroom/plump/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,8)
 	set_trait(TRAIT_YIELD,4)
 	set_trait(TRAIT_POTENCY,0)
@@ -64,8 +64,8 @@
 	mutants = list(PLANT_LIBERTYCAP,PLANT_GLOWSHROOM)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,50), REAGENT_ID_PSILOCYBIN = list(3,5), REAGENT_ID_FUNGI = list(1,5))
 
-/datum/seed/mushroom/hallucinogenic/New()
-	..()
+/datum/seed/mushroom/hallucinogenic/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,10)
 	set_trait(TRAIT_PRODUCTION,5)
 	set_trait(TRAIT_YIELD,4)
@@ -82,8 +82,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1), REAGENT_ID_STOXIN = list(3,3), REAGENT_ID_BLISS = list(1,12), REAGENT_ID_FUNGI = list(1,12))
 
-/datum/seed/mushroom/hallucinogenic/strong/New()
-	..()
+/datum/seed/mushroom/hallucinogenic/strong/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCTION,1)
 	set_trait(TRAIT_POTENCY,15)
 	set_trait(TRAIT_PRODUCT_ICON,"mushroom8")
@@ -98,8 +98,8 @@
 	mutants = list(PLANT_DESTROYINGANGEL,PLANT_PLASTIC)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1), REAGENT_ID_AMATOXIN = list(3,3), REAGENT_ID_PSILOCYBIN = list(1,25), REAGENT_ID_FUNGI = list(1,4))
 
-/datum/seed/mushroom/poison/New()
-	..()
+/datum/seed/mushroom/poison/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,10)
 	set_trait(TRAIT_PRODUCTION,5)
 	set_trait(TRAIT_YIELD,4)
@@ -116,8 +116,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,50), REAGENT_ID_AMATOXIN = list(13,3), REAGENT_ID_PSILOCYBIN = list(1,25), REAGENT_ID_FUNGI = list(1,2))
 
-/datum/seed/mushroom/poison/death/New()
-	..()
+/datum/seed/mushroom/poison/death/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,12)
 	set_trait(TRAIT_YIELD,2)
 	set_trait(TRAIT_POTENCY,35)
@@ -134,8 +134,8 @@
 	mutants = list(PLANT_REDCAP)
 	has_item_product = /obj/item/stack/material/log
 
-/datum/seed/mushroom/towercap/New()
-	..()
+/datum/seed/mushroom/towercap/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,15)
 	set_trait(TRAIT_PRODUCT_ICON,"mushroom7")
 	set_trait(TRAIT_PRODUCT_COLOUR,"#79A36D")
@@ -150,8 +150,8 @@
 	mutants = null
 	has_item_product = null
 
-/datum/seed/mushroom/towercap/red/New()
-	..()
+/datum/seed/mushroom/towercap/red/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#b81414")
 
 /datum/seed/mushroom/glowshroom
@@ -161,8 +161,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_RADIUM = list(1,20), REAGENT_ID_FUNGI = list(1,5))
 
-/datum/seed/mushroom/glowshroom/New()
-	..()
+/datum/seed/mushroom/glowshroom/default_traits()
+	. = ..()
 	set_trait(TRAIT_SPREAD,1)
 	set_trait(TRAIT_MATURATION,15)
 	set_trait(TRAIT_YIELD,3)
@@ -181,8 +181,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_PLASTICIDE = list(1,10), REAGENT_ID_FUNGI = list(2,6))
 
-/datum/seed/mushroom/plastic/New()
-	..()
+/datum/seed/mushroom/plastic/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,5)
 	set_trait(TRAIT_PRODUCTION,6)
 	set_trait(TRAIT_YIELD,6)
@@ -199,8 +199,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_SEROTROTIUM = list(5,10), REAGENT_ID_MOLD = list(1,10), REAGENT_ID_FUNGI = list(1,4))
 
-/datum/seed/mushroom/spore/New()
-	..()
+/datum/seed/mushroom/spore/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,15)
 	set_trait(TRAIT_PRODUCTION,5)
 	set_trait(TRAIT_YIELD,4)

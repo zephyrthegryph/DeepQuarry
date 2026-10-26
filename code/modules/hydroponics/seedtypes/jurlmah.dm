@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_JURLMAH
 	chems = list(REAGENT_ID_SEROTROTIUM = list(1,5),REAGENT_ID_NUTRIMENT = list(1,5))
 
-/datum/seed/jurlmah/New()
-	..()
+/datum/seed/jurlmah/default_traits()
+	. = ..()
 	set_trait(TRAIT_PLANT_ICON,"mushroom9")
 	set_trait(TRAIT_ENDURANCE,12)
 	set_trait(TRAIT_MATURATION,8)

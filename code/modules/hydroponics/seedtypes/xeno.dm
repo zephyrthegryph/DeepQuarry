@@ -6,8 +6,8 @@
 	force_layer = 3
 	chems = list(REAGENT_ID_PHORON = list(1,3))
 
-/datum/seed/xenomorph/New()
-	..()
+/datum/seed/xenomorph/default_traits()
+	. = ..()
 	set_trait(TRAIT_PLANT_ICON,"vine2")
 	set_trait(TRAIT_IMMUTABLE,1)
 	set_trait(TRAIT_PRODUCT_COLOUR,"#3D1934")

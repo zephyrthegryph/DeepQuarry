@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_VANILLA
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_VANILLA = list(2,8), REAGENT_ID_SUGAR = list(1, 4))
 
-/datum/seed/vanilla/New()
-	..()
+/datum/seed/vanilla/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,7)
 	set_trait(TRAIT_PRODUCTION,5)
 	set_trait(TRAIT_YIELD,3)

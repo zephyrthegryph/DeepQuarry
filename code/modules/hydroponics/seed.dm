@@ -18,8 +18,7 @@
 	var/mysterious                 // Only used for the random seed packets.
 	var/can_self_harvest = 0       // Mostly used for living mobs.
 	var/growth_stages = 0          // Number of stages the plant passes through before it is mature.
-	// ALLOW(instance_list): d: every seed has traits
-	var/list/trait_values = list() // Initialized in New()
+	var/list/trait_values // Built by default_traits() when the seed is made (the param below)
 	var/list/mutants               // Possible predefined mutant varieties, if any.
 	var/list/chems                 // Chemicals that plant produces in products/injects into victim.
 	var/list/consume_gasses        // The plant will absorb these gasses during its life.
@@ -41,8 +40,12 @@
 
 	var/ai_mob_product = 0 //This variable determines whether or not a mob product is meant to be ai-controlled. If set to 0, mob products die without a player to control them.
 
-/datum/seed/New()
+CAPABILITIES(/datum/seed)
+	param(nameof(trait_values), default = PROC_REF(default_traits))
+	after_init(0.5 SECONDS, then(PROC_REF(growth_stages_due)))
 
+/// The seed's traits when it is made: each subtype sets its own after `. = ..()`. Returns the trait table.
+/datum/seed/proc/default_traits()
 	set_trait(TRAIT_IMMUTABLE,            0)            // If set, plant will never mutate. If -1, plant is highly mutable.
 	set_trait(TRAIT_HARVEST_REPEAT,       0)            // If 1, this plant will fruit repeatedly.
 	set_trait(TRAIT_PRODUCES_POWER,       0)            // Can be used to make a battery.
@@ -83,7 +86,7 @@
 	set_trait(TRAIT_MUTAGENIC_REAG,       null)         // Reagents considered uniquely 'mutagenic' by a plant. This should be an associated list, or null. Examples in tray.dm
 	set_trait(TRAIT_TOXIC_REAG,           null)         // Reagents considered uniquely 'toxic' by a plant. This should be an associated list, or null. Examples in tray.dm
 
-	after(src, 0.5 SECONDS, PROC_REF(update_growth_stages))
+	return trait_values
 
 /datum/seed/proc/get_trait(trait)
 	return trait_values["[trait]"]
@@ -932,6 +935,10 @@
 	if(!S || is_registered(S))
 		return proto_set(dest, dest_var, S)
 	return proto_set(dest, dest_var, proto_replace(source, source_var, null))
+
+/// after_init(): the plant icon is known now; count its growth stages.
+/datum/seed/proc/growth_stages_due(datum/act/timer/A)
+	update_growth_stages()
 
 /datum/seed/proc/update_growth_stages()
 	if(get_trait(TRAIT_PLANT_ICON))

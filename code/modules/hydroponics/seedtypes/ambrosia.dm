@@ -7,8 +7,8 @@
 	mutants = list(PLANT_AMBROSIADEUS)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1), REAGENT_ID_AMBROSIAEXTRACT = list(1,8), REAGENT_ID_KELOTANE = list(1,8,1), REAGENT_ID_BICARIDINE = list(1,10,1))
 
-/datum/seed/ambrosia/New()
-	..()
+/datum/seed/ambrosia/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)
@@ -27,8 +27,8 @@
 	mutants = list(PLANT_AMBROSIAINFERNUS, PLANT_AMBROSIAGAIA)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1), REAGENT_ID_BICARIDINE = list(1,8), REAGENT_ID_SYNAPTIZINE = list(1,8,1), REAGENT_ID_HYPERZINE = list(1,10,1), REAGENT_ID_AMBROSIAEXTRACT = list(1,10))
 
-/datum/seed/ambrosia/deus/New()
-	..()
+/datum/seed/ambrosia/deus/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#A3F0AD")
 	set_trait(TRAIT_PLANT_COLOUR,"#2A9C61")
 
@@ -40,8 +40,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,3), REAGENT_ID_OXYCODONE = list(1,8), REAGENT_ID_IMPEDREZENE = list(1,10), REAGENT_ID_MINDBREAKER = list(1,10), REAGENT_ID_AMBROSIAEXTRACT = list(1,10))
 
-/datum/seed/ambrosia/infernus/New()
-	..()
+/datum/seed/ambrosia/infernus/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#dc143c")
 	set_trait(TRAIT_PLANT_COLOUR,"#b22222")
 
@@ -53,8 +53,8 @@
 	mutants = null
 	chems = list (REAGENT_ID_EARTHSBLOOD = list(3,5), REAGENT_ID_NUTRIMENT = list(1,3))
 
-/datum/seed/ambrosia/gaia/New()
-	..()
+/datum/seed/ambrosia/gaia/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,0)
 	set_trait(TRAIT_MATURATION,10)
 	set_trait(TRAIT_WATER_CONSUMPTION,6)

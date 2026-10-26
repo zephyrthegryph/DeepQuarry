@@ -7,8 +7,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_SPACESPICE = list(5,15))
 	kitchen_tag = PLANT_WURMWOAD
 
-/datum/seed/wurmwoad/New()
-	..()
+/datum/seed/wurmwoad/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,7)
 	set_trait(TRAIT_PRODUCTION,6)

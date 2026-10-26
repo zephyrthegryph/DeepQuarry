@@ -7,8 +7,8 @@
 	mutants = list(PLANT_EGG_PLANT)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10))
 
-/datum/seed/eggplant/New()
-	..()
+/datum/seed/eggplant/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)

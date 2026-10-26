@@ -7,8 +7,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,50), REAGENT_ID_SACID = list(0,1))
 	kitchen_tag = PLANT_NETTLE
 
-/datum/seed/nettle/New()
-	..()
+/datum/seed/nettle/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)
@@ -27,8 +27,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,50), REAGENT_ID_PACID = list(0,1))
 
-/datum/seed/nettle/death/New()
-	..()
+/datum/seed/nettle/death/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,8)
 	set_trait(TRAIT_YIELD,2)
 	set_trait(TRAIT_PRODUCT_COLOUR,"#8C5030")

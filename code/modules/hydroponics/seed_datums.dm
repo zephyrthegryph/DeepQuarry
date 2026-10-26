@@ -33,21 +33,21 @@
 	display_name = "black sapbean"
 	chems = list(REAGENT_ID_BLUESAP = list(1,2),REAGENT_ID_ORANGESAP = list(1,2),REAGENT_PURPLESAP = list(1,2))
 
-/datum/seed/soybean/sapbean/orange/New()
-	..()
+/datum/seed/soybean/sapbean/orange/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#FF8700")
 	set_trait(TRAIT_PLANT_COLOUR,"#FF8700")
-/datum/seed/soybean/sapbean/purple/New()
-	..()
+/datum/seed/soybean/sapbean/purple/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#FF00FF")
 	set_trait(TRAIT_PLANT_COLOUR,"#FF00FF")
-/datum/seed/soybean/sapbean/blue/New()
-	..()
+/datum/seed/soybean/sapbean/blue/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#0000FF")
 	set_trait(TRAIT_PLANT_COLOUR,"#0000FF")
 
-/datum/seed/soybean/sapbean/black/New() //the only real positive is that its 1 plant to care for rather than 3
-	..()
+/datum/seed/soybean/sapbean/black/default_traits() //the only real positive is that its 1 plant to care for rather than 3
+	. = ..()
 	set_trait(TRAIT_PRODUCT_ICON,"treefruit")
 	set_trait(TRAIT_PRODUCT_COLOUR,"#333333")
 	set_trait(TRAIT_PLANT_COLOUR,"#333333")
@@ -63,8 +63,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,25), REAGENT_ID_PROTEIN = list(4,10))
 
-/datum/seed/wheat/meatwheat/New()
-	..()
+/datum/seed/wheat/meatwheat/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#440000")
 
 /datum/seed/potato/voltato
@@ -74,8 +74,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_SHOCKCHEM = list(0,10))
 	mutants = null
 
-/datum/seed/potato/voltato/New()
-	..()
+/datum/seed/potato/voltato/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#E4EC2F")
 	set_trait(TRAIT_POTENCY,30)
 	set_trait(TRAIT_MATURATION,12)
@@ -88,8 +88,8 @@
 	display_name = PLANT_SOLARFLOWER + "s"
 	mutants = null
 
-/datum/seed/flower/sunflower/solarflower/New()
-	..()
+/datum/seed/flower/sunflower/solarflower/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#4466b3")
 	set_trait(TRAIT_BIOLUM,1)
 	set_trait(TRAIT_BIOLUM_COLOUR,"#4e74cc")
@@ -105,8 +105,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_MILK = list(4,5))
 	mutants = list("sweetbreeze")
 
-/datum/seed/flower/lavender/milkdew/New()
-	..()
+/datum/seed/flower/lavender/milkdew/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#DFDFDF")
 	set_trait(TRAIT_POTENCY,5)
 	set_trait(TRAIT_YIELD,3)
@@ -118,8 +118,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_SERAZINE = list(1,10))
 	mutants = null
 
-/datum/seed/flower/lavender/sweetbreeze/New()
-	..()
+/datum/seed/flower/lavender/sweetbreeze/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#df9898")
 	set_trait(TRAIT_POTENCY,10)
 	set_trait(TRAIT_MATURATION,20)
@@ -134,8 +134,8 @@
 	mutants = null
 	kitchen_tag = PLANT_CINNAMON
 
-/datum/seed/cinnamon/New()
-	..()
+/datum/seed/cinnamon/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)
@@ -155,8 +155,8 @@
 	kitchen_tag = PLANT_MICROM
 	chems = list(REAGENT_ID_MICROCILLIN = list(1,20))
 
-/datum/seed/size/New()
-	..()
+/datum/seed/size/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)
@@ -174,8 +174,8 @@
 	kitchen_tag = PLANT_MEGAM
 	chems = list(REAGENT_ID_MACROCILLIN = list(1,20))
 
-/datum/seed/size/megam/New()
-	..()
+/datum/seed/size/megam/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)
@@ -198,8 +198,8 @@
 	has_mob_product = /mob/living/simple_mob/vore/pitcher_plant
 	ai_mob_product = 1
 
-/datum/seed/pitcher_plant/New() //No custom icons yet. No spread trait yet even though pitcher fruit can be planted outside of a tray as I've not tied that to hydroponics code.
-	..()
+/datum/seed/pitcher_plant/default_traits() //No custom icons yet. No spread trait yet even though pitcher fruit can be planted outside of a tray as I've not tied that to hydroponics code.
+	. = ..()
 	set_trait(TRAIT_IMMUTABLE,1)
 	set_trait(TRAIT_CARNIVOROUS,1)
 	set_trait(TRAIT_MATURATION,8)
@@ -221,8 +221,8 @@
 	mutants = null
 	kitchen_tag = PLANT_TEA
 
-/datum/seed/tea/New()
-	..()
+/datum/seed/tea/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,5)
 	set_trait(TRAIT_PRODUCTION,5)
@@ -246,8 +246,8 @@
 	has_mob_product = /mob/living/simple_mob/animal/synx/ai/pet/holo
 	ai_mob_product = 1
 
-/datum/seed/hardlightseed/New()
-	..()
+/datum/seed/hardlightseed/default_traits()
+	. = ..()
 	set_trait(TRAIT_IMMUTABLE,1) //Normal genetics wont be able to do much with the mechanical parts, its more a machine than a real plant
 	set_trait(TRAIT_MATURATION,1)
 	set_trait(TRAIT_PRODUCTION,1)
@@ -268,8 +268,8 @@
 	kitchen_tag = PLANT_GARDENIA
 	chems = list(REAGENT_ID_NUTRIMENT = list(1), REAGENT_ID_PHENETHYLAMINE = list(12,24))
 
-/datum/seed/lustflower/New()
-	..()
+/datum/seed/lustflower/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,12)
 	set_trait(TRAIT_PRODUCTION,12)

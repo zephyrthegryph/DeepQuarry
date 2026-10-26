@@ -9,8 +9,8 @@
 	mutants = list(PLANT_BLACKWABBACK,PLANT_WILDWABBACK)
 	has_item_product = /obj/item/stack/material/cloth
 
-/datum/seed/wabback/New()
-	..()
+/datum/seed/wabback/default_traits()
+	. = ..()
 	set_trait(TRAIT_IDEAL_LIGHT, 5)
 	set_trait(TRAIT_MATURATION,8)
 	set_trait(TRAIT_PRODUCTION,3)
@@ -33,8 +33,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,3), REAGENT_ID_PROTEIN = list(1,10), REAGENT_ID_SEROTROTIUMV = list(0,1))
 
-/datum/seed/wabback/vine/New()
-	..()
+/datum/seed/wabback/vine/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#2E2F32")
 	set_trait(TRAIT_CARNIVOROUS,2)
 
@@ -46,8 +46,8 @@
 	has_item_product = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,15), REAGENT_ID_PROTEIN = list(0,2), REAGENT_ID_ENZYME = list(0,1))
 
-/datum/seed/wabback/wild/New()
-	..()
+/datum/seed/wabback/wild/default_traits()
+	. = ..()
 	set_trait(TRAIT_IDEAL_LIGHT, 3)
 	set_trait(TRAIT_WATER_CONSUMPTION, 7)
 	set_trait(TRAIT_NUTRIENT_CONSUMPTION, 0.1)

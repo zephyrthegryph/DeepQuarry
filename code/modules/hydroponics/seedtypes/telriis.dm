@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_TELRIIS
 	chems = list(REAGENT_ID_PWINE = list(1,5), REAGENT_ID_NUTRIMENT = list(1,6))
 
-/datum/seed/telriis/New()
-	..()
+/datum/seed/telriis/default_traits()
+	. = ..()
 	set_trait(TRAIT_PLANT_ICON,"ambrosia")
 	set_trait(TRAIT_PRODUCT_ICON,"ambrosia")
 	set_trait(TRAIT_ENDURANCE,50)

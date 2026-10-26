@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_CARROT
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20), REAGENT_ID_IMIDAZOLINE = list(3,5), REAGENT_ID_CARROTJUICE = list(10,20))
 
-/datum/seed/carrots/New()
-	..()
+/datum/seed/carrots/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,10)
 	set_trait(TRAIT_PRODUCTION,1)
 	set_trait(TRAIT_YIELD,5)

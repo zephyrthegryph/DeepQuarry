@@ -6,8 +6,8 @@
 	chems = list(REAGENT_ID_BANANA = list(10,10))
 	trash_type = /obj/item/bananapeel
 
-/datum/seed/banana/New()
-	..()
+/datum/seed/banana/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)

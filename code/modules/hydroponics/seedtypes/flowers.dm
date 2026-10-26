@@ -6,8 +6,8 @@
 	kitchen_tag = PLANT_HAREBELLS
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20))
 
-/datum/seed/flower/New()
-	..()
+/datum/seed/flower/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,7)
 	set_trait(TRAIT_PRODUCTION,1)
 	set_trait(TRAIT_YIELD,2)
@@ -24,8 +24,8 @@
 	kitchen_tag = PLANT_POPPIES
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20), REAGENT_ID_BICARIDINE = list(1,10))
 
-/datum/seed/flower/poppy/New()
-	..()
+/datum/seed/flower/poppy/default_traits()
+	. = ..()
 	set_trait(TRAIT_POTENCY,20)
 	set_trait(TRAIT_MATURATION,8)
 	set_trait(TRAIT_PRODUCTION,6)
@@ -44,8 +44,8 @@
 	mutants = list(PLANT_SOLARFLOWER) // Adding mutation strain for solarflowers.
 	kitchen_tag = PLANT_SUNFLOWERS
 
-/datum/seed/flower/sunflower/New()
-	..()
+/datum/seed/flower/sunflower/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCT_ICON,"flower2")
 	set_trait(TRAIT_PRODUCT_COLOUR,"#FFF700")
@@ -62,8 +62,8 @@
 	mutants = list(PLANT_MILKDEW) // Adding mutation strain for milkdew.
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20), REAGENT_ID_BICARIDINE = list(1,10))
 
-/datum/seed/flower/lavender/New()
-	..()
+/datum/seed/flower/lavender/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,7)
 	set_trait(TRAIT_PRODUCTION,5)
 	set_trait(TRAIT_YIELD,5)
@@ -83,8 +83,8 @@
 	mutants = list(PLANT_BLOODROSE)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,5), REAGENT_ID_STOXIN = list(0,2))
 
-/datum/seed/flower/rose/New()
-	..()
+/datum/seed/flower/rose/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,7)
 	set_trait(TRAIT_PRODUCTION,5)
 	set_trait(TRAIT_YIELD,3)
@@ -103,8 +103,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,5), REAGENT_ID_STOXIN = list(1,5), REAGENT_ID_BLOOD = list(0,2))
 
-/datum/seed/flower/rose/blood/New()
-	..()
+/datum/seed/flower/rose/blood/default_traits()
+	. = ..()
 	set_trait(TRAIT_IDEAL_LIGHT, 1)
 	set_trait(TRAIT_PLANT_COLOUR,"#5e0303")
 	set_trait(TRAIT_CARNIVOROUS,1)
@@ -116,8 +116,8 @@
 	kitchen_tag = PLANT_MUSTARD
 	chems = list(REAGENT_ID_MUSTARDPODS = list(1,10))
 
-/datum/seed/flower/mustard/New()
-	..()
+/datum/seed/flower/mustard/default_traits()
+	. = ..()
 	set_trait(TRAIT_POTENCY,20)
 	set_trait(TRAIT_MATURATION,7)
 	set_trait(TRAIT_PRODUCTION,5)

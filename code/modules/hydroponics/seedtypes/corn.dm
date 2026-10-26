@@ -6,8 +6,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_CORNOIL = list(3,15))
 	trash_type = /obj/item/corncob
 
-/datum/seed/corn/New()
-	..()
+/datum/seed/corn/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,8)
 	set_trait(TRAIT_PRODUCTION,6)
 	set_trait(TRAIT_YIELD,3)

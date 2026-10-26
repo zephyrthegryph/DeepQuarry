@@ -7,8 +7,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_TOMATOJUICE = list(10,10))
 	kitchen_tag = PLANT_TOMATO
 
-/datum/seed/tomato/New()
-	..()
+/datum/seed/tomato/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_JUICY,1)
 	set_trait(TRAIT_MATURATION,8)
@@ -30,8 +30,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_BLOOD = list(1,5))
 	splat_type = /obj/effect/decal/cleanable/blood/splatter
 
-/datum/seed/tomato/blood/New()
-	..()
+/datum/seed/tomato/blood/default_traits()
+	. = ..()
 	set_trait(TRAIT_YIELD,3)
 	set_trait(TRAIT_PRODUCT_COLOUR,"#FF0000")
 
@@ -43,8 +43,8 @@
 	can_self_harvest = 1
 	has_mob_product = /mob/living/simple_mob/tomato
 
-/datum/seed/tomato/killer/New()
-	..()
+/datum/seed/tomato/killer/default_traits()
+	. = ..()
 	set_trait(TRAIT_YIELD,2)
 	set_trait(TRAIT_PRODUCT_COLOUR,"#A86747")
 
@@ -55,8 +55,8 @@
 	mutants = list(PLANT_BLUESPACETOMATO)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20), REAGENT_ID_LUBE = list(1,5))
 
-/datum/seed/tomato/blue/New()
-	..()
+/datum/seed/tomato/blue/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#4D86E8")
 	set_trait(TRAIT_PLANT_COLOUR,"#070AAD")
 
@@ -67,8 +67,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20), REAGENT_ID_SINGULO = list(10,5))
 
-/datum/seed/tomato/blue/teleport/New()
-	..()
+/datum/seed/tomato/blue/teleport/default_traits()
+	. = ..()
 	set_trait(TRAIT_TELEPORTING,1)
 	set_trait(TRAIT_PRODUCT_COLOUR,"#00E5FF")
 	set_trait(TRAIT_BIOLUM,1)
