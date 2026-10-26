@@ -28,6 +28,8 @@ git config user.email t@t; git config user.name t
 mkdir -p tools/ci lanes docs
 cp "$here/tools/dq_train.sh" "$here/tools/dq_train_estimate.js" "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" "$here/tools/dq_light_paths.sh" "$here/tools/dq_gate_retry.sh" "$here/tools/dq_declared_tests.sh" tools/
 echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
+printf '#!/usr/bin/env bash\nexit 0\n' >tools/dq_disk_budget.sh  # stub: the integrator runs the disk gate from its SELF_DIR
+echo '# manifest' >tools/ci/disk_budget.toml
 cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
 # stub gates: BAD in a lane file fails; with DQ_STUB_CAP_ABOVE=N a batch of more than N lane files looks like a killed test phase
@@ -243,5 +245,41 @@ out="$(DQ_STUB_CAP_ABOVE=0 bash tools/dq_merge_batch.sh --lanes "lane/p" 2>&1)"
 check "a lane capped alone is bounced with the attempt log named" 'grep -q "^BATCH_BOUNCED: lane/p|its tests do not fit" <<<"$out" && grep -q "^BATCH_BOUNCED: lane/p|.*|data/merge-batch/.*attempt1.log" <<<"$out"'
 out="$(bash tools/dq_merge_batch.sh --lanes "lane/p,lane/q" 2>&1)"
 check "a clean batch reports its lanes as good" 'grep -q "^BATCH_GOOD: lane/p lane/q" <<<"$out" && grep -q "^BATCH_CAPPED: $" <<<"$out"'
+
+# ---- the integrator updates itself from origin/master between cycles ---------------------------------------------------------------------
+# It runs from a snapshot ($STATE/self). Cases: a change to a snapshot script on master re-execs it (same pid, same lock, the new code runs,
+# the snapshot equals master's blobs, the queued lane still lands); a master whose dq_train.sh does not parse is refused loudly and the
+# old copy keeps running. And every "$SELF_DIR/<file>" the cycle uses is in SNAP_FILES.
+snapfiles="$(sed -n 's/^SNAP_FILES=(\(.*\))$/\1/p' tools/dq_train.sh)"
+refs="$(sed '/^cmd_enqueue() {/,/^}/d' tools/dq_train.sh | grep -o '\$SELF_DIR/[A-Za-z0-9_][A-Za-z0-9_./-]*' | sed 's|^\$SELF_DIR/||' | sort -u)"
+missing=""; for r in $refs; do case " $snapfiles " in *" $r "*) ;; *) missing="$missing $r" ;; esac; done
+check "every file the cycle runs from SELF_DIR is in SNAP_FILES (missing:${missing:- none})" '[ -z "$missing" ] && [ -n "$snapfiles" ]'
+git fetch -q origin; git switch -q --detach origin/master
+su="$tmp/su-state"; mkdir -p "$su/self/ci"
+for f in $snapfiles; do cp -f "tools/$f" "$su/self/$f"; done
+export DQ_TRAIN_ORIGIN_REPO="$tmp/repo"
+sulog() { cat "$su/log/train.log" 2>/dev/null; }
+suenq() { mk "$1" "lanes/$2.txt" fine; DQ_TRAIN_STATE="$su" train enqueue --light >/dev/null 2>&1; back; }
+sumaster() { # <file> <sed-expr>: a commit on origin/master changing tools/<file>
+	git fetch -q origin; git switch -q --detach origin/master
+	sed -i "$2" "tools/$1"; git add -A; git commit -q -m "master changes $1"; git push -q origin HEAD:refs/heads/master
+}
+suenq lane/su1 su1
+sumaster dq_train.sh '/^	trap .lock_release; phase "idle". EXIT$/a\
+	tlog "v2 marker: the new dq_train.sh runs"'
+sumaster dq_train_estimate.js '$a// v2'
+want_est="$(git show origin/master:tools/dq_train_estimate.js | git hash-object --stdin)"
+out="$(DQ_TRAIN_STATE="$su" DQ_TRAIN_ONCE=1 bash "$su/self/dq_train.sh" run 2>&1)"; rc=$?
+check "a changed snapshot script is logged and the integrator re-execs" '[ "$rc" = 0 ] && grep -q "self-update: dq_train.sh dq_train_estimate.js changed on master; re-exec" <<<"$out"'
+check "the new dq_train.sh ran after the exec" 'grep -q "v2 marker" <<<"$out"'
+check "the snapshot now equals origin/master's copies" '[ "$(git hash-object --no-filters "$su/self/dq_train_estimate.js")" = "$want_est" ] && git show origin/master:tools/dq_train.sh | cmp -s - "$su/self/dq_train.sh"'
+pids="$(sed -n 's/.*train\[\([0-9]*\)\]: integrator started (pid .*/\1/p' <<<"$out" | sort -u | wc -l)"
+check "the exec keeps the integrator's pid and its lock (no second integrator)" '[ "$pids" = 1 ] && ! grep -q "already running" <<<"$out" && in_master lane/su1 && [ ! -d "$su/run.lock" ]'
+suenq lane/su2 su2
+sumaster dq_train.sh '$aif then echo "unterminated'
+cp -f "$su/self/dq_train.sh" "$tmp/su-before.sh"
+out="$(DQ_TRAIN_STATE="$su" DQ_TRAIN_ONCE=1 bash "$su/self/dq_train.sh" run 2>&1)"; rc=$?
+check "a master whose dq_train.sh does not parse is refused loudly" 'grep -q "SELF-UPDATE REFUSED" <<<"$out" && ! grep -q "changed on master; re-exec" <<<"$out"'
+check "the old copy keeps running, is not replaced, and still lands the lane" '[ "$rc" = 0 ] && cmp -s "$tmp/su-before.sh" "$su/self/dq_train.sh" && in_master lane/su2'
 
 [ "$fail" = 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
