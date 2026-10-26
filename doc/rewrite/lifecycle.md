@@ -260,9 +260,8 @@ run-time report; a `New()` override that never calls `..()` does not reach `/dat
 `make()` params are not written: chain `..()`). `analyze gen declare` marks such a type `lifeform_declared`, so `/datum/New()` takes its
 `make()` record; `make()` arms the entries whenever the made type's table has any. Why not arm it
 from `/datum/New()`: that runs at the root of the chain, before the subtype's own code, so a delay of 0 read a half-built datum (the seeds'
-growth stages, set from the plant icon a subtype's `New()` writes, divided by zero). Why it matters: `/datum/seed` set its growth stages from the plant icon its subtype's `New()` writes, through an `after()` half a
-second later; an `after_init()` armed at the root would divide by zero, and its `New()` never called `..()`, so nothing from
-`/datum/New()` ran at all. Tests: `dq_after_init/plain_datum*` (the seeds are converted on `engine/after-init-seeds`).
+growth stages, set from the plant icon a subtype's `New()` writes, divided by zero; `/datum/seed/New()` also never called `..()`,
+so nothing of `/datum/New()` ran for a seed). Tests: `dq_after_init/plain_datum*` (the seeds are converted on `engine/after-init-seeds`).
 
 **DECLARE_BEHAVIOUR audit** (4 real sites):
 
