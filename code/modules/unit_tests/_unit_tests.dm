@@ -411,6 +411,7 @@
 #include "dq_fields_tasks_tests.dm"
 #include "dx_ui_validators_tests.dm"
 #include "dq_om_key_tests.dm"
+#include "dq_ref_text_admin_tests.dm"
 #include "dq_ref_text_stored_tests.dm"
 #include "dq_om_periodic_tests.dm"
 #include "dq_machine_state_tests.dm"

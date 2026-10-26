@@ -482,8 +482,8 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 	info_links = info
 	var/i = 0
 	for(i=1,i<=fields,i++)
-		addtofield(i, "<font face=\"[deffont]\"><A href='byond://?src=\ref[src];write=[i]'>write</A></font>", 1)
-	info_links = info_links + "<font face=\"[deffont]\"><A href='byond://?src=\ref[src];write=end'>write</A></font>"
+		addtofield(i, "<font face=\"[deffont]\"><A href='byond://?src=[REF(src)];write=[i]'>write</A></font>", 1)
+	info_links = info_links + "<font face=\"[deffont]\"><A href='byond://?src=[REF(src)];write=end'>write</A></font>"
 
 
 /obj/item/paper/proc/clearpaper()
@@ -904,11 +904,11 @@ CAPABILITIES(/obj/item/paper/manifest)
 		t = replacetext(t, "\[/row\]", "")
 		t = replacetext(t, "\[cell\]", "<td>")
 		t = replacetext(t, "\[/cell\]", "")
-		t = replacetext(t, "\[logo\]", "<img src=\ref['html/images/ntlogo.png']>")
-		t = replacetext(t, "\[talogo\]", "<img src=\ref['html/images/talonlogo.png']>")
-		t = replacetext(t, "\[sglogo\]", "<img src=\ref['html/images/sglogo.png']>")
-		t = replacetext(t, "\[trlogo\]", "<img src=\ref['html/images/trader.png']>")
-		t = replacetext(t, "\[pclogo\]", "<img src=\ref['html/images/pclogo.png']>") // Not available on virgo // CHOMPEnable
+		t = replacetext(t, "\[logo\]", "<img src=[REF('html/images/ntlogo.png')]>")
+		t = replacetext(t, "\[talogo\]", "<img src=[REF('html/images/talonlogo.png')]>")
+		t = replacetext(t, "\[sglogo\]", "<img src=[REF('html/images/sglogo.png')]>")
+		t = replacetext(t, "\[trlogo\]", "<img src=[REF('html/images/trader.png')]>")
+		t = replacetext(t, "\[pclogo\]", "<img src=[REF('html/images/pclogo.png')]>") // Not available on virgo // CHOMPEnable
 
 		t = "<font face=\"[/obj/item/paper::deffont]\" color=[P ? P.colour : "black"]>[t]</font>"
 	else // If it is a crayon, and he still tries to use these, make them empty!
