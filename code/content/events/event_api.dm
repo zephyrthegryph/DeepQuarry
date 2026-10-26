@@ -1,4 +1,4 @@
-// The event system's API (code/modules/events/event_service.dm declares the system).
+// The event system's API (code/content/events/event_service.dm declares the system).
 //
 //   SSevents.request_round_end_report()   the round end prints the event report
 //   events_*()                            reads (code/contracts/accessors/accessors.dm)
