@@ -435,17 +435,29 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 /// TRUE while the login checks are outstanding.
 /client/var/login_pending = FALSE
 
+/// Counts login gates started. Every connection takes the next number, so an answer or the gate timer of an earlier connection of the same
+/// ckey and computer id can be told from the current one's.
+GLOBAL_VAR_INIT(login_seq, 0)
+
+/// This connection's number from GLOB.login_seq; 0 before its gate starts.
+/client/var/login_serial = 0
+
 /// Holds the client and starts its login checks. Called once, from client/New().
 /client/proc/start_login_gate()
 	login_pending = TRUE
-	log_access("Login gate: holding [key_name(src)] for its login checks")
-	after(LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), ckey, clock = CLOCK_WORLD, with = list(computer_id))
+	login_serial = ++GLOB.login_seq
+	log_access("Login gate: holding [key_name(src)] for its login checks (connection #[login_serial])")
+	after(LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), ckey, clock = CLOCK_WORLD, with = list(computer_id, login_serial))
 	log_client_to_db()
 
-/// A gate still closed after LOGIN_GATE_TIMEOUT fails open.
-/proc/login_gate_timeout(ckey, computer_id)
+/// A gate still closed after LOGIN_GATE_TIMEOUT fails open. The timer belongs to one connection (its serial): a reconnect's new gate is
+/// not admitted by the old connection's timer.
+/proc/login_gate_timeout(ckey, computer_id, serial)
 	var/client/C = GLOB.directory[ckey]
 	if(!C || !C.login_pending || C.computer_id != computer_id)
+		return
+	if(C.login_serial != serial)
+		log_access("Login gate: dropped the timeout of connection #[serial] for [ckey]: the client is on connection #[C.login_serial]")
 		return
 	log_access("Login gate: checks for [key_name(C)] did not answer in [LOGIN_GATE_TIMEOUT / 10]s; admitting")
 	message_admins("Login checks for [key_name_admin(C)] did not answer in time; they were admitted unchecked.")
@@ -502,27 +514,37 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 /// is answered, if the client is still here. Parameterized only.
 /client/proc/login_ask(query, list/params, answer, ...)
 	log_access("Login gate: [key_name(src)] checking [answer]")
-	var/list/call_args = list(null, query, params, GLOBAL_PROC_REF(login_answered), ckey, computer_id, answer)
+	var/list/call_args = list(null, query, params, GLOBAL_PROC_REF(login_answered), ckey, computer_id, login_serial, answer)
 	if(length(args) > 3)
 		call_args += args.Copy(4)
-	return sql_ask(arglist(call_args))
+	var/job = sql_ask(arglist(call_args))
+	if(!job)
+		log_access("Login gate: ERROR the I/O lane refused the read for [answer] for [key_name(src)]; the gate timeout will admit it")
+		log_sql("login: the I/O lane refused the read for [answer] for [ckey]")
+	return job
 
 /// Starts one of the login HTTP lookups: `answer` runs as answer(/datum/http_response, error, context...), the response null on a failure.
 /client/proc/login_http_ask(url, answer, ...)
 	log_access("Login gate: [key_name(src)] checking [answer]")
-	var/list/call_args = list(null, url, GLOBAL_PROC_REF(login_answered), ckey, computer_id, answer)
+	var/list/call_args = list(null, url, GLOBAL_PROC_REF(login_answered), ckey, computer_id, login_serial, answer)
 	if(length(args) > 2)
 		call_args += args.Copy(3)
-	return http_ask(arglist(call_args))
+	var/job = http_ask(arglist(call_args))
+	if(!job)
+		log_access("Login gate: ERROR the I/O lane refused the lookup for [answer] for [key_name(src)]; the gate timeout will admit it")
+	return job
 
 /// io_job() callback of every login read: hands the answer to the step on the client it was started for. A client that has gone, or
-/// reconnected from another computer, drops it (the new connection runs its own checks).
-/proc/login_answered(result, error, ckey, computer_id, answer, ...)
+/// reconnected (another computer, or the same one: the connection's serial differs) drops it, because the new connection runs its own checks.
+/proc/login_answered(result, error, ckey, computer_id, serial, answer, ...)
 	var/client/C = GLOB.directory[ckey]
 	if(!C || C.computer_id != computer_id)
 		log_access("Login gate: dropped the answer to [answer] for [ckey]: the client is gone")
 		return
-	var/list/context = length(args) > 5 ? args.Copy(6) : list()
+	if(C.login_serial != serial)
+		log_access("Login gate: dropped the stale answer to [answer] for [ckey]: it was asked for connection #[serial], the client is on #[C.login_serial]")
+		return
+	var/list/context = length(args) > 6 ? args.Copy(7) : list()
 	call(C, answer)(arglist(list(result, error) + context))
 
 /// The database ban check (moved here from world/IsBanned(), which can't wait on a query): the first login step. A ban disconnects
@@ -551,28 +573,38 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			log_world("Key [ckey] cid not checked. Non-Numeric: [computer_id]")
 			failedcid = 1
 
-	login_ask("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params, PROC_REF(login_ban_answered), failedcid, failedip)
+	if(!login_ask("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params, PROC_REF(login_ban_answered), failedcid, failedip))
+		// the documented behaviour of a ban read that fails is to carry on unchecked; say so loudly
+		log_world("Login gate: ERROR the ban check for [ckey] could not be started; continuing unchecked")
+		message_admins("The ban check for [key_name_admin(src)] could not be started; they were not checked for bans.")
+		login_ban_answered(null, "the I/O lane refused the ban read", failedcid, failedip)
+
+/// The refusal message for the first ban row, or null when there is no ban row. A ban row always refuses: a row too short or odd to
+/// describe still gives a plain message, so the ban never fails open on the description.
+/proc/login_ban_refusal(list/ban_rows)
+	if(!length(ban_rows))
+		return null
+	var/list/ban_row = ban_rows[1]
+	if(!islist(ban_row) || length(ban_row) < 9)
+		return "You have been banned."
+	var/expires = ""
+	if(text2num("[ban_row[7]]") > 0)
+		expires = " The ban is for [ban_row[7]] minutes and expires on [ban_row[6]] (server time)."
+	return "You have been banned.\nReason: You, or another user of this computer or connection ([ban_row[1]]) is banned from playing here. The ban reason is:\n[ban_row[5]]\nThis ban was applied by [ban_row[4]] on [ban_row[8]], [expires]"
 
 /client/proc/login_ban_answered(list/result, error, failedcid, failedip)
 	var/list/ban_rows = sql_answer_rows(result, error, "login: ban check for [ckey]")
-
-	for(var/list/ban_row as anything in ban_rows)
-		var/pckey = ban_row[1]
-		var/ackey = ban_row[4]
-		var/reason = ban_row[5]
-		var/expiration = ban_row[6]
-		var/duration = ban_row[7]
-		var/bantime = ban_row[8]
-		var/bantype = ban_row[9]
-
-		var/expires = ""
-		if(text2num(duration) > 0)
-			expires = " The ban is for [duration] minutes and expires on [expiration] (server time)."
-
-		var/desc = "\nReason: You, or another user of this computer or connection ([pckey]) is banned from playing here. The ban reason is:\n[reason]\nThis ban was applied by [ackey] on [bantime], [expires]"
-		log_suspicious_login("Failed Login: [key] [computer_id] [address] - Banned [bantype]")
-		message_admins(span_blue("Failed Login: [key] id:[computer_id] ip:[address] - Banned [bantype]"))
-		disconnect_with_message("You have been banned.[desc]")
+	var/refusal = login_ban_refusal(ban_rows)
+	if(refusal)
+		// disconnect first: nothing after this may keep a banned player in
+		var/who = key
+		var/cid = computer_id
+		var/ip = address
+		var/list/ban_row = ban_rows[1]
+		var/bantype = islist(ban_row) && length(ban_row) >= 9 ? "[ban_row[9]]" : "unknown"
+		disconnect_with_message(refusal)
+		log_suspicious_login("Failed Login: [who] [cid] [ip] - Banned [bantype]")
+		message_admins(span_blue("Failed Login: [who] id:[cid] ip:[ip] - Banned [bantype]"))
 		return
 	if (failedcid)
 		message_admins("[key] has logged in with a blank computer id in the ban check.")
