@@ -64,7 +64,7 @@ fn started() -> (Roots, Arc<Shared>) {
 #[test]
 fn an_edit_after_the_session_is_released_patches_the_restored_base() {
     let (roots, shared) = started();
-    let applied = || crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
+    let applied = || crate::retained_output::applied(&roots.manifest(0));
     let initial = build(&shared, &roots);
     let start = applied();
     roots.edit(0, &TREE.replace("return a + 1", "return a + 2"));
@@ -97,7 +97,7 @@ fn an_edit_after_the_session_is_released_patches_the_restored_base() {
 #[test]
 fn edits_that_move_lines_or_change_strings_patch_the_restored_base() {
     let (roots, shared) = started();
-    let applied = || crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
+    let applied = || crate::retained_output::applied(&roots.manifest(0));
     build(&shared, &roots);
     roots.edit(0, &TREE.replace("return a + 1", "return a + 2"));
     build(&shared, &roots);
@@ -132,7 +132,7 @@ fn a_declaration_edit_after_the_release_compiles_whole_and_is_correct() {
 #[test]
 fn a_damaged_or_foreign_spill_file_is_ignored() {
     let (roots, shared) = started();
-    let applied = || crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
+    let applied = || crate::retained_output::applied(&roots.manifest(0));
     build(&shared, &roots);
     roots.edit(0, &TREE.replace("return a + 1", "return a + 2"));
     build(&shared, &roots);
@@ -186,7 +186,7 @@ fn another_variants_file_is_not_this_variants_base() {
 #[test]
 fn a_retiring_daemon_and_the_idle_housekeeping_pass_store_the_base_before_they_drop_it() {
     let (roots, shared) = started();
-    let applied = || crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
+    let applied = || crate::retained_output::applied(&roots.manifest(0));
     build(&shared, &roots);
     roots.edit(0, &TREE.replace("return a + 1", "return a + 2"));
     build(&shared, &roots);

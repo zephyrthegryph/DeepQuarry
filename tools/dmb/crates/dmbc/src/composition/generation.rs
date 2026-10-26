@@ -342,59 +342,6 @@ impl RetainedGeneration {
             }
         }
     }
-    /// Default-edit patch: replace Variables-table values in the retained
-    /// image (see `crate::declaration_patch`). The base advances
-    /// exactly as `patch_rows` advances it.
-    pub(crate) fn patch_variable_values(
-        &self,
-        image: &PatchImage,
-        values: &[(u32, u8, u32)],
-        base: crate::retained_output::OutputBase,
-    ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
-        self.attempt
-            .with_pending(|_| {
-                let patched = image
-                    .rows
-                    .patch_variable_values(values)
-                    .map_err(|error| format!("variable patch: {error}"))?;
-                let encoded = patched.image().clone();
-                validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;
-                // Keep the retained model describing the published image so a
-                // later structural patch can edit it (stable numbering).
-                {
-                    let _timer = dm_profile::detail_timer("patch.default_model_sync");
-                    let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-                    let synced = current.as_ref().and_then(|generation| {
-                        (generation.encoded.content_hash() == image.rows.image().content_hash())
-                            .then(|| {
-                                let mut inputs = CertifiedGenerationInputs {
-                                    model: generation.inputs.model.clone(),
-                                    string_seed: generation.inputs.string_seed.clone(),
-                                };
-                                for &(record, _, value) in values {
-                                    inputs.model.variables[record as usize].value = value;
-                                }
-                                Generation {
-                                    inputs,
-                                    encoded: encoded.clone(),
-                                }
-                            })
-                    });
-                    *current = synced.map(Arc::new);
-                }
-                let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-                slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
-                slot.image = Some(Arc::new(PatchImage {
-                    rows: patched,
-                    proc_code: Arc::clone(&image.proc_code),
-                }));
-                // The retained model was replaced (or released) above.
-                slot.model_rows.clear();
-                slot.model_anchor = None;
-                Ok(encoded)
-            })
-            .unwrap_or_else(|| Err("generation attempt is not pending".into()))
-    }
     /// Whether body patches since the model's encoding (`encoded`) account for the published image
     /// `base_hash`: the model plus the rows in the patch slot describe that image.
     fn rows_synced(&self, encoded: u128, base_hash: u128) -> bool {
@@ -496,7 +443,7 @@ impl RetainedGeneration {
             .collect(),
         )
     }
-    /// Structural append patch on the retained composed model, which must
+    /// Edit of the retained composed model (appended callables, new strings), which must
     /// still describe the published image with `base_hash`. `strings` runs
     /// before the string index is built (table strings), `edit` after. The
     /// edited model is encoded with list-row reuse and becomes the current

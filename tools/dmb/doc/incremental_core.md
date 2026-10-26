@@ -381,6 +381,21 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
    `try_default_patch`, `DMB_DEFAULT_PATCH`, `disable_default_patch` and the patch-count test are deleted; `reads_initial`
    stays in `retained_output` (the admission proof uses it), as does `DefaultEdits` in `dm-tree` (the frontend's proof).
 4. Same for appended callables (new link entries append), then delete `declaration_patch*.rs`.
+   **Landed 2026-10-26 (compiler/one-path-decl).** `retained_output::admit` takes an edit that only appended procs, verbs
+   or plain vars relative to the retained output's own tree (`tree.appended_callables()`): `retained_output_append.rs`
+   (the former append patch, split into `admit_appended` and `splice_appended`) proves the alignment, the mentions and the
+   line map; `cold::incremental_output` lowers the changed and appended bodies through the same selected-body lowering as a
+   body edit, and `splice` appends the new procedures, records and list entries to the retained model. No answers are
+   compared (every text naming an appended name is a relowered body or its own declaration) and no marking is made, as
+   before. Deleted: `declaration_patch.rs`, `declaration_patch_append.rs` (moved), `cold/selected_lowering.rs`
+   (`lower_selected`), the request runner's declaration-patch attempt, `RetainedGeneration::patch_variable_values` (dead
+   since the default patch went) and `applied_with_declaration_patches`. Measured, production tree, 4 workers, hot daemon
+   per arm, three edits per round (added proc, added proc, added `/datum/var` with a numeric default), arms interleaved six
+   times on a machine shared with other lanes: published compiler (patch) 5.2-8.8 s wall, compilation stage 1.47-2.26 s;
+   this branch 4.8-9.2 s, compilation 1.47-3.03 s (first edit of a session the slowest); the quietest pair: patch 5.24-5.56 s,
+   general path 4.83-5.22 s. `dmb-equiv --all --ignore-debug --ignore-order` of the general path's output after the edits
+   against a fresh `--no-daemon --no-cache` compile of the same tree: EQUIVALENT. Cargo tests `structural_change`,
+   `six_session`, `revert_rebase`, `variant_spill`, `retained_output` pass.
 5. Frontend queries (`file_decls`, `type_node`) and resources as queries lower the shared 9-11 s floor.
 
 
