@@ -232,3 +232,5 @@ CAPABILITIES(/datum/record_update_review)
 
 /proc/client_record_update_unlock()
 	GLOB.client_record_update_lock = FALSE
+
+SCHEMA(/datum/prompt/choice/record_update_review, initial_refusal, schema_text())

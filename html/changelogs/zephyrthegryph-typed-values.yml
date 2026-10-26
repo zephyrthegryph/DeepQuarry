@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The analyzer reads SCHEMA value declarations (schema_path, schema_msg) in the untyped, stored_refs and base_vars lints; path-valued and refusal-reason vars are declared with SCHEMA; analyze fix --propose-schema proposes a base and never applies it"

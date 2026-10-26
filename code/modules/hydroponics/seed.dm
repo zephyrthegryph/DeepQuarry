@@ -938,3 +938,5 @@
 		set_growth_stages(SSplants.plant_sprites[get_trait(TRAIT_PLANT_ICON)])
 	else
 		set_growth_stages(0)
+
+SCHEMA(/datum/seed, has_item_product, schema_path(/obj))

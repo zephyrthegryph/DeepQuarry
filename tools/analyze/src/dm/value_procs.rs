@@ -7,7 +7,7 @@
 //! * each assignment to `.` (a bare `return` and the end of the body both return `.`),
 //! * a `..()` / `.()` result, which is the result of the parent or of the proc itself.
 //!
-//! A value expression is a number or text literal, an interpolated string, arithmetic, a comparison or a unary operator (this tree
+//! A value expression is a number, text or type path literal, an interpolated string, arithmetic, a comparison or a unary operator (this tree
 //! defines no operator overloads, so none yields an entity), `a || b` / `a && b` when both operands are values, a ternary whose
 //! branches both are, a local whose every assignment in the proc is a value, or a call that resolves to value-returning procs or to a
 //! DM builtin in [`BUILTIN_VALUE_CALLS`].
@@ -280,6 +280,8 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 }
                 match &term.elem {
                     Term::Null | Term::Int(_) | Term::Float(_) | Term::String(_) | Term::Resource(_) | Term::InterpString(..) | Term::__PROC__ | Term::__TYPE__ => true,
+                    // A type path literal (`/datum/msg/op/busy`) names a type, never an instance (doc/rewrite/proposals/typed_values.md section 5).
+                    Term::Prefab(_) => true,
                     Term::Expr(inner) => self.value_expr(ctx, inner),
                     Term::Ident(n) => n == "." || ctx.locals.contains(n.as_str()) || (!ctx.sc.locals.contains_key(n.as_str()) && self.var_value(ctx.sc.owner, n)),
                     Term::Pick(choices) => choices.iter().all(|(w, v)| w.as_ref().is_none_or(|w| self.value_expr(ctx, w)) && self.value_expr(ctx, v)),
