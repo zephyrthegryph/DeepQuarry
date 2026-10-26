@@ -391,7 +391,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	else if(!keytouse && mind?.key)
 		keytouse = ckey(mind.key)
 
-	GLOB.respawn_timers[keytouse] = EXPIRY_AT(null, CLOCK_WORLD, 0) + time
+	SSmobs.set_respawn_wait(keytouse, time)
 
 /mob/observer/dead/set_respawn_timer()
 	if(CONFIG_GET(flag/antag_hud_restricted) && has_enabled_antagHUD)

@@ -86,39 +86,28 @@
 // A command that reads the database runs its body, flow_run(), as a prompt flow (flow_io.dm):
 // each query re-runs it when answered. A body that finishes at once (no query, or an error
 // before one) answers through Run() as usual; one that waited sends its reply to the channel
-// the command came from when it finishes. The sender is held here until then.
+// the command came from when it finishes. The sender is held by the server tasks system until then.
 
-/// Senders of commands whose flow is waiting on a query, key -> sender (a declared keyed relation of GLOB), and when each started.
-GLOBAL_ALIST_EMPTY(tgs_flow_senders)
-GLOBAL_ALIST_EMPTY(tgs_flow_started)
 GLOBAL_VAR_INIT(tgs_flow_seq, 0)
 
-/// Drops one waiting flow's sender and its start time.
-/proc/tgs_flow_release(key)
-	rel_add(GLOB, nameof(GLOB.tgs_flow_senders), null, key)
-	GLOB.tgs_flow_started -= key
-
 /datum/tgs_chat_command/proc/run_as_flow(datum/tgs_chat_user/sender, params)
-	for(var/stale in GLOB.tgs_flow_started) // a flow dropped on the way never collects its sender
-		if(ELAPSED_SINCE(src, GLOB.tgs_flow_started[stale], CLOCK_WORLD) > 10 MINUTES)
-			tgs_flow_release(stale)
+	SSserver_maint.tgs_flows_drop_stale() // a flow dropped on the way never collects its sender
 	var/key = "[++GLOB.tgs_flow_seq]"
-	rel_add(GLOB, nameof(GLOB.tgs_flow_senders), sender, key)
-	GLOB.tgs_flow_started[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+	SSserver_maint.tgs_flow_hold(key, sender)
 	. = flow_entry(key, params)
 	if(!isnull(.))
-		tgs_flow_release(key)
+		SSserver_maint.tgs_flow_release(key)
 
 /datum/tgs_chat_command/proc/flow_entry(key, params)
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(flow_entry), args)
-	var/datum/tgs_chat_user/sender = GLOB.tgs_flow_senders[key]
+	var/datum/tgs_chat_user/sender = SSserver_maint.tgs_flow_sender(key)
 	if(!sender)
 		return
 	var/reply = flow_run(sender, params)
 	if(!prompt_flow_answers()) // finished on its first run: Run() returns the reply
 		return reply
-	tgs_flow_release(key)
+	SSserver_maint.tgs_flow_release(key)
 	if(isnull(reply))
 		return
 	var/datum/tgs_message_content/message = istext(reply) ? new /datum/tgs_message_content(reply) : reply

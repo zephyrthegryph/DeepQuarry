@@ -159,7 +159,7 @@
 	var/datum/contract_cooldown/cooldown = contract_cooldown_running(offer_cooldowns, offer_key)
 	var/recheck_delay = candidate_expires_at ? max(1, candidate_expires_at - world.time) : 0
 	if(cooldown)
-		recheck_delay = recheck_delay ? min(recheck_delay, EXPIRY_LEFT(cooldown, until, CLOCK_WORLD)) : EXPIRY_LEFT(cooldown, until, CLOCK_WORLD)
+		recheck_delay = recheck_delay ? min(recheck_delay, contract_cooldown_left(cooldown)) : contract_cooldown_left(cooldown)
 	if(recheck_delay)
 		after(src, recheck_delay, PROC_REF(reconcile_offer_board), with = list("Candidate timer"))
 	return null
@@ -242,7 +242,7 @@
 	if(definition?.auto_replace && contract.offer_kind == CONTRACT_OFFER_STANDING)
 		cooldown = rand(CONTRACT_ROTATION_MIN_DELAY, CONTRACT_ROTATION_MAX_DELAY)
 	if(isnum(cooldown) && cooldown > 0)
-		contract_cooldown_start(offer_cooldowns, contract.offer_key, cooldown)
+		contract_cooldown_start(nameof(offer_cooldowns), contract.offer_key, cooldown)
 	switch(contract.closure_code)
 		if(CONTRACT_CLOSE_DECLINED)
 			offers_declined++

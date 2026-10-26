@@ -46,6 +46,13 @@ SYSTEM_DEF(pathing)
 
 CAPABILITIES(/datum/system/pathing)
 	ref_many(nameof(queue), /datum/io/path)
+	owns_many(nameof(failed_searches), /datum/path_failure)
+
+/// A search that found nothing: the navigation revision it failed under and when. The path system owns one per failed search key.
+/datum/path_failure
+	/// GLOB.ai_navigation_revision when the search failed.
+	var/revision = 0
+	EXPIRY_DECLARE(failed_at)
 
 #define PATHFINDER_TIMEOUT 50
 /// A cached failure is also dropped after this long, because not every map edit bumps the navigation revision.
@@ -70,40 +77,40 @@ CAPABILITIES(/datum/system/pathing)
 	/// this is used in place of a closed list in algorithms like JPS
 	/// to maximize performance.
 	var/tmp/pathfinding_cycle = 0
-	/// Failed search key -> list(GLOB.ai_navigation_revision, world.time) when it failed (Q9).
+	/// Failed search key -> the /datum/path_failure that records it (Q9).
 	var/list/failed_searches
 	/// Searches answered from failed_searches.
 	var/failure_cache_hits = 0
 
 /// Waits for the search mutex. Returns FALSE if it is still held after `timeout`. pathfinding_blocked
 /// counts the callers waiting here; the only exit from this proc is the bottom, so it is always put back.
-/datum/system/pathing/proc/wait_for_mutex(started_at, timeout = PATHFINDER_TIMEOUT)
+/datum/system/pathing/proc/wait_for_mutex(datum/pathfinding/waiter, timeout = PATHFINDER_TIMEOUT)
 	++pathfinding_blocked
 	// Many waiters back off further, so a pile-up does not turn into a stoplag storm.
 	var/backoff = pathfinding_blocked < 10 ? 1 : 3
 	. = TRUE
 	while(pathfinding_mutex)
 		stoplag(backoff) // ALLOW(scheduler): mutex held across the search's CHECK_TICK yields
-		if(ELAPSED_SINCE(src, started_at, CLOCK_WORLD) > timeout)
+		if(ELAPSED(waiter, started_at, CLOCK_WORLD) > timeout)
 			. = FALSE
 			break
 	--pathfinding_blocked
 
 /datum/system/pathing/proc/run_pathfinding(datum/pathfinding/instance)
-	var/started_at = world.time
-	if(!wait_for_mutex(started_at))
+	STAMP(instance, started_at, CLOCK_WORLD)
+	if(!wait_for_mutex(instance))
 		stack_trace("pathfinder timeout; check debug logs.")
 		log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 		return null
 	var/failure_key = instance.failure_cache_key()
 	var/navigation_revision = GLOB.ai_navigation_revision
 	if(failure_key)
-		var/list/failure = LAZYACCESS(failed_searches, failure_key)
+		var/datum/path_failure/failure = LAZYACCESS(failed_searches, failure_key)
 		if(failure)
-			if(failure[1] == navigation_revision && ELAPSED_SINCE(src, failure[2], CLOCK_WORLD) < PATHFINDER_FAILURE_TTL)
+			if(failure.revision == navigation_revision && ELAPSED(failure, failed_at, CLOCK_WORLD) < PATHFINDER_FAILURE_TTL)
 				failure_cache_hits++
 				return null
-			LAZYREMOVE(failed_searches, failure_key)
+			rel_remove(src, nameof(failed_searches), failure)
 	pathfinding_mutex = TRUE
 	try
 		. = instance.search()
@@ -113,13 +120,16 @@ CAPABILITIES(/datum/system/pathing)
 		pathfinding_mutex = FALSE
 		throw search_error
 	pathfinding_mutex = FALSE
-	if(ELAPSED_SINCE(src, started_at, CLOCK_WORLD) > PATHFINDER_TIMEOUT)
+	if(ELAPSED(instance, started_at, CLOCK_WORLD) > PATHFINDER_TIMEOUT)
 		stack_trace("pathfinder timeout; check debug logs.")
 		log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 	if(failure_key && !length(.))
 		if(LAZYLEN(failed_searches) >= PATHFINDER_FAILURE_CACHE_MAX)
-			failed_searches = null
-		LAZYSET(failed_searches, failure_key, list(navigation_revision, world.time))
+			rel_clear(src, nameof(failed_searches))
+		var/datum/path_failure/failed = new
+		failed.revision = navigation_revision
+		STAMP(failed, failed_at, CLOCK_WORLD)
+		rel_add(src, nameof(failed_searches), failed, key = failure_key)
 
 /datum/system/pathing/proc/enqueue(datum/io/path/R)
 	rel_add(src, nameof(queue), R)

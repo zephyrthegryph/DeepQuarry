@@ -4175,14 +4175,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"area" = A.area_uid,
 		"sigtype" = "status",
 		"device" = "AVP",
-		"timestamp" = world.time,
 	)
 	A.receive_signal(status)
-	TEST_ASSERT_EQUAL(LAZYACCESS(A.alarm_area_ref().air_vent_info, tag), status.data, \
+	var/datum/air_device_status/kept = LAZYACCESS(A.alarm_area_ref().air_vent_info, tag)
+	TEST_ASSERT_EQUAL(kept?.fields, status.data, \
 		"air alarm discarded a matching vent status packet")
 	TEST_ASSERT(tag in A.alarm_area_ref().air_vent_names, \
 		"air alarm did not register the matching vent status tag")
-	LAZYREMOVE(A.alarm_area_ref().air_vent_info, tag)
+	var/area/room = A.alarm_area_ref()
+	if(kept)
+		rel_remove(room, nameof(room.air_vent_info), kept)
 	LAZYREMOVE(A.alarm_area_ref().air_vent_names, tag)
 	qdel(status)
 	qdel(A)

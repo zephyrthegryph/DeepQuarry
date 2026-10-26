@@ -43,6 +43,8 @@ CAPABILITIES(/datum/contract_subject_identity)
 	var/kind
 	var/subject_id
 	EXPIRY_DECLARE(created_at)
+	/// When the thing the evidence shows happened (a body scan's time, from its payload; 0 when it carries none).
+	EXPIRY_DECLARE(occurred_at)
 	var/creator_account
 	var/source_ref
 	var/consumed_by
@@ -60,6 +62,8 @@ CAPABILITIES(/datum/contract_subject_identity)
 	source_ref = source ? REF(source) : null
 	STAMP(src, created_at, CLOCK_WORLD)
 	payload = _payload ? deepCopyList(_payload) : list()
+	if(isnum(payload["scan_time"]))
+		occurred_at = payload["scan_time"]
 
 /obj/item/paper/proc/attach_contract_evidence(evidence_id)
 	if(!evidence_id)

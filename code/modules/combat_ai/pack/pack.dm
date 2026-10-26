@@ -45,6 +45,7 @@ CAPABILITIES(/datum/ai_pack)
 	links(/datum/ai_pack::members, /datum/ai_brain::pack, a_many = TRUE)
 	ref_one(nameof(leader))
 	owns_many(nameof(intents), /datum/ai_intent)
+	owns_many(nameof(flow_fields), /datum/flow_field)
 	on_notice(/datum/notice/ai_pack_stirred, coalesce(PROC_REF(perceive_interval)), then(PROC_REF(perceive_run)))
 	every(PACK_UPKEEP_INTERVAL, then(PROC_REF(upkeep_run)), when = nameof(needs_upkeep))
 

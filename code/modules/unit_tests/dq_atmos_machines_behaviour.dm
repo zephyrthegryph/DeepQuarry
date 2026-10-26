@@ -195,21 +195,33 @@
 	/// The area's lists as the test found them.
 	var/list/area_saved
 
+/// The status fields an area's device table keeps, by tag (what a test saves to put back).
+/proc/dq_air_status_fields(list/table)
+	var/list/fields = list()
+	for(var/tag in table)
+		var/datum/air_device_status/status = table[tag]
+		fields[tag] = status.fields.Copy()
+	return fields
+
 /datum/unit_test/dq_atmos_m/Run()
 	test_driver_begin()
 	p2cl_capture_prompts()
 	var/area/room = get_area(run_loc_floor_bottom_left)
 	area_saved = list(
-		"names" = LAZYCOPY(room.air_vent_names), "info" = LAZYCOPY(room.air_vent_info),
-		"snames" = LAZYCOPY(room.air_scrub_names), "sinfo" = LAZYCOPY(room.air_scrub_info),
+		"names" = LAZYCOPY(room.air_vent_names), "info" = dq_air_status_fields(room.air_vent_info),
+		"snames" = LAZYCOPY(room.air_scrub_names), "sinfo" = dq_air_status_fields(room.air_scrub_info),
 		"atmosalm" = room.atmosalm)
 	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 		dq_atmos_test_snapshot_air(T)
 	run_gate()
 	room.set_air_vent_names(area_saved["names"])
-	room.set_air_vent_info(area_saved["info"])
+	rel_clear(room, nameof(room.air_vent_info))
+	for(var/tag in area_saved["info"])
+		room.air_device_report(AREA_AIR_VENT, tag, area_saved["info"][tag])
 	room.set_air_scrub_names(area_saved["snames"])
-	room.set_air_scrub_info(area_saved["sinfo"])
+	rel_clear(room, nameof(room.air_scrub_info))
+	for(var/tag in area_saved["sinfo"])
+		room.air_device_report(AREA_AIR_SCRUBBER, tag, area_saved["sinfo"][tag])
 	if(room.atmosalm != area_saved["atmosalm"])
 		room.atmosalert(area_saved["atmosalm"], null)
 	test_driver_end()
@@ -686,9 +698,9 @@
 	am_alarm_set_locked(A, FALSE)
 	var/area/room = get_area(A)
 	room.set_air_vent_names(null)
-	room.set_air_vent_info(null)
+	rel_clear(room, nameof(room.air_vent_info))
 	room.set_air_scrub_names(null)
-	room.set_air_scrub_info(null)
+	rel_clear(room, nameof(room.air_scrub_info))
 	am_area_reset_numbers(room)
 	var/obj/machinery/atmospherics/unary/vent_pump/V = device(/obj/machinery/atmospherics/unary/vent_pump)
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = device(/obj/machinery/atmospherics/unary/vent_scrubber, 1, 3)
@@ -696,7 +708,8 @@
 	TEST_ASSERT_EQUAL(V.name, "[room.name] Vent Pump #1", "and named so")
 	TEST_ASSERT_EQUAL(LAZYACCESS(room.air_scrub_names, am_device_tag(S)), "[room.name] Air Scrubber #1", "the scrubber too")
 	am_radio(V, list("power" = "1"))
-	var/list/info = LAZYACCESS(room.air_vent_info, am_device_tag(V))
+	var/datum/air_device_status/status = LAZYACCESS(room.air_vent_info, am_device_tag(V))
+	var/list/info = status?.fields
 	TEST_ASSERT_EQUAL(info?["power"], V.use_power, "the vent's status follows a command")
 	var/list/data = hc_data(A, person())
 	var/found
@@ -716,7 +729,7 @@
 /datum/unit_test/dq_atmos_m/device_names_collide/run_gate()
 	var/area/room = get_area(tile(1, 1))
 	room.set_air_vent_names(null)
-	room.set_air_vent_info(null)
+	rel_clear(room, nameof(room.air_vent_info))
 	var/obj/machinery/atmospherics/unary/vent_pump/first = device(/obj/machinery/atmospherics/unary/vent_pump, 1, 1)
 	var/obj/machinery/atmospherics/unary/vent_pump/second = device(/obj/machinery/atmospherics/unary/vent_pump, 3, 1)
 	TEST_ASSERT_NOTEQUAL(first.name, second.name, "two vents, two names")

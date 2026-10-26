@@ -540,8 +540,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	for(var/kind in list(AREA_AIR_VENT, AREA_AIR_SCRUBBER))
 		var/list/info = alarm_area.air_device_info(kind)
 		for(var/id_tag in alarm_area.air_device_names(kind))
-			var/list/I = LAZYACCESS(info, id_tag)
-			if(I && ELAPSED_SINCE(src, I["timestamp"], CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
+			var/datum/air_device_status/status = LAZYACCESS(info, id_tag)
+			if(status && ELAPSED(status, reported_at, CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
 				continue
 			send_signal(id_tag, list("status" = TRUE))
 
@@ -678,7 +678,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	data["vents"] = vents
 	var/list/vent_info = alarm_area?.air_device_info(AREA_AIR_VENT)
 	for(var/id_tag in alarm_area?.air_device_names(AREA_AIR_VENT))
-		var/list/info = LAZYACCESS(vent_info, id_tag)
+		var/datum/air_device_status/status = LAZYACCESS(vent_info, id_tag)
+		var/list/info = status?.fields
 		if(!info)
 			continue
 		vents.Add(list(list(
@@ -698,7 +699,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	data["scrubbers"] = scrubbers
 	var/list/scrub_info = alarm_area?.air_device_info(AREA_AIR_SCRUBBER)
 	for(var/id_tag in alarm_area?.air_device_names(AREA_AIR_SCRUBBER))
-		var/list/info = LAZYACCESS(scrub_info, id_tag)
+		var/datum/air_device_status/status = LAZYACCESS(scrub_info, id_tag)
+		var/list/info = status?.fields
 		if(!info)
 			continue
 		scrubbers += list(list(

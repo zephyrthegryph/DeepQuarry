@@ -3,7 +3,6 @@
 
 GLOBAL_LIST_INIT(admin_departments, list("[using_map.boss_name]", "Solar Central Government", "Central Command Job Boards", "Supply"))
 GLOBAL_LIST_EMPTY(alldepartments)
-GLOBAL_VAR(last_fax_role_request)
 
 // The links in the admin message point at these copies, so the cache keeps them (bounded by admin_fax_keep()).
 GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
@@ -80,8 +79,7 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 
 /// The staff request is open: the global relays are not recalibrating after the last request.
 /obj/machinery/photocopier/faxmachine/proc/role_request_ready(datum/act/op/A)
-	var/last_request = read_once(GLOB.last_fax_role_request)
-	return (!last_request || ELAPSED_SINCE(src, last_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
+	return read_once(SSjob.role_request_cooling_down()) ? MSG(fax/relays_recalibrating) : null
 
 /// The jobs a fax may request (the talon's offmap crew on its own fax).
 /obj/machinery/photocopier/faxmachine/proc/requestable_jobs(datum/act/A)
@@ -162,7 +160,7 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 	message_color = ping_dept.color
 
 	message_chat_rolerequest(message_color, ping_name, reason, role)
-	GLOB.last_fax_role_request = EXPIRY_AT(src, CLOCK_WORLD, 0)
+	SSjob.note_role_request()
 	to_chat(L, span_notice("Your request was transmitted."))
 	return OP_OK
 

@@ -31,7 +31,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/log_holder)
 	var/initialized = FALSE
 	var/shutdown = FALSE
 
-	/// Log file path -> world.time it was last confirmed to exist. Saves an fexists() per entry (Q8).
+	/// Log file path -> the /datum/verified_log_file that says when it was last confirmed to exist. Saves an fexists() per entry (Q8).
 	var/list/verified_log_files
 
 GENERAL_PROTECT_DATUM(/datum/log_holder)
@@ -89,6 +89,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	set_data_cache_at("last_data_update", last_data_update)
 
 CAPABILITIES(/datum/log_holder)
+	owns_many(nameof(verified_log_files), /datum/verified_log_file)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_log_refresh)))
 	interface("LogViewer", title = "Log Viewer", rights = R_ADMIN|R_MOD|R_DEBUG)
 	ui_shape()

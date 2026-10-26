@@ -8,7 +8,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/photocopier/faxmachine/fax = allocate(/obj/machinery/photocopier/faxmachine, T)
-	set_global("last_fax_role_request", null)
+	SSjob.last_role_request_at = 0
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "the real actor starts without an unrelated question")
 	test_menu(actor, fax, "send_automated_staff_request")
 	var/datum/prompt/choice/fax_role_request/asked = SSrequests.open_for(actor)
@@ -18,11 +18,11 @@
 	TEST_ASSERT(asked.buttons, "the confirmation uses the original alert buttons")
 	test_answer(actor, "No")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "No ends the request without asking a job")
-	TEST_ASSERT_NULL(GLOB.last_fax_role_request, "No cannot update the transmission timestamp")
+	TEST_ASSERT(!SSjob.last_role_request_at, "No cannot update the transmission timestamp")
 	TEST_ASSERT(!fax.sendcooldown, "No does not begin a fax-send cooldown")
 	test_menu(actor, fax, "send_automated_staff_request")
 	asked = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(asked), "the menu can open a fresh confirmation")
 	test_answer(actor, null, REQ_CANCELLED)
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "closing retires the confirmation")
-	TEST_ASSERT_NULL(GLOB.last_fax_role_request, "closing cannot transmit a staffing request")
+	TEST_ASSERT(!SSjob.last_role_request_at, "closing cannot transmit a staffing request")

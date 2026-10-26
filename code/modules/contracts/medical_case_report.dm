@@ -229,7 +229,7 @@ GLOBAL_LIST_INIT(medical_rare_case_types, list(
 	var/list/baseline
 	var/list/followup
 	for(var/list/evidence as anything in scans)
-		if(evidence["subject_id"] != report.target_ref || evidence["scan_time"] < report.consent_time || BEFORE(packet, evidence["scan_time"], CLOCK_WORLD))
+		if(evidence["subject_id"] != report.target_ref || evidence["scan_time"] < report.consent_time || SScontracts.scan_is_from_the_future(evidence))
 			continue
 		var/severity = medical_snapshot_condition_severity(evidence["snapshot"], report.target_condition_type)
 		if(isnum(severity) && severity >= MEDICAL_RARE_CASE_MINIMUM_SEVERITY)

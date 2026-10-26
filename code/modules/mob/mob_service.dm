@@ -9,8 +9,35 @@ SYSTEM_DEF(mobs)
 	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
 	var/list/death_list = list()
+	/// ckey -> the /datum/respawn_timer of a player who may not respawn yet (the system owns them).
+	var/list/respawn_timers
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
 	var/list/last_counts = list(0, 0, 0)
+
+CAPABILITIES(/datum/system/mobs)
+	owns_many(nameof(respawn_timers), /datum/respawn_timer)
+
+/// How long a player must wait to respawn, counted from when it was set.
+/datum/respawn_timer
+	var/duration = 0
+	EXPIRY_DECLARE(started_at)
+
+/// Starts (or restarts) the respawn wait of `ckey`.
+/datum/system/mobs/proc/set_respawn_wait(ckey, duration)
+	var/datum/respawn_timer/timer = new
+	timer.duration = duration
+	STAMP(timer, started_at, CLOCK_WORLD)
+	rel_add(src, nameof(respawn_timers), timer, key = ckey)
+
+/// The ckeys that are still waiting to respawn.
+/datum/system/mobs/proc/respawn_waiters()
+	return assoc_to_keys(respawn_timers)
+
+/// Lets `ckey` respawn now.
+/datum/system/mobs/proc/clear_respawn_wait(ckey)
+	var/datum/respawn_timer/timer = LAZYACCESS(respawn_timers, ckey)
+	if(timer)
+		rel_remove(src, nameof(respawn_timers), timer)
 
 /datum/system/mobs/stat_entry(msg)
 	var/datum/sequence/life = sequence_def(/datum/sequence/life)

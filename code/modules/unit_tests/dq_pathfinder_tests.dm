@@ -39,10 +39,13 @@
 	var/datum/system/pathing/service = SSpathing
 	// Someone else holds the mutex for longer than this waiter will wait.
 	service.pathfinding_mutex = TRUE
+	var/datum/pathfinding/waiter = new /datum/pathfinding/dq_test_found(null, null, null, 1, 8)
 	for(var/i in 1 to 12)
-		TEST_ASSERT(!service.wait_for_mutex(world.time, 1), "wait [i] times out while the mutex stays held")
+		STAMP(waiter, started_at, CLOCK_WORLD)
+		TEST_ASSERT(!service.wait_for_mutex(waiter, 1), "wait [i] times out while the mutex stays held")
 		TEST_ASSERT_EQUAL(service.pathfinding_blocked, 0, "wait [i] timed out and left the waiter count at zero")
 	// More than the backoff threshold of timeouts: the leak used to make every later wait take the slow branch.
 	service.pathfinding_mutex = FALSE
-	TEST_ASSERT(service.wait_for_mutex(world.time, 1), "a free mutex is taken at once")
+	STAMP(waiter, started_at, CLOCK_WORLD)
+	TEST_ASSERT(service.wait_for_mutex(waiter, 1), "a free mutex is taken at once")
 	TEST_ASSERT_EQUAL(service.pathfinding_blocked, 0, "and the waiter count is still zero")

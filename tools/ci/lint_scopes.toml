@@ -794,6 +794,8 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "ELAPSED_SINCE = ELAPSED(D, var, clock) on a declared var; a time kept per row is a small /datum record the holder owns (owns_many/owns_one) whose var is STAMPed (code/__defines/sys_expiry.dm)",
+  "BEFORE = ELAPSED(D, var, clock) < duration: keep the start with STAMP and the length beside it, or use COOLDOWN_* for a rate limit (code/__defines/sys_expiry.dm)",
   "LEFT_UNTIL = EXPIRY_LEFT(D, var, clock) reads the time left on a deadline var (code/__defines/sys_expiry.dm)",
   "EXPIRY_STAMP = STAMP(D, var, clock) records now in a var (code/__defines/sys_expiry.dm); a base type stamps with stamp_now(D, name, clock)",
   "STAMP_ELAPSED = ELAPSED(D, var, clock) reads a var stamp; a base type's table stamp is stamp_elapsed(D, name, clock) (code/__defines/engine/sparse_slots.dm)",

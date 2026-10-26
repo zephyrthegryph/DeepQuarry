@@ -24,8 +24,6 @@
 	TEST_ASSERT(EXPIRY_EXPIRED(E, test_until, CLOCK_WORLD), "a cleared expiry is expired")
 	E.test_started = world.time - 3 SECONDS
 	TEST_ASSERT_EQUAL(ELAPSED(E, test_started, CLOCK_WORLD), 3 SECONDS, "ELAPSED reads time since the stamp")
-	TEST_ASSERT_EQUAL(ELAPSED_SINCE(E, world.time - 2, CLOCK_WORLD), 2, "ELAPSED_SINCE reads a raw point")
-	TEST_ASSERT(BEFORE(E, world.time + 1, CLOCK_WORLD), "BEFORE: a future point")
 	qdel(E)
 
 /// Own-clock expiry follows the datum's OM timer clock: it stops while suspended.

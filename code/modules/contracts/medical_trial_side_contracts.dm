@@ -500,7 +500,7 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 		if(evidence["subject_id"] != subject_id)
 			continue
 		var/scanned_at = evidence["scan_time"]
-		if(!isnum(scanned_at) || BEFORE(null, scanned_at, CLOCK_WORLD))
+		if(!isnum(scanned_at) || SScontracts.scan_is_from_the_future(evidence))
 			continue
 		if(scanned_at >= signature_time && scanned_at <= participant.exposure_time)
 			if(!baseline || scanned_at > baseline["scan_time"])

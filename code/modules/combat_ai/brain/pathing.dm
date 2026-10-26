@@ -25,9 +25,9 @@
 	/// every tick when chasing a moving target.
 	var/path_recompute_tolerance = 2
 	var/path_navigation_revision = 0
-	/// world.time before which a failed A* toward (roughly) the same goal is
-	/// not retried. Zero when the last pathfind succeeded.
-	EXPIRY_DECLARE(next_path_attempt_at)
+	/// When the last A* failed (zero when the last pathfind succeeded): a failed A* toward (roughly) the same goal is
+	/// not retried until path_fail_backoff has passed from then.
+	EXPIRY_DECLARE(path_failed_at)
 	/// Current failure backoff (deciseconds); grows with consecutive failures.
 	var/path_fail_backoff = 0
 	/// TRUE while a /datum/io/path request for this brain is open: only one is, and the brain steps directly meanwhile.
@@ -61,11 +61,11 @@
 	failed_steps = 0
 	if(!length(planned_path))
 		path_fail_backoff = path_fail_backoff ? min(path_fail_backoff * 2, DQ_PATH_BACKOFF_MAX) : DQ_PATH_BACKOFF_MIN
-		EXPIRY_SET(src, next_path_attempt_at, path_fail_backoff, CLOCK_WORLD)
+		STAMP(src, path_failed_at, CLOCK_WORLD)
 		dqai_log("[holder] brain: A* to [target_turf] failed, backing off [path_fail_backoff]ds")
 		return
 	path_fail_backoff = 0
-	next_path_attempt_at = 0
+	path_failed_at = 0
 
 /// One smart step toward an atom. Re-uses a cached path when the goal is
 /// close to the previous goal; recomputes otherwise. Returns TRUE if the mob
@@ -104,7 +104,7 @@
 		// A recent A* to this same goal (same nav revision, goal hasn't
 		// drifted) came back empty: honour the backoff instead of recomputing
 		// on every fast tick. A moved goal or a map change retries at once.
-		if(next_path_attempt_at && EXPIRY_ACTIVE(src, next_path_attempt_at, CLOCK_WORLD) \
+		if(path_failed_at && ELAPSED(src, path_failed_at, CLOCK_WORLD) < path_fail_backoff \
 			&& path_goal() && get_dist(path_goal(), target_turf) <= path_recompute_tolerance \
 			&& path_navigation_revision == GLOB.ai_navigation_revision)
 			return FALSE

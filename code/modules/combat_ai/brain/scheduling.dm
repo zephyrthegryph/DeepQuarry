@@ -84,7 +84,7 @@ CAPABILITY_TYPE(ai_tactical, CAP_AI_TACTICAL, /datum/capability/ai_loop/tactical
 	if(is_busy())
 		return
 	var/started = TICK_USAGE
-	strategic_tick() // the slow work, gated by its own cadence (next_strategic_at)
+	strategic_tick() // the slow work, gated by its own cadence (strategic_wait)
 	handle_tactics()
 	GLOB.ai_brain_cost_ms += TICK_USAGE_TO_MS(started)
 
@@ -154,7 +154,7 @@ GLOBAL_VAR_INIT(ai_navigation_revision, 1)
 	parked = FALSE
 	wakes++
 	trace("woken")
-	next_strategic_at = 0
+	strategic_wait = 0
 	manage_processing(DQAI_PROCESSING)
 
 /// Asleep with a threat in hand: it should be awake.
@@ -165,11 +165,16 @@ GLOBAL_VAR_INIT(ai_navigation_revision, 1)
 		return "parked with a primary threat"
 	return null
 
-/// One run of the slow work (the action loop's, gated by its own cadence next_strategic_at; tests driving a brain by hand call it too).
+/// The slow work waits `wait` from now.
+/datum/ai_brain/proc/defer_strategic(wait)
+	strategic_wait = wait
+	STAMP(src, strategic_set_at, CLOCK_WORLD)
+
+/// One run of the slow work (the action loop's, gated by its own cadence strategic_wait; tests driving a brain by hand call it too).
 /datum/ai_brain/proc/strategic_tick()
 	if(is_busy() || !holder?.loc)
 		return
-	if(EXPIRY_ACTIVE(src, next_strategic_at, CLOCK_WORLD))
+	if(ELAPSED(src, strategic_set_at, CLOCK_WORLD) < strategic_wait)
 		return
 	var/started = TICK_USAGE
 	handle_strategicals()

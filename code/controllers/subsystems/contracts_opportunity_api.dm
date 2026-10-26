@@ -79,11 +79,11 @@
 		return
 	if(!rule.trigger(src, window, event, signal_snapshots))
 		// Avoid retrying a definition with exhausted demand on every event.
-		contract_cooldown_start(opportunity_cooldowns, window_key, 2 MINUTES)
+		contract_cooldown_start(nameof(opportunity_cooldowns), window_key, 2 MINUTES)
 		opportunities_suppressed++
 		return
 	window.latched = TRUE
-	contract_cooldown_start(opportunity_cooldowns, window_key, rule.cooldown)
+	contract_cooldown_start(nameof(opportunity_cooldowns), window_key, rule.cooldown)
 	opportunities_triggered++
 	var/datum/contract_opportunity_history_entry/history_entry = new(rule, window, event, signal_snapshots)
 	rel_add(src, nameof(opportunity_history), history_entry)

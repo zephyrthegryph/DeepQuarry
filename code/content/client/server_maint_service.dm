@@ -16,6 +16,44 @@ SYSTEM_DEF(server_maint)
 	///Delay between list clearings in ticks
 	var/delay = 5
 	var/cleanup_ticker = 0
+	/// Chat commands whose flow waits on a query: key -> its /datum/tgs_flow (the system owns them; code/modules/tgs_commands/vorestation.dm).
+	var/list/tgs_flows
+
+CAPABILITIES(/datum/system/server_maint)
+	owns_many(nameof(tgs_flows), /datum/tgs_flow)
+
+/// A chat command whose flow is waiting on a query: who sent it and when it started. The system owns one per waiting flow, by key.
+/datum/tgs_flow
+	var/datum/tgs_chat_user/sender
+	EXPIRY_DECLARE(started_at)
+
+CAPABILITIES(/datum/tgs_flow)
+	ref_one(nameof(sender), /datum/tgs_chat_user)
+
+/// Holds `sender` of a waiting flow under `key`.
+/datum/system/server_maint/proc/tgs_flow_hold(key, datum/tgs_chat_user/sender)
+	var/datum/tgs_flow/flow = new
+	rel_set(flow, nameof(flow.sender), sender)
+	STAMP(flow, started_at, CLOCK_WORLD)
+	rel_add(src, nameof(tgs_flows), flow, key = key)
+
+/// The sender of the flow waiting under `key`, or null.
+/datum/system/server_maint/proc/tgs_flow_sender(key) as /datum/tgs_chat_user
+	var/datum/tgs_flow/flow = LAZYACCESS(tgs_flows, key)
+	return flow?.sender
+
+/// Drops the flow waiting under `key`.
+/datum/system/server_maint/proc/tgs_flow_release(key)
+	var/datum/tgs_flow/flow = LAZYACCESS(tgs_flows, key)
+	if(flow)
+		rel_remove(src, nameof(tgs_flows), flow)
+
+/// Drops the flows that have waited longer than 10 minutes.
+/datum/system/server_maint/proc/tgs_flows_drop_stale()
+	for(var/stale in assoc_to_keys(tgs_flows))
+		var/datum/tgs_flow/flow = tgs_flows[stale]
+		if(ELAPSED(flow, started_at, CLOCK_WORLD) > 10 MINUTES)
+			rel_remove(src, nameof(tgs_flows), flow)
 
 /datum/system/server_maint/reactions()
 	. = ..()

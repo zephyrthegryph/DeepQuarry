@@ -46,7 +46,3 @@
 /// Records "now" on `clock` in the var `name` of D. The pair of ELAPSED; a base type's stamp is a table slot (stamp_now(), sparse_slots.dm).
 #define STAMP(D, name, clock) (D.name = EXPIRY_NOW(D, clock))
 #define ELAPSED(D, name, clock) (EXPIRY_NOW(D, clock) - D.name)
-/// Elapsed since a raw point (a list slot, a local) on D's clock.
-#define ELAPSED_SINCE(D, point, clock) (EXPIRY_NOW(D, clock) - (point))
-/// TRUE while a raw point is still in the future.
-#define BEFORE(D, point, clock) ((point) > EXPIRY_NOW(D, clock))

@@ -19,12 +19,22 @@ SYSTEM_DEF(job)
 	var/debug_messages = FALSE
 
 	var/savepath = "data/job_camp_list.json"
+	/// When the last automated staff request went out over the fax relays (0: none this round).
+	EXPIRY_DECLARE(last_role_request_at)
 	var/list/shift_keys = list()
 	var/list/restricted_keys = list()
 
 
 CAPABILITIES(/datum/system/job)
 	ref_many(nameof(unassigned), /mob/new_player)
+
+/// The automated staff request went out over the fax relays just now.
+/datum/system/job/proc/note_role_request()
+	STAMP(src, last_role_request_at, CLOCK_WORLD)
+
+/// TRUE while the fax relays are still recalibrating after the last automated staff request.
+/datum/system/job/proc/role_request_cooling_down()
+	return last_role_request_at && ELAPSED(src, last_role_request_at, CLOCK_WORLD) < 5 MINUTES
 
 /datum/system/job/proc/get_all_job_icons() //For all existing HUD icons
 	return occupation_with_excludes + GLOB.alt_titles_with_icons + list("Prisoner")

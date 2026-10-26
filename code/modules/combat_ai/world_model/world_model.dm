@@ -21,9 +21,8 @@
 	/// Lazylists — usually empty, so we pay no list-allocation cost most of the time.
 	var/list/recent_damage_events = null // each entry: list(amount, type, attacker name, when)
 	var/list/heard_sounds = null         // each entry: list(turf_ref, type, when)
-	var/list/known_hazards = null        // each entry: list(hazard ref text, severity, expires); the hazard itself is in hazard_atoms
-	/// The hazards known_hazards names (a relation list: a deleted hazard leaves it).
-	var/list/hazard_atoms = null
+	/// The hazards the brain knows (it owns the records; a record whose hazard was deleted is dropped at the next trim).
+	var/list/known_hazards = null
 
 	/// One-slot caches (relation views).
 	var/atom/last_attacker = null
@@ -94,24 +93,33 @@
 		heard_sounds.Cut(1, 2)
 	UNSETEMPTY(heard_sounds)
 
+/// A hazard the brain noted: what it is (a relation: a deleted hazard leaves it), how severe, and how long it stays noted from when.
+/datum/known_hazard
+	var/atom/hazard
+	var/severity = 1
+	var/duration = 0
+	EXPIRY_DECLARE(noted_at)
+
+CAPABILITIES(/datum/known_hazard)
+	ref_one(nameof(hazard), /atom)
+
 /datum/world_model/proc/record_hazard(atom/hazard, severity = 1, duration = 5 SECONDS)
 	if(!hazard)
 		return
-	LAZYINITLIST(known_hazards)
-	rel_add(src, nameof(hazard_atoms), hazard)
-	known_hazards += list(list(ref(hazard), severity, world.time + duration))
+	var/datum/known_hazard/known = new
+	rel_set(known, nameof(known.hazard), hazard)
+	known.severity = severity
+	known.duration = duration
+	STAMP(known, noted_at, CLOCK_WORLD)
+	rel_add(src, nameof(known_hazards), known)
 
 /datum/world_model/proc/trim_old_hazards()
 	if(!LAZYLEN(known_hazards))
 		return
 	for(var/i = length(known_hazards), i >= 1, i--)
-		var/list/entry = known_hazards[i]
-		var/atom/hazard = locate(entry[1])
-		if(ELAPSED_SINCE(src, entry[3], CLOCK_WORLD) > 0 || !(hazard in hazard_atoms))
-			known_hazards.Cut(i, i + 1)
-			if(hazard in hazard_atoms)
-				rel_remove(src, nameof(hazard_atoms), hazard)
-	UNSETEMPTY(known_hazards)
+		var/datum/known_hazard/known = known_hazards[i]
+		if(ELAPSED(known, noted_at, CLOCK_WORLD) > known.duration || !known.hazard)
+			rel_remove(src, nameof(known_hazards), known)
 
 /datum/world_model/proc/get_last_attacker()
 	return last_attacker
@@ -125,7 +133,7 @@ CAPABILITIES(/datum/world_model)
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(last_attacker), /atom)
 	ref_one(nameof(last_known_threat_turf), /atom)
-	ref_many(nameof(hazard_atoms))
+	owns_many(nameof(known_hazards), /datum/known_hazard)
 	ref_many(nameof(visible_friendlies))
 	ref_many(nameof(visible_hostiles))
 	ref_many(nameof(visible_neutrals))

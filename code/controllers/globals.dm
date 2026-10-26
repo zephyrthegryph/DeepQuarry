@@ -117,6 +117,5 @@ CAPABILITIES(/datum/controller/global_vars)
 	ref_many(nameof(affliction_triggers_all))
 	// Keyed many: an alist, key -> member (the ckey, or the level as text); a member that is deleted takes its keys with it.
 	ref_many(nameof(mannequins))
-	ref_many(nameof(tgs_flow_senders))
 	ref_many(nameof(latency_sweep_holders))
 	ref_many(nameof(map_sectors))

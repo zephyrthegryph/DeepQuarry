@@ -41,7 +41,7 @@
 		B.give_target(H, TRUE)
 	for(var/round in 1 to rounds)
 		cooldown_set_end(S, next_click, 0)
-		B.behavior_state = null // no cooldown holds the next tactic back
+		rel_clear(B, nameof(B.behavior_state)) // no cooldown holds the next tactic back
 		B.rebuild_behaviors()
 		B.pack?.perceive(TRUE)
 		B.pick_and_run()
