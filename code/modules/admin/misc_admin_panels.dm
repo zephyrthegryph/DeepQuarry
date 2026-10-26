@@ -95,7 +95,7 @@ CAPABILITIES(/datum/tag_menu_panel)
 			health_info = "Vitality: [round(L.vitality() * 100)]%"
 		rows += list(list(
 			"index" = index,
-			"ref" = REF(d),
+			"ref" = ref_token(d),
 			"name" = "[d]",
 			"type" = "[d.type]",
 			"area_coord" = area_coord,
@@ -412,7 +412,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	if(!target())
 		return data
 	data["target_name"] = target().name
-	data["target_ref"] = "\ref[target()]"
+	data["target_ref"] = ref_token(target())
 	var/list/departments = list()
 	for(var/list/layout_entry in GLOB.jobban_dept_layout)
 		departments += list(build_dept_block(layout_entry["dept_const"], layout_entry["title"], layout_entry["dept_bantype"], layout_entry["color"]))
@@ -492,8 +492,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	if(!ui_gate(A))
 		return FALSE
 	var/title = "[title_arg]"
-	// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
-	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
+	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = title, "jobban4" = ref_token(target())))
 	return TRUE
 
 /datum/jobban_panel/proc/ui_act_toggle_dept(datum/act/op/A, bantype_arg)
@@ -501,7 +500,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	if(!ui_gate(A))
 		return FALSE
 	var/bantype = "[bantype_arg]"
-	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
+	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = ref_token(target())))
 	return TRUE
 
 /datum/jobban_panel/proc/ui_act_refresh(datum/act/op/A)
@@ -627,7 +626,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	if(ui_viewer_fact(user, "person_console"))
 		data["recognized"] = !!is_special_character(user)
 		data["connection_severed"] = (charges < 1) && !is_special_character(user)
-		data["user_ref"] = "\ref[user]"
+		data["user_ref"] = ref_token(user)
 		data["user_name"] = user.name
 		var/honorific = "Mr."
 		if(user.gender == FEMALE)

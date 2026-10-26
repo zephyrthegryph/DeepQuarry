@@ -94,7 +94,7 @@
 		L = loc
 
 	if(L)
-		to_chat(L, span_notice("[icon2html(src,L.client)] Message from [who]: <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)"))
+		to_chat(L, span_notice("[icon2html(src,L.client)] Message from [who]: <b>\"[text]\"</b> (<a href='byond://?src=[REF(src)];action=Reply;target=[REF(candidate)]'>Reply</a>)"))
 
 // This is the only Topic the communicators really uses
 /datum/prompt/text/communicator_reply
@@ -140,7 +140,7 @@ CAPABILITIES(/datum/prompt/text/communicator_reply)
 	exonet.send_message(comm.exonet.address, "text", message)
 	add_im_list(list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
 	user.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
-	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
+	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=[REF(src)];action=Reply;target=[REF(exonet.get_atom_from_address(comm.exonet.address))]'>Reply</a>)"))
 
 // Verb: text_communicator()
 // Parameters: None
