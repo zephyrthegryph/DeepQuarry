@@ -158,6 +158,7 @@ export DQ_TRAIN_STALL_BACKOFF_SEC=0
 mk lane/g lanes/g.txt fine; train enqueue --tests tg >/dev/null 2>&1; back
 mk lane/h lanes/h.txt fine; train enqueue --tests th >/dev/null 2>&1; back
 mk lane/i lanes/i.txt fine; train enqueue --tests ti >/dev/null 2>&1; back
+rm -f "$DQ_TRAIN_STATE/batch_limit"
 # the stub calls a batch of more than one lane file a killed test phase
 out="$(DQ_STUB_CAP_ABOVE=1 train run 2>&1)"
 check "a capped test phase halves the batch limit" 'grep -q "hit its 10 min cap with 3 lane" <<<"$out"'
@@ -206,6 +207,25 @@ kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
 out="$(train run 2>&1)"
 check "a dead integrator's lock is replaced" 'grep -q "replacing the lock of a dead integrator" <<<"$out" && in_master lane/m'
 
+# ---- a bisect spans cycles: one attempt per cycle, the bad lane is bounced, the rest land, a newcomer waits --------------------------------
+rm -f "$DQ_TRAIN_STATE/batch_limit" "$DQ_TRAIN_STATE/bisect.lanes" "$DQ_TRAIN_STATE/bisect.cache"
+for n in 1 2 3 4 5 6; do
+	if [ "$n" = 4 ]; then mk "lane/bs$n" "lanes/bs$n.txt" BAD; else mk "lane/bs$n" "lanes/bs$n.txt" fine; fi
+	train enqueue --tests "tbs$n" >/dev/null 2>&1; back
+done
+bsout=""; late=0
+for c in 1 2 3 4 5 6 7 8 9 10 11 12; do
+	o="$(DQ_TRAIN_CYCLE_MAX_MIN=0 DQ_TRAIN_ONCE=1 train run 2>&1)"; bsout="$bsout$o"
+	if [ "$c" = 1 ]; then mk lane/bslate lanes/bslate.txt fine; train enqueue --tests tbsl >/dev/null 2>&1; back; fi
+	status_has "lane/bs4  tip" || [ -n "$(ls "$DQ_TRAIN_STATE"/bounced 2>/dev/null | grep bs4)" ] && [ ! -s "$DQ_TRAIN_STATE/bisect.lanes" ] && break
+done
+check "an unfinished bisect is recorded and resumed, not restarted" 'grep -q "bisect unfinished" <<<"$bsout" && grep -q "resuming the bisect" "$DQ_TRAIN_STATE"/log/cycle-*.log'
+check "the bad lane is bounced, never deferred forever" 'grep -q "BOUNCED lane/bs4" <<<"$bsout" || grep -q "bounced lane/bs4\|lane/bs4" "$DQ_TRAIN_STATE/log/train.log"; ! in_master lane/bs4'
+check "the other five land" 'for n in 1 2 3 5 6; do in_master "lane/bs$n" || exit 1; done'
+check "a lane enqueued during the bisect waited for it" 'grep -q "the other queued lanes wait" "$DQ_TRAIN_STATE/log/train.log"'
+check "a failed batch halves the next one" 'grep -q "failed (bounced" "$DQ_TRAIN_STATE/log/train.log"'
+train run >/dev/null 2>&1
+
 # ---- dry run -----------------------------------------------------------------------------------------------------------------------------
 mk lane/n lanes/n.txt fine; train enqueue --tests tn >/dev/null 2>&1; back
 out="$(DQ_TRAIN_DRY_RUN=1 DQ_TRAIN_ONCE=1 train run 2>&1)"
@@ -237,8 +257,11 @@ check "a run killed at the cap fails once, with no retry" '[ "$rc" = 1 ] && [ "$
 git fetch -q origin; git switch -q --detach origin/master
 git switch -q -c lane/p origin/master; echo ok >lanes/p.txt; git add -A; git commit -q -m p; git switch -q --detach origin/master
 git switch -q -c lane/q origin/master; echo ok >lanes/q.txt; git add -A; git commit -q -m q; git switch -q --detach origin/master
-out="$(DQ_BATCH_DEADLINE=1 bash tools/dq_merge_batch.sh --lanes "lane/p,lane/q" 2>&1)"
-check "past the deadline no attempt starts and the lanes are deferred, not bounced" 'grep -q "^BATCH_DEFERRED: lane/p lane/q" <<<"$out" && grep -q "^BATCH_GOOD: $" <<<"$out" && ! grep -q "^BATCH_BOUNCED" <<<"$out"'
+git switch -q -c lane/pd origin/master; echo ok >lanes/pd.txt; git add -A; git commit -q -m pd; git switch -q --detach origin/master
+git switch -q -c lane/rd origin/master; echo ok >lanes/rd.txt; git add -A; git commit -q -m rd; git switch -q --detach origin/master
+git switch -q -c lane/qd origin/master; echo BAD >lanes/qd.txt; git add -A; git commit -q -m qd; git switch -q --detach origin/master
+out="$(DQ_BATCH_DEADLINE=1 bash tools/dq_merge_batch.sh --lanes "lane/pd,lane/rd,lane/qd" 2>&1)"
+check "past the deadline only the first attempt runs; the rest of the bisect is deferred, not bounced" 'grep -q "^BATCH_DEFERRED: lane/pd lane/rd lane/qd" <<<"$out" && grep -q "^BATCH_GOOD: $" <<<"$out" && ! grep -q "^BATCH_BOUNCED" <<<"$out"'
 out="$(DQ_STUB_CAP_ABOVE=1 bash tools/dq_merge_batch.sh --lanes "lane/p,lane/q" 2>&1)"
 check "a capped attempt on two lanes defers them and reports the batch capped" 'grep -q "^BATCH_CAPPED: 1" <<<"$out" && grep -q "^BATCH_DEFERRED: lane/p lane/q" <<<"$out" && ! grep -q "^BATCH_BOUNCED" <<<"$out"'
 out="$(DQ_STUB_CAP_ABOVE=0 bash tools/dq_merge_batch.sh --lanes "lane/p" 2>&1)"

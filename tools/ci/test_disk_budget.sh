@@ -175,7 +175,7 @@ DQ_DISK_MANIFEST="$T/nonexistent.toml" DQ_DISK_FREE_GB=80 bash tools/dq_disk_bud
 check "gate: a missing manifest is a warning, exit 0, no REFUSED" '[ "$rc" = 0 ] && ! grep -q REFUSED "$T/gate3.out" && grep -q WARNING "$T/gate3.out"'
 env -u DQ_DISK_FREE_GB DQ_CACHE_ROOT="$T/no/such/cache" DQ_DISK_STATE="$T/gstate" bash tools/dq_disk_budget.sh gate lease --sync >"$T/gate4.out" 2>&1; rc=$?
 check "gate: free space that cannot be read is a warning, exit 0, no REFUSED" '[ "$rc" = 0 ] && ! grep -q REFUSED "$T/gate4.out" && grep -q "cannot read the free space" "$T/gate4.out"'
-check "train: only the gate's exit 4 skips a cycle" 'grep -q "drc\" -eq 4" tools/dq_train.sh && grep -q "cp -f \"\$SELF_DIR/dq_disk_budget.sh\"" tools/dq_train.sh'
+check "train: only the gate's exit 4 skips a cycle" 'grep -q "drc\" -eq 4" tools/dq_train.sh && grep -q "^SNAP_FILES=(.*dq_disk_budget.sh ci/disk_budget.toml" tools/dq_train.sh'
 
 # a table over its cap because its units are protected says so, with the protected size
 cat >>"$T/m.toml" <<'TOML'

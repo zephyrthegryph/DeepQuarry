@@ -26,6 +26,11 @@
 #     one native test compile, the union of the lanes' tests + the smoke set with the test phase capped at 10 minutes (the gate's cap, DQ_TRAIN_TEST_MAX_MIN),
 #     and on a failure a bisect that names the culprit lane(s), which are bounced; the rest is proved and pushed. A test that fails and
 #     then passes alone is a flake (the gate's retry ledgers it in tools/dq_flake_log.sh) and bounces nobody;
+#   - a batch that fails is bisected ACROSS cycles (a bisect is several 20-minute attempts, a cycle allows one): dq_merge_batch.sh saves
+#     every attempt verdict in $STATE/bisect.cache (DQ_BATCH_CACHE) and the deferred lanes are recorded in $STATE/bisect.lanes. While that
+#     file exists the next cycle takes exactly those lanes (new lanes wait, they never join a bisect) and resumes at the next untried
+#     attempt, never the full batch again; the first real attempt of a cycle and every single-lane attempt ignore the cycle deadline, so a
+#     lane proven bad alone is BOUNCED, never deferred. A cycle that bounced or deferred something halves the next batch (batch_limit);
 #   - a test phase that hits the cap halves the batch (state: batch_limit) and the lanes wait for the next cycle; a single lane whose own
 #     tests exceed the cap is bounced;
 #   - pushes master with tools/dq_push_master.sh (the batch's merge-gates stamp is what the pre-push hook checks) and records the lanes
@@ -344,6 +349,22 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 	set -f # test names such as dq_gameplay/* are patterns for the estimator, never for the shell
 	CHOSEN=()
 	local limit b union est lane_tests
+	if [ -s "$STATE/bisect.lanes" ]; then
+		# a bisect in progress: exactly its lanes (the ones still queued and valid), in the recorded order; new lanes wait
+		local want w v
+		want="$(cat "$STATE/bisect.lanes")"
+		for w in $want; do
+			for v in "${VALID[@]}"; do [ "$v" = "$w" ] && CHOSEN+=("$w"); done
+		done
+		if [ ${#CHOSEN[@]} -gt 0 ]; then
+			tlog "bisect in progress: this cycle takes only [${CHOSEN[*]}]; the other queued lanes wait until it resolves"
+			BATCH_LIMIT_NOW="bisect"
+			BATCH_EST="$(est_secs $(printf '%s\n' $(read_list "$(repo_dir)/tools/ci/smoke_tests.txt")))"
+			set +f
+			return 0
+		fi
+		rm -f "$STATE/bisect.lanes" "$STATE/bisect.cache"
+	fi
 	limit="$(cat "$STATE/batch_limit" 2>/dev/null)"
 	case "$limit" in ''|*[!0-9]*|0) limit="$MAX_LANES" ;; esac
 	[ "$limit" -gt "$MAX_LANES" ] && limit="$MAX_LANES"
@@ -450,6 +471,7 @@ heavy_cycle() {
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
 		export DQ_GATE_DREAMCHECKER=1
+		export DQ_BATCH_CACHE="$STATE/bisect.cache"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
 		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" "${lane_test_args[@]}" --no-dm
@@ -460,8 +482,10 @@ heavy_cycle() {
 	capped="$(sed -n 's/^BATCH_CAPPED: //p' "$out" | tail -n 1)"
 	tlog "merge_batch rc=$rc good=[${good:-}] deferred=[${deferred:-}] capped=[${capped:-}]"
 	# bounces first: they are the lane's fault whatever happens to the push
+	local nbounced=0
 	while IFS= read -r line; do
 		[ -n "$line" ] || continue
+		nbounced=$((nbounced + 1))
 		lane="${line%%|*}"; why="${line#*|}"; lg="${why##*|}"; why="${why%|*}"
 		[ -n "$lane" ] || continue
 		bounce "$lane" "$why" "$WT/$lg"
@@ -472,6 +496,19 @@ heavy_cycle() {
 		echo "$half" >"$STATE/batch_limit"
 		tlog "the test phase hit its ${TEST_MAX_MIN} min cap with ${#CHOSEN[@]} lane(s): batch limit is now $half; the deferred lanes [${deferred:-}] ride a smaller batch"
 		CYCLE_PROGRESS=1
+	fi
+	# An unfinished bisect (lanes deferred by the deadline, not by a cap) resumes next cycle with exactly those lanes and the saved verdicts.
+	if [ -n "${deferred:-}" ] && [ -z "${capped:-}" ]; then
+		printf '%s\n' $deferred >"$STATE/bisect.lanes"
+		tlog "bisect unfinished: [$deferred] resume next cycle from the saved verdicts ($STATE/bisect.cache)"
+		CYCLE_PROGRESS=1
+	else
+		rm -f "$STATE/bisect.lanes" "$STATE/bisect.cache"
+	fi
+	if [ -z "${capped:-}" ] && { [ "$nbounced" -gt 0 ] || [ -n "${deferred:-}" ]; }; then
+		local fh=$(( ${#CHOSEN[@]} / 2 )); [ "$fh" -lt 1 ] && fh=1
+		echo "$fh" >"$STATE/batch_limit"
+		tlog "the batch of ${#CHOSEN[@]} lane(s) failed (bounced $nbounced, deferred [${deferred:-}]): batch limit is now $fh"
 	fi
 	if [ -z "${good:-}" ]; then
 		tlog "nothing passed in this cycle"
@@ -513,7 +550,7 @@ heavy_cycle() {
 	sha="$(G rev-parse origin/master)"
 	for b in $good; do mark_landed "$b" "${TIP_OF[$b]}" "$sha"; done
 	CYCLE_PROGRESS=1
-	if [ -z "${capped:-}" ]; then
+	if [ -z "${capped:-}" ] && [ "$nbounced" -eq 0 ] && [ -z "${deferred:-}" ]; then
 		local lim; lim="$(cat "$STATE/batch_limit" 2>/dev/null)"; lim="${lim:-$MAX_LANES}"
 		lim=$(( lim * 2 )); [ "$lim" -gt "$MAX_LANES" ] && lim="$MAX_LANES"
 		echo "$lim" >"$STATE/batch_limit"
