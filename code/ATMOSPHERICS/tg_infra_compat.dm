@@ -217,7 +217,6 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === Multi-z helpers ===
 #define GET_Z_PLANE_OFFSET(z) 0
-#define cardinals cardinal
 
 GLOBAL_LIST_INIT(cardinals_multiz, list(NORTH, SOUTH, EAST, WEST, UP, DOWN))
 GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST, UP|NORTH, UP|SOUTH, UP|EAST, UP|WEST, DOWN|NORTH, DOWN|SOUTH, DOWN|EAST, DOWN|WEST))
