@@ -17,7 +17,9 @@
 	response_disarm = "gently pushes aside"
 	response_harm = "hits"
 
-	say_list_type = /datum/say_list/clown
+
+CAPABILITIES(/mob/living/simple_mob/clowns/big/c_shift/honkelemental)
+	configure(living_rules(say_list_type = /datum/say_list/clown))
 
 /datum/say_list/clown
 	speak = list("HONK", "Honk!", "Henk!")

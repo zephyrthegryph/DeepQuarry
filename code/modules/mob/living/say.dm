@@ -98,7 +98,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		if(S.speaking && (S.speaking.flags & NO_STUTTER || S.speaking.flags & SIGNLANG))
 			continue
 
-		if(disabilities & CENSORED)
+		if(disabilities() & CENSORED)
 			S.message = text_or_null(censor_swears(S.message)) // Googlybonkers
 			. = 1
 
@@ -119,7 +119,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			verb = pick("muffles")
 			whispering = 1
 			. = 1
-		if(disabilities & WINGDINGS)
+		if(disabilities() & WINGDINGS)
 			verb = pick("gibbers","gabbers","gahoos","gazonks") // Yeah lets just be stupid
 			S.message = Gibberish(S.message, 100) // Googlybonkers
 			S.message = span_wingdings((S.message))
@@ -353,7 +353,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	//The 'post-say' static speech bubble
 	var/speech_bubble_test = say_test(message)
-	var/speech_type = custom_speech_bubble
+	var/speech_type = bio.custom_speech_bubble
 	if(!speech_type || speech_type == "default")
 		speech_type = speech_bubble_appearance()
 	var/image/speech_bubble = generate_speech_bubble(src, "[speech_type][speech_bubble_test]")

@@ -31,7 +31,6 @@
 	minbodytemp = 0
 	maxbodytemp = 900
 
-	say_list_type = /datum/say_list/shadekin
 
 	response_help = "pets"
 	response_disarm = "bops"
@@ -72,6 +71,7 @@
 	var/check_timer = 0
 
 CAPABILITIES(/mob/living/simple_mob/shadekin)
+	configure(living_rules(say_list_type = /datum/say_list/shadekin))
 	setup(PROC_REF(replace_prototype), mapload = TRUE)
 	ref_one(nameof(henlo_human), /mob/living/carbon/human)
 	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID, death_message = "phases to somewhere far away!"))
@@ -270,7 +270,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 		shadekin.in_dark_respite = TRUE
 		PUBLISH(belly.owner, belly_change)
 		clear_fullscreen("belly")
-		belly_overlay_tgui?.hide() // hide TGUI belly overlay
+		belly_overlay_window()?.hide() // hide TGUI belly overlay
 		if(hud_used)
 			if(!hud_used.hud_shown)
 				toggle_hud_vis()

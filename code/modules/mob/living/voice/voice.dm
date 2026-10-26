@@ -99,7 +99,7 @@
 	//Speech bubbles.
 	if(comm)
 		var/speech_bubble_test = say_test(message)
-		var/speech_type = custom_speech_bubble
+		var/speech_type = bio.custom_speech_bubble
 		if(!speech_type || speech_type == "default")
 			speech_type = speech_bubble_appearance()
 		var/image/speech_bubble = generate_speech_bubble(comm, "[speech_type][speech_bubble_test]")

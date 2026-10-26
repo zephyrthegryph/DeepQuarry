@@ -44,7 +44,6 @@
 	item_state = "gun"
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	w_class = ITEMSIZE_NORMAL
-	throw_range = 5
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the
@@ -108,7 +107,7 @@
 	var/datum/gun_firemode_selector/firemode_selector = null
 
 CAPABILITIES(/obj/item/gun)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 5, throw_speed = 4))
 	configure(item_handling(zoom_name = "scope"))
 	configure(item_handling(preserve = 1))
 	setup(PROC_REF(item_gun_setup))

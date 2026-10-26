@@ -1,29 +1,19 @@
 /mob/living/carbon/human
 	name = "unknown"
 	real_name = "unknown"
-	voice_name = "unknown"
 	icon = 'icons/effects/effects.dmi'	//We have an ultra-complex update icons that overlays everything, don't load some stupid random male human
 	icon_state = "nothing"
 
 
-	vore_capacity = 3
-	vore_capacity_ex = list("stomach" = 3, "taur belly" = 3)
 	vore_fullness_ex = list("stomach" = 0, "taur belly" = 0)
 	vore_icon_bellies = list("stomach", "taur belly")
 	var/struggle_anim_stomach = FALSE
 	var/struggle_anim_taur = FALSE
 
 	var/embedded_flag					//To check if we've need to roll for damage on movement while an item is imbedded in us.
-	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
-
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 
-	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
-	var/list/teleporters = list() //Used for lleill abilities
-
 	var/rest_dir = 0					//To lay down in a specific direction
-	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
-	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
 
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
@@ -123,7 +113,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 				if(SRM.CanUse())
 					L[++L.len] = list(SRM.module.interface_name,null,null,SRM.name,REF(SRM))
 		}
-		misc_tabs["Hardsuit Modules"] = L
+		misc_tab_set(src, "Hardsuit Modules", L)
 
 /mob/living/update_misc_tabs()
 	..()
@@ -810,10 +800,10 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	return 0
 
 /mob/living/carbon/human/abiotic(full_body = 0)
-	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK) || get_equipped_item(SLOT_ID_HEAD) || get_equipped_item(SLOT_ID_SHOES) || get_equipped_item(SLOT_ID_UNIFORM) || get_equipped_item(SLOT_ID_SUIT) || get_equipped_item(SLOT_ID_EYES) || get_equipped_item(SLOT_ID_EAR_L) || get_equipped_item(SLOT_ID_EAR_R) || get_equipped_item(SLOT_ID_GLOVES))))
+	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK) || get_equipped_item(SLOT_ID_HEAD) || get_equipped_item(SLOT_ID_SHOES) || get_equipped_item(SLOT_ID_UNIFORM) || get_equipped_item(SLOT_ID_SUIT) || get_equipped_item(SLOT_ID_EYES) || get_equipped_item(SLOT_ID_EAR_L) || get_equipped_item(SLOT_ID_EAR_R) || get_equipped_item(SLOT_ID_GLOVES))))
 		return 1
 
-	if( (get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_L).abstract) || (get_equipped_item(SLOT_ID_HAND_R) && !get_equipped_item(SLOT_ID_HAND_R).abstract) )
+	if( (get_equipped_item(SLOT_ID_HAND_L) && !item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract) || (get_equipped_item(SLOT_ID_HAND_R) && !item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract) )
 		return 1
 
 	return 0
@@ -1222,7 +1212,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 			sync_organ_dna()
 	initialize_vessel()
 
-	losebreath = 0
+	set_losebreath(0)
 
 	..()
 
@@ -1289,7 +1279,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/wash(clean_types)
 	. = ..()
 
-	LAZYCLEARLIST(body_writing)
+	sparse_set(src, body_writing, null)
 
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))
@@ -1857,7 +1847,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		return ..()
 
 /mob/living/carbon/human/can_stand_overridden()
-	if(wearing_rig && wearing_rig.ai_can_move_suit(check_for_ai = 1))
+	if(wearing_rig()?.ai_can_move_suit(check_for_ai = 1))
 		// Actually missing a leg will screw you up. Everything else can be compensated for.
 		for(var/limbcheck in list(BP_L_LEG,BP_R_LEG))
 			var/obj/item/organ/affecting = get_organ(limbcheck)

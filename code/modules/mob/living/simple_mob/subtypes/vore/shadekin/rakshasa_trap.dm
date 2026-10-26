@@ -1,6 +1,5 @@
 /obj/structure/gootrap
 	name = "goo"
-	throw_range = 1
 	gender = PLURAL
 	icon = 'icons/effects/blood.dmi'
 	var/base_icon = 'icons/effects/blood.dmi'
@@ -20,7 +19,7 @@
 
 
 CAPABILITIES(/obj/structure/gootrap)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 1, throw_speed = 2))
 	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), begins(PROC_REF(freeing_text)), wait(0.5 SECONDS), then(PROC_REF(free_victims)), says(PROC_REF(freed_text)))
 
 /// The lines of the freeing name the one who is caught.

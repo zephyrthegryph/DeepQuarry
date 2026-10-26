@@ -173,7 +173,6 @@ why aren't these accessories?
 	desc = "A box containing a few bluespace stickers. Moderately obsolete, limited range dimensional bypass technology that enables remote \"things\" and \"stuff\" as if there were no distance at all between them!"
 	var/primary = /obj/item/remote_scene_tool
 	var/secondary = /obj/item/remote_scene_tool
-	description_fluff = "A long since discarded prototype of a bag of holding - turns out it's hard to store things securely when the other end's open. too bad NOBODY has EVER found a practical use for them!"
 
 /obj/item/storage/box/remote_scene_tools/proc/fill_with_tools()
 	//set the contents to be a few remote scene tools
@@ -230,5 +229,6 @@ CAPABILITIES(/obj/item/remote_scene_tool)
 	return worn_mob
 
 CAPABILITIES(/obj/item/storage/box/remote_scene_tools)
+	configure(atom_rules(description_fluff = "A long since discarded prototype of a bag of holding - turns out it's hard to store things securely when the other end's open. too bad NOBODY has EVER found a practical use for them!"))
 	setup(PROC_REF(fill_with_tools))
 	setup(TYPE_PROC_REF(/obj/item/storage, calibrate_size))

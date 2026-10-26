@@ -6,24 +6,26 @@
 
 STATIC_ENTRY(butchery_rules)
 
-/proc/butchery_rules(meat_amount = null, butchery_loot = null)
+/proc/butchery_rules(meat_amount = null, butchery_loot = null, meat_type = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_BUTCHERY_RULES, null, list("meat_amount" = meat_amount, "butchery_loot" = butchery_loot))
+	return entry_make(ENTRY_BUTCHERY_RULES, null, list("meat_amount" = meat_amount, "butchery_loot" = butchery_loot, "meat_type" = meat_type))
 
 /datum/type_trait/butchery_rules
 	var/meat_amount = 0
 	var/list/butchery_loot = null
+	var/meat_type = null
 
 /datum/type_trait/butchery_rules/copy_values(datum/type_trait/butchery_rules/into)
 	into.meat_amount = meat_amount
 	into.butchery_loot = butchery_loot
+	into.meat_type = meat_type
 
 /datum/entry_engine/type_trait/butchery_rules
 	kind = ENTRY_BUTCHERY_RULES
 	trait_type = /datum/type_trait/butchery_rules
 	publish_key = BUTCHERY_RULES_KEY
 	base_type = /mob/living
-	var_names = list("meat_amount" = "meat_amount", "butchery_loot" = "butchery_loot")
+	var_names = list("meat_amount" = "meat_amount", "butchery_loot" = "butchery_loot", "meat_type" = "meat_type")
 
 /// The holder's butchery_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/butchery_of, BUTCHERY_RULES_KEY)
@@ -41,3 +43,6 @@ READS_AS(/proc/butchery_of, BUTCHERY_RULES_KEY)
 
 /mob/living/proc/set_butchery_loot(value)
 	return set_trait(src, ENTRY_BUTCHERY_RULES, "butchery_loot", value)
+
+/mob/living/proc/set_meat_type(value)
+	return set_trait(src, ENTRY_BUTCHERY_RULES, "meat_type", value)

@@ -12,7 +12,6 @@
 	faction = FACTION_REDPANDA
 	endurance = 30
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pats"
 	response_disarm = "gently pushes aside"
@@ -23,10 +22,10 @@
 	melee_damage_upper = 1
 	attacktext = list("bapped")
 
-	say_list_type = /datum/say_list/redpanda
 
 CAPABILITIES(/mob/living/simple_mob/vore/redpanda)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(say_list_type = /datum/say_list/redpanda))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 

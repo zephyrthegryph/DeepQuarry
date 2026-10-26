@@ -199,6 +199,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable/sandwich)
 
 // Bread + a food = a sandwich, bread + a shard = a sandwich with a shard in it.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/bread)
+	configure(atom_rules(price_tag = 1))
 	configure(item_handling(center_x = 16, center_y = 4))
 	op("start_sandwich", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food))), label("Make a sandwich"), then(PROC_REF(sandwich_started)))
 	op("shard_sandwich", item(/obj/item/material/shard), priority(OP_PRIORITY_PART), label("Make a sandwich"), then(PROC_REF(shard_sandwich_made)))
@@ -241,6 +242,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/flatdough)
 
 // A spaghetti + a food = a pasta dish.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/spagetti)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 16))
 	op("start_pasta", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food))), label("Make a pasta dish"), then(PROC_REF(pasta_started)))
 

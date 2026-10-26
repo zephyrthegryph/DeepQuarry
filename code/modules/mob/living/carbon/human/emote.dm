@@ -387,7 +387,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	var/pose
 
 /mob/living/carbon/human/proc/pose_cleared()
-	pose = null
+	sparse_set(src, pose, null)
 	remove_pose_indicator()
 
 /mob/living/carbon/human/proc/pose_entered(datum/act/request/A)
@@ -422,9 +422,9 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	else
 		remove_pose_indicator()
 
-	pose = new_pose
+	sparse_set(src, pose, new_pose)
 	if(!quiet_pose)
-		act_message(src, null, others = "%U% [pose]")
+		act_message(src, null, others = "%U% [new_pose]")
 
 /mob/living/carbon/human/proc/add_pose_indicator()
 	if(pose_indicator)

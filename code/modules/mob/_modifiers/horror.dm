@@ -564,7 +564,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return
 	if(unfortunate_soul.check_vital_organs()) //Missing a vital organ.
 		return
-	if(unfortunate_soul.teleop) //Aghosted or the sort.
+	if(unfortunate_soul.teleop()) //Aghosted or the sort.
 		return
 	if(!unfortunate_soul.mind) //Mind is gone.
 		return

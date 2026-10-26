@@ -25,13 +25,13 @@
 
 	organ_names = /datum/decl/mob_organ_names/tree
 
-	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat
 
 	pixel_x = -16
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/tree)
-	configure(butchery_rules(meat_amount = 2))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat, meat_amount = 2))
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_PLANT, death_message = "is hacked into pieces!"))
@@ -44,7 +44,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/tree)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 
 /mob/living/simple_mob/animal/space/tree
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/animal/space/tree/on_death(gibbed)
 	..()

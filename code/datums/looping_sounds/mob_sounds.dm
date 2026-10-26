@@ -32,16 +32,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/datum/looping_sound/mob/on_fire
-	mid_sounds = list('sound/effects/mob_effects/on_fire/on_fire_loop.ogg'=1)
-	mid_length = 6 SECONDS
-	end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish.ogg'
-	volume = 20
-	exclusive = TRUE // This should only occur once, because we only want one loop running while we're on fire, even if we're set on fire multiple times.
-	volume_chan = VOLUME_CHANNEL_INJURY_SOUNDS
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 /datum/looping_sound/mob/stunned // Going to hang onto this one for later
 	mid_sounds = list('sound/effects/mob_effects/stun_loop.ogg'=1)
 	mid_length = 3 SECONDS

@@ -33,7 +33,6 @@
 
 	holder_type = /obj/item/holder/mouse
 
-	say_list_type = /datum/say_list/mouse
 
 	hasthermals = FALSE
 	ghostjoin = TRUE
@@ -46,6 +45,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	configure(living_rules(say_list_type = /datum/say_list/mouse))
 	configure(butchery_rules(meat_amount = 1, butchery_loot = list()))
 	configure(mob_rules(universal_understand = 1))
 	configure(mob_nature(pain_1p = list("squeak", "squik"), pain_3p = list("squeaks", "squiks"), restrict_vore_ventcrawl = TRUE))

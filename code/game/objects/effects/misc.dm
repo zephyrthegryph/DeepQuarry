@@ -75,9 +75,9 @@ CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
 	icon_state = "nothing"
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	light_on = TRUE
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 CAPABILITIES(/obj/effect/dummy/lighting_obj)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	configure(atom_rules(light_system = MOVABLE_LIGHT))
 	configure(light_glow(range = MINIMUM_USEFUL_LIGHT_RANGE, color = COLOR_WHITE))
 	param(nameof(glow_range), pos = 1)

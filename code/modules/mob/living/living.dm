@@ -268,7 +268,7 @@
 	// shut down ongoing problems
 	rejuvenate_physiology()
 	set_sdisabilities(0)
-	disabilities = 0
+	set_disabilities(0)
 	set_resting(FALSE)
 
 	for(var/datum/affliction/contagion/D as anything in get_contagions())
@@ -401,7 +401,7 @@
 
 //called when the mob receives a bright flash
 /mob/living/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
-	if(override_blindness_check || !(disabilities & BLIND))
+	if(override_blindness_check || !(disabilities() & BLIND))
 		overlay_fullscreen("flash", type)
 		after(src, 2.5 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 2.5 SECONDS))
 		return 1
@@ -453,13 +453,13 @@
 			var/datum/game_mode/nuclear/G = ticker_mode()
 			if(G.check_mob(src))
 				if(x <= TRANSITIONEDGE)
-					inertia_dir = 4
+					sparse_set_or(src, inertia_dir, 4, 0)
 				else if(x >= world.maxx -TRANSITIONEDGE)
-					inertia_dir = 8
+					sparse_set_or(src, inertia_dir, 8, 0)
 				else if(y <= TRANSITIONEDGE)
-					inertia_dir = 1
+					sparse_set_or(src, inertia_dir, 1, 0)
 				else if(y >= world.maxy -TRANSITIONEDGE)
-					inertia_dir = 2
+					sparse_set_or(src, inertia_dir, 2, 0)
 				to_chat(src, span_warning("Something you are carrying is preventing you from leaving."))
 				return
 
@@ -813,7 +813,7 @@ sparse(/mob/living, vomiting, type = bool)
 	if(!item || istype(item, /obj/item/tk_grab))
 		return FALSE
 
-	var/throw_range = item.throw_range
+	var/throw_range = motion_of(item).throw_range
 	if (istype(item, /obj/item/grab))
 		var/obj/item/grab/G = item
 		item = G.throw_held() //throw the person instead of the grab
@@ -821,7 +821,7 @@ sparse(/mob/living, vomiting, type = bool)
 			var/mob/M = item
 
 			//limit throw range by relative mob size
-			throw_range = round(M.throw_range * min(src.mob_size/M.mob_size, 1))
+			throw_range = round(motion_of(M).throw_range * min(src.mob_size/M.mob_size, 1))
 
 			var/turf/end_T = get_turf(target)
 			if(end_T)
@@ -835,8 +835,8 @@ sparse(/mob/living, vomiting, type = bool)
 			act_message(src, item, others = span_warning("%U% has thrown %T%."))
 
 			if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
-				src.inertia_dir = get_dir(target, src)
-				step(src, inertia_dir)
+				sparse_set_or(src, inertia_dir, get_dir(target, src), 0)
+				step(src, sparse_get_or(src, inertia_dir, 0))
 			item.throw_at(target, throw_range, motion_of(item).throw_speed, src)
 			return TRUE
 		else
@@ -866,8 +866,8 @@ sparse(/mob/living, vomiting, type = bool)
 	act_message(src, item, others = span_warning("%U% has thrown %T%."))
 
 	if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
-		src.inertia_dir = get_dir(target, src)
-		step(src, inertia_dir)
+		sparse_set_or(src, inertia_dir, get_dir(target, src), 0)
+		step(src, sparse_get_or(src, inertia_dir, 0))
 
 	if(istype(item,/obj/item))
 		var/obj/item/W = item
@@ -875,8 +875,8 @@ sparse(/mob/living, vomiting, type = bool)
 
 /*
 	if(istype(src.loc, /turf/space) || (src.flags & NOGRAV)) //they're in space, move em one space in the opposite direction
-		src.inertia_dir = get_dir(target, src)
-		step(src, inertia_dir)
+		sparse_set_or(src, inertia_dir, get_dir(target, src), 0)
+		step(src, sparse_get_or(src, inertia_dir, 0))
 */
 
 	item.throw_at(target, throw_range, motion_of(item).throw_speed, src)
@@ -917,7 +917,7 @@ sparse(/mob/living, vomiting, type = bool)
 	return
 
 /mob/living/proc/has_vision()
-	return !(has_status(STAT_BLINDED) || (disabilities & BLIND) || stat || blinded)
+	return !(has_status(STAT_BLINDED) || (disabilities() & BLIND) || stat || blinded)
 
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
 	return movement_of(src).makes_dirt
@@ -1142,7 +1142,7 @@ READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
 
 /**
  * Small helper datum to manage the character setup HUD icon (was
- * /datum/component/character_setup). Owned by the mob's `character_setup_button` var.
+ * /datum/component/character_setup). Linked to its mob by LK_SETUP_BUTTON (gone with it).
  */
 /datum/character_setup_button
 	var/mob/living/owner
@@ -1152,7 +1152,10 @@ CAPABILITIES(/datum/character_setup_button)
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(screen_icon), /atom/movable/screen/character_setup)
 
-/mob/living/var/datum/character_setup_button/character_setup_button
+/// The mob's character setup button datum (LK_SETUP_BUTTON), or null.
+/mob/living/proc/character_setup_button()
+	RETURN_TYPE(/datum/character_setup_button)
+	return link_get(src, LK_SETUP_BUTTON)
 
 /datum/character_setup_button/New(mob/living/M)
 	..()
@@ -1172,9 +1175,11 @@ CAPABILITIES(/datum/character_setup_button)
 
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()
-	if(!character_setup_button)
-		rel_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
-	return character_setup_button
+	var/datum/character_setup_button/button = character_setup_button()
+	if(!button)
+		button = new /datum/character_setup_button(src)
+		link_make(src, LK_SETUP_BUTTON, button)
+	return button
 
 /datum/character_setup_button/proc/on_client_login(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -1246,18 +1251,6 @@ CAPABILITIES(/datum/character_setup_button)
 		rel_clear(src, nameof(hud_list))
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
-
-/// Its burning loop, with one of the extinguish sounds at random (owns_one(starts =)).
-/mob/living/proc/start_fire_loop(current, mapload)
-	var/datum/looping_sound/mob/on_fire/loop = new /datum/looping_sound/mob/on_fire(src, FALSE)
-	if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
-		if(prob(30))
-			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
-		else if(prob(20))
-			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
-		else
-			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
-	return loop
 
 /// rolls(nameof(name), PROC_REF(roll_numbered_name)): "mouse" becomes "mouse (417)". The roll is skipped for a renamed or map-named instance.
 /mob/living/proc/roll_numbered_name(datum/roller/R)

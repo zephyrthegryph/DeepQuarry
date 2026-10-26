@@ -1,7 +1,6 @@
 /obj/structure
 	icon = 'icons/obj/structures.dmi'
 	w_class = ITEMSIZE_NO_CONTAINER
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
 	var/breakable
 	var/parts
@@ -14,6 +13,7 @@
 	// Structures shrug off a plain telekinetic grab or poke; ones that react declare an INTERACT_TK.
 
 CAPABILITIES(/obj/structure)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	configure(obj_rules(tk_reach = FALSE))
 
 /// The smoothing code writes these through their setters (interned lists, so an unchanged shape publishes nothing); a draw reads them.

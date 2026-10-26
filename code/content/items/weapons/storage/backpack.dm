@@ -57,7 +57,6 @@ CAPABILITIES(/obj/item/storage/backpack)
 	desc = "A backpack that opens into a localized pocket of Blue Space."
 	icon_state = "holdingpack"
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14 // 56
-	storage_cost = INVENTORY_STANDARD_SPACE + 1
 
 
 /obj/item/storage/backpack/holding/duffle
@@ -89,6 +88,7 @@ CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
 	return OP_OK
 
 CAPABILITIES(/obj/item/storage/backpack/holding)
+	configure(item_rules(storage_cost = INVENTORY_STANDARD_SPACE + 1))
 	configure(storage(refuses = list(/obj/item/storage/backpack/holding)))
 	op("conflict", item(/obj/item/storage/backpack/holding), label("Put in"), then(PROC_REF(bluespace_conflict)))
 

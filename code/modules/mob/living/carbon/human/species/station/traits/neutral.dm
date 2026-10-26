@@ -332,18 +332,18 @@
 /datum/trait/neutral/venom_bite/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
 	grant(H, granted_verb(/mob/living/proc/injection), src)
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_MICROCILLIN)		// get small
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_MACROCILLIN)		// get BIG
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_NORMALCILLIN)	// normal
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_NUMBENZYME)		// no feelings
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_ANDROROVIR) 		// -> MALE
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_GYNOROVIR) 		// -> FEMALE
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_ANDROGYNOROVIR) 	// -> PLURAL
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_STOXIN)			// night night chem
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_RAINBOWTOXIN) 	// Funny flashing lights.
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_PARALYSISTOXIN) 	// Paralysis!
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_PAINENZYME)		// Pain INCREASER
-	LAZYADD(H.trait_injection_reagents, REAGENT_ID_APHRODISIAC) // Horni
+	H.add_injection_reagent(REAGENT_ID_MICROCILLIN)		// get small
+	H.add_injection_reagent(REAGENT_ID_MACROCILLIN)		// get BIG
+	H.add_injection_reagent(REAGENT_ID_NORMALCILLIN)	// normal
+	H.add_injection_reagent(REAGENT_ID_NUMBENZYME)		// no feelings
+	H.add_injection_reagent(REAGENT_ID_ANDROROVIR) 		// -> MALE
+	H.add_injection_reagent(REAGENT_ID_GYNOROVIR) 		// -> FEMALE
+	H.add_injection_reagent(REAGENT_ID_ANDROGYNOROVIR) 	// -> PLURAL
+	H.add_injection_reagent(REAGENT_ID_STOXIN)			// night night chem
+	H.add_injection_reagent(REAGENT_ID_RAINBOWTOXIN) 	// Funny flashing lights.
+	H.add_injection_reagent(REAGENT_ID_PARALYSISTOXIN) 	// Paralysis!
+	H.add_injection_reagent(REAGENT_ID_PAINENZYME)		// Pain INCREASER
+	H.add_injection_reagent(REAGENT_ID_APHRODISIAC) // Horni
 
 /datum/trait/neutral/long_vore
 	name = "Long Predatorial Reach"

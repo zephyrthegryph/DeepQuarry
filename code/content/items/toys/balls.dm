@@ -9,10 +9,10 @@
 		slot_wear_mask_str = 'icons/mob/mouthball_vr.dmi',
 		)
 	item_state = "tennis_classic"
-	throw_range = 14
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/toy/tennis)
+	configure(movable_motion(throw_range = 14))
 	configure(item_worn(slots = SLOT_MASK))
 
 /obj/item/toy/tennis/red
@@ -65,12 +65,10 @@ CAPABILITIES(/obj/item/toy/tennis/red)
 		slot_wear_mask_str = 'icons/mob/mouthball_vr.dmi',
 		)
 	item_state = "baseball"
-	throw_range = 16
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/toy/baseball)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 16, throw_speed = 5))
 	configure(item_worn(slots = SLOT_MASK))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 2.0))

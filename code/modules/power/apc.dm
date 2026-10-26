@@ -54,7 +54,6 @@
 	anchored = TRUE
 	use_power = USE_POWER_OFF
 	req_access = list(ACCESS_ENGINE_EQUIP)
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	integrity_failure = 0.5
@@ -153,7 +152,9 @@ MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.",
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
 CAPABILITIES(/obj/machinery/power/apc)
-	configure(movable_motion(unacidable = TRUE))
+	configure(atom_rules(description_antag = "This can be emagged to unlock it.  It will cause the APC to have a blue error screen. \
+	Wires can be pulsed remotely with a signaler attached to it.  A powersink will also drain any APCs connected to the same wire the powersink is on."))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE, unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_SWITCH))
 	blast_contents()
 	after_init(0, then(PROC_REF(apply_power_after_init)))

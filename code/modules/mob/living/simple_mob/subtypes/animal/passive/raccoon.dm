@@ -10,7 +10,6 @@
 	icon_dead = "raccoon_dead"
 	icon_rest = "raccoon_rest"
 
-	say_list_type = /datum/say_list/raccoon
 
 	see_in_dark = 6
 	movement_cooldown = 3
@@ -24,17 +23,16 @@
 	minbodytemp = 223		//Below -50 Degrees Celsius
 	maxbodytemp = 323	//Above 50 Degrees Celsius
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	vore_active = TRUE
-	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 	center_offset = 0
 
 	species_sounds = "Raccoon"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/raccoon)
-	configure(butchery_rules(meat_amount = 1))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/raccoon))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 1))
 	configure(mob_nature(pain_1p = list("chitter"), pain_3p = list("chitters")))
 	after_init(0, then(PROC_REF(raccoon_ghostjoin_ready)))
 

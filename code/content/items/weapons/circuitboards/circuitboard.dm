@@ -5,7 +5,6 @@
 	density = FALSE
 	anchored = FALSE
 	w_class = ITEMSIZE_SMALL
-	throw_range = 15
 	MATERIAL_BULK(MAT_GLASS, 40)
 	var/build_path = null
 	var/board_type = new /datum/frame/frame_types/computer
@@ -16,7 +15,7 @@
 	var/hidden = FALSE
 
 CAPABILITIES(/obj/item/circuitboard)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 15, throw_speed = 3))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))

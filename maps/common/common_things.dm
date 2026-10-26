@@ -266,7 +266,7 @@ CAPABILITIES(/obj/sc_away_spawner)
 		prob_spawn -= prob_fall
 		var/picked_type = pickweight(mobs_to_pick_from)
 		my_mob = new picked_type(get_turf(src))
-		my_mob.low_priority = TRUE
+		my_mob.set_low_priority(TRUE)
 
 		if(faction)
 			my_mob.faction = faction

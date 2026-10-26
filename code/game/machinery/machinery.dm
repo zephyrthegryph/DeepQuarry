@@ -115,12 +115,12 @@ Class Procs:
 	var/obj/item/circuitboard/circuit = null
 
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 SETTER(/obj/machinery, use_power)
 
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	machine_rules(maintenance_flags = NONE)
 	machine_usage(click_volume = 40, interact_offline = 0, wrench_time = 0, weld_time = 2 SECONDS) // how it is used and serviced: a type trait (code/game/machinery/machine_usage.dm)
 	uses_power(channel = EQUIP, idle = 0, active = 0) // what it draws: a type trait (machinery_power.dm); a subtype configure()s what it changes

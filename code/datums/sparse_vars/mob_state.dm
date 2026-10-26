@@ -4,6 +4,8 @@
 
 // /mob
 sparse(/mob, last_emote_summary, type = text)
+sparse(/mob, registered_z, type = num)
+sparse(/mob, inertia_dir, type = num)
 sparse(/mob, name_archive, type = text)
 sparse(/mob, lastattacker_name, type = text)
 sparse(/mob, lastattacker_key, type = text)
@@ -44,6 +46,7 @@ sparse(/mob/living, footstep_steps, type = num)
 sparse(/mob/living, mute_entry, type = bool)
 sparse(/mob/living, trash_catching, type = bool)
 sparse(/mob/living, trait_injection_verb, type = text)
+sparse(/mob/living, trait_injection_reagents, type = list)
 sparse(/mob/living, digestion_in_progress, type = bool)
 sparse(/mob/living, photosynthesis_boost, type = num)
 sparse(/mob/living, drain_finalized, type = num)
@@ -147,5 +150,56 @@ sparse(/mob/living, vore_egg_type, type = text)
 sparse(/mob/living, stuffing_feeder, type = bool)
 sparse(/mob/living, appendage_alt_setting, type = bool)
 sparse(/mob/living/carbon, dream_wait, type = num)
+sparse(/mob/living/carbon, pose, type = text)
+sparse(/mob/living/carbon, current_dream, type = /datum/dream)
 sparse(/mob/living/carbon/human, markings_len, type = num)
+sparse(/mob/living/carbon/human, body_writing, type = list)
 sparse(/mob/living/carbon/human, resleeve_lock)
+
+// Weak slots: they name another mob or atom by handle, pin nothing and read null once it is gone (sparse_ref(), code/engine/declare/sparse_slots.dm).
+sparse(/mob, lastattacker, type = weak)
+sparse(/mob, LAssailant, type = weak)
+sparse(/mob, teleop, type = weak)
+sparse(/mob/living, autofire_target, type = weak)
+
+// base_vars wave 9
+sparse(/mob, progressbars, type = list)
+sparse(/mob, misc_tabs, type = list)
+sparse(/mob, spont_belly_front, type = text)
+sparse(/mob, spont_belly_rear, type = text)
+sparse(/mob, spont_belly_left, type = text)
+sparse(/mob, spont_belly_right, type = text)
+sparse(/mob/living, temp_languages, type = list)
+
+/// Sets stat tab `tab` of the mob's custom stat tabs to `contents` (the tabs are rebuilt every Stat(): update_misc_tabs()).
+/proc/misc_tab_set(mob/M, tab, list/rows)
+	var/list/tabs = sparse_get(M, misc_tabs)
+	if(!tabs)
+		tabs = sparse_set(M, misc_tabs, list())
+	tabs[tab] = rows
+
+// base_vars wave 11: rare numeric state of a mob. Each reads 0 while unset and a write of 0 clears it. (losebreath, read by every breathing step, lives on the physiology.)
+sparse(/mob, disabilities, type = num)
+sparse(/mob, accumulated_rads, type = num)
+
+/// The mob's disability bitfield (NEARSIGHTED, CLUMSY, BLIND, ...): 0 for nearly every mob, so it is a slot.
+/mob/proc/disabilities()
+	return sparse_get_or(src, disabilities, 0)
+
+/mob/proc/set_disabilities(flags)
+	return sparse_set_or(src, disabilities, flags, 0)
+
+/// Adds the disability flags `flags` to the mob.
+/mob/proc/add_disabilities(flags)
+	return set_disabilities(disabilities() | flags)
+
+/// Takes the disability flags `flags` off the mob.
+/mob/proc/remove_disabilities(flags)
+	return set_disabilities(disabilities() & ~flags)
+
+/// The long-term radiation dose that settles out of the acute one (radiation is the acute dose; the writers are in code/modules/body/injury.dm).
+/mob/proc/accumulated_rads()
+	return sparse_get_or(src, accumulated_rads, 0)
+
+/mob/proc/set_accumulated_rads(amount)
+	return sparse_set_or(src, accumulated_rads, amount, 0)

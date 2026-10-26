@@ -11,7 +11,6 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	icon = 'icons/obj/device.dmi'
 	icon_state = "multitool"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 15
 
 
 	var/mode_index = 1
@@ -28,7 +27,7 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 
 CAPABILITIES(/obj/item/multitool)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 15, throw_speed = 3))
 	configure(item_tooling(speed = 1))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))

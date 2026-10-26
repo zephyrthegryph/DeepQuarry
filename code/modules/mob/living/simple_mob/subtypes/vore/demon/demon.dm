@@ -193,11 +193,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	switch(alternate_selection)
 		if("boxfox")
 			set_vore_icons(SA_ICON_LIVING)
-			vore_capacity = 1
+			set_vore_capacity(1)
 
 		if("wendigo")
 			set_vore_icons(SA_ICON_LIVING)
-			vore_capacity = 1
+			set_vore_capacity(1)
 			set_icon_dead("[alternate_selection]_dead")
 
 		//These are the larger variants, so we do some different stuff here!
@@ -205,7 +205,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 			set_pixel_x(-8)
 			set_vis_height(64)
 			set_vore_icons(SA_ICON_LIVING | SA_ICON_REST)
-			vore_capacity = 2
+			set_vore_capacity(2)
 			set_icon_dead("[alternate_selection]_dead")
 			set_icon('icons/mob/demon_alt.dmi')
 
@@ -213,7 +213,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 			set_pixel_x(-8)
 			set_vis_height(64)
 			set_vore_icons(SA_ICON_LIVING)
-			vore_capacity = 2
+			set_vore_capacity(2)
 			set_icon_dead("[alternate_selection]_dead")
 			set_icon('icons/mob/demon_alt.dmi')
 

@@ -10,7 +10,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	item_state = "welder"
 
 	//Amount of OUCH when it's thrown
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 
 	//Cost to make in the autolathe
@@ -159,7 +158,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
 CAPABILITIES(/obj/item/weldingtool)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_tooling(speed = 1))
 	configure(item_worn(slots = SLOT_BELT))

@@ -58,7 +58,7 @@
 	if(!(var_name in vars))
 		var/slot = sparse_slot_named(src, var_name)
 		if(slot)
-			return debug_variable(var_name, _sparse_get(src, slot), 0, src, viewer = viewer)
+			return debug_variable(var_name, sparse_slot_value(src, slot), 0, src, viewer = viewer)
 		var/list/trait_field = type_trait_field_named(src, var_name)
 		if(trait_field)
 			return debug_variable(var_name, type_trait_of(src, trait_field[1]).vars[trait_field[2]], 0, src, viewer = viewer)

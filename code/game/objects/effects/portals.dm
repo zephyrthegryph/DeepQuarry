@@ -1,7 +1,6 @@
 REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 
 /obj/effect/portal
-	lifecycle_lifetime = 30 SECONDS
 	name = "portal"
 	desc = "Looks unstable. Best to test it with the clown."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -16,7 +15,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	var/event = FALSE
 
 CAPABILITIES(/obj/effect/portal)
-	configure(movable_motion(unacidable = TRUE))
+	configure(movable_motion(lifecycle_lifetime = 30 SECONDS, unacidable = TRUE))
 	ref_one(nameof(target))
 	ref_one(nameof(creator), /obj/item/hand_tele)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))

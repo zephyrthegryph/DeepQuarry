@@ -29,7 +29,6 @@
 	vore_active = 1
 	vore_icons = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 1
 	swallowTime = 1
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_SELECT
@@ -39,6 +38,7 @@
 	var/list/eaten_mobs
 
 CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
+	configure(living_rules(vore_capacity = 1))
 	ref_many(nameof(eaten_mobs))
 
 /mob/living/simple_mob/vore/mantrap/load_default_bellies()
@@ -75,7 +75,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 		var/mob/living/L = AM
 		if(L in eaten_mobs)
 			return
-		if(L.vore_prefs.devourable && L.vore_prefs.allowmobvore && (src.vore_fullness < src.vore_capacity))
+		if(L.vore_prefs.devourable && L.vore_prefs.allowmobvore && (src.vore_fullness < living_rules_of(src).vore_capacity))
 			begin_instant_nom(src,L,src,vore_selected_of(src))
 			rel_add(src, nameof(eaten_mobs), L)
 
@@ -113,7 +113,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 	vore_active = 1
 	vore_icons = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 1
 	swallowTime = 1
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_SELECT
@@ -124,7 +123,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 	projectilesound = SFX_EFFECTS_SLIME_SQUISH
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher)
-	configure(living_rules(appendage_color = "#03a319"))
+	configure(living_rules(vore_capacity = 1, appendage_color = "#03a319"))
 	configure(mob_kind(attack_cooldown = 5 SECONDS))
 
 /mob/living/simple_mob/vore/pitcher/load_default_bellies()

@@ -23,12 +23,10 @@
 	melee_damage_upper = 5
 	attacktext = list("kicked")
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	can_buckle = TRUE
 	mount_offset_x = 0
 
-	say_list_type = /datum/say_list/horse
 
 
 /mob/living/simple_mob/vore/horse/big
@@ -53,6 +51,7 @@
 	mount_offset_y = 22
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse/big)
+	configure(living_rules(vore_capacity = 2))
 	configure(butchery_rules(meat_amount = 10))
 
 // Activate Noms!
@@ -61,10 +60,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse/big)
 	vore_icons = SA_ICON_LIVING
 
 /mob/living/simple_mob/vore/horse/big
-	vore_capacity = 2
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse)
-	configure(butchery_rules(meat_amount = 6))
+	configure(living_rules(say_list_type = /datum/say_list/horse))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
@@ -116,7 +115,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 	desc = "A darkly furred horse-like creature with piercing light green eyes. It's mane is a dark green and has an almost seaweed like texture."
 	tt_desc = "Equus cailpeach"
 
-	vore_capacity = 2
 	endurance = 250
 
 	old_x = -16
@@ -125,7 +123,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 	pixel_x = -16
 	pixel_y = 0
 	mount_offset_y = 22
-	say_list_type = /datum/say_list/horse/kelpie
 
 	vore_bump_chance = 75
 	vore_pounce_chance = 75
@@ -133,6 +130,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 	vore_bump_emote	= "chomps down on"
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse/kelpie)
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/horse/kelpie))
 	configure(butchery_rules(meat_amount = 10))
 
 /mob/living/simple_mob/vore/horse/kelpie/load_default_bellies()

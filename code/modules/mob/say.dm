@@ -891,6 +891,6 @@
 		return
 	var/new_speech_bubble = A.answer.value
 	if(new_speech_bubble)
-		custom_speech_bubble = new_speech_bubble
+		bio.custom_speech_bubble = new_speech_bubble
 		if(dna)
 			dna.custom_speech_bubble = new_speech_bubble
