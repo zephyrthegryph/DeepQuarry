@@ -980,7 +980,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
 	icon_rest = "suslug_rest"
 	icon_dead = "suslug_dead"
 	var/is_impostor = FALSE
-	EXPIRY_DECLARE(kill_cooldown)
+	var/kill_cooldown = 0
 	can_wear_hat = FALSE
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/impostor

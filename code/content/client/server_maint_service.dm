@@ -25,7 +25,7 @@ CAPABILITIES(/datum/system/server_maint)
 /// A chat command whose flow is waiting on a query: who sent it and when it started. The system owns one per waiting flow, by key.
 /datum/tgs_flow
 	var/datum/tgs_chat_user/sender
-	EXPIRY_DECLARE(started_at)
+	var/started_at = 0
 
 CAPABILITIES(/datum/tgs_flow)
 	ref_one(nameof(sender), /datum/tgs_chat_user)

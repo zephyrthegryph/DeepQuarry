@@ -280,7 +280,7 @@ CAPABILITIES(/datum/system/flight)
 
 /datum/system/flight/proc/process_plan(datum/flight_plan/plan)
 	if(plan.state == FLIGHT_PLAN_FAILED)
-		if(EXPIRY_EXPIRED(plan, terminal_cleanup_at, CLOCK_WORLD))
+		if(COOLDOWN_LAPSED(plan, terminal_cleanup_at))
 			finish_plan(plan)
 		return
 	if(plan.cancel_requested)
@@ -296,7 +296,7 @@ CAPABILITIES(/datum/system/flight)
 				plan.fail("The vessel has no open-space departure landmark.")
 				return
 			plan.state = FLIGHT_PLAN_UNDOCKING
-			EXPIRY_SET(plan, departure_deadline, 20 SECONDS, CLOCK_WORLD)
+			COOLDOWN_START(plan, departure_deadline, 20 SECONDS)
 			plan.vessel.shuttle().short_jump(landable.landmark)
 			return
 		enter_transit(plan)
@@ -310,7 +310,7 @@ CAPABILITIES(/datum/system/flight)
 			plan.fail("The vessel could not complete undocking.")
 		return
 	if(plan.state == FLIGHT_PLAN_TRANSIT)
-		if(EXPIRY_ACTIVE(plan, estimated_arrival_at, CLOCK_WORLD))
+		if(COOLDOWN_RUNNING(plan, estimated_arrival_at))
 			return
 		if(plan.generation_state == FLIGHT_GENERATION_RUNNING)
 			plan.state = FLIGHT_PLAN_HOLDING
@@ -335,7 +335,7 @@ CAPABILITIES(/datum/system/flight)
 			finish_plan(plan)
 			return
 		plan.state = FLIGHT_PLAN_ARRIVING
-		EXPIRY_SET(plan, departure_deadline, 30 SECONDS, CLOCK_WORLD)
+		COOLDOWN_START(plan, departure_deadline, 30 SECONDS)
 		return
 	if(plan.state == FLIGHT_PLAN_ARRIVING)
 		var/obj/effect/overmap/visitable/ship/landable/landable = plan.vessel.ship()
@@ -354,7 +354,7 @@ CAPABILITIES(/datum/system/flight)
 	set_vessel_docked_port(plan.vessel, null)
 	plan.state = FLIGHT_PLAN_TRANSIT
 	STAMP(plan, departure_at, CLOCK_WORLD)
-	EXPIRY_SET(plan, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME, CLOCK_WORLD)
+	COOLDOWN_START(plan, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME)
 	if(plan.generation_state != FLIGHT_GENERATION_RUNNING)
 		return TRUE
 	plan.generation_stage = "Generating destination during transit"

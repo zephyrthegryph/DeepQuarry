@@ -168,7 +168,7 @@
 	if(!candidate || !(candidate in offer_candidates))
 		return null
 	var/datum/contract_definition/definition = definitions[candidate.definition_id]
-	if(!definition || (candidate.expires_at && EXPIRY_EXPIRED(candidate, expires_at, CLOCK_WORLD)) || !definition.is_available(candidate.context))
+	if(!definition || (candidate.expires_at && COOLDOWN_LAPSED(candidate, expires_at)) || !definition.is_available(candidate.context))
 		withdraw_candidate(candidate, "Eligibility ended before publication.")
 		return null
 	if(contract_cooldown_running(offer_cooldowns, candidate.offer_key) || !make_priority_capacity(candidate, definition))

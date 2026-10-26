@@ -2,7 +2,7 @@
 	// Person who started the vote
 	var/initiator = "the server"
 	// world.time the bote started at
-	EXPIRY_DECLARE(started_time)
+	var/started_time = 0
 	// The question being asked
 	var/question
 	// Vote type text, for showing in UIs and stuff

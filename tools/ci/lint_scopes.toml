@@ -140,7 +140,7 @@ exclude_fixtures = ["/obj/gdeps_probe::raw_ok", "/obj/dq_small_look_composer::dr
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
 
 [lint.cooldown]
-# cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
+# cooldown_lint.py SKIP_DIRS.
 exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]
 [lint.system_boundary]
 # system_boundary_lint.py SKIP_DIRS (unit tests read private state through system_debug()) and
@@ -794,10 +794,21 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
-  "ELAPSED_SINCE = ELAPSED(D, var, clock) on a declared var; a time kept per row is a small /datum record the holder owns (owns_many/owns_one) whose var is STAMPed (code/__defines/sys_expiry.dm)",
-  "BEFORE = ELAPSED(D, var, clock) < duration: keep the start with STAMP and the length beside it, or use COOLDOWN_* for a rate limit (code/__defines/sys_expiry.dm)",
-  "LEFT_UNTIL = EXPIRY_LEFT(D, var, clock) reads the time left on a deadline var (code/__defines/sys_expiry.dm)",
-  "EXPIRY_STAMP = STAMP(D, var, clock) records now in a var (code/__defines/sys_expiry.dm); a base type stamps with stamp_now(D, name, clock)",
+  "ELAPSED_SINCE = ELAPSED(D, var, clock) on a declared var; a time kept per row is a small /datum record the holder owns (owns_many/owns_one) whose var is STAMPed (code/__defines/time_now.dm)",
+  "BEFORE = ELAPSED(D, var, clock) < duration: keep the start with STAMP and the length beside it, or use COOLDOWN_* for a rate limit (code/__defines/time_now.dm)",
+  "LEFT_UNTIL = COOLDOWN_TIMELEFT(D, var) reads the time left on a deadline var (COOLDOWN_TIMELEFT_OWN on the datum's own clock; code/__defines/cooldowns.dm)",
+  "EXPIRY_STAMP = STAMP(D, var, clock) records now in a var (code/__defines/time_now.dm); a base type stamps with stamp_now(D, name, clock)",
+  "EXPIRY_DECLARE = COOLDOWN_DECLARE(var) for an end time; a start time (a STAMP var) is a plain var, and a base type uses cooldowns()/stamps() names (code/__defines/cooldowns.dm)",
+  "EXPIRY_TMP_DECLARE = a plain var/tmp for a stamp; a base type uses stamps() (code/__defines/engine/sparse_slots.dm)",
+  "STATIC_EXPIRY_DECLARE = STATIC_COOLDOWN_DECLARE(var) (code/__defines/cooldowns.dm)",
+  "EXPIRY_SET = COOLDOWN_START(D, var, delay), or COOLDOWN_START_OWN on the datum's own clock (code/__defines/cooldowns.dm)",
+  "EXPIRY_EXTEND = COOLDOWN_EXTEND(D, var, delay), or COOLDOWN_EXTEND_OWN (code/__defines/cooldowns.dm)",
+  "EXPIRY_CLEAR = COOLDOWN_RESET(D, var) (code/__defines/cooldowns.dm)",
+  "EXPIRY_ACTIVE = COOLDOWN_RUNNING(D, var), or COOLDOWN_RUNNING_OWN (code/__defines/cooldowns.dm)",
+  "EXPIRY_EXPIRED = COOLDOWN_LAPSED(D, var), or COOLDOWN_LAPSED_OWN (code/__defines/cooldowns.dm)",
+  "EXPIRY_ON_LAPSE = after(owner, delay, PROC_REF(x), key =) armed where the deadline starts, or hold(lasts =) when a stat holds the state (code/engine/time/)",
+  "EXPIRY_AT = TIME_NOW(CLOCK_WORLD) for a world-clock \"now\" (add the delay yourself); TIME_NOW(CLOCK_OWN, owner) on a datum's own clock (code/__defines/time_now.dm)",
+  "EXPIRY_NOW = TIME_NOW(clock, owner), the one clock read (code/__defines/time_now.dm)",
   "STAMP_ELAPSED = ELAPSED(D, var, clock) reads a var stamp; a base type's table stamp is stamp_elapsed(D, name, clock) (code/__defines/engine/sparse_slots.dm)",
   "STAMP_AT = stamp_set(D, name, point) (code/__defines/engine/sparse_slots.dm)",
   "STAMP_POINT = stamp_point(D, name) (code/__defines/engine/sparse_slots.dm)",

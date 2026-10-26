@@ -51,8 +51,8 @@
 
 	var/shifted_out = FALSE
 	var/shift_state = AB_SHIFT_NONE
-	EXPIRY_DECLARE(last_shift)
-	EXPIRY_DECLARE(blood_spawn)
+	var/last_shift = 0
+	var/blood_spawn = 0
 	var/is_shifting = FALSE
 
 	var/enable_autolaugh = FALSE //Whether user controlled mob will laugh when interacting automatically.

@@ -346,7 +346,7 @@ GLOBAL_LIST_INIT(agent_faction_departments_default, list(DEPARTMENT_CARGO))
 	return finalize_operation("Authoritative operation evidence")
 
 /datum/contract/faction_agent/check_deadline()
-	if(state == CONTRACT_ACTIVE && deadline && EXPIRY_EXPIRED(src, deadline, CLOCK_WORLD))
+	if(state == CONTRACT_ACTIVE && deadline && COOLDOWN_LAPSED(src, deadline))
 		if(current_operation_ratio() >= CONTRACT_GRADE_MINIMUM_RATIO)
 			finalize_operation()
 		else

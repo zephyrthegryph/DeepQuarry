@@ -14,7 +14,7 @@
 	var/high_messages = TRUE
 	var/list/high_message_list = list("You feel great! For now...", "You feel a wave of happiness!") // ALLOW(instance_list): kept: interned by contents in New() (intern_list); read-only
 	var/list/sober_message_list = list("You feel like garbage...", "Your head aches.") // ALLOW(instance_list): kept: interned by contents in New() (intern_list); read-only
-	EXPIRY_DECLARE(last_message_at) // when the last status message was sent (-1: the effect ended)
+	var/last_message_at = 0 // when the last status message was sent (-1: the effect ended)
 
 	var/prob_proc = FALSE /// ANY probabilities in specific drugs should check for this to be TRUE + the desired probability AND set this back to false.
 

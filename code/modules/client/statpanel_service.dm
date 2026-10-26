@@ -9,7 +9,7 @@ SYSTEM_DEF(statpanels)
 	var/list/global_data
 	var/list/mc_data
 	var/list/mc_metrics
-	EXPIRY_DECLARE(mc_metrics_generated_at)
+	var/mc_metrics_generated_at = 0
 	mc_metrics_generated_at = -INFINITY
 
 	///how many subsystem fires between most tab updates

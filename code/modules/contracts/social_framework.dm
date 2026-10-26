@@ -36,7 +36,7 @@
 	var/approved_weight = 0
 	var/status = CONTRACT_STAKEHOLDER_PENDING
 	var/contribution = 0
-	EXPIRY_DECLARE(created_at)
+	var/created_at = 0
 
 /datum/contract_stakeholder_proposal/New(datum/money_account/account, _role_id, _requested_weight)
 	. = ..()
@@ -421,14 +421,14 @@ CAPABILITIES(/datum/contract/social)
 	return complete()
 
 /datum/contract/social/check_deadline()
-	if(state == CONTRACT_ACTIVE && deadline && EXPIRY_EXPIRED(src, deadline, CLOCK_WORLD))
+	if(state == CONTRACT_ACTIVE && deadline && COOLDOWN_LAPSED(src, deadline))
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The delivery window closed before the minimum graded outcome and required stakeholder participation were reached.")
-	else if(state == CONTRACT_GRACE && grace_until && EXPIRY_EXPIRED(src, grace_until, CLOCK_WORLD))
+	else if(state == CONTRACT_GRACE && grace_until && COOLDOWN_LAPSED(src, grace_until))
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else

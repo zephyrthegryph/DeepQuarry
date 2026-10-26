@@ -34,7 +34,7 @@ SYSTEM_DEF(ticker)
 	var/selected_tip // What will be the tip of the day?
 
 	var/timeLeft //pregame timer
-	EXPIRY_DECLARE(start_at)
+	COOLDOWN_DECLARE(start_at)
 
 	var/gametime_offset = 432000 //Deciseconds to add to world.time for station time.
 	var/station_time_rate_multiplier = 12 //factor of station time progressal vs real time.
@@ -54,7 +54,7 @@ SYSTEM_DEF(ticker)
 
 	var/roundend_check_paused = FALSE
 
-	EXPIRY_DECLARE(round_start_time)
+	var/round_start_time = 0
 	var/list/round_start_events
 	var/mode_result = "undefined"
 	var/end_state = "undefined"
@@ -74,9 +74,9 @@ SYSTEM_DEF(ticker)
 	/// Time remaining until restart in desiseconds
 	var/restart_timeleft
 	/// world.time of last restart warning.
-	EXPIRY_DECLARE(last_restart_notify)
+	var/last_restart_notify = 0
 	/// When Reboot() began waiting for the round-end sound.
-	EXPIRY_TMP_DECLARE(reboot_wait_started)
+	var/tmp/reboot_wait_started = 0
 
 /// Time left until a scheduled reboot; announce_countdown() counts it down while it is above zero.
 /datum/system/ticker/var/tmp/reboot_countdown_left = 0
@@ -92,7 +92,7 @@ SYSTEM_DEF(ticker)
 
 /datum/system/ticker/initialize()
 	lifecycle_decls_init(src) // a non-atom has no materialize
-	EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
+	COOLDOWN_START(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10))
 
 /// The round state machine runs every `wait` (phase K).
 /datum/system/ticker/reactions()
@@ -102,7 +102,7 @@ SYSTEM_DEF(ticker)
 /datum/system/ticker/proc/round_step(dt)
 	switch(current_state)
 		if(GAME_STATE_STARTUP)
-			EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
+			COOLDOWN_START(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10))
 			for(var/client/C in GLOB.clients)
 				window_flash(C, ignorepref = TRUE) //let them know lobby has opened up.
 			to_chat(world, span_boldnotice("Welcome to [station_name()]!"))
@@ -146,7 +146,7 @@ SYSTEM_DEF(ticker)
 			if(!setup())
 				//setup failed
 				current_state = GAME_STATE_STARTUP
-				EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
+				COOLDOWN_START(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10))
 				timeLeft = null
 				Kernel.SetRunLevel(RUNLEVEL_LOBBY)
 

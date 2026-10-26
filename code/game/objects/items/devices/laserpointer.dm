@@ -12,7 +12,7 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	var/max_energy = 8
 	var/effectchance = 20
 	var/cooldown = 10
-	EXPIRY_DECLARE(last_used_time)
+	var/last_used_time = 0
 	var/recharge_locked = 0
 	var/obj/item/stock_parts/micro_laser/diode //used for upgrading!
 

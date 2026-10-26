@@ -26,7 +26,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/log_holder)
 	var/list/data_cache
 
 	/// Last time the ui_data was updated
-	EXPIRY_DECLARE(last_data_update)
+	var/last_data_update = 0
 
 	var/initialized = FALSE
 	var/shutdown = FALSE

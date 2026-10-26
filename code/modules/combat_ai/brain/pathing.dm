@@ -27,7 +27,7 @@
 	var/path_navigation_revision = 0
 	/// When the last A* failed (zero when the last pathfind succeeded): a failed A* toward (roughly) the same goal is
 	/// not retried until path_fail_backoff has passed from then.
-	EXPIRY_DECLARE(path_failed_at)
+	var/path_failed_at = 0
 	/// Current failure backoff (deciseconds); grows with consecutive failures.
 	var/path_fail_backoff = 0
 	/// TRUE while a /datum/io/path request for this brain is open: only one is, and the brain steps directly meanwhile.

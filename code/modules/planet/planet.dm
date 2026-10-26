@@ -22,7 +22,7 @@
 	var/list/turf/simulated/floor/planet_floors
 	var/list/turf/unsimulated/wall/planetary/planet_walls
 
-	EXPIRY_TMP_DECLARE(last_step)
+	var/tmp/last_step = 0
 	var/needs_work = 0 // Bitflags to signal to the planet controller these need (properly deferrable) work. Flags defined in controller.
 
 	var/sun_name = "the sun" // For flavor.

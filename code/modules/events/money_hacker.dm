@@ -3,13 +3,13 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 /datum/event/money_hacker
 	var/tmp/datum/money_account/affected_account
 	endWhen = 100
-	EXPIRY_DECLARE(end_time)
+	COOLDOWN_DECLARE(end_time)
 
 CAPABILITIES(/datum/event/money_hacker)
 	ref_one(nameof(affected_account), /datum/money_account)
 
 /datum/event/money_hacker/setup()
-	EXPIRY_SET(src, end_time, 6000, CLOCK_WORLD)
+	COOLDOWN_START(src, end_time, 10 MINUTES)
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
 		rel_set(src, nameof(affected_account), pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 
@@ -29,7 +29,7 @@ CAPABILITIES(/datum/event/money_hacker)
 
 
 /datum/event/money_hacker/tick()
-	if(EXPIRY_EXPIRED(src, end_time, CLOCK_WORLD))
+	if(COOLDOWN_LAPSED(src, end_time))
 		endWhen = activeFor
 	else
 		endWhen = activeFor + 10

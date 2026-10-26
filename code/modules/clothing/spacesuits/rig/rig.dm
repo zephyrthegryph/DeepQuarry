@@ -26,7 +26,7 @@
 	var/ai_interface_path = "RIGSuit"
 	var/interface_title = "Hardsuit Controller"
 	var/interface_intro = "NT"
-	EXPIRY_DECLARE(wearer_move_delay) //Used for AI moving.
+	var/wearer_move_delay = 0 //Used for AI moving.
 	var/ai_controlled_move_delay = 10
 
 	// Keeps track of what this rig should spawn with.

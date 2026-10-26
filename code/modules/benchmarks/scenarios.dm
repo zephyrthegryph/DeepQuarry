@@ -1024,7 +1024,7 @@
 	begin_window()
 	start = REALTIMEOFDAY
 	for(var/obj/item/card/id/guest/P as anything in passes)
-		EXPIRY_SET(P, expiration_time, 1 MINUTE, CLOCK_WORLD)
+		COOLDOWN_START(P, expiration_time, 1 MINUTE)
 		var/list/access = P.GetAccess()
 		if(!islist(access) || !access || length(access))
 			alias_errors++

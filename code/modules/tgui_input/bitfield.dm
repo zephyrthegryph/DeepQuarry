@@ -9,7 +9,7 @@
 	var/bitset
 	// Bitfield as it was when the window opened, for the "Cancel" path.
 	var/initial_value
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	var/timeout
 	var/submitted = FALSE
 	var/closed = FALSE

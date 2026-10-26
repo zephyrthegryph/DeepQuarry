@@ -12,7 +12,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/isRepeating = FALSE
 	var/coordinates = ""
 	var/cooldown = 0 //Given in seconds in set_vars() but stored in ticks
-	EXPIRY_DECLARE(last_trigger)
+	var/last_trigger = 0
 	COOLDOWN_DECLARE(trigger_cooldown)
 	var/isLoud = FALSE
 	var/isNarrate = FALSE

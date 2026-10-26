@@ -57,8 +57,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/services
 	/// /datum/decl_binder types.
 	var/list/binders
-	/// EXPIRY_ON_LAPSE: var name -> list(clock, proc_ref) (code/datums/sys/expiry.dm).
-	var/list/expiry_hooks
 	/// DECLARE_VERB: verb paths every instance has from init.
 	var/list/verbs_always
 	/// DECLARE_LOGIN_VERB: verb paths a mob has once a player had it.
@@ -114,10 +112,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		if(VERB_DECL_HIDE)
 			LAZYADD(verbs_hidden, verb_path)
 
-/// `skip_unset`: an unset (0) value is not armed at materialize (nothing to lapse; EMP_DISABLE).
-/datum/lifecycle_decls/proc/add_expiry_hook(var_name, clock, proc_ref, skip_unset = FALSE)
-	LAZYSET(expiry_hooks, var_name, list(clock, proc_ref, skip_unset))
-
 /// Validates the declarations against the first instance and works out the work bits.
 /// A bad declaration is reported and dropped here, once per type, never mid-lifecycle.
 /datum/lifecycle_decls/proc/finish(datum/D)
@@ -152,13 +146,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		work |= DECL_WORK_VERBS
 	if(gas || verbs_always || verbs_if || verbs_hidden)
 		work |= DECL_WORK_INIT
-	for(var/hook_var in expiry_hooks?.Copy())
-		if(!(hook_var in D.vars))
-			stack_trace("EXPIRY_ON_LAPSE([owner_type], \"[hook_var]\"): no such var; dropped")
-			expiry_hooks -= hook_var
-	if(!length(expiry_hooks))
-		expiry_hooks = null
-	if(registries || services || binders || expiry_hooks)
+	if(registries || services || binders)
 		work |= DECL_WORK_MATERIALIZE
 	if(binders)
 		work |= DECL_WORK_UNBIND

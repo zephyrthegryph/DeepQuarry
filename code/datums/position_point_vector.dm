@@ -193,8 +193,8 @@
 	return
 
 /datum/point/vector/processed		//pixel_speed is per decisecond.
-	EXPIRY_DECLARE(last_process)
-	EXPIRY_DECLARE(last_move)
+	var/last_process = 0
+	var/last_move = 0
 	var/paused = FALSE
 
 /datum/point/vector/processed/proc/start()

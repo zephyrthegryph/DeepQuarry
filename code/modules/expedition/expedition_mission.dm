@@ -28,7 +28,7 @@
 	var/list/objectives
 	/// Optional time limit (0 = none); failure if the deadline passes.
 	var/time_limit = 0
-	EXPIRY_DECLARE(deadline)
+	COOLDOWN_DECLARE(deadline)
 	/// Optional: pin the enemy faction (EXP_FACTION_*). 0/null = roll one for the site.
 	var/faction_type = null
 
@@ -64,7 +64,7 @@ CAPABILITIES(/datum/expedition_mission)
 	for(var/datum/expedition_objective/O in objectives)
 		O.populate(S)
 	if(time_limit)
-		EXPIRY_SET(src, deadline, time_limit, CLOCK_WORLD)
+		COOLDOWN_START(src, deadline, time_limit)
 
 /datum/expedition_mission/proc/has_viable_objectives()
 	if(!length(objectives))

@@ -62,7 +62,7 @@
 
 /obj/effect/step_trigger/lost_in_space/bluespace
 	deathmessage = "Everything goes blue as your component particles are scattered throughout the known and unknown universe."
-	EXPIRY_DECLARE(last_sound)
+	var/last_sound = 0
 
 /obj/effect/step_trigger/lost_in_space/bluespace/Trigger(A)
 	if(ELAPSED(src, last_sound, CLOCK_WORLD) > 5 SECONDS)

@@ -73,7 +73,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			LAZYADD(dead, holder)
 			continue
 		for(var/atom/movable/A as anything in holder.contents)
-			if(COOLDOWN_TIMELEFT(A, latent_refused_until))
+			if(cooldown_left(A, latent_refused_until))
 				continue
 			if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - frame_start) >= LATENCY_SWEEP_MS_BUDGET)
 				// Resume at this holder next frame.
@@ -89,7 +89,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			catch(var/exception/e)
 				// One bad atom must not end the whole frame (and with it every
 				// other holder's turn): log it with context and back it off.
-				COOLDOWN_START(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
+				cooldown_start(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 				stack_trace("LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed: [e.name] at [e.file]:[e.line] -- [e.desc]")
 				continue
 			if(!eligible)
@@ -99,8 +99,8 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 				break // holder.contents changed; the rest wait for next turn
 			// Refused by latent_collapse() itself: back off for the holder's idle
 			// delay instead of re-offering it (and re-running its refusal) every frame.
-			COOLDOWN_START(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
-			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(COOLDOWN_TIMELEFT(A, latent_refused_until))]: [GLOB.latent_last_refusal]")
+			cooldown_start(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
+			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(cooldown_left(A, latent_refused_until))]: [GLOB.latent_last_refusal]")
 	for(var/atom/gone as anything in dead)
 		rel_remove(GLOB, nameof(GLOB.latency_sweep_holders), gone)
 	cursor = index % max(length(holders), 1)

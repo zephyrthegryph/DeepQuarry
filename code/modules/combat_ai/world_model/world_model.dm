@@ -98,7 +98,7 @@
 	var/atom/hazard
 	var/severity = 1
 	var/duration = 0
-	EXPIRY_DECLARE(noted_at)
+	var/noted_at = 0
 
 CAPABILITIES(/datum/known_hazard)
 	ref_one(nameof(hazard), /atom)

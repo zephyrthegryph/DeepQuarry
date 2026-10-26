@@ -9,7 +9,7 @@
 	var/time_between_spawn = 1 MINUTE
 	var/time_to_end = 45 MINUTES
 	var/spawned_num = 0
-	EXPIRY_DECLARE(init_time)
+	var/init_time = 0
 
 /obj/effect/bspawner/proc/stamp_creation_time()
 	STAMP(src, init_time, CLOCK_WORLD)

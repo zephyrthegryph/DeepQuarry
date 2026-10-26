@@ -9,7 +9,7 @@
 	name = "Gravitational Waves"
 	effect_type = EFFECT_GRAVIATIONAL_WAVES
 
-	EXPIRY_DECLARE(last_wave_pull)
+	var/last_wave_pull = 0
 	/// At most one pull a second (see the warning above).
 	COOLDOWN_DECLARE(wave_pull_cooldown)
 	var/pull_power

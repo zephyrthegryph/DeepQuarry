@@ -2,9 +2,9 @@
 /datum/artifact_effect/vampire
 	name = "Cultic Vampirism"
 	effect_type = EFFECT_VAMPIRE
-	EXPIRY_DECLARE(last_bloodcall)
+	var/last_bloodcall = 0
 	var/bloodcall_interval = 50
-	EXPIRY_DECLARE(last_eat)
+	var/last_eat = 0
 	var/eat_interval = 100
 	var/charges = 0
 	var/list/nearby_mobs

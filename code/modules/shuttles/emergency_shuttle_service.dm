@@ -16,7 +16,7 @@ SYSTEM_DEF(emergency_shuttle)
 	var/datum/shuttle/autodock/ferry/emergency/shuttle
 	var/list/escape_pods = list()
 
-	EXPIRY_DECLARE(launch_time) //the time at which the shuttle will be launched
+	COOLDOWN_DECLARE(launch_time) //the time at which the shuttle will be launched
 	var/auto_recall = FALSE		//if set, the shuttle will be auto-recalled
 	var/evac = FALSE			//1 = emergency evacuation, 0 = crew transfer
 	var/wait_for_launch = FALSE	//if the shuttle is waiting to launch
@@ -25,7 +25,7 @@ SYSTEM_DEF(emergency_shuttle)
 	var/deny_shuttle = FALSE	//allows admins to prevent the shuttle from being called
 	var/departed = FALSE		//if the shuttle has left the station at least once
 
-	EXPIRY_DECLARE(auto_recall_at)		//the time at which the shuttle will be auto-recalled
+	COOLDOWN_DECLARE(auto_recall_at)		//the time at which the shuttle will be auto-recalled
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_docked
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_called
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_recalled
@@ -69,9 +69,9 @@ CAPABILITIES(/datum/system/emergency_shuttle)
 		if(!wait_for_launch)
 			return TRUE
 
-		if(evac && auto_recall && EXPIRY_EXPIRED(src, auto_recall_at, CLOCK_WORLD))
+		if(evac && auto_recall && COOLDOWN_LAPSED(src, auto_recall_at))
 			recall()
-		if(EXPIRY_EXPIRED(src, launch_time, CLOCK_WORLD))	//time to launch the shuttle
+		if(COOLDOWN_LAPSED(src, launch_time))	//time to launch the shuttle
 			stop_launch_countdown()
 
 			if(!shuttle.location)	//leaving from the station

@@ -18,7 +18,7 @@
 	var/faction = ""					//Antag faction holder.
 
 	var/offer_time = 10 MINUTES			//The time increment per discount offered
-	EXPIRY_DECLARE(next_offer_time)
+	COOLDOWN_DECLARE(next_offer_time)
 	var/datum/uplink_item/discount_item_static	//The item to be discounted
 	var/discount_amount					//The amount as a percent the item will be discounted by
 	var/compact_mode = FALSE
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/item/uplink)
 /obj/item/uplink/hidden/proc/next_offer(datum/act/timer/A)
 	set_discount_item_static(GLOB.default_uplink_selection.get_random_item(INFINITY))
 	set_discount_amount(pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1))
-	EXPIRY_SET(src, next_offer_time, offer_time, CLOCK_WORLD)
+	COOLDOWN_START(src, next_offer_time, offer_time)
 	SStgui.update_uis(src)
 
 // Toggles the uplink on and off. Normally this will bypass the item's normal functions and go to the uplink menu, if activated.

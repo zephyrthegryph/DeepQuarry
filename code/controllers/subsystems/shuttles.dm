@@ -27,7 +27,7 @@ SYSTEM_DEF(shuttles)
 	var/list/process_shuttles = list()             // Simple list of shuttles, for processing
 
 	var/list/registered_shuttle_landmarks = list() // Maps shuttle landmark tags to ref_token()s of the instances (get_landmark() resolves)
-	EXPIRY_DECLARE(last_landmark_registration_time) // world.time of most recent addition to registered_shuttle_landmarks
+	var/last_landmark_registration_time = 0 // world.time of most recent addition to registered_shuttle_landmarks
 	var/list/shuttle_logs = list()                 // (Not Implemented) Keeps records of shuttle movement, format is list(datum/shuttle = datum/shuttle_log)
 	var/list/shuttle_areas = list()                // All the areas of all shuttles.
 	var/list/docking_registry = list()             // Docking controller tag -> ref_token() of the docking controller program, mostly for init purposes (docking_program() resolves).

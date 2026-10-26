@@ -34,7 +34,7 @@
 	var/document_id
 	/// world.time at which a prewarm initialize() was issued, so an idle shell that
 	/// never reports `ready` can be timed out and replaced.
-	EXPIRY_DECLARE(prewarm_started_at)
+	var/prewarm_started_at = 0
 	/// Ends the current one-second payload chunk budget window.
 	COOLDOWN_DECLARE(payload_chunk_window_cooldown)
 	/// payloadChunk topics accepted during the current accounting window.

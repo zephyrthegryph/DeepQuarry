@@ -133,7 +133,7 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 	icon_state = "denecrotizer"
 	w_class = ITEMSIZE_COST_NORMAL
 	var/charges = 5 //your army of minions can only be this big
-	EXPIRY_DECLARE(last_used)
+	var/last_used = 0
 	var/cooldown = 10 MINUTES //LONG
 	var/revive_time = 30 SECONDS //Don't do this in combat
 	var/advanced = 1 //allows for ghosts to join mobs who get revived by this, and updates their faction to yours

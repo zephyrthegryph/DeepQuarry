@@ -155,7 +155,7 @@ SYSTEM_DEF(contracts)
 	var/active = is_physically_custodied(subject)
 	if(active && !started_at)
 		var/start_revision = next_custody_revision++
-		custody_started_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		custody_started_by_subject[key] = TIME_NOW(CLOCK_WORLD)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -659,14 +659,14 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		"negotiation_clauses" = negotiation_rows(contract),
 		"deadline" = contract.deadline,
 		"offer_expires_at" = contract.offer_expires_at,
-		"offer_time_remaining" = EXPIRY_ACTIVE(contract, offer_expires_at, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, offer_expires_at, CLOCK_WORLD), 1) : null,
+		"offer_time_remaining" = COOLDOWN_RUNNING(contract, offer_expires_at) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, offer_expires_at), 1) : null,
 		"accepted_at" = contract.accepted_at,
-		"deadline_remaining" = EXPIRY_ACTIVE(contract, deadline, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, deadline, CLOCK_WORLD), 1) : null,
+		"deadline_remaining" = COOLDOWN_RUNNING(contract, deadline) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, deadline), 1) : null,
 		"can_accept" = can_accept && contract.state == CONTRACT_OFFERED,
 		"can_decline" = can_accept && contract.state == CONTRACT_OFFERED,
 		"offer_kind" = contract.offer_kind,
 		"closure_code" = contract.closure_code,
-		"grace_time_remaining" = EXPIRY_ACTIVE(contract, grace_until, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, grace_until, CLOCK_WORLD), 1) : null,
+		"grace_time_remaining" = COOLDOWN_RUNNING(contract, grace_until) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, grace_until), 1) : null,
 		"requirements" = requirement_rows(contract),
 		"contributor_count" = length(contract.contributions),
 	)

@@ -19,7 +19,7 @@
 	var/volume = 1
 
 	var/media_url = ""
-	EXPIRY_DECLARE(media_start_time)
+	var/media_start_time = 0
 
 	var/obj/item/headpods/deployed_headpods
 

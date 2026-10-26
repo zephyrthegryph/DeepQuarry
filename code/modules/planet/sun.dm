@@ -11,7 +11,7 @@ CAPABILITIES(/datum/sun_holder)
 
 /// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (its every() in CAPABILITIES(/datum/sun_holder)).
 /datum/sun_holder
-	EXPIRY_TMP_DECLARE(rainbow_ends_at)
+	COOLDOWN_TMP_DECLARE(rainbow_ends_at)
 
 /// The running rainbow's next colour, and the light to restore when it ends.
 /datum/sun_holder/var/tmp/rainbow_index = 1
@@ -73,7 +73,7 @@ CAPABILITIES(/datum/sun_holder)
 /// One colour of the rainbow every 0.3 s until `rainbow_ends_at`, then the original light.
 /datum/sun_holder/proc/rainbow_step(datum/act/timer/tick)
 	var/static/list/colors = list("#ff5d5d","#ffd17b","#ffff5e","#7eff7e","#6868ff","#b753ff","#d08fff","#ffffff")
-	if(EXPIRY_EXPIRED(src, rainbow_ends_at, CLOCK_WORLD))
+	if(COOLDOWN_LAPSED(src, rainbow_ends_at))
 		set_rainbow_ends_at(0)
 		update_brightness(rainbow_original_brightness)
 		update_color(rainbow_original_color)

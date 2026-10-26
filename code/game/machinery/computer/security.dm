@@ -555,7 +555,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	var/datum/data/record/disposition_record = active2()
 	LAZYINITLIST(disposition_record.disposition_history)
 	disposition_record.disposition_history.Add(list(list(
-		"occurred_at" = EXPIRY_AT(src, CLOCK_WORLD, 0),
+		"occurred_at" = TIME_NOW(CLOCK_WORLD),
 		"actor_account" = contract_account_for_mob(user)?.account_number,
 		"actor_name" = user?.real_name,
 		"previous_status" = old_status,

@@ -139,12 +139,12 @@ CAPABILITIES(/datum/flight_port)
 	var/tmp/datum/flight_port/arrival_port
 	var/state = FLIGHT_PLAN_DRAFT
 	var/failure_reason
-	EXPIRY_DECLARE(created_at)
-	EXPIRY_DECLARE(departure_at)
-	EXPIRY_DECLARE(arrival_at)
-	EXPIRY_DECLARE(estimated_arrival_at)
-	EXPIRY_DECLARE(departure_deadline)
-	EXPIRY_DECLARE(terminal_cleanup_at)
+	var/created_at = 0
+	var/departure_at = 0
+	var/arrival_at = 0
+	COOLDOWN_DECLARE(estimated_arrival_at)
+	COOLDOWN_DECLARE(departure_deadline)
+	COOLDOWN_DECLARE(terminal_cleanup_at)
 	var/generation_state = FLIGHT_GENERATION_NONE
 	var/generation_progress = 0
 	var/generation_stage = "Not required"
@@ -216,7 +216,7 @@ CAPABILITIES(/datum/flight_plan)
 			fail("No compatible arrival port is available.")
 			return FALSE
 	state = FLIGHT_PLAN_PREPARING
-	EXPIRY_SET(src, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME, CLOCK_WORLD)
+	COOLDOWN_START(src, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME)
 	if(generation_state == FLIGHT_GENERATION_QUEUED)
 		generation_state = FLIGHT_GENERATION_RUNNING
 		generation_stage = "Reserving destination"
@@ -229,7 +229,7 @@ CAPABILITIES(/datum/flight_plan)
 	failure_reason = reason
 	state = FLIGHT_PLAN_FAILED
 	release_leases(TRUE)
-	EXPIRY_SET(src, terminal_cleanup_at, 10 SECONDS, CLOCK_WORLD)
+	COOLDOWN_START(src, terminal_cleanup_at, 10 SECONDS)
 	log_world("Flight plan [id] for [vessel?.name || "unknown vessel"] failed: [reason]")
 
 /datum/flight_plan/proc/request_abort()

@@ -1,5 +1,5 @@
 /datum/contract_audit_entry
-	EXPIRY_DECLARE(time)
+	var/time = 0
 	var/category
 	var/detail
 
@@ -202,12 +202,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/contract_definition)
 	var/station_reputation_reward = 0
 	var/department_reputation_reward = 0
 	var/personal_reputation_reward = 0
-	EXPIRY_DECLARE(deadline)
+	COOLDOWN_DECLARE(deadline)
 	var/deadline_duration = 0
 	var/deadline_grace_duration = CONTRACT_DEFAULT_GRACE_DURATION
-	EXPIRY_DECLARE(grace_until)
-	EXPIRY_DECLARE(offer_expires_at)
-	EXPIRY_DECLARE(accepted_at)
+	COOLDOWN_DECLARE(grace_until)
+	COOLDOWN_DECLARE(offer_expires_at)
+	var/accepted_at = 0
 	var/accepted_by_account = 0
 	var/closed_at = 0
 	var/offer_kind = CONTRACT_OFFER_OPPORTUNITY
@@ -279,7 +279,7 @@ CAPABILITIES(/datum/contract)
 	if(!length(audit_log))
 		audit(CONTRACT_AUDIT_CREATED, "Contract offered by [issuer_name].")
 	audit(CONTRACT_AUDIT_OFFER, "Published on [board_key || "the contract board"]: [offer_reason || "eligible offer"].")
-	EXPIRY_SET(src, offer_expires_at, duration, CLOCK_WORLD)
+	COOLDOWN_START(src, offer_expires_at, duration)
 	after(src, duration, PROC_REF(expire_offer), key = "offer_timer")
 	return TRUE
 
@@ -425,7 +425,7 @@ CAPABILITIES(/datum/contract)
 	var/datum/contract_definition/definition = SScontracts?.definitions[definition_id]
 	if(state != CONTRACT_OFFERED || (definition && !definition.prepare_accept(src, accepting_account, user, source)) || validate())
 		return FALSE
-	if(offer_expires_at && EXPIRY_EXPIRED(src, offer_expires_at, CLOCK_WORLD))
+	if(offer_expires_at && COOLDOWN_LAPSED(src, offer_expires_at))
 		expire_offer()
 		return FALSE
 	if(scope == CONTRACT_SCOPE_PERSONAL && accepting_account?.account_number != owner_account_number)
@@ -445,8 +445,8 @@ CAPABILITIES(/datum/contract)
 	STAMP(src, accepted_at, CLOCK_WORLD)
 	accepted_by_account = accepting_account?.account_number || contract_account_for_mob(user)?.account_number
 	if(deadline_duration > 0)
-		EXPIRY_SET(src, deadline, deadline_duration, CLOCK_WORLD)
-	if(EXPIRY_ACTIVE(src, deadline, CLOCK_WORLD))
+		COOLDOWN_START(src, deadline, deadline_duration)
+	if(COOLDOWN_RUNNING(src, deadline))
 		after(src, deadline - world.time, PROC_REF(check_deadline), key = "deadline_timer")
 	SScontracts.set_contract_state(src, old_state, state)
 	subscribe_events()
@@ -472,12 +472,12 @@ CAPABILITIES(/datum/contract)
 	return null
 
 /datum/contract/proc/check_deadline()
-	if(state == CONTRACT_ACTIVE && deadline && EXPIRY_EXPIRED(src, deadline, CLOCK_WORLD))
+	if(state == CONTRACT_ACTIVE && deadline && COOLDOWN_LAPSED(src, deadline))
 		if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The deadline expired.")
-	else if(state == CONTRACT_GRACE && grace_until && EXPIRY_EXPIRED(src, grace_until, CLOCK_WORLD))
+	else if(state == CONTRACT_GRACE && grace_until && COOLDOWN_LAPSED(src, grace_until))
 		fail("The evidence grace period expired.")
 
 /datum/contract/proc/enter_grace()
@@ -485,7 +485,7 @@ CAPABILITIES(/datum/contract)
 		return FALSE
 	var/old_state = state
 	state = CONTRACT_GRACE
-	EXPIRY_SET(src, grace_until, deadline_grace_duration, CLOCK_WORLD)
+	COOLDOWN_START(src, grace_until, deadline_grace_duration)
 	after(src, deadline_grace_duration, PROC_REF(check_deadline), key = "deadline_timer")
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(CONTRACT_AUDIT_GRACE, "The operational deadline passed; already-prepared evidence has [DisplayTimeText(deadline_grace_duration)] to arrive.")

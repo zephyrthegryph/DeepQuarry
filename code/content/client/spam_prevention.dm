@@ -1,6 +1,6 @@
 // Based on Aurora's anti-spam system.
 /client/
-	EXPIRY_DECLARE(last_message_time)
+	var/last_message_time = 0
 	var/spam_alert = 0
 
 /client/proc/handle_spam_prevention(mute_type = MUTE_ALL, spam_delay = 0.5 SECONDS)

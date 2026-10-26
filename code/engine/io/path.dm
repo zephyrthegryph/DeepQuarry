@@ -52,7 +52,7 @@ CAPABILITIES(/datum/system/pathing)
 /datum/path_failure
 	/// GLOB.ai_navigation_revision when the search failed.
 	var/revision = 0
-	EXPIRY_DECLARE(failed_at)
+	var/failed_at = 0
 
 #define PATHFINDER_TIMEOUT 50
 /// A cached failure is also dropped after this long, because not every map edit bumps the navigation revision.

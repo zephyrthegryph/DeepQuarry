@@ -45,7 +45,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/tmp/other_flags = 0
 
 	var/tmp/stat = NIF_PREINSTALL		// Status of the NIF
-	EXPIRY_TMP_DECLARE(install_done) // Time when install will finish
+	COOLDOWN_TMP_DECLARE(install_done) // Time when install will finish
 	var/tmp/open = FALSE				// If it's open for maintenance (1-3)
 	var/tmp/should_be_in = BP_HEAD		// Organ we're supposed to be held in
 
@@ -276,10 +276,10 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 	if(!install_done)
 		if(human.mind.name == owner)
 			owner_key = human.ckey
-			EXPIRY_SET(src, install_done, 1 MINUTE, CLOCK_WORLD)
+			COOLDOWN_START(src, install_done, 1 MINUTE)
 			notify("Welcome back, [owner]! Performing quick-calibration...")
 		else if(!owner)
-			EXPIRY_SET(src, install_done, 15 MINUTES, CLOCK_WORLD) // Install time from 35 minutes to 15 minutes.
+			COOLDOWN_START(src, install_done, 15 MINUTES) // Install time from 35 minutes to 15 minutes.
 			owner_key = human.ckey
 			notify("Adapting to new user...")
 			after(src, 5 SECONDS, PROC_REF(notify), with = list("Adjoining optic [HAS_SYNTHETIC_BIOLOGY(human) ? "interface" : "nerve"], please be patient.", TRUE))

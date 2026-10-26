@@ -30,7 +30,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/pathfinding_predicate)
 	var/turf/goal
 
 	/// when the pathfinder service took this search (the wait for its mutex and the search's total are read from it)
-	EXPIRY_DECLARE(started_at)
+	var/started_at = 0
 
 	//* options
 	/// how far away to the end we want to get; 0 = get ontop of the tile, 1 = get adjacent to the tile

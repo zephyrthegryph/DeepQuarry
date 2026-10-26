@@ -2,7 +2,7 @@
 	return
 
 /datum/cache_entry
-	EXPIRY_DECLARE(timestamp)
+	COOLDOWN_DECLARE(timestamp)
 	var/data
 
 /datum/cache_entry/New()
@@ -16,4 +16,4 @@
 	timestamp += valid_duration
 
 /datum/cache_entry/valid_until/is_valid()
-	return EXPIRY_ACTIVE(src, timestamp, CLOCK_WORLD)
+	return COOLDOWN_RUNNING(src, timestamp)

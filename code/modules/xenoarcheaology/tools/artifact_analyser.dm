@@ -7,7 +7,7 @@
 	density = TRUE
 	var/scan_in_progress = 0
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
-	EXPIRY_DECLARE(scan_completion_time)
+	COOLDOWN_DECLARE(scan_completion_time)
 	var/scan_duration = 50
 	var/tmp/obj/scanned_object
 	var/report_num = 0
@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 			atom_say("Unable to isolate scan target.")
 		else
 			set_scan_in_progress(1)
-			EXPIRY_SET(src, scan_completion_time, scan_duration, CLOCK_WORLD)
+			COOLDOWN_START(src, scan_completion_time, scan_duration)
 			after(src, scan_duration + 0.1 SECONDS, PROC_REF(scan_timer_fired))
 			atom_say("Scanning begun.")
 	return TRUE

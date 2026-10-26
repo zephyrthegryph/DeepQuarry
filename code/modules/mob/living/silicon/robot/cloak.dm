@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	///How many times we have been hit in a short succession.
 	var/times_hit = 0
 	///When we were last hit.
-	EXPIRY_DECLARE(last_hit_time)
+	var/last_hit_time = 0
 	///If our cloak is currently up or not
 	var/cloaked = TRUE
 	///Body factors while the cloak is up (built once from the module's strength).

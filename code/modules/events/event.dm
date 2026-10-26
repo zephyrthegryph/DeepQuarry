@@ -65,8 +65,8 @@
 	var/severity			= 0 //Severity. Lower means less severe, higher means more severe. Does not have to be supported. Is set on New().
 	var/activeFor			= 0	//How long the event has existed. You don't need to change this.
 	var/isRunning			= TRUE //If this event is currently running. You should not change this.
-	EXPIRY_DECLARE(startedAt) //When this event started.
-	EXPIRY_DECLARE(endedAt) //When this event ended.
+	var/startedAt = 0 //When this event started.
+	var/endedAt = 0 //When this event ended.
 	var/processing_active 	= TRUE
 	/// Relation view: the event_meta this event was started from.
 	var/tmp/datum/event_meta/event_meta

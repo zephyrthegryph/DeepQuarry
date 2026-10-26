@@ -20,18 +20,28 @@ CAPABILITIES(/datum/system/mobs)
 /// How long a player must wait to respawn, counted from when it was set.
 /datum/respawn_timer
 	var/duration = 0
-	EXPIRY_DECLARE(started_at)
+	/// This player may never respawn, whatever the duration says (an admin clears the record to allow it).
+	var/forbidden = FALSE
+	var/started_at = 0
 
-/// Starts (or restarts) the respawn wait of `ckey`.
-/datum/system/mobs/proc/set_respawn_wait(ckey, duration)
+/// Starts (or restarts) the respawn wait of `ckey`; `forbidden` means they may never respawn. A forbidden record is kept until an admin clears it.
+/datum/system/mobs/proc/set_respawn_wait(ckey, duration, forbidden = FALSE)
+	if(respawn_forbidden(ckey))
+		return
 	var/datum/respawn_timer/timer = new
 	timer.duration = duration
+	timer.forbidden = forbidden
 	STAMP(timer, started_at, CLOCK_WORLD)
 	rel_add(src, nameof(respawn_timers), timer, key = ckey)
 
 /// The ckeys that are still waiting to respawn.
 /datum/system/mobs/proc/respawn_waiters()
 	return assoc_to_keys(respawn_timers)
+
+/// Whether `ckey` has a record that forbids ever respawning.
+/datum/system/mobs/proc/respawn_forbidden(ckey)
+	var/datum/respawn_timer/timer = LAZYACCESS(respawn_timers, ckey)
+	return timer?.forbidden
 
 /// Lets `ckey` respawn now.
 /datum/system/mobs/proc/clear_respawn_wait(ckey)

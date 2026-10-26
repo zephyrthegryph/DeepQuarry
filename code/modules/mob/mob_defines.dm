@@ -70,7 +70,7 @@
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
 
 
-	EXPIRY_DECLARE(timeofdeath) //Living
+	COOLDOWN_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 
 	var/bodytemperature = BODYTEMP_NORMAL

@@ -40,7 +40,7 @@
 	var/list/selected_figure
 	var/list/last_double_pawn_move
 	var/game_flags = NONE
-	EXPIRY_DECLARE(turn_start_time)
+	var/turn_start_time = 0
 	var/winner
 
 CAPABILITIES(/datum/board_game/chess)

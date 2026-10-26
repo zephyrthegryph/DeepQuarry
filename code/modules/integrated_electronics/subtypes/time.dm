@@ -41,7 +41,7 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 1
 	var/delay = 2 SECONDS
-	EXPIRY_DECLARE(next_fire)
+	COOLDOWN_DECLARE(next_fire)
 	// Power consumption scales based on how fast it ticks.
 	// This, plus the fact it ticks more often will increase consumption non-linearly,
 	// and the circuit cooldown and will hopefully discourage stupidly fast ticking machines.
@@ -79,7 +79,7 @@ CAPABILITIES(/obj/item/integrated_circuit/time/ticker)
 		set_is_running(FALSE)
 		return
 	if(ELAPSED(src, next_fire, CLOCK_WORLD) > 0)
-		EXPIRY_SET(src, next_fire, delay, CLOCK_WORLD)
+		COOLDOWN_START(src, next_fire, delay)
 		activate_pin(1)
 
 /obj/item/integrated_circuit/time/clock

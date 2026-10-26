@@ -59,7 +59,7 @@
 	/// Whether the submitted number is rounded down into an integer.
 	var/round_value
 	/// The time at which the number input was created, for displaying timeout progress.
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	/// The lifespan of the number input, after which the window will close and delete itself.
 	var/timeout
 	/// The title of the TGUI window

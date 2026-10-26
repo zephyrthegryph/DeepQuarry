@@ -11,12 +11,12 @@
 	var/monitor_last_input = 0
 	var/monitor_last_output = 0
 	var/monitor_last_moles = 0
-	EXPIRY_DECLARE(monitor_last_time)
+	var/monitor_last_time = 0
 	var/monitor_configuration = -1
 	var/maintenance_open = FALSE
 	var/last_reading_id
 	var/list/last_reading
-	EXPIRY_DECLARE(monitor_started)
+	var/monitor_started = 0
 	var/monitor_input = 0
 	var/monitor_output = 0
 	var/monitor_moles = 0
@@ -324,7 +324,7 @@ CAPABILITIES(/datum/material_service)
 	var/duration = (world.time - monitor_started) / 10
 	var/consumed = input_joules - monitor_input + monitor_stored_energy - owner().material_operating_reservoir()
 	var/datum/money_account/observer_account = contract_account_for_mob(user)
-	set_last_reading(list("name" = owner().name, "assembly" = wear.assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name))
+	set_last_reading(list("name" = owner().name, "assembly" = wear.assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = TIME_NOW(CLOCK_WORLD), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name))
 	tool.set_engineering_reading(last_reading)
 	return TRUE
 

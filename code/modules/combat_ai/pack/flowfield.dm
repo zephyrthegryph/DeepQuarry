@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(ai_pack_flow_builds, 0)
 	var/turf/goal
 	var/revision = 0
 	var/list/dist
-	EXPIRY_DECLARE(built_at)
+	var/built_at = 0
 
 CAPABILITIES(/datum/flow_field)
 	ref_one(nameof(goal), /turf)

@@ -350,7 +350,7 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 	SScontracts.bind_evidence_subject(evidence_id, identity.id)
 	payload["subject_name"] = subject.real_name
 	payload["signature"] = signature
-	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	payload["signature_time"] = TIME_NOW(CLOCK_WORLD)
 	var/datum/medical_trial_participant/signed_participant = trial.participants?[identity.id]
 	STAMP(signed_participant, consent_time, CLOCK_WORLD)
 	signed_participant.consent_evidence_id = evidence_id
@@ -373,7 +373,7 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 	if(payload["signed"] || !istype(subject) || SScontracts.subject_identity(subject)?.id != payload["subject_id"])
 		return FALSE
 	payload["signed"] = TRUE
-	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	payload["signature_time"] = TIME_NOW(CLOCK_WORLD)
 	paper.name = "signed [paper.name]"
 	paper.set_info(paper.info + ("<br><b>Status:</b> Signed withdrawal pending receipt by [destination]."))
 	paper.updateinfolinks()

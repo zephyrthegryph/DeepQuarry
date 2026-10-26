@@ -26,7 +26,7 @@
 	/// Passengers in the compartments, kept by the compartments' slot changes (mecha_passenger_changed()); the tracked mirror a requirement reads.
 	var/passenger_count = 0
 	var/list/log = list() // ALLOW(instance_list): d: mech log (generic name, too many ambiguous call sites)
-	EXPIRY_DECLARE(last_message)
+	var/last_message = 0
 	var/add_req_access = 1
 	var/maint_access = 1
 	var/dna								//Dna-locking the mech

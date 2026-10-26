@@ -97,7 +97,7 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 
 /// When a log file was last confirmed to exist; the logger owns one per file (verified_log_files).
 /datum/verified_log_file
-	EXPIRY_DECLARE(verified_at)
+	var/verified_at = 0
 
 /// How long a log file is trusted to still exist before fexists() is checked again.
 #define LOG_FILE_RECHECK_INTERVAL (10 SECONDS)

@@ -5,8 +5,8 @@
 	var/source_name = ""	// The name of the source should it be lost (for example a destroyed camera)
 	var/duration	= 0		// How long this source will be alarming, 0 for indefinetely.
 	var/severity 	= 1		// How severe the alarm from this source is.
-	EXPIRY_DECLARE(start_time) // When this source began alarming.
-	EXPIRY_DECLARE(end_time)		// Use to set when this trigger should clear, in case the source is lost.
+	var/start_time = 0 // When this source began alarming.
+	COOLDOWN_DECLARE(end_time)		// Use to set when this trigger should clear, in case the source is lost.
 
 /datum/alarm_source/New(atom/source)
 	rel_set(src, nameof(source), source) // a relation: the framework clears it when the source dies
@@ -20,7 +20,7 @@
 	var/tmp/area/last_area	//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
 	var/last_name	//The last acquired name, used should origin be lost
 	var/tmp/area/last_camera_area	//The last area in which cameras where fetched, used to see if the camera list should be updated.
-	EXPIRY_DECLARE(end_time)//Used to set when this alarm should clear, in case the origin is lost.
+	COOLDOWN_DECLARE(end_time)//Used to set when this alarm should clear, in case the origin is lost.
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.
 
 CAPABILITIES(/datum/alarm)
@@ -38,7 +38,7 @@ CAPABILITIES(/datum/alarm)
 /datum/alarm/proc/alarm_tick()
 	// Has origin gone missing?
 	if(!origin() && !end_time)
-		EXPIRY_SET(src, end_time, ALARM_RESET_DELAY, CLOCK_WORLD)
+		COOLDOWN_START(src, end_time, ALARM_RESET_DELAY)
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
 		if((AS.end_time && ELAPSED(AS, end_time, CLOCK_WORLD) > 0) || (AS.duration && ELAPSED(AS, start_time, CLOCK_WORLD) > AS.duration))
@@ -47,7 +47,7 @@ CAPABILITIES(/datum/alarm)
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.
 			AS.duration = 0
-			EXPIRY_SET(AS, end_time, ALARM_RESET_DELAY, CLOCK_WORLD)
+			COOLDOWN_START(AS, end_time, ALARM_RESET_DELAY)
 
 #undef ALARM_RESET_DELAY
 

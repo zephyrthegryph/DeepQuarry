@@ -21,7 +21,7 @@ CAPABILITIES(/datum/repository/crew)
 		cache_entry = new/datum/cache_entry
 		rel_add(src, nameof(cache_data), cache_entry, z_level)
 
-	if(EXPIRY_ACTIVE(cache_entry, timestamp, CLOCK_WORLD))
+	if(COOLDOWN_RUNNING(cache_entry, timestamp))
 		return cache_entry.data
 
 	var/tracked = scan()
@@ -68,7 +68,7 @@ CAPABILITIES(/datum/repository/crew)
 				crewmembers[++crewmembers.len] = crewmemberData
 
 	crewmembers = sortByKey(crewmembers, "name")
-	EXPIRY_SET(cache_entry, timestamp, 5 SECONDS, CLOCK_WORLD)
+	COOLDOWN_START(cache_entry, timestamp, 5 SECONDS)
 	cache_entry.data = crewmembers
 
 	return crewmembers

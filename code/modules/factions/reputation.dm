@@ -291,8 +291,8 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 	var/faction_id
 	var/datum/mind/agent_mind
 	var/tier = FACTION_AGENT_TIER_CANDIDATE
-	EXPIRY_DECLARE(candidate_started_at)
-	EXPIRY_DECLARE(appointed_at)
+	var/candidate_started_at = 0
+	var/appointed_at = 0
 	var/contracts_completed = 0
 	var/contracts_failed = 0
 	var/next_offer_sequence = 1

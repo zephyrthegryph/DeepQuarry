@@ -2,7 +2,7 @@
 	var/severity = -1
 	var/delayed = 0
 	var/delay_modifier = 1
-	EXPIRY_DECLARE(next_event_time)
+	COOLDOWN_DECLARE(next_event_time)
 	/// Every event_meta this container made (owned); available_events and next_event name members of it.
 	var/list/event_pool
 	var/list/available_events
@@ -10,7 +10,7 @@
 	var/list/last_event_time
 	var/tmp/datum/event_meta/next_event
 
-	EXPIRY_DECLARE(last_world_time)
+	var/last_world_time = 0
 
 /// The random-event clock runs (the events service sets it when it makes the container).
 /datum/event_container/var/clock_running = FALSE
@@ -107,7 +107,7 @@ CAPABILITIES(/datum/event_container)
 		var/lower = (event_delays["lower"] MINUTES)
 		var/upper = (event_delays["upper"] MINUTES)
 		var/event_delay = rand(lower, upper)
-		EXPIRY_SET(src, next_event_time, event_delay, CLOCK_WORLD)
+		COOLDOWN_START(src, next_event_time, event_delay)
 	// Otherwise, follow the standard setup process
 	else
 		var/playercount_modifier = 1
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/event_container)
 		playercount_modifier = playercount_modifier * delay_modifier
 
 		var/event_delay = rand(CONFIG_GET(number_list/event_delay_lower)[severity] MINUTES, CONFIG_GET(number_list/event_delay_upper)[severity] MINUTES) * playercount_modifier
-		EXPIRY_SET(src, next_event_time, event_delay, CLOCK_WORLD)
+		COOLDOWN_START(src, next_event_time, event_delay)
 
 	log_game("Next event of severity [GLOB.severity_to_string[severity]] in [(next_event_time - world.time)/600] minutes.")
 

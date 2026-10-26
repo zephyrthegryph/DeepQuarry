@@ -43,7 +43,7 @@
 	var/target_name
 	var/target_condition_type
 	var/target_condition_name
-	EXPIRY_DECLARE(consent_time)
+	var/consent_time = 0
 	var/tmp/obj/item/paper/consent_record
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
@@ -120,7 +120,7 @@ CAPABILITIES(/datum/contract/medical_case_report)
 	payload["signed"] = TRUE
 	report.consent_evidence_id = evidence_id
 	SScontracts.bind_evidence_subject(evidence_id, report.target_ref)
-	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	payload["signature_time"] = TIME_NOW(CLOCK_WORLD)
 	paper.name = "signed case registry consent - [subject.real_name]"
 	paper.set_info(paper.info + ("<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this form with the completed case narrative and longitudinal body scans, then fax it to [CONTRACT_FAX_CASE_REGISTRY]."))
 	paper.updateinfolinks()

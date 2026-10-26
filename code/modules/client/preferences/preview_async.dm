@@ -331,7 +331,7 @@
 /datum/preferences/proc/dq_poll_preview_jobs(generation, list/jobs, list/ready, scale_x, scale_y, had_client)
 	var/datum/dq_preview_poll/poll = new
 	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list())
-	EXPIRY_SET(poll, timeout_at, DQ_PREVIEW_JOB_TIMEOUT, CLOCK_WORLD)
+	COOLDOWN_START(poll, timeout_at, DQ_PREVIEW_JOB_TIMEOUT)
 	rel_set(poll, nameof(poll.prefs), src)
 	rel_add(SScharacter_setup, nameof(/datum/system/character_setup::preview_polls), poll)
 	// The declared repeat polls once a tick while this holds, starting next tick: never in the
@@ -346,7 +346,7 @@
 	/// generation, jobs, ready, scale_x, scale_y, had_client, outputs.
 	var/list/state
 	/// When the render gives up waiting for its jobs.
-	EXPIRY_DECLARE(timeout_at)
+	COOLDOWN_DECLARE(timeout_at)
 
 /// Jobs still outstanding: poll_step() runs once a tick while set.
 /datum/dq_preview_poll/var/polling = FALSE

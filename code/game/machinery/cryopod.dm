@@ -173,7 +173,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 	var/list/disallow_occupant_types
 
 	var/time_till_despawn = 60 // Down to 1 minute to reflect respawn times. //Now 6 seconds. Mind the deciseconds.
-	EXPIRY_DECLARE(time_entered) // Used to keep track of the safe period.
+	var/time_entered = 0 // Used to keep track of the safe period.
 	var/obj/item/radio/intercom/announce //
 
 	var/obj/machinery/computer/cryopod/control_computer

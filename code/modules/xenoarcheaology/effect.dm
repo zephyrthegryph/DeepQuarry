@@ -19,7 +19,7 @@
 	var/effect_color = "#ffffff"
 
 	// The last time the effect was toggled.
-	EXPIRY_DECLARE(last_activation)
+	var/last_activation = 0
 	// If we can start activated or not! Note: This is only really disabled on artifacts that can REALLY do some MAJOR DAMAGE to the server itself. See: Atmos & temperature artifacts destroying an entire Z-level's atmos.
 	var/can_start_activated = TRUE
 

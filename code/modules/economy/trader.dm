@@ -20,7 +20,7 @@
 	var/welcome_msg_finish = ". Would you like to browse the wares?"	//The final part of the welcome message.
 	var/list/interact_sound	//The sounds that may play when you click it. It will pick one at random from this list. It only thinks about this if there's anything in the list.
 	var/sound_cooldown = 0				//The sound can only play this often in deciseconds. Use '10 SECONDS' format to make it easier to read
-	EXPIRY_DECLARE(sound_lastplayed) //Automatically set when the sound is played.
+	var/sound_lastplayed = 0 //Automatically set when the sound is played.
 	var/pick_inventory = FALSE			//If true, when initialized the trader will randomly pick things from its start products list to set up
 	var/pick_inventory_quantity = 0		//This is how many things will be picked if pick_inventory is TRUE
 	var/move_trader = FALSE

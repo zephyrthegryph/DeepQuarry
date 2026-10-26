@@ -2,7 +2,7 @@
 /// (offer_cooldowns, opportunity_cooldowns).
 /datum/contract_cooldown
 	var/duration = 0
-	EXPIRY_DECLARE(started_at)
+	var/started_at = 0
 
 /// Starts (or restarts) the cooldown under `key` in the system's `table` (a var name), lasting `delay` from now.
 /proc/contract_cooldown_start(table, key, delay)

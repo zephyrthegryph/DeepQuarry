@@ -7,7 +7,7 @@
 	/// There is only ever the one: if it is destroyed, it is gone.
 	var/obj/item/rig/protean/rig
 	/// world.time of the last form change (form strain).
-	EXPIRY_DECLARE(last_switch_time)
+	var/last_switch_time = 0
 
 CAPABILITIES(/datum/forms/protean)
 	ref_one(nameof(rig), /obj/item/rig/protean)

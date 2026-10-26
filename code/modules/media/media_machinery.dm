@@ -3,7 +3,7 @@
 /obj/machinery/media/var/playing = 0
 /obj/machinery/media
 	var/media_url = ""			// URL of media I am playing
-	EXPIRY_DECLARE(media_start_time) // world.time when it started playing
+	var/media_start_time = 0 // world.time when it started playing
 	var/volume = 1				// 0 - 1 for ease of coding.
 
 	var/tmp/area/master_area	// My area

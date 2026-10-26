@@ -84,12 +84,14 @@
 
 /mob/proc/time_till_respawn()
 	if(!ckey)
-		return -1 // What?
+		return RESPAWN_NEVER // What?
 
 	var/datum/respawn_timer/timer = LAZYACCESS(SSmobs.respawn_timers, ckey)
 	// No timer at all
 	if(!timer)
 		return 0
+	if(timer.forbidden)
+		return RESPAWN_NEVER
 	// Timer expired
 	var/waited = ELAPSED(timer, started_at, CLOCK_WORLD)
 	if(waited >= timer.duration)

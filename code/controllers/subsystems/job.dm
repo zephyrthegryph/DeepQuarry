@@ -20,7 +20,7 @@ SYSTEM_DEF(job)
 
 	var/savepath = "data/job_camp_list.json"
 	/// When the last automated staff request went out over the fax relays (0: none this round).
-	EXPIRY_DECLARE(last_role_request_at)
+	var/last_role_request_at = 0
 	var/list/shift_keys = list()
 	var/list/restricted_keys = list()
 

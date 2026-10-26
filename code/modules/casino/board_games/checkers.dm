@@ -35,7 +35,7 @@
 	var/list/valid_moves
 	var/list/selected_figure
 	var/list/possible_jumps
-	EXPIRY_DECLARE(turn_start_time)
+	var/turn_start_time = 0
 	var/winner
 
 CAPABILITIES(/datum/board_game/checkers)

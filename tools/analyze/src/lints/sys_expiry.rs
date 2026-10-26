@@ -1,17 +1,18 @@
 //! Port of `tools/ci/sys_rules/expiry.py` (doc/rewrite/systems.md section 17): hand-rolled expiry and
-//! elapsed state read against `world.time`.
+//! elapsed state read against `world.time`. The old expiry macros are retired: an end time is a COOLDOWN var
+//! (`COOLDOWN_DECLARE`), a start time a STAMP var.
 //!
 //! `world_time_expiry` counts a `world.time` compare that `cooldown_lint.py` does NOT count as a
 //! cooldown, plus elapsed compares; `world_time_write` a stored time written as `x = world.time`
-//! (or through `EXPIRY_AT` on a member); `expiry_undeclared` a var read or written by an `EXPIRY_*`
-//! macro that has no `EXPIRY_DECLARE`.
+//! (or through `TIME_NOW` on a member); `expiry_undeclared` a var read or written by a `COOLDOWN_*`
+//! macro that has no `COOLDOWN_DECLARE`.
 //!
 //! The Python imports `cooldown_lint` (its COMPARE/CONST_CMP/TIME_NAME patterns and
 //! `timestamp_names()`); the parts expiry uses are inlined here. Not a cooldown lint port.
 //!
-//! The Python module redefines `scan` three times (compares, then writes, then `EXPIRY_AT` writes);
+//! The Python module redefines `scan` three times (compares, then writes, then `TIME_NOW` writes);
 //! sites are emitted in the same pass order (all compares, then writes, then undeclared, then
-//! `EXPIRY_AT` writes), which only matters for the order inside `world_time_write`.
+//! `TIME_NOW` writes), which only matters for the order inside `world_time_write`.
 //!
 //! Quirk kept: `ALLOW(cooldown)` inside this module is checked with the engine's `allow::kept`
 //! directly (the module has no Sink there), so that use is not recorded for the unused-ALLOW check.
@@ -27,21 +28,21 @@ use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::pat;
-use crate::tree::{SourceFile, Tree, CODE_DM};
+use crate::tree::{SourceFile, Tree};
 use crate::util::{before_slashes, py_lstrip, py_strip};
 
 const RULES: &[RuleMeta] = &[
     RuleMeta {
         name: "world_time_expiry",
-        hint: "EXPIRY_DECLARE/EXPIRY_SET/EXPIRY_ACTIVE/EXPIRY_LEFT/ELAPSED (code/__defines/sys_expiry.dm, doc/rewrite/systems.md section 17)",
+        hint: "COOLDOWN_DECLARE/COOLDOWN_START/COOLDOWN_RUNNING/COOLDOWN_TIMELEFT for an end time, STAMP/ELAPSED for a start (code/__defines/cooldowns.dm, code/__defines/sys_expiry.dm)",
     },
     RuleMeta {
         name: "world_time_write",
-        hint: "a stored time is written with EXPIRY_SET/EXPIRY_EXTEND/STAMP (or EXPIRY_AT for list slots/records), never `x = world.time (+ N)`",
+        hint: "a stored time is written with COOLDOWN_START/COOLDOWN_EXTEND/STAMP (or TIME_NOW for list slots/records), never `x = world.time (+ N)`",
     },
     RuleMeta {
         name: "expiry_undeclared",
-        hint: "a var read/written by EXPIRY_*/STAMP/ELAPSED is declared with EXPIRY_DECLARE/EXPIRY_TMP_DECLARE",
+        hint: "a var read/written by COOLDOWN_EXTEND/RUNNING/LAPSED or an _OWN cooldown macro is declared with COOLDOWN_DECLARE (a base type uses a cooldowns() name and cooldown_*)",
     },
 ];
 
@@ -100,22 +101,6 @@ fn not_a_cooldown(rel: &str, line: &str, stamp: Option<&Pat>) -> bool {
     rel.starts_with("code/modules/reagents/") && pat!(r"(?<![\w.])data\b").is_match(line)
 }
 
-/// `cooldown_lint.timestamp_names()`: every `EXPIRY_DECLARE`d name in `code/`.
-fn timestamp_names(tree: &Tree) -> BTreeSet<String> {
-    let files = tree.select(&CODE_DM);
-    let per: Vec<Vec<String>> = incr::facts("sys-expiry-names", &files, |f| {
-        let text = &f.raw().text;
-        if !text.contains("EXPIRY") {
-            return Vec::new();
-        }
-        pat!(r"\b(?:STATIC_)?EXPIRY(?:_TMP)?_DECLARE\(\s*(\w+)\s*\)").captures_iter(text).into_iter().map(|c| c.s(1).to_string()).collect()
-    });
-    let mut names: BTreeSet<String> = per.into_iter().flatten().collect();
-    names.remove("name");
-    names.remove("time"); // would match every `world.time`
-    names
-}
-
 fn pass_compares(f: &SourceFile, stamp: Option<&Pat>) -> Vec<usize> {
     let mut out = Vec::new();
     let rel = f.rel.as_str();
@@ -157,8 +142,8 @@ fn pass_writes(f: &SourceFile) -> Writes {
     let mut w = Writes { declared: Vec::new(), writes: Vec::new(), uses: Vec::new() };
     let skip = skipped(&f.rel);
     for (number, line) in f.raw().numbered() {
-        if line.contains("EXPIRY") {
-            for c in pat!(r"\b(?:STATIC_)?EXPIRY(?:_TMP)?_DECLARE\(\s*(\w+)\s*\)").captures_iter(line) {
+        if line.contains("COOLDOWN_") {
+            for c in pat!(r"\b(?:STATIC_)?COOLDOWN_(?:TMP_)?DECLARE\(\s*(\w+)\s*\)").captures_iter(line) {
                 w.declared.push(c.s(1).to_string());
             }
         }
@@ -175,8 +160,8 @@ fn pass_writes(f: &SourceFile) -> Writes {
         {
             w.writes.push(number);
         }
-        if code.contains("EXPIRY_") || code.contains("ELAPSED(") || code.contains("STAMP(") {
-            for c in pat!(r"\b(?:EXPIRY_(?:SET|EXTEND|CLEAR|ACTIVE|EXPIRED|LEFT)|STAMP|ELAPSED)\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(\w+)").captures_iter(code) {
+        if code.contains("COOLDOWN_") {
+            for c in pat!(r"\b(?:COOLDOWN_(?:EXTEND|RUNNING|LAPSED)(?:_OWN)?|COOLDOWN_(?:START|FINISHED|TIMELEFT)_OWN)\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(\w+)").captures_iter(code) {
                 w.uses.push((number, c.s(1).to_string()));
             }
         }
@@ -186,7 +171,7 @@ fn pass_writes(f: &SourceFile) -> Writes {
 
 fn pass_at_writes(f: &SourceFile) -> Vec<usize> {
     let mut out = Vec::new();
-    if skipped(&f.rel) || !f.raw().text.contains("EXPIRY_AT(") {
+    if skipped(&f.rel) || !f.raw().text.contains("TIME_NOW(") {
         return out;
     }
     let mut local: BTreeSet<String> = BTreeSet::new();
@@ -210,7 +195,7 @@ fn pass_at_writes(f: &SourceFile) -> Vec<usize> {
         for c in pat!(r"\bvar/(?:[\w]+/)*(\w+)").captures_iter(code) {
             local.insert(c.s(1).to_string());
         }
-        let Some(m) = pat!(r"\A(?:\s*((?:\w+\.)*)(\w+)\s*=\s*EXPIRY_AT\()").captures(code) else { continue };
+        let Some(m) = pat!(r"\A(?:\s*((?:\w+\.)*)(\w+)\s*=\s*TIME_NOW\()").captures(code) else { continue };
         if py_lstrip(code).starts_with("var/") {
             continue;
         }
@@ -218,7 +203,7 @@ fn pass_at_writes(f: &SourceFile) -> Vec<usize> {
         if owner.starts_with("GLOB.") {
             owner = &owner[5..];
             if owner.is_empty() {
-                continue; // a GLOBAL_VAR cannot be EXPIRY_DECLAREd
+                continue; // a GLOBAL_VAR cannot be COOLDOWN_DECLAREd
             }
         }
         if !owner.is_empty() || !local.contains(name) {
@@ -228,8 +213,9 @@ fn pass_at_writes(f: &SourceFile) -> Vec<usize> {
     out
 }
 
-fn files_scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
-    let names = timestamp_names(tree);
+fn files_scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+    // The declared-name index is gone with the old declaration macro: a raw compare against a cooldown var is the cooldown lint's.
+    let names: BTreeSet<String> = BTreeSet::new();
     let stamp: OnceLock<Option<Pat>> = OnceLock::new();
     let p1: Vec<Vec<u32>> = incr::keyed("sys-expiry-compares", incr::ctx_key(&names), files, |f| {
         let stamp = stamp

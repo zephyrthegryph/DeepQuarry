@@ -20,7 +20,7 @@
 	/// our default list should not be edited as it might be a reference
 	var/list/color_matrix_last
 	/// The time at which the number input was created, for displaying timeout progress.
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	/// The lifespan of the color matrix input, after which the window will close and delete itself.
 	var/timeout
 	/// The title of the TGUI window

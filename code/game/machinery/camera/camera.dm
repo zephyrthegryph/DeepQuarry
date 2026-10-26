@@ -33,7 +33,7 @@
 	var/on_open_network = 0
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
-	EXPIRY_DECLARE(affected_by_emp_until)
+	COOLDOWN_DECLARE(affected_by_emp_until)
 	/// The deadline the `camera_timer_token` timer slot was last set for (next_camera_deadline()).
 	var/tmp/camera_timer_at = 0
 
@@ -159,7 +159,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_at = 0
-	if(affected_by_emp_until && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
+	if(affected_by_emp_until && COOLDOWN_LAPSED(src, affected_by_emp_until))
 		affected_by_emp_until = 0
 		release(src, STAT_OPERABLE, SRC_EMP)
 		cancelCameraAlarm()
@@ -189,7 +189,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /obj/machinery/camera/proc/camera_disrupt(severity)
 	if(isEmpProof())
 		return
-	if(!affected_by_emp_until || EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
+	if(!affected_by_emp_until || COOLDOWN_LAPSED(src, affected_by_emp_until))
 		affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
 		hold(src, STAT_OPERABLE, FALSE, SRC_EMP, max(affected_by_emp_until - world.time, 1))
 		set_glow(src, GLOW(0, null, null))

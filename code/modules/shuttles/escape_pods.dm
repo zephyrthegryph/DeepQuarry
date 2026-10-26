@@ -125,7 +125,7 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 /datum/embedded_program/docking/simple/escape_pod_berth
 	var/armed = 0
 	var/eject_delay = 10	//give latecomers some time to get out of the way if they don't make it onto the pod
-	EXPIRY_DECLARE(eject_time)
+	COOLDOWN_DECLARE(eject_time)
 	var/closing = 0
 
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/arm()
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 	return		//don't do anything - the doors only open when the pod is armed.
 
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
-	EXPIRY_SET(src, eject_time, eject_delay*10, CLOCK_WORLD)
+	COOLDOWN_START(src, eject_time, eject_delay*10)
 	after(src, eject_delay*10, PROC_REF(eject_timer_fired))
 
 /// Accessor for the arming_controller var.

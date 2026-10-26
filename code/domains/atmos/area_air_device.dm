@@ -176,7 +176,7 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 /// What an area keeps of one device's last status report: the packet's fields, and when they came.
 /datum/air_device_status
 	var/list/fields
-	EXPIRY_DECLARE(reported_at)
+	var/reported_at = 0
 
 /// The area's key on the air alarms' radio.
 /area/proc/air_uid()

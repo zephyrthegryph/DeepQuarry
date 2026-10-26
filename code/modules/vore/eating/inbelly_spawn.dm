@@ -343,7 +343,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	buttons = TRUE
 	timeout = 1 MINUTES
 	recheck_on_open = TRUE
-	EXPIRY_DECLARE(req_time)
+	var/req_time = 0
 
 /datum/prompt/choice/soulcatcher_admission/recheck_extra()
 	var/mob/living/recipient = owner

@@ -22,7 +22,7 @@
 	///Where to draw the progress bar above the icon
 	var/offset_y
 	/// animate_fill(): when the client-side fill started, and how long it takes.
-	EXPIRY_DECLARE(fill_started)
+	var/fill_started = 0
 	var/fill_duration = 0
 
 CAPABILITIES(/datum/progressbar)

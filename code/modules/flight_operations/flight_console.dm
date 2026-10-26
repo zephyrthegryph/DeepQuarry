@@ -108,7 +108,7 @@ CAPABILITIES(/datum/flight_operations_ui)
 		"contacts" = list(),
 		"plan" = null,
 		"expedition" = null,
-		"server_time" = EXPIRY_AT(null, CLOCK_WORLD, 0),
+		"server_time" = TIME_NOW(CLOCK_WORLD),
 	)
 	if(!vessel)
 		return data

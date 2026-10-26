@@ -236,8 +236,8 @@ CAPABILITIES(/obj/effect/statclick/ticket_list)
 	var/list/tags
 	var/state = AHELP_ACTIVE
 
-	EXPIRY_DECLARE(opened_at)
-	EXPIRY_DECLARE(closed_at)
+	var/opened_at = 0
+	var/closed_at = 0
 
 	var/tmp/client/initiator	//semi-misnomer, it's the person who ahelped/was bwoinked
 	/// The handling admin's ckey (a client is not a datum, so it is held by key); read with handler_client().

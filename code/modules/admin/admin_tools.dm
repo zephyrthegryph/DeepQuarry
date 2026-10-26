@@ -41,7 +41,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 	var/target_name
 	var/target_ckey
 	var/special_role
-	EXPIRY_DECLARE(last_refresh)
+	var/last_refresh = 0
 	var/client_view
 
 /datum/player_log_viwer/tgui_close(mob/user)

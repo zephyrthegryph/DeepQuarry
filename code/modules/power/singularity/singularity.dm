@@ -23,7 +23,7 @@
 	var/event_chance = 15 //Prob for event each tick.
 	var/atom/movable/target = null //Its target: a singularity beacon, or for Nar-Sie a mob. Moves towards the target if it has one.
 	var/last_failed_movement = 0 //Will not move in the same dir if it couldnt before, will help with the getting stuck on fields thing.
-	EXPIRY_DECLARE(last_warning)
+	var/last_warning = 0
 
 	var/chained = 0//Adminbus chain-grab
 

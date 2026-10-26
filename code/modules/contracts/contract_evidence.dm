@@ -8,7 +8,7 @@
 	/// The body last seen (a relation view).
 	var/mob/living/body
 	/// When custody last ended (0 = never).
-	EXPIRY_DECLARE(custody_ended_at)
+	var/custody_ended_at = 0
 
 CAPABILITIES(/datum/contract_subject_identity)
 	ref_one(nameof(subject_mind), /datum/mind)
@@ -42,13 +42,13 @@ CAPABILITIES(/datum/contract_subject_identity)
 	var/id
 	var/kind
 	var/subject_id
-	EXPIRY_DECLARE(created_at)
+	var/created_at = 0
 	/// When the thing the evidence shows happened (a body scan's time, from its payload; 0 when it carries none).
-	EXPIRY_DECLARE(occurred_at)
+	var/occurred_at = 0
 	var/creator_account
 	var/source_ref
 	var/consumed_by
-	EXPIRY_DECLARE(consumed_at)
+	var/consumed_at = 0
 	var/reference_count = 0
 	var/void_reason
 	var/list/payload

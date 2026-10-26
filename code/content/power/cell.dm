@@ -27,7 +27,7 @@
 	/// Material-derived resistance to EMP charge loss, as a percentage.
 	var/material_emp_resistance = 0
 	var/material_discharge_credit
-	EXPIRY_DECLARE(material_discharge_updated)
+	var/material_discharge_updated = 0
 	/// Hysteretic physical state. A quenched conductor must cool meaningfully
 	/// below its transition before it can carry enhanced output again.
 	var/material_superconducting = FALSE

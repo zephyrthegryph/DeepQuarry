@@ -22,7 +22,7 @@
 
 /mob/living/simple_mob/vore/blaidd
 	/// world.time the current uninterrupted stare-down began; 0 if not watched.
-	EXPIRY_DECLARE(blaidd_watched_since)
+	var/blaidd_watched_since = 0
 
 TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_behaviors, list( \
 	/datum/ai_behavior/blaidd_flee_watched, \

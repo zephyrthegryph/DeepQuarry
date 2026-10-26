@@ -33,7 +33,7 @@ ACTION(ai_pack_stir, FIXED, notice = /datum/notice/ai_pack_stirred)
 	var/list/sightings = null     // ref text of a mob => list(spotter ref text, first seen at, seen, last classified at)
 	var/list/covered_ids = null   // the chunk ids watched now
 	var/list/chunk_tokens = null  // the chunk datums watched now
-	EXPIRY_DECLARE(last_perceived_at)
+	var/last_perceived_at = 0
 	/// Perception passes this pack made (tests and the trace).
 	var/perceptions = 0
 	/// Line-of-sight checks made by those passes, and view() builds behind them.
@@ -167,7 +167,7 @@ CAPABILITIES(/datum/ai_pack)
 	/// The pack this brain is in (a link; null only while it is dead, being deleted, or before it has one).
 	var/datum/ai_pack/pack = null
 	/// world.time the brain was made: the seniority half of its authority.
-	EXPIRY_DECLARE(born_at)
+	var/born_at = 0
 
 /// Puts this brain in a pack: the pack of the nearest leader within its faction's join radius, else a pack of its own.
 /datum/ai_brain/proc/seek_pack()

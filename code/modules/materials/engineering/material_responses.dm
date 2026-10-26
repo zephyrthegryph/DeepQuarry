@@ -44,7 +44,7 @@
 	var/medical_form = FALSE
 	var/armor_form = FALSE
 	var/tool_form = FALSE
-	EXPIRY_DECLARE(last_energy_settlement)
+	var/last_energy_settlement = 0
 	var/reference_temperature
 	var/next_piezo_response = 0
 	var/stored_phase_energy = 0

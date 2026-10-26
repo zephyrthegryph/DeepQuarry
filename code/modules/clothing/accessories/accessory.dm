@@ -1038,7 +1038,7 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 	/// undoes the collar's own contribution instead of clobbering whatever other
 	/// size sources (potions, sizeguns, etc.) did to the wearer in the meantime.
 	var/applied_ratio
-	EXPIRY_DECLARE(last_activated)
+	var/last_activated = 0
 	var/target_size = 1
 	on = 1
 

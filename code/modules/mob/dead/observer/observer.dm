@@ -351,7 +351,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(!A.answer || !A.answer.value)
 		return
 	set_can_reenter_corpse(FALSE)
-	set_respawn_timer(-1) // Foreeeever
+	set_respawn_timer(RESPAWN_NEVER) // Foreeeever
 	toggle_antag_hud_now()
 
 /mob/observer/dead/proc/toggle_antag_hud_now()
@@ -1169,8 +1169,9 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 	set desc = "Flash an indicator light on available blank pAI devices for a smidgen of hope."
 
 	var/time_till_respawn = time_till_respawn()
-	if(time_till_respawn == -1) // Special case, never allowed to respawn
+	if(time_till_respawn == RESPAWN_NEVER) // Special case, never allowed to respawn
 		to_chat(src, span_warning("Respawning is not allowed!"))
+		return
 	else if(time_till_respawn) // Nonzero time to respawn
 		to_chat(src, span_warning("You can't do that yet! You died too recently. You need to wait another [round(time_till_respawn/10/60, 0.1)] minutes."))
 		return

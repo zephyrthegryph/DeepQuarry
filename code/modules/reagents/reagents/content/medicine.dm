@@ -1247,7 +1247,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	mrate_static = TRUE
 	overdose = REAGENTS_OVERDOSE
 	scannable = SCANNABLE_BENEFICIAL
-	EXPIRY_DECLARE(last_message_at) // when the last status message was sent (-1: the effect ended)
+	var/last_message_at = 0 // when the last status message was sent (-1: the effect ended)
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_SPACACIL
@@ -1281,7 +1281,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	overdose = 10
 	overdose_mod = 1.5
 	scannable = SCANNABLE_BENEFICIAL
-	EXPIRY_DECLARE(last_message_at) // when the last status message was sent (-1: the effect ended)
+	var/last_message_at = 0 // when the last status message was sent (-1: the effect ended)
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
@@ -1354,7 +1354,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	mrate_static = TRUE
 	overdose = REAGENTS_OVERDOSE
 	scannable = SCANNABLE_BENEFICIAL
-	EXPIRY_DECLARE(last_message_at) // when the last status message was sent (-1: the effect ended)
+	var/last_message_at = 0 // when the last status message was sent (-1: the effect ended)
 	can_overdose_touch = TRUE
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DRUG

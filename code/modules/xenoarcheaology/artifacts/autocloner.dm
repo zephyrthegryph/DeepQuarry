@@ -6,7 +6,7 @@
 	var/spawn_type
 	var/time_spent_spawning = 0
 	var/time_per_spawn = 0
-	EXPIRY_DECLARE(last_process)
+	var/last_process = 0
 	density = TRUE
 	var/previous_power_state = 0
 

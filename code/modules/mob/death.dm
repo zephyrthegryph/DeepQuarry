@@ -94,7 +94,7 @@
 	STAMP(src, timeofdeath, CLOCK_WORLD)
 	if(isliving(src))
 		var/mob/living/dead_living = src
-		dead_living.identity()?.time_of_death = EXPIRY_AT(null, CLOCK_WORLD, 0)
+		dead_living.identity()?.time_of_death = TIME_NOW(CLOCK_WORLD)
 	registry_leave(REGISTRY_LIVING_MOBS, src)
 	registry_join(REGISTRY_DEAD_MOBS, src)
 	if(mind || ckey)

@@ -84,7 +84,7 @@
 	var/peak_damage = 0
 	/// world.time a continuous treatment mechanism last acted on this lesion
 	/// (see is_stabilised(): halts bleeding, leaking and necrotic spread).
-	EXPIRY_TMP_DECLARE(stabilised_at)
+	var/tmp/stabilised_at = 0
 
 	// --- Defined by the lesion kind ---
 	/// Short noun for the lesion ("contusion", "laceration"…).

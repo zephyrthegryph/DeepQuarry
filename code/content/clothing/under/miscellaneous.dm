@@ -1912,7 +1912,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 	w_class = ITEMSIZE_TINY
 	glove_level = 1
 	var/original_size
-	EXPIRY_DECLARE(last_activated)
+	var/last_activated = 0
 	var/emagged = FALSE
 	var/target_size = 1
 

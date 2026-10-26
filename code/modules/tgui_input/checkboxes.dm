@@ -9,7 +9,7 @@
 	/// List of selected items
 	var/list/choices
 	/// Time when the input was created
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	/// Timeout for the input
 	var/timeout
 	/// Whether the input was closed

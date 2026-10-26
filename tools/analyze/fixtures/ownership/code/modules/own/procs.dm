@@ -90,7 +90,7 @@
 	rosterless |= new /obj/item/widget()
 	rosterless += 5
 	rosterless += list(1, 2)
-	rosterless += EXPIRY_AT(src, 5)
+	rosterless += TIME_NOW(src, 5)
 	rosterless += new
 	rosterless += image(src)
 

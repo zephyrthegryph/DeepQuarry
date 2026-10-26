@@ -349,9 +349,12 @@ ADMIN_VERB(allow_character_respawn, R_ADMIN|R_MOD|R_FUN, "Allow player to respaw
 	if(!context.answer)
 		return
 	var/selected = context.answer.value
+	if(SSmobs.respawn_forbidden(selected)) // They would normally never be able to: confirm first
+		open_request(src, /datum/prompt/choice/allow_impossible_respawn, PROC_REF(impossible_confirmed), answerer = context.request.answerer, target = selected)
+		return
 	respawn_allowed(context.request.answerer.client, selected)
 
-/// Allowing a respawn that is normally not allowed (its timer is -1).
+/// Allowing a respawn that is normally not allowed (its respawn record is forbidden).
 /datum/prompt/choice/allow_impossible_respawn
 	title = "Allow impossible respawn?"
 	question = "Are you sure you wish to allow this individual to respawn? They would normally not be able to."

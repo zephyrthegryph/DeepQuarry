@@ -6,13 +6,13 @@
 	/// When set initially / in on_creation, this is how long the status effect lasts in deciseconds.
 	/// While processing, this becomes the world.time when the status effect will expire.
 	/// -1 = infinite duration.
-	EXPIRY_DECLARE(duration)
+	COOLDOWN_DECLARE(duration)
 	duration = STATUS_EFFECT_PERMANENT
 	/// When set initially / in on_creation, this is how long between [proc/tick] calls in deciseconds.
 	/// Note that this cannot be faster than the processing subsystem you choose to fire the effect on. (See: [var/processing_speed])
 	/// While processing, this becomes the world.time when the next tick will occur.
 	/// -1 = will prevent ticks, and if duration is also unlimited (-1), stop processing wholesale.
-	EXPIRY_DECLARE(tick_interval)
+	COOLDOWN_DECLARE(tick_interval)
 	tick_interval = 1 SECONDS
 	///If our tick intervals are set to be a dynamic value within a range, the lowerbound of said range
 	var/tick_interval_lowerbound
@@ -62,9 +62,9 @@ CAPABILITIES(/datum/status_effect)
 		// but we'll still set it to -1 / STATUS_EFFECT_PERMANENT for proper unified handling
 		duration = STATUS_EFFECT_PERMANENT
 	if(duration != STATUS_EFFECT_PERMANENT)
-		EXPIRY_SET(src, duration, duration, CLOCK_WORLD)
+		COOLDOWN_START(src, duration, duration)
 	if(tick_interval != STATUS_EFFECT_NO_TICK)
-		EXPIRY_SET(src, tick_interval, tick_interval, CLOCK_WORLD)
+		COOLDOWN_START(src, tick_interval, tick_interval)
 
 	if(alert_type)
 		var/atom/movable/screen/alert/status_effect/new_alert = owner.throw_alert(id, alert_type)
@@ -72,7 +72,7 @@ CAPABILITIES(/datum/status_effect)
 		rel_set(src, nameof(linked_alert), new_alert) //so we can reference the alert, if we need to
 		update_shown_duration()
 
-	if(EXPIRY_ACTIVE(src, duration, CLOCK_WORLD) || EXPIRY_ACTIVE(src, tick_interval, CLOCK_WORLD)) //don't process if we don't care
+	if(COOLDOWN_RUNNING(src, duration) || COOLDOWN_RUNNING(src, tick_interval)) //don't process if we don't care
 		switch(processing_speed)
 			if(STATUS_EFFECT_FAST_PROCESS)
 				SSstatus_fast.kernel_join(src)
@@ -101,7 +101,7 @@ CAPABILITIES(/datum/status_effect)
 	if(!linked_alert || !show_duration)
 		return
 
-	linked_alert.maptext = MAPTEXT("<span style='text-align:center'>[round(EXPIRY_LEFT(src, duration, CLOCK_WORLD)/10, 1)]s</span>")
+	linked_alert.maptext = MAPTEXT("<span style='text-align:center'>[round(COOLDOWN_TIMELEFT(src, duration)/10, 1)]s</span>")
 
 // Status effect process. Handles adjusting its duration and ticks.
 // If you're adding processed effects, put them in [proc/tick]
@@ -115,17 +115,17 @@ CAPABILITIES(/datum/status_effect)
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
 		tick(delta / (1 SECONDS)) // the periodic lane passes deciseconds
-	else if(tick_interval != STATUS_EFFECT_NO_TICK && EXPIRY_EXPIRED(src, tick_interval, CLOCK_WORLD))
+	else if(tick_interval != STATUS_EFFECT_NO_TICK && COOLDOWN_LAPSED(src, tick_interval))
 		var/tick_length = (tick_interval_upperbound && tick_interval_lowerbound) ? rand(tick_interval_lowerbound, tick_interval_upperbound) : initial(tick_interval)
 		tick(tick_length / (1 SECONDS))
-		EXPIRY_SET(src, tick_interval, tick_length, CLOCK_WORLD)
+		COOLDOWN_START(src, tick_interval, tick_length)
 
 	if(QDELING(src))
 		// tick deleted us, no need to continue
 		return
 
 	if(duration != STATUS_EFFECT_PERMANENT)
-		if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
+		if(COOLDOWN_LAPSED(src, duration))
 			lapsed(src)
 			return
 		update_shown_duration()
@@ -181,7 +181,7 @@ CAPABILITIES(/datum/status_effect)
 	var/original_duration = initial(duration)
 	if(original_duration == STATUS_EFFECT_PERMANENT)
 		return
-	EXPIRY_SET(src, duration, original_duration, CLOCK_WORLD)
+	COOLDOWN_START(src, duration, original_duration)
 
 /// Adds nextmove modifier multiplicatively to the owner while applied
 /datum/status_effect/proc/nextmove_modifier()
@@ -206,7 +206,7 @@ CAPABILITIES(/datum/status_effect)
 		return FALSE
 
 	duration -= seconds
-	if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
+	if(COOLDOWN_LAPSED(src, duration))
 		lapsed(src)
 		return TRUE
 

@@ -420,8 +420,8 @@ CAPABILITIES(/datum/contract/medical_trial)
 	var/corpse_contract_offered = FALSE
 	var/dose = 0
 	var/challenge_dose = 0
-	EXPIRY_DECLARE(exposure_time)
-	EXPIRY_DECLARE(consent_time)
+	var/exposure_time = 0
+	var/consent_time = 0
 	var/completed = FALSE
 	var/faxed = FALSE
 
@@ -616,14 +616,14 @@ sparse(/mob/living/carbon/human, clinical_exposure_history, type = list)
 			"contract_id" = contract_id,
 			"study_code" = study_code,
 			"agent" = agent_name,
-			"first_exposure" = EXPIRY_AT(null, CLOCK_WORLD, 0),
+			"first_exposure" = TIME_NOW(CLOCK_WORLD),
 			"dose" = 0,
 		)
 		history = history || list()
 		history += list(existing)
 		sparse_set(src, clinical_exposure_history, history)
 	existing["dose"] += amount
-	existing["last_exposure"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	existing["last_exposure"] = TIME_NOW(CLOCK_WORLD)
 
 /mob/living/carbon/human/proc/clinical_exposure_printout()
 	var/list/history = sparse_get(src, clinical_exposure_history)

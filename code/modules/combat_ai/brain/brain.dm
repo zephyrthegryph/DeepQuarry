@@ -52,17 +52,17 @@
 	var/list/subscribed_signals = null   // DQAI_TRIGGER_* => list(behavior_typepath, ...)
 
 	// --- Tactical state (read by behaviors) ---
-	EXPIRY_DECLARE(last_attack_at) // world.time of the most recent successful attack tick
+	var/last_attack_at = 0 // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
 	var/tmp/turf/home_turf	// for guard / return_home behaviors
 	var/mob/leader = null  // for follow_leader / cooperative AI (a relation view)
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
-	EXPIRY_DECLARE(lose_threat_at)
+	var/lose_threat_at = 0
 	/// Dependency-driven strategic scheduling: the slow work waits `strategic_wait` from `strategic_set_at`. Events set the wait to zero
 	/// (due now); a calm brain uses a long discovery cadence while combat stays responsive.
-	EXPIRY_DECLARE(strategic_set_at)
+	var/strategic_set_at = 0
 	var/strategic_wait = 0
 	var/idle_strategic_interval = 10 SECONDS
 	/// Tactics started so far (type => times): diagnostics for traces and the creature smoke tests.
@@ -70,7 +70,7 @@
 	/// The interval the action loop was last armed with (action_interval()); poke_action_loop() re-arms a stretched one.
 	var/tmp/armed_interval = 0
 	/// world.time of the last behaviour selection (pick_and_run()); engaged brains re-select at least every DQ_ENGAGED_RECHECK.
-	EXPIRY_DECLARE(last_pick_at)
+	var/last_pick_at = 0
 	/// The op the active tactic is waiting on (act_waiting()), null when none.
 	var/datum/op_result/waiting_op = null
 
@@ -515,7 +515,7 @@ CAPABILITIES(/datum/ai_brain)
 	var/behavior
 	var/cooldown_duration = 0
 	var/charges = null
-	EXPIRY_DECLARE(cooldown_started_at)
+	var/cooldown_started_at = 0
 
 /// The brain's record of `btype`, or null when it has none.
 /datum/ai_brain/proc/behavior_state_of(btype)

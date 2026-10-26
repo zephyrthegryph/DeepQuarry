@@ -124,7 +124,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/parked = FALSE
 	/// Position in the scheduler's parked list for this pipeline, and when it parked.
 	var/parked_index = 0
-	EXPIRY_DECLARE(parked_at)
+	var/parked_at = 0
 	/// Stage types added to this entity only (pipeline_stage_add()).
 	var/list/extras
 	/// Lazy: plan position -> time it last ran (min_interval stages).

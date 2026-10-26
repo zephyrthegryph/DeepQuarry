@@ -1,6 +1,6 @@
 /obj/machinery/camera
 	var/list/motionTargets = null
-	EXPIRY_DECLARE(detectTime)
+	var/detectTime = 0
 	var/area/ai_monitored/area_motion
 	var/alarm_delay = 100 // Don't forget, there's another 10 seconds in queueAlarm()
 

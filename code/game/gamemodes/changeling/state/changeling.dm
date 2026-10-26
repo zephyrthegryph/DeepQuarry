@@ -49,13 +49,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/power/changeling)
 	var/datum/changeling_panel/power_panel //Our changeling eveolution panel. Generated the first time we try to open the panel.
 	var/cooldown_time = 1 SECOND // Sting anti-spam.
 	COOLDOWN_DECLARE(sting_cooldown) // world.time when we used last used a power.
-	var/list/changeling_cooldowns = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
-		CRYO_STING = 0,
-		ESCAPE_RESTRAINTS = 0,
-		FAKE_DEATH = 0,
-		FLESHMEND = 0,
-		CHANGELING_SCREECH = 0
-	)
+	COOLDOWN_KEYED_DECLARE(changeling_cooldowns) // power id -> when that power may be used again
 
 CAPABILITIES(/datum/changeling)
 	ref_one(nameof(owner))
@@ -97,14 +91,13 @@ CAPABILITIES(/datum/changeling)
 	tracked_changed(src, nameof(sting_cooldown))
 
 /datum/changeling/proc/get_cooldown(id)
-	return changeling_cooldowns[id]
+	return COOLDOWN_KEYED_END(src, changeling_cooldowns, id)
 
 /datum/changeling/proc/set_cooldown(id, cooldown_time)
-	changeling_cooldowns[id] = EXPIRY_AT(src, CLOCK_WORLD, cooldown_time)
+	COOLDOWN_KEYED_START(src, changeling_cooldowns, id, cooldown_time)
 
 /datum/changeling/proc/is_on_cooldown(id)
-	// ALLOW(cooldown): per-ability cooldown table keyed by id (one var per ability would be dozens)
-	return (world.time < changeling_cooldowns[id])
+	return COOLDOWN_KEYED_RUNNING(src, changeling_cooldowns, id)
 
 /// The voice we mimic, or "". Costs a chemical every 4 seconds while set (mimic_voice.dm, every()).
 /datum/changeling/var/mimicing = ""

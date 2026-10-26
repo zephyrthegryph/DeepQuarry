@@ -277,7 +277,7 @@ CAPABILITIES(/obj/item/solar_assembly)
 	var/targetdir = 0		// target angle in manual tracking (since it updates every game minute)
 	var/track = 0			// 0= off  1=timed  2=auto (tracker)
 	var/trackrate = 600		// 300-900 seconds
-	EXPIRY_DECLARE(nexttime) // time for a panel to rotate of 1° in manual tracking
+	COOLDOWN_DECLARE(nexttime) // time for a panel to rotate of 1° in manual tracking
 	var/tmp/obj/machinery/power/tracker/connected_tracker
 	var/needs_panel_check	// Powernet has been updated, need to check if panels are still connected.
 	var/connected_power		// Sum of power supplied by connected panels.
@@ -478,9 +478,9 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 			connected_tracker().unset_control()
 
 	if(track==1 && trackrate) //manual tracking and set a rotation speed
-		if(EXPIRY_EXPIRED(src, nexttime, CLOCK_WORLD)) //every time we need to increase/decrease the angle by 1°...
+		if(COOLDOWN_LAPSED(src, nexttime)) //every time we need to increase/decrease the angle by 1°...
 			targetdir = (targetdir + trackrate/abs(trackrate) + 360) % 360 	//... do it
-			nexttime += 36000/abs(trackrate) //reset the counter for the next 1°
+			nexttime += 1 HOURS / abs(trackrate) //reset the counter for the next 1°
 
 	if(needs_panel_check)
 		needs_panel_check = FALSE
@@ -508,7 +508,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 	if(value != null)
 		set_trackrate(round(clamp(value, -7200, 7200), 0.01))
 		if(trackrate)
-			EXPIRY_SET(src, nexttime, 36000 / abs(trackrate), CLOCK_WORLD)
+			COOLDOWN_START(src, nexttime, 1 HOURS / abs(trackrate))
 		return TRUE
 	return TRUE
 
@@ -522,7 +522,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 	else if(track == 1) //begin manual tracking
 		targetdir = cdir
 		if(trackrate)
-			EXPIRY_SET(src, nexttime, 36000/abs(trackrate), CLOCK_WORLD)
+			COOLDOWN_START(src, nexttime, 1 HOURS / abs(trackrate))
 		set_panels(targetdir)
 	return TRUE
 

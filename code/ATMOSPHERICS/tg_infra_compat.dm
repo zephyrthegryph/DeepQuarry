@@ -135,7 +135,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 // spray). Sets a per-turf cooldown that hotspot_expose checks before igniting.
 #define FIRE_PROTECTION_DURATION (30 SECONDS)
 /turf
-	EXPIRY_DECLARE(fire_protection)
+	var/fire_protection = 0
 
 /turf/proc/apply_fire_protection()
 	STAMP(src, fire_protection, CLOCK_WORLD)

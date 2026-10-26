@@ -69,7 +69,7 @@
 	//////////////////////////////////////////////////////
 
 	/// Last world.time we checked for who can hear us
-	EXPIRY_DECLARE(last_hearcheck)
+	var/last_hearcheck = 0
 	/// The list of mobs that can hear us
 	var/list/hearing_mobs
 	/// If this is enabled, some things won't be strictly cleared when they usually are (liked compiled_chords on play stop)
