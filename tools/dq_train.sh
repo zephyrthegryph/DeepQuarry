@@ -470,7 +470,17 @@ cycle() {
 	local all_light=1
 	for b in "${CHOSEN[@]}"; do [ "$(qget "$(qfile "$b")" light)" = 1 ] || all_light=0; done
 	tlog "cycle: queue=[${all[*]}] valid=[${VALID[*]}] chosen=[${CHOSEN[*]}] (limit $BATCH_LIMIT_NOW, est ~${BATCH_EST}s of tests) all_light=$all_light"
-	if [ "$all_light" -eq 1 ]; then light_cycle; else heavy_cycle; fi
+	# Disk budget (tools/dq_disk_budget.sh): enforce the caps at every cycle start; below the floor a heavy cycle is not started (the lanes stay queued).
+	if [ "$all_light" -eq 1 ]; then
+		bash "$SELF_DIR/dq_disk_budget.sh" enforce --quiet --throttle 10 >>"$LOGS/train.log" 2>&1 || true
+		light_cycle
+	else
+		if ! bash "$SELF_DIR/dq_disk_budget.sh" gate "a heavy train cycle" --sync --throttle 10 >>"$LOGS/train.log" 2>&1; then
+			tlog "disk floor: the cycle is skipped, the lanes stay queued; free space (see the REFUSED message above in this log), then the next cycle runs"
+			return 0
+		fi
+		heavy_cycle
+	fi
 	local rc=$?
 	tlog "cycle done in $(( $(date +%s) - t0 ))s (rc=$rc, progress=$CYCLE_PROGRESS)"
 	return "$rc"

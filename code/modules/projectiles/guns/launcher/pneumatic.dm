@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	var/mob/user = A.actor
 	var/N = A.step_value("pressure")
 	if(N)
-		pressure_setting = N
+		pressure_setting = num_or_null(N)
 		to_chat(user, "You dial the pressure valve to [pressure_setting]%.")
 	return OP_OK
 

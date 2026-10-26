@@ -1029,7 +1029,7 @@ CAPABILITIES(/datum/system/job)
 					var/confirm = consent
 					if(isnull(confirm))
 						to_chat(spawn_client, span_boldwarning("[carrier] has received your spawn request. Please wait."))
-						log_and_message_admins("[key_name(spawn_client)] has requested to item spawn into [key_name(carrier)]'s possession")
+						log_and_message_admins("[key_name(spawn_client)] has requested to item spawn into [key_name(carrier)]'s possession", joiner)
 						late_spawn_ask_consent(joiner, carrier, rank, answers, "[spawn_client.prefs.read_preference(/datum/preference/name/real_name)] is attempting to join as the [item_name] in your possession.")
 						return
 					if(confirm != "Yes")
@@ -1043,7 +1043,7 @@ CAPABILITIES(/datum/system/job)
 						to_chat(spawn_client, span_warning("[carrier] is no longer in station grounds."))
 						to_chat(carrier, span_warning("You must be within station grounds to accept."))
 						return
-					log_and_message_admins("[key_name(spawn_client)] has item spawned onto [key_name(carrier)]")
+					log_and_message_admins("[key_name(spawn_client)] has item spawned onto [key_name(carrier)]", joiner)
 					item_to_be = item
 					item_carrier = carrier
 					if(backup)
@@ -1052,7 +1052,7 @@ CAPABILITIES(/datum/system/job)
 					var/confirm = LAZYACCESS(answers, "unheld")
 					if(confirm != "Yes")
 						return
-					log_and_message_admins("[key_name(spawn_client)] has item spawned into \a [item.name] that was not held by anyone")
+					log_and_message_admins("[key_name(spawn_client)] has item spawned into \a [item.name] that was not held by anyone", joiner)
 					item_to_be = item
 					if(backup)
 						after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))

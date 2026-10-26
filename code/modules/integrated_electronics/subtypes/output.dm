@@ -110,7 +110,7 @@
 	if(new_color && isnum(brightness))
 		brightness = CLAMP(brightness, 0, 6)
 		light_rgb = new_color
-		light_brightness = brightness
+		light_brightness = num_or_null(brightness)
 
 	..()
 

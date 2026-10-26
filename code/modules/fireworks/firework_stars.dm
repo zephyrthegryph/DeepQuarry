@@ -140,11 +140,11 @@ CAPABILITIES(/obj/item/firework_star/aesthetic/configurable)
 	if(choice == "Color")
 		var/color_choice = A.step_value("color")
 		if(color_choice)
-			current_color = color_choice
+			current_color = text_or_null(color_choice)
 	else if(choice == "Shape")
 		var/shape_choice = A.step_value("shape")
 		if(shape_choice)
-			current_shape = shape_choice
+			current_shape = text_or_null(shape_choice)
 	return OP_OK
 
 /obj/item/firework_star/aesthetic/configurable/get_firework_message()

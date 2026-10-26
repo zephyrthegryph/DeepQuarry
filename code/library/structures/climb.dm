@@ -96,9 +96,13 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 			return "You can't climb there, there's \a [occupied] in the way."
 	return null
 
-/// needs: the climb has somewhere to land.
+/// The tile the climber would end on exists (a holder's landing proc or its own tile): the refusal read before the wait and again after it.
 /datum/capability/lib/climb/proc/has_landing(datum/act/op/A)
-	return landing_of(A.holder, A.actor) ? null : MSG(climb/blocked)
+	var/atom/movable/holder = A.holder
+	var/mob/living/climber = A.actor
+	if(!istype(holder) || !istype(climber) || landing_of(holder, climber))
+		return null
+	return /datum/msg/climb/blocked
 
 /// A small mob climbs in 60% of the time.
 /datum/capability/lib/climb/proc/climb_time(datum/act/op/A)

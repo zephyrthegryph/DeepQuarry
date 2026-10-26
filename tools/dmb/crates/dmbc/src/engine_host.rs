@@ -389,6 +389,15 @@ impl<R: Resolver> EngineResolverHost<R> {
         xxhash_rust::xxh3::xxh3_128(&bytes)
     }
 }
+/// A host version made of a tree token and the host's own 64-bit tail (provider issuer, catalog digest, receipt). Tree
+/// tokens are 128-bit content digests, so the pair is digested, not packed into the halves of one word.
+pub(super) fn compose_version(base: u128, tail: u64) -> u128 {
+    let mut hash = xxhash_rust::xxh3::Xxh3::new();
+    hash.update(b"dm-host-version-v1\0");
+    hash.update(&base.to_le_bytes());
+    hash.update(&tail.to_le_bytes());
+    hash.digest128()
+}
 impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
     fn observes_reads(&self) -> bool {
         self.tree.observes_reads()
@@ -454,7 +463,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
     /// An Unsupported tree variable answer that the captured declaration source answers
     /// positively resolves to that declaration (see `resolve`), provided neither method
     /// catalog intercepts it. Version it by both source tokens and the pinned providers.
-    fn captured_declaration_version(&self, query: Q, base: u64) -> Option<u128> {
+    fn captured_declaration_version(&self, query: Q, base: u128) -> Option<u128> {
         if !matches!(
             query,
             Q::Var { .. } | Q::DeclaredVarType { .. } | Q::VarStorage { .. } | Q::StaticVar { .. }
@@ -509,7 +518,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
             bytes.extend_from_slice(&retained.identity().to_le_bytes());
         }
         let combined = xxhash_rust::xxh3::xxh3_64(&bytes);
-        variable_negative::qualified(combined, coverage.issuer?, false)
+        variable_negative::qualified(u128::from(combined), coverage.issuer?, false)
     }
 
     fn issued_domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
@@ -525,7 +534,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
                     return Some(version);
                 }
             }
-            let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
+            let base = self.tree.domain_version(domain)?;
             // Only a positive enriched source answer bypasses engine fallback.
             // Its admitted scalar owner already records the exact engine read.
             if !matches!(tree_answer, M::Member { .. }) {
@@ -558,9 +567,9 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
                     };
                     (self.tree.domain_version(domain)?, provider)
                 };
-                return variable_negative::qualified(u64::try_from(base).ok()?, provider, false);
+                return variable_negative::qualified(base, provider, false);
             }
-            let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
+            let base = self.tree.domain_version(domain)?;
             // Only an unchanged positive/current source answer may use the
             // local certificate. Native absence fallback remains uncertified.
             if matches!(tree_answer, M::Unsupported(_)) {
@@ -573,7 +582,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
             return variable_negative::qualified(base, provider, false);
         }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
-            let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
+            let base = self.tree.domain_version(domain)?;
             if matches!(
                 query,
                 Q::MemberCallableName(_) | Q::MemberCallableVerbName(_)
@@ -587,7 +596,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
                 {
                     return None;
                 }
-                return Some((u128::from(base) << 64) | u128::from(self.callable_issuer?));
+                return Some(compose_version(base, self.callable_issuer?));
             }
             // Global authored-name exclusion can change fallback answers even
             // when this owner's source declarations are unchanged. Such reads
@@ -627,7 +636,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
                             bytes.extend_from_slice(&retained.identity().to_le_bytes());
                         }
                         let catalogs = xxhash_rust::xxh3::xxh3_64(&bytes);
-                        return Some((u128::from(base) << 64) | u128::from(catalogs));
+                        return Some(compose_version(base, catalogs));
                     }
                 }
                 let name = match query {
@@ -642,7 +651,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
                     return None;
                 }
                 let receipt = self.callable_fallback.as_ref()?.version(name)?;
-                return Some((u128::from(base) << 64) | u128::from(receipt));
+                return Some(compose_version(base, receipt));
             }
             let provider = if self.callable_absence.is_some()
                 || self.intrinsic_methods.is_some()
@@ -652,7 +661,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
             } else {
                 0
             };
-            return Some((u128::from(base) << 64) | u128::from(provider));
+            return Some(compose_version(base, provider));
         }
         if matches!(domain, dm_ir::ReadDomain::OwnerHierarchy(_)) {
             // These three queries are delegated unchanged to the current source

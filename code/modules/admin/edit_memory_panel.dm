@@ -109,7 +109,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 		return FALSE
 	var/new_role = A.step_value("a1")
 	if(new_role)
-		target_mind.assigned_role = new_role
+		target_mind.assigned_role = text_or_null(new_role)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_edit_memory_a2_default(datum/act/op/A)
@@ -135,7 +135,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 	target_mind.ambitions = text_or_null(new_amb)
 	if(target_mind.current)
 		to_chat(target_mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [target_mind.ambitions]"))
-	log_and_message_admins("made [key_name(target_mind.current)]'s ambitions be '[target_mind.ambitions]'.")
+	log_and_message_admins("made [key_name(target_mind.current)]'s ambitions be '[target_mind.ambitions]'.", A.actor)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_obj_toggle_complete(datum/act/op/A, ref)

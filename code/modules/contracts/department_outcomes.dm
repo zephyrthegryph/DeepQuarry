@@ -114,7 +114,7 @@
 	if(!owner)
 		return
 	var/standing = owner.get_faction_reputation(contract.issuer_faction)
-	contract.standing_score = standing
+	contract.standing_score = num_or_null(standing)
 	contract.standing_tier = reputation_rank(standing)
 	var/percent = standing >= REPUTATION_ALLIED ? 10 : (standing >= REPUTATION_FRIENDLY ? 10 : (standing <= REPUTATION_HOSTILE ? -10 : (standing <= REPUTATION_UNFRIENDLY ? -5 : 0)))
 	contract.standing_reward_modifier = percent

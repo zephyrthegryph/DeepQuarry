@@ -117,7 +117,7 @@
 		if((SK.in_dark_respite) || H.has_body_effect(/datum/body_effect/dark_respite) || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
 			return
 		if(!LAZYLEN(GLOB.latejoin_thedark))
-			log_and_message_admins("[H] died outside of the dark but there were no valid floors to warp to")
+			log_and_message_admins("[H] died outside of the dark but there were no valid floors to warp to", null)
 			return
 
 		act_message(H, null, others = "<b>%U%</b> phases to somewhere far away!")

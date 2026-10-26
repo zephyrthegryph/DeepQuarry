@@ -61,6 +61,9 @@ if ! "$bin" check --ci "$@"; then
 	failed+=("analyze check")
 fi
 
+if ! bash tools/ci/test_disk_budget.sh; then
+	failed+=("test_disk_budget")
+fi
 if ! bash tools/ci/check_test_scratch.sh; then
 	failed+=("check_test_scratch")
 fi

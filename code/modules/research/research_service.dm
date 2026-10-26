@@ -233,7 +233,7 @@ SYSTEM_DEF(research)
 	// Initialize all freshly-created nodes (converts list vars to associative form).
 	for(var/id in techweb_nodes)
 		var/datum/techweb_node/TN = techweb_nodes[id]
-		TN.Initialize()
+		TN.index_ids()
 	if(!verify_techweb_nodes()) //Verify all nodes have ids and such.
 		CRASH("Invalid techweb nodes detected after initial registration")
 	calculate_techweb_nodes()

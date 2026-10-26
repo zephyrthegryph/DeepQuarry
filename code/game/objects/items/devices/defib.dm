@@ -13,6 +13,7 @@
 	var/obj/item/cell/bcell = null
 
 CAPABILITIES(/obj/item/defib_kit)
+	setup(PROC_REF(tether_paddles))
 	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = 1))
 	configure(item_worn(slots = SLOT_BACK))
@@ -29,9 +30,9 @@ CAPABILITIES(/obj/item/defib_kit)
 /obj/item/defib_kit/get_cell()
 	return bcell
 
-/obj/item/defib_kit/Initialize(mapload) //starts without a cell for rnd
+/// Its setup hook: the kit makes its paddles (it starts without a cell for rnd).
+/obj/item/defib_kit/proc/tether_paddles()
 	make_tethered(paddle_path)
-	. = ..()
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc
@@ -458,7 +459,7 @@ CAPABILITIES(/obj/item/defib_kit/compact)
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")
 	play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS)
 
-	log_and_message_admins("used \a [src] to revive [key_name(H)].")
+	log_and_message_admins("used \a [src] to revive [key_name(H)].", A.actor)
 
 /obj/item/shockpaddles/proc/do_electrocute(mob/living/carbon/human/H, mob/user, target_zone)
 	var/obj/item/organ/external/affecting = H.get_organ(target_zone)

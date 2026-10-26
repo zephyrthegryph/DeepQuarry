@@ -10,6 +10,19 @@
 /client/input_key_loop()
 	return keyLoop()
 
+/mob/input_double_click(atom/target, params)
+	return DblClickOn(target, params)
+
+/mob/input_wheel(atom/target, delta_x, delta_y, params)
+	return MouseWheelOn(target, delta_x, delta_y, params)
+
+/mob/input_hover(atom/target, params)
+	client?.note_hover(target)
+
+/// A press closes the tooltip of what declares one ("No reason not to, really").
+/mob/input_pressed(atom/target, params)
+	closeToolTip(src, target)
+
 
 /datum/op_topic_resolve_ref(raw, wanted, source)
 	return topic_resolve_ref(src, raw, wanted, source)

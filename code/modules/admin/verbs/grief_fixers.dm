@@ -9,5 +9,5 @@
 // manually via varedit.
 ADMIN_VERB(fix_atmos, (R_ADMIN|R_DEBUG|R_EVENT), "Fix Atmospherics Grief", "View or retrieve logfiles for the current round.", ADMIN_CATEGORY_GAME)
 	feedback_add_details("admin_verb","FA")
-	log_and_message_admins("Atmos-grief-fixer verb invoked by [user]. NOTE: Stub under LINDA migration — please use SSair varedit instead.")
+	log_and_message_admins("Atmos-grief-fixer verb invoked by [user]. NOTE: Stub under LINDA migration — please use SSair varedit instead.", user)
 	to_chat(user, span_warning("LINDA migration: the bulk atmos-reset verb is currently stubbed. Use SSair varedit (clear active_turfs, then call SSair.fire) for manual reset."))

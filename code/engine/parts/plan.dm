@@ -567,7 +567,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 	P.quiet = TRUE
 
 /datum/entry/part/claims/compile(datum/op_plan/P, level)
-	P.claim_mask = isnull(src.args?["mask"]) ? CLAIM_ALL : src.args["mask"]
+	P.claim_mask = isnull(src.args?["mask"]) ? CLAIM_ALL : (src.args["mask"] & CLAIM_ALL)
 
 /datum/entry/part/label/compile(datum/op_plan/P, level)
 	P.label = src.args["text"]

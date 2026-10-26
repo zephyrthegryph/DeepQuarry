@@ -94,7 +94,7 @@
 	grant(avatar, granted_verb(/mob/living/carbon/human/proc/vr_transform_into_mob), avatar)
 	grant(avatar, granted_verb(/mob/living/proc/set_size), avatar)
 	avatar.set_virtual_reality_mob(TRUE)
-	log_and_message_admins("[key_name_admin(avatar)] joined virtual reality from the ghost menu.")
+	log_and_message_admins("[key_name_admin(avatar)] joined virtual reality from the ghost menu.", src)
 
 	avatar.ask_vr_ghost_name(src.name)
 

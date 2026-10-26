@@ -37,7 +37,7 @@
 		T.emp_act(hit[2])
 		#ifdef EMPDEBUG
 		if((world.timeofday - time) >= EMPDEBUG)
-			log_and_message_admins("EMPDEBUG: [T.name] - [T.type] - took [world.timeofday - time]ds to process emp_act()!")
+			log_and_message_admins("EMPDEBUG: [T.name] - [T.type] - took [world.timeofday - time]ds to process emp_act()!", null)
 		#endif
 	return TRUE
 

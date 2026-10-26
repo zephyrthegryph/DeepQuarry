@@ -303,7 +303,7 @@ CAPABILITIES(/datum/system/requests)
 		var/datum/resource/RS = resource_of(text2num("[res_id]"))
 		var/datum/reservation/reserved = RS?.reserve(A, amount)
 		if(!reserved)
-			R.last_error = text_or_null(reason_text(RS ? RS.refusal(A, amount) : /datum/msg/op/no_resource))
+			R.last_error = reason_text(RS ? RS.refusal(A, amount) : /datum/msg/op/no_resource)
 			. = FALSE
 			break
 		held += reserved

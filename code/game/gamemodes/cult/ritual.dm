@@ -469,7 +469,7 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	if(destination)
 		required = required + destination
 	var/area/A = get_area(user)
-	log_and_message_admins("created \an [chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
+	log_and_message_admins("created \an [chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].", T.actor)
 	var/obj/effect/rune/R = new /obj/effect/rune(user.loc)
 	to_chat(user, span_notice("You finish drawing the arcane markings of the Geometer."))
 	R.word1 = english[required[1]]
@@ -552,7 +552,7 @@ GLOBAL_LIST_INIT(imbued_rune_choices, list("teleport", "itemport", "tome", "armo
 		var/mob/living/carbon/human/H = user
 		R.add_blooddna(H.dna,H)
 	var/area/A = get_area(user)
-	log_and_message_admins("created \an [r] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
+	log_and_message_admins("created \an [r] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].", user)
 	switch(r)
 		if("teleport")
 			R.word1=GLOB.cultwords["travel"]
