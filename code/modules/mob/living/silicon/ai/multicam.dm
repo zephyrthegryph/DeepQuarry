@@ -23,8 +23,9 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 	..()
 	set_ai(null)
 
-/atom/movable/screen/movable/pic_in_pic/ai/Click()
-	..()
+/// A click on a window is the HUD screen's own, and then makes it the AI's main window.
+/atom/movable/screen/movable/pic_in_pic/ai/screen_click_input(datum/act/input/A)
+	. = ..()
 	if(ai)
 		ai.select_main_multicam_window(src)
 

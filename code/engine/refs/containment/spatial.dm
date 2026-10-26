@@ -123,6 +123,9 @@ READS_AS(/proc/contents_count, SLOT_OCCUPANCY_KEY)
 	READS_FROM() // what a list holds is asked when a choice is made, never cached
 	if(!L)
 		return null
+	if(istext(what)) // a handle a window carried, else a plain ref text
+		var/datum/found = resolve_window_ref(what)
+		return (found in L) ? found : null
 	return locate(what) in L
 
 /// Anchor an /image (not a movable: it has no ledger entry and no Move())

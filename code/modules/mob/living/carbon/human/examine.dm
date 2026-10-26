@@ -122,7 +122,7 @@
 
 /// One worn-item line: "<lead> <icon> <item><where>.<extra>", or a warning when the item is stained.
 /mob/living/carbon/human/proc/examine_worn_line(obj/item/I, mob/user, lead, where, extra = "")
-	var/link = "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>"
+	var/link = "<a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(I)]'>"
 	if(I.forensic_data?.has_blooddna())
 		var/stain = (dq_get_blood_color(I) != "#030303") ? "blood" : "oil"
 		return span_warning("[lead] [icon2html(I, user.client)] [I.gender == PLURAL ? "some" : "a"] [stain]-stained [link][I.name]</a>[where]![extra]")
@@ -138,7 +138,7 @@
 			if(A.show_examine && !istype(A, /obj/item/clothing/accessory/holster)) // If we're supposed to skip holsters, actually skip them
 				accessory_descs += "\a [A]"
 		else if(!linked || (A.concealed_holster == 0 && A.show_examine))
-			accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[A]'>\a [A]</a>"
+			accessory_descs += "<a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(A)]'>\a [A]</a>"
 	return ". Attached to it is [lowertext(english_list(accessory_descs))]."
 
 /// Lines for everything worn or held that isn't hidden.
@@ -225,15 +225,15 @@
 
 	I = get_equipped_item(SLOT_ID_EAR_L)
 	if(I && !(skip_gear & EXAMINE_SKIPEARS) && I.show_examine)
-		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a> on [p_their()] left ear."
+		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(I)]'>\a [I]</a> on [p_their()] left ear."
 
 	I = get_equipped_item(SLOT_ID_EAR_R)
 	if(I && !(skip_gear & EXAMINE_SKIPEARS) && I.show_examine)
-		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a> on [p_their()] right ear."
+		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(I)]'>\a [I]</a> on [p_their()] right ear."
 
 	I = get_equipped_item(SLOT_ID_ID)
 	if(I && I.show_examine)
-		. += "[p_Theyre()] wearing [icon2html(I, user.client)]<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a>."
+		. += "[p_Theyre()] wearing [icon2html(I, user.client)]<a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(I)]'>\a [I]</a>."
 
 /// Jitters, splints, vore and size lines, responsiveness, fire and SSD.
 /mob/living/carbon/human/proc/examine_status_lines(mob/user, list/hidden)
@@ -398,8 +398,8 @@
 		for(var/datum/data/record/R in GLOB.data_core.security)
 			if(R.fields["name"] == perpname)
 				criminal = R.fields["criminal"]
-		. += "Criminal status: <a href='byond://?src=\ref[src];criminal=1'>\[[criminal]\]</a>"
-		. += "Security records: <a href='byond://?src=\ref[src];secrecord=`'>\[View\]</a>  <a href='byond://?src=\ref[src];secrecordadd=`'>\[Add comment\]</a>"
+		. += "Criminal status: <a href='byond://?src=[REF(src)];criminal=1'>\[[criminal]\]</a>"
+		. += "Security records: <a href='byond://?src=[REF(src)];secrecord=`'>\[View\]</a>  <a href='byond://?src=[REF(src)];secrecordadd=`'>\[Add comment\]</a>"
 
 	if(hasHUD(user,"medical"))
 		var/perpname = examine_record_name()
@@ -407,11 +407,11 @@
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if(R.fields["name"] == perpname)
 				medical = R.fields["p_stat"]
-		. += "Physical status: <a href='byond://?src=\ref[src];medical=1'>\[[medical]\]</a>"
-		. += "Medical records: <a href='byond://?src=\ref[src];medrecord=`'>\[View\]</a> <a href='byond://?src=\ref[src];medrecordadd=`'>\[Add comment\]</a>"
+		. += "Physical status: <a href='byond://?src=[REF(src)];medical=1'>\[[medical]\]</a>"
+		. += "Medical records: <a href='byond://?src=[REF(src)];medrecord=`'>\[View\]</a> <a href='byond://?src=[REF(src)];medrecordadd=`'>\[Add comment\]</a>"
 
 	if(hasHUD(user,"best"))
-		. += "Employment records: <a href='byond://?src=\ref[src];emprecord=`'>\[View\]</a> <a href='byond://?src=\ref[src];emprecordadd=`'>\[Add comment\]</a>"
+		. += "Employment records: <a href='byond://?src=[REF(src)];emprecord=`'>\[View\]</a> <a href='byond://?src=[REF(src)];emprecordadd=`'>\[Add comment\]</a>"
 
 /// Flavour text, custom link, OOC notes and vore preference links.
 /mob/living/carbon/human/proc/examine_profile_lines()
@@ -423,8 +423,8 @@
 	if(sparse_get(src, custom_link))
 		. += "Custom link: " + span_linkify("[sparse_get(src, custom_link)]")
 	if(identity().ooc_notes)
-		. += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
-	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
+		. += "OOC Notes: <a href='byond://?src=[REF(src)];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=[REF(src)];print_ooc_notes_chat=1'>\[Print\]</a>"
+	. += "<a href='byond://?src=[REF(src)];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
 //Helper procedure. Called by /mob/living/carbon/human/examine() and /mob/living/carbon/human/Topic() to determine HUD access to security and medical records.
 /proc/hasHUD(mob/M as mob, hudtype)

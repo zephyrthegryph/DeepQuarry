@@ -18,6 +18,8 @@
 
 CAPABILITIES(/atom/movable/screen/movable/spell_master)
 	ref_one(nameof(spell_holder))
+	click_on(PROC_REF(master_clicked))
+	drag_onto(PROC_REF(master_dragged))
 
 /// The master shows the open or closed button once it has been toggled.
 /atom/movable/screen/movable/spell_master/draw(datum/look/look)
@@ -39,18 +41,20 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 /atom/movable/screen/movable/spell_master/proc/spell_holder() as /mob
 	return spell_holder
 
-/atom/movable/screen/movable/spell_master/MouseDrop()
+/// The drop of the master while its spells are showing is nothing (it cannot be moved then); otherwise it is the movable screen's own drop.
+/atom/movable/screen/movable/spell_master/proc/master_dragged(datum/act/input/A)
 	if(showing)
-		return
+		return TRUE
+	return drop_input(A)
 
-	return ..()
-
-/atom/movable/screen/movable/spell_master/Click()
+/// A click opens or closes the spells; a master with none is spent.
+/atom/movable/screen/movable/spell_master/proc/master_clicked(datum/act/input/A)
 	if(!length(spell_buttons()))
 		spent(src)
-		return
+		return TRUE
 
 	toggle_open()
+	return TRUE
 
 /atom/movable/screen/movable/spell_master/proc/toggle_open(forced_state = 0)
 	if(showing && (forced_state != 2))

@@ -14,9 +14,11 @@
 	var/mob/actor
 	var/result
 
-/obj/interim_frame_construct_actor_probe/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_frame_construct_actor_probe/proc/probe_clicked(datum/act/input/A)
 	var/datum/op_result/performed = test_click(actor, frame, actor.get_active_hand())
 	result = test_op_committed(performed)
+	return TRUE
 
 /datum/unit_test/interim_frame_board_construct_actor/Run()
 	test_driver_begin()
@@ -57,5 +59,6 @@
 	TEST_ASSERT(!QDELETED(board), "actual frame expiry preserves the installed board")
 
 CAPABILITIES(/obj/interim_frame_construct_actor_probe)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(actor))
 	ref_one(nameof(frame))
