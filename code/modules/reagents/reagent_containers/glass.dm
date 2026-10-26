@@ -29,7 +29,7 @@ CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING, key = NONE)
 /datum/capability/def/glass_handling/entries()
 	return list(
 		op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"), \
-			asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, label_applied))),
+			asks(/datum/prompt/text/glass_label, fields = list("question" = "Enter a label for it:")), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, label_applied))),
 		op("dip", item(/obj/item), stance(I_DISARM, I_GRAB, I_HURT), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_fits)), label("Dip into it"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_applied))),
 		op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(req(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), label("Test the blood"), \
@@ -54,7 +54,7 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, \
 			feed = TRUE, \
 			examine_range = 2),
-		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), \
+		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), needs(req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_available))), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass)
@@ -66,7 +66,14 @@ CAPABILITIES(/obj/item/reagent_containers/glass)
 
 MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.")
 MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open the container to drink from it.")
-MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too recently, try again later.")
+
+/// The label of a glass container: at most 50 letters once sanitised; a longer answer is refused and the prompt stays open.
+/datum/prompt/text/glass_label
+
+/datum/prompt/text/glass_label/refusal(given)
+	if(length(sanitizeSafe("[given]", MAX_NAME_LEN)) > 50)
+		return reason_text(/datum/msg/glass/label_too_long)
+	return null
 
 /obj/item/reagent_containers/glass/proc/remember_base_text()
 	base_name = name
@@ -80,8 +87,8 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	var/mob/user = A.actor
 	var/tmp_label = sanitizeSafe("[R?.value]", MAX_NAME_LEN) || ""
 	if(length(tmp_label) > 50)
-		A.reason = /datum/msg/glass/label_too_long
-		return OP_REFUSED
+		log_world("GLASS: [src] label too long after the prompt check")
+		return OP_FAILED
 	if(length(tmp_label) > 10)
 		balloon_alert(user, "label set")
 	else
@@ -115,10 +122,8 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 
 // ---- venom ----
 
-/// What a creature's venom is and how much of it comes out of one milking: a trait's chosen injection, or a spider's poison.
-/obj/item/reagent_containers/glass/proc/venom_milked(datum/act/op/A)
-	var/mob/living/target = A.target
-	var/mob/living/user = A.actor
+/// The reagent and amount one milking of `target` gives (a trait's chosen injection, or a spider's poison): list(reagent, amount), or null when it has none.
+/obj/item/reagent_containers/glass/proc/venom_of(mob/living/target)
 	var/reagent
 	var/amount
 	if(sparse_get(target, trait_injection_selected))
@@ -129,13 +134,28 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 		reagent = spider.poison_type
 		amount = spider.poison_per_bite
 	if(!reagent || !amount)
-		A.reason = /datum/msg/glass/no_venom
-		return OP_REFUSED
+		return null
+	return list(reagent, amount)
+
+/// needs: the creature has a venom to express.
+/obj/item/reagent_containers/glass/proc/venom_available(datum/act/op/A)
+	return venom_of(A.target) ? null : MSG(glass/no_venom)
+
+/// What a creature's venom is and how much of it comes out of one milking: a trait's chosen injection, or a spider's poison.
+/obj/item/reagent_containers/glass/proc/venom_milked(datum/act/op/A)
+	var/mob/living/target = A.target
+	var/mob/living/user = A.actor
+	var/list/venom = venom_of(target)
+	if(!venom)
+		log_world("GLASS: [src] milking of [target] by [user] no longer possible after the check")
+		return OP_FAILED
 	if(!cooldown_ready(target, venom_milking_cd))
+		// Onlookers see the failed attempt too, which a requirement's refusal (told to the actor alone) cannot say.
 		act_message(user, target, MSG_SELF(span_warning("%T% had their venom expressed too recently, try again later.")), \
 			MSG_OTHERS(span_warning("%U% attempts to express venom from %T%, but nothing happens.")))
-		A.reason = /datum/msg/glass/venom_recently
 		return OP_REFUSED
+	var/reagent = venom[1]
+	var/amount = venom[2]
 	cooldown_start(target, venom_milking_cd, 30 SECONDS)
 	act_message(user, target, others = span_notice("%U% expresses venom from %T%."))
 	reagents.add_reagent(reagent, amount)

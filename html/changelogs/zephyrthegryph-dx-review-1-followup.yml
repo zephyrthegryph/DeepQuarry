@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Restored the shuttle controller's per-prompt rights check, the pinpointer and admin tome side effects before their questions, swallowed clicks on tapes, beacons, masks, agent cards and wardrobes, and the venom-milking onlooker message"
