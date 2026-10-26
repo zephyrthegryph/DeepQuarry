@@ -205,7 +205,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_SILICONS))
 		if(!R.loc)
 			continue
-		all_robots += list(list("displayText" = "[R]", "value" = "\ref[R]"))
+		all_robots += list(list("displayText" = "[R]", "value" = ref_token(R)))
 	.["all_robots"] = all_robots
 	// Law data
 	.["ion_law_nr"] = ionnum()
@@ -222,7 +222,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	for(var/mob/living/silicon/ai/ai in active_ais())
 		if(!ai.loc)
 			continue
-		active_ais += list(list("displayText" = "[ai]", "value" = "\ref[ai]"))
+		active_ais += list(list("displayText" = "[ai]", "value" = ref_token(ai)))
 	.["active_ais"] = active_ais
 	.["selected_ai"] = selected_ai ? selected_ai : null
 

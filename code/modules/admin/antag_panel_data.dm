@@ -22,7 +22,7 @@
 		members += list(list(
 			"name" = M.real_name,
 			"key" = player.key,
-			"ref" = "\ref[M]",
+			"ref" = ref_token(M),
 			"logged_out" = !M.client,
 			"dead" = M.stat == DEAD,
 		))

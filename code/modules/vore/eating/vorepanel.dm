@@ -24,7 +24,7 @@
 
 	if(!vorePanel)
 		if(!isnewplayer(src))
-			log_vore("[src] ([type], \ref[src]) didn't have a vorePanel and tried to use the verb.")
+			log_vore("[src] ([type], [REF(src)]) didn't have a vorePanel and tried to use the verb.")
 		rel_set(src, nameof(vorePanel), new /datum/vore_look(src))
 
 	vorePanel.tgui_interact(src)
