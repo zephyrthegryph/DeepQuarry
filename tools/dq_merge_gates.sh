@@ -13,7 +13,7 @@
 #                   the native compiler accepts what DreamChecker rejects, so the train needs its verdict in the gate, where a failure bisects)
 #        ratchets   tools/ci/check_ratchets.sh, then build.sh analyze
 #        tgui       tools/build/build.sh tgui-lint                 (only when the batch touches tgui/, or with --tgui)
-#        analyze_tests  cargo test in tools/analyze, in a cargo slot (only when the batch touches tools/analyze/)
+#        analyze_tests  cargo test in tools/analyze, in a cargo slot (only when the batch touches tools/analyze/ or tools/ci/lint_scopes.toml, which the fixture tests read)
 #
 # The test list is the cross-branch smoke set (tools/ci/smoke_tests.txt, which includes the boot gate), plus --tests, plus the
 # tests of every lane in --lanes whose lane-ready stamp (tools/dq_lane_ready.sh, tools/dq_lane_check.sh) is not valid for this
@@ -154,7 +154,7 @@ if [ "$tgui" -eq 0 ] && git rev-parse -q --verify origin/master >/dev/null; then
 fi
 
 analyze_tests=0
-if git rev-parse -q --verify origin/master >/dev/null && ! git diff --quiet "$(git merge-base origin/master HEAD)" HEAD -- tools/analyze/; then analyze_tests=1; fi
+if git rev-parse -q --verify origin/master >/dev/null && ! git diff --quiet "$(git merge-base origin/master HEAD)" HEAD -- tools/analyze/ tools/ci/lint_scopes.toml; then analyze_tests=1; fi
 
 # ---- the test list ---------------------------------------------------------------------------------------------------------
 tests=()

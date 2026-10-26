@@ -6,7 +6,11 @@
 
 /proc/get_emote_by_key(key)
 	if(!LAZYLEN(GLOB.emotes_by_key))
-		GLOB.decls_repository.get_decls_of_type(/datum/decl/emote) // GLOB.emotes_by_key will be updated in emote Initialize()
+		var/list/emotes = GLOB.decls_repository.get_decls_of_type(/datum/decl/emote)
+		for(var/emote_type in emotes)
+			var/datum/decl/emote/E = emotes[emote_type]
+			if(E.key)
+				LAZYSET(GLOB.emotes_by_key, E.key, E)
 	return GLOB.emotes_by_key[key]
 
 /datum/decl/emote
@@ -43,11 +47,6 @@
 
 	var/sound_preferences = list(/datum/preference/toggle/emote_noises) // Default emote sound_preferences is just emote_noises. Belch emote overrides this list for pref-checks.
 	var/sound_vary = FALSE
-
-/datum/decl/emote/Initialize()
-	. = ..()
-	if(key)
-		LAZYSET(GLOB.emotes_by_key, key, src)
 
 /datum/decl/emote/proc/get_emote_message_1p(atom/user, atom/target, extra_params)
 	if(target)

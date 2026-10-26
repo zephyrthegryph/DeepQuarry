@@ -808,7 +808,7 @@ fn block_calls(args: &[String], name: &str) -> Vec<Vec<String>> {
 /// callbacks are overridden only in code/engine/kernel/entry.dm, and the input resolver finds the declared entry in the type tables when the event
 /// resolves (the `mouse_override` lint rejects any other definition).
 fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> bool) {
-    const FORMS: &[&str] = &["rolls", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes", "every", "keeps_if", "setup", "name_prefix", "factors"];
+    const FORMS: &[&str] = &["rolls", "preset", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes", "every", "keeps_if", "setup", "name_prefix", "factors"];
     let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
     lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
     for m in lists {

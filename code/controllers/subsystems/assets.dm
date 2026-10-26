@@ -36,4 +36,3 @@ CAPABILITIES(/datum/system/assets)
 
 	asset_cache_save_hashes()
 	transport.start(cache)
-

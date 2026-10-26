@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved 325 fully migrated files from modules/body, combat_ai, reagents, materials, events, vore, spells, xenoarcheaology and other modules into code/content and code/domains"

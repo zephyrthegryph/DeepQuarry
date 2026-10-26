@@ -19,7 +19,7 @@
 // What resolves an event is the event's own resolve(), and it is one step whether the event ran on arrival or waited in the inbox: the target type's
 // declared entry for the input (click_on(), double_click_on(), drag_onto(), drag_over(), hover(), tooltip(), looked up in the type tables by
 // input_dispatch(), code/engine/lifeforms/input.dm) runs first, and an input no entry takes goes on to its default handling: the click router for a
-// click, the target's ops and MouseDrop_T for a drop, the Topic dispatch for a Topic, the mob's hover tracking for a hover. No type overrides a native
+// click, the target's ops for a drop, the Topic dispatch for a Topic, the mob's hover tracking for a hover. No type overrides a native
 // mouse proc: BYOND's callbacks are overridden only in code/engine/kernel/entry.dm. E2's resolver takes the click, menu and window-action events over
 // through the seams at the bottom (input_resolve_click(), input_resolve_menu(), input_resolve_ui()); a driver-built event reports a missing
 // resolver to the test driver (ENGINE_STUB).
@@ -147,27 +147,27 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 	return input_resolve_click(src)
 
 /// An atom (an item, or a mob dragging itself) dragged onto another: the Drag action. The ops of the target see the dragged atom as A.held (gesture GESTURE_DRAG);
-/// what no op answers goes on to the legacy MouseDrop_T chain, as it did before the target declared one.
+/// what no op answers is dropped: a type declares what a drop does with drag_onto() (on the dragged type) or an op that takes the dragged atom as the held one.
 /datum/input_event/drag
 	resolve_threshold = INPUT_CLICK_THRESHOLD
 	metered_as_click = TRUE
 	max_wait = INPUT_MAX_WAIT_DRAG
 	var/atom/dragged
 	var/atom/over
-	/// What the legacy chain takes on (the locations, the controls and the params of the drag).
-	var/list/legacy_args
+	/// The native arguments of the drag (the locations, the controls and the params of the drag).
+	var/list/native_drag
 	/// TRUE for a drop BYOND handed over (atom/MouseDrop, code/engine/kernel/entry.dm): the drop must be within reach of the actor when it resolves,
 	/// which a drop an adapter already checked (adapter.drag()) is not asked twice.
 	var/native = FALSE
 
-/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/legacy, native_drop = FALSE)
+/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/drag_args, native_drop = FALSE)
 	..(user)
 	native = native_drop
 	if(dragged_atom)
 		dragged = dragged_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	if(dropped_on)
 		over = dropped_on // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
-	legacy_args = legacy
+	native_drag = drag_args
 
 /datum/input_event/drag/subject()
 	return over
@@ -180,13 +180,13 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /datum/input_event/drag/event_key()
 	return "input.drag"
 
-/// What the legacy chain takes on, as a declared handler's A.native reads it.
+/// The drag's native arguments, as a declared handler's A.native reads them.
 /datum/input_event/drag/proc/native_args()
-	return list("over_object" = over, "src_location" = legacy_args?[1], "over_location" = legacy_args?[2], "src_control" = legacy_args?[3], "over_control" = legacy_args?[4], "params" = legacy_args?[5])
+	return list("over_object" = over, "src_location" = native_drag?[1], "over_location" = native_drag?[2], "src_control" = native_drag?[3], "over_control" = native_drag?[4], "params" = native_drag?[5])
 
-/// The dragged type's drag_onto() entry first (no reach is asked of it: the entry says what it takes), then the target's ops and MouseDrop_T.
+/// The dragged type's drag_onto() entry first (no reach is asked of it: the entry says what it takes), then the target's ops.
 /datum/input_event/drag/resolve()
-	if(!driven && dragged && input_dispatch(dragged, actor, INPUT_DRAG_ONTO, legacy_args?[5], over, FALSE, native_args()))
+	if(!driven && dragged && input_dispatch(dragged, actor, INPUT_DRAG_ONTO, native_drag?[5], over, FALSE, native_args()))
 		return null
 	return input_resolve_drag(src)
 

@@ -7,7 +7,7 @@
 /datum/integrated_io/list/ask_for_pin_data(mob/user)
 	interact(user)
 
-// interact() body moved to code/modules/integrated_electronics/list_pin_panel.dm (structured TGUI).
+// interact() body moved to code/content/integrated_electronics/list_pin_panel.dm (structured TGUI).
 /datum/integrated_io/list/proc/interact(mob/user)
 	return  // body provided by modular override
 

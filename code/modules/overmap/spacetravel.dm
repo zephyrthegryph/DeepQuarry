@@ -5,18 +5,22 @@
 	known = FALSE
 	in_space = TRUE
 
-/obj/effect/overmap/visitable/sector/temporary/Initialize(mapload)
-	if(!istype(loc, /turf/unsimulated/map))
-		CRASH("Attempt to create deepspace which is not on overmap: [log_info_line(loc)]")
-	// Tell sector initializer where are is where we want to be.
-	start_x = loc.x
-	start_y = loc.y
-	// But pick an empty z level to use
-	map_z += using_map.get_empty_zlevel()
-	return ..()
-
 CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
+	keeps_if(PROC_REF(on_overmap), warn = "Attempt to create deepspace which is not on overmap")
+	// Tell the sector initializer where we are and where we want to be. The empty z-level it uses is claimed in find_z_levels() (below).
+	preset(nameof(start_x), PROC_REF(start_at_x))
+	preset(nameof(start_y), PROC_REF(start_at_y))
 	setup(PROC_REF(check_zlevel), mapload = TRUE)
+
+/// Deep space is only ever made on the overmap.
+/obj/effect/overmap/visitable/sector/temporary/proc/on_overmap()
+	return istype(loc, /turf/unsimulated/map)
+
+/obj/effect/overmap/visitable/sector/temporary/proc/start_at_x(target)
+	return loc?.x
+
+/obj/effect/overmap/visitable/sector/temporary/proc/start_at_y(target)
+	return loc?.y
 
 /// No empty z-level to claim: the sector is discarded (setup hook).
 /obj/effect/overmap/visitable/sector/temporary/proc/check_zlevel(mapload)
@@ -33,7 +37,10 @@ CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
 	testing("Temporary sector at [x],[y] was destroyed, returning empty zlevel [map_z[1]] to map datum.")
 	return ..()
 
+/// Claims the sector's empty z-levels, before the parent's reader (register_sector()) uses map_z. Two claims, as Initialize() then find_z_levels()
+/// made them: the first level, which Initialize() took before the chain, then the one this proc takes (check_zlevel() reads the first).
 /obj/effect/overmap/visitable/sector/temporary/find_z_levels()
+	map_z += using_map.get_empty_zlevel()
 	LAZYADD(map_z, using_map.get_empty_zlevel())
 
 /obj/effect/overmap/visitable/sector/temporary/proc/is_empty(mob/observer)
