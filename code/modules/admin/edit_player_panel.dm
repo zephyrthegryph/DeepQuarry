@@ -117,7 +117,7 @@ CAPABILITIES(/datum/edit_player_panel)
 		data["inactivity_minutes"] = -1
 		data["muted"] = 0
 
-	data["can_event"] = !!check_rights(R_ADMIN|R_MOD|R_EVENT, 0)
+	data["can_event"] = !!admin_can(A.actor?.client, R_ADMIN|R_MOD|R_EVENT)
 	data["special_character"] = is_special_character(target())
 
 	// Mute mask constants exposed so the React side doesn't hardcode them.

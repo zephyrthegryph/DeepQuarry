@@ -28,11 +28,11 @@ CAPABILITIES(/obj/item/spell/radiance)
 
 /// Admins are told the radiance is cast.
 /obj/item/spell/radiance/proc/announce_cast()
-	log_and_message_admins("has casted [src].")
+	log_and_message_admins("has casted [src].", owner_ref())
 
 // admins are told the maintained spell stopped.
 /obj/item/spell/radiance/on_destroy(force)
-	log_and_message_admins("has stopped maintaining [src].")
+	log_and_message_admins("has stopped maintaining [src].", owner_ref())
 	..()
 
 /obj/item/spell/radiance/proc/radiance_step(datum/act/timer/A)

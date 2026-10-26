@@ -38,5 +38,5 @@
 	to_chat(M, span_notice("You are a <b>Clown!</b>! HONK!"))
 	bind_player(R, M.ckey, as_ckey = TRUE)
 	visible_message(span_warning("With a bright flash of light, \the [src] disappears, and in its place you see a... Clown?"))
-	log_and_message_admins("successfully touched \a [src] and summoned a mistake!")
+	log_and_message_admins("successfully touched \a [src] and summoned a mistake!", A.request.answerer)
 	open_pod()

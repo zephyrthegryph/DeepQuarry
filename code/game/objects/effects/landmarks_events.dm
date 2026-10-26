@@ -262,7 +262,7 @@ CAPABILITIES(/obj/effect/landmark/event_trigger/auto_narrate)
 	..()
 	if(QDELETED(src))
 		return
-	message = encode_html_emphasis(setup["narration"])
+	message = text_or_null(encode_html_emphasis(setup["narration"]))
 	if(setup["to_player"])
 		isPersonal_orVis_orAud = 0
 		isWarning = setup["scary"]

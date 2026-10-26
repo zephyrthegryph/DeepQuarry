@@ -206,7 +206,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/delay = A.step_value("interval")
 	if(!isnum(delay) || delay <= 0)
 		return
-	EC.delay_modifier = delay
+	EC.delay_modifier = num_or_null(delay)
 	log_and_message_admins("has set the interval modifier for [GLOB.severity_to_string[EC.severity]] events to [EC.delay_modifier].", user)
 	return TRUE
 
@@ -283,7 +283,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/name = A.step_value("name")
 	if(!name)
 		return
-	EM.name = name
+	EM.name = text_or_null(name)
 	return TRUE
 
 /datum/event_manager_panel/proc/ui_act_set_type(datum/act/op/A, ref)
@@ -313,7 +313,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/weight = A.step_value("weight")
 	if(!isnum(weight) || weight <= 0)
 		return
-	EM.weight = weight
+	EM.weight = num_or_null(weight)
 	if(EM != service.new_event)
 		log_and_message_admins("has changed the weight of the [GLOB.severity_to_string[EM.severity]] event '[EM.name]' to [EM.weight].", user)
 	return TRUE

@@ -1,12 +1,13 @@
 
 GLOBAL_LIST_EMPTY(chemical_reaction_logs)
 
-/proc/log_chemical_reaction(atom/A, datum/xform/R, multiplier)
+/// `actor` is who mixed it (null: no one did, logged as an EVENT).
+/proc/log_chemical_reaction(atom/A, datum/xform/R, multiplier, mob/actor)
 	if(!A || !R)
 		return
 
 	var/turf/T = get_turf(A)
-	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
+	var/logstr = "[actor ? key_name(actor) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 
 	GLOB.chemical_reaction_logs += "\[[time_stamp()]\] [logstr]"
 

@@ -270,6 +270,16 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
   `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
   first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
+- **Disk use is bounded by construction.** `tools/ci/disk_budget.toml` lists EVERY directory under `E:/dq-cache` and every per-worktree growth dir
+  (`data/test-runs`, `merge-gates`, `merge-batch`, `bench`, test-world logs in the checkout root, worktree-local cargo targets, ...) with a size cap,
+  an age cap and an eviction policy, plus a whole-cache total (`DQ_CACHE_BUDGET_GB`, default 60). `bash tools/dq_disk_budget.sh enforce` applies it
+  (least recently modified first; never a unit modified in the last 30 min, a leased slot's own cargo target, the `dmb-bin/current` version or a file
+  a running process holds open; stat listings, never `du`; `--dry-run`, `status`). It runs at every lease, release, train cycle start and dmbc daemon
+  start (throttled to once per 10 min). A directory under `E:/dq-cache` that the manifest does not name is unknown: it is reported, and removed once idle only when clearly a cache
+  (`*.log`, `dmb-*`, ...); `train`, `lane-pool`, `slots`, `dmb-bin`, `flakes.tsv` are never removed. A file git tracks is never deleted in a worktree. Add the
+  `[cache.<name>]` table first. Below `DQ_DISK_FLOOR_GB` (default 50) free on E:, caps are halved, and if it is still under the floor `lease` (exit 6)
+  and the train's heavy cycles refuse to start with a REFUSED message instead of filling the disk. Never delete under `E:/dq-cache` by hand.
+  `tools/ci/test_disk_budget.sh` (part of `check_ratchets.sh`) proves eviction, protection, unknown-dir removal and the floor.
 - **Stuck lanes and waiting.** `bash tools/dq_lane_pool.sh stuck` lists leases with no live process and no activity for 30 min (exit 1 if any; `status` flags them, with
   idle time and machine-slot waits). A dirty or unpushed one is only reported, never wiped; a clean pushed one is reclaimed. `... cancel <branch>` withdraws a queued
   `lease --wait`. A full suite takes at most `DQ_SLOTS_SUITE_MAX_WORLDS` test worlds (default 1 while others wait) so focused runs are not starved.
@@ -281,8 +291,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   exit, pass or fail); never `create_dir_all` a path of your own under `E:/dq-cache` (`tools/ci/check_test_scratch.sh`, part of
   `check_ratchets.sh`, rejects it). Every file cache a daemon or tool writes needs a size cap and an age cap with eviction that actually runs
   (the dmbc file cache: `DMB_CACHE_BUDGET_GB` / `DMB_CACHE_MAX_AGE_DAYS`; published pair stores: `DMB_PAIR_BUDGET_GB` (8) /
-  `DMB_PAIR_MAX_AGE_DAYS` (7), `PairStore::evict_to_budget`). `tools/dq_cache_prune.sh` (run by the pool's release at most every 6 hours)
-  also removes abandoned test-run directories idle for a day whose pid is dead, and caps `dqp-cache`. Don't measure with `du`; count entries.
+  `DMB_PAIR_MAX_AGE_DAYS` (7), `PairStore::evict_to_budget`; the dmbc cache spares only its newest segment by age, so the budget holds); the
+  manifest above lists every one, `tools/dq_cache_prune.sh` is now a wrapper for `dq_disk_budget.sh enforce`, and abandoned test-run directories idle for a day are
+  its `test-scratch` table. Don't measure with `du`; count entries.
 - **Git safety.** Never delete `.git/index.lock` or any other lock file; another process holds
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.
@@ -405,6 +416,9 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   are requests (`open_request()`, `request_answer()`, `requests.dm`); long work that must yield is `job()`
   (`jobs.dm`); a call that may fail by design is `safe_call()` (`safe.dm`). Tests make time pass with
   `test_driver_begin()` and `test_time()` (doc/testing.md "The kernel clock").
+  BYOND's own callbacks (`atom/Click`, `DblClick`, `MouseWheel`, `MouseDrop`, `MouseEntered`, `MouseDown`, the client's mouse procs,
+  `/datum/Topic`, `world.Reboot`) are in `code/engine/kernel/entry.dm`: each reads `usr` there once, builds the event with the actor, and
+  handlers read the actor from the event (the hooks in `input_hooks.dm` take it as `src`).
 - **Atmospherics: LINDA on a Rust backend.** `code/ATMOSPHERICS/` is the only engine (ZAS/XGM
   are gone); gas math, diffusion, decompression and heat conduction run in the auxmos arena in
   Verdigris, driven from SSair's atmos step (phase N). `/datum/gas_mixture` is an opaque handle: read with

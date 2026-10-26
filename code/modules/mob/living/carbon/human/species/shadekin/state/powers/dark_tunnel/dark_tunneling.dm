@@ -62,7 +62,7 @@
 	var/datum/map_template/shelter/template = dq_dark_tunnel_template()
 	play_sfx(src, SFX_EFFECTS_PHASEIN)
 	act_message(src, null, others = span_notice("%U% finishes pulling dark energies around themselves, creating a portal."))
-	log_and_message_admins("[key_name_admin(src)] created a tunnel to the dark at [get_area(T)]!")
+	log_and_message_admins("[key_name_admin(src)] created a tunnel to the dark at [get_area(T)]!", A.actor)
 	template.annihilate_plants(T)
 	template.load_async(T, TRUE, TYPE_PROC_REF(/datum/map_template/shelter, shelter_loaded), template, list(T.x, T.y, T.z))
 	SK.set_created_dark_tunnel(TRUE)

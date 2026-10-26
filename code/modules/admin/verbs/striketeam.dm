@@ -229,7 +229,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 	after(null, 5 MINUTES, GLOBAL_PROC_REF(close_armed_response_team))
 
 /proc/ert_load_finished(z)
-	log_and_message_admins("Loaded the ERT shuttle just now.")
+	log_and_message_admins("Loaded the ERT shuttle just now.", null)
 
 /proc/close_armed_response_team()
 	GLOB.send_emergency_team = 0 // Can no longer join the ERT.

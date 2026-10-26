@@ -51,7 +51,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	for (var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES)) //change status
 		if(istype(M, /obj/machinery/ai_status_display))
 			var/obj/machinery/ai_status_display/AISD = M
-			AISD.emotion = emote
+			AISD.emotion = text_or_null(emote)
 			AISD.update()
 		//if Friend Computer, change ALL displays
 		else if(istype(M, /obj/machinery/status_display))

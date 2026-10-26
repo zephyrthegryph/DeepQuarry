@@ -123,11 +123,17 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 
 /// The Drag action: the inbox resolves it (the target's ops see the dragged atom as the held one), and what no op answers is drag_legacy().
 /datum/input_adapter/proc/drag(mob/user, atom/dragged, atom/over, src_location, over_location, src_control, over_control, params)
-	if(!dragged.Adjacent(user) || !over.Adjacent(user))
-		return // should stop you from dragging through windows
-	if(user.is_incorporeal())
+	if(!drag_reachable(user, dragged, over))
 		return
 	input_submit(new /datum/input_event/drag(user, dragged, over, list(src_location, over_location, src_control, over_control, params)))
+
+/// Can this actor drag `dragged` onto `over`: both within reach (no dragging through windows), and not incorporeal.
+/datum/input_adapter/proc/drag_reachable(mob/user, atom/dragged, atom/over)
+	if(!dragged.Adjacent(user) || !over.Adjacent(user))
+		return FALSE
+	if(user.is_incorporeal())
+		return FALSE
+	return TRUE
 
 /// The drag no op took: MouseDrop_T of the target.
 /datum/input_adapter/drag_legacy(mob/user, atom/dragged, atom/over, list/legacy)

@@ -55,9 +55,9 @@ CAPABILITIES(/datum/instrument)
 		id = "[type]"
 
 /**
- * Initializes the instrument, calculating its samples if necessary.
+ * Prepares the instrument, calculating its samples if necessary (called once by the instruments system).
  */
-/datum/instrument/proc/Initialize()
+/datum/instrument/proc/prepare_samples()
 	if(instrument_flags & (INSTRUMENT_LEGACY | INSTRUMENT_DO_NOT_AUTOSAMPLE))
 		return
 	calculate_samples()

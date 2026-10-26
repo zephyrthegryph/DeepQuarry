@@ -21,7 +21,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
 /// No empty z-level to claim: the sector is discarded (setup hook).
 /obj/effect/overmap/visitable/sector/temporary/proc/check_zlevel(mapload)
 	if(!map_z[1])
-		log_and_message_admins("Could not create empty sector at [x], [y]. No available z levels to allocate.")
+		log_and_message_admins("Could not create empty sector at [x], [y]. No available z levels to allocate.", null)
 		return INITIALIZE_HINT_QDEL
 	testing("Temporary sector at [x],[y],[z] was created, corresponding zlevel is [english_list(map_z)].")
 	return INITIALIZE_HINT_NORMAL
@@ -38,7 +38,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
 
 /obj/effect/overmap/visitable/sector/temporary/proc/is_empty(mob/observer)
 	if(!LAZYLEN(map_z))
-		log_and_message_admins("CANARY: [src] tried to check is_empty, but map_z is `[map_z || "null"]`")
+		log_and_message_admins("CANARY: [src] tried to check is_empty, but map_z is `[map_z || "null"]`", null)
 		return TRUE
 	testing("Checking if sector at [map_z[1]] has no players.")
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))

@@ -93,23 +93,6 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 	log_input("Input: [key_name(user)] pressed the [category] key on [target] ([target.type]).")
 	return adapter.perform_category(user, target, category)
 
-/atom/Click(location, control, params) // This is their reaction to being clicked on (standard proc)
-	if(src)
-		// The input inbox (code/engine/kernel/inbox.dm): the click resolves on the spot while the tick has room, and
-		// otherwise waits for phase K's drain, in arrival order, behind the clicker's own earlier inputs.
-		input_submit(new /datum/input_event/click(usr, src, location, control, params)) // ALLOW(sys_usr_outside_verb): atom/Click is BYOND's entry point: usr is the clicking mob here
-
-/atom/DblClick(location, control, params)
-	if(src)
-		usr.DblClickOn(src, params)
-
-/atom/MouseWheel(delta_x,delta_y,location,control,params)
-	if(src)
-		usr.MouseWheelOn(src, delta_x, delta_y, params)
-
-/atom/MouseDrop(atom/over, src_location, over_location, src_control, over_control, params)
-	GLOB.input_router.route_drag(usr, src, over, src_location, over_location, src_control, over_control, params)
-
 /// A mob's click. Subtypes that must see a click before routing (pAI card
 /// machines, the folded protean) override this and call ..().
 /mob/proc/ClickOn(atom/A, params)

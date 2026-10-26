@@ -6,7 +6,7 @@
 /datum/persistent/paintings/SetFilename()
 	filename = "data/persistent/paintings.json"
 
-/datum/persistent/paintings/Initialize()
+/datum/persistent/paintings/load_saved()
 	. = ..()
 	load_database()
 
@@ -46,7 +46,7 @@
 			if(SSpersistence.remove_painting(d))
 				log_admin("A painting was deleted")
 			else
-				log_and_message_admins("Attempted to delete a painting, but failed.")
+				log_and_message_admins("Attempted to delete a painting, but failed.", null)
 			over --
 
 	if(fexists(filename))
