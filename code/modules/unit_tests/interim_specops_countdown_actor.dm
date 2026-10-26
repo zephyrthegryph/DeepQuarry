@@ -20,8 +20,10 @@
 	var/obj/item/radio/intercom/announcer
 	var/mob/user
 
-/obj/interim_specops_countdown_click/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_specops_countdown_click/proc/probe_clicked(datum/act/input/A)
 	specops_countdown(list(), announcer, GLOBAL_PROC_REF(interim_specops_actor_arrived), user)
+	return TRUE
 
 /datum/unit_test/om/interim_specops_actor
 	abstract_type = /datum/unit_test/om/interim_specops_actor
@@ -97,6 +99,7 @@ CAPABILITIES(/datum/interim_specops_actor_witness)
 	ref_one(nameof(user))
 
 CAPABILITIES(/obj/interim_specops_countdown_click)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(announcer))
 	ref_one(nameof(user))
 

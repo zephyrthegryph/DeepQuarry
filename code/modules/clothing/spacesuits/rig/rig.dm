@@ -116,6 +116,7 @@ CAPABILITIES(/obj/item/rig)
 	ref_one(nameof(visor), /obj/item/rig_module/vision)
 	ref_one(nameof(speech), /obj/item/rig_module/voice)
 	ref_one(nameof(wearer), /mob/living/carbon/human)
+	drag_onto(PROC_REF(rig_dragged))
 	// We only care about processing when we're on a mob
 	every(2 SECONDS, then(PROC_REF(rig_step)), when = nameof(carried_by_mob))
 	space(SPACE_PANEL, door = nameof(open))
@@ -212,10 +213,11 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	component_registry?.destroy_pieces(src)
 	..()
 
-/obj/item/rig/MouseDrop(obj/over_object)
+/// An unremovable suit cannot be dragged off; any other drag is the item's own.
+/obj/item/rig/proc/rig_dragged(datum/act/input/A)
 	if(unremovable)
-		return
-	..()
+		return TRUE
+	return INPUT_FALLTHROUGH
 
 /obj/item/rig/examine(mob/user)
 	. = ..()

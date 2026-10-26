@@ -2,8 +2,13 @@
 /obj/interim_remove_ban_actor_probe
 	var/result
 
-/obj/interim_remove_ban_actor_probe/Click(location, control, params)
+CAPABILITIES(/obj/interim_remove_ban_actor_probe)
+	click_on(PROC_REF(probe_clicked))
+
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_remove_ban_actor_probe/proc/probe_clicked(datum/act/input/A)
 	result = RemoveBan("expiredfixture", null)
+	return TRUE
 
 /datum/unit_test/interim_remove_ban_actor/Run()
 	set_config(/datum/config_entry/string/chat_webhook_url, "")

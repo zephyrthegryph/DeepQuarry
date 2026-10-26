@@ -3,8 +3,13 @@
 	var/obj/item/reagent_containers/food/drinks/sillycup/cup
 	var/obj/destination
 
-/obj/interim_cup_return_actor_click/Click(location, control, params)
+CAPABILITIES(/obj/interim_cup_return_actor_click)
+	click_on(PROC_REF(probe_clicked))
+
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_cup_return_actor_click/proc/probe_clicked(datum/act/input/A)
 	cup.MouseDrop(destination)
+	return TRUE
 
 /datum/unit_test/interim_cup_return_actor/Run()
 	var/turf/T = run_loc_floor_bottom_left

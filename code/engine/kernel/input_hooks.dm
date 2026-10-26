@@ -38,3 +38,16 @@
 /// A link that reached this datum's own Topic(), answered as `user` (null: a server-side call). TRUE when an op took it.
 /datum/proc/input_topic_dispatch(mob/user, list/href_list)
 	return null
+
+/// A client's inbox refused an input (over its hard cap or its rate limit), the first of a burst: staff are told, with the ckey (`kind` is the event's key,
+/// `why` what it ran into). The engine has logged it already.
+/world/proc/input_flood_report(mob/actor, kind, why)
+	return
+
+/// A click the client sent, before it goes on to the clicked atom: TRUE lets it go on, FALSE ends it (a click over the client's limits).
+/client/proc/input_click_allowed(atom/object, atom/location, control, params)
+	return TRUE
+
+/// A drag-and-drop the client sent: TRUE when something took it before the dragged atom's MouseDrop() (the build mode's map drag).
+/client/proc/input_map_drop(start_object, end_object, start_location, end_location, start_control, end_control, params)
+	return FALSE

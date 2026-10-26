@@ -3,8 +3,10 @@
 	var/datum/SDQL2_query/query
 	var/resolved_actor
 
-/obj/interim_sdql_actor_probe/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_sdql_actor_probe/proc/probe_clicked(datum/act/input/A)
 	resolved_actor = world.SDQL_var(null, list("usr"), 1, src, FALSE, query)
+	return TRUE
 
 /datum/unit_test/interim_sdql_query_actor_context/Run()
 	test_driver_begin()
@@ -29,4 +31,5 @@
 	TEST_ASSERT_NULL(world.SDQL_var(null, list("usr"), 1, probe, FALSE, null), "an evaluation without query context cannot inherit an ambient actor")
 
 CAPABILITIES(/obj/interim_sdql_actor_probe)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(query))

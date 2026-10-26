@@ -8,8 +8,10 @@
 /obj/interim_nif_size_click
 	var/datum/nifsoft/sizechange/software
 
-/obj/interim_nif_size_click/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_nif_size_click/proc/probe_clicked(datum/act/input/A)
 	software.activate()
+	return TRUE
 
 /datum/unit_test/dq_eg2/interim_nif_size_actor
 	abstract_type = /datum/unit_test/dq_eg2/interim_nif_size_actor
@@ -111,4 +113,5 @@
 	TEST_ASSERT_EQUAL(implant.power_usage, 0, "the surviving actual implant has no leaked active power cost")
 
 CAPABILITIES(/obj/interim_nif_size_click)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(software))

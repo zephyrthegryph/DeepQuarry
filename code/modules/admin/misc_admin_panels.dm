@@ -144,7 +144,7 @@ CAPABILITIES(/datum/tag_menu_panel)
 	if(!ui_gate(A))
 		return FALSE
 	var/ref = "[ref_arg]"
-	holder().topic_internal(user, list("_src_" = "holder", "playerpanel" = ref))
+	holder().topic_internal(user, list("_src_" = "holder", "adminplayeropts" = ref))
 	return TRUE
 
 /datum/tag_menu_panel/proc/ui_act_follow(datum/act/op/A, ref_arg)
@@ -152,7 +152,7 @@ CAPABILITIES(/datum/tag_menu_panel)
 	if(!ui_gate(A))
 		return FALSE
 	var/ref = "[ref_arg]"
-	holder().topic_internal(user, list("_src_" = "holder", "adminobs" = ref))
+	holder().topic_internal(user, list("_src_" = "holder", "adminplayerobservefollow" = ref))
 	return TRUE
 
 // ---- ToRban list ---------------------------------------------------------
