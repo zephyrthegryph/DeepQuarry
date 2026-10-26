@@ -349,19 +349,20 @@ light_cycle() { # CHOSEN are all light
 }
 
 heavy_cycle() {
-	local b out rc stamp good bounced_lines deferred capped line lane why lg pushlog prc tests_union lane_tests sha deadline
+	local b out rc stamp good bounced_lines deferred capped line lane why lg pushlog prc tests_union lane_test_args lane_tests sha deadline
 	ensure_wt || { tlog "ERROR: no train worktree; the cycle is skipped"; return 20; }
 	stamp="$(date +%Y%m%dT%H%M%S)"
 	out="$LOGS/cycle-$stamp.log"
-	tests_union=""
+	tests_union=""; lane_test_args=()
 	for b in "${CHOSEN[@]}"; do
 		lane_tests="$(qget "$(qfile "$b")" tests)"
 		tests_union="$tests_union $lane_tests"
+		lane_test_args+=(--lane-tests "$b=$lane_tests")
 	done
 	set -f
 	tests_union="$(printf '%s\n' $tests_union | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
 	set +f
-	[ -n "${tests_union// /}" ] || tests_union="dq_boot_gate"
+	if [ -z "${tests_union// /}" ]; then tests_union="dq_boot_gate"; lane_test_args+=(--tests dq_boot_gate); fi
 	deadline=$(( $(date +%s) + CYCLE_MAX_MIN * 60 ))
 	phase "gate: ${CHOSEN[*]}"
 	tlog "heavy cycle: ${#CHOSEN[@]} lane(s) [${CHOSEN[*]}], tests [$tests_union] (+ smoke set, est ~${BATCH_EST}s), test cap ${TEST_MAX_MIN} min, no new attempt after $(date -u -d "@$deadline" +%H:%MZ 2>/dev/null || echo "$CYCLE_MAX_MIN min"); log $out"
@@ -375,7 +376,7 @@ heavy_cycle() {
 		export DQ_GATE_DREAMCHECKER=1
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
-		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" --tests "$tests_union" --no-dm
+		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" "${lane_test_args[@]}" --no-dm
 	) >"$out" 2>&1
 	rc=$?
 	good="$(sed -n 's/^BATCH_GOOD: //p' "$out" | tail -n 1)"
