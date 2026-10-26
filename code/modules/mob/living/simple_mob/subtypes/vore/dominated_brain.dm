@@ -152,7 +152,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 
 		prey_goes_here = ndb
 		prey_goes_here.set_real_name(src.prey_name)
-		remove_languages(src.temp_languages)
+		remove_languages(sparse_get(src, temp_languages))
 		prey_goes_here.include_languages(src.prey_langs)
 
 	else		//The prey body does not exist, let's put them in the back seat instead!
@@ -162,7 +162,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 		rel_set(ndb, nameof(ndb.pred_mind), pred_mind)
 
 		prey_goes_here = ndb
-		remove_languages(src.temp_languages)
+		remove_languages(sparse_get(src, temp_languages))
 		prey_goes_here.include_languages(src.prey_langs)
 		prey_goes_here.set_real_name(src.prey_name)
 
@@ -186,8 +186,8 @@ CAPABILITIES(/mob/living/dominated_brain)
 /mob/living/proc/absorb_langs()		//This should be called on the predator in the exchange
 	var/list/langlist = list()
 
-	remove_languages(temp_languages)
-	LAZYCLEARLIST(src.temp_languages)
+	remove_languages(sparse_get(src, temp_languages))
+	sparse_set(src, temp_languages, null)
 	for(var/mob/living/L in contents)
 		if(istype(L,/mob/living/dominated_brain))
 			if(L.ckey)
@@ -202,7 +202,10 @@ CAPABILITIES(/mob/living/dominated_brain)
 		for(var/datum/language/L in langlist)
 			if(L.flags & HIVEMIND)
 				grant(src, granted_verb(/mob/proc/adjust_hive_range), src)
-		LAZYOR(temp_languages, langlist)
+		var/list/held_languages = sparse_get(src, temp_languages)
+		if(!held_languages)
+			held_languages = sparse_set(src, temp_languages, list())
+		held_languages |= langlist
 		include_languages(langlist)
 
 //Welcome to the adapted borer code.
@@ -702,7 +705,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 	pred_brain.set_real_name(pred.real_name)
 	var/list/preylangs = list()
 	preylangs |= prey.languages
-	preylangs -= prey.temp_languages
+	preylangs -= sparse_get(prey, temp_languages)
 	pred_brain.prey_langs |= preylangs
 	pred_brain.pred_body.absorb_langs()
 
@@ -725,7 +728,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 	rel_set(db, nameof(db.prey_mind), M.ensure_mind())
 	rel_set(db, nameof(db.pred_mind), mind)
 
-	M.remove_languages(M.temp_languages)
+	M.remove_languages(sparse_get(M, temp_languages))
 	db.include_languages(M.languages)
 
 	absorb_langs()

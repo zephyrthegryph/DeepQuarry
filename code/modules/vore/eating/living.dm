@@ -1,6 +1,6 @@
 ///////////////////// Mob Living /////////////////////
 /mob/living
-	var/list/temp_languages		// Absorbs add languages to the pred. Lazy.
+	// temp_languages (languages absorbed prey add to the pred) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 	var/weight = 137					// Weight for mobs for weightgain system
 	var/metabolism = 0.0015
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
@@ -304,10 +304,10 @@
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_export(vore_prefs, P)
-	P.spont_belly_rear = spont_belly_rear
-	P.spont_belly_left = spont_belly_left
-	P.spont_belly_front = spont_belly_front
-	P.spont_belly_right = spont_belly_right
+	P.spont_belly_rear = vore_spont_name(src, "rear")
+	P.spont_belly_left = vore_spont_name(src, "left")
+	P.spont_belly_front = vore_spont_name(src, "front")
+	P.spont_belly_right = vore_spont_name(src, "right")
 	P.autotransferable = !!sparse_get_or(src, autotransferable, TRUE)
 
 	var/list/serialized = list()
@@ -340,10 +340,10 @@
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_import(vore_prefs, P)
-	rel_set(src, nameof(spont_belly_rear), P.spont_belly_rear)
-	rel_set(src, nameof(spont_belly_left), P.spont_belly_left)
-	rel_set(src, nameof(spont_belly_front), P.spont_belly_front)
-	rel_set(src, nameof(spont_belly_right), P.spont_belly_right)
+	sparse_set(src, spont_belly_rear, P.spont_belly_rear)
+	sparse_set(src, spont_belly_left, P.spont_belly_left)
+	sparse_set(src, spont_belly_front, P.spont_belly_front)
+	sparse_set(src, spont_belly_right, P.spont_belly_right)
 	sparse_set_or(src, autotransferable, P.autotransferable, TRUE)
 
 	if(bellies)
@@ -923,17 +923,13 @@
 	var/spont_belly_name
 	switch(direction_diff)
 		if(NORTH)
-			if(spont_belly_front)
-				spont_belly_name = spont_belly_front
+			spont_belly_name = sparse_get(src, spont_belly_front)
 		if(SOUTH)
-			if(spont_belly_rear)
-				spont_belly_name = spont_belly_rear
+			spont_belly_name = sparse_get(src, spont_belly_rear)
 		if(EAST)
-			if(spont_belly_right)
-				spont_belly_name = spont_belly_right
+			spont_belly_name = sparse_get(src, spont_belly_right)
 		if(WEST)
-			if(spont_belly_left)
-				spont_belly_name = spont_belly_left
+			spont_belly_name = sparse_get(src, spont_belly_left)
 	for(var/obj/belly/lookup_belly in vore_organs)
 		if(lookup_belly.name == spont_belly_name)
 			return lookup_belly

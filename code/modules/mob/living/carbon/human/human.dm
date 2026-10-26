@@ -121,7 +121,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 				if(SRM.CanUse())
 					L[++L.len] = list(SRM.module.interface_name,null,null,SRM.name,REF(SRM))
 		}
-		misc_tabs["Hardsuit Modules"] = L
+		misc_tab_set(src, "Hardsuit Modules", L)
 
 /mob/living/update_misc_tabs()
 	..()

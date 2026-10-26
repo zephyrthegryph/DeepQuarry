@@ -27,6 +27,7 @@
 	var/headset = 1
 	var/backbag = 2
 	var/pdachoice = 1
+	var/custom_speech_bubble = "default"
 	var/custom_say = null
 	var/custom_ask = null
 	var/custom_whisper = null

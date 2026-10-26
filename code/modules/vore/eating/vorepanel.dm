@@ -1752,41 +1752,41 @@ CAPABILITIES(/datum/vore_look)
 		if("rear")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_rear = null
+				sparse_set(host(), spont_belly_rear, null)
 			else
-				host().spont_belly_rear = spont_target
+				sparse_set(host(), spont_belly_rear, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_rear = host().spont_belly_rear
+				host().client.prefs_vr.spont_belly_rear = vore_spont_name(host(), "rear")
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("front")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_front = null
+				sparse_set(host(), spont_belly_front, null)
 			else
-				host().spont_belly_front = spont_target
+				sparse_set(host(), spont_belly_front, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_front = host().spont_belly_front
+				host().client.prefs_vr.spont_belly_front = vore_spont_name(host(), "front")
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("left")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_left = null
+				sparse_set(host(), spont_belly_left, null)
 			else
-				host().spont_belly_left = spont_target
+				sparse_set(host(), spont_belly_left, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_left = host().spont_belly_left
+				host().client.prefs_vr.spont_belly_left = vore_spont_name(host(), "left")
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("right")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_right = null
+				sparse_set(host(), spont_belly_right, null)
 			else
-				host().spont_belly_right = spont_target
+				sparse_set(host(), spont_belly_right, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_right = host().spont_belly_right
+				host().client.prefs_vr.spont_belly_right = vore_spont_name(host(), "right")
 			set_unsaved_changes(TRUE)
 			return TRUE
 	return FALSE

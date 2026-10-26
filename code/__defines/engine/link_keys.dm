@@ -21,6 +21,18 @@
 /// A mob's selected belly (where its vore goes): LK_VORE_SELECTED on the mob, LK_VORE_SELECTED_BY on the belly (many). Read vore_selected_of(M).
 #define LK_VORE_SELECTED "vore_selected"
 #define LK_VORE_SELECTED_BY "vore_selected_by"
+/// The belly a mob is previewing the vore FX of: LK_VORE_PREVIEW on the mob, LK_VORE_PREVIEWED_BY on the belly (many). Read vore_previewing_of(M).
+#define LK_VORE_PREVIEW "vore_preview"
+#define LK_VORE_PREVIEWED_BY "vore_previewed_by"
+/// The object an admin mob possesses: LK_POSSESSING on the mob, LK_POSSESSED_BY on the object (many). Read possessed_obj_of(M).
+#define LK_POSSESSING "possessing"
+#define LK_POSSESSED_BY "possessed_by"
+/// An integrated tool and the augment organ that hosts it: LK_AUGMENT_HOST on the item, LK_AUGMENT_TOOLS on the organ (many). Read item_my_augment(I).
+#define LK_AUGMENT_HOST "augment_host"
+#define LK_AUGMENT_TOOLS "augment_tools"
+/// The gun a mob fires while its trigger is held: LK_AUTOFIRE_GUN on the mob, LK_AUTOFIRE_USERS on the gun (many). Read autofire_gun().
+#define LK_AUTOFIRE_GUN "autofire_gun"
+#define LK_AUTOFIRE_USERS "autofire_users"
 /// A shapeshifter and the form it took: LK_TF_FORM on the original, LK_TF_ORIGIN on the form (many). Read tf_form_of(L).
 #define LK_TF_FORM "tf_form"
 #define LK_TF_ORIGIN "tf_origin"

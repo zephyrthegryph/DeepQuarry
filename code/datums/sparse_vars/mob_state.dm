@@ -149,3 +149,19 @@ sparse(/mob/living, appendage_alt_setting, type = bool)
 sparse(/mob/living/carbon, dream_wait, type = num)
 sparse(/mob/living/carbon/human, markings_len, type = num)
 sparse(/mob/living/carbon/human, resleeve_lock)
+
+// base_vars wave 9
+sparse(/mob, progressbars, type = list)
+sparse(/mob, misc_tabs, type = list)
+sparse(/mob, spont_belly_front, type = text)
+sparse(/mob, spont_belly_rear, type = text)
+sparse(/mob, spont_belly_left, type = text)
+sparse(/mob, spont_belly_right, type = text)
+sparse(/mob/living, temp_languages, type = list)
+
+/// Sets stat tab `tab` of the mob's custom stat tabs to `contents` (the tabs are rebuilt every Stat(): update_misc_tabs()).
+/proc/misc_tab_set(mob/M, tab, list/rows)
+	var/list/tabs = sparse_get(M, misc_tabs)
+	if(!tabs)
+		tabs = sparse_set(M, misc_tabs, list())
+	tabs[tab] = rows

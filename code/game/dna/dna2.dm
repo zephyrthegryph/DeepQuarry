@@ -169,7 +169,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	src.scale_appearance = character.fuzzy
 	src.offset_override = character.offset_override
 	src.synth_markings = character.looks.synth_markings
-	src.custom_speech_bubble = character.custom_speech_bubble
+	src.custom_speech_bubble = character.bio.custom_speech_bubble
 	src.species_sounds = character.species.species_sounds
 	src.gender_specific_species_sounds = character.species.gender_specific_species_sounds
 	src.species_sounds_male = character.species.species_sounds_male
@@ -365,7 +365,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	H.bio.custom_ask = custom_ask
 	H.bio.custom_whisper = custom_whisper
 	H.bio.custom_exclaim = custom_exclaim
-	H.custom_speech_bubble = custom_speech_bubble
+	H.bio.custom_speech_bubble = custom_speech_bubble
 	sparse_set(H, custom_heat, custom_heat)
 	sparse_set(H, custom_cold, custom_cold)
 	H.set_custom_footstep(custom_footstep)

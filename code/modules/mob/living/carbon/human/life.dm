@@ -1465,7 +1465,7 @@
 		life_hud_condition_overlays()
 		life_hud_nutrition_alert()
 		life_hud_sight_overlays()
-		if(!src.surrounding_belly() && !src.previewing_belly) // Belly fullscreens safety
+		if(!src.surrounding_belly() && !vore_previewing_of(src)) // Belly fullscreens safety
 			src.clear_fullscreen("belly")
 			src.belly_overlay_tgui?.hide() // hide TGUI belly overlay
 		if(CONFIG_GET(flag/welder_vision) && life_hud_welder_vision())

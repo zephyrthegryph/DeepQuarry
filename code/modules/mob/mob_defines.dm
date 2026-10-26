@@ -43,12 +43,6 @@
 	var/transforming = null	//Carbon
 	var/other = 0.0
 	var/real_name = null
-	var/nickname = null
-	var/flavor_text = ""
-	var/med_record = ""
-	var/sec_record = ""
-	var/gen_record = ""
-	var/exploit_record = ""
 	var/blinded = null
 	var/phoron = null
 	var/resting = 0			//Carbon
@@ -135,7 +129,6 @@
 
 
 
-	var/obj/control_object //Used by admins to possess objects. All mobs should have this var
 
 	//Whether or not mobs can understand other mobtypes. These stay in /mob so that ghosts can hear everything.
 	var/universal_speak = 0 // Set to 1 to enable the mob to speak to everyone -- TLE
@@ -155,8 +148,6 @@
 	var/seedarkness = 1	//Determines mob's ability to see shadows. 1 = Normal vision, 0 = darkvision
 
 
-	var/custom_speech_bubble = "default"
-
 	var/low_priority = FALSE //Skip processing life() if there's just no players on this Z-level
 
 	var/default_pixel_x = 0 //For offsetting mobs
@@ -167,16 +158,12 @@
 
 
 	///List of progress bars this mob is currently seeing for actions
-	var/tmp/list/progressbars = null //for stacking do_after bars
+	// progressbars (the do_after bars this mob is seeing, for stacking) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
-
-	///Allows a datum to intercept all click calls this mob is the source of
-	var/tmp/datum/click_intercept
 
 	var/tmp/datum/focus //What receives our keyboard inputs. src by default
 
-	/// dict of custom stat tabs with data
-	var/list/list/misc_tabs = list() // ALLOW(instance_list): d: per-mob misc_tabs, filled at runtime; mobs are few
+	// misc_tabs (custom stat tabs with data) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 	// Membership list maintained by /datum/action Grant()/Remove(): a relation list.
 	var/tmp/list/datum/action/actions
@@ -193,7 +180,6 @@ CAPABILITIES(/mob)
 	stamps(last_move_time) // when the client last moved this mob, for movement smoothing
 	ref_one(nameof(lastattacker), /mob, weak = TRUE) // the last mob to hit this one with a weapon (attack logs and death records); a gone attacker reads as none
 	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
-	ref_one(nameof(click_intercept), /datum)
 	ref_one(nameof(hovered_atom_view), /atom)
 	ref_one(nameof(focus), /datum) // what receives the mob's keyboard input (itself by default)
 	ref_one(nameof(mind), /datum/mind)
@@ -209,7 +195,7 @@ CAPABILITIES(/mob)
 	// per-subtype constant tables: every instance of a type shares one list
 	per_type(nameof(speak_emote), TYPE_PROC_REF(/datum, per_type_own))
 	per_type(nameof(shouldnt_see), TYPE_PROC_REF(/datum, per_type_own))
-	ref_one(nameof(control_object)) // the object an admin possesses
+	links(LINK_END(/mob, LK_POSSESSING), LINK_END(/obj, LK_POSSESSED_BY), sparse = TRUE, b_many = TRUE) // the object an admin possesses (possessed_obj_of())
 	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
 	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
 	ref_many(nameof(spell_list))
@@ -242,11 +228,6 @@ CAPABILITIES(/mob)
 	owns_many(nameof(alerts))
 	owns_many(nameof(screens))
 	// Selected, spontaneous and previewed bellies are borrowed views, separate from owned vore_organs.
-	ref_one(nameof(spont_belly_front))
-	ref_one(nameof(spont_belly_rear))
-	ref_one(nameof(spont_belly_left))
-	ref_one(nameof(spont_belly_right))
-	ref_one(nameof(previewing_belly))
 	hover(PROC_REF(hover_input))
 	op("flavor_more", topic("flavor_more"), then(PROC_REF(topic_flavor_more)))
 	op("flavor_change", topic("flavor_change", arg("flavor_change", schema_text(32), optional = TRUE)), needs(req_self()), then(PROC_REF(topic_flavor_change)))

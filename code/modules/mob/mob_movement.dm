@@ -130,13 +130,16 @@
 	return
 
 /client/proc/Move_object(direct)
-	if(mob && mob.control_object)
-		if(mob.control_object.density)
-			step(mob.control_object,direct)
-			if(!mob.control_object)	return
-			mob.control_object.dir = direct
+	var/obj/possessed = mob ? possessed_obj_of(mob) : null
+	if(possessed)
+		if(possessed.density)
+			step(possessed, direct)
+			possessed = possessed_obj_of(mob)
+			if(!possessed)
+				return
+			possessed.set_dir(direct)
 		else
-			mob.control_object.forceMove(get_step(mob.control_object,direct))
+			possessed.forceMove(get_step(possessed, direct))
 	return
 
 // NB: This is called for 'self movement', not for being pulled or things like that, which COULD be the case for /mob/Move
@@ -158,7 +161,7 @@
 		return FALSE //This is sorta the goto stop mobs from moving trait
 
 	// We're controlling an object which is when admins possess an object.
-	if(my_mob.control_object)
+	if(possessed_obj_of(my_mob))
 		Move_object(direct)
 
 	// Ghosty mob movement

@@ -353,7 +353,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	//The 'post-say' static speech bubble
 	var/speech_bubble_test = say_test(message)
-	var/speech_type = custom_speech_bubble
+	var/speech_type = bio.custom_speech_bubble
 	if(!speech_type || speech_type == "default")
 		speech_type = speech_bubble_appearance()
 	var/image/speech_bubble = generate_speech_bubble(src, "[speech_type][speech_bubble_test]")

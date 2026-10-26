@@ -795,7 +795,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	//. += get_spells_for_statpanel(mob_spell_list)
 
 /mob/proc/update_misc_tabs()
-	misc_tabs = list() //Reset misc_tabs every Stat() to prevent old shit sticking around
+	sparse_set(src, misc_tabs, null) //Reset misc_tabs every Stat() to prevent old shit sticking around
 
 // facing verbs
 /mob/proc/canface()

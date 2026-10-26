@@ -144,7 +144,7 @@
 	return GLOB.selectable_speech_bubbles
 
 /datum/preference/text/human/custom_speech_bubble/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_speech_bubble = text_or_null(value)
+	target.bio.custom_speech_bubble = text_or_null(value)
 
 
 /datum/preference/text/human/custom_footstep

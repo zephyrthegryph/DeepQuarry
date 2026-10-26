@@ -84,7 +84,7 @@ CAPABILITIES(/mob/living)
 	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
 	drag_onto(PROC_REF(mousedrop_input))
 	drag_onto(PROC_REF(drop_input))
-	ref_one(nameof(autofire_gun))
+	links(LINK_END(/mob/living, LK_AUTOFIRE_GUN), LINK_END(/obj/item/gun, LK_AUTOFIRE_USERS), sparse = TRUE, b_many = TRUE) // the gun a held trigger fires (autofire_gun())
 	ref_one(nameof(autofire_target))
 
 /mob/living/simple_mob

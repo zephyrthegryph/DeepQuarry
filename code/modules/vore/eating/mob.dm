@@ -6,13 +6,32 @@
 /proc/set_vore_selected(mob/M, obj/belly/B)
 	return link_set_one(M, LK_VORE_SELECTED, B)
 
+/// The belly whose vore FX the mob is previewing in the vore panel, or null: a sparse link (LK_VORE_PREVIEW), not a var on /mob.
+/proc/vore_previewing_of(mob/M) as /obj/belly
+	return link_get(M, LK_VORE_PREVIEW)
+
+/// Starts previewing belly B, or stops previewing with null.
+/proc/set_vore_previewing(mob/M, obj/belly/B)
+	return link_set_one(M, LK_VORE_PREVIEW, B)
+
+/// The name of the belly the mob's vore goes to for `side` ("front", "rear", "left" or "right") when something is spontaneously eaten from there, or
+/// null for the selected belly: a sparse text slot (spont_belly_<side>), not a var on /mob.
+/proc/vore_spont_name(mob/M, side)
+	var/spont_name
+	switch(side)
+		if("front")
+			spont_name = "[sparse_get(M, spont_belly_front)]"
+		if("rear")
+			spont_name = "[sparse_get(M, spont_belly_rear)]"
+		if("left")
+			spont_name = "[sparse_get(M, spont_belly_left)]"
+		if("right")
+			spont_name = "[sparse_get(M, spont_belly_right)]"
+	return spont_name || null
+
 /mob
 	var/list/vore_organs		// Lazy list of vore containers inside a mob
 	var/absorbed = FALSE				// If a mob is absorbed into another
-	var/obj/belly/spont_belly_front = null
-	var/obj/belly/spont_belly_rear = null
-	var/obj/belly/spont_belly_left = null
-	var/obj/belly/spont_belly_right = null
 
 	// vore_capacity (maximum capacity, -1 for unlimited) and vore_capacity_ex (expanded list of capacities) are the living_rules type trait
 	var/vore_fullness = 0				// How "full" the belly is (controls icons)
@@ -20,7 +39,6 @@
 	var/list/vore_fullness_ex = list("stomach" = 0) // Expanded list of fullness
 
 	var/list/vore_icon_bellies = list("stomach") // ALLOW(instance_list): d: per-mob vore_icon_bellies with starting entries, edited at runtime; mobs are few
-	var/tmp/obj/belly/previewing_belly
 
 	var/vore_icons = 0					// Bitfield for which fields we have vore icons for.
 

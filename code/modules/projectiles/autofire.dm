@@ -27,7 +27,6 @@
 // ---------------------------------------------------------------------------
 
 /mob/living
-	var/tmp/obj/item/gun/autofire_gun
 	var/tmp/atom/autofire_target
 
 /// TRUE while a hold-to-fire session runs: autofire_tick() repeats every autofire_delay (its every() in CAPABILITIES(/mob/living)).
@@ -41,7 +40,7 @@
 /mob/living/proc/start_autofire(obj/item/gun/G, atom/target, params)
 	if(QDELETED(G) || QDELETED(target))
 		return
-	rel_set(src, nameof(autofire_gun), G)
+	link_make(src, LK_AUTOFIRE_GUN, G)
 	rel_set(src, nameof(autofire_target), target)
 	sparse_set(src, autofire_params, params)
 	if(!autofire_on)
@@ -58,7 +57,7 @@
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
 	set_autofire_on(FALSE)
-	rel_clear(src, nameof(autofire_gun))
+	link_break(src, LK_AUTOFIRE_GUN)
 	rel_clear(src, nameof(autofire_target))
 	sparse_set(src, autofire_params, null)
 
@@ -122,9 +121,9 @@
 			if(isatom(over) && !istype(over, /atom/movable/screen))
 				update_autofire_target(over, params)
 
-/// the autofire_gun this refers to (a relation view: null once it is deleted).
+/// the gun the mob is firing while its trigger is held: a sparse link (LK_AUTOFIRE_GUN), null once the gun is deleted.
 /mob/living/proc/autofire_gun() as /obj/item/gun
-	return autofire_gun
+	return link_get(src, LK_AUTOFIRE_GUN)
 
 /// the autofire_target this refers to (a relation view: null once it is deleted).
 /mob/living/proc/autofire_target() as /atom

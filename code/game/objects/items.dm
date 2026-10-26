@@ -64,8 +64,6 @@
 
 	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
 	var/list/tool_qualities
-	/// Used to reference the object's host organ.
-	var/tmp/obj/item/organ/internal/augment/my_augment
 	var/datum/identification/identity = null // owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
@@ -1048,7 +1046,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
-	return I?.my_augment
+	return link_get(I, LK_AUGMENT_HOST)
 
 // An item's master is the thing holding it (an assembly's valve, a chair's kit): a sparse link (LK_ITEM_MASTER).
 /proc/item_master(obj/item/I) as /obj/item
