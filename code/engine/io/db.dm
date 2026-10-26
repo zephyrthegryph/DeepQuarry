@@ -18,8 +18,9 @@
 // down, or a query the server refuses, ends REQ_TRANSPORT_FAILED with `last_error` set. Nothing waits: the work runs on the I/O
 // lane (datums/om/io.dm) and the answer arrives through the request's handler.
 //
-// SSdb owns the path's accounting; the connection itself is SSdbcore's (connect, disconnect, query_blocking). Code that is a prompt flow
-// reads with flow_select() (datums/om/flow_io.dm).
+// SSdb owns the path's accounting; the connection itself is SSdbcore's (connect, disconnect, query_blocking). Code that reads one answer
+// and carries on from it (a chain of reads, the login checks, a chat command) starts the read with sql_ask() and continues in its
+// callback; the answer's rows come from sql_answer_rows().
 //
 // db_query_now() blocks its caller. It exists for the places BYOND itself waits: world/IsBanned, the boot loads and schema check,
 // and the shutdown flush.
@@ -64,6 +65,50 @@ SYSTEM_DEF(db)
 		return 0
 	SSdb.writes++
 	return io_job(null, /datum/io_backend/sql, query, params, GLOBAL_PROC_REF(io_log_sql_error), query)
+
+/// Starts a read (or a write whose success the caller reads) on the I/O lane and returns at once: the job id, or 0 if `owner` is already
+/// gone. `query` is parameterized only (`:name` placeholders filled from `params`, format_table_name() for tables). `on_done` is a
+/// PROC_REF on `owner` (a GLOBAL_PROC_REF when `owner` is null) and runs as on_done(result, error, context...) with the `context` args
+/// passed after it: a datum among them is held weakly and its death drops the answer. Read the rows with sql_answer_rows().
+/proc/sql_ask(owner, query, list/params, on_done, ...)
+	var/list/call_args = list(owner, /datum/io_backend/sql, query, params, on_done)
+	if(length(args) > 4)
+		call_args += args.Copy(5)
+	return io_job(arglist(call_args))
+
+/// The rows of a sql_ask() answer (a list of positional row lists, empty for none), or null when the query failed: the failure is
+/// logged to the SQL log with `what` (a short name of the query).
+/proc/sql_answer_rows(list/result, error, what)
+	if(error || !result)
+		log_sql("[error || "no result"] | [what]")
+		return null
+	return result["rows"] || list()
+
+/// Starts an HTTP GET on the I/O lane and returns at once: the job id, or 0 if `owner` is already gone. `on_done` runs as
+/// on_done(/datum/http_response, error, context...) like sql_ask()'s, and the response is null when the request failed.
+/proc/http_ask(owner, url, on_done, ...)
+	var/list/call_args = list(owner, /datum/io_backend/http, RUSTG_HTTP_METHOD_GET, url, "", null, on_done)
+	if(length(args) > 3)
+		call_args += args.Copy(4)
+	return io_job(arglist(call_args))
+
+// ---------------------------------------------------------------- panel views
+//
+// A panel whose tgui_data shows database rows can't query inside tgui_data. It fetches with sql_view(src, key, sql, arguments,
+// PROC_REF(sql_rows_arrived)) when it opens or its filters change, keeps what its callback gets, and tgui_data reads that (showing
+// "loading" until it arrives). The callback is a proc on the panel, called (result, error, key) like any io_job() callback;
+// sql_view_rows() turns that into the rows. The job is owned by the panel: a closed (deleted) panel drops the answer.
+
+/// Starts a read for a panel; on_rows(result, error, key) runs on `owner` with the answer.
+/proc/sql_view(owner, key, sql, list/arguments, on_rows)
+	return sql_ask(owner, sql, arguments, on_rows, key)
+
+/// The rows of an sql_view() answer (positional lists), or null (logged) on an error.
+/proc/sql_view_rows(list/result, error, key, owner)
+	if(error)
+		log_sql("[error] | view [owner] [key]")
+		return null
+	return result["rows"] || list()
 
 /// Runs `query` and waits for it: a blocking call, for the places BYOND itself waits (world/IsBanned, the boot schema check and the
 /// boot-only loads), and for the shutdown flush once the I/O lane has stopped. The lint allows it nowhere else and accepts no ALLOW.
