@@ -29,7 +29,7 @@ fn a_revert_answered_from_the_stored_record_rebases_the_patch_base() {
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;
     roots.edit(0, tree);
     let initial = build(&shared, &roots);
-    let applied = || crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
+    let applied = || crate::retained_output::applied(&roots.manifest(0));
     let start = applied();
 
     roots.edit(0, &tree.replace("return a + 1", "return a + 2"));

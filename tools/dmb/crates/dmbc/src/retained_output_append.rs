@@ -1,27 +1,29 @@
-//! Stable-numbering append patch (doc/structural_change_set.md, addendum).
+//! Appended callables and vars on the general path (`crate::retained_output`; doc/incremental_core.md,
+//! "Plan for the remaining patches", step 4).
 //!
-//! When the frontend's change-set splice proves that an edit only added procs
-//! or verbs to existing types, relative to exactly the patch base's tree, the
-//! new procedures are appended to the retained composed model with fresh
-//! indices (procedure, code list, frame variables, strings), existing bodies
-//! that moved or changed are relinked as body patches are, and each owner's
-//! proc/verb list is rebuilt in fresh-build order. New procedures take the
-//! next free table index and no existing index moves (no whole-model remap);
-//! the global procedure table order therefore differs from a fresh build, and so
-//! does the string-id order of a new var's name. `dmb-equiv` gates both orders
-//! (`typesof(/T/proc)` follows the procedure table, `vars` iterates name string
-//! ids), so a new proc or var is listed last there instead of at its fresh
-//! position; the 2026-10-14 decision (order is not semantic) accepts that, and
-//! the six-session tests allow exactly those moved names. Class proc/verb and
+//! When the frontend's change-set splice proves that an edit only added procs, verbs or plain vars to
+//! existing types, relative to exactly the retained output's tree, `admit` takes the request instead of
+//! composing the whole program: the new procedures are lowered with the changed bodies and appended to the
+//! retained composed model with fresh indices (procedure, code list, frame variables, strings), existing
+//! bodies that moved, changed or mention an appended name are relinked like any changed body, and each
+//! owner's proc/verb list is rebuilt in fresh-build order. New procedures take the next free table index and
+//! no existing index moves (no whole-model remap); the global procedure table order therefore differs from a
+//! fresh build, and so does the string-id order of a new var's name. `dmb-equiv` gates both orders
+//! (`typesof(/T/proc)` follows the procedure table, `vars` iterates name string ids), so a new proc or var is
+//! listed last there instead of at its fresh position; the 2026-10-14 decision (order is not semantic)
+//! accepts that, and the six-session tests allow exactly those moved names. Class proc/verb and
 //! declaring-variable lists keep fresh order.
 //!
-//! Declines (full path) when: a name is a header callback or appears outside
-//! its own declaration; a new unit has warnings, helpers, modified instances,
-//! required types, shared slots or header-affecting bytecode features; a link
-//! key outside the String and Procedure tables would be added; a shifted line
-//! falls where the insertion point is ambiguous; the retained model no longer
-//! describes the published image; or the owner's list cannot be reproduced.
+//! The answers are not compared: an appended name changes only the answers that name it, and every text that
+//! names it is a relowered body or the member's own declaration (a mention anywhere else declines).
+//!
+//! Declines (whole program) when: a name is a header callback or appears outside its own declaration and
+//! bodies; a new unit has warnings, helpers, modified instances, required types, shared slots or
+//! header-affecting bytecode features; a link key outside the String and Procedure tables would be added; a
+//! shifted line falls where the insertion point is ambiguous; the retained model no longer describes the
+//! retained image; or the owner's list cannot be reproduced.
 use super::*;
+use crate::composition::{PatchImage, PatchLink};
 use std::collections::BTreeMap;
 use crate::lowering::Namespace;
 use dm_ir::SymbolId;
@@ -85,25 +87,34 @@ fn body_at(bodies: &[dm_tree::frontend::BodyOccurrence], at: usize) -> Option<us
     (at < bodies[index].expanded_span.end as usize).then_some(index)
 }
 
-pub(super) fn try_append_patch<R: dm_ir::Resolver>(
-    request: PatchRequest<'_, R>,
+/// What `admit` proved about an appended-callable edit: the current bodies that are new, the aligned
+/// bodies to relower, and how lines moved.
+pub(crate) struct AppendAdmission {
+    /// Current indices of aligned bodies whose text or position changed or that mention an appended name.
+    changed: Vec<usize>,
+    /// Current indices of the appended bodies.
+    inserted: Vec<usize>,
+    /// Current index of an aligned body -> its index in the retained roster.
+    base_index: HashMap<usize, usize>,
+    lines: InsertionLines,
+}
+impl AppendAdmission {
+    /// The bodies to lower: changed aligned ones, then the appended ones.
+    pub(super) fn selected(&self) -> Vec<usize> {
+        self.changed.iter().chain(&self.inserted).copied().collect()
+    }
+}
+
+/// Admit an edit that only appended callables or plain vars relative to the retained output's own tree.
+pub(super) fn admit_appended(
+    frontend: &dm_tree::frontend::ColdFrontend,
+    shape: &SourceShape,
     base: &OutputBase,
-    link: &crate::composition::PatchLink,
-    image: &crate::composition::PatchImage,
-) -> Result<Patched, String> {
-    let frontend: &dm_tree::frontend::ColdFrontend = request.frontend;
+    appended: &dm_tree::AppendedCallables,
+) -> Result<AppendAdmission, String> {
     let tree = &frontend.snapshot.tree;
-    let appended = tree
-        .appended_callables()
-        .ok_or("not an appended-callable edit")?;
     if appended.from_identity != base.shape.tree_identity {
-        return Err("appended callables are not relative to the patch base".into());
-    }
-    if let Some(difference) = request.inputs.non_text_difference_with(&base.inputs, request.archive != base.archive) {
-        return Err(format!("non-text input changed: {difference}"));
-    }
-    if request.archive != base.archive {
-        return Err("resource archive changed".into());
+        return Err("appended callables are not relative to the retained output".into());
     }
     dm_profile::request_mark("append.inputs_compared");
     let symbols = tree.symbols();
@@ -117,7 +128,6 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     }
     dm_profile::request_mark("append.names_checked");
     // Split current bodies into aligned (existing) and inserted (appended).
-    let shape = request.shape;
     let is_appended = |body: &dm_tree::frontend::BodyOccurrence| -> bool {
         tree.member(body.member).is_some_and(|member| {
             let owner = tree.type_node(member.owner).map(|node| node.path);
@@ -251,7 +261,7 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
             return Err("changed body declares a static or global var".into());
         }
     }
-    if changed.len() + inserted.len() > PATCH_LIMIT {
+    if changed.len() + inserted.len() > SPLICE_LIMIT {
         return Err("too many bodies to patch".into());
     }
     // The first root procedure registers its literals first, so its text must
@@ -266,40 +276,53 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         return Err("first root procedure changed".into());
     }
     dm_profile::request_mark("append.admitted");
-    let starts = request
+    Ok(AppendAdmission {
+        changed,
+        inserted,
+        base_index,
+        lines,
+    })
+}
+
+/// Splice an admitted appended-callable edit into the retained output. `contributions` are the lowered
+/// bodies of `AppendAdmission::selected`.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn splice_appended(
+    retained: RetainedOutput<'_>,
+    admission: AppendAdmission,
+    answered: Answered,
+    base: &OutputBase,
+    link: &PatchLink,
+    image: &PatchImage,
+    frontend: &dm_tree::frontend::ColdFrontend,
+    contributions: Vec<crate::symbolic::PreparedContribution>,
+    query: (
+        Arc<crate::driver_facts::PreparedAbiUnits>,
+        Arc<crate::startup::StartupFacts>,
+    ),
+    executor: &dm_exec::BuildExecutor,
+) -> Result<Patched, String> {
+    let AppendAdmission {
+        changed,
+        inserted,
+        base_index,
+        lines,
+    } = admission;
+    let tree = &frontend.snapshot.tree;
+    let appended = tree
+        .appended_callables()
+        .ok_or("not an appended-callable edit")?;
+    let symbols = tree.symbols();
+    let shape = retained.shape;
+    let starts = retained
         .generation
         .model_table_starts(base.dmb_hash)
-        .ok_or("retained model released or differs from the patch base")?;
-    let selected: Vec<_> = changed
-        .iter()
-        .chain(&inserted)
-        .map(|&index| &frontend.bodies[index])
-        .collect();
-    let lowered = crate::cold::selected_lowering::lower_selected(
-        frontend,
-        request.resolver,
-        crate::cold::selected_lowering::LinkFacts {
-            engine_bytes: request.engine_bytes,
-            engine: request.engine,
-            references: request.references,
-            spellings: request.spellings,
-        },
-        request.resource_search_context,
-        crate::lowering::LoweringConfig {
-            workers: request.workers,
-            ..Default::default()
-        },
-        request.memo,
-        Some(request.frontend),
-        request.executor,
-        &selected,
-    )?;
+        .ok_or("retained model released or differs from the retained output")?;
     // Freeze new units on their own and extend the tables append-only.
     let mut existing = Vec::new();
     let mut fresh = Vec::new();
     let mut entries = Vec::new();
-    let lowered_answers = lowered.answers;
-    for contribution in lowered.contributions {
+    for contribution in contributions {
         let record = contribution.patch_record();
         let identity = record.record.identity();
         if let Some(old) = base.units.get(&identity) {
@@ -554,7 +577,7 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
                 {
                     Some(index) => order.push(Declared::Added(index)),
                     None => order.push(Declared::Existing(
-                        request
+                        retained
                             .generation
                             .field_record(owner, member.name)
                             .ok_or("a declared var of the owner has no retained record")?,
@@ -581,20 +604,22 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     let next = OutputBase {
         shape: Arc::clone(shape),
         units: Arc::new(units),
-        inputs: Arc::new(request.inputs),
-        archive: request.archive,
+        inputs: Arc::new(retained.inputs),
+        archive: retained.archive,
         warnings: Arc::new(warnings),
-        answers: lowered_answers,
+        // No marking: the appended names' answers were not proven against the retained ones, so a later
+        // request must not take this table as the published answers (the next declaration edit composes whole).
+        answers: answered.version,
         answers_context: None,
         marks: None,
         facts: None,
-        restored: base.restored,
+        restored: answered.restored,
         dmb_hash: 0,
     };
     dm_profile::request_mark("append.linked");
     let patched_rows = rows.len();
     let appended_count = new_procedures.len();
-    let dmb = request.generation.patch_model(
+    let dmb = retained.generation.patch_model(
         base.dmb_hash,
         |model| crate::composition::append::append_table_strings(model, &new_strings),
         |model, strings| {
@@ -687,18 +712,18 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
             initializers,
         },
         next,
-        request.executor,
+        executor,
     )?;
-    request.generation.extend_field_records(&new_field_records);
+    retained.generation.extend_field_records(&new_field_records);
     dm_profile::request_mark("append.model_encoded");
     crate::daemon_eprintln!(
-        "native append patch: {appended_count} procedures and {} vars appended, {patched_rows} rows relinked",
+        "native incremental output: {appended_count} procedures and {} vars appended, {patched_rows} rows relinked",
         appended.fields.len()
     );
     Ok(Patched {
         dmb,
         warnings: output_warnings,
-        query: lowered.query,
+        query,
         changed_bodies: changed.len() + appended_count + appended.fields.len(),
         shifted_initializers: 0,
         patched_rows,

@@ -23,6 +23,10 @@
 //! features, inventory, strings aside, debug paths, instances, helpers, required types, no
 //! modified instances), and none may be the first root procedure (its literals register strings
 //! with the declarations). New string literals are appended to the retained string table.
+//!
+//! Two declaration edits are admitted although the text outside bodies changed: a pure numeric default edit
+//! (its Variables records are rewritten) and an edit that only appended procs, verbs or plain vars
+//! (`retained_output_append.rs`: new procedures and records take the next free table indexes).
 use crate::initializer_policy::warnings::InitializerWarning;
 use crate::lowering::UnitIdentity;
 use std::collections::{BTreeMap, HashMap};
@@ -31,6 +35,8 @@ use xxhash_rust::xxh3::Xxh3;
 
 #[path = "retained_output_wire.rs"]
 mod wire;
+#[path = "retained_output_append.rs"]
+mod append;
 pub(crate) use wire::BaseParts;
 
 /// At most this many relowered bodies are spliced; more compose the whole program.
@@ -679,6 +685,9 @@ pub(crate) struct Admitted {
     pub lines: LineMap,
     /// Variables-table records `(record, kind, value)` whose numeric default this request edited.
     pub variable_values: Vec<(u32, u8, u32)>,
+    /// An edit that only appended callables or plain vars (`retained_output_append.rs`); `changed` then
+    /// lists the aligned bodies to relower followed by the appended ones.
+    appended: Option<append::AppendAdmission>,
 }
 /// The answer table's facts at the point an output is retained (see `OutputBase`).
 #[derive(Clone, Debug, Default)]
@@ -747,6 +756,45 @@ pub(crate) fn admit(
         .tree
         .default_edits()
         .filter(|edits| edits.from_identity == base.shape.tree_identity);
+    let appended = frontend
+        .snapshot
+        .tree
+        .appended_callables()
+        .filter(|appended| appended.from_identity == base.shape.tree_identity)
+        .filter(|_| base.shape.text_key() != shape.text_key());
+    if let Some(appended) = appended {
+        if let Some(difference) = retained
+            .inputs
+            .non_text_difference_with(&base.inputs, retained.archive != base.archive)
+        {
+            return Err(format!("non-text input changed: {difference}"));
+        }
+        if retained.archive != base.archive {
+            return Err("resource archive changed".into());
+        }
+        let admission = append::admit_appended(frontend, shape, &base, appended)?;
+        crate::daemon_eprintln!(
+            "native incremental output: {} callables and {} vars appended, answers not compared",
+            appended.members.len(),
+            appended.fields.len()
+        );
+        return Ok(Admitted {
+            answered: Answered {
+                version: Some(answers),
+                context,
+                marks: None,
+                facts: None,
+                restored: base.restored,
+            },
+            changed: admission.selected(),
+            base,
+            link,
+            image,
+            lines: LineMap::identity(),
+            variable_values: Vec::new(),
+            appended: Some(admission),
+        });
+    }
     let mut variable_values = Vec::new();
     if let Some(edits) = default_edits.filter(|_| base.shape.text_key() != shape.text_key()) {
         if base.shape.bodies.len() != shape.bodies.len() {
@@ -846,6 +894,7 @@ pub(crate) fn admit(
         changed,
         lines,
         variable_values,
+        appended: None,
     })
 }
 
@@ -986,7 +1035,7 @@ pub(crate) fn splice(
     retained: RetainedOutput<'_>,
     admitted: Admitted,
     frontend: &dm_tree::frontend::ColdFrontend,
-    contributions: &[crate::symbolic::PreparedContribution],
+    contributions: Vec<crate::symbolic::PreparedContribution>,
     query: (
         Arc<crate::driver_facts::PreparedAbiUnits>,
         Arc<crate::startup::StartupFacts>,
@@ -1001,7 +1050,23 @@ pub(crate) fn splice(
         changed,
         lines,
         variable_values,
+        appended,
     } = admitted;
+    if let Some(admission) = appended {
+        return append::splice_appended(
+            retained,
+            admission,
+            answered,
+            &base,
+            &link,
+            &image,
+            frontend,
+            contributions,
+            query,
+            executor,
+        );
+    }
+    let contributions = contributions.as_slice();
     let shape = retained.shape;
     let symbols = frontend.snapshot.tree.symbols();
     // Bodies whose text is unchanged and merely moved, by current position.
@@ -1252,12 +1317,6 @@ pub(crate) fn applied(project: &std::path::Path) -> u64 {
         .get(project)
         .copied()
         .unwrap_or(0)
-}
-
-/// Incremental outputs plus declaration patches of a project (tests).
-#[cfg(test)]
-pub(crate) fn applied_with_declaration_patches(project: &std::path::Path) -> u64 {
-    applied(project) + crate::declaration_patch::applied(project)
 }
 
 #[cfg(test)]
