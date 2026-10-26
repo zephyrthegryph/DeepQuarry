@@ -52,7 +52,7 @@ CAPABILITIES(/obj/effect/mine)
 /// The delay wire pulsed sets it off in two seconds.
 /obj/effect/mine/proc/delay_wire_pulsed(datum/act/A)
 	wire_beep("*BEEPBEEPBEEP*")
-	after(src, 2 SECONDS, PROC_REF(explode))
+	after(src, 2 SECONDS, PROC_REF(explode), key = "explode")
 
 /// The disarm wire, cut: the mine comes up as its item (with its trap), the signalers on it fall off.
 /obj/effect/mine/proc/disarm_wire_cut(datum/act/A)
@@ -68,7 +68,7 @@ CAPABILITIES(/obj/effect/mine)
 /// The bad disarm wire, cut: it goes off in two seconds.
 /obj/effect/mine/proc/bad_disarm_wire_cut(datum/act/A)
 	wire_beep("*BEEPBEEPBEEP*")
-	after(src, 2 SECONDS, PROC_REF(explode))
+	after(src, 2 SECONDS, PROC_REF(explode), key = "explode")
 
 /obj/effect/mine/proc/ping_wire_pulsed(datum/act/A)
 	wire_beep("*ping*")

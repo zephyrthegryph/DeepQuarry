@@ -30,7 +30,7 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 CAPABILITIES(/obj/item/stack/marker_beacon)
 	without("ui_open")
 	op("place", in_hand(), label("Place"), needs(req(PROC_REF(can_place))), then(PROC_REF(marker_beacon_self)))
-	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
+	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), asks(/datum/prompt/choice, fields = list("title" = "Beacon Color", "question" = "Choose a color.", "choices" = computed(PROC_REF(color_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "color", when = PROC_REF(recolor_askable)), then(PROC_REF(recolor_asked)))
 
 MSG_DEF_SELF(marker_beacon/no_space, "You need more space to place a marker beacon here.")
 MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here.")
@@ -85,18 +85,20 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 	options += "Random"
 	return options
 
-/// The alt-click: ask which colour the beacons should be.
-/obj/item/stack/marker_beacon/proc/recolor_asked(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!in_range(src, user))
-		return OP_OK
-	open_request(src, /datum/prompt/choice, PROC_REF(color_chosen), answerer = user, title = "Beacon Color", question = "Choose a color.", choices = marker_beacon_color_choices(), ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return OP_OK
+/// The colours the alt-click offers.
+/obj/item/stack/marker_beacon/proc/color_choices(datum/act/A)
+	return marker_beacon_color_choices()
 
-/obj/item/stack/marker_beacon/proc/color_chosen(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	set_picked_color(A.answer.value)
+/// The alt-click asks only someone within reach.
+/obj/item/stack/marker_beacon/proc/recolor_askable(datum/act/op/A)
+	return in_range(src, A.actor)
+
+/// The alt-click: the colour the beacons should be.
+/obj/item/stack/marker_beacon/proc/recolor_asked(datum/act/op/A)
+	var/picked = A.step_value("color")
+	if(picked)
+		set_picked_color(picked)
+	return OP_OK
 
 /obj/structure/marker_beacon
 	name = "marker beacon"
@@ -115,7 +117,7 @@ CAPABILITIES(/obj/structure/marker_beacon)
 	configure(light_glow(range = 2, power = 0.8))
 	op("pick_up", hand(), ungated(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_by_hand)))
 	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_into_stack)))
-	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
+	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), asks(/datum/prompt/choice, fields = list("title" = "Beacon Color", "question" = "Choose a color.", "choices" = computed(PROC_REF(color_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "color", when = PROC_REF(recolor_askable)), then(PROC_REF(recolor_asked)))
 	param(nameof(color_at_make), pos = 1, apply = PROC_REF(light_beacon))
 
 /// The colour a beacon is set down with (its constructor param).
@@ -177,20 +179,19 @@ MSG_DEF_SELF(marker_beacon/picking_up, span_notice("You start picking %T% up..."
 	consume(src)
 	return OP_OK
 
-/// The alt-click: ask which colour the beacon should be (a permanent one ignores it silently).
-/obj/structure/marker_beacon/proc/recolor_asked(datum/act/op/A)
-	var/mob/living/user = A.actor
-	if(perma)
-		return OP_OK
-	if(!in_range(src, user))
-		return OP_OK
-	open_request(src, /datum/prompt/choice, PROC_REF(color_chosen), answerer = user, title = "Beacon Color", question = "Choose a color.", choices = marker_beacon_color_choices(), ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return OP_OK
+/// The colours the alt-click offers.
+/obj/structure/marker_beacon/proc/color_choices(datum/act/A)
+	return marker_beacon_color_choices()
 
-/obj/structure/marker_beacon/proc/color_chosen(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/chosen = A.answer.value
-	if(!GLOB.marker_beacon_colors[chosen]) // "Random" is not a true colour: it picks one
-		chosen = pick(GLOB.marker_beacon_colors)
-	set_picked_color(chosen)
+/// The alt-click asks only someone within reach (a permanent beacon ignores it silently).
+/obj/structure/marker_beacon/proc/recolor_askable(datum/act/op/A)
+	return !perma && in_range(src, A.actor)
+
+/// The alt-click: the colour the beacon should be.
+/obj/structure/marker_beacon/proc/recolor_asked(datum/act/op/A)
+	var/chosen = A.step_value("color")
+	if(chosen)
+		if(!GLOB.marker_beacon_colors[chosen]) // "Random" is not a true colour: it picks one
+			chosen = pick(GLOB.marker_beacon_colors)
+		set_picked_color(chosen)
+	return OP_OK

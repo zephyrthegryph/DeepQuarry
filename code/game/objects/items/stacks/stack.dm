@@ -43,6 +43,7 @@ CAPABILITIES(/obj/item/stack)
 	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
 	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
 	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
+	op("split_amount", ai(), asks(/datum/prompt/number, fields = list("title" = "Split stacks", "question" = computed(PROC_REF(split_question)), "default" = 1, "max_value" = nameof(amount), "min_value" = 1, "step" = 0.01, "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "amount"), then(PROC_REF(split_amount_chosen)))
 	// A recipe takes its build time (none: at once); the stack is claimed meanwhile, and what the recipe asked for comes from produce_recipe().
 	op("build", ai(), claims(CLAIM_TARGET), takes("recipe", "required", "produced"), wait(PROC_REF(build_time), keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(produce_recipe_done)))
 	param(nameof(amount_at_make), pos = 1)
@@ -438,14 +439,17 @@ CAPABILITIES(/obj/item/stack)
 	var/mob/user = A.actor
 	if (user.get_inactive_hand() != src)
 		return OP_DECLINE
-	open_request(src, /datum/prompt/number, PROC_REF(split_amount_chosen), answerer = user, title = "Split stacks", question = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max_value = amount, min_value = 1, step = 0.01, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+	perform_op(user, src, "split_amount", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return OP_OK
 
-/obj/item/stack/proc/split_amount_chosen(datum/act/request/A)
-	if(!A.answer)
+/obj/item/stack/proc/split_question(datum/act/A)
+	return "How many stacks of [src] would you like to split off?  There are currently [amount]."
+
+/obj/item/stack/proc/split_amount_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/N = A.step_value("amount")
+	if(isnull(N))
 		return
-	var/mob/user = A.request.answerer
-	var/N = A.answer.value
 	if(N != round(N))
 		to_chat(user, span_warning("You cannot separate a non-whole number of stacks!"))
 		return

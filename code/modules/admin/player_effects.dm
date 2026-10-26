@@ -87,8 +87,8 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	section(admin, "The admin tools of the Player Effects panel: size, teleport, gib, narrate, AI control, quests, orbits")
 	op("resize", ui_act("resize"), then(PROC_REF(ui_act_resize)))
 	op("teleport", ui_act("teleport"), asks(/datum/prompt/choice, fields = list("title" = "Where?", "question" = "Where to teleport?", "choices" = list("To Me", "To Mob", "To Area", "Cancel")), step = "where"), asks(/datum/prompt/choice, fields = list("title" = "Jump to mob", "question" = computed(PROC_REF(teleport_mob_question)), "choices" = computed(PROC_REF(teleport_mobs))), step = "mob", when = PROC_REF(teleport_to_mob)), asks(/datum/prompt/choice, fields = list("title" = "Jump to Area", "question" = computed(PROC_REF(teleport_area_question)), "choices" = computed(PROC_REF(teleport_areas))), step = "area", when = PROC_REF(teleport_to_area)), then(PROC_REF(ui_act_teleport)))
-	op("gib", ui_act("gib"), then(PROC_REF(ui_act_gib)))
-	op("dust", ui_act("dust"), then(PROC_REF(ui_act_dust)))
+	op("gib", ui_act("gib"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(destroy_question)), "title" = "Gib?", "choices" = list("KILL", "Cancel"), "timeout" = 0), step = "death"), then(PROC_REF(ui_act_gib)))
+	op("dust", ui_act("dust"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(destroy_question)), "title" = "Dust?", "choices" = list("KILL", "Cancel"), "timeout" = 0), step = "death"), then(PROC_REF(ui_act_dust)))
 	op("paralyse", ui_act("paralyse"), then(PROC_REF(ui_act_paralyse)))
 	op("subtle_message", ui_act("subtle_message"), then(PROC_REF(ui_act_subtle_message)))
 	op("direct_narrate", ui_act("direct_narrate"), then(PROC_REF(ui_act_direct_narrate)))
@@ -907,24 +907,15 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 		target().forceMove(pick(get_area_turfs(where_to)))
 		log_admin("[key_name(user)] jumped [target()] to [where_to]")
 
-/datum/eventkit/player_effects/proc/ui_act_gib(datum/act/op/A)
-	open_request(src, /datum/prompt/choice, PROC_REF(gib_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Are you sure you want to destroy [target()]?", title = "Gib?", choices = list("KILL", "Cancel"), timeout = 0)
+/datum/eventkit/player_effects/proc/destroy_question(datum/act/op/A)
+	return "Are you sure you want to destroy [target()]?"
 
-/datum/eventkit/player_effects/proc/gib_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/death = A.answer.value
-	if(death == "KILL")
+/datum/eventkit/player_effects/proc/ui_act_gib(datum/act/op/A)
+	if(A.step_value("death") == "KILL")
 		target().gib()
 
 /datum/eventkit/player_effects/proc/ui_act_dust(datum/act/op/A)
-	open_request(src, /datum/prompt/choice, PROC_REF(dust_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Are you sure you want to destroy [target()]?", title = "Dust?", choices = list("KILL", "Cancel"), timeout = 0)
-
-/datum/eventkit/player_effects/proc/dust_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/death = A.answer.value
-	if(death == "KILL")
+	if(A.step_value("death") == "KILL")
 		target().dust()
 
 /datum/eventkit/player_effects/proc/ui_act_paralyse(datum/act/op/A)

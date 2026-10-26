@@ -296,21 +296,18 @@ CAPABILITIES(/obj/item/aiModule/oneHuman)
 	desc = "A 'freeform' AI module: '<freeform>'"
 
 CAPABILITIES(/obj/item/aiModule/freeform)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), asks(/datum/prompt/number, fields = list("title" = "Law Priority (15+)", "question" = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", "default" = nameof(lawpos), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "position"), then(PROC_REF(law_position_entered)))
+	// The law's text, asked once its priority is set (law_position_entered).
+	op("law_text", ai(), asks(/datum/prompt/text/ai_law_freeform, fields = list("question" = "Please enter a new law for the AI."), step = "law"), then(PROC_REF(law_entered)))
 
-/// Old attack_self.
-/obj/item/aiModule/freeform/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/number, PROC_REF(law_position_entered), answerer = user, title = "Law Priority (15+)", question = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", default = lawpos, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+/// The priority answered: it is set at once, and the law's text is asked next.
+/obj/item/aiModule/freeform/proc/law_position_entered(datum/act/op/A)
+	var/position = A.step_value("position")
+	if(isnull(position) || position < MIN_SUPPLIED_LAW_NUMBER)
+		return TRUE
+	set_lawpos(min(position, MAX_SUPPLIED_LAW_NUMBER))
+	perform_op(A.actor, src, "law_text", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return TRUE
-
-/obj/item/aiModule/freeform/proc/law_position_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value < MIN_SUPPLIED_LAW_NUMBER)
-		return
-	lawpos = min(A.answer.value, MAX_SUPPLIED_LAW_NUMBER)
-	open_request(src, /datum/prompt/text/ai_law_freeform, PROC_REF(law_entered), answerer = A.request.answerer, question = "Please enter a new law for the AI.")
 
 /// Freeform law text: the existing numeric stage and this stage use the same carried/capable rechecks.
 /datum/prompt/text/ai_law_freeform
@@ -319,8 +316,9 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 	timeout = 0
 
-/obj/item/aiModule/freeform/proc/law_entered(datum/act/request/A)
-	if(!A.answer)
+/obj/item/aiModule/freeform/proc/law_entered(datum/act/op/A)
+	var/entered = A.step_value("law")
+	if(isnull(entered))
 		return
 	newFreeFormLaw = A.answer.value
 	desc = "A 'freeform' AI module: ([lawpos]) '[newFreeFormLaw]'"
@@ -328,7 +326,7 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 /obj/item/aiModule/freeform/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "[newFreeFormLaw]"
 	if(!lawpos || lawpos < MIN_SUPPLIED_LAW_NUMBER)
-		lawpos = MIN_SUPPLIED_LAW_NUMBER
+		set_lawpos(MIN_SUPPLIED_LAW_NUMBER)
 	target.add_supplied_law(lawpos, law, actor = sender)
 	GLOB.lawchanges.Add("The law was '[newFreeFormLaw]'")
 

@@ -63,7 +63,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 			needs(who), wait(delay), then(CAP_PROC(buckle_victim)), says(MSG(buckle/grabbed)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
 		op("unbuckle", hand(), when(req(CAP_PROC(has_occupants))), label("Unbuckle"), \
 			asks(/datum/prompt/choice, fields = list("question" = "Who do you wish to unbuckle?", "choices" = computed(CAP_PROC(occupant_names))), when = CAP_PROC(has_several)), \
-			needs(req(CAP_PROC(has_occupants))), then(CAP_PROC(unbuckle_chosen)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)))
+			needs(req(CAP_PROC(has_occupants)), req(CAP_PROC(occupant_ready))), then(CAP_PROC(unbuckle_chosen)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)))
 
 // ---- who is being buckled ----
 
@@ -228,12 +228,21 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	var/list/by_name = occupants_by_name(holder)
 	return R ? by_name[R.value] : null
 
+/// The one to free is still buckled to it: read after the choice is answered (a choice not made yet is not a refusal) and again before the effect.
+/datum/capability/lib/buckle/proc/occupant_ready(datum/act/op/A)
+	var/atom/movable/holder = A.holder
+	if(!A.answer && length(holder.buckled_mob_list()) > 1)
+		return null
+	var/mob/living/occupant = chosen_occupant(A)
+	if(!istype(occupant) || occupant.buckled_to() != holder)
+		return /datum/msg/buckle/nobody
+	return null
+
 /datum/capability/lib/buckle/proc/unbuckle_chosen(datum/act/op/A)
 	var/atom/movable/holder = A.holder
 	var/mob/living/occupant = chosen_occupant(A)
 	if(!istype(occupant) || occupant.buckled_to() != holder)
-		A.reason = /datum/msg/buckle/nobody
-		return OP_REFUSED
+		return OP_FAILED
 	rel_set(GLOB, nameof(GLOB.act_next_actor), A.actor)
 	var/U = ACT_ATTEMPT(holder, unbuckle, occupant)
 	rel_clear(GLOB, nameof(GLOB.act_next_actor))

@@ -143,18 +143,13 @@ CAPABILITIES(/obj/item/projectile/energy/spidertoxin)
 
 
 CAPABILITIES(/obj/item/royal_spider_egg)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), asks(/datum/prompt/yes_no, fields = list("question" = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", "title" = "Royal Spider Egg", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "release"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/royal_spider_egg/proc/interaction_self(datum/act/op/A)
+	if(!A.step_value("release"))
+		return TRUE
 	var/mob/user = A.actor
-	open_request(src, /datum/prompt/yes_no, PROC_REF(release_confirmed), answerer = user, title = "Royal Spider Egg", question = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/item/royal_spider_egg/proc/release_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/mob/user = A.request.answerer
 	var/turf/drop_loc = user.loc
 	if(istype(drop_loc))
 		var/obj/effect/spider/spiderling/princess/royalty = new(drop_loc)

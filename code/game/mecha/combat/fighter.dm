@@ -312,15 +312,39 @@ TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, mecha_starting_equipment, lis
 
 
 CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
-	op("gunpod_paint", item(/obj/item), label("Paint stripes"), then(PROC_REF(interaction_gunpod_paint)))
+	op("gunpod_paint", item(/obj/item/multitool), when(PROC_REF(stripes_paintable)), label("Paint stripes"),
+		asks(/datum/prompt/choice, fields = list("title" = "Paint Zone", "question" = "Please select a target zone.", "choices" = list("Fore Stripe", "Aft Stripe", "CANCEL"), "subject" = computed(PROC_REF(paint_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "zone"),
+		asks(/datum/prompt/color/mech_paint, fields = list("subject" = computed(PROC_REF(paint_subject)), "zone" = computed(PROC_REF(paint_zone))), step = "color", when = PROC_REF(paint_zone_chosen)),
+		then(PROC_REF(interaction_gunpod_paint)))
 
-/// Old attackby: a multitool repaints the stripes while the maintenance state is open.
+/// A multitool repaints the stripes while the maintenance state is open.
+/obj/mecha/combat/fighter/gunpod/proc/stripes_paintable(datum/act/A)
+	return state == 1
+
+/// The multitool the questions are about.
+/obj/mecha/combat/fighter/gunpod/proc/paint_subject(datum/act/op/A)
+	return A.held
+
+/// The zone picked.
+/obj/mecha/combat/fighter/gunpod/proc/paint_zone(datum/act/op/A)
+	return A.step_value("zone")
+
+/// A zone, not CANCEL, was picked: the colour is asked next.
+/obj/mecha/combat/fighter/gunpod/proc/paint_zone_chosen(datum/act/op/A)
+	var/zone = A.step_value("zone")
+	return !isnull(zone) && zone != "CANCEL"
+
+/// The colour for the zone, set while the maintenance state is still open.
 /obj/mecha/combat/fighter/gunpod/proc/interaction_gunpod_paint(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(!istype(W,/obj/item/multitool) || state != 1)
-		return OP_DECLINE
-	open_request(src, /datum/prompt/choice, PROC_REF(ask_stripe_color), answerer = user, subject = W, timeout = 0, title = "Paint Zone", question = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
+	var/paint = A.step_value("color")
+	if(state != 1)
+		return TRUE
+	if(paint)
+		switch(A.step_value("zone"))
+			if("Fore Stripe")
+				set_stripe1_color(paint)
+			if("Aft Stripe")
+				set_stripe2_color(paint)
 	return TRUE
 
 /datum/prompt/color/mech_paint
@@ -329,32 +353,6 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	timeout = 0
 	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/zone
-
-/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/act/request/context)
-	if(!context.answer)
-		return
-	return ask_stripe_color_apply(context)
-
-/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color_apply(datum/act/request/context)
-	var/datum/prompt/choice/ask = context.answer
-	if(ask.value != "CANCEL")
-		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(stripe_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.value)
-
-/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/act/request/context)
-	if(!context.answer)
-		return
-	return stripe_painted_apply(context)
-
-/obj/mecha/combat/fighter/gunpod/proc/stripe_painted_apply(datum/act/request/context)
-	var/datum/prompt/color/mech_paint/ask = context.answer
-	if(state != 1)
-		return
-	if(ask.value)
-		switch(ask.zone)
-			if("Fore Stripe")
-				set_stripe1_color(ask.value)
-			if("Aft Stripe")
-				set_stripe2_color(ask.value)
 
 /obj/effect/decal/mecha_wreckage/gunpod
 	name = "Gunpod wreckage"

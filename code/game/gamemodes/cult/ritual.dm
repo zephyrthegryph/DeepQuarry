@@ -328,48 +328,63 @@ CAPABILITIES(/obj/effect/rune)
 CAPABILITIES(/obj/item/book/tome)
 	configure(movable_motion(throw_speed = 1))
 	setup(PROC_REF(learn_cultwords))
-	op("tome", in_hand(), label("Read"), then(PROC_REF(interaction_tome)))
+	op("tome", in_hand(), label("Read"), asks(/datum/prompt/choice, fields = list("title" = "Tome", "question" = "You open the tome", "buttons" = TRUE, "choices" = list("Read it", "Scribe a rune", "Cancel"), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "menu", when = PROC_REF(tome_menu_open)), then(PROC_REF(interaction_tome)))
 	// The five seconds of drawing a rune (begin_drawing).
 	op("scribe", ai(), takes("english", "chosen_rune", "destination"), wait(5 SECONDS), then(PROC_REF(rune_drawn)))
 
-/// Old attack_self.
+#define TOME_OK 0
+#define TOME_SILENT 1
+#define TOME_ILLEGIBLE 2
+#define TOME_NO_SPACE 3
+#define TOME_STRAINED 4
+
+/// Why the tome cannot open its menu for this reader (a TOME_* value; TOME_OK when it can).
+/obj/item/book/tome/proc/tome_block(mob/living/user)
+	if(!user.canmove || user.stat || user.restrained())
+		return TOME_SILENT
+	if(occult_tier > 1) //This is a low tier book. If it's a higher tier, use ITS parent call instead of  continuing.
+		return TOME_SILENT
+	if(!iscultist(user))
+		return TOME_ILLEGIBLE
+	if(!istype(user.loc,/turf))
+		return TOME_NO_SPACE
+	var/C = 0
+	for(var/obj/effect/rune/N in REGISTRY_MEMBERS(REGISTRY_RUNES))
+		C++
+	if(C>=26 + read_once(GLOB.runedec) + length(antag_cult().current_antagonists)) //including the useless rune at the secret room, shouldn't count against the limit of 25 runes - Urist
+		return TOME_STRAINED
+	return TOME_OK
+
+/// The menu is asked only of a reader the tome has nothing against.
+/obj/item/book/tome/proc/tome_menu_open(datum/act/op/A)
+	return tome_block(A.actor) == TOME_OK
+
+/// Old attack_self: the menu's answer, or (when the menu was not asked) what the reader is told.
 /obj/item/book/tome/proc/interaction_tome(datum/act/op/A)
 	var/mob/living/user = A.actor
-	if(!user.canmove || user.stat || user.restrained())
+	var/picked = A.step_value("menu")
+	if(picked)
+		if(!GLOB.cultwords["travel"])
+			runerandom()
+		switch(picked)
+			if("Read it")
+				// structured TGUI AdminReport.
+				dq_admin_report_html(user, "Arcane Tome", "[tomedat]")
+			if("Scribe a rune")
+				tome_scribe(user)
 		return
-	if(occult_tier > 1) //This is a low tier book. If it's a higher tier, use ITS parent call instead of  continuing.
+	var/blocked = tome_block(user)
+	if(blocked == TOME_SILENT)
 		return
-
 	if(!GLOB.cultwords["travel"])
 		runerandom()
-	if(iscultist(user))
-		var/C = 0
-		for(var/obj/effect/rune/N in REGISTRY_MEMBERS(REGISTRY_RUNES))
-			C++
-		if (!istype(user.loc,/turf))
+	switch(blocked)
+		if(TOME_ILLEGIBLE)
+			to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")
+		if(TOME_NO_SPACE)
 			to_chat(user, span_warning("You do not have enough space to write a proper rune."))
-			return
-
-		if (C>=26 + GLOB.runedec + length(antag_cult().current_antagonists)) //including the useless rune at the secret room, shouldn't count against the limit of 25 runes - Urist
+		if(TOME_STRAINED)
 			tgui_alert_async(user, "The cloth of reality can't take that much of a strain. Remove some runes first!")
-			return
-		else
-			open_request(src, /datum/prompt/choice, PROC_REF(tome_menu_chosen), answerer = user, title = "Tome", question = "You open the tome", buttons = TRUE, choices = list("Read it", "Scribe a rune", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-			return
-	else
-		to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")
-		return
-
-/obj/item/book/tome/proc/tome_menu_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/user = A.request.answerer
-	switch(A.answer.value)
-		if("Read it")
-			// structured TGUI AdminReport.
-			dq_admin_report_html(user, "Arcane Tome", "[tomedat]")
-		if("Scribe a rune")
-			tome_scribe(user)
 
 /obj/item/book/tome/proc/tome_scribe(mob/living/user)
 	if(user.get_active_hand() != src)
@@ -488,41 +503,36 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	occult_tier = 2
 	var/cultistsonly = 1
 CAPABILITIES(/obj/item/book/tome/imbued)
-	op("imbued", in_hand(), label("Scribe a rune"), then(PROC_REF(interaction_imbued)))
+	op("imbued", in_hand(), label("Scribe a rune"),
+		asks(/datum/prompt/choice/imbued_rune, fields = list("question" = "Choose a rune to scribe", "choices" = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")), step = "rune", when = PROC_REF(imbued_may_scribe)),
+		asks(/datum/prompt/choice/imbued_rune, fields = list("question" = "Select the last rune", "choices" = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri")), step = "beacon", when = PROC_REF(imbued_needs_beacon)),
+		then(PROC_REF(interaction_imbued)))
+
+/// The admin tome asks only a cultist (or anyone, when it is not cultists-only).
+/obj/item/book/tome/imbued/proc/imbued_may_scribe(datum/act/op/A)
+	return !(cultistsonly && !iscultist(A.actor))
+
+/// A teleport or item-port rune takes a last word.
+/obj/item/book/tome/imbued/proc/imbued_needs_beacon(datum/act/op/A)
+	var/rune = A.step_value("rune")
+	return rune == "teleport" || rune == "itemport"
 
 /// Old attack_self: the admin tome scribes working runes at once. Its parent's self-use did nothing at this tier.
 /obj/item/book/tome/imbued/proc/interaction_imbued(datum/act/op/A)
 	var/mob/user = A.actor
-	if(src.cultistsonly && !iscultist(user))
+	var/rune = A.step_value("rune")
+	if(!rune)
 		return
 	if(!GLOB.cultwords["travel"])
 		runerandom()
-	if(user)
-		if (!istype(user.loc,/turf))
-			to_chat(user, span_notice("You do not have enough space to write a proper rune."))
-		var/static/list/runes = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")
-		open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), answerer = user, question = "Choose a rune to scribe", choices = runes)
+	if(!istype(user.loc,/turf))
+		to_chat(user, span_notice("You do not have enough space to write a proper rune."))
+	imbued_rune_chosen(user, rune, A.step_value("beacon"))
 
-/// The admin tome's rune pick, then (for a teleport rune) its last word. `rune` carries the first answer.
+/// The admin tome's rune pick, then (for a teleport rune) its last word.
 /datum/prompt/choice/imbued_rune
 	title = "Rune Scribing"
 	timeout = 30 SECONDS
-	var/rune
-
-/obj/item/book/tome/imbued/proc/imbued_rune_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/imbued_rune/ask = A.answer
-	if(ask.value == "teleport" || ask.value == "itemport")
-		open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), answerer = ask.answerer, question = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.value)
-		return
-	imbued_rune_chosen(ask.answerer, ask.value)
-
-/obj/item/book/tome/imbued/proc/imbued_beacon_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/imbued_rune/ask = A.answer
-	imbued_rune_chosen(ask.answerer, ask.rune, ask.value)
 
 /obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, r, beacon)
 	var/obj/effect/rune/R = new /obj/effect/rune

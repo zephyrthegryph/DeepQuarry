@@ -9,7 +9,7 @@ CAPABILITIES(/obj/structure/undies_wardrobe)
 	climb()
 	interface("UndiesWardrobe", title = "Underwear Dresser")
 	op("remove_underwear", ui_act("remove_underwear", arg("category")), then(PROC_REF(ui_act_remove_underwear)))
-	op("change_underwear", ui_act("change_underwear", arg("category")), then(PROC_REF(ui_act_change_underwear)))
+	op("change_underwear", ui_act("change_underwear", arg("category")), asks(/datum/prompt/choice/underwear, fields = list("choices" = computed(PROC_REF(underwear_choices)), "default" = computed(PROC_REF(underwear_default)), "category" = computed(PROC_REF(underwear_category)), "timeout" = 0), step = "item", when = PROC_REF(underwear_category_known)), then(PROC_REF(ui_act_change_underwear)))
 	op("tweak", ui_act("tweak", arg("category"), arg("tweak")), then(PROC_REF(ui_act_tweak)))
 	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(undies_wardrobe/not_human))))
 	extend("ui_open", needs(req(PROC_REF(can_browse))))
@@ -97,25 +97,41 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 	var/category
 
 /// The wardrobe stands and the person is next to it and can still wear underwear.
-/obj/structure/undies_wardrobe/proc/request_usable(datum/request/R)
-	var/mob/M = R.answerer
-	return istype(M) && !QDELETED(src) && in_range(src, M) && human_who_can_use_underwear(M)
+/datum/prompt/choice/underwear/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/obj/structure/undies_wardrobe/wardrobe = owner_holder()
+	var/mob/M = answerer
+	return (istype(M) && istype(wardrobe) && !QDELETED(wardrobe) && in_range(wardrobe, M) && wardrobe.human_who_can_use_underwear(M)) ? null : "out of reach"
 
-/obj/structure/undies_wardrobe/proc/underwear_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/underwear/R = A.request
-	var/mob/living/carbon/human/H = R.answerer
-	if(!istype(H))
-		return
-	var/category = R.category
-	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[category]
-	var/datum/category_item/underwear/selected_underwear = UWC?.items_by_name[A.answer.value]
-	if(!selected_underwear)
-		return
-	H.set_all_underwear_at(category, selected_underwear)
-	H.set_hide_underwear_at(category, FALSE)
-	H.underwear_edited()
+/// The category the window named, when the wardrobe has it.
+/obj/structure/undies_wardrobe/proc/underwear_category_of(datum/act/op/A)
+	return GLOB.global_underwear.categories_by_name[A.arg("category")]
+
+/// The change is asked only for a category the wardrobe has.
+/obj/structure/undies_wardrobe/proc/underwear_category_known(datum/act/op/A)
+	return !!underwear_category_of(A)
+
+/// The name of the category the question is about.
+/obj/structure/undies_wardrobe/proc/underwear_category(datum/act/op/A)
+	var/datum/category_group/underwear/UWC = underwear_category_of(A)
+	return UWC?.name
+
+/// The names of the items in the category.
+/obj/structure/undies_wardrobe/proc/underwear_choices(datum/act/op/A)
+	var/datum/category_group/underwear/UWC = underwear_category_of(A)
+	var/list/names = list()
+	for(var/datum/category_item/underwear/UWI in UWC?.items)
+		names += UWI.name
+	return names
+
+/// The item the person wears now in the category.
+/obj/structure/undies_wardrobe/proc/underwear_default(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	var/datum/category_group/underwear/UWC = underwear_category_of(A)
+	var/datum/category_item/underwear/current = LAZYACCESS(H.all_underwear, UWC?.name)
+	return current?.name
 
 /obj/structure/undies_wardrobe/proc/ui_act_remove_underwear(datum/act/op/A, category)
 	var/mob/living/carbon/human/H = A.actor
@@ -125,15 +141,17 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 	return TRUE
 
 /obj/structure/undies_wardrobe/proc/ui_act_change_underwear(datum/act/op/A, category)
+	var/datum/prompt/choice/underwear/R = A.step_answer("item")
+	if(!R)
+		return TRUE
 	var/mob/living/carbon/human/H = A.actor
 	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[category]
-	if(!UWC)
+	var/datum/category_item/underwear/selected_underwear = UWC?.items_by_name[R.value]
+	if(!selected_underwear)
 		return TRUE
-	var/list/names = list()
-	for(var/datum/category_item/underwear/UWI in UWC.items)
-		names += UWI.name
-	var/datum/category_item/underwear/current = LAZYACCESS(H.all_underwear, UWC.name)
-	open_request(src, /datum/prompt/choice/underwear, PROC_REF(underwear_chosen), valid = PROC_REF(request_usable), answerer = H, choices = names, default = current?.name, category = UWC.name, timeout = 0)
+	H.set_all_underwear_at(UWC.name, selected_underwear)
+	H.set_hide_underwear_at(UWC.name, FALSE)
+	H.underwear_edited()
 	return TRUE
 
 /obj/structure/undies_wardrobe/proc/ui_act_tweak(datum/act/op/A, category, tweak)

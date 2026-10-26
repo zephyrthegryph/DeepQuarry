@@ -94,20 +94,17 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 /obj/structure/closet/body_bag/cryobag/robobag/proc/tag_swapped(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(corptag)
-		var/old_tag = corptag
+	var/old_tag = corptag
+	if(old_tag)
 		corptag.forceMove(get_turf(src))
 		rel_take(src, nameof(src.corptag))
-		if(!user.unEquip(W))
-			return OP_REFUSED
-		W.moveToNullspace()
-		rel_set(src, nameof(src.corptag), W)
+	if(!user.unEquip(W))
+		return OP_REFUSED
+	W.moveToNullspace()
+	rel_set(src, nameof(src.corptag), W)
+	if(old_tag)
 		to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
 	else
-		if(!user.unEquip(W))
-			return OP_REFUSED
-		W.moveToNullspace()
-		rel_set(src, nameof(src.corptag), W)
 		to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
 	return OP_OK
 

@@ -18,10 +18,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
 	var/list/datum/ai_laws/law_list
 	var/tmp/obj/item/robotic_multibelt/multibelt_holder	//Currently selected multibelt.
-	/// The upgrade a question is open for.
-	var/pending_upgrade
-	/// The law a question about editing is open for (a view: the robot's laws own themselves).
-	var/tmp/datum/ai_law/editing_law
 
 CAPABILITIES(/datum/eventkit/modify_robot)
 	op("add_zeroth_law", ui_act(), then(PROC_REF(ui_act_add_zeroth_law)))
@@ -40,7 +36,6 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	op("toggle_emag", ui_act(), then(PROC_REF(ui_act_toggle_emag)))
 	owns_many(nameof(law_list), /datum/ai_laws)
 	owns_one(nameof(source), /mob/living/silicon/robot)
-	ref_one(nameof(editing_law), /datum/ai_law)
 	ref_one(nameof(target), /mob/living/silicon/robot)
 	ref_one(nameof(multibelt_holder), /obj/item/robotic_multibelt)
 	interface("ModifyRobot", title = "Modify Robot", rights = R_ADMIN|R_EVENT|R_DEBUG)
@@ -59,7 +54,10 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	op("ert_toggle", ui_act("ert_toggle"), then(PROC_REF(ui_act_ert_toggle)))
 	op("add_compatibility", ui_act("add_compatibility", arg("upgrade", schema_path(/datum))), then(PROC_REF(ui_act_add_compatibility)))
 	op("rem_compatibility", ui_act("rem_compatibility", arg("upgrade", schema_path(/datum))), then(PROC_REF(ui_act_rem_compatibility)))
-	op("add_upgrade", ui_act("add_upgrade", arg("upgrade", schema_path(/datum))), then(PROC_REF(ui_act_add_upgrade)))
+	op("add_upgrade", ui_act("add_upgrade", arg("upgrade", schema_path(/datum))),
+		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(upgrade_reset_question)), "title" = "Confirm", "timeout" = 0), step = "upgrade_reset", when = PROC_REF(upgrade_is_reset)),
+		asks(/datum/prompt/text, fields = list("question" = "Enter new robot name", "title" = "Robot Reclassification", "default" = computed(PROC_REF(upgrade_rename_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "upgrade_name", when = PROC_REF(upgrade_is_rename)),
+		then(PROC_REF(ui_act_add_upgrade)))
 	op("install_modkit", ui_act("install_modkit", arg("modkit", schema_path(/datum))), then(PROC_REF(ui_act_install_modkit)))
 	op("remove_modkit", ui_act("remove_modkit", arg("modkit", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_modkit)))
 	op("select_multibelt", ui_act("select_multibelt", arg("multibelt", schema_ref(null))), then(PROC_REF(ui_act_select_multibelt)))
@@ -93,7 +91,9 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	op("change_inherent_law", ui_act("change_inherent_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_inherent_law)))
 	op("change_supplied_law", ui_act("change_supplied_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_supplied_law)))
 	op("change_supplied_law_position", ui_act("change_supplied_law_position"), asks(/datum/prompt/number, fields = list("title" = "Law Position", "question" = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "default" = computed(PROC_REF(law_position_default)), "max_value" = MAX_SUPPLIED_LAW_NUMBER, "min_value" = 1)), then(PROC_REF(ui_act_change_supplied_law_position)))
-	op("edit_law", ui_act("edit_law", arg("edit_law")), then(PROC_REF(ui_act_edit_law)))
+	op("edit_law", ui_act("edit_law", arg("edit_law")),
+		asks(/datum/prompt/text, fields = list("question" = "Enter new law. Leaving the field blank will cancel the edit.", "title" = "Edit Law", "default" = computed(PROC_REF(edit_law_default)), "timeout" = 0), step = "law", when = PROC_REF(edit_law_found)),
+		then(PROC_REF(ui_act_edit_law)))
 	op("delete_law", ui_act("delete_law", arg("delete_law")), then(PROC_REF(ui_act_delete_law)))
 	op("state_laws", ui_act("state_laws"), then(PROC_REF(ui_act_state_laws)))
 	op("state_law_set", ui_act("state_law_set", arg("state_law_set", schema_ref(/datum/ai_laws))), then(PROC_REF(ui_act_state_law_set)))
@@ -352,35 +352,36 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	LAZYREMOVE(robot_target.module.supported_upgrades, upgrade)
 	return TRUE
 
-/// The answer to a question a button asked still counts (its window is still open and interactive for the one who answers).
-/datum/eventkit/modify_robot/proc/request_usable(datum/request/R)
-	return window_request_usable(src, R)
+/// The upgrade being installed is the one that resets the robot's module.
+/datum/eventkit/modify_robot/proc/upgrade_is_reset(datum/act/op/A)
+	return A.args["upgrade"] == /obj/item/borg/upgrade/utility/reset
+
+/// The upgrade being installed is the one that renames the robot.
+/datum/eventkit/modify_robot/proc/upgrade_is_rename(datum/act/op/A)
+	return A.args["upgrade"] == /obj/item/borg/upgrade/utility/rename
+
+/datum/eventkit/modify_robot/proc/upgrade_reset_question(datum/act/op/A)
+	var/obj/item/borg/upgrade/utility/reset/rmodul = A.args["upgrade"]
+	return "Are you sure that you want to install [initial(rmodul.name)] and reset the robot's module?"
+
+/datum/eventkit/modify_robot/proc/upgrade_rename_default(datum/act/op/A)
+	var/obj/item/borg/upgrade/utility/rename/renamer = A.args["upgrade"]
+	return initial(renamer.heldname)
 
 /datum/eventkit/modify_robot/proc/ui_act_add_upgrade(datum/act/op/A, upgrade_arg)
 	var/mob/user = A.actor
 	if(upgrade_arg == /obj/item/borg/upgrade/utility/reset)
-		pending_upgrade = upgrade_arg
-		var/obj/item/borg/upgrade/utility/reset/rmodul = upgrade_arg
-		open_request(src, /datum/prompt/yes_no, PROC_REF(upgrade_reset_confirmed), valid = PROC_REF(request_usable), answerer = user, question = "Are you sure that you want to install [initial(rmodul.name)] and reset the robot's module?", title = "Confirm", timeout = 0)
+		if(A.step_value("upgrade_reset"))
+			install_upgrade(user, upgrade_arg, null)
+			SStgui.update_uis(src)
 		return TRUE
 	if(upgrade_arg == /obj/item/borg/upgrade/utility/rename)
-		pending_upgrade = upgrade_arg
-		var/obj/item/borg/upgrade/utility/rename/renamer = upgrade_arg
-		open_request(src, /datum/prompt/text, PROC_REF(upgrade_renamed), valid = PROC_REF(request_usable), answerer = user, question = "Enter new robot name", title = "Robot Reclassification", default = initial(renamer.heldname), max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, timeout = 0)
+		var/new_name = A.step_value("upgrade_name")
+		if(!isnull(new_name))
+			install_upgrade(user, upgrade_arg, new_name)
+			SStgui.update_uis(src)
 		return TRUE
 	return install_upgrade(user, upgrade_arg, null)
-
-/datum/eventkit/modify_robot/proc/upgrade_reset_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value || !ispath(pending_upgrade))
-		return
-	install_upgrade(A.request.answerer, pending_upgrade, null)
-	SStgui.update_uis(src)
-
-/datum/eventkit/modify_robot/proc/upgrade_renamed(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.value) || !ispath(pending_upgrade))
-		return
-	install_upgrade(A.request.answerer, pending_upgrade, A.answer.value)
-	SStgui.update_uis(src)
 
 /// Builds the upgrade and installs it in the target.
 /datum/eventkit/modify_robot/proc/install_upgrade(mob/user, new_upgrade, new_name)
@@ -640,30 +641,28 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/law_position_default(datum/act/op/A)
 	return supplied_law_position
 
+/// The law the window named, when it is one of the target's.
+/datum/eventkit/modify_robot/proc/law_named(datum/act/op/A) as /datum/ai_law
+	var/datum/ai_law/AL = ui_ref(A.args["edit_law"], null, /datum/ai_law)
+	return target().laws.lists_law(AL) ? AL : null
+
+/datum/eventkit/modify_robot/proc/edit_law_found(datum/act/op/A)
+	return !!law_named(A)
+
+/datum/eventkit/modify_robot/proc/edit_law_default(datum/act/op/A)
+	var/datum/ai_law/AL = law_named(A)
+	return AL?.law
+
 /datum/eventkit/modify_robot/proc/ui_act_edit_law(datum/act/op/A, edit_law)
-	var/datum/ai_law/AL = ui_ref(edit_law, ui_source_target_laws_all_laws(), /datum/ai_law)
+	var/datum/ai_law/AL = law_named(A)
 	if(!AL)
 		return TRUE
-	rel_set(src, nameof(editing_law), AL)
-	open_request(src, /datum/prompt/text, PROC_REF(law_edited), valid = PROC_REF(request_usable), answerer = A.actor, question = "Enter new law. Leaving the field blank will cancel the edit.", title = "Edit Law", default = AL.law, timeout = 0)
-	return TRUE
-
-/datum/eventkit/modify_robot/proc/law_edited(datum/act/request/A)
-	law_edited_apply(A)
-	SStgui.update_uis(src)
-
-/datum/eventkit/modify_robot/proc/law_edited_apply(datum/act/request/A)
-	var/datum/ai_law/AL = editing_law()
-	if(!A.answer || !AL || !(AL in ui_source_target_laws_all_laws()))
-		return
-	var/new_law = A.answer.value
+	var/new_law = A.step_value("law")
 	if(new_law && new_law != AL.law)
 		AL.set_law(new_law)
 		target().lawsync()
-
-/// The law a question about editing is open for.
-/datum/eventkit/modify_robot/proc/editing_law() as /datum/ai_law
-	return editing_law
+	SStgui.update_uis(src)
+	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_delete_law(datum/act/op/A, delete_law)
 	var/datum/ai_law/AL = ui_ref(delete_law, ui_source_target_laws_all_laws(), /datum/ai_law)

@@ -3,6 +3,7 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	rolls(nameof(flooring_override), pick_one(list("dirt0" = 150, "dirt1" = 25, "dirt2" = 25, "dirt3" = 25, "dirt4" = 25, "dirt5" = 10, "dirt6" = 10, "dirt7" = 3, "dirt8" = 3, "dirt9" = 1)))
 	op("newdirt_hand", hand(), ungated(), stance(I_HELP), label("Dig"), then(PROC_REF(newdirt_hand)))
+	op("build_growplot", ai(), asks(/datum/prompt/yes_no/build_growplot, step = "growplot"), then(PROC_REF(growplot_answered)))
 	op("loosen_rocks", ai(), wait(5 SECONDS), then(PROC_REF(loosen_rocks_done)))
 	op("pile_up", ai(), wait(5 SECONDS), then(PROC_REF(pile_done)))
 
@@ -21,7 +22,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 		to_chat(user, span_notice("The [name] isn't clear."))
 		return TRUE
 	else
-		open_request(src, /datum/prompt/yes_no/build_growplot, PROC_REF(growplot_answered), answerer = user)
+		perform_op(user, src, "build_growplot", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return TRUE
 
 /// Re-checked: next to the dirt, and it's still clear.
@@ -32,12 +33,12 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
 /datum/prompt/yes_no/build_growplot/recheck_extra()
-	return locate_on(owner, /obj) ? "not clear" : null
+	return locate_on(owner_holder(), /obj) ? "not clear" : null
 
-/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
+/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/act/op/A)
+	if(!A.step_value("growplot"))
 		return
-	var/mob/user = A.request.answerer
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF("You start piling up %T%..."), MSG_OTHERS("%U% starts piling up %T%..."))
 	perform_op(user, src, "pile_up", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 

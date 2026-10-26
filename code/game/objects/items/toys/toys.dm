@@ -2138,19 +2138,20 @@ CAPABILITIES(/obj/item/toy/plushie/sus)
 CAPABILITIES(/obj/item/toy/rock)
 	configure(item_combat(attack_verbs = list("grug'd", "unga'd")))
 	op("draw_face", item(/obj/item/pen), label("Draw a face"), then(PROC_REF(interaction_draw_face)))
+	op("pick_face", ai(), asks(/datum/prompt/choice, fields = list("title" = "Faces", "question" = "Choose what you'd like to draw.", "choices" = list("fred","roxie","rock","Cancel"), "buttons" = TRUE, "subject" = computed(PROC_REF(face_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "face"), then(PROC_REF(face_chosen)))
 
-/// Old attackby.
+/// Old attackby: the faces are asked as the click goes on.
 /obj/item/toy/rock/proc/interaction_draw_face(datum/act/op/A)
-	var/mob/living/user = A.actor
-	var/obj/item/I = A.held
-	open_request(src, /datum/prompt/choice, PROC_REF(face_chosen), answerer = user, title = "Faces", question = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
+	perform_op(A.actor, src, "pick_face", A.held, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return OP_PASS
 
-/obj/item/toy/rock/proc/face_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/user = A.request.answerer
-	switch(A.answer.value)
+/// The pen the faces are drawn with.
+/obj/item/toy/rock/proc/face_subject(datum/act/op/A)
+	return A.held
+
+/obj/item/toy/rock/proc/face_chosen(datum/act/op/A)
+	var/mob/living/user = A.actor
+	switch(A.step_value("face"))
 		if("fred")
 			set_icon_state("fred")
 			to_chat(user, "You draw a face on the rock.")

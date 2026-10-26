@@ -18,30 +18,50 @@
 	return
 
 /// Labelling a case with a pen. Re-checked on the answer: the pen is still in hand, the case still in reach.
-/obj/item/implantcase/proc/label_in_reach(datum/request/R)
-	var/mob/M = R.answerer
-	return in_range(src, M) || loc == M
+/datum/prompt/text/implantcase_label
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	timeout = 0
 
-/obj/item/implantcase/proc/label_entered(datum/act/request/A)
-	if(!A.answer)
+/datum/prompt/text/implantcase_label/recheck_extra()
+	. = ..()
+	if(.)
 		return
-	var/t = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
+	var/obj/item/implantcase/implantcase = owner_holder()
+	var/mob/M = answerer
+	return (istype(implantcase) && istype(M) && (in_range(implantcase, M) || implantcase.loc == M)) ? null : "out of reach"
+
+/obj/item/implantcase/proc/label_entered(datum/act/op/A)
+	var/entered = A.step_value("label")
+	if(isnull(entered))
+		return
+	var/t = sanitizeSafe(entered, MAX_NAME_LEN)
 	if(t)
 		name = text("Glass Case - '[]'", t)
 	else
 		name = "Glass Case"
 
+/// The pen the label question is about.
+/obj/item/implantcase/proc/label_subject(datum/act/op/A)
+	return A.held
+
+/// The label's question: the case's name is its title.
+/obj/item/implantcase/proc/label_title(datum/act/A)
+	return "[name]"
+
 CAPABILITIES(/obj/item/implantcase)
 	configure(movable_motion(throw_speed = 1))
 	op("label", item(/obj/item/pen), passes(), label("Label"), then(PROC_REF(label_asked)))
+	// The label's question, asked once label_asked has let the click go on.
+	op("label_text", ai(), asks(/datum/prompt/text/implantcase_label, fields = list("title" = computed(PROC_REF(label_title)), "question" = "What would you like the label to be?", "subject" = computed(PROC_REF(label_subject))), step = "label"), then(PROC_REF(label_entered)))
 	op("fill_from_syringe", item(/obj/item/reagent_containers/syringe), passes(), label("Fill"), then(PROC_REF(syringe_used)))
 	op("swap_implant", item(/obj/item/implanter), passes(), label("Swap implant"), then(PROC_REF(implanter_used)))
 	owns_one(nameof(imp), on_destroy = ON_DESTROY_CONTAINED)
 
 /// A pen labels the case.
 /obj/item/implantcase/proc/label_asked(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/text, PROC_REF(label_entered), answerer = user, title = "[name]", question = "What would you like the label to be?", max_len = MAX_NAME_LEN, name_text = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE, subject = A.held, valid = PROC_REF(label_in_reach), timeout = 0)
+	perform_op(A.actor, src, "label_text", A.held, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return OP_OK
 
 /// A syringe fills a reagent implant in the case.

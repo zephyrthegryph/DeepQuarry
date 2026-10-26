@@ -164,9 +164,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
 			M.take_damage(i * 2, "energy") // Mechs don't have a concept for siemens so energy armor check is the best alternative.
 
 	if(i < 10)
-		after(src, 1 SECOND, PROC_REF(energy_ball_pulse), with = list(i + 1, old_shock_resist))
+		after(src, 1 SECOND, PROC_REF(energy_ball_pulse), key = "energy_ball", with = list(i + 1, old_shock_resist))
 		return
-	after(src, 1 SECOND, PROC_REF(energy_ball_discharge), with = list(old_shock_resist))
+	after(src, 1 SECOND, PROC_REF(energy_ball_discharge), key = "energy_ball", with = list(old_shock_resist))
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_discharge(old_shock_resist)
 

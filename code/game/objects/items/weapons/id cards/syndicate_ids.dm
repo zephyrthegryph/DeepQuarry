@@ -23,6 +23,8 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	owns_one(nameof(agentcard_module), /datum/tgui_module/agentcard, starts = /datum/tgui_module/agentcard)
 	without("show") // its own self-use edits or shows the card
 	op("agent_card", in_hand(), label("Edit or show"), then(PROC_REF(interaction_agent_card)))
+	// Edit or show, asked of the registered user once agent_card has registered them.
+	op("agent_mode", ai(), asks(/datum/prompt/choice/agent_id_mode, step = "mode"), then(PROC_REF(edit_or_show_chosen)))
 	ref_one(nameof(registered_user), /mob)
 
 // the card's registered user is unset.
@@ -52,14 +54,12 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
 /datum/prompt/choice/agent_id_mode/recheck_extra()
-	var/obj/item/card/id/syndicate/card = owner
+	var/obj/item/card/id/syndicate/card = owner_holder()
 	return card.registered_user() == answerer ? null : "not the owner"
 
-/obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/mob/user = context.request.answerer
-	switch(context.answer.value)
+/obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	switch(A.step_value("mode"))
 		if("Edit")
 			agentcard_module.tgui_interact(user)
 		if("Show")
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	if(!registered_user() && register_user(user))
 		to_chat(user, span_notice("The microscanner marks you as its owner, preventing others from accessing its internals."))
 	if(registered_user() == user)
-		open_request(src, /datum/prompt/choice/agent_id_mode, PROC_REF(edit_or_show_chosen), answerer = user)
+		perform_op(user, src, "agent_mode", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 
 /obj/item/card/id/syndicate/proc/register_user(mob/user)

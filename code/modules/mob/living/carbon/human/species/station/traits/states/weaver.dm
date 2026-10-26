@@ -36,18 +36,10 @@
 		set_silk_reserve(min(silk_reserve + silk_generation_amount, silk_max_reserve))
 		owner.adjust_nutrition(-(nutrtion_per_silk*silk_generation_amount))
 
-/datum/trait_state/weaver/proc/silk_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/color/ask = A.answer
-	if(ask.value)
-		set_silk_color(ask.value)
-	SStgui.update_uis(src)
-
 //TGUI Weaver Panel
 CAPABILITIES(/datum/trait_state/weaver)
 	interface("WeaverConfig", title = "Weaver Config")
-	op("new_silk_color", ui_act("new_silk_color"), then(PROC_REF(ui_act_new_silk_color)))
+	op("new_silk_color", ui_act("new_silk_color"), asks(/datum/prompt/color, fields = list("question" = "Select a color you wish your silk to be!", "default" = nameof(silk_color), "title" = "Color Selector", "timeout" = 0), step = "color"), then(PROC_REF(ui_act_new_silk_color)))
 	op("toggle_silk_production", ui_act("toggle_silk_production"), then(PROC_REF(ui_act_toggle_silk_production)))
 	op("check_silk_amount", ui_act("check_silk_amount"), then(PROC_REF(ui_act_check_silk_amount)))
 	op("weave_binding", ui_act("weave_binding"), needs(req(PROC_REF(weave_silk_binding)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
@@ -94,8 +86,10 @@ CAPABILITIES(/datum/trait_state/weaver)
 	return FALSE
 
 /datum/trait_state/weaver/proc/ui_act_new_silk_color(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/color, PROC_REF(silk_color_picked), answerer = user, question = "Select a color you wish your silk to be!", default = silk_color, title = "Color Selector", timeout = 0)
+	var/picked = A.step_value("color")
+	if(picked)
+		set_silk_color(picked)
+	SStgui.update_uis(src)
 	return FALSE
 
 /datum/trait_state/weaver/proc/ui_act_toggle_silk_production(datum/act/op/A)

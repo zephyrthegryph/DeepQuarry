@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 	op("pry_broken", item(/obj/item), stance(I_HURT), when(PROC_REF(prying_item)), when(PROC_REF(wrecked)), priority(OP_PRIORITY_CLAW), wait(0),
 		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
 	op("mend", item(/obj/item/stack/material/plasteel), label("Repair"), priority(OP_PRIORITY_PART), wait(3 SECONDS),
-		needs(req(PROC_REF(needs_mending))),
+		needs(req(PROC_REF(needs_mending)), req(PROC_REF(enough_sheets))),
 		then(PROC_REF(mended)), says(MSG(blast_door/repaired)))
 
 /// Emag: the motors are subverted and the door throws twice as hard.
@@ -192,10 +192,16 @@ CAPABILITIES(/obj/machinery/door/blast)
 /obj/machinery/door/blast/proc/needs_mending(datum/act/A)
 	return (sheets_to_mend() > 0) ? null : MSG(blast_door/already_repaired)
 
+/// The held stack has the sheets the repair takes.
+/obj/machinery/door/blast/proc/enough_sheets(datum/act/op/A)
+	var/obj/item/stack/P = A.held
+	if(read_once(P?.can_use(sheets_to_mend()))) // the held stack is asked when the repair begins and again before it is done
+		return null
+	return msg_reason(span_warning("You don't have enough sheets to repair this! You need at least [sheets_to_mend()] sheets."))
+
 /obj/machinery/door/blast/proc/mended(datum/act/op/A)
 	var/obj/item/stack/P = A.held
 	if(!P?.use(sheets_to_mend()))
-		to_chat(A.actor, span_warning("You don't have enough sheets to repair this! You need at least [sheets_to_mend()] sheets."))
 		return OP_REFUSED
 	repair()
 	return OP_OK

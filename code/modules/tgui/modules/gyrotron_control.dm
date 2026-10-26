@@ -6,18 +6,13 @@
 
 CAPABILITIES(/datum/tgui_module/gyrotron_control)
 	interface("GyrotronControl")
-	op("set_tag", ui_act("set_tag"), then(PROC_REF(ui_act_set_tag)))
+	op("set_tag", ui_act("set_tag"), asks(/datum/prompt/text, fields = list("title" = "Gyrotron Control", "question" = "Enter a new ident tag.", "default" = nameof(gyro_tag), "timeout" = 0), step = "tag"), then(PROC_REF(ui_act_set_tag)))
 	op("toggle_active", ui_act("toggle_active", arg("gyro", schema_text(32))), then(PROC_REF(ui_act_toggle_active)))
 	op("set_str", ui_act("set_str", arg("gyro", schema_text(32)), arg("str", num())), then(PROC_REF(ui_act_set_str)))
 	op("set_rate", ui_act("set_rate", arg("gyro", schema_text(32)), arg("rate", num())), then(PROC_REF(ui_act_set_rate)))
 
 /datum/tgui_module/gyrotron_control/proc/ui_act_set_tag(datum/act/op/A)
-	open_request(src, /datum/prompt/text, PROC_REF(tag_entered), valid = PROC_REF(request_usable), answerer = A.actor, title = "Gyrotron Control", question = "Enter a new ident tag.", default = gyro_tag, timeout = 0)
-
-/datum/tgui_module/gyrotron_control/proc/tag_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/new_ident = sanitize_text(A.answer.value)
+	var/new_ident = sanitize_text(A.step_value("tag"))
 	if(new_ident)
 		set_gyro_tag(new_ident)
 	SStgui.update_uis(src)

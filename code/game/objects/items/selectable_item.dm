@@ -12,31 +12,41 @@ TYPE_TABLE_DECLARE(/obj/item/selectable_item, selectable_item_options, list("Gif
 									"Health Analyzer" = /obj/item/healthanalyzer))
 
 CAPABILITIES(/obj/item/selectable_item)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(),
+		asks(/datum/prompt/yes_no, fields = list("title" = nameof(preface_title), "question" = nameof(preface_string), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "preface"),
+		asks(/datum/prompt/choice, fields = list("title" = nameof(selection_title), "question" = nameof(selection_string), "choices" = computed(PROC_REF(item_choices)), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "item", when = PROC_REF(preface_confirmed)),
+		then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
+/// The items the holder may pick from.
+/obj/item/selectable_item/proc/item_choices(datum/act/A)
+	return TYPE_TABLE_GET(src, selectable_item_options)
+
+/// The preface was answered yes: the selection is asked next.
+/obj/item/selectable_item/proc/preface_confirmed(datum/act/op/A)
+	return !!A.step_value("preface")
+
+/// Old attack_self: the item picked is swapped for the selectable item.
 /obj/item/selectable_item/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/yes_no, PROC_REF(preface_confirmed), answerer = user, title = preface_title, question = preface_string, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+	var/picked = A.step_value("item")
+	if(!isnull(picked))
+		exchange_for(A.actor, picked)
 	return TRUE
 
-/obj/item/selectable_item/proc/preface_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(item_selected), answerer = A.request.answerer, title = selection_title, question = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-
+/// A request's answer (the selection-kit unit tests answer through it): the same exchange.
 /obj/item/selectable_item/proc/item_selected(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/user = A.request.answerer
-	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[A.answer.value]
+	exchange_for(A.request.answerer, A.answer.value)
+
+/// The kit is used up for the item named `picked` in the user's hand.
+/obj/item/selectable_item/proc/exchange_for(mob/user, picked)
+	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[picked]
 	if(chosen_item)
 		if(!consume(src, user))
 			return
 		var/obj/item/result = new chosen_item(get_turf(user))
 		user.put_in_active_hand(result)
 		result.add_fingerprint(user)
-	return
 
 
 /obj/item/selectable_item/chemistrykit

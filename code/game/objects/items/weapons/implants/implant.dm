@@ -878,31 +878,34 @@ CAPABILITIES(/datum/prompt/text/compliance_laws)
 	. = ..()
 	if(.)
 		return
-	var/obj/item/implanter/compliance/implanter = owner
+	var/obj/item/implanter/compliance/implanter = owner_holder()
 	return !QDELETED(implanter) && !QDELETED(implant) && implanter.imp == implant ? null : "implant changed"
 
-/obj/item/implanter/compliance/proc/laws_entered(datum/act/request/A)
-	var/datum/prompt/text/compliance_laws/ask = A.request
-	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.implant))
-		return
-	var/mob/user = ask.answerer
-	var/obj/item/implant/compliance/implant = ask.implant
-	var/newlaws = sanitize(ask.value, 2048)
-	if(newlaws)
-		to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
-		implant.set_laws(newlaws) //Organic
+/// The implant the laws are written to (null for any other implant: the question is not asked).
+/obj/item/implanter/compliance/proc/laws_implant(datum/act/A)
+	return istype(imp, /obj/item/implant/compliance) ? imp : null
+
+/// The implanter has a compliance implant to write laws to.
+/obj/item/implanter/compliance/proc/has_compliance_implant(datum/act/A)
+	return istype(imp, /obj/item/implant/compliance)
 
 CAPABILITIES(/obj/item/implanter/compliance)
 	without("toggle")
-	op("compliance_implanter_self", in_hand(), label("Set laws"), then(PROC_REF(compliance_implanter_self)))
+	op("compliance_implanter_self", in_hand(), label("Set laws"), asks(/datum/prompt/text/compliance_laws, fields = list("implant" = computed(PROC_REF(laws_implant))), step = "laws", when = PROC_REF(has_compliance_implant)), then(PROC_REF(compliance_implanter_self)))
 	owns_one(nameof(imp), starts = /obj/item/implant/compliance, on_destroy = ON_DESTROY_CONTAINED)
 
-/// Old attack_self.
+/// Old attack_self: the laws typed are set on the implant; any other implant is refused.
 /obj/item/implanter/compliance/proc/compliance_implanter_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(istype(imp,/obj/item/implant/compliance))
-		var/obj/item/implant/compliance/implant = imp
-		open_request(src, /datum/prompt/text/compliance_laws, PROC_REF(laws_entered), answerer = user, implant = implant)
+		var/datum/prompt/text/compliance_laws/ask = A.step_answer("laws")
+		if(!ask || QDELETED(ask.answerer) || QDELETED(ask.implant))
+			return
+		var/obj/item/implant/compliance/implant = ask.implant
+		var/newlaws = sanitize(ask.value, 2048)
+		if(newlaws)
+			to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
+			implant.set_laws(newlaws) //Organic
 	else //No using other implants.
 		to_chat(user,span_notice("A red warning pops up on the implanter's micro-screen: 'INVALID IMPLANT DETECTED.'"))
 

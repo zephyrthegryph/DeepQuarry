@@ -55,6 +55,7 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			feed = TRUE, \
 			examine_range = 2),
 		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), \
+			needs(req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, has_venom))), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass)
@@ -115,10 +116,8 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 
 // ---- venom ----
 
-/// What a creature's venom is and how much of it comes out of one milking: a trait's chosen injection, or a spider's poison.
-/obj/item/reagent_containers/glass/proc/venom_milked(datum/act/op/A)
-	var/mob/living/target = A.target
-	var/mob/living/user = A.actor
+/// What a creature's venom is and how much of it comes out of one milking: a trait's chosen injection, or a spider's poison. Null when it has none.
+/obj/item/reagent_containers/glass/proc/venom_of(mob/living/target)
 	var/reagent
 	var/amount
 	if(sparse_get(target, trait_injection_selected))
@@ -129,8 +128,21 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 		reagent = spider.poison_type
 		amount = spider.poison_per_bite
 	if(!reagent || !amount)
-		A.reason = /datum/msg/glass/no_venom
+		return null
+	return list(reagent, amount)
+
+/// The creature has a venom to express.
+/obj/item/reagent_containers/glass/proc/has_venom(datum/act/op/A)
+	return venom_of(A.target) ? null : /datum/msg/glass/no_venom
+
+/obj/item/reagent_containers/glass/proc/venom_milked(datum/act/op/A)
+	var/mob/living/target = A.target
+	var/mob/living/user = A.actor
+	var/list/venom = venom_of(target)
+	if(!venom)
 		return OP_REFUSED
+	var/reagent = venom[1]
+	var/amount = venom[2]
 	if(!cooldown_ready(target, venom_milking_cd))
 		act_message(user, target, MSG_SELF(span_warning("%T% had their venom expressed too recently, try again later.")), \
 			MSG_OTHERS(span_warning("%U% attempts to express venom from %T%, but nothing happens.")))

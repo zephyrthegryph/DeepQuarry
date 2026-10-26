@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 	extend(TAG_UI, needs(req_closed(SPACE_PANEL)), then(PROC_REF(control_touched), early = TRUE))
 	op("chemical", ui_act("chemical", arg("amount", num()), arg("chemid")),
 		needs(req_operable(), req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)),
-			req(PROC_REF(occupant_alive)), req(PROC_REF(occupant_viable))),
+			req(PROC_REF(occupant_alive)), req(PROC_REF(occupant_viable)), req(PROC_REF(room_for_chemical))),
 		then(PROC_REF(inject_chosen)))
 	op("togglefilter", ui_act("togglefilter"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_full(nameof(beaker), because = MSG(sleeper/needs_beaker))),
 		toggles(nameof(filtering)))
@@ -258,6 +258,19 @@ CAPABILITIES(/obj/machinery/sleeper)
 	var/mob/living/occupant = occupant_of(src)
 	return (occupant && occupant.vitality() > 0) ? null : MSG(sleeper/too_far_gone)
 
+/// The occupant does not already carry max_chem of the chemical (a forged press, an unlisted dose or chemical, is left to inject_chosen to refuse).
+/obj/machinery/sleeper/proc/room_for_chemical(datum/act/op/A)
+	var/amount = A.args["amount"]
+	var/chemid = A.args["chemid"]
+	var/mob/living/carbon/human/occupant = occupant_of(src)
+	if(!occupant?.reagents || !(amount in amounts))
+		return null
+	if(!istext(chemid) || !LAZYACCESS(available_chemicals, chemid))
+		return null
+	if(occupant.reagents.get_reagent_amount(chemid) + amount > max_chem)
+		return msg_reason("The subject has too many chemicals in their bloodstream.")
+	return null
+
 /// A chemical button: `amount` units of `chemid` into the occupant, when it is one of the doses and one of the chemicals the sleeper lists, and the
 /// occupant does not already carry max_chem of it. A chemical the sleeper does not list is a forged press: refused and told to the admins.
 /obj/machinery/sleeper/proc/inject_chosen(datum/act/op/A, amount, chemid)
@@ -270,7 +283,6 @@ CAPABILITIES(/obj/machinery/sleeper)
 		message_admins("[key_name_admin(user)] attempted to inject non-available reagent '[html_encode("[chemid]")]' via [src].")
 		return OP_REFUSED
 	if(occupant.reagents.get_reagent_amount(chemid) + amount > max_chem)
-		to_chat(user, "The subject has too many chemicals in their bloodstream.")
 		return OP_REFUSED
 	use_power(amount * CHEM_SYNTH_ENERGY)
 	occupant.reagents.add_reagent(chemid, amount)

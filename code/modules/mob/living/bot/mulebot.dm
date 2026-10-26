@@ -81,7 +81,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
 	op("home", ui_act("home"), then(PROC_REF(ui_act_home)))
 	op("destination", ui_act("destination"), then(PROC_REF(ui_act_destination)))
-	op("sethome", ui_act("sethome"), then(PROC_REF(ui_act_sethome)))
+	op("sethome", ui_act("sethome"), asks(/datum/prompt/choice, fields = list("question" = "Select new home tag", "title" = computed(PROC_REF(beacon_prompt_title)), "choices" = computed(PROC_REF(beacon_choices)), "timeout" = 0), step = "home_tag", when = PROC_REF(beacons_available)), then(PROC_REF(ui_act_sethome)))
 	op("unload", ui_act("unload"), then(PROC_REF(ui_act_unload)))
 	op("autoret", ui_act("autoret"), then(PROC_REF(ui_act_autoret)))
 	op("cargotypes", ui_act("cargotypes"), then(PROC_REF(ui_act_cargotypes)))
@@ -132,12 +132,24 @@ CAPABILITIES(/mob/living/bot/mulebot)
 
 /mob/living/bot/mulebot/proc/ui_act_sethome(datum/act/op/A)
 	var/mob/user = A.actor
-	var/list/beaconlist = GetBeaconList()
-	if(beaconlist.len)
-		open_request(src, /datum/prompt/choice, PROC_REF(home_tag_chosen), answerer = user, valid = PROC_REF(beacon_prompt_usable), title = beacon_prompt_title(), question = "Select new home tag", choices = beaconlist, timeout = 0)
-	else
+	if(!A.step_answer("home_tag")) // the question was skipped: no beacon to name
 		tgui_alert_async(user, "No destination beacons available.")
+		return TRUE
+	var/home_tag = A.step_value("home_tag")
+	var/obj/machinery/navbeacon/beacon = GetBeaconList()[home_tag]
+	if(!beacon)
+		return TRUE
+	rel_set(src, nameof(home), get_turf(beacon))
+	homeName = A.answer.value
 	. = TRUE
+
+/// There is a beacon to ask about.
+/mob/living/bot/mulebot/proc/beacons_available(datum/act/op/A)
+	return length(GetBeaconList()) > 0
+
+/// The beacons a beacon question lists.
+/mob/living/bot/mulebot/proc/beacon_choices(datum/act/op/A)
+	return GetBeaconList()
 
 /mob/living/bot/mulebot/proc/ui_act_unload(datum/act/op/A)
 	unload()
@@ -156,7 +168,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	. = TRUE
 
 /// The title of a beacon question: the bot's own.
-/mob/living/bot/mulebot/proc/beacon_prompt_title()
+/mob/living/bot/mulebot/proc/beacon_prompt_title(datum/act/A = null)
 	return "Mulebot [suffix ? "([suffix])" : ""]"
 
 /// Re-checked on the answer of a beacon question: the asker can still work the bot's window.
@@ -168,13 +180,6 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	if(!A.answer)
 		return null
 	return GetBeaconList()[A.answer.value]
-
-/mob/living/bot/mulebot/proc/home_tag_chosen(datum/act/request/A)
-	var/obj/machinery/navbeacon/beacon = beacon_of_answer(A)
-	if(!beacon)
-		return
-	rel_set(src, nameof(home), get_turf(beacon))
-	homeName = A.answer.value
 
 /// Old attackby: the bot's item handling (old ..()), then an icon refresh. A FALSE result still reaches the attack.
 /mob/living/bot/mulebot/proc/mulebot_interaction_item(datum/act/op/A)
