@@ -20,6 +20,12 @@
 #      batch is reported CAPPED (a single lane that is capped alone is bounced: its own tests do not fit),
 #   4. leaves rewrite/integ-current on the proved combination (push it with tools/dq_push_master.sh) or on origin/master when nothing
 #      passed. Exit 0: every lane is in; 1: some lane was bounced (listed); 2: usage.
+#   3c. DQ_BATCH_CACHE=<file> (the batch train sets it): the verdict of every attempt (pass, merge conflict, gate failure) is saved there,
+#      keyed to origin/master and the lanes' tips, and read back by the next run on the same batch. The bisect is deterministic, so a
+#      run that was cut off by the deadline is RESUMED by the next one: it replays the saved verdicts at once and spends its time on the
+#      next untried attempt instead of the full batch again. A cut-off or capped verdict is never saved. The first real attempt of a run
+#      and any single-lane attempt (the decisive step of a bisect) ignore the deadline, so every run makes progress and a lane is never
+#      deferred instead of judged,
 # Machine-readable result lines at the end (tools/dq_train.sh reads them): BATCH_GOOD: <lanes>, BATCH_DEFERRED: <lanes>, BATCH_CAPPED: 1|,
 # and one BATCH_BOUNCED: <lane>|<reason>|<attempt log> per bounced lane.
 # Attempts run on a detached HEAD, so the branch only ever moves to a proved tip, with `git switch -C` from a clean tree (the previous
@@ -67,8 +73,34 @@ blogs=()
 deferred=()
 capped=""
 n_attempts=0
+real_attempts=0
+CACHE="${DQ_BATCH_CACHE:-}"
+cache_ctx=""
 
 ref_of() { git rev-parse -q --verify "$1^{commit}" >/dev/null 2>&1 && echo "$1" || echo "origin/$1"; }
+
+# The verdict cache (3c): a context line (origin/master + every lane's tip, in order) then "<rc> <lanes>" lines. A different context is discarded.
+cache_load() {
+	[ -n "$CACHE" ] || return 0
+	local l
+	cache_ctx="$(git rev-parse origin/master)"
+	for l in "${lanes[@]}"; do cache_ctx="$cache_ctx $(git rev-parse "$(ref_of "$l")^{commit}")"; done
+	if [ -f "$CACHE" ] && [ "$(head -n 1 "$CACHE")" = "ctx $cache_ctx" ]; then
+		local rc key
+		while read -r rc key; do
+			[ -n "$key" ] && tried_rc[$key]="$rc"
+		done < <(tail -n +2 "$CACHE")
+		echo "== resuming the bisect: ${#tried_rc[@]} attempt verdict(s) saved from an earlier run on this batch"
+	else
+		printf 'ctx %s\n' "$cache_ctx" >"$CACHE.tmp" && mv -f "$CACHE.tmp" "$CACHE"
+	fi
+}
+cache_save() { # <rc> <key>
+	[ -n "$CACHE" ] || return 0
+	case "$1" in 90|92|93) return 0 ;; esac
+	printf '%s %s\n' "$1" "$2" >>"$CACHE"
+}
+cache_load
 
 # attempt <lane...>: detached origin/master + the merges + the gates. Returns the gates' status; a merge conflict names the lane in $CONFLICT.
 CONFLICT=""
@@ -76,12 +108,13 @@ current_key=""
 attempt() {
 	local key="$*" l log
 	if [ -z "${NOCACHE:-}" ] && [ -n "${tried_rc[$key]+x}" ]; then return "${tried_rc[$key]}"; fi
-	if [ -z "${NOCACHE:-}" ] && [ -n "$DEADLINE" ] && [ "$(date +%s)" -gt "$DEADLINE" ]; then
+	if [ -z "${NOCACHE:-}" ] && [ -n "$DEADLINE" ] && [ "$real_attempts" -gt 0 ] && [ "$#" -gt 1 ] && [ "$(date +%s)" -gt "$DEADLINE" ]; then
 		echo "== batch attempt not started ($key): the cycle deadline passed; the lanes not yet judged are deferred"
 		return 92
 	fi
 	current_key="$key"
 	n_attempts=$((n_attempts + 1))
+	real_attempts=$((real_attempts + 1))
 	log="data/merge-batch/$stamp.attempt$n_attempts.log"
 	attempt_log[$key]="$log"
 	echo "== batch attempt $n_attempts: $key (log $log)"
@@ -95,6 +128,7 @@ attempt() {
 			CONFLICT="$l"
 			echo "   $l conflicts with the batch; see $log" >&2
 			tried_rc[$key]=91
+			[ -n "${NOCACHE:-}" ] || cache_save 91 "$key"
 			return 91
 		fi
 	done
@@ -112,6 +146,7 @@ attempt() {
 	# A failed gate leaves its in-job baseline shrink uncommitted: discard it now, so nothing leaks into the next attempt or cycle.
 	if [ "$rc" -ne 0 ]; then dq_clean_tracked "dq_merge_batch: failed gate left a tracked edit" 2>&1 | tee -a "$log" >&2; fi
 	tried_rc[$key]=$rc
+	[ -n "${NOCACHE:-}" ] || cache_save "$rc" "$key"
 	return "$rc"
 }
 
