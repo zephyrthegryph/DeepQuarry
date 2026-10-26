@@ -351,8 +351,8 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 						Name = <b>[M.name]</b>; Real_name = [M.real_name]; Mind_name = [M.mind?"[M.mind.name]":""]; Key = <b>[M.key]</b>;<br>\
 						Location = [location_description];<br>\
 						[special_role_description]<br>\
-						(<a href='byond://?src=[REF(user)];[HrefToken()];priv_msg=[url_encode(ref_token(M))]'>PM</a>) (<A href='byond://?src=[REF(src)];[HrefToken()];adminplayeropts=[url_encode(ref_token(M))]'>PP</A>) (<A href='byond://?_src_=vars;[HrefToken()];Vars=[REF(M)]'>VV</A>) \
-						(<A href='byond://?src=[REF(src)];[HrefToken()];subtlemessage=[url_encode(ref_token(M))]'>SM</A>) ([admin_jump_link(M, src)]) (<A href='byond://?src=[REF(src)];[HrefToken()];secretsadmin=check_antagonist'>CA</A>)</span>")
+						(<a href='byond://?src=[REF(user)];[HrefToken(user)];priv_msg=[url_encode(ref_token(M))]'>PM</a>) (<A href='byond://?src=[REF(src)];[HrefToken(user)];adminplayeropts=[url_encode(ref_token(M))]'>PP</A>) (<A href='byond://?_src_=vars;[HrefToken(user)];Vars=[REF(M)]'>VV</A>) \
+						(<A href='byond://?src=[REF(src)];[HrefToken(user)];subtlemessage=[url_encode(ref_token(M))]'>SM</A>) ([admin_jump_link(M, src)]) (<A href='byond://?src=[REF(src)];[HrefToken(user)];secretsadmin=check_antagonist'>CA</A>)</span>")
 
 /datum/admins/proc/topic_adminspawncookie(datum/act/op/A, href_adminspawncookie)
 	var/mob/living/carbon/human/H = href_adminspawncookie

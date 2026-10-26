@@ -526,6 +526,7 @@
 #include "dq_topic_datums_tests.dm"
 #include "dq_admin_txt_load_tests.dm"
 #include "dq_topic_admin_tests.dm"
+#include "dq_topic_token_strict_tests.dm"
 #include "dq_sys_messages_tests.dm"
 #include "dq_untyped_wave3_tests.dm"
 #include "dq_om_core_fix_tests.dm"

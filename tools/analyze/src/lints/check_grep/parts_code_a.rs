@@ -20,6 +20,13 @@ pub fn parts() -> Vec<Part> {
         .allow(Allow::Strict)
         .flt(vec![Flt::DropPaths("call_ext_allow"), drop(r":\s*//|:\s*\*|// .*call_ext")]),
         Part::new(
+            "href_token_needs_a_viewer",
+            "href token needs a viewer",
+            "HrefToken()/HrefTokenFormField() with no viewer. Pass the admin the link is built for (a client or a mob); a link written for every admin, or into a _src_=vars page, carries HREF_TOKEN_PLACEHOLDER.",
+            Files::Code,
+            line(r"HrefToken(FormField)?\([[:space:]]*\)"),
+        ),
+        Part::new(
             "holder_call_proc_ref_only",
             "holder_call: PROC_REF only",
             "holder_call(owner, proc, with) takes a PROC_REF()/TYPE_PROC_REF()/GLOBAL_PROC_REF() (or one stored from them), never a string literal; `with` is the argument list, as after() takes it.",

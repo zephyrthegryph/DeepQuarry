@@ -38,7 +38,7 @@
 	if(!target)
 		to_chat(user, span_warning("The object you tried to expose to [C] no longer exists (nulled or hard-deled)"), confidential = TRUE)
 		return
-	message_admins("[key_name_admin(user)] Showed [key_name_admin(C)] a <a href='byond://?_src_=vars;[HrefToken(TRUE)];Vars=[REF(target)]'>VV window</a>")
+	message_admins("[key_name_admin(user)] Showed [key_name_admin(C)] a <a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(target)]'>VV window</a>")
 	log_admin("Admin [key_name(user)] Showed [key_name(C)] a VV window of a [target]")
 	to_chat(C, "[holder.fakekey ? "an Administrator" : "[key]"] has granted you access to view a View Variables window", confidential = TRUE)
 	C.debug_variables(target, user)

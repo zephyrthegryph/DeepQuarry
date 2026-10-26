@@ -127,7 +127,7 @@ CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
 
 	var/datum/announcement/priority/command/AN = new/datum/announcement/priority/command()
 	AN.title = title
-	AN.Announce(text)
+	AN.Announce(text, actor = user)
 
 
 /datum/game_mode/malfunction/verb/elite_encryption_hack()

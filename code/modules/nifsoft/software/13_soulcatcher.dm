@@ -415,7 +415,7 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().say_into(message,src,eyeobj)
 
-/mob/living/carbon/brain/caught_soul/emote(act,m_type=1,message = null)
+/mob/living/carbon/brain/caught_soul/emote(act, m_type = 1, message = null, typed = FALSE)
 	if(has_status(STAT_MUTED)) return FALSE
 	if (act == "me")
 		if(has_status(STAT_MUTED))
@@ -428,11 +428,11 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 			return
 		if(!(message))
 			return
-		return custom_emote(m_type, message)
+		return custom_emote(m_type, message, typed = typed)
 	else
 		return FALSE
 
-/mob/living/carbon/brain/caught_soul/custom_emote(m_type, message)
+/mob/living/carbon/brain/caught_soul/custom_emote(m_type, message, typed = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().emote_into(message,src,eyeobj)
