@@ -228,7 +228,14 @@ self_update() {
 	exec bash "$STATE/self/dq_train.sh" "${ORIG_ARGS[@]}"
 	tlog "ERROR: self-update: exec failed"; return 0
 }
-
+# Runs tools/dq_disk_budget.sh from the integrator's snapshot, else from the worktree it was started from; missing is a warning (rc 0), never a refusal.
+disk_budget() {
+	local s="$SELF_DIR/dq_disk_budget.sh" rc
+	[ -f "$s" ] && [ -f "$SELF_DIR/ci/disk_budget.toml" ] || s="${DQ_TRAIN_ORIGIN_REPO:-}/tools/dq_disk_budget.sh"
+	if [ ! -f "$s" ]; then tlog "WARNING: no dq_disk_budget.sh next to the integrator ($SELF_DIR) or in the origin repo; the disk budget is not enforced"; return 0; fi
+	bash "$s" "$@" >>"$LOGS/train.log" 2>&1; rc=$?
+	return "$rc"
+}
 cmd_ensure() {
 	init_state
 	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; return 0; fi
@@ -542,12 +549,16 @@ cycle() {
 	tlog "cycle: queue=[${all[*]}] valid=[${VALID[*]}] chosen=[${CHOSEN[*]}] (limit $BATCH_LIMIT_NOW, est ~${BATCH_EST}s of tests) all_light=$all_light"
 	# Disk budget (tools/dq_disk_budget.sh): enforce the caps at every cycle start; below the floor a heavy cycle is not started (the lanes stay queued).
 	if [ "$all_light" -eq 1 ]; then
-		bash "$SELF_DIR/dq_disk_budget.sh" enforce --quiet --throttle 10 >>"$LOGS/train.log" 2>&1 || true
+		disk_budget enforce --quiet --throttle 10 || true
 		light_cycle
 	else
-		if ! bash "$SELF_DIR/dq_disk_budget.sh" gate "a heavy train cycle" --sync --throttle 10 >>"$LOGS/train.log" 2>&1; then
+		# only exit 4 is a real floor breach (the REFUSED message above in this log has the free GB and the floor); anything else is a warning and the cycle runs
+		disk_budget gate "a heavy train cycle" --sync --throttle 10; local drc=$?
+		if [ "$drc" -eq 4 ]; then
 			tlog "disk floor: the cycle is skipped, the lanes stay queued; free space (see the REFUSED message above in this log), then the next cycle runs"
 			return 0
+		elif [ "$drc" -ne 0 ]; then
+			tlog "WARNING: the disk gate failed internally (rc=$drc, not a floor breach); running the cycle"
 		fi
 		heavy_cycle
 	fi
