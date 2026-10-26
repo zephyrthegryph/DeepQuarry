@@ -6,7 +6,6 @@ handler_override	code/modules/a/a.dm	1
 handler_override	code/modules/a/a.dm	2
 handler_override	code/modules/a/a.dm	3
 handler_override	code/modules/a/a.dm	4
-handler_override	code/modules/a/a.dm	5
 handler_override	code/modules/a/a.dm	12
 handler_override	code/modules/a/a.dm	13
 handler_override	code/modules/a/a.dm	14

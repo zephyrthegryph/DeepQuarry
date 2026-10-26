@@ -255,9 +255,9 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	var/turf/location = get_turf(src)
 	var/special_role = check_special_role()
 	if(!istype(loc,/obj/machinery/cryopod))
-		log_and_message_admins("has ghosted outside cryo[special_role ? " as [special_role]" : ""]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
+		log_and_message_admins("has ghosted outside cryo[special_role ? " as [special_role]" : ""]. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
 	else if(special_role)
-		log_and_message_admins("has ghosted in cryo as [special_role]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
+		log_and_message_admins("has ghosted in cryo as [special_role]. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
 	var/mob/observer/dead/ghost = ghostize(0)	// 0 parameter is so we can never re-enter our body, "Charlie, you can never come baaaack~" :3
 	if(ghost)
 		STAMP(ghost, timeofdeath, CLOCK_WORLD) 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.

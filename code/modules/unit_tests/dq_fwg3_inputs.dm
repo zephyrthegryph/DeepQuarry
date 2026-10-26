@@ -31,7 +31,7 @@
 			return TRUE
 	return FALSE
 
-/// A player's drag (the adapter's path: ops first, then the legacy gesture entries and MouseDrop_T).
+/// A player's drag (the adapter's path: ops first, then nothing).
 /datum/unit_test/dq_fwg3/proc/player_drag(mob/actor, atom/dragged, atom/over)
 	var/datum/input_adapter/adapter = actor.input_adapter()
 	adapter.drag(actor, dragged, over, get_turf(dragged), get_turf(over), null, null, "")

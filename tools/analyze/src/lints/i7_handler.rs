@@ -1,7 +1,7 @@
 //! Port of `tools/ci/i7_handler_lint.py` (I7, doc/rewrite/interactions.md sec 13).
 //!
-//! No legacy input-handler overrides anywhere: `attackby`, `attack_hand`, `attack_self`, `click_alt`
-//! and `MouseDrop_T` are thin dispatchers into the resolver defined once in code/_onclick/, and a
+//! No legacy input-handler overrides anywhere: `attackby`, `attack_hand`, `attack_self` and `click_alt`
+//! are thin dispatchers into the resolver defined once in code/_onclick/, and a
 //! type declares what it does with an input as interactions. Fails on any other definition of them.
 //! The dispatchers themselves (`allowed`) and `code/modules/unit_tests/` are in `lint_scopes.toml`.
 //!
@@ -37,7 +37,7 @@ impl Lint for I7Handler {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let handler = crate::pat!(r"(?m)^(/\w[\w/ ]*?)/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T)\(");
+        let handler = crate::pat!(r"(?m)^(/\w[\w/ ]*?)/(attackby|attack_hand|attack_self|click_alt)\(");
         let allowed = cx.list("allowed");
         let text = f.text();
         for m in handler.captures_iter(text) {

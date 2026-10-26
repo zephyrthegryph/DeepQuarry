@@ -23,15 +23,10 @@
 	if(src)
 		input_submit(new /datum/input_event/click/wheel(usr, src, location, control, params, delta_x, delta_y))
 
-/// A drop: reach is asked when the event resolves (input_resolve_drag()), then the target's ops and its MouseDrop_T answer it.
+/// A drop: the dragged type's drag_onto() entry, then reach (asked when the event resolves, input_resolve_drag()) and the target's ops answer it.
 /atom/MouseDrop(atom/over, src_location, over_location, src_control, over_control, params)
 	if(src && over)
 		input_submit(new /datum/input_event/drag(usr, src, over, list(src_location, over_location, src_control, over_control, params), TRUE))
-
-/// Something dragged onto this, when no declared entry and no op took it: the engine's default drop. Nothing: a type declares what a drop does (drag_onto(), an op
-/// that takes the dragged atom as the held one).
-/atom/proc/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	return FALSE
 
 /atom/MouseEntered(location, control, params)
 	if(src)

@@ -49,7 +49,7 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/modules/mob/living/carbon/human/npcs.dm` | 1 | 1 |
 | `code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm` | 4 | 4 |
 | `code/modules/paperwork/folders.dm` | 1 | 2 |
-| `code/modules/vore/eating/vore_consent.dm` | 12 | 24 |
+| `code/content/vore/eating/vore_consent.dm` | 12 | 24 |
 | `code/modules/vore/fluffstuff/custom_clothes.dm` | 14 | 14 |
 | `code/modules/vore/fluffstuff/custom_items.dm` | 3 | 3 |
 | `code/modules/weapons/MadokaSpear.dm` | 1 | 1 |
@@ -206,7 +206,7 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/modules/shieldgen/sheldwallgen.dm` | 1 |
 | `code/modules/shieldgen/shield_gen.dm` | 1 |
 | `code/modules/shieldgen/shield_generator.dm` | 1 |
-| `code/modules/surgery/surgery_ops.dm` | 1 |
+| `code/content/surgery/surgery_ops.dm` | 1 |
 | `code/modules/telesci/bscyrstal.dm` | 1 |
 | `code/modules/telesci/quantum_pad.dm` | 1 |
 | `code/modules/telesci/telesci_computer.dm` | 1 |
@@ -221,7 +221,7 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/modules/vehicles/Securitrain.dm` | 1 |
 | `code/modules/vehicles/cargo_train.dm` | 1 |
 | `code/modules/vehicles/rover.dm` | 1 |
-| `code/modules/vehicles/train.dm` | 1 |
+| `code/content/vehicles/train.dm` | 1 |
 | `code/modules/vore/smoleworld/smoleworld.dm` | 2 |
 | `code/modules/xenoarcheaology/tools/tools.dm` | 2 |
 | `code/modules/xenobio/items/weapons.dm` | 2 |

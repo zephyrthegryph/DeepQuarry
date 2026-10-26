@@ -86,7 +86,7 @@ fn not_a_cooldown(p: &Patterns, rel: &str, line: &str, stamp: &Option<Pat>) -> b
             return true;
         }
     }
-    rel.starts_with("code/modules/reagents/") && p.reagent_data.is_match(line)
+    (rel.starts_with("code/modules/reagents/") || rel.starts_with("code/content/reagents/")) && p.reagent_data.is_match(line)
 }
 
 impl Lint for Cooldown {

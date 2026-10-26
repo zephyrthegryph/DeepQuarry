@@ -203,7 +203,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 /// Starts the delamination: the pull, then the effects after `pull_time` (explode_effects()).
 /obj/machinery/power/supermatter/proc/explode()
-	message_admins("Supermatter exploded at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+	message_admins("Supermatter exploded at ([x],[y],[z] - <A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 	log_game("SUPERMATTER([x],[y],[z]) Exploded. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()]")
 	set_anchored(TRUE)
 	set_grav_pulling(1)
@@ -702,7 +702,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 /// Declared setup: announce broken shard, after the complete parent chain.
 /obj/item/broken_sm/proc/announce_broken_shard()
-	message_admins("Broken SM shard created at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+	message_admins("Broken SM shard created at ([x],[y],[z] - <A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 
 /obj/item/broken_sm/proc/radiate()
 	if(active)

@@ -15,4 +15,4 @@
 		return FALSE // should stop you from dragging through windows
 	return TRUE
 
-// /atom/MouseDrop routes through the input inbox as the Drag action (code/engine/kernel/entry.dm); the engine's default drop, MouseDrop_T(), is there too.
+// /atom/MouseDrop routes through the input inbox as the Drag action (code/engine/kernel/entry.dm).

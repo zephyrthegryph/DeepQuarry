@@ -24,13 +24,13 @@
 
 	//Snapshot is crazy and likes putting each topic hyperlink on a seperate line from any other tags so it's nice and clean.
 	admin_fax_links += "<HR><center><font size= \"1\">The fax will transmit everything above this line</font><br>"
-	admin_fax_links += "<A href='byond://?src=[REF(src)];[HrefToken()];confirm=1'>Send fax</A> "
-	admin_fax_links += "<A href='byond://?src=[REF(src)];[HrefToken()];penmode=1'>Pen mode: [isCrayon ? "Crayon" : "Pen"]</A> "
-	admin_fax_links += "<A href='byond://?src=[REF(src)];[HrefToken()];cancel=1'>Cancel fax</A> "
+	admin_fax_links += "<A href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];confirm=1'>Send fax</A> "
+	admin_fax_links += "<A href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];penmode=1'>Pen mode: [isCrayon ? "Crayon" : "Pen"]</A> "
+	admin_fax_links += "<A href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];cancel=1'>Cancel fax</A> "
 	admin_fax_links += "<BR>"
-	admin_fax_links += "<A href='byond://?src=[REF(src)];[HrefToken()];toggleheader=1'>Toggle Header</A> "
-	admin_fax_links += "<A href='byond://?src=[REF(src)];[HrefToken()];togglefooter=1'>Toggle Footer</A> "
-	admin_fax_links += "<A href='byond://?src=[REF(src)];[HrefToken()];clear=1'>Clear page</A> "
+	admin_fax_links += "<A href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];toggleheader=1'>Toggle Header</A> "
+	admin_fax_links += "<A href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];togglefooter=1'>Toggle Footer</A> "
+	admin_fax_links += "<A href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];clear=1'>Clear page</A> "
 	admin_fax_links += "</center>"
 
 /obj/item/paper/admin/proc/generateHeader(logo)

@@ -179,6 +179,9 @@ export async function runAnalyzeTests(options: AnalyzeTestOptions): Promise<void
       configurationCandidates.push(file);
       if (fs.existsSync(file)) inputs.push(file);
     }
+    // The fixture tests read the repo's lint scopes (outside the package), so a scope change must miss the cache.
+    const scopesFile = path.join(root, 'tools/ci/lint_scopes.toml');
+    if (fs.existsSync(scopesFile)) inputs.push(scopesFile);
     inputs = [...new Set(inputs)].sort();
     if (executableDoctests(inputs)) throw new Error('executable or unclassified doctests');
     const toolchain = `${await execute('rustc', ['-vV'])}\0${await execute('cargo', ['--version'])}`;

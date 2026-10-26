@@ -14,7 +14,7 @@
 // There is one input path. BYOND's native mouse callbacks are overridden in one place, code/engine/kernel/entry.dm: each reads `usr` once, builds a typed
 // /datum/input_event with the actor in it and hands it to input_submit(). When the event resolves (on the spot, or later from the inbox, the same code)
 // input_dispatch() looks up the target type's declared entry for the input in the type tables, runs the first that takes it, and otherwise the input
-// goes on to its default handling (the click router, the drop's ops and MouseDrop_T, the mob's hover tracking). No type overrides a native mouse proc
+// goes on to its default handling (the click router, the drop's ops, the mob's hover tracking). No type overrides a native mouse proc
 // (the `mouse_override` lint rejects it). Content never reads usr: the handler gets the actor in its context (A.actor), and an op key runs through
 // perform_op() with it, so requirements, reach and logging apply as for any input.
 //
@@ -159,7 +159,7 @@
 	return FALSE
 
 /// The acting mob of the native input running now (usr), for the engine's own entry points. Content gets its actor as an argument.
-/proc/input_actor()
+/proc/input_actor() as /mob
 	return usr
 
 /// A compatibility callback has an engine-level invocation interface.

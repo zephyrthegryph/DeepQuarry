@@ -207,6 +207,59 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
     pub fn visit_storage(&self, visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>)) {
         self.store.visit_storage(visit);
     }
+    /// Visit the stored variants of the exact `keys`, in caller order, with whether THIS lease claims each. Sibling leases'
+    /// variants of the same key are included: a caller choosing one candidate prefers its own claim.
+    pub fn visit_key_storage<K: AsRef<[u8]>>(
+        &self,
+        keys: impl IntoIterator<Item = K>,
+        mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>, bool),
+    ) {
+        let state = self
+            .store
+            .state
+            .read()
+            .unwrap_or_else(|error| error.into_inner());
+        for key in keys {
+            let key = key.as_ref();
+            let hash = xxhash_rust::xxh3::xxh3_128(key);
+            if let Some(bucket) = state.buckets.get(&hash) {
+                for entry in bucket.iter().filter(|entry| entry.key.as_ref() == key) {
+                    visit(
+                        ObservedArtifactStorageView::Entry {
+                            key: &entry.key,
+                            reads: &entry.reads,
+                            versions: &entry.versions,
+                            value: &entry.value,
+                        },
+                        entry.holders.has(self.slot),
+                    );
+                }
+            }
+        }
+    }
+    /// Make the stored variant `value` of `key` this lease's claim for the key (releasing its previous claim of the key).
+    /// False when no such variant is stored any more (a candidate the caller already validated was released meanwhile).
+    pub fn claim_stored(&self, key: &[u8], value: &Arc<T>) -> bool {
+        let hash = xxhash_rust::xxh3::xxh3_128(key);
+        let mut state = self
+            .store
+            .state
+            .write()
+            .unwrap_or_else(|error| error.into_inner());
+        let stored = state
+            .buckets
+            .get(&hash)
+            .into_iter()
+            .flatten()
+            .any(|entry| Arc::ptr_eq(&entry.value, value) && entry.key.as_ref() == key);
+        if !stored {
+            return false;
+        }
+        let detached = assign(&mut state, self.slot, key, hash, Arc::as_ptr(value) as usize);
+        drop(state);
+        drop(detached);
+        true
+    }
     /// Whole shared-core accounting, including sibling leases. This is neither
     /// this lease's private byte charge nor complete heap coverage.
     pub fn storage_accounting(&self) -> ArtifactStorageAccounting {

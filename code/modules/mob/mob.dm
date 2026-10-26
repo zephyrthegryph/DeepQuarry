@@ -757,7 +757,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/is_active()
 	return (0 >= stat)
 
-/// Vital-state predicate: is this mob dead (stat)? See code/modules/body/vital_state.dm.
+/// Vital-state predicate: is this mob dead (stat)? See code/domains/body/vital_state.dm.
 /mob/proc/is_dead()
 	return stat == DEAD
 

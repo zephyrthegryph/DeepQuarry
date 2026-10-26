@@ -455,7 +455,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 /mob/living/silicon/ai/proc/ai_announcement_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	announcement.Announce(A.answer.value)
+	announcement.Announce(A.answer.value, actor = src)
 	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()

@@ -1,0 +1,3 @@
+duplicate_input_key	code/modules/a/a.dm	5
+duplicate_input_key	code/modules/a/a.dm	14
+duplicate_input_key	code/modules/a/a.dm	15

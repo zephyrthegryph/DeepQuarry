@@ -348,7 +348,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 		return TRUE
 	var/obj/item/card/id/id = user.GetIdCard()
 	crew_announcement.announcer = istype(id) ? GetNameAndAssignmentFromId(id) : null
-	crew_announcement.Announce(input)
+	crew_announcement.Announce(input, actor = user)
 	COOLDOWN_START(src, message_cooldown, 60 SECONDS)
 	return TRUE
 

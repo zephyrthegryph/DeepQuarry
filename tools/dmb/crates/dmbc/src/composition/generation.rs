@@ -47,31 +47,10 @@ pub(super) struct PatchSlot {
     fields: Option<crate::class_projection::FieldRecords>,
     base: Option<Arc<crate::retained_output::OutputBase>>,
     image: Option<Arc<PatchImage>>,
-    /// Code rows spliced into `image` by body patches since the retained model's own encoding
-    /// (`model_anchor`, the hash of `current.encoded`). Applied to a copy of the model when a
-    /// structural patch needs it, so a body edit does not cost a model update.
-    model_rows: Vec<(usize, Arc<Vec<u32>>)>,
-    model_anchor: Option<u128>,
-    /// Patch bases of earlier full builds with a different declaration skeleton, most recent first.
-    /// A shared compile root alternates between lanes whose trees differ in declarations; each lane's
-    /// next body edit patches against its own earlier base instead of compiling the whole program.
-    /// A body patch is relative to its base alone (body digests, link footprints, inputs, archive);
-    /// what needs the retained model (string appends, structural patches) declines on an alternate.
-    alternates: Vec<Arc<PatchSlot>>,
-    /// On an alternate only: the retained model of that build (with `model_rows`/`model_anchor` it
-    /// describes the alternate's image), so string-literal and structural patches work there too.
-    /// Released with the wire images under memory pressure.
-    generation: Option<Arc<Generation>>,
-}
-/// How many earlier patch bases a session keeps (`DMB_PATCH_ALTERNATES`, default 2, 0 disables).
-fn alternate_limit() -> usize {
-    static LIMIT: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
-    *LIMIT.get_or_init(|| {
-        std::env::var("DMB_PATCH_ALTERNATES")
-            .ok()
-            .and_then(|value| value.parse().ok())
-            .unwrap_or(2)
-    })
+    /// The base a full build of this request replaces, until the build installs its own: when the two differ in
+    /// program text the replaced one is stored (`variant_spill`, keyed by its text) so a compile root that alternates
+    /// between trees with different declarations finds it again (`restore_patch_base`).
+    replaced: Option<Arc<PatchSlot>>,
 }
 /// A single latest successful generation; no history or source authority retained.
 pub struct RetainedGeneration {
@@ -286,21 +265,9 @@ impl RetainedGeneration {
     ) {
         self.attempt.with_pending(|_| {
             let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-            // The previous base becomes an alternate, unless it has the same program text as one kept.
-            let mut alternates = std::mem::take(&mut slot.alternates);
-            if alternate_limit() > 0 && slot.base.is_some() && slot.image.is_some() && slot.link.is_some() {
-                // Composition has not encoded this request's model yet: `current` is still the previous build's.
-                let generation = self.current.lock().unwrap_or_else(|e| e.into_inner()).clone();
-                let previous = Arc::new(PatchSlot {
-                    alternates: Vec::new(),
-                    generation,
-                    ..std::mem::take(&mut *slot)
-                });
-                let key = previous.base.as_ref().map(|base| base.text_key());
-                alternates.retain(|kept| kept.base.as_ref().map(|base| base.text_key()) != key);
-                alternates.insert(0, previous);
-            }
-            alternates.truncate(alternate_limit());
+            let previous = std::mem::take(&mut *slot);
+            let replaced = (previous.base.is_some() && previous.image.is_some() && previous.link.is_some())
+                .then(|| Arc::new(PatchSlot { replaced: None, ..previous }));
             *slot = PatchSlot {
                 link: Some(Arc::new(PatchLink {
                     tables: tables.clone(),
@@ -310,10 +277,7 @@ impl RetainedGeneration {
                 base: None,
                 image: None,
                 fields: None,
-                model_rows: Vec::new(),
-                model_anchor: None,
-                alternates,
-                generation: None,
+                replaced,
             };
         });
     }
@@ -342,128 +306,41 @@ impl RetainedGeneration {
             }
         }
     }
-    /// Default-edit patch: replace Variables-table values in the retained
-    /// image (see `crate::declaration_patch`). The base advances
-    /// exactly as `patch_rows` advances it.
-    pub(crate) fn patch_variable_values(
-        &self,
-        image: &PatchImage,
-        values: &[(u32, u8, u32)],
-        base: crate::retained_output::OutputBase,
-    ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
-        self.attempt
-            .with_pending(|_| {
-                let patched = image
-                    .rows
-                    .patch_variable_values(values)
-                    .map_err(|error| format!("variable patch: {error}"))?;
-                let encoded = patched.image().clone();
-                validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;
-                // Keep the retained model describing the published image so a
-                // later structural patch can edit it (stable numbering).
-                {
-                    let _timer = dm_profile::detail_timer("patch.default_model_sync");
-                    let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-                    let synced = current.as_ref().and_then(|generation| {
-                        (generation.encoded.content_hash() == image.rows.image().content_hash())
-                            .then(|| {
-                                let mut inputs = CertifiedGenerationInputs {
-                                    model: generation.inputs.model.clone(),
-                                    string_seed: generation.inputs.string_seed.clone(),
-                                };
-                                for &(record, _, value) in values {
-                                    inputs.model.variables[record as usize].value = value;
-                                }
-                                Generation {
-                                    inputs,
-                                    encoded: encoded.clone(),
-                                }
-                            })
-                    });
-                    *current = synced.map(Arc::new);
-                }
-                let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-                slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
-                slot.image = Some(Arc::new(PatchImage {
-                    rows: patched,
-                    proc_code: Arc::clone(&image.proc_code),
-                }));
-                // The retained model was replaced (or released) above.
-                slot.model_rows.clear();
-                slot.model_anchor = None;
-                Ok(encoded)
-            })
-            .unwrap_or_else(|| Err("generation attempt is not pending".into()))
-    }
-    /// Whether body patches since the model's encoding (`encoded`) account for the published image
-    /// `base_hash`: the model plus the rows in the patch slot describe that image.
-    fn rows_synced(&self, encoded: u128, base_hash: u128) -> bool {
-        let slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-        slot.model_anchor == Some(encoded)
-            && !slot.model_rows.is_empty()
-            && slot.base.as_ref().is_some_and(|base| base.dmb_hash() == base_hash)
-    }
-    /// Rebuild a released retained model from the patch slot's row image: memory pressure drops the
-    /// model (`release_wire_images`), which used to send the next structural or string patch to a
-    /// full compile. The image is the published DMB; decoding it gives the model back, accepted only
-    /// when it re-encodes to exactly those bytes. Its patch rows are then already in the model.
-    fn recover_model(&self) {
-        static RECOVERED: dm_profile::Accumulator = dm_profile::Accumulator::new("generation.model_recovery");
+    /// Make the retained model the one of the published image `base_hash`: kept when it is, else decoded from the patch
+    /// slot's image (which a body patch, a restored base or a released model leaves as the only description of the
+    /// output). The decode is accepted only when it re-encodes to exactly those bytes.
+    fn model_of(&self, base_hash: u128) -> Result<(), String> {
+        static DECODED: dm_profile::Accumulator = dm_profile::Accumulator::new("generation.model_from_image");
         let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-        if current.is_some() {
-            return;
+        if current.as_ref().is_some_and(|generation| generation.encoded.content_hash() == base_hash) {
+            return Ok(());
         }
-        let Some(image) = self.patch.lock().unwrap_or_else(|e| e.into_inner()).image.clone() else {
-            return;
-        };
-        let _timer = RECOVERED.time();
+        let image = self
+            .patch
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .image
+            .clone()
+            .filter(|image| image.rows.image().content_hash() == base_hash)
+            .ok_or("no retained image of the patch base")?;
+        let _timer = DECODED.time();
         let encoded = image.rows.image().clone();
-        let Ok(model) = Dmb::from_bytes(encoded.bytes()) else {
-            return;
-        };
-        let Ok(reencoded) = encode_model(&model, None) else {
-            return;
-        };
+        let model = Dmb::from_bytes(encoded.bytes()).map_err(|error| format!("retained image decode: {error:?}"))?;
+        let reencoded = encode_model(&model, None).map_err(|error| format!("retained image re-encode: {error:?}"))?;
         if reencoded.content_hash() != encoded.content_hash() {
-            crate::daemon_eprintln!("native patch: released model does not re-encode from its image; not recovered");
-            return;
+            return Err("retained image does not re-encode from its model".into());
         }
         *current = Some(Arc::new(Generation {
             inputs: CertifiedGenerationInputs::after_validation(model),
             encoded,
         }));
-        drop(current);
-        let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-        slot.model_rows.clear();
-        slot.model_anchor = None;
-        crate::daemon_eprintln!("native patch: released model recovered from the retained image");
+        Ok(())
     }
-    /// A copy of the retained model that describes the published image `base_hash`: the model
-    /// itself when it does, else the model with the code rows body patches spliced since.
+    /// A copy of the model of the published image `base_hash`.
     fn model_for(&self, base_hash: u128) -> Result<Dmb, String> {
-        self.recover_model();
+        self.model_of(base_hash)?;
         let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-        let generation = current.as_ref().ok_or("retained model released")?;
-        let mut model = generation.inputs.model.clone();
-        if generation.encoded.content_hash() == base_hash {
-            return Ok(model);
-        }
-        if !self.rows_synced(generation.encoded.content_hash(), base_hash) {
-            return Err("retained model differs from the patch base".to_string());
-        }
-        let rows = self
-            .patch
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .model_rows
-            .clone();
-        let image = model
-            .patch_list_rows(&rows)
-            .map_err(|error| format!("retained model row sync: {error}"))?;
-        if image.content_hash() != base_hash {
-            return Err("retained model rows do not reproduce the patch base".into());
-        }
-        Ok(model)
+        Ok(current.as_ref().ok_or("retained model absent")?.inputs.model.clone())
     }
     /// First free physical index of each link table in the retained model
     /// that describes the published image `base_hash` (append-only linking).
@@ -471,14 +348,9 @@ impl RetainedGeneration {
         &self,
         base_hash: u128,
     ) -> Option<std::collections::BTreeMap<dm_link::Table, u32>> {
-        self.recover_model();
+        self.model_of(base_hash).ok()?;
         let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
         let generation = current.as_ref()?;
-        if generation.encoded.content_hash() != base_hash
-            && !self.rows_synced(generation.encoded.content_hash(), base_hash)
-        {
-            return None;
-        }
         let model = &generation.inputs.model;
         use dm_link::Table;
         Some(
@@ -496,7 +368,7 @@ impl RetainedGeneration {
             .collect(),
         )
     }
-    /// Structural append patch on the retained composed model, which must
+    /// Edit of the retained composed model (appended callables, new strings), which must
     /// still describe the published image with `base_hash`. `strings` runs
     /// before the string index is built (table strings), `edit` after. The
     /// edited model is encoded with list-row reuse and becomes the current
@@ -543,9 +415,6 @@ impl RetainedGeneration {
                 slot.link = Some(Arc::new(link));
                 slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
                 slot.image = Some(Arc::new(PatchImage { rows, proc_code }));
-                // The model was just re-encoded: it now describes the image itself.
-                slot.model_rows.clear();
-                slot.model_anchor = None;
                 Ok(encoded)
             })
             .unwrap_or_else(|| Err("generation attempt is not pending".into()))
@@ -580,6 +449,12 @@ impl RetainedGeneration {
                 }
                 slot.base = Some(Arc::new(base));
                 slot.image = Some(Arc::new(image));
+                let replaced = slot.replaced.take();
+                let text = slot.base.as_ref().map(|base| base.text_key());
+                drop(slot);
+                if let Some(replaced) = replaced.filter(|old| old.base.as_ref().map(|base| base.text_key()) != text) {
+                    self.spill_replaced(replaced);
+                }
                 true
             })
             .unwrap_or(false)
@@ -597,58 +472,6 @@ impl RetainedGeneration {
             .with_published(|old| old.patch.lock().unwrap_or_else(|e| e.into_inner()).base.as_ref().map(|base| base.dmb_hash()))
             .flatten()
             .or_else(|| self.stored_image_hash())
-    }
-    /// Make the patch base `wanted` accepts current: the current one if it does, else the most recent
-    /// alternate that does, which swaps with the current base. Returns whether an alternate was swapped in.
-    pub(crate) fn select_patch_base(
-        &self,
-        wanted: impl Fn(&crate::retained_output::OutputBase) -> bool,
-    ) -> bool {
-        let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-        if slot.base.as_deref().is_some_and(&wanted) {
-            return false;
-        }
-        let Some(position) = slot
-            .alternates
-            .iter()
-            .position(|kept| kept.base.as_deref().is_some_and(&wanted))
-        else {
-            return false;
-        };
-        let mut alternates = std::mem::take(&mut slot.alternates);
-        let chosen = alternates.remove(position);
-        let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-        let previous_generation = current.take();
-        // The alternate's own model (if still retained) becomes current; its model rows and anchor
-        // describe that model, so string and structural patches can edit it.
-        *current = chosen.generation.clone();
-        let keeps_model = current.is_some();
-        drop(current);
-        let previous = std::mem::replace(
-            &mut *slot,
-            PatchSlot {
-                alternates: Vec::new(),
-                generation: None,
-                ..(*chosen).clone()
-            },
-        );
-        if previous.base.is_some() && previous.image.is_some() && previous.link.is_some() {
-            alternates.insert(
-                0,
-                Arc::new(PatchSlot {
-                    alternates: Vec::new(),
-                    generation: previous_generation,
-                    ..previous
-                }),
-            );
-        }
-        alternates.truncate(alternate_limit());
-        slot.alternates = alternates;
-        if !keeps_model {
-            slot.model_rows.clear();
-            slot.model_anchor = None;
-        }
-        true
     }
     /// The patch base, its link answers and the image they describe.
     pub(crate) fn patch_base(
@@ -684,43 +507,16 @@ impl RetainedGeneration {
                         .map_err(|error| format!("list splice: {error}"))?
                 };
                 if !variable_values.is_empty() {
-                    // Fixed-width records: no row range moves. The retained model does not hold
-                    // the new values, so it is dropped and rebuilt from the image when needed.
+                    // Fixed-width records: no row range moves. The retained model no longer describes the
+                    // image; an edit that needs a model decodes it from the image (`model_of`).
                     spliced = spliced
                         .patch_variable_values(variable_values)
                         .map_err(|error| format!("variable patch: {error}"))?;
-                    *self.current.lock().unwrap_or_else(|e| e.into_inner()) = None;
                 }
                 dm_profile::request_mark("patch.spliced");
                 let encoded = spliced.image().clone();
                 validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;
-                let anchor = self
-                    .current
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .as_ref()
-                    .map(|generation| generation.encoded.content_hash());
                 let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-                // Keep what the retained model lacks: rows spliced since its own encoding.
-                match anchor {
-                    Some(anchor) if slot.model_anchor == Some(anchor) => {}
-                    Some(anchor) if anchor == image.rows.image().content_hash() => {
-                        slot.model_anchor = Some(anchor);
-                        slot.model_rows.clear();
-                    }
-                    _ => {
-                        slot.model_anchor = None;
-                        slot.model_rows.clear();
-                    }
-                }
-                if slot.model_anchor.is_some() {
-                    for (index, words) in rows {
-                        match slot.model_rows.iter_mut().find(|(row, _)| row == index) {
-                            Some(entry) => entry.1 = Arc::clone(words),
-                            None => slot.model_rows.push((*index, Arc::clone(words))),
-                        }
-                    }
-                }
                 slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
                 if let (Some(initializers), Some(link)) = (initializers, slot.link.as_ref()) {
                     // Shifted initializer origins are the next patch's baseline.
@@ -749,21 +545,6 @@ impl RetainedGeneration {
             .current
             .lock()
             .unwrap_or_else(|error| error.into_inner()) = None;
-        // Alternates drop their models too; their compact slots stay.
-        let strip = |slot: &mut PatchSlot| {
-            for alternate in &mut slot.alternates {
-                if alternate.generation.is_some() {
-                    *alternate = Arc::new(PatchSlot {
-                        generation: None,
-                        model_rows: Vec::new(),
-                        model_anchor: None,
-                        ..(**alternate).clone()
-                    });
-                }
-            }
-        };
-        strip(&mut self.patch.lock().unwrap_or_else(|error| error.into_inner()));
-        self.visit_published(|old| strip(&mut old.patch.lock().unwrap_or_else(|error| error.into_inner())));
         // The compact patch slot (row image, link answers, source base) stays:
         // it is what lets the next body edit skip whole-program compilation.
     }
