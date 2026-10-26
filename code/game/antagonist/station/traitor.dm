@@ -17,7 +17,7 @@
 	..()
 
 /datum/antagonist/traitor/get_extra_panel_options(datum/mind/player)
-	return "<a href='byond://?src=\ref[player];[HrefToken()];common=crystals'>\[set crystals\]</a><a href='byond://?src=\ref[src];[HrefToken()];spawn_uplink=\ref[player.current]'>\[spawn uplink\]</a>"
+	return "<a href='byond://?src=[REF(player)];[HrefToken()];common=crystals'>\[set crystals\]</a><a href='byond://?src=[REF(src)];[HrefToken()];spawn_uplink=[url_encode(ref_token(player.current))]'>\[spawn uplink\]</a>"
 
 CAPABILITIES(/datum/antagonist/traitor)
 	op("spawn_uplink", topic("spawn_uplink", arg("spawn_uplink", schema_ref(/mob/living/carbon/human), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_spawn_uplink)))
