@@ -488,7 +488,7 @@
 
 /// Are this body's injuries lethal? A question about damage, not about stat: the mob may still be
 /// alive (death is applied on the next status check) or already dead. Ask the mob's vital-state
-/// predicates (is_dead(), is_dying(), vital_band(); code/modules/body/vital_state.dm) for stat.
+/// predicates (is_dead(), is_dying(), vital_band(); code/domains/body/vital_state.dm) for stat.
 /datum/body/proc/is_lethal()
 	return FALSE
 
