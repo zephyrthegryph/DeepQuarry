@@ -7,7 +7,7 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 	interface("RustCoreMonitor")
 	op("toggle_active", ui_act("toggle_active", arg("core", schema_text(32))), then(PROC_REF(ui_act_toggle_active)))
 	op("toggle_reactantdump", ui_act("toggle_reactantdump", arg("core", schema_text(32))), then(PROC_REF(ui_act_toggle_reactantdump)))
-	op("set_tag", ui_act("set_tag"), then(PROC_REF(ui_act_set_tag)))
+	op("set_tag", ui_act("set_tag"), asks(/datum/prompt/text, fields = list("title" = "Core Control", "question" = "Enter a new ident tag.", "default" = nameof(core_tag), "timeout" = 0)), then(PROC_REF(ui_act_set_tag)))
 	op("set_fieldstr", ui_act("set_fieldstr", arg("core", schema_text(32)), arg("fieldstr", num())), then(PROC_REF(ui_act_set_fieldstr)))
 
 /// The cores the window lists: those on this console's tag.
@@ -33,15 +33,13 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 	return TRUE
 
 /datum/tgui_module/rustcore_monitor/proc/ui_act_set_tag(datum/act/op/A)
-	open_request(src, /datum/prompt/text, PROC_REF(tag_entered), valid = PROC_REF(request_usable), answerer = A.actor, title = "Core Control", question = "Enter a new ident tag.", default = core_tag, timeout = 0)
-
-/datum/tgui_module/rustcore_monitor/proc/tag_entered(datum/act/request/A)
 	if(!A.answer)
-		return
+		return OP_OK
 	var/new_ident = sanitize_text(A.answer.value)
 	if(new_ident)
 		set_core_tag(new_ident)
 	SStgui.update_uis(src)
+	return OP_OK
 
 /datum/tgui_module/rustcore_monitor/proc/ui_act_set_fieldstr(datum/act/op/A, core, fieldstr)
 	var/obj/machinery/power/fusion_core/C = ui_member(core, listed_cores(), /obj/machinery/power/fusion_core)

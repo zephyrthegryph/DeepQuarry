@@ -6,10 +6,8 @@
 	w_class = ITEMSIZE_SMALL
 
 
-/obj/item/godfig/proc/resprite_figure_effect(datum/act/op/A)
-	var/mob/user = A.actor
-
-	var/mob/M = user
+/// The icons a figure can take, by name.
+/obj/item/godfig/proc/figure_options(datum/act/op/A)
 	var/list/options = list()
 	options["Painted - Robed Human Female"] = "frobe"
 	options["Painted - Robed Human Male (Pale)"] = "mrobe"
@@ -41,14 +39,15 @@
 	options["Moon Gem"] = "moon"
 	options["Tajaran Figure"] = "catrobe"
 
-	open_request(src, /datum/prompt/choice, PROC_REF(figure_chosen), answerer = M, title = "Customize Figure", question = "Choose your icon!", choices = options, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+	return options
 
-/obj/item/godfig/proc/figure_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/prompt = A.answer
-	var/list/options = prompt.choices
-	var/choice = A.answer.value
+/// The icon the question was answered with.
+/obj/item/godfig/proc/resprite_figure_effect(datum/act/op/A)
+	var/datum/prompt/prompt = A.answer
+	if(!prompt)
+		return 0
+	var/list/options = figure_options(A)
+	var/choice = prompt.value
 	set_icon_state(options[choice])
 	if(options[choice] == "frobe")
 		desc = "A painted holy figure of a plain looking human woman in a robe."
@@ -109,24 +108,21 @@
 	else if(options[choice] == "catrobe")
 		desc = "A painted holy figure of a plain looking Tajaran in a robe."
 
-	to_chat(A.request.answerer, "The religious icon is now a [choice]. All hail!")
+	to_chat(A.actor, "The religious icon is now a [choice]. All hail!")
 	return 1
 
 
 
+/// Only someone with a mind names a figure.
+/obj/item/godfig/proc/actor_has_mind(datum/act/op/A)
+	return !!A.actor.mind
+
 /obj/item/godfig/proc/rename_fig_effect(datum/act/op/A)
-	var/mob/user = A.actor
-
-	var/mob/M = user
-	if(!M.mind)	return 0
-
-	open_request(src, /datum/prompt/text, PROC_REF(figure_named), answerer = M, question = "What do you want to name the icon?", default = "", max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
-
-/obj/item/godfig/proc/figure_named(datum/act/request/A)
-	if(!A.answer)
+	var/mob/M = A.actor
+	var/datum/prompt/prompt = A.answer
+	if(!prompt)
 		return
-	var/mob/M = A.request.answerer
-	var/input = A.answer.value
+	var/input = prompt.value
 	if(input)
 		name = "icon of " + input
 		to_chat(M, "You name the figure. Glory to [input]!.")
@@ -136,5 +132,9 @@ CAPABILITIES(/obj/item/godfig)
 	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
-	op("resprite_figure_effect", menu(), label("Customize Figure"), needs(carried()), then(PROC_REF(resprite_figure_effect)))
-	op("rename_fig_effect", menu(), label("Name Figure"), needs(carried()), then(PROC_REF(rename_fig_effect)))
+	op("resprite_figure_effect", menu(), label("Customize Figure"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("title" = "Customize Figure", "question" = "Choose your icon!", "choices" = computed(PROC_REF(figure_options)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "figure"),
+		then(PROC_REF(resprite_figure_effect)))
+	op("rename_fig_effect", menu(), label("Name Figure"), needs(carried()), when(PROC_REF(actor_has_mind)),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the icon?", "default" = "", "max_len" = MAX_NAME_LEN, "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(rename_fig_effect)))

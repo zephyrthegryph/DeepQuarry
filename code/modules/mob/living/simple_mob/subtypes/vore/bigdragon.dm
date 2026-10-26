@@ -669,7 +669,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 		var/atom/movable/AM = am
 		if(AM == src || AM.anchored)
 			continue
-		after(src, 0.1 SECONDS, PROC_REF(yeet), with = list(am))
+		after(src, 0.1 SECONDS, PROC_REF(yeet), key = "yeet_[REF(AM)]", with = list(am))
 	playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 //Split repulse into two parts so I can recycle this later

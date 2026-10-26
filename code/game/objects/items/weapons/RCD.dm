@@ -324,7 +324,9 @@ CAPABILITIES(/obj/item/rcd)
 	op("build", ai(), claims(CLAIM_TARGET), takes("target", "delay", "rcd_results", "output_envelope", "beam"), wait(PROC_REF(build_delay), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(use_rcd_cancelled)), then(PROC_REF(use_rcd_timed_done)))
 	op("build_concurrent", ai(), takes("target", "delay", "rcd_results", "output_envelope", "beam"), wait(PROC_REF(build_delay), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(use_rcd_cancelled)), then(PROC_REF(use_rcd_timed_done)))
 	op("rcd_item", item(/obj/item), label("Load"), then(PROC_REF(rcd_item)))
-	op("rcd_self", in_hand(), label("Select mode"), then(PROC_REF(rcd_self)))
+	op("rcd_self", in_hand(), label("Select mode"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(rcd_mode_choices)), "anchor" = computed(PROC_REF(rcd_mode_anchor)), "radius" = 42, "tooltips" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "mode"),
+		then(PROC_REF(rcd_self)))
 	op("close", topic("close"), then(PROC_REF(topic_close)))
 	op("access", topic("access", arg("access", schema_text(16), optional = TRUE)), then(PROC_REF(topic_access)))
 	derives(nameof(stored_matter), PROC_REF(starting_matter))

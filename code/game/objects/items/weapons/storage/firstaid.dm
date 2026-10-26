@@ -125,6 +125,14 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery)
 	if(wrapper_color)
 		look.overlay(look_appearance(icon, "pillbottle_wrap", color = wrapper_color))
 
+/// The bottle's label: at most 50 letters once sanitised; a longer answer is refused and the prompt stays open.
+/datum/prompt/text/pill_label
+
+/datum/prompt/text/pill_label/refusal(given)
+	if(length(sanitizeSafe("[given]", MAX_NAME_LEN)) > 50)
+		return "The label can be at most 50 characters long."
+	return null
+
 CAPABILITIES(/obj/item/storage/pill_bottle)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PILLBOTTLE, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
 	configure(storage(accepts = list(
@@ -133,7 +141,7 @@ CAPABILITIES(/obj/item/storage/pill_bottle)
 		/obj/item/paper), max_size = ITEMSIZE_TINY))
 	
 	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label"),
-		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
+		asks(/datum/prompt/text/pill_label, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
 	derives(nameof(base_name), PROC_REF(name_at_start))
 	derives(nameof(base_desc), PROC_REF(desc_at_start))
 
@@ -143,8 +151,8 @@ CAPABILITIES(/obj/item/storage/pill_bottle)
 	var/mob/user = A.actor
 	var/tmp_label = sanitizeSafe("[R?.value]", MAX_NAME_LEN)
 	if(length(tmp_label) > 50)
-		to_chat(user, span_notice("The label can be at most 50 characters long."))
-		return OP_REFUSED
+		log_world("PILL BOTTLE: [src] label too long after the prompt check")
+		return OP_FAILED
 	if(length(tmp_label) > 10)
 		to_chat(user, span_notice("You set the label."))
 	else

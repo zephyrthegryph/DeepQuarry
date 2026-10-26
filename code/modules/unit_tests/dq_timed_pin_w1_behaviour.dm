@@ -196,7 +196,7 @@
 /datum/unit_test/dq_timed_pin_w1/marker_beacon_permanent_stays/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/obj/structure/marker_beacon/B = allocate(/obj/structure/marker_beacon, run_loc_floor_bottom_left)
-	B.perma = TRUE
+	B.set_perma(TRUE)
 	test_click(user, B, null)
 	TEST_ASSERT_NULL(running(user), "a permanent beacon starts nothing")
 	test_time(3 SECONDS)
