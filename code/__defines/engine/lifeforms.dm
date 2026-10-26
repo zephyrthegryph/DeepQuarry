@@ -6,6 +6,7 @@
 
 // ---- entry kinds ----
 #define ENTRY_ROLLS "rolls"
+#define ENTRY_PRESET "preset"
 #define ENTRY_PARAM "param"
 #define ENTRY_BUILT_FROM "built_from"
 #define ENTRY_REGISTRY "registry"
@@ -98,7 +99,9 @@
 #define INPUT_HOVER "hover"
 /// drag_over(): the native MouseDrag while the holder is dragged over something (A.over).
 #define INPUT_DRAG_OVER "drag_over"
-/// What a click_on()/drag_onto() handler returns to let the type's own native Click()/MouseDrop() (its parent's) run after it.
+/// double_click_on(): the native DblClick on the holder.
+#define INPUT_DOUBLE_CLICK "double_click_on"
+/// What a click_on()/drag_onto()/double_click_on() handler returns to let the input go on to its default handling (the click router, the drop's ops) as if no handler had taken it.
 #define INPUT_FALLTHROUGH "\[input:fallthrough]"
 
 // ---- finds(near =) ----

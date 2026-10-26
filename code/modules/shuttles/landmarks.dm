@@ -133,9 +133,15 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 	flags = SLANDMARK_FLAG_AUTOSET
 	var/original_name = null // Save our mapped-in name so we can rebuild our name when moving sectors.
 
-// ALLOW(init/INSTANCE_STATE): tags itself with its coordinates and a random id
-/obj/effect/shuttle_landmark/automatic/Initialize(mapload)
-	original_name = name
+CAPABILITIES(/obj/effect/shuttle_landmark/automatic)
+	preset(nameof(original_name), PROC_REF(mapped_name))
+
+/// The name the map gave, saved so the name can be rebuilt when the landmark moves sectors.
+/obj/effect/shuttle_landmark/automatic/proc/mapped_name(target)
+	return name
+
+/// An automatic landmark tags itself with its coordinates and a random id, then registers under that tag (the setup hook, once the init chain has returned).
+/obj/effect/shuttle_landmark/automatic/register_landing()
 	landmark_tag += "-[x]-[y]-[z]-[random_id("landmarks",1,9999)]"
 	return ..()
 

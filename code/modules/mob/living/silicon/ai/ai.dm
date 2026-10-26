@@ -166,6 +166,9 @@ CAPABILITIES(/mob/living/silicon/ai)
 	knows(LANGUAGE_DRUDAKAR)
 	knows(LANGUAGE_TAVAN)
 	verb_entry(/mob/living/silicon/ai/proc/deploy_to_shell_act, when = cond_config(/datum/config_entry/flag/allow_ai_shells))
+	keeps_if(PROC_REF(ai_has_brain), instead = PROC_REF(leave_empty_core))
+	setup(PROC_REF(alias_common_radio))
+	setup(PROC_REF(take_brain_mind))
 	setup(PROC_REF(verbs_if_installed))
 	setup(PROC_REF(create_eyeobj)) // its eye, named after it; create_eyeobj() gives the rolled name to its PDA, communicator and announcements
 	owns_one(nameof(research), /datum/malf_research)
@@ -201,20 +204,25 @@ CAPABILITIES(/mob/living/silicon/ai)
 /// Made by AIize(): no brain is needed (its constructor param).
 /mob/living/silicon/ai/var/spawn_safety = FALSE
 
-// ALLOW(init/INSTANCE_STATE): an AI made with no brain leaves an empty core instead; one made from a brain takes its mind before its parents' init
-/mob/living/silicon/ai/Initialize(mapload)
-	rel_set(src, nameof(common_radio), aiRadio) // an alias of the owned aiRadio
-	if(!spawn_safety)//Only used by AIize() to successfully spawn an AI.
-		if (!brain_at_make)//If there is no player/brain inside.
-			registry_join(REGISTRY_EMPTY_AI_CORES, new/obj/structure/AIcore/deactivated(loc))//New empty terminal.
-			return INITIALIZE_HINT_QDEL //Delete AI.
+/// An AI is kept when something makes it: a brain/player inside, or AIize() (spawn_safety). Else it leaves an empty core instead.
+/mob/living/silicon/ai/proc/ai_has_brain()
+	return spawn_safety || brain_at_make
 
-		var/datum/mind_host/host = get_mind_host(brain_at_make)
-		host?.release_mind(src, "AI core activated")
+/// No player/brain inside: an empty terminal stays where the AI was made (keeps_if(instead =)).
+/mob/living/silicon/ai/proc/leave_empty_core()
+	registry_join(REGISTRY_EMPTY_AI_CORES, new/obj/structure/AIcore/deactivated(loc))
 
-		on_mob_init()
+/// Its common radio is an alias of the owned aiRadio (setup()).
+/mob/living/silicon/ai/proc/alias_common_radio()
+	rel_set(src, nameof(common_radio), aiRadio)
 
-	return ..()
+/// An AI made from a brain takes its mind and greets it; one made by AIize() (spawn_safety) does neither (setup()).
+/mob/living/silicon/ai/proc/take_brain_mind()
+	if(spawn_safety)
+		return
+	var/datum/mind_host/host = get_mind_host(brain_at_make)
+	host?.release_mind(src, "AI core activated")
+	on_mob_init()
 
 /// Its laws: those it was made with, else the map's default set (owns_one(starts =), before its parents' init).
 /mob/living/silicon/ai/proc/start_laws(current, mapload)
@@ -447,7 +455,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 /mob/living/silicon/ai/proc/ai_announcement_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	announcement.Announce(A.answer.value)
+	announcement.Announce(A.answer.value, actor = src)
 	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()

@@ -803,10 +803,12 @@ fn block_calls(args: &[String], name: &str) -> Vec<Vec<String>> {
 
 /// The lifecycle forms (code/engine/lifeforms/) a type's block needs the generator for:
 /// - a non-atom type whose block names a form (a type-level every() is one: lifeform_datum_new() arms it; so is factors(), whose table lifeform_datum_new() puts on the entity its relation names), or an owns_one/owns_many with starts =, gets `lifeform_declared = TRUE`, so /datum/New() runs it;
-/// - a type whose block names click_on(), drag_onto(), drag_over(), hover() or tooltip() gets the native override that reads `usr` (the engine's,
-///   here) and hands the engine the actor: Click(), MouseDrop(), MouseDrag(), MouseEntered()/MouseExited().
+///
+/// A type whose block names click_on(), double_click_on(), drag_onto(), drag_over(), hover() or tooltip() gets NO native override: BYOND's mouse
+/// callbacks are overridden only in code/engine/kernel/entry.dm, and the input resolver finds the declared entry in the type tables when the event
+/// resolves (the `mouse_override` lint rejects any other definition).
 fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> bool) {
-    const FORMS: &[&str] = &["rolls", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes", "every", "keeps_if", "setup", "name_prefix", "factors"];
+    const FORMS: &[&str] = &["rolls", "preset", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes", "every", "keeps_if", "setup", "name_prefix", "factors"];
     let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
     lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
     for m in lists {
@@ -825,50 +827,6 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
                 out.line(ty);
                 out.line("\tlifeform_declared = TRUE");
             }
-        }
-        if !is_atom_path(ty) {
-            continue;
-        }
-        let click = !block_calls(&m.args, "click_on").is_empty();
-        let drag = !block_calls(&m.args, "drag_onto").is_empty();
-        let drag_over = !block_calls(&m.args, "drag_over").is_empty();
-        let hover = !block_calls(&m.args, "hover").is_empty();
-        let tip = !block_calls(&m.args, "tooltip").is_empty();
-        if click {
-            out.doc(format!("click_on() of {} ({}:{}): the native click hands the engine its actor.", ty, m.rel, m.line));
-            out.line(format!("{}/Click(location, control, params)", ty));
-            out.line("\tif(input_declared(src, usr, INPUT_CLICK_ON, params, null, FALSE, list(\"location\" = location, \"control\" = control, \"params\" = params)))");
-            out.line("\t\treturn");
-            out.line("\t. = ..()");
-            out.line("\tinput_fell(src)");
-        }
-        if drag {
-            out.doc(format!("drag_onto() of {} ({}:{}): the native drop hands the engine its actor.", ty, m.rel, m.line));
-            out.line(format!("{}/MouseDrop(over_object, src_location, over_location, src_control, over_control, params)", ty));
-            out.line("\tif(input_declared(src, usr, INPUT_DRAG_ONTO, params, over_object, FALSE, list(\"over_object\" = over_object, \"src_location\" = src_location, \"over_location\" = over_location, \"src_control\" = src_control, \"over_control\" = over_control, \"params\" = params)))");
-            out.line("\t\treturn");
-            out.line("\t. = ..()");
-            out.line("\tinput_fell(src)");
-        }
-        if drag_over {
-            out.doc(format!("drag_over() of {} ({}:{}): the native drag hands the engine its actor.", ty, m.rel, m.line));
-            out.line(format!("{}/MouseDrag(over_object, src_location, over_location, src_control, over_control, params)", ty));
-            out.line("\tif(input_declared(src, usr, INPUT_DRAG_OVER, params, over_object, FALSE, list(\"over_object\" = over_object, \"src_location\" = src_location, \"over_location\" = over_location, \"src_control\" = src_control, \"over_control\" = over_control, \"params\" = params)))");
-            out.line("\t\treturn");
-            out.line("\t. = ..()");
-            out.line("\tinput_fell(src)");
-        }
-        if hover || tip {
-            out.doc(format!("hover()/tooltip() of {} ({}:{}): the native mouse-over hands the engine its actor.", ty, m.rel, m.line));
-            for (native, entered) in [("MouseEntered", "TRUE"), ("MouseExited", "FALSE")] {
-                out.line(format!("{}/{}(location, control, params)", ty, native));
-                out.line(format!("\tinput_declared(src, usr, INPUT_HOVER, params, null, {}, list(\"location\" = location, \"control\" = control, \"params\" = params), {}, {})", entered, if tip { "TRUE" } else { "FALSE" }, if hover { "TRUE" } else { "FALSE" }));
-                out.line("\t. = ..()");
-                out.line("\tinput_fell(src)");
-            }
-        }
-        if click || drag || drag_over || hover || tip {
-            out.blank();
         }
     }
 }
@@ -984,16 +942,17 @@ CAPABILITIES(/obj/thing, \
     }
 
     #[test]
-    fn lifecycle_forms_get_make_a_datum_flag_and_native_input() {
+    fn lifecycle_forms_get_make_a_datum_flag_and_no_native_input_override() {
         let src = "CAPABILITIES(/datum/req, \\\n\tparam(nameof(charge), int()), \\\n\trolls(nameof(x), range_of(1, 2)))\nCAPABILITIES(/obj/screen_thing, \\\n\tclick_on(PROC_REF(clicked)), \\\n\tdrag_over(PROC_REF(dragged)), \\\n\ttooltip(PROC_REF(tip)))\n";
         let (_, decl, diags) = gen(vec![("code/a.dm", src)]);
         assert!(diags.is_empty(), "{:?}", diags);
         assert!(decl.contains("/proc/make(type, at = null, by = null, parts = null, charge = MAKE_UNSET)"), "{}", decl);
         assert!(decl.contains("/proc/make_args(charge = MAKE_UNSET)"), "{}", decl);
         assert!(decl.contains("/datum/req\n\tlifeform_declared = TRUE"), "{}", decl);
-        assert!(decl.contains("/obj/screen_thing/Click(location, control, params)\n\tif(input_declared(src, usr, INPUT_CLICK_ON, params, null, FALSE, list("), "{}", decl);
-        assert!(decl.contains("/obj/screen_thing/MouseEntered(location, control, params)\n\tinput_declared(src, usr, INPUT_HOVER, params, null, TRUE, list("), "{}", decl);
-        assert!(decl.contains("/obj/screen_thing/MouseDrag(over_object, src_location, over_location, src_control, over_control, params)\n\tif(input_declared(src, usr, INPUT_DRAG_OVER, params, over_object, FALSE, list("), "{}", decl);
+        for native in ["Click", "DblClick", "MouseDrop", "MouseDrag", "MouseEntered", "MouseExited"] {
+            assert!(!decl.contains(&format!("/obj/screen_thing/{}(", native)), "no native mouse override is generated for a declared input ({}): {}", native, decl);
+        }
+        assert!(!decl.contains("input_declared"), "{}", decl);
         assert!(!decl.contains("/obj/screen_thing\n\tlifeform_declared"), "an atom runs its forms from Initialize()");
     }
 

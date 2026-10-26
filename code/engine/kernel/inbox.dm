@@ -16,14 +16,19 @@
 //     actor that has gone by then ends the event with the gate's reason and nothing runs.
 //   - Never shed. The inbox is latency class L0: phase K runs it first, every tick, whatever the load.
 //
-// What resolves an event is the event's own resolve(): the legacy mob click handling for a click, the Topic dispatch for a
-// Topic, and so on. E2's resolver takes the click, menu and window-action events over through the seams at the bottom
-// (input_resolve_click(), input_resolve_menu(), input_resolve_ui()); until then a driver-built event reports the missing
-// resolver to the test driver (ENGINE_STUB) and a player's event runs the legacy path.
+// What resolves an event is the event's own resolve(), and it is one step whether the event ran on arrival or waited in the inbox: the target type's
+// declared entry for the input (click_on(), double_click_on(), drag_onto(), drag_over(), hover(), tooltip(), looked up in the type tables by
+// input_dispatch(), code/engine/lifeforms/input.dm) runs first, and an input no entry takes goes on to its default handling: the click router for a
+// click, the target's ops for a drop, the Topic dispatch for a Topic, the mob's hover tracking for a hover. No type overrides a native
+// mouse proc: BYOND's callbacks are overridden only in code/engine/kernel/entry.dm. E2's resolver takes the click, menu and window-action events over
+// through the seams at the bottom (input_resolve_click(), input_resolve_menu(), input_resolve_ui()); a driver-built event reports a missing
+// resolver to the test driver (ENGINE_STUB).
 
 MSG_DEF_SELF(input/stale_actor, "You can't do that any more.")
 MSG_DEF_SELF(input/stale_target, "That is no longer there.")
 MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
+MSG_DEF_SELF(input/too_late, "That input waited too long for the server and was ignored.")
+MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take it: that one was refused.")
 
 // ---------------------------------------------------------------- events
 
@@ -47,6 +52,15 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	var/resolve_threshold = INPUT_VERB_THRESHOLD
 	/// TRUE when a click-cost measurement (the tick meter's click stamps) should wrap the resolution.
 	var/metered_as_click = FALSE
+	/// The kernel clock (op_now(): the injected one under a test driver) when the event arrived: its age at resolve time is read from it.
+	var/arrived_clock = 0
+	/// How long the event may wait in the inbox before it is too late, in deciseconds (INPUT_MAX_WAIT_*), or null for never: a Topic, a tgui action, say, point
+	/// and a menu pick are what the player asked for, whenever they are served. The gate checks it when the event resolves.
+	var/max_wait = null
+	/// TRUE when an expired event is dropped without telling the player (feedback such as a hover).
+	var/silent_expiry = FALSE
+	/// FALSE for inputs the rate limit does not apply to (the server's own: a reboot, the synthetic load).
+	var/rate_limited = TRUE
 
 /datum/input_event/New(mob/user)
 	..()
@@ -79,7 +93,13 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 		return /datum/msg/input/stale_target
 	if(!driven && sender && !actor.client)
 		return /datum/msg/input/client_gone
+	if(expired())
+		return /datum/msg/input/too_late
 	return null
+
+/// Has the event waited longer than its max_wait?
+/datum/input_event/proc/expired()
+	return !isnull(max_wait) && (op_now() - arrived_clock) > max_wait
 
 /// Does the work, as `actor`. Returns the op's /datum/op_result or null.
 /datum/input_event/proc/resolve()
@@ -89,6 +109,7 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/click
 	resolve_threshold = INPUT_CLICK_THRESHOLD
 	metered_as_click = TRUE
+	max_wait = INPUT_MAX_WAIT_CLICK
 	var/atom/target
 	var/location
 	var/control
@@ -115,30 +136,38 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/click/event_key()
 	return "input.click"
 
+/// The native hook's arguments by name, as a declared handler's A.native reads them.
+/datum/input_event/click/proc/native_args()
+	return list("location" = location, "control" = control, "params" = params)
+
+/// The type's click_on() entry first (a driver-built click is the ops' own and runs no declared entry), then the click router.
 /datum/input_event/click/resolve()
+	if(!driven && input_dispatch(target, actor, INPUT_CLICK_ON, params, null, FALSE, native_args()))
+		return null
 	return input_resolve_click(src)
 
 /// An atom (an item, or a mob dragging itself) dragged onto another: the Drag action. The ops of the target see the dragged atom as A.held (gesture GESTURE_DRAG);
-/// what no op answers goes on to the legacy MouseDrop_T chain, as it did before the target declared one.
+/// what no op answers is dropped: a type declares what a drop does with drag_onto() (on the dragged type) or an op that takes the dragged atom as the held one.
 /datum/input_event/drag
 	resolve_threshold = INPUT_CLICK_THRESHOLD
 	metered_as_click = TRUE
+	max_wait = INPUT_MAX_WAIT_DRAG
 	var/atom/dragged
 	var/atom/over
-	/// What the legacy chain takes on (the locations, the controls and the params of the drag).
-	var/list/legacy_args
+	/// The native arguments of the drag (the locations, the controls and the params of the drag).
+	var/list/native_drag
 	/// TRUE for a drop BYOND handed over (atom/MouseDrop, code/engine/kernel/entry.dm): the drop must be within reach of the actor when it resolves,
 	/// which a drop an adapter already checked (adapter.drag()) is not asked twice.
 	var/native = FALSE
 
-/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/legacy, native_drop = FALSE)
+/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/drag_args, native_drop = FALSE)
 	..(user)
 	native = native_drop
 	if(dragged_atom)
 		dragged = dragged_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	if(dropped_on)
 		over = dropped_on // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
-	legacy_args = legacy
+	native_drag = drag_args
 
 /datum/input_event/drag/subject()
 	return over
@@ -151,7 +180,14 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/drag/event_key()
 	return "input.drag"
 
+/// The drag's native arguments, as a declared handler's A.native reads them.
+/datum/input_event/drag/proc/native_args()
+	return list("over_object" = over, "src_location" = native_drag?[1], "over_location" = native_drag?[2], "src_control" = native_drag?[3], "over_control" = native_drag?[4], "params" = native_drag?[5])
+
+/// The dragged type's drag_onto() entry first (no reach is asked of it: the entry says what it takes), then the target's ops.
 /datum/input_event/drag/resolve()
+	if(!driven && dragged && input_dispatch(dragged, actor, INPUT_DRAG_ONTO, native_drag?[5], over, FALSE, native_args()))
+		return null
 	return input_resolve_drag(src)
 
 /// A double click on a target. Repeated ones on one target keep only the latest.
@@ -165,12 +201,15 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	return "input.double_click"
 
 /datum/input_event/click/double/resolve()
+	if(!driven && input_dispatch(target, actor, INPUT_DOUBLE_CLICK, params, null, FALSE, native_args()))
+		return null
 	actor.input_double_click(target, params)
 	return null
 
 /// The mouse wheel over a target. Every notch counts: it never coalesces.
 /datum/input_event/click/wheel
 	metered_as_click = FALSE
+	max_wait = INPUT_MAX_WAIT_WHEEL
 	var/delta_x = 0
 	var/delta_y = 0
 
@@ -189,94 +228,39 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	actor.input_wheel(target, delta_x, delta_y, params)
 	return null
 
-/// The mouse entering a target. Only the latest hover is worth keeping.
+/// The mouse entering a target, or leaving it (`entered` FALSE). Only the latest hover of a target is worth keeping: an exit that finds its enter still waiting
+/// replaces it, so the pair does nothing.
 /datum/input_event/click/hover
 	metered_as_click = FALSE
+	max_wait = INPUT_MAX_WAIT_FEEDBACK
+	silent_expiry = TRUE
+	/// TRUE on enter, FALSE on exit.
+	var/entered = TRUE
+
+/datum/input_event/click/hover/New(mob/user, atom/over, location, control, params, entering = TRUE)
+	..(user, over, location, control, params)
+	entered = entering
 
 /datum/input_event/click/hover/coalesce_key()
-	return "hover"
+	return target ? "hover:[REF(target)]" : "hover"
 
 /datum/input_event/click/hover/event_key()
 	return "input.hover"
 
+/// The tooltip the type declares opens or closes, its hover() entry runs, and an enter goes on to the mob's hover tracking whatever the entry said.
 /datum/input_event/click/hover/resolve()
-	actor.input_hover(target, params)
+	input_tooltip(target, actor, entered, params)
+	if(!driven)
+		input_dispatch(target, actor, INPUT_HOVER, params, null, entered, native_args())
+	if(entered)
+		actor.input_hover(target, params)
 	return null
-
-/// A native input (click, drop, drag-over, mouse-over) of a type whose CAPABILITIES declares click_on(), drag_onto(), drag_over(), hover() or tooltip()
-/// (the generated overrides in code/engine/_generated/declare.dm reach it through input_declared(), code/engine/kernel/entry.dm). It resolves the type's
-/// declared entry as `actor`. One that waited in the inbox and found no entry to take it goes on to the native handling afterwards, as the override's
-/// own ..() would have.
-/datum/input_event/declared
-	var/atom/holder
-	/// INPUT_CLICK_ON, INPUT_DRAG_ONTO, INPUT_DRAG_OVER or INPUT_HOVER.
-	var/input
-	var/params
-	var/atom/over
-	/// A hover: TRUE on enter, FALSE on exit.
-	var/entered = FALSE
-	/// The native hook's own arguments by name.
-	var/list/native
-	/// TRUE when the type declares a tooltip: a hover opens or closes it before the hover entry runs.
-	var/tooltip = FALSE
-	/// TRUE when the type declares an entry for this input (a type with only a tooltip has none).
-	var/dispatch = TRUE
-	/// TRUE when a declared handler took the input.
-	var/taken = FALSE
-	/// TRUE when the input waited in the inbox: the override that built it has already returned.
-	var/deferred = FALSE
-
-/datum/input_event/declared/New(mob/user, atom/declared_on, input_kind, input_params, atom/over_atom, entered_flag, list/native_args, with_tooltip, with_dispatch)
-	..(user)
-	holder = declared_on // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
-	input = input_kind
-	params = input_params
-	if(over_atom)
-		over = over_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
-	entered = entered_flag
-	native = native_args
-	tooltip = with_tooltip
-	dispatch = with_dispatch
-	if(input != INPUT_HOVER)
-		resolve_threshold = INPUT_CLICK_THRESHOLD
-		metered_as_click = TRUE
-
-/// Only a hover coalesces: the latest mouse-over of a holder is the one that matters (apart from the plain hover event, which has its own key).
-/datum/input_event/declared/coalesce_key()
-	return input == INPUT_HOVER ? "declared_hover" : null
-
-/datum/input_event/declared/subject()
-	return holder
-
-/datum/input_event/declared/event_key()
-	return "input.declared.[input]"
-
-/datum/input_event/declared/resolve()
-	if(tooltip)
-		input_tooltip(holder, actor, entered, params)
-	if(dispatch)
-		taken = input_dispatch(holder, actor, input, params, over, entered, native)
-	if(!deferred)
-		return null
-	// The override returned long ago, so its native chain and its end-of-fall mark are this event's to finish.
-	if(!taken)
-		input_native_fall()
-	input_fell(holder)
-	return null
-
-/// What the declaring override's ..() would have done for an input that was not taken: the click and the drop go on as the plain events; a hover's
-/// override went on at once, and a drag-over has no native handling.
-/datum/input_event/declared/proc/input_native_fall()
-	switch(input)
-		if(INPUT_CLICK_ON)
-			input_submit(new /datum/input_event/click(actor, holder, native?["location"], native?["control"], params))
-		if(INPUT_DRAG_ONTO)
-			if(over)
-				input_submit(new /datum/input_event/drag(actor, holder, over, list(native?["src_location"], native?["over_location"], native?["src_control"], native?["over_control"], params), TRUE))
 
 /// A mouse button pressed on a target (atom/MouseDown). A press and its release are a pair: it never coalesces.
 /datum/input_event/click/pressed
 	metered_as_click = FALSE
+	max_wait = INPUT_MAX_WAIT_FEEDBACK
+	silent_expiry = TRUE
 
 /datum/input_event/click/pressed/event_key()
 	return "input.pressed"
@@ -291,12 +275,17 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /// The client's own mouse procs (client/MouseDown, MouseUp, MouseDrag): INPUT_MOUSE_*, what the pointer is on, and for a drag what it is over.
 /datum/input_event/click/client_mouse
 	metered_as_click = FALSE
+	/// A press or a release is a click's own wait; a drag is feedback (silent when late).
+	max_wait = INPUT_MAX_WAIT_CLICK
 	var/kind = INPUT_MOUSE_DOWN
 	var/atom/over
 
 /datum/input_event/click/client_mouse/New(mob/user, mouse_kind, atom/pointed, atom/dragged_over, location, control, params)
 	..(user, pointed, location, control, params)
 	kind = mouse_kind
+	if(kind == INPUT_MOUSE_DRAG)
+		max_wait = INPUT_MAX_WAIT_FEEDBACK
+		silent_expiry = TRUE
 	if(dragged_over)
 		over = dragged_over // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 
@@ -307,7 +296,21 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/click/client_mouse/event_key()
 	return "input.[kind]"
 
+/// A press and its release are a pair: a release whose press ran is never too late (the press is held until it arrives), whatever it waited. A release
+/// whose press never ran (it was late, refused or dropped) expires like any other input.
+/datum/input_event/click/client_mouse/expired()
+	if(kind == INPUT_MOUSE_UP && SSinput.press_ran(lane_key()))
+		return FALSE
+	return ..()
+
+/// A drag first runs the dragged type's drag_over() entry (it only watches: the drag goes on to the mob's hook either way).
 /datum/input_event/click/client_mouse/resolve()
+	if(kind == INPUT_MOUSE_DOWN)
+		SSinput.note_press(lane_key(), TRUE)
+	else if(kind == INPUT_MOUSE_UP)
+		SSinput.note_press(lane_key(), FALSE)
+	if(kind == INPUT_MOUSE_DRAG && target && over)
+		input_dispatch(target, actor, INPUT_DRAG_OVER, params, over, FALSE, list("over_object" = over, "over_location" = location, "over_control" = control, "params" = params))
 	actor.input_client_mouse(kind, target, over, params)
 	return null
 
@@ -454,6 +457,7 @@ CAPABILITIES(/datum/input_event/ui_act)
 /// a reboot waits for no drain, and a server-side one has no actor.
 /datum/input_event/reboot
 	resolve_threshold = 1000
+	rate_limited = FALSE
 	var/reason = 0
 	var/fast_track = FALSE
 	/// What the hook answered: TRUE when the native reboot goes on.
@@ -482,6 +486,20 @@ CAPABILITIES(/datum/input_event/ui_act)
 
 // ---------------------------------------------------------------- the system
 
+// What the inbox remembers about one client between its inputs, a list by these indexes (kept under the lane's REF text, so a client that leaves is not held, and
+// forgotten after a minute of nothing): the rate window, the refusal bursts, the time near the cap, an unreleased press.
+#define INPUT_LANE_RATE_START 1
+#define INPUT_LANE_RATE_COUNT 2
+/// When the last input of the lane was refused, and when the player was last told (null: never).
+#define INPUT_LANE_LAST_REFUSAL 3
+#define INPUT_LANE_LAST_NOTICE 4
+/// When the inbox first reached INPUT_CLIENT_NEAR_CAP in this run of it, and when the server last warned.
+#define INPUT_LANE_NEAR_SINCE 5
+#define INPUT_LANE_LAST_NEAR_WARNING 6
+/// TRUE from a press that ran until its release runs.
+#define INPUT_LANE_PRESSED 7
+#define INPUT_LANE_TOUCHED 8
+
 SYSTEM_DEF(input)
 	name = "Input"
 	phase = KERNEL_PHASE_K
@@ -506,6 +524,14 @@ SYSTEM_DEF(input)
 	/// The deepest any inbox got.
 	var/queue_high_water = 0
 	var/last_drop_log = 0
+	/// Inputs refused over a client's hard cap or rate limit, and inputs that waited past their max_wait, since boot.
+	var/hard_refused = 0
+	var/rate_refused = 0
+	var/expired = 0
+	var/near_cap_warnings = 0
+	/// lane key REF text -> that lane's state (INPUT_LANE_*).
+	var/list/lanes = list()
+	var/next_lane_prune = 0
 	/// TRUE while the drain item is parked (the drain found nothing queued): the enqueue that ends the idle wakes it, and every other
 	/// enqueue reads this flag instead of looking the item up.
 	var/drain_parked = FALSE
@@ -528,7 +554,13 @@ SYSTEM_DEF(input)
 /datum/system/input/proc/submit(datum/input_event/E)
 	E.arrived_time = world.time // ALLOW(sys_world_time_write): the inbox's own arrival stamp, read for the wait metrics, not an entity expiry
 	E.arrived_usage = TICK_USAGE
+	E.arrived_clock = op_now()
 	var/source = E.lane_key()
+	if(E.rate_limited && source && !E.coalesce_key() && rate_exceeded(source))
+		// An input that cannot coalesce is not bounded by the soft cap, so its rate is: the newest is refused, never one already waiting.
+		rate_refused++
+		refuse(E, source, "more than [INPUT_CLIENT_RATE_MAX] such inputs in [INPUT_RATE_WINDOW / (1 SECONDS)] second")
+		return FALSE
 	var/list/queue = inboxes[source]
 	// has_room() inlined: this is the stretch between an input's arrival stamp and its dispatch stamp, which the wait metrics count.
 #ifdef UNIT_TESTS
@@ -589,11 +621,17 @@ SYSTEM_DEF(input)
 			// Nothing in the inbox can be shed and this one could be: it goes.
 			note_drop(E, "the inbox is full of inputs that cannot be dropped")
 			return
+	if(length(queue) >= INPUT_CLIENT_HARD_MAX)
+		// Nothing left to shed and the inbox is full of inputs that cannot be dropped: the newest is refused, and said so.
+		hard_refused++
+		refuse(E, source, "the inbox holds [INPUT_CLIENT_HARD_MAX] waiting inputs")
+		return
 	queue += E
 	queued++
 	kernel_latency().input_queued++
 	if(length(queue) > queue_high_water)
 		queue_high_water = length(queue)
+	watch_near_cap(source, length(queue))
 	km_meter().verb_queued(length(queue))
 
 /// A coalescible input was dropped over the cap: counted, and logged at most once a second.
@@ -615,7 +653,12 @@ SYSTEM_DEF(input)
 		resolved_queued++
 	var/reason = (on_arrival && !E.driven) ? null : E.gate()
 	if(reason)
-		dropped_stale++
+		if(reason == /datum/msg/input/too_late)
+			expired++
+			if(!E.silent_expiry)
+				op_tell(E.actor, reason)
+		else
+			dropped_stale++
 		TEST_REC_OUTCOME(E.event_key(), ACT_REFUSED, reason, E.actor)
 		TEST_REC_LOG(E.event_key(), ACT_REFUSED, E.origin, E.actor, E.subject(), "[reason]")
 		return
@@ -641,6 +684,9 @@ SYSTEM_DEF(input)
 
 /// Phase K: serves the queues round-robin, each client's oldest first, under the input budget (one event at least).
 /datum/system/input/proc/drain_step(dt, unlimited = FALSE)
+	if(op_now() >= next_lane_prune)
+		next_lane_prune = op_now() + 1 MINUTES
+		prune_lanes()
 	if(!length(ready))
 		// Nothing queued: the item parks and the next enqueue() wakes it (no per-tick poll of an empty inbox).
 		drain_parked = TRUE
@@ -693,6 +739,9 @@ SYSTEM_DEF(input)
 /datum/system/input/proc/inbox_done(source)
 	inboxes -= source
 	ready -= source
+	var/list/L = lanes["[REF(source)]"]
+	if(L)
+		L[INPUT_LANE_NEAR_SINCE] = null
 
 /// Phase K, after the drain: every client's held keys (the movement loop SSinput ran).
 /datum/system/input/proc/key_step(dt)
@@ -722,6 +771,7 @@ SYSTEM_DEF(input)
 	ready = list()
 	next_source = null
 	room_override = null
+	lanes = list()
 
 /datum/system/input/stat_entry(msg)
 	return "[msg] I:[resolved_in_place + resolved_queued] Q:[queued_total()]"
@@ -736,6 +786,100 @@ SYSTEM_DEF(input)
 	.["dropped_stale"] = dropped_stale
 	.["faults"] = faults
 	.["queue_high_water"] = queue_high_water
+	.["hard_refused"] = hard_refused
+	.["rate_refused"] = rate_refused
+	.["expired"] = expired
+	.["near_cap_warnings"] = near_cap_warnings
+	var/list/depth = depth_stats()
+	.["depth_max"] = depth[1]
+	.["depth_p95"] = depth[2]
+
+/// The state of `source`'s lane, made on first use.
+/datum/system/input/proc/lane_of(source)
+	var/key = "[REF(source)]"
+	var/list/L = lanes[key]
+	if(!L)
+		L = list(0, 0, null, null, null, null, FALSE, 0)
+		lanes[key] = L
+	L[INPUT_LANE_TOUCHED] = op_now()
+	return L
+
+/// Has `source` sent more inputs that cannot coalesce than INPUT_CLIENT_RATE_MAX in the current INPUT_RATE_WINDOW (this one counted)?
+/datum/system/input/proc/rate_exceeded(source)
+	var/list/L = lane_of(source)
+	var/now = op_now()
+	if(now - L[INPUT_LANE_RATE_START] >= INPUT_RATE_WINDOW)
+		L[INPUT_LANE_RATE_START] = now
+		L[INPUT_LANE_RATE_COUNT] = 0
+	L[INPUT_LANE_RATE_COUNT]++
+	return L[INPUT_LANE_RATE_COUNT] > INPUT_CLIENT_RATE_MAX
+
+/// Refuses `E`: counted by the caller, logged (once per burst, to staff too), and the player told (at most every INPUT_REFUSE_NOTICE_EVERY). Never silent.
+/datum/system/input/proc/refuse(datum/input_event/E, source, why)
+	var/list/L = lane_of(source)
+	var/now = op_now()
+	var/kind = E.event_key()
+	TEST_REC_OUTCOME(kind, ACT_REFUSED, /datum/msg/input/flood, E.actor)
+	TEST_REC_LOG(kind, ACT_REFUSED, E.origin, E.actor, E.subject(), "refused: [why]")
+	if(isnull(L[INPUT_LANE_LAST_REFUSAL]) || now - L[INPUT_LANE_LAST_REFUSAL] >= INPUT_REFUSE_BURST_GAP)
+		var/who = E.actor ? key_name(E.actor) : "nobody"
+		log_world("Input: refused a [kind] from [who]: [why] ([hard_refused] hard-cap and [rate_refused] rate refusals so far).")
+		world.input_flood_report(E.actor, kind, why)
+	L[INPUT_LANE_LAST_REFUSAL] = now
+	if(isnull(L[INPUT_LANE_LAST_NOTICE]) || now - L[INPUT_LANE_LAST_NOTICE] >= INPUT_REFUSE_NOTICE_EVERY)
+		L[INPUT_LANE_LAST_NOTICE] = now
+		op_tell(E.actor, /datum/msg/input/flood)
+
+/// `source`'s inbox now holds `depth` events: a client that stays at INPUT_CLIENT_NEAR_CAP or more for INPUT_NEAR_CAP_WARN gets a warning in the server log.
+/datum/system/input/proc/watch_near_cap(source, depth)
+	var/list/L = lane_of(source)
+	if(depth < INPUT_CLIENT_NEAR_CAP)
+		L[INPUT_LANE_NEAR_SINCE] = null
+		return
+	var/now = op_now()
+	if(isnull(L[INPUT_LANE_NEAR_SINCE]))
+		L[INPUT_LANE_NEAR_SINCE] = now
+		return
+	var/last_warning = L[INPUT_LANE_LAST_NEAR_WARNING]
+	if(now - L[INPUT_LANE_NEAR_SINCE] >= INPUT_NEAR_CAP_WARN && (isnull(last_warning) || now - last_warning >= INPUT_NEAR_CAP_REPEAT))
+		L[INPUT_LANE_LAST_NEAR_WARNING] = now
+		near_cap_warnings++
+		var/mob/who = ismob(source) ? source : null
+		if(!who && istype(source, /client))
+			var/client/C = source
+			who = C.mob
+		log_world("WARNING: Input: [who ? key_name(who) : "a client"]'s inbox has held [depth] of its [INPUT_CLIENT_MAX] inputs for [(now - L[INPUT_LANE_NEAR_SINCE]) / (1 SECONDS)] seconds.")
+
+/// The deepest inbox and the 95th percentile of the inbox depths, over the clients that have one waiting: list(max, p95).
+/datum/system/input/proc/depth_stats()
+	var/list/depths = list()
+	for(var/source in inboxes)
+		depths += length(inboxes[source])
+	if(!length(depths))
+		return list(0, 0)
+	depths = sortTim(depths, GLOBAL_PROC_REF(cmp_numeric_asc))
+	return list(depths[length(depths)], depths[max(1, CEILING(length(depths) * 0.95, 1))])
+
+/// Did the press of `source`'s last mouse button run and its release not yet?
+/datum/system/input/proc/press_ran(source)
+	var/list/L = lanes["[REF(source)]"]
+	return L ? L[INPUT_LANE_PRESSED] : FALSE
+
+/datum/system/input/proc/note_press(source, down)
+	var/list/L = lane_of(source)
+	L[INPUT_LANE_PRESSED] = down
+
+/// Forgets the lanes that have been quiet for a minute.
+/datum/system/input/proc/prune_lanes()
+	var/now = op_now()
+	for(var/key in lanes)
+		var/list/L = lanes[key]
+		if(now - L[INPUT_LANE_TOUCHED] >= 1 MINUTES && !L[INPUT_LANE_PRESSED])
+			lanes -= key
+
+/// The inbox's counters and depths (SSinput.metrics()), for the server metrics source (code/modules/metrics/metrics_sources.dm).
+/proc/input_metrics()
+	return SSinput.metrics()
 
 // ---------------------------------------------------------------- the resolver seams (E2)
 // input_resolve_click(), input_resolve_menu() and input_resolve_ui() are code/engine/parts/inputs.dm.

@@ -26,10 +26,20 @@
 #     one native test compile, the union of the lanes' tests + the smoke set with the test phase capped at 10 minutes (the gate's cap, DQ_TRAIN_TEST_MAX_MIN),
 #     and on a failure a bisect that names the culprit lane(s), which are bounced; the rest is proved and pushed. A test that fails and
 #     then passes alone is a flake (the gate's retry ledgers it in tools/dq_flake_log.sh) and bounces nobody;
+#   - a batch that fails is bisected ACROSS cycles (a bisect is several 20-minute attempts, a cycle allows one): dq_merge_batch.sh saves
+#     every attempt verdict in $STATE/bisect.cache (DQ_BATCH_CACHE) and the deferred lanes are recorded in $STATE/bisect.lanes. While that
+#     file exists the next cycle takes exactly those lanes (new lanes wait, they never join a bisect) and resumes at the next untried
+#     attempt, never the full batch again; the first real attempt of a cycle and every single-lane attempt ignore the cycle deadline, so a
+#     lane proven bad alone is BOUNCED, never deferred. A cycle that bounced or deferred something halves the next batch (batch_limit);
 #   - a test phase that hits the cap halves the batch (state: batch_limit) and the lanes wait for the next cycle; a single lane whose own
 #     tests exceed the cap is bounced;
 #   - pushes master with tools/dq_push_master.sh (the batch's merge-gates stamp is what the pre-push hook checks) and records the lanes
 #     as landed. Master moving under the gate is not the lanes' fault: they stay queued and the next cycle repeats.
+# Self-update: the integrator runs from a snapshot of SNAP_FILES under $STATE/self. At the start of every cycle (never inside one) it
+# fetches and compares the snapshot's files with origin/master's tools/ copies; on a difference it logs "self-update: <files> changed
+# on master; re-exec", refreshes the snapshot with git show, checks the new scripts with bash -n and execs the new dq_train.sh with the
+# same arguments, keeping the run lock and pid. A new version that does not parse is logged (SELF-UPDATE REFUSED) and not run.
+# DQ_TRAIN_SELF_UPDATE=0 turns it off.
 # Nothing here holds the merge lock: the train works in its own worktree and takes no lock for the gate. Nothing runs checkout, reset,
 # restore, stash or cherry-pick, or deletes a lock file (the integrator's own lock directory is replaced only when its pid is dead).
 #
@@ -42,6 +52,11 @@ set -uo pipefail
 
 SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 SELF_DIR="$(dirname "$SELF")"
+ORIG_ARGS=("$@")
+# Every file the integrator runs from SELF_DIR (the snapshot under $STATE/self), relative to tools/. The ONE place to list them: ensure
+# copies these, and the self-update compares and refreshes these. A script the cycle runs through "$SELF_DIR/..." goes here
+# (tools/ci/test_train.sh fails when one is missing); dq_declared_tests.sh and dq_light_paths.sh are enqueue-only (the lane's checkout).
+SNAP_FILES=(dq_train.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml)
 STATE="${DQ_TRAIN_STATE:-E:/dq-cache/train}"
 WT="${DQ_TRAIN_WT:-E:/projects/dq-wt/train-base}"
 TBRANCH="${DQ_TRAIN_BRANCH:-train/integ}"
@@ -160,14 +175,80 @@ start_detached() { # <script> <log>: a process outside this shell's process grou
 	nohup bash "$self" run >>"$log" 2>&1 &
 	disown $! 2>/dev/null || true
 }
+# ---- the snapshot and its self-update ------------------------------------------------------------------------------------------------
+in_snapshot() { [ -d "$STATE/self" ] && [ "$(cd "$STATE/self" && pwd)" = "$SELF_DIR" ]; }
+snapshot_install() { # <from dir> <to dir>: SNAP_FILES, plain copies (dq_train.sh last: it may be the running script)
+	local f i from="$1" to="$2"
+	mkdir -p "$to/ci" || return 1
+	for (( i = ${#SNAP_FILES[@]} - 1; i >= 0; i-- )); do
+		f="${SNAP_FILES[$i]}"
+		cp -f "$from/$f" "$to/$f" || return 1
+	done
+}
+snap_syntax_ok() { # <dir>: every script in it parses; prints the first failure
+	local f
+	for f in "${SNAP_FILES[@]}"; do
+		case "$f" in
+			*.sh) bash -n "$1/$f" 2>&1 || { echo "bash -n failed for $f"; return 1; } ;;
+			*.js) if command -v node >/dev/null 2>&1; then node --check "$1/$f" 2>&1 || { echo "node --check failed for $f"; return 1; }; fi ;;
+		esac
+	done
+	return 0
+}
+SELF_UPDATE_BAD=""
+SELF_UPDATE_LAST="${DQ_TRAIN_REEXEC_AT:-0}"
+# Between cycles, never in one: when a script of the snapshot differs from origin/master's copy, refresh the snapshot from origin/master
+# (git show, no checkout), check that it parses, and exec the new dq_train.sh with the same arguments. The run lock and the integrator's
+# identity are kept (DQ_TRAIN_REEXEC=1 makes the new process adopt its own lock). A new version that does not parse is never run: the
+# old copy keeps going and the refusal is logged loudly once per master version.
+self_update() {
+	[ "${DQ_TRAIN_SELF_UPDATE:-1}" = 1 ] || return 0
+	in_snapshot || return 0
+	local f cur want changed=() sig="" stage d
+	G fetch -q origin 2>/dev/null || { tlog "warning: self-update: git fetch failed; keeping the current scripts"; return 0; }
+	for f in "${SNAP_FILES[@]}"; do
+		want="$(G rev-parse -q --verify "origin/master:tools/$f" 2>/dev/null)"
+		if [ -z "$want" ]; then continue; fi # not on master (yet): nothing to refresh to
+		sig="$sig $want"
+		cur=""
+		[ -f "$STATE/self/$f" ] && cur="$(git hash-object --no-filters "$STATE/self/$f" 2>/dev/null)"
+		[ "$cur" = "$want" ] || changed+=("$f")
+	done
+	[ ${#changed[@]} -gt 0 ] || return 0
+	[ "$sig" != "$SELF_UPDATE_BAD" ] || return 0
+	if [ $(( $(date +%s) - SELF_UPDATE_LAST )) -lt 30 ]; then return 0; fi # never a tight re-exec loop
+	stage="$STATE/self.new"
+	rm -rf "$stage"; mkdir -p "$stage/ci" || return 0
+	for f in "${SNAP_FILES[@]}"; do
+		G show "origin/master:tools/$f" >"$stage/$f" 2>/dev/null || { tlog "ERROR: self-update: cannot read tools/$f from origin/master; keeping the current scripts"; SELF_UPDATE_BAD="$sig"; rm -rf "$stage"; return 0; }
+	done
+	d="$(snap_syntax_ok "$stage")" || {
+		tlog "ERROR: SELF-UPDATE REFUSED: [${changed[*]}] changed on master but the new copy does not parse ($d); the integrator keeps running the OLD copy; fix master's tools/"
+		SELF_UPDATE_BAD="$sig"; rm -rf "$stage"; return 0
+	}
+	tlog "self-update: ${changed[*]} changed on master; re-exec"
+	snapshot_install "$stage" "$STATE/self" || { tlog "ERROR: self-update: could not refresh $STATE/self; keeping the current scripts"; rm -rf "$stage"; return 0; }
+	rm -rf "$stage"
+	export DQ_TRAIN_REEXEC=1 DQ_TRAIN_REEXEC_AT="$(date +%s)"
+	exec bash "$STATE/self/dq_train.sh" "${ORIG_ARGS[@]}"
+	tlog "ERROR: self-update: exec failed"; return 0
+}
+# Runs tools/dq_disk_budget.sh from the integrator's snapshot, else from the worktree it was started from; missing is a warning (rc 0), never a refusal.
+disk_budget() {
+	local s="$SELF_DIR/dq_disk_budget.sh" rc
+	[ -f "$s" ] && [ -f "$SELF_DIR/ci/disk_budget.toml" ] || s="${DQ_TRAIN_ORIGIN_REPO:-}/tools/dq_disk_budget.sh"
+	if [ ! -f "$s" ]; then tlog "WARNING: no dq_disk_budget.sh next to the integrator ($SELF_DIR) or in the origin repo; the disk budget is not enforced"; return 0; fi
+	bash "$s" "$@" >>"$LOGS/train.log" 2>&1; rc=$?
+	return "$rc"
+}
 cmd_ensure() {
 	init_state
 	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; return 0; fi
 	# The watchdog callers (dq_lane_pool.sh lease and release) ask on every call: with nothing queued there is nothing to run.
 	[ -n "$(queue_branches)" ] || return 0
 	# The integrator runs from a snapshot (the lane's worktree is released and reset while it works); the helpers are read from its worktree.
-	if [ "$SELF_DIR" != "$STATE/self" ]; then
-		cp -f "$SELF" "$STATE/self/dq_train.sh" && cp -f "$SELF_DIR/dq_train_estimate.js" "$STATE/self/dq_train_estimate.js" || die "cannot snapshot the integrator into $STATE/self"
+	if ! in_snapshot; then
+		snapshot_install "$SELF_DIR" "$STATE/self" || die "cannot snapshot the integrator into $STATE/self"
 	fi
 	export DQ_TRAIN_ORIGIN_REPO="${DQ_TRAIN_ORIGIN_REPO:-$(git rev-parse --show-toplevel)}"
 	start_detached "$STATE/self/dq_train.sh" "$LOGS/integrator.out"
@@ -268,6 +349,22 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 	set -f # test names such as dq_gameplay/* are patterns for the estimator, never for the shell
 	CHOSEN=()
 	local limit b union est lane_tests
+	if [ -s "$STATE/bisect.lanes" ]; then
+		# a bisect in progress: exactly its lanes (the ones still queued and valid), in the recorded order; new lanes wait
+		local want w v
+		want="$(cat "$STATE/bisect.lanes")"
+		for w in $want; do
+			for v in "${VALID[@]}"; do [ "$v" = "$w" ] && CHOSEN+=("$w"); done
+		done
+		if [ ${#CHOSEN[@]} -gt 0 ]; then
+			tlog "bisect in progress: this cycle takes only [${CHOSEN[*]}]; the other queued lanes wait until it resolves"
+			BATCH_LIMIT_NOW="bisect"
+			BATCH_EST="$(est_secs $(printf '%s\n' $(read_list "$(repo_dir)/tools/ci/smoke_tests.txt")))"
+			set +f
+			return 0
+		fi
+		rm -f "$STATE/bisect.lanes" "$STATE/bisect.cache"
+	fi
 	limit="$(cat "$STATE/batch_limit" 2>/dev/null)"
 	case "$limit" in ''|*[!0-9]*|0) limit="$MAX_LANES" ;; esac
 	[ "$limit" -gt "$MAX_LANES" ] && limit="$MAX_LANES"
@@ -374,6 +471,7 @@ heavy_cycle() {
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
 		export DQ_GATE_DREAMCHECKER=1
+		export DQ_BATCH_CACHE="$STATE/bisect.cache"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
 		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" "${lane_test_args[@]}" --no-dm
@@ -384,8 +482,10 @@ heavy_cycle() {
 	capped="$(sed -n 's/^BATCH_CAPPED: //p' "$out" | tail -n 1)"
 	tlog "merge_batch rc=$rc good=[${good:-}] deferred=[${deferred:-}] capped=[${capped:-}]"
 	# bounces first: they are the lane's fault whatever happens to the push
+	local nbounced=0
 	while IFS= read -r line; do
 		[ -n "$line" ] || continue
+		nbounced=$((nbounced + 1))
 		lane="${line%%|*}"; why="${line#*|}"; lg="${why##*|}"; why="${why%|*}"
 		[ -n "$lane" ] || continue
 		bounce "$lane" "$why" "$WT/$lg"
@@ -396,6 +496,19 @@ heavy_cycle() {
 		echo "$half" >"$STATE/batch_limit"
 		tlog "the test phase hit its ${TEST_MAX_MIN} min cap with ${#CHOSEN[@]} lane(s): batch limit is now $half; the deferred lanes [${deferred:-}] ride a smaller batch"
 		CYCLE_PROGRESS=1
+	fi
+	# An unfinished bisect (lanes deferred by the deadline, not by a cap) resumes next cycle with exactly those lanes and the saved verdicts.
+	if [ -n "${deferred:-}" ] && [ -z "${capped:-}" ]; then
+		printf '%s\n' $deferred >"$STATE/bisect.lanes"
+		tlog "bisect unfinished: [$deferred] resume next cycle from the saved verdicts ($STATE/bisect.cache)"
+		CYCLE_PROGRESS=1
+	else
+		rm -f "$STATE/bisect.lanes" "$STATE/bisect.cache"
+	fi
+	if [ -z "${capped:-}" ] && { [ "$nbounced" -gt 0 ] || [ -n "${deferred:-}" ]; }; then
+		local fh=$(( ${#CHOSEN[@]} / 2 )); [ "$fh" -lt 1 ] && fh=1
+		echo "$fh" >"$STATE/batch_limit"
+		tlog "the batch of ${#CHOSEN[@]} lane(s) failed (bounced $nbounced, deferred [${deferred:-}]): batch limit is now $fh"
 	fi
 	if [ -z "${good:-}" ]; then
 		tlog "nothing passed in this cycle"
@@ -437,7 +550,7 @@ heavy_cycle() {
 	sha="$(G rev-parse origin/master)"
 	for b in $good; do mark_landed "$b" "${TIP_OF[$b]}" "$sha"; done
 	CYCLE_PROGRESS=1
-	if [ -z "${capped:-}" ]; then
+	if [ -z "${capped:-}" ] && [ "$nbounced" -eq 0 ] && [ -z "${deferred:-}" ]; then
 		local lim; lim="$(cat "$STATE/batch_limit" 2>/dev/null)"; lim="${lim:-$MAX_LANES}"
 		lim=$(( lim * 2 )); [ "$lim" -gt "$MAX_LANES" ] && lim="$MAX_LANES"
 		echo "$lim" >"$STATE/batch_limit"
@@ -473,12 +586,16 @@ cycle() {
 	tlog "cycle: queue=[${all[*]}] valid=[${VALID[*]}] chosen=[${CHOSEN[*]}] (limit $BATCH_LIMIT_NOW, est ~${BATCH_EST}s of tests) all_light=$all_light"
 	# Disk budget (tools/dq_disk_budget.sh): enforce the caps at every cycle start; below the floor a heavy cycle is not started (the lanes stay queued).
 	if [ "$all_light" -eq 1 ]; then
-		bash "$SELF_DIR/dq_disk_budget.sh" enforce --quiet --throttle 10 >>"$LOGS/train.log" 2>&1 || true
+		disk_budget enforce --quiet --throttle 10 || true
 		light_cycle
 	else
-		if ! bash "$SELF_DIR/dq_disk_budget.sh" gate "a heavy train cycle" --sync --throttle 10 >>"$LOGS/train.log" 2>&1; then
+		# only exit 4 is a real floor breach (the REFUSED message above in this log has the free GB and the floor); anything else is a warning and the cycle runs
+		disk_budget gate "a heavy train cycle" --sync --throttle 10; local drc=$?
+		if [ "$drc" -eq 4 ]; then
 			tlog "disk floor: the cycle is skipped, the lanes stay queued; free space (see the REFUSED message above in this log), then the next cycle runs"
 			return 0
+		elif [ "$drc" -ne 0 ]; then
+			tlog "WARNING: the disk gate failed internally (rc=$drc, not a floor breach); running the cycle"
 		fi
 		heavy_cycle
 	fi
@@ -491,11 +608,19 @@ cmd_run() {
 	init_state
 	# the lane's checkout that started us (ensure exports it); a hand-started run uses the checkout it runs in
 	export DQ_TRAIN_ORIGIN_REPO="${DQ_TRAIN_ORIGIN_REPO:-$(git rev-parse --show-toplevel 2>/dev/null)}"
-	lock_take || { echo "dq_train: an integrator is already running (pid $(integrator_pid))"; exit 0; }
+	if [ "${DQ_TRAIN_REEXEC:-0}" = 1 ] && [ "$(integrator_pid)" = "$$" ]; then
+		# a self-update exec: this process IS the integrator that holds the lock (same pid); keep the lock and its start time
+		sed -i -e "s|^winpid=.*|winpid=$(cat /proc/$$/winpid 2>/dev/null)|" -e "s|^script=.*|script=$SELF|" "$STATE/run.lock/owner" 2>/dev/null || true
+		LOCK_HELD=1
+		unset DQ_TRAIN_REEXEC
+	else
+		lock_take || { echo "dq_train: an integrator is already running (pid $(integrator_pid))"; exit 0; }
+	fi
 	trap 'lock_release; phase "idle"' EXIT
 	tlog "integrator started (pid $$, script $SELF, state $STATE, worktree $WT)"
 	local idle=0 rc stalls=0
 	while :; do
+		self_update
 		cycle
 		rc=$?
 		if [ "$rc" -eq 10 ]; then

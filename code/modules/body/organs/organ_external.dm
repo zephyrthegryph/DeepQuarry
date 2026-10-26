@@ -84,7 +84,7 @@
 	var/encased                        // Needs to be opened with a saw to access the organs.
 
 	/// Surgical access depth. A cache of this limb's surgical incision
-	/// affliction (code/modules/surgery/incision.dm); only the incision writes it.
+	/// affliction (code/content/surgery/incision.dm); only the incision writes it.
 	var/open = 0
 	/// Dissection stage of a severed limb on the bench.
 	var/stage = 0

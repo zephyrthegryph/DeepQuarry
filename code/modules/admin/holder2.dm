@@ -112,6 +112,8 @@ CAPABILITIES(/datum/admins)
 	op("makeanimal", topic("makeanimal", arg("makeanimal", schema_ref(/mob), optional = TRUE)), needs(req_rights(R_SPAWN)), then(PROC_REF(topic_makeanimal)))
 	op("respawn", topic("respawn", arg("respawn", schema_ref(/client), optional = TRUE)), needs(req_rights(R_SPAWN)), then(PROC_REF(topic_respawn)))
 	op("togmutate", topic("togmutate", arg("togmutate", schema_ref(/mob/living/carbon/human), optional = TRUE), arg("block", num(), optional = TRUE)), needs(req_rights(R_SPAWN)), then(PROC_REF(topic_togmutate)))
+	op("del_tag", topic("del_tag", arg("del_tag", schema_ref(/datum), optional = TRUE, among = TOPIC_ANY)), needs(req_rights(R_ADMIN)), then(PROC_REF(topic_del_tag)))
+	op("mark_datum", topic("mark_datum", arg("mark_datum", schema_ref(/datum), optional = TRUE, among = TOPIC_ANY)), needs(req_rights(R_HOLDER)), then(PROC_REF(topic_mark_datum)))
 	op("adminplayeropts", topic("adminplayeropts", arg("adminplayeropts", schema_ref(/mob), optional = TRUE)), then(PROC_REF(topic_adminplayeropts)))
 	op("adminplayerobservejump", topic("adminplayerobservejump", arg("adminplayerobservejump", schema_ref(/atom), optional = TRUE)), needs(req_rights(R_MOD|R_ADMIN|R_SERVER)), then(PROC_REF(topic_adminplayerobservejump)))
 	op("adminplayerobservefollow", topic("adminplayerobservefollow", arg("adminplayerobservefollow", schema_ref(/atom/movable), optional = TRUE)), needs(req_rights(R_MOD|R_ADMIN|R_SERVER)), then(PROC_REF(topic_adminplayerobservefollow)))
@@ -429,12 +431,14 @@ CAPABILITIES(/datum/admins)
 	for(var/I in 1 to 32)
 		. += "[rand(10)]"
 
-/proc/RawHrefToken(forceGlobal = FALSE)
-	var/tok = GLOB.href_token
-	if(!forceGlobal && usr)
-		var/client/C = usr.client
-		return RawHrefTokenFor(C)
-	return tok
+/// The admin token a link carries: the `viewer`'s own (a client or a mob), the admin the panel is built for. The viewer is required: a link
+/// with no admin to show it to carries HREF_TOKEN_PLACEHOLDER (check_grep rejects a call with no argument).
+/proc/RawHrefToken(viewer)
+	var/client/C = viewer
+	if(ismob(viewer))
+		var/mob/M = viewer
+		C = M.client
+	return RawHrefTokenFor(C)
 
 /// Resolve the same admin token for an explicitly supplied current client.
 /proc/RawHrefTokenFor(client/C)
@@ -448,11 +452,36 @@ CAPABILITIES(/datum/admins)
 /proc/HrefTokenFor(mob/actor)
 	return "admin_token=[RawHrefTokenFor(actor?.client)]"
 
-/proc/HrefToken(forceGlobal = FALSE)
-	return "admin_token=[RawHrefToken(forceGlobal)]"
+/// The token query part of a link built for `viewer` (a client or a mob).
+/proc/HrefToken(viewer)
+	return "admin_token=[RawHrefToken(viewer)]"
 
-/proc/HrefTokenFormField(forceGlobal = FALSE)
-	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal)]'>"
+/proc/HrefTokenFormField(viewer)
+	return "<input type='hidden' name='admin_token' value='[RawHrefToken(viewer)]'>"
+
+/// `text` as delivered to `viewer` (a client or a mob): the HREF_TOKEN_PLACEHOLDER of its links becomes the viewer's own admin token when it has a holder,
+/// and is stripped otherwise, so no token ever reaches a player. Every path that sends link text to a client goes through this (the chat system's
+/// generate_payload() for to_chat/message_admins, and /datum/tgui_window/send_message() for every tgui panel; browse() has no admin
+/// page left that carries a link).
+/proc/href_deliver(viewer, text)
+	if(!istext(text) || !findtext(text, HREF_TOKEN_PLACEHOLDER))
+		return text
+	var/client/C = viewer
+	if(ismob(viewer))
+		var/mob/M = viewer
+		C = M.client
+	return href_fill(C?.holder?.href_token, text)
+
+/// `text` with the HREF_TOKEN_PLACEHOLDER of its links filled with `token` (an admin's own), or stripped when `token` is null (a player).
+/proc/href_fill(token, text)
+	if(!istext(text) || !findtext(text, HREF_TOKEN_PLACEHOLDER))
+		return text
+	if(token)
+		return replacetext(text, HREF_TOKEN_PLACEHOLDER, "admin_token=[token]")
+	text = replacetext(text, ";[HREF_TOKEN_PLACEHOLDER];", ";")
+	text = replacetext(text, "[HREF_TOKEN_PLACEHOLDER];", "")
+	text = replacetext(text, ";[HREF_TOKEN_PLACEHOLDER]", "")
+	return replacetext(text, HREF_TOKEN_PLACEHOLDER, "")
 
 // Shared admin_rank registry entries.
 

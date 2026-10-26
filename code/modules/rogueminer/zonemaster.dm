@@ -183,7 +183,7 @@
 		return
 
 	if(isnull(M.geologic_data))
-		rel_set(M, nameof(M.geologic_data), new /datum/geosample(M))
+		rel_set(M, nameof(M.geologic_data), geosample_of(M))
 
 	if(!prob(XENOARCH_SPAWN_CHANCE))
 		return

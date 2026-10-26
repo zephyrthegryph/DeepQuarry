@@ -4,8 +4,10 @@
 /obj/interim_digest_actor_click
 	var/mob/living/simple_mob/animal
 
-/obj/interim_digest_actor_click/Click(location, control, params)
+/// The click the test sends: the body runs as the clicking actor.
+/obj/interim_digest_actor_click/proc/probe_clicked(datum/act/input/A)
 	animal.toggle_digestion()
+	return TRUE
 
 /datum/unit_test/om/interim_animal_digest_actor/run_om(list/made)
 	test_prompts_reset()
@@ -55,4 +57,5 @@
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "actor refusals preserve actual belly state")
 
 CAPABILITIES(/obj/interim_digest_actor_click)
+	click_on(PROC_REF(probe_clicked))
 	ref_one(nameof(animal))

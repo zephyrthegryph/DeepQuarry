@@ -175,9 +175,18 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 		return 1
 	return 0
 
-// This handles the drag-open inventory panel.
-/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A mob dragged onto its dragger shows them its inventory.
+/// The one drag_onto() handler of a living mob (a subtype that has a case of its own overrides this and calls ..()). The cases, in priority order:
+/// 1. a small mob dragged onto an adjacent human is scooped (scoop_with_actor(), code/modules/mob/holder.dm);
+/// 2. a micro-carry species (teshari) is scooped by or onto the dragger (micro_scoop_with_actor(), the teshari file);
+/// 3. a mob dragged onto its dragger shows them its inventory panel (inventory_drop_with_actor()); the drop then goes on to the target's own handling.
+/// Before the declared form these were three `/mob/living/MouseDrop` overrides chained through ..(); the first two stop the drop, the third does not.
 /mob/living/proc/drop_input(datum/act/input/A)
+	if(scoop_with_actor(A.actor, A.over))
+		log_game("drag_onto: [src] scooped by drag onto [A.over] (actor [A.actor])")
+		return TRUE
+	if(micro_scoop_with_actor(A.actor, A.over))
+		log_game("drag_onto: [src] micro-scooped by drag onto [A.over] (actor [A.actor])")
+		return TRUE
 	if(inventory_drop_with_actor(A.actor, A.over))
 		return TRUE
 	return INPUT_FALLTHROUGH

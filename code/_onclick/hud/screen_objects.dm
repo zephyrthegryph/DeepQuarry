@@ -48,13 +48,12 @@
 	..()
 	look.overlay(hover_overlay)
 
-/atom/movable/screen/inventory/MouseEntered()
-	..()
-	add_overlays()
-
-/atom/movable/screen/inventory/MouseExited()
-	..()
-	set_hover_overlay(null)
+/// The slot shows the ghost of the active item while the mouse is over it.
+/atom/movable/screen/inventory/proc/slot_hovered(datum/act/input/A)
+	if(A.entered)
+		add_overlays()
+	else
+		set_hover_overlay(null)
 
 /atom/movable/screen/close
 	name = "close"
@@ -96,14 +95,16 @@ CAPABILITIES(/atom/movable/screen/item_action)
 /atom/movable/screen/grab
 	name = "grab"
 
-/atom/movable/screen/grab/Click()
+/// A click on the grab screen is the grab's own (s_click()).
+/atom/movable/screen/grab/proc/grab_clicked(datum/act/input/A)
 	var/obj/master = master_ref
 	var/obj/item/grab/G = master
 	G.s_click(src)
-	return 1
+	return TRUE
 
-// Screen grabs are clicked through Click() above; touches and items do nothing.
+// Screen grabs are clicked through grab_clicked() above; touches and items do nothing.
 CAPABILITIES(/atom/movable/screen/grab)
+	click_on(PROC_REF(grab_clicked))
 	op("swallow", hand(), ungated(), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("swallow_2", item(/obj/item), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
@@ -267,10 +268,10 @@ CAPABILITIES(/atom/movable/screen)
 	ref_one(nameof(master_ref), /datum)
 	click_on(PROC_REF(screen_click_input))
 
-/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). The click goes to the clicker's
-/// input inbox as any atom's does (/atom/Click()), then the named HUD controls act on it.
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). The click takes the default handling any
+/// atom's does (the click router, input_resolve_click()), then the named HUD controls act on it.
 /atom/movable/screen/proc/screen_click_input(datum/act/input/A)
-	input_submit(new /datum/input_event/click(A.actor, src, A.native["location"], A.native["control"], A.params))
+	input_resolve_click(new /datum/input_event/click(A.actor, src, A.native["location"], A.native["control"], A.params))
 	click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
 	return TRUE
 
@@ -572,6 +573,7 @@ CAPABILITIES(/atom/movable/screen)
 	return 1
 
 CAPABILITIES(/atom/movable/screen/inventory)
+	hover(PROC_REF(slot_hovered))
 	click_on(PROC_REF(click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
@@ -655,7 +657,11 @@ CAPABILITIES(/atom/movable/screen/component_button)
 /atom/movable/screen/setup_preview/bg
 	mouse_over_pointer = MOUSE_HAND_POINTER
 
-/atom/movable/screen/setup_preview/bg/Click(params)
+CAPABILITIES(/atom/movable/screen/setup_preview/bg)
+	click_on(PROC_REF(bg_clicked))
+
+/// A click on the backdrop steps the character preview to the next background.
+/atom/movable/screen/setup_preview/bg/proc/bg_clicked(datum/act/input/A)
 	// migrated bgstate
 	if(pref())
 		// bgstate_options moved onto the pref subtype as bgstate_choices.
@@ -665,6 +671,8 @@ CAPABILITIES(/atom/movable/screen/component_button)
 		var/list/options = bg_pref?.bgstate_choices
 		pref().update_preference_by_type(/datum/preference/text/human/bgstate, next_in_list(pref().read_preference(/datum/preference/text/human/bgstate), options))
 		pref().update_preview_icon()
+	return TRUE
+
 /**
  * This object holds all the on-screen elements of the mapping unit.
  * It has a decorative frame and onscreen buttons. The map itself is drawn

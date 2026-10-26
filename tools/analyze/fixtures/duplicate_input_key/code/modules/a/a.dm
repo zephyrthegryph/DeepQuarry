@@ -1,0 +1,15 @@
+CAPABILITIES(/mob/living)
+	click_on(PROC_REF(a))
+	drag_onto(PROC_REF(first))
+	hover(PROC_REF(h))
+	drag_onto(PROC_REF(second))
+
+CAPABILITIES(/obj/other)
+	drag_onto(PROC_REF(only))
+	click_on(PROC_REF(a))
+	when(x, drag_onto(PROC_REF(nested)))
+
+CAPABILITIES(/mob/living)
+	tooltip(PROC_REF(t))
+	drag_onto(PROC_REF(third))
+	hover(PROC_REF(h2))

@@ -15,8 +15,4 @@
 		return FALSE // should stop you from dragging through windows
 	return TRUE
 
-// /atom/MouseDrop routes through the input router as the Drag action (router.dm).
-
-/// Something dragged onto this: the ops answered it first (the dragged atom is the held one); a type overrides this for what no op takes.
-/atom/proc/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	return FALSE
+// /atom/MouseDrop routes through the input inbox as the Drag action (code/engine/kernel/entry.dm).

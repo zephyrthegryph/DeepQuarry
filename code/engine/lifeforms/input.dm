@@ -11,10 +11,12 @@
 //
 //	with_actor(user, CALLBACK(target, TYPE_PROC_REF(/datum, vv_edit_var), name, value))   // admin and callback code: runs it as `user`
 //
-// The client's native hooks (Click(), MouseDrop(), MouseDrag(), MouseEntered(), MouseExited()) are the only places BYOND hands DM the acting mob, as `usr`.
-// For a type that declares one of these entries, analyze gen declare writes the native override into code/engine/_generated/declare.dm: it
-// reads usr there, once, and calls the engine with the actor as an argument. Content never reads usr: the handler gets the actor in its
-// context (A.actor), and an op key runs through perform_op() with it, so requirements, reach and logging apply as for any input.
+// There is one input path. BYOND's native mouse callbacks are overridden in one place, code/engine/kernel/entry.dm: each reads `usr` once, builds a typed
+// /datum/input_event with the actor in it and hands it to input_submit(). When the event resolves (on the spot, or later from the inbox, the same code)
+// input_dispatch() looks up the target type's declared entry for the input in the type tables, runs the first that takes it, and otherwise the input
+// goes on to its default handling (the click router, the drop's ops, the mob's hover tracking). No type overrides a native mouse proc
+// (the `mouse_override` lint rejects it). Content never reads usr: the handler gets the actor in its context (A.actor), and an op key runs through
+// perform_op() with it, so requirements, reach and logging apply as for any input.
 //
 // tooltip(PROC_REF(x)): x(mob/user) answers list(title, content) or the content alone (the holder's name is the title); the tooltip opens on
 // enter and closes on exit (openToolTip(), closeToolTip()). `theme =` picks a tooltip theme.
@@ -24,6 +26,10 @@
 
 /proc/click_on(handler)
 	return entry_make(ENTRY_INPUT, "input:[INPUT_CLICK_ON]", list("input" = INPUT_CLICK_ON, "handler" = handler))
+
+/// double_click_on(PROC_REF(x)): x(datum/act/input/A) on the native DblClick of the holder.
+/proc/double_click_on(handler)
+	return entry_make(ENTRY_INPUT, "input:[INPUT_DOUBLE_CLICK]", list("input" = INPUT_DOUBLE_CLICK, "handler" = handler))
 
 /proc/drag_onto(handler, onto = null)
 	return entry_make(ENTRY_INPUT, "input:[INPUT_DRAG_ONTO]", list("input" = INPUT_DRAG_ONTO, "handler" = handler, "onto" = onto))
@@ -42,7 +48,7 @@
 /// The context an input handler gets: the holder, the acting mob, and what the input carried.
 /datum/act/input
 	parent_type = /datum/act/action
-	/// The input kind (INPUT_CLICK_ON, INPUT_DRAG_ONTO, INPUT_HOVER).
+	/// The input kind (INPUT_CLICK_ON, INPUT_DOUBLE_CLICK, INPUT_DRAG_ONTO, INPUT_DRAG_OVER, INPUT_HOVER).
 	var/input
 	/// The client's params text (modifier keys, screen location).
 	var/params
@@ -53,21 +59,22 @@
 	/// The native hook's own arguments by name (location, control, src_location, over_location, src_control, over_control, params).
 	var/list/native
 
-/// The input that fell through to the native parent right now (INPUT_FALLTHROUGH): list(holder handle, input). A parent type's generated override
-/// that the fall reaches must not run the same (inherited or replaced) entry a second time; input_fell() clears it when the native chain returns.
-GLOBAL_REAL_VAR(list/input_falling)
+/// The lifeform plan of `holder`'s type (the declared inputs and the tooltip), or null for a type that declares nothing the engine runs.
+/proc/input_plan_of(atom/holder)
+	var/datum/type_table/T = type_table_cache()[holder.type] || table_of(holder)
+	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
+		return null
+	return lifeform_plan_of(holder)
 
-/// Runs the holder's handler for one input with `actor`: a holder proc gets the context; an op key runs through perform_op(). Returns TRUE
-/// when a handler took the input.
+/// The resolver's lookup (every input event runs it when it resolves, whether it was resolved on arrival or waited in the inbox): the holder's
+/// declared entry for `input`, run with `actor`. A holder proc gets the context; an op key runs through perform_op(). Returns TRUE when a handler took
+/// the input; FALSE when the holder declares none, none accepts, or the handler answered INPUT_FALLTHROUGH, and the caller goes on to the default handling.
 /proc/input_dispatch(atom/holder, mob/actor, input, params = null, atom/over = null, entered = FALSE, list/native = null)
 	if(!holder || QDELETED(holder))
 		return FALSE
-	if(input_falling && entity_handle_is(input_falling[1], holder) && input_falling[2] == input)
-		return FALSE // a subtype's generated override already ran this holder's entry and fell through to its parent
-	var/datum/type_table/T = type_table_cache()[holder.type] || table_of(holder)
-	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
+	var/datum/lifeform_plan/P = input_plan_of(holder)
+	if(!P)
 		return FALSE
-	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
 	. = FALSE
 	for(var/datum/centry/C as anything in P.inputs)
 		var/datum/entry/E = C.item
@@ -89,26 +96,16 @@ GLOBAL_REAL_VAR(list/input_falling)
 			A.origin = ORIGIN_CLICK
 			var/reply = call(holder, handler)(A)
 			A.release()
-			if(reply == INPUT_FALLTHROUGH) // the native override goes on to ..(): a parent's generated override must not run it again
-				input_falling = list(ref_token(holder), input)
-				return FALSE
-			if(input == INPUT_HOVER) // a hover's override always goes on to ..() (the native hover tracking): the parent's override must not run this entry again
-				input_falling = list(ref_token(holder), input)
-			return TRUE
+			return reply != INPUT_FALLTHROUGH
 		if(istext(handler))
 			perform_op(actor, holder, handler, null, ORIGIN_CLICK)
 			return TRUE
 	return .
 
-/// The native chain of a generated override returned: the fall-through mark of `holder` is over.
-/proc/input_fell(atom/holder)
-	if(input_falling && entity_handle_is(input_falling[1], holder))
-		input_falling = null
-
 /// The tooltip of `holder` for `user`: opened on enter, closed on exit.
 /proc/input_tooltip(atom/holder, mob/user, entered, params)
-	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
-	var/datum/centry/C = P.tooltip
+	var/datum/lifeform_plan/P = input_plan_of(holder)
+	var/datum/centry/C = P?.tooltip
 	if(!C || !user)
 		return FALSE
 	if(!entered)
@@ -150,10 +147,9 @@ GLOBAL_REAL_VAR(list/input_falling)
 
 /// Does this atom declare a tooltip or a hover entry (so a press on it closes one)?
 /proc/input_declares_tooltip(atom/holder)
-	var/datum/type_table/T = type_table_cache()[holder.type] || table_of(holder)
-	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
+	var/datum/lifeform_plan/P = input_plan_of(holder)
+	if(!P)
 		return FALSE
-	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
 	if(P.tooltip)
 		return TRUE
 	for(var/datum/centry/C as anything in P.inputs)
@@ -163,7 +159,7 @@ GLOBAL_REAL_VAR(list/input_falling)
 	return FALSE
 
 /// The acting mob of the native input running now (usr), for the engine's own entry points. Content gets its actor as an argument.
-/proc/input_actor()
+/proc/input_actor() as /mob
 	return usr
 
 /// A compatibility callback has an engine-level invocation interface.

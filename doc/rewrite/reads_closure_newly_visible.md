@@ -60,7 +60,7 @@ Of the 345 newly visible sites, **15** sit in engine-internal files (the directo
 | `code/ATMOSPHERICS/_atmos_setup.dm` | 27 |
 | `code/game/objects/items/weapons/tools/weldingtool.dm` | 14 |
 | `code/modules/clothing/clothing_appearance_handler.dm` | 10 |
-| `code/modules/reagents/chemistry_service.dm` | 8 |
+| `code/content/reagents/chemistry_service.dm` | 8 |
 | `code/game/turfs/simulated/fancy_shuttles.dm` | 7 |
 | `code/modules/hydroponics/trays/tray_update_icons.dm` | 7 |
 | `code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm` | 7 |
@@ -298,14 +298,14 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - draw_untracked | code/modules/power/power_grid.dm:150 | `?ffi_call` | 1
 - draw_untracked | code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm:198 | `icon` | 1
 - draw_untracked | code/modules/projectiles/guns/energy/protector.dm:86 | `icon` | 1
-- draw_untracked | code/modules/reagents/chemistry_service.dm:28 | `SSchemistry.chemical_reactions` | 2
-- draw_untracked | code/modules/reagents/chemistry_service.dm:28 | `SSchemistry.chemical_reagents` | 2
-- draw_untracked | code/modules/reagents/chemistry_service.dm:44 | `SSchemistry.chemical_reactions` | 2
-- draw_untracked | code/modules/reagents/chemistry_service.dm:61 | `SSchemistry.distilled_reactions_by_product` | 2
-- draw_untracked | code/modules/reagents/chemistry_service.dm:62 | `SSchemistry.distilled_reactions_by_product` | 2
-- draw_untracked | code/modules/reagents/chemistry_service.dm:64 | `SSchemistry.chemical_reactions_by_product` | 2
-- draw_untracked | code/modules/reagents/chemistry_service.dm:65 | `SSchemistry.chemical_reactions_by_product` | 2
-- draw_untracked | code/modules/reagents/chemistry_service.dm:83 | `SSchemistry.chemical_reagents` | 2
+- draw_untracked | code/content/reagents/chemistry_service.dm:28 | `SSchemistry.chemical_reactions` | 2
+- draw_untracked | code/content/reagents/chemistry_service.dm:28 | `SSchemistry.chemical_reagents` | 2
+- draw_untracked | code/content/reagents/chemistry_service.dm:44 | `SSchemistry.chemical_reactions` | 2
+- draw_untracked | code/content/reagents/chemistry_service.dm:61 | `SSchemistry.distilled_reactions_by_product` | 2
+- draw_untracked | code/content/reagents/chemistry_service.dm:62 | `SSchemistry.distilled_reactions_by_product` | 2
+- draw_untracked | code/content/reagents/chemistry_service.dm:64 | `SSchemistry.chemical_reactions_by_product` | 2
+- draw_untracked | code/content/reagents/chemistry_service.dm:65 | `SSchemistry.chemical_reactions_by_product` | 2
+- draw_untracked | code/content/reagents/chemistry_service.dm:83 | `SSchemistry.chemical_reagents` | 2
 - draw_untracked | code/modules/skybox_service.dm:23 | `SSskybox.initialized` | 1
 - draw_untracked | code/modules/vore/fluffstuff/custom_items.dm:1041 | `base_icon` | 1
 - stat_input_untracked | code/__defines/verdigris/_bindings_types.dm:1074 | `?ffi_call` | 2
@@ -405,16 +405,16 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/modules/clothing/spacesuits/rig/rig.dm:938 | `malfunction_delay` | 1
 - stat_input_untracked | code/modules/clothing/under/miscellaneous.dm:1901 | `original_size` | 2
 - stat_input_untracked | code/modules/clothing/under/miscellaneous.dm:1942 | `original_size` | 2
-- stat_input_untracked | code/modules/economy/Accounts.dm:124 | `GLOB.department_accounts` | 1
+- stat_input_untracked | code/content/economy/Accounts.dm:124 | `GLOB.department_accounts` | 1
 - stat_input_untracked | code/modules/economy/vending.dm:512 | `GLOB.vendor_account` | 1
 - stat_input_untracked | code/modules/economy/vending.dm:512 | `GLOB.vendor_account.suspended` | 1
 - stat_input_untracked | code/modules/ghosttrap/trap.dm:8 | `GLOB.ghost_traps` | 1
 - stat_input_untracked | code/modules/ghosttrap/trap.dm:10 | `GLOB.ghost_traps` | 1
 - stat_input_untracked | code/modules/ghosttrap/trap.dm:17 | `GLOB.ghost_traps` | 1
 - stat_input_untracked | code/modules/integrated_electronics/core/assemblies.dm:640 | `?hop_not_relation` | 1
-- stat_input_untracked | code/modules/integrated_electronics/core/assemblies/clothing.dm:256 | `?hop_not_relation` | 1
-- stat_input_untracked | code/modules/integrated_electronics/core/assemblies/implant.dm:27 | `?hop_not_relation` | 1
-- stat_input_untracked | code/modules/integrated_electronics/core/assemblies/implant.dm:27 | `implant` | 1
+- stat_input_untracked | code/content/integrated_electronics/core/assemblies/clothing.dm:256 | `?hop_not_relation` | 1
+- stat_input_untracked | code/content/integrated_electronics/core/assemblies/implant.dm:27 | `?hop_not_relation` | 1
+- stat_input_untracked | code/content/integrated_electronics/core/assemblies/implant.dm:27 | `implant` | 1
 - stat_input_untracked | code/modules/integrated_electronics/core/integrated_circuit.dm:124 | `?hop_not_relation` | 1
 - stat_input_untracked | code/modules/integrated_electronics/core/integrated_circuit.dm:125 | `?hop_not_relation` | 1
 - stat_input_untracked | code/modules/integrated_electronics/subtypes/camera.dm:149 | `?hop_not_relation` | 2
@@ -439,10 +439,10 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/modules/modular_computers/file_system/programs/research/ntmonitor.dm:64 | `GLOB.ntnet_global` | 1
 - stat_input_untracked | code/modules/modular_computers/file_system/programs/research/ntmonitor.dm:64 | `GLOB.ntnet_global.setting_disabled` | 1
 - stat_input_untracked | code/modules/modular_computers/file_system/programs/research/ntmonitor.dm:98 | `GLOB.ntnet_global` | 1
-- stat_input_untracked | code/modules/overmap/helpers.dm:2 | `using_map.use_overmap` | 1
-- stat_input_untracked | code/modules/overmap/helpers.dm:3 | `GLOB.map_sectors` | 1
+- stat_input_untracked | code/content/overmap/helpers.dm:2 | `using_map.use_overmap` | 1
+- stat_input_untracked | code/content/overmap/helpers.dm:3 | `GLOB.map_sectors` | 1
 - stat_input_untracked | code/modules/paperwork/faxmachine.dm:71 | `GLOB.last_fax_role_request` | 1
-- stat_input_untracked | code/modules/pda/contracts.dm:109 | `SScontracts.contracts_by_id` | 1
+- stat_input_untracked | code/content/pda/contracts.dm:109 | `SScontracts.contracts_by_id` | 1
 - stat_input_untracked | code/modules/power/port_gen.dm:232 | `?hop_not_relation` | 1
 - stat_input_untracked | code/modules/power/port_gen.dm:232 | `loc` | 1
 - stat_input_untracked | code/modules/power/port_gen.dm:240 | `temperature` | 1

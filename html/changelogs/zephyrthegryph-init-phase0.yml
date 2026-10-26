@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added preset(), param(early = TRUE) and keeps_if(instead =), the init_roots list, boot steps for boot-time datums, and a from_body param for ghosts"

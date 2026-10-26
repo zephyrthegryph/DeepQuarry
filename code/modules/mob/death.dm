@@ -64,7 +64,7 @@
 //   7. refresh     - HUD, icon and vision (skipped when on_death() deleted the mob);
 //   8. antag       - the game mode's win check;
 //   9. final       - /datum/definition_event/living_death_final, once, after everything above.
-// The way back is /mob/living/proc/return_from_death() (code/modules/body/revival.dm).
+// The way back is /mob/living/proc/return_from_death() (code/domains/body/revival.dm).
 
 /// Kill this mob. Returns TRUE if it went from alive to dead, FALSE otherwise (already dead,
 /// deleted, or replace_death() took over). `deathmessage` overrides get_death_message(gibbed).

@@ -103,6 +103,68 @@ fn find_root(explicit: Option<PathBuf>) -> PathBuf {
     }
 }
 
+/// An unused-ALLOW verdict that came out of warm caches is confirmed by one cold run (an empty private cache, no shared seed, no gen
+/// store): the verdict must depend on the tree alone, and a cached lint result that lost an annotation's use would otherwise fail a gate
+/// the cold audit passes. When the cold run finds none, the warm caches are wrong: say so, delete this worktree's cache files (the next
+/// run rebuilds them) and return no problems. When it finds problems they are real. Not repeated inside the cold child.
+fn recheck_unused_cold(root: &Path, problems: Vec<String>) -> Vec<String> {
+    if std::env::var_os("DQ_ANALYZE_UNUSED_RECHECK").is_some() {
+        return problems;
+    }
+    let Some(cache) = dq_analyze::incr::dir() else { return problems };
+    let Ok(exe) = std::env::current_exe() else { return problems };
+    let scratch = std::env::temp_dir().join(format!("analyze-cold-{}", std::process::id()));
+    let _ = std::fs::create_dir_all(&scratch);
+    eprintln!("analyze: {} unused ALLOW annotation(s) under warm caches; confirming with a cold run", problems.len());
+    let mut args: Vec<String> = std::env::args().skip(1).collect();
+    if !args.iter().any(|a| a == "--root") {
+        args.push("--root".to_string());
+        args.push(root.to_string_lossy().to_string());
+    }
+    let out = std::process::Command::new(exe)
+        .args(&args)
+        .env("DQ_ANALYZE_CACHE", &scratch)
+        .env("DQ_ANALYZE_SHARED_CACHE", "off")
+        .env("DQ_GEN_STORE", "off")
+        .env("DQ_ANALYZE_UNUSED_RECHECK", "1")
+        .output();
+    let _ = std::fs::remove_dir_all(&scratch);
+    let Ok(out) = out else { return problems };
+    if cold_finds_no_unused(&String::from_utf8_lossy(&out.stdout)) != Some(true) {
+        return problems;
+    }
+    eprintln!("analyze: WARNING warm and cold disagree: the cold run finds no unused ALLOW; these came from stale cached results:");
+    for p in &problems {
+        eprintln!("analyze:   {}", p);
+    }
+    if let Ok(rd) = std::fs::read_dir(&cache) {
+        for e in rd.flatten() {
+            if e.path().extension().map(|x| x == "bin").unwrap_or(false) {
+                let _ = std::fs::remove_file(e.path());
+            }
+        }
+    }
+    Vec::new()
+}
+
+/// `Some(true)` when a cold run's output reports the unused-ALLOW check with no problem, `Some(false)` with some, `None` when the check did not run.
+fn cold_finds_no_unused(text: &str) -> Option<bool> {
+    text.lines().any(|l| l.starts_with("allow annotations: "))
+        .then(|| !text.lines().any(|l| l.contains("is unused: no longer triggers")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::cold_finds_no_unused;
+
+    #[test]
+    fn cold_verdict_is_read_from_the_check_output() {
+        assert_eq!(cold_finds_no_unused("x\nallow annotations: 0 unused\n"), Some(true));
+        assert_eq!(cold_finds_no_unused("a.dm:3: ALLOW(handlers) is unused: no longer triggers the handlers lint; delete\nallow annotations: 1 unused\n"), Some(false));
+        assert_eq!(cold_finds_no_unused("crashed before the check\n"), None);
+    }
+}
+
 fn options(args: &Args, root: &Path) -> Options {
     let has = |f: &str| args.flags.iter().any(|x| x == f);
     Options {
@@ -220,7 +282,10 @@ fn real_main() -> ExitCode {
             if args.cmd == "check" && full_run && (has("--unused") || NATIVE_UNUSED_DEFAULT) && !has("--no-unused") && std::env::var("DQ_ALLOW_USAGE").is_err() {
                 use dq_analyze::lints::allow_annotations;
                 let used: Vec<dq_analyze::lint::AllowUse> = outcomes.iter().flat_map(|o| o.allow_used.iter().cloned()).collect();
-                let problems = allow_annotations::unused(&engine.tree, &used, &[], &|_| String::new());
+                let mut problems = allow_annotations::unused(&engine.tree, &used, &[], &|_| String::new());
+                if !problems.is_empty() {
+                    problems = recheck_unused_cold(&root, problems);
+                }
                 for p in &problems {
                     println!("{}", p);
                 }

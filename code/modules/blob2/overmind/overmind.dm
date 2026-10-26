@@ -27,6 +27,9 @@
 	var/tmp/datum/language/default_language_static
 
 CAPABILITIES(/mob/observer/blob)
+	rolls(nameof(name), PROC_REF(roll_overmind_name))
+	rolls(nameof(real_name), PROC_REF(roll_overmind_real_name), from = list(nameof(name)))
+	knows(LANGUAGE_ANIMAL, default = TRUE)
 	setup(PROC_REF(tint_overmind))
 	configure(mob_rules(universal_understand = TRUE))
 	ref_one(nameof(blob_core), /obj/structure/blob/core)
@@ -38,23 +41,20 @@ CAPABILITIES(/mob/observer/blob)
 /mob/observer/blob/get_default_language()
 	return default_language()
 
-/// The languages the overmind knows.
-TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
-
 /// The blob type an overmind is made as (its constructor param), or null for a random one.
 /mob/observer/blob/var/desired_blob_type
 
-// ALLOW(init/INSTANCE_STATE): an overmind is numbered, makes its blob type and learns its languages before its parents' init
-/mob/observer/blob/Initialize(mapload)
-	var/new_name = "[initial(name)] ([rand(1, 999)])"
-	name = new_name
-	set_real_name(new_name)
-	for(var/L in TYPE_TABLE_GET(src, blob_langs))
-		languages |= GLOB.all_languages[L]
-	if(languages.len)
-		default_language_static = languages[1]
+/// An overmind is numbered (rolls(), before any init code reads its name): "Blob Overmind (417)".
+/mob/observer/blob/proc/roll_overmind_name(datum/roller/R, target)
+	return "[initial(name)] ([R.number(1, 999)])"
 
-	return ..()
+/// Its real name is the numbered name it rolled.
+/mob/observer/blob/proc/roll_overmind_real_name(datum/roller/R, target)
+	return name
+
+/// The language an overmind speaks when it names none is the one it learned first (knows(default = TRUE)).
+/mob/observer/blob/lifeform_default_language(language)
+	default_language_static = GLOB.all_languages[language]
 
 /// It takes its blob type's colour, and its core draws the same (a setup() hook, once its blob type exists).
 /mob/observer/blob/proc/tint_overmind()

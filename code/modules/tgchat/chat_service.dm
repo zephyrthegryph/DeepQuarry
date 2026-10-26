@@ -18,7 +18,17 @@ SYSTEM_DEF(chat)
 	/// Assosciates a ckey with their next sequence number.
 	var/list/client_to_sequence_number = list()
 
-/datum/system/chat/proc/generate_payload(client/target, message_data)
+/// The one point every chat message to a client goes through (to_chat, to_chat_immediate and message_admins all end in queue()/send_immediate()):
+/// the HREF_TOKEN_PLACEHOLDER of its links becomes this client's own admin token, or nothing for a player (href_deliver()). The message list is
+/// shared by every target of one call, so a copy is made only when the placeholder is present.
+/datum/system/chat/proc/generate_payload(client/target, list/message_data)
+	for(var/field in list("html", "text"))
+		var/original = message_data[field]
+		if(!istext(original) || !findtext(original, HREF_TOKEN_PLACEHOLDER))
+			continue
+		var/delivered = href_deliver(target, original)
+		message_data = message_data.Copy()
+		message_data[field] = delivered
 	var/sequence = client_to_sequence_number[target.ckey]
 	client_to_sequence_number[target.ckey] += 1
 

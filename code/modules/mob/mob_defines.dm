@@ -188,6 +188,7 @@
 SCHEMA(/mob, faction, schema_text())
 
 CAPABILITIES(/mob)
+	preset(nameof(lastarea), PROC_REF(start_lastarea))
 	setup(PROC_REF(finish_mob_setup))
 	mob_rules(universal_understand = 0, forced_psay = FALSE, vent_crawl_time = 4.5 SECONDS)
 	configure(movable_motion(unacidable = FALSE))
@@ -198,7 +199,7 @@ CAPABILITIES(/mob)
 	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)
 	ref_one(nameof(hovered_atom_view), /atom)
-	ref_one(nameof(focus), /datum) // what receives the mob's keyboard input (itself by default)
+	ref_one(nameof(focus), /datum, starts = PROC_REF(start_focus)) // what receives the mob's keyboard input (itself by default)
 	ref_one(nameof(mind), /datum/mind)
 	// Who the character says they are (profile_records.dm).
 	profile(nameof(bio), /datum/record/identity)

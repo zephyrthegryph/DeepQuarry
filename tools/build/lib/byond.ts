@@ -491,9 +491,10 @@ function runDreamDaemonWithWatchdog(
   const graceMs = options.watchdogGraceMs ?? 30_000;
   // Once the world has stamped its clean marker (finished_run.lk, written after its logs and results are flushed)
   // only the process exit is left. The child 'exit' event resolves the run the moment the daemon really exits, so
-  // this is only the wait before a force-kill of a daemon that does not (the Windows zombie case). It was a fixed
-  // 5 s; 1.5 s still leaves the daemon time to close its handles. DQ_DD_CLEAN_GRACE_MS overrides it.
-  const cleanGraceMs = Math.min(graceMs, Number(process.env.DQ_DD_CLEAN_GRACE_MS) || 1_500);
+  // this is only the wait before a force-kill of a daemon that does not (the Windows zombie case). A healthy daemon
+  // takes 1.4-2.6 s to exit on a loaded machine (world delete joins the verdigris threads), so 1.5 s turned that race
+  // into "the world was not clean" on the train (2026-10-26); 10 s costs nothing when the daemon exits. DQ_DD_CLEAN_GRACE_MS overrides it.
+  const cleanGraceMs = Math.min(graceMs, Number(process.env.DQ_DD_CLEAN_GRACE_MS) || 10_000);
   let cleanSeenAt = 0;
   // The full normal tier is about 6700 s of summed DreamDaemon CPU (2026-10-04),
   // so one unsharded world can need well over an hour on a busy, contended
