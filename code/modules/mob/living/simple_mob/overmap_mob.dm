@@ -37,7 +37,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The marker of a mob made with no mob makes its own.
 /obj/effect/overmap/visitable/simplemob/proc/link_parent(parent_mob)
 	if(!parent_mob_type && !parent)
-		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
+		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.", null)
 		spent(src)
 		return
 	if(!parent)
@@ -127,7 +127,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 /mob/living/simple_mob/vore/overmap/proc/end_if_unconfigured(datum/act/timer/A)
 	if(om_child_type)
 		return
-	log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.")
+	log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.", null)
 	spent(src)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A mob made with no marker makes its own.
@@ -173,7 +173,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The marker of a mob made with no mob makes its own.
 /obj/effect/overmap/visitable/ship/simplemob/proc/link_parent(parent_mob)
 	if(!parent_mob_type && !parent)
-		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
+		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.", null)
 		spent(src)
 		return
 	if(!parent)

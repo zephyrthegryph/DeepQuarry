@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "BYOND's native input callbacks (double click, wheel, hover, press, drop, the client's mouse, datum Topic, world.Reboot) now build a typed input event carrying the actor and go through the input inbox; handlers read the actor from the event."
+  - code_imp: "log_and_message_admins takes an explicit actor (null logs an EVENT); prompt flows name their actor instead of re-running under usr."

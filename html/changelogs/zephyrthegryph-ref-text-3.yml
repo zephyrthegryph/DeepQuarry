@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Window payload refs (communicator, overmap, vore panel, PDA, NIF, crew monitor and others) are ref_token handles instead of ref text"

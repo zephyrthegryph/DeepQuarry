@@ -336,7 +336,7 @@ CAPABILITIES(/obj/item/holder/fish)
 			var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
 			to_chat(user, span_danger("You roughly squeeze [M]!"))
 			to_chat(M, span_danger("You are roughly squeezed by [user]!"))
-			log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]")
+			log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]", A.actor)
 			M.injure(INJURY_BLUNT, dam, null, user)
 	// ITION: MicroHandCrush END
 	return OP_OK

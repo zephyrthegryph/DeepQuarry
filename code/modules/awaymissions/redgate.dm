@@ -146,7 +146,7 @@
 				restricted_human.set_redgate_restricted(FALSE)
 				to_chat(M, span_notice("You have given [restricted_human] permission to use the redgate."))
 				to_chat(restricted_human, span_notice("[M] has given you permission to use the redgate."))
-				log_and_message_admins("[M] has given [restricted_human] permission to use the redgate.")
+				log_and_message_admins("[M] has given [restricted_human] permission to use the redgate.", M)
 		else
 			teleport(M)
 	else
@@ -167,7 +167,7 @@ CAPABILITIES(/obj/structure/redgate/away)
 
 /obj/structure/redgate/away/proc/check_partner(datum/act/timer/A)
 	if(!find_partner())
-		log_and_message_admins("An away redgate spawned but wasn't able to find a gateway to link to. If this appeared at roundstart, something has gone wrong, otherwise if you spawn another gate they should connect.")
+		log_and_message_admins("An away redgate spawned but wasn't able to find a gateway to link to. If this appeared at roundstart, something has gone wrong, otherwise if you spawn another gate they should connect.", null)
 
 /obj/structure/redgate/proc/find_partner()
 	for(var/obj/structure/redgate/g in world)

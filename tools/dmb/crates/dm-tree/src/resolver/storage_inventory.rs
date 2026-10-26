@@ -44,18 +44,89 @@ pub struct UniqueStorageInputs {
 }
 pub struct StorageOwner {
     pub facts: Arc<[(DeclarationKey, StorageFact)]>,
-    pub unique_token: Option<u64>,
+    pub unique_token: Option<u128>,
 }
-type Store = ObservedArtifactStore<StorageOwner, StorageQuery, StorageAnswer, ()>;
+pub(crate) type Store = ObservedArtifactStore<StorageOwner, StorageQuery, StorageAnswer, ()>;
+type Lease = dm_session::ObservedArtifactLease<StorageOwner, StorageQuery, StorageAnswer, ()>;
+/// The per-owner storage facts: private to this tree, or a lease on the engine's shared core (equal declarations of two
+/// sessions are one allocation; every fact is validated against the asking tree's own answers).
+enum OwnerFacts {
+    Local(Store),
+    Shared {
+        owner: Arc<crate::SharedNormalizedDeclarations>,
+        lease: Lease,
+    },
+}
+impl OwnerFacts {
+    fn visit_storage(
+        &self,
+        visit: impl FnMut(
+            ObservedArtifactStorageView<'_, StorageOwner, StorageQuery, StorageAnswer, ()>,
+        ),
+    ) {
+        match self {
+            Self::Local(store) => store.visit_storage(visit),
+            Self::Shared { lease, .. } => lease.visit_storage(visit),
+        }
+    }
+    fn lookup(&self, key: &[u8], host: &Host<'_>) -> Option<Arc<StorageOwner>> {
+        match self {
+            Self::Local(store) => store.lookup(key, host),
+            Self::Shared { lease, .. } => lease.visit_explained(key, host, &mut |_| true).0,
+        }
+    }
+    fn insert_with(
+        &self,
+        key: Arc<[u8]>,
+        reads: Vec<dm_session::Observation<StorageQuery, StorageAnswer, ()>>,
+        versions: Vec<((), u128)>,
+        create: impl FnOnce() -> StorageOwner,
+    ) {
+        match self {
+            Self::Local(store) => {
+                store.insert_with(key, reads, versions, 0, create);
+            }
+            Self::Shared { lease, .. } => {
+                lease.insert_with(key, reads, versions, 0, create);
+            }
+        }
+    }
+    fn retain_current_keys<'a>(&self, keys: impl IntoIterator<Item = &'a [u8]>) {
+        match self {
+            Self::Local(store) => store.retain_current_keys(keys),
+            Self::Shared { lease, .. } => lease.retain_current_keys(keys),
+        }
+    }
+}
 pub(crate) struct RetainedStorage {
-    store: Store,
+    /// Facts by owner: content-defined, shareable between sessions.
+    store: OwnerFacts,
+    /// Uniqueness certificates (`storage_uniqueness`): their tokens are issued by this process for this tree, so they
+    /// stay private even when the owner facts are shared.
+    unique: Store,
     hits: AtomicUsize,
 }
 impl Default for RetainedStorage {
     fn default() -> Self {
         Self {
-            store: Store::current_revision(),
+            store: OwnerFacts::Local(Store::current_revision()),
+            unique: Store::current_revision(),
             hits: AtomicUsize::new(0),
+        }
+    }
+}
+impl RetainedStorage {
+    pub(crate) fn shared(owner: Arc<crate::SharedNormalizedDeclarations>) -> Self {
+        let lease = owner.storage.lease();
+        Self {
+            store: OwnerFacts::Shared { owner, lease },
+            ..Self::default()
+        }
+    }
+    pub(crate) fn fresh(&self) -> Self {
+        match &self.store {
+            OwnerFacts::Local(_) => Self::default(),
+            OwnerFacts::Shared { owner, .. } => Self::shared(Arc::clone(owner)),
         }
     }
 }
@@ -97,7 +168,9 @@ impl RetainedStorage {
             ObservedArtifactStorageView<'_, StorageOwner, StorageQuery, StorageAnswer, ()>,
         ),
     ) {
-        self.store.visit_storage(visit);
+        let mut visit = visit;
+        self.store.visit_storage(&mut visit);
+        self.unique.visit_storage(visit);
     }
     fn owner(
         &self,
@@ -142,7 +215,6 @@ impl RetainedStorage {
                 key(owner),
                 ledger.reads(),
                 ledger.domain_receipts(),
-                0,
                 || StorageOwner {
                     facts: Arc::clone(&facts),
                     unique_token: None,
@@ -201,14 +273,7 @@ impl RetainedStorage {
             .into_iter()
             .map(|(owner, rows)| (owner, rows.into()))
             .collect();
-        let mut keys: Vec<_> = inputs.keys().map(|owner| key(*owner)).collect();
-        self.store.visit_storage(|view| {
-            if let ObservedArtifactStorageView::Entry { key, .. } = view {
-                if key.starts_with(UNIQUE_PREFIX) {
-                    keys.push(Arc::clone(key));
-                }
-            }
-        });
+        let keys: Vec<_> = inputs.keys().map(|owner| key(*owner)).collect();
         self.store
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         let owners = crate::metadata_update::dependency_order(tree.types.len(), |index| {
@@ -316,6 +381,23 @@ mod tests {
         (0..tree.members.len())
             .map(|index| inventory::fact(tree, MemberId(index as u32)))
             .collect()
+    }
+    #[test]
+    fn shared_owner_facts_serve_a_second_session_exactly() {
+        let engine = Arc::new(crate::SharedNormalizedDeclarations::default());
+        let first = RetainedStorage::shared(Arc::clone(&engine));
+        let second = RetainedStorage::shared(Arc::clone(&engine));
+        let (tree, index) = source("/datum/base\n    var/static/shared = 1\n/datum/base/child\n    shared = 2\n/datum/other\n    var/value = 3\n");
+        assert_eq!(first.facts(&tree, &index).unwrap(), fresh(&tree));
+        assert_eq!(first.hits(), 0);
+        // A second session of the same engine finds the first one's facts and validates them against its own tree.
+        assert_eq!(second.facts(&tree, &index).unwrap(), fresh(&tree));
+        assert_eq!(second.hits(), 3);
+        // Changed inherited storage is not served from the shared core.
+        let (changed, index) = source("/datum/base\n    var/value = 1\n/datum/base/child\n    var/static/shared = 2\n/datum/other\n    var/value = 3\n");
+        assert_eq!(second.facts(&changed, &index).unwrap(), fresh(&changed));
+        drop(first);
+        assert_eq!(second.facts(&changed, &index).unwrap(), fresh(&changed));
     }
     #[test]
     fn initializer_edits_reuse_storage_but_inherited_storage_changes_invalidate() {
@@ -474,4 +556,4 @@ mod tests {
 
 #[path = "storage_uniqueness.rs"]
 mod uniqueness;
-use uniqueness::{unique_inputs, UNIQUE_PREFIX};
+use uniqueness::unique_inputs;

@@ -502,7 +502,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(datum/act/op/A)
 	var/new_light = A.step_value("light")
 	if(new_light)
-		tray_light = new_light
+		tray_light = num_or_null(new_light)
 		to_chat(A.actor, span_filter_notice("You set the tray to a light level of [tray_light] lumens."))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/check_level_sanity()

@@ -393,8 +393,8 @@
 /datum/map_template/shelter
 	var/shelter_id
 	var/description
-	var/blacklisted_turfs
-	var/banned_areas
+	var/list/blacklisted_turfs
+	var/list/banned_areas
 	var/banned_objects
 	var/list/door_locations /// Where the door (or doors) are located in XY coordinates, so the capsule deploy preview can show where the doors will be.
 

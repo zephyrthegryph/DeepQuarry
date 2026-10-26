@@ -1048,7 +1048,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 /obj/machinery/casinosentientprize_handler/proc/price_done(datum/act/op/A)
 	var/answer = A.step_value("price")
 	if(!isnull(answer))
-		casinosentientprize_price = answer
+		casinosentientprize_price = num_or_null(answer)
 		to_chat(A.actor, span_notice("You set the price to [casinosentientprize_price]"))
 	return OP_OK
 

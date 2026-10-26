@@ -815,7 +815,7 @@ CAPABILITIES(/datum/respawn_review)
 		if(charjob)
 			SSjob.equip_rank(new_character, charjob, 1)
 			if(new_character.mind)
-				new_character.mind.assigned_role = charjob
+				new_character.mind.assigned_role = text_or_null(charjob)
 				new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
 			equip_custom_items(new_character) // readded to enable custom_item.txt
 
@@ -923,7 +923,7 @@ ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a cu
 		else if (target_ai.see_in_dark == 0)
 			to_chat(user, "Upload failed. Only a faint signal is being detected from the AI, and it is not responding to our requests. It may be low on power.")
 		else
-			target_ai.add_ion_law(input)
+			target_ai.add_ion_law(input, actor = ask.answerer)
 			for(var/mob/living/silicon/ai/found_ai in REGISTRY_MEMBERS(REGISTRY_MOBS))
 				to_chat(found_ai, span_warning("... LAWS UPDATED!") + "\n" + input)
 				found_ai.show_laws()

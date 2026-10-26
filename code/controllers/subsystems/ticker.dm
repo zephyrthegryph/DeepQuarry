@@ -452,15 +452,17 @@ SYSTEM_DEF(ticker)
 			if(GAME_STATE_FINISHED)
 				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 
-/// `admin_initiated`: the admin Reboot World verb (R_SERVER, checked there) asked for this, so an admin's round-end delay does not hold it.
-/datum/system/ticker/proc/Reboot(reason, end_string, delay, admin_initiated = FALSE)
+/datum/system/ticker/proc/Reboot(reason, end_string, delay, client/admin)
 	set waitfor = FALSE // ALLOW(scheduler): UNTIL waits on the round-end sound before arming the reboot timer
+	if(admin && !admin_require(admin, R_SERVER, "ticker.reboot"))
+		return
+
 	if(!delay)
 		delay = CONFIG_GET(number/round_end_countdown) SECONDS
 		if(delay >= 60 SECONDS)
 			set_reboot_countdown_left(delay)
 
-	var/skip_delay = admin_initiated
+	var/skip_delay = admin_can(admin, null)
 	if(delay_end && !skip_delay)
 		to_chat(world, span_boldannounce("An admin has delayed the round end."))
 		return

@@ -160,8 +160,30 @@ list_init_exempt_files = ["code/__defines/tgs.dm"]
 # the sparse and cooldown stores), is not a `base_var` site. A lane that lands a new home adds it here.
 base_var_home_macros = ["TRACKED", "TRACKED_SCHEMA", "TRACKED_DATA", "SETTER", "STAT"]
 base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/datum/cooldown_table"]
+# The most hot-var rows `[lint.base_vars.tables.base_var_home_hot]` may hold (one number). It only falls.
+hot_ceiling = ["14"]
 # records_data_only: the procs a /datum/record may define (accessors).
 record_accessor_prefixes = ["set_", "get_"]
+
+[lint.base_vars.tables.base_var_home_hot]
+# Hot per-tick base vars that stay on their base type, one `"<type>/<var>" = "<justification>"` row each. A listed var is homed
+# (not a `base_var` site). Criteria: declared on a base type, read on a per-tick, per-move or per-turf-update path by most
+# instances, not per-type constant data (that is a trait block), not rare (that is a sparse slot). The justification is at
+# least 40 characters and names the hot reader (a .dm file and the proc); a row whose var no longer exists fails (`hot_home`).
+"/atom/flags_1" = "read per turf activation: SSair.add_to_active tests flags_1 & INITIALIZED_1 (code/ATMOSPHERICS/SSair.dm:343); set on every atom at init"
+"/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/ATMOSPHERICS/environmental/LINDA_system.dm:58)"
+"/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm:338)"
+"/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/game/turfs/turf.dm:349), held by all atoms"
+"/atom/pass_flags" = "read on every CanPass test of every move and projectile pass: pass_flags & passflag (code/game/atom/_atom.dm:439), held by all atoms"
+"/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/game/turfs/turf.dm:335)"
+"/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/game/atoms_movable.dm:232-250), held by all movables"
+"/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/game/atoms_movable.dm:294), held by all movables"
+"/atom/movable/throwing" = "read on every footstep and bump: footstep.dm throw check (code/datums/behaviours/footstep.dm:70), Bump finalize (code/game/atoms_movable.dm:376)"
+"/atom/light_sources" = "read on every Moved(): the loop that updates each light source on the mover (code/game/atoms_movable.dm:322), walked for all movers"
+"/atom/movable/blocks_emissive" = "read on every overlay update of an atom: the emissive blocker build (code/modules/lighting/emissive_blocker_overlays.dm:13)"
+"/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/modules/mob/living/living_movement.dm:20) and mob_movement.dm:21"
+"/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/modules/mob/living/living_movement.dm:51) and carbon.dm:382"
+"/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"
 
 [lint.decl]
 # decl_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose. (No TGS exemption here:
@@ -352,6 +374,7 @@ legacy_forms_converted = [
   "code/core/",
   "code/datums/abilities/",
   "code/datums/behaviours/",
+  "code/content/behaviours/",
   "code/datums/capabilities/",
   "code/datums/changelog/",
   "code/datums/cinematics/",
@@ -391,6 +414,7 @@ legacy_forms_converted = [
   "code/datums/topic/",
   "code/datums/underwear/",
   "code/datums/uplink/",
+  "code/content/uplink/",
   "code/datums/variants/",
   "code/datums/vending/",
   "code/defines/",
@@ -400,22 +424,39 @@ legacy_forms_converted = [
   "code/game/atom/",
   "code/game/dna/",
   "code/game/gamemodes/calamity/",
+  "code/content/gamemodes/calamity/",
   "code/game/gamemodes/changeling/state/helpers/",
+  "code/content/gamemodes/changeling/state/helpers/",
   "code/game/gamemodes/cult/",
+  "code/content/gamemodes/cult/",
   "code/game/gamemodes/endgame/",
+  "code/content/gamemodes/endgame/",
   "code/game/gamemodes/events/",
+  "code/content/gamemodes/events/",
   "code/game/gamemodes/extended/",
+  "code/content/gamemodes/extended/",
   "code/game/gamemodes/heist/",
+  "code/content/gamemodes/heist/",
   "code/game/gamemodes/infiltrator/",
+  "code/content/gamemodes/infiltrator/",
   "code/game/gamemodes/malfunction/",
+  "code/content/gamemodes/malfunction/",
   "code/game/gamemodes/meteor/",
+  "code/content/gamemodes/meteor/",
   "code/game/gamemodes/mixed/",
+  "code/content/gamemodes/mixed/",
   "code/game/gamemodes/ninja/",
+  "code/content/gamemodes/ninja/",
   "code/game/gamemodes/nuclear/",
+  "code/content/gamemodes/nuclear/",
   "code/game/gamemodes/revolution/",
+  "code/content/gamemodes/revolution/",
   "code/game/gamemodes/technomancer/",
+  "code/content/gamemodes/technomancer/",
   "code/game/gamemodes/traitor/",
+  "code/content/gamemodes/traitor/",
   "code/game/gamemodes/wizard/",
+  "code/content/gamemodes/wizard/",
   "code/game/jobs/",
   "code/content/jobs/",
   "code/game/magic/",
@@ -430,6 +471,7 @@ legacy_forms_converted = [
   "code/content/mecha/",
   "code/game/objects/effects/",
   "code/game/objects/items/",
+  "code/content/items/",
   "code/game/objects/random/",
   "code/game/objects/structures/",
   "code/game/turfs/flooring/",
@@ -515,6 +557,7 @@ legacy_forms_converted = [
   "code/modules/hydroponics/",
   "code/modules/identification/",
   "code/modules/instruments/",
+  "code/content/instruments/",
   "code/modules/integrated_electronics/",
   "code/modules/keybindings/",
   "code/modules/library/",
@@ -664,7 +707,7 @@ timer_handles_allow = ["code/datums/om/", "code/engine/time/handles.dm", "code/e
 revive_allow = [
   "code/modules/unit_tests/", "code/modules/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
   "code/_helpers/unsorted.dm", "code/modules/mob/living/carbon/human/human_species.dm",
-  "code/modules/mob/living/silicon/ai/ai.dm", "code/game/objects/items/weapons/autopsy.dm",
+  "code/modules/mob/living/silicon/ai/ai.dm", "code/content/items/weapons/autopsy.dm",
 ]
 thermal_allow = ["code/__defines/verdigris/_bindings.dm"]
 input_ladder_allow = ["code/modules/keybindings/router.dm", "code/engine/parts/inputs.dm"]
@@ -676,7 +719,7 @@ admin_holder_allow = ["code/engine/", "code/datums/interactions/native_resolutio
 space_indent_allow = ["code/modules/unit_tests/dq_e1_declare_tests.dm"]
 # type-specific tool checks and domains converted later (mecha: I5; surgery and medical machines)
 tool_istype_allow = [
-  "code/datums/wires/wires.dm", "code/datums/behaviours/omen.dm", "code/game/machinery/recharger.dm",
+  "code/datums/wires/wires.dm", "code/content/behaviours/omen.dm", "code/game/machinery/recharger.dm",
   "code/game/mecha/mecha.dm", "code/game/mecha/space/shuttle.dm", "code/game/mecha/combat/fighter.dm",
   "code/game/machinery/adv_med.dm", "code/content/machinery/cloning.dm", "code/game/machinery/computer/cloning.dm",
 ]

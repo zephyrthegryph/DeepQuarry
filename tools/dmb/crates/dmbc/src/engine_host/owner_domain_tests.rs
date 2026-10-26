@@ -77,10 +77,10 @@ fn callable_owner_certificate_declines_engine_fallback_and_qualifies_provider() 
     positive.domain_memo = Default::default();
     positive.callable_issuer = Some(11);
     positive.domain_memo = Default::default();
-    assert_eq!(positive.domain_version(domain), Some((7u128 << 64) | 11));
+    assert_eq!(positive.domain_version(domain), Some(compose_version(7, 11)));
     positive.callable_issuer = Some(12);
     positive.domain_memo = Default::default();
-    assert_eq!(positive.domain_version(domain), Some((7u128 << 64) | 12));
+    assert_eq!(positive.domain_version(domain), Some(compose_version(7, 12)));
     positive.callable_issuer = None;
     positive.domain_memo = Default::default();
     assert_eq!(positive.domain_version(domain), None);
@@ -160,13 +160,13 @@ fn variable_owner_certificate_requires_current_source_and_provider_issuer() {
     host.domain_memo = Default::default();
     assert_eq!(
         host.domain_version(query.domain()),
-        Some((9u128 << 64) | 44)
+        Some(compose_version(9, 44))
     );
     Arc::make_mut(host.variable_absence.as_mut().unwrap()).issuer = Some(12);
     host.domain_memo = Default::default();
     assert_eq!(
         host.domain_version(query.domain()),
-        Some((9u128 << 64) | 48)
+        Some(compose_version(9, 48))
     );
     Arc::make_mut(host.variable_absence.as_mut().unwrap()).issuer = None;
     host.domain_memo = Default::default();

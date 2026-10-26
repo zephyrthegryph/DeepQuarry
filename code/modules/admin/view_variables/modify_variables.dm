@@ -358,13 +358,13 @@ GLOBAL_PROTECT(VVpixelmovement)
 
 /proc/vv_varname_lockcheck(client/user, param_var_name)
 	if(param_var_name in GLOB.VVlocked)
-		if(!admin_can(user, R_DEBUG))
+		if(!admin_require(user, R_DEBUG, "vv_varname_lockcheck"))
 			return FALSE
 	if(param_var_name in GLOB.VVckey_edit)
-		if(!admin_can(user, R_SPAWN|R_DEBUG))
+		if(!admin_require(user, R_SPAWN|R_DEBUG, "vv_varname_lockcheck"))
 			return FALSE
 	if(param_var_name in GLOB.VVicon_edit_lock)
-		if(!admin_can(user, R_FUN|R_DEBUG))
+		if(!admin_require(user, R_FUN|R_DEBUG, "vv_varname_lockcheck"))
 			return FALSE
 	return TRUE
 

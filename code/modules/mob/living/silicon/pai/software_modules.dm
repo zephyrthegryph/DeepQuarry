@@ -157,7 +157,7 @@ CAPABILITIES(/datum/pai_software/med_records)
 	for(var/datum/data/record/general in sortRecord(GLOB.data_core.general))
 		var/list/record = list()
 		record["name"] = general.fields["name"]
-		record["ref"] = "\ref[general]"
+		record["ref"] = ref_token(general)
 		records.Add(list(record))
 
 	data["records"] = records
@@ -208,7 +208,7 @@ CAPABILITIES(/datum/pai_software/sec_records)
 	for(var/datum/data/record/general in sortRecord(GLOB.data_core.general))
 		var/list/record = list()
 		record["name"] = general.fields["name"]
-		record["ref"] = "\ref[general]"
+		record["ref"] = ref_token(general)
 		records.Add(list(record))
 
 	data["records"] = records

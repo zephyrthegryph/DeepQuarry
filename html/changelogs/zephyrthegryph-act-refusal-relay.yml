@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The effect_refusal review lint no longer flags a refusal that relays an ACT_ATTEMPT hook veto or follows an act_cancel; climb checks its landing tile as a requirement"

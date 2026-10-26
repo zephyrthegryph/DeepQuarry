@@ -154,7 +154,7 @@ CAPABILITIES(/obj/item/gun/energy/anomaly)
 	if(!chosen_particle)
 		return OP_DECLINE
 
-	particle = chosen_particle
+	particle = text_or_null(chosen_particle)
 	balloon_alert_visible("changed to [chosen_particle]")
 	return ..()
 

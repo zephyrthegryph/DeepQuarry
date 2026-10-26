@@ -837,7 +837,7 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
         if click {
             out.doc(format!("click_on() of {} ({}:{}): the native click hands the engine its actor.", ty, m.rel, m.line));
             out.line(format!("{}/Click(location, control, params)", ty));
-            out.line("\tif(input_dispatch(src, usr, INPUT_CLICK_ON, params, null, FALSE, list(\"location\" = location, \"control\" = control, \"params\" = params)))");
+            out.line("\tif(input_declared(src, usr, INPUT_CLICK_ON, params, null, FALSE, list(\"location\" = location, \"control\" = control, \"params\" = params)))");
             out.line("\t\treturn");
             out.line("\t. = ..()");
             out.line("\tinput_fell(src)");
@@ -845,7 +845,7 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
         if drag {
             out.doc(format!("drag_onto() of {} ({}:{}): the native drop hands the engine its actor.", ty, m.rel, m.line));
             out.line(format!("{}/MouseDrop(over_object, src_location, over_location, src_control, over_control, params)", ty));
-            out.line("\tif(input_dispatch(src, usr, INPUT_DRAG_ONTO, params, over_object, FALSE, list(\"over_object\" = over_object, \"src_location\" = src_location, \"over_location\" = over_location, \"src_control\" = src_control, \"over_control\" = over_control, \"params\" = params)))");
+            out.line("\tif(input_declared(src, usr, INPUT_DRAG_ONTO, params, over_object, FALSE, list(\"over_object\" = over_object, \"src_location\" = src_location, \"over_location\" = over_location, \"src_control\" = src_control, \"over_control\" = over_control, \"params\" = params)))");
             out.line("\t\treturn");
             out.line("\t. = ..()");
             out.line("\tinput_fell(src)");
@@ -853,7 +853,7 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
         if drag_over {
             out.doc(format!("drag_over() of {} ({}:{}): the native drag hands the engine its actor.", ty, m.rel, m.line));
             out.line(format!("{}/MouseDrag(over_object, src_location, over_location, src_control, over_control, params)", ty));
-            out.line("\tif(input_dispatch(src, usr, INPUT_DRAG_OVER, params, over_object, FALSE, list(\"over_object\" = over_object, \"src_location\" = src_location, \"over_location\" = over_location, \"src_control\" = src_control, \"over_control\" = over_control, \"params\" = params)))");
+            out.line("\tif(input_declared(src, usr, INPUT_DRAG_OVER, params, over_object, FALSE, list(\"over_object\" = over_object, \"src_location\" = src_location, \"over_location\" = over_location, \"src_control\" = src_control, \"over_control\" = over_control, \"params\" = params)))");
             out.line("\t\treturn");
             out.line("\t. = ..()");
             out.line("\tinput_fell(src)");
@@ -862,12 +862,7 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
             out.doc(format!("hover()/tooltip() of {} ({}:{}): the native mouse-over hands the engine its actor.", ty, m.rel, m.line));
             for (native, entered) in [("MouseEntered", "TRUE"), ("MouseExited", "FALSE")] {
                 out.line(format!("{}/{}(location, control, params)", ty, native));
-                if tip {
-                    out.line(format!("\tinput_tooltip(src, usr, {}, params)", entered));
-                }
-                if hover {
-                    out.line(format!("\tinput_dispatch(src, usr, INPUT_HOVER, params, null, {}, list(\"location\" = location, \"control\" = control, \"params\" = params))", entered));
-                }
+                out.line(format!("\tinput_declared(src, usr, INPUT_HOVER, params, null, {}, list(\"location\" = location, \"control\" = control, \"params\" = params), {}, {})", entered, if tip { "TRUE" } else { "FALSE" }, if hover { "TRUE" } else { "FALSE" }));
                 out.line("\t. = ..()");
                 out.line("\tinput_fell(src)");
             }
@@ -996,9 +991,9 @@ CAPABILITIES(/obj/thing, \
         assert!(decl.contains("/proc/make(type, at = null, by = null, parts = null, charge = MAKE_UNSET)"), "{}", decl);
         assert!(decl.contains("/proc/make_args(charge = MAKE_UNSET)"), "{}", decl);
         assert!(decl.contains("/datum/req\n\tlifeform_declared = TRUE"), "{}", decl);
-        assert!(decl.contains("/obj/screen_thing/Click(location, control, params)\n\tif(input_dispatch(src, usr, INPUT_CLICK_ON, params, null, FALSE, list("), "{}", decl);
-        assert!(decl.contains("/obj/screen_thing/MouseEntered(location, control, params)\n\tinput_tooltip(src, usr, TRUE, params)"), "{}", decl);
-        assert!(decl.contains("/obj/screen_thing/MouseDrag(over_object, src_location, over_location, src_control, over_control, params)\n\tif(input_dispatch(src, usr, INPUT_DRAG_OVER, params, over_object, FALSE, list("), "{}", decl);
+        assert!(decl.contains("/obj/screen_thing/Click(location, control, params)\n\tif(input_declared(src, usr, INPUT_CLICK_ON, params, null, FALSE, list("), "{}", decl);
+        assert!(decl.contains("/obj/screen_thing/MouseEntered(location, control, params)\n\tinput_declared(src, usr, INPUT_HOVER, params, null, TRUE, list("), "{}", decl);
+        assert!(decl.contains("/obj/screen_thing/MouseDrag(over_object, src_location, over_location, src_control, over_control, params)\n\tif(input_declared(src, usr, INPUT_DRAG_OVER, params, over_object, FALSE, list("), "{}", decl);
         assert!(!decl.contains("/obj/screen_thing\n\tlifeform_declared"), "an atom runs its forms from Initialize()");
     }
 

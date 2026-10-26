@@ -1,5 +1,5 @@
 /obj/machinery/computer/ship/disperser/proc/fire(mob/user)
-	log_and_message_admins("attempted to launch a disperser beam.")
+	log_and_message_admins("attempted to launch a disperser beam.", user)
 	if(!link_parts())
 		return FALSE //no disperser, no service
 	if(!front().powered() || !middle().powered() || !back().powered())
@@ -67,7 +67,7 @@
 		return TRUE
 
 	var/obj/effect/overmap/event/finaltarget = pick(candidates)
-	log_and_message_admins("A type [chargetype] disperser beam was launched at [finaltarget].")
+	log_and_message_admins("A type [chargetype] disperser beam was launched at [finaltarget].", user)
 
 	fire_at_event(finaltarget, chargetype)
 	return TRUE

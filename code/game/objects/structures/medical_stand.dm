@@ -19,7 +19,6 @@
 	var/transfer_amount = 1
 
 CAPABILITIES(/obj/structure/medical_stand)
-	drag_onto(PROC_REF(drop_input), onto = /mob/living/carbon/human)
 	silicon_hand(adjacent = TRUE)
 	ref_one(nameof(attached))
 	ref_one(nameof(breather))
@@ -27,6 +26,7 @@ CAPABILITIES(/obj/structure/medical_stand)
 	owns_one(nameof(contained), /obj/item/clothing/mask/breath, starts = nameof(mask_type))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
+	drag_onto(PROC_REF(stand_dropped), onto = /mob/living/carbon/human)
 	op("toggle_iv_mode", menu(), label("Toggle IV Mode"), needs(req(PROC_REF(actor_is_living))), then(PROC_REF(medical_stand_toggle_mode_effect)))
 	op("set_iv_transfer", menu(), label("Set IV transfer amount"), then(PROC_REF(set_APTFT_effect)))
 	op("medical_stand_interaction_hand", hand(), ungated(), then(PROC_REF(medical_stand_interaction_hand)))
@@ -102,8 +102,9 @@ MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 		breather().remove_from_mob(contained)
 		src.visible_message(span_notice("The mask rapidly retracts just before /the [src] is destroyed!"))
 
-/// The native drop's actor and the patient it was dropped on, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
-/obj/structure/medical_stand/proc/drop_input(datum/act/input/A)
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm): dragged onto a patient, the stand attaches
+/// or detaches what the actor picks, then the native drop goes on.
+/obj/structure/medical_stand/proc/stand_dropped(datum/act/input/A)
 	var/mob/living/carbon/human/target = A.over
 	var/mob/user = A.actor
 	if(!ismob(user) || user.stat == DEAD || !CanMouseDrop(target, user))

@@ -362,7 +362,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 	if(prey.stat == DEAD || sparse_get_or(prey, prey_controlled, FALSE) || sparse_get_or(pred, prey_controlled, FALSE) || !pred.vore_prefs.allow_mind_transfer)
 		return
 	if(!pred.client && ishuman(pred)) //check if the body belonged to a player and give proper log about it while preparing it
-		log_and_message_admins("[key_name_admin(prey)] is taking control over [pred] while they are out of their body.")
+		log_and_message_admins("[key_name_admin(prey)] is taking control over [pred] while they are out of their body.", src)
 
 	to_chat(pred, span_warning("You can feel the will of another overwriting your own, control of your body being sapped away from you..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you exert your will over them!"))

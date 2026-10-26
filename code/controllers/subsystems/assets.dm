@@ -35,7 +35,7 @@ CAPABILITIES(/datum/system/assets)
 	// get_asset_datum() builds an asset on first use, which is what the
 	// spritesheets and asset tests call. The full suite still loads everything.
 	if(unit_test_is_focused_run())
-		transport.Initialize(cache)
+		transport.start(cache)
 		return
 	#endif
 	for(var/type in typesof(/datum/asset))
@@ -44,5 +44,5 @@ CAPABILITIES(/datum/system/assets)
 			load_asset_datum(type)
 
 	asset_cache_save_hashes()
-	transport.Initialize(cache)
+	transport.start(cache)
 

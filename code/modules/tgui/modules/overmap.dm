@@ -189,7 +189,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 /datum/tgui_module/ship/fullmonty/New(host, obj/effect/overmap/visitable/ship/new_linked)
 	. = ..()
 	if(!istype(new_linked))
-		CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong!")
+		CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [host]!")
 	rel_set(src, nameof(linked), new_linked)
 	name = initial(name) + " ([linked().name])"
 	// HELM
@@ -263,7 +263,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 		rdata["name"] = R.fields["name"]
 		rdata["x"] = R.fields["x"]
 		rdata["y"] = R.fields["y"]
-		rdata["reference"] = "\ref[R]"
+		rdata["reference"] = ref_token(R)
 		locations.Add(list(rdata))
 
 	data["locations"] = locations
@@ -282,10 +282,10 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 		rdata["eng_thrust_limiter"] = round(E.get_thrust_limit()*100)
 		var/list/status = E.get_status()
 		if(!islist(status))
-			log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked().name] returned a non-list status!"))
+			log_runtime(EXCEPTION("Warning, ship [E.name] ([ref_token(E)]) for [linked().name] returned a non-list status!"))
 			status = list("Error")
 		rdata["eng_status"] = status
-		rdata["eng_reference"] = "\ref[E]"
+		rdata["eng_reference"] = ref_token(E)
 		total_thrust += E.get_thrust()
 		enginfo.Add(list(rdata))
 
@@ -327,7 +327,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 			var/bearing = round(90 - ATAN2(O.x - linked().x, O.y - linked().y),5)
 			if(bearing < 0)
 				bearing += 360
-			contacts.Add(list(list("name"=O.name, "ref"="\ref[O]", "bearing"=bearing)))
+			contacts.Add(list(list("name"=O.name, "ref"=ref_token(O), "bearing"=bearing)))
 		data["contacts"] = contacts
 
 	return data

@@ -99,7 +99,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			continue
 
 		if(disabilities & CENSORED)
-			S.message = censor_swears(S.message) // Googlybonkers
+			S.message = text_or_null(censor_swears(S.message)) // Googlybonkers
 			. = 1
 
 		if((has_mutation(HULK)) && vitality() >= 0.25 && length(S.message))

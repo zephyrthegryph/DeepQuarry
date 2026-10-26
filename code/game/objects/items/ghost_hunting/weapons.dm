@@ -179,11 +179,12 @@ CAPABILITIES(/obj/item/ghost_catcher)
 	w_class = ITEMSIZE_LARGE
 	var/who_ya_gunna_call = /obj/item/ghost_catcher
 
-/obj/item/proton_pack/Initialize(mapload)
+/// Its setup hook: the pack makes its ghost catcher.
+/obj/item/proton_pack/proc/tether_catcher()
 	make_tethered(who_ya_gunna_call)
-	. = ..()
 
 CAPABILITIES(/obj/item/proton_pack)
+	setup(PROC_REF(tether_catcher))
 	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = 1))
 	configure(item_worn(worn_icon = 'icons/inventory/back/mob.dmi', slots = SLOT_BACK))

@@ -909,7 +909,7 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   Code that builds its own params list calls `om_task_launch(task, actor, target, params, starter)`
   (there is no legacy positional-params form).
 
-  Before (`code/game/objects/items/stacks/medical.dm`, `code/modules/clothing/glasses/glasses.dm`):
+  Before (`code/content/items/stacks/medical.dm`, `code/modules/clothing/glasses/glasses.dm`):
 
   ```dm
   om_task_start(/datum/om/task/timed/splint_attack, user, affecting, list("receiver" = src, "M" = M, "limb" = limb))

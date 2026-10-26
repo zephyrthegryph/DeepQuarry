@@ -399,7 +399,7 @@
 	var/rad = get_pin_data(IC_INPUT, 2)
 	if(isnum(rad))
 		rad = CLAMP(rad, 0, 7)
-		radius = rad
+		radius = num_or_null(rad)
 
 /obj/item/integrated_circuit/input/advanced_locator/do_work()
 	var/datum/integrated_io/I = inputs[1]
@@ -496,7 +496,7 @@ CAPABILITIES(/obj/item/integrated_circuit/input/signaler)
 	if(isnum(new_freq) && new_freq > 0)
 		set_frequency(new_freq)
 	if(isnum(new_code))
-		code = new_code
+		code = num_or_null(new_code)
 
 /obj/item/integrated_circuit/input/signaler/do_work() // Sends a signal.
 	if(!radio_connection)

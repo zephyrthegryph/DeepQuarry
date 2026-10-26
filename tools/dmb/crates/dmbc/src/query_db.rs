@@ -653,11 +653,12 @@ impl dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning> for R
 }
 
 type ReadLeaf = Arc<[dm_session::Observation<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>]>;
-/// One interned read leaf as (query id, query, recorded answer hash). Equal leaves are one allocation in every unit,
-/// session and variant (the receipt pool interns them), so their proof lists are derived once.
+/// One interned read leaf with, per read, its (query id, recorded answer hash). Equal leaves are one allocation in every
+/// unit, session and variant (the receipt pool interns them), so their proof lists are derived once. The query itself is
+/// the leaf's own (same order), not a second copy: a derived entry is 32 bytes, not 64.
 struct LeafReads {
-    _owner: ReadLeaf,
-    reads: Vec<(u128, dm_ir::ResolveQuery, u128)>,
+    owner: ReadLeaf,
+    reads: Vec<(u128, u128)>,
 }
 /// A stored unit's recorded reads: its receipt's leaves, each with its derived list.
 struct UnitReads {
@@ -678,8 +679,8 @@ impl LeafProofs {
             return held;
         }
         let proof = Arc::new(LeafReads {
-            _owner: Arc::clone(leaf),
-            reads: leaf.iter().map(|read| (query_id(&read.query), read.query, answer_hash(&read.answer))).collect(),
+            owner: Arc::clone(leaf),
+            reads: leaf.iter().map(|read| (query_id(&read.query), answer_hash(&read.answer))).collect(),
         });
         leaves.insert(address, Arc::downgrade(&proof));
         proof
@@ -978,7 +979,10 @@ impl QueryDb {
                         part.iter()
                             .map(|unit| {
                                 unit.leaves.iter().all(|leaf| {
-                                    leaf.reads.iter().all(|(id, query, recorded)| answers.matches(*id, query, *recorded))
+                                    leaf.owner
+                                        .iter()
+                                        .zip(leaf.reads.iter())
+                                        .all(|(read, (id, recorded))| answers.matches(*id, &read.query, *recorded))
                                 })
                             })
                             .collect::<Vec<_>>()

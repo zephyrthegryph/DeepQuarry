@@ -18,7 +18,7 @@
  * Before a compile starts, if more namespaces are registered than the cap, the least recently used ones with no live lease are
  * asked to retire (`dmbc --daemon-retire`, which drains running builds first).
  */
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -141,7 +141,23 @@ function keptRoot(root: string): boolean {
  * the one machine-wide daemon and there is nothing to bookkeep (the daemon caps and retires itself). With a namespace it takes
  * a lease and evicts least-recently-used idle namespaces beyond the cap. Never throws: bookkeeping failure only loses the cap.
  */
+/**
+ * The disk budget (tools/dq_disk_budget.sh, tools/ci/disk_budget.toml) is enforced whenever a compile enters a daemon scope, i.e. whenever a
+ * dmbc daemon may start: detached, and the script itself throttles to once per 10 minutes, so a compile never waits for it. Never throws.
+ */
+function enforceDiskBudget(root: string): void {
+  if (process.env.DQ_DISK_BUDGET === 'off') return;
+  try {
+    const script = path.join(path.resolve(root), 'tools', 'dq_disk_budget.sh');
+    if (!fs.existsSync(script)) return;
+    const child = spawn('bash', [script, 'enforce', '--quiet', '--throttle', '10'], { detached: true, stdio: 'ignore', windowsHide: true });
+    child.on('error', () => { /* no bash on PATH: the lease, release and train hooks still enforce */ });
+    child.unref();
+  } catch { /* housekeeping only */ }
+}
+
 export function enterDaemonScope(root: string, executable: string): DaemonScope {
+  enforceDiskBudget(root);
   const namespace = effectiveNamespace();
   if (!namespace) {
     delete process.env.DMB_DAEMON_NAMESPACE;

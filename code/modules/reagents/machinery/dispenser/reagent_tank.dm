@@ -48,7 +48,7 @@
 /obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft(datum/act/op/A)
 	var/N = A.step_value("a1")
 	if (N)
-		amount_per_transfer_from_this = N
+		amount_per_transfer_from_this = num_or_null(N)
 
 /obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft_a1_title(datum/act/op/A)
 	return "[src]"

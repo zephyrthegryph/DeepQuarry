@@ -22,7 +22,7 @@ static D3: &[(&str, &[&str])] = &[
     ),
     (
         r"\bhealth\b",
-        &["code/game/objects/items/weapons/material", "code/game/objects/items/weapons/traps.dm", "code/modules/vore/smoleworld"],
+        &["code/game/objects/items/weapons/material", "code/content/items/weapons/material", "code/content/items/weapons/traps.dm", "code/modules/vore/smoleworld"],
     ),
     (r"\.integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)", &["code/game/mecha"]),
 ];
@@ -343,9 +343,10 @@ pub fn parts() -> Vec<Part> {
                     "code/modules/mob/living/bot",
                     "code/game/mecha",
                     "code/game/objects/items/weapons/medigun",
+                    "code/content/items/weapons/medigun",
                     "code/game/machinery/cryo.dm",
                     "code/game/machinery/rechargestation.dm",
-                    "code/game/objects/items/stacks/nanopaste.dm",
+                    "code/content/items/stacks/nanopaste.dm",
                     "code/game/objects/items/robobag.dm",
                     "code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm",
                     "code/modules/admin/view_variables",

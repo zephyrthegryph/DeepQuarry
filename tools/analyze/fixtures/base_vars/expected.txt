@@ -59,3 +59,7 @@ list_init	code/modules/bv/singleton.dm	32
 list_init	code/modules/sub/unit_tests/t.dm	2
 list_init	code/modules/tgs2/t.dm	2
 list_init	code/modules/unit_tests_other/t.dm	2
+base_var	code/modules/bv/hot.dm	4
+hot_home	tools/ci/lint_scopes.toml	1
+hot_home	tools/ci/lint_scopes.toml	1
+hot_home	tools/ci/lint_scopes.toml	1

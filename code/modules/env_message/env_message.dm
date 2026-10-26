@@ -43,11 +43,6 @@ CAPABILITIES(/obj/effect/env_message)
 /obj/effect/env_message/proc/env_message_tooltip(mob/user)
 	return list(null, combined_message)
 
-/obj/effect/env_message/MouseDown()
-	closeToolTip(usr, src) //No reason not to, really
-
-	..()
-
 /proc/clear_env_message(tckey)
 	for(var/obj/effect/env_message/EM in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES))
 		if(tckey in EM.message_list)

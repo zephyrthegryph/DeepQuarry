@@ -17,7 +17,7 @@ EXE=$1; EQUIV=$2; S=$3; A=$4; B=$5; ID=${6:-$$}
 TESTDEFS="-DCBT -DCIBUILDING -DCITESTING -DDEBUG"
 mkdir -p "$S"; fail=0
 marker() { # <root> <label>
-  f="$1/code/game/objects/items/falling_object.dm"
+  f="$1/code/content/items/falling_object.dm"
   sed -i '/^\/proc\/dq_shared_store_marker/,$d' "$f"
   printf '/proc/dq_shared_store_marker()\n\treturn "MARKER-%s-%s"\n' "$2" "$ID" >> "$f"
 }
