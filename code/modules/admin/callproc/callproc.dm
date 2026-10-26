@@ -311,7 +311,7 @@ GLOBAL_PROTECT(LastAdminCalledProc)
 #ifdef TESTING
 	return FALSE
 #else
-	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == usr?.client?.ckey) || (GLOB.AdminProcCallHandler && usr == GLOB.AdminProcCallHandler)
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == input_actor()?.client?.ckey) || (GLOB.AdminProcCallHandler && input_actor() == GLOB.AdminProcCallHandler)
 #endif
 
 ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/thing as null|area|mob|obj|turf)

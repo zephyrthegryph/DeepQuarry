@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "No usr read is left outside verb procs: announcements, emotes, SDQL range wrappers and admin href tokens take their actor or viewer as an argument; usr outside verbs is now a hard lint error"

@@ -428,12 +428,16 @@ CAPABILITIES(/datum/admins)
 	for(var/I in 1 to 32)
 		. += "[rand(10)]"
 
-/proc/RawHrefToken(forceGlobal = FALSE)
-	var/tok = GLOB.href_token
-	if(!forceGlobal && usr)
-		var/client/C = usr.client
+/// The admin token a link carries: the `viewer`'s own (a client or a mob; the admin the panel is built for), else the world's, which a link made
+/// with nobody to show it to (an admin message, a log line) carries. `forceGlobal` makes the world's even for a viewer.
+/proc/RawHrefToken(forceGlobal = FALSE, viewer = null)
+	if(!forceGlobal && viewer)
+		var/client/C = viewer
+		if(ismob(viewer))
+			var/mob/M = viewer
+			C = M.client
 		return RawHrefTokenFor(C)
-	return tok
+	return GLOB.href_token
 
 /// Resolve the same admin token for an explicitly supplied current client.
 /proc/RawHrefTokenFor(client/C)
@@ -447,11 +451,11 @@ CAPABILITIES(/datum/admins)
 /proc/HrefTokenFor(mob/actor)
 	return "admin_token=[RawHrefTokenFor(actor?.client)]"
 
-/proc/HrefToken(forceGlobal = FALSE)
-	return "admin_token=[RawHrefToken(forceGlobal)]"
+/proc/HrefToken(forceGlobal = FALSE, viewer = null)
+	return "admin_token=[RawHrefToken(forceGlobal, viewer)]"
 
-/proc/HrefTokenFormField(forceGlobal = FALSE)
-	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal)]'>"
+/proc/HrefTokenFormField(forceGlobal = FALSE, viewer = null)
+	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal, viewer)]'>"
 
 // Shared admin_rank registry entries.
 

@@ -97,7 +97,7 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 		var/r = t
 		if( findtext(r,"##") )
 			r = copytext( r, 1, findtext(r,"##") )//removes the description
-		dat += text("<tr><td>[t] (<a href='byond://?src=[REF(src)];[HrefToken()];removejobban=[r]'>unban</a>)</td></tr>")
+		dat += text("<tr><td>[t] (<a href='byond://?src=[REF(src)];[HrefToken(viewer = owner())];removejobban=[r]'>unban</a>)</td></tr>")
 	dat += "</table>"
 
 	// structured TGUI AdminReport; byond:// links forwarded to host.

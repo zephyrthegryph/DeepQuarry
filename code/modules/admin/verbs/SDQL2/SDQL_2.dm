@@ -768,9 +768,22 @@ CAPABILITIES(/datum/SDQL2_query)
 	for(var/arg in arguments)
 		new_args[++new_args.len] = SDQL_expression(source, arg)
 	if(object == GLOB) // Global proc.
+		sdql_center_default(procname, new_args)
 		procname = "/proc/[procname]"
 		return superuser? (call(procname)(new_args)) : (WrapAdminProcCall(GLOBAL_PROC, procname, new_args, requester))
 	return superuser? (call(object, procname)(new_args)) : (WrapAdminProcCall(object, procname, new_args, requester))
+
+/// The range wrappers (_range, _view, ...) centre on the query's requester when the query names no centre.
+/datum/SDQL2_query/proc/sdql_center_default(procname, list/new_args)
+	var/static/list/center_slot = list("_hearers" = 2, "_ohearers" = 2, "_orange" = 2, "_oview" = 2, "_oviewers" = 2, "_range" = 2)
+	var/slot = center_slot[procname]
+	if(!slot || length(new_args) >= slot)
+		return
+	if(procname == "_hearers" && !length(new_args))
+		new_args += world.view // the wrapper's own default depth
+	while(length(new_args) < slot - 1)
+		new_args += null
+	new_args += requester
 
 /datum/SDQL2_query/proc/SDQL_function_async(datum/object, procname, list/arguments, source)
 	set waitfor = FALSE // ALLOW(scheduler): SDQL async() runs an arbitrary admin-chosen proc

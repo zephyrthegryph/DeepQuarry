@@ -163,9 +163,10 @@ CAPABILITIES(/datum/error_viewer/error_entry)
 			// There's probably a better way to do this than non-breaking spaces...
 			desc += "<span class='runtime_line'>[html_encode(line)]</span><br>"
 
-	if (usr)
-		usr_ref = "[REF(usr)]"
-		rel_set(src, nameof(usr_loc), get_turf(usr))
+	var/mob/acting = input_actor() // the native input's acting mob (usr) when the runtime hit
+	if (acting)
+		usr_ref = "[REF(acting)]"
+		rel_set(src, nameof(usr_loc), get_turf(acting))
 
 /datum/error_viewer/error_entry/show_to(user, datum/error_viewer/back_to, linear)
 	if (!istype(back_to))
@@ -174,12 +175,12 @@ CAPABILITIES(/datum/error_viewer/error_entry)
 	var/html = build_header(back_to, linear)
 	html += "[name]<div class='runtime'>[desc]</div>"
 	if (usr_ref)
-		html += "<br><b>usr</b>: <a href='byond://?_src_=vars;[HrefToken()];Vars=[usr_ref]'>VV</a>"
-		html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayeropts=[usr_ref]'>PP</a>"
-		html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayerobservefollow=[usr_ref]'>Follow</a>"
+		html += "<br><b>usr</b>: <a href='byond://?_src_=vars;[HrefToken(viewer = user)];Vars=[usr_ref]'>VV</a>"
+		html += " <a href='byond://?_src_=holder;[HrefToken(viewer = user)];adminplayeropts=[usr_ref]'>PP</a>"
+		html += " <a href='byond://?_src_=holder;[HrefToken(viewer = user)];adminplayerobservefollow=[usr_ref]'>Follow</a>"
 		if (istype(usr_loc(), /turf))
-			html += "<br><b>usr.loc</b>: <a href='byond://?_src_=vars;[HrefToken()];Vars=[REF(usr_loc())]'>VV</a>"
-			html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[usr_loc().x];Y=[usr_loc().y];Z=[usr_loc().z]'>JMP</a>"
+			html += "<br><b>usr.loc</b>: <a href='byond://?_src_=vars;[HrefToken(viewer = user)];Vars=[REF(usr_loc())]'>VV</a>"
+			html += " <a href='byond://?_src_=holder;[HrefToken(viewer = user)];adminplayerobservecoodjump=1;X=[usr_loc().x];Y=[usr_loc().y];Z=[usr_loc().z]'>JMP</a>"
 
 	browse_to(user, html)
 

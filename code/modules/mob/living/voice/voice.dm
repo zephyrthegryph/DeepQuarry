@@ -128,7 +128,7 @@
 			return TRUE
 	return ..()
 
-/mob/living/voice/custom_emote(m_type = VISIBLE_MESSAGE, message = null, range = world.view)
+/mob/living/voice/custom_emote(m_type = VISIBLE_MESSAGE, message = null, range = world.view, typed = FALSE)
 	if(comm)
 		..(m_type,message,comm.video_range)
 	else if(item_tf)

@@ -34,7 +34,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/announcement/priority/security)
 	title = "Security Announcement"
 	announcement_type = "Security Announcement"
 
-/datum/announcement/proc/Announce(message as text, new_title = "", new_sound = null, do_newscast = newscast, msg_sanitized = 0, zlevel)
+/datum/announcement/proc/Announce(message as text, new_title = "", new_sound = null, do_newscast = newscast, msg_sanitized = 0, zlevel, mob/actor = null)
 	if(!message)
 		return
 
@@ -55,7 +55,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/announcement/priority/security)
 	if(do_newscast)
 		NewsCast(message, message_title)
 	Sound(message_sound, zlevels)
-	Log(message, message_title)
+	Log(message, message_title, actor)
 
 /datum/announcement/proc/Message(message as text, message_title as text, list/zlevels)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -115,10 +115,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/announcement/priority/security)
 /datum/announcement/proc/Sound(message_sound, list/zlevels)
 	PlaySound(message_sound, zlevels)
 
-/datum/announcement/proc/Log(message as text, message_title as text)
+/// `actor`: the mob that made the announcement; none is a world announcement (the server made it).
+/datum/announcement/proc/Log(message as text, message_title as text, mob/actor = null)
 	if(log)
-		log_game("[key_name(usr)] has made \a [announcement_type]: [message_title] - [message] - [announcer]")
-		message_admins("[key_name_admin(usr)] has made \a [announcement_type].", 1)
+		var/who = actor ? key_name(actor) : "the server"
+		var/who_admin = actor ? key_name_admin(actor) : "the server"
+		log_game("[who] has made \a [announcement_type]: [message_title] - [message] - [announcer]")
+		message_admins("[who_admin] has made \a [announcement_type].", 1)
 
 /proc/GetNameAndAssignmentFromId(obj/item/card/id/I)
 	READS_FROM(I) // Follow the actual ID argument: registered_name and assignment.
