@@ -58,7 +58,7 @@ TYPE_TABLE_DECLARE(/datum/ghosttrap, ghosttrap_ban_checks, list(JOB_AI,JOB_CYBOR
 		if(pref_check && !(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & pref_check)) // migrated
 			continue
 		if(O.client)
-			to_chat(O, "[request_string]<a href='byond://?src=\ref[src];candidate=\ref[O];target=\ref[target]'>Click here</a> if you wish to play as this option.")
+			to_chat(O, "[request_string]<a href='byond://?src=[REF(src)];candidate=[REF(O)];target=[REF(target)]'>Click here</a> if you wish to play as this option.")
 
 // Handles a response to request_player().
 CAPABILITIES(/datum/ghosttrap)

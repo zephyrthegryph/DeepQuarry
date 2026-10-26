@@ -267,8 +267,8 @@ SYSTEM_DEF(statpanels)
 		mc_data.Insert(2, list(list("byond-tracy:", "[tracy_dll] not present")))
 #endif
 	for(var/datum/system/system as anything in kernel_pure_systems())
-		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), "\ref[system]")
-	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", "\ref[GLOB.cameranet]")
+		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), REF(system))
+	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", REF(GLOB.cameranet))
 
 /// Stat panel window declaration
 /client/var/datum/tgui_window/stat_panel

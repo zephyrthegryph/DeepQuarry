@@ -91,7 +91,7 @@
 			. += "[flavor_text]"
 
 		if(master.identity().ooc_notes)
-			. += span_deptradio("OOC Notes:") + "<a href='byond://?src=\ref[master];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[master];print_ooc_notes_chat=1'>\[Print\]</a>"
+			. += span_deptradio("OOC Notes:") + "<a href='byond://?src=[REF(master)];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=[REF(master)];print_ooc_notes_chat=1'>\[Print\]</a>"
 
 // Allow dissipating ai holograms by attacking them
 CAPABILITIES(/obj/effect/overlay/aiholo)
