@@ -29,7 +29,7 @@ CAPABILITIES(/datum/event/money_hacker)
 
 
 /datum/event/money_hacker/tick()
-	if(!BEFORE(src, end_time, CLOCK_WORLD))
+	if(EXPIRY_EXPIRED(src, end_time, CLOCK_WORLD))
 		endWhen = activeFor
 	else
 		endWhen = activeFor + 10

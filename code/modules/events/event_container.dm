@@ -30,7 +30,7 @@ CAPABILITIES(/datum/event_container)
 
 	if(delayed || !CONFIG_GET(flag/allow_random_events))
 		next_event_time += (world.time - last_world_time)
-	else if(ELAPSED_SINCE(src, next_event_time, CLOCK_WORLD) > 0)
+	else if(ELAPSED(src, next_event_time, CLOCK_WORLD) > 0)
 		start_event()
 
 	STAMP(src, last_world_time, CLOCK_WORLD)

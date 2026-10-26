@@ -7,6 +7,8 @@
 	var/display_name
 	/// The body last seen (a relation view).
 	var/mob/living/body
+	/// When custody last ended (0 = never).
+	EXPIRY_DECLARE(custody_ended_at)
 
 CAPABILITIES(/datum/contract_subject_identity)
 	ref_one(nameof(subject_mind), /datum/mind)

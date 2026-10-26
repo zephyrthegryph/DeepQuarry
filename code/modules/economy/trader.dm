@@ -181,7 +181,7 @@ CAPABILITIES(/datum/trader_review)
 		retire()
 		return
 	if(length(trader.interact_sound) > 0)
-		if(ELAPSED_SINCE(src, trader.sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
+		if(ELAPSED(trader, sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
 			var/sound = DEFAULTPICK(trader.interact_sound, null)
 			playsound(trader, sound, 25, FALSE, ignore_walls = FALSE)
 			STAMP(trader, sound_lastplayed, CLOCK_WORLD)

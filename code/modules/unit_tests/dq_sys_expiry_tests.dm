@@ -26,7 +26,6 @@
 	TEST_ASSERT_EQUAL(ELAPSED(E, test_started, CLOCK_WORLD), 3 SECONDS, "ELAPSED reads time since the stamp")
 	TEST_ASSERT_EQUAL(ELAPSED_SINCE(E, world.time - 2, CLOCK_WORLD), 2, "ELAPSED_SINCE reads a raw point")
 	TEST_ASSERT(BEFORE(E, world.time + 1, CLOCK_WORLD), "BEFORE: a future point")
-	TEST_ASSERT_EQUAL(LEFT_UNTIL(E, world.time - 4, CLOCK_WORLD), 0, "LEFT_UNTIL is 0 for a past point")
 	qdel(E)
 
 /// Own-clock expiry follows the datum's OM timer clock: it stops while suspended.

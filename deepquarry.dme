@@ -2685,6 +2685,7 @@
 #include "code\modules\contracts\contract_requirement.dm"
 #include "code\modules\contracts\contract.dm"
 #include "code\modules\contracts\contract_offer.dm"
+#include "code\modules\contracts\contract_cooldown.dm"
 #include "code\controllers\subsystems\contracts_offer_api.dm"
 #include "code\modules\contracts\contract_evidence.dm"
 #include "code\controllers\subsystems\contracts_evidence_api.dm"

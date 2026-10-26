@@ -266,7 +266,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/datum/supply_pack/pack
 	var/unit_price = 0
 	var/stock = 0
-	var/expires_at = 0
+	EXPIRY_DECLARE(expires_at)
 	var/cover_name
 	var/reservation_key
 	var/reserved_account = 0
@@ -279,7 +279,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/target_units = 0
 	var/fulfilled_units = 0
 	var/price_multiplier = 1
-	var/expires_at = 0
+	EXPIRY_DECLARE(expires_at)
 	EXPIRY_DECLARE(completed_at)
 	var/cover_name
 	var/reservation_key
@@ -392,12 +392,12 @@ CAPABILITIES(/datum/cargo_market_bid)
 	var/list/listing_ids = market_listings?.Copy()
 	for(var/listing_id in listing_ids)
 		var/datum/cargo_market_listing/existing_listing = market_listings?[listing_id]
-		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && BEFORE(src, existing_listing.expires_at, CLOCK_WORLD)))
+		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && EXPIRY_ACTIVE(existing_listing, expires_at, CLOCK_WORLD)))
 			rel_add(src, nameof(market_listings), null, listing_id) // disposes of the owned listing
 	var/list/bid_ids = market_bids?.Copy()
 	for(var/bid_id in bid_ids)
 		var/datum/cargo_market_bid/existing_bid = market_bids?[bid_id]
-		if(!(existing_bid.reservation_key && !existing_bid.completed_at && BEFORE(src, existing_bid.expires_at, CLOCK_WORLD)))
+		if(!(existing_bid.reservation_key && !existing_bid.completed_at && EXPIRY_ACTIVE(existing_bid, expires_at, CLOCK_WORLD)))
 			rel_add(src, nameof(market_bids), null, bid_id) // disposes of the owned bid
 	market_generation++
 	var/expiry = world.time + CARGO_MARKET_REFRESH_INTERVAL
@@ -438,7 +438,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	next_market_refresh = expiry
 
 /datum/system/supply/proc/process_cargo_market()
-	if(!BEFORE(src, next_market_refresh, CLOCK_WORLD))
+	if(EXPIRY_EXPIRED(src, next_market_refresh, CLOCK_WORLD))
 		refresh_cargo_market()
 
 /datum/system/supply/proc/market_counterparty_visible(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
@@ -500,7 +500,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 
 /datum/system/supply/proc/request_market_order(datum/cargo_market_listing/listing, mob/living/user, reason, console_unlocked = FALSE, personal_funding = FALSE, contract_funding = FALSE)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[listing?.counterparty_id]
-	if(!listing || listing.retired || !counterparty || listing.stock <= 0 || !BEFORE(src, listing.expires_at, CLOCK_WORLD) || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
+	if(!listing || listing.retired || !counterparty || listing.stock <= 0 || EXPIRY_EXPIRED(listing, expires_at, CLOCK_WORLD) || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
 		return FALSE
 	var/datum/contract/faction_agent/funding_contract
 	if(contract_funding)
@@ -556,7 +556,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	if(!order?.market_stock_reserved)
 		return FALSE
 	var/datum/cargo_market_listing/listing = market_listing(order.market_listing_id)
-	if(listing && !listing.retired && BEFORE(src, listing.expires_at, CLOCK_WORLD))
+	if(listing && !listing.retired && EXPIRY_ACTIVE(listing, expires_at, CLOCK_WORLD))
 		listing.stock++
 	order.market_stock_reserved = FALSE
 	return TRUE
@@ -629,7 +629,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		return FALSE
 	var/datum/cargo_market_bid/bid = market_bid(export.market_bid_id)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid?.counterparty_id]
-	if(!bid || !counterparty || bid.completed_at || !BEFORE(src, bid.expires_at, CLOCK_WORLD) || !bid.profile.matches(item))
+	if(!bid || !counterparty || bid.completed_at || EXPIRY_EXPIRED(bid, expires_at, CLOCK_WORLD) || !bid.profile.matches(item))
 		return FALSE
 	var/reported_quantity = export_row["quantity"]
 	var/quantity = isnum(reported_quantity) ? max(1, reported_quantity) : 1
@@ -703,7 +703,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		return TRUE
 	var/datum/cargo_market_bid/bid = market_bid(bid_id)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid?.counterparty_id]
-	if(!bid || bid.reservation_key || bid.completed_at || !BEFORE(src, bid.expires_at, CLOCK_WORLD) || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
+	if(!bid || bid.reservation_key || bid.completed_at || EXPIRY_EXPIRED(bid, expires_at, CLOCK_WORLD) || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
 		return FALSE
 	crate.cargo_market_bid_id = bid.id
 	crate.cargo_market_router_account = contract_account_for_mob(user)?.account_number || 0
@@ -772,7 +772,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			break
 	if(!counterparty)
 		return FALSE
-	var/expiry = BEFORE(src, contract.deadline, CLOCK_WORLD) ? contract.deadline : world.time + 30 MINUTES
+	var/expiry = EXPIRY_ACTIVE(contract, deadline, CLOCK_WORLD) ? contract.deadline : world.time + 30 MINUTES
 	var/needs_purchase_route = FALSE
 	var/needs_export_route = FALSE
 	for(var/datum/contract_requirement/requirement in contract.requirements)
@@ -935,7 +935,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	for(var/listing_id in market_listings)
 		var/datum/cargo_market_listing/listing = market_listings?[listing_id]
 		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[listing.counterparty_id]
-		if(listing.retired || listing.stock <= 0 || !BEFORE(src, listing.expires_at, CLOCK_WORLD) || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
+		if(listing.retired || listing.stock <= 0 || EXPIRY_EXPIRED(listing, expires_at, CLOCK_WORLD) || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
 			continue
 		var/can_access_listing = market_counterparty_access(counterparty, user, console_unlocked)
 		var/datum/contract/faction_agent/funding_contract = market_contract_funding(listing.reservation_key, user, listing.unit_price)
@@ -959,7 +959,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	for(var/bid_id in market_bids)
 		var/datum/cargo_market_bid/bid = market_bids?[bid_id]
 		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid.counterparty_id]
-		if(bid.completed_at || bid.remaining_units() <= 0 || !BEFORE(src, bid.expires_at, CLOCK_WORLD) || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
+		if(bid.completed_at || bid.remaining_units() <= 0 || EXPIRY_EXPIRED(bid, expires_at, CLOCK_WORLD) || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
 			continue
 		bids.Add(list(list(
 			"id" = bid.id,
@@ -1005,7 +1005,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 				var/datum/cargo_market_bid/assigned_bid = market_bid(crate.cargo_market_bid_id)
 				var/datum/cargo_market_counterparty/assigned_counterparty = market_counterparties?[assigned_bid?.counterparty_id]
 				var/assigned_visible = assigned_bid && assigned_counterparty && market_counterparty_visible(assigned_counterparty, user, console_unlocked)
-				var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && BEFORE(src, assigned_bid.expires_at, CLOCK_WORLD)
+				var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && EXPIRY_ACTIVE(assigned_bid, expires_at, CLOCK_WORLD)
 				outbound_crates.Add(list(list(
 					"ref" = ref_token(crate),
 					"name" = crate.name,

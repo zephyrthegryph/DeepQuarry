@@ -217,7 +217,7 @@ CAPABILITIES(/datum/ai_brain)
 		switch(result)
 			if(DQ_BEHAVIOR_CONTINUE)
 				// Still running: re-select only on an event (selection_dirty) or, engaged, once DQ_ENGAGED_RECHECK has passed.
-				if(!primary_threat || (!selection_dirty && BEFORE(src, last_pick_at + DQ_ENGAGED_RECHECK, CLOCK_WORLD)))
+				if(!primary_threat || (!selection_dirty && ELAPSED(src, last_pick_at, CLOCK_WORLD) < DQ_ENGAGED_RECHECK))
 					return
 				if(!selection_dirty)
 					trace("engaged recheck (minimum interval)")
@@ -451,7 +451,7 @@ CAPABILITIES(/datum/ai_brain)
 			if(!lose_threat_at)
 				STAMP(src, lose_threat_at, CLOCK_WORLD)
 				return  // Start the grace timer; don't drop yet.
-			if(BEFORE(src, lose_threat_at + DQ_LOSE_THREAT_TIMEOUT, CLOCK_WORLD))
+			if(ELAPSED(src, lose_threat_at, CLOCK_WORLD) < DQ_LOSE_THREAT_TIMEOUT)
 				return  // Still within the grace period.
 			// Grace period expired — drop the target.
 			drop_primary_threat()

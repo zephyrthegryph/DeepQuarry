@@ -59,7 +59,7 @@
 	. = ..()
 	if(!.)
 		// Give up if nobody was reachable for five minutes.
-		if(ELAPSED_SINCE(src, last_spam_time + give_up_after, CLOCK_WORLD) > 0)
+		if(ELAPSED(src, last_spam_time, CLOCK_WORLD) > give_up_after)
 			log_game("PDA Spam event giving up after not being able to spam for awhile.")
 			return TRUE
 

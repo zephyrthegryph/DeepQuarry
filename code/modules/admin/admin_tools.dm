@@ -109,7 +109,7 @@ CAPABILITIES(/datum/player_log_viwer)
 	return TRUE
 
 /datum/player_log_viwer/proc/refresh_cooldown()
-	return (ELAPSED_SINCE(src, last_refresh, CLOCK_WORLD) < 5 SECONDS)
+	return (ELAPSED(src, last_refresh, CLOCK_WORLD) < 5 SECONDS)
 
 /// Adds the player's logged dialog from the database (io_job: the rows arrive later and the
 /// window's static data is resent then).

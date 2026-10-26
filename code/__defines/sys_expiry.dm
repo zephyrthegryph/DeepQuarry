@@ -48,7 +48,5 @@
 #define ELAPSED(D, name, clock) (EXPIRY_NOW(D, clock) - D.name)
 /// Elapsed since a raw point (a list slot, a local) on D's clock.
 #define ELAPSED_SINCE(D, point, clock) (EXPIRY_NOW(D, clock) - (point))
-/// Deciseconds from now until a raw point, 0 when past.
-#define LEFT_UNTIL(D, point, clock) max(0, (point) - EXPIRY_NOW(D, clock))
 /// TRUE while a raw point is still in the future.
 #define BEFORE(D, point, clock) ((point) > EXPIRY_NOW(D, clock))

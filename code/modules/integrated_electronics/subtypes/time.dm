@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/integrated_circuit/time/ticker)
 	if(!check_power())
 		set_is_running(FALSE)
 		return
-	if(ELAPSED_SINCE(src, next_fire, CLOCK_WORLD) > 0)
+	if(ELAPSED(src, next_fire, CLOCK_WORLD) > 0)
 		EXPIRY_SET(src, next_fire, delay, CLOCK_WORLD)
 		activate_pin(1)
 

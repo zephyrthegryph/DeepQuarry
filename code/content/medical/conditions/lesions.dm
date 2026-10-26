@@ -199,7 +199,7 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 /// Is a continuous treatment holding this lesion (no bleeding, leaking or
 /// spreading)?
 /datum/affliction/lesion/proc/is_stabilised()
-	return stabilised_at && ELAPSED_SINCE(src, stabilised_at, CLOCK_WORLD) <= LESION_STABILISED_WINDOW
+	return stabilised_at && ELAPSED(src, stabilised_at, CLOCK_WORLD) <= LESION_STABILISED_WINDOW
 
 /// Natural regeneration only repairs an organ that isn't badly hurt.
 /datum/affliction/lesion/proc/can_regenerate()

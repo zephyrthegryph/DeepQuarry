@@ -25,7 +25,7 @@ SYSTEM_DEF(emergency_shuttle)
 	var/deny_shuttle = FALSE	//allows admins to prevent the shuttle from being called
 	var/departed = FALSE		//if the shuttle has left the station at least once
 
-	VAR_PRIVATE/auto_recall_at		//the time at which the shuttle will be auto-recalled
+	EXPIRY_DECLARE(auto_recall_at)		//the time at which the shuttle will be auto-recalled
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_docked
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_called
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_recalled
@@ -69,7 +69,7 @@ CAPABILITIES(/datum/system/emergency_shuttle)
 		if(!wait_for_launch)
 			return TRUE
 
-		if(evac && auto_recall && !BEFORE(src, auto_recall_at, CLOCK_WORLD))
+		if(evac && auto_recall && EXPIRY_EXPIRED(src, auto_recall_at, CLOCK_WORLD))
 			recall()
 		if(EXPIRY_EXPIRED(src, launch_time, CLOCK_WORLD))	//time to launch the shuttle
 			stop_launch_countdown()

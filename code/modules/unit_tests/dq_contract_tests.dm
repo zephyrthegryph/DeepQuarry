@@ -124,7 +124,7 @@
 			candidates_before_decline++
 	TEST_ASSERT(declined.decline(), "one-click decline did not close an offered contract")
 	TEST_ASSERT_EQUAL(declined.closure_code, CONTRACT_CLOSE_DECLINED, "decline did not record its lifecycle outcome")
-	TEST_ASSERT(SScontracts.offer_cooldowns[declined.offer_key] > world.time, "declined offer did not enter cooldown")
+	TEST_ASSERT(contract_cooldown_running(SScontracts.offer_cooldowns, declined.offer_key), "declined offer did not enter cooldown")
 	var/candidates_after_decline = 0
 	for(var/datum/contract_offer_candidate/candidate in SScontracts.offer_candidates)
 		if(candidate.definition_id == "dq_offer_lifecycle_test")
@@ -519,7 +519,7 @@
 	TEST_ASSERT(after_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
 	original_routine.cancel("Lifecycle test")
 	TEST_ASSERT(SScontracts.find_candidate(original_routine.offer_key), "closing a standing medical offer did not queue its cooldown-safe replacement")
-	TEST_ASSERT(SScontracts.offer_cooldowns[original_routine.offer_key] > world.time, "closing a standing offer did not enforce its publication cooldown")
+	TEST_ASSERT(contract_cooldown_running(SScontracts.offer_cooldowns, original_routine.offer_key), "closing a standing offer did not enforce its publication cooldown")
 
 /datum/unit_test/dq_contract_staged_requirement_unique_tiers
 

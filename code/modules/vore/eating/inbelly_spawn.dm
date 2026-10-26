@@ -274,15 +274,15 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/soulcatcher_admission/ask = context.answer
-	soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.value)
+	soulcatcher_spawn_prompt_apply(context.request.subject, ask, ask.value)
 	SStgui.update_uis(src)
 
-/mob/living/proc/soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, req_time, selected)
+/mob/living/proc/soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, datum/prompt/choice/soulcatcher_admission/ask, selected)
 	if(selected != "Allow")
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
-	if(ELAPSED_SINCE(src, req_time, CLOCK_WORLD) > 1 MINUTES)
+	if(ELAPSED(ask, req_time, CLOCK_WORLD) > 1 MINUTES)
 		to_chat(src, span_warning("The request had already expired. (1 minute waiting max)"))
 		return
 
@@ -306,15 +306,15 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/soulcatcher_admission/ask = context.answer
-	nif_soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.value)
+	nif_soulcatcher_spawn_prompt_apply(context.request.subject, ask, ask.value)
 	SStgui.update_uis(src)
 
-/mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, req_time, selected)
+/mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, datum/prompt/choice/soulcatcher_admission/ask, selected)
 	if(selected != "Allow")
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
-	if(ELAPSED_SINCE(src, req_time, CLOCK_WORLD) > 1 MINUTES)
+	if(ELAPSED(ask, req_time, CLOCK_WORLD) > 1 MINUTES)
 		to_chat(src, span_warning("The request had already expired. (1 minute waiting max)"))
 		return
 
@@ -343,7 +343,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	buttons = TRUE
 	timeout = 1 MINUTES
 	recheck_on_open = TRUE
-	var/req_time
+	EXPIRY_DECLARE(req_time)
 
 /datum/prompt/choice/soulcatcher_admission/recheck_extra()
 	var/mob/living/recipient = owner

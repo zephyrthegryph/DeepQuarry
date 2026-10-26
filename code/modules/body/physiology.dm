@@ -295,9 +295,6 @@ CAPABILITIES(/datum/body)
 	var/oxygen_debt = 0
 	/// Breath quality of the last breath, 0..1 (Breathing system).
 	var/breath_quality = 1
-	/// When the last scheduled breath was taken, on the owner's own (bio) clock: the breath cadence is time,
-	/// so a breathing step woken from sleep breathes when one is due.
-	EXPIRY_TMP_DECLARE(last_breath_at)
 	/// The air on the owner's turf changed since its last breath (a visible gas arrived or left): breathing must not idle.
 	var/tmp/air_stale = FALSE
 	/// The last breath carried a gas that acts on every breath (a poison, N2O, methane, the exhaled gas building up):

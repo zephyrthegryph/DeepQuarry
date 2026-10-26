@@ -84,7 +84,7 @@ SYSTEM_DEF(server_maint)
 		var/client/C = I
 		//handle kicking inactive players
 
-		if (!(!C || ELAPSED_SINCE(src, C.connection_time, CLOCK_WORLD) < PING_BUFFER_TIME || C.inactivity >= (SERVER_MAINT_INTERVAL - 1)))
+		if (!(!C || ELAPSED(C, connection_time, CLOCK_WORLD) < PING_BUFFER_TIME || C.inactivity >= (SERVER_MAINT_INTERVAL - 1)))
 			winset(C, null, "command=.update_ping+[num2text(world.time+world.tick_lag*TICK_USAGE_REAL/100, 32)]")
 
 		if(KERNEL_OVER_BUDGET) //one day, when ss13 has 1000 people per server, you guys are gonna be glad I added this budget check

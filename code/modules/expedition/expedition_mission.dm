@@ -28,7 +28,7 @@
 	var/list/objectives
 	/// Optional time limit (0 = none); failure if the deadline passes.
 	var/time_limit = 0
-	var/deadline = 0
+	EXPIRY_DECLARE(deadline)
 	/// Optional: pin the enemy faction (EXP_FACTION_*). 0/null = roll one for the site.
 	var/faction_type = null
 
@@ -83,7 +83,7 @@ CAPABILITIES(/datum/expedition_mission)
 		return TRUE
 	if(state == EXP_MISSION_FAILED)
 		return FALSE
-	if(deadline && ELAPSED_SINCE(src, deadline, CLOCK_WORLD) > 0)
+	if(deadline && ELAPSED(src, deadline, CLOCK_WORLD) > 0)
 		state = EXP_MISSION_FAILED
 		return FALSE
 	if(party_wiped())

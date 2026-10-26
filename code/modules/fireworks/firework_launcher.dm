@@ -87,7 +87,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		return "close the panel first"
 	if(!loaded_star())
 		return "there is no firework star loaded in \the [src]"
-	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
+	if(ELAPSED(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
 		return "\The [src] is still re-priming for launch"
 	if(!anchored)
 		return "\The [src] must be firmly secured to the ground before firework can be launched"

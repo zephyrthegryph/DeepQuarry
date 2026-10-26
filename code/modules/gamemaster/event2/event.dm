@@ -198,7 +198,7 @@ CAPABILITIES(/datum/event2/event)
 /datum/event2/event/proc/should_announce()
 	if(!time_to_announce)
 		return TRUE
-	return !BEFORE(src, time_to_announce, CLOCK_WORLD)
+	return EXPIRY_EXPIRED(src, time_to_announce, CLOCK_WORLD)
 
 // Override this for code that alerts the crew that the event is happening in some form, e.g. a centcom announcement or some other message.
 // If you want them to not know, you can just not override it.
@@ -213,7 +213,7 @@ CAPABILITIES(/datum/event2/event)
 /datum/event2/event/proc/should_start()
 	if(!time_to_start)
 		return TRUE
-	return !BEFORE(src, time_to_start, CLOCK_WORLD)
+	return EXPIRY_EXPIRED(src, time_to_start, CLOCK_WORLD)
 
 // Override this for code to do the actual event.
 /datum/event2/event/proc/start()
@@ -230,7 +230,7 @@ CAPABILITIES(/datum/event2/event)
 /datum/event2/event/proc/should_end()
 	if(!time_to_end)
 		return TRUE
-	return !BEFORE(src, time_to_end, CLOCK_WORLD)
+	return EXPIRY_EXPIRED(src, time_to_end, CLOCK_WORLD)
 
 // Override this for code to run when the event is over, e.g. cleanup.
 /datum/event2/event/proc/end()

@@ -75,6 +75,8 @@ SYSTEM_DEF(ticker)
 	var/restart_timeleft
 	/// world.time of last restart warning.
 	EXPIRY_DECLARE(last_restart_notify)
+	/// When Reboot() began waiting for the round-end sound.
+	EXPIRY_TMP_DECLARE(reboot_wait_started)
 
 /// Time left until a scheduled reboot; announce_countdown() counts it down while it is above zero.
 /datum/system/ticker/var/tmp/reboot_countdown_left = 0
@@ -469,9 +471,9 @@ SYSTEM_DEF(ticker)
 
 	to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(delay)]. [reason]"))
 
-	var/start_wait = world.time
-	UNTIL(round_end_sound_sent || ELAPSED_SINCE(src, start_wait, CLOCK_WORLD) > (delay * 2)) //don't wait forever
-	after(src, delay - (world.time - start_wait), PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string))
+	STAMP(src, reboot_wait_started, CLOCK_WORLD)
+	UNTIL(round_end_sound_sent || ELAPSED(src, reboot_wait_started, CLOCK_WORLD) > (delay * 2)) //don't wait forever
+	after(src, delay - ELAPSED(src, reboot_wait_started, CLOCK_WORLD), PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string))
 
 /// The wait before the next countdown step: a minute, or what is left of the last one.
 /datum/system/ticker/proc/reboot_countdown_delay()

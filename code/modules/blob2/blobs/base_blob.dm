@@ -104,9 +104,9 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	overmind.blob_type.on_emp(src, packet.severity)
 
 /obj/structure/blob/proc/pulsed()
-	if(!BEFORE(src, pulse_timestamp, CLOCK_WORLD))
+	if(EXPIRY_EXPIRED(src, pulse_timestamp, CLOCK_WORLD))
 		consume_tile()
-		if(!BEFORE(src, heal_timestamp, CLOCK_WORLD))
+		if(EXPIRY_EXPIRED(src, heal_timestamp, CLOCK_WORLD))
 			adjust_integrity(health_regen)
 			EXPIRY_SET(src, heal_timestamp, 2 SECONDS, CLOCK_WORLD)
 		sync_overmind_look()
@@ -146,9 +146,9 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 
 		if(distance <= expand_range)
 			var/can_expand = TRUE
-			if(blobs_to_affect.len >= 120 && BEFORE(src, B.heal_timestamp, CLOCK_WORLD))
+			if(blobs_to_affect.len >= 120 && EXPIRY_ACTIVE(B, heal_timestamp, CLOCK_WORLD))
 				can_expand = FALSE
-			if(!expanded && can_expand && !BEFORE(src, B.pulse_timestamp, CLOCK_WORLD) && prob(expand_probablity))
+			if(!expanded && can_expand && EXPIRY_EXPIRED(B, pulse_timestamp, CLOCK_WORLD) && prob(expand_probablity))
 				var/obj/structure/blob/newB = B.expand(null, null, !expanded) //expansion falls off with range but is faster near the blob causing the expansion
 				if(newB)
 					if(expanded)

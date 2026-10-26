@@ -421,14 +421,14 @@ CAPABILITIES(/datum/contract/social)
 	return complete()
 
 /datum/contract/social/check_deadline()
-	if(state == CONTRACT_ACTIVE && deadline && !BEFORE(src, deadline, CLOCK_WORLD))
+	if(state == CONTRACT_ACTIVE && deadline && EXPIRY_EXPIRED(src, deadline, CLOCK_WORLD))
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The delivery window closed before the minimum graded outcome and required stakeholder participation were reached.")
-	else if(state == CONTRACT_GRACE && grace_until && !BEFORE(src, grace_until, CLOCK_WORLD))
+	else if(state == CONTRACT_GRACE && grace_until && EXPIRY_EXPIRED(src, grace_until, CLOCK_WORLD))
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else

@@ -41,7 +41,7 @@ CAPABILITIES(/datum/alarm)
 		EXPIRY_SET(src, end_time, ALARM_RESET_DELAY, CLOCK_WORLD)
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
-		if((AS.end_time && ELAPSED_SINCE(src, AS.end_time, CLOCK_WORLD) > 0) || (AS.duration && ELAPSED_SINCE(src, (AS.start_time + AS.duration), CLOCK_WORLD) > 0))
+		if((AS.end_time && ELAPSED(AS, end_time, CLOCK_WORLD) > 0) || (AS.duration && ELAPSED(AS, start_time, CLOCK_WORLD) > AS.duration))
 			rel_remove(src, nameof(sources), AS)
 			continue
 		// Has the source gone missing?	Then reset the normal duration and set end_time

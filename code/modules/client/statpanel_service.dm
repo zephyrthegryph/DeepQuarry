@@ -155,7 +155,7 @@ SYSTEM_DEF(statpanels)
 	var/coord_entry = COORD(eye_turf)
 	if(!mc_data)
 		generate_mc_data()
-	if(!mc_metrics || !BEFORE(src, mc_metrics_generated_at + 5 SECONDS, CLOCK_WORLD))
+	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 5 SECONDS)
 		mc_metrics = generate_mc_metrics()
 		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
 	target.stat_panel.send_message("update_mc", list(

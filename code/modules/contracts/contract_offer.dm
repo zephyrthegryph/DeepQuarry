@@ -10,7 +10,7 @@
 	var/offer_kind
 	var/reason
 	EXPIRY_DECLARE(created_at)
-	var/expires_at
+	EXPIRY_DECLARE(expires_at)
 	var/priority = 50
 	var/list/context
 

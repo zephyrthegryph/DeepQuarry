@@ -1079,7 +1079,7 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return
 		if(applied_ratio == null)
-			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
+			if(!(ELAPSED(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			STAMP(src, last_activated, CLOCK_WORLD)
@@ -1196,7 +1196,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/modified)
 				MSG_OTHERS(span_warning("The collar on %U% flickers, but fizzles out.")))
 			return
 		if(applied_ratio == null)
-			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
+			if(!(ELAPSED(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			STAMP(src, last_activated, CLOCK_WORLD)
@@ -1277,7 +1277,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning)
 				MSG_OTHERS(span_warning("The collar on %U% flickers, but fizzles out.")))
 			return
 		if(currently_shrinking == 0)
-			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
+			if(!(ELAPSED(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			STAMP(src, last_activated, CLOCK_WORLD)

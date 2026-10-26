@@ -53,8 +53,8 @@ ADMIN_VERB(dq_inspect_contract_board, R_ADMIN, "Inspect Contract Board", "Inspec
 		html += "<tr><td>[html_encode(candidate.id)]</td><td>[html_encode(candidate.definition_id)]</td><td>[html_encode(candidate.board_key)]</td><td>[candidate.priority]</td><td>[html_encode(expires)]</td><td>[html_encode(candidate.reason)]</td></tr>"
 	html += "</table><h3>Offer cooldowns</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>Offer key</th><th>Available</th></tr>"
 	for(var/offer_key in contracts_offer_cooldowns())
-		var/available_at = contracts_offer_cooldowns()[offer_key]
-		html += "<tr><td>[html_encode(offer_key)]</td><td>[html_encode(BEFORE(src, available_at, CLOCK_WORLD) ? worldtime2stationtime(available_at) : "now")]</td></tr>"
+		var/datum/contract_cooldown/cooldown = contract_cooldown_running(contracts_offer_cooldowns(), offer_key)
+		html += "<tr><td>[html_encode(offer_key)]</td><td>[html_encode(cooldown ? worldtime2stationtime(cooldown.until) : "now")]</td></tr>"
 	html += "</table><h3>Opportunity windows / near misses</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>Rule</th><th>Bucket</th><th>Overall</th><th>Lane progress</th><th>Last activity</th></tr>"
 	for(var/list/near_miss as anything in SScontracts.opportunity_near_misses())
 		html += "<tr><td>[html_encode(near_miss["rule"])]</td><td>[html_encode(near_miss["bucket"])]</td><td>[near_miss["progress"]]%</td><td>[html_encode(near_miss["lanes"])]</td><td>[worldtime2stationtime(near_miss["last_event_at"])]</td></tr>"

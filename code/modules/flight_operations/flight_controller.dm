@@ -280,7 +280,7 @@ CAPABILITIES(/datum/system/flight)
 
 /datum/system/flight/proc/process_plan(datum/flight_plan/plan)
 	if(plan.state == FLIGHT_PLAN_FAILED)
-		if(!BEFORE(src, plan.terminal_cleanup_at, CLOCK_WORLD))
+		if(EXPIRY_EXPIRED(plan, terminal_cleanup_at, CLOCK_WORLD))
 			finish_plan(plan)
 		return
 	if(plan.cancel_requested)
@@ -306,11 +306,11 @@ CAPABILITIES(/datum/system/flight)
 		if(istype(landable) && landable.status == SHIP_STATUS_OVERMAP && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE)
 			enter_transit(plan)
 			return
-		if(ELAPSED_SINCE(src, plan.departure_deadline, CLOCK_WORLD) > 0)
+		if(ELAPSED(plan, departure_deadline, CLOCK_WORLD) > 0)
 			plan.fail("The vessel could not complete undocking.")
 		return
 	if(plan.state == FLIGHT_PLAN_TRANSIT)
-		if(BEFORE(src, plan.estimated_arrival_at, CLOCK_WORLD))
+		if(EXPIRY_ACTIVE(plan, estimated_arrival_at, CLOCK_WORLD))
 			return
 		if(plan.generation_state == FLIGHT_GENERATION_RUNNING)
 			plan.state = FLIGHT_PLAN_HOLDING
@@ -347,7 +347,7 @@ CAPABILITIES(/datum/system/flight)
 			plan.release_leases()
 			finish_plan(plan)
 			return
-		if(ELAPSED_SINCE(src, plan.departure_deadline, CLOCK_WORLD) > 0)
+		if(ELAPSED(plan, departure_deadline, CLOCK_WORLD) > 0)
 			plan.fail("The vessel could not complete its landing sequence.")
 
 /datum/system/flight/proc/enter_transit(datum/flight_plan/plan)

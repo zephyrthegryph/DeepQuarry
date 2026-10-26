@@ -169,7 +169,7 @@ GLOBAL_VAR_INIT(ai_navigation_revision, 1)
 /datum/ai_brain/proc/strategic_tick()
 	if(is_busy() || !holder?.loc)
 		return
-	if(BEFORE(holder, next_strategic_at, CLOCK_WORLD))
+	if(EXPIRY_ACTIVE(src, next_strategic_at, CLOCK_WORLD))
 		return
 	var/started = TICK_USAGE
 	handle_strategicals()
