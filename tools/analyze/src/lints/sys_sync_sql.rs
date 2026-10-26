@@ -24,11 +24,11 @@ use crate::tree::SourceFile;
 const RULES: &[RuleMeta] = &[
     RuleMeta {
         name: "sync_sql",
-        hint: "open a /datum/io/sql request (code/engine/io/db.dm) and read the rows in its handler, or run the caller as a prompt flow and flow_select() (code/datums/om/flow_io.dm)",
+        hint: "open a /datum/io/sql request (code/engine/io/db.dm) and read the rows in its handler, or start the read with sql_ask() and carry on in its callback (sql_answer_rows())",
     },
     RuleMeta {
         name: "legacy_db_api",
-        hint: "the /datum/db_query API is deleted: a read is a /datum/io/sql request (or flow_select() in a prompt flow), a write is sql_write(), and only BYOND's own waits use db_query_now()",
+        hint: "the /datum/db_query API is deleted: a read is a /datum/io/sql request (or sql_ask() with a callback), a write is sql_write(), and only BYOND's own waits use db_query_now()",
     },
 ];
 
@@ -86,7 +86,7 @@ fn selftest() -> Result<String, String> {
         "var/datum/db_query/q = SSdbcore.NewQuery(\"SELECT 1\")", // 1 bad (twice on the line: one site)
         "SSdbcore.run_query_sync(q)",                              // 2 bad
         "// SSdbcore.NewQuery(sql)",                               // 3 ok: a comment
-        "var/list/rows = flow_select(\"SELECT 1\")",              // 4 ok
+        "var/list/rows = sql_ask(src, \"SELECT 1\", null, PROC_REF(x))", // 4 ok
     ];
     let g = SourceFile::from_text("y.dm", &legacy.join("\n"));
     let mut w = Vec::new();
