@@ -448,7 +448,7 @@ CAPABILITIES(/obj/item/entrepreneur/spirit_board)
 	var/_answer_k451 = A.step_value("k451")
 	if(isnull(_answer_k451))
 		return OP_OK
-	next_result = _answer_k451
+	next_result = text_or_null(_answer_k451)
 	return OP_OK
 
 /// A board with ghosts disabled asks nothing.
@@ -463,7 +463,7 @@ CAPABILITIES(/obj/item/entrepreneur/spirit_board)
 	var/_answer_k459 = A.step_value("k459")
 	if(isnull(_answer_k459))
 		return OP_OK
-	next_result = _answer_k459
+	next_result = text_or_null(_answer_k459)
 	if(!is_admin(user) || !accurate) //admins can bypass this for event stuff
 		if(prob(25))
 			next_result = 0 //25% chance for the ghost to fail to manipulate the board

@@ -51,7 +51,7 @@
 	description = "This usually means something in the database has corrupted. If it doesn't go away automatically, inform Central Command for their techs to fix it ASAP(tm)"
 	show_on_wiki = FALSE
 
-/datum/techweb_node/proc/Initialize()
+/datum/techweb_node/proc/index_ids()
 	//Make lists associative for lookup
 	for(var/id in prereq_ids)
 		LAZYSET(prereq_ids, id, TRUE)

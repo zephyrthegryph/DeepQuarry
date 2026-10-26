@@ -68,9 +68,9 @@
 	pass_silicons_astar = !!length(pass_silicons_astar)
 	pass_silicons_jps = !!length(pass_silicons_jps)
 	if(pass_silicons_astar != pass_silicons_jps)
-		log_and_message_admins("turf pair [COORD(start)], [COORD(goal)] mismatch silicons-astar [pass_silicons_astar] silicons-jps [pass_silicons_jps]")
+		log_and_message_admins("turf pair [COORD(start)], [COORD(goal)] mismatch silicons-astar [pass_silicons_astar] silicons-jps [pass_silicons_jps]", user)
 	else
-		log_and_message_admins("turf pair [COORD(start)], [COORD(goal)] succeeded")
+		log_and_message_admins("turf pair [COORD(start)], [COORD(goal)] succeeded", user)
 
 /proc/pathfinding_run_benchmark(times = 1000, turf/source, mob/user)
 	if(!source)

@@ -430,7 +430,7 @@ CAPABILITIES(/obj/item/communicator)
 	add_fingerprint(A.actor)
 	var/tone = A.step_value("tone")
 	if(tone)
-		ttone = tone
+		ttone = text_or_null(tone)
 	return TRUE
 
 /obj/item/communicator/proc/ui_act_selfie_mode(datum/act/op/A)

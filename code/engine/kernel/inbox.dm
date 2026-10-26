@@ -127,9 +127,13 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	var/atom/over
 	/// What the legacy chain takes on (the locations, the controls and the params of the drag).
 	var/list/legacy_args
+	/// TRUE for a drop BYOND handed over (atom/MouseDrop, code/engine/kernel/entry.dm): the drop must be within reach of the actor when it resolves,
+	/// which a drop an adapter already checked (adapter.drag()) is not asked twice.
+	var/native = FALSE
 
-/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/legacy)
+/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/legacy, native_drop = FALSE)
 	..(user)
+	native = native_drop
 	if(dragged_atom)
 		dragged = dragged_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	if(dropped_on)
@@ -149,6 +153,163 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 
 /datum/input_event/drag/resolve()
 	return input_resolve_drag(src)
+
+/// A double click on a target. Repeated ones on one target keep only the latest.
+/datum/input_event/click/double
+	metered_as_click = FALSE
+
+/datum/input_event/click/double/coalesce_key()
+	return target ? "double:[REF(target)]" : null
+
+/datum/input_event/click/double/event_key()
+	return "input.double_click"
+
+/datum/input_event/click/double/resolve()
+	actor.input_double_click(target, params)
+	return null
+
+/// The mouse wheel over a target. Every notch counts: it never coalesces.
+/datum/input_event/click/wheel
+	metered_as_click = FALSE
+	var/delta_x = 0
+	var/delta_y = 0
+
+/datum/input_event/click/wheel/New(mob/user, atom/over, location, control, params, delta_x, delta_y)
+	..(user, over, location, control, params)
+	src.delta_x = delta_x
+	src.delta_y = delta_y
+
+/datum/input_event/click/wheel/coalesce_key()
+	return null
+
+/datum/input_event/click/wheel/event_key()
+	return "input.wheel"
+
+/datum/input_event/click/wheel/resolve()
+	actor.input_wheel(target, delta_x, delta_y, params)
+	return null
+
+/// The mouse entering a target. Only the latest hover is worth keeping.
+/datum/input_event/click/hover
+	metered_as_click = FALSE
+
+/datum/input_event/click/hover/coalesce_key()
+	return "hover"
+
+/datum/input_event/click/hover/event_key()
+	return "input.hover"
+
+/datum/input_event/click/hover/resolve()
+	actor.input_hover(target, params)
+	return null
+
+/// A native input (click, drop, drag-over, mouse-over) of a type whose CAPABILITIES declares click_on(), drag_onto(), drag_over(), hover() or tooltip()
+/// (the generated overrides in code/engine/_generated/declare.dm reach it through input_declared(), code/engine/kernel/entry.dm). It resolves the type's
+/// declared entry as `actor`. One that waited in the inbox and found no entry to take it goes on to the native handling afterwards, as the override's
+/// own ..() would have.
+/datum/input_event/declared
+	var/atom/holder
+	/// INPUT_CLICK_ON, INPUT_DRAG_ONTO, INPUT_DRAG_OVER or INPUT_HOVER.
+	var/input
+	var/params
+	var/atom/over
+	/// A hover: TRUE on enter, FALSE on exit.
+	var/entered = FALSE
+	/// The native hook's own arguments by name.
+	var/list/native
+	/// TRUE when the type declares a tooltip: a hover opens or closes it before the hover entry runs.
+	var/tooltip = FALSE
+	/// TRUE when the type declares an entry for this input (a type with only a tooltip has none).
+	var/dispatch = TRUE
+	/// TRUE when a declared handler took the input.
+	var/taken = FALSE
+	/// TRUE when the input waited in the inbox: the override that built it has already returned.
+	var/deferred = FALSE
+
+/datum/input_event/declared/New(mob/user, atom/declared_on, input_kind, input_params, atom/over_atom, entered_flag, list/native_args, with_tooltip, with_dispatch)
+	..(user)
+	holder = declared_on // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	input = input_kind
+	params = input_params
+	if(over_atom)
+		over = over_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	entered = entered_flag
+	native = native_args
+	tooltip = with_tooltip
+	dispatch = with_dispatch
+	if(input != INPUT_HOVER)
+		resolve_threshold = INPUT_CLICK_THRESHOLD
+		metered_as_click = TRUE
+
+/// Only a hover coalesces: the latest mouse-over of a holder is the one that matters (apart from the plain hover event, which has its own key).
+/datum/input_event/declared/coalesce_key()
+	return input == INPUT_HOVER ? "declared_hover" : null
+
+/datum/input_event/declared/subject()
+	return holder
+
+/datum/input_event/declared/event_key()
+	return "input.declared.[input]"
+
+/datum/input_event/declared/resolve()
+	if(tooltip)
+		input_tooltip(holder, actor, entered, params)
+	if(dispatch)
+		taken = input_dispatch(holder, actor, input, params, over, entered, native)
+	if(!deferred)
+		return null
+	// The override returned long ago, so its native chain and its end-of-fall mark are this event's to finish.
+	if(!taken)
+		input_native_fall()
+	input_fell(holder)
+	return null
+
+/// What the declaring override's ..() would have done for an input that was not taken: the click and the drop go on as the plain events; a hover's
+/// override went on at once, and a drag-over has no native handling.
+/datum/input_event/declared/proc/input_native_fall()
+	switch(input)
+		if(INPUT_CLICK_ON)
+			input_submit(new /datum/input_event/click(actor, holder, native?["location"], native?["control"], params))
+		if(INPUT_DRAG_ONTO)
+			if(over)
+				input_submit(new /datum/input_event/drag(actor, holder, over, list(native?["src_location"], native?["over_location"], native?["src_control"], native?["over_control"], params), TRUE))
+
+/// A mouse button pressed on a target (atom/MouseDown). A press and its release are a pair: it never coalesces.
+/datum/input_event/click/pressed
+	metered_as_click = FALSE
+
+/datum/input_event/click/pressed/event_key()
+	return "input.pressed"
+
+/datum/input_event/click/pressed/coalesce_key()
+	return null
+
+/datum/input_event/click/pressed/resolve()
+	actor.input_pressed(target, params)
+	return null
+
+/// The client's own mouse procs (client/MouseDown, MouseUp, MouseDrag): INPUT_MOUSE_*, what the pointer is on, and for a drag what it is over.
+/datum/input_event/click/client_mouse
+	metered_as_click = FALSE
+	var/kind = INPUT_MOUSE_DOWN
+	var/atom/over
+
+/datum/input_event/click/client_mouse/New(mob/user, mouse_kind, atom/pointed, atom/dragged_over, location, control, params)
+	..(user, pointed, location, control, params)
+	kind = mouse_kind
+	if(dragged_over)
+		over = dragged_over // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+
+/// A drag keeps only its latest position; a press and a release never coalesce.
+/datum/input_event/click/client_mouse/coalesce_key()
+	return kind == INPUT_MOUSE_DRAG ? "mouse_drag" : null
+
+/datum/input_event/click/client_mouse/event_key()
+	return "input.[kind]"
+
+/datum/input_event/click/client_mouse/resolve()
+	actor.input_client_mouse(kind, target, over, params)
+	return null
 
 /// A pick from a target's context menu (origin ORIGIN_MENU).
 /datum/input_event/menu
@@ -218,9 +379,15 @@ CAPABILITIES(/datum/input_event/ui_act)
 	var/datum/hsrc
 	var/href
 	var/list/href_list
+	/// TRUE for a link BYOND already carried to the datum's own Topic() (/datum/Topic, code/engine/kernel/entry.dm): the dispatch answers it, and the
+	/// client's chain is not walked again.
+	var/at_datum = FALSE
+	/// What the datum dispatch answered (TRUE when an op took the link), for the Topic() that submitted it.
+	var/answered
 
-/datum/input_event/topic/New(mob/user, datum/source, link, list/link_list)
+/datum/input_event/topic/New(mob/user, datum/source, link, list/link_list, reached_datum = FALSE)
 	..(user)
+	at_datum = reached_datum
 	if(source)
 		hsrc = source // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	href = link
@@ -233,6 +400,9 @@ CAPABILITIES(/datum/input_event/ui_act)
 	return "input.topic"
 
 /datum/input_event/topic/resolve()
+	if(at_datum)
+		answered = hsrc.input_topic_dispatch(actor, href_list)
+		return null
 	// The op that names the href answers it, through the same Match, Require and Do as a click; what no op names is the legacy Topic() chain's.
 	var/datum/op_result/answered = op_topic_href(actor, hsrc, href_list)
 	if(answered)
@@ -278,6 +448,36 @@ CAPABILITIES(/datum/input_event/ui_act)
 
 /datum/input_event/point/resolve()
 	actor.input_point(pointing_at)
+	return null
+
+/// world.Reboot(): who asked, and whether the world goes on to reboot (the hook, input_reboot()). It resolves on arrival whatever the tick says:
+/// a reboot waits for no drain, and a server-side one has no actor.
+/datum/input_event/reboot
+	resolve_threshold = 1000
+	var/reason = 0
+	var/fast_track = FALSE
+	/// What the hook answered: TRUE when the native reboot goes on.
+	var/proceed = FALSE
+	/// TRUE once the hook returned (an input that sleeps detaches in input_run(), so a hook that slept has not).
+	var/finished = FALSE
+
+/datum/input_event/reboot/New(mob/user, reboot_reason, reboot_fast_track)
+	..(user)
+	reason = reboot_reason
+	fast_track = reboot_fast_track
+
+/datum/input_event/reboot/lane_key()
+	return "reboot"
+
+/datum/input_event/reboot/gate()
+	return null
+
+/datum/input_event/reboot/event_key()
+	return "input.reboot"
+
+/datum/input_event/reboot/resolve()
+	proceed = world.input_reboot(actor, reason, fast_track)
+	finished = TRUE
 	return null
 
 // ---------------------------------------------------------------- the system

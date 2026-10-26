@@ -1253,10 +1253,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(user?.read_preference(/datum/preference/toggle/mob_tooltips))
 			openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
 
-/mob/MouseDown()
-	closeToolTip(usr, src) //No reason not to, really
-	. = ..()
-
 // Manages a global list of mobs with clients attached, indexed by z-level.
 /mob/proc/update_client_z(new_z) // +1 to register, null to unregister.
 	if(registered_z != new_z)

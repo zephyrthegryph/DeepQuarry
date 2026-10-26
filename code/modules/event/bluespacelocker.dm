@@ -58,7 +58,7 @@ CAPABILITIES(/datum/event/bluespace_locker)
 	entry_point().connect_bluespace(list(exit_point()))
 	exit_point().connect_bluespace(list(entry_point()))
 
-	log_and_message_admins("Bluespace lockers linked. Entry: [get_area(entry_point())] Exit: [get_area(exit_point())]")
+	log_and_message_admins("Bluespace lockers linked. Entry: [get_area(entry_point())] Exit: [get_area(exit_point())]", null)
 
 /datum/event/bluespace_locker/announce()
 	GLOB.command_announcement.Announce("Bluespace anomaly detected near [station_name()]. Possible location, [get_area(pick(entry_point(), exit_point()))].", "Anomaly Alert")

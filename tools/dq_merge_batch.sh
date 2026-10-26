@@ -45,7 +45,9 @@ read -r -a lanes <<<"$lanes_arg"
 BRANCH="${DQ_MERGE_BRANCH:-rewrite/integ-current}"
 
 git update-index -q --refresh >/dev/null 2>&1
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then echo "dq_merge_batch: REFUSED: uncommitted tracked changes" >&2; exit 1; fi
+# A tracked edit left by an earlier batch's failed gate is the gate's own output, not a lane's work: logged and put back to HEAD.
+dq_clean_tracked "dq_merge_batch: start dirty"
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then echo "dq_merge_batch: REFUSED: uncommitted tracked changes that could not be cleaned" >&2; exit 1; fi
 git fetch -q origin 2>/dev/null || echo "dq_merge_batch: warning: git fetch failed" >&2
 git rev-parse -q --verify origin/master >/dev/null || { echo "dq_merge_batch: no origin/master" >&2; exit 2; }
 for l in "${lanes[@]}"; do
@@ -81,6 +83,8 @@ attempt() {
 	attempt_log[$key]="$log"
 	echo "== batch attempt $n_attempts: $key (log $log)"
 	CONFLICT=""
+	# Each attempt starts from a clean tree: the previous failed attempt may have left a baseline shrink behind.
+	dq_clean_tracked "dq_merge_batch: attempt started dirty" 2>&1 | tee -a "$log" >&2
 	git switch -q --detach origin/master || return 90
 	for l in "$@"; do
 		if ! git merge --no-ff --no-edit -q -m "Merge $l" "$(ref_of "$l")" >>"$log" 2>&1; then
@@ -97,6 +101,8 @@ attempt() {
 	tail -n 3 "$log" | sed 's/^/   /'
 	# A killed test phase is a verdict on the size of the batch, not on a lane.
 	if [ "$rc" -ne 0 ] && grep -q 'FOCUSED RUN CAPPED' "$log"; then rc=93; echo "   the test phase hit its wall-clock cap (the batch is too big for it)"; fi
+	# A failed gate leaves its in-job baseline shrink uncommitted: discard it now, so nothing leaks into the next attempt or cycle.
+	if [ "$rc" -ne 0 ]; then dq_clean_tracked "dq_merge_batch: failed gate left a tracked edit" 2>&1 | tee -a "$log" >&2; fi
 	tried_rc[$key]=$rc
 	return "$rc"
 }

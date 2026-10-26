@@ -71,7 +71,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 /// A prompt flow (flow_io.dm): the check and the insert each re-run it when answered.
 /datum/privacy_poll_dialog/proc/record_vote(option)
 	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(record_vote), args)
+		return prompt_flow(src, PROC_REF(record_vote), args, actor = owner)
 	if(!owner || answered)
 		return
 	var/voted = FALSE
@@ -128,7 +128,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 /// A prompt flow (flow_io.dm): the list is replaced when the rows arrive.
 /datum/poll_browser_dialog/proc/refresh_poll_list()
 	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(refresh_poll_list), args)
+		return prompt_flow(src, PROC_REF(refresh_poll_list), args, actor = owner)
 	if(!SSdbcore.IsConnected() || !owner?.client)
 		clear_poll_ids()
 		clear_poll_meta()
@@ -162,7 +162,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 /// each re-run it, and the detail shows once they have all arrived.
 /datum/poll_browser_dialog/proc/load_poll_detail(pollid)
 	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(load_poll_detail), args)
+		return prompt_flow(src, PROC_REF(load_poll_detail), args, actor = owner)
 	if(selected_pollid != pollid)
 		return
 	set_selected_detail(build_poll_detail(pollid))

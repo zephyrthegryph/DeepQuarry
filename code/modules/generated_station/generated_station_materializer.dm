@@ -916,7 +916,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		if(!A)
 			return FALSE
 		A.station_id = spec().id
-		A.department_id = department_id
+		A.department_id = text_or_null(department_id)
 		var/designation_key = "[department_id]/[module.role]"
 		designation_counts[designation_key] = (designation_counts[designation_key] || 0) + 1
 		var/designation_number = designation_counts[designation_key]

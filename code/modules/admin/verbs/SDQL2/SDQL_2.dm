@@ -769,8 +769,8 @@ CAPABILITIES(/datum/SDQL2_query)
 		new_args[++new_args.len] = SDQL_expression(source, arg)
 	if(object == GLOB) // Global proc.
 		procname = "/proc/[procname]"
-		return superuser? (call(procname)(new_args)) : (WrapAdminProcCall(GLOBAL_PROC, procname, new_args))
-	return superuser? (call(object, procname)(new_args)) : (WrapAdminProcCall(object, procname, new_args))
+		return superuser? (call(procname)(new_args)) : (WrapAdminProcCall(GLOBAL_PROC, procname, new_args, requester))
+	return superuser? (call(object, procname)(new_args)) : (WrapAdminProcCall(object, procname, new_args, requester))
 
 /datum/SDQL2_query/proc/SDQL_function_async(datum/object, procname, list/arguments, source)
 	set waitfor = FALSE // ALLOW(scheduler): SDQL async() runs an arbitrary admin-chosen proc
