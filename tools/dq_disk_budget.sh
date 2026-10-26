@@ -38,7 +38,7 @@ declare -A M=()                 # manifest: M[<section>.<key>]
 CACHE_TABLES=(); WT_TABLES=()
 declare -A IDX_T=() IDX_S=()    # size index: when a directory was walked, bytes (per path)
 IDX_DIRTY=0
-declare -A BEFORE=() AFTER=() NREMOVED=() KEPT_BUSY=()
+declare -A BEFORE=() AFTER=() NREMOVED=() KEPT_BUSY=() PROT_B=() PROT_N=()
 DRY=0; FORCE=0; AGGR=0; QUIET=0; THROTTLE=0; PARSED=0; SYNC=0
 SCR=""   # scratch directory of this run
 TRACKED=""   # a file of absolute paths git tracks in the worktree being processed
@@ -71,8 +71,10 @@ parse_manifest() {
 
 # ---- numbers ----------------------------------------------------------------------------------------------------------------------
 free_gb() {
+	FREE_KNOWN=1
 	if [ -n "${DQ_DISK_FREE_GB:-}" ]; then FREE_R="$DQ_DISK_FREE_GB"; return; fi
-	FREE_R="$(df -Pk "$CACHE" 2>/dev/null | awk 'NR==2 {print int($4/1048576)}')"; FREE_R="${FREE_R:-0}"
+	FREE_R="$(df -Pk "$CACHE" 2>/dev/null | awk 'NR==2 {print int($4/1048576)}')"
+	case "$FREE_R" in ''|*[!0-9]*) FREE_R=0; FREE_KNOWN=0 ;; esac
 }
 SCALE=100; MIN_IDLE_S=0; TOTAL_B=0; FLOOR_GB=50; TTL_S=1800
 settings() {
@@ -89,6 +91,10 @@ cap_bytes() { # <table> -> CAP_R (-1 = no size cap), scaled
 	if [ -n "${M[$t.cap_gb]:-}" ]; then CAP_R=$(( ${M[$t.cap_gb]} * 1073741824 * SCALE / 100 ))
 	elif [ -n "${M[$t.cap_mb]:-}" ]; then CAP_R=$(( ${M[$t.cap_mb]} * 1048576 * SCALE / 100 ))
 	else CAP_R=-1; fi
+}
+evict_cap_bytes() { # <table> -> CAP_R: the cap the eviction pass enforces (glob_cap_gb: the part of a table the pass owns, when cap_gb covers more)
+	local t="$1"
+	if [ -n "${M[$t.glob_cap_gb]:-}" ]; then CAP_R=$(( ${M[$t.glob_cap_gb]} * 1073741824 * SCALE / 100 )); else cap_bytes "$t"; fi
 }
 idle_of() { # <table> -> IDLE_R seconds
 	IDLE_R="$MIN_IDLE_S"
@@ -217,7 +223,7 @@ apply_evictions() { # reads $SCR/*; fills BEFORE/AFTER/NREMOVED/KEPT_BUSY per id
 
 spec_row() { # <id> <prefix> <table> <depth> <override cap or empty>  -> a spec row on stdout
 	local id="$1" prefix="$2" t="$3" depth="$4" ov="${5:-}" cap gre pre
-	cap_bytes "$t"; cap="$CAP_R"
+	evict_cap_bytes "$t"; cap="$CAP_R"
 	if [ -n "$ov" ]; then if [ "$cap" -lt 0 ] || [ "$ov" -lt "$cap" ]; then cap="$ov"; fi; fi
 	idle_of "$t"
 	g2r "${M[$t.glob]:-}"; gre="$G_R"; g2r "${M[$t.protect_glob]:-}"; pre="$G_R"
@@ -257,6 +263,11 @@ process_children() { # <name> <table> <override>
 	[ -d "$dir" ] || return 0
 	children_units "$dir" "$t"
 	mapfile -t top <"$SCR/units"
+	idle_of "$t"
+	for line in ${top[@]+"${top[@]}"}; do   # what this pass may not touch: leased/excluded/live units and units modified within the idle window
+		IFS=$'\t' read -r mt csz c <<<"$line"
+		if name_protected "$t" "$c" || [ $(( NOW - mt )) -lt "$IDLE_R" ]; then PROT_B["$name"]=$(( ${PROT_B[$name]:-0} + csz )); PROT_N["$name"]=$(( ${PROT_N[$name]:-0} + 1 )); fi
+	done
 	spec_row "$name" "" "$t" 999 "$ov" >"$SCR/spec"
 	select_evictions "$SCR/spec" <"$SCR/units"
 	apply_evictions
@@ -316,7 +327,7 @@ run_cache_tool() { # <table>
 			bin="${DQ_DMBC_BIN_DIR:-$CACHE/dmb-bin}"; read -r cur <"$bin/current" 2>/dev/null; cur="${cur%$'\r'}"
 			[ -n "$cur" ] || return 0
 			exe="$bin/v/$cur/dmbc.exe"; [ -f "$exe" ] || exe="$bin/v/$cur/dmbc"; [ -f "$exe" ] || return 0
-			cap_bytes "$t"; gb=$(( (CAP_R > 0 ? CAP_R : 16 * 1073741824) / 1073741824 )); [ "$gb" -ge 1 ] || gb=1
+			evict_cap_bytes "$t"; gb=$(( (CAP_R > 0 ? CAP_R : 16 * 1073741824) / 1073741824 )); [ "$gb" -ge 1 ] || gb=1
 			# the compiler's own pass: pair stores, spilled bases, and the lowering cache against the same budget
 			DMB_CACHE_BUDGET_GB="$gb" DMB_CACHE_MAX_AGE_DAYS="${M[$t.age_days]:-14}" timeout 120 "$exe" --cache-gc 2>&1 | tail -3 | sed 's/^/  dmbc: /' ;;
 	esac
@@ -398,12 +409,17 @@ enforce_once() { # <squeeze percent, 0 for the first pass>
 	done
 }
 
+table_total() { # <name> -> TT_R: the whole directory after the pass (a table with a glob only owns part of it: the rest is as it was)
+	local name="$1" t="cache.$1"
+	TT_R="${AFTER[$name]:-0}"
+	if [ -n "${M[$t.glob]:-}" ] && [ -d "$CACHE/$name" ]; then path_size "$CACHE/$name"; TT_R=$(( SIZE_R - ${BEFORE[$name]:-0} + ${AFTER[$name]:-0} )); [ "$TT_R" -ge 0 ] || TT_R=0; fi
+}
 cache_sum() { # -> SUM_R bytes: evictable tables after the pass, state tables as they are
 	local name
 	SUM_R=0
 	for name in "${CACHE_TABLES[@]}"; do
 		[ -d "$CACHE/$name" ] || continue
-		if [ "${M[cache.$name.policy]:-}" = state ]; then path_size "$CACHE/$name"; SUM_R=$((SUM_R + SIZE_R)); else SUM_R=$((SUM_R + ${AFTER[$name]:-0})); fi
+		if [ "${M[cache.$name.policy]:-}" = state ]; then path_size "$CACHE/$name"; SUM_R=$((SUM_R + SIZE_R)); else table_total "$name"; SUM_R=$((SUM_R + TT_R)); fi
 	done
 }
 
@@ -463,6 +479,7 @@ enforce() {
 			mb "${BEFORE[$f]:-0}"; local b="$MB_R"; mb "${AFTER[$f]:-0}"
 			printf '  %-34s %8s -> %-8s removed %s%s\n' "$f" "$b" "$MB_R" "${NREMOVED[$f]:-0}" "$([ "${KEPT_BUSY[$f]:-0}" -gt 0 ] && echo "  (${KEPT_BUSY[$f]} in use, kept)")"
 		done | sort
+		over_report
 	fi
 	local wtb=0 wta=0 wtn=0 x y
 	for f in "${!BEFORE[@]}"; do case "$f" in wt:*) wtb=$((wtb + BEFORE[$f])); wta=$((wta + ${AFTER[$f]:-0})); wtn=$((wtn + ${NREMOVED[$f]:-0})) ;; esac; done
@@ -474,9 +491,22 @@ enforce() {
 	rm -rf "$SCR"; trap - EXIT
 }
 
+over_report() { # every table still over its cap, and why: protected units, files a process holds open, or bytes another tool owns
+	local name t tt cm pm xm
+	for name in "${CACHE_TABLES[@]}"; do
+		t="cache.$name"; [ -d "$CACHE/$name" ] || continue
+		[ "${M[$t.policy]:-}" = state ] && continue
+		cap_bytes "$t"; [ "$CAP_R" -ge 0 ] || continue
+		table_total "$name"; tt="$TT_R"
+		[ "$tt" -gt "$CAP_R" ] || continue
+		mb "$tt"; xm="$MB_R"; mb "$CAP_R"; cm="$MB_R"; mb "${PROT_B[$name]:-0}"; pm="$MB_R"
+		echo "  OVER CAP $name: $xm MB against $cm MB; protected (leased slot, excluded worktree, live key, or modified within the idle window): $pm MB in ${PROT_N[$name]:-0} unit(s); files a process holds open: ${KEPT_BUSY[$name]:-0}; the rest is owned by ${M[$t.tool]:-no eviction tool} and not evictable by this pass"
+	done
+}
 status() {
 	local name t s cs
 	parse_manifest; settings
+	FORCE=1   # a status that reports a cached size from before the last enforcement is worse than a slow one
 	SCR="$(mktemp -d)"; trap 'rm -rf "$SCR"' EXIT
 	index_load; free_gb
 	echo "cache root $CACHE: $FREE_R GB free, floor $FLOOR_GB GB, total cap $(( TOTAL_B / 1073741824 )) GB"
@@ -494,20 +524,23 @@ gate() { # <what>
 	parse_manifest; settings
 	[ "${DQ_DISK_BUDGET:-}" = off ] && return 0
 	free_gb
+	# an unreadable free-space figure is not a breach
+	if [ "$FREE_KNOWN" -eq 0 ]; then echo "dq_disk_budget: WARNING cannot read the free space of $CACHE; not refusing $what" >&2; return 0; fi
 	if [ "$FREE_R" -ge "$FLOOR_GB" ]; then
 		# above the floor the enforcement is housekeeping: detached (unless --sync), at most once per throttle window
-		if [ "$SYNC" -eq 1 ]; then enforce >/dev/null 2>&1
+		if [ "$SYNC" -eq 1 ]; then ( enforce ) >/dev/null 2>&1 || echo "dq_disk_budget: WARNING housekeeping enforce failed (rc=$?); not refusing $what" >&2
 		else ( nohup bash "$HERE/dq_disk_budget.sh" enforce --quiet --throttle "$([ "$THROTTLE" -gt 0 ] && echo "$THROTTLE" || echo 10)" >/dev/null 2>&1 & ) >/dev/null 2>&1; fi
 		return 0
 	fi
 	# below the floor: enforce now, then aggressively, before deciding
-	enforce >/dev/null 2>&1
+	( enforce ) >/dev/null 2>&1 || echo "dq_disk_budget: WARNING enforce failed (rc=$?); judging by the free space alone" >&2
 	free_gb
-	if [ "$FREE_R" -lt "$FLOOR_GB" ]; then
+	if [ "$FREE_KNOWN" -eq 1 ] && [ "$FREE_R" -lt "$FLOOR_GB" ]; then
 		AGGR=1; FORCE=1; QUIET=1; settings
-		enforce >/dev/null 2>&1
+		( enforce ) >/dev/null 2>&1 || echo "dq_disk_budget: WARNING aggressive enforce failed (rc=$?); judging by the free space alone" >&2
 		free_gb
 	fi
+	if [ "$FREE_KNOWN" -eq 0 ]; then echo "dq_disk_budget: WARNING cannot read the free space of $CACHE; not refusing $what" >&2; return 0; fi
 	if [ "$FREE_R" -lt "$FLOOR_GB" ]; then
 		cat >&2 <<EOF
 dq_disk_budget: REFUSED $what: only $FREE_R GB free on the disk of $CACHE (floor $FLOOR_GB GB, DQ_DISK_FLOOR_GB).
@@ -538,6 +571,8 @@ done
 case "$cmd" in
 	enforce) enforce ;;
 	status) status ;;
-	gate) gate "$what"; exit $? ;;
+	gate) # the gate refuses (exit 4) ONLY on a real floor breach; any other failure (lock busy, a failed enforce, a missing manifest) is a warning and exit 0
+		( gate "$what" ); grc=$?
+		case "$grc" in 0|4) exit "$grc" ;; *) echo "dq_disk_budget: WARNING the gate failed internally (rc=$grc); not refusing $what" >&2; exit 0 ;; esac ;;
 	*) echo "usage: dq_disk_budget.sh enforce|status|gate <what> [--dry-run] [--force] [--aggressive] [--throttle MIN] [--quiet]" >&2; exit 2 ;;
 esac

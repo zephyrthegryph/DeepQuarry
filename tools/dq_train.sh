@@ -160,6 +160,14 @@ start_detached() { # <script> <log>: a process outside this shell's process grou
 	nohup bash "$self" run >>"$log" 2>&1 &
 	disown $! 2>/dev/null || true
 }
+# Runs tools/dq_disk_budget.sh from the integrator's snapshot, else from the worktree it was started from; missing is a warning (rc 0), never a refusal.
+disk_budget() {
+	local s="$SELF_DIR/dq_disk_budget.sh" rc
+	[ -f "$s" ] && [ -f "$SELF_DIR/ci/disk_budget.toml" ] || s="${DQ_TRAIN_ORIGIN_REPO:-}/tools/dq_disk_budget.sh"
+	if [ ! -f "$s" ]; then tlog "WARNING: no dq_disk_budget.sh next to the integrator ($SELF_DIR) or in the origin repo; the disk budget is not enforced"; return 0; fi
+	bash "$s" "$@" >>"$LOGS/train.log" 2>&1; rc=$?
+	return "$rc"
+}
 cmd_ensure() {
 	init_state
 	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; return 0; fi
@@ -168,6 +176,10 @@ cmd_ensure() {
 	# The integrator runs from a snapshot (the lane's worktree is released and reset while it works); the helpers are read from its worktree.
 	if [ "$SELF_DIR" != "$STATE/self" ]; then
 		cp -f "$SELF" "$STATE/self/dq_train.sh" && cp -f "$SELF_DIR/dq_train_estimate.js" "$STATE/self/dq_train_estimate.js" || die "cannot snapshot the integrator into $STATE/self"
+		# the disk budget script reads its manifest from ci/ beside it, so both go into the snapshot
+		if [ -f "$SELF_DIR/dq_disk_budget.sh" ] && [ -f "$SELF_DIR/ci/disk_budget.toml" ]; then
+			mkdir -p "$STATE/self/ci" && cp -f "$SELF_DIR/dq_disk_budget.sh" "$STATE/self/dq_disk_budget.sh" && cp -f "$SELF_DIR/ci/disk_budget.toml" "$STATE/self/ci/disk_budget.toml" || tlog "WARNING: cannot snapshot the disk budget into $STATE/self"
+		fi
 	fi
 	export DQ_TRAIN_ORIGIN_REPO="${DQ_TRAIN_ORIGIN_REPO:-$(git rev-parse --show-toplevel)}"
 	start_detached "$STATE/self/dq_train.sh" "$LOGS/integrator.out"
@@ -472,12 +484,16 @@ cycle() {
 	tlog "cycle: queue=[${all[*]}] valid=[${VALID[*]}] chosen=[${CHOSEN[*]}] (limit $BATCH_LIMIT_NOW, est ~${BATCH_EST}s of tests) all_light=$all_light"
 	# Disk budget (tools/dq_disk_budget.sh): enforce the caps at every cycle start; below the floor a heavy cycle is not started (the lanes stay queued).
 	if [ "$all_light" -eq 1 ]; then
-		bash "$SELF_DIR/dq_disk_budget.sh" enforce --quiet --throttle 10 >>"$LOGS/train.log" 2>&1 || true
+		disk_budget enforce --quiet --throttle 10 || true
 		light_cycle
 	else
-		if ! bash "$SELF_DIR/dq_disk_budget.sh" gate "a heavy train cycle" --sync --throttle 10 >>"$LOGS/train.log" 2>&1; then
+		# only exit 4 is a real floor breach (the REFUSED message above in this log has the free GB and the floor); anything else is a warning and the cycle runs
+		disk_budget gate "a heavy train cycle" --sync --throttle 10; local drc=$?
+		if [ "$drc" -eq 4 ]; then
 			tlog "disk floor: the cycle is skipped, the lanes stay queued; free space (see the REFUSED message above in this log), then the next cycle runs"
 			return 0
+		elif [ "$drc" -ne 0 ]; then
+			tlog "WARNING: the disk gate failed internally (rc=$drc, not a floor breach); running the cycle"
 		fi
 		heavy_cycle
 	fi
