@@ -215,20 +215,23 @@ CAPABILITIES(/obj/structure/bed/chair/wheelchair)
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm): dragged onto oneself, a person folds the
 /// chair up; then the native drop goes on.
 /obj/structure/bed/chair/wheelchair/proc/chair_dropped(datum/act/input/A)
-	var/mob/user = A.actor
+	collapse_for(A.actor, A.over)
+	return INPUT_FALLTHROUGH
+
+/// The mob that dragged the chair onto itself collapses it into its folded form.
+/obj/structure/bed/chair/wheelchair/proc/collapse_for(mob/user, over_object)
 	if(!istype(user))
-		return INPUT_FALLTHROUGH
-	if((A.over == user && (in_range(src, user) || user.contents.Find(src))))
+		return
+	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))
 		if(!ishuman(user))
-			return INPUT_FALLTHROUGH
+			return
 		if(has_buckled_mobs())
-			return INPUT_FALLTHROUGH
+			return
 		act_message(user, null, others = "%U% collapses \the [src.name].")
 		var/obj/item/wheelchair/R = new folded_type(get_turf(src))
 		R.name = src.name
 		R.set_color(src.color)
 		expire(0)
-	return INPUT_FALLTHROUGH
 
 /obj/structure/bed/chair/wheelchair/proc/check_pulled_along()
 	var/mob/living/pulling = src?.pulling_target()
