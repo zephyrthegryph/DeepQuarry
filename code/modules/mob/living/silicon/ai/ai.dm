@@ -1076,16 +1076,16 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 	var/track = ""
 	if(changed_voice)  // They have a fake name
 		if(impersonating) // And we found a mob with that name above, track them instead
-			track = "<a href='byond://?src=\ref[src];trackname=[html_encode(speaker_name)];track=\ref[impersonating]'>[speaker_name] ([jobname])</a>"
-			track += "<a href='byond://?src=\ref[src];trackname=[html_encode(speaker_name)];open=\ref[impersonating]'>\[OPEN\]</a>" // Rykka ports AI opening doors
+			track = "<a href='byond://?src=[REF(src)];trackname=[html_encode(speaker_name)];track=[REF(impersonating)]'>[speaker_name] ([jobname])</a>"
+			track += "<a href='byond://?src=[REF(src)];trackname=[html_encode(speaker_name)];open=[REF(impersonating)]'>\[OPEN\]</a>" // Rykka ports AI opening doors
 		else // We couldn't find a mob with their fake name, don't track at all
 			track = "[speaker_name] ([jobname])"
 	else // Not faking their name
 		if(isbot(speaker)) // It's a bot, and no fake name! (That'd be kinda weird.) :p
-			track = "<a href='byond://?src=\ref[src];trackbot=\ref[speaker]'>[speaker_name] ([jobname])</a>"
+			track = "<a href='byond://?src=[REF(src)];trackbot=[REF(speaker)]'>[speaker_name] ([jobname])</a>"
 		else // It's not a bot, and no fake name!
-			track = "<a href='byond://?src=\ref[src];trackname=[html_encode(speaker_name)];track=\ref[speaker]'>[speaker_name] ([jobname])</a>"
-			track += "<a href='byond://?src=\ref[src];trackname=[html_encode(speaker_name)];open=\ref[speaker]'>\[OPEN\]</a>" // Rykka ports AI opening doors
+			track = "<a href='byond://?src=[REF(src)];trackname=[html_encode(speaker_name)];track=[REF(speaker)]'>[speaker_name] ([jobname])</a>"
+			track += "<a href='byond://?src=[REF(src)];trackname=[html_encode(speaker_name)];open=[REF(speaker)]'>\[OPEN\]</a>" // Rykka ports AI opening doors
 
 	return track // Feed variable back to AI
 

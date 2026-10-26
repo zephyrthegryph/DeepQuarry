@@ -299,7 +299,7 @@ CAPABILITIES(/obj/item/retail_scanner)
 
 /obj/item/retail_scanner/showoff(mob/user)
 	for (var/mob/M in view(user))
-		M.show_message("[user] holds up [src]. <a HREF='byond://?src=\ref[M];clickitem=\ref[src]'>Swipe card or item.</a>",1)
+		M.show_message("[user] holds up [src]. <a HREF='byond://?src=[REF(M)];clickitem=[REF(src)]'>Swipe card or item.</a>",1)
 
 /obj/item/retail_scanner/proc/confirm(obj/item/I)
 	if(confirm_item == I && confirm_revision == ticket_revision)

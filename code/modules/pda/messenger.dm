@@ -256,7 +256,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 		var/owner = data["owner"]
 		var/job = data["job"]
 		var/message = data["message"]
-		notify(span_bold("Message from [owner] ([job]), ") + "\"[message]\" (<a href='byond://?src=\ref[src];choice=Message;target=[ref]'>Reply</a>)")
+		notify(span_bold("Message from [owner] ([job]), ") + "\"[message]\" (<a href='byond://?src=[REF(src)];choice=Message;target=[ref]'>Reply</a>)")
 
 /datum/data/pda/app/messenger/multicast
 /datum/data/pda/app/messenger/multicast/receive_message(list/data, ref)

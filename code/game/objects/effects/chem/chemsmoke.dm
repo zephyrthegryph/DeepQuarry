@@ -109,7 +109,7 @@ CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 			var/mob/M = get_mob_by_key(print_name)
 			var/more = ""
 			if(M)
-				more = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[M]'>?</a>)"
+				more = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=[url_encode(ref_token(M))]'>?</a>)"
 			message_admins("A chemical smoke reaction has taken place in ([whereLink]) [contained]. Last associated key is [print_name][more].", 0, 1)
 			log_game("A chemical smoke reaction has taken place in ([where]) [contained]. Last associated key is [print_name].")
 		else
