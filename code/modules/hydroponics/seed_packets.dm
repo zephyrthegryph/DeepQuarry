@@ -61,14 +61,11 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/random
 	seed_type = null
 
-CAPABILITIES(/obj/item/seeds/random)
-	param(nameof(seed_type), pos = 1, apply = PROC_REF(seed_made), default = PROC_REF(roll_random_seed), overrides = TRUE)
-
-/// The packet's seed_type when none was given: a new random seed line, which the packet holds.
-/obj/item/seeds/random/proc/roll_random_seed()
-	var/datum/seed/S = SSplants.create_random_seed()
-	proto_set(src, nameof(seed_static), S)
-	return S.name
+// ALLOW(init/INSTANCE_STATE): creates a random seed for this packet
+/obj/item/seeds/random/Initialize(mapload)
+	proto_set(src, nameof(seed_static), SSplants.create_random_seed())
+	seed_type = seed().name
+	. = ..()
 
 /obj/item/seeds/replicapod
 	seed_type = PLANT_DIONA
