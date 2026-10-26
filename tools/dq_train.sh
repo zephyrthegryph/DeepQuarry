@@ -30,6 +30,11 @@
 #     tests exceed the cap is bounced;
 #   - pushes master with tools/dq_push_master.sh (the batch's merge-gates stamp is what the pre-push hook checks) and records the lanes
 #     as landed. Master moving under the gate is not the lanes' fault: they stay queued and the next cycle repeats.
+# Self-update: the integrator runs from a snapshot of SNAP_FILES under $STATE/self. At the start of every cycle (never inside one) it
+# fetches and compares the snapshot's files with origin/master's tools/ copies; on a difference it logs "self-update: <files> changed
+# on master; re-exec", refreshes the snapshot with git show, checks the new scripts with bash -n and execs the new dq_train.sh with the
+# same arguments, keeping the run lock and pid. A new version that does not parse is logged (SELF-UPDATE REFUSED) and not run.
+# DQ_TRAIN_SELF_UPDATE=0 turns it off.
 # Nothing here holds the merge lock: the train works in its own worktree and takes no lock for the gate. Nothing runs checkout, reset,
 # restore, stash or cherry-pick, or deletes a lock file (the integrator's own lock directory is replaced only when its pid is dead).
 #
@@ -42,6 +47,11 @@ set -uo pipefail
 
 SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 SELF_DIR="$(dirname "$SELF")"
+ORIG_ARGS=("$@")
+# Every file the integrator runs from SELF_DIR (the snapshot under $STATE/self), relative to tools/. The ONE place to list them: ensure
+# copies these, and the self-update compares and refreshes these. A script the cycle runs through "$SELF_DIR/..." goes here
+# (tools/ci/test_train.sh fails when one is missing); dq_declared_tests.sh and dq_light_paths.sh are enqueue-only (the lane's checkout).
+SNAP_FILES=(dq_train.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml)
 STATE="${DQ_TRAIN_STATE:-E:/dq-cache/train}"
 WT="${DQ_TRAIN_WT:-E:/projects/dq-wt/train-base}"
 TBRANCH="${DQ_TRAIN_BRANCH:-train/integ}"
@@ -160,14 +170,73 @@ start_detached() { # <script> <log>: a process outside this shell's process grou
 	nohup bash "$self" run >>"$log" 2>&1 &
 	disown $! 2>/dev/null || true
 }
+# ---- the snapshot and its self-update ------------------------------------------------------------------------------------------------
+in_snapshot() { [ -d "$STATE/self" ] && [ "$(cd "$STATE/self" && pwd)" = "$SELF_DIR" ]; }
+snapshot_install() { # <from dir> <to dir>: SNAP_FILES, plain copies (dq_train.sh last: it may be the running script)
+	local f i from="$1" to="$2"
+	mkdir -p "$to/ci" || return 1
+	for (( i = ${#SNAP_FILES[@]} - 1; i >= 0; i-- )); do
+		f="${SNAP_FILES[$i]}"
+		cp -f "$from/$f" "$to/$f" || return 1
+	done
+}
+snap_syntax_ok() { # <dir>: every script in it parses; prints the first failure
+	local f
+	for f in "${SNAP_FILES[@]}"; do
+		case "$f" in
+			*.sh) bash -n "$1/$f" 2>&1 || { echo "bash -n failed for $f"; return 1; } ;;
+			*.js) if command -v node >/dev/null 2>&1; then node --check "$1/$f" 2>&1 || { echo "node --check failed for $f"; return 1; }; fi ;;
+		esac
+	done
+	return 0
+}
+SELF_UPDATE_BAD=""
+SELF_UPDATE_LAST="${DQ_TRAIN_REEXEC_AT:-0}"
+# Between cycles, never in one: when a script of the snapshot differs from origin/master's copy, refresh the snapshot from origin/master
+# (git show, no checkout), check that it parses, and exec the new dq_train.sh with the same arguments. The run lock and the integrator's
+# identity are kept (DQ_TRAIN_REEXEC=1 makes the new process adopt its own lock). A new version that does not parse is never run: the
+# old copy keeps going and the refusal is logged loudly once per master version.
+self_update() {
+	[ "${DQ_TRAIN_SELF_UPDATE:-1}" = 1 ] || return 0
+	in_snapshot || return 0
+	local f cur want changed=() sig="" stage d
+	G fetch -q origin 2>/dev/null || { tlog "warning: self-update: git fetch failed; keeping the current scripts"; return 0; }
+	for f in "${SNAP_FILES[@]}"; do
+		want="$(G rev-parse -q --verify "origin/master:tools/$f" 2>/dev/null)"
+		if [ -z "$want" ]; then continue; fi # not on master (yet): nothing to refresh to
+		sig="$sig $want"
+		cur=""
+		[ -f "$STATE/self/$f" ] && cur="$(git hash-object --no-filters "$STATE/self/$f" 2>/dev/null)"
+		[ "$cur" = "$want" ] || changed+=("$f")
+	done
+	[ ${#changed[@]} -gt 0 ] || return 0
+	[ "$sig" != "$SELF_UPDATE_BAD" ] || return 0
+	if [ $(( $(date +%s) - SELF_UPDATE_LAST )) -lt 30 ]; then return 0; fi # never a tight re-exec loop
+	stage="$STATE/self.new"
+	rm -rf "$stage"; mkdir -p "$stage/ci" || return 0
+	for f in "${SNAP_FILES[@]}"; do
+		G show "origin/master:tools/$f" >"$stage/$f" 2>/dev/null || { tlog "ERROR: self-update: cannot read tools/$f from origin/master; keeping the current scripts"; SELF_UPDATE_BAD="$sig"; rm -rf "$stage"; return 0; }
+	done
+	d="$(snap_syntax_ok "$stage")" || {
+		tlog "ERROR: SELF-UPDATE REFUSED: [${changed[*]}] changed on master but the new copy does not parse ($d); the integrator keeps running the OLD copy; fix master's tools/"
+		SELF_UPDATE_BAD="$sig"; rm -rf "$stage"; return 0
+	}
+	tlog "self-update: ${changed[*]} changed on master; re-exec"
+	snapshot_install "$stage" "$STATE/self" || { tlog "ERROR: self-update: could not refresh $STATE/self; keeping the current scripts"; rm -rf "$stage"; return 0; }
+	rm -rf "$stage"
+	export DQ_TRAIN_REEXEC=1 DQ_TRAIN_REEXEC_AT="$(date +%s)"
+	exec bash "$STATE/self/dq_train.sh" "${ORIG_ARGS[@]}"
+	tlog "ERROR: self-update: exec failed"; return 0
+}
+
 cmd_ensure() {
 	init_state
 	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; return 0; fi
 	# The watchdog callers (dq_lane_pool.sh lease and release) ask on every call: with nothing queued there is nothing to run.
 	[ -n "$(queue_branches)" ] || return 0
 	# The integrator runs from a snapshot (the lane's worktree is released and reset while it works); the helpers are read from its worktree.
-	if [ "$SELF_DIR" != "$STATE/self" ]; then
-		cp -f "$SELF" "$STATE/self/dq_train.sh" && cp -f "$SELF_DIR/dq_train_estimate.js" "$STATE/self/dq_train_estimate.js" || die "cannot snapshot the integrator into $STATE/self"
+	if ! in_snapshot; then
+		snapshot_install "$SELF_DIR" "$STATE/self" || die "cannot snapshot the integrator into $STATE/self"
 	fi
 	export DQ_TRAIN_ORIGIN_REPO="${DQ_TRAIN_ORIGIN_REPO:-$(git rev-parse --show-toplevel)}"
 	start_detached "$STATE/self/dq_train.sh" "$LOGS/integrator.out"
@@ -491,11 +560,19 @@ cmd_run() {
 	init_state
 	# the lane's checkout that started us (ensure exports it); a hand-started run uses the checkout it runs in
 	export DQ_TRAIN_ORIGIN_REPO="${DQ_TRAIN_ORIGIN_REPO:-$(git rev-parse --show-toplevel 2>/dev/null)}"
-	lock_take || { echo "dq_train: an integrator is already running (pid $(integrator_pid))"; exit 0; }
+	if [ "${DQ_TRAIN_REEXEC:-0}" = 1 ] && [ "$(integrator_pid)" = "$$" ]; then
+		# a self-update exec: this process IS the integrator that holds the lock (same pid); keep the lock and its start time
+		sed -i -e "s|^winpid=.*|winpid=$(cat /proc/$$/winpid 2>/dev/null)|" -e "s|^script=.*|script=$SELF|" "$STATE/run.lock/owner" 2>/dev/null || true
+		LOCK_HELD=1
+		unset DQ_TRAIN_REEXEC
+	else
+		lock_take || { echo "dq_train: an integrator is already running (pid $(integrator_pid))"; exit 0; }
+	fi
 	trap 'lock_release; phase "idle"' EXIT
 	tlog "integrator started (pid $$, script $SELF, state $STATE, worktree $WT)"
 	local idle=0 rc stalls=0
 	while :; do
+		self_update
 		cycle
 		rc=$?
 		if [ "$rc" -eq 10 ]; then
