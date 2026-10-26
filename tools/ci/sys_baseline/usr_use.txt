@@ -24,4 +24,3 @@ usr_outside_verb	code/modules/error_handler/error_viewer.dm	if (usr)
 usr_outside_verb	code/modules/error_handler/error_viewer.dm	usr_ref = "[REF(usr)]"
 usr_outside_verb	code/modules/error_handler/error_viewer.dm	rel_set(src, nameof(usr_loc), get_turf(usr))
 usr_outside_verb	code/modules/mob/say.dm	if(stat || !kind_of(src).use_me && usr == src)
-usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
