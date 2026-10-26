@@ -1,5 +1,5 @@
-// Input with an actor (code/engine/lifeforms/input.dm): click_on(), drag_onto(), hover(), tooltip() and with_actor(). The native overrides
-// are generated (analyze gen declare); the test drives them through with_actor(), as a client's input would arrive with its usr.
+// Input with an actor (code/engine/lifeforms/input.dm): click_on(), drag_onto(), hover(), tooltip() and with_actor(). BYOND's native callbacks are the engine's
+// (code/engine/kernel/entry.dm); the test drives them through with_actor(), as a client's input would arrive with its usr.
 
 /obj/item/dq_input_probe
 	name = "input probe"
@@ -102,10 +102,10 @@ CAPABILITIES(/obj/item/dq_input_layer/sub)
 	var/obj/structure/dq_input_target/target = allocate(/obj/structure/dq_input_target, T)
 
 	with_actor(user, S, "Click", T, null, "")
-	TEST_ASSERT_EQUAL(S.sub_clicks, 1, "the subtype's click_on() runs once, though its parent's generated Click is reached by the fall-through")
+	TEST_ASSERT_EQUAL(S.sub_clicks, 1, "the subtype's click_on() runs once, and its answering INPUT_FALLTHROUGH sends the click on to the default handling, not to the parent's entry")
 	TEST_ASSERT_EQUAL(S.base_clicks, 0, "the parent's replaced entry does not run")
 	with_actor(user, S, "Click", T, null, "")
-	TEST_ASSERT_EQUAL(S.sub_clicks, 2, "the fall-through mark is cleared when the native chain returns: the next click runs it again")
+	TEST_ASSERT_EQUAL(S.sub_clicks, 2, "the next click runs it again")
 
-	with_actor(user, S, "MouseDrag", target, T, T, null, null, "")
+	input_submit(new /datum/input_event/click/client_mouse(user, INPUT_MOUSE_DRAG, S, target, T, null, ""))
 	TEST_ASSERT_EQUAL(S.dragged_over, target, "drag_over() hands the handler what the holder is dragged over")

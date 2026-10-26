@@ -92,6 +92,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
+import { cargoIncrementalEnv, cargoTargetDir, clearIncremental, compilerPanicSignature } from './lib/cargo_ice';
 import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
@@ -111,7 +112,23 @@ export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 /** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a
  * time on the machine, the merge worktree first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
 const cargoExec = (args: string[], options?: any) =>
-  withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => Juke.exec('cargo', args, options), (m) => Juke.logger.info(m));
+  withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => cargoWithIceRetry(args, options), (m) => Juke.logger.info(m));
+
+/** One cargo run, non-incremental unless DQ_CARGO_INCREMENTAL=1 (lib/cargo_ice.ts). If rustc panics ("the compiler unexpectedly
+ * panicked", the corrupt incremental cache ICE) the panic is logged, the target's incremental directories are deleted and the build runs once
+ * more without RUSTC_WRAPPER. Any other failure throws as Juke.exec would. */
+async function cargoWithIceRetry(args: string[], options?: any): Promise<void> {
+  const env = { ...process.env, ...cargoIncrementalEnv(), ...(options?.env ?? {}) };
+  const run = (e: NodeJS.ProcessEnv) => Juke.exec('cargo', args, { ...options, env: e, throw: false });
+  let result = await run(env);
+  if (result.code !== 0 && compilerPanicSignature(result.combined ?? '')) {
+    const target = cargoTargetDir(args, env, path.resolve(options?.cwd ?? '.'));
+    const removed = clearIncremental(target);
+    Juke.logger.warn(`cargo ${args[0]}: rustc panicked; removed ${removed.length} incremental dir(s) under ${target} and retrying once`);
+    result = await run({ ...env, RUSTC_WRAPPER: '', CARGO_BUILD_RUSTC_WRAPPER: '' });
+  }
+  if (result.code !== 0) throw new Error(`cargo ${args[0]} failed (exit ${result.code})`);
+}
 
 export const DME_NAME = 'deepquarry';
 
