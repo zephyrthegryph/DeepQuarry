@@ -6,8 +6,8 @@
 	kitchen_tag = PLANT_PEANUT
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_PEANUTOIL = list(3,10))
 
-/datum/seed/peanuts/New()
-	..()
+/datum/seed/peanuts/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)

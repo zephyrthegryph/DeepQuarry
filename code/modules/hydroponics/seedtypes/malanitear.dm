@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_MTEAR
 	chems = list(REAGENT_ID_HONEY = list(1,10), REAGENT_ID_KELOTANE = list(3,5))
 
-/datum/seed/mtear/New()
-	..()
+/datum/seed/mtear/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,3)
 	set_trait(TRAIT_PRODUCTION,5)
 	set_trait(TRAIT_YIELD,4)

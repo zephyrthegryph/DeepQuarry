@@ -6,8 +6,8 @@
 	mutants = list(PLANT_ORANGESAPBEAN,PLANT_BLUESAPBEAN,PLANT_PURPLESAPBEAN) // Adding mutation strain for sap beans.
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20), REAGENT_ID_SOYMILK = list(10,20))
 
-/datum/seed/soybean/New()
-	..()
+/datum/seed/soybean/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,4)
 	set_trait(TRAIT_PRODUCTION,4)

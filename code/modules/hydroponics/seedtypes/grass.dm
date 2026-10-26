@@ -6,8 +6,8 @@
 	mutants = list(PLANT_CARPET)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20))
 
-/datum/seed/grass/New()
-	..()
+/datum/seed/grass/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,2)
 	set_trait(TRAIT_PRODUCTION,5)
@@ -27,8 +27,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_LIQUIDCARPET = list(5,10))
 
-/datum/seed/grass/carpet/New()
-	..()
+/datum/seed/grass/carpet/default_traits()
+	. = ..()
 	set_trait(TRAIT_YIELD,7)
 	set_trait(TRAIT_PRODUCT_ICON,"grass")
 	set_trait(TRAIT_PRODUCT_COLOUR,"#9e2500")

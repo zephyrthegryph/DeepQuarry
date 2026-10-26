@@ -7,8 +7,8 @@
 	mutants = list(PLANT_GLOWBERRIES,PLANT_POISONBERRIES)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_BERRYJUICE = list(10,10))
 
-/datum/seed/berry/New()
-	..()
+/datum/seed/berry/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_JUICY,1)
 	set_trait(TRAIT_MATURATION,5)
@@ -28,8 +28,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_URANIUM = list(3,5))
 
-/datum/seed/berry/glow/New()
-	..()
+/datum/seed/berry/glow/default_traits()
+	. = ..()
 	set_trait(TRAIT_SPREAD,1)
 	set_trait(TRAIT_BIOLUM,1)
 	set_trait(TRAIT_BIOLUM_COLOUR,"#006622")
@@ -49,8 +49,8 @@
 	mutants = list(PLANT_DEATHBERRIES)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1), REAGENT_ID_TOXIN = list(3,5), REAGENT_ID_POISONBERRYJUICE = list(10,5))
 
-/datum/seed/berry/poison/New()
-	..()
+/datum/seed/berry/poison/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#6DC961")
 	set_trait(TRAIT_WATER_CONSUMPTION, 3)
 	set_trait(TRAIT_NUTRIENT_CONSUMPTION, 0.25)
@@ -62,8 +62,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1), REAGENT_ID_TOXIN = list(3,3), REAGENT_ID_LEXORIN = list(1,5))
 
-/datum/seed/berry/poison/death/New()
-	..()
+/datum/seed/berry/poison/death/default_traits()
+	. = ..()
 	set_trait(TRAIT_YIELD,3)
 	set_trait(TRAIT_POTENCY,50)
 	set_trait(TRAIT_PRODUCT_COLOUR,"#7A5454")
@@ -76,7 +76,7 @@
 	display_name = "peppercorn bush"
 	chems = list(REAGENT_ID_BLACKPEPPER = list(5,10))
 
-/datum/seed/berry/peppercorn/New()
-	..()
+/datum/seed/berry/peppercorn/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#303030")
 	set_trait(TRAIT_WATER_CONSUMPTION, 2)

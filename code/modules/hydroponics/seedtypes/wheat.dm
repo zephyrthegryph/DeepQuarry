@@ -6,8 +6,8 @@
 	mutants = list(PLANT_MEATWHEAT) // Adding mutation strain for meatwheat.
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,25), REAGENT_ID_FLOUR = list(10,30))
 
-/datum/seed/wheat/New()
-	..()
+/datum/seed/wheat/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,1)
 	set_trait(TRAIT_YIELD,4)

@@ -7,8 +7,8 @@
 	mutants = list("stimbush")
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,15), REAGENT_ID_NICOTINE = list(1,20))
 
-/datum/seed/tobacco/New()
-	..()
+/datum/seed/tobacco/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)
@@ -25,8 +25,8 @@
 	display_name = "stim-bush"
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_HYPERZINE = list(1,10), REAGENT_ID_SYNAPTIZINE = list(1,5))
 
-/datum/seed/tobacco/stimbush/New()
-	..()
+/datum/seed/tobacco/stimbush/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)

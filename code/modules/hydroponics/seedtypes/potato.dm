@@ -6,8 +6,8 @@
 	mutants = list(PLANT_VOLTATO) // Adding mutation strain for voltatoes.
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_POTATOJUICE = list(10,10))
 
-/datum/seed/potato/New()
-	..()
+/datum/seed/potato/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCES_POWER,1)
 	set_trait(TRAIT_MATURATION,10)
 	set_trait(TRAIT_PRODUCTION,1)

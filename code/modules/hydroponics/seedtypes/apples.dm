@@ -7,8 +7,8 @@
 	mutants = list(PLANT_POISONAPPLE,PLANT_GOLDAPPLE)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10),REAGENT_ID_APPLEJUICE = list(10,20))
 
-/datum/seed/apple/New()
-	..()
+/datum/seed/apple/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)
@@ -34,8 +34,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_GOLD = list(1,5))
 
-/datum/seed/apple/gold/New()
-	..()
+/datum/seed/apple/gold/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,10)
 	set_trait(TRAIT_PRODUCTION,10)
 	set_trait(TRAIT_YIELD,3)
@@ -49,8 +49,8 @@
 	kitchen_tag = PLANT_APPLE
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,5),REAGENT_ID_SIFSAP = list(10,20))
 
-/datum/seed/apple/sif/New()
-	..()
+/datum/seed/apple/sif/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,3)
 	set_trait(TRAIT_PRODUCTION,10)

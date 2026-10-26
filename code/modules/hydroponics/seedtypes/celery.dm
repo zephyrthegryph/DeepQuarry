@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_CELERY
 	chems = list(REAGENT_ID_NUTRIMENT = list(5,20))
 
-/datum/seed/celery/New()
-	..()
+/datum/seed/celery/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,4)

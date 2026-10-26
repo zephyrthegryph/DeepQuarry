@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_PUMPKIN
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,6))
 
-/datum/seed/pumpkin/New()
-	..()
+/datum/seed/pumpkin/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,6)

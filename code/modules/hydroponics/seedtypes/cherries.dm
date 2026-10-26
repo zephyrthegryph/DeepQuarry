@@ -6,8 +6,8 @@
 	kitchen_tag = PLANT_CHERRY
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,15), REAGENT_ID_SUGAR = list(1,15), REAGENT_ID_CHERRYJELLY = list(10,15))
 
-/datum/seed/cherries/New()
-	..()
+/datum/seed/cherries/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_JUICY,1)
 	set_trait(TRAIT_MATURATION,5)

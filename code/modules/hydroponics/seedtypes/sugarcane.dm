@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_SUGARCANE
 	chems = list(REAGENT_ID_SUGAR = list(4,5))
 
-/datum/seed/sugarcane/New()
-	..()
+/datum/seed/sugarcane/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,3)
 	set_trait(TRAIT_PRODUCTION,6)

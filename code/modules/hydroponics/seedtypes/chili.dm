@@ -7,8 +7,8 @@
 	chems = list(REAGENT_ID_CAPSAICIN = list(3,5), REAGENT_ID_NUTRIMENT = list(1,25))
 	mutants = list(PLANT_ICECHILI, PLANT_GHOSTCHILI)
 
-/datum/seed/chili/New()
-	..()
+/datum/seed/chili/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,5)
 	set_trait(TRAIT_PRODUCTION,5)
@@ -28,8 +28,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_FROSTOIL = list(3,5), REAGENT_ID_NUTRIMENT = list(1,50))
 
-/datum/seed/chili/ice/New()
-	..()
+/datum/seed/chili/ice/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,4)
 	set_trait(TRAIT_PRODUCTION,4)
 	set_trait(TRAIT_PRODUCT_COLOUR,"#00EDC6")
@@ -42,8 +42,8 @@
 	mutants = null
 	chems = list(REAGENT_ID_CONDENSEDCAPSAICIN = list (3,10), REAGENT_ID_NUTRIMENT = list (1,25))
 
-/datum/seed/chili/ghost/New()
-	..()
+/datum/seed/chili/ghost/default_traits()
+	. = ..()
 	set_trait(TRAIT_MATURATION,6)
 	set_trait(TRAIT_PRODUCTION,3)
 	set_trait(TRAIT_PRODUCT_COLOUR,"#eaecec")

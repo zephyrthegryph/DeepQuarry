@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_WATERMELON
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,6), REAGENT_ID_WATERMELONJUICE = list(10,6))
 
-/datum/seed/watermelon/New()
-	..()
+/datum/seed/watermelon/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_JUICY,1)
 	set_trait(TRAIT_MATURATION,6)

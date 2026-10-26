@@ -5,8 +5,8 @@
 	kitchen_tag = PLANT_CABBAGE
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10))
 
-/datum/seed/cabbage/New()
-	..()
+/datum/seed/cabbage/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,3)
 	set_trait(TRAIT_PRODUCTION,5)

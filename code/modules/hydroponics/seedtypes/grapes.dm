@@ -7,8 +7,8 @@
 	mutants = list(PLANT_GREENGRAPES)
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_SUGAR = list(1,5), REAGENT_ID_GRAPEJUICE = list(10,10))
 
-/datum/seed/grapes/New()
-	..()
+/datum/seed/grapes/default_traits()
+	. = ..()
 	set_trait(TRAIT_HARVEST_REPEAT,1)
 	set_trait(TRAIT_MATURATION,3)
 	set_trait(TRAIT_PRODUCTION,5)
@@ -28,6 +28,6 @@
 	mutants = null
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_KELOTANE = list(3,5), REAGENT_ID_GRAPEJUICE = list(10,10))
 
-/datum/seed/grapes/green/New()
-	..()
+/datum/seed/grapes/green/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"42ed2f")
