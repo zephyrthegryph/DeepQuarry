@@ -58,7 +58,7 @@
 CAPABILITIES(/datum/tgui_module/player_notes)
 	interface("PlayerNotes", rights = R_ADMIN|R_MOD|R_EVENT|R_DEBUG)
 	op("show_player_info", ui_act("show_player_info", arg("name", schema_text(4096))), then(PROC_REF(ui_act_show_player_info)))
-	op("filter_player_notes", ui_act("filter_player_notes"), then(PROC_REF(ui_act_filter_player_notes)))
+	op("filter_player_notes", ui_act("filter_player_notes"), asks(/datum/prompt/text, fields = list("title" = "Player notes filter", "question" = "Filter string (case-insensitive regex)", "timeout" = 0)), then(PROC_REF(ui_act_filter_player_notes)))
 	op("set_page", ui_act("set_page", arg("index", num())), then(PROC_REF(ui_act_set_page)))
 	op("clear_player_info_filter", ui_act("clear_player_info_filter"), then(PROC_REF(ui_act_clear_player_info_filter)))
 	op("open_legacy_ui", ui_act("open_legacy_ui"), then(PROC_REF(ui_act_open_legacy_ui)))
@@ -76,13 +76,11 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 	A2.tgui_interact(user)
 
 /datum/tgui_module/player_notes/proc/ui_act_filter_player_notes(datum/act/op/A)
-	open_request(src, /datum/prompt/text, PROC_REF(filter_player_notes_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Filter string (case-insensitive regex)", title = "Player notes filter", timeout = 0)
-
-/datum/tgui_module/player_notes/proc/filter_player_notes_answered(datum/act/request/A)
 	if(!A.answer)
-		return
+		return OP_OK
 	var/input = A.answer.value
 	set_current_filter(input)
+	return OP_OK
 
 /datum/tgui_module/player_notes/proc/ui_act_set_page(datum/act/op/A, index)
 	var/page = index
