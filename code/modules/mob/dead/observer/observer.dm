@@ -1017,17 +1017,17 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	if(isobserver(target))
 		var/mob/observer/dead/dead = target
 		if(dead.mind && dead.mind.current)
-			return "|<a href='byond://?src=\ref[ghost];track=\ref[dead.mind.current]'>body</a>"
+			return "|<a href='byond://?src=[REF(ghost)];track=[REF(dead.mind.current)]'>body</a>"
 		return
 	if(ismob(target))
 		var/mob/M = target
 		var/mob/observer/eye/eyeobj = M?.active_eye()
 		if(M.client && eyeobj)
-			return "|<a href='byond://?src=\ref[ghost];track=\ref[eyeobj]'>eye</a>"
+			return "|<a href='byond://?src=[REF(ghost)];track=[REF(eyeobj)]'>eye</a>"
 
 /proc/ghost_follow_link(atom/target, atom/ghost)
 	if((!target) || (!ghost)) return
-	. = "<a href='byond://?src=\ref[ghost];track=\ref[target]'>follow</a>"
+	. = "<a href='byond://?src=[REF(ghost)];track=[REF(target)]'>follow</a>"
 	. += extra_ghost_link(target, ghost)
 
 //Culted Ghosts

@@ -358,7 +358,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/warn_flavor_changed()
 	if(bio.flavor_text && bio.flavor_text != "") // don't spam people that don't use it!
 		to_chat(src, span_filter_notice("<h2 class='alert'>OOC Warning:</h2>"))
-		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=\ref[src];flavor_change=1'>Change</a>")))
+		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=[REF(src)];flavor_change=1'>Change</a>")))
 
 /mob/proc/print_flavor_text()
 	if (bio.flavor_text && bio.flavor_text != "")
@@ -366,7 +366,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(length(msg) <= 40)
 			return span_notice("[msg]")
 		else
-			return span_notice("[copytext_preserve_html(msg, 1, 37)]... <a href='byond://?src=\ref[src];flavor_more=1'>More...</a>")
+			return span_notice("[copytext_preserve_html(msg, 1, 37)]... <a href='byond://?src=[REF(src)];flavor_more=1'>More...</a>")
 
 /mob/proc/set_respawn_timer(time)
 	// Try to figure out what time to use

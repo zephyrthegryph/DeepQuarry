@@ -358,7 +358,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		if(U.name == "Unknown")
 			to_chat(O, span_infoplain(span_bold("[U]") + " holds \a [itemname] up to one of your cameras ..."))
 		else
-			to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
+			to_chat(O, span_infoplain(span_bold("<a href='byond://?src=[REF(O)];track2=[REF(O)];track=[REF(U)];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
 
 		// structured TGUI AdminReport.
 		dq_admin_report_html(O, itemname, "<TT>[info]</TT>")
