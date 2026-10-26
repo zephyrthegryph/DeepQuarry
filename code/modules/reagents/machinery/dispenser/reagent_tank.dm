@@ -234,7 +234,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 	act_message(user, src, MSG_SELF(span_notice("You rig [H] to %T%")), MSG_OTHERS(span_notice("%U% rigs [H] to %T%.")))
 
 	if (istype(H.a_left,/obj/item/assembly/igniter) || istype(H.a_right,/obj/item/assembly/igniter))
-		message_admins("[key_name_admin(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
+		message_admins("[key_name_admin(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion. (<A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("[key_name(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion.")
 
 	if(!move_into(src, nameof(src.rig), H, user))
@@ -254,7 +254,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 	modded = !modded
 	playsound(src, sounds_of(tool).use, 75, TRUE)
 	if(modded)
-		message_admins("[key_name_admin(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
+		message_admins("[key_name_admin(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel. (<A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("[key_name(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel.")
 		leak_fuel(amount_per_transfer_from_this)
 	return OP_OK
@@ -262,7 +262,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 /obj/structure/reagent_dispensers/fueltank/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
 		if(istype(Proj.firer))
-			message_admins("[key_name_admin(Proj.firer)] shot fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>).")
+			message_admins("[key_name_admin(Proj.firer)] shot fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>).")
 			log_game("[key_name(Proj.firer)] shot fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]).")
 
 		if(!istype(Proj ,/obj/item/projectile/beam/lasertag) && !istype(Proj ,/obj/item/projectile/beam/practice) )

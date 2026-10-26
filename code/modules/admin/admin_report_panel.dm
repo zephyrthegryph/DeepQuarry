@@ -97,7 +97,7 @@ CAPABILITIES(/datum/admin_report)
 	if(!user?.client)
 		return
 	var/datum/admin_report/R = new(title, user, host)
-	R.set_body_html(body_html)
+	R.set_body_html(admin_href_for(user.client, body_html)) // its links may carry the world token until here
 	R.tgui_interact(user)
 
 // StockChart — typed line/bar chart panel for stock share-value displays.

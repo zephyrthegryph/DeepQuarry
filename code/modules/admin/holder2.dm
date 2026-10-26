@@ -428,16 +428,14 @@ CAPABILITIES(/datum/admins)
 	for(var/I in 1 to 32)
 		. += "[rand(10)]"
 
-/// The admin token a link carries: the `viewer`'s own (a client or a mob; the admin the panel is built for), else the world's, which a link made
-/// with nobody to show it to (an admin message, a log line) carries. `forceGlobal` makes the world's even for a viewer.
-/proc/RawHrefToken(forceGlobal = FALSE, viewer = null)
-	if(!forceGlobal && viewer)
-		var/client/C = viewer
-		if(ismob(viewer))
-			var/mob/M = viewer
-			C = M.client
-		return RawHrefTokenFor(C)
-	return GLOB.href_token
+/// The admin token a link carries: the `viewer`'s own (a client or a mob), the admin the panel is built for. The viewer is required: a link
+/// with no admin to show it to is HrefTokenWorld() (check_grep rejects a call with no argument).
+/proc/RawHrefToken(viewer)
+	var/client/C = viewer
+	if(ismob(viewer))
+		var/mob/M = viewer
+		C = M.client
+	return RawHrefTokenFor(C)
 
 /// Resolve the same admin token for an explicitly supplied current client.
 /proc/RawHrefTokenFor(client/C)
@@ -451,11 +449,25 @@ CAPABILITIES(/datum/admins)
 /proc/HrefTokenFor(mob/actor)
 	return "admin_token=[RawHrefTokenFor(actor?.client)]"
 
-/proc/HrefToken(forceGlobal = FALSE, viewer = null)
-	return "admin_token=[RawHrefToken(forceGlobal, viewer)]"
+/// The token query part of a link built for `viewer` (a client or a mob).
+/proc/HrefToken(viewer)
+	return "admin_token=[RawHrefToken(viewer)]"
 
-/proc/HrefTokenFormField(forceGlobal = FALSE, viewer = null)
-	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal, viewer)]'>"
+/proc/HrefTokenFormField(viewer)
+	return "<input type='hidden' name='admin_token' value='[RawHrefToken(viewer)]'>"
+
+/// The token part of a link that has no single admin to show it to: one written into a message for every admin, or into a `_src_=vars` page (its
+/// topic is checked by CheckAdminHref, which accepts the world token). The text carries the world token only until it is delivered:
+/// admin_href_for() puts each recipient's own token in its place, and a topic op refuses the world token from an admin that has a holder.
+/proc/HrefTokenWorld()
+	return "admin_token=[GLOB.href_token]"
+
+/// `text` for one admin client: the world token of its links replaced by that admin's own.
+/proc/admin_href_for(client/C, text)
+	var/datum/admins/holder = C?.holder
+	if(!holder || !istext(text))
+		return text
+	return replacetext(text, "admin_token=[GLOB.href_token]", "admin_token=[holder.href_token]")
 
 // Shared admin_rank registry entries.
 

@@ -26,7 +26,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 /obj/effect/decal/cleanable/liquid_fuel/proc/join_or_spread()
 	ignite_spill()
 	if(!quiet_spill)
-		message_admins("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
+		message_admins("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z])")
 
 	var/has_spread = 0

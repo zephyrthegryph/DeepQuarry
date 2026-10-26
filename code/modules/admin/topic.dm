@@ -48,13 +48,13 @@
 	if(isobserver(target))
 		var/mob/observer/dead/ghost = target
 		if(ghost.mind && ghost.mind.current)
-			return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=[url_encode(ref_token(ghost.mind.current))]'>BDY</A>"
+			return "|<A href='byond://?[source];[HrefTokenWorld()];adminplayerobservejump=[url_encode(ref_token(ghost.mind.current))]'>BDY</A>"
 		return
 	if(ismob(target))
 		var/mob/M = target
 		var/mob/observer/eye/eyeobj = M?.active_eye()
 		if(M.client && eyeobj)
-			return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=[url_encode(ref_token(eyeobj))]'>EYE</A>"
+			return "|<A href='byond://?[source];[HrefTokenWorld()];adminplayerobservejump=[url_encode(ref_token(eyeobj))]'>EYE</A>"
 
 /proc/admin_jump_link(atom/target, source)
 	if(!target) return
@@ -64,5 +64,5 @@
 	else
 		source = "_src_=holder"
 
-	. = "<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=[url_encode(ref_token(target))]'>JMP</A>"
+	. = "<A href='byond://?[source];[HrefTokenWorld()];adminplayerobservejump=[url_encode(ref_token(target))]'>JMP</A>"
 	. += extra_admin_link(target, source)

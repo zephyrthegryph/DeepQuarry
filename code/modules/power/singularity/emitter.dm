@@ -79,7 +79,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 
 // admins are told an emitter was deleted.
 /obj/machinery/power/emitter/on_destroy(force)
-	message_admins("Emitter deleted at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+	message_admins("Emitter deleted at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 	log_game("EMITTER([x],[y],[z]) Destroyed/deleted.")
 	investigate_log(span_red("deleted") + " at ([x],[y],[z])","singulo")
 	..()
@@ -135,7 +135,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	if(active == 1)
 		set_active(0)
 		balloon_alert_visible("turned off")
-		message_admins("Emitter turned off by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=[url_encode(ref_token(user))]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
+		message_admins("Emitter turned off by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefTokenWorld()];adminmoreinfo=[url_encode(ref_token(user))]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
 		log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
 		investigate_log("turned " + span_red("off") + " by [user?.key]","singulo")
 	else
@@ -144,7 +144,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 		balloon_alert_visible("turned on")
 		shot_number = 0
 		fire_delay = get_initial_fire_delay()
-		message_admins("Emitter turned on by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=[url_encode(ref_token(user))]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+		message_admins("Emitter turned on by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefTokenWorld()];adminmoreinfo=[url_encode(ref_token(user))]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefTokenWorld()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 		log_game("EMITTER([x],[y],[z]) ON by [key_name(user)]")
 		investigate_log("turned " + span_green("on") + " by [user?.key]","singulo")
 

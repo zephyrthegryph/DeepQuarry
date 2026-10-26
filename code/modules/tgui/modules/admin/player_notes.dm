@@ -221,7 +221,7 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 	return QDELETED(owner) || QDELETED(answerer) ? "gone" : null
 
 /datum/admins/proc/PlayerNotesPageLegacy(page, filter, mob/user)
-	var/dat = span_bold("Player notes") + " - <a href='byond://?src=[REF(src)];[HrefToken()];notes_legacy=filter'>Apply Filter</a><HR>"
+	var/dat = span_bold("Player notes") + " - <a href='byond://?src=[REF(src)];[HrefToken(user)];notes_legacy=filter'>Apply Filter</a><HR>"
 	var/savefile/S=new("data/player_notes.sav")
 	var/list/note_keys
 	S >> note_keys
@@ -254,13 +254,13 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 			upper_bound = min(upper_bound, note_keys.len)
 			for(var/index = lower_bound, index <= upper_bound, index++)
 				var/t = note_keys[index]
-				dat += "<tr><td><a href='byond://?src=[REF(src)];[HrefToken()];notes_legacy=show;ckey=[t]'>[t]</a></td></tr>"
+				dat += "<tr><td><a href='byond://?src=[REF(src)];[HrefToken(user)];notes_legacy=show;ckey=[t]'>[t]</a></td></tr>"
 
 		dat += "</table><hr>"
 
 		// Display a footer to select different pages
 		for(var/index = 1, index <= number_pages, index++)
-			dat += "<a href='byond://?src=[REF(src)];[HrefToken()];notes_legacy=list;index=[index];filter=[filter ? url_encode(filter) : 0]'>[index]</a> "
+			dat += "<a href='byond://?src=[REF(src)];[HrefToken(user)];notes_legacy=list;index=[index];filter=[filter ? url_encode(filter) : 0]'>[index]</a> "
 			if(index == page)
 				dat = span_bold(dat)
 
@@ -302,12 +302,12 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 				update_file = 1
 			dat += span_green("[I.content]") + " " + span_italics("by [I.author] ([I.rank])") + " on " + span_italics(span_blue("[I.timestamp]")) + " "
 			if(I.author == user.key || I.author == "Adminbot" || ishost(user))
-				dat += "<A href='byond://?src=[REF(src)];[HrefToken()];remove_player_info_legacy=[key];remove_index=[i]'>Remove</A>"
+				dat += "<A href='byond://?src=[REF(src)];[HrefToken(user)];remove_player_info_legacy=[key];remove_index=[i]'>Remove</A>"
 			dat += "<br><br>"
 		if(update_file) info << infos
 
 	dat += "<br>"
-	dat += "<A href='byond://?src=[REF(src)];[HrefToken()];add_player_info_legacy=[key]'>Add Comment</A><br>"
+	dat += "<A href='byond://?src=[REF(src)];[HrefToken(user)];add_player_info_legacy=[key]'>Add Comment</A><br>"
 
 	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Info on [key]", dat, src)

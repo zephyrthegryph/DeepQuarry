@@ -531,14 +531,14 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 
 /obj/machinery/photocopier/faxmachine/proc/message_admins(mob/sender, faxname, obj/item/sent, reply_type, font_colour="#006100")
 	var/msg = "<font color='[font_colour]'>[faxname]: </font>[get_options_bar(sender, 2,1,1)]"
-	msg += "(<a href='byond://?_src_=holder;[HrefToken()];FaxReply=[REF(sender)];originfax=[REF(src)];replyorigin=[reply_type]'>REPLY</a>)"
+	msg += "(<a href='byond://?_src_=holder;[HrefTokenWorld()];FaxReply=[REF(sender)];originfax=[REF(src)];replyorigin=[reply_type]'>REPLY</a>)"
 	msg = span_bold(msg) + ": "
-	msg += "Receiving '[sent.name]' via secure connection ... <a href='byond://?_src_=holder;[HrefToken(TRUE)];AdminFaxView=[REF(sent)]'>view message</a>"
+	msg += "Receiving '[sent.name]' via secure connection ... <a href='byond://?_src_=holder;[HrefTokenWorld()];AdminFaxView=[REF(sent)]'>view message</a>"
 	msg = span_notice(msg)
 
 	for(var/client/C in GLOB.admins)
 		if(check_rights_for(C, (R_ADMIN|R_MOD|R_EVENT)))
-			to_chat(C,msg)
+			to_chat(C, admin_href_for(C, msg)) // its links carry the world token until here
 			C << 'sound/machines/printer.ogg'
 	sender.client << 'sound/machines/printer.ogg' // The pain must be felt
 
