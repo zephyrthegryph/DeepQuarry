@@ -722,6 +722,7 @@ legacy_forms_converted = [
   "code/modules/vote/",
   "code/modules/weapons/",
   "code/modules/xenoarcheaology/artifacts/predefined/",
+  "code/content/xenoarcheaology/artifacts/predefined/",
   "code/modules/xenoarcheaology/effects/",
   "code/content/xenoarcheaology/effects/",
   "code/modules/xenoarcheaology/finds/",

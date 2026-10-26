@@ -29,13 +29,16 @@ CAPABILITIES(/obj/item/rocksliver)
 	var/source_mineral = REAGENT_ID_CHLORINE
 	var/list/find_presence
 
-/datum/geosample/New(turf/simulated/mineral/container)
-	UpdateTurf(container)
+/// A geosample of `container` (a mine turf): its ages, mineral and nearby finds.
+/proc/geosample_of(turf/simulated/mineral/container)
+	var/datum/geosample/G = new /datum/geosample
+	G.UpdateTurf(container)
+	return G
 
 /// A private copy: a mine turf, each ore dug from it and each sample own their own geosample
 /// (never one shared owned instance).
 /datum/geosample/proc/copy()
-	var/datum/geosample/G = new /datum/geosample(null)
+	var/datum/geosample/G = new /datum/geosample
 	G.age = age
 	G.age_thousand = age_thousand
 	G.age_million = age_million
