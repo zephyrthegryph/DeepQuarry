@@ -52,11 +52,3 @@ GLOBAL_LIST_EMPTY(every_dispatch_items)
 			return STEP_YIELD
 	pending = null
 	return STEP_PARK
-
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-/datum/work_item/every_dispatch/test_reset()
-	..()
-	pending = null
-	parked = TRUE
-
-#endif

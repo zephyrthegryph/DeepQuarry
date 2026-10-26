@@ -44,41 +44,6 @@ GLOBAL_LIST_EMPTY(dq_refsearch_type_counts)
 GLOBAL_LIST_EMPTY(dq_refsearch_skipped)
 GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 
-#ifdef UNIT_TESTS
-/// Test builds: every automatic reference search (GC hard lookup, collapse
-/// diagnostics) runs with FIND_REF_NO_CHECK_TICK and can freeze the world for
-/// tens of seconds. Unbounded, a caller that keeps re-offering the same
-/// object hangs the suite, so each object is searched once, each type at most
-/// DQ_REFSEARCH_PER_TYPE times (once: a second search of the same leaking type repeats the first one's answer at ~5-40 s each), and all searches together get
-/// DQ_REFSEARCH_BUDGET_DS of real time. Running out fails the run with a report
-/// instead of hanging it.
-#define DQ_REFSEARCH_PER_TYPE 1
-#define DQ_REFSEARCH_BUDGET_DS (5 MINUTES)
-
-/proc/dq_refsearch_allowed(datum/D)
-	var/key = ref(D)
-	if(GLOB.dq_refsearch_searched[key])
-		log_reftracker("Skipping repeat search for references to [D.type] [key]: already searched once this run.")
-		return FALSE
-	if(GLOB.dq_refsearch_type_counts[D.type] >= DQ_REFSEARCH_PER_TYPE)
-		GLOB.dq_refsearch_skipped[D.type]++
-		log_reftracker("Skipping search for references to [D.type] [key]: type already searched [DQ_REFSEARCH_PER_TYPE] times.")
-		return FALSE
-	if(GLOB.dq_refsearch_spent_ds >= DQ_REFSEARCH_BUDGET_DS)
-		GLOB.dq_refsearch_skipped[D.type]++
-		var/message = "REF SEARCH budget exhausted ([GLOB.dq_refsearch_spent_ds / 10]s spent searching): skipped search for [D.type] [key]. Something keeps offering undeletable objects for reference searches; see the ## REF SEARCH lines in runtime.log."
-		log_reftracker(message)
-		log_test(message)
-		GLOB.failed_any_test = TRUE
-		return FALSE
-	GLOB.dq_refsearch_searched[key] = TRUE
-	GLOB.dq_refsearch_type_counts[D.type]++
-	return TRUE
-
-#undef DQ_REFSEARCH_PER_TYPE
-#undef DQ_REFSEARCH_BUDGET_DS
-#endif
-
 /proc/_search_references(datum/source)
 	log_reftracker("Beginning search for references to a [source.type], looking for [source.references_to_clear] refs.")
 

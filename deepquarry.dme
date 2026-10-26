@@ -522,7 +522,6 @@
 #include "code\controllers\measure\histogram.dm"
 #include "code\controllers\measure\meter.dm"
 #include "code\controllers\measure\report.dm"
-#include "code\controllers\measure\synthetic.dm"
 #include "code\controllers\measure\systems.dm"
 #include "code\controllers\configuration\config_entry.dm"
 #include "code\controllers\configuration\configuration.dm"

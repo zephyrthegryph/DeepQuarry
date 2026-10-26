@@ -34,11 +34,6 @@
 
 // ---------------------------------------------------------------- DEF freeze (test builds)
 
-#ifdef UNIT_TESTS
-/// "type ref" -> hash of the instance's vars at boot.
-GLOBAL_LIST_EMPTY(def_freeze_snapshot)
-#endif
-
 /// D's vars as name -> stable text digest (lists by content, datums by type and ref).
 /proc/def_freeze_digest(datum/D)
 	. = list()
