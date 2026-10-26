@@ -227,7 +227,7 @@ Awake and mixed pass the gate: the sequence is cheaper per frame (no per-stage f
 (scheduled) per mob-frame: a frame whose every step sleeps still pays the sweep's per-member path, where the ring
 paid one call. In service that shape does not occur (such a member parks after `park_after` frames and costs nothing:
 it is out of the sweep); it is left as a known gap. What was done to get here: the sweep inlines its per-member path
-(`/datum/work_item/sequence/run_sweep()`, a new `work_item.run_sweep()` hook in `run_item()`), the execution token lives on
+(`/datum/work_item/sequence/sweep()`, a new `work_item.sweep()` hook in `run_item()`), the execution token lives on
 the member's state, `admit()` is asked only with `admit_guard`, the frame end is inline, and the sweep's frame is
 reset once per pass.
 
