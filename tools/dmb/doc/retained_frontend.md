@@ -854,3 +854,37 @@ for both worlds.
   sessions only (a one-shot compile never leases), keyed by variant pointer, with deferred claims and a generation check through
   the held key owner, and about a dozen tests read `buckets` directly. A flat slab with hash index would save an estimated 300-400
   MB per daemon session; it needs its own lane.
+
+## Shared ABI unit artifacts (lane `compiler/share-abi-artifacts`, 2026-10-26)
+
+The largest owner a second root added was `driver_facts::abi_artifacts` (97 MB, shared store part 4). An ABI unit artifact is a pure
+function of what its receipt reads (`Inputs`: the shared engine payload, procedure metadata by content, the predecessor layout, the
+semantic answers), so the ABI store is now one daemon-wide core with a lease per session (`driver_facts/abi_store.rs`, purpose
+`abi.units`; `DMB_SHARED_STORE_PRIVATE=abi` keeps it private, and a store that builds whole-batch recipes, `DMB_ABI_BATCH_REPLAY` /
+`DMB_ABI_BATCH_RECIPES`, stays private because recipes bind to one session's frontend). The rules are the other shared cores': a
+variant is found by exact key, validated against the asking session's own answers, claimed by the lease, and freed when the last lease
+releases it. The scheduler (`abi_scheduler.rs`) visits the key's candidates through `visit_candidates`, prefers the variant this
+session already claims over a sibling's, and claims the accepted variant when the row is finished (`ObservedArtifactLease::claim`,
+new in `dm-session` with `visit_key_storage` reporting whether the lease holds a variant).
+
+**Memory** (`bench/shared_store_probe.sh`, allocation-sites release build, same binary, `DMB_SHARED_STORE_PRIVATE=abi` against
+sharing on; requested live after each request, GB):
+
+| | root A | + second request of A (test variant) | + root B | sum |
+|---|---|---|---|---|
+| ABI store private | 6.80 | +3.53 | +2.24 | 12.57 |
+| ABI store shared | 6.80 | +3.06 | +1.58 | 11.44 |
+
+Sampled owner growth of root B fell from 2176 to 1475 MB: `abi_artifacts` (97), and with it the `lowering::symbolic_input` (151)
+and `portable_meaning::meta` (82) payloads the private units held, left the list. Peak private memory of the three-build probe
+15.55 -> 14.05 GB.
+
+**Proof.** `bench/shared_store_equiv.sh`: all six interleaved shared-daemon builds (A game, B game, A test, B test, B game, A game)
+byte-identical to their cold private-daemon references (pairs `d422acf6...` A game, `2fcde9cc...` A test, `2f841f3a...` B game,
+`1ed11dbb...` B test), `dmb-equiv --all --ignore-debug` EQUIVALENT, no marker leak. Tests: `abi_store_tests` (a second session
+claims the first session's variant, and it dies with the last lease), `leased` key-storage/claim test in `dm-session`.
+
+**Timing** (warm patch rebuild, root A, one daemon per arm, three one-line edits to `code/game/world.dm` per round, arms
+interleaved; the machine was loaded by other work and a game, so single runs vary by a factor of two). Two sessions: first
+private 17.4-21.5 s (mean 18.8) against shared 12.6-18.6 s (mean 15.9); second, three rounds, private 11.4-18.8 s (median 16.1,
+one 43 s outlier) against shared 10.4-19.4 s (median 15.3). No sign of the shared core being slower; within the 5 percent limit.
