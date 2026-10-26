@@ -447,7 +447,7 @@
 	copy.structure = structure.Copy()
 	copy.amount = amount
 	copy.phase = phase
-	copy.rest_temperature = num_or_null(temperature())
+	copy.rest_temperature = temperature()
 	if(heat_store)
 		copy.heat_store = heat_store_create(copy.thermal_capacity(), copy.rest_temperature) // its share of the heat: the original is replaced by its copies
 	copy.purity = purity
@@ -561,7 +561,7 @@
 		return
 	if(into)
 		heat_equalize(HEAT_STORE(heat_store), into)
-	rest_temperature = num_or_null(temperature())
+	rest_temperature = temperature()
 	drop_heat_links()
 	heat_store_drop(heat_store)
 	heat_store = null
@@ -572,3 +572,4 @@
 		heat_store_drop(heat_store)
 		heat_store = null
 	return ..()
+SCHEMA(/datum/material_batch, rest_temperature, num())

@@ -78,8 +78,8 @@ CAPABILITIES(/datum/contract/social)
 
 /datum/contract/social/on_negotiated_terms_changed()
 	..()
-	minimum_grade_ratio = num_or_null(negotiated_effect("minimum_grade_ratio", CONTRACT_GRADE_MINIMUM_RATIO))
-	success_grade_ratio = num_or_null(negotiated_effect("success_grade_ratio", CONTRACT_GRADE_SUCCESS_RATIO))
+	minimum_grade_ratio = negotiated_effect("minimum_grade_ratio", CONTRACT_GRADE_MINIMUM_RATIO)
+	success_grade_ratio = negotiated_effect("success_grade_ratio", CONTRACT_GRADE_SUCCESS_RATIO)
 
 /datum/contract/social/on_accepted(mob/living/user, atom/source)
 	lock_stakeholder_requirements()
@@ -650,3 +650,5 @@ CAPABILITIES(/datum/contract/social)
 	if(distinct_category_target <= 0)
 		return value_ratio
 	return min(value_ratio, clamp(portfolio_category_count() / distinct_category_target, 0, 1))
+SCHEMA(/datum/contract/social, minimum_grade_ratio, num())
+SCHEMA(/datum/contract/social, success_grade_ratio, num())

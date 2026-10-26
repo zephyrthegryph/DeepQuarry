@@ -15,13 +15,5 @@ call	code/datums/prompts/sequence.dm	@/datum/ask_sequence::answerer_w
 call	code/datums/sys/damage_reactions.dm	@/datum/controller/global_vars::projectile_hit_act
 call	code/modules/asset_cache/asset_cache_item.dm	@/datum/asset_cache_item::resource
 call	code/modules/asset_cache/asset_list.dm	@/datum/asset/simple::assets
-call	code/modules/contracts/engineering_qualification.dm	@/datum/contract_requirement/recorded_stages::last_interval_end
-call	code/modules/contracts/medical_trial.dm	@/datum/affliction::contract_rare_eligibility_qualifying
-call	code/modules/contracts/opportunity_broker.dm	@/datum/contract_opportunity_observation::value
-call	code/modules/examine/examine.dm	@/atom::description_fluff
-call	code/modules/flight_operations/flight_types.dm	@/datum/flight_port::host_destination_id
-call	code/modules/gamemaster/event2/events/security/security_advisement.dm	@/datum/event2/event/security_screening::victim
-call	code/modules/integrated_electronics/subtypes/output.dm	@/obj/item/integrated_circuit/output/light::light_rgb
 call	code/modules/materials/containers/material_container.dm	@/datum/material_container::last_inserted_id
 call	code/modules/scripting/Interpreter/Interpreter.dm	@/datum/n_Interpreter::returnVal
-call	code/modules/spells/general/rune_write.dm	@/datum/spell/rune_write::picked_beacon

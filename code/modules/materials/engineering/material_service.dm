@@ -628,7 +628,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 		owner().take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)
 		active = TRUE
 	updating = FALSE
-	last_environment_temperature = num_or_null(temperature())
+	last_environment_temperature = temperature()
 	active = sample_observation() || active
 	if(active)
 		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
@@ -709,3 +709,4 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 /// The heat a material service's phase buffer holds, J.
 /proc/material_service_buffer(datum/material_service/service)
 	return service.buffer_energy()
+SCHEMA(/datum/material_service, last_environment_temperature, num())

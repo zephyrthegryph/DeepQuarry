@@ -827,7 +827,7 @@ CAPABILITIES(/datum/prompt/yes_no/copy_body_consent)
 	ref_one(nameof(victim), /mob/living/carbon/human)
 
 /datum/prompt/yes_no/copy_body_consent/begin()
-	initial_refusal = text_or_null(request_recheck(src))
+	initial_refusal = request_recheck(src)
 	if(!initial_refusal)
 		var/mob/living/carbon/human/H = owner
 		initial_refusal = H.copy_body_gripping(victim) ? null : "lost grip"
@@ -1008,3 +1008,4 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(S && !(S in visited))
 		. += S.acceptance_bodytype_reads(H, visited)
+SCHEMA(/datum/prompt/yes_no/copy_body_consent, initial_refusal, schema_msg())

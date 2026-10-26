@@ -11,7 +11,7 @@
 /datum/alarm_source/New(atom/source)
 	rel_set(src, nameof(source), source) // a relation: the framework clears it when the source dies
 	STAMP(src, start_time, CLOCK_WORLD)
-	source_name = text_or_null(source.get_source_name())
+	source_name = source.get_source_name()
 
 /datum/alarm
 	var/tmp/atom/origin	//Used to identify the alarm area.
@@ -89,7 +89,7 @@ CAPABILITIES(/datum/alarm)
 	if(!origin())
 		return last_name
 
-	last_name = text_or_null(origin().get_alarm_name())
+	last_name = origin().get_alarm_name()
 	return last_name
 
 /datum/alarm/proc/cameras()
@@ -167,3 +167,5 @@ CAPABILITIES(/datum/alarm)
 
 CAPABILITIES(/datum/alarm_source)
 	ref_one(nameof(source))
+SCHEMA(/datum/alarm_source, source_name, schema_text())
+SCHEMA(/datum/alarm, last_name, schema_text())

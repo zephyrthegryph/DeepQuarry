@@ -385,3 +385,4 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/service_definition)
 
 /datum/scheduled_behaviour/internal
 	abstract_type = /datum/scheduled_behaviour/internal
+SCHEMA(/datum/scheduled_behaviour, system_idx, num())
