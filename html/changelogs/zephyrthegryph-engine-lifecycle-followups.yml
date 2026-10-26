@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Engineered-conductor power overlays that stop processing are removed from the power system (the removal used to be refused)"
+  - code_imp: "Engine tests cover add, remove by key, remove by value and owner destruction for text-keyed, plain and set owned lists"

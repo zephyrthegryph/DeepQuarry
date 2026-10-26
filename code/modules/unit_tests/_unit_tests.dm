@@ -356,6 +356,7 @@
 #include "dq_integrity_pool_tests.dm"
 #include "dq_mech_body_tests.dm"
 #include "dq_ownership_tests.dm"
+#include "dq_ownership_keyed_tests.dm"
 #include "dq_relations_tests.dm"
 #include "dq_untyped_relations_tests.dm"
 #include "dq_stored_refs_tests.dm"
