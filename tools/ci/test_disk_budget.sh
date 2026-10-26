@@ -163,6 +163,35 @@ if command -v flock >/dev/null 2>&1; then
 	check "cargo: a profile whose .cargo-lock a running cargo holds is never touched" '[ "$(ls "$DQ_CACHE_ROOT/targets/lane5/t/debug/deps" | wc -l)" = 3 ]'
 fi
 
+# the gate fails ONLY on a real floor breach: every other failure is a warning and exit 0
+mkdir "$DQ_CACHE_ROOT/disk-budget/enforce.lock" 2>/dev/null || { mkdir -p "$DQ_CACHE_ROOT/disk-budget"; mkdir "$DQ_CACHE_ROOT/disk-budget/enforce.lock"; }
+rm -f "$DQ_CACHE_ROOT/disk-budget/enforce.stamp"
+DQ_DISK_FREE_GB=80 bash tools/dq_disk_budget.sh gate lease --sync --throttle 60 >/dev/null 2>&1; rc=$?
+check "gate: a busy enforce lock above the floor is not a refusal" '[ "$rc" = 0 ]'
+DQ_DISK_FREE_GB=10 bash tools/dq_disk_budget.sh gate lease --sync >"$T/gate2.out" 2>&1; rc=$?
+check "gate: below the floor with enforce unable to run it still refuses, naming the free GB and the floor" '[ "$rc" = 4 ] && grep -q "REFUSED lease: only 10 GB free .*floor 50 GB" "$T/gate2.out"'
+rmdir "$DQ_CACHE_ROOT/disk-budget/enforce.lock"
+DQ_DISK_MANIFEST="$T/nonexistent.toml" DQ_DISK_FREE_GB=80 bash tools/dq_disk_budget.sh gate lease --sync >"$T/gate3.out" 2>&1; rc=$?
+check "gate: a missing manifest is a warning, exit 0, no REFUSED" '[ "$rc" = 0 ] && ! grep -q REFUSED "$T/gate3.out" && grep -q WARNING "$T/gate3.out"'
+env -u DQ_DISK_FREE_GB DQ_CACHE_ROOT="$T/no/such/cache" DQ_DISK_STATE="$T/gstate" bash tools/dq_disk_budget.sh gate lease --sync >"$T/gate4.out" 2>&1; rc=$?
+check "gate: free space that cannot be read is a warning, exit 0, no REFUSED" '[ "$rc" = 0 ] && ! grep -q REFUSED "$T/gate4.out" && grep -q "cannot read the free space" "$T/gate4.out"'
+check "train: only the gate's exit 4 skips a cycle" 'grep -q "drc\" -eq 4" tools/dq_train.sh && grep -q "cp -f \"\$SELF_DIR/dq_disk_budget.sh\"" tools/dq_train.sh'
+
+# a table over its cap because its units are protected says so, with the protected size
+cat >>"$T/m.toml" <<'TOML'
+[cache.held]
+policy = children-lru
+cap_mb = 1
+protect = leased-slot
+TOML
+unit "$DQ_CACHE_ROOT/held/pool-h1" "5 days ago"; unit "$DQ_CACHE_ROOT/held/pool-h2" "6 days ago"
+: >"$DQ_CACHE_ROOT/lane-pool/pool-h1.lease"; : >"$DQ_CACHE_ROOT/lane-pool/pool-h2.lease"
+out="$(bash tools/dq_disk_budget.sh enforce --force 2>&1)"
+check "over cap: a table held over its cap by leased slots is reported with the protected size" 'grep -q "OVER CAP held: 2 MB against 1 MB; protected .*: 2 MB in 2 unit" <<<"$out" && [ -d "$DQ_CACHE_ROOT/held/pool-h1" ]'
+# status measures fresh: a stale index must not show an old size
+mk "$DQ_CACHE_ROOT/units/grow.dat" 5242880 "1 minute ago"
+st="$(bash tools/dq_disk_budget.sh status 2>&1)"
+check "status: sizes are measured now, not read from the index" 'grep -Eq "^  units +([5-9]|[1-9][0-9]) MB" <<<"$st"'
 # the real manifest parses
 DQ_DISK_MANIFEST="$PWD/tools/ci/disk_budget.toml" DQ_CACHE_ROOT="$T/empty" bash tools/dq_disk_budget.sh status >/dev/null 2>&1; rc=$?
 check "the real manifest parses" '[ "$rc" = 0 ]'

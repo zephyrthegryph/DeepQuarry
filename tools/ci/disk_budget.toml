@@ -91,14 +91,15 @@ keep = 6
 age_days = 14
 
 [cache.dmbd]
-# The compiler's per-file lowering cache (*.seg/*.grp segments of 1-3 GB), pair stores and publication leases. File level is SAFE here: a segment is
-# an immutable content-addressed memo ("disposable memos: an evicted record is recomputed", dm-cache store_budget.rs), and the compiler's own
-# pass (dmbc-cache-gc, run first) deletes the same files the same way.
+# The compiler's per-file lowering cache (*.seg/*.grp segments of 1-3 GB), pair stores and publication leases. This pass evicts only the
+# segments (glob_cap_gb); the pair stores (up to DMB_PAIR_BUDGET_GB, 8) are the compiler's own and bounded by its --cache-gc, so the
+# directory as a whole is bounded by cap_gb = segments + pair stores (status and the total cap count the whole directory).
 policy = files-lru
 tool = dmbc-cache-gc
 glob = *.seg|*.grp
 depth = 3
-cap_gb = 16
+glob_cap_gb = 16
+cap_gb = 24
 age_days = 14
 keep = 1
 
