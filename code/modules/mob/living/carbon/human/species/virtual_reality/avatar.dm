@@ -67,14 +67,22 @@
 		shapeshifter_change_species(SPECIES_VR)
 
 // enter_vr is called on the original mob, and puts the mind into the supplied vr mob
+/// The real mob a VR avatar's client belongs to, or null (a sparse link, LK_VR_HOLDER).
+/mob/living/carbon/human/proc/vr_holder() as /mob/living/carbon/human
+	return link_get(src, LK_VR_HOLDER)
+
+/// The avatar a real mob entered (or left), or null (a sparse link, LK_VR_LINK).
+/mob/living/carbon/human/proc/vr_link() as /mob/living/carbon/human
+	return link_get(src, LK_VR_LINK)
+
 /mob/living/carbon/human/proc/enter_vr(mob/living/carbon/human/avatar) // Avatar is currently a human, because we have preexisting setup code for appearance manipulation, etc.
 	if(!istype(avatar))
 		return
 
 	// Link the two mobs for client transfer
-	rel_set(avatar, nameof(avatar.vr_holder), src)
+	link_make(avatar, LK_VR_HOLDER, src)
 	rel_set(src, nameof(teleop), avatar)
-	rel_set(src, nameof(vr_link), avatar) // Can't reuse vr_holder so that death can automatically eject users from VR
+	link_make(src, LK_VR_LINK, avatar) // Can't reuse vr_holder so that death can automatically eject users from VR
 
 	// Move the mind
 	src.mind.transfer_to(avatar)
@@ -89,7 +97,8 @@
 
 /mob/living/carbon/human/proc/exit_vr(player_initated)
 
-	if(!vr_holder)
+	var/mob/living/carbon/human/vr_body = vr_holder()
+	if(!vr_body)
 		return
 	if(tfed_into_mob_check()) //Make sure we're not TFed and revert if we are before checking for a mind.
 		var/mob/living/M = loc
@@ -106,21 +115,21 @@
 		total_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.oxygen_debt() + H.injury_load(INJURY_CATEGORY_TOXIC)
 
 	// Move the mind back to the original mob
-	src.mind.transfer_to(vr_holder)
-	to_chat(vr_holder, span_notice("You black out for a moment, and wake to find yourself back in your own body."))
+	src.mind.transfer_to(vr_body)
+	to_chat(vr_body, span_notice("You black out for a moment, and wake to find yourself back in your own body."))
 	// Two-thirds damage is transferred as agony for /humans
 	// Getting hurt in VR doesn't damage the physical body, but you still got hurt.
-	if(ishuman(vr_holder) && total_damage)
-		var/mob/living/carbon/human/V = vr_holder
+	if(total_damage)
+		var/mob/living/carbon/human/V = vr_body
 		V.stun_effect_act(0, total_damage*2/3, null, electric = FALSE)												// 200 damage leaves the user in paincrit for several seconds, agony reaches 0 after around 2m.
-		to_chat(vr_holder, span_warning("Pain from your time in VR lingers."))		// 250 damage leaves the user unconscious for several seconds in addition to paincrit
+		to_chat(vr_body, span_warning("Pain from your time in VR lingers."))		// 250 damage leaves the user unconscious for several seconds in addition to paincrit
 
 	// Maintain a link with the mob, but don't use teleop
-	rel_set(vr_holder, nameof(vr_holder.vr_link), src)
-	rel_clear(vr_holder, nameof(vr_holder.teleop))
+	link_make(vr_body, LK_VR_LINK, src)
+	rel_clear(vr_body, nameof(vr_body.teleop))
 
-	if(player_initated && istype(vr_holder.loc, /obj/machinery/vr_sleeper))
-		var/obj/machinery/vr_sleeper/V = vr_holder.loc
+	if(player_initated && istype(vr_body.loc, /obj/machinery/vr_sleeper))
+		var/obj/machinery/vr_sleeper/V = vr_body.loc
 		V.perform_exit()
 
 	if(sparse_get_or(src, died_in_vr, FALSE))

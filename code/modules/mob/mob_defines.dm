@@ -41,10 +41,8 @@
 	var/memory = ""
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
-	var/other = 0.0
 	var/real_name = null
 	var/blinded = null
-	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
 	var/is_shifted = FALSE // Edit; pixel shifting
@@ -67,7 +65,6 @@
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 
 	var/bodytemperature = BODYTEMP_NORMAL
-	var/charges = 0.0
 
 	var/losebreath = 0.0//Carbon
 	var/m_intent = I_RUN//Living
@@ -83,7 +80,7 @@
 	var/tmp/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
 
-	var/inertia_dir = 0
+	// inertia_dir (the direction a drifting mob keeps going) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 
 	var/job = null//Living
@@ -120,7 +117,6 @@
 
 	mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 
-	var/update_icon = 1 //Set to 1 to trigger update_icons() at the next life() call
 
 	var/status_flags = CANPUSH	//bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH. Status immunities and godmode are effects (EFFECT_IMMUNE_*, EFFECT_GODMODE).
 
@@ -154,7 +150,7 @@
 	var/default_pixel_y = 0
 
 
-	var/registered_z
+	// registered_z (the z-level the mob is listed under in players_by_zlevel) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 
 	///List of progress bars this mob is currently seeing for actions

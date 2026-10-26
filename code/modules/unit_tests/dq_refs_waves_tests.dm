@@ -266,16 +266,16 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT_NULL(panel.host, "deleting the host clears the panel's host")
 	qdel(panel)
 
-/// A VR avatar and its body name each other (vr_holder / vr_link are one linked pair): writing one end sets the other, deleting either clears both.
+/// A VR avatar and its body name each other (vr_holder / vr_link are one sparse link pair): writing one end sets the other, deleting either clears both.
 /datum/unit_test/dq_refs_vr_pair_links_and_clears
 
 /datum/unit_test/dq_refs_vr_pair_links_and_clears/Run()
 	var/mob/living/carbon/human/body = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/avatar = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	rel_set(avatar, nameof(avatar.vr_holder), body)
-	TEST_ASSERT_EQUAL(body.vr_link, avatar, "the body names the avatar once the avatar names the body")
+	link_make(avatar, LK_VR_HOLDER, body)
+	TEST_ASSERT_EQUAL(body.vr_link(), avatar, "the body names the avatar once the avatar names the body")
 	qdel(avatar)
-	TEST_ASSERT_NULL(body.vr_link, "deleting the avatar clears the body's link")
+	TEST_ASSERT_NULL(body.vr_link(), "deleting the avatar clears the body's link")
 
 /// A borg module's matter reserve is a relation: deleting the synth clears the decompiler's pointer to it.
 /datum/unit_test/dq_refs_decompiler_synth_clears_when_deleted

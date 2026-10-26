@@ -33,6 +33,9 @@
 /// The gun a mob fires while its trigger is held: LK_AUTOFIRE_GUN on the mob, LK_AUTOFIRE_USERS on the gun (many). Read autofire_gun().
 #define LK_AUTOFIRE_GUN "autofire_gun"
 #define LK_AUTOFIRE_USERS "autofire_users"
+/// A VR avatar and the body its player came from: LK_VR_HOLDER on the avatar, LK_VR_LINK on the body (the avatar it entered or left). Read vr_holder() / vr_link().
+#define LK_VR_HOLDER "vr_holder"
+#define LK_VR_LINK "vr_link"
 /// A shapeshifter and the form it took: LK_TF_FORM on the original, LK_TF_ORIGIN on the form (many). Read tf_form_of(L).
 #define LK_TF_FORM "tf_form"
 #define LK_TF_ORIGIN "tf_origin"

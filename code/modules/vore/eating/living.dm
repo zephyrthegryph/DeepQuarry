@@ -5,9 +5,21 @@
 	var/metabolism = 0.0015
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	var/vis_height = 32					// Sprite height used for resize features.
-	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
 
 
+/// The reagents a type's venom bite may inject from creation (a trait adds to the mob's own slot instead).
+TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
+
+/// The reagents this mob's venom bite may inject: its sparse slot (trait_injection_reagents), else its type's table; null when it has none.
+/mob/living/proc/injection_reagent_choices()
+	return sparse_get(src, trait_injection_reagents) || TYPE_TABLE_GET(src, injection_reagent_table)
+
+/// Lets the venom bite inject `reagent_id`.
+/mob/living/proc/add_injection_reagent(reagent_id)
+	var/list/held = sparse_get(src, trait_injection_reagents)
+	if(!held)
+		held = sparse_set(src, trait_injection_reagents, list())
+	held |= reagent_id
 
 /mob/living/proc/handle_special_unlocks()
 	return
@@ -268,7 +280,10 @@
 		return
 	add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
 
-	LAZYSET(canvas_user.body_writing, affecting.organ_tag, message)
+	var/list/writing = sparse_get(canvas_user, body_writing)
+	if(!writing)
+		writing = sparse_set(canvas_user, body_writing, list())
+	writing[affecting.organ_tag] = message
 
 	act_message(attacker, canvas_user, MSG_SELF(span_notice("You finish writing on %T%'s [affecting.name].")), \
 		MSG_OTHERS(span_notice("%U% finishes writing on %T%'s [affecting.name].")))

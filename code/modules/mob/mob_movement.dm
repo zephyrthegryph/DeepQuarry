@@ -535,7 +535,7 @@
 
 	if(restrained()) //Check to see if we can do things
 		return 0
-	inertia_dir = 0
+	sparse_set_or(src, inertia_dir, 0, 0)
 	return 1
 
 /mob/proc/Check_Dense_Object() //checks for anything to push off in the vicinity. also handles magboots on gravity-less floors tiles

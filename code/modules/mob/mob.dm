@@ -718,7 +718,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			hud_of(M)?.pullin?.icon_state = "pull1"
 	if(ismob(AM))
 		var/mob/pulled = AM
-		pulled.inertia_dir = 0
+		sparse_set_or(pulled, inertia_dir, 0, 0)
 	return TRUE
 
 /// links(holds_while) of the pull pair: it stands while the two are within a tile of each other.
@@ -748,7 +748,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	pull_link(AM)
 	if(ismob(AM))
 		var/mob/pulled = AM
-		pulled.inertia_dir = 0
+		sparse_set_or(pulled, inertia_dir, 0, 0)
 
 /mob/proc/can_use_hands()
 	return
@@ -1255,27 +1255,29 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 // Manages a global list of mobs with clients attached, indexed by z-level.
 /mob/proc/update_client_z(new_z) // +1 to register, null to unregister.
-	if(registered_z != new_z)
-		if(registered_z)
-			GLOB.players_by_zlevel[registered_z] -= src
+	var/was_z = sparse_get(src, registered_z)
+	if(was_z != new_z)
+		if(was_z)
+			GLOB.players_by_zlevel[was_z] -= src
 		if(client)
 			if(new_z)
 				GLOB.players_by_zlevel[new_z] += src
-			registered_z = new_z
+			sparse_set(src, registered_z, new_z)
 		else
-			registered_z = null
+			sparse_set(src, registered_z, null)
 
 GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/living/update_client_z(new_z)
-	var/precall_reg_z = registered_z
+	var/precall_reg_z = sparse_get(src, registered_z)
 	. = ..() // will update registered_z if necessary
-	if(precall_reg_z != registered_z) // parent did work, let's do work too
+	var/now_reg_z = sparse_get(src, registered_z)
+	if(precall_reg_z != now_reg_z) // parent did work, let's do work too
 		if(precall_reg_z)
 			GLOB.living_players_by_zlevel[precall_reg_z] -= src
 			life_z_occupancy_changed(precall_reg_z)
-		if(registered_z)
-			GLOB.living_players_by_zlevel[registered_z] += src
-			life_z_occupancy_changed(registered_z)
+		if(now_reg_z)
+			GLOB.living_players_by_zlevel[now_reg_z] += src
+			life_z_occupancy_changed(now_reg_z)
 
 /mob/onTransitZ(old_z, new_z)
 	..()

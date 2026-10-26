@@ -453,13 +453,13 @@
 			var/datum/game_mode/nuclear/G = ticker_mode()
 			if(G.check_mob(src))
 				if(x <= TRANSITIONEDGE)
-					inertia_dir = 4
+					sparse_set_or(src, inertia_dir, 4, 0)
 				else if(x >= world.maxx -TRANSITIONEDGE)
-					inertia_dir = 8
+					sparse_set_or(src, inertia_dir, 8, 0)
 				else if(y <= TRANSITIONEDGE)
-					inertia_dir = 1
+					sparse_set_or(src, inertia_dir, 1, 0)
 				else if(y >= world.maxy -TRANSITIONEDGE)
-					inertia_dir = 2
+					sparse_set_or(src, inertia_dir, 2, 0)
 				to_chat(src, span_warning("Something you are carrying is preventing you from leaving."))
 				return
 
@@ -835,8 +835,8 @@ sparse(/mob/living, vomiting, type = bool)
 			act_message(src, item, others = span_warning("%U% has thrown %T%."))
 
 			if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
-				src.inertia_dir = get_dir(target, src)
-				step(src, inertia_dir)
+				sparse_set_or(src, inertia_dir, get_dir(target, src), 0)
+				step(src, sparse_get_or(src, inertia_dir, 0))
 			item.throw_at(target, throw_range, motion_of(item).throw_speed, src)
 			return TRUE
 		else
@@ -866,8 +866,8 @@ sparse(/mob/living, vomiting, type = bool)
 	act_message(src, item, others = span_warning("%U% has thrown %T%."))
 
 	if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
-		src.inertia_dir = get_dir(target, src)
-		step(src, inertia_dir)
+		sparse_set_or(src, inertia_dir, get_dir(target, src), 0)
+		step(src, sparse_get_or(src, inertia_dir, 0))
 
 	if(istype(item,/obj/item))
 		var/obj/item/W = item
@@ -875,8 +875,8 @@ sparse(/mob/living, vomiting, type = bool)
 
 /*
 	if(istype(src.loc, /turf/space) || (src.flags & NOGRAV)) //they're in space, move em one space in the opposite direction
-		src.inertia_dir = get_dir(target, src)
-		step(src, inertia_dir)
+		sparse_set_or(src, inertia_dir, get_dir(target, src), 0)
+		step(src, sparse_get_or(src, inertia_dir, 0))
 */
 
 	item.throw_at(target, throw_range, motion_of(item).throw_speed, src)

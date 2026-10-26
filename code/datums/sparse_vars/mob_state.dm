@@ -4,6 +4,8 @@
 
 // /mob
 sparse(/mob, last_emote_summary, type = text)
+sparse(/mob, registered_z, type = num)
+sparse(/mob, inertia_dir, type = num)
 sparse(/mob, name_archive, type = text)
 sparse(/mob, lastattacker_name, type = text)
 sparse(/mob, lastattacker_key, type = text)
@@ -44,6 +46,7 @@ sparse(/mob/living, footstep_steps, type = num)
 sparse(/mob/living, mute_entry, type = bool)
 sparse(/mob/living, trash_catching, type = bool)
 sparse(/mob/living, trait_injection_verb, type = text)
+sparse(/mob/living, trait_injection_reagents, type = list)
 sparse(/mob/living, digestion_in_progress, type = bool)
 sparse(/mob/living, photosynthesis_boost, type = num)
 sparse(/mob/living, drain_finalized, type = num)
@@ -147,7 +150,10 @@ sparse(/mob/living, vore_egg_type, type = text)
 sparse(/mob/living, stuffing_feeder, type = bool)
 sparse(/mob/living, appendage_alt_setting, type = bool)
 sparse(/mob/living/carbon, dream_wait, type = num)
+sparse(/mob/living/carbon, pose, type = text)
+sparse(/mob/living/carbon, current_dream, type = /datum/dream)
 sparse(/mob/living/carbon/human, markings_len, type = num)
+sparse(/mob/living/carbon/human, body_writing, type = list)
 sparse(/mob/living/carbon/human, resleeve_lock)
 
 // base_vars wave 9

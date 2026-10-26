@@ -139,8 +139,8 @@ CAPABILITIES(/obj/item/extinguisher)
 			spray_particle(a, the_targets, user)
 
 		if((istype(user.loc, /turf/space)) || (user.lastarea.get_gravity() == 0))
-			user.inertia_dir = get_dir(target, user)
-			step(user, user.inertia_dir)
+			sparse_set_or(user, inertia_dir, get_dir(target, user), 0)
+			step(user, sparse_get_or(user, inertia_dir, 0))
 	else
 		return ..()
 	return

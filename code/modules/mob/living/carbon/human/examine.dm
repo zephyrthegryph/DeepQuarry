@@ -37,10 +37,12 @@
 	if(applying_pressure)
 		msg += applying_pressure
 
-	if(pose)
-		if(!findtext(pose, regex("\[.?!]$"))) // Will be zero if the last character is not a member of [.?!]
-			pose = addtext(pose,".") //Makes sure all emotes end with a period.
-		msg += "<br>[p_They()] [pose]" //<br> intentional, extra gap.
+	var/current_pose = sparse_get(src, pose)
+	if(current_pose)
+		if(!findtext(current_pose, regex("\[.?!]$"))) // Will be zero if the last character is not a member of [.?!]
+			current_pose = addtext(current_pose,".") //Makes sure all emotes end with a period.
+			sparse_set(src, pose, current_pose)
+		msg += "<br>[p_They()] [current_pose]" //<br> intentional, extra gap.
 
 	return msg
 
@@ -577,16 +579,19 @@
 /mob/living/carbon/human/proc/examine_body_writing(list/hidden)
 	. = list()
 
+	var/list/written = sparse_get(src, body_writing)
 	for(var/bodypart in hidden)
 		var/is_hidden = hidden[bodypart]
 		if(is_hidden)
 			continue
 
-		var/writing = LAZYACCESS(body_writing, bodypart)
+		var/writing = LAZYACCESS(written, bodypart)
 		if(writing)
 			var/obj/item/organ/external/affecting = get_organ(bodypart)
 			if(!affecting || affecting.is_stump())
-				LAZYREMOVE(body_writing, bodypart)
+				written -= bodypart
+				if(!length(written))
+					sparse_set(src, body_writing, null)
 				continue
 
 			. += span_notice("[p_They()] [p_have()] \"[writing]\" written on [p_their()] [parse_zone(bodypart)].")

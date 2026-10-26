@@ -122,7 +122,7 @@ CAPABILITIES(/datum/turfslip)
 /datum/turfslip/lifecycle_prerelease()
 	..()
 	if(owner)
-		owner.inertia_dir = 0
+		sparse_set_or(owner, inertia_dir, 0, 0)
 		sparse_set(owner, is_slipping, FALSE)
 
 ////////////////////////////////////////////////////////////////////////////////////////

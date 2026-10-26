@@ -1287,7 +1287,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/wash(clean_types)
 	. = ..()
 
-	LAZYCLEARLIST(body_writing)
+	sparse_set(src, body_writing, null)
 
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))

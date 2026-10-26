@@ -452,10 +452,6 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/ears_key = ears_look_key(block_head_hair)
 	.[1] = human_look_icon("hair|[facial_key]|[hair_key]|[ears_key]|[head_organ.transparent]|[head_organ.head_offset]", "build_hair_look", facial_key, hair_key, block_head_hair, head_organ.transparent, head_organ.head_offset)
 
-	var/datum/sprite_accessory/hair_accessory/accessory = hair_accessory_style()
-	if(accessory && !block_head_hair)
-		.[2] = human_look_icon("hair_accessory|[accessory.type]|[looks.ears_color]|[overlay_flags()]", "build_hair_accessory_look", looks.ears_color, overlay_flags())
-
 /mob/living/carbon/human/proc/build_hair_look(facial_key, hair_key, block_head_hair, transparent, head_offset)
 	var/icon/face_standing = icon(icon = 'icons/mob/human_face.dmi', icon_state = "bald_s")
 	if(length(facial_key))
@@ -493,15 +489,6 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 			em_block_ears = em_block_image_generic(image(ears_s))
 	var/image/semifinal = image(face_standing, layer = BODY_LAYER + HAIR_LAYER, "pixel_y" = head_offset)
 	return em_block_ears ? look_composed_image(semifinal, list(em_block_ears)) : semifinal
-
-/mob/living/carbon/human/proc/build_hair_accessory_look(colour, flags)
-	var/datum/sprite_accessory/hair_accessory/accessory = hair_accessory_style()
-	var/icon/hair_acc_s = icon(accessory.icon, accessory.icon_state)
-	if(accessory.do_colouration)
-		hair_acc_s.Blend(colour, accessory.color_blend_mode)
-	if(accessory.ignores_lighting)
-		return human_layer_image(hair_acc_s, null, plane = PLANE_LIGHTING_ABOVE, flags = flags)
-	return image(hair_acc_s, layer = BODY_LAYER + HAIR_ACCESSORY_LAYER)
 
 /// The text of every input of the ears overlay (get_ears_overlay()).
 /mob/living/carbon/human/proc/ears_look_key(block_head_hair)

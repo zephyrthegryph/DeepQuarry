@@ -27,6 +27,8 @@
 	var/headset = 1
 	var/backbag = 2
 	var/pdachoice = 1
+	/// The suit sensor setting a worn jumpsuit starts on (1 off ... 5 random).
+	var/sensorpref = 5
 	var/custom_speech_bubble = "default"
 	var/custom_say = null
 	var/custom_ask = null
