@@ -216,6 +216,7 @@ CAPABILITIES(/obj/structure/dq_one_path_probe/declining)
 		var/atom/movable/screen/movable/ability_master/master = allocate(/atom/movable/screen/movable/ability_master, user)
 		master.add_ability("one_path_a")
 		master.add_ability("one_path_b")
+		master.update_abilities(0, user) // numbers the abilities (their index), as the master does when its HUD is built
 		var/atom/movable/screen/ability/first = master.ability_objects[1]
 		var/atom/movable/screen/ability/second = master.ability_objects[2]
 		path_send(user, new /datum/input_event/drag(user, first, second, list(null, null, "mapwindow.map", "mapwindow.map", "left=1"), TRUE), queued)
