@@ -157,6 +157,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
+SCHEMA(/obj/item/projectile, def_zone, schema_text())
+
 CAPABILITIES(/obj/item/projectile)
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(item_projectile_setup))

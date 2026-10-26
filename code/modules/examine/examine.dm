@@ -11,6 +11,8 @@
 	var/description_fluff = null //Green text about the atom's fluff, if any exists.
 	var/description_antag = null //Malicious red text, for the antags.
 
+SCHEMA(/atom, description_fluff, schema_text())
+
 /**
  * Generated mechanics text: what the atom's properties mean in play (a weapon's
  * damage, armour ratings, a gun's fire modes). Types add lines generated from

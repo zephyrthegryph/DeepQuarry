@@ -15,7 +15,7 @@
 	// Damage taken below this is transferred back to the mob on release; this is NOT
 	// max_integrity, because a wounded mob petrifies into an already-weakened statue.
 	var/original_int = 100
-	var/stored_examine
+	var/list/stored_examine
 	var/identifier = "statue"
 	var/material = "stone"
 	var/adjective = "hardens"

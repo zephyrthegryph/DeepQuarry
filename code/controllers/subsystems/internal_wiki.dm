@@ -52,6 +52,8 @@ SYSTEM_DEF(internal_wiki)
 	VAR_PRIVATE/list/dono_list = list()
 	VAR_PRIVATE/highest_cached_donator = null
 
+SCHEMA(/datum/system/internal_wiki, highest_cached_donator, schema_text())
+
 /datum/system/internal_wiki/stat_entry(msg)
 	msg = "P: [length(pages)] | O: [length(ores)] | M: [length(materials)] | S: [length(smashers)] | F: [length(foodrecipe)]  | D: [length(drinkreact)]  | C: [length(chemreact)]  | B: [length(botseeds)] | V: [length(viruses)] | G: [length(genes)] "
 	return ..()

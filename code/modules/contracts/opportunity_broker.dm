@@ -14,6 +14,8 @@
 	var/actor_key
 	var/list/diversity_values
 
+SCHEMA(/datum/contract_opportunity_observation, value, num())
+
 /datum/contract_opportunity_observation/New(_fact_key, datum/contract_event/event, datum/contract_opportunity_signal/signal)
 	. = ..()
 	fact_key = _fact_key

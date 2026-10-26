@@ -107,6 +107,8 @@ CAPABILITIES(/datum/flight_vessel)
 	/// Ports in the same physical bay exclude one another even when their alignment landmarks differ.
 	var/berth_group
 
+SCHEMA(/datum/flight_port, host_destination_id, schema_text())
+
 CAPABILITIES(/datum/flight_port)
 	ref_one(nameof(landmark), /obj/effect/shuttle_landmark)
 	ref_one(nameof(occupied_by), /datum/flight_vessel)

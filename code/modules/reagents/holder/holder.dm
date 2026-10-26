@@ -22,6 +22,8 @@
 	/// A removal happened inside the current batch.
 	var/tmp/batch_changed = FALSE
 
+SCHEMA(/datum/reagents, maximum_volume, num())
+
 CAPABILITIES(/datum/reagents)
 	owns_many(nameof(reagent_list), on_lost = PROC_REF(reagent_lost))
 	ref_one(nameof(my_atom))

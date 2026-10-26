@@ -219,6 +219,8 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/has_sampled = FALSE
 	var/last_admission_event
 
+SCHEMA(/datum/material_service, electrical_reference_temperature, num())
+
 /datum/material_service/New(obj/holder)
 	..()
 	rel_set(src, nameof(owner), holder)
