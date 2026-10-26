@@ -326,7 +326,7 @@ CAPABILITIES(/obj/item/rcd)
 	op("build_concurrent", ai(), takes("target", "delay", "rcd_results", "output_envelope", "beam"), wait(PROC_REF(build_delay), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(use_rcd_cancelled)), then(PROC_REF(use_rcd_timed_done)))
 	op("rcd_item", item(/obj/item), label("Load"), then(PROC_REF(rcd_item)))
 	op("rcd_self", in_hand(), label("Select mode"),
-		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(rcd_mode_choices)), "radius" = 42, "tooltips" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "mode"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(rcd_mode_choices)), "anchor" = computed(PROC_REF(rcd_mode_anchor)), "radius" = 42, "tooltips" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "mode"),
 		asks(/datum/prompt/choice/rcd_option_review, fields = list("choices" = computed(PROC_REF(rcd_girder_choices)), "anchor" = computed(PROC_REF(rcd_ring_anchor)), "require_near" = TRUE, "tooltips" = TRUE), step = "girder", when = PROC_REF(rcd_mode_is_walls), optional = TRUE),
 		asks(/datum/prompt/choice/rcd_option_review, fields = list("choices" = computed(PROC_REF(rcd_wall_frame_choices)), "anchor" = computed(PROC_REF(rcd_ring_anchor)), "require_near" = TRUE, "tooltips" = TRUE), step = "frame", when = PROC_REF(rcd_mode_is_wallframes), optional = TRUE),
 		asks(/datum/prompt/choice/rcd_option_review, fields = list("choices" = computed(PROC_REF(rcd_turret_choices)), "anchor" = computed(PROC_REF(rcd_ring_anchor)), "require_near" = computed(PROC_REF(rcd_ring_near)), "tooltips" = TRUE), step = "faction", when = PROC_REF(rcd_mode_is_turrets), optional = TRUE),

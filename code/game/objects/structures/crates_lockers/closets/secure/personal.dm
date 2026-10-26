@@ -45,17 +45,14 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 	var/obj/item/card/id/I = A.held?.GetID()
 	return (!!I?.registered_name) ? null : /datum/msg/personal/blank_card
 
-/// The master access, an unowned locker or the owner's own card works the lock.
+/// The card may work the lock: the master access, an unowned locker or the owner's own card.
 /obj/structure/closet/secure_closet/personal/proc/card_may_swipe(datum/act/op/A)
-	var/obj/item/card/id/I = A.held.GetID()
-	if(allowed(A.actor) || !registered_name || (istype(I) && registered_name == I.registered_name))
-		return null
-	return /datum/msg/lock/denied
+	var/obj/item/card/id/I = A.held?.GetID()
+	return (allowed(A.actor) || !registered_name || (istype(I) && registered_name == I.registered_name)) ? null : /datum/msg/lock/denied
 
 /// A swipe: the master access, an unowned locker or the owner's own card works the lock, and the first card swiped claims it.
 /obj/structure/closet/secure_closet/personal/proc/card_swiped(datum/act/op/A)
 	var/obj/item/card/id/I = A.held.GetID()
-	//they can open all lockers, or nobody owns this, or they own this locker (card_may_swipe)
 	force_lock(!lock_locked(src))
 	if(!registered_name)
 		set_registered_name(I.registered_name)

@@ -50,41 +50,38 @@
 
 
 CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
-	op("shuttlecraft_paint", item(/obj/item/multitool), when(PROC_REF(hull_paintable)), label("Paint hull"),
+	op("shuttlecraft_paint", item(/obj/item), label("Paint hull"), when(PROC_REF(paintable_by_multitool)),
 		asks(/datum/prompt/choice, fields = list("title" = "Paint Zone", "question" = "Please select a target zone.", "choices" = list("Central", "Engine", "Base", "Front", "CANCEL"), "subject" = computed(PROC_REF(paint_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "zone"),
-		asks(/datum/prompt/color/mech_paint, fields = list("subject" = computed(PROC_REF(paint_subject)), "zone" = computed(PROC_REF(paint_zone))), step = "color", when = PROC_REF(paint_zone_chosen)),
+		asks(/datum/prompt/color/mech_paint, fields = list("subject" = computed(PROC_REF(paint_subject))), step = "color", when = PROC_REF(paint_zone_chosen)),
 		then(PROC_REF(interaction_shuttlecraft_paint)))
 
 /// A multitool repaints the hull while the maintenance state is open.
-/obj/mecha/working/hoverpod/shuttlecraft/proc/hull_paintable(datum/act/A)
-	return state == 1
+/obj/mecha/working/hoverpod/shuttlecraft/proc/paintable_by_multitool(datum/act/op/A)
+	return istype(A.held, /obj/item/multitool) && state == 1
 
-/// The multitool the questions are about.
+/// The question is about the multitool in the hand.
 /obj/mecha/working/hoverpod/shuttlecraft/proc/paint_subject(datum/act/op/A)
 	return A.held
 
-/// The zone picked.
-/obj/mecha/working/hoverpod/shuttlecraft/proc/paint_zone(datum/act/op/A)
-	return A.step_value("zone")
-
-/// A zone, not CANCEL, was picked: the colour is asked next.
+/// A zone other than CANCEL was picked, so a colour is asked.
 /obj/mecha/working/hoverpod/shuttlecraft/proc/paint_zone_chosen(datum/act/op/A)
 	var/zone = A.step_value("zone")
 	return !isnull(zone) && zone != "CANCEL"
 
-/// The colour for the zone, set while the maintenance state is still open.
+/// Old attackby: the colour answered for the zone answered.
 /obj/mecha/working/hoverpod/shuttlecraft/proc/interaction_shuttlecraft_paint(datum/act/op/A)
-	var/paint = A.step_value("color")
 	if(state != 1)
 		return TRUE
-	if(paint)
+	var/color_value = A.step_value("color")
+	if(color_value)
 		switch(A.step_value("zone"))
 			if("Central")
-				set_central_paint(paint)
+				set_central_paint(color_value)
 			if("Engine")
-				set_engine_paint(paint)
+				set_engine_paint(color_value)
 			if("Front")
-				set_front_paint(paint)
+				set_front_paint(color_value)
 			if("Base")
-				set_base_paint(paint)
+				set_base_paint(color_value)
+	return TRUE
 

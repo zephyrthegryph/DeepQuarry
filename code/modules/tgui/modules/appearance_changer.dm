@@ -59,7 +59,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	ref_one(nameof(owner), /mob/living/carbon/human)
 
 	section(body, "The body buttons of the appearance changer: species, gender, skin, hair, eyes")
-	op("race", ui_act("race", arg("race", schema_text(4096))), asks(/datum/prompt/text, fields = list("question" = "Input custom species name:", "title" = "Custom Species Name", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "custom_name", when = PROC_REF(race_is_custom)), then(PROC_REF(ui_act_race)))
+	op("race", ui_act("race", arg("race", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "Custom Species Name", "question" = "Input custom species name:", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "custom_name", when = PROC_REF(asks_custom_species)), then(PROC_REF(ui_act_race)))
 	op("gender", ui_act("gender", arg("gender")), then(PROC_REF(ui_act_gender)))
 	op("gender_id", ui_act("gender_id", arg("gender_id", schema_text(4096))), then(PROC_REF(ui_act_gender_id)))
 	op("skin_tone", ui_act("skin_tone"), needs(req(PROC_REF(can_tone), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Skin Tone", "question" = "Choose your character's skin-tone:\n(Light 1 - 220 Dark)", "default" = computed(PROC_REF(skin_tone_default)), "max_value" = 220, "min_value" = 1)), then(PROC_REF(ui_act_skin_tone)))
@@ -96,24 +96,24 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	op("rotate_view", ui_act("rotate_view"), then(PROC_REF(ui_act_rotate_view)))
 	op("rename", ui_act("rename"), needs(req(PROC_REF(has_owner), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Sleeve Name", "question" = "Choose the a name:", "encode" = FALSE)), then(PROC_REF(ui_act_rename)))
 	op("char_name", ui_act("char_name"), needs(req(PROC_REF(has_designer_console), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Input character's name:", "default" = computed(PROC_REF(char_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE)), then(PROC_REF(ui_act_char_name)))
-	op("race_name", ui_act("race_name"), asks(/datum/prompt/text, fields = list("question" = "Input custom species name:", "title" = "Custom Species Name", "default" = computed(PROC_REF(race_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(ui_act_race_name)))
+	op("race_name", ui_act("race_name"), needs(req(PROC_REF(can_race_silent), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Custom Species Name", "question" = "Input custom species name:", "default" = computed(PROC_REF(race_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(ui_act_race_name)))
 	op("base_icon", ui_act("base_icon"), needs(req(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Body Shape", "question" = "Please select basic shape.", "choices" = computed(PROC_REF(custom_species_bases)))), then(PROC_REF(ui_act_base_icon)))
 	op("blood_reagent", ui_act("blood_reagent"), needs(req(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Character Preference", "question" = "Please select blood restoration reagent:", "choices" = computed(PROC_REF(valid_blood_reagents)))), then(PROC_REF(ui_act_blood_reagent)))
 	op("blood_color", ui_act("blood_color"), then(PROC_REF(ui_act_blood_color)))
 	op("weight", ui_act("weight"), asks(/datum/prompt/number, fields = list("title" = "Character Preference", "question" = "Choose tbe character's relative body weight.\nThis measurement should be set relative to a normal 5'10'' person's body and not the actual size of the character.\n([WEIGHT_MIN]-[WEIGHT_MAX])", "max_value" = WEIGHT_MAX, "min_value" = WEIGHT_MIN, "step" = 0.01), step = "amount"), asks(/datum/prompt/choice, fields = list("title" = "Confirmation", "question" = "Is that number in pounds (lb) or kilograms (kg)?", "choices" = list("Pounds", "Kilograms")), step = "unit", when = PROC_REF(weight_given)), then(PROC_REF(ui_act_weight)))
-	op("size_scale", ui_act("size_scale"), asks(/datum/prompt/number, fields = list("question" = "Choose size, ranging from [RESIZE_MINIMUM * 100]% to [RESIZE_MAXIMUM * 100]%", "title" = "Set Size", "max_value" = RESIZE_MAXIMUM * 100, "min_value" = RESIZE_MINIMUM * 100, "timeout" = 0), step = "size"), then(PROC_REF(ui_act_size_scale)))
+	op("size_scale", ui_act("size_scale"), asks(/datum/prompt/number, fields = list("title" = "Set Size", "question" = "Choose size, ranging from [RESIZE_MINIMUM * 100]% to [RESIZE_MAXIMUM * 100]%", "max_value" = RESIZE_MAXIMUM * 100, "min_value" = RESIZE_MINIMUM * 100, "timeout" = 0)), then(PROC_REF(ui_act_size_scale)))
 	op("scale_appearance", ui_act("scale_appearance"), then(PROC_REF(ui_act_scale_appearance)))
 	op("offset_override", ui_act("offset_override"), then(PROC_REF(ui_act_offset_override)))
 	op("digitigrade", ui_act("digitigrade"), then(PROC_REF(ui_act_digitigrade)))
-	op("species_sound", ui_act("species_sound"), asks(/datum/prompt/choice, fields = list("question" = "Which set of sounds would you like to use? (Cough, Sneeze, Scream, Pain, Gasp, Death)", "title" = "Species Sounds", "choices" = computed(PROC_REF(species_sound_choices)), "timeout" = 0), step = "sounds"), then(PROC_REF(ui_act_species_sound)))
-	op("flavor_text", ui_act("flavor_text", arg("target", schema_text(4096))), asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(flavor_text_question)), "title" = "Flavor Text", "default" = computed(PROC_REF(flavor_text_default)), "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT, "timeout" = 0), step = "text", when = PROC_REF(flavor_text_askable)), then(PROC_REF(ui_act_flavor_text)))
+	op("species_sound", ui_act("species_sound"), needs(req(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Species Sounds", "question" = "Which set of sounds would you like to use? (Cough, Sneeze, Scream, Pain, Gasp, Death)", "choices" = computed(PROC_REF(species_sound_choices)), "timeout" = 0)), then(PROC_REF(ui_act_species_sound)))
+	op("flavor_text", ui_act("flavor_text", arg("target", schema_text(4096))), needs(req(PROC_REF(flavor_key_valid), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Flavor Text", "question" = computed(PROC_REF(flavor_question)), "default" = computed(PROC_REF(flavor_default)), "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT, "timeout" = 0)), then(PROC_REF(ui_act_flavor_text)))
 
 	section(records, "The save slots, body records and disks of the appearance changer")
-	op("load_saveslot", ui_act("load_saveslot"), asks(/datum/prompt/yes_no, fields = list("question" = "Are you certain you wish to load the currently selected savefile?", "title" = "Load Savefile", "timeout" = 0), step = "confirm", answerer = PROC_REF(saveslot_answerer), answerer_bound = FALSE, when = PROC_REF(saveslot_askable)), then(PROC_REF(ui_act_load_saveslot)))
+	op("load_saveslot", ui_act("load_saveslot"), needs(req(PROC_REF(can_cosmetic_silent), silent = TRUE)), asks(/datum/prompt/yes_no, fields = list("title" = "Load Savefile", "question" = "Are you certain you wish to load the currently selected savefile?", "timeout" = 0)), then(PROC_REF(ui_act_load_saveslot)))
 	op("view_brec", ui_act("view_brec", arg("view_brec", schema_ref(/datum/transhuman/body_record))), then(PROC_REF(ui_act_view_brec)))
 	op("view_stock_brec", ui_act("view_stock_brec", arg("view_stock_brec", schema_text(4096))), then(PROC_REF(ui_act_view_stock_brec)))
 	op("loadfromdisk", ui_act("loadfromdisk"), then(PROC_REF(ui_act_loadfromdisk)))
-	op("savetodisk", ui_act("savetodisk"), asks(/datum/prompt/yes_no, fields = list("question" = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", "title" = "Mind Compatability", "timeout" = 0), step = "permission", when = PROC_REF(record_permission_askable)), then(PROC_REF(ui_act_savetodisk)))
+	op("savetodisk", ui_act("savetodisk"), asks(/datum/prompt/yes_no, fields = list("title" = "Mind Compatability", "question" = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", "timeout" = 0), step = "permission", when = PROC_REF(asks_record_permission)), then(PROC_REF(ui_act_savetodisk)))
 	op("ejectdisk", ui_act("ejectdisk"), then(PROC_REF(ui_act_ejectdisk)))
 	op("back_to_library", ui_act("back_to_library"), then(PROC_REF(ui_act_back_to_library)))
 	ref_one(nameof(last_camera_turf))
@@ -198,6 +198,12 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/can_race(datum/act/op/A)
 	return can_change(owner(), APPEARANCE_RACE)
 
+/datum/tgui_module/appearance_changer/proc/can_race_silent(datum/act/op/A)
+	return (can_change(owner(), APPEARANCE_RACE)) ? null : /datum/msg/req_silent
+
+/datum/tgui_module/appearance_changer/proc/can_cosmetic_silent(datum/act/op/A)
+	return (can_change(owner(), APPEARANCE_ALL_COSMETIC)) ? null : /datum/msg/req_silent
+
 /datum/tgui_module/appearance_changer/proc/has_owner(datum/act/op/A)
 	return (!!owner()) ? null : /datum/msg/req_failed
 
@@ -214,9 +220,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 
 /// A custom species is named before the change.
-/datum/tgui_module/appearance_changer/proc/race_is_custom(datum/act/op/A)
-	var/race = A.args["race"]
-	return race == "Custom Species" && can_change(owner(), APPEARANCE_RACE) && (race in valid_species)
+/datum/tgui_module/appearance_changer/proc/asks_custom_species(datum/act/op/A)
+	return A.args["race"] == "Custom Species" && can_change(owner(), APPEARANCE_RACE) && ("Custom Species" in valid_species)
 
 /datum/tgui_module/appearance_changer/proc/ui_act_race(datum/act/op/A, race)
 	var/mob/user = A.actor
@@ -224,9 +229,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		if(race == "Custom Species")
 			var/custom_name = A.step_value("custom_name")
 			if(isnull(custom_name))
-				return
-			change_race(user, "Custom Species", custom_name)
-			return
+				return FALSE
+			return change_race(user, race, custom_name)
 		return change_race(user, race, null)
 	return FALSE
 
@@ -555,8 +559,11 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return owner().custom_species
 
 /datum/tgui_module/appearance_changer/proc/ui_act_race_name(datum/act/op/A)
+	if(!A.answer)
+		return FALSE
+	var/new_name = A.answer.value
 	if(can_change(owner(), APPEARANCE_RACE)) // new name can be empty, it uses base species if so
-		owner().custom_species = A.answer?.value
+		owner().custom_species = new_name
 		return TRUE
 	return FALSE
 
@@ -622,8 +629,10 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_size_scale(datum/act/op/A)
+	if(!A.answer)
+		return FALSE
 	var/mob/user = A.actor
-	var/new_size = A.step_value("size")
+	var/new_size = A.answer.value
 	if(new_size && ISINRANGE(new_size,RESIZE_MINIMUM * 100,RESIZE_MAXIMUM * 100) && can_change(owner(), APPEARANCE_MISC))
 		owner().resize(new_size / 100, animate = FALSE, ignore_prefs = TRUE)
 		owner().set_dir(owner().dir) // Causes a visual update for fuzzy/offset
@@ -661,49 +670,44 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return GLOB.species_sound_map
 
 /datum/tgui_module/appearance_changer/proc/ui_act_species_sound(datum/act/op/A)
-	var/choice = A.step_value("sounds")
+	if(!A.answer)
+		return FALSE
+	var/choice = A.answer.value
 	if(choice && can_change(owner(), APPEARANCE_MISC))
 		var/datum/species/own_species = rel_private(owner(), nameof(/datum/dna::species)) // PROTO: private copy
 		own_species.species_sounds = text_or_null(choice)
 		return TRUE
 	return FALSE
 
-/// The flavor text button's target is one of the owner's flavor texts, and the owner may change it.
-/datum/tgui_module/appearance_changer/proc/flavor_text_askable(datum/act/op/A)
+/// The flavor text the button names is one of the owner's, and the owner may be edited.
+/datum/tgui_module/appearance_changer/proc/flavor_key_valid(datum/act/op/A)
 	var/select_key = A.args["target"]
-	return select_key && can_change(owner(), APPEARANCE_MISC) && (select_key in owner().bio.flavor_texts)
+	if(select_key && can_change(owner(), APPEARANCE_MISC) && (select_key in owner().bio.flavor_texts))
+		return null
+	return /datum/msg/req_silent
 
-/datum/tgui_module/appearance_changer/proc/flavor_text_question(datum/act/op/A)
+/datum/tgui_module/appearance_changer/proc/flavor_question(datum/act/op/A)
 	var/select_key = A.args["target"]
 	if(select_key == "general")
 		return "Give a general description of the character. This will be shown regardless of clothings. Put in \"!clear\" to make blank."
 	return "Set the flavor text for their [select_key]. Put in \"!clear\" to make blank."
 
-/datum/tgui_module/appearance_changer/proc/flavor_text_default(datum/act/op/A)
+/datum/tgui_module/appearance_changer/proc/flavor_default(datum/act/op/A)
 	return html_decode(owner().bio.flavor_texts[A.args["target"]])
 
 /datum/tgui_module/appearance_changer/proc/ui_act_flavor_text(datum/act/op/A, target)
-	var/datum/prompt/P = A.step_answer("text")
-	if(!P) // nothing was asked: the target is not one the owner may change
-		return FALSE
 	var/select_key = target
-	if(isnull(P.value) || !select_key || !can_change(owner(), APPEARANCE_MISC))
-		return
-	var/msg = strip_html_simple(P.value)
+	if(!A.answer || isnull(A.answer.value) || !select_key || !can_change(owner(), APPEARANCE_MISC))
+		return FALSE
+	var/msg = strip_html_simple(A.answer.value)
 	if(msg == "!clear") // allows empty to wipe flavor
 		msg = ""
 	var/mob/living/carbon/human/flavor_owner = owner()
 	LAZYSET(flavor_owner.bio.flavor_texts, select_key, msg)
-
-/// The body's owner is the one asked to confirm loading a save slot onto it.
-/datum/tgui_module/appearance_changer/proc/saveslot_answerer(datum/act/op/A)
-	return owner()
-
-/datum/tgui_module/appearance_changer/proc/saveslot_askable(datum/act/op/A)
-	return can_change(owner(), APPEARANCE_ALL_COSMETIC)
+	return TRUE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_load_saveslot(datum/act/op/A)
-	if(!A.step_value("confirm") || !can_change(owner(), APPEARANCE_ALL_COSMETIC))
+	if(!A.answer || !A.answer.value || !can_change(owner(), APPEARANCE_ALL_COSMETIC))
 		return
 	if(owner() && owner().client) //sanity
 		owner().client.prefs.vanity_copy_to(owner(), FALSE, TRUE, FALSE, FALSE, FALSE)
@@ -760,10 +764,12 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		to_chat(user,span_notice("\The [owner()]'s bodyrecord was loaded from the disk."))
 	return TRUE
 
-/// A record whose body owner's preferences forbid impersonation is written only after the permission question.
-/datum/tgui_module/appearance_changer/proc/record_permission_askable(datum/act/op/A)
+/// A record whose owner's preferences forbid body impersonation needs the writer's confirmation first.
+/datum/tgui_module/appearance_changer/proc/asks_record_permission(datum/act/op/A)
 	var/obj/machinery/computer/transhuman/designer/DC = designer_console()
-	return DC?.selected_record && DC.disk && !sparse_get(owner(), changeling_locked) && sparse_get(owner(), resleeve_lock)
+	if(!DC?.selected_record || !DC.disk || !owner())
+		return FALSE
+	return !sparse_get(owner(), changeling_locked) && sparse_get(owner(), resleeve_lock)
 
 /datum/tgui_module/appearance_changer/proc/ui_act_savetodisk(datum/act/op/A)
 	var/mob/user = A.actor
@@ -785,6 +791,14 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		return FALSE
 	if(sparse_get(owner(), changeling_locked))
 		to_chat(user, span_warning("ERROR: Record too complex. Disk does not have enough space to store this record."))
+	else if(sparse_get(owner(), resleeve_lock))
+		if(!A.answer)
+			return FALSE
+		if(!A.step_value("permission"))
+			to_chat(user, span_warning("ERROR: This body record is restricted."))
+		else
+			message_admins("[user] wrote an unlocked version of [owner().real_name]'s bodyrecord to a disk. Their preferences do not allow body impersonation, but may be allowed with OOC consent.")
+			sparse_set(owner(), resleeve_lock, FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
 	return write_record(user, DC)
 
 /datum/tgui_module/appearance_changer/proc/write_record(mob/user, obj/machinery/computer/transhuman/designer/DC)

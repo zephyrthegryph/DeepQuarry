@@ -81,7 +81,9 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
 	op("home", ui_act("home"), then(PROC_REF(ui_act_home)))
 	op("destination", ui_act("destination"), then(PROC_REF(ui_act_destination)))
-	op("sethome", ui_act("sethome"), asks(/datum/prompt/choice, fields = list("question" = "Select new home tag", "title" = computed(PROC_REF(beacon_prompt_title)), "choices" = computed(PROC_REF(beacon_choices)), "timeout" = 0), step = "home_tag", when = PROC_REF(beacons_available)), then(PROC_REF(ui_act_sethome)))
+	op("sethome", ui_act("sethome"),
+		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(beacon_title_text)), "question" = "Select new home tag", "choices" = computed(PROC_REF(beacon_choices)), "timeout" = 0), step = "home", when = PROC_REF(has_beacons)),
+		then(PROC_REF(ui_act_sethome)))
 	op("unload", ui_act("unload"), then(PROC_REF(ui_act_unload)))
 	op("autoret", ui_act("autoret"), then(PROC_REF(ui_act_autoret)))
 	op("cargotypes", ui_act("cargotypes"), then(PROC_REF(ui_act_cargotypes)))
@@ -130,26 +132,28 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	obeyCommand(A.actor, "SetD")
 	. = TRUE
 
-/mob/living/bot/mulebot/proc/ui_act_sethome(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!A.step_answer("home_tag")) // the question was skipped: no beacon to name
-		tgui_alert_async(user, "No destination beacons available.")
-		return TRUE
-	var/home_tag = A.step_value("home_tag")
-	var/obj/machinery/navbeacon/beacon = GetBeaconList()[home_tag]
-	if(!beacon)
-		return TRUE
-	rel_set(src, nameof(home), get_turf(beacon))
-	homeName = A.answer.value
-	. = TRUE
-
-/// There is a beacon to ask about.
-/mob/living/bot/mulebot/proc/beacons_available(datum/act/op/A)
-	return length(GetBeaconList()) > 0
-
-/// The beacons a beacon question lists.
+/// The question's choices: the destination beacons there are.
 /mob/living/bot/mulebot/proc/beacon_choices(datum/act/op/A)
 	return GetBeaconList()
+
+/mob/living/bot/mulebot/proc/has_beacons(datum/act/op/A)
+	return length(GetBeaconList()) > 0
+
+/mob/living/bot/mulebot/proc/beacon_title_text(datum/act/op/A)
+	return beacon_prompt_title()
+
+/// The home tag the question was answered with (or, with no beacon to choose, the alert).
+/mob/living/bot/mulebot/proc/ui_act_sethome(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!has_beacons(A))
+		tgui_alert_async(user, "No destination beacons available.")
+		return TRUE
+	var/datum/prompt/answer = A.answer
+	var/obj/machinery/navbeacon/beacon = answer ? GetBeaconList()[answer.value] : null
+	if(beacon)
+		rel_set(src, nameof(home), get_turf(beacon))
+		homeName = answer.value
+	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_unload(datum/act/op/A)
 	unload()

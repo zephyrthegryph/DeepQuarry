@@ -168,16 +168,16 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 	op("remove", ui_act("remove", arg("remove", schema_ref(/datum/computer_file/data/waypoint))), then(PROC_REF(ui_act_remove)))
 	op("setcoord", ui_act("setcoord", arg("setx", bool()), arg("sety", bool())), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new destiniation x coordinate", "default" = computed(PROC_REF(setcoord_x_default)), "max_value" = world.maxx, "min_value" = 1), step = "x", when = PROC_REF(setcoord_x)), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new destiniation y coordinate", "default" = computed(PROC_REF(setcoord_y_default)), "max_value" = world.maxy, "min_value" = 1), step = "y", when = PROC_REF(setcoord_y)), then(PROC_REF(ui_act_setcoord)))
 	op("setds", ui_act("setds", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_setds)))
-	op("speedlimit", ui_act("speedlimit"), asks(/datum/prompt/number, fields = list("question" = "Input new speed limit for autopilot (0 to brake)", "title" = "Autopilot speed limit", "default" = computed(PROC_REF(speedlimit_default)), "max_value" = 100000, "timeout" = 0), step = "limit"), then(PROC_REF(ui_act_speedlimit)))
-	op("accellimit", ui_act("accellimit"), asks(/datum/prompt/number, fields = list("question" = "Input new acceleration limit", "title" = "Acceleration limit", "default" = computed(PROC_REF(accellimit_default)), "timeout" = 0), step = "limit"), then(PROC_REF(ui_act_accellimit)))
+	op("speedlimit", ui_act("speedlimit"), asks(/datum/prompt/number, fields = list("title" = "Autopilot speed limit", "question" = "Input new speed limit for autopilot (0 to brake)", "default" = computed(PROC_REF(speedlimit_default)), "max_value" = 100000, "timeout" = 0)), then(PROC_REF(ui_act_speedlimit)))
+	op("accellimit", ui_act("accellimit"), asks(/datum/prompt/number, fields = list("title" = "Acceleration limit", "question" = "Input new acceleration limit", "default" = computed(PROC_REF(accellimit_default)), "timeout" = 0)), then(PROC_REF(ui_act_accellimit)))
 	op("move", ui_act("move", arg("dir", num())), then(PROC_REF(ui_act_move)))
 	op("manual", ui_act("manual"), then(PROC_REF(ui_act_manual)))
-	op("set_global_limit", ui_act("set_global_limit"), asks(/datum/prompt/number, fields = list("question" = "Input new thrust limit (0..100%)", "title" = "Thrust limit", "default" = computed(PROC_REF(global_limit_default)), "max_value" = 100, "timeout" = 0), step = "limit"), then(PROC_REF(ui_act_set_global_limit)))
+	op("set_global_limit", ui_act("set_global_limit"), asks(/datum/prompt/number, fields = list("title" = "Thrust limit", "question" = "Input new thrust limit (0..100%)", "default" = computed(PROC_REF(global_limit_default)), "max_value" = 100, "timeout" = 0)), then(PROC_REF(ui_act_set_global_limit)))
 	op("global_limit", ui_act("global_limit", arg("global_limit", num())), then(PROC_REF(ui_act_global_limit)))
 	op("set_limit", ui_act("set_limit", arg("engine", schema_ref(/datum/ship_engine))), asks(/datum/prompt/number, fields = list("title" = "Thrust limit", "question" = "Input new thrust limit (0..100)", "default" = computed(PROC_REF(thrust_limit_default)), "max_value" = 100)), then(PROC_REF(ui_act_set_limit)))
 	op("limit", ui_act("limit", arg("engine", schema_ref(/datum/ship_engine)), arg("limit", num())), then(PROC_REF(ui_act_limit)))
 	op("toggle_engine", ui_act("toggle_engine", arg("engine", schema_ref(/datum/ship_engine))), then(PROC_REF(ui_act_toggle_engine)))
-	op("range", ui_act("range"), asks(/datum/prompt/number, fields = list("question" = "Set new sensors range", "title" = "Sensor range", "default" = computed(PROC_REF(range_default)), "max_value" = computed(PROC_REF(range_max)), "step" = 0.01, "timeout" = 0), step = "range"), then(PROC_REF(ui_act_range)))
+	op("range", ui_act("range"), asks(/datum/prompt/number, fields = list("title" = "Sensor range", "question" = "Set new sensors range", "default" = computed(PROC_REF(range_default)), "max_value" = computed(PROC_REF(range_max)), "step" = 0.01, "timeout" = 0)), then(PROC_REF(ui_act_range)))
 	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
 	ref_one(nameof(sensors))
 
@@ -415,25 +415,29 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 	set_dy(0)
 	return OP_OK
 
-/datum/tgui_module/ship/fullmonty/proc/speedlimit_default(datum/act/op/A)
+/datum/tgui_module/ship/fullmonty/proc/speedlimit_default(datum/act/A)
 	return speedlimit*1000
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_speedlimit(datum/act/op/A)
-	var/newlimit = A.step_value("limit")
+	if(!A.answer)
+		return OP_OK
+	var/newlimit = A.answer.value
 	if(newlimit)
 		set_speedlimit(CLAMP(newlimit/1000, 0, 100))
-	. = TRUE
 	SStgui.update_uis(src)
+	return OP_OK
 
-/datum/tgui_module/ship/fullmonty/proc/accellimit_default(datum/act/op/A)
+/datum/tgui_module/ship/fullmonty/proc/accellimit_default(datum/act/A)
 	return accellimit*1000
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_accellimit(datum/act/op/A)
-	var/newlimit = A.step_value("limit")
+	if(!A.answer)
+		return OP_OK
+	var/newlimit = A.answer.value
 	if(newlimit)
 		set_accellimit(max(newlimit/1000, 0))
-	. = TRUE
 	SStgui.update_uis(src)
+	return OP_OK
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_move(datum/act/op/A, dir)
 	var/mob/user = A.actor
@@ -477,18 +481,18 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 			E.toggle()
 	return OP_OK
 
-/datum/tgui_module/ship/fullmonty/proc/global_limit_default(datum/act/op/A)
+/datum/tgui_module/ship/fullmonty/proc/global_limit_default(datum/act/A)
 	return linked().thrust_limit*100
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_set_global_limit(datum/act/op/A)
-	var/newlim = A.step_value("limit")
-	if(isnull(newlim)) // a cancelled question changes nothing
-		return
+	if(!A.answer)
+		return OP_OK
+	var/newlim = A.answer.value
 	linked().thrust_limit = clamp(newlim/100, 0, 1)
 	for(var/datum/ship_engine/E in linked().engines)
 		E.set_thrust_limit(linked().thrust_limit)
-	. = TRUE
 	SStgui.update_uis(src)
+	return OP_OK
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_global_limit(datum/act/op/A, global_limit)
 	linked().thrust_limit = clamp(linked().thrust_limit + global_limit, 0, 1)
@@ -528,19 +532,20 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 // END ENGINES
 // SENSORS
 
-/datum/tgui_module/ship/fullmonty/proc/range_default(datum/act/op/A)
+/datum/tgui_module/ship/fullmonty/proc/range_default(datum/act/A)
 	return sensors().range
 
-/// The widest range the sensors can be set to.
-/datum/tgui_module/ship/fullmonty/proc/range_max(datum/act/op/A)
+/datum/tgui_module/ship/fullmonty/proc/range_max(datum/act/A)
 	return world.view
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_range(datum/act/op/A)
-	var/nrange = A.step_value("range")
+	if(!A.answer)
+		return OP_OK
+	var/nrange = A.answer.value
 	if(nrange)
 		sensors().set_range(CLAMP(nrange, 1, world.view))
-	. = TRUE
 	SStgui.update_uis(src)
+	return OP_OK
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_toggle_sensor(datum/act/op/A)
 	sensors().toggle()

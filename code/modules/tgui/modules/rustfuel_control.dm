@@ -6,7 +6,7 @@
 CAPABILITIES(/datum/tgui_module/rustfuel_control)
 	interface("RustFuelControl")
 	op("toggle_active", ui_act("toggle_active", arg("fuel", schema_text(32))), then(PROC_REF(ui_act_toggle_active)))
-	op("set_tag", ui_act("set_tag"), asks(/datum/prompt/text, fields = list("title" = "Gyrotron Control", "question" = "Enter a new ident tag.", "default" = nameof(fuel_tag), "timeout" = 0), step = "tag"), then(PROC_REF(ui_act_set_tag)))
+	op("set_tag", ui_act("set_tag"), asks(/datum/prompt/text, fields = list("title" = "Gyrotron Control", "question" = "Enter a new ident tag.", "default" = nameof(fuel_tag), "timeout" = 0)), then(PROC_REF(ui_act_set_tag)))
 
 /// The injectors the window lists: those on this console's tag.
 /datum/tgui_module/rustfuel_control/proc/listed_fuels()
@@ -29,10 +29,13 @@ CAPABILITIES(/datum/tgui_module/rustfuel_control)
 	return TRUE
 
 /datum/tgui_module/rustfuel_control/proc/ui_act_set_tag(datum/act/op/A)
-	var/new_ident = sanitize_text(A.step_value("tag"))
+	if(!A.answer)
+		return OP_OK
+	var/new_ident = sanitize_text(A.answer.value)
 	if(new_ident)
 		set_fuel_tag(new_ident)
 	SStgui.update_uis(src)
+	return OP_OK
 
 /datum/tgui_module/rustfuel_control/ui_data(datum/act/eval/A)
 	var/list/data = list()

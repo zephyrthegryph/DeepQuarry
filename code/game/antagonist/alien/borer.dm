@@ -28,7 +28,7 @@
 	..(1)
 
 /datum/antagonist/xenos/borer/get_extra_panel_options(datum/mind/player)
-	return "<a href='byond://?src=\ref[src];[HrefToken()];move_to_spawn=\ref[player.current]'>\[put in host\]</a>"
+	return "<a href='byond://?src=[REF(src)];[HrefToken()];move_to_spawn=[url_encode(ref_token(player.current))]'>\[put in host\]</a>"
 
 /datum/antagonist/borer/create_objectives(datum/mind/player)
 	if(!..())

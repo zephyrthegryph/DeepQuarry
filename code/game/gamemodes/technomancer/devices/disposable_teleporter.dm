@@ -26,13 +26,17 @@
 	. += "[uses] uses remaining."
 
 CAPABILITIES(/obj/item/disposable_teleporter)
-	op("self", in_hand(), asks(/datum/prompt/choice/technomancer_carried, fields = list("title" = "Teleportation", "question" = "Area to teleport to", "choices" = computed(PROC_REF(teleport_choices))), step = "area", when = nameof(uses)), then(PROC_REF(interaction_self)))
+	op("self", in_hand(),
+		asks(/datum/prompt/choice/technomancer_carried, fields = list("title" = "Teleportation", "question" = "Area to teleport to", "choices" = computed(PROC_REF(teleport_area_choices))), step = "area", when = PROC_REF(has_uses)),
+		then(PROC_REF(interaction_self)))
 
-/// The areas the device can take its holder to.
-/obj/item/disposable_teleporter/proc/teleport_choices(datum/act/A)
+/obj/item/disposable_teleporter/proc/has_uses(datum/act/op/A)
+	return uses > 0
+
+/obj/item/disposable_teleporter/proc/teleport_area_choices(datum/act/op/A)
 	return GLOB.teleportlocs
 
-/// Old attack_self: a spent device says so; otherwise the area picked is where the holder is taken.
+/// Old attack_self: with uses left, teleports to the area the question was answered with.
 /obj/item/disposable_teleporter/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	var/picked = A.step_value("area")
@@ -40,15 +44,16 @@ CAPABILITIES(/obj/item/disposable_teleporter)
 		if(!uses)
 			to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
 		return TRUE
-	teleport_area_chosen_apply(user, picked)
+	var/datum/prompt/ask = A.answer
+	if(!ask)
+		return TRUE
+	var/area/A_area = GLOB.teleportlocs[ask.value]
+	if(!A_area)
+		return TRUE
+	teleport_to_area(user, A_area)
 	return TRUE
 
-/obj/item/disposable_teleporter/proc/teleport_area_chosen_apply(mob/user, picked)
-	if(!uses)
-		return
-	var/area/A = GLOB.teleportlocs[picked]
-	if(!A)
-		return
+/obj/item/disposable_teleporter/proc/teleport_to_area(mob/user, area/A)
 
 	fx_sparks(user, 5, FALSE)
 

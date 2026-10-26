@@ -143,9 +143,11 @@ CAPABILITIES(/obj/item/projectile/energy/spidertoxin)
 
 
 CAPABILITIES(/obj/item/royal_spider_egg)
-	op("self", in_hand(), asks(/datum/prompt/yes_no, fields = list("question" = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", "title" = "Royal Spider Egg", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "release"), then(PROC_REF(interaction_self)))
+	op("self", in_hand(),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Royal Spider Egg", "question" = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "release", ends_on_no = TRUE),
+		then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
+/// Old attack_self: the egg is released once that is confirmed.
 /obj/item/royal_spider_egg/proc/interaction_self(datum/act/op/A)
 	if(!A.step_value("release"))
 		return TRUE

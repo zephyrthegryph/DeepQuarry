@@ -126,6 +126,14 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery)
 	if(wrapper_color)
 		look.overlay(look_appearance(icon, "pillbottle_wrap", color = wrapper_color))
 
+/// The bottle's label: at most 50 letters once sanitised; a longer answer is refused and the prompt stays open.
+/datum/prompt/text/pill_label
+
+/datum/prompt/text/pill_label/refusal(given)
+	if(length(sanitizeSafe("[given]", MAX_NAME_LEN)) > 50)
+		return "The label can be at most 50 characters long."
+	return null
+
 CAPABILITIES(/obj/item/storage/pill_bottle)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PILLBOTTLE, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
 	configure(storage(accepts = list(

@@ -373,25 +373,29 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	configure(item_rules(actions_types = list(/datum/action/item_action/hands_free/redraw_design)))
 	configure(item_worn(covers = FACE))
 	per_type(nameof(papermask_designs), PROC_REF(build_papermask_designs))
-	op("paper_mask_design_self", in_hand(), label("Change design"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(papermask_design_choices)), "anchor" = computed(PROC_REF(design_anchor)), "radius" = 36, "require_near" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "design", when = PROC_REF(design_pickable)), then(PROC_REF(paper_mask_design_self)))
+	op("paper_mask_design_self", in_hand(), label("Change design"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(papermask_choices)), "anchor" = computed(PROC_REF(design_anchor)), "radius" = 36, "require_near" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "design", when = PROC_REF(design_changeable)),
+		then(PROC_REF(paper_mask_design_self)))
 
-/// The radial ring's designs.
-/obj/item/clothing/mask/paper/proc/papermask_design_choices(datum/act/op/A)
-	return papermask_designs || list()
-
-/// The ring is drawn around the mask.
-/obj/item/clothing/mask/paper/proc/design_anchor(datum/act/op/A)
-	return src
-
-/// No ring for a holder who is not up to it.
-/obj/item/clothing/mask/paper/proc/design_pickable(datum/act/op/A)
+/// Only someone able to act changes a mask's design.
+/obj/item/clothing/mask/proc/design_changeable(datum/act/op/A)
 	var/mob/user = A.actor
 	return istype(user) && !user.incapacitated()
 
-/// Old attack_self.
+/// The design radial rings the mask.
+/obj/item/clothing/mask/proc/design_anchor(datum/act/op/A)
+	return src
+
+/obj/item/clothing/mask/paper/proc/papermask_choices(datum/act/op/A)
+	return papermask_designs || list()
+
+/// Old attack_self: the design the radial was answered with.
 /obj/item/clothing/mask/paper/proc/paper_mask_design_self(datum/act/op/A)
 	var/mob/user = A.actor
-	var/choice = A.step_value("design")
+	var/datum/prompt/answer = A.answer
+	if(!answer)
+		return
+	var/choice = answer.value
 	var/static/list/options = list("Blank" = "papermask", "Neutral" = "neutralmask", "Eyes" = "eyemask",
 							"Sleeping" ="sleepingmask", "Heart" = "heartmask", "Core" = "coremask",
 							"Plus" = "plusmask", "Square" ="squaremask", "Bullseye" = "bullseyemask",
@@ -429,25 +433,20 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	configure(item_rules(actions_types = list(/datum/action/item_action/hands_free/redraw_design)))
 	configure(item_worn(covers = FACE))
 	per_type(nameof(joymask_designs), PROC_REF(build_joymask_designs))
-	op("emotion_mask_design_self", in_hand(), label("Change emotion"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(joymask_design_choices)), "anchor" = computed(PROC_REF(design_anchor)), "radius" = 36, "require_near" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "design", when = PROC_REF(design_pickable)), then(PROC_REF(emotion_mask_design_self)))
+	op("emotion_mask_design_self", in_hand(), label("Change emotion"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(joymask_choices)), "anchor" = computed(PROC_REF(design_anchor)), "radius" = 36, "require_near" = TRUE, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "design", when = PROC_REF(design_changeable)),
+		then(PROC_REF(emotion_mask_design_self)))
 
-/// The radial ring's designs.
-/obj/item/clothing/mask/emotions/proc/joymask_design_choices(datum/act/op/A)
+/obj/item/clothing/mask/emotions/proc/joymask_choices(datum/act/op/A)
 	return joymask_designs
 
-/// The ring is drawn around the mask.
-/obj/item/clothing/mask/emotions/proc/design_anchor(datum/act/op/A)
-	return src
-
-/// No ring for a holder who is not up to it.
-/obj/item/clothing/mask/emotions/proc/design_pickable(datum/act/op/A)
-	var/mob/user = A.actor
-	return istype(user) && !user.incapacitated()
-
-/// Old attack_self.
+/// Old attack_self: the design the radial was answered with.
 /obj/item/clothing/mask/emotions/proc/emotion_mask_design_self(datum/act/op/A)
 	var/mob/user = A.actor
-	var/choice = A.step_value("design")
+	var/datum/prompt/answer = A.answer
+	if(!answer)
+		return
+	var/choice = answer.value
 	var/static/list/options = list("Joy" = "joy", "Flushed" = "flushed", "Pensive" = "pensive","Angry" ="angry")
 	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		set_icon_state(options[choice])

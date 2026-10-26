@@ -22,9 +22,11 @@
 CAPABILITIES(/obj/item/card/id/syndicate)
 	owns_one(nameof(agentcard_module), /datum/tgui_module/agentcard, starts = /datum/tgui_module/agentcard)
 	without("show") // its own self-use edits or shows the card
-	op("agent_card", in_hand(), label("Edit or show"), then(PROC_REF(interaction_agent_card)))
-	// Edit or show, asked of the registered user once agent_card has registered them.
-	op("agent_mode", ai(), asks(/datum/prompt/choice/agent_id_mode, step = "mode"), then(PROC_REF(edit_or_show_chosen)))
+	// The card registers its first user; then, for its registered user, the same use asks whether to edit or show it.
+	op("agent_card_register", in_hand(), label("Register"), priority(OP_PRIORITY_DEFAULT + 1), passes(), when(PROC_REF(agent_card_unregistered)), then(PROC_REF(agent_card_register)))
+	op("agent_card", in_hand(), label("Edit or show"),
+		asks(/datum/prompt/choice/agent_id_mode, step = "mode", when = PROC_REF(agent_card_owned)),
+		then(PROC_REF(interaction_agent_card)))
 	ref_one(nameof(registered_user), /mob)
 
 // the card's registered user is unset.
@@ -54,26 +56,37 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
 /datum/prompt/choice/agent_id_mode/recheck_extra()
-	var/obj/item/card/id/syndicate/card = owner_holder()
+	var/obj/item/card/id/syndicate/card = subject // an op's question is about its holder
 	return card.registered_user() == answerer ? null : "not the owner"
 
-/obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/act/op/A)
-	var/mob/user = A.actor
-	switch(A.step_value("mode"))
-		if("Edit")
-			agentcard_module.tgui_interact(user)
-		if("Show")
-			show_id_card(user)
+/// The card has no registered user yet.
+/obj/item/card/id/syndicate/proc/agent_card_unregistered(datum/act/op/A)
+	return !registered_user()
 
-/// Old attack_self: the card registers its first user, who can then edit or show it.
-/obj/item/card/id/syndicate/proc/interaction_agent_card(datum/act/op/A)
+/// The actor is the card's registered user.
+/obj/item/card/id/syndicate/proc/agent_card_owned(datum/act/op/A)
+	return registered_user() == A.actor
+
+/// Old attack_self: the card registers its first user.
+/obj/item/card/id/syndicate/proc/agent_card_register(datum/act/op/A)
 	var/mob/user = A.actor
 	// We use the fact that registered_name is not unset should the owner be vaporized, to ensure the id doesn't magically become unlocked.
 	if(!registered_user() && register_user(user))
 		to_chat(user, span_notice("The microscanner marks you as its owner, preventing others from accessing its internals."))
-	if(registered_user() == user)
-		perform_op(user, src, "agent_mode", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
-		return
+	return OP_OK
+
+/// Old attack_self: the registered user edits or shows the card.
+/obj/item/card/id/syndicate/proc/interaction_agent_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/answer = A.answer
+	if(!answer || registered_user() != user)
+		return OP_OK
+	switch(answer.value)
+		if("Edit")
+			agentcard_module.tgui_interact(user)
+		if("Show")
+			show_id_card(user)
+	return OP_OK
 
 /obj/item/card/id/syndicate/proc/register_user(mob/user)
 	if(!istype(user) || user == registered_user())

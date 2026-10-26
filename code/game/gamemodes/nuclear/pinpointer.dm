@@ -115,85 +115,76 @@ CAPABILITIES(/obj/item/pinpointer)
 		if(16 to INFINITY)
 			set_icon_state("pinonfar")
 
-/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(datum/act/op/A)
-	var/mob/user = A.actor
+/// The mode question and, by its answer, the coordinates, the signature kind and what to search for.
+/obj/item/pinpointer/advpinpointer/proc/mode_is_location(datum/act/op/A)
+	return A.step_value("mode") == "Location"
 
-	set_active(FALSE)
-	set_icon_state("pinoff")
-	rel_clear(src, nameof(target))
-	rel_clear(src, nameof(location))
+/obj/item/pinpointer/advpinpointer/proc/mode_is_signature(datum/act/op/A)
+	return A.step_value("mode") == "Other Signature"
 
-	perform_op(user, src, "pinpointer_pick_mode", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+/obj/item/pinpointer/advpinpointer/proc/signature_is_item(datum/act/op/A)
+	return mode_is_signature(A) && A.step_value("signature") == "Item"
 
-/// The mode answer: the mode is set at once, and Location and Other Signature go on to their own questions.
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(datum/act/op/A)
-	var/mob/user = A.actor
-	var/picked = A.step_value("mode")
-	if(!picked)
-		return
-	switch(picked)
-		if("Location")
-			mode = 1
-			perform_op(user, src, "pinpointer_pick_location", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
-		if("Disk Recovery")
-			mode = 0
-			attack_self(user)
-		if("Other Signature")
-			mode = 2
-			perform_op(user, src, "pinpointer_pick_signature", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+/obj/item/pinpointer/advpinpointer/proc/signature_is_dna(datum/act/op/A)
+	return mode_is_signature(A) && A.step_value("signature") == "DNA"
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_x_value(datum/act/op/A)
-	return A.step_value("x")
-
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(datum/act/op/A)
-	var/mob/user = A.actor
-	var/locationx = A.step_value("x")
-	var/locationy = A.step_value("y")
-	if(!locationx || !locationy)
-		return
-	var/turf/Z = get_turf(src)
-	rel_set(src, nameof(location), locate(locationx,locationy,Z.z))
-	to_chat(user, "You set the pinpointer to locate [locationx],[locationy]")
-	attack_self(user)
-
-/// The signature kind is "Item" (its list is asked next).
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_is_item(datum/act/op/A)
-	return A.step_value("signature") == "Item"
-
-/// The signature kind is "DNA" (its string is asked next).
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_is_dna(datum/act/op/A)
-	return A.step_value("signature") == "DNA"
-
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_item_choices(datum/act/op/A)
+/obj/item/pinpointer/advpinpointer/proc/signature_items(datum/act/op/A)
 	var/static/datum/objective/steal/itemlist
 	if(!itemlist)
 		itemlist = new
 	return itemlist.possible_items?.Copy()
 
-/// The signature answer: the item picked from the list, or the DNA string typed.
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_chosen(datum/act/op/A)
+/// The moment the mode question opens (before it is answered, as the old verb did): the pinpointer goes off and forgets what it pointed at.
+/obj/item/pinpointer/advpinpointer/proc/mode_question_opening(datum/act/op/A)
+	log_game("pinpointer: [src] mode question opened for [key_name(A.actor)], the pinpointer is switched off")
+	set_active(FALSE)
+	set_icon_state("pinoff")
+	rel_clear(src, nameof(target))
+	rel_clear(src, nameof(location))
+
+/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(datum/act/op/A)
 	var/mob/user = A.actor
-	var/targetitem = A.step_value("item")
-	if(targetitem)
-		var/datum/objective/steal/itemlist = new
-		rel_set(src, nameof(target), locate(itemlist.possible_items[targetitem]))
-		spent(itemlist)
-		if(!target_ref())
-			to_chat(user, "Failed to locate [targetitem]!")
-			return
-		to_chat(user, "You set the pinpointer to locate [targetitem]")
-		attack_self(user)
-		return
-	var/DNAstring = A.step_value("dna")
-	if(!DNAstring)
-		return
-	for(var/mob/living/carbon/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
-		if(!M.dna)
-			continue
-		if(M.dna.unique_enzymes == DNAstring)
-			rel_set(src, nameof(target), M)
-			break
-	attack_self(user)
+
+	switch(A.step_value("mode"))
+		if("Location")
+			mode = 1
+			var/locationx = A.step_value("location_x")
+			var/locationy = A.step_value("location_y")
+			if(!locationx || !locationy)
+				return
+			var/turf/Z = get_turf(src)
+			rel_set(src, nameof(location), locate(locationx,locationy,Z.z))
+			to_chat(user, "You set the pinpointer to locate [locationx],[locationy]")
+			attack_self(user)
+		if("Disk Recovery")
+			mode = 0
+			attack_self(user)
+		if("Other Signature")
+			mode = 2
+			switch(A.step_value("signature"))
+				if("Item")
+					var/targetitem = A.step_value("item")
+					if(isnull(targetitem))
+						return
+					var/datum/objective/steal/itemlist = new
+					rel_set(src, nameof(target), locate(itemlist.possible_items[targetitem]))
+					spent(itemlist)
+					if(!target_ref())
+						to_chat(user, "Failed to locate [targetitem]!")
+						return
+					to_chat(user, "You set the pinpointer to locate [targetitem]")
+					attack_self(user)
+				if("DNA")
+					var/DNAstring = A.step_value("dna")
+					if(!DNAstring)
+						return
+					for(var/mob/living/carbon/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
+						if(!M.dna)
+							continue
+						if(M.dna.unique_enzymes == DNAstring)
+							rel_set(src, nameof(target), M)
+							break
+					attack_self(user)
 
 ///////////////////////
 //nuke op pinpointers//
@@ -358,18 +349,14 @@ CAPABILITIES(/obj/item/pinpointer/shuttle)
 /// Old object verbs.
 CAPABILITIES(/obj/item/pinpointer/advpinpointer)
 	ref_one(nameof(target))
-	op("advpinpointer_toggle_mode_effect", menu(), label("Toggle Pinpointer Mode"), then(PROC_REF(advpinpointer_toggle_mode_effect)))
-	// The mode menu and its follow-up questions: opened by advpinpointer_toggle_mode_effect once it has switched the pinpointer off.
-	op("pinpointer_pick_mode", ai(), asks(/datum/prompt/choice/pinpointer_carried, fields = list("title" = "Pinpointer Mode Select", "question" = "Please select the mode you want to put the pinpointer in.", "choices" = list("Location", "Disk Recovery", "Other Signature"), "buttons" = TRUE), step = "mode"), then(PROC_REF(pinpointer_mode_chosen)))
-	op("pinpointer_pick_location", ai(),
-		asks(/datum/prompt/number/pinpointer_coordinate, fields = list("question" = "Please input the x coordinate to search for."), step = "x"),
-		asks(/datum/prompt/number/pinpointer_coordinate, fields = list("question" = "Please input the y coordinate to search for.", "location_x" = computed(PROC_REF(pinpointer_x_value))), step = "y"),
-		then(PROC_REF(pinpointer_location_chosen)))
-	op("pinpointer_pick_signature", ai(),
-		asks(/datum/prompt/choice/pinpointer_carried, fields = list("title" = "Signature Mode Select", "question" = "Search for item signature or DNA fragment?", "choices" = list("Item", "DNA"), "buttons" = TRUE), step = "signature"),
-		asks(/datum/prompt/choice/pinpointer_carried, fields = list("title" = "Item Mode Select", "question" = "Select item to search for.", "choices" = computed(PROC_REF(pinpointer_item_choices))), step = "item", when = PROC_REF(pinpointer_signature_is_item)),
-		asks(/datum/prompt/text, fields = list("title" = "Please Enter String.", "question" = "Input DNA string to search for.", "default" = "", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "dna", when = PROC_REF(pinpointer_signature_is_dna)),
-		then(PROC_REF(pinpointer_signature_chosen)))
+	op("advpinpointer_toggle_mode_effect", menu(), label("Toggle Pinpointer Mode"),
+		asks(/datum/prompt/choice/pinpointer_carried/mode, fields = list("title" = "Pinpointer Mode Select", "question" = "Please select the mode you want to put the pinpointer in.", "choices" = list("Location", "Disk Recovery", "Other Signature"), "buttons" = TRUE), step = "mode"),
+		asks(/datum/prompt/number/pinpointer_coordinate, fields = list("question" = "Please input the x coordinate to search for."), step = "location_x", when = PROC_REF(mode_is_location)),
+		asks(/datum/prompt/number/pinpointer_coordinate, fields = list("question" = "Please input the y coordinate to search for."), step = "location_y", when = PROC_REF(mode_is_location)),
+		asks(/datum/prompt/choice/pinpointer_carried, fields = list("title" = "Signature Mode Select", "question" = "Search for item signature or DNA fragment?", "choices" = list("Item", "DNA"), "buttons" = TRUE), step = "signature", when = PROC_REF(mode_is_signature)),
+		asks(/datum/prompt/choice/pinpointer_carried, fields = list("title" = "Item Mode Select", "question" = "Select item to search for.", "choices" = computed(PROC_REF(signature_items))), step = "item", when = PROC_REF(signature_is_item)),
+		asks(/datum/prompt/text, fields = list("title" = "Please Enter String.", "question" = "Input DNA string to search for.", "default" = "", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "dna", when = PROC_REF(signature_is_dna)),
+		then(PROC_REF(advpinpointer_toggle_mode_effect)))
 	ref_one(nameof(location))
 
 /datum/prompt/choice/pinpointer_carried
@@ -381,11 +368,20 @@ CAPABILITIES(/obj/item/pinpointer/advpinpointer)
 	var/mob/user = answerer
 	return !istype(user) || QDELETED(user) ? "gone" : null
 
+/// The mode question: opening it switches the pinpointer off, before the answer, as the old verb did.
+/datum/prompt/choice/pinpointer_carried/mode
+
+/datum/prompt/choice/pinpointer_carried/mode/prepare(datum/act/A)
+	. = ..()
+	var/datum/act/op/O = A
+	var/obj/item/pinpointer/advpinpointer/device = istype(O) ? O.holder : null
+	if(istype(device))
+		device.mode_question_opening(O)
+
 /datum/prompt/number/pinpointer_coordinate
 	title = "Location?"
 	timeout = 0
 	recheck_on_open = TRUE
-	var/location_x
 
 /datum/prompt/number/pinpointer_coordinate/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, INFINITY, 0, timeout, TRUE, GLOB.tgui_always_state)
@@ -395,7 +391,7 @@ CAPABILITIES(/obj/item/pinpointer/advpinpointer)
 
 /datum/prompt/number/pinpointer_coordinate/recheck_extra()
 	var/mob/user = answerer
-	var/obj/item/pinpointer/advpinpointer/device = owner_holder()
+	var/obj/item/pinpointer/advpinpointer/device = subject // an op's question is about its holder
 	if(!istype(user) || QDELETED(user) || !istype(device) || QDELETED(device))
 		return "gone"
 	return can_see(user, device, 1) ? null : "can't see it"

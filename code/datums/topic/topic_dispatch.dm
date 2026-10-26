@@ -21,7 +21,7 @@
 /datum/input_topic_dispatch(mob/user, list/href_list)
 	return topic_dispatch(src, user, href_list)
 
-/// `locate(raw) in <source>`, then istype(`wanted`); null if either fails or it is being deleted.
+/// The thing `raw` names (a ref_token() handle, else a plain REF() text) in <source>, then istype(`wanted`); null if either fails or it is being deleted.
 /proc/topic_resolve_ref(target, raw, wanted, source)
 	if(isnull(source))
 		if(ispath(wanted, /client))
@@ -33,10 +33,11 @@
 	var/found
 	switch(source)
 		if(TOPIC_ANY)
-			found = locate(raw)
+			found = resolve_window_ref(raw)
 		if(TOPIC_IN_WORLD)
-			// ALLOW(spatial): a TOPIC_IN_WORLD ref is any atom on the map; world is not a list to hand locate_in_list().
-			found = locate(raw) in world
+			found = resolve_window_ref(raw)
+			if(!isatom(found)) // a TOPIC_IN_WORLD ref is any atom on the map
+				found = null
 		if(TOPIC_IN_CLIENTS)
 			found = locate_in_list(GLOB.clients, raw)
 		if(TOPIC_IN_MOBS)

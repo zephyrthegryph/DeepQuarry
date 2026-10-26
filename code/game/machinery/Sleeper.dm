@@ -13,6 +13,7 @@
 
 MSG_DEF_SELF(sleeper/dead_occupant, "This person has no life to preserve anymore. Take them to a department capable of reanimating them.")
 MSG_DEF_SELF(sleeper/too_far_gone, "This person is not in good enough condition for sleepers to be effective! Use another means of treatment, such as cryogenics!")
+MSG_DEF_SELF(sleeper/too_many_chems, "The subject has too many chemicals in their bloodstream.")
 MSG_DEF_SELF(sleeper/needs_beaker, "There is no beaker to drain into.")
 
 /// Units of blood chemistry dialysis draws per chemical present, per machine interval (and as much blood as chemicals plus one).
@@ -109,7 +110,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 	extend(TAG_UI, needs(req_closed(SPACE_PANEL)), then(PROC_REF(control_touched), early = TRUE))
 	op("chemical", ui_act("chemical", arg("amount", num()), arg("chemid")),
 		needs(req_operable(), req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)),
-			req(PROC_REF(occupant_alive)), req(PROC_REF(occupant_viable)), req(PROC_REF(room_for_chemical))),
+			req(PROC_REF(occupant_alive)), req(PROC_REF(occupant_viable)), req(PROC_REF(chem_room))),
 		then(PROC_REF(inject_chosen)))
 	op("togglefilter", ui_act("togglefilter"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_full(nameof(beaker), because = MSG(sleeper/needs_beaker))),
 		toggles(nameof(filtering)))
@@ -258,18 +259,14 @@ CAPABILITIES(/obj/machinery/sleeper)
 	var/mob/living/occupant = occupant_of(src)
 	return (occupant && occupant.vitality() > 0) ? null : MSG(sleeper/too_far_gone)
 
-/// The occupant does not already carry max_chem of the chemical (a forged press, an unlisted dose or chemical, is left to inject_chosen to refuse).
-/obj/machinery/sleeper/proc/room_for_chemical(datum/act/op/A)
+/// The occupant does not already carry max_chem of the chemical the button names, once the dose is in.
+/obj/machinery/sleeper/proc/chem_room(datum/act/op/A)
+	var/mob/living/carbon/human/occupant = occupant_of(src)
 	var/amount = A.args["amount"]
 	var/chemid = A.args["chemid"]
-	var/mob/living/carbon/human/occupant = occupant_of(src)
-	if(!occupant?.reagents || !(amount in amounts))
+	if(!occupant?.reagents || !isnum(amount) || !istext(chemid))
 		return null
-	if(!istext(chemid) || !LAZYACCESS(available_chemicals, chemid))
-		return null
-	if(occupant.reagents.get_reagent_amount(chemid) + amount > max_chem)
-		return msg_reason("The subject has too many chemicals in their bloodstream.")
-	return null
+	return (occupant.reagents.get_reagent_amount(chemid) + amount > max_chem) ? MSG(sleeper/too_many_chems) : null
 
 /// A chemical button: `amount` units of `chemid` into the occupant, when it is one of the doses and one of the chemicals the sleeper lists, and the
 /// occupant does not already carry max_chem of it. A chemical the sleeper does not list is a forged press: refused and told to the admins.
@@ -283,7 +280,8 @@ CAPABILITIES(/obj/machinery/sleeper)
 		message_admins("[key_name_admin(user)] attempted to inject non-available reagent '[html_encode("[chemid]")]' via [src].")
 		return OP_REFUSED
 	if(occupant.reagents.get_reagent_amount(chemid) + amount > max_chem)
-		return OP_REFUSED
+		log_world("SLEEPER: [src] chemical [chemid] x[amount] pushed past max_chem after the check")
+		return OP_FAILED
 	use_power(amount * CHEM_SYNTH_ENERGY)
 	occupant.reagents.add_reagent(chemid, amount)
 	to_chat(user, "Occupant now has [occupant.reagents.get_reagent_amount(chemid)] units of [LAZYACCESS(available_chemicals, chemid)] in their bloodstream.")

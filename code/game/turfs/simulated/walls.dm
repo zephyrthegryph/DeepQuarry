@@ -469,6 +469,10 @@ CAPABILITIES(/turf/simulated/wall)
 	to_chat(user, span_warning("You can't insert any more [S.name] sheets into [src]!"))
 	return 0
 
+/// The mode radial rings the user.
+/obj/item/rcd/proc/rcd_mode_anchor(datum/act/op/A)
+	return A.actor
+
 /// The mode radial's ring: the modes, and the turrets once the RCD is emagged.
 /obj/item/rcd/proc/rcd_mode_choices(datum/act/op/A)
 	. = list(

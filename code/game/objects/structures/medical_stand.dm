@@ -28,8 +28,12 @@ CAPABILITIES(/obj/structure/medical_stand)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	drag_onto(PROC_REF(stand_dropped), onto = /mob/living/carbon/human)
 	op("toggle_iv_mode", menu(), label("Toggle IV Mode"), needs(req(PROC_REF(actor_is_living))), then(PROC_REF(medical_stand_toggle_mode_effect)))
-	op("set_iv_transfer", menu(), label("Set IV transfer amount"), asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(transfer_title)), "question" = "Amount per transfer from this:", "choices" = computed(PROC_REF(transfer_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "amount"), then(PROC_REF(set_APTFT_effect)))
-	op("medical_stand_interaction_hand", hand(), ungated(), asks(/datum/prompt/choice, fields = list("title" = "Stand Choice", "question" = "What do you want to do?", "choices" = computed(PROC_REF(stand_options)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action", when = PROC_REF(stand_has_choice)), then(PROC_REF(medical_stand_interaction_hand)))
+	op("set_iv_transfer", menu(), label("Set IV transfer amount"),
+		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(stand_title)), "question" = "Amount per transfer from this:", "choices" = computed(PROC_REF(transfer_amount_choices)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "amount"),
+		then(PROC_REF(set_APTFT_effect)))
+	op("medical_stand_interaction_hand", hand(), ungated(),
+		asks(/datum/prompt/choice, fields = list("title" = "Stand Choice", "question" = "What do you want to do?", "choices" = computed(PROC_REF(hand_options)), "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action", when = PROC_REF(hand_options_many)),
+		then(PROC_REF(medical_stand_interaction_hand)))
 	op("medical_stand_interaction_item", item(/obj/item), then(PROC_REF(medical_stand_interaction_item)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	// What a drag of a patient onto the stand (and the choice it asks) starts; the patient comes with the call.
@@ -214,8 +218,9 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		src.add_fingerprint(user)
 	return OP_OK
 
+/// Old attack_hand (it never reached the structure gate).
 /// What a hand on the stand can do now.
-/obj/structure/medical_stand/proc/stand_options(datum/act/A)
+/obj/structure/medical_stand/proc/hand_options(datum/act/op/A)
 	var/list/available_options = list()
 	if (tank)
 		available_options += "Toggle valve"
@@ -224,20 +229,18 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		available_options += "Remove vessel"
 	return available_options
 
-/// More than one thing can be done: the hand is asked which.
-/obj/structure/medical_stand/proc/stand_has_choice(datum/act/A)
-	return length(stand_options(A)) > 1
+/// More than one thing to do: the hand asks which.
+/obj/structure/medical_stand/proc/hand_options_many(datum/act/op/A)
+	return length(hand_options(A)) > 1
 
-/// Old attack_hand (it never reached the structure gate).
 /obj/structure/medical_stand/proc/medical_stand_interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
-	var/chosen = A.step_value("action")
-	if(!isnull(chosen))
-		stand_action(user, chosen)
-		return TRUE
-	var/list/available_options = stand_options(A)
-	if(available_options.len)
-		stand_action(user, available_options[1])
+	var/list/available_options = hand_options(A)
+	var/choice = A.step_value("action")
+	if(isnull(choice) && length(available_options) == 1)
+		choice = available_options[1]
+	if(choice)
+		stand_action(user, choice)
 	return TRUE
 
 /obj/structure/medical_stand/proc/stand_action(mob/user, action_type)
@@ -288,18 +291,20 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	to_chat(user, "The IV drip is now [mode ? "injecting" : "taking blood"].")
 	return OP_OK
 
-/// The amounts per transfer on offer.
-/obj/structure/medical_stand/proc/transfer_choices(datum/act/A)
-	return transfer_amounts
-
-/// The transfer question is titled with the stand's name.
-/obj/structure/medical_stand/proc/transfer_title(datum/act/A)
+/obj/structure/medical_stand/proc/stand_title(datum/act/op/A)
 	return "[src]"
 
+/obj/structure/medical_stand/proc/transfer_amount_choices(datum/act/op/A)
+	return transfer_amounts
+
+/// The amount per transfer the question was answered with.
 /obj/structure/medical_stand/proc/set_APTFT_effect(datum/act/op/A)
-	var/N = A.step_value("amount")
+	var/datum/prompt/answer = A.answer
+	if(!answer)
+		return OP_OK
+	var/N = answer.value
 	if(N)
-		transfer_amount = A.answer.value
+		transfer_amount = N
 	return OP_OK
 
 /obj/structure/medical_stand/proc/attach_mask(mob/living/carbon/C)

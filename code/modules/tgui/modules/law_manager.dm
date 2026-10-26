@@ -12,7 +12,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	op("change_ion_law", ui_act("change_ion_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_ion_law)))
 	op("change_inherent_law", ui_act("change_inherent_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_inherent_law)))
 	op("change_supplied_law", ui_act("change_supplied_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_supplied_law)))
-	op("change_supplied_law_position", ui_act("change_supplied_law_position"), asks(/datum/prompt/number, fields = list("title" = "Law Position", "question" = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "default" = nameof(supplied_law_position), "max_value" = MAX_SUPPLIED_LAW_NUMBER, "min_value" = 1, "timeout" = 0), step = "position"), then(PROC_REF(ui_act_change_supplied_law_position)))
+	op("change_supplied_law_position", ui_act("change_supplied_law_position"), asks(/datum/prompt/number, fields = list("title" = "Law Position", "question" = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "default" = nameof(supplied_law_position), "max_value" = MAX_SUPPLIED_LAW_NUMBER, "min_value" = 1, "timeout" = 0)), then(PROC_REF(ui_act_change_supplied_law_position)))
 	op("edit_law", ui_act("edit_law", arg("edit_law")), needs(req(PROC_REF(ui_malf), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Edit Law", "question" = "Enter new law. Leaving the field blank will cancel the edit.", "default" = computed(PROC_REF(edit_law_default)))), then(PROC_REF(ui_act_edit_law)))
 	op("delete_law", ui_act("delete_law", arg("delete_law")), then(PROC_REF(ui_act_delete_law)))
 	op("state_law_set", ui_act("state_law_set", arg("state_law_set")), then(PROC_REF(ui_act_state_law_set)))
@@ -98,10 +98,13 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_change_supplied_law_position(datum/act/op/A)
-	var/new_position = A.step_value("position")
+	if(!A.answer)
+		return OP_OK
+	var/new_position = A.answer.value
 	if(isnum(new_position))
 		set_supplied_law_position(CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER))
 	SStgui.update_uis(src)
+	return OP_OK
 
 /// Only an antagonist (or an admin on a silicon that is not slaved) edits or deletes laws; anyone else's button is not answered.
 /datum/tgui_module/law_manager/proc/ui_malf(datum/act/op/A)

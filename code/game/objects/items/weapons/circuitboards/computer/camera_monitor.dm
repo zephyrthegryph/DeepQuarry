@@ -19,6 +19,17 @@ MSG_DEF_SELF(camera_board/no_input, "No input found please hang up and try your 
 MSG_DEF_SELF(camera_board/no_network, "No network found please hang up and try your call again.")
 MSG_DEF_SELF(camera_board/emagged, "You override the circuit lock and open controls.")
 
+/// The networks the board is set to: the answer must name at least one network a board may join. A refused answer keeps the prompt open.
+/datum/prompt/text/camera_networks
+
+/datum/prompt/text/camera_networks/refusal(given)
+	if(!given)
+		return "No input found please hang up and try your call again."
+	var/list/tempnetwork = difflist(splittext(given, ","), GLOB.restricted_camera_networks, 1)
+	if(tempnetwork.len < 1)
+		return "No network found please hang up and try your call again."
+	return null
+
 CAPABILITIES(/obj/item/circuitboard/security)
 	op("lock", item(/obj/item/card/id), needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/broken)), req_credential_in_hand(list(/obj/item/card/id), because = MSG(camera_board/denied))), label("Lock or unlock circuit controls"), then(PROC_REF(lock_toggled)), passes())
 	op("networks", tool(TOOL_MULTITOOL), needs(req_adjacent(), req_is(nameof(locked), FALSE, because = MSG(camera_board/locked))), label("Configure camera networks"), wait(0),

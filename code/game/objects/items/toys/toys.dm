@@ -2137,21 +2137,21 @@ CAPABILITIES(/obj/item/toy/plushie/sus)
 
 CAPABILITIES(/obj/item/toy/rock)
 	configure(item_combat(attack_verbs = list("grug'd", "unga'd")))
-	op("draw_face", item(/obj/item/pen), label("Draw a face"), then(PROC_REF(interaction_draw_face)))
-	op("pick_face", ai(), asks(/datum/prompt/choice, fields = list("title" = "Faces", "question" = "Choose what you'd like to draw.", "choices" = list("fred","roxie","rock","Cancel"), "buttons" = TRUE, "subject" = computed(PROC_REF(face_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "face"), then(PROC_REF(face_chosen)))
+	op("draw_face", item(/obj/item/pen), label("Draw a face"), passes(),
+		asks(/datum/prompt/choice, fields = list("title" = "Faces", "question" = "Choose what you'd like to draw.", "choices" = list("fred","roxie","rock","Cancel"), "buttons" = TRUE, "subject" = computed(PROC_REF(face_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "face"),
+		then(PROC_REF(interaction_draw_face)))
 
-/// Old attackby: the faces are asked as the click goes on.
-/obj/item/toy/rock/proc/interaction_draw_face(datum/act/op/A)
-	perform_op(A.actor, src, "pick_face", A.held, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
-	return OP_PASS
-
-/// The pen the faces are drawn with.
+/// The question is about the pen in the hand.
 /obj/item/toy/rock/proc/face_subject(datum/act/op/A)
 	return A.held
 
-/obj/item/toy/rock/proc/face_chosen(datum/act/op/A)
+/// Old attackby: the face the question was answered with.
+/obj/item/toy/rock/proc/interaction_draw_face(datum/act/op/A)
 	var/mob/living/user = A.actor
-	switch(A.step_value("face"))
+	var/datum/prompt/answer = A.answer
+	if(!answer)
+		return OP_OK
+	switch(answer.value)
 		if("fred")
 			set_icon_state("fred")
 			to_chat(user, "You draw a face on the rock.")
@@ -2161,7 +2161,7 @@ CAPABILITIES(/obj/item/toy/rock)
 		if("roxie")
 			set_icon_state("roxie")
 			to_chat(user, "You draw a face on the rock and pull aside the plastic slightly, revealing a small pink bow.")
-	return
+	return OP_OK
 
 /*
  * Chew toys

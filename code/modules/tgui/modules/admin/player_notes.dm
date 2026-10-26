@@ -58,7 +58,7 @@
 CAPABILITIES(/datum/tgui_module/player_notes)
 	interface("PlayerNotes", rights = R_ADMIN|R_MOD|R_EVENT|R_DEBUG)
 	op("show_player_info", ui_act("show_player_info", arg("name", schema_text(4096))), then(PROC_REF(ui_act_show_player_info)))
-	op("filter_player_notes", ui_act("filter_player_notes"), asks(/datum/prompt/text, fields = list("question" = "Filter string (case-insensitive regex)", "title" = "Player notes filter", "timeout" = 0), step = "filter"), then(PROC_REF(ui_act_filter_player_notes)))
+	op("filter_player_notes", ui_act("filter_player_notes"), asks(/datum/prompt/text, fields = list("title" = "Player notes filter", "question" = "Filter string (case-insensitive regex)", "timeout" = 0)), then(PROC_REF(ui_act_filter_player_notes)))
 	op("set_page", ui_act("set_page", arg("index", num())), then(PROC_REF(ui_act_set_page)))
 	op("clear_player_info_filter", ui_act("clear_player_info_filter"), then(PROC_REF(ui_act_clear_player_info_filter)))
 	op("open_legacy_ui", ui_act("open_legacy_ui"), then(PROC_REF(ui_act_open_legacy_ui)))
@@ -76,7 +76,11 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 	A2.tgui_interact(user)
 
 /datum/tgui_module/player_notes/proc/ui_act_filter_player_notes(datum/act/op/A)
-	set_current_filter(A.step_value("filter"))
+	if(!A.answer)
+		return OP_OK
+	var/input = A.answer.value
+	set_current_filter(input)
+	return OP_OK
 
 /datum/tgui_module/player_notes/proc/ui_act_set_page(datum/act/op/A, index)
 	var/page = index
@@ -217,7 +221,7 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 	return QDELETED(owner) || QDELETED(answerer) ? "gone" : null
 
 /datum/admins/proc/PlayerNotesPageLegacy(page, filter, mob/user)
-	var/dat = span_bold("Player notes") + " - <a href='byond://?src=\ref[src];[HrefToken()];notes_legacy=filter'>Apply Filter</a><HR>"
+	var/dat = span_bold("Player notes") + " - <a href='byond://?src=[REF(src)];[HrefToken()];notes_legacy=filter'>Apply Filter</a><HR>"
 	var/savefile/S=new("data/player_notes.sav")
 	var/list/note_keys
 	S >> note_keys
@@ -250,13 +254,13 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 			upper_bound = min(upper_bound, note_keys.len)
 			for(var/index = lower_bound, index <= upper_bound, index++)
 				var/t = note_keys[index]
-				dat += "<tr><td><a href='byond://?src=\ref[src];[HrefToken()];notes_legacy=show;ckey=[t]'>[t]</a></td></tr>"
+				dat += "<tr><td><a href='byond://?src=[REF(src)];[HrefToken()];notes_legacy=show;ckey=[t]'>[t]</a></td></tr>"
 
 		dat += "</table><hr>"
 
 		// Display a footer to select different pages
 		for(var/index = 1, index <= number_pages, index++)
-			dat += "<a href='byond://?src=\ref[src];[HrefToken()];notes_legacy=list;index=[index];filter=[filter ? url_encode(filter) : 0]'>[index]</a> "
+			dat += "<a href='byond://?src=[REF(src)];[HrefToken()];notes_legacy=list;index=[index];filter=[filter ? url_encode(filter) : 0]'>[index]</a> "
 			if(index == page)
 				dat = span_bold(dat)
 
@@ -298,12 +302,12 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 				update_file = 1
 			dat += span_green("[I.content]") + " " + span_italics("by [I.author] ([I.rank])") + " on " + span_italics(span_blue("[I.timestamp]")) + " "
 			if(I.author == user.key || I.author == "Adminbot" || ishost(user))
-				dat += "<A href='byond://?src=\ref[src];[HrefToken()];remove_player_info_legacy=[key];remove_index=[i]'>Remove</A>"
+				dat += "<A href='byond://?src=[REF(src)];[HrefToken()];remove_player_info_legacy=[key];remove_index=[i]'>Remove</A>"
 			dat += "<br><br>"
 		if(update_file) info << infos
 
 	dat += "<br>"
-	dat += "<A href='byond://?src=\ref[src];[HrefToken()];add_player_info_legacy=[key]'>Add Comment</A><br>"
+	dat += "<A href='byond://?src=[REF(src)];[HrefToken()];add_player_info_legacy=[key]'>Add Comment</A><br>"
 
 	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Info on [key]", dat, src)

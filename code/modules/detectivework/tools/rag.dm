@@ -48,9 +48,10 @@ CAPABILITIES(/obj/item/reagent_containers/glass/rag)
 	op("wring_out", in_hand(), when(not(nameof(rag_lit))), label("Wring it out"),
 		needs(req_reagents(1, because = MSG(wiper/dry))), begins(MSG(rag/begin_wring_floor)), wait(PROC_REF(wring_floor_time)), then(PROC_REF(wrung_out)))
 	op("light", item(/obj/item/flame), when(not(nameof(rag_lit))), label("Light it"), then(PROC_REF(lit_by_flame)))
-	op("rub", at_target(/mob/living), priority(OP_PRIORITY_PART), label("Use on"), needs(req(PROC_REF(rub_refusal))), begins(PROC_REF(rub_begins)), wait(PROC_REF(rub_wait)), then(PROC_REF(rubbed)))
+	op("rub", at_target(/mob/living), priority(OP_PRIORITY_PART), label("Use on"), needs(req(PROC_REF(rub_possible))), begins(PROC_REF(rub_begins)), wait(PROC_REF(rub_wait)), then(PROC_REF(rubbed)))
 	every(2 SECONDS, then(PROC_REF(rag_step)), when = nameof(rag_lit))
 
+MSG_DEF_SELF(rag/cant_smother, span_warning("You can't smother this creature."))
 MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U% begins to wring out %I%.")
 MSG_DEF_SELF(rag/cant_smother, "You can't smother this creature.")
 MSG_DEF_SELF(rag/dry, "The rag is dry!")
@@ -136,24 +137,23 @@ MSG_DEF_SELF(rag/dry, "The rag is dry!")
 		update_name()
 	return null
 
-/// Why it can't be used on this person now, or null: a burning rag always works; with the mouth aimed at, the person must be a human with the face bare and
-/// the rag must hold something; otherwise it must hold something to wipe with.
-/obj/item/reagent_containers/glass/rag/proc/rub_refusal(datum/act/op/A)
+/// needs: a rag that does not burn can wipe them, or smother them when the mouth is aimed at (a human with a clear face, and the rag wet).
+/obj/item/reagent_containers/glass/rag/proc/rub_possible(datum/act/op/A)
 	if(rag_lit)
 		return null
 	var/mob/living/target = A.target
 	var/mob/living/user = A.actor
 	if(hud_of(user)?.zone_sel?.selecting == O_MOUTH)
-		if(!ishuman(target))
-			return /datum/msg/rag/cant_smother
+		if(!ishuman(target)) //Added this since player species process reagents in majority of cases.
+			return MSG(rag/cant_smother)
 		var/mob/living/carbon/human/H = target
-		if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE))
-			return "Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) //Check human head coverage.
+			return span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first.")
 		if(!reagents.total_volume)
-			return /datum/msg/rag/cant_smother
+			return MSG(rag/cant_smother)
 		return null
 	if(!reagents.total_volume)
-		return /datum/msg/rag/dry
+		return span_warning("The [initial(name)] is dry!")
 	return null
 
 /// Used on a person: it sets them alight if it burns, smothers them if the mouth is aimed at, else wipes them.
@@ -166,6 +166,9 @@ MSG_DEF_SELF(rag/dry, "The rag is dry!")
 		target.ignite_mob()
 		return OP_OK
 	if(hud_of(user)?.zone_sel?.selecting == O_MOUTH) //Check player target location, provided the rag is not on fire. Then check if mouth is exposed.
+		if(!ishuman(target) || !reagents.total_volume) // rub_possible() has checked these and the head coverage
+			log_world("RAG: [src] smother of [target] by [user] no longer possible after the check")
+			return OP_FAILED
 		user.do_attack_animation(src)
 		act_message(user, target, MSG_SELF(span_warning("You smother %T% with [src]!")), \
 			MSG_OTHERS(span_danger("%U% smothers %T% with [src]!")), \
@@ -174,6 +177,9 @@ MSG_DEF_SELF(rag/dry, "The rag is dry!")
 		reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
 		update_name()
 		return OP_OK
+	if(!reagents.total_volume)
+		log_world("RAG: [src] went dry before wiping [target] after the check")
+		return OP_FAILED
 	act_message(user, target, others = "%U% finishes wiping %T%!")
 	target.on_rag_wipe(src)
 	return OP_OK

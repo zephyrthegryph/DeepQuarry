@@ -590,7 +590,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	set_irradiating(radiation_duration)
 	var/lock_state = connected().locked
 	connected().set_locked(TRUE) //lock it
-	after(src, radiation_duration SECONDS, PROC_REF(do_pulse), with = list(lock_state))
+	after(src, radiation_duration SECONDS, PROC_REF(do_pulse), key = "dna_pulse", with = list(lock_state))
 	return TRUE
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_radiationduration(datum/act/op/A, value)
@@ -636,7 +636,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	connected().set_locked(TRUE) //lock it
 
 	//We call the do_irradiate proc here after radation_duration SECONDS
-	after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), with = list(lock_state, block))
+	after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), key = "dna_irradiate", with = list(lock_state, block))
 	return TRUE
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_ejectbeaker(datum/act/op/A)
