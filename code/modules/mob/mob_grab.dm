@@ -162,7 +162,7 @@
 		//affecting.apply_effect(STUTTER, 5) //would do this, but affecting isn't declared as mob/living for some stupid reason.
 		affecting.status_at_least(STAT_STUTTERING, 5) //It will hamper your voice, being choked and all.
 		affecting.status_at_least(STAT_WEAKENED, 5)	//Should keep you down unless you get help.
-		affecting.losebreath = max(affecting.losebreath + 2, 3)
+		affecting.set_losebreath(max(affecting.losebreath() + 2, 3))
 
 	adjust_position()
 

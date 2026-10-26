@@ -12,16 +12,9 @@
 	var/struggle_anim_taur = FALSE
 
 	var/embedded_flag					//To check if we've need to roll for damage on movement while an item is imbedded in us.
-	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
-
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 
-	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
-	var/list/teleporters = list() //Used for lleill abilities
-
 	var/rest_dir = 0					//To lay down in a specific direction
-	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
-	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
 
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
@@ -1220,7 +1213,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 			sync_organ_dna()
 	initialize_vessel()
 
-	losebreath = 0
+	set_losebreath(0)
 
 	..()
 
@@ -1855,7 +1848,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		return ..()
 
 /mob/living/carbon/human/can_stand_overridden()
-	if(wearing_rig && wearing_rig.ai_can_move_suit(check_for_ai = 1))
+	if(wearing_rig()?.ai_can_move_suit(check_for_ai = 1))
 		// Actually missing a leg will screw you up. Everything else can be compensated for.
 		for(var/limbcheck in list(BP_L_LEG,BP_R_LEG))
 			var/obj/item/organ/affecting = get_organ(limbcheck)

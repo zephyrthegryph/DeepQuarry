@@ -64,7 +64,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	test_chat_note(src, msg) // a test mob has no client: the driver keeps what it would have been shown
 #endif
 
-	if(!client && !teleop)	return
+	if(!client && !teleop())	return
 
 	if (type)
 		if((type & VISIBLE_MESSAGE) && (is_blind() || has_status(STAT_PARALYZED)) )//Vision related
@@ -85,8 +85,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(stat == UNCONSCIOUS || has_status(STAT_SLEEPING))
 		to_chat(src, span_filter_notice(span_italics("... You can almost hear someone talking ...")))
 	else
-		if(teleop)
-			to_chat(teleop, create_text_tag("body", "BODY:", teleop.client) + "[msg]")
+		if(teleop())
+			to_chat(teleop(), create_text_tag("body", "BODY:", teleop().client) + "[msg]")
 		else
 			to_chat(src,msg)
 	return
@@ -158,12 +158,21 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(runemessage != -1)
 			M.create_chat_message(src, "[runemessage || message]", FALSE, list("emote"), audible = FALSE)
 
-/// `who` was the last to push, drag or grab this mob: remembered when it is a carbon, else the old assailant is forgotten (LAssailant is a carbon relation).
+/// `who` was the last to push, drag or grab this mob: remembered when it is a carbon, else the old assailant is forgotten (LAssailant is a weak slot).
 /mob/proc/note_assailant(mob/living/who)
 	if(iscarbon(who))
-		rel_set(src, nameof(LAssailant), who)
+		sparse_ref_set(src, LAssailant, who)
 	else
-		rel_clear(src, nameof(LAssailant))
+		sparse_ref_set(src, LAssailant, null)
+
+/// The last mob/living/carbon to push, drag or grab this mob (slimes recognise a friend by it): a weak sparse slot, null once it is gone.
+/mob/proc/assailant() as /mob/living
+	return sparse_ref(src, LAssailant)
+
+/// The mob this clientless mob's player is controlling remotely (an aghost, an AI's eye, a VR avatar), so it is not treated as SSD even though its client is
+/// null: a weak sparse slot, null once that mob is gone. The controller may be the mob itself.
+/mob/proc/teleop() as /mob
+	return sparse_ref(src, teleop)
 
 /mob/proc/findname(msg)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -860,10 +869,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return
 
 /mob/proc/AdjustLosebreath(amount)
-	losebreath = CLAMP(losebreath + amount, 0, 25)
+	set_losebreath(CLAMP(losebreath() + amount, 0, 25))
 
 /mob/proc/SetLosebreath(amount)
-	losebreath = CLAMP(amount, 0, 25)
+	set_losebreath(CLAMP(amount, 0, 25))
 
 /mob/proc/get_species()
 	return ""
@@ -1505,7 +1514,7 @@ MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 
 /// Requirement: nobody drives the mob by remote control (its teleop is a relation view: null once that is gone).
 /mob/proc/vv_not_remote_driven(datum/act/op/A)
-	return (!teleop) ? null : MSG(vv/player_mob)
+	return (!teleop()) ? null : MSG(vv/player_mob)
 
 /// A VV AI brain setup, after the faction, the combat mode and the wake question have all been answered.
 /mob/living/proc/vv_topic_give_ai(datum/act/op/A)

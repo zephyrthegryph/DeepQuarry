@@ -99,8 +99,8 @@
 		to_chat(target, span_warning("You can suddenly see much better than before."))
 		rel_private(target, nameof(target.species)) // per-mob change: never mutate the shared species
 		target.species.darksight = 10
-	if(target.disabilities & NEARSIGHTED)
-		target.disabilities &= ~NEARSIGHTED
+	if(target.disabilities() & NEARSIGHTED)
+		target.remove_disabilities(NEARSIGHTED)
 		to_chat(target, span_warning("Everything is much less blurry."))
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
@@ -260,7 +260,7 @@ MSG_DEF_SELF(glamour_ring/breaking, span_warning("You begin to break the lines o
 	if(M != connected_mob && connected_mob)
 		to_chat(connected_mob, span_warning("\The [src] has been destroyed by \the [M]."))
 	if(istype(L) && istype(L.species, /datum/species/lleill))
-		own_take_member(L, nameof(L.teleporters), src)
+		link_break(L, LK_GLAMOUR_RINGS, src)
 	consume(src, M)
 
 /// Old attack_hand: the ring's connected lleill (or anyone) is asked whether to break it, and its owner whether to restore energy instead.

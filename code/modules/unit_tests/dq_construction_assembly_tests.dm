@@ -8,7 +8,7 @@
 /datum/unit_test/proc/dq_asm_person(turf/T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, T)
-	rel_set(H, nameof(H.teleop), controller)
+	sparse_ref_set(H, teleop, controller)
 	return H
 
 /// A zero-speed tool of `path` on `T`.

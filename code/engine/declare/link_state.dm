@@ -55,6 +55,11 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 		return members.Copy()
 	return isnull(value) ? list() : list(value)
 
+/// How many datums are linked at holder's end `key`, without copying them (link_list() copies): 0 or 1 for a single end.
+/proc/link_count(datum/holder, key)
+	var/value = holder?.rx?.link_ends?[key]
+	return islist(value) ? length(value) : !isnull(value)
+
 /// Is `other` linked at holder's end `key`?
 /proc/link_has(datum/holder, key, datum/other)
 	var/value = holder?.rx?.link_ends?[key]

@@ -39,7 +39,6 @@
 	var/list/logging
 
 	var/memory = ""
-	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
 	var/real_name = null
 	var/blinded = null
@@ -66,7 +65,6 @@
 
 	var/bodytemperature = BODYTEMP_NORMAL
 
-	var/losebreath = 0.0//Carbon
 	var/m_intent = I_RUN//Living
 	/// Set around a holder-driven forced step (a chair/wheelchair moving its
 	/// own buckled occupant directly, handle_buckled_mob_movement()) so
@@ -77,7 +75,6 @@
 
 	var/tmp/datum/hud/hud_used = null
 
-	var/tmp/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
 
 	// inertia_dir (the direction a drifting mob keeps going) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
@@ -105,8 +102,7 @@
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
 
-//The last mob/living/carbon to push/drag/grab this mob (mostly used by slimes friend recognition)
-	var/tmp/mob/living/LAssailant = null
+// LAssailant (the last mob/living/carbon to push/drag/grab this mob) is a weak sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
 	// Spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm): a relation list.
@@ -131,9 +127,7 @@
 
 	var/stance_damage = 0 //Whether this mob's ability to stand has been affected
 
-	//If set, indicates that the client "belonging" to this (clientless) mob is currently controlling some other mob
-	//so don't treat them as being SSD even though their client var is null.
-	var/tmp/mob/teleop = null
+	// teleop (the mob this clientless mob's player is controlling, so it is not treated as SSD) is a weak sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
@@ -174,8 +168,6 @@ CAPABILITIES(/mob)
 	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
 	cooldowns(next_emote, next_emote_refresh)
 	stamps(last_move_time) // when the client last moved this mob, for movement smoothing
-	ref_one(nameof(lastattacker), /mob, weak = TRUE) // the last mob to hit this one with a weapon (attack logs and death records); a gone attacker reads as none
-	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
 	ref_one(nameof(hovered_atom_view), /atom)
 	ref_one(nameof(focus), /datum) // what receives the mob's keyboard input (itself by default)
 	ref_one(nameof(mind), /datum/mind)
@@ -197,7 +189,7 @@ CAPABILITIES(/mob)
 	ref_many(nameof(spell_list))
 	ref_many(nameof(actions))
 	ref_many(nameof(pinned), /obj/item) // Borrowed objects pinning the mob to a wall.
-	owns_many(nameof(mapobjs), /atom/movable/screen) // the camera-overview map screens this mob is shown: disposed of when cleared
+	links(LINK_END(/mob, LK_MAPOBJS), LINK_END(/atom/movable/screen, LK_MAPOBJ_OF), sparse = TRUE, a_many = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the camera-overview map screens this mob is shown, gone with it (mapobjs())
 	ref_many(nameof(embedded), /obj/item) // Items embedded in a mob with no organs to hold them: a deleted item leaves the list.
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
@@ -207,7 +199,6 @@ CAPABILITIES(/mob)
 	// A spin (animations.dm): a quarter turn every lap, whatever the mob does meanwhile; not an action, so it keeps nothing and holds nothing.
 	op("spin", ai(), claims(0), takes("left", "speed", "facing"), wait(PROC_REF(spin_lap_time), keeps = 0, repeats = PROC_REF(spin_more), after_step = PROC_REF(spin_step)))
 	mob_state()
-	ref_one(nameof(teleop))
 	telekinetic_reach()
 	godmode_immunities()
 	every(1 DECISECONDS, then(PROC_REF(dizzy_shake_tick)), when = nameof(dizzy_shaking))
@@ -276,7 +267,6 @@ CAPABILITIES(/mob)
 
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
-	var/accumulated_rads = 0 	// For radiation stuff.
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

@@ -73,7 +73,7 @@ Bonus
 				M.status_adjust(STAT_BLURRY, 20)
 				M.injure(INJURY_BLUNT, 5, eyes)
 				if(eyes.damage >= 10)
-					M.disabilities |= NEARSIGHTED
+					M.add_disabilities(NEARSIGHTED)
 				if(prob(eyes.damage - 10 + 1))
 					if(!remove_eyes)
 						if(!M.is_blind())

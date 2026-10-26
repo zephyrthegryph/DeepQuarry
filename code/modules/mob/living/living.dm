@@ -268,7 +268,7 @@
 	// shut down ongoing problems
 	rejuvenate_physiology()
 	set_sdisabilities(0)
-	disabilities = 0
+	set_disabilities(0)
 	set_resting(FALSE)
 
 	for(var/datum/affliction/contagion/D as anything in get_contagions())
@@ -401,7 +401,7 @@
 
 //called when the mob receives a bright flash
 /mob/living/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
-	if(override_blindness_check || !(disabilities & BLIND))
+	if(override_blindness_check || !(disabilities() & BLIND))
 		overlay_fullscreen("flash", type)
 		after(src, 2.5 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 2.5 SECONDS))
 		return 1
@@ -917,7 +917,7 @@ sparse(/mob/living, vomiting, type = bool)
 	return
 
 /mob/living/proc/has_vision()
-	return !(has_status(STAT_BLINDED) || (disabilities & BLIND) || stat || blinded)
+	return !(has_status(STAT_BLINDED) || (disabilities() & BLIND) || stat || blinded)
 
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
 	return movement_of(src).makes_dirt

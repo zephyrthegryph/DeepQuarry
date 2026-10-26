@@ -156,6 +156,12 @@ sparse(/mob/living/carbon/human, markings_len, type = num)
 sparse(/mob/living/carbon/human, body_writing, type = list)
 sparse(/mob/living/carbon/human, resleeve_lock)
 
+// Weak slots: they name another mob or atom by handle, pin nothing and read null once it is gone (sparse_ref(), code/engine/declare/sparse_slots.dm).
+sparse(/mob, lastattacker, type = weak)
+sparse(/mob, LAssailant, type = weak)
+sparse(/mob, teleop, type = weak)
+sparse(/mob/living, autofire_target, type = weak)
+
 // base_vars wave 9
 sparse(/mob, progressbars, type = list)
 sparse(/mob, misc_tabs, type = list)
@@ -171,3 +177,37 @@ sparse(/mob/living, temp_languages, type = list)
 	if(!tabs)
 		tabs = sparse_set(M, misc_tabs, list())
 	tabs[tab] = rows
+
+// base_vars wave 11: rare numeric state of a mob. Each reads 0 while unset and a write of 0 clears it.
+sparse(/mob, disabilities, type = num)
+sparse(/mob, losebreath, type = num)
+sparse(/mob, accumulated_rads, type = num)
+
+/// The mob's disability bitfield (NEARSIGHTED, CLUMSY, BLIND, ...): 0 for nearly every mob, so it is a slot.
+/mob/proc/disabilities()
+	return sparse_get_or(src, disabilities, 0)
+
+/mob/proc/set_disabilities(flags)
+	return sparse_set_or(src, disabilities, flags, 0)
+
+/// Adds the disability flags `flags` to the mob.
+/mob/proc/add_disabilities(flags)
+	return set_disabilities(disabilities() | flags)
+
+/// Takes the disability flags `flags` off the mob.
+/mob/proc/remove_disabilities(flags)
+	return set_disabilities(disabilities() & ~flags)
+
+/// How many breaths the mob cannot take (0 breathes normally): set while it chokes or is held by the throat.
+/mob/proc/losebreath()
+	return sparse_get_or(src, losebreath, 0)
+
+/mob/proc/set_losebreath(amount)
+	return sparse_set_or(src, losebreath, amount, 0)
+
+/// The long-term radiation dose that settles out of the acute one (radiation is the acute dose; the writers are in code/modules/body/injury.dm).
+/mob/proc/accumulated_rads()
+	return sparse_get_or(src, accumulated_rads, 0)
+
+/mob/proc/set_accumulated_rads(amount)
+	return sparse_set_or(src, accumulated_rads, amount, 0)

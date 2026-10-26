@@ -131,8 +131,9 @@
 
 	SSmobs.report_death(src)
 
-	if(wearing_rig)
-		wearing_rig.notify_ai(span_danger("Warning: user death event. Mobility control passed to integrated intelligence system."))
+	var/obj/item/rig/worn_rig = wearing_rig()
+	if(worn_rig)
+		worn_rig.notify_ai(span_danger("Warning: user death event. Mobility control passed to integrated intelligence system."))
 
 	// If the body is in VR, move the mind back to the real world
 	if(vr_holder())

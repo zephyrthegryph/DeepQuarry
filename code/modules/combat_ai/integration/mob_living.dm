@@ -85,7 +85,6 @@ CAPABILITIES(/mob/living)
 	drag_onto(PROC_REF(mousedrop_input))
 	drag_onto(PROC_REF(drop_input))
 	links(LINK_END(/mob/living, LK_AUTOFIRE_GUN), LINK_END(/obj/item/gun, LK_AUTOFIRE_USERS), sparse = TRUE, b_many = TRUE) // the gun a held trigger fires (autofire_gun())
-	ref_one(nameof(autofire_target))
 
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as

@@ -137,7 +137,7 @@
 	G.s_click(G.hud)
 	TEST_ASSERT_EQUAL(G.state, GRAB_KILL, "the third tighten is a strangle")
 	G.periodic_step()
-	TEST_NOTICE(src, "PIN grab kill: weakened=[V.has_status(STAT_WEAKENED)] stuttering=[V.has_status(STAT_STUTTERING)] losebreath=[V.losebreath]")
+	TEST_NOTICE(src, "PIN grab kill: weakened=[V.has_status(STAT_WEAKENED)] stuttering=[V.has_status(STAT_STUTTERING)] losebreath=[V.losebreath()]")
 	TEST_ASSERT(V.has_status(STAT_WEAKENED), "a strangle weakens the victim")
 	TEST_ASSERT(V.has_status(STAT_STUTTERING), "a strangle mutes the victim")
 	G.reset_kill_state()

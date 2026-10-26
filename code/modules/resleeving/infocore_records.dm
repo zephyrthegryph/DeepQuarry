@@ -257,7 +257,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	H.set_real_name(mydna.dna.real_name)
 	H.name = H.real_name
 	sparse_set(H, suiciding, 0)
-	H.losebreath = 0
+	H.set_losebreath(0)
 	rel_clear(H, nameof(H.mind))
 
 	return H

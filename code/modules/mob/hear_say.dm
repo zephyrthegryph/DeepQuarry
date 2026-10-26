@@ -63,7 +63,7 @@
 		return stars(SP.message)
 
 /mob/proc/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)
-	if(!client && !teleop)
+	if(!client && !teleop())
 		return FALSE
 
 	if(isobserver(src) && client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
@@ -145,8 +145,8 @@
 		else if(speaker && !(get_z(src) == get_z(speaker)))
 			message = span_multizsay(message)
 		to_chat(src, message)
-	else if(teleop)
-		to_chat(teleop, span_game(span_say("[create_text_tag("body", "BODY:", teleop.client)][message]")))
+	else if(teleop())
+		to_chat(teleop(), span_game(span_say("[create_text_tag("body", "BODY:", teleop().client)][message]")))
 	else
 		to_chat(src, span_game(span_say(message)))
 
@@ -158,8 +158,8 @@
 		else if(speaker && !(get_z(src) == get_z(speaker)))
 			message = span_multizsay(message)
 		to_chat(src, message)
-	else if(teleop)
-		to_chat(teleop, span_game(span_say("[create_text_tag("body", "BODY:", teleop.client)][message]")))
+	else if(teleop())
+		to_chat(teleop(), span_game(span_say("[create_text_tag("body", "BODY:", teleop().client)][message]")))
 	else
 		to_chat(src, span_game(span_say(message)))
 

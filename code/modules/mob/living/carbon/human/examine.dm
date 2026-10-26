@@ -276,7 +276,7 @@
 	if(src.stat || (status_flags & FAKEDEATH))
 		. += span_warning("[p_Theyre()] not responding to anything around [p_them()] and seems to be asleep.")
 		var/obj/item/organ/internal/lungs/L = organ_in(O_LUNGS)
-		if(((stat == DEAD || losebreath || !L || (status_flags & FAKEDEATH)) && get_dist(user, src) <= 3))
+		if(((stat == DEAD || losebreath() || !L || (status_flags & FAKEDEATH)) && get_dist(user, src) <= 3))
 			. += span_warning("[p_They()] [user.p_do()] not appear to be breathing.")
 		if(ishuman(user) && !user.stat && Adjacent(user))
 			act_message(user, src, MSG_SELF(span_infoplain("You check %T%'s pulse.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " checks %T%'s pulse.")))

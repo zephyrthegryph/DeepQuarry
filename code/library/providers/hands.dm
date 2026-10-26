@@ -53,7 +53,7 @@ CAPABILITIES(/mob/living/carbon)
 	cooldowns(taste_cooldown, taste_repeat_cooldown)
 	every(PROC_REF(dream_interval), then(PROC_REF(dream_sequence)), when = nameof(dream_fragments))
 	rel_grants(nameof(species))
-	owns_one(nameof(cozyloop), /datum/looping_sound/mob/cozyloop, starts = /datum/looping_sound/mob/cozyloop, starts_args = list(FALSE))
+	links(LINK_END(/mob/living/carbon, LK_COZY_LOOP), LINK_END(/datum/looping_sound/mob/cozyloop, LK_COZY_LOOP_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the sleep music it plays for itself, gone with it (cozy_loop())
 	owns_one(nameof(hallucinations), /datum/hallucinations)
 	// its reagent holders: the bloodstream (`reagents`), the stomach and the skin, 500 units each
 	reagents(500, holder = /datum/reagents/metabolism/bloodstream)

@@ -98,7 +98,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		if(S.speaking && (S.speaking.flags & NO_STUTTER || S.speaking.flags & SIGNLANG))
 			continue
 
-		if(disabilities & CENSORED)
+		if(disabilities() & CENSORED)
 			S.message = text_or_null(censor_swears(S.message)) // Googlybonkers
 			. = 1
 
@@ -119,7 +119,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			verb = pick("muffles")
 			whispering = 1
 			. = 1
-		if(disabilities & WINGDINGS)
+		if(disabilities() & WINGDINGS)
 			verb = pick("gibbers","gabbers","gahoos","gazonks") // Yeah lets just be stupid
 			S.message = Gibberish(S.message, 100) // Googlybonkers
 			S.message = span_wingdings((S.message))

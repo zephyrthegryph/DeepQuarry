@@ -26,9 +26,6 @@
 // Per-mob autofire state + loop
 // ---------------------------------------------------------------------------
 
-/mob/living
-	var/tmp/atom/autofire_target
-
 /// TRUE while a hold-to-fire session runs: autofire_tick() repeats every autofire_delay (its every() in CAPABILITIES(/mob/living)).
 /mob/living/var/tmp/autofire_on = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
 
@@ -41,7 +38,7 @@
 	if(QDELETED(G) || QDELETED(target))
 		return
 	link_make(src, LK_AUTOFIRE_GUN, G)
-	rel_set(src, nameof(autofire_target), target)
+	sparse_ref_set(src, autofire_target, target)
 	sparse_set(src, autofire_params, params)
 	if(!autofire_on)
 		sparse_set(src, autofire_delay, 0) // the first trigger pull comes right away
@@ -51,14 +48,14 @@
 /// tile while the button is still held).  No-op if not autofiring.
 /mob/living/proc/update_autofire_target(atom/target, params)
 	if(autofire_on && !QDELETED(target))
-		rel_set(src, nameof(autofire_target), target)
+		sparse_ref_set(src, autofire_target, target)
 		sparse_set(src, autofire_params, params)
 
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
 	set_autofire_on(FALSE)
 	link_break(src, LK_AUTOFIRE_GUN)
-	rel_clear(src, nameof(autofire_target))
+	sparse_ref_set(src, autofire_target, null)
 	sparse_set(src, autofire_params, null)
 
 /// One iteration of the hold-to-fire loop (declared: while autofire_on).  Fires if the gun is
@@ -125,6 +122,6 @@
 /mob/living/proc/autofire_gun() as /obj/item/gun
 	return link_get(src, LK_AUTOFIRE_GUN)
 
-/// the autofire_target this refers to (a relation view: null once it is deleted).
+/// the atom the mob is firing at: a weak sparse slot, null once it is deleted.
 /mob/living/proc/autofire_target() as /atom
-	return autofire_target
+	return sparse_ref(src, autofire_target)

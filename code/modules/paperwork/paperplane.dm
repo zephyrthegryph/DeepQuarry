@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/paperplane)
 		sync_stamps()
 
 	else if(is_hot(P))
-		if(user.disabilities & CLUMSY && prob(10))
+		if(user.disabilities() & CLUMSY && prob(10))
 			act_message(user, src, MSG_SELF(span_userdanger("You miss %T% and accidentally light yourself on fire!")), \
 				MSG_OTHERS(span_warning("%U% accidentally ignites themselves!")))
 			user.unEquip(P)

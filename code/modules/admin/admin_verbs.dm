@@ -83,7 +83,7 @@ ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the opt
 			log_and_message_admins("[key_name(user)] admin-ghosted.", usr) // Add logging.
 		user.init_verbs()
 		if(body)
-			body.teleop = ghost
+			sparse_ref_set(body, teleop, ghost)
 			if(!body.key)
 				bind_player(body, "@[user.key]")	//Haaaaaaaack. But the people have spoken. If it breaks; blame adminbus
 		feedback_add_details("admin_verb","O") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

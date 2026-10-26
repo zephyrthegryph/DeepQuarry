@@ -377,17 +377,16 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT_NULL(scanner.linked_account, "deleting the account unlinks the scanner")
 	own_turf_contents(run_loc_floor_bottom_left) // the account's setup left a receipt and its parcel on the block: the test owns them
 
-/// W6B: a genetic side effect names the human suffering it as a relation: deleting the human clears the pointer.
+/// W6B: a genetic side effect names the human suffering it as a sparse link: deleting the human deletes the effect with it.
 /datum/unit_test/dq_refs_w6b_side_effect_host_clears_when_deleted
 
 /datum/unit_test/dq_refs_w6b_side_effect_host_clears_when_deleted/Run()
 	var/mob/living/carbon/human/host = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/genetics/side_effect/effect = new
-	rel_set(effect, nameof(effect.host), host)
-	TEST_ASSERT_EQUAL(effect.host, host, "the side effect names its host")
+	link_make(host, LK_GENETIC_EFFECTS, effect)
+	TEST_ASSERT_EQUAL(effect.host(), host, "the side effect names its host")
 	qdel(host)
-	TEST_ASSERT_NULL(effect.host, "deleting the host clears the side effect's pointer")
-	qdel(effect)
+	TEST_ASSERT(QDELETED(effect), "deleting the host deletes the side effect with it")
 
 /// W6B: a book's barcode scanner names its associated computer as a relation.
 /datum/unit_test/dq_refs_w6b_barcode_scanner_book_clears_when_deleted

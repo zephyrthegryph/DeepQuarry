@@ -88,12 +88,12 @@
 		return FALSE
 	if(B.dirty & BODY_DIRTY_CONDITIONS)
 		return TRUE
-	if(LAZYLEN(src.side_effects))
+	if(link_count(src, LK_SIDE_EFFECTS))
 		return TRUE
 	if(src.allergy > 0)
 		return TRUE
 	// A metric past its trigger: the affliction's severity follows the value continuously, so it is re-read every cycle.
-	if(src.radiation || src.accumulated_rads >= 100)
+	if(src.radiation || src.accumulated_rads() >= 100)
 		return TRUE
 	var/normal = src.dq_normal_body_temperature()
 	var/body_temp = src.body_temperature()
@@ -307,7 +307,7 @@
 
 /// MED-6: no dose and nothing accumulated to dissipate.
 /mob/living/carbon/human/life_radiation_due()
-	return src.radiation || src.accumulated_rads || act_wanted(src, /datum/act/live_radiation)
+	return src.radiation || src.accumulated_rads() || act_wanted(src, /datum/act/live_radiation)
 
 /// The dose is written only through the radiation writers, which publish MOB_KEY_RADIATION. This is the fallback.
 /mob/living/carbon/human/life_radiation_rewake()
@@ -325,7 +325,7 @@
 		src.purge_radiation(antirad * DQ_ANTIRAD_RADS_PER_LEVEL)
 	if(!src.radiation)
 		src.clear_alert("irradiated")
-		if(src.accumulated_rads)
+		if(src.accumulated_rads())
 			src.decay_radiation(0, -RADIATION_SPEED_COEFFICIENT) //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
 	//Radiation is a slow, insidious killer. Unless you get a massive dose, then the onset is sudden!
 	else if((src.life_tick % 5 == 0) || (src.radiation > 600))
@@ -502,11 +502,11 @@
 /// Loss of taste at 100 (2 Gy) is handled in taste.dm. Effects stack by threshold. Only
 /// organic bodies have them, and never while a live dose is still being taken.
 /mob/living/carbon/human/proc/life_radiation_chronic_radiation()
-	if(src.radiation || src.accumulated_rads < 100 || src.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE))
+	if(src.radiation || src.accumulated_rads() < 100 || src.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE))
 		return
 	if(!(src.biology() & BIOLOGY_ORGANIC))
 		return
-	var/rads = src.accumulated_rads
+	var/rads = src.accumulated_rads()
 	if(src.organ_in(O_EYES))
 		if(prob(5) && prob(rads * RADIATION_SPEED_COEFFICIENT))
 			to_chat(src, span_warning("Your eyes water."))
@@ -1226,7 +1226,7 @@
 		return TRUE
 	if((src.sdisabilities & (BLIND | DEAF)) || src.ear_damage)
 		return TRUE
-	if(src.species.get_ssd(src) && !src.client && !src.teleop)
+	if(src.species.get_ssd(src) && !src.client && !src.teleop())
 		return TRUE
 	if(src.species.vision_organ)
 		var/obj/item/organ/vision = src.organ_in(src.species.vision_organ)
@@ -1245,7 +1245,7 @@
 		return 0	// Cancelled by a component
 
 	//SSD check, if a logged player is awake put them back to sleep!
-	if(src.species.get_ssd(src) && !src.client && !src.teleop)
+	if(src.species.get_ssd(src) && !src.client && !src.teleop())
 		src.status_at_least(STAT_SLEEPING, 2)
 	if(src.stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
 		life_status_dead_senses()

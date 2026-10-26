@@ -299,7 +299,7 @@
 	dq_give_zone_sel(surgeon)
 	cooldown_set_end(surgeon, next_click, 0)
 	// A clientless test human counts as SSD and is put to sleep; a teleoperated one is awake, as a surgeon must be.
-	surgeon.teleop = surgeon
+	sparse_ref_set(surgeon, teleop, surgeon)
 	surgeon.status_end(STAT_SLEEPING)
 	surgeon.set_stat(CONSCIOUS)
 	var/obj/machinery/optable/table = new(patient.loc)
@@ -319,7 +319,7 @@
 	body_pin_log("surgery_incision", "depth [chest.surgical_depth()] slipped [slipped]")
 	TEST_ASSERT(incised || slipped, "the incision step ran to an outcome (depth [chest.surgical_depth()])")
 	chest.get_incision()?.close_site()
-	surgeon.teleop = null
+	sparse_ref_set(surgeon, teleop, null)
 	test_driver_end()
 	qdel(S)
 	qdel(table)

@@ -46,6 +46,25 @@
 #define LK_NEST "nest"
 #define LK_NEST_SPAWNS "nest_spawns"
 
+/// The rings a lleill has placed: LK_GLAMOUR_RINGS on the human (many), LK_GLAMOUR_OWNER on the ring. A ring goes with its owner. Read glamour_rings().
+#define LK_GLAMOUR_RINGS "glamour_rings"
+#define LK_GLAMOUR_OWNER "glamour_owner"
+/// The medication side effects a human suffers: LK_SIDE_EFFECTS on the human (many), LK_SIDE_EFFECT_OF on the effect. An effect goes with its human.
+#define LK_SIDE_EFFECTS "side_effects"
+#define LK_SIDE_EFFECT_OF "side_effect_of"
+/// The genetic side effects a human suffers: LK_GENETIC_EFFECTS on the human (many), LK_GENETIC_HOST on the effect. An effect goes with its human. Read genetic_side_effects().
+#define LK_GENETIC_EFFECTS "genetic_effects"
+#define LK_GENETIC_HOST "genetic_host"
+/// A rig and the human wearing it: LK_WEARING_RIG on the human, LK_RIG_WEARER on the rig. Read wearing_rig() / wearer().
+#define LK_WEARING_RIG "wearing_rig"
+#define LK_RIG_WEARER "rig_wearer"
+/// The camera-overview map screens a mob is shown: LK_MAPOBJS on the mob (many), LK_MAPOBJ_OF on the screen. A screen goes with its mob. Read mapobjs().
+#define LK_MAPOBJS "mapobjs"
+#define LK_MAPOBJ_OF "mapobj_of"
+/// The cozy sleep music a carbon plays for itself: LK_COZY_LOOP on the carbon, LK_COZY_LOOP_OF on the loop. The loop goes with its carbon. Read cozy_loop().
+#define LK_COZY_LOOP "cozy_loop"
+#define LK_COZY_LOOP_OF "cozy_loop_of"
+
 /// The pseudo segments of the turf and area hops (code/engine/refs/hops.dm): not vars. A reactive read of `get_turf(src).x` crosses HOP_TURF, of
 /// `get_area(src).x` crosses HOP_AREA; hop_step() resolves them and the movement choke point publishes them (hop_moved()).
 #define HOP_TURF "turf"

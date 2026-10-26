@@ -257,7 +257,7 @@
 			var/show_ssd
 			var/mob/living/carbon/human/H = src
 			if(istype(H)) show_ssd = H.species.show_ssd
-			if(show_ssd && !client && !teleop)
+			if(show_ssd && !client && !teleop())
 				act_message(M, src, MSG_SELF(span_notice("You shake %T%, but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?")), \
 					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
 			else if(lying || src.has_status(STAT_SLEEPING))
@@ -538,5 +538,18 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 			return TRUE
 	return FALSE
 
-/mob/living/carbon
-	var/datum/looping_sound/mob/cozyloop/cozyloop
+/// The cozy sleep music this carbon plays for itself (LK_COZY_LOOP, gone with it): made the first time it is started, so a carbon that never sleeps
+/// in a pod has none. `make`: create it when it does not exist yet.
+/mob/living/carbon/proc/cozy_loop(make = FALSE) as /datum/looping_sound/mob/cozyloop
+	var/datum/looping_sound/mob/cozyloop/loop = link_get(src, LK_COZY_LOOP)
+	if(!loop && make)
+		loop = new(src, FALSE)
+		link_make(src, LK_COZY_LOOP, loop)
+	return loop
+
+/// Starts (`on`) or stops the cozy sleep music.
+/mob/living/carbon/proc/cozy_music(on)
+	if(on)
+		cozy_loop(TRUE)?.start()
+	else
+		cozy_loop()?.stop()
