@@ -42,7 +42,7 @@ compile() { # flavor compiler destination
 
 equiv_target="$(bash tools/dq_cargo_target.sh dmb-equiv)"
 if [ ! -x "$equiv_target/release/dmb-equiv" ] && [ ! -x "$equiv_target/release/dmb-equiv.exe" ]; then
-  (cd tools/dmb && CARGO_TARGET_DIR="$equiv_target" cargo build --release -p dmb-equiv) || exit 1
+  (cd tools/dmb && CARGO_INCREMENTAL=0 CARGO_TARGET_DIR="$equiv_target" cargo build --release -p dmb-equiv) || exit 1
 fi
 equiv="$equiv_target/release/dmb-equiv"
 [ -x "$equiv" ] || equiv="$equiv_target/release/dmb-equiv.exe"
