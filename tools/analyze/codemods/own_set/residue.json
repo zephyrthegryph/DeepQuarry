@@ -171,7 +171,7 @@
     {"file": "code/modules/hydroponics/seed_machines.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.seed), W, user = user))"},
     {"file": "code/modules/hydroponics/seed_machines.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.loaded_disk), W, user = user))"},
     {"file": "code/modules/integrated_electronics/core/assemblies.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.battery), cell, user = user))"},
-    {"file": "code/modules/integrated_electronics/subtypes/manipulation.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.installed_gun), gun, user = user))"},
+    {"file": "code/content/integrated_electronics/subtypes/manipulation.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.installed_gun), gun, user = user))"},
     {"file": "code/modules/maint_recycler/code/maint_recycler.dm", "reason": "extra_args", "text": "own_set(src, nameof(src.inserted_item), m, user = user)"},
     {"file": "code/modules/maint_recycler/code/maint_recycler.dm", "reason": "extra_args", "text": "own_set(src, nameof(src.inserted_item), O, user = user)"},
     {"file": "code/modules/maint_recycler/code/maint_recycler.dm", "reason": "extra_args", "text": "own_set(src, nameof(src.inserted_item), source, into = TRUE)"},

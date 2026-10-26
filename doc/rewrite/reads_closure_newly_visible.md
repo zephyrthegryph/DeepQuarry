@@ -412,9 +412,9 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/modules/ghosttrap/trap.dm:10 | `GLOB.ghost_traps` | 1
 - stat_input_untracked | code/modules/ghosttrap/trap.dm:17 | `GLOB.ghost_traps` | 1
 - stat_input_untracked | code/modules/integrated_electronics/core/assemblies.dm:640 | `?hop_not_relation` | 1
-- stat_input_untracked | code/modules/integrated_electronics/core/assemblies/clothing.dm:256 | `?hop_not_relation` | 1
-- stat_input_untracked | code/modules/integrated_electronics/core/assemblies/implant.dm:27 | `?hop_not_relation` | 1
-- stat_input_untracked | code/modules/integrated_electronics/core/assemblies/implant.dm:27 | `implant` | 1
+- stat_input_untracked | code/content/integrated_electronics/core/assemblies/clothing.dm:256 | `?hop_not_relation` | 1
+- stat_input_untracked | code/content/integrated_electronics/core/assemblies/implant.dm:27 | `?hop_not_relation` | 1
+- stat_input_untracked | code/content/integrated_electronics/core/assemblies/implant.dm:27 | `implant` | 1
 - stat_input_untracked | code/modules/integrated_electronics/core/integrated_circuit.dm:124 | `?hop_not_relation` | 1
 - stat_input_untracked | code/modules/integrated_electronics/core/integrated_circuit.dm:125 | `?hop_not_relation` | 1
 - stat_input_untracked | code/modules/integrated_electronics/subtypes/camera.dm:149 | `?hop_not_relation` | 2
@@ -439,8 +439,8 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/modules/modular_computers/file_system/programs/research/ntmonitor.dm:64 | `GLOB.ntnet_global` | 1
 - stat_input_untracked | code/modules/modular_computers/file_system/programs/research/ntmonitor.dm:64 | `GLOB.ntnet_global.setting_disabled` | 1
 - stat_input_untracked | code/modules/modular_computers/file_system/programs/research/ntmonitor.dm:98 | `GLOB.ntnet_global` | 1
-- stat_input_untracked | code/modules/overmap/helpers.dm:2 | `using_map.use_overmap` | 1
-- stat_input_untracked | code/modules/overmap/helpers.dm:3 | `GLOB.map_sectors` | 1
+- stat_input_untracked | code/content/overmap/helpers.dm:2 | `using_map.use_overmap` | 1
+- stat_input_untracked | code/content/overmap/helpers.dm:3 | `GLOB.map_sectors` | 1
 - stat_input_untracked | code/modules/paperwork/faxmachine.dm:71 | `GLOB.last_fax_role_request` | 1
 - stat_input_untracked | code/content/pda/contracts.dm:109 | `SScontracts.contracts_by_id` | 1
 - stat_input_untracked | code/modules/power/port_gen.dm:232 | `?hop_not_relation` | 1
