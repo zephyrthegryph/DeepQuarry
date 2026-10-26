@@ -30,7 +30,10 @@
 		if(QDELETED(A))
 			return TRUE
 	// Then the early params: a setter whose output the chain reads (param(apply =, early = TRUE), code/engine/lifeforms/params.dm).
-	if((type_table_cache()[A.type] || table_of(A)).hook_flags & ENGINE_HOOK_LIFEFORMS)
+	var/datum/type_table/lifeform_table = type_table_cache()[A.type]
+	if(!lifeform_table)
+		lifeform_table = table_of(A)
+	if(lifeform_table.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		params_early(A, length(arguments) ? arguments[1] : FALSE)
 		if(QDELETED(A))
 			return TRUE
