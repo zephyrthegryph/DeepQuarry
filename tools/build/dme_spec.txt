@@ -69,9 +69,7 @@ optional code/modules/unit_tests/_test_build_overrides.dm    # likewise
 skip code/modules/benchmarks/**   # code/modules/unit_tests/_unit_tests.dm includes them
 skip code/modules/balance/**      # likewise
 
-# Generated files (gitignored; analyze gen writes them before every compile).
-skip code/engine/_generated/**
-skip code/_generated/**
+# Generated files (gitignored; analyze gen writes them before every compile, so a clean checkout lacks them: `file` includes them anyway).
 file code/engine/_generated/ids.dm
 file code/engine/_generated/reads.dm
 file code/engine/_generated/deps.dm
