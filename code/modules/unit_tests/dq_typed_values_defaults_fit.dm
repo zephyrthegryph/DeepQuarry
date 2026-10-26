@@ -12,9 +12,7 @@
 		for(var/var_name in by_var)
 			var/datum/schema/S = by_var[var_name]
 			for(var/type in typesof(declared_type))
-				var/datum/D = type
-				if(!(var_name in D.vars))
-					continue
+				var/datum/D = type // every subtype of the declaring type inherits the var, so initial() on the path always has it
 				var/value = initial(D.vars[var_name])
 				if(isnull(value))
 					continue
