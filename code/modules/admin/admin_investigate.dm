@@ -23,7 +23,7 @@
 	if(!message)	return
 	var/F = investigate_subject2file(subject)
 	if(!F)	return
-	to_file(F, span_filter_adminlog("<small>[time2text(world.timeofday,"hh:mm")] \ref[src] ([x],[y],[z])</small> || [src] [message]<br>"))
+	to_file(F, span_filter_adminlog("<small>[time2text(world.timeofday,"hh:mm")] [REF(src)] ([x],[y],[z])</small> || [src] [message]<br>"))
 
 //ADMINVERBS
 ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs, notes or singulo and telesci logs.", ADMIN_CATEGORY_INVESTIGATE)

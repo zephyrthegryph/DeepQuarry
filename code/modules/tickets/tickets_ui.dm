@@ -265,7 +265,7 @@ CAPABILITIES(/datum/tickets)
 //
 
 /datum/ticket/ui_title(mob/user)
-	return "Ticket #[id] - [LinkedReplyName("\ref[src]")]"
+	return "Ticket #[id] - [LinkedReplyName(ref_token(src))]"
 
 /datum/ticket/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -285,7 +285,7 @@ CAPABILITIES(/datum/tickets)
 	var/list/data = list()
 
 
-	var/ref_src = "\ref[src]"
+	var/ref_src = ref_token(src)
 	data["name"] = LinkedReplyName(ref_src)
 	data["ticket_ref"] = ref_src
 
@@ -349,7 +349,7 @@ CAPABILITIES(/datum/tickets)
 
 /datum/ticket/proc/TicketPanelLegacy(mob/user)
 	var/list/dat = list("<html><head><title>Ticket #[id]</title></head>")
-	var/ref_src = "\ref[src]"
+	var/ref_src = ref_token(src)
 	dat += "<h4>Ticket #[id]: [LinkedReplyName(ref_src)]</h4>"
 	dat += "<b>State: "
 	switch(state)

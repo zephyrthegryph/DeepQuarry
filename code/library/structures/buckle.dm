@@ -170,9 +170,8 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	var/linked = holder.buckle_link(victim)
 	if(!linked)
 		act_cancel(B)
-		A.reason = /datum/msg/op/failed
 		log_world("BUCKLE: [victim] to [holder] did not link")
-		return OP_REFUSED
+		return OP_FAILED
 	if(A.actor)
 		holder.add_fingerprint(A.actor)
 	victim.reveal(TRUE, null)
@@ -232,8 +231,8 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	var/atom/movable/holder = A.holder
 	var/mob/living/occupant = chosen_occupant(A)
 	if(!istype(occupant) || occupant.buckled_to() != holder)
-		A.reason = /datum/msg/buckle/nobody
-		return OP_REFUSED
+		log_world("BUCKLE: nobody to unbuckle from [holder] after the occupant check")
+		return OP_FAILED
 	rel_set(GLOB, nameof(GLOB.act_next_actor), A.actor)
 	var/U = ACT_ATTEMPT(holder, unbuckle, occupant)
 	rel_clear(GLOB, nameof(GLOB.act_next_actor))
@@ -244,8 +243,8 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 		return OP_REFUSED
 	if(!holder.unbuckle_mob(occupant))
 		act_cancel(U)
-		A.reason = /datum/msg/op/failed
-		return OP_REFUSED
+		log_world("BUCKLE: [occupant] could not be unbuckled from [holder] after the attempt")
+		return OP_FAILED
 	if(A.actor)
 		holder.add_fingerprint(A.actor)
 	if(occupant == A.actor)

@@ -89,7 +89,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/tickets)
 	var/list/dat = list("<html><head><title>[title]</title></head>")
 	dat += "<A href='byond://?_src_=holder;[HrefToken()];ahelp_tickets=[state]'>Refresh</A><br><br>"
 	for(var/datum/ticket/T as anything in l2b)
-		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ahelp=\ref[T];[HrefToken()];ahelp_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
+		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ahelp=[ref_token(T)];[HrefToken()];ahelp_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
 	dat += "</html>"
 	// structured TGUI AdminReport (fallback path; primary tickets
 	// UI is the dedicated TGUI module).
@@ -349,7 +349,7 @@ CAPABILITIES(/datum/ticket)
 //private
 /datum/ticket/proc/FullMonty(ref_src, admin_commands = FALSE)
 	if(!ref_src)
-		ref_src = "\ref[src]"
+		ref_src = ref_token(src)
 	if(initiator() && initiator().mob)
 		if(admin_commands)
 			. = ADMIN_FULLMONTY_NONAME(initiator().mob)
@@ -361,7 +361,7 @@ CAPABILITIES(/datum/ticket)
 //private
 /datum/ticket/proc/ClosureLinks(ref_src)
 	if(!ref_src)
-		ref_src = "\ref[src]"
+		ref_src = ref_token(src)
 
 	if(level == 1)
 		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=reject'>REJT</A>)"
@@ -376,13 +376,13 @@ CAPABILITIES(/datum/ticket)
 //private
 /datum/ticket/proc/LinkedReplyName(ref_src)
 	if(!ref_src)
-		ref_src = "\ref[src]"
+		ref_src = ref_token(src)
 	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=reply'>[initiator_key_name]</A>"
 
 //private
 /datum/ticket/proc/TicketHref(msg, ref_src, action = "ticket")
 	if(!ref_src)
-		ref_src = "\ref[src]"
+		ref_src = ref_token(src)
 	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=[action]'>[msg]</A>"
 
 /*
@@ -392,7 +392,7 @@ CAPABILITIES(/datum/ticket)
 //message from the initiator without a target, all admins will see this
 //won't bug irc
 /datum/ticket/proc/MessageNoRecipient(msg)
-	var/ref_src = "\ref[src]"
+	var/ref_src = ref_token(src)
 
 	AddInteraction(span_red("[LinkedReplyName(ref_src)]: [msg]"))
 	//send this msg to all admins
@@ -791,7 +791,7 @@ CAPABILITIES(/obj/effect/statclick/ticket)
 							if(found.mind && found.mind.special_role)
 								is_antag = 1
 							founds += "Name: [found.name]([found.real_name]) Ckey: [found.ckey] [is_antag ? "(Antag)" : null] "
-							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefToken()];adminmoreinfo=\ref[found]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefToken()];adminplayerobservefollow=\ref[found]'>F</A> "
+							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefToken()];adminmoreinfo=[url_encode(ref_token(found))]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefToken()];adminplayerobservefollow=[url_encode(ref_token(found))]'>F</A> "
 							msg += "[original_word]" + span_small((is_antag ? span_red(textentry) : span_black(textentry)))
 							continue
 		msg += "[original_word] "

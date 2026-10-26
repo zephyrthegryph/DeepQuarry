@@ -55,7 +55,7 @@ CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
 		for(var/obj/item/reagent_containers/food/snacks/S in I.instances)
 			if(S.dry) continue
 			if(S.dried_type == S.type)
-				S.dry = 1
+				S.set_dry(1)
 				S.name = "dried [S.name]"
 				S.set_color("#AAAAAA")
 				rel_remove(I, nameof(I.instances), S)
