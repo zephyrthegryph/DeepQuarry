@@ -704,3 +704,28 @@ daemon-wide pool (`dmbc/src/output_pool.rs`, installed through `byond_dmb::dmb::
 pool before any holder (`Generation`, the list-row encoding, the patch base) clones it, the digest is the one the writer
 already computed, and a hit is decided by the bytes. Two sessions that publish equal outputs (a second worktree at the same
 commit) retain one image; unequal outputs (the test variant) share nothing.
+
+## Design option: the include spec as the project input (2026-10-27, lane `tools/generated-dme`)
+
+Not built; recorded for the query-core work. `deepquarry.dme` is generated now (`tools/build/gen_dme.py` from the files on disk and the
+ordering spec `tools/build/dme_spec.txt`: `scan` roots, `skip`s, `first`/`last` groups, `before` rules, each with its reason; the
+order dependences were found by compiling the generated order against the old hand order and comparing with dmb-equiv,
+`tools/ci/dme_order_equiv.sh`). The `.dme` stays on disk because DreamMaker, DreamChecker, the analyzer and CI read it.
+
+dmbc could take the spec directly instead of parsing the generated manifest: the `project` input row would be the spec text plus the
+directory listings of the scan roots (names only), and the manifest order a query over them (`manifest_order(spec, listing)`, the
+same stable topological sort). What it would buy:
+
+* A file added or removed changes one listing entry, not a 5,900-line manifest whose text the frontend diffs region by region today
+  (`program text outside bodies changed` declines incremental output on any manifest edit, which is why a lane that only adds a file
+  pays a structural change).
+* The order rules become typed edges the frontend can check: a macro use before its `#define` (what `gen_dme.py --check` reports
+  heuristically) is visible exactly in the preprocessor's expansion facts, so the spec could be verified by the compiler instead of a
+  token scan.
+* The include position of a file stops being an input of every file after it: today's `.dme` order is a total order, while the spec
+  only orders what genuinely depends on order (macros, the definition precedence of a proc defined twice on one type, global
+  initializer order); everything else could compile in any order, which the per-file queries already assume.
+
+What it costs: dmbc must reproduce `gen_dme.py`'s sort byte for byte (or call it) so DreamMaker, which still reads the `.dme`, sees
+the same order; a disagreement would be a native-vs-DreamMaker difference the CI cross-check (`tools/ci/dm_equiv.sh`) catches. Keep
+the `.dme` either way.

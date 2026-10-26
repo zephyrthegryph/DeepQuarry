@@ -9,8 +9,7 @@ Baystation12 → Polaris → VOREStation (Virgo) → Yawn-wider → CHOMPStation
 It is a **hard fork**: no upstream is tracked or merged. There are no edit markers
 (`// CHOMPEdit`, `// DQEdit`, ...) and no modular folders; a stray one is a leftover, so
 treat it as ordinary code and remove it when you touch the file. Edit or delete any file
-freely. When you remove a file, delete it and its `#include` in `deepquarry.dme` (never
-comment an include out); git history is the record.
+freely. When you remove a file, delete it; the build regenerates `deepquarry.dme` (§2); git history is the record.
 
 **The codebase is mid-migration to the final design.** Read §3 before writing code; the short version is: write what exists on master today.
 
@@ -30,15 +29,19 @@ comment an include out); git history is the record.
 | `doc/rewrite/` | The design. Start at `README.md`; the primary design is `final_api.html`. |
 | `html/changelogs/` | One YAML stub per PR (§6). |
 | `tools/`, `bin/` | Build, lint, map tooling, Windows entry points. |
-| `deepquarry.dme` | Compile manifest. Every `.dm` is `#include`d here (§2). |
+| `deepquarry.dme` | Compile manifest, generated from the files on disk (§2). Committed; never edited by hand. |
 | `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm` | DreamChecker config. |
 
 ## 2. Wiring files into the build
 
-DM has no auto-discovery. Add one line per file to `deepquarry.dme`, Windows separators:
-`#include "code\modules\myfeature\myfile.dm"`. Keep `__defines/` includes near the top;
-later definitions win in override chains. The design plans to generate the `.dme` from the
-tree (defines, engine, library, domains, content, world); until that lands, edit it by hand.
+`deepquarry.dme` is generated: `tools/build/gen_dme.py` includes every `.dm` under the scanned roots (`code/`, `interface/`, the
+`maps/common*` trees) in path order, with the few rules that order genuinely depends on in `tools/build/dme_spec.txt` (macro files
+first, a file that redefines another's type var or proc after it, the test trees and generated files last; each rule says why).
+Add, move or delete a file and build (every target that compiles or lints DM regenerates the manifest), or run
+`python3 tools/build/gen_dme.py`; commit the result. `bash tools/ci/check_ratchets.sh` fails on a stale manifest and on a macro used
+before its `#define` in the generated order. A new order dependency (a macro in an ordinary file, a second definition of a type's var
+or proc in another file) needs a `before` rule; `bash tools/ci/dme_order_equiv.sh` compiles a reference order against the generated
+one and compares the worlds with dmb-equiv. Test files are listed in `code/modules/unit_tests/_unit_tests.dm` (still by hand).
 
 ---
 
@@ -307,7 +310,8 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   and `tgui/packages/tgui/interfaces/generated/` are gitignored; every build target that compiles or lints DM
   (and `check_ratchets.sh`) runs `analyze gen` first (`tools/build/build.sh gen` by hand). Commit the
   declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
-  that still tracks them. `deepquarry.dme` and `_unit_tests.dm` merge by union (`.gitattributes`).
+  that still tracks them. `deepquarry.dme` merges by its include sets (the `dq-dme` driver) and is regenerated after every merge;
+  `_unit_tests.dm` merges by union (`.gitattributes`).
   `doc/rewrite/agent_workflow.md`. There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
   of how types look; test a draw's behaviour instead (`dq_fresh_look_default`, `dq_human_draw_deterministic`, the staleness checker).
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
@@ -385,7 +389,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 
 ## 7. PR checklist
 
-- [ ] New `.dm` files are in `deepquarry.dme`.
+- [ ] `deepquarry.dme` regenerated and committed (the build does it; `check_ratchets.sh` checks it); new `.dm` test files in `_unit_tests.dm`.
 - [ ] Only forms that exist on master (§3a "On master"); no use of a legacy form whose ban lint is on (§3b).
 - [ ] Absolute paths; no `:` subtype access; no `Destroy()`; time defines used.
 - [ ] DreamChecker passes; `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
@@ -478,5 +482,5 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 > The codebase is mid-migration to the design in `doc/rewrite/final_api.html`. Write the forms
 > that exist on master today (a legacy form stays correct until its replacement has landed and
 > its lint is on; a form marked **new** is not usable yet), obey the ratchets that are already
-> on, and move a file into the new tree only when it is fully migrated. Register every `.dm` in `deepquarry.dme`, run only the
+> on, and move a file into the new tree only when it is fully migrated. Commit the regenerated `deepquarry.dme`, run only the
 > tests you touch, keep debug tracing, drop a changelog, and squash before merge.
