@@ -128,6 +128,7 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 		return OP_FAILED
 	var/turf/destination = landing_of(holder, climber)
 	if(!destination)
+		log_world("CLIMB: [climber] onto [holder] has no landing after the check")
 		return OP_FAILED
 	rel_set(GLOB, nameof(GLOB.act_next_actor), climber)
 	var/C = ACT_ATTEMPT(climber, climb, holder)
@@ -140,9 +141,8 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 	climber.forceMove(destination)
 	if(climber.loc != destination)
 		act_cancel(C)
-		A.reason = /datum/msg/climb/blocked
 		log_world("CLIMB: [climber] did not arrive at [destination] for [holder]")
-		return OP_REFUSED
+		return OP_FAILED
 	act_done(C)
 	if(climbed && !QDELETED(holder))
 		call(holder, climbed)(climber)

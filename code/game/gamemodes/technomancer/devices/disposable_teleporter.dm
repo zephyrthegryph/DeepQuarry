@@ -26,31 +26,32 @@
 	. += "[uses] uses remaining."
 
 CAPABILITIES(/obj/item/disposable_teleporter)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(),
+		asks(/datum/prompt/choice/technomancer_carried, fields = list("title" = "Teleportation", "question" = "Area to teleport to", "choices" = computed(PROC_REF(teleport_area_choices))), step = "area", when = PROC_REF(has_uses)),
+		then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
+/obj/item/disposable_teleporter/proc/has_uses(datum/act/op/A)
+	return uses > 0
+
+/obj/item/disposable_teleporter/proc/teleport_area_choices(datum/act/op/A)
+	return GLOB.teleportlocs
+
+/// Old attack_self: with uses left, teleports to the area the question was answered with.
 /obj/item/disposable_teleporter/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!uses)
 		to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
 		return TRUE
-	else
-		open_request(src, /datum/prompt/choice/technomancer_carried, PROC_REF(teleport_area_chosen), answerer = user, subject = src, title = "Teleportation", question = "Area to teleport to", choices = GLOB.teleportlocs)
+	var/datum/prompt/ask = A.answer
+	if(!ask)
+		return TRUE
+	var/area/A_area = GLOB.teleportlocs[ask.value]
+	if(!A_area)
+		return TRUE
+	teleport_to_area(user, A_area)
 	return TRUE
 
-/obj/item/disposable_teleporter/proc/teleport_area_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	return teleport_area_chosen_apply(A)
-
-/obj/item/disposable_teleporter/proc/teleport_area_chosen_apply(datum/act/request/request_act)
-	var/datum/prompt/choice/technomancer_carried/ask = request_act.answer
-	var/mob/user = ask.answerer
-	if(!uses)
-		return
-	var/area/A = GLOB.teleportlocs[ask.value]
-	if(!A)
-		return
+/obj/item/disposable_teleporter/proc/teleport_to_area(mob/user, area/A)
 
 	fx_sparks(user, 5, FALSE)
 
@@ -81,7 +82,7 @@ CAPABILITIES(/obj/item/disposable_teleporter)
 	if(destination)
 		user.forceMove(destination)
 		to_chat(user, span_notice("You are teleported to \the [A]."))
-		uses--
+		set_uses(uses - 1)
 		if(uses <= 0)
 			to_chat(user, span_danger("\The [src] has ran out of uses, and disintegrates from your hands."))
 			consume(src, user)

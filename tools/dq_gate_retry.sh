@@ -54,7 +54,7 @@ gate_cap_minutes() {
 # line, and the evidence check then says only "missing or inconsistent". Print a clear one, so the cause is in the log.
 gate_ensure_result() {
 	grep -q '^FOCUSED RESULT:' "$1" 2>/dev/null && return 0
-	local line="FOCUSED RESULT: CAPPED or killed before a result (exit $2): the focused run printed no result line; see the guard log (data/focused-runs/guard.*.log) and the 'FOCUSED RUN CAPPED' / queued-time lines above. Not a test failure."
+	local line="FOCUSED RESULT: CAPPED or killed before a result (exit $2): the focused run printed no result line; see the guard log (data/focused-runs/guard.*.log) and the cap and queued-time lines above (a real cap prints its own line that starts with the words RUN CAPPED; this is not one). Not a test failure."
 	echo "$line"
 	echo "$line" >>"$1"
 }

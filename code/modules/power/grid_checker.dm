@@ -151,7 +151,7 @@ CAPABILITIES(/obj/machinery/power/grid_checker)
 	if(wire_locked_out)
 		return
 	wire_locked_out = TRUE
-	after(src, 30 SECONDS, PROC_REF(end_wire_lockout))
+	after(src, 30 SECONDS, PROC_REF(end_wire_lockout), key = "wire_lockout")
 
 /// A manual wire cut allows a manual reboot; mended, it does not.
 /obj/machinery/power/grid_checker/proc/manual_wire_cut(datum/act/A)
