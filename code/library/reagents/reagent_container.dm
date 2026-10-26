@@ -75,7 +75,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		click_order(BIND_AT_TARGET, "reagent_container.spray", "reagent_container.fill", "reagent_container.pour"),
 		(lid && lid_visible) ? op("lid", inputs(in_hand(), menu()), label("Open or close the lid"), toggles(REAGENT_CONTAINER_LID_OPEN), says(MSG(reagent_container/lid))) : null,
 		settable ? op("set_amount", inputs(menu(), hand()), answers(INTENT_TOGGLE), when(CAP_PROC(range_known)), label("Set transfer amount"),
-			asks(/datum/prompt/number, fields = list("question" = "Amount per transfer:")), then(CAP_PROC(apply_amount))) : null,
+			asks(/datum/prompt/number/transfer_amount, fields = list("question" = "Amount per transfer:")), then(CAP_PROC(apply_amount))) : null,
 		(spray || needle) ? null : op("pour", at_target(), when(CAP_PROC(target_pourable)), priority(OP_PRIORITY_PART), label("Pour"),
 			needs(req_source_open(), req_source_has_reagents(),
 				req_sink_has_room()),
@@ -159,6 +159,25 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		return value >= low && value <= high
 	return value in transfer
 
+/// The amount a transfer moves: a whole number the container allows (amount_allowed). Any other answer is refused and the prompt stays open.
+/datum/prompt/number/transfer_amount
+	step = 1
+	/// The handle of the container being set, taken when the question is asked.
+	var/vessel_token
+
+/datum/prompt/number/transfer_amount/prepare(datum/act/A)
+	. = ..()
+	var/datum/act/op/O = A
+	if(istype(O))
+		vessel_token = ref_token(O.holder)
+
+/datum/prompt/number/transfer_amount/refusal(given)
+	var/atom/vessel = resolve_token(vessel_token)
+	var/datum/capability/lib/reagent_container/C = vessel ? cap_of(vessel, CAP_REAGENT_CONTAINER) : null
+	if(!C?.amount_allowed(vessel, given))
+		return reason_text(/datum/msg/reagent_container/bad_amount)
+	return null
+
 /// What set_amount answered.
 /datum/capability/lib/reagent_container/proc/apply_amount(datum/act/op/A)
 	var/datum/prompt/R = A.answer
@@ -166,8 +185,8 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 	if(isnum(value))
 		value = round(value)
 	if(!amount_allowed(A.holder, value))
-		A.reason = /datum/msg/reagent_container/bad_amount
-		return OP_REFUSED
+		log_world("REAGENT CONTAINER: [A.holder] amount [R?.value] refused after the prompt check")
+		return OP_FAILED
 	var/datum/activation/act_state = cap_activation(A.holder, CAP_REAGENT_CONTAINER, null, TRUE)
 	var/datum/cap_data/reagent_container/D = activation_data(act_state)
 	D.transfer_amount = value

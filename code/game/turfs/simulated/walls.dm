@@ -469,9 +469,12 @@ CAPABILITIES(/turf/simulated/wall)
 	to_chat(user, span_warning("You can't insert any more [S.name] sheets into [src]!"))
 	return 0
 
-/// Old attack_self: the mode radial menu.
-/obj/item/rcd/proc/rcd_self(datum/act/op/A)
-	var/mob/living/user = A.actor
+/// The mode radial rings the user.
+/obj/item/rcd/proc/rcd_mode_anchor(datum/act/op/A)
+	return A.actor
+
+/// The modes the radial offers.
+/obj/item/rcd/proc/rcd_mode_choices(datum/act/op/A)
 	var/list/choices = list(
 		"Floors & Walls" = radial_image_floorwall,
 		"Airlock" = radial_image_airlock,
@@ -487,13 +490,18 @@ CAPABILITIES(/turf/simulated/wall)
 		)
 	if(emagged)
 		choices["Turrets"] = radial_image_turret
-	open_request(src, /datum/prompt/choice, PROC_REF(rcd_mode_chosen), answerer = user, choices = choices, anchor = user, radius = 42, tooltips = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
+	return choices
 
-/obj/item/rcd/proc/rcd_mode_chosen(datum/act/request/A)
-	if(!A.answer)
+/// Old attack_self: the mode the radial was answered with.
+/obj/item/rcd/proc/rcd_self(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/datum/prompt/answer = A.answer
+	if(!answer)
 		return
-	var/mob/living/user = A.request.answerer
-	var/choice = A.answer.value
+	rcd_mode_chosen(user, answer.value)
+
+/// The sub-radials of a mode answer on their own (open_request callbacks).
+/obj/item/rcd/proc/rcd_mode_chosen(mob/living/user, choice)
 	if(!check_menu(user))
 		return
 	switch(choice)

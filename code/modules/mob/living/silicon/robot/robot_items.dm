@@ -133,26 +133,28 @@ CAPABILITIES(/obj/item/card/robot)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/pen/robopen)
-	op("robopen", in_hand(), label("Change colour or mode"), then(PROC_REF(interaction_robopen)))
+	op("robopen", in_hand(), label("Change colour or mode"),
+		asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Change What?", "question" = "Would you like to change colour or mode?", "choices" = list("Colour", "Mode", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "what"),
+		asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Color Choice", "question" = "Which colour would you like to use?", "choices" = list("black", "blue", "red", "green", "yellow"), "timeout" = 0), step = "colour", when = PROC_REF(robopen_wants_colour)),
+		then(PROC_REF(interaction_robopen)))
 
-/// Old attack_self.
+/obj/item/pen/robopen/proc/robopen_wants_colour(datum/act/op/A)
+	return A.step_value("what") == "Colour"
+
+/// Old attack_self: the colour or the mode the questions were answered with.
 /obj/item/pen/robopen/proc/interaction_robopen(datum/act/op/A)
 	var/mob/user = A.actor
-	open_request(src, /datum/prompt/choice, PROC_REF(robopen_choice_made), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Change What?", question = "Would you like to change colour or mode?", choices = list("Colour", "Mode", "Cancel"), buttons = TRUE, timeout = 0)
-
-/obj/item/pen/robopen/proc/robopen_choice_made(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
-	if(choice == "Cancel")
+	var/choice = A.step_value("what")
+	if(isnull(choice) || choice == "Cancel")
 		return
 
 	play_sfx(src, SFX_EFFECTS_POP)
 
 	switch(choice)
 		if("Colour")
-			open_request(src, /datum/prompt/choice, PROC_REF(robopen_colour_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Color Choice", question = "Which colour would you like to use?", choices = list("black", "blue", "red", "green", "yellow"), timeout = 0)
+			var/chosen_colour = A.step_value("colour")
+			if(!isnull(chosen_colour))
+				colour = text_or_null(chosen_colour)
 
 		if("Mode")
 			if (mode == 1)
@@ -160,11 +162,6 @@ CAPABILITIES(/obj/item/pen/robopen)
 			else
 				mode = 1
 			to_chat(user, span_filter_notice("Changed printing mode to '[mode == 2 ? "Rename Paper" : "Write Paper"]'"))
-
-/obj/item/pen/robopen/proc/robopen_colour_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	colour = A.answer.value
 
 // Copied over from paper's rename verb
 // see code\modules\paperwork\paper.dm line 62
@@ -467,8 +464,12 @@ CAPABILITIES(/obj/item/form_printer)
 	return !active || flash_count
 
 CAPABILITIES(/obj/item/borg/combat/shield)
-	op("level", in_hand(), then(PROC_REF(shield_ask_level)))
-	op("set_level", menu(), label("Set shield level"), needs(carried()), then(PROC_REF(shield_ask_level)))
+	op("level", in_hand(),
+		asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Shield Level", "question" = "How much damage should the shield absorb?", "choices" = list("5", "10", "25", "50", "75", "100"), "timeout" = 0), step = "level"),
+		then(PROC_REF(shield_ask_level)))
+	op("set_level", menu(), label("Set shield level"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Shield Level", "question" = "How much damage should the shield absorb?", "choices" = list("5", "10", "25", "50", "75", "100"), "timeout" = 0), step = "level"),
+		then(PROC_REF(shield_ask_level)))
 	/// Cools its flash count or recovers from an overload while either is pending (an overload or a flash count is pending recovery).
 	every(2 SECONDS, then(PROC_REF(shield_step)), when = any_of(not(nameof(active)), nameof(flash_count)))
 
@@ -502,14 +503,12 @@ CAPABILITIES(/obj/item/borg/combat/shield)
 	act_message(user, null, MSG_SELF(span_danger("Your shield destabilizes!")), MSG_OTHERS(span_danger("%U%'s shield destabilizes!")))
 	COOLDOWN_START(src, overload_cooldown, shield_refresh)
 
-/// Using the shield in hand, or its menu entry: ask the level.
+/// Using the shield in hand, or its menu entry: the level the question was answered with.
 /obj/item/borg/combat/shield/proc/shield_ask_level(datum/act/op/A)
-	open_request(src, /datum/prompt/choice, PROC_REF(shield_level_chosen), answerer = A.actor, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Shield Level", question = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), timeout = 0)
-
-/obj/item/borg/combat/shield/proc/shield_level_chosen(datum/act/request/A)
-	if(!A.answer)
+	var/datum/prompt/answer = A.answer
+	if(!answer)
 		return
-	shield_level = text2num(A.answer.value)/100
+	shield_level = text2num(answer.value)/100
 
 /obj/item/borg/combat/mobility
 	name = "mobility module"
@@ -630,13 +629,23 @@ CAPABILITIES(/obj/item/inflatable_dispenser)
 	icon_state = "setup_device_box"
 
 CAPABILITIES(/obj/item/robo_dice)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(dice_options)), "radial" = TRUE, "anchor" = computed(PROC_REF(dice_anchor)), "radius" = 70, "autopick_single_option" = TRUE, "timeout" = 0), step = "die"),
+		asks(/datum/prompt/number, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Custom Dice Roll", "question" = "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", "default" = 6, "max_value" = 1000, "min_value" = 0, "timeout" = 0), step = "custom", when = PROC_REF(die_is_custom)),
+		then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
-/obj/item/robo_dice/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
+/// The dice radial rings the user.
+/obj/item/robo_dice/proc/dice_anchor(datum/act/op/A)
+	return A.actor
+
+/// A custom die asks how many faces it has.
+/obj/item/robo_dice/proc/die_is_custom(datum/act/op/A)
+	return A.step_value("die") == "roll a custom die"
+
+/// The dice the radial offers.
+/obj/item/robo_dice/proc/dice_options(datum/act/op/A)
 	var/DI = 'icons/obj/dice.dmi'
-	var/dice_options = list(
+	var/options = list(
 		"roll a custom die"	= image(icon = 'icons/obj/integrated_electronics/electronic_setups.dmi', icon_state = "setup_device_box"),
 		"roll d4"			= image(icon = DI, icon_state = "d44"),
 		"roll d6"			= image(icon = DI, icon_state = "d66"),
@@ -646,16 +655,16 @@ CAPABILITIES(/obj/item/robo_dice)
 		"roll d20"			= image(icon = DI, icon_state = "d2020"),
 		"roll d100"			= image(icon = DI, icon_state = "d10010"),
 	)
-	open_request(src, /datum/prompt/choice, PROC_REF(die_chosen), answerer = user, radial = TRUE, choices = dice_options, anchor = user, radius = 70, autopick_single_option = TRUE, timeout = 0)
-	return TRUE
+	return options
 
-/// Dice radial answer.
-/obj/item/robo_dice/proc/die_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
+/// Old attack_self: the die the radial was answered with (a custom one with the faces asked).
+/obj/item/robo_dice/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/die = A.step_value("die")
+	if(isnull(die))
+		return TRUE
 	var/sides = 0
-	switch(A.answer.value)
+	switch(die)
 		if("roll d4")
 			sides = 4
 		if("roll d6")
@@ -671,15 +680,12 @@ CAPABILITIES(/obj/item/robo_dice)
 		if("roll d100")
 			sides = 100
 		if("roll a custom die")
-			open_request(src, /datum/prompt/number, PROC_REF(custom_die_entered), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Custom Dice Roll", question = "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", default = 6, max_value = 1000, min_value = 0, timeout = 0)
-			return TRUE
+			var/faces = A.step_value("custom")
+			if(isnull(faces))
+				return TRUE
+			sides = faces
 	roll_die(user, sides)
 	return TRUE
-
-/obj/item/robo_dice/proc/custom_die_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	roll_die(A.request.answerer, A.answer.value)
 
 /obj/item/robo_dice/proc/roll_die(mob/user, sides)
 	if(sides <= 0)

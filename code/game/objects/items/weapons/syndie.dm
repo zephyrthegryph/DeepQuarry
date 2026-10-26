@@ -102,16 +102,18 @@ CAPABILITIES(/obj/item/syndie/c4explosive)
 		set_icon_state("[base_state]1")
 		act_message(user, src, others = span_rose("Without even breaking stride, %U% flips open %T% in one smooth movement."))
 
-	else if(lit && detonator_mode)
-		open_request(src, /datum/prompt/choice, PROC_REF(detonator_action), answerer = user, title = "Lighter", question = "What would you like to do?", choices = list("Press the button.", "Close the lighter."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+/// An open lighter in detonator mode asks about the button (the op of that name, ahead of the toggle).
+/obj/item/flame/lighter/zippo/c4detonator/proc/detonator_asked(datum/act/op/A)
+	return lit && detonator_mode
 
-/obj/item/flame/lighter/zippo/c4detonator/proc/detonator_action(datum/act/request/A)
-	if(!A.answer)
-		return
+/obj/item/flame/lighter/zippo/c4detonator/proc/detonator_action(datum/act/op/A)
+	var/datum/prompt/answer = A.answer
+	if(!answer)
+		return OP_OK
 	if(!lit || !detonator_mode)
-		return
-	var/mob/user = A.request.answerer
-	switch(A.answer.value)
+		return OP_OK
+	var/mob/user = A.actor
+	switch(answer.value)
 		if("Press the button.")
 			to_chat(user, span_warning("You press the button."))
 			set_icon_state("[base_state]click")
@@ -126,9 +128,13 @@ CAPABILITIES(/obj/item/syndie/c4explosive)
 			set_lit(FALSE)
 			set_icon_state("[base_state]")
 			act_message(user, src, others = span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing."))
+	return OP_OK
 
 
 CAPABILITIES(/obj/item/flame/lighter/zippo/c4detonator)
+	op("detonator_action", in_hand(), priority(OP_PRIORITY_DEFAULT + 1), when(PROC_REF(detonator_asked)),
+		asks(/datum/prompt/choice, fields = list("title" = "Lighter", "question" = "What would you like to do?", "choices" = list("Press the button.", "Close the lighter."), "buttons" = TRUE, "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "action"),
+		then(PROC_REF(detonator_action)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	ref_one(nameof(bomb), /obj/item/syndie/c4explosive)
 
