@@ -1,5 +1,5 @@
 // Vital state: death, revival and the named vitality bands.
-// See code/modules/body/vital_state.dm, code/modules/body/revival.dm and code/modules/mob/death.dm.
+// See code/domains/body/vital_state.dm, code/domains/body/revival.dm and code/modules/mob/death.dm.
 
 // --- return_from_death() flags ---------------------------------------------------------------
 

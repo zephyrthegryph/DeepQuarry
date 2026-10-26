@@ -1,4 +1,4 @@
-// The star mover system's API (code/modules/overmap/ships/starmover_service.dm declares the system).
+// The star mover system's API (code/content/overmap/ships/starmover_service.dm declares the system).
 //
 //   SSstarmover.toggle_move_stars(zlevel, direction)   start moving the stars of a z-level in `direction`; a null direction stops them
 

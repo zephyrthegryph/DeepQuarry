@@ -238,7 +238,7 @@ is sealed (`SHOULD_NOT_OVERRIDE`): guard (already dead or deleted: no side effec
 mind memory → `COMSIG_MOB_DEATH` → subtype `on_death()` → HUD/icon refresh → antag win check →
 `COMSIG_LIVING_DEATH_FINAL`. Subtypes set `death_message` or override `get_death_message()`, never
 `death()`. The way back is `L.return_from_death(reason, source, REVIVE_*)`
-(`code/modules/body/revival.dm`), gated by `can_return_from_death()`; `set_stat()` refuses to
+(`code/domains/body/revival.dm`), gated by `can_return_from_death()`; `set_stat()` refuses to
 leave `DEAD` anywhere else, and `check_grep.sh` rejects hand-rolled list swaps.
 
 Queries every other system uses instead of `health`:

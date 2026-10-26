@@ -1,4 +1,4 @@
-// AI standings (code/modules/combat_ai/standings/standings.dm, doc/rewrite/ai_packs.md B5): disposition_to() is standing_toward() of rows that providers place.
+// AI standings (code/domains/ai/standings/standings.dm, doc/rewrite/ai_packs.md B5): disposition_to() is standing_toward() of rows that providers place.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
