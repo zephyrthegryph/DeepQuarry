@@ -26,7 +26,7 @@
 
 // Proc for creating a random seed type.
 /datum/system/plants/proc/create_random_seed(survive_on_station)
-	var/datum/seed/seed = make(/datum/seed)
+	var/datum/seed/seed = new()
 	seed.randomize()
 	seed.set_uid(length(seeds) + 1)
 	seed.name = "[seed.uid]"

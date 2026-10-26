@@ -61,7 +61,7 @@ SYSTEM_DEF(plants)
 
 	// Populate the global seed datum list.
 	for(var/type in subtypesof(/datum/seed))
-		var/datum/seed/S = make(type)
+		var/datum/seed/S = new type
 		seeds[S.name] = S
 		S.set_uid("[length(seeds)]")
 		S.roundstart = 1
