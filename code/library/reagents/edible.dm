@@ -30,7 +30,6 @@ MSG_DEF_SELF(edible/mouth_covered, "Something is in the way of the mouth!")
 MSG_DEF_SELF(edible/unconscious, "You can't feed them through what is over their mouth while they are unconscious!")
 MSG_DEF_SELF(edible/too_full, "Nope. That's it. You literally cannot force any more of it to go down your throat. It's fair to say you're full.")
 MSG_DEF_SELF(edible/no_whole_feeding, "They refuse to be fed whole things!")
-MSG_DEF_SELF(edible/no_belly, "They don't appear to have a belly to fit it!")
 MSG_DEF_SELF(edible/from_belly, "That contains something produced from a belly, and it won't be taken.")
 MSG_DEF(edible/begin_feed, "You attempt to feed %T% %I%.", "%U% attempts to feed %T% %I%.")
 MSG_DEF(edible/fed, "You feed %T% %I%.", "%U% feeds %T% %I%.")
@@ -243,8 +242,8 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 	var/datum/prompt/R = A.answer
 	var/obj/belly/belly_target = R?.value
 	if(!belly_target)
-		A.reason = /datum/msg/edible/no_belly
-		return OP_REFUSED
+		log_world("EDIBLE: [holder] whole-fed to [eater] with no belly answered (takes_whole_feeding passed)")
+		return OP_FAILED
 	user.setClickCooldown(user.get_attack_speed(holder))
 	add_attack_logs(user, eater, "Whole-fed with [holder.name] containing [holder.reagents ? holder.reagents.get_reagents() : "nothing"] into [belly_target]", admin_notify = FALSE)
 	user.drop_item()

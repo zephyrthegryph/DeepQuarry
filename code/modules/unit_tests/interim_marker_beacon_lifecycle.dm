@@ -34,7 +34,7 @@
 	TEST_ASSERT_NULL(locate_within(T, /obj/item/stack/marker_beacon), "failed placement leaves no duplicate stack on the floor")
 	TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_L), left, "failed pickup preserves the left-hand item")
 	TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_R), right, "failed pickup preserves the right-hand item")
-	beacon.perma = TRUE
+	beacon.set_perma(TRUE)
 	TEST_ASSERT(beacon.perma, "the permanent beacon is refused by the requirement (dq_timed_pin_w1/marker_beacon_permanent_stays pins the click)")
 	TEST_ASSERT(!QDELETED(beacon), "the permanent beacon remains deployed")
 

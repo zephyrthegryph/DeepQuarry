@@ -33,7 +33,7 @@ MSG_DEF_SELF(personal/unlock_first, "You need to unlock it first.")
 CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 	click_order(BIND_ITEM, "swipe", "lock.toggle")
 	op("swipe", item(/obj/item), label("Swipe ID"), when(not(nameof(opened))), when(PROC_REF(carries_id)),
-		needs(req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(card_has_name))), then(PROC_REF(card_swiped)))
+		needs(req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(card_has_name)), req(PROC_REF(card_may_swipe))), then(PROC_REF(card_swiped)))
 	op("reset_lock", menu(), label("Reset Lock"), needs(req_capable(), req(PROC_REF(can_reset))), then(PROC_REF(lock_reset)))
 
 /// The held item is, or carries, an ID card.
@@ -46,18 +46,19 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 	return (!!I?.registered_name) ? null : /datum/msg/personal/blank_card
 
 
+/// The card may work the lock: the master access, an unowned locker or the owner's own card.
+/obj/structure/closet/secure_closet/personal/proc/card_may_swipe(datum/act/op/A)
+	var/obj/item/card/id/I = A.held?.GetID()
+	return (allowed(A.actor) || !registered_name || (istype(I) && registered_name == I.registered_name)) ? null : /datum/msg/lock/denied
+
 /// A swipe: the master access, an unowned locker or the owner's own card works the lock, and the first card swiped claims it.
 /obj/structure/closet/secure_closet/personal/proc/card_swiped(datum/act/op/A)
 	var/obj/item/card/id/I = A.held.GetID()
-	if(allowed(A.actor) || !registered_name || (istype(I) && registered_name == I.registered_name))
-		//they can open all lockers, or nobody owns this, or they own this locker
-		force_lock(!lock_locked(src))
-		if(!registered_name)
-			set_registered_name(I.registered_name)
-			desc = "Owned by [I.registered_name]."
-		return OP_OK
-	A.reason = /datum/msg/lock/denied
-	return OP_REFUSED
+	force_lock(!lock_locked(src))
+	if(!registered_name)
+		set_registered_name(I.registered_name)
+		desc = "Owned by [I.registered_name]."
+	return OP_OK
 
 /obj/structure/closet/secure_closet/personal/break_lock(mob/user, obj/item/emag_source, visual_feedback, audible_feedback)
 	if(!broken)

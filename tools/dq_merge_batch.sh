@@ -5,6 +5,7 @@
 #   bash tools/dq_merge_gates.sh --lanes a,b,c      # the same thing: gates delegates here when a lane is not in HEAD yet
 #
 # Run it inside the merge worktree holding the merge lock (cd "$(bash tools/dq_merge_worktree.sh)"). It:
+#   (--lane-tests "lane=name name", repeatable: the tests a lane asked for, sent to the gates only in attempts that merge that lane)
 #   1. starts from origin/master, merges every lane in order with `git merge --no-ff` (a lane that conflicts is bounced at once),
 #   2. runs dq_merge_gates.sh once on the combination: ONE gen, ONE build, ONE union of focused tests (the smoke set plus the tests of
 #      every lane whose stamp is stale) and ONE look-key normalization and record, committed into the batch's last merge commit,
@@ -31,9 +32,11 @@ merge_lock_require || exit 1
 
 lanes_arg=""
 pass=()
+declare -A lane_tests
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--lanes) shift; lanes_arg="${1:-}" ;;
+		--lane-tests) shift; lane_tests["${1%%=*}"]="${1#*=}" ;;
 		-h|--help) sed -n '2,24p' "$0"; exit 0 ;;
 		*) pass+=("$1") ;;
 	esac
@@ -96,11 +99,16 @@ attempt() {
 		fi
 	done
 	# One look-key normalization/record and one gen/build/test pass for the whole combination: dq_merge_gates.sh does them on this HEAD.
-	bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
+	# --lane-tests LANE="names": only the tests of the lanes merged in THIS attempt go to the gate. A lane bounced for a conflict (or cut by
+	# the bisect) is not in the tree, and its test names would be "unknown" to the test build and fail every attempt that follows.
+	local lt=""
+	for l in "$@"; do lt="$lt ${lane_tests[$l]:-}"; done
+	lt="$(printf '%s\n' $lt | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
+	bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${lt:+--tests "$lt"} ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
 	local rc=$?
 	tail -n 3 "$log" | sed 's/^/   /'
 	# A killed test phase is a verdict on the size of the batch, not on a lane.
-	if [ "$rc" -ne 0 ] && grep -q 'FOCUSED RUN CAPPED' "$log"; then rc=93; echo "   the test phase hit its wall-clock cap (the batch is too big for it)"; fi
+	if [ "$rc" -ne 0 ] && grep -q '^FOCUSED RUN CAPPED' "$log"; then rc=93; echo "   the test phase hit its wall-clock cap (the batch is too big for it)"; fi
 	# A failed gate leaves its in-job baseline shrink uncommitted: discard it now, so nothing leaks into the next attempt or cycle.
 	if [ "$rc" -ne 0 ]; then dq_clean_tracked "dq_merge_batch: failed gate left a tracked edit" 2>&1 | tee -a "$log" >&2; fi
 	tried_rc[$key]=$rc

@@ -36,7 +36,7 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/snake)
 	if(pulses_remaining <= 0)
 		consume(src)
 		return
-	after(src, pulse_delay, PROC_REF(snake_pulse))
+	after(src, pulse_delay, PROC_REF(snake_pulse), key = "snake_pulse")
 
 /obj/effect/temporary_effect/pulse/snake/proc/snake_pulse()
 	if(!on_pulse())
