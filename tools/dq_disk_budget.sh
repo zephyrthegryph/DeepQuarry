@@ -247,47 +247,139 @@ children_units() { # <dir> <table>
 	done | sort -n >"$SCR/units"
 }
 
-# One children-lru table, plus trimming inside any child over sub_cap_gb (the cargo targets of one worktree): the child is cut down by its
-# least recently modified FILES (stale rlib/pdb/incremental state first; cargo rebuilds only what is missing), not evicted whole.
+# One children-lru table: the unit is each immediate child, evicted whole. A child is never trimmed file by file (a cargo target is its own
+# policy, cargo-units, below).
 process_children() { # <name> <table> <override>
-	local name="$1" t="$2" ov="${3:-}" dir="$CACHE/$1" c csz sub_b total=0 id mt line any=0
-	local -a top=()
+	local name="$1" t="$2" ov="${3:-}" dir="$CACHE/$1"
 	[ -d "$dir" ] || return 0
 	[ -n "${M[$t.subdir]:-}" ] && dir="$dir/${M[$t.subdir]}"
 	[ -d "$dir" ] || return 0
 	children_units "$dir" "$t"
-	mapfile -t top <"$SCR/units"
 	spec_row "$name" "" "$t" 999 "$ov" >"$SCR/spec"
 	select_evictions "$SCR/spec" <"$SCR/units"
 	apply_evictions
-	if [ -n "${M[$t.sub_cap_gb]:-}" ]; then sub_b=$(( ${M[$t.sub_cap_gb]} * 1073741824 * SCALE / 100 ))
-	elif [ -n "${M[$t.sub_cap_mb]:-}" ]; then sub_b=$(( ${M[$t.sub_cap_mb]} * 1048576 * SCALE / 100 ))
-	else return 0; fi
-	: >"$SCR/sub.spec"; DEPTH_PATHS=()
-	for line in ${top[@]+"${top[@]}"}; do
-		IFS=$'\t' read -r mt csz c <<<"$line"
-		[ -d "$c" ] || continue
-		if ! name_protected "$t" "$c" && [ "$csz" -gt "$sub_b" ]; then
-			spec_row "$name/${c##*/}" "$c" "sub" 14 "$sub_b" >>"$SCR/sub.spec"
-			DEPTH_PATHS[14]+="${DEPTH_PATHS[14]:+$'\n'}$c"; any=1
+}
+
+# ---- cargo targets: whole units only ----------------------------------------------------------------------------------------------
+# A cargo target is never trimmed file by file: cargo's fingerprints say an artifact is fresh while its file is gone, so a deleted rlib/rmeta
+# breaks the next build ("extern location for <crate> does not exist") and races with a build that is running. The only safe units are a whole
+# profile directory (the one that holds .fingerprint: <target>/debug, <target>/release, ...) and, once it holds none, the whole owner directory.
+# A unit is evicted only when its owner is not protected (a permanent worktree, a leased pool slot, an excluded name, a worktree that holds a
+# machine slot right now), it was not modified for the table's idle time, and it can be renamed away (a running cargo or rustc keeps a file open
+# there, so the rename fails and the unit is reported as kept).
+SLOTS_DIR="${DQ_SLOTS_DIR:-$CACHE/slots}"
+declare -A CARGO_PROT=() CARGO_WHY=()
+cargo_protected() { # <owner> -> 0 when its cargo targets must not be touched; CARGO_WHY[<owner>] says why
+	local o="$1" f w
+	if [ -z "${CARGO_PROT[$o]:-}" ]; then
+		CARGO_PROT["$o"]=0
+		case "$EXCLUDE" in *" $o "*) CARGO_PROT["$o"]=1; CARGO_WHY["$o"]="excluded worktree" ;; esac
+		if [ "${CARGO_PROT[$o]}" = 0 ]; then case " ${M[settings.permanent_worktrees]:-} " in *" $o "*) CARGO_PROT["$o"]=1; CARGO_WHY["$o"]="permanent worktree" ;; esac; fi
+		if [ "${CARGO_PROT[$o]}" = 0 ] && [ -f "$LEASE_DIR/$o.lease" ]; then CARGO_PROT["$o"]=1; CARGO_WHY["$o"]="leased pool slot"; fi
+		if [ "${CARGO_PROT[$o]}" = 0 ]; then
+			for f in "$SLOTS_DIR"/*/slot.*/owner; do
+				[ -f "$f" ] || continue
+				w="$(sed -n 's/^worktree=//p' "$f" 2>/dev/null | tr -d '\r')"; w="${w%/}"
+				if [ "${w##*/}" = "$o" ]; then CARGO_PROT["$o"]=1; CARGO_WHY["$o"]="holds a machine slot"; break; fi
+			done
+		fi
+	fi
+	[ "${CARGO_PROT[$o]}" = 1 ]
+}
+cargo_collect() { # <root dir> <owner> : appends "mtime size path owner" for every profile directory under <root> to $SCR/cunits
+	local root="$1" owner="$2" fp u
+	[ -d "$root" ] || return 0
+	while IFS= read -r fp; do
+		u="${fp%/.fingerprint}"
+		newest_mtime "$u"; path_size "$u"
+		printf '%s\t%s\t%s\t%s\n' "$MT_R" "$SIZE_R" "$u" "$owner"
+	done < <(find "$root" -maxdepth 4 \( -name '.evicting-*' -prune \) -o -type d -name .fingerprint -print 2>/dev/null) >>"$SCR/cunits"
+}
+cargo_remove() { # <dir> -> 0 removed, 1 in use (nothing changed): rename aside first, so an open file anywhere inside refuses it
+	local u="$1" tomb="${1%/*}/.evicting-$$-${1##*/}"
+	if command -v flock >/dev/null 2>&1 && [ -f "$u/.cargo-lock" ]; then flock -n "$u/.cargo-lock" true 2>/dev/null || return 1; fi
+	mv -- "$u" "$tomb" 2>/dev/null || return 1
+	rm -rf -- "$tomb" 2>/dev/null
+	return 0
+}
+# Evicts from $SCR/cunits (least recently modified first) for table <t>: age cap, then the per-owner cap, then the table cap. <id> labels the report.
+cargo_run() { # <id> <table> <table cap override or empty> <per-owner cap bytes or -1>
+	local id="$1" t="$2" ov="${3:-}" ownercap="${4:--1}" k n=0 total=0 cap age idle o m s p
+	local -a MT=() SZ=() PA=() OW=() DK=()
+	local -A OWN=() SHOWN=()
+	[ -s "$SCR/cunits" ] || return 0
+	cap_bytes "$t"; cap="$CAP_R"
+	if [ -n "$ov" ]; then if [ "$cap" -lt 0 ] || [ "$ov" -lt "$cap" ]; then cap="$ov"; fi; fi
+	idle_of "$t"; idle="$IDLE_R"; age="${M[$t.age_days]:-0}"
+	while IFS=$'\t' read -r m s p o; do
+		n=$((n + 1)); MT[n]="$m"; SZ[n]="$s"; PA[n]="$p"; OW[n]="$o"; DK[n]=0; total=$((total + s)); OWN["$o"]=$(( ${OWN[$o]:-0} + s ))
+	done < <(sort -n "$SCR/cunits")
+	BEFORE["$id"]=$(( ${BEFORE[$id]:-0} + total ))
+	for k in $(seq 1 "$n"); do
+		if cargo_protected "${OW[k]}"; then
+			DK[k]=-1
+			if [ -z "${SHOWN[${OW[k]}]:-}" ]; then log "  protected (${CARGO_WHY[${OW[k]}]}): ${OW[k]}"; SHOWN["${OW[k]}"]=1; fi
+		elif [ $(( NOW - MT[k] )) -lt "$idle" ]; then DK[k]=-1; fi
+	done
+	if [ "$age" -gt 0 ]; then
+		for k in $(seq 1 "$n"); do
+			if [ "${DK[k]}" = 0 ] && [ $(( NOW - MT[k] )) -gt $(( age * 86400 )) ]; then DK[k]=1; total=$((total - SZ[k])); OWN["${OW[k]}"]=$(( ${OWN[${OW[k]}]} - SZ[k] )); fi
+		done
+	fi
+	if [ "$ownercap" -ge 0 ]; then
+		for k in $(seq 1 "$n"); do
+			if [ "${DK[k]}" = 0 ] && [ "${OWN[${OW[k]}]}" -gt "$ownercap" ]; then DK[k]=1; total=$((total - SZ[k])); OWN["${OW[k]}"]=$(( ${OWN[${OW[k]}]} - SZ[k] )); fi
+		done
+	fi
+	if [ "$cap" -ge 0 ]; then
+		for k in $(seq 1 "$n"); do
+			if [ "${DK[k]}" = 0 ] && [ "$total" -gt "$cap" ]; then DK[k]=1; total=$((total - SZ[k])); fi
+		done
+	fi
+	for k in $(seq 1 "$n"); do
+		[ "${DK[k]}" = 1 ] || continue
+		mb "${SZ[k]}"
+		if [ "$DRY" -eq 1 ]; then log "  would remove ${PA[k]} ($MB_R MB, whole cargo profile)"; NREMOVED["$id"]=$(( ${NREMOVED[$id]:-0} + 1 )); continue; fi
+		if cargo_remove "${PA[k]}"; then
+			log "  removed ${PA[k]} ($MB_R MB, whole cargo profile)"; index_drop "${PA[k]}"; NREMOVED["$id"]=$(( ${NREMOVED[$id]:-0} + 1 ))
+		else
+			log "  kept (in use): ${PA[k]} ($MB_R MB)"; KEPT_BUSY["$id"]=$(( ${KEPT_BUSY[$id]:-0} + 1 )); total=$((total + SZ[k]))
 		fi
 	done
-	[ "$any" -eq 1 ] && run_file_group "$SCR/sub.spec"
-	for line in ${top[@]+"${top[@]}"}; do
-		IFS=$'\t' read -r mt csz c <<<"$line"
-		[ -d "$c" ] || continue
-		id="$name/${c##*/}"
-		if [ -n "${AFTER[$id]:-}" ]; then
-			if [ "${NREMOVED[$id]:-0}" -gt 0 ]; then
-				mb "$csz"; local was="$MB_R"; mb "${AFTER[$id]}"; log "  trimmed $c: $was MB -> $MB_R MB by least recently modified files (sub cap per worktree)"
-				IDX_T["$c"]="$NOW"; IDX_S["$c"]="${AFTER[$id]}"; IDX_DIRTY=1
-				NREMOVED["$name"]=$(( ${NREMOVED[$name]:-0} + 1 ))
-			fi
-			csz="${AFTER[$id]}"
-		fi
-		total=$((total + csz))
+	AFTER["$id"]=$(( ${AFTER[$id]:-0} + total ))
+}
+# The cache-root table: <cache>/cargo-targets/<owner>/... one owner directory per worktree.
+process_cargo_cache() { # <name> <table> <override>
+	local name="$1" t="$2" ov="${3:-}" dir="$CACHE/$1" c o sub=-1 left
+	[ -d "$dir" ] || return 0
+	: >"$SCR/cunits"
+	[ "$DRY" -eq 1 ] || find "$dir" -maxdepth 4 -name '.evicting-*' -prune -exec rm -rf -- {} + 2>/dev/null   # an interrupted eviction's leftovers
+	for c in "$dir"/*/; do c="${c%/}"; [ -d "$c" ] && cargo_collect "$c" "${c##*/}"; done
+	if [ -n "${M[$t.sub_cap_gb]:-}" ]; then sub=$(( ${M[$t.sub_cap_gb]} * 1073741824 * SCALE / 100 ))
+	elif [ -n "${M[$t.sub_cap_mb]:-}" ]; then sub=$(( ${M[$t.sub_cap_mb]} * 1048576 * SCALE / 100 )); fi
+	BEFORE["$name"]=0; AFTER["$name"]=0; NREMOVED["$name"]=0
+	cargo_run "$name" "$t" "$ov" "$sub"
+	# an owner directory with no profile left goes whole, when its owner is unprotected and nothing in it changed lately
+	idle_of "$t"
+	for c in "$dir"/*/; do
+		c="${c%/}"; o="${c##*/}"; [ -d "$c" ] || continue
+		cargo_protected "$o" && continue
+		left="$(find "$c" -maxdepth 4 \( -name '.evicting-*' -prune \) -o -type d -name .fingerprint -print -quit 2>/dev/null)"
+		[ -z "$left" ] || continue
+		newest_mtime "$c"; [ $(( NOW - MT_R )) -ge "$IDLE_R" ] || continue
+		if [ "$DRY" -eq 1 ]; then log "  would remove empty cargo owner $c"; continue; fi
+		cargo_remove "$c" && { log "  removed empty cargo owner $c"; index_drop "$c"; }
 	done
-	AFTER["$name"]="$total"
+}
+# A worktree table: <worktree>/<path> is one target directory (tools/analyze/target), capped per worktree by its own cap.
+process_cargo_wt() { # <worktree> <table name>
+	local wt="$1" t="worktree.$2" base="${1##*/}" root
+	root="$wt/${M[$t.path]:-.}"; [ -d "$root" ] || return 0
+	: >"$SCR/cunits"
+	[ "$DRY" -eq 1 ] || find "$root" -maxdepth 3 -name '.evicting-*' -prune -exec rm -rf -- {} + 2>/dev/null
+	cargo_collect "$root" "$base"
+	cap_bytes "$t"
+	cargo_run "wt:$base:$2" "$t" "" "$CAP_R"
 }
 
 truncate_logs() { # <dir> <max MB>
@@ -361,10 +453,11 @@ enforce_once() { # <squeeze percent, 0 for the first pass>
 	local squeeze="$1" t wt base name ov
 	for name in "${CACHE_TABLES[@]}"; do   # directory-level tables first (a child over its sub cap runs a file pass of its own)
 		t="cache.$name"
-		[ "${M[$t.policy]:-}" = children-lru ] && [ -d "$CACHE/$name" ] || continue
+		case "${M[$t.policy]:-}" in children-lru|cargo-units) ;; *) continue ;; esac
+		[ -d "$CACHE/$name" ] || continue
 		ov=""; [ "$squeeze" -gt 0 ] && ov=$(( ${AFTER[$name]:-0} * squeeze / 100 ))
 		[ "$squeeze" -eq 0 ] && run_cache_tool "$t"
-		process_children "$name" "$t" "$ov"
+		if [ "${M[$t.policy]}" = cargo-units ]; then process_cargo_cache "$name" "$t" "$ov"; else process_children "$name" "$t" "$ov"; fi
 	done
 	: >"$SCR/group.spec"; DEPTH_PATHS=()
 	for name in "${CACHE_TABLES[@]}"; do
@@ -373,7 +466,7 @@ enforce_once() { # <squeeze percent, 0 for the first pass>
 			if [ "$squeeze" -eq 0 ] && [ -n "${M[$t.log_max_mb]:-}" ]; then truncate_logs "$CACHE/$name${M[$t.log_subdir]:+/${M[$t.log_subdir]}}" "${M[$t.log_max_mb]}"; fi
 			continue
 		fi
-		[ "${M[$t.policy]:-}" = children-lru ] && continue
+		case "${M[$t.policy]:-}" in children-lru|cargo-units) continue ;; esac
 		[ -d "$CACHE/$name" ] || continue
 		ov=""; [ "$squeeze" -gt 0 ] && ov=$(( ${AFTER[$name]:-0} * squeeze / 100 ))
 		[ "$squeeze" -eq 0 ] && run_cache_tool "$t"
@@ -391,6 +484,7 @@ enforce_once() { # <squeeze percent, 0 for the first pass>
 		TRACKED="$SCR/tracked"
 		for name in "${WT_TABLES[@]}"; do
 			t="worktree.$name"
+			if [ "${M[$t.policy]:-}" = cargo-units ]; then process_cargo_wt "$wt" "$name"; continue; fi
 			add_file_table "wt:$base:$name" "$wt/${M[$t.path]:-.}" "$t" 1 ""
 		done
 		[ -s "$SCR/group.spec" ] && run_file_group "$SCR/group.spec"
