@@ -574,7 +574,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			text += span_bold("Religious Beliefs:") + " [R.fields["religion"]]"
 			text += span_bold("Known Languages:") + " [R.fields["languages"]]"
 	text += span_bold("Notes:") + " [R.fields["notes"]]"
-	text += "<a href='byond://?src=\ref[src];[kind[1]]recordComment=`'>\[View Comment Log\]</a>"
+	text += "<a href='byond://?src=[REF(src)];[kind[1]]recordComment=`'>\[View Comment Log\]</a>"
 	to_chat(user, span_filter_notice("[jointext(text, "<br>")]"))
 
 /// Print the comment log of the record `hud_type` reads.
@@ -590,7 +590,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		counter++
 	if(counter == 1)
 		to_chat(user, span_filter_notice("No comment found."))
-	to_chat(user, span_filter_notice("<a href='byond://?src=\ref[src];[kind[1]]recordadd=`'>\[Add comment\]</a>"))
+	to_chat(user, span_filter_notice("<a href='byond://?src=[REF(src)];[kind[1]]recordadd=`'>\[Add comment\]</a>"))
 
 /// Editing one flavor text part. Re-checked on the answer: it's your own.
 /datum/prompt/text/flavor_part
