@@ -50,7 +50,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/human)
 		to_chat(M, span_warning("Your intent may not be completely beneficial."))
 	bind_player(H, M.ckey, as_ckey = TRUE)
 	visible_message(span_warning("As \the [src] opens, the pipes on \the [src] surge, before it grows dark."))
-	log_and_message_admins("successfully opened \a [src] and became a [occupant_type].")
+	log_and_message_admins("successfully opened \a [src] and became a [occupant_type].", M)
 
 	var/list/uniform_options
 	var/list/shoe_options

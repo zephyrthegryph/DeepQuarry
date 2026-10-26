@@ -90,7 +90,7 @@ CAPABILITIES(/datum/computer_file/data/email_account/service/broadcaster)
 		return FALSE
 	// Possibly exploitable for user spamming so keep admins informed.
 	if(!received_message.spam)
-		log_and_message_admins("Broadcast email address used by [user]. Message title: [received_message.title].")
+		log_and_message_admins("Broadcast email address used by [user]. Message title: [received_message.title].", user)
 
 	// One delivery every 0.2 seconds, on the broadcaster's clock.
 	var/delay = 0

@@ -320,7 +320,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_fire)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/orange_fire, on_reaction)))
 
 /transformation/chem/instant/slime/orange_fire/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_fire), with = list(holder.my_atom))
@@ -344,7 +344,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_heatwave)
 	// was filtering by ZAS zone membership; under LINDA there are no
 	// zones. Fall back to view-radius proximity (visually meaningful and matches
 	// "you're in the same room" 95% of the time on stations without windowed walls).
-	log_and_message_admins("Orange extract reaction (heat wave) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Orange extract reaction (heat wave) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 
 	var/list/nearby_things = view(T)
 
@@ -420,7 +420,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_lightning)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_lightning, on_reaction)))
 
 /transformation/chem/instant/slime/yellow_lightning/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Yellow extract reaction (lightning) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Yellow extract reaction (lightning) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_lightning), with = list(holder.my_atom))
@@ -445,7 +445,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_emp)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_emp, on_reaction)))
 
 /transformation/chem/instant/slime/yellow_emp/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_emp), with = list(holder.my_atom))
@@ -483,7 +483,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_random_mobs)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_random_mobs, on_reaction)))
 
 /transformation/chem/instant/slime/gold_random_mobs/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Gold extract reaction (random mobs) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Gold extract reaction (random mobs) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	var/type_to_spawn
 	var/list/all_spawnable_types = list()
 	all_spawnable_types += GLOB.xenobio_gold_mobs_safe
@@ -508,7 +508,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_hostile_mob)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_hostile_mob, on_reaction)))
 
 /transformation/chem/instant/slime/gold_hostile_mob/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Gold extract reaction (dangerous mob) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Gold extract reaction (dangerous mob) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	var/type_to_spawn = pickweight(GLOB.xenobio_gold_mobs_hostile)
 	var/mob/living/C = new type_to_spawn(get_turf(holder.my_atom))
 	for(var/l = 1, l <= rand(1, 3), l++)
@@ -671,7 +671,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_cold_snap)
 		return
 
 	// was ZAS-zone filter; under LINDA fall back to view-radius.
-	log_and_message_admins("Dark Blue extract reaction (cold snap) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Dark Blue extract reaction (cold snap) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 
 	var/list/nearby_things = view(T)
 
@@ -811,7 +811,7 @@ CAPABILITIES(/transformation/chem/instant/slime/red_enrage)
 			H.apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 			to_chat(H, span_warning("An intense wave of rage is felt from inside, but you remain in control of yourself."))
 
-	log_and_message_admins("Red extract reaction (enrage) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Red extract reaction (enrage) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	..()
@@ -877,7 +877,7 @@ CAPABILITIES(/transformation/chem/instant/slime/green_radpulse)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/green_radpulse, on_reaction)))
 
 /transformation/chem/instant/slime/green_radpulse/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	if(istype(holder.my_atom, /obj/item/slime_extract/green))
@@ -891,7 +891,7 @@ CAPABILITIES(/transformation/chem/instant/slime/green_emitter)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/green_emitter, on_reaction)))
 
 /transformation/chem/instant/slime/green_emitter/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
 	..()
 
@@ -1015,7 +1015,7 @@ CAPABILITIES(/transformation/chem/instant/slime/oil_explosion)
 
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 
 	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_explode), with = list(holder.my_atom, power))
 
@@ -1063,7 +1063,7 @@ CAPABILITIES(/transformation/chem/instant/slime/bluespace_chaotic_tele)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_chaotic_tele, on_reaction)))
 
 /transformation/chem/instant/slime/bluespace_chaotic_tele/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Bluespace extract reaction (chaos teleport) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Bluespace extract reaction (chaos teleport) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	for(var/mob/living/M in range(2,get_turf(holder.my_atom)))
 		if(M?.buckled_to())
 			var/atom/movable/_tmp_buck_51 = M?.buckled_to()
@@ -1426,7 +1426,7 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_hell)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/emerald_hell, on_reaction)))
 
 /transformation/chem/instant/slime/emerald_hell/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Emerald extract reaction (slip hell) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
+	log_and_message_admins("Emerald extract reaction (slip hell) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
 	for(var/turf/simulated/T in trange(5, get_turf(holder.my_atom)))
 		if(!istype(T))
 			continue

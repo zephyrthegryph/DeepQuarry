@@ -18,6 +18,9 @@
 		return topic_dispatch(forward, user, href_list)
 	return null
 
+/datum/input_topic_dispatch(mob/user, list/href_list)
+	return topic_dispatch(src, user, href_list)
+
 /// `locate(raw) in <source>`, then istype(`wanted`); null if either fails or it is being deleted.
 /proc/topic_resolve_ref(target, raw, wanted, source)
 	if(isnull(source))
@@ -66,6 +69,3 @@
 			return null
 	return found
 
-// ALLOW(sys_topic_override): the one core dispatcher every href on a datum reaches.
-/datum/Topic(href, list/href_list)
-	return topic_dispatch(src, usr, href_list)

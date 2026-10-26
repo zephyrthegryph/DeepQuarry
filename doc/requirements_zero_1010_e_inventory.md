@@ -11,8 +11,8 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/datums/properties/constraints.dm` | 1 | 1 |
 | `code/datums/properties/equip_slots.dm` | 27 | 48 |
 | `code/datums/rules/declarations.dm` | 12 | 12 |
-| `code/game/objects/items/weapons/storage/backpack.dm` | 2 | 2 |
-| `code/game/objects/items/weapons/storage/internal.dm` | 1 | 2 |
+| `code/content/items/weapons/storage/backpack.dm` | 2 | 2 |
+| `code/content/items/weapons/storage/internal.dm` | 1 | 2 |
 | `code/game/objects/structures/crates_lockers/__closets.dm` | 1 | 2 |
 | `code/modules/clothing/accessories/accessory.dm` | 1 | 1 |
 | `code/modules/clothing/accessories/holster.dm` | 1 | 2 |
@@ -106,39 +106,39 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/game/objects/effects/anomalies/_anomalies.dm` | 1 |
 | `code/game/objects/effects/mines.dm` | 1 |
 | `code/game/objects/items/bodybag.dm` | 5 |
-| `code/game/objects/items/devices/binoculars.dm` | 1 |
-| `code/game/objects/items/devices/e_beacon.dm` | 1 |
+| `code/content/items/devices/binoculars.dm` | 1 |
+| `code/content/items/devices/e_beacon.dm` | 1 |
 | `code/game/objects/items/devices/flashlight.dm` | 1 |
-| `code/game/objects/items/devices/modkit.dm` | 1 |
+| `code/content/items/devices/modkit.dm` | 1 |
 | `code/game/objects/items/devices/paicard.dm` | 1 |
-| `code/game/objects/items/devices/personal_shield_generator.dm` | 2 |
+| `code/content/items/devices/personal_shield_generator.dm` | 2 |
 | `code/game/objects/items/devices/radio/headset.dm` | 1 |
-| `code/game/objects/items/devices/scanners/gas.dm` | 1 |
+| `code/content/items/devices/scanners/gas.dm` | 1 |
 | `code/game/objects/items/devices/scanners/health.dm` | 1 |
-| `code/game/objects/items/devices/scanners/mass_spectrometer.dm` | 1 |
+| `code/content/items/devices/scanners/mass_spectrometer.dm` | 1 |
 | `code/game/objects/items/devices/translator.dm` | 1 |
 | `code/game/objects/items/devices/tvcamera.dm` | 1 |
 | `code/game/objects/items/devices/whistle.dm` | 2 |
-| `code/game/objects/items/latexballoon.dm` | 1 |
-| `code/game/objects/items/petrifier.dm` | 1 |
+| `code/content/items/latexballoon.dm` | 1 |
+| `code/content/items/petrifier.dm` | 1 |
 | `code/game/objects/items/robobag.dm` | 1 |
 | `code/game/objects/items/shooting_range.dm` | 1 |
 | `code/game/objects/items/stacks/marker_beacons.dm` | 3 |
 | `code/game/objects/items/stacks/stack.dm` | 1 |
 | `code/game/objects/items/toys/toys.dm` | 1 |
 | `code/game/objects/items/uav.dm` | 1 |
-| `code/game/objects/items/weapons/RMS.dm` | 1 |
-| `code/game/objects/items/weapons/autopsy.dm` | 1 |
-| `code/game/objects/items/weapons/candle.dm` | 1 |
+| `code/content/items/weapons/RMS.dm` | 1 |
+| `code/content/items/weapons/autopsy.dm` | 1 |
+| `code/content/items/weapons/candle.dm` | 1 |
 | `code/game/objects/items/weapons/cigs_lighters.dm` | 1 |
-| `code/game/objects/items/weapons/cosmetics.dm` | 1 |
-| `code/game/objects/items/weapons/dna_injector.dm` | 1 |
-| `code/game/objects/items/weapons/implants/implantpad.dm` | 2 |
+| `code/content/items/weapons/cosmetics.dm` | 1 |
+| `code/content/items/weapons/dna_injector.dm` | 1 |
+| `code/content/items/weapons/implants/implantpad.dm` | 2 |
 | `code/game/objects/items/weapons/material/ashtray.dm` | 1 |
-| `code/game/objects/items/weapons/material/gravemarker.dm` | 1 |
+| `code/content/items/weapons/material/gravemarker.dm` | 1 |
 | `code/game/objects/items/weapons/picnic_blankets.dm` | 2 |
-| `code/game/objects/items/weapons/storage/bible.dm` | 2 |
-| `code/game/objects/items/weapons/traps.dm` | 2 |
+| `code/content/items/weapons/storage/bible.dm` | 2 |
+| `code/content/items/weapons/traps.dm` | 2 |
 | `code/game/objects/mail.dm` | 3 |
 | `code/game/objects/micro_structures.dm` | 1 |
 | `code/game/objects/structures/artstuff.dm` | 1 |

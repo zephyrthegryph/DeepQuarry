@@ -169,9 +169,9 @@ ADMIN_VERB(restart, R_SERVER, "Reboot World", "Restarts the world immediately.",
 	var/init_by = "Initiated by [user.holder.fakekey ? "Admin" : user.key]."
 	switch(result)
 		if(REGULAR_RESTART)
-			SSticker.Reboot(init_by, "admin reboot - by [user.key] [user.holder.fakekey ? "(stealth)" : ""]", 10)
+			SSticker.Reboot(init_by, "admin reboot - by [user.key] [user.holder.fakekey ? "(stealth)" : ""]", 10, user)
 		if(REGULAR_RESTART_DELAYED)
-			SSticker.Reboot(init_by, "admin reboot - by [user.key] [user.holder.fakekey ? "(stealth)" : ""]", delay * 10)
+			SSticker.Reboot(init_by, "admin reboot - by [user.key] [user.holder.fakekey ? "(stealth)" : ""]", delay * 10, user)
 		if(HARD_RESTART)
 			to_chat(world, "World reboot - [init_by]")
 			world.Reboot()

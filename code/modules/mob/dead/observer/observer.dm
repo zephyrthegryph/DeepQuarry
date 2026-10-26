@@ -305,7 +305,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(!admin_ghosted)
 		announce_ghost_joinleave(mind, 0, "They now occupy their body again.")
 	if(admin_ghosted)
-		log_and_message_admins("Admin [key_name(src)] re-entered their body.")
+		log_and_message_admins("Admin [key_name(src)] re-entered their body.", usr)
 	return 1
 
 /mob/observer/dead/verb/toggle_medHUD()
@@ -711,7 +711,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		if(length(antag_cult().current_antagonists) > CONFIG_GET(number/cult_ghostwriter_req_cultists))
 			ghosts_can_write = 1
 
-	if(!ghosts_can_write && !check_rights(R_ADMIN|R_EVENT|R_FUN, 0)) //Let's allow for admins to write in blood for events and the such.
+	if(!ghosts_can_write && !admin_can(client, R_ADMIN|R_EVENT|R_FUN)) //Let's allow for admins to write in blood for events and the such.
 		to_chat(src, span_filter_notice(span_red("The veil is not thin enough for you to do that.")))
 		return
 

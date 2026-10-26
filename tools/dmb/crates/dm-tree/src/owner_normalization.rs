@@ -101,6 +101,7 @@ impl RetainedNormalization {
             )),
             local: crate::owner_local_shape::RetainedOwnerShapes::with_shared(Arc::clone(&owner)),
             metadata: Arc::new(crate::owner_metadata::RetainedMetadata::with_shared(Arc::clone(&owner.metadata))),
+            storage: crate::resolver::storage_inventory::RetainedStorage::shared(Arc::clone(&owner)),
             values: NormalizedValues::shared(owner),
             ..Self::default()
         }
@@ -116,6 +117,7 @@ impl RetainedNormalization {
             callables: self.callables.fresh(),
             local: self.local.fresh(),
             metadata: Arc::new(self.metadata.fresh()),
+            storage: self.storage.fresh(),
             ..Self::default()
         }
     }

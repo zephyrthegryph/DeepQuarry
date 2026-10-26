@@ -960,6 +960,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
     }
     Ok(tree)
 }
+mod token_digest;
 mod tree_identity;
 use tree_identity::metadata_fingerprint;
 mod resolver_impl;

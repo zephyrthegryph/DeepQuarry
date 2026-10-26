@@ -267,7 +267,7 @@ CAPABILITIES(/obj/machinery/telecomms/bus)
 		return
 	newfreq = tcomms_tenths(newfreq)
 	if(newfreq < TCOMMS_FREQ_LIMIT)
-		change_frequency = newfreq
+		change_frequency = num_or_null(newfreq)
 		tracked_changed(src, nameof(change_frequency))
 		report("-% New frequency to change to assigned: \"[newfreq] GHz\" %-")
 

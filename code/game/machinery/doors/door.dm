@@ -184,16 +184,16 @@ CAPABILITIES(/obj/machinery/door)
 /obj/machinery/door/proc/bump_reaches(mob/M)
 	if(panel_is_open(src) || operating)
 		return FALSE
-	if(ELAPSED_SINCE(M, sparse_get_or(M, last_bumped, 0), CLOCK_WORLD) <= 1 SECOND)
+	if(STAMP_ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
 		return FALSE //Can bump-open one airlock per second. This is to prevent shock spam.
-	sparse_set(M, last_bumped, EXPIRY_NOW(M, CLOCK_WORLD))
+	STAMP(M, last_bumped, CLOCK_WORLD)
 	return bump_allowed(M)
 
 /// bump_reaches() without the stamp: what a takeover asks before it answers the bump itself (the airlock's shock).
 /obj/machinery/door/proc/bump_reaches_without_stamp(mob/M)
 	if(panel_is_open(src) || operating)
 		return FALSE
-	if(ELAPSED_SINCE(M, sparse_get_or(M, last_bumped, 0), CLOCK_WORLD) <= 1 SECOND)
+	if(STAMP_ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
 		return FALSE
 	return bump_allowed(M)
 

@@ -31,6 +31,56 @@ pub(crate) struct ModifierLocations {
     policy: Policy,
     pub(crate) rows: Arc<[ModifierLocator]>,
 }
+/// Modifier locators by exact content, process-wide. A locator is a pure function of the policy and one write, so two
+/// sessions holding the same write (two worktrees, the game and the test variant of one tree) share its key bytes and its
+/// input instead of each holding a copy. Weak: the pool keeps nothing alive.
+pub(in crate::initializer_policy) fn shared_locator(bytes: Vec<u8>, write: &InitializerWrite) -> ModifierLocator {
+    const SHARDS: usize = 32;
+    struct Shard {
+        locators: std::collections::HashMap<u128, (std::sync::Weak<[u8]>, std::sync::Weak<InitializerWrite>)>,
+        prune_at: usize,
+    }
+    static POOL: std::sync::OnceLock<Box<[std::sync::Mutex<Shard>]>> = std::sync::OnceLock::new();
+    let pool = POOL.get_or_init(|| {
+        (0..SHARDS)
+            .map(|_| {
+                std::sync::Mutex::new(Shard {
+                    locators: Default::default(),
+                    prune_at: 4096,
+                })
+            })
+            .collect()
+    });
+    let digest = xxhash_rust::xxh3::xxh3_128(&bytes);
+    let mut shard = pool[(digest as usize) % SHARDS]
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    if let Some((held_bytes, held_input)) = shard.locators.get(&digest) {
+        if let (Some(held_bytes), Some(held_input)) = (held_bytes.upgrade(), held_input.upgrade()) {
+            // The digest names the locator; the bytes and the input themselves decide.
+            if held_bytes[..] == bytes[..] && held_input.as_ref() == write {
+                return ModifierLocator {
+                    bytes: held_bytes,
+                    input: held_input,
+                };
+            }
+        }
+    }
+    let locator = ModifierLocator {
+        bytes: bytes.into(),
+        input: Arc::new(write.clone()),
+    };
+    shard
+        .locators
+        .insert(digest, (Arc::downgrade(&locator.bytes), Arc::downgrade(&locator.input)));
+    if shard.locators.len() >= shard.prune_at {
+        shard
+            .locators
+            .retain(|_, (bytes, input)| bytes.strong_count() > 0 && input.strong_count() > 0);
+        shard.prune_at = (shard.locators.len() * 2).max(4096);
+    }
+    locator
+}
 impl Preparation {
     pub(in crate::initializer_policy) fn new(writes: &[InitializerWrite]) -> Arc<Self> {
         let mut indexes = std::collections::HashMap::new();

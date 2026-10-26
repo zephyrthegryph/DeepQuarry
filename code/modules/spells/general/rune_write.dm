@@ -44,7 +44,7 @@
 		beacon = asked.get("beacon")
 		if(!beacon)
 			return list()
-	picked_rune = r
+	picked_rune = text_or_null(r)
 	picked_beacon = beacon
 	return list(user)
 

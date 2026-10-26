@@ -53,7 +53,7 @@
 		var/list/plugins = list()
 		if(pda().cartridge)
 			for(var/datum/data/pda/messenger_plugin/P as anything in pda().cartridge.messenger_plugins)
-				plugins += list(list(name = P.name, icon = P.icon, ref = "\ref[P]"))
+				plugins += list(list(name = P.name, icon = P.icon, ref = ref_token(P)))
 		data["plugins"] = plugins
 
 		if(pda().cartridge)

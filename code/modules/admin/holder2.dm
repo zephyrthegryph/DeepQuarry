@@ -418,25 +418,6 @@ CAPABILITIES(/datum/admins)
 	if(show_msg && subject)
 		to_chat(subject, span_red("Error: You do not have sufficient rights to do that. You require one of the following flags:[rights2text(rights," ")]."), confidential = TRUE)
 
-/**
- * DEPRECATED: reads usr, so it is wrong in a callback or proc chain. Use admin_can(client, rights), or declare
- * the rights on the entry point. Kept as a thin usr wrapper; a shrink-only lint baseline tracks the remaining calls.
- */
-/proc/check_rights(rights_required, show_msg=1)
-	if(usr?.client && admin_can(usr.client, rights_required))
-		return TRUE
-	admin_log_denial(usr?.client, "check_rights in [caller?.proc]", rights_required, show_msg)
-	return FALSE
-
-//probably a bit iffy - will hopefully figure out a better solution
-/proc/check_if_greater_rights_than(client/other)
-	if(usr?.client)
-		if(check_rights_for(usr.client, R_HOLDER))
-			if(!other || !other.holder)
-				return TRUE
-			return usr.client.holder.check_if_greater_rights_than_holder(other.holder)
-	return FALSE
-
 /// Alias of admin_can(): whether subject has at least ONE of the rights specified in rights_required.
 /proc/check_rights_for(client/subject, rights_required)
 	READS_FROM()

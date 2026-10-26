@@ -290,8 +290,8 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 		var/obj/mecha/mecha = AM
 		if(mecha?.slot_item(MECHA_SLOT_PILOT))
 			var/mob/M = mecha?.slot_item(MECHA_SLOT_PILOT)
-			if(ELAPSED_SINCE(M, sparse_get_or(M, last_bumped, 0), CLOCK_WORLD) <= 1 SECOND) return //Can bump-open one airlock per second. This is to prevent popup message spam.
-			sparse_set(M, last_bumped, EXPIRY_NOW(M, CLOCK_WORLD))
+			if(STAMP_ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND) return //Can bump-open one airlock per second. This is to prevent popup message spam.
+			STAMP(M, last_bumped, CLOCK_WORLD)
 			perform_op(M, src, "remote_use", origin = ORIGIN_SYSTEM)
 	return 0
 

@@ -235,11 +235,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	else
 		closeToolTip(A.actor, src)
 
-/obj/effect/overmap/visitable/MouseDown()
-	closeToolTip(usr, src) //No reason not to, really
-
-	..()
-
 /obj/effect/overmap/visitable/sector
 	name = "generic sector"
 	desc = "Sector with some stuff in it."

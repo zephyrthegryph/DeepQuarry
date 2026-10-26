@@ -6,7 +6,6 @@
 sparse(/atom, examine_icon_snapshot)
 sparse(/atom, tf_offset_x, type = num)
 sparse(/atom, tf_offset_y, type = num)
-sparse(/atom, last_bumped, type = num)
 sparse(/atom, tf_rotation, type = num)
 sparse(/atom, tf_scale_x, type = num)
 sparse(/atom, tf_scale_y, type = num)

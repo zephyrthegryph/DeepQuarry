@@ -28,7 +28,7 @@
 		on_summon(L)
 		to_chat(user, span_notice("You've successfully teleported \a [L] to you!"))
 		visible_message(span_warning("\A [L] appears from no-where!"))
-		log_and_message_admins("has summoned \a [L] at [T.x],[T.y],[T.z].")
+		log_and_message_admins("has summoned \a [L] at [T.x],[T.y],[T.z].", user)
 		user.adjust_instability(instability_cost)
 
 /// Item spell and device selections recheck the original carried/capable policy.

@@ -44,17 +44,9 @@ init_lines	code/game/machinery/doors/airlock_angled_bay.dm	@/obj/machinery/door/
 init_lines	code/game/machinery/embedded_controller/embedded_controller_base.dm	@/obj/machinery/embedded_controller/radio::Initialize::frequency
 init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::rel_take_all
 init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::RefreshParts
-init_lines	code/game/objects/items/devices/defib.dm	@/obj/item/defib_kit::Initialize::make_tethered
-init_lines	code/game/objects/items/devices/radio/radiopack.dm	@/obj/item/bluespaceradio::Initialize::make_tethered
-init_lines	code/game/objects/items/ghost_hunting/weapons.dm	@/obj/item/proton_pack::Initialize::make_tethered
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::make_tethered
 init_lines	code/game/objects/micro_structures.dm	@/obj::Initialize::obj_instance_setup
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
 init_lines	code/game/turfs/turf.dm	@/turf::Initialize::turf_instance_setup
-init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::preload
-init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::if
-init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::for
-init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::after
 init_lines	code/modules/blob2/blobs/base_blob.dm	@/obj/structure/blob::Initialize::if
 init_lines	code/modules/blob2/blobs/base_blob.dm	@/obj/structure/blob::Initialize::faction
 init_lines	code/modules/blob2/blobs/base_blob.dm	@/obj/structure/blob::Initialize::consume_tile
@@ -71,8 +63,6 @@ init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::i
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::LAZYSET
 init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Initialize::proto_set
 init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Initialize::seed_type
-init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::if
-init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::calculate_samples
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::if
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::network
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::c_tag
@@ -146,27 +136,10 @@ init_lines	code/modules/overmap/spacetravel.dm	@/obj/effect/overmap/visitable/se
 init_lines	code/modules/overmap/spacetravel.dm	@/obj/effect/overmap/visitable/sector/temporary::Initialize::start_x
 init_lines	code/modules/overmap/spacetravel.dm	@/obj/effect/overmap/visitable/sector/temporary::Initialize::start_y
 init_lines	code/modules/overmap/spacetravel.dm	@/obj/effect/overmap/visitable/sector/temporary::Initialize::map_z
-init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::if
-init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::tokens
-init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::for
-init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::if
-init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::tokens
-init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::ProcessAndApplyTokens
-init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::load_database
 init_lines	code/modules/power/lighting.dm	@/obj/machinery/light/flamp::Initialize::layer
-init_lines	code/modules/research/tg/machinery/_production.dm	@/obj/machinery/rnd/production::Initialize::available_designs
-init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::available_designs
-init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::illegal_local_designs
-init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::for
-init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::LAZYSET
-init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::for
-init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::LAZYSET
-init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::for
-init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::unlock_ids[id]
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::original_name
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::landmark_tag
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists
-world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
 world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]
 world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)
 world_reads	code/modules/integrated_electronics/subtypes/camera.dm	GLOB.cameranet.addCamera(src)

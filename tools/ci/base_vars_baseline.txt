@@ -2,9 +2,6 @@
 # tools/ci/base_vars_lint.py fails on a site not listed here. A site with
 # `// ALLOW(base_vars): <reason>` doesn't count.
 # Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.
-base_var	code/ATMOSPHERICS/atom_flags_1.dm	@/atom::flags_1
-base_var	code/ATMOSPHERICS/environmental/LINDA_system.dm	@/atom::can_atmos_pass
-base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/atom/movable::pressure_resistance
 base_var	code/_onclick/hud/alert.dm	@/mob::alerts
 base_var	code/_onclick/hud/fullscreen.dm	@/mob::screens
 base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_overlays
@@ -13,7 +10,6 @@ base_var	code/datums/behaviours/burning.dm	@/obj::burn_cool_watch
 base_var	code/datums/behaviours/swarming.dm	@/atom/movable::swarm_members
 base_var	code/datums/character_identity.dm	@/mob/living::own_identity
 base_var	code/datums/character_identity.dm	@/mob/living::identity
-base_var	code/datums/lifecycle/verbs.dm	@/atom/movable::lifecycle_lifetime_timer
 base_var	code/datums/properties/families/temperature_thresholds.dm	@/obj::insulation
 base_var	code/datums/reactive_icon_update.dm	@/obj::reactive_icon
 base_var	code/datums/recursive_move.dm	@/atom/movable::recursive_move
@@ -22,9 +18,6 @@ base_var	code/datums/soul_link.dm	@/mob/living::owned_soul_links
 base_var	code/datums/soul_link.dm	@/mob/living::shared_soul_links
 base_var	code/datums/sparse_vars/alt_appearance.dm	@/atom::alt_appearances_owned
 base_var	code/datums/sparse_vars/alt_appearance.dm	@/atom::alt_appearances_viewing
-base_var	code/engine/refs/containment/latency_policy.dm	@/atom/movable::latent_touched_at
-base_var	code/game/atom/_atom.dm	@/atom::flags
-base_var	code/game/atom/_atom.dm	@/atom::pass_flags
 base_var	code/game/atom/_atom.dm	@/atom::germ_level
 base_var	code/game/atom/_atom.dm	@/atom::simulated
 base_var	code/game/atom/_atom.dm	@/atom::forensic_data
@@ -39,15 +32,11 @@ base_var	code/game/atom/atom_defense.dm	@/atom::atom_integrity
 base_var	code/game/atom/atom_defense.dm	@/atom::integrity_failure
 base_var	code/game/atom/atom_type_table.dm	@/atom::init_from_table
 base_var	code/game/atoms_movable.dm	@/atom/movable::last_move
-base_var	code/game/atoms_movable.dm	@/atom/movable::moving_diagonally
 base_var	code/game/atoms_movable.dm	@/atom/movable::move_speed
-base_var	code/game/atoms_movable.dm	@/atom/movable::l_move_time
-base_var	code/game/atoms_movable.dm	@/atom/movable::throwing
 base_var	code/game/atoms_movable.dm	@/atom/movable::throw_source
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_x
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_y
 base_var	code/game/atoms_movable.dm	@/atom/movable::riding_datum
-base_var	code/game/atoms_movable.dm	@/atom/movable::movement_type
 base_var	code/game/gamemodes/changeling/state/changeling.dm	@/mob/living::changeling_state
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::component_parts
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::circuit
@@ -80,7 +69,6 @@ base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::deaf_
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::species_sounds
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::firesoundloop
 base_var	code/modules/crafting/crafting.dm	@/mob/living/carbon/human::crafting
-base_var	code/modules/detectivework/tools/rag.dm	@/mob::track_blood
 base_var	code/modules/economy/service_invoices.dm	@/obj/item::economic_adoption
 base_var	code/modules/factions/reputation.dm	@/mob/living::faction_reputation
 base_var	code/modules/flufftext/Dreaming.dm	@/mob/living/carbon::current_dream
@@ -90,7 +78,6 @@ base_var	code/modules/heat/heat_objects.dm	@/atom/movable::heat_fire_turf
 base_var	code/modules/keybindings/hover.dm	@/mob::hovered_atom_view
 base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_flags
 base_var	code/modules/lighting/lighting_atom.dm	@/atom::light
-base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_sources
 base_var	code/modules/lighting/lighting_atom.dm	@/atom/movable::em_block
 base_var	code/modules/lighting/overlay_lighting.dm	@/atom/movable::overlay_light
 base_var	code/modules/materials/containers/machine_shim.dm	@/mob::machine_shim
@@ -135,7 +122,6 @@ base_var	code/modules/mob/living/default_language.dm	@/mob/living::default_langu
 base_var	code/modules/mob/living/inventory.dm	@/mob/living::internal
 base_var	code/modules/mob/living/life/life_om.dm	@/mob/living::life_set
 base_var	code/modules/mob/living/living.dm	@/mob/living::character_setup_button
-base_var	code/modules/mob/living/living_defines.dm	@/mob/living::now_pushing
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::hud_list
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::inventory_panel
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::status_effects
@@ -163,7 +149,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::embedded
 base_var	code/modules/mob/mob_defines.dm	@/mob::bodytemperature
 base_var	code/modules/mob/mob_defines.dm	@/mob::charges
 base_var	code/modules/mob/mob_defines.dm	@/mob::losebreath
-base_var	code/modules/mob/mob_defines.dm	@/mob::m_intent
 base_var	code/modules/mob/mob_defines.dm	@/mob::mapobjs
 base_var	code/modules/mob/mob_defines.dm	@/mob::inertia_dir
 base_var	code/modules/mob/mob_defines.dm	@/mob::dna
@@ -209,7 +194,6 @@ base_var	code/modules/vore/eating/mob.dm	@/mob::vore_icon_bellies
 base_var	code/modules/vore/eating/mob.dm	@/mob::previewing_belly
 base_var	code/modules/vore/eating/mob.dm	@/mob::soulgem
 base_var	code/modules/vore/eating/mob.dm	@/mob::voice_sounds_list
-base_var	code/modules/vore/eating/mob.dm	@/mob::last_move_time
 base_var	code/modules/vore/eating/vorepanel.dm	@/mob::vorePanel
 base_var	code/modules/xenoarcheaology/effect_master.dm	@/atom::artifact_master
 base_var	code/modules/xenoarcheaology/finds/talking.dm	@/obj::talking_atom

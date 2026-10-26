@@ -112,9 +112,9 @@ CAPABILITIES(/obj/item/card)
 	A.add_fingerprint(user)
 	// Because some things (read lift doors) don't get emagged
 	if(used)
-		log_and_message_admins("emagged \an [A].")
+		log_and_message_admins("emagged \an [A].", user)
 	else
-		log_and_message_admins("attempted to emag \an [A].")
+		log_and_message_admins("attempted to emag \an [A].", user)
 	if(uses < 1)
 		spent(user)
 

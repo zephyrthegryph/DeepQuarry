@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The merge batch cleans tracked leftovers (a failed gate's baseline shrink) before and after every attempt, so a failed attempt no longer bounces innocent lanes"

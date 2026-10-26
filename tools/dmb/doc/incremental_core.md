@@ -639,3 +639,68 @@ expansion equals the full expansion" on every request that had a previous plan, 
   (step 4's last deletion). The carry itself is 0.13-0.28 s of a declaration edit.
 - Declaration chunk cells (parse 0.11 s, origins 0.07 s and body indexing 0.07 s still visit every chunk or declaration).
 
+
+## Domain-version tokens are content digests (lane `compiler/shared-store-4`, 2026-10-25)
+
+A domain version (`Resolver::domain_version`, a `(ReadDomain, u128)` receipt) certifies that every read recorded under that
+domain still has its recorded answer. The owner-scoped tokens used to come from process-wide counters, one number per issued
+input state, so two sessions (two worktree roots, the test variant) with identical declarations held unequal tokens and nothing
+that stored a token (rebound lowering records' `versions`, the domain memo, name-demand receipts, `MetadataDependencies`) could be
+shared by content.
+
+**Contract.** `token = xxh3_128(tag, artifact key, canonical encoding of the exact input state the token certifies)`
+(`dm-tree/src/token_digest.rs`: every variable part length-prefixed, every optional part with a presence byte). A token changes
+**iff** the encoded state changes, up to the 128-bit digest width:
+
+* *Equal state, equal token* in every session and after every restart (symbols are text hashes, so no session-local id enters).
+* *Different state, different token.* The encoding covers every field the artifact's `PartialEq` compares, because the old
+  issuer reused a counter value exactly when the store's exact-read replay found an equal state. Nothing was added to or removed
+  from the answers; only the name of an equal state changed from "the number the first session drew" to "its digest".
+* A state that returns to an earlier value (A, B, A) returns the earlier token. That is sound: a recorded read under the token
+  was computed from state A and still holds in state A. The counter issued a fresh number there and caused a spurious miss.
+* Chains stay chains: a name's token at a type includes its parent's token (`parent_certificate`), so an ancestor change moves
+  every descendant's token, exactly as before.
+
+| Token | Digest of | Where |
+|---|---|---|
+| callable (whole owner, demanded selection, override chain, presence) | key, local members (key, definition, content (override chains only), metadata fingerprint, predecessor), engine intrinsics, parent token, both completeness gates | `owner_metadata/callables.rs`, `demanded_selections.rs` |
+| variable | key, ancestors, parent token, local members, intrinsics, gates | `owner_metadata/variables.rs` |
+| hierarchy | key, ancestry path list (the domain version is that digest shifted left with the hierarchy-certified bit) | `owner_metadata/hierarchy.rs` |
+| member-name / selector | key, presence flag / selector bits | `demanded_selections.rs` |
+| uniqueness certificate | key, reduced slot, non-unique flag, completeness | `resolver/storage_uniqueness.rs` |
+| procedure static layout | procedure identity and every declaration's canonical bytes | `procedure_static_layout.rs` |
+
+Content-insensitive selections keep ignoring `content` (the selection kinds below 6 pass 0), because their recorded reads never
+depend on it; that is part of what the token certifies and unchanged.
+
+`ReadDomain::persistent_version` is unchanged: these domains still never authorize a disk record. A digest could, but the
+classification also records that the *host* tied the answer to process-local facts (fallback receipts, catalog issuers), so
+lifting it is a separate decision.
+
+**Still counter-issued** (process-local, not per-session-state): scalar-artifact certificates
+(`constant_resolution_artifacts`), callable-fallback receipts (`runner_facts_callable_fallback`), engine provider and catalog
+issuers (one per captured engine snapshot, shared by every session of the engine), `query_db` ids. Each certifies an admission
+event, not a content state; converting them needs the transitive reads of the artifact in the digest.
+
+**Consumers that assumed a counter.** `EngineResolverHost` packed a tree token into the high half of a `u128` next to a 64-bit
+provider half (`(base << 64) | provider`, and `u64::try_from(token)`), which silently declined every version once tokens were
+128-bit digests (five `dmbc` tests caught it). `engine_host::compose_version(base, tail)` now digests the pair; the catalog,
+variable-negative and callable sites use it. `variable_negative_tests` and `owner_domain_tests` assert against it.
+
+**Measured effect** (shared-store probe, requested-live GB; roots A and B are copies of the tree, B with comment-only edits, so
+their outputs are byte-identical): A 6.28 / test +3.74 / B +1.94 before, A 6.60 / test +3.38 / B +1.87 after (one probe differs
+from another by about 0.15 GB). The lowering `versions` list (124 MB, the largest B owner) is gone from B's growth because a
+rebound record's list now equals its predecessor's and is shared. The rest of the owners the tokens were meant to unlock
+(`domain_memo` 57, `MetadataDependencies` 59, the per-tree demand token map in `RetainedMetadata`/`demanded_selections` about
+50, all of them per-tree caches keyed by selection) are caches of a pure function of the tree, not stores of content, so equal
+tokens do not let two trees share them: sharing needs a tree-state identity to key a whole-cache share on, or a cheaper
+representation, and is not done here.
+
+## Shared output images (same lane)
+
+The encoded `.dmb` a session retains for splicing (`byond_dmb::dmb::codec`, about 70 MB) is interned by content in a weak
+daemon-wide pool (`dmbc/src/output_pool.rs`, installed through `byond_dmb::dmb::set_image_interner` by
+`shared_store::activate`; `DMB_SHARED_STORE_PRIVATE=images` keeps it private). The writer hands every finished image to the
+pool before any holder (`Generation`, the list-row encoding, the patch base) clones it, the digest is the one the writer
+already computed, and a hit is decided by the bytes. Two sessions that publish equal outputs (a second worktree at the same
+commit) retain one image; unequal outputs (the test variant) share nothing.

@@ -238,7 +238,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 	if(shadekin.in_dark_respite || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
 		return FALSE
 	if(!LAZYLEN(GLOB.latejoin_thedark))
-		log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to")
+		log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to", null)
 		return FALSE
 
 	flick("tp_out",src)

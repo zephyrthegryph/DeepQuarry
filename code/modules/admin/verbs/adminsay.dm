@@ -19,7 +19,7 @@ ADMIN_VERB(cmd_mod_say, (R_ADMIN|R_MOD|R_SERVER), "Msay", "Send a message to oth
 		return
 
 	var/sender_name = key_name(user, 1)
-	if(check_rights(R_ADMIN, 0))
+	if(admin_can(user, R_ADMIN))
 		sender_name = span_admin("[sender_name]")
 	for(var/client/C in GLOB.admins)
 		if(check_rights_for(C, R_ADMIN|R_MOD|R_SERVER))
@@ -35,7 +35,7 @@ ADMIN_VERB(cmd_event_say, (R_ADMIN|R_MOD|R_EVENT|R_SERVER), "Esay", "Send a mess
 		return
 
 	var/sender_name = key_name(user, 1)
-	if(check_rights(R_ADMIN, 0))
+	if(admin_can(user, R_ADMIN))
 		sender_name = span_admin("[sender_name]")
 	for(var/client/C in GLOB.admins)
 		to_chat(C, span_event_channel(create_text_tag("event", "EVENT:", C) + " " + span_name("[sender_name]") + "([admin_jump_link(user.mob, C.holder)]): " + span_name("[msg]") ))

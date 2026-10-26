@@ -700,7 +700,7 @@
 					spent(src)
 					ourmob.forceMove(item_to_destroy.loc)
 					spent(item_to_destroy)
-					log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
+					log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.", src)
 					return
 				to_chat(src,span_notice("You have no body."))
 				rel_set(src, nameof(tf_mob_holder), null)
@@ -711,7 +711,7 @@
 			src.mind.transfer_to(ourmob)
 			own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
 			spent(src)
-			log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
+			log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.", src)
 			return
 		if(istype(src.loc, /obj/item/clothing)) //Are they in clothes? Delete the item then revert them.
 			spent(item_to_destroy)
@@ -742,7 +742,7 @@
 	else if(!istype(src, /mob/living/voice) && istype(src.loc, /obj/item/clothing/shoes))
 		var/obj/item/clothing/shoes/S = src.loc
 		forceMove(get_turf(src))
-		log_and_message_admins("[key_name(src)] used the OOC escape button to escape from of a pair of shoes. [ADMIN_FLW(src)] - Shoes [ADMIN_VV(S)]")
+		log_and_message_admins("[key_name(src)] used the OOC escape button to escape from of a pair of shoes. [ADMIN_FLW(src)] - Shoes [ADMIN_VV(S)]", src)
 
 	//You are in food and for some reason can't resist out
 	else if(istype(loc, /obj/item/reagent_containers/food))

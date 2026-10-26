@@ -284,7 +284,7 @@ CAPABILITIES(/datum/prompt/text/language_key)
 	rel_set(src, nameof(language), captured_language)
 	if(captured_language)
 		question = "Input a new key for [captured_language.name]"
-		default = get_custom_prefix_by_lang(answerer, captured_language)
+		default = text_or_null(get_custom_prefix_by_lang(answerer, captured_language))
 
 /datum/prompt/text/language_key/recheck_extra()
 	var/reason = ..()

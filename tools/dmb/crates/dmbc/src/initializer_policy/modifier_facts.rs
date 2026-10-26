@@ -272,10 +272,7 @@ pub(super) fn keys_in(
                 let duplicate = duplicates.entry(key.clone()).or_default();
                 key.extend_from_slice(&(*duplicate as u128).to_le_bytes());
                 *duplicate += 1;
-                classification::token_roster::preparation::ModifierLocator {
-                    bytes: key.into(),
-                    input: Arc::new(write.clone()),
-                }
+                classification::token_roster::preparation::shared_locator(key, write)
             })
             .collect::<Vec<_>>();
         keys
