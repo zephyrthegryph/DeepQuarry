@@ -44,8 +44,8 @@
     {"file": "code/modules/projectiles/guns/projectile/dartgun.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(src.beakers), B, user = user))"},
     {"file": "code/modules/projectiles/guns/projectile/revolver.dm", "reason": "dynamic_var", "text": "own_add(src, stash_var, casing)"},
     {"file": "code/modules/projectiles/guns/toy.dm", "reason": "extra_args", "text": "own_add(src, nameof(src.loaded), D, into = TRUE)"},
-    {"file": "code/modules/reagents/machinery/grinder.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(src.holdingitems), O, user = user))"},
-    {"file": "code/modules/reagents/machinery/pump.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(component_parts), W, user = user, slot = CONTAINER_SLOT_INTERNALS))"},
+    {"file": "code/content/reagents/machinery/grinder.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(src.holdingitems), O, user = user))"},
+    {"file": "code/content/reagents/machinery/pump.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(component_parts), W, user = user, slot = CONTAINER_SLOT_INTERNALS))"},
     {"file": "code/modules/refinery/core/industrial_reagent_grinder.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(src.holdingitems), O, user = user))"},
     {"file": "code/modules/refinery/core/industrial_reagent_grinder.dm", "reason": "extra_args", "text": "own_add(src, nameof(src.holdingitems), AM, into = TRUE)"},
     {"file": "code/modules/resleeving/implant.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(src.imps), W, user = user))"}
