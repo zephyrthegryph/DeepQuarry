@@ -216,7 +216,7 @@ CAPABILITIES(/obj/item/xenobio)
 /// Set after a monkey is ground: make_cubes() runs every second while it is (every()).
 /obj/item/slime_grinder/var/cube_making = FALSE
 
-/// What the grinder is working on: the REF text of the target of the running grind, or "cubes" while the last monkey's cubes are made. Null: free.
+/// What the grinder is working on: the handle (ref_token) of the target of the running grind, or "cubes" while the last monkey's cubes are made. Null: free.
 /obj/item/slime_grinder/var/grinding = null
 
 // Instead of bringing the slime to the grinder, lets bring the grinder to the slime! This will process slimes and monkies one at a time:
@@ -233,7 +233,7 @@ CAPABILITIES(/obj/item/slime_grinder)
 /// Requirement: nothing else is being ground (another target, or the cubes of the last monkey). The grind the op itself started does not refuse it.
 /obj/item/slime_grinder/proc/grinder_free(datum/act/op/A)
 	var/working = read_once(grinding) // a plain var: the juicer starts inside the wait, and a published write there would re-check the op half-started
-	return (isnull(working) || working == "\ref[A.target]") ? null : MSG(req_failed)
+	return (isnull(working) || working == ref_token(A.target)) ? null : MSG(req_failed)
 
 /// Requirement: the target is a dead slime or a dead monkey.
 /obj/item/slime_grinder/proc/target_processable(datum/act/op/A)
@@ -242,7 +242,7 @@ CAPABILITIES(/obj/item/slime_grinder)
 /// The juicer starts and the grinder is busy until the grind ends.
 /obj/item/slime_grinder/proc/grind_started(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_JUICER)
-	grinding = "\ref[A.target]"
+	grinding = ref_token(A.target)
 
 /// A grind that ends without finishing: the grinder is free again.
 /obj/item/slime_grinder/proc/grind_ended(datum/act/op/A)

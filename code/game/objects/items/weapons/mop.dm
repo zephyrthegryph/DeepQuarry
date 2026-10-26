@@ -42,11 +42,11 @@ CAPABILITIES(/obj/item/mop)
 		var/mob/living/cleaner = user
 		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
 			"department" = DEPARTMENT_CIVILIAN,
-			"target_id" = REF(T),
+			"target_id" = ref_token(T),
 			"method" = "manual_mop",
 			"cleaned_units" = 1,
 			"detail" = "Cleaned [T] with [src].",
-		), "sanitation:[REF(T)]:[world.time]", src, cleaner)
+		), "sanitation:[ref_token(T)]:[world.time]", src, cleaner)
 	user.balloon_alert(user, "you have finished mopping!")
 	return OP_OK
 

@@ -159,7 +159,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		system_data += list(list(
 			"name" = system.name,
-			"ref" = REF(system),
+			"ref" = ref_token(system),
 			"init_order" = 0,
 			"last_fire" = system.last_fire,
 			"next_fire" = 0,

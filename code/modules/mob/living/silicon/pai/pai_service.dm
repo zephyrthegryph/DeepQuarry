@@ -118,7 +118,7 @@ CAPABILITIES(/datum/prompt/choice/pai_invite)
 			to_chat(inquirer, span_info("[new_pai] has accepted your pAI request!"))
 			return
 		if("Never for this round")
-			SSpai.block_pai_invites(REF(ghost))
+			SSpai.block_pai_invites(ref_token(ghost))
 
 	to_chat(inquirer, span_warning("The pAI denied the request."))
 

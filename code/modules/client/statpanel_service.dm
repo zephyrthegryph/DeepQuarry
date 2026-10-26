@@ -181,7 +181,7 @@ SYSTEM_DEF(statpanels)
 			"overrun" = S.tick_overrun,
 			"cost" = S.fire_cost,
 			"fires" = S.times_fired,
-			"ref" = REF(S),
+			"ref" = ref_token(S),
 		))
 	return list(
 		"tick_budget_ms" = world.tick_lag * 100,

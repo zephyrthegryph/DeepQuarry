@@ -17,7 +17,7 @@ CAPABILITIES(/datum/turbolift_floor)
 	ref_many(nameof(doors))
 
 /datum/turbolift_floor/proc/set_area_ref(ref)
-	var/area/turbolift/A = locate(ref)
+	var/area/turbolift/A = resolve_token(ref)
 	if(!istype(A))
 		log_mapping("Turbolift floor area was of the wrong type: ref=[ref]")
 		return

@@ -183,13 +183,13 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
-			"bot_id" = REF(src),
+			"bot_id" = ref_token(src),
 			"task_kind" = "medical_assistance",
 			"target_id" = SScontracts.subject_identity(H)?.id,
 			"successful" = TRUE,
 			"work_units" = injection_amount,
 			"detail" = "[src] completed an autonomous treatment for [H].",
-		), "automation:[REF(src)]:medical:[REF(H)]:[world.time]", src, null, H)
+		), "automation:[ref_token(src)]:medical:[ref_token(H)]:[world.time]", src, null, H)
 
 /// The kit skin it was built from shows over the sprite.
 /mob/living/bot/medbot/draw(datum/look/look)

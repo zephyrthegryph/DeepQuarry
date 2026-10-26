@@ -55,7 +55,7 @@ CAPABILITIES(/datum/contract_subject_identity)
 	kind = _kind
 	subject_id = _subject_id
 	creator_account = _creator_account
-	source_ref = source ? REF(source) : null
+	source_ref = source ? ref_token(source) : null
 	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
 	payload = _payload ? deepCopyList(_payload) : list()
 
