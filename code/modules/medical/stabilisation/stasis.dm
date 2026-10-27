@@ -20,6 +20,9 @@
 // paused frames and no system asks. inStasisNow() remains for code outside the life pipeline.
 // So at stasis 0.9 everything runs at 10% speed; at 1 it stops. STAT_STASIS stays a factor
 // for diagnosis readouts; nothing in the life pipeline reads it.
+/// Stasis hold numbers: a source's key in the mob's stasis sources.
+SERIAL_DEF(stasis_hold, 1, FALSE)
+
 
 /datum/body
 	/// Fractional biology counter: + the clock_rate_bio rate per frame.
@@ -169,8 +172,7 @@ CAPABILITIES(/datum/stasis_hold)
 		if(!length(stasis_sources))
 			rel_clear(src, nameof(stasis_sources))
 	if(stasis_type)
-		var/static/hold_serial = 0
-		key = source ? "stasis_[++hold_serial]" : STASIS_NO_SOURCE
+		key = source ? "stasis_[next_serial(stasis_hold)]" : STASIS_NO_SOURCE
 		var/datum/body_effect/stasis/level = body_effect_def(stasis_type)
 		var/datum/stasis_hold/hold = new
 		hold.set_stasis_type(stasis_type)

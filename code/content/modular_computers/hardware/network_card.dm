@@ -1,4 +1,5 @@
-GLOBAL_VAR_INIT(ntnet_card_uid, 1)
+/// NTNet card identification numbers (the id a card shows on the network).
+SERIAL_DEF(ntnet_card, 1, FALSE)
 
 /obj/item/computer_hardware/network_card/
 	name = "basic NTNet network card"
@@ -36,8 +37,7 @@ CAPABILITIES(/obj/item/computer_hardware/network_card)
 	after_init(0, then(PROC_REF(assign_identification_id)))
 
 /obj/item/computer_hardware/network_card/proc/assign_identification_id(datum/act/timer/A)
-	set_identification_id(GLOB.ntnet_card_uid)
-	GLOB.ntnet_card_uid++
+	set_identification_id(next_serial(ntnet_card))
 
 /obj/item/computer_hardware/network_card/advanced
 	name = "advanced NTNet network card"

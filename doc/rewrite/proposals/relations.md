@@ -154,8 +154,13 @@ second uid scheme for the same purpose: one way to name an entity.
   address; the slot table holds text, so a handle never keeps its target alive; a turf handle carries its z-level's generation, a client handle its
   connection. A counter-minted id or a `REF()` text has none of this: nothing clears it when its entity goes, and a `REF()` text can name the next datum at
   the same address.
-- **What stays.** A number that is player-facing data rather than a way to find the entity again (a contract's "DQ-12", an NTNet card id, a cell's
-  number in a UI list) is a record field, not a handle; such a site says so with `// ALLOW(entity_ids): <reason>`. Saved data still stores ids, ckeys or
+- **What stays: serials.** A number that is player-facing or saved data rather than a way to find the entity again (a contract's "DQ-12", an NTNet card id, a
+  cell's number in a UI list, a SQL round number) is a record field, not a handle, and it uses the one declared serial form
+  (`code/engine/refs/serials.dm`, `code/__defines/engine/serials.dm`): `SERIAL_DEF(kind, first, persisted)` beside the owner, `next_serial(kind)` to take a
+  number (`next_serial_keyed(kind, key)` for one run per key), `serial_reset(kind)`, and `serial_seed(kind, last_issued)` for a persisted kind. There is one
+  logged counter per kind, round-scoped unless the kind is declared persisted; a persisted kind (the SQL round number) is seeded from the database or the
+  save before it issues and refuses to issue unseeded. A hand-rolled counter is not allowed and has no annotation: the `entity_ids` `counter_id` rule is a
+  hard ban with an empty baseline. Saved data still stores ids, ckeys or
   names, never a handle (D10, `saved_handle`).
 - **Lint `entity_ids`** (`tools/analyze/src/lints/entity_ids.rs`, shrink-only baseline `tools/ci/entity_ids_baseline.txt` seeded at its switch-on): rule
   `counter_id` reports an id minted from a counter (`X++` / `++X` on a counter named `*uid*`, `id`, `*_id`, `next_*id`, `*_id_counter`, `*_id_ticker`),

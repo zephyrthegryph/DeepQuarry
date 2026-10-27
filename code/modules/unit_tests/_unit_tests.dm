@@ -268,6 +268,7 @@
 #include "dq_ai_port_smoke_tests.dm"
 #include "dq_ai_cost_tests.dm"
 #include "dq_economy_tests.dm"
+#include "dq_serial_tests.dm"
 #include "dq_refs_waves_tests.dm"
 #include "dq_refs_prompt_callers_tests.dm"
 #include "dq_ratchet_tail_tests.dm"
