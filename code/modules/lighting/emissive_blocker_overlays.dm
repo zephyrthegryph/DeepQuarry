@@ -22,21 +22,18 @@
 /// The generic blocker for a look, one appearance per (icon file, state, alpha, dir, flags): about 91 k movables take one at boot, and
 /// they share a few hundred looks, so most attach without building a mutable appearance. An icon object (not a file) is built every time.
 /proc/emissive_blocker_generic(icon, icon_state, alpha, dir, appearance_flags)
-	var/key = (isnull(icon) || isfile(icon)) ? "[icon]|[icon_state]|[alpha]|[dir]|[appearance_flags]" : null
-	if(key)
-		var/known = GLOB.emissive_blocker_generic_cache[key]
-		if(known)
-			return known
+	if(isnull(icon) || isfile(icon))
+		return CACHED_KEY(emissive_blocker_generic, "[icon]|[icon_state]|[alpha]|[dir]|[appearance_flags]", icon, icon_state, alpha, dir, appearance_flags)
+	return emissive_blocker_generic_build(icon, icon_state, alpha, dir, appearance_flags)
+
+DECLARE_SHARED_CACHE(emissive_blocker_generic, GLOBAL_PROC_REF(emissive_blocker_generic_build), SC_NEVER)
+
+/proc/emissive_blocker_generic_build(icon, icon_state, alpha, dir, appearance_flags)
 	var/mutable_appearance/gen_emissive_blocker = mutable_appearance(icon, icon_state, plane = PLANE_EMISSIVE, alpha = alpha)
 	gen_emissive_blocker.color = GLOB.em_block_color
 	gen_emissive_blocker.dir = dir
 	gen_emissive_blocker.appearance_flags |= appearance_flags
-	if(!key)
-		return gen_emissive_blocker
-	. = gen_emissive_blocker.appearance
-	GLOB.emissive_blocker_generic_cache[key] = .
-
-GLOBAL_LIST_EMPTY(emissive_blocker_generic_cache)
+	return gen_emissive_blocker.appearance
 
 /// Takes the unique blocker off in the destroy transaction (the generic overlay dies with the movable).
 /atom/movable/proc/emissive_blocker_detach()
