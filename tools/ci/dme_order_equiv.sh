@@ -42,7 +42,8 @@ else
 fi
 python3 tools/build/gen_dme.py --out "$gen_dme" >/dev/null || exit 2
 
-includes() { grep -E '^#include "' "$1" | sort; }
+# The compiled include set: lines inside #ifdef blocks (DOC_SNIPPETS) are not compiled by either build.
+includes() { awk '/^#ifdef/{skip=1} /^#endif/{skip=0} !skip && /^#include "/' "$1" | sort; }
 if ! diff <(includes "$ref_dme") <(includes "$gen_dme") > "$out/include_set.diff"; then
 	echo "dme_order_equiv: the two manifests name different files ($out/include_set.diff):" >&2
 	head -20 "$out/include_set.diff" >&2
