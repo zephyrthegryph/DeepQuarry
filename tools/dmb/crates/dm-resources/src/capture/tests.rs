@@ -405,3 +405,23 @@ fn piecewise_literal_discovery_equals_the_whole_text_scan() {
     let piece_error = format!("{:?}", discover_literals_in_pieces(broken, &[split]).unwrap_err());
     assert_eq!(whole_error, piece_error);
 }
+
+#[test]
+fn piece_literals_are_reused_by_text_and_stay_equal_to_a_whole_pass() {
+    let first = "/obj/a\n    icon = 'a.dmi'\n/obj/b\n    icon = 'b.dmi'\n    var/s = \"x [y] 'c.ogg'\"\n/obj/c\n    icon = 'c.dmi'\n";
+    let boundaries: Vec<usize> = first.match_indices("/obj/").map(|(at, _)| at).collect();
+    for _ in 0..2 {
+        assert_eq!(discover_literals_in_pieces(first, &boundaries).unwrap(), discover_literals(first).unwrap());
+    }
+    // One piece edited (and so moved): the others come from the memo at their new offsets.
+    let edited = first.replace("'b.dmi'", "'bb/b2.dmi'");
+    let boundaries: Vec<usize> = edited.match_indices("/obj/").map(|(at, _)| at).collect();
+    assert_eq!(discover_literals_in_pieces(&edited, &boundaries).unwrap(), discover_literals(&edited).unwrap());
+    // An error in one piece is reported as the whole pass reports it.
+    let broken = format!("{edited}/obj/d\n    icon = 'unterminated\n");
+    let boundaries: Vec<usize> = broken.match_indices("/obj/").map(|(at, _)| at).collect();
+    assert_eq!(
+        format!("{:?}", discover_literals_in_pieces(&broken, &boundaries)),
+        format!("{:?}", discover_literals(&broken))
+    );
+}

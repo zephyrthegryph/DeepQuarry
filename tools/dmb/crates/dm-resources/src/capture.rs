@@ -619,47 +619,88 @@ pub fn discover_literals_in_pieces(
         .zip(starts.iter().skip(1).chain(std::iter::once(&source.len())))
         .map(|(&start, &end)| (start, end))
         .collect();
-    type Lexed = (Vec<dm_syntax::Diagnostic>, Vec<SpanToken>);
-    let lex = |(start, end): (usize, usize)| -> Lexed {
-        let mut relevant = Vec::new();
-        let diagnostics = dm_syntax::visit_tokens(&source[start..end], |token| {
-            if matches!(token.kind, TokenKind::Resource | TokenKind::String) {
-                relevant.push(token);
-            }
-        });
-        (diagnostics, relevant)
-    };
+    // Each piece's literals are a pure function of its text: a query keyed by the text's digest
+    // (`piece_literals`), so an edit lexes only the pieces whose text changed.
     let threads = std::thread::available_parallelism()
         .map_or(1, |n| n.get())
         .min(8)
         .min(pieces.len());
     let group = pieces.len().div_ceil(threads.max(1));
-    let lexed: Vec<Lexed> = std::thread::scope(|scope| {
+    let found: Vec<Result<Arc<[LiteralRequest]>, CaptureError>> = std::thread::scope(|scope| {
         let handles: Vec<_> = pieces
             .chunks(group)
-            .map(|part| scope.spawn(move || part.iter().map(|&piece| lex(piece)).collect::<Vec<_>>()))
+            .map(|part| {
+                scope.spawn(move || {
+                    part.iter()
+                        .map(|&(start, end)| piece_literals(&source[start..end]))
+                        .collect::<Vec<_>>()
+                })
+            })
             .collect();
         handles
             .into_iter()
             .flat_map(|handle| handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)))
             .collect()
     });
-    for (&(start, _), (diagnostics, _)) in pieces.iter().zip(&lexed) {
-        if let Some(error) = diagnostics.first() {
-            return Err(CaptureError::Source {
-                span: Span {
-                    start: start + error.span.start,
-                    end: start + error.span.end,
-                },
-                reason: format!("{:?}", error.kind),
-            });
-        }
+    // Any error: the whole-text discovery reports exactly the error a single pass would (first lexical error first).
+    if found.iter().any(Result::is_err) {
+        piece_memo().rotate();
+        return discover_literals(source);
     }
-    let mut found = Vec::new();
-    for (&(start, end), (_, tokens)) in pieces.iter().zip(&lexed) {
-        collect_tokens(&source[start..end], tokens, start, &mut found)?;
+    let mut out = Vec::new();
+    for (&(start, _), piece) in pieces.iter().zip(found) {
+        let piece = piece.expect("checked above");
+        out.extend(piece.iter().map(|literal| LiteralRequest {
+            path: literal.path.clone(),
+            span: Span {
+                start: start + literal.span.start,
+                end: start + literal.span.end,
+            },
+        }));
     }
-    Ok(found)
+    piece_memo().rotate();
+    Ok(out)
+}
+
+/// Literal requests of one piece of expanded text, relative to the piece, by the digest of its text. Kept for the
+/// pieces of the last two discoveries (one request's game and test worlds, or two requests of one world), so the
+/// memo holds about one expansion's literals.
+struct PieceMemo {
+    current: std::sync::Mutex<std::collections::HashMap<u128, Arc<[LiteralRequest]>>>,
+    previous: std::sync::Mutex<std::collections::HashMap<u128, Arc<[LiteralRequest]>>>,
+}
+fn piece_memo() -> &'static PieceMemo {
+    static PIECES: std::sync::OnceLock<PieceMemo> = std::sync::OnceLock::new();
+    PIECES.get_or_init(|| PieceMemo {
+        current: Default::default(),
+        previous: Default::default(),
+    })
+}
+impl PieceMemo {
+    fn rotate(&self) {
+        let current = std::mem::take(&mut *self.current.lock().unwrap_or_else(|e| e.into_inner()));
+        *self.previous.lock().unwrap_or_else(|e| e.into_inner()) = current;
+    }
+}
+fn piece_literals(piece: &str) -> Result<Arc<[LiteralRequest]>, CaptureError> {
+    let key = xxhash_rust::xxh3::xxh3_128(piece.as_bytes());
+    let held = piece_memo()
+        .current
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&key)
+        .cloned()
+        .or_else(|| piece_memo().previous.lock().unwrap_or_else(|e| e.into_inner()).get(&key).cloned());
+    let literals = match held {
+        Some(literals) => literals,
+        None => Arc::from(discover_literals(piece)?),
+    };
+    piece_memo()
+        .current
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(key, Arc::clone(&literals));
+    Ok(literals)
 }
 pub fn discover_literals(source: &str) -> Result<Vec<LiteralRequest>, CaptureError> {
     let mut relevant = Vec::new();
