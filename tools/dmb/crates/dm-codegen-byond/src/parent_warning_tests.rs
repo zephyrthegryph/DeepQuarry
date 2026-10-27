@@ -140,7 +140,7 @@ fn declaration(
 ) -> M {
     M::Declaration {
         identity,
-        previous,
+        previous: previous.map(Box::new),
         definition: dm_ir::ProcedureDefinition::Implicit,
         data: Arc::new(Default::default()),
     }

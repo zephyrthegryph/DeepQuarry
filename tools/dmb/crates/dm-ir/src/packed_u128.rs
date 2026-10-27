@@ -106,6 +106,6 @@ mod size_guard {
     #[test]
     fn query_and_meaning_stay_packed() {
         assert!(std::mem::size_of::<crate::ResolveQuery>() <= 32);
-        assert!(std::mem::size_of::<crate::ResolvedMeaning>() <= 64);
+        assert!(std::mem::size_of::<crate::ResolvedMeaning>() <= 48);
     }
 }

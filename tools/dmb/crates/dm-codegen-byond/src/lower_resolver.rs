@@ -168,7 +168,7 @@ impl ProjectResolver<'_> {
                 Some(_) => return None,
                 None => None,
             };
-            if *previous != next {
+            if previous.as_deref().copied() != next {
                 return None;
             }
             if *declaration == identity {
