@@ -382,6 +382,11 @@ elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
 		dc_ok=1
 		echo "dreamchecker reused 0s" >>"$timings"
 		echo "== gates: dreamchecker reused: its inputs (key ${dc_key:0:12}) are identical to a tree that passed it ($dc_prev)"
+	elif [ "${DQ_GATE_DC_DEFER:-0}" = 1 ]; then
+		# The train's precheck: DreamChecker is judged for all queued lanes at once by the prechecker's DreamChecker batch (dq_train.sh
+		# dc_batch_run), not once per lane here. No stamp is written; the lane's precheck passes only with that verdict.
+		echo "dreamchecker deferred 0s" >>"$timings"
+		echo "== gates: dreamchecker deferred to the train's DreamChecker batch"
 	elif [ -n "${DQ_GATE_DC_DISJOINT:-}" ]; then
 		# The train's prechecked batch (tools/dq_train.sh dc_disjoint): every lane passed DreamChecker alone on its merge with master, and
 		# no two of them (nor master since the lane's precheck) change the same DreamChecker input file. Not stored as a verdict for the key.
@@ -394,6 +399,11 @@ elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
 fi
 [ "$tgui" -eq 1 ] && names+=(tgui)
 [ "$analyze_tests" -eq 1 ] && names+=(analyze_tests)
+if [ "${DQ_GATE_ONLY_DC:-0}" = 1 ]; then
+	# the train's DreamChecker batch: only DreamChecker on this combination (gen ran above); every other job belongs to the prechecks
+	only=(); for n in "${names[@]}"; do [ "$n" = dreamchecker ] && only+=(dreamchecker); done
+	names=(${only[@]+"${only[@]}"})
+fi
 echo "== gates in parallel: ${names[*]}$([ "$run_tests" -eq 1 ] && echo " (${#tests[@]} test(s): ${tests[*]:0:6}$([ ${#tests[@]} -gt 6 ] && echo ' ...'))")"
 for n in "${names[@]}"; do
 	log="data/merge-gates/$short.$n.log"
@@ -474,6 +484,26 @@ else
 	elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ] && dc_key="$(gate_dc_key 2>/dev/null)" && dc_prev="$(gate_verdict_has dreamchecker "$dc_key")"; then
 		dc_ok=1
 		echo "== gates: dreamchecker reused with the proof: its inputs (key ${dc_key:0:12}) passed before ($dc_prev)"
+	fi
+	# No verdict covers this tree (a proof made by a precheck that deferred DreamChecker, and no trust): run it here, never leave it to the
+	# push's full production build. gen first: the early reuse skipped it.
+	if [ "$dc_ok" -eq 0 ] && [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
+		echo "== gates: dreamchecker on the reused proof's tree (no verdict covers it)"
+		t0=$(date +%s)
+		tools/build/build.sh gen >/dev/null 2>&1
+		if [ -f tools/dq_machine_slots.sh ]; then
+			DQ_DREAMCHECKER=1 bash tools/dq_machine_slots.sh run dreamchecker --label "dreamchecker $short" -- tools/build/build.sh dream-checker
+		else
+			DQ_DREAMCHECKER=1 tools/build/build.sh dream-checker
+		fi >"data/merge-gates/$short.dreamchecker.log" 2>&1
+		echo "dreamchecker $(( $(date +%s) - t0 ))s rc=$?" >>"$timings"
+		if grep -q "dream-checker: passed" "data/merge-gates/$short.dreamchecker.log" && grep -q "Found 0 diagnostics" "data/merge-gates/$short.dreamchecker.log"; then
+			dc_ok=1; dc_key="$(gate_dc_key 2>/dev/null)" && gate_verdict_put dreamchecker "$dc_key" "$sha"
+		else
+			echo "dq_merge_gates: FAILED: dreamchecker (log data/merge-gates/$short.dreamchecker.log)" >&2
+			tail -n 40 "data/merge-gates/$short.dreamchecker.log" >&2
+			exit 1
+		fi
 	fi
 	echo "proof-reused 0s" >>"$timings"
 fi

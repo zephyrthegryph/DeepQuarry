@@ -917,3 +917,11 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
   another lane or with master since its precheck, no global path) passes `--no-smoke` and runs `dq_boot_gate` alone: each lane passed the
   smoke and gameplay sets on its merge with master, master passed them on its own, and the combination still compiles and boots in the
   gate. `DQ_TRAIN_LONE_SMOKE=1` keeps the sets.
+- **DreamChecker once for the queue.** A precheck defers DreamChecker (`DQ_GATE_DC_DEFER`) and records `tpass` when everything else passed.
+  The prechecker runs one DreamChecker for origin/master plus every queued heavy lane that has no DreamChecker verdict yet, beside the
+  prechecks, in its own worktree `E:/projects/dq-wt/train-dc` (`dq_merge_batch.sh --no-tests` with `DQ_GATE_ONLY_DC`: a failure bisects to
+  the culprit lane). A lane that changes no DreamChecker input passes at once. A `tpass` lane becomes `pass` when its verdict arrives; a
+  DreamChecker failure bounces it with the log; a lane that conflicted with another lane of the run is checked alone next
+  (`precheck/dc/`). The batch gate's DreamChecker trust (above) measures master's changes from the DreamChecker run's master. A gate that
+  reuses a proof with no DreamChecker verdict covering its tree runs DreamChecker itself, so the push never falls back to the full
+  production build. `DQ_TRAIN_DC_BATCH=0` returns to one DreamChecker per precheck.

@@ -23,6 +23,8 @@ export DQ_FLAKE_LEDGER="$tmp/flakes.tsv"
 # The prechecker (section "prechecks" below) is off for the cases written before it; its own section turns it on.
 # One test world and no light promotion for the cases written before them (every scratch lane here changes no DM); their own cases turn them on.
 export DQ_TRAIN_TEST_WORLDS=1 DQ_TRAIN_AUTO_LIGHT=0
+export DQ_DMB_ROOTS="$tmp/no-roots"   # warm_train_root: never the machine's real compile roots
+export DQ_TRAIN_DC_WT="$tmp/dc-wt"
 export DQ_TRAIN_PRECHECK=0 DQ_TRAIN_PRE_WT="$tmp/pre-wt" DQ_TRAIN_WT2="$tmp/wt2" DQ_GATE_VERDICTS="$tmp/verdicts"
 
 git init -q --bare "$tmp/origin.git"
@@ -38,6 +40,13 @@ mkdir -p tools/train; cp "$here/tools/train/lane_times.py" tools/train/
 cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
 # stub gates: BAD in a lane file fails; with DQ_STUB_CAP_ABOVE=N a batch of more than N lane files looks like a killed test phase
+# DQ_GATE_ONLY_DC=1 (the train's DreamChecker batch): only DCFAIL fails
+if [ "${DQ_GATE_ONLY_DC:-0}" = 1 ]; then
+	echo "$*" >>"${DQ_STUB_DCRUN_LOG:-/dev/null}"
+	if grep -rq DCFAIL lanes 2>/dev/null; then echo "stub dreamchecker: DCFAIL present"; echo "dq_merge_gates: FAILED: dreamchecker" >&2; exit 1; fi
+	echo "stub dreamchecker: ok"; exit 0
+fi
+echo "defer=${DQ_GATE_DC_DEFER:-}" >>"${DQ_STUB_DEFER_LOG:-/dev/null}"
 if grep -rq BAD lanes 2>/dev/null; then echo "stub gates: BAD present"; echo "dq_merge_gates: FAILED: tests (logs data/merge-gates/x.tests.log)" >&2; exit 1; fi
 echo "worlds=${DQ_MAIN_WORLDS:-} split=${DQ_MAIN_WORLD_TESTS:-}" >>"${DQ_STUB_WORLDS_LOG:-/dev/null}"
 # DQ_STUB_MOVE=<branch>: the lane commits more while its batch is being gated (once)
@@ -397,6 +406,20 @@ check "a prechecked batch takes more lanes than DQ_TRAIN_MAX_LANES" 'grep -q "he
 check "its bisect ends in the same cycle despite the passed deadline: the interacting lane is bounced, nine land" 'grep -q "BOUNCED lane/q8" <<<"$out" && ! grep -q "bisect unfinished" <<<"$out" && for n in 1 2 3 4 5 6 7 9 10; do in_master "lane/q$n" || exit 1; done; ! in_master lane/q8'
 check "the halves ran at once in the second worktree" 'grep -q "halves in parallel" <<<"$out" && grep -q "parallel bisect: \[" "$DQ_TRAIN_STATE"/log/cycle-*.log && grep -q "^$tmp/wt2 " "$DQ_STUB_WHERE"'
 unset DQ_STUB_WHERE
+# the DreamChecker batch: one run for several queued lanes; a DreamChecker failure is pinned on its lane, the others pass
+export DQ_STUB_DCRUN_LOG="$tmp/dcrun.log" DQ_STUB_DEFER_LOG="$tmp/defer.log"; : >"$DQ_STUB_DCRUN_LOG"; : >"$DQ_STUB_DEFER_LOG"
+mk lane/da lanes/da/f.txt fine; train enqueue --tests "tda" >/dev/null 2>&1; back
+mk lane/db lanes/db/f.txt DCFAIL; train enqueue --tests "tdb" >/dev/null 2>&1; back
+mk lane/dc lanes/dc/f.txt fine; train enqueue --tests "tdc" >/dev/null 2>&1; back
+mk lane/dd doc/dd.txt fine; train enqueue --tests "tdd" >/dev/null 2>&1; back
+out="$(train precheck-run 2>&1)"
+check "prechecks defer DreamChecker to the DreamChecker batch" 'grep -q "^defer=1" "$DQ_STUB_DEFER_LOG" && ! grep -q "^defer=$" "$DQ_STUB_DEFER_LOG"'
+check "one DreamChecker run covers several queued lanes" 'grep -q "DreamChecker batch: \[lane/da lane/db lane/dc\]" <<<"$out" && grep -q -- "--lanes lane/da lane/db lane/dc" "$DQ_STUB_DCRUN_LOG"'
+check "a lane that changes nothing DreamChecker reads needs no run" 'grep -q "PRECHECK pass: lane/dd " <<<"$out" && ! grep -q "lane/dd" "$DQ_STUB_DCRUN_LOG"'
+check "a DreamChecker failure is pinned on its lane: bounced; the others pass" 'grep -q "BOUNCED lane/db: precheck: DreamChecker" <<<"$out" && grep -q "PRECHECK pass: lane/da " <<<"$out" && grep -q "PRECHECK pass: lane/dc " <<<"$out"'
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "the DreamChecker-batched lanes land; the culprit does not" 'in_master lane/da && in_master lane/dc && in_master lane/dd && ! in_master lane/db'
+unset DQ_STUB_DCRUN_LOG DQ_STUB_DEFER_LOG
 # a lane that touches a global path (maps/): the batch runs DreamChecker itself
 export DQ_STUB_DCD_LOG="$tmp/dcd2.log"; : >"$DQ_STUB_DCD_LOG"
 mk lane/pg maps/m.txt fine; train enqueue --tests "tpg" >/dev/null 2>&1; back
@@ -411,7 +434,7 @@ mk lane/pi lanes/pi/f.txt fine; train enqueue --tests "tpi" >/dev/null 2>&1; bac
 mk lane/pj lanes/pj/f.txt fine; train enqueue --tests "tpj" >/dev/null 2>&1; back
 train precheck-run >/dev/null 2>&1
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
-check "a prechecked batch where nothing interacts gates compile and boot only (no smoke set)" 'in_master lane/pi && in_master lane/pj && grep -q -- "--no-smoke" "$DQ_STUB_ARGS_LOG" && grep -q "dq_boot_gate" "$DQ_STUB_ARGS_LOG" && ! grep -q "tpi\|tpj" "$DQ_STUB_ARGS_LOG" && grep -q "compile and boot only" <<<"$out"'
+check "a prechecked batch where nothing interacts gates compile and boot only (no smoke set)" 'in_master lane/pi && in_master lane/pj && bl="$(grep -- "--lanes lane/pi lane/pj" "$DQ_STUB_ARGS_LOG")" && grep -q -- "--no-smoke" <<<"$bl" && grep -q "dq_boot_gate" <<<"$bl" && ! grep -q "tpi\|tpj" <<<"$bl" && grep -q "compile and boot only" <<<"$out"'
 unset DQ_STUB_ARGS_LOG
 # no verdict after the wait limit (the prechecker is not running here): the lane rides the old way
 mk lane/pw lanes/pw/f.txt fine; train enqueue --tests "tpw" >/dev/null 2>&1; back

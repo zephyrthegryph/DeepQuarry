@@ -46,7 +46,7 @@ min_idle_min = 30
 # A directory size walked within this many minutes is reused instead of walked again.
 index_ttl_min = 30
 # Worktrees that are permanent (their cargo targets are never evicted whole, only trimmed inside).
-permanent_worktrees = merge-base train-base train-pre1 train-pre2 train-bisect
+permanent_worktrees = merge-base train-base train-pre1 train-pre2 train-bisect train-dc
 
 # ---------------------------------------------------------------------------------------------------------------------------------
 # E:/dq-cache: one table per directory the tools create. Caps below add up to more than total_gb on purpose: the total cap evicts the
