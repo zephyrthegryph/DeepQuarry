@@ -36,6 +36,9 @@ pub enum Mode {
     Fallback { budget_cells: usize },
 }
 
+/// A frame that follows one shorter than this runs on the one-thread light pool instead of the frame pool.
+pub const LIGHT_FRAME: Duration = Duration::from_millis(2);
+
 /// Construction options.
 #[derive(Clone, Debug)]
 pub struct SimConfig {
@@ -68,6 +71,8 @@ impl Default for SimConfig {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SimMetrics {
     pub ticks: u64,
+    /// Frames run on the one-thread light pool ([`LIGHT_FRAME`]).
+    pub light_frames: u64,
     pub frames_dispatched: u64,
     pub frames_completed: u64,
     /// Dispatches skipped because a frame was still running.
@@ -524,6 +529,11 @@ impl SimBuilder {
             return Err(BuildError::Boot(errors));
         }
         let pool = crate::pool::Pool::new(self.config.threads, "vg-frame")?;
+        let light_pool = if self.config.threads > 1 {
+            Some(crate::pool::Pool::new(1, "vg-light")?)
+        } else {
+            None
+        };
         let mut tasks = self.apply_tasks;
         tasks.extend(self.tasks);
         tasks.extend(self.watch_tasks);
@@ -545,6 +555,7 @@ impl SimBuilder {
         });
         Ok(Sim {
             pool,
+            light_pool,
             world: Some(Box::new(world)),
             done: Arc::new(Latest::new()),
             ports: self.ports,
@@ -568,6 +579,8 @@ impl SimBuilder {
 pub struct Sim {
     config: SimConfig,
     pool: crate::pool::Pool,
+    /// One thread for light frames ([`LIGHT_FRAME`]); `None` when the frame pool has one thread anyway.
+    light_pool: Option<crate::pool::Pool>,
     /// `Some` while no frame is running.
     world: Option<Box<World>>,
     done: Arc<Latest<Box<World>>>,
@@ -634,10 +647,21 @@ impl Sim {
             log.frames.push(FrameRecord { frame, batches });
         }
         let done = Arc::clone(&self.done);
-        self.pool.spawn(move || {
+        let job = move || {
             world.run(frame);
             done.put(world);
-        });
+        };
+        // A frame like the last one, when that took under LIGHT_FRAME, runs on the one-thread pool: its scopes and parallel
+        // iterators run inline there. On the frame pool every level's scope woke idle workers that spun before parking again:
+        // at idle (frames of about 0.25 ms, 40 a second) the 14 frame threads burned 25-60 % of a core for ~1 % of real work
+        // (doc/rewrite/server_bench_20261027.md). A slower frame moves the next one back to the full pool.
+        match &self.light_pool {
+            Some(light) if self.metrics.frames_completed > 0 && self.metrics.last_frame < LIGHT_FRAME => {
+                self.metrics.light_frames += 1;
+                light.spawn(job);
+            }
+            _ => self.pool.spawn(job),
+        }
         self.metrics.frames_dispatched += 1;
         true
     }
@@ -698,6 +722,9 @@ impl Sim {
     pub fn shutdown(&mut self) {
         self.wait_for_frame();
         self.pool.shutdown();
+        if let Some(light) = &mut self.light_pool {
+            light.shutdown();
+        }
     }
 
     /// Blocks (yielding) until the running frame finishes. For tests,
