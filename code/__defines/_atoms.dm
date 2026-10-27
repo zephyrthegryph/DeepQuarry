@@ -5,7 +5,7 @@
 
 #ifdef PROFILE_MAPLOAD_INIT_ATOM
 #define PROFILE_INIT_ATOM_BEGIN(...) var/__profile_stat_time = TICK_USAGE
-#define PROFILE_INIT_ATOM_END(atom) mapload_init_times[##atom.type] += TICK_USAGE_TO_MS(__profile_stat_time)
+#define PROFILE_INIT_ATOM_END(atom) mapload_init_times[##atom.type] += TICK_USAGE_TO_MS(__profile_stat_time); mapload_init_counts[##atom.type]++
 #else
 #define PROFILE_INIT_ATOM_BEGIN(...)
 #define PROFILE_INIT_ATOM_END(...)
