@@ -21,7 +21,6 @@ pub struct RequiredTypeArtifacts {
     pub(crate) prefixes: super::source_prefix::SourcePrefixes,
     pub(crate) allocations: crate::type_creation_order::AllocationArtifacts,
     pub(crate) parents: super::parent_index::ParentIndex,
-    pub(crate) fields: super::field_requests::FieldRequests,
     values: crate::initializer_lowering::receipts::publication_store::PublicationStore<
         Closure,
         SymbolId,
@@ -34,7 +33,6 @@ pub struct RequiredTypeArtifacts {
 impl Default for RequiredTypeArtifacts {
     fn default() -> Self {
         Self {
-            fields: Default::default(),
             selected: Default::default(),
             prefixes: Default::default(),
             allocations: Default::default(),
@@ -48,7 +46,6 @@ impl Default for RequiredTypeArtifacts {
 impl RequiredTypeArtifacts {
     pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
         Arc::new(Self {
-            fields: self.fields.for_request(publishable),
             selected: self.selected.for_request(publishable),
             prefixes: self.prefixes.for_request(publishable),
             allocations: self.allocations.for_request(publishable),
@@ -60,7 +57,6 @@ impl RequiredTypeArtifacts {
     }
     pub(crate) fn publish_successful(&self) -> bool {
         let results = [
-            self.fields.publish_successful(),
             self.selected.publish_successful(),
             self.prefixes.publish_successful(),
             self.allocations.publish_successful(),
@@ -71,7 +67,6 @@ impl RequiredTypeArtifacts {
     }
 
     pub fn clear(&self) {
-        self.fields.clear();
         self.selected.clear();
         self.prefixes.clear();
         self.allocations.clear();
