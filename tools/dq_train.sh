@@ -951,10 +951,46 @@ dc_disjoint() { # <lanes...>: 0 and DC_DISJOINT_WHY set when the batch may keep 
 	return 0
 }
 
+# ---- the analyzer's cargo tests for a prechecked batch (27 October: 472-513 s in a gate whose lane had passed them in its precheck) --------
+# The gate runs analyze_tests when the batch changes tools/analyze or tools/dmb. A lane that changes them passed those very tests on its
+# merge with master in its precheck. When exactly one lane of the batch changes them and master changed neither since that precheck, the
+# combination runs the same analyzer and compiler sources: the gate keeps that verdict (DQ_GATE_ANALYZE_TRUSTED). DQ_TRAIN_ANALYZE_TRUST=0: off.
+analyze_trusted() { # <lanes...>: 0 and ANALYZE_TRUST_WHY set when the batch may skip analyze_tests
+	local b tip vf pm master who="" n=0
+	ANALYZE_TRUST_WHY=""
+	[ "${DQ_TRAIN_ANALYZE_TRUST:-1}" = 1 ] || return 1
+	master="$(G rev-parse origin/master 2>/dev/null)" || return 1
+	for b in "$@"; do
+		tip="${TIP_OF[$b]:-$(qget "$(qfile "$b")" tip)}"
+		G diff --name-only "$master...$tip" 2>/dev/null | grep -qE '^tools/(analyze|dmb)/' || continue
+		n=$((n + 1)); [ "$n" -le 1 ] || return 1
+		vf="$(pre_verdict_file "$b" "$tip")"
+		[ -n "$vf" ] || return 1
+		case "$(qget "$vf" verdict)" in pass|tpass) ;; *) return 1 ;; esac
+		pm="$(qget "$vf" master)"
+		[ -n "$pm" ] && G merge-base --is-ancestor "$pm" "$master" 2>/dev/null || return 1
+		if [ "$pm" != "$master" ] && G diff --name-only "$pm" "$master" 2>/dev/null | grep -qE '^tools/(analyze|dmb)/'; then return 1; fi
+		who="$b@${pm:0:10}"
+	done
+	[ "$n" -eq 1 ] || return 1
+	ANALYZE_TRUST_WHY="$who passed analyze_tests in its precheck, no other lane of the batch changes tools/analyze or tools/dmb, and master changed neither since"
+	return 0
+}
+
+# Smoke and gameplay sets on a proof landing (a prechecked batch with no interaction): prechecks run each lane's own tests and the boot gate
+# only, so the sets run once every DQ_TRAIN_SMOKE_EVERY proof landings (default 4) and on any batch of DQ_TRAIN_SMOKE_AT_LANES lanes or more
+# (default 5): one run covers several lanes. State: smoke_skipped (proof landings since the sets last ran).
+smoke_due() { # <batch size>: 0 when this proof landing runs the sets
+	local every="${DQ_TRAIN_SMOKE_EVERY:-4}" at="${DQ_TRAIN_SMOKE_AT_LANES:-5}" k
+	k="$(cat "$STATE/smoke_skipped" 2>/dev/null)"; case "$k" in ''|*[!0-9]*) k=0 ;; esac
+	[ "$1" -ge "$at" ] || [ $((k + 1)) -ge "$every" ]
+}
+
 # ---- one cycle ------------------------------------------------------------------------------------------------------------------
 LOCK_HELD=0
 declare -A TIP_OF
 CYCLE_PROGRESS=0
+CYCLE_T0=$(date +%s)
 
 ensure_wt() {
 	[ -e "$WT/.git" ] && return 0
@@ -1028,6 +1064,28 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 		# logged when the set changes (the integrator looks every minute while it waits)
 		if [ ${#W[@]} -gt 0 ] && [ "${W[*]}" != "${WAIT_LAST:-}" ]; then tlog "waiting for prechecks: [${W[*]}]"; fi
 		WAIT_LAST="${W[*]-}"
+		# Gather window (e): a heavy cycle costs ~15 min whatever its size, and on 27 October every heavy cycle took ONE lane because it
+		# started the moment the first precheck passed while the next ones were minutes from their verdicts. While a precheck is running and
+		# the oldest ready lane passed less than DQ_TRAIN_GATHER_MIN (default 8) minutes ago, the cycle waits for it, so a batch takes every
+		# prechecked lane. DQ_TRAIN_GATHER_MIN=0 turns it off; a bisect in progress never waits.
+		if [ ${#P[@]} -gt 0 ] && [ ${#W[@]} -gt 0 ] && [ "${DQ_TRAIN_GATHER_MIN:-8}" -gt 0 ]; then
+			local nrun=0 oldest=0 vf mt pb
+			for b in "${W[@]}"; do case "$(pre_status "$b" "${TIP_OF[$b]}")" in running|tpass) nrun=$((nrun + 1)) ;; esac; done
+			for pb in "${P[@]}"; do
+				lane_is_light "$pb" && continue
+				vf="$(pre_verdict_file "$pb" "${TIP_OF[$pb]}")"; [ -n "$vf" ] || continue
+				mt="$(stat -c %Y "$vf" 2>/dev/null || echo "$nowt")"
+				{ [ "$oldest" -eq 0 ] || [ "$mt" -lt "$oldest" ]; } && oldest="$mt"
+			done
+			if [ "$nrun" -gt 0 ] && [ "$oldest" -gt 0 ] && [ $(( nowt - oldest )) -lt $(( ${DQ_TRAIN_GATHER_MIN:-8} * 60 )) ]; then
+				local gmsg="gather: ${#P[@]} lane(s) ready [${P[*]}], $nrun precheck(s) still running; the heavy cycle waits up to ${DQ_TRAIN_GATHER_MIN:-8} min from the first pass ($(( (nowt - oldest) / 60 )) min so far) to take them together"; local gkey="${P[*]}|$nrun"
+				[ "$gkey" = "${GATHER_LAST:-}" ] || tlog "$gmsg"
+				GATHER_LAST="$gkey"
+				BATCH_LIMIT_NOW=0; BATCH_EST=0; set +f; return 0
+			fi
+			[ -z "${GATHER_LAST:-}" ] || tlog "gather: done waiting; the batch takes every ready lane"
+			GATHER_LAST=""
+		fi
 		if [ ${#P[@]} -gt 0 ]; then
 			select_prechecked "${P[@]}"
 			set +f
@@ -1200,11 +1258,22 @@ heavy_cycle_gate() {
 	# Nothing in a prechecked batch interacts (every lane's own tests skipped: no shared area with another lane or with master since its
 	# precheck, no global path): each lane passed the smoke and gameplay sets on its merge with master, and master passed them on its own.
 	# What is left to prove is that the combination compiles and boots (dq_boot_gate). DQ_TRAIN_LONE_SMOKE=1 keeps the sets.
-	local smoke_args=()
-	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_PRECHECK_SMOKE:-0}" = 1 ] && [ "${DQ_TRAIN_LONE_SMOKE:-0}" != 1 ] && [ "${#SKIP_TESTS[@]}" -eq "${#CHOSEN[@]}" ]; then
-		smoke_args=(--no-smoke); tests_union="dq_boot_gate"
+	# PROOF kinds (logged on the heavy-cycle line and on LANDED): "precheck" = the lanes land on their precheck proof, the batch gate only
+	# compiles and boots the combination (+ DreamChecker unless trusted, + ratchets); "precheck+smoke" = the same plus the smoke/gameplay sets
+	# (smoke_due); "full" = the lanes' tests run again (an interaction, a global path, an unprechecked lane).
+	local smoke_args=() proof_kind="full" smoke_ran=1
+	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_LONE_SMOKE:-0}" != 1 ] && [ "${#SKIP_TESTS[@]}" -eq "${#CHOSEN[@]}" ]; then
+		tests_union="dq_boot_gate"
 		case " ${lane_test_args[*]} " in *" --tests dq_boot_gate "*) ;; *) lane_test_args+=(--tests dq_boot_gate) ;; esac
-		tlog "no lane of this batch interacts with another or with master since its precheck: compile and boot only (no smoke or gameplay sets)"
+		if smoke_due "${#CHOSEN[@]}"; then
+			proof_kind="precheck+smoke"
+			tlog "PROOF precheck+smoke: no lane interacts with another or with master since its precheck; compile + boot, and the smoke/gameplay sets are due (every ${DQ_TRAIN_SMOKE_EVERY:-4} proof landings or ${DQ_TRAIN_SMOKE_AT_LANES:-5}+ lanes)"
+		else
+			smoke_args=(--no-smoke); proof_kind="precheck"; smoke_ran=0
+			tlog "PROOF precheck: no lane interacts with another or with master since its precheck (merge-tree clean, disjoint areas): compile and boot only; smoke/gameplay sets not due ($(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) proof landing(s) since they last ran)"
+		fi
+	else
+		tlog "PROOF full: the batch's lane tests run again ($([ "${PRECHECKED_BATCH:-0}" = 1 ] && echo "$(( ${#CHOSEN[@]} - ${#SKIP_TESTS[@]} )) lane(s) interact" || echo "not every lane is prechecked"))"
 	fi
 	deadline=$(( $(date +%s) + CYCLE_MAX_MIN * 60 ))
 	local wt2_use="" deadline_use="$deadline" limit_file="$STATE/batch_limit" limit_max="$MAX_LANES"
@@ -1219,8 +1288,10 @@ heavy_cycle_gate() {
 	warm_root="$(warm_train_root)"
 	[ -z "$warm_root" ] || [ "$warm_root" = merge ] || tlog "compile root: the batch compiles in deepquarry-$warm_root (the train root compiled last: its daemon session is the warm one)"
 	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && dc_disjoint "${CHOSEN[@]}"; then dc_why="$DC_DISJOINT_WHY"; tlog "dreamchecker: $dc_why; the batch keeps those verdicts"; fi
+	local an_why=""
+	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && analyze_trusted "${CHOSEN[@]}"; then an_why="$ANALYZE_TRUST_WHY"; tlog "analyze_tests: $an_why; the batch keeps that verdict"; fi
 	phase "gate: ${CHOSEN[*]}"
-	tlog "heavy cycle: ${#CHOSEN[@]} lane(s) [${CHOSEN[*]}]$([ "${PRECHECKED_BATCH:-0}" = 1 ] && echo " (all prechecked; bisect to the end$([ -n "$wt2_use" ] && echo ", halves in parallel"))"), tests [$tests_union] ($([ ${#smoke_args[@]} -gt 0 ] && echo "no smoke set" || echo "+ smoke set"), est ~${BATCH_EST}s), test cap ${TEST_MAX_MIN} min, $([ -n "$deadline_use" ] && echo "no new attempt after $(date -u -d "@$deadline" +%H:%MZ 2>/dev/null || echo "$CYCLE_MAX_MIN min")" || echo "no cycle deadline"); log $out"
+	tlog "heavy cycle: ${#CHOSEN[@]} lane(s) [${CHOSEN[*]}]$([ "${PRECHECKED_BATCH:-0}" = 1 ] && echo " (all prechecked; bisect to the end$([ -n "$wt2_use" ] && echo ", halves in parallel"))"), proof $proof_kind, tests [$tests_union] ($([ ${#smoke_args[@]} -gt 0 ] && echo "no smoke set" || echo "+ smoke set"), est ~${BATCH_EST}s), test cap ${TEST_MAX_MIN} min, $([ -n "$deadline_use" ] && echo "no new attempt after $(date -u -d "@$deadline" +%H:%MZ 2>/dev/null || echo "$CYCLE_MAX_MIN min")" || echo "no cycle deadline"); log $out"
 	for b in "${CHOSEN[@]}"; do bump_attempts "$b"; done
 	(
 		cd "$WT" || exit 99
@@ -1233,6 +1304,7 @@ heavy_cycle_gate() {
 		export DQ_GATE_DREAMCHECKER=1
 		[ "${PRECHECKED_BATCH:-0}" != 1 ] || export DQ_GATE_CAP_MAX_MIN="${DQ_TRAIN_PRECHECKED_CAP_MIN:-20}"
 		[ -z "$dc_why" ] || export DQ_GATE_DC_DISJOINT="$dc_why"
+		[ -z "$an_why" ] || export DQ_GATE_ANALYZE_TRUSTED="$an_why"
 		[ -z "$warm_root" ] || export DQ_TRAIN_ROOT_KEY="$warm_root"
 		export DQ_BATCH_CACHE="$STATE/bisect.cache"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
@@ -1243,7 +1315,20 @@ heavy_cycle_gate() {
 	good="$(sed -n 's/^BATCH_GOOD: //p' "$out" | tail -n 1)"
 	deferred="$(sed -n 's/^BATCH_DEFERRED: //p' "$out" | tail -n 1)"
 	capped="$(sed -n 's/^BATCH_CAPPED: //p' "$out" | tail -n 1)"
-	local later; later="$(sed -n 's/^BATCH_LATER: //p' "$out" | tail -n 1)"
+	local later noresult nr; later="$(sed -n 's/^BATCH_LATER: //p' "$out" | tail -n 1)"
+	noresult="$(sed -n 's/^BATCH_NORESULT: //p' "$out" | tail -n 1)"
+	# A lane whose test phase gave no result twice (capped or killed, then again with only its own tests) stays queued, never bounced;
+	# after DQ_TRAIN_NORESULT_MAX (3) such cycles it is bounced so it cannot hold the train for ever.
+	for b in $noresult; do
+		nr="$(qget "$(qfile "$b")" noresult)"; nr=$(( ${nr:-0} + 1 ))
+		if grep -q '^noresult=' "$(qfile "$b")" 2>/dev/null; then qedit "$b" -e "s/^noresult=.*/noresult=$nr/"; else qedit "$b" -e "\$a noresult=$nr"; fi
+		tlog "################ NO RESULT: $b: its test phase hit the cap or died without a verdict twice (once with only its own tests); DEFERRED, still queued ($nr of ${DQ_TRAIN_NORESULT_MAX:-3}); log $out"
+		if [ "$nr" -ge "${DQ_TRAIN_NORESULT_MAX:-3}" ]; then
+			bounce "$b" "its test phase gave no result in $nr cycles (capped or killed, also with only its own tests): see $out" "$out"
+		fi
+		deferred="$(printf '%s\n' $deferred | grep -vxF "$b" | tr '\n' ' ')"
+		CYCLE_PROGRESS=1
+	done
 	[ -z "${later// /}" ] || { tlog "conflicted with another lane of this batch only, they stay queued for the next cycle: [$later]"; CYCLE_PROGRESS=1; }
 	tlog "merge_batch rc=$rc good=[${good:-}] deferred=[${deferred:-}] capped=[${capped:-}]"
 	# bounces first: they are the lane's fault whatever happens to the push
@@ -1324,12 +1409,14 @@ heavy_cycle_gate() {
 		# a cycle that landed with no failed test: back to the full batch size at once (not doubled step by step)
 		echo "$limit_max" >"$limit_file"
 	fi
-	tlog "pushed: origin/master ${sha:0:10} carries [$good]"
+	if [ "$smoke_ran" = 1 ]; then echo 0 >"$STATE/smoke_skipped"
+	else echo $(( $(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) + 1 )) >"$STATE/smoke_skipped"; fi
+	tlog "pushed: origin/master ${sha:0:10} carries [$good] (proof: $proof_kind; cycle $(( $(date +%s) - CYCLE_T0 ))s; smoke/gameplay sets $([ "$smoke_ran" = 1 ] && echo ran || echo "skipped, $(cat "$STATE/smoke_skipped") proof landing(s) since they last ran"))"
 }
 
 cycle() {
 	local b f tip cur all=() t0
-	t0=$(date +%s)
+	t0=$(date +%s); CYCLE_T0=$t0
 	CYCLE_PROGRESS=0
 	phase "fetch"
 	G fetch -q origin 2>/dev/null || tlog "warning: git fetch failed"

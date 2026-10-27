@@ -195,6 +195,13 @@ changed_since_base=""
 if git rev-parse -q --verify origin/master >/dev/null; then changed_since_base="$(git diff --name-only "$(git merge-base origin/master HEAD)" HEAD 2>/dev/null)"; fi
 changed_match() { grep -qE "$1" <<<"$changed_since_base"; }
 if changed_match '^tools/(analyze|dmb)/'; then analyze_tests=1; fi
+# The train sets DQ_GATE_ANALYZE_TRUSTED=<why> when every lane that changes tools/analyze or tools/dmb passed these tests in its precheck
+# and master changed neither since (tools/dq_train.sh analyze_trusted): the job is skipped and the reason logged, like DQ_GATE_DC_DISJOINT.
+if [ "$analyze_tests" -eq 1 ] && [ -n "${DQ_GATE_ANALYZE_TRUSTED:-}" ]; then
+	analyze_tests=0
+	echo "== gates: analyze_tests trusted (not run): $DQ_GATE_ANALYZE_TRUSTED"
+	echo "analyze_tests trusted 0s" >>"${timings:-/dev/null}"
+fi
 dc_inputs_changed=1
 changed_match '\.(dm|dme|dmm|dmf)$|^(code|maps|interface)/|^SpacemanDMM\.toml$|^tools/analyze/' || dc_inputs_changed=0
 lint_inputs_changed=1

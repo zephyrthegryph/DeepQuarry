@@ -155,6 +155,8 @@ if want light; then
 mk lane/doc docs/new.txt "a doc"; train enqueue --light >/dev/null 2>&1; back
 out="$(train run 2>&1)"; rc=$?
 check "a light lane is queued, lands, and leaves the queue empty" '[ "$rc" = 0 ] && in_master lane/doc && grep -q "LANDED lane/doc" <<<"$out" && status_has "  (empty)"'
+# 27 October: this case failed once inside a loaded precheck and printed nothing else; on a failure show what the train said
+if ! { [ "$rc" = 0 ] && in_master lane/doc; }; then echo "---- train run (rc=$rc), last lines:"; tail -n 25 <<<"$out"; echo "---- status:"; train status 2>&1 | tail -n 10; fi
 fi
 
 if want heavy; then

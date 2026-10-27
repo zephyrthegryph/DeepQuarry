@@ -79,6 +79,7 @@ reasons=()
 blogs=()
 deferred=()
 capped=""
+noresult=()
 n_attempts=0
 real_attempts=0
 CACHE="${DQ_BATCH_CACHE:-}"
@@ -153,7 +154,9 @@ attempt_run() {
 		bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${lt:+--tests "$lt"} ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
 		rc=$?
 		# A killed test phase is a verdict on the size of the batch, not on a lane.
-		if [ "$rc" -ne 0 ] && grep -q '^FOCUSED RUN CAPPED' "$log"; then rc=93; fi
+		# A run killed at its cap, or one that ended with no pass/fail result at all ("FOCUSED RESULT: CAPPED or killed before a result",
+		# 27 October: forms/setup-early-test was bounced for a run that printed nothing), is no verdict on a lane either.
+		if [ "$rc" -ne 0 ] && grep -qE '^FOCUSED RUN CAPPED|^FOCUSED RESULT: CAPPED' "$log"; then rc=93; fi
 		# A failed gate leaves its in-job baseline shrink uncommitted: discard it now, so nothing leaks into the next attempt or cycle.
 		if [ "$rc" -ne 0 ]; then dq_clean_tracked "dq_merge_batch: failed gate left a tracked edit" 2>&1 | tee -a "$log" >&2; fi
 		exit "$rc"
@@ -310,6 +313,29 @@ while [ ${#remaining[@]} -gt 0 ]; do
 		deferred+=("${remaining[@]}"); remaining=()
 		break
 	fi
+	if [ ${#set[@]} -eq 1 ] && [ "$rc" -eq 93 ]; then
+		# One lane, and the test phase gave no result (capped or killed). That is not a failure: retry ONCE with only the lane's own tests
+		# (no smoke or gameplay sets). Still no result: the lane is deferred (stays queued; the train counts these and logs them loudly),
+		# never bounced for a run that said nothing.
+		echo "################################################################################"
+		echo "# NO RESULT: the test phase of ${set[0]} hit its cap or died without a verdict; retrying once with only its own tests"
+		echo "################################################################################"
+		save_pass=("${pass[@]+"${pass[@]}"}")
+		pass+=(--no-smoke)
+		NOCACHE=1 attempt "${set[@]}"; rc=$?
+		pass=("${save_pass[@]+"${save_pass[@]}"}")
+		if [ "$rc" -eq 0 ]; then
+			echo "== ${set[0]}: the retry with only its own tests passed"
+			good=("${set[@]}"); remaining=(); break
+		fi
+		if [ "$rc" -eq 93 ] || [ "$rc" -eq 92 ]; then
+			echo "################################################################################"
+			echo "# NO RESULT TWICE: ${set[0]} is DEFERRED (kept queued), not bounced; see ${attempt_log[${set[*]}]:-the attempt logs}"
+			echo "################################################################################"
+			deferred+=("${set[0]}"); noresult+=("${set[0]}")
+			good=(); remaining=(); break
+		fi
+	fi
 	if [ ${#set[@]} -eq 1 ]; then
 		if [ "$rc" -eq 93 ]; then
 			bounce "${set[0]}" "its tests do not fit the gate's test-phase cap alone (the run was killed at the cap): trim or split the lane's tests" "${attempt_log[${set[*]}]:-}"
@@ -397,6 +423,7 @@ echo "BATCH_GOOD: ${good[*]-}"
 echo "BATCH_DEFERRED: ${deferred[*]-}"
 echo "BATCH_LATER: ${later[*]-}"
 echo "BATCH_CAPPED: ${capped}"
+echo "BATCH_NORESULT: ${noresult[*]-}"
 for i in "${!bounced[@]}"; do echo "BATCH_BOUNCED: ${bounced[$i]}|${reasons[$i]}|${blogs[$i]}"; done
 if [ ${#good[@]} -eq 0 ]; then
 	echo "dq_merge_batch: nothing passed; $BRANCH stays at origin/master"
