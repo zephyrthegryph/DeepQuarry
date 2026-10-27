@@ -103,9 +103,9 @@
 /datum/unit_test/dq_hc_items/stack_sandbag_slowdown_follows_amount/run_gate()
 	var/obj/item/stack/sandbags/B = allocate(/obj/item/stack/sandbags, tile(2, 2))
 	hci2_set_amount(B, 20)
-	TEST_ASSERT_EQUAL(B.slowdown, 2, "twenty bags slow by two")
+	TEST_ASSERT_EQUAL(B.worn_factor(STAT_ITEM_ENCUMBRANCE), 2, "twenty bags slow by two")
 	hci2_set_amount(B, 5)
-	TEST_ASSERT_EQUAL(B.slowdown, 0.5, "five bags slow by half")
+	TEST_ASSERT_EQUAL(B.worn_factor(STAT_ITEM_ENCUMBRANCE), 0.5, "five bags slow by half")
 
 /datum/unit_test/dq_hc_items/stack_merges_when_clicked_onto_another
 
@@ -284,7 +284,7 @@
 	hci_answer(H, 5)
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(S.amount, 15, "five came off")
-	TEST_ASSERT_EQUAL(S.slowdown, 1.5, "the stack re-weighs itself")
+	TEST_ASSERT_EQUAL(S.worn_factor(STAT_ITEM_ENCUMBRANCE), 1.5, "the stack re-weighs itself")
 	for(var/obj/item/I in H.contents)
 		if(I != S && istype(I, /obj/item/stack/material/supermatter))
 			qdel(I)
