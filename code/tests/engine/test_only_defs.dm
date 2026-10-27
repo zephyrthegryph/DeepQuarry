@@ -4,6 +4,13 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
+// from code/modules/admin/view_variables/reference_tracking.dm: what the reference searches of a test run cost (filled under REFERENCE_TRACKING,
+// read by unit_test.dm); outside that file's #ifdef REFERENCE_TRACKING so every test build and DreamChecker see them
+GLOBAL_LIST_EMPTY(dq_refsearch_searched)
+GLOBAL_LIST_EMPTY(dq_refsearch_type_counts)
+GLOBAL_LIST_EMPTY(dq_refsearch_skipped)
+GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
+
 // from code/engine/actions/periodic_dispatch.dm
 /datum/work_item/every_dispatch/test_reset()
 	..()

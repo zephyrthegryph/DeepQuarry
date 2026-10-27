@@ -38,12 +38,6 @@
 	GLOB.dq_refsearch_spent_ds += REALTIMEOFDAY - search_started
 #endif
 
-// Declared in every build so unit_test.dm and DreamChecker see them; only test builds fill them.
-GLOBAL_LIST_EMPTY(dq_refsearch_searched)
-GLOBAL_LIST_EMPTY(dq_refsearch_type_counts)
-GLOBAL_LIST_EMPTY(dq_refsearch_skipped)
-GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
-
 /proc/_search_references(datum/source)
 	log_reftracker("Beginning search for references to a [source.type], looking for [source.references_to_clear] refs.")
 
