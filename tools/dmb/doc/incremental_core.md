@@ -801,8 +801,16 @@ loaded, 58.7 s); versions issued 909k -> 345k, `issue_s` 8.2-9.9 -> 2.6-3.8 CPU-
 body edits unchanged (250 issued, 3.9-4.7 s). `dmb-equiv --all --ignore-debug` of the daemon output after the edits against a
 fresh `--no-daemon --no-cache` compile: EQUIVALENT (two rounds).
 
-Next slices: (2) the recording resolvers of ABI and initializer receipts record no version when the request has an answer
-table (their admission already uses the oracle); (3) every request gets an answer table (one-shot compiles too), after
+**Slice 2 (2026-10-26, compiler/answer-hashes-2): ABI and classification receipts record no versions under the table.**
+`dm_session::RecordingResolver::with_versions(resolver, false)` records reads with no domain version; the ABI evaluator's
+recorder (`abi_artifacts::prepare`) and the initializer classification recorder use it when the session has a query
+database (their admission already takes the answer table as oracle). Measured as slice 1, slice 1 against this branch:
+versions issued on a fresh-session full compile 345k -> 112k (`issue_s` 3.4-4.5 -> 0.9-1.2 CPU-s), on a hot body edit
+250 -> 1; tree version calls 739k -> 458k, but their CPU time rose (14-16 -> 24-26 CPU-s: the answers are now resolved
+through the tree's own certificates), so the compile is unchanged within noise (compilation stage 19.4 / 22.1 s against
+18.6 / 23.8 s; body edits 1.6-1.9 s against 1.4-1.8 s). `dmb-equiv` against a fresh compile: EQUIVALENT, three rounds.
+
+Next slices: (3) every request gets an answer table (one-shot compiles too), after
 which the version path of `ReceiptAdmission`, `ObservationLedger::versions` and the stored version lists can go; (4) the
 answer world (`QueryDb::begin_answers`) is computed from the tree and scalar snapshot directly instead of through
 `domain_version(Tree)`, the dep index keys on it, and `Resolver::domain_version`, the engine-host issuers and dm-tree's

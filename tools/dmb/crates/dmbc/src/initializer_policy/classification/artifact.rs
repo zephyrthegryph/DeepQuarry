@@ -650,7 +650,9 @@ pub(super) fn classify_one_keyed_grouped_in(
     }
     drop(input_timer);
     let host = ResolverView(reuse.resolver);
-    let recorder = crate::lowering_memo::RecordingResolver::new(&host);
+    // A session's answer table proves classification receipts: their reads carry no domain version.
+    let recorder =
+        crate::lowering_memo::RecordingResolver::with_versions(&host, reuse.store.query_db.is_none());
     let mut result = None;
     let mut hit = false;
     let captured =
