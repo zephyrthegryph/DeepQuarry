@@ -165,7 +165,7 @@ base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/d
 # kinds naming it in the CAPABILITIES block of the type that declares it, or an end of links(/A::a, /B::b).
 base_var_home_relations = ["ref_one", "ref_many", "owns_one", "owns_many", "links", "slot"]
 # The most hot-var rows `[lint.base_vars.tables.base_var_home_hot]` may hold (one number). It only falls.
-hot_ceiling = ["12"]
+hot_ceiling = ["11"]
 # records_data_only: the procs a /datum/record may define (accessors).
 record_accessor_prefixes = ["set_", "get_"]
 
