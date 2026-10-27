@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A DreamChecker verdict older than a lane's latest enqueue no longer bounces it, whichever script enqueued the lane"
