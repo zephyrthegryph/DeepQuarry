@@ -211,6 +211,7 @@
 #include "dq_input_entry_tests.dm"
 #include "dq_input_one_path_tests.dm"
 #include "dq_input_limits_tests.dm"
+#include "dq_effect_refusal_reqs_tests.dm"
 #include "dq_engine_layering_tests.dm"
 #include "dq_system_boundary_accessor_tests.dm"
 #include "dq_ending_causes_tests.dm"
