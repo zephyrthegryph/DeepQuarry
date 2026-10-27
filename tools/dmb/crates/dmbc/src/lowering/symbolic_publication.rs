@@ -142,7 +142,6 @@ impl SessionSymbolicMemo {
             record.local = record.local.take().map(|local| local.bind_key(&record.key));
             let key = Arc::clone(record.key.owner());
             let reads = record.reads.clone();
-            let versions = Arc::clone(&record.versions);
             // Current-roster symbolic retention has no byte admission policy;
             // actual payload ownership remains reported by the explicit census.
             attempt
@@ -150,13 +149,11 @@ impl SessionSymbolicMemo {
                     if let Some(previous) = previous.filter(|previous| {
                         previous.key == record.key
                             && previous.reads == reads
-                            && previous.versions == versions
                     }) {
                         return leases.records.rebind_with_qualified_receipt(
                             previous,
                             key.into(),
                             reads,
-                            versions,
                             1,
                             || record,
                         );
@@ -164,7 +161,6 @@ impl SessionSymbolicMemo {
                     leases.records.insert_with_qualified_receipt(
                         key.into(),
                         reads,
-                        versions,
                         1,
                         || record,
                     )

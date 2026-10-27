@@ -52,7 +52,6 @@ impl ParentIndex {
                     query: (),
                     answer: Arc::clone(types),
                 }],
-                Vec::new(),
                 0,
                 || value,
             )

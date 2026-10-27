@@ -475,7 +475,6 @@ impl Payload<'_> {
         crate::lowering_memo_wire::ResidentPromotion {
             current: None,
             queries: self.reads.0.iter().map(|r| r.query).collect(),
-            versions: self.versions.0.clone(),
             relative_debug: self.debug.0.clone(),
         }
     }

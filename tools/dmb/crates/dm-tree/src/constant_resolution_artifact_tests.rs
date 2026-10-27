@@ -74,7 +74,7 @@ impl ScalarArtifacts for Store {
             ledger.record(query, answer, ());
         }
         self.values
-            .insert_with_owned(key(query).into(), ledger.reads(), Vec::new(), 0, || value)
+            .insert_with_owned(key(query).into(), ledger.reads(), 0, || value)
     }
 }
 fn query(name: &str) -> ScalarQuery {

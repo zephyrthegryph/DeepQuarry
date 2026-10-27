@@ -36,7 +36,6 @@ fn query_database_proves_stored_units_by_their_recorded_answers() {
                 answer: dm_ir::ResolvedMeaning::Presence(true)
             }]
             .into(),
-            versions: Arc::from([(query.domain(), 1)]),
             value: RecordValue::Selections {
                 facts: Arc::new(Default::default()),
                 abi: vec![1]

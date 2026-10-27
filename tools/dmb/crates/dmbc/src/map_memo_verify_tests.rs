@@ -62,7 +62,7 @@ fn corrupt_admitted_map_hits_fail_closed_before_successful_publication() {
     )
     .unwrap();
     let key = retained::geometry_locator(1, &[plan.clone()], defaults());
-    memo.admit_retained_geometry(key, &[plan.clone()], &value, Vec::new(), Vec::new());
+    memo.admit_retained_geometry(key, &[plan.clone()], &value, Vec::new());
     assert!(matches!(
         memo.project(&[plan], defaults(), &Host),
         Err(crate::map_projection::Error::Verification(_))

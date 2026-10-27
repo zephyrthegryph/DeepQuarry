@@ -57,7 +57,6 @@ impl RetainedTypePaths {
         self.store.insert_with(
             key(path),
             ledger.reads(),
-            Vec::new(),
             0,
             || LexicalPath {
                 parent: parent.clone(),

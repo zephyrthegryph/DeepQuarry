@@ -117,7 +117,6 @@ impl FieldRequests {
                         query: (),
                         answer: Arc::clone(field),
                     }],
-                    Vec::new(),
                     0,
                     || value,
                 );

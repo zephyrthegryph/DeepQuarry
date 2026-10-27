@@ -178,7 +178,7 @@ impl<'a> Request<'a> {
             };
             store
                 .values
-                .insert_with(key.into(), reads, Vec::new(), 0, || value);
+                .insert_with(key.into(), reads, 0, || value);
             store.recomputed.fetch_add(1, Ordering::Relaxed);
         }
         Ok(())

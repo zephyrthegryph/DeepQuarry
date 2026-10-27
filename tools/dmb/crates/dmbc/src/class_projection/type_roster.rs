@@ -105,7 +105,6 @@ impl TypeRoster {
                         query: (),
                         answer: current.0,
                     }],
-                    Vec::new(),
                     0,
                     || value.take().expect("single producer"),
                 )

@@ -101,12 +101,10 @@ impl crate::driver_facts::AbiArtifacts {
     pub(crate) fn compact_payload_charge(
         key: &Arc<[u8]>,
         reads: &dm_session::Receipt<Query, Answer, Domain>,
-        versions: &Arc<[(Domain, u128)]>,
         value: &Arc<Artifact>,
     ) -> Option<usize> {
         let mut c = HeapCensus::new("compact_abi_payload_charge");
         c.slice("compact.key", key, true);
-        c.slice("compact.versions", versions, true);
         let mut private = receipt(&mut c, reads)?;
         c.arc_object("compact.abi_artifact", value);
         match value.as_ref() {
@@ -130,7 +128,6 @@ impl crate::driver_facts::AbiArtifacts {
                         private = private
                             .checked_add(unit(&mut c, &row.unit)?)?
                             .checked_add(receipt(&mut c, &row.reads)?)?;
-                        c.slice("compact.abi_row_versions", &row.versions, true);
                     }
                     c.slice("compact.abi_keys", &recipe.keys, true);
                     for key in recipe.keys.iter() {

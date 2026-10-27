@@ -255,12 +255,10 @@ impl MapMemo {
             crate::InitializerCode::from_admitted(stripped, code.requests().clone())
         };
         let reads = recording.reads();
-        let versions = Vec::new();
         let Some(weight) = crate::heap_census::resident_map_unit_weight(
             &stripped,
             &key,
             &reads,
-            &versions,
             &recipes,
             &references,
             &sites,
@@ -276,7 +274,7 @@ impl MapMemo {
         self.with_pending_maps(|leases| {
             leases
                 .outputs
-                .insert_with(key, reads, versions, weight, || {
+                .insert_with(key, reads, weight, || {
                     MapOutputs::Unit(RetainedUnit {
                         code: stripped,
                         sites,

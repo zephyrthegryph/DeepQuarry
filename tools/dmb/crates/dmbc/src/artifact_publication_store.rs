@@ -103,7 +103,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
     pub(crate) fn prune_for_pressure(
         &self,
         limit: usize,
-        charge: impl FnMut(&Arc<[u8]>, &Receipt<Q, A, D>, &Arc<[(D, u128)]>, &Arc<T>) -> Option<usize>,
+        charge: impl FnMut(&Arc<[u8]>, &Receipt<Q, A, D>, &Arc<T>) -> Option<usize>,
     ) -> dm_session::PressurePrune
     where
         D: Copy,
@@ -116,7 +116,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         charge: impl FnMut(
             &Arc<[u8]>,
             &Receipt<Q, A, D>,
-            &Arc<[(D, u128)]>,
             &Arc<T>,
             usize,
         ) -> Option<Vec<dm_session::PressureAllocation>>,
@@ -171,7 +170,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<Arc<T>>, Option<Q>) {
         let mut validate =
-            |reads: &Receipt<Q, A, D>, _: &[(D, u128)]| admission.first_changed_receipted(reads, |_| {});
+            |reads: &Receipt<Q, A, D>| admission.first_changed_receipted(reads, |_| {});
         let (accepted, changed) = match &self.attempt {
             Some(attempt) => attempt
                 .with_pending(|lease| lease.visit_receipted_with(key, &mut validate, accept))
@@ -188,19 +187,18 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         &self,
         key: Arc<[u8]>,
         reads: Receipt<Q, A, D>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
         match &self.attempt {
             Some(attempt) => attempt
                 .with_pending(|lease| {
-                    lease.insert_fresh_with_qualified_receipt(key, reads, versions, weight, create)
+                    lease.insert_fresh_with_qualified_receipt(key, reads, weight, create)
                 })
                 .flatten(),
             None => self
                 .core
-                .insert_with_receipt(key, reads, versions, weight, create),
+                .insert_with_receipt(key, reads, weight, create),
         }
     }
     /// Fresh post-miss producer output whose exact inputs live in its payload.
@@ -209,11 +207,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         &self,
         key: Arc<[u8]>,
         reads: Vec<Observation<Q, A, D>>,
-        versions: Vec<(D, u128)>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_current_qualified_with(key, reads.into(), versions.into(), weight, create)
+        self.insert_current_qualified_with(key, reads.into(),weight, create)
     }
     /// Original accepted receipt; caller may compare it with an independent producer.
     pub(crate) fn lookup_accepted<H: ObservationHost<Q, A, D>>(
@@ -232,28 +229,25 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         &self,
         key: Arc<[u8]>,
         reads: Vec<Observation<Q, A, D>>,
-        versions: Vec<(D, u128)>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> bool {
-        self.insert_with_owned(key, reads, versions, weight, create)
+        self.insert_with_owned(key, reads, weight, create)
             .is_some()
     }
     pub(crate) fn insert_with_owned(
         &self,
         key: Arc<[u8]>,
         reads: Vec<Observation<Q, A, D>>,
-        versions: Vec<(D, u128)>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_with_receipt(key, reads.into(), versions.into(), weight, create)
+        self.insert_with_receipt(key, reads.into(),weight, create)
     }
     pub(crate) fn insert_with_receipt(
         &self,
         key: Arc<[u8]>,
         reads: Receipt<Q, A, D>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
@@ -263,7 +257,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
                 .flatten(),
             None => self
                 .core
-                .insert_with_receipt(key, reads, versions, weight, create),
+                .insert_with_receipt(key, reads, weight, create),
         }
     }
 }

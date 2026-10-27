@@ -47,7 +47,6 @@ pub(crate) struct Row {
     pub(crate) identity: dm_ir::ProcedureIdentity,
     pub(crate) unit: Arc<UnitArtifact>,
     pub(crate) reads: Receipt<Query, Answer, Domain>,
-    pub(crate) versions: Arc<[(Domain, u128)]>,
 }
 pub(crate) struct Recipe {
     pub(crate) rows: Arc<[Row]>,
@@ -225,12 +224,10 @@ pub(in crate::driver_facts) fn remember(
         }
         keys.push(key);
         units.push((entry.identity, unit.clone()));
-        let versions: Vec<(Domain, u128)> = Vec::new();
         rows.push(Row {
             identity: entry.identity,
             unit: unit.clone(),
             reads: reads.clone(),
-            versions: versions.into(),
         });
         for read in reads
             .iter()
@@ -248,7 +245,6 @@ pub(in crate::driver_facts) fn remember(
         answer: Answer::BatchInputs(inputs),
     }];
     reads.extend(observations.into_values().flatten());
-    let versions: Vec<(Domain, u128)> = Vec::new();
     let Ok(reads) = store.groups.intern_receipt(reads, |a, b| {
         matches!(
             (&a.query, &b.query),
@@ -260,7 +256,6 @@ pub(in crate::driver_facts) fn remember(
     store.store.insert_with_receipt(
         Arc::from(KEY),
         reads,
-        versions.into(),
         std::mem::size_of::<Recipe>(),
         || {
             Artifact::Batch(Arc::new(Recipe {

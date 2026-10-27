@@ -15,7 +15,6 @@ fn shared_batch_keys_prune_exact_roster_without_copying_key_descriptors() {
         store.store.insert_with_receipt(
             Arc::from(key),
             Receipt::from(Vec::new()),
-            Arc::from([]),
             0,
             || Artifact::Batch(Arc::clone(&recipe)),
         );

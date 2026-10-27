@@ -61,13 +61,11 @@ pub(crate) fn inspect(census: &mut HeapCensus, store: &StartupArtifacts) {
         View::Entry {
             key,
             reads,
-            versions,
             value,
             ..
         } => {
             census.slice("startup.artifact_keys", key, true);
             census.receipt("startup.artifact_reads", reads);
-            census.slice("startup.artifact_versions", versions, true);
             for read in reads.iter() {
                 match &read.answer {
                     crate::startup::StartupAnswer::Static(rows) => declarations(census, rows),

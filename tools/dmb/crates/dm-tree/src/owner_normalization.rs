@@ -52,7 +52,6 @@ pub enum NormalizationStorageView<'a> {
     Entry {
         key: &'a Arc<[u8]>,
         reads: &'a dm_session::Receipt<SourceQuery, SourceAnswer, SourceDomain>,
-        versions: &'a Arc<[(SourceDomain, u128)]>,
         address: usize,
         size: usize,
     },
@@ -135,13 +134,11 @@ impl RetainedNormalization {
             View::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 visit(NormalizationStorageView::Entry {
                     key,
                     reads,
-                    versions,
                     address: Arc::as_ptr(value) as usize,
                     size: std::mem::size_of::<ResolvedOwner>(),
                 });
@@ -418,7 +415,6 @@ impl RetainedNormalization {
                 .insert_with_receipt(
                     key(*owner),
                     receipts::share(ledger.reads(), &receipt_pool, &branching_paths),
-                    Vec::new(),
                     0,
                     || ResolvedOwner { members: payload },
                 )

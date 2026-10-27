@@ -35,13 +35,11 @@ fn allocation(
 pub(crate) fn weight<Q>(
     key: &Arc<[u8]>,
     reads: &dm_session::Receipt<Q, StartupAnswer, Option<dm_ir::ReadDomain>>,
-    versions: &Arc<[(Option<dm_ir::ReadDomain>, u128)]>,
     value: &Arc<StartupArtifact>,
 ) -> Option<usize> {
     let mut c = HeapCensus::new("compact_startup_charge");
     c.slice("compact.key", key, true);
     c.receipt("compact.reads", reads);
-    c.slice("compact.versions", versions, true);
     for read in reads.iter() {
         match &read.answer {
             StartupAnswer::Static(rows) => super::declarations(&mut c, rows),

@@ -41,7 +41,7 @@ fn storage_accounting_tracks_shared_claims_and_exposes_private_owner_gaps() {
     let c = store.lease();
     let key: Arc<[u8]> = Arc::from(b"owner".as_slice());
     let first = a
-        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 1, || 11)
+        .insert_with_owned(Arc::clone(&key), reads(1), 1, || 11)
         .unwrap();
     let sibling = b.visit_explained(&key, &Host(1), &mut |_| true).0.unwrap();
     assert!(Arc::ptr_eq(&first, &sibling));
@@ -57,7 +57,7 @@ fn storage_accounting_tracks_shared_claims_and_exposes_private_owner_gaps() {
         .0
         .is_none());
     assert_eq!(counts(store.storage_accounting()), (1, 1, 3, 2, 1, 2));
-    b.insert_with_owned(Arc::clone(&key), reads(2), vec![], 1, || 22)
+    b.insert_with_owned(Arc::clone(&key), reads(2), 1, || 22)
         .unwrap();
     assert_eq!(counts(store.storage_accounting()), (1, 2, 3, 2, 2, 2));
     a.retain_current_keys(std::iter::empty());
