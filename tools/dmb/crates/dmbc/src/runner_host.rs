@@ -577,7 +577,8 @@ impl BuildHost {
                 .as_ref()
                 .unwrap()
                 .1
-                .with_request(publishable),
+                .with_request(publishable)
+                .with_answers(Some(Arc::clone(&self.query_db))),
         ));
         if self
             .required_types
