@@ -147,17 +147,33 @@ integrator_pid() { lockdir_pid run.lock; }
 integrator_alive() { lockdir_alive run.lock; }
 prechecker_alive() { lockdir_alive precheck.lock; }
 lock_take() {
-	local d="$STATE/$LOCK_NAME" who="integrator"
+	# Exclusive across concurrent ensure/enqueue starts and self-update re-execs (27 October: two integrators gated rx/readback-notices).
+	# The owner file is written into a private directory first and the directory is renamed into place, so a lock never exists without its
+	# owner; a dead lock is moved aside (one rename wins) and checked to still be the dead owner's before it is dropped.
+	local d="$STATE/$LOCK_NAME" who="integrator" mine dead deadpid
 	[ "$LOCK_NAME" = run.lock ] || who="prechecker"
-	if ! mkdir "$d" 2>/dev/null; then
-		if lockdir_alive "$LOCK_NAME"; then return 1; fi
-		tlog "replacing the lock of a dead $who (pid $(lockdir_pid "$LOCK_NAME"))"
-		rm -rf "$d"
-		mkdir "$d" 2>/dev/null || return 1
+	mine="$STATE/.$LOCK_NAME.new.$$"
+	rm -rf "$mine"; mkdir "$mine" 2>/dev/null || return 1
+	printf 'pid=%s\nwinpid=%s\nsince=%s\nscript=%s\n' "$$" "$(cat /proc/$$/winpid 2>/dev/null)" "$(now)" "$SELF" >"$mine/owner"
+	if ! mv -T "$mine" "$d" 2>/dev/null; then
+		if [ ! -s "$d/owner" ] && [ -n "$(find "$d" -maxdepth 0 -mmin -2 2>/dev/null)" ]; then rm -rf "$mine"; return 1; fi # an old-style lock being born
+		if lockdir_alive "$LOCK_NAME"; then rm -rf "$mine"; return 1; fi
+		deadpid="$(lockdir_pid "$LOCK_NAME")"
+		dead="$STATE/.$LOCK_NAME.dead.$$"
+		mv -T "$d" "$dead" 2>/dev/null || { rm -rf "$mine"; return 1; }
+		if [ "$(sed -n 's/^pid=//p' "$dead/owner" 2>/dev/null)" != "$deadpid" ]; then
+			# another process replaced the dead lock between our look and our move: put its lock back and step aside
+			mv -T "$dead" "$d" 2>/dev/null || rm -rf "$dead"
+			rm -rf "$mine"; return 1
+		fi
+		rm -rf "$dead"
+		tlog "replacing the lock of a dead $who (pid ${deadpid:-none})"
+		mv -T "$mine" "$d" 2>/dev/null || { rm -rf "$mine"; return 1; }
 	fi
-	printf 'pid=%s\nwinpid=%s\nsince=%s\nscript=%s\n' "$$" "$(cat /proc/$$/winpid 2>/dev/null)" "$(now)" "$SELF" >"$d/owner"
+	[ "$(lockdir_pid "$LOCK_NAME")" = "$$" ] || return 1
 	LOCK_HELD=1
 }
+lock_owned() { [ "$(lockdir_pid "$LOCK_NAME")" = "$$" ]; } # still ours (checked at every cycle: a second integrator must stop, not gate)
 lock_release() { [ "${LOCK_HELD:-0}" = 1 ] && [ "$(lockdir_pid "$LOCK_NAME")" = "$$" ] && rm -rf "$STATE/$LOCK_NAME"; LOCK_HELD=0; return 0; }
 
 # ---- enqueue ----------------------------------------------------------------------------------------------------------------
@@ -399,6 +415,10 @@ mark_landed() { # <branch> <snapshot tip> <master sha>
 	local b="$1" tip="$2" sha="$3" f cur
 	f="$(qfile "$b")"
 	printf 'branch=%s\ntip=%s\nmaster=%s\nlanded=%s\n' "$b" "$tip" "$sha" "$(now)" >"$LANDED/$(fname "$b").landed"
+	# a bounce record for this tip (or an older one) is stale once the tip is in master: a racing cycle may have written it
+	if [ -f "$BOUNCED/$(fname "$b").q" ] && G merge-base --is-ancestor "$(qget "$BOUNCED/$(fname "$b").q" tip)" "$sha" 2>/dev/null; then
+		rm -f "$BOUNCED/$(fname "$b").q"; tlog "$b: cleared its stale bounce record (it landed)"
+	fi
 	# a lane that enqueued a newer tip, or committed more, while its old tip rode the train stays queued with what is not in master yet
 	cur="$(G rev-parse -q --verify "refs/heads/$b^{commit}" 2>/dev/null || G rev-parse -q --verify "refs/remotes/origin/$b^{commit}" 2>/dev/null)"
 	if [ -f "$f" ] && [ "$(qget "$f" tip)" = "$tip" ]; then
@@ -1147,6 +1167,7 @@ cmd_run() {
 	tlog "integrator started (pid $$, script $SELF, state $STATE, worktree $WT)"
 	local idle=0 rc stalls=0
 	while :; do
+		if ! lock_owned; then LOCK_HELD=0; tlog "the run lock is held by pid $(integrator_pid), not this integrator: exiting without a cycle"; exit 0; fi
 		self_update
 		cycle
 		rc=$?
