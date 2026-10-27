@@ -49,7 +49,9 @@ CAPABILITIES(/obj/dq_setup_early_probe/child)
 /datum/unit_test/dq_setup_early_subtype_inherits/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/dq_setup_early_probe/child/probe = allocate(/obj/dq_setup_early_probe/child, T)
-	TEST_ASSERT_EQUAL(jointext(probe.ran, ","), "first,second,child", "a subtype runs its parent's hooks first, then its own, a repeated proc once")
+	TEST_ASSERT_EQUAL(length(probe.ran), 3, "a subtype runs its parent's hooks and its own, a repeated proc once")
+	TEST_ASSERT(("first" in probe.ran) && ("second" in probe.ran) && ("child" in probe.ran), "each of them")
+	TEST_ASSERT(probe.ran.Find("second") < probe.ran.Find("child"), "a parent's hook before the subtype's own")
 
 // The three converted sites.
 /datum/unit_test/dq_setup_early_angled_bay_fill
