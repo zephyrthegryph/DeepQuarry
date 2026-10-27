@@ -29,9 +29,13 @@ impl Mapping<'_> {
             .iter()
             .filter_map(|expansion| expansion.definition.as_ref())
             .filter_map(|definition| {
-                self.by_path
-                    .get(definition.path.as_ref())
-                    .map(|file| (*file, definition))
+                // Definition paths are project-relative (equal in every worktree); files are keyed by their full path.
+                let file = if definition.path.is_relative() {
+                    self.by_path.get(&self.plan.project_dir.join(definition.path.as_ref()))
+                } else {
+                    self.by_path.get(definition.path.as_ref())
+                };
+                file.map(|file| (*file, definition))
             })
             .map(|(file, definition)| source_span(file, definition.source_span))
             .collect::<Result<Vec<_>, _>>()?
