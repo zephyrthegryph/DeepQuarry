@@ -370,6 +370,7 @@ SETTER(/atom, invisibility)
  */
 /atom/proc/extinguish()
 	SHOULD_CALL_PARENT(TRUE)
+	PUBLISH_LEGACY(src, /datum/notice/atom_extinguish)
 	return NONE
 
 // Returns an assoc list of RCD information.

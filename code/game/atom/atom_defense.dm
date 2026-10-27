@@ -43,6 +43,7 @@
 	var/previous_atom_integrity = atom_integrity
 
 	update_integrity(atom_integrity - damage_amount)
+	PUBLISH_LEGACY(src, /datum/notice/atom_take_damage, damage_amount, damage_type, damage_flag, sound_effect, attack_dir, armour_penetration)
 	contract_report_station_damage(src, previous_atom_integrity - atom_integrity)
 	if(isobj(src) && max_integrity > 0)
 		var/obj/damaged_object = src
