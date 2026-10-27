@@ -176,7 +176,6 @@ impl StartupArtifacts {
         self.values.insert_with(
             key.into(),
             Vec::new(),
-            Vec::new(),
             std::mem::size_of::<Artifact>(),
             || Artifact::Syntax(payload),
         );
@@ -208,7 +207,6 @@ impl StartupArtifacts {
         let owner = self.values.insert_with_owned(
             key,
             ledger.reads(),
-            Vec::new(),
             0,
             || Artifact::Layout(Arc::new(layout)),
         )?;
@@ -271,7 +269,6 @@ impl StartupArtifacts {
         let inventory = Arc::clone(receipt.storage().1);
         self.values.insert_fresh_with_owned(
             Arc::from(INVENTORY_KEY),
-            Vec::new(),
             Vec::new(),
             0,
             || Artifact::Inventory(receipt),

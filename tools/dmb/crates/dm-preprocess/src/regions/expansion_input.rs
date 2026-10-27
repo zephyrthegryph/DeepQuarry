@@ -153,10 +153,10 @@ impl Values {
     fn insert_with(&self, key: Arc<[u8]>, reads: Reads, create: impl FnOnce() -> ExpansionInputReceipt) {
         match self {
             Self::Local(store) => {
-                store.insert_with(key, reads, Vec::new(), 0, create);
+                store.insert_with(key, reads, 0, create);
             }
             Self::Shared(lease) => {
-                lease.insert_with(key, reads, Vec::new(), 0, create);
+                lease.insert_with(key, reads, 0, create);
             }
         }
     }
@@ -210,7 +210,6 @@ impl ExpansionInputs {
             Store::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 visit(slice_storage(key));
@@ -218,7 +217,6 @@ impl ExpansionInputs {
                     dm_session::ReceiptStorageView::Flat(values) => visit(slice_storage(values)),
                     dm_session::ReceiptStorageView::Groups(groups) => visit(slice_storage(groups)),
                 });
-                visit(slice_storage(versions));
                 for read in reads.iter() {
                     if let Query::Macro { name, .. } = &read.query {
                         visit(View::Text(name));

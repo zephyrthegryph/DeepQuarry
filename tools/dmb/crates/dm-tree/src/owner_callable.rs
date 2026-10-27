@@ -123,7 +123,6 @@ impl RetainedCallableOwners {
             let payload = self.store.insert_with_owned(
                 key(*owner),
                 ledger.reads(),
-                Vec::new(),
                 0,
                 || CallableOwner { anchors, duplicate },
             );

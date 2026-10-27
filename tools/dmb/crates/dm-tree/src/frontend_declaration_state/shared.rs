@@ -86,7 +86,6 @@ impl DeclarationValues {
                     domain: (),
                     answer: ChunkSourceAnswer::Owned(current.value.source.clone()),
                 }],
-                vec![],
                 0,
                 || current.value.as_ref().clone(),
             )?,
@@ -121,12 +120,10 @@ impl DeclarationValues {
                     ObservedArtifactStorageView::Entry {
                         key,
                         reads,
-                        versions,
                         value,
                     } => visit(DeclarationStorageView::SharedEntry {
                         key,
                         reads,
-                        versions,
                         contribution: value.view(),
                     }),
                 })

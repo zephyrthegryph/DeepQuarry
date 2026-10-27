@@ -176,7 +176,6 @@ impl MapMemo {
         if self.retained.is_some() {
             let maps: Arc<[MapPlan]> = maps.to_vec().into();
             let reads = recording.reads();
-            let versions = Vec::new();
             let artifacts: Arc<[InitializationArtifact]> = artifacts.into();
             let unit_keys: Vec<_> = self
                 .current
@@ -201,13 +200,12 @@ impl MapMemo {
                     &artifacts,
                     &key,
                     &reads,
-                    &versions,
                     &unit_keys,
                 ) {
                     self.with_pending_maps(|leases| {
                         leases
                             .outputs
-                            .insert_with(key, reads, versions, weight, || {
+                            .insert_with(key, reads, weight, || {
                                 MapOutputs::Bundle(MapBundle {
                                     maps,
                                     projection: projection.clone(),

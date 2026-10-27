@@ -49,7 +49,7 @@ impl RetainedMetadata {
                 let paths = Arc::clone(paths);
                 let stored_paths = Arc::clone(&paths);
                 self.store
-                    .insert_with(key, ledger.reads(), Vec::new(), 0, || EffectiveOwner::Hierarchy { paths });
+                    .insert_with(key, ledger.reads(), 0, || EffectiveOwner::Hierarchy { paths });
                 (owner, stored_paths)
             })
             .collect()

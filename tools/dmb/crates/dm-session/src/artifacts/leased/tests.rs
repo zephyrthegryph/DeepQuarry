@@ -20,10 +20,10 @@ fn two_host_variants_same_key_survive_roster_changes_and_drop_independently() {
     let b = store.lease();
     let key: Arc<[u8]> = Arc::from(b"owner".as_slice());
     let first = a
-        .insert_with_owned(Arc::clone(&key), reads(1), vec![(0, 9)], 1, || 11)
+        .insert_with_owned(Arc::clone(&key), reads(1),1, || 11)
         .unwrap();
     let second = b
-        .insert_with_owned(Arc::clone(&key), reads(2), vec![(0, 9)], 2, || 22)
+        .insert_with_owned(Arc::clone(&key), reads(2),2, || 22)
         .unwrap();
     assert!(!Arc::ptr_eq(&first, &second));
     let hit = a.visit_explained(&key, &Host(1), &mut |_| true).0.unwrap();
@@ -49,10 +49,10 @@ fn exact_same_read_insert_shares_owner_and_consumer_decline_does_not_claim() {
     let b = store.lease();
     let key: Arc<[u8]> = Arc::from(b"owner".as_slice());
     let first = a
-        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 7, || 11)
+        .insert_with_owned(Arc::clone(&key), reads(1), 7, || 11)
         .unwrap();
     let shared = b
-        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 7, || {
+        .insert_with_owned(Arc::clone(&key), reads(1), 7, || {
             panic!("exact immutable producer already exists")
         })
         .unwrap();
@@ -72,9 +72,9 @@ fn replacing_one_host_variant_updates_only_its_claim_and_bytes() {
     let a = store.lease();
     let b = store.lease();
     let key: Arc<[u8]> = Arc::from(b"owner".as_slice());
-    a.insert_with(Arc::clone(&key), reads(1), vec![], 3, || 1);
+    a.insert_with(Arc::clone(&key), reads(1), 3, || 1);
     b.visit_explained(&key, &Host(1), &mut |_| true);
-    a.insert_with(Arc::clone(&key), reads(2), vec![], 5, || 2);
+    a.insert_with(Arc::clone(&key), reads(2), 5, || 2);
     assert_eq!(store.admitted_bytes(), 8);
     {
         let state = store.state.write().unwrap();
@@ -107,7 +107,7 @@ fn roster_pruning_and_lease_drop_destroy_payloads_after_unlock() {
         let store = ObservedArtifactStore::<DropProbe, u8, u32, u8>::shared_current_rosters();
         let lease = store.lease();
         let unlocked = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        lease.insert_with(Arc::from(b"probe".as_slice()), reads(1), vec![], 1, || {
+        lease.insert_with(Arc::from(b"probe".as_slice()), reads(1), 1, || {
             DropProbe {
                 store: Arc::downgrade(&store),
                 unlocked: Arc::clone(&unlocked),
@@ -128,7 +128,7 @@ fn accepted_receipt_shares_exact_ledger_and_claims_only_after_admission() {
     let published = store.lease();
     let pending = store.lease();
     let value = published
-        .insert_with_owned(Arc::from(b"owner".as_slice()), reads(1), vec![], 7, || 11)
+        .insert_with_owned(Arc::from(b"owner".as_slice()), reads(1), 7, || 11)
         .unwrap();
     assert!(pending
         .visit_explained_accepted(b"owner", &Host(1), &mut |_| false)
@@ -154,7 +154,7 @@ fn custom_current_receipt_proof_claims_only_after_complete_consumer_admission() 
     let published = store.lease();
     let key: Arc<[u8]> = Arc::from(b"recipe".as_slice());
     let value = published
-        .insert_with_owned(Arc::clone(&key), reads(7), vec![], 1, || 19)
+        .insert_with_owned(Arc::clone(&key), reads(7), 1, || 19)
         .unwrap();
     let weak = Arc::downgrade(&value);
     drop(value);
@@ -162,7 +162,7 @@ fn custom_current_receipt_proof_claims_only_after_complete_consumer_admission() 
     let mut consumer_called = false;
     let rejected = pending.visit_receipted_with(
         &key,
-        &mut |receipt, _| {
+        &mut |receipt| {
             assert_eq!(receipt.iter().next().unwrap().answer, 7);
             Some(0)
         },
@@ -174,7 +174,7 @@ fn custom_current_receipt_proof_claims_only_after_complete_consumer_admission() 
     assert!(rejected.0.is_none());
     assert_eq!(rejected.1, Some(0));
     assert!(!consumer_called);
-    let declined = pending.visit_receipted_with(&key, &mut |_, _| None, &mut |_| false);
+    let declined = pending.visit_receipted_with(&key, &mut |_| None, &mut |_| false);
     assert!(declined.0.is_none());
     drop(published);
     assert!(weak.upgrade().is_none());
@@ -187,20 +187,19 @@ fn bounded_shared_rosters_charge_unique_values_and_never_evict_live_claims() {
     let first = store.lease();
     let key: Arc<[u8]> = Arc::from(b"first".as_slice());
     let value = first
-        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 2, || 11)
+        .insert_with_owned(Arc::clone(&key), reads(1), 2, || 11)
         .unwrap();
     let second = store.lease();
     assert!(second
         .insert_with_owned(
             Arc::from(b"second".as_slice()),
             reads(1),
-            vec![],
             1,
             || panic!("budget miss must not construct payload")
         )
         .is_none());
     let shared = second
-        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 2, || {
+        .insert_with_owned(Arc::clone(&key), reads(1), 2, || {
             panic!("same exact producer must share")
         })
         .unwrap();
@@ -219,7 +218,7 @@ fn bounded_reattachment_declines_if_other_live_roster_consumed_the_budget() {
     let first = store.lease();
     let key: Arc<[u8]> = Arc::from(b"old".as_slice());
     let value = first
-        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 2, || 11)
+        .insert_with_owned(Arc::clone(&key), reads(1), 2, || 11)
         .unwrap();
     let weak = Arc::downgrade(&value);
     drop(value);
@@ -232,7 +231,7 @@ fn bounded_reattachment_declines_if_other_live_roster_consumed_the_budget() {
             // owning lease disappears and another exact live value takes its charge.
             drop(first.borrow_mut().take());
             assert!(competing
-                .insert_with_owned(Arc::from(b"new".as_slice()), reads(1), vec![], 2, || 22)
+                .insert_with_owned(Arc::from(b"new".as_slice()), reads(1), 2, || 22)
                 .is_some());
             true
         })
@@ -255,7 +254,7 @@ fn bounded_shared_roster_callbacks_can_admit_in_parallel_outside_core_lock() {
     let first = store.lease();
     for key in [b"a", b"b"] {
         first
-            .insert_with_owned(Arc::from(key.as_slice()), reads(1), vec![], 1, || 7)
+            .insert_with_owned(Arc::from(key.as_slice()), reads(1), 1, || 7)
             .unwrap();
     }
     let (started, observed) = mpsc::channel();
@@ -303,9 +302,9 @@ fn retain_where_releases_only_this_leases_rejected_keys() {
     let b = store.lease();
     let keep: Arc<[u8]> = Arc::from(b"keep-1".as_slice());
     let drop_key: Arc<[u8]> = Arc::from(b"drop-1".as_slice());
-    a.insert_with_owned(Arc::clone(&keep), reads(1), vec![], 3, || 1).unwrap();
-    let doomed = a.insert_with_owned(Arc::clone(&drop_key), reads(1), vec![], 5, || 2).unwrap();
-    let shared = b.insert_with_owned(Arc::clone(&drop_key), reads(1), vec![], 5, || 2).unwrap();
+    a.insert_with_owned(Arc::clone(&keep), reads(1), 3, || 1).unwrap();
+    let doomed = a.insert_with_owned(Arc::clone(&drop_key), reads(1), 5, || 2).unwrap();
+    let shared = b.insert_with_owned(Arc::clone(&drop_key), reads(1), 5, || 2).unwrap();
     assert!(Arc::ptr_eq(&doomed, &shared));
     assert_eq!(store.admitted_bytes(), 8);
     a.retain_where(|key| key.starts_with(b"keep"));
@@ -324,7 +323,7 @@ fn lease_slots_hold_every_claim_as_a_bit_and_are_reused_after_drop() {
     let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
     let leases: Vec<_> = (0..128).map(|_| store.lease()).collect();
     let key: Arc<[u8]> = Arc::from(b"owner".as_slice());
-    let first = leases[0].insert_with_owned(Arc::clone(&key), reads(1), vec![], 3, || 1).unwrap();
+    let first = leases[0].insert_with_owned(Arc::clone(&key), reads(1), 3, || 1).unwrap();
     for lease in &leases[1..] {
         let (found, _) = lease.visit_explained(&key, &Host(1), &mut |_| true);
         assert!(Arc::ptr_eq(&found.unwrap(), &first));
@@ -343,7 +342,7 @@ fn lease_slots_hold_every_claim_as_a_bit_and_are_reused_after_drop() {
     assert_eq!(store.storage_accounting().leases, 0);
     // A freed slot is handed out again.
     let again = store.lease();
-    again.insert_with(Arc::clone(&key), reads(1), vec![], 3, || 2);
+    again.insert_with(Arc::clone(&key), reads(1), 3, || 2);
     assert_eq!(store.storage_accounting().claims, 1);
     drop(again);
     assert_eq!(store.admitted_bytes(), 0);
@@ -353,7 +352,7 @@ fn key_storage_reports_which_variants_this_lease_claims_and_claim_stored_adopts_
     let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
     let (a, b) = (store.lease(), store.lease());
     let key: Arc<[u8]> = Arc::from(b"unit".as_slice());
-    let first = a.insert_with_owned(Arc::clone(&key), reads(1), vec![], 1, || 11).unwrap();
+    let first = a.insert_with_owned(Arc::clone(&key), reads(1), 1, || 11).unwrap();
     let held = |lease: &ObservedArtifactLease<u32, u8, u32, u8>| {
         let mut seen = Vec::new();
         lease.visit_key_storage([key.as_ref()], |view, mine| {
@@ -368,7 +367,7 @@ fn key_storage_reports_which_variants_this_lease_claims_and_claim_stored_adopts_
     assert!(b.claim_stored(&key, &first));
     assert_eq!(held(&b), [(11, true)]);
     // A different variant of the key replaces the claim; the sibling keeps the first one alive.
-    let second = b.insert_with_owned(Arc::clone(&key), reads(2), vec![], 1, || 22).unwrap();
+    let second = b.insert_with_owned(Arc::clone(&key), reads(2), 1, || 22).unwrap();
     assert_eq!(*second, 22);
     assert_eq!(held(&a), [(11, true), (22, false)]);
     drop(a);

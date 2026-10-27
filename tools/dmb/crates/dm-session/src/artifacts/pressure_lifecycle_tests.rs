@@ -39,7 +39,6 @@ fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
                     .insert_with_qualified_receipt(
                         shared_key.clone(),
                         reads(0),
-                        Arc::from([(0, 9)]),
                         8,
                         || vec![7; 8],
                     )
@@ -48,7 +47,6 @@ fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
                     .insert_with_qualified_receipt(
                         private_key.clone(),
                         reads(destination as u32 + 10),
-                        Arc::from([(0, 9)]),
                         4,
                         || vec![destination as u8; 4]
                     )
@@ -75,7 +73,6 @@ fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
                 .insert_with_qualified_receipt(
                     private_key.clone(),
                     reads(99),
-                    Arc::from([(0, 9)]),
                     4,
                     || vec![99; 4],
                 )
@@ -89,7 +86,7 @@ fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
     assert!(unpublished_weak.upgrade().is_none());
     assert_eq!(store.state.write().unwrap().claimed_variants(), 7);
 
-    let pruned = store.prune_for_pressure(usize::MAX, |key, _, _, value| {
+    let pruned = store.prune_for_pressure(usize::MAX, |key, _, value| {
         (key == &shared_key).then_some(value.capacity())
     });
     assert_eq!(pruned.retained_entries, 1);
@@ -126,7 +123,6 @@ fn refresh_published_during_pressure_charge_keeps_escaped_values_and_generation(
     let owner: Arc<ArtifactPublication<Lease>> = Arc::new(ArtifactPublication::default());
     let key: Arc<[u8]> = Arc::from(b"same-key".as_slice());
     let ledger = reads(0);
-    let versions: Arc<[(u8, u128)]> = Arc::from([(0, 9)]);
     let original = owner.begin(store.lease());
     let old = original
         .with_pending(|lease| {
@@ -134,7 +130,6 @@ fn refresh_published_during_pressure_charge_keeps_escaped_values_and_generation(
                 .insert_with_qualified_receipt(
                     key.clone(),
                     ledger.clone(),
-                    versions.clone(),
                     8,
                     || vec![1; 8],
                 )
@@ -148,7 +143,7 @@ fn refresh_published_during_pressure_charge_keeps_escaped_values_and_generation(
     let pressure_started = started.clone();
     let pressure_resume = resume.clone();
     let job = std::thread::spawn(move || {
-        pressure_store.prune_for_pressure(usize::MAX, |_, _, _, value| {
+        pressure_store.prune_for_pressure(usize::MAX, |_, _, value| {
             pressure_started.wait();
             pressure_resume.wait();
             Some(value.capacity())
@@ -159,7 +154,7 @@ fn refresh_published_during_pressure_charge_keeps_escaped_values_and_generation(
     let rebound = current
         .with_pending(|lease| {
             lease
-                .rebind_with_qualified_receipt(&old, key.clone(), ledger, versions, 8, || {
+                .rebind_with_qualified_receipt(&old, key.clone(), ledger.into(), 8, || {
                     vec![2; 8]
                 })
                 .unwrap()

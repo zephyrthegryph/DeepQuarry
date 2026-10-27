@@ -13,7 +13,6 @@ fn payload_validation_is_reentrant_and_declined_consumers_never_claim() {
                 query: 1,
                 answer: false
             }],
-            vec![],
             1,
             || 7
         )
@@ -22,11 +21,10 @@ fn payload_validation_is_reentrant_and_declined_consumers_never_claim() {
     let mut callbacks = 0;
     let (rejected, _) = request.visit_receipted_with_value(
         &key,
-        &mut |reads, versions, payload| {
+        &mut |reads, payload| {
             // Would deadlock if validation still held the artifact store lock.
             store.visit_storage(|_| {});
             assert_eq!(reads.len(), 1);
-            assert!(versions.is_empty());
             assert_eq!(**payload, 7);
             callbacks += 1;
             None
@@ -37,7 +35,7 @@ fn payload_validation_is_reentrant_and_declined_consumers_never_claim() {
     assert_eq!(callbacks, 1);
     drop(published);
     assert!(store
-        .visit_receipted_with_value(&key, &mut |_, _, _| None, &mut |_| true)
+        .visit_receipted_with_value(&key, &mut |_, _| None, &mut |_| true)
         .0
         .is_none());
 }
@@ -66,7 +64,6 @@ fn payload_validation_preserves_variant_order_and_replays_each_variant() {
                 query: 1,
                 answer: false
             }],
-            vec![],
             1,
             || 7
         )
@@ -79,7 +76,6 @@ fn payload_validation_preserves_variant_order_and_replays_each_variant() {
                 query: 1,
                 answer: true
             }],
-            vec![],
             1,
             || 8
         )
@@ -92,7 +88,7 @@ fn payload_validation_preserves_variant_order_and_replays_each_variant() {
     let mut edges = 0;
     let (selected, _) = current.visit_receipted_with_value(
         &key,
-        &mut |reads, _, payload| {
+        &mut |reads, payload| {
             order.push(**payload);
             admission.first_changed_receipted(reads, |leaf| edges += leaf.len())
         },

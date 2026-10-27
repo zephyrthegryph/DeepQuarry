@@ -14,7 +14,6 @@ fn insert(store: &Store<Vec<u8>, u8, u8, u8>, name: &[u8], value: u8) -> Arc<Vec
                 answer: value,
                 domain: 1,
             }],
-            vec![],
             1,
             || vec![value],
         )
@@ -92,7 +91,6 @@ fn bounded_failed_and_ephemeral_claims_preserve_published_variant_and_budget() {
                 answer: 4,
                 domain: 1
             }],
-            vec![],
             2,
             || panic!("over-budget producer"),
         )

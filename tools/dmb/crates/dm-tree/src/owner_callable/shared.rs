@@ -69,14 +69,13 @@ impl CallableValues {
         &self,
         key: Arc<[u8]>,
         reads: Vec<dm_session::Observation<SourceQuery, SourceAnswer, SourceDomain>>,
-        versions: Vec<(SourceDomain, u128)>,
         weight: usize,
         create: impl FnOnce() -> CallableOwner,
     ) -> Option<Arc<CallableOwner>> {
         match self {
-            Self::Local(store) => store.insert_with_owned(key, reads, versions, weight, create),
+            Self::Local(store) => store.insert_with_owned(key, reads, weight, create),
             Self::Shared { lease, .. } => {
-                lease.insert_with_owned(key, reads, versions, weight, create)
+                lease.insert_with_owned(key, reads, weight, create)
             }
         }
     }

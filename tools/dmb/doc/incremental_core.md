@@ -909,6 +909,17 @@ file in a resource search folder, and after two added-type edits and a default e
 mismatches). `cargo test` over the workspace passes; tests whose subject was a version or certificate are deleted or
 rewritten to assert answers.
 
+**Slice 5 (2026-10-27, compiler/version-plumbing): the empty version lists removed.** Every store API that still carried
+an always-empty `(domain, version)` list loses it: dm-session variants, observed artifacts, storage views, `insert_*`,
+`rebind_with_qualified_receipt`, validate/charge callbacks; dmbc publication/ABI/initializer/map/lowering stores, symbolic
+records and admissions, `ResidentPromotion`, and every heap-census charge. Persisted wire records keep their `versions`
+field and are written with an empty list at the encoder (`queue_disk`, `queue_selections`, `queue_compact`,
+`remember_executable`, `remember_failure`), so the disk format is unchanged. 125 files, -351 lines net. Speed (production
+tree, own daemon per arm, two interleaved rounds against compiler/memory-1, busy machine): body edits median 6.14 s against
+6.43 s. `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile: EQUIVALENT (body edits + a
+resource-folder change). This lane also carries compiler/memory-1 (bounced by the train on a census test that expected the
+old relocation HashMap's unknown bytes; the test now asserts the dense slice is fully known).
+
 ## Design option: the include spec as the project input (2026-10-27, lane `tools/generated-dme`)
 
 Not built; recorded for the query-core work. `deepquarry.dme` is generated now (`tools/build/gen_dme.py` from the files on disk and the

@@ -9,7 +9,6 @@ pub(crate) fn compact_weight(
         crate::initializer_lowering::receipts::Answer,
         crate::initializer_lowering::receipts::Domain,
     >,
-    versions: &Arc<[(crate::initializer_lowering::receipts::Domain, u128)]>,
     code: &Arc<dm_codegen_byond::lower_resolver::ResolverProc>,
     recipes: &Vec<crate::modified_initializers::ExpressionRecipe>,
     root_indexes: &Vec<usize>,
@@ -19,7 +18,6 @@ pub(crate) fn compact_weight(
     let mut census = HeapCensus::new("compact_initializer_assembly_charge");
     census.slice("compact.key", key, true);
     census.receipt("compact.reads", reads);
-    census.slice("compact.versions", versions, true);
     for read in reads.iter() {
         match &read.answer {
             crate::initializer_lowering::receipts::Answer::Semantic(answer) => {
@@ -62,10 +60,9 @@ pub(super) fn inspect_into(mut census: &mut HeapCensus, store: &InitializerAssem
         View::Bucket { address, len, capacity, element_size } => {
             census.buffer("initializer_assemblies.buckets", address, len.saturating_mul(element_size), capacity.saturating_mul(element_size));
         }
-        View::Entry { key, reads, versions, value } => {
+        View::Entry { key, reads, value } => {
             census.slice("initializer_assemblies.keys", key, true);
             census.receipt("initializer_assemblies.reads", reads);
-            census.slice("initializer_assemblies.versions", versions, true);
             for read in reads.iter() {
                 match &read.answer {
                     crate::initializer_lowering::receipts::Answer::Semantic(answer) => super::resident_weight::answer(&mut census, answer),

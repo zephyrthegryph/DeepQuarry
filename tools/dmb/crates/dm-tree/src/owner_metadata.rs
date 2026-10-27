@@ -118,13 +118,12 @@ impl Store {
         &self,
         key: Arc<[u8]>,
         reads: Reads,
-        versions: Vec<(MetadataDomain, u128)>,
         weight: usize,
         create: impl FnOnce() -> EffectiveOwner,
     ) -> bool {
         match self {
-            Self::Local(store) => store.insert_with(key, reads, versions, weight, create),
-            Self::Shared { lease, .. } => lease.insert_with(key, reads, versions, weight, create),
+            Self::Local(store) => store.insert_with(key, reads, weight, create),
+            Self::Shared { lease, .. } => lease.insert_with(key, reads, weight, create),
         }
     }
 }
@@ -205,7 +204,6 @@ pub enum MetadataStorageView<'a> {
     Entry {
         key: &'a Arc<[u8]>,
         reads: &'a dm_session::Receipt<MetadataQuery, MetadataAnswer, MetadataDomain>,
-        versions: &'a Arc<[(MetadataDomain, u128)]>,
         address: usize,
         size: usize,
     },
@@ -246,13 +244,11 @@ impl RetainedMetadata {
             V::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 visit(MetadataStorageView::Entry {
                     key,
                     reads,
-                    versions,
                     address: Arc::as_ptr(value) as usize,
                     size: std::mem::size_of::<EffectiveOwner>(),
                 });
@@ -327,7 +323,7 @@ impl RetainedMetadata {
             let Some(ids) = by_owner.get(&owner) else {
                 continue;
             };
-            let (accepted, reads, versions) = {
+            let (accepted, reads) = {
                 let host = Host {
                     tree,
                     normalized,
@@ -362,7 +358,7 @@ impl RetainedMetadata {
                         }
                     }
                 }
-                (accepted, ledger.reads(), Vec::new())
+                (accepted, ledger.reads())
             };
             if let Some(value) = accepted {
                 let EffectiveOwner::Members { selection, values } = value.as_ref() else {
@@ -405,7 +401,7 @@ impl RetainedMetadata {
                 let selection =
                     crate::host_declaration_selection::select(owner, members, ids.iter().copied());
                 selections.insert(owner, Arc::clone(&selection));
-                self.store.insert_with(key(owner), reads, versions, 0, || {
+                self.store.insert_with(key(owner), reads,0, || {
                     EffectiveOwner::Members { values, selection }
                 });
             }

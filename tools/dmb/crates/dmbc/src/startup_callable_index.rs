@@ -56,7 +56,7 @@ impl CallableIndex {
         // One fixed key replaces the previous current roster; no edit history.
         self.values.retain_current_keys([key.as_ref()]);
         self.values
-            .insert_with_owned(key, ledger.reads(), Vec::new(), 0, || {
+            .insert_with_owned(key, ledger.reads(), 0, || {
                 Arc::clone(&value)
             })
             .map(|owner| Arc::clone(owner.as_ref()))

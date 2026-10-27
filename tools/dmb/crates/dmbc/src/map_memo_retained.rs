@@ -237,7 +237,7 @@ impl MapMemo {
             if let Some(weight) = crate::heap_census::resident_map_plan_weight(plan, &key) {
                 retained
                     .parse
-                    .insert_with(key, Vec::new(), Vec::new(), weight, || plan.clone());
+                    .insert_with(key, Vec::new(), weight, || plan.clone());
             }
         });
     }
@@ -291,16 +291,15 @@ impl MapMemo {
         maps: &[MapPlan],
         value: &Projection,
         reads: Vec<ResolverRead>,
-        versions: Vec<(dm_ir::ReadDomain, u128)>,
     ) {
         self.with_pending_maps(|retained| {
             let maps: Arc<[MapPlan]> = maps.to_vec().into();
             if let Some(weight) = crate::heap_census::resident_map_geometry_weight(
-                &maps, value, &key, &reads, &versions,
+                &maps, value, &key, &reads,
             ) {
                 retained
                     .geometry
-                    .insert_with(key, reads, versions, weight, || GeometryArtifact {
+                    .insert_with(key, reads, weight, || GeometryArtifact {
                         maps,
                         value: value.clone(),
                     });

@@ -113,7 +113,6 @@ fn nested_certified_admission_records_transitive_reads_in_assembly_ledger() {
             query,
             answer: host.resolve(query),
         }],
-        vec![(query.domain(), 7)],
         1,
         || (),
     );
@@ -219,7 +218,6 @@ fn earlier_unrelated_receiver_preserves_assembly_locator_and_admission() {
     store.insert_with(
         std::sync::Arc::clone(&old.key),
         receipts::reads(&old, Vec::new()),
-        Vec::new(),
         1,
         || (),
     );
@@ -423,7 +421,6 @@ fn verified_assembly_hit_uses_original_receipt_and_fails_closed_on_changed_outpu
     corrupt_store.values.insert_with(
         Arc::clone(&key.key),
         accepted.reads.iter().cloned().collect(),
-        Vec::new(),
         std::mem::size_of::<RetainedAssembly>(),
         || RetainedAssembly {
             code: Arc::clone(&changed_code),

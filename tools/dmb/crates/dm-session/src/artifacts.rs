@@ -31,7 +31,6 @@ pub const DEFAULT_RESIDENT_BYTES: usize = 8 * 1024 * 1024;
 pub struct ObservedArtifact<T, Q, A, D> {
     pub value: Arc<T>,
     pub reads: Receipt<Q, A, D>,
-    pub versions: Arc<[(D, u128)]>,
     weight: usize,
 }
 
@@ -51,7 +50,6 @@ pub enum ObservedArtifactStorageView<'a, T, Q, A, D> {
     Entry {
         key: &'a Arc<[u8]>,
         reads: &'a Receipt<Q, A, D>,
-        versions: &'a Arc<[(D, u128)]>,
         value: &'a Arc<T>,
     },
 }
@@ -59,7 +57,6 @@ pub enum ObservedArtifactStorageView<'a, T, Q, A, D> {
 struct Variant<T, Q = ResolveQuery, A = ResolvedMeaning, D = ReadDomain> {
     key: Arc<[u8]>,
     reads: Receipt<Q, A, D>,
-    versions: Arc<[(D, u128)]>,
     value: Arc<T>,
     weight: usize,
     /// The leases claiming this variant, one bit per lease slot. A lease's roster is the set of variants naming its slot
@@ -118,7 +115,6 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
                 visit(ObservedArtifactStorageView::Entry {
                     key: &entry.key,
                     reads: &entry.reads,
-                    versions: &entry.versions,
                     value: &entry.value,
                 });
             }
@@ -144,7 +140,6 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
                     visit(ObservedArtifactStorageView::Entry {
                         key: &entry.key,
                         reads: &entry.reads,
-                        versions: &entry.versions,
                         value: &entry.value,
                     });
                 }
@@ -256,7 +251,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         // Both routes preserve the same exact-key candidate loop and replay core.
         self.visit_receipted_with(
             key,
-            &mut |reads, _| {
+            &mut |reads| {
                 crate::observations::first_changed_iter(
                     reads.iter(),
                     |query| resolver.answer(query),
@@ -280,7 +275,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         self.visit_receipted_with(
             key,
-            &mut |reads, _| request.first_changed_receipted(reads, |_| {}),
+            &mut |reads| request.first_changed_receipted(reads, |_| {}),
             accept,
         )
     }
@@ -290,12 +285,12 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     pub fn visit_receipted_with(
         &self,
         key: &[u8],
-        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)]) -> Option<Q>,
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         self.visit_receipted_with_value(
             key,
-            &mut |reads, versions, _| validate(reads, versions),
+            &mut |reads, _| validate(reads),
             accept,
         )
     }
@@ -305,7 +300,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     pub fn visit_receipted_with_value(
         &self,
         key: &[u8],
-        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &Arc<T>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let (accepted, changed) = self.visit_borrowed_receipted_with_value(
@@ -321,11 +316,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         key: Arc<[u8]>,
         reads: Vec<Observation<Q, A, D>>,
-        versions: Vec<(D, u128)>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> bool {
-        self.insert_with_owned(key, reads, versions, weight, create)
+        self.insert_with_owned(key, reads, weight, create)
             .is_some()
     }
     /// Return the actual immutable stored owner without cloning the produced payload.
@@ -334,29 +328,26 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         key: Arc<[u8]>,
         reads: Vec<Observation<Q, A, D>>,
-        versions: Vec<(D, u128)>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_with_shared(key, reads.into(), versions.into(), weight, create)
+        self.insert_with_shared(key, reads.into(), weight, create)
     }
     /// Admit the issuer's existing immutable ledger without copying its answers.
     pub fn insert_with_shared(
         &self,
         key: Arc<[u8]>,
         reads: Arc<[Observation<Q, A, D>]>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_with_receipt(key, reads.into(), versions, weight, create)
+        self.insert_with_receipt(key, reads.into(), weight, create)
     }
     /// Share existing canonical receipt leaves without flattening or reminting.
     pub fn insert_with_receipt(
         &self,
         key: Arc<[u8]>,
         reads: Receipt<Q, A, D>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
@@ -389,7 +380,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 .push(Variant {
                     key,
                     reads,
-                    versions,
                     value: Arc::clone(&value),
                     weight,
                     holders: Default::default(),
@@ -426,7 +416,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 bucket.push(Variant {
                     key,
                     reads,
-                    versions,
                     value: Arc::clone(&value),
                     weight,
                     holders: Default::default(),
@@ -439,7 +428,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         bucket.push(Variant {
             key,
             reads,
-            versions,
             value: Arc::clone(&value),
             weight,
             holders: Default::default(),
@@ -461,7 +449,7 @@ impl<T: Send + Sync> ArtifactStore<T> {
                 .iter()
                 .map(|read| read.answer.canonical_bytes().len())
                 .sum::<usize>();
-        self.insert_with(key, reads, Vec::new(), weight, || value);
+        self.insert_with(key, reads, weight, || value);
     }
 }
 
@@ -489,14 +477,13 @@ mod tests {
                     domain: (),
                     answer: false
                 }],
-                vec![],
                 0,
                 || 7
             )
             .is_some());
         let (value, changed) = store.visit_receipted_with(
             &key,
-            &mut |reads, _| {
+            &mut |reads| {
                 assert_eq!(reads.len(), 1);
                 Some(1)
             },
@@ -511,7 +498,7 @@ mod tests {
             }
         }
         assert_eq!(*store.lookup(&key, &Current).unwrap(), 7);
-        let (value, changed) = store.visit_receipted_with(&key, &mut |_, _| None, &mut |_| false);
+        let (value, changed) = store.visit_receipted_with(&key, &mut |_| None, &mut |_| false);
         assert!(value.is_none());
         assert_eq!(changed, None);
     }
@@ -521,7 +508,7 @@ mod tests {
         let store: ArtifactStore<usize> = ArtifactStore::current_revision();
         let key: Arc<[u8]> = Arc::from(b"singleton".as_slice());
         for value in 0..3 {
-            store.insert_with(Arc::clone(&key), vec![], vec![], 1, || value);
+            store.insert_with(Arc::clone(&key), vec![], 1, || value);
             let mut buckets = 0;
             store.visit_storage(|view| {
                 if let ObservedArtifactStorageView::Bucket { len, capacity, .. } = view {
@@ -545,12 +532,10 @@ mod tests {
             answer: ResolvedMeaning::Missing,
         }]
         .into();
-        let versions: Arc<[(ReadDomain, u128)]> = vec![(query.domain(), 7)].into();
         assert!(store
             .insert_with_shared(
                 Arc::clone(&key),
                 Arc::clone(&reads),
-                Arc::clone(&versions),
                 1,
                 || (),
             )
@@ -558,7 +543,6 @@ mod tests {
         let (accepted, _) = store.visit_receipted(&key, &Host, &mut |_| true);
         let accepted = accepted.unwrap();
         assert!(Arc::ptr_eq(&reads, accepted.reads.flat().unwrap()));
-        assert!(Arc::ptr_eq(&versions, &accepted.versions));
         store.visit_storage(|view| {
             if let ObservedArtifactStorageView::Entry { key: stored, .. } = view {
                 assert!(Arc::ptr_eq(&key, stored));
@@ -570,7 +554,7 @@ mod tests {
         let store = ArtifactStore::current_revision();
         let key: Arc<[u8]> = Arc::from(b"produced".as_slice());
         let produced = store
-            .insert_with_owned(Arc::clone(&key), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::clone(&key), vec![], 1, || {
                 Value(Arc::new(AtomicUsize::new(0)))
             })
             .unwrap();
@@ -581,7 +565,7 @@ mod tests {
         assert!(Arc::ptr_eq(&produced, &found));
         let rejected = ArtifactStore::<Value>::with_limit(0);
         assert!(rejected
-            .insert_with_owned(key, vec![], vec![], 1, || panic!(
+            .insert_with_owned(key, vec![], 1, || panic!(
                 "oversized producers must not run"
             ))
             .is_none());
@@ -590,7 +574,7 @@ mod tests {
     fn diagnostic_storage_borrows_actual_owner_without_cloning_it() {
         let store = ArtifactStore::current_revision();
         let key: Arc<[u8]> = Arc::from(b"diagnostic".as_slice());
-        store.insert_with(Arc::clone(&key), Vec::new(), Vec::new(), 7, || vec![1u8, 2]);
+        store.insert_with(Arc::clone(&key), Vec::new(), 7, || vec![1u8, 2]);
         let retained = store.lookup(&key, &Host).unwrap();
         let count = Arc::strong_count(&retained);
         let mut saw = (false, false, false);
@@ -615,12 +599,11 @@ mod tests {
                 key: borrowed_key,
                 value,
                 reads,
-                versions,
             } => {
                 assert!(Arc::ptr_eq(borrowed_key, &key));
                 assert!(Arc::ptr_eq(value, &retained));
                 assert_eq!(Arc::strong_count(value), count);
-                assert!(reads.is_empty() && versions.is_empty());
+                assert!(reads.is_empty());
                 saw.2 = true;
             }
         });
@@ -637,11 +620,11 @@ mod tests {
         let drops = Arc::new(AtomicUsize::new(0));
         let store = ArtifactStore::current_revision();
         let key: Arc<[u8]> = Arc::from(b"current".as_slice());
-        store.insert_with(Arc::clone(&key), vec![], vec![], 1, || {
+        store.insert_with(Arc::clone(&key), vec![], 1, || {
             Value(Arc::clone(&drops))
         });
         let reader = store.lookup(&key, &Host).unwrap();
-        store.insert_with(Arc::clone(&key), vec![], vec![], 2, || {
+        store.insert_with(Arc::clone(&key), vec![], 2, || {
             Value(Arc::clone(&drops))
         });
         assert_eq!(store.admitted_bytes(), 2);
@@ -667,7 +650,7 @@ mod tests {
         let store = ArtifactStore::current_revision();
         let key: Arc<[u8]> = Arc::from(b"a".as_slice());
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
-        store.insert_with(Arc::clone(&key), vec![], vec![], 1, || 1u32);
+        store.insert_with(Arc::clone(&key), vec![], 1, || 1u32);
         // Force the bucket collision independently of the hashing implementation.
         store
             .state
@@ -679,13 +662,12 @@ mod tests {
             .push(Variant {
                 key: Arc::from(b"b".as_slice()),
                 reads: Vec::new().into(),
-                versions: Arc::from([]),
                 value: Arc::new(9),
                 weight: 3,
                 holders: Default::default(),
             });
         store.state.write().unwrap().bytes += 3;
-        store.insert_with(key, vec![], vec![], 2, || 2u32);
+        store.insert_with(key, vec![], 2, || 2u32);
         let state = store.state.write().unwrap();
         assert_eq!(state.bytes, 5);
         let bucket = &state.buckets[&hash];
@@ -720,9 +702,9 @@ mod tests {
                 answer: ResolvedMeaning::Presence(value),
             }]
         };
-        store.insert_with(Arc::clone(&key), reads(false), vec![], 1, || 1u32);
+        store.insert_with(Arc::clone(&key), reads(false), 1, || 1u32);
         assert!(store.lookup(&key, &Presence(true)).is_none());
-        store.insert_with(Arc::clone(&key), reads(true), vec![], 2, || 2u32);
+        store.insert_with(Arc::clone(&key), reads(true), 2, || 2u32);
         assert_eq!(store.lookup(&key, &Presence(true)).as_deref(), Some(&2));
         assert!(store.lookup(&key, &Presence(false)).is_none());
         assert_eq!(store.admitted_bytes(), 2);
@@ -746,13 +728,13 @@ mod tests {
         let drops = Arc::new(AtomicUsize::new(0));
         let store = ArtifactStore::with_limit(1);
         assert!(
-            store.insert_with(Arc::from(b"a".as_slice()), vec![], vec![], 1, || Value(
+            store.insert_with(Arc::from(b"a".as_slice()), vec![], 1, || Value(
                 Arc::clone(&drops)
             ))
         );
         let reader = store.lookup(b"a", &Host).unwrap();
         assert!(
-            store.insert_with(Arc::from(b"b".as_slice()), vec![], vec![], 1, || Value(
+            store.insert_with(Arc::from(b"b".as_slice()), vec![], 1, || Value(
                 Arc::clone(&drops)
             ))
         );
@@ -768,7 +750,7 @@ mod tests {
         let store = ArtifactStore::<u32>::with_limit(1);
         let calls = AtomicUsize::new(0);
         assert!(
-            !store.insert_with(Arc::from(b"a".as_slice()), vec![], vec![], 2, || {
+            !store.insert_with(Arc::from(b"a".as_slice()), vec![], 2, || {
                 calls.fetch_add(1, Ordering::SeqCst);
                 7
             })
@@ -785,7 +767,7 @@ mod tests {
             domain: query.domain(),
             answer: Host.resolve(query),
         }];
-        store.insert_with(Arc::from(b"a".as_slice()), reads, vec![], 1, || 7u32);
+        store.insert_with(Arc::from(b"a".as_slice()), reads, 1, || 7u32);
         let (accepted, changed) = store.visit_receipted(b"a", &Host, &mut |_| true);
         assert!(changed.is_none());
         let accepted = accepted.unwrap();
@@ -795,9 +777,8 @@ mod tests {
             accepted.reads.flat().unwrap(),
             original.reads.flat().unwrap()
         ));
-        assert!(Arc::ptr_eq(&accepted.versions, &original.versions));
         drop(state);
-        store.insert_with(Arc::from(b"b".as_slice()), vec![], vec![], 1, || 8u32);
+        store.insert_with(Arc::from(b"b".as_slice()), vec![], 1, || 8u32);
         assert!(store.lookup(b"a", &Host).is_none());
         assert_eq!(accepted.reads[0].query, query);
         assert_eq!(
@@ -809,7 +790,7 @@ mod tests {
     #[test]
     fn collision_bucket_cannot_authorize_different_exact_key() {
         let store = ArtifactStore::with_limit(10);
-        store.insert_with(Arc::from(b"a".as_slice()), vec![], vec![], 1, || 7u32);
+        store.insert_with(Arc::from(b"a".as_slice()), vec![], 1, || 7u32);
         // Force a collision structurally instead of assuming real hash behavior.
         let mut state = store.state.write().unwrap();
         let variant = state

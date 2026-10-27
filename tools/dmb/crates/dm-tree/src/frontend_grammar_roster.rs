@@ -179,7 +179,6 @@ impl RetainedGrammar {
             self.lease.insert_with(
                 key.clone().into(),
                 ledger.reads(),
-                Vec::new(),
                 0,
                 || descriptors,
             );

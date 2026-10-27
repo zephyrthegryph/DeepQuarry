@@ -308,7 +308,7 @@ pub(super) fn prepare(
             .store
             .visit_receipted_with(
                 &key,
-                &mut |reads, _| admission::changed(reads, current, admission),
+                &mut |reads| admission::changed(reads, current, admission),
                 &mut |value| matches!(value.as_ref(), Artifact::Unit(_)),
             )
             .0
@@ -431,7 +431,6 @@ pub(super) fn prepare(
                 ) && a.domain == b.domain
             })
             .map_err(AbiError::invariant)?;
-        let versions: Vec<(Domain, u128)> = Vec::new();
         // Current-roster mode has no byte admission budget. This is an inline
         // accounting charge only; opt-in census separately walks actual owners.
         let charge = std::mem::size_of::<Artifact>()
@@ -441,7 +440,6 @@ pub(super) fn prepare(
         if let Some(accepted) = store.store.insert_with_receipt(
             Arc::clone(&key),
             reads,
-            versions.into(),
             charge,
             || {
                 Artifact::Unit(Arc::new(UnitArtifact {

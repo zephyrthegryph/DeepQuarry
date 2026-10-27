@@ -73,10 +73,9 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         View::Bucket { address, len, capacity, element_size } => {
             census.buffer("retained_authored.buckets", address, len.saturating_mul(element_size), capacity.saturating_mul(element_size));
         }
-        View::Entry { key, reads, versions, value } => {
+        View::Entry { key, reads, value } => {
             census.slice("retained_authored.keys", key, true);
             census.receipt("retained_authored.reads", reads);
-            census.slice("retained_authored.versions", versions, true);
             contribution(census, value);
             for read in reads.iter() {
                 if let Some(rows) = &read.answer {
@@ -105,10 +104,9 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         NormalizationStorageView::Buffer { address, length, capacity } => {
             census.buffer("retained_normalization.buffers", address, length, capacity);
         }
-        NormalizationStorageView::Entry { key, reads, versions, address, size } => {
+        NormalizationStorageView::Entry { key, reads, address, size } => {
             census.slice("retained_normalization.keys", key, true);
             census.receipt("retained_normalization.reads", reads);
-            census.slice("retained_normalization.versions", versions, true);
             census.buffer("retained_normalization.values", address, size, size);
             for read in reads.iter() {
                 match read.query {

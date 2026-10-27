@@ -89,7 +89,6 @@ fn finite_variable_negative_resident_and_disk_replay_tracks_inheritance_and_dele
         assert!(matches!(opaque.resolve(query), M::Unsupported(_)));
     }
     let reads = recorder.reads();
-    let versions = Vec::new();
     let ast = dm_syntax::parse("/proc/probe()\n    return 7\n");
     let code = dm_codegen_byond::compile_simple_proc_with_resolver(
         &ast.items[0].children,
@@ -107,14 +106,14 @@ fn finite_variable_negative_resident_and_disk_replay_tracks_inheritance_and_dele
         .unwrap();
     let resident = ProcedureMemo::new(91);
     let key = b"finite-variable-negative-return7";
-    resident.remember(key.to_vec(), reads.clone(), unit, vec![], versions.clone());
+    resident.remember(key.to_vec(), reads.clone(), unit, vec![]);
     assert!(resident.values.lookup(key, &host).is_some());
     let root = crate::test_scratch::root()
         .join(format!("{}-variable-negative", std::process::id()));
     std::fs::create_dir_all(&root).unwrap();
     let cache = dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap();
     let writer = ProcedureMemo::with_disk_only(91, cache.snapshot().unwrap());
-    writer.remember_executable(key, &reads, &code, &versions);
+    writer.remember_executable(key, &reads, &code);
     let records = writer.take_pending();
     assert_eq!(records.len(), 1);
     cache.publish(&records).unwrap();

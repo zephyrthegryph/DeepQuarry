@@ -64,7 +64,6 @@ fn typed_inputs_seal_exact_owner_boundary_predecessor_and_policy() {
         .insert_with_owned(
             Arc::clone(&key),
             observations::reads(Arc::clone(&inputs), Vec::new()),
-            Vec::new(),
             0,
             || Artifact::Unit(Arc::new(UnitArtifact {
                 canonical: None,
@@ -155,7 +154,6 @@ fn typed_inputs_seal_exact_owner_boundary_predecessor_and_policy() {
         .insert_with_owned(
             Arc::clone(&key),
             observations::reads(Arc::clone(&predecessor), Vec::new()),
-            Vec::new(),
             0,
             || Artifact::Unit(Arc::new(UnitArtifact {
                 canonical: None,
@@ -226,7 +224,7 @@ fn typed_abi_negative_semantic_reads_replay_and_current_keys_replace_history() {
     );
     assert!(store
         .store
-        .insert_with_owned(Arc::clone(&key), reads, Vec::new(), 0, || Artifact::Unit(
+        .insert_with_owned(Arc::clone(&key), reads, 0, || Artifact::Unit(
             Arc::new(UnitArtifact {
                 canonical: None,
                 inputs: Arc::new(ProcedureInputs::default()),
@@ -304,7 +302,6 @@ fn shared_abi_semantic_leaf_keeps_current_inputs_and_invalidates_negative_next_r
         definition: None,
     });
     let query = ResolveQuery::GlobalVar(SymbolId::of("optional"));
-    let versions = [(Domain::Semantic(query.domain()), 9)];
     let pool = ReceiptGroupPool::default();
     let build = || {
         pool.intern_receipt(

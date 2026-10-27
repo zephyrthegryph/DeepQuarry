@@ -23,10 +23,9 @@ impl HeapCensus {
         View::Bucket { address, len, capacity, element_size } => {
             census.buffer("prepared_inputs.buckets",address,len.saturating_mul(element_size),capacity.saturating_mul(element_size));
         }
-        View::Entry { key, reads, versions, value } => {
+        View::Entry { key, reads, value } => {
             census.slice("prepared_inputs.key",key,true);
             census.receipt("prepared_inputs.reads", reads);
-            census.slice("prepared_inputs.versions",versions,true);
             if census.arc_object("prepared_inputs.payload",value) {
                 let source=value.source();
                 if census.arc_object("prepared_inputs.source",source) {

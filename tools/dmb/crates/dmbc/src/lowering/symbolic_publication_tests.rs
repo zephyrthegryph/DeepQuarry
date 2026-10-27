@@ -13,7 +13,6 @@ fn record(key: &[u8], reads: Vec<ResolverRead>) -> Record {
         recipe: None,
         key: Arc::<[u8]>::from(key).into(),
         reads: reads.into(),
-        versions: Arc::from([]),
         value: RecordValue::Selections {
             facts: Arc::new(Default::default()),
             abi: vec![7],
@@ -53,7 +52,7 @@ fn published_symbolic_candidate_replays_its_reads_and_keeps_read_edges() {
     let owner = SessionSymbolicMemo::current_revision();
     let first = owner.for_request(true);
     let query = dm_ir::ResolveQuery::MemberCallableName(dm_ir::SymbolId::of("absent"));
-    let mut produced = record(
+    let produced = record(
         b"qualified",
         vec![ResolverRead {
             query,
@@ -61,7 +60,6 @@ fn published_symbolic_candidate_replays_its_reads_and_keeps_read_edges() {
             answer: dm_ir::ResolvedMeaning::Presence(false),
         }],
     );
-    produced.versions = Arc::from([(query.domain(), 7)]);
     assert!(first.insert_record(identity(), produced));
     assert!(first.publish_successful());
     drop(first);
@@ -91,7 +89,7 @@ fn published_symbolic_candidate_replays_its_reads_and_keeps_read_edges() {
                     .records
                     .visit_receipted_with_value(
                         &locator(identity(), b"qualified"),
-                        &mut |reads, _, _| {
+                        &mut |reads, _| {
                             validate_published_record(
                                 reads,
                                 admission.as_ref(),

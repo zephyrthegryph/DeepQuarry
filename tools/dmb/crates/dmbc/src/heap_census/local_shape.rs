@@ -17,10 +17,9 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         LocalShapeStorageView::Buffer { address, length, capacity } => {
             census.buffer("retained_local_shape.buffers", address, length, capacity);
         }
-        LocalShapeStorageView::Entry { key, reads, versions, address, size } => {
+        LocalShapeStorageView::Entry { key, reads, address, size } => {
             census.slice("retained_local_shape.keys", key, true);
             census.receipt("retained_local_shape.reads", reads);
-            census.slice("retained_local_shape.versions", versions, true);
             census.buffer("retained_local_shape.values", address, size, size);
             for read in reads.iter() {
                 super::retained_normalization::answer(census, &read.answer);
