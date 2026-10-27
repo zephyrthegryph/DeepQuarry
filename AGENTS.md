@@ -88,6 +88,7 @@ definition before using it.
 | Links and ownership | Relations declared in `CAPABILITIES`; lifecycle declared | §6 | yes (`OWN`/`REL`, `own_set` and the `relations()`/`ownership()` procs are banned) | `ref_one()`/`ref_many()`/`links()`/`owns_one()`/`owns_many()` in the block |
 | World-level state/work | `SYSTEM_DEF(x)` plus `/datum/system/x` with `needs`, `lane`, `every()`; other folders call only its `api.dm` | §2 | yes (`world_service` is gone) | `SYSTEM_DEF(x)` |
 | Construction ladders | `construction(start(...), step(...), dismantle(...))` | §12 | yes (`code/engine/declare/graph.dm`) | `construction(...)` |
+| Database and HTTP reads | A `/datum/io/sql` request, or a read that carries on in its callback | §2 | yes (`prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` are gone and banned) | `sql_ask(owner, sql, params, PROC_REF(next), context...)` + `sql_answer_rows()`, `http_ask()`, `sql_write()` for a write nobody reads, `db_query_now()` only where BYOND itself waits |
 | Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `flow_ask` is gone and banned) | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()`; a tool that is not an op asks with an `ask_sequence` (`question_step()`, `ask_child()`) |
 
 Rules that hold under both old and new forms:
@@ -126,7 +127,7 @@ table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` l
 What is still open, and still correct to write where a file already uses it:
 
 - The `BF_*` body factors themselves are done: they are stats on `/mob/living`. A `factors = alist(...)` var on a flyweight or prototype (a body effect, affliction, reagent, trait, perk or form type) is final data read by its type's one reader, not open work (`doc/rewrite/proposals/stat_layer.md` §8, end); `factors_converted` is only for types that move the table into the entry itself.
-- `prompt_flow()` / `flow_select()` (database reads that re-run their entry). `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/modules/admin/view_variables/pickers.dm`).
+- `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/modules/admin/view_variables/pickers.dm`).
 - The init, `base_vars` and raw-overlay ratchets (baselines shrink as files convert).
 - File moves into the new tree (§3c).
 
@@ -423,7 +424,9 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   type's declared `click_on()`/`drag_onto()`/`hover()`/... entry through `input_dispatch()`, then the default handling. Nothing generates or
   hand-writes a native mouse override. Things that wait for an answer
   are requests (`open_request()`, `request_answer()`, `requests.dm`); long work that must yield is `job()`
-  (`jobs.dm`); a call that may fail by design is `safe_call()` (`safe.dm`). Tests make time pass with
+  (`jobs.dm`); a call that may fail by design is `safe_call()` (`safe.dm`). A database or HTTP read whose answer the caller
+  carries on from (a chain of reads, the login checks, a chat command) is `sql_ask()` / `http_ask()` with a callback on the owner and
+  `sql_answer_rows()` for the rows (`code/engine/io/db.dm`); a typed read is a `/datum/io/sql` request. Tests make time pass with
   `test_driver_begin()` and `test_time()` (doc/testing.md "The kernel clock").
   BYOND's own callbacks (`atom/Click`, `DblClick`, `MouseWheel`, `MouseDrop`, `MouseEntered`, `MouseDown`, the client's mouse procs,
   `/datum/Topic`, `world.Reboot`) are in `code/engine/kernel/entry.dm`: each reads `usr` there once, builds the event with the actor, and

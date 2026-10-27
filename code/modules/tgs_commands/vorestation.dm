@@ -83,50 +83,43 @@
 
 // ---------------------------------------------------------------- database commands
 //
-// A command that reads the database runs its body, flow_run(), as a prompt flow (flow_io.dm):
-// each query re-runs it when answered. A body that finishes at once (no query, or an error
-// before one) answers through Run() as usual; one that waited sends its reply to the channel
-// the command came from when it finishes. The sender is held here until then.
+// A command that reads the database starts the read with sql_ask() (code/engine/io/db.dm) and returns null from Run(); its callback
+// carries on, and the reply goes to the channel the command came from once the work is done (tgs_reply_when_ready()). A command that
+// can answer at once (a bad argument, no database) returns its reply from Run() as usual. TGS drops the sender once Run() returns,
+// so it is held here until the reply is sent.
 
-/// Senders of commands whose flow is waiting on a query, key -> sender (a declared keyed relation of GLOB), and when each started.
-GLOBAL_ALIST_EMPTY(tgs_flow_senders)
-GLOBAL_ALIST_EMPTY(tgs_flow_started)
-GLOBAL_VAR_INIT(tgs_flow_seq, 0)
+/// Senders of commands waiting on a read, key -> sender (a declared keyed relation of GLOB), and when each started.
+GLOBAL_ALIST_EMPTY(tgs_waiting_senders)
+GLOBAL_ALIST_EMPTY(tgs_waiting_started)
+GLOBAL_VAR_INIT(tgs_waiting_seq, 0)
 
-/// Drops one waiting flow's sender and its start time.
-/proc/tgs_flow_release(key)
-	rel_add(GLOB, nameof(GLOB.tgs_flow_senders), null, key)
-	GLOB.tgs_flow_started -= key
+/// Drops one waiting command's sender and its start time.
+/proc/tgs_waiting_release(key)
+	rel_add(GLOB, nameof(GLOB.tgs_waiting_senders), null, key)
+	GLOB.tgs_waiting_started -= key
 
-/datum/tgs_chat_command/proc/run_as_flow(datum/tgs_chat_user/sender, params)
-	for(var/stale in GLOB.tgs_flow_started) // a flow dropped on the way never collects its sender
-		if(ELAPSED_SINCE(src, GLOB.tgs_flow_started[stale], CLOCK_WORLD) > 10 MINUTES)
-			tgs_flow_release(stale)
-	var/key = "[++GLOB.tgs_flow_seq]"
-	rel_add(GLOB, nameof(GLOB.tgs_flow_senders), sender, key)
-	GLOB.tgs_flow_started[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
-	. = flow_entry(key, params)
-	if(!isnull(.))
-		tgs_flow_release(key)
+/// Holds `sender` while this command's read is out; returns the key its callback finds the sender by.
+/datum/tgs_chat_command/proc/tgs_hold_sender(datum/tgs_chat_user/sender)
+	for(var/stale in GLOB.tgs_waiting_started) // a read dropped on the way never collects its sender
+		if(ELAPSED_SINCE(src, GLOB.tgs_waiting_started[stale], CLOCK_WORLD) > 10 MINUTES)
+			tgs_waiting_release(stale)
+	var/key = "[++GLOB.tgs_waiting_seq]"
+	rel_add(GLOB, nameof(GLOB.tgs_waiting_senders), sender, key)
+	GLOB.tgs_waiting_started[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+	return key
 
-/datum/tgs_chat_command/proc/flow_entry(key, params)
-	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(flow_entry), args)
-	var/datum/tgs_chat_user/sender = GLOB.tgs_flow_senders[key]
-	if(!sender)
-		return
-	var/reply = flow_run(sender, params)
-	if(!prompt_flow_answers()) // finished on its first run: Run() returns the reply
-		return reply
-	tgs_flow_release(key)
-	if(isnull(reply))
+/// The sender held under `key`, or null (the hold was dropped).
+/datum/tgs_chat_command/proc/tgs_held_sender(key)
+	return GLOB.tgs_waiting_senders[key]
+
+/// Sends `reply` (text or a tgs_message_content) to the channel the held command came from, and lets the sender go.
+/datum/tgs_chat_command/proc/tgs_reply_when_ready(key, reply)
+	var/datum/tgs_chat_user/sender = GLOB.tgs_waiting_senders[key]
+	tgs_waiting_release(key)
+	if(!sender || isnull(reply))
 		return
 	var/datum/tgs_message_content/message = istext(reply) ? new /datum/tgs_message_content(reply) : reply
 	world.TgsChatBroadcast(message, sender.channel ? list(sender.channel) : null)
-
-/// The command's body when it runs as a flow; returns the reply (text or tgs_message_content).
-/datum/tgs_chat_command/proc/flow_run(datum/tgs_chat_user/sender, params)
-	return
 
 GLOBAL_LIST_EMPTY(pending_discord_registrations)
 /datum/tgs_chat_command/register
@@ -135,18 +128,25 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	admin_only = FALSE
 
 /datum/tgs_chat_command/register/Run(datum/tgs_chat_user/sender, params)
-	return run_as_flow(sender, params)
-
-/datum/tgs_chat_command/register/flow_run(datum/tgs_chat_user/sender, params)
 	// Try to find if that ID is registered to someone already
-	var/list/registered_rows = flow_select("SELECT discord_id FROM erro_player WHERE discord_id = :discord_id", list("discord_id" = sender.id))
+	var/key = tgs_hold_sender(sender)
+	sql_ask(src, "SELECT discord_id FROM erro_player WHERE discord_id = :discord_id", list("discord_id" = sender.id), PROC_REF(register_id_checked), key, params)
+	return null
+
+/datum/tgs_chat_command/register/proc/register_id_checked(list/result, error, key, params)
+	var/datum/tgs_chat_user/sender = tgs_held_sender(key)
+	if(!sender)
+		return
+	var/list/registered_rows = sql_answer_rows(result, error, "discord register: id lookup")
 	if(length(registered_rows))
-		return "[sender.friendly_name], your Discord ID is already registered to a Byond username. Please contact an administrator if you changed your Byond username or Discord ID."
+		tgs_reply_when_ready(key, "[sender.friendly_name], your Discord ID is already registered to a Byond username. Please contact an administrator if you changed your Byond username or Discord ID.")
+		return
 	var/key_to_find = "[ckey(params)]"
 
 	// They didn't provide anything worth looking up.
 	if(!length(key_to_find))
-		return "[sender.friendly_name], you need to provide your Byond username at the end of the command. It can be in 'key' format (with spaces and characters) or 'ckey' format (without spaces or special characters)."
+		tgs_reply_when_ready(key, "[sender.friendly_name], you need to provide your Byond username at the end of the command. It can be in 'key' format (with spaces and characters) or 'ckey' format (without spaces or special characters).")
+		return
 
 	// Try to find their client.
 	var/client/user
@@ -157,18 +157,38 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 
 	// Couldn't find them logged in.
 	if(!user)
-		return "[sender.friendly_name], I couldn't find a logged-in user with the username of '[key_to_find]', which is what you provided after conversion to Byond's ckey format. Please connect to the game server and try again."
+		tgs_reply_when_ready(key, "[sender.friendly_name], I couldn't find a logged-in user with the username of '[key_to_find]', which is what you provided after conversion to Byond's ckey format. Please connect to the game server and try again.")
+		return
 
-	var/list/player_rows = flow_select("SELECT discord_id FROM erro_player WHERE ckey = :ckey", list("ckey" = key_to_find))
+	sql_ask(src, "SELECT discord_id FROM erro_player WHERE ckey = :ckey", list("ckey" = key_to_find), PROC_REF(register_player_checked), key, key_to_find)
+
+/datum/tgs_chat_command/register/proc/register_player_checked(list/result, error, key, key_to_find)
+	var/datum/tgs_chat_user/sender = tgs_held_sender(key)
+	if(!sender)
+		return
+	var/list/player_rows = sql_answer_rows(result, error, "discord register: player lookup for [key_to_find]")
 
 	// We somehow found their client, BUT they don't exist in the database
 	if(!length(player_rows))
-		return "[sender.friendly_name], the server's database is either not responding or there's no evidence you've ever logged in. Please contact an administrator."
+		tgs_reply_when_ready(key, "[sender.friendly_name], the server's database is either not responding or there's no evidence you've ever logged in. Please contact an administrator.")
+		return
 
 	// We found them in the database, AND they already have a discord ID assigned
 	var/list/player_row = player_rows[1]
 	if(player_row[1])
-		return "[sender.friendly_name], it appears you've already registered your chat and game IDs. If you've changed game or chat usernames, please contact an administrator for help."
+		tgs_reply_when_ready(key, "[sender.friendly_name], it appears you've already registered your chat and game IDs. If you've changed game or chat usernames, please contact an administrator for help.")
+		return
+
+	// The client may have left while the lookup was out.
+	var/client/user
+	for(var/client/C in GLOB.clients)
+		if(C.ckey == key_to_find)
+			user = C
+			break
+	if(!user)
+		tgs_reply_when_ready(key, "[sender.friendly_name], I couldn't find a logged-in user with the username of '[key_to_find]', which is what you provided after conversion to Byond's ckey format. Please connect to the game server and try again.")
+		return
+
 	// Okay. We found them, they're in the DB, and they have no discord ID set.
 	var/message = span_notice("A request has been sent from Discord to validate your Byond username, by '[sender.friendly_name]' in '[sender.channel.friendly_name]'") + "\
 	<br>" + span_warning("If you did not send this request, do not click the link below, and do notify an administrator in-game or on Discord ASAP.") + "\
@@ -179,7 +199,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	GLOB.pending_discord_registrations.len++
 	GLOB.pending_discord_registrations[GLOB.pending_discord_registrations.len] = list("ckey" = key_to_find, "id" = sender.id, "time" = world.realtime)
 
-	return "[sender.friendly_name], I've sent you a message in-game. Please verify your username there to complete your registration within 10 minutes."
+	tgs_reply_when_ready(key, "[sender.friendly_name], I've sent you a message in-game. Please verify your username there to complete your registration within 10 minutes.")
 
 // Coin flip
 /datum/tgs_chat_command/coinflip
@@ -246,17 +266,24 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	admin_only = TRUE
 
 /datum/tgs_chat_command/discordping/Run(datum/tgs_chat_user/sender, params)
-	return run_as_flow(sender, params)
-
-/datum/tgs_chat_command/discordping/flow_run(datum/tgs_chat_user/sender, params)
 	var/key_to_find = "[ckey(params)]"
 
 	// They didn't provide anything worth looking up.
 	if(!length(key_to_find))
 		return "[sender.friendly_name], you need to provide a Byond username at the end of the command. It can be in 'key' format (with spaces and characters) or 'ckey' format (without spaces or special characters)."
 
-	var/list/ckey_rows = flow_select("SELECT discord_id FROM erro_player WHERE ckey = :t_ckey",list("t_ckey" = key_to_find))
+	var/key = tgs_hold_sender(sender)
+	sql_ask(src, "SELECT discord_id FROM erro_player WHERE ckey = :t_ckey", list("t_ckey" = key_to_find), PROC_REF(discordping_found), key, key_to_find)
+	return null
 
+/datum/tgs_chat_command/discordping/proc/discordping_found(list/result, error, key, key_to_find)
+	var/datum/tgs_chat_user/sender = tgs_held_sender(key)
+	if(!sender)
+		return
+	tgs_reply_when_ready(key, discordping_reply(sender, key_to_find, sql_answer_rows(result, error, "discord ping: lookup for [key_to_find]")))
+
+/// The reply to a discordping: the ckey's discord, or why there is none.
+/datum/tgs_chat_command/discordping/proc/discordping_reply(datum/tgs_chat_user/sender, key_to_find, list/ckey_rows)
 	if(!length(ckey_rows))
 		return "[sender.friendly_name], the server's database is either not responding or there's no such ckey in the database."
 
@@ -272,14 +299,21 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	admin_only = TRUE
 
 /datum/tgs_chat_command/getkey/Run(datum/tgs_chat_user/sender, params)
-	return run_as_flow(sender, params)
-
-/datum/tgs_chat_command/getkey/flow_run(datum/tgs_chat_user/sender, params)
 	if(!params)
 		return "[sender.friendly_name], you need to provide a Discord ID at the end of the command. To obtain someone's Discord ID, you need to enable developer mode on discord, and then right click on their name and click Copy ID."
 
-	var/list/discord_rows = flow_select("SELECT ckey FROM erro_player WHERE discord_id = :t_discord", list("t_discord"=params))
+	var/key = tgs_hold_sender(sender)
+	sql_ask(src, "SELECT ckey FROM erro_player WHERE discord_id = :t_discord", list("t_discord" = params), PROC_REF(getkey_found), key, params)
+	return null
 
+/datum/tgs_chat_command/getkey/proc/getkey_found(list/result, error, key, params)
+	var/datum/tgs_chat_user/sender = tgs_held_sender(key)
+	if(!sender)
+		return
+	tgs_reply_when_ready(key, getkey_reply(sender, params, sql_answer_rows(result, error, "discord getkey: lookup for [params]")))
+
+/// The reply to a getkey: the ckey of the discord id, or why there is none.
+/datum/tgs_chat_command/getkey/proc/getkey_reply(datum/tgs_chat_user/sender, params, list/discord_rows)
 	if(!length(discord_rows))
 		return "[sender.friendly_name], the server's database is either not responding or there's no such Discord ID in the database."
 
@@ -430,9 +464,6 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	admin_only = TRUE
 
 /datum/tgs_chat_command/whitelist/Run(datum/tgs_chat_user/sender, params)
-	return run_as_flow(sender, params)
-
-/datum/tgs_chat_command/whitelist/flow_run(datum/tgs_chat_user/sender, params)
 	var/list/message_as_list = splittext(params, " ")
 	var/datum/tgs_message_content/message = new("Invalid return message.")
 
@@ -530,72 +561,64 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 						message.set_text("Error, robot module \"[role]\" is not a whitelist robot module.")
 						return message
 
-			if(!flow_sql("INSERT INTO [format_table_name("whitelist")] (ckey, kind, entry) VALUES (:ckey, :kind, :entry)", list("ckey" = ckey, "kind" = kind, "entry" = role)))
-				log_sql("Error while trying to add [ckey] to the [role] [kind] whitelist.")
-				message.set_text("Error while trying to add [ckey] to the [role] [kind] whitelist. Please review SQL logs.")
-				return message
-
-			switch(kind)
-				if("job")
-					LAZYOR(GLOB.job_whitelist[ckey], role)
-
-				if("species")
-					LAZYOR(GLOB.alien_whitelist[ckey], role)
-
-				if("language")
-					LAZYOR(GLOB.language_whitelist[ckey], role)
-
-				if("robot")
-					LAZYOR(GLOB.robot_whitelist[ckey], role)
+			var/add_key = tgs_hold_sender(sender)
+			sql_ask(src, "INSERT INTO [format_table_name("whitelist")] (ckey, kind, entry) VALUES (:ckey, :kind, :entry)", list("ckey" = ckey, "kind" = kind, "entry" = role), PROC_REF(whitelist_edit_done), add_key, action, kind, ckey, role)
+			return null
 
 		if("remove")
-			if(!flow_sql("DELETE FROM [format_table_name("whitelist")] WHERE ckey = :ckey AND kind = :kind AND entry = :entry", list("ckey" = ckey, "kind" = kind, "entry" = role)))
-				log_sql("Error while trying to remove [ckey] from the [role] [kind] whitelist.")
-				message.set_text("Error while trying to remove [ckey] from the [role] [kind] whitelist. Please review SQL logs.")
-				return message
-
-			switch(kind)
-				if("job")
-					LAZYREMOVE(GLOB.job_whitelist[ckey], role)
-
-				if("species")
-					LAZYREMOVE(GLOB.alien_whitelist[ckey], role)
-
-				if("language")
-					LAZYREMOVE(GLOB.language_whitelist[ckey], role)
-
-				if("robot")
-					LAZYREMOVE(GLOB.robot_whitelist[ckey], role)
+			var/remove_key = tgs_hold_sender(sender)
+			sql_ask(src, "DELETE FROM [format_table_name("whitelist")] WHERE ckey = :ckey AND kind = :kind AND entry = :entry", list("ckey" = ckey, "kind" = kind, "entry" = role), PROC_REF(whitelist_edit_done), remove_key, action, kind, ckey, role)
+			return null
 
 		// Listing all whitelists for a specific ckey
 		if("list")
-			var/datum/tgs_chat_embed/structure/embed = new()
-			var/found = FALSE
+			var/list_key = tgs_hold_sender(sender)
+			sql_ask(src, "SELECT kind, entry FROM [format_table_name("whitelist")] WHERE ckey = :ckey", list("ckey" = ckey), PROC_REF(whitelist_listed), list_key, ckey)
+			return null
 
-			message.set_text("")
-			rel_set(message, nameof(message.embed), embed)
-			embed.title = "Whitelists for [ckey]"
+	return message
 
-			var/list/whitelist_rows = flow_select(
-				"SELECT kind, entry FROM [format_table_name("whitelist")] WHERE ckey = :ckey",
-				list("ckey" = ckey)
-			)
-			if(isnull(whitelist_rows))
-				log_sql("Error while trying to query whitelists for [ckey].")
-				embed.description = "Error while trying to query whitelists for [ckey]. Please review SQL logs."
-				embed.colour = "#FF0000"
-				return message
-			for(var/list/whitelist_row as anything in whitelist_rows)
-				var/kind_query_result = whitelist_row[1]
-				var/entry_query_result = whitelist_row[2]
+/// A whitelist add or remove was written (or refused): the list is updated, the player told and the admins notified.
+/datum/tgs_chat_command/whitelist/proc/whitelist_edit_done(list/result, error, key, action, kind, ckey, role)
+	var/datum/tgs_message_content/message = new("Invalid return message.")
+	if(error || !result)
+		log_sql("[error] | whitelist [action] of [ckey] for [role] [kind]")
+		if(action == "add")
+			log_sql("Error while trying to add [ckey] to the [role] [kind] whitelist.")
+			message.set_text("Error while trying to add [ckey] to the [role] [kind] whitelist. Please review SQL logs.")
+		else
+			log_sql("Error while trying to remove [ckey] from the [role] [kind] whitelist.")
+			message.set_text("Error while trying to remove [ckey] from the [role] [kind] whitelist. Please review SQL logs.")
+		tgs_reply_when_ready(key, message)
+		return
 
-				embed.description += "- [kind_query_result] - [entry_query_result]\n"
-				found = TRUE
+	// the write happened: the lists and the admins follow it, whether or not the chat sender is still held
+	if(action == "add")
+		switch(kind)
+			if("job")
+				LAZYOR(GLOB.job_whitelist[ckey], role)
 
-			if(!found)
-				embed.description += "No whitelist entries found for [ckey]"
+			if("species")
+				LAZYOR(GLOB.alien_whitelist[ckey], role)
 
-			return message
+			if("language")
+				LAZYOR(GLOB.language_whitelist[ckey], role)
+
+			if("robot")
+				LAZYOR(GLOB.robot_whitelist[ckey], role)
+	else
+		switch(kind)
+			if("job")
+				LAZYREMOVE(GLOB.job_whitelist[ckey], role)
+
+			if("species")
+				LAZYREMOVE(GLOB.alien_whitelist[ckey], role)
+
+			if("language")
+				LAZYREMOVE(GLOB.language_whitelist[ckey], role)
+
+			if("robot")
+				LAZYREMOVE(GLOB.robot_whitelist[ckey], role)
 
 	// Notify the player of the change
 	var/key_to_find = "[ckey(ckey)]"
@@ -612,7 +635,38 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	log_admin(message.text)
 	message_admins(message.text)
 
-	return message
+	tgs_reply_when_ready(key, message)
+
+/// A ckey's whitelist entries were read: they go out as an embed.
+/datum/tgs_chat_command/whitelist/proc/whitelist_listed(list/result, error, key, ckey)
+	if(!tgs_held_sender(key))
+		return
+	var/datum/tgs_message_content/message = new("Invalid return message.")
+	var/datum/tgs_chat_embed/structure/embed = new()
+	var/found = FALSE
+
+	message.set_text("")
+	rel_set(message, nameof(message.embed), embed)
+	embed.title = "Whitelists for [ckey]"
+
+	var/list/whitelist_rows = sql_answer_rows(result, error, "whitelist list for [ckey]")
+	if(isnull(whitelist_rows))
+		log_sql("Error while trying to query whitelists for [ckey].")
+		embed.description = "Error while trying to query whitelists for [ckey]. Please review SQL logs."
+		embed.colour = "#FF0000"
+		tgs_reply_when_ready(key, message)
+		return
+	for(var/list/whitelist_row as anything in whitelist_rows)
+		var/kind_query_result = whitelist_row[1]
+		var/entry_query_result = whitelist_row[2]
+
+		embed.description += "- [kind_query_result] - [entry_query_result]\n"
+		found = TRUE
+
+	if(!found)
+		embed.description += "No whitelist entries found for [ckey]"
+
+	tgs_reply_when_ready(key, message)
 #undef VALID_USAGE
 #undef VALID_KINDS
 #undef VALID_ACTIONS
