@@ -301,6 +301,9 @@
 		flat.Scale(max(1, round(flat.Width() * scale_x)), max(1, round(flat.Height() * scale_y)))
 	return icon2base64(flat)
 
+/// Preview sheet numbers: each rendered direction gets its own sheet name.
+SERIAL_DEF(preview_sheet, 1, FALSE)
+
 /**
  * Starts a preview render. `sprites` (dir key -> iconforge sprite) is composited
  * by rust-g off-thread; `ready` (key -> base-64) holds parts already done
@@ -313,11 +316,10 @@
 	if(!length(sprites))
 		dq_apply_preview_result(generation, ready)
 		return generation
-	var/static/job_serial = 0
 	dq_preview_ensure_dirs()
 	var/list/jobs = list()
 	for(var/dir_key in sprites)
-		var/sheet_name = "preview_[++job_serial]_[dir_key]"
+		var/sheet_name = "preview_[next_serial(preview_sheet)]_[dir_key]"
 		var/job_id = rustg_iconforge_generate_async(DQ_PREVIEW_JOB_DIR, sheet_name, json_encode(list("preview" = sprites[dir_key])), FALSE, FALSE, TRUE)
 		jobs[dir_key] = list(job_id, sheet_name)
 	dq_preview_jobs_in_flight++

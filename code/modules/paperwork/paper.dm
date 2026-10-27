@@ -233,7 +233,7 @@ CAPABILITIES(/obj/item/paper/card)
 	var/close = "</span>"
 	var/close_len = length(close)
 	var/cursor = 1
-	var/field_id = 0
+	var/field_number = 0
 	var/total = length(info)
 	while(cursor <= total)
 		var/istart = findtext(info, marker, cursor)
@@ -247,10 +247,10 @@ CAPABILITIES(/obj/item/paper/card)
 			// Malformed; treat the rest as text.
 			segs += list(list("type" = "text", "text" = copytext(info, cursor)))
 			break
-		field_id++
+		field_number++
 		var/content_start = istart + marker_len
 		var/field_text = copytext(info, content_start, iend)
-		segs += list(list("type" = "field", "id" = field_id, "text" = field_text))
+		segs += list(list("type" = "field", "id" = field_number, "text" = field_text))
 		cursor = iend + close_len
 	return segs
 

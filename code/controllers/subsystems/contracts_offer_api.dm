@@ -141,7 +141,7 @@
 	var/candidate_offer_kind = candidate_context["offer_kind"] || definition.offer_kind
 	var/candidate_expires_at = candidate_offer_kind == CONTRACT_OFFER_STANDING ? 0 : world.time + definition.candidate_duration
 	var/datum/contract_offer_candidate/candidate = new(
-		"DQ-CAND-[next_candidate_id++]",
+		"DQ-CAND-[next_serial(contract_candidate)]",
 		definition_id,
 		offer_key,
 		board_key,

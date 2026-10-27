@@ -23,22 +23,13 @@ CAPABILITIES(/datum/repository/unique)
 /datum/uniqueness_generator/proc/Generate()
 	return
 
+/// The sequential_id(key) numbers: one run per key, from 100.
+SERIAL_DEF(sequential_id, 100, FALSE)
+
 /datum/uniqueness_generator/id_sequential
-	var/list/ids_by_key
 
-/datum/uniqueness_generator/id_sequential/New()
-	..()
-	ids_by_key = list()
-
-/datum/uniqueness_generator/id_sequential/Generate(key, default_id = 100)
-	var/id = ids_by_key[key]
-	if(id)
-		id++
-	else
-		id = default_id
-
-	ids_by_key[key] = id
-	. = id
+/datum/uniqueness_generator/id_sequential/Generate(key)
+	return next_serial_keyed(sequential_id, key)
 
 /datum/uniqueness_generator/id_random
 	var/list/ids_by_key

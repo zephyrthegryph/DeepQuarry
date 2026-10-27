@@ -285,6 +285,10 @@ GLOBAL_DATUM(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all)
 		rel_set(GLOB, nameof(GLOB.sdql2_vv_statobj), new /obj/effect/statclick/SDQL2_VV_all(null, "VIEW VARIABLES (all)", null))
 	return GLOB.sdql2_vv_statobj
 
+/// SDQL query numbers.
+SERIAL_DEF(sdql_query, 1, FALSE)
+SCHEMA(/datum/SDQL2_query, id, num())
+
 /datum/SDQL2_query
 	/// The actor whose usr/marked values and diagnostics this query uses; a relation view.
 	var/mob/requester
@@ -293,7 +297,6 @@ GLOBAL_DATUM(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all)
 	var/options = SDQL2_OPTIONS_DEFAULT
 	var/superuser = FALSE		//Run things like proccalls without using admin protections
 	var/allow_admin_interact = TRUE		//Allow admins to do things to this excluding varedit these two vars
-	var/static/id_assign = 1
 	var/id = 0
 
 	var/qdel_on_finish = FALSE
@@ -330,7 +333,7 @@ CAPABILITIES(/datum/SDQL2_query)
 	allow_admin_interact = admin_interact
 	query_tree = tree
 	options = _options
-	id = id_assign++
+	id = next_serial(sdql_query)
 	qdel_on_finish = finished_qdel
 	..()
 

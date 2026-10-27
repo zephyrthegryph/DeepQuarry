@@ -1,3 +1,7 @@
+/// Stack canary serials, so a reused ref id never reads as the canary.
+SERIAL_DEF(stack_canary, 1, FALSE)
+SCHEMA(/datum/stack_canary, serial, num())
+
 /**
 	Stack End Detector.
 	Can detect if a given code stack has exited, used by the mc for stack overflow detection.
@@ -15,9 +19,8 @@ CAPABILITIES(/datum/stack_end_detector)
 	owns_one(nameof(_canary), /datum/stack_canary)
 
 /datum/stack_end_detector/New()
-	var/static/next_serial = 0
 	rel_set(src, nameof(_canary), new /datum/stack_canary())
-	_canary.serial = ++next_serial
+	_canary.serial = next_serial(stack_canary)
 	_canary_serial = _canary.serial
 	_canary_ref = REF(_canary)
 
