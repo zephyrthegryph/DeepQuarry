@@ -4,7 +4,8 @@
 	icon_state = "implant"
 	w_class = ITEMSIZE_TINY
 
-	var/implanted = null
+	/// Whether it has been implanted (the host is imp_in).
+	var/implanted = FALSE
 	var/mob/imp_in
 	var/obj/item/organ/external/part = null
 	var/implant_color = "b"

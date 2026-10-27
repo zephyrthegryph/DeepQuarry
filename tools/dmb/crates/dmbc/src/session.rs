@@ -214,6 +214,7 @@ impl Session {
             return Err(invalid("session record exceeds budget"));
         }
         let id = xxhash_rust::xxh3::xxh3_128(&bytes);
+        remember_watch_mark(id, envelope.record.inputs.watch_mark());
         let destination = self.directory.join(format!("{id:032x}.bin"));
         if destination.exists() {
             if self.read_bytes(&destination)? != bytes {
@@ -395,7 +396,12 @@ impl SessionRecords {
                 .map_err(|error| (error.kind(), error.to_string()))
         });
         match result {
-            Ok(Some(record)) => Ok(Some(record.clone())),
+            Ok(Some(record)) => {
+                let record = record.clone();
+                // The decoded inputs are the stored ones, so they are current where those were.
+                record.inputs.adopt_watch_mark(watch_mark_of(id));
+                Ok(Some(record))
+            }
             other => {
                 // Absence and failure are never cached: a later record file or a
                 // transient error must be decoded afresh.
@@ -596,6 +602,26 @@ impl SessionRecords {
 
 fn invalid(error: impl std::fmt::Display) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error.to_string())
+}
+
+/// Watcher marks of the records this process stored, by record id (content hash): the wire drops a snapshot's mark, and a
+/// record is decoded again by the next request. Only a few recent records are ever validated.
+static WATCH_MARKS: std::sync::Mutex<Vec<(u128, Option<crate::fs_watch::WatchToken>)>> = std::sync::Mutex::new(Vec::new());
+fn remember_watch_mark(id: u128, mark: Option<crate::fs_watch::WatchToken>) {
+    let mut marks = WATCH_MARKS.lock().unwrap_or_else(|e| e.into_inner());
+    marks.retain(|(held, _)| *held != id);
+    if marks.len() >= 16 {
+        marks.remove(0);
+    }
+    marks.push((id, mark));
+}
+fn watch_mark_of(id: u128) -> Option<crate::fs_watch::WatchToken> {
+    WATCH_MARKS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .find(|(held, _)| *held == id)
+        .and_then(|(_, mark)| *mark)
 }
 
 #[cfg(test)]

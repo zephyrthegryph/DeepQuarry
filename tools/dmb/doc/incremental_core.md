@@ -302,6 +302,29 @@ are unchanged stays green without a certificate check. Revalidation must be para
    3858 files, 1705 folder listings and 13889 negative probes, through the directory proofs. Next: make those inputs
    `source(path)` queries of the watcher's directory proofs, so a directory whose cached proof is the one the snapshot was
    proven with is not walked again; demand admission (0.02 s) and archive authentication are already cheap.)
+   (2026-10-27, compiler/resource-queries-3: **input snapshots are proven by watcher events.** The directory watcher
+   (`fs_watch.rs`) keeps an ordered change log: every event appends the changed entry and its directory under one sequence
+   number, a `WatchToken` (epoch, sequence) names a position in it, a loss (overflow, read error, sync timeout, a full log
+   of 200k entries) starts a new epoch, and a newly armed root is logged as one changed subtree once its watcher is
+   proven. A `SnapshotProvider` reports the position of its first observation (`watch_token`: the live file system at the
+   call, `BulkFileSystemProofs` at its capture, a journal none), and an `InputSnapshot` remembers the position at which its
+   facts were last proven entry for entry (`WatchMark`, private, absent from the wire and from equality). Validation then
+   carries every file, folder listing and negative probe whose directory no event named since that position (and no
+   subtree event above it, and that is watched by a healthy root and not behind a link), and asks the provider only about
+   the rest; racy and identity-less entries and exact mode are proven as before. Marks travel with the facts: a capture is
+   marked at its start (or its provider's proof position), a merge keeps the earlier mark of its parts (none if either has
+   none), `select_files` keeps it, and a session record takes its stored snapshot's mark back after the decode (by
+   record id). The first access of an entry in a while updates its last-access time, which the watcher reports as a
+   change of the directory: such a directory is proven once more, never skipped. Measured, production tree (`rootA`
+   copy), 4 workers, hot private daemons per arm, three unique edits per arm (an added proc, then body edits), arms
+   interleaved pub/new/pub/new on a machine shared with a server benchmark: `native resource InputValidation` 0.33-0.95 s
+   (published) against 0.058-0.109 s from the second edit on (the first edit after a cold build still proves everything,
+   0.32-0.43 s); `resources_maps` stage 1.03-2.45 s against 0.50-0.66 s; 9758 of 9794 session-record files carried; edit
+   wall median 8.4 s (6.97-17.4) against 7.7 s (6.74-8.99). `dmb-equiv --all --ignore-debug` of the daemon output after
+   body edits and a new file in a resource search folder against a fresh `--no-daemon --no-cache` compile: EQUIVALENT.
+   Cargo tests `input_snapshot::watch_tests` (carried directories, changed file, appeared negative, new listing entry,
+   removed directory, exact mode, unwatched paths, capture and merge marks). The demand and order memos the step names
+   were already gone; nothing else re-scans the snapshot on an unchanged request.)
 
 Measured 2026-10-18 before step 1: the general path today on a hot body edit (`DMB_BODY_PATCH=0`)
 is recorded below with the patch for comparison.

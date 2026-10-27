@@ -684,7 +684,11 @@ proc, and `nameof(call().var)`). Two guards now stop that:
 - `dmbc` reports the same errors as DreamMaker for those classes (`fixtures/diagnostics/cases/keyword_*`, `inherited_proc_*`,
   `inherited_verb_*`, `nameof_call_expression`). In DM an override is written without `proc/` or `verb/`; with the keyword it is a
   `duplicate definition` of the nearest ancestor's declaration. `to` and `in` cannot be argument names; `if`, `set`, `while` and the
-  like cannot be formal names; a `nameof` operand is a reference path, not a call or index.
+  like cannot be formal names; a `nameof` operand is a reference path, not a call or index. A procedure local is in scope over its
+  whole enclosing block: a bare name used above its `var/` line in that block is DreamMaker's `var_before_def`, and code generation
+  then fails with a bare `error: invalid variable` and no file or line (`var_before_def_*`; it broke master's DreamMaker compile on
+  2026-10-25 through `/datum/input_event/topic/resolve()`). Not modelled: DreamMaker cannot parse a function-like macro call followed by
+  `?[]` inside `for(... in ...)` (read the list into a local first).
 - The local gates (`tools/dq_merge_gates.sh`, `tools/dq_push_master.sh`) no longer compile with DreamMaker (the 3 minute cross-check and the second
   one in the push lock are gone, 2026-10-24); the CI `dreammaker_cross_check` job (`tools/ci/dm_equiv.sh`) and CI's production compile are the DreamMaker
   checks. Check a new class locally with

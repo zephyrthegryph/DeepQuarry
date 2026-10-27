@@ -477,7 +477,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	var/obj/item/implant/health/imp = locate(/obj/item/implant/health, subject)
 	if (isnull(imp))
 		imp = new /obj/item/implant/health(subject)
-		imp.implanted = subject
+		imp.implanted = TRUE
 		BR.mydna.implant = ref_token(imp)
 	//Update it if needed
 	else

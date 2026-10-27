@@ -1,0 +1,3 @@
+var_before_def_member_write.dm:6:warning (var_before_def): answered: use of answered precedes its definition
+var_before_def_member_write.dm:8:warning (var_before_def): answered: definition is here
+var_before_def_member_write.dmb - 1 error, 2 warnings

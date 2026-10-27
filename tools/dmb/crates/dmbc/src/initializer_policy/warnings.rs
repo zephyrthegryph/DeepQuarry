@@ -150,6 +150,10 @@ fn write_warning_lines(
         if let Some(name) = &warning.name {
             write!(output, "{name}: ")?;
         }
+        if warning.code == WarningCode::VarBeforeDef {
+            // DreamMaker names the variable twice: `x: use of x precedes its definition`.
+            write!(output, "use of {} ", warning.name.as_deref().unwrap_or(""))?;
+        }
         writeln!(output, "{}", warning.code.message())?;
     }
     Ok(())
