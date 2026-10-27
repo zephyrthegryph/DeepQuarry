@@ -189,6 +189,8 @@ fn replay_reproduces_views_bit_for_bit() {
     }
     sim.settle();
     assert!(sim.metrics().frames_completed > 10);
+    // Toy frames are light: after the first, they run on the one-thread light pool, and replay on the frame pool matches them.
+    assert!(sim.metrics().light_frames > 0, "light frames run on the light pool");
     let heat = Arc::clone(sim.port(keys.heat).pinned());
     let tally = Arc::clone(sim.port(keys.tally).pinned());
     let log = sim.take_log().unwrap();

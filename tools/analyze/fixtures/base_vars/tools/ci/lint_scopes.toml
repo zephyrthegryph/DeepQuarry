@@ -3,6 +3,7 @@ list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmark
 list_init_exempt_files = ["code/__defines/tgs.dm"]
 base_var_home_macros = ["TRACKED", "TRACKED_SCHEMA", "TRACKED_DATA", "SETTER", "STAT"]
 base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/datum/cooldown_table"]
+base_var_home_relations = ["ref_one", "ref_many", "owns_one", "owns_many", "links", "slot"]
 hot_ceiling = ["4"]
 record_accessor_prefixes = ["set_", "get_"]
 

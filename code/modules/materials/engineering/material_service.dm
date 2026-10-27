@@ -259,6 +259,12 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	clear_watches()
 	..()
 
+/// The steady resample delay: MATERIAL_SERVICE_INTERVAL on average, drawn from half to one and a half of it. The services a map
+/// creates in one tick all sampled in the same instant every interval (about 258 at idle, one burst every 10 s); a spread delay
+/// scatters them over the interval within a sample or two. advance() measures the real elapsed time, so the physics is unchanged.
+/proc/material_service_spread_interval()
+	return rand(MATERIAL_SERVICE_INTERVAL / 2, MATERIAL_SERVICE_INTERVAL + MATERIAL_SERVICE_INTERVAL / 2)
+
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)
 	if(QDELETED(owner()))
 		return
@@ -306,7 +312,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 		STAMP(src, last_update, CLOCK_WORLD)
 	if(topology_changed)
 		watches_dirty = TRUE
-	schedule(active && !topology_changed ? MATERIAL_SERVICE_INTERVAL : 0)
+	schedule(active && !topology_changed ? material_service_spread_interval() : 0)
 
 /// Environmental assemblies care about thermal/composition changes. Pressure is
 /// relevant only to pressure-rated objects, so ordinary machine housings do not
@@ -631,7 +637,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	last_environment_temperature = temperature()
 	active = sample_observation() || active
 	if(active)
-		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
+		schedule(monitor_tool ? 1 SECOND : material_service_spread_interval())
 	else if(owner().material_service_can_retire(src))
 		settle_heat()
 		spent(src)
