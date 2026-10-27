@@ -540,13 +540,15 @@ CAPABILITIES(/obj/structure/sign/painting)
  * Recursive Proc. If given no arguments, requests user to input arguments with warning that generating the list may be res intensive
  * Upon generating arguments, calls itself and spawns the painting
  * Ideally called using the vvar dropdown admin verb and used using debugging the SSpersistence list to minimize lag
- * usr must have an admin holder (ergo: only staff may use this)
+ * the admin (the proc caller when it is not given) must have an admin holder (ergo: only staff may use this)
  * TODO: create a machine in the library for curators to spawn canvases and refactor this to use the proc used there.
  * For now, we do it this way because calling this on a canvas itself might cause issues due to the whole dimension thing.
 */
-/obj/structure/sign/painting/proc/admin_lateload_painting(spawn_specific = 0, which_painting = 0)
-	var/mob/admin = usr // ALLOW(sys_usr_outside_verb): called from the vvar dropdown, which is a verb: the admin who chose it is usr
-	if(!check_rights_for(admin.client, R_HOLDER))
+/obj/structure/sign/painting/proc/admin_lateload_painting(spawn_specific = 0, which_painting = 0, mob/admin = null)
+	if(!admin) // an admin proc call: the admin is the one whose call is running
+		var/client/caller_client = GLOB.directory[GLOB.AdminProcCaller]
+		admin = caller_client?.mob
+	if(!admin || !check_rights_for(admin.client, R_HOLDER))
 		return 0
 	if(spawn_specific && isnum(which_painting))
 		var/list/painting = persistence_all_paintings()[which_painting]
@@ -585,7 +587,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 /obj/structure/sign/painting/proc/lateload_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	admin_lateload_painting(1, lateload_choices()[A.answer.value])
+	admin_lateload_painting(1, lateload_choices()[A.answer.value], A.request.answerer)
 
 /obj/structure/sign/painting/proc/lateload_confirmed(datum/act/request/A)
 	if(!A.answer || !A.answer.value)

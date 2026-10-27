@@ -34,6 +34,9 @@ impl<P: SnapshotProvider> SnapshotProvider for GeneratedOutputInputs<P> {
     fn list(&self, path: &Path) -> io::Result<FolderListing> {
         self.provider.list(path)
     }
+    fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
+        self.provider.watch_token()
+    }
 }
 
 #[cfg(test)]

@@ -407,9 +407,11 @@ CAPABILITIES(/datum/input_event/ui_act)
 		answered = hsrc.input_topic_dispatch(actor, href_list)
 		return null
 	// The op that names the href answers it, through the same Match, Require and Do as a click; what no op names is the legacy Topic() chain's.
-	var/datum/op_result/answered = op_topic_href(actor, hsrc, href_list)
-	if(answered)
-		return answered
+	// Not named `answered`: a local of the member's name declared below the member's write above makes DreamMaker fail with a bare
+	// "invalid variable" (var_before_def), and in DM that write would go to the local.
+	var/datum/op_result/op_answer = op_topic_href(actor, hsrc, href_list)
+	if(op_answer)
+		return op_answer
 	if(driven)
 		input_compatibility().compatibility_topic(hsrc, actor, href_list) // a driver-built link: the table's row, as the actor (a player's reaches it through Topic())
 		return null
