@@ -316,7 +316,7 @@ mod tests {
     fn retained_directive_records_charge_reserved_nested_capacities() {
         let mut value = DirectiveRecord {
             key: 0,
-            source: Arc::from(""),
+            source: Arc::<str>::from("").into(),
             control: 0,
             incoming: Vec::new(),
             outgoing: Vec::new(),
