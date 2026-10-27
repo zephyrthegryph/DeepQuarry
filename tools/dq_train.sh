@@ -513,7 +513,12 @@ pre_record() { # <branch> <tip> <master> <verdict> <secs> <log> [why]
 # lane with a DreamChecker pass becomes "pass" (dc_finalize); a DreamChecker failure bounces it with the log. A lane that conflicted with
 # another lane of the run, or a run that broke, is checked alone next ($PRE/dc/solo). DQ_TRAIN_DC_BATCH=0: per-precheck DreamChecker.
 dc_verdict_file() { find "$PRE/dc/v" -maxdepth 1 -type f -name "$(pre_key "$1" "$2")@*" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n 1 | cut -d' ' -f2-; }
-dc_status() { local f; f="$(dc_verdict_file "$1" "$2")"; if [ -n "$f" ]; then qget "$f" verdict; else echo none; fi; }
+dc_status() { # <branch> <tip>: pass | fail | none. A verdict older than the lane's queue entry (it was enqueued again since) is none: whatever script enqueued it, a stale DreamChecker fail never bounces the new entry
+	local f w q; f="$(dc_verdict_file "$1" "$2")"
+	[ -n "$f" ] || { echo none; return 0; }
+	w="$(qget "$f" when)"; q="$(qget "$(qfile "$1")" since)"
+	if [ -n "$w" ] && [ -n "$q" ] && [[ "$w" < "$q" ]]; then echo none; else qget "$f" verdict; fi
+}
 dc_record() { # <branch> <tip> <master> <verdict> <log> <why>
 	local f="$PRE/dc/v/$(pre_key "$1" "$2")@${3:0:12}"
 	printf 'branch=%s\ntip=%s\nmaster=%s\nverdict=%s\nlog=%s\nwhy=%s\nwhen=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$(now)" >"$f.tmp" && mv -f "$f.tmp" "$f"
