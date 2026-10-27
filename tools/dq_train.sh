@@ -284,13 +284,16 @@ precheck_ensure() { # start the prechecker when prechecks are on, lanes are queu
 	[ "$PRE_ON" = 1 ] && [ "${DQ_TRAIN_NO_START:-0}" != 1 ] || return 0
 	prechecker_alive && return 0
 	[ -n "$(queue_branches)" ] || return 0
-	in_snapshot || snapshot_install "$SELF_DIR" "$STATE/self" || return 0
+	# It runs the integrator's snapshot, never a lane's checkout: installing a snapshot here would replace the code a running integrator
+	# runs (an enqueue from a lane's worktree did that once). cmd_ensure installs it before it starts both; the integrator calls this.
+	[ -f "$STATE/self/dq_train.sh" ] || return 0
 	start_detached "$STATE/self/dq_train.sh" "$LOGS/prechecker.out" precheck-run
 	tlog "prechecker started (detached; lock $STATE/precheck.lock)"
 }
 cmd_ensure() {
 	init_state
-	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; precheck_ensure; return 0; fi
+	# a running integrator starts the prechecker itself at its next cycle (from its own snapshot)
+	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; return 0; fi
 	# The watchdog callers (dq_lane_pool.sh lease and release) ask on every call: with nothing queued there is nothing to run.
 	[ -n "$(queue_branches)" ] || return 0
 	# The integrator runs from a snapshot (the lane's worktree is released and reset while it works); the helpers are read from its worktree.

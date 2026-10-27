@@ -208,6 +208,9 @@ mk lane/m lanes/m.txt fine; train enqueue --tests tm >/dev/null 2>&1; back
 out="$(train run 2>&1)"; rc=$?
 check "a second integrator refuses to run beside a live one" '[ "$rc" = 0 ] && grep -q "already running" <<<"$out" && ! in_master lane/m'
 check "status names the running integrator" 'status_has "integrator: RUNNING pid $holder"'
+mkdir -p "$DQ_TRAIN_STATE/self"; echo "# the running integrator's snapshot" >"$DQ_TRAIN_STATE/self/dq_train.sh"
+git switch -q lane/m; DQ_TRAIN_NO_START=0 DQ_TRAIN_PRECHECK=1 train enqueue --tests tm >/dev/null 2>&1; back
+check "an enqueue beside a running integrator never replaces its snapshot or starts a prechecker" 'grep -qx "# the running integrator.s snapshot" "$DQ_TRAIN_STATE/self/dq_train.sh" && [ ! -d "$DQ_TRAIN_STATE/precheck.lock" ]'
 kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
 out="$(train run 2>&1)"
 check "a dead integrator's lock is replaced" 'grep -q "replacing the lock of a dead integrator" <<<"$out" && in_master lane/m'
