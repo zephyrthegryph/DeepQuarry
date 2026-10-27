@@ -70,10 +70,11 @@
 	if(GLOB.state_batch_depth)
 		state_batch_queue(E, channel, var_name)
 		return
-	// A mapped atom that is not initialized yet (map load, SSatoms holding inits): its init queues its first full refresh and attaches
-	// its derived values (caps_init()), and no observer, reaction or relation watches it before then. Its writes publish nothing but the
-	// stat layer's recompute and a draw hop to an initialized holder: map load made 884 k of these calls (server_bench_20261027.md, boot).
-	if(isatom(E) && SSatoms?.atom_initialized == INITIALIZATION_INSSATOMS)
+	// An atom that is not initialized yet (a map load holds every init until the Atoms system runs): its init queues its first full
+	// refresh and attaches its derived values (caps_init()), and no observer, reaction or relation is enrolled on it before then. Its
+	// writes publish nothing but the stat layer's recompute and a draw hop to an initialized holder: map load made 884 k of these calls
+	// (server_bench_20261027.md, boot).
+	if(isatom(E))
 		var/atom/pending = E
 		if(!(pending.flags & ATOM_INITIALIZED))
 			if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
