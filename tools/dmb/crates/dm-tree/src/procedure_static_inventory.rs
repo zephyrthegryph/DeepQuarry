@@ -70,11 +70,6 @@ impl StaticInventory {
             }
         }
     }
-    pub(super) fn certificate(&self, procedure: ProcedureIdentity) -> Option<u128> {
-        self.certificates
-            .get(&procedure)
-            .map(|layout| layout.certificate())
-    }
     pub fn certificates(&self) -> impl Iterator<Item = &Arc<StaticLayout>> {
         self.certificates.values()
     }
@@ -98,8 +93,8 @@ mod tests {
         fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
             ResolvedMeaning::Unsupported(query)
         }
-        fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-            (domain == ReadDomain::Tree).then_some(9)
+        fn answer_world(&self) -> Option<u128> {
+            Some(9)
         }
     }
     fn identity(name: &str) -> ProcedureIdentity {
@@ -123,8 +118,8 @@ mod tests {
         assert!(Arc::ptr_eq(&one.inventory, &two.inventory));
         let compatibility = StaticResolver::from_plans(&Host, [(b, &second), (a, &first)]).unwrap();
         assert_eq!(
-            one.domain_version(ReadDomain::Tree),
-            compatibility.domain_version(ReadDomain::Tree)
+            one.answer_world(),
+            compatibility.answer_world()
         );
         for (procedure, name) in [(a, "value"), (a, "missing"), (identity("outside"), "value")] {
             let query = ResolveQuery::ProcedureStatic {

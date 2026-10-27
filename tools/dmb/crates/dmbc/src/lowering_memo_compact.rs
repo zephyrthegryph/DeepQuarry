@@ -387,14 +387,13 @@ impl Payload<'_> {
     pub(crate) fn certify_world(&mut self) {
         self.world_certified = true;
     }
-    fn covered(&self, matching: &std::collections::BTreeSet<ReadDomain>, domain: ReadDomain) -> bool {
-        matching.contains(&domain)
-            || (self.world_certified && crate::dep_index::world_determines(domain))
+    /// A read the dependency index certified under the current world needs no resolve.
+    fn covered(&self, domain: ReadDomain) -> bool {
+        self.world_certified && crate::dep_index::world_determines(domain)
     }
     pub(crate) fn changed_read<R: Resolver>(&self, host: &R) -> Option<ResolveQuery> {
-        let matching = crate::lowering_memo::matching_domains(&self.versions.0, host);
         self.reads.0.iter().find_map(|r| {
-            (!self.covered(&matching, r.query.domain())
+            (!self.covered(r.query.domain())
                 && host.resolve(r.query).canonical_bytes() != r.answer.as_ref())
             .then_some(r.query)
         })
@@ -413,15 +412,12 @@ impl Payload<'_> {
             None => return self.changed_read(host).map_or(Ok(None), Err),
         };
         let mut pending = Vec::with_capacity(self.reads.0.len());
-        let matching = dm_session::observations::certified_domains(&self.versions.0, |d| {
-            provider.domain_version(*d)
-        });
         for (index, read) in self.reads.0.iter().enumerate() {
             let answer = self.verified_answers.hydrate(
                 index,
                 read.query,
                 &read.answer,
-                self.covered(&matching, read.query.domain()),
+                self.covered(read.query.domain()),
                 &self.typed_answers.0,
                 provider,
             );

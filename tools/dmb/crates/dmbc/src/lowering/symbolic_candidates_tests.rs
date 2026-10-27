@@ -8,10 +8,6 @@ impl Resolver for AnswerHost {
     fn resolve(&self, _: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
         dm_ir::ResolvedMeaning::Presence(self.present)
     }
-    fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-        self.versions.fetch_add(1, Ordering::Relaxed);
-        Some(1)
-    }
     fn observes_reads(&self) -> bool {
         false
     }

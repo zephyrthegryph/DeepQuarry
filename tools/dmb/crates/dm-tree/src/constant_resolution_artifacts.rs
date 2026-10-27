@@ -22,7 +22,6 @@ pub enum ScalarReadAnswer {
 /// inspectable; only current exact read replay in the shared store admits it.
 #[derive(Debug)]
 pub struct ScalarArtifact {
-    certificate: Option<u64>,
     pub outcome: ScalarOutcome,
     pub dependencies: Arc<[ScalarQuery]>,
     pub predefined: Arc<[(SymbolId, PredefinedOutcome)]>,
@@ -35,7 +34,6 @@ impl ScalarArtifact {
         predefined: Arc<[(SymbolId, PredefinedOutcome)]>,
     ) -> Self {
         Self {
-            certificate: None,
             outcome,
             dependencies,
             predefined,
@@ -46,27 +44,11 @@ impl ScalarArtifact {
         dependencies: Arc<[ScalarQuery]>,
         predefined: Arc<[(SymbolId, PredefinedOutcome)]>,
     ) -> Self {
-        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
-        let certificate = matches!(outcome, ScalarOutcome::Value(_))
-            .then(|| {
-                NEXT.fetch_update(
-                    std::sync::atomic::Ordering::Relaxed,
-                    std::sync::atomic::Ordering::Relaxed,
-                    |next| next.checked_add(1),
-                )
-                .ok()
-            })
-            .flatten();
         Self {
-            certificate,
             outcome,
             dependencies,
             predefined,
         }
-    }
-    /// Process-local receipt. It is usable only after current exact store admission.
-    pub fn certificate(&self) -> Option<u64> {
-        self.certificate
     }
 }
 pub trait ScalarArtifacts {

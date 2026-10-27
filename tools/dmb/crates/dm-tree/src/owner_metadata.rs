@@ -1,19 +1,14 @@
 //! Effective per-owner metadata over current keyed namespace contributions.
 //! Both misses and full construction use the same inheritance resolver.
-mod callables;
-mod demanded_selections;
 mod hierarchy;
-mod selections;
-pub use demanded_selections::CallableDemands;
+pub(crate) use hierarchy::ancestry;
 #[cfg(test)]
 mod sparse_tests;
-mod variables;
 use crate::{
     declaration_contributions::{DeclarationKey, KeyedDeclarations},
     owner_normalization::ResolvedMember,
     *,
 };
-pub use callables::{CallableFact, CallableInputs};
 use dm_session::{
     observations::{ObservationHost, ObservationLedger},
     ObservedArtifactStore,
@@ -22,30 +17,18 @@ use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicUsize, Ordering},
 };
-pub use variables::{VariableFact, VariableInputs};
 pub(crate) type OwnerContributions = BTreeMap<SymbolId, Arc<[ResolvedMember]>>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MetadataQuery {
     NormalizedOwner(SymbolId),
     Effective(DeclarationKey),
     Hierarchy(SymbolId),
-    CallableLocal(SymbolId),
-    CallableSelection(SymbolId, SymbolId, bool),
-    CallablePresence(SymbolId, SymbolId),
-    VariableLocal(SymbolId, SymbolId),
-    MemberName(SymbolId),
-    MemberSelector(SymbolId),
-    CallableChain(SymbolId, SymbolId, bool),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MetadataAnswer {
     NormalizedOwner(Option<Arc<[ResolvedMember]>>),
     Effective(Option<Arc<MemberMetadata>>),
     Hierarchy(Arc<[SymbolId]>),
-    CallableLocal(Arc<CallableInputs>),
-    VariableLocal(Arc<VariableInputs>),
-    MemberName(bool),
-    MemberSelector(u8),
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MetadataDomain {
@@ -57,21 +40,11 @@ impl MetadataQuery {
         match self {
             Self::NormalizedOwner(_) => MetadataDomain::Namespace,
             Self::Effective(_) => MetadataDomain::EffectiveMembers,
-            Self::Hierarchy(_)
-            | Self::CallableLocal(_)
-            | Self::CallableSelection(..)
-            | Self::CallableChain(..)
-            | Self::CallablePresence(..)
-            | Self::VariableLocal(..)
-            | Self::MemberName(_)
-            | Self::MemberSelector(_) => MetadataDomain::Namespace,
+            Self::Hierarchy(_) => MetadataDomain::Namespace,
         }
     }
 }
 pub(crate) enum EffectiveOwner {
-    MemberName {
-        version: u128,
-    },
     Members {
         selection: Arc<crate::HostDeclarationSelection>,
         // Only fields changed by the ordinary inheritance resolver. The exact
@@ -80,30 +53,7 @@ pub(crate) enum EffectiveOwner {
     },
     Hierarchy {
         paths: Arc<[SymbolId]>,
-        version: u128,
     },
-    Callable {
-        inputs: Arc<CallableInputs>,
-        version: u128,
-    },
-    Variable {
-        inputs: Arc<VariableInputs>,
-        version: u128,
-    },
-}
-impl EffectiveOwner {
-    fn callable_token(&self) -> Option<u128> {
-        match self {
-            Self::Callable { version, .. } => Some(*version),
-            _ => None,
-        }
-    }
-    fn variable_token(&self) -> Option<u128> {
-        match self {
-            Self::Variable { version, .. } => Some(*version),
-            _ => None,
-        }
-    }
 }
 type SharedStore = ObservedArtifactStore<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
 type Lease = dm_session::ObservedArtifactLease<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
@@ -143,12 +93,6 @@ impl Store {
             Self::Shared { lease, .. } => lease.retain_current_keys(keys),
         }
     }
-    fn retain_where(&self, keep: impl FnMut(&[u8]) -> bool) {
-        match self {
-            Self::Local(store) => store.retain_where(keep),
-            Self::Shared { lease, .. } => lease.retain_where(keep),
-        }
-    }
     fn lookup<R: ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain>>(
         &self,
         key: &[u8],
@@ -183,19 +127,6 @@ impl Store {
             Self::Shared { lease, .. } => lease.insert_with(key, reads, versions, weight, create),
         }
     }
-    fn insert_with_owned(
-        &self,
-        key: Arc<[u8]>,
-        reads: Reads,
-        versions: Vec<(MetadataDomain, u128)>,
-        weight: usize,
-        create: impl FnOnce() -> EffectiveOwner,
-    ) -> Option<Arc<EffectiveOwner>> {
-        match self {
-            Self::Local(store) => store.insert_with_owned(key, reads, versions, weight, create),
-            Self::Shared { lease, .. } => lease.insert_with_owned(key, reads, versions, weight, create),
-        }
-    }
 }
 /// Cumulative diagnostic counts for the effective metadata artifact stage.
 /// Stable-roster updates outside this stage are not included.
@@ -207,10 +138,6 @@ pub struct MetadataResolutionStats {
 }
 pub struct RetainedMetadata {
     store: Store,
-    current_demands: demanded_selections::CurrentDemands,
-    /// False for a one-shot compile: name-demand tokens are issued but their receipts are not stored, because nothing
-    /// outlives the request to read them.
-    retain_receipts: bool,
     hits: AtomicUsize,
     common_resolved_members: AtomicUsize,
     structurally_reused_members: AtomicUsize,
@@ -221,23 +148,13 @@ impl RetainedMetadata {
         Self { store: Store::shared(owner), ..Self::default() }
     }
     pub(crate) fn fresh(&self) -> Self {
-        Self { store: self.store.fresh(), retain_receipts: self.retain_receipts, ..Self::default() }
-    }
-    /// Issue name-demand tokens without storing their receipts (a one-shot compile).
-    pub(crate) fn without_receipts(mut self) -> Self {
-        self.retain_receipts = false;
-        self
-    }
-    pub(super) fn retains_receipts(&self) -> bool {
-        self.retain_receipts
+        Self { store: self.store.fresh(), ..Self::default() }
     }
 }
 impl Default for RetainedMetadata {
     fn default() -> Self {
         Self {
             store: Store::current_revision(),
-            current_demands: Default::default(),
-            retain_receipts: true,
             hits: AtomicUsize::new(0),
             common_resolved_members: AtomicUsize::new(0),
             structurally_reused_members: AtomicUsize::new(0),
@@ -263,15 +180,6 @@ impl<M: crate::member_binding::MemberRead + ?Sized>
         match query {
             MetadataQuery::NormalizedOwner(owner) => {
                 MetadataAnswer::NormalizedOwner(self.normalized.get(owner).cloned())
-            }
-            MetadataQuery::CallableLocal(_)
-            | MetadataQuery::CallableSelection(..)
-            | MetadataQuery::CallableChain(..)
-            | MetadataQuery::CallablePresence(..)
-            | MetadataQuery::VariableLocal(..)
-            | MetadataQuery::MemberName(_)
-            | MetadataQuery::MemberSelector(_) => {
-                unreachable!("effective metadata records no callable certificate inputs")
             }
             MetadataQuery::Hierarchy(owner) => {
                 MetadataAnswer::Hierarchy(hierarchy::ancestry(self.tree, *owner))
@@ -304,8 +212,6 @@ pub enum MetadataStorageView<'a> {
     Values(&'a Arc<[(DeclarationKey, Arc<MemberMetadata>)]>),
     Selection(&'a Arc<crate::HostDeclarationSelection>),
     Hierarchy(&'a Arc<[SymbolId]>),
-    CallableLocal(&'a Arc<CallableInputs>),
-    VariableLocal(&'a Arc<VariableInputs>),
 }
 impl RetainedMetadata {
     pub fn resolution_stats(&self) -> MetadataResolutionStats {
@@ -355,14 +261,7 @@ impl RetainedMetadata {
                         visit(MetadataStorageView::Values(values));
                         visit(MetadataStorageView::Selection(selection));
                     }
-                    EffectiveOwner::Callable { inputs, .. } => {
-                        visit(MetadataStorageView::CallableLocal(inputs))
-                    }
-                    EffectiveOwner::MemberName { .. } => (),
-                    EffectiveOwner::Variable { inputs, .. } => {
-                        visit(MetadataStorageView::VariableLocal(inputs))
-                    }
-                    EffectiveOwner::Hierarchy { paths, .. } => {
+                    EffectiveOwner::Hierarchy { paths } => {
                         visit(MetadataStorageView::Hierarchy(paths))
                     }
                 }
@@ -416,9 +315,6 @@ impl RetainedMetadata {
         let keys: Vec<_> = normalized.keys().map(|&owner| key(owner)).collect();
         let mut keys = keys;
         keys.extend(tree.types.iter().map(|node| hierarchy::key(node.path)));
-        keys.extend(tree.types.iter().map(|node| callables::key(node.path)));
-        keys.extend(selections::keys(tree, &*members, order));
-        keys.extend(self.demanded_keys(tree));
         self.store
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         drop(keys_timer);
@@ -450,7 +346,7 @@ impl RetainedMetadata {
                 let ledger = ObservationLedger::default();
                 if accepted.is_none() {
                     let query = MetadataQuery::NormalizedOwner(owner);
-                    ledger.record(query, host.answer(&query), query.domain(), None);
+                    ledger.record(query, host.answer(&query), query.domain());
                     for &id in ids {
                         let member = members.member(id.index());
                         if member.definition == DefinitionMode::Override
@@ -460,13 +356,13 @@ impl RetainedMetadata {
                                 if members.member(previous.index()).owner != member.owner {
                                     let query =
                                         MetadataQuery::Effective(keys_by_id[previous.index()]);
-                                    ledger.record(query, host.answer(&query), query.domain(), None);
+                                    ledger.record(query, host.answer(&query), query.domain());
                                 }
                             }
                         }
                     }
                 }
-                (accepted, ledger.reads(), ledger.domain_receipts())
+                (accepted, ledger.reads(), Vec::new())
             };
             if let Some(value) = accepted {
                 let EffectiveOwner::Members { selection, values } = value.as_ref() else {

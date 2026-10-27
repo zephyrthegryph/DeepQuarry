@@ -300,7 +300,6 @@ impl ClassProjections {
                 answers as &dyn dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning>
             }),
         );
-        let versioned = answers.is_none();
         // Owners are independent: compare each with its retained projection in parallel (43k owners).
         use rayon::prelude::*;
         let keys: Vec<_> = keys.into_iter().collect();
@@ -319,8 +318,8 @@ impl ClassProjections {
                                     .values
                                     .visit_receipted_with(
                                         &key,
-                                        &mut |reads, versions| {
-                                            admission.first_changed_receipted(reads, versions, |_| {})
+                                        &mut |reads, _| {
+                                            admission.first_changed_receipted(reads, |_| {})
                                         },
                                         &mut |value| {
                                         let matches = value.inputs.len() == inputs.len()
@@ -356,7 +355,7 @@ impl ClassProjections {
                             inputs,
                             produced: Vec::new(),
                             rejected_local_input,
-                            recorder: RecordingResolver::with_versions(tree, versioned),
+                            recorder: RecordingResolver::new(tree),
                             next: 0,
                             pending,
                             prefetched: Default::default(),
@@ -484,7 +483,7 @@ impl Request<'_> {
                 continue;
             }
             let reads = owner.recorder.reads();
-            let versions = owner.recorder.domain_receipts();
+            let versions = Vec::new();
             let Some(weight) = crate::heap_census::resident_owner_projection_weight(
                 &owner.produced,
                 &owner.inputs,

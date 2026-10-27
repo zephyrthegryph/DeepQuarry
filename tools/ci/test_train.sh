@@ -226,6 +226,23 @@ kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
 out="$(train run 2>&1)"
 check "a dead integrator's lock is replaced" 'grep -q "replacing the lock of a dead integrator" <<<"$out" && in_master lane/m'
 
+# ---- the lock is exclusive under a race; a lane that lands clears a stale bounce record (27 October: two integrators, rx/readback-notices) --
+lk="$tmp/lockrace"; mkdir -p "$lk/log"
+sed -n '/^alive() {/,/^}/p;/^now() {/p;/^tlog() {/p;/^lockdir_pid() {/p;/^lockdir_alive() {/p;/^lock_take() {/,/^}/p;/^lock_owned() {/p' tools/dq_train.sh >"$lk/fns.sh"
+for i in 1 2 3 4 5 6 7 8; do # separate processes: an integrator's identity is its own $$
+	STATE="$lk" LOGS="$lk/log" LOCK_NAME=run.lock SELF=x bash -c '. "$1"; if lock_take; then echo "$$" >>"$2/winners"; sleep 4; fi' _ "$lk/fns.sh" "$lk" &
+done
+wait
+check "eight integrators racing for the lock: exactly one takes it" '[ "$(wc -l <"$lk/winners")" = 1 ]'
+STATE="$lk" LOGS="$lk/log" LOCK_NAME=run.lock SELF=x bash -c '. "$1"; lock_take && lock_owned' _ "$lk/fns.sh" && lk2=1 || lk2=0
+check "a dead winner's lock is taken over (once)" '[ "$lk2" = 1 ] && grep -q "replacing the lock of a dead integrator" "$lk/log/train.log"'
+grep -q 'lock_owned; then LOCK_HELD=0; tlog "the run lock is held by pid' tools/dq_train.sh && lo=1 || lo=0
+check "an integrator that no longer owns the run lock stops before a cycle" '[ "$lo" = 1 ]'
+mk lane/sb lanes/sb.txt fine; train enqueue --tests tsb >/dev/null 2>&1; back
+printf 'branch=lane/sb\ntip=%s\nbounced=now\nreason=racing integrator\n' "$(git rev-parse lane/sb)" >"$DQ_TRAIN_STATE/bounced/lane_sb.q"
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a lane that lands clears its stale bounce record" 'in_master lane/sb && [ ! -f "$DQ_TRAIN_STATE/bounced/lane_sb.q" ] && grep -q "lane/sb: cleared its stale bounce record" <<<"$out"'
+
 # ---- a bisect spans cycles: one attempt per cycle, the bad lane is bounced, the rest land, a newcomer waits --------------------------------
 rm -f "$DQ_TRAIN_STATE/batch_limit" "$DQ_TRAIN_STATE/bisect.lanes" "$DQ_TRAIN_STATE/bisect.cache"
 for n in 1 2 3 4 5 6; do

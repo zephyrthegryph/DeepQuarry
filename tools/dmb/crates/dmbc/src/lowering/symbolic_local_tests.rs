@@ -220,7 +220,6 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
         .lookup(
             &current,
             &tail,
-            front.snapshot.tree.as_ref(),
             Some(&request),
             Some(&candidates),
             &observer,

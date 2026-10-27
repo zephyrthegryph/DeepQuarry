@@ -3,9 +3,6 @@ use dm_codegen_byond::initializer::{lower_assignment_views, AssignmentView, Init
 use dm_ir::{InitializerTarget, ResolveQuery, ResolvedMeaning, SymbolId};
 struct Host(u128);
 impl Resolver for Host {
-    fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-        Some(self.0)
-    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         match query {
             ResolveQuery::Ancestry(owner) => ResolvedMeaning::Symbols(vec![owner].into()),

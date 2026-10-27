@@ -6,7 +6,7 @@ use super::*;
 mod receipts;
 #[path = "shared_expression.rs"]
 mod shared_expression;
-use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 pub(super) use receipts::ReceiptPool;
 use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(test)]
@@ -313,8 +313,8 @@ impl Resolver for ResolverView<'_> {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.0.resolve(query)
     }
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.0.domain_version(domain)
+    fn answer_world(&self) -> Option<u128> {
+        self.0.answer_world()
     }
 }
 pub(super) fn key(
@@ -652,7 +652,7 @@ pub(super) fn classify_one_keyed_grouped_in(
     let host = ResolverView(reuse.resolver);
     // A session's answer table proves classification receipts: their reads carry no domain version.
     let recorder =
-        crate::lowering_memo::RecordingResolver::with_versions(&host, reuse.store.query_db.is_none());
+        crate::lowering_memo::RecordingResolver::new(&host);
     let mut result = None;
     let mut hit = false;
     let captured =
@@ -743,7 +743,7 @@ pub(super) fn classify_one_keyed_grouped_in(
         };
         value.input = Some(input);
         let reads = recorder.reads();
-        let versions = recorder.domain_receipts();
+        let versions = Vec::new();
         let dimensions = match &value.runtime {
             Some(
                 RuntimeRecipe::SizedArray(dimensions)

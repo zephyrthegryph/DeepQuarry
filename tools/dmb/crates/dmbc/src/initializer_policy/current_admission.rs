@@ -10,8 +10,8 @@ impl Resolver for Host<'_> {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.0.resolve(query)
     }
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.0.domain_version(domain)
+    fn answer_world(&self) -> Option<u128> {
+        self.0.answer_world()
     }
     fn observes_reads(&self) -> bool {
         self.0.observes_reads()

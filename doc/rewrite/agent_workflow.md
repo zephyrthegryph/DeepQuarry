@@ -905,3 +905,8 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
   now compiles in whichever train root (`merge`, `pre<N>`) built a test dmb last (`DQ_TRAIN_ROOT_KEY`, honoured only for the train
   worktree; the root slot serialises it with that worker), so a batch right after its lanes' prechecks patches from the precheck's session.
   `DQ_TRAIN_WARM_ROOT=0` keeps the `merge` root.
+- **One integrator, really.** At 07:31:58 two enqueues each started an integrator; the second found the first's lock directory before its
+  `owner` file existed, judged it dead, replaced it, and both gated rx/readback-notices (one bounced it, "not in HEAD"; the other landed
+  it). `lock_take` now writes the owner into a private directory and renames it into place (a lock never exists without its owner); a
+  dead lock is moved aside and checked to still be the dead owner's before it goes; and the integrator checks it still owns `run.lock`
+  before every cycle (`lock_owned`), exiting otherwise. `mark_landed` clears a bounce record whose tip is in master.

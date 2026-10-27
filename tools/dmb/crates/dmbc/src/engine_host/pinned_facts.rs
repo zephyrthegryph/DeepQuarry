@@ -47,13 +47,6 @@ impl PinnedSource for dm_tree::constant_resolution::ScalarSnapshot {
             }
         }
         census.slice("host.scalar.requested", &self.requested, true);
-        if census.arc_object("host.scalar.certificates", self.certificates()) {
-            census.collection_entries::<(ScalarQuery, u64)>(
-                "host.scalar.certificates",
-                self.certificates().as_ref() as *const _ as usize,
-                self.certificates().len(),
-            );
-        }
         if census.arc_object("host.scalar.predefined", &self.predefined_reads) {
             census.collection_entries::<(SymbolId, PredefinedOutcome)>(
                 "host.scalar.predefined",
@@ -72,7 +65,7 @@ impl PinnedSource for dm_tree::constant_resolution::ScalarSnapshot {
         &self.source.tree
     }
     fn pinned_source_is_issued(&self) -> bool {
-        self.domain_version(dm_ir::ReadDomain::Tree).is_some()
+        dm_ir::Resolver::answer_world(self).is_some()
     }
 }
 
@@ -83,7 +76,6 @@ pub struct PinnedHostFacts {
     constants: u128,
     runtime: u128,
     source_versions: Vec<u128>,
-    callable_issuer: Option<u64>,
     callable_absence: Option<Arc<HashSet<SymbolId>>>,
     intrinsic_methods: Option<Arc<intrinsic_methods::IntrinsicMethods>>,
     retained_methods: Option<Arc<crate::engine::procedure_abi::RetainedMethods>>,
@@ -136,7 +128,6 @@ impl PinnedHostFacts {
             constants: constants.identity(),
             runtime: runtime.identity(),
             source_versions: host.source_versions,
-            callable_issuer: host.callable_issuer,
             callable_absence: host.callable_absence,
             intrinsic_methods: host.intrinsic_methods,
             retained_methods: host.retained_methods,
@@ -191,10 +182,7 @@ impl<R: PinnedSource> EngineResolverHost<R> {
             );
         }
         self.answer_domain = std::sync::OnceLock::new();
-        self.domain_memo = Default::default();
         self.source_versions = facts.source_versions.clone();
-        self.callable_fallback = None;
-        self.callable_issuer = facts.callable_issuer;
         self.callable_absence = facts.callable_absence.clone();
         self.intrinsic_methods = facts.intrinsic_methods.clone();
         self.retained_methods = facts.retained_methods.clone();
@@ -280,10 +268,6 @@ mod tests {
         assert_eq!(
             host.configuration_identity(),
             legacy.configuration_identity()
-        );
-        assert_eq!(
-            host.domain_version(dm_ir::ReadDomain::Tree),
-            legacy.domain_version(dm_ir::ReadDomain::Tree)
         );
         for query in [
             Q::Var {

@@ -90,14 +90,14 @@ pub(super) struct AssemblyHost<'a, R: Resolver> {
     pub recorder: Option<&'a crate::lowering_memo::RecordingResolver<'a, R>>,
 }
 impl<R: Resolver> Resolver for AssemblyHost<'_, R> {
-    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+    fn answer_world(&self) -> Option<u128> {
         // Nested artifact admission must observe each original dependency in
-        // the outer recorder. A certified-domain fast hit would otherwise
-        // bypass resolve() and lose transitive reads from the assembled owner.
+        // the outer recorder. A world-certified hit would otherwise bypass
+        // resolve() and lose transitive reads from the assembled owner.
         if self.recorder.is_some() {
             None
         } else {
-            self.original.domain_version(domain)
+            self.original.answer_world()
         }
     }
     fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
@@ -496,7 +496,7 @@ impl InitializerAssemblies {
             disk.stage_attempt(key, &roots, &semantic_reads, code, None, disk_attempt, recorder);
         }
         let reads = receipts::reads(key, semantic_reads);
-        let versions = receipts::versions(recorder.domain_receipts());
+        let versions = receipts::versions(Vec::new());
         // This store retains the current roster without a byte admission budget.
         // Full resident ownership is measured only by the opt-in census.
         let weight = std::mem::size_of::<RetainedAssembly>();

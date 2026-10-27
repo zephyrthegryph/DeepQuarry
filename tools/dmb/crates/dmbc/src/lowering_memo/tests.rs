@@ -67,26 +67,11 @@ fn mandatory_reads_include_ancestry_and_structural_declaration_position() {
         ResolveQuery::OverrideChain { .. }
     ));
 }
-struct VersionHost {
-    tree: Option<u128>,
-    resource: Option<u128>,
+struct ReplayHost {
     changed: bool,
     calls: std::sync::atomic::AtomicUsize,
 }
-impl Resolver for VersionHost {
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        match domain {
-            // Global vars are read through the owner scalar domain (9eb5b8f1d5); it shares the tree version here.
-            ReadDomain::Tree | ReadDomain::OwnerScalar(_) => self.tree,
-            ReadDomain::ResourceSearch => self.resource,
-            ReadDomain::OwnerHierarchy(_)
-            | ReadDomain::OwnerCallable(_)
-            | ReadDomain::OwnerVariable(_)
-            | ReadDomain::OwnerProcedureStatic(_)
-            | ReadDomain::PredefinedCatalog(_)
-            | ReadDomain::RuntimeCatalog(_) => None,
-        }
-    }
+impl Resolver for ReplayHost {
     fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
         self.calls
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -98,38 +83,28 @@ impl Resolver for VersionHost {
     }
 }
 #[test]
-fn domain_receipts_skip_matching_domains_and_recheck_changed_or_unknown_versions() {
-    let host = |tree, resource, changed| VersionHost {
-        tree,
-        resource,
+fn stored_reads_are_replayed_and_a_changed_answer_declines() {
+    let host = |changed| ReplayHost {
         changed,
         calls: Default::default(),
     };
-    let initial = host(Some(1), Some(2), false);
+    let initial = host(false);
     let recorder = RecordingResolver::new(&initial);
     recorder.resolve(ResolveQuery::GlobalVar(dm_ir::SymbolId::of("absent")));
     recorder.resolve(ResolveQuery::Resource(dm_ir::SymbolId::of("missing.asset")));
     assert_eq!(recorder.reads().len(), 2);
-    assert_eq!(recorder.domain_receipts().len(), 2);
-    assert_eq!(recorder.domain_version(ReadDomain::Tree), Some(1));
     let memo = LoweringMemo::default();
     assert!(memo.insert_with(
         Arc::from(b"domain-key".as_slice()),
         recorder.reads(),
-        recorder.domain_receipts(),
+        Vec::new(),
         1,
         || 7u32
     ));
-    let same = host(Some(1), Some(2), false);
+    let same = host(false);
     assert_eq!(memo.lookup(b"domain-key", &same).as_deref(), Some(&7));
-    assert_eq!(same.calls.load(std::sync::atomic::Ordering::Relaxed), 0);
-    let partial = host(Some(1), Some(3), false);
-    assert!(memo.lookup(b"domain-key", &partial).is_some());
-    assert_eq!(partial.calls.load(std::sync::atomic::Ordering::Relaxed), 1);
-    let unknown = host(None, None, false);
-    assert!(memo.lookup(b"domain-key", &unknown).is_some());
-    assert_eq!(unknown.calls.load(std::sync::atomic::Ordering::Relaxed), 2);
-    let changed = host(Some(4), Some(3), true);
+    assert_eq!(same.calls.load(std::sync::atomic::Ordering::Relaxed), 2);
+    let changed = host(true);
     assert!(memo.lookup(b"domain-key", &changed).is_none());
 }
 

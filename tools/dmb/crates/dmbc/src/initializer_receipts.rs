@@ -219,12 +219,6 @@ impl<R: Resolver> dm_session::ObservationHost<Query, Answer, Domain> for Host<'_
             Query::Semantic(query) => Answer::Semantic(self.resolver.resolve(*query)),
         }
     }
-    fn version(&self, domain: &Domain) -> Option<u128> {
-        match domain {
-            Domain::Input => None,
-            Domain::Semantic(domain) => self.resolver.domain_version(*domain),
-        }
-    }
     fn equivalent(&self, a: &Answer, b: &Answer) -> bool {
         match (a, b) {
             (Answer::Input(a), Answer::Input(b)) => Arc::ptr_eq(a, b) || a == b,

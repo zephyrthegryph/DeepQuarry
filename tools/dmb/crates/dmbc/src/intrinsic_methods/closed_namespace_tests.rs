@@ -148,7 +148,6 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
         host.resolve(opaque_selector),
         ResolvedMeaning::Unsupported(opaque_selector)
     );
-    assert_eq!(host.domain_version(opaque_selector.domain()), None);
     let opaque = ResolveQuery::MemberCallableName(SymbolId::of("ODHotReloadInterface"));
     assert_eq!(host.resolve(opaque), ResolvedMeaning::Unsupported(opaque));
     let query = ResolveQuery::GlobalProc(SymbolId::of("arbitrary_missing_one"));
