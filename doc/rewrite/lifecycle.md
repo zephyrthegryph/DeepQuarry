@@ -261,7 +261,8 @@ run-time report; a `New()` override that never calls `..()` does not reach `/dat
 `make()` record; `make()` arms the entries whenever the made type's table has any. Why not arm it
 from `/datum/New()`: that runs at the root of the chain, before the subtype's own code, so a delay of 0 read a half-built datum (the seeds'
 growth stages, set from the plant icon a subtype's `New()` writes, divided by zero; `/datum/seed/New()` also never called `..()`,
-so nothing of `/datum/New()` ran for a seed). Tests: `dq_after_init/plain_datum*` (the seeds are converted on `engine/after-init-seeds`).
+so nothing of `/datum/New()` ran for a seed). Worked example: `/datum/seed` (`seed_ready()` counts the growth stages its subtype's `default_traits()` plant icon
+gives; every seed is made with `make()`). Tests: `dq_after_init/plain_datum*`, `dq_seed_default_traits`.
 
 **DECLARE_BEHAVIOUR audit** (4 real sites):
 
