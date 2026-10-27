@@ -3,7 +3,7 @@
 /mob/living/carbon/human/proc/dq_open_flavor_panel(mob/user)
 	if(!istype(user))
 		return
-	var/key = "[REF(src)]"
+	var/key = ref_token(src)
 	var/datum/flavor_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_flavor_panels, key))
 	if(!panel)
 		panel = new(src)
@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 /datum/flavor_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_flavor_panels -= "[REF(host)]"
+		GLOB.dq_flavor_panels -= ref_token(host)
 
 CAPABILITIES(/datum/flavor_panel)
 	ref_one(nameof(host), /mob/living/carbon/human)
