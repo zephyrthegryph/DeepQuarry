@@ -296,11 +296,7 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 	// compile-time default per instance) -- qdel'ing the probe could run
 	// Destroy() cleanup that clears that list in place and corrupt it for
 	// every real instance of the type, not just this throwaway one.
-	var/static/list/probes = list()
-	var/atom/instance = probes[path]
-	if(!instance)
-		instance = new path
-		probes[path] = instance
+	var/atom/instance = dq_proto(path)
 	var/value = instance.vars[var_name]
 	cache[cache_key] = value
 	return value

@@ -47,18 +47,11 @@
 CAPABILITIES(/turf/open)
 	owns_one(nameof(active_hotspot), /obj/effect/hotspot)
 	owns_one(nameof(air), /datum/gas_mixture)
+	// Both hooks run for the Initialize() chain and the init_from_table path alike: the mixture first, then the Rust arena registration.
+	setup(PROC_REF(setup_open_air))
+	setup(PROC_REF(register_open_air))
 
-/turf/open/Initialize(mapload)
-	setup_open_air()
-	. = ..()
-	register_open_air()
-
-/turf/open/table_initialize()
-	setup_open_air()
-	..()
-	register_open_air()
-
-/// Gives the turf its gas mixture (Initialize() and the init_from_table path).
+/// Gives the turf its gas mixture (a setup() hook).
 /turf/open/proc/setup_open_air()
 	PRIVATE_PROC(TRUE)
 	if(!blocks_air)

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Open turfs register their air through setup() hooks, and four stored-reference caches (gas ids, machine probes, robot upgrade prototypes, global HUD overlays) use shared caches"
