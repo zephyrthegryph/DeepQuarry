@@ -269,6 +269,7 @@
 #include "dq_ai_cost_tests.dm"
 #include "dq_economy_tests.dm"
 #include "dq_serial_tests.dm"
+#include "dq_item_encumbrance_tests.dm"
 #include "dq_sellable_organ_tests.dm"
 #include "dq_refs_waves_tests.dm"
 #include "dq_refs_prompt_callers_tests.dm"
