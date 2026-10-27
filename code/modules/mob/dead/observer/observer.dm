@@ -689,7 +689,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!user || !A.over)
 		return TRUE
 	if(isobserver(user) && user.client && check_rights_for(user.client, R_HOLDER) && isliving(A.over))
-		if(user.client.holder.cmd_ghost_drag(src, A.over, user))
+		if(admin_holder_of(user.client).cmd_ghost_drag(src, A.over, user))
 			return TRUE
 	return INPUT_FALLTHROUGH
 

@@ -9,10 +9,10 @@
 /// The signed token for `user`, or null when the viewer isn't configured.
 /proc/metrics_viewer_token(client/user)
 	var/secret = CONFIG_GET(string/metrics_viewer_secret)
-	if(!secret || !user?.holder)
+	if(!secret || !admin_can(user, 0))
 		return null
 	var/expires = rustg_unix_timestamp() + CONFIG_GET(number/metrics_viewer_link_minutes) * 60
-	var/payload = "[user.ckey]|[user.holder.rank_flags()]|[round(expires)]"
+	var/payload = "[user.ckey]|[admin_rank_flags(user)]|[round(expires)]"
 	var/inner = rustg_hash_string(RUSTG_HASH_SHA256, "[secret][payload]")
 	var/signature = rustg_hash_string(RUSTG_HASH_SHA256, "[secret][inner]")
 	return "[payload]|[signature]"

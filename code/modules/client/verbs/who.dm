@@ -10,11 +10,11 @@
 
 	for(var/client/C in GLOB.clients)
 		if(!check_rights_for(src, R_ADMIN|R_MOD))
-			Lines += "\t[C.holder?.fakekey || C.key]"
+			Lines += "\t[admin_fakekey(C) || C.key]"
 			continue
 		var/entry = "\t[C.key]"
-		if(C.holder?.fakekey)
-			entry += " " + span_italics("as [C.holder.fakekey])")
+		if(admin_fakekey(C))
+			entry += " " + span_italics("as [admin_fakekey(C)])")
 		entry += " - Playing as [C.mob.real_name]"
 		switch(C.mob.stat)
 			if(UNCONSCIOUS)
@@ -76,7 +76,7 @@
 		var/temp = ""
 		var/category = R_ADMIN
 		// Apply stealthmin protection to all levels
-		if(C.holder.fakekey && !check_rights_for(src, R_ADMIN|R_MOD))	// Only admins and mods can see stealthmins
+		if(admin_fakekey(C) && !check_rights_for(src, R_ADMIN|R_MOD))	// Only admins and mods can see stealthmins
 			continue
 		if(check_rights_for(C, R_BAN)) // admins //
 			num_admins_online++
@@ -93,10 +93,10 @@
 			category = R_MENTOR
 			num_mentors_online++
 
-		temp += "\t[C] is a [C.holder.rank_names()]"
+		temp += "\t[C] is a [admin_rank_names(C)]"
 		if(holder)
-			if(C.holder.fakekey)
-				temp += " " + span_italics("(as [C.holder.fakekey])")
+			if(admin_fakekey(C))
+				temp += " " + span_italics("(as [admin_fakekey(C)])")
 
 			if(isobserver(C.mob))
 				temp += " - Observing"

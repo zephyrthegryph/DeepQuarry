@@ -47,7 +47,7 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(show_player_panel, R_HOLDER, "Show Player Panel", m
 	if(!player)
 		to_chat(user, "You seem to be selecting a mob that doesn't exist anymore.")
 		return
-	user.holder?.dq_open_edit_player_panel(player)
+	admin_holder_of(user)?.dq_open_edit_player_panel(player)
 	feedback_add_details("admin_verb","SPP")
 
 
@@ -57,7 +57,7 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(show_player_panel, R_HOLDER, "Show Player Panel", m
 /datum/player_info/var/timestamp // Because this is bloody annoying
 
 ADMIN_VERB(PlayerNotes, R_ADMIN|R_MOD|R_EVENT|R_DEBUG, "Player Notes", "Access the player notes.", ADMIN_CATEGORY_INVESTIGATE)
-	user.holder.PlayerNotesPage(user.mob, 1)
+	admin_holder_of(user).PlayerNotesPage(user.mob, 1)
 
 /datum/admins/proc/PlayerNotesPage(mob/user, page)
 	var/savefile/S=new("data/player_notes.sav")
@@ -88,7 +88,7 @@ ADMIN_VERB(show_player_info, R_ADMIN|R_MOD|R_EVENT|R_DEBUG, "Show Player Info", 
 // in /datum/admins.Topic still own state transitions, and the panel
 // refreshes after each click via SStgui.update_uis().
 ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "Allows you to view, add and edit news feeds.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	user.holder?.dq_open_newscaster_panel()
+	admin_holder_of(user)?.dq_open_newscaster_panel()
 
 
 /datum/admins/proc/Jobbans() // rights (R_BAN) are declared by the jobbans ADMIN_VERB
@@ -166,12 +166,12 @@ ADMIN_VERB(restart, R_SERVER, "Reboot World", "Restarts the world immediately.",
 	if(GLOB.blackbox)
 		GLOB.blackbox.save_all_data_to_sql()
 
-	var/init_by = "Initiated by [user.holder.fakekey ? "Admin" : user.key]."
+	var/init_by = "Initiated by [admin_fakekey(user) ? "Admin" : user.key]."
 	switch(result)
 		if(REGULAR_RESTART)
-			SSticker.Reboot(init_by, "admin reboot - by [user.key] [user.holder.fakekey ? "(stealth)" : ""]", 10, user)
+			SSticker.Reboot(init_by, "admin reboot - by [user.key] [admin_fakekey(user) ? "(stealth)" : ""]", 10, user)
 		if(REGULAR_RESTART_DELAYED)
-			SSticker.Reboot(init_by, "admin reboot - by [user.key] [user.holder.fakekey ? "(stealth)" : ""]", delay * 10, user)
+			SSticker.Reboot(init_by, "admin reboot - by [user.key] [admin_fakekey(user) ? "(stealth)" : ""]", delay * 10, user)
 		if(HARD_RESTART)
 			to_chat(world, "World reboot - [init_by]")
 			world.Reboot()
@@ -214,7 +214,7 @@ ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desire
 	if(!check_rights_for(user, R_SERVER))
 		message = sanitize(message, 500, extra = 0)
 	message = replacetext(message, "\n", "<br>") // required since we're putting it in a <p> tag
-	send_ooc_announcement(message, "From [user.holder.fakekey ? "Administrator" : user.key]")
+	send_ooc_announcement(message, "From [admin_fakekey(user) ? "Administrator" : user.key]")
 	log_admin("Announce: [key_name(user)] : [message]")
 	feedback_add_details("admin_verb","A") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -693,7 +693,7 @@ ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATE
 			chosen_path = matches[1]
 
 	if(!chosen_path)
-		var/datum/spawn_menu/menu = user.holder.spawn_menu
+		var/datum/spawn_menu/menu = admin_holder_of(user).spawn_menu
 		if(!menu)
 			menu = rel_set(user.admin_datum(), nameof(/datum/admins::spawn_menu), new /datum/spawn_menu())
 		menu.init_value = object

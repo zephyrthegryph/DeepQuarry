@@ -179,7 +179,7 @@
 		to_chat(target, span_looc(create_text_tag("looc", "LOOC:", target) + " <EM>[display_name][admin_stuff]:</EM> " + span_message("[msg]")))
 
 	for(var/client/target in r_receivers)
-		var/admin_stuff = "/([key])([admin_jump_link(mob, target.holder)])"
+		var/admin_stuff = "/([key])([admin_jump_link(mob, admin_holder_of(target))])"
 
 		to_chat(target, span_rlooc(create_text_tag("rlooc", "RLOOC:", target) + " " + span_prefix("(R)") + "<EM>[display_name][admin_stuff]:</EM> " + span_message("[msg]")))
 

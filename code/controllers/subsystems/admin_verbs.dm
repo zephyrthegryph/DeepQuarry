@@ -45,12 +45,12 @@ SYSTEM_DEF(admin_verbs)
 			admin_verbs_by_visibility_flag[verb_singleton.visibility_flag] |= list(verb_singleton)
 
 /datum/system/admin_verbs/proc/get_valid_verbs_for_admin(client/admin)
-	if(isnull(admin.holder))
+	if(isnull(admin_holder_of(admin)))
 		CRASH("Why are we checking a non-admin for their valid... ahem... admin verbs?")
 
 	var/list/has_permission = list()
 	for(var/permission_flag in GLOB.bitflags)
-		if(admin.holder.check_for_rights(permission_flag))
+		if(admin_holder_of(admin).check_for_rights(permission_flag))
 			has_permission["[permission_flag]"] = TRUE
 
 	var/list/valid_verbs = list()
@@ -96,7 +96,7 @@ SYSTEM_DEF(admin_verbs)
 
 	if(!ispath(verb_type, /datum/admin_verb) || verb_type == /datum/admin_verb)
 		CRASH("Attempted to dynamically invoke admin verb with invalid typepath '[verb_type]'.")
-	if(isnull(admin.holder))
+	if(isnull(admin_holder_of(admin)))
 		CRASH("Attempted to dynamically invoke admin verb '[verb_type]' with a non-admin.")
 
 	var/list/verb_args = args.Copy()
