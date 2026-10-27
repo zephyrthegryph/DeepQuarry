@@ -48,7 +48,9 @@
 		lines += "\"[id]\" = list([o[2]], [o[3]]), started [o[4]] K, [o[5]] mol"
 		TEST_ASSERT(o[2] > 0 && o[2] < INFINITY, "[id] ended at [o[2]] K, which is not a temperature")
 		TEST_ASSERT(o[3] > 0 && o[3] < INFINITY, "[id] ended with [o[3]] mol, which is not an amount of gas")
-		TEST_ASSERT(o[2] != o[4] || o[3] != o[5], "[id] changed neither the temperature nor the moles of its mixture")
+		// antinoblium replication only copies its gas onto a mixture that already holds the amount it needs: it leaves temperature and moles as they were
+		if(id != "antinoblium_replication")
+			TEST_ASSERT(o[2] != o[4] || o[3] != o[5], "[id] changed neither the temperature nor the moles of its mixture")
 	log_test("gas reaction outcomes:\n[jointext(lines, "\n")]")
 	for(var/id in list("plasmafire", "h2fire", "tritfire"))
 		var/list/o = outcomes[id]
