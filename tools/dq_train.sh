@@ -384,17 +384,32 @@ listed_in() { # <file> <branch>: the branch is a line of the file
 	[ -s "$1" ] && grep -qxF -- "$2" "$1"
 }
 
+wt_creating() { # <path>: another process of the train is creating this worktree right now
+	local c="$STATE/wt-creating/$(basename "$1")"
+	[ -f "$c" ] && alive "$(cat "$c" 2>/dev/null)"
+}
+wt_ready() { [ -e "$1/.git" ] && ! wt_creating "$1"; } # <path>: checked out, gen warmed, nobody still creating it
 ensure_wt_at() { # <path>: a detached worktree of the repository (the prechecker's, the parallel bisect's); one-time full checkout + gen
-	local p="$1" origin free
-	[ -e "$p/.git" ] && return 0
+	local p="$1" origin free c rc=0
+	wt_ready "$p" && return 0
+	wt_creating "$p" && return 1
 	origin="$(repo_dir)"
 	free="$(df -Pk "$(dirname "$p")" 2>/dev/null | awk 'NR==2 {print int($4/1048576)}')"
 	if [ -n "$free" ] && [ "$free" -lt "${DQ_TRAIN_MIN_FREE_GB:-60}" ] && [ -z "${DQ_TRAIN_NO_DISK_CHECK:-}" ]; then tlog "ERROR: only ${free} GB free for the worktree $p"; return 1; fi
-	tlog "creating the worktree $p (detached at origin/master; a one-time full checkout, slow)"
-	mkdir -p "$(dirname "$p")"
-	git -C "$origin" worktree add --detach "$p" origin/master >>"$LOGS/train.log" 2>&1 || return 1
-	(cd "$p" && [ -x tools/build/build.sh ] && tools/build/build.sh gen) >>"$LOGS/train.log" 2>&1 || tlog "warning: the warm-up gen in $p failed (the gate will report it)"
-	tlog "worktree $p ready"
+	# the marker names the creating process: a half-made worktree is never used (wt_ready), and a dead creator's marker is ignored
+	c="$STATE/wt-creating/$(basename "$p")"
+	mkdir -p "$STATE/wt-creating" && echo "${BASHPID:-$$}" >"$c"
+	if [ ! -e "$p/.git" ]; then
+		tlog "creating the worktree $p (detached at origin/master; a one-time full checkout, slow)"
+		mkdir -p "$(dirname "$p")"
+		git -C "$origin" worktree add --detach "$p" origin/master >>"$LOGS/train.log" 2>&1 || rc=1
+	fi
+	if [ "$rc" -eq 0 ]; then
+		(cd "$p" && [ -x tools/build/build.sh ] && tools/build/build.sh gen) >>"$LOGS/train.log" 2>&1 || tlog "warning: the warm-up gen in $p failed (the gate will report it)"
+		tlog "worktree $p ready"
+	fi
+	rm -f "$c"
+	return "$rc"
 }
 
 # The cheap first stage, for every queued lane at once (seconds, no build): does the lane merge with current master? A real conflict
@@ -821,7 +836,7 @@ heavy_cycle_gate() {
 		# Every lane passed alone: a failure is an interaction, and its bisect runs to the end in this cycle (no deadline; the machine is
 		# protected by the machine slots and the RAM floor instead), both halves at once in the second worktree.
 		deadline_use=""; limit_file="$STATE/batch_limit_pre"; limit_max="$MAX_LANES_PRE"
-		if [ -e "$WT2/.git" ]; then wt2_use="$WT2"
+		if wt_ready "$WT2"; then wt2_use="$WT2"
 		else ( ensure_wt_at "$WT2" ) >/dev/null 2>&1 & disown $! 2>/dev/null || true; fi # one-time checkout in the background; used from the next cycle
 	fi
 	phase "gate: ${CHOSEN[*]}"

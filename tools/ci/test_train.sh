@@ -298,13 +298,18 @@ check "a lane that conflicts with master is bounced by the probe, without a gate
 pa_tip="$(git rev-parse lane/pa)"; m_now="$(git rev-parse origin/master)"
 check "the verdict is keyed by (master, lane tip)" '[ -f "$DQ_TRAIN_STATE/precheck/v/lane_pa@${pa_tip:0:12}@${m_now:0:12}" ] && grep -q "^verdict=pass" "$DQ_TRAIN_STATE/precheck/v/lane_pa@${pa_tip:0:12}@${m_now:0:12}"'
 check "status shows each lane's precheck" 'status_has "lane/pa  tip.*precheck: pass on master"'
+git switch -q lane/pb; train enqueue --tests "tpb" >/dev/null 2>&1; back
+check "enqueueing a bounced tip again asks for a fresh precheck" 'status_has "lane/pb  tip.*precheck: none" && [ -z "$(ls "$DQ_TRAIN_STATE/precheck/v" | grep "^lane_pb@")" ]'
+train dequeue lane/pb >/dev/null 2>&1
 export DQ_STUB_ARGS_LOG="$tmp/pre-args.log"; : >"$DQ_STUB_ARGS_LOG"
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "the prechecked lanes land; the failed one never joined a batch" 'in_master lane/pa && in_master lane/pc && in_master lane/pe && ! in_master lane/pb && ! grep -q "chosen=\[[^]]*lane/pb" "$DQ_TRAIN_STATE/log/train.log"'
 check "the batch says it is prechecked and has no cycle deadline" 'grep -q "all prechecked; bisect to the end" <<<"$out" && grep -q "no cycle deadline" <<<"$out"'
 check "lanes sharing an area run their own tests; a lane sharing none does not" 'grep -q "tpa" "$DQ_STUB_ARGS_LOG" && grep -q "tpe" "$DQ_STUB_ARGS_LOG" && ! grep -q "tpc" "$DQ_STUB_ARGS_LOG" && grep -q "own tests do not run in this batch.*lane/pc" "$DQ_TRAIN_STATE/log/train.log"'
 # ten prechecked lanes (more than DQ_TRAIN_MAX_LANES=8), two of them fine alone but failing together: one cycle, past the deadline, both halves at once
-git -C "$tmp/repo" worktree add -q --detach "$DQ_TRAIN_WT2" origin/master
+# the first prechecked cycle created it in the background; wait until it is ready (never used half-made)
+for _ in $(seq 1 60); do [ -e "$DQ_TRAIN_WT2/.git" ] && [ ! -f "$DQ_TRAIN_STATE/wt-creating/wt2" ] && break; sleep 1; done
+check "the first prechecked cycle created the parallel-bisect worktree in the background" '[ -e "$DQ_TRAIN_WT2/.git" ]'
 export DQ_STUB_WHERE="$tmp/where.log"; : >"$DQ_STUB_WHERE"
 for n in 1 2 3 4 5 6 7 8 9 10; do
 	c=fine; [ "$n" = 3 ] && c=PAIR1; [ "$n" = 8 ] && c=PAIR2
