@@ -71,6 +71,8 @@
 	var/light_rgb = "#FFFFFF"
 	power_draw_idle = 0 // Adjusted based on brightness.
 
+SCHEMA(/obj/item/integrated_circuit/output/light, light_rgb, schema_text())
+
 /obj/item/integrated_circuit/output/light/do_work()
 	light_toggled = !light_toggled
 	update_lighting()

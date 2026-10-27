@@ -802,13 +802,13 @@ fn block_calls(args: &[String], name: &str) -> Vec<Vec<String>> {
 }
 
 /// The lifecycle forms (code/engine/lifeforms/) a type's block needs the generator for:
-/// - a non-atom type whose block names a form (a type-level every() is one: lifeform_datum_new() arms it; so is factors(), whose table lifeform_datum_new() puts on the entity its relation names), or an owns_one/owns_many with starts =, gets `lifeform_declared = TRUE`, so /datum/New() runs it;
+/// - a non-atom type whose block names a form (a type-level every() is one: lifeform_datum_new() arms it; so is factors(), whose table lifeform_datum_new() puts on the entity its relation names; after_init() is one too: lifeform_datum_new() takes the make() record that arms it), or an owns_one/owns_many with starts =, gets `lifeform_declared = TRUE`, so /datum/New() runs it;
 ///
 /// A type whose block names click_on(), double_click_on(), drag_onto(), drag_over(), hover() or tooltip() gets NO native override: BYOND's mouse
 /// callbacks are overridden only in code/engine/kernel/entry.dm, and the input resolver finds the declared entry in the type tables when the event
 /// resolves (the `mouse_override` lint rejects any other definition).
 fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> bool) {
-    const FORMS: &[&str] = &["rolls", "preset", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes", "every", "keeps_if", "setup", "name_prefix", "factors"];
+    const FORMS: &[&str] = &["rolls", "preset", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes", "every", "keeps_if", "setup", "name_prefix", "factors", "after_init"];
     let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
     lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
     for m in lists {
@@ -954,6 +954,19 @@ CAPABILITIES(/obj/thing, \
         }
         assert!(!decl.contains("input_declared"), "{}", decl);
         assert!(!decl.contains("/obj/screen_thing\n\tlifeform_declared"), "an atom runs its forms from Initialize()");
+    }
+
+    #[test]
+    fn a_plain_datum_after_init_gets_the_datum_flag() {
+        let src = "CAPABILITIES(/datum/ripens, \
+	after_init(0, then(PROC_REF(ripe))))
+CAPABILITIES(/obj/ripens, \
+	after_init(0, then(PROC_REF(ripe))))
+";
+        let (_, decl, diags) = gen(vec![("code/a.dm", src)]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(decl.contains("/datum/ripens\n\tlifeform_declared = TRUE"), "lifeform_datum_new() takes the make() record that arms it: {}", decl);
+        assert!(!decl.contains("/obj/ripens\n\tlifeform_declared"), "an atom arms it when its Initialize() returns");
     }
 
     #[test]

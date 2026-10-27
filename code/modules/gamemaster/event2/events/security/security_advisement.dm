@@ -46,6 +46,8 @@
 		FBP_POSI = 25
 	)
 
+SCHEMA(/datum/event2/event/security_screening, victim, schema_text())
+
 /datum/event2/event/security_screening/set_up()
 	var/list/end_weights = list()
 

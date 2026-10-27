@@ -2,9 +2,11 @@
 	name = "swab kit"
 	desc = "A sterilized cotton swab and vial used to take forensic samples."
 	icon_state = "swab"
-	var/gsr = 0
+	var/gsr
 	var/list/dna
 	var/used
+
+SCHEMA(/obj/item/forensics/swab, gsr, schema_text())
 
 CAPABILITIES(/obj/item/forensics/swab)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))

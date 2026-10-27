@@ -26,7 +26,7 @@
 	var/record_class_to_delete = null
 
 /datum/event2/event/manifest_malfunction/set_up()
-	record_class_to_delete = text_or_null(pickweight(list("medical" = 10, "security" = 30)))
+	record_class_to_delete = pickweight(list("medical" = 10, "security" = 30))
 
 /datum/event2/event/manifest_malfunction/announce()
 	if(prob(30))
@@ -59,3 +59,4 @@
 		if(R)
 			log_game("Manifest malfunction event is now deleting [R.fields["name"]]'s [record_class_to_delete] record.")
 			spent(R)
+SCHEMA(/datum/event2/event/manifest_malfunction, record_class_to_delete, schema_text())

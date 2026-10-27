@@ -219,7 +219,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 /datum/ore_silo_log/New(obj/machinery/M, _action, _amount, _noun, list/mats=list())
 	timestamp = stationtime2text()
 	machine_name = M.name
-	area_name = text_or_null(get_area_name(M, TRUE))
+	area_name = get_area_name(M, TRUE)
 	action = _action
 	amount = _amount
 	noun = _noun
@@ -272,3 +272,4 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		separator = ", "
 		msg += "[amount < 0 ? "-" : "+"][val] [M.name]"
 	return msg.Join()
+SCHEMA(/datum/ore_silo_log, area_name, schema_text())

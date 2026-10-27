@@ -27,6 +27,7 @@ pub mod keys;
 pub mod gen;
 pub mod incremental;
 pub mod model_store;
+pub mod value_schema;
 pub mod walk_cache;
 pub mod body_facts;
 pub mod oracle;

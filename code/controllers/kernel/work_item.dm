@@ -178,7 +178,7 @@ CAPABILITIES(/datum/work_item)
 
 /// One run of the item on kernel `K`: a member sweep (spread or whole) or one call. Returns TRUE when done. An item
 /// type with its own member loop (a sequence: kernel/sequence.dm) overrides it; the protocol is run_item_spread()'s.
-/datum/work_item/proc/run_sweep(datum/controller/kernel/K, datum/owner, limit_abs, now)
+/datum/work_item/proc/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now)
 	if(members)
 		return spread ? K.run_item_spread(src, owner, limit_abs, now) : K.run_item_members(src, owner, limit_abs, now)
 	return K.run_item_once(src, owner, now)

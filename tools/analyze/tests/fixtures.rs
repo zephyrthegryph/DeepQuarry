@@ -91,7 +91,7 @@ fn untyped_findings_list_every_assigning_line() {
     let (run, _, _) = engine.scan(lint);
     let msg_of = |var: &str| run.sites.iter().find(|s| s.ident.ends_with(var)).map(|s| s.msg.clone()).unwrap_or_default();
     let two = msg_of("::two_writes");
-    for line in [420, 424, 425] {
+    for line in [421, 425, 426] {
         assert!(two.contains(&format!("vals.dm:{}", line)), "two_writes should list line {}: {}", line, two);
     }
     // declared value returns and `as text` parameters are typed as values; a text parameter fed an entity is not

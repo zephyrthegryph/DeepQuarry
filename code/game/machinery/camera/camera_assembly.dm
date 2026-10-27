@@ -208,3 +208,4 @@ CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok)
 	if(!anchored)
 		return OP_DECLINE
 	return TRUE
+SCHEMA(/obj/item/camera_assembly, camera_network, schema_text())

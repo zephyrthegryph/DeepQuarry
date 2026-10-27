@@ -275,7 +275,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
  * by the end of this tick, catches up by at most KERNEL_SPREAD_CATCHUP shares a pass, and looks at a slot again when
  * its member left during its turn (a member that parks swap-removes itself).
  */
-/datum/work_item/sequence/run_sweep(datum/controller/kernel/K, datum/owner, limit_abs, now)
+/datum/work_item/sequence/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now)
 	var/list/members_list = members_of(members)
 	var/count = length(members_list)
 	var/target

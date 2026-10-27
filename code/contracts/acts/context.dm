@@ -157,3 +157,7 @@ CAPABILITIES(/datum/act/timer)
 /// Borrow the current member only for this trigger; deletion clears the link before a later part reads it.
 /datum/act/timer/proc/set_member_target(datum/member)
 	rel_set(src, nameof(target), member)
+
+SCHEMA(/datum/act/action, reason, schema_msg())
+
+SCHEMA(/datum/op_result, reason, schema_msg())

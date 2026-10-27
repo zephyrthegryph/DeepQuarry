@@ -132,6 +132,21 @@ attempt() {
 			return 91
 		fi
 	done
+	# deepquarry.dme is generated: whatever the merges made of it (the dq-dme driver, or a union for a lane that still edits it by hand),
+	# the batch carries the list its merged files give, amended into its last merge commit. A spec rule the batch made stale (a lane
+	# deleted or moved a file a rule names) fails the attempt like a gate, so the bisect names the lane.
+	if [ -f tools/build/gen_dme.py ]; then
+		if ! python3 tools/build/gen_dme.py >>"$log" 2>&1; then
+			echo "   tools/build/gen_dme.py failed on the merged tree (a stale rule in tools/build/dme_spec.txt?); see $log" >&2
+			tried_rc[$key]=1
+			[ -n "${NOCACHE:-}" ] || cache_save 1 "$key"
+			return 1
+		fi
+		if ! git diff --quiet -- deepquarry.dme; then
+			git add -- deepquarry.dme && git commit -q --amend --no-edit
+			echo "   regenerated deepquarry.dme into the batch's last merge commit"
+		fi
+	fi
 	# One look-key normalization/record and one gen/build/test pass for the whole combination: dq_merge_gates.sh does them on this HEAD.
 	# --lane-tests LANE="names": only the tests of the lanes merged in THIS attempt go to the gate. A lane bounced for a conflict (or cut by
 	# the bisect) is not in the tree, and its test names would be "unknown" to the test build and fail every attempt that follows.

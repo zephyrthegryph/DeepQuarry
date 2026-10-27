@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/grown)
 		if(!S || !S.chems)
 			return
 
-		potency = num_or_null(S.get_trait(TRAIT_POTENCY))
+		potency = S.get_trait(TRAIT_POTENCY)
 
 /// The plant's chemicals at its potency (reagents(contents_from =)), or null for a harvest made from no plant.
 /obj/item/grown/proc/seed_contents()
@@ -75,3 +75,4 @@ CAPABILITIES(/obj/item/corncob)
 CAPABILITIES(/obj/item/bananapeel)
 	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_thrown(force = 0))
+SCHEMA(/obj/item/grown, potency, num())
