@@ -70,6 +70,18 @@
 	if(GLOB.state_batch_depth)
 		state_batch_queue(E, channel, var_name)
 		return
+	// A mapped atom that is not initialized yet (map load, SSatoms holding inits): its init queues its first full refresh and attaches
+	// its derived values (caps_init()), and no observer, reaction or relation watches it before then. Its writes publish nothing but the
+	// stat layer's recompute and a draw hop to an initialized holder: map load made 884 k of these calls (server_bench_20261027.md, boot).
+	if(isatom(E) && SSatoms?.atom_initialized == INITIALIZATION_INSSATOMS)
+		var/atom/pending = E
+		if(!(pending.flags & ATOM_INITIALIZED))
+			if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
+				stat_inputs_changed(E, var_name)
+			if(var_name && draw_hop_reads_var(var_name))
+				draw_hop_published(E, var_name)
+			GLOB.state_changed_preinit_skipped++
+			return
 	op_changed(E) // a cached menu or reach read of the op engine is stale now
 	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
 	if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
@@ -221,6 +233,8 @@
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// state_changed() calls on atoms still waiting for their init during a map load, answered without publishing (the boot bench reads it).
+GLOBAL_VAR_INIT(state_changed_preinit_skipped, 0)
 /// The number of the last refresh_drain() pass (the stamp of datum/refresh_pass).
 GLOBAL_VAR_INIT(refresh_drain_pass, 0)
 /// A type whose marks are counted by where they came from (the draw-queue test's re-queue census, or an admin's question); null: off.
