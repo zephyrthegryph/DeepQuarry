@@ -607,12 +607,10 @@ pub(super) fn splice_appended(
         inputs: Arc::new(retained.inputs),
         archive: retained.archive,
         warnings: Arc::new(warnings),
-        // No marking: the appended names' answers were not proven against the retained ones, so a later
-        // request must not take this table as the published answers (the next declaration edit composes whole).
         answers: answered.version,
-        answers_context: None,
-        marks: None,
-        facts: None,
+        answers_context: answered.context,
+        marks: answered.marks,
+        facts: answered.facts,
         restored: answered.restored,
         dmb_hash: 0,
     };

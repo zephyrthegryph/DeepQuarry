@@ -410,9 +410,16 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
    switch builds on that lane's base). Measured, production tree, interleaved hot daemons, per round body edit, string
    edit, appended proc, body edit, string edit: patch-path steps 4.2-9.1 s (step 1 compiler) against 4.6-8.4 s (this
    branch) apart from one loaded round; `dmb-equiv` of the chain's output against a fresh `--no-daemon --no-cache` compile:
-   EQUIVALENT. Found, not changed: a body edit right after an appended-callable edit compiles whole ("answer world or
-   resource searches changed") on both compilers, because an appended output is retained without answer marks; that is
-   the next thing to absorb.
+   EQUIVALENT.
+7. **Answers settled after lowering (2026-10-26, compiler/one-path-marks).** An admitted output's answer version, context,
+   facts and mark are taken after the request lowered what it relowers (`Answered::settle`), not at admission: the
+   answers and resource searches the relowered and appended units asked first are now part of the published mark, so the
+   next request proves them too (before, a slot first asked after the mark was never compared). Appended-callable outputs
+   are marked like any other (they were retained without marks). A decline on the answer world now says whether the
+   world or the resource searches differ, and each request logs `native answer world: tree=... world=...`.
+   A body edit after an append builds on it. (A measurement script that re-appended an edited proc at the end of its
+   file moved that declaration after the appended one: the declaration order changed, the tree identity and answer
+   world with it, and the edit correctly compiled whole.)
 
 
 ## Persisted dependency index, step 2 (2026-10-24, lane `compiler/dep-index`)
