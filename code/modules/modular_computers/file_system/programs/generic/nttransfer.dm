@@ -79,9 +79,9 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 
 CAPABILITIES(/datum/computer_file/program/nttransfer)
 	interface("NtosNetTransfer")
-	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("uid", num())), then(PROC_REF(ui_act_prg_downloadfile)))
+	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("uid", num())), asks(/datum/prompt/text, fields = list("question" = "Code 401 Unauthorized. Please enter password:", "title" = "Password required", "timeout" = 0), step = "password", when = PROC_REF(download_needs_password)), then(PROC_REF(ui_act_prg_downloadfile)))
 	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
-	op("PRG_setpassword", ui_act("PRG_setpassword"), then(PROC_REF(ui_act_prg_setpassword)))
+	op("PRG_setpassword", ui_act("PRG_setpassword"), asks(/datum/prompt/text, fields = list("question" = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", "title" = "Server security", "default" = "none", "timeout" = 0), step = "password"), then(PROC_REF(ui_act_prg_setpassword)))
 	op("PRG_uploadfile", ui_act("PRG_uploadfile", arg("uid", num())), then(PROC_REF(ui_act_prg_uploadfile)))
 	op("PRG_uploadmenu", ui_act("PRG_uploadmenu"), then(PROC_REF(ui_act_prg_uploadmenu)))
 	ref_one(nameof(downloaded_file))
@@ -133,32 +133,37 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 
 	return data
 
-/datum/computer_file/program/nttransfer/proc/ui_act_prg_downloadfile(datum/act/op/A, uid)
-	var/mob/user = A.actor
-	for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
+/// The file server a download link names.
+/datum/computer_file/program/nttransfer/proc/server_with_uid(uid) as /datum/computer_file/program/nttransfer
+	for(var/datum/computer_file/program/nttransfer/P in read_once(GLOB.ntnet_global.fileservers))
 		if(P.unique_token == uid)
-			rel_set(src, nameof(/datum/computer_file/program/nttransfer::remote), P)
-			break
+			return P
+	return null
+
+/// The server named offers a file behind a password: the password is asked.
+/datum/computer_file/program/nttransfer/proc/download_needs_password(datum/act/op/A)
+	var/datum/computer_file/program/nttransfer/P = server_with_uid(A.args["uid"])
+	if(!P)
+		P = remote()
+	return P && P.provided_file() && P.server_password
+
+/datum/computer_file/program/nttransfer/proc/ui_act_prg_downloadfile(datum/act/op/A, uid)
+	var/datum/computer_file/program/nttransfer/P = server_with_uid(uid)
+	if(P)
+		rel_set(src, nameof(/datum/computer_file/program/nttransfer::remote), P)
 	if(!remote() || !remote().provided_file())
 		return
 	if(remote().server_password)
-		open_request(src, /datum/prompt/text, PROC_REF(download_password_entered), valid = PROC_REF(request_usable), answerer = user, question = "Code 401 Unauthorized. Please enter password:", title = "Password required", timeout = 0)
-		return
-	start_download()
-	return TRUE
-
-/datum/computer_file/program/nttransfer/proc/download_password_entered(datum/act/request/A)
-	download_password_entered_apply(A)
-	SStgui.update_uis(src)
-
-/datum/computer_file/program/nttransfer/proc/download_password_entered_apply(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.value) || !remote() || !remote().provided_file())
-		return
-	if(A.answer.value != remote().server_password)
-		set_error("Incorrect Password")
+		var/entered = A.step_value("password")
+		if(!isnull(entered))
+			if(entered != remote().server_password)
+				set_error("Incorrect Password")
+			else
+				start_download()
 		SStgui.update_uis(src)
 		return
 	start_download()
+	return TRUE
 
 /datum/computer_file/program/nttransfer/proc/start_download()
 	rel_set(src, nameof(src.downloaded_file), remote().provided_file().clone())
@@ -176,23 +181,10 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	return TRUE
 
 /datum/computer_file/program/nttransfer/proc/ui_act_prg_setpassword(datum/act/op/A)
-	open_request(src, /datum/prompt/text, PROC_REF(prg_setpassword_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none", timeout = 0)
-
-/datum/computer_file/program/nttransfer/proc/prg_setpassword_answered(datum/act/request/A)
-	prg_setpassword_answered_apply(A)
+	var/pass = A.step_value("password")
+	if(pass)
+		set_server_password(pass == "none" ? "" : pass)
 	SStgui.update_uis(src)
-
-/datum/computer_file/program/nttransfer/proc/prg_setpassword_answered_apply(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/pass = A.answer.value
-	if(!pass)
-		return
-	if(pass == "none")
-		set_server_password("")
-		return
-	set_server_password(pass)
-	return TRUE
 
 /datum/computer_file/program/nttransfer/proc/ui_act_prg_uploadfile(datum/act/op/A, uid)
 	for(var/datum/computer_file/F in computer().hard_drive.stored_files)

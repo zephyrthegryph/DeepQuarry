@@ -172,7 +172,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	. = TRUE
 
 /// The title of a beacon question: the bot's own.
-/mob/living/bot/mulebot/proc/beacon_prompt_title()
+/mob/living/bot/mulebot/proc/beacon_prompt_title(datum/act/A = null)
 	return "Mulebot [suffix ? "([suffix])" : ""]"
 
 /// Re-checked on the answer of a beacon question: the asker can still work the bot's window.

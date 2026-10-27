@@ -141,18 +141,25 @@ CAPABILITIES(/obj/item/storage/pill_bottle)
 		/obj/item/paper), max_size = ITEMSIZE_TINY))
 	
 	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label"),
-		asks(/datum/prompt/text/pill_label, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
+		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:"), step = "label"),
+		needs(req_answer(PROC_REF(label_refusal), step = "label")), then(PROC_REF(label_applied)))
 	derives(nameof(base_name), PROC_REF(name_at_start))
 	derives(nameof(base_desc), PROC_REF(desc_at_start))
 
+MSG_DEF_SELF(pill_bottle/label_too_long, "The label can be at most 50 characters long.")
+
+/// The label a pen wrote, cleaned the way it is kept.
+/obj/item/storage/pill_bottle/proc/label_written(datum/act/op/A)
+	return sanitizeSafe("[A.step_value("label")]", MAX_NAME_LEN)
+
+/// A label of more than 50 letters is refused.
+/obj/item/storage/pill_bottle/proc/label_refusal(datum/act/op/A)
+	return length(label_written(A)) > 50 ? MSG(pill_bottle/label_too_long) : null
+
 /// A pen wrote `value` on the bottle: the label (up to 50 letters; the name shows 10).
 /obj/item/storage/pill_bottle/proc/label_applied(datum/act/op/A)
-	var/datum/prompt/R = A.answer
 	var/mob/user = A.actor
-	var/tmp_label = sanitizeSafe("[R?.value]", MAX_NAME_LEN)
-	if(length(tmp_label) > 50)
-		log_world("PILL BOTTLE: [src] label too long after the prompt check")
-		return OP_FAILED
+	var/tmp_label = label_written(A)
 	if(length(tmp_label) > 10)
 		to_chat(user, span_notice("You set the label."))
 	else

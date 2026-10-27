@@ -125,6 +125,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
 // Charges a tesla shot, while emitting a dangerous electric field. The exosuit is immune to electric damage while this is ongoing.
 // It also briefly blinds anyone looking directly at the mech without flash protection.
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/electric_defense(atom/target)
+	if(energy_ball || after_pending(src, "energy_ball"))
+		log_game("[key_name(src)] electric defense ignored: a charge is already running")
+		return // one charge at a time: a second would restart the countdown and keep the first one's saved shock resist as the shield
 
 	// Temporary immunity to shock to avoid killing themselves with their own attack.
 	var/old_shock_resist = shock_resist
@@ -164,9 +167,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
 			M.take_damage(i * 2, "energy") // Mechs don't have a concept for siemens so energy armor check is the best alternative.
 
 	if(i < 10)
-		after(src, 1 SECOND, PROC_REF(energy_ball_pulse), key = "energy_ball_pulse", with = list(i + 1, old_shock_resist))
+		after(src, 1 SECOND, PROC_REF(energy_ball_pulse), key = "energy_ball", with = list(i + 1, old_shock_resist))
 		return
-	after(src, 1 SECOND, PROC_REF(energy_ball_discharge), key = "energy_ball_discharge", with = list(old_shock_resist))
+	after(src, 1 SECOND, PROC_REF(energy_ball_discharge), key = "energy_ball", with = list(old_shock_resist))
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_discharge(old_shock_resist)
 

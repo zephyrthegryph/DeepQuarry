@@ -130,6 +130,9 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 
 /// The item the question was answered with becomes the actor's underwear of the category.
 /obj/structure/undies_wardrobe/proc/ui_act_change_underwear(datum/act/op/A, category)
+	var/datum/prompt/choice/underwear/R = A.step_answer("item")
+	if(!R)
+		return TRUE
 	var/mob/living/carbon/human/H = A.actor
 	var/datum/prompt/answer = A.answer
 	if(!istype(H) || !answer)
