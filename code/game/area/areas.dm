@@ -3,7 +3,7 @@
 GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area
-	var/fire = null
+	var/fire = 0
 	var/atmos = 1
 	var/atmosalm = 0
 	var/poweralm = 1
