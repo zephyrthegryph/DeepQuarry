@@ -162,6 +162,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(simple_mob_blast))))
 	configure(living_rules(vore_capacity = 1, use_modern_ai = TRUE, has_huds = TRUE))
 	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
 	configure(movable_motion(does_spin = FALSE, blocks_emissive = EMISSIVE_BLOCK_UNIQUE)) // no stripping of simplemobs; note, this should be refactored to drop priority overlays
