@@ -156,7 +156,21 @@ if [ "$tgui" -eq 0 ] && git rev-parse -q --verify origin/master >/dev/null; then
 fi
 
 analyze_tests=0
-if git rev-parse -q --verify origin/master >/dev/null && ! git diff --quiet "$(git merge-base origin/master HEAD)" HEAD -- tools/analyze/ tools/ci/lint_scopes.toml; then analyze_tests=1; fi
+# Gate jobs by what changed (since the merge base with origin/master; master itself passed every job in its own gate):
+#   analyze_tests  only when the analyzer or the compiler changed (tools/analyze/, tools/dmb/). A lint_scopes.toml change no longer runs it:
+#                  the ratchet job runs the lints with the new scopes on the real tree (the fixture tests only re-read the scopes).
+#   dreamchecker   only when a file DreamChecker reads (DM, maps, interface, SpacemanDMM.toml) or the generator of the generated DM
+#                  (tools/analyze/) changed; SpacemanDMM has no per-file mode, so a DM change checks the whole tree (verdict reused per key).
+#   ratchets       only when a lint input changed: anything but docs, Markdown and tools/ outside tools/ci, tools/analyze and tools/dx.
+changed_since_base=""
+if git rev-parse -q --verify origin/master >/dev/null; then changed_since_base="$(git diff --name-only "$(git merge-base origin/master HEAD)" HEAD 2>/dev/null)"; fi
+changed_match() { grep -qE "$1" <<<"$changed_since_base"; }
+if changed_match '^tools/(analyze|dmb)/'; then analyze_tests=1; fi
+dc_inputs_changed=1
+changed_match '\.(dm|dme|dmm|dmf)$|^(code|maps|interface)/|^SpacemanDMM\.toml$|^tools/analyze/' || dc_inputs_changed=0
+lint_inputs_changed=1
+if [ -n "$changed_since_base" ] && ! grep -vqE '^doc/|\.md$|^tools/' <<<"$changed_since_base" && ! changed_match '^tools/(ci|analyze|dx)/'; then lint_inputs_changed=0; fi
+[ -n "$changed_since_base" ] || lint_inputs_changed=1
 
 # ---- the test list ---------------------------------------------------------------------------------------------------------
 tests=()
@@ -297,13 +311,14 @@ job_dreamchecker() {
 }
 job_ratchets() {
 	# The analyze caches are content-addressed and stamped with the engine's own source hash and lint_scopes.toml (tools/analyze/README.md,
-	# "Caches and truth"; tests/cache_truth.rs holds the property), so a warm run answers as a cold one does. The gate still audits that
-	# claim: it runs COLD (private cache, no shared seed, no gen store; ~4 min) when the last passing cold run is older than
-	# DQ_GATE_COLD_EVERY_MIN (720), when the batch changed tools/analyze or lint_scopes.toml, or when DQ_GATE_COLD=1; otherwise warm.
-	local cold_stamp="${DQ_ANALYZE_COLD_STAMP:-E:/dq-cache/analyze-cold-audit.stamp}" want_cold=0 why=""
+	# "Caches and truth"; tests/cache_truth.rs holds the property), so a warm run answers as a cold one does, also when the analyzer changed.
+	# The gate runs warm; a COLD run (private cache, ~4 min) only with DQ_GATE_COLD=1 or DQ_GATE_COLD_EVERY_MIN=<n> (default 0: never on the
+	# gate's critical path; CI's runs are cold by construction). The self-tests of the generators, the disk budget and the test-scratch rule
+	# run only when their own files changed (DQ_RATCHETS_SELFTESTS=changed; tools/ci/check_ratchets.sh).
+	export DQ_RATCHETS_SELFTESTS="${DQ_RATCHETS_SELFTESTS:-changed}"
+	local cold_stamp="${DQ_ANALYZE_COLD_STAMP:-E:/dq-cache/analyze-cold-audit.stamp}" want_cold=0 why="" every="${DQ_GATE_COLD_EVERY_MIN:-0}"
 	if [ "${DQ_GATE_COLD:-0}" = "1" ]; then want_cold=1; why="DQ_GATE_COLD=1"
-	elif [ ! -f "$cold_stamp" ] || [ -n "$(find "$cold_stamp" -mmin +"${DQ_GATE_COLD_EVERY_MIN:-720}" 2>/dev/null)" ]; then want_cold=1; why="no cold audit in the last ${DQ_GATE_COLD_EVERY_MIN:-720} min"
-	elif [ -n "$(git diff --name-only origin/master HEAD -- tools/analyze tools/ci/lint_scopes.toml 2>/dev/null | head -1)" ]; then want_cold=1; why="the analyzer or its scopes changed"
+	elif [ "$every" -gt 0 ] 2>/dev/null && { [ ! -f "$cold_stamp" ] || [ -n "$(find "$cold_stamp" -mmin +"$every" 2>/dev/null)" ]; }; then want_cold=1; why="no cold audit in the last $every min"
 	fi
 	if [ "$want_cold" -eq 1 ]; then
 		echo "dq_merge_gates: ratchets run COLD ($why)"
@@ -322,13 +337,26 @@ job_ratchets() {
 job_tgui() { tools/build/build.sh tgui-lint; }
 job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
 	# Compiled harnesses are cached by source hash (tools/build/lib/analyze_test_cache.md); every harness still runs.
-	CARGO_TARGET_DIR="$(bash tools/dq_cargo_target.sh analyze-test)" tools/build/build.sh analyze-test
+	# gate-test: incremental, persistent per-worktree target (tools/analyze/Cargo.toml); DQ_ANALYZE_TEST_JOBS (4) compile jobs in the cargo slot
+	DQ_ANALYZE_TEST_PROFILE="${DQ_ANALYZE_TEST_PROFILE:-gate-test}" DQ_CARGO_INCREMENTAL=1 \
+		CARGO_TARGET_DIR="$(bash tools/dq_cargo_target.sh analyze-test)" tools/build/build.sh analyze-test
 }
 
 [ "$run_tests" -eq 1 ] && names+=(tests)
-[ "$no_dm" -eq 1 ] && names+=(ratchets) || names+=(dm ratchets)
+ratchets_job=ratchets
+if [ "$lint_inputs_changed" -eq 0 ]; then
+	ratchets_job=""
+	echo "ratchets skipped 0s" >>"$timings"
+	echo "== gates: ratchets skipped: no lint input changed since origin/master (only docs and tools outside tools/ci, tools/analyze, tools/dx)"
+fi
+[ "$no_dm" -eq 1 ] && names+=($ratchets_job) || names+=(dm $ratchets_job)
 dc_key=""
-if [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
+if [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ] && [ "$dc_inputs_changed" -eq 0 ]; then
+	# nothing DreamChecker reads changed since origin/master, whose own gate passed it (the push requires that)
+	dc_ok=1
+	echo "dreamchecker skipped 0s" >>"$timings"
+	echo "== gates: dreamchecker skipped: no DM, map, interface, SpacemanDMM.toml or generator change since origin/master"
+elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
 	# DreamChecker has no incremental mode; its verdict is reused when every file it reads is identical to a tree that passed it
 	# (tools/dq_gate_verdicts.sh: a lane that changed no DM, or a bisect attempt on a tree already checked). Any DM change runs it.
 	dc_key="$(gate_dc_key 2>/dev/null)" || dc_key=""

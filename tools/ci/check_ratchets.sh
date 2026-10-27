@@ -36,13 +36,26 @@ bin="$(bash tools/ci/analyze.sh)" || {
 	exit 1
 }
 
+# DQ_RATCHETS_SELFTESTS=changed (the merge gates set it): the self-tests of a tool (the disk budget, the test-scratch rule, the capability
+# varmap generator's selftest) run only when that tool's own files changed since origin/master; they test the tool, not the tree. Unset
+# or "all" (CI, by hand): every one runs.
+selftest_wanted() { # <regex of the tool's files>
+	[ "${DQ_RATCHETS_SELFTESTS:-all}" = changed ] || return 0
+	local base
+	base="$(git merge-base origin/master HEAD 2>/dev/null)" || return 0
+	git diff --name-only "$base" HEAD 2>/dev/null | grep -qE "$1" && return 0
+	[ -n "$(git status --porcelain --untracked-files=no 2>/dev/null | awk '{print $2}' | grep -E "$1")" ]
+}
+
 # The generator checks stay Python: start them beside the engine.
 gen_dir="$(mktemp -d)"
 run_gen() { # <name> <script> <flag>
 	( "$PY" "$2" "$3" >"$gen_dir/$1.out" 2>&1; echo $? >"$gen_dir/$1.rc" ) &
 }
 run_gen gen_capability_varmap_check tools/dx/gen_capability_varmap.py --check
-run_gen gen_capability_varmap_selftest tools/dx/gen_capability_varmap.py --selftest
+gen_names=(gen_capability_varmap_check)
+if selftest_wanted '^tools/dx/'; then run_gen gen_capability_varmap_selftest tools/dx/gen_capability_varmap.py --selftest; gen_names+=(gen_capability_varmap_selftest)
+else echo "check_ratchets: gen_capability_varmap --selftest skipped (tools/dx unchanged)"; fi
 
 # The generated DM (code/engine/_generated/, code/_generated/reads.dm, the tgui .d.ts) is not committed;
 # every build writes it, and so does this, before the lints that read it. It fails on what still matters:
@@ -61,15 +74,17 @@ if ! "$bin" check --ci "$@"; then
 	failed+=("analyze check")
 fi
 
-if ! bash tools/ci/test_disk_budget.sh; then
+if ! selftest_wanted '^tools/(dq_disk_budget\.sh|ci/disk_budget\.toml|ci/test_disk_budget\.sh)$'; then echo "check_ratchets: test_disk_budget skipped (the disk budget is unchanged)"
+elif ! bash tools/ci/test_disk_budget.sh; then
 	failed+=("test_disk_budget")
 fi
-if ! bash tools/ci/check_test_scratch.sh; then
+if ! selftest_wanted '\.rs$|^tools/ci/check_test_scratch\.sh$'; then echo "check_ratchets: check_test_scratch skipped (no Rust file changed)"
+elif ! bash tools/ci/check_test_scratch.sh; then
 	failed+=("check_test_scratch")
 fi
 
 wait
-for name in gen_capability_varmap_check gen_capability_varmap_selftest; do
+for name in "${gen_names[@]}"; do
 	echo "::group::$name"
 	cat "$gen_dir/$name.out"
 	if [ "$(cat "$gen_dir/$name.rc" 2>/dev/null || echo 1)" != "0" ]; then

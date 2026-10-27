@@ -75,3 +75,17 @@ incremental = false
 opt-level = 3
 codegen-units = 16
 incremental = false
+
+# The merge gates' `analyze_tests` job (tools/dq_merge_gates.sh, DQ_ANALYZE_TEST_PROFILE=gate-test): the job runs exactly when the
+# analyzer's sources changed, so the harness cache misses then and the build is on the gate's critical path (9 min with the `test`
+# profile, incremental off, 2 jobs). Incremental, many codegen units and line tables only, in the worktree's persistent target
+# (tools/dq_cargo_target.sh analyze-test): an edit rebuilds the touched units; dependencies stay optimized and are built once.
+[profile.gate-test]
+inherits = "dev"
+opt-level = 1
+debug = "line-tables-only"
+incremental = true
+codegen-units = 256
+
+[profile.gate-test.package."*"]
+opt-level = 2

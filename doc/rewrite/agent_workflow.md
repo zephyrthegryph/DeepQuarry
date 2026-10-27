@@ -821,3 +821,35 @@ New state: `precheck/` (verdicts, running markers, probe marks; kept 3 days), `p
 leaves them alone), `batch_limit_pre`, `verdicts/`; logs `log/precheck-<lane>-*.log`; worktrees `train-pre1`, `train-pre2`, `train-bisect` (kept by
 `dq_worktree.sh gc`, permanent in `disk_budget.toml`). Tests: `tools/ci/test_train.sh` "prechecks" and "DreamChecker verdicts", `tools/ci/test_merge_batch.sh`
 "parallel bisect" and "deepquarry.dme", `bun test tools/ci/analyze_test_cache.test.ts tools/build/lib/compile_root.test.ts`.
+
+### 29b. Batch size, moved tips, gates by what changed (27 October 2026, `tools/train-conflict-limit`)
+
+- **Only a failed test shrinks the batch.** A lane bounced for a merge conflict, a moved tip, or a DreamChecker or ratchet culprit says
+  nothing about how many lanes fit (the bisect already isolated it), so the batch limit stays; a cycle in which no lane failed a test
+  sets it back to the maximum at once (it used to double step by step: one conflict on 26 October left the train at 1 lane per cycle).
+  A capped test phase still halves it.
+- **A moved tip is adopted, not bounced.** A lane that committed more after it was enqueued keeps its place: the next cycle takes the
+  new tip (log: `adopted the new tip`), and a precheck of the new tip follows. A tip that moves while its lane rides a cycle is carried
+  to the next cycle (`mark_landed` keeps the lane queued while its branch holds commits master lacks). A light lane's new tip is pushed
+  to origin first (never forced); if that push is refused, it is bounced as before.
+- **A lane with no DM rides the light path.** A lane enqueued without `--light` whose change touches no DM path, `tools/dmb/` or
+  `tools/build/` is promoted to light (its tip pushed to origin): it never starts a DM world. Light lanes go first and alone
+  (`DQ_TRAIN_LIGHT_FIRST`); they no longer ride a DM gate. `DQ_TRAIN_AUTO_LIGHT=0` turns the promotion off.
+- **Two test worlds.** The gate's union of tests runs in `DQ_TRAIN_TEST_WORLDS` (2) worlds at once (`DQ_MAIN_WORLDS`, any list over 8
+  selectors is split; one compile). The selection budget is `DQ_TRAIN_TEST_BUDGET_SEC` (420) per world, less one 30 s boot per extra world
+  (810 s of summed test time), so heavy lanes that one world deferred ride the same cycle.
+- **Gate jobs by what changed** (`dq_merge_gates.sh`, since the merge base with origin/master, whose own gate passed every job):
+  `analyze_tests` only for `tools/analyze/` or `tools/dmb/` (a `lint_scopes.toml` change runs the lints on the real tree in the ratchet job,
+  not the fixture tests); DreamChecker only when DM, maps, interface, `SpacemanDMM.toml` or the generator (`tools/analyze/`) changed
+  (SpacemanDMM has no per-file mode: a DM change still checks the whole tree, with the verdict reused per input key, 29a); ratchets only
+  when a lint input changed (anything but docs, Markdown and `tools/` outside `tools/ci`, `tools/analyze`, `tools/dx`). The ratchets run
+  warm: a change to the analyzer no longer forces a cold run (the caches are keyed by the engine's source hash); a cold audit runs only with
+  `DQ_GATE_COLD=1` or `DQ_GATE_COLD_EVERY_MIN=<n>`. `check_ratchets.sh` runs the self-tests of the disk budget, the test-scratch rule and the
+  varmap generator only when their own files changed (`DQ_RATCHETS_SELFTESTS=changed`, set by the gates; CI runs all).
+- **analyze_tests builds incrementally.** The job uses the `gate-test` profile (`tools/analyze/Cargo.toml`: incremental, 256 codegen units,
+  line tables, optimized dependencies) in the worktree's persistent target with 4 jobs (`DQ_ANALYZE_TEST_JOBS`), so the build that the
+  job exists for (an analyzer change) rebuilds the touched units instead of the whole crate.
+- **`bash tools/dq_train.sh lanes [--since T]`** (`tools/train/lane_times.py`): per lane, the time waiting in the queue, inside cycles and
+  fixing after a bounce, and the mean of every gate phase over `train-base/data/merge-gates/*.timings`. On 26 October from 14:00Z: 33 lane
+  episodes, mean 2h22m waiting, 36m in cycles, 3m fixing (79% of a lane's life was queue wait); gate means analyze_tests 533 s,
+  DreamChecker 361 s, tests 345 s, ratchets 210 s, wall 544 s.
