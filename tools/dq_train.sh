@@ -121,6 +121,17 @@ repo_dir() { # the checkout the cycle reads and runs light batches from: the tra
 	else echo "${DQ_TRAIN_MAIN_REPO:-E:/projects/CHOMPStation2}"; fi
 }
 G() { git -C "$(repo_dir)" "$@"; }
+wait_change() { # <max secs> <dir...>: sleep until a directory's listing changes (2 s ticks), at most <max secs>
+	local max="$1" w=0 sig now_sig
+	shift
+	sig="$(ls -l --time-style=+%s "$@" 2>/dev/null | cksum)"
+	while [ "$w" -lt "$max" ]; do
+		sleep 2; w=$((w + 2))
+		now_sig="$(ls -l --time-style=+%s "$@" 2>/dev/null | cksum)"
+		[ "$now_sig" = "$sig" ] || return 0
+	done
+	return 0
+}
 phase() { printf '%s\t%s\n' "$(date +%s)" "$*" >"$STATE/cycle.txt" 2>/dev/null || true; }
 read_list() { # a tools/ci test list: names without comments
 	[ -f "$1" ] || return 0
@@ -299,8 +310,9 @@ precheck_ensure() { # start the prechecker when prechecks are on, lanes are queu
 }
 cmd_ensure() {
 	init_state
-	# a running integrator starts the prechecker itself at its next cycle (from its own snapshot)
-	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; return 0; fi
+	# A running integrator only starts the prechecker between cycles: a lane enqueued during a 10-minute cycle waited for its end before its
+	# precheck even began (27 October: 11 of migrate/ratchet-tail's 34 minutes in the queue). Start it now, from the integrator's snapshot.
+	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; precheck_ensure; return 0; fi
 	# The watchdog callers (dq_lane_pool.sh lease and release) ask on every call: with nothing queued there is nothing to run.
 	[ -n "$(queue_branches)" ] || return 0
 	# The integrator runs from a snapshot (the lane's worktree is released and reset while it works); the helpers are read from its worktree.
@@ -625,7 +637,7 @@ cmd_precheck_run() {
 			# wake when a worker ends, at most DQ_TRAIN_PRECHECK_POLL_SEC later (new lanes are looked at then)
 			local w=0; while [ "$w" -lt "${DQ_TRAIN_PRECHECK_POLL_SEC:-60}" ]; do sleep 2; w=$((w + 2)); for i in "${!wpid[@]}"; do kill -0 "${wpid[$i]}" 2>/dev/null || break 2; done; done
 		else
-			sleep "${DQ_TRAIN_PRECHECK_POLL_SEC:-60}"
+			wait_change "${DQ_TRAIN_PRECHECK_POLL_SEC:-60}" "$Q"   # an enqueue starts its precheck at once
 		fi
 	done
 }
@@ -649,6 +661,52 @@ global_hit() { # <rev range>: 0 when it touches a global path
 		for p in $g; do case "$f" in "$p"*) return 0 ;; esac; done
 	done < <(G diff --name-only "$1" 2>/dev/null)
 	return 1
+}
+
+# ---- DreamChecker for a prechecked batch (no run when the lanes' DreamChecker inputs are disjoint) ----------------------------------
+# SpacemanDMM checks only the whole tree (5-11 min). Every lane of a prechecked batch passed it alone on its merge with master. When no
+# two lanes, and no lane and what master changed since its precheck, change the same DreamChecker input file, and no lane touches a
+# global path (train_interact_global.txt: defines, engine, controllers, maps, build) or the generator (tools/analyze/), the batch keeps
+# those verdicts: the gate's dreamchecker job is skipped (DQ_GATE_DC_DISJOINT; "dreamchecker trusted" in the timings). Anything else runs it
+# (its verdict is still reused per input key, tools/dq_gate_verdicts.sh). DQ_TRAIN_DC_DISJOINT=0 turns this off.
+warm_train_root() { # the train compile root (merge, pre<N>) whose test build is newest; nothing when DQ_TRAIN_WARM_ROOT=0 or none is known
+	[ "${DQ_TRAIN_WARM_ROOT:-1}" = 1 ] || return 0
+	local roots="${DQ_DMB_ROOTS:-E:/dq-cache/dmb-roots}" r best="" bt=0 t
+	for r in merge $(seq -f 'pre%g' 1 "$PRE_WORKERS"); do
+		t="$(stat -c %Y "$roots/deepquarry-$r/deepquarry.test.dmb-pair.json" 2>/dev/null)" || continue
+		[ "$t" -gt "$bt" ] && { bt="$t"; best="$r"; }
+	done
+	echo "$best"
+}
+dc_inputs() { # <rev range>: the DreamChecker input files it changes (what gate_dc_key hashes, less the manifest every lane touches)
+	G diff --name-only "$1" 2>/dev/null | awk '/^(doc|tools|tgui|html\/changelogs|\.github|SQL)\// || /\.md$/ || /^deepquarry\.dme$/ { next } { print }' | sort -u
+}
+dc_disjoint() { # <lanes...>: 0 and DC_DISJOINT_WHY set when the batch may keep the lanes' DreamChecker verdicts
+	local b tip vf pm seen="" files f master
+	DC_DISJOINT_WHY=""
+	[ "${DQ_TRAIN_DC_DISJOINT:-1}" = 1 ] || return 1
+	master="$(G rev-parse origin/master 2>/dev/null)" || return 1
+	declare -A owner=()
+	for b in "$@"; do
+		tip="${TIP_OF[$b]:-$(qget "$(qfile "$b")" tip)}"
+		vf="$(pre_verdict_file "$b" "$tip")"
+		[ -n "$vf" ] && [ "$(qget "$vf" verdict)" = pass ] || return 1
+		pm="$(qget "$vf" master)"
+		[ -n "$pm" ] && G merge-base --is-ancestor "$pm" "$master" 2>/dev/null || return 1
+		global_hit "$master...$tip" && return 1
+		G diff --name-only "$master...$tip" 2>/dev/null | grep -qE '^tools/analyze/|^SpacemanDMM\.toml$' && return 1
+		files="$(dc_inputs "$master...$tip")"
+		# what master changed since this lane's precheck must not touch the lane's files (master's own gate checked master)
+		if [ "$pm" != "$master" ] && [ -n "$files" ] && [ -n "$(comm -12 <(printf '%s\n' "$files") <(dc_inputs "$pm..$master"))" ]; then return 1; fi
+		while IFS= read -r f; do
+			[ -n "$f" ] || continue
+			[ -z "${owner[$f]:-}" ] || return 1
+			owner[$f]="$b"
+		done <<<"$files"
+		seen="$seen $b@${pm:0:10}"
+	done
+	DC_DISJOINT_WHY="every lane passed DreamChecker in its precheck (${seen# }) and no two change the same DreamChecker input"
+	return 0
 }
 
 # ---- one cycle ------------------------------------------------------------------------------------------------------------------
@@ -903,6 +961,10 @@ heavy_cycle_gate() {
 		if wt_ready "$WT2"; then wt2_use="$WT2"
 		else ( ensure_wt_at "$WT2" ) >/dev/null 2>&1 & disown $! 2>/dev/null || true; fi # one-time checkout in the background; used from the next cycle
 	fi
+	local dc_why="" warm_root
+	warm_root="$(warm_train_root)"
+	[ -z "$warm_root" ] || [ "$warm_root" = merge ] || tlog "compile root: the batch compiles in deepquarry-$warm_root (the train root compiled last: its daemon session is the warm one)"
+	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && dc_disjoint "${CHOSEN[@]}"; then dc_why="$DC_DISJOINT_WHY"; tlog "dreamchecker: $dc_why; the batch keeps those verdicts"; fi
 	phase "gate: ${CHOSEN[*]}"
 	tlog "heavy cycle: ${#CHOSEN[@]} lane(s) [${CHOSEN[*]}]$([ "${PRECHECKED_BATCH:-0}" = 1 ] && echo " (all prechecked; bisect to the end$([ -n "$wt2_use" ] && echo ", halves in parallel"))"), tests [$tests_union] (+ smoke set, est ~${BATCH_EST}s), test cap ${TEST_MAX_MIN} min, $([ -n "$deadline_use" ] && echo "no new attempt after $(date -u -d "@$deadline" +%H:%MZ 2>/dev/null || echo "$CYCLE_MAX_MIN min")" || echo "no cycle deadline"); log $out"
 	for b in "${CHOSEN[@]}"; do bump_attempts "$b"; done
@@ -915,6 +977,8 @@ heavy_cycle_gate() {
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
 		export DQ_GATE_DREAMCHECKER=1
+		[ -z "$dc_why" ] || export DQ_GATE_DC_DISJOINT="$dc_why"
+		[ -z "$warm_root" ] || export DQ_TRAIN_ROOT_KEY="$warm_root"
 		export DQ_BATCH_CACHE="$STATE/bisect.cache"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
@@ -1052,7 +1116,8 @@ cycle() {
 		light_cycle
 	else
 		# only exit 4 is a real floor breach (the REFUSED message above in this log has the free GB and the floor); anything else is a warning and the cycle runs
-		disk_budget gate "a heavy train cycle" --sync --throttle 10; local drc=$?
+		# the floor is checked here; the housekeeping enforcement runs detached (synchronous it held the cycle 2-8 minutes, 27 October)
+		disk_budget gate "a heavy train cycle" --throttle 10; local drc=$?
 		if [ "$drc" -eq 4 ]; then
 			tlog "disk floor: the cycle is skipped, the lanes stay queued; free space (see the REFUSED message above in this log), then the next cycle runs"
 			return 0
@@ -1097,7 +1162,8 @@ cmd_run() {
 			# waiting for prechecks is not a stall; look again shortly (a verdict, a new lane, or a lane past the wait limit)
 			idle=0
 			if [ "${DQ_TRAIN_NO_START:-0}" = 1 ] && ! prechecker_alive; then tlog "waiting for prechecks, and DQ_TRAIN_NO_START=1 starts no prechecker: the integrator exits"; exit 0; fi
-			sleep "${DQ_TRAIN_PRECHECK_WAIT_SEC:-60}"
+			# wake as soon as a verdict or a lane arrives (a precheck that passed is taken within seconds), at most every PRECHECK_WAIT_SEC
+			wait_change "${DQ_TRAIN_PRECHECK_WAIT_SEC:-60}" "$PRE/v" "$Q"
 			continue
 		fi
 		if [ "$CYCLE_PROGRESS" -eq 0 ]; then

@@ -466,7 +466,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			log_qdel("OM: timer [proc_ref] on [E] ([E.type]) runs with [nulled] deleted argument(s) passed as null")
 		if(timer_flags & OM_TIMER_OWNER_FIRST)
 			captured = captured ? list(E) + captured : list(E)
-		CHURN_COUNT(timers, "[E.type] [proc_ref]")
+		CHURN_COUNT(timers, "[E.type] [timer_census_name(proc_ref, captured)]")
 		GLOB.timer_fire_quiet = FALSE
 		try
 			deferred_guarded_call(E, proc_ref, captured, is_global)
@@ -592,3 +592,13 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// Set by an every() fire that ran none of its holder's work (its gate skipped the run, or it only queued it): the timer that fired it does not
 /// redraw the holder (refresh_dispatched()). Cleared around each timer call.
 GLOBAL_VAR_INIT(timer_fire_quiet, FALSE)
+
+/// The churn census name of a fired timer: the handler an after() timer wraps (rx_timer_fire), and the number of a type-level every().
+/proc/timer_census_name(proc_ref, list/captured)
+	if(proc_ref != GLOBAL_PROC_REF(rx_timer_fire) || length(captured) < 5)
+		return "[proc_ref]"
+	var/handler = captured[2]
+	if(handler == GLOBAL_PROC_REF(type_every_fire))
+		var/list/every_args = captured[5]
+		return "every #[length(every_args) >= 3 ? every_args[3] : "?"]"
+	return "[handler]"

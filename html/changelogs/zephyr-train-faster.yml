@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Batch train waits less: an enqueue starts its precheck at once, a reused proof keeps its DreamChecker stamp (no rebuild in the push), batches of disjoint prechecked lanes skip DreamChecker, the disk housekeeping runs detached, and the batch compiles in the warm compile root"

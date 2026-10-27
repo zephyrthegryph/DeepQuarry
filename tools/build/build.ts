@@ -3698,7 +3698,9 @@ export const ServerTarget = new Juke.Target({
         ddSecurityFlag(),
         '-invisible',
         '-params',
-        'config-directory=config/example',
+        // dd_log=1: an -invisible world has no console, so the world writes world.log (every runtime) to the round's dd.log.
+        // DQ_SERVER_CONFIG_DIR picks another config folder (a local copy with AUTO_PROFILE on profiles the boot, for example).
+        `config-directory=${process.env.DQ_SERVER_CONFIG_DIR || 'config/example'}&dd_log=1`,
       );
     } finally {
       webroot.kill();

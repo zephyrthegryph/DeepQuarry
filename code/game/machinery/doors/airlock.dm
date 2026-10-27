@@ -752,10 +752,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// If we are not on a planet don't bother checking again. We physically cannot be outdoors. Except shuttles...
-	var/area/our_area = get_area(src)
-	var/turf/our_turf = get_turf(src)
-	if(!our_turf || (!istype(our_area, /area/shuttle) && (!SSplanets.planet_at_z(our_turf.z))))
+	if(!airlock_weather_exposed(src))
 		return
+	var/turf/our_turf = get_turf(src)
 	if(operating)
 		return
 	// Door must be facing the outdoors and the temp of the air must be low enough
@@ -774,6 +773,13 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	else if(planet_temp > T0C) // Above 0 to have any chance at unfreezing
 		if(frozen && prob(20))
 			set_frozen(FALSE)
+
+/// Whether weather can reach `door`: it is on a planet's level, or in a shuttle (which may land on one).
+/proc/airlock_weather_exposed(obj/machinery/door/airlock/door)
+	var/turf/our_turf = get_turf(door)
+	if(!our_turf)
+		return FALSE
+	return istype(get_area(door), /area/shuttle) || !!SSplanets.planet_at_z(our_turf.z)
 
 /// Most airlocks don't freeze, subtypes set this
 /obj/machinery/door/airlock/proc/can_freeze(datum/act/A)
