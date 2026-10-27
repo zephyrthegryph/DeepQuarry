@@ -180,9 +180,7 @@ impl From<Arc<str>> for SourceText {
     }
 }
 impl From<String> for SourceText {
-    fn from(mut text: String) -> Self {
-        // The backing is immutable and long-lived: growth slack from the builder would be retained with it.
-        text.shrink_to_fit();
+    fn from(text: String) -> Self {
         let length = text.len();
         Self {
             backing: Arc::new(Backing {
