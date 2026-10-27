@@ -420,15 +420,19 @@ impl BuildHost {
             publishable,
         ))
     }
+    /// `facts_policy` keys the caches whose content does not depend on `DEBUG` (`ProcedureMemo::facts_policy`): the
+    /// initializer transport, whose lowered code always carries debug ops (stripped at link without `DEBUG`).
     pub(crate) fn procedure_memo(
         &mut self,
         policy: u128,
+        facts_policy: u128,
         disk: Option<Arc<disk::LazyDisk>>,
         publishable: bool,
     ) -> Option<crate::lowering_memo::ProcedureMemo> {
         if self.memo.is_none() {
             return Some(initializers::one_shot(
                 policy,
+                facts_policy,
                 disk,
                 publishable,
                 self.engine.as_ref(),
@@ -486,7 +490,7 @@ impl BuildHost {
             crate::initializer_lowering::disk::Transport::new(
                 disk,
                 self.engine.as_ref().map(|engine| engine.abi_engine_owner()),
-                policy,
+                facts_policy,
                 publishable,
                 dep_index.clone(),
             )
@@ -945,8 +949,8 @@ mod tests {
         assert!(!Arc::ptr_eq(&first, &second));
         assert!(Arc::ptr_eq(&first.payload, &second.payload));
         assert_ne!(first.configuration.project, second.configuration.project);
-        let a_memo = a.procedure_memo(1, None, true).unwrap();
-        let b_memo = b.procedure_memo(1, None, true).unwrap();
+        let a_memo = a.procedure_memo(1, 1, None, true).unwrap();
+        let b_memo = b.procedure_memo(1, 1, None, true).unwrap();
         assert!(!Arc::ptr_eq(&a_memo.values, &b_memo.values));
     }
     #[test]
@@ -1026,12 +1030,12 @@ mod tests {
     #[test]
     fn procedure_facades_share_only_values_and_policy_change_replaces_store() {
         let mut host = BuildHost::default();
-        let first = host.procedure_memo(1, None, true).unwrap();
+        let first = host.procedure_memo(1, 1, None, true).unwrap();
         first
             .counts
             .resident_hits
             .store(7, std::sync::atomic::Ordering::Relaxed);
-        let second = host.procedure_memo(1, None, true).unwrap();
+        let second = host.procedure_memo(1, 1, None, true).unwrap();
         assert!(Arc::ptr_eq(&first.values, &second.values));
         assert_eq!(
             second
@@ -1040,10 +1044,10 @@ mod tests {
                 .load(std::sync::atomic::Ordering::Relaxed),
             0
         );
-        let changed = host.procedure_memo(2, None, true).unwrap();
+        let changed = host.procedure_memo(2, 2, None, true).unwrap();
         assert!(!Arc::ptr_eq(&first.values, &changed.values));
         let mut one_shot = BuildHost::one_shot();
-        let request = one_shot.procedure_memo(1, None, true).unwrap();
+        let request = one_shot.procedure_memo(1, 1, None, true).unwrap();
         assert!(request.initializer_fragments.is_some());
         assert!(request.initializer_assemblies.is_some());
         assert!(one_shot.procedures.is_none());
@@ -1081,16 +1085,16 @@ mod tests {
     fn one_shot_without_disk_has_no_expansion_memo_or_retained_procedure_owner() {
         let mut host = BuildHost::one_shot();
         assert!(host.expansion_memo(None).is_none());
-        let no_engine = host.procedure_memo(1, None, true).unwrap();
+        let no_engine = host.procedure_memo(1, 1, None, true).unwrap();
         assert!(no_engine.abi.as_ref().unwrap().engine_owner().is_none());
         let engine = capture(&mut host, BTreeMap::new());
-        let request = host.procedure_memo(1, None, true).unwrap();
+        let request = host.procedure_memo(1, 1, None, true).unwrap();
         let abi = request.abi.as_ref().unwrap();
         assert!(Arc::ptr_eq(
             abi.engine_owner().unwrap(),
             &engine.abi_engine_owner(),
         ));
-        let next_request = host.procedure_memo(1, None, true).unwrap();
+        let next_request = host.procedure_memo(1, 1, None, true).unwrap();
         assert!(!Arc::ptr_eq(abi, next_request.abi.as_ref().unwrap()));
         assert!(Arc::ptr_eq(
             abi.engine_owner().unwrap(),

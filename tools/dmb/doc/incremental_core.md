@@ -837,5 +837,22 @@ none of them. Same measurement: regions expanded again 5917 -> 30-32 (13174 reus
 quieter round against 2.1-2.3 s for the previous slice (the other round was loaded on both sides). Test
 `a_new_macro_used_in_adopted_text_expands_that_text_again`. `dmb-equiv` against a fresh compile: EQUIVALENT, two rounds.
 
+**A new define variant starts from the active variant's frontend (compiler/test-increment-3).** `switch_variant` seeds the
+new variant's semantic state with the left variant's last frontend (`RetainedSemanticTree::seed_previous_frontend`);
+`previous_frontend` no longer requires equal defines, because the ordered pass adopts only what the differing macros do
+not reach, and the changed-files patch is taken only for a plan of the same defines (`DirectivePlan::defines`). Test
+`a_plan_of_other_defines_is_a_base_for_the_ordered_pass_and_never_for_the_patch` (plan equal to a full pass; four
+subtrees adopted, all rebased). The production memory probe of the test variant (`bench/shared_store_probe.sh`, game then
+test world) is queued for when the machine has 28 GB free; measured before this lane, the test world added 3.04 GB
+requested live, of which about 470 MB were preprocessor owners (region memo 118, expansion 105, directives 84, joined
+text 79, environments 44, trace arena 39).
+
+**Initializer, map and modified-instance code is `DEBUG`-independent (same lane).** Their lowering always emits
+`DbgFile`/`DbgLine` (`initializer_lowering`, `map_artifacts`, `modified_initializers`: `ops: true`) and a build without
+`DEBUG` strips them when the words are wired (`symbolic::debug_strip`, as for procedure bodies); the initializer disk
+transport is keyed by the facts policy (`BuildHost::procedure_memo` takes it), so the game and test worlds share those
+records. Checked against the compiler before the change: 416 fixture compiles (`fixtures/*.dme`, `lowering/`, `native/`,
+`native_compiler/`, each with and without `-DDEBUG`, `--no-daemon --no-cache`) produced identical `.dmb` bytes.
+
 Next: start a new define variant (the unit-test world) from the active variant's plan, so the test
 world's plan, regions and expansions are an increment over the game's.

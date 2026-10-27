@@ -340,7 +340,8 @@ fn finish_collection<R: Resolver>(
         artifacts: Vec::new(),
     };
     while let Some((symbol, captured, mut source)) = pending.pop_front() {
-        source.ops = frontend.is_none_or(|frontend| frontend.plan.final_macros.contains_key("DEBUG"));
+        // Always emitted; stripped at link without DEBUG (`symbolic::debug_strip`).
+        source.ops = true;
         let descriptor = &captured.descriptor;
         let lowered = retained::lower(
             symbol,
