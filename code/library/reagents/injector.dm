@@ -15,11 +15,14 @@
 //   unload         (`vial` names the holder var of the vial slot) an empty hand on the injector, held in the other hand: the vial comes out
 //
 // Requirements: something in it, nothing a belly made for somebody who will not take it, the limb aimed at is there. The thick hide of some species
-// is a roll made when the needle goes in (a first effect of both ops): it turns the injection away.
+// is a roll made when the needle goes in (each op's chance()): a failed one turns the injection away.
 
 CAPABILITY_TYPE(injector, CAP_INJECTOR, /datum/capability/lib/injector, key = NONE, slow = null, vial = null, resist_wait = 30)
 
 MSG_DEF_SELF(injector/empty, "It is empty.")
+/datum/msg/injector/thick_hide
+	self = "Your needle fails to penetrate %LIMB%'s thick hide..."
+	span_class = "warning"
 MSG_DEF_SELF(injector/limb_missing, "They are missing that limb!")
 MSG_DEF_SELF(injector/from_belly, "That contains something produced from a belly, and it won't be taken!")
 MSG_DEF(injector/begin, "You begin to inject %T% with %I%.", "%U% is trying to inject %T% with %I%!")
@@ -30,12 +33,12 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 		op("inject", at_target(/mob/living/carbon/human), when(not(CAP_PROC(goes_slowly))), priority(OP_PRIORITY_PART), label("Inject"),
 			needs(req_reagents(1, because = MSG(injector/empty)), req(CAP_PROC(belly_free)),
 				req(CAP_PROC(limb_there))),
-			then(CAP_PROC(skin_holds_up))),
+			chance(CAP_PROC(needle_gets_through), otherwise = list(says(MSG(injector/thick_hide))))),
 		op("inject_slowly", at_target(/mob/living/carbon/human), when(CAP_PROC(goes_slowly)), priority(OP_PRIORITY_PART), label("Inject"),
 			begins(CAP_PROC(begin_message)), wait(CAP_PROC(slow_wait)),
 			needs(req_reagents(1, because = MSG(injector/empty)), req(CAP_PROC(belly_free)),
 				req(CAP_PROC(limb_there))),
-			then(CAP_PROC(skin_holds_up))),
+			chance(CAP_PROC(needle_gets_through), otherwise = list(says(MSG(injector/thick_hide))))),
 		vial ? op("unload", hand(), when(CAP_PROC(unloadable)), priority(OP_PRIORITY_NORMAL + 5), label("Remove the vial")) : null)
 
 /// Is the injector slow: a var of the holder says so.
@@ -67,17 +70,13 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 	var/mob/user = A.actor
 	return (!hud_of(user)?.zone_sel || !!target.get_organ(hud_of(user)?.zone_sel?.selecting)) ? null : /datum/msg/injector/limb_missing
 
-/// The roll of a thick hide: TRUE (the injection goes on) unless it turns the needle away.
-/datum/capability/lib/injector/proc/skin_holds_up(datum/act/op/A)
+/// The chance (percent) the needle goes in: the thick hide of some species at the limb aimed at may turn it away (the op's chance(): a failed roll
+/// says so, and the holder's injection effect does not run).
+/datum/capability/lib/injector/proc/needle_gets_through(datum/act/op/A)
 	var/mob/living/carbon/human/target = A.target
-	var/mob/user = A.actor
-	if(!hud_of(user)?.zone_sel)
-		return OP_OK
-	var/obj/item/organ/external/affected = target.get_organ(hud_of(user)?.zone_sel?.selecting)
-	if(affected && target.thick_skin_holds(affected))
-		to_chat(user, span_warning("Your needle fails to penetrate \the [affected]'s thick hide..."))
-		return OP_REFUSED
-	return OP_OK
+	if(!istype(target) || !hud_of(A.actor)?.zone_sel)
+		return 100
+	return 100 - target.thick_skin_hold_chance(target.get_organ(hud_of(A.actor)?.zone_sel?.selecting))
 
 /// The empty hand takes the vial out of an injector held in the other hand.
 /datum/capability/lib/injector/proc/unloadable(datum/act/op/A)

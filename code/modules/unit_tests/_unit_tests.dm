@@ -385,6 +385,7 @@
 #include "dq_medical_k_c_tests.dm"
 #include "dq_medical_k_a_tests.dm"
 #include "dq_medical_k_b_tests.dm"
+#include "dq_msg_limb_token_tests.dm"
 #include "dq_mutation_tests.dm"
 #include "dq_dna_storage_tests.dm"
 #include "dq_lesion_tests.dm"
