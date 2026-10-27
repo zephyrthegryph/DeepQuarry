@@ -530,6 +530,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		side = TRUE
 	if(probing)
 		GLOB.derive_side_probing = FALSE
+		GLOB.derive_side_base_reached = FALSE // the probe's scratch flag: read above, never left set between refreshes
 		// Type-pure: the type overrides draw()/hidden_verbs()/granted_verbs()/the side effects or it doesn't, whatever
 		// this instance's state drew or hid (review: never record a negative from one result).
 		type_derive_record(D, probe_found & TYPE_DERIVES_LOOK, probe_found & TYPE_DERIVES_VERBS, side)
