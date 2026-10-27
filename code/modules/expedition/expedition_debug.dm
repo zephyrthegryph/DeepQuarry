@@ -70,8 +70,8 @@
 		materialization.degradation_events += "defender initialization failed"
 	site.floors = scan_floors(z)
 	site.status = EXP_STATUS_ACTIVE
-	EXPIRY_STAMP(site, deployed_at, CLOCK_WORLD)
-	EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
+	STAMP(site, deployed_at, CLOCK_WORLD)
+	STAMP(site, last_occupied, CLOCK_WORLD)
 	rel_add(src, nameof(sites), site, "[z]")
 	demand()
 	return site

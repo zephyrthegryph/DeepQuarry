@@ -7,7 +7,7 @@
 	set name = "Knockout Victim"
 	set desc = "Use your psychic influence to put a target into a temporary catatonic state."
 
-	if(ELAPSED_SINCE(src, used_dominate, CLOCK_WORLD) < 150)
+	if(ELAPSED(src, used_dominate, CLOCK_WORLD) < 150)
 		to_chat(src, span_warning("You cannot use that ability again so soon."))
 		return
 	if(host)
@@ -22,7 +22,7 @@
 	for(var/mob/living/carbon/human/attackable in view(attack_range,src))
 		if(attackable.stat != DEAD && !attackable.has_brain_worms())
 			choices += attackable
-	if(ELAPSED_SINCE(src, used_dominate, CLOCK_WORLD) < 150)
+	if(ELAPSED(src, used_dominate, CLOCK_WORLD) < 150)
 		to_chat(src, span_warning("You cannot use that ability again so soon."))
 		return
 
@@ -41,7 +41,7 @@
 
 /mob/living/simple_mob/animal/borer/proc/psychic_knockout(mob/living/carbon/human/attack_target)
 	var/attack_range = 5
-	if(ELAPSED_SINCE(src, used_dominate, CLOCK_WORLD) < 150 || src?.borer_host())
+	if(ELAPSED(src, used_dominate, CLOCK_WORLD) < 150 || src?.borer_host())
 		return
 	if(!(attack_target in view(attack_range,src)))
 		to_chat(src, span_warning("\The [attack_target] escaped your influence..."))
@@ -53,7 +53,7 @@
 	to_chat(src, span_alien("You focus your psychic lance on [attack_target] and freeze their limbs with a wave of terrible dread."))
 	to_chat(attack_target, span_vdanger("You feel a creeping, horrible sense of dread come over you, freezing your limbs and setting your heart racing."))
 	attack_target.status_at_least(STAT_SLEEPING, 10) // This was paralyze, but it resulted in players instantly screaming over radio. So get slept nerds.
-	EXPIRY_STAMP(src, used_dominate, CLOCK_WORLD)
+	STAMP(src, used_dominate, CLOCK_WORLD)
 	add_attack_logs(src, attack_target, "psychic knockout (borer)")
 
 /**

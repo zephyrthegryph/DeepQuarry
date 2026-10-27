@@ -242,16 +242,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 
 // The execution token lives on the member's state (one var read) instead of the item's assoc list: the sweep asks
 // for it twice per member.
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/sequence/token_current(datum/member, now = world.time)
+/datum/work_item/sequence/token_current(datum/member, now)
 	var/datum/seq_state/state = SEQ_STATE_OF(member, def.idx)
 	var/prev = state?.last_at
 	if(isnull(prev))
 		return FALSE
 	return prev >= (clock == CLOCK_WORLD ? now : work_clock_now(clock, member, now))
 
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/sequence/take_dt(datum/member, now = world.time)
+/datum/work_item/sequence/take_dt(datum/member, now)
 	var/datum/seq_state/state = SEQ_STATE_OF(member, def.idx)
 	if(!state)
 		return 0
@@ -260,7 +258,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 	var/prev = state.last_at
 	if(isnull(prev))
 		prev = now - max(interval, world.tick_lag)
-	state.last_at = max(now, 0) // a timestamp is never negative; max() keeps it a plain number
+	state.last_at = now
 	return max(now - prev, 0)
 
 /datum/work_item/sequence/forget(datum/member)
@@ -277,8 +275,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
  * by the end of this tick, catches up by at most KERNEL_SPREAD_CATCHUP shares a pass, and looks at a slot again when
  * its member left during its turn (a member that parks swap-removes itself).
  */
-// ALLOW(sys_world_time_write): the kernel clock: a per-sweep timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/sequence/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now = world.time)
+/datum/work_item/sequence/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now)
 	var/list/members_list = members_of(members)
 	var/count = length(members_list)
 	var/target
@@ -1122,44 +1119,3 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 			var/datum/seq_step/S = seq.missed_wake(E)
 			if(S)
 				. += seq.report_missed(E, S, expected)
-
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-/// Tests: the values of the reads of `S` that are vars of `E`, when it falls asleep.
-/proc/seq_snapshot_note(datum/E, datum/seq_state/state, datum/seq_step/S)
-	// A step earlier in this frame can replan E onto another table; the rest of the frame still walks the old one, and
-	// its positions index a table that no longer exists. Those sleeps are void (the new table starts all awake).
-	if(S.pos > state.table.n || state.table.steps[S.pos] != S)
-		return
-	var/list/snap
-	for(var/key in S.keys)
-		if(!(key in E.vars))
-			continue
-		if(!snap)
-			snap = list()
-		snap[key] = seq_snapshot_value(E.vars[key])
-	if(!snap)
-		return
-	if(length(state.snaps) < S.pos)
-		if(!state.snaps)
-			state.snaps = list()
-		state.snaps.len = state.table.n
-	state.snaps[S.pos] = snap
-
-/proc/seq_snapshot_value(value)
-	if(islist(value))
-		return json_encode(value)
-	if(isdatum(value))
-		return REF(value)
-	return value
-
-/// Tests: the reads of `S` that changed since it fell asleep (no publish woke it), or null.
-/proc/seq_snapshot_diff(datum/E, datum/seq_state/state, datum/seq_step/S)
-	var/list/snap = length(state?.snaps) >= S.pos ? state.snaps[S.pos] : null
-	if(!snap)
-		return null
-	var/list/changed = list()
-	for(var/key in snap)
-		if(seq_snapshot_value(E.vars[key]) != snap[key])
-			changed += key
-	return length(changed) ? jointext(changed, ", ") : null
-#endif

@@ -53,9 +53,14 @@ run_gen() { # <name> <script> <flag>
 	( "$PY" "$2" "$3" >"$gen_dir/$1.out" 2>&1; echo $? >"$gen_dir/$1.rc" ) &
 }
 run_gen gen_capability_varmap_check tools/dx/gen_capability_varmap.py --check
-gen_names=(gen_capability_varmap_check)
+gen_names=(gen_capability_varmap_check gen_dme_check)
 if selftest_wanted '^tools/dx/'; then run_gen gen_capability_varmap_selftest tools/dx/gen_capability_varmap.py --selftest; gen_names+=(gen_capability_varmap_selftest)
 else echo "check_ratchets: gen_capability_varmap --selftest skipped (tools/dx unchanged)"; fi
+# deepquarry.dme is generated and committed: stale (a file added, moved or deleted without the build running), or a macro used before
+# its #define in the generated order, fails here with the regenerate command (python3 tools/build/gen_dme.py).
+run_gen gen_dme_check tools/build/gen_dme.py --check
+if selftest_wanted '^tools/build/(gen_dme\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
+else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchanged)"; fi
 
 # The generated DM (code/engine/_generated/, code/_generated/reads.dm, the tgui .d.ts) is not committed;
 # every build writes it, and so does this, before the lints that read it. It fails on what still matters:

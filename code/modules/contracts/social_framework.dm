@@ -36,7 +36,7 @@
 	var/approved_weight = 0
 	var/status = CONTRACT_STAKEHOLDER_PENDING
 	var/contribution = 0
-	EXPIRY_DECLARE(created_at)
+	var/created_at = 0
 
 /datum/contract_stakeholder_proposal/New(datum/money_account/account, _role_id, _requested_weight)
 	. = ..()
@@ -45,7 +45,7 @@
 	department = account.department_id
 	role_id = _role_id
 	requested_weight = clamp(round(_requested_weight), 1, 3)
-	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
+	STAMP(src, created_at, CLOCK_WORLD)
 
 /// Social contracts keep their exceptional target live until an authorized
 /// head finalizes the outcome or the deadline does so automatically. All
@@ -78,8 +78,8 @@ CAPABILITIES(/datum/contract/social)
 
 /datum/contract/social/on_negotiated_terms_changed()
 	..()
-	minimum_grade_ratio = num_or_null(negotiated_effect("minimum_grade_ratio", CONTRACT_GRADE_MINIMUM_RATIO))
-	success_grade_ratio = num_or_null(negotiated_effect("success_grade_ratio", CONTRACT_GRADE_SUCCESS_RATIO))
+	minimum_grade_ratio = negotiated_effect("minimum_grade_ratio", CONTRACT_GRADE_MINIMUM_RATIO)
+	success_grade_ratio = negotiated_effect("success_grade_ratio", CONTRACT_GRADE_SUCCESS_RATIO)
 
 /datum/contract/social/on_accepted(mob/living/user, atom/source)
 	lock_stakeholder_requirements()
@@ -421,14 +421,14 @@ CAPABILITIES(/datum/contract/social)
 	return complete()
 
 /datum/contract/social/check_deadline()
-	if(state == CONTRACT_ACTIVE && deadline && !BEFORE(src, deadline, CLOCK_WORLD))
+	if(state == CONTRACT_ACTIVE && deadline && COOLDOWN_LAPSED(src, deadline))
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The delivery window closed before the minimum graded outcome and required stakeholder participation were reached.")
-	else if(state == CONTRACT_GRACE && grace_until && !BEFORE(src, grace_until, CLOCK_WORLD))
+	else if(state == CONTRACT_GRACE && grace_until && COOLDOWN_LAPSED(src, grace_until))
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else
@@ -650,3 +650,5 @@ CAPABILITIES(/datum/contract/social)
 	if(distinct_category_target <= 0)
 		return value_ratio
 	return min(value_ratio, clamp(portfolio_category_count() / distinct_category_target, 0, 1))
+SCHEMA(/datum/contract/social, minimum_grade_ratio, num())
+SCHEMA(/datum/contract/social, success_grade_ratio, num())

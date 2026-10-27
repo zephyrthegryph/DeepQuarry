@@ -35,9 +35,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/kernel_latency)
 	input_bins = new /list(KERNEL_LATENCY_BINS)
 	for(var/i in 1 to KERNEL_LATENCY_BINS)
 		input_bins[i] = 0
-#ifdef UNIT_TESTS
-	enabled = FALSE
-#endif
 
 /proc/kernel_latency()
 	RETURN_TYPE(/datum/kernel_latency)

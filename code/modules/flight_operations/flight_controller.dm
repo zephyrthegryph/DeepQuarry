@@ -94,7 +94,7 @@ CAPABILITIES(/datum/system/flight)
 		destination.orbit_inclination = 4
 	else
 		destination.kind = istype(target, /obj/effect/overmap/visitable/ship) ? FLIGHT_DEST_VESSEL : (target.base ? FLIGHT_DEST_STATION : FLIGHT_DEST_ORBIT)
-		destination.orbit_parent_id = text_or_null(first_planet_id())
+		destination.orbit_parent_id = first_planet_id()
 		destination.body_radius = destination.kind == FLIGHT_DEST_STATION ? 1.8 : 1.15
 		destination.body_color = destination.kind == FLIGHT_DEST_STATION ? "#bda5ff" : "#62d5ff"
 		destination.orbit_radius = destination.kind == FLIGHT_DEST_STATION ? 14 : 19
@@ -158,7 +158,7 @@ CAPABILITIES(/datum/system/flight)
 			var/mission_type = pick(mission_types)
 			var/difficulty = pick(EXP_DIFF_LOW, EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH)
 			var/datum/expedition_mission/mission = new mission_type(difficulty)
-			mission.faction_type = text_or_null(expedition_pick_faction(difficulty))
+			mission.faction_type = expedition_pick_faction(difficulty)
 			var/datum/expedition_site/site = SSexpedition.create_site_descriptor(mission, difficulty, null, null, planet.id)
 			if(!site)
 				spent(mission)
@@ -280,7 +280,7 @@ CAPABILITIES(/datum/system/flight)
 
 /datum/system/flight/proc/process_plan(datum/flight_plan/plan)
 	if(plan.state == FLIGHT_PLAN_FAILED)
-		if(!BEFORE(src, plan.terminal_cleanup_at, CLOCK_WORLD))
+		if(COOLDOWN_LAPSED(plan, terminal_cleanup_at))
 			finish_plan(plan)
 		return
 	if(plan.cancel_requested)
@@ -296,7 +296,7 @@ CAPABILITIES(/datum/system/flight)
 				plan.fail("The vessel has no open-space departure landmark.")
 				return
 			plan.state = FLIGHT_PLAN_UNDOCKING
-			EXPIRY_SET(plan, departure_deadline, 20 SECONDS, CLOCK_WORLD)
+			COOLDOWN_START(plan, departure_deadline, 20 SECONDS)
 			plan.vessel.shuttle().short_jump(landable.landmark)
 			return
 		enter_transit(plan)
@@ -306,11 +306,11 @@ CAPABILITIES(/datum/system/flight)
 		if(istype(landable) && landable.status == SHIP_STATUS_OVERMAP && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE)
 			enter_transit(plan)
 			return
-		if(ELAPSED_SINCE(src, plan.departure_deadline, CLOCK_WORLD) > 0)
+		if(ELAPSED(plan, departure_deadline, CLOCK_WORLD) > 0)
 			plan.fail("The vessel could not complete undocking.")
 		return
 	if(plan.state == FLIGHT_PLAN_TRANSIT)
-		if(BEFORE(src, plan.estimated_arrival_at, CLOCK_WORLD))
+		if(COOLDOWN_RUNNING(plan, estimated_arrival_at))
 			return
 		if(plan.generation_state == FLIGHT_GENERATION_RUNNING)
 			plan.state = FLIGHT_PLAN_HOLDING
@@ -330,12 +330,12 @@ CAPABILITIES(/datum/system/flight)
 			return
 		if(!plan.arrival_port() && !plan.destination().expedition()?.landing_waypoint)
 			plan.state = FLIGHT_PLAN_ARRIVED
-			EXPIRY_STAMP(plan, arrival_at, CLOCK_WORLD)
+			STAMP(plan, arrival_at, CLOCK_WORLD)
 			plan.release_leases()
 			finish_plan(plan)
 			return
 		plan.state = FLIGHT_PLAN_ARRIVING
-		EXPIRY_SET(plan, departure_deadline, 30 SECONDS, CLOCK_WORLD)
+		COOLDOWN_START(plan, departure_deadline, 30 SECONDS)
 		return
 	if(plan.state == FLIGHT_PLAN_ARRIVING)
 		var/obj/effect/overmap/visitable/ship/landable/landable = plan.vessel.ship()
@@ -343,18 +343,18 @@ CAPABILITIES(/datum/system/flight)
 		if(!plan.vessel.shuttle() || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE && plan.vessel.shuttle().current_location() == expected_landmark))
 			set_vessel_docked_port(plan.vessel, plan.arrival_port())
 			plan.state = FLIGHT_PLAN_ARRIVED
-			EXPIRY_STAMP(plan, arrival_at, CLOCK_WORLD)
+			STAMP(plan, arrival_at, CLOCK_WORLD)
 			plan.release_leases()
 			finish_plan(plan)
 			return
-		if(ELAPSED_SINCE(src, plan.departure_deadline, CLOCK_WORLD) > 0)
+		if(ELAPSED(plan, departure_deadline, CLOCK_WORLD) > 0)
 			plan.fail("The vessel could not complete its landing sequence.")
 
 /datum/system/flight/proc/enter_transit(datum/flight_plan/plan)
 	set_vessel_docked_port(plan.vessel, null)
 	plan.state = FLIGHT_PLAN_TRANSIT
-	EXPIRY_STAMP(plan, departure_at, CLOCK_WORLD)
-	EXPIRY_SET(plan, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME, CLOCK_WORLD)
+	STAMP(plan, departure_at, CLOCK_WORLD)
+	COOLDOWN_START(plan, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME)
 	if(plan.generation_state != FLIGHT_GENERATION_RUNNING)
 		return TRUE
 	plan.generation_stage = "Generating destination during transit"

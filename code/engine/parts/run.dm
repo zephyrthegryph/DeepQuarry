@@ -439,6 +439,8 @@
 	var/datum/request/request
 	/// The mob the open question was put to when it is not the actor (asks(answerer =)).
 	var/mob/answerer
+	/// The open question's answerer must stay conscious and within reach of the actor (asks(answerer_bound = FALSE) clears it: only the window check applies).
+	var/answerer_bound = TRUE
 	var/started_at = 0
 	/// REF text of the target a claims() op holds while it waits.
 	var/claim_ref
@@ -730,6 +732,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 				return cancel(/datum/msg/op/failed)
 			rel_set(src, nameof(request), R)
 			rel_set(src, nameof(answerer), third == A.actor ? null : third)
+			answerer_bound = isnull(Q.args["answerer_bound"]) || !!Q.args["answerer_bound"]
 			if(answerer)
 				watch_answerer(answerer)
 				log_game("op [key]: question [R.type] put to [key_name(answerer)] on behalf of [key_name(A.actor)]")
@@ -797,13 +800,21 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return
 	var/datum/request/R = RA.request
 	rel_clear(src, nameof(request))
-	if(R.outcome != REQ_ANSWERED)
+	var/datum/entry/part/asks/Q = oplan.steps[cursor - 1]
+	// asks(optional = TRUE): a cancel or a timeout takes the declared default and the workflow goes on, as for a real answer.
+	var/defaulted = R.outcome != REQ_ANSWERED && Q.args["optional"] && (R.outcome == REQ_CANCELLED || R.outcome == REQ_TIMED_OUT)
+	if(R.outcome != REQ_ANSWERED && !defaulted)
 		return cancel(R.outcome == REQ_TIMED_OUT ? /datum/msg/op/timed_out : (R.outcome == REQ_CANCELLED ? /datum/msg/op/answer_no : /datum/msg/op/failed))
 	if(!resume_act())
 		return cancel(/datum/msg/op/target_gone)
 	var/datum/act/op/A = act
+	if(defaulted)
+		var/fallback = Q.args["default"]
+		if(islist(fallback) && length(fallback) == 2 && fallback[1] == "computed")
+			fallback = op_call(A, fallback[2])
+		R.take_default(fallback)
+		log_game("op [key]: step [R.step_name || "answer"] was [R.outcome == REQ_TIMED_OUT ? "timed out" : "cancelled"]: its declared default ([isnull(fallback) ? "none" : fallback]) stands in")
 	// A confirms() answered "no" ends the op and nothing is spent.
-	var/datum/entry/part/asks/Q = oplan.steps[cursor - 1]
 	if((Q.args["confirms"] || Q.args["ends_on_no"]) && !R.value)
 		suspend_act()
 		return cancel(/datum/msg/op/answer_no)
@@ -917,16 +928,26 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		watch_reconcile(A)
 	return why
 
+/// The actor can reach the mob an op asks: next to it, or carried by it (a pAI in a card is adjacent only to the card, and its carrier is up the loc chain).
+/proc/op_answerer_reach(mob/actor, mob/third)
+	for(var/atom/where = actor.loc; where; where = where.loc)
+		if(where == third)
+			return TRUE
+	return actor.Adjacent(third)
+
 /// The reason a keep broke, or null: HELD, ADJACENT, TARGET_PRESENT and ALIVE.
 /datum/pending_op/proc/keeps_reason(datum/act/op/A)
 	var/mob/M = A.actor
 	var/mob/third = answerer
 	if(third && request?.is_open())
-		// a question put to someone else: they must stay able to answer and within reach of the actor
-		if(QDELETED(third) || third.stat != CONSCIOUS)
+		// a question put to someone else: they must stay able to answer and within reach of the actor (asks(answerer_bound = FALSE): the window check alone)
+		if(QDELETED(third))
 			return /datum/msg/op/stopped
-		if(M ? !M.Adjacent(third) : (A.target_atom && !third.Adjacent(A.target_atom)))
-			return /datum/msg/op/stopped
+		if(answerer_bound)
+			if(third.stat != CONSCIOUS)
+				return /datum/msg/op/stopped
+			if(M ? !op_answerer_reach(M, third) : (A.target_atom && !third.Adjacent(A.target_atom)))
+				return /datum/msg/op/stopped
 	if((keeps & HELD) && M && REF(M.held_for_ops()) != start_hand_ref)
 		return /datum/msg/op/stopped
 	if((keeps & ADJACENT) && M && A.target_atom)

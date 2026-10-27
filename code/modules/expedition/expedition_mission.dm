@@ -28,7 +28,7 @@
 	var/list/objectives
 	/// Optional time limit (0 = none); failure if the deadline passes.
 	var/time_limit = 0
-	var/deadline = 0
+	COOLDOWN_DECLARE(deadline)
 	/// Optional: pin the enemy faction (EXP_FACTION_*). 0/null = roll one for the site.
 	var/faction_type = null
 
@@ -64,7 +64,7 @@ CAPABILITIES(/datum/expedition_mission)
 	for(var/datum/expedition_objective/O in objectives)
 		O.populate(S)
 	if(time_limit)
-		EXPIRY_SET(src, deadline, time_limit, CLOCK_WORLD)
+		COOLDOWN_START(src, deadline, time_limit)
 
 /datum/expedition_mission/proc/has_viable_objectives()
 	if(!length(objectives))
@@ -83,7 +83,7 @@ CAPABILITIES(/datum/expedition_mission)
 		return TRUE
 	if(state == EXP_MISSION_FAILED)
 		return FALSE
-	if(deadline && ELAPSED_SINCE(src, deadline, CLOCK_WORLD) > 0)
+	if(deadline && ELAPSED(src, deadline, CLOCK_WORLD) > 0)
 		state = EXP_MISSION_FAILED
 		return FALSE
 	if(party_wiped())
@@ -305,3 +305,5 @@ CAPABILITIES(/datum/expedition_mission)
 /// Accessor for the site var.
 /datum/expedition_mission/proc/site() as /datum/expedition_site
 	return site
+
+SCHEMA(/datum/expedition_mission, faction_type, int())

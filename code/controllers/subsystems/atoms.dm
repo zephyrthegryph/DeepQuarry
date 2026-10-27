@@ -43,7 +43,7 @@ SYSTEM_DEF(atoms)
 	/// TRUE while the boot map loads (initialize()): its settling drain is the first kernel tick's.
 	var/booting = FALSE
 
-	EXPIRY_DECLARE(init_start_time)
+	var/init_start_time = 0
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	var/list/mapload_init_times = list()
@@ -52,7 +52,7 @@ SYSTEM_DEF(atoms)
 	atom_initialized = INITIALIZATION_INSSATOMS
 
 /datum/system/atoms/initialize()
-	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
+	STAMP(src, init_start_time, CLOCK_WORLD)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	booting = TRUE

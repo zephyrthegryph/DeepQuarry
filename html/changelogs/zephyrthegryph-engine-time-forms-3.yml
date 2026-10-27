@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "ELAPSED_SINCE and BEFORE are gone: the times kept in list slots (path failures, air device status, flow fields, AI hazards and cooldowns, respawn waits, TGS flows, log file checks, scan evidence) are small owned records stamped with STAMP and read with ELAPSED"

@@ -171,7 +171,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		card.assignment = newassignment
 		card.name = text("[card.registered_name]'s ID Card ([card.assignment])")
 		GLOB.data_core.manifest_modify(card.registered_name, card.assignment, card.rank)
-		EXPIRY_STAMP(card, last_job_switch, CLOCK_WORLD)
+		STAMP(card, last_job_switch, CLOCK_WORLD)
 		newjob.current_positions++
 		var/mob/living/carbon/human/H = user
 		H.mind.assigned_role = card.rank
@@ -196,7 +196,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		card.assignment = ptojob.title
 		card.name = text("[card.registered_name]'s ID Card ([card.assignment])")
 		GLOB.data_core.manifest_modify(card.registered_name, card.assignment, card.rank)
-		EXPIRY_STAMP(card, last_job_switch, CLOCK_WORLD)
+		STAMP(card, last_job_switch, CLOCK_WORLD)
 		var/mob/living/carbon/human/H = user
 		H.mind.assigned_role = ptojob.title
 		H.mind.role_alt_title = ptojob.title
@@ -227,7 +227,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		return TRUE
 
 /obj/item/card/id
-	EXPIRY_DECLARE(last_job_switch)
+	var/last_job_switch = 0
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -237,7 +237,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 	var/configured = FALSE
 
 /obj/item/card/id/proc/stamp_job_switch()
-	EXPIRY_STAMP(src, last_job_switch, CLOCK_WORLD)
+	STAMP(src, last_job_switch, CLOCK_WORLD)
 
 //
 // Frame type for construction

@@ -311,13 +311,22 @@ impl<'a> Canon<'a> {
 
         // World.
         let w = &dmb.world;
+        // The world's proc list compares like a type's (canon.rs, `type_procs`): grouped by proc name, the order within a name kept
+        // (that is definition precedence), the order between names not (it follows the include order, and nothing reads it).
         let world_procs = dmb
             .lists
             .get(w.proc_list_id() as usize)
             .filter(|_| w.proc_list_id() != NONE)
             .map(|l| {
-                l.iter()
-                    .map(|&p| ctx.proc_key(p))
+                let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+                for &p in l {
+                    let key = ctx.proc_key(p);
+                    let name = key.rsplit('/').next().unwrap_or(&key).split('#').next().unwrap_or("").to_string();
+                    groups.entry(name).or_default().push(key);
+                }
+                groups
+                    .iter()
+                    .map(|(n, ks)| format!("{n}=[{}]", ks.join(" > ")))
                     .collect::<Vec<_>>()
                     .join(", ")
             })

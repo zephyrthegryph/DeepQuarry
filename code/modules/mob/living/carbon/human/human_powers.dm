@@ -610,7 +610,7 @@ CAPABILITIES(/datum/prompt/choice/hand_game_move)
 	var/initial_refusal
 
 /datum/prompt/choice/hand_game_invite/begin()
-	initial_refusal = text_or_null(request_recheck(src))
+	initial_refusal = request_recheck(src)
 	if(initial_refusal)
 		request_end(src, REQ_CANCELLED, null)
 		return
@@ -842,3 +842,4 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 /datum/body_effect/play_dead/on_end(mob/living/L, expired)
 	L.remove_status_indicator("dead")
 	act_message(L, null, others = span_warning("%U% literally just dies!"))
+SCHEMA(/datum/prompt/choice/hand_game_invite, initial_refusal, schema_msg())

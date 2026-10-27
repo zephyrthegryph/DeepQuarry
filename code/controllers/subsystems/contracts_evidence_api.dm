@@ -93,7 +93,7 @@
 	for(var/evidence_id in unique_ids)
 		var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 		evidence.consumed_by = contract_id
-		EXPIRY_STAMP(evidence, consumed_at, CLOCK_WORLD)
+		STAMP(evidence, consumed_at, CLOCK_WORLD)
 	emit_contract_event(CONTRACT_EVENT_EVIDENCE_CONSUMED, list(
 		"contract_id" = contract_id,
 		"evidence_ids" = unique_ids.Copy(),
@@ -133,6 +133,11 @@
 	var/list/result = deepCopyList(evidence.payload)
 	result["evidence_id"] = evidence.id
 	return result
+
+/// TRUE when an authenticated scan payload claims a time that has not come yet (a scan cannot be from the future).
+/datum/system/contracts/proc/scan_is_from_the_future(list/scan_evidence)
+	var/datum/contract_evidence/evidence = evidence_by_id[scan_evidence["evidence_id"]]
+	return evidence && ELAPSED(evidence, occurred_at, CLOCK_WORLD) < 0
 
 /datum/system/contracts/proc/schedule_contract_evidence_prune(contract_id)
 	after(src, CONTRACT_EVIDENCE_RETENTION, PROC_REF(prune_contract_evidence), with = list(contract_id))

@@ -3,9 +3,7 @@
 // A benchmark world has no clients, so nothing would ever record input latency. These drive the real paths: a
 // click goes through the real /atom/Click (the router's stamps), a verb through the real input inbox
 // (input_submit() and the phase K drain), so what the meter records is what a player's input would.
-// Compiled into test and benchmark builds only.
-
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+// Compiled into test and benchmark builds only (code/tests/_tests.dm).
 
 GLOBAL_DATUM_INIT(km_synthetic, /datum/km_synthetic, new)
 
@@ -39,5 +37,3 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/km_synthetic)
 	input_force_room(FALSE)
 	input_submit(new /datum/input_event/synthetic)
 	input_force_room(null)
-
-#endif

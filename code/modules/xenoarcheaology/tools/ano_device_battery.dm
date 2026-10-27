@@ -50,10 +50,10 @@ CAPABILITIES(/obj/item/anobattery)
 	icon_state = "anodev"
 	var/duration = 0
 	var/interval = 0
-	EXPIRY_DECLARE(time_end)
+	COOLDOWN_DECLARE(time_end)
 	/// after() timer that ends the emission at time_end, or 0.
-	EXPIRY_DECLARE(last_activation)
-	EXPIRY_DECLARE(last_process)
+	var/last_activation = 0
+	var/last_process = 0
 	var/tmp/obj/item/anobattery/inserted_battery
 	var/tmp/turf/archived_loc
 	var/energy_consumed_on_touch = 100
@@ -143,7 +143,7 @@ CAPABILITIES(/obj/item/anodevice)
 		if(!inserted_battery().battery_effect.activated)
 			inserted_battery().battery_effect.ToggleActivate(1)
 		arm_emission_timer()
-		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+		STAMP(src, last_process, CLOCK_WORLD)
 	else
 		to_chat(user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
 	return TRUE
@@ -207,7 +207,7 @@ CAPABILITIES(/obj/item/anodevice)
 					//consume power equal to time passed
 					inserted_battery().use_power(world.time - last_process)
 
-				EXPIRY_STAMP(src, last_activation, CLOCK_WORLD)
+				STAMP(src, last_activation, CLOCK_WORLD)
 
 			//process the effect
 			inserted_battery().battery_effect.periodic_step()
@@ -219,11 +219,11 @@ CAPABILITIES(/obj/item/anodevice)
 		else
 			src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 			shutdown_emission()
-		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+		STAMP(src, last_process, CLOCK_WORLD)
 
 /// (Re)starts the emission's run: it ends `duration` from now (emission_timer_fired()).
 /obj/item/anodevice/proc/arm_emission_timer()
-	EXPIRY_SET(src, time_end, duration, CLOCK_WORLD)
+	COOLDOWN_START(src, time_end, duration)
 	after(src, duration + 0.1 SECONDS, PROC_REF(emission_timer_fired), key = "emission") // replaces a pending one
 
 /// The keyed timer: the set duration has run out.

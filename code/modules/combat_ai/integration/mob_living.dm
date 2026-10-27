@@ -24,6 +24,7 @@ CAPABILITIES(/mob/living)
 	ref_one(nameof(own_identity))
 	ref_one(nameof(tf_mob_holder))
 	ref_one(nameof(identity))
+	stamps(last_breath_at, climb_started) // last_breath_at: the last scheduled breath on its own (bio) clock, so a breathing step woken from sleep breathes when one is due; climb_started: when the climb op in flight began
 	cooldowns(next_preyloop, hud_full_refresh_at, last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping, venom_milking_cd)
 	links(LINK_END(/mob/living, LK_TF_FORM), LINK_END(/mob/living, LK_TF_ORIGIN), sparse = TRUE, b_many = TRUE)
 	links(LINK_END(/mob/living, LK_TF_FORM_MIND), LINK_END(/datum/mind, LK_TF_FORM_MIND_OF), sparse = TRUE, b_many = TRUE)

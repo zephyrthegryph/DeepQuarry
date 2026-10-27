@@ -81,7 +81,7 @@ CAPABILITIES(/obj/structure/portal_event/resize)
 	. += span_notice("It will open in [ourtime] minutes!")
 
 /obj/structure/timer_door/proc/stamp_door_creation()
-	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+	STAMP(src, start_time, CLOCK_WORLD)
 
 CAPABILITIES(/obj/structure/timer_door)
 	setup(PROC_REF(stamp_door_creation))

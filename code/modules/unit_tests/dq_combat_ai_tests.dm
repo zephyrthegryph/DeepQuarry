@@ -498,7 +498,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 			break
 		wait_ticks(1)
 	TEST_ASSERT(!brain.path_pending, "the path system answered")
-	TEST_ASSERT(length(brain.planned_path) >= 1 || brain.next_path_attempt_at, "the answer is a cached path, or the failure backoff")
+	TEST_ASSERT(length(brain.planned_path) >= 1 || brain.path_failed_at, "the answer is a cached path, or the failure backoff")
 	if(length(brain.planned_path))
 		TEST_ASSERT_EQUAL(brain.path_goal(), goal, "the path is to the asked goal")
 

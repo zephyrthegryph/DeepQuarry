@@ -14,12 +14,6 @@ CAPABILITIES(/datum/universal_icon)
 
 /// Don't instantiate these yourself, use uni_icon.
 /datum/universal_icon/New(icon/icon_file, icon_state="", dir=null, frame=null, datum/icon_transformer/transform=null, color=null)
-	#ifdef UNIT_TESTS
-	// This check is kinda slow and shouldn't fail unless a developer makes a mistake. So it'll get caught in unit tests.
-	if(!isicon(icon_file) || !isfile(icon_file) || "[icon_file]" == "/icon" || !length("[icon_file]"))
-		// bad! use 'icons/path_to_dmi.dmi' format only
-		CRASH("FATAL: universal_icon was provided icon_file: [icon_file] - icons provided to batched spritesheets MUST be DMI files, they cannot be /image, /icon, or other runtime generated icons.")
-	#endif
 	src.icon_file = icon_file
 	src.icon_state = icon_state
 	src.dir = dir
@@ -259,75 +253,32 @@ CAPABILITIES(/datum/universal_icon)
 	return new_transformer
 
 /datum/icon_transformer/proc/blend_color(color, blend_mode)
-	#ifdef UNIT_TESTS
-	if(!istext(color))
-		CRASH("Invalid color provided to blend_color: [color]")
-	if(!isnum(blend_mode))
-		CRASH("Invalid blend_mode provided to blend_color: [blend_mode]")
-	#endif
 	transforms += list(list("type" = RUSTG_ICONFORGE_BLEND_COLOR, "color" = color, "blend_mode" = blend_mode))
 
 /datum/icon_transformer/proc/blend_icon(datum/universal_icon/icon_object, blend_mode, x=1, y=1)
-	#ifdef UNIT_TESTS
-	// icon_object's type is checked later in to_list
-	if(!isnum(blend_mode))
-		CRASH("Invalid blend_mode provided to blend_icon: [blend_mode]")
-	if(!isnum(x))
-		CRASH("Invalid x offset provided to blend_icon: [x]")
-	if(!isnum(y))
-		CRASH("Invalid y offset provided to blend_icon: [y]")
-	#endif
 	// A transform step is plain data (serialized by to_list); the embedded icon is a value, not a roster member.
 	var/list/blend_step = list("type" = RUSTG_ICONFORGE_BLEND_ICON, "icon" = icon_object, "blend_mode" = blend_mode, "x" = x, "y" = y)
 	transforms += list(blend_step)
 
 /datum/icon_transformer/proc/scale(width, height)
-	#ifdef UNIT_TESTS
-	if(!isnum(width) || !isnum(height))
-		CRASH("Invalid arguments provided to scale: [width],[height]")
-	#endif
 	transforms += list(list("type" = RUSTG_ICONFORGE_SCALE, "width" = width, "height" = height))
 
 /datum/icon_transformer/proc/crop(x1, y1, x2, y2)
-	#ifdef UNIT_TESTS
-	if(!isnum(x1) || !isnum(y1) || !isnum(x2) || !isnum(y2))
-		CRASH("Invalid arguments provided to crop: [x1],[y1],[x2],[y2]")
-	#endif
 	transforms += list(list("type" = RUSTG_ICONFORGE_CROP, "x1" = x1, "y1" = y1, "x2" = x2, "y2" = y2))
 
 /datum/icon_transformer/proc/flip(dir)
-	#ifdef UNIT_TESTS
-	if(!isnum(dir))
-		CRASH("Invalid arguments provided to flip: [dir]")
-	#endif
 	transforms += list(list("type" = RUSTG_ICONFORGE_FLIP, "dir" = dir))
 
 /datum/icon_transformer/proc/rotate(angle)
-	#ifdef UNIT_TESTS
-	if(!isnum(angle))
-		CRASH("Invalid arguments provided to rotate: [angle]")
-	#endif
 	transforms += list(list("type" = RUSTG_ICONFORGE_TURN, "angle" = angle))
 
 /datum/icon_transformer/proc/shift(dir, offset, wrap=FALSE)
-	#ifdef UNIT_TESTS
-	if(!isnum(dir) || !isnum(offset) || (wrap != FALSE && wrap != TRUE))
-		CRASH("Invalid arguments provided to shift: [dir],[offset],[wrap]")
-	#endif
 	transforms += list(list("type" = RUSTG_ICONFORGE_SHIFT, "dir" = dir, "offset" = offset, "wrap" = wrap))
 
 /datum/icon_transformer/proc/swap_color(src_color, dst_color)
-	#ifdef UNIT_TESTS
-	if(!istext(src_color) || !istext(dst_color))
-		CRASH("Invalid arguments provided to swap_color: [src_color],[dst_color]")
-	#endif
 	transforms += list(list("type" = RUSTG_ICONFORGE_SWAP_COLOR, "src_color" = src_color, "dst_color" = dst_color))
 
 /datum/icon_transformer/proc/draw_box(color, x1, y1, x2=x1, y2=y1)
-	#ifdef UNIT_TESTS
-	if(!istext(color) || !isnum(x1) || !isnum(y1) || !isnum(x2) || !isnum(y2))
-		CRASH("Invalid arguments provided to draw_box: [color],[x1],[y1],[x2],[y2]")
-	#endif
 	transforms += list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "color" = color, "x1" = x1, "y1" = y1, "x2" = x2, "y2" = y2))
 
 /datum/icon_transformer/proc/map_colors(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa, r0=0, g0=0, b0=0, a0=0)

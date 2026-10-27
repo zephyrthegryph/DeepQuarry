@@ -38,7 +38,7 @@ CAPABILITIES(/datum/pai_software)
 
 CAPABILITIES(/datum/pai_software/directives)
 	interface("pAIDirectives", state = nameof(GLOB.tgui_always_state))
-	op("getdna", ui_act("getdna"), then(PROC_REF(ui_act_getdna)))
+	op("getdna", ui_act("getdna"), asks(/datum/prompt/yes_no, fields = list("title" = computed(PROC_REF(dna_title)), "question" = computed(PROC_REF(dna_question)), "timeout" = 0), step = "dna", answerer = PROC_REF(dna_asked), when = PROC_REF(dna_has_carrier)), then(PROC_REF(ui_act_getdna)))
 
 /datum/pai_software/directives/ui_data(datum/act/eval/A)
 	var/mob/living/silicon/pai/user = A.actor
@@ -51,43 +51,41 @@ CAPABILITIES(/datum/pai_software/directives)
 
 	return data
 
-/datum/pai_software/directives/proc/ui_act_getdna(datum/act/op/A)
-	var/mob/user = A.actor
-	var/mob/living/silicon/pai/P = user
-	var/mob/living/M = P.loc
-
+/// The living carrier of the pAI (its card's holder, up to a few containers out), or null when nobody carries it.
+/datum/pai_software/directives/proc/dna_carrier(mob/living/silicon/pai/P)
+	var/atom/M = P.loc
 	var/count = 0
 	// Find the carrier
 	while(!isliving(M))
 		if(!M || !M.loc || count > 6)
 			//For a runtime where M ends up in nullspace (similar to bluespace but less colourful)
-			to_chat(src, span_infoplain("You are not being carried by anyone!"))
-			return 0
+			return null
 		M = M.loc
 		count++
+	return M
 
-	// Check the carrier
-	var/datum/prompt/yes_no/pai_dna_sample/sample = open_request(src, /datum/prompt/yes_no/pai_dna_sample, PROC_REF(dna_sample_answered), answerer = M, title = "[P] Check DNA", question = "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", timeout = 0)
-	if(sample)
-		rel_set(sample, nameof(sample.pai), P)
-	return TRUE
+/// The carrier is who is asked for the sample.
+/datum/pai_software/directives/proc/dna_asked(datum/act/op/A)
+	return dna_carrier(A.actor)
 
-/// A pAI asks its carrier for a DNA sample. The answer proc runs on no too (the pAI is told).
-/datum/prompt/yes_no/pai_dna_sample
-	var/mob/living/silicon/pai/pai
+/// There is a carrier to ask.
+/datum/pai_software/directives/proc/dna_has_carrier(datum/act/op/A)
+	return !!dna_carrier(A.actor)
 
-CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample)
-	ref_one(nameof(pai), /mob/living/silicon/pai)
+/datum/pai_software/directives/proc/dna_title(datum/act/op/A)
+	return "[A.actor] Check DNA"
 
-/datum/pai_software/directives/proc/dna_sample_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/yes_no/pai_dna_sample/sample = A.request
-	var/mob/living/M = A.request.answerer
-	var/mob/living/silicon/pai/P = sample.pai
-	if(!P || !M)
-		return
-	if(A.answer.value)
+/datum/pai_software/directives/proc/dna_question(datum/act/op/A)
+	return "[A.actor] is requesting a DNA sample from you. Will you allow it to confirm your identity?"
+
+/// A pAI asks its carrier for a DNA sample. The op goes on on no too (the pAI is told).
+/datum/pai_software/directives/proc/ui_act_getdna(datum/act/op/A)
+	var/mob/living/silicon/pai/P = A.actor
+	var/mob/living/M = dna_carrier(P)
+	if(!M || !A.step_answer("dna"))
+		to_chat(A.actor, span_infoplain("You are not being carried by anyone!"))
+		return 0
+	if(A.step_value("dna"))
 		var/turf/T = get_turf(P.loc)
 		for (var/mob/v in viewers(T))
 			v.show_message(span_notice("[M] presses [M.p_their()] thumb against [P]."), 3, span_notice("[P] makes a sharp clicking sound as it extracts DNA material from [M]."), 2)

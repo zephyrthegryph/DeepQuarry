@@ -5,7 +5,7 @@
 /datum/contract_event
 	var/id
 	var/event_type
-	EXPIRY_DECLARE(occurred_at)
+	var/occurred_at = 0
 	var/occurrence_id
 	/// Stable identity and monotonic revision for gameplay facts that can be
 	/// corrected (for example, a paid invoice becoming refunded).
@@ -44,7 +44,7 @@
 /datum/contract_event/New(_event_type, atom/source, mob/living/actor, mob/living/subject, list/context, _occurrence_id)
 	. = ..()
 	event_type = _event_type
-	EXPIRY_STAMP(src, occurred_at, CLOCK_WORLD)
+	STAMP(src, occurred_at, CLOCK_WORLD)
 	occurrence_id = _occurrence_id
 	data = context ? deepCopyList(context) : list()
 	fact_id = data["fact_id"] || occurrence_id

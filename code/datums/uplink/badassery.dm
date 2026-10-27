@@ -56,7 +56,7 @@
 	name = "Surplus Crate"
 	item_cost = DEFAULT_TELECRYSTAL_AMOUNT
 	var/item_worth = 240
-	var/icon
+	var/image/icon
 
 /datum/uplink_item/item/badassery/surplus/merc2
 	name = "Surplus Crate - 240 TC"

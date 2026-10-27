@@ -291,8 +291,8 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 	var/faction_id
 	var/datum/mind/agent_mind
 	var/tier = FACTION_AGENT_TIER_CANDIDATE
-	EXPIRY_DECLARE(candidate_started_at)
-	EXPIRY_DECLARE(appointed_at)
+	var/candidate_started_at = 0
+	var/appointed_at = 0
 	var/contracts_completed = 0
 	var/contracts_failed = 0
 	var/next_offer_sequence = 1
@@ -369,7 +369,7 @@ CAPABILITIES(/datum/faction_agent_record)
 	record.account_number = account.account_number
 	record.faction_id = faction_id
 	rel_set(record, nameof(record.agent_mind), user.mind)
-	EXPIRY_STAMP(record, candidate_started_at, CLOCK_WORLD)
+	STAMP(record, candidate_started_at, CLOCK_WORLD)
 	rel_add(src, nameof(agent_records), record, "[account.account_number]")
 	var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]
 	log_game("[key_name(user)] opened exclusive faction vetting with [faction?.name || faction_id].")
@@ -386,7 +386,7 @@ CAPABILITIES(/datum/faction_agent_record)
 	if(!record || record.tier != FACTION_AGENT_TIER_CANDIDATE)
 		return FALSE
 	record.set_tier(FACTION_AGENT_TIER_ACCREDITED)
-	EXPIRY_STAMP(record, appointed_at, CLOCK_WORLD)
+	STAMP(record, appointed_at, CLOCK_WORLD)
 	SScontracts?.queue_agent_offers(record.account_number, record.faction_id)
 	return TRUE
 

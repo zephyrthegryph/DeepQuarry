@@ -15,7 +15,7 @@
 	// Damage taken below this is transferred back to the mob on release; this is NOT
 	// max_integrity, because a wounded mob petrifies into an already-weakened statue.
 	var/original_int = 100
-	var/stored_examine
+	var/list/stored_examine
 	var/identifier = "statue"
 	var/material = "stone"
 	var/adjective = "hardens"
@@ -62,7 +62,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
 	var/tint = "#FFFFFF"
 	if(comp)
-		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
+		COOLDOWN_START(comp, cooldown, (15 SECONDS))
 		rel_set(comp, nameof(comp.statue), src)
 		comp.transformed = TRUE
 		comp.paused = FALSE
@@ -214,7 +214,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		return
 	var/datum/trait_state/gargoyle/comp = gargoyle.get_trait_state(/datum/trait_state/gargoyle)
 	if(comp)
-		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
+		COOLDOWN_START(comp, cooldown, (15 SECONDS))
 		rel_clear(comp, nameof(comp.statue))
 		comp.transformed = FALSE
 	else

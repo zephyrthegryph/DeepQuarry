@@ -101,11 +101,11 @@ GLOBAL_VAR_INIT(tgs_waiting_seq, 0)
 /// Holds `sender` while this command's read is out; returns the key its callback finds the sender by.
 /datum/tgs_chat_command/proc/tgs_hold_sender(datum/tgs_chat_user/sender)
 	for(var/stale in GLOB.tgs_waiting_started) // a read dropped on the way never collects its sender
-		if(ELAPSED_SINCE(src, GLOB.tgs_waiting_started[stale], CLOCK_WORLD) > 10 MINUTES)
+		if(TIME_NOW(CLOCK_WORLD) - GLOB.tgs_waiting_started[stale] > 10 MINUTES)
 			tgs_waiting_release(stale)
 	var/key = "[++GLOB.tgs_waiting_seq]"
 	rel_add(GLOB, nameof(GLOB.tgs_waiting_senders), sender, key)
-	GLOB.tgs_waiting_started[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+	GLOB.tgs_waiting_started[key] = TIME_NOW(CLOCK_WORLD)
 	return key
 
 /// The sender held under `key`, or null (the hold was dropped).

@@ -42,10 +42,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_state)
 	var/list/rewake_at
 	/// When the member's one rewake timer goes off (the soonest due), or 0 when none is armed.
 	var/rewake_next = 0
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	/// Tests: position -> (read key -> value) when that step fell asleep, for the audit's diff.
-	var/list/snaps
-#endif
 
 /// A list of `n` sleep bits, all clear.
 /proc/seq_words(n)

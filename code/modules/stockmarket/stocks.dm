@@ -2,14 +2,14 @@
 	var/broker = ""
 	var/borrower = ""
 	var/tmp/datum/stock/stock
-	EXPIRY_DECLARE(lease_expires)
+	COOLDOWN_DECLARE(lease_expires)
 	var/lease_time = 0
 	var/grace_time = 0
-	EXPIRY_DECLARE(grace_expires)
+	var/grace_expires = 0
 	var/share_amount = 0
 	var/share_debt = 0
 	var/deposit = 0
-	EXPIRY_DECLARE(offer_expires)
+	var/offer_expires = 0
 
 /datum/stock
 	var/name = "Stock"
@@ -32,7 +32,7 @@
 
 	var/disp_value_change = 0
 	var/optimism = 0
-	EXPIRY_DECLARE(last_unification)
+	var/last_unification = 0
 	var/average_shares = 100
 	var/outside_shareholders = 10000		// The amount of offstation people holding shares in this company. The higher it is, the more fluctuation it causes.
 	var/available_shares = 500000
@@ -61,7 +61,7 @@ CAPABILITIES(/datum/stock)
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
 		rel_add(src, nameof(articles), A) // appended: newest article is last
-	EXPIRY_STAMP(A, ticks, CLOCK_WORLD)
+	STAMP(A, ticks, CLOCK_WORLD)
 
 /datum/stock/proc/generateEvents()
 	var/list/types = typesof(/datum/stockEvent) - /datum/stockEvent
@@ -187,7 +187,7 @@ CAPABILITIES(/datum/stock)
 	average_shares /= 2
 	available_shares /= 2
 	current_value *= 2
-	EXPIRY_STAMP(src, last_unification, CLOCK_WORLD)
+	STAMP(src, last_unification, CLOCK_WORLD)
 
 /datum/stock/proc/stock_tick(elapsed_steps = 1)
 	for (var/B in borrows)
@@ -257,7 +257,7 @@ CAPABILITIES(/datum/stock)
 /datum/stock/proc/borrow(datum/borrow/B, who)
 	if (B.lease_expires)
 		return 0
-	EXPIRY_SET(B, lease_expires, B.lease_time, CLOCK_WORLD)
+	COOLDOWN_START(B, lease_expires, B.lease_time)
 	var/old_d = B.deposit
 	var/d_amt = B.deposit * current_value * B.share_amount
 	if (!modifyAccount(who, -d_amt))

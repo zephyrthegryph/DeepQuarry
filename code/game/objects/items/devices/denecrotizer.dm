@@ -133,7 +133,7 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 	icon_state = "denecrotizer"
 	w_class = ITEMSIZE_COST_NORMAL
 	var/charges = 5 //your army of minions can only be this big
-	EXPIRY_DECLARE(last_used)
+	var/last_used = 0
 	var/cooldown = 10 MINUTES //LONG
 	var/revive_time = 30 SECONDS //Don't do this in combat
 	var/advanced = 1 //allows for ghosts to join mobs who get revived by this, and updates their faction to yours
@@ -209,7 +209,7 @@ CAPABILITIES(/obj/item/denecrotizer)
 	target.revivedby = user.name
 	target.set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, target)
-	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
+	STAMP(src, last_used, CLOCK_WORLD)
 	set_charges(charges - 1)
 	log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
 	act_message(target, user, others = "%U%'s eyes widen, as though in revelation as it looks at %T%.", runemessage = "eyes widen")
@@ -233,7 +233,7 @@ CAPABILITIES(/obj/item/denecrotizer)
 	if(!target.mind) //if it doesn't have a mind then no one has been playing as it, and it is safe to offer to ghosts.
 		target.set_ghostjoin(1)
 		registry_join(REGISTRY_GHOST_PODS, target)
-	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
+	STAMP(src, last_used, CLOCK_WORLD)
 	set_charges(charges - 1)
 	return OP_OK
 
@@ -248,7 +248,7 @@ CAPABILITIES(/obj/item/denecrotizer)
 		return OP_REFUSED
 	target.revive()
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
-	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
+	STAMP(src, last_used, CLOCK_WORLD)
 	set_charges(charges - 1)
 	return OP_OK
 

@@ -1,6 +1,6 @@
 /obj/machinery/camera
 	var/list/motionTargets = null
-	EXPIRY_DECLARE(detectTime)
+	var/detectTime = 0
 	var/area/ai_monitored/area_motion
 	var/alarm_delay = 100 // Don't forget, there's another 10 seconds in queueAlarm()
 
@@ -16,7 +16,7 @@
 /obj/machinery/camera/proc/newTarget(mob/target)
 	if (isAI(target)) return 0
 	if (detectTime == 0)
-		EXPIRY_STAMP(src, detectTime, CLOCK_WORLD) // start the clock
+		STAMP(src, detectTime, CLOCK_WORLD) // start the clock
 	if (!(target in motionTargets))
 		rel_add(src, nameof(motionTargets), target)
 		// Losing a target is event driven: it moves, dies or is deleted.

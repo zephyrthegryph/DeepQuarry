@@ -15,13 +15,32 @@ pub type ResolverRead = Observation<ResolveQuery, ResolvedMeaning, ReadDomain>;
 pub struct RecordingResolver<'a, R: Resolver> {
     resolver: &'a R,
     ledger: ObservationLedger<ResolveQuery, ResolvedMeaning, ReadDomain>,
+    /// Record no domain version with the reads: a consumer whose receipts are proven by an answer table.
+    unversioned: bool,
 }
 impl<'a, R: Resolver> RecordingResolver<'a, R> {
     pub fn new(resolver: &'a R) -> Self {
         Self {
             resolver,
             ledger: ObservationLedger::default(),
+            unversioned: false,
         }
+    }
+    /// A recorder whose reads carry no domain version (`new` when `versioned`): for receipts a session's answer
+    /// table proves, so no version is issued for them.
+    pub fn with_versions(resolver: &'a R, versioned: bool) -> Self {
+        Self {
+            unversioned: !versioned,
+            ..Self::new(resolver)
+        }
+    }
+    fn version_of(&self, domain: ReadDomain) -> Option<u128> {
+        if self.unversioned {
+            return None;
+        }
+        self.ledger
+            .domain_receipt(&domain)
+            .unwrap_or_else(|| self.resolver.domain_version(domain))
     }
     pub fn reads(&self) -> Vec<ResolverRead> {
         self.ledger.reads()
@@ -40,10 +59,7 @@ impl<'a, R: Resolver> RecordingResolver<'a, R> {
             {
                 self.resolve(read.query);
             } else {
-                let version = self
-                    .ledger
-                    .domain_receipt(&read.domain)
-                    .unwrap_or_else(|| self.resolver.domain_version(read.domain));
+                let version = self.version_of(read.domain);
                 if self.transparent_receipt_observer().is_some() {
                     dm_ir::ResolvedReadObserver::record_answer(
                         self,
@@ -110,20 +126,14 @@ impl<R: Resolver> Resolver for RecordingResolver<'_, R> {
         self.resolver.domain_version(domain)
     }
     fn resolve_with_canonical(&self, query: ResolveQuery) -> dm_ir::CanonicalResolvedAnswer {
-        let version = self
-            .ledger
-            .domain_receipt(&query.domain())
-            .unwrap_or_else(|| self.resolver.domain_version(query.domain()));
+        let version = self.version_of(query.domain());
         let answer = self.resolver.resolve_with_canonical(query);
         self.ledger
             .record(query, answer.answer().clone(), query.domain(), version);
         answer
     }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
-        let version = self
-            .ledger
-            .domain_receipt(&query.domain())
-            .unwrap_or_else(|| self.resolver.domain_version(query.domain()));
+        let version = self.version_of(query.domain());
         let answer = self.resolver.resolve(query);
         self.ledger
             .record(query, answer.clone(), query.domain(), version);

@@ -13,15 +13,15 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 
 	//0: Normal, 1: Might be dead, 2: Definitely dead, show on console
 	var/dead_state = 0
-	EXPIRY_DECLARE(last_update)
-	EXPIRY_DECLARE(last_notification)
+	var/last_update = 0
+	var/last_notification = 0
 	var/do_notify = TRUE
 
 	//Backend
 	var/ckey = ""
 	var/id_gender = MALE
 	var/datum/mind/mind_ref
-	EXPIRY_DECLARE(cryo_at)
+	var/cryo_at = 0
 	var/nif_path
 	var/nif_durability
 	var/list/nif_software
@@ -59,7 +59,7 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 	if(istype(M,/mob) && !M.read_preference(/datum/preference/toggle/autotranscore))
 		do_notify = FALSE
 
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
 
 	if(add_to_db)
 		SStranscore.add_backup(src, database_key = database_key)

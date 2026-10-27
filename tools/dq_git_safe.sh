@@ -14,6 +14,12 @@ export "GIT_CONFIG_KEY_$_dq_n=merge.dq-baseline.driver" "GIT_CONFIG_VALUE_$_dq_n
 _dq_n=$((_dq_n + 1))
 export "GIT_CONFIG_KEY_$_dq_n=merge.dq-baseline.name" "GIT_CONFIG_VALUE_$_dq_n=shrink-only baseline merge"
 _dq_n=$((_dq_n + 1))
+# The merge driver for deepquarry.dme (.gitattributes merge=dq-dme; tools/build/dme_merge_driver.sh): the generated manifest merges by
+# its include sets, never by text. A branch whose tree lacks the script gets the driver's failure, and git a normal conflict.
+export "GIT_CONFIG_KEY_$_dq_n=merge.dq-dme.driver" "GIT_CONFIG_VALUE_$_dq_n=bash tools/build/dme_merge_driver.sh %O %A %B %P"
+_dq_n=$((_dq_n + 1))
+export "GIT_CONFIG_KEY_$_dq_n=merge.dq-dme.name" "GIT_CONFIG_VALUE_$_dq_n=generated deepquarry.dme: merge the include sets"
+_dq_n=$((_dq_n + 1))
 export GIT_CONFIG_COUNT="$_dq_n"
 unset _dq_n _dq_k
 

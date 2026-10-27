@@ -41,7 +41,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 	var/target_name
 	var/target_ckey
 	var/special_role
-	EXPIRY_DECLARE(last_refresh)
+	var/last_refresh = 0
 	var/client_view
 
 /datum/player_log_viwer/tgui_close(mob/user)
@@ -54,7 +54,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 	target_name = name
 	target_ckey = ckey
 	special_role = special
-	EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
+	STAMP(src, last_refresh, CLOCK_WORLD)
 	client_view = is_client
 	if(!islist(log_data))
 		log_data = list()
@@ -86,7 +86,7 @@ CAPABILITIES(/datum/player_log_viwer)
 	if(refresh_cooldown())
 		return FALSE
 	refresh_data()
-	EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
+	STAMP(src, last_refresh, CLOCK_WORLD)
 	update_tgui_static_data(user)
 	return TRUE
 
@@ -104,12 +104,12 @@ CAPABILITIES(/datum/player_log_viwer)
 	special_role = selected.mob()?.mind?.special_role
 	client_view = TRUE
 	refresh_data()
-	EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
+	STAMP(src, last_refresh, CLOCK_WORLD)
 	update_tgui_static_data(user)
 	return TRUE
 
 /datum/player_log_viwer/proc/refresh_cooldown()
-	return (ELAPSED_SINCE(src, last_refresh, CLOCK_WORLD) < 5 SECONDS)
+	return (ELAPSED(src, last_refresh, CLOCK_WORLD) < 5 SECONDS)
 
 /// Adds the player's logged dialog from the database (io_job: the rows arrive later and the
 /// window's static data is resent then).

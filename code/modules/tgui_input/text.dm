@@ -74,7 +74,7 @@
 	/// Multiline input for larger input boxes.
 	var/multiline
 	/// The time at which the text input was created, for displaying timeout progress.
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	/// The lifespan of the text input, after which the window will close and delete itself.
 	var/timeout
 	/// The title of the TGUI window
@@ -92,7 +92,7 @@
 	src.state_static = ui_state
 	if (timeout)
 		src.timeout = timeout
-		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+		STAMP(src, start_time, CLOCK_WORLD)
 		expire(timeout)
 
 /**

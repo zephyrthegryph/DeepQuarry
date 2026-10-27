@@ -76,6 +76,10 @@
 	/// The reservations held while the handler runs.
 	var/list/reservations
 
+/// asks(optional = TRUE): the answerer cancelled or ran out of time, and the op's declared default stands in for the answer.
+/datum/request/proc/take_default(chosen)
+	value = chosen
+
 /// Whether the answer goes ahead with the request's costs: any answer does; a yes/no only on yes.
 /datum/request/proc/confirmed()
 	return TRUE
@@ -438,3 +442,5 @@ CAPABILITIES(/datum/system/requests)
 	else
 		request_end(R, outcome, value)
 	return waiting
+
+SCHEMA(/datum/request, last_error, schema_text())

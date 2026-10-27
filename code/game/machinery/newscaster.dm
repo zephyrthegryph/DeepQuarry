@@ -29,7 +29,7 @@ CAPABILITIES(/datum/feed_message)
 	var/backup_author=""
 	var/censored=0
 	var/is_admin_channel=0
-	EXPIRY_DECLARE(updated)
+	var/updated = 0
 	var/announcement = ""
 
 CAPABILITIES(/datum/feed_channel)
@@ -48,7 +48,7 @@ CAPABILITIES(/datum/feed_channel)
 	parent_channel().update()
 
 /datum/feed_channel/proc/update()
-	EXPIRY_STAMP(src, updated, CLOCK_WORLD)
+	STAMP(src, updated, CLOCK_WORLD)
 
 /datum/feed_channel/proc/clear()
 	set_channel_name("")
@@ -748,7 +748,7 @@ CAPABILITIES(/datum/news_photo)
 		var/mob/living/carbon/human/human_user = user
 		var/obj/item/card/id/I = human_user.GetIdCard()
 		if(I)
-			scanned_user = text_or_null(GetNameAndAssignmentFromId(I))
+			scanned_user = GetNameAndAssignmentFromId(I)
 		else
 			scanned_user = "Unknown"
 	else
@@ -807,3 +807,4 @@ CAPABILITIES(/datum/news_photo)
 /// photo (a relation view: it reads null once the target is deleted).
 /datum/news_photo/proc/photo() as /obj/item/photo
 	return photo
+SCHEMA(/obj/machinery/newscaster, scanned_user, schema_text())

@@ -7,7 +7,7 @@
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
 	var/tmp/move_speed = 10
-	EXPIRY_TMP_DECLARE(l_move_time)
+	var/tmp/l_move_time = 0
 	l_move_time = 1
 	var/datum/thrownthing/throwing // running: set only mid-throw
 	// throw_source lives in code/datums/sparse_vars/movable_misc.dm
@@ -290,7 +290,7 @@
 
 	// Update timers/cooldown stuff
 	move_speed = world.time - l_move_time
-	EXPIRY_STAMP(src, l_move_time, CLOCK_WORLD)
+	STAMP(src, l_move_time, CLOCK_WORLD)
 	last_move = direct // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary
 
@@ -391,7 +391,7 @@
 	if(QDELETED(A))
 		return
 	A.Bumped(src)
-	STAMP(A, last_bumped, CLOCK_WORLD)
+	stamp_now(A, last_bumped, CLOCK_WORLD)
 
 /atom/movable/proc/forceMove(atom/destination, direction, movetime)
 	. = FALSE

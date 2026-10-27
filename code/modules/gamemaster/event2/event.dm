@@ -27,8 +27,8 @@ This allows for events that have their announcement happen after the end itself.
 	var/finished = FALSE	// Is set to TRUE when `ended` and `announced` are TRUE.
 
 	// `world.time`s when this event started, and finished, for bookkeeping.
-	EXPIRY_DECLARE(time_started)
-	EXPIRY_DECLARE(time_finished)
+	var/time_started = 0
+	var/time_finished = 0
 
 	// If these are set, the announcement will be delayed by a random time between the lower and upper bounds.
 	// If the upper bound is not defined, then it will use the lower bound instead.
@@ -50,9 +50,9 @@ This allows for events that have their announcement happen after the end itself.
 	var/length_upper_bound = null
 
 	// Set automatically, don't touch.
-	EXPIRY_DECLARE(time_to_start)
-	EXPIRY_DECLARE(time_to_announce)
-	EXPIRY_DECLARE(time_to_end)
+	COOLDOWN_DECLARE(time_to_start)
+	COOLDOWN_DECLARE(time_to_announce)
+	COOLDOWN_DECLARE(time_to_end)
 
 	// These are also set automatically, and are provided for events to know what RNG decided for the various durations.
 	var/start_delay = null
@@ -118,15 +118,15 @@ This allows for events that have their announcement happen after the end itself.
 
 // Starts the event.
 /datum/event2/event/proc/execute()
-	EXPIRY_STAMP(src, time_started, CLOCK_WORLD)
+	STAMP(src, time_started, CLOCK_WORLD)
 
 	if(announce_delay_lower_bound)
 		announce_delay = rand(announce_delay_lower_bound, announce_delay_upper_bound ? announce_delay_upper_bound : announce_delay_lower_bound)
-		EXPIRY_SET(src, time_to_announce, announce_delay, CLOCK_WORLD)
+		COOLDOWN_START(src, time_to_announce, announce_delay)
 
 	if(start_delay_lower_bound)
 		start_delay = rand(start_delay_lower_bound, start_delay_upper_bound ? start_delay_upper_bound : start_delay_lower_bound)
-		EXPIRY_SET(src, time_to_start, start_delay, CLOCK_WORLD)
+		COOLDOWN_START(src, time_to_start, start_delay)
 
 	if(length_lower_bound)
 		var/starting_point = time_to_start ? time_to_start : world.time
@@ -139,7 +139,7 @@ This allows for events that have their announcement happen after the end itself.
 // Don't override this, use `end()` for cleanup instead.
 /datum/event2/event/proc/finish()
 	finished = TRUE
-	EXPIRY_STAMP(src, time_finished, CLOCK_WORLD)
+	STAMP(src, time_finished, CLOCK_WORLD)
 
 // Called by admins wanting to stop an event immediately.
 /datum/event2/event/proc/abort()
@@ -198,7 +198,7 @@ CAPABILITIES(/datum/event2/event)
 /datum/event2/event/proc/should_announce()
 	if(!time_to_announce)
 		return TRUE
-	return !BEFORE(src, time_to_announce, CLOCK_WORLD)
+	return COOLDOWN_LAPSED(src, time_to_announce)
 
 // Override this for code that alerts the crew that the event is happening in some form, e.g. a centcom announcement or some other message.
 // If you want them to not know, you can just not override it.
@@ -213,7 +213,7 @@ CAPABILITIES(/datum/event2/event)
 /datum/event2/event/proc/should_start()
 	if(!time_to_start)
 		return TRUE
-	return !BEFORE(src, time_to_start, CLOCK_WORLD)
+	return COOLDOWN_LAPSED(src, time_to_start)
 
 // Override this for code to do the actual event.
 /datum/event2/event/proc/start()
@@ -230,7 +230,7 @@ CAPABILITIES(/datum/event2/event)
 /datum/event2/event/proc/should_end()
 	if(!time_to_end)
 		return TRUE
-	return !BEFORE(src, time_to_end, CLOCK_WORLD)
+	return COOLDOWN_LAPSED(src, time_to_end)
 
 // Override this for code to run when the event is over, e.g. cleanup.
 /datum/event2/event/proc/end()

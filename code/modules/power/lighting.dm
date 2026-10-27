@@ -72,7 +72,7 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/auto_flicker = FALSE // If true, will constantly flicker, so long as someone is around to see it (otherwise its a waste of CPU).
 	var/obj/item/cell/emergency_light/cell
 	/// World time the emergency discharge was last settled (0 for none).
-	EXPIRY_DECLARE(emergency_discharge_started)
+	var/emergency_discharge_started = 0
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
 	var/no_emergency = FALSE	// if true, this light cannot ever have an emergency mode
@@ -274,7 +274,7 @@ CAPABILITIES(/obj/machinery/light)
 	var/charge = cell ? cell.charge : latent_cell_charge
 	var/maxcharge = cell ? cell.maxcharge : initial(/obj/item/cell/emergency_light::maxcharge)
 	if(cell && emergency_discharge_started)
-		charge = max(0, charge - LIGHT_EMERGENCY_POWER_USE * (max(0, EXPIRY_NOW(src, CLOCK_WORLD) - emergency_discharge_started) / (2 SECONDS)))
+		charge = max(0, charge - LIGHT_EMERGENCY_POWER_USE * (max(0, TIME_NOW(CLOCK_WORLD) - emergency_discharge_started) / (2 SECONDS)))
 	return "Its backup power charge meter reads [round((charge / maxcharge) * 100, 0.1)]%."
 
 // ---- alerts ----
@@ -773,14 +773,14 @@ CAPABILITIES(/obj/machinery/light)
 	// Set the initial emergency appearance immediately, then account for charge in one batch when the light next has to change
 	// (emergency_discharge_wait()).
 	use_emergency_power(0)
-	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
+	STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	after(src, emergency_discharge_wait(), PROC_REF(continue_emergency_discharge), key = "discharge", clock = CLOCK_WORLD)
 
 /obj/machinery/light/proc/settle_emergency_discharge()
 	if(!emergency_discharge_started || !has_cell())
 		return
 	var/elapsed = max(0, world.time - emergency_discharge_started)
-	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
+	STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
 		// A sustained draw over `elapsed`, settled in one batch: the cell sees its rate, not one surge.

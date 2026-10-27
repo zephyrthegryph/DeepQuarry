@@ -63,9 +63,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
 /mob/show_message(msg, type, alt, alt_type)
-#ifdef UNIT_TESTS
-	test_chat_note(src, msg) // a test mob has no client: the driver keeps what it would have been shown
-#endif
 
 	if(!client && !teleop())	return
 
@@ -381,12 +378,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	// Try to figure out what time to use
 
 	// Special cases, can never respawn
-	if(ticker_mode()?.deny_respawn)
-		time = -1
-	else if(!CONFIG_GET(flag/abandon_allowed))
-		time = -1
-	else if(!CONFIG_GET(flag/respawn))
-		time = -1
+	var/forbidden = FALSE
+	if(time == RESPAWN_NEVER || ticker_mode()?.deny_respawn || !CONFIG_GET(flag/abandon_allowed) || !CONFIG_GET(flag/respawn))
+		forbidden = TRUE
+		time = 0
 
 	// Special case for observing before game start
 	else if(round_game_state() <= GAME_STATE_SETTING_UP)
@@ -403,11 +398,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	else if(!keytouse && mind?.key)
 		keytouse = ckey(mind.key)
 
-	GLOB.respawn_timers[keytouse] = EXPIRY_AT(null, CLOCK_WORLD, 0) + time
+	SSmobs.set_respawn_wait(keytouse, time, forbidden)
 
 /mob/observer/dead/set_respawn_timer()
 	if(CONFIG_GET(flag/antag_hud_restricted) && has_enabled_antagHUD)
-		..(-1)
+		..(RESPAWN_NEVER)
 	else
 		return // Don't set it, no need
 

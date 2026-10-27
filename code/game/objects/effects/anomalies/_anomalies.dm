@@ -10,7 +10,7 @@
 	var/area/impact_area
 
 	var/lifespan = ANOMALY_COUNTDOWN_TIMER
-	EXPIRY_DECLARE(death_time)
+	COOLDOWN_DECLARE(death_time)
 
 	var/countdown_colour
 	var/obj/effect/countdown/anomaly/countdown
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/effect/anomaly)
 		anomaly_core.anomaly_type = type
 
 /obj/effect/anomaly/proc/start_initial_countdown()
-	EXPIRY_SET(src, death_time, lifespan, CLOCK_WORLD)
+	COOLDOWN_START(src, death_time, lifespan)
 
 	if(countdown_colour)
 		countdown.color = countdown_colour
@@ -93,13 +93,13 @@ CAPABILITIES(/obj/effect/anomaly)
 /obj/effect/anomaly/proc/anomalyPulse()
 	if(!stats)
 		return FALSE
-	if(EXPIRY_ACTIVE(stats, next_activation, CLOCK_WORLD))
+	if(COOLDOWN_RUNNING(stats, next_activation))
 		return FALSE
 
 	stats.pulse_effect()
 	if(QDELETED(src))
 		return FALSE
-	EXPIRY_SET(stats, next_activation, rand(stats.min_activation, stats.max_activation), CLOCK_WORLD)
+	COOLDOWN_START(stats, next_activation, rand(stats.min_activation, stats.max_activation))
 	return TRUE
 
 /obj/effect/anomaly/proc/move_anomaly()

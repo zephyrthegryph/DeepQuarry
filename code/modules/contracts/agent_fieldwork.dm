@@ -207,7 +207,7 @@
 	payload["contact_account"] = contract.contact_account_number
 	payload["contact_name"] = contract.contact_name
 	payload["contact_mode"] = contract.contact_mode
-	payload["signed_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	payload["signed_at"] = TIME_NOW(CLOCK_WORLD)
 	paper.name = "signed external freight subcontract — [contract.id]"
 	paper.set_info(paper.info + ("<br><b>Authenticated contact:</b> [html_encode(contract.contact_name)]<br><b>Terms:</b> [agent_contact_mode_name(contract.contact_mode)], [contract.contact_share_percent]% reward share.<br>"))
 	paper.updateinfolinks()
@@ -220,7 +220,7 @@
 	if(account?.account_number != contract.contact_account_number)
 		return FALSE
 	payload["cooperated"] = TRUE
-	payload["cooperated_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	payload["cooperated_at"] = TIME_NOW(CLOCK_WORLD)
 	contract.contact_cooperated = TRUE
 	contract.contact_share_percent = 0
 	contract.contact_sales_commission = 0
@@ -258,7 +258,7 @@
 		return FALSE
 	payload["signed"] = TRUE
 	payload["approach"] = selected_approach
-	payload["signed_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	payload["signed_at"] = TIME_NOW(CLOCK_WORLD)
 	paper.name = "signed faction operation charter — [contract.id]"
 	paper.set_info(paper.info + ("<br><b>Authenticated agent:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br><b>Operating approach:</b> [agent_approach_name(selected_approach)].<br>"))
 	paper.updateinfolinks()
@@ -280,12 +280,12 @@
 			continue
 		for(var/market_id in contract.market_reservation_ids)
 			var/datum/cargo_market_bid/bid = SSsupply.market_bid(market_id)
-			if(!bid || bid.completed_at || !BEFORE(null, bid.expires_at, CLOCK_WORLD))
+			if(!bid || bid.completed_at || COOLDOWN_LAPSED(bid, expires_at))
 				continue
 			crate.cargo_market_bid_id = bid.id
 			crate.cargo_market_router_account = contract.contact_account_number
 			crate.cargo_market_contract_key = contract.offer_key
-			document.payload["loaded_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+			document.payload["loaded_at"] = TIME_NOW(CLOCK_WORLD)
 			var/shipment_ref = ref_token(crate) // a handle text: the payload stays plain data
 			document.payload["shipment_ref"] = shipment_ref
 			return TRUE

@@ -156,10 +156,10 @@
 	var/datum/contract/materialized = candidate_context["defer_materialization"] ? null : try_materialize_candidate(candidate)
 	if(materialized)
 		return materialized
-	var/cooldown_until = offer_cooldowns[offer_key] || 0
+	var/datum/contract_cooldown/cooldown = contract_cooldown_running(offer_cooldowns, offer_key)
 	var/recheck_delay = candidate_expires_at ? max(1, candidate_expires_at - world.time) : 0
-	if(BEFORE(src, cooldown_until, CLOCK_WORLD))
-		recheck_delay = recheck_delay ? min(recheck_delay, cooldown_until - world.time) : cooldown_until - world.time
+	if(cooldown)
+		recheck_delay = recheck_delay ? min(recheck_delay, contract_cooldown_left(cooldown)) : contract_cooldown_left(cooldown)
 	if(recheck_delay)
 		after(src, recheck_delay, PROC_REF(reconcile_offer_board), with = list("Candidate timer"))
 	return null
@@ -168,10 +168,10 @@
 	if(!candidate || !(candidate in offer_candidates))
 		return null
 	var/datum/contract_definition/definition = definitions[candidate.definition_id]
-	if(!definition || (candidate.expires_at && !BEFORE(src, candidate.expires_at, CLOCK_WORLD)) || !definition.is_available(candidate.context))
+	if(!definition || (candidate.expires_at && COOLDOWN_LAPSED(candidate, expires_at)) || !definition.is_available(candidate.context))
 		withdraw_candidate(candidate, "Eligibility ended before publication.")
 		return null
-	if(BEFORE(src, offer_cooldowns[candidate.offer_key] || 0, CLOCK_WORLD) || !make_priority_capacity(candidate, definition))
+	if(contract_cooldown_running(offer_cooldowns, candidate.offer_key) || !make_priority_capacity(candidate, definition))
 		return null
 	var/list/materialization_context = deepCopyList(candidate.context)
 	materialization_context["offer_key"] = candidate.offer_key
@@ -242,7 +242,7 @@
 	if(definition?.auto_replace && contract.offer_kind == CONTRACT_OFFER_STANDING)
 		cooldown = rand(CONTRACT_ROTATION_MIN_DELAY, CONTRACT_ROTATION_MAX_DELAY)
 	if(isnum(cooldown) && cooldown > 0)
-		offer_cooldowns[contract.offer_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + cooldown
+		contract_cooldown_start(nameof(offer_cooldowns), contract.offer_key, cooldown)
 	switch(contract.closure_code)
 		if(CONTRACT_CLOSE_DECLINED)
 			offers_declined++

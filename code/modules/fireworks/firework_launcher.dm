@@ -8,11 +8,11 @@
 
 	circuit = /obj/item/circuitboard/firework_launcher
 	var/tmp/obj/item/firework_star/loaded_star
-	EXPIRY_DECLARE(last_launch)
+	var/last_launch = 0
 	var/launch_cooldown = 5 MINUTES
 
 /obj/machinery/firework_launcher/proc/stamp_launch_cooldown()
-	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
+	STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
 
 /obj/machinery/firework_launcher/RefreshParts()
 	set_launch_cooldown(5 MINUTES)
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		return "close the panel first"
 	if(!loaded_star())
 		return "there is no firework star loaded in \the [src]"
-	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
+	if(ELAPSED(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
 		return "\The [src] is still re-priming for launch"
 	if(!anchored)
 		return "\The [src] must be firmly secured to the ground before firework can be launched"
@@ -117,7 +117,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 	loaded_star().trigger_firework(WH)
 	spent(loaded_star(), user)
 	rel_clear(src, nameof(loaded_star))
-	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
+	STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
 	flick("launcher_launch", src)
 	return TRUE

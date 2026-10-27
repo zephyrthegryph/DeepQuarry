@@ -195,7 +195,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/list/port_links
 	var/ambient_engine = FALSE
 	var/chemical_rate = 0
-	EXPIRY_DECLARE(chemical_last_update)
+	var/chemical_last_update = 0
 	var/input_joules = 0
 	var/output_joules = 0
 	var/loss_joules = 0
@@ -219,14 +219,16 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/has_sampled = FALSE
 	var/last_admission_event
 
+SCHEMA(/datum/material_service, electrical_reference_temperature, num())
+
 /datum/material_service/New(obj/holder)
 	..()
 	rel_set(src, nameof(owner), holder)
 	var/datum/material_assembly/assembly = material_assembly(holder)
 	if(!assembly.assembly_id)
 		assembly.assembly_id = "ME-[++GLOB.next_material_assembly_id]"
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
-	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, chemical_last_update, CLOCK_WORLD)
 	initialize_thermal_stock()
 	register_diagnostics()
 	// Not scheduled here: material_service_event(), the only creator, schedules the first
@@ -301,7 +303,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	// Sleeping means the previous environment had no continuing effect. Do not
 	// charge minutes spent asleep against a newly hot or corrosive mixture.
 	if(!active && !timer)
-		EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+		STAMP(src, last_update, CLOCK_WORLD)
 	if(topology_changed)
 		watches_dirty = TRUE
 	schedule(active && !topology_changed ? MATERIAL_SERVICE_INTERVAL : 0)
@@ -415,7 +417,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 
 /datum/material_service/proc/settle_chemical()
 	var/elapsed = max(0, (world.time - chemical_last_update) / 10)
-	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
+	STAMP(src, chemical_last_update, CLOCK_WORLD)
 	if(chemical_rate && elapsed)
 		var/datum/material_assembly/wear = material_assembly(owner())
 		wear.liner_integrity = max(0, wear.liner_integrity - chemical_rate * elapsed)
@@ -580,7 +582,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/elapsed = has_sampled ? clamp((world.time - last_update) / 10, 0, MATERIAL_SERVICE_MAX_ELAPSED) : 0
 	has_sampled = TRUE
 	settle_chemical()
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
 	if(QDELETED(owner()))
 		updating = FALSE
 		return
@@ -626,7 +628,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		owner().take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)
 		active = TRUE
 	updating = FALSE
-	last_environment_temperature = num_or_null(temperature())
+	last_environment_temperature = temperature()
 	active = sample_observation() || active
 	if(active)
 		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
@@ -707,3 +709,4 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /// The heat a material service's phase buffer holds, J.
 /proc/material_service_buffer(datum/material_service/service)
 	return service.buffer_energy()
+SCHEMA(/datum/material_service, last_environment_temperature, num())

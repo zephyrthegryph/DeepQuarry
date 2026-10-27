@@ -44,7 +44,7 @@
 	var/medical_form = FALSE
 	var/armor_form = FALSE
 	var/tool_form = FALSE
-	EXPIRY_DECLARE(last_energy_settlement)
+	var/last_energy_settlement = 0
 	var/reference_temperature
 	var/next_piezo_response = 0
 	var/stored_phase_energy = 0
@@ -70,8 +70,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	medical_form = !!_medical_form
 	armor_form = !!_armor_form
 	tool_form = !!_tool_form
-	EXPIRY_STAMP(src, last_energy_settlement, CLOCK_WORLD)
-	reference_temperature = num_or_null(ambient_temperature())
+	STAMP(src, last_energy_settlement, CLOCK_WORLD)
+	reference_temperature = ambient_temperature()
 	stored_reactive_energy = armor_form ? material.reactive_energy_capacity : 0
 	if(material.reagent_porosity > 0 && (medical_form || tool_form))
 		var/obj/item/item = parent
@@ -116,7 +116,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	var/generated = material.electrogenic_rate * elapsed_seconds
 	// Thermoelectric conversion is applied to real transferred heat by the
 	// assembly thermal service, never to a difference between UI observations.
-	reference_temperature = num_or_null(current_temperature)
+	reference_temperature = current_temperature
 	last_energy_settlement = now
 	return generated > 0 ? cell.give(min(generated, cell.amount_missing())) : 0
 
@@ -305,3 +305,4 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	// Superconductors eliminate conductor loss; they do not multiply stored
 	// energy. Throughput and heat are handled by the cell's conductor role.
 	return amount
+SCHEMA(/datum/material_response, reference_temperature, num())

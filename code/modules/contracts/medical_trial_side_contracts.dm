@@ -350,9 +350,9 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 	SScontracts.bind_evidence_subject(evidence_id, identity.id)
 	payload["subject_name"] = subject.real_name
 	payload["signature"] = signature
-	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	payload["signature_time"] = TIME_NOW(CLOCK_WORLD)
 	var/datum/medical_trial_participant/signed_participant = trial.participants?[identity.id]
-	EXPIRY_STAMP(signed_participant, consent_time, CLOCK_WORLD)
+	STAMP(signed_participant, consent_time, CLOCK_WORLD)
 	signed_participant.consent_evidence_id = evidence_id
 	rel_set(signed_participant, nameof(signed_participant.consent_record), paper)
 	paper.name = "signed VeyMed observation record - [subject.real_name]"
@@ -373,7 +373,7 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 	if(payload["signed"] || !istype(subject) || SScontracts.subject_identity(subject)?.id != payload["subject_id"])
 		return FALSE
 	payload["signed"] = TRUE
-	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	payload["signature_time"] = TIME_NOW(CLOCK_WORLD)
 	paper.name = "signed [paper.name]"
 	paper.set_info(paper.info + ("<br><b>Status:</b> Signed withdrawal pending receipt by [destination]."))
 	paper.updateinfolinks()
@@ -500,7 +500,7 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 		if(evidence["subject_id"] != subject_id)
 			continue
 		var/scanned_at = evidence["scan_time"]
-		if(!isnum(scanned_at) || BEFORE(null, scanned_at, CLOCK_WORLD))
+		if(!isnum(scanned_at) || SScontracts.scan_is_from_the_future(evidence))
 			continue
 		if(scanned_at >= signature_time && scanned_at <= participant.exposure_time)
 			if(!baseline || scanned_at > baseline["scan_time"])

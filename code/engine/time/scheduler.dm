@@ -136,19 +136,11 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/expect_errors = FALSE
 	/// Times a lane loop was aborted by a runtime that escaped per-behaviour isolation (run_lane_guarded()).
 	var/lane_faults = 0
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	/// Test harness: lane -> TRUE makes run_lane() runtime for that lane (lane-isolation tests).
-	var/list/harness_lane_fault
-#endif
 	var/last_run_ms = 0
 	var/runs = 0
 	/// Where this scheduler charges what it spends, per system (code/controllers/measure/): the live meter, or a
 	/// test's own (scheduler_test_begin()).
 	var/datum/tick_meter/meter
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	/// Tests: when a list, every dispatched change is logged here as list(entity, bits).
-	var/list/test_raises
-#endif
 
 /datum/time_scheduler/New()
 	if(!rings)
@@ -1111,7 +1103,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 /datum/time_scheduler/proc/note_slow_step(datum/scheduled_behaviour/B, datum/E, usage, kind = "step")
 	if(slow_step && slow_step["world_time"] == world.time && slow_step["usage"] >= usage)
 		return
-	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = (E ? "[E.type]" : "none"), "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = EXPIRY_AT(null, CLOCK_WORLD, 0))
+	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = (E ? "[E.type]" : "none"), "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = TIME_NOW(CLOCK_WORLD))
 
 GLOBAL_DATUM(time_scheduler_factory, /datum/time_scheduler_factory)
 

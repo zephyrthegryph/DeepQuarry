@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "ELAPSED_SINCE, BEFORE and LEFT_UNTIL callers moved to ELAPSED and the EXPIRY_ACTIVE/EXPIRED/LEFT deadline forms on declared vars; untyped time rows became small records"

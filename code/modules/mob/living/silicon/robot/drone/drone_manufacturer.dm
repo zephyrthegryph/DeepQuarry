@@ -16,7 +16,7 @@
 	var/fabricator_tag = "Upper Level"
 	var/drone_progress = 0
 	var/produce_drones = 2
-	EXPIRY_DECLARE(time_last_drone)
+	var/time_last_drone = 0
 	time_last_drone = 500
 	var/drone_type = /mob/living/silicon/robot/drone
 
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/machinery/drone_fabricator)
 	flick("h_lathe_leave",src)
 	set_drone_progress(0)
 
-	EXPIRY_STAMP(src, time_last_drone, CLOCK_WORLD)
+	STAMP(src, time_last_drone, CLOCK_WORLD)
 	work_start(src)
 
 	var/mob/living/silicon/robot/drone/new_drone = new drone_type(get_turf(src))

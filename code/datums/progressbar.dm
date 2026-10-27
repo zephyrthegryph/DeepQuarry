@@ -22,7 +22,7 @@
 	///Where to draw the progress bar above the icon
 	var/offset_y
 	/// animate_fill(): when the client-side fill started, and how long it takes.
-	EXPIRY_DECLARE(fill_started)
+	var/fill_started = 0
 	var/fill_duration = 0
 
 CAPABILITIES(/datum/progressbar)
@@ -149,7 +149,7 @@ CAPABILITIES(/datum/progressbar)
 
 /// Fills the bar over `duration` deciseconds as a client-side animation: no server updates.
 /datum/progressbar/animate_fill(duration)
-	EXPIRY_STAMP(src, fill_started, CLOCK_WORLD)
+	STAMP(src, fill_started, CLOCK_WORLD)
 	fill_duration = max(duration, 1)
 	var/step_time = fill_duration / 20
 	animate(bar, icon_state = "prog_bar_5", time = step_time, flags = ANIMATION_PARALLEL)

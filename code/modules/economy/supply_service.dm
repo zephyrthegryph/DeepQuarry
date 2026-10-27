@@ -19,7 +19,7 @@ SYSTEM_DEF(supply)
 
 	var/points_per_slip = 2
 	var/points_per_money = 0.02 // Legacy export values convert at 1 point = 50 Thalers.
-	EXPIRY_DECLARE(next_payroll)
+	COOLDOWN_DECLARE(next_payroll)
 	/// NanoTrasen's default contribution toward the station's projected gross payroll.
 	var/nt_salary_support = 0.75
 	/// Command-selected rule for dividing the projected station payroll pool.
@@ -83,7 +83,7 @@ CAPABILITIES(/datum/system/supply)
 			spent(P)
 	initialize_cargo_market()
 
-	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
+	COOLDOWN_START(src, next_payroll, 15 MINUTES)
 	log_world("System [name] initialized: [length(supply_pack)] supply packs.")
 
 /datum/system/supply/proc/reset_shift_economy_tracking()
@@ -101,14 +101,14 @@ CAPABILITIES(/datum/system/supply)
 
 /datum/system/supply/proc/supply_step(dt)
 	process_cargo_market()
-	if(next_payroll && EXPIRY_EXPIRED(src, next_payroll, CLOCK_WORLD))
+	if(next_payroll && COOLDOWN_LAPSED(src, next_payroll))
 		payroll_cycle() // every 15 minutes, noticed on the 20 s step (payroll_cycle() sets the next time)
 	return STEP_DONE
 
 /// Every 15 minutes (supply_step() calls it once next_payroll has passed): the department budget cycle and
 /// payroll. next_payroll is the time of the next cycle.
 /datum/system/supply/proc/payroll_cycle()
-	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
+	COOLDOWN_START(src, next_payroll, 15 MINUTES)
 	var/completed_service_period = service_accounting_period
 	var/list/funded_allocations = run_department_budget_cycle()
 	run_department_payroll()

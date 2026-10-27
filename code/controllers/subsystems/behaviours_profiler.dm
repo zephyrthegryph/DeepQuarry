@@ -5,7 +5,7 @@
 
 /datum/system/behaviours
 	/// world.time the profiler counters were last cleared (0: since boot).
-	EXPIRY_DECLARE(profile_reset_time)
+	var/profile_reset_time = 0
 
 CAPABILITIES(/datum/system/behaviours)
 	interface("OmProfiler", title = "Object Model Profiler", rights = R_DEBUG)
@@ -128,7 +128,7 @@ CAPABILITIES(/datum/system/behaviours)
 		sched.stage_calls = list()
 	// The per-system record (histograms, overrun share, input latency) restarts with it; the flight recorder stays.
 	km_meter().live.reset()
-	EXPIRY_STAMP(src, profile_reset_time, CLOCK_WORLD)
+	STAMP(src, profile_reset_time, CLOCK_WORLD)
 	log_admin("[key_name(user)] reset the OM profiler counters.")
 	return TRUE
 

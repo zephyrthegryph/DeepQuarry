@@ -2,21 +2,17 @@
 //! (doc/rewrite/object_model_core.md sec 16, "Rate-limit something").
 //!
 //! Counts the hand-rolled form: a line that compares `world.time` with something. Not counted, when
-//! the line reads one of these: a var declared with `EXPIRY_DECLARE(name)` / `EXPIRY_TMP_DECLARE(name)`
-//! anywhere in `code/` (collected by name first, which is why this is a tree scan), a var named for a
-//! point in time (`*_at`, `*_until`, ...), a list slot read by a literal key or index, a reagent's
+//! the line reads one of these: a var named for a point in time (`*_at`, `*_until`, ...), a list slot read by a literal key or index, a reagent's
 //! `data` slot under `code/modules/reagents`, a compare against a bare constant. Skipped: `#` lines
-//! and the `exempt_prefixes` in `lint_scopes.toml` (the name index still reads those files).
+//! and the `exempt_prefixes` in `lint_scopes.toml`.
 //!
 //! Quirks kept: the compare is tried on the `code_only` view, whose line numbers can drift from the raw
-//! file after an unbalanced quote, and the fingerprint text is the raw line at that number; a name
-//! declared in an EXPIRY macro inside a comment still joins the index; the Python read files with
+//! file after an unbalanced quote, and the fingerprint text is the raw line at that number; the Python read files with
 //! `errors="ignore"` (invalid bytes dropped) where the engine's text has U+FFFD.
 
 use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
-use serde::{Deserialize, Serialize};
 
 use crate::dm::pylines::recorded_into;
 use crate::incr;
@@ -56,7 +52,6 @@ const CONST: &str = r"\d+(?:\.\d+)?(?:\s+(?:SECONDS?|MINUTES?|HOURS?|DECISECONDS
 struct Patterns {
     compare: Pat,
     time_name: Pat,
-    decl: Pat,
     data_slot: Pat,
     reagent_data: Pat,
     const_cmp: Pat,
@@ -67,7 +62,6 @@ impl Patterns {
         Patterns {
             compare: Pat::new(&format!(r"(?<![\w.])world\.time\s*{cmp}|{cmp}\s*world\.time(?![\w])", cmp = CMP)),
             time_name: Pat::new(r"\b\w*(?:_at|_until|_since|deadline|expires|expires_at|expiry|timestamp|timeofdeath)\b"),
-            decl: Pat::new(r"\b(?:STATIC_)?EXPIRY(?:_TMP)?_DECLARE\(\s*(\w+)\s*\)"),
             data_slot: Pat::new(r#"\[\s*(?:""|\d+)\s*\]"#),
             reagent_data: Pat::new(r"(?<![\w.])data\b"),
             const_cmp: Pat::new(&format!(
@@ -81,11 +75,6 @@ impl Patterns {
 
 struct Cooldown {
     p: Patterns,
-}
-
-#[derive(Serialize, Deserialize, Default, PartialEq)]
-struct Names {
-    names: Vec<String>,
 }
 
 fn not_a_cooldown(p: &Patterns, rel: &str, line: &str, stamp: &Option<Pat>) -> bool {
@@ -107,22 +96,9 @@ impl Lint for Cooldown {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let p = &self.p;
-        // `timestamp_names()`: every EXPIRY(_TMP)_DECLARE name in code/, exempt files included. One
-        // file's names are cached by content; the union keys the per-file judgements.
-        let all = cx.all_files();
-        let declared = incr::facts("cooldown-names", &all, |f| {
-            let text = f.text();
-            let mut names: BTreeSet<String> = BTreeSet::new();
-            if text.contains("EXPIRY") {
-                for m in p.decl.captures_iter(text) {
-                    names.insert(m.s(1).to_string());
-                }
-            }
-            Names { names: names.into_iter().collect() }
-        });
-        let mut names: BTreeSet<String> = declared.into_iter().flat_map(|n| n.names).collect();
-        names.remove("name");
-        names.remove("time"); // would match every `world.time`
+        // No declared-name index any more: the old declaration macro names it read are gone (an end time is a COOLDOWN var the
+        // macros read, a start time a STAMP var), so a raw `world.time` compare against one counts.
+        let names: BTreeSet<String> = BTreeSet::new();
         let stamp: OnceLock<Option<Pat>> = OnceLock::new();
         let stamp_of = || {
             stamp.get_or_init(|| {

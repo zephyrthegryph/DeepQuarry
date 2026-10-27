@@ -34,7 +34,7 @@ SYSTEM_DEF(ticker)
 	var/selected_tip // What will be the tip of the day?
 
 	var/timeLeft //pregame timer
-	EXPIRY_DECLARE(start_at)
+	COOLDOWN_DECLARE(start_at)
 
 	var/gametime_offset = 432000 //Deciseconds to add to world.time for station time.
 	var/station_time_rate_multiplier = 12 //factor of station time progressal vs real time.
@@ -54,7 +54,7 @@ SYSTEM_DEF(ticker)
 
 	var/roundend_check_paused = FALSE
 
-	EXPIRY_DECLARE(round_start_time)
+	var/round_start_time = 0
 	var/list/round_start_events
 	var/mode_result = "undefined"
 	var/end_state = "undefined"
@@ -74,7 +74,9 @@ SYSTEM_DEF(ticker)
 	/// Time remaining until restart in desiseconds
 	var/restart_timeleft
 	/// world.time of last restart warning.
-	EXPIRY_DECLARE(last_restart_notify)
+	var/last_restart_notify = 0
+	/// When Reboot() began waiting for the round-end sound.
+	var/tmp/reboot_wait_started = 0
 
 /// Time left until a scheduled reboot; announce_countdown() counts it down while it is above zero.
 /datum/system/ticker/var/tmp/reboot_countdown_left = 0
@@ -90,7 +92,7 @@ SYSTEM_DEF(ticker)
 
 /datum/system/ticker/initialize()
 	lifecycle_decls_init(src) // a non-atom has no materialize
-	EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
+	COOLDOWN_START(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10))
 
 /// The round state machine runs every `wait` (phase K).
 /datum/system/ticker/reactions()
@@ -100,7 +102,7 @@ SYSTEM_DEF(ticker)
 /datum/system/ticker/proc/round_step(dt)
 	switch(current_state)
 		if(GAME_STATE_STARTUP)
-			EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
+			COOLDOWN_START(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10))
 			for(var/client/C in GLOB.clients)
 				window_flash(C, ignorepref = TRUE) //let them know lobby has opened up.
 			to_chat(world, span_boldnotice("Welcome to [station_name()]!"))
@@ -144,7 +146,7 @@ SYSTEM_DEF(ticker)
 			if(!setup())
 				//setup failed
 				current_state = GAME_STATE_STARTUP
-				EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
+				COOLDOWN_START(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10))
 				timeLeft = null
 				Kernel.SetRunLevel(RUNLEVEL_LOBBY)
 
@@ -189,7 +191,7 @@ SYSTEM_DEF(ticker)
 
 			if (ELAPSED(src, last_restart_notify, CLOCK_WORLD) >= 1 MINUTE && !delay_end)
 				to_chat(world, span_boldannounce("Restarting in [round(restart_timeleft/600, 1)] minute\s."))
-				EXPIRY_STAMP(src, last_restart_notify, CLOCK_WORLD)
+				STAMP(src, last_restart_notify, CLOCK_WORLD)
 
 /datum/system/ticker/proc/setup()
 	to_chat(world, span_boldannounce("Starting game..."))
@@ -214,7 +216,7 @@ SYSTEM_DEF(ticker)
 	LAZYCLEARLIST(round_start_events)
 
 	//otherwise round_start_time would be 0 for the signals
-	EXPIRY_STAMP(src, round_start_time, CLOCK_WORLD)
+	STAMP(src, round_start_time, CLOCK_WORLD)
 	GLOB.round_start_time = REALTIMEOFDAY
 	SSserver_metrics.round_started()
 
@@ -356,7 +358,7 @@ SYSTEM_DEF(ticker)
 				restart_timeleft = 1 MINUTE // No point waiting five minutes if everyone's dead.
 				if(!delay_end)
 					to_chat(world, span_boldannounce("Rebooting due to destruction of [station_name()] in [round(restart_timeleft/600)] minute\s."))
-					EXPIRY_STAMP(src, last_restart_notify, CLOCK_WORLD)
+					STAMP(src, last_restart_notify, CLOCK_WORLD)
 			else
 				feedback_set_details("end_proper", "proper completion")
 				restart_timeleft = restart_timeout
@@ -469,9 +471,9 @@ SYSTEM_DEF(ticker)
 
 	to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(delay)]. [reason]"))
 
-	var/start_wait = world.time
-	UNTIL(round_end_sound_sent || ELAPSED_SINCE(src, start_wait, CLOCK_WORLD) > (delay * 2)) //don't wait forever
-	after(src, delay - (world.time - start_wait), PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string))
+	STAMP(src, reboot_wait_started, CLOCK_WORLD)
+	UNTIL(round_end_sound_sent || ELAPSED(src, reboot_wait_started, CLOCK_WORLD) > (delay * 2)) //don't wait forever
+	after(src, delay - ELAPSED(src, reboot_wait_started, CLOCK_WORLD), PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string))
 
 /// The wait before the next countdown step: a minute, or what is left of the last one.
 /datum/system/ticker/proc/reboot_countdown_delay()

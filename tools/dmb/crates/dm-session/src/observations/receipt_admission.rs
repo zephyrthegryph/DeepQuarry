@@ -52,6 +52,10 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     pub fn host(&self) -> &'host H {
         self.host
     }
+    /// Whether receipts are certified by an answer table (`with_oracle`) rather than by domain versions.
+    pub fn has_oracle(&self) -> bool {
+        self.oracle.is_some() && self.allows_certificate_reuse()
+    }
     pub fn allows_certificate_reuse(&self) -> bool {
         !self.host.observes_answers() || self.host.supports_admitted_observation()
     }

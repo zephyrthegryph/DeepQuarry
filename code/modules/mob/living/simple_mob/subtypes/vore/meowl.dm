@@ -21,7 +21,7 @@
 	attacktext = list("scratches")
 	see_in_dark = 8
 	minbodytemp = 0
-	EXPIRY_DECLARE(well_fed)
+	var/well_fed = 0
 
 	vore_bump_chance = 0
 	vore_digest_chance = 50
@@ -110,7 +110,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/meowl)
 		return TRUE
 	act_message(user, src, MSG_SELF(span_notice("%T% happily gulps down %I% right out of your hand, it seems pretty content now.")), MSG_OTHERS(span_notice("%T% happily gulps down %I% right out of %U%'s hand, it seems pretty content now.")), item = O)
 	consume(O, user)
-	EXPIRY_STAMP(src, well_fed, CLOCK_WORLD)
+	STAMP(src, well_fed, CLOCK_WORLD)
 	return TRUE
 
 /mob/living/simple_mob/vore/meowl/PounceTarget(mob/living/M, successrate = 100)

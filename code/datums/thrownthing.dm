@@ -55,7 +55,7 @@
 	///How long an object has been paused for, to be added to the travel time.
 	var/delayed_time = 0
 	///The last world.time value stored when the thrownthing was moving.
-	EXPIRY_DECLARE(last_move)
+	var/last_move = 0
 	/// If our thrownthing has been blocked
 	var/blocked = FALSE
 
@@ -114,7 +114,7 @@ CAPABILITIES(/datum/thrownthing)
 
 	diagonal_error = dist_x/2 - dist_y
 
-	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+	STAMP(src, start_time, CLOCK_WORLD)
 
 
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
@@ -150,7 +150,7 @@ CAPABILITIES(/datum/thrownthing)
 		finalize()
 		return
 
-	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+	STAMP(src, last_move, CLOCK_WORLD)
 
 	var/area/A = get_area(AM.loc)
 	var/atom/step

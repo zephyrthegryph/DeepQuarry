@@ -7,7 +7,7 @@
 	var/revive_ready = REVIVING_READY
 	/// Time before another regeneration may start.
 	COOLDOWN_DECLARE(revive_cooldown)
-	EXPIRY_DECLARE(revive_finished)
+	COOLDOWN_DECLARE(revive_finished)
 	VAR_PRIVATE/regen_sounds = SFX_EFFECTS_MOB_EFFECTS_XENOCHIMERA_REGEN_MIX
 	VAR_PRIVATE/datum/transhuman/body_record/revival_record
 
@@ -64,7 +64,7 @@ CAPABILITIES(/datum/xenochimera)
 
 /datum/xenochimera/proc/set_revival_delay(time)
 	revive_ready = REVIVING_NOW
-	EXPIRY_SET(src, revive_finished, time SECONDS, CLOCK_WORLD) // When do we finish reviving? Allows us to find out when we're done, called by the alert currently.
+	COOLDOWN_START(src, revive_finished, time SECONDS) // When do we finish reviving? Allows us to find out when we're done, called by the alert currently.
 
 /datum/xenochimera/proc/trigger_revival(from_save_slot)
 	ASSERT(revival_record)

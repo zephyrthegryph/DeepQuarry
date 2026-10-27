@@ -36,20 +36,6 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 /world/Error(exception/E, datum/e_src)
 	GLOB.total_runtimes++
 
-#ifdef UNIT_TESTS
-	// Capture before error suppression and cache initialization. The fixed bound
-	// keeps a failing test from retaining unbounded exception descriptions.
-	if(GLOB.unit_test_runtime_capture)
-		if(LAZYLEN(GLOB.unit_test_runtime_events) < 256)
-			LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = E?.name, "file" = E?.file, "line" = E?.line, "description" = E?.desc)))
-		else
-			GLOB.unit_test_runtime_events_truncated = TRUE
-	// Preserve even very-early runtimes that occur before the normal error cache
-	// is initialized; CI treats any runtime as fatal and needs an actionable file.
-	var/runtime_log_directory = GLOB?.log_directory || "data/logs/ci"
-	text2file("[time_stamp()] [E?.file]:[E?.line] [E?.name]\n[E?.desc]\n", "[runtime_log_directory]/runtime-errors.log")
-#endif
-
 	if(!istype(E)) //Something threw an unusual exception
 		log_world("uncaught runtime error: [E]")
 		return ..()
@@ -90,8 +76,8 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 	var/cooldown = error_cooldown[erroruid] || 0
 
 	if(last_seen == null)
-		error_last_seen[erroruid] = EXPIRY_AT(null, CLOCK_WORLD, 0)
-		last_seen = EXPIRY_AT(null, CLOCK_WORLD, 0)
+		error_last_seen[erroruid] = TIME_NOW(CLOCK_WORLD)
+		last_seen = TIME_NOW(CLOCK_WORLD)
 
 	if(cooldown < 0)
 		error_cooldown[erroruid]-- //Used to keep track of skip count for this error
@@ -128,7 +114,7 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 		// (Lists pass through after() as they are: the exception rides in one.)
 		after(null, configured_error_silence_time, GLOBAL_PROC_REF(error_silence_ended), with = list(erroruid, error_cooldown, list(E)))
 
-	error_last_seen[erroruid] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	error_last_seen[erroruid] = TIME_NOW(CLOCK_WORLD)
 	error_cooldown[erroruid] = cooldown
 	SSserver_metrics?.note_runtime(E, erroruid)
 

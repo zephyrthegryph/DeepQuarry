@@ -836,8 +836,30 @@ export const AnalyzeBuildTarget = new Juke.Target({
 // tree keeps its mtimes and the .dmb caches hold) and caches its parse per file in data/analyze-cache:
 // about 3 s warm, 18 s cold. It fails on a generator diagnostic (a bad declaration) or a generated
 // file missing from deepquarry.dme. DQ_SKIP_GEN=1 skips it (the files must already exist).
+// deepquarry.dme is generated (tools/build/gen_dme.py, from the .dm files on disk and the ordering spec tools/build/dme_spec.txt): every
+// target that compiles or lints DM writes it first, so adding, moving or deleting a file never needs a hand edit of the manifest.
+// The file stays committed (DreamMaker, DreamChecker and CI read it); `gen_dme.py --check` (tools/ci/check_ratchets.sh) fails when the
+// committed one is stale. DQ_DME_GEN=0 leaves the manifest alone (tools/ci/dme_order_equiv.sh compiles a reference order with it).
+export const DmeTarget = new Juke.Target({
+  executes: async () => {
+    if (process.env.DQ_DME_GEN === '0') {
+      Juke.logger.warn(`dme: DQ_DME_GEN=0, not regenerating ${DME_NAME}.dme`);
+      return;
+    }
+    const python = process.platform === 'win32' ? 'python' : 'python3';
+    const result = spawnSync(python, ['tools/build/gen_dme.py'], { encoding: 'utf-8' });
+    const out = `${result.stdout || ''}${result.stderr || ''}`.trim();
+    if (result.error || result.status !== 0) {
+      if (out) console.log(out);
+      Juke.logger.error(`dme: tools/build/gen_dme.py failed${result.error ? ` (${result.error.message})` : ''}; fix tools/build/dme_spec.txt`);
+      throw new Juke.ExitCode(1);
+    }
+    if (out) Juke.logger.info(out);
+  },
+});
+
 export const GenTarget = new Juke.Target({
-  dependsOn: [AnalyzeBuildTarget],
+  dependsOn: [AnalyzeBuildTarget, DmeTarget],
   executes: async () => {
     if (process.env.DQ_SKIP_GEN === '1') {
       Juke.logger.warn('gen: DQ_SKIP_GEN=1, not regenerating code/engine/_generated');

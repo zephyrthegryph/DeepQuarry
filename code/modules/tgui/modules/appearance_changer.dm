@@ -46,7 +46,6 @@
 	var/list/valid_gradstyles
 	var/list/markings = null
 	var/cooldown //Anti-spam. If spammed, this can be REALLY laggy.
-	/// The flavor text a question is open for.
 
 CAPABILITIES(/datum/tgui_module/appearance_changer)
 	owns_one(nameof(cam_background), /atom/movable/screen/background)
@@ -178,9 +177,14 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 		rel_clear(src, nameof(last_camera_turf))
 		cut_data()
 
-/// Buttons are answered at most twice a second: spamming them is laggy.
+/// Buttons are answered at most twice a second, and not while the actor's earlier button of this window still waits on a question: spamming them is laggy.
 /datum/tgui_module/appearance_changer/proc/ui_cooled(datum/act/op/A)
-	return COOLDOWN_FINISHED(src, cooldown) ? null : MSG(appearance_changer/too_fast)
+	if(!COOLDOWN_FINISHED(src, cooldown))
+		return MSG(appearance_changer/too_fast)
+	for(var/datum/pending_op/earlier as anything in op_pendings_of(A.actor))
+		if(earlier != A.pending && earlier.holder == src)
+			return MSG(appearance_changer/too_fast)
+	return null
 
 MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!")
 
@@ -739,7 +743,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().set_real_name("Stock [S.name] Body")
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
-		owner().dna.base_species = text_or_null(S.base_species)
+		owner().dna.base_species = S.base_species
 		sparse_set(owner(), resleeve_lock, FALSE)
 		owner().custom_species = "Custom Sleeve" // Custom name
 		DC.set_selected_record(TRUE)
@@ -770,6 +774,17 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_savetodisk(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/machinery/computer/transhuman/designer/DC = designer_console()
+	var/datum/prompt/P = A.step_answer("permission")
+	if(P) // the permission question was asked and answered
+		if(!DC?.selected_record || !DC.disk || !owner())
+			return
+		if(!P.value)
+			to_chat(user, span_warning("ERROR: This body record is restricted."))
+		else
+			message_admins("[user] wrote an unlocked version of [owner().real_name]'s bodyrecord to a disk. Their preferences do not allow body impersonation, but may be allowed with OOC consent.")
+			sparse_set(owner(), resleeve_lock, FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
+		write_record(user, DC)
+		return
 	if(!DC?.selected_record)
 		return FALSE
 	if(!DC.disk)

@@ -124,7 +124,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/parked = FALSE
 	/// Position in the scheduler's parked list for this pipeline, and when it parked.
 	var/parked_index = 0
-	EXPIRY_DECLARE(parked_at)
+	var/parked_at = 0
 	/// Stage types added to this entity only (pipeline_stage_add()).
 	var/list/extras
 	/// Lazy: plan position -> time it last ran (min_interval stages).
@@ -563,7 +563,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	var/datum/time_scheduler/sched = E.om_rec.sched
 	S.parked = TRUE
 	S.idle_frames = 0
-	EXPIRY_STAMP(S, parked_at, CLOCK_WORLD)
+	STAMP(S, parked_at, CLOCK_WORLD)
 	if(length(sched.parked) < pipe_idx)
 		sched.parked.len = pipe_idx
 	var/list/L = sched.parked[pipe_idx]

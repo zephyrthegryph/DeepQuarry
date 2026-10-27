@@ -3,7 +3,7 @@
 	icon_state = "banana"
 	item_state = "emergency_engi"
 	arm_sound = SFX_EFFECTS_3
-	EXPIRY_DECLARE(implode_at)
+	COOLDOWN_DECLARE(implode_at)
 	/// TRUE from detonation: the slow step pulls everything in until the grenade implodes.
 	var/tmp/imploding = FALSE
 
@@ -13,7 +13,7 @@ CAPABILITIES(/obj/item/grenade/supermatter)
 /obj/item/grenade/supermatter/detonate()
 	..()
 	set_imploding(TRUE)
-	EXPIRY_SET(src, implode_at, 10 SECONDS, CLOCK_WORLD)
+	COOLDOWN_START(src, implode_at, 10 SECONDS)
 	after(src, 10 SECONDS, PROC_REF(implode))
 	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 

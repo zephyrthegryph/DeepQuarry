@@ -319,7 +319,9 @@ fn manifest_changes_renumber_adopted_subtrees_or_decline_them() {
         ),
         &memo,
     );
-    assert_eq!(redefined.walked.subtrees, 0);
+    // Only c.dm reads N in a directive; the other subtrees are adopted with the new binding carried into them.
+    assert_eq!(redefined.walked.subtrees, 3, "{:?}", redefined.walked);
+    assert_eq!(redefined.walked.rebased_subtrees, 3, "{:?}", redefined.walked);
     assert_eq!(redefined.reuse.replanned, 0, "the manifest changed: no patch");
     // A new include in the middle moves every later subtree; they are adopted renumbered.
     let inserted = request(
@@ -437,4 +439,39 @@ fn a_changed_manifest_line_before_an_adopted_subtree_keeps_the_cursors_exact() {
     );
     assert!(shifted.walked.subtrees >= 3);
     assert!(shifted.expansion.is_some());
+}
+
+#[test]
+fn a_define_edit_reruns_only_the_subtrees_whose_directives_read_it() {
+    let memo = Memo::default();
+    // The nested child reads N in a directive: its parent b.dm must run again with it; a.dm and tail.dm only use N in
+    // text and are adopted with the new binding (their expansion proves it by the macros it reads).
+    let child = "#if N > 3\n/proc/b_child()\n    return LOCAL\n#else\n/proc/b_child()\n    return 0\n#endif\n";
+    let zero = first(&world(MANIFEST, A, B, child, C, TAIL), &memo);
+    let edited = request(
+        &zero,
+        &world(&MANIFEST.replace("#define N 3", "#define N 4"), A, B, child, C, TAIL),
+        &memo,
+    );
+    assert_eq!(edited.walked.subtrees, 2, "{:?}", edited.walked);
+    assert_eq!(edited.walked.rebased_subtrees, 2, "{:?}", edited.walked);
+    // An edit back, and an unrelated define added after the includes: equal to a full pass every time.
+    let back = request(&edited, &world(MANIFEST, A, B, child, C, TAIL), &memo);
+    assert_eq!(back.walked.subtrees, 2, "{:?}", back.walked);
+    // A define above N moves N's definition site, which the subtrees reading N see: they run again.
+    let added = request(&back, &world(&format!("#define UNUSED 1\n{MANIFEST}"), A, B, child, C, TAIL), &memo);
+    assert_eq!(added.walked.subtrees, 2, "{:?}", added.walked);
+}
+
+#[test]
+fn a_new_macro_used_in_adopted_text_expands_that_text_again() {
+    let memo = Memo::default();
+    // a.dm names LATE in code; the manifest then defines it. a.dm's directives never read LATE, so the subtree is adopted
+    // under the new binding, but its expansion read LATE (absent) and must be expanded again; c.dm's need not be.
+    let a = "/proc/a()\n    return LATE\n";
+    let zero = first(&world(MANIFEST, a, B, B_CHILD, C, TAIL), &memo);
+    let defined = request(&zero, &world(&format!("#define LATE 7\n{MANIFEST}"), a, B, B_CHILD, C, TAIL), &memo);
+    assert!(defined.walked.rebased_subtrees >= 1, "{:?}", defined.walked);
+    let stats = defined.expansion.expect("expansion reuses what it can");
+    assert!(stats.expanded >= 1, "{stats:?}");
 }

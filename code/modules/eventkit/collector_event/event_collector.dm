@@ -36,7 +36,7 @@
 	var/sound_for_recipe_complete
 
 	var/wait_between_items = 0 //How long must you wait before adding another item
-	EXPIRY_DECLARE(next_item_added) //world time when the next item can be added
+	COOLDOWN_DECLARE(next_item_added) //world time when the next item can be added
 
 	var/type_to_spawn_on_complete
 
@@ -251,7 +251,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 			start_recipe_process()
 		set_current_step(current_step + 1)
 		post_recipe_complete(user)
-		EXPIRY_SET(src, next_item_added, wait_between_items, CLOCK_WORLD)
+		COOLDOWN_START(src, next_item_added, wait_between_items)
 
 /obj/structure/event_collector/proc/start_recipe_process()
 	calls_remaining = completion_time * 10

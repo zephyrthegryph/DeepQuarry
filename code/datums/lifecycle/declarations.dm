@@ -60,8 +60,6 @@
 			call(target, service[2])(A)
 	if(decls.binders)
 		lifecycle_decls_bind(A, decls)
-	for(var/hook_var in decls.expiry_hooks)
-		expiry_arm(A, hook_var, A.vars[hook_var], TRUE)
 
 /// The inverse, from /atom/on_dematerialize(). Registries, behaviours and timers are left by
 /// the core (leave_registries(), entity_teardown_rest()).

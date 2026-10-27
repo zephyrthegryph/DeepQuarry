@@ -38,7 +38,6 @@
 	options["Sun Gem"] = "sun"
 	options["Moon Gem"] = "moon"
 	options["Tajaran Figure"] = "catrobe"
-
 	return options
 
 /// The icon the question was answered with.

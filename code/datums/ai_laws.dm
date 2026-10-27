@@ -60,6 +60,18 @@ CAPABILITIES(/datum/ai_laws)
 
 	return statements
 
+/// Whether the law is one all_laws() lists, read without building the sorted list: the zeroth, an ion law, a supplied law, or an inherent
+/// law no supplied law at its position replaces.
+/datum/ai_laws/proc/lists_law(datum/ai_law/L)
+	if(!istype(L))
+		return FALSE
+	if(L == zeroth_law || (L in ion_laws) || (L in supplied_laws))
+		return TRUE
+	var/position = inherent_laws.Find(L)
+	if(!position)
+		return FALSE
+	return length(supplied_laws) < position || !istype(supplied_laws[position], /datum/ai_law)
+
 /datum/ai_laws/proc/sort_laws()
 	if(length(sorted_laws))
 		return

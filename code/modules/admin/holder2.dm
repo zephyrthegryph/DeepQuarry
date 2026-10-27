@@ -57,6 +57,7 @@ GLOBAL_PROTECT(href_token)
 
 	var/given_profiling = FALSE
 
+SCHEMA(/datum/admins, feedback_link_pending, int())
 
 CAPABILITIES(/datum/admins)
 	ref_one(nameof(click_intercept), /datum)

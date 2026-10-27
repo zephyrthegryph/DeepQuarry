@@ -45,7 +45,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 
 /// A backstop for a brain's strategic tick: a pass when none has run for a window.
 /datum/ai_pack/proc/perceive_if_due()
-	if(!last_perceived_at || ELAPSED_SINCE(src, last_perceived_at, CLOCK_WORLD) >= perceive_interval(null))
+	if(!last_perceived_at || ELAPSED(src, last_perceived_at, CLOCK_WORLD) >= perceive_interval(null))
 		perceive()
 
 /// `brains` ordered by their distance to `where`, nearest first (a stable insertion sort: the lists are a pack's size).
@@ -89,7 +89,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 	var/stage_t = started
 	perceptions++
 	GLOB.ai_pack_perceptions++
-	EXPIRY_STAMP(src, last_perceived_at, CLOCK_WORLD)
+	STAMP(src, last_perceived_at, CLOCK_WORLD)
 
 	// 1. candidates: the living mobs in the chunks that cover the members' vision (each mob is in exactly one chunk)
 	PACK_STAGE("setup")
@@ -286,7 +286,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 	trim_old_damage()
 	trim_old_sounds()
 	trim_old_hazards()
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
 	return hostiles_changed || others_changed
 
 /// One perception list brought to `want` by removing what is gone and adding what is new. TRUE when anything changed.

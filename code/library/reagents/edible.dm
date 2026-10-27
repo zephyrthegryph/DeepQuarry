@@ -31,6 +31,7 @@ MSG_DEF_SELF(edible/unconscious, "You can't feed them through what is over their
 MSG_DEF_SELF(edible/too_full, "Nope. That's it. You literally cannot force any more of it to go down your throat. It's fair to say you're full.")
 MSG_DEF_SELF(edible/no_whole_feeding, "They refuse to be fed whole things!")
 MSG_DEF_SELF(edible/from_belly, "That contains something produced from a belly, and it won't be taken.")
+MSG_DEF_SELF(edible/no_belly, "They don't appear to have a belly to fit it!")
 MSG_DEF(edible/begin_feed, "You attempt to feed %T% %I%.", "%U% attempts to feed %T% %I%.")
 MSG_DEF(edible/fed, "You feed %T% %I%.", "%U% feeds %T% %I%.")
 MSG_DEF(edible/begin_stuff, "You attempt to make %T% consume %I% whole.", "%U% attempts to make %T% consume %I% whole.")
@@ -53,15 +54,15 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 				req(CAP_PROC(awake_or_open_mouthed))),
 			costs(RES_REAGENTS, CAP_PROC(bite_amount)), then(CAP_PROC(fed)), says(MSG(edible/fed))),
 		op("stuff", at_target(/mob/living/carbon/human), when(all_of(not(CAP_PROC(targets_self)), CAP_PROC(feeds_whole))), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART + 1), label("Feed whole"),
-			asks(/datum/prompt/choice, fields = list("question" = "Choose Belly", "title" = "Belly Choice", "choices" = computed(CAP_PROC(belly_choices)))),
+			asks(/datum/prompt/choice, fields = list("question" = "Choose Belly", "title" = "Belly Choice", "choices" = computed(CAP_PROC(belly_choices))), step = "belly"),
 			begins(MSG(edible/begin_stuff)), wait(CAP_PROC(whole_time)),
 			needs(req(CAP_PROC(is_open)), req(CAP_PROC(awake_or_open_mouthed)), req(CAP_PROC(mouth_present)),
-				req(CAP_PROC(mouth_clear)), req(CAP_PROC(takes_whole_feeding))),
+				req(CAP_PROC(mouth_clear)), req(CAP_PROC(takes_whole_feeding)), req_answer(CAP_PROC(belly_refusal), step = "belly")),
 			then(CAP_PROC(swallowed_whole)), says(MSG(edible/stuffed))),
 		op("stuff_other", at_target(/mob/living), when(all_of(not(CAP_PROC(is_carbon_target)), CAP_PROC(feeds_whole))), priority(OP_PRIORITY_PART + 1), label("Feed whole"),
-			asks(/datum/prompt/choice, fields = list("question" = "Choose Belly", "title" = "Belly Choice", "choices" = computed(CAP_PROC(belly_choices)))),
+			asks(/datum/prompt/choice, fields = list("question" = "Choose Belly", "title" = "Belly Choice", "choices" = computed(CAP_PROC(belly_choices))), step = "belly"),
 			begins(MSG(edible/begin_stuff)), wait(CAP_PROC(other_time)),
-			needs(req(CAP_PROC(takes_whole_feeding))),
+			needs(req(CAP_PROC(takes_whole_feeding)), req_answer(CAP_PROC(belly_refusal), step = "belly")),
 			then(CAP_PROC(swallowed_whole)), says(MSG(edible/stuffed))))
 
 // ---- settings ----
@@ -234,16 +235,16 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 	bitten(A, eater, user)
 	return OP_OK
 
+/// The belly the question was answered with is gone (or the answer named none).
+/datum/capability/lib/edible/proc/belly_refusal(datum/act/op/A)
+	return A.step_value("belly") ? null : MSG(edible/no_belly)
+
 /// The food goes whole into the belly that was chosen.
 /datum/capability/lib/edible/proc/swallowed_whole(datum/act/op/A)
 	var/mob/living/eater = A.target
 	var/mob/living/user = A.actor
 	var/obj/item/holder = A.holder
-	var/datum/prompt/R = A.answer
-	var/obj/belly/belly_target = R?.value
-	if(!belly_target)
-		log_world("EDIBLE: [holder] whole-fed to [eater] with no belly answered (takes_whole_feeding passed)")
-		return OP_FAILED
+	var/obj/belly/belly_target = A.step_value("belly")
 	user.setClickCooldown(user.get_attack_speed(holder))
 	add_attack_logs(user, eater, "Whole-fed with [holder.name] containing [holder.reagents ? holder.reagents.get_reagents() : "nothing"] into [belly_target]", admin_notify = FALSE)
 	user.drop_item()

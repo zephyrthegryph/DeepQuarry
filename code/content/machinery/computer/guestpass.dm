@@ -9,7 +9,7 @@
 	initial_sprite_stack = list()
 
 	var/list/temp_access //to prevent agent cards stealing access as permanent
-	EXPIRY_DECLARE(expiration_time)
+	COOLDOWN_DECLARE(expiration_time)
 	var/expired = 0
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
@@ -19,7 +19,7 @@
 	return
 
 /obj/item/card/id/guest/GetAccess()
-	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
+	if(COOLDOWN_LAPSED(src, expiration_time))
 		return access
 	else
 		LAZYINITLIST(temp_access)
@@ -27,7 +27,7 @@
 
 /obj/item/card/id/guest/examine(mob/user)
 	. = ..()
-	if(EXPIRY_ACTIVE(src, expiration_time, CLOCK_WORLD))
+	if(COOLDOWN_RUNNING(src, expiration_time))
 		. += span_notice("This pass expires at [worldtime2stationtime(expiration_time)].")
 	else
 		. += span_warning("It expired at [worldtime2stationtime(expiration_time)].")
@@ -35,7 +35,7 @@
 /obj/item/card/id/guest/id_read_effect(mob/user)
 	if(!Adjacent(user))
 		return //Too far to read
-	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
+	if(COOLDOWN_LAPSED(src, expiration_time))
 		to_chat(user, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
 	else
 		to_chat(user, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
@@ -51,6 +51,7 @@ MSG_DEF_SELF(guest_pass/deactivation_unavailable, "this guest pass is already de
 
 CAPABILITIES(/obj/item/card/id/guest)
 	configure(light_glow(color = "#0099ff"))
+	after_init(0, then(PROC_REF(pass_lapsed)))
 	without("show")
 	op("show_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP, I_DISARM, I_GRAB), label("Show"), then(PROC_REF(interaction_guest_pass_show)))
 	op("deactivate_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Deactivate"), needs(req(PROC_REF(deactivation_allowed))),
@@ -77,14 +78,18 @@ CAPABILITIES(/obj/item/card/id/guest)
 		//rip guest pass </3
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + "deactivates %T%."))
 		set_icon_state("guest-invalid")
-		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
+		cancel_after(src, "lapse")
+		COOLDOWN_START(src, expiration_time, 0)
 		set_expired(TRUE)
 
-/// The pass turns red when its expiry lapses, however it was made (terminal, admin spawn, map).
-EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(pass_lapsed))
+/// Starts the pass: it runs out `duration` from now and turns red then.
+/obj/item/card/id/guest/proc/begin_expiry(duration)
+	COOLDOWN_START(src, expiration_time, duration)
+	after(src, duration, PROC_REF(pass_lapsed), key = "lapse")
 
-/obj/item/card/id/guest/proc/pass_lapsed()
-	if(expired)
+/// The pass turns red when its expiry lapses. A pass nobody started (admin spawn, map) has no expiry running, so it lapses as it initializes.
+/obj/item/card/id/guest/proc/pass_lapsed(datum/act/A)
+	if(expired || COOLDOWN_RUNNING(src, expiration_time))
 		return
 	visible_message(span_warning("\The [src] flashes a few times before turning red."))
 	set_icon_state("guest-invalid")
@@ -287,7 +292,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 		var/obj/item/card/id/guest/pass = new(src.loc)
 		pass.set_temp_access(LAZYCOPY(accesses))
 		pass.set_registered_name(giv_name)
-		EXPIRY_SET(pass, expiration_time, duration MINUTES, CLOCK_WORLD)
+		pass.begin_expiry(duration MINUTES)
 		pass.reason = reason
 		pass.name = "guest pass #[number]"
 	else

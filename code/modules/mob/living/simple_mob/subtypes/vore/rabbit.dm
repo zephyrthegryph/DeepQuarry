@@ -42,7 +42,7 @@
 	var/body_color 				//brown, black and white, leave blank for random
 
 	var/grumpiness = 0 			// This determines how grumpy we are. Pet us to increase it, leave us alone to decrease.
-	EXPIRY_DECLARE(last_pet) // This tracks the last time someone patted us.
+	var/last_pet = 0 // This tracks the last time someone patted us.
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
 CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
@@ -79,7 +79,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
 
 	if(stance == I_HELP) // only patpet on help. :p
 		grumpiness = CLAMP(grumpiness + rand(5, 10), 0, 120)
-		EXPIRY_STAMP(src, last_pet, CLOCK_WORLD)
+		STAMP(src, last_pet, CLOCK_WORLD)
 
 	if(grumpiness > 90) // Annoyed bunbun :U
 		var/pounce_chance = CanPounceTarget(user)

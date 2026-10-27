@@ -5,7 +5,7 @@
 	var/details
 	var/source_department_id
 	var/confidence = 0
-	EXPIRY_DECLARE(created_at)
+	var/created_at = 0
 	var/expires_at = 0
 	/// Relation view: the atom (or turf) this report is about.
 	var/atom/target
@@ -13,7 +13,7 @@
 CAPABILITIES(/datum/generated_station_knowledge_report)
 	ref_one(nameof(target), /atom)
 
-/datum/generated_station_knowledge_report/proc/is_expired(at_time = EXPIRY_AT(null, CLOCK_WORLD, 0))
+/datum/generated_station_knowledge_report/proc/is_expired(at_time = TIME_NOW(CLOCK_WORLD))
 	return expires_at > 0 && at_time >= expires_at
 
 /datum/generated_station_squad
@@ -39,7 +39,7 @@ CAPABILITIES(/datum/generated_station_knowledge_report)
 	var/kind
 	var/global_coordination = FALSE
 	var/state = GENERATED_STATION_ORDER_PENDING
-	EXPIRY_DECLARE(created_at)
+	var/created_at = 0
 
 /// Event-driven strategic state for one station. Producers submit observations
 /// and capability changes directly; this layer never discovers state by polling mobs.
@@ -150,7 +150,7 @@ CAPABILITIES(/datum/generated_station_director)
 	report.details = details
 	report.source_department_id = source_department_id
 	report.confidence = clamp(confidence, 0, 100)
-	EXPIRY_STAMP(report, created_at, CLOCK_WORLD)
+	STAMP(report, created_at, CLOCK_WORLD)
 	report.expires_at = lifetime > 0 ? world.time + lifetime : 0
 	rel_add(src, nameof(reports), report, report.id)
 	source_knowledge[report.id] = report
@@ -234,7 +234,7 @@ CAPABILITIES(/datum/generated_station_director)
 	order.report_id = report_id
 	order.kind = kind
 	order.global_coordination = global_coordination
-	EXPIRY_STAMP(order, created_at, CLOCK_WORLD)
+	STAMP(order, created_at, CLOCK_WORLD)
 	order.state = GENERATED_STATION_ORDER_ACTIVE
 	rel_add(src, nameof(orders), order, order.id)
 	squad.active_order_id = order.id

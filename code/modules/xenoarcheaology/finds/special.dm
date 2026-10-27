@@ -20,7 +20,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
 //a talking gas mask!
 /obj/item/clothing/mask/gas/poltergeist
 	var/list/heard_talk
-	EXPIRY_DECLARE(last_twitch)
+	var/last_twitch = 0
 	var/max_stored_messages = 100
 	/// Is it worn and has it something to say? The echo every() below runs while it is.
 	var/echoing = FALSE
@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/poltergeist)
 	if(isliving(loc))
 		set_echoing(TRUE)
 	if(isliving(src.loc) && ELAPSED(src, last_twitch, CLOCK_WORLD) > 5 SECONDS)
-		EXPIRY_STAMP(src, last_twitch, CLOCK_WORLD)
+		STAMP(src, last_twitch, CLOCK_WORLD)
 
 //a vampiric statuette
 //todo: cult integration
@@ -57,9 +57,9 @@ CAPABILITIES(/obj/item/clothing/mask/gas/poltergeist)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	var/charges = 0
 	var/list/nearby_mobs
-	EXPIRY_DECLARE(last_bloodcall)
+	var/last_bloodcall = 0
 	var/bloodcall_interval = 50
-	EXPIRY_DECLARE(last_eat)
+	var/last_eat = 0
 	var/eat_interval = 100
 	var/wight_check_index = 1
 	var/list/shadow_wights
@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/vampiric)
 	if(ELAPSED(src, last_eat, CLOCK_WORLD) > eat_interval)
 		var/obj/effect/decal/cleanable/blood/B = locate_in_list(range(2,src), /obj/effect/decal/cleanable/blood)
 		if(B)
-			EXPIRY_STAMP(src, last_eat, CLOCK_WORLD)
+			STAMP(src, last_eat, CLOCK_WORLD)
 			B.moveToNullspace()
 			if(istype(B, /obj/effect/decal/cleanable/blood/drip))
 				charges += 0.25
@@ -138,7 +138,7 @@ CAPABILITIES(/obj/item/vampiric)
 		bloodcall(M)
 
 /obj/item/vampiric/proc/bloodcall(mob/living/carbon/human/M)
-	EXPIRY_STAMP(src, last_bloodcall, CLOCK_WORLD)
+	STAMP(src, last_bloodcall, CLOCK_WORLD)
 	if(istype(M))
 		play_sfx(src, SFX_HALLUCINATIONS_WAIL)
 		rel_add(src, nameof(nearby_mobs), M)

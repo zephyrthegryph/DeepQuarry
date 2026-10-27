@@ -45,7 +45,6 @@ CAPABILITIES(/obj/item/selectable_item)
 		var/obj/item/result = new chosen_item(get_turf(user))
 		user.put_in_active_hand(result)
 		result.add_fingerprint(user)
-	return
 
 
 /obj/item/selectable_item/chemistrykit

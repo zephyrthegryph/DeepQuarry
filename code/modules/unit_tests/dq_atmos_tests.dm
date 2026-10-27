@@ -3711,6 +3711,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/A = pair[1]
 	var/turf/simulated/floor/other = pair[2]
 
+	// The real gas frames below step the whole world's heat field, not only this room's (the telecomms plating cools on them), and the breach bleeds the
+	// plating around it into space: every tracked floor's solid temperature is put back at the end.
+	var/list/solid_turfs = unit_test_air_tracked()
+	var/list/solid_temperatures = vg_heat_turf_temperatures(solid_turfs)
+
 	dq_atmos_test_isolate_pair(A, other)
 
 	var/turf/space/S = dq_atmos_test_open_to_space(A)
@@ -3761,6 +3766,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// to their original turf types so later tests see a clean sealed room.
 	A.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	dq_atmos_test_restore_walls()
+	var/list/solid_now = vg_heat_turf_temperatures(solid_turfs)
+	for(var/i in 1 to length(solid_turfs))
+		var/turf/near = solid_turfs[i]
+		if(solid_now[i] != solid_temperatures[i] && solid_temperatures[i] >= 0 && !QDELETED(near))
+			heat_set_solid(near, solid_temperatures[i])
 
 	TEST_ASSERT(final_pressure < initial_pressure, \
 		"pressurised floor adjacent to space didn't depressurize: [initial_pressure] → [final_pressure]")
@@ -4175,14 +4185,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"area" = A.area_uid,
 		"sigtype" = "status",
 		"device" = "AVP",
-		"timestamp" = world.time,
 	)
 	A.receive_signal(status)
-	TEST_ASSERT_EQUAL(LAZYACCESS(A.alarm_area_ref().air_vent_info, tag), status.data, \
+	var/datum/air_device_status/kept = LAZYACCESS(A.alarm_area_ref().air_vent_info, tag)
+	TEST_ASSERT_EQUAL(kept?.fields, status.data, \
 		"air alarm discarded a matching vent status packet")
 	TEST_ASSERT(tag in A.alarm_area_ref().air_vent_names, \
 		"air alarm did not register the matching vent status tag")
-	LAZYREMOVE(A.alarm_area_ref().air_vent_info, tag)
+	var/area/room = A.alarm_area_ref()
+	if(kept)
+		rel_remove(room, nameof(room.air_vent_info), kept)
 	LAZYREMOVE(A.alarm_area_ref().air_vent_names, tag)
 	qdel(status)
 	qdel(A)

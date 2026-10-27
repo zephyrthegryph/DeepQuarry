@@ -12,7 +12,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/isRepeating = FALSE
 	var/coordinates = ""
 	var/cooldown = 0 //Given in seconds in set_vars() but stored in ticks
-	EXPIRY_DECLARE(last_trigger)
+	var/last_trigger = 0
 	COOLDOWN_DECLARE(trigger_cooldown)
 	var/isLoud = FALSE
 	var/isNarrate = FALSE
@@ -216,7 +216,7 @@ CAPABILITIES(/obj/effect/landmark/event_trigger)
 		return FALSE
 	if(!isRepeating && last_trigger) //Used to avoid spam if qdel(src) fires too slowly
 		return FALSE
-	EXPIRY_STAMP(src, last_trigger, CLOCK_WORLD)
+	STAMP(src, last_trigger, CLOCK_WORLD)
 	COOLDOWN_START(src, trigger_cooldown, cooldown)
 
 	if(!creator_ckey)	//For some reason, the user didn't have a ckey. Let's clean up
@@ -262,7 +262,7 @@ CAPABILITIES(/obj/effect/landmark/event_trigger/auto_narrate)
 	..()
 	if(QDELETED(src))
 		return
-	message = text_or_null(encode_html_emphasis(setup["narration"]))
+	message = encode_html_emphasis(setup["narration"])
 	if(setup["to_player"])
 		isPersonal_orVis_orAud = 0
 		isWarning = setup["scary"]
@@ -289,3 +289,4 @@ CAPABILITIES(/obj/effect/landmark/event_trigger/auto_narrate)
 			T.audible_message(message, hearing_distance = message_range, runemessage= message)
 	if(!isRepeating)
 		consume(src)
+SCHEMA(/obj/effect/landmark/event_trigger/auto_narrate, message, schema_text())

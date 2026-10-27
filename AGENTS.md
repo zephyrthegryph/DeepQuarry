@@ -9,8 +9,7 @@ Baystation12 → Polaris → VOREStation (Virgo) → Yawn-wider → CHOMPStation
 It is a **hard fork**: no upstream is tracked or merged. There are no edit markers
 (`// CHOMPEdit`, `// DQEdit`, ...) and no modular folders; a stray one is a leftover, so
 treat it as ordinary code and remove it when you touch the file. Edit or delete any file
-freely. When you remove a file, delete it and its `#include` in `deepquarry.dme` (never
-comment an include out); git history is the record.
+freely. When you remove a file, delete it; the build regenerates `deepquarry.dme` (§2); git history is the record.
 
 **The codebase is mid-migration to the final design.** Read §3 before writing code; the short version is: write what exists on master today.
 
@@ -30,15 +29,19 @@ comment an include out); git history is the record.
 | `doc/rewrite/` | The design. Start at `README.md`; the primary design is `final_api.html`. |
 | `html/changelogs/` | One YAML stub per PR (§6). |
 | `tools/`, `bin/` | Build, lint, map tooling, Windows entry points. |
-| `deepquarry.dme` | Compile manifest. Every `.dm` is `#include`d here (§2). |
+| `deepquarry.dme` | Compile manifest, generated from the files on disk (§2). Committed; never edited by hand. |
 | `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm` | DreamChecker config. |
 
 ## 2. Wiring files into the build
 
-DM has no auto-discovery. Add one line per file to `deepquarry.dme`, Windows separators:
-`#include "code\modules\myfeature\myfile.dm"`. Keep `__defines/` includes near the top;
-later definitions win in override chains. The design plans to generate the `.dme` from the
-tree (defines, engine, library, domains, content, world); until that lands, edit it by hand.
+`deepquarry.dme` is generated: `tools/build/gen_dme.py` includes every `.dm` under the scanned roots (`code/`, `interface/`, the
+`maps/common*` trees) in path order, with the few rules that order genuinely depends on in `tools/build/dme_spec.txt` (macro files
+first, a file that redefines another's type var or proc after it, the test trees and generated files last; each rule says why).
+Add, move or delete a file and build (every target that compiles or lints DM regenerates the manifest), or run
+`python3 tools/build/gen_dme.py`; commit the result. `bash tools/ci/check_ratchets.sh` fails on a stale manifest and on a macro used
+before its `#define` in the generated order. A new order dependency (a macro in an ordinary file, a second definition of a type's var
+or proc in another file) needs a `before` rule; `bash tools/ci/dme_order_equiv.sh` compiles a reference order against the generated
+one and compares the worlds with dmb-equiv. Test files are listed in `code/modules/unit_tests/_unit_tests.dm` (still by hand).
 
 ---
 
@@ -73,20 +76,20 @@ definition before using it.
 | Declare a type | One inheriting block: `CAPABILITIES(T)` and indented entries | §1 | yes (the table procs are hard-banned) | `CAPABILITIES(T)` |
 | Reusable behaviour | A capability (`cover()`, `powered()`) or a plain proc returning entries; one type groups its own entries with `section(name, "doc")` in its block (no `BUNDLE`) | §11 | yes | `CAPABILITIES`, `section()`; shared capabilities in `code/library/` and `code/datums/capabilities/` |
 | Player/AI/admin choice | `op(key, name, parts...)`: input, select, `needs()`, `wait()`, `then()` | §9 | yes (interactions, the task engine, `DECLARE_INTERACTIONS`, `om_ask` are gone and banned) | `op(...)`; a window button is `op(key, ui_act(key, arg(...)), needs(...), asks(...), then(...))` |
+| Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | `needs()` yes (the `REQ_*` predicate macros are gone and banned) | `needs(...)` with a native `req_*` part; a refusal that depends on what an `asks()` step was answered with is `req_answer(PROC_REF(x), step = "name")` (`x(A)` reads `A.step_value("name")`, holds while unanswered, asked again at commit) |
 | Mouse and click input | One path: only `code/engine/kernel/entry.dm` overrides BYOND's `Click`/`DblClick`/`MouseDrop`/`MouseDrag`/`MouseDown`/`MouseUp`/`MouseEntered`/`MouseExited`/`MouseWheel` (it reads `usr` once, builds a typed `/datum/input_event`, calls `input_submit()`); the resolver finds the type's declared entry when the event resolves, on the spot or from the inbox | §2 | yes (the `mouse_override` lint hard-bans any other definition, generated code included) | `click_on(PROC_REF(x))`, `double_click_on()`, `drag_onto(PROC_REF(x), onto =)`, `drag_over()`, `hover()`, `tooltip()` in `CAPABILITIES`, handler `x(datum/act/input/A)` (`A.actor`, `A.over`, `A.entered`, `A.params`); `INPUT_FALLTHROUGH` sends the input on to its default handling; a subtype re-declaring the form replaces its parent's entry, so override the parent's handler proc and call `..()` to extend it |
-| Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | `needs()` yes (the `REQ_*` predicate macros are gone and banned) | `needs(...)` with a native `req_*` part |
 | Typed world events | `/datum/act` contexts from `ACTION()`; refuse, take over or modify with `extend(/datum/act/x, needs(...))`, `instead(...)`, `adjusts(...)` under `ACT_ATTEMPT` (`intercept()` is retired) | §8, §10 | yes (all of them) | `ACTION()`, `ACT_ATTEMPT` with `act_done`/`act_cancel`, hooks in `CAPABILITIES` (`DAMAGE_REACTION`, `OM_EMIT`, `om_hook` are banned) |
 | React after | `on_notice(/datum/notice/x, ...)`, `PUBLISH()` | §10 | yes (notices come from `ACTION()`; master's `NOTICE()` is an unrelated log macro) | `on_notice()`, `PUBLISH()` |
 | React to a state key | `on_change(nameof(v), ...)` | §7, §10 | yes | `on_change()` |
 | State | `TRACKED(T, var)` (two arguments); writes through setters; reads generated by the build | §4, §7 | yes (`OM_FIELD` and `changed()` channels are banned) | `TRACKED`, tracked setters; reads in `code/_generated/reads.dm` |
 | Numbers/flags composed from sources | `STAT(...)`, `contributes(...)`, `hold(E, stat, value, source, lasts =)`, `hold_table()`, `release()`, `grant()`/`revoke()` | §5 | yes (`code/engine/stats/`, `grant()` in `code/engine/declare/activation.dm`); the `stat(...)` entry form in `CAPABILITIES` is **new** | `STAT` with a var of its own, `hold()`/`hold_table()`/`release()`/`grant()`; a source type's table is `factors(...)` in its CAPABILITIES block, held on the entity its relation names at a tracked scale (converted families are listed under `factors_converted` in `tools/ci/lint_scopes.toml`, where a raw `factors =` var is banned; a `factors = alist(...)` data var on a flyweight or prototype read by the type's one entry stays, stat_layer.md §8); a body factor is a `STAT` on `/mob/living` (`code/contracts/ids/body_stats.dm`) read as a var (`L.slowdown`); `BF_*` and `factor(` are banned |
-| Delays and repeats | `after(owner, delay, then(...))`, `every(...)`, `after_init(delay, parts...)`, `STAMP`/`ELAPSED`, `COOLDOWN_*`, `wait()` on an op | §3 | `after()`, `every()`, `after_init()`, `COOLDOWN_*`, `wait()`/`then()`, `STAMP` yes (`stamps(a)` in the block, `STAMP(D, a, clock)`, `STAMP_ELAPSED(D, a, clock)`, `STAMP_AT`, `STAMPED`, `STAMP_CLEAR`; one lazy table with the cooldowns, `code/__defines/engine/sparse_slots.dm`) | `after()`, `every()`, `after_init()`, `COOLDOWN_*`, `STAMP` for a base type's timestamp (a subtype's own var stays `EXPIRY_STAMP`/`ELAPSED`) |
+| Delays and repeats | `after(owner, delay, then(...))`, `every(...)`, `after_init(delay, parts...)`, `STAMP`/`ELAPSED`, `COOLDOWN_*`, `wait()` on an op | §3 | `after()`, `every()`, `after_init()`, `COOLDOWN_*`, `wait()`/`then()`, `STAMP`/`ELAPSED` yes (`STAMP(D, var, clock)` records now in a var, `ELAPSED(D, var, clock)` reads it; `EXPIRY_STAMP`, `STAMP_ELAPSED`, `STAMP_AT`, `STAMP_POINT`, `STAMPED`, `STAMP_CLEAR`, `ELAPSED_SINCE` and `BEFORE` are gone and banned) | `after()`, `every()`, `after_init()`, `COOLDOWN_*`, `STAMP`/`ELAPSED` for a var; a time per row (a failure cache, a flow field, a respawn wait) is a small `/datum` record the holder owns with `owns_many()`/`owns_one()`, its var stamped with `STAMP` and read with `ELAPSED` (an end time is a `COOLDOWN_DECLARE` var: `COOLDOWN_START`/`COOLDOWN_EXTEND`/`COOLDOWN_RESET`, read with `COOLDOWN_RUNNING`/`COOLDOWN_LAPSED` (the strict pair) or `COOLDOWN_FINISHED`/`COOLDOWN_TIMELEFT`, and the `_OWN` family for a deadline on the datum's own clock; the `EXPIRY_DECLARE`/`SET`/`EXTEND`/`CLEAR`/`ACTIVE`/`EXPIRED`/`LEFT`/`ON_LAPSE` forms are gone and banned, and a start-time var is a plain var; `TIME_NOW(clock, owner)` is the one clock read the `STAMP`/`ELAPSED`/`COOLDOWN_*` macros are built on, and a payload or list slot that records "now" calls it directly; a data key (an ability id) is `COOLDOWN_KEYED_DECLARE`/`_START`/`_FINISHED`; `EXPIRY_AT`/`EXPIRY_NOW` are gone). A base type (`/atom`, `/mob`) holds no var: it declares `stamps(a)` in its block and writes the lazy table it shares with `cooldown_*`, as `COOLDOWN_*` is to `cooldown_*`: `stamp_now(D, a, clock)`, `stamp_elapsed(D, a, clock)`, `stamp_set`, `stamp_point`, `stamp_has`, `stamp_clear` (`code/__defines/engine/sparse_slots.dm`) |
 | Instance values from place or params, phase 0, discard | `preset(nameof(v), PROC_REF(x), from =, when =)` (a value computed from the instance's own place or params at the root, before any code after `..()`; the generator reads, never writes; a claim on a resource stays a `setup()` effect); `param(..., apply = PROC_REF(x), early = TRUE)` (the setter runs in phase 0, after the early children and before the chain: only for a setter the chain reads, e.g. the human's species); `keeps_if(cond, warn =, instead = PROC_REF(x))` (`instead` runs once when the instance is discarded); an object that needs a body to copy takes it as a param (`make(/mob/observer/dead, at = T, from_body = M)`, no positional constructor argument) | init_phase0 N1-N3, D5 | yes (`code/engine/lifeforms/preset.dm`, `params.dm`, `keeps_if.dm`; `init_roots` in `tools/ci/lint_scopes.toml` is the closed list of the types that are the `Initialize()` chain: `/atom`, `/atom/movable`, `/obj`, `/turf`, `/datum/controller/global_vars`, adding one is a design change; there is no `preinit()`) | `preset()`, `param(early = TRUE)`, `keeps_if(instead =)`; a boot-time datum (persistent, asset transport, techweb node, instrument) has no `Initialize()`: its loader's system runs the boot step |
 | Links and ownership | Relations declared in `CAPABILITIES`; lifecycle declared | §6 | yes (`OWN`/`REL`, `own_set` and the `relations()`/`ownership()` procs are banned) | `ref_one()`/`ref_many()`/`links()`/`owns_one()`/`owns_many()` in the block |
 | World-level state/work | `SYSTEM_DEF(x)` plus `/datum/system/x` with `needs`, `lane`, `every()`; other folders call only its `api.dm` | §2 | yes (`world_service` is gone) | `SYSTEM_DEF(x)` |
 | Construction ladders | `construction(start(...), step(...), dismantle(...))` | §12 | yes (`code/engine/declare/graph.dm`) | `construction(...)` |
 | Database and HTTP reads | A `/datum/io/sql` request, or a read that carries on in its callback | §2 | yes (`prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` are gone and banned) | `sql_ask(owner, sql, params, PROC_REF(next), context...)` + `sql_answer_rows()`, `http_ask()`, `sql_write()` for a write nobody reads, `db_query_now()` only where BYOND itself waits |
-| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `flow_ask` is gone and banned) | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()`; a tool that is not an op asks with an `ask_sequence` (`question_step()`, `ask_child()`) |
+| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `flow_ask` is gone and banned) | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()` (a cancel that must still proceed: `optional = TRUE, default = v`); a tool that is not an op asks with an `ask_sequence` (`question_step()`, `ask_child()`) |
 
 Rules that hold under both old and new forms:
 
@@ -308,7 +311,8 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   and `tgui/packages/tgui/interfaces/generated/` are gitignored; every build target that compiles or lints DM
   (and `check_ratchets.sh`) runs `analyze gen` first (`tools/build/build.sh gen` by hand). Commit the
   declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
-  that still tracks them. `deepquarry.dme` and `_unit_tests.dm` merge by union (`.gitattributes`).
+  that still tracks them. `deepquarry.dme` merges by its include sets (the `dq-dme` driver) and is regenerated after every merge;
+  `_unit_tests.dm` merges by union (`.gitattributes`).
   `doc/rewrite/agent_workflow.md`. There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
   of how types look; test a draw's behaviour instead (`dq_fresh_look_default`, `dq_human_draw_deterministic`, the staleness checker).
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
@@ -386,7 +390,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 
 ## 7. PR checklist
 
-- [ ] New `.dm` files are in `deepquarry.dme`.
+- [ ] `deepquarry.dme` regenerated and committed (the build does it; `check_ratchets.sh` checks it); new `.dm` test files in `_unit_tests.dm`.
 - [ ] Only forms that exist on master (§3a "On master"); no use of a legacy form whose ban lint is on (§3b).
 - [ ] Absolute paths; no `:` subtype access; no `Destroy()`; time defines used.
 - [ ] DreamChecker passes; `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
@@ -481,5 +485,5 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 > The codebase is mid-migration to the design in `doc/rewrite/final_api.html`. Write the forms
 > that exist on master today (a legacy form stays correct until its replacement has landed and
 > its lint is on; a form marked **new** is not usable yet), obey the ratchets that are already
-> on, and move a file into the new tree only when it is fully migrated. Register every `.dm` in `deepquarry.dme`, run only the
+> on, and move a file into the new tree only when it is fully migrated. Commit the regenerated `deepquarry.dme`, run only the
 > tests you touch, keep debug tracing, drop a changelog, and squash before merge.

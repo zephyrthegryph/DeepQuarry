@@ -439,6 +439,7 @@ impl Lint for StoredRefs {
         }
         let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: never_deleted, cache: Default::default() };
         let rels = relation_index(cx);
+        let schemas = crate::sem::value_schema::ValueSchemas::build(&Decls::get(cx.tree));
         let transient: Vec<String> = cx.list("transient_types").to_vec();
         let queues: Vec<String> = cx.list("work_queues").to_vec();
         let work_queue = |owner: &str, name: &str| queues.iter().any(|q| q == &format!("{}::{}", owner, name));
@@ -555,6 +556,10 @@ impl Lint for StoredRefs {
         for (place, (wrel, wline)) in found {
             match place {
                 Place::Member(o, v) => {
+                    // A var declared a value (`SCHEMA(T, v, list_of(schema_path(...)))`) holds no entity, whatever a call assigns it.
+                    if schemas.find(sem, &o, &v).is_some() {
+                        continue;
+                    }
                     if pooled_holder(sem, &o) || transient_holder(sem, &transient, &o) || work_queue(&o, &v) || declared_by_relation(sem, &rels, &o, &v) {
                         continue;
                     }

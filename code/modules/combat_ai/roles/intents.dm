@@ -14,7 +14,7 @@
 	/// Who gave it (a relation view): the order ends with them.
 	var/datum/source = null
 	/// world.time it lapses; 0: never.
-	EXPIRY_DECLARE(expires_at)
+	COOLDOWN_DECLARE(expires_at)
 
 CAPABILITIES(/datum/ai_intent)
 	ref_one(nameof(subject))
@@ -51,9 +51,9 @@ CAPABILITIES(/datum/ai_intent)
 		rel_set(found, nameof(found.subject), subject)
 		rel_set(found, nameof(found.source), source)
 	if(lasts)
-		EXPIRY_SET(found, expires_at, lasts, CLOCK_WORLD)
+		COOLDOWN_START(found, expires_at, lasts)
 	else
-		EXPIRY_CLEAR(found, expires_at)
+		COOLDOWN_RESET(found, expires_at)
 	pack.trace("intent [found.name] on [subject || "nothing"] from [source || "no one"] [lasts ? "for [lasts] ds" : "until released"]")
 	return found
 
@@ -69,7 +69,7 @@ CAPABILITIES(/datum/ai_intent)
 	. = list()
 	for(var/datum/ai_intent/I as anything in intents?.Copy())
 		var/mob/living/issuer = istype(I.source, /mob/living) ? I.source : null
-		var/stale = (I.expires_at && !EXPIRY_ACTIVE(I, expires_at, CLOCK_WORLD)) || !I.source || QDELETED(I.source) || (issuer && issuer.stat >= DEAD)
+		var/stale = (I.expires_at && !COOLDOWN_RUNNING(I, expires_at)) || !I.source || QDELETED(I.source) || (issuer && issuer.stat >= DEAD)
 		if(stale)
 			rel_remove(src, nameof(intents), I)
 			spent(I)

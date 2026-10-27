@@ -84,21 +84,21 @@
 
 /mob/proc/time_till_respawn()
 	if(!ckey)
-		return -1 // What?
+		return RESPAWN_NEVER // What?
 
-	var/respawn_at = GLOB.respawn_timers[ckey]
+	var/datum/respawn_timer/timer = LAZYACCESS(SSmobs.respawn_timers, ckey)
 	// No timer at all
-	if(!respawn_at)
+	if(!timer)
 		return 0
-	// Special case, infinite timer
-	if(respawn_at == -1)
-		return -1
+	if(timer.forbidden)
+		return RESPAWN_NEVER
 	// Timer expired
-	if(!BEFORE(src, respawn_at, CLOCK_WORLD))
-		GLOB.respawn_timers -= ckey
+	var/waited = ELAPSED(timer, started_at, CLOCK_WORLD)
+	if(waited >= timer.duration)
+		SSmobs.clear_respawn_wait(ckey)
 		return 0
 	// Timer still going
-	return respawn_at - world.time
+	return timer.duration - waited
 
 MSG_DEF_SELF(join/no_such_job, "There is no such job.")
 MSG_DEF_SELF(join/job_full, "That job has no open positions.")

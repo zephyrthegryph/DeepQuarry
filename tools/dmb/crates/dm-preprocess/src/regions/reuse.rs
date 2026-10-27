@@ -110,8 +110,19 @@ pub fn expand_regions_reusing(
     let source: Vec<Option<usize>> = emission
         .iter()
         .map(|&region| {
-            let previous = reuse.regions[region]?;
-            receipt_of.get(previous).copied().flatten()
+            if let Some(previous) = reuse.regions[region] {
+                return receipt_of.get(previous).copied().flatten();
+            }
+            // A region of a subtree adopted under other bindings: its previous expansion stands when it read none
+            // of the macros whose bindings differ.
+            let (previous, names) = reuse.rebased_regions.get(&region)?;
+            let position = receipt_of.get(*previous).copied().flatten()?;
+            prev.receipts[position]
+                .record
+                .reads()
+                .iter()
+                .all(|read| !names.contains(&read.name))
+                .then_some(position)
         })
         .collect();
     let fresh: Vec<usize> = emission

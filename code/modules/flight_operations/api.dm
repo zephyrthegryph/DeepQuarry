@@ -34,14 +34,14 @@
 	if(vessel.shuttle()?.current_location())
 		physical_target = waypoint_sector(vessel.shuttle().current_location())
 	var/datum/flight_destination/physical_context = destination_for_target(physical_target)
-	vessel.orbit_parent_id = text_or_null(physical_context?.orbit_parent_id || planet_id_named("Sif") || first_planet_id())
+	vessel.orbit_parent_id = physical_context?.orbit_parent_id || planet_id_named("Sif") || first_planet_id()
 	if(vessel.shuttle()?.current_location())
 		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle().current_location())
 		if(current_port)
 			vessel.docked_port_id = current_port.id
 			rel_set(current_port, nameof(current_port.occupied_by), vessel)
 	else if(istype(ship, /obj/effect/overmap/visitable/ship/exploration_carrier))
-		vessel.orbit_parent_id = text_or_null(planet_id_named("Sif") || first_planet_id())
+		vessel.orbit_parent_id = planet_id_named("Sif") || first_planet_id()
 		vessel.docked_port_id = null
 	return vessel
 
@@ -62,7 +62,7 @@
 	rel_set(destination, nameof(destination.expedition), site)
 	rel_set(destination, nameof(destination.target), site.overmap_sector())
 	destination.required_capabilities = FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND
-	destination.orbit_parent_id = text_or_null(site.parent_destination_id || first_planet_id())
+	destination.orbit_parent_id = site.parent_destination_id || first_planet_id()
 	destination.body_radius = 0.45
 	destination.body_color = "#ffc45c"
 	destination.surface_latitude = rand(-75, 75)

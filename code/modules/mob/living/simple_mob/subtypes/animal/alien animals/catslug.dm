@@ -994,7 +994,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/santaslug)
 	icon_rest = "suslug_rest"
 	icon_dead = "suslug_dead"
 	var/is_impostor = FALSE
-	EXPIRY_DECLARE(kill_cooldown)
+	var/kill_cooldown = 0
 	can_wear_hat = FALSE
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/impostor
@@ -1032,7 +1032,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 	if(!is_impostor)
 		to_chat(src, span_notice("You are not an impostor! You can't kill like that!"))
 		return
-	if(ELAPSED_SINCE(src, kill_cooldown, CLOCK_WORLD) < 1 MINUTE)
+	if(ELAPSED(src, kill_cooldown, CLOCK_WORLD) < 1 MINUTE)
 		to_chat(src, span_notice("You cannot kill so soon after previous kill!"))
 		return
 
@@ -1052,7 +1052,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 	if(target && istype(target))
 		target.injure(INJURY_BLUNT, target.get_endurance() * 30, source = src, flags = INJURE_IGNORE_RESISTANCE)
 		act_message(src, target, null, MSG_OTHERS(span_warning("%U% kills %T%!")))
-		EXPIRY_STAMP(src, kill_cooldown, CLOCK_WORLD)
+		STAMP(src, kill_cooldown, CLOCK_WORLD)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/color
 	picked_color = TRUE

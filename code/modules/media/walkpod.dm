@@ -18,7 +18,7 @@
 	var/volume = 1
 
 	var/media_url = ""
-	EXPIRY_DECLARE(media_start_time)
+	var/media_start_time = 0
 
 	var/obj/item/headpods/deployed_headpods
 
@@ -113,7 +113,7 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 	if(!playing)
 		return
 	// If the current track isn't finished playing, let it keep going
-	if(current_track() && BEFORE(src, media_start_time + current_track().duration, CLOCK_WORLD))
+	if(current_track() && ELAPSED(src, media_start_time, CLOCK_WORLD) < current_track().duration)
 		return
 	// Oh... nothing in queue? Well then pick next according to our rules
 	var/list/tracks = getTracksList()
@@ -138,7 +138,7 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 /obj/item/walkpod/proc/start_stop_song()
 	if(current_track() && playing)
 		media_url = current_track().url
-		EXPIRY_STAMP(src, media_start_time, CLOCK_WORLD)
+		STAMP(src, media_start_time, CLOCK_WORLD)
 		runechat_message("*&nbsp;[current_track().display()]&nbsp;*", specific_viewers = list(listener()))
 	else
 		media_url = ""
