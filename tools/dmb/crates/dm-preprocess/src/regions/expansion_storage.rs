@@ -60,6 +60,7 @@ impl ExpansionRecord {
             lines: _,
             diagnostics: _,
             fragments: _,
+            rows: _,
         } = self;
         visit(ExpansionStorageView::Source(&self.source));
         visit(ExpansionStorageView::Source(&self.text));
@@ -140,6 +141,7 @@ mod tests {
                 span: Span::new(0, 1),
                 payload: fragment,
             }],
+            rows: Default::default(),
         };
         let mut message_seen = false;
         let mut chain_seen = false;
