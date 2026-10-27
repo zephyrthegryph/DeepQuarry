@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - server: "The test-world watchdog waits 10 s, not 1.5 s, for a finished daemon to exit before force-killing it."

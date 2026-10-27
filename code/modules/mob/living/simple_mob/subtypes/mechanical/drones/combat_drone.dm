@@ -53,12 +53,12 @@
 
 	organ_names = /datum/decl/mob_organ_names/combatdrone
 
-	say_list_type = /datum/say_list/malf_drone
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
+	configure(living_rules(say_list_type = /datum/say_list/malf_drone, delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "suddenly breaks apart."))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
@@ -69,7 +69,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
 	icon_dead = "droneM_dead"
 
 /mob/living/simple_mob/mechanical/combat_drone
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/combat_drone
 

@@ -25,17 +25,14 @@
 	response_disarm = "gently pushes aside"
 	response_harm = "hits"
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 	harm_intent_damage = 3
 	melee_damage_lower = 4
 	melee_damage_upper = 6
 	attacktext = list("pecked", "pinched", "wingslapped")
 
-	say_list_type = /datum/say_list/seagull
 
 	vore_active = 1
-	vore_capacity = 5
 	vore_bump_chance = 25
 	vore_bump_emote	= "greedily dives at"
 	vore_pounce_chance = 70
@@ -48,7 +45,8 @@
 	emote_see = list("pecks at the ground","looks around hungrily")
 
 CAPABILITIES(/mob/living/simple_mob/vore/seagull)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(vore_capacity = 5, say_list_type = /datum/say_list/seagull))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 2))
 	configure(mob_nature(belly_size = 2.5))
 	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))
 

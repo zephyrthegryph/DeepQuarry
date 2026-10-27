@@ -1,7 +1,7 @@
 // A mob's vore preferences profile record (code/engine/declare/profiles.dm): the toggles and messages a player sets in the
 // vore panel and saves with the character (/datum/vore_preferences is the save format: record_export() and record_import()
 // move the fields across by name). Declared on /mob with profile(nameof(vore_prefs), /datum/record/vore_prefs) in mob_defines.dm.
-// The spontaneous-vore bellies (spont_belly_*) are references, not data, and stay on the mob.
+// The spontaneous-vore belly names (spont_belly_*) are sparse text slots of the mob (code/datums/sparse_vars/mob_state.dm).
 
 /datum/record/vore_prefs
 	var/digestable = TRUE				// Can the mob be digested inside a belly?

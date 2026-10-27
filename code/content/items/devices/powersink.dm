@@ -6,7 +6,6 @@
 	icon_state = "powersink0"
 	icon = 'icons/obj/device.dmi'
 	w_class = ITEMSIZE_LARGE
-	throw_range = 2
 
 	MATERIAL_BULK(MAT_STEEL, 750)
 
@@ -53,7 +52,7 @@
 
 
 CAPABILITIES(/obj/item/powersink)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 2, throw_speed = 1))
 	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// Drains the attached powernet while operating.

@@ -14,8 +14,8 @@
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_SOULDEW = list(1,13))
 	mutants = null
 
-/datum/seed/flower/sunflower/soulflower/New()
-	..()
+/datum/seed/flower/sunflower/soulflower/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#00FFFF")
 	set_trait(TRAIT_BIOLUM,1)
 	set_trait(TRAIT_BIOLUM_COLOUR,"#00FFFF")
@@ -31,8 +31,8 @@
 	display_name = "cherry bomb tree"
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,15), REAGENT_ID_LIQUIDFIRE = list(1,15), REAGENT_ID_CHERRYJELLY = list(10,15))
 
-/datum/seed/cherries/cherrybomb/New()
-	..()
+/datum/seed/cherries/cherrybomb/default_traits()
+	. = ..()
 	set_trait(TRAIT_PRODUCT_COLOUR,"#993399")
 	set_trait(TRAIT_BIOLUM,1)
 	set_trait(TRAIT_BIOLUM_COLOUR,"#993399")

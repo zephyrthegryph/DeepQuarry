@@ -34,7 +34,7 @@
 /mob/living/carbon/life_breathing_due()
 	if(!src.breathes())
 		return FALSE
-	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath || sparse_get_or(src, failed_last_breath, 0) || src.internal || !src.air_watched())
+	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath() || sparse_get_or(src, failed_last_breath, 0) || src.internal || !src.air_watched())
 		return TRUE
 	if(src.alerts?["oxy"] || src.alerts?["tox_in_air"] || src.alerts?["methane_in_air"])
 		return TRUE
@@ -60,7 +60,7 @@
 	if(src.is_critical() && !src.stabilization) //crit aka circulatory shock
 		src.AdjustLosebreath(1)
 
-	if(src.losebreath>0) //Suffocating so do not take a breath
+	if(src.losebreath()>0) //Suffocating so do not take a breath
 		src.AdjustLosebreath(-1)
 		if (prob(10) && !isbelly(src.loc)) //Gasp per 10 ticks? Sounds about right.
 			src.emote("gasp")

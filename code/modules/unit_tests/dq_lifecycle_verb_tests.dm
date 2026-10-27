@@ -84,6 +84,6 @@
 /datum/unit_test/dq_lifecycle_delete_on_death_arms
 /datum/unit_test/dq_lifecycle_delete_on_death_arms/Run()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, test_floor())
-	M.delete_on_death = TRUE
+	M.set_delete_on_death(TRUE)
 	M.death()
 	TEST_ASSERT(QDELETED(M), "the final hook of death() should delete a dead delete_on_death mob")

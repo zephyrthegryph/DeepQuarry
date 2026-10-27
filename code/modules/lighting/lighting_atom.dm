@@ -13,12 +13,12 @@
 	///Highest-intensity light affecting us, which determines our visibility.
 	///Lazylist to keep track on the sources of illumination.
 	// affected_dynamic_lights lives in code/datums/sparse_vars/movable_misc.dm
-	///Either FALSE, [EMISSIVE_BLOCK_GENERIC], or [EMISSIVE_BLOCK_UNIQUE]
-	var/blocks_emissive = EMISSIVE_BLOCK_NONE
-	///Internal holder for emissive blocker object, do not use directly use blocks_emissive
+	// blocks_emissive (EMISSIVE_BLOCK_NONE, _GENERIC or _UNIQUE) is the movable_motion type trait: motion_of(A).blocks_emissive
+	///Internal holder for emissive blocker object, do not use directly use motion_of(A).blocks_emissive
 	var/tmp/atom/movable/emissive_blocker/em_block
 
 CAPABILITIES(/atom/movable)
+	cooldowns(latent_refused_until)
 	buckle_rules(movable = 0, dir = 0, lying = -1, require_restraints = 0, max_mobs = 1)
 	movable_motion(throw_speed = 2, icon_height = 32, does_spin = TRUE, unacidable = TRUE)
 	ref_many(nameof(swarm_members))
@@ -42,7 +42,6 @@ CAPABILITIES(/atom/movable)
 	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(all_of(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
 	op("vv_get_movable", topic_in(VV_TOPIC, VV_HK_GET_MOVABLE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_get_movable)))
 	op("vv_edit_particles", topic_in(VV_TOPIC, VV_HK_EDIT_PARTICLES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_particles)))
-	ref_one(nameof(throw_source))
 	ref_one(nameof(throwing))
 
 

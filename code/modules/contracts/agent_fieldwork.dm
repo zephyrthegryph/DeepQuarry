@@ -224,7 +224,7 @@
 	contract.contact_cooperated = TRUE
 	contract.contact_share_percent = 0
 	contract.contact_sales_commission = 0
-	var/obj/structure/closet/crate/loaded_crate = locate(payload["shipment_ref"])
+	var/obj/structure/closet/crate/loaded_crate = resolve_token(payload["shipment_ref"])
 	if(istype(loaded_crate) && loaded_crate.cargo_market_contract_key == contract.offer_key)
 		loaded_crate.cargo_market_bid_id = null
 		loaded_crate.cargo_market_router_account = 0
@@ -286,7 +286,7 @@
 			crate.cargo_market_router_account = contract.contact_account_number
 			crate.cargo_market_contract_key = contract.offer_key
 			document.payload["loaded_at"] = TIME_NOW(CLOCK_WORLD)
-			var/shipment_ref = REF(crate) // a ref string: the payload stays plain data
+			var/shipment_ref = ref_token(crate) // a handle text: the payload stays plain data
 			document.payload["shipment_ref"] = shipment_ref
 			return TRUE
 	return FALSE

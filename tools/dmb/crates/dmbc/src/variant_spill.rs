@@ -8,8 +8,12 @@
 //! admission (`RetainedGeneration::restore_patch_base`), with nothing else assumed: admission compares the restored source half
 //! with the request exactly as it compares the live one, and anything that differs sends the request down the ordinary path.
 //!
-//! Not stored, because a patch can do without it or rebuilds it: the retained model (recovered from the image when a patch needs
-//! one, `recover_model`), unit symbolic records (a patch compares footprints only) and the expanded program text (numeric
+//! A variant's base that a full build replaced with a base of other program text is stored too, in a file keyed by the
+//! variant and that text (`text_key`): a compile root alternating between lanes whose declarations differ finds each lane's
+//! base there (`RetainedGeneration::restore_patch_base`).
+//!
+//! Not stored, because a patch can do without it or rebuilds it: the retained model (decoded from the image when an edit needs
+//! one, `RetainedGeneration::model_of`), unit symbolic records (a patch compares footprints only) and the expanded program text (numeric
 //! default edits are not admitted on a restored output). The answer marks are not stored either: a restored output proves its
 //! answers from the facts its version hashes (`QueryDb::prove_facts`), or is admitted on an equal answer-table version.
 //!
@@ -62,6 +66,17 @@ pub(crate) fn key(project: &Path, defines: &BTreeMap<String, String>, policy: u1
         hash.update(b"=");
         hash.update(value.as_bytes());
     }
+    hash.digest128()
+}
+
+/// The file of a variant's base with this program text (`OutputBase::text_key`): a base a full build replaced with one of
+/// other text, kept so a compile root that alternates between trees with different declarations finds it again.
+pub(crate) fn text_key(variant: u128, text: (u128, usize)) -> u128 {
+    let mut hash = xxhash_rust::xxh3::Xxh3::new();
+    hash.update(b"dm-variant-spill-text-v1\0");
+    hash.update(&variant.to_le_bytes());
+    hash.update(&text.0.to_le_bytes());
+    hash.update(&(text.1 as u64).to_le_bytes());
     hash.digest128()
 }
 
@@ -216,7 +231,12 @@ pub(crate) fn write(
     };
     fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let target = path_of(dir, key);
-    let aside = dir.join(format!("{key:032x}.{EXTENSION}.tmp{}", std::process::id()));
+    static WRITES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let aside = dir.join(format!(
+        "{key:032x}.{EXTENSION}.tmp{}-{}",
+        std::process::id(),
+        WRITES.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
     let result = (|| -> Result<u64, String> {
         let mut out = BufWriter::with_capacity(1 << 20, fs::File::create(&aside).map_err(|e| e.to_string())?);
         out.write_all(MAGIC).map_err(|e| e.to_string())?;

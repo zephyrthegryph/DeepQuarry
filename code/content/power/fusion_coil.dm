@@ -9,7 +9,6 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 
 	//these things are big and heavy, they're awkward to transport, and you can't throw them very far
 	w_class = ITEMSIZE_LARGE
-	throw_range = 4
 	slowdown = 1 //0.5 was not very much in practice, let's make this a bit more meaningful
 
 	var/coil_charged = TRUE	//have we been discharged into something yet?
@@ -17,7 +16,7 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	var/coil_charge = 4800000	//how much power do we dump into the SMES on use? restores the main (if unupgraded) by 20%, or engine by 80%
 
 CAPABILITIES(/obj/item/fusion_coil)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 4, throw_speed = 4))
 	configure(light_glow(color = "#30B5E6"))
 	configure(item_combat(force = 15))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_GASCAN))

@@ -34,7 +34,6 @@
 	closed_layer = ON_WINDOW_LAYER // Above airlocks when closed
 	var/id = 1.0
 	dir = 1
-	explosion_resistance = 25
 
 	//Most blast doors are infrequently toggled and sometimes used with regular doors anyways,
 	//turning this off prevents awkward zone geometry in places like medbay lobby, for example.
@@ -76,6 +75,7 @@ MSG_DEF(blast_door/repaired, "You have repaired %T%.", "%U% repairs %T%.")
 MSG_DEF(blast_door/emagged, "You subvert %T%'s motors with %I%.", "")
 
 CAPABILITIES(/obj/machinery/door/blast)
+	configure(obj_rules(explosion_resistance = 25))
 	setup(PROC_REF(set_blast_material))
 	without(CAP_EMAG)
 	without("reinforce")

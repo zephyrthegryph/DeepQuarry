@@ -15,7 +15,6 @@
 
 	attacktext = list("kicked","bit")
 
-	say_list_type = /datum/say_list/wolftaur
 
 	var/random_skin = 1
 	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
@@ -38,6 +37,7 @@
 	faction = FACTION_WOLFTAUR
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur)
+	configure(living_rules(say_list_type = /datum/say_list/wolftaur))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
 	look_from(nameof(icon_living), rest = "*_rest", dead = "*-dead", only_if = nameof(random_skin))
 	rolls(nameof(size_multiplier), range_of(0.9, 2, 0.01)) // the larger roll of the two old overrides (syndimobs.dm ran last)

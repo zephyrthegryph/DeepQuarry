@@ -30,7 +30,6 @@
 	organ_names = /datum/decl/mob_organ_names
 
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
 	var/mob/living/simple_mob/animal/space/space_worm/previous //next/previous segments, correspondingly
 	var/mob/living/simple_mob/animal/space/space_worm/next     //head is the nextest segment
@@ -464,7 +463,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
-	configure(butchery_rules(meat_amount = 10))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/worm, meat_amount = 10))
 	configure(mob_rules(universal_understand = 1))
 	ref_one(nameof(previous), /mob/living/simple_mob/animal/space/space_worm)
 	ref_one(nameof(next), /mob/living/simple_mob/animal/space/space_worm)

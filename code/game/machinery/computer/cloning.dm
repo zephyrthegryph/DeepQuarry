@@ -271,7 +271,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 		else
 			var/obj/item/implant/health/H = null
 			if(active_BR().mydna.implant)
-				H = locate(active_BR().mydna.implant)
+				H = resolve_token(active_BR().mydna.implant)
 			var/list/payload = list(
 				activerecord = ref_token(active_BR()),
 				health = (H && istype(H)) ? H.sensehealth() : "",
@@ -478,13 +478,13 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	if (isnull(imp))
 		imp = new /obj/item/implant/health(subject)
 		imp.implanted = subject
-		BR.mydna.implant = "\ref[imp]"
+		BR.mydna.implant = ref_token(imp)
 	//Update it if needed
 	else
-		BR.mydna.implant = "\ref[imp]"
+		BR.mydna.implant = ref_token(imp)
 
 	if (!isnull(subject.mind)) //Save that mind so traitors can continue traitoring after cloning.
-		BR.mydna.mind = "\ref[subject.mind]"
+		BR.mydna.mind = ref_token(subject.mind)
 
 	rel_add(src, nameof(records), BR)
 	set_scan_temp("Subject successfully scanned.", "good")

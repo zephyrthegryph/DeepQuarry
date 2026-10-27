@@ -61,7 +61,6 @@
 	vore_active = 1
 	vore_icons = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 1
 	swallowTime = 50
 	vore_ignores_undigestable = FALSE
 	vore_default_mode = DM_SELECT
@@ -69,7 +68,7 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/scel)
-	configure(living_rules(appendage_color = "#000000"))
+	configure(living_rules(vore_capacity = 1, appendage_color = "#000000"))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

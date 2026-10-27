@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved fully migrated event, plant (seed types) and xenoarchaeology files into code/content/."

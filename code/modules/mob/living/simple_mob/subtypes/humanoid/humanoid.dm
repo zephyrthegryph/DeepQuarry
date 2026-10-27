@@ -22,12 +22,12 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_nature(pain_1p = list("shout out in pain", "growl in pain", "grunt in pain", "gasp out in pain"), pain_3p = list("shouts out in pain", "growls in pain", "grunts in pain", "gasps out in pain")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID))
 
 /mob/living/simple_mob/humanoid
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/on_death(gibbed)
 	..()

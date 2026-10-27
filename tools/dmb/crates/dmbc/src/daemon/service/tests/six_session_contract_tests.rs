@@ -108,7 +108,7 @@ fn assert_equivalent_outputs(
         // An append patch gives a new proc or var the next free table index and
         // string, so only its own position in the two order-gated tables
         // (`typesof(/T/proc)`, `vars` name-string order) may differ from a fresh
-        // build (documented in declaration_patch_append.rs). Anything else is a failure.
+        // build (documented in retained_output_append.rs). Anything else is a failure.
         let report = dmb_equiv::compare_bytes(&retained.1, Some(&retained.2), &fresh.1, Some(&fresh.2), &dmb_equiv::Options::default())
             .unwrap_or_else(|error| panic!("{context}: decode failed: {error}"));
         if report.equivalent() {
@@ -503,7 +503,7 @@ fn body_edits_build_incrementally_and_match_fresh_bytes_through_line_shifts_chai
     let initial = compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
-            .map(|index| crate::retained_output::applied_with_declaration_patches(&roots.manifest(index)))
+            .map(|index| crate::retained_output::applied(&roots.manifest(index)))
             .collect()
     };
     let same_line = tree.replace("return a + 1", "return a + 2");
@@ -554,7 +554,7 @@ fn code_motion_edits_patch_and_match_fresh_bytes() {
     compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
-            .map(|index| crate::retained_output::applied_with_declaration_patches(&roots.manifest(index)))
+            .map(|index| crate::retained_output::applied(&roots.manifest(index)))
             .collect()
     };
     let comment = tree.replace("/proc/second(b)", "// a note\n/proc/second(b)");
@@ -605,7 +605,7 @@ fn string_literal_edits_patch_and_match_fresh_bytes() {
     compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
-            .map(|index| crate::retained_output::applied_with_declaration_patches(&roots.manifest(index)))
+            .map(|index| crate::retained_output::applied(&roots.manifest(index)))
             .collect()
     };
     let changed = tree.replace("\"alpha\"", "\"alpha two\"");
@@ -651,7 +651,7 @@ fn comment_inside_a_body_builds_incrementally_without_relowering_and_matches_fre
     compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
-            .map(|index| crate::retained_output::applied_with_declaration_patches(&roots.manifest(index)))
+            .map(|index| crate::retained_output::applied(&roots.manifest(index)))
             .collect()
     };
     let commented = tree.replace("return a + 1", "return a + 1 // note");

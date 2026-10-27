@@ -6,11 +6,13 @@ CAPABILITIES(/obj/effect/overlay)
 	configure(movable_motion(unacidable = TRUE))
 
 /obj/effect/overlay/beam //Not actually a projectile, just an effect.
-	lifecycle_lifetime = 1 SECOND
 	name="beam"
 	icon='icons/effects/beam.dmi'
 	icon_state="b_beam"
 	plane = ABOVE_OBJ_PLANE
+
+CAPABILITIES(/obj/effect/overlay/beam)
+	configure(movable_motion(lifecycle_lifetime = 1 SECOND))
 
 /obj/effect/overlay/palmtree_r
 	name = "Palm tree"
@@ -138,7 +140,9 @@ CAPABILITIES(/obj/effect/overlay/snow)
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	alpha = 0
 	vis_flags = NONE
-	blocks_emissive = EMISSIVE_BLOCK_NONE
+
+CAPABILITIES(/obj/effect/overlay/light_visible)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 
 // Only its light component may delete it (a forced qdel()).
 /obj/effect/overlay/light_visible/lifecycle_keep(force)
@@ -156,7 +160,6 @@ CAPABILITIES(/obj/effect/overlay/snow)
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	vis_flags = NONE
 	alpha = 110
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 	var/static/matrix/normal_transform
 
@@ -183,4 +186,5 @@ CAPABILITIES(/obj/effect/overlay/snow)
 	appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PIXEL_SCALE
 
 CAPABILITIES(/obj/effect/overlay/light_cone)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(apply_standard_transform))

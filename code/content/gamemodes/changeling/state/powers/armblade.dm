@@ -60,7 +60,6 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "arm_blade"
 	w_class = ITEMSIZE_NO_CONTAINER
-	throw_range = 0
 	embed_chance = 0 //No embedding.
 	var/mob/living/creator	//This is just like ninja swords, needed to make sure dumb shit that removes the sword doesn't make it stay around.
 	var/weapType = "weapon"
@@ -70,7 +69,7 @@
 	projectile_parry_chance = 15	// The base chance for a projectile to be deflected.
 
 CAPABILITIES(/obj/item/melee/changeling)
-	configure(movable_motion(throw_speed = 0))
+	configure(movable_motion(throw_range = 0, throw_speed = 0))
 	setup(PROC_REF(form_initial_weapon))
 	ref_one(nameof(creator))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))

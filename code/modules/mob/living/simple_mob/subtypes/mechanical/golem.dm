@@ -55,13 +55,13 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
+	configure(living_rules(delete_on_death = TRUE))
 	ref_one(nameof(master), /mob/living)
 	owns_one(nameof(core), starts = /obj/item/technomancer_core/golem)
 	owns_one(nameof(active_spell), on_destroy = ON_DESTROY_CONTAINED)
 
 
 /mob/living/simple_mob/mechanical/technomancer_golem
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/technomancer_golem/on_death(gibbed)
 	..()

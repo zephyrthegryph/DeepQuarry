@@ -183,10 +183,8 @@ CAPABILITY_TYPE(overheating, CAP_OVERHEATING, /datum/capability/overheating, key
 // ------------------------------------------------------ machine heat (H4)
 
 /obj/machinery
-	/// Declared heat output, watts, while the machine runs (current_heat_output()).
-	/// The power goes into the machine's heat body, which passes it to its
-	/// surroundings; above its heat limit the overheating rule damages it.
-	var/heat_output = 0
+	// heat_output (declared watts while the machine runs, current_heat_output()) is the machine_rules type trait. The power goes into the
+	// machine's heat body, which passes it to its surroundings; above its heat limit the overheating rule damages it.
 	/// Watts currently fed to the heat body by set_heat_output().
 
 /obj/machinery/thermal_properties()
@@ -196,13 +194,13 @@ CAPABILITY_TYPE(overheating, CAP_OVERHEATING, /datum/capability/overheating, key
 
 /// Watts the machine emits right now. Subtypes scale it by load.
 /obj/machinery/proc/current_heat_output()
-	if(!heat_output || !use_power || (!operable()))
+	if(!machine_rules_of(src).heat_output || !use_power || (!operable()))
 		return 0
-	return heat_output
+	return machine_rules_of(src).heat_output
 
 /// Re-reads current_heat_output(). power_change() calls it; call it when load changes.
 /obj/machinery/proc/update_heat_output()
-	if(!heat_output && !sparse_get_or(src, heat_output_now, 0))
+	if(!machine_rules_of(src).heat_output && !sparse_get_or(src, heat_output_now, 0))
 		return
 	set_heat_output(current_heat_output())
 

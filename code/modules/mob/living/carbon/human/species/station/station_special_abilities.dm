@@ -1134,7 +1134,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 				play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
-			hit_object.throw_at(firer, throw_range, motion_of(hit_object).throw_speed, firer)
+			hit_object.throw_at(firer, motion_of(src).throw_range, motion_of(hit_object).throw_speed, firer)
 	if(istype(target, /turf/simulated/wall) || istype(target, /obj/machinery/door) || istype(target, /obj/structure/window)) //This can happen normally due to odd terrain. For some reason, it seems to not actually interact with walls.
 		if(isliving(firer))
 			var/mob/living/originator = firer
@@ -1313,10 +1313,11 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 
 	var/list/choices = list("Inject")
 
-	if(LAZYLEN(trait_injection_reagents) > 1) //Should never happen, but who knows!
+	var/list/injection_options = injection_reagent_choices()
+	if(LAZYLEN(injection_options) > 1) //Should never happen, but who knows!
 		choices += "Change reagent"
 	else if(!sparse_get(src, trait_injection_selected))
-		sparse_set(src, trait_injection_selected, LAZYACCESS(trait_injection_reagents, 1))
+		sparse_set(src, trait_injection_selected, LAZYACCESS(injection_options, 1))
 
 	choices += "Change amount"
 	choices += "Change verb"
@@ -1328,7 +1329,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 	if(!A.answer)
 		return
 	var/reagent_choice = A.answer.value
-	if(reagent_choice in trait_injection_reagents)
+	if(reagent_choice in injection_reagent_choices())
 		sparse_set(src, trait_injection_selected, reagent_choice)
 	to_chat(src, span_notice("You prepare to inject [sparse_get_or(src, trait_injection_amount, 5)] units of [sparse_get(src, trait_injection_selected) ? "[sparse_get(src, trait_injection_selected)]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
@@ -1349,7 +1350,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 		return
 	var/choice = A.answer.value
 	if(choice == "Change reagent")
-		open_request(src, /datum/prompt/choice, PROC_REF(injection_reagent_chosen), answerer = src, title = "Select reagent", question = "Choose which reagent to inject!", choices = trait_injection_reagents || list(), timeout = 0)
+		open_request(src, /datum/prompt/choice, PROC_REF(injection_reagent_chosen), answerer = src, title = "Select reagent", question = "Choose which reagent to inject!", choices = injection_reagent_choices() || list(), timeout = 0)
 		return
 	if(choice == "Change amount")
 		open_request(src, /datum/prompt/number, PROC_REF(injection_amount_chosen), answerer = src, timeout = 0, question = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = sparse_get_or(src, trait_injection_amount, 5), max_value = 5, min_value = 0)

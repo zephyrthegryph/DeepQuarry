@@ -19,6 +19,9 @@ pub(crate) struct UnitArtifact {
 }
 #[path = "abi_batch.rs"]
 pub(super) mod batch;
+#[path = "abi_store.rs"]
+mod store;
+use store::AbiStore;
 #[path = "abi_disk.rs"]
 mod disk;
 pub(crate) use disk::{admit_initializer_engine_bucket, initializer_engine_record};
@@ -30,7 +33,7 @@ pub(crate) enum Artifact {
 pub(crate) struct AbiDiskLease(#[allow(dead_code)] Arc<disk::Transport>);
 
 pub struct AbiArtifacts {
-    pub(super) store: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
+    pub(super) store: AbiStore,
     engine_owner: Option<Arc<crate::runner_host::EnginePayload>>,
     /// Disk transport of the current request. Weak: the request's `AbiDiskLease` owns it, so a retained
     /// store never keeps a cache snapshot alive between requests.
@@ -58,8 +61,12 @@ pub struct AbiArtifacts {
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
+        let batch_replay = std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1");
+        let batch_recipes = batch_replay
+            || std::env::var_os("DMB_ABI_BATCH_RECIPES").is_some_and(|value| value == "1");
         Self {
-            store: dm_session::ObservedArtifactStore::current_revision(),
+            // Recipes bind to one session's frontend: a store that builds them stays private.
+            store: AbiStore::new(batch_recipes),
             engine_owner: None,
             disk: std::sync::RwLock::new(std::sync::Weak::new()),
             pinned_disk: None,
@@ -67,9 +74,8 @@ impl Default for AbiArtifacts {
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
             provisional_reused: AtomicUsize::new(0),
-            batch_replay: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1"),
-            batch_recipes: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1")
-                || std::env::var_os("DMB_ABI_BATCH_RECIPES").is_some_and(|value| value == "1"),
+            batch_replay,
+            batch_recipes,
             batch_reused: AtomicUsize::new(0),
             scheduled_reused: AtomicUsize::new(0),
             batch_rows_selected: AtomicUsize::new(0),

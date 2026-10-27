@@ -1,5 +1,4 @@
 /mob/living/simple_mob/animal
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help  = "pets"
 	response_disarm = "shoos"

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved 17 base-type vars to their homes: losebreath now lives on the physiology (not a slot), the voice name is a mob_kind trait field, throw_source and armor_override are weak slots, and the mob-owned datums (turfslip, setup and vore HUD buttons, vore panel, belly overlay window, inventory panel, machine shim, disposal connection, rules heat node, burn cooling watch) plus the faction ledger and default unarmed attack are sparse links. traumatic_shock (a mirror of current_pain()) and the never-started fire sound loop (a looping sound made for every living mob) are deleted."

@@ -327,11 +327,11 @@ CAPABILITIES(/obj/item/cartridge/syndicate)
 	desc = "It feels heavier for some reason."
 	w_class = ITEMSIZE_SMALL
 	icon_state = "cart-lib"
-	show_examine = FALSE
 	var/slots = 1
 	var/obj/item/storage/internal/hold
 
 CAPABILITIES(/obj/item/cartridge/storage)
+	configure(obj_rules(show_examine = FALSE))
 	drag_onto(PROC_REF(cartridge_dropped))
 	after_init(0, then(PROC_REF(size_hold)))
 	owns_one(nameof(hold), starts = /obj/item/storage/internal)

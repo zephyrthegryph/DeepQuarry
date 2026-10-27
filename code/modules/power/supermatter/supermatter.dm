@@ -124,6 +124,9 @@
 // exhaust is a gas reaction (GAS_REACTION_SUPERMATTER, verdigris/domains/gas/src/reaction_energy.rs): DM decides how much phoron and oxygen it
 // exhales and its device energy, Rust settles the heat.
 CAPABILITIES(/obj/machinery/power/supermatter)
+	configure(atom_rules(description_antag = "Exposing the supermatter to oxygen or vacuum will cause it to start rapidly heating up.  Sabotaging the supermatter and making it explode will \
+	cause a period of lag as the explosion is processed by the server, as well as irradiating the entire station and causing hallucinations to happen.  \
+	Wearing radiation equipment will protect you from most of the delamination effects sans explosion."))
 	configure(movable_motion(unacidable = TRUE))
 	configure(light_glow(range = 4, color = "#8A8A00"))
 	owns_one(nameof(soundloop), /datum/looping_sound/supermatter, starts = PROC_REF(make_soundloop))
@@ -156,10 +159,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			"department" = DEPARTMENT_ENGINEERING,
 			"machine_kind" = "supermatter",
 			"station_machine" = stationcrystal && (z in using_map.station_levels),
-			"machine_id" = REF(src),
+			"machine_id" = ref_token(src),
 			"metrics" = list("eer" = -1, "integrity" = 0),
 			"detail" = "Supermatter telemetry ended",
-		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
+		), "supermatter-destroyed:[ref_token(src)]:[world.time]", src)
 	..()
 
 /obj/machinery/power/supermatter/proc/get_status()
@@ -203,7 +206,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 /// Starts the delamination: the pull, then the effects after `pull_time` (explode_effects()).
 /obj/machinery/power/supermatter/proc/explode()
-	message_admins("Supermatter exploded at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+	message_admins("Supermatter exploded at ([x],[y],[z] - <A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 	log_game("SUPERMATTER([x],[y],[z]) Exploded. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()]")
 	set_anchored(TRUE)
 	set_grav_pulling(1)
@@ -511,10 +514,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			"department" = DEPARTMENT_ENGINEERING,
 			"machine_kind" = "supermatter",
 			"station_machine" = stationcrystal && (z in using_map.station_levels),
-			"machine_id" = REF(src),
+			"machine_id" = ref_token(src),
 			"metrics" = telemetry_metrics,
 			"detail" = "Supermatter telemetry reported [round(power)] Relative EER at [round(get_integrity())]% integrity",
-		), "supermatter-telemetry:[REF(src)]:[world.time]", src)
+		), "supermatter-telemetry:[ref_token(src)]:[world.time]", src)
 
 /// The look (the draw sweep: from its layers).
 /obj/machinery/power/supermatter/draw(datum/look/look)
@@ -702,7 +705,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 /// Declared setup: announce broken shard, after the complete parent chain.
 /obj/item/broken_sm/proc/announce_broken_shard()
-	message_admins("Broken SM shard created at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+	message_admins("Broken SM shard created at ([x],[y],[z] - <A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 
 /obj/item/broken_sm/proc/radiate()
 	if(active)

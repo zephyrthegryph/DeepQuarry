@@ -7,12 +7,11 @@ MATERIAL_MIX(/obj/item/nifrepairer, list(MAT_STEEL = 4000, MAT_GLASS = 6000))
 	icon_state = "hydro"
 	item_state = "gun"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 	var/datum/reagents/supply
 	var/efficiency = 15 //How many units reagent per 1 unit nanopaste
 
 CAPABILITIES(/obj/item/nifrepairer)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 10, throw_speed = 5))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

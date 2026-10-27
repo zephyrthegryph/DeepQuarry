@@ -534,7 +534,7 @@ CAPABILITIES(/atom/movable/screen)
 					to_chat(user, span_notice("You are currently <b>calm and collected.</b>"))
 				if(xc.feral > 0)
 					var/feral_passing = TRUE
-					if(H.traumatic_shock > min(60, nutrition_of(H)/10))
+					if(H.current_pain() > min(60, nutrition_of(H)/10))
 						to_chat(user, span_warning("Your pain prevents you from regaining focus."))
 						feral_passing = FALSE
 					if(xc.feral + nutrition_of(H) < 150)

@@ -39,14 +39,12 @@
 	endurance = 200
 	see_in_dark = 8
 
-	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat
 
 	melee_damage_lower = 8
 	melee_damage_upper = 16
 	grab_resist = 100 // you can't even wrap your arms around this thing, how could you hope to grab it???
 
 	vore_active = 1
-	vore_capacity = 2
 	vore_pounce_chance = 70 // v hongry buggo
 	vore_icons = SA_ICON_LIVING
 
@@ -76,11 +74,11 @@
 	can_buckle = TRUE
 	mount_offset_y = 26
 
-	say_list_type = /datum/say_list/sect_queen
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
-	configure(butchery_rules(meat_amount = 8))
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/sect_queen))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 8))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(vore_eyes = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

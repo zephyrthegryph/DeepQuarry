@@ -82,7 +82,7 @@ CAPABILITIES(/datum/xenochimera)
 	var/hunger = max(0, 150 - nutrition_of(owner))
 
 	//pain makes feralness a thing
-	var/shock = 0.75*owner.traumatic_shock
+	var/shock = 0.75*owner.current_pain()
 
 	//Caffeinated or otherwise overexcited xenochimera can become feral and have special messages
 	var/jittery = max(0, owner.status_units(STAT_JITTERY) - 100)
@@ -248,7 +248,7 @@ CAPABILITIES(/datum/xenochimera)
 	// If they're hurt, chance of snapping.
 	else if(cause == "shock")
 		//If the majority of their shock is due to raw pain, give them a different message (3x multiplier on check as pain is 2x - meaning t_s must be at least 3x for other damage sources to be the greater part)
-		if(3*owner.current_pain() >= owner.traumatic_shock)
+		if(3*owner.current_pain() >= owner.current_pain())
 			to_chat(owner,span_danger(span_large("The pain! It stings! Got to get away! Your instincts take over, urging you to flee, to hide, to go to ground, get away from here...")))
 			log_and_message_admins("has gone feral due to pain.", owner)
 

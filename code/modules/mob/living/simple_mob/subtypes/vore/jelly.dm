@@ -9,7 +9,6 @@
 
 	swallowTime = 1 SECOND
 	vore_active = 1
-	vore_capacity = 3
 	vore_default_mode = DM_DIGEST
 	vore_icons = SA_ICON_LIVING
 	vore_bump_chance = 100 //Don't want to be eaten? Watch your step. :)
@@ -24,7 +23,6 @@
 	melee_damage_lower = 2
 	melee_damage_upper = 7
 
-	say_list_type = /datum/say_list/jelly
 
 
 	min_oxy = 0
@@ -45,6 +43,7 @@
 	swallowTime = 2 SECONDS // Hungry little bastards.
 
 CAPABILITIES(/mob/living/simple_mob/vore/jelly)
+	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/jelly))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 /datum/say_list/jelly

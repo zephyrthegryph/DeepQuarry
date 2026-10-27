@@ -690,6 +690,95 @@ Tools: `bench/shared_store_probe.sh` and `bench/alloc_sites_diff.py` as before. 
 innermost frame with a line number; an inlined callee shows as its caller (`lookup_record` held the `versions` conversion), so the line
 number, not the function, names the site.
 
+### Shared store, part 4 (lane `compiler/shared-store-5`, 2026-10-26)
+
+Target of the user unchanged: about 1 GB per extra session. Master gained content-digest domain-version tokens (`b584bac20a`) and
+content-shared retained output images (`05fbeae28e`); this lane measured their effect and tried to cut the largest remaining owner.
+Method of part 3: `bench/shared_store_probe.sh` on the `allocation-sites` release build (requested live, GB; root A production, the A
+test world `-DCBT -DCIBUILDING -DCITESTING -DDEBUG`, root B a copy of A with a comment line in two files), 4 workers, fresh output store.
+The machine was shared with another lane's test world and cargo build, so wall times are inflated and one probe differs from another
+by about 0.05 GB.
+
+| Step | root A | + test variant | + root B | sum |
+|---|---|---|---|---|
+| master `8e5a8be879` (digest tokens, shared images) | 6.81 | +3.47 | +1.93 | 12.22 |
+| content-digest provider issuers (not landed) | 6.83 | +3.45 | +1.90 | 12.18 |
+
+**The two earlier changes took almost nothing off the totals.** Part 3 ended at about 2.0 GB for a second root and 3.5 GB for the test
+variant; they are now 1.9 and 3.45. The shared output image only helps two sessions that publish equal outputs (a second worktree at
+the same commit); the test variant publishes a different image, and `dmb::codec` is still the largest test-variant owner.
+
+**Tried and not landed: provider issuers as content digests.** The callable and variable engine providers
+(`engine_host/engine_providers.rs`) draw their `issuer` from a process-wide counter at every capture, and every catalog,
+variable-negative and callable version token is `compose_version(base, issuer)`. Two sessions capturing equal engines therefore hold
+unequal tokens even though the tree tokens under them are digests, so a rebound lowering record cannot keep its predecessor's
+`versions` list. The lane made the issuer `xxh3(tag, engine identity, payload)` masked to 56 bits (`variable_negative::qualified`
+multiplies it by 4 with checked arithmetic; 64 bits made it decline every token and failed two tests). Effect on root B: the rebinding
+site `SessionSymbolicMemo::lookup_record` fell from 144 to about 110 MB; the sum did not move. **It made the warm patch rebuild slower:**
+three interleaved rounds of three one-line edits to `code/game/world.dm` in root A (`--workers 4`, own daemon per build, allocation-sites
+release builds) gave master 8.83 to 10.32 s (mean 9.47) and the digest-issuer build 10.93 to 12.83 s (mean 11.71), 24 percent slower,
+far over the 5 percent limit. The outputs were correct (`shared_store_equiv.sh` with `BASE_DIR`: game and test `.dmb`/`.rsc` byte-identical
+to the pre-change build, all six interleaved shared-daemon builds byte-identical and `dmb-equiv` EQUIVALENT), so the cost is work, not
+a wrong answer: the likely cause is that equal issuers across captures let rebound records and version checks take a slower validating
+path where unequal tokens used to fail fast, which was not profiled. The code is not landed; its diff is kept at
+`E:/dq-cache/shared-store-5/issuer-digest.patch` (with the `lowering_policies` refactor and its two tests). Sharing anything built on
+those tokens (domain memo, name-demand receipts, `MetadataDependencies`) still needs stable issuers, and first a profile of that patch
+rebuild.
+
+**Tried and removed: a daemon-wide pool of `versions` lists.** Interning each rebound record's `(domain, token)` list by content did not
+measurably move root B (6.83 / +3.51 / +1.94 with it), and the warm patch rebuild of the pooled build was 10.1 to 12.1 s against
+9.3 to 10.4 s, so it did not land.
+
+### What is left, in order, with a design for each
+
+The target is **not met**: a second root costs about 1.9 GB and the test variant about 3.45 GB. Next owners (growth, MB):
+
+| Rank | Owner | Second root | Test variant |
+|---|---|---|---|
+| 1 | `driver_facts::abi_artifacts` | 97 | |
+| 2 | `query_db::RequestAnswers` | 77 | |
+| 3 | `initializer_policy::classification` | 75 | |
+| 1 (test) | `dmb::codec` output buffers | | 196 |
+| 2 (test) | `dm_session::artifacts::leased` | | 174 |
+| 3 (test) | `query_db::AnswerValues` | | 133 |
+
+* **`abi_artifacts` (97).** The ABI units are hydrated from the disk cache (`UnitWire::hydrate_current`) into a per-session store keyed
+  by the session's own metadata. Design: make a hydrated unit a function of its wire bytes, which are already content addressed in
+  `dm-cache`, and intern the decoded unit in a weak daemon pool keyed by the record digest; the session store keeps `Arc`s plus its own
+  receipt and certificate. It is per-session today because the unit embeds the session's metadata tokens and local certificate inline
+  instead of beside the shared payload; splitting those two out is the change.
+* **`RequestAnswers` (77).** Part 2 already moved the content-defined value out; what remains is the 32-byte slot (request, born,
+  changed, stamp, two `Arc`s) per answered query, about 1.6 million per session. Design: store runs. Answers of one request that share
+  `born` and `changed` are contiguous in query-id order, so a session keeps a sorted `(first id, bookkeeping)` run list and a bit per
+  query for presence, about 1 to 2 bytes per answer. It is per-session because the bookkeeping names this session's requests, so it can
+  be compacted but not shared.
+* **`classification` (75).** Initializer classification receipts are claimed from a shared core but each session rebuilds the per-unit
+  receipt group around its own tree tokens. Design: with digest tokens and digest issuers a unit's receipt group is a pure function of
+  the unit's reads, so intern it in the existing `receipt_pool("classification")` by content and let the session hold only the unit
+  index. It is per-session today because tokens differed between sessions until these changes; the groups are now equal and need to be
+  looked up by content instead of rebuilt.
+* **`dmb::codec` output buffers (196, test variant).** The test world publishes its own image, so whole-image interning
+  (`output_pool`) cannot help. Design: chunk the retained encoded image at stable section boundaries (string table, procedure bodies,
+  type tables) and intern each chunk by digest, so the game and test images share the procedure bodies that are equal after debug-op
+  stripping. It is per-session because the writer produces one contiguous `Vec<u8>` per output, which only matches another output when
+  every byte matches.
+* **`leased` (174, test variant).** One bit per claim (part 3) is paid for every variant a lease claims; the test variant claims about as
+  many as the game variant over mostly the same variants. Design: let a variant session lease the game session's roster as a base and
+  keep only a delta (claims added, claims dropped), so a session whose claims equal the base costs nothing. It is per-session because a
+  lease is the claim roster of one session; the delta form is the missing piece.
+* **`AnswerValues` (133, test variant).** The interned answer values are keyed by query id; the test variant adds values because its
+  answers differ in the debug-dependent domains. Design: intern by `(query, answer hash)` and keep one allocation per distinct answer
+  independent of query id, since many ids carry the same positive answer. It is per-session only in that the intern key includes the id.
+
+**What reaching 1 GB would take.** Root B needs about 0.9 GB removed. The three designs above are about 250 MB together; the rest is
+the long tail of per-tree indexes (`joined_text` 61, `RetainedMetadata` 64, `MetadataDependencies` 59, `frame_contribution` 54,
+`domain_memo`, `region_memo`, the preprocessor's whole-project vectors), each a cache of a pure function of the tree. Those need a
+tree-state identity to key a whole-cache share on (two trees equal up to a comment would share a cache, not copy it) or per-file chunking
+of the preprocessor plan; that is a design change of its own, not another interning pass, and is the realistic route to 1 GB. The test
+variant needs the chunked image and the roster delta first (about 370 MB), and its remaining 3 GB is mostly code that differs by `DEBUG`
+(initializers, maps, modified instances), which only a debug-independent lowering of those three kinds would share. These estimates are
+sketches, not measurements.
+
 ## Memory diet (lane `compiler/memory-diet`, 2026-10-24)
 
 Question from the user: why does the compiler keep the whole source in memory? Measured answer: it does not. One production
@@ -765,3 +854,37 @@ for both worlds.
   sessions only (a one-shot compile never leases), keyed by variant pointer, with deferred claims and a generation check through
   the held key owner, and about a dozen tests read `buckets` directly. A flat slab with hash index would save an estimated 300-400
   MB per daemon session; it needs its own lane.
+
+## Shared ABI unit artifacts (lane `compiler/share-abi-artifacts`, 2026-10-26)
+
+The largest owner a second root added was `driver_facts::abi_artifacts` (97 MB, shared store part 4). An ABI unit artifact is a pure
+function of what its receipt reads (`Inputs`: the shared engine payload, procedure metadata by content, the predecessor layout, the
+semantic answers), so the ABI store is now one daemon-wide core with a lease per session (`driver_facts/abi_store.rs`, purpose
+`abi.units`; `DMB_SHARED_STORE_PRIVATE=abi` keeps it private, and a store that builds whole-batch recipes, `DMB_ABI_BATCH_REPLAY` /
+`DMB_ABI_BATCH_RECIPES`, stays private because recipes bind to one session's frontend). The rules are the other shared cores': a
+variant is found by exact key, validated against the asking session's own answers, claimed by the lease, and freed when the last lease
+releases it. The scheduler (`abi_scheduler.rs`) visits the key's candidates through `visit_candidates`, prefers the variant this
+session already claims over a sibling's, and claims the accepted variant when the row is finished (`ObservedArtifactLease::claim`,
+new in `dm-session` with `visit_key_storage` reporting whether the lease holds a variant).
+
+**Memory** (`bench/shared_store_probe.sh`, allocation-sites release build, same binary, `DMB_SHARED_STORE_PRIVATE=abi` against
+sharing on; requested live after each request, GB):
+
+| | root A | + second request of A (test variant) | + root B | sum |
+|---|---|---|---|---|
+| ABI store private | 6.80 | +3.53 | +2.24 | 12.57 |
+| ABI store shared | 6.80 | +3.06 | +1.58 | 11.44 |
+
+Sampled owner growth of root B fell from 2176 to 1475 MB: `abi_artifacts` (97), and with it the `lowering::symbolic_input` (151)
+and `portable_meaning::meta` (82) payloads the private units held, left the list. Peak private memory of the three-build probe
+15.55 -> 14.05 GB.
+
+**Proof.** `bench/shared_store_equiv.sh`: all six interleaved shared-daemon builds (A game, B game, A test, B test, B game, A game)
+byte-identical to their cold private-daemon references (pairs `d422acf6...` A game, `2fcde9cc...` A test, `2f841f3a...` B game,
+`1ed11dbb...` B test), `dmb-equiv --all --ignore-debug` EQUIVALENT, no marker leak. Tests: `abi_store_tests` (a second session
+claims the first session's variant, and it dies with the last lease), `leased` key-storage/claim test in `dm-session`.
+
+**Timing** (warm patch rebuild, root A, one daemon per arm, three one-line edits to `code/game/world.dm` per round, arms
+interleaved; the machine was loaded by other work and a game, so single runs vary by a factor of two). Two sessions: first
+private 17.4-21.5 s (mean 18.8) against shared 12.6-18.6 s (mean 15.9); second, three rounds, private 11.4-18.8 s (median 16.1,
+one 43 s outlier) against shared 10.4-19.4 s (median 15.3). No sign of the shared core being slower; within the 5 percent limit.

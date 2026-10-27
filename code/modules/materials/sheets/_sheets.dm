@@ -2,7 +2,6 @@
 // If you're adding something here, make sure to add it to fifty_spawner_mats.dm as well
 /obj/item/stack/material
 	w_class = ITEMSIZE_NORMAL
-	throw_range = 3
 	max_amount = 50
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_material.dmi',
@@ -20,7 +19,7 @@
 	var/apply_colour //temp pending icon rewrite
 
 CAPABILITIES(/obj/item/stack/material)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 3, throw_speed = 3))
 	configure(item_handling(center_x = 0, center_y = 0))
 	setup(PROC_REF(find_material), mapload = TRUE)
 	setup(PROC_REF(stack_material_setup))

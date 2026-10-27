@@ -285,6 +285,8 @@ CAPABILITIES(/obj/belly)
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	// The mob's selected belly: a sparse link, not a var on /mob (vore_selected_of()).
 	links(LINK_END(/mob, LK_VORE_SELECTED), LINK_END(/obj/belly, LK_VORE_SELECTED_BY), sparse = TRUE, b_many = TRUE)
+	// The belly the mob is previewing the vore FX of: a sparse link, not a var on /mob (vore_previewing_of()).
+	links(LINK_END(/mob, LK_VORE_PREVIEW), LINK_END(/obj/belly, LK_VORE_PREVIEWED_BY), sparse = TRUE, b_many = TRUE)
 	// a belly is an organ of its owner, never a thing on the floor to hit
 	without("melee_hit")
 	reagents(300) // So we can have some liquids in bellies
@@ -441,7 +443,7 @@ CAPABILITIES(/obj/belly)
 		if(can_taste && living_mob.loc == src && (taste = living_mob.get_taste_message(FALSE))) // Prevent indirect tasting
 			to_chat(owner, span_vnotice("[living_mob] tastes of [taste]."))
 		vore_fx(living_mob)
-		if(owner.previewing_belly == src)
+		if(vore_previewing_of(owner) == src)
 			vore_fx(owner)
 		//Stop AI processing in bellies
 		if(living_mob.ai_brain)
@@ -481,7 +483,7 @@ CAPABILITIES(/obj/belly)
 		for(var/mob/living/L in endfx)
 			if(L.surrounding_belly()) continue
 			L.clear_fullscreen("belly")
-			L.belly_overlay_tgui?.hide() // hide TGUI belly overlay
+			L.belly_overlay_window()?.hide() // hide TGUI belly overlay
 			if(L.hud_used)
 				if(!L.hud_used.hud_shown)
 					L.toggle_hud_vis()

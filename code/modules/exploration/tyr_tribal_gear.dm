@@ -262,7 +262,6 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 	active_force = 10
 	active_armourpen = 60
 	active_throwforce = 40
-	throw_range = 7
 	slowdown = 2
 	defend_chance = 70
 	projectile_parry_chance = 70
@@ -274,7 +273,7 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 		)
 
 CAPABILITIES(/obj/item/melee/energy/sword/top_shield)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 7, throw_speed = 1))
 
 //E sword has 30 damage, 50 AP, and 65% projectile block
 //Axe is 60 damage, 65 AP, no guard

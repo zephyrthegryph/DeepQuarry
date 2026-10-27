@@ -53,6 +53,7 @@ MSG_DEF(canister/deconstructed, "You deconstruct %T%.", "%U% deconstructs %T%.")
 MSG_DEF(canister/jetpack, "You pulse-pressurize your jetpack from the tank.", "%U% pulse-pressurizes a jetpack from %T%.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
+	configure(atom_rules(description_antag = "Canisters can be damaged, spilling their contents into the air, or you can just leave the release valve open."))
 	configure(machine_usage(interact_offline = 1))
 	setup(PROC_REF(fill_preset))
 	climb()

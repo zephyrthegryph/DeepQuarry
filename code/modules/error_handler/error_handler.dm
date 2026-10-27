@@ -134,9 +134,10 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 
 	var/list/usrinfo = null
 	var/locinfo
-	if(istype(usr))
-		usrinfo = list("  usr: [key_name(usr)]")
-		locinfo = loc_name(usr)
+	var/mob/acting = input_actor() // the native input's acting mob (usr) when the runtime hit
+	if(istype(acting))
+		usrinfo = list("  usr: [key_name(acting)]")
+		locinfo = loc_name(acting)
 		if(locinfo)
 			usrinfo += "  usr.loc: [locinfo]"
 	// The proceeding mess will almost definitely break if error messages are ever changed

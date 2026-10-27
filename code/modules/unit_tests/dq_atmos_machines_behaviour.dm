@@ -238,7 +238,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, where || tile(2, 1))
 	H.enable_godmode()
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(0, 4))
-	rel_set(H, nameof(H.teleop), controller)
+	sparse_ref_set(H, teleop, controller)
 	if(access)
 		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 		H.equip_to_slot(id_card(access, H.loc), SLOT_ID_ID)

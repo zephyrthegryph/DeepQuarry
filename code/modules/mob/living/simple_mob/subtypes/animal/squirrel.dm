@@ -22,7 +22,6 @@
 	faction = FACTION_ANIMAL
 	endurance = 40
 	movement_cooldown = -1
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pets"
 	response_disarm = "slaps"
@@ -40,7 +39,6 @@
 
 
 	has_langs = list(LANGUAGE_ANIMAL)
-	say_list_type = /datum/say_list/squirrel
 
 	mob_size = MOB_SMALL
 
@@ -52,7 +50,6 @@
 
 	swallowTime = 4 SECONDS
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 1
 	vore_bump_emote	= "pounces on"
 	vore_ignores_undigestable = 0
@@ -150,7 +147,8 @@
 // A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
-	configure(butchery_rules(meat_amount = 1))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/squirrel))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 1))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(softfall = TRUE))
 	rolls(nameof(winter_coat), PROC_REF(roll_season), when = nameof(do_seasons))
@@ -202,7 +200,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 	set_vis_height(64)
 
 	swallowTime = 1 SECOND
-	vore_capacity = 3
+	set_vore_capacity(3)
 	set_vore_bump_chance(5)
 	set_mob_size(MOB_LARGE)
 

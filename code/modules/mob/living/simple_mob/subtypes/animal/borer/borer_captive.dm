@@ -37,7 +37,7 @@ CAPABILITIES(/mob/living/captive_brain)
 	to_chat(src, span_danger("You cannot emote as a captive mind."))
 	return
 
-/mob/living/captive_brain/emote(message)
+/mob/living/captive_brain/emote(message, typed = FALSE)
 	to_chat(src, span_danger("You cannot emote as a captive mind."))
 	return
 

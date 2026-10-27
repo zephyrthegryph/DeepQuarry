@@ -248,29 +248,29 @@
 		// This shit need to die in a phoron fire.
 
 		// host -> self
-		var/h2s_id = host.computer_id
+		var/h2s_id = sparse_get(host, computer_id)
 		var/h2s_ip= sparse_get(host, lastKnownIP)
-		host.computer_id = null
+		sparse_set(host, computer_id, null)
 		sparse_set(host, lastKnownIP, null)
 
 		move_player(host, src, "borer [src] released control of [host]")
 
-		if(!src.computer_id)
-			src.computer_id = h2s_id
+		if(!sparse_get(src, computer_id))
+			sparse_set(src, computer_id, h2s_id)
 
 		if(!sparse_get(host_brain, lastKnownIP))
 			sparse_set(src, lastKnownIP, h2s_ip)
 
 		// brain -> host
-		var/b2h_id = host_brain.computer_id
+		var/b2h_id = sparse_get(host_brain, computer_id)
 		var/b2h_ip= sparse_get(host_brain, lastKnownIP)
-		host_brain.computer_id = null
+		sparse_set(host_brain, computer_id, null)
 		sparse_set(host_brain, lastKnownIP, null)
 
 		move_player_mind(host_brain.mind, host, "regained control of [host] from borer [src]")
 
-		if(!host.computer_id)
-			host.computer_id = b2h_id
+		if(!sparse_get(host, computer_id))
+			sparse_set(host, computer_id, b2h_id)
 
 		if(!sparse_get(host, lastKnownIP))
 			sparse_set(host, lastKnownIP, b2h_ip)

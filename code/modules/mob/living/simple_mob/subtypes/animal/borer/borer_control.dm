@@ -35,9 +35,9 @@
 	host.add_language("Cortical Link")
 
 	// host -> brain
-	var/h2b_id = host.computer_id
+	var/h2b_id = sparse_get(host, computer_id)
 	var/h2b_ip= sparse_get(host, lastKnownIP)
-	host.computer_id = null
+	sparse_set(host, computer_id, null)
 	sparse_set(host, lastKnownIP, null)
 
 	rel_set(src, nameof(host_brain), new /mob/living/captive_brain(src)) // replaces (and deletes) any old one
@@ -45,23 +45,23 @@
 	// The host's mind is pushed aside into the captive brain, keeping its identity.
 	move_player(host, host_brain, "pushed aside by borer [src]", share = TRUE)
 
-	if(!host_brain.computer_id)
-		host_brain.computer_id = h2b_id
+	if(!sparse_get(host_brain, computer_id))
+		sparse_set(host_brain, computer_id, h2b_id)
 
 	if(!sparse_get(host_brain, lastKnownIP))
 		sparse_set(host_brain, lastKnownIP, h2b_ip)
 
 	// self -> host
-	var/s2h_id = src.computer_id
+	var/s2h_id = sparse_get(src, computer_id)
 	var/s2h_ip= sparse_get(src, lastKnownIP)
-	src.computer_id = null
+	sparse_set(src, computer_id, null)
 	sparse_set(src, lastKnownIP, null)
 
 	// The borer wears the host's body without rewriting the host's identity.
 	move_player(src, host, "borer [src] took control of [host]", share = TRUE)
 
-	if(!host.computer_id)
-		host.computer_id = s2h_id
+	if(!sparse_get(host, computer_id))
+		sparse_set(host, computer_id, s2h_id)
 	if(!sparse_get(host, lastKnownIP))
 		sparse_set(host, lastKnownIP, s2h_ip)
 	controlling = TRUE

@@ -9,6 +9,14 @@
 // Every slot of an instance lives in one lazy assoc list, /datum/var/sparse_slots, null until the first slot is set, so an instance with none
 // costs nothing. A per-type default (what a GLOB type table used to hold) is a trait block, not a slot.
 //
+// A slot that names another datum is a weak slot, declared `sparse(/mob, teleop, type = weak)`. It holds ref_token() of its target, so it pins nothing, a
+// self value is fine (no link, no reverse index, nothing to cycle), and it reads null once the target is gone:
+//
+//   sparse_ref(M, teleop)                          the live target, or null (a slot whose target is gone is cleared as it is found)
+//   sparse_ref_set(M, teleop, target)              points it at `target` (a datum, the holder itself included); null clears it
+//
+// A reader that must react to the target's death declares a link or a ref_one instead: a weak slot runs nothing when its target goes.
+//
 // Cooldowns on a base type are a cooldown table: one lazy list of name -> world.time the cooldown ends.
 //
 //   cooldowns(next_move, resist_cooldown)          in the type's CAPABILITIES block: declares the names (expands to nothing)
@@ -49,6 +57,27 @@
 	D.sparse_slots[name] = value
 	return value
 
+/// The live target of weak slot `name` (sparse(T, name, type = weak)), or null when unset or gone. A gone target's token is dropped as it is found.
+/proc/_sparse_ref(datum/D, name)
+	var/token = D?.sparse_slots?[name]
+	if(isnull(token))
+		return null
+	var/datum/target = resolve_token(token)
+	if(!target)
+		_sparse_set(D, name, null)
+	return target
+
+/// Points weak slot `name` at `target` (any datum, the holder too), or clears it with null. Returns `target`, or null when refused (not a datum, or being deleted).
+/proc/_sparse_ref_set(datum/D, name, datum/target)
+	if(!D)
+		return null
+	if(isnull(target))
+		_sparse_set(D, name, null)
+		return null
+	if(!isdatum(target) || QDELETED(target))
+		return null
+	_sparse_set(D, name, ref_token(target))
+	return target
 
 /proc/_cooldown_start(datum/D, name, duration)
 	return _cooldown_set(D, name, world.time + duration)

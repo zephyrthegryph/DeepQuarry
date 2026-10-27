@@ -864,8 +864,8 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 	spent(probe)
 
 /obj/item/proc/get_storage_cost()
-	if (storage_cost)
-		return storage_cost
+	if (item_rules_of(src).storage_cost)
+		return item_rules_of(src).storage_cost
 	else
 		switch(w_class)
 			if(ITEMSIZE_TINY)

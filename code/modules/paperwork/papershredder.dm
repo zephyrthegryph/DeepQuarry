@@ -142,10 +142,9 @@ MSG_DEF_SELF(papershredder/empty, "it is empty")
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "shredp"
 	w_class = ITEMSIZE_TINY
-	throw_range = 3
 
 CAPABILITIES(/obj/item/shreddedp)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 3, throw_speed = 1))
 	configure(item_thrown(force = 0))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	rolls(nameof(color), PROC_REF(roll_color))
