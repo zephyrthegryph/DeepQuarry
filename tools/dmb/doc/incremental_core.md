@@ -302,6 +302,29 @@ are unchanged stays green without a certificate check. Revalidation must be para
    3858 files, 1705 folder listings and 13889 negative probes, through the directory proofs. Next: make those inputs
    `source(path)` queries of the watcher's directory proofs, so a directory whose cached proof is the one the snapshot was
    proven with is not walked again; demand admission (0.02 s) and archive authentication are already cheap.)
+   (2026-10-27, compiler/resource-queries-3: **input snapshots are proven by watcher events.** The directory watcher
+   (`fs_watch.rs`) keeps an ordered change log: every event appends the changed entry and its directory under one sequence
+   number, a `WatchToken` (epoch, sequence) names a position in it, a loss (overflow, read error, sync timeout, a full log
+   of 200k entries) starts a new epoch, and a newly armed root is logged as one changed subtree once its watcher is
+   proven. A `SnapshotProvider` reports the position of its first observation (`watch_token`: the live file system at the
+   call, `BulkFileSystemProofs` at its capture, a journal none), and an `InputSnapshot` remembers the position at which its
+   facts were last proven entry for entry (`WatchMark`, private, absent from the wire and from equality). Validation then
+   carries every file, folder listing and negative probe whose directory no event named since that position (and no
+   subtree event above it, and that is watched by a healthy root and not behind a link), and asks the provider only about
+   the rest; racy and identity-less entries and exact mode are proven as before. Marks travel with the facts: a capture is
+   marked at its start (or its provider's proof position), a merge keeps the earlier mark of its parts (none if either has
+   none), `select_files` keeps it, and a session record takes its stored snapshot's mark back after the decode (by
+   record id). The first access of an entry in a while updates its last-access time, which the watcher reports as a
+   change of the directory: such a directory is proven once more, never skipped. Measured, production tree (`rootA`
+   copy), 4 workers, hot private daemons per arm, three unique edits per arm (an added proc, then body edits), arms
+   interleaved pub/new/pub/new on a machine shared with a server benchmark: `native resource InputValidation` 0.33-0.95 s
+   (published) against 0.058-0.109 s from the second edit on (the first edit after a cold build still proves everything,
+   0.32-0.43 s); `resources_maps` stage 1.03-2.45 s against 0.50-0.66 s; 9758 of 9794 session-record files carried; edit
+   wall median 8.4 s (6.97-17.4) against 7.7 s (6.74-8.99). `dmb-equiv --all --ignore-debug` of the daemon output after
+   body edits and a new file in a resource search folder against a fresh `--no-daemon --no-cache` compile: EQUIVALENT.
+   Cargo tests `input_snapshot::watch_tests` (carried directories, changed file, appeared negative, new listing entry,
+   removed directory, exact mode, unwatched paths, capture and merge marks). The demand and order memos the step names
+   were already gone; nothing else re-scans the snapshot on an unchanged request.)
 
 Measured 2026-10-18 before step 1: the general path today on a hot body edit (`DMB_BODY_PATCH=0`)
 is recorded below with the patch for comparison.
@@ -830,6 +853,25 @@ projection's retained owners (`class_projection::retained`, a `RecordingResolver
 admitted by `visit_explained` against the tree with their versions: about 340k tree version calls). The class projection
 reads the tree, not the engine host the answer table answers for, so it needs a tree-level answer table (or to read
 through the request's table) before its versions can go.
+
+**Slice 3 (2026-10-27, compiler/answer-world-1): class projection owners proven by the answer table.** `ClassProjections`
+takes the session's query database (`with_answers`, set by the build host); when the request's answers are bound to the
+projection's own tree (`QueryDb::answers_bound_to`, pointer equality with the tree `begin_answers` bound), each owner's
+stored receipt is admitted through a `ReceiptAdmission` with the table as oracle and its reads are recorded with no
+domain version (`RecordingResolver::with_versions(tree, false)`). The projection resolves through the tree, every other
+stage through the static resolver, and the table holds one answer per query for all of them: `DMB_QUERY_VERIFY=1`
+re-resolves every shared answer through the asking stage's resolver and found 0 mismatches over a fresh compile and two
+added-type edits. Measured, production tree (`rootA`), 4 workers, fresh private daemon per arm with a warm disk cache,
+then three added-type edits (each runs the projection: the program text outside bodies changed): fresh-session full
+compile 63.9 s against 34.4 and 36.5 s, `initialization` 8.6 s against 3.4-3.5 s, tree version calls 474k against
+111-122k (`tree_s` 38.9 against 0.8 CPU-s); added-type edits 16.6-26.4 s (initialization 2.2-4.3 s) against
+14.2-18.1 s (1.9-2.2 s). `dmb-equiv --all --ignore-debug` of the daemon output after the edits against a fresh
+`--no-daemon --no-cache` compile: EQUIVALENT. What still issues versions (caller probe, 1/64 sampled, fresh daemon): the
+first request of a fresh daemon runs on the one-shot memo, which has no query database (about 112k issues: the lowering
+records' resident promotion computing current versions, the ABI recorder of the initializer binding, the initializer
+assembly and resource recorders); on an edit about 166 (`startup_allocation::authored_call_availability`, modified
+instances). A trial with every recorder unversioned (all receipts proven by the table or by exact replay) issued 1 version
+per request at equal speed, so the next slice removes the versioned path instead of converting recorders one by one.
 
 Next slices: (3) every request gets an answer table (one-shot compiles too), after
 which the version path of `ReceiptAdmission`, `ObservationLedger::versions` and the stored version lists can go; (4) the

@@ -48,6 +48,8 @@
 
 /// Deepest chain of notices published from inside a delivery before the rest is dropped (a loop).
 #define RX_NOTICE_LIMIT 500
+/// How deep read-back notices may be answered inside one another (publish(), rx_answer_notice()).
+#define RX_ANSWER_DEPTH 16
 
 // ---- guard keys: before_op(GUARD_X, handler) / guard(E, GUARD_X, ...) (code/datums/reactions/guard.dm) ----
 // "May this proceed?" for what is not an operation; they replace the om before/* veto events. A real operation

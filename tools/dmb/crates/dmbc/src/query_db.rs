@@ -757,6 +757,12 @@ impl QueryDb {
     /// resource search's current answer (None when the resolver does not version its answers).
     /// Equal versions at two points mean every answer read in between and still held is equal,
     /// so a stage whose other inputs are equal too may reuse its whole earlier output.
+    /// Whether this request's answers are bound to `tree` itself ([`Self::begin_answers`] ran with it): only then may a
+    /// stage that resolves through `tree` share the table.
+    pub(crate) fn answers_bound_to(&self, tree: &dm_tree::SemanticTree) -> bool {
+        let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
+        current.tree.as_deref().is_some_and(|bound| std::ptr::eq(bound, tree))
+    }
     pub(crate) fn answers_version(&self) -> Option<u128> {
         self.answer_facts().map(|facts| facts.version())
     }

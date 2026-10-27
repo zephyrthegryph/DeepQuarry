@@ -1,0 +1,43 @@
+# Ad-hoc entity ids: counters minted as ids and REF() text list keys (doc/rewrite/proposals/relations.md D9). rule<TAB>file<TAB>normalized line.
+# Shrink-only: after a sweep run `analyze baseline --update --lint entity_ids`; it drops fixed sites and never adds one.
+counter_id	code/_helpers/icons.dm	if(next_id++ > 9)
+counter_id	code/content/modular_computers/hardware/network_card.dm	GLOB.ntnet_card_uid++
+counter_id	code/content/power/cell.dm	c_uid = cell_uid++
+counter_id	code/controllers/subsystems/contracts.dm	contract.id = "DQ-[next_contract_id++]"
+counter_id	code/controllers/subsystems/contracts.dm	event.id = "DQ-CE-[next_event_id++]"
+counter_id	code/controllers/subsystems/contracts_evidence_api.dm	identity = new("DQ-SUB-[next_subject_id++]", subject)
+counter_id	code/controllers/subsystems/contracts_evidence_api.dm	var/id = "DQ-EV-[next_evidence_id++]"
+counter_id	code/controllers/subsystems/contracts_offer_api.dm	"DQ-CAND-[next_candidate_id++]",
+counter_id	code/datums/managed_browsers/_managed_browser.dm	browser_id = "[base_browser_id]-[GLOB.managed_browser_id_ticker++]"
+counter_id	code/datums/repositories/unique.dm	id++
+counter_id	code/game/machinery/machinery.dm	gl_uid++
+counter_id	code/modules/admin/verbs/SDQL2/SDQL_2.dm	id = id_assign++
+counter_id	code/modules/economy/cargo_market.dm	listing.id = "MKT-L-[next_market_id++]"
+counter_id	code/modules/economy/cargo_market.dm	bid.id = "MKT-B-[next_market_id++]"
+counter_id	code/modules/economy/cargo_market.dm	transaction.id = "MKT-T-[next_market_id++]"
+counter_id	code/modules/economy/cargo_market.dm	listing.id = "MKT-L-[next_market_id++]"
+counter_id	code/modules/economy/cargo_market.dm	bid.id = "MKT-B-[next_market_id++]"
+counter_id	code/modules/generated_station/generated_station_director.dm	report.id = "report-[next_report_id++]"
+counter_id	code/modules/generated_station/generated_station_director.dm	squad.id = "squad-[next_squad_id++]"
+counter_id	code/modules/generated_station/generated_station_director.dm	order.id = "order-[next_order_id++]"
+counter_id	code/modules/logging/log_entry.dm	src.id = next_id++
+counter_id	code/modules/materials/engineering/material_service.dm	assembly.assembly_id = "ME-[++GLOB.next_material_assembly_id]"
+counter_id	code/modules/modular_computers/NTNet/NTNRC/conversation.dm	GLOB.ntnrc_uid++
+counter_id	code/modules/modular_computers/file_system/computer_file.dm	GLOB.file_uid++
+counter_id	code/modules/modular_computers/file_system/programs/generic/nttransfer.dm	GLOB.nttransfer_uid++
+counter_id	code/modules/modular_computers/file_system/programs/security/digitalwarrant.dm	warrant_id = GLOB.warrant_uid++
+counter_id	code/modules/paperwork/paper.dm	field_id++
+counter_id	code/modules/power/supermatter/supermatter.dm	uid = gl_uid++
+counter_id	code/modules/research/message_server.dm	round_id++
+ref_key	code/_onclick/hud/picture_in_picture.dm	if(user.client.screen_maps["camera-[REF(src)]_map"])
+ref_key	code/controllers/kernel/sleep_audit.dm	GLOB.sleep_audited["[REF(D)]"] = TRUE
+ref_key	code/datums/rules/rule.dm	return GLOB.dq_rule_fire_log["[REF(thing)]|[rule.type]"] || 0
+ref_key	code/modules/admin/edit_player_panel.dm	GLOB.dq_edit_player_panels -= "[REF(holder())]-[REF(target())]"
+ref_key	code/modules/admin/misc_admin_panels.dm	GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target())]"
+ref_key	code/modules/admin/view_variables/pickers.dm	.["[D]([shorttype])[REF(D)]#[i]"] = D
+ref_key	code/modules/crafting/crafting.dm	craftability["[REF(R)]"] = can_craft
+ref_key	code/modules/mob/language/language_panel.dm	GLOB.dq_languages_panels -= "[REF(host)]"
+ref_key	code/modules/mob/living/carbon/human/attacks_panel.dm	GLOB.dq_attacks_panels -= "[REF(host)]"
+ref_key	code/modules/mob/living/carbon/human/flavor_panel.dm	GLOB.dq_flavor_panels -= "[REF(host)]"
+ref_key	code/modules/mob/living/notes_panels.dm	GLOB.dq_private_notes_panels -= "[REF(host)]"
+ref_key	code/modules/mob/living/notes_panels.dm	GLOB.dq_ooc_notes_panels -= "[REF(host)]"

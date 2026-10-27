@@ -779,7 +779,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 	var/mob/living/ourmob = tf_mob_holder
 	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps on
-	// stat change via its /datum/definition_event/mob_statchange handler.
+	// stat change via its /datum/notice/mob_statchange handler.
 	return_player_to_tf_holder("reverted beast form")
 	rel_set(src, nameof(tf_mob_holder), null)
 	var/turf/beast_loc = src.loc

@@ -2,7 +2,7 @@
 //
 // Built once, on first use (SSbehaviours.Initialize() forces it at boot).
 // It instantiates every DEF, parses every table row, compiles run order,
-// wake tables, event handler tables and derived order, and collects every
+// wake tables and derived order, and collects every
 // declaration error in `errors` (each also a stack_trace unless `quiet`).
 // Unit tests build private registries from a named set of decls.
 
@@ -40,12 +40,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	/// Every declared holder type, longest-declared-path-first, so
 	/// slot_group_for() finds the most-derived match first.
 	var/list/slot_holder_types
-	var/list/event_types
-	var/list/event_idx
-	/// event idx -> list of behaviour ids handling it (subtypes flattened).
-	/// Per event index: list(type, parent, ...) up to (not including) /datum/definition_event.
-	var/list/event_lineage
-	var/list/event_handlers
 	var/list/derived
 	var/list/derived_by_name
 	var/list/checks_cache
@@ -86,11 +80,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	build_named_checks()
 	build_relations()
 	build_slot_holders()
-	build_events()
 	build_stages()
 	build_behaviours()
 	build_derived()
-	build_event_tables()
 	build_services()
 	check_field_reads()
 	for(var/problem in scheduler_field_check_derived_inputs())
@@ -299,23 +291,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	for(var/key in b)
 		.[key] = b[key]
 
-// ---------------------------------------------------------------- events
-
-/datum/definition_registry/proc/build_events()
-	for(var/path in subtypesof(/datum/definition_event))
-		event_types += path
-		event_idx[path] = length(event_types)
-	// Per event index: the event's type and its ancestors below /datum/definition_event,
-	// most-derived first (hook delivery honours ancestry, as behaviour tables do).
-	event_lineage = new /list(length(event_types))
-	for(var/e in 1 to length(event_types))
-		var/list/lineage = list()
-		var/path = event_types[e]
-		while(path && path != /datum/definition_event)
-			lineage += path
-			path = type2parent(path)
-		event_lineage[e] = lineage
-
 // ---------------------------------------------------------------- behaviours
 
 /datum/definition_registry/proc/build_behaviours()
@@ -381,18 +356,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			B.order_after = row["order_after"]
 			B.requires = row["requires"]
 			B.name = "[bundle.type]:[proc_path]"
-			pending += B
-			bundle.compiled_behaviours += B
-		for(var/event_path in bundle.events)
-			if(!ispath(event_path, /datum/definition_event))
-				error("[bundle.type] events: [event_path] is not an event type")
-				continue
-			var/datum/scheduled_behaviour/inline/B = make_inline_behaviour()
-			B.mode = "event"
-			B.system_key = km_bundle_key(bundle)
-			B.call_path = bundle.events[event_path]
-			B.handles = list(event_path)
-			B.name = "[bundle.type]:[event_path]"
 			pending += B
 			bundle.compiled_behaviours += B
 		for(var/path in bundle.behaviours)
@@ -723,9 +686,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	for(var/path in B.order_after)
 		if(!behaviour_by_type[path])
 			error("[B.name]: order_after names unknown behaviour [path]")
-	for(var/path in B.handles)
-		if(!ispath(path, /datum/definition_event))
-			error("[B.name]: handles [path], not an event type")
 
 /// A spec list may be a single spec (typepath, name, combinator) or a list of specs.
 /proc/definition_spec_list(spec)
@@ -1021,23 +981,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		CRASH("om: unknown derived [name_or_type]")
 	return D
 
-// ---------------------------------------------------------------- event tables
-
-/datum/definition_registry/proc/build_event_tables()
-	var/nb = length(behaviours)
-	event_handlers = new /list(length(event_types))
-	for(var/e in 1 to length(event_types))
-		var/event_path = event_types[e]
-		var/list/flags = null
-		for(var/datum/scheduled_behaviour/B as anything in behaviours)
-			for(var/handled in B.handles)
-				if(ispath(event_path, handled))
-					if(!flags)
-						flags = new /list(nb)
-					flags[B.id] = TRUE
-					break
-		event_handlers[e] = flags
-
 // ---------------------------------------------------------------- services
 
 /datum/definition_registry/proc/build_services()
@@ -1151,12 +1094,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		slot_groups_by_holder = list()
 	if(!slot_holder_types)
 		slot_holder_types = list()
-	if(!event_types)
-		event_types = list()
-	if(!event_idx)
-		event_idx = list()
-	if(!event_handlers)
-		event_handlers = list()
 	if(!derived)
 		derived = list()
 	if(!derived_by_name)

@@ -403,7 +403,6 @@ legacy_forms_converted = [
   "code/datums/native/",
   "code/datums/observation/",
   "code/datums/om/",
-  "code/datums/om_events/",
   "code/datums/operations/",
   "code/datums/outfits/",
   "code/content/outfits/",
@@ -853,6 +852,7 @@ banned = [
   "STAMP_POINT = stamp_point(D, name) (code/__defines/engine/sparse_slots.dm)",
   "STAMPED = stamp_has(D, name) (code/__defines/engine/sparse_slots.dm)",
   "STAMP_CLEAR = stamp_clear(D, name) (code/__defines/engine/sparse_slots.dm)",
+  "definition_event = the om events (code/datums/om_events/) are deleted: an occurrence is a /datum/notice published with PUBLISH_LEGACY(E, /datum/notice/x, fields...) or an ACTION() notice, heard with on_notice(/datum/notice/x, ...) in CAPABILITIES or observe(source, /datum/notice/x, listener, then(...)); a veto is before_op(GUARD_X, ...) asked with guard() (doc/rewrite/reactions.md section 3)",
   "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
   "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
   "datum/gas_reaction = a gas reaction is a transformation: a type under /transformation/gas with a transformation(medium = MEDIUM_GAS, takes = list(gas(type, moles)), holds = temperature_in(lo, hi)) entry (code/ATMOSPHERICS/gasmixtures/reactions.dm)",
@@ -1003,7 +1003,7 @@ banned = [
   "APPEARANCE_SLOT = a draw(datum/look/look) override: look.overlay()",
   "DECLARE_APPEARANCE_PROC = a draw(datum/look/look) override: look.state(), look.variant(), look.overlay(), look.glow() (a light is look.glow(range, power, color)); a draw writes no state (doc/rewrite/final_api.html section 13)",
   "appearance_overlays = a draw(datum/look/look) override; the provider form is gone",
-  "datum/om = /datum/om/* is gone, use the engine type it aliased (/datum/time_scheduler, /datum/scheduled_behaviour, /datum/definition_event, /datum/relation_definition/slot, /datum/work_pipeline, ...); code/datums/om/ is gone (doc/rewrite/proposals/om_carriers.md)",
+  "datum/om = /datum/om/* is gone, use the engine type it aliased (/datum/time_scheduler, /datum/scheduled_behaviour, /datum/relation_definition/slot, /datum/work_pipeline, ...); code/datums/om/ is gone (doc/rewrite/proposals/om_carriers.md)",
   "task_timed = an op with wait(t) (begins(MSG(x)), claims(), then(PROC_REF(x))); doc/rewrite/conversion_guide.md section 12",
   "task_start = an op with wait(t) and takes()/A.arg() for the state the task carried; doc/rewrite/conversion_guide.md section 12",
   "task_busy = op_claimed(thing) for an op's claim, work_busy(thing) for a held busy",
@@ -1811,7 +1811,7 @@ exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/d
 # wiki spoiler entries (type paths), virusDB / archive_diseases (disease records and copies), department_accounts, mob_chunks, belly overlay asset items, construction frame flyweights, signal and reagent `data` payload lists, asset/simple::assets.
 # Hot reverse indexes where a declared relation would add a write per change: /datum::open_tguis (every ui open and close) and /datum/lighting_corner::affecting (every light update); both are cleared by their owner's own teardown.
 work_queues = ["/datum/system/lighting::sources_queue", "/datum/system/radiation::dirty_turfs", "/datum/system/atoms::after_init_pending", "/datum/system/atoms::after_init_loose", "/datum/system/shuttles::sectors_to_initialize", "/datum/system/air::planetary", "/datum/system/assets::cache", "/datum/system/tgui::asset_generations", "/datum/system/internal_wiki::spoiler_entries", "/datum/system/contracts::subject_identities", "/datum/system/contracts::opportunity_rules", "/datum/system/contracts::opportunity_windows", "/datum/system/proximity::cells", "/datum/system/proximity::eyes", "/datum/controller/global_vars::virusDB", "/datum/controller/global_vars::department_accounts", "/datum/controller/global_vars::archive_diseases", "/datum/controller/global_vars::mob_chunks", "/datum/controller/global_vars::dq_belly_overlay_aci_by_name", "/datum/controller/global_vars::construction_frame_wall", "/datum/controller/global_vars::construction_frame_floor", "/datum/signal::data", "/datum/reagent::data", "/datum/asset/simple::assets", "/datum::open_tguis", "/datum/lighting_corner::affecting"] # each pinned by relations_work_queue_* (enqueue, delete, drain)
-transient_types = ["/datum/definition_event", "/datum/look", "/datum/io/sql", "/datum/relation_edge", "/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context", "/datum/centry"] # /datum/centry: compiled once from the declarations and never deleted; its item is an entry or capability definition (both exempt types), so the var cannot pin a deleted object
+transient_types = ["/datum/look", "/datum/io/sql", "/datum/relation_edge", "/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context", "/datum/centry"] # /datum/centry: compiled once from the declarations and never deleted; its item is an entry or capability definition (both exempt types), so the var cannot pin a deleted object
 
 # rel_write_undeclared (tools/analyze/src/lints/rel_write_undeclared.rs; doc/rewrite/proposals/relations.md D1): a hard ban. Generated scaffolding is derived output.
 [lint.rel_write_undeclared]
@@ -1856,3 +1856,8 @@ exempt_prefixes = ["code/engine/refs/weak.dm", "code/engine/_generated/", "code/
 # duplicate_input_key: a hard ban with no baseline. A type's table holds one entry per input key, so a second click_on()/drag_onto()/... of the same type replaces the first.
 [lint.duplicate_input_key]
 exempt_prefixes = ["code/engine/_generated/"]
+
+# entity_ids (tools/analyze/src/lints/entity_ids.rs; doc/rewrite/proposals/relations.md D9, "One handle"): ad-hoc entity ids, counters minted as
+# ids and REF() text list keys; ref_token() is the one handle. The engine implements the handles and keeps ordering serials; tests and generated output are exempt.
+[lint.entity_ids]
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/"]

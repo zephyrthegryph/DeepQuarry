@@ -2,7 +2,7 @@
 // (tools/dx/gen_om_notices.py) went with the events. Each is published with PUBLISH_LEGACY(E, /datum/notice/x, fields...)
 // in fill() order until its own ACTION() declaration replaces it.
 
-/// From /datum/definition_event/affliction_severity_changed.
+/// From /datum/affliction/proc/set_severity(), sent to the owning mob: (datum/affliction/affliction, old_severity)
 /datum/notice/affliction_severity_changed
 	var/affliction
 	var/old_severity
@@ -11,14 +11,14 @@
 	src.affliction = affliction
 	src.old_severity = old_severity
 
-/// From /datum/definition_event/arcade_prizevend.
+/// From /obj/machinery/computer/arcade/prizevend(mob/user, prizes = 1)
 /datum/notice/arcade_prizevend
 	var/user
 
 /datum/notice/arcade_prizevend/fill(user)
 	src.user = user
 
-/// From /datum/definition_event/atom_after_successful_initialized_on.
+/// From SSatoms InitAtom, only when the atom was not deleted, did not fail initialization and has a loc: (created, mapload)
 /datum/notice/atom_after_successful_initialized_on
 	var/created
 	var/mapload
@@ -27,14 +27,14 @@
 	src.created = created
 	src.mapload = mapload
 
-/// From /datum/definition_event/atom_bumped.
+/// From base of atom/Bumped(): (/atom/movable) (the one that gets bumped)
 /datum/notice/atom_bumped
 	var/bumped
 
 /datum/notice/atom_bumped/fill(bumped)
 	src.bumped = bumped
 
-/// From /datum/definition_event/atom_dir_change.
+/// From base of atom/setDir(): (old_dir, new_dir). Called before the direction changes.
 /datum/notice/atom_dir_change
 	var/old_dir
 	var/new_dir
@@ -43,7 +43,7 @@
 	src.old_dir = old_dir
 	src.new_dir = new_dir
 
-/// From /datum/definition_event/atom_emp_act.
+/// From base of atom/emp_act(severity): (severity, protection)
 /datum/notice/atom_emp_act
 	var/severity
 	var/protection
@@ -52,7 +52,7 @@
 	src.severity = severity
 	src.protection = protection
 
-/// From /datum/definition_event/atom_entered.
+/// From base of atom/Entered(): (atom/movable/arrived, atom/old_loc, list/atom/old_locs)
 /datum/notice/atom_entered
 	var/arrived
 	var/old_loc
@@ -61,7 +61,7 @@
 	src.arrived = arrived
 	src.old_loc = old_loc
 
-/// From /datum/definition_event/atom_entering.
+/// Sent from the atom that just Entered src. From base of atom/Entered(): (/atom/destination, atom/old_loc, list/atom/old_locs)
 /datum/notice/atom_entering
 	var/destination
 	var/old_loc
@@ -70,7 +70,7 @@
 	src.destination = destination
 	src.old_loc = old_loc
 
-/// From /datum/definition_event/atom_exited.
+/// From base of atom/Exited(): `gone` left the atom for `new_loc`.
 /datum/notice/atom_exited
 	var/gone
 	var/new_loc
@@ -79,7 +79,7 @@
 	src.gone = gone
 	src.new_loc = new_loc
 
-/// From /datum/definition_event/atom_fire_act.
+/// From base of atom/fire_act(): (exposed_temperature, exposed_volume)
 /datum/notice/atom_fire_act
 	var/exposed_temperature
 	var/exposed_volume
@@ -88,59 +88,59 @@
 	src.exposed_temperature = exposed_temperature
 	src.exposed_volume = exposed_volume
 
-/// From /datum/definition_event/atom_propagate_rad_pulse.
+/// From internal loop in /atom/proc/propagate_radiation_pulse: (atom/pulse_source)
 /datum/notice/atom_propagate_rad_pulse
 	var/pulse_source
 
 /datum/notice/atom_propagate_rad_pulse/fill(pulse_source)
 	src.pulse_source = pulse_source
 
-/// From /datum/definition_event/atom_update_light_color.
+/// Called right after the atom changes the value of light_color to a different one, from base of [/atom/proc/set_light_color]: (old_color)
 /datum/notice/atom_update_light_color
 	var/old_color
 
 /datum/notice/atom_update_light_color/fill(old_color)
 	src.old_color = old_color
 
-/// From /datum/definition_event/atom_update_light_flags.
+/// Called right after the atom changes the value of light_flags to a different one, from base of [/atom/proc/set_light_flags]: (old_flags)
 /datum/notice/atom_update_light_flags
 	var/old_flags
 
 /datum/notice/atom_update_light_flags/fill(old_flags)
 	src.old_flags = old_flags
 
-/// From /datum/definition_event/atom_update_light_on.
+/// Called right after the atom changes the value of light_on to a different one, from base of [/atom/proc/set_light_on]: (old_value)
 /datum/notice/atom_update_light_on
 	var/old_value
 
 /datum/notice/atom_update_light_on/fill(old_value)
 	src.old_value = old_value
 
-/// From /datum/definition_event/atom_update_light_power.
+/// Lighting: Called right after the atom changes the value of light_power to a different one, from base of [/atom/proc/set_light_power]: (old_power)
 /datum/notice/atom_update_light_power
 	var/old_power
 
 /datum/notice/atom_update_light_power/fill(old_power)
 	src.old_power = old_power
 
-/// From /datum/definition_event/atom_update_light_range.
+/// Called right after the atom changes the value of light_range to a different one, from base of [/atom/proc/set_light_range]: (old_range)
 /datum/notice/atom_update_light_range
 	var/old_range
 
 /datum/notice/atom_update_light_range/fill(old_range)
 	src.old_range = old_range
 
-/// From /datum/definition_event/atom_used_in_craft.
+/// From base of atom/used_in_craft(): (atom/result)
 /datum/notice/atom_used_in_craft
 	var/result_
 
 /datum/notice/atom_used_in_craft/fill(result_)
 	src.result_ = result_
 
-/// From /datum/definition_event/before/atom_extinguish.
+/// From base of atom/attack_basic_mob(): (/mob/user) from base of [/atom/proc/extinguish]
 /datum/notice/atom_extinguish
 
-/// From /datum/definition_event/before/atom_take_damage.
+/// From base of [/atom/proc/take_damage]: (damage_amount, damage_type, damage_flag, sound_effect, attack_dir, aurmor_penetration)
 /datum/notice/atom_take_damage
 	var/damage_amount
 	var/damage_type
@@ -157,21 +157,24 @@
 	src.attack_dir = attack_dir
 	src.aurmor_penetration = aurmor_penetration
 
-/// From /datum/definition_event/before/attack_hand.
+/// Veto (from hand_gate()): `user` touches the atom;
+/// EVENT_VETO means a behaviour handled it and the touch stops there.
 /datum/notice/attack_hand
 	var/user
 
 /datum/notice/attack_hand/fill(user)
 	src.user = user
 
-/// From /datum/definition_event/before/attack_self.
+/// Veto: `user` uses the item in hand; EVENT_VETO
+/// means a behaviour handled it and the attack chain stops.
 /datum/notice/attack_self
 	var/user
 
 /datum/notice/attack_self/fill(user)
 	src.user = user
 
-/// From /datum/definition_event/before/attackby.
+/// Veto: `user` hits the atom with `item`; EVENT_VETO
+/// means a behaviour handled it and the attack chain stops.
 /datum/notice/attackby
 	var/item
 	var/user
@@ -182,21 +185,21 @@
 	src.user = user
 	src.params = params
 
-/// From /datum/definition_event/before/belly_update_vore_fx.
+/// From /obj/belly/HandleBellyReagents() and /obj/belly/update_internal_overlay()
 /datum/notice/belly_update_vore_fx
 	var/volume
 
 /datum/notice/belly_update_vore_fx/fill(volume)
 	src.volume = volume
 
-/// From /datum/definition_event/before/click_alt.
+/// #define COMSIG_MOB_CANCEL_CLICKON (1<<0) //shared with other forms of click, this is so you're aware it exists here too. from base of atom/click_alt(): (/mob)
 /datum/notice/click_alt
 	var/mob
 
 /datum/notice/click_alt/fill(mob)
 	src.mob = mob
 
-/// From /datum/definition_event/before/in_range_of_irradiation.
+/// From the radiation subsystem, called before a potential irradiation. This does not guarantee radiation can reach or will succeed, but merely that there's a radiation source within range. (datum/radiation_pulse_information/pulse_information, insulation_to_target)
 /datum/notice/in_range_of_irradiation
 	var/pulse_information
 	var/insulation_to_target
@@ -205,7 +208,7 @@
 	src.pulse_information = pulse_information
 	src.insulation_to_target = insulation_to_target
 
-/// From /datum/definition_event/before/living_turf_collision.
+/// Called when a living mob collides with a dense turf : /mob/living/proc/turf_collision(var/turf/T, var/speed)
 /datum/notice/living_turf_collision
 	var/t
 	var/speed
@@ -214,14 +217,14 @@
 	src.t = t
 	src.speed = speed
 
-/// From /datum/definition_event/before/movable_bump.
+/// From base of atom/movable/Bump(): (/atom)
 /datum/notice/movable_bump
 	var/atom
 
 /datum/notice/movable_bump/fill(atom)
 	src.atom = atom
 
-/// From /datum/definition_event/before/movable_z_changed.
+/// From base of atom/movable/on_changed_z_level(): (turf/old_turf, turf/new_turf, same_z_layer)
 /datum/notice/movable_z_changed
 	var/old_z
 	var/new_z
@@ -230,7 +233,7 @@
 	src.old_z = old_z
 	src.new_z = new_z
 
-/// From /datum/definition_event/before/robot_item_attack.
+/// Non TG signals: from the base of /mob/living/silicon/robot/ClickOn(): (var/atom/A, var/params)
 /datum/notice/robot_item_attack
 	var/item
 	var/user
@@ -241,7 +244,7 @@
 	src.user = user
 	src.params = params
 
-/// From /datum/definition_event/body_afflictions_changed.
+/// From /datum/body/add_affliction() and remove_affliction(): (datum/affliction/affliction, added)
 /datum/notice/body_afflictions_changed
 	var/affliction
 	var/added
@@ -250,21 +253,21 @@
 	src.affliction = affliction
 	src.added = added
 
-/// From /datum/definition_event/body_part_attached.
+/// From /datum/body/proc/adopt_subtree(), sent to the owning mob once per part that joined it: (obj/item/organ/part)
 /datum/notice/body_part_attached
 	var/part
 
 /datum/notice/body_part_attached/fill(part)
 	src.part = part
 
-/// From /datum/definition_event/body_part_detached.
+/// From /datum/body/proc/release_subtree(), sent to the owning mob once per part that left it: (obj/item/organ/part)
 /datum/notice/body_part_detached
 	var/part
 
 /datum/notice/body_part_detached/fill(part)
 	src.part = part
 
-/// From /datum/definition_event/carbon_slip.
+/// The `carbon_slip` occurrence (it was an om event).
 /datum/notice/carbon_slip
 	var/slipped_on
 	var/stun_duration
@@ -273,7 +276,7 @@
 	src.slipped_on = slipped_on
 	src.stun_duration = stun_duration
 
-/// From /datum/definition_event/click.
+/// From base of atom/Click(): (atom/location, control, params, mob/user)
 /datum/notice/click
 	var/location
 	var/control
@@ -286,7 +289,7 @@
 	src.params = params
 	src.user = user
 
-/// From /datum/definition_event/client_click.
+/// From base of client/Click(): (atom/target, atom/location, control, params, mob/user)
 /datum/notice/client_click
 	var/target_
 	var/location
@@ -301,17 +304,17 @@
 	src.params = params
 	src.user = user
 
-/// From /datum/definition_event/closet_closed.
+/// The `closet_closed` occurrence (it was an om event).
 /datum/notice/closet_closed
 
-/// From /datum/definition_event/disposal_link.
+/// Called when a disposal connected object attempts to link to a trunk: (/obj/structure/disposalpipe/trunk)
 /datum/notice/disposal_link
 	var/trunk
 
 /datum/notice/disposal_link/fill(trunk)
 	src.trunk = trunk
 
-/// From /datum/definition_event/disposal_receive.
+/// Called when a disposal connected object recieves an object from it's connected trunk
 /datum/notice/disposal_receive
 	var/items
 	var/gas
@@ -320,14 +323,14 @@
 	src.items = items
 	src.gas = gas
 
-/// From /datum/definition_event/disposal_unlink.
+/// Called when a disposal connected object should unlink from a trunk it's attached to.
 /datum/notice/disposal_unlink
 
-/// From /datum/definition_event/do_after_began.
+/// Sent from /proc/do_after if someone starts a do_after action bar.
 /datum/notice/do_after_began
 
-/// From /datum/definition_event/do_after_ended.
-/// From /datum/definition_event/dqai_damage_taken.
+/// Sent from /proc/do_after once a do_after action completes, whether via the bar filling or via interruption.
+/// --------------------------------------------------------------------------- Signals emitted on the mob by the brain framework. Behaviors can subscribe to these via their eval_triggers list to re-evaluate only when relevant. ---------------------------------------------------------------------------
 /datum/notice/dqai_damage_taken
 	var/amount
 	var/injury_kind
@@ -338,8 +341,10 @@
 	src.injury_kind = injury_kind
 	src.attacker = attacker
 
-/// From /datum/definition_event/examine.
+/// Notification: `user` examined the atom. Handlers
+/// append lines to `texts`, the examine output list.
 /datum/notice/examine
+	read_back = TRUE // the sender reads what the handlers wrote: answered at once, even mid-delivery (reactions.md section 3)
 	var/user
 	var/texts
 
@@ -347,10 +352,10 @@
 	src.user = user
 	src.texts = texts
 
-/// From /datum/definition_event/ghost_query_complete.
+/// Signal that gets sent when a ghost query is completed
 /datum/notice/ghost_query_complete
 
-/// From /datum/definition_event/hitby.
+/// Notification: the atom was hit by thrown `source`.
 /datum/notice/hitby
 	var/source_
 	var/throwingdatum
@@ -359,20 +364,21 @@
 	src.source_ = source_
 	src.throwingdatum = throwingdatum
 
-/// From /datum/definition_event/hose_forcepump.
+/// Non TG signals.
+/// Hose Connector Component
 /datum/notice/hose_forcepump
 
-/// From /datum/definition_event/human_dna_finalized.
+/// NON TG Signals When the mob's dna and species have been fully applied
 /datum/notice/human_dna_finalized
 
-/// From /datum/definition_event/instrument_end.
+/// Sent to the instrument when a song stops playing
 /datum/notice/instrument_end
 	var/finished
 
 /datum/notice/instrument_end/fill(finished)
 	src.finished = finished
 
-/// From /datum/definition_event/instrument_start.
+/// Sent to the instrument when a song starts playing: (datum/starting_song, atom/player)
 /datum/notice/instrument_start
 	var/starting_song
 	var/player
@@ -381,7 +387,7 @@
 	src.starting_song = starting_song
 	src.player = player
 
-/// From /datum/definition_event/item_attack.
+/// From base of /obj/item/attack(): (mob/living, mob/living, list/modifiers, list/attack_modifiers)
 /datum/notice/item_attack
 	var/target_
 	var/user
@@ -392,14 +398,14 @@
 	src.user = user
 	src.target_zone = target_zone
 
-/// From /datum/definition_event/item_dropped.
+/// From base of obj/item/dropped(): (mob/user)
 /datum/notice/item_dropped
 	var/user
 
 /datum/notice/item_dropped/fill(user)
 	src.user = user
 
-/// From /datum/definition_event/item_equipped.
+/// From base of obj/item/equipped(): (mob/equipper, slot)
 /datum/notice/item_equipped
 	var/equipper
 	var/slot
@@ -408,14 +414,14 @@
 	src.equipper = equipper
 	src.slot = slot
 
-/// From /datum/definition_event/item_pickup.
+/// From base of obj/item/pickup(): (/mob/taker)
 /datum/notice/item_pickup
 	var/taker
 
 /datum/notice/item_pickup/fill(taker)
 	src.taker = taker
 
-/// From /datum/definition_event/item_tool_acted.
+/// Sent from [atom/proc/item_interaction], when this atom is used as a tool and an event occurs
 /datum/notice/item_tool_acted
 	var/target_
 	var/user
@@ -428,17 +434,17 @@
 	src.tool_quality = tool_quality
 	src.modifiers = modifiers
 
-/// From /datum/definition_event/living_aheal.
+/// From end of revival_healing_action(): ()
 /datum/notice/living_aheal
 
-/// From /datum/definition_event/living_death_final.
+/// From /mob/proc/death(), once per death, after EVERY death side effect (on_death(), HUD refresh, antag win check): (gibbed). Never sent on a repeated or replaced death. Hang end-of-death work (delete_on_death) here; death() itself never deletes the mob.
 /datum/notice/living_death_final
 	var/gibbed
 
 /datum/notice/living_death_final/fill(gibbed)
 	src.gibbed = gibbed
 
-/// From /datum/definition_event/living_injured.
+/// From base of /mob/living/proc/injure(), after the injury applied: (kind, applied, zone, atom/source, flags)
 /datum/notice/living_injured
 	var/kind
 	var/applied
@@ -453,7 +459,7 @@
 	src.source_ = source_
 	src.flags = flags
 
-/// From /datum/definition_event/living_injury_explained.
+/// From /mob/living/proc/injure() once mitigation is done, when something listens or the injury trace is on: (incoming_kind, landed_kind, list/stages, zone, atom/source, flags). Each stage is list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /datum/notice/living_injury_explained
 	var/incoming_kind
 	var/landed_kind
@@ -470,7 +476,7 @@
 	src.source_ = source_
 	src.flags = flags
 
-/// From /datum/definition_event/living_revived.
+/// From /mob/living/proc/return_from_death(), after the mob is alive again: (datum/source, reason)
 /datum/notice/living_revived
 	var/source_
 	var/reason
@@ -479,8 +485,9 @@
 	src.source_ = source_
 	src.reason = reason
 
-/// From /datum/definition_event/living_shield_injury.
+/// From /mob/living/proc/injure(), mitigation stage 2 (energy shields), after armour: (kind, list/amount_ref, zone, atom/source, flags). Shields scale amount_ref[1].
 /datum/notice/living_shield_injury
+	read_back = TRUE // the sender reads what the handlers wrote: answered at once, even mid-delivery (reactions.md section 3)
 	var/kind
 	var/amount_ref
 	var/zone
@@ -494,21 +501,21 @@
 	src.source_ = source_
 	src.flags = flags
 
-/// From /datum/definition_event/machinery_broken.
+/// From /obj/machinery/atom_break(damage_flag): (damage_flag)
 /datum/notice/machinery_broken
 	var/damage_flag
 
 /datum/notice/machinery_broken/fill(damage_flag)
 	src.damage_flag = damage_flag
 
-/// From /datum/definition_event/machinery_destructive_scan.
+/// From /obj/machinery/rnd/destructive_analyzer/proc/destroy_item(gain_research_points = FALSE): Runs when the destructive scanner scans a group of objects. (list/scanned_atoms)
 /datum/notice/machinery_destructive_scan
 	var/scanned_atoms
 
 /datum/notice/machinery_destructive_scan/fill(scanned_atoms)
 	src.scanned_atoms = scanned_atoms
 
-/// From /datum/definition_event/machinery_explosion_detected.
+/// From /obj/machinery/doppler_array/proc/sense_explosion(): Runs when an explosion is detected. (turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
 /datum/notice/machinery_explosion_detected
 	var/epicenter
 	var/devastation_range
@@ -523,13 +530,13 @@
 	src.light_impact_range = light_impact_range
 	src.seconds_taken = seconds_taken
 
-/// From /datum/definition_event/machinery_power_lost.
+/// From base power_change() when power is lost
 /datum/notice/machinery_power_lost
 
-/// From /datum/definition_event/machinery_power_restored.
+/// From base power_change() when power is restored
 /datum/notice/machinery_power_restored
 
-/// From /datum/definition_event/matcontainer_item_consumed.
+/// Material Container Signals Called from datum/component/material_container/proc/insert_item() : (item, primary_mat, mats_consumed, material_amount, context)
 /datum/notice/matcontainer_item_consumed
 	var/item
 	var/primary_mat
@@ -544,7 +551,7 @@
 	src.material_amount = material_amount
 	src.context = context
 
-/// From /datum/definition_event/matcontainer_stack_retrieved.
+/// Called from datum/component/material_container/proc/retrieve_stack() : (new_stack, context)
 /datum/notice/matcontainer_stack_retrieved
 	var/new_stack
 	var/context
@@ -553,10 +560,10 @@
 	src.new_stack = new_stack
 	src.context = context
 
-/// From /datum/definition_event/material_facts_changed.
+/// The `material_facts_changed` occurrence (it was an om event).
 /datum/notice/material_facts_changed
 
-/// From /datum/definition_event/material_surgery.
+/// The `material_surgery` occurrence (it was an om event).
 /datum/notice/material_surgery
 	var/patient
 	var/zone
@@ -567,7 +574,7 @@
 	src.zone = zone
 	src.success = success
 
-/// From /datum/definition_event/mob_apply_damage.
+/// From base of /mob/living/proc/apply_damage(): (damage, damagetype, def_zone, blocked, wound_bonus, exposed_wound_bonus, sharpness, attack_direction, attacking_item)
 /datum/notice/mob_apply_damage
 	var/damage
 	var/damagetype
@@ -590,24 +597,24 @@
 	src.attack_direction = attack_direction
 	src.attacking_item = attacking_item
 
-/// From /datum/definition_event/mob_client_login.
+/// Sent when a mob/login() finishes: (client)
 /datum/notice/mob_client_login
 	var/client
 
 /datum/notice/mob_client_login/fill(client)
 	src.client = client
 
-/// From /datum/definition_event/mob_death.
+/// From base of mob/death(): (gibbed)
 /datum/notice/mob_death
 	var/gibbed
 
 /datum/notice/mob_death/fill(gibbed)
 	src.gibbed = gibbed
 
-/// From /datum/definition_event/mob_dna_mutation.
+/// From /proc/domutcheck(): ()
 /datum/notice/mob_dna_mutation
 
-/// From /datum/definition_event/mob_equipped_item.
+/// A mob has just equipped an item. Called on [/mob] from base of [/obj/item/equipped()]: (/obj/item/equipped_item, slot)
 /datum/notice/mob_equipped_item
 	var/equipped_item
 	var/slot
@@ -616,47 +623,47 @@
 	src.equipped_item = equipped_item
 	src.slot = slot
 
-/// From /datum/definition_event/mob_granted_action.
+/// From /datum/action/Grant(): (datum/action)
 /datum/notice/mob_granted_action
 	var/action
 
 /datum/notice/mob_granted_action/fill(action)
 	src.action = action
 
-/// From /datum/definition_event/mob_login.
+/// From base of /mob/Login(): ()
 /datum/notice/mob_login
 
-/// From /datum/definition_event/mob_logout.
+/// From base of /mob/Logout(): ()
 /datum/notice/mob_logout
 
-/// From /datum/definition_event/mob_medical_issues_changed.
+/// A condition was attached, removed, or crossed a clinically meaningful threshold.
 /datum/notice/mob_medical_issues_changed
 
-/// From /datum/definition_event/mob_mind_transferred_into.
+/// From mind/transfer_to. Sent to the receiving mob.
 /datum/notice/mob_mind_transferred_into
 	var/old_character
 
 /datum/notice/mob_mind_transferred_into/fill(old_character)
 	src.old_character = old_character
 
-/// From /datum/definition_event/mob_mind_transferred_out_of.
+/// From mind/transfer_from. Sent to the mob the mind is being transferred out of.
 /datum/notice/mob_mind_transferred_out_of
 	var/new_character
 
 /datum/notice/mob_mind_transferred_out_of/fill(new_character)
 	src.new_character = new_character
 
-/// From /datum/definition_event/mob_removed_action.
+/// From /datum/action/Remove(): (datum/action)
 /datum/notice/mob_removed_action
 	var/action
 
 /datum/notice/mob_removed_action/fill(action)
 	src.action = action
 
-/// From /datum/definition_event/mob_reset_perspective.
+/// From base of /mob/proc/reset_perspective() : ()
 /datum/notice/mob_reset_perspective
 
-/// From /datum/definition_event/mob_statchange.
+/// From base of mob/set_stat(): (new_stat, old_stat)
 /datum/notice/mob_statchange
 	var/new_stat
 	var/old_stat
@@ -665,7 +672,7 @@
 	src.new_stat = new_stat
 	src.old_stat = old_stat
 
-/// From /datum/definition_event/mob_unequipped_item.
+/// A mob has just unequipped an item.
 /datum/notice/mob_unequipped_item
 	var/item
 	var/target_
@@ -674,7 +681,7 @@
 	src.item = item
 	src.target_ = target_
 
-/// From /datum/definition_event/movable_attempted_move.
+/// From base of atom/movable/Moved(): (/atom, newloc, direction)
 /datum/notice/movable_attempted_move
 	var/old_loc
 	var/new_loc
@@ -683,7 +690,7 @@
 	src.old_loc = old_loc
 	src.new_loc = new_loc
 
-/// From /datum/definition_event/movable_impact.
+/// From base of atom/movable/throw_impact() after confirming a hit: (/atom/hit_atom, /datum/thrownthing/throwingdatum)
 /datum/notice/movable_impact
 	var/hit_atom
 	var/throwingdatum
@@ -692,7 +699,7 @@
 	src.hit_atom = hit_atom
 	src.throwingdatum = throwingdatum
 
-/// From /datum/definition_event/movable_motiontracker.
+/// From /datum/controller/subsystem/motion_tracker/notice() (source_atom,/turf/echo_turf_location)
 /datum/notice/movable_motiontracker
 	var/source_
 	var/echo_turf_location
@@ -701,7 +708,7 @@
 	src.source_ = source_
 	src.echo_turf_location = echo_turf_location
 
-/// From /datum/definition_event/moved.
+/// Notification: the movable changed loc.
 /datum/notice/moved
 	var/old_loc
 	var/direction
@@ -712,34 +719,34 @@
 	src.direction = direction
 	src.forced = forced
 
-/// From /datum/definition_event/moved_down_stairs.
+/// The `moved_down_stairs` occurrence (it was an om event).
 /datum/notice/moved_down_stairs
 	var/old_loc
 
 /datum/notice/moved_down_stairs/fill(old_loc)
 	src.old_loc = old_loc
 
-/// From /datum/definition_event/obj_deconstruct.
+/// /obj signals from base of obj/deconstruct(): (disassembled)
 /datum/notice/obj_deconstruct
 	var/disassembled
 
 /datum/notice/obj_deconstruct/fill(disassembled)
 	src.disassembled = disassembled
 
-/// From /datum/definition_event/observer_apc.
+/// The `observer_apc` occurrence (it was an om event).
 /datum/notice/observer_apc
 
-/// From /datum/definition_event/observer_globalmoved.
+/// The `observer_globalmoved` occurrence (it was an om event).
 /datum/notice/observer_globalmoved
 
-/// From /datum/definition_event/observer_shuttle_added.
+/// The `observer_shuttle_added` occurrence (it was an om event).
 /datum/notice/observer_shuttle_added
 	var/shuttle
 
 /datum/notice/observer_shuttle_added/fill(shuttle)
 	src.shuttle = shuttle
 
-/// From /datum/definition_event/observer_shuttle_moved.
+/// The `observer_shuttle_moved` occurrence (it was an om event).
 /datum/notice/observer_shuttle_moved
 	var/old_location
 	var/destination
@@ -748,7 +755,7 @@
 	src.old_location = old_location
 	src.destination = destination
 
-/// From /datum/definition_event/observer_shuttle_pre_move.
+/// The `observer_shuttle_pre_move` occurrence (it was an om event).
 /datum/notice/observer_shuttle_pre_move
 	var/old_location
 	var/destination
@@ -757,7 +764,7 @@
 	src.old_location = old_location
 	src.destination = destination
 
-/// From /datum/definition_event/observer_turf_entered.
+/// The `observer_turf_entered` occurrence (it was an om event).
 /datum/notice/observer_turf_entered
 	var/arrived
 	var/old_loc
@@ -766,22 +773,22 @@
 	src.arrived = arrived
 	src.old_loc = old_loc
 
-/// From /datum/definition_event/picked_up_item.
+/// The `picked_up_item` occurrence (it was an om event).
 /datum/notice/picked_up_item
 	var/item
 
 /datum/notice/picked_up_item/fill(item)
 	src.item = item
 
-/// From /datum/definition_event/popup_cleared.
+/// From /client/proc/handle_popup_close() : (window_id)
 /datum/notice/popup_cleared
 	var/window_id
 
 /datum/notice/popup_cleared/fill(window_id)
 	src.window_id = window_id
 
-/// From /datum/definition_event/qdeleting.
-/// From /datum/definition_event/reagent_expose_obj.
+/// Just before a datum's Destroy() is called: (force), at this point none of the other components chose to interrupt qdel and Destroy will be called
+/// Sent to the obj from base of [/datum/reagent/proc/touch_obj]: (datum/reagent/reagent, amount)
 /datum/notice/reagent_expose_obj
 	var/datum/reagent/reagent
 	var/amount
@@ -790,7 +797,7 @@
 	src.reagent = reagent
 	src.amount = amount
 
-/// From /datum/definition_event/reagents_holder_reacted.
+/// Non TG signals: from base of /datum/reagents/proc/handle_reactions(): (list/datum/xform)
 /datum/notice/reagents_holder_reacted
 	/// The /datum/xform rules that fired in the settle, in the order they first did.
 	var/rules
@@ -798,11 +805,12 @@
 /datum/notice/reagents_holder_reacted/fill(rules)
 	src.rules = rules
 
-/// From /datum/definition_event/remote_view_clear.
+/// /datum/remote_view event that can be sent from the mob remote viewing, the viewed mob, or object being used to view to forcibly end all related remote viewing components
 /datum/notice/remote_view_clear
 
-/// From /datum/definition_event/robot_belly_fullness.
+/// From the robot belly overlay provider: (belly_class, list/fullness_ref) Handlers may adjust fullness_ref[1].
 /datum/notice/robot_belly_fullness
+	read_back = TRUE // the sender reads what the handlers wrote: answered at once, even mid-delivery (reactions.md section 3)
 	var/belly_class
 	var/fullness_ref
 
@@ -810,17 +818,17 @@
 	src.belly_class = belly_class
 	src.fullness_ref = fullness_ref
 
-/// From /datum/definition_event/robot_equipment_changed.
+/// From /mob/living/silicon/robot/proc/after_equip(): (obj/item/equipped_or_null)
 /datum/notice/robot_equipment_changed
 	var/item
 
 /datum/notice/robot_equipment_changed/fill(item)
 	src.item = item
 
-/// From /datum/definition_event/silicon_laws_changed.
+/// From /mob/living/silicon/proc/laws_changed(): ()
 /datum/notice/silicon_laws_changed
 
-/// From /datum/definition_event/stun_effect.
+/// The `stun_effect` occurrence (it was an om event).
 /datum/notice/stun_effect
 	var/stun_amount
 	var/agony_amount
@@ -835,7 +843,7 @@
 	src.used_weapon = used_weapon
 	src.electric = electric
 
-/// From /datum/definition_event/techweb_add_design.
+/// Called when a techweb design is researched (datum/design/researched_design, custom)
 /datum/notice/techweb_add_design
 	var/researched_design
 	var/custom
@@ -844,7 +852,7 @@
 	src.researched_design = researched_design
 	src.custom = custom
 
-/// From /datum/definition_event/techweb_remove_design.
+/// Called when a techweb design is removed (datum/design/removed_design, custom)
 /datum/notice/techweb_remove_design
 	var/removed_design
 	var/custom
@@ -853,7 +861,7 @@
 	src.removed_design = removed_design
 	src.custom = custom
 
-/// From /datum/definition_event/telesci_teleport.
+/// From /obj/machinery/computer/telescience/proc/doteleport(mob/user): (list/atom/movable/teleported_things, turf/target_turf, sending )
 /datum/notice/telesci_teleport
 	var/teleported_things
 	var/target_turf
@@ -864,14 +872,15 @@
 	src.target_turf = target_turf
 	src.sending = sending
 
-/// From /datum/definition_event/tgui_window_visible.
+/// Window is fully visible and we can make fragile calls
 /datum/notice/tgui_window_visible
 	var/client
 
 /datum/notice/tgui_window_visible/fill(client)
 	src.client = client
 
-/// From /datum/definition_event/tool_atom_acted.
+/// Was COMSIG_TOOL_ATOM_ACTED_PRIMARY(quality) / _SECONDARY(quality), sent on the tool
+/// after it acted on `target`.
 /datum/notice/tool_atom_acted
 	var/tool_quality
 	var/secondary
@@ -886,22 +895,24 @@
 	src.user = user
 	src.modifiers = modifiers
 
-/// From /datum/definition_event/trait_gained.
+/// Was SIGNAL_ADDTRAIT(trait): `trait` was gained (its first source added). Hook it and
+/// test event.trait (hooks key on the event type, not the trait).
 /datum/notice/trait_gained
 	var/trait
 
 /datum/notice/trait_gained/fill(trait)
 	src.trait = trait
 
-/// From /datum/definition_event/trait_lost.
+/// Was SIGNAL_REMOVETRAIT(trait): `trait` was lost (its last source removed).
 /datum/notice/trait_lost
 	var/trait
 
 /datum/notice/trait_lost/fill(trait)
 	src.trait = trait
 
-/// From /datum/definition_event/turf_change.
+/// From base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that handlers append rows list(owner, PROC_REF, with) to; each runs as after(owner, 0, PROC_REF, with = with + the new turf) after the turf has changed.
 /datum/notice/turf_change
+	read_back = TRUE // the sender reads what the handlers wrote: answered at once, even mid-delivery (reactions.md section 3)
 	var/path
 	var/new_baseturfs
 	var/flags
@@ -913,7 +924,7 @@
 	src.flags = flags
 	src.post_change_callbacks = post_change_callbacks
 
-/// From /datum/definition_event/ui_act.
+/// From datum ui_act (usr, action)
 /datum/notice/ui_act
 	var/usr_
 	var/action
@@ -922,14 +933,14 @@
 	src.usr_ = usr_
 	src.action = action
 
-/// From /datum/definition_event/unittest_data.
+/// The `unittest_data` occurrence (it was an om event).
 /datum/notice/unittest_data
 	var/data_
 
 /datum/notice/unittest_data/fill(data_)
 	src.data_ = data_
 
-/// From /datum/definition_event/world_explosion.
+/// Called after an explosion happened : (epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range)
 /datum/notice/world_explosion
 	var/epicenter
 	var/devastation_range
@@ -944,21 +955,21 @@
 	src.light_impact_range = light_impact_range
 	src.took = took
 
-/// From /datum/definition_event/world_ghost_captured.
+/// Called when a ghost or phaser is captured by a ghosttrap: (mob/passing_entity)
 /datum/notice/world_ghost_captured
 	var/passing_entity
 
 /datum/notice/world_ghost_captured/fill(passing_entity)
 	src.passing_entity = passing_entity
 
-/// From /datum/definition_event/world_mob_created.
+/// Called from base of /mob/Initialise : (mob)
 /datum/notice/world_mob_created
 	var/mob
 
 /datum/notice/world_mob_created/fill(mob)
 	src.mob = mob
 
-/// From /datum/definition_event/world_mob_death.
+/// Mob died somewhere : (mob/living, gibbed)
 /datum/notice/world_mob_death
 	var/living
 	var/gibbed
@@ -967,21 +978,21 @@
 	src.living = living
 	src.gibbed = gibbed
 
-/// From /datum/definition_event/world_payment_account_status.
+/// Payment account status changed /obj/machinery/account_database/tgui_act() : (datum/money_account/account)
 /datum/notice/world_payment_account_status
 	var/account
 
 /datum/notice/world_payment_account_status/fill(account)
 	src.account = account
 
-/// From /datum/definition_event/world_supply_shuttle_depart.
+/// Shuttle Comsigs Supply shuttle selling, before all items are sold, called by /datum/controller/subsystem/supply/proc/sell() : (/list/area/supply_shuttle_areas)
 /datum/notice/world_supply_shuttle_depart
 	var/supply_shuttle_areas
 
 /datum/notice/world_supply_shuttle_depart/fill(supply_shuttle_areas)
 	src.supply_shuttle_areas = supply_shuttle_areas
 
-/// From /datum/definition_event/world_wight_captured.
+/// Called when a shadow wright passes by a ghosttrap: (obj/effect/shadow_wight)
 /datum/notice/world_wight_captured
 	var/shadow_wight
 
