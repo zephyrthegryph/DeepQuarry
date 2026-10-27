@@ -12,7 +12,7 @@
 
 	var/list/stored_souls = list()
 	for(var/soul in owner.soulgem.brainmobs)
-		var/list/info = list("displayText" = "[soul]", "value" = "\ref[soul]")
+		var/list/info = list("displayText" = "[soul]", "value" = ref_token(soul))
 		stored_souls.Add(list(info))
 	var/list/soulcatcher_data = list(
 		"active" = owner.soulgem.flag_check(SOULGEM_ACTIVE),

@@ -45,7 +45,9 @@
 
 	corpse = /obj/effect/landmark/mobcorpse/pirate
 
-	say_list_type = /datum/say_list/pirate
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate)
+	configure(living_rules(say_list_type = /datum/say_list/pirate))
 
 /// Every pirate's loot table also holds pirate salvage (its per_type() table, built once per type).
 /mob/living/simple_mob/humanoid/pirate/per_type_own(var_name)

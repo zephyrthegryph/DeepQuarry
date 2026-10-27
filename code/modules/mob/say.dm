@@ -47,9 +47,9 @@
 
 	client?.stop_thinking()
 	if(kind_of(src).use_me)
-		custom_emote(kind_of(src).emote_type, message)
+		custom_emote(kind_of(src).emote_type, message, typed = TRUE)
 	else
-		emote(message)
+		emote(message, typed = TRUE)
 
 /mob/proc/say_dead(message)
 	if(!client)
@@ -307,9 +307,9 @@
 
 	client?.stop_thinking()
 	if(kind_of(src).use_me)
-		emote_vr("me",4,message)
+		emote_vr("me", 4, message, typed = TRUE)
 	else
-		emote_vr(message)
+		emote_vr(message, typed = TRUE)
 
 /mob/verb/me_verb_subtle_custom(message as message) // Literally same as above but with mode_selection set to true //
 	set name = "Subtle (Custom)"
@@ -325,13 +325,13 @@
 
 	client?.stop_thinking()
 	if(kind_of(src).use_me)
-		emote_vr("me",4,message,TRUE)
+		emote_vr("me", 4, message, TRUE, typed = TRUE)
 	else
-		emote_vr(message)
+		emote_vr(message, typed = TRUE)
 
 /// `picked_mode` and `picked` carry the answers of earlier questions (the mode, the belly or person picked) when a prompt re-enters this.
-/mob/proc/custom_emote_vr(m_type=1,message = null,mode_selection = FALSE, picked_mode, datum/picked) //This would normally go in emote.dm
-	if(stat || !kind_of(src).use_me && usr == src)
+/mob/proc/custom_emote_vr(m_type = 1, message = null, mode_selection = FALSE, picked_mode, datum/picked, typed = FALSE) //This would normally go in emote.dm
+	if(stat || !kind_of(src).use_me && typed)
 		to_chat(src, "You are unable to emote.")
 		return
 
@@ -518,9 +518,9 @@
 		for(var/obj/O as anything in vis_objs)
 			O.see_emote(src, message, 2)
 
-/mob/proc/emote_vr(act, type, message, mode_selection) //This would normally go in say.dm
+/mob/proc/emote_vr(act, type, message, mode_selection, typed = FALSE) //This would normally go in say.dm
 	if(act == "me")
-		return custom_emote_vr(type, message, mode_selection)
+		return custom_emote_vr(type, message, mode_selection, typed = typed)
 
 /proc/sanitize_or_reflect(message,user)
 	//Way too long to send
@@ -592,9 +592,9 @@
 /mob/proc/custom_subtle_pick_apply(datum/act/request/A)
 	var/datum/prompt/choice/custom_subtle/ask = A.answer
 	if(ask.subtle_mode)
-		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.subtle_mode, ask.value)
+		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.subtle_mode, ask.value, typed = TRUE)
 	else
-		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.value)
+		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.value, typed = TRUE)
 
 /mob/proc/custom_subtle_text_entered(datum/act/request/A)
 	if(!A.answer)
@@ -605,7 +605,7 @@
 	var/datum/prompt/text/custom_subtle/ask = A.answer
 	var/text = sanitize_or_reflect(ask.value, src)
 	if(text)
-		custom_emote_vr(ask.m_type, text, FALSE, ask.subtle_mode)
+		custom_emote_vr(ask.m_type, text, FALSE, ask.subtle_mode, typed = TRUE)
 
 /mob/verb/psay(message as text)
 	set name = "Psay"
@@ -891,6 +891,6 @@
 		return
 	var/new_speech_bubble = A.answer.value
 	if(new_speech_bubble)
-		custom_speech_bubble = new_speech_bubble
+		bio.custom_speech_bubble = new_speech_bubble
 		if(dna)
 			dna.custom_speech_bubble = new_speech_bubble

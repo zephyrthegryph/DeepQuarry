@@ -146,5 +146,3 @@
 	TEST_ASSERT_EQUAL(eye.loc, camera_turf, "the actual selected camera moves the AI eye to its real turf")
 	TEST_ASSERT_EQUAL(native_result.outcome, ACT_COMMITTED, "the answered native HUD operation really commits")
 	TEST_ASSERT_NULL(op_pending_for(actor, "hud_camera_list"), "the completed native continuation releases its actual pending record")
-	var/cache_key = "[REF(button)]:[TYPE_PROC_REF(/atom/movable/screen, click_with_actor)]"
-	TEST_ASSERT_NULL(GLOB.rerun_answers[cache_key], "the native continuation creates no legacy rerun answer cache")

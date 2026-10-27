@@ -139,14 +139,14 @@
 	var/datum/reagent/respiro = SSchemistry.ready().chemical_reagents[REAGENT_ID_RESPIRODAXON]
 	TEST_ASSERT(O_LUNGS in TYPE_TABLE_GET(respiro, daxon_organs), "respirodaxon targets the lungs")
 	TEST_ASSERT(REAGENT_ID_GASTIRODAXON in TYPE_TABLE_GET(respiro, daxon_partners), "gastirodaxon is its partner")
-	H.losebreath = 8
+	H.set_losebreath(8)
 	respiro.affect_blood(H, null, REM)
-	TEST_ASSERT_EQUAL(H.losebreath, 4, "alone, respirodaxon eases breathing")
+	TEST_ASSERT_EQUAL(H.losebreath(), 4, "alone, respirodaxon eases breathing")
 	H.bloodstr.add_reagent(REAGENT_ID_GASTIRODAXON, 5)
 	H.body.invalidate(BODY_DIRTY_TREATMENT)
-	H.losebreath = 0
+	H.set_losebreath(0)
 	respiro.affect_blood(H, null, REM)
-	TEST_ASSERT_EQUAL(H.losebreath, 3, "with its partner present, respirodaxon clashes")
+	TEST_ASSERT_EQUAL(H.losebreath(), 3, "with its partner present, respirodaxon clashes")
 
 /// P2-S9: can_inject takes the delivery method; a hypo still asks the same question.
 /datum/unit_test/dq_med7_p2s9_one_can_inject
@@ -168,11 +168,11 @@
 	TEST_ASSERT_EQUAL(H.radiation, RADIATION_CAP, "the acute dose is capped")
 	H.decay_radiation(100, 40)
 	TEST_ASSERT_EQUAL(H.radiation, RADIATION_CAP - 100, "decay lowers the acute dose")
-	TEST_ASSERT_EQUAL(H.accumulated_rads, 40, "decay settles into the accumulated dose")
+	TEST_ASSERT_EQUAL(H.accumulated_rads(), 40, "decay settles into the accumulated dose")
 	H.purge_radiation(RADIATION_CAP)
 	TEST_ASSERT_EQUAL(H.radiation, 0, "a purge never goes below zero")
-	TEST_ASSERT_EQUAL(H.accumulated_rads, 0, "a purge clears the accumulated dose too")
+	TEST_ASSERT_EQUAL(H.accumulated_rads(), 0, "a purge clears the accumulated dose too")
 	H.add_radiation(50)
 	H.decay_radiation(0, 10)
 	H.clear_radiation()
-	TEST_ASSERT(!H.radiation && !H.accumulated_rads, "clear_radiation empties both doses")
+	TEST_ASSERT(!H.radiation && !H.accumulated_rads(), "clear_radiation empties both doses")

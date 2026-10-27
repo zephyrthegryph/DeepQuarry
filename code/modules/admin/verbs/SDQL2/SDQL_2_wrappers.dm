@@ -42,7 +42,7 @@
 /proc/_get_step(Ref, Dir)
 	return get_step(Ref, Dir)
 
-/proc/_hearers(Depth = world.view, Center = usr)
+/proc/_hearers(Depth = world.view, atom/Center)
 	return hearers(Depth, Center)
 
 /proc/_image(icon, loc, icon_state, layer, dir)
@@ -90,19 +90,19 @@
 /proc/_num2text(N, SigFig = 6)
 	return num2text(N, SigFig)
 
-/proc/_ohearers(Dist, Center = usr)
+/proc/_ohearers(Dist, atom/Center)
 	return ohearers(Dist, Center)
 
-/proc/_orange(Dist, Center = usr)
+/proc/_orange(Dist, atom/Center)
 	return orange(Dist, Center)
 
 /proc/_output(thing, msg, control)
 	thing << output(msg, control)
 
-/proc/_oview(Dist, Center = usr)
+/proc/_oview(Dist, atom/Center)
 	return oview(Dist, Center)
 
-/proc/_oviewers(Dist, Center = usr)
+/proc/_oviewers(Dist, atom/Center)
 	return oviewers(Dist, Center)
 
 /proc/_params2list(Params)
@@ -117,7 +117,7 @@
 /proc/_rand(L = 0, H = 1)
 	return rand(L, H)
 
-/proc/_range(Dist, Center = usr)
+/proc/_range(Dist, atom/Center)
 	return range(Dist, Center)
 
 /proc/_regex(pattern, flags)

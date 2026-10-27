@@ -141,7 +141,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 /obj/machinery/clonepod/proc/growclone(datum/transhuman/body_record/BR)
 	if(mess || attempting)
 		return 0
-	var/datum/mind/clonemind = locate(BR.mydna.mind)
+	var/datum/mind/clonemind = resolve_token(BR.mydna.mind)
 
 	if(!istype(clonemind, /datum/mind))	//not a mind
 		return 0

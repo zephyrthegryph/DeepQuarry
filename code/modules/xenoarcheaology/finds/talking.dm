@@ -1,9 +1,6 @@
-/obj/var/datum/talking_atom/talking_atom // owned: xenoarch speech state
-
 /datum/talking_atom
 	var/list/heard_words = list() // ALLOW(instance_list): d: speech memory of a talking item, filled as it hears
 	COOLDOWN_DECLARE(talk_cooldown)
-	var/tmp/atom/holder_atom
 	var/talk_interval = 50
 	var/talk_chance = 10
 	/// Has it a holder to talk through? The talk every() below runs while it does.
@@ -12,10 +9,10 @@
 
 CAPABILITIES(/datum/talking_atom)
 	every(2 SECONDS, then(PROC_REF(talk_step)), when = nameof(talking))
-	ref_one(nameof(holder_atom))
 
-/datum/talking_atom/New(atom/holder)
-	rel_set(src, nameof(holder_atom), holder)
+/// Speech state of a talking find: linked to the object that carries it by LK_TALKING_ATOM, gone with it.
+/datum/talking_atom/New(obj/holder)
+	link_make(holder, LK_TALKING_ATOM, src)
 	init()
 
 /datum/talking_atom/proc/init()
@@ -111,6 +108,10 @@ CAPABILITIES(/datum/talking_atom)
 		to_chat(M, "[icon2html(holder_atom(),M.client)] " + span_bold("[holder_atom()] reverberates") +" , \"[span_blue(msg)]\"")
 	COOLDOWN_START(src, talk_cooldown, talk_interval)
 
-/// Accessor for the holder_atom var.
+/// The object this speech state belongs to (the other end of its LK_TALKING_ATOM link), null once it is gone.
 /datum/talking_atom/proc/holder_atom() as /atom
-	return holder_atom
+	return link_get(src, LK_TALKING_ATOM_OF)
+
+/// The object's speech state (LK_TALKING_ATOM), or null when it does not talk.
+/obj/proc/talking_atom() as /datum/talking_atom
+	return link_get(src, LK_TALKING_ATOM)

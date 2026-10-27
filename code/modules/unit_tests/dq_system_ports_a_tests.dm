@@ -242,7 +242,7 @@
 	var/steps = 0
 	while(SSmotiontracker.draw_echoes(0) != STEP_DONE && steps++ < 50)
 		continue
-	TEST_ASSERT(!SSmotiontracker.queued_echo_turfs[REF(run_loc_floor_top_right)], "the motion tracker step left the echo queued")
+	TEST_ASSERT(!SSmotiontracker.queued_echo_turfs[ref_token(run_loc_floor_top_right)], "the motion tracker step left the echo queued")
 	var/pings = SSmotiontracker.all_pings_round
 	var/hidden = SSmotiontracker.hide_all
 	SSmotiontracker.hide_all = TRUE

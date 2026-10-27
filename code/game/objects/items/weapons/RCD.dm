@@ -6,7 +6,6 @@
 	icon_state = "rcd"
 	item_state = "rcd"
 	flags = NOBLUDGEON
-	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 50000)
 	var/stored_matter = 0
@@ -314,7 +313,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	var/static/image/radial_image_floorwall = image(icon = 'icons/mob/radial.dmi', icon_state = "wallfloor")
 
 CAPABILITIES(/obj/item/rcd)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_handling(preserve = TRUE))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))

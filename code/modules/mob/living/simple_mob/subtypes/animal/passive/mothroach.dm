@@ -20,7 +20,6 @@
 
 	see_in_dark = 10
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	holder_type = /obj/item/holder/mothroach
 
 	response_help   = "pats"
@@ -39,11 +38,11 @@
 	friendly = list("pats")
 	climbing_delay = 2.0
 
-	say_list_type = /datum/say_list/mothroach
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(say_list_type = /datum/say_list/mothroach))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(can_climb = TRUE))
 	after_init(0, then(PROC_REF(mothroach_name_ready)))

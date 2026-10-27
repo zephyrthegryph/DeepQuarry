@@ -28,7 +28,6 @@
 	attacktext = list("bites")
 	see_in_dark = 8
 	minbodytemp = 0
-	say_list_type = /datum/say_list/sonadile
 
 	vore_bump_chance = 25
 	vore_digest_chance = 50
@@ -37,7 +36,6 @@
 	vore_active = 1
 	vore_icons = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 1
 	swallowTime = 50
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_DIGEST
@@ -80,6 +78,7 @@
 		look.state("[icon_living]-2")
 
 CAPABILITIES(/mob/living/simple_mob/vore/sonadile)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/sonadile))
 	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))
 
 /// A new meal unsettles the sprite and starts the ten second wait for it to settle again.

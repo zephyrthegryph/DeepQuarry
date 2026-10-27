@@ -340,7 +340,7 @@ CAPABILITIES(/obj/dq_input_probe)
 	return OP_OK
 
 /obj/dq_input_probe/proc/probe_drag(datum/act/op/A)
-	note("MouseDrop_T", A.actor)
+	note("drag", A.actor)
 	return OP_OK
 
 /obj/item/dq_input_probe_item
@@ -419,7 +419,7 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 	H.drop_from_inventory(item, T)
 	probe.last_handler = null
 	GLOB.input_router.route_drag(H, item, probe)
-	TEST_ASSERT_EQUAL(probe.last_handler, "MouseDrop_T", "dragging onto an atom reaches MouseDrop_T")
+	TEST_ASSERT_EQUAL(probe.last_handler, "drag", "dragging onto an atom runs its drag op")
 
 /// apply_keybindings() creates each macro by naming it as winset()'s control with a parent: the null-control
 /// "id.parent=" form only edits controls that exist, so it never made the macros and every key beeped.

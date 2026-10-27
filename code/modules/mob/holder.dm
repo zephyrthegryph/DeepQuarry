@@ -350,13 +350,15 @@ CAPABILITIES(/obj/item/holder/fish)
 //Mob procs and vars for scooping up
 /mob/living/var/holder_type
 
-/mob/living/proc/scoop_drop(datum/act/input/A)
-	var/mob/living/carbon/human/H = A.over
+/// A small mob dragged onto an upright, adjacent human (neither in combat mode) is scooped up by them, or climbs up when it is the one dragging.
+/// TRUE when the drop was this case (the scoop itself may still refuse), FALSE when it is not.
+/mob/living/proc/scoop_with_actor(mob/user, atom/over_object)
+	var/mob/living/carbon/human/H = over_object
 	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (!combat_mode && !H.combat_mode))
 		if(!issmall(H) || !ishuman(src))
-			get_scooped(H, A.actor == src)
-		return
-	return INPUT_FALLTHROUGH
+			get_scooped(H, user == src)
+		return TRUE
+	return FALSE
 
 /mob/living/proc/get_scooped(mob/living/carbon/grabber, self_grab)
 

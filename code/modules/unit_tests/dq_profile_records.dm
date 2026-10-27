@@ -127,7 +127,7 @@
 		"citizenship" = list("bio", "citizenship"), "religion" = list("bio", "religion"), "med_record" = list("bio", "med_record"),
 		"sec_record" = list("bio", "sec_record"), "gen_record" = list("bio", "gen_record"), "custom_say" = list("bio", "custom_say"),
 		"custom_whisper" = list("bio", "custom_whisper"), "custom_ask" = list("bio", "custom_ask"), "custom_exclaim" = list("bio", "custom_exclaim"),
-		"nickname" = list("bio", "nickname"),
+		"nickname" = list("bio", "nickname"), "custom_speech_bubble" = list("bio", "custom_speech_bubble"),
 	)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/list/applied = list()

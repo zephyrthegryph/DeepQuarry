@@ -31,7 +31,6 @@
 	can_buckle = TRUE
 	mount_offset_y = 12
 
-	say_list_type = /datum/say_list/panther
 	var/cloaked_alpha = 60			// Lower = Harder to see.
 	var/cloaked_bonus_damage = 30	// This is added on top of the normal melee damage.
 	var/cloaked_weaken_amount = 10	// How long to stun for.
@@ -41,7 +40,6 @@
 
 /mob/living/simple_mob/vore/aggressive/panther/thor
 	vore_active = 1
-	vore_capacity = 3
 	vore_pounce_chance = 100
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
@@ -93,6 +91,7 @@
 
 // Force uncloaking if attacked.
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther/thor)
+	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/panther))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 

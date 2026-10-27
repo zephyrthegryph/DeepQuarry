@@ -43,7 +43,6 @@
 
 /mob/living/simple_mob/vr/alchemistbee
 	vore_active = 1
-	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
 	vore_min_size = RESIZE_SMALL
 	vore_pounce_chance = 0 // Beat them into crit before eating.
@@ -51,7 +50,7 @@
 
 //bluenom
 CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
-	configure(living_rules(use_modern_ai = TRUE))
+	configure(living_rules(vore_capacity = 6, use_modern_ai = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 

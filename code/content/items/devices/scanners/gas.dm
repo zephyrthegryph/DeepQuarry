@@ -6,7 +6,6 @@ MATERIAL_MIX(/obj/item/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "atmos"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 20
 
 
 
@@ -22,7 +21,7 @@ MATERIAL_MIX(/obj/item/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	return atmosanalyzer_scan(src, air, user)
 
 CAPABILITIES(/obj/item/analyzer)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))

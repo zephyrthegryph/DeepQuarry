@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	M.extinguish_mob()
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(STAT_SLEEPING)))
 		act_message_t(M, src, /datum/msg/cryo_cell/cold_liquid)
-	M.cozyloop?.start() // Cozy Music
+	M.cozy_music(TRUE) // Cozy Music
 	buckle_mob(M, authority = GLOB.authority_forced, check_loc = FALSE)
 	set_use_power(USE_POWER_ACTIVE)
 
@@ -140,7 +140,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 			unbuckle_mob(M, force = TRUE)
 		if(M.body_temperature() < CRYO_THAW_TEMPERATURE && M.body_temperature() >= CRYO_THAW_FLOOR) //Patch by Aranclanos to stop people from taking burn damage after being ejected
 			M.set_bodytemperature(CRYO_THAW_TEMPERATURE)
-		M.cozyloop?.stop() // Cozy Music
+		M.cozy_music(FALSE) // Cozy Music
 	set_use_power(USE_POWER_IDLE)
 
 // ---- one machine interval, while the cell is on, works and is occupied ----
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 		if(healthy)
 			release_treated_occupant(occupant)
 			return FALSE
-	if(occupant.body_temperature() < CRYO_DEEP_COLD && (occupant.radiation || occupant.accumulated_rads))
+	if(occupant.body_temperature() < CRYO_DEEP_COLD && (occupant.radiation || occupant.accumulated_rads()))
 		occupant.purge_radiation(25)
 	return TRUE
 

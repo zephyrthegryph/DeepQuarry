@@ -5,10 +5,9 @@ MATERIAL_MIX(/obj/item/slime_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "xenobio"
 	item_state = "xenobio"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 7
 
 CAPABILITIES(/obj/item/slime_scanner)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 7, throw_speed = 3))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_thrown(force = 0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

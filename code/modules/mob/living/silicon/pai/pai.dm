@@ -94,10 +94,9 @@
 
 	var/datum/tgui_module/pai_chassis/pai_ui_chassis
 
-	vore_capacity = 1
-	vore_capacity_ex = list("stomach" = 1)
 
 CAPABILITIES(/mob/living/silicon/pai)
+	configure(living_rules(vore_capacity_ex = list("stomach" = 1), vore_capacity = 1))
 	setup(PROC_REF(setup_card))
 	ref_one(nameof(current), /obj/machinery/camera)
 	ref_one(nameof(card), /obj/item/paicard)
@@ -307,11 +306,11 @@ CAPABILITIES(/mob/living/silicon/pai)
 			fall()
 
 	// Set vore size.
-	vore_capacity = max(1, chassis_data.belly_states) // Minimum of 1
-	vore_capacity_ex = list("stomach" = vore_capacity)
+	set_vore_capacity(max(1, chassis_data.belly_states)) // Minimum of 1
+	set_vore_capacity_ex(list("stomach" = living_rules_of(src).vore_capacity))
 
 	// Emergency eject if you change to a smaller belly
-	if(vore_fullness > vore_capacity && vore_selected_of(src))
+	if(vore_fullness > living_rules_of(src).vore_capacity && vore_selected_of(src))
 		vore_selected_of(src).release_all_contents(TRUE)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

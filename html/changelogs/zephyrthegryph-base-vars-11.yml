@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added the weak sparse slot (sparse(T, name, type = weak), sparse_ref(), sparse_ref_set()) and moved lastattacker, LAssailant, teleop and autofire_target into it; moved disabilities, losebreath and accumulated_rads to sparse slots; moved side effects, genetic side effects, lleill rings, map screens, the cozy sleep loop and the worn rig off /mob and /human onto sparse links. The cozy loop is now made the first time it plays instead of for every carbon."

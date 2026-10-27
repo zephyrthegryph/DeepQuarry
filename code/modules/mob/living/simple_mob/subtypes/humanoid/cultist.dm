@@ -73,7 +73,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 /mob/living/simple_mob/humanoid/cultist/human
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/human/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -247,7 +246,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 /mob/living/simple_mob/humanoid/cultist/tesh
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/tesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
@@ -296,7 +294,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 /mob/living/simple_mob/humanoid/cultist/lizard
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/lizard/on_death(gibbed)
 	new /obj/effect/decal/remains/unathi (src.loc)
@@ -343,7 +340,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 /mob/living/simple_mob/humanoid/cultist/caster
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/caster/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -391,7 +387,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 /mob/living/simple_mob/humanoid/cultist/initiate
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/initiate/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -436,7 +431,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
@@ -480,6 +474,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "shatters into bone and blood like pieces like the now shattered mirror."))
 	op("cultist_elite_item", item(/obj/item), then(PROC_REF(cultist_elite_interaction_item)))
 	immune_to_incapacitation()
@@ -512,7 +507,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 		..()
 
 /mob/living/simple_mob/humanoid/cultist/elite
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/elite/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -562,7 +556,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 
 
 /mob/living/simple_mob/humanoid/cultist/magus
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/magus/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
@@ -570,6 +563,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	ghostize()
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "let's out a dark laugh as it collapses into a puddle of blood."))
 	immune_to_incapacitation()
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/magus)
@@ -621,7 +615,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 
 
 /mob/living/simple_mob/humanoid/cultist/hunter
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/humanoid/cultist/hunter/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
@@ -753,7 +746,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball
 	drag_buckle = FALSE
 	vore_active = 1
-	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
 	vore_min_size = RESIZE_SMALL
 	vore_pounce_chance = 0 // Beat them into crit before eating.
@@ -761,6 +753,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
+	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
@@ -792,7 +785,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
 
 /mob/living/simple_mob/humanoid/cultist/noodle
 	vore_active = 1
-	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
 	vore_min_size = RESIZE_SMALL
 	vore_pounce_chance = 0 // Beat them into crit before eating.
@@ -800,6 +792,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
+	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
@@ -833,7 +826,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
 //Thank you Ears for the teshari bellies
 /mob/living/simple_mob/humanoid/cultist/tesh
 	vore_active = 1
-	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
 	vore_min_size = RESIZE_SMALL
 	vore_pounce_chance = 0 // Beat them into crit before eating.
@@ -841,6 +833,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
+	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(death_message = "let's out a shrill chirp as his body turns to dust."))
 	immune_to_incapacitation()
@@ -874,7 +867,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
 	vore_active = 1
-	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
 	vore_min_size = RESIZE_SMALL
 	vore_pounce_chance = 0 // Beat them into crit before eating.
@@ -882,6 +874,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
+	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "burns away into nothing."))
 	immune_to_incapacitation()
@@ -914,21 +907,25 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "let's out a maddening laugh as his body crumbles away."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "hisses as he collapses into a pile of bones."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "melts into a pile of blood and bones."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "lets out a horrified scream as his body crumbles away."))
 	immune_to_incapacitation()
 
@@ -936,5 +933,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."))
 	immune_to_incapacitation()

@@ -389,11 +389,11 @@ CAPABILITIES(/obj/dq_pin_rejected_constructor)
 		var/list/after_atoms = dq_pin_fixture_atoms()
 		TEST_ASSERT_EQUAL(length(after_atoms - baseline_atoms), 0, "failed constructors leave no new fixture atoms")
 
-/// The pins' robot actor with a fixed serial: a robot names itself "Default Cyborg-N" from rand(1, 999) at init, and that name reaches refusal
+/// The pins' robot actor with a fixed serial: a robot names itself "Default Cyborg-N" from a rolled number at init, and that name reaches refusal
 /// text, so the rows would follow how much of the RNG earlier tests drew.
 /datum/unit_test/proc/dq_pin_robot(turf/T)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
-	R.ident = 1
+	R.set_ident(1)
 	R.updatename(R.modtype)
 	return R
 

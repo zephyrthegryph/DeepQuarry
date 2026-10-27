@@ -51,7 +51,7 @@
 
 	if(!nature_of(src).no_vore)
 		grant(src, granted_verb(/mob/living/proc/vorebelly_printout), src)
-		if(!vorePanel)
+		if(!vore_panel())
 			add_vore_panel_button()
 
 

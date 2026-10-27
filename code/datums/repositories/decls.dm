@@ -3,7 +3,7 @@
 //     var/datum/decl/somedecl/mydecl = GET_DECL(/datum/decl/somedecl)
 
 // /datum/decls are created the first time they are fetched from decls_repository and will
-// automatically call Initialize() and such when created in this way.
+// hold their state in vars and need no setup call when created in this way.
 
 // decls_repository.get_decls_of_type() and decls_repository.get_decls_of_subtype()
 // can be used similarly to typesof() and subtypesof(), returning assoc instance lists.
@@ -12,7 +12,7 @@
 //     I.   Thou shalt not create a /datum/decl with new().
 //     II.  Thou shalt not del() or qdel() a /datum/decl.
 //     III. Thou shalt not write a decl that relies on arguments supplied to New().
-//     IV.  Thou shalt not call Initialize() on a /datum/decl.
+//     IV.  Thou shalt not give a /datum/decl an Initialize(); a registry of decls is built by whatever reads it.
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/repository/decls)
 /datum/repository/decls
@@ -34,10 +34,6 @@ PROC_SUMMARY(/datum/repository/decls/proc/get_decl)
 	if(!.)
 		. = new decl_type()
 		fetched_decls[decl_type] = .
-
-		var/datum/decl/decl = .
-		if(istype(decl))
-			decl.Initialize()
 
 /datum/repository/decls/proc/get_decls(list/decl_types)
 	. = list()
@@ -62,11 +58,6 @@ PROC_SUMMARY(/datum/repository/decls/proc/get_decls_of_subtype)
 	if(!.)
 		. = get_decls(subtypesof(decl_prototype))
 		fetched_decl_subtypes[decl_prototype] = .
-
-/datum/decl/proc/Initialize()
-	SHOULD_CALL_PARENT(TRUE)
-	SHOULD_NOT_SLEEP(TRUE)
-	return
 
 // Decls are immutable singletons and refuse deletion.
 /datum/decl/lifecycle_keep(force)

@@ -7,13 +7,12 @@
 	icon_state = "m_st"
 	item_state = "egg6"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 7
 	charge = 480
 	maxcharge = 480
 	charge_amount = 5
 
 CAPABILITIES(/obj/item/cell/device)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 7, throw_speed = 5))
 	configure(item_handling(preserve = 1))
 	configure(item_combat(force = 0))
 
@@ -27,10 +26,12 @@ CAPABILITIES(/obj/item/cell/device)
 	standard_overlays = FALSE
 	name = "\improper rechargable D battery"
 	desc = "An older, cheap power cell designed to power handheld devices. It's probably been in use for quite some time now."
-	description_fluff = "You can't top the rust top." //TOTALLY TRADEMARK INFRINGEMENT
 	icon_state = "device_crap"
 	charge = 240
 	maxcharge = 240
+
+CAPABILITIES(/obj/item/cell/device/crap)
+	configure(atom_rules(description_fluff = "You can't top the rust top."))
 
 /obj/item/cell/device/crap/empty
 	charge = 0

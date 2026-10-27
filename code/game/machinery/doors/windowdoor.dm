@@ -12,7 +12,6 @@
 	flags = ON_BORDER
 	opacity = 0
 	var/obj/item/airlock_electronics/electronics = null
-	explosion_resistance = 5
 	can_atmos_pass = ATMOS_PASS_PROC
 	air_properties_vary_with_direction = 1
 
@@ -118,7 +117,7 @@
 /obj/machinery/door/window/proc/finish_open()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	explosion_resistance = 0
+	set_explosion_resistance(0)
 	set_density(FALSE)
 	update_nearby_tiles()
 
@@ -134,7 +133,7 @@
 	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 
 	set_density(TRUE)
-	explosion_resistance = initial(explosion_resistance)
+	set_explosion_resistance(rules_of_type(type).explosion_resistance)
 	update_nearby_tiles()
 	after(src, 1 SECONDS, PROC_REF(finish_close), key = "swing", clock = CLOCK_WORLD)
 
@@ -163,6 +162,7 @@ MSG_DEF_SELF(windoor/good_condition, "It's already in good condition.")
 MSG_DEF(windoor/repaired, "You repair %T%.", "%U% repairs %T%.")
 
 CAPABILITIES(/obj/machinery/door/window)
+	configure(obj_rules(explosion_resistance = 5))
 	setup(PROC_REF(settle_window))
 	without("reinforce")
 	without("weld_plasteel")

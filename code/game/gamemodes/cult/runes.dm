@@ -1073,7 +1073,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			C.status_adjust(STAT_BLURRY, 50)
 			C.status_at_least(STAT_BLINDED, 20)
 			if(prob(5))
-				C.disabilities |= NEARSIGHTED
+				C.add_disabilities(NEARSIGHTED)
 				if(prob(10))
 					C.set_sdisabilities(C.sdisabilities | (BLIND))
 			C.show_message(span_warning("Suddenly you see a red flash that blinds you."), 3)

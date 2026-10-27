@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved the remaining easy Initialize() overrides (emotes, decls, pipes, areas, protean reconstitutor, suits, seed packs, landmarks, mobs, blob overmind, radio controllers) onto init forms"

@@ -30,7 +30,6 @@
 	faction = FACTION_CATSLUG
 	endurance = 50
 	movement_cooldown = -1
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	holder_type = /obj/item/holder/catslug
 
 	response_help = "hugs"
@@ -50,7 +49,6 @@
 	ID_provided = TRUE
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)
-	say_list_type = /datum/say_list/catslug
 	player_msg = "You have escaped the foul weather, into this much more pleasant place. You are an intelligent creature capable of more than most think. You can pick up and use many things, and even carry some of them with you into the vents, which you can use to move around quickly. You're quiet and capable, you speak with your hands and your deeds!<br>- - - - -<br>" + span_notice("Keep in mind, your goal should generally be to survive. You're expected to follow the same rules as everyone else, so don't go self antagging without permission from the staff team, but you are able and capable of defending yourself from those who would attack you for no reason.")
 
 	has_langs = list(LANGUAGE_SIGN)
@@ -60,7 +58,6 @@
 
 
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 1
 	vore_ignores_undigestable = 0
 	vore_default_mode = DM_DIGEST
@@ -104,7 +101,8 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		))
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/catslug))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(can_climb = TRUE))
 	verb_entry(/mob/living/proc/ventcrawl)
@@ -319,7 +317,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_dead = "spaceslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/spaceslug)
 	holder_type = /obj/item/holder/catslug/custom/spaceslug
-	say_list_type = /datum/say_list/catslug/custom/spaceslug
 
 	minbodytemp = 0				// Shamelessly stolen temp & atmos tolerances from the space cat.
 	maxbodytemp = 900
@@ -336,6 +333,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	max_n2 = 0
 
 	player_msg = "You are an intelligent creature capable of more than most think, clad in a spacesuit that protects you from the ravages of vacuum and hostile atmospheres alike. You can pick up and use many things, and even carry some of them with you into the vents, which you can use to move around quickly. You're quiet and capable, you speak with your hands and your deeds!<br>- - - - -<br>" + span_notice("Keep in mind, your goal should generally be to survive. You're expected to follow the same rules as everyone else, so don't go self antagging without permission from the staff team, but you are able and capable of defending yourself from those who would attack you for no reason.")
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/spaceslug))
 
 /datum/say_list/catslug/custom/spaceslug
 	speak = list("Have any porl?", "What is that?", "What kind of ship is that?", "What are you doing?", "How did you get here?", "Don't take off your helmet.", "SPAAAAAACE!", "WAOW!", "Nice weather we're having, isn't it?")
@@ -420,7 +420,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_dead = "engislug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/engislug)
 	holder_type = /obj/item/holder/catslug/custom/engislug
-	say_list_type = /datum/say_list/catslug/custom/engislug
 	myid_access = list(ACCESS_ENGINE, ACCESS_ENGINE_EQUIP, ACCESS_TECH_STORAGE, ACCESS_MAINT_TUNNELS, ACCESS_CONSTRUCTION, ACCESS_ATMOSPHERICS)
 	siemens_coefficient = 0 		//Noodly fella's gone and built up an immunity from many small shocks
 
@@ -437,6 +436,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	max_co2 = 0
 	min_n2 = 0
 	max_n2 = 0
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/engislug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/engislug))
 
 /datum/say_list/catslug/custom/engislug
 	speak = list("Have any porl?", "What is that?", "Phoroncheck!", "Thump is mean work fine!", "What are you doing?", "How did you get here?", "Don't breathe in the spicy purple.", "Zap-zap ball bad.", "WAOW!", "The pipes make sense.")
@@ -523,12 +525,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/gatslug)
 	holder_type = /obj/item/holder/catslug/custom/gatslug
 	endurance = 75
-	say_list_type = /datum/say_list/catslug/custom/gatslug
 	melee_damage_lower = 5
 	melee_damage_upper = 10		//"Trained" security member, so they can hit that little bit harder
 	taser_kill = 0		//Shouldn't be weak to accidental friendly fire from other officers
 	armor_spec = "melee=15" //Similarly, \some\ armour values for a smidge more survivability compared to other catslugs.
 	myid_access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_FORENSICS_LOCKERS, ACCESS_MAINT_TUNNELS)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/gatslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/gatslug))
 
 /datum/say_list/catslug/custom/gatslug
 	speak = list("Have any flashbangs?", "Valids!", "Heard spiders?", "What is that?", "Freeze!", "What are you doing?", "How did you get here?", "Red alert means big bangsticks.", "No being naughty now.", "WAOW!", "Who ate all the donuts?")
@@ -564,8 +568,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_dead = "medislug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/medislug)
 	holder_type = /obj/item/holder/catslug/custom/medislug
-	say_list_type = /datum/say_list/catslug/custom/medislug
 	myid_access = list(ACCESS_MEDICAL, ACCESS_MORGUE, ACCESS_SURGERY, ACCESS_CHEMISTRY, ACCESS_VIROLOGY, ACCESS_GENETICS)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/medislug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/medislug))
 
 /datum/say_list/catslug/custom/medislug
 	speak = list("Have any osteodaxon?", "What is that?", "Suit sensors!", "What are you doing?", "How did you get here?", "Put a mask on!", "No smoking!", "WAOW!", "Stop getting blood everywhere!", "WHERE IN MAINT?")
@@ -600,8 +606,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_dead = "scienceslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/scienceslug)
 	holder_type = /obj/item/holder/catslug/custom/scienceslug
-	say_list_type = /datum/say_list/catslug/custom/scienceslug
 	myid_access = list(ACCESS_ROBOTICS, ACCESS_TOX, ACCESS_TOX_STORAGE, ACCESS_RESEARCH, ACCESS_XENOBIOLOGY, ACCESS_XENOARCH)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/scienceslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/scienceslug))
 
 /datum/say_list/catslug/custom/scienceslug
 	speak = list("Slimes, squish!", "What is that?", "Smoking in Toxins is not advised.", "What are you doing?", "How did you get here?", "Do not deconstruct the cube!", "WAOW!", "Where are our materials?", "The acid dispenser is not full of juice. Must remember that.")
@@ -637,8 +645,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_dead = "cargoslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/cargoslug)
 	holder_type = /obj/item/holder/catslug/custom/cargoslug
-	say_list_type = /datum/say_list/catslug/custom/cargoslug
 	myid_access = list(ACCESS_MAINT_TUNNELS, ACCESS_MAILSORTING, ACCESS_CARGO, ACCESS_CARGO_BOT, ACCESS_MINING, ACCESS_MINING_STATION)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/cargoslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/cargoslug))
 
 /datum/say_list/catslug/custom/cargoslug
 	speak = list("Disposals is not for slip and slide.", "What is that?", "Stamp those manifests!", "What are you doing?", "How did you get here?", "Can order pizza crate?", "WAOW!", "Where are all of our materials?", "Got glubbs?")
@@ -676,7 +686,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	faction = FACTION_NEUTRAL
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/capslug)
 	holder_type = /obj/item/holder/catslug/custom/capslug
-	say_list_type = /datum/say_list/catslug/custom/capslug
 	myid_access = list(ACCESS_HEADS, ACCESS_KEYCARD_AUTH)		//Same access as a bridge secretary.
 
 /datum/say_list/catslug/custom/capslug
@@ -699,7 +708,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_rest = "deathslug_rest"
 	icon_dead = "deathslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug) 			//So they don't get the spaceslug's cataloguer entry
-	say_list_type = /datum/say_list/catslug 			//Similarly, so they don't get the spaceslug's speech lines.
 	myid_access = list(ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE)
 	endurance = 100		//Tough noodles
 	taser_kill = 0
@@ -722,7 +730,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_rest = "syndislug_rest"
 	icon_dead = "syndislug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)
-	say_list_type = /datum/say_list/catslug
 	myid_access = list(ACCESS_MAINT_TUNNELS, ACCESS_SYNDICATE, ACCESS_EXTERNAL_AIRLOCKS)
 	faction = FACTION_SYNDICATE
 	endurance = 100		//Tough noodles
@@ -748,7 +755,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_rest = "responseslug_rest"
 	icon_dead = "responseslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)
-	say_list_type = /datum/say_list/catslug
 	myid_access = list(ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE)
 	endurance = 100		//Tough noodles
 	taser_kill = 0
@@ -771,11 +777,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	tt_desc = "Mollusca Felis Mischefterous"
 	color = "#2b2b2b"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/pilotslug)
-	say_list_type = /datum/say_list/catslug/custom/pilotslug
 
 	can_wear_hat = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/pilotslug))
 	rolls(nameof(takes_a_helm), chance(25))
 	after_init(0, then(PROC_REF(take_a_helm))) // once the map has loaded: the helms are placed
 
@@ -836,7 +842,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
 	icon_rest = "catslugking_rest"
 	icon_dead = "catslugking_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/royalslug)
-	say_list_type = /datum/say_list/catslug/custom/royalslug
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/royalslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/royalslug))
 
 /datum/category_item/catalogue/fauna/catslug/custom/royalslug
 	name = "Alien Wildlife - Catslug - Ruler Purrton"
@@ -871,7 +879,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
 	icon_rest = "cryptslug_rest"
 	icon_dead = "cryptslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/cryptslug)
-	say_list_type = /datum/say_list/catslug/custom/cryptslug
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/cryptslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/cryptslug))
 
 /datum/category_item/catalogue/fauna/catslug/custom/cryptslug
 	name = "Alien Wildlife - Catslug - Keeper Sluguloth"
@@ -906,7 +916,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
 	icon_rest = "exploslug_rest"
 	icon_dead = "exploslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/exploslug)
-	say_list_type = /datum/say_list/catslug/custom/exploslug
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/exploslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/exploslug))
 
 /datum/category_item/catalogue/fauna/catslug/custom/exploslug
 	name = "Alien Wildlife - Catslug - Explorer Pawdiana"
@@ -941,7 +953,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
 	icon_rest = "santaslug_rest"
 	icon_dead = "santaslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/santaslug)
-	say_list_type = /datum/say_list/catslug/custom/santaslug
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/santaslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/santaslug))
 
 /datum/category_item/catalogue/fauna/catslug/custom/santaslug
 	name = "Alien Wildlife - Catslug - Santa Claws"
@@ -1102,15 +1116,19 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 */
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/capslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/capslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/deathslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/syndislug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
+	configure(living_rules(say_list_type = /datum/say_list/catslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/responseslug)
 
 // The special catslugs' headsets: their channel and key.

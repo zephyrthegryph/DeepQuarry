@@ -164,7 +164,7 @@
 		spent(J)
 		H.icon = HI
 		H.hud_layerise()
-		rel_add(user, nameof(user.mapobjs), H)
+		link_make(user, LK_MAPOBJS, H)
 #else
 
 	for(var/i = 0; i<icount; i++)
@@ -274,11 +274,11 @@
 		H.icon = I
 		spent(I)
 		H.hud_layerise()
-		rel_add(user, nameof(user.mapobjs), H)
+		link_make(user, LK_MAPOBJS, H)
 
 #endif
 
-	client_screen_add(user.client, user.mapobjs)
+	client_screen_add(user.client, user.mapobjs())
 
 	src.close(user)
 
@@ -296,13 +296,18 @@
 /proc/getb(col)
 	return hex2num(copytext(col, 6))
 
+/// The camera-overview map screens this mob is shown (a fresh list): sparse links, each screen gone with its mob.
+/mob/proc/mapobjs()
+	return link_list(src, LK_MAPOBJS)
+
 /mob/proc/clearmap()
-	client_screen_remove(src.client, src.mapobjs)
-	rel_clear(src, nameof(mapobjs)) // the screens are owned: clearing disposes of them
+	var/list/screens = mapobjs()
+	client_screen_remove(src.client, screens)
+	QDEL_LIST(screens) // the screens are owned by the mob: clearing disposes of them
 
 /obj/machinery/computer/security/proc/close_check(mob/user)
 	var/using = null
-	if(length(user.mapobjs))
+	if(link_count(user, LK_MAPOBJS))
 		for(var/obj/machinery/computer/security/seccomp in oview(1,user))
 			if(seccomp == src)
 				using = 1

@@ -30,7 +30,6 @@
 	vore_active = 1
 	vore_icons = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 1
 	swallowTime = 50
 	vore_ignores_undigestable = FALSE
 	vore_default_mode = DM_HOLD
@@ -100,6 +99,7 @@
 		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly."))
 
 CAPABILITIES(/mob/living/simple_mob/vore/meowl)
+	configure(living_rules(vore_capacity = 1))
 	op("meowl_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(meowl_interaction_feed)))
 
 /// Old attackby: hand-feeding. Food is never an attack, even on a dead meowl.

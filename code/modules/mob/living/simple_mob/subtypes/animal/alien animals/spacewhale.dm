@@ -31,7 +31,6 @@
 
 	speak_emote = list("rumbles")
 
-	say_list_type = /datum/say_list/spacewhale
 
 	var/hazard_pickup_chance = 35
 	var/hazard_drop_chance = 35
@@ -40,7 +39,6 @@
 	var/post_restless_tired = 0
 
 	vore_active = 1
-	vore_capacity = 99
 	vore_bump_chance = 99
 	vore_pounce_chance = 99
 	vore_ignores_undigestable = 0
@@ -121,6 +119,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
+	configure(living_rules(vore_capacity = 99, say_list_type = /datum/say_list/spacewhale))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	after_init(0, then(PROC_REF(spacewhale_restless_ready)))
 	on_change(nameof(restless), ANY, then(PROC_REF(restless_changed)))

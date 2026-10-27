@@ -1,9 +1,6 @@
 /obj/item/ghost_trap
 	name = "spectral trap"
 	desc = "A mechanically activated 'ghost trap'."
-	description_fluff = "A 'ghost trap' created by Krow Enterprise's Spectral Division. Used by self proclaimed ghost-hunters and \
-	paranormal investigators to supposedly capture spirits and specters."
-	throw_range = 7
 	gender = PLURAL
 	icon = 'icons/obj/ghost_trap.dmi'
 	icon_state = "item"
@@ -13,7 +10,9 @@
 
 
 CAPABILITIES(/obj/item/ghost_trap)
-	configure(movable_motion(throw_speed = 5))
+	configure(atom_rules(description_fluff = "A 'ghost trap' created by Krow Enterprise's Spectral Division. Used by self proclaimed ghost-hunters and \
+	paranormal investigators to supposedly capture spirits and specters."))
+	configure(movable_motion(throw_range = 7, throw_speed = 5))
 	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	setup(PROC_REF(prepare_capture_experiment))
 	configure(item_thrown(force = 0))

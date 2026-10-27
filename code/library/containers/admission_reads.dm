@@ -4,7 +4,7 @@
 	. = list()
 	if(isitem(thing))
 		var/obj/item/I = thing
-		. += list(list(I, nameof(I.storage_cost)), list(I, nameof(I.w_class)))
+		. += list(list(I, ITEM_RULES_KEY), list(I, nameof(I.w_class)))
 
 /datum/relation_definition/slot/stock/cost_read_keys(atom/holder, atom/movable/thing)
 	. = list()
@@ -28,7 +28,7 @@
 		. += list(list(D, nameof(D.accepts)), list(D, nameof(D.has_accepts)), list(D, nameof(D.max_size)), list(D, nameof(D.has_max_size)))
 	if(isitem(thing))
 		var/obj/item/I = thing
-		. += list(list(I, nameof(I.storage_cost)), list(I, nameof(I.w_class)))
+		. += list(list(I, ITEM_RULES_KEY), list(I, nameof(I.w_class)))
 		for(var/key in change_read_keys(I, STAT_TRAIT_HOLDS))
 			. += list(list(I, key))
 		if(actor)

@@ -398,7 +398,7 @@ SYSTEM_DEF(explosions)
 		return
 	. = T.explosion_resistance
 	FOR_CONTENTS(var/obj/O, T)
-		. += O.explosion_resistance
+		. += rules_of(O).explosion_resistance
 	explosion_resistance_cache[T] = .
 
 /datum/system/explosions/proc/start_resolve()
@@ -507,7 +507,7 @@ SYSTEM_DEF(explosions)
 	SSexplosions.queue_sound_event(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 
 	if(adminlog)
-		message_admins("Explosion with [shaped ? "shaped" : "non-shaped"] size ([devastation_range], [heavy_impact_range], [light_impact_range]) in area [epicenter.loc.name] ([epicenter.x],[epicenter.y],[epicenter.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[epicenter.x];Y=[epicenter.y];Z=[epicenter.z]'>JMP</a>)")
+		message_admins("Explosion with [shaped ? "shaped" : "non-shaped"] size ([devastation_range], [heavy_impact_range], [light_impact_range]) in area [epicenter.loc.name] ([epicenter.x],[epicenter.y],[epicenter.z]) (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[epicenter.x];Y=[epicenter.y];Z=[epicenter.z]'>JMP</a>)")
 		log_game("Explosion with [shaped ? "shaped" : "non-shaped"] size ([devastation_range], [heavy_impact_range], [light_impact_range]) in area [epicenter.loc.name] ")
 
 	if(heavy_impact_range > 1)

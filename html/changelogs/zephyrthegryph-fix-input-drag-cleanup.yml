@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Dragging a small mob or a micro-carry species onto someone scoops it up again; the scoop handlers had been replaced by the inventory drag handler."
+  - code_imp: "A type declaring the same input key twice is now a lint error; the unused MouseDrop_T default and the legacy drop chain are removed."

@@ -6,7 +6,6 @@
 
 /obj/item/beartrap
 	name = "mechanical trap"
-	throw_range = 1
 	gender = PLURAL
 	icon = 'icons/obj/items.dmi'
 	icon_state = "beartrap0"
@@ -30,7 +29,7 @@ MSG_DEF(beartrap/disarming, "You begin disarming %T%!", "%U% starts to disarm %T
 MSG_DEF(beartrap/disarmed, "You have disarmed %T%!", "%U% has disarmed %T%.")
 
 CAPABILITIES(/obj/item/beartrap)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 1, throw_speed = 2))
 	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_worn(slots = SLOT_MASK))
 	configure(item_thrown(force = 0))
@@ -166,7 +165,6 @@ CAPABILITIES(/obj/item/beartrap)
 	anchored = FALSE
 	layer = TABLE_LAYER
 	w_class = ITEMSIZE_LARGE
-	explosion_resistance = 1
 	can_dull = TRUE
 	fragile = TRUE
 	force_divisor = 0.20
@@ -191,6 +189,7 @@ MSG_DEF(barbedwire/collecting, "You begin collecting %T%!", "%U% starts to colle
 MSG_DEF(barbedwire/collected, "You have collected %T%!", "%U% has collected %T%.")
 
 CAPABILITIES(/obj/item/material/barbedwire)
+	configure(obj_rules(explosion_resistance = 1))
 	configure(item_combat(sharp = TRUE))
 	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
 		begins(MSG(barbedwire/deploying), blind = "You hear the rustling of wire."), wait(6 SECONDS),

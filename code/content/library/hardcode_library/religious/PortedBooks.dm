@@ -10,7 +10,6 @@ Category: Religion
 /obj/item/book/bundle/custom_library/religious/zoroastrianism
 	name = "A Basic Understanding of Zoroastrianism"
 	desc = "A hardbound book titled \"A Basic Understanding of Zoroastrianism\" by Satrap."
-	description_fluff ="This book is titled \"A Basic Understanding of Zoroastrianism\" by Satrap. It covers the basics of Zoroastrianism -- an old religion originating on Earth -- as well as its influence on other religions."
 
 	title = "A Basic Understanding of Zoroastrianism"
 	icon_state = "triangulate"
@@ -81,13 +80,15 @@ Category: Religion
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/religious/zoroastrianism)
+	configure(atom_rules(description_fluff = "This book is titled \"A Basic Understanding of Zoroastrianism\" by Satrap. It covers the basics of Zoroastrianism -- an old religion originating on Earth -- as well as its influence on other religions."))
+
 
 /// The Way of the Bleeding Swan by Shra'ziir Krin Enai-Rinrijar. I have no idea what this is about but it was in religion.
 
 /obj/item/book/custom_library/religious/wayofbleedingswan
 	name = "The Way of the Bleeding Swan"
 	desc = "A hardbound book titled \"The Way of the Bleeding Swan\" by Shra'ziir Krin Enai-Rinrijar."
-	description_fluff ="This book is titled \"The Way of the Bleeding Swan\" by Shra'ziir Krin Enai-Rinrijar. It appears religious in nature."
 
 	title = "The Way of the Bleeding Swan"
 	icon_state = "book"
@@ -169,13 +170,15 @@ Category: Religion
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/religious/wayofbleedingswan)
+	configure(atom_rules(description_fluff = "This book is titled \"The Way of the Bleeding Swan\" by Shra'ziir Krin Enai-Rinrijar. It appears religious in nature."))
+
 /// The Sun Goddess of Korea by Korean Folklore
 
 /obj/item/book/custom_library/religious/sungoddessofkorea
 
 	name = "The Sun Goddess of Korea"
 	desc = "A hardbound book titled \"The Sun Goddess of Korea\" as provided by the Earth Religion Preservation Team."
-	description_fluff ="This book is titled \"The Sun Goddess of Korea\" as provided by the Earth Religious Preservation Team. It covers the Korean sun goddess, Hae-soon."
 
 	title = "The Sun Goddess of Korea"
 	icon_state = "book3"
@@ -206,13 +209,15 @@ Category: Religion
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/religious/sungoddessofkorea)
+	configure(atom_rules(description_fluff = "This book is titled \"The Sun Goddess of Korea\" as provided by the Earth Religious Preservation Team. It covers the Korean sun goddess, Hae-soon."))
+
 /// The Story of Lord Ganesha by Hindu Folklore
 
 /obj/item/book/custom_library/religious/storyoflordganesha
 
 	name = "The Story of Lord Ganesha"
 	desc = "A hardbound book titled \"The Story of Lord Ganesha\" as provided by the Earth Religion Preservation Team."
-	description_fluff = "This book is titled \"The Story of Lord Ganesha\" as provided by the Earth Religion Preservation Team."
 
 	title = "The Story of Lord Ganesha"
 	icon_state = "book3"
@@ -247,13 +252,15 @@ Category: Religion
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/religious/storyoflordganesha)
+	configure(atom_rules(description_fluff = "This book is titled \"The Story of Lord Ganesha\" as provided by the Earth Religion Preservation Team."))
+
 /// Feast of Kubera by Hindu Folklore
 
 /obj/item/book/custom_library/religious/feastofkubera
 
 	name = "Feast of Kubera"
 	desc = "A hardbound book titled \"The Story of Lord Ganesha\" as provided by the Earth Religion Preservation Team."
-	description_fluff = "This book is titled \"The Story of Lord Ganesha\" as provided by the Earth Religion Preservation Team."
 
 	title = "Feast of Kubera"
 	icon_state = "book3"
@@ -289,3 +296,6 @@ Category: Religion
 				</body>
 				</html>
 				"}
+
+CAPABILITIES(/obj/item/book/custom_library/religious/feastofkubera)
+	configure(atom_rules(description_fluff = "This book is titled \"The Story of Lord Ganesha\" as provided by the Earth Religion Preservation Team."))

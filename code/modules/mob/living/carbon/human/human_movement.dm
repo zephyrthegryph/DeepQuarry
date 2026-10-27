@@ -108,8 +108,8 @@
 	if(embedded_flag)
 		handle_embedded_objects() //Moving with objects stuck in you can cause bad times.
 
-	if(pose && sparse_get_or(src, pose_move, FALSE)) //clear pose on movement if choosing to
-		pose = null
+	if(sparse_get(src, pose) && sparse_get_or(src, pose_move, FALSE)) //clear pose on movement if choosing to
+		sparse_set(src, pose, null)
 		sparse_set(src, pose_move, FALSE)
 		remove_pose_indicator()
 
@@ -231,7 +231,7 @@
 
 	if(thrust)
 		if(((!check_drift) || (check_drift && thrust.stabilization_on)) && (!lying) && (thrust.do_thrust(0.01, src)))
-			inertia_dir = 0
+			sparse_set_or(src, inertia_dir, 0, 0)
 			return TRUE
 
 	return FALSE

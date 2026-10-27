@@ -1,6 +1,5 @@
 /mob/living/silicon
 	gender = NEUTER
-	voice_name = "synthesized voice"
 	var/syndicate = 0
 	var/const/MAIN_CHANNEL = "Main Frequency"
 	var/lawchannel = MAIN_CHANNEL // Default channel on which to state laws
@@ -31,13 +30,13 @@
 	var/hudmode = null
 	var/idcard_type = /obj/item/card/id/synthetic
 	// footsteps (footstep() in its CAPABILITIES)
-	footstep_type = FOOTSTEP_MOB_SHOE
 
 /mob/living/silicon/fire_stack_decay_rate()
 	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
-	configure(footstep_rules(footstep_volume = 1, footstep_e_range = -6))
+	configure(mob_kind(voice_name = "synthesized voice"))
+	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
 	configure(living_rules(has_huds = TRUE))
 	ref_one(nameof(common_radio), /obj/item/radio)
 	immune_to(STAT_DIZZY)

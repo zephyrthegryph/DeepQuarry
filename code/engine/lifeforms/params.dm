@@ -36,13 +36,20 @@
 //	/obj/structure/simple_door/iron
 //		material_name = MAT_IRON
 //
+// `early = TRUE` (with `apply =`) runs the setter in phase 0 instead: after the early children (owns_*(early = TRUE)) and before the Initialize()
+// chain, so a parent's code and every form of the root see what it set. Only for a setter whose output the chain reads (a human's species builds its
+// body, which everything of the human reads). The params are checked and defaulted first (as at the root) and the setter gets the same value.
+//
+//	CAPABILITIES(/mob/living/carbon/human)
+//		param(nameof(species_at_make), apply = PROC_REF(set_species), early = TRUE)
+//
 // A positional argument that is null is not given: the var keeps its default (the `arg || default` the old overrides wrote).
 //
 // `keep = FALSE` is for a value init only builds from: a mob a statue copies, the assembly a door is built from. The setters (apply =) and
 // an Initialize() that remains read it; when Initialize() has returned (an atom) or the init ran (a plain datum), the var goes back to its
 // compiled default, so the instance holds no reference to it.
 
-/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null, apply = null, keep = TRUE, overrides = FALSE)
+/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null, apply = null, keep = TRUE, overrides = FALSE, early = FALSE)
 	if(!istext(var_name))
 		declare_report("param(): the var is nameof(var), got [var_name]")
 		return null
@@ -51,7 +58,10 @@
 	if(!isnull(apply) && !istext(apply))
 		declare_report("param([var_name]): apply = is PROC_REF(x), got [apply]")
 		apply = null
-	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos, "apply" = apply, "keep" = !!keep, "overrides" = !!overrides))
+	if(early && !apply)
+		declare_report("param([var_name]): early = TRUE needs an apply = (phase 0 runs the setter)")
+		early = FALSE
+	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos, "apply" = apply, "keep" = !!keep, "overrides" = !!overrides, "early" = !!early))
 
 /proc/built_from(var_name)
 	return entry_make(ENTRY_BUILT_FROM, "built_from", list("var" = var_name))
@@ -114,6 +124,8 @@
 	GLOB.make_pending += M
 	var/datum/D = new type
 	GLOB.make_pending -= M
+	if(!QDELETED(D) && (table_of(D).hook_flags & ENGINE_HOOK_AFTER_INIT))
+		after_init_arm(D, FALSE) // a plain datum's init is complete when its whole New() chain has returned: params first, then every New()
 	return D
 
 /// make() records of plain datums being made now (innermost last): /datum/New() takes the top one for an instance of its type.
@@ -255,6 +267,35 @@ GLOBAL_REAL_VAR(param_writing) = 0
 		if(!param_drop_pending)
 			param_drop_pending = list()
 		param_drop_pending[holder] = TRUE
+
+/// instance -> TRUE once phase 0 checked and defaulted its params (params_early()); lifeform_preinit() then does not repeat it. A real global:
+/// atoms initialize while the globals are still being made.
+GLOBAL_REAL_VAR(list/param_early_done)
+
+/// Phase 0 (InitAtom(), after the early children, before the Initialize() chain): the params are checked and defaulted, then each param declared
+/// with early = TRUE is put into effect through its setter. Returns TRUE when it ran.
+/proc/params_early(atom/A, mapload)
+	var/datum/lifeform_plan/P = lifeform_plan_of(A)
+	if(!P.param_early)
+		return FALSE
+	params_preinit(A, P, mapload)
+	if(!param_early_done)
+		param_early_done = list()
+	param_early_done[A] = TRUE
+	for(var/datum/centry/C as anything in P.param_early)
+		var/datum/entry/E = C.item
+		var/var_name = E.args["var"]
+		try
+			call(A, E.args["apply"])(A.vars[var_name])
+		catch(var/exception/e)
+			stack_trace("param([var_name], apply = [E.args["apply"]], early = TRUE) on [A.type]: [e] ([e.file]:[e.line])")
+		if(QDELETED(A))
+			return TRUE
+	if(P.param_drops)
+		if(!param_drop_pending)
+			param_drop_pending = list()
+		param_drop_pending[A] = TRUE
+	return TRUE
 
 /// instance -> TRUE while it holds keep = FALSE params to drop (InitAtom() drops them when Initialize() returns). A real global: atoms
 /// initialize while the globals are still being made.

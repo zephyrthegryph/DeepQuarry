@@ -62,11 +62,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	if(GLOB.areas_by_type[type] == src)
 		GLOB.areas_by_type -= type
 
-// ALLOW(init/FRAMEWORK): the area base of the init chain sets its ceiling before its parents' init
-/area/Initialize(mapload)
-	apply_ceiling()
-	return ..()
-
 /// An area with dynamic lighting is dark of its own (a setup() hook, once its init chain has returned).
 /area/proc/set_ambient_luminosity()
 	luminosity = !(dynamic_lighting)
@@ -579,6 +574,7 @@ SETTER(/area, flags)
 	if(exit_message && isliving(AM))
 		to_chat(AM, exit_message)
 
+/// The open turfs above an area with a ceiling_type become that ceiling (a setup() hook, once its init chain has returned).
 /area/proc/apply_ceiling()
 	if(!ceiling_type)
 		return
@@ -626,6 +622,7 @@ SETTER(/area, flags)
 /// dying APC lets go. The APC also feeds the area's lights_nightshift and lights_emergency_off (its contributes_to entries).
 /// A new APC (or none) serves the area: its Rust node takes the area's static loads.
 CAPABILITIES(/area)
+	setup(PROC_REF(apply_ceiling))
 	setup(PROC_REF(set_ambient_luminosity))
 	after_init(0, then(PROC_REF(area_after_init)))
 	ref_one(nameof(main_air_alarm), /obj/machinery/alarm)

@@ -11,7 +11,6 @@
 	icon_state = "default"
 
 	desc = "A long since abandoned recycling kiosk. Now featuring a state of the art, monochrome holographic tube display!"
-	description_fluff = "While the original owners stopped their partnership with NT after a data theft scandal, the machine itself has been adopted by endless hoardes of vintage hardware enthusiasts to \"Keep Maint Clean™️\" and facilitate what has to be the galaxy's most neurodivergent black market "
 
 	anchored = TRUE
 	density = TRUE
@@ -108,6 +107,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	configure(atom_rules(description_fluff = "While the original owners stopped their partnership with NT after a data theft scandal, the machine itself has been adopted by endless hoardes of vintage hardware enthusiasts to \"Keep Maint Clean™️\" and facilitate what has to be the galaxy's most neurodivergent black market "))
 	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_RECYCLER_TYPING))
 	setup(PROC_REF(init_hatch))
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 		log_admin("[src] has been placed at [loc], [x],[y],[z]")
 		testing("[src] has been placed at [loc], [x],[y],[z]")
 	else
-		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
+		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
 /obj/machinery/maint_recycler/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor

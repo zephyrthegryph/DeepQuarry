@@ -124,7 +124,7 @@
 			TB.names.Add(name)
 			LAZYSET(TB.namecounts, name, 1)
 		rel_add(TB, nameof(TB.tracked), M)
-		var/mob_ref = REF(M)
+		var/mob_ref = ref_token(M)
 		if(ishuman(M))
 			LAZYSET(TB.humans, name, mob_ref)
 		else

@@ -365,10 +365,6 @@ CAPABILITIES(/obj/item/clothing/glasses/gglasses)
 /obj/item/clothing/glasses/sunglasses/bigshot
 	name = "colored glasses"
 	desc = "A pair of glasses with uniquely colored lenses to make you feel like a \[BIG SHOT]."
-	description_fluff = "A prototype model of the AR glasses which focused on stylization and \
-	functionality. The concept never caught on and was replaced with the earlier rendition of \
-	the modern AR glasses. These have quite clearly seen better days as the AR function no \
-	longer works, the toggle merely obscuring the users vison."
 	icon_state = "salesman"
 	var/ar = 0
 
@@ -377,6 +373,10 @@ CAPABILITIES(/obj/item/clothing/glasses/gglasses)
 	. += span_notice("Alt-click to toggle modes.")
 
 CAPABILITIES(/obj/item/clothing/glasses/sunglasses/bigshot)
+	configure(atom_rules(description_fluff = "A prototype model of the AR glasses which focused on stylization and \
+	functionality. The concept never caught on and was replaced with the earlier rendition of \
+	the modern AR glasses. These have quite clearly seen better days as the AR function no \
+	longer works, the toggle merely obscuring the users vison."))
 	op("bigshot_ar_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle AR"), then(PROC_REF(bigshot_ar_alt)))
 
 /// Old click_alt: toggle the AR mode. It never reached the clothing alt-click.

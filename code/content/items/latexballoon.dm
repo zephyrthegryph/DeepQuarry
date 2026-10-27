@@ -9,12 +9,11 @@
 			)
 	item_state = "lgloves"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 15
 	var/state
 	var/datum/gas_mixture/air_contents = null
 
 CAPABILITIES(/obj/item/latexballon)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 15, throw_speed = 1))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	owns_one(nameof(air_contents), /datum/gas_mixture)

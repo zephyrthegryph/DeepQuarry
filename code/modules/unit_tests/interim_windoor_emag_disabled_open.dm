@@ -31,7 +31,7 @@
 	TEST_ASSERT(!after_pending(door, "swing"), "the actual opening animation timer drains")
 	TEST_ASSERT(!door.density, "the actual delayed windoor animation opens the passage")
 	TEST_ASSERT_EQUAL(door.operating, -1, "the actual opening animation preserves the disabled mechanism")
-	TEST_ASSERT_EQUAL(door.explosion_resistance, 0, "the actual opened windoor removes its closed explosion barrier")
+	TEST_ASSERT_EQUAL(rules_of(door).explosion_resistance, 0, "the actual opened windoor removes its closed explosion barrier")
 	TEST_ASSERT(!door.close(), "the actual disabled windoor cannot close through its public mechanism")
 	TEST_ASSERT(!door.density, "actual refused closing preserves the open passage")
 	var/open_timers = time_scheduler().timer_count(door)

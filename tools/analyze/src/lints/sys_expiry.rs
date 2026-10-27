@@ -97,7 +97,7 @@ fn not_a_cooldown(rel: &str, line: &str, stamp: Option<&Pat>) -> bool {
             return true;
         }
     }
-    rel.starts_with("code/modules/reagents/") && pat!(r"(?<![\w.])data\b").is_match(line)
+    (rel.starts_with("code/modules/reagents/") || rel.starts_with("code/content/reagents/")) && pat!(r"(?<![\w.])data\b").is_match(line)
 }
 
 /// `cooldown_lint.timestamp_names()`: every `EXPIRY_DECLARE`d name in `code/`.

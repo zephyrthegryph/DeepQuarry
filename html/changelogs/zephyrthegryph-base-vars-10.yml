@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved 19 more base-type vars to their homes: combat mode, attack variant, low priority and does-not-breathe publish through setters, current dream, z registration, drift direction, venom reagents, body writing and pose are sparse slots, the VR avatar and body are a sparse link pair, and the suit sensor preference lives in the identity profile"
+  - code_imp: "Deleted dead mob vars (other, phoron, charges, update_icon), the human ability_flags var with its phase-shift checks, and the never-written hair accessory style with its draw code"

@@ -186,6 +186,19 @@ where
         None => Arc::default(),
     }
 }
+/// The daemon-wide core of this purpose, or `None` when the store is inactive (tests, one-shot compiles) or the purpose is
+/// kept private: for owners whose private form is a different kind of store.
+pub(crate) fn shared_core<T, Q, A, D>(name: &'static str) -> Option<Arc<ObservedArtifactStore<T, Q, A, D>>>
+where
+    T: Send + Sync + 'static,
+    Q: Send + Sync + 'static,
+    A: Send + Sync + 'static,
+    D: Send + Sync + 'static,
+{
+    active()
+        .filter(|_| !private(name))
+        .map(|store| store.core(name, None))
+}
 /// The core an artifact owner of this purpose uses: the daemon-wide one, else a private one.
 pub(crate) fn artifact_core<T, Q, A, D>(
     name: &'static str,
