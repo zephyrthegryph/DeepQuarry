@@ -1,6 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_review.py (doc/rewrite/systems.md); shrink-only, target 0
-effect_refusal	code/library/reagents/injector.dm	return OP_REFUSED
-effect_refusal	code/library/reagents/needle.dm	return OP_REFUSED
 manual_push	code/modules/power/apc.dm	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Robot Sprites have not been initialized yet. How are you choosing a sprite? Harass a coder."))
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Your module appears to have no sprite options. Harass a coder."))
