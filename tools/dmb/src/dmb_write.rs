@@ -103,8 +103,14 @@ impl CanonicalHash {
     fn finish(mut self, writer: Writer<'static>) -> EncodedDmb {
         self.pending(&writer);
         let content_hash = self.state.digest128();
+        let mut bytes = writer.bytes.into_owned();
+        // The image is retained (output pool, patch base): a buffer grown by doubling can hold up to twice its length,
+        // and the allocator does not give back the slack of a large block shrunk in place. One exact copy releases it.
+        if bytes.capacity() - bytes.len() > bytes.len() / 16 {
+            bytes = bytes.as_slice().to_vec();
+        }
         EncodedDmb {
-            bytes: interned(writer.bytes.into_owned(), content_hash),
+            bytes: interned(bytes, content_hash),
             content_hash,
         }
     }

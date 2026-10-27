@@ -507,7 +507,6 @@ impl ProcedureMemo {
                     reads,
                     unit,
                     promotion.relative_debug.clone(),
-                    promotion.versions.clone(),
                 );
             }
         }
@@ -518,7 +517,6 @@ impl ProcedureMemo {
         key: &[u8],
         reads: &[ResolverRead],
         unit: &crate::lowering::LoweredUnit,
-        versions: &[(ReadDomain, u128)],
     ) {
         if self.read_only_disk || self.disk.is_none() {
             return;
@@ -526,7 +524,7 @@ impl ProcedureMemo {
         let start = std::time::Instant::now();
         let bytes = {
             let _profile = dm_profile::item("lowering.population_encode");
-            crate::lowering_memo_selection::encode(key, reads, versions, unit)
+            crate::lowering_memo_selection::encode(key, reads, &[], unit)
         };
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
@@ -548,7 +546,6 @@ impl ProcedureMemo {
         reads: &[ResolverRead],
         unit: &crate::lowering::LoweredUnit,
         relative_debug: &[crate::debug_sources::RelativeDebugAnchor],
-        versions: &[(ReadDomain, u128)],
     ) {
         if self.read_only_disk || self.disk.is_none() {
             return;
@@ -556,7 +553,7 @@ impl ProcedureMemo {
         let start = std::time::Instant::now();
         let payload = {
             let _profile = dm_profile::item("lowering.population_encode");
-            crate::lowering_memo_wire::encode(key, reads, versions, unit, relative_debug)
+            crate::lowering_memo_wire::encode(key, reads, &[], unit, relative_debug)
         };
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
@@ -610,14 +607,13 @@ impl ProcedureMemo {
         identity: Option<dm_ir::ProcedureIdentity>,
         reads: &[ResolverRead],
         errors: &[dm_codegen_byond::LowerError],
-        versions: &[(ReadDomain, u128)],
     ) {
         if self.read_only_disk || self.disk.is_none() {
             return;
         }
         let payload = {
             let _profile = dm_profile::item("lowering.population_encode");
-            crate::lowering_memo_wire::encode_failure(key, identity, reads, versions, errors)
+            crate::lowering_memo_wire::encode_failure(key, identity, reads, &[], errors)
         };
         if let Some(payload) = payload {
             self.queue_payload(key, payload);
@@ -633,7 +629,6 @@ impl ProcedureMemo {
         key: &[u8],
         reads: &[ResolverRead],
         code: &dm_codegen_byond::lower_resolver::ResolverProc,
-        versions: &[(ReadDomain, u128)],
     ) {
         self.counts.recomputed.fetch_add(1, Ordering::Relaxed);
         if self.read_only_disk || self.disk.is_none() {
@@ -642,7 +637,7 @@ impl ProcedureMemo {
         let start = std::time::Instant::now();
         let payload = {
             let _profile = dm_profile::item("lowering.population_encode");
-            crate::lowering_memo_wire::encode_executable(key, reads, versions, code)
+            crate::lowering_memo_wire::encode_executable(key, reads, &[], code)
         };
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
@@ -686,7 +681,6 @@ impl ProcedureMemo {
         reads: Vec<ResolverRead>,
         unit: &crate::lowering::LoweredUnit,
         relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
-        versions: Vec<(ReadDomain, u128)>,
     ) {
         if self.resident_retention == ResidentRetention::DiskOnly {
             return;
@@ -696,7 +690,6 @@ impl ProcedureMemo {
             reads.into(),
             unit,
             relative_debug,
-            versions.into(),
         );
     }
     pub(crate) fn remember_shared(
@@ -705,7 +698,6 @@ impl ProcedureMemo {
         reads: Arc<[ResolverRead]>,
         unit: &crate::lowering::LoweredUnit,
         relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
-        versions: Arc<[(ReadDomain, u128)]>,
     ) {
         if self.resident_retention == ResidentRetention::DiskOnly {
             // Avoid weight serialization and RichIR clone for a request-local
@@ -718,7 +710,6 @@ impl ProcedureMemo {
             &relative_debug,
             &key,
             &reads,
-            &versions,
         ) else {
             self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
             return;
@@ -734,7 +725,7 @@ impl ProcedureMemo {
                 .flatten()
         } else {
             self.values
-                .insert_with_shared(key, reads, versions, weight, || CachedProcedure {
+                .insert_with_shared(key, reads, weight, || CachedProcedure {
                     unit: unit.clone(),
                     relative_debug,
                 })

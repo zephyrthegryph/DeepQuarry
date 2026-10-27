@@ -60,11 +60,10 @@ pub(super) fn inspect_into(mut census: &mut HeapCensus, state: &RetainedSemantic
             census.buffer("retained_declarations.buckets", address,
                 len.saturating_mul(element_size), capacity.saturating_mul(element_size));
         }
-        DeclarationStorageView::SharedEntry { key, reads, versions, contribution } => {
+        DeclarationStorageView::SharedEntry { key, reads, contribution } => {
             let owner = "retained_declarations.payload";
             census.slice(owner, key, true);
             census.receipt(owner, reads);
-            census.slice(owner, versions, true);
             for read in reads.iter() {
                 match &read.answer {
                     dm_tree::frontend::ChunkSourceAnswer::Owned(source) => census.source_text(owner, source),
@@ -73,12 +72,11 @@ pub(super) fn inspect_into(mut census: &mut HeapCensus, state: &RetainedSemantic
             }
             contribution_payload(&mut census, contribution);
         }
-        DeclarationStorageView::Entry { key, reads, versions, contribution } => {
+        DeclarationStorageView::Entry { key, reads, contribution } => {
             let owner = "retained_declarations.payload";
             census.source_text(owner, contribution.source);
             census.slice(owner, key, true);
             census.receipt(owner, reads);
-            census.slice(owner, versions, true);
             for read in reads.iter() {
                 super::resident_weight::answer(&mut census, &read.answer);
             }

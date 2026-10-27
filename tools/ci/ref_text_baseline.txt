@@ -1,17 +1,10 @@
 # Stored REF() texts and \ref[] macros (doc/rewrite/proposals/relations.md D9). rule<TAB>file<TAB>normalized line.
 # Shrink-only: after a sweep run `analyze baseline --update --lint ref_text`; it drops fixed sites and never adds one.
-stored	code/_helpers/sorts/comparators.dm	a = REF(a)
-stored	code/_helpers/sorts/comparators.dm	b = REF(b)
-stored	code/_helpers/sorts/comparators.dm	a = REF(a)
-stored	code/_helpers/sorts/comparators.dm	b = REF(b)
-stored	code/datums/capabilities/debug_verbs.dm	var/ref_text = REF(target)
 stored	code/datums/helper_datums/stack_end_detector.dm	_canary_ref = REF(_canary)
-stored	code/game/atom/atom_vv.dm	var/refid = REF(src)
 stored	code/modules/admin/view_variables/debug_variable_appearance.dm	appearance_ref = REF(appearance_father)
 stored	code/modules/admin/view_variables_panel.dm	dq_vv_panel.refid = REF(thing)
 stored	code/modules/materials/registry.dm	key = REF(key)
 stored	code/modules/materials/registry.dm	value = REF(value)
-stored	code/modules/mob/living/living.dm	var/refid = REF(src)
 ref_macro	code/_helpers/icons.dm	var/icon_ref = "\ref[icon]"
 ref_macro	code/_helpers/icons.dm	var/icon_ref = "\ref[rsc_ref]"
 ref_macro	code/_helpers/icons.dm	var/rsc_ref_ref = "\ref[rsc_ref]"

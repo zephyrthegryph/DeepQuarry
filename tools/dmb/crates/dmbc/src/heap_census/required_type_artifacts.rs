@@ -24,47 +24,12 @@ impl HeapCensus {
             V::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 self.slice("required_types.keys", key, true);
                 self.receipt("required_types.reads", reads);
-                self.slice("required_types.versions", versions, true);
                 if self.arc_object("required_types.closure", value) {
                     self.vec_payload("required_types.ordered", &value.ordered);
-                }
-            }
-        });
-        store.fields.visit_storage(|view| match view {
-            V::Store { entries, .. } => self.observe_items("required_fields.index", entries),
-            V::Bucket {
-                address,
-                len,
-                capacity,
-                element_size,
-            } => {
-                self.buffer(
-                    "required_fields.buckets",
-                    address,
-                    len.saturating_mul(element_size),
-                    capacity.saturating_mul(element_size),
-                );
-            }
-            V::Entry {
-                key,
-                reads,
-                versions,
-                value,
-            } => {
-                self.slice("required_fields.keys", key, true);
-                if self.receipt("required_fields.reads", reads) {
-                    for read in reads.iter() {
-                        super::resident_owner_projection::inspect_field(self, &read.answer);
-                    }
-                }
-                self.slice("required_fields.versions", versions, true);
-                if self.arc_object("required_fields.requests", value) {
-                    self.vec_payload("required_fields.ordered", value);
                 }
             }
         });
@@ -86,7 +51,6 @@ impl HeapCensus {
             V::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 self.slice("required_parents.keys", key, true);
@@ -95,7 +59,6 @@ impl HeapCensus {
                         self.slice("required_parents.type_roster", &read.answer, true);
                     }
                 }
-                self.slice("required_parents.versions", versions, true);
                 self.required_parent_map(value);
             }
         });
@@ -117,7 +80,6 @@ impl HeapCensus {
             V::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 self.slice("required_allocations.keys", key, true);
@@ -128,7 +90,6 @@ impl HeapCensus {
                         }
                     }
                 }
-                self.slice("required_allocations.versions", versions, true);
                 self.required_allocation_roster(value);
             }
         });
@@ -138,7 +99,7 @@ impl HeapCensus {
                 self.buffer("required_prefix.buckets", address,
                     len.saturating_mul(element_size), capacity.saturating_mul(element_size));
             }
-            V::Entry { key, reads, versions, value } => {
+            V::Entry { key, reads, value } => {
                 self.slice("required_prefix.keys", key, true);
                 if self.receipt("required_prefix.reads", reads) {
                     for read in reads.iter() {
@@ -147,7 +108,6 @@ impl HeapCensus {
                         self.required_parent_map(&read.answer.parents);
                     }
                 }
-                self.slice("required_prefix.versions", versions, true);
                 if self.arc_object("required_prefix.payload", value) {
                     self.vec_payload("required_prefix.order", &value.order);
                     self.vec_payload("required_prefix.requests", &value.requests);
@@ -163,7 +123,7 @@ impl HeapCensus {
                 self.buffer("required_selected.buckets", address,
                     len.saturating_mul(element_size), capacity.saturating_mul(element_size));
             }
-            V::Entry { key, reads, versions, value } => {
+            V::Entry { key, reads, value } => {
                 self.slice("required_selected.keys", key, true);
                 if self.receipt("required_selected.reads", reads) {
                     for read in reads.iter() {
@@ -175,7 +135,6 @@ impl HeapCensus {
                         }
                     }
                 }
-                self.slice("required_selected.versions", versions, true);
                 if self.arc_object("required_selected.output", value) {
                     self.slice("required_selected.output_roster", value.as_ref(), true);
                 }

@@ -2,14 +2,12 @@
 use super::*;
 use crate::{lowering_memo::ResolverRead, procedure_policy::PreparedAbi};
 use dm_codegen_byond::lower_resolver::ProcedureInputs;
-use dm_ir::ReadDomain;
 
 pub(crate) fn weight(
     inputs: &Arc<ProcedureInputs>,
     abi: &Arc<PreparedAbi>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
     let mut census = HeapCensus::new("resident_abi_admission");
     census.shared_procedure_inputs(inputs);
@@ -19,7 +17,6 @@ pub(crate) fn weight(
     let indexes = super::abi_certificates::input_indexes::charge(inputs)?;
     census.abi(abi);
     census.vec_payload("resident_abi.reads", reads);
-    census.vec_payload("resident_abi.versions", versions);
     for read in reads {
         super::resident_weight::answer(&mut census, &read.answer);
     }
@@ -55,8 +52,7 @@ mod tests {
         });
         let mut inputs = Arc::new(ProcedureInputs::default());
         let reads = Vec::new();
-        let versions = Vec::new();
-        let base = weight(&inputs, &abi, b"key", &reads, &versions).unwrap();
+        let base = weight(&inputs, &abi, b"key", &reads).unwrap();
         Arc::make_mut(&mut inputs).parameters.reserve_exact(100);
         Arc::make_mut(&mut inputs)
             .parameter_defaults
@@ -65,14 +61,14 @@ mod tests {
             .parameter_types
             .insert("argument".into(), "/obj".into());
         Arc::make_mut(&mut inputs).readonly_parameters.insert(0);
-        let expanded = weight(&inputs, &abi, b"key", &reads, &versions).unwrap();
+        let expanded = weight(&inputs, &abi, b"key", &reads).unwrap();
         assert!(expanded >= base + 10000 + 100 * size_of::<String>());
         let mut larger_abi = (*abi).clone();
         larger_abi.layout.description = Some(Vec::with_capacity(20000));
-        let larger = weight(&inputs, &Arc::new(larger_abi), b"key", &reads, &versions).unwrap();
+        let larger = weight(&inputs, &Arc::new(larger_abi), b"key", &reads).unwrap();
         assert!(larger >= expanded + 20000);
         assert_eq!(
-            weight(&inputs, &abi, b"longer-key", &reads, &versions).unwrap() - expanded,
+            weight(&inputs, &abi, b"longer-key", &reads).unwrap() - expanded,
             7
         );
     }

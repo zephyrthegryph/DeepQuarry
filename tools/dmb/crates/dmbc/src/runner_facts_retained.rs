@@ -221,7 +221,6 @@ impl RetainedHostFacts {
         self.values.insert_with(
             Arc::from(key),
             ledger.reads(),
-            Vec::new(),
             charge,
             || value,
         );
@@ -254,7 +253,6 @@ impl RetainedHostFacts {
             dm_session::ObservedArtifactStorageView::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 census.slice("host.facts.keys", key, true);
@@ -281,7 +279,6 @@ impl RetainedHostFacts {
                         }
                     }
                 }
-                census.slice("host.facts.versions", versions, true);
                 if census.arc_object("host.facts.value", value) {
                     match value.as_ref() {
                         Artifact::Prepared(entry) => inspect_entry(entry, &mut census),

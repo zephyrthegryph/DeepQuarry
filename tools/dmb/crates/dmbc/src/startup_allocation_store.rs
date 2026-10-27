@@ -37,7 +37,6 @@ impl StartupArtifacts {
         let owner = self.values.insert_fresh_with_owned(
             Arc::from(ALLOCATION_KEY),
             Vec::new(),
-            Vec::new(),
             0,
             || Artifact::Allocation(Arc::clone(&receipt)),
         );
@@ -79,7 +78,6 @@ impl StartupArtifacts {
         let owner = self.values.insert_fresh_with_owned(
             Arc::from(FINAL_KEY),
             ledger.reads(),
-            Vec::new(),
             0,
             || Artifact::AllocationFinal(Arc::new(receipt)),
         );

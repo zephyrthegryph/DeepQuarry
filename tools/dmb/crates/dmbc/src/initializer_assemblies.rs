@@ -123,12 +123,11 @@ impl Default for InitializerAssemblies {
 impl InitializerAssemblies {
     pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
         self.values
-            .prune_for_pressure(bytes, |key, reads, versions, value| {
+            .prune_for_pressure(bytes, |key, reads, value| {
                 value.encoding.release_encoded();
                 crate::heap_census::initializer_assemblies::compact_weight(
                     key,
                     reads,
-                    versions,
                     &value.code,
                     &value.recipes,
                     &value.root_indexes,
@@ -334,7 +333,6 @@ impl InitializerAssemblies {
                         self.values.insert_with(
                             Arc::clone(&key.key),
                             receipts::reads(key, semantic_reads),
-                            Vec::new(),
                             std::mem::size_of::<RetainedAssembly>(),
                             || RetainedAssembly {
                                 code,
@@ -496,7 +494,6 @@ impl InitializerAssemblies {
             disk.stage_attempt(key, &roots, &semantic_reads, code, None, disk_attempt, recorder);
         }
         let reads = receipts::reads(key, semantic_reads);
-        let versions = receipts::versions(Vec::new());
         // This store retains the current roster without a byte admission budget.
         // Full resident ownership is measured only by the opt-in census.
         let weight = std::mem::size_of::<RetainedAssembly>();
@@ -504,7 +501,6 @@ impl InitializerAssemblies {
         self.values.insert_with(
             std::sync::Arc::clone(&key.key),
             reads,
-            versions,
             weight,
             || RetainedAssembly {
                 code: stripped,

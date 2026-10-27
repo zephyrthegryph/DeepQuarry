@@ -909,6 +909,17 @@ file in a resource search folder, and after two added-type edits and a default e
 mismatches). `cargo test` over the workspace passes; tests whose subject was a version or certificate are deleted or
 rewritten to assert answers.
 
+**Slice 5 (2026-10-27, compiler/version-plumbing): the empty version lists removed.** Every store API that still carried
+an always-empty `(domain, version)` list loses it: dm-session variants, observed artifacts, storage views, `insert_*`,
+`rebind_with_qualified_receipt`, validate/charge callbacks; dmbc publication/ABI/initializer/map/lowering stores, symbolic
+records and admissions, `ResidentPromotion`, and every heap-census charge. Persisted wire records keep their `versions`
+field and are written with an empty list at the encoder (`queue_disk`, `queue_selections`, `queue_compact`,
+`remember_executable`, `remember_failure`), so the disk format is unchanged. 125 files, -351 lines net. Speed (production
+tree, own daemon per arm, two interleaved rounds against compiler/memory-1, busy machine): body edits median 6.14 s against
+6.43 s. `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile: EQUIVALENT (body edits + a
+resource-folder change). This lane also carries compiler/memory-1 (bounced by the train on a census test that expected the
+old relocation HashMap's unknown bytes; the test now asserts the dense slice is fully known).
+
 ## Design option: the include spec as the project input (2026-10-27, lane `tools/generated-dme`)
 
 Not built; recorded for the query-core work. `deepquarry.dme` is generated now (`tools/build/gen_dme.py` from the files on disk and the
@@ -981,3 +992,103 @@ records. Checked against the compiler before the change: 416 fixture compiles (`
 
 Next: measure the test variant with both changes (memory probe, warm test build after a game build) and share the
 per-variant owners the probe names by content.
+
+## Memory toward the 1 GB targets (2026-10-27, lane `compiler/memory-1`)
+
+Probe `bench/shared_store_probe.sh` (allocation-sites release build, requested live GB; root A = production tree, then the A test
+variant `-DCBT -DCIBUILDING -DCITESTING -DDEBUG`, then root B = A with two comment lines). After domain versions were deleted
+(compiler/domain-version-out): A 5.63, test +2.97, B +1.49 (the doc's last figures were 6.80 / +3.06 / +1.58; the deleted
+certificate maps, demand tokens and domain memo account for most of root A's drop). This lane:
+
+- *Dense relocation answers.* `LatestImage` kept each procedure's relocation answers as `Arc<HashMap<SymRef, u32>>` (329 MB
+  over two variants). They are compared only for the same frozen code, so `BindingAnswers` is now `Arc<[u32]>` in
+  first-occurrence order of the code's distinct references.
+- *Exact-size images.* The encoded image was retained in the writer's doubled buffer (a 69 MB image in a 128 MB block; the
+  allocator does not shrink a large block in place). `CanonicalHash::finish` copies it into an exact allocation when the slack
+  exceeds 1/16.
+
+Result: A 5.38 (-0.25), test +2.80 (-0.17), B +1.50 (unchanged); private bytes A 6.90 (was 7.19), after test 10.16 (was 10.68).
+Speed (interleaved, own daemon per arm, lane base vs this lane): body edits per-round medians 4.92/4.93 and 4.14/4.04 s;
+added-type edits median 17.05 vs 16.38 s. `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile:
+EQUIVALENT (body edits + resource-folder change; added types under `DMB_QUERY_VERIFY=1`).
+
+Targets not met. Largest remaining growth: test variant `query_db::AnswerValues` 168, preprocessor (expansion 117, region memo
+116, joined text 80, directives 72, environment 46) about 430, `RequestAnswers` 98, `LeafProofs` 79, receipt pool 72;
+root B: startup capture 66, `RequestAnswers` 65, joined text 61, classification 57, frame contribution 56, preprocessor
+about 230. The preprocessor family needs per-file sharing keyed by (bytes, start state), step 3 of the test-variant plan.
+
+**compiler/memory-2 (2026-10-27).** The probe now runs on a fresh disk cache (`DMB_CACHE_DIR`; a warm cache made root B a
+whole-output hit). Base: A 5.36, test +2.78, B +1.52. Two owners went: the required-type field-request store keyed every
+field by its position, so the test variant (other positions) re-stored nearly every entry (107 MB) to save a few pushes per
+field; requests are now computed. The answer-value pool keys on the low 64 bits of the query id and checks the pooled
+query (pool 62 -> 35 MB). Result: A 5.27, test +2.66, B +1.49. Speed (three interleaved rounds, own daemon per arm): body
+edits median 5.94 s against 6.03 s, added types 17.80 s against 18.44 s. `dmb-equiv --all --ignore-debug` against a fresh
+`--no-daemon --no-cache` compile: EQUIVALENT.
+
+## Shared per-file preprocessing, answer queries and output images (design, 2026-10-27)
+
+Measured with `bench/shared_store_probe.sh` (cold disk cache through `DMB_CACHE_DIR`, compiler/memory-2): root A 5.27 GB,
+test variant +2.66 GB, root B +1.49 GB. The 1 GB targets need about 1.7 GB off the test variant and 0.5 GB off root B. The
+three largest families that are copies of something another session or variant already holds:
+
+| family | test variant | root B |
+|---|---|---|
+| preprocessor (plan, environments, hydrated rows, traces, origin rows, joined text) | about 450 MB | about 240 MB |
+| answer tables (`AnswerValues`, `RequestAnswers`, `LeafProofs`) | about 315 MB | about 95 MB |
+| retained DMB image and row lists | about 140 MB | about 60 MB |
+
+### 1. Preprocessing as per-file results keyed by what they read (step 3 of the test-variant plan)
+
+**What is per session today.** Expansion records (`ExpansionRecord`, keyed by region source and control digest, validated
+by the macro definitions they read) and expansion-input admissions are already daemon-wide. Everything derived from them
+is rebuilt per session: the directive plan's regions and segment environments (`directives`, `environment`), the hydrated
+output rows of every region (`region_memo::hydrate`), their macro traces (`trace_arena`), the flat origin arena (one 32-byte
+row per output line), and the joined text. A start state that differs anywhere (the test variant defines `UNIT_TESTS`
+before almost every file) makes a whole-environment key useless: no file after `_compile_options.dm` would be shared. So
+the key is the file's bytes plus the answers to the macros it reads, exactly as expansion records already work, not the
+start environment's fingerprint.
+
+**The unit.** A region (the text between two include directives of one file) is the unit; a file's result is the list of
+its regions' results. Each region result is an immutable shared object reached from its expansion record:
+
+- *Region rows* (slice P1): the region's provenance rows relative to the region (output offsets from the region start,
+  source span, source line, local trace index) and its trace table. Built once per record and per set of macro definition
+  origins the traces name (a macro defined at the same place in both variants gives equal rows), held by the record
+  (weakly pooled), so two sessions that hydrate the same record share one row table. The session's origin arena becomes a
+  list of `(rows, first output line, output base, region, path)` chunks, one per region (about 14k instead of 1.5M rows),
+  found by a galloping search from the last chunk asked.
+- *Region plan* (slice P2): the region's segments and effects, with segment environments replaced by what expansion and
+  validation actually use: the definitions the region reads (already in the record) and a shared persistent environment
+  only where a later directive in the same region needs the whole state. A variant's plan adopts a region result whose
+  read definitions are equal instead of re-interpreting and rebasing its environment (the earlier attempt to seed the
+  test plan from the game plan rebased whole environments and cost +0.14 GB).
+- *Joined text* stays one contiguous string per variant (the lexer and every span consumer need it); it is the only
+  per-variant copy of the program text. Region record texts are not duplicated into it twice: a session keeps the joined
+  text, records keep their own text, and nothing else holds a third copy.
+
+**Slices.** P1 region rows (hydrate, traces, origin arena; expected test -110 MB, root B -100 MB). *P1 landed (compiler/preproc-rows):* test variant
++2.66 -> +2.57 GB, root A unchanged (5.29), root B unchanged (+1.49): a trace's definition origin carries the absolute path
+of the defining file, so root B's rows never equal root A's (next slice: project-relative definition paths). Body edits
+(three interleaved rounds, busy machine): stage times equal (frontend 0.37-0.44 s both arms, row assembly 0 vs 15 ms), wall
+medians of the calm round 5.76 vs 5.55 s. `dmb-equiv`: EQUIVALENT for the game variant (body edits + resource-folder
+change) and for the test variant built in the same daemon after the game variant plus a body edit (`eqtest.sh`). P2 region plans shared
+across variants and roots (directives, environments, directive memo; expected test -150 MB, root B -100 MB). Each slice is
+proven by `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile of both variants, the six-session
+contract tests, and a warm-speed A/B within 5 percent.
+
+### 2. Smaller answer queries
+
+`dm_ir::ResolveQuery` is 48 bytes with 16-byte alignment because `ResourceIn::search_context` is a `u128`. Every answer slot
+value, receipt observation and query-keyed map pays for it. `search_context` becomes `SearchContext([u64; 2])` (same
+`Serialize`/`Deserialize` as `u128`, so no persisted format changes), which makes the query 40 bytes with 8-byte alignment;
+the answer value stores its hash as `[u64; 2]` for the same reason. A codemod updates the construction and match sites.
+Expected: `AnswerValues` 96-byte allocations to 64, observations in receipts 16 bytes smaller each.
+
+### 3. One DMB image for two variants
+
+The retained encoded image (`RetainedGeneration`'s current `EncodedDmb`, about 105 MB) and its row lists are kept per
+variant. The test variant's image differs from the game image in a minority of rows. The retained image becomes a chunked
+image: fixed-size chunks (64 KiB) interned by content in a daemon-wide weak pool, the image a list of chunk handles plus
+length. Writing the output file and hashing stream over the chunks; the exact-hit path returns the chunk list. Two
+variants whose images agree on most chunks hold those chunks once. Expected: test -60..90 MB, root B -50..90 MB (root B's
+image equals root A's except for line-number debug rows).

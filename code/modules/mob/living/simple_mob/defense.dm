@@ -124,7 +124,7 @@
 	effective_force = combat_of(O).force
 
 	//Animals can't be stunned(?)
-	if(O.injury_kind == INJURY_PAIN)
+	if(combat_of(O).injury_kind == INJURY_PAIN)
 		effective_force = 0
 	if(supernatural && istype(O,/obj/item/nullrod))
 		effective_force *= 2

@@ -21,8 +21,14 @@ base_var	code/modules/bv/base.dm	45
 base_var	code/modules/bv/base.dm	47
 base_var	code/modules/bv/base.dm	48
 base_var	code/modules/bv/base.dm	55
+base_var	code/modules/bv/hot.dm	4
+base_var	code/modules/bv/relations.dm	4
+base_var	code/modules/bv/relations.dm	5
 base_var	code/modules/tgs/x.dm	2
 base_var	code/modules/unit_tests/t.dm	2
+hot_home	tools/ci/lint_scopes.toml	1
+hot_home	tools/ci/lint_scopes.toml	1
+hot_home	tools/ci/lint_scopes.toml	1
 list_init	code/__defines/tgs_other.dm	2
 list_init	code/modules/bv/base.dm	19
 list_init	code/modules/bv/base.dm	45
@@ -59,7 +65,3 @@ list_init	code/modules/bv/singleton.dm	32
 list_init	code/modules/sub/unit_tests/t.dm	2
 list_init	code/modules/tgs2/t.dm	2
 list_init	code/modules/unit_tests_other/t.dm	2
-base_var	code/modules/bv/hot.dm	4
-hot_home	tools/ci/lint_scopes.toml	1
-hot_home	tools/ci/lint_scopes.toml	1
-hot_home	tools/ci/lint_scopes.toml	1

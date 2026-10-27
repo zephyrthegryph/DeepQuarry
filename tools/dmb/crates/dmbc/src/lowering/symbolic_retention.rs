@@ -126,7 +126,7 @@ fn census_record(record: &std::sync::Arc<super::Record>, mut census: &mut HeapCe
     if let Some(recipe) = &record.recipe {
         census.procedure_metadata("session_symbolic.key_metadata", &recipe.metadata);
     }
-    census.retained_symbolic_ledger(&record.reads, &record.versions);
+    census.retained_symbolic_ledger(&record.reads);
     match &record.value {
         super::RecordValue::Executable(artifact) => {
             crate::symbolic::ReusableProcedureArtifact::retained_census(artifact, &mut census);

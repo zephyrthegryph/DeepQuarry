@@ -6,7 +6,6 @@
 	// r_speed removed (dead, 0 refs)
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
-	var/burning = null
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
@@ -22,9 +21,6 @@
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
-	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
-
-	var/embed_chance = -1	//0 won't embed, and 100 will always embed
 
 	var/icon_override = null  //Used to override hardcoded clothing dmis in human clothing proc.
 
@@ -58,7 +54,6 @@
 
 
 
-	var/digestable = TRUE
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
 
@@ -84,11 +79,11 @@
 
 /// An item left on the default embed chance (-1) takes it from its weight and edge.
 /obj/item/proc/roll_embed_chance()
-	if(embed_chance < 0)
+	if(combat_of(src).embed_chance < 0)
 		if(combat_of(src).sharp)
-			embed_chance = max(5, round(combat_of(src).force/w_class))
+			set_embed_chance(max(5, round(combat_of(src).force/w_class)))
 		else
-			embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
+			set_embed_chance(max(5, round(combat_of(src).force/(w_class*3))))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component
@@ -612,17 +607,17 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		devicename = src.name
 
 	var/can_zoom = TRUE
-	if((M.stat && !zoom) || !(ishuman(M)))
+	if((M.stat && !sparse_get_or(src, zoom, FALSE)) || !(ishuman(M)))
 		to_chat(M, span_filter_notice("You are unable to focus through the [devicename]."))
 		can_zoom = FALSE
-	else if(!zoom && (GLOB.global_hud.darkMask[1] in M.client.screen))
+	else if(!sparse_get_or(src, zoom, FALSE) && (GLOB.global_hud.darkMask[1] in M.client.screen))
 		to_chat(M, span_filter_notice("Your visor gets in the way of looking through the [devicename]."))
 		can_zoom = FALSE
-	else if(!zoom && M.get_active_hand() != src)
+	else if(!sparse_get_or(src, zoom, FALSE) && M.get_active_hand() != src)
 		to_chat(M, span_filter_notice("You are too distracted to look through the [devicename], perhaps if it was in your active hand this might work better."))
 		can_zoom = FALSE
 
-	if(!zoom && can_zoom)
+	if(!sparse_get_or(src, zoom, FALSE) && can_zoom)
 		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
 	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
@@ -927,8 +922,8 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 
 /obj/item/proc/toggle_digestable_effect(datum/act/op/A)
 	var/mob/user = A.actor
-	digestable = !digestable
-	if(!digestable)
+	set_digestable(!item_rules_of(src).digestable)
+	if(!item_rules_of(src).digestable)
 		to_chat(user, span_notice("[src] is now protected from digestion."))
 	return OP_OK
 

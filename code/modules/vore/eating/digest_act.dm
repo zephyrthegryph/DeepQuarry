@@ -6,7 +6,7 @@
 // digest_rate_mult scales the per-cycle digestion damage by the time the belly cycle covers
 // (see BELLY_BASELINE_TICK). 1 = one baseline cycle; smaller on shorter (turbo) cycles.
 /obj/item/proc/digest_act(atom/movable/item_storage = null, touchable_amount, splashing = 0, digest_rate_mult = 1)
-	if(!digestable)
+	if(!item_rules_of(src).digestable)
 		return FALSE
 	if(istype(item_storage, /obj/item/dogborg/sleeper))
 		if(istype(src, /obj/item/pda))

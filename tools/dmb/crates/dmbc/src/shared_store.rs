@@ -253,7 +253,6 @@ mod tests {
             .insert_with_owned(
                 Arc::clone(&key),
                 vec![Observation { query: (), answer: 7, domain: () }],
-                vec![],
                 8,
                 || 41,
             )

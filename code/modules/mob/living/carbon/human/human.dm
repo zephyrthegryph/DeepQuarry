@@ -1574,7 +1574,13 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /// A species with a thick hide turns a needle away at times (a roll, by how hurt the limb is): TRUE when it does this time.
 /mob/living/carbon/human/proc/thick_skin_holds(obj/item/organ/external/affecting)
-	return (species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2))
+	return prob(thick_skin_hold_chance(affecting))
+
+/// The chance (0-100) that a thick hide turns a needle away at `affecting`: 0 for a species without one; wounds make it weaker.
+/mob/living/carbon/human/proc/thick_skin_hold_chance(obj/item/organ/external/affecting)
+	if(!affecting || !(species.flags & THICK_SKIN))
+		return 0
+	return clamp(70 - round(affecting.get_trauma() + affecting.get_burn() / 2), 0, 100)
 
 /// `roll` = FALSE leaves out the thick-hide roll of some species (the one who asks makes it later, with thick_skin_holds()).
 /mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)

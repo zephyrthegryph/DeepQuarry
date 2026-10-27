@@ -42,6 +42,16 @@
 		return text
 	return replacetext(text, mark, "%")
 
+/// The limb of `target` that `user` aims at (their zone selection), or null when the target has no such limb or the user aims at nothing.
+/proc/msg_aimed_limb(atom/user, atom/target)
+	if(!ismob(user) || !ishuman(target))
+		return null
+	var/zone = hud_of(user)?.zone_sel?.selecting
+	if(!zone)
+		return null
+	var/mob/living/carbon/human/H = target
+	return H.get_organ(zone)
+
 /// The text for one token name (the part between the %s), or null when it is not a token.
 /proc/msg_token(token, atom/user, atom/target, obj/item/item, capital)
 	switch(token)
@@ -51,6 +61,8 @@
 			return msg_name(target, capital)
 		if("I")
 			return msg_name(item, capital)
+		if("LIMB")
+			return msg_name(msg_aimed_limb(user, target), capital)
 	if(!istype(user))
 		return null
 	switch(token)

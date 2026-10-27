@@ -4,7 +4,6 @@ use crate::{
     class_projection::member_contribution::MemberContribution, initializer_policy::DefaultValue,
     lowering_memo::ResolverRead,
 };
-use dm_ir::ReadDomain;
 
 pub(super) fn inspect_field(
     census: &mut HeapCensus,
@@ -28,7 +27,6 @@ pub(crate) fn weight(
     inputs: &Vec<crate::class_projection::retained::MemberInput>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
     let mut census = HeapCensus::new("resident_owner_projection_admission");
     inspect_inputs(&mut census, inputs);
@@ -46,7 +44,6 @@ pub(crate) fn weight(
         }
     }
     census.vec_payload("resident_owner_projection.reads", reads);
-    census.vec_payload("resident_owner_projection.versions", versions);
     for read in reads {
         super::resident_weight::answer(&mut census, &read.answer);
     }
@@ -127,12 +124,10 @@ pub(super) fn inspect_into(
         dm_session::ArtifactStorageView::Entry {
             key,
             reads,
-            versions,
             value,
         } => {
             census.slice("owner_projection.keys", key, true);
             census.receipt("owner_projection.reads", reads);
-            census.slice("owner_projection.versions", versions, true);
             for read in reads.iter() {
                 super::resident_weight::answer(&mut census, &read.answer);
             }
@@ -168,7 +163,6 @@ pub(super) fn inspect_into(
         dm_session::ObservedArtifactStorageView::Entry {
             key,
             reads,
-            versions,
             value,
         } => {
             census.slice("owner_projection.types_keys", key, true);
@@ -181,7 +175,6 @@ pub(super) fn inspect_into(
                     }
                 }
             }
-            census.slice("owner_projection.types_versions", versions, true);
             if census.arc_object("owner_projection.projected_types_owner", value) {
                 census.slice("owner_projection.projected_types", &value.types, true);
                 if census.arc_object(
@@ -206,9 +199,9 @@ mod tests {
     fn owned_nested_default_and_unused_vector_capacity_raise_conservative_charge() {
         let empty = Vec::new();
         let mut values = Vec::new();
-        let before = weight(&values, &Vec::new(), b"key", &empty, &Vec::new()).unwrap();
+        let before = weight(&values, &Vec::new(), b"key", &empty).unwrap();
         values.reserve_exact(100);
-        let reserved = weight(&values, &Vec::new(), b"key", &empty, &Vec::new()).unwrap();
+        let reserved = weight(&values, &Vec::new(), b"key", &empty).unwrap();
         assert!(reserved >= before + 100 * size_of::<MemberContribution>());
         values.push(MemberContribution::Field(std::sync::Arc::new(
             crate::class_projection::FieldProjection {
@@ -225,6 +218,6 @@ mod tests {
                 )]))),
             },
         )));
-        assert!(weight(&values, &Vec::new(), b"key", &empty, &Vec::new()).unwrap() > reserved);
+        assert!(weight(&values, &Vec::new(), b"key", &empty).unwrap() > reserved);
     }
 }

@@ -176,12 +176,9 @@ fn admit_common(
             _ => (),
         }
     }
-    if let Some(artifacts) = artifacts {
-        artifacts.fields.append(&projection.fields, &mut requests);
-    } else {
-        for field in projection.fields.iter() {
-            field_requests::produce(field, &mut requests);
-        }
+    // A field's requests are a few pushes: computing them is cheaper than any lookup that could replace it.
+    for field in projection.fields.iter() {
+        field_requests::produce(field, &mut requests);
     }
     for chain in projection.chains.iter() {
         requests.push(chain.owner);

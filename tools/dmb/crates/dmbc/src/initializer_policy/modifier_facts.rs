@@ -372,17 +372,14 @@ pub(super) fn modifier_facts_reused_in<'a>(
         if captured {
             let _ = keys[ordinal].admitted.set(Arc::clone(&keys[ordinal].input));
             let reads = recording.reads();
-            let versions = Vec::new();
             if let Some(weight) = crate::heap_census::resident_modifier_weight(
                 &keys[ordinal].input,
                 &keys[ordinal].bytes,
                 &reads,
-                &versions,
             ) {
                 reuse.store.modifiers.values.insert_current_qualified_with(
                     keys[ordinal].bytes.clone().into(),
                     reads.into(),
-                    versions.into(),
                     weight,
                     || ModifierArtifact {
                         input: Arc::clone(&keys[ordinal].input),

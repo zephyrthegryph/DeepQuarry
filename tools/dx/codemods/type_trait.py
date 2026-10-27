@@ -134,9 +134,9 @@ SPECS = {
     ),
     "item_rules": dict(
         base="/obj/item", ctor="item_rules", reader="item_rules_of", type_reader="item_rules_of_type",
-        fields={"sprite_sheets_obj": "sprite_sheets_obj", "actions_types": "actions_types"},
+        fields={"sprite_sheets_obj": "sprite_sheets_obj", "actions_types": "actions_types", "digestable": "digestable"},
         skip={"code/content/items/item_rules.dm"},
-        skip_refs=r"(^|\.)species$",
+        skip_refs=r"(^|\.)(species|vore_prefs|prefs_vr|prefs)$",  # a mob's vore preferences carry their own digestable
     ),
     "item_tooling": dict(
         base="/obj/item", ctor="item_tooling", reader="tooling_of", type_reader="tooling_of_type",
@@ -165,7 +165,8 @@ SPECS = {
         base="/obj/item", ctor="item_combat", reader="combat_of", type_reader="combat_of_type",
         fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",
                 "melee_windup": "windup", "melee_recovery": "recovery", "melee_sweep": "sweep", "can_cleave": "can_cleave",
-                "attackspeed": "attack_speed", "reach": "reach", "attack_verb": "attack_verbs"},
+                "attackspeed": "attack_speed", "reach": "reach", "attack_verb": "attack_verbs",
+                "embed_chance": "embed_chance", "injury_kind": "injury_kind", "injury_kinds": "injury_kinds"},
         skip={"code/content/items/item_combat.dm"},
         skip_refs=r"(^|\.)def$",  # a wire definition's own reach  # items.dm is rewritten too: its base declarations are deleted by hand
     ),

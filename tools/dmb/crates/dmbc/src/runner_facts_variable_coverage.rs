@@ -105,7 +105,6 @@ impl RetainedHostFacts {
             .insert_with_owned(
                 Arc::from(KEY),
                 ledger.reads(),
-                Vec::new(),
                 std::mem::size_of::<Artifact>(),
                 || {
                     Artifact::VariableCoverage(

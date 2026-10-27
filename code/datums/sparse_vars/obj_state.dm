@@ -19,6 +19,8 @@ sparse(/obj, micro_accepted_scale, type = num)
 
 // /obj/item
 sparse(/obj/item, cleandesc, type = text)
+/// TRUE while the item is held up to zoom (a scope, binoculars): set and cleared by the item_zoom remote view.
+sparse(/obj/item, zoom, type = bool)
 sparse(/obj/item, user_vars_to_edit, type = list)
 sparse(/obj/item, user_vars_remembered, type = list)
 sparse(/obj/item, warned_of_possession, type = list)

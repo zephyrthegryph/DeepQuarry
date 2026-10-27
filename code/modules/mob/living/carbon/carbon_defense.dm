@@ -12,9 +12,9 @@
 	receive_weapon_hit(I, user, effective_force, zone = hit_zone, silent = FALSE)
 
 	//Melee weapon embedded object code.
-	if (I && I.obj_damage_type() == BRUTE && !I.anchored && !is_robot_module(I) && I.embed_chance > 0)
+	if (I && I.obj_damage_type() == BRUTE && !I.anchored && !is_robot_module(I) && combat_of(I).embed_chance > 0)
 		var/weapon_sharp = is_sharp(I)
-		var/hit_embed_chance = I.embed_chance
+		var/hit_embed_chance = combat_of(I).embed_chance
 		if(dq_armor_turns_edge(INJURY_CUT, blocked)) // Armour that turns the edge also keeps the blade from lodging.
 			weapon_sharp = FALSE
 			hit_embed_chance = combat_of(I).force/(I.w_class*3)

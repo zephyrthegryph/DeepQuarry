@@ -2,7 +2,7 @@
 //! sidecars decline memory retention; disk replay remains independently available.
 use super::*;
 use crate::lowering_memo::ResolverRead;
-use dm_ir::{ReadDomain, ResolvedMeaning};
+use dm_ir::ResolvedMeaning;
 fn source(c: &mut HeapCensus, location: &dm_tree::frontend::SourceLocation) {
     let owner = "resident_source";
     c.arc_path(owner, &location.path);
@@ -109,11 +109,9 @@ pub(crate) fn procedure(
     relative: &Vec<crate::debug_sources::RelativeDebugAnchor>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
     procedure_core(unit, relative, key, reads, |c| {
         c.vec_payload("resident_reads", reads);
-        c.vec_payload("resident_versions", versions);
     })
 }
 pub(crate) fn procedure_shared(
@@ -121,11 +119,9 @@ pub(crate) fn procedure_shared(
     relative: &Vec<crate::debug_sources::RelativeDebugAnchor>,
     key: &[u8],
     reads: &std::sync::Arc<[ResolverRead]>,
-    versions: &std::sync::Arc<[(ReadDomain, u128)]>,
 ) -> Option<usize> {
     procedure_core(unit, relative, key, reads, |c| {
         c.slice("resident_reads", reads, true);
-        c.slice("resident_versions", versions, true);
     })
 }
 fn procedure_core(
@@ -245,10 +241,10 @@ mod tests {
             crate::lowering::lower_frontend(&frontend, &Host, &Policy, Default::default());
         assert!(batch.diagnostics.is_empty());
         let unit = &mut batch.units[0];
-        let args = (Vec::new(), Vec::new(), Vec::new());
-        let before = procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap();
+        let args = (Vec::new(), Vec::new());
+        let before = procedure(unit, &args.0, b"key", &args.1).unwrap();
         unit.code.procedure.code.items.reserve(10000);
-        let after = procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap();
+        let after = procedure(unit, &args.0, b"key", &args.1).unwrap();
         assert!(after > before + 1000);
         unit.source_helpers
             .push(crate::argument_sources::LoweredHelper {
@@ -257,7 +253,7 @@ mod tests {
                 code: unit.code.clone(),
                 debug_origins: unit.debug_origins.clone(),
             });
-        let with_helper = procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap();
+        let with_helper = procedure(unit, &args.0, b"key", &args.1).unwrap();
         assert!(with_helper > after);
         unit.source_helpers[0]
             .code
@@ -265,8 +261,8 @@ mod tests {
             .code
             .items
             .reserve(20000);
-        assert!(procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap() > with_helper);
-        let before_modified = procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap();
+        assert!(procedure(unit, &args.0, b"key", &args.1).unwrap() > with_helper);
+        let before_modified = procedure(unit, &args.0, b"key", &args.1).unwrap();
         let expression = dm_syntax::Expr {
             kind: dm_syntax::ExprKind::Group(Box::new(dm_syntax::Expr {
                 kind: dm_syntax::ExprKind::Literal("x".repeat(10000)),
@@ -290,7 +286,7 @@ mod tests {
             },
         );
         assert!(
-            procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap() > before_modified + 10000
+            procedure(unit, &args.0, b"key", &args.1).unwrap() > before_modified + 10000
         );
 
         let value =

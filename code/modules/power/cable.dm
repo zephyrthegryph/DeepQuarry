@@ -897,11 +897,11 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 
 /// An alien coil works out its embed chance from its own force (from /obj/item, it does not do what the normal coil does).
 /obj/item/stack/cable_coil/alien/proc/work_out_embed_chance()
-	if(embed_chance == -1)		//From /obj/item, don't want to do what the normal cable_coil does
+	if(combat_of(src).embed_chance == -1)		//From /obj/item, don't want to do what the normal cable_coil does
 		if(combat_of(src).sharp)
-			embed_chance = combat_of(src).force/w_class
+			set_embed_chance(combat_of(src).force/w_class)
 		else
-			embed_chance = combat_of(src).force/(w_class*3)
+			set_embed_chance(combat_of(src).force/(w_class*3))
 
 /// An alien spool always shows its own state.
 /obj/item/stack/cable_coil/alien/look_state()

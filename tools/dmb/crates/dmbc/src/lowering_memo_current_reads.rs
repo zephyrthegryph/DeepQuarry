@@ -6,7 +6,6 @@ use dm_ir::{ResolveQuery, Resolver};
 pub(crate) struct ResidentPromotion<'host> {
     pub current: Option<CurrentReads<'host>>,
     pub queries: Vec<ResolveQuery>,
-    pub versions: Vec<(dm_ir::ReadDomain, u128)>,
     pub relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
 }
 #[derive(Default)]
@@ -114,7 +113,6 @@ mod tests {
         super::super::ResidentPromotion {
             current,
             queries,
-            versions: Vec::new(),
             relative_debug: Vec::new(),
         }
     }

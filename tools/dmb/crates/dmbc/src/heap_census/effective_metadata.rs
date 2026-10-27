@@ -45,10 +45,9 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         MetadataStorageView::Buffer { address, length, capacity } => {
             census.buffer("retained_effective_metadata.buffers", address, length, capacity);
         }
-        MetadataStorageView::Entry { key, reads, versions, address, size } => {
+        MetadataStorageView::Entry { key, reads, address, size } => {
             census.slice("retained_effective_metadata.keys", key, true);
             census.receipt("retained_effective_metadata.reads", reads);
-            census.slice("retained_effective_metadata.versions", versions, true);
             census.buffer("retained_effective_metadata.values", address, size, size);
             for read in reads.iter() {
                 match read.query {

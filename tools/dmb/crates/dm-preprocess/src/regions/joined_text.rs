@@ -91,7 +91,7 @@ impl JoinedText {
         let ledger = ObservationLedger::default();
         ledger.record(Query::OrderedEmission, host.0.clone(), ());
         self.values
-            .insert_with(Arc::from(KEY), ledger.reads(), Vec::new(), 0, || {
+            .insert_with(Arc::from(KEY), ledger.reads(), 0, || {
                 text.clone()
             });
         text
@@ -115,7 +115,6 @@ impl JoinedText {
             Store::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 visit(slice_storage(key));
@@ -123,7 +122,6 @@ impl JoinedText {
                     dm_session::ReceiptStorageView::Flat(values) => visit(slice_storage(values)),
                     dm_session::ReceiptStorageView::Groups(groups) => visit(slice_storage(groups)),
                 });
-                visit(slice_storage(versions));
                 visit(arc_storage(value));
                 visit(View::Source(value));
                 for read in reads.iter() {

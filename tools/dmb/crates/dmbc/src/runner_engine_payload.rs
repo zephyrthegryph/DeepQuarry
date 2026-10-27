@@ -134,7 +134,7 @@ impl EnginePayloads {
             .retain_current_keys(roster.iter().map(AsRef::as_ref));
         // Count-bound storage: zero is not presented as a retained heap charge.
         self.values
-            .insert_with(key, Vec::new(), Vec::new(), 0, || Arc::clone(&payload));
+            .insert_with(key, Vec::new(), 0, || Arc::clone(&payload));
         Ok(payload)
     }
     /// Release store-only payloads after host expiry/pressure, outside slot locks.

@@ -44,7 +44,6 @@ fn record() -> Arc<super::super::super::Record> {
         recipe: None,
         key: Arc::<[u8]>::from([1u8, 2, 3]).into(),
         reads: Vec::new().into(),
-        versions: Arc::from([]),
         value: super::super::super::RecordValue::Executable(contribution.shared_artifact()),
         relative_debug: vec![crate::debug_sources::RelativeDebugAnchor::AtBodyOffset(0)].into(),
         required_types: Arc::clone(contribution.required_types_owner()),
@@ -163,7 +162,6 @@ fn shared_pressure_footprint_preserves_exact_unique_and_shared_backing() {
         recipe: None,
         key: Arc::<[u8]>::from([4u8, 5, 6]).into(),
         reads: first.reads.clone(),
-        versions: Arc::clone(&first.versions),
         value: match &first.value {
             super::super::super::RecordValue::Executable(value) => {
                 super::super::super::RecordValue::Executable(Arc::clone(value))

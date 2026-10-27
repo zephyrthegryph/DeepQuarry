@@ -743,7 +743,6 @@ pub(super) fn classify_one_keyed_grouped_in(
         };
         value.input = Some(input);
         let reads = recorder.reads();
-        let versions = Vec::new();
         let dimensions = match &value.runtime {
             Some(
                 RuntimeRecipe::SizedArray(dimensions)
@@ -760,13 +759,11 @@ pub(super) fn classify_one_keyed_grouped_in(
                 value.key.as_ref(),
                 key,
                 &reads,
-                &versions,
             )
             .and_then(|weight| {
                 crate::heap_census::resident_modifier_weight(
                     value.input_write()?,
                     &[],
-                    &Vec::new(),
                     &Vec::new(),
                 )
                 .and_then(|input_weight| weight.checked_add(input_weight))
@@ -798,7 +795,6 @@ pub(super) fn classify_one_keyed_grouped_in(
             reuse.store.values.insert_current_qualified_with(
                 Arc::clone(key),
                 receipt,
-                versions.into(),
                 weight,
                 || value,
             )

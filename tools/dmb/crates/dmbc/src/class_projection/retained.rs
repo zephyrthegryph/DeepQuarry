@@ -318,7 +318,7 @@ impl ClassProjections {
                                     .values
                                     .visit_receipted_with(
                                         &key,
-                                        &mut |reads, _| {
+                                        &mut |reads| {
                                             admission.first_changed_receipted(reads, |_| {})
                                         },
                                         &mut |value| {
@@ -483,13 +483,11 @@ impl Request<'_> {
                 continue;
             }
             let reads = owner.recorder.reads();
-            let versions = Vec::new();
             let Some(weight) = crate::heap_census::resident_owner_projection_weight(
                 &owner.produced,
                 &owner.inputs,
                 &owner.key,
                 &reads,
-                &versions,
             ) else {
                 self.store.declined.fetch_add(1, Ordering::Relaxed);
                 continue;
@@ -503,7 +501,6 @@ impl Request<'_> {
                     return leases.values.insert_fresh_with_qualified_receipt(
                         owner.key.into(),
                         reads.into(),
-                        versions.into(),
                         weight,
                         || OwnerProjection {
                             inputs: owner.inputs,
@@ -514,7 +511,7 @@ impl Request<'_> {
                 }
                 leases
                     .values
-                    .insert_with(owner.key.into(), reads, versions, weight, || {
+                    .insert_with(owner.key.into(), reads, weight, || {
                         OwnerProjection {
                             inputs: owner.inputs,
                             values: owner.produced,

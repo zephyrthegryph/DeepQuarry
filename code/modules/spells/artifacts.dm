@@ -5,9 +5,9 @@
 	desc = "An incandescent orb of otherworldly energy, staring into it gives you vision beyond mortal means."
 	icon = 'icons/obj/projectiles.dmi'
 	icon_state = "bluespace"
-	injury_kind = INJURY_BURN
 
 CAPABILITIES(/obj/item/scrying)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(movable_motion(throw_range = 7, throw_speed = 3))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))

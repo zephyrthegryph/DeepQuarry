@@ -82,7 +82,6 @@ fn symbolic_census_deduplicates_shared_records_and_counts_pruned_members() {
         key: vec![1, 2, 3].into(),
         recipe: None,
         reads: Vec::new().into(),
-        versions: Arc::from([]),
         value: super::super::RecordValue::Executable(contribution.shared_artifact()),
         relative_debug: vec![crate::debug_sources::RelativeDebugAnchor::AtBodyOffset(0)].into(),
         required_types: Arc::clone(contribution.required_types_owner()),

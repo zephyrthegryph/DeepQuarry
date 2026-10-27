@@ -4,9 +4,9 @@
 	icon_state = "claymore"
 	force_divisor = 0.7 // 42 when wielded with hardnes 60 (steel)
 	thrown_force_divisor = 0.5 // 10 when thrown with weight 20 (steel)
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/material/sword)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
@@ -38,9 +38,9 @@ CAPABILITIES(/obj/item/material/sword/katana)
 	icon_state = "rapier"
 	item_state = "rapier"
 	applies_material_colour = 0
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/material/sword/rapier)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(attack_verbs = list("attacked", "stabbed", "prodded", "poked", "lunged"), edge = 0))
 
