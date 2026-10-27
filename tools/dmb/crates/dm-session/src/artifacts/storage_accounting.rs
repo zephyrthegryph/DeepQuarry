@@ -68,7 +68,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             coverage: ArtifactStorageCoverage::Partial,
             exclusions: EXCLUSIONS,
             buckets: state.buckets.len(),
-            variants: state.buckets.values().map(Vec::len).sum(),
+            variants: state.buckets.values().map(|bucket| bucket.len()).sum(),
             leases: state.slots.count_ones() as usize,
             roster_keys: state.buckets.values().flatten().map(|entry| entry.holders.count()).sum(),
             claimed_variants: state
