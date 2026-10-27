@@ -1856,3 +1856,8 @@ exempt_prefixes = ["code/engine/refs/weak.dm", "code/engine/_generated/", "code/
 # duplicate_input_key: a hard ban with no baseline. A type's table holds one entry per input key, so a second click_on()/drag_onto()/... of the same type replaces the first.
 [lint.duplicate_input_key]
 exempt_prefixes = ["code/engine/_generated/"]
+
+# entity_ids (tools/analyze/src/lints/entity_ids.rs; doc/rewrite/proposals/relations.md D9, "One handle"): ad-hoc entity ids, counters minted as
+# ids and REF() text list keys; ref_token() is the one handle. The engine implements the handles and keeps ordering serials; tests and generated output are exempt.
+[lint.entity_ids]
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/"]
