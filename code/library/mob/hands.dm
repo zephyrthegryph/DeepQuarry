@@ -5,6 +5,7 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(human_blast))))
 	configure(living_rules(vore_capacity_ex = list("stomach" = 3, "taur belly" = 3), vore_capacity = 3, has_huds = TRUE, vore_shred_time = 10 SECONDS))
 	configure(butchery_rules(butchery_loot = list(/obj/item/stack/animalhide/human = 1)))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

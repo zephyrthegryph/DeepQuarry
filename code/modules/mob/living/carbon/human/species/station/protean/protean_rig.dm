@@ -71,18 +71,22 @@
 /// through the protean's injure(), aimed at the core, like every other hit on
 /// the cluster (take_damage()). The cluster's own integrity never moves. An
 /// orphaned cluster is just an object.
-/obj/item/rig/protean/ex_act(severity)
-	if(!myprotean || QDELETED(src))
-		return ..()
-	var/band = round(severity)
+/obj/item/rig/protean/proc/rig_has_protean()
+	return myprotean && !QDELETED(src)
+
+/obj/item/rig/protean/proc/rig_blast(datum/act/hit/explosion/A)
+	var/band = round(A.packet.severity)
 	var/static/list/blast_blunt = list(120, 60, 25)
 	var/static/list/blast_burn = list(60, 30, 10)
 	if(band < 1 || band > length(blast_blunt))
-		return
+		return OP_OK
 	var/taken = myprotean.injure(INJURY_BLUNT, blast_blunt[band], BP_TORSO, src)
 	taken += myprotean.injure(INJURY_BURN, blast_burn[band], BP_TORSO, src)
 	log_attack("PROTEAN RIG: [src] caught a severity [band] explosion; [key_name(myprotean)] took [taken].")
-	return taken
+	return OP_OK
+
+CAPABILITIES(/obj/item/rig/protean)
+	extend(/datum/act/hit/explosion, instead(when(PROC_REF(rig_has_protean)), then(PROC_REF(rig_blast))))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The rig becomes that protean's control cluster.
 /obj/item/rig/protean/proc/bind_protean(mob/living/carbon/human/P)
