@@ -11,11 +11,6 @@
 /datum/var/tmp/own_slot
 /// This entity's weak key (own_key()), cached on first use.
 /datum/var/tmp/own_key_text
-#ifdef UNIT_TESTS
-/// Test builds: the owner's type when it stamped this entity, so an orphan report names the real
-/// owner even after its weak key was recycled by an unrelated datum.
-/datum/var/tmp/own_holder_type
-#endif
 
 /// D's weak key, by which weak indexes name it (owner stamps, relation reverse indexes, keyed
 /// links, OM handle slots): a string own_locate() turns back into D, which never keeps D alive.

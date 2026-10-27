@@ -431,13 +431,18 @@
 /// `answerer` (PROC_REF(x), x(datum/act/op/A) returns a mob): this question goes to that mob, not to the actor (a kiosk asks the patient, a cryopod asks the
 /// sleeper). The answer lands in the op like any other. The op ends with the usual feedback to the actor if that mob declines, closes the prompt, is deleted,
 /// cannot act any more or moves out of reach of the actor while the question is open; the same holds if the actor goes. x returning no mob ends the op as failed.
+/// `answerer_bound` (default TRUE): the third party must stay conscious and within reach of the actor (a loc chain counts: a carrier holding the actor's card). FALSE
+/// leaves only the window check (a screen's owner confirming a change made on their own panel by someone else).
+/// `optional` + `default`: a cancel or a timeout does not end the op: the step is answered with `default` (a value, or computed(PROC_REF(x)), x(datum/act/op/A)) and the
+/// workflow goes on, with every requirement asked again as for a real answer (a cancelled sub-menu that still applies the mode). A.step_value("name") is the default
+/// then; the prompt's own `outcome` still says it was not answered. Anything that ends the question otherwise (the op's own checks failing) still ends the op.
 /// `keeps_answer`: the answer is a thing (an atom: the person a healing is aimed at) and the op keeps it from then on, as it keeps its target: the
 /// later waits end when it is deleted, when it moves away from where it was answered (TARGET_PRESENT) or out of the actor's reach (ADJACENT), and
 /// A.answer_target() is that thing in needs() and then(). Written keeps_answer = PROC_REF(x), x(datum/act/op/A) returns the atom the answer names (a
 /// prompt that lists texts: the limb whose name was picked); TRUE means the answer itself. An answer that names no atom ends the op as failed. Only the
 /// keeps the wait names apply.
-/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null, answerer = null, keeps_answer = FALSE)
-	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats, "answerer" = answerer, "keeps_answer" = keeps_answer))
+/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null, answerer = null, keeps_answer = FALSE, answerer_bound = TRUE, optional = FALSE, default = null)
+	return part_make(/datum/entry/part/asks, list("answerer_bound" = answerer_bound, "optional" = optional, "default" = default, "type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats, "answerer" = answerer, "keeps_answer" = keeps_answer))
 
 /datum/entry/part/asks
 	part_name = "asks"

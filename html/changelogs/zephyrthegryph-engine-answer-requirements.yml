@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added req_answer() and optional asks() steps; converted the answer-dependent refusals (camera board networks, pill bottle and glass labels, stack split, whole feeding, transfer amount) and the RCD mode radial onto them"
+  - bugfix: "A pAI's DNA request no longer cancels when its carrier walks off; mine delay wires and the dark gygax charge keep their first countdown; the appearance changer refuses a second button while a question of its own is open"

@@ -12,7 +12,6 @@ stored	code/modules/admin/view_variables_panel.dm	dq_vv_panel.refid = REF(thing)
 stored	code/modules/materials/registry.dm	key = REF(key)
 stored	code/modules/materials/registry.dm	value = REF(value)
 stored	code/modules/mob/living/living.dm	var/refid = REF(src)
-stored	code/modules/mob/living/silicon/pai/api.dm	asked[REF(ghost)] = TIME_NOW(CLOCK_WORLD)
 ref_macro	code/_helpers/icons.dm	var/icon_ref = "\ref[icon]"
 ref_macro	code/_helpers/icons.dm	var/icon_ref = "\ref[rsc_ref]"
 ref_macro	code/_helpers/icons.dm	var/rsc_ref_ref = "\ref[rsc_ref]"

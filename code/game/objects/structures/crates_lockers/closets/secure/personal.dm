@@ -45,7 +45,6 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 	var/obj/item/card/id/I = A.held?.GetID()
 	return (!!I?.registered_name) ? null : /datum/msg/personal/blank_card
 
-
 /// The card may work the lock: the master access, an unowned locker or the owner's own card.
 /obj/structure/closet/secure_closet/personal/proc/card_may_swipe(datum/act/op/A)
 	var/obj/item/card/id/I = A.held?.GetID()

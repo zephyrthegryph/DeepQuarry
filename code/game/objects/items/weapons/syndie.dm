@@ -136,6 +136,8 @@ CAPABILITIES(/obj/item/flame/lighter/zippo/c4detonator)
 		asks(/datum/prompt/choice, fields = list("title" = "Lighter", "question" = "What would you like to do?", "choices" = list("Press the button.", "Close the lighter."), "buttons" = TRUE, "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "action"),
 		then(PROC_REF(detonator_action)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	// The button or the lid, asked once a lit detonator is used (toggled).
+	op("detonator_choice", ai(), asks(/datum/prompt/choice, fields = list("title" = "Lighter", "question" = "What would you like to do?", "choices" = list("Press the button.", "Close the lighter."), "buttons" = TRUE, "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "action"), then(PROC_REF(detonator_action)))
 	ref_one(nameof(bomb), /obj/item/syndie/c4explosive)
 
 /obj/item/flame/lighter/zippo/c4detonator/proc/screwdriver_used(datum/act/op/A)

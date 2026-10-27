@@ -98,27 +98,6 @@ GLOBAL_REAL(SSvg, /datum/system/native)
 		return null
 	return entities_by_index[slot]
 
-#if defined(UNIT_TESTS) || defined(TESTING) || defined(SPACEMAN_DMM)
-/**
- * The drift audit: every bound atom's declared inputs against what Rust stores, in one call. The
- * test sandbox teardown and the binding fuzz test run it after every step (a repaired divergence
- * is a runtime that fails the test that caused it). Returns every finding (empty: no divergence).
- * Test builds only: production never sweeps.
- */
-/datum/system/native/proc/reconcile_all()
-	. = list()
-	for(var/atom/movable/mover as anything in bound.Copy())
-		if(QDELETED(mover) || !mover.vg_entity)
-			continue
-		var/list/mismatches = mover.vg_reconcile()
-		if(length(mismatches))
-			. += "[mover.type] [REF(mover)]: [jointext(mismatches, "; ")]"
-
-/// Global convenience: `vg_reconcile_all()` (called from the test sandbox teardown and the fuzz test).
-/proc/vg_reconcile_all()
-	return SSvg.reconcile_all()
-#endif
-
 /// Test/debug: `vg_entity` count Rust reports versus `length(bound)`, and
 /// the raw Rust-side debug list (`vg_entity_debug_list()`). A mismatch here
 /// means an atom bound or unbound without going through vg_bind()/

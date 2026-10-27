@@ -99,23 +99,3 @@
 		"wakes_by_type" = by_type,
 		"rust" = world_rust_stats(),
 	)
-
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-/// Tests: start counting world wakes delivered to `owner`.
-/proc/world_wake_trace(datum/owner)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
-	LAZYINITLIST(sched.world_traced)
-	if(!sched.world_traced[owner])
-		sched.world_traced[owner] = 1
-
-/proc/world_wake_traced(datum/owner)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
-	return (sched.world_traced && sched.world_traced[owner]) ? sched.world_traced[owner] - 1 : 0
-
-/proc/world_wake_untrace(datum/owner)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
-	if(sched.world_traced)
-		sched.world_traced -= owner
-		if(!length(sched.world_traced))
-			sched.world_traced = null
-#endif

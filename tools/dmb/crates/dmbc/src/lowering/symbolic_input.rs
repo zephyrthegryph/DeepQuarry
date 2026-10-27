@@ -570,8 +570,12 @@ impl SessionSymbolicMemo {
             self.declines.key_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
+        let oracle_only = request_admission.filter(|admission| admission.has_oracle());
         let changed = if reads_validated {
             false
+        } else if let Some(admission) = oracle_only {
+            // The session's answer table certifies every semantic read; no domain version is issued.
+            partial_admission::changed(admission, &record.reads, &[], observer).is_some()
         } else {
             let matching =
                 partial_admission::matching_domains(&record.versions, host, request_admission);

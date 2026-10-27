@@ -39,8 +39,10 @@ CAPABILITIES(/obj/item/disposable_teleporter)
 /// Old attack_self: with uses left, teleports to the area the question was answered with.
 /obj/item/disposable_teleporter/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!uses)
-		to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
+	var/picked = A.step_value("area")
+	if(isnull(picked))
+		if(!uses)
+			to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
 		return TRUE
 	var/datum/prompt/ask = A.answer
 	if(!ask)

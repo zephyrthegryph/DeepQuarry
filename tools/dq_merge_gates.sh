@@ -46,6 +46,8 @@ merge_lock_require || exit 1
 . "$(dirname "${BASH_SOURCE[0]}")/dq_proof_cache.sh"
 # shellcheck source=tools/dq_gate_retry.sh
 . "$(dirname "${BASH_SOURCE[0]}")/dq_gate_retry.sh"
+# shellcheck source=tools/dq_gate_verdicts.sh
+. "$(dirname "${BASH_SOURCE[0]}")/dq_gate_verdicts.sh"
 _lap_t0=$(date +%s)
 lap() { echo "== gates: $1 +$(( $(date +%s) - _lap_t0 ))s"; } # where the pre-proof seconds go (the lock is held across them)
 merge_lock_busy begin
@@ -322,7 +324,7 @@ job_ratchets() {
 		echo "dq_merge_gates: ratchets run WARM (content-keyed caches; the last cold audit is recent: $cold_stamp)"
 		bash tools/ci/check_ratchets.sh || return 1
 	fi
-	tools/build/build.sh analyze || return 2
+	# (a second `build.sh analyze` ran here: the same `analyze check` over the same tree that check_ratchets.sh just ran, ~1 min per gate)
 	if [ "$shrink_after" -eq 1 ]; then
 		local abin
 		abin="$(bash tools/ci/analyze.sh 2>/dev/null)" && "$abin" baseline --update >/dev/null 2>&1 || echo "dq_merge_gates: warning: analyze baseline --update failed; baselines left as they are"
@@ -336,7 +338,19 @@ job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/ana
 
 [ "$run_tests" -eq 1 ] && names+=(tests)
 [ "$no_dm" -eq 1 ] && names+=(ratchets) || names+=(dm ratchets)
-if [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then names+=(dreamchecker); fi
+dc_key=""
+if [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
+	# DreamChecker has no incremental mode; its verdict is reused when every file it reads is identical to a tree that passed it
+	# (tools/dq_gate_verdicts.sh: a lane that changed no DM, or a bisect attempt on a tree already checked). Any DM change runs it.
+	dc_key="$(gate_dc_key 2>/dev/null)" || dc_key=""
+	if [ -n "$dc_key" ] && dc_prev="$(gate_verdict_has dreamchecker "$dc_key")"; then
+		dc_ok=1
+		echo "dreamchecker reused 0s" >>"$timings"
+		echo "== gates: dreamchecker reused: its inputs (key ${dc_key:0:12}) are identical to a tree that passed it ($dc_prev)"
+	else
+		names+=(dreamchecker)
+	fi
+fi
 [ "$tgui" -eq 1 ] && names+=(tgui)
 [ "$analyze_tests" -eq 1 ] && names+=(analyze_tests)
 echo "== gates in parallel: ${names[*]}$([ "$run_tests" -eq 1 ] && echo " (${#tests[@]} test(s): ${tests[*]:0:6}$([ ${#tests[@]} -gt 6 ] && echo ' ...'))")"
@@ -389,6 +403,7 @@ if printf '%s\n' "${names[@]}" | grep -qx dreamchecker && [[ " ${failed[*]-} " !
 	dc_log="data/merge-gates/$short.dreamchecker.log"
 	if grep -q "dream-checker: passed" "$dc_log" && grep -q "Found 0 diagnostics" "$dc_log"; then
 		dc_ok=1
+		gate_verdict_put dreamchecker "$dc_key" "$sha"
 	else
 		echo "dq_merge_gates: DreamChecker ran but did not report a clean result (or did not run); see $dc_log" >&2
 		failed+=(dreamchecker)
@@ -407,6 +422,12 @@ fi
 else
 	dm_ok="$(sed -n 's/^dm=//p' "$proof_file" 2>/dev/null)" # a lane proof (dm=0) leaves the production compile to the push
 	[ "$dm_ok" = 1 ] || dm_ok=0
+	# The push trusts the train's gate only with a DreamChecker stamp on the exact HEAD: a proof reuse has none unless DreamChecker's
+	# inputs match a tree that passed it (tools/dq_gate_verdicts.sh). Without the stamp the push runs the full production build itself.
+	if [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ] && dc_key="$(gate_dc_key 2>/dev/null)" && dc_prev="$(gate_verdict_has dreamchecker "$dc_key")"; then
+		dc_ok=1
+		echo "== gates: dreamchecker reused with the proof: its inputs (key ${dc_key:0:12}) passed before ($dc_prev)"
+	fi
 	echo "proof-reused 0s" >>"$timings"
 fi
 

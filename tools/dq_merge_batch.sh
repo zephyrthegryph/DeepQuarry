@@ -26,6 +26,11 @@
 #      next untried attempt instead of the full batch again. A cut-off or capped verdict is never saved. The first real attempt of a run
 #      and any single-lane attempt (the decisive step of a bisect) ignore the deadline, so every run makes progress and a lane is never
 #      deferred instead of judged,
+#   3d. DQ_BATCH_WT2=<a second worktree of this repository> (the train sets it for a batch of prechecked lanes): the bisect gates BOTH
+#      halves at once, good+L here and good+R there (attempt_pair); L failing narrows to L, L passing grows the proved set by L and narrows
+#      to R. One attempt at a time when free RAM is under DQ_BATCH_PARALLEL_MIN_FREE_GB (16) or DQ_BATCH_PARALLEL=0.
+#   3e. deepquarry.dme: a merge that stops on the manifest alone is resolved by merging the include sets, and an include the union merge
+#      brought back for a file one side deleted is dropped (tools/dq_dme_resolve.sh; both verified against the files on disk).
 # Machine-readable result lines at the end (tools/dq_train.sh reads them): BATCH_GOOD: <lanes>, BATCH_DEFERRED: <lanes>, BATCH_CAPPED: 1|,
 # and one BATCH_BOUNCED: <lane>|<reason>|<attempt log> per bounced lane.
 # Attempts run on a detached HEAD, so the branch only ever moves to a proved tip, with `git switch -C` from a clean tree (the previous
@@ -34,6 +39,7 @@ set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_dme_resolve.sh"
 merge_lock_require || exit 1
 
 lanes_arg=""
@@ -102,67 +108,136 @@ cache_save() { # <rc> <key>
 }
 cache_load
 
-# attempt <lane...>: detached origin/master + the merges + the gates. Returns the gates' status; a merge conflict names the lane in $CONFLICT.
-CONFLICT=""
-current_key=""
-attempt() {
-	local key="$*" l log
+# attempt_run <dir> <log> <lane...>: in <dir> (this worktree, or the second one of a parallel bisect), detached origin/master + the merges +
+# the gates; exits with the gates' status (90 setup, 91 a merge conflict: the lane is written to <log>.conflict, 93 capped). It runs in a
+# subshell so two attempts can run at once (each in its own worktree); the bookkeeping is the caller's (attempt, attempt_pair).
+attempt_run() {
+	local dir="$1" log="$2"
+	shift 2
+	(
+		cd "$dir" || exit 90
+		# Each attempt starts from a clean tree: the previous failed attempt may have left a baseline shrink behind.
+		dq_clean_tracked "dq_merge_batch: attempt started dirty" 2>&1 | tee -a "$log" >&2
+		git switch -q --detach origin/master >>"$log" 2>&1 || exit 90
+		for l in "$@"; do
+			if ! git merge --no-ff --no-edit -q -m "Merge $l" "$(ref_of "$l")" >>"$log" 2>&1 && ! dme_resolve_conflict >>"$log" 2>&1; then
+				git merge --abort >/dev/null 2>&1
+				echo "$l" >"$log.conflict"
+				echo "   $l conflicts with the batch; see $log" >&2
+				exit 91
+			fi
+			# the union merge of deepquarry.dme can bring back an include one side deleted: drop it (tools/dq_dme_resolve.sh;
+			# only where the manifest is still hand-written, without tools/build/gen_dme.py)
+			[ -f tools/build/gen_dme.py ] || dme_repair_after_merge >>"$log" 2>&1
+		done
+		# deepquarry.dme is generated: whatever the merges made of it (the dq-dme driver, or a union for a lane that still edits it by hand),
+		# the batch carries the list its merged files give, amended into its last merge commit. A spec rule the batch made stale (a lane
+		# deleted or moved a file a rule names) fails the attempt like a gate, so the bisect names the lane.
+		if [ -f tools/build/gen_dme.py ]; then
+			if ! python3 tools/build/gen_dme.py >>"$log" 2>&1; then
+				echo "   tools/build/gen_dme.py failed on the merged tree (a stale rule in tools/build/dme_spec.txt?); see $log" >&2
+				exit 1
+			fi
+			if ! git diff --quiet -- deepquarry.dme; then
+				git add -- deepquarry.dme && git commit -q --amend --no-edit
+				echo "   regenerated deepquarry.dme into the batch's last merge commit" >>"$log"
+			fi
+		fi
+		# One gen/build/test pass for the whole combination: dq_merge_gates.sh does it on this HEAD.
+		# --lane-tests LANE="names": only the tests of the lanes merged in THIS attempt go to the gate. A lane bounced for a conflict (or cut by
+		# the bisect) is not in the tree, and its test names would be "unknown" to the test build and fail every attempt that follows.
+		lt=""
+		for l in "$@"; do lt="$lt ${lane_tests[$l]:-}"; done
+		lt="$(printf '%s\n' $lt | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
+		bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${lt:+--tests "$lt"} ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
+		rc=$?
+		# A killed test phase is a verdict on the size of the batch, not on a lane.
+		if [ "$rc" -ne 0 ] && grep -q '^FOCUSED RUN CAPPED' "$log"; then rc=93; fi
+		# A failed gate leaves its in-job baseline shrink uncommitted: discard it now, so nothing leaks into the next attempt or cycle.
+		if [ "$rc" -ne 0 ]; then dq_clean_tracked "dq_merge_batch: failed gate left a tracked edit" 2>&1 | tee -a "$log" >&2; fi
+		exit "$rc"
+	)
+}
+
+attempt_start() { # <lane...>: 0 = run it, else the cached verdict or 92 (the deadline passed)
+	local key="$*"
 	if [ -z "${NOCACHE:-}" ] && [ -n "${tried_rc[$key]+x}" ]; then return "${tried_rc[$key]}"; fi
 	if [ -z "${NOCACHE:-}" ] && [ -n "$DEADLINE" ] && [ "$real_attempts" -gt 0 ] && [ "$#" -gt 1 ] && [ "$(date +%s)" -gt "$DEADLINE" ]; then
 		echo "== batch attempt not started ($key): the cycle deadline passed; the lanes not yet judged are deferred"
 		return 92
 	fi
-	current_key="$key"
+	return 0
+}
+attempt_new_log() { # <lane...>: numbers a new attempt; ATT_LOG is its log (relative to this worktree)
 	n_attempts=$((n_attempts + 1))
 	real_attempts=$((real_attempts + 1))
-	log="data/merge-batch/$stamp.attempt$n_attempts.log"
-	attempt_log[$key]="$log"
-	echo "== batch attempt $n_attempts: $key (log $log)"
+	ATT_LOG="data/merge-batch/$stamp.attempt$n_attempts.log"
+	attempt_log["$*"]="$ATT_LOG"
+	: >"$ATT_LOG"
+	rm -f "$ATT_LOG.conflict"
+	echo "== batch attempt $n_attempts: $* (log $ATT_LOG)"
+}
+attempt_done() { # <rc> <log> <lane...>: records the verdict, names a conflicting lane in CONFLICT
+	local rc="$1" log="$2"
+	shift 2
 	CONFLICT=""
-	# Each attempt starts from a clean tree: the previous failed attempt may have left a baseline shrink behind.
-	dq_clean_tracked "dq_merge_batch: attempt started dirty" 2>&1 | tee -a "$log" >&2
-	git switch -q --detach origin/master || return 90
-	for l in "$@"; do
-		if ! git merge --no-ff --no-edit -q -m "Merge $l" "$(ref_of "$l")" >>"$log" 2>&1; then
-			git merge --abort >/dev/null 2>&1
-			CONFLICT="$l"
-			echo "   $l conflicts with the batch; see $log" >&2
-			tried_rc[$key]=91
-			[ -n "${NOCACHE:-}" ] || cache_save 91 "$key"
-			return 91
-		fi
-	done
-	# deepquarry.dme is generated: whatever the merges made of it (the dq-dme driver, or a union for a lane that still edits it by hand),
-	# the batch carries the list its merged files give, amended into its last merge commit. A spec rule the batch made stale (a lane
-	# deleted or moved a file a rule names) fails the attempt like a gate, so the bisect names the lane.
-	if [ -f tools/build/gen_dme.py ]; then
-		if ! python3 tools/build/gen_dme.py >>"$log" 2>&1; then
-			echo "   tools/build/gen_dme.py failed on the merged tree (a stale rule in tools/build/dme_spec.txt?); see $log" >&2
-			tried_rc[$key]=1
-			[ -n "${NOCACHE:-}" ] || cache_save 1 "$key"
-			return 1
-		fi
-		if ! git diff --quiet -- deepquarry.dme; then
-			git add -- deepquarry.dme && git commit -q --amend --no-edit
-			echo "   regenerated deepquarry.dme into the batch's last merge commit"
-		fi
-	fi
-	# One look-key normalization/record and one gen/build/test pass for the whole combination: dq_merge_gates.sh does them on this HEAD.
-	# --lane-tests LANE="names": only the tests of the lanes merged in THIS attempt go to the gate. A lane bounced for a conflict (or cut by
-	# the bisect) is not in the tree, and its test names would be "unknown" to the test build and fail every attempt that follows.
-	local lt=""
-	for l in "$@"; do lt="$lt ${lane_tests[$l]:-}"; done
-	lt="$(printf '%s\n' $lt | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
-	bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${lt:+--tests "$lt"} ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
-	local rc=$?
+	if [ "$rc" -eq 91 ]; then CONFLICT="$(cat "$log.conflict" 2>/dev/null)"; rm -f "$log.conflict"; fi
 	tail -n 3 "$log" | sed 's/^/   /'
-	# A killed test phase is a verdict on the size of the batch, not on a lane.
-	if [ "$rc" -ne 0 ] && grep -q '^FOCUSED RUN CAPPED' "$log"; then rc=93; echo "   the test phase hit its wall-clock cap (the batch is too big for it)"; fi
-	# A failed gate leaves its in-job baseline shrink uncommitted: discard it now, so nothing leaks into the next attempt or cycle.
-	if [ "$rc" -ne 0 ]; then dq_clean_tracked "dq_merge_batch: failed gate left a tracked edit" 2>&1 | tee -a "$log" >&2; fi
-	tried_rc[$key]=$rc
-	[ -n "${NOCACHE:-}" ] || cache_save "$rc" "$key"
+	[ "$rc" -eq 93 ] && echo "   the test phase hit its wall-clock cap (the batch is too big for it)"
+	tried_rc["$*"]=$rc
+	[ -n "${NOCACHE:-}" ] || cache_save "$rc" "$*"
+}
+
+# attempt <lane...>: one attempt in this worktree. Returns the gates' status; a merge conflict names the lane in $CONFLICT.
+CONFLICT=""
+current_key=""
+attempt() {
+	local rc
+	attempt_start "$@" || return $?
+	current_key="$*"
+	attempt_new_log "$@"
+	attempt_run "$PWD" "$ATT_LOG" "$@"; rc=$?
+	attempt_done "$rc" "$ATT_LOG" "$@"
 	return "$rc"
+}
+
+# attempt_pair "<lanes A>" "<lanes B>": both attempts at once, A in this worktree and B in the second one (DQ_BATCH_WT2). Sets RC_A and RC_B
+# (CONFLICT_A, CONFLICT_B). A verdict already known is not run again; with only one left to run it runs here, alone.
+attempt_pair() {
+	local a b log_a log_b pid_a pid_b
+	read -r -a a <<<"$1"; read -r -a b <<<"$2"
+	attempt_start "${a[@]}"; RC_A=$?
+	attempt_start "${b[@]}"; RC_B=$?
+	CONFLICT_A=""; CONFLICT_B=""
+	if [ "$RC_A" -eq 0 ] && [ "$RC_B" -eq 0 ]; then
+		echo "== parallel bisect: [${a[*]}] here and [${b[*]}] in $WT2, at the same time"
+		current_key="${a[*]}"
+		attempt_new_log "${a[@]}"; log_a="$ATT_LOG"
+		attempt_new_log "${b[@]}"; log_b="$ATT_LOG"
+		attempt_run "$PWD" "$log_a" "${a[@]}" & pid_a=$!
+		attempt_run "$WT2" "$PWD/$log_b" "${b[@]}" & pid_b=$!
+		wait "$pid_a"; RC_A=$?
+		wait "$pid_b"; RC_B=$?
+		attempt_done "$RC_A" "$log_a" "${a[@]}"; CONFLICT_A="$CONFLICT"
+		attempt_done "$RC_B" "$log_b" "${b[@]}"; CONFLICT_B="$CONFLICT"
+		return 0
+	fi
+	if [ "$RC_A" -eq 0 ]; then attempt "${a[@]}"; RC_A=$?; CONFLICT_A="$CONFLICT"; fi
+	if [ "$RC_B" -eq 0 ]; then attempt "${b[@]}"; RC_B=$?; CONFLICT_B="$CONFLICT"; fi
+	return 0
+}
+
+# Parallel halves need a second worktree of this repository and the memory for a second compile session.
+WT2="${DQ_BATCH_WT2:-}"
+parallel_ok() {
+	[ -n "$WT2" ] && [ -e "$WT2/.git" ] && [ "${DQ_BATCH_PARALLEL:-1}" != 0 ] || return 1
+	local free_kb min_gb="${DQ_BATCH_PARALLEL_MIN_FREE_GB:-16}"
+	free_kb="$(awk '/^MemFree:/ {print $2}' /proc/meminfo 2>/dev/null)"
+	if [ -n "$free_kb" ] && [ "$free_kb" -lt $((min_gb * 1048576)) ]; then
+		echo "== the bisect runs one attempt at a time: $((free_kb / 1048576)) GB of RAM free (< ${min_gb} GB for a second compile session)"
+		return 1
+	fi
+	return 0
 }
 
 bounce() { # <lane> <why> [<attempt log>]
@@ -199,6 +274,41 @@ while [ ${#remaining[@]} -gt 0 ]; do
 			bounce "${set[0]}" "gates failed alone on master (logs data/merge-batch/$stamp.attempt$n_attempts.log and data/merge-gates/)" "${attempt_log[${set[*]}]:-}"
 		fi
 		good=(); remaining=(); break
+	fi
+	if parallel_ok; then
+		# Parallel bisect: good+remaining fails. Split remaining into halves L and R and gate good+L and good+R AT ONCE (two worktrees).
+		# L fails: the culprit is in L (R waits in `rest`). L passes: good grows by L, and the culprit is in R (R failed on its own, or
+		# only together with L: either way good+R now fails). One halving per gate wall time instead of one per attempt.
+		sub=("${remaining[@]}"); rest=(); fail_key="${set[*]}"; prc=0
+		while [ ${#sub[@]} -gt 1 ]; do
+			mid=$(( ${#sub[@]} / 2 ))
+			L=("${sub[@]:0:mid}"); R=("${sub[@]:mid}")
+			attempt_pair "${good[*]-} ${L[*]}" "${good[*]-} ${R[*]}"
+			if [ "$RC_A" -eq 92 ] || [ "$RC_A" -eq 93 ] || [ "$RC_B" -eq 92 ] || [ "$RC_B" -eq 93 ]; then
+				if [ "$RC_A" -eq 93 ] || [ "$RC_B" -eq 93 ]; then prc=93; else prc=92; fi
+				if [ "$RC_A" -eq 0 ]; then good+=("${L[@]}"); sub=("${R[@]}"); fi
+				break
+			fi
+			if [ "$RC_A" -ne 0 ]; then
+				rest=("${R[@]}" "${rest[@]+"${rest[@]}"}"); sub=("${L[@]}"); fail_key="${good[*]-}"; fail_key="${fail_key:+$fail_key }${L[*]}"
+			else
+				# the log that shows R failing: good+R itself when it failed, else the earlier set (good+L+R) that did
+				if [ "$RC_B" -ne 0 ]; then fail_key="${good[*]-}"; fail_key="${fail_key:+$fail_key }${R[*]}"; fi
+				good+=("${L[@]}"); sub=("${R[@]}")
+			fi
+		done
+		if [ "$prc" -ne 0 ]; then
+			[ "$prc" -eq 93 ] && capped=1
+			echo "== the parallel bisect stopped ($([ "$prc" -eq 93 ] && echo 'capped' || echo 'deadline')); deferring [${sub[*]} ${rest[*]-}]"
+			deferred+=("${sub[@]}" "${rest[@]+"${rest[@]}"}"); remaining=()
+			continue
+		fi
+		culprit="${sub[0]}"
+		if [ "${tried_rc[$fail_key]:-1}" = 91 ]; then why="merge conflict with the batch or master (rebase it: bash tools/dq_merge_master.sh in the lane, then enqueue again)"
+		else why="the batch fails once it is merged (parallel bisect; logs data/merge-batch/$stamp.attempt*.log)"; fi
+		bounce "$culprit" "$why" "${attempt_log[$fail_key]:-}"
+		remaining=("${rest[@]+"${rest[@]}"}")
+		continue
 	fi
 	# Bisect: the smallest prefix of `remaining` that fails on top of `good` names the culprit.
 	lo=1; hi=${#remaining[@]}; passed=0

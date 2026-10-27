@@ -183,7 +183,14 @@ export async function runAnalyzeTests(options: AnalyzeTestOptions): Promise<void
     const scopesFile = path.join(root, 'tools/ci/lint_scopes.toml');
     if (fs.existsSync(scopesFile)) inputs.push(scopesFile);
     inputs = [...new Set(inputs)].sort();
-    if (executableDoctests(inputs)) throw new Error('executable or unclassified doctests');
+    // Doctests run only for the package under test: `cargo test` in tools/analyze (its own workspace root) never runs a path
+    // dependency's doctests ("Doc-tests dq_analyze" is the only doctest section). So only that package's own files are classified;
+    // a vendored dependency (vendor/dreammaker's `#[doc(hidden)]`, vendor/interval-tree's untagged fences) made every gate bypass the
+    // cache and recompile the harnesses (~9 min of a 10-11 min analyze_tests job, train gates 2026-10-26). Files still hash into the key.
+    const own = fs.realpathSync(cwd);
+    const nested = packageDirs.filter((dir) => dir !== own && dir.startsWith(`${own}${path.sep}`));
+    const ownFiles = filesUnder(own).filter((file) => !nested.some((dir) => file.startsWith(`${dir}${path.sep}`)));
+    if (executableDoctests(ownFiles)) throw new Error('executable or unclassified doctests');
     const toolchain = `${await execute('rustc', ['-vV'])}\0${await execute('cargo', ['--version'])}`;
     const settings = [...new Set(['RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'RUSTC', 'RUSTDOC', 'RUSTUP_TOOLCHAIN', 'RUSTC_BOOTSTRAP', 'RUSTC_WRAPPER', 'RUSTC_WORKSPACE_WRAPPER', 'CC', 'CFLAGS', 'CXX', 'CXXFLAGS', 'AR',
       ...Object.keys(env).filter((name) => name.startsWith('CARGO_PROFILE_') || name.startsWith('CARGO_TARGET_') || name.startsWith('CARGO_BUILD_')),

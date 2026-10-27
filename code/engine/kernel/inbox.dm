@@ -585,12 +585,7 @@ SYSTEM_DEF(input)
 
 /// The tick's own answer (no override).
 /datum/system/input/proc/input_room(datum/input_event/E)
-#ifdef UNIT_TESTS
-	// A test world boots through ticks that run far past 100%: only room_override decides there (as shedding is off in tests).
-	return TRUE
-#else
 	return TICK_USAGE < E.resolve_threshold
-#endif
 
 /// Files `E` in `source`'s queue: a coalescible event replaces the queued one with its key, and a full inbox sheds its oldest
 /// coalescible input (an event that cannot coalesce is kept, past the cap if it must).

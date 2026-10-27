@@ -53,6 +53,8 @@ CAPABILITIES(/obj/item/reagent_containers/glass/rag)
 
 MSG_DEF_SELF(rag/cant_smother, span_warning("You can't smother this creature."))
 MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U% begins to wring out %I%.")
+MSG_DEF_SELF(rag/cant_smother, "You can't smother this creature.")
+MSG_DEF_SELF(rag/dry, "The rag is dry!")
 
 /// What the rag is called follows what it holds and whether it burns.
 /obj/item/reagent_containers/glass/rag/proc/name_refreshed(datum/act/A)

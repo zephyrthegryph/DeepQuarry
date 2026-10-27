@@ -414,6 +414,16 @@ impl ProcedureMemo {
             };
         };
         let certificates = self.dep_index().map(|index| &**index);
+        // Stored reads are proven by the session's answer table when there is one (no domain version is issued).
+        let provider: &dyn Resolver = match host.transparent_receipt_observer() {
+            Some(observer) => observer.provider(),
+            None => host,
+        };
+        let answer = |query: &dm_ir::ResolveQuery| provider.resolve(*query);
+        let answers = self
+            .query_db()
+            .filter(|_| !host.observes_reads() || host.transparent_receipt_observer().is_some())
+            .map(|db| db.request_answers(&answer));
         let replay = std::cell::RefCell::new(None);
         let view =
             snapshot.get_candidate_backed(key.record_key(tail), |bytes, _symbols, backing| {
@@ -445,6 +455,7 @@ impl ProcedureMemo {
                         host,
                         prepared,
                         Some(backing),
+                        answers.as_ref(),
                     )
                 };
                 let admitted = result.unit.is_some()

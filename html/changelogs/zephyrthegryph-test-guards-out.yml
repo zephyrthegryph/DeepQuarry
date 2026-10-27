@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Test-only procs and checks moved out of game files into appended test-build files; the test build now differs from the game build mostly by those files."

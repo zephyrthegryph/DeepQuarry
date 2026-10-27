@@ -530,7 +530,7 @@ GLOBAL_LIST_INIT(imbued_rune_choices, list("teleport", "itemport", "tome", "armo
 		return
 	imbued_rune_chosen(user, rune, A.step_value("beacon"))
 
-/// The admin tome's rune pick, then (for a teleport rune) its last word. `rune` carries the first answer.
+/// The admin tome's rune pick, then (for a teleport rune) its last word.
 /datum/prompt/choice/imbued_rune
 	title = "Rune Scribing"
 	timeout = 30 SECONDS
