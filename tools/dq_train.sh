@@ -67,7 +67,7 @@ ORIG_ARGS=("$@")
 # Every file the integrator runs from SELF_DIR (the snapshot under $STATE/self), relative to tools/. The ONE place to list them: ensure
 # copies these, and the self-update compares and refreshes these. A script the cycle runs through "$SELF_DIR/..." goes here
 # (tools/ci/test_train.sh fails when one is missing); dq_declared_tests.sh and dq_light_paths.sh are enqueue-only (the lane's checkout).
-SNAP_FILES=(dq_train.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml)
+SNAP_FILES=(dq_train.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml train/lane_times.py)
 STATE="${DQ_TRAIN_STATE:-E:/dq-cache/train}"
 WT="${DQ_TRAIN_WT:-E:/projects/dq-wt/train-base}"
 TBRANCH="${DQ_TRAIN_BRANCH:-train/integ}"
@@ -214,7 +214,7 @@ start_detached() { # <script> <log> [<command>, default run]: a process outside 
 in_snapshot() { [ -d "$STATE/self" ] && [ "$(cd "$STATE/self" && pwd)" = "$SELF_DIR" ]; }
 snapshot_install() { # <from dir> <to dir>: SNAP_FILES, plain copies (dq_train.sh last: it may be the running script)
 	local f i from="$1" to="$2"
-	mkdir -p "$to/ci" || return 1
+	mkdir -p "$to/ci" "$to/train" || return 1
 	for (( i = ${#SNAP_FILES[@]} - 1; i >= 0; i-- )); do
 		f="${SNAP_FILES[$i]}"
 		cp -f "$from/$f" "$to/$f" || return 1
@@ -264,7 +264,7 @@ self_update() {
 	[ "$sig" != "$SELF_UPDATE_BAD" ] || return 0
 	if [ $(( $(date +%s) - SELF_UPDATE_LAST )) -lt 30 ]; then return 0; fi # never a tight re-exec loop
 	stage="$STATE/self.new"
-	rm -rf "$stage"; mkdir -p "$stage/ci" || return 0
+	rm -rf "$stage"; mkdir -p "$stage/ci" "$stage/train" || return 0
 	for f in "${SNAP_FILES[@]}"; do
 		G show "origin/master:tools/$f" >"$stage/$f" 2>/dev/null || { tlog "ERROR: self-update: cannot read tools/$f from origin/master; keeping the current scripts"; SELF_UPDATE_BAD="$sig"; rm -rf "$stage"; return 0; }
 	done

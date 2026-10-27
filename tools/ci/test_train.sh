@@ -34,6 +34,7 @@ cp "$here/tools/dq_train.sh" "$here/tools/dq_train_estimate.js" "$here/tools/dq_
 echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
 printf '#!/usr/bin/env bash\nexit 0\n' >tools/dq_disk_budget.sh  # stub: the integrator runs the disk gate from its SELF_DIR
 echo '# manifest' >tools/ci/disk_budget.toml
+mkdir -p tools/train; cp "$here/tools/train/lane_times.py" tools/train/
 cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
 # stub gates: BAD in a lane file fails; with DQ_STUB_CAP_ABOVE=N a batch of more than N lane files looks like a killed test phase
@@ -249,6 +250,9 @@ out="$(DQ_TRAIN_DRY_RUN=1 DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "a dry run passes the gate but pushes nothing and keeps the lane queued" 'grep -q "DRY RUN" <<<"$out" && ! in_master lane/n && status_has "lane/n  tip"'
 train dequeue lane/n >/dev/null
 check "dequeue withdraws a lane" '! status_has "lane/n  tip"'
+mkdir -p "$DQ_TRAIN_WT/data/merge-gates"; printf 'gen 2s rc=0\ntests 300s rc=0\ngates-wall 400s rc=0\n' >"$DQ_TRAIN_WT/data/merge-gates/abc.timings"
+out="$(train lanes --since 2000-01-01T00:00:00Z 2>&1)"
+check "lanes reports per-lane waiting / in-cycle / fixing times and the gate phase means" 'grep -q "lane episodes: mean waiting" <<<"$out" && grep -q "lane/a " <<<"$out" && grep -qE "tests +300" <<<"$out"'
 
 # ---- the estimator -----------------------------------------------------------------------------------------------------------------------
 mkdir -p "$tmp/runs"
@@ -409,7 +413,7 @@ refs="$(sed '/^cmd_enqueue() {/,/^}/d' tools/dq_train.sh | grep -o '\$SELF_DIR/[
 missing=""; for r in $refs; do case " $snapfiles " in *" $r "*) ;; *) missing="$missing $r" ;; esac; done
 check "every file the cycle runs from SELF_DIR is in SNAP_FILES (missing:${missing:- none})" '[ -z "$missing" ] && [ -n "$snapfiles" ]'
 git fetch -q origin; git switch -q --detach origin/master
-su="$tmp/su-state"; mkdir -p "$su/self/ci"
+su="$tmp/su-state"; mkdir -p "$su/self/ci" "$su/self/train"
 for f in $snapfiles; do cp -f "tools/$f" "$su/self/$f"; done
 export DQ_TRAIN_ORIGIN_REPO="$tmp/repo"
 sulog() { cat "$su/log/train.log" 2>/dev/null; }
