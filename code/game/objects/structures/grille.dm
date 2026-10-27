@@ -229,11 +229,14 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	return 0
 
 
-/obj/structure/grille/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/grille/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
-	return 1
+	return OP_OK
 
 // Used in mapping to avoid
 /obj/structure/grille/broken

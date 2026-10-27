@@ -31,7 +31,6 @@
 /obj/structure/cult/pylon/var/isbroken = FALSE
 CAPABILITIES(/obj/structure/cult/pylon)
 	configure(light_glow(range = 5, color = "#3e0000"))
-	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	/// Surges near players while intact; a broken pylon does nothing until repaired.
 	every(2 SECONDS, then(PROC_REF(pylon_step)), when = all_of(not(nameof(isbroken)), STAT_RELEVANCE))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -44,7 +43,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 	return TRUE
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
-/obj/structure/cult/pylon/proc/smashed_by(datum/act/hit/generic/A)
+/obj/structure/cult/pylon/smashed_by(datum/act/hit/generic/A)
 	var/mob/user = A.attacker
 	var/damage = A.damage
 	attackpylon(user, damage)

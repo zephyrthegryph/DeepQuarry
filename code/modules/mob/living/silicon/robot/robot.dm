@@ -1160,8 +1160,9 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 				H.feed_self_to_grabbed(H, src)
 
 //Robots take half damage from basic attacks.
-/mob/living/silicon/robot/attack_generic(mob/user, damage, attack_message)
-	return ..(user,FLOOR(damage/2, 1),attack_message)
+/mob/living/silicon/robot/smashed_by(datum/act/hit/generic/A)
+	A.damage = FLOOR(A.damage / 2, 1)
+	return ..()
 
 /mob/living/silicon/robot/proc/allowed(mob/M)
 	//check if it doesn't require any access at all

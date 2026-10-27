@@ -23,10 +23,12 @@
 			continue
 		spent(A)
 
-/turf/unsimulated/wall/supermatter/attack_generic(mob/user as mob)
-	return attack_hand(user)
+/turf/unsimulated/wall/supermatter/proc/smashed_by(datum/act/hit/generic/A)
+	attack_hand(A.attacker)
+	return OP_OK
 
 CAPABILITIES(/turf/unsimulated/wall/supermatter)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	op("supermatter_wall_robot", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_robot)))
 	op("supermatter_wall_silicon_examine", remote(), priority(OP_PRIORITY_DEFAULT - 2), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
 	op("supermatter_wall_ghost_examine", observer(), label("Examine"), then(PROC_REF(supermatter_wall_examine)))

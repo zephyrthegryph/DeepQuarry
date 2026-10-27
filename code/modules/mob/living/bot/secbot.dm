@@ -196,10 +196,11 @@ CAPABILITIES(/mob/living/bot/secbot)
 		return
 	after(src, 0, PROC_REF(react_to_attack), with = list(attacker))
 
-/mob/living/bot/secbot/attack_generic(mob/attacker)
+/mob/living/bot/secbot/smashed_by(datum/act/hit/generic/A)
+	var/mob/attacker = A.attacker
 	if(attacker)
 		after(src, 0, PROC_REF(react_to_attack), with = list(attacker))
-	..()
+	return ..()
 
 /mob/living/bot/secbot/proc/react_to_attack(mob/attacker)
 	if(!on || !retaliates)		// We don't want it to react if it's off or doesn't care

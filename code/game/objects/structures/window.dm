@@ -159,10 +159,12 @@
 			MSG_BLIND("You hear a knocking sound."))
 	return OP_OK
 
-/obj/structure/window/attack_generic(mob/user, damage)
+/obj/structure/window/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	user.setClickCooldown(user.get_attack_speed())
 	if(!damage)
-		return
+		return OP_OK
 	if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		act_message(user, src, others = span_danger("%U% smashes into %T%!"))
 		if(reinf)
@@ -171,7 +173,7 @@
 	else
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
-	return 1
+	return OP_OK
 
 /// Old attackby: slam a grabbed mob against it, wire it for tinting, or hit it.
 /obj/structure/window/proc/interaction_item(datum/act/op/A)

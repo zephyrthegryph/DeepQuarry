@@ -19,6 +19,7 @@
 	var/apply_colour //temp pending icon rewrite
 
 CAPABILITIES(/obj/item/stack/material)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(movable_motion(throw_range = 3, throw_speed = 3))
 	configure(item_handling(center_x = 0, center_y = 0))
 	setup(PROC_REF(find_material), mapload = TRUE)

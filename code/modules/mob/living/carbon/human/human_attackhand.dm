@@ -429,7 +429,10 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 /mob/living/carbon/human/proc/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, inrange, params)
 	return
 
-/mob/living/carbon/human/attack_generic(mob/user, damage, attack_message)
+/mob/living/carbon/human/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb
 	if(istype(user,/mob/living))
 		var/mob/living/L = user
 		if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
@@ -439,7 +442,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 					MSG_OTHERS(span_warning("%U% is hurt by sharp body parts when touching %T%!")))
 
 	if(!damage)
-		return
+		return OP_OK
 
 	add_attack_logs(user,src,"Melee attacked with fists (miss/block)",admin_notify = FALSE) //No admin notice since this is usually fighting simple animals
 	act_message(user, src, others = span_danger("%U% has [attack_message] %T%!"))
@@ -448,7 +451,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 	var/dam_zone = pick(organs_by_name)
 	var/obj/item/organ/external/affecting = get_organ(ran_zone(dam_zone))
 	receive_generic_attack(user, damage, affecting?.organ_tag, armored = TRUE)
-	return TRUE
+	return OP_OK
 
 //Used to attack a joint through grabbing
 /mob/living/carbon/human/proc/grab_joint(mob/living/user, def_zone)

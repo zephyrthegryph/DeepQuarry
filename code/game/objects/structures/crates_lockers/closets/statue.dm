@@ -109,10 +109,9 @@
 		shatter(M)
 	return ..()
 
-/obj/structure/closet/statue/attack_generic(mob/user, damage, attacktext, environment_smash)
-	if(damage && environment_smash)
-		for(var/mob/M in slot_contents())
-			shatter(M)
+/obj/structure/closet/statue/smashed_by(datum/act/hit/generic/A)
+	// A statue shrugs off a generic hit: nothing lands and nothing is thrown open.
+	return OP_OK
 
 /obj/structure/closet/statue/relaymove()
 	return
