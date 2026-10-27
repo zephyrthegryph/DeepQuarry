@@ -913,3 +913,27 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
 - **One DreamChecker at a time.** Two at once (both precheck workers, or a precheck beside the batch gate) took 600-700 s each against
   335 s alone. The gates' dreamchecker job now holds the machine slot class `dreamchecker` (capacity 1, `DQ_SLOTS_DREAMCHECKER`); the
   batch gate's priority 0 goes first. `DQ_GATE_DC_PARALLEL=1` runs it without the slot.
+- **Compile and boot only when nothing interacts.** A prechecked batch in which every lane's own tests are skipped (no shared area with
+  another lane or with master since its precheck, no global path) passes `--no-smoke` and runs `dq_boot_gate` alone: each lane passed the
+  smoke and gameplay sets on its merge with master, master passed them on its own, and the combination still compiles and boots in the
+  gate. `DQ_TRAIN_LONE_SMOKE=1` keeps the sets.
+- **DreamChecker once for the queue.** A precheck defers DreamChecker (`DQ_GATE_DC_DEFER`) and records `tpass` when everything else passed.
+  The prechecker runs one DreamChecker for origin/master plus every queued heavy lane that has no DreamChecker verdict yet, beside the
+  prechecks, in its own worktree `E:/projects/dq-wt/train-dc` (`dq_merge_batch.sh --no-tests` with `DQ_GATE_ONLY_DC`: a failure bisects to
+  the culprit lane). A lane that changes no DreamChecker input passes at once. A `tpass` lane becomes `pass` when its verdict arrives; a
+  DreamChecker failure bounces it with the log; a lane that conflicted with another lane of the run is checked alone next
+  (`precheck/dc/`). The batch gate's DreamChecker trust (above) measures master's changes from the DreamChecker run's master. A gate that
+  reuses a proof with no DreamChecker verdict covering its tree runs DreamChecker itself, so the push never falls back to the full
+  production build. `DQ_TRAIN_DC_BATCH=0` returns to one DreamChecker per precheck.
+- **Light lanes are prechecked.** Compiler lanes ride the light path; their cargo tests made each light cycle about 10 minutes, and light
+  lanes go first, so every DM lane waited behind them (lane wait 22 -> 4 -> 14.7 min, 27 October). The prechecker now runs a light lane's
+  cheap checks on its merge with master (`DQ_GATE_LIGHT`, in a precheck worker beside the gates), the light cycle takes a light lane once
+  that passed (or after the wait limit), and lands it without repeating the checks (`DQ_LIGHT_TRUST` to `dq_land_batch.sh`) when master
+  changed nothing in the lane's areas since (`light_area`: a compiler crate, `tools/<x>`, a top-level script, a directory; a parent area
+  such as `tools/dmb` overlaps its crates). `DQ_TRAIN_LIGHT_PRECHECK=0` turns it off.
+- **Queue files are written whole.** Every change to a queue file holds `queue.lock` and replaces the file by rename; an edit to a file a
+  bounce removed is dropped, never appended into a new one (an append left `perf/refresh-timer` queued with no tip, tests or enqueue time).
+  A malformed entry (no seq, branch or tip) is moved to `malformed/`, logged, listed by `status`, and never gated.
+- **A compiler lane's light precheck publishes its compiler.** When a light precheck's merge changes `tools/dmb`, it also runs
+  `build.sh dmbc` (content-addressed), so the heavy gate after the lane lands finds the compiler instead of rebuilding it for 3-4
+  minutes (`prebuild-compiler` 180-273 s in four of the slow cycles on 27 October). `DQ_GATE_LIGHT_PREBUILD=0` turns it off.
