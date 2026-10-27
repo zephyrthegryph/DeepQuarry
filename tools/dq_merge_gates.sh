@@ -251,8 +251,9 @@ if [ -n "$lanes" ]; then
 			UNSTAMPED) unstamped+=("$(awk '{print $2}' <<<"$row")") ;;
 		esac
 	done
-	if [ ${#unstamped[@]} -gt 0 ] && [ ${#tests_arg[@]} -eq 0 ]; then
-		echo "dq_merge_gates: REFUSED: no lane-ready stamp on: ${unstamped[*]}. Run tools/dq_lane_ready.sh in the lane, or name its tests: --tests \"a b c\"" >&2
+	# --no-tests (the train's DreamChecker batch) runs no test world, so a lane's proof is the train's own precheck and a stamp decides nothing.
+	if [ ${#unstamped[@]} -gt 0 ] && [ ${#tests_arg[@]} -eq 0 ] && [ "$run_tests" -eq 1 ]; then
+		echo "dq_merge_gates: REFUSED: no test list for unstamped lane(s): ${unstamped[*]}. Name the lane's tests: --tests \"a b c\" (the train passes them from the queue record: tools/dq_train.sh enqueue --tests ...)" >&2
 		exit 2
 	fi
 fi
