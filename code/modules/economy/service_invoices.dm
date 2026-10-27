@@ -342,12 +342,12 @@ CAPABILITIES(/datum/economic_adoption)
 	customer_department = _customer_department
 	provider_department = _provider_department
 	value = _value
-	observe(parent, /datum/notice/attack_self, src, then(PROC_REF(on_attack_self)))
+	observe(parent, /datum/notice/self_attacked, src, then(PROC_REF(on_attack_self)))
 	observe(parent, /datum/notice/item_attack, src, then(PROC_REF(on_attack)))
 
 /datum/economic_adoption/proc/on_attack_self(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/notice/attack_self/event = N
+	var/datum/notice/self_attacked/event = N
 	record_use(event.user)
 
 /datum/economic_adoption/proc/on_attack(datum/act/notice/A)

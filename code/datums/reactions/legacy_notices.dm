@@ -137,10 +137,10 @@
 /datum/notice/atom_used_in_craft/fill(result_)
 	src.result_ = result_
 
-/// From base of atom/attack_basic_mob(): (/mob/user) from base of [/atom/proc/extinguish]
+/// From base of [/atom/proc/extinguish]: the atom's fire was put out (a burning mob's fire_stacks status hears it on its owner).
 /datum/notice/atom_extinguish
 
-/// From base of [/atom/proc/take_damage]: (damage_amount, damage_type, damage_flag, sound_effect, attack_dir, aurmor_penetration)
+/// From base of [/atom/proc/take_damage], once the damage landed (after armour): (damage_amount, damage_type, damage_flag, sound_effect, attack_dir, aurmor_penetration)
 /datum/notice/atom_take_damage
 	var/damage_amount
 	var/damage_type
@@ -157,34 +157,6 @@
 	src.attack_dir = attack_dir
 	src.aurmor_penetration = aurmor_penetration
 
-/// Veto (from hand_gate()): `user` touches the atom;
-/// EVENT_VETO means a behaviour handled it and the touch stops there.
-/datum/notice/attack_hand
-	var/user
-
-/datum/notice/attack_hand/fill(user)
-	src.user = user
-
-/// Veto: `user` uses the item in hand; EVENT_VETO
-/// means a behaviour handled it and the attack chain stops.
-/datum/notice/attack_self
-	var/user
-
-/datum/notice/attack_self/fill(user)
-	src.user = user
-
-/// Veto: `user` hits the atom with `item`; EVENT_VETO
-/// means a behaviour handled it and the attack chain stops.
-/datum/notice/attackby
-	var/item
-	var/user
-	var/params
-
-/datum/notice/attackby/fill(item, user, params)
-	src.item = item
-	src.user = user
-	src.params = params
-
 /// From /obj/belly/HandleBellyReagents() and /obj/belly/update_internal_overlay()
 /datum/notice/belly_update_vore_fx
 	var/volume
@@ -192,7 +164,7 @@
 /datum/notice/belly_update_vore_fx/fill(volume)
 	src.volume = volume
 
-/// #define COMSIG_MOB_CANCEL_CLICKON (1<<0) //shared with other forms of click, this is so you're aware it exists here too. from base of atom/click_alt(): (/mob)
+/// From /mob/proc/base_click_alt(): `mob` alt-clicked the atom. A listener handles the click: when one listens, the atom's own click_alt() and the loot panel do not run.
 /datum/notice/click_alt
 	var/mob
 
@@ -207,15 +179,6 @@
 /datum/notice/in_range_of_irradiation/fill(pulse_information, insulation_to_target)
 	src.pulse_information = pulse_information
 	src.insulation_to_target = insulation_to_target
-
-/// Called when a living mob collides with a dense turf : /mob/living/proc/turf_collision(var/turf/T, var/speed)
-/datum/notice/living_turf_collision
-	var/t
-	var/speed
-
-/datum/notice/living_turf_collision/fill(t, speed)
-	src.t = t
-	src.speed = speed
 
 /// From base of atom/movable/Bump(): (/atom)
 /datum/notice/movable_bump
@@ -325,9 +288,6 @@
 
 /// Called when a disposal connected object should unlink from a trunk it's attached to.
 /datum/notice/disposal_unlink
-
-/// Sent from /proc/do_after if someone starts a do_after action bar.
-/datum/notice/do_after_began
 
 /// Sent from /proc/do_after once a do_after action completes, whether via the bar filling or via interruption.
 /// --------------------------------------------------------------------------- Signals emitted on the mob by the brain framework. Behaviors can subscribe to these via their eval_triggers list to re-evaluate only when relevant. ---------------------------------------------------------------------------
@@ -571,29 +531,6 @@
 	src.patient = patient
 	src.zone = zone
 	src.success = success
-
-/// From base of /mob/living/proc/apply_damage(): (damage, damagetype, def_zone, blocked, wound_bonus, exposed_wound_bonus, sharpness, attack_direction, attacking_item)
-/datum/notice/mob_apply_damage
-	var/damage
-	var/damagetype
-	var/def_zone
-	var/blocked
-	var/wound_bonus
-	var/exposed_wound_bonus
-	var/sharpness
-	var/attack_direction
-	var/attacking_item
-
-/datum/notice/mob_apply_damage/fill(damage, damagetype, def_zone, blocked, wound_bonus, exposed_wound_bonus, sharpness, attack_direction, attacking_item)
-	src.damage = damage
-	src.damagetype = damagetype
-	src.def_zone = def_zone
-	src.blocked = blocked
-	src.wound_bonus = wound_bonus
-	src.exposed_wound_bonus = exposed_wound_bonus
-	src.sharpness = sharpness
-	src.attack_direction = attack_direction
-	src.attacking_item = attacking_item
 
 /// Sent when a mob/login() finishes: (client)
 /datum/notice/mob_client_login
