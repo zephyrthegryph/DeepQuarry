@@ -574,6 +574,20 @@
 	qdel(a)
 	TEST_ASSERT(!after_pending(a_service, "material_service"), "Deleting a queued assembly must leave no deadline")
 
+/datum/unit_test/dq_material_service_spread
+
+/datum/unit_test/dq_material_service_spread/Run()
+	// The steady resample delay is spread over the interval, so services a map makes in one tick do not all sample in one tick forever.
+	var/list/seen = list()
+	var/total = 0
+	for(var/i in 1 to 200)
+		var/delay = material_service_spread_interval()
+		TEST_ASSERT(delay >= MATERIAL_SERVICE_INTERVAL / 2 && delay <= MATERIAL_SERVICE_INTERVAL * 1.5, "A spread delay stays within half an interval of it ([delay])")
+		seen["[delay]"] = TRUE
+		total += delay
+	TEST_ASSERT(length(seen) >= 20, "Spread delays differ ([length(seen)] distinct of 200)")
+	TEST_ASSERT(abs(total / 200 - MATERIAL_SERVICE_INTERVAL) <= MATERIAL_SERVICE_INTERVAL * 0.15, "Spread delays average the interval")
+
 /datum/unit_test/dq_material_corrosion_interval_invariance
 
 /datum/unit_test/dq_material_corrosion_interval_invariance/Run()
