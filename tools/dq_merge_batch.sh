@@ -26,6 +26,11 @@
 #      next untried attempt instead of the full batch again. A cut-off or capped verdict is never saved. The first real attempt of a run
 #      and any single-lane attempt (the decisive step of a bisect) ignore the deadline, so every run makes progress and a lane is never
 #      deferred instead of judged,
+#   3d. DQ_BATCH_WT2=<a second worktree of this repository> (the train sets it for a batch of prechecked lanes): the bisect gates BOTH
+#      halves at once, good+L here and good+R there (attempt_pair); L failing narrows to L, L passing grows the proved set by L and narrows
+#      to R. One attempt at a time when free RAM is under DQ_BATCH_PARALLEL_MIN_FREE_GB (16) or DQ_BATCH_PARALLEL=0.
+#   3e. deepquarry.dme: a merge that stops on the manifest alone is resolved by merging the include sets, and an include the union merge
+#      brought back for a file one side deleted is dropped (tools/dq_dme_resolve.sh; both verified against the files on disk).
 # Machine-readable result lines at the end (tools/dq_train.sh reads them): BATCH_GOOD: <lanes>, BATCH_DEFERRED: <lanes>, BATCH_CAPPED: 1|,
 # and one BATCH_BOUNCED: <lane>|<reason>|<attempt log> per bounced lane.
 # Attempts run on a detached HEAD, so the branch only ever moves to a proved tip, with `git switch -C` from a clean tree (the previous

@@ -1,0 +1,18 @@
+# Paths whose change can change the behaviour of any test (tools/dq_train.sh, select_prechecked): a prechecked lane that touches one,
+# or whose batch or master's changes since its precheck touch one, runs its own tests in the batch (and makes every lane of the batch run
+# its own). Other prechecked lanes run their tests in the batch only when they share an area with another lane of it. Prefixes, one per line.
+code/__defines/
+code/__odlint.dm
+code/__pragmas.dm
+code/_helpers/
+code/engine/
+code/controllers/
+code/library/
+code/datums/capabilities/
+code/world/
+code/game/atom/
+maps/
+tools/build/
+tools/dmb/
+verdigris/
+SpacemanDMM.toml

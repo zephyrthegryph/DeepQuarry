@@ -749,7 +749,7 @@ shell's process group, so the 30-minute kill of whatever shell enqueued does not
 **Time limits.** Testing never runs over 10 minutes: the gate's test-phase cap is `gate_cap_minutes` (5 min plus 1 min per test, ceiling 10; the train also sets `DQ_FOCUSED_MAX_MIN` to `DQ_TRAIN_TEST_MAX_MIN`, 10), and a run killed at the cap is never retried (another run would only spend the cap again)
 and is not blamed on a lane: the batch is reported CAPPED, the lanes not yet judged are deferred, the batch limit halves; a single lane whose tests exceed the
 cap alone is bounced. No new gate attempt starts after `DQ_TRAIN_CYCLE_MAX_MIN` (20) minutes into a cycle (`DQ_BATCH_DEADLINE`): lanes not yet judged are
-deferred, the proved prefix still lands. The shell that starts the integrator returns in about 20 seconds; no Bash command ever has to outlive 30 minutes.
+deferred, the proved prefix still lands. That deadline applies only to a batch with unprechecked lanes; a prechecked batch bisects to the end (29a). The shell that starts the integrator returns in about 20 seconds; no Bash command ever has to outlive 30 minutes.
 **Nothing heavy runs under the merge lock**: the train works in its own worktree and never takes it (compiles and tests hold machine slots with priority 0, as the
 merge worktree does). Compiles per batch: one test compile and one production compile; the test phase and a bisect attempt on an identical tree reuse the tree
 proof, and a bisect attempt on a different tree is an incremental compile in the same daemon session, not a cold one.
@@ -765,3 +765,59 @@ inside the 3 minute target, so the 10 minute cap leaves room for the lanes' own 
 `DQ_TRAIN_DRY_RUN=1 DQ_TRAIN_ONCE=1 bash tools/dq_train.sh run` runs one cycle through every push check and stops before the push (lanes stay queued).
 `bash tools/dq_land.sh` still works and prints a notice; `dq_land.sh --light` is the old light path (the train's `--light` is the same machinery behind the same queue
 discipline). Tests (stub gates, stub push, a scratch origin): `bash tools/ci/test_train.sh`; the batch driver's own: `bash tools/ci/test_merge_batch.sh`.
+
+### 29a. Prechecks, affected-only jobs, parallel bisect (26 October 2026, `tools/train-speed`)
+
+Why: on 26 October one gate attempt took about 741 s (analyze_tests 663 s, DreamChecker 410 s, tests 335 s, ratchets 282 s); a batch of 7 with
+one bad lane needed a serial bisect, the 20 minute cycle deadline allowed one or two attempts per cycle, so isolating the lane took three cycles
+(about 90 minutes) with nothing landing; and lanes reached the train having passed only their focused tests, so DreamChecker, analyzer and
+ratchet failures first showed up inside batches. Over 25-26 October (47 h of log): 99 heavy cycles, median 1046 s (p90 1743 s), 75 lanes landed
+(about 2.7 per hour of cycling), 56 bounces, enqueue to landing median 102 min (p90 295 min).
+
+**Prechecks** (`dq_train.sh precheck-run`, started detached by `ensure` and by every integrator cycle; lock `E:/dq-cache/train/precheck.lock`). Every
+queued heavy lane is gated ALONE on current origin/master before it may join a batch:
+
+1. a conflict probe, seconds: `git merge-tree` of the lane and origin/master (in a throwaway object directory). A real conflict bounces the lane at once
+   ("precheck: merge conflict ..."); a conflict in `deepquarry.dme` alone is not one (below).
+2. the gate a batch would run, on that one lane: `tools/dq_merge_batch.sh --lanes <lane>` in a worker worktree `E:/projects/dq-wt/train-pre<N>`
+   (`DQ_TRAIN_PRECHECK_WORKERS`, 2), each with a compile root of its own (`deepquarry-pre<N>`, `compile_root.ts rootKeyFor`), so a worker's next precheck is an
+   incremental compile of master plus the next lane in the shared daemon, not a turn in the lanes' root. Every heavy step holds machine slots below the train
+   gate's priority and runs below normal priority; no precheck STARTS while free RAM is under `DQ_TRAIN_PRECHECK_MIN_FREE_GB` (16).
+
+A lane that fails alone is bounced with the usual report and never costs a batch or a bisect. The verdict is kept per (origin/master, lane tip) in
+`E:/dq-cache/train/precheck/v/<lane>@<tip>@<master>` (pass, fail, conflict or error, seconds, log); `status` shows it per lane. Batches take only lanes with a
+PASS for their tip (light lanes need none). A lane with no verdict after `DQ_TRAIN_PRECHECK_WAIT_MIN` (45, counted from when prechecks started) and no precheck
+running rides the old way (a small batch with the cycle deadline), never mixed into a prechecked batch. `DQ_TRAIN_PRECHECK=0` turns prechecks off.
+
+**A batch of prechecked lanes.** Up to `DQ_TRAIN_MAX_LANES_PRECHECKED` (20; `batch_limit_pre` halves after a failed batch and doubles back). Each lane's own
+tests passed alone, so they run again only when the lane can interact: it shares an *area* (a code file's first three path components, e.g. `code/modules/mob`;
+another file's directory) with another lane of the batch or with what master changed since its precheck, or someone touched a path in
+`tools/ci/train_interact_global.txt` (defines, engine, library, controllers, maps, the build and the compiler). Test files, the manifest, baselines, docs and
+changelogs are not areas. The test budget (`DQ_TRAIN_TEST_BUDGET_SEC`) counts only those tests plus the smoke and gameplay sets, which always run; the log names
+the lanes whose tests were left out. A failure in such a batch is an interaction, so it has **no cycle deadline**: its bisect runs to the end in the same cycle
+(the machine is protected by the machine slots and the RAM floor, not by the deadline), and the halves run **at once**: `dq_merge_batch.sh` with
+`DQ_BATCH_WT2` (`E:/projects/dq-wt/train-bisect`, own root `deepquarry-bisect`, created in the background by the first prechecked cycle) gates good+L here and
+good+R there; L failing narrows to L, L passing grows the proved set by L and narrows to R. One attempt at a time when free RAM is under 16 GB.
+
+**Affected-only gate jobs** (`dq_merge_gates.sh`, for every gate, prechecks included):
+
+- `analyze_tests` (still only when `tools/analyze/` or `tools/ci/lint_scopes.toml` changed): its harness cache (`tools/build/lib/analyze_test_cache.ts`) was
+  bypassed on every gate because a vendored path dependency (`vendor/dreammaker`'s `#[doc(hidden)]`, `vendor/interval-tree`'s untagged fences) looked like an
+  executable doctest; `cargo test` never runs a dependency's doctests, so only the analyzer's own files are classified now. A hit runs every harness (about a
+  minute) instead of recompiling them (9 of the 10-11 minutes).
+- `dreamchecker`: SpacemanDMM has no incremental or per-file mode, so its verdict is reused when every file it reads is identical to a tree that passed
+  (`tools/dq_gate_verdicts.sh`: key = the DreamChecker binary, the index entries of every tracked file outside `doc/ tools/ tgui/ html/changelogs/ .github/ SQL/
+  *.md`, and the content of the untracked and generated files under `code/ maps/ interface/`; passes only, under `E:/dq-cache/train/verdicts`). A lane that changes
+  no DM, or a bisect attempt on a tree already checked, skips it; any DM change runs it. A proof reuse also takes the verdict, so the push keeps its stamp.
+- `ratchets`: the second `build.sh analyze` after `check_ratchets.sh` (the same `analyze check` over the same tree, about a minute) is gone. `--changed-only`
+  is not used in the gates: it still scans the whole tree (no time saved) and only hides sites in unchanged files, which a batch can create.
+
+**`deepquarry.dme` conflicts** (`tools/dq_dme_resolve.sh`, called by every merge in `dq_merge_batch.sh`). A merge that stops on the manifest alone is resolved
+by merging the include sets (`dme_merge3`: a side's addition kept, a side's removal kept), verified against the files on disk, and committed; the union merge's
+known failure (an include one side deleted, brought back because the other side added a line next to it) is repaired after every merge. `dme_merge3` is the
+one function to swap for the generator when `tools/generated-dme` lands (`python3 tools/build/gen_dme.py --merge BASE OURS THEIRS`).
+
+New state: `precheck/` (verdicts, running markers, probe marks; kept 3 days), `precheck.lock`, `batch.lanes` (the lanes of the gate running now; the prechecker
+leaves them alone), `batch_limit_pre`, `verdicts/`; logs `log/precheck-<lane>-*.log`; worktrees `train-pre1`, `train-pre2`, `train-bisect` (kept by
+`dq_worktree.sh gc`, permanent in `disk_budget.toml`). Tests: `tools/ci/test_train.sh` "prechecks" and "DreamChecker verdicts", `tools/ci/test_merge_batch.sh`
+"parallel bisect" and "deepquarry.dme", `bun test tools/ci/analyze_test_cache.test.ts tools/build/lib/compile_root.test.ts`.
