@@ -226,6 +226,10 @@ CAPABILITIES(/obj/structure/portal_event)
 	var/mob/M = N.bumper
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
+	send_through(M)
+
+/// Sends `M` to a random event destination; an abductor destination also strips their belongings and drops them in the away abductors' room.
+/obj/structure/portal_gateway/proc/send_through(mob/M)
 	var/obj/effect/landmark/dest = pick(GLOB.eventdestinations)
 	if(dest)
 		M << 'sound/effects/phasein.ogg'

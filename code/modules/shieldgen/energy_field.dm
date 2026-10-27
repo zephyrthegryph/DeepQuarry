@@ -87,7 +87,6 @@ CAPABILITIES(/obj/effect/energy_field)
 
 /// The bump notice: something walked into it (was Bumped()).
 /obj/effect/energy_field/proc/bumped_by(datum/act/bump_act)
-	var/datum/notice/bumped/N = bump_act
 	impact_effect(2)
 
 /obj/effect/energy_field/handle_meteor_impact(obj/effect/meteor/meteor)
