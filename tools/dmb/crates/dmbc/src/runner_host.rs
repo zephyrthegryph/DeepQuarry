@@ -739,9 +739,19 @@ impl BuildHost {
                 payload: Arc::clone(&leaving.payload),
             });
             if semantic_enabled {
-                self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::with_shared_normalized(Arc::clone(
+                let mut semantic = dm_tree::frontend::RetainedSemanticTree::with_shared_normalized(Arc::clone(
                     &retained.payload.normalized,
-                )));
+                ));
+                // The new variant's first frontend is an increment over the variant being left (same files, other
+                // defines): its plan and expansions adopt what the differing macros do not reach.
+                if let Some(left) = self
+                    .variants
+                    .get(&leaving.configuration)
+                    .and_then(|state| state.semantic.as_ref())
+                {
+                    semantic.seed_previous_frontend(left);
+                }
+                self.semantic = Some(semantic);
             }
             retained
         };
