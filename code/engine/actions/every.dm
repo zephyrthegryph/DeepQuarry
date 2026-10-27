@@ -164,7 +164,7 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 		known[id] = activation_every_cond_published(A.holder, cond) ? TRUE : FALSE
 	return known[id]
 
-/// type_every_cond_tracked(), plus capability keys: key_set() publishes every change of one (capability_key_changed()).
+/// type_every_cond_tracked() (which takes capability keys too: key_set() publishes every change of one, capability_key_changed()).
 /proc/activation_every_cond_published(datum/holder, cond)
 	if(islist(cond))
 		var/list/tree = cond
@@ -173,8 +173,6 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 		for(var/i in 2 to length(tree))
 			if(!activation_every_cond_published(holder, tree[i]))
 				return FALSE
-		return TRUE
-	if(isnum(cond) && cond >= CAPKEY_ID_BASE)
 		return TRUE
 	return type_every_cond_tracked(holder, cond)
 
@@ -263,7 +261,9 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 				return FALSE
 		return TRUE
 	if(isnum(cond))
-		return cond >= STAT_ID_BASE && cond < CAPKEY_ID_BASE // a stat: every write of it publishes to a reader (the wake hook is one)
+		// A stat: every write of it publishes to a reader (the wake hook is one). A capability key (OCCUPANT_POD_OCCUPIED): key_set() publishes
+		// every change of one (capability_key_changed()), so an empty sleeper's every() parks instead of polling every two seconds.
+		return cond >= STAT_ID_BASE
 	if(!istext(cond))
 		return FALSE
 	if(cond in holder.vars)

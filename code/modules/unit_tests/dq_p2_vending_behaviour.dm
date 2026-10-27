@@ -1160,11 +1160,15 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	TEST_ASSERT_EQUAL(length(V.p2v_spoken), 0, "and nothing said")
 	TEST_ASSERT_EQUAL(p2v_electrified(V), 0, "it is not electrified")
 
-/// A talking vendor pitches its slogans (a frame in twenty), no more often than its delay, and not while it is quiet.
+/// A talking vendor pitches its slogans (a frame in twenty) while a player is near, no more often than its delay, and not while it is quiet.
 /datum/unit_test/dq_p2_vending/talker_pitches_its_slogans
 /datum/unit_test/dq_p2_vending/talker_pitches_its_slogans/run_gate()
 	var/obj/machinery/vending/p2v_test/V = p2v_vendor(/obj/machinery/vending/p2v_test/talker)
 	COOLDOWN_RESET(V, slogan_cooldown)
+	p2v_settle(1 MINUTE)
+	TEST_ASSERT_EQUAL(length(V.p2v_spoken), 0, "with nobody near, its pitch is parked")
+	TEST_ASSERT(!every_running(V), "and no timed work of it is armed")
+	hold(V, STAT_RELEVANCE, RELEVANCE_NEAR, src) // a player comes near (the proximity tracker's hold)
 	p2v_set_quiet(V, TRUE)
 	p2v_settle(2 MINUTES)
 	TEST_ASSERT_EQUAL(length(V.p2v_spoken), 0, "a quiet vendor says nothing")
@@ -1172,6 +1176,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	p2v_settle(10 MINUTES)
 	TEST_ASSERT(length(V.p2v_spoken) >= 1, "a loud one pitches")
 	TEST_ASSERT(("Buy!" in V.p2v_spoken) || ("Buy more!" in V.p2v_spoken), "one of its slogans")
+	release(V, STAT_RELEVANCE, src)
 
 /// A vendor says its thank-you after a sale, at most once per delay and twenty seconds.
 /datum/unit_test/dq_p2_vending/vend_says_thank_you

@@ -31,8 +31,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_bundle)
 	var/list/reacts
 	/// /type/proc/x = list(every=, clock=, lane=, max_interval=, max_dt=, relevance=, order_after=): calls E.x(dt).
 	var/list/ticks
-	/// /datum/definition_event/x = /type/proc/y: calls E.y(event).
-	var/list/events
 	/// Full behaviour types attached to the entity.
 	var/list/behaviours
 	/// Pipeline stages this entity type runs besides its pipelines' own (each stage names its

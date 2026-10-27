@@ -1,0 +1,3 @@
+var_before_def_same_block.dm:2:warning (var_before_def): count: use of count precedes its definition
+var_before_def_same_block.dm:3:warning (var_before_def): count: definition is here
+var_before_def_same_block.dmb - 1 error, 2 warnings

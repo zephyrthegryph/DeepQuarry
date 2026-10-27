@@ -189,6 +189,13 @@ impl Journal {
     }
 }
 impl SnapshotProvider for Inputs {
+    /// Live reads follow the call; a journal is not the watched file system.
+    fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
+        match self {
+            Self::Live => crate::fs_watch::token(),
+            Self::Recording(_) | Self::Replay(_) => None,
+        }
+    }
     fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
         match self {
             // Only the live file system is read in parallel; recording and replay keep their ordered journal.
@@ -499,6 +506,13 @@ impl<'a> ProofStampedInputs<'a> {
 impl SnapshotProvider for ProofStampedInputs<'_> {
     fn generated_outputs(&self) -> Option<&std::collections::BTreeSet<PathBuf>> {
         self.inner.generated_outputs()
+    }
+    /// Stamps come from the adopted proofs once there are some, so their capture position is this provider's.
+    fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
+        match self.proofs.get() {
+            Some(proofs) => proofs.watch_token(),
+            None => self.inner.watch_token(),
+        }
     }
     fn stamp(&self, path: &Path) -> io::Result<Stamp> {
         match self.proofs.get() {

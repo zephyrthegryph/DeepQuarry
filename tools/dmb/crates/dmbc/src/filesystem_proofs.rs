@@ -24,6 +24,8 @@ pub struct BulkFileSystemProofs {
     live_stamp_fallbacks: AtomicU64,
     folder_hits: AtomicU64,
     folder_fallbacks: AtomicU64,
+    /// Watcher position before the first directory of this capture was proven (cached proofs are current at it too).
+    watch: Option<crate::fs_watch::WatchToken>,
 }
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ProofCounts {
@@ -86,6 +88,7 @@ impl BulkFileSystemProofs {
         paths: impl IntoIterator<Item = std::borrow::Cow<'a, Path>>,
         folders: impl IntoIterator<Item = std::borrow::Cow<'a, Path>>,
     ) -> Self {
+        let watch = crate::fs_watch::token();
         let mut requested: BTreeSet<std::borrow::Cow<'a, Path>> = folders.into_iter().collect();
         let mut exact_candidates = Vec::new();
         let mut exact_bytes = 0usize;
@@ -255,6 +258,7 @@ impl BulkFileSystemProofs {
             live_stamp_fallbacks: AtomicU64::new(0),
             folder_hits: AtomicU64::new(0),
             folder_fallbacks: AtomicU64::new(0),
+            watch,
         }
     }
     pub fn counts(&self) -> ProofCounts {
@@ -297,6 +301,9 @@ fn ordinary_negative_name(name: &str) -> bool {
         && matches!(stem.as_bytes()[3], b'1'..=b'9'))
 }
 impl SnapshotProvider for BulkFileSystemProofs {
+    fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
+        self.watch
+    }
     fn stamp(&self, path: &Path) -> io::Result<Stamp> {
         if let Some(stamp) = self.exact_files.get(path) {
             self.exact_path_hits.fetch_add(1, Ordering::Relaxed);

@@ -81,7 +81,9 @@ CAPABILITIES(/datum/progressbar)
 /datum/progressbar/lifecycle_unbind()
 	var/mob/user = user()
 	if(user)
-		for(var/pb in sparse_get(user, progressbars)?[bar_loc])
+		var/list/user_bars = sparse_get(user, progressbars)
+		// a local, not `for(... in sparse_get(...)?[k])`: DreamMaker cannot parse a function-like macro call followed by ?[] inside for(... in ...)
+		for(var/pb in user_bars?[bar_loc])
 			var/datum/progressbar/progress_bar = pb
 			if(progress_bar == src || progress_bar.listindex <= listindex)
 				continue
@@ -91,7 +93,6 @@ CAPABILITIES(/datum/progressbar)
 			var/dist_to_travel = ICON_SIZE_Y + offset_y + (PROGRESSBAR_HEIGHT * (progress_bar.listindex - 1)) - PROGRESSBAR_HEIGHT
 			animate(progress_bar.bar, pixel_z = dist_to_travel, time = PROGRESSBAR_ANIMATION_TIME, easing = SINE_EASING)
 
-		var/list/user_bars = sparse_get(user, progressbars)
 		LAZYREMOVEASSOC(user_bars, bar_loc, src)
 		if(!user_bars)
 			sparse_set(user, progressbars, null)
