@@ -465,7 +465,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 				if(one_handed_penalty >= 20)
 					to_chat(user, span_warning("You struggle to keep \the [src] pointed at the correct position with just one hand!"))
 
-			if(!zoom) //If we're not zoomed, reset our accuracy to our initial accuracy.
+			if(!sparse_get_or(src, zoom, FALSE)) //If we're not zoomed, reset our accuracy to our initial accuracy.
 				accuracy = initial(accuracy) //Reset our accuracy
 			note_shot()
 			user.hud_used?.update_ammo_hud(user, src)
@@ -798,7 +798,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 	var/scoped_accuracy_mod = zoom_offset
 
 	zoom(user, zoom_offset, view_size)
-	if(zoom)
+	if(sparse_get_or(src, zoom, FALSE))
 		accuracy = scoped_accuracy + scoped_accuracy_mod
 		if(recoil)
 			recoil = round(recoil*zoom_amount+1) //recoil is worse when looking through a scope
@@ -806,7 +806,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 //make sure accuracy and recoil are reset regardless of how the item is unzoomed.
 /obj/item/gun/zoom(mob/living/M, tileoffset = 14, viewsize = 9)
 	..()
-	if(!zoom)
+	if(!sparse_get_or(src, zoom, FALSE))
 		accuracy = initial(accuracy)
 		recoil = initial(recoil)
 

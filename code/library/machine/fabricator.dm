@@ -33,6 +33,7 @@ MSG_DEF_SELF(fabricator/on_hold, "Its access to the material storage is on hold.
 MSG_DEF_SELF(fabricator/printing, "Not while it is printing.")
 MSG_DEF_SELF(fabricator/no_power, "It doesn't have the power to dispense sheets.")
 MSG_DEF_SELF(fabricator/no_such_material, "It holds no such material.")
+MSG_DEF_SELF(fabricator/no_eject_power, "It has no power to dispense sheets.")
 MSG_DEF_SELF(fabricator/too_far, "You need to stand next to it.")
 
 CAPABILITY_TYPE(fabricator, CAP_FABRICATOR, /datum/capability/lib/fabricator, key = NONE, buildtypes = NONE, efficiency = null, materials = "materials", print = TRUE, action = "build", design_arg = "ref", count_arg = "amount", knows = null, build_time = null, department = null, worth_floor = 10, sound = "print_sound", resets = TRUE, eject = FALSE, eject_power = FALSE, drop = "drop_direction", run_var = "print_run")
@@ -69,7 +70,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 			then(CAP_PROC(run_started)), logs(LOG_GAME))
 	if(eject)
 		. += op("remove_mat", ui_act(arg("id", schema_text(64)), arg("amount", num(1, MAX_STACK_SIZE))),
-			needs(req(CAP_PROC(material_held))),
+			needs(req(CAP_PROC(material_held)), req(CAP_PROC(eject_powered))),
 			then(CAP_PROC(sheets_ejected)))
 
 // ---- the print run ----
@@ -330,14 +331,22 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	var/datum/material_container/C = fabricator_store(A.holder, materials)
 	return (istype(M) && C && C.get_material_amount(M) > 0) ? null : /datum/msg/fabricator/no_such_material
 
+/// Taking sheets out costs power (eject_power): the machine's channel is powered.
+/datum/capability/lib/fabricator/proc/eject_powered(datum/act/op/A)
+	var/obj/machinery/M = A.holder
+	return (!eject_power || M.can_use_power_oneoff(eject_power_cost(M, A.args ? A.args["amount"] : 0))) ? null : /datum/msg/fabricator/no_eject_power
+
+/// The power one take-out of `amount` sheets costs: 40% of the base power per full stack, as an insertion does.
+/datum/capability/lib/fabricator/proc/eject_power_cost(obj/machinery/M, amount)
+	return ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * power_of_type(M.type).active)
+
 /// Sheets of the material come out onto the machine's tile.
 /datum/capability/lib/fabricator/proc/sheets_ejected(datum/act/op/A, id, amount)
 	var/obj/machinery/M = A.holder
 	var/datum/material/mat = fabricator_material(id)
 	// insertion takes 40% of the base power per full stack, and so does taking sheets back out (the base power: better parts draw more for nothing)
-	if(eject_power && !M.use_power_oneoff(ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * power_of_type(M.type).active)))
-		M.atom_say("No power to dispense sheets")
-		return OP_REFUSED
+	if(eject_power) // eject_powered() held at commit
+		M.use_power_oneoff(eject_power_cost(M, amount))
 	var/datum/remote_materials/R = M.vars[materials]
 	if(istype(R))
 		R.eject_sheets(mat, amount)

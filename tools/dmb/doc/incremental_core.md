@@ -1017,6 +1017,14 @@ Targets not met. Largest remaining growth: test variant `query_db::AnswerValues`
 root B: startup capture 66, `RequestAnswers` 65, joined text 61, classification 57, frame contribution 56, preprocessor
 about 230. The preprocessor family needs per-file sharing keyed by (bytes, start state), step 3 of the test-variant plan.
 
+**compiler/memory-2 (2026-10-27).** The probe now runs on a fresh disk cache (`DMB_CACHE_DIR`; a warm cache made root B a
+whole-output hit). Base: A 5.36, test +2.78, B +1.52. Two owners went: the required-type field-request store keyed every
+field by its position, so the test variant (other positions) re-stored nearly every entry (107 MB) to save a few pushes per
+field; requests are now computed. The answer-value pool keys on the low 64 bits of the query id and checks the pooled
+query (pool 62 -> 35 MB). Result: A 5.27, test +2.66, B +1.49. Speed (three interleaved rounds, own daemon per arm): body
+edits median 5.94 s against 6.03 s, added types 17.80 s against 18.44 s. `dmb-equiv --all --ignore-debug` against a fresh
+`--no-daemon --no-cache` compile: EQUIVALENT.
+
 ## Shared per-file preprocessing, answer queries and output images (design, 2026-10-27)
 
 Measured with `bench/shared_store_probe.sh` (cold disk cache through `DMB_CACHE_DIR`, compiler/memory-2): root A 5.27 GB,

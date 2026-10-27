@@ -161,8 +161,11 @@ list_init_exempt_files = ["code/__defines/tgs.dm"]
 # the sparse and cooldown stores), is not a `base_var` site. A lane that lands a new home adds it here.
 base_var_home_macros = ["TRACKED", "TRACKED_SCHEMA", "TRACKED_DATA", "SETTER", "STAT"]
 base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/datum/cooldown_table"]
+# A var declared as a relation on its own type is homed (base_vars.md: references live in relations): an entry of one of these
+# kinds naming it in the CAPABILITIES block of the type that declares it, or an end of links(/A::a, /B::b).
+base_var_home_relations = ["ref_one", "ref_many", "owns_one", "owns_many", "links", "slot"]
 # The most hot-var rows `[lint.base_vars.tables.base_var_home_hot]` may hold (one number). It only falls.
-hot_ceiling = ["14"]
+hot_ceiling = ["11"]
 # records_data_only: the procs a /datum/record may define (accessors).
 record_accessor_prefixes = ["set_", "get_"]
 
@@ -179,8 +182,6 @@ record_accessor_prefixes = ["set_", "get_"]
 "/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/game/turfs/turf.dm:335)"
 "/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/game/atoms_movable.dm:232-250), held by all movables"
 "/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/game/atoms_movable.dm:294), held by all movables"
-"/atom/movable/throwing" = "read on every footstep and bump: footstep.dm throw check (code/datums/behaviours/footstep.dm:70), Bump finalize (code/game/atoms_movable.dm:376)"
-"/atom/light_sources" = "read on every Moved(): the loop that updates each light source on the mover (code/game/atoms_movable.dm:322), walked for all movers"
 "/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/modules/mob/living/living_movement.dm:20) and mob_movement.dm:21"
 "/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/modules/mob/living/living_movement.dm:51) and carbon.dm:382"
 "/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"
@@ -784,7 +785,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 [lint.check_grep.ceilings]
 admin_rights_shrink_only_baseline_one_mechanism_admin_can = 1
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 102
-admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 0
 objects_ratchet_on_legacy_interactions = 0
 objects_ratchet_on_tool_act_overrides = 0
 tools_use_tool_banned = 0

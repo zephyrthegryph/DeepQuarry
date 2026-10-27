@@ -5,6 +5,7 @@
 // observers get the blind line). Text keeps its span wrapping: MSG_SELF(span_notice("..."))
 // works as before. Tokens, filled per call:
 //   %U%  the user        %T%  the target        %I%  the item
+//   %LIMB%  the target's limb the user aims at (their zone selection), "" when there is none
 //        (each is "\the [x]"; at the start of a line it becomes "\The [x]")
 //   %THEY% %THEM% %THEIR% %THEIRS% %THEMSELVES% %THEYRE% %THEYVE% %S% %ES%: the user's pronouns
 //   %They% %Them% %Their% %Theyre%: capitalised forms

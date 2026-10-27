@@ -143,43 +143,30 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 		if (BLEND_SUBTRACT) return ICON_SUBTRACT
 		else                return ICON_OVERLAY
 
-// Converts a rights bitfield into a string
+// Converts a rights bitfield into a string: each right's name, in this order (the text admin rank tools and logs show).
 /proc/rights2text(rights, seperator="", prefix = "+")
+	var/static/list/right_names = list(
+		list(R_BUILDMODE, "BUILDMODE"),
+		list(R_ADMIN, "ADMIN"),
+		list(R_BAN, "BAN"),
+		list(R_FUN, "FUN"),
+		list(R_SERVER, "SERVER"),
+		list(R_DEBUG, "DEBUG"),
+		list(R_POSSESS, "POSSESS"),
+		list(R_PERMISSIONS, "PERMISSIONS"),
+		list(R_STEALTH, "STEALTH"),
+		list(R_REJUVINATE, "REJUVINATE"),
+		list(R_VAREDIT, "VAREDIT"),
+		list(R_SOUNDS, "SOUND"),
+		list(R_SPAWN, "SPAWN"),
+		list(R_MOD, "MODERATOR"),
+		list(R_EVENT, "EVENT"),
+		list(R_MENTOR, "MENTOR"),
+		list(R_DBRANKS, "DBRANKS"))
 	seperator += prefix
-	if(rights & R_BUILDMODE)
-		. += "[seperator]BUILDMODE"
-	if(rights & R_ADMIN)
-		. += "[seperator]ADMIN"
-	if(rights & R_BAN)
-		. += "[seperator]BAN"
-	if(rights & R_FUN)
-		. += "[seperator]FUN"
-	if(rights & R_SERVER)
-		. += "[seperator]SERVER"
-	if(rights & R_DEBUG)
-		. += "[seperator]DEBUG"
-	if(rights & R_POSSESS)
-		. += "[seperator]POSSESS"
-	if(rights & R_PERMISSIONS)
-		. += "[seperator]PERMISSIONS"
-	if(rights & R_STEALTH)
-		. += "[seperator]STEALTH"
-	if(rights & R_REJUVINATE)
-		. += "[seperator]REJUVINATE"
-	if(rights & R_VAREDIT)
-		. += "[seperator]VAREDIT"
-	if(rights & R_SOUNDS)
-		. += "[seperator]SOUND"
-	if(rights & R_SPAWN)
-		. += "[seperator]SPAWN"
-	if (rights & R_MOD)
-		. += "[seperator]MODERATOR"
-	if (rights & R_EVENT)
-		. += "[seperator]EVENT"
-	if (rights & R_MENTOR)
-		. += "[seperator]MENTOR"
-	if(rights & R_DBRANKS)
-		. += "[seperator]DBRANKS"
+	for(var/list/row as anything in right_names)
+		if(rights & row[1])
+			. += "[seperator][row[2]]"
 	if(!.)
 		. = "NONE"
 	return .
