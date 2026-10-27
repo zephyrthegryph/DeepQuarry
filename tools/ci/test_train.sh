@@ -277,6 +277,13 @@ check "a lane capped alone is bounced with the attempt log named" 'grep -q "^BAT
 out="$(bash tools/dq_merge_batch.sh --lanes "lane/p,lane/q" 2>&1)"
 check "a clean batch reports its lanes as good" 'grep -q "^BATCH_GOOD: lane/p lane/q" <<<"$out" && grep -q "^BATCH_CAPPED: $" <<<"$out"'
 
+# ---- a bounce for a merge conflict does not halve the batch limit (only a lane that failed the gates does) ---------------------------------
+echo 4 >"$DQ_TRAIN_STATE/batch_limit"
+mk lane/cf1 lanes/cf1.txt fine "shared-cf1"; train enqueue --tests tcf1 >/dev/null 2>&1; back
+mk lane/cf2 lanes/cf2.txt fine "shared-cf2"; train enqueue --tests tcf2 >/dev/null 2>&1; back
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a conflict bounce leaves the batch limit alone" 'grep -q "BOUNCED lane/cf2: merge conflict" <<<"$out" && grep -q "merge conflicts only: the batch limit stays" <<<"$out" && [ "$(cat "$DQ_TRAIN_STATE/batch_limit")" -ge 4 ] && in_master lane/cf1'
+
 # ---- prechecks: each heavy lane gated alone first; a lane that fails alone never joins a batch -------------------------------------------
 # Cases: before its precheck a lane waits (the batch takes only prechecked lanes); the prechecker passes good lanes, bounces a lane that
 # fails alone with a report, and bounces a lane that conflicts with master from the seconds-long probe without a gate run; verdicts are

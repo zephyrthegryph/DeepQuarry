@@ -874,11 +874,14 @@ heavy_cycle_gate() {
 	capped="$(sed -n 's/^BATCH_CAPPED: //p' "$out" | tail -n 1)"
 	tlog "merge_batch rc=$rc good=[${good:-}] deferred=[${deferred:-}] capped=[${capped:-}]"
 	# bounces first: they are the lane's fault whatever happens to the push
-	local nbounced=0
+	# A lane bounced for a merge CONFLICT says nothing about the batch's size (the batch never ran its tree): it never halves the limit.
+	# Only a lane that failed the gates (nfailed) does. 2026-10-26: one answer-requirements conflict dropped the train to 1 lane/cycle.
+	local nbounced=0 nfailed=0
 	while IFS= read -r line; do
 		[ -n "$line" ] || continue
 		nbounced=$((nbounced + 1))
 		lane="${line%%|*}"; why="${line#*|}"; lg="${why##*|}"; why="${why%|*}"
+		case "$why" in *"merge conflict"*) ;; *) nfailed=$((nfailed + 1)) ;; esac
 		[ -n "$lane" ] || continue
 		bounce "$lane" "$why" "$WT/$lg"
 		CYCLE_PROGRESS=1
@@ -897,10 +900,12 @@ heavy_cycle_gate() {
 	else
 		rm -f "$STATE/bisect.lanes" "$STATE/bisect.cache"
 	fi
-	if [ -z "${capped:-}" ] && { [ "$nbounced" -gt 0 ] || [ -n "${deferred:-}" ]; }; then
+	if [ -z "${capped:-}" ] && { [ "$nfailed" -gt 0 ] || [ -n "${deferred:-}" ]; }; then
 		local fh=$(( ${#CHOSEN[@]} / 2 )); [ "$fh" -lt 1 ] && fh=1
 		echo "$fh" >"$limit_file"
-		tlog "the batch of ${#CHOSEN[@]} lane(s) failed (bounced $nbounced, deferred [${deferred:-}]): batch limit is now $fh"
+		tlog "the batch of ${#CHOSEN[@]} lane(s) failed (bounced $nbounced, $nfailed by the gates, deferred [${deferred:-}]): batch limit is now $fh"
+	elif [ "$nbounced" -gt 0 ]; then
+		tlog "bounced $nbounced lane(s) for merge conflicts only: the batch limit stays"
 	fi
 	if [ -z "${good:-}" ]; then
 		tlog "nothing passed in this cycle"
@@ -942,7 +947,7 @@ heavy_cycle_gate() {
 	sha="$(G rev-parse origin/master)"
 	for b in $good; do mark_landed "$b" "${TIP_OF[$b]}" "$sha"; done
 	CYCLE_PROGRESS=1
-	if [ -z "${capped:-}" ] && [ "$nbounced" -eq 0 ] && [ -z "${deferred:-}" ]; then
+	if [ -z "${capped:-}" ] && [ "$nfailed" -eq 0 ] && [ -z "${deferred:-}" ]; then
 		local lim; lim="$(cat "$limit_file" 2>/dev/null)"; lim="${lim:-$limit_max}"
 		lim=$(( lim * 2 )); [ "$lim" -gt "$limit_max" ] && lim="$limit_max"
 		echo "$lim" >"$limit_file"
