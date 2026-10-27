@@ -19,6 +19,7 @@
 	return camo_net ? 50 : alpha
 
 CAPABILITIES(/obj/effect/mine)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	setup(PROC_REF(register_dangerous_to_step))
 	owns_one(nameof(trap), starts = nameof(trap))
 	space(SPACE_PANEL, door = nameof(panel_open))
@@ -141,9 +142,14 @@ CAPABILITIES(/obj/effect/mine)
 /obj/effect/mine/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
 		return
-	Bumped(AM)
+	touched_by(AM)
 
-/obj/effect/mine/Bumped(mob/M as mob|obj)
+/// The bump notice (was Bumped()).
+/obj/effect/mine/proc/bumped_by(datum/notice/bumped/N)
+	touched_by(N.bumper)
+
+/// Something walked into or over the mine: a vehicle, a mech or a living thing heavy enough on the ground sets it off.
+/obj/effect/mine/proc/touched_by(mob/M)
 
 	if(triggered)
 		return

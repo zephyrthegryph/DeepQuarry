@@ -14,9 +14,12 @@
 	return
 
 CAPABILITIES(/obj/machinery/disposal/deliveryChute)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	op("swallow", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT), label("Alt-click"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
-/obj/machinery/disposal/deliveryChute/Bumped(atom/movable/AM) //Go straight into the chute
+/// The bump notice: `AM` walked into it (was Bumped()). //Go straight into the chute
+/obj/machinery/disposal/deliveryChute/proc/bumped_by(datum/notice/bumped/N)
+	var/atom/movable/AM = N.bumper
 	if(QDELETED(AM) || istype(AM, /obj/item/projectile) || istype(AM, /obj/effect) || istype(AM, /obj/mecha))	return
 	switch(dir)
 		if(NORTH)

@@ -339,8 +339,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/closet)
 	. = ..()
 	tryTrigger(AM)
 
-/obj/effect/floormimic/Bumped(atom/movable/AM)
-	. = ..()
+/// The bump notice: `AM` walked into it (was Bumped()).
+/obj/effect/floormimic/proc/bumped_by(datum/notice/bumped/N)
+	var/atom/movable/AM = N.bumper
 	tryTrigger(AM)
 
 /obj/effect/floormimic/proc/tryTrigger(atom/movable/victim)
@@ -372,6 +373,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/closet)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/effect/floormimic)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
 	op("floormimic_awaken_item", item(/obj/item), then(PROC_REF(floormimic_awaken_item)))
 
