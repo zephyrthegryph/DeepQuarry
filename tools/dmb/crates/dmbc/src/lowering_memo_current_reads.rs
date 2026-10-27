@@ -67,6 +67,19 @@ impl<'host> CurrentReads<'host> {
             versions,
         })
     }
+    /// Reads proven by the session's answer table (`crate::query_db`): the receipt carries no domain version.
+    pub(crate) fn answered(host: &'host dyn Resolver, reads: Vec<ResolverRead>) -> Option<Self> {
+        if (host.observes_reads() && host.transparent_receipt_observer().is_none())
+            || reads.iter().any(|read| read.domain != read.query.domain())
+        {
+            return None;
+        }
+        Some(Self {
+            host,
+            reads,
+            versions: Vec::new(),
+        })
+    }
     /// Reads of a record the dependency index certified for `world`: the receipt names the
     /// world's `Tree` version alone (`crate::dep_index`), so no per-domain version is issued.
     pub(crate) fn certified(
