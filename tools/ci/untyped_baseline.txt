@@ -1,15 +1,9 @@
 # Untyped vars assigned an atom or datum, or an unknown call result (doc/rewrite/proposals/relations.md D8). rule<TAB>file<TAB>text.
 # Shrink-only: after a sweep run `analyze baseline --update --lint untyped`; it drops fixed sites and never adds one.
-typed	code/game/objects/items/weapons/implants/implant.dm	@/obj/item/implant::implanted
 typed	code/modules/admin/view_variables_panel.dm	@/datum/view_variables_panel::thing
-typed	code/modules/games/cards.dm	@/obj/item/hand::parentdeck
 call	code/contracts/acts/context.dm	@/datum/act/action::reply
 call	code/controllers/configuration/config_entry.dm	@/datum/config_entry::config_entry_value
-call	code/datums/beam.dm	@/datum/beam::target_oldloc
-call	code/datums/beam.dm	@/datum/beam::origin_oldloc
 call	code/datums/prompts/sequence.dm	@/datum/ask_sequence::answerer_w
-call	code/datums/sys/damage_reactions.dm	@/datum/controller/global_vars::projectile_hit_act
 call	code/modules/asset_cache/asset_cache_item.dm	@/datum/asset_cache_item::resource
 call	code/modules/asset_cache/asset_list.dm	@/datum/asset/simple::assets
-call	code/modules/materials/containers/material_container.dm	@/datum/material_container::last_inserted_id
 call	code/modules/scripting/Interpreter/Interpreter.dm	@/datum/n_Interpreter::returnVal

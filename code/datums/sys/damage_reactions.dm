@@ -19,8 +19,9 @@
 /// packet the round delivers next neither starts the hit action a second time nor runs the hooks again.
 GLOBAL_VAR_INIT(projectile_pre_reacted, null)
 
-/// The hit action and packet bullet_act() started for the round being resolved; ended by projectile_hit_end().
-GLOBAL_VAR_INIT(projectile_hit_act, null)
+/// The hit action and packet bullet_act() started for the round being resolved; ended by projectile_hit_end(). The global holds the
+/// only reference to the open hit action until then, so it is a relation, not a handle.
+GLOBAL_DATUM_INIT(projectile_hit_act, /datum/act, null)
 GLOBAL_DATUM_INIT(projectile_hit_packet, /datum/damage_packet, null)
 
 /// Starts the round's hit action ahead of the round's own effects (on_hit(): stun, embed, reagents ...), so a veto (a hook
@@ -36,7 +37,8 @@ GLOBAL_DATUM_INIT(projectile_hit_packet, /datum/damage_packet, null)
 		packet.release()
 		return TRUE
 	GLOB.projectile_pre_reacted = ref(src)
-	GLOB.projectile_hit_act = hit
+	if(isdatum(hit)) // ACT_PASS is not an action: act_done() ignores it
+		rel_set(GLOB, nameof(GLOB.projectile_hit_act), hit)
 	rel_set(GLOB, nameof(GLOB.projectile_hit_packet), packet)
 	return FALSE
 
@@ -47,7 +49,7 @@ GLOBAL_DATUM_INIT(projectile_hit_packet, /datum/damage_packet, null)
 	GLOB.projectile_pre_reacted = null
 	var/datum/act/hit = GLOB.projectile_hit_act
 	var/datum/damage_packet/packet = GLOB.projectile_hit_packet
-	GLOB.projectile_hit_act = null
+	rel_clear(GLOB, nameof(GLOB.projectile_hit_act))
 	rel_clear(GLOB, nameof(GLOB.projectile_hit_packet))
 	act_done(hit)
 	packet?.release()

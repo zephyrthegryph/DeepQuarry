@@ -21,8 +21,6 @@
 	var/list/allowed_materials
 	/// The typecache of things that this material container can accept
 	var/list/allowed_item_typecache
-	/// The last main material that was inserted into this container
-	var/last_inserted_id
 	/// Whether or not this material container allows specific amounts from sheets to be inserted
 	var/precise_insertion = FALSE
 	/// The material container flags. See __DEFINES/construction/materials.dm.
@@ -233,8 +231,8 @@ CAPABILITIES(/datum/material_container)
 		material_amount = get_item_material_amount(target, mat_container_flags) * multiplier
 	material_amount = OPTIMAL_COST(material_amount)
 
-	last_inserted_id = insert_item_materials(target, multiplier, context)
-	if(!isnull(last_inserted_id))
+	var/primary_material = insert_item_materials(target, multiplier, context)
+	if(!isnull(primary_material))
 		if(delete_item || target != weapon) //we could have split the stack ourselves
 			consumed(target, src) //item gone
 		return material_amount

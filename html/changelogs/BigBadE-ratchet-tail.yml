@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Drawing a card from a deck into your hand no longer fails with a runtime: a hand of cards now owns its cards."
+  - bugfix: "A health implant made by the cloning computer, or implanted, reads its host instead of reporting ERROR."
+  - code_imp: "Beams, card hands and the projectile hit action name what they track by handle or declared relation; the untyped and escape_hatches ratchets shrink."

@@ -125,7 +125,7 @@
 	O.set_stat(C.stat)
 	for (var/obj/item/implant/I in implants)
 		I.forceMove(O)
-		I.implanted = O
+		I.implanted = TRUE
 
 	C.mind.transfer_to(O)
 	O.make_changeling()
