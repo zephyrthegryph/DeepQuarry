@@ -102,10 +102,12 @@ CAPABILITIES(/obj/item/gun/projectile/smartgun)
 	// Slight damage and big stun
 	damage = 10
 	agony = 70
-	embed_chance = 0 // There's a separate sprite for this, but for now let's just not embed
 	accuracy = -30 // 2 turfs closer for the purpose of accuracy
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
+
+CAPABILITIES(/obj/item/projectile/bullet/smartgun)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/bullet/smartgun/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread)
 	. = ..()

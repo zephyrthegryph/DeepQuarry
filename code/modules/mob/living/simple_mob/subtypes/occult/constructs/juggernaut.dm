@@ -41,7 +41,7 @@
 	var/reflectchance = 100 - round(P.damage*2) // We have lower damage values now
 	if(prob(reflectchance))
 		var/damage_mod = rand(2,4)
-		var/projectile_kind = P.injury_kind
+		var/projectile_kind = combat_of(P).injury_kind
 		var/incoming_damage = (round(P.damage / damage_mod) - (round((P.damage / damage_mod) * 0.3)))
 		if(!(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam)))
 			act_message(src, null, \

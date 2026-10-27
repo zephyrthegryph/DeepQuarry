@@ -22,13 +22,13 @@ CAPABILITIES(/obj/item/flashlight/lantern)
 	var/sand_dig = FALSE // does this thing dig sand?
 	var/drill_sound = SFX_PICKAXE
 	var/drill_verb = "picking"
-	injury_kind = INJURY_PIERCE
 
 	var/excavation_amount = 200
 	var/destroy_artefacts = FALSE // some mining tools will destroy artefacts completely while avoiding side-effects.
 	var/borg_flags = COUNTS_AS_ROBOTIC_MELEE //The ONLY reason this gets this here is because pickaxes are SO hardcoded that it's easier to add it here than everywhere else. Please do not attach this to everything that you desire. Only VERY SPECIFIC THINGS under CERTAIN CIRCUMSTANCES, PLEASE. 99% of things can be added to code\modules\projectiles\guns\energy\cyborg.dm
 
 CAPABILITIES(/obj/item/pickaxe)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 4.0))
 	configure(item_combat(force = 15.0, attack_verbs = list("hit", "pierced", "sliced", "attacked"), sharp = TRUE))
@@ -117,9 +117,9 @@ MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 3000, MAT_PLASTEEL
 	digspeed = 18 //Can slice though normal walls, all girders, or be used in reinforced wall deconstruction/light thermite on fire
 	drill_verb = "cutting"
 	drill_sound = SFX_ITEMS_WELDER
-	injury_kind = INJURY_BURN
 
 CAPABILITIES(/obj/item/pickaxe/plasmacutter)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/pickaxe/plasmacutter/borg

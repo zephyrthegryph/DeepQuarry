@@ -7,10 +7,10 @@
 	name = "metroid acid"
 	icon_state = "neurotoxin"
 	damage = 10
-	injury_kind = INJURY_TOXIN
 	agony = 10
 
 CAPABILITIES(/obj/item/projectile/energy/metroidacid)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
 	configure(item_combat(armor_penetration = 50))
 
 //EGG! Metroid egg and its mechanics. Ripped from spiders.

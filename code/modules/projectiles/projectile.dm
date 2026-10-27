@@ -129,7 +129,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/modifier_duration = null // How long the above modifier should last for. Leave null to be permanent.
 	var/excavation_amount = 0 // How much, if anything, it drills from a mineral turf.
 
-	embed_chance = 0	//Base chance for a projectile to embed
 
 	var/fire_sound = SFX_WEAPONS_GUNSHOT_OLD // Can be overriden in gun.dm's fire_sound var. It can also be null but I don't know why you'd ever want to do that. -Ace
 
@@ -159,6 +158,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 SCHEMA(/obj/item/projectile, def_zone, schema_text())
 
 CAPABILITIES(/obj/item/projectile)
+	configure(item_combat(embed_chance = 0))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = TRUE))
 	setup(PROC_REF(item_projectile_setup))
 	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
@@ -709,7 +709,7 @@ CAPABILITIES(/obj/item/projectile)
 		return 0
 	if(emp_on_hit)
 		target.react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, src, firer)
-		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, combat_of(src).armor_penetration)) / 100)
+		target.receive_ionic(damage * (100 - target.armor_against(combat_of(src).injury_kind, def_zone, combat_of(src).armor_penetration)) / 100)
 		return 0
 	return target.receive_projectile(src, def_zone)
 
@@ -732,7 +732,7 @@ CAPABILITIES(/obj/item/projectile)
 //Checks if the projectile is eligible for embedding. Not that it necessarily will.
 /obj/item/projectile/proc/can_embed()
 	//embed must be enabled and the round must do physical harm
-	if(embed_chance == 0 || injury_category(injury_kind) != INJURY_CATEGORY_PHYSICAL)
+	if(combat_of(src).embed_chance == 0 || injury_category(combat_of(src).injury_kind) != INJURY_CATEGORY_PHYSICAL)
 		return 0
 	return 1
 
@@ -956,10 +956,12 @@ CAPABILITIES(/obj/item/projectile)
 	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_SHOTGUNSHOT
 	damage = 10
 	mob_bonus_damage = 16 // Potential 156 Damage against demons at point blank.
-	embed_chance = -1
 	pellets = 6
 	range_step = 1
 	spread_step = 20
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/shotgun/silver)
+	configure(item_combat(embed_chance = -1))
 
 // === merged from projectile_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/item/projectile

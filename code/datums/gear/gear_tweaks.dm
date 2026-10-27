@@ -379,8 +379,8 @@ Toggle Digestable
 
 /datum/gear_tweak/toggle_digestable/tweak_item(obj/item/I, metadata)
 	if(isnull(metadata))
-		return I.digestable
-	I.digestable = metadata
+		return item_rules_of(I).digestable
+	I.set_digestable(metadata)
 
 //end of custom description
 

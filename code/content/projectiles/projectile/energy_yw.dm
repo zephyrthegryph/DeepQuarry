@@ -44,9 +44,11 @@
 	damage = 35
 	taser_effect = 1
 	agony = 65
-	injury_kind = INJURY_PAIN
 	stutter = 10
 	hud_state = "taser"
+
+CAPABILITIES(/obj/item/projectile/energy/electrode/x01stunshot)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 
 //plasma weaponry
 /obj/item/projectile/energy/Plasma
