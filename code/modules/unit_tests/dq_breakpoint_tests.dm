@@ -8,9 +8,11 @@
 	var/break_calls = 0
 	var/fix_calls = 0
 
-/obj/machinery/dq_breakpoint_probe/atom_break(damage_flag)
-	. = ..()
+/obj/machinery/dq_breakpoint_probe/proc/count_break(datum/act/A)
 	break_calls++
+
+CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
+	on_notice(/datum/notice/atom_broken, then(PROC_REF(count_break)))
 
 /obj/machinery/dq_breakpoint_probe/atom_fix()
 	. = ..()
