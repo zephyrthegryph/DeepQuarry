@@ -87,6 +87,8 @@ mk "$DQ_CACHE_ROOT/mystery/x" 2048 "3 days ago"; touch -d "3 days ago" "$DQ_CACH
 mk "$DQ_CACHE_ROOT/mystery-busy/x" 2048
 mk "$DQ_CACHE_ROOT/slots/owner" 10 "9 days ago"
 mk "$DQ_CACHE_ROOT/stray.log" 100 "2 days ago"
+# an unknown stray cargo target (CACHEDIR.TAG): a cache by its own word, removed when idle
+mkdir -p "$DQ_CACHE_ROOT/stray-target/debug"; mk "$DQ_CACHE_ROOT/stray-target/CACHEDIR.TAG" 40 "3 days ago"; mk "$DQ_CACHE_ROOT/stray-target/debug/x" 2048 "3 days ago"; touch -d "3 days ago" "$DQ_CACHE_ROOT/stray-target/debug" "$DQ_CACHE_ROOT/stray-target"
 # a worktree growth dir: three 1 MB files, 1 MB cap, one past the 3 day age cap
 mkdir -p "$DQ_WT_ROOT/lane-a/data/test-runs"; git init -q "$DQ_WT_ROOT/lane-a"
 mk "$DQ_WT_ROOT/lane-a/data/test-runs/old.log" 1048576 "10 days ago"
@@ -126,6 +128,7 @@ check "files-lru: the oldest file goes, the newest is kept" '[ ! -f "$DQ_CACHE_R
 check "unknown directory that is not clearly a cache is reported, not removed" '[ -d "$DQ_CACHE_ROOT/mystery" ] && grep -q "not clearly a cache" <<<"$out"'
 check "unknown directory that is clearly a cache (dmb-*) is removed when idle" '[ ! -d "$DQ_CACHE_ROOT/dmb-probe-old" ]'
 check "coordination state (train queue, lane-pool self) is never touched, even if the manifest does not name it" '[ -f "$DQ_CACHE_ROOT/train/queue/q1.q" ] && [ -f "$DQ_CACHE_ROOT/lane-pool/self/x" ]'
+check "unknown directory with a CACHEDIR.TAG (a stray build target) is removed when idle" '[ ! -d "$DQ_CACHE_ROOT/stray-target" ]'
 check "unknown stray file is removed when idle" '[ ! -f "$DQ_CACHE_ROOT/stray.log" ]'
 check "unknown but busy directory is kept" '[ -d "$DQ_CACHE_ROOT/mystery-busy" ]'
 check "state table is never evicted" '[ -f "$DQ_CACHE_ROOT/slots/owner" ]'
@@ -152,6 +155,10 @@ DQ_DISK_FREE_GB=10 bash tools/dq_disk_budget.sh gate lease --sync --throttle 60 
 check "floor: gate refuses (exit 4) below the floor with a clear message" '[ "$rc" = 4 ] && grep -q "REFUSED lease: only 10 GB free" "$T/gate.out"'
 DQ_DISK_FREE_GB=80 bash tools/dq_disk_budget.sh gate lease --sync --throttle 60 >/dev/null 2>&1; rc=$?
 check "floor: gate passes above the floor" '[ "$rc" = 0 ]'
+tout="$(DQ_DISK_FREE_GB=60 DQ_DISK_TARGET_GB=80 bash tools/dq_disk_budget.sh enforce --dry-run 2>&1)"
+check "target: under the free-space target the housekeeping runs aggressive (above the floor)" 'grep -q "under the target of 80 GB: aggressive" <<<"$tout" && grep -q "scale 50%" <<<"$tout"'
+tout="$(DQ_DISK_FREE_GB=90 DQ_DISK_TARGET_GB=80 bash tools/dq_disk_budget.sh enforce --dry-run 2>&1)"
+check "target: above it the housekeeping stays normal" '! grep -q "under the target" <<<"$tout" && grep -q "scale 100%" <<<"$tout"'
 DQ_DISK_FREE_GB=10 DQ_DISK_FLOOR_GB=5 bash tools/dq_disk_budget.sh gate lease --sync --throttle 60 >/dev/null 2>&1; rc=$?
 check "floor: DQ_DISK_FLOOR_GB lowers it" '[ "$rc" = 0 ]'
 
