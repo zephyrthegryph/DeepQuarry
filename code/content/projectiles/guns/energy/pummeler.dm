@@ -31,9 +31,11 @@ CAPABILITIES(/obj/item/gun/energy/pummeler)
 	name = "sonic blast"
 	icon_state = "sound"
 	damage = 5
-	embed_chance = 0
 	vacuum_traversal = 0
 	range = 6 //Scary name, but just deletes the projectile after this range
+
+CAPABILITIES(/obj/item/projectile/pummel)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/pummel/on_hit(atom/movable/target, blocked = 0)
 	if(isliving(target))

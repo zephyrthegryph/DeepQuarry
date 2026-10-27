@@ -24,8 +24,6 @@
 
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
-	var/embed_chance = -1	//0 won't embed, and 100 will always embed
-
 	var/icon_override = null  //Used to override hardcoded clothing dmis in human clothing proc.
 
 	//** These specify item/icon overrides for _slots_
@@ -58,7 +56,6 @@
 
 
 
-	var/digestable = TRUE
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
 
@@ -84,11 +81,11 @@
 
 /// An item left on the default embed chance (-1) takes it from its weight and edge.
 /obj/item/proc/roll_embed_chance()
-	if(embed_chance < 0)
+	if(combat_of(src).embed_chance < 0)
 		if(combat_of(src).sharp)
-			embed_chance = max(5, round(combat_of(src).force/w_class))
+			set_embed_chance(max(5, round(combat_of(src).force/w_class)))
 		else
-			embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
+			set_embed_chance(max(5, round(combat_of(src).force/(w_class*3))))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component
@@ -927,8 +924,8 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 
 /obj/item/proc/toggle_digestable_effect(datum/act/op/A)
 	var/mob/user = A.actor
-	digestable = !digestable
-	if(!digestable)
+	set_digestable(!item_rules_of(src).digestable)
+	if(!item_rules_of(src).digestable)
 		to_chat(user, span_notice("[src] is now protected from digestion."))
 	return OP_OK
 

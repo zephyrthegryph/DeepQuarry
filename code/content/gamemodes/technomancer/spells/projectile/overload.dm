@@ -25,11 +25,11 @@
 /obj/item/projectile/overload
 	name = "overloaded bolt"
 	icon_state = "bluespace"
-	injury_kind = INJURY_BURN
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 
 CAPABILITIES(/obj/item/projectile/overload)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(item_combat(armor_penetration = 100))
 
 /obj/item/spell/projectile/overload/make_projectile(obj/item/projectile/projectile_type, mob/living/user)

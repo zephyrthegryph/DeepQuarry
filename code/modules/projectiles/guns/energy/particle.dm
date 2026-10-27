@@ -176,8 +176,9 @@ CAPABILITIES(/obj/item/gun/energy/particle/cannon)
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "particle"
 	damage = 40
-	injury_kind = INJURY_BURN
-	embed_chance = 0
+
+CAPABILITIES(/obj/item/projectile/bullet/particle)
+	configure(item_combat(injury_kind = INJURY_BURN, embed_chance = 0))
 
 /obj/item/projectile/bullet/particle/heavy
 	name = "antimatter slug"

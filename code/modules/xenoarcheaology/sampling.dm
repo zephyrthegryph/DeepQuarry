@@ -4,11 +4,11 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "sliver1"
 	w_class = ITEMSIZE_TINY
-	injury_kind = INJURY_PIERCE
 	/// The sliver's own geosample (a private copy of the sampled one; owned).
 	var/tmp/datum/geosample/geological_data_static
 
 CAPABILITIES(/obj/item/rocksliver)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_handling(randpixel = 8))
 	configure(item_combat(sharp = TRUE))
 	owns_one(nameof(geological_data_static), /datum/geosample)

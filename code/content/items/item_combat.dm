@@ -13,9 +13,9 @@
 
 STATIC_ENTRY(item_combat)
 
-/proc/item_combat(force = null, sharp = null, edge = null, armor_penetration = null, windup = null, recovery = null, sweep = null, can_cleave = null, attack_speed = null, reach = null, attack_verbs = null)
+/proc/item_combat(force = null, sharp = null, edge = null, armor_penetration = null, windup = null, recovery = null, sweep = null, can_cleave = null, attack_speed = null, reach = null, attack_verbs = null, embed_chance = null, injury_kind = null, injury_kinds = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_ITEM_COMBAT, null, list("force" = force, "sharp" = sharp, "edge" = edge, "armor_penetration" = armor_penetration, "windup" = windup, "recovery" = recovery, "sweep" = sweep, "can_cleave" = can_cleave, "attack_speed" = attack_speed, "reach" = reach, "attack_verbs" = attack_verbs))
+	return entry_make(ENTRY_ITEM_COMBAT, null, list("force" = force, "sharp" = sharp, "edge" = edge, "armor_penetration" = armor_penetration, "windup" = windup, "recovery" = recovery, "sweep" = sweep, "can_cleave" = can_cleave, "attack_speed" = attack_speed, "reach" = reach, "attack_verbs" = attack_verbs, "embed_chance" = embed_chance, "injury_kind" = injury_kind, "injury_kinds" = injury_kinds))
 
 /datum/type_trait/item_combat
 	var/force = 0
@@ -29,6 +29,12 @@ STATIC_ENTRY(item_combat)
 	var/attack_speed = DEFAULT_ATTACK_COOLDOWN
 	var/reach = 1
 	var/list/attack_verbs
+	/// Chance (0-100) to embed in a body it hits; 0 never, -1 the size default (roll_embed_chance()).
+	var/embed_chance = -1
+	/// INJURY_* this item inflicts as a weapon (or projectile, or thrown); its object damage is derived from it (injury_kind_obj_damage_type()).
+	var/injury_kind = INJURY_BLUNT
+	/// Mixed hits: INJURY_* -> share of the damage, e.g. alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3); null = all injury_kind. Shared: never mutate it.
+	var/alist/injury_kinds
 
 /datum/type_trait/item_combat/copy_values(datum/type_trait/item_combat/into)
 	into.force = force
@@ -42,13 +48,16 @@ STATIC_ENTRY(item_combat)
 	into.attack_speed = attack_speed
 	into.reach = reach
 	into.attack_verbs = attack_verbs
+	into.embed_chance = embed_chance
+	into.injury_kind = injury_kind
+	into.injury_kinds = injury_kinds
 
 /datum/entry_engine/type_trait/item_combat
 	kind = ENTRY_ITEM_COMBAT
 	trait_type = /datum/type_trait/item_combat
 	publish_key = ITEM_COMBAT_KEY
 	base_type = /obj/item
-	var_names = list("force" = "force", "sharp" = "sharp", "edge" = "edge", "armor_penetration" = "armor_penetration", "melee_windup" = "windup", "melee_recovery" = "recovery", "melee_sweep" = "sweep", "can_cleave" = "can_cleave", "attackspeed" = "attack_speed", "reach" = "reach", "attack_verb" = "attack_verbs")
+	var_names = list("force" = "force", "sharp" = "sharp", "edge" = "edge", "armor_penetration" = "armor_penetration", "melee_windup" = "windup", "melee_recovery" = "recovery", "melee_sweep" = "sweep", "can_cleave" = "can_cleave", "attackspeed" = "attack_speed", "reach" = "reach", "attack_verb" = "attack_verbs", "embed_chance" = "embed_chance", "injury_kind" = "injury_kind", "injury_kinds" = "injury_kinds")
 
 /// How `I` fights (its own values once one was set at run time). Read only.
 READS_AS(/proc/combat_of, ITEM_COMBAT_KEY)
@@ -93,3 +102,12 @@ READS_AS(/proc/combat_of, ITEM_COMBAT_KEY)
 
 /obj/item/proc/set_attack_verb(value)
 	return set_trait(src, ENTRY_ITEM_COMBAT, "attack_verbs", value)
+
+/obj/item/proc/set_embed_chance(value)
+	return set_trait(src, ENTRY_ITEM_COMBAT, "embed_chance", value)
+
+/obj/item/proc/set_injury_kind(value)
+	return set_trait(src, ENTRY_ITEM_COMBAT, "injury_kind", value)
+
+/obj/item/proc/set_injury_kinds(value)
+	return set_trait(src, ENTRY_ITEM_COMBAT, "injury_kinds", value)

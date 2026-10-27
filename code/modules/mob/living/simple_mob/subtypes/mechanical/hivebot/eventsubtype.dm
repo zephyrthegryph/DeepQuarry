@@ -101,8 +101,10 @@ CAPABILITIES(/obj/item/projectile/energy/lightingspark/nanoweave)
 	name = "sonic blast"
 	icon_state = "sound"
 	damage = 0 //No
-	embed_chance = 0
 	range = 12
+
+CAPABILITIES(/obj/item/projectile/knockback)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/knockback/on_hit(atom/movable/target, blocked = 0)
 	if(isliving(target))
@@ -116,9 +118,11 @@ CAPABILITIES(/obj/item/projectile/energy/lightingspark/nanoweave)
 	icon_state = "bolter"
 	speed = 0.5 //we need this to hit for the follow up, the sooner the better
 	damage = 0 //but hey no real harm
-	embed_chance = 0
 	muzzle_type = null
 	combustion = FALSE
+
+CAPABILITIES(/obj/item/projectile/metalball)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/metalball/on_hit(atom/target, blocked = 0)
 	if(isturf(target.loc))

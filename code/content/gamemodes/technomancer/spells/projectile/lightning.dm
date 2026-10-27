@@ -24,13 +24,15 @@
 	name = "lightning"
 	icon_state = "lightning"
 	nodamage = 1
-	injury_kind = INJURY_PAIN
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning
 	impact_type = /obj/effect/projectile/impact/lightning
 
 	var/power = 60				//How hard it will hit for with electrocute_act().
+
+CAPABILITIES(/obj/item/projectile/beam/lightning)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 
 /obj/item/projectile/beam/lightning/attack_mob(mob/living/target_mob, distance, miss_modifier=0)
 	if(ishuman(target_mob))

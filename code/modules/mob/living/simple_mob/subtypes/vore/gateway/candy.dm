@@ -555,10 +555,12 @@ CAPABILITIES(/obj/random/mob/candycritter)
 	use_submunitions = 1
 	only_submunitions = 1
 	range = 0
-	embed_chance = 0
 	submunition_spread_max = 1800
 	submunition_spread_min = 500
 	submunitions = list(/obj/item/projectile/energy/chocosphere = 12)
+
+CAPABILITIES(/obj/item/projectile/bullet/cmblast)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/energy/chocosphere
 	name = "choclate sphere"

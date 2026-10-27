@@ -761,10 +761,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 	use_submunitions = 1
 	only_submunitions = 1 	//lmao this var doesn't even do anything
 	range = 0				//so instead we circumvent it with this :^)
-	embed_chance = 0
 	submunition_spread_max = 300
 	submunition_spread_min = 150
 	submunitions = list(/obj/item/projectile/bullet/incendiary/dragonflame = 5)
+
+CAPABILITIES(/obj/item/projectile/bullet/dragon)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/bullet/dragon/on_range()
 	consume(src)
@@ -773,7 +775,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 	name = "dragon flame"
 	icon_state = null
 	damage = 30
-	embed_chance = 0
 	accuracy = 100	//This is a bullet facading as a swathe of fire, how's a wall of fire gonna miss huh?
 	speed = 2
 	incendiary = 2
@@ -781,6 +782,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 	range = 12
 	penetrating = 5
 	var/fire_stacks = 1
+
+CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
+	configure(item_combat(embed_chance = 0))
 
 //Making it so fire passes through mobs but not walls
 /obj/item/projectile/bullet/incendiary/dragonflame/check_penetrate(atom/A)
