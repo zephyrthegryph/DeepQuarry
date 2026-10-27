@@ -33,8 +33,9 @@ look is the only light source.
 
 ## Tooling
 
-- `base_vars` lint accepts trait blocks, profile records, HUD elements, `TRACKED`/`STAT`, sparse slots and cooldowns;
-  anything else on a base type fails.
+- `base_vars` lint accepts trait blocks, profile records, HUD elements, `TRACKED`/`STAT`, sparse slots, cooldowns and relations
+  (a var named by a `ref_one`/`ref_many`/`owns_one`/`owns_many`/`slot` entry in its own type's `CAPABILITIES` block, or an end of
+  `links(/A::a, /B::b)`; `base_var_home_relations` in `tools/ci/lint_scopes.toml`, decided 2026-10-27); anything else on a base type fails.
 - `records_data_only` lint: a `/datum/record` subtype declares data fields and accessors only.
 - Analyzer report of vars with no reads or write-only (`analyze base-vars-dead`).
 - Map loader: an edit of an unknown var that names a trait field goes through `set_trait()` (restores the Southern
