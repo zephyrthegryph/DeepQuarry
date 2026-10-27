@@ -873,11 +873,41 @@ assembly and resource recorders); on an edit about 166 (`startup_allocation::aut
 instances). A trial with every recorder unversioned (all receipts proven by the table or by exact replay) issued 1 version
 per request at equal speed, so the next slice removes the versioned path instead of converting recorders one by one.
 
-Next slices: (3) every request gets an answer table (one-shot compiles too), after
-which the version path of `ReceiptAdmission`, `ObservationLedger::versions` and the stored version lists can go; (4) the
-answer world (`QueryDb::begin_answers`) is computed from the tree and scalar snapshot directly instead of through
-`domain_version(Tree)`, the dep index keys on it, and `Resolver::domain_version`, the engine-host issuers and dm-tree's
-owner certificates and demand tokens are deleted.
+**Slice 4 (2026-10-27, compiler/domain-version-out): domain versions deleted.** `Resolver::domain_version` is gone,
+and with it every issuer and every consumer of a version:
+
+- *Recording and admission.* `RecordingResolver` and `ObservationLedger` record answers only (no version argument, no
+  `domain_receipts`, no versioned mode); `ObservationHost` has no `version`/`version_for_admission`;
+  `ReceiptAdmission` keeps no version cache and proves a receipt by the request's answer table when it has one (`with_oracle`)
+  and otherwise by exact replay; `certified_domains`, `matching_domains`, `CertificateDelta` and the version branch of every
+  consumer (ABI admission and scheduler, lowering resident/disk/partial admission, compact and wire records,
+  `CurrentReads`) are deleted. Store APIs still carry an always-empty version list (removed in the next lane).
+- *One identity remains.* `Resolver::answer_world` is the old `Tree` domain version under its own name, computed exactly as
+  before at each layer (tree: declarations identity; scalar snapshot: its issued tables; engine host: configuration, runtime
+  policy, pinned source trees, callable exclusions; static resolver: the underlying world and the static inventory; memo,
+  resource and recording resolvers forward it). It keys answer carrying (`QueryDb::begin_answers`) and the dependency index.
+- *Every request has an answer table.* The one-shot memo of a fresh daemon's first request (and of `--no-daemon`) gets a
+  request-local `QueryDb` (`ProcedureMemo::answers`), shared by its ABI and initializer stores.
+- *Issuers deleted.* dm-tree: owner hierarchy/callable/variable selection certificates, demanded selections and the
+  demand-token carry (the change set is still classified for `change_since`), storage-uniqueness certificates, scalar
+  certificates, procedure-static layout tokens and `token_digest`. dmbc: the engine host's catalog, callable, scalar-owner,
+  negative-variable and captured-declaration issuers, its domain memo, the callable-fallback receipt store
+  (`runner_facts_callable_fallback.rs`) and the provider/catalog issuer counters.
+- *One behavioural rewrite.* The engine host's pinned variable-absence proof compared the coverage source's demanded-name
+  token with the current tree's; it now requires the two trees to give the same `Ancestry` and `HasMemberVar` answers. A
+  tree without the old token issuer (a test-only construction) used to answer `Unsupported` for an uncaptured name on a
+  covered owner and now answers `Missing`, as every production tree already did.
+
+Measured, production tree at this lane's base (the lane's worktree as compile root), 4 workers, fresh private daemon per
+arm, both binaries warmed once so their disk caches are hot; base = this lane's merge base, built the same way. Fresh
+daemon first compile 38.9 s (base) against 32.7 s; added-type edits (full in-session path, 8 per arm over two rounds and a
+warm-up) median 16.97 s against 16.91 s; body edits (12 per arm, three interleaved rounds) median 5.64 s against 5.87 s
+(+4.1 %; the per-round medians alternate: 5.04 / 5.27, 6.10 / 5.95). Versions issued per request: about 112k on a fresh
+daemon's first compile and 166 per edit before, none after (the counter is gone with the issuers). 6.9k lines deleted.
+`dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile: EQUIVALENT after body edits plus a new
+file in a resource search folder, and after two added-type edits and a default edit under `DMB_QUERY_VERIFY=1` (0 answer
+mismatches). `cargo test` over the workspace passes; tests whose subject was a version or certificate are deleted or
+rewritten to assert answers.
 
 ## Design option: the include spec as the project input (2026-10-27, lane `tools/generated-dme`)
 
