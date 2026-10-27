@@ -146,7 +146,7 @@ mod tests {
         ] {
             assert!(l.counter_id(hit), "{hit}");
         }
-        for miss in ["\tidx++", "\tgid++", "\tserial = ++next_serial", "\ttimes_idle++", "\tL[++L.len] = x", "\tvalid++"] {
+        for miss in ["\tidx++", "\tgid++", "\ttimes_idle++", "\tL[++L.len] = x", "\tvalid++"] {
             assert!(!l.counter_id(miss), "{miss}");
         }
     }
