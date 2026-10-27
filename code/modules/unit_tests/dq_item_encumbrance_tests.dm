@@ -88,8 +88,10 @@
 			var/got = H.movement_delay()
 			if(abs(got - want) > 0.001)
 				H.species.item_slowdown_mod = species_mod
+				H.body.sync_worn_factors()
 				return Fail("mod [mod], suit [c[1]] shoes [c[2]] held [c[3]] pulled [c[4]]: delay [got], expected [want] (naked [base])")
 	H.stop_pulling()
 	H.species.item_slowdown_mod = species_mod
+	H.body.sync_worn_factors() // the species' mod was put back by hand
 
 #endif
