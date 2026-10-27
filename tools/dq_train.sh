@@ -225,6 +225,7 @@ snap_syntax_ok() { # <dir>: every script in it parses; prints the first failure
 }
 SELF_UPDATE_BAD=""
 SELF_UPDATE_LAST="${DQ_TRAIN_REEXEC_AT:-0}"
+SELF_SIG="$(git hash-object --no-filters "$SELF" 2>/dev/null)" # the code this process runs (self_update notices a refreshed snapshot)
 # Between cycles, never in one: when a script of the snapshot differs from origin/master's copy, refresh the snapshot from origin/master
 # (git show, no checkout), check that it parses, and exec the new dq_train.sh with the same arguments. The run lock and the integrator's
 # identity are kept (DQ_TRAIN_REEXEC=1 makes the new process adopt its own lock). A new version that does not parse is never run: the
@@ -242,7 +243,17 @@ self_update() {
 		[ -f "$STATE/self/$f" ] && cur="$(git hash-object --no-filters "$STATE/self/$f" 2>/dev/null)"
 		[ "$cur" = "$want" ] || changed+=("$f")
 	done
-	[ ${#changed[@]} -gt 0 ] || return 0
+	if [ ${#changed[@]} -eq 0 ]; then
+		# The snapshot is current, but another process of the train (the integrator or the prechecker: both run it) may have refreshed it
+		# after this one started: re-exec into it, or this process keeps running the old code until it exits.
+		if [ -n "$SELF_SIG" ] && [ "$(git hash-object --no-filters "$SELF" 2>/dev/null)" != "$SELF_SIG" ] && [ $(( $(date +%s) - SELF_UPDATE_LAST )) -ge 30 ] \
+			&& d="$(snap_syntax_ok "$STATE/self")"; then
+			tlog "self-update: $SELF was refreshed by another train process; re-exec"
+			export DQ_TRAIN_REEXEC=1 DQ_TRAIN_REEXEC_AT="$(date +%s)"
+			exec bash "$STATE/self/dq_train.sh" "${ORIG_ARGS[@]}"
+		fi
+		return 0
+	fi
 	[ "$sig" != "$SELF_UPDATE_BAD" ] || return 0
 	if [ $(( $(date +%s) - SELF_UPDATE_LAST )) -lt 30 ]; then return 0; fi # never a tight re-exec loop
 	stage="$STATE/self.new"
