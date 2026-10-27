@@ -30,7 +30,6 @@
 	vore_fullness_ex = list("stomach" = 0, "tail" = 0)
 	vore_bump_emote = "coils their tail around"
 	vore_icons = 0
-	vore_icon_bellies = list("stomach", "tail")
 	// Default stomach
 	vore_stomach_name = "upper stomach"
 	vore_stomach_flavor = "You've ended up inside of the lamia's human stomach. It's pretty much identical to any human stomach, but the valve leading deeper is much bigger."
@@ -51,7 +50,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/lamia)
-	configure(living_rules(vore_capacity_ex = list("stomach" = 1, "tail" = 1), vore_capacity = 1, say_list_type = /datum/say_list/lamia))
+	configure(living_rules(vore_icon_bellies = list("stomach", "tail"), vore_capacity_ex = list("stomach" = 1, "tail" = 1), vore_capacity = 1, say_list_type = /datum/say_list/lamia))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 

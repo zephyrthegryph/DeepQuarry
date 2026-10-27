@@ -970,13 +970,7 @@ CAPABILITIES(/transformation/chem/instant/brown_paint)
 CAPABILITIES(/transformation/chem/instant/blood_paint)
 	configure(transformation(name = "Blood paint", id = "blood_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_BLOOD, 2)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/blood_paint, send_data)))
-
-/transformation/chem/instant/blood_paint/proc/send_data(datum/reagents/T)
-	var/t = T.get_data(REAGENT_ID_BLOOD)
-	if(t && t["blood_colour"])
-		return t["blood_colour"]
-	return "#FE191A" // Probably red
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), data_from = data_from_reagent(REAGENT_ID_BLOOD, "blood_colour", "#FE191A")))
 
 /transformation/chem/instant/milk_paint
 

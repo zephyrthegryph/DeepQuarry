@@ -38,7 +38,6 @@
 	// ALLOW(instance_list): d: per-mob vore_fullness_ex with starting entries, edited at runtime; mobs are few
 	var/list/vore_fullness_ex = list("stomach" = 0) // Expanded list of fullness
 
-	var/list/vore_icon_bellies = list("stomach") // ALLOW(instance_list): d: per-mob vore_icon_bellies with starting entries, edited at runtime; mobs are few
 
 	var/vore_icons = 0					// Bitfield for which fields we have vore icons for.
 

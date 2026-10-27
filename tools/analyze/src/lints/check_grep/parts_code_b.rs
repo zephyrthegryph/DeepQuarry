@@ -260,7 +260,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "transform_ratchet_on_bespoke_data_procs",
             "transform: ratchet on bespoke data procs",
-            "a chemical transformation with a bespoke data = TYPE_PROC_REF(...) over the ratchet. Product data is a pure function of the settle; the count only falls (doc/rewrite/proposals/transformations.md section 6).",
+            "a chemical transformation with a data = TYPE_PROC_REF(...) is gone (banned). Declare the product's data: with_data = constant, or data_from = data_from_reagent(id, key, default) (doc/rewrite/proposals/transformations.md section 6).",
             Files::Code,
             line(r"\bdata = TYPE_PROC_REF\(/transformation/chem/"),
         ),

@@ -67,6 +67,9 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	//need to obtain the new reagent's data before anything is altered
 	var/datum/owner = X.owner_of()
 	var/data = X.data_proc ? call(owner, X.data_proc)(holder, reaction_progress) : X.data_const
+	if(X.data_from)
+		var/list/source = holder.get_data(X.data_from[1])
+		data = (source && source[X.data_from[2]]) || X.data_from[3]
 
 	//remove the reactants
 	for(var/reactant in X.reagent_takes)

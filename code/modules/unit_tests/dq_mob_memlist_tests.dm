@@ -11,7 +11,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
 	TEST_ASSERT_NULL(H.logging, "a fresh human owns no logging list")
-	TEST_ASSERT_NULL(H.active_genes, "a fresh human owns no active_genes list")
+	TEST_ASSERT_NULL(sparse_get(H, active_genes), "a fresh human owns no active_genes list")
 	TEST_ASSERT_NULL(H.body_effect_origins, "a fresh human owns no body effect lists")
 	TEST_ASSERT_NULL(sparse_get(H, temp_languages), "a fresh human owns no temp_languages list")
 	TEST_ASSERT_NULL(sparse_get(H, custom_heat), "a fresh human owns no custom_heat list")

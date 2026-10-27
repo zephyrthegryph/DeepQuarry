@@ -24,6 +24,8 @@ sparse(/mob, skip_buckled_move_redirect, type = bool)
 sparse(/mob, get_rig_stats, type = num)
 sparse(/mob, m_int, type = text)
 sparse(/mob, vantag_hud, type = num)
+// Names of the genes switched on in this mob's DNA (/datum/gene/proc/mark_active).
+sparse(/mob, active_genes, type = list)
 sparse(/mob, narsimage, type = /image)
 sparse(/mob, narglow, type = /image)
 sparse(/mob, riftimage, type = /image)

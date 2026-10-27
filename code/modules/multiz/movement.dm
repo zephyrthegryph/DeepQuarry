@@ -795,7 +795,7 @@
 /// The climb of the Climb Wall verb. The questions in front of it (an unequipped climb, a scug's spear) are requests whose answers come back
 /// here with `confirmed` (the climber said "Bring it!") and `spear_answer` ("Yes!" / "No") set; every check is made again with each answer.
 /turf/simulated/proc/climb_wall_attempt(mob/living/L, confirmed = FALSE, spear_answer = null)
-	var/climbing_delay_min = L.climbing_delay
+	var/climbing_delay_min = living_rules_of(L).climbing_delay
 	var/fall_chance = 0
 	var/drop_our_held = FALSE
 	var/nutrition_cost = 50 //Climbing up is harder!
@@ -828,7 +828,7 @@
 	if(ishuman(L))
 		var/permit_human = FALSE
 		var/mob/living/carbon/human/H = L
-		if(H.species.climbing_delay < H.climbing_delay)
+		if(H.species.climbing_delay < living_rules_of(H).climbing_delay)
 			climbing_delay_min = H.species.climbing_delay
 		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
@@ -966,7 +966,7 @@
 /mob/living/proc/climb_down_attempt(confirmed = FALSE)
 	var/fall_chance = 0	//Increased if we can't actually climb
 	var/turf/our_turf = get_turf(src) //floor we're standing on
-	var/climbing_delay_min = src.climbing_delay //We take the lowest climbing delay between mob, species and gear.
+	var/climbing_delay_min = living_rules_of(src).climbing_delay //We take the lowest climbing delay between mob, species and gear.
 	var/nutrition_cost = 25	//Descending is easier!
 
 
@@ -998,7 +998,7 @@
 	if(ishuman(src))
 		var/permit_human = FALSE
 		var/mob/living/carbon/human/H = src
-		if(H.species.climbing_delay < H.climbing_delay)
+		if(H.species.climbing_delay < living_rules_of(H).climbing_delay)
 			climbing_delay_min = H.species.climbing_delay
 		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())

@@ -135,7 +135,6 @@
 	var/list/vore_light_states	//Robot exclusive. Lazy.
 	var/list/active_module_types // The types of the active modules (module_slots_changed()). Lazy.
 	vore_fullness_ex = list()
-	vore_icon_bellies = list()
 
 // --- Lifecycle ------------------------------------------------------------------------------
 
