@@ -913,3 +913,7 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
 - **One DreamChecker at a time.** Two at once (both precheck workers, or a precheck beside the batch gate) took 600-700 s each against
   335 s alone. The gates' dreamchecker job now holds the machine slot class `dreamchecker` (capacity 1, `DQ_SLOTS_DREAMCHECKER`); the
   batch gate's priority 0 goes first. `DQ_GATE_DC_PARALLEL=1` runs it without the slot.
+- **Compile and boot only when nothing interacts.** A prechecked batch in which every lane's own tests are skipped (no shared area with
+  another lane or with master since its precheck, no global path) passes `--no-smoke` and runs `dq_boot_gate` alone: each lane passed the
+  smoke and gameplay sets on its merge with master, master passed them on its own, and the combination still compiles and boots in the
+  gate. `DQ_TRAIN_LONE_SMOKE=1` keeps the sets.

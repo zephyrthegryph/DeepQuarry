@@ -972,6 +972,15 @@ heavy_cycle_gate() {
 	tests_union="$(printf '%s\n' $tests_union | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
 	set +f
 	if [ -z "${tests_union// /}" ]; then tests_union="dq_boot_gate"; lane_test_args+=(--tests dq_boot_gate); fi
+	# Nothing in a prechecked batch interacts (every lane's own tests skipped: no shared area with another lane or with master since its
+	# precheck, no global path): each lane passed the smoke and gameplay sets on its merge with master, and master passed them on its own.
+	# What is left to prove is that the combination compiles and boots (dq_boot_gate). DQ_TRAIN_LONE_SMOKE=1 keeps the sets.
+	local smoke_args=()
+	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_LONE_SMOKE:-0}" != 1 ] && [ "${#SKIP_TESTS[@]}" -eq "${#CHOSEN[@]}" ]; then
+		smoke_args=(--no-smoke); tests_union="dq_boot_gate"
+		case " ${lane_test_args[*]} " in *" --tests dq_boot_gate "*) ;; *) lane_test_args+=(--tests dq_boot_gate) ;; esac
+		tlog "no lane of this batch interacts with another or with master since its precheck: compile and boot only (no smoke or gameplay sets)"
+	fi
 	deadline=$(( $(date +%s) + CYCLE_MAX_MIN * 60 ))
 	local wt2_use="" deadline_use="$deadline" limit_file="$STATE/batch_limit" limit_max="$MAX_LANES"
 	if [ "${PRECHECKED_BATCH:-0}" = 1 ]; then
@@ -1002,7 +1011,7 @@ heavy_cycle_gate() {
 		export DQ_BATCH_CACHE="$STATE/bisect.cache"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
-		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" "${lane_test_args[@]}" --no-dm
+		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" "${lane_test_args[@]}" ${smoke_args[@]+"${smoke_args[@]}"} --no-dm
 	) >"$out" 2>&1
 	rc=$?
 	good="$(sed -n 's/^BATCH_GOOD: //p' "$out" | tail -n 1)"

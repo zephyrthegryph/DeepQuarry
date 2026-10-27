@@ -380,6 +380,7 @@ check "a prechecked batch whose lanes change different DreamChecker inputs keeps
 unset DQ_STUB_DCD_LOG
 check "the prechecked lanes land; the failed one never joined a batch" 'in_master lane/pa && in_master lane/pc && in_master lane/pe && ! in_master lane/pb && ! grep -q "chosen=\[[^]]*lane/pb" "$DQ_TRAIN_STATE/log/train.log"'
 check "the batch says it is prechecked and has no cycle deadline" 'grep -q "all prechecked; bisect to the end" <<<"$out" && grep -q "no cycle deadline" <<<"$out"'
+check "a batch where lanes interact keeps the smoke and gameplay sets" '! grep -q -- "--no-smoke" "$DQ_STUB_ARGS_LOG"'
 check "lanes sharing an area run their own tests; a lane sharing none does not" 'grep -q "tpa" "$DQ_STUB_ARGS_LOG" && grep -q "tpe" "$DQ_STUB_ARGS_LOG" && ! grep -q "tpc" "$DQ_STUB_ARGS_LOG" && grep -q "own tests do not run in this batch.*lane/pc" "$DQ_TRAIN_STATE/log/train.log"'
 # ten prechecked lanes (more than DQ_TRAIN_MAX_LANES=8), two of them fine alone but failing together: one cycle, past the deadline, both halves at once
 # the first prechecked cycle created it in the background; wait until it is ready (never used half-made)
@@ -404,6 +405,14 @@ train precheck-run >/dev/null 2>&1
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "a batch with a lane on a global path runs DreamChecker (no trusted verdict)" 'in_master lane/pg && in_master lane/ph && grep -q "^dcdisjoint= " "$DQ_STUB_DCD_LOG" && ! grep -q "^dcdisjoint=every" "$DQ_STUB_DCD_LOG"'
 unset DQ_STUB_DCD_LOG
+# two prechecked lanes in different areas, nothing global: compile and boot only
+export DQ_STUB_ARGS_LOG="$tmp/lone-args.log"; : >"$DQ_STUB_ARGS_LOG"
+mk lane/pi lanes/pi/f.txt fine; train enqueue --tests "tpi" >/dev/null 2>&1; back
+mk lane/pj lanes/pj/f.txt fine; train enqueue --tests "tpj" >/dev/null 2>&1; back
+train precheck-run >/dev/null 2>&1
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a prechecked batch where nothing interacts gates compile and boot only (no smoke set)" 'in_master lane/pi && in_master lane/pj && grep -q -- "--no-smoke" "$DQ_STUB_ARGS_LOG" && grep -q "dq_boot_gate" "$DQ_STUB_ARGS_LOG" && ! grep -q "tpi\|tpj" "$DQ_STUB_ARGS_LOG" && grep -q "compile and boot only" <<<"$out"'
+unset DQ_STUB_ARGS_LOG
 # no verdict after the wait limit (the prechecker is not running here): the lane rides the old way
 mk lane/pw lanes/pw/f.txt fine; train enqueue --tests "tpw" >/dev/null 2>&1; back
 out="$(DQ_TRAIN_PRECHECK_WAIT_MIN=0 DQ_TRAIN_ONCE=1 train run 2>&1)"
