@@ -312,7 +312,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /datum/admins/proc/dq_open_jobban_panel(mob/target)
 	if(!owner()?.mob || !target)
 		return
-	var/key = "[REF(src)]-[REF(target)]"
+	var/key = "[ref_token(src)]-[ref_token(target)]"
 	var/datum/jobban_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_jobban_panels, key))
 	if(!panel)
 		panel = new(src, target)
@@ -332,7 +332,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /datum/jobban_panel/lifecycle_dematerialize()
 	..()
 	if(holder() && target())
-		GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target())]"
+		GLOB.dq_jobban_panels -= "[ref_token(holder())]-[ref_token(target())]"
 
 CAPABILITIES(/datum/jobban_panel)
 	ref_one(nameof(holder))

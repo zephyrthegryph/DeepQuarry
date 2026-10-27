@@ -536,6 +536,7 @@
 #include "dq_om_relations_tests.dm"
 #include "dq_om_notice_delivery_tests.dm"
 #include "dq_entity_handle_ids_tests.dm"
+#include "dq_entity_handle_keys_tests.dm"
 #include "dq_rel_lifecycle_pins.dm"
 #include "dq_links_hit_pins.dm"
 #include "dq_om_scheduler_tests.dm"
