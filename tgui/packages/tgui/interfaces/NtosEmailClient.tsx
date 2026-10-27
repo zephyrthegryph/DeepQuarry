@@ -25,7 +25,7 @@ type Data = {
   cur_source: string | null;
   cur_timestamp: string | null;
   cur_title: string | null;
-  cur_uid: number | null;
+  cur_uid: string | null;
   current_account: account | null;
   down_filename: string | null;
   down_progress: number | null;
@@ -55,7 +55,7 @@ type message = {
   body: string;
   source: string;
   timestamp: string;
-  uid: number;
+  uid: string;
 };
 
 type account = { login: string };

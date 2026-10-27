@@ -28,7 +28,7 @@
 CAPABILITIES(/datum/computer_file/program/chatclient)
 	interface("NtosNetChat")
 	op("PRG_speak", ui_act("PRG_speak", arg("message", schema_text(4096))), then(PROC_REF(ui_act_prg_speak)))
-	op("PRG_joinchannel", ui_act("PRG_joinchannel", arg("id", num())), then(PROC_REF(ui_act_prg_joinchannel)))
+	op("PRG_joinchannel", ui_act("PRG_joinchannel", arg("id", schema_text(64))), then(PROC_REF(ui_act_prg_joinchannel)))
 	op("PRG_leavechannel", ui_act("PRG_leavechannel"), then(PROC_REF(ui_act_prg_leavechannel)))
 	op("PRG_newchannel", ui_act("PRG_newchannel", arg("new_channel_name", schema_text(4096))), then(PROC_REF(ui_act_prg_newchannel)))
 	op("PRG_toggleadmin", ui_act("PRG_toggleadmin"), then(PROC_REF(ui_act_prg_toggleadmin)))

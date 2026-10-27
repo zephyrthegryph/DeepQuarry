@@ -1,5 +1,3 @@
-GLOBAL_VAR_INIT(file_uid, 0)
-
 /datum/computer_file/
 	/// Placeholder. Whitespace and most special characters are not allowed.
 	var/filename = "NewFile"
@@ -17,7 +15,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	var/hidden = FALSE
 	/// Protects files that should never be edited by the user due to special properties.
 	var/read_only = FALSE
-	/// UID of this file
+	/// The file's handle (ref_token(src), relations.md D9a): how windows and drives name it. A clone is a new file with its own.
 	var/uid
 	/// Any metadata the file uses.
 	var/list/metadata
@@ -26,8 +24,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 
 /datum/computer_file/New(list/md = null)
 	..()
-	uid = GLOB.file_uid
-	GLOB.file_uid++
+	uid = ref_token(src)
 	if(islist(md))
 		metadata = md.Copy()
 

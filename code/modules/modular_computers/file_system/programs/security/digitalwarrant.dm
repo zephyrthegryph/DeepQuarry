@@ -1,14 +1,7 @@
-GLOBAL_VAR_INIT(warrant_uid, 0)
-
 /datum/datacore
 	var/list/warrants
 
 /datum/data/record/warrant
-	var/warrant_id
-
-/datum/data/record/warrant/New()
-	..()
-	warrant_id = GLOB.warrant_uid++
 
 /datum/computer_file/program/digitalwarrant
 	filename = "digitalwarrant"
@@ -29,7 +22,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 CAPABILITIES(/datum/computer_file/program/digitalwarrant)
 	interface("NtosDigitalWarrant")
 	op("back", ui_act("back"), then(PROC_REF(ui_act_back)))
-	op("editwarrant", ui_act("editwarrant", arg("id", num())), then(PROC_REF(ui_act_editwarrant)))
+	op("editwarrant", ui_act("editwarrant", arg("id", schema_ref(/datum/data/record/warrant))), then(PROC_REF(ui_act_editwarrant)))
 	op("addwarrant", ui_act("addwarrant"), needs(req(PROC_REF(warrant_id_ok))), asks(/datum/prompt/choice, fields = list("title" = "Warrant Type", "question" = "Do you want to create a search-, or an arrest warrant?", "choices" = list("Search", "Arrest", "Cancel"))), then(PROC_REF(ui_act_addwarrant)))
 	op("savewarrant", ui_act("savewarrant"), then(PROC_REF(ui_act_savewarrant)))
 	op("deletewarrant", ui_act("deletewarrant"), then(PROC_REF(ui_act_deletewarrant)))
@@ -59,7 +52,7 @@ CAPABILITIES(/datum/computer_file/program/digitalwarrant)
 			"warrantname" = W.fields["namewarrant"],
 			"charges" = "[copytext(W.fields["charges"],1,min(length(W.fields["charges"]) + 1, 50))]...",
 			"auth" = W.fields["auth"],
-			"id" = W.warrant_id,
+			"id" = ref_token(W), // the window names a warrant by its handle (relations.md D9a)
 			"arrestsearch" = W.fields["arrestsearch"]
 		)))
 	data["allwarrants"] = allwarrants
@@ -72,10 +65,8 @@ CAPABILITIES(/datum/computer_file/program/digitalwarrant)
 
 /datum/computer_file/program/digitalwarrant/proc/ui_act_editwarrant(datum/act/op/A, id)
 	. = TRUE
-	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-		if(W.warrant_id == id)
-			rel_set(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref), W)
-			break
+	if(id in GLOB.data_core.warrants)
+		rel_set(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref), id)
 
 	// The following actions will only be possible if the user has an ID with security access equipped. This is in line with modular computer framework's authentication methods,
 	// which also use RFID scanning to allow or disallow access to some functions. Anyone can view warrants, editing requires ID. This also prevents situations where you show a tablet
