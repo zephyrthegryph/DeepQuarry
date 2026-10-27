@@ -33,37 +33,6 @@ impl HeapCensus {
                 }
             }
         });
-        store.fields.visit_storage(|view| match view {
-            V::Store { entries, .. } => self.observe_items("required_fields.index", entries),
-            V::Bucket {
-                address,
-                len,
-                capacity,
-                element_size,
-            } => {
-                self.buffer(
-                    "required_fields.buckets",
-                    address,
-                    len.saturating_mul(element_size),
-                    capacity.saturating_mul(element_size),
-                );
-            }
-            V::Entry {
-                key,
-                reads,
-                value,
-            } => {
-                self.slice("required_fields.keys", key, true);
-                if self.receipt("required_fields.reads", reads) {
-                    for read in reads.iter() {
-                        super::resident_owner_projection::inspect_field(self, &read.answer);
-                    }
-                }
-                if self.arc_object("required_fields.requests", value) {
-                    self.vec_payload("required_fields.ordered", value);
-                }
-            }
-        });
         store.parents.visit_storage(|view| match view {
             V::Store { entries, .. } => self.observe_items("required_parents.index", entries),
             V::Bucket {

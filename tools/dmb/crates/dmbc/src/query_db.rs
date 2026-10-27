@@ -211,10 +211,11 @@ pub(crate) struct AnswerValue {
     query: dm_ir::ResolveQuery,
 }
 const VALUE_SHARDS: usize = 64;
-/// The intern pool of answer values by query id: weak, so nothing is kept alive by it. A value whose id is already
-/// pooled with another hash (two sessions disagreeing about one answer) is simply not pooled.
+/// The intern pool of answer values by the low half of the query id (an entry is 16 bytes, not the 32 a `u128` key
+/// aligns to; the pooled value's own query settles a collision): weak, so nothing is kept alive by it. A value whose
+/// key is already pooled with another query or hash (two sessions disagreeing about one answer) is simply not pooled.
 pub(crate) struct AnswerValues {
-    shards: Box<[Mutex<std::collections::HashMap<u128, std::sync::Weak<AnswerValue>>>]>,
+    shards: Box<[Mutex<std::collections::HashMap<u64, std::sync::Weak<AnswerValue>>>]>,
 }
 impl Default for AnswerValues {
     fn default() -> Self {
@@ -225,13 +226,13 @@ impl AnswerValues {
     fn intern(&self, id: u128, query: &dm_ir::ResolveQuery, meaning: &dm_ir::ResolvedMeaning) -> Arc<AnswerValue> {
         let hash = answer_hash(meaning);
         let mut pooled = self.shards[(id as usize) % VALUE_SHARDS].lock().unwrap_or_else(|error| error.into_inner());
-        if let Some(held) = pooled.get(&id).and_then(std::sync::Weak::upgrade) {
-            if held.hash == hash {
+        if let Some(held) = pooled.get(&(id as u64)).and_then(std::sync::Weak::upgrade) {
+            if held.hash == hash && held.query == *query {
                 return held;
             }
         }
         let value = Arc::new(AnswerValue { hash, positive: positive_answer(meaning), query: *query });
-        pooled.insert(id, Arc::downgrade(&value));
+        pooled.insert(id as u64, Arc::downgrade(&value));
         value
     }
     /// Drop entries whose last slot is gone (a weak entry would otherwise keep its allocation).

@@ -30,6 +30,9 @@ MSG_DEF_SELF(needle/target_empty, "It is empty.")
 MSG_DEF_SELF(needle/target_full, "It is full.")
 MSG_DEF_SELF(needle/cannot_remove, "You cannot directly remove reagents from this object.")
 MSG_DEF_SELF(needle/cannot_fill, "You cannot directly fill this object.")
+/datum/msg/needle/thick_hide
+	self = "Your needle fails to penetrate %LIMB%'s thick hide..."
+	span_class = "warning"
 MSG_DEF_SELF(needle/blood_present, "There is already a blood sample in this syringe.")
 MSG_DEF_SELF(needle/full, "The syringe is full.")
 MSG_DEF_SELF(needle/no_dna, "You are unable to locate any blood. (To be specific, your target seems to be missing their DNA datum).")
@@ -69,6 +72,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 			needs(req(CAP_PROC(target_has_room)), req(CAP_PROC(belly_free)),
 				req(CAP_PROC(limb_there)), req(CAP_PROC(limb_not_robotic)),
 				req(CAP_PROC(limb_not_lifelike)), req(CAP_PROC(skin_open))),
+			chance(CAP_PROC(needle_gets_through), otherwise = list(says(MSG(needle/thick_hide)))),
 			then(CAP_PROC(injected))) : null)
 
 // ---- the mode ----
@@ -219,6 +223,13 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 		return null
 	return target.get_organ(hud_of(user)?.zone_sel?.selecting)
 
+/// The chance (percent) the needle goes in: a thick hide at the limb aimed at may turn it away (chance(): a failed roll says so and does nothing).
+/datum/capability/lib/needle/proc/needle_gets_through(datum/act/op/A)
+	if(!aimed_at_a_human(A))
+		return 100
+	var/mob/living/carbon/human/H = A.target
+	return 100 - H.thick_skin_hold_chance(H.get_organ(hud_of(A.actor)?.zone_sel?.selecting))
+
 /datum/capability/lib/needle/proc/aimed_at_a_human(datum/act/op/A)
 	var/mob/living/target = A.target
 	var/mob/user = A.actor
@@ -348,18 +359,12 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 		mode_set(holder, NEEDLE_INJECT)
 	return OP_OK
 
-/// The needle goes in: the thick hide of some species turns it away (a roll, as the injector's old check made, for somebody else), else the first transfer
+/// The needle went in (the thick-hide roll is the op's chance(), needle_gets_through()): the first transfer
 /// goes into the blood now and the rest follow, one every third of the time, as long as both stand where they stood and the container is in the hand.
 /datum/capability/lib/needle/proc/injected(datum/act/op/A)
 	var/atom/holder = A.holder
 	var/mob/living/target = A.target
 	var/mob/user = A.actor
-	if(aimed_at_a_human(A))
-		var/mob/living/carbon/human/H = target
-		var/obj/item/organ/external/affected = H.get_organ(hud_of(user)?.zone_sel?.selecting)
-		if(affected && H.thick_skin_holds(affected))
-			to_chat(user, span_warning("Your needle fails to penetrate \the [affected]'s thick hide..."))
-			return OP_REFUSED
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	var/contained = holder.reagents.get_reagents()
 	var/trans = holder.reagents.trans_to_mob(target, reagent_transfer_amount(holder), CHEM_BLOOD) || 0
