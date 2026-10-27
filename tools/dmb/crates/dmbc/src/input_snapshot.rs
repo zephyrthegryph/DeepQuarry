@@ -492,6 +492,15 @@ impl InputSnapshot {
     pub fn generated_outputs(&self) -> &BTreeSet<PathBuf> {
         &self.generated_outputs
     }
+    /// The watcher position this snapshot's facts are current at (see `WatchMark`). A copy of the same facts that
+    /// went through the wire (a session record decoded again) may take it back with [`Self::adopt_watch_mark`].
+    pub(crate) fn watch_mark(&self) -> Option<crate::fs_watch::WatchToken> {
+        self.watch.get()
+    }
+    /// Only for a snapshot whose recorded facts equal those of the one the mark was taken from.
+    pub(crate) fn adopt_watch_mark(&self, mark: Option<crate::fs_watch::WatchToken>) {
+        self.watch.replace(mark);
+    }
     fn generated_policy_matches(&self, provider: &impl SnapshotProvider) -> bool {
         self.folders.is_empty()
             || match provider.generated_outputs() {
