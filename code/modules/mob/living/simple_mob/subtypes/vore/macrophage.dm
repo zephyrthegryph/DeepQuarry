@@ -42,7 +42,6 @@
 	vore_bump_chance = "attempts to absorb"
 
 	vore_active = TRUE
-	vore_capacity = 1
 	vore_pounce_chance = 45
 
 
@@ -50,6 +49,7 @@
 	mob_size = MOB_TINY
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
+	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	every(3 MINUTES, then(PROC_REF(deathcheck)), when = nameof(deathwatch))
 	// An extrapolator's probe stabs it (extrapolator_act()): the user works on the germ, next to it, for two seconds.
@@ -149,7 +149,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 	ai_busy_end()
 */
 /mob/living/simple_mob/vore/aggressive/macrophage
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/aggressive/macrophage/on_death(gibbed)
 	..()

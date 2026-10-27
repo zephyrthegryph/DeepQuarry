@@ -66,7 +66,7 @@
 			if(LAZYLEN(target.vore_organs))
 				set_vore_selected(target, target.vore_organs[1])
 		src.copy_vore_prefs_to_mob(target)
-		rel_set(src, nameof(teleop), target) // So the AI 'hears' messages near its core.
+		sparse_ref_set(src, teleop, target) // So the AI 'hears' messages near its core.
 		target.post_deploy()
 
 /// Picking a shell to deploy to. A cancel aborts deployment.

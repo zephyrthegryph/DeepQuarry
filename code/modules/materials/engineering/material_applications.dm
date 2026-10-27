@@ -38,7 +38,7 @@
 		// Density changes the physical handling of every manufactured object;
 		// dielectric performance changes its real electrical coupling.
 		set_throw_speed(max(1, round(motion_of_type(type).throw_speed * clamp(100 / max(build.effective_density, 10), 0.5, 1.5))))
-		throw_range = max(1, round(initial(throw_range) * clamp(100 / max(build.effective_density, 10), 0.5, 1.5)))
+		set_throw_range(max(1, round(motion_of_type(type).throw_range * clamp(100 / max(build.effective_density, 10), 0.5, 1.5))))
 		set_siemens_coefficient(clamp(protection_of_type(type).siemens * (1.25 - build.effective_electrical_resistance / 125), 0.05, 2))
 		worn_protection_changed()
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || material_for_role(MATERIAL_ROLE_FRAME) || material_for_role(MATERIAL_ROLE_BODY) || primary

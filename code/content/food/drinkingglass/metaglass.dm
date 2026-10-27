@@ -50,9 +50,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/metaglass)
 			set_center_of_mass_y(10)
 
 		if(R.price_tag)
-			price_tag = R.price_tag
+			set_price_tag(R.price_tag)
 		else
-			price_tag = null
+			set_price_tag(null)
 	else
 		if(type == /obj/item/reagent_containers/food/drinks/metaglass/metapint)
 			set_icon_state("pglass_empty")

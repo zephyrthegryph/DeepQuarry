@@ -1,6 +1,5 @@
 /obj/item/lego
 	name = "Lego of Doom"
-	throw_range = 4
 	gender = PLURAL
 	icon = 'icons/obj/items_ch.dmi'
 	icon_state = "lego"
@@ -8,7 +7,7 @@
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/lego)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 4, throw_speed = 5))
 	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_thrown(force = 0))
 
@@ -28,7 +27,6 @@ CAPABILITIES(/obj/item/lego)
 
 /obj/item/lego/gib
 	name = "Lego of Doom"
-	throw_range = 4
 	gender = PLURAL
 	icon = 'icons/obj/items_ch.dmi'
 	icon_state = "lego"
@@ -36,7 +34,7 @@ CAPABILITIES(/obj/item/lego)
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/lego/gib)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 4, throw_speed = 5))
 	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_thrown(force = 0))
 

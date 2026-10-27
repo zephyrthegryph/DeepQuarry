@@ -851,7 +851,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		new_item.desc = src.desc
 
 		if(talkative)
-			rel_set(new_item, nameof(new_item.talking_atom), new /datum/talking_atom(new_item))
+			new /datum/talking_atom(new_item)
 
 		if(become_anomalous)
 			new_item.become_anomalous()
@@ -864,7 +864,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			T.last_find_name = new_item.name
 		if(secondary_item) //Is this part of a set?
 			if(talkative)
-				rel_set(secondary_item, nameof(secondary_item.talking_atom), new /datum/talking_atom(secondary_item))
+				new /datum/talking_atom(secondary_item)
 
 			if(become_anomalous)
 				secondary_item.become_anomalous()
@@ -873,7 +873,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		return
 
 	else if(talkative)
-		rel_set(src, nameof(talking_atom), new /datum/talking_atom(src))
+		new /datum/talking_atom(src)
 
 	if(become_anomalous)
 		become_anomalous()

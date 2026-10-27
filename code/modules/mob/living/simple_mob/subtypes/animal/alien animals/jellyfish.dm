@@ -54,12 +54,9 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 	speak_emote = list("thrumms")
 
-	meat_type = /obj/item/reagent_containers/food/snacks/jellyfishcore
 
-	say_list_type = /datum/say_list/jellyfish
 
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 25
 	vore_ignores_undigestable = 0
 	vore_default_mode = DM_DRAIN
@@ -104,7 +101,8 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
-	configure(butchery_rules(meat_amount = 0))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/jellyfish, delete_on_death = TRUE))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/jellyfishcore, meat_amount = 0))
 	ref_one(nameof(budded_from), /mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
@@ -121,7 +119,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 		parent.faction = faction
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
 	. = ..()

@@ -545,10 +545,10 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 	if(!process_contract_export_payload(shipment))
 		return FALSE
 	emit_contract_event(CONTRACT_EVENT_SHIPMENT_DEPARTED, list(
-		"shipment_ref" = REF(shipment),
+		"shipment_ref" = ref_token(shipment),
 		"shipment_name" = shipment.name,
 		"detail" = "Outbound freight departed aboard the supply shuttle",
-	), "shipment-departed:[REF(shipment)]", shipment)
+	), "shipment-departed:[ref_token(shipment)]", shipment)
 	return TRUE
 
 /proc/process_contract_export_payload(atom/movable/shipment)

@@ -3,13 +3,12 @@
 	item_state = "spraycan"
 	flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 	var/toxicity = 4
 	var/pest_kill_str = 0
 	var/weed_kill_str = 0
 
 CAPABILITIES(/obj/item/plantspray)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 10, throw_speed = 2))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 4))
 

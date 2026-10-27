@@ -1,7 +1,7 @@
 /// A body nobody plays is put to sleep by its life while the test's clock runs: a controller keeps it awake.
 /datum/unit_test/proc/interim_keep_awake(mob/living/carbon/human/H)
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, run_loc_floor_bottom_left)
-	rel_set(H, nameof(H.teleop), controller)
+	sparse_ref_set(H, teleop, controller)
 
 /// Assemble the actual wired/electropack trap through its normal item effects.
 /datum/unit_test/proc/interim_rig_crate(obj/structure/closet/crate/crate, mob/living/carbon/human/installer)

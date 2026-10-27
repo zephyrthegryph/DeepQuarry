@@ -27,8 +27,6 @@
 
 	// Vore tags
 	vore_active = 1
-	vore_capacity = 1
-	vore_capacity_ex = list("stomach" = 1, "tail" = 1)
 	vore_fullness_ex = list("stomach" = 0, "tail" = 0)
 	vore_bump_emote = "coils their tail around"
 	vore_icons = 0
@@ -51,9 +49,9 @@
 	var/vore_tail_absorb_chance = 0
 	var/vore_tail_transfer_chance = 50
 
-	say_list_type = /datum/say_list/lamia
 
 CAPABILITIES(/mob/living/simple_mob/vore/lamia)
+	configure(living_rules(vore_capacity_ex = list("stomach" = 1, "tail" = 1), vore_capacity = 1, say_list_type = /datum/say_list/lamia))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 

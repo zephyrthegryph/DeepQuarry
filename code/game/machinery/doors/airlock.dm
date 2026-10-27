@@ -19,9 +19,7 @@
 	icon = 'icons/obj/doors/doorint.dmi'
 	icon_state = "door_closed"
 
-	explosion_resistance = 10
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC // Not quite as nice as /tg/'s custom masks. We should make those sometime
 
 	/// If 1, will not beep on a failed closing attempt. Resets when the door closes.
 	var/has_beeped = 0
@@ -130,6 +128,8 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
+	configure(obj_rules(explosion_resistance = 10))
 	setup(PROC_REF(secure_admin_wires))
 	configure(atom_shielding(rad_material = MAT_STEEL, rad_thickness_mm = RAD_AIRLOCK_THICKNESS_MM))
 	setup(PROC_REF(join_close_group))

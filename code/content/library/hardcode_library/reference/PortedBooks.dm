@@ -10,7 +10,6 @@ Category: Reference
 /obj/item/book/bundle/custom_library/reference/recyclingprocedures
 	name = "Recycling Procedures"
 	desc = "A hardbound book titled \"Recycling Procedures\" by Astrid Morton."
-	description_fluff = "This book is titled \"Recycling Procedures\" by Astrid Morton. It appears to be about ways you can help recycle on your average space station."
 
 	title = "Recycling Procedures"
 	icon_state = "book7"
@@ -102,12 +101,14 @@ Category: Reference
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/reference/recyclingprocedures)
+	configure(atom_rules(description_fluff = "This book is titled \"Recycling Procedures\" by Astrid Morton. It appears to be about ways you can help recycle on your average space station."))
+
 ///A Guide to FBP and Prosthetic Maintenance by Yuki Matsuda. Was edited to be more accurate and fixed typos.
 
 /obj/item/book/bundle/custom_library/reference/fbpandprostheticmaintenance
 	name = "A Guide to FBP and Prosthetic Maintenance"
 	desc = "A hardbound book titled \"A Guide to FBP and Prosthetic Maintenance\" by Yuki Matsuda."
-	description_fluff = "This book is titled \"A Guide to FBP and Prosthetic Maintenance\" by Yuki Matsuda. It appears to cover general steps for repairing prosthetics."
 
 	title = "A Guide to FBP and Prosthetic Maintenance"
 	icon_state = "bookEngineering"
@@ -231,13 +232,15 @@ Category: Reference
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/reference/fbpandprostheticmaintenance)
+	configure(atom_rules(description_fluff = "This book is titled \"A Guide to FBP and Prosthetic Maintenance\" by Yuki Matsuda. It appears to cover general steps for repairing prosthetics."))
+
 ///A Fistful of D6's: Player's Guide by Ray Rogers
 
 /obj/item/book/custom_library/reference/fistfulofd6splayersguide
 
 	name = "A Fistful of D6's: Player's Guide"
 	desc = "A hardbound book titled \"A Fistful of D6's: Player's Guide\" by Ray Rogers."
-	description_fluff = "This book is titled \"A Fistful of D6's: Player's Guide\" by Ray Rogers. It is a player's guide to a TTRPG."
 
 	title = "A Fistful of D6's: Player's Guide"
 	icon_state = "corp_regs"
@@ -267,13 +270,15 @@ Category: Reference
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/reference/fistfulofd6splayersguide)
+	configure(atom_rules(description_fluff = "This book is titled \"A Fistful of D6's: Player's Guide\" by Ray Rogers. It is a player's guide to a TTRPG."))
+
 ///The Space Survival Guide: Depressurization by Lachina Green.
 
 /obj/item/book/custom_library/reference/spacesurvivalguidedespressurization
 
 	name = "The Space Survival Guide: Depressurization"
 	desc = "A hardbound book titled \"The Space Survival Guide: Depressurization\" by Lachina Green."
-	description_fluff = "This book is titled \"The Space Survival Guide: Depressurization\" by Lachina Green. It is a guide on how to handle being in a depressurized room on a space station."
 
 	title = "The Space Survival Guide: Depressurization"
 	icon_state = "evabook"
@@ -320,13 +325,15 @@ Category: Reference
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/reference/spacesurvivalguidedespressurization)
+	configure(atom_rules(description_fluff = "This book is titled \"The Space Survival Guide: Depressurization\" by Lachina Green. It is a guide on how to handle being in a depressurized room on a space station."))
+
 ///Security Guidelines by NanoTrasen.
 
 /obj/item/book/custom_library/reference/securityguidelines
 
 	name = "Security Guidelines"
 	desc = "A hardbound book titled \"Security Guidelines\" as provided by NanoTrasen."
-	description_fluff = "This book is titled \"Security Guidelines\" as provided by NanoTrasen. It covers the basic security etiquette on NanoTrasen stations and vessels."
 
 	title = "Security Guidelines"
 	icon_state = "bookSpaceLaw"
@@ -369,3 +376,6 @@ Category: Reference
 				</body>
 				</html>
 				"}
+
+CAPABILITIES(/obj/item/book/custom_library/reference/securityguidelines)
+	configure(atom_rules(description_fluff = "This book is titled \"Security Guidelines\" as provided by NanoTrasen. It covers the basic security etiquette on NanoTrasen stations and vessels."))

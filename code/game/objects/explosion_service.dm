@@ -398,7 +398,7 @@ SYSTEM_DEF(explosions)
 		return
 	. = T.explosion_resistance
 	FOR_CONTENTS(var/obj/O, T)
-		. += O.explosion_resistance
+		. += rules_of(O).explosion_resistance
 	explosion_resistance_cache[T] = .
 
 /datum/system/explosions/proc/start_resolve()

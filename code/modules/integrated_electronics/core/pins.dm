@@ -56,7 +56,7 @@ CAPABILITIES(/datum/integrated_io)
 
 	if(ic_is_ref(input))
 		var/atom/A = ic_ref_resolve(input)
-		return A ? "(\ref[A] \[Ref\])" : "(null)"
+		return A ? "([ref_token(A)] \[Ref\])" : "(null)"
 
 	if(istext(input))
 		return "(\"[input]\")" // Wraps the 'string' in escaped quotes, so that people know it's a 'string'.

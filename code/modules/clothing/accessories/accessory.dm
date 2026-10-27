@@ -250,7 +250,7 @@ CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
 											sound = span_warning("an extremely rapid, thready, irregular heartbeat")
 
 							var/obj/item/organ/internal/lungs/L = M.organ_in(O_LUNGS)
-							if(!L || M.losebreath)
+							if(!L || M.losebreath())
 								sound += span_warning(" and no respiration")
 							else if(M.is_lung_ruptured() || M.oxygen_debt() > 50)
 								sound += span_warning(" and [pick("wheezing","gurgling")] sounds")

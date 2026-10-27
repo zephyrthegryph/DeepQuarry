@@ -23,8 +23,9 @@
 /// Passing out: our AI can now control the suit.
 /mob/living/carbon/human/status_passed_out()
 	..()
-	if(wearing_rig && !stat)
-		wearing_rig.notify_ai(span_danger("Warning: user consciousness failure. Mobility control passed to integrated intelligence system."))
+	var/obj/item/rig/worn_rig = wearing_rig()
+	if(worn_rig && !stat)
+		worn_rig.notify_ai(span_danger("Warning: user consciousness failure. Mobility control passed to integrated intelligence system."))
 
 /mob/proc/status_sight_returned()
 	return

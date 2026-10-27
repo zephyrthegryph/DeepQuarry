@@ -47,10 +47,10 @@ SETTER(/mob, vore_fullness_ex)
 		new_fullness[belly_class] /= size_multiplier //Divided by pred's size so a macro mob won't get macro belly from a regular prey.
 		new_fullness[belly_class] *= nature_of(src).belly_size // Some mobs are small even at 100% size. Let's account for that.
 		new_fullness[belly_class] = round(new_fullness[belly_class], 1) // Because intervals of 0.25 are going to make sprite artists cry.
-		classes[belly_class] = min(vore_capacity_ex[belly_class], new_fullness[belly_class])
+		classes[belly_class] = min(living_rules_of(src).vore_capacity_ex[belly_class], new_fullness[belly_class])
 		total += new_fullness[belly_class]
 	set_vore_fullness_ex(classes)
-	set_vore_fullness(min(vore_capacity, max(total, 0)))
+	set_vore_fullness(min(living_rules_of(src).vore_capacity, max(total, 0)))
 	sparse_set(src, updating_fullness, FALSE)
 	return new_fullness
 

@@ -7,7 +7,7 @@
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	H.teleop = H // a clientless test human counts as SSD and falls asleep; a teleoperated one stays awake through the ladder
+	sparse_ref_set(H, teleop, H) // a clientless test human counts as SSD and falls asleep; a teleoperated one stays awake through the ladder
 	var/obj/item/camera_assembly/C = allocate(/obj/item/camera_assembly, T)
 	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
@@ -66,7 +66,7 @@
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	H.teleop = H
+	sparse_ref_set(H, teleop, H)
 	var/obj/structure/AIcore/C = allocate(/obj/structure/AIcore, T)
 	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
@@ -107,7 +107,7 @@
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	H.teleop = H
+	sparse_ref_set(H, teleop, H)
 	var/obj/item/clothing/glasses/welding/goggles = allocate(/obj/item/clothing/glasses/welding, T)
 	H.equip_to_slot_if_possible(goggles, SLOT_ID_EYES, quiet = TRUE)
 	var/obj/item/crossbowframe/F = allocate(/obj/item/crossbowframe, T)
@@ -146,7 +146,7 @@
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	H.teleop = H
+	sparse_ref_set(H, teleop, H)
 	var/obj/item/clothing/glasses/welding/goggles = allocate(/obj/item/clothing/glasses/welding, T)
 	H.equip_to_slot_if_possible(goggles, SLOT_ID_EYES, quiet = TRUE)
 	var/obj/machinery/nuclearbomb/N = allocate(/obj/machinery/nuclearbomb, T)
@@ -174,7 +174,7 @@
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	H.teleop = H
+	sparse_ref_set(H, teleop, H)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
 	var/obj/item/grenade/G = allocate(/obj/item/grenade, T)
@@ -199,7 +199,7 @@
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	H.teleop = H
+	sparse_ref_set(H, teleop, H)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	var/obj/item/grenade/chem_grenade/C = allocate(/obj/item/grenade/chem_grenade, T)
 	C.set_stage(1)

@@ -124,6 +124,9 @@
 // exhaust is a gas reaction (GAS_REACTION_SUPERMATTER, verdigris/domains/gas/src/reaction_energy.rs): DM decides how much phoron and oxygen it
 // exhales and its device energy, Rust settles the heat.
 CAPABILITIES(/obj/machinery/power/supermatter)
+	configure(atom_rules(description_antag = "Exposing the supermatter to oxygen or vacuum will cause it to start rapidly heating up.  Sabotaging the supermatter and making it explode will \
+	cause a period of lag as the explosion is processed by the server, as well as irradiating the entire station and causing hallucinations to happen.  \
+	Wearing radiation equipment will protect you from most of the delamination effects sans explosion."))
 	configure(movable_motion(unacidable = TRUE))
 	configure(light_glow(range = 4, color = "#8A8A00"))
 	owns_one(nameof(soundloop), /datum/looping_sound/supermatter, starts = PROC_REF(make_soundloop))
@@ -156,10 +159,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			"department" = DEPARTMENT_ENGINEERING,
 			"machine_kind" = "supermatter",
 			"station_machine" = stationcrystal && (z in using_map.station_levels),
-			"machine_id" = REF(src),
+			"machine_id" = ref_token(src),
 			"metrics" = list("eer" = -1, "integrity" = 0),
 			"detail" = "Supermatter telemetry ended",
-		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
+		), "supermatter-destroyed:[ref_token(src)]:[world.time]", src)
 	..()
 
 /obj/machinery/power/supermatter/proc/get_status()
@@ -511,10 +514,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			"department" = DEPARTMENT_ENGINEERING,
 			"machine_kind" = "supermatter",
 			"station_machine" = stationcrystal && (z in using_map.station_levels),
-			"machine_id" = REF(src),
+			"machine_id" = ref_token(src),
 			"metrics" = telemetry_metrics,
 			"detail" = "Supermatter telemetry reported [round(power)] Relative EER at [round(get_integrity())]% integrity",
-		), "supermatter-telemetry:[REF(src)]:[world.time]", src)
+		), "supermatter-telemetry:[ref_token(src)]:[world.time]", src)
 
 /// The look (the draw sweep: from its layers).
 /obj/machinery/power/supermatter/draw(datum/look/look)

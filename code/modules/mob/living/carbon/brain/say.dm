@@ -4,7 +4,7 @@
 		return
 
 
-	if(!(container && container.can_speak))
+	if(!(container && rules_of(container).can_speak))
 		return //Certain objects can speak, like MMIs. Most others cannot. -Q
 	else
 		if(prob(emp_damage * 4))

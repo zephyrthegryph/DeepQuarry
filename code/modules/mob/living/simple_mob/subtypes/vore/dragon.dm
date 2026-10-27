@@ -16,7 +16,6 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 30
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	//Space dragons aren't affected by atmos.
 	min_oxy = 0
@@ -43,7 +42,6 @@
 	mount_offset_x = -12
 	can_buckle = TRUE
 
-	say_list_type = /datum/say_list/dragonboss
 
 
 /mob/living/simple_mob/vore/aggressive/dragon/Process_Spacemove(check_drift = 0)
@@ -57,7 +55,6 @@
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/dragon
 	vore_active = 1
-	vore_capacity = 2
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = SA_ICON_LIVING
 
@@ -108,7 +105,8 @@
 	has_eye_glow = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
-	configure(butchery_rules(meat_amount = 15))
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/dragonboss))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
@@ -158,6 +156,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/space)
 	pixel_y = 0
 
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = SA_ICON_LIVING
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/gray_scaled)
+	configure(living_rules(vore_capacity = 1))

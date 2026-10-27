@@ -4,9 +4,9 @@
 	anchored = TRUE
 	var/obj/item/holosign_creator/projector
 	max_integrity = 10
-	explosion_resistance = 1
 
 CAPABILITIES(/obj/structure/holosign)
+	configure(obj_rules(explosion_resistance = 1))
 	links(/obj/structure/holosign::projector, /obj/item/holosign_creator::signs, b_many = TRUE)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

@@ -1,9 +1,3 @@
-/obj
-	/// Debris created when the object is destroyed (not disassembled). Declared per
-	/// type; atom_destruction() spawns it before the slots' drop policies run.
-	/// Types with several kinds of debris override debris_entries().
-	var/debris_type
-
 /// An explicit exposure to fire (lava, a flamethrower, a bonfire, a lighter):
 /// a pulse of heat into the object's heat node. Ignition, melting, overheating
 /// damage and every per-type heat behaviour are rules on that node
@@ -134,10 +128,14 @@
 
 /// This type's debris: path -> amount, or null. A shared list; don't modify it.
 /obj/proc/debris_entries()
-	if(!debris_type)
+	var/list/declared = rules_of(src).debris_entry
+	if(!length(declared))
 		return null
 	var/amount = sparse_get_or(src, debris_amount, 1)
-	return list((debris_type) = amount)
+	var/list/entries = list()
+	for(var/path in declared)
+		entries[path] = declared[path] * amount
+	return entries
 
 /// Create the debris entries on the turf. Stacks get their amount.
 /obj/proc/spawn_debris()

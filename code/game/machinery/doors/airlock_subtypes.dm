@@ -142,9 +142,11 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	close_sound_powered = 'sound/machines/door/hall1c.ogg'
 	legacy_open_powered = 'sound/machines/door/windowdoor.ogg'
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	glass = 1
+
+CAPABILITIES(/obj/machinery/door/airlock/glass)
+	configure(obj_rules(explosion_resistance = 5))
 
 /obj/machinery/door/airlock/centcom
 	name = "Centcom Airlock"
@@ -167,7 +169,6 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 /obj/machinery/door/airlock/vault
 	name = "Vault"
 	icon = 'icons/obj/doors/vault.dmi'
-	explosion_resistance = 20
 	opacity = 1
 	secured_wires = 1
 	assembly_type = /obj/structure/door_assembly/door_assembly_highsecurity //Until somebody makes better sprites.
@@ -176,6 +177,9 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	close_sound_powered = 'sound/machines/door/vault1c.ogg'
 	security_level = 5
 	heat_proof = 1
+
+CAPABILITIES(/obj/machinery/door/airlock/vault)
+	configure(obj_rules(explosion_resistance = 20))
 
 /obj/machinery/door/airlock/vault/bolted
 	icon_state = "door_locked"
@@ -190,7 +194,6 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 /obj/machinery/door/airlock/hatch
 	name = "Airtight Hatch"
 	icon = 'icons/obj/doors/Doorhatchele.dmi'
-	explosion_resistance = 20
 	opacity = 1
 	assembly_type = /obj/structure/door_assembly/door_assembly_hatch
 	req_one_access = list(ACCESS_MAINT_TUNNELS)
@@ -199,10 +202,12 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	open_sound_unpowered = 'sound/machines/door/hatchforced.ogg'
 	heat_proof = 1
 
+CAPABILITIES(/obj/machinery/door/airlock/hatch)
+	configure(obj_rules(explosion_resistance = 20))
+
 /obj/machinery/door/airlock/maintenance_hatch
 	name = "Maintenance Hatch"
 	icon = 'icons/obj/doors/Doorhatchmaint2.dmi'
-	explosion_resistance = 20
 	opacity = 1
 	assembly_type = /obj/structure/door_assembly/door_assembly_mhatch
 	req_one_access = list(ACCESS_MAINT_TUNNELS)
@@ -210,12 +215,14 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	close_sound_powered = 'sound/machines/door/hatchclose.ogg'
 	open_sound_unpowered = 'sound/machines/door/hatchforced.ogg'
 
+CAPABILITIES(/obj/machinery/door/airlock/maintenance_hatch)
+	configure(obj_rules(explosion_resistance = 20))
+
 /obj/machinery/door/airlock/glass_command
 	name = "Command Airlock"
 	icon = 'icons/obj/doors/Doorcomglass.dmi'
 	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	assembly_type = /obj/structure/door_assembly/door_assembly_com
 	glass = 1
@@ -226,12 +233,14 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	department_close_powered = 'sound/machines/door/cmd1c.ogg'
 	security_level = 3
 
+CAPABILITIES(/obj/machinery/door/airlock/glass_command)
+	configure(obj_rules(explosion_resistance = 5))
+
 /obj/machinery/door/airlock/glass_engineering
 	name = "Engineering Airlock"
 	icon = 'icons/obj/doors/Doorengglass.dmi'
 	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	assembly_type = /obj/structure/door_assembly/door_assembly_eng
 	glass = 1
@@ -240,12 +249,14 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	department_close_powered = 'sound/machines/door/eng1c.ogg'
 	security_level = 1.5
 
+CAPABILITIES(/obj/machinery/door/airlock/glass_engineering)
+	configure(obj_rules(explosion_resistance = 5))
+
 /obj/machinery/door/airlock/glass_engineeringatmos
 	name = "Atmospherics Airlock"
 	icon = 'icons/obj/doors/Doorengatmoglass.dmi'
 	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	assembly_type = /obj/structure/door_assembly/door_assembly_eat
 	glass = 1
@@ -256,12 +267,14 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	department_close_powered = 'sound/machines/door/eng1c.ogg'
 	security_level = 1.5
 
+CAPABILITIES(/obj/machinery/door/airlock/glass_engineeringatmos)
+	configure(obj_rules(explosion_resistance = 5))
+
 /obj/machinery/door/airlock/glass_security
 	name = "Security Airlock"
 	icon = 'icons/obj/doors/Doorsecglass.dmi'
 	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	assembly_type = /obj/structure/door_assembly/door_assembly_sec
 	glass = 1
@@ -272,12 +285,14 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	department_close_powered = 'sound/machines/door/sec1c.ogg'
 	security_level = 2
 
+CAPABILITIES(/obj/machinery/door/airlock/glass_security)
+	configure(obj_rules(explosion_resistance = 5))
+
 /obj/machinery/door/airlock/glass_medical
 	name = "Medical Airlock"
 	icon = 'icons/obj/doors/doormedglass.dmi'
 	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	assembly_type = /obj/structure/door_assembly/door_assembly_med
 	glass = 1
@@ -287,6 +302,9 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	department_open_powered = 'sound/machines/door/med1o.ogg'
 	department_close_powered = 'sound/machines/door/med1c.ogg'
 	security_level = 1.5
+
+CAPABILITIES(/obj/machinery/door/airlock/glass_medical)
+	configure(obj_rules(explosion_resistance = 5))
 
 /obj/machinery/door/airlock/mining
 	name = "Mining Airlock"
@@ -324,7 +342,6 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	icon = 'icons/obj/doors/doorresearchglass.dmi'
 	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	assembly_type = /obj/structure/door_assembly/door_assembly_research
 	glass = 1
@@ -335,12 +352,14 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	department_close_powered = 'sound/machines/door/sci1c.ogg'
 	security_level = 2
 
+CAPABILITIES(/obj/machinery/door/airlock/glass_research)
+	configure(obj_rules(explosion_resistance = 5))
+
 /obj/machinery/door/airlock/glass_mining
 	name = "Mining Airlock"
 	icon = 'icons/obj/doors/Doorminingglass.dmi'
 	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	assembly_type = /obj/structure/door_assembly/door_assembly_min
 	glass = 1
@@ -350,12 +369,14 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	department_open_powered = 'sound/machines/door/cgo1o.ogg'
 	department_close_powered = 'sound/machines/door/cgo1c.ogg'
 
+CAPABILITIES(/obj/machinery/door/airlock/glass_mining)
+	configure(obj_rules(explosion_resistance = 5))
+
 /obj/machinery/door/airlock/glass_atmos
 	name = "Atmospherics Airlock"
 	icon = 'icons/obj/doors/Dooratmoglass.dmi'
 	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 300
-	explosion_resistance = 5
 	opacity = 0
 	assembly_type = /obj/structure/door_assembly/door_assembly_atmo
 	glass = 1
@@ -365,6 +386,9 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	department_open_powered = 'sound/machines/door/eng1o.ogg'
 	department_close_powered = 'sound/machines/door/eng1c.ogg'
 	security_level = 1.5
+
+CAPABILITIES(/obj/machinery/door/airlock/glass_atmos)
+	configure(obj_rules(explosion_resistance = 5))
 
 /obj/machinery/door/airlock/gold
 	name = "Gold Airlock"
@@ -470,7 +494,6 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 /obj/machinery/door/airlock/highsecurity
 	name = "Secure Airlock"
 	icon = 'icons/obj/doors/hightechsecurity.dmi'
-	explosion_resistance = 20
 	secured_wires = 1
 	assembly_type = /obj/structure/door_assembly/door_assembly_highsecurity
 	req_one_access = list(ACCESS_HEADS_VAULT)
@@ -478,16 +501,21 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	close_sound_powered = 'sound/machines/door/secure1c.ogg'
 	security_level = 4
 
+CAPABILITIES(/obj/machinery/door/airlock/highsecurity)
+	configure(obj_rules(explosion_resistance = 20))
+
 /obj/machinery/door/airlock/voidcraft
 	name = "voidcraft hatch"
 	desc = "It's an extra resilient airlock intended for spacefaring vessels."
 	icon = 'icons/obj/doors/shuttledoors.dmi'
-	explosion_resistance = 20
 	opacity = 0
 	glass = 1
 	assembly_type = /obj/structure/door_assembly/door_assembly_voidcraft
 	open_sound_powered = 'sound/machines/door/shuttle1o.ogg'
 	close_sound_powered = 'sound/machines/door/shuttle1c.ogg'
+
+CAPABILITIES(/obj/machinery/door/airlock/voidcraft)
+	configure(obj_rules(explosion_resistance = 20))
 
 // Airlock opens from top-bottom instead of left-right.
 /obj/machinery/door/airlock/voidcraft/vertical
@@ -518,11 +546,13 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	desc = "You're fairly sure this is a door."
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_airlock)
 	icon = 'icons/obj/doors/Dooralien.dmi'
-	explosion_resistance = 20
 	secured_wires = TRUE
 	assembly_type = /obj/structure/door_assembly/door_assembly_alien
 	req_one_access = list(ACCESS_ALIEN)
 	security_level = 100
+
+CAPABILITIES(/obj/machinery/door/airlock/alien)
+	configure(obj_rules(explosion_resistance = 20))
 
 /obj/machinery/door/airlock/alien/locked
 	icon_state = "door_locked"
@@ -541,10 +571,12 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	desc = "You're fairly sure this is a door."
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_airlock)
 	icon = 'icons/obj/doors/Dooralien_blue.dmi'
-	explosion_resistance = 20
 	secured_wires = TRUE
 	assembly_type = /obj/structure/door_assembly/door_assembly_alien
 	req_one_access = list()
+
+CAPABILITIES(/obj/machinery/door/airlock/alien/blue)
+	configure(obj_rules(explosion_resistance = 20))
 
 /obj/machinery/door/airlock/alien/blue/locked
 	icon_state = "door_locked"

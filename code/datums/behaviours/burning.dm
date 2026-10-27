@@ -26,20 +26,16 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 		on_notice(/datum/notice/examine, then(CAP_PROC(burn_examined))),
 	)
 
-/obj
-	/// The heat watch that puts the fire out when the object cools.
-	var/tmp/datum/native_watch/heat/burn_cool_watch
-
 CAPABILITIES(/obj)
 	configure(movable_motion(unacidable = FALSE))
 	obj_rules(tk_reach = TRUE, redgate_allowed = TRUE, micro_target = FALSE, surgery_cleanliness = 0) // its per-type rules: a type trait (code/game/objects/obj_rules.dm)
 	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
 	extend(TAG_TOPIC, then(PROC_REF(topic_touched), early = TRUE))
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
-	owns_one(nameof(burn_cool_watch), /datum/native_watch/heat)
-	owns_one(nameof(disposal_connection), /datum/disposal_system_connection)
-	owns_one(nameof(reactive_icon), /datum/reactive_icon_update)
-	owns_one(nameof(talking_atom), /datum/talking_atom)
+	links(LINK_END(/obj, LK_BURN_COOL_WATCH), LINK_END(/datum/native_watch/heat, LK_BURN_COOL_WATCH_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the heat watch that puts the fire out when the object cools, gone with it
+	links(LINK_END(/obj, LK_DISPOSAL_CONNECTION), LINK_END(/datum/disposal_system_connection, LK_DISPOSAL_CONNECTION_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the disposal network connection, gone with the object (disposal_connection())
+	links(LINK_END(/obj, LK_REACTIVE_ICON), LINK_END(/datum/reactive_icon_update, LK_REACTIVE_ICON_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the reactive icon, gone with its object (reactive_icon())
+	links(LINK_END(/obj, LK_TALKING_ATOM), LINK_END(/datum/talking_atom, LK_TALKING_ATOM_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the speech state of a talking find, gone with it (talking_atom())
 	op("vv_mass_delete_type", topic_in(VV_TOPIC, VV_HK_MASS_DEL_TYPE), needs(req_rights(R_DEBUG|R_SERVER)), asks(/datum/prompt/choice/mass_delete_scope, step = "scope"), asks(/datum/prompt/yes_no/mass_delete, step = "sure", when = PROC_REF(mass_delete_not_cancelled)), asks(/datum/prompt/yes_no/mass_delete, fields = list("second" = TRUE), step = "again", when = PROC_REF(mass_delete_not_cancelled)), then(PROC_REF(vv_topic_mass_delete_type)))
 
 
@@ -98,7 +94,9 @@ CAPABILITIES(/obj)
 	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
 		vg_heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
 	vg_heat_body_power(heat_body, BURN_POWER)
-	rel_set(src, nameof(burn_cool_watch), heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled)))
+	var/datum/native_watch/heat/cool_watch = heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled))
+	if(cool_watch)
+		link_make(src, LK_BURN_COOL_WATCH, cool_watch)
 
 /// Below this the fire goes out.
 /obj/proc/burn_out_temperature()
@@ -108,14 +106,14 @@ CAPABILITIES(/obj)
 	return max(T0C + 50, ignition - BURN_EXTINGUISH_MARGIN)
 
 /obj/proc/burning_stop_heat()
-	rel_clear(src, nameof(burn_cool_watch))
+	spent(link_get(src, LK_BURN_COOL_WATCH)) // the cooling watch goes with the fire
 	if(QDELETED(src) || isnull(heat_body))
 		return
 	vg_heat_body_power(heat_body, 0)
 	if(isnull(heat_fire_turf))
 		vg_heat_body_keep(heat_body, FALSE)
 
-/// The object cooled below the burn-out temperature (burn_cool_watch).
+/// The object cooled below the burn-out temperature (the LK_BURN_COOL_WATCH watch).
 /obj/proc/burning_cooled(datum/native_watch/heat/watch, reason, source)
 	if(QDELETED(src) || !is_burning())
 		return

@@ -48,10 +48,13 @@
 	return registry
 GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect_registry))
 
-/mob/living/carbon/human/var/list/datum/medical_effect/side_effects
+/// The medication side effects this human suffers (a fresh list): sparse links, each effect gone with its human.
+/mob/living/carbon/human/proc/side_effects()
+	return link_list(src, LK_SIDE_EFFECTS)
+
 /mob/proc/add_side_effect(name, strength = 0)
 /mob/living/carbon/human/add_side_effect(name, strength = 0)
-	for(var/datum/medical_effect/M in side_effects)
+	for(var/datum/medical_effect/M in side_effects())
 		if(M.name == name)
 			M.set_strength(max(M.strength, 10))
 			M.start = life_tick
@@ -63,22 +66,22 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 	var/datum/medical_effect/new_effect = new prototype.type
 	new_effect.set_strength(strength)
 	new_effect.start = life_tick
-	rel_add(src, nameof(side_effects), new_effect)
+	link_make(src, LK_SIDE_EFFECTS, new_effect)
 
 /// Reconcile once per Life cycle, and only when the reagent holder changed
 /// (BODY_DIRTY_CHEMS, consumed by dq_process_dirty_medical_conditions). The old architecture
 /// allocated every medical-effect subtype for every human every 30 seconds.
 /mob/living/carbon/human/proc/reconcile_medical_side_effects()
-	for(var/datum/medical_effect/active in side_effects)
+	for(var/datum/medical_effect/active in side_effects())
 		if(active.cure(src))
-			rel_remove(src, nameof(side_effects), active)
+			dissolved(active)
 	var/list/registry = GLOBAL_TABLE_GET(dq_medical_effect_registry)
 	for(var/effect_name in registry)
 		var/datum/medical_effect/prototype = registry[effect_name]
 		if(!prototype.manifest(src))
 			continue
 		var/already_active = FALSE
-		for(var/datum/medical_effect/active in side_effects)
+		for(var/datum/medical_effect/active in side_effects())
 			if(active.type == prototype.type)
 				already_active = TRUE
 				break
@@ -87,18 +90,18 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 
 /// Medication side effects, every 15 life ticks.
 /mob/living/carbon/human/proc/life_medical_side_effects()
-	if(!LAZYLEN(src.side_effects) || src.life_tick % 15 != 0)
+	if(!link_count(src, LK_SIDE_EFFECTS) || src.life_tick % 15 != 0)
 		return 0
 
 	// One full cycle(in terms of strength) every 10 minutes
-	for (var/datum/medical_effect/M in src.side_effects)
+	for (var/datum/medical_effect/M in src.side_effects())
 		if (!M) continue
 		var/strength_percent = sin((src.life_tick - M.start) / 2)
 
 		// Only do anything if the effect is currently strong enough
 		if(strength_percent >= 0.4)
 			if (M.cure(src) || M.strength > 50)
-				own_remove(src, nameof(src.side_effects), M)
+				dissolved(M)
 			else
 				if(src.life_tick % 45 == 0)
 					M.on_life(src, strength_percent*M.strength)

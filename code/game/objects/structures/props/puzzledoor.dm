@@ -11,7 +11,6 @@
 	icon_state_closing = "pdoorc1"
 	icon_state = "pdoor1"
 
-	explosion_resistance = 100
 
 	max_integrity = 9999999 //No.
 	heat_proof = 1 //just so repairing them doesn't try to fireproof something that never takes fire damage
@@ -45,6 +44,7 @@
 
 // many-to-many with locks (declared on the lock, projectile_lock.dm): a dying door leaves each lock's door list and vice versa.
 CAPABILITIES(/obj/machinery/door/blast/puzzle)
+	configure(obj_rules(explosion_resistance = 100))
 	setup(PROC_REF(find_matching_locks))
 	// the puzzle door answers to its locks: its own touch and its own item use replace the blast door's open, close, pry and swallow
 	without("doors.open")

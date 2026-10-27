@@ -422,8 +422,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 //
 // A connecting client is held (login_pending) until its login checks have answered: the
 // database ban check (world/IsBanned() can't wait on a query, so it runs here), the player
-// record, the BYOND join date and the IP reputation lookups. Nothing waits: the checks run as
-// a prompt flow on the client (flow_io.dm) and each answer re-runs them. While held, the lobby
+// record, the BYOND join date and the IP reputation lookups. Nothing waits: each check is a read on
+// the I/O lane (login_ask(), login_http_ask()) and the next one starts in its answer. While held, the lobby
 // refuses to join or observe (login_hold_refuses()); the client is then admitted
 // (login_admit()) or disconnected. A client that reconnects into a body it already has keeps
 // it meanwhile, but is disconnected all the same if the ban check says so. If the answers
@@ -435,17 +435,29 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 /// TRUE while the login checks are outstanding.
 /client/var/login_pending = FALSE
 
+/// Counts login gates started. Every connection takes the next number, so an answer or the gate timer of an earlier connection of the same
+/// ckey and computer id can be told from the current one's.
+GLOBAL_VAR_INIT(login_seq, 0)
+
+/// This connection's number from GLOB.login_seq; 0 before its gate starts.
+/client/var/login_serial = 0
+
 /// Holds the client and starts its login checks. Called once, from client/New().
 /client/proc/start_login_gate()
 	login_pending = TRUE
-	log_access("Login gate: holding [key_name(src)] for its login checks")
-	after(LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), ckey, clock = CLOCK_WORLD, with = list(computer_id))
+	login_serial = ++GLOB.login_seq
+	log_access("Login gate: holding [key_name(src)] for its login checks (connection #[login_serial])")
+	after(LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), ckey, clock = CLOCK_WORLD, with = list(computer_id, login_serial))
 	log_client_to_db()
 
-/// A gate still closed after LOGIN_GATE_TIMEOUT fails open.
-/proc/login_gate_timeout(ckey, computer_id)
+/// A gate still closed after LOGIN_GATE_TIMEOUT fails open. The timer belongs to one connection (its serial): a reconnect's new gate is
+/// not admitted by the old connection's timer.
+/proc/login_gate_timeout(ckey, computer_id, serial)
 	var/client/C = GLOB.directory[ckey]
 	if(!C || !C.login_pending || C.computer_id != computer_id)
+		return
+	if(C.login_serial != serial)
+		log_access("Login gate: dropped the timeout of connection #[serial] for [ckey]: the client is on connection #[C.login_serial]")
 		return
 	log_access("Login gate: checks for [key_name(C)] did not answer in [LOGIN_GATE_TIMEOUT / 10]s; admitting")
 	message_admins("Login checks for [key_name_admin(C)] did not answer in time; they were admitted unchecked.")
@@ -483,12 +495,12 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	to_chat(src, span_warning("Your connection is still being verified. Please wait a moment and try again."))
 	return TRUE
 
-/// The login checks, run as a prompt flow on the client: every read and lookup re-runs it when
-/// it answers, and the writes go out at the end. Admits the client when it finishes, or
-/// disconnects it (bans, the panic bunker, IP reputation).
+/// The login checks, one read after another on the I/O lane: the ban check, the player record, the BYOND join date and account age, the
+/// accounts related by ip and computer id, the panic bunker, the IP reputation, the play hours, and last the writes and login_admit().
+/// Each step starts in the answer of the one before, so no step runs before the ban check has answered: the client stays held
+/// (login_pending) until the last step admits it, a step disconnects it (a ban, the panic bunker, IP reputation) or LOGIN_GATE_TIMEOUT
+/// admits it. A read that fails admits the client unchecked, as a failed check always has.
 /client/proc/log_client_to_db()
-	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(log_client_to_db), args)
 	if(IsGuestKey(src.key) || !SSdbcore.IsConnected())
 		if(!IsGuestKey(src.key) && !CONFIG_GET(flag/ban_legacy_system))
 			var/msg = "Ban database connection failure. Key [ckey] not checked"
@@ -496,131 +508,51 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			message_admins(msg)
 		login_admit()
 		return
-	if(!login_checks())
-		return // disconnected
-	login_admit()
+	login_ban_check()
 
-/// The body of log_client_to_db()'s flow. FALSE if the client was disconnected.
-/client/proc/login_checks()
-	var/sql_ckey = src.ckey
+/// Starts one of the login reads for this client: `answer` (a PROC_REF on the client) runs as answer(result, error, context...) when it
+/// is answered, if the client is still here. Parameterized only.
+/client/proc/login_ask(query, list/params, answer, ...)
+	log_access("Login gate: [key_name(src)] checking [answer]")
+	var/list/call_args = list(null, query, params, GLOBAL_PROC_REF(login_answered), ckey, computer_id, login_serial, answer)
+	if(length(args) > 3)
+		call_args += args.Copy(4)
+	var/job = sql_ask(arglist(call_args))
+	if(!job)
+		log_access("Login gate: ERROR the I/O lane refused the read for [answer] for [key_name(src)]; the gate timeout will admit it")
+		log_sql("login: the I/O lane refused the read for [answer] for [ckey]")
+	return job
 
-	if(!CONFIG_GET(flag/ban_legacy_system) && !(ckey in GLOB.admin_datums))
-		var/list/ban = login_ban_check()
-		if(ban)
-			log_suspicious_login("Failed Login: [key] [computer_id] [address] - Banned [ban["reason"]]")
-			message_admins(span_blue("Failed Login: [key] id:[computer_id] ip:[address] - Banned [ban["reason"]]"))
-			disconnect_with_message("You have been banned.[ban["desc"]]")
-			return FALSE
+/// Starts one of the login HTTP lookups: `answer` runs as answer(/datum/http_response, error, context...), the response null on a failure.
+/client/proc/login_http_ask(url, answer, ...)
+	log_access("Login gate: [key_name(src)] checking [answer]")
+	var/list/call_args = list(null, url, GLOBAL_PROC_REF(login_answered), ckey, computer_id, login_serial, answer)
+	if(length(args) > 2)
+		call_args += args.Copy(3)
+	var/job = http_ask(arglist(call_args))
+	if(!job)
+		log_access("Login gate: ERROR the I/O lane refused the lookup for [answer] for [key_name(src)]; the gate timeout will admit it")
+	return job
 
-	var/list/player_rows = flow_select("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
-	if(isnull(player_rows))
-		return TRUE
-	var/sql_id = 0
-	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
-	if(length(player_rows))
-		var/list/player_row = player_rows[1]
-		sql_id = player_row[1]
-		player_age = text2num(player_row[2])
+/// io_job() callback of every login read: hands the answer to the step on the client it was started for. A client that has gone, or
+/// reconnected (another computer, or the same one: the connection's serial differs) drops it, because the new connection runs its own checks.
+/proc/login_answered(result, error, ckey, computer_id, serial, answer, ...)
+	var/client/C = GLOB.directory[ckey]
+	if(!C || C.computer_id != computer_id)
+		log_access("Login gate: dropped the answer to [answer] for [ckey]: the client is gone")
+		return
+	if(C.login_serial != serial)
+		log_access("Login gate: dropped the stale answer to [answer] for [ckey]: it was asked for connection #[serial], the client is on #[C.login_serial]")
+		return
+	var/list/context = length(args) > 6 ? args.Copy(7) : list()
+	call(C, answer)(arglist(list(result, error) + context))
 
-	account_join_date = text_or_null(findJoinDate())
-	if(account_join_date)
-		var/list/datediff_rows = flow_select("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
-		if(isnull(datediff_rows))
-			return TRUE
-		if(length(datediff_rows))
-			var/list/datediff_row = datediff_rows[1]
-			account_age = text2num(datediff_row[1])
-
-	var/list/ip_rows = flow_select("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
-	if(isnull(ip_rows))
-		return TRUE
-	related_accounts_ip = ""
-	if(length(ip_rows))
-		var/list/ip_row = ip_rows[1]
-		related_accounts_ip += "[ip_row[1]], "
-
-	var/list/cid_rows = flow_select("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
-	if(isnull(cid_rows))
-		return TRUE
-	related_accounts_cid = ""
-	if(length(cid_rows))
-		var/list/cid_row = cid_rows[1]
-		related_accounts_cid += "[cid_row[1]], "
-
-	//Just the standard check to see if it's actually a number
-	if(sql_id)
-		if(istext(sql_id))
-			sql_id = text2num(sql_id)
-		if(!isnum(sql_id))
-			return TRUE
-
-	var/admin_rank = "Player"
-	if(src.holder)
-		admin_rank = src.holder.rank_names()
-
-	var/sql_ip = src.address
-	var/sql_computerid = src.computer_id
-	var/sql_admin_rank = admin_rank
-
-	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (SSchat will queue it)
-
-	//Panic bunker code
-	if (isnum(player_age) && player_age == 0) //first connection
-		if (CONFIG_GET(flag/panic_bunker) && !holder && !GLOB.deadmins[key])
-			log_admin_private("Failed Login: [key] - New account attempting to connect during panic bunker")
-			message_admins(span_adminnotice("Failed Login: [key] - New account attempting to connect during panic bunker"))
-			disconnect_with_message("Sorry but the server is currently not accepting connections from never before seen players.")
-			return FALSE
-
-	// IP Reputation Check
-	if(CONFIG_GET(flag/ip_reputation))
-		if(CONFIG_GET(flag/ipr_allow_existing) && player_age >= CONFIG_GET(number/ipr_minimum_age))
-			log_admin("Skipping IP reputation check on [key] with [address] because of player age")
-		else if(update_ip_reputation()) //It is set now
-			if(ip_reputation >= CONFIG_GET(number/ipr_bad_score)) //It's bad
-
-				//Log it
-				if(CONFIG_GET(flag/paranoia_logging)) //We don't block, but we want paranoia log messages
-					log_and_message_admins("[key] at [address] has bad IP reputation: [ip_reputation]. Will be kicked if enabled in config.", null)
-				else //We just log it
-					log_admin("[key] at [address] has bad IP reputation: [ip_reputation]. Will be kicked if enabled in config.")
-
-				//Take action if required
-				if(CONFIG_GET(flag/ipr_block_bad_ips) && CONFIG_GET(flag/ipr_allow_existing)) //We allow players of an age, but you don't meet it
-					disconnect_with_message("Sorry, we only allow VPN/Proxy/Tor usage for players who have spent at least [CONFIG_GET(number/ipr_minimum_age)] days on the server. If you are unable to use the internet without your VPN/Proxy/Tor, please contact an admin out-of-game to let them know so we can accommodate this.")
-					return FALSE
-				else if(CONFIG_GET(flag/ipr_block_bad_ips)) //We don't allow players of any particular age
-					disconnect_with_message("Sorry, we do not accept connections from users via VPN/Proxy/Tor connections. If you believe this is in error, contact an admin out-of-game.")
-					return FALSE
-		else
-			log_admin("Couldn't perform IP check on [key] with [address]")
-
-	var/list/hours_rows = flow_select("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
-	if(!isnull(hours_rows))
-		for(var/list/hours_row as anything in hours_rows)
-			department_hours[hours_row[1]] = text2num(hours_row[2])
-			play_hours[hours_row[1]] = text2num(hours_row[3])
-	else
-		var/error_message = flow_sql_error()
-		log_sql("Error loading play hours for [ckey]: [error_message]")
-		tgui_alert_async(src, "The query to load your existing playtime failed. Screenshot this, give the screenshot to a developer, and reconnect, otherwise you may lose any recorded play hours (which may limit access to jobs). ERROR: [error_message]", "PROBLEMS!!")
-
-	// The writes: nothing reads them back, so they go out without holding the gate.
-	if(sql_id)
-		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
-	else
-		//New player!! Need to insert all the stuff
-		sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
-
-	//Logging player access
-	var/serverip = "[world.internet_address]:[world.port]"
-	sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
-	return TRUE
-
-/// The database ban check (moved here from world/IsBanned(), which can't wait on a query).
-/// Runs inside the login flow; returns list("reason", "desc") for a ban, else null.
+/// The database ban check (moved here from world/IsBanned(), which can't wait on a query): the first login step. A ban disconnects
+/// the client; no ban (or a read that failed) goes on to the player record.
 /client/proc/login_ban_check()
+	if(CONFIG_GET(flag/ban_legacy_system) || (ckey in GLOB.admin_datums))
+		login_player_lookup()
+		return
 	var/failedcid = 1
 	var/failedip = 1
 
@@ -641,28 +573,304 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			log_world("Key [ckey] cid not checked. Non-Numeric: [computer_id]")
 			failedcid = 1
 
-	var/list/ban_rows = flow_select("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
+	if(!login_ask("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params, PROC_REF(login_ban_answered), failedcid, failedip))
+		// the documented behaviour of a ban read that fails is to carry on unchecked; say so loudly
+		log_world("Login gate: ERROR the ban check for [ckey] could not be started; continuing unchecked")
+		message_admins("The ban check for [key_name_admin(src)] could not be started; they were not checked for bans.")
+		login_ban_answered(null, "the I/O lane refused the ban read", failedcid, failedip)
 
-	for(var/list/ban_row as anything in ban_rows)
-		var/pckey = ban_row[1]
-		var/ackey = ban_row[4]
-		var/reason = ban_row[5]
-		var/expiration = ban_row[6]
-		var/duration = ban_row[7]
-		var/bantime = ban_row[8]
-		var/bantype = ban_row[9]
+/// The refusal message for the first ban row, or null when there is no ban row. A ban row always refuses: a row too short or odd to
+/// describe still gives a plain message, so the ban never fails open on the description.
+/proc/login_ban_refusal(list/ban_rows)
+	if(!length(ban_rows))
+		return null
+	var/list/ban_row = ban_rows[1]
+	if(!islist(ban_row) || length(ban_row) < 9)
+		return "You have been banned."
+	var/expires = ""
+	if(text2num("[ban_row[7]]") > 0)
+		expires = " The ban is for [ban_row[7]] minutes and expires on [ban_row[6]] (server time)."
+	return "You have been banned.\nReason: You, or another user of this computer or connection ([ban_row[1]]) is banned from playing here. The ban reason is:\n[ban_row[5]]\nThis ban was applied by [ban_row[4]] on [ban_row[8]], [expires]"
 
-		var/expires = ""
-		if(text2num(duration) > 0)
-			expires = " The ban is for [duration] minutes and expires on [expiration] (server time)."
-
-		var/desc = "\nReason: You, or another user of this computer or connection ([pckey]) is banned from playing here. The ban reason is:\n[reason]\nThis ban was applied by [ackey] on [bantime], [expires]"
-		return list("reason" = "[bantype]", "desc" = "[desc]")
+/client/proc/login_ban_answered(list/result, error, failedcid, failedip)
+	var/list/ban_rows = sql_answer_rows(result, error, "login: ban check for [ckey]")
+	var/refusal = login_ban_refusal(ban_rows)
+	if(refusal)
+		// disconnect first: nothing after this may keep a banned player in
+		var/who = key
+		var/cid = computer_id
+		var/ip = address
+		var/list/ban_row = ban_rows[1]
+		var/bantype = islist(ban_row) && length(ban_row) >= 9 ? "[ban_row[9]]" : "unknown"
+		disconnect_with_message(refusal)
+		log_suspicious_login("Failed Login: [who] [cid] [ip] - Banned [bantype]")
+		message_admins(span_blue("Failed Login: [who] id:[cid] ip:[ip] - Banned [bantype]"))
+		return
 	if (failedcid)
 		message_admins("[key] has logged in with a blank computer id in the ban check.")
 	if (failedip)
 		message_admins("[key] has logged in with a blank ip in the ban check.")
-	return null
+	login_player_lookup()
+
+/// The player record: the first login read after the ban check.
+/client/proc/login_player_lookup()
+	login_ask("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = ckey), PROC_REF(login_player_answered))
+
+/client/proc/login_player_answered(list/result, error)
+	var/list/player_rows = sql_answer_rows(result, error, "login: player record of [ckey]")
+	if(isnull(player_rows))
+		login_admit()
+		return
+	var/sql_id = 0
+	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
+	if(length(player_rows))
+		var/list/player_row = player_rows[1]
+		sql_id = player_row[1]
+		player_age = text2num(player_row[2])
+
+	login_http_ask("http://byond.com/members/[ckey]?format=text", PROC_REF(login_join_date_answered), sql_id)
+
+/// The BYOND account's join date, from the member page.
+/client/proc/login_join_date_answered(datum/http_response/response, error, sql_id)
+	var/joined
+	if(!response)
+		log_world("Failed to connect to byond age check for [ckey]")
+	else if(response.body)
+		var/regex/R = regex("joined = \"(\\d{4}-\\d{2}-\\d{2})\"")
+		if(R.Find(response.body))
+			joined = R.group[1]
+		else
+			stack_trace("Age check regex failed for [src.ckey]")
+	account_join_date = text_or_null(joined)
+	if(account_join_date)
+		login_ask("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date), PROC_REF(login_account_age_answered), sql_id)
+		return
+	login_related_ip(sql_id)
+
+/client/proc/login_account_age_answered(list/result, error, sql_id)
+	var/list/datediff_rows = sql_answer_rows(result, error, "login: account age of [ckey]")
+	if(isnull(datediff_rows))
+		login_admit()
+		return
+	if(length(datediff_rows))
+		var/list/datediff_row = datediff_rows[1]
+		account_age = text2num(datediff_row[1])
+	login_related_ip(sql_id)
+
+/// The accounts that connected from this ip, then from this computer id.
+/client/proc/login_related_ip(sql_id)
+	login_ask("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address), PROC_REF(login_related_ip_answered), sql_id)
+
+/client/proc/login_related_ip_answered(list/result, error, sql_id)
+	var/list/ip_rows = sql_answer_rows(result, error, "login: accounts on the ip of [ckey]")
+	if(isnull(ip_rows))
+		login_admit()
+		return
+	related_accounts_ip = ""
+	if(length(ip_rows))
+		var/list/ip_row = ip_rows[1]
+		related_accounts_ip += "[ip_row[1]], "
+
+	login_ask("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id), PROC_REF(login_related_cid_answered), sql_id)
+
+/client/proc/login_related_cid_answered(list/result, error, sql_id)
+	var/list/cid_rows = sql_answer_rows(result, error, "login: accounts on the computer id of [ckey]")
+	if(isnull(cid_rows))
+		login_admit()
+		return
+	related_accounts_cid = ""
+	if(length(cid_rows))
+		var/list/cid_row = cid_rows[1]
+		related_accounts_cid += "[cid_row[1]], "
+
+	//Just the standard check to see if it's actually a number
+	if(sql_id)
+		if(istext(sql_id))
+			sql_id = text2num(sql_id)
+		if(!isnum(sql_id))
+			login_admit()
+			return
+
+	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (SSchat will queue it)
+
+	//Panic bunker code
+	if (isnum(player_age) && player_age == 0) //first connection
+		if (CONFIG_GET(flag/panic_bunker) && !holder && !GLOB.deadmins[key])
+			log_admin_private("Failed Login: [key] - New account attempting to connect during panic bunker")
+			message_admins(span_adminnotice("Failed Login: [key] - New account attempting to connect during panic bunker"))
+			disconnect_with_message("Sorry but the server is currently not accepting connections from never before seen players.")
+			return
+
+	// IP Reputation Check
+	if(CONFIG_GET(flag/ip_reputation))
+		if(CONFIG_GET(flag/ipr_allow_existing) && player_age >= CONFIG_GET(number/ipr_minimum_age))
+			log_admin("Skipping IP reputation check on [key] with [address] because of player age")
+		else
+			login_ipr_getipintel(sql_id)
+			return
+	login_hours_lookup(sql_id)
+
+// The IP reputation check uses a couple of different services, one after the other; the worse score counts.
+
+//Service returns a single float in html body
+/client/proc/login_ipr_getipintel(sql_id)
+	if(!CONFIG_GET(string/ipr_email))
+		login_ipr_ipqualityscore(sql_id, -1)
+		return
+	login_http_ask("https://check.getipintel.net/check.php?ip=[address]&contact=[CONFIG_GET(string/ipr_email)]", PROC_REF(login_getipintel_answered), sql_id)
+
+/client/proc/login_getipintel_answered(datum/http_response/response, error, sql_id)
+	login_ipr_ipqualityscore(sql_id, getipintel_score(response))
+
+/// The getipintel.net score of a response, or -1 when there is none.
+/client/proc/getipintel_score(datum/http_response/response)
+	if(!response) //If we couldn't check, the service might be down, fail-safe.
+		log_admin("Couldn't connect to getipintel.net to check [address] for [key]")
+		return -1
+
+	//429 is rate limit exceeded
+	if(text2num("[response.status_code]") == 429)
+		log_and_message_admins("getipintel.net reports HTTP status 429. IP reputation checking is now disabled. If you see this, let a developer know.", null)
+		CONFIG_SET(flag/ip_reputation, FALSE)
+		return -1
+
+	var/content = response.body
+	var/score = text2num(content)
+	if(isnull(score))
+		return -1
+
+	//Error handling
+	if(score < 0)
+		var/fatal = TRUE
+		var/ipr_error = "getipintel.net IP reputation check error while checking [address] for [key]: "
+		switch(score)
+			if(-1)
+				ipr_error += "No input provided"
+			if(-2)
+				fatal = FALSE
+				ipr_error += "Invalid IP provided"
+			if(-3)
+				fatal = FALSE
+				ipr_error += "Unroutable/private IP (spoofing?)"
+			if(-4)
+				fatal = FALSE
+				ipr_error += "Unable to reach database"
+			if(-5)
+				ipr_error += "Our IP is banned or otherwise forbidden"
+			if(-6)
+				ipr_error += "Missing contact info"
+
+		log_and_message_admins(ipr_error, null)
+		if(fatal)
+			CONFIG_SET(flag/ip_reputation, FALSE)
+			log_and_message_admins("With this error, IP reputation checking is disabled for this shift. Let a developer know.", null)
+		return -1
+
+	//Went fine
+	else
+		return score
+
+//Service returns JSON in html body
+/client/proc/login_ipr_ipqualityscore(sql_id, getipintel_result)
+	if(!CONFIG_GET(string/ipqualityscore_apikey))
+		login_ipr_scored(sql_id, getipintel_result, -1)
+		return
+	login_http_ask("https://www.ipqualityscore.com/api/json/ip/[CONFIG_GET(string/ipqualityscore_apikey)]/[address]?strictness=1&fast=true&byond_key=[key]", PROC_REF(login_ipqualityscore_answered), sql_id, getipintel_result)
+
+/client/proc/login_ipqualityscore_answered(datum/http_response/response, error, sql_id, getipintel_result)
+	login_ipr_scored(sql_id, getipintel_result, ipqualityscore_score(response))
+
+/// The ipqualityscore.com score of a response, or -1 when there is none.
+/client/proc/ipqualityscore_score(datum/http_response/response)
+	if(!response) //If we couldn't check, the service might be down, fail-safe.
+		log_admin("Couldn't connect to ipqualityscore.com to check [address] for [key]")
+		return -1
+
+	var/list/parsed = try_parse_json(response.body)
+	if(!islist(parsed))
+		return -1
+
+	//Error handling
+	if(!parsed["success"])
+		log_admin("IPQualityscore.com returned an error while processing [key] from [address]: " + parsed["message"])
+		return -1
+
+	var/score = 0
+	if(parsed["proxy"])
+		score = 100
+	else
+		score = parsed["fraud_score"]
+
+	return score/100 //To normalize with the 0.0 to 1.0 scores.
+
+/// Both services have answered: the worse score is the client's IP reputation, and a bad one is logged and, if configured, disconnected.
+/client/proc/login_ipr_scored(sql_id, getipintel_result, ipqualityscore_result)
+	var/scores[] = list("GII" = getipintel_result, "IPQS" = ipqualityscore_result)
+
+	var/log_output = "IP Reputation [key] from [address]"
+	var/worst = 0
+
+	for(var/service in scores)
+		var/score = scores[service]
+		if(score > worst)
+			worst = score
+		log_output += " - [service] ([num2text(score)])"
+
+	log_admin(log_output)
+	ip_reputation = worst
+	if(ip_reputation >= CONFIG_GET(number/ipr_bad_score)) //It's bad
+
+		//Log it
+		if(CONFIG_GET(flag/paranoia_logging)) //We don't block, but we want paranoia log messages
+			log_and_message_admins("[key] at [address] has bad IP reputation: [ip_reputation]. Will be kicked if enabled in config.", null)
+		else //We just log it
+			log_admin("[key] at [address] has bad IP reputation: [ip_reputation]. Will be kicked if enabled in config.")
+
+		//Take action if required
+		if(CONFIG_GET(flag/ipr_block_bad_ips) && CONFIG_GET(flag/ipr_allow_existing)) //We allow players of an age, but you don't meet it
+			disconnect_with_message("Sorry, we only allow VPN/Proxy/Tor usage for players who have spent at least [CONFIG_GET(number/ipr_minimum_age)] days on the server. If you are unable to use the internet without your VPN/Proxy/Tor, please contact an admin out-of-game to let them know so we can accommodate this.")
+			return
+		else if(CONFIG_GET(flag/ipr_block_bad_ips)) //We don't allow players of any particular age
+			disconnect_with_message("Sorry, we do not accept connections from users via VPN/Proxy/Tor connections. If you believe this is in error, contact an admin out-of-game.")
+			return
+	login_hours_lookup(sql_id)
+
+/// The play hours: the last read, then the writes.
+/client/proc/login_hours_lookup(sql_id)
+	login_ask("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = ckey), PROC_REF(login_hours_answered), sql_id)
+
+/client/proc/login_hours_answered(list/result, error, sql_id)
+	if(error || !result)
+		log_sql("Error loading play hours for [ckey]: [error]")
+		tgui_alert_async(src, "The query to load your existing playtime failed. Screenshot this, give the screenshot to a developer, and reconnect, otherwise you may lose any recorded play hours (which may limit access to jobs). ERROR: [error]", "PROBLEMS!!")
+	else
+		for(var/list/hours_row as anything in result["rows"])
+			department_hours[hours_row[1]] = text2num(hours_row[2])
+			play_hours[hours_row[1]] = text2num(hours_row[3])
+	login_record_and_admit(sql_id)
+
+/// The writes: nothing reads them back, so they go out without holding the gate. Every check has passed: the client is admitted.
+/client/proc/login_record_and_admit(sql_id)
+	var/admin_rank = "Player"
+	if(src.holder)
+		admin_rank = src.holder.rank_names()
+
+	var/sql_ckey = src.ckey
+	var/sql_ip = src.address
+	var/sql_computerid = src.computer_id
+	var/sql_admin_rank = admin_rank
+
+	if(sql_id)
+		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
+		sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
+	else
+		//New player!! Need to insert all the stuff
+		sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
+
+	//Logging player access
+	var/serverip = "[world.internet_address]:[world.port]"
+	sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
+	login_admit()
 
 #undef LOGIN_GATE_TIMEOUT
 
@@ -737,20 +945,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	prefs.current_window = PREFERENCE_TAB_GAME_PREFERENCES
 	prefs.update_tgui_static_data(mob)
 	prefs.tgui_interact(mob)
-
-/// The BYOND account's join date, looked up inside the login flow (flow_http_get()).
-/client/proc/findJoinDate()
-	var/list/http = flow_http_get("http://byond.com/members/[ckey]?format=text")
-	if(http["error"])
-		log_world("Failed to connect to byond age check for [ckey]")
-		return
-	var/F = http["body"]
-	if(F)
-		var/regex/R = regex("joined = \"(\\d{4}-\\d{2}-\\d{2})\"")
-		if(R.Find(F))
-			. = R.group[1]
-		else
-			CRASH("Age check regex failed for [src.ckey]")
 
 /client/vv_edit_var(var_name, var_value)
 	if(var_name == NAMEOF(src, holder))
@@ -908,103 +1102,3 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	return (client.eye != client.mob)
 
 
-//Uses a couple different services
-/client/proc/update_ip_reputation()
-	var/scores[] = list("GII" = ipr_getipintel(), "IPQS" = ipr_ipqualityscore())
-
-	var/log_output = "IP Reputation [key] from [address]"
-	var/worst = 0
-
-	for(var/service in scores)
-		var/score = scores[service]
-		if(score > worst)
-			worst = score
-		log_output += " - [service] ([num2text(score)])"
-
-	log_admin(log_output)
-	ip_reputation = worst
-	return TRUE
-
-//Service returns a single float in html body
-/client/proc/ipr_getipintel()
-	if(!CONFIG_GET(string/ipr_email))
-		return -1
-
-	var/request = "https://check.getipintel.net/check.php?ip=[address]&contact=[CONFIG_GET(string/ipr_email)]"
-	var/list/http = flow_http_get(request) // inside the login flow
-
-	if(http["error"]) //If we couldn't check, the service might be down, fail-safe.
-		log_admin("Couldn't connect to getipintel.net to check [address] for [key]")
-		return -1
-
-	//429 is rate limit exceeded
-	if(text2num("[http["status"]]") == 429)
-		log_and_message_admins("getipintel.net reports HTTP status 429. IP reputation checking is now disabled. If you see this, let a developer know.", null)
-		CONFIG_SET(flag/ip_reputation, FALSE)
-		return -1
-
-	var/content = http["body"]
-	var/score = text2num(content)
-	if(isnull(score))
-		return -1
-
-	//Error handling
-	if(score < 0)
-		var/fatal = TRUE
-		var/ipr_error = "getipintel.net IP reputation check error while checking [address] for [key]: "
-		switch(score)
-			if(-1)
-				ipr_error += "No input provided"
-			if(-2)
-				fatal = FALSE
-				ipr_error += "Invalid IP provided"
-			if(-3)
-				fatal = FALSE
-				ipr_error += "Unroutable/private IP (spoofing?)"
-			if(-4)
-				fatal = FALSE
-				ipr_error += "Unable to reach database"
-			if(-5)
-				ipr_error += "Our IP is banned or otherwise forbidden"
-			if(-6)
-				ipr_error += "Missing contact info"
-
-		log_and_message_admins(ipr_error, null)
-		if(fatal)
-			CONFIG_SET(flag/ip_reputation, FALSE)
-			log_and_message_admins("With this error, IP reputation checking is disabled for this shift. Let a developer know.", null)
-		return -1
-
-	//Went fine
-	else
-		return score
-
-//Service returns JSON in html body
-/client/proc/ipr_ipqualityscore()
-	if(!CONFIG_GET(string/ipqualityscore_apikey))
-		return -1
-
-	var/request = "https://www.ipqualityscore.com/api/json/ip/[CONFIG_GET(string/ipqualityscore_apikey)]/[address]?strictness=1&fast=true&byond_key=[key]"
-	var/list/http = flow_http_get(request) // inside the login flow
-
-	if(http["error"]) //If we couldn't check, the service might be down, fail-safe.
-		log_admin("Couldn't connect to ipqualityscore.com to check [address] for [key]")
-		return -1
-
-	var/content = http["body"]
-	var/response = json_decode(content)
-	if(isnull(response))
-		return -1
-
-	//Error handling
-	if(!response["success"])
-		log_admin("IPQualityscore.com returned an error while processing [key] from [address]: " + response["message"])
-		return -1
-
-	var/score = 0
-	if(response["proxy"])
-		score = 100
-	else
-		score = response["fraud_score"]
-
-	return score/100 //To normalize with the 0.0 to 1.0 scores.

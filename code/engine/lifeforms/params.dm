@@ -124,6 +124,8 @@
 	GLOB.make_pending += M
 	var/datum/D = new type
 	GLOB.make_pending -= M
+	if(!QDELETED(D) && (table_of(D).hook_flags & ENGINE_HOOK_AFTER_INIT))
+		after_init_arm(D, FALSE) // a plain datum's init is complete when its whole New() chain has returned: params first, then every New()
 	return D
 
 /// make() records of plain datums being made now (innermost last): /datum/New() takes the top one for an instance of its type.

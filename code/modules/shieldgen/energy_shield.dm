@@ -328,9 +328,9 @@ CAPABILITIES(/obj/effect/shield)
 
 /obj/effect/shield/proc/update_explosion_resistance()
 	if(gen() && gen().check_flag(MODEFLAG_HYPERKINETIC))
-		explosion_resistance = INFINITY
+		set_explosion_resistance(INFINITY)
 	else
-		explosion_resistance = 0
+		set_explosion_resistance(0)
 
 //
 // Visual effect of shield taking impact

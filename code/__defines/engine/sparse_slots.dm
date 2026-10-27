@@ -10,6 +10,12 @@
 #define sparse_set(D, name, value) _sparse_set(D, #name, value)
 /// Writes the slot; a value equal to `default` clears it (a counter back at 0).
 #define sparse_set_or(D, name, value, default) _sparse_set(D, #name, value, default)
+/// The value kind of a weak slot: sparse(T, name, type = weak).
+#define SPARSE_KIND_WEAK "weak"
+/// A weak slot (declared `type = weak`): the live datum it names, or null (code/engine/declare/sparse_slots.dm).
+#define sparse_ref(D, name) _sparse_ref(D, #name)
+/// Points a weak slot at a datum (the holder itself is allowed); null clears it.
+#define sparse_ref_set(D, name, target) _sparse_ref_set(D, #name, target)
 #define sparse_has(D, name) (!isnull((D).sparse_slots?[#name]))
 #define cooldown_start(D, name, duration) _cooldown_start(D, #name, duration)
 #define cooldown_ready(D, name) ((D).cooldown_table?[#name] < world.time)

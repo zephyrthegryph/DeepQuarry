@@ -15,7 +15,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
 	var/hitsound_wall = null // Played when something hits a wall, or anything else that isn't a mob.
 
@@ -160,7 +159,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 SCHEMA(/obj/item/projectile, def_zone, schema_text())
 
 CAPABILITIES(/obj/item/projectile)
-	configure(movable_motion(unacidable = TRUE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = TRUE))
 	setup(PROC_REF(item_projectile_setup))
 	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
 	owns_one(nameof(trajectory), /datum/point/vector)
@@ -537,7 +536,7 @@ CAPABILITIES(/obj/item/projectile)
 	// dying projectile adopts nothing): the cache is made detached and handed to the timer.
 	var/datum/beam_components_cache/drawn = new
 	if(tracer_type)
-		var/tempref = "\ref[src]"
+		var/tempref = ref_token(src)
 		for(var/i in 1 to length(points) - 1)
 			generate_tracer_between_points(points[i], points[i + 1], drawn, tracer_type, color, duration, hitscan_light_range, hitscan_light_color_override, hitscan_light_intensity, tempref)
 	if(muzzle_type && duration > 0)

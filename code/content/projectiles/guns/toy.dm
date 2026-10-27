@@ -61,13 +61,15 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/toy)
 /obj/item/gun/projectile/shotgun/pump/toy/moistnugget
 	name = "\improper Donk-Soft mosin-nagant"
 	desc = "Donk-Soft foam mosin-nagant! It's Donk or Don't! Ages 8 and up."
-	description_fluff = "A special Donk-Soft rifle originally made to pair with a Soviet Soldier costume. It didn't catch on quite as well as other Donk-Soft products."
 	icon = 'icons/obj/gun_toy.dmi'
 	icon_state = "moistnugget"
 	item_state = "moistnugget"
 	max_shells = 5
 	MATERIAL_BULK(MAT_PLASTIC, 2500)
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/toy/moistnugget)
+	configure(atom_rules(description_fluff = "A special Donk-Soft rifle originally made to pair with a Soviet Soldier costume. It didn't catch on quite as well as other Donk-Soft products."))
 
 /*
  * Pistol

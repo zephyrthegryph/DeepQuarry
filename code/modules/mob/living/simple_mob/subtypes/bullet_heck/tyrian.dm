@@ -4,7 +4,6 @@
 	size_multiplier = 2
 	swallowTime = 2 SECONDS
 	vore_active = 1
-	vore_capacity = 5
 	vore_bump_chance = 10
 	vore_stomach_name = "Stomach"
 	vore_default_item_mode = IM_DIGEST
@@ -38,6 +37,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses)
+	configure(living_rules(vore_capacity = 5))
 	configure(movable_motion(unacidable = TRUE))
 
 //So tyr mobs, Two types, the robots, and the expirments.

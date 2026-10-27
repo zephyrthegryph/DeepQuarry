@@ -3,10 +3,6 @@
 typed	code/game/objects/items/weapons/implants/implant.dm	@/obj/item/implant::implanted
 typed	code/modules/admin/view_variables_panel.dm	@/datum/view_variables_panel::thing
 typed	code/modules/games/cards.dm	@/obj/item/hand::parentdeck
-typed	code/modules/vore/eating/vore.dm	@/datum/vore_preferences::spont_belly_rear
-typed	code/modules/vore/eating/vore.dm	@/datum/vore_preferences::spont_belly_left
-typed	code/modules/vore/eating/vore.dm	@/datum/vore_preferences::spont_belly_right
-typed	code/modules/vore/eating/vore.dm	@/datum/vore_preferences::spont_belly_front
 call	code/contracts/acts/context.dm	@/datum/act/action::reply
 call	code/controllers/configuration/config_entry.dm	@/datum/config_entry::config_entry_value
 call	code/datums/beam.dm	@/datum/beam::target_oldloc

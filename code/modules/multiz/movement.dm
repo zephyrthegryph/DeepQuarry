@@ -837,9 +837,8 @@
 		for(var/obj/item/I in gear)
 			if(tooling_of(I).climbing)
 				permit_human = TRUE
-				var/item_climbing_delay = sparse_get_or(I, climbing_delay, 1)
-				if(item_climbing_delay > climbing_delay_min)
-					climbing_delay_min = item_climbing_delay //We get the maximum possible speedup out of worn equipment
+				if(item_rules_of(I).climbing_delay > climbing_delay_min)
+					climbing_delay_min = item_rules_of(I).climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
 			if(!confirmed)
 				climb_ask_confirm(src, L, PROC_REF(climb_wall_confirmed))
@@ -1007,9 +1006,8 @@
 		for(var/obj/item/I in gear)
 			if(tooling_of(I).climbing)
 				permit_human = TRUE
-				var/item_climbing_delay = sparse_get_or(I, climbing_delay, 1)
-				if(item_climbing_delay > climbing_delay_min)
-					climbing_delay_min = item_climbing_delay //We get the maximum possible speedup out of worn equipment
+				if(item_rules_of(I).climbing_delay > climbing_delay_min)
+					climbing_delay_min = item_rules_of(I).climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
 			if(!confirmed)
 				climb_ask_confirm(src, src, PROC_REF(climb_down_confirmed))

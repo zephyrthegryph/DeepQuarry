@@ -613,7 +613,7 @@ SCHEMA(/datum/system/internal_wiki, highest_cached_donator, schema_text())
 						"Appliance" = R.cooks_in,
 						"Allergens" = 0,
 						"Medallergens" = 0,
-						"Price" = initial(res.price_tag),
+						"Price" = atom_rules_of_type(res).price_tag,
 						"Flags" = R.wiki
 						)
 	// basically condiments, tofu, cheese, soysauce, etc

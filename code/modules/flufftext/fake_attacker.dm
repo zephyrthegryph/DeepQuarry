@@ -6,7 +6,8 @@
 	opacity = 0
 	/// The clients shown this attacker: a relation list view (a disconnected client reads null).
 	VAR_PRIVATE/list/client/clients
-	VAR_PRIVATE/list/image/dir_images = list()
+	/// The four facing images (lazy: empty until create_images_from()).
+	VAR_PRIVATE/list/image/dir_images
 
 /obj/effect/fake_attacker/periodic_step()
 	. = ..()
@@ -50,10 +51,10 @@
 
 /obj/effect/fake_attacker/proc/create_images_from(atom/clone)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	dir_images["[NORTH]"] = image(clone,dir = NORTH)
-	dir_images["[SOUTH]"] = image(clone,dir = SOUTH)
-	dir_images["[EAST]"] = image(clone,dir = EAST)
-	dir_images["[WEST]"] = image(clone,dir = WEST)
+	LAZYSET(dir_images, "[NORTH]", image(clone,dir = NORTH))
+	LAZYSET(dir_images, "[SOUTH]", image(clone,dir = SOUTH))
+	LAZYSET(dir_images, "[EAST]", image(clone,dir = EAST))
+	LAZYSET(dir_images, "[WEST]", image(clone,dir = WEST))
 	for(var/img in dir_images)
 		var/image/G = dir_images[img]
 		G.layer = clone.layer
@@ -73,7 +74,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!C)
 		return
-	if(!dir_images.len)
+	if(!length(dir_images))
 		return
 	var/image/I = dir_images["[dir]"]
 	if(I)
@@ -88,7 +89,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!C)
 		return
-	if(!dir_images.len)
+	if(!length(dir_images))
 		return
 	for(var/img in dir_images)
 		C.images -= dir_images[img]
@@ -98,7 +99,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	for(var/img in dir_images)
 		QDEL_NULL(dir_images[img])
-	dir_images.Cut()
+	LAZYCLEARLIST(dir_images)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hallucination attackers with AI behaviors

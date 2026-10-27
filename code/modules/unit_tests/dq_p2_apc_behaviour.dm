@@ -1001,7 +1001,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	H.set_species(SPECIES_XENOMORPH_HYBRID)
-	H.combat_mode = TRUE
+	H.set_combat_mode(TRUE)
 	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	touch(H, A, null)
 	TEST_ASSERT(!p2_apc_panel_open(A), "one slash does not open it")

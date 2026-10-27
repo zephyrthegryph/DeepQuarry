@@ -999,7 +999,7 @@ CAPABILITIES(/datum/SDQL2_query)
 		else
 			v = "SECRET"
 	else if(D != null && (!long || expression[start + 1] == ".") && sparse_slot_named(D, expression[start]))
-		v = _sparse_get(D, sparse_slot_named(D, expression[start]))
+		v = sparse_slot_value(D, sparse_slot_named(D, expression[start]))
 	else if(D != null && (!long || expression[start + 1] == ".") && !(expression[start] in D.vars) && type_trait_field_named(D, expression[start]))
 		v = vv_var_value(D, expression[start])
 	else if(D != null && long && expression[start + 1] == ":" && hascall(D, expression[start]))

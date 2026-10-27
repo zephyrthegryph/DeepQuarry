@@ -45,7 +45,7 @@
 		PUBLISH_LEGACY(src, /datum/notice/belly_update_vore_fx, reagents.total_volume)
 		for(var/mob/living/L in contents)
 			vore_fx(L, reagents.total_volume)
-	if(owner.previewing_belly == src)
+	if(vore_previewing_of(owner) == src)
 		vore_fx(owner, reagents.total_volume)
 
 /obj/belly/proc/GenerateBellyReagents()
@@ -332,9 +332,9 @@
 	for(var/A in belly_surrounding)
 		if(isliving(A))
 			vore_fx(A)
-	if(owner.previewing_belly == src)
+	if(vore_previewing_of(owner) == src)
 		if(isbelly(owner.loc))
-			rel_clear(owner, nameof(owner.previewing_belly))
+			set_vore_previewing(owner, null)
 			return
 		vore_fx(owner)
 

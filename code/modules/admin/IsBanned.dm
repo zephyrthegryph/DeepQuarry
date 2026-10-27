@@ -37,7 +37,7 @@
 		return ..()	//default pager ban stuff
 
 	// The database ban check can't run here: this hook must answer at once and a query answers
-	// later. The login gate runs it (/client/proc/login_ban_check(), in log_client_to_db()'s
-	// flow) and holds the client until it answers.
+	// later. The login gate runs it (/client/proc/login_ban_check(), the first read of log_client_to_db()'s
+	// chain) and holds the client until it answers.
 	return ..()	//default pager ban stuff
 #endif

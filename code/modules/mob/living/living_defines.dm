@@ -31,7 +31,7 @@
 
 
 
-	var/datum/inventory_panel/inventory_panel
+	// The inventory panel window datum is the LK_INVENTORY_PANEL link (inventory_panel()).
 
 	var/static/list/fear_message_self = list(
 									"Your heart is racing, it feels like it's going burst from your chest.",

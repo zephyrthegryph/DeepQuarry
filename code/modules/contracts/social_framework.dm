@@ -587,11 +587,11 @@ CAPABILITIES(/datum/contract/social)
 		asset_label += " ([source_turf.x], [source_turf.y], [source_turf.z])"
 	emit_contract_event(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, list(
 		"department" = DEPARTMENT_ENGINEERING,
-		"atom_id" = REF(source),
+		"atom_id" = ref_token(source),
 		"asset_name" = source.name,
 		"asset_label" = asset_label,
 		"atom_type" = source.type,
-		"fact_id" = "infrastructure-damage:[REF(source)]",
+		"fact_id" = "infrastructure-damage:[ref_token(source)]",
 		"fact_revision" = revision,
 		"fact_active" = current_damage > 0,
 		"metrics" = list(
@@ -600,7 +600,7 @@ CAPABILITIES(/datum/contract/social)
 			"maximum_integrity" = source.max_integrity,
 		),
 		"detail" = "[source] sustained [round(amount, 0.1)] integrity damage in [get_area(source)].",
-	), "infrastructure-damage:[REF(source)]:[revision]", source)
+	), "infrastructure-damage:[ref_token(source)]:[revision]", source)
 
 /proc/contract_report_station_repair(atom/source, amount)
 	if(!SScontracts || !contract_atom_is_station_infrastructure(source) || !isnum(amount) || amount <= 0)
@@ -611,7 +611,7 @@ CAPABILITIES(/datum/contract/social)
 		asset_label += " ([source_turf.x], [source_turf.y], [source_turf.z])"
 	emit_contract_event(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, list(
 		"department" = DEPARTMENT_ENGINEERING,
-		"atom_id" = REF(source),
+		"atom_id" = ref_token(source),
 		"asset_name" = source.name,
 		"asset_label" = asset_label,
 		"atom_type" = source.type,
@@ -619,16 +619,16 @@ CAPABILITIES(/datum/contract/social)
 		"integrity" = source.get_integrity(),
 		"maximum_integrity" = source.max_integrity,
 		"detail" = "Restored [round(amount, 0.1)] integrity to [source] in [get_area(source)].",
-	), "infrastructure-repair:[REF(source)]:[world.time]:[source.get_integrity()]", source)
+	), "infrastructure-repair:[ref_token(source)]:[world.time]:[source.get_integrity()]", source)
 	var/revision = SScontracts.next_infrastructure_revision(source)
 	var/current_damage = max(0, source.max_integrity - source.get_integrity())
 	emit_contract_event(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, list(
 		"department" = DEPARTMENT_ENGINEERING,
-		"atom_id" = REF(source),
+		"atom_id" = ref_token(source),
 		"asset_name" = source.name,
 		"asset_label" = asset_label,
 		"atom_type" = source.type,
-		"fact_id" = "infrastructure-damage:[REF(source)]",
+		"fact_id" = "infrastructure-damage:[ref_token(source)]",
 		"fact_revision" = revision,
 		"fact_active" = current_damage > 0,
 		"metrics" = list(
@@ -637,7 +637,7 @@ CAPABILITIES(/datum/contract/social)
 			"maximum_integrity" = source.max_integrity,
 		),
 		"detail" = "[source] damage state was revised after repairs in [get_area(source)].",
-	), "infrastructure-damage:[REF(source)]:[revision]", source)
+	), "infrastructure-damage:[ref_token(source)]:[revision]", source)
 
 /// Grade progress is deliberately virtual so portfolios can incorporate both
 /// their value and breadth dimensions without teaching the social contract

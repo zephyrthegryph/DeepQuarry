@@ -71,7 +71,6 @@ CAPABILITIES(/obj/item/animal_spawner)
 	universal_speak = FALSE
 	holder_type = /obj/item/holder/possum
 	mob_size = MOB_SMALL
-	say_list_type = /datum/say_list/possum
 	catalogue_data = list(/datum/category_item/catalogue/fauna/opossum)
 
 /mob/living/simple_mob/animal/passive/opossum/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
@@ -88,6 +87,7 @@ CAPABILITIES(/obj/item/animal_spawner)
 	return
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/opossum)
+	configure(living_rules(say_list_type = /datum/say_list/possum))
 	configure(butchery_rules(meat_amount = 2))
 	configure(mob_rules(universal_understand = TRUE))
 	configure(mob_movement(pull_size = 2, pull_mobs = MOB_PULL_SMALLER))

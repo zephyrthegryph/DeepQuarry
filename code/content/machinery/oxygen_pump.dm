@@ -41,7 +41,7 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 		if(hud_of(breather())?.internals)
 			hud_of(breather())?.internals?.icon_state = "internal0"
 		breather().remove_from_mob(contained)
-		breather().cozyloop.stop()
+		breather().cozy_music(FALSE)
 		visible_message(span_notice("\The [contained] rapidly retracts just before /the [src] is destroyed!"))
 
 // A pump dragged onto a person carries that person as the at_target op's target.
@@ -97,7 +97,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		breather().remove_from_mob(contained)
 		contained.forceMove(src)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " makes \the [contained] rapidly retract back into %T%!"))
-		breather().cozyloop.stop() // Cozy Music
+		breather().cozy_music(FALSE) // Cozy Music
 		if(hud_of(breather())?.internals)
 			hud_of(breather())?.internals?.icon_state = "internal0"
 		rel_clear(src, nameof(breather))
@@ -197,7 +197,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 				tank.forceMove(src)
 			breather().remove_from_mob(contained)
 			contained.forceMove(src)
-			breather().cozyloop.stop() // Cozy Music
+			breather().cozy_music(FALSE) // Cozy Music
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
 			rel_clear(src, nameof(breather))
 			set_use_power(USE_POWER_IDLE)
@@ -277,7 +277,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		if(hud_of(breather())?.internals)
 			hud_of(breather())?.internals?.icon_state = "internal1"
 	set_use_power(USE_POWER_ACTIVE)
-	breather().cozyloop.start()
+	breather().cozy_music(TRUE)
 
 /obj/machinery/oxygen_pump/mobile
 	name = "portable oxygen pump"
@@ -327,7 +327,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		if(hud_of(breather())?.internals)
 			hud_of(breather())?.internals?.icon_state = "internal1"
 	set_use_power(USE_POWER_ACTIVE)
-	breather().cozyloop.start()
+	breather().cozy_music(TRUE)
 
 /obj/machinery/oxygen_pump/mobile/stabilizer
 	name = "portable patient stabilizer"

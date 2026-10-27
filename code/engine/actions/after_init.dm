@@ -14,6 +14,11 @@
 // runtime, and the close of the map-load frame for one the map loads: by then every atom of the load exists and has initialized, so this is the
 // form that replaces LateInitialize(). A delay of 0 runs the parts at that moment; a positive delay arms the timer then.
 //
+// A plain datum (not an atom) has no Initialize(): its init is complete when its whole New() chain has returned (make()'s params were written
+// before the first New() body ran). Only the creator sees that moment, so after_init() on a plain datum is armed by the engine's creation path,
+// make(type, ...): make() arms it as new() returns. A bare `new /datum/T` of a type that declares after_init() is refused: /datum/New() reports
+// it at run time (declare_report) and the `lifeforms` lint (`after_init_bare_new`) rejects a literal one at compile time.
+//
 // The handler is x(datum/act/timer/A): A.holder the instance, A.mapload TRUE when it was loaded with the map, A.cap the capability when the entry
 // came from a capability's entries(). An enclosing when() gates it once, when it is due. A subtype inherits its parent's after_init() entries; to
 // change what one does, override the handler proc (calling ..() keeps the parent's part).
@@ -30,12 +35,9 @@
 		return null
 	return entry_make(ENTRY_AFTER_INIT, null, list("delay" = delay), parts)
 
-/// The engine's init found after_init() entries on `holder` (engine_holder_init()): an atom waits for its Initialize() to return (the atoms
-/// system keeps it), any other datum is armed at once.
-/proc/after_init_note(datum/holder, mapload)
-	if(!isatom(holder))
-		after_init_arm(holder, mapload)
-		return
+/// The engine's init found after_init() entries on an atom (engine_holder_init()): it waits for its Initialize() to return (the atoms system keeps
+/// it). A plain datum never comes here: make() arms it (make_build()).
+/proc/after_init_note(atom/holder, mapload)
 	materialization_host().after_init_wait(holder)
 
 /// Arms every after_init() entry of `holder`'s type table: a delay of 0 runs now, a positive one is an after() from now.

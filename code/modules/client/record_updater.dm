@@ -87,7 +87,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	var/datum/record_update_review/review = new
 	rel_set(review, nameof(review.actor), M)
 	rel_set(review, nameof(review.record), active)
-	review.console = REF(COM)
+	review.console = ref_token(COM)
 	review.console_path = console_path
 	review.record_name = active.fields["name"]
 	review.record_string = record_string
@@ -100,7 +100,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 /datum/record_update_review
 	parent_type = /datum/prompt_workflow
 	var/mob/actor
-	/// REF() of the console, looked up again for its beeps.
+	/// ref_token() of the console, looked up again for its beeps.
 	var/console
 	var/console_path
 	var/datum/data/record/record
@@ -175,7 +175,7 @@ CAPABILITIES(/datum/record_update_review)
 	open_request(src, /datum/prompt/text/record_update_notes, PROC_REF(notes_entered), answerer = actor, title = "Character Preference", question = "Please review [pusher]'s changes to your [record_string] record before confirming. Confirming will SAVE your CURRENT character slot! If your new [record_string] record major errors, it is recomended to have it corrected IC instead of editing it yourself.", default = html_decode(record.fields["notes"]))
 
 /datum/record_update_review/proc/console_says(message, sound)
-	var/obj/machinery/computer/COM = locate(console)
+	var/obj/machinery/computer/COM = resolve_token(console)
 	if(istype(COM) && !QDELETED(COM))
 		COM.visible_message(span_notice("\The [COM] [message]!"))
 		play_sfx(COM, sound, volume = 50, vary = sound == SFX_MACHINES_DING)

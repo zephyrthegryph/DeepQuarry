@@ -37,17 +37,14 @@
 	response_disarm = "shoos"
 	response_harm   = "kicks"
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	melee_damage_lower = 2
 	melee_damage_upper = 3
 	attacktext = list("bitten")
 
-	say_list_type = /datum/say_list/snake
 
 
 	vore_active = 1
-	vore_capacity = 1
 	vore_default_mode = DM_DIGEST
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 	vore_escape_chance = 20
@@ -56,7 +53,8 @@
 	vore_bump_emote = "coils around and unhinges its jaws at"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/snake)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/snake))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	configure(mob_nature(faction_bump_vore = 1))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 

@@ -958,7 +958,7 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 	var/mob/living/L = target()
 	if(!istype(L))
 		return /datum/msg/player_effects/ai_not_living
-	return mob_state_played(L) || L.teleop ? /datum/msg/player_effects/ai_player : null
+	return mob_state_played(L) || L.teleop() ? /datum/msg/player_effects/ai_player : null
 
 MSG_DEF_SELF(player_effects/ai_not_living, "This can only be used on instances of type /mob/living")
 MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")

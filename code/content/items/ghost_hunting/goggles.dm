@@ -1,10 +1,6 @@
 /obj/item/clothing/glasses/ghost
 	name = "spectral field analysis goggles"
 	desc = "A pair of goggles claiming to let you see into the beyond!"
-	description_fluff = "A pair of goggles created by K.E's Spectral-Division, a popular item among ghost hunters and paranormal investigators. \
-	Due to their extremely poor visual clarity and the extreme static coming from the display, users often claim to see 'specters' and 'spirits' \
-	while wearing them with no physcial proof to back up these claims, as any attempt to take a photo or record through the goggles results in \
-	results in a blurry, static-filled mess."
 	icon_state = "proton_goggles"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	darkness_view = 7 //So you can really see those ghosts~
@@ -27,5 +23,9 @@
 	static_vision = FALSE
 
 CAPABILITIES(/obj/item/clothing/glasses/ghost)
+	configure(atom_rules(description_fluff = "A pair of goggles created by K.E's Spectral-Division, a popular item among ghost hunters and paranormal investigators. \
+	Due to their extremely poor visual clarity and the extreme static coming from the display, users often claim to see 'specters' and 'spirits' \
+	while wearing them with no physcial proof to back up these claims, as any attempt to take a photo or record through the goggles results in \
+	results in a blurry, static-filled mess."))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 	setup(PROC_REF(prepare_static_overlay))

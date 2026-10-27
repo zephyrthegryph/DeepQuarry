@@ -246,9 +246,9 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/steroid)
 	var/mob/living/carbon/human/user = loc
 	LAZYINITLIST(targets)
 
-	//We can't keep a mob reference, that's a bad idea, so instead name+ref should suffice.
+	//We can't keep a mob reference, that's a bad idea, so instead name+handle should suffice.
 	var/name_to_use = ismob(target) ? target.real_name : target.name
-	var/hash = md5(name_to_use + "\ref[target]")
+	var/hash = md5(name_to_use + "[ref_token(target)]")
 
 	//Just once!
 	targets |= hash

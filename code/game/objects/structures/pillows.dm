@@ -6,7 +6,6 @@
 	icon = 'icons/obj/pillows.dmi'
 	icon_state = "pillow_pink_square"
 	var/pile_type = "/obj/structure/bed/pillowpile"
-	throw_range = 7
 
 /// Old attack_self: set the pillow down.
 /obj/item/bedsheet/pillow/proc/pillow_self(datum/act/op/A)
@@ -21,6 +20,7 @@
 	set_icon_state(initial(icon_state))
 
 CAPABILITIES(/obj/item/bedsheet/pillow)
+	configure(movable_motion(throw_range = 7))
 	configure(item_worn(slots = 0))
 	// the pillow's own uses replace the sheet's (lay_out, use_item)
 	op("lay_out", in_hand(), label("Place"), then(PROC_REF(pillow_self)))

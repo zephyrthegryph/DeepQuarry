@@ -10,7 +10,6 @@
 	icon_living = "slug"
 	icon_state = "slug"
 	faction = "slug" //A faction other than neutral is necessary to get the slug to try eating station crew.
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	melee_damage_lower = 0
 	melee_damage_upper = 1 //Not intended to pose any sort of threat outside of vore. Other code should stop it from ever attacking but this is an extra safety check.
 	friendly = list("blinks at")
@@ -38,13 +37,14 @@
 	vore_bump_emote = "knocks over and begins slowly engulfing"
 	vore_active = 1
 	vore_icons = 1
-	vore_capacity = 1
 	vore_pounce_chance = 100 //...while this should make bump noms always knock the target over. Passive AI meanwhile should mean this never affects combat since it doesn't fight back.
 	vore_ignores_undigestable = 0
 	swallowTime = 100 //10 seconds. Easy to crawl away from when knocked over.
 	vore_default_mode = DM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/slug)
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	ref_one(nameof(last_prey), /mob/living)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
@@ -134,7 +134,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 	density = 0
 	can_buckle = 1
 
-	lifecycle_lifetime = 5 MINUTES //How long until we cease existing.
 	var/mob/living/simple_mob/vore/slug/owner_slug = null
 	var/base_escape_time = 1 MINUTE //How long does it take to struggle free? Affected by the victim's size_multiplier.
 
@@ -206,6 +205,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
 CAPABILITIES(/obj/effect/slug_glue)
+	configure(movable_motion(lifecycle_lifetime = 5 MINUTES))
 	configure(buckle_rules(lying = TRUE))
 	ref_one(nameof(owner_slug), /mob/living/simple_mob/vore/slug)
 	keeps_if(PROC_REF(not_in_water))
