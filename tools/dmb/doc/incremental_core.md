@@ -831,6 +831,25 @@ admitted by `visit_explained` against the tree with their versions: about 340k t
 reads the tree, not the engine host the answer table answers for, so it needs a tree-level answer table (or to read
 through the request's table) before its versions can go.
 
+**Slice 3 (2026-10-27, compiler/answer-world-1): class projection owners proven by the answer table.** `ClassProjections`
+takes the session's query database (`with_answers`, set by the build host); when the request's answers are bound to the
+projection's own tree (`QueryDb::answers_bound_to`, pointer equality with the tree `begin_answers` bound), each owner's
+stored receipt is admitted through a `ReceiptAdmission` with the table as oracle and its reads are recorded with no
+domain version (`RecordingResolver::with_versions(tree, false)`). The projection resolves through the tree, every other
+stage through the static resolver, and the table holds one answer per query for all of them: `DMB_QUERY_VERIFY=1`
+re-resolves every shared answer through the asking stage's resolver and found 0 mismatches over a fresh compile and two
+added-type edits. Measured, production tree (`rootA`), 4 workers, fresh private daemon per arm with a warm disk cache,
+then three added-type edits (each runs the projection: the program text outside bodies changed): fresh-session full
+compile 63.9 s against 34.4 and 36.5 s, `initialization` 8.6 s against 3.4-3.5 s, tree version calls 474k against
+111-122k (`tree_s` 38.9 against 0.8 CPU-s); added-type edits 16.6-26.4 s (initialization 2.2-4.3 s) against
+14.2-18.1 s (1.9-2.2 s). `dmb-equiv --all --ignore-debug` of the daemon output after the edits against a fresh
+`--no-daemon --no-cache` compile: EQUIVALENT. What still issues versions (caller probe, 1/64 sampled, fresh daemon): the
+first request of a fresh daemon runs on the one-shot memo, which has no query database (about 112k issues: the lowering
+records' resident promotion computing current versions, the ABI recorder of the initializer binding, the initializer
+assembly and resource recorders); on an edit about 166 (`startup_allocation::authored_call_availability`, modified
+instances). A trial with every recorder unversioned (all receipts proven by the table or by exact replay) issued 1 version
+per request at equal speed, so the next slice removes the versioned path instead of converting recorders one by one.
+
 Next slices: (3) every request gets an answer table (one-shot compiles too), after
 which the version path of `ReceiptAdmission`, `ObservationLedger::versions` and the stored version lists can go; (4) the
 answer world (`QueryDb::begin_answers`) is computed from the tree and scalar snapshot directly instead of through
