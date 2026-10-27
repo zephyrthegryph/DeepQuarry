@@ -128,7 +128,7 @@ What is still open, and still correct to write where a file already uses it:
 
 - The `BF_*` body factors themselves are done: they are stats on `/mob/living`. A `factors = alist(...)` var on a flyweight or prototype (a body effect, affliction, reagent, trait, perk or form type) is final data read by its type's one reader, not open work (`doc/rewrite/proposals/stat_layer.md` §8, end); `factors_converted` is only for types that move the table into the entry itself.
 - `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/modules/admin/view_variables/pickers.dm`).
-- The init, `base_vars` and raw-overlay ratchets (baselines shrink as files convert).
+- The `base_vars` ratchet (its baseline shrinks as files convert). The init, raw-overlay, untyped and escape_hatches ratchets are at 0 and hard-banned.
 - File moves into the new tree (§3c).
 
 Run `bash tools/ci/legacy_form_counts.sh` for the current census. If you touch a file that still

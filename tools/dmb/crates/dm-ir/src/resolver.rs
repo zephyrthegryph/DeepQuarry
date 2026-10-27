@@ -238,7 +238,7 @@ pub enum ResolvedMeaning {
     Declaration {
         identity: crate::ProcedureIdentity,
         definition: ProcedureDefinition,
-        previous: Option<crate::ProcedureIdentity>,
+        previous: Option<Box<crate::ProcedureIdentity>>,
         data: Arc<DeclarationMeaning>,
     },
 }

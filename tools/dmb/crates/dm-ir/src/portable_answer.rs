@@ -150,7 +150,7 @@ impl PortableResolvedAnswer {
                         ProcedureDefinition::Reopen => 2,
                         ProcedureDefinition::Implicit => 3,
                     },
-                    previous: *previous,
+                    previous: previous.as_deref().copied(),
                     data,
                     opaque,
                 }
@@ -271,7 +271,7 @@ impl PortableResolvedAnswer {
                     3 => ProcedureDefinition::Implicit,
                     _ => return None,
                 },
-                previous: *previous,
+                previous: (*previous).map(Box::new),
                 data: restore_data(data, opaque)?,
             },
         })
@@ -366,7 +366,7 @@ mod tests {
             ResolvedMeaning::Declaration {
                 identity,
                 definition: ProcedureDefinition::Override,
-                previous: Some(identity),
+                previous: Some(Box::new(identity)),
                 data: Arc::new(meaning()),
             },
             ResolvedMeaning::Member {

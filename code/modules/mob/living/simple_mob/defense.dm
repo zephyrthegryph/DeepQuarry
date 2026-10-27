@@ -137,9 +137,16 @@
 
 
 // Exploding.
-/mob/living/simple_mob/ex_act(severity)
-	if(..())
-		return
+/// A blast on a simple mob (the explosion hit hook): the severity ladder below.
+/mob/living/simple_mob/proc/simple_mob_blast(datum/act/hit/explosion/A)
+	simple_mob_blast_ladder(blast_severity(A.packet.severity))
+	return OP_OK
+
+/// The severity a blast lands at before the mob's explosion shift: a type that turns blasts aside makes it less severe.
+/mob/living/simple_mob/proc/blast_severity(severity)
+	return severity
+
+/mob/living/simple_mob/proc/simple_mob_blast_ladder(severity)
 	if(is_incorporeal()) // Can't explode shadekin in phase
 		return
 
