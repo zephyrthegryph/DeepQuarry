@@ -21,9 +21,7 @@ counter_id	code/modules/generated_station/generated_station_director.dm	squad.id
 counter_id	code/modules/generated_station/generated_station_director.dm	order.id = "order-[next_order_id++]"
 counter_id	code/modules/logging/log_entry.dm	src.id = next_id++
 counter_id	code/modules/materials/engineering/material_service.dm	assembly.assembly_id = "ME-[++GLOB.next_material_assembly_id]"
-counter_id	code/modules/modular_computers/NTNet/NTNRC/conversation.dm	GLOB.ntnrc_uid++
 counter_id	code/modules/modular_computers/file_system/computer_file.dm	GLOB.file_uid++
-counter_id	code/modules/modular_computers/file_system/programs/security/digitalwarrant.dm	warrant_id = GLOB.warrant_uid++
 counter_id	code/modules/paperwork/paper.dm	field_id++
 counter_id	code/modules/power/supermatter/supermatter.dm	uid = gl_uid++
 counter_id	code/modules/research/message_server.dm	round_id++
