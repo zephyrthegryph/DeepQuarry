@@ -214,7 +214,7 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 		if(!L.Move(loc, direct, movetime))
 			L.forceMove(loc, direct, movetime)
 			L.last_move = last_move
-			L.inertia_dir = last_move
+			sparse_set_or(L, inertia_dir, last_move, 0)
 
 		if(!buckle_of(src).dir)
 			L.set_dir(dir)

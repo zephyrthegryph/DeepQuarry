@@ -15,7 +15,6 @@
 	density = TRUE
 	can_atmos_pass = ATMOS_PASS_PROC
 	layer = DOOR_OPEN_LAYER
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	var/open_layer = DOOR_OPEN_LAYER
 	var/closed_layer = DOOR_CLOSED_LAYER
 
@@ -60,6 +59,7 @@ MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
 CAPABILITIES(/obj/machinery/door)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(atom_shielding(announce_bands = TRUE))
 	setup(PROC_REF(settle_door_state))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
@@ -100,11 +100,11 @@ CAPABILITIES(/obj/machinery/door)
 	apply_rad_shield_material()
 	if(density)
 		layer = closed_layer
-		explosion_resistance = initial(explosion_resistance)
+		set_explosion_resistance(rules_of_type(type).explosion_resistance)
 		update_heat_protection(get_turf(src))
 	else
 		layer = open_layer
-		explosion_resistance = 0
+		set_explosion_resistance(0)
 
 	if(width > 1)
 		if(dir in list(EAST, WEST))
@@ -469,7 +469,7 @@ CAPABILITIES(/obj/machinery/door)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set_layer(open_layer)
-	explosion_resistance = 0
+	set_explosion_resistance(0)
 	set_opacity(0)
 	set_operating(0)
 
@@ -512,7 +512,7 @@ CAPABILITIES(/obj/machinery/door)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set_density(TRUE)
-	explosion_resistance = initial(explosion_resistance)
+	set_explosion_resistance(rules_of_type(type).explosion_resistance)
 	set_layer(closed_layer)
 	update_nearby_tiles()
 	after(src, anim_length_before_finalize, PROC_REF(close_internalfinish), with = list(forced))

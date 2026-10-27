@@ -802,4 +802,4 @@ GLOBAL_LIST_INIT(hud_toggled_slots, list(SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_EA
 
 /// Nearsighted for good (the disability) or for a while (STAT_NEARSIGHTED: a flash, a sting).
 /mob/proc/is_nearsighted()
-	return (disabilities & NEARSIGHTED) || has_status(STAT_NEARSIGHTED)
+	return (disabilities() & NEARSIGHTED) || has_status(STAT_NEARSIGHTED)

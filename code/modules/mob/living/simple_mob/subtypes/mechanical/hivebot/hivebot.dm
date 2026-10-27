@@ -16,11 +16,12 @@
 
 	organ_names = /datum/decl/mob_organ_names/hivebot
 
-	say_list_type = /datum/say_list/hivebot
 
 
 /mob/living/simple_mob/mechanical/hivebot
-	delete_on_death = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot)
+	configure(living_rules(say_list_type = /datum/say_list/hivebot, delete_on_death = TRUE))
 
 /mob/living/simple_mob/mechanical/hivebot/on_death(gibbed)
 	..()

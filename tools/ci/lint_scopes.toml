@@ -181,7 +181,6 @@ record_accessor_prefixes = ["set_", "get_"]
 "/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/game/atoms_movable.dm:294), held by all movables"
 "/atom/movable/throwing" = "read on every footstep and bump: footstep.dm throw check (code/datums/behaviours/footstep.dm:70), Bump finalize (code/game/atoms_movable.dm:376)"
 "/atom/light_sources" = "read on every Moved(): the loop that updates each light source on the mover (code/game/atoms_movable.dm:322), walked for all movers"
-"/atom/movable/blocks_emissive" = "read on every overlay update of an atom: the emissive blocker build (code/modules/lighting/emissive_blocker_overlays.dm:13)"
 "/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/modules/mob/living/living_movement.dm:20) and mob_movement.dm:21"
 "/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/modules/mob/living/living_movement.dm:51) and carbon.dm:382"
 "/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"

@@ -11,7 +11,6 @@
 	endurance = 200
 
 
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
 	var/lights_on = FALSE // Is our integrated light on?
 	var/grabbable = FALSE //disables/enables pick-up mechanics.
@@ -135,7 +134,6 @@
 
 	var/list/vore_light_states	//Robot exclusive. Lazy.
 	var/list/active_module_types // The types of the active modules (module_slots_changed()). Lazy.
-	vore_capacity_ex = list()
 	vore_fullness_ex = list()
 	vore_icon_bellies = list()
 
@@ -1062,7 +1060,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	updatename("Default")
 	set_has_recoloured(FALSE)
 	robotact?.update_static_data_for_all_viewers()
-	vore_capacity_ex = list()
+	set_vore_capacity_ex(list())
 	set_vore_fullness_ex(list())
 	set_vore_light_states(list())
 

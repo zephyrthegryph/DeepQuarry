@@ -34,12 +34,14 @@
 	vore_active = 1
 	vore_icons = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 1
 	swallowTime = 50
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_DIGEST
 	vore_pounce_maxhealth = 1000
 	vore_bump_emote = "pounces on"
+
+CAPABILITIES(/mob/living/simple_mob/vore/devil)
+	configure(living_rules(vore_capacity = 1))
 
 /mob/living/simple_mob/vore/devil/load_default_bellies()
 	. = ..()

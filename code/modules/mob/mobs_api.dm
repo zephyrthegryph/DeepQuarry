@@ -40,15 +40,19 @@
 	)
 	death_list += list(data)
 
+/// The last mob to hit this one with a weapon (attack logs and death records): a weak sparse slot, null once the attacker is gone.
+/mob/proc/lastattacker() as /mob
+	return sparse_ref(src, lastattacker)
+
 /// Records who last struck this mob: the weak handle, plus their name and key as text so a death record still names an attacker who is gone.
 /mob/proc/note_attacker(mob/attacker)
-	rel_set(src, nameof(lastattacker), attacker)
+	sparse_ref_set(src, lastattacker, attacker)
 	sparse_set(src, lastattacker_name, attacker?.real_name)
 	sparse_set(src, lastattacker_key, attacker?.key)
 
 /// The last attacker's name and key for the death record: the live mob's, else what was noted when they struck.
 /mob/proc/last_attacker_record()
-	var/mob/lastattacker = lastattacker()
-	if(istype(lastattacker))
-		return list(lastattacker.real_name, lastattacker.key)
+	var/mob/attacker = lastattacker()
+	if(istype(attacker))
+		return list(attacker.real_name, attacker.key)
 	return list(sparse_get_or(src, lastattacker_name, ""), sparse_get_or(src, lastattacker_key, ""))

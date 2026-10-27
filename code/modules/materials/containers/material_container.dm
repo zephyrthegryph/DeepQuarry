@@ -262,7 +262,7 @@ CAPABILITIES(/datum/material_container)
 	. = 0
 
 	//a stack to insert by a precise amount asks first; the answer runs this proc again with `requested_amount`
-	if(isnull(requested_amount) && precise_insertion && istype(held_item, /obj/item/stack) && !held_item.abstract && (!allowed_item_typecache || is_type_in_typecache(held_item, allowed_item_typecache)))
+	if(isnull(requested_amount) && precise_insertion && istype(held_item, /obj/item/stack) && !item_rules_of(held_item).abstract && (!allowed_item_typecache || is_type_in_typecache(held_item, allowed_item_typecache)))
 		var/obj/item/stack/asked_stack = held_item
 		open_request(src, /datum/prompt/number/material_insert, PROC_REF(insert_amount_answered), answerer = user, question = "How much do you want to insert?", title = "Inserting [asked_stack.singular_name]s", default = asked_stack.amount, max_value = asked_stack.amount, timeout = 0, held_item = held_item, context = context)
 		return
@@ -293,7 +293,7 @@ CAPABILITIES(/datum/material_container)
 		if(!istype(target_item))
 			continue
 		//can't allow abstract items
-		if(target_item.abstract)
+		if(item_rules_of(target_item).abstract)
 			continue
 		// user defined conditions
 		//item is either indestructible, not allowed for redemption or not in the allowed types

@@ -60,7 +60,7 @@
 
 /datum/unit_test/dq_death_final_hook_deletes_on_death/Run()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
-	M.delete_on_death = TRUE
+	M.set_delete_on_death(TRUE)
 	var/datum/dq_vital_listener/listener = new
 	listener.watch(M)
 	M.set_stat(UNCONSCIOUS)

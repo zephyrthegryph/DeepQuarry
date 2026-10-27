@@ -54,7 +54,7 @@
 
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
-		G.throw_at(target, G.throw_range, motion_of(G).throw_speed, src)
+		G.throw_at(target, motion_of(G).throw_range, motion_of(G).throw_speed, src)
 		G.set_det_time(grenade_timer)
 		G.activate(src)
 
@@ -64,7 +64,7 @@
 
 	var/obj/item/grenade/G = new grenade_type2(get_turf(src))
 	if(istype(G))
-		G.throw_at(target, G.throw_range, motion_of(G).throw_speed, src)
+		G.throw_at(target, motion_of(G).throw_range, motion_of(G).throw_speed, src)
 		G.set_det_time(grenade_timer)
 		G.activate(src)
 

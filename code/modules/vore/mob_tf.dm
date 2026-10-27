@@ -143,10 +143,10 @@
 	sparse_set_or(new_mob, appendage_alt_setting, sparse_get_or(src, appendage_alt_setting, FALSE), FALSE)
 
 	record_copy(new_mob.vore_prefs, vore_prefs)
-	rel_set(new_mob, nameof(spont_belly_rear), spont_belly_rear)
-	rel_set(new_mob, nameof(spont_belly_left), spont_belly_left)
-	rel_set(new_mob, nameof(spont_belly_front), spont_belly_front)
-	rel_set(new_mob, nameof(spont_belly_right), spont_belly_right)
+	sparse_set(new_mob, spont_belly_rear, sparse_get(src, spont_belly_rear))
+	sparse_set(new_mob, spont_belly_left, sparse_get(src, spont_belly_left))
+	sparse_set(new_mob, spont_belly_front, sparse_get(src, spont_belly_front))
+	sparse_set(new_mob, spont_belly_right, sparse_get(src, spont_belly_right))
 	sparse_set_or(new_mob, autotransferable, sparse_get_or(src, autotransferable, TRUE), TRUE)
 
 // Requires a /mob/living type path for transformation. Returns the new mob on success, null in all other cases.

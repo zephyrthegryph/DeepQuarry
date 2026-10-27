@@ -205,10 +205,8 @@
 
 /datum/body/humanoid/recompute_vitals()
 	set_dirty(dirty & (~BODY_DIRTY_VITALS))
-	var/mob/living/carbon/human/H = owner
 	var/worst_part = worst_vital_part_fraction()
 	set_pain(compute_pain())
-	H.traumatic_shock = pain
 	set_consciousness(compute_consciousness(worst_part))
 	set_vitality(compute_vitality(worst_part))
 

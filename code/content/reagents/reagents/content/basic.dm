@@ -243,11 +243,6 @@ TYPE_TABLE(/datum/reagent/blood, reagent_data_codec_keys, list("viruses"))
 	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
-/datum/reagent/antibodies/affect_blood(mob/living/carbon/M, alien, removed)
-	if(src.data)
-		M.antibodies |= src.data[REAGENT_ID_ANTIBODIES]
-	..()
-
 /datum/reagent/water
 	name = REAGENT_WATER
 	id = REAGENT_ID_WATER

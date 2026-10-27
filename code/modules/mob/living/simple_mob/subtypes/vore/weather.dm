@@ -21,7 +21,6 @@
 	special_attack_cooldown = 8 SECONDS //1 fire ticks a second
 	swallowTime = 1.5 SECONDS
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 10
 	vore_pounce_chance = 50
 	vore_pounce_cooldown = 10
@@ -39,6 +38,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
+	configure(living_rules(vore_capacity = 1))
 	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 
@@ -113,7 +113,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 
 	swallowTime = 1.5 SECONDS
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 10
 	vore_pounce_chance = 50
 	vore_pounce_cooldown = 10
@@ -132,7 +131,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 	var/leech = 50
 
 /mob/living/simple_mob/vore/boss_jellyfish
-	delete_on_death = TRUE
 
 /// Attacks still to chain after a warp. A field: one chained attack every 4 s while it is non-zero.
 /mob/living/simple_mob/vore/boss_jellyfish/var/chain_number = 0
@@ -140,6 +138,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	configure(movable_motion(unacidable = TRUE))
 	ref_one(nameof(chain_target), /atom)
 	configure(light_glow(color = "#14ff20"))

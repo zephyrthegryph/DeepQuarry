@@ -14,7 +14,6 @@
 
 	see_in_dark = 2
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"
@@ -28,7 +27,6 @@
 	can_buckle = TRUE
 	mount_offset_x = 0
 
-	say_list_type = /datum/say_list/sheep
 
 
 
@@ -38,7 +36,8 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/sheep)
-	configure(butchery_rules(meat_amount = 5))
+	configure(living_rules(say_list_type = /datum/say_list/sheep))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

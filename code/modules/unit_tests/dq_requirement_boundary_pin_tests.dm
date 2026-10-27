@@ -683,9 +683,9 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, H.loc)
 	check(target, H, "vv_give_ai", "vv_not_remote_driven", null)
-	rel_set(target, nameof(target.teleop), H)
+	sparse_ref_set(target, teleop, H)
 	check(target, H, "vv_give_ai", "vv_not_remote_driven", MSG(vv/player_mob))
-	rel_set(target, nameof(target.teleop), null)
+	sparse_ref_set(target, teleop, null)
 	check(target, H, "vv_give_ai", "vv_not_remote_driven", null)
 // Record and compare concrete old-code types for requirement batch E.
 /datum/unit_test/dq_requirement_fifth_pin
@@ -1078,9 +1078,9 @@
 	TEST_ASSERT_NULL(H.nif, "The real target begins without a NIF")
 	check(panel, H, "quick_nif", "nif_target_ok", null)
 	check(panel, H, "ai", "ai_target_ok", null)
-	H.teleop = ghost
+	sparse_ref_set(H, teleop, ghost)
 	check(panel, H, "ai", "ai_target_ok", /datum/msg/player_effects/ai_player)
-	H.teleop = null
+	sparse_ref_set(H, teleop, null)
 	check(panel, H, "ai", "ai_target_ok", null)
 	var/obj/item/nif/N = allocate(/obj/item/nif, H.loc)
 	TEST_ASSERT(N.quick_implant(H), "The actual implant preparation succeeds")

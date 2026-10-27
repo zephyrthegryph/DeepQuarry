@@ -47,10 +47,12 @@ CAPABILITIES(/obj/item/melee/baton/slime/loaded)
 	charge_cost = 120 // Twice as many shots.
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30 // Make it a bit easier to hit the slimes.
-	description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
-	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
-	ineffective at stunning non-slimy lifeforms such as humanoids."
 	recoil_mode = 0
+
+CAPABILITIES(/obj/item/gun/energy/taser/xeno)
+	configure(atom_rules(description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
+	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
+	ineffective at stunning non-slimy lifeforms such as humanoids."))
 
 /*
 REMOVAL
@@ -61,7 +63,9 @@ REMOVAL
 	projectile_type = /obj/item/projectile/beam/stun/xeno/weak
 	charge_cost = 480
 	accuracy = 0 //Same accuracy as a normal Sec taser.
-	description_fluff = "An NT Mk30 NL retrofitted after the events that occurred aboard the NRS Prometheus."
+
+CAPABILITIES(/obj/item/gun/energy/taser/xeno/sec)
+	configure(atom_rules(description_fluff = "An NT Mk30 NL retrofitted after the events that occurred aboard the NRS Prometheus."))
 
 /obj/item/gun/energy/taser/xeno/sec/robot //Cyborg variant of the security xeno-taser.
 	self_recharge = 1

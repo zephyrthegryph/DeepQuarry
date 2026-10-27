@@ -5,7 +5,6 @@
 // Based on railing.dmi from https://github.com/Endless-Horizon/CEV-Eris
 /obj/structure/railing
 	name = "railing"
-	debris_type = /obj/item/stack/rods
 	desc = "A standard steel railing, painted orange.  Play stupid games, win stupid prizes."
 	icon = 'icons/obj/railing.dmi'
 	density = TRUE
@@ -34,6 +33,7 @@
 		set_anchored(FALSE)
 
 CAPABILITIES(/obj/structure/railing)
+	configure(obj_rules(debris_entry = list(/obj/item/stack/rods = 1)))
 	configure(atom_rules(throwpass = 1))
 	setup(PROC_REF(start_loose))
 	rotatable(while_anchored = TRUE)

@@ -457,7 +457,6 @@ CAPABILITIES(/obj/structure/cable)
 	gender = NEUTER
 	desc = "A coil of power cable."
 	w_class = ITEMSIZE_SMALL
-	throw_range = 5
 	item_state = "coil"
 	stacktype = /obj/item/stack/cable_coil
 	singular_name = "length"
@@ -576,7 +575,7 @@ CAPABILITIES(/obj/structure/cable)
 	return GLOB.possible_cable_coil_colours
 
 CAPABILITIES(/obj/item/stack/cable_coil)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 5, throw_speed = 2))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 10))
 	configure(item_combat(attack_verbs = list("whipped", "lashed", "disciplined", "flogged")))
@@ -894,7 +893,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 	max_amount = MAXCOIL
 	color = COLOR_SILVER
 	w_class = ITEMSIZE_SMALL
-	throw_range = 5
 	stacktype = null
 
 /// An alien coil works out its embed chance from its own force (from /obj/item, it does not do what the normal coil does).
@@ -929,7 +927,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 
 // The endless coil's touch replaces the stack's split: it asks how much wire to take.
 CAPABILITIES(/obj/item/stack/cable_coil/alien)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 5, throw_speed = 2))
 	setup(PROC_REF(work_out_embed_chance))
 	configure(item_tooling(speed = 0.25))
 	configure(item_worn(slots = SLOT_BELT))

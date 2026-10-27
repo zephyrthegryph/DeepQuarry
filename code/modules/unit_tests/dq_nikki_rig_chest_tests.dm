@@ -23,7 +23,7 @@
 	TEST_ASSERT(M in R.installed_modules, "Real mounted module is in owned registry")
 	// A real wearer relation exercises notification; it does not claim the
 	// named owner's authenticated equipment permission was satisfied.
-	rel_set(R, nameof(R.wearer), H)
+	link_make(H, LK_WEARING_RIG, R)
 	TEST_ASSERT_EQUAL(R.wearer(), H, "Controller resolves real wearer relation")
 	R.take_hit(50, "test impact", FALSE)
 	TEST_ASSERT_EQUAL(M.damage, 1, "Zero cape breach resistance gives deterministic100percent damage chance")

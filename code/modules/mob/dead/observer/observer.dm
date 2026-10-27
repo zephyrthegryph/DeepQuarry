@@ -206,7 +206,7 @@ Works together with spawning an observer, noted above.
 	if(key)
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			if(H.vr_holder && !can_reenter_corpse)
+			if(H.vr_holder() && !can_reenter_corpse)
 				H.exit_vr()
 				return 0
 		var/mob/observer/dead/ghost = make(/mob/observer/dead, at = src, from_body = src, admin_ghosted = aghost)
@@ -299,7 +299,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			return
 	sparse_set(mind.current, ajourn, 0)
 	bind_player(mind.current, key)
-	rel_clear(mind.current, nameof(/mob::teleop))
+	sparse_ref_set(mind.current, teleop, null)
 	if(istype(mind.current.loc, /obj/structure/morgue))
 		var/obj/structure/morgue/M = mind.current.loc
 		M.update(1)

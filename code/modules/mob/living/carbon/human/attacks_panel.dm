@@ -31,13 +31,13 @@ CAPABILITIES(/datum/attacks_panel)
 	var/list/data = list()
 	if(!host || !host.species)
 		return data
-	data["default_name"] = host.default_attack ? host.default_attack.attack_name : null
+	data["default_name"] = host.default_attack()?.attack_name
 	var/list/rows = list()
 	for(var/datum/unarmed_attack/u_attack in host.species.unarmed_attacks)
 		rows += list(list(
 			"ref" = ref_token(u_attack),
 			"name" = u_attack.attack_name,
-			"is_default" = (u_attack == host.default_attack),
+			"is_default" = (u_attack == host.default_attack()),
 		))
 	data["attacks"] = rows
 	return data

@@ -1,14 +1,11 @@
 /mob/living/carbon
 	gender = MALE
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // BLEH, this could be improved for transparent species and stuff! And blocks glowing eyes?!
 	var/datum/species/species //Contains icon generation and language information, set during New().
-	var/list/antibodies = list() // ALLOW(instance_list): d: per-mob antibodies, filled at runtime; mobs are few
 
 	var/life_tick = 0      // The amount of life ticks that have processed on this mob.
 
 	/// Zones a surgical step is currently being performed on (lazy).
-	//Active emote/pose
-	var/pose = null
+	//Active emote/pose: pose (the text) is a sparse slot (code/datums/sparse_vars/mob_state.dm)
 	var/image/pose_indicator
 	var/datum/reagents/metabolism/bloodstream/bloodstr = null
 	var/datum/reagents/metabolism/ingested/ingested = null

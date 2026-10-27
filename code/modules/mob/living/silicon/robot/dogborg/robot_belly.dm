@@ -116,7 +116,7 @@ CAPABILITIES(/datum/robot_belly)
 		if(preference == "Sleeper")
 			fullness_ref[1] = 0
 		return
-	var/capacity = R.vore_capacity_ex[belly_class]
+	var/capacity = living_rules_of(R).vore_capacity_ex[belly_class]
 	if(fullness_ref[1] + 1 > capacity)
 		return
 	if(preference == "Sleeper")

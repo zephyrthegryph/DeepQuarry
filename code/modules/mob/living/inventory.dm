@@ -168,10 +168,10 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	return
 
 /mob/living/abiotic(full_body = 0)
-	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK))))
+	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK))))
 		return 1
 
-	if((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )))
+	if((get_equipped_item(SLOT_ID_HAND_L) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract )))
 		return 1
 	return 0
 
@@ -199,14 +199,21 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 		show_inventory_panel(L)
 	return FALSE
 
+/// The mob's inventory panel (LK_INVENTORY_PANEL, gone with the mob), or null until first shown.
+/mob/living/proc/inventory_panel()
+	RETURN_TYPE(/datum/inventory_panel)
+	return link_get(src, LK_INVENTORY_PANEL)
+
 /mob/living/proc/show_inventory_panel(mob/user, datum/tgui_state/state)
 	if(!kind_of(src).inventory_panel)
 		return FALSE
 
-	if(!inventory_panel)
+	var/datum/inventory_panel/panel = inventory_panel()
+	if(!panel)
 		var/panel_type = kind_of(src).inventory_panel
-		rel_set(src, nameof(inventory_panel), new panel_type(src))
-	inventory_panel.tgui_interact(user, custom_state = state)
+		panel = new panel_type(src)
+		link_make(src, LK_INVENTORY_PANEL, panel)
+	panel.tgui_interact(user, custom_state = state)
 
 	return TRUE
 

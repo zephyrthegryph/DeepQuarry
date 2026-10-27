@@ -29,7 +29,6 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 1
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	catalogue_data = list(/datum/category_item/catalogue/fauna/abyss_lurker)
 
 	see_in_dark = 8
@@ -47,7 +46,6 @@
 
 	swallowTime = 2 SECONDS
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 50
 	vore_bump_emote	= "begins to absorb"
 	vore_ignores_undigestable = 0
@@ -76,7 +74,8 @@
 	B.escape_stun = 5
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
-	configure(butchery_rules(meat_amount = 5))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(movable_motion(unacidable = TRUE))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 	op("abyss_lurker_interaction_hand", hand(), then(PROC_REF(abyss_lurker_interaction_hand)))
@@ -117,7 +116,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	melee_damage_upper = 1
 
 	movement_cooldown = 1
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	catalogue_data = list(/datum/category_item/catalogue/fauna/leaper)
 
 	see_in_dark = 8
@@ -136,7 +134,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 
 	swallowTime = 1 SECONDS
 	vore_active = 1
-	vore_capacity = 2
 	vore_bump_chance = 75
 	vore_bump_emote	= "grabs ahold of"
 	vore_ignores_undigestable = 0
@@ -159,7 +156,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
-	configure(butchery_rules(meat_amount = 5))
+	configure(living_rules(vore_capacity = 2))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "throw_vore" = TRUE))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
@@ -244,7 +242,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	melee_damage_upper = 1
 
 	movement_cooldown = 50
-	meat_type = null
 	catalogue_data = list(/datum/category_item/catalogue/fauna/gelatinous_cube)
 
 	see_in_dark = 8
@@ -261,7 +258,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 
 	swallowTime = 0 SECONDS
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 100
 	vore_bump_emote	= "begins to absorb"
 	vore_ignores_undigestable = 0
@@ -296,7 +292,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	B.escape_stun = 3
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
-	configure(butchery_rules(meat_amount = 0))
+	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
+	configure(butchery_rules(meat_type = TRAIT_NONE, meat_amount = 0))
 	configure(movable_motion(unacidable = TRUE))
 	configure(mob_movement(bump = HUMAN, swap = HEAVY, push = HEAVY))
 	rolls(nameof(color), PROC_REF(roll_color))
@@ -306,7 +303,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
 	return R.saturated_colour()
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/on_death(gibbed)
 	. = ..()

@@ -4,7 +4,6 @@
 	desc = "Paper folded into the shape of a plane."
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "paperplane"
-	throw_range = 7
 	w_class = ITEMSIZE_TINY
 
 	var/obj/item/paper/internalPaper
@@ -12,7 +11,7 @@
 	var/list/stamp_marks
 
 CAPABILITIES(/obj/item/paperplane)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 7, throw_speed = 1))
 	configure(item_thrown(force = 0))
 	owns_one(nameof(internalPaper), /obj/item/paper)
 	param(nameof(internalPaper), pos = 1, apply = PROC_REF(fold_from))
@@ -74,7 +73,7 @@ CAPABILITIES(/obj/item/paperplane)
 		sync_stamps()
 
 	else if(is_hot(P))
-		if(user.disabilities & CLUMSY && prob(10))
+		if(user.disabilities() & CLUMSY && prob(10))
 			act_message(user, src, MSG_SELF(span_userdanger("You miss %T% and accidentally light yourself on fire!")), \
 				MSG_OTHERS(span_warning("%U% accidentally ignites themselves!")))
 			user.unEquip(P)

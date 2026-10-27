@@ -44,7 +44,6 @@
 	grab_resist = 50 // they're still slippery buggers!
 
 	vore_active = 1
-	vore_capacity = 2
 	vore_pounce_chance = 50
 	vore_icons = SA_ICON_LIVING
 
@@ -60,9 +59,9 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	say_list_type = /datum/say_list/xeno_defanged
 
 CAPABILITIES(/mob/living/simple_mob/vore/xeno_defanged)
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/xeno_defanged))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 

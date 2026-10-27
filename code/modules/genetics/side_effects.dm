@@ -2,11 +2,14 @@
 	var/name 				// name of the side effect, to use as a header in the manual
 	var/duration = 0 		// delay between start() and finish()
 	var/antidote_reagent 	// What type of reagent we require to stop the specific side effect from happening
-	/// The human suffering it (who owns it, in genetic_side_effects): a relation view.
-	var/mob/living/carbon/human/host
 
-CAPABILITIES(/datum/genetics/side_effect)
-	ref_one(nameof(host), /mob/living/carbon/human)
+/// The human suffering it, who it goes with (LK_GENETIC_HOST): null once they are gone.
+/datum/genetics/side_effect/proc/host() as /mob/living/carbon/human
+	return link_get(src, LK_GENETIC_HOST)
+
+/// The genetic side effects this human suffers (a fresh list).
+/mob/living/carbon/human/proc/genetic_side_effects()
+	return link_list(src, LK_GENETIC_EFFECTS)
 
 /proc/trigger_side_effect(mob/living/carbon/human/H)
 	if(!ishuman(H)) return
@@ -20,20 +23,19 @@ CAPABILITIES(/datum/genetics/side_effect)
 
 /datum/genetics/side_effect/proc/start(mob/living/carbon/human/H)
 	if(H && ishuman(H))
-		rel_add(H, nameof(H.genetic_side_effects), src)
-		rel_set(src, nameof(host), H)
+		link_make(H, LK_GENETIC_EFFECTS, src)
 	// start the side effect, this should give some cue as to what's happening,
 	// such as gasping. These cues need to be unique among side-effects.
 
-/// The timer's end: runs finish(), then the host disposes of the side effect.
+/// The timer's end: runs finish(), then the side effect is disposed of.
 /datum/genetics/side_effect/proc/complete()
-	var/mob/living/carbon/human/H = host
+	var/mob/living/carbon/human/H = host()
 	finish()
 	if(H && !QDELETED(src))
-		own_remove(H, nameof(H.genetic_side_effects), src)
+		spent(src)
 
 /datum/genetics/side_effect/proc/finish()
-	var/mob/living/carbon/human/H = host
+	var/mob/living/carbon/human/H = host()
 	if(!H || !ishuman(H)) return FALSE
 	if(antidote_reagent && (H.reagents.has_reagent(antidote_reagent)|| H.ingested.has_reagent(antidote_reagent) || H.touching.has_reagent(antidote_reagent)))
 		return TRUE
@@ -52,7 +54,7 @@ CAPABILITIES(/datum/genetics/side_effect)
 
 /datum/genetics/side_effect/genetic_burn/finish()
 	if(..()) return
-	var/mob/living/carbon/human/H = host
+	var/mob/living/carbon/human/H = host()
 	if(!ishuman(H))
 		return
 	for(var/organ_name in BP_ALL)
@@ -71,7 +73,7 @@ CAPABILITIES(/datum/genetics/side_effect)
 
 /datum/genetics/side_effect/bone_snap/finish()
 	if(..()) return
-	var/mob/living/carbon/human/H = host
+	var/mob/living/carbon/human/H = host()
 	var/organ_name = pick(BP_ALL)
 	var/obj/item/organ/external/E = H.get_organ(organ_name)
 	if(!E)
@@ -90,5 +92,5 @@ CAPABILITIES(/datum/genetics/side_effect)
 
 /datum/genetics/side_effect/confuse/finish()
 	if(..()) return
-	var/mob/living/carbon/human/H = host
+	var/mob/living/carbon/human/H = host()
 	H.status_at_least(STAT_CONFUSED, 100)

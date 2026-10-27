@@ -261,11 +261,11 @@ sparse(/mob/living, injury_trace, type = list)
 /// dose and accumulated dose together (anti-radiation treatment, restoration).
 /// Returns the acute dose removed.
 /mob/proc/purge_radiation(amount)
-	if(amount <= 0 || (!radiation && !accumulated_rads))
+	if(amount <= 0 || (!radiation && !accumulated_rads()))
 		return 0
 	var/before = radiation
 	set_radiation(max(radiation - amount, 0))
-	accumulated_rads = max(accumulated_rads - amount, 0)
+	set_accumulated_rads(max(accumulated_rads() - amount, 0))
 	radiation_changed()
 	return before - radiation
 
@@ -284,15 +284,15 @@ sparse(/mob/living, injury_trace, type = list)
 /// `amount` and `to_accumulated` of it settles into the long-term dose.
 /mob/proc/decay_radiation(amount, to_accumulated = 0)
 	set_radiation(max(radiation - amount, 0))
-	accumulated_rads = clamp(accumulated_rads + to_accumulated, 0, RADIATION_CAP)
+	set_accumulated_rads(clamp(accumulated_rads() + to_accumulated, 0, RADIATION_CAP))
 	radiation_changed()
 
 /// P2-S12: clear all radiation (restoration, rejuvenate, changeling panacea).
 /mob/proc/clear_radiation()
-	if(!radiation && !accumulated_rads)
+	if(!radiation && !accumulated_rads())
 		return
 	set_radiation(0)
-	accumulated_rads = 0
+	set_accumulated_rads(0)
 	radiation_changed()
 
 /// The dose changed (every radiation writer above calls it): the radiation step and the medical metric triggers hear it.

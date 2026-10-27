@@ -7,7 +7,6 @@
 	anchored = TRUE
 	layer = MOB_LAYER
 	plane = MOB_PLANE
-	explosion_resistance = 5
 	var/can_pass_lying = TRUE
 	var/static/list/mobs_can_pass = list(
 		/mob/living/bot,
@@ -17,6 +16,7 @@
 		)
 
 CAPABILITIES(/obj/structure/plasticflaps)
+	configure(obj_rules(explosion_resistance = 5))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), starts(PROC_REF(wirecutter_started)), begins(PROC_REF(wirecutter_begins)), wait(1 SECOND), then(PROC_REF(wirecutter_act_tool_done)))
 
 /obj/structure/plasticflaps/proc/wirecutter_started(datum/act/op/A)

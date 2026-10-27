@@ -37,7 +37,6 @@
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
-	say_list_type = /datum/say_list/softdog
 	swallowTime = 0.1 SECONDS
 
 	loot_list = list(/obj/random/underdark/uncertain)
@@ -55,6 +54,7 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	configure(living_rules(say_list_type = /datum/say_list/softdog))
 	after_init(0, then(PROC_REF(stardog_light_ready)))
 	links(/mob/living/simple_mob/vore/overmap/stardog::control_node, /obj/structure/control_pod::host)
 	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
