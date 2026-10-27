@@ -43,9 +43,9 @@
 
 
 
-	say_list_type = /datum/say_list/hare
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/hare)
+	configure(living_rules(say_list_type = /datum/say_list/hare))
 	configure(butchery_rules(meat_amount = 1))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 

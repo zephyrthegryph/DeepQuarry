@@ -59,10 +59,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/advanced_smg)
 /obj/item/gun/projectile/automatic/sts35
 	name = "assault rifle"
 	desc = "The rugged Jindal Arms STS-35 is a durable automatic weapon of a make popular on the frontier worlds. Uses 5.45mm rounds."
-	description_fluff = "A subsidiary of Hephaestus Industries, While Jindal’s rugged, affordable weapons intended for the colonial sector are a major export of Tau Ceti, \
-	the Jindal Arms company is perhaps best known for its liberal sale of production licenses to just about any fledgling rimworld venture who asks, and has cash to spare. \
-	While Jindal’s 'authentic' Binma-built weapons are renowned for their reliability, the same cannot be said for the hundreds of low-grade (But technically legal) \
-	copies circulating the squalid habitats and smoke-filled junk ships of the frontier."
 	icon_state = "arifle"
 	item_state = "arifle"
 	wielded_item_state = "arifle-wielded"
@@ -83,6 +79,10 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/advanced_smg)
 		)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/sts35)
+	configure(atom_rules(description_fluff = "A subsidiary of Hephaestus Industries, While Jindal’s rugged, affordable weapons intended for the colonial sector are a major export of Tau Ceti, \
+	the Jindal Arms company is perhaps best known for its liberal sale of production licenses to just about any fledgling rimworld venture who asks, and has cash to spare. \
+	While Jindal’s 'authentic' Binma-built weapons are renowned for their reliability, the same cannot be said for the hundreds of low-grade (But technically legal) \
+	copies circulating the squalid habitats and smoke-filled junk ships of the frontier."))
 	configure(movable_motion(icon_height = 32))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
@@ -151,9 +151,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/wt550)
 	name = "battle rifle"
 	desc = "The Z8 Bulldog is an older model battle rifle, made by the now defunct Zendai Foundries. Makes you feel like an old-school badass when you hold it, \
 	even though it can only hold 10 round magazines. Uses 7.62mm rounds and has an under barrel grenade launcher."
-	description_fluff = "Zendai Foundries was a well-respected mid-sized arms company that operated until 2508, when it was acquired by Hephaestus Industries. \
-	Plans to integrate the brand into wider corporate operations were brought to an abrupt halt by the SolGov-Hegemony war, and the company was left by the wayside. \
-	Hephaestus still produces replacement parts for many of Zendai's most popular weapons, including the Z8 Bulldog, and a great detail remain in service."
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_expected_width = 64
 	icon_state = "carbine" // This isn't a carbine. :T
@@ -182,6 +179,9 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/wt550)
 	var/obj/item/gun/launcher/grenade/underslung/launcher
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
+	configure(atom_rules(description_fluff = "Zendai Foundries was a well-respected mid-sized arms company that operated until 2508, when it was acquired by Hephaestus Industries. \
+	Plans to integrate the brand into wider corporate operations were brought to an abrupt halt by the SolGov-Hegemony war, and the company was left by the wayside. \
+	Hephaestus still produces replacement parts for many of Zendai's most popular weapons, including the Z8 Bulldog, and a great detail remain in service."))
 	configure(movable_motion(icon_height = 32))
 	setup(TYPE_PROC_REF(/atom/movable, update_transform))
 	configure(item_worn(slots = SLOT_BACK))
@@ -229,7 +229,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 /obj/item/gun/projectile/automatic/l6_saw
 	name = "light machine gun"
 	desc = "A rather sturdily made L6 SAW with a reassuringly ergonomic pistol grip. 'Hephaestus Industries' is engraved on the receiver. Uses 5.45mm rounds. It's also compatible with magazines from STS-35 assault rifles."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by professional armed forces across human space."
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_expected_width = 64
 	icon_state = "l6closed100"
@@ -257,6 +256,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 	special_weapon_handling = TRUE
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/l6_saw)
+	configure(atom_rules(description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by professional armed forces across human space."))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
@@ -318,8 +318,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/l6_saw)
 	name = "automatic shotgun"
 	desc = "The AS-24 is a rugged looking automatic shotgun produced exclusively for the SCG Fleet by Hephaestus \
 	Industries. For very obvious reasons, it's illegal to own in many juristictions. Uses 12g rounds."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' \
-	branding for its military-grade equipment used by professional armed forces across human space."
 	icon_state = "ashot"
 	item_state = "ashot"
 	wielded_item_state = "ashot-wielded"
@@ -338,6 +336,8 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/l6_saw)
 		)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/as24)
+	configure(atom_rules(description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' \
+	branding for its military-grade equipment used by professional armed forces across human space."))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
@@ -352,9 +352,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/as24)
 /obj/item/gun/projectile/automatic/mini_uzi
 	name = "micro-smg"
 	desc = "The infamous ProTek Spitz is a lightweight, compact, fast firing machine pistol. Cheaply produced under the ProTek consumer brand, the Spitz seems to find its way into every corner of the galaxy. Uses .45 rounds."
-	description_fluff = "Budget-grade weapons for the budget-grade consumer! Hephaestus’ low-end brand of cheaply made, low-maintenance personal defense weapons for those who just need a handgun with absolutely no frills. \
-	Early ProTek weapons were notoriously unsafe and unreliable, though more recent designs have improved somewhat - they still aren’t very good. \
-	Though sold for a pittance, the profit margin is too irresistible for Hephaestus to discontinue the brand."
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_expected_width = 64
 	icon_state = "mini-uzi"
@@ -404,7 +401,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/as24)
 /obj/item/gun/projectile/automatic/tommygun
 	name = "\improper Tommy Gun"
 	desc = "This weapon was made famous by gangsters in the 20th century. Cybersun Industries is currently reproducing these for a target market of historic gun collectors and classy criminals. Uses .45 rounds."
-	description_fluff = "Cybersun Industries is a minor arms manufacturer specialising in replica firearms from eras past. Though they offer a wide selection of made-to-order models, their products are seen as little more than novelty items to most serious collectors."
 	icon_state = "tommygun"
 	item_state = "stg44"
 	w_class = ITEMSIZE_NORMAL
@@ -420,6 +416,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/as24)
 		)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/tommygun)
+	configure(atom_rules(description_fluff = "Cybersun Industries is a minor arms manufacturer specialising in replica firearms from eras past. Though they offer a wide selection of made-to-order models, their products are seen as little more than novelty items to most serious collectors."))
 	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/gun/projectile/automatic/tommygun/draw(datum/look/look)
@@ -476,9 +473,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/bullpup)
 /obj/item/gun/projectile/automatic/combatsmg
 	name = "\improper PP3 Ten"
 	desc = "The Bishamonten PP3 Ten personal defense weapon is a rare design much sought after - though more for its looks than its functionality. Uses 9mm rounds."
-	description_fluff = "The Bishamonten Company operated from roughly 2150-2280 - the height of the first extrasolar colonisation boom - before filing for bankruptcy and selling off its assets to various companies that would go on to become today’s TSCs. \
-	Focused on sleek ‘futurist’ designs which have largely fallen out of fashion but remain popular with collectors and people hoping to make some quick thalers from replica weapons. \
-	Bishamonten weapons tended to be form over function - despite their flashy looks, most were completely unremarkable one way or another as weapons and used very standard firing mechanisms."
 	icon_state = "combatsmg"
 	w_class = ITEMSIZE_NORMAL
 	load_method = MAGAZINE
@@ -491,6 +485,11 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/bullpup)
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
 		list(mode_name="3-round bursts", burst=3, burst_delay=1, fire_delay=4, move_delay=4, burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/combatsmg)
+	configure(atom_rules(description_fluff = "The Bishamonten Company operated from roughly 2150-2280 - the height of the first extrasolar colonisation boom - before filing for bankruptcy and selling off its assets to various companies that would go on to become today’s TSCs. \
+	Focused on sleek ‘futurist’ designs which have largely fallen out of fashion but remain popular with collectors and people hoping to make some quick thalers from replica weapons. \
+	Bishamonten weapons tended to be form over function - despite their flashy looks, most were completely unremarkable one way or another as weapons and used very standard firing mechanisms."))
 
 /// The look (the draw sweep: from its template).
 /obj/item/gun/projectile/automatic/combatsmg/draw(datum/look/look)
@@ -513,7 +512,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/bullpup)
 /obj/item/gun/projectile/automatic/p90
 	name = "\improper P90K PDW"
 	desc = "The P90K Personal Defense Weapon is a MarsTech-assembled modernized variation of the ancient FN P90, a compact, high-capacity submachine gun of human origin. Its fierce reputation owes to its minimal recoil and ergonomic design. Chambered in 9mm rounds."
-	description_fluff = "The leading civilian-sector high-quality small arms subsidiary of Hephaestus Industries, MarsTech has been the provider of choice for law enforcement and security forces for over 300 years."
 
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_guns_ch.dmi',
@@ -543,6 +541,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/bullpup)
 		)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/p90)
+	configure(atom_rules(description_fluff = "The leading civilian-sector high-quality small arms subsidiary of Hephaestus Industries, MarsTech has been the provider of choice for law enforcement and security forces for over 300 years."))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /// Declared icon_state suffix: rounded magazine count, or "empty".
@@ -558,7 +557,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/p90)
 /obj/item/gun/projectile/automatic/c20r
 	name = "\improper C-20R"
 	desc = "The C-20R is a lightweight, heavy-hitting submachine gun with an infamous reputation for being the weapon of choice among mercenary outfits and insurgent cabals. It has 'Scarborough Arms - Per Falcis, Per Pravitas' inscribed on the stock. Chambered in 10mm caseless rounds."
-	description_fluff = "The C-20R is produced by Scarborough Arms, a specialist high-end weapons manufacturer based out of Titan, Sol. Scarborough has resisted numerous efforts by Trans-Stellars to acquire the brand since its founding in 2511, and has gained a dedicated following among a certain flavor of private operative."
 
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_expected_width = 64
@@ -590,6 +588,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/p90)
 		)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/c20r)
+	configure(atom_rules(description_fluff = "The C-20R is produced by Scarborough Arms, a specialist high-end weapons manufacturer based out of Titan, Sol. Scarborough has resisted numerous efforts by Trans-Stellars to acquire the brand since its founding in 2511, and has gained a dedicated following among a certain flavor of private operative."))
 	configure(movable_motion(icon_height = 32))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 

@@ -4,7 +4,6 @@
 	icon_state = "holder"
 	item_state = "assembly"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 
 	var/secured = 0
 	var/obj/item/assembly/a_left = null
@@ -93,7 +92,7 @@
 		a_right.on_found(finder)
 
 CAPABILITIES(/obj/item/assembly_holder)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 10, throw_speed = 3))
 	configure(item_thrown(force = 5))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("use", in_hand(), label("Use"),

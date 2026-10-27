@@ -59,7 +59,6 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 	req_one_access = list(ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
-	blocks_emissive = NONE
 	flags = WALL_ITEM
 	circuit = /obj/item/circuitboard/airalarm
 	mode = AALARM_MODE_SCRUBBING
@@ -121,7 +120,7 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
-	configure(movable_motion(unacidable = TRUE))
+	configure(movable_motion(blocks_emissive = NONE, unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 30))
 	rolls(nameof(name), PROC_REF(roll_alarm_name))
 	setup(PROC_REF(register_initial_alarm))
@@ -404,16 +403,16 @@ CAPABILITIES(/obj/machinery/alarm)
 		contract_atmos_revision++
 		emit_contract_event(CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, list(
 			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "atmos-service:[REF(src)]",
+			"fact_id" = "atmos-service:[ref_token(src)]",
 			"fact_revision" = contract_atmos_revision,
-			"service_id" = REF(src),
+			"service_id" = ref_token(src),
 			"danger_level" = danger_level,
 			"metrics" = list(
 				"pressure" = S.pressure,
 				"temperature" = S.temperature,
 			),
 			"detail" = "[alarm_area] atmospheric service reports danger level [danger_level], [round(S.pressure, 0.1)] kPa, and [round(S.temperature, 0.1)] K.",
-		), "atmos-service:[REF(src)]:[contract_atmos_revision]", src)
+		), "atmos-service:[ref_token(src)]:[contract_atmos_revision]", src)
 	if(mode == AALARM_MODE_CYCLE && S.pressure < ONE_ATMOSPHERE * 0.05)
 		set_mode(AALARM_MODE_FILL)
 		apply_mode()

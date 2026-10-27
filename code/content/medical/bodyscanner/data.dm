@@ -75,7 +75,7 @@
 	out["hasBorer"] = H.has_brain_worms()
 	out["blind"] = (H.sdisabilities & BLIND)
 	out["nearsighted"] = H.is_nearsighted()
-	out["brokenspine"] = (H.disabilities & SPINE)
+	out["brokenspine"] = (H.disabilities() & SPINE)
 	out["husked"] = (H.has_mutation(HUSK))
 
 	var/has_withdrawl = FALSE

@@ -114,7 +114,7 @@
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(4, 4))
 	controller.set_invisibility(INVISIBILITY_MAXIMUM)
 	controller.set_density(FALSE)
-	rel_set(H, nameof(H.teleop), controller)
+	sparse_ref_set(H, teleop, controller)
 	if(!H.hud_used)
 		H.set_hud_used(new /datum/hud(H))
 		H.hud_used.instantiate()

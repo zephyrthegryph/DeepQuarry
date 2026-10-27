@@ -3,7 +3,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "shield0"
 	item_state = "electronic"
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	var/can_use = 1
 	var/obj/effect/dummy/chameleon/active_dummy = null
@@ -14,7 +13,7 @@
 
 
 CAPABILITIES(/obj/item/chameleon)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5.0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

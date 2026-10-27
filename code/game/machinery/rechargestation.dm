@@ -121,10 +121,10 @@
 				cell.use(7000/450*10)
 
 			// And clear up radiation
-			if(H.radiation > 0 || H.accumulated_rads > 0)
+			if(H.radiation > 0 || H.accumulated_rads() > 0)
 				H.purge_radiation(25)
 
-		if(H.wearing_rig) // stepping into a borg charger to charge your rig and fix your shit
+		if(H.wearing_rig()) // stepping into a borg charger to charge your rig and fix your shit
 			var/obj/item/rig/wornrig = H.get_rig()
 			if(wornrig) // just to make sure
 				for(var/obj/item/rig_module/storedmod in wornrig.installed_modules)
@@ -339,7 +339,7 @@ CAPABILITIES(/obj/machinery/recharge_station)
 
 /mob/living/carbon/human/recharge_station_admission(obj/machinery/recharge_station/station)
 	// Forced loading and bumps historically admit unconscious synthetic/rig wearers.
-	return (HAS_SYNTHETIC_BIOLOGY(src) || wearing_rig) ? null : /datum/msg/req_silent
+	return (HAS_SYNTHETIC_BIOLOGY(src) || wearing_rig()) ? null : /datum/msg/req_silent
 
 /obj/machinery/recharge_station/proc/go_out()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)

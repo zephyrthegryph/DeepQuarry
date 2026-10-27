@@ -1198,13 +1198,13 @@
 	rel_set(store, nameof(store.linked_account), GLOB.department_accounts[DEPARTMENT_RESEARCH]) // linked by the economy setup / after_init in a live round
 	var/obj/item/store_item = new(store)
 	store_item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, 0)
-	var/item_ref = REF(store_item)
+	var/item_ref = ref_token(store_item)
 	store.set_stock_suggested_prices_at(item_ref, 40)
 	store.set_stock_prices_at(item_ref, 50)
 	store.stock_stocker_accounts[item_ref] = 0
 	var/obj/item/second_store_item = new(store)
 	second_store_item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, 0)
-	var/second_item_ref = REF(second_store_item)
+	var/second_item_ref = ref_token(second_store_item)
 	store.set_stock_suggested_prices_at(second_item_ref, 40)
 	store.set_stock_prices_at(second_item_ref, 50)
 	store.stock_stocker_accounts[second_item_ref] = 0

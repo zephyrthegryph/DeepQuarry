@@ -30,13 +30,11 @@
 
 	movement_cooldown = 3.5
 
-	meat_type = /obj/item/ore/coal
 
 	response_help = "pokes"
 	response_disarm = "pushes"
 	response_harm = "roughly pushes"
 
-	say_list_type = /datum/say_list/oregrub
 
 	var/poison_per_bite = 2.5
 	var/poison_type = REAGENT_ID_THERMITEV //burn baby burn
@@ -48,7 +46,6 @@
 	vore_bump_chance = 60
 	vore_bump_emote = "applies minimal effort to try and slurp up"
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 50 // Might seem unforgiving, but these guys run away from enemies, making them more of an environmental hazard than a real threat. You have to bump them.
 	vore_default_mode = DM_DIGEST
 
@@ -70,6 +67,8 @@
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/oregrub))
+	configure(butchery_rules(meat_type = /obj/item/ore/coal))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/vore/oregrub/lava

@@ -430,7 +430,7 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 
 /// Writes a temporary ban of `M` for `mins` minutes and tells the player and the admins.
 /datum/admins/proc/ban_commit_temp(mob/user, mob/M, mins, reason)
-	AddBan(M.ckey, M.computer_id, reason, user.ckey, 1, mins, user = user)
+	AddBan(M.ckey, sparse_get(M, computer_id), reason, user.ckey, 1, mins, user = user)
 	ban_unban_log_save("[user.ckey] has banned [M.ckey]. - Reason: [reason] - This will be removed in [mins] minutes.")
 	notes_add(M.ckey,"[user.ckey] has banned [M.ckey]. - Reason: [reason] - This will be removed in [mins] minutes.",user)
 	to_chat(M, span_filter_system(span_critical("You have been banned by [user.ckey].\nReason: [reason].")))
@@ -452,9 +452,9 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 /// Writes a permanent ban of `M` (with their address too when `ip_ban`) and tells the player and the admins.
 /datum/admins/proc/ban_commit_perm(mob/user, mob/M, reason, ip_ban)
 	if(ip_ban)
-		AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, sparse_get(M, lastKnownIP), user)
+		AddBan(M.ckey, sparse_get(M, computer_id), reason, user.ckey, 0, 0, sparse_get(M, lastKnownIP), user)
 	else
-		AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, user = user)
+		AddBan(M.ckey, sparse_get(M, computer_id), reason, user.ckey, 0, 0, user = user)
 	to_chat(M, span_filter_system(span_critical("You have been banned by [user.ckey].\nReason: [reason].")))
 	to_chat(M, span_filter_system(span_warning("This is a permanent ban.")))
 	if(CONFIG_GET(string/banappeals))

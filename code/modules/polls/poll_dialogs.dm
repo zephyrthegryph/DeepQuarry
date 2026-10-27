@@ -24,6 +24,8 @@
 /datum/privacy_poll_dialog
 	var/mob/new_player/owner
 	var/answered = FALSE
+	/// TRUE while a vote's checks and insert are out: a double-submit is dropped.
+	var/record_inflight = FALSE
 
 /datum/privacy_poll_dialog/New(mob/new_player/owner)
 	rel_set(src, nameof(owner), owner)
@@ -68,24 +70,50 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 	record_vote(option)
 	return TRUE
 
-/// A prompt flow (flow_io.dm): the check and the insert each re-run it when answered.
+/// Records the vote unless this player already voted: the check is a read on the I/O lane, and the vote is written in its callback.
 /datum/privacy_poll_dialog/proc/record_vote(option)
-	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(record_vote), args, actor = owner)
 	if(!owner || answered)
 		return
-	var/voted = FALSE
-	var/list/check_rows = flow_select(
-		"SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey",
-		list("t_ckey" = owner.ckey),
-	)
+	if(record_inflight)
+		log_sql("privacy poll: dropped a repeat submit by [owner.ckey]: the first is still in flight")
+		return
+	record_inflight = TRUE
+	if(!sql_ask(src, "SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey", list("t_ckey" = owner.ckey), PROC_REF(vote_checked), option))
+		record_inflight = FALSE
+
+/datum/privacy_poll_dialog/proc/vote_checked(list/result, error, option)
+	if(!owner || answered)
+		record_inflight = FALSE
+		return
+	var/list/check_rows = sql_answer_rows(result, error, "privacy poll: earlier vote of [owner.ckey]")
+	if(isnull(check_rows))
+		record_inflight = FALSE
+		to_chat(owner, span_warning("Your vote could not be checked. Please try again later."))
+		return
+
 	if(length(check_rows))
-		voted = TRUE
+		// already voted: nothing to write
+		record_inflight = FALSE
+		set_answered(TRUE)
+		SStgui.close_uis(src)
+		spent(src)
+		return
 
-	if(!voted)
-		flow_sql("INSERT INTO erro_privacy VALUES (null, Now(), :t_ckey, :t_option)", list("t_ckey" = owner.ckey, "t_option" = option))
-		to_chat(owner, span_bold("Thank you for your vote!"))
+	// conditional: a repeat that slipped past the check inserts nothing
+	if(!sql_ask(src, "INSERT INTO erro_privacy SELECT null, Now(), :t_ckey, :t_option FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey)", list("t_ckey" = owner.ckey, "t_option" = option), PROC_REF(vote_written), option))
+		record_inflight = FALSE
+		to_chat(owner, span_warning("Your vote could not be saved. Please try again later."))
 
+/// The privacy vote's insert answered: thanks and done only when it was written, else the player can try again.
+/datum/privacy_poll_dialog/proc/vote_written(list/result, error, option)
+	record_inflight = FALSE
+	if(!owner || answered)
+		return
+	if(error)
+		log_sql("[error] | privacy poll vote insert by [owner.ckey]")
+		to_chat(owner, span_warning("Your vote could not be saved. Please try again later."))
+		return
+	to_chat(owner, span_bold("Thank you for your vote!"))
 	set_answered(TRUE)
 	SStgui.close_uis(src)
 	spent(src)
@@ -125,21 +153,20 @@ CAPABILITIES(/datum/poll_browser_dialog)
 	SStgui.close_uis(src)
 	spent(src, user)
 
-/// A prompt flow (flow_io.dm): the list is replaced when the rows arrive.
+/// Reloads the poll list: the read is on the I/O lane, and the list is replaced when the rows arrive.
 /datum/poll_browser_dialog/proc/refresh_poll_list()
-	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(refresh_poll_list), args, actor = owner)
 	if(!SSdbcore.IsConnected() || !owner?.client)
 		clear_poll_ids()
 		clear_poll_meta()
 		return
 	var/isadmin = check_rights_for(owner.client, R_HOLDER) ? 1 : 0
 	// Adminonly clause is a static fragment of the query selected at
-	// build-time � not user input. The Now() BETWEEN comparison takes no
+	// build-time, not user input. The Now() BETWEEN comparison takes no
 	// parameters. Parameterised queries below for any user-derived value.
-	var/list/question_rows = flow_select(
-		"SELECT id, question FROM erro_poll_question WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime",
-	)
+	sql_ask(src, "SELECT id, question FROM erro_poll_question WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime", null, PROC_REF(poll_list_loaded))
+
+/datum/poll_browser_dialog/proc/poll_list_loaded(list/result, error)
+	var/list/question_rows = sql_answer_rows(result, error, "poll list")
 	clear_poll_ids()
 	clear_poll_meta()
 	for(var/list/question_row as anything in question_rows)
@@ -158,120 +185,114 @@ CAPABILITIES(/datum/poll_browser_dialog)
 	data["selected"] = (selected_pollid && selected_detail) ? selected_detail : null
 	return data
 
-/// Loads the selected poll's detail as a prompt flow (flow_io.dm): build_poll_detail()'s reads
-/// each re-run it, and the detail shows once they have all arrived.
+/// Loads the selected poll's detail: the question, then (by its type) its options and this player's earlier vote are read on the I/O
+/// lane, one after another, and the detail shows once they have all arrived. Each answer is dropped if another poll was selected meanwhile.
 /datum/poll_browser_dialog/proc/load_poll_detail(pollid)
-	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(load_poll_detail), args, actor = owner)
 	if(selected_pollid != pollid)
 		return
-	set_selected_detail(build_poll_detail(pollid))
+	if(!SSdbcore.IsConnected() || !owner?.ckey)
+		poll_detail_done(pollid, list("id" = pollid, "error" = "Database unavailable.", "voted" = FALSE))
+		return
+	sql_ask(src, "SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM erro_poll_question WHERE id = :t_pollid", list("t_pollid" = pollid), PROC_REF(poll_detail_loaded), pollid)
+
+/// The detail is complete (or failed): it is shown.
+/datum/poll_browser_dialog/proc/poll_detail_done(pollid, list/detail)
+	if(selected_pollid != pollid)
+		return
+	set_selected_detail(detail)
 	SStgui.update_uis(src)
 
-/// Runs inside load_poll_detail()'s flow.
-/datum/poll_browser_dialog/proc/build_poll_detail(pollid)
-	. = list()
-	.["id"] = pollid
-	.["error"] = null
-	.["voted"] = FALSE
-
-	if(!SSdbcore.IsConnected() || !owner?.ckey)
-		.["error"] = "Database unavailable."
+/datum/poll_browser_dialog/proc/poll_detail_loaded(list/result, error, pollid)
+	if(selected_pollid != pollid)
 		return
-
-	var/list/detail_rows = flow_select(
-		"SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM erro_poll_question WHERE id = :t_pollid",
-		list("t_pollid" = pollid),
-	)
-	var/found = FALSE
-	var/start_time = ""
-	var/end_time = ""
-	var/question = ""
-	var/poll_type = ""
-	var/multi_max = 0
-	if(length(detail_rows))
-		var/list/detail_row = detail_rows[1]
-		start_time = detail_row[1]
-		end_time = detail_row[2]
-		question = detail_row[3]
-		poll_type = detail_row[4]
-		multi_max = text2num("[detail_row[5]]") || 0
-		found = TRUE
-	if(!found)
-		.["error"] = "Poll question details not found."
+	var/list/detail = list("id" = pollid, "error" = null, "voted" = FALSE)
+	var/list/detail_rows = sql_answer_rows(result, error, "poll detail: question [pollid]")
+	if(!length(detail_rows))
+		detail["error"] = "Poll question details not found."
+		poll_detail_done(pollid, detail)
 		return
-
-	.["start_time"] = start_time
-	.["end_time"] = end_time
-	.["question"] = question
-	.["poll_type"] = poll_type
-	.["multi_max"] = multi_max
+	var/list/detail_row = detail_rows[1]
+	var/poll_type = detail_row[4]
+	detail["start_time"] = detail_row[1]
+	detail["end_time"] = detail_row[2]
+	detail["question"] = detail_row[3]
+	detail["poll_type"] = poll_type
+	detail["multi_max"] = text2num("[detail_row[5]]") || 0
 
 	switch(poll_type)
 		if("OPTION")
-			.["voted_option_id"] = null
-			.["options"] = build_option_list(pollid)
-
-			var/list/voted_rows = flow_select(
-				"SELECT optionid FROM erro_poll_vote WHERE pollid = :t_pollid AND ckey = :t_ckey",
-				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
-			)
-			if(length(voted_rows))
-				var/list/voted_row = voted_rows[1]
-				.["voted"] = TRUE
-				.["voted_option_id"] = text2num("[voted_row[1]]")
-
+			detail["voted_option_id"] = null
+			sql_ask(src, "SELECT id, text FROM erro_poll_option WHERE pollid = :t_pollid", list("t_pollid" = pollid), PROC_REF(poll_detail_options_loaded), pollid, detail)
 		if("MULTICHOICE")
-			.["options"] = build_option_list(pollid)
-
-			var/list/voted_for = list()
-			var/list/voted_rows = flow_select(
-				"SELECT optionid FROM erro_poll_vote WHERE pollid = :t_pollid AND ckey = :t_ckey",
-				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
-			)
-			for(var/list/voted_row as anything in voted_rows)
-				voted_for += text2num("[voted_row[1]]")
-			if(length(voted_for))
-				.["voted"] = TRUE
-			.["voted_options"] = voted_for
-
+			sql_ask(src, "SELECT id, text FROM erro_poll_option WHERE pollid = :t_pollid", list("t_pollid" = pollid), PROC_REF(poll_detail_options_loaded), pollid, detail)
 		if("TEXT")
-			var/list/reply_rows = flow_select(
-				"SELECT replytext FROM erro_poll_textreply WHERE pollid = :t_pollid AND ckey = :t_ckey",
-				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
-			)
-			if(length(reply_rows))
-				var/list/reply_row = reply_rows[1]
-				.["voted"] = TRUE
-				.["vote_text"] = "[reply_row[1]]"
-
+			sql_ask(src, "SELECT replytext FROM erro_poll_textreply WHERE pollid = :t_pollid AND ckey = :t_ckey", list("t_pollid" = pollid, "t_ckey" = owner.ckey), PROC_REF(poll_detail_reply_loaded), pollid, detail)
 		if("NUMVAL")
-			.["options"] = build_numval_options(pollid)
-			.["voted_ratings"] = list()
-			var/list/rating_rows = flow_select(
-				"SELECT o.text, v.rating FROM erro_poll_option o, erro_poll_vote v WHERE o.pollid = :t_pollid AND v.ckey = :t_ckey AND o.id = v.optionid",
-				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
-			)
-			for(var/list/rating_row as anything in rating_rows)
-				.["voted"] = TRUE
-				.["voted_ratings"] += list(list("text" = "[rating_row[1]]", "rating" = "[rating_row[2]]"))
+			sql_ask(src, "SELECT id, text, minval, maxval, descmin, descmid, descmax FROM erro_poll_option WHERE pollid = :t_pollid", list("t_pollid" = pollid), PROC_REF(poll_detail_numval_options_loaded), pollid, detail)
+		else
+			poll_detail_done(pollid, detail)
 
-/datum/poll_browser_dialog/proc/build_option_list(pollid)
+/// An option or multichoice poll's options arrived: this player's earlier votes are next.
+/datum/poll_browser_dialog/proc/poll_detail_options_loaded(list/result, error, pollid, list/detail)
+	if(selected_pollid != pollid)
+		return
+	detail["options"] = option_list_from_rows(sql_answer_rows(result, error, "poll detail: options of [pollid]"))
+	sql_ask(src, "SELECT optionid FROM erro_poll_vote WHERE pollid = :t_pollid AND ckey = :t_ckey", list("t_pollid" = pollid, "t_ckey" = owner?.ckey), PROC_REF(poll_detail_votes_loaded), pollid, detail)
+
+/datum/poll_browser_dialog/proc/poll_detail_votes_loaded(list/result, error, pollid, list/detail)
+	if(selected_pollid != pollid)
+		return
+	var/list/voted_rows = sql_answer_rows(result, error, "poll detail: votes on [pollid]")
+	if(detail["poll_type"] == "OPTION")
+		if(length(voted_rows))
+			var/list/voted_row = voted_rows[1]
+			detail["voted"] = TRUE
+			detail["voted_option_id"] = text2num("[voted_row[1]]")
+	else
+		var/list/voted_for = list()
+		for(var/list/voted_row as anything in voted_rows)
+			voted_for += text2num("[voted_row[1]]")
+		if(length(voted_for))
+			detail["voted"] = TRUE
+		detail["voted_options"] = voted_for
+	poll_detail_done(pollid, detail)
+
+/// A text poll's earlier reply arrived.
+/datum/poll_browser_dialog/proc/poll_detail_reply_loaded(list/result, error, pollid, list/detail)
+	if(selected_pollid != pollid)
+		return
+	var/list/reply_rows = sql_answer_rows(result, error, "poll detail: reply to [pollid]")
+	if(length(reply_rows))
+		var/list/reply_row = reply_rows[1]
+		detail["voted"] = TRUE
+		detail["vote_text"] = "[reply_row[1]]"
+	poll_detail_done(pollid, detail)
+
+/// A rating poll's options arrived: this player's earlier ratings are next.
+/datum/poll_browser_dialog/proc/poll_detail_numval_options_loaded(list/result, error, pollid, list/detail)
+	if(selected_pollid != pollid)
+		return
+	detail["options"] = numval_options_from_rows(sql_answer_rows(result, error, "poll detail: rating options of [pollid]"))
+	detail["voted_ratings"] = list()
+	sql_ask(src, "SELECT o.text, v.rating FROM erro_poll_option o, erro_poll_vote v WHERE o.pollid = :t_pollid AND v.ckey = :t_ckey AND o.id = v.optionid", list("t_pollid" = pollid, "t_ckey" = owner?.ckey), PROC_REF(poll_detail_ratings_loaded), pollid, detail)
+
+/datum/poll_browser_dialog/proc/poll_detail_ratings_loaded(list/result, error, pollid, list/detail)
+	if(selected_pollid != pollid)
+		return
+	var/list/rating_rows = sql_answer_rows(result, error, "poll detail: ratings on [pollid]")
+	for(var/list/rating_row as anything in rating_rows)
+		detail["voted"] = TRUE
+		detail["voted_ratings"] += list(list("text" = "[rating_row[1]]", "rating" = "[rating_row[2]]"))
+	poll_detail_done(pollid, detail)
+
+/datum/poll_browser_dialog/proc/option_list_from_rows(list/option_rows)
 	var/list/out = list()
-	var/list/option_rows = flow_select(
-		"SELECT id, text FROM erro_poll_option WHERE pollid = :t_pollid",
-		list("t_pollid" = pollid),
-	)
 	for(var/list/option_row as anything in option_rows)
 		out += list(list("id" = text2num("[option_row[1]]"), "text" = "[option_row[2]]"))
 	return out
 
-/datum/poll_browser_dialog/proc/build_numval_options(pollid)
+/datum/poll_browser_dialog/proc/numval_options_from_rows(list/numval_rows)
 	var/list/out = list()
-	var/list/numval_rows = flow_select(
-		"SELECT id, text, minval, maxval, descmin, descmid, descmax FROM erro_poll_option WHERE pollid = :t_pollid",
-		list("t_pollid" = pollid),
-	)
 	for(var/list/numval_row as anything in numval_rows)
 		var/optionid = text2num("[numval_row[1]]")
 		var/optiontext = "[numval_row[2]]"

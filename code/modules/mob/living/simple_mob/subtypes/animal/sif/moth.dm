@@ -58,7 +58,6 @@
 
 	var/datum/effect/effect/system/smoke_spread/mothspore/smoke_spore
 
-	say_list_type = /datum/say_list/tymisian
 
 /datum/say_list/tymisian
 	speak = list("Zzzz.", "Rrr...", "Zzt?")
@@ -132,6 +131,7 @@
 TYPE_TABLE(/datum/decl/mob_organ_names/moth, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left forewing", "left hindwing", "right forewing", "right hindwing", "left foreleg", "right foreleg", "left hindleg", "right hindleg"))
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/tymisian)
+	configure(living_rules(say_list_type = /datum/say_list/tymisian))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 1.5 SECONDS))
 	owns_one(nameof(smoke_spore), starts = /datum/effect/effect/system/smoke_spread/mothspore)

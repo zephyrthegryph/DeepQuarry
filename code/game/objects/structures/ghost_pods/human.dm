@@ -99,7 +99,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/human)
 	if(spawn_with_emag)
 		var/obj/item/card/emag/E = new(H)
 		E.name = "broken card"
-		E.description_antag = "This is a 'disguised' emag, to make your escape from wherever you happen to be trapped."
+		E.set_description_antag("This is a 'disguised' emag, to make your escape from wherever you happen to be trapped.")
 		H.equip_to_appropriate_slot(E)
 
 	set_icon_state(icon_state_opened)

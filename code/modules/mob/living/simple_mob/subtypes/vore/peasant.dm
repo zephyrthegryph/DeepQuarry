@@ -16,7 +16,6 @@
 
 	attacktext = list("punched","kicked")
 
-	say_list_type = /datum/say_list/peasant
 
 	var/random_skin = 1
 	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
@@ -30,6 +29,7 @@
 	faction = FACTION_PEASANT
 
 CAPABILITIES(/mob/living/simple_mob/vore/peasant)
+	configure(living_rules(say_list_type = /datum/say_list/peasant))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
 	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
 

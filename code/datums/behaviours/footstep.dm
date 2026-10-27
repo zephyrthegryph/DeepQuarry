@@ -9,14 +9,8 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 /datum/capability/footstep/entries()
 	return list(on_notice(/datum/notice/moved, then(CAP_PROC(footstep_moved))))
 
-/mob/living
-	///FOOTSTEP_MOB_*: which kind of sounds the footstep behaviour chooses (non-humans).
-	var/footstep_type = FOOTSTEP_MOB_BAREFOOT
-	///Whether to add variation to the sounds played.
-	///Steps taken since footsteps were last played.
-
 /mob/living/proc/enable_footsteps(type = FOOTSTEP_MOB_BAREFOOT, volume = 0.1, e_range = -8, vary = FALSE)
-	footstep_type = type
+	set_footstep_type(type)
 	set_footstep_volume(volume)
 	set_footstep_e_range(e_range)
 	sparse_set(src, footstep_vary, vary)
@@ -111,7 +105,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	var/volume = footstep_of(source).footstep_volume
 	var/e_range = footstep_of(source).footstep_e_range
 	var/sound_vary = sparse_get_or(source, footstep_vary, FALSE)
-	var/footstep_type = source.footstep_type
+	var/footstep_type = footstep_of(source).footstep_type
 	var/footstep_sounds = check_footstep_type(footstep_type)
 
 	var/volume_multiplier = 0.3
@@ -178,8 +172,8 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 
 	var/barefoot_type = prepared_steps[FOOTSTEP_MOB_BAREFOOT]
 	var/bare_footstep_sounds
-	if(source.custom_footstep != FOOTSTEP_MOB_HUMAN)
-		bare_footstep_sounds = check_footstep_type(source.custom_footstep)
+	if(footstep_of(source).custom_footstep != FOOTSTEP_MOB_HUMAN)
+		bare_footstep_sounds = check_footstep_type(footstep_of(source).custom_footstep)
 	else
 		bare_footstep_sounds = GLOB.barefootstep
 

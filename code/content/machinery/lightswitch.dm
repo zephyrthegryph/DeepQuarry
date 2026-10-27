@@ -9,7 +9,6 @@
 	layer = ABOVE_WINDOW_LAYER
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	on = 1
@@ -33,6 +32,7 @@
 // electromagnetic pulse makes it read its power again. What the machine core keeps until the machine track (phase 4): the NOPOWER bit and
 // the power_change() dispatch (an area calls it on every channel change and on every switch use).
 CAPABILITIES(/obj/machinery/light_switch)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(resolve_switch_area))
 	configure(uses_power(idle = 10, channel = LIGHT))

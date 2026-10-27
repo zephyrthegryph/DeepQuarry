@@ -170,7 +170,7 @@
 			SK.respite_activating = FALSE
 			PUBLISH(belly.owner, belly_change)
 			H.clear_fullscreen("belly")
-			H.belly_overlay_tgui?.hide() // hide TGUI belly overlay
+			H.belly_overlay_window()?.hide() // hide TGUI belly overlay
 			if(H.hud_used)
 				if(!H.hud_used.hud_shown)
 					H.toggle_hud_vis()

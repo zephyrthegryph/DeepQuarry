@@ -3,9 +3,9 @@
 	response_disarm = "gently pushes aside"
 	response_harm = "hits"
 
-	say_list_type = /datum/say_list/clown
 
 CAPABILITIES(/mob/living/simple_mob/clowns)
+	configure(living_rules(say_list_type = /datum/say_list/clown))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 

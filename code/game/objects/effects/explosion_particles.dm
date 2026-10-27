@@ -1,11 +1,13 @@
 /obj/effect/expl_particles
-	lifecycle_lifetime = 1.5 SECONDS
 	name = "explosive particles"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "explosion_particle"
 	opacity = 1
 	anchored = TRUE
 	mouse_opacity = 0
+
+CAPABILITIES(/obj/effect/expl_particles)
+	configure(movable_motion(lifecycle_lifetime = 1.5 SECONDS))
 
 /datum/effect/system/expl_particles
 	var/number = 10
@@ -28,7 +30,6 @@
 		emit_one_particle()
 
 /obj/effect/explosion
-	lifecycle_lifetime = 1 SECOND
 	name = "explosive particles"
 	icon = 'icons/effects/96x96.dmi'
 	icon_state = "explosion"
@@ -37,6 +38,9 @@
 	mouse_opacity = 0
 	pixel_x = -32
 	pixel_y = -32
+
+CAPABILITIES(/obj/effect/explosion)
+	configure(movable_motion(lifecycle_lifetime = 1 SECOND))
 
 /datum/effect/system/explosion
 	var/turf/location

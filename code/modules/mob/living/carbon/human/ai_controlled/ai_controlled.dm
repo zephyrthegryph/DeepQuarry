@@ -36,6 +36,7 @@ CAPABILITIES(/mob/living/carbon/human/ai_controlled)
 	rolls(nameof(gender), PROC_REF(roll_gender), when = nameof(generate_gender))
 	rolls(nameof(identifying_gender), PROC_REF(roll_gender), when = nameof(generate_id_gender))
 	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
+	profile(nameof(bio), /datum/record/identity, fields = list("sensorpref" = 1))
 	wears(nameof(to_wear_uniform), SLOT_ID_UNIFORM)
 	wears(nameof(to_wear_suit), SLOT_ID_SUIT)
 	wears(nameof(to_wear_shoes), SLOT_ID_SHOES)
@@ -110,5 +111,3 @@ CAPABILITIES(/mob/living/carbon/human/ai_controlled/replicant)
 	body_effect(/datum/body_effect/homeothermic)
 
 
-/mob/living/carbon/human/ai_controlled
-	sensorpref = 1

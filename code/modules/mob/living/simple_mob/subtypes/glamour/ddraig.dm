@@ -66,7 +66,6 @@
 	vore_active = 1
 	vore_icons = 3
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 3
 	swallowTime = 50
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_DIGEST
@@ -81,6 +80,7 @@
 	movement_cooldown = -3
 
 CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
+	configure(living_rules(vore_capacity = 3))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	immune_to_incapacitation()

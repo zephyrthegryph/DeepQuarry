@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A reconnecting player's old login answers and 90 second timer can no longer run on the new connection; each connection has its own serial."
+  - bugfix: "A banned player is disconnected even if the ban description cannot be built, and a ban read the I/O lane refuses is logged loudly."
+  - bugfix: "Whitelist chat edits update the in-memory whitelist and notify admins even when the chat sender is gone."
+  - bugfix: "Bans and unbans from the admin panel are no longer lost when the admin's mob is deleted mid-lookup."
+  - bugfix: "A double-submitted poll vote, text reply or privacy vote is dropped while the first is in flight, and the inserts are conditional."
+  - bugfix: "The privacy poll only thanks the player when the vote was actually saved."

@@ -50,7 +50,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	attack_sound = SFX_WEAPONS_BITE // placeholder till I find a better bite
 
 	vore_active = 1 // nom settings. <3
-	vore_capacity = 3 // yeens can eat something like 85% of their weight in meat. nom~
 	vore_bump_chance = 25
 	vore_bump_emote = "nomfs!"
 	vore_pounce_chance = 35
@@ -75,7 +74,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 	speak_emote = list("yaps")
 
-	say_list_type = /datum/say_list/hyena
 
 
 	var/obj/item/clothing/head/hat = null // The hat the yeen is wearing when initialized, var will update with the chosen hat.
@@ -146,6 +144,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/hyena))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_kind(attack_cooldown = 2))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)

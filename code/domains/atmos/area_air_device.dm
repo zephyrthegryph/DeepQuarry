@@ -181,7 +181,7 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 /// The area's key on the air alarms' radio.
 /area/proc/air_uid()
 	if(!air_uid_text)
-		air_uid_text = REF(src)
+		air_uid_text = ref_token(src)
 	return air_uid_text
 
 /// What a device of `kind` is called in the area's names ("Vent Pump", "Air Scrubber").

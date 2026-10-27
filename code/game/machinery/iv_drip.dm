@@ -179,11 +179,11 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 					emit_contract_event(CONTRACT_EVENT_BLOOD_DONATED, list(
 						"department" = DEPARTMENT_MEDICAL,
 						"subject_id" = SScontracts.subject_identity(T)?.id,
-						"container_id" = REF(beaker),
+						"container_id" = ref_token(beaker),
 						"blood_type" = B.data?["blood_type"] || "unknown",
 						"amount" = amount,
 						"detail" = "Collected [amount] units of [B.data?["blood_type"] || "untyped"] blood from [T].",
-					), "blood-donation:[REF(beaker)]:[round(beaker.reagents.total_volume, 0.1)]", src, null, T)
+					), "blood-donation:[ref_token(beaker)]:[round(beaker.reagents.total_volume, 0.1)]", src, null, T)
 
 /// Old attack_hand: take the container off before the machinery gate; with none, the touch goes on.
 /obj/machinery/iv_drip/proc/iv_drip_interaction_hand(datum/act/op/A)

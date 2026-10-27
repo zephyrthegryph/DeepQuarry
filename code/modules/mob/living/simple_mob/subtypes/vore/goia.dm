@@ -36,7 +36,6 @@
 	color = null //color is selected when spawned
 
 	vore_active = 1
-	vore_capacity = 3
 	vore_icons = 0 //The icon system down there handles the vore belly
 	vore_pounce_chance = 35
 	vore_bump_chance = 25
@@ -48,8 +47,6 @@
 
 
 	species_sounds = "None"
-	// what its venom bite can inject (/mob/living/proc/injection)
-	trait_injection_reagents = list(REAGENT_ID_MICROCILLIN, REAGENT_ID_MACROCILLIN, REAGENT_ID_NORMALCILLIN, REAGENT_ID_NUMBENZYME, REAGENT_ID_ANDROROVIR, REAGENT_ID_GYNOROVIR, REAGENT_ID_ANDROGYNOROVIR, REAGENT_ID_STOXIN, REAGENT_ID_RAINBOWTOXIN, REAGENT_ID_PARALYSISTOXIN, REAGENT_ID_PAINENZYME)
 
 	//This is copypastad from protean code, hope it isnt too painful lol
 	// ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
@@ -221,6 +218,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
+	configure(living_rules(vore_capacity = 3))
 	configure(butchery_rules(meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
@@ -236,6 +234,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	op("zorgoia_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(zorgoia_interaction_hand_help)))
 	op("zorgoia_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(zorgoia_interaction_hand_grab)))
 	rolls(nameof(goia_overlays), PROC_REF(roll_look))
+
+/// What its venom bite can inject (/mob/living/proc/injection).
+TYPE_TABLE(/mob/living/simple_mob/vore/zorgoia, injection_reagent_table, list(REAGENT_ID_MICROCILLIN, REAGENT_ID_MACROCILLIN, REAGENT_ID_NORMALCILLIN, REAGENT_ID_NUMBENZYME, REAGENT_ID_ANDROROVIR, REAGENT_ID_GYNOROVIR, REAGENT_ID_ANDROGYNOROVIR, REAGENT_ID_STOXIN, REAGENT_ID_RAINBOWTOXIN, REAGENT_ID_PARALYSISTOXIN, REAGENT_ID_PAINENZYME))
 
 /// The help-stance input of zorgoia_interaction_hand: the shared handler with its stance.
 /mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand_help(datum/act/op/A)

@@ -24,7 +24,9 @@
 
 	organ_names = /datum/decl/mob_organ_names/clown
 
-	say_list_type = /datum/say_list/clown
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/clown)
+	configure(living_rules(say_list_type = /datum/say_list/clown))
 
 /datum/say_list/clown
 	speak = list("HONK", "Honk!", "Welcome to clown planet!")

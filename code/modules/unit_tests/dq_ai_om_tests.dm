@@ -33,7 +33,7 @@
 /datum/unit_test/dq_ai_om_parks_without_players/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, run_loc_floor_top_right)
-	hunter.low_priority = TRUE
+	hunter.set_low_priority(TRUE)
 	hunter.life_update_relevance()
 	hunter.ai_brain.give_target(target, TRUE)
 	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/tactical), "the loop is not attached")

@@ -30,10 +30,10 @@
 	desc = "This finger appears to be an organic datajack."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "electric_hand"
-	show_examine = FALSE
 	w_class = ITEMSIZE_NO_CONTAINER
 
 CAPABILITIES(/obj/item/finger_lockpick)
+	configure(obj_rules(show_examine = FALSE))
 	setup(PROC_REF(shape_initial_lockpick))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 

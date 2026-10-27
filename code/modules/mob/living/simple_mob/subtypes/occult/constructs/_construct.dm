@@ -89,6 +89,7 @@
 
 // Each construct is numbered.
 CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	setup(PROC_REF(prepare_construct_spells))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
@@ -104,7 +105,6 @@ CAPABILITIES(/mob/living/simple_mob/construct)
 		src.add_spell(new spell, "const_spell_ready")
 
 /mob/living/simple_mob/construct
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/construct/on_death(gibbed)
 	new /obj/item/ectoplasm (src.loc)

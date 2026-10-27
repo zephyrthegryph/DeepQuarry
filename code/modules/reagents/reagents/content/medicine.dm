@@ -930,13 +930,13 @@ TYPE_TABLE(/datum/reagent/respirodaxon, daxon_organs, list(O_LUNGS, O_VOICE, O_G
 TYPE_TABLE(/datum/reagent/respirodaxon, daxon_partners, list(REAGENT_ID_GASTIRODAXON, REAGENT_ID_PERIDAXON))
 
 /datum/reagent/respirodaxon/daxon_clash(mob/living/carbon/human/H, removed)
-	if(H.losebreath >= 15 && prob(H.losebreath))
+	if(H.losebreath() >= 15 && prob(H.losebreath()))
 		H.status_at_least(STAT_STUNNED, 2)
 	else
-		H.losebreath = CLAMP(H.losebreath + 3, 0, 20)
+		H.set_losebreath(CLAMP(H.losebreath() + 3, 0, 20))
 
 /datum/reagent/respirodaxon/daxon_alone(mob/living/carbon/human/H, removed)
-	H.losebreath = max(H.losebreath - 4, 0)
+	H.set_losebreath(max(H.losebreath() - 4, 0))
 
 /datum/reagent/gastirodaxon
 	treatment_tags = list(TREAT_DIGESTIVE = 1.0, TREAT_ANTITOXIN = 0.6)
@@ -1013,7 +1013,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_organs, list(O_HEART, O_SPLEEN, O_R
 TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN, REAGENT_ID_PERIDAXON))
 
 /datum/reagent/cordradaxon/daxon_clash(mob/living/carbon/human/H, removed)
-	H.losebreath = CLAMP(H.losebreath + 1, 0, 10)
+	H.set_losebreath(CLAMP(H.losebreath() + 1, 0, 10))
 
 /datum/reagent/immunosuprizine
 	name = REAGENT_IMMUNOSUPRIZINE
@@ -1792,7 +1792,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			dq_reagent_close_wounds(O, wound_heal, internal = FALSE)
 		M.injure(INJURY_BLUNT, 3 * removed, source = src)
-		if(M.losebreath < 15)
+		if(M.losebreath() < 15)
 			M.AdjustLosebreath(1)
 		H.custom_pain("It feels as if your veins are fusing shut!",60)
 
@@ -1933,9 +1933,9 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 			H.status_adjust(STAT_WEAKENED, 5) //Fall onto the floor for a few moments.
 			H.status_at_least(STAT_CONFUSED, 15) //Be unable to walk correctly for a bit longer.
 		if(prob(1))
-			if(H.losebreath <= 1 && H.oxygen_debt() <= 20) //Let's not suffocate them to the point that they pass out.
+			if(H.losebreath() <= 1 && H.oxygen_debt() <= 20) //Let's not suffocate them to the point that they pass out.
 				to_chat(H,span_warning("You feel a sharp stabbing pain in your chest and quickly realize that your lungs have stopped functioning!")) //Let's scare them a bit.
-				H.losebreath = 10
+				H.set_losebreath(10)
 		if(prob(2))
 			to_chat(H,span_warning("You feel a dull pain behind your eyes and at the back of your head..."))
 			H.status_adjust(STAT_HALLUCINATING, 20) //It messes with your mind for some reason.

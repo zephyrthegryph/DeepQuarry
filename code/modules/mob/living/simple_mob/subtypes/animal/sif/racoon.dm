@@ -40,7 +40,6 @@
 
 	armor_spec = "melee=15;bullet=5;laser=5;bomb=10;bio=100;rad=100"
 
-	say_list_type = /datum/say_list/sakimm
 
 	var/obj/item/clothing/head/hat = null // The hat the Sakimm may be wearing.
 	var/static/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
@@ -112,9 +111,9 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	configure(living_rules(say_list_type = /datum/say_list/sakimm, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_amount = 3))
 	configure(mob_rules(universal_understand = 1))
-	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(pain_1p = list("chitter"), pain_3p = list("chitters")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(attack_cooldown = 1 SECOND))

@@ -19,7 +19,6 @@
 	// To promote a more diverse weapon selection.
 	armor_spec = "melee=25;bullet=25;laser=-20;bio=100;rad=100"
 
-	say_list_type = /datum/say_list/cyber_horror
 
 	response_help = "pokes"
 	response_disarm = "gently pushes aside"
@@ -32,6 +31,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
+	configure(living_rules(say_list_type = /datum/say_list/cyber_horror))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
 
@@ -54,7 +54,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
 	desc = "What was once a phoronoid, now a empty shell of malfunctioning nanites."
 	icon_state = "plasma_cyber_horror"
 	icon_dead = "plasma_cyber_horror_dead"
-	say_list_type = /datum/say_list/cyber_horror/plasma
 
 	armor_spec = "melee=40;bullet=-10;laser=40;bio=100;rad=100"
 	endurance = 75
@@ -68,6 +67,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
 	var/poison_chance = 100
 	var/poison_per_bite = 3
 	var/poison_type = "neurophage_nanites"
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/plasma_cyber_horror)
+	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/plasma))
 
 /datum/say_list/cyber_horror/plasma
 	threaten_sound = 'sound/mob/robots/cyber_horror_plasma.ogg'
@@ -93,7 +95,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
 	desc = "What was once something, now an exposed shell with lashing cables."
 	icon_state = "ling_cyber_horror"
 	icon_dead = "ling_cyber_horror_dead"
-	say_list_type = /datum/say_list/cyber_horror/ling
 
 	endurance = 250
 // Four attacks per second.
@@ -122,6 +123,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
 	var/leap_sound = SFX_MOB_ROBOTS_CYBER_HORROR_CHANGELINGLEAP
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
+	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/ling))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 2.5))
 
@@ -194,9 +196,11 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
 	desc = "Once a Vox now torn and changed, peices of a Durand has been grafted onto it."
 	icon_state = "vox_cyber_horror"
 	icon_dead = "vox_cyber_horror_dead"
-	say_list_type = /datum/say_list/cyber_horror/vox
 
 	armor_spec = "melee=40;bullet=30;laser=30;bio=100;rad=100"
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/vox)
+	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/vox))
 
 /datum/say_list/cyber_horror/vox
 	threaten_sound = 'sound/mob/robots/cyber_horror_vox.ogg'
@@ -208,7 +212,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
 	desc = "A mangled mess of machine and fur, light seems to bounce off it."
 	icon_state = "tajaran_cyber_horror"
 	icon_dead = "tajaran_cyber_horror_dead"
-	say_list_type = /datum/say_list/cyber_horror/tajaran
 	attack_sound = SFX_WEAPONS_MELEETEAR
 
 
@@ -269,6 +272,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/tajaran)
+	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/tajaran))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
@@ -283,12 +287,14 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/tajaran)
 	icon_state = "grey_cyber_horror"
 	icon_dead = "grey_cyber_horror_dead"
 	endurance = 100
-	say_list_type = /datum/say_list/cyber_horror/grey
 
 	projectiletype = /obj/item/projectile/arc/blue_energy
 	projectilesound = SFX_WEAPONS_PLASMANEW
 
 	armor_spec = "melee=-30;bullet=10;laser=10;bio=100;rad=100"
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/grey)
+	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/grey))
 
 /datum/say_list/cyber_horror/grey
 	threaten_sound = 'sound/mob/robots/cyber_horror_grey.ogg'
@@ -301,13 +307,13 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/tajaran)
 	icon_state = "corgi_cyber_horror"
 	icon_dead = "corgi_cyber_horror_dead"
 	endurance = 50
-	say_list_type = /datum/say_list/cyber_horror/corgi
 
 	projectiletype = /obj/item/projectile/beam/drone
 	projectilesound = SFX_WEAPONS_SMALLLASER
 	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/corgi)
+	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/corgi))
 	configure(mob_kind(attack_cooldown = 4))
 
 
@@ -322,7 +328,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/corgi)
 
 	icon_state = "cat_cyber_horror"
 	icon_dead = "cat_cyber_horror_dead"
-	say_list_type = /datum/say_list/cyber_horror/cat
 
 	endurance = 40
 	movement_cooldown = 0
@@ -344,6 +349,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/corgi)
 	var/poison_type = REAGENT_ID_MINDBREAKER
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/cat_cyber_horror)
+	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/cat))
 	configure(mob_kind(attack_cooldown = 2.5))
 	configure(mob_movement(swap = 0, push = 0))
 

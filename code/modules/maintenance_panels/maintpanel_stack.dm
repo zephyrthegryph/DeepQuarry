@@ -5,14 +5,13 @@
 	singular_name = "panel"
 	icon_state = "maintpanel"
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, SHEET_MATERIAL_AMOUNT / 4)
-	throw_range = 20
 	can_weld = TRUE
 	no_variants = FALSE
 
 MSG_DEF_SELF(maintenance_panel/clumsy, "this task is too complex for your clumsy hands")
 
 CAPABILITIES(/obj/item/stack/tile/maintenance_panel)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 20, throw_speed = 5))
 	configure(item_thrown(force = 15.0))
 	configure(item_combat(force = 6.0))
 	without("ui_open")

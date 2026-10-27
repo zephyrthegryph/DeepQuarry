@@ -52,15 +52,14 @@
 
 	organ_names = /datum/decl/mob_organ_names/fish
 
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/ray
 
 
-	say_list_type = /datum/say_list/space_ray
 
 	var/knockdown_chance = 66
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/ray)
-	configure(butchery_rules(meat_amount = 5))
+	configure(living_rules(say_list_type = /datum/say_list/space_ray))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/ray, meat_amount = 5))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 18))
 	configure(mob_movement(bump = 0))

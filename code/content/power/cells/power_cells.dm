@@ -71,11 +71,13 @@
  */
 /obj/item/cell/robot_syndi
 	name = "syndicate robot power cell"
-	description_fluff = "Almost as good as a hyper."
 	icon_state = "b_sup" //We don't want roboticists confuse it with a low standard cell
 	charge = 25000
 	maxcharge = 25000
 	robot_durability = 65
+
+CAPABILITIES(/obj/item/cell/robot_syndi)
+	configure(atom_rules(description_fluff = "Almost as good as a hyper."))
 
 /*
  * Hyper

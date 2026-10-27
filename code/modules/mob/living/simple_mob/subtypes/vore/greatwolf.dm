@@ -11,7 +11,6 @@
 	icon_rest = "whitewolf-rest"
 	faction = FACTION_SIF
 	has_eye_glow = TRUE
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	old_x = -48
 	old_y = 0
 	vis_height = 92
@@ -43,7 +42,6 @@
 	vore_active = 1
 	vore_icons = 2
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 2
 	swallowTime = 50
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_HEAL
@@ -90,7 +88,8 @@
 	movement_cooldown = -1.5 // 1.5 Downstream
 
 CAPABILITIES(/mob/living/simple_mob/vore/greatwolf)
-	configure(butchery_rules(meat_amount = 40))
+	configure(living_rules(vore_capacity = 2))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))

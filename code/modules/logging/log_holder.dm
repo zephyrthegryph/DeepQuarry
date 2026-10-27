@@ -319,7 +319,7 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 			// A datum is logged as its saved state (code/datums/state/schema.dm), or
 			// as its type and ref when its state does not serialize.
 			var/datum/logged = data
-			var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = REF(logged))
+			var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = ref_token(logged))
 			semvers[logged.type] = "[logged.state_version].0.0"
 			data = recursive_jsonify(serialization_data, semvers)
 

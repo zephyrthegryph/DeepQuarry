@@ -4,7 +4,6 @@ MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 1000, MAT_GLASS = 1000))
 	icon = 'icons/obj/items.dmi'
 	icon_state = "implanter0_1"
 	item_state = "syringe_0"
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	var/obj/item/implant/imp = null
 	var/active = 1
@@ -12,7 +11,7 @@ MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 1000, MAT_GLASS = 1000))
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/implanter)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(implanter_self)))
 	op("remove_implant", menu(), label("Remove Implant"), needs(carried()), then(PROC_REF(remove_implant_effect)))
 	// Implanting the target: at once into yourself, else five seconds while it holds still (it has to be on the tile it was on when the work began).

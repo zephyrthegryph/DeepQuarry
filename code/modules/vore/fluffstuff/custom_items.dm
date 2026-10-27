@@ -1094,14 +1094,13 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	active_force = 15
 	active_throwforce = 7
 	active_w_class = ITEMSIZE_LARGE
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/active_state = "wolfgirlsword"
 	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	suit_storage(list(/obj/item/shield/fluff/wolfgirlshield))
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 1))

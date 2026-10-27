@@ -4,10 +4,9 @@
 /obj/machinery/dq_h4_heater
 	name = "test heater"
 	use_power = USE_POWER_IDLE
-	heat_output = 1000
 
 CAPABILITIES(/obj/machinery/dq_h4_heater)
-	configure(machine_rules(heat_dissipation = 100))
+	configure(machine_rules(heat_output = 1000, heat_dissipation = 100))
 	configure(uses_power(idle = 1000))
 
 /datum/unit_test/dq_h4_machine_heat_regulator
@@ -39,7 +38,7 @@ CAPABILITIES(/obj/machinery/dq_h4_heater)
 	release(server, STAT_OPERABLE, SRC_EMP)
 	server.research_disabled = FALSE
 	server.refresh_working()
-	TEST_ASSERT_EQUAL(server.current_heat_output(), server.heat_output, "a working RD server emits its declared heat")
+	TEST_ASSERT_EQUAL(server.current_heat_output(), machine_rules_of(server).heat_output, "a working RD server emits its declared heat")
 	server.research_disabled = TRUE
 	server.refresh_working()
 	TEST_ASSERT_EQUAL(sparse_get_or(server, heat_output_now, 0), 0, "a halted RD server emits nothing")

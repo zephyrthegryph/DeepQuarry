@@ -204,7 +204,7 @@
 	// Admin chem: heals everything.
 	M.fully_heal()
 	M.status_set(STAT_HALLUCINATING, 0)
-	M.disabilities = 0
+	M.set_disabilities(0)
 	M.set_sdisabilities(0)
 	M.status_set(STAT_BLURRY, 0)
 	M.status_set(STAT_BLINDED, 0)

@@ -6,7 +6,6 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "spectrometer"
 	w_class = ITEMSIZE_SMALL
 	flags = OPENCONTAINER
-	throw_range = 20
 
 
 	var/details = 0
@@ -20,7 +19,7 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 		set_icon_state(initial(icon_state))
 
 CAPABILITIES(/obj/item/mass_spectrometer)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	reagents(5)

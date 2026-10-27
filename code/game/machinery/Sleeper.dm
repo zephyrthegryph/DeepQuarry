@@ -178,14 +178,14 @@ CAPABILITIES(/obj/machinery/sleeper)
 	var/mob/living/carbon/occupant = N.occupant
 	set_use_power(USE_POWER_ACTIVE)
 	if(istype(occupant))
-		occupant.cozyloop?.start() // Cozy Music
+		occupant.cozy_music(TRUE) // Cozy Music
 
 /// They left (by any path): the music stops, dialysis and the pump stop with nobody to drain, the sleeper idles. Their stasis ended with the slot.
 /obj/machinery/sleeper/proc/occupant_left(datum/act/A)
 	var/datum/notice/pod_left/N = A
 	var/mob/living/carbon/occupant = N.occupant
 	if(istype(occupant))
-		occupant.cozyloop?.stop() // Cozy Music
+		occupant.cozy_music(FALSE) // Cozy Music
 	set_filtering(FALSE)
 	set_pumping(FALSE)
 	set_use_power(USE_POWER_IDLE)

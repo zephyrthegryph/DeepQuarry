@@ -8,7 +8,6 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	item_state = "coolingpack"
 
 	//copied from tank.dm
-	throw_range = 4
 
 
 	var/cover_open = 0		//is the cover open?
@@ -20,8 +19,8 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	//TODO: make it heat up the surroundings when not in space
 
 CAPABILITIES(/obj/item/suit_cooling_unit)
+	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_heatsink)))
-	configure(movable_motion(throw_speed = 1))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 5.0))

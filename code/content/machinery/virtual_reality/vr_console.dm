@@ -61,8 +61,8 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
 /obj/machinery/vr_sleeper/lifecycle_dematerialize()
 	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
-	if(occupant && occupant.vr_link)
-		occupant.vr_link.exit_vr()
+	if(occupant && occupant.vr_link())
+		occupant.vr_link().exit_vr()
 	..()
 
 /// Watches its occupant (death, power loss) while it has one (the declaration above).
@@ -234,8 +234,8 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 
 	rel_clear(src, nameof(avatar))
 
-	if(occupant.vr_link)
-		occupant.vr_link.exit_vr(FALSE)
+	if(occupant.vr_link())
+		occupant.vr_link().exit_vr(FALSE)
 
 	occupant.reset_perspective() // Needed for returning from VR
 	// The occupant slot is the only thing in this machine that should ever
@@ -260,10 +260,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	if(occupant.stat == DEAD)
 		return
 
-	if(QDELETED(occupant.vr_link)) //Hardrefs...
-		rel_clear(occupant, nameof(occupant.vr_link))
-
-	rel_set(src, nameof(avatar), occupant.vr_link)
+	rel_set(src, nameof(avatar), occupant.vr_link())
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
 	if(avatar())
 		open_request(src, /datum/prompt/yes_no, PROC_REF(vr_reuse_answered), answerer = occupant, title = "New avatar", question = "You already have a [avatar().stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", ask_flags = ASK_INSIDE, timeout = 0)
@@ -278,7 +275,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 		vr_reenter(occupant)
 		return
 	// Delink the mob
-	rel_clear(occupant, nameof(occupant.vr_link))
+	link_break(occupant, LK_VR_LINK)
 	rel_clear(src, nameof(avatar))
 	vr_choose_avatar(occupant)
 

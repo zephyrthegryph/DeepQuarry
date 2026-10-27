@@ -295,6 +295,9 @@ CAPABILITIES(/datum/body)
 	var/oxygen_debt = 0
 	/// Breath quality of the last breath, 0..1 (Breathing system).
 	var/breath_quality = 1
+	/// How many breaths the body cannot take (0 breathes normally): set while it chokes or is held by the throat. The breathing step reads it
+	/// on every wake of every breather, so it is a field here beside the breath state it gates, not a slot looked up by name.
+	var/losebreath = 0
 	/// The air on the owner's turf changed since its last breath (a visible gas arrived or left): breathing must not idle.
 	var/tmp/air_stale = FALSE
 	/// The last breath carried a gas that acts on every breath (a poison, N2O, methane, the exhaled gas building up):
@@ -307,6 +310,23 @@ CAPABILITIES(/datum/body)
 	/// When the post-revival grace ends (a cooldown; 0 = none).
 	COOLDOWN_DECLARE(revival_grace_until)
 
+
+/// How many breaths the mob cannot take (the physiology's losebreath): 0 for a mob without one.
+/mob/proc/losebreath()
+	return 0
+
+/mob/proc/set_losebreath(amount)
+	return 0
+
+/mob/living/losebreath()
+	return body?.physiology?.losebreath || 0
+
+/mob/living/set_losebreath(amount)
+	var/datum/physiology/P = body?.physiology
+	if(!P)
+		return 0
+	P.losebreath = amount
+	return amount
 
 /datum/physiology/New(datum/body/new_body)
 	..()

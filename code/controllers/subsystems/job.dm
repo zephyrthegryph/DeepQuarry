@@ -702,7 +702,7 @@ CAPABILITIES(/datum/system/job)
 	// END EMAIL GENERATION
 
 	//Gives glasses to the vision impaired
-	if(human_mob.disabilities & NEARSIGHTED)
+	if(human_mob.disabilities() & NEARSIGHTED)
 		var/equipped = human_mob.equip_to_slot_or_del(new /obj/item/clothing/glasses/regular(human_mob), SLOT_ID_EYES)
 		if(equipped != 1)
 			var/obj/item/clothing/glasses/worn_glasses = human_mob.get_equipped_item(SLOT_ID_EYES)

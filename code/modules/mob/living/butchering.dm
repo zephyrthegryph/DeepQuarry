@@ -1,7 +1,5 @@
 
 
-/mob/living
-	var/meat_type					// The meat object to drop
 
 
 
@@ -10,7 +8,7 @@
 /mob/living/proc/harvest(mob/user, obj/item/I)
 	if(op_claimed(src))
 		return
-	if(meat_type && butchery_of(src).meat_amount > 0 && stat == DEAD)
+	if(butchery_of(src).meat_type && butchery_of(src).meat_amount > 0 && stat == DEAD)
 		perform_op(user, src, "harvest", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("cuts" = butchery_of(src).meat_amount))
 		return
 
@@ -23,6 +21,7 @@
 
 /// One cut of meat.
 /mob/living/proc/harvest_cut(datum/act/op/A)
+	var/meat_type = butchery_of(src).meat_type
 	var/obj/item/meat = new meat_type(get_turf(src))
 	if(nature_of(src).name_the_meat)
 		meat.name = "[src.name] [meat.name]"
@@ -39,7 +38,7 @@
 	handle_butcher(A.actor, A.held)
 
 /mob/living/proc/can_butcher(mob/user, obj/item/I)	// Override for special butchering checks.
-	if(((meat_type && butchery_of(src).meat_amount) || LAZYLEN(butchery_of(src).butchery_loot)) && stat == DEAD)
+	if(((butchery_of(src).meat_type && butchery_of(src).meat_amount) || LAZYLEN(butchery_of(src).butchery_loot)) && stat == DEAD)
 		return TRUE
 
 	return FALSE
