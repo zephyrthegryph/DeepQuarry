@@ -123,9 +123,12 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		var/obj/item/rig/R = get_equipped_item(SLOT_ID_BELT)
 		RigPanel(R)
 
-/mob/living/carbon/human/ex_act(severity)
-	if(..())
-		return
+/// A blast on a human (the explosion hit hook): the severity ladder below.
+/mob/living/carbon/human/proc/human_blast(datum/act/hit/explosion/A)
+	human_blast_ladder(A.packet.severity)
+	return OP_OK
+
+/mob/living/carbon/human/proc/human_blast_ladder(severity)
 	if(is_incorporeal()) // Can't explode shadekin in phase
 		return
 
