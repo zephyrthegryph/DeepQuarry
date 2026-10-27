@@ -493,7 +493,9 @@ CAPABILITIES(/datum/reagent_dose)
 
 /// The value the item's type gives a worn factor (what it was made with, before anything changed it).
 /obj/item/proc/default_worn_factor(stat)
-	return initial(worn_factors)?[stat] || 0
+	var/initial_table = initial(worn_factors)
+	log_world("DEBUG worn initial: [isnull(initial_table) ? "null" : "[initial_table]"] list=[islist(initial_table)] type=[istype(initial_table, /alist)]")
+	return 0
 
 /// Sets one of the item's worn factors (0 removes it) and re-reads the body that carries the item. The table is replaced, never written, because a
 /// type's table is shared.
