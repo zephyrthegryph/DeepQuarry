@@ -490,6 +490,40 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			meter.live.reset()
 		return json_encode(report)
 
+	// Localhost-only read of the churn census (code/engine/state/churn_census.dm): draws, timers, signals, lights and power edits
+	// counted since the last take, the 40 busiest keys of each kind. Starts the next window, like the churn metrics source.
+	if (diag == "churn")
+		var/list/kinds = GLOB.churn_census.take()
+		var/list/out = list("world_time_ds" = TIME_NOW(CLOCK_WORLD))
+		for(var/kind in kinds)
+			var/list/rows = sortTim(kinds[kind], GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+			var/total = 0
+			for(var/row_key in rows)
+				total += rows[row_key]
+			var/list/top = list()
+			for(var/row_key in rows)
+				top["[row_key]"] = rows[row_key]
+				if(length(top) >= 40)
+					break
+			out[kind] = list("total" = total, "keys" = length(rows), "top" = top)
+		return json_encode(out)
+
+	// Localhost-only "why does this type redraw": `markprobe&type=/obj/x` counts where the marks of /obj/x come from (refresh_mark_probe_note(),
+	// the four callers above the mark) from now on; `markprobe` alone returns the 40 busiest sources and stops.
+	if (diag == "markprobe")
+		var/probe_type = text2path(params2list(T)["type"])
+		if(probe_type)
+			GLOB.refresh_mark_probe_sources = list()
+			GLOB.refresh_mark_probe_type = probe_type
+			return "probing [probe_type]"
+		var/list/sources = sortTim(GLOB.refresh_mark_probe_sources.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+		if(length(sources) > 40)
+			sources.Cut(41)
+		var/probed = "[GLOB.refresh_mark_probe_type]"
+		GLOB.refresh_mark_probe_type = null
+		GLOB.refresh_mark_probe_sources = list()
+		return json_encode(list("type" = probed, "sources" = sources))
+
 	if (T == "ping")
 		var/x = 1
 		for (var/client/C)
