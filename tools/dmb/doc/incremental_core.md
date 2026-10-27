@@ -854,5 +854,5 @@ transport is keyed by the facts policy (`BuildHost::procedure_memo` takes it), s
 records. Checked against the compiler before the change: 416 fixture compiles (`fixtures/*.dme`, `lowering/`, `native/`,
 `native_compiler/`, each with and without `-DDEBUG`, `--no-daemon --no-cache`) produced identical `.dmb` bytes.
 
-Next: start a new define variant (the unit-test world) from the active variant's plan, so the test
-world's plan, regions and expansions are an increment over the game's.
+Next: measure the test variant with both changes (memory probe, warm test build after a game build) and share the
+per-variant owners the probe names by content.
