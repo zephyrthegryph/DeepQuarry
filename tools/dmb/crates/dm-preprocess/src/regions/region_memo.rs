@@ -5,7 +5,7 @@ mod control;
 pub(super) mod retained_size;
 #[cfg(test)]
 mod retained_size_tests;
-mod source_wire;
+pub(super) mod source_wire;
 #[path = "expansion_storage.rs"]
 pub(super) mod storage;
 use super::{DirectivePlan, MacroEnvironment, MacroExpansion};
@@ -225,12 +225,60 @@ struct Trace {
     #[serde(deserialize_with = "super::intern_wire::shared_chain")]
     replacement_chain: Arc<[Arc<str>]>,
 }
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+/// One emitted line of a record. Offsets are u32 and an untraced line holds no allocation: records keep one per output
+/// line, so the struct is the dominant cost of a large expansion record. The wire form is [`LineWire`], unchanged.
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct Line {
+    output_start: u32,
+    output_end: u32,
+    input: u32,
+    traces: Box<[Trace]>,
+}
+impl Line {
+    fn output(&self) -> Span {
+        Span::new(self.output_start as usize, self.output_end as usize)
+    }
+    fn input(&self) -> usize {
+        self.input as usize
+    }
+}
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+struct LineWire {
     #[serde(with = "span_wire")]
     output: Span,
     input: usize,
     traces: Vec<Trace>,
+}
+impl From<Line> for LineWire {
+    fn from(line: Line) -> Self {
+        Self {
+            output: line.output(),
+            input: line.input(),
+            traces: line.traces.into_vec(),
+        }
+    }
+}
+impl TryFrom<LineWire> for Line {
+    type Error = &'static str;
+    fn try_from(line: LineWire) -> Result<Self, Self::Error> {
+        let narrow = |value: usize| u32::try_from(value).map_err(|_| "expansion line offset exceeds u32");
+        Ok(Self {
+            output_start: narrow(line.output.start)?,
+            output_end: narrow(line.output.end)?,
+            input: narrow(line.input)?,
+            traces: line.traces.into_boxed_slice(),
+        })
+    }
+}
+impl Serialize for Line {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        LineWire::from(self.clone()).serialize(serializer)
+    }
+}
+impl<'de> Deserialize<'de> for Line {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Line::try_from(LineWire::deserialize(deserializer)?).map_err(serde::de::Error::custom)
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Error {
@@ -316,15 +364,17 @@ impl ExpansionRecord {
             }))
             .saturating_add(vector(&self.locations, |(_, _, name)| name.capacity()))
             .saturating_add(vector(&self.lines, |line| {
-                vector(&line.traces, |trace| {
+                line.traces.iter().fold(
+                    line.traces.len().saturating_mul(std::mem::size_of::<Trace>()),
+                    |total, trace| total.saturating_add(
                     slice::<u8>(trace.name.len())
                         .saturating_add(slice::<Arc<str>>(trace.replacement_chain.len()))
                         .saturating_add(
                             trace.replacement_chain.iter().fold(0usize, |bytes, name| {
                                 bytes.saturating_add(slice::<u8>(name.len()))
                             }),
-                        )
-                })
+                        )),
+                )
             }))
             .saturating_add(vector(&self.diagnostics, |error| error.message.capacity()))
             .saturating_add(vector(&self.fragments, |fragment| {
@@ -383,10 +433,10 @@ impl ExpansionRecord {
             return Err("expansion record key mismatch".into());
         }
         if record.lines.iter().any(|line| {
-            line.output.start > line.output.end
-                || line.output.end > record.text.len()
-                || !record.text.is_char_boundary(line.output.start)
-                || !record.text.is_char_boundary(line.output.end)
+            line.output().start > line.output().end
+                || line.output().end > record.text.len()
+                || !record.text.is_char_boundary(line.output().start)
+                || !record.text.is_char_boundary(line.output().end)
         }) {
             return Err("expansion record output span invalid".into());
         }
@@ -513,7 +563,7 @@ pub(super) fn expand(
         }) {
             return false;
         }
-        if record.lines.iter().any(|line| line.input >= input.len())
+        if record.lines.iter().any(|line| line.input() >= input.len())
             || record
                 .diagnostics
                 .iter()
@@ -554,8 +604,9 @@ pub(super) fn expand(
                 .get(&(line, source_span.start, source_span.end))
                 .copied()?;
             Some(Line {
-                output: span,
-                input: ordinal,
+                output_start: u32::try_from(span.start).ok()?,
+                output_end: u32::try_from(span.end).ok()?,
+                input: u32::try_from(ordinal).ok()?,
                 traces: traces
                     .iter()
                     .map(|trace| Trace {
@@ -566,7 +617,11 @@ pub(super) fn expand(
                     .collect(),
             })
         })
-        .collect::<Option<Vec<_>>>();
+        .collect::<Option<Vec<_>>>()
+        .map(|mut lines| {
+            lines.shrink_to_fit();
+            lines
+        });
     let Some(lines) = lines else {
         return output;
     };
@@ -650,7 +705,7 @@ fn hydrate(
     let mut lines =
         super::expansion::output_lines::OutputLineBuilder::with_capacity(record.lines.len());
     for line in record.lines.iter() {
-        let (segment, current) = input[line.input];
+        let (segment, current) = input[line.input()];
         let traces = line
             .traces
             .iter()
@@ -665,7 +720,7 @@ fn hydrate(
             })
             .collect();
         lines.push((
-            line.output,
+            line.output(),
             current.source_line,
             current.source_span,
             trace_arena.freeze_expansions(traces),
