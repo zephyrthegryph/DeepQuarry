@@ -57,6 +57,7 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
             message: "fixture".into(),
         }]),
         fragments: vec![],
+        rows: Default::default(),
     };
     let legacy_lines = value
         .lines

@@ -4,6 +4,7 @@ use dm_syntax::Span;
 use std::sync::Arc;
 type Trace = Arc<Vec<MacroExpansion>>;
 pub(in crate::regions) type Line = (Span, usize, Span, Trace);
+#[derive(Debug)]
 pub(in crate::regions) struct CompactLine {
     output_start: u32,
     output_end: u32,
@@ -80,6 +81,7 @@ impl OutputLineBuilder {
         }
     }
 }
+#[derive(Debug)]
 pub(in crate::regions) enum OutputLines {
     Compact(Box<[CompactLine]>),
     Wide(Box<[Line]>),
@@ -95,6 +97,27 @@ impl OutputLines {
             Self::Compact(lines) => lines.len(),
             Self::Wide(lines) => lines.len(),
         }
+    }
+    /// Line `index`: output span relative to the region, source line, source span, traces.
+    pub(in crate::regions) fn view(&self, index: usize) -> (Span, usize, Span, &Trace) {
+        match self {
+            Self::Compact(lines) => lines[index].view(),
+            Self::Wide(lines) => {
+                let line = &lines[index];
+                (line.0, line.1, line.2, &line.3)
+            }
+        }
+    }
+    /// The largest relative output end (0 when empty): what a region's output base must leave room for.
+    pub(in crate::regions) fn output_end(&self) -> usize {
+        self.iter().map(|(span, ..)| span.end).max().unwrap_or(0)
+    }
+    /// Equal rows, traces compared by content (shared trace allocations compare by pointer first).
+    pub(in crate::regions) fn same_rows(&self, other: &Self) -> bool {
+        self.len() == other.len()
+            && self.iter().zip(other.iter()).all(|(a, b)| {
+                a.0 == b.0 && a.1 == b.1 && a.2 == b.2 && (Arc::ptr_eq(a.3, b.3) || a.3 == b.3)
+            })
     }
     pub(in crate::regions) fn iter(
         &self,

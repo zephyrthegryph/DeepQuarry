@@ -255,6 +255,46 @@ pub struct ExpansionRecord {
     diagnostics: Arc<Vec<Error>>,
     #[serde(default)]
     fragments: Vec<ParseFragment>,
+    /// Output rows sessions hydrated from this record, one per distinct set of rows (see [`RowsPool`]). Not part of
+    /// the record's identity or wire form.
+    #[serde(skip)]
+    rows: RowsPool,
+}
+/// The hydrated output rows of one record, shared by every session, variant and worktree whose rows are equal (the same
+/// source lines and the same macro definition origins in their traces): an origin arena holds a region's rows by
+/// pointer instead of a private copy. Weak, so rows live only while some arena holds them; a clone of the record (a
+/// fragment-enriched copy) starts empty.
+#[derive(Default)]
+pub(super) struct RowsPool(std::sync::Mutex<Vec<std::sync::Weak<super::expansion::output_lines::OutputLines>>>);
+impl RowsPool {
+    pub(super) fn intern(
+        &self,
+        lines: Arc<super::expansion::output_lines::OutputLines>,
+    ) -> Arc<super::expansion::output_lines::OutputLines> {
+        let mut pooled = self.0.lock().unwrap_or_else(|error| error.into_inner());
+        pooled.retain(|held| held.strong_count() > 0);
+        if let Some(held) = pooled.iter().filter_map(std::sync::Weak::upgrade).find(|held| held.same_rows(&lines)) {
+            return held;
+        }
+        pooled.push(Arc::downgrade(&lines));
+        lines
+    }
+}
+impl Clone for RowsPool {
+    fn clone(&self) -> Self {
+        Self::default()
+    }
+}
+impl PartialEq for RowsPool {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+impl Eq for RowsPool {}
+impl std::fmt::Debug for RowsPool {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("RowsPool")
+    }
 }
 impl ExpansionRecord {
     /// Includes record Arc, owned capacities and all nested Arc backing storage.
@@ -580,6 +620,7 @@ pub(super) fn expand(
         lines: Arc::new(lines),
         diagnostics: Arc::new(diagnostics),
         fragments: Vec::new(),
+        rows: Default::default(),
     });
     if let Some(admissions) = memo.input_admissions() {
         admissions.insert(plan, index, Arc::clone(&record));
@@ -587,6 +628,7 @@ pub(super) fn expand(
     memo.insert(Arc::clone(&record));
     let mut output = output;
     output.text = record.text.clone();
+    output.lines = record.rows.intern(output.lines);
     output.receipt = Some(record);
     output
 }
@@ -629,7 +671,7 @@ fn hydrate(
             trace_arena.freeze_expansions(traces),
         ));
     }
-    output.lines = lines.finish();
+    output.lines = record.rows.intern(Arc::new(lines.finish()));
     for error in record.diagnostics.iter() {
         output.diagnostics.push(Diagnostic {
             path: path.clone(),
@@ -767,6 +809,8 @@ mod tests {
             assert!(output.text.same_view(&record.text));
         }
         assert_eq!(fresh.lines.len(), reused.lines.len());
+        // Equal rows of one record are one allocation, whichever session hydrated them.
+        assert!(Arc::ptr_eq(&fresh.lines, &reused.lines));
         for ((span, line, input, traces), (other_span, other_line, other_input, other_traces)) in
             fresh.lines.iter().zip(reused.lines.iter())
         {

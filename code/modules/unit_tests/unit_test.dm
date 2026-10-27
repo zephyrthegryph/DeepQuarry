@@ -1596,6 +1596,17 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/list/turfs = unit_test_air_tracked()
 	return list("turfs" = turfs, "k" = vg_heat_turf_temperatures(turfs))
 
+/// Puts every watched turf's solid temperature back to what unit_test_solid_snapshot() read: for a test that lets world time pass (sleep, test_time)
+/// while the heat field steps on its own, so the floors it did not mean to touch (the telecomms plating cooling) do not leak into later tests.
+/proc/unit_test_solid_restore(list/snapshot)
+	var/list/turfs = snapshot["turfs"]
+	var/list/was = snapshot["k"]
+	var/list/now = vg_heat_turf_temperatures(turfs)
+	for(var/i in 1 to length(turfs))
+		var/turf/T = turfs[i]
+		if(was[i] >= 0 && now[i] != was[i] && !QDELETED(T))
+			heat_set_solid(T, was[i])
+
 /// Logs "STATE LEAK" for turfs whose solid temperature the test changed (and adds it to `found`, which fails the test). One batched read and one pass find the floors
 /// that moved at all; those are judged (the map's cryogenic rooms, colder than UNIT_TEST_SOLID_COLD_ROOM_KELVIN, are not) and then taken as the session's baseline.
 /proc/unit_test_solid_guard(list/before, test_path, list/found, list/touched, datum/unit_test_guard/guard)

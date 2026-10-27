@@ -17,6 +17,7 @@ fn retained_records_charge_owned_capacity_and_duplicate_shared_backings() {
         lines: Arc::new(Vec::new()),
         diagnostics: Arc::new(Vec::new()),
         fragments: Vec::new(),
+        rows: Default::default(),
     };
     let before = value.retained_size_bytes();
     Arc::make_mut(&mut value.reads).reserve_exact(2);
