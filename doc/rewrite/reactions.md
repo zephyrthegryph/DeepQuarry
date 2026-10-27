@@ -145,8 +145,11 @@ A `derive()` value is tracked: when the framework recomputes it and it changed, 
 tracked `nightshift_lights` is read by its area's `derive(lights_nightshift, rel(apc, ...))`, and each light's
 `derive(nightshift_enabled, rel(power_area, /area::lights_nightshift))` feeds its `on_change()` redraw.
 
-Notice types for the om events that have listeners are generated (`code/_generated/om_notices.dm`, by
-`tools/dx/gen_om_notices.py`, which also writes the event -> notice / guard map the codemod reads; migration_guide F5).
+The notices that replaced the om events are hand-written in `code/datums/reactions/legacy_notices.dm` (each carries the
+event's doc comment) and published with `PUBLISH_LEGACY(E, /datum/notice/x, fields...)` in `fill()` order until an `ACTION()`
+declaration replaces it. The om event layer itself (`code/datums/om_events/`, `/datum/definition_event`, the registry's event
+tables and the behaviours' `handles`) is deleted, and `definition_event` is a hard ban in `[lint.legacy_forms.lists] banned`.
+`dq_om_notice_delivery_tests.dm` pins the delivery of a representative set (section 7).
 Worked conversions: dry galoshes hear `/datum/notice/shoes_step` (published by the wearer's step); squeaky shoes
 `observe()` the same notice on their owner.
 
@@ -213,6 +216,11 @@ safety fact but must not recursively run a whole Life frame.
   [operations_and_actions.md](operations_and_actions.md).
 
 ## 7. Event coalescing audit
+
+The om events are deleted (October 2026); this audit is kept as the record of what each was. Their notices are delivered by
+`publish()`: synchronously and in order at the top level, never coalesced, and a notice published from a handler is queued behind
+the current delivery and delivered before the outermost publish returns (it is not delivered "at once" inside another delivery as
+a `sync` event was). Pinned by `dq_om_notice_delivery_sync`, `_not_coalesced` and `_order`.
 
 `/datum/om/event` used to coalesce by default (`coalesce = TRUE`); it is now `FALSE` (an event is an
 occurrence), and `skip_in_bulk` is `FALSE` as before (no event sets it). `om_emit()` consults

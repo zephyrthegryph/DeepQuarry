@@ -161,3 +161,7 @@ site outside comments (the weaver's `om_task_timed` in section 6 is gone too). W
 `code/datums/om_events` (2 files, 1173 lines): 122 `/datum/definition_event` types dispatched to `/datum/scheduled_behaviour`
 handlers (125 more `scheduled_behaviour` uses outside the folder), referenced 168 times from 31 files, with 78 `PUBLISH()` senders. Retiring it means moving each event's senders and
 handlers onto actions/reactions (`reactions.md`); that is a track of its own, not a cleanup, and was left for one.
+
+**27 October 2026:** done. A census found no sender (`om_emit()` was already gone) and no handler left: every event's senders and
+listeners had moved to `/datum/notice` types (`legacy_notices.dm`) and guard keys. The 122 declarations, `/datum/definition_event`,
+the registry's event tables, bundle `events` rows and behaviour `handles` were deleted, and `definition_event` is hard-banned.

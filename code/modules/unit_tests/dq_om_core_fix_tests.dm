@@ -1,20 +1,11 @@
-// Regressions for the OM core review fixes (rewrite/core-fix): event delivery under
-// attach/detach, before-event nesting, task interrupts and hook ancestry, the timer
+// Regressions for the OM core review fixes (rewrite/core-fix): the timer
 // soonest-cache and id search, the deadline bucket compaction, and interaction shadowing.
 
 // ---------------------------------------------------------------- fixtures
 
-/datum/definition_event/before/cf_outer
-
-/datum/definition_event/before/cf_inner
-
 /proc/dq_cf_global_hit(datum/om_test_entity/L)
 	LAZYADD(L.log, "global")
 
-// ---------------------------------------------------------------- events
-
-/// Tasks: om_wants() and delivery read a precomputed interrupt set (with subtypes),
-/// not "any task wants every event".
 // ---------------------------------------------------------------- timers
 
 /// The soonest-due cache and the id binary search: cancelling the soonest timer moves
