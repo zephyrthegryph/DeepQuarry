@@ -6,7 +6,6 @@
 	// r_speed removed (dead, 0 refs)
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
-	var/burning = null
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
@@ -22,7 +21,6 @@
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
-	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
 	var/icon_override = null  //Used to override hardcoded clothing dmis in human clothing proc.
 
@@ -609,17 +607,17 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		devicename = src.name
 
 	var/can_zoom = TRUE
-	if((M.stat && !zoom) || !(ishuman(M)))
+	if((M.stat && !sparse_get_or(src, zoom, FALSE)) || !(ishuman(M)))
 		to_chat(M, span_filter_notice("You are unable to focus through the [devicename]."))
 		can_zoom = FALSE
-	else if(!zoom && (GLOB.global_hud.darkMask[1] in M.client.screen))
+	else if(!sparse_get_or(src, zoom, FALSE) && (GLOB.global_hud.darkMask[1] in M.client.screen))
 		to_chat(M, span_filter_notice("Your visor gets in the way of looking through the [devicename]."))
 		can_zoom = FALSE
-	else if(!zoom && M.get_active_hand() != src)
+	else if(!sparse_get_or(src, zoom, FALSE) && M.get_active_hand() != src)
 		to_chat(M, span_filter_notice("You are too distracted to look through the [devicename], perhaps if it was in your active hand this might work better."))
 		can_zoom = FALSE
 
-	if(!zoom && can_zoom)
+	if(!sparse_get_or(src, zoom, FALSE) && can_zoom)
 		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
 	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
