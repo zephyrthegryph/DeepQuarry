@@ -297,7 +297,11 @@ are unchanged stays green without a certificate check. Revalidation must be para
 7. **Resources as queries.** Deletes the resource order and demand memos.
    (2026-10-27, compiler/resource-queries-1: tried memoizing resource literal discovery per expanded-text piece by its
    text digest; a hot body edit's `resources_maps` stage stayed 0.50-0.66 s against 0.53 s, so literal lexing is not
-   where that stage goes, and the memo was taken out. The stage needs a per-step profile first.)
+   where that stage goes, and the memo was taken out. Profiled (compiler/resource-queries-2, `DMB_TIMINGS_DETAIL=1`, now
+   in the request log): of the 0.53 s, `InputValidation` is 0.35 s: every request re-proves the resource input snapshot,
+   3858 files, 1705 folder listings and 13889 negative probes, through the directory proofs. Next: make those inputs
+   `source(path)` queries of the watcher's directory proofs, so a directory whose cached proof is the one the snapshot was
+   proven with is not walked again; demand admission (0.02 s) and archive authentication are already cheap.)
 
 Measured 2026-10-18 before step 1: the general path today on a hot body edit (`DMB_BODY_PATCH=0`)
 is recorded below with the patch for comparison.

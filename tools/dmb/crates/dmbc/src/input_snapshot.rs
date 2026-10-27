@@ -805,7 +805,7 @@ impl InputSnapshot {
             }
         }
         if self.files.len() > 1000 && std::env::var_os("DMB_TIMINGS_DETAIL").is_some() {
-            eprintln!(
+            crate::daemon_eprintln!(
                 "detail inputs.validate counts: files={} to_hash={} folders={} negatives={} exact={exact}",
                 self.files.len(),
                 to_hash.len(),
