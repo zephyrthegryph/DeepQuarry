@@ -785,6 +785,51 @@ interleaving; memory by `bench/shared_store_probe.sh` game then test):
 **Coordination.** A DM-side lane reduces `#ifdef UNIT_TESTS` guards in engine code so fewer game bodies differ; it records its
 progress here. The compiler side does not depend on it: steps 1-3 share whatever is equal.
 
+
+## Domain versions to answer hashes (step 4's last deletion; started 2026-10-26)
+
+Where versions are still issued, measured with a sampled caller probe (production tree, 4 workers): a hot body edit in a
+session issues about 250 (ABI admission); a fresh-session full compile issued 909k domain versions (`issue_s` 8-10 CPU-s)
+plus 1.30M tree version calls (`tree_s` 17-19 CPU-s). By caller, the full compile's issues were: stored lowering records
+from disk (`lowering_memo_wire::current_reads` computing the current version of every read domain, and `transparent_reads`
+covering reads by those versions), about 60 percent; the ABI and initializer receipts' recording resolvers
+(`dm_session::reads` recording a version with every read: initializer classification, the ABI evaluator, non-text capture),
+most of the rest; dependency-index replays a little.
+
+**Slice 1 (2026-10-26, compiler/answer-hashes-1): lowering records under the answer table.** In a session with a query
+database every stored lowering record is proven by the answer table instead of domain versions: `lookup_record` asks the
+`RequestAdmission` oracle only (`ReceiptAdmission::has_oracle`; no `matching_domains`), and a compact record from disk is
+admitted by `answered_reads` (each recorded answer's hash must be the table's current one; the typed answer is then taken
+from the record without resolving) with no `CurrentReads::versions`, no version in the observer's record and an empty
+version list in the promoted resident record (`CurrentReads::answered`). Records keep their stored versions on disk for
+processes without a table. Measured, fresh daemon per build, the published compiler against this branch, interleaved:
+full compile 30.6 / 35.6 / 36.0 s (compilation stage 17.5 / 21.3 / 20.6 s) against 27.1 / 32.9 s (15.3 / 19.1 s; a third,
+loaded, 58.7 s); versions issued 909k -> 345k, `issue_s` 8.2-9.9 -> 2.6-3.8 CPU-s, tree version calls 1.30M -> 0.74M; hot
+body edits unchanged (250 issued, 3.9-4.7 s). `dmb-equiv --all --ignore-debug` of the daemon output after the edits against a
+fresh `--no-daemon --no-cache` compile: EQUIVALENT (two rounds).
+
+**Slice 2 (2026-10-26, compiler/answer-hashes-2): ABI and classification receipts record no versions under the table.**
+`dm_session::RecordingResolver::with_versions(resolver, false)` records reads with no domain version; the ABI evaluator's
+recorder (`abi_artifacts::prepare`) and the initializer classification recorder use it when the session has a query
+database (their admission already takes the answer table as oracle). Measured as slice 1, slice 1 against this branch:
+versions issued on a fresh-session full compile 345k -> 112k (`issue_s` 3.4-4.5 -> 0.9-1.2 CPU-s), on a hot body edit
+250 -> 1; tree version calls 739k -> 458k, but their CPU time rose (14-16 -> 24-26 CPU-s: the answers are now resolved
+through the tree's own certificates), so the compile is unchanged within noise (compilation stage 19.4 / 22.1 s against
+18.6 / 23.8 s; body edits 1.6-1.9 s against 1.4-1.8 s). `dmb-equiv` against a fresh compile: EQUIVALENT, three rounds.
+
+Remaining issuers on a fresh-session full compile after slice 2 (caller probe, 1/64 sampled): the engine host's own
+issuance (`issued_domain_version` through the scalar snapshot) for the receipts that still record versions, and the class
+projection's retained owners (`class_projection::retained`, a `RecordingResolver` over the `SemanticTree` whose receipts are
+admitted by `visit_explained` against the tree with their versions: about 340k tree version calls). The class projection
+reads the tree, not the engine host the answer table answers for, so it needs a tree-level answer table (or to read
+through the request's table) before its versions can go.
+
+Next slices: (3) every request gets an answer table (one-shot compiles too), after
+which the version path of `ReceiptAdmission`, `ObservationLedger::versions` and the stored version lists can go; (4) the
+answer world (`QueryDb::begin_answers`) is computed from the tree and scalar snapshot directly instead of through
+`domain_version(Tree)`, the dep index keys on it, and `Resolver::domain_version`, the engine-host issuers and dm-tree's
+owner certificates and demand tokens are deleted.
+
 ## Design option: the include spec as the project input (2026-10-27, lane `tools/generated-dme`)
 
 Not built; recorded for the query-core work. `deepquarry.dme` is generated now (`tools/build/gen_dme.py` from the files on disk and the

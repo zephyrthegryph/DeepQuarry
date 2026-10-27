@@ -767,7 +767,7 @@ impl Candidates<'_> {
         host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
     ) -> ProcedureLookup<'host> {
-        self.procedure_matching_backed(matches_key, identity, context, host, prepared, None)
+        self.procedure_matching_backed(matches_key, identity, context, host, prepared, None, None)
     }
     pub(crate) fn procedure_matching_backed<'host, R: Resolver>(
         self,
@@ -777,6 +777,7 @@ impl Candidates<'_> {
         host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
         backing: Option<&dm_cache::MappedPayload>,
+        answers: Option<&crate::query_db::RequestAnswers<'_>>,
     ) -> ProcedureLookup<'host> {
         static READS: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_reads_check");
         static REBIND: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_rebind");
@@ -838,12 +839,18 @@ impl Candidates<'_> {
                 let mut promotion = v.promotion();
                 // A certified record's receipt names the world, not one version per read
                 // domain: issuing those resolves every domain's query again.
-                let current_versions = if certified_world.is_some() {
+                // Under the session's answer table the reads are proven by its answers: no version is issued.
+                let answered = answers.filter(|_| certified_world.is_none());
+                let current_versions = if certified_world.is_some() || answered.is_some() {
                     Vec::new()
                 } else {
                     CurrentReads::versions(host, &promotion.queries)
                 };
-                let pending_reads = match v.transparent_reads(host) {
+                let checked = match answered {
+                    Some(answers) => v.answered_reads(host, answers),
+                    None => v.transparent_reads(host),
+                };
+                let pending_reads = match checked {
                     Ok(reads) => reads,
                     Err(query) => {
                         if let (Some(index), Some(crate::dep_index::Adoption::Certified { .. })) =
@@ -882,9 +889,9 @@ impl Candidates<'_> {
                             (pending_reads.as_ref(), host.transparent_receipt_observer())
                         {
                             for read in reads {
-                                let version = match certified_world {
-                                    Some(_) => None,
-                                    None => observer.provider().domain_version(read.domain),
+                                let version = match (certified_world, answered) {
+                                    (None, None) => observer.provider().domain_version(read.domain),
+                                    _ => None,
                                 };
                                 observer.record_answer(
                                     read.query,
@@ -894,10 +901,14 @@ impl Candidates<'_> {
                                 );
                             }
                         }
-                        promotion.current = pending_reads.and_then(|reads| match certified_world {
-                            Some(world) => CurrentReads::certified(host, reads, world),
-                            None => CurrentReads::accepted(host, reads, current_versions),
+                        promotion.current = pending_reads.and_then(|reads| match (certified_world, answered) {
+                            (Some(world), _) => CurrentReads::certified(host, reads, world),
+                            (None, Some(_)) => CurrentReads::answered(host, reads),
+                            (None, None) => CurrentReads::accepted(host, reads, current_versions),
                         });
+                        if answered.is_some() {
+                            promotion.versions.clear();
+                        }
                         result.verification_reads = verification_reads;
                         result.prepared = Some(value);
                         result.resident = Some(promotion);

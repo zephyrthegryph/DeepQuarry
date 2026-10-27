@@ -330,7 +330,8 @@ pub(super) fn prepare(
         }
     }
     drop(stage);
-    let recording = dm_session::RecordingResolver::new(&base);
+    // A session's answer table proves ABI receipts: their reads carry no domain version.
+    let recording = dm_session::RecordingResolver::with_versions(&base, store.query_db.is_none());
     let issued_identity = dm_ir::ProcedureIdentity {
         owner: context.identity.owner,
         name: context.identity.name,

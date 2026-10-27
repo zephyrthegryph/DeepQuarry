@@ -772,6 +772,7 @@ fn check_replay_features(
                 &host,
                 ready,
                 Some(backing),
+                None,
             );
             let accepted = result.prepared.is_some();
             *mapped.borrow_mut() = result.prepared;
