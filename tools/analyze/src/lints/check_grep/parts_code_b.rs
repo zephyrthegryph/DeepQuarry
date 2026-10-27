@@ -110,10 +110,12 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "damage_ratchet_on_atom_break_set_broken_overrides_d4",
             "damage: ratchet on atom_break()/set_broken() overrides (D4)",
-            "atom_break()/set_broken() overrides over the ratchet. Declare integrity_failure / broken_icon_state instead.",
+            "atom_break()/set_broken() overrides are banned. Declare integrity_failure / broken_icon_state, and react with on_notice(/datum/notice/machinery_broken | /datum/notice/atom_broken, then(PROC_REF(x))) in the type's CAPABILITIES.",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/(atom_break|set_broken)\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, machinery) are the one place the break is written and published; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/atom_defense.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/game/machinery/machinery.dm")]),
         Part::new(
             "generic_hit_ratchet_on_attack_generic_overrides",
             "generic hit: ratchet on attack_generic() overrides",

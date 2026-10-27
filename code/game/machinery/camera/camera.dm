@@ -45,6 +45,7 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(camera_broken)))
 	setup(PROC_REF(validate_network))
 	configure(atom_shielding(deflection = 5))
 	setup(PROC_REF(install_viewer_hud))
@@ -425,10 +426,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		play_sfx(src, SFX_ITEMS_WIRECUTTER)
 		set_icon_state(initial(icon_state))
 
-/obj/machinery/camera/atom_break(damage_flag)
-	. = ..()
-	if(!.)
-		return
+/obj/machinery/camera/proc/camera_broken(datum/act/A)
 	wires_cut_all(src)
 
 	triggerCameraAlarm()

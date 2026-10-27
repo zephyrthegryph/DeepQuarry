@@ -117,6 +117,7 @@ CAPABILITIES(/obj/machinery/shield)
 MSG_DEF_SELF(shieldgen/rewiring, span_notice("You begin to replace the wires."))
 
 CAPABILITIES(/obj/machinery/shieldgen)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(shieldgen_broken)))
 	configure(atom_rules(emp_integrity_factor = 1))
 	configure(uses_power(idle = 0))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
@@ -195,8 +196,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 			spent(DEFAULTPICK(deployed_shields, null))
 
 // Dropping below 30% integrity makes the generator start to malfunction.
-/obj/machinery/shieldgen/atom_break(damage_flag)
-	. = ..()
+/obj/machinery/shieldgen/proc/shieldgen_broken(datum/act/A)
 	set_malfunction(TRUE)
 
 // Integrity zero blows the generator apart.
