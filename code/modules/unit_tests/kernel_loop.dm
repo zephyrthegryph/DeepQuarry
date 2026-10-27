@@ -76,6 +76,8 @@
 	var/datum/controller/kernel/K = kernel()
 	var/datum/kernel_watchdog/watchdog = K.watchdog
 	TEST_ASSERT_NOTNULL(watchdog, "the kernel started its watchdog")
+	// The test lets about seven seconds of world time pass with the heat field stepping: the floors it cools on its own are put back at the end.
+	var/list/solid = unit_test_solid_snapshot()
 	sleep(watchdog.processing_interval + 2)
 	TEST_ASSERT(watchdog.kernel_tick_seen > 0, "the watchdog has read the kernel heartbeat")
 	TEST_ASSERT(K.last_tick - watchdog.kernel_tick_seen <= watchdog.processing_interval * 2, "it reads a recent one: [watchdog.kernel_tick_seen] vs [K.last_tick]")
@@ -97,6 +99,7 @@
 	var/elapsed = (world.time - time_before) / world.tick_lag
 	TEST_ASSERT(ticks > 0, "the restarted kernel ticks")
 	TEST_ASSERT(ticks <= elapsed + 1, "one loop runs (not two): [ticks] kernel ticks in [elapsed] world ticks")
+	unit_test_solid_restore(solid)
 
 /// reset_work() drops every in-flight run, so the next loop starts the items clean.
 /datum/unit_test/kernel_reset_work
