@@ -252,8 +252,5 @@ Resolver specifics for A:
   `/datum/map_resolver_info`; `SSatoms.InitAtom()` looks the instance's type up in it.
 - **Waves** were closed under inheritance (a legacy declaration does not inherit from an entry), by `tools/codemods/declare_loot.py` and `map_resolver.py`; both
   forms were read until the last site went, then deleted and banned (21 names) in one commit.
-- **Pins** (`code/modules/unit_tests/snapshots/loot/`): the rolls (`rolls.txt`, 6120 rows), the pile searches, the resolver table (every atom type that resolves)
-  and the map-reader fixture (`resolver_fixture.dmm`). Recording them needed a null guard in the repair droid (the rolls delete uninstalled ones), and left out of the
-  fixture the stairs spawner, the turbolift holder, `/obj/random`, `/obj/effect/spawner/parts` and `newbomb` (a base spawner with no table recurses forever, a mapped
-  TTV bomb runtimes during a load; the table pin covers their resolvers).
+- **Tests** (`code/modules/unit_tests/dq_loot_behaviour.dm`): a roll yields an item its table names, a search yields once per searcher, a map resolver is inherited. The golden roll, search, resolver-table and map-reader pins (`snapshots/loot/`) were deleted: they only failed when re-blessed.
 - **Option B** (search as an op, `code/library/loot/loot_search.dm`): see `doc/rewrite/intended_changes.md`, "Loot piles: the search op".
