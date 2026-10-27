@@ -1,10 +1,13 @@
+// Contract record numbers (the "DQ-12" a player reads): one counter per kind, round-scoped.
+SERIAL_DEF(contract, 1, FALSE)
+SERIAL_DEF(contract_event, 1, FALSE)
+SERIAL_DEF(contract_subject, 1, FALSE)
+SERIAL_DEF(contract_evidence, 1, FALSE)
+SERIAL_DEF(contract_candidate, 1, FALSE)
+
 SYSTEM_DEF(contracts)
 	name = "Contracts"
 	init_stage = INITSTAGE_MAIN
-	var/next_contract_id = 1
-	var/next_subject_id = 1
-	var/next_evidence_id = 1
-	var/next_event_id = 1
 	/// Contract id -> the contract; the system owns every registered contract (a deleted one leaves it).
 	var/list/datum/contract/contracts_by_id
 	var/list/datum/contract/offered_contracts
@@ -14,7 +17,6 @@ SYSTEM_DEF(contracts)
 	var/list/datum/contract_offer_candidate/offer_candidates
 	var/list/offer_cooldowns
 	var/list/datum/contract_lifecycle_entry/lifecycle_history
-	var/next_candidate_id = 1
 	var/suppress_offer_reconcile = FALSE
 	var/offers_materialized = 0
 	var/offers_declined = 0
@@ -405,7 +407,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 /datum/system/contracts/proc/register_contract(datum/contract/contract)
 	if(!contract || contract.id)
 		return FALSE
-	contract.id = "DQ-[next_contract_id++]"
+	contract.id = "DQ-[next_serial(contract)]"
 	rel_add(src, nameof(contracts_by_id), contract, contract.id)
 	rel_add(src, nameof(offered_contracts), contract)
 	return TRUE
@@ -479,7 +481,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 			var/expired_key = event_occurrence_order[1]
 			event_occurrence_order.Cut(1, 2)
 			seen_event_occurrences -= expired_key
-	event.id = "DQ-CE-[next_event_id++]"
+	event.id = "DQ-CE-[next_serial(contract_event)]"
 	STAMP(event, occurred_at, CLOCK_WORLD)
 	events_published++
 	rel_add(src, nameof(recent_events), event)
