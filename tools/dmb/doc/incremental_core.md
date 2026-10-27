@@ -798,6 +798,12 @@ request was already a body-level patch on both (4.6-7.9 s against 5.3-6.3 s, fro
 are still expanded again (memo-verified), which is where the frontend time of such an edit goes. `dmb-equiv` of the
 output after the edits against a fresh compile: EQUIVALENT, two rounds.
 
-Next: map a rebased region to its previous expansion when that expansion read none of the delta's names (the expansion
-reuse then copies it), and start a new define variant (the unit-test world) from the active variant's plan, so the test
+**Rebased regions keep their expansion (compiler/test-increment-2).** `PlanReuse::rebased_regions` names, for every region
+of a rebased subtree, the previous region and the macro names whose bindings differ; `expand_regions_reusing` copies the
+previous expansion when its recorded macro reads (`ExpansionRecord::reads`, which include names read while absent) name
+none of them. Same measurement: regions expanded again 5917 -> 30-32 (13174 reused); frontend of the edit 1.0-1.1 s in the
+quieter round against 2.1-2.3 s for the previous slice (the other round was loaded on both sides). Test
+`a_new_macro_used_in_adopted_text_expands_that_text_again`. `dmb-equiv` against a fresh compile: EQUIVALENT, two rounds.
+
+Next: start a new define variant (the unit-test world) from the active variant's plan, so the test
 world's plan, regions and expansions are an increment over the game's.

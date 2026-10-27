@@ -895,6 +895,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             return false;
         }
         let rebase = !self.delta.is_empty();
+        let delta_names = rebase.then(|| self.delta.names());
         let mut seen = BTreeSet::new();
         for visit in &record.visits {
             if seen.insert(visit.path.as_ref())
@@ -988,6 +989,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                             macros: segment.macros.apply(&self.delta),
                         })
                         .collect(),
+                );
+                self.reuse.rebased_regions.insert(
+                    self.region_map.len(),
+                    (entry.region + offset, Arc::clone(delta_names.as_ref().expect("rebased"))),
                 );
                 self.region_map.push(None);
             } else {

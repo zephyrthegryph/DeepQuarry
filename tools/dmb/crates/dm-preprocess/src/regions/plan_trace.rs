@@ -131,6 +131,9 @@ pub struct PlanReuse {
     pub subtrees: usize,
     /// Of those, adopted although the macro environment differed in bindings they never read.
     pub rebased_subtrees: usize,
+    /// Regions of rebased subtrees (not in `regions`): the previous region each copies and the macro names whose
+    /// bindings differ from its. The expansion reuse copies the previous expansion when it read none of them.
+    pub rebased_regions: std::collections::HashMap<usize, (usize, Arc<[Arc<str>]>)>,
     /// Occurrences, regions and items adopted inside them.
     pub occurrences: usize,
     pub copied_regions: usize,

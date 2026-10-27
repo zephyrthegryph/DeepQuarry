@@ -462,3 +462,16 @@ fn a_define_edit_reruns_only_the_subtrees_whose_directives_read_it() {
     let added = request(&back, &world(&format!("#define UNUSED 1\n{MANIFEST}"), A, B, child, C, TAIL), &memo);
     assert_eq!(added.walked.subtrees, 2, "{:?}", added.walked);
 }
+
+#[test]
+fn a_new_macro_used_in_adopted_text_expands_that_text_again() {
+    let memo = Memo::default();
+    // a.dm names LATE in code; the manifest then defines it. a.dm's directives never read LATE, so the subtree is adopted
+    // under the new binding, but its expansion read LATE (absent) and must be expanded again; c.dm's need not be.
+    let a = "/proc/a()\n    return LATE\n";
+    let zero = first(&world(MANIFEST, a, B, B_CHILD, C, TAIL), &memo);
+    let defined = request(&zero, &world(&format!("#define LATE 7\n{MANIFEST}"), a, B, B_CHILD, C, TAIL), &memo);
+    assert!(defined.walked.rebased_subtrees >= 1, "{:?}", defined.walked);
+    let stats = defined.expansion.expect("expansion reuses what it can");
+    assert!(stats.expanded >= 1, "{stats:?}");
+}

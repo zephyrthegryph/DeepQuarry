@@ -72,6 +72,9 @@ impl EnvDelta {
     pub(super) fn len(&self) -> usize {
         self.0.len()
     }
+    pub(super) fn names(&self) -> Arc<[Arc<str>]> {
+        self.0.iter().map(|(name, _)| Arc::clone(name)).collect()
+    }
     pub(super) fn contains(&self, name: &str) -> bool {
         self.0.binary_search_by(|(entry, _)| entry.as_ref().cmp(name)).is_ok()
     }
