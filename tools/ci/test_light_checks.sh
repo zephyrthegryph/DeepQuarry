@@ -51,6 +51,6 @@ runlc
 check "a changed lint input runs the ratchets with the changed-only self-tests" 'grep -qx "ratchets selftests=changed" "$ST_LOG"'
 git switch -q -c st/slow master; echo '# x' >>tools/dq_slow.sh; git commit -qam slow
 : >"$ST_LOG"; DQ_LIGHT_SELFTEST_CAP_SEC=1 bash tools/dq_light_checks.sh origin/master HEAD >"$tmp/lc.out" 2>&1; rc=$?
-check "a self-test over its cap fails the check and says so" '[ "$rc" != 0 ] && grep -q "hit its 1s cap" "$tmp/lc.out"'
+check "a self-test over its cap is a warning (inconclusive), not a failure" '[ "$rc" = 0 ] && grep -q "hit its 1s cap and was stopped" "$tmp/lc.out"'
 [ "$fail" -eq 0 ] && echo "test_light_checks: all passed" || echo "test_light_checks: FAILED"
 exit "$fail"

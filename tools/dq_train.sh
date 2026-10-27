@@ -833,7 +833,7 @@ cmd_precheck_run() {
 		fi
 		# start workers: cheap prechecks first (a lane that changes no DM reuses DreamChecker's verdict and patches nothing in the compile),
 		# then queue order; at most PRE_WORKERS at once, never below the free-RAM floor
-		if [ ${#want[@]} -gt 1 ] && [ ${#wpid[@]} -lt "$PRE_WORKERS" ]; then
+		if [ ${#want[@]} -gt 1 ] && [ ${#wpid[@]} -le "$PRE_WORKERS" ]; then
 			local cheap=() dear=()
 			for b in "${want[@]}"; do
 				if G diff --name-only "origin/master...$(qget "$(qfile "$b")" tip)" 2>/dev/null | grep -qE '^(code|maps|interface)/|\.dme$|\.dmm$'; then dear+=("$b"); else cheap+=("$b"); fi
@@ -841,7 +841,19 @@ cmd_precheck_run() {
 			want=("${cheap[@]+"${cheap[@]}"}" "${dear[@]+"${dear[@]}"}")
 		fi
 		for b in "${want[@]+"${want[@]}"}"; do
-			[ ${#wpid[@]} -lt "$PRE_WORKERS" ] || break
+			# A light lane (docs, tools: cheap checks, no compile) has its own worker slot "L": it never waits behind the heavy prechecks (21 minutes on 27 October)
+			# and the free-RAM floor does not apply to it. Heavy lanes use the PRE_WORKERS slots as before.
+			local is_l=0 hv=${#wpid[@]}
+			lane_is_light "$b" && is_l=1
+			[ -z "${wpid[L]:-}" ] || hv=$((hv - 1))
+			if [ "$is_l" = 1 ]; then
+				[ -z "${wpid[L]:-}" ] || continue
+				listed_in "$STATE/batch.lanes" "$b" && continue
+				precheck_one L "$b" "$(qget "$(qfile "$b")" tip)" &
+				wpid[L]=$!; wlane[L]="$b"
+				continue
+			fi
+			[ "$hv" -lt "$PRE_WORKERS" ] || break
 			if [ "$(free_ram_gb)" -lt "$PRE_MIN_FREE_GB" ]; then
 				[ "$ram_note" = 1 ] || tlog "prechecker: waiting: $(free_ram_gb) GB of RAM free (< $PRE_MIN_FREE_GB GB); no new precheck starts"
 				ram_note=1
