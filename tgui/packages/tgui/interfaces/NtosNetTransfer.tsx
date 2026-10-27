@@ -33,7 +33,7 @@ type server = {
   haspassword: BooleanLike;
 };
 
-type uploadFile = { uid: number; filename: string; size: number };
+type uploadFile = { uid: string; filename: string; size: number };
 
 export const NtosNetTransfer = (props) => {
   const { data } = useBackend<Data>();

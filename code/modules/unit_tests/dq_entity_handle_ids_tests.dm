@@ -19,3 +19,11 @@
 	var/datum/ntnet_conversation/C = allocate(/datum/ntnet_conversation)
 	TEST_ASSERT_EQUAL(C.id, ref_token(C), "the channel's id is its handle")
 	TEST_ASSERT_EQUAL(GLOB.ntnet_global.get_chat_channel_by_id(C.id), C, "the network finds the channel by its handle")
+
+/// A computer file's id is its handle; a clone is a new file with a handle of its own.
+/datum/unit_test/dq_entity_handle_computer_file/Run()
+	var/datum/computer_file/data/F = allocate(/datum/computer_file/data)
+	TEST_ASSERT_EQUAL(F.uid, ref_token(F), "the file's id is its handle")
+	var/datum/computer_file/data/copy = F.clone()
+	TEST_ASSERT(copy.uid && copy.uid != F.uid, "a clone gets its own handle")
+	qdel(copy)
