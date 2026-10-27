@@ -371,10 +371,12 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion/phase5)
 	use_submunitions = 1
 	only_submunitions = 1
 	range = 0
-	embed_chance = 0
 	submunition_spread_max = 700
 	submunition_spread_min = 200
 	submunitions = list(/obj/item/projectile/energy/imperionspear = 5)
+
+CAPABILITIES(/obj/item/projectile/bullet/imperionspear)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/bullet/imperionspear/on_range()
 	consume(src)
@@ -394,10 +396,12 @@ CAPABILITIES(/obj/item/projectile/energy/imperionspear)
 	use_submunitions = 1
 	only_submunitions = 1
 	range = 0
-	embed_chance = 0
 	submunition_spread_max = 1500
 	submunition_spread_min = 300
 	submunitions = list(/obj/item/projectile/energy/imperionblaster = 8)
+
+CAPABILITIES(/obj/item/projectile/bullet/imperionblaster)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/bullet/imperionblaster/on_range()
 	consume(src)
@@ -417,10 +421,12 @@ CAPABILITIES(/obj/item/projectile/energy/imperionblaster)
 	use_submunitions = 1
 	only_submunitions = 1
 	range = 0
-	embed_chance = 0
 	submunition_spread_max = 400
 	submunition_spread_min = 50
 	submunitions = list(/obj/item/projectile/energy/imperiontesla = 2)
+
+CAPABILITIES(/obj/item/projectile/bullet/imperiontesla)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/bullet/imperiontesla/on_range()
 	consume(src)

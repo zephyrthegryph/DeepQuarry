@@ -81,13 +81,13 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	nodamage = 1
 	taser_effect = 1
 	agony = 55
-	injury_kind = INJURY_PAIN
 
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatterstun
 	tracer_type = /obj/effect/projectile/tracer/darkmatterstun
 	impact_type = /obj/effect/projectile/impact/darkmatterstun
 
 CAPABILITIES(/obj/item/projectile/beam/stun/darkmatter)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(light_glow(color = "#8837A3"))
 
 /obj/item/projectile/beam/darkmatter
@@ -95,15 +95,14 @@ CAPABILITIES(/obj/item/projectile/beam/stun/darkmatter)
 	icon_state = "darkb"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 35
-	injury_kind = INJURY_BLUNT
 
-	embed_chance = 0
 
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatter
 	tracer_type = /obj/effect/projectile/tracer/darkmatter
 	impact_type = /obj/effect/projectile/impact/darkmatter
 
 CAPABILITIES(/obj/item/projectile/beam/darkmatter)
+	configure(item_combat(injury_kind = INJURY_BLUNT, embed_chance = 0))
 	configure(light_glow(color = "#8837A3"))
 	configure(item_combat(armor_penetration = 35))
 
@@ -112,11 +111,10 @@ CAPABILITIES(/obj/item/projectile/beam/darkmatter)
 	icon_state = "dark_pellet"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 20
-	injury_kind = INJURY_BLUNT
 
-	embed_chance = 0
 
 CAPABILITIES(/obj/item/projectile/energy/darkmatter)
+	configure(item_combat(injury_kind = INJURY_BLUNT, embed_chance = 0))
 	configure(light_glow(color = "#8837A3"))
 	configure(item_combat(armor_penetration = 35))
 
@@ -146,10 +144,10 @@ CAPABILITIES(/obj/item/projectile/energy/darkmatter)
 	icon_state = "sound"
 	fire_sound = SFX_EFFECTS_BASSCANNON
 	damage = 5
-	embed_chance = 0
 	vacuum_traversal = 0
 
 CAPABILITIES(/obj/item/projectile/sonic)
+	configure(item_combat(embed_chance = 0))
 	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/sonic/weak

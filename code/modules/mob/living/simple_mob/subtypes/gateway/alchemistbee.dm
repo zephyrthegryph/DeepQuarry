@@ -153,10 +153,12 @@ CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
 	use_submunitions = 1
 	only_submunitions = 1
 	range = 0
-	embed_chance = 0
 	submunition_spread_max = 1200
 	submunition_spread_min = 200
 	submunitions = list(/obj/item/projectile/energy/homing_bolt/wizard/fire = 1, /obj/item/projectile/energy/homing_bolt/wizard/frost = 1, /obj/item/projectile/energy/homing_bolt/wizard/poison = 1, /obj/item/projectile/energy/homing_bolt/wizard/lighting = 1)
+
+CAPABILITIES(/obj/item/projectile/bullet/homingcluster)
+	configure(item_combat(embed_chance = 0))
 
 //I desire arcing projectiles with smoke. Wish this was a general proc for projectiles
 /obj/item/projectile/arc/vial

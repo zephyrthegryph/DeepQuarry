@@ -32,9 +32,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot)
 // The hivebot's default projectile.
 /obj/item/projectile/bullet/hivebot
 	damage = 10
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/hivebot)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(sharp = FALSE, edge = FALSE))
 
 /mob/living/simple_mob/mechanical/hivebot/swarm

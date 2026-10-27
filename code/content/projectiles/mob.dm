@@ -47,12 +47,12 @@ CAPABILITIES(/obj/item/projectile/energy/mob/smalllaser)
 	fire_sound = SFX_WEAPONS_TASER
 	nodamage = 1
 	taser_effect = 1
-	injury_kind = INJURY_PAIN
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	combustion = FALSE
 	agony = 20
 
 CAPABILITIES(/obj/item/projectile/energy/mob/electric_spider)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(light_glow(color = "#FFFFFF"))
 	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
@@ -130,10 +130,10 @@ CAPABILITIES(/obj/item/projectile/energy/mob/heavysniper)
 /obj/item/projectile/energy/mob/ionbeam
 	name = "Ion Burst"
 	damage = 20 //Old 10
-	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
 	icon_state = "impact_blue"
 	fire_sound = SFX_WEAPONS_LASER
 
 CAPABILITIES(/obj/item/projectile/energy/mob/ionbeam)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(light_glow(color = "#00CCFF"))

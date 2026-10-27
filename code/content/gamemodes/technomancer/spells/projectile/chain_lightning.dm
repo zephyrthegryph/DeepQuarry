@@ -24,7 +24,6 @@
 	name = "lightning"
 	icon_state = "lightning"
 	nodamage = 1
-	injury_kind = INJURY_PAIN
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning
@@ -77,4 +76,5 @@
 	return 1
 
 CAPABILITIES(/obj/item/projectile/beam/chain_lightning)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	ref_many(nameof(hit_mobs))

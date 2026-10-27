@@ -7,9 +7,9 @@
 	icon_state = "bolt"
 	item_state = "bolt"
 	w_class = ITEMSIZE_NORMAL
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/arrow)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_thrown(force = 8))
 	configure(item_combat(sharp = TRUE, edge = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
@@ -20,13 +20,13 @@ CAPABILITIES(/obj/item/arrow)
 /obj/item/spike
 	name = "alloy spike"
 	desc = "It's about a foot of weird silver metal with a wicked point."
-	injury_kind = INJURY_PIERCE
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "metal-rod"
 	item_state = "bolt"
 
 CAPABILITIES(/obj/item/spike)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_thrown(force = 5))
 	configure(item_combat(sharp = TRUE, edge = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))

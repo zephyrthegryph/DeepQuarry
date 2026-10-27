@@ -19,7 +19,7 @@
 	projectile.agony = 20
 	projectile.set_sharp(TRUE)
 	projectile.set_edge(TRUE)
-	projectile.embed_chance = 50
+	projectile.set_embed_chance(50)
 	var/damage_before = projectile.damage
 	TEST_ASSERT_EQUAL(shield.handle_shield(user, 20, projectile), 0, "actual inactive shield returns the original damage-handling result")
 	TEST_ASSERT_EQUAL(projectile.damage, damage_before, "actual inactive shield leaves projectile damage unchanged")
@@ -35,7 +35,7 @@
 	TEST_ASSERT_EQUAL(projectile.agony, 5, "actual shielding removes seventy-five percent of projectile agony")
 	TEST_ASSERT_EQUAL(combat_of(projectile).sharp, FALSE, "actual shielding makes the real projectile blunt")
 	TEST_ASSERT_EQUAL(combat_of(projectile).edge, FALSE, "actual shielding clears the real projectile cutting edge")
-	TEST_ASSERT_EQUAL(projectile.embed_chance, 0, "actual shielding prevents the real projectile embedding")
+	TEST_ASSERT_EQUAL(combat_of(projectile).embed_chance, 0, "actual shielding prevents the real projectile embedding")
 	TEST_ASSERT(shield.active, "actual successful shielding leaves its emitter active")
 	TEST_ASSERT_EQUAL(core.pay_energy(core.energy), 1, "actual core payment drains its remaining energy")
 	TEST_ASSERT_EQUAL(core.energy, 0, "actual core payment leaves no energy for another shield hit")

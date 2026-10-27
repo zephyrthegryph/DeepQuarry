@@ -431,7 +431,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 
 		if(B.faction != faction)
 			var/damage = rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper)
-			var/inc_damage_type = injury_kind_obj_damage_type(B.overmind.blob_type.injury_kind)
+			var/inc_damage_type = injury_kind_obj_damage_type(combat_of(B.overmind.blob_type).injury_kind)
 
 			if(overmind)
 				damage = overmind.blob_type.on_received_damage(src, damage, inc_damage_type, B)

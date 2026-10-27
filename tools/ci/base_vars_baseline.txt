@@ -40,8 +40,6 @@ base_var	code/game/objects/items.dm	@/obj/item::burning
 base_var	code/game/objects/items.dm	@/obj/item::actions
 base_var	code/game/objects/items.dm	@/obj/item::slowdown
 base_var	code/game/objects/items.dm	@/obj/item::zoom
-base_var	code/game/objects/items.dm	@/obj/item::embed_chance
-base_var	code/game/objects/items.dm	@/obj/item::digestable
 base_var	code/game/objects/items.dm	@/obj/item::possessed_voice
 base_var	code/game/objects/items.dm	@/obj/item::identity
 base_var	code/game/objects/items.dm	@/obj/item::identity_type
@@ -51,8 +49,6 @@ base_var	code/modules/body/body.dm	@/mob/living::body
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_timers
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_origins
 base_var	code/modules/body/factors.dm	@/obj/item::worn_factors
-base_var	code/modules/body/injury.dm	@/obj/item::injury_kind
-base_var	code/modules/body/injury.dm	@/obj/item::injury_kinds
 base_var	code/modules/body/organs/blood.dm	@/mob/living/carbon/human::vessel
 base_var	code/modules/catalogue/atoms.dm	@/atom::catalogue_data
 base_var	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::ai_brain
