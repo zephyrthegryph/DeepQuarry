@@ -7,9 +7,9 @@ type Data = {
   can_admin: BooleanLike;
   all_channels: {
     chan: string;
-    id: number | null;
+    id: string | null;
   }[];
-  active_channel: number | null;
+  active_channel: string | null;
   username: string;
   adminmode: BooleanLike;
   title: string | undefined;

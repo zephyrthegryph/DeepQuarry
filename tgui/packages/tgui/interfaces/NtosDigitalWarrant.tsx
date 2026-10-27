@@ -21,7 +21,7 @@ type warrant = {
   warrantname: string;
   charges: string;
   auth: BooleanLike;
-  id: number;
+  id: string;
   arrestsearch: string;
 };
 
