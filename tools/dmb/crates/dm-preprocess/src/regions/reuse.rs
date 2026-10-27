@@ -171,7 +171,7 @@ pub fn expand_regions_reusing(
             let record = output.receipt?;
             let start = text.len();
             text.push_str(&output.text);
-            let lines: Vec<_> = output.lines.into_iter().collect();
+            let lines = output.lines;
             receipts.push(RegionReceipt {
                 region,
                 output: Span::new(start, text.len()),

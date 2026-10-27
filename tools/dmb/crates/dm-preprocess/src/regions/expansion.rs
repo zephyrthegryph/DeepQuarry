@@ -26,7 +26,8 @@ pub struct ExpandedRegions {
 pub(super) struct RegionOutput {
     pub(super) text: crate::SourceText,
     pub(super) receipt: Option<Arc<region_memo::ExpansionRecord>>,
-    pub(super) lines: output_lines::OutputLines,
+    /// Shared with every session that hydrated equal rows from the same record (`RowsPool`).
+    pub(super) lines: Arc<output_lines::OutputLines>,
     pub(super) diagnostics: Vec<Diagnostic>,
 }
 
@@ -143,7 +144,7 @@ fn expand_regions_inner(
         }));
     }
     diagnostics.sort_by_key(|(ordinal, line, _)| (*ordinal, *line));
-    let origin_capacity = outputs.iter().map(|output| output.lines.len()).sum();
+    let origin_capacity = outputs.len();
     let text = match memo.and_then(|memo| memo.input_admissions()) {
         Some(admissions) => admissions.joined_text(plan, &outputs),
         None => super::joined_text::assemble(plan, &outputs),
@@ -182,22 +183,7 @@ fn expand_regions_inner(
                 rows: output.lines.len(),
             });
         }
-        for (relative_span, source_line, source_span, macro_expansions) in output.lines {
-            origins.push(ExpandedOrigin {
-                origin: Origin {
-                    output_line: origins.len() + 1,
-                    path: path.clone(),
-                    source_line,
-                },
-                output_span: Span::new(
-                    output_start + relative_span.start,
-                    output_start + relative_span.end,
-                ),
-                source_span,
-                region: *index,
-                macro_expansions,
-            });
-        }
+        origins.push_region(output.lines, output_start, *index, path);
     }
     result.origins = origins.finish();
     debug_assert_eq!(output_offset, text.len());
@@ -374,7 +360,7 @@ pub(super) fn expand_region(
     RegionOutput {
         text: text_buffer.into(),
         receipt: None,
-        lines: lines.finish(),
+        lines: Arc::new(lines.finish()),
         diagnostics,
     }
 }
