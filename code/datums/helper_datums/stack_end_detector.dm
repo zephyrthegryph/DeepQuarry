@@ -1,28 +1,21 @@
-/// Stack canary serials, so a reused ref id never reads as the canary.
-SERIAL_DEF(stack_canary, 1, FALSE)
-SCHEMA(/datum/stack_canary, serial, num())
-
 /**
 	Stack End Detector.
 	Can detect if a given code stack has exited, used by the mc for stack overflow detection.
 
  **/
 /datum/stack_end_detector
-	/// REF() of the canary. Deliberately not an OM handle: a handle keeps its
-	/// target alive, and this has to notice BYOND collecting the canary.
-	var/_canary_ref
-	/// The canary's serial, so a reused ref id never reads as the canary.
-	var/_canary_serial
-	var/datum/stack_canary/_canary
+	/// A weak view of the canary: it pins nothing and never names a datum that reuses the canary's address, so canary_watch() reads null once
+	/// BYOND has collected the canary (the stack that held it has ended); the collection is logged.
+	var/canary_watch
+	var/datum/handle_sentinel/stack_canary/_canary
 
 CAPABILITIES(/datum/stack_end_detector)
-	owns_one(nameof(_canary), /datum/stack_canary)
+	ref_one(nameof(canary_watch), /datum/handle_sentinel/stack_canary, weak = TRUE)
+	owns_one(nameof(_canary), /datum/handle_sentinel/stack_canary)
 
 /datum/stack_end_detector/New()
-	rel_set(src, nameof(_canary), new /datum/stack_canary())
-	_canary.serial = next_serial(stack_canary)
-	_canary_serial = _canary.serial
-	_canary_ref = REF(_canary)
+	rel_set(src, nameof(_canary), new /datum/handle_sentinel/stack_canary())
+	rel_set(src, nameof(canary_watch), _canary)
 
 /** Prime the stack overflow detector.
 	Store the return value of this proc call in a proc level var.
@@ -36,13 +29,11 @@ CAPABILITIES(/datum/stack_end_detector)
 
 /// Returns true if the stack is still going. Calling before the canary has been primed also returns true
 /datum/stack_end_detector/proc/check()
-	var/datum/stack_canary/canary = locate(_canary_ref)
-	return istype(canary) && canary.serial == _canary_serial
+	return istype(canary_watch(), /datum/handle_sentinel/stack_canary)
 
 /// Stack canary. Will go away if the stack it was primed by is ended by byond for return or stack overflow reasons.
-/datum/stack_canary
-	var/serial = 0
+/datum/handle_sentinel/stack_canary
 
 /// empty proc to avoid warnings about unused variables. Call this proc on your canary in the stack it's watching.
-/datum/stack_canary/proc/use_variable()
+/datum/handle_sentinel/stack_canary/proc/use_variable()
 
