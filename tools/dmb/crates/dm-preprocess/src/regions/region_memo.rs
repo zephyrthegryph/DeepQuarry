@@ -5,7 +5,7 @@ mod control;
 pub(super) mod retained_size;
 #[cfg(test)]
 mod retained_size_tests;
-mod source_wire;
+pub(super) mod source_wire;
 #[path = "expansion_storage.rs"]
 pub(super) mod storage;
 use super::{DirectivePlan, MacroEnvironment, MacroExpansion};
