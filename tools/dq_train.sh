@@ -7,6 +7,7 @@
 #   bash tools/dq_train.sh dequeue <branch>                     # withdraw a queued or bounced lane (the branch itself is untouched)
 #   bash tools/dq_train.sh ensure                               # start the integrator when none is running (enqueue does this)
 #   bash tools/dq_train.sh run                                  # the integrator itself (detached by `ensure`; one at a time)
+#   bash tools/dq_train.sh lanes [--since T]                    # per-lane waiting / in-cycle / fixing times, mean gate phases
 #   bash tools/dq_train.sh precheck-run                         # the prechecker (detached by `ensure` and by every cycle; one at a time)
 #
 # Prechecks (October 2026, tools/train-speed; doc section 29 "Prechecks"): the prechecker gates every queued heavy lane ALONE on current
@@ -66,12 +67,18 @@ ORIG_ARGS=("$@")
 # Every file the integrator runs from SELF_DIR (the snapshot under $STATE/self), relative to tools/. The ONE place to list them: ensure
 # copies these, and the self-update compares and refreshes these. A script the cycle runs through "$SELF_DIR/..." goes here
 # (tools/ci/test_train.sh fails when one is missing); dq_declared_tests.sh and dq_light_paths.sh are enqueue-only (the lane's checkout).
-SNAP_FILES=(dq_train.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml)
+SNAP_FILES=(dq_train.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml train/lane_times.py)
 STATE="${DQ_TRAIN_STATE:-E:/dq-cache/train}"
 WT="${DQ_TRAIN_WT:-E:/projects/dq-wt/train-base}"
 TBRANCH="${DQ_TRAIN_BRANCH:-train/integ}"
 MAX_LANES="${DQ_TRAIN_MAX_LANES:-8}"
-TEST_BUDGET="${DQ_TRAIN_TEST_BUDGET_SEC:-420}"
+# The union of tests runs in TEST_WORLDS test worlds at once (dq_focused_test.sh splits the list: DQ_MAIN_WORLDS), so the budget for the
+# union's summed seconds is the per-world budget times the worlds, less one world boot (~30 s) per extra world. Heavy lanes that a single
+# 420 s world deferred to a later cycle ride the same one.
+TEST_WORLDS="${DQ_TRAIN_TEST_WORLDS:-2}"
+TEST_BUDGET_WORLD="${DQ_TRAIN_TEST_BUDGET_SEC:-420}"
+TEST_BUDGET=$(( TEST_BUDGET_WORLD * TEST_WORLDS - 30 * (TEST_WORLDS - 1) ))
+AUTO_LIGHT="${DQ_TRAIN_AUTO_LIGHT:-1}"
 TEST_MAX_MIN="${DQ_TRAIN_TEST_MAX_MIN:-10}"
 CYCLE_MAX_MIN="${DQ_TRAIN_CYCLE_MAX_MIN:-20}"
 # Prechecks (section 29 "Prechecks"): every heavy lane is gated ALONE on current master by a separate detached process (`precheck-run`)
@@ -207,7 +214,7 @@ start_detached() { # <script> <log> [<command>, default run]: a process outside 
 in_snapshot() { [ -d "$STATE/self" ] && [ "$(cd "$STATE/self" && pwd)" = "$SELF_DIR" ]; }
 snapshot_install() { # <from dir> <to dir>: SNAP_FILES, plain copies (dq_train.sh last: it may be the running script)
 	local f i from="$1" to="$2"
-	mkdir -p "$to/ci" || return 1
+	mkdir -p "$to/ci" "$to/train" || return 1
 	for (( i = ${#SNAP_FILES[@]} - 1; i >= 0; i-- )); do
 		f="${SNAP_FILES[$i]}"
 		cp -f "$from/$f" "$to/$f" || return 1
@@ -257,7 +264,7 @@ self_update() {
 	[ "$sig" != "$SELF_UPDATE_BAD" ] || return 0
 	if [ $(( $(date +%s) - SELF_UPDATE_LAST )) -lt 30 ]; then return 0; fi # never a tight re-exec loop
 	stage="$STATE/self.new"
-	rm -rf "$stage"; mkdir -p "$stage/ci" || return 0
+	rm -rf "$stage"; mkdir -p "$stage/ci" "$stage/train" || return 0
 	for f in "${SNAP_FILES[@]}"; do
 		G show "origin/master:tools/$f" >"$stage/$f" 2>/dev/null || { tlog "ERROR: self-update: cannot read tools/$f from origin/master; keeping the current scripts"; SELF_UPDATE_BAD="$sig"; rm -rf "$stage"; return 0; }
 	done
@@ -348,12 +355,47 @@ bounce() { # <branch> <reason> [<logfile>]
 	fi
 	tlog "BOUNCED $b: $why (report $rep)"
 }
+# A lane enqueued without --light whose change touches no DM path, compiler or build tool runs no DM world: it rides the light path
+# (cheap checks only). The light batch merges origin/<branch>, so its tip is pushed there first (never forced).
+promote_light() { # <branch>
+	local b="$1" f tip
+	f="$(qfile "$b")"
+	[ "$(qget "$f" light)" = 1 ] && return 0
+	tip="${TIP_OF[$b]:-$(qget "$f" tip)}"
+	G diff --name-only "origin/master...$tip" 2>/dev/null | awk '
+		/\.(dm|dme|dmm|dmf|dmi|dmb|rsc)$/ || /^(maps|icons|code|interface|sound|tgui)\// || /^tools\/(dmb|build)\// { heavy = 1 }
+		END { exit heavy ? 0 : 1 }' && return 0
+	if [ "$(G rev-parse -q --verify "refs/remotes/origin/$b" 2>/dev/null)" != "$tip" ] && ! G push -q origin "$tip:refs/heads/$b" 2>/dev/null; then return 0; fi
+	sed -i "s/^light=.*/light=1/" "$f"
+	tlog "$b changes no DM, compiler or build tool: it rides the light path (no DM world)"
+}
+adopt_tip() { # <branch> <queued tip> <current tip>: 0 = the queue now holds the current tip; 1 = bounced (a light lane that cannot be pushed)
+	local b="$1" old="$2" cur="$3" f
+	f="$(qfile "$b")"
+	if [ "$(qget "$f" light)" = 1 ] && [ "$(G rev-parse -q --verify "refs/remotes/origin/$b" 2>/dev/null)" != "$cur" ]; then
+		# the light batch merges origin/<branch>: publish the new tip there (never forced)
+		if ! G push -q origin "$cur:refs/heads/$b" 2>/dev/null; then
+			bounce "$b" "the branch moved after it was enqueued (queued ${old:0:10}, now ${cur:0:10}) and the new tip could not be pushed to origin (not a fast-forward?): enqueue again"
+			return 1
+		fi
+	fi
+	sed -i -e "s/^tip=.*/tip=$cur/" -e "s/^attempts=.*/attempts=0/" "$f"
+	tlog "adopted the new tip of $b (${old:0:10} -> ${cur:0:10}): it stays queued, no bounce"
+	return 0
+}
 mark_landed() { # <branch> <snapshot tip> <master sha>
-	local b="$1" tip="$2" sha="$3" f
+	local b="$1" tip="$2" sha="$3" f cur
 	f="$(qfile "$b")"
 	printf 'branch=%s\ntip=%s\nmaster=%s\nlanded=%s\n' "$b" "$tip" "$sha" "$(now)" >"$LANDED/$(fname "$b").landed"
-	# a lane that enqueued a newer tip while its old one rode the train stays queued
-	if [ -f "$f" ] && [ "$(qget "$f" tip)" = "$tip" ]; then rm -f "$f"; fi
+	# a lane that enqueued a newer tip, or committed more, while its old tip rode the train stays queued with what is not in master yet
+	cur="$(G rev-parse -q --verify "refs/heads/$b^{commit}" 2>/dev/null || G rev-parse -q --verify "refs/remotes/origin/$b^{commit}" 2>/dev/null)"
+	if [ -f "$f" ] && [ "$(qget "$f" tip)" = "$tip" ]; then
+		if [ -n "$cur" ] && [ "$cur" != "$tip" ] && ! G merge-base --is-ancestor "$cur" "$sha" 2>/dev/null; then
+			tlog "$b moved while its tip ${tip:0:10} rode the cycle: the new tip ${cur:0:10} is carried to the next cycle"
+		else
+			rm -f "$f"
+		fi
+	fi
 	tlog "LANDED $b (tip ${tip:0:10}) in origin/master ${sha:0:10}"
 }
 bump_attempts() { local f n; f="$(qfile "$1")"; [ -f "$f" ] || return 0; n="$(qget "$f" attempts)"; n=$(( ${n:-0} + 1 )); sed -i "s/^attempts=.*/attempts=$n/" "$f"; }
@@ -433,11 +475,14 @@ pre_probe_conflict() { # <branch> <tip> <master>: 0 = merges (or only the manife
 	CONFLICT_FILES=""
 	common="$(G rev-parse --path-format=absolute --git-common-dir)"
 	scratch="$(mktemp -d "${TMPDIR:-/tmp}/dq-preprobe.XXXXXX")"
-	out="$(GIT_OBJECT_DIRECTORY="$scratch" GIT_ALTERNATE_OBJECT_DIRECTORIES="$common/objects" G merge-tree --write-tree --name-only --no-messages "$3" "$2" 2>/dev/null)" || rc=$?
+	# with the repository's merge drivers (tools/dq_git_safe.sh: shrink-only baselines, the manifest's include sets), as the real merge has them
+	out="$(cd "$(repo_dir)" && { [ -f tools/dq_git_safe.sh ] && . tools/dq_git_safe.sh; GIT_OBJECT_DIRECTORY="$scratch" GIT_ALTERNATE_OBJECT_DIRECTORIES="$common/objects" git merge-tree --write-tree --name-only --no-messages "$3" "$2"; } 2>/dev/null)" || rc=$?
 	rm -rf "$scratch"
 	[ "$rc" -eq 1 ] || return 0 # clean, or merge-tree could not tell (the full precheck merges for real)
 	CONFLICT_FILES="$(tail -n +2 <<<"$out" | awk 'NF' | sort -u)"
-	f="$(grep -vxF deepquarry.dme <<<"$CONFLICT_FILES")"
+	# the manifest merges by sets, shared docs by union (tools/dq_merge_batch.sh doc_union_conflict): neither is a conflict here
+	# files with a merge driver or a union rule (baselines, the manifest, the unit-test list) never stop the real merge either
+	f="$(grep -vE '^(deepquarry\.dme|AGENTS\.md|CLAUDE\.md|doc/.*\.md|tools/.*/doc/[^/]*\.md|tools/ci/[^/]*_baseline\.txt|tools/ci/sys_baseline/.*\.txt|code/modules/unit_tests/_unit_tests\.dm)$' <<<"$CONFLICT_FILES")"
 	[ -n "$f" ] || return 0
 	return 1
 }
@@ -634,6 +679,11 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 	set -f # test names such as dq_gameplay/* are patterns for the estimator, never for the shell
 	CHOSEN=(); PRECHECKED_BATCH=0; SKIP_TESTS=()
 	local limit b union est lane_tests
+	# Light lanes (docs, tools, Rust: no DM world, minutes) go first and alone, so they never ride, or wait for, a DM gate.
+	if [ ! -s "$STATE/bisect.lanes" ] && [ "${DQ_TRAIN_LIGHT_FIRST:-1}" = 1 ]; then
+		for b in "${VALID[@]}"; do lane_is_light "$b" && CHOSEN+=("$b"); done
+		if [ ${#CHOSEN[@]} -gt 0 ]; then BATCH_LIMIT_NOW="light first"; BATCH_EST=0; set +f; return 0; fi
+	fi
 	if [ -s "$STATE/bisect.lanes" ]; then
 		# a bisect in progress: exactly its lanes (the ones still queued and valid), in the recorded order; new lanes wait
 		local want w v
@@ -859,6 +909,8 @@ heavy_cycle_gate() {
 	(
 		cd "$WT" || exit 99
 		export DQ_MERGE_BRANCH="$TBRANCH" DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN"
+		# the union of tests in TEST_WORLDS worlds at once (any list over 8 selectors is split)
+		export DQ_MAIN_WORLDS="$TEST_WORLDS" DQ_MAIN_WORLD_TESTS="${DQ_TRAIN_WORLD_SPLIT_AT:-8}"
 		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1 DQ_BATCH_DEADLINE="$deadline_use" DQ_BATCH_WT2="$wt2_use"
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
@@ -872,13 +924,18 @@ heavy_cycle_gate() {
 	good="$(sed -n 's/^BATCH_GOOD: //p' "$out" | tail -n 1)"
 	deferred="$(sed -n 's/^BATCH_DEFERRED: //p' "$out" | tail -n 1)"
 	capped="$(sed -n 's/^BATCH_CAPPED: //p' "$out" | tail -n 1)"
+	local later; later="$(sed -n 's/^BATCH_LATER: //p' "$out" | tail -n 1)"
+	[ -z "${later// /}" ] || { tlog "conflicted with another lane of this batch only, they stay queued for the next cycle: [$later]"; CYCLE_PROGRESS=1; }
 	tlog "merge_batch rc=$rc good=[${good:-}] deferred=[${deferred:-}] capped=[${capped:-}]"
 	# bounces first: they are the lane's fault whatever happens to the push
-	local nbounced=0
+	# Only a failed TEST shrinks the next batch (nfailed): a merge conflict, a moved tip or a DreamChecker/ratchet culprit says nothing
+	# about how many lanes fit, and the bisect already isolated the culprit. 2026-10-26: one conflict dropped the train to 1 lane/cycle.
+	local nbounced=0 nfailed=0
 	while IFS= read -r line; do
 		[ -n "$line" ] || continue
 		nbounced=$((nbounced + 1))
 		lane="${line%%|*}"; why="${line#*|}"; lg="${why##*|}"; why="${why%|*}"
+		case "$why" in *"merge conflict"*) ;; *) grep -qE '^dq_merge_gates: FAILED: .*\btests\b' "$WT/$lg" 2>/dev/null && nfailed=$((nfailed + 1)) ;; esac
 		[ -n "$lane" ] || continue
 		bounce "$lane" "$why" "$WT/$lg"
 		CYCLE_PROGRESS=1
@@ -897,10 +954,12 @@ heavy_cycle_gate() {
 	else
 		rm -f "$STATE/bisect.lanes" "$STATE/bisect.cache"
 	fi
-	if [ -z "${capped:-}" ] && { [ "$nbounced" -gt 0 ] || [ -n "${deferred:-}" ]; }; then
+	if [ -z "${capped:-}" ] && [ "$nfailed" -gt 0 ]; then
 		local fh=$(( ${#CHOSEN[@]} / 2 )); [ "$fh" -lt 1 ] && fh=1
 		echo "$fh" >"$limit_file"
-		tlog "the batch of ${#CHOSEN[@]} lane(s) failed (bounced $nbounced, deferred [${deferred:-}]): batch limit is now $fh"
+		tlog "the batch of ${#CHOSEN[@]} lane(s) failed tests (bounced $nbounced, $nfailed for failed tests, deferred [${deferred:-}]): batch limit is now $fh"
+	elif [ "$nbounced" -gt 0 ]; then
+		tlog "bounced $nbounced lane(s), none for a failed test: the batch limit stays"
 	fi
 	if [ -z "${good:-}" ]; then
 		tlog "nothing passed in this cycle"
@@ -942,10 +1001,9 @@ heavy_cycle_gate() {
 	sha="$(G rev-parse origin/master)"
 	for b in $good; do mark_landed "$b" "${TIP_OF[$b]}" "$sha"; done
 	CYCLE_PROGRESS=1
-	if [ -z "${capped:-}" ] && [ "$nbounced" -eq 0 ] && [ -z "${deferred:-}" ]; then
-		local lim; lim="$(cat "$limit_file" 2>/dev/null)"; lim="${lim:-$limit_max}"
-		lim=$(( lim * 2 )); [ "$lim" -gt "$limit_max" ] && lim="$limit_max"
-		echo "$lim" >"$limit_file"
+	if [ -z "${capped:-}" ] && [ "$nfailed" -eq 0 ]; then
+		# a cycle that landed with no failed test: back to the full batch size at once (not doubled step by step)
+		echo "$limit_max" >"$limit_file"
 	fi
 	tlog "pushed: origin/master ${sha:0:10} carries [$good]"
 }
@@ -966,12 +1024,17 @@ cycle() {
 		tip="$(qget "$f" tip)"
 		cur="$(G rev-parse -q --verify "refs/heads/$b^{commit}" 2>/dev/null || G rev-parse -q --verify "refs/remotes/origin/$b^{commit}" 2>/dev/null || true)"
 		if [ -z "$cur" ]; then bounce "$b" "the branch no longer exists in the repository (deleted or renamed after enqueue)"; CYCLE_PROGRESS=1; continue; fi
-		if [ "$cur" != "$tip" ]; then bounce "$b" "the branch moved after it was enqueued (queued ${tip:0:10}, now ${cur:0:10}); the train lands exactly what was enqueued: enqueue the new tip"; CYCLE_PROGRESS=1; continue; fi
+		if [ "$cur" != "$tip" ]; then
+			# A lane that committed more after it was enqueued is not bounced: the queue adopts the new tip (a fresh precheck follows).
+			# A tip that moved while its lane rode a cycle is carried here, to the next cycle (mark_landed keeps such a lane queued).
+			if adopt_tip "$b" "$tip" "$cur"; then tip="$cur"; else CYCLE_PROGRESS=1; continue; fi
+		fi
 		if G merge-base --is-ancestor "$tip" origin/master; then mark_landed "$b" "$tip" "$(G rev-parse origin/master)"; tlog "$b was already in origin/master"; CYCLE_PROGRESS=1; continue; fi
 		TIP_OF[$b]="$tip"
 		VALID+=("$b")
 	done
 	[ ${#VALID[@]} -gt 0 ] || return 0
+	[ "$AUTO_LIGHT" = 1 ] && for b in "${VALID[@]}"; do promote_light "$b"; done
 	precheck_ensure
 	[ "$PRE_ON" != 1 ] || [ -s "$PRE/epoch" ] || date +%s >"$PRE/epoch"
 	select_batch
@@ -1102,6 +1165,12 @@ cmd_report() {
 	[ -f "$r" ] || { if [ -f "$(qfile "$b")" ]; then echo "$b is queued, not bounced"; elif [ -f "$LANDED/$(fname "$b").landed" ]; then echo "$b landed: $(tr '\n' ' ' <"$LANDED/$(fname "$b").landed")"; else echo "no record of $b"; fi; return 0; }
 	cat "$r"
 }
+cmd_lanes() { # per-lane waiting / in-cycle / fixing times and the mean gate phases (tools/train/lane_times.py)
+	local since="${DQ_TRAIN_LANES_SINCE:-$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)}" here
+	[ "${1:-}" = "--since" ] && since="${2:?--since needs a time like 2026-10-26T14:00:00Z}"
+	here="$SELF_DIR/train/lane_times.py"; [ -f "$here" ] || here="$(repo_dir)/tools/train/lane_times.py"
+	"${PYTHON:-python3}" "$here" "$LOGS/train.log" --since "$since" --timings "$WT/data/merge-gates"
+}
 cmd_dequeue() {
 	local b="${1:?usage: dequeue <branch>}"
 	rm -f "$(qfile "$b")" "$BOUNCED/$(fname "$b").q"
@@ -1116,5 +1185,6 @@ case "${1:-}" in
 	ensure) cmd_ensure ;;
 	run) cmd_run ;;
 	precheck-run) cmd_precheck_run ;;
+	lanes) shift; cmd_lanes "$@" ;;
 	*) sed -n '2,12p' "$0"; exit 2 ;;
 esac

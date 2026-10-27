@@ -59,7 +59,16 @@ check "a dirty start is cleaned, not refused" '[ "$rc" = 0 ] && grep -q "start d
 rc="$(run "lb")"
 check "a lone bad lane leaves the branch at origin/master" '[ "$rc" = 1 ] && [ "$(git rev-parse rewrite/integ-current)" = "$(git rev-parse origin/master)" ]'
 rc="$(run "ld,le,la")"
-check "a conflicting lane is bounced, the rest merge" '[ "$rc" = 1 ] && grep -q "BOUNCED: le" "$tmp/out.log" && git merge-base --is-ancestor ld rewrite/integ-current && git merge-base --is-ancestor la rewrite/integ-current'
+check "a lane that conflicts with the batch only waits (BATCH_LATER), the rest merge" '[ "$rc" = 0 ] && grep -q "^BATCH_LATER: le$" "$tmp/out.log" && ! grep -q "^BATCH_BOUNCED" "$tmp/out.log" && git merge-base --is-ancestor ld rewrite/integ-current && git merge-base --is-ancestor la rewrite/integ-current'
+git push -q origin rewrite/integ-current:master; git fetch -q origin; git switch -q --detach origin/master
+rc="$(run "le")"
+check "once master holds the other side, the conflict is with master: bounced" '[ "$rc" = 1 ] && grep -q "^BATCH_BOUNCED: le|merge conflict with master" "$tmp/out.log"'
+# shared docs: two lanes appending at the same place of AGENTS.md and a doc keep both sides (union), nobody bounced
+mkdir -p doc; echo "# agents" >AGENTS.md; echo "# doc" >doc/n.md; git add -A; git commit -q -m docs; git push -q origin HEAD:master; git fetch -q origin
+git switch -q -c du1 origin/master; echo "one" >>AGENTS.md; echo "one" >>doc/n.md; git add -A; git commit -q -m du1; git switch -q --detach origin/master
+git switch -q -c du2 origin/master; echo "two" >>AGENTS.md; echo "two" >>doc/n.md; git add -A; git commit -q -m du2; git switch -q --detach origin/master
+rc="$(run "du1,du2")"
+check "a conflict confined to shared docs keeps both sides and is gated, not bounced" '[ "$rc" = 0 ] && grep -q "^BATCH_GOOD: du1 du2$" "$tmp/out.log" && git show rewrite/integ-current:AGENTS.md | grep -qx one && git show rewrite/integ-current:AGENTS.md | grep -qx two && git show rewrite/integ-current:doc/n.md | grep -qx two'
 
 # a test-phase failure that is not a cap (here: an unknown test name, exit 2, no result line) must not be read as a cap, and the
 # tests of a lane that is not in the attempt must not reach the gate (the train bounced healthy lanes both ways)
@@ -72,7 +81,7 @@ check "the fallback result line does not contain the cap marker" '! grep -q "FOC
 unset DQ_STUB_USAGE_FAIL
 : >"$DQ_STUB_ARGS"
 rc="$(bash tools/dq_merge_batch.sh --lanes "ld,le,la" --lane-tests "ld=dq_t_d" --lane-tests "le=dq_t_e" --lane-tests "la=dq_t_a" >"$tmp/out.log" 2>&1; echo $?)"
-check "a bounced lane's tests are not sent to the gate" '[ "$rc" = 1 ] && grep -q "dq_t_d" "$DQ_STUB_ARGS" && grep -q "dq_t_a" "$DQ_STUB_ARGS" && ! grep -q dq_t_e "$DQ_STUB_ARGS"'
+check "a lane left out (deferred or bounced) has its tests kept from the gate" 'grep -q "dq_t_d" "$DQ_STUB_ARGS" && grep -q "dq_t_a" "$DQ_STUB_ARGS" && ! grep -q dq_t_e "$DQ_STUB_ARGS"'
 unset DQ_STUB_ARGS
 
 # A bisect that only gets one attempt per cycle (the deadline is already past; the first real attempt of a run is still allowed) is
@@ -127,7 +136,7 @@ git switch -q --detach origin/master
 bash tools/dq_merge_batch.sh --lanes "dme1,dme2" >"$tmp/dme.log" 2>&1; rc=$?
 check "a deepquarry.dme-only conflict is resolved by the include-set merge, nobody bounced" '[ "$rc" = 0 ] && grep -q "^BATCH_GOOD: dme1 dme2" "$tmp/dme.log" && git show rewrite/integ-current:deepquarry.dme | grep -qF "n1.dm" && git show rewrite/integ-current:deepquarry.dme | grep -qF "n2.dm" && grep -q "resolved a deepquarry.dme-only conflict" data/merge-batch/*.log'
 bash tools/dq_merge_batch.sh --lanes "dme1,dme3" >"$tmp/dme3.log" 2>&1; rc=$?
-check "a manifest naming a file that is not on disk stays a conflict and is bounced" '[ "$rc" = 1 ] && grep -q "^BATCH_BOUNCED: dme3|merge conflict" "$tmp/dme3.log" && grep -q "^BATCH_GOOD: dme1$" "$tmp/dme3.log"'
+check "a manifest naming a file that is not on disk stays a conflict (with the batch: it waits)" 'grep -q "^BATCH_LATER: dme3$" "$tmp/dme3.log" && grep -q "^BATCH_GOOD: dme1$" "$tmp/dme3.log"'
 . tools/dq_dme_resolve.sh
 printf 'A\nB\nC\n' >"$tmp/b"; printf 'A\nC\nX\n' >"$tmp/o"; printf 'A\nB\nT\nC\n' >"$tmp/t"
 dme_merge3 "$tmp/b" "$tmp/o" "$tmp/t" "$tmp/r"
