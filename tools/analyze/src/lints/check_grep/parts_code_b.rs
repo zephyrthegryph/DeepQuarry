@@ -117,10 +117,11 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "generic_hit_ratchet_on_attack_generic_overrides",
             "generic hit: ratchet on attack_generic() overrides",
-            "attack_generic() overrides over the ratchet. Take the generic hit over: extend(/datum/act/hit/generic, instead(then(PROC_REF(x)))) in the type's CAPABILITIES; HOOK_DECLINE lets the default attack land.",
+            "attack_generic() overrides are gone (banned; the /atom default stays). Take the generic hit over: extend(/datum/act/hit/generic, instead(then(PROC_REF(x)))) in the type's CAPABILITIES; HOOK_DECLINE lets the default attack land.",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/attack_generic\("),
-        ),
+        )
+        .flt(vec![drop(r"^[^:]+:\d+:/atom/proc/attack_generic\(")]),
         // Items, structures, effects and turfs (code/game/objects, code/game/turfs): the legacy forms of the items/structures
         // wave, shrink-only until each reaches zero and becomes a hard ban (tools/codemods/run_items_wave.sh, exclusions.txt).
         Part::new(
