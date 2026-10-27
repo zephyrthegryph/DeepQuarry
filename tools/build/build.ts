@@ -3698,7 +3698,8 @@ export const ServerTarget = new Juke.Target({
         ddSecurityFlag(),
         '-invisible',
         '-params',
-        'config-directory=config/example',
+        // dd_log=1: an -invisible world has no console, so the world writes world.log (every runtime) to the round's dd.log.
+        'config-directory=config/example&dd_log=1',
       );
     } finally {
       webroot.kill();

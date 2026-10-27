@@ -342,8 +342,10 @@ GLOBAL_VAR(restart_counter)
 #ifndef USE_CUSTOM_ERROR_HANDLER
 	world.log = file("[GLOB.log_directory]/dd.log")
 #else
-	if (TgsAvailable()) // why
-		world.log = file("[GLOB.log_directory]/dd.log") //not all runtimes trigger world/Error, so this is the only way to ensure we can see all of them.
+	// Under TGS, and on a headless server (`-params dd_log=1`, the `server` build target: -invisible shows no console), world.log
+	// goes to the round's dd.log: runtimes are written to world.log, and not all of them trigger world/Error.
+	if (TgsAvailable() || params["dd_log"])
+		world.log = file("[GLOB.log_directory]/dd.log")
 #endif
 
 GLOBAL_VAR_INIT(world_topic_spam_protect_ip, "0.0.0.0")
@@ -455,6 +457,38 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		if(length(top) > 40)
 			top.Cut(41)
 		return json_encode(top)
+
+	// Localhost-only flight recorder read for live benchmarking (tools/ci/server_bench_sample.py): every recorded tick after
+	// tick `since` (usage and maptick %, the ring holds the last KM_RING_LEN ticks), so a poller that asks more often than
+	// the ring wraps sees every tick of a live server.
+	if (diag == "kmticks")
+		var/datum/tick_meter/meter = km_meter()
+		var/since = text2num(params2list(T)["since"]) || 0
+		var/list/tick_ids = list()
+		var/list/usage = list()
+		var/list/maptick = list()
+		for(var/n in 1 to meter.ring_count)
+			var/at = meter.ring_index(n)
+			if(meter.fr_tick[at] <= since)
+				continue
+			tick_ids += meter.fr_tick[at]
+			usage += round(meter.fr_usage[at], 0.1)
+			maptick += round(meter.fr_maptick[at], 0.1)
+		return json_encode(list("world_time_ds" = TIME_NOW(CLOCK_WORLD), "players" = length(GLOB.clients), "state" = round_game_state(),
+			"cpu" = world.cpu, "map_cpu" = world.map_cpu, "ticks" = tick_ids, "usage" = usage, "maptick" = maptick))
+	// Localhost-only per-system kernel accounting of the live stats set (the stat panel's Kernel view), the 40 costliest rows;
+	// `reset=1` clears the set afterwards so the next read covers one benchmark phase.
+	if (diag == "kmsystems")
+		var/datum/tick_meter/meter = km_meter()
+		var/list/report = km_diagnostics(GLOB.om_live_sched)
+		var/list/rows = report["systems"]
+		if(length(rows) > 40)
+			rows.Cut(41)
+		report -= "unrolled_behaviours"
+		report["elapsed_s"] = meter.live.elapsed_seconds()
+		if(params2list(T)["reset"])
+			meter.live.reset()
+		return json_encode(report)
 
 	if (T == "ping")
 		var/x = 1
