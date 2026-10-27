@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "AGENTS.md lists only base_vars as an open ratchet; init, raw overlays, untyped and escape_hatches are at 0 and banned"
