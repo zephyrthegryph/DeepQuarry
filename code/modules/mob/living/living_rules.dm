@@ -36,7 +36,7 @@ STATIC_ENTRY(living_rules)
 	/// How long a climb takes by default: mobs climb at quarter speed; the lower the faster. A species and worn gear may beat it.
 	var/climbing_delay = 1.5
 	/// The belly sprite classes the mob has icons for (a belly picks one as its sprite); shared, never mutate it: set_vore_icon_bellies() writes a new list.
-	var/list/vore_icon_bellies = list("stomach")
+	var/list/vore_icon_bellies = list("stomach") // ALLOW(instance_list): a type trait holds one shared copy-on-write value per type, not one list per mob
 
 /datum/type_trait/living_rules/copy_values(datum/type_trait/living_rules/into)
 	into.use_modern_ai = use_modern_ai
