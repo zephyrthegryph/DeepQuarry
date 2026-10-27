@@ -810,6 +810,13 @@ versions issued on a fresh-session full compile 345k -> 112k (`issue_s` 3.4-4.5 
 through the tree's own certificates), so the compile is unchanged within noise (compilation stage 19.4 / 22.1 s against
 18.6 / 23.8 s; body edits 1.6-1.9 s against 1.4-1.8 s). `dmb-equiv` against a fresh compile: EQUIVALENT, three rounds.
 
+Remaining issuers on a fresh-session full compile after slice 2 (caller probe, 1/64 sampled): the engine host's own
+issuance (`issued_domain_version` through the scalar snapshot) for the receipts that still record versions, and the class
+projection's retained owners (`class_projection::retained`, a `RecordingResolver` over the `SemanticTree` whose receipts are
+admitted by `visit_explained` against the tree with their versions: about 340k tree version calls). The class projection
+reads the tree, not the engine host the answer table answers for, so it needs a tree-level answer table (or to read
+through the request's table) before its versions can go.
+
 Next slices: (3) every request gets an answer table (one-shot compiles too), after
 which the version path of `ReceiptAdmission`, `ObservationLedger::versions` and the stored version lists can go; (4) the
 answer world (`QueryDb::begin_answers`) is computed from the tree and scalar snapshot directly instead of through
