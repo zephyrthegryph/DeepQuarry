@@ -21,10 +21,10 @@ type message = {
   title: string;
   source: string;
   timestamp: string;
-  uid: number;
+  uid: string;
 };
 
-type account = { login: string; uid: number };
+type account = { login: string; uid: string };
 
 export const NtosEmailAdministration = (props) => {
   const { data } = useBackend<Data>();
