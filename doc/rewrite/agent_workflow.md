@@ -85,8 +85,9 @@ conflicts back). Don't commit regenerated output after a declaration change: com
 
 - **Order.** Path order, except what the spec places: the pragmas and compile options, `code/__defines/**`, the ids and contracts,
   every `*_defines.dm` first; `before A B` rules where a macro lives in an ordinary file or one file redefines a type's var or proc
-  another file defines (the later definition wins, so the pair keeps its order); the test aggregators and the generated files last.
-  Each rule carries its reason. The rules were found by compiling the generated order against the old hand order (origin/master
+  another file defines (the later definition wins, so the pair keeps its order), or where DreamMaker needs a declaration before a
+  file that sets the var or overrides the proc (it warns, `var_before_def` / `override_before_def`; the native compiler does not
+  care); the test aggregators and the generated files last. Each rule carries its reason. The rules were found by compiling the generated order against the old hand order (origin/master
   54914eb899) with the native compiler and comparing the worlds with dmb-equiv: `bash tools/ci/dme_order_equiv.sh [REV:deepquarry.dme]`
   (production and test worlds; `--ignore-order`, debug lines compared). The global initializers always run in include order, so they
   move; `tools/ci/global_init_order.py` checks that every moved pair commutes (no initializer reads another's global after the move,

@@ -59,6 +59,26 @@ before code/ATMOSPHERICS/components/** code/ATMOSPHERICS/rust_pipenets.dm   # ru
 before code/modules/overmap/ships/computers/helm.dm code/modules/flight_operations/flight_console.dm   # navigation ui_redirect()
 before code/datums/observation/turf_enterexit.dm code/content/turfs/simulated/outdoors/sky_effect.dm   # /turf/Entered()
 
+# Declaration before use, for DreamMaker: it warns when a type's var is set, or a proc overridden, before the file that declares it
+# (var_before_def, override_before_def). The native compiler does not care and the worlds are the same; these pairs keep DreamMaker's
+# warnings at what the old order gave (tools/ci/dm_equiv.sh compiles with both).
+before code/engine/declare/lifecycle.dm code/datums/lifecycle/declarations.dm          # validate_registries()
+before code/engine/hooks/content_adapters.dm code/datums/engine_adapters.dm            # bind_native(), send(), lookup(), ...
+before code/engine/parts/input_adapter.dm code/datums/engine_adapters.dm              # compatibility_topic()
+before code/engine/refs/transfer.dm code/datums/ownership/transfer.dm                 # record(), refusal()
+before code/engine/state/collapse.dm code/datums/state/collapse.dm                     # describe(), hook_blockers()
+before code/engine/state/construction.dm code/datums/state/construction_adapter.dm     # create()
+before code/engine/state/properties/providers.dm code/datums/properties/providers.dm   # validate_rules(), variant_values()
+before code/engine/state/schema.dm code/datums/state/latent_safe_types.dm              # register_defaults()
+before code/engine/state/serializer.dm code/datums/state/serializer.dm                 # identity(), lookup()
+before code/game/objects/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
+before code/modules/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm      # change_win_count()
+before code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm code/domains/ai/ports/possum.dm  # respond_to_damage()
+before code/modules/reagents/reagents/content/food.dm code/content/reagents/reagents/content/alcohol.dm      # nutriment_factor
+before code/modules/refinery/core/industrial_reagent_machines.dm code/content/refinery/core/industrial_reagent_pump.dm   # minimum_reagents_for_transfer
+before code/modules/stockmarket/stocks.dm code/modules/admin/admin_report_panel.dm     # displayValues()
+before code/content/integrated_electronics/core/special_pins/list_pin.dm code/content/integrated_electronics/list_pin_panel.dm   # interact()
+
 # The test trees are compiled through their aggregators (their own include lists, under UNIT_TESTS).
 skip code/modules/unit_tests/**
 file code/modules/unit_tests/_unit_tests.dm
@@ -99,6 +119,7 @@ first code/__defines/**
 first code/engine/_generated/ids.dm      # the ids the declaration markers declare (analyze gen declare_ids): before everything that names one
 first code/contracts/**                  # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first **/*_defines.dm                    # a module's own macro file (combat_ai, integrated_electronics, flight_operations, expedition, ...)
+first code/game/machinery/machinery_fields.dm   # declares the machine families' state vars (on, active, locked, mode) their files set
 
 # Macros defined in an ordinary file and used by others: the definer before its users.
 before code/modules/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
