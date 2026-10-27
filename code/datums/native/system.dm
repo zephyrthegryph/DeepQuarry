@@ -88,28 +88,29 @@
 	frames++
 	read_cache = null
 	var/list/box = vg_frame(elapsed, budget)
+	var/vg_done = TICK_USAGE_REAL
 	deliver(box)
 	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
 	if(last_frame_ms >= NATIVE_SLOW_FRAME_MS)
-		report_slow_frame()
+		report_slow_frame(TICK_DELTA_TO_MS(vg_done - start))
 	return TRUE
 
 /// Logs a frame that took NATIVE_SLOW_FRAME_MS or more with the Rust phases (`frame.us.<phase>`, microseconds) that grew since the
 /// previous slow frame: a multi-second frame names its phase here instead of showing as an anonymous om_native overrun.
-/datum/system/native/proc/report_slow_frame()
+/datum/system/native/proc/report_slow_frame(vg_ms = 0)
 	slow_frames++
 	var/list/rust = verdigris_metrics_list()
 	var/list/now_us = list()
 	for(var/name in rust)
-		if(findtext(name, "frame.us.") == 1 && isnum(rust[name]))
+		if(findtext(name, "frame.slow_us.") == 1 && isnum(rust[name]))
 			now_us[name] = rust[name]
 	var/list/grew = list()
 	for(var/name in now_us)
 		var/delta = now_us[name] - (slow_frame_prev ? slow_frame_prev[name] : 0)
 		if(delta >= 1000)
-			grew[copytext(name, 10)] = round(delta / 1000, 0.1)
+			grew[copytext(name, 15)] = round(delta / 1000, 0.1)
 	slow_frame_prev = now_us
-	log_world("NATIVE_SLOW_FRAME: frame [frames] took [round(last_frame_ms, 0.1)] ms (records [last_records], changed [last_changed], notices [last_notices]); phases grown since the previous slow frame, ms: [json_encode(grew)]")
+	log_world("NATIVE_SLOW_FRAME: frame [frames] took [round(last_frame_ms, 0.1)] ms, of which vg_frame [round(vg_ms, 0.1)] ms and delivery [round(last_frame_ms - vg_ms, 0.1)] ms (records [last_records], changed [last_changed], notices [last_notices]); Rust phases of the slow frames since the previous report, ms (frame.slow_us.*, empty when Rust saw no frame over 100 ms): [json_encode(grew)]")
 
 /// Test hook: drains what Rust holds now without pacing it (after vg_world_run_steps()).
 /datum/system/native/proc/drain()
