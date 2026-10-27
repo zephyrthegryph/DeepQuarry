@@ -167,7 +167,7 @@ SYSTEM_DEF(research)
 				bitcoins[i] *= (income_time_difference / 10) * techweb_list.income_modifier
 			techweb_list.add_point_list(bitcoins)
 
-		EXPIRY_STAMP(techweb_list, last_income, CLOCK_WORLD)
+		STAMP(techweb_list, last_income, CLOCK_WORLD)
 
 		if(length(techweb_list.research_queue_nodes))
 			techweb_list.research_node_id(LAZYACCESS(techweb_list.research_queue_nodes, 1)) // Attempt to research the first node in queue if possible

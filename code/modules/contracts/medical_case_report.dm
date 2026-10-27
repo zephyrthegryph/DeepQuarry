@@ -91,7 +91,7 @@ CAPABILITIES(/datum/contract/medical_case_report)
 /datum/contract/medical_case_report/proc/register_consent(obj/item/paper/paper, mob/living/carbon/human/subject)
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
-	EXPIRY_STAMP(src, consent_time, CLOCK_WORLD)
+	STAMP(src, consent_time, CLOCK_WORLD)
 	rel_set(src, nameof(consent_record), paper)
 	return TRUE
 

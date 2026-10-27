@@ -10,4 +10,4 @@
 			cmd_admin_mute(src.mob, mute_type, TRUE)
 	else
 		spam_alert = max(0, spam_alert - 1)
-	EXPIRY_STAMP(src, last_message_time, CLOCK_WORLD)
+	STAMP(src, last_message_time, CLOCK_WORLD)

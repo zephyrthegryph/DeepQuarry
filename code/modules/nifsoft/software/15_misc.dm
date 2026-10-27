@@ -215,12 +215,12 @@ CAPABILITIES(/datum/nifsoft/sizechange)
 
 /datum/nifsoft/malware/install()
 	if((. = ..()))
-		EXPIRY_STAMP(src, last_ads, CLOCK_WORLD)
+		STAMP(src, last_ads, CLOCK_WORLD)
 
 /datum/nifsoft/malware/life()
 	if((. = ..()))
 		if(nif().human.client && ELAPSED(src, last_ads, CLOCK_WORLD) > rand(10 MINUTES, 15 MINUTES) && prob(1))
-			EXPIRY_STAMP(src, last_ads, CLOCK_WORLD)
+			STAMP(src, last_ads, CLOCK_WORLD)
 			nif().human.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)
 
 /// LC-refs: the apc this refers to -- a relation view: null once it is deleted.

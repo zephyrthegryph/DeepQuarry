@@ -9,7 +9,7 @@
 //   EXPIRY_ACTIVE(src, stun_until, CLOCK_WORLD)  // TRUE until it runs out
 //   EXPIRY_LEFT(src, stun_until, CLOCK_WORLD)    // deciseconds left, 0 when expired
 //   EXPIRY_CLEAR(src, stun_until)
-//   EXPIRY_STAMP(src, started_at, CLOCK_WORLD)   // record "now"
+//   STAMP(src, started_at, CLOCK_WORLD)          // record "now"
 //   ELAPSED(src, started_at, CLOCK_WORLD)        // deciseconds since the stamp
 //
 // The clock is part of the value's meaning, so every read passes the same clock the write used:
@@ -43,7 +43,8 @@
 #define EXPIRY_EXPIRED(D, name, clock) (D.name <= EXPIRY_NOW(D, clock))
 #define EXPIRY_LEFT(D, name, clock) max(0, D.name - EXPIRY_NOW(D, clock))
 
-#define EXPIRY_STAMP(D, name, clock) (D.name = EXPIRY_NOW(D, clock))
+/// Records "now" on `clock` in the var `name` of D. The pair of ELAPSED; a base type's stamp is a table slot (stamp_now(), sparse_slots.dm).
+#define STAMP(D, name, clock) (D.name = EXPIRY_NOW(D, clock))
 #define ELAPSED(D, name, clock) (EXPIRY_NOW(D, clock) - D.name)
 /// Elapsed since a raw point (a list slot, a local) on D's clock.
 #define ELAPSED_SINCE(D, point, clock) (EXPIRY_NOW(D, clock) - (point))

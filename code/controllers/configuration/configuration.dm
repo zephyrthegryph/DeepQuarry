@@ -17,7 +17,7 @@
 	var/list/mode_false_report_weight
 
 	var/motd
-	var/policy
+	var/list/policy
 
 	/// If the configuration is loaded
 	var/loaded = FALSE

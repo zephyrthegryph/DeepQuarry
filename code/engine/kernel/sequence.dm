@@ -242,16 +242,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 
 // The execution token lives on the member's state (one var read) instead of the item's assoc list: the sweep asks
 // for it twice per member.
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/sequence/token_current(datum/member, now = world.time)
+/datum/work_item/sequence/token_current(datum/member, now)
 	var/datum/seq_state/state = SEQ_STATE_OF(member, def.idx)
 	var/prev = state?.last_at
 	if(isnull(prev))
 		return FALSE
 	return prev >= (clock == CLOCK_WORLD ? now : work_clock_now(clock, member, now))
 
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/sequence/take_dt(datum/member, now = world.time)
+/datum/work_item/sequence/take_dt(datum/member, now)
 	var/datum/seq_state/state = SEQ_STATE_OF(member, def.idx)
 	if(!state)
 		return 0
@@ -260,7 +258,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 	var/prev = state.last_at
 	if(isnull(prev))
 		prev = now - max(interval, world.tick_lag)
-	state.last_at = max(now, 0) // a timestamp is never negative; max() keeps it a plain number
+	state.last_at = now
 	return max(now - prev, 0)
 
 /datum/work_item/sequence/forget(datum/member)
@@ -277,8 +275,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
  * by the end of this tick, catches up by at most KERNEL_SPREAD_CATCHUP shares a pass, and looks at a slot again when
  * its member left during its turn (a member that parks swap-removes itself).
  */
-// ALLOW(sys_world_time_write): the kernel clock: a per-sweep timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/sequence/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now = world.time)
+/datum/work_item/sequence/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now)
 	var/list/members_list = members_of(members)
 	var/count = length(members_list)
 	var/target

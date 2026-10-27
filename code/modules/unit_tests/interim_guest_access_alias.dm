@@ -12,7 +12,7 @@
 	access += ACCESS_ENGINE
 	TEST_ASSERT(ACCESS_ENGINE in pass.GetAccess(), "mutation through the public list alias reaches the pass")
 	TEST_ASSERT(!(ACCESS_ENGINE in other.GetAccess()), "another pass never aliases the first pass's access")
-	EXPIRY_STAMP(pass, expiration_time, CLOCK_WORLD)
+	STAMP(pass, expiration_time, CLOCK_WORLD)
 	TEST_ASSERT_EQUAL(pass.GetAccess(), pass.access, "an expired pass returns its permanent-access list")
 	TEST_ASSERT(!(ACCESS_ENGINE in pass.GetAccess()), "expiration stops granting the temporary access")
 	TEST_ASSERT(ACCESS_ENGINE in access, "expiration preserves an outstanding temporary-list alias")

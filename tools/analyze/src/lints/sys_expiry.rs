@@ -37,11 +37,11 @@ const RULES: &[RuleMeta] = &[
     },
     RuleMeta {
         name: "world_time_write",
-        hint: "a stored time is written with EXPIRY_SET/EXPIRY_EXTEND/EXPIRY_STAMP (or EXPIRY_AT for list slots/records), never `x = world.time (+ N)`",
+        hint: "a stored time is written with EXPIRY_SET/EXPIRY_EXTEND/STAMP (or EXPIRY_AT for list slots/records), never `x = world.time (+ N)`",
     },
     RuleMeta {
         name: "expiry_undeclared",
-        hint: "a var read/written by EXPIRY_*/ELAPSED is declared with EXPIRY_DECLARE/EXPIRY_TMP_DECLARE",
+        hint: "a var read/written by EXPIRY_*/STAMP/ELAPSED is declared with EXPIRY_DECLARE/EXPIRY_TMP_DECLARE",
     },
 ];
 
@@ -175,8 +175,8 @@ fn pass_writes(f: &SourceFile) -> Writes {
         {
             w.writes.push(number);
         }
-        if code.contains("EXPIRY_") || code.contains("ELAPSED(") {
-            for c in pat!(r"\b(?:EXPIRY_(?:SET|EXTEND|CLEAR|ACTIVE|EXPIRED|LEFT|STAMP)|ELAPSED)\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(\w+)").captures_iter(code) {
+        if code.contains("EXPIRY_") || code.contains("ELAPSED(") || code.contains("STAMP(") {
+            for c in pat!(r"\b(?:EXPIRY_(?:SET|EXTEND|CLEAR|ACTIVE|EXPIRED|LEFT)|STAMP|ELAPSED)\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(\w+)").captures_iter(code) {
                 w.uses.push((number, c.s(1).to_string()));
             }
         }

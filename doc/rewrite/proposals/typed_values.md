@@ -57,7 +57,7 @@ What the `untyped` and `stored_refs` lints do with it today: nothing. A var with
 | Option | Verdict |
 |---|---|
 | `var/path/x`, `var/text/x`, `var/num/x` | Does not compile. |
-| DM's `as` clause on a var (`var/x as path`) | `as` takes input types (`num`, `text`, `mob`, `obj`, ...), and `path` is not one of them. Even where it parses, it cannot say "a path under `/obj/item/stack`", and DreamChecker gives it no meaning. Rejected for paths; to confirm for text and num with a 5-line probe in the lane (both compilers), but it would add nothing the lints can read. |
+| DM's `as` clause on a var (`var/x as path`) | `as` takes input types (`num`, `text`, `mob`, `obj`, ...), and `path` is not one of them. Even where it parses, it cannot say "a path under `/obj/item/stack`", and DreamChecker gives it no meaning. Rejected for paths. **Probed 2026-10-25** (`var/p as path`, `var/t as text`, `var/n as num` on one type): DreamMaker 516.1687 stops at `var/p as path` with `error: Bad input type: path` and accepts `as text` / `as num`; `tools/dmb` (`dmbc compile`) accepts all three with 0 errors and treats the var as untyped (`declared_type` null, `known_untyped`). So `as path` is a hard DreamMaker error (CI's production compile would fail on it), `as text`/`as num` compile everywhere but give the lints nothing to read, and the native compiler is more lenient than DreamMaker here (a divergence to remember: a local green native build does not prove an `as` clause is legal). |
 | A typed-path macro on the var line (`PATH_VAR(/obj/item/stack, debris_type)` expanding to `var/debris_type`) | A second declaration form beside `SCHEMA`, a macro that hides a `var/` from every textual tool, and it cannot carry text/num/msg. Rejected. |
 | A `/datum/msg` instance instead of a path (a flyweight, `var/datum/msg/reason`) | Honestly typed with no new form, but every `return /datum/msg/x` in the `req_*` library and every `reason =` becomes a call; about the whole refusal channel changes for a typing win. Held as an alternative (D2). |
 | **`SCHEMA(T, V, schema_expr)` read by the analyzer** | Chosen. The form exists, the schema vocabulary exists, one kind of declaration for every value, and the check at the boundary (a UI arg, a request, a loaded record) already runs. |
@@ -117,6 +117,13 @@ type-table size before converting the long tail, and if it is visible, adds a bl
 
 Risks: a wrong base type in `schema_path` rejects a legitimate subtype at a boundary (the UI arg) and fails the lint on a valid literal; the fix proposes, a reviewer chooses. A var
 with several kinds (a reason that is sometimes text) needs D2 settled first. Subtypes that override a var's default keep the schema (it is found down the chain).
+
+## 6a. Landed in the first lane (2026-10-25)
+
+- `value_procs` treats a type path literal as a value (`Term::Prefab`). On the real tree it cleared 1 `call` row of the `untyped` baseline (109 to 108): most `req_*` refusals were already values through other rules, so the free step is small.
+- `analyze` reads `SCHEMA` / `TRACKED_SCHEMA` value schemas (`tools/analyze/src/sem/value_schema.rs`): `untyped` skips such a var and checks a path literal against `schema_path(base)` or `schema_msg()` (new rule `schema`), `stored_refs` skips a value-schema var (a `list_of(schema_path(...))` list included), and `base_vars` names the schema in a base var's message. A schema alone does not house a base var (it saves no memory); the trait or sparse home is the base_vars wave.
+- `schema_msg()` is in the engine (`code/engine/declare/schema.dm`): null, a `/datum/msg` path, or a `msg_text()` list.
+- `analyze fix --propose-schema` prints a proposed `SCHEMA` line per untyped `call` row and writes nothing, with or without `--apply` (D4).
 
 ## 7. Decisions (DECIDED 2026-10-25, the coordinator on the user's delegation)
 

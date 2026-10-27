@@ -186,7 +186,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	if(PC && M)
 		rel_remove(PC, nameof(PC.targets), M)
 
-	EXPIRY_STAMP(src, last_shot, CLOCK_WORLD)
+	STAMP(src, last_shot, CLOCK_WORLD)
 	if(!istype(M))
 		return
 	//We throw a laser but it doesnt have to hit for meteor to explode

@@ -158,6 +158,7 @@
 
 
 
+SCHEMA(/mob, faction, schema_text())
 
 CAPABILITIES(/mob)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = FALSE))

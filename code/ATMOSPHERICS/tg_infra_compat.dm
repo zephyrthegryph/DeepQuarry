@@ -138,7 +138,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 	EXPIRY_DECLARE(fire_protection)
 
 /turf/proc/apply_fire_protection()
-	EXPIRY_STAMP(src, fire_protection, CLOCK_WORLD)
+	STAMP(src, fire_protection, CLOCK_WORLD)
 
 
 // Structured scan data shared by PDA, pAI and communicator TGUI clients.

@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/circulator)
 				//Update the gas networks.
 				gas_touched(air1)
 
-				EXPIRY_STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
+				STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
 				// The "running" overlay times out 5 s after the last transfer: one keyed timer, re-armed per transfer.
 				after(src, 5 SECONDS, PROC_REF(expire_transfer_display), key = "transfer_display")
 		else

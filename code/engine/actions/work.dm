@@ -134,14 +134,12 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 
 /// A crossing is a discrete event, not an interval of time: it carries no execution token (last_at) and always
 /// reports a positive dt to the urgent runner.
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/reaction/take_dt(datum/member, now = world.time)
+/datum/work_item/reaction/take_dt(datum/member, now)
 	if(reaction.kind == RXN_CROSS)
 		return world.tick_lag
 	return ..()
 
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/work_item/reaction/token_current(datum/member, now = world.time)
+/datum/work_item/reaction/token_current(datum/member, now)
 	if(reaction.kind == RXN_CROSS)
 		return FALSE
 	return ..()

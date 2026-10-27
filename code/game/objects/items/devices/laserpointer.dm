@@ -215,7 +215,7 @@ CAPABILITIES(/obj/item/laser_pointer)
 	else
 		act_message(user, src, MSG_SELF(span_info("You point %T% at [target].")), MSG_OTHERS(span_info("%U% points %T% at [target].")))
 
-	EXPIRY_STAMP(src, last_used_time, CLOCK_WORLD)
+	STAMP(src, last_used_time, CLOCK_WORLD)
 	energy -= 1
 	if(energy <= max_energy)
 		set_recharging(TRUE)

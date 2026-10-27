@@ -150,7 +150,7 @@ CAPABILITIES(/datum/generated_station_director)
 	report.details = details
 	report.source_department_id = source_department_id
 	report.confidence = clamp(confidence, 0, 100)
-	EXPIRY_STAMP(report, created_at, CLOCK_WORLD)
+	STAMP(report, created_at, CLOCK_WORLD)
 	report.expires_at = lifetime > 0 ? world.time + lifetime : 0
 	rel_add(src, nameof(reports), report, report.id)
 	source_knowledge[report.id] = report
@@ -234,7 +234,7 @@ CAPABILITIES(/datum/generated_station_director)
 	order.report_id = report_id
 	order.kind = kind
 	order.global_coordination = global_coordination
-	EXPIRY_STAMP(order, created_at, CLOCK_WORLD)
+	STAMP(order, created_at, CLOCK_WORLD)
 	order.state = GENERATED_STATION_ORDER_ACTIVE
 	rel_add(src, nameof(orders), order, order.id)
 	squad.active_order_id = order.id

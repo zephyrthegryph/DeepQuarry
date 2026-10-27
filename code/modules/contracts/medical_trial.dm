@@ -182,7 +182,7 @@ CAPABILITIES(/datum/contract/medical_trial)
 	participant.dose += amount
 	subject.record_clinical_exposure(id, profile.code_name, "coded trial medication", amount)
 	if(!participant.exposure_time)
-		EXPIRY_STAMP(participant, exposure_time, CLOCK_WORLD)
+		STAMP(participant, exposure_time, CLOCK_WORLD)
 
 /datum/contract/medical_trial/proc/record_challenge(mob/living/carbon/human/subject, amount)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
@@ -465,6 +465,8 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 	var/contract_eligibility_initialized = FALSE
 	var/contract_eligibility_qualifying = FALSE
 	var/contract_rare_eligibility_qualifying = FALSE
+
+SCHEMA(/datum/affliction, contract_rare_eligibility_qualifying, bool())
 
 /// Does this affliction's severity describe a clinical outcome? Wounds,
 /// lesions and injury load mirror physical integrity (autoheal, bandaging,

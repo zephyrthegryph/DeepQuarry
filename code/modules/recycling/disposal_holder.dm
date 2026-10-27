@@ -170,3 +170,4 @@ CAPABILITIES(/obj/structure/disposalholder)
 /obj/structure/disposalholder/proc/vent_gas(atom/location)
 	location.assume_air(gas)  // vent all gas to turf
 	return
+SCHEMA(/obj/structure/disposalholder, destinationTag, schema_text())

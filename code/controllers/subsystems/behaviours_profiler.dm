@@ -128,7 +128,7 @@ CAPABILITIES(/datum/system/behaviours)
 		sched.stage_calls = list()
 	// The per-system record (histograms, overrun share, input latency) restarts with it; the flight recorder stays.
 	km_meter().live.reset()
-	EXPIRY_STAMP(src, profile_reset_time, CLOCK_WORLD)
+	STAMP(src, profile_reset_time, CLOCK_WORLD)
 	log_admin("[key_name(user)] reset the OM profiler counters.")
 	return TRUE
 

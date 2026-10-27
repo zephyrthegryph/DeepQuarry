@@ -61,6 +61,8 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 		"this_time" = list("this week", "last week", "this month", "yesterday", "today", "a few days ago") \
 	)
 
+SCHEMA(/datum/article, headline, schema_text())
+
 /datum/article/New()
 	..()
 	if ((outlets.len && !prob(100 / (outlets.len + 1))) || !outlets.len)
@@ -79,7 +81,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 	else
 		author = pick(authors)
 
-	EXPIRY_STAMP(src, ticks, CLOCK_WORLD)
+	STAMP(src, ticks, CLOCK_WORLD)
 
 /datum/article/proc/generateOutletName()
 	var/list/locations = list("Earth", "Luna", "Mars", "Saturn", "Jupiter", "Uranus", "Pluto", "Europa", "Io", "Phobos", "Deimos", "Space", "Venus", "Neptune", "Mercury", "Kalliope", "Ganymede", "Callisto", "Amalthea", "Himalia", "Orion", "Sybil", "Basil", "Badger", "Terry", "Artyom")

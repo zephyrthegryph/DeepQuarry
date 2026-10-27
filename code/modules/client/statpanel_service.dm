@@ -158,7 +158,7 @@ SYSTEM_DEF(statpanels)
 		generate_mc_data()
 	if(!mc_metrics || !BEFORE(src, mc_metrics_generated_at + 5 SECONDS, CLOCK_WORLD))
 		mc_metrics = generate_mc_metrics()
-		EXPIRY_STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
+		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
 	target.stat_panel.send_message("update_mc", list(
 		"mc_data" = mc_data,
 		"mc_metrics" = mc_metrics,

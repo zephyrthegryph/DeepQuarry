@@ -103,8 +103,8 @@ GLOBAL_LIST_EMPTY(derives_running)
 	try
 		value = call(holder, E.args["proc"])(target) // x(target): one proc may compute several targets
 	catch(var/exception/e)
+		LAZYREMOVE(GLOB.derives_running, holder) // first: stack_trace() may itself throw (a test world, safe_call()), and the guard must not outlive the call
 		stack_trace("derives([target]) on [holder.type]: [e] ([e.file]:[e.line])")
-		LAZYREMOVE(GLOB.derives_running, holder)
 		return
 	LAZYREMOVE(GLOB.derives_running, holder)
 	if(holder.vars[target] == value)

@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 	if(last_scan && ELAPSED(src, last_scan, CLOCK_WORLD) < 20 SECONDS)
 		return 0
 	else
-		EXPIRY_STAMP(src, last_scan, CLOCK_WORLD)
+		STAMP(src, last_scan, CLOCK_WORLD)
 
 	rel_clear(src, nameof(connectedscrubbers))
 

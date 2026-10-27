@@ -391,7 +391,7 @@ CAPABILITIES(/datum/mind)
 		return 0
 
 	if(brigged_since == -1)
-		EXPIRY_STAMP(src, brigged_since, CLOCK_WORLD)
+		STAMP(src, brigged_since, CLOCK_WORLD)
 
 	return (duration <= ELAPSED(src, brigged_since, CLOCK_WORLD))
 

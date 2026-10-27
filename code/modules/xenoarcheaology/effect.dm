@@ -76,7 +76,7 @@
 	var/atom/target = get_master_holder()
 
 	if(ELAPSED(src, last_activation, CLOCK_WORLD) > 1 SECOND)
-		EXPIRY_STAMP(src, last_activation, CLOCK_WORLD)
+		STAMP(src, last_activation, CLOCK_WORLD)
 		if(activated)
 			set_activated(FALSE)
 		else

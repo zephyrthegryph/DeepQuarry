@@ -70,6 +70,8 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	var/species = SPECIES_HUMAN
 	var/list/body_markings
 
+SCHEMA(/datum/dna, base_species, schema_text())
+
 // Make a copy of this strand.
 // USE THIS WHEN COPYING STUFF OR YOU'LL GET CORRUPTION!
 // Can you imagine, this used to be done manually, var by var?

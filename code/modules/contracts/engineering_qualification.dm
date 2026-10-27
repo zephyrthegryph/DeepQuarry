@@ -33,6 +33,8 @@
 	var/measurement_field
 	var/unit
 
+SCHEMA(/datum/contract_requirement/recorded_stages, last_interval_end, num())
+
 CAPABILITIES(/datum/contract_requirement/recorded_stages)
 	owns_one(nameof(filter), /datum/contract_event_filter)
 

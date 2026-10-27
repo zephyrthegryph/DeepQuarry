@@ -59,7 +59,7 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 	if(istype(M,/mob) && !M.read_preference(/datum/preference/toggle/autotranscore))
 		do_notify = FALSE
 
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
 
 	if(add_to_db)
 		SStranscore.add_backup(src, database_key = database_key)

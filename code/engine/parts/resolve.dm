@@ -881,3 +881,5 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 
 /obj/proc/op_tool_quality(quality)
 	return FALSE
+
+SCHEMA(/datum/op_cand, dropped_reason, schema_msg())

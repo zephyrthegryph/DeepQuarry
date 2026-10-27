@@ -534,7 +534,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
 		// continuous harm for the time since the last digestion pass.
 		var/delta_factor = last_digest_time ? clamp((world.time - last_digest_time) / BELLY_BASELINE_TICK, 0, DOGBORG_DIGEST_MAX_CATCHUP) : 1
-		EXPIRY_STAMP(src, last_digest_time, CLOCK_WORLD)
+		STAMP(src, last_digest_time, CLOCK_WORLD)
 
 		//Burn all the mobs or add them to the exclusion list
 		for(var/mob/living/T in (touchable_items))

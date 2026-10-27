@@ -58,7 +58,7 @@
 		active_mode = COLORMATE_MATRIX
 	if (timeout)
 		src.timeout = timeout
-		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+		STAMP(src, start_time, CLOCK_WORLD)
 		expire(timeout)
 	color_matrix_last = default.Copy()
 
