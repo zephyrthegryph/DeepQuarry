@@ -8,9 +8,9 @@
 	min_n2 = 0 //breathe N2
 	max_n2 = 0
 
-	species_sounds = "Vox"
 
 CAPABILITIES(/mob/living/simple_mob/vox)
+	configure(living_rules(species_sounds = "Vox"))
 	configure(mob_nature(pain_1p = list("shriek"), pain_3p = list("shrieks")))
 
 /mob/living/simple_mob/vox/armalis

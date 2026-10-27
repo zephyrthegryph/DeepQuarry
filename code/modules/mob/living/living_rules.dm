@@ -10,9 +10,9 @@
 
 STATIC_ENTRY(living_rules)
 
-/proc/living_rules(use_modern_ai = null, has_huds = null, max_nutrition = null, fire_reaction = null, fire_trigger_proc = null, fire_trigger_verb = null, fire_heats_body = null, force_max_speed = null, adminbus_trash = null, parasitic = null, appendage_color = null, vore_shred_time = null, composition_reagent = null, low_sorting_priority = null, delete_on_death = null, say_list_type = null, vore_capacity = null, vore_capacity_ex = null, climbing_delay = null, vore_icon_bellies = null)
+/proc/living_rules(use_modern_ai = null, has_huds = null, max_nutrition = null, fire_reaction = null, fire_trigger_proc = null, fire_trigger_verb = null, fire_heats_body = null, force_max_speed = null, adminbus_trash = null, parasitic = null, appendage_color = null, vore_shred_time = null, composition_reagent = null, low_sorting_priority = null, delete_on_death = null, say_list_type = null, vore_capacity = null, vore_capacity_ex = null, climbing_delay = null, vore_icon_bellies = null, species_sounds = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_LIVING_RULES, null, list("use_modern_ai" = use_modern_ai, "has_huds" = has_huds, "max_nutrition" = max_nutrition, "fire_reaction" = fire_reaction, "fire_trigger_proc" = fire_trigger_proc, "fire_trigger_verb" = fire_trigger_verb, "fire_heats_body" = fire_heats_body, "force_max_speed" = force_max_speed, "adminbus_trash" = adminbus_trash, "parasitic" = parasitic, "appendage_color" = appendage_color, "vore_shred_time" = vore_shred_time, "composition_reagent" = composition_reagent, "low_sorting_priority" = low_sorting_priority, "delete_on_death" = delete_on_death, "say_list_type" = say_list_type, "vore_capacity" = vore_capacity, "vore_capacity_ex" = vore_capacity_ex, "climbing_delay" = climbing_delay, "vore_icon_bellies" = vore_icon_bellies))
+	return entry_make(ENTRY_LIVING_RULES, null, list("use_modern_ai" = use_modern_ai, "has_huds" = has_huds, "max_nutrition" = max_nutrition, "fire_reaction" = fire_reaction, "fire_trigger_proc" = fire_trigger_proc, "fire_trigger_verb" = fire_trigger_verb, "fire_heats_body" = fire_heats_body, "force_max_speed" = force_max_speed, "adminbus_trash" = adminbus_trash, "parasitic" = parasitic, "appendage_color" = appendage_color, "vore_shred_time" = vore_shred_time, "composition_reagent" = composition_reagent, "low_sorting_priority" = low_sorting_priority, "delete_on_death" = delete_on_death, "say_list_type" = say_list_type, "vore_capacity" = vore_capacity, "vore_capacity_ex" = vore_capacity_ex, "climbing_delay" = climbing_delay, "vore_icon_bellies" = vore_icon_bellies, "species_sounds" = species_sounds))
 
 /datum/type_trait/living_rules
 	var/use_modern_ai = FALSE
@@ -35,8 +35,10 @@ STATIC_ENTRY(living_rules)
 	var/vore_capacity_ex = list("stomach" = 0)
 	/// How long a climb takes by default: mobs climb at quarter speed; the lower the faster. A species and worn gear may beat it.
 	var/climbing_delay = 1.5
-	/// The belly sprite classes the mob has icons for (a belly picks one as its sprite); shared, never mutate it: set_vore_icon_bellies() writes a new list.
-	var/list/vore_icon_bellies = list("stomach") // ALLOW(instance_list): a type trait holds one shared copy-on-write value per type, not one list per mob
+	/// The belly sprite classes the mob has icons for (a belly picks one as its sprite); declared per type (/mob/living declares "stomach"); shared, never mutate it: set_vore_icon_bellies() writes a new list.
+	var/list/vore_icon_bellies
+	/// The species-sound set it speaks and emotes with (get_species_sound()); "None" has nothing.
+	var/species_sounds = "None"
 
 /datum/type_trait/living_rules/copy_values(datum/type_trait/living_rules/into)
 	into.use_modern_ai = use_modern_ai
@@ -59,13 +61,14 @@ STATIC_ENTRY(living_rules)
 	into.vore_capacity_ex = vore_capacity_ex
 	into.climbing_delay = climbing_delay
 	into.vore_icon_bellies = vore_icon_bellies
+	into.species_sounds = species_sounds
 
 /datum/entry_engine/type_trait/living_rules
 	kind = ENTRY_LIVING_RULES
 	trait_type = /datum/type_trait/living_rules
 	publish_key = LIVING_RULES_KEY
 	base_type = /mob/living
-	var_names = list("use_modern_ai" = "use_modern_ai", "has_huds" = "has_huds", "max_nutrition" = "max_nutrition", "fire_reaction" = "fire_reaction", "fire_trigger_proc" = "fire_trigger_proc", "fire_trigger_verb" = "fire_trigger_verb", "fire_heats_body" = "fire_heats_body", "force_max_speed" = "force_max_speed", "adminbus_trash" = "adminbus_trash", "parasitic" = "parasitic", "appendage_color" = "appendage_color", "vore_shred_time" = "vore_shred_time", "composition_reagent" = "composition_reagent", "low_sorting_priority" = "low_sorting_priority", "delete_on_death" = "delete_on_death", "say_list_type" = "say_list_type", "vore_capacity" = "vore_capacity", "vore_capacity_ex" = "vore_capacity_ex", "climbing_delay" = "climbing_delay", "vore_icon_bellies" = "vore_icon_bellies")
+	var_names = list("use_modern_ai" = "use_modern_ai", "has_huds" = "has_huds", "max_nutrition" = "max_nutrition", "fire_reaction" = "fire_reaction", "fire_trigger_proc" = "fire_trigger_proc", "fire_trigger_verb" = "fire_trigger_verb", "fire_heats_body" = "fire_heats_body", "force_max_speed" = "force_max_speed", "adminbus_trash" = "adminbus_trash", "parasitic" = "parasitic", "appendage_color" = "appendage_color", "vore_shred_time" = "vore_shred_time", "composition_reagent" = "composition_reagent", "low_sorting_priority" = "low_sorting_priority", "delete_on_death" = "delete_on_death", "say_list_type" = "say_list_type", "vore_capacity" = "vore_capacity", "vore_capacity_ex" = "vore_capacity_ex", "climbing_delay" = "climbing_delay", "vore_icon_bellies" = "vore_icon_bellies", "species_sounds" = "species_sounds")
 
 /// The holder's living_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/living_rules_of, LIVING_RULES_KEY)
@@ -110,6 +113,9 @@ READS_AS(/proc/living_rules_of, LIVING_RULES_KEY)
 
 /mob/living/proc/set_appendage_color(value)
 	return set_trait(src, ENTRY_LIVING_RULES, "appendage_color", value)
+
+/mob/living/proc/set_species_sounds(value)
+	return set_trait(src, ENTRY_LIVING_RULES, "species_sounds", value)
 
 /mob/living/proc/set_vore_icon_bellies(value)
 	return set_trait(src, ENTRY_LIVING_RULES, "vore_icon_bellies", value)

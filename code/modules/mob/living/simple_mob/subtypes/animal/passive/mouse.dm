@@ -41,10 +41,10 @@
 
 	var/list/datum/affliction/contagion/rat_diseases
 
-	species_sounds = "Mouse"
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	configure(living_rules(species_sounds = "Mouse"))
 	configure(living_rules(say_list_type = /datum/say_list/mouse))
 	configure(butchery_rules(meat_amount = 1, butchery_loot = list()))
 	configure(mob_rules(universal_understand = 1))

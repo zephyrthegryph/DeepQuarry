@@ -10,6 +10,7 @@
 		list(/mob, "lastKnownIP", "127.0.0.1", null),
 		list(/mob, "skincmds", list(), null),
 		list(/mob, "active_genes", list("x"), null),
+		list(/mob, "voice_sounds_list", list("x"), null),
 		list(/mob/living, "custom_link", "example.org", null),
 		list(/mob/living, "eggs", 3, 0),
 		list(/mob/living, "failed_last_breath", 1, 0),

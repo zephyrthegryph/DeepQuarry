@@ -26,6 +26,8 @@ sparse(/mob, m_int, type = text)
 sparse(/mob, vantag_hud, type = num)
 // Names of the genes switched on in this mob's DNA (/datum/gene/proc/mark_active).
 sparse(/mob, active_genes, type = list)
+// The sounds the mob's speech and emotes play (a pick from this list); set by preferences or login.
+sparse(/mob, voice_sounds_list, type = list)
 sparse(/mob, narsimage, type = /image)
 sparse(/mob, narglow, type = /image)
 sparse(/mob, riftimage, type = /image)

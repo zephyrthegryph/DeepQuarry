@@ -44,8 +44,6 @@
 	var/obj/soulgem/soulgem				// Soulcatcher. Needs to be up-ported sometime.
 
 
-	// ALLOW(instance_list): d: per-mob voice_sounds_list, filled at runtime; mobs are few
-	var/list/voice_sounds_list = list()	// The sound list containing our voice sounds!
 
 
 

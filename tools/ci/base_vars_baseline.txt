@@ -24,7 +24,6 @@ base_var	code/game/objects/items.dm	@/obj/item::identity_type
 base_var	code/game/objects/items.dm	@/obj/item::init_hide_identity
 base_var	code/modules/body/factors.dm	@/obj/item::worn_factors
 base_var	code/modules/catalogue/atoms.dm	@/atom::catalogue_data
-base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::species_sounds
 base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_flags
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::life_tick
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::custom_species
@@ -36,6 +35,5 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::bodytemperature
 base_var	code/modules/mob/mob_defines.dm	@/mob::faction
 base_var	code/modules/vore/eating/living.dm	@/mob/living::weight
 base_var	code/modules/vore/eating/living.dm	@/mob/living::metabolism
-base_var	code/modules/vore/eating/mob.dm	@/mob::voice_sounds_list
 list_init	code/modules/projectiles/targeting/targeting_mob.dm	@/mob/living::aimed
 list_init	code/modules/refinery/core/industrial_reagent_grinder.dm	@/obj/machinery/reagent_refinery/grinder::holdingitems
