@@ -344,6 +344,7 @@
 /// Notification: `user` examined the atom. Handlers
 /// append lines to `texts`, the examine output list.
 /datum/notice/examine
+	read_back = TRUE // the sender reads what the handlers wrote: answered at once, even mid-delivery (reactions.md section 3)
 	var/user
 	var/texts
 
@@ -486,6 +487,7 @@
 
 /// From /mob/living/proc/injure(), mitigation stage 2 (energy shields), after armour: (kind, list/amount_ref, zone, atom/source, flags). Shields scale amount_ref[1].
 /datum/notice/living_shield_injury
+	read_back = TRUE // the sender reads what the handlers wrote: answered at once, even mid-delivery (reactions.md section 3)
 	var/kind
 	var/amount_ref
 	var/zone
@@ -808,6 +810,7 @@
 
 /// From the robot belly overlay provider: (belly_class, list/fullness_ref) Handlers may adjust fullness_ref[1].
 /datum/notice/robot_belly_fullness
+	read_back = TRUE // the sender reads what the handlers wrote: answered at once, even mid-delivery (reactions.md section 3)
 	var/belly_class
 	var/fullness_ref
 
@@ -909,6 +912,7 @@
 
 /// From base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that handlers append rows list(owner, PROC_REF, with) to; each runs as after(owner, 0, PROC_REF, with = with + the new turf) after the turf has changed.
 /datum/notice/turf_change
+	read_back = TRUE // the sender reads what the handlers wrote: answered at once, even mid-delivery (reactions.md section 3)
 	var/path
 	var/new_baseturfs
 	var/flags

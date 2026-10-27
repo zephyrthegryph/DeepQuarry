@@ -12,6 +12,8 @@
 	var/list/log = list()
 	/// atom_entered handlers publish atom_exited from inside the delivery.
 	var/republish = FALSE
+	/// atom_dir_change handlers publish a read-back examine (and a plain atom_exited) from inside the delivery and read the lines back.
+	var/ask_examine = FALSE
 
 /datum/om_notice_fx/reactions()
 	. = ..()
@@ -25,6 +27,11 @@
 
 /datum/om_notice_fx/proc/on_dir(datum/notice/atom_dir_change/N)
 	log += "dir:[N.old_dir]>[N.new_dir]"
+	if(ask_examine)
+		var/list/texts = list("base")
+		PUBLISH_LEGACY(src, /datum/notice/atom_exited, "plain", "nested")
+		PUBLISH_LEGACY(src, /datum/notice/examine, "inner", texts)
+		log += "read:[jointext(texts, "|")]"
 
 /datum/om_notice_fx/proc/on_entered(datum/notice/atom_entered/N)
 	log += "entered:[N.arrived]<[N.old_loc]"
@@ -97,3 +104,14 @@
 	F.republish = FALSE
 	PUBLISH_LEGACY(F, /datum/notice/atom_entered, "crate", "hall")
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "entered:crate<hall", "and the hook hears nothing more")
+
+/// A read-back notice published from inside another delivery is answered at once: the handler that published it reads the lines
+/// back on its next line. A plain notice published from the same handler still waits for the current delivery (reactions.md section 3).
+/datum/unit_test/dq_om_notice_delivery_read_back_nested/Run()
+	var/datum/om_notice_fx/F = allocate(/datum/om_notice_fx)
+	F.ask_examine = TRUE
+	PUBLISH_LEGACY(F, /datum/notice/atom_dir_change, NORTH, SOUTH)
+	TEST_ASSERT_EQUAL(jointext(F.log, ","), "dir:[NORTH]>[SOUTH],examine:inner,read:base|line from inner,exited:plain>nested", "the nested examine was answered before its sender read the list; the plain notice still queued behind the delivery")
+	for(var/read_back_type in list(/datum/notice/examine, /datum/notice/living_shield_injury, /datum/notice/robot_belly_fullness, /datum/notice/turf_change))
+		var/datum/notice/proto = read_back_type
+		TEST_ASSERT(initial(proto.read_back), "[read_back_type] is read back by its sender, so it is declared read_back")
