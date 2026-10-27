@@ -87,7 +87,7 @@ CAPABILITIES(/datum/experiment_handler)
 	// Determine UI display mode
 	switch(config_mode)
 		if(EXPERIMENT_CONFIG_ATTACKSELF)
-			observe(owner, /datum/notice/attack_self, src, then(PROC_REF(on_config_event)))
+			observe(owner, /datum/notice/self_attacked, src, then(PROC_REF(on_config_event)))
 		if(EXPERIMENT_CONFIG_ALTCLICK)
 			observe(owner, /datum/notice/click_alt, src, then(PROC_REF(on_config_event)))
 		if(EXPERIMENT_CONFIG_UI)
@@ -272,10 +272,10 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  */
 /datum/experiment_handler/proc/on_config_event(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/source = N.target
+	var/datum/source = N.target || N.source // self_attacked comes through the act engine (target); click_alt is a legacy publish (source)
 	var/mob/user
-	if(istype(N, /datum/notice/attack_self))
-		var/datum/notice/attack_self/self_event = N
+	if(istype(N, /datum/notice/self_attacked))
+		var/datum/notice/self_attacked/self_event = N
 		user = self_event.user
 	else if(istype(N, /datum/notice/click_alt))
 		var/datum/notice/click_alt/alt_event = N

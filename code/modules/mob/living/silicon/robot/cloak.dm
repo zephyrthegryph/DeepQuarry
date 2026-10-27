@@ -123,12 +123,12 @@ CAPABILITIES(/obj/item/borg/cloak)
 	L.set_body_effect_state(type, state)
 	L.set_body_effect_factors(type, state.cloaked_factors)
 	L.set_alpha_source(SRC_ALPHA_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
-	observe(L, /datum/notice/mob_apply_damage, src, then(PROC_REF(damage_inflicted)))
+	observe(L, /datum/notice/living_injured, src, then(PROC_REF(damage_inflicted)))
 	observe(L, /datum/notice/robot_item_attack, src, then(PROC_REF(attacked_in_cloak)))
 
 /datum/body_effect/robot_cloak/on_end(mob/living/L, expired)
 	L.clear_alpha_source(SRC_ALPHA_ROBOT_CLOAK)
-	unobserve(L, /datum/notice/mob_apply_damage, src)
+	unobserve(L, /datum/notice/living_injured, src)
 	unobserve(L, /datum/notice/robot_item_attack, src)
 	robot_cloak_remove_wibble(L, TRUE)
 
@@ -147,9 +147,9 @@ CAPABILITIES(/obj/item/borg/cloak)
 
 /datum/body_effect/robot_cloak/proc/damage_inflicted(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
-	var/mob/living/source = A.target
-	var/datum/notice/mob_apply_damage/event = A
-	var/damage = event.damage
+	var/mob/living/source = A.source // a legacy publish: the injured mob is the notice's source
+	var/datum/notice/living_injured/event = A
+	var/damage = event.applied
 	var/datum/robot_cloak_state/state = source.body_effect_state(type)
 	if(!state || damage < 5) //weak, don't do anything.
 		return
