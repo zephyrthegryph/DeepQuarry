@@ -94,3 +94,43 @@ CAPABILITIES(/obj/dq_stamp_plain)
 		log_test("space requeue: [GLOB.refresh_mark_probe_sources[chain]] x [chain]")
 	log_test("space requeue: [total] mark(s) of space turfs over 20 deadline passes")
 	TEST_ASSERT(!(GLOB.type_look_stamp[/turf/space] && created_only), "space turfs still queued on their creation mark alone after boot: [created_only]")
+
+/// A datum that is not an atom and derives nothing (no derived() values, no push_to_rust()/on_state_changed() of its own) is refreshed once, to
+/// probe its type, and its tracked writes queue nothing after that: the kernel's histograms wrote a tracked count every tick and each write was a
+/// refresh in the presentation drain.
+/datum/dq_refresh_plain_datum
+	var/count = 0
+
+/datum/dq_refresh_plain_datum/proc/bump()
+	count++
+	state_changed(src, CHANGE_EXPLICIT, nameof(count))
+
+/// The same datum with a side effect of its own: every write still refreshes it.
+/datum/dq_refresh_plain_datum/side
+	var/sides = 0
+
+/datum/dq_refresh_plain_datum/side/on_state_changed(bits)
+	sides++
+
+/datum/unit_test/dq_datum_refresh_skips_types_that_derive_nothing
+
+/datum/unit_test/dq_datum_refresh_skips_types_that_derive_nothing/Run()
+	refresh_flush()
+	GLOB.type_derives_cache -= /datum/dq_refresh_plain_datum
+	GLOB.type_derives_cache -= /datum/dq_refresh_plain_datum/side
+	var/datum/dq_refresh_plain_datum/plain = new
+	plain.bump()
+	TEST_ASSERT(plain.refresh_queued, "an unknown datum type is refreshed once, to probe it")
+	refresh_flush()
+	plain.bump()
+	TEST_ASSERT(!plain.refresh_queued, "a datum type that derives nothing was queued for a refresh again")
+	var/datum/dq_refresh_plain_datum/side/side = new
+	side.bump()
+	refresh_flush()
+	TEST_ASSERT_EQUAL(side.sides, 1, "the probe ran its on_state_changed()")
+	side.bump()
+	TEST_ASSERT(side.refresh_queued, "a datum type with an on_state_changed() of its own was not queued")
+	refresh_flush()
+	TEST_ASSERT_EQUAL(side.sides, 2, "and its on_state_changed() ran again")
+	qdel(plain)
+	qdel(side)

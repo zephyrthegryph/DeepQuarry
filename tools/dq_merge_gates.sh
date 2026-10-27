@@ -375,6 +375,12 @@ elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
 		dc_ok=1
 		echo "dreamchecker reused 0s" >>"$timings"
 		echo "== gates: dreamchecker reused: its inputs (key ${dc_key:0:12}) are identical to a tree that passed it ($dc_prev)"
+	elif [ -n "${DQ_GATE_DC_DISJOINT:-}" ]; then
+		# The train's prechecked batch (tools/dq_train.sh dc_disjoint): every lane passed DreamChecker alone on its merge with master, and
+		# no two of them (nor master since the lane's precheck) change the same DreamChecker input file. Not stored as a verdict for the key.
+		dc_ok=1
+		echo "dreamchecker trusted 0s" >>"$timings"
+		echo "== gates: dreamchecker trusted: $DQ_GATE_DC_DISJOINT"
 	else
 		names+=(dreamchecker)
 	fi
@@ -452,7 +458,13 @@ else
 	[ "$dm_ok" = 1 ] || dm_ok=0
 	# The push trusts the train's gate only with a DreamChecker stamp on the exact HEAD: a proof reuse has none unless DreamChecker's
 	# inputs match a tree that passed it (tools/dq_gate_verdicts.sh). Without the stamp the push runs the full production build itself.
-	if [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ] && dc_key="$(gate_dc_key 2>/dev/null)" && dc_prev="$(gate_verdict_has dreamchecker "$dc_key")"; then
+	# The proof itself records a DreamChecker pass on this tree (same binary). On an early reuse gen did not run, so the generated files
+	# in this checkout may still be the previous tree's and the input key below would miss (the push then rebuilt everything, ~9 min).
+	dc_bin_now=""; dc_bin="$(gate_dc_binary 2>/dev/null)" && dc_bin_now="$(git hash-object --no-filters -- "$dc_bin" 2>/dev/null)"
+	if [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ] && [ -n "$dc_bin_now" ] && [ "$(sed -n 's/^dreamchecker=//p' "$proof_file" 2>/dev/null)" = "$dc_bin_now" ]; then
+		dc_ok=1
+		echo "== gates: dreamchecker reused with the proof: it passed on this exact tree when the proof was made"
+	elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ] && dc_key="$(gate_dc_key 2>/dev/null)" && dc_prev="$(gate_verdict_has dreamchecker "$dc_key")"; then
 		dc_ok=1
 		echo "== gates: dreamchecker reused with the proof: its inputs (key ${dc_key:0:12}) passed before ($dc_prev)"
 	fi
@@ -537,7 +549,9 @@ fi
 } >"data/merge-gates/$short.ok"
 # The proof for this tree (tools/dq_proof_cache.sh): what lets the merge of an unmoved-master lane skip every gate above.
 if [ "$reused" -eq 0 ] && [ "$run_tests" -eq 1 ] && { [ "$dm_ok" -eq 1 ] || [ "$no_dm" -eq 1 ]; } && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
-	DQ_PROOF_DM=$((1 - no_dm)) proof_store "$tree" "$base_master" "${tests[*]-}" "${passed:-0}" "${nfailed:-0}" 0 "$tgui" "$analyze_tests" "$tests_json" "${DQ_PROOF_INHERITS:-}"
+	dc_proof=""
+	if [ "$dc_ok" -eq 1 ] || [ "$dm_ok" -eq 1 ]; then dc_bin="$(gate_dc_binary 2>/dev/null)" && dc_proof="$(git hash-object --no-filters -- "$dc_bin" 2>/dev/null)"; fi
+	DQ_PROOF_DC="$dc_proof" DQ_PROOF_DM=$((1 - no_dm)) proof_store "$tree" "$base_master" "${tests[*]-}" "${passed:-0}" "${nfailed:-0}" 0 "$tgui" "$analyze_tests" "$tests_json" "${DQ_PROOF_INHERITS:-}"
 	proof_alias_baseline_shrink "$pre_shrink_tree" "$tree"
 	proof_prune
 fi

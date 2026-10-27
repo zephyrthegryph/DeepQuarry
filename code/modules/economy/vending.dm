@@ -114,6 +114,9 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 /// Fire items at customers! The throw wire cut, a pulse, a brand intelligence (item_throw()).
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
+// Its slogans are ambient: they run only while a player is near (STAT_RELEVANCE, code/controllers/subsystems/proximity.dm).
+/obj/machinery/vending/proximity_tracked = TRUE
+
 CAPABILITIES(/obj/machinery/vending)
 	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_BUTTON))
@@ -139,7 +142,10 @@ CAPABILITIES(/obj/machinery/vending)
 	ref_one(nameof(currently_vending), /datum/stored_item/vending_product)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vending_blast_malfunction)))
 	on_change(nameof(coin), ANY, then(PROC_REF(coin_changed)))
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(timed_work_frame)), when = all_of(STAT_OPERABLE, PROC_REF(timed_work_wanted)))
+	// Two timed works, each parked while its condition is false (no timer runs): the pitch only while a player is near (a slogan to an empty
+	// room is lost), the stock shooting only while the vendor is told to shoot (a cut wire, the brand intelligence event).
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(pitch_frame)), when = all_of(STAT_OPERABLE, STAT_RELEVANCE, nameof(active)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(shoot_frame)), when = all_of(STAT_OPERABLE, STAT_SHOOT_INVENTORY, nameof(active)))
 	after_init(0, then(PROC_REF(slogans_start)))
 
 	section(window, "The vendor's window and the buttons in it")
@@ -174,10 +180,6 @@ CAPABILITIES(/obj/machinery/vending)
 	extend("open_with_item", then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
 	op("check_logs", hand(), when(nameof(has_logs)), when(PROC_REF(bare_touch)), label("Check vending logs"),
 		needs(req(PROC_REF(log_access_ok))), then(PROC_REF(check_logs_op)))
-
-/// The timed work is wanted (with the vendor working): it is switched on, and is shooting its stock or has slogans to pitch.
-/obj/machinery/vending/proc/timed_work_wanted(datum/act/A)
-	return active && (shoot_inventory || (!shut_up && length(slogan_list)))
 
 /obj/machinery/vending/proc/prepare_vendor_inventory()
 	if(product_slogans)
@@ -613,15 +615,17 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 // ---- timed work: electrified, shooting stock, pitching ----
 
-/// One frame of the machine's own work (every() runs it only while timed_work_wanted() holds): it pitches, it shoots.
-/obj/machinery/vending/proc/timed_work_frame(datum/act/timer/A)
+/// One pitch frame (every() runs it only while the vendor works and a player is near): a slogan, a frame in twenty, no more often than its delay.
+/obj/machinery/vending/proc/pitch_frame(datum/act/timer/A)
 	//Pitch to the people!  Really sell it!
 	if((COOLDOWN_FINISHED(src, slogan_cooldown)) && length(slogan_list) && (!shut_up) && prob(5))
 		var/slogan = pick(slogan_list)
 		speak(slogan)
 		COOLDOWN_START(src, slogan_cooldown, slogan_delay)
 
-	if(shoot_inventory && prob(shoot_inventory_chance))
+/// One shooting frame (every() runs it only while the vendor works and is told to shoot its stock).
+/obj/machinery/vending/proc/shoot_frame(datum/act/timer/A)
+	if(prob(shoot_inventory_chance))
 		throw_item()
 
 /obj/machinery/vending/proc/speak(message)

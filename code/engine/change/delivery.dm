@@ -371,6 +371,10 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 	/// The arguments PUBLISH passed (the default fill()). A notice is an act context (code/engine/actions/notices.dm), whose `source` is the
 	/// publisher for the legacy handlers and the activation's source for the hooks.
 	var/list/data
+	/// A read-back notice (a request the handlers answer): the sender reads, after PUBLISH returns, what the handlers wrote into it (examine
+	/// lines, a shield's scaled amount, post-change callbacks). publish() delivers one at once even inside another delivery, instead of
+	/// queueing it behind that delivery where the sender would read its fields before any handler ran. Notices its handlers publish still queue.
+	var/read_back = FALSE
 
 /// Sets the notice up from PUBLISH's arguments.
 /datum/notice/proc/fill(...)
@@ -379,6 +383,8 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 /// The notices waiting behind the delivery in progress: (source, notice) pairs in publish order.
 GLOBAL_LIST_EMPTY(rx_notice_queue)
 GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
+/// How many read-back notices are being answered inside one another (publish(), RX_ANSWER_DEPTH).
+GLOBAL_VAR_INIT(rx_answer_depth, 0)
 
 /// A notice of `type` taken from its pool and filled from the arguments after it. PUBLISH's helper: the
 /// notice is released by publish() once delivered.
@@ -414,7 +420,7 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
  * Delivers `N` (from take_notice) to the holder's on_notice reactions and observers, in that order, each
  * in registration order. Occurrences are never coalesced or dropped: one published while another is
  * being delivered (from a handler) is queued behind it and delivered, in order, before this returns to the
- * outermost caller. A chain longer than RX_NOTICE_LIMIT is reported and cut.
+ * outermost caller. A read-back notice (`read_back`) is the exception: it is answered at once (rx_answer_notice()). A chain longer than RX_NOTICE_LIMIT is reported and cut.
  */
 /proc/publish(datum/E, datum/notice/N)
 	if(!E || !N)
@@ -422,6 +428,9 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 
 	N.source = E
 	if(GLOB.rx_notice_delivering)
+		if(N.read_back)
+			rx_answer_notice(E, N)
+			return
 		GLOB.rx_notice_queue += list(list(E, N))
 		return
 	GLOB.rx_notice_delivering = TRUE
@@ -441,6 +450,23 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 			break
 		rx_deliver_notice(next[1], next[2])
 	GLOB.rx_notice_delivering = FALSE
+
+/**
+ * A read-back notice published inside another delivery: delivered now, so the sender's next line reads the handlers' answers. The notices
+ * its handlers publish join the outer queue as usual. Answers nest at most RX_ANSWER_DEPTH deep; past that one is reported and dropped
+ * (the sender then reads its own unanswered values).
+ */
+/proc/rx_answer_notice(datum/E, datum/notice/N)
+	if(GLOB.rx_answer_depth >= RX_ANSWER_DEPTH)
+		stack_trace("publish: read-back notice [N.type] on [E?.type] nested more than [RX_ANSWER_DEPTH] answers deep; not delivered")
+		N.release()
+		return
+	GLOB.rx_answer_depth++
+	try
+		rx_deliver_notice(E, N)
+	catch(var/exception/e)
+		stack_trace("publish: answering [N.type] on [E?.type]: [e] ([e.file]:[e.line])")
+	GLOB.rx_answer_depth--
 
 /proc/rx_deliver_notice(datum/E, datum/notice/N)
 	rx_deliver_notice_to(E, N)

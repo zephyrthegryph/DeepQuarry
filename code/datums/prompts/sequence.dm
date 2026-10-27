@@ -22,8 +22,8 @@
 	var/datum/owner
 	var/on_done
 	var/on_stop
-	/// Who answers by default (wrapped: never kept alive by the sequence).
-	var/answerer_w
+	/// Who answers by default, as its handle (ref_token(): never kept alive by the sequence; a client's handle ends with its connection).
+	var/answerer_h
 	/// What the questions are about (wrapped), or null.
 	var/subject_w
 	/// Fields every step's request also gets (rights, ask_flags, usable_state: the re-checks of the whole sequence).
@@ -45,7 +45,7 @@ CAPABILITIES(/datum/ask_sequence)
 /// The default answerer, or null when they are gone.
 /datum/ask_sequence/proc/actor()
 	RETURN_TYPE(/mob)
-	return rerun_unwrap(answerer_w)
+	return resolve_token(answerer_h)
 
 /// What the questions are about, or null.
 /datum/ask_sequence/proc/subject()
@@ -225,7 +225,7 @@ CAPABILITIES(/datum/ask_sequence)
 	S.on_done = on_done
 	S.on_stop = on_stop
 	S.common_fields = common_fields
-	S.answerer_w = rerun_wrap(answerer)
+	S.answerer_h = answerer ? ref_token(answerer) : null
 	S.subject_w = subject ? rerun_wrap(subject) : null
 	S.next_step()
 	return S

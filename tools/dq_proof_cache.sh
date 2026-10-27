@@ -60,6 +60,9 @@ proof_store() {
 		echo "tgui=$7"
 		echo "analyze_tests=$8"
 		echo "dm=${DQ_PROOF_DM:-1}" # 0: a lane proof (tools/dq_merge_gates.sh --no-dm); the production compile was not run for this tree
+		# DreamChecker passed on this tree (ran, reused by input key, or skipped because nothing it reads changed): the binary's hash.
+		# The generated DM is a function of the tree, so a later gate that reuses this proof without running gen still has its verdict.
+		[ -z "${DQ_PROOF_DC:-}" ] || echo "dreamchecker=$DQ_PROOF_DC"
 		echo "tests_json=$copy"
 		[ -z "${10:-}" ] || echo "inherits=${10}"
 		echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -93,7 +96,8 @@ proof_smoke_tests() {
 		[ -f "$f" ] || continue
 		while IFS= read -r line || [ -n "$line" ]; do
 			line="${line%%#*}"
-			line="${line//$''/}"
+			line="${line//$'
+'/}"
 			read -r line <<<"$line" # trims the blanks with no fork (xargs per line cost seconds on Windows)
 			[ -n "$line" ] && printf '%s
 ' "$line"

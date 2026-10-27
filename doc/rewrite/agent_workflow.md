@@ -878,3 +878,30 @@ leaves them alone), `batch_limit_pre`, `verdicts/`; logs `log/precheck-<lane>-*.
   fixing after a bounce, and the mean of every gate phase over `train-base/data/merge-gates/*.timings`. On 26 October from 14:00Z: 33 lane
   episodes, mean 2h22m waiting, 36m in cycles, 3m fixing (79% of a lane's life was queue wait); gate means analyze_tests 533 s,
   DreamChecker 361 s, tests 345 s, ratchets 210 s, wall 544 s.
+
+### 29c. Waiting less: prechecks at once, no rebuild on a reused proof, DreamChecker off the batch (27 October 2026, `train/faster`)
+
+Measured 05:00-07:00Z on 27 October (`dq_train.sh lanes`): 6 lanes, mean 22 min waiting and 12 min in cycles. migrate/ratchet-tail
+waited 34 min: 11 min before its precheck even started (the prechecker had exited; an enqueue during a running cycle did not start it),
+4 min below the RAM floor, a 16 min precheck, 3 min behind a light cycle. Inside cycles: 8 min of synchronous disk-budget enforcement
+before the gate, and on both single-lane cycles that reused the precheck's proof a 9-10 min `build.sh dm` in the push.
+
+- **An enqueue starts the prechecker** even while an integrator runs (`cmd_ensure` -> `precheck_ensure`, from the integrator's snapshot).
+  The integrator waiting for prechecks and the idle prechecker wake on a change of `precheck/v/` or `queue/` (2 s ticks, `wait_change`)
+  instead of sleeping 60 s.
+- **A proof carries DreamChecker's verdict.** `proof_store` writes `dreamchecker=<binary hash>` when DreamChecker passed on the tree (ran,
+  reused, or skipped because nothing it reads changed). A gate that reuses the proof early skips gen, so its generated files still belong
+  to the previous tree and the input key (29a) missed: no `.dreamchecker.ok`, and `dq_push_master.sh` fell through to the full production
+  build. Now the proof's own record gives the stamp.
+- **DreamChecker off a prechecked batch** when its lanes are disjoint (`dc_disjoint` in `dq_train.sh`, `DQ_GATE_DC_DISJOINT` to the gates,
+  "dreamchecker trusted" in the timings): every lane passed DreamChecker in its precheck on an ancestor of current master, no two lanes
+  change the same DreamChecker input file (what `gate_dc_key` hashes, less `deepquarry.dme`), master since a lane's precheck changed none of
+  that lane's files, and no lane touches a global path (`train_interact_global.txt`) or `tools/analyze/` or `SpacemanDMM.toml`. Otherwise the
+  job runs (still reused per input key). A trusted verdict is not stored under the key. `DQ_TRAIN_DC_DISJOINT=0` turns it off.
+- **The heavy cycle's disk gate is detached**: the floor is still checked before the gate (exit 4 skips the cycle); the housekeeping
+  enforcement (2-8 min of walking the cache) runs in the background, throttled as before.
+- **The batch compiles in the warm root.** The dmbc daemon's 8 GB budget keeps about one session (the most recently used); with the train
+  root, two precheck roots and the lanes' root alternating, most gate compiles were cold (40-220 s against 3-25 s warm). The train's gate
+  now compiles in whichever train root (`merge`, `pre<N>`) built a test dmb last (`DQ_TRAIN_ROOT_KEY`, honoured only for the train
+  worktree; the root slot serialises it with that worker), so a batch right after its lanes' prechecks patches from the precheck's session.
+  `DQ_TRAIN_WARM_ROOT=0` keeps the `merge` root.

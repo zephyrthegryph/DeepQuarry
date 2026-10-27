@@ -130,6 +130,11 @@ Delivery rules:
 - Occurrences are **ordered and never coalesced**, and never suppressed in bulk mode. Opening and
   closing a door in one tick can leave its final state unchanged; both occurrences still happened.
 - A notice published during delivery is **queued**, and delivery has a **recursion limit**.
+- **Read-back notices are answered at once.** A notice whose sender reads back what the handlers wrote into it (`/datum/notice/examine`'s
+  `texts`, `living_shield_injury`'s `amount_ref`, `robot_belly_fullness`'s `fullness_ref`, `turf_change`'s `post_change_callbacks`) declares
+  `read_back = TRUE`; `publish()` delivers it immediately even from inside another delivery (`rx_answer_notice()`, at most `RX_ANSWER_DEPTH`
+  deep), so the sender never reads the list before the lines exist. The notices its handlers publish still queue. The `read_back` lint
+  (tools/analyze/src/lints/read_back.rs) fails a handler that writes into a notice (a field, or a list read from one) whose type is not declared read_back.
 - `WANTS(src, type)` avoids the allocation when nothing listens.
 - Registrations have deterministic order, automatic teardown and tracing. A reentrant notice that
   deletes its source stops delivery safely.
