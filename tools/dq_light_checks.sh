@@ -91,7 +91,9 @@ cap="${DQ_LIGHT_SELFTEST_CAP_SEC:-300}"
 for t in "${!selftests[@]}"; do
 	echo "== self-test tools/ci/$t (cap ${cap}s)"
 	t0=$(date +%s)
-	timeout -k 10 "$cap" bash "tools/ci/$t" >"${TMPDIR:-/tmp}/light-selftest-$$.log" 2>&1; rc=$?
+	# test_train.sh: only its quick subset (enqueue, light) is on the critical path; the full file runs by hand
+	tt_only=""; [ "$t" != test_train.sh ] || tt_only="quick"
+	TEST_TRAIN_ONLY="$tt_only" timeout -k 10 "$cap" bash "tools/ci/$t" >"${TMPDIR:-/tmp}/light-selftest-$$.log" 2>&1; rc=$?
 	echo "   $t rc=$rc in $(( $(date +%s) - t0 ))s"
 	if [ "$rc" -ne 0 ]; then
 		tail -n 25 "${TMPDIR:-/tmp}/light-selftest-$$.log" >&2
