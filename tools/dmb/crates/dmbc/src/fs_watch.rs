@@ -121,6 +121,7 @@ fn key(path: &Path) -> Option<String> {
 
 fn clear_all() {
     EVENTS.fetch_add(1, Ordering::AcqRel);
+    lose_log();
     cache().lock().unwrap_or_else(|e| e.into_inner()).clear();
     behind_link_memo().lock().unwrap_or_else(|e| e.into_inner()).clear();
 }
@@ -129,6 +130,7 @@ fn clear_all() {
 /// everything below it (a removed or renamed directory takes its subtree with it).
 fn invalidate(path: &str, subtree: bool) {
     EVENTS.fetch_add(1, Ordering::AcqRel);
+    log_change(path, subtree);
     forget_links(path, subtree);
     let mut cache = cache().lock().unwrap_or_else(|e| e.into_inner());
     if let Some(parent) = path.rsplit_once('\\').map(|(parent, _)| parent) {
@@ -147,6 +149,110 @@ fn invalidate(path: &str, subtree: bool) {
     for key in doomed {
         cache.remove(&key);
     }
+}
+
+/// Change log: what the watcher saw, in order, so a recorded input set can ask which of its directories changed since it
+/// was last proven instead of proving every entry again (incremental_core.md, resources as queries).
+///
+/// Every event appends the changed entry and its directory under one sequence number, taken under the log lock, so a
+/// [`WatchToken`] read under the same lock orders exactly: an event logged at or before the token was applied before
+/// anything observed after it. A loss (overflow, read error, sync timeout, a newly armed root) or a full log starts a
+/// new epoch, and a token of another epoch proves nothing.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct WatchToken {
+    epoch: u64,
+    seq: u64,
+}
+struct ChangeLog {
+    epoch: u64,
+    seq: u64,
+    /// (sequence, directory or entry key, whether everything below the key changed too).
+    entries: Vec<(u64, String, bool)>,
+}
+/// About 20 MB of keys at most; a burst beyond it (a whole checkout switched) starts a new epoch.
+const LOG_LIMIT: usize = 200_000;
+static LOG: Mutex<ChangeLog> = Mutex::new(ChangeLog { epoch: 1, seq: 0, entries: Vec::new() });
+fn change_log() -> std::sync::MutexGuard<'static, ChangeLog> {
+    LOG.lock().unwrap_or_else(|e| e.into_inner())
+}
+fn lose_log() {
+    let mut log = change_log();
+    log.epoch += 1;
+    log.entries = Vec::new();
+}
+fn log_change(path: &str, subtree: bool) {
+    let mut log = change_log();
+    if log.entries.len() + 2 > LOG_LIMIT {
+        log.epoch += 1;
+        log.entries = Vec::new();
+    }
+    log.seq += 1;
+    let seq = log.seq;
+    if let Some(parent) = path.rsplit_once('\\').map(|(parent, _)| parent) {
+        log.entries.push((seq, parent.to_string(), false));
+    }
+    log.entries.push((seq, path.to_string(), subtree));
+}
+
+/// The watcher's position now. A provider takes it before its first observation; `None` when the watcher is off.
+pub fn token() -> Option<WatchToken> {
+    if !enabled() {
+        return None;
+    }
+    let log = change_log();
+    Some(WatchToken { epoch: log.epoch, seq: log.seq })
+}
+
+/// What changed after a token: directories named by an event, and keys whose whole subtree changed.
+pub struct Changes {
+    dirs: std::collections::HashSet<String>,
+    subtrees: Vec<String>,
+}
+impl Changes {
+    /// True when nothing in `dir` (its listing, its entries' stamps) can have changed: it is watched by a healthy root,
+    /// not reached through a link, and no event named it or a subtree above it.
+    pub fn clean(&self, dir: &Path) -> bool {
+        let Some(key) = key(dir) else {
+            return false;
+        };
+        !self.dirs.contains(&key)
+            && !self
+                .subtrees
+                .iter()
+                .any(|top| key == *top || (key.starts_with(top.as_str()) && key.as_bytes().get(top.len()) == Some(&b'\\')))
+            && covered(dir)
+            && !behind_link(&key)
+    }
+    pub fn len(&self) -> usize {
+        self.dirs.len() + self.subtrees.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+/// Changes logged after `since`, as seen by an observer positioned at `now` (events after `now` are included too:
+/// that only re-proves more). `None` when either token is of another epoch than the log's, or out of order.
+pub fn changes_since(since: WatchToken, now: WatchToken) -> Option<Changes> {
+    if !enabled() || since.epoch != now.epoch || since.seq > now.seq {
+        return None;
+    }
+    let log = change_log();
+    if log.epoch != since.epoch {
+        return None;
+    }
+    let start = log.entries.partition_point(|(seq, _, _)| *seq <= since.seq);
+    let mut changes = Changes { dirs: Default::default(), subtrees: Vec::new() };
+    for (_, key, subtree) in &log.entries[start..] {
+        if *subtree {
+            if !changes.subtrees.contains(key) {
+                changes.subtrees.push(key.clone());
+            }
+        } else {
+            changes.dirs.insert(key.clone());
+        }
+    }
+    Some(changes)
 }
 
 /// The cached proof of `path`, or a fresh capture that is cached when no event interfered.
@@ -317,6 +423,8 @@ mod windows {
             all.retain(|existing| existing.key != state.key);
             all.push(Arc::clone(&state));
         }
+        // Nothing under this root was logged before now: a token taken earlier must not prove it.
+        lose_log();
         let handle_value = handle as usize;
         let thread_state = Arc::clone(&state);
         let spawned = std::thread::Builder::new()
