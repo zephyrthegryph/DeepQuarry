@@ -985,7 +985,7 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 		local P=() U=() W=() st since_s nowt
 		nowt=$(date +%s)
 		for b in "${VALID[@]}"; do
-			if lane_is_light "$b"; then P+=("$b"); continue; fi
+			if lane_is_light "$b"; then light_ready "$b" && P+=("$b"); continue; fi
 			st="$(pre_status "$b" "${TIP_OF[$b]}")"
 			case "$st" in
 				pass) P+=("$b") ;;
