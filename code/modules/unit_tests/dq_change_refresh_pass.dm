@@ -26,3 +26,26 @@
 	refresh_drain(null)
 	TEST_ASSERT_EQUAL(GLOB.refresh_bench_drained - second, 1, "a later mark runs in the next pass")
 	TEST_ASSERT_EQUAL(A.refresh_pass, GLOB.refresh_drain_pass, "with the next pass number")
+
+/// A timer's fire re-runs its owner's outputs but not the look (refresh_dispatched(spare_draw)): the tracked writes it made marked
+/// their own outputs. A mob keeps the full mark (its species and traits grant verbs no type flag knows).
+/datum/unit_test/dq_change_timer_fire_spares_draw
+
+/datum/unit_test/dq_change_timer_fire_spares_draw/Run()
+	refresh_flush()
+	var/obj/cap_fixture/dx_core/A = allocate(/obj/cap_fixture/dx_core)
+	refresh_flush()
+	var/spared = GLOB.refresh_dispatched_draws_spared
+	refresh_dispatched(A, TRUE)
+	TEST_ASSERT(A.refresh_queued, "a timer's fire still queues its owner's outputs")
+	TEST_ASSERT(!(A.refresh_queued & DEP_DRAW), "but not its look")
+	TEST_ASSERT_EQUAL(GLOB.refresh_dispatched_draws_spared, spared + 1, "the spared draw is counted")
+	refresh_flush()
+	refresh_dispatched(A)
+	TEST_ASSERT(A.refresh_queued & DEP_DRAW, "any other dispatched call redraws")
+	refresh_flush()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	refresh_flush()
+	refresh_dispatched(H, TRUE)
+	TEST_ASSERT(H.refresh_queued & DEP_DRAW, "a mob keeps the full mark")
+	refresh_flush()
