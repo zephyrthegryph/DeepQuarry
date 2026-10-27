@@ -743,19 +743,12 @@ impl BuildHost {
                 payload: Arc::clone(&leaving.payload),
             });
             if semantic_enabled {
-                let mut semantic = dm_tree::frontend::RetainedSemanticTree::with_shared_normalized(Arc::clone(
+                // Not seeded from the left variant's frontend: measured, that adopted 4660 subtrees of the test world
+                // but cost more (rebased environments, +0.14 GB; frontend 7.4 s against 6.0 s) than the disk expansion
+                // memo already saves (doc/incremental_core.md, step 5).
+                self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::with_shared_normalized(Arc::clone(
                     &retained.payload.normalized,
-                ));
-                // The new variant's first frontend is an increment over the variant being left (same files, other
-                // defines): its plan and expansions adopt what the differing macros do not reach.
-                if let Some(left) = self
-                    .variants
-                    .get(&leaving.configuration)
-                    .and_then(|state| state.semantic.as_ref())
-                {
-                    semantic.seed_previous_frontend(left);
-                }
-                self.semantic = Some(semantic);
+                )));
             }
             retained
         };

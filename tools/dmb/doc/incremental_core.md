@@ -295,6 +295,9 @@ are unchanged stays green without a certificate check. Revalidation must be para
    lines 4.0-4.7 s, added type 11.4-12.8 s (was 14.5-15.3 s); dmb-equiv equivalent against a
    fresh compile for all three.)
 7. **Resources as queries.** Deletes the resource order and demand memos.
+   (2026-10-27, compiler/resource-queries-1: tried memoizing resource literal discovery per expanded-text piece by its
+   text digest; a hot body edit's `resources_maps` stage stayed 0.50-0.66 s against 0.53 s, so literal lexing is not
+   where that stage goes, and the memo was taken out. The stage needs a per-step profile first.)
 
 Measured 2026-10-18 before step 1: the general path today on a hot body edit (`DMB_BODY_PATCH=0`)
 is recorded below with the patch for comparison.
@@ -837,15 +840,16 @@ none of them. Same measurement: regions expanded again 5917 -> 30-32 (13174 reus
 quieter round against 2.1-2.3 s for the previous slice (the other round was loaded on both sides). Test
 `a_new_macro_used_in_adopted_text_expands_that_text_again`. `dmb-equiv` against a fresh compile: EQUIVALENT, two rounds.
 
-**A new define variant starts from the active variant's frontend (compiler/test-increment-3).** `switch_variant` seeds the
-new variant's semantic state with the left variant's last frontend (`RetainedSemanticTree::seed_previous_frontend`);
-`previous_frontend` no longer requires equal defines, because the ordered pass adopts only what the differing macros do
-not reach, and the changed-files patch is taken only for a plan of the same defines (`DirectivePlan::defines`). Test
-`a_plan_of_other_defines_is_a_base_for_the_ordered_pass_and_never_for_the_patch` (plan equal to a full pass; four
-subtrees adopted, all rebased). The production memory probe of the test variant (`bench/shared_store_probe.sh`, game then
-test world) is queued for when the machine has 28 GB free; measured before this lane, the test world added 3.04 GB
-requested live, of which about 470 MB were preprocessor owners (region memo 118, expansion 105, directives 84, joined
-text 79, environments 44, trace arena 39).
+**Tried and taken out: starting a new define variant from the active variant's frontend.** `switch_variant` seeded the
+test world's semantic state with the game world's last frontend, and the ordered pass adopted 4660 of its include subtrees
+(rebased) with 11572 regions' expansions reused. Measured (production tree, game then test world in one daemon, interleaved
+against the published compiler, `dmb-equiv` EQUIVALENT against a fresh test-world compile): the test world's frontend took
+7.4 s against 6.0 s (14.0 against 9.5 in a loaded round) and the memory probe showed +3.18 GB for the test world against
++3.04 GB: the rebased segment environments cost 226 MB (+182) where the shared regions saved about 150 MB, and the disk
+expansion memo already answers a fresh test world's regions. Kept from it: `DirectivePlan::defines` (a plan of other
+defines is never a base for the changed-files patch) and the per-pass cache of rebased environments (consecutive segments
+share one), which `#define` edits use. Seeding needs environments rebased as an overlay (a binding delta over a shared
+map) instead of materialized maps before it pays.
 
 **Initializer, map and modified-instance code is `DEBUG`-independent (same lane).** Their lowering always emits
 `DbgFile`/`DbgLine` (`initializer_lowering`, `map_artifacts`, `modified_initializers`: `ops: true`) and a build without
