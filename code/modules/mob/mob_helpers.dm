@@ -399,7 +399,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	var/keyname
 	if(subject && subject.client)
 		var/client/C = subject.client
-		keyname = (C.holder && C.holder.fakekey) ? C.holder.fakekey : C.key
+		keyname = (admin_can(C, 0) && admin_fakekey(C)) ? admin_fakekey(C) : C.key
 		if(C.mob) //Most of the time this is the dead/observer mob; we can totally use him if there is no better name
 			var/mindname
 			var/realname = C.mob.real_name
@@ -489,7 +489,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 				else
 					name = M.real_name
 		if(!name)
-			name = (C.holder && C.holder.fakekey) ? C.holder.fakekey : C.key
+			name = (admin_can(C, 0) && admin_fakekey(C)) ? admin_fakekey(C) : C.key
 		if(joined_ghosts)
 			// say_dead_direct("The ghost of " + span_name("[name]") + " now [pick("skulks","lurks","prowls","creeps","stalks")] among the dead. [message]") // Removed for ghost privacy
 			log_and_message_admins("<span class='name'>[name]</span> entered ghost/observe mode. [message]", null)

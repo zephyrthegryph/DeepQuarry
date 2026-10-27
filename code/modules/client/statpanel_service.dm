@@ -72,15 +72,15 @@ SYSTEM_DEF(statpanels)
 		if(target.stat_tab == "Status" && num_fires % status_wait == 0)
 			set_status_tab(target)
 
-		if(!target.holder)
+		if(!admin_can(target, 0))
 			target.stat_panel.send_message("remove_admin_tabs")
 		else
 			target.stat_panel.send_message("update_split_admin_tabs", FALSE)
 
 			if(check_rights_for(target, R_MENTOR))
-				target.stat_panel.send_message("add_tickets_tabs", target.holder.href_token)
+				target.stat_panel.send_message("add_tickets_tabs", admin_href_token(target))
 			if(check_rights_for(target, R_HOLDER) && (!("MC" in target.panel_tabs) || !("Tickets" in target.panel_tabs)))
-				target.stat_panel.send_message("add_admin_tabs", target.holder.href_token)
+				target.stat_panel.send_message("add_admin_tabs", admin_href_token(target))
 
 			if(target.stat_tab == "MC" && ((num_fires % mc_wait == 0)))
 				set_MC_tab(target)

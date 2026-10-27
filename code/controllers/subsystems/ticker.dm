@@ -122,7 +122,7 @@ SYSTEM_DEF(ticker)
 			for(var/mob/new_player/player as anything in REGISTRY_MEMBERS(REGISTRY_NEW_PLAYERS))
 				if(player.ready == PLAYER_READY_TO_PLAY)
 					++totalPlayersReady
-					if(player.client?.holder)
+					if(admin_can(player.client, 0))
 						++total_admins_ready
 
 			if(start_immediately)

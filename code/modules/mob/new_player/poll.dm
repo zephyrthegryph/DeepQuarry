@@ -133,8 +133,8 @@
 		return
 
 	var/adminrank = "Player"
-	if(client && client.holder)
-		adminrank = client.holder.rank_names()
+	if(client && admin_can(client, 0))
+		adminrank = admin_rank_names(client)
 
 
 	if(!client)
@@ -196,8 +196,8 @@
 		return
 
 	var/adminrank = "Player"
-	if(client && client.holder)
-		adminrank = client.holder.rank_names()
+	if(client && admin_can(client, 0))
+		adminrank = admin_rank_names(client)
 
 
 	replytext = replacetext(replytext, "%BR%", "")
@@ -280,8 +280,8 @@
 		return
 
 	var/adminrank = "Player"
-	if(client && client.holder)
-		adminrank = client.holder.rank_names()
+	if(client && admin_can(client, 0))
+		adminrank = admin_rank_names(client)
 
 
 	if(!client)

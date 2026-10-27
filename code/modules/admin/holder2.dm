@@ -404,6 +404,44 @@ CAPABILITIES(/datum/admins)
 	READS_FROM() // the admin record of a client, not round state
 	return subject?.holder
 
+// What the rest of the code reads of a client's admin record, so nothing outside code/modules/admin/holder* reaches into `.holder`
+// (the admin-rights ratchet). Each answers for a player too: null, or no rights.
+
+/// The stealth key an admin shows instead of their own (null when none, or for a player).
+/proc/admin_fakekey(client/subject)
+	READS_FROM() // the admin record of a client, not round state
+	return subject?.holder?.fakekey
+
+/// Sets (or clears, with null) an admin's stealth key. Nothing for a player.
+/proc/admin_set_fakekey(client/subject, key)
+	if(subject?.holder)
+		subject.holder.fakekey = key
+
+/// The admin's rank names as text (null for a player).
+/proc/admin_rank_names(client/subject)
+	READS_FROM() // the admin record of a client, not round state
+	return subject?.holder?.rank_names()
+
+/// The rights the admin may grant or take when editing others' ranks (NONE for a player).
+/proc/admin_editable_rights(client/subject)
+	READS_FROM() // the admin record of a client, not round state
+	return subject?.holder ? subject.holder.can_edit_rights_flags() : NONE
+
+/// The rights of the admin's ranks (NONE for a player).
+/proc/admin_rank_flags(client/subject)
+	READS_FROM() // the admin record of a client, not round state
+	return subject?.holder ? subject.holder.rank_flags() : NONE
+
+/// The datum the admin marked (View Variables "Mark Object"), or null.
+/proc/admin_marked_datum(client/subject)
+	READS_FROM() // the admin record of a client, not round state
+	return subject?.holder?.marked_datum()
+
+/// The admin's href token (the topic CSRF guard), or null for a player.
+/proc/admin_href_token(client/subject)
+	READS_FROM() // the admin record of a client, not round state
+	return subject?.holder?.href_token
+
 /**
  * admin_can() that audits a denial: one log line with the key, the entry point and the rights required.
  * Use it where an entry point cannot declare the rights itself (per-action rights inside one UI).

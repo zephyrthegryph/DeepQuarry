@@ -20,7 +20,7 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 
 	// structured TGUI AdminReport; populate_inactive link forwards
 	// through dispatch_forwarded_topic to the admin holder Topic.
-	dq_admin_report_html(user.mob, "Inactive Custom Items", dat, user.holder)
+	dq_admin_report_html(user.mob, "Inactive Custom Items", dat, admin_holder_of(user))
 
 /proc/populate_inactive_customitems_list(client/C)
 

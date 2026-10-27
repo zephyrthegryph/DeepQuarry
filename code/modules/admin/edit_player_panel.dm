@@ -108,7 +108,7 @@ CAPABILITIES(/datum/edit_player_panel)
 		data["account_join_date"] = target().client.account_join_date
 		data["account_age"] = target().client.account_age
 		data["inactivity_minutes"] = round(target().client.inactivity / 600)
-		data["rank_names"] = target().client.holder ? target().client.holder.rank_names() : "Player"
+		data["rank_names"] = admin_holder_of(target().client) ? admin_rank_names(target().client) : "Player"
 		data["editrights_mode"] = (GLOB.admin_datums[target().client.ckey] || GLOB.deadmins[target().client.ckey]) ? "rank" : "add"
 		data["muted"] = target().client.prefs.muted
 	else

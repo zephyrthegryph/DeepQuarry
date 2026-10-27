@@ -41,4 +41,4 @@
 		to_chat(owner(), span_warning("[target_datum] was not already tagged."))
 
 ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums.", ADMIN_CATEGORY_GAME)
-	user.holder.dq_open_tag_menu(user.mob)
+	admin_holder_of(user).dq_open_tag_menu(user.mob)

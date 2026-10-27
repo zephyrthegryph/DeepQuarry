@@ -726,7 +726,7 @@ CAPABILITIES(/obj/effect/statclick/ticket)
 			.["noflags"] += X
 		else if(X.is_afk())
 			.["afk"] += X
-		else if(X.holder.fakekey)
+		else if(admin_fakekey(X))
 			.["stealth"] += X
 		else
 			.["present"] += X
