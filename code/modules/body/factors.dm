@@ -67,6 +67,7 @@
 		list(STAT_O2_SAT, "Oxygen saturation", "%", "Change in blood oxygen saturation."),
 		list(STAT_RESP_RATE, "Breathing rate", "/min", "Change in breaths per minute."),
 		list(STAT_SLOWDOWN, "Slowdown", "points", "Movement delay; negative is faster."),
+		list(STAT_ITEM_ENCUMBRANCE, "Item encumbrance", "points", "Movement delay from the weight of worn and held equipment."),
 		list(STAT_PENALTY_SCALE, "Movement penalties", "percent", "Scale on every movement penalty."),
 		list(STAT_HASTE, "Haste", "flag", "Ignores every slowdown."),
 		list(STAT_ACCURACY, "Accuracy", "%", "Ranged accuracy."),
@@ -482,8 +483,28 @@ CAPABILITIES(/datum/reagent_dose)
 	var/alist/factors
 
 /obj/item
-	/// Body factors applied while this item is equipped outside the hands.
+	/// Body factors applied while this item is equipped outside the hands. STAT_ITEM_ENCUMBRANCE is how much the item slows its carrier (positive) or
+	/// speeds them up (negative); it also counts while the item is held, when it slows (humanoid sync_worn_factors()).
 	var/alist/worn_factors
+
+/// The value of one of the item's worn factors, 0 when it has none.
+/obj/item/proc/worn_factor(stat)
+	return worn_factors?[stat] || 0
+
+/// Sets one of the item's worn factors (0 removes it) and re-reads the body that carries the item. The table is replaced, never written, because a
+/// type's table is shared.
+/obj/item/proc/set_worn_factor(stat, value)
+	var/alist/table = alist()
+	for(var/key in worn_factors)
+		table[key] = worn_factors[key]
+	if(value)
+		table[stat] = value
+	else
+		table -= stat
+	worn_factors = length(table) ? table : null
+	var/mob/living/carrier = loc
+	if(istype(carrier))
+		carrier.body?.sync_worn_factors()
 
 // --- Book text -------------------------------------------------------------------------
 

@@ -17,7 +17,6 @@
 	//It should be used purely for appearance. For gameplay effects caused by items covering body parts, use body_parts_covered.
 
 
-	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
 
