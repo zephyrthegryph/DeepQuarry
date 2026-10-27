@@ -1092,3 +1092,48 @@ image: fixed-size chunks (64 KiB) interned by content in a daemon-wide weak pool
 length. Writing the output file and hashing stream over the chunks; the exact-hit path returns the chunk list. Two
 variants whose images agree on most chunks hold those chunks once. Expected: test -60..90 MB, root B -50..90 MB (root B's
 image equals root A's except for line-number debug rows).
+
+### Measured: packed queries (2) and project-relative traces (P1 follow-up) (2026-10-27, lanes `compiler/packed-queries`, `compiler/relative-traces`)
+
+Probe `bench/shared_store_probe.sh` (allocation-sites release build, fresh `DMB_CACHE_DIR`, requested live GB; root A, the A
+test variant, root B = a copy at another path with two comment lines), one run per lane. The reference figures are those of
+compiler/memory-2 above (A 5.27, test +2.66, B +1.49); they were not re-measured on the lane base.
+
+| lane | A | test variant | root B |
+|---|---|---|---|
+| memory-2 (reference) | 5.27 | +2.66 | +1.49 |
+| packed-queries | 5.14 | +2.61 | +1.47 |
+| relative-traces | 5.28 | +2.58 | +1.41 |
+
+- *Packed queries.* `ResolveQuery` 48 -> 32 bytes and `ResolvedMeaning` 80 -> 64 (`dm_ir::PackedU128`, two `u64` words, the
+  serde, hash, order and canonical bytes of the `u128` it replaces; a unit test pins the sizes). The output is byte-identical to
+  the previous compiler's (`.dmb` and `.rsc`, game and test), and `shared_store_equiv.sh` (six interleaved builds in one daemon
+  against cold references) is EQUIVALENT. Warm body edits on a quiet machine, four edits per arm, interleaved by pair:
+  4.74 s before / 5.08 s after in the first pair, 5.53 s before / 4.97 s after with the arms swapped (the second arm of a pair
+  is slower in both): equal within the noise.
+- *Relative traces.* A trace's definition origin is relative to the project directory, so root B's region rows equal root A's:
+  in the root B growth `region_memo` fell from 65 to 24 MB and `directives` from 38 to 22 MB.
+- *What the sites say is left.* Test variant (MB): `AnswerValues` 137, `region_memo` 116, `expansion` 113, `writing` (the
+  retained image) 112, `LeafProofs` 112, `RequestAnswers` 109, `directives` 88, `joined_text` 81, `leased` 69, `receipt_pool`
+  65. Root B: `RequestAnswers` 65, `joined_text` 60, `MetadataDependencies` 54, `environment` 54,
+  `assemble_procedure_rows` 49, `classification` 49, `frame_contribution` 46, `BoundRelocations` 40, `word_lists` 36.
+- *Findings that change the plan.* (a) The expansion records are already one allocation per content in `SharedRecords`
+  (`runner_host_memo.rs`); the preprocessor growth of the test variant is the per-session structures built from them (plan,
+  hydrated rows, joined text), not the records. (b) The macro environment is already a persistent map (`im::OrdMap`, segments
+  clone it), so "stop copying environments" is not a copy to remove: the cost is that the test plan builds its own maps from a
+  different start state, and the earlier seeding experiment measured that rebasing them costs more than it saves. P2 as
+  designed above (region results keyed by the definitions they read, adopted by a variant's plan without re-interpreting the
+  region) is a rewrite of plan adoption, not a patch, and is not started. (c) A slot of the answer table
+  (`RequestAnswers`: `HashMap<u128, AnswerSlot>`, 48 bytes per entry) is per session and about 65 MB per extra session; a
+  `[u64; 2]` key does not shrink it (the slot is 32 bytes), only dropping `base` (8 bytes) from the slot would, and that
+  needs the published-base set kept elsewhere.
+- *Joined text, design.* Every consumer of `ExpandedRegions::text` takes `&str` with absolute offsets (`frontend_parse.rs`
+  chunking, `frontend_grammar_roster.rs` span checks, `debug_sources.rs`, `argument_sources.rs`, `issued_arena`/`same_view`
+  as the authority of every span). A chunked text is `ChunkedText { pieces: Arc<[Piece]>, starts: Arc<[usize]> }` with
+  `slice(range) -> Cow<str>` (borrowed when the range lies in one piece, which holds for every declaration chunk that does
+  not cross an include boundary, copied otherwise), `find`, `is_char_boundary` and `same_view` over piece identity, and
+  a piece is the region output text the expansion record already holds, so the joined copy (60 to 80 MB per session) is not
+  held at all. The lexer keeps running per declaration chunk, which is already how large cold frontends lex. It touches
+  about 40 call sites and the issued-arena authority, so it lands as its own lane with the six-session contract tests; until
+  then identical joined texts of two roots can be interned like output images (saves 60 MB only for a second worktree at the
+  same commit, nothing for the test variant or for the probe's edited root B).
