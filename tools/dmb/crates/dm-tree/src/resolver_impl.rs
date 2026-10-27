@@ -233,7 +233,7 @@ impl dm_ir::Resolver for SemanticTree {
                                         }
                                     },
                                     previous: match node.previous {
-                                        Some(previous) => Some(identity(previous)?),
+                                        Some(previous) => Some(Box::new(identity(previous)?)),
                                         None => None,
                                     },
                                     data: Arc::clone(&node.metadata),
