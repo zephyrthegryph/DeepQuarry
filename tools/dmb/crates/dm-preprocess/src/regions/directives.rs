@@ -348,6 +348,9 @@ struct DirectivePass<'a, P> {
     file_dir_definitions: Vec<Macro>,
     environment: MacroEnvironment,
     file_dir_origins: Vec<Option<DefinitionOrigin>>,
+    /// Definition-site path of each file by its occurrence path's allocation: relative to the project directory, so
+    /// macro traces (and the region rows that hold them) are equal in every worktree of one project.
+    definition_paths: HashMap<usize, (Arc<PathBuf>, Arc<PathBuf>)>,
     // Includes splice their directives into the same encounter stream.
     conditionals: Vec<Conditional>,
     detail: PassDetail,
@@ -386,6 +389,7 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
             file_dir_origins: Vec::new(),
             conditionals: Vec::new(),
             detail: PassDetail::default(),
+            definition_paths: HashMap::new(),
         }
     }
 }
@@ -504,7 +508,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         name: String,
         definition: Macro,
     ) {
-        let path = self.plan.occurrences[occurrence].path.clone();
+        let path = self.definition_path(occurrence);
         if let Some(recording) = self.recording.as_mut() {
             recording.actions.push(directive_memo::Action::Define {
                 input: recording.current,
@@ -539,6 +543,22 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         self.environment
             .insert(&name, definition.clone(), Some(origin));
         self.plan.final_macros.insert(name, definition);
+    }
+    /// Where a definition in `occurrence`'s file is reported: the file's path relative to the project directory (the
+    /// absolute path when the file lies outside it). Consumers resolve it against `DirectivePlan::project_dir`.
+    fn definition_path(&mut self, occurrence: usize) -> Arc<PathBuf> {
+        let path = &self.plan.occurrences[occurrence].path;
+        let key = Arc::as_ptr(path) as usize;
+        if let Some((_, relative)) = self.definition_paths.get(&key) {
+            return Arc::clone(relative);
+        }
+        let relative = match path.strip_prefix(&self.plan.project_dir) {
+            Ok(relative) if !relative.as_os_str().is_empty() => Arc::new(relative.to_path_buf()),
+            _ => Arc::clone(path),
+        };
+        // The occurrence path is held with its entry, so its address names it for as long as the entry lives.
+        self.definition_paths.insert(key, (Arc::clone(path), Arc::clone(&relative)));
+        relative
     }
     fn apply_undef(&mut self, region: usize, name: &str) {
         if let Some(recording) = self.recording.as_mut() {
