@@ -1,7 +1,0 @@
-/mob/living/carbon/human/proc/get_hair_accessory_overlay()
-	if(hair_accessory_style() && !(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & BLOCKHEADHAIR)))
-		var/icon/hair_acc_s = icon(hair_accessory_style().icon, hair_accessory_style().icon_state)
-		if(hair_accessory_style().do_colouration)
-			hair_acc_s.Blend(src.looks.ears_color, hair_accessory_style().color_blend_mode)
-		return hair_acc_s
-	return null

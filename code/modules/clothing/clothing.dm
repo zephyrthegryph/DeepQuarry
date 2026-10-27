@@ -647,14 +647,6 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	if(user.stat || user.restrained() || user.incapacitated())
 		return
 
-	// begin
-	if(istype(user, /mob/living/carbon/human))
-		var/mob/living/carbon/human/H = user
-		if(H.ability_flags & 0x1)
-			to_chat(user, span_warning("You cannot do that while phase shifted."))
-			return
-	// end
-
 	holding.forceMove(get_turf(user))
 
 	if(user.put_in_hands(holding))
@@ -902,15 +894,10 @@ CAPABILITIES(/obj/item/clothing/suit)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
-	owns_one(nameof(hood), /obj/item/clothing/head)
+	owns_one(nameof(hood), /obj/item/clothing/head, starts = PROC_REF(start_hood), early = TRUE) // made before the init chain reads the actions (the action buttons come from actions_types)
 	setup(PROC_REF(take_toggle_icon))
 
 
-
-/// The hood is made before the item's parent init reads its actions (the action buttons come from actions_types).
-/obj/item/clothing/suit/Initialize(mapload)
-	MakeHood()
-	return ..()
 
 /// The sprite name its hood toggle shows follows the type's own icon state.
 /obj/item/clothing/suit/proc/take_toggle_icon()
@@ -936,13 +923,13 @@ CAPABILITIES(/obj/item/clothing/suit)
 	ToggleHood()
 
 /// HOOD STUFF BELOW HERE.
-/obj/item/clothing/suit/proc/MakeHood()
+/// The starting hood (owns_one starts, phase 0): the type its hoodtype names, and the toggle action it brings when the suit has no special one.
+/obj/item/clothing/suit/proc/start_hood(current, mapload)
 	if(!hoodtype)
-		return
-	var/obj/item/clothing/head/hood/H = new hoodtype(src)
-	rel_set(src, nameof(hood), H)
+		return null
 	if(!item_rules_of(src).actions_types.len) //If we don't already have a special action type, let's add it.
 		set_actions_types(item_rules_of(src).actions_types | (/datum/action/item_action/toggle_hood))
+	return hoodtype
 
 /obj/item/clothing/suit/proc/RemoveHood()
 	set_hood_up(FALSE)
@@ -1135,7 +1122,7 @@ CAPABILITIES(/obj/item/clothing/under)
 		return
 
 	var/mob/living/carbon/human/H = loc
-	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.sensorpref : 1)
+	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.bio.sensorpref : 1)
 	switch(sensorpref)
 		if(1) sensor_mode = SUIT_SENSOR_OFF			//Sensors off
 		if(2) sensor_mode = SUIT_SENSOR_BINARY		//Sensors on binary

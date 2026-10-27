@@ -2,12 +2,11 @@
 	name = "salvage"
 	desc = "A tonne of salvage from bad mapping practices. Who spawned the base type? Report this on GitHub"
 	icon = 'icons/obj/salvage/sellable.dmi'
-	throw_range = 4
 	w_class = ITEMSIZE_NORMAL
 	var/worth = 100
 
 CAPABILITIES(/obj/item/salvage)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5))
 	configure(item_sounds(hit = SFX_ITEMS_SALVAGE_SALVAGEPICKUP, drop = SFX_ITEMS_SALVAGE_SALVAGEDROP))

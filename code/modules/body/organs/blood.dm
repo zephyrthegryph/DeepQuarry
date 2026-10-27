@@ -157,10 +157,6 @@ sparse(/mob/living/carbon/human, pale, type = num)
 		if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS)) // Special/Non-Contagious stay in the blood, but they won't spread
 			continue
 		force_contagion(D)
-	if (injected.data["resistances"] && prob(5))
-		antibodies |= injected.data["resistances"]
-	if (injected.data[REAGENT_ID_ANTIBODIES] && prob(5))
-		antibodies |= injected.data[REAGENT_ID_ANTIBODIES]
 	var/list/chems = list()
 	chems = params2list(injected.data["trace_chem"])
 	for(var/C in chems)

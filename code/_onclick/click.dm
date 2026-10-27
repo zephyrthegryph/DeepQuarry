@@ -211,9 +211,4 @@ CAPABILITIES(/atom/movable/screen/click_catcher)
 		if(call(client.click_intercept(), "InterceptClickOn")(src, params, A))
 			return TRUE
 
-	//Mob level intercept
-	if(click_intercept)
-		if(call(click_intercept, "InterceptClickOn")(src, params, A))
-			return TRUE
-
 	return FALSE

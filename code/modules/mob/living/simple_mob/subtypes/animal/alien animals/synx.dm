@@ -91,7 +91,6 @@
 
 //Vore stuff//leaving most of this here even though its no going to be an AI controlled variant.
 	vore_active = 1
-	vore_capacity = 2
 	vore_pounce_chance = 50
 	vore_bump_chance = 10
 	vore_bump_emote = "Slowly wraps its tongue around, and slides its drooling maw over the head of"
@@ -200,8 +199,8 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	can_self_harvest = 1
 	has_mob_product = null
 
-/datum/seed/hardlightseed/New()
-	..()
+/datum/seed/hardlightseed/default_traits()
+	. = ..()
 	set_trait(TRAIT_IMMUTABLE,1) //Normal genetics wont be able to do much with the mechanical parts, its more a machine than a real plant
 	set_trait(TRAIT_MATURATION,1)
 	set_trait(TRAIT_PRODUCTION,1)
@@ -724,10 +723,10 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 
 //HOLOSEEDSPAWNCODE
 /mob/living/simple_mob/animal/synx/ai/pet/holo
-	delete_on_death = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
-	configure(butchery_rules(meat_amount = 0))
+	configure(living_rules(vore_capacity = 2, delete_on_death = TRUE))
+	configure(butchery_rules(meat_type = TRAIT_NONE, meat_amount = 0))
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/on_death(gibbed)
 	..()
@@ -761,10 +760,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
 	faction = "neutral"//Can be safely bapped with newspaper.
 	melee_damage_lower = 0 //Holos do no damage
 	melee_damage_upper = 0
-	meat_type = null
 	//Vore Section
 	vore_default_mode = DM_HEAL
-	vore_capacity = 2
 	vore_digest_chance = 0    //Holos cannot digest
 	vore_pounce_chance = 40 //Shouldn't fight
 	vore_bump_chance = 0 //lowered bump chance
@@ -852,7 +849,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth)
 	icon_dead = "synx_diablo_dead"
 	speak = list( )
 	//Vore Section
-	vore_capacity = 2
+
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/diablo)
+	configure(living_rules(vore_capacity = 2))
 */
 /mob/living/simple_mob/animal/synx/ai/pet/clown
 	poison_chance = 100
@@ -869,11 +868,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth)
 	//destroy_surroundings = 0
 	//Vore Section
 	vore_default_mode = DM_HEAL
-	vore_capacity = 10
 	vore_digest_chance = 0
 	vore_pounce_chance = 1 //MAKE THEM HONK
 	vore_bump_chance = 0 //lowered bump chance
 	vore_escape_chance = 100
+
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/clown)
+	configure(living_rules(vore_capacity = 10))
 
 ////////////////////////////////////////
 ////////////////SYNX DEBUG//////////////
@@ -965,13 +966,15 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 	tt_desc = "Unknown Alien Lifeform"
 
 	poison_chance = 0 //no poison,
-	say_list_type = /datum/say_list/malf_drone
 
 	icon = 'icons/mob/synxmanyvoices.dmi'
 	icon_state = "939_living"
 	icon_living = "939_living"
 	icon_dead = "939_dead"
 	pixel_x = -15
+
+CAPABILITIES(/mob/living/simple_mob/animal/synx/scp)
+	configure(living_rules(say_list_type = /datum/say_list/malf_drone))
 
 #undef SYNX_LOWER_DAMAGE
 #undef SYNX_UPPER_DAMAGE
@@ -981,7 +984,7 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 	name = realname
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx)
-	configure(living_rules(parasitic = TRUE))
+	configure(living_rules(vore_capacity = 2, parasitic = TRUE))
 	configure(mob_movement(bump = SIMPLE_ANIMAL))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
 	rolls(nameof(body_style), PROC_REF(roll_look))

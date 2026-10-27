@@ -8,7 +8,6 @@ REGISTRY_MEMBERSHIP(/obj/item/mop, REGISTRY_MOPS)
 	desc = "The world of janitalia wouldn't be complete without a mop."
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "mop"
-	throw_range = 10
 	w_class = ITEMSIZE_NORMAL
 	flags = NOCONDUCT
 	///How long it takes to mop a tile.
@@ -18,7 +17,7 @@ MSG_DEF(mop/cleaning, null, span_warning("%U% begins to clean the floor."))
 MSG_DEF_SELF(mop/dry, "Your mop is dry!")
 
 CAPABILITIES(/obj/item/mop)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 10, throw_speed = 5))
 	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 3.0, attack_verbs = list("mopped", "bashed", "bludgeoned", "whacked")))
 	reagents(30)
@@ -42,11 +41,11 @@ CAPABILITIES(/obj/item/mop)
 		var/mob/living/cleaner = user
 		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
 			"department" = DEPARTMENT_CIVILIAN,
-			"target_id" = REF(T),
+			"target_id" = ref_token(T),
 			"method" = "manual_mop",
 			"cleaned_units" = 1,
 			"detail" = "Cleaned [T] with [src].",
-		), "sanitation:[REF(T)]:[world.time]", src, cleaner)
+		), "sanitation:[ref_token(T)]:[world.time]", src, cleaner)
 	user.balloon_alert(user, "you have finished mopping!")
 	return OP_OK
 
@@ -62,12 +61,11 @@ CAPABILITIES(/obj/item/mop)
 	desc = "No stain will go unclean."
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "adv_mop"
-	throw_range = 10
 	w_class = ITEMSIZE_NORMAL
 	flags = NOCONDUCT
 	mop_time = 2 SECONDS
 
 CAPABILITIES(/obj/item/mop/advanced)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 10, throw_speed = 4))
 	configure(item_thrown(force = 10.5))
 	configure(item_combat(force = 3.5, attack_verbs = list("mopped", "bashed", "bludgeoned", "whacked")))

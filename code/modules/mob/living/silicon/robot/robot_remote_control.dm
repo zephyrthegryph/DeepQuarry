@@ -7,7 +7,7 @@
 	var/mob/living/silicon/ai/mainframe = null
 	var/first_transfer = TRUE
 
-// Premade AI shell, for roundstart shells: its brain is the AI remote interface (the robot's setup_brain() step, before its parents' init);
+// Premade AI shell, for roundstart shells: its brain is the AI remote interface (the robot's setup_brain() step, a setup() hook);
 // post_mmi_setup() makes it a shell and grants the transfer verb.
 /mob/living/silicon/robot/ai_shell/setup_brain()
 	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src))
@@ -108,7 +108,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	else if(mind)
 		to_chat(src, span_notice("Transferring Shell"))
 		set_deployed(FALSE)
-		rel_clear(mainframe, nameof(mainframe.teleop))
+		sparse_ref_set(mainframe, teleop, null)
 		rel_clear(mainframe, nameof(mainframe.deployed_shell))
 		SetName("[modtype] AI Shell [num2text(ident)]")
 		if(radio) //Return radio to normal
@@ -130,7 +130,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 			if(LAZYLEN(target.vore_organs))
 				set_vore_selected(target, target.vore_organs[1])
 		src.copy_vore_prefs_to_mob(target)
-		rel_set(AI, nameof(AI.teleop), target) // So the AI 'hears' messages near its core.
+		sparse_ref_set(AI, teleop, target) // So the AI 'hears' messages near its core.
 		target.post_deploy()
 // ITION END
 
@@ -192,7 +192,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	mind.transfer_to(mainframe)
 	src.copy_vore_prefs_to_mob(mainframe)
 	set_deployed(FALSE)
-	rel_clear(mainframe, nameof(mainframe.teleop))
+	sparse_ref_set(mainframe, teleop, null)
 	rel_clear(mainframe, nameof(mainframe.deployed_shell))
 	SetName("[modtype] AI Shell [num2text(ident)]")
 	if(radio) //Return radio to normal

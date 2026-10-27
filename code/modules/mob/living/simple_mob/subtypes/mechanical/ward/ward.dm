@@ -26,13 +26,13 @@
 	var/mob/living/owner = null // The mob that made the ward, if any. Used to ensure the ward does not interfere with its creator.
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/ward)
+	configure(living_rules(delete_on_death = TRUE))
 	ref_one(nameof(owner), /mob/living)
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(death_message = "is smashed into pieces!"))
 	configure(mob_movement(bump = 0))
 
 /mob/living/simple_mob/mechanical/ward
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/ward/on_death(gibbed)
 	..()

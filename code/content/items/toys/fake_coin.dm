@@ -6,7 +6,6 @@
 	icon = 'icons/obj/coins.dmi'
 	name = "Coin"
 	desc = "A simple coin you can flip. The weight doesn't seem quite right..."
-	description_fluff = "This isn't a real coin; you can't use it on vending machines."
 	icon_state = "coin"
 	w_class = ITEMSIZE_TINY
 	var/sides = 2
@@ -97,6 +96,7 @@
 	icon_state = "coin_verdantium"
 
 CAPABILITIES(/obj/item/fake_coin)
+	configure(atom_rules(description_fluff = "This isn't a real coin; you can't use it on vending machines."))
 	configure(item_handling(randpixel = 8))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_thrown(force = 0.0))

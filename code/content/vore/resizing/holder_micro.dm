@@ -1,0 +1,114 @@
+// Micro Holders - Extends /obj/item/holder
+
+/obj/item/holder/micro
+	name = "micro"
+	desc = "Another crewmember, small enough to fit in your hand."
+	icon_state = "micro"
+	icon_override = 'icons/inventory/head/mob.dmi'
+	w_class = ITEMSIZE_SMALL
+	item_icons = null // No in-hand sprites (for now, anyway, we could totally add some)
+	pixel_y = 0		  // Override value from parent.
+
+/obj/item/holder/micro/proc/prepare_micro_carrier_sprite()
+	var/mob/living/carbon/human/H = held_mob
+	if(istype(H) && H.species.is_micro_carry(H))
+		set_item_icons(list(
+					slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
+					slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
+					slot_back_str = 'icons/mob/toy_worn.dmi',
+					slot_head_str = 'icons/mob/toy_worn.dmi'))
+
+		// Leaving the following two set makes the sprite not visible
+		set_icon_override(null)
+		set_icon_state("teshariplushie_white")
+		set_item_state("teshariplushie_white")
+
+/obj/item/holder/micro/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null, mob/living/carbon/human/wearer = null)
+	. = ..()
+	var/mob/living/carbon/human/H = held_mob
+	// Only a tesh (or something shaped like one) is tinted by its skin colour; the worn image takes it, the holder's own colour (the hand-slot icon) is never written.
+	if(istype(H) && H.species.is_micro_carry(H))
+		var/image/standing = .
+		if(standing)
+			standing.color = H.looks.skin_color
+
+/obj/item/holder/examine(mob/user)
+	SHOULD_CALL_PARENT(FALSE)
+	. = list()
+	FOR_REAL_CONTENTS(var/mob/living/M, src)
+		. += M.examine(user)
+
+CAPABILITIES(/obj/item/holder)
+	configure(item_handling(cavity_implantable = FALSE))
+	configure(obj_rules(show_messages = 1))
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
+	ref_one(nameof(held_at_make), /mob)
+	ref_one(nameof(held_mob), /mob/living)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_HOLSTER))
+	drag_onto(PROC_REF(drop_input))
+	op("holder_pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(holder_pick_up)))
+	op("holder_squeeze", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_NORMAL + 1), label("Squeeze"), passes(), then(PROC_REF(holder_squeezed)))
+	op("holder_use", item(/obj/item), label("Use on"), passes(), then(PROC_REF(holder_item_used)))
+	param(nameof(held_at_make), pos = 1, apply = PROC_REF(take_held), keep = FALSE)
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). Dropped onto its dragger, the held mob
+/// moves into their hands; the native drop goes on either way.
+/obj/item/holder/proc/drop_input(datum/act/input/A)
+	holder_inventory_drop(A.over, A.actor)
+	return INPUT_FALLTHROUGH
+
+/obj/item/holder/proc/holder_inventory_drop(mob/M, mob/user)
+	if(M != user) return
+	if(user == src) return
+	if(!Adjacent(user)) return
+	if(isAI(M)) return
+	for(var/mob/living/carbon/human/O in contents)
+		O.show_inventory_panel(user, state = GLOB.tgui_deep_inventory_state)
+
+CAPABILITIES(/obj/item/holder/micro)
+	setup(PROC_REF(prepare_micro_carrier_sprite))
+	setup(PROC_REF(configure_micro_sheets))
+	configure(item_worn(slots = SLOT_FEET | SLOT_HEAD | SLOT_ID | SLOT_HOLSTER | SLOT_BACK))
+	op("micro_holder_pet_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Pet"), then(PROC_REF(micro_holder_pet_self)))
+
+/// Old attack_self: reworked so it works w/ nonhumans.
+/obj/item/holder/micro/proc/micro_holder_pet_self(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
+	user.setClickCooldown(user.get_attack_speed())
+	for(var/L in contents)
+		if(ishuman(L))
+			var/mob/living/carbon/human/H = L
+			H.help_shake_act(user)
+		if(isanimal(L))
+			var/mob/living/simple_mob/S = L
+			act_message(user, S, others = span_notice("%U% [S.response_help] %T%."))
+	return OP_OK
+
+//Egg features. (The egged-mob check lives in /obj/item/holder/proc/holder_pick_up(), holder.dm.)
+/obj/item/holder/container_resist(mob/living/held)
+	if(!istype(src.loc, /obj/item/storage/vore_egg))
+		..()
+	else
+		var/obj/item/storage/vore_egg/E = src.loc
+		if(isbelly(E.loc))
+			var/obj/belly/B = E.loc
+			B.relay_resist(held, E)
+			return
+		E.hatch(held)
+		return
+
+/// The held mob is already moved in by its constructor param; configure its complete worn presentation together.
+/obj/item/holder/micro/proc/configure_micro_sheets()
+	var/mob/living/carbon/human/H = held_mob
+	if(istype(H) && H.species.is_micro_carry(H))
+		set_item_icons(list(
+					slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
+					slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
+					slot_back_str = 'icons/mob/toy_worn.dmi',
+					slot_head_str = 'icons/mob/toy_worn.dmi'))
+
+		// Leaving the following two set makes the sprite not visible
+		set_icon_override(null)
+		set_icon_state("teshariplushie_white")
+		set_item_state("teshariplushie_white")
+		set_sprite_sheets(null)

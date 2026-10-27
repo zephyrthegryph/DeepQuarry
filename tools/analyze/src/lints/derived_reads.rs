@@ -119,7 +119,7 @@ const REACTION_OUTPUTS: &[(&str, &str, &[&str], &[&str])] = &[
         &["life_hud", "life_hud_health_icons", "life_hud_darksight"],
         &[
             "dsoverlay", "health_doll_key", "healths", "damageoverlaytemp", "global_hud_claims", "alerts", "screens", "hud_list",
-            "hud_used", "belly_overlay_tgui", "card", "borer_chem_display", "pai_fold_display",
+            "hud_used", "card", "borer_chem_display", "pai_fold_display",
         ],
     ),
     ("vision", "life_vision_changed", &["life_vision"], &["plane_holder", "global_hud_claims", "hud_used", "seer"]),

@@ -83,7 +83,7 @@ ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the opt
 			log_and_message_admins("[key_name(user)] admin-ghosted.", usr) // Add logging.
 		user.init_verbs()
 		if(body)
-			body.teleop = ghost
+			sparse_ref_set(body, teleop, ghost)
 			if(!body.key)
 				bind_player(body, "@[user.key]")	//Haaaaaaaack. But the people have spoken. If it breaks; blame adminbus
 		feedback_add_details("admin_verb","O") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -465,13 +465,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(togglebuildmodeself, R_BUILDMODE, "Toggle Build Mode
 
 ADMIN_VERB(object_talk, R_FUN, "oSay", "Display a message to everyone who can hear the target.", ADMIN_CATEGORY_FUN_NARRATE, msg as text)
 	var/mob/user_mob = user.mob
-	if(!user_mob.control_object)
+	var/obj/possessed = possessed_obj_of(user_mob)
+	if(!possessed)
 		return
 
 	if(!msg)
 		return
-	for(var/mob/V in hearers(user_mob.control_object))
-		V.show_message(span_filter_say(span_bold("[user_mob.control_object.name]") + " says: \"[msg]\""), 2)
+	for(var/mob/V in hearers(possessed))
+		V.show_message(span_filter_say(span_bold("[possessed.name]") + " says: \"[msg]\""), 2)
 	feedback_add_details("admin_verb","OT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(kill_air, R_SERVER, "Kill Air", "Toggle Air Processing.", ADMIN_CATEGORY_DEBUG_DANGEROUS)

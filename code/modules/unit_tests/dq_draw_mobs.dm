@@ -9,12 +9,14 @@
 	icon_dead = "mouse_gray_dead"
 	has_eye_glow = TRUE
 	vore_active = TRUE
-	vore_capacity = 2
 	vore_icons = SA_ICON_LIVING
 	icon_state_prepounce = "mouse_gray_pre"
 	icon_state_pounce = "mouse_gray_leap"
 	icon_pounce_x = 8
 	icon_pounce_y = 4
+
+CAPABILITIES(/mob/living/simple_mob/dq_draw_pred)
+	configure(living_rules(vore_capacity = 2))
 
 /// The overlay states (icon_state of each overlay) the mob shows now.
 /datum/unit_test/proc/dq_overlay_states(atom/A)

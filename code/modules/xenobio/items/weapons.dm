@@ -47,10 +47,12 @@ CAPABILITIES(/obj/item/melee/baton/slime/loaded)
 	charge_cost = 120 // Twice as many shots.
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30 // Make it a bit easier to hit the slimes.
-	description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
-	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
-	ineffective at stunning non-slimy lifeforms such as humanoids."
 	recoil_mode = 0
+
+CAPABILITIES(/obj/item/gun/energy/taser/xeno)
+	configure(atom_rules(description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
+	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
+	ineffective at stunning non-slimy lifeforms such as humanoids."))
 
 /*
 REMOVAL
@@ -61,7 +63,9 @@ REMOVAL
 	projectile_type = /obj/item/projectile/beam/stun/xeno/weak
 	charge_cost = 480
 	accuracy = 0 //Same accuracy as a normal Sec taser.
-	description_fluff = "An NT Mk30 NL retrofitted after the events that occurred aboard the NRS Prometheus."
+
+CAPABILITIES(/obj/item/gun/energy/taser/xeno/sec)
+	configure(atom_rules(description_fluff = "An NT Mk30 NL retrofitted after the events that occurred aboard the NRS Prometheus."))
 
 /obj/item/gun/energy/taser/xeno/sec/robot //Cyborg variant of the security xeno-taser.
 	self_recharge = 1
@@ -216,7 +220,7 @@ CAPABILITIES(/obj/item/xenobio)
 /// Set after a monkey is ground: make_cubes() runs every second while it is (every()).
 /obj/item/slime_grinder/var/cube_making = FALSE
 
-/// What the grinder is working on: the REF text of the target of the running grind, or "cubes" while the last monkey's cubes are made. Null: free.
+/// What the grinder is working on: the handle (ref_token) of the target of the running grind, or "cubes" while the last monkey's cubes are made. Null: free.
 /obj/item/slime_grinder/var/grinding = null
 
 // Instead of bringing the slime to the grinder, lets bring the grinder to the slime! This will process slimes and monkies one at a time:
@@ -233,7 +237,7 @@ CAPABILITIES(/obj/item/slime_grinder)
 /// Requirement: nothing else is being ground (another target, or the cubes of the last monkey). The grind the op itself started does not refuse it.
 /obj/item/slime_grinder/proc/grinder_free(datum/act/op/A)
 	var/working = read_once(grinding) // a plain var: the juicer starts inside the wait, and a published write there would re-check the op half-started
-	return (isnull(working) || working == "\ref[A.target]") ? null : MSG(req_failed)
+	return (isnull(working) || working == ref_token(A.target)) ? null : MSG(req_failed)
 
 /// Requirement: the target is a dead slime or a dead monkey.
 /obj/item/slime_grinder/proc/target_processable(datum/act/op/A)
@@ -242,7 +246,7 @@ CAPABILITIES(/obj/item/slime_grinder)
 /// The juicer starts and the grinder is busy until the grind ends.
 /obj/item/slime_grinder/proc/grind_started(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_JUICER)
-	grinding = "\ref[A.target]"
+	grinding = ref_token(A.target)
 
 /// A grind that ends without finishing: the grinder is free again.
 /obj/item/slime_grinder/proc/grind_ended(datum/act/op/A)

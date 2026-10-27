@@ -174,7 +174,7 @@ GLOBAL_LIST_EMPTY(grab_drain_test_stages)
 /datum/unit_test/dq_living_ability/harvest_cuts_every_piece_then_butchers/exercise()
 	var/mob/living/carbon/human/H = person()
 	var/mob/living/simple_mob/e0_fixture/carcass = allocate(/mob/living/simple_mob/e0_fixture, get_step(get_turf(H), NORTH))
-	carcass.meat_type = /obj/item/reagent_containers/food/snacks/meat
+	carcass.set_meat_type(/obj/item/reagent_containers/food/snacks/meat)
 	carcass.set_meat_amount(2)
 	carcass.set_name_the_meat(FALSE)
 	carcass.set_gib_on_butchery(FALSE)

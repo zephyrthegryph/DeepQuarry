@@ -19,7 +19,7 @@
 	else
 		overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
 		overlay.cache_expiration = -1
-		var/cache_id = "\ref[overlay]@{[world.time]}"
+		var/cache_id = "[ref_token(overlay)]@{[world.time]}"
 		rel_add(src, nameof(vis_overlay_cache), overlay, cache_id)
 		. = overlay
 	vis_add(thing, overlay)

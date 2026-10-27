@@ -6,7 +6,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "implantcase-0"
 	item_state = "implantcase"
-	throw_range = 5
 	w_class = ITEMSIZE_TINY
 	var/obj/item/implant/imp = null
 
@@ -38,7 +37,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/implantcase)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	op("label", item(/obj/item/pen), passes(), label("Label"),
 		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(label_title)), "question" = "What would you like the label to be?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "ask_flags" = ASK_HELD | ASK_CAPABLE, "subject" = computed(PROC_REF(label_subject)), "timeout" = 0), step = "label"),
 		then(PROC_REF(label_entered)))

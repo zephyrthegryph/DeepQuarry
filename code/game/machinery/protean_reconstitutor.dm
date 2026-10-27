@@ -44,12 +44,6 @@
 	gen[circuit] = 1
 	return gen
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with before the parent init reads them
-/obj/machinery/protean_reconstitutor/Initialize(mapload)
-	rel_take_all(src, nameof(component_parts))
-	RefreshParts()
-	. = ..()
-
 /obj/machinery/protean_reconstitutor/RefreshParts()
 	//total paste storage cap (300 * the rating, straightforward)
 	var/store_rating = initial(nanotank_max)
@@ -115,6 +109,7 @@
 	. += "The readout shows that it has [nanomass_reserve] units of nanites ready for use. It requires [nanomass_required] per \'revive\' process, and has a maximum capacity of [nanotank_max] units."
 
 CAPABILITIES(/obj/machinery/protean_reconstitutor)
+	default_parts()
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(machine_usage(interface_sound = SFX_MACHINES_BUTTONBEEP))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 1000))

@@ -267,8 +267,10 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 /obj/item/gun/energy/taser/magic
 	name = "orb of lightning"
 	desc = "An orb filled with electrical energy, it looks oddly like a toy plasma orb..."
-	description_fluff = ""
 	icon_state = "orb"
+
+CAPABILITIES(/obj/item/gun/energy/taser/magic)
+	configure(atom_rules(description_fluff = ""))
 
 //Kettle
 

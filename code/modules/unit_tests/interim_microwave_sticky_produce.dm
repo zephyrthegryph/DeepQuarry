@@ -4,7 +4,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, run_loc_floor_top_right)
-	rel_set(user, nameof(user.teleop), controller)
+	sparse_ref_set(user, teleop, controller)
 	var/obj/machinery/microwave/microwave = allocate(/obj/machinery/microwave, T)
 	var/obj/item/reagent_containers/food/snacks/grown/produce = allocate(/obj/item/reagent_containers/food/snacks/grown, T, PLANT_APPLE)
 	var/original_volume = produce.reagents.total_volume

@@ -1,7 +1,10 @@
-//! A generation's patch base on disk (see `crate::variant_spill`): written before the base would be dropped, restored lazily at
-//! patch admission.
+//! A generation's patch base on disk (see `crate::variant_spill`): written before the base would be dropped, and when a full
+//! build replaces it with a base of other program text; restored lazily at admission, by program text.
 use super::*;
 use std::path::PathBuf;
+
+/// Writes of replaced bases still running (`spill_replaced`); a restore waits for them.
+static PENDING: std::sync::Mutex<Vec<std::thread::JoinHandle<()>>> = std::sync::Mutex::new(Vec::new());
 
 /// Where this variant's stored base lives, and what is known of the file.
 #[derive(Default)]
@@ -81,28 +84,67 @@ impl RetainedGeneration {
         Some(message)
     }
 
-    /// Put the stored base in this request's patch slot when the slot has none and the file describes a build with the
-    /// program text the request has (`wanted`, from `OutputBase::text_key`). Returns whether a base was installed.
+    /// Store a base a full build replaced (its program text differs from the new base's), keyed by that text, on a thread
+    /// of its own: the request does not wait for the write.
+    pub(super) fn spill_replaced(&self, replaced: Arc<PatchSlot>) {
+        let Some((directory, key)) = self.spill.lock().unwrap_or_else(|e| e.into_inner()).target.clone() else {
+            return;
+        };
+        let (Some(base), Some(link), Some(image)) = (replaced.base.clone(), replaced.link.clone(), replaced.image.clone()) else {
+            return;
+        };
+        let file = crate::variant_spill::text_key(key, base.text_key());
+        if crate::variant_spill::peek(&directory, file).is_some_and(|header| header.dmb_hash == base.dmb_hash()) {
+            return;
+        }
+        let fields = replaced.fields.clone();
+        let spawned = std::thread::Builder::new().name("dmbc-spill".into()).spawn(move || {
+            let message = match crate::variant_spill::write(&directory, file, &base, &link, fields.as_ref(), &image, 2) {
+                Ok(written) => format!(
+                    "stored the replaced base bodies={} {:.1} MB in {:.2}s",
+                    base.text_key().1,
+                    written.bytes as f64 / 1e6,
+                    written.seconds
+                ),
+                Err(error) => format!("replaced base not stored: {error}"),
+            };
+            crate::daemon_eprintln!("native variant spill: {message}");
+            let _ = crate::variant_spill::evict(&directory, None);
+        });
+        match spawned {
+            Ok(handle) => PENDING.lock().unwrap_or_else(|e| e.into_inner()).push(handle),
+            Err(error) => crate::daemon_eprintln!("native variant spill: replaced base not stored: {error}"),
+        }
+    }
+
+    /// Make the patch base one whose program text is the request's (`wanted`, from `OutputBase::text_key`): the live one
+    /// if it is, else the variant's stored base or the stored base of that text (written when a full build replaced it).
+    /// A live base of other text is stored before it is swapped out. Returns whether a base was installed.
     pub(crate) fn restore_patch_base(&self, wanted: (u128, usize)) -> bool {
         let Some((directory, key)) = self.spill.lock().unwrap_or_else(|e| e.into_inner()).target.clone() else {
             return false;
         };
-        if self.patch.lock().unwrap_or_else(|e| e.into_inner()).base.is_some() {
+        let live = self.patch.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        if live.base.as_ref().is_some_and(|base| base.text_key() == wanted) {
             return false;
         }
-        let Some(header) = crate::variant_spill::peek(&directory, key) else {
+        // A replaced base still being written may be the one this request wants.
+        let pending = std::mem::take(&mut *PENDING.lock().unwrap_or_else(|e| e.into_inner()));
+        for handle in pending {
+            let _ = handle.join();
+        }
+        let wanted_key = (wanted.0, wanted.1 as u64);
+        let file = [key, crate::variant_spill::text_key(key, wanted)].into_iter().find(|&file| {
+            crate::variant_spill::peek(&directory, file).is_some_and(|header| header.text_key == wanted_key)
+        });
+        let Some(file) = file else {
             return false;
         };
-        if header.text_key != (wanted.0, wanted.1 as u64) {
-            crate::daemon_eprintln!(
-                "native variant spill: stored base has other program text (bodies {} against {}); not restored",
-                header.text_key.1,
-                wanted.1
-            );
+        let Some(header) = crate::variant_spill::peek(&directory, file) else {
             return false;
-        }
+        };
         let started = std::time::Instant::now();
-        let restored = match crate::variant_spill::read(&directory, key) {
+        let restored = match crate::variant_spill::read(&directory, file) {
             Ok(restored) => restored,
             Err(error) => {
                 crate::daemon_eprintln!("native variant spill: stored base unreadable: {error}");
@@ -110,17 +152,26 @@ impl RetainedGeneration {
             }
         };
         let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-        if slot.base.is_some() {
+        if slot.base.as_ref().map(|base| base.dmb_hash()) != live.base.as_ref().map(|base| base.dmb_hash()) {
             return false;
         }
-        slot.link = Some(Arc::new(restored.link));
-        slot.fields = restored.fields;
-        slot.base = Some(Arc::new(restored.base));
-        slot.image = Some(Arc::new(restored.image));
-        slot.model_rows.clear();
-        slot.model_anchor = None;
+        let previous = std::mem::replace(
+            &mut *slot,
+            PatchSlot {
+                link: Some(Arc::new(restored.link)),
+                fields: restored.fields,
+                base: Some(Arc::new(restored.base)),
+                image: Some(Arc::new(restored.image)),
+                replaced: None,
+            },
+        );
         drop(slot);
-        self.spill.lock().unwrap_or_else(|e| e.into_inner()).stored = Some(header.clone());
+        if previous.base.is_some() && previous.image.is_some() && previous.link.is_some() {
+            self.spill_replaced(Arc::new(previous));
+        }
+        if file == key {
+            self.spill.lock().unwrap_or_else(|e| e.into_inner()).stored = Some(header.clone());
+        }
         crate::daemon_eprintln!(
             "native variant spill: restored patch base image={:032x} bodies={} {:.1} MB in {:.2}s",
             header.dmb_hash,

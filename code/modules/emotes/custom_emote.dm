@@ -1,8 +1,9 @@
 
 /// This is the custom_emote that you'll want to use if you want the mob to be able to input their emote.
-/mob/proc/custom_emote(m_type = VISIBLE_MESSAGE, message, range = world.view, check_stat = TRUE)
+/// `typed`: the player typed this emote (a say or me entry, or the answer to its prompt), as against the game making the mob emote.
+/mob/proc/custom_emote(m_type = VISIBLE_MESSAGE, message, range = world.view, check_stat = TRUE, typed = FALSE)
 
-	if((check_stat && (src && stat)) || is_paralyzed() || (!kind_of(src).use_me && usr == src))
+	if((check_stat && (src && stat)) || is_paralyzed() || (!kind_of(src).use_me && typed))
 		to_chat(src, "You are unable to emote.")
 		return
 
@@ -25,7 +26,7 @@
 	var/datum/prompt/text/custom_emote/asked = A.answer
 	if(!asked || isnull(asked.value))
 		return
-	custom_emote(asked.m_type, asked.value, asked.range, asked.check_stat)
+	custom_emote(asked.m_type, asked.value, asked.range, asked.check_stat, typed = TRUE)
 
 /// This is the custom_emote that you'll want to use if you're forcing something to custom emote with no input from the mob.
 /// By default, we have a visible message, our range is world.view, and we do NOT check the stat.

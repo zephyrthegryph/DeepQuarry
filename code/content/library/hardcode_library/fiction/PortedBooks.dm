@@ -10,8 +10,6 @@ Category: Fiction
 /obj/item/book/bundle/custom_library/fiction/taleoftherainbowcat
 	name = "The Tale of the Rainbow Cat"
 	desc = "A hardbound book titled \"The Tale of the Rainbow Cat\" by Miyahara Koichiro."
-	description_fluff = "Thisbook is titled \"The Tale of the Rainbow Cat\" by Miyahara Koichiro. There is a blurb on the back: <br>\<br>\
-						A wildly imaginative tale of powerful gods and a mischievous cat. Written originally in Japanese, it has been translated to GalCom."
 
 	title = "The Tale of the Rainbow Cat"
 	icon_state = "book2"
@@ -177,12 +175,15 @@ Category: Fiction
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/taleoftherainbowcat)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"The Tale of the Rainbow Cat\" by Miyahara Koichiro. There is a blurb on the back: <br>\<br>\
+						A wildly imaginative tale of powerful gods and a mischievous cat. Written originally in Japanese, it has been translated to GalCom."))
+
 /// Woody's Got Wood by Unknown. Literally just a meme entry, a memory of a different time.
 
 /obj/item/book/custom_library/fiction/woodysgotwood
 	name = "Woody's Got Wood"
 	desc = "A barely held together book titled \"Woody's Got Wood\". There doesn't seem to be an author listed."
-	description_fluff = "Thisworn book is titled \"Woody's Got Wood\" and has no author visibly listed. Just holding it gives you a sense this is from a different time."
 
 	title = "Woody's Got Wood"
 	icon_state = "book1"
@@ -211,12 +212,14 @@ Category: Fiction
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/fiction/woodysgotwood)
+	configure(atom_rules(description_fluff = "Thisworn book is titled \"Woody's Got Wood\" and has no author visibly listed. Just holding it gives you a sense this is from a different time."))
+
 ///Song from Arcadia: My True Love Hath My Heart by Sir Philip Sidney.
 
 /obj/item/book/custom_library/fiction/truelovehathmyheart
 	name = "My True Love Hath My Heart"
 	desc = "A hardbound book titled \"Song from Arcadia: My True Love Hath My Heart\" by Sir Philip Sidney."
-	description_fluff = "Thisbook is titled \"Song from Arcadia: My True Love Hath My Heart\" by Sir Philip Sidney. It appears to be a short poem."
 
 	title = "My True Love Hath My Heart"
 	icon_state = "book6"
@@ -255,12 +258,14 @@ Category: Fiction
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/fiction/truelovehathmyheart)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"Song from Arcadia: My True Love Hath My Heart\" by Sir Philip Sidney. It appears to be a short poem."))
+
 /// An Irish Airman Forsees His Death by W.B. Yeats.
 
 /obj/item/book/custom_library/fiction/irishairmanforseesdeath
 	name = "An Irish Airman Forsees His Death"
 	desc = "A hardbound book titled \"An Irish Airman Forsees His Death\" by W.B. Yeats."
-	description_fluff = "Thisbook is titled \"An Irish Airman Forsees His Death\" by W.B. Yeats. It is a poem from the point of view of an aircraft pilot in Earth's First World War."
 
 	title = "An Irish Airman Forsees His Death"
 	icon_state = "book2"
@@ -301,12 +306,14 @@ Category: Fiction
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/fiction/irishairmanforseesdeath)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"An Irish Airman Forsees His Death\" by W.B. Yeats. It is a poem from the point of view of an aircraft pilot in Earth's First World War."))
+
 /// Poems by Wilfred Owen, renamed to "Poems for a Rainy Day: A Collection of Poetry by Wilfred Owen".
 
 /obj/item/book/bundle/custom_library/fiction/poemsforarainyday
 	name = "Poems for a Rainy Day"
 	desc = "A hardbound book titled \"Poems for a Rainy Day\" by Wilfred Owen."
-	description_fluff = "Thisbook is titled \"Poems for a Rainy Day\" by Wilfred Owen. It's a collection of three poems by an old Earth poet by the name of Wilfred Owen."
 
 	title = "Poems for a Rainy Day"
 	icon_state = "book3"
@@ -439,12 +446,14 @@ Category: Fiction
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/poemsforarainyday)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"Poems for a Rainy Day\" by Wilfred Owen. It's a collection of three poems by an old Earth poet by the name of Wilfred Owen."))
+
 ///Silence by Samara McCollough.
 
 /obj/item/book/bundle/custom_library/fiction/silence
 	name = "Silence"
 	desc = "A hardbound book titled \"Silence\" by Samara McCollough."
-	description_fluff = "Thisbook is titled \"Silence\" by Samara McCollough. It appears to be an excerpt from a longer novel."
 
 	title = "Silence"
 	icon_state = "book1"
@@ -488,13 +497,15 @@ Category: Fiction
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/silence)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"Silence\" by Samara McCollough. It appears to be an excerpt from a longer novel."))
+
 ///My Rock by Roman Pilduski
 
 /obj/item/book/custom_library/fiction/myrock
 
 	name = "My Rock"
 	desc = "A hardbound book titled \"My Rock\" by Roman Pilduski."
-	description_fluff = "Thisbook is titled \"My Rock\" by Roman Pilduski."
 
 	title = "My Rock"
 	icon_state = "book7"
@@ -529,13 +540,15 @@ Category: Fiction
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/fiction/myrock)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"My Rock\" by Roman Pilduski."))
+
 /// Ghost Ship by Ogawa Mimei
 
 /obj/item/book/bundle/custom_library/fiction/ghostship
 
 	name = "Ghost Ship"
 	desc = "A hardbound book titled \"Ghost Ship\" by Ogawa Mimei."
-	description_fluff = "Thisbook is titled \"Ghost Ship\" by Ogawa Mimei. It seems to be a fictional story about three fishermen."
 
 	title = "Ghost Ship"
 	icon_state = "bookHacking"
@@ -643,13 +656,15 @@ Category: Fiction
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/ghostship)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"Ghost Ship\" by Ogawa Mimei. It seems to be a fictional story about three fishermen."))
+
 ///The Metal Glen by Jawn Mancer
 
 /obj/item/book/bundle/custom_library/fiction/metalglen
 
 	name = "The Metal Glen"
 	desc = "A hardbound book titled \"The Metal Glen\" by Jawn Mancer."
-	description_fluff = "Thisbook is titled \"The Metal Glen\" by Jawn Mancer. It is a poem about a hare and a cat."
 
 	title = "The Metal Glen"
 	icon_state = "book1"
@@ -761,13 +776,15 @@ Category: Fiction
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/metalglen)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"The Metal Glen\" by Jawn Mancer. It is a poem about a hare and a cat."))
+
 /// RA - Issue 142 by Jawn Mancer
 
 /obj/item/book/bundle/custom_library/fiction/raissue142
 
 	name = "RA - Issue 142"
 	desc = "A hardbound book titled \"RA - Issue 142\" by Jawn Mancer."
-	description_fluff = "Thisbook is titled \"RA - Issue 142\" by Jawn Mancer. It appears to be part of an apocalyptic series."
 
 	title = "RA - Issue 142"
 	icon_state = "book7"
@@ -894,6 +911,9 @@ Category: Fiction
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/raissue142)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"RA - Issue 142\" by Jawn Mancer. It appears to be part of an apocalyptic series."))
+
 
 /// RA - Issue 147 by Jawn Mancer
 
@@ -901,7 +921,6 @@ Category: Fiction
 
 	name = "RA - Issue 147"
 	desc = "A hardbound book titled \"RA - Issue 147\" by Jawn Mancer."
-	description_fluff = "Thisbook is titled \"RA - Issue 147\" by Jawn Mancer. It seems to be part of an apocalyptic series."
 
 	title = "RA - Issue 147"
 	icon_state = "book7"
@@ -1067,13 +1086,15 @@ Category: Fiction
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/raissue147)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"RA - Issue 147\" by Jawn Mancer. It seems to be part of an apocalyptic series."))
+
 ///Serenity by Hold Hill (Cold Mountain). Renamed and reauthored to match original writer.
 
 /obj/item/book/bundle/custom_library/fiction/coldmountain
 
 	name = "Cold Mountain"
 	desc = "A hardbound book titled \"Cold Mountain\" by Han Shan."
-	description_fluff = "Thisbook is titled \"Cold Mountain\" by Han Shan. It is a collection of three poems."
 
 	title = "Cold Mountain"
 	icon_state = "book5"
@@ -1175,13 +1196,15 @@ Category: Fiction
 					</html>
 					"})
 
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/coldmountain)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"Cold Mountain\" by Han Shan. It is a collection of three poems."))
+
 /// Tha' Story o' tha' Blacksmith an' tha' Kingly Bloke by Haggis MacDougall
 
 /obj/item/book/custom_library/fiction/blacksmithandkinglybloke
 
 	name = "Tha' Story o' tha' Blacksmith an' tha' Kingly Bloke"
 	desc = "A hardbound book titled \"Tha' Story o' tha' Blacksmith an' tha' Kingly Bloke\" by Haggis MacDougall."
-	description_fluff = "Thisbook is titled \"Tha' Story o' tha' Blacksmith an' tha' Kingly Bloke\" by Haggis MacDougall. It seems to be some ancient, unknown dialect detailing the dangers of a different era."
 
 	title = "Tha' Story o' tha' Blacksmith an' tha' Kingly Bloke"
 	icon_state = "book3"
@@ -1214,13 +1237,15 @@ Category: Fiction
 				</html>
 				"}
 
+CAPABILITIES(/obj/item/book/custom_library/fiction/blacksmithandkinglybloke)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"Tha' Story o' tha' Blacksmith an' tha' Kingly Bloke\" by Haggis MacDougall. It seems to be some ancient, unknown dialect detailing the dangers of a different era."))
+
 ///Stars and Sometimes Falling Ones by Henry Clement Fandango
 
 /obj/item/book/custom_library/fiction/starsandsometimesfallingones
 
 	name = "Stars and Sometimes Falling Ones"
 	desc = "A hardbound book titled \"Stars and Sometimes Falling Ones\" by Henry Clement Fandango."
-	description_fluff = "Thisbook is titled \"Stars and Sometimes Falling Ones\" by Henry Clement Fandango. It is a poem on the life of a spaceman."
 
 	title = "Stars and Sometimes Falling Ones"
 	icon_state = "stasis"
@@ -1266,3 +1291,6 @@ Category: Fiction
 				</body>
 				</html>
 				"}
+
+CAPABILITIES(/obj/item/book/custom_library/fiction/starsandsometimesfallingones)
+	configure(atom_rules(description_fluff = "Thisbook is titled \"Stars and Sometimes Falling Ones\" by Henry Clement Fandango. It is a poem on the life of a spaceman."))

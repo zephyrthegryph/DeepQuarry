@@ -5,7 +5,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "handcuff"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 5
 	MATERIAL_BULK(MAT_STEEL, 500)
 	var/elastic
 	var/dispenser = 0
@@ -51,7 +50,7 @@
 
 /// Putting them on takes `use_time`; the cuffs have to stay in hand and the wearer-to-be in the grip.
 CAPABILITIES(/obj/item/handcuffs)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 5, throw_speed = 2))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))

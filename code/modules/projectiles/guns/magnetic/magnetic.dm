@@ -242,8 +242,6 @@ CAPABILITIES(/obj/item/gun/magnetic)
 	cell = /obj/item/cell/high // the declared default child (owns_one starts on /obj/item/gun/magnetic)
 	capacitor = /obj/item/stock_parts/capacitor
 	desc = "A bulky weapon designed to fire reactor core fuel rods at absurd velocities... who thought this was a good idea?!"
-	description_antag = "This device is capable of firing reactor fuel assemblies, acquired from a R-UST fuel compressor and an appropriate fueltype. Be warned, Supermatter rods may have unforseen consequences."
-	description_fluff = "Morpheus' second entry into the arms manufacturing field, the Morpheus B.F.G, or 'Big Fuel-rod Gun' made some noise when it was initially sent to the market. By noise, they mean it was rapidly declared 'incredibly dangerous to the wielder and civilians within a mile radius alike'."
 	icon_state = "fuelrodgun"
 	item_state = "coilgun"
 	icon = 'icons/obj/railgun.dmi'
@@ -256,6 +254,9 @@ CAPABILITIES(/obj/item/gun/magnetic)
 	projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod
 
 	power_cost = 500
+
+CAPABILITIES(/obj/item/gun/magnetic/fuelrod)
+	configure(atom_rules(description_fluff = "Morpheus' second entry into the arms manufacturing field, the Morpheus B.F.G, or 'Big Fuel-rod Gun' made some noise when it was initially sent to the market. By noise, they mean it was rapidly declared 'incredibly dangerous to the wielder and civilians within a mile radius alike'.", description_antag = "This device is capable of firing reactor fuel assemblies, acquired from a R-UST fuel compressor and an appropriate fueltype. Be warned, Supermatter rods may have unforseen consequences."))
 
 /obj/item/gun/magnetic/fuelrod/consume_next_projectile()
 	if(!check_ammo() || !capacitor || capacitor.charge < power_cost)

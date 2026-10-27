@@ -19,7 +19,6 @@
 
 	movement_cooldown = -1
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 	attacktext = list("clawed", "pecked")
 	speak_emote = list("chirps", "caws")
@@ -29,11 +28,11 @@
 	response_harm   = "swats"
 	organ_names = /datum/decl/mob_organ_names/bird
 
-	say_list_type = /datum/say_list/bird
 	holder_type = /obj/item/holder/bird
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/bird)
-	configure(butchery_rules(meat_amount = 1))
+	configure(living_rules(say_list_type = /datum/say_list/bird))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 1))
 	configure(mob_movement(softfall = TRUE, hovering = TRUE, parachuting = TRUE))
 
 /datum/say_list/bird

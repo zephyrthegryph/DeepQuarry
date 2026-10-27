@@ -48,11 +48,22 @@
 /proc/sparse_slots_of(datum/D)
 	var/list/out = list()
 	for(var/list/row as anything in sparse_slot_rows_of(D))
-		out[sparse_slot_label(row[2])] = _sparse_get(D, row[2])
+		out[sparse_slot_label(row[2])] = sparse_slot_value(D, row[2])
 	return out
+
+/// The value of slot `slot` of `D` as View Variables shows it: a weak slot (type = weak) answers the datum it names, any other its stored value.
+/proc/sparse_slot_value(datum/D, slot)
+	var/list/row = sparse_slot_row(D, slot)
+	if(row && row[3] == SPARSE_KIND_WEAK)
+		return _sparse_ref(D, slot)
+	return _sparse_get(D, slot)
 
 /// Writes slot `slot` of `D` through the sparse writer (null clears it). Returns TRUE.
 /proc/sparse_slot_write(datum/D, slot, value)
+	var/list/row = sparse_slot_row(D, slot)
+	if(row && row[3] == SPARSE_KIND_WEAK)
+		_sparse_ref_set(D, slot, value)
+		return TRUE
 	_sparse_set(D, slot, value)
 	return TRUE
 
@@ -61,7 +72,7 @@
 	if(!(name in D.vars))
 		var/slot = sparse_slot_named(D, name)
 		if(slot)
-			return _sparse_get(D, slot)
+			return sparse_slot_value(D, slot)
 		var/list/trait_field = type_trait_field_named(D, name)
 		if(trait_field)
 			return type_trait_of(D, trait_field[1]).vars[trait_field[2]]
@@ -88,6 +99,6 @@
 			return VV_COLOR
 		if("list")
 			return VV_LIST
-		if("/image")
+		if("/image", SPARSE_KIND_WEAK)
 			return VV_DATUM_REFERENCE
 	return VV_NULL

@@ -627,7 +627,7 @@ mob/living/carbon/human                      (holder)
 
 ### 2.3 Data structures and procs
 
-`code/modules/body/parts/part_slots.dm` (new):
+`code/domains/body/parts/part_slots.dm` (new):
 ```dm
 /datum/slot_def/part                         // abstract: internal exposure, no capacity model
 	exposure = SLOT_EXPOSURE_INTERNAL
@@ -860,7 +860,7 @@ there are no vitals recomputes.
 
 ### 2.7 One revive path: `return_from_death()`
 
-`code/modules/body/revival.dm` (new):
+`code/domains/body/revival.dm` (new):
 ```dm
 /// The only way a dead mob becomes alive. Returns TRUE on success, or a reason string on refusal.
 /// `source` is what did it (defib, spell, admin, core reboot); `flags` REVIVE_* (REVIVE_HEAL: fully_heal first;
@@ -945,11 +945,11 @@ ending, not a revive).
 
 ```
 code/__defines/body_parts.dm            SLOT_ID_PART_*, COMSIG_BODY_PART_ATTACHED/DETACHED, REVIVE_*
-code/modules/body/parts/part_slots.dm   slot defs (2.3)
+code/domains/body/parts/part_slots.dm   slot defs (2.3)
 code/modules/body/parts/attach.dm       on_attached/on_detached, adopt_subtree/release_subtree
 code/modules/body/parts/queries.dm      parts(), part(), organs(), organ(), embedded_objects(), foreign_objects()
-code/modules/body/parts/verify.dm       verify_body_tree(), used by tests and the debug verb
-code/modules/body/revival.dm            return_from_death()
+code/domains/body/parts/verify.dm       verify_body_tree(), used by tests and the debug verb
+code/domains/body/revival.dm            return_from_death()
 code/modules/unit_tests/dq_part_lifecycle_tests.dm
 tools/ci/check_part_moves.py (+ tools/ci/part_moves_allowlist.txt)
 ```

@@ -73,6 +73,7 @@ input_stance_readers = [
     "code/modules/mob/living/living_movement.dm",
     "code/modules/vore/eating/belly_obj_resist.dm",
     "code/modules/combat_ai/",
+    "code/domains/ai/",
     "code/modules/unit_tests/",
 ]
 
@@ -180,7 +181,6 @@ record_accessor_prefixes = ["set_", "get_"]
 "/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/game/atoms_movable.dm:294), held by all movables"
 "/atom/movable/throwing" = "read on every footstep and bump: footstep.dm throw check (code/datums/behaviours/footstep.dm:70), Bump finalize (code/game/atoms_movable.dm:376)"
 "/atom/light_sources" = "read on every Moved(): the loop that updates each light source on the mover (code/game/atoms_movable.dm:322), walked for all movers"
-"/atom/movable/blocks_emissive" = "read on every overlay update of an atom: the emissive blocker build (code/modules/lighting/emissive_blocker_overlays.dm:13)"
 "/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/modules/mob/living/living_movement.dm:20) and mob_movement.dm:21"
 "/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/modules/mob/living/living_movement.dm:51) and carbon.dm:382"
 "/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"
@@ -198,6 +198,17 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/", "code/modules/benchmarks/"]
 # The codes an ALLOW(init/CODE) keep may carry (the lint holds the same list: tools/analyze/src/lints/init.rs REASON_CODES).
 reason_codes = ["INSTANCE_STATE", "CTOR_ARGS", "FRAMEWORK"]
+
+[lint.init.lists]
+# The closed list of types that ARE the Initialize() chain (doc/rewrite/proposals/init_phase0.md D1): no form runs before the chain they define, so
+# their Initialize() has no init_lines or world_reads sites and takes no ALLOW(init/...). Each entry is "/type = why". Adding one is a design change.
+init_roots = [
+  "/atom = the root of every Initialize() chain: it runs the double-init guard and calls the lifecycle forms (lifecycle_decls_init, caps_init) that every other type's forms depend on",
+  "/atom/movable = the movable layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom's Initialize()",
+  "/obj = the obj layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom/movable's Initialize()",
+  "/turf = the turf layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom's Initialize()",
+  "/datum/controller/global_vars = the boot step that makes GLOB: it runs before any type table exists, so no declared form can run first",
+]
 
 [lint.instance_list]
 # instance_list_lint.py: allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES): unit tests and
@@ -299,7 +310,6 @@ allowed = [
   "/atom/proc/attackby",
   "/atom/proc/attack_hand",
   "/atom/proc/click_alt",
-  "/atom/proc/MouseDrop_T",
   "/obj/item/proc/attack_self",
   "/client/verb/attack_self",
 ]
@@ -352,7 +362,7 @@ ui_push_converted = [
   "code/game/machinery/suit_storage/suit_storage.dm",
   "code/content/mecha/equipment/tools/cable_layer.dm",
   "code/game/objects/structures/crates_lockers/closets/statue.dm",
-  "code/modules/mining/mineral_effect.dm",
+  "code/content/mining/mineral_effect.dm",
   "code/modules/power/fusion/fuel_assembly/fuel_assembly.dm",
   "code/content/power/fusion_coil.dm",
   "code/modules/power/port_gen.dm",
@@ -507,8 +517,10 @@ legacy_forms_converted = [
   "code/modules/blob2/",
   "code/content/blob2/",
   "code/modules/body/",
+  "code/domains/body/",
   "code/modules/busy_space/",
   "code/modules/casino/",
+  "code/content/casino/",
   "code/modules/catalogue/",
   "code/modules/client/",
   "code/content/client/",
@@ -518,11 +530,14 @@ legacy_forms_converted = [
   "code/modules/compass/",
   "code/modules/contracts/",
   "code/modules/crafting/",
+  "code/content/crafting/",
   "code/modules/customitems/",
   "code/modules/datums/",
   "code/modules/debugging/",
   "code/modules/detectivework/",
+  "code/content/detectivework/",
   "code/modules/economy/",
+  "code/content/economy/",
   "code/modules/emotes/",
   "code/content/emotes/",
   "code/modules/entopics/",
@@ -532,6 +547,7 @@ legacy_forms_converted = [
   "code/modules/event/",
   "code/modules/eventkit/",
   "code/modules/events/",
+  "code/content/events/",
   "code/modules/examine/",
   "code/content/examine/",
   "code/modules/expedition/",
@@ -546,6 +562,7 @@ legacy_forms_converted = [
   "code/modules/gamemaster/",
   "code/content/gamemaster/",
   "code/modules/games/",
+  "code/content/games/",
   "code/modules/generated_station/",
   "code/modules/genetics/",
   "code/modules/ghosttrap/",
@@ -555,10 +572,12 @@ legacy_forms_converted = [
   "code/modules/holomap/",
   "code/modules/hydro/",
   "code/modules/hydroponics/",
+  "code/content/hydroponics/",
   "code/modules/identification/",
   "code/modules/instruments/",
   "code/content/instruments/",
   "code/modules/integrated_electronics/",
+  "code/content/integrated_electronics/",
   "code/modules/keybindings/",
   "code/modules/library/",
   "code/content/library/",
@@ -568,6 +587,7 @@ legacy_forms_converted = [
   "code/modules/looking_glass/",
   "code/modules/lootpanel/",
   "code/modules/lore_codex/",
+  "code/content/lore_codex/",
   "code/modules/maint_recycler/",
   "code/content/maint_recycler/",
   "code/modules/maintenance_panels/",
@@ -575,6 +595,7 @@ legacy_forms_converted = [
   "code/modules/map_stubs/",
   "code/modules/maps/",
   "code/modules/materials/",
+  "code/content/materials/",
   "code/modules/media/",
   "code/modules/medical/",
   "code/content/medical/",
@@ -583,6 +604,7 @@ legacy_forms_converted = [
   "code/modules/metrics/",
   "code/modules/mind_body/",
   "code/modules/mining/",
+  "code/content/mining/",
   "code/modules/mob/_modifiers/",
   "code/modules/mob/dead/",
   "code/modules/mob/freelook/",
@@ -637,7 +659,9 @@ legacy_forms_converted = [
   "code/modules/news/",
   "code/modules/nifsoft/",
   "code/modules/overmap/",
+  "code/content/overmap/",
   "code/modules/pda/",
+  "code/content/pda/",
   "code/modules/persistence/",
   "code/modules/planet/",
   "code/modules/player_tips/",
@@ -648,11 +672,17 @@ legacy_forms_converted = [
   "code/modules/radiation/",
   "code/modules/random_map/",
   "code/modules/reagents/holder/",
+  "code/content/reagents/holder/",
   "code/modules/reagents/hose/",
+  "code/content/reagents/hose/",
   "code/modules/reagents/machinery/",
+  "code/content/reagents/machinery/",
   "code/modules/reagents/reactions/",
+  "code/content/reagents/reactions/",
   "code/modules/reagents/reagent_containers/",
+  "code/content/reagents/reagent_containers/",
   "code/modules/reagents/reagents/",
+  "code/content/reagents/reagents/",
   "code/modules/recycling/",
   "code/modules/refinery/",
   "code/content/refinery/",
@@ -667,8 +697,10 @@ legacy_forms_converted = [
   "code/modules/shieldgen/",
   "code/modules/shuttles/",
   "code/modules/spells/",
+  "code/content/spells/",
   "code/modules/stockmarket/",
   "code/modules/surgery/",
+  "code/content/surgery/",
   "code/modules/tables/",
   "code/modules/telesci/",
   "code/modules/tension/",
@@ -680,15 +712,22 @@ legacy_forms_converted = [
   "code/modules/tickets/",
   "code/modules/tooltip/",
   "code/modules/turbolift/",
+  "code/content/turbolift/",
   "code/modules/vehicles/",
+  "code/content/vehicles/",
   "code/modules/ventcrawl/",
   "code/modules/vore/",
+  "code/content/vore/",
   "code/modules/vote/",
   "code/modules/weapons/",
   "code/modules/xenoarcheaology/artifacts/predefined/",
+  "code/content/xenoarcheaology/artifacts/predefined/",
   "code/modules/xenoarcheaology/effects/",
+  "code/content/xenoarcheaology/effects/",
   "code/modules/xenoarcheaology/finds/",
+  "code/content/xenoarcheaology/finds/",
   "code/modules/xenoarcheaology/tools/",
+  "code/content/xenoarcheaology/tools/",
   "code/modules/xenobio/",
 ]
 call_ext_allow = [
@@ -705,7 +744,7 @@ relation_fields_allow = ["code/datums/om/", "code/engine/refs/edges.dm", "code/e
 timer_handles_allow = ["code/datums/om/", "code/engine/time/handles.dm", "code/engine/time/timers.dm"]
 # creation/deletion bookkeeping for the one revive path
 revive_allow = [
-  "code/modules/unit_tests/", "code/modules/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
+  "code/modules/unit_tests/", "code/domains/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
   "code/_helpers/unsorted.dm", "code/modules/mob/living/carbon/human/human_species.dm",
   "code/modules/mob/living/silicon/ai/ai.dm", "code/content/items/weapons/autopsy.dm",
 ]
@@ -744,7 +783,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
-admin_rights_shrink_only_baseline_one_mechanism_admin_can = 2
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 1
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 102
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
 objects_ratchet_on_legacy_interactions = 0
@@ -782,7 +821,7 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
-  "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/datums/properties/equip_slots.dm;code/modules/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
+  "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/datums/properties/equip_slots.dm;code/content/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
   "TRACKED @ code/engine/_generated/;code/__defines/ = tracking is automatic: a var that reactive code reads (or that is written through set_<v>()) gets its setter from `analyze gen auto_tracked`. Declare nothing; write the var through set_<v>() (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written set_<v>() plus SETTER(T, v) (doc/rewrite/read_driven_tracking.md)",
   "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
   "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/modules/benchmarks/;code/__defines/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
@@ -821,7 +860,7 @@ banned = [
   "build_kitchen_items = kitchen_acceptable_items()",
   "build_kitchen_reagents = kitchen_acceptable_reagents()",
 
-  "datum/alloy = an alloy is a transformation: a type under /transformation/smelting with a transformation(takes = ore_term(...), makes = stack_term(...)) entry (code/modules/mining/alloys.dm)",
+  "datum/alloy = an alloy is a transformation: a type under /transformation/smelting with a transformation(takes = ore_term(...), makes = stack_term(...)) entry (code/content/mining/alloys.dm)",
   "alloy_data = xform_rules_in(MEDIUM_ORE_STOCK, REGIME_SMELTING): the compiled smelting transformations",
   "datum/decl/chemical_reaction = a chemical reaction is a transformation: a type under /transformation/chem with a transformation(...) entry in its CAPABILITIES block (code/library/transformations/transformation_entry.dm, doc/rewrite/proposals/transformations.md)",
   "required_reagents = takes = list(reagent(id, amount), ...) in the transformation() entry; a compiled rule reads reagent_takes",
@@ -1167,6 +1206,10 @@ banned = [
   "client_ask = open_request(src, /datum/prompt/x, PROC_REF(entered), answerer = mob, ...) in the client proc, the answer handled in the handler",
   "cast_ask = target_questions(user) returning question_step() specs on the spell, the answers read in targets_from_answers(user, asked)",
   "flow_ask = a question sequence (code/datums/prompts/sequence.dm): ask_admin(/datum/ask_sequence/admin/x, subject, steps, PROC_REF(done)) with question_step() specs, or ask_child() for a shared picker; an op asks with asks() steps",
+  "prompt_flow = a read that carries on from its answer: sql_ask(owner, sql, params, PROC_REF(next), context...) and sql_answer_rows() (code/engine/io/db.dm); a question is a question sequence or asks()",
+  "flow_select = sql_ask(owner, sql, params, PROC_REF(next), context...), the rows read with sql_answer_rows(result, error, what) in the callback (code/engine/io/db.dm)",
+  "flow_sql = sql_ask(owner, sql, params, PROC_REF(next)) when the callback reads the outcome, sql_write(sql, params) when nobody does",
+  "flow_http_get = http_ask(owner, url, PROC_REF(next), context...) (code/engine/io/db.dm); the response is null when the request failed",
   "rerun_ask_on = asks(/datum/prompt/kind, fields = list(...), step = \"name\", answerer = PROC_REF(x)) on the op",
   "topic_rerun_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the topic op; read the answer with A.step_value(\"name\")",
   "ban_topic_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the op; repeat a step with repeats = PROC_REF(x)",
@@ -1789,3 +1832,7 @@ exempt_prefixes = ["code/engine/", "code/modules/unit_tests/", "code/modules/ben
 # weak_raw_read (tools/analyze/src/lints/weak_raw_read.rs; doc/rewrite/proposals/relations.md D5): a hard ban. The weak-reference store reads the handle by design; tests read it to prove the handle stays.
 [lint.weak_raw_read]
 exempt_prefixes = ["code/engine/refs/weak.dm", "code/engine/_generated/", "code/modules/unit_tests/", "code/tests/"]
+
+# duplicate_input_key: a hard ban with no baseline. A type's table holds one entry per input key, so a second click_on()/drag_onto()/... of the same type replaces the first.
+[lint.duplicate_input_key]
+exempt_prefixes = ["code/engine/_generated/"]

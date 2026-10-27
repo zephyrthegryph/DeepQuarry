@@ -1,6 +1,6 @@
 // Handles the subjugation of slimes by force.
 //bodies of adjust_discipline / is_justified_to_discipline live in
-// code/modules/combat_ai/ports/slime_mob_overrides.dm where they
+// code/domains/ai/ports/slime_mob_overrides.dm where they
 // now drive /datum/slime_state instead of the deleted ai_holder.
 
 /mob/living/simple_mob/slime/xenobio/proc/adjust_discipline(amount, silent)

@@ -15,7 +15,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/penguin
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 	harm_intent_damage = 5
 	melee_damage_lower = 10
@@ -25,7 +24,7 @@
 	has_langs = list(LANGUAGE_ANIMAL)
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/penguin)
-	configure(butchery_rules(meat_amount = 3))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 3))
 
 /mob/living/simple_mob/animal/passive/penguin/tux
 	name = "Tux"

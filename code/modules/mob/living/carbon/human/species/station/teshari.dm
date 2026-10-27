@@ -1,9 +1,4 @@
 // allow teshari to always be scooped, as long as pref is enabled
-/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
-/mob/living/proc/mousedrop_input(datum/act/input/A)
-	if(!micro_scoop_with_actor(A.actor, A.over))
-		return INPUT_FALLTHROUGH
-
 /mob/living/proc/micro_scoop_with_actor(mob/user, atom/over_object)
 	// make sure src (The dragged) is human
 	if(!istype(src, /mob/living/carbon/human))

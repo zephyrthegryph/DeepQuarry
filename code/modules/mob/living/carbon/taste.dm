@@ -4,7 +4,7 @@
 		from.trans_to_holder(temp, amount, multiplier, 1)
 
 		var/text_output = temp.generate_taste_message(src)
-		if(accumulated_rads >= 100) //If you're irradiated, you can't taste!
+		if(accumulated_rads() >= 100) //If you're irradiated, you can't taste!
 			text_output = "nothing"
 
 		if(text_output != sparse_get_or(src, last_taste_text, "") || cooldown_ready(src, taste_repeat_cooldown)) //We dont want to spam the same message over and over again at the person. Give it a bit of a buffer.

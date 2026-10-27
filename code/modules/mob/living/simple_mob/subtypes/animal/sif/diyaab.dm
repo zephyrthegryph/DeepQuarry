@@ -28,7 +28,6 @@
 
 	endurance = 25
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	movement_cooldown = -1
 
@@ -37,7 +36,6 @@
 	attack_injury_kind = INJURY_PIERCE
 	attacktext = list("gouged")
 
-	say_list_type = /datum/say_list/diyaab
 
 	// What do you hit the mob with (on help) to get something from it?
 	harvest_tool = /obj/item/tool/wirecutters
@@ -55,7 +53,8 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/diyaab)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(say_list_type = /datum/say_list/diyaab))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/diyaab

@@ -7,8 +7,6 @@
 	desc = "The WT-98a 'Protector' is a common sidearm developed by Ward-Takahashi GMC. It features a powerful stun mode, and \
 	an alert-level-locked lethal mode, only usable when the connected jurisdiction allows. It also features an integrated flashlight!"
 	catalogue_data = list(/datum/category_item/catalogue/information/organization/ward_takahashi)
-	description_fluff = "One of the few sidearms developed by Ward-Takahashi, this gun has a wireless connection to the computer's datacore to ensure it can't be used without authorization from heads of staff who have raised the alert level. Until then, *click*!"
-	description_antag = "The gun can be emagged to remove the lethal security level restriction, allowing it to be fired on lethal mode at all times."
 
 	icon = 'icons/vore/custom_guns_vr.dmi'
 	icon_state = "prot"
@@ -42,6 +40,7 @@
 	var/emagged = FALSE
 
 CAPABILITIES(/obj/item/gun/energy/gun/protector)
+	configure(atom_rules(description_fluff = "One of the few sidearms developed by Ward-Takahashi, this gun has a wireless connection to the computer's datacore to ensure it can't be used without authorization from heads of staff who have raised the alert level. Until then, *click*!", description_antag = "The gun can be emagged to remove the lethal security level restriction, allowing it to be fired on lethal mode at all times."))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_gunlight)))
 
 /obj/item/gun/energy/gun/protector/special_check(mob/user)
@@ -106,7 +105,6 @@ CAPABILITIES(/obj/item/gun/energy/gun/protector)
 /obj/item/gun/energy/gun/protector/pilotgun/locked
 	name = "secure shuttle-protection pistol"
 	desc = "The LAEP97 'Defender' is a variant of another firearm from Lawson Arms and "+TSC_HEPH+", designed to be issued to pilots for defence of their craft from trespassers whilst in-flight. It contains a detachable cell, two modes of fire and a safety interlock to minimize workplace accidents. It also features an integrated flashlight!"
-	description_fluff = "A lighter weapon designed for pilots, this gun has a wireless connection to the computer's datacore to ensure it can't be used within the bounds of NT facilities without authorization from ranking members of security, or the Captain."
 
 	firemodes = list(
 		list(mode_name="stunbeam", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="stun", charge_cost = 400),
@@ -116,6 +114,9 @@ CAPABILITIES(/obj/item/gun/energy/gun/protector)
 	req_access = list(ACCESS_ARMORY) //for toggling safety
 	var/locked = 1
 	var/lockable = 1
+
+CAPABILITIES(/obj/item/gun/energy/gun/protector/pilotgun/locked)
+	configure(atom_rules(description_fluff = "A lighter weapon designed for pilots, this gun has a wireless connection to the computer's datacore to ensure it can't be used within the bounds of NT facilities without authorization from ranking members of security, or the Captain."))
 
 /// Old attackby.
 /obj/item/gun/energy/gun/protector/pilotgun/locked/gun_item(datum/act/op/A)

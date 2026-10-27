@@ -1,5 +1,4 @@
 /obj/effect/effect/water
-	lifecycle_lifetime = 15 SECONDS
 	name = "water"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "extinguish"
@@ -18,6 +17,7 @@
 /obj/effect/effect/water/var/spraying = FALSE
 
 CAPABILITIES(/obj/effect/effect/water)
+	configure(movable_motion(lifecycle_lifetime = 15 SECONDS))
 	ref_one(nameof(spray_target), /turf)
 	ref_one(nameof(spray_actor))
 	every(PROC_REF(spray_delay), then(PROC_REF(step_process)), when = nameof(spraying))

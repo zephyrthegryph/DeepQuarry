@@ -45,7 +45,6 @@
 	attacktext = list("ravaged")
 	friendly = list("nuzzles", "licks", "noses softly at", "noseboops", "headbumps against", "leans on", "nibbles affectionately on")
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	old_x = -16
 	old_y = 0
@@ -57,13 +56,11 @@
 	mount_offset_y = 10
 
 	vore_active = TRUE
-	vore_capacity = 1
 	vore_pounce_chance = 65
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 	var/life_since_foodscan = 0
 
-	say_list_type = /datum/say_list/rat
 
 
 /mob/living/simple_mob/vore/aggressive/rat/load_default_bellies()
@@ -219,7 +216,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
-	configure(butchery_rules(meat_amount = 6))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/rat))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
@@ -329,7 +327,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/event)
 	desc = "A giant rat that made it's nest in an abandoned genetics lab. This one seems fairly docile."
 
 	vore_active = 1
-	vore_capacity = 1
 	vore_escape_chance = 20
 	swallowTime = 25
 	vore_bump_chance = 100
@@ -339,6 +336,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/event)
 	vore_bump_emote = "knocks over and attempts to engulf"
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/labrat/genetics)
+	configure(living_rules(vore_capacity = 1))
 	configure(mob_nature(faction_bump_vore = 1))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = FALSE))
 

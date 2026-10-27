@@ -14,7 +14,7 @@
 /mob/proc/create_thinking_indicator()
 	if(active_thinking_indicator || active_typing_indicator || stat != CONSCIOUS || !has_trait(src, TRAIT_THINKING_IN_CHARACTER))
 		return FALSE
-	var/cur_bubble_appearance = custom_speech_bubble
+	var/cur_bubble_appearance = bio.custom_speech_bubble
 	if(!cur_bubble_appearance || cur_bubble_appearance == "default")
 		cur_bubble_appearance = speech_bubble_appearance()
 	set_active_thinking_indicator(mutable_appearance('icons/mob/talk_vr.dmi', "[cur_bubble_appearance]_thinking", FLOAT_LAYER, appearance_flags=(KEEP_APART|RESET_COLOR|PIXEL_SCALE)))
@@ -31,7 +31,7 @@
 /mob/proc/create_typing_indicator()
 	if(active_typing_indicator || active_thinking_indicator || stat != CONSCIOUS || !has_trait(src, TRAIT_THINKING_IN_CHARACTER))
 		return FALSE
-	var/cur_bubble_appearance = custom_speech_bubble
+	var/cur_bubble_appearance = bio.custom_speech_bubble
 	if(!cur_bubble_appearance || cur_bubble_appearance == "default")
 		cur_bubble_appearance = speech_bubble_appearance()
 	set_active_typing_indicator(mutable_appearance('icons/mob/talk_vr.dmi', "[cur_bubble_appearance]_typing", ABOVE_MOB_LAYER, appearance_flags=(KEEP_APART|RESET_COLOR|PIXEL_SCALE)))

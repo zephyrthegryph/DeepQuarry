@@ -48,9 +48,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass)
 		set_center_of_mass_y(10)
 
 	if(R.price_tag)
-		price_tag = R.price_tag
+		set_price_tag(R.price_tag)
 	else
-		price_tag = null
+		set_price_tag(null)
 
 /obj/item/reagent_containers/food/drinks/cup
 	name = "coffee cup"
@@ -101,9 +101,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cup)
 		set_center_of_mass_y(16)
 
 	if(R.price_tag)
-		price_tag = R.price_tag
+		set_price_tag(R.price_tag)
 	else
-		price_tag = null
+		set_price_tag(null)
 
 // for /obj/machinery/vending/sovietsoda
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/soda)
@@ -232,9 +232,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/tall)
 		set_center_of_mass_y(16)
 
 	if(R.price_tag)
-		price_tag = R.price_tag
+		set_price_tag(R.price_tag)
 	else
-		price_tag = null
+		set_price_tag(null)
 
 /obj/item/reagent_containers/food/drinks/grande
 	name = "grande cup"
@@ -284,9 +284,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/grande)
 		set_center_of_mass_y(16)
 
 	if(R.price_tag)
-		price_tag = R.price_tag
+		set_price_tag(R.price_tag)
 	else
-		price_tag = null
+		set_price_tag(null)
 
 /obj/item/reagent_containers/food/drinks/venti
 	name = "venti cup"
@@ -336,6 +336,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/venti)
 		set_center_of_mass_y(16)
 
 	if(R.price_tag)
-		price_tag = R.price_tag
+		set_price_tag(R.price_tag)
 	else
-		price_tag = null
+		set_price_tag(null)

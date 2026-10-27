@@ -351,3 +351,31 @@ fn lease_slots_hold_every_claim_as_a_bit_and_are_reused_after_drop() {
     drop(again);
     assert_eq!(store.admitted_bytes(), 0);
 }
+#[test]
+fn key_storage_reports_which_variants_this_lease_claims_and_claim_stored_adopts_one() {
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
+    let (a, b) = (store.lease(), store.lease());
+    let key: Arc<[u8]> = Arc::from(b"unit".as_slice());
+    let first = a.insert_with_owned(Arc::clone(&key), reads(1), vec![], 1, || 11).unwrap();
+    let held = |lease: &ObservedArtifactLease<u32, u8, u32, u8>| {
+        let mut seen = Vec::new();
+        lease.visit_key_storage([key.as_ref()], |view, mine| {
+            if let ObservedArtifactStorageView::Entry { value, .. } = view {
+                seen.push((**value, mine));
+            }
+        });
+        seen
+    };
+    assert_eq!(held(&a), [(11, true)]);
+    assert_eq!(held(&b), [(11, false)]);
+    assert!(b.claim_stored(&key, &first));
+    assert_eq!(held(&b), [(11, true)]);
+    // A different variant of the key replaces the claim; the sibling keeps the first one alive.
+    let second = b.insert_with_owned(Arc::clone(&key), reads(2), vec![], 1, || 22).unwrap();
+    assert_eq!(*second, 22);
+    assert_eq!(held(&a), [(11, true), (22, false)]);
+    drop(a);
+    assert_eq!(store.admitted_bytes(), 1);
+    // A released variant cannot be claimed back.
+    assert!(!b.claim_stored(&key, &first));
+}

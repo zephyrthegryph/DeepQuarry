@@ -62,22 +62,24 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
 /obj/item/clothing/mask/smokable/ecig/simple
 	name = "simple electronic cigarette"
 	desc = "A cheap Lucky 1337 electronic cigarette, styled like a traditional cigarette."
-	description_fluff = "Produced by the Ward-Takahashi Corporation on behalf of the Lucky Stars cigarette brand, the 1337 is the e-cig of choice for teenage wastrels across the core worlds. Due to a total lack of safety features, this model is banned on most interstellar flights."
 	icon_state = "ccigoff"
 	icon_off = "ccigoff"
 	icon_empty = "ccigoff"
 	icon_on = "ccigon"
 
+CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/simple)
+	configure(atom_rules(description_fluff = "Produced by the Ward-Takahashi Corporation on behalf of the Lucky Stars cigarette brand, the 1337 is the e-cig of choice for teenage wastrels across the core worlds. Due to a total lack of safety features, this model is banned on most interstellar flights."))
+
 /obj/item/clothing/mask/smokable/ecig/util
 	name = "electronic cigarette"
 	desc = "A popular utilitarian model electronic cigarette, the ONI-55. Comes in a variety of colors."
-	description_fluff = "Ward-Takahashi's flagship brand of e-cig is a popular fashion accessory in certain circles where open flames are prohibited. Custom casings are sold for almost as much as the device itself, and are practically impossible to DIY."
 	icon_state = "ecigoff1"
 	icon_off = "ecigoff1"
 	icon_empty = "ecigoff1"
 	icon_on = "ecigon"
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
+	configure(atom_rules(description_fluff = "Ward-Takahashi's flagship brand of e-cig is a popular fashion accessory in certain circles where open flames are prohibited. Custom casings are sold for almost as much as the device itself, and are practically impossible to DIY."))
 	rolls(nameof(color), PROC_REF(roll_color))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
@@ -87,11 +89,13 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 /obj/item/clothing/mask/smokable/ecig/deluxe
 	name = "deluxe electronic cigarette"
 	desc = "A premium model eGavana MK3 electronic cigarette, shaped like a cigar."
-	description_fluff = "The eGavana is a product of Morpheus Cyberkinetics, and comes standard with additional jacks that allow cyborgs and positronics to experience a simulation of soothing artificial oil residues entering their lungs. It's a pretty good cig for meatbags, too."
 	icon_state = "pcigoff1"
 	icon_off = "pcigoff1"
 	icon_empty = "pcigoff2"
 	icon_on = "pcigon"
+
+CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/deluxe)
+	configure(atom_rules(description_fluff = "The eGavana is a product of Morpheus Cyberkinetics, and comes standard with additional jacks that allow cyborgs and positronics to experience a simulation of soothing artificial oil residues entering their lungs. It's a pretty good cig for meatbags, too."))
 
 /obj/item/clothing/mask/smokable/ecig/proc/ecig_step(datum/act/timer/A)
 	if(ishuman(loc))

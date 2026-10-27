@@ -29,7 +29,6 @@
 	grab_resist = 50
 
 	vore_active = 1
-	vore_capacity = 2
 	vore_pounce_chance = 50
 	vore_icons = null
 
@@ -59,6 +58,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/xeno_ch)
+	configure(living_rules(vore_capacity = 2))
 	owns_one(nameof(build_action), /datum/action/innate/xeno_ch/xeno_build, starts = /datum/action/innate/xeno_ch/xeno_build)
 	owns_one(nameof(neurotox_action), /datum/action/innate/xeno_ch/xeno_neuro, starts = /datum/action/innate/xeno_ch/xeno_neuro)
 	owns_one(nameof(acidspit_action), /datum/action/innate/xeno_ch/xeno_acidspit, starts = /datum/action/innate/xeno_ch/xeno_acidspit)

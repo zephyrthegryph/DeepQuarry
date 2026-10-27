@@ -2,7 +2,6 @@
 	name = "xeyakin"
 	desc = "A strange creature, it's fur shifting, looking like liquid metal."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/xeyakin)
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/xeyakin
 
 	icon = 'icons/mob/vore64x32_ch.dmi'
 	icon_state = "xeyakin" //horrid coder sprite, yay
@@ -28,7 +27,7 @@
 	pixel_y = 0
 
 CAPABILITIES(/mob/living/simple_mob/vore/xeyakin)
-	configure(butchery_rules(meat_amount = 30))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/xeyakin, meat_amount = 30))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0))
 
 

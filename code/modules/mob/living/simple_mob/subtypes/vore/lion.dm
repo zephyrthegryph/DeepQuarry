@@ -22,7 +22,6 @@
 	melee_damage_upper = 20
 	grab_resist = 100
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pets"
 	response_disarm = "bops"
@@ -106,7 +105,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion)
-	configure(butchery_rules(meat_amount = 5))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)

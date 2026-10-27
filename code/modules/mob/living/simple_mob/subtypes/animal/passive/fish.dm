@@ -22,12 +22,11 @@
 
 	holder_type = /obj/item/holder/fish
 
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish
 
 	var/randomize_location = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
-	configure(butchery_rules(meat_amount = 3))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish, meat_amount = 3))
 	rolls(nameof(default_pixel_x), range_of(-12, 12), when = all_of(nameof(randomize_location), not(nameof(default_pixel_x))))
 	rolls(nameof(default_pixel_y), range_of(-6, 10), when = all_of(nameof(randomize_location), not(nameof(default_pixel_y))))
 
@@ -122,7 +121,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/javelin)
 
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/javelin)
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 
 /datum/category_item/catalogue/fauna/icebass
 	name = "Sivian Fauna - Glitter Bass"
@@ -149,7 +150,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/icebass)
 
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
 
 	var/max_red = 150
 	var/min_red = 50
@@ -165,6 +165,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 	rolls(nameof(dorsal_color), PROC_REF(roll_colour))
 	rolls(nameof(belly_color), PROC_REF(roll_colour))
 
@@ -219,9 +220,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
 
 	var/head_color = "#FFFFFF"
 
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 	rolls(nameof(head_color), PROC_REF(roll_colour))
 
 /// A colour in its own channel ranges (rolls()).
@@ -262,7 +263,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
 
 	has_eye_glow = TRUE
 
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/solarfish)
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 
 /datum/category_item/catalogue/fauna/murkin
 	name = "Sivian Fauna - Murkfish"
@@ -289,7 +292,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/murkin)
 
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/sif/murkfish
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/murkin)
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/sif/murkfish))
 
 /datum/decl/mob_organ_names/fish
 TYPE_TABLE(/datum/decl/mob_organ_names/fish, mob_organ_hit_zones, list("head", "body", "dorsal fin", "left pectoral fin", "right pectoral fin", "tail fin"))
@@ -387,13 +392,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/koi/poisonous)
 	icon_state = "measelshark"
 	icon_living = "measelshark"
 	icon_dead = "measelshark-dead"
-	meat_type = /obj/item/reagent_containers/food/snacks/sliceable/sharkchunk
 	vore_active = 1
 	vore_bump_chance = 100
 	vore_default_mode = DM_HOLD //docile shark
-	vore_capacity = 5
 	pixel_x = -50
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/measelshark)
-	configure(butchery_rules(meat_amount = 8))
+	configure(living_rules(vore_capacity = 5))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/sliceable/sharkchunk, meat_amount = 8))
 

@@ -5,7 +5,6 @@
 	icon_state = "jar"
 	density = FALSE
 	anchored = FALSE
-	throw_range = 2
 
 	var/fuel = 10000
 	var/fuel_max = 10000//Lets try this for now
@@ -13,7 +12,7 @@
 
 
 CAPABILITIES(/obj/item/am_containment)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 2, throw_speed = 1))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 8))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(jar_blast))))

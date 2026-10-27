@@ -20,7 +20,6 @@
 	melee_damage_upper = 20
 	grab_resist = 100
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pets"
 	response_disarm = "bops"
@@ -42,7 +41,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/reindeer)
-	configure(butchery_rules(meat_amount = 5))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 
 /mob/living/simple_mob/vore/reindeer/festive

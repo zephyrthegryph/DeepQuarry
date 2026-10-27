@@ -41,13 +41,11 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 
 	movement_cooldown = 3
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat
 
 	response_help = "pokes"
 	response_disarm = "pushes"
 	response_harm = "roughly pushes"
 
-	say_list_type = /datum/say_list/solargrub
 
 	var/poison_per_bite = 5 //grubs cause a shock when they bite someone
 	var/poison_type = REAGENT_ID_SHOCKCHEM
@@ -61,7 +59,8 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
-	configure(butchery_rules(meat_amount = 6))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/solargrub))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat, meat_amount = 6))
 	ref_one(nameof(attached), /obj/structure/cable)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
@@ -124,7 +123,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
 	vore_bump_chance = 50
 	vore_bump_emote = "applies minimal effort to try and slurp up"
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 0 //grubs only eat incapacitated targets
 	vore_default_mode = DM_DIGEST
 

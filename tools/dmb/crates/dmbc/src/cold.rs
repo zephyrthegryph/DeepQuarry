@@ -13,7 +13,6 @@ use std::time::{Duration, Instant};
 mod diagnostic_continuation;
 mod initializer_factory;
 mod prepared;
-pub(crate) mod selected_lowering;
 pub use prepared::{PreparedCold, PreparedComposition};
 
 /// What the general path prepared: the whole program for composition, or an output it built
@@ -501,7 +500,7 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
         retained,
         admitted,
         frontend,
-        &contributions,
+        contributions,
         (
             std::sync::Arc::clone(prepared.units_owner()),
             startup.facts(),

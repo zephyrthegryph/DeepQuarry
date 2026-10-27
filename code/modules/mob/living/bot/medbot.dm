@@ -183,13 +183,13 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
-			"bot_id" = REF(src),
+			"bot_id" = ref_token(src),
 			"task_kind" = "medical_assistance",
 			"target_id" = SScontracts.subject_identity(H)?.id,
 			"successful" = TRUE,
 			"work_units" = injection_amount,
 			"detail" = "[src] completed an autonomous treatment for [H].",
-		), "automation:[REF(src)]:medical:[REF(H)]:[world.time]", src, null, H)
+		), "automation:[ref_token(src)]:medical:[ref_token(H)]:[world.time]", src, null, H)
 
 /// The kit skin it was built from shows over the sprite.
 /mob/living/bot/medbot/draw(datum/look/look)
@@ -490,7 +490,7 @@ MSG_DEF_SELF(medbot/empty_first, "You need to empty the first aid kit out first.
 // A robot arm (a part, or a robotic arm organ) on an empty kit starts a medibot; on a kit with things in it the kit is to be emptied first; anything
 // else goes on to the storage.
 CAPABILITIES(/obj/item/storage/firstaid)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 8, throw_speed = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("add_arm", inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)),
 		when(req(PROC_REF(arm_is_robotic))), label("Add robot arm"),
