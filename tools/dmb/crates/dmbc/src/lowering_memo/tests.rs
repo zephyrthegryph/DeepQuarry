@@ -2,8 +2,8 @@ use super::*;
 #[test]
 fn resident_budget_evicts_before_retaining_new_results() {
     let memo = LoweringMemo::with_limit(10);
-    assert!(memo.insert_with(Arc::from(b"a".as_slice()), vec![], vec![], 6, || 1u32));
-    assert!(memo.insert_with(Arc::from(b"b".as_slice()), vec![], vec![], 6, || 2u32));
+    assert!(memo.insert_with(Arc::from(b"a".as_slice()), vec![],6, || 1u32));
+    assert!(memo.insert_with(Arc::from(b"b".as_slice()), vec![],6, || 2u32));
     assert!(memo.lookup(b"a", &Host(false)).is_none());
     assert_eq!(memo.lookup(b"b", &Host(false)).as_deref(), Some(&2));
     assert_eq!(memo.admitted_bytes(), 6);
@@ -97,7 +97,6 @@ fn stored_reads_are_replayed_and_a_changed_answer_declines() {
     assert!(memo.insert_with(
         Arc::from(b"domain-key".as_slice()),
         recorder.reads(),
-        Vec::new(),
         1,
         || 7u32
     ));

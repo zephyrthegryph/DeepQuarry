@@ -96,7 +96,6 @@ impl ScalarArtifacts for CurrentScalars<'_> {
         let admitted = self.owner.values.insert_with_owned(
             Arc::from(key),
             ledger.reads(),
-            Vec::new(),
             charge,
             || Artifact::Scalar(Arc::new(value)),
         )?;

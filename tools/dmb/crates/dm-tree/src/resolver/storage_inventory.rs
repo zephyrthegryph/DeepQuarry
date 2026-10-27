@@ -70,15 +70,14 @@ impl OwnerFacts {
         &self,
         key: Arc<[u8]>,
         reads: Vec<dm_session::Observation<StorageQuery, StorageAnswer, ()>>,
-        versions: Vec<((), u128)>,
         create: impl FnOnce() -> StorageOwner,
     ) {
         match self {
             Self::Local(store) => {
-                store.insert_with(key, reads, versions, 0, create);
+                store.insert_with(key, reads, 0, create);
             }
             Self::Shared { lease, .. } => {
-                lease.insert_with(key, reads, versions, 0, create);
+                lease.insert_with(key, reads, 0, create);
             }
         }
     }
@@ -198,7 +197,6 @@ impl RetainedStorage {
             self.store.insert_with(
                 key(owner),
                 ledger.reads(),
-                Vec::new(),
                 || StorageOwner {
                     facts: Arc::clone(&facts),
                 },

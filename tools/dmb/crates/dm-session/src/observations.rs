@@ -105,7 +105,6 @@ mod tests {
                 query: "absent",
                 answer: None,
             }],
-            Vec::new(),
             32,
             || 9,
         );

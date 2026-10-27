@@ -49,7 +49,6 @@ fn populate(store: &Values) -> Arc<Vec<u8>> {
                 },
             ]
             .into(),
-            Arc::from([(1, 7)]),
             2,
             || vec![1, 2],
         )
@@ -129,7 +128,6 @@ fn observable_wave_replays_every_answer_for_the_same_shared_receipt_leaf() {
             .insert_current_qualified_with(
                 Arc::from(b"key".as_slice()),
                 receipt.clone(),
-                Arc::from([(1, 7)]),
                 1,
                 || vec![1],
             )

@@ -49,7 +49,6 @@ impl HeapCensus {
             V::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 self.slice("retained.headers.keys", key, true);
@@ -60,7 +59,6 @@ impl HeapCensus {
                         }
                     }
                 }
-                self.slice("retained.headers.versions", versions, true);
                 if self.arc_object("retained.headers.values", value) {
                     recipe(self, value);
                 }
@@ -86,12 +84,10 @@ impl HeapCensus {
             V::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 self.slice("retained.header_defaults.keys", key, true);
                 self.receipt("retained.header_defaults.reads", reads);
-                self.slice("retained.header_defaults.versions", versions, true);
                 if self.arc_object("retained.header_defaults.values", value)
                     && self.vec_payload("retained.header_defaults.rows", value)
                 {

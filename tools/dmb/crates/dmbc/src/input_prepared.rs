@@ -175,7 +175,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             let source = Arc::clone(&hit.source);
             owner
                 .values
-                .insert_with(key, Vec::new(), Vec::new(), 0, || PreparedInputPayload {
+                .insert_with(key, Vec::new(), 0, || PreparedInputPayload {
                     source: Arc::clone(&source),
                     inputs: refreshed,
                 });
@@ -212,7 +212,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         inputs.files.insert(path, fact);
         owner
             .values
-            .insert_with(key, Vec::new(), Vec::new(), 0, || PreparedInputPayload {
+            .insert_with(key, Vec::new(), 0, || PreparedInputPayload {
                 source: Arc::clone(&source),
                 inputs,
             });

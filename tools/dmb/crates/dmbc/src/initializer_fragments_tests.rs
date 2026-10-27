@@ -355,7 +355,6 @@ fn same_locator_declines_changed_current_flags_before_reusing_code() {
     store.insert_with(
         Arc::clone(&original.key),
         receipts::reads(&original, Vec::new()),
-        Vec::new(),
         1,
         || (),
     );
@@ -570,7 +569,6 @@ fn verified_fragment_hit_recomputes_same_producer_and_rejects_missing_reads() {
     corrupt_store.values.insert_with(
         Arc::clone(&key.key),
         accepted.reads.iter().cloned().collect(),
-        Vec::new(),
         std::mem::size_of::<RetainedFragment>(),
         || RetainedFragment {
             code: RetainedCode::Assignment(changed_fragment),

@@ -88,7 +88,6 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
         ),
         key: key.into(),
         reads: Vec::<ResolverRead>::new().into(),
-        versions: Arc::from([]),
         value: RecordValue::Selections {
             facts: Arc::new(Default::default()),
             abi: vec![],
@@ -168,7 +167,6 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
             ),
             key: record.key.clone(),
             reads: record.reads.clone(),
-            versions: Arc::clone(&record.versions),
             value: RecordValue::Executable(value.shared_artifact()),
             relative_debug: record.relative_debug.clone(),
             required_types: Arc::clone(&record.required_types),

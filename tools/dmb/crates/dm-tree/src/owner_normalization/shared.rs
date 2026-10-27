@@ -86,13 +86,12 @@ impl NormalizedValues {
         &self,
         key: Arc<[u8]>,
         reads: dm_session::Receipt<SourceQuery, SourceAnswer, SourceDomain>,
-        versions: Vec<(SourceDomain, u128)>,
         weight: usize,
         create: impl FnOnce() -> ResolvedOwner,
     ) -> Option<Arc<ResolvedOwner>> {
         match self {
             Self::Local(store) => {
-                store.insert_with_receipt(key, reads, versions.into(), weight, create)
+                store.insert_with_receipt(key, reads, weight, create)
             }
             Self::Shared { lease, .. } => lease.insert_with_receipt(key, reads, weight, create),
         }

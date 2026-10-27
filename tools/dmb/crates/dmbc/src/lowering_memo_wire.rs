@@ -889,9 +889,6 @@ impl Candidates<'_> {
                             (None, Some(_)) => CurrentReads::answered(host, reads),
                             (None, None) => CurrentReads::accepted(host, reads),
                         });
-                        if answered.is_some() {
-                            promotion.versions.clear();
-                        }
                         result.verification_reads = verification_reads;
                         result.prepared = Some(value);
                         result.resident = Some(promotion);
@@ -943,7 +940,6 @@ impl Candidates<'_> {
                     let promotion = ResidentPromotion {
                         current: None,
                         queries: v.reads.iter().map(|(query, _)| *query).collect(),
-                        versions: v.versions.clone(),
                         relative_debug: v.relative_debug.clone(),
                     };
                     match rebind(

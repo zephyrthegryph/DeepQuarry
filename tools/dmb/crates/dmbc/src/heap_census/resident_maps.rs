@@ -1,7 +1,6 @@
 //! Retained parsed maps and geometry: accessible owners, not wire-size proxies.
 use super::*;
 use crate::{lowering_memo::ResolverRead, map_projection::Projection};
-use dm_ir::ReadDomain;
 use dm_tree::maps::MapPlan;
 
 impl HeapCensus {
@@ -140,7 +139,6 @@ pub(crate) fn geometry_weight(
     projection: &Projection,
     key: &Arc<[u8]>,
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
     let mut census = HeapCensus::new("resident_map_geometry_admission");
     census.slice("retained_maps.key", key, true);
@@ -151,7 +149,6 @@ pub(crate) fn geometry_weight(
     }
     census.retained_map_projection(projection);
     census.vec_payload("retained_maps.reads", reads);
-    census.vec_payload("retained_maps.versions", versions);
     for read in reads {
         super::resident_weight::answer(&mut census, &read.answer);
     }
@@ -204,7 +201,7 @@ mod tests {
         let key: Arc<[u8]> = Arc::from(b"key".as_slice());
         assert!(plan_weight(&plan, &key).is_some());
         let plans = Arc::from([plan]);
-        let base = geometry_weight(&plans, &projected, &key, &Vec::new(), &Vec::new()).unwrap();
+        let base = geometry_weight(&plans, &projected, &key, &Vec::new()).unwrap();
         let mut larger = projected.clone();
         larger.grid = Arc::from(vec![
             crate::map_projection::GridRun {
@@ -215,7 +212,7 @@ mod tests {
             10000
         ]);
         assert!(
-            geometry_weight(&plans, &larger, &key, &Vec::new(), &Vec::new()).unwrap()
+            geometry_weight(&plans, &larger, &key, &Vec::new()).unwrap()
                 >= base + 10000 * size_of::<crate::map_projection::GridRun>()
         );
     }

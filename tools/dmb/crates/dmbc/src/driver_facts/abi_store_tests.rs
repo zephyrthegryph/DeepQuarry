@@ -75,7 +75,7 @@ fn admit(store: &AbiStore, key: &[u8], current: &Current<'_>) -> Option<Arc<Arti
     store
         .visit_receipted_with(
             key,
-            &mut |reads, _| admission::changed(reads, current, None),
+            &mut |reads| admission::changed(reads, current, None),
             &mut |value| matches!(value.as_ref(), Artifact::Unit(_)),
         )
         .0
@@ -96,7 +96,7 @@ fn second_session_claims_the_first_variant_and_it_dies_with_the_last_lease() {
     let query = ResolveQuery::GlobalVar(SymbolId::of("missing"));
     let inputs = inputs(&engine);
     let stored = first
-        .insert_with_receipt(Arc::clone(&key), reads_of(&inputs, query), Arc::from([]), 1, unit)
+        .insert_with_receipt(Arc::clone(&key), reads_of(&inputs, query), 1, unit)
         .unwrap();
 
     // The second session has not claimed it yet: the scheduler sees a sibling variant.
@@ -117,7 +117,7 @@ fn second_session_claims_the_first_variant_and_it_dies_with_the_last_lease() {
 
     // Computing the same unit again stores nothing new: the insert finds the equal variant.
     let again = second
-        .insert_with_receipt(Arc::clone(&key), reads_of(&inputs, query), Arc::from([]), 1, || {
+        .insert_with_receipt(Arc::clone(&key), reads_of(&inputs, query), 1, || {
             panic!("an equal variant is stored")
         })
         .unwrap();
@@ -138,7 +138,7 @@ fn claim_of_a_released_variant_is_declined() {
     let (first, second) = (session(&core), session(&core));
     let key: Arc<[u8]> = Arc::from(&b"unit"[..]);
     let reads = observations::reads(inputs(&engine), Vec::new()).into();
-    let stored = first.insert_with_receipt(Arc::clone(&key), reads, Arc::from([]), 1, unit).unwrap();
+    let stored = first.insert_with_receipt(Arc::clone(&key), reads, 1, unit).unwrap();
     first.retain_current_keys(std::iter::empty());
     // The only holder released it: a row the scheduler validated meanwhile cannot claim it back.
     let AbiStore::Shared { lease, .. } = &second else { unreachable!() };

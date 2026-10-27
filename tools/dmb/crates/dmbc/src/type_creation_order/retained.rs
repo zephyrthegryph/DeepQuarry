@@ -149,7 +149,7 @@ pub fn collect_retained(
     )?;
     Ok(artifacts
         .values
-        .insert_with_owned(key.into(), reads, Vec::new(), 0, || AllocationRoster {
+        .insert_with_owned(key.into(), reads, 0, || AllocationRoster {
             order: order.into(),
             touches: touches.into(),
         })

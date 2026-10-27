@@ -63,7 +63,7 @@ fn rich_promotion_preserves_current_only_negative_reissue_dependency() {
     );
     let (accepted, changed) =
         memo.values
-            .visit_receipted_with(&key, &mut |_, _| None::<ResolveQuery>, &mut |_| true);
+            .visit_receipted_with(&key, &mut |_| None::<ResolveQuery>, &mut |_| true);
     assert!(changed.is_none());
     let accepted = accepted.unwrap();
     assert_eq!(accepted.reads.iter().count(), 0);
@@ -86,7 +86,6 @@ fn rich_promotion_preserves_current_only_negative_reissue_dependency() {
         .insert_with_receipt(
             Arc::clone(&key),
             promoted.reads,
-            promoted.versions,
             1,
             || ()
         )

@@ -296,7 +296,7 @@ impl MapMemo {
             if verify {
                 self.verify_geometry(maps, defaults, host, &value, &reads)?;
             }
-            self.admit_retained_geometry(locator, maps, &value, reads.clone(), Vec::new());
+            self.admit_retained_geometry(locator, maps, &value, reads.clone());
             self.counts.geometry_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(value);
         }
@@ -313,7 +313,6 @@ impl MapMemo {
             maps,
             &value,
             reads.clone(),
-            Vec::new(),
         );
         if !persist {
             return Ok(value);

@@ -59,7 +59,7 @@ impl AbiStore {
     pub(in crate::driver_facts) fn visit_receipted_with(
         &self,
         key: &[u8],
-        validate: &mut dyn FnMut(&Receipt<Query, Answer, Domain>, &[(Domain, u128)]) -> Option<Query>,
+        validate: &mut dyn FnMut(&Receipt<Query, Answer, Domain>) -> Option<Query>,
         accept: &mut dyn FnMut(&Arc<Artifact>) -> bool,
     ) -> Found {
         match self {
@@ -83,14 +83,13 @@ impl AbiStore {
         &self,
         key: Arc<[u8]>,
         reads: Receipt<Query, Answer, Domain>,
-        versions: Arc<[(Domain, u128)]>,
         weight: usize,
         create: impl FnOnce() -> Artifact,
     ) -> Option<Arc<Artifact>> {
         match self {
-            Self::Private(store) => store.insert_with_receipt(key, reads, versions, weight, create),
+            Self::Private(store) => store.insert_with_receipt(key, reads, weight, create),
             Self::Shared { lease, .. } => {
-                lease.insert_with_qualified_receipt(key, reads, versions, weight, create)
+                lease.insert_with_qualified_receipt(key, reads, weight, create)
             }
         }
     }
@@ -117,7 +116,6 @@ impl AbiStore {
         charge: impl FnMut(
             &Arc<[u8]>,
             &Receipt<Query, Answer, Domain>,
-            &Arc<[(Domain, u128)]>,
             &Arc<Artifact>,
         ) -> Option<usize>,
     ) -> PressurePrune {
@@ -131,13 +129,12 @@ impl AbiStore {
         &self,
         key: Arc<[u8]>,
         reads: Vec<dm_session::Observation<Query, Answer, Domain>>,
-        versions: Vec<(Domain, u128)>,
         weight: usize,
         create: impl FnOnce() -> Artifact,
     ) -> Option<Arc<Artifact>> {
         match self {
-            Self::Private(store) => store.insert_with_owned(key, reads, versions, weight, create),
-            Self::Shared { lease, .. } => lease.insert_with_owned(key, reads, versions, weight, create),
+            Self::Private(store) => store.insert_with_owned(key, reads, weight, create),
+            Self::Shared { lease, .. } => lease.insert_with_owned(key, reads, weight, create),
         }
     }
     #[cfg(test)]

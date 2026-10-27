@@ -67,7 +67,6 @@ struct Record {
     recipe: Option<crate::lowering_memo::key_recipe::KeyRecipe>,
     key: SharedKey,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
-    versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     value: RecordValue,
     /// Shared by every session's record of the same body: a rebound record keeps its predecessor's allocation.
     relative_debug: Arc<[crate::debug_sources::RelativeDebugAnchor]>,
@@ -89,7 +88,6 @@ pub(crate) struct Admission {
     disk: Option<crate::lowering_memo::DiskWriter>,
     key: SharedKey,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
-    versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Arc<[crate::debug_sources::RelativeDebugAnchor]>,
     /// The dependency-index world the reads were computed under (a freshly lowered unit only).
     world: Option<u128>,
@@ -279,7 +277,6 @@ impl CompletedInput {
                 writer.queue_compact(
                     &admission.key,
                     &admission.reads,
-                    &admission.versions,
                     &value,
                     &admission.relative_debug,
                     admission.world,
@@ -297,7 +294,6 @@ impl CompletedInput {
                         }),
                         key: admission.key,
                         reads: admission.reads,
-                        versions: admission.versions,
                         value: RecordValue::Executable(value.shared_artifact()),
                         relative_debug: admission.relative_debug,
                         required_types: Arc::clone(value.required_types_owner()),
@@ -495,7 +491,7 @@ impl SessionSymbolicMemo {
                         .visit_borrowed_receipted_with_value(
                             digest,
                             &|candidate| locator.matches(candidate),
-                            &mut |reads, _, _| {
+                            &mut |reads, _| {
                                 // The private publication producer stages a clone
                                 // of this SAME record.reads owner and qualified
                                 // record.versions owner. Ordinary cross-host
@@ -618,15 +614,6 @@ impl SessionSymbolicMemo {
                         record.reads.clone()
                     } else {
                         receipt_groups::grouped(&self.receipt_groups, current)
-                    }
-                },
-                versions: {
-                    // Equal domain receipts are the predecessor's allocation, not a copy per session.
-                    let current = Vec::new();
-                    if record.versions[..] == current[..] {
-                        Arc::clone(&record.versions)
-                    } else {
-                        current.into()
                     }
                 },
                 relative_debug: Arc::clone(&record.relative_debug),
@@ -759,7 +746,6 @@ pub(super) fn admission(
     memo: &crate::lowering_memo::ProcedureMemo,
     key: Arc<[u8]>,
     reads: Arc<[ResolverRead]>,
-    versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
     write_compact: bool,
     world: Option<u128>,
@@ -781,7 +767,6 @@ pub(super) fn admission(
         disk,
         key: key.into(),
         reads,
-        versions,
         relative_debug: relative_debug.into(),
         world,
     })
@@ -803,7 +788,6 @@ pub(super) fn disk_admission<R: Resolver>(
         disk: None,
         key: key.into(),
         reads,
-        versions: Vec::new().into(),
         relative_debug: promotion.relative_debug.as_slice().into(),
         world: None,
     })
@@ -831,7 +815,6 @@ pub(super) fn remember_selections<R: Resolver>(
         recipe: None,
         key: admission.key,
         reads: admission.reads,
-        versions: admission.versions,
         value: RecordValue::Selections {
             facts: Arc::clone(facts),
             abi: abi.canonical_bytes(),
@@ -860,7 +843,6 @@ pub(super) fn accepted_admission<R: Resolver>(
         disk: None,
         key: key.into(),
         reads,
-        versions: Vec::new().into(),
         relative_debug: accepted.value.relative_debug.as_slice().into(),
         world: None,
     })

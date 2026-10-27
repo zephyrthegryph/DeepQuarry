@@ -1,6 +1,6 @@
 use super::*;
 #[test]
-fn latest_image_census_deduplicates_shared_words_and_preserves_binding_unknowns() {
+fn latest_image_census_deduplicates_shared_words_and_counts_dense_binding_answers() {
     use byond_dmb::bytecode::opcode;
     use dm_codegen_byond::{Instruction, Item, SymbolicProc, Word};
     let code = SymbolicProc {
@@ -48,16 +48,14 @@ fn latest_image_census_deduplicates_shared_words_and_preserves_binding_unknowns(
         .owners
         .iter()
         .any(|owner| owner.shared_encounters > 0));
+    // Binding answers are one exact dense slice: fully known, never a HashMap estimate.
     let bindings = shared
         .owners
         .iter()
         .find(|owner| owner.owner == "latest_images.bindings")
         .unwrap();
-    assert!(bindings.unknown_capacity_payload_bytes > 0);
-    assert!(bindings
-        .unknown
-        .iter()
-        .any(|reason| reason.contains("HashMap allocated")));
+    assert_eq!(bindings.unknown_capacity_payload_bytes, 0);
+    assert!(bindings.unknown.is_empty());
     assert!(shared
         .owners
         .iter()

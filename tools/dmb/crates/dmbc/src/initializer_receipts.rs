@@ -246,12 +246,6 @@ pub(crate) fn reads(
     }));
     result
 }
-pub(crate) fn versions(values: Vec<(ReadDomain, u128)>) -> Vec<(Domain, u128)> {
-    values
-        .into_iter()
-        .map(|(domain, version)| (Domain::Semantic(domain), version))
-        .collect()
-}
 
 #[cfg(test)]
 mod equivalence_tests {

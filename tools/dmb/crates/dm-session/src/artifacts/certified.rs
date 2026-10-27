@@ -58,7 +58,6 @@ impl<T, Q: Clone, A: Clone, D> ObservedArtifactStore<T, Q, A, D> {
                     ObservedArtifact {
                         value: Arc::clone(&entry.value),
                         reads: entry.reads.clone(),
-                        versions: Arc::clone(&entry.versions),
                         weight: entry.weight,
                     },
                 )

@@ -2,7 +2,6 @@
 use super::*;
 use crate::initializer_policy::DefaultValue;
 use crate::lowering_memo::ResolverRead;
-use dm_ir::ReadDomain;
 
 pub(crate) fn weight(
     default: &DefaultValue,
@@ -10,7 +9,6 @@ pub(crate) fn weight(
     token_key: Option<&Arc<[u8]>>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
     let mut census = HeapCensus::new("resident_initializer_admission");
     match default {
@@ -29,7 +27,6 @@ pub(crate) fn weight(
     // The store converts these vectors to exact Arc slices. Charging original
     // capacities conservatively covers either reused or newly allocated backing.
     census.vec_payload("resident_initializer.reads", reads);
-    census.vec_payload("resident_initializer.versions", versions);
     for read in reads {
         super::resident_weight::answer(&mut census, &read.answer);
     }
@@ -63,7 +60,6 @@ pub(crate) fn modifier_weight(
     input: &Arc<dm_ir::InitializerWrite>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
     let envelope = weight(
         &DefaultValue::Scalar(dm_ir::SemanticValue::Null),
@@ -71,7 +67,6 @@ pub(crate) fn modifier_weight(
         None,
         key,
         reads,
-        versions,
     )?;
     let mut census = HeapCensus::new("resident_modifier_input");
     census.shared_initializer_write("resident_modifier_input", input);
@@ -97,15 +92,15 @@ mod tests {
         let default = DefaultValue::Scalar(dm_ir::SemanticValue::Null);
         let small: Arc<[u8]> = Arc::from([]);
         let large: Arc<[u8]> = vec![0; 10000].into();
-        let empty = (Vec::new(), Vec::new());
-        let before = weight(&default, None, Some(&small), b"key", &empty.0, &empty.1).unwrap();
-        let after = weight(&default, None, Some(&large), b"key", &empty.0, &empty.1).unwrap();
+        let empty = (Vec::new(),);
+        let before = weight(&default, None, Some(&small), b"key", &empty.0).unwrap();
+        let after = weight(&default, None, Some(&large), b"key", &empty.0).unwrap();
         assert!(after >= before + 10000);
         let nested = DefaultValue::Scalar(dm_ir::SemanticValue::List(Arc::from([(
             Some(dm_ir::SemanticValue::Text(Arc::from(b"key".as_slice()))),
             dm_ir::SemanticValue::Text(Arc::from(b"value".as_slice())),
         )])));
-        assert!(weight(&nested, None, None, b"key", &empty.0, &empty.1).unwrap() > before);
+        assert!(weight(&nested, None, None, b"key", &empty.0).unwrap() > before);
         let dimensions: Arc<[u16]> = Arc::from([2, 4]);
         assert!(
             weight(
@@ -114,10 +109,9 @@ mod tests {
                 None,
                 b"key",
                 &empty.0,
-                &empty.1
             )
             .unwrap()
-                > weight(&default, None, None, b"key", &empty.0, &empty.1).unwrap()
+                > weight(&default, None, None, b"key", &empty.0).unwrap()
         );
     }
     #[test]
@@ -133,7 +127,7 @@ mod tests {
         )
         .unwrap();
         let default = DefaultValue::Scalar(dm_ir::SemanticValue::ModifiedInstance(Arc::new(value)));
-        assert!(weight(&default, None, None, b"key", &Vec::new(), &Vec::new()).is_none());
+        assert!(weight(&default, None, None, b"key", &Vec::new()).is_none());
     }
 }
 
