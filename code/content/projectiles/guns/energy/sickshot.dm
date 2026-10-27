@@ -28,12 +28,11 @@ CAPABILITIES(/obj/item/gun/energy/sickshot)
 	name = "sickshot pulse"
 	icon_state = "sound"
 	damage = 5
-	injury_kind = INJURY_BURN
-	embed_chance = 0
 	vacuum_traversal = 0
 	range = 5 //Scary name, but just deletes the projectile after this range
 
 CAPABILITIES(/obj/item/projectile/sickshot)
+	configure(item_combat(injury_kind = INJURY_BURN, embed_chance = 0))
 	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/sickshot/on_hit(atom/movable/target, blocked = 0)

@@ -533,6 +533,11 @@ enforce() {
 	trap '[ "$DRY" -eq 1 ] || rmdir "$STATE/enforce.lock" 2>/dev/null; rm -rf "$SCR"' EXIT   # backup: the normal path releases both at the end
 	index_load
 	free_gb; local free_before="$FREE_R" f
+	# below the free-space target (target_free_gb, DQ_DISK_TARGET_GB): squeeze as under the floor, so the floor is never reached
+	if [ "$AGGR" -eq 0 ] && [ "$FREE_KNOWN" -eq 1 ] && [ "$FREE_R" -lt "${DQ_DISK_TARGET_GB:-${M[settings.target_free_gb]:-0}}" ]; then
+		AGGR=1; settings
+		log "dq_disk_budget: $FREE_R GB free is under the target of ${DQ_DISK_TARGET_GB:-${M[settings.target_free_gb]}} GB: aggressive"
+	fi
 	log "dq_disk_budget: cache $CACHE, $free_before GB free (floor $FLOOR_GB GB), total cap $(( TOTAL_B / 1073741824 )) GB, scale ${SCALE}%$([ "$DRY" -eq 1 ] && echo ' (dry run)')"
 	enforce_once 0
 	# unknown entries under the cache root: not in the manifest, so disposable; removed once idle
@@ -544,8 +549,9 @@ enforce() {
 		[ "$known" -eq 1 ] && continue
 		# coordination state is never an unknown, whatever the manifest says; anything else that is not clearly a cache is only reported
 		case "$n" in train|lane-pool|slots|dmb-bin|dmb-daemon|flakes.tsv|worktree-keep.txt|ports|test-durations|disk-budget) continue ;; esac
-		case "$n" in
-			*.log|*.stamp|*.patch|*.jsonl|*.tmp|lane_*.sh|run-*|dm-*|dc-*|dmb-*|dmt-*|*fixture*|*-tests|shadow-*) ;;
+		local tagged=0; [ -f "$c/CACHEDIR.TAG" ] && tagged=1   # a build tool's own output (a stray cargo target): a cache by its own word
+		case "$tagged:$n" in
+			1:*|*:*.log|*:*.stamp|*:*.patch|*:*.jsonl|*:*.tmp|*:lane_*.sh|*:run-*|*:dm-*|*:dc-*|*:dmb-*|*:dmt-*|*:*fixture*|*:*-tests|*:shadow-*) ;;
 			*) newest_mtime "$c"; path_size "$c"; mb "$SIZE_R"; log "  unknown $c ($MB_R MB) is not in tools/ci/disk_budget.toml and not clearly a cache: reported, not removed"; continue ;;
 		esac
 		newest_mtime "$c"; path_size "$c"; mb "$SIZE_R"

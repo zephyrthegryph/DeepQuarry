@@ -268,9 +268,9 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 	can_dismantle = FALSE
 
 /obj/item/holo
-	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/holo)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_handling(no_attack_log = 1, no_random_knockdown = TRUE))
 
 /obj/item/holo/esword

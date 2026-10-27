@@ -214,9 +214,8 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 
 /atom/vv_get_header()
 	. = ..()
-	var/refid = REF(src)
-	. += "[VV_HREF_TARGETREF(refid, VV_HK_AUTO_RENAME, span_bold("<span id='name'>[src]</span>"))]"
-	. += "<br>" + span_small("<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];rotatedatum=[refid];rotatedir=left'><<</a> [VV_HREF_TARGETREF_1V(refid, VV_HK_BASIC_EDIT, "[dir2text(dir) || dir]", "dir")] <a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];rotatedatum=[refid];rotatedir=right'>>></a>")
+	. += "[VV_HREF_TARGETREF(REF(src), VV_HK_AUTO_RENAME, span_bold("<span id='name'>[src]</span>"))]"
+	. += "<br>" + span_small("<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];rotatedatum=[REF(src)];rotatedir=left'><<</a> [VV_HREF_TARGETREF_1V(REF(src), VV_HK_BASIC_EDIT, "[dir2text(dir) || dir]", "dir")] <a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];rotatedatum=[REF(src)];rotatedir=right'>>></a>")
 
 /**
  * call back when a var is edited on this atom

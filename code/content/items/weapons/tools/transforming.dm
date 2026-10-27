@@ -43,10 +43,10 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "jaws_pry"
 	item_state = "jawsoflife"
-	injury_kind = INJURY_CUT
 	possible_tooltypes = list(TOOL_CROWBAR,TOOL_WIRECUTTER)
 
 CAPABILITIES(/obj/item/tool/transforming/jawsoflife)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_tooling(speed = 0.25))
 	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "pinched", "nipped")))
 	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))

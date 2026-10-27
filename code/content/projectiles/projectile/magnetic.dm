@@ -53,24 +53,22 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/flechette/small)
 	weaken = 0
 	stun = 0
 	damage = 30
-	injury_kind = INJURY_BLUNT
-	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
-	embed_chance = 0
 	penetrating = 1
 	hud_state = "alloy_spike"
 
 CAPABILITIES(/obj/item/projectile/bullet/magnetic/heated)
+	configure(item_combat(injury_kind = INJURY_BLUNT, injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3), embed_chance = 0))
 	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/bullet/magnetic/heated/weak
 	icon_state = "gauss_silenced"
 	damage = 15
 	agony = 5
-	embed_chance = 0
 	penetrating = 0
 	hud_state = "alloy_spike"
 
 CAPABILITIES(/obj/item/projectile/bullet/magnetic/heated/weak)
+	configure(item_combat(embed_chance = 0))
 	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/bullet/magnetic/fuelrod
@@ -83,7 +81,6 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/heated/weak)
 	incendiary = 1
 	flammability = 0 //Deuterium and Tritium are both held in water, but the object moving so quickly will ignite the target.
 	penetrating = 2
-	embed_chance = 0
 	range = 20
 	hud_state = "rocket_he"
 
@@ -93,6 +90,7 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/heated/weak)
 	var/energetic_impact = 0 //Does this fuelrod cause a bright flash on impact with a mob?
 
 CAPABILITIES(/obj/item/projectile/bullet/magnetic/fuelrod)
+	configure(item_combat(embed_chance = 0))
 	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/bullet/magnetic/fuelrod/on_hit(atom/target, blocked = 0, def_zone = null) //Future-proofing. Special effects for impact.

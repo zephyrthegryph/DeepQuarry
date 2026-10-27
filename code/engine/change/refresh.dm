@@ -257,14 +257,14 @@ GLOBAL_LIST_EMPTY(refresh_self_marks)
 
 // ---- "why did this redraw?" (M10): the last marks of each entity, with where they came from ----
 
-/// Ref text of entities whose marks are being traced (the admin verb turns one on); refs, so a
+/// Handles (ref_token()) of entities whose marks are being traced (the admin verb turns one on), so a
 /// forgotten trace keeps nothing alive. Empty: tracing costs one check.
 GLOBAL_LIST_EMPTY(refresh_traced)
 
 /proc/refresh_trace_note(datum/E, channel)
 	if(!length(GLOB.refresh_traced))
 		return
-	var/ref_text = REF(E)
+	var/ref_text = ref_token(E)
 	if(!(ref_text in GLOB.refresh_traced))
 		return
 	var/list/lines = GLOB.refresh_traced[ref_text]
