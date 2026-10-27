@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	// Linked console: the pod is one of its pods (two-sided; clears when either dies).
 	links(/obj/machinery/clonepod::connected, /obj/machinery/computer/cloning::pods, b_many = TRUE)
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(clonepod_occupied), wakes_on = list(nameof(occupant_mob)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(clonepod_occupied), wakes_on = list(nameof(occupant_mob)), gate_waits = TRUE)
 	blast_contents()
 	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(growing_record), /datum/transhuman/body_record)

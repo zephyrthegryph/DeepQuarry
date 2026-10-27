@@ -45,7 +45,7 @@
 CAPABILITIES(/obj/machinery/appliance)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 5, active = 1000))
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), STAT_OPERABLE, STAT_SWITCHED_ON), unpowered = TRUE)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), STAT_OPERABLE, STAT_SWITCHED_ON), unpowered = TRUE, gate_waits = TRUE)
 	owns_many(nameof(cooking_objs))
 	// the AI's ctrl-click switches it on or off over its link
 	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle power"),
