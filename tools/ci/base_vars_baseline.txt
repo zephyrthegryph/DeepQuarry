@@ -36,10 +36,8 @@ base_var	code/game/gamemodes/changeling/state/changeling.dm	@/mob/living::change
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::component_parts
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::circuit
 base_var	code/game/objects/items.dm	@/obj/item::health
-base_var	code/game/objects/items.dm	@/obj/item::burning
 base_var	code/game/objects/items.dm	@/obj/item::actions
 base_var	code/game/objects/items.dm	@/obj/item::slowdown
-base_var	code/game/objects/items.dm	@/obj/item::zoom
 base_var	code/game/objects/items.dm	@/obj/item::possessed_voice
 base_var	code/game/objects/items.dm	@/obj/item::identity
 base_var	code/game/objects/items.dm	@/obj/item::identity_type

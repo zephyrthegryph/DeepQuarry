@@ -359,7 +359,7 @@ CAPABILITIES(/datum/remote_view/item_zoom)
 	observe(host_item, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 	// Unfortunately too many things read this to control item state for me to remove this.
 	// Oh well! better than looking the view up everywhere. Lets just manage item/zoom in this datum though...
-	our_item.zoom = TRUE
+	sparse_set(our_item, zoom, TRUE)
 	// Offset view
 	var/tilesize = 32
 	var/viewoffset = tilesize * tileoffset
@@ -388,7 +388,7 @@ CAPABILITIES(/datum/remote_view/item_zoom)
 		// Feedback
 		if(show_message)
 			host_mob.visible_message(span_filter_notice("[handling_of(host_item).zoom_name ? "[host_mob] looks up from the [host_item.name]" : "[host_mob] lowers the [host_item.name]"]."))
-		host_item.zoom = FALSE
+		sparse_set_or(host_item, zoom, FALSE, FALSE)
 		if(host_mob.client)
 			host_mob.client.pixel_x = 0
 			host_mob.client.pixel_y = 0
