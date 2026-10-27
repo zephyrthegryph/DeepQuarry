@@ -158,7 +158,7 @@ check "the bounce has a readable report with the reason and the next step" '[ -f
 check "status shows the bounced lane with its report" 'status_has "lane/b: " && status_has "report: "'
 check "the report command prints it" 'train report lane/b | grep -q "lane/b"'
 check "the gate gets only the tests of the lanes it merged (the bounced lane's tests are dropped)" 'grep -h "stub gates: ok" "$DQ_TRAIN_STATE"/log/cycle-*.log | grep "tests: " | grep -q "ta1 ta2 tc1" && ! grep -h "stub gates: ok" "$DQ_TRAIN_STATE"/log/cycle-*.log | grep -q "tb1"'
-check "the decisions are logged" 'grep -q "heavy cycle: 5 lane" "$DQ_TRAIN_STATE/log/train.log" && grep -q "merge_batch rc=1 good=" "$DQ_TRAIN_STATE/log/train.log"'
+check "the decisions are logged" 'grep -q "heavy cycle: 6 lane" "$DQ_TRAIN_STATE/log/train.log" && grep -q "merge_batch rc=1 good=" "$DQ_TRAIN_STATE/log/train.log"'
 check "a lane whose branch moved after enqueue keeps its place: the new tip is adopted and lands" 'grep -q "adopted the new tip of lane/d" <<<"$out" && ! grep -q "BOUNCED lane/d" <<<"$out" && in_master lane/d'
 check "of two conflicting lanes one lands and one is bounced" '{ in_master lane/e && ! in_master lane/f && grep -q "BOUNCED lane/f" <<<"$out"; } || { in_master lane/f && ! in_master lane/e && grep -q "BOUNCED lane/e" <<<"$out"; }'
 check "the integrator released its lock" '[ ! -d "$DQ_TRAIN_STATE/run.lock" ]'
@@ -291,7 +291,10 @@ echo 4 >"$DQ_TRAIN_STATE/batch_limit"
 mk lane/cf1 lanes/cf1.txt fine "shared-cf1"; train enqueue --tests tcf1 >/dev/null 2>&1; back
 mk lane/cf2 lanes/cf2.txt fine "shared-cf2"; train enqueue --tests tcf2 >/dev/null 2>&1; back
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
-check "a conflict bounce leaves the batch limit alone, and the clean landing resets it to the maximum" 'grep -q "BOUNCED lane/cf2: merge conflict" <<<"$out" && grep -q "none for a failed test: the batch limit stays" <<<"$out" && [ "$(cat "$DQ_TRAIN_STATE/batch_limit")" = 8 ] && in_master lane/cf1'
+check "a lane that conflicts with another lane of the batch waits for the next cycle, unbounced" 'grep -q "they stay queued for the next cycle: \[lane/cf2\]" <<<"$out" && ! grep -q "BOUNCED lane/cf2" <<<"$out" && in_master lane/cf1 && status_has "lane/cf2  tip"'
+echo 4 >"$DQ_TRAIN_STATE/batch_limit"
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a conflict bounce leaves the batch limit alone, and the clean landing resets it to the maximum" 'grep -q "BOUNCED lane/cf2: merge conflict with master" <<<"$out" && grep -q "none for a failed test: the batch limit stays" <<<"$out" && [ "$(cat "$DQ_TRAIN_STATE/batch_limit")" -ge 4 ]'
 
 # ---- a tip that moves while its lane rides a cycle is carried to the next one ---------------------------------------------------------
 mk lane/mv lanes/mv.txt fine; train enqueue --tests tmv >/dev/null 2>&1; back

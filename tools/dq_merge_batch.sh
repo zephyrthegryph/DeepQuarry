@@ -32,6 +32,7 @@
 #   3e. deepquarry.dme: a merge that stops on the manifest alone is resolved by merging the include sets, and an include the union merge
 #      brought back for a file one side deleted is dropped (tools/dq_dme_resolve.sh; both verified against the files on disk).
 # Machine-readable result lines at the end (tools/dq_train.sh reads them): BATCH_GOOD: <lanes>, BATCH_DEFERRED: <lanes>, BATCH_CAPPED: 1|,
+# BATCH_LATER: <lanes> (they conflicted with another lane of the batch only: neither judged nor bounced, they stay queued),
 # and one BATCH_BOUNCED: <lane>|<reason>|<attempt log> per bounced lane.
 # Attempts run on a detached HEAD, so the branch only ever moves to a proved tip, with `git switch -C` from a clean tree (the previous
 # value of the branch is origin/master, nothing is lost). Nothing here runs checkout, reset, restore, stash or cherry-pick.
@@ -120,7 +121,7 @@ attempt_run() {
 		dq_clean_tracked "dq_merge_batch: attempt started dirty" 2>&1 | tee -a "$log" >&2
 		git switch -q --detach origin/master >>"$log" 2>&1 || exit 90
 		for l in "$@"; do
-			if ! git merge --no-ff --no-edit -q -m "Merge $l" "$(ref_of "$l")" >>"$log" 2>&1 && ! dme_resolve_conflict >>"$log" 2>&1; then
+			if ! git merge --no-ff --no-edit -q -m "Merge $l" "$(ref_of "$l")" >>"$log" 2>&1 && ! dme_resolve_conflict >>"$log" 2>&1 && ! doc_union_conflict >>"$log" 2>&1; then
 				git merge --abort >/dev/null 2>&1
 				echo "$l" >"$log.conflict"
 				echo "   $l conflicts with the batch; see $log" >&2
@@ -226,6 +227,43 @@ parallel_ok() {
 	return 0
 }
 
+# A conflict confined to shared, append-mostly docs (AGENTS.md, doc/**/*.md, tools/**/doc/*.md) is not a reason to bounce a lane: both
+# sides are kept (git merge-file --union, per file, from the index stages) and the merge is committed; the gates then judge the result
+# like any other tree. DQ_BATCH_DOC_UNION=0 turns it off. 2026-10-27: 5 of a batch of 8 bounced on AGENTS.md / incremental_core.md.
+doc_union_conflict() {
+	[ "${DQ_BATCH_DOC_UNION:-1}" = 1 ] || return 1
+	local u f tmp
+	u="$(git diff --name-only --diff-filter=U 2>/dev/null)"
+	[ -n "$u" ] || return 1
+	while IFS= read -r f; do
+		case "$f" in AGENTS.md|CLAUDE.md|doc/*.md|tools/*/doc/*.md) ;; *) return 1 ;; esac
+	done <<<"$u"
+	tmp="$(mktemp -d)" || return 1
+	while IFS= read -r f; do
+		git show ":1:$f" >"$tmp/base" 2>/dev/null || : >"$tmp/base"
+		git show ":2:$f" >"$tmp/ours" 2>/dev/null || { rm -rf "$tmp"; return 1; }
+		git show ":3:$f" >"$tmp/theirs" 2>/dev/null || { rm -rf "$tmp"; return 1; }
+		git merge-file --union -L ours -L base -L theirs "$tmp/ours" "$tmp/base" "$tmp/theirs"
+		cat "$tmp/ours" >"$f" && git add -- "$f" || { rm -rf "$tmp"; return 1; }
+	done <<<"$u"
+	rm -rf "$tmp"
+	git commit -q --no-edit >/dev/null 2>&1 || return 1
+	echo "doc union: kept both sides of a conflict confined to shared docs: $(tr '\n' ' ' <<<"$u")"
+	return 0
+}
+
+# A lane that conflicts with another lane of the batch, but merges cleanly with origin/master alone, is not at fault: it waits for the
+# next cycle (BATCH_LATER), where it merges onto the new master. Only a conflict with master itself bounces.
+merges_with_master() { # <lane>
+	local scratch common rc=0
+	common="$(git rev-parse --path-format=absolute --git-common-dir)"
+	scratch="$(mktemp -d "${TMPDIR:-/tmp}/dq-batchprobe.XXXXXX")"
+	GIT_OBJECT_DIRECTORY="$scratch" GIT_ALTERNATE_OBJECT_DIRECTORIES="$common/objects" git merge-tree --write-tree --name-only --no-messages origin/master "$(ref_of "$1")" >/dev/null 2>&1 || rc=$?
+	rm -rf "$scratch"
+	[ "$rc" -eq 0 ]
+}
+later=()
+
 bounce() { # <lane> <why> [<attempt log>]
 	bounced+=("$1"); reasons+=("$2"); blogs+=("${3:-}")
 	echo "== BOUNCED $1: $2"
@@ -237,8 +275,13 @@ while [ ${#remaining[@]} -gt 0 ]; do
 	set=("${good[@]+"${good[@]}"}" "${remaining[@]}")
 	attempt "${set[@]}"; rc=$?
 	if [ "$rc" -eq 91 ]; then
-		# a lane that cannot even merge: bounce it and retry without it
-		bounce "$CONFLICT" "merge conflict with the batch or master (rebase it: bash tools/dq_merge_master.sh in the lane, then enqueue again)" "${attempt_log[$current_key]:-}"
+		# a lane that cannot even merge: with master alone it merges -> it waits for the next cycle; with master it conflicts -> bounced
+		if merges_with_master "$CONFLICT"; then
+			later+=("$CONFLICT")
+			echo "== $CONFLICT conflicts with another lane of this batch only (it merges with origin/master): it waits for the next cycle"
+		else
+			bounce "$CONFLICT" "merge conflict with master (rebase it: bash tools/dq_merge_master.sh in the lane, then enqueue again)" "${attempt_log[$current_key]:-}"
+		fi
 		new=()
 		for l in "${remaining[@]}"; do [ "$l" = "$CONFLICT" ] || new+=("$l"); done
 		remaining=("${new[@]+"${new[@]}"}")
@@ -290,7 +333,13 @@ while [ ${#remaining[@]} -gt 0 ]; do
 			continue
 		fi
 		culprit="${sub[0]}"
-		if [ "${tried_rc[$fail_key]:-1}" = 91 ]; then why="merge conflict with the batch or master (rebase it: bash tools/dq_merge_master.sh in the lane, then enqueue again)"
+		if [ "${tried_rc[$fail_key]:-1}" = 91 ] && merges_with_master "$culprit"; then
+			later+=("$culprit")
+			echo "== $culprit conflicts with another lane of this batch only (it merges with origin/master): it waits for the next cycle"
+			remaining=("${rest[@]+"${rest[@]}"}")
+			continue
+		fi
+		if [ "${tried_rc[$fail_key]:-1}" = 91 ]; then why="merge conflict with master (rebase it: bash tools/dq_merge_master.sh in the lane, then enqueue again)"
 		else why="the batch fails once it is merged (parallel bisect; logs data/merge-batch/$stamp.attempt*.log)"; fi
 		bounce "$culprit" "$why" "${attempt_log[$fail_key]:-}"
 		remaining=("${rest[@]+"${rest[@]}"}")
@@ -332,6 +381,7 @@ fi
 
 echo "BATCH_GOOD: ${good[*]-}"
 echo "BATCH_DEFERRED: ${deferred[*]-}"
+echo "BATCH_LATER: ${later[*]-}"
 echo "BATCH_CAPPED: ${capped}"
 for i in "${!bounced[@]}"; do echo "BATCH_BOUNCED: ${bounced[$i]}|${reasons[$i]}|${blogs[$i]}"; done
 if [ ${#good[@]} -eq 0 ]; then

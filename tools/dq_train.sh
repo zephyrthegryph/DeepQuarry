@@ -479,7 +479,8 @@ pre_probe_conflict() { # <branch> <tip> <master>: 0 = merges (or only the manife
 	rm -rf "$scratch"
 	[ "$rc" -eq 1 ] || return 0 # clean, or merge-tree could not tell (the full precheck merges for real)
 	CONFLICT_FILES="$(tail -n +2 <<<"$out" | awk 'NF' | sort -u)"
-	f="$(grep -vxF deepquarry.dme <<<"$CONFLICT_FILES")"
+	# the manifest merges by sets, shared docs by union (tools/dq_merge_batch.sh doc_union_conflict): neither is a conflict here
+	f="$(grep -vE '^(deepquarry\.dme|AGENTS\.md|CLAUDE\.md|doc/.*\.md|tools/.*/doc/[^/]*\.md)$' <<<"$CONFLICT_FILES")"
 	[ -n "$f" ] || return 0
 	return 1
 }
@@ -921,6 +922,8 @@ heavy_cycle_gate() {
 	good="$(sed -n 's/^BATCH_GOOD: //p' "$out" | tail -n 1)"
 	deferred="$(sed -n 's/^BATCH_DEFERRED: //p' "$out" | tail -n 1)"
 	capped="$(sed -n 's/^BATCH_CAPPED: //p' "$out" | tail -n 1)"
+	local later; later="$(sed -n 's/^BATCH_LATER: //p' "$out" | tail -n 1)"
+	[ -z "${later// /}" ] || { tlog "conflicted with another lane of this batch only, they stay queued for the next cycle: [$later]"; CYCLE_PROGRESS=1; }
 	tlog "merge_batch rc=$rc good=[${good:-}] deferred=[${deferred:-}] capped=[${capped:-}]"
 	# bounces first: they are the lane's fault whatever happens to the push
 	# Only a failed TEST shrinks the next batch (nfailed): a merge conflict, a moved tip or a DreamChecker/ratchet culprit says nothing
