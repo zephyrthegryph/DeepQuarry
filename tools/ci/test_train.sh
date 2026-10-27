@@ -385,5 +385,11 @@ cp -f "$su/self/dq_train.sh" "$tmp/su-before.sh"
 out="$(DQ_TRAIN_STATE="$su" DQ_TRAIN_ONCE=1 bash "$su/self/dq_train.sh" run 2>&1)"; rc=$?
 check "a master whose dq_train.sh does not parse is refused loudly" 'grep -q "SELF-UPDATE REFUSED" <<<"$out" && ! grep -q "changed on master; re-exec" <<<"$out"'
 check "the old copy keeps running, is not replaced, and still lands the lane" '[ "$rc" = 0 ] && cmp -s "$tmp/su-before.sh" "$su/self/dq_train.sh" && in_master lane/su2'
+# the integrator and the prechecker run the same snapshot: a process whose snapshot was refreshed by the other one re-execs into it
+git fetch -q origin; git switch -q --detach origin/master
+cp -f "$su/self/dq_train.sh" tools/dq_train.sh; git add -A; git commit -q -m "master: a dq_train.sh that parses again"; git push -q origin HEAD:refs/heads/master
+suenq lane/su3 su3
+out="$(DQ_TRAIN_TEST_SELF_SIG=stale DQ_TRAIN_STATE="$su" DQ_TRAIN_ONCE=1 bash "$su/self/dq_train.sh" run 2>&1)"; rc=$?
+check "a process whose snapshot another train process refreshed re-execs into it, once" '[ "$rc" = 0 ] && [ "$(grep -c "refreshed by another train process; re-exec" <<<"$out")" = 1 ] && in_master lane/su3'
 
 [ "$fail" = 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }

@@ -225,7 +225,7 @@ snap_syntax_ok() { # <dir>: every script in it parses; prints the first failure
 }
 SELF_UPDATE_BAD=""
 SELF_UPDATE_LAST="${DQ_TRAIN_REEXEC_AT:-0}"
-SELF_SIG="$(git hash-object --no-filters "$SELF" 2>/dev/null)" # the code this process runs (self_update notices a refreshed snapshot)
+SELF_SIG="${DQ_TRAIN_TEST_SELF_SIG:-$(git hash-object --no-filters "$SELF" 2>/dev/null)}" # the code this process runs (self_update notices a refreshed snapshot)
 # Between cycles, never in one: when a script of the snapshot differs from origin/master's copy, refresh the snapshot from origin/master
 # (git show, no checkout), check that it parses, and exec the new dq_train.sh with the same arguments. The run lock and the integrator's
 # identity are kept (DQ_TRAIN_REEXEC=1 makes the new process adopt its own lock). A new version that does not parse is never run: the
