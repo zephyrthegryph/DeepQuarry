@@ -1,8 +1,0 @@
-robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Remove Label
-robot|none menu: Set Light
-robot|none menu: Toggle lid
-robot|none menu: Toggle Tray Lid
-robot|none menu: Use
-robot|none click: Click: Use
-@obj.machinery ai|none

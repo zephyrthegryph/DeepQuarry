@@ -1,2 +1,0 @@
-equip wearer=Human: you aren't the appropriate taur type to wear this!
-
