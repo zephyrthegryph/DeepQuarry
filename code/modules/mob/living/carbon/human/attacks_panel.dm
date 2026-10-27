@@ -13,7 +13,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 /datum/attacks_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_attacks_panels -= "[REF(host)]"
+		GLOB.dq_attacks_panels -= ref_token(host)
 
 CAPABILITIES(/datum/attacks_panel)
 	ref_one(nameof(host), /mob/living/carbon/human)
@@ -77,7 +77,7 @@ CAPABILITIES(/datum/attacks_panel)
 	set name = "Check Attacks"
 	set category = VERB_CAT_IC_GAME
 	set src = usr
-	var/key = "[REF(src)]"
+	var/key = ref_token(src)
 	var/datum/attacks_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_attacks_panels, key))
 	if(!panel)
 		panel = new(src)

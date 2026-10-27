@@ -1,4 +1,3 @@
-GLOBAL_VAR_INIT(nttransfer_uid, 0)
 
 /datum/computer_file/program/nttransfer
 	filename = "nttransfer"
@@ -22,13 +21,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	var/tmp/datum/computer_file/program/nttransfer/remote	// Client var, specifies who are we downloading from.
 	var/download_completion = 0							// Download progress in GQ
 	var/actual_netspeed = 0								// Displayed in the UI, this is the actual transfer speed.
-	var/unique_token 									// UID of this program
 	var/upload_menu = FALSE								// Whether we show the program list and upload menu
-
-/datum/computer_file/program/nttransfer/New()
-	unique_token = GLOB.nttransfer_uid
-	GLOB.nttransfer_uid++
-	..()
 
 /datum/computer_file/program/nttransfer/process_tick()
 	..()
@@ -79,7 +72,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 
 CAPABILITIES(/datum/computer_file/program/nttransfer)
 	interface("NtosNetTransfer")
-	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("uid", num())), asks(/datum/prompt/text, fields = list("question" = "Code 401 Unauthorized. Please enter password:", "title" = "Password required", "timeout" = 0), step = "password", when = PROC_REF(download_needs_password)), then(PROC_REF(ui_act_prg_downloadfile)))
+	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("uid", schema_ref(/datum/computer_file/program/nttransfer))), asks(/datum/prompt/text, fields = list("question" = "Code 401 Unauthorized. Please enter password:", "title" = "Password required", "timeout" = 0), step = "password", when = PROC_REF(download_needs_password)), then(PROC_REF(ui_act_prg_downloadfile)))
 	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
 	op("PRG_setpassword", ui_act("PRG_setpassword"), asks(/datum/prompt/text, fields = list("question" = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", "title" = "Server security", "default" = "none", "timeout" = 0), step = "password"), then(PROC_REF(ui_act_prg_setpassword)))
 	op("PRG_uploadfile", ui_act("PRG_uploadfile", arg("uid", num())), then(PROC_REF(ui_act_prg_uploadfile)))
@@ -101,7 +94,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 
 	data["uploading"] = !!provided_file()
 	if(provided_file())
-		data["upload_uid"] = unique_token
+		data["upload_uid"] = ref_token(src)
 		data["upload_clients"] = length(connected_clients)
 		data["upload_haspassword"] = server_password ? 1 : 0
 		data["upload_filename"] = "[provided_file().filename].[provided_file().filetype]"
@@ -124,7 +117,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 			if(!P.provided_file())
 				continue
 			all_servers.Add(list(list(
-				"uid" = P.unique_token,
+				"uid" = ref_token(P), // the server's handle: a download names it back (relations.md D9a)
 				"filename" = "[P.provided_file().filename].[P.provided_file().filetype]",
 				"size" = P.provided_file().size,
 				"haspassword" = P.server_password ? 1 : 0
@@ -134,11 +127,8 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	return data
 
 /// The file server a download link names.
-/datum/computer_file/program/nttransfer/proc/server_with_uid(uid) as /datum/computer_file/program/nttransfer
-	for(var/datum/computer_file/program/nttransfer/P in read_once(GLOB.ntnet_global.fileservers))
-		if(P.unique_token == uid)
-			return P
-	return null
+/datum/computer_file/program/nttransfer/proc/server_with_uid(datum/computer_file/program/nttransfer/server) as /datum/computer_file/program/nttransfer
+	return (server in read_once(GLOB.ntnet_global.fileservers)) ? server : null
 
 /// The server named offers a file behind a password: the password is asked.
 /datum/computer_file/program/nttransfer/proc/download_needs_password(datum/act/op/A)
