@@ -491,6 +491,10 @@ CAPABILITIES(/datum/reagent_dose)
 /obj/item/proc/worn_factor(stat)
 	return worn_factors?[stat] || 0
 
+/// The value the item's type gives a worn factor (what it was made with, before anything changed it).
+/obj/item/proc/default_worn_factor(stat)
+	return initial(worn_factors)?[stat] || 0
+
 /// Sets one of the item's worn factors (0 removes it) and re-reads the body that carries the item. The table is replaced, never written, because a
 /// type's table is shared.
 /obj/item/proc/set_worn_factor(stat, value)

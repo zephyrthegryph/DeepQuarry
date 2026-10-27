@@ -1217,7 +1217,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
 	armor_spec = "" // this isn't armor, it's a dorky frickin cape
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 	chest_type = /obj/item/clothing/suit/fluff/nikki

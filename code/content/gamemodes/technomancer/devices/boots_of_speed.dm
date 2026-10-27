@@ -9,7 +9,7 @@
 	name = "boots of speed"
 	desc = "The latest in sure footing technology."
 	icon_state = "swat"
-	slowdown = -1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -1)
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/speed)
 	configure(item_worn(flags = NOSLIP))

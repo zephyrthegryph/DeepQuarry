@@ -9,7 +9,7 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 
 	//these things are big and heavy, they're awkward to transport, and you can't throw them very far
 	w_class = ITEMSIZE_LARGE
-	slowdown = 1 //0.5 was not very much in practice, let's make this a bit more meaningful
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1) //0.5 was not very much in practice, let's make this a bit more meaningful
 
 	var/coil_charged = TRUE	//have we been discharged into something yet?
 	var/coil_damaged = FALSE	//have we been damaged? one hit is fine, but two direct hits will explode us if we're charged

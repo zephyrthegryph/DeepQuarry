@@ -587,7 +587,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
-	slowdown = SHOES_SLOWDOWN
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN)
 	var/overshoes = 0
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/feet/mob_teshari.dmi',

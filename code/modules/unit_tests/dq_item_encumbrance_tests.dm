@@ -14,11 +14,25 @@
 /obj/item/dq_test_encumbrance
 	name = "encumbering test item"
 
+/obj/item/clothing/shoes/dq_test_encumbrance/heavy
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2.5)
+
+/datum/unit_test/dq_item_encumbrance_default_factor
+
+/datum/unit_test/dq_item_encumbrance_default_factor/Run()
+	var/obj/item/clothing/shoes/dq_test_encumbrance/heavy/boots = allocate(/obj/item/clothing/shoes/dq_test_encumbrance/heavy, test_floor())
+	TEST_ASSERT_EQUAL(boots.worn_factor(STAT_ITEM_ENCUMBRANCE), 2.5, "an item starts with its type's encumbrance")
+	boots.set_worn_factor(STAT_ITEM_ENCUMBRANCE, 4)
+	TEST_ASSERT_EQUAL(boots.worn_factor(STAT_ITEM_ENCUMBRANCE), 4, "the factor can be changed")
+	TEST_ASSERT_EQUAL(boots.default_worn_factor(STAT_ITEM_ENCUMBRANCE), 2.5, "the type's encumbrance is still known")
+	var/obj/item/clothing/shoes/dq_test_encumbrance/heavy/other = allocate(/obj/item/clothing/shoes/dq_test_encumbrance/heavy, test_floor())
+	TEST_ASSERT_EQUAL(other.worn_factor(STAT_ITEM_ENCUMBRANCE), 2.5, "changing one item leaves the type's table alone")
+
 /datum/unit_test/dq_item_encumbrance_movement_delay
 
 /// Sets the test item's slowdown through whichever form holds it.
 /datum/unit_test/dq_item_encumbrance_movement_delay/proc/set_slow(obj/item/I, value)
-	I.slowdown = value
+	I.set_worn_factor(STAT_ITEM_ENCUMBRANCE, value)
 
 /datum/unit_test/dq_item_encumbrance_movement_delay/proc/expected_tally(mod, list/worn, list/held, pulled)
 	var/tally = 0

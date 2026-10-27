@@ -29,7 +29,7 @@
 
 	to_chat(H, span_boldnotice("You activate the suit's sprint mode."))
 
-	holder.slowdown = initial(holder.slowdown) - sprint_speed
+	holder.set_worn_factor(STAT_ITEM_ENCUMBRANCE, holder.default_worn_factor(STAT_ITEM_ENCUMBRANCE) - sprint_speed)
 
 /obj/item/rig_module/sprinter/deactivate(forced = FALSE, mob/user)
 
@@ -40,4 +40,4 @@
 
 	to_chat(H, span_danger("Your hardsuit returns to normal speed."))
 
-	holder.slowdown = initial(holder.slowdown)
+	holder.set_worn_factor(STAT_ITEM_ENCUMBRANCE, holder.default_worn_factor(STAT_ITEM_ENCUMBRANCE))

@@ -223,7 +223,7 @@ CAPABILITIES(/obj/structure/redgate/away)
 /obj/item/laserdome_flag
 	name = "Flag"
 	desc = "Steal the enemy flag and take it to your base in order to score! First team to three captures wins! Or was it five? Eh, check with the referee I guess."
-	slowdown = 1 //big flag is harder to run with, encourages teamwork and lets the opposing team catch up. would be nice if this was a forced slowdown that ignores hardy.
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1) //big flag is harder to run with, encourages teamwork and lets the opposing team catch up. would be nice if this was a forced slowdown that ignores hardy.
 	icon = 'icons/obj/flags.dmi'
 	item_icons = list(
 			slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
@@ -369,7 +369,7 @@ CAPABILITIES(/obj/structure/flag_base)
 /obj/item/laserdome_hyperball
 	name = "\improper HYPERball"	//*always* refer to it as "the hyperball", not just "the ball". corporate insists.
 	desc = "Because regular balls aren't exciting enough, the future needs HYPERballs!"
-	slowdown = -0.5	//carrying the ball actually speeds you up a little bit? given you need to get past enemy defense and dunk. also makes it easier to get the ball away from your base if you intercept.
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5) //carrying the ball actually speeds you up a little bit? given you need to get past enemy defense and dunk. also makes it easier to get the ball away from your base if you intercept.
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball"
 	item_icons = list(
@@ -386,7 +386,7 @@ CAPABILITIES(/obj/structure/flag_base)
 /obj/item/laserdome_hyperball_prop
 	name = "demonstration HYPERball"
 	desc = "Because regular balls aren't exciting enough, the future needs HYPERballs!"
-	slowdown = 3	//really discourage people from trying to actually use these in the game if they get them out of the display cases
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 3) //really discourage people from trying to actually use these in the game if they get them out of the display cases
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball"
 	w_class = ITEMSIZE_NO_CONTAINER

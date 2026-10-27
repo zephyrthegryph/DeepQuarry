@@ -10,7 +10,7 @@
 	icon_state = "nanomachine_rig"
 	interface_intro = "Protean"
 	armor_spec = "bio=100;rad=100"
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0
 	seal_delay = 0
 	/// The protean character this cluster belongs to. While folded, it is inside us.
@@ -515,7 +515,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 	set_armor(dq_armor_none())
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
 		piece.set_armor(dq_armor_none())
-	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, PROTEAN_RIG_INERT_SLOWDOWN)
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	wearer()?.worn_protection_changed()
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
@@ -532,10 +532,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 		piece.set_armor(restored)
 	wearer()?.worn_protection_changed()
 	if(istype(R))
-		slowdown = initial(R.slowdown) * 0.5
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, R.default_worn_factor(STAT_ITEM_ENCUMBRANCE) * 0.5)
 	else
-		slowdown = initial(slowdown)
-	offline_slowdown = slowdown
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
+	offline_slowdown = worn_factor(STAT_ITEM_ENCUMBRANCE)
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] woke at [AREACOORD(src)].")
 
 /// The unconfigured cluster's armour.
@@ -658,8 +658,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 	user.drop_item(R)
 	R.forceMove(src)
 	rel_set(src, nameof(assimilated_rig), R)
-	slowdown = (initial(R.slowdown) *0.5)
-	offline_slowdown = slowdown
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, (R.default_worn_factor(STAT_ITEM_ENCUMBRANCE) *0.5))
+	offline_slowdown = worn_factor(STAT_ITEM_ENCUMBRANCE)
 
 /// Old verb "Remove Assimilated Rig".
 /obj/item/rig/protean/proc/protean_removerig_verb(datum/act/op/A)
@@ -686,7 +686,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 		boots.set_sprite_sheets_obj(tempRig.boots.sprite_sheets.Copy())
 		chest.set_sprite_sheets(tempRig.chest.sprite_sheets.Copy())
 		chest.set_sprite_sheets_obj(tempRig.chest.sprite_sheets.Copy())
-		slowdown = initial(slowdown)
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
 		name = tempRig.name
 		set_icon(tempRig.icon) // Reset the icon back to its original
 		set_icon_state(tempRig.icon_state)
