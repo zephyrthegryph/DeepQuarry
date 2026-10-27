@@ -12,9 +12,6 @@ world_time_expiry	code/controllers/other.dm	2
 world_time_expiry	code/controllers/other.dm	4
 world_time_expiry	code/controllers/other.dm	11
 world_time_expiry	code/modules/a/exp.dm	8
-world_time_expiry	code/modules/a/exp.dm	22
-world_time_expiry	code/modules/a/exp.dm	24
-world_time_expiry	code/modules/a/exp.dm	26
 world_time_expiry	code/modules/a/exp.dm	30
 world_time_expiry	code/modules/a/exp.dm	32
 world_time_expiry	code/modules/a/exp.dm	34

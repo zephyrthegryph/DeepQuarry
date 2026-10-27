@@ -40,7 +40,6 @@ SYSTEM_DEF(contracts)
 	var/list/payout_by_definition
 	var/list/custody_started_by_subject
 	var/list/custody_last_duration_by_subject
-	var/list/custody_last_ended_at_by_subject
 	/// Stable record-to-mob bindings established only from an unambiguous live identity.
 	var/list/security_record_subject_ids
 	var/list/infrastructure_fact_revisions
@@ -78,7 +77,6 @@ SYSTEM_DEF(contracts)
 	payout_by_definition = list()
 	custody_started_by_subject = list()
 	custody_last_duration_by_subject = list()
-	custody_last_ended_at_by_subject = list()
 	security_record_subject_ids = list()
 	infrastructure_fact_revisions = list()
 	observe(OM_WORLD, /datum/notice/world_mob_created, src, then(PROC_REF(on_mob_created)))
@@ -157,7 +155,7 @@ SYSTEM_DEF(contracts)
 	var/active = is_physically_custodied(subject)
 	if(active && !started_at)
 		var/start_revision = next_custody_revision++
-		custody_started_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		custody_started_by_subject[key] = TIME_NOW(CLOCK_WORLD)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -172,7 +170,7 @@ SYSTEM_DEF(contracts)
 		var/duration = max(0, world.time - started_at)
 		custody_started_by_subject -= key
 		custody_last_duration_by_subject[key] = duration
-		custody_last_ended_at_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		STAMP(identity, custody_ended_at, CLOCK_WORLD)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -216,10 +214,9 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	var/datum/contract_subject_identity/identity = subject_identity(subject)
 	var/started_at = custody_started_by_subject[identity.id] || 0
 	var/duration = started_at ? max(0, world.time - started_at) : (custody_last_duration_by_subject[identity.id] || 0)
-	var/ended_at = custody_last_ended_at_by_subject[identity.id] || 0
 	var/turf/current_location = get_turf(subject)
 	var/released_alive_outside_brig = subject.stat != DEAD && !istype(current_location?.loc, /area/security/brig)
-	var/recently_released = released_alive_outside_brig && ended_at && ELAPSED_SINCE(src, ended_at, CLOCK_WORLD) <= 2 MINUTES
+	var/recently_released = released_alive_outside_brig && identity.custody_ended_at && ELAPSED(identity, custody_ended_at, CLOCK_WORLD) <= 2 MINUTES
 	return list(
 		"verified" = !!started_at || recently_released,
 		"active" = !!started_at,
@@ -662,14 +659,14 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		"negotiation_clauses" = negotiation_rows(contract),
 		"deadline" = contract.deadline,
 		"offer_expires_at" = contract.offer_expires_at,
-		"offer_time_remaining" = EXPIRY_ACTIVE(contract, offer_expires_at, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, offer_expires_at, CLOCK_WORLD), 1) : null,
+		"offer_time_remaining" = COOLDOWN_RUNNING(contract, offer_expires_at) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, offer_expires_at), 1) : null,
 		"accepted_at" = contract.accepted_at,
-		"deadline_remaining" = EXPIRY_ACTIVE(contract, deadline, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, deadline, CLOCK_WORLD), 1) : null,
+		"deadline_remaining" = COOLDOWN_RUNNING(contract, deadline) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, deadline), 1) : null,
 		"can_accept" = can_accept && contract.state == CONTRACT_OFFERED,
 		"can_decline" = can_accept && contract.state == CONTRACT_OFFERED,
 		"offer_kind" = contract.offer_kind,
 		"closure_code" = contract.closure_code,
-		"grace_time_remaining" = EXPIRY_ACTIVE(contract, grace_until, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, grace_until, CLOCK_WORLD), 1) : null,
+		"grace_time_remaining" = COOLDOWN_RUNNING(contract, grace_until) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, grace_until), 1) : null,
 		"requirements" = requirement_rows(contract),
 		"contributor_count" = length(contract.contributions),
 	)

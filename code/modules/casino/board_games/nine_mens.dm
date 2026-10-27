@@ -84,7 +84,7 @@
 	var/list/valid_moves
 	var/list/valid_removes
 	var/selected_node
-	EXPIRY_DECLARE(turn_start_time)
+	var/turn_start_time = 0
 	var/pone_pieces = 9
 	var/ptwo_pieces = 9
 	var/winner

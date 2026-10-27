@@ -120,7 +120,7 @@
 			to_chat(src, span_notice("New notification has been sent."))
 		else
 			to_chat(src, span_warning("Your backup is not past-due yet."))
-	else if(ELAPSED_SINCE(src, record.last_notification, CLOCK_WORLD) < 5 MINUTES)
+	else if(ELAPSED(record, last_notification, CLOCK_WORLD) < 5 MINUTES)
 		to_chat(src, span_warning("Too little time has passed since your last notification."))
 	else
 		db.notify(record)

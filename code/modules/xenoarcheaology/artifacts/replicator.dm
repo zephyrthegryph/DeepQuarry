@@ -9,7 +9,7 @@
 
 	var/spawn_progress_time = 0
 	var/max_spawn_time = 50
-	EXPIRY_DECLARE(last_process_time)
+	var/last_process_time = 0
 
 	var/list/construction
 	var/list/spawning_types = list() // ALLOW(instance_list): d: filled in New() with the replicator's output table

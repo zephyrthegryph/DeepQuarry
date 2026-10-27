@@ -8,7 +8,7 @@
 
 	circuit = /obj/item/circuitboard/firework_launcher
 	var/tmp/obj/item/firework_star/loaded_star
-	EXPIRY_DECLARE(last_launch)
+	var/last_launch = 0
 	var/launch_cooldown = 5 MINUTES
 
 /obj/machinery/firework_launcher/proc/stamp_launch_cooldown()
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		return "close the panel first"
 	if(!loaded_star())
 		return "there is no firework star loaded in \the [src]"
-	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
+	if(ELAPSED(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
 		return "\The [src] is still re-priming for launch"
 	if(!anchored)
 		return "\The [src] must be firmly secured to the ground before firework can be launched"

@@ -3,7 +3,7 @@
 #define ROBO_HARM 2
 /datum/artifact_effect/robohealth
 	name = "Robotic Healing"
-	EXPIRY_DECLARE(last_message)
+	var/last_message = 0
 	effect_type = EFFECT_ROBOT_HEALTH
 	effect_color = "#3879ad"
 	var/health_type = ROBO_HEAL

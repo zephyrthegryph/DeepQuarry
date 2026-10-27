@@ -44,7 +44,7 @@
 	var/list/behavior_sources = null
 
 	// --- Per-behavior state ---
-	var/list/behavior_state = null       // typepath => list("cooldown" = world.time, "charges" = N)
+	var/list/behavior_state = null       // one /datum/behavior_state per behavior type that has a cooldown or charges
 
 	// Dispositions are standings (standings/standings.dm): grudges, effects and faction rows are rows on the mob, not a list on the brain.
 
@@ -52,24 +52,25 @@
 	var/list/subscribed_signals = null   // DQAI_TRIGGER_* => list(behavior_typepath, ...)
 
 	// --- Tactical state (read by behaviors) ---
-	EXPIRY_DECLARE(last_attack_at) // world.time of the most recent successful attack tick
+	var/last_attack_at = 0 // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
 	var/tmp/turf/home_turf	// for guard / return_home behaviors
 	var/mob/leader = null  // for follow_leader / cooperative AI (a relation view)
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
-	EXPIRY_DECLARE(lose_threat_at)
-	/// Dependency-driven strategic scheduling. Events set this to zero; a calm
-	/// brain uses a long discovery cadence while combat stays responsive.
-	EXPIRY_DECLARE(next_strategic_at)
+	var/lose_threat_at = 0
+	/// Dependency-driven strategic scheduling: the slow work waits `strategic_wait` from `strategic_set_at`. Events set the wait to zero
+	/// (due now); a calm brain uses a long discovery cadence while combat stays responsive.
+	var/strategic_set_at = 0
+	var/strategic_wait = 0
 	var/idle_strategic_interval = 10 SECONDS
 	/// Tactics started so far (type => times): diagnostics for traces and the creature smoke tests.
 	var/tmp/list/started_counts = null
 	/// The interval the action loop was last armed with (action_interval()); poke_action_loop() re-arms a stretched one.
 	var/tmp/armed_interval = 0
 	/// world.time of the last behaviour selection (pick_and_run()); engaged brains re-select at least every DQ_ENGAGED_RECHECK.
-	EXPIRY_DECLARE(last_pick_at)
+	var/last_pick_at = 0
 	/// The op the active tactic is waiting on (act_waiting()), null when none.
 	var/datum/op_result/waiting_op = null
 
@@ -80,6 +81,7 @@ CAPABILITIES(/datum/ai_brain)
 	ref_one(nameof(active_source), /atom)
 	ref_one(nameof(leader), /mob)
 	ref_many(nameof(behavior_sources))
+	owns_many(nameof(behavior_state), /datum/behavior_state)
 	owns_one(nameof(model), /datum/world_model)
 	ref_one(nameof(lord))
 	ref_one(nameof(waiting_op))
@@ -184,7 +186,7 @@ CAPABILITIES(/datum/ai_brain)
 	selection_dirty = TRUE
 	if(primary_threat)
 		// Combat: the quarter-second tactical loop owns behavior selection.
-		EXPIRY_SET(src, next_strategic_at, 2 SECONDS, CLOCK_WORLD)
+		defer_strategic(2 SECONDS)
 		sync_fast_processing()
 		return
 	// Calm: this is the place no-threat behaviors (wander, idle speak, walk_to_destination, return_home, follow_leader, scavenge, ...) get
@@ -192,9 +194,9 @@ CAPABILITIES(/datum/ai_brain)
 	var/idle_pending = pick_and_run()
 	if(active_behavior_type)
 		// A tick-driven idle behavior is running: the loop drives it until it finishes.
-		EXPIRY_SET(src, next_strategic_at, 2 SECONDS, CLOCK_WORLD)
+		defer_strategic(2 SECONDS)
 		return
-	EXPIRY_SET(src, next_strategic_at, idle_strategic_interval, CLOCK_WORLD)
+	defer_strategic(idle_strategic_interval)
 	// Only park when nothing idle wants to run and no one-shot walk is queued. A brain with an idle behavior scoring > 0 (or cooling down
 	// toward one) stays on the slow cadence so it actually gets to act.
 	if(!idle_pending && !destination())
@@ -217,7 +219,7 @@ CAPABILITIES(/datum/ai_brain)
 		switch(result)
 			if(DQ_BEHAVIOR_CONTINUE)
 				// Still running: re-select only on an event (selection_dirty) or, engaged, once DQ_ENGAGED_RECHECK has passed.
-				if(!primary_threat || (!selection_dirty && BEFORE(src, last_pick_at + DQ_ENGAGED_RECHECK, CLOCK_WORLD)))
+				if(!primary_threat || (!selection_dirty && ELAPSED(src, last_pick_at, CLOCK_WORLD) < DQ_ENGAGED_RECHECK))
 					return
 				if(!selection_dirty)
 					trace("engaged recheck (minimum interval)")
@@ -234,7 +236,7 @@ CAPABILITIES(/datum/ai_brain)
 		// Calm: idle selection lives on the slow cadence (handle_strategicals), never here.
 		// If the idle behavior just finished, ask for a prompt re-pick on the next slow run.
 		if(!active_behavior_type)
-			next_strategic_at = 0
+			strategic_wait = 0
 		return
 
 	if(!selection_dirty && active_behavior_type)
@@ -417,7 +419,7 @@ CAPABILITIES(/datum/ai_brain)
 
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
-	next_strategic_at = 0
+	strategic_wait = 0
 	wake_loops()
 	sync_fast_processing()
 	poke_action_loop()
@@ -451,7 +453,7 @@ CAPABILITIES(/datum/ai_brain)
 			if(!lose_threat_at)
 				STAMP(src, lose_threat_at, CLOCK_WORLD)
 				return  // Start the grace timer; don't drop yet.
-			if(BEFORE(src, lose_threat_at + DQ_LOSE_THREAT_TIMEOUT, CLOCK_WORLD))
+			if(ELAPSED(src, lose_threat_at, CLOCK_WORLD) < DQ_LOSE_THREAT_TIMEOUT)
 				return  // Still within the grace period.
 			// Grace period expired — drop the target.
 			drop_primary_threat()
@@ -508,33 +510,44 @@ CAPABILITIES(/datum/ai_brain)
 // Behavior state (cooldowns, charges).
 // ---------------------------------------------------------------------------
 
-/datum/ai_brain/proc/cooldown_until(btype, atom/source)
+/// What a brain keeps of one behavior type: when its cooldown started and how long it lasts, and its charges (null: unlimited).
+/datum/behavior_state
+	var/behavior
+	var/cooldown_duration = 0
+	var/charges = null
+	var/cooldown_started_at = 0
+
+/// The brain's record of `btype`, or null when it has none.
+/datum/ai_brain/proc/behavior_state_of(btype)
+	for(var/datum/behavior_state/state as anything in behavior_state)
+		if(state.behavior == btype)
+			return state
+	return null
+
+/// TRUE while the cooldown of `btype` is still running. An item-granted behavior (a `source`) manages its own cooldown.
+/datum/ai_brain/proc/cooldown_active(btype, atom/source)
 	if(source)
-		return 0  // item-granted: source manages its own cooldown
-	if(!behavior_state)
-		return 0
-	var/list/entry = behavior_state[btype]
-	if(!entry)
-		return 0
-	return entry["cooldown"] || 0
+		return FALSE
+	var/datum/behavior_state/state = behavior_state_of(btype)
+	return state && ELAPSED(state, cooldown_started_at, CLOCK_WORLD) < state.cooldown_duration
 
 /datum/ai_brain/proc/set_cooldown(btype, atom/source, duration)
 	if(source)
 		return
-	LAZYINITLIST(behavior_state)
-	if(!behavior_state[btype])
-		behavior_state[btype] = list("cooldown" = 0, "charges" = null)
-	behavior_state[btype]["cooldown"] = EXPIRY_AT(null, CLOCK_WORLD, 0) + duration
+	var/datum/behavior_state/state = behavior_state_of(btype)
+	if(!state)
+		state = new
+		state.behavior = btype
+		rel_add(src, nameof(behavior_state), state)
+	state.cooldown_duration = duration
+	STAMP(state, cooldown_started_at, CLOCK_WORLD)
 
 /datum/ai_brain/proc/consume_charge(btype, atom/source)
 	if(source)
 		return
-	LAZYINITLIST(behavior_state)
-	if(!behavior_state[btype])
-		return
-	var/list/entry = behavior_state[btype]
-	if(!isnull(entry["charges"]))
-		entry["charges"] -= 1
+	var/datum/behavior_state/state = behavior_state_of(btype)
+	if(state && !isnull(state.charges))
+		state.charges -= 1
 
 // ---------------------------------------------------------------------------
 // Event handlers.

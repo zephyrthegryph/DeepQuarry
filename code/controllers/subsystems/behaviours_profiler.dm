@@ -5,7 +5,7 @@
 
 /datum/system/behaviours
 	/// world.time the profiler counters were last cleared (0: since boot).
-	EXPIRY_DECLARE(profile_reset_time)
+	var/profile_reset_time = 0
 
 CAPABILITIES(/datum/system/behaviours)
 	interface("OmProfiler", title = "Object Model Profiler", rights = R_DEBUG)

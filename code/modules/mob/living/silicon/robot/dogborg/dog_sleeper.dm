@@ -42,7 +42,7 @@
 	var/datum/matter_synth/water = null
 	var/digest_brute = 2
 	/// world.time of the last digestion pass (0: none yet).
-	EXPIRY_TMP_DECLARE(last_digest_time)
+	var/tmp/last_digest_time = 0
 	var/digest_burn = 3
 	var/digest_multiplier = 1
 	var/recycles = FALSE

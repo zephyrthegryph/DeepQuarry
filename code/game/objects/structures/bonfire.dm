@@ -10,7 +10,7 @@
 	icon_state = "bonfire"
 	density = FALSE
 	anchored = TRUE
-	EXPIRY_DECLARE(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
+	COOLDOWN_DECLARE(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
 	var/grill = FALSE
 	var/datum/material/material
 	var/set_temperature = T0C + 30	//K
@@ -175,12 +175,12 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 		return FALSE
 
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
-		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
+		COOLDOWN_START(src, next_fuel_consumption, 6 MINUTES)
 		consume(consumed_fuel)
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
-		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTE, CLOCK_WORLD)
+		COOLDOWN_START(src, next_fuel_consumption, 3 MINUTE)
 		consume(consumed_fuel)
 		return TRUE
 	return FALSE
@@ -245,7 +245,7 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(EXPIRY_EXPIRED(src, next_fuel_consumption, CLOCK_WORLD))
+	if(COOLDOWN_LAPSED(src, next_fuel_consumption))
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return
@@ -300,7 +300,7 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 	icon_state = "fireplace"
 	density = TRUE
 	anchored = TRUE
-	EXPIRY_DECLARE(next_fuel_consumption)
+	COOLDOWN_DECLARE(next_fuel_consumption)
 	var/set_temperature = T0C + 20	//K
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF
@@ -365,12 +365,12 @@ CAPABILITIES(/obj/structure/fireplace)
 		return FALSE
 
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
-		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
+		COOLDOWN_START(src, next_fuel_consumption, 6 MINUTES)
 		consume(consumed_fuel)
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
-		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTES, CLOCK_WORLD)
+		COOLDOWN_START(src, next_fuel_consumption, 3 MINUTES)
 		consume(consumed_fuel)
 		return TRUE
 	return FALSE
@@ -436,7 +436,7 @@ CAPABILITIES(/obj/structure/fireplace)
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(EXPIRY_EXPIRED(src, next_fuel_consumption, CLOCK_WORLD))
+	if(COOLDOWN_LAPSED(src, next_fuel_consumption))
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return

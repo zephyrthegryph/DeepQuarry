@@ -232,7 +232,7 @@
 /datum/unit_test/dq_hc_computers/guest_pass_deactivation/run_gate()
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/id/guest/G = allocate(/obj/item/card/id/guest, hc_side())
-	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
+	COOLDOWN_START(G, expiration_time, 1 HOURS)
 	G.set_expired(0)
 	G.set_icon_state("guest")
 	H.set_combat_mode(TRUE)
@@ -254,7 +254,7 @@
 /datum/unit_test/dq_hc_computers/guest_pass_expired_state_gates_deactivation/run_gate()
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/id/guest/G = allocate(/obj/item/card/id/guest, hc_side())
-	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
+	COOLDOWN_START(G, expiration_time, 1 HOURS)
 	G.set_expired(TRUE)
 	G.set_icon_state("guest") // a stale rendering must not reactivate the real expired pass
 	H.set_combat_mode(TRUE)

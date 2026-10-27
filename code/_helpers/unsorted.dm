@@ -299,7 +299,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Last modified by Carn
 /mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
 	if(isnull(started_at))
-		started_at = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		started_at = TIME_NOW(CLOCK_WORLD)
 	open_request(src, /datum/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), answerer = src, default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
 
 /// A mob picking its own name for a role (rename_self()).
@@ -311,7 +311,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/role
 	var/allow_numbers
 	var/attempt
-	EXPIRY_DECLARE(started_at)
+	var/started_at = 0
 
 /datum/prompt/text/rename_self/prepare(datum/act/A)
 	. = ..()

@@ -62,7 +62,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
 	var/tint = "#FFFFFF"
 	if(comp)
-		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
+		COOLDOWN_START(comp, cooldown, (15 SECONDS))
 		rel_set(comp, nameof(comp.statue), src)
 		comp.transformed = TRUE
 		comp.paused = FALSE
@@ -214,7 +214,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		return
 	var/datum/trait_state/gargoyle/comp = gargoyle.get_trait_state(/datum/trait_state/gargoyle)
 	if(comp)
-		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
+		COOLDOWN_START(comp, cooldown, (15 SECONDS))
 		rel_clear(comp, nameof(comp.statue))
 		comp.transformed = FALSE
 	else

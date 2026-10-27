@@ -13,7 +13,7 @@
 /// stable fact about the atom (an outside reference, a signal, a slot problem),
 /// so retrying every frame only repeats the refusal -- and in test builds each
 /// refcount refusal walks the world looking for the holder.
-// (cooldowns(latent_refused_until) in /atom/movable's CAPABILITIES block, code/modules/lighting/lighting_atom.dm)
+/// (a cooldowns() name on /atom/movable: code/modules/lighting/lighting_atom.dm)
 
 /// A holder's configured idle delay, in deciseconds, before its contents are
 /// offered to the sweep. Holders may override for a shorter or longer delay

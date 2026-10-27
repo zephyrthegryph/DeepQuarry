@@ -29,7 +29,7 @@ CAPABILITIES(/datum/feed_message)
 	var/backup_author=""
 	var/censored=0
 	var/is_admin_channel=0
-	EXPIRY_DECLARE(updated)
+	var/updated = 0
 	var/announcement = ""
 
 CAPABILITIES(/datum/feed_channel)

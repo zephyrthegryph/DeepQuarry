@@ -11,7 +11,7 @@
 	var/tmp/obj/item/forensics/swab/bloodsamp
 	var/scanner_progress = 0
 	var/scanner_rate = 5
-	EXPIRY_DECLARE(last_process_worldtime)
+	var/last_process_worldtime = 0
 	var/report_num = 0
 
 /obj/machinery/dnaforensics/var/scanning = FALSE

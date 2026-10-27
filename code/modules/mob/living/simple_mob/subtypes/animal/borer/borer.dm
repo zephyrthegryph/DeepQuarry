@@ -38,7 +38,7 @@
 	var/docile_counter = 0						// How long we are docile for
 
 	var/has_reproduced = FALSE
-	EXPIRY_DECLARE(used_dominate) // world.time when the dominate power was last used.
+	var/used_dominate = 0 // world.time when the dominate power was last used.
 
 
 	var/static/borer_chem_list = list(

@@ -383,7 +383,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	//////////////
 /client/Del()
 	if(!gc_destroyed)
-		gc_destroyed = EXPIRY_AT(null, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): gc_destroyed doubles as the QDELETED flag, a raw stamp by contract (garbage.dm)
+		gc_destroyed = TIME_NOW(CLOCK_WORLD) // ALLOW(sys_world_time_write): gc_destroyed doubles as the QDELETED flag, a raw stamp by contract (garbage.dm)
 		if (!QDELING(src))
 			stack_trace("Client does not purport to be QDELING, this is going to cause bugs in other places!")
 

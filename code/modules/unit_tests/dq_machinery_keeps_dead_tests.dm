@@ -163,7 +163,7 @@
 	set_global("specops_shuttle_time", world.timeofday + 1 SECOND)
 	set_global("specops_shuttle_timeleft", 0)
 	var/obj/machinery/computer/specops_shuttle/M = allocate(/obj/machinery/computer/specops_shuttle, test_floor())
-	EXPIRY_SET(M, specops_shuttle_timereset, 1 DAY, CLOCK_WORLD)
+	COOLDOWN_START(M, specops_shuttle_timereset, 1 DAY)
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/radio/intercom/radio = allocate(/obj/item/radio/intercom, test_floor())
 	SSshuttles.hold_specops_announcer(radio)

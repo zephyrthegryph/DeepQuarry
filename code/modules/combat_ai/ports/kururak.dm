@@ -157,7 +157,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 	if(!length(brain.known_friendlies()))
 		return null
 	// Only worth rallying once we're actually in a fight (recently swung).
-	if(ELAPSED_SINCE(src, brain.last_attack_at + 5 SECONDS, CLOCK_WORLD) > 0)
+	if(ELAPSED(brain, last_attack_at, CLOCK_WORLD) > 5 SECONDS)
 		return null
 	return DQAI_RESULT(48, threat)
 

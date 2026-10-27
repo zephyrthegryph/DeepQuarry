@@ -16,7 +16,7 @@
 	var/fabricator_tag = "Upper Level"
 	var/drone_progress = 0
 	var/produce_drones = 2
-	EXPIRY_DECLARE(time_last_drone)
+	var/time_last_drone = 0
 	time_last_drone = 500
 	var/drone_type = /mob/living/silicon/robot/drone
 

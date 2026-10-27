@@ -55,7 +55,7 @@
 	///How long an object has been paused for, to be added to the travel time.
 	var/delayed_time = 0
 	///The last world.time value stored when the thrownthing was moving.
-	EXPIRY_DECLARE(last_move)
+	var/last_move = 0
 	/// If our thrownthing has been blocked
 	var/blocked = FALSE
 

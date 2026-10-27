@@ -195,7 +195,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/list/port_links
 	var/ambient_engine = FALSE
 	var/chemical_rate = 0
-	EXPIRY_DECLARE(chemical_last_update)
+	var/chemical_last_update = 0
 	var/input_joules = 0
 	var/output_joules = 0
 	var/loss_joules = 0

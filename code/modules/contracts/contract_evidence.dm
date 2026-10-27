@@ -7,6 +7,8 @@
 	var/display_name
 	/// The body last seen (a relation view).
 	var/mob/living/body
+	/// When custody last ended (0 = never).
+	var/custody_ended_at = 0
 
 CAPABILITIES(/datum/contract_subject_identity)
 	ref_one(nameof(subject_mind), /datum/mind)
@@ -40,11 +42,13 @@ CAPABILITIES(/datum/contract_subject_identity)
 	var/id
 	var/kind
 	var/subject_id
-	EXPIRY_DECLARE(created_at)
+	var/created_at = 0
+	/// When the thing the evidence shows happened (a body scan's time, from its payload; 0 when it carries none).
+	var/occurred_at = 0
 	var/creator_account
 	var/source_ref
 	var/consumed_by
-	EXPIRY_DECLARE(consumed_at)
+	var/consumed_at = 0
 	var/reference_count = 0
 	var/void_reason
 	var/list/payload
@@ -58,6 +62,8 @@ CAPABILITIES(/datum/contract_subject_identity)
 	source_ref = source ? ref_token(source) : null
 	STAMP(src, created_at, CLOCK_WORLD)
 	payload = _payload ? deepCopyList(_payload) : list()
+	if(isnum(payload["scan_time"]))
+		occurred_at = payload["scan_time"]
 
 /obj/item/paper/proc/attach_contract_evidence(evidence_id)
 	if(!evidence_id)

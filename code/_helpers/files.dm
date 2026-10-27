@@ -108,7 +108,7 @@
 	var/delay = FTPDELAY
 	if(holder)
 		delay *= ADMIN_FTPDELAY_MODIFIER
-	GLOB.fileaccess_timer = EXPIRY_AT(world, CLOCK_WORLD, delay)
+	GLOB.fileaccess_timer = (TIME_NOW(CLOCK_WORLD) + (delay))
 	return FALSE
 #undef FTPDELAY
 #undef ADMIN_FTPDELAY_MODIFIER

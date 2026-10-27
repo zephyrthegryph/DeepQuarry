@@ -15,9 +15,9 @@
 #define TGUI_TELEMETRY_RESPONSE_WINDOW (30 SECONDS)
 
 /// Time of telemetry request
-/datum/tgui_panel/EXPIRY_DECLARE(telemetry_requested_at)
+/datum/tgui_panel/var/telemetry_requested_at = 0
 /// Time of telemetry analysis completion
-/datum/tgui_panel/EXPIRY_DECLARE(telemetry_analyzed_at)
+/datum/tgui_panel/var/telemetry_analyzed_at = 0
 /// List of previous client connections
 /datum/tgui_panel/var/list/telemetry_connections
 

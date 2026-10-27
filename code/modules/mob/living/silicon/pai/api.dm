@@ -53,11 +53,11 @@
 	if(check_is_delayed(ghost_key))
 		to_chat(inquirer, span_notice("This pAI is responding to a request, but may become available again shortly..."))
 		return
-	asked[ghost_key] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	asked[ghost_key] = TIME_NOW(CLOCK_WORLD)
 
 	// Can't play, still respawning
 	var/time_till_respawn = ghost.time_till_respawn()
-	if(time_till_respawn == -1 || time_till_respawn)
+	if(time_till_respawn)
 		to_chat(inquirer, span_warning("This pAI is still downloading..."))
 		return
 
@@ -140,7 +140,7 @@
 
 /datum/system/pai/proc/block_pai_invites(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	asked[ghost_ref] = EXPIRY_AT(null, CLOCK_WORLD, 0) + 99 HOURS // We never want to be asked again
+	asked[ghost_ref] = TIME_NOW(CLOCK_WORLD) + 99 HOURS // We never want to be asked again
 
 /datum/system/pai/proc/clear_pai_block_delay(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)

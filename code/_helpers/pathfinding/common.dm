@@ -29,6 +29,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/pathfinding_predicate)
 	/// goal turf: an OM handle, read with search_goal()
 	var/turf/goal
 
+	/// when the pathfinder service took this search (the wait for its mutex and the search's total are read from it)
+	var/started_at = 0
+
 	//* options
 	/// how far away to the end we want to get; 0 = get ontop of the tile, 1 = get adjacent to the tile
 	/// keep in mind that pathing with 0 to a dense object is usually going to fail!

@@ -84,7 +84,7 @@
 	var/peak_damage = 0
 	/// world.time a continuous treatment mechanism last acted on this lesion
 	/// (see is_stabilised(): halts bleeding, leaking and necrotic spread).
-	EXPIRY_TMP_DECLARE(stabilised_at)
+	var/tmp/stabilised_at = 0
 
 	// --- Defined by the lesion kind ---
 	/// Short noun for the lesion ("contusion", "laceration"…).
@@ -199,7 +199,7 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 /// Is a continuous treatment holding this lesion (no bleeding, leaking or
 /// spreading)?
 /datum/affliction/lesion/proc/is_stabilised()
-	return stabilised_at && ELAPSED_SINCE(src, stabilised_at, CLOCK_WORLD) <= LESION_STABILISED_WINDOW
+	return stabilised_at && ELAPSED(src, stabilised_at, CLOCK_WORLD) <= LESION_STABILISED_WINDOW
 
 /// Natural regeneration only repairs an organ that isn't badly hurt.
 /datum/affliction/lesion/proc/can_regenerate()

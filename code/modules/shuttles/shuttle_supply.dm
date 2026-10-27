@@ -53,7 +53,7 @@
 		attempt_move(away_waypoint)
 
 	//wait ETA here, plus a late arrival sometimes.
-	EXPIRY_SET(src, arrive_time, supply_movetime(), CLOCK_WORLD)
+	COOLDOWN_START(src, arrive_time, supply_movetime())
 	var/wait = supply_movetime()
 	if (next_location() != away_waypoint && prob(late_chance))
 		wait += rand(0,max_late_time)

@@ -27,7 +27,7 @@
 	TEST_ASSERT(site, "the actual brain-parent organ exists")
 	implant.forceMove(site)
 	TEST_ASSERT(implant.implant(human), "the actual implant procedure succeeds inside its required organ")
-	EXPIRY_SET(implant, install_done, -1 DAY, CLOCK_WORLD)
+	COOLDOWN_START(implant, install_done, -1 DAY)
 	implant.handle_install()
 	TEST_ASSERT_EQUAL(implant.stat, NIF_WORKING, "actual elapsed calibration reaches the real working state")
 	TEST_ASSERT_EQUAL(human.nif, implant, "implantation sets the actual reciprocal human relation")

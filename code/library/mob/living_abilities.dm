@@ -54,8 +54,8 @@
 /// Climbing a wall (multiz/movement.dm): the one climbing is still for as long as it takes, and falls if it is broken off late.
 /proc/living_climbing()
 	return list(
-		op("climb_wall", ai(), needs(req_capable()), takes("wall", "time", "above_mob", "above_wall", "fall_chance", "drop_held", "nutrition_cost", "fall_at"), wait(TYPE_PROC_REF(/mob/living, climb_time_of)), on_interrupt(TYPE_PROC_REF(/mob/living, climb_wall_interrupted)), then(TYPE_PROC_REF(/mob/living, climb_wall_done))),
-		op("climb_down", ai(), needs(req_capable()), takes("time", "front_of_us", "destination", "below_wall", "fall_chance", "nutrition_cost", "fall_at"), wait(TYPE_PROC_REF(/mob/living, climb_time_of)), on_interrupt(TYPE_PROC_REF(/mob/living, climb_down_interrupted)), then(TYPE_PROC_REF(/mob/living, climb_down_done))))
+		op("climb_wall", ai(), needs(req_capable()), takes("wall", "time", "above_mob", "above_wall", "fall_chance", "drop_held", "nutrition_cost", "fall_grace"), wait(TYPE_PROC_REF(/mob/living, climb_time_of)), on_interrupt(TYPE_PROC_REF(/mob/living, climb_wall_interrupted)), then(TYPE_PROC_REF(/mob/living, climb_wall_done))),
+		op("climb_down", ai(), needs(req_capable()), takes("time", "front_of_us", "destination", "below_wall", "fall_chance", "nutrition_cost", "fall_grace"), wait(TYPE_PROC_REF(/mob/living, climb_time_of)), on_interrupt(TYPE_PROC_REF(/mob/living, climb_down_interrupted)), then(TYPE_PROC_REF(/mob/living, climb_down_done))))
 
 /// Climbing into a vent (ventcrawl.dm): the crawler is claimed while the animation fades them in, and stays where they are.
 /proc/living_ventcrawling()

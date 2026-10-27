@@ -1103,7 +1103,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 /datum/time_scheduler/proc/note_slow_step(datum/scheduled_behaviour/B, datum/E, usage, kind = "step")
 	if(slow_step && slow_step["world_time"] == world.time && slow_step["usage"] >= usage)
 		return
-	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = (E ? "[E.type]" : "none"), "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = EXPIRY_AT(null, CLOCK_WORLD, 0))
+	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = (E ? "[E.type]" : "none"), "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = TIME_NOW(CLOCK_WORLD))
 
 GLOBAL_DATUM(time_scheduler_factory, /datum/time_scheduler_factory)
 

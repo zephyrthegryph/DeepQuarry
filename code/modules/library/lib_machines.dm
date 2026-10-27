@@ -14,8 +14,8 @@
 /datum/borrowbook // Datum used to keep track of who has borrowed what when and for how long.
 	var/bookname
 	var/mobname
-	EXPIRY_DECLARE(getdate)
-	EXPIRY_DECLARE(duedate)
+	var/getdate = 0
+	COOLDOWN_DECLARE(duedate)
 
 /*
  * Library Public Computer
@@ -396,7 +396,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	b.set_bookname(sanitizeSafe(buffer_book))
 	b.set_mobname(sanitize(buffer_mob))
 	STAMP(b, getdate, CLOCK_WORLD)
-	EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
+	COOLDOWN_START(b, duedate, (checkoutperiod * 600))
 	rel_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return OP_OK
 

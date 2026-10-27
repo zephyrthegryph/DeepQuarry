@@ -25,8 +25,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	//Fired processing vars
 	var/fired = FALSE	//Have we been fired yet
-	EXPIRY_DECLARE(last_projectile_move)
-	EXPIRY_DECLARE(last_process)
+	var/last_projectile_move = 0
+	var/last_process = 0
 	var/time_offset = 0
 	var/datum/point/vector/trajectory
 	var/trajectory_ignore_forcemove = FALSE	//instructs forceMove to NOT reset our trajectory to the new location!

@@ -29,7 +29,7 @@
 	/// If the UI has been initialized yet.
 	var/initialized = FALSE
 	/// Time of opening the window.
-	EXPIRY_DECLARE(opened_at)
+	var/opened_at = 0
 	/// Stops further updates when close() was called.
 	var/closing = FALSE
 	/// The status/visibility of the UI.

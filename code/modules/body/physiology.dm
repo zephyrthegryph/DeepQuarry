@@ -295,9 +295,6 @@ CAPABILITIES(/datum/body)
 	var/oxygen_debt = 0
 	/// Breath quality of the last breath, 0..1 (Breathing system).
 	var/breath_quality = 1
-	/// When the last scheduled breath was taken, on the owner's own (bio) clock: the breath cadence is time,
-	/// so a breathing step woken from sleep breathes when one is due.
-	EXPIRY_TMP_DECLARE(last_breath_at)
 	/// How many breaths the body cannot take (0 breathes normally): set while it chokes or is held by the throat. The breathing step reads it
 	/// on every wake of every breather, so it is a field here beside the breath state it gates, not a slot looked up by name.
 	var/losebreath = 0

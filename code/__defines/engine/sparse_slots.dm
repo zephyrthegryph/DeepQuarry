@@ -31,11 +31,11 @@
 /// Declares stamp names on the type whose CAPABILITIES block holds it.
 #define stamps(names...)
 /// Records "now" on `clock` (CLOCK_WORLD or CLOCK_OWN) as the stamp `name` of D.
-#define stamp_now(D, name, clock) _stamp_set(D, #name, EXPIRY_NOW(D, clock))
+#define stamp_now(D, name, clock) _stamp_set(D, #name, TIME_NOW(clock, D))
 /// Records a raw point on D's clock as the stamp (tests, a stamp moved by a computed amount).
 #define stamp_set(D, name, point) _stamp_set(D, #name, point)
 /// Deciseconds since the stamp on `clock`. A never-stamped name reads as a stamp at 0, as the var it replaces did.
-#define stamp_elapsed(D, name, clock) (EXPIRY_NOW(D, clock) - ((D).cooldown_table?[#name] || 0))
+#define stamp_elapsed(D, name, clock) (TIME_NOW(clock, D) - ((D).cooldown_table?[#name] || 0))
 /// The stored point, or null when never stamped.
 #define stamp_point(D, name) ((D).cooldown_table?[#name])
 #define stamp_has(D, name) (!isnull((D).cooldown_table?[#name]))

@@ -8,7 +8,7 @@
 	var/icon_state = "" //icon state of the main segments of the beam
 	var/beam_color = null // Color of the beam segments
 	var/max_distance = 0
-	EXPIRY_DECLARE(endtime)
+	COOLDOWN_DECLARE(endtime)
 	var/sleep_time = 0.3 SECONDS
 	var/finished = 0
 	var/target_oldloc = null
@@ -24,7 +24,7 @@ CAPABILITIES(/datum/beam)
 /datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=5 SECONDS,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=0.3 SECONDS,new_beam_color = null)
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
-	EXPIRY_SET(src, endtime, time, CLOCK_WORLD)
+	COOLDOWN_START(src, endtime, time)
 	rel_set(src, nameof(origin), beam_origin)
 	origin_oldloc =	get_turf(origin())
 	rel_set(src, nameof(target), beam_target)
@@ -52,7 +52,7 @@ CAPABILITIES(/datum/beam)
 
 /// Every `sleep_time` (it re-arms itself from Start()): redraw if an end moved; ends the beam when it runs out or breaks.
 /datum/beam/proc/beam_tick()
-	if(finished || !origin() || !target() || EXPIRY_EXPIRED(src, endtime, CLOCK_WORLD) || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
+	if(finished || !origin() || !target() || COOLDOWN_LAPSED(src, endtime) || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
 		lapsed(src)
 		return
 	var/origin_turf = get_turf(origin())

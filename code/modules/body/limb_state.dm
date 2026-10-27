@@ -109,7 +109,7 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 /mob/living/carbon/human/proc/broken_bone_jolt()
 	if(lying || buckled_to() || stat || !can_feel_pain() || src.analgesia >= 50)
 		return
-	if(ELAPSED_SINCE(src, l_move_time, CLOCK_WORLD) >= BODY_MOVING_WINDOW)
+	if(ELAPSED(src, l_move_time, CLOCK_WORLD) >= BODY_MOVING_WINDOW)
 		return
 	for(var/obj/item/organ/external/E as anything in organs)
 		if(!E.is_broken() || !length(E.held_organs()) || !prob(LIMB_JOLT_CHANCE))

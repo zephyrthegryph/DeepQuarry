@@ -18,7 +18,7 @@
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
 
 	var/simulating = 0
-	EXPIRY_DECLARE(simulation_started)
+	var/simulation_started = 0
 	/// after() timer that ends the running simulation, or 0.
 	var/simulation_delay = 20 SECONDS
 

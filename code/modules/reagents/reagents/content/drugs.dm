@@ -14,7 +14,7 @@
 	var/high_messages = TRUE
 	var/list/high_message_list = list("You feel great! For now...", "You feel a wave of happiness!") // ALLOW(instance_list): kept: interned by contents in New() (intern_list); read-only
 	var/list/sober_message_list = list("You feel like garbage...", "Your head aches.") // ALLOW(instance_list): kept: interned by contents in New() (intern_list); read-only
-	data = 0
+	var/last_message_at = 0 // when the last status message was sent (-1: the effect ended)
 
 	var/prob_proc = FALSE /// ANY probabilities in specific drugs should check for this to be TRUE + the desired probability AND set this back to false.
 
@@ -42,12 +42,12 @@
 		return
 
 	if(high_messages == TRUE)
-		if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > 90 SECONDS && volume > 0.5) /// Spam prevention.
-			data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
+		if(ELAPSED(src, last_message_at, CLOCK_WORLD) > 90 SECONDS && volume > 0.5) /// Spam prevention.
+			STAMP(src, last_message_at, CLOCK_WORLD)
 			var/msg = pick(high_message_list)
 			to_chat(M, span_warning("[msg]"))
-		else if(volume <= 0.2 && data != -1)
-			data = -1
+		else if(volume <= 0.2 && last_message_at != -1)
+			last_message_at = -1
 			var/msg = pick(sober_message_list)
 			to_chat(M, span_warning("[msg]"))
 	if(prob(5) && prob_proc == FALSE) /// Enables procs to activate, remains true until THAT PROC sets it to false again.

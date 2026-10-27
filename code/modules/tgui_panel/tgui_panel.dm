@@ -11,7 +11,7 @@
 	var/tmp/client/client
 	var/datum/tgui_window/window
 	var/broken = FALSE
-	EXPIRY_DECLARE(initialized_at)
+	var/initialized_at = 0
 	var/oldchat = FALSE
 	/// Each client notifies on protected playback, so this prevents spamming admins.
 	var/static/admins_warned = 0 // COOLDOWN, shared by every panel

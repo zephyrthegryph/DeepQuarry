@@ -13,7 +13,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/shuttle)
 	var/tmp/obj/effect/shuttle_landmark/current_location	//Set current_location_tag, not this: New() resolves the tag into the landmark.
 	var/current_location_tag	// the tag it starts as; resolved into current_location at init
 
-	EXPIRY_TMP_DECLARE(arrive_time) //the time at which the shuttle arrives when long jumping
+	COOLDOWN_TMP_DECLARE(arrive_time) //the time at which the shuttle arrives when long jumping
 	var/process_state = IDLE_STATE // Used with SHUTTLE_FLAGS_PROCESS, as well as to store current state. Written by set_process_state().
 	var/always_process = FALSE // Automated shuttles may need idle-state checks.
 	var/category = /datum/shuttle
@@ -33,7 +33,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/shuttle)
 	var/mothershuttle 	//tag of mothershuttle
 	var/motherdock		//tag of mothershuttle landmark, defaults to starting location
 
-	EXPIRY_TMP_DECLARE(depart_time) //Similar to above, set when the shuttle leaves when long jumping. Used for progress bars.
+	var/tmp/depart_time = 0 //Similar to above, set when the shuttle leaves when long jumping. Used for progress bars.
 
 	var/debug_logging = FALSE // If set to true, the shuttle will start broadcasting its debug messages to admins
 
@@ -231,7 +231,7 @@ SETTER(/datum/shuttle, process_state)
 		make_sounds(HYPERSPACE_END)
 		return	//someone cancelled the launch
 
-	EXPIRY_SET(src, arrive_time, travel_time*10, CLOCK_WORLD)
+	COOLDOWN_START(src, arrive_time, travel_time*10)
 	STAMP(src, depart_time, CLOCK_WORLD)
 
 	set_moving_status(SHUTTLE_INTRANSIT)
@@ -257,7 +257,7 @@ SETTER(/datum/shuttle, process_state)
 /datum/shuttle/proc/long_jump_transit(datum/act/timer/A)
 	var/obj/effect/shuttle_landmark/start_location = transit_start
 	var/obj/effect/shuttle_landmark/destination = transit_dest
-	if(EXPIRY_EXPIRED(src, arrive_time, CLOCK_WORLD))
+	if(COOLDOWN_LAPSED(src, arrive_time))
 		set_transit_active(FALSE)
 		rel_clear(src, nameof(transit_dest))
 		rel_clear(src, nameof(transit_start))
@@ -269,7 +269,7 @@ SETTER(/datum/shuttle, process_state)
 		make_sounds(HYPERSPACE_PROGRESS)
 		COOLDOWN_START(src, progress_sound_cooldown, 4 SECONDS)
 
-	if(EXPIRY_LEFT(src, arrive_time, CLOCK_WORLD) <= 5 SECONDS && !transit_warned)
+	if(COOLDOWN_TIMELEFT(src, arrive_time) <= 5 SECONDS && !transit_warned)
 		transit_warned = TRUE
 		create_warning_effect(destination)
 

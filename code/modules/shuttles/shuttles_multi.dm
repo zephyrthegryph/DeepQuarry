@@ -3,7 +3,7 @@
 /datum/shuttle/autodock/multi
 	var/list/destination_tags
 	var/list/destinations_cache
-	EXPIRY_DECLARE(last_cache_rebuild_time)
+	var/last_cache_rebuild_time = 0
 	category = /datum/shuttle/autodock/multi
 
 	var/cloaked = FALSE
@@ -11,7 +11,7 @@
 
 	var/at_origin = 1
 	var/cooldown = 20
-	EXPIRY_DECLARE(last_move) //the time at which we last moved
+	var/last_move = 0 //the time at which we last moved
 
 	var/announcer
 	var/arrival_message

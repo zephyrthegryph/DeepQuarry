@@ -81,7 +81,7 @@
 	var/last_delivery_pressure = 0
 	var/last_delivery_temperature = 0
 	var/last_delivery_mixture
-	EXPIRY_DECLARE(last_work_time)
+	var/last_work_time = 0
 	var/last_work_kind
 	var/last_work_duration = 0
 
@@ -104,7 +104,7 @@
 	var/material_output_setting = 1
 	var/material_cadence_setting = 1
 	var/material_stored_energy = 0
-	EXPIRY_DECLARE(material_last_charge)
+	var/material_last_charge = 0
 	var/material_beam_joules = 0
 
 /obj/machinery/power/emitter/proc/emitter_efficiency()

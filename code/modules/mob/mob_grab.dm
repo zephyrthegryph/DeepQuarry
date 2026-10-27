@@ -400,7 +400,7 @@ CAPABILITIES(/obj/item/grab)
 		if(GRAB_NECK)
 			grab_name = "headlock"
 			//If the you move when grabbing someone then it's easier for them to break free. Same if the affected mob is immune to stun.
-			if(ELAPSED_SINCE(src, assailant.l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(STAT_STUNNED))
+			if(ELAPSED(assailant, l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(STAT_STUNNED))
 				break_strength++
 			break_chance_table = list(3, 18, 45, 100)
 

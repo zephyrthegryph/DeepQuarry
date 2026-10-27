@@ -117,7 +117,7 @@
 	registry_leave(REGISTRY_DEAD_MOBS, src)
 	registry_join(REGISTRY_LIVING_MOBS, src)
 	if(!(flags & REVIVE_KEEP_TIMEOFDEATH))
-		EXPIRY_CLEAR(src, timeofdeath)
+		COOLDOWN_RESET(src, timeofdeath)
 		sparse_set(src, tod, null)
 	sparse_set_or(src, failed_last_breath, 0, 0)
 

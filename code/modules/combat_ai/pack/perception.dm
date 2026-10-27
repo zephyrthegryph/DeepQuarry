@@ -45,7 +45,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 
 /// A backstop for a brain's strategic tick: a pass when none has run for a window.
 /datum/ai_pack/proc/perceive_if_due()
-	if(!last_perceived_at || ELAPSED_SINCE(src, last_perceived_at, CLOCK_WORLD) >= perceive_interval(null))
+	if(!last_perceived_at || ELAPSED(src, last_perceived_at, CLOCK_WORLD) >= perceive_interval(null))
 		perceive()
 
 /// `brains` ordered by their distance to `where`, nearest first (a stable insertion sort: the lists are a pack's size).

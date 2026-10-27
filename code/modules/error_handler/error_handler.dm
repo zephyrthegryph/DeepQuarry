@@ -76,8 +76,8 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 	var/cooldown = error_cooldown[erroruid] || 0
 
 	if(last_seen == null)
-		error_last_seen[erroruid] = EXPIRY_AT(null, CLOCK_WORLD, 0)
-		last_seen = EXPIRY_AT(null, CLOCK_WORLD, 0)
+		error_last_seen[erroruid] = TIME_NOW(CLOCK_WORLD)
+		last_seen = TIME_NOW(CLOCK_WORLD)
 
 	if(cooldown < 0)
 		error_cooldown[erroruid]-- //Used to keep track of skip count for this error
@@ -114,7 +114,7 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 		// (Lists pass through after() as they are: the exception rides in one.)
 		after(null, configured_error_silence_time, GLOBAL_PROC_REF(error_silence_ended), with = list(erroruid, error_cooldown, list(E)))
 
-	error_last_seen[erroruid] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	error_last_seen[erroruid] = TIME_NOW(CLOCK_WORLD)
 	error_cooldown[erroruid] = cooldown
 	SSserver_metrics?.note_runtime(E, erroruid)
 

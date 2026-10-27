@@ -206,7 +206,7 @@ CAPABILITIES(/datum/nifsoft/sizechange)
 	illegal = TRUE
 	vended = FALSE
 	tick_flags = NIF_ALWAYSTICK
-	EXPIRY_DECLARE(last_ads)
+	var/last_ads = 0
 	can_uninstall = FALSE
 
 /datum/nifsoft/malware/activate()

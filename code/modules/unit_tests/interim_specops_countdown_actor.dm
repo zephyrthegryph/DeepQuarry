@@ -35,7 +35,7 @@
 	set_global("specops_shuttle_time", world.timeofday + 1 MINUTE)
 	set_global("specops_shuttle_timeleft", 0)
 	var/obj/machinery/computer/specops_shuttle/console = allocate(/obj/machinery/computer/specops_shuttle, run_loc_floor_bottom_left)
-	EXPIRY_SET(console, specops_shuttle_timereset, 1 DAY, CLOCK_WORLD)
+	COOLDOWN_START(console, specops_shuttle_timereset, 1 DAY)
 	TEST_ASSERT(!specops_can_move(), "the actual registered console's real reset deadline refuses shuttle movement")
 	return console
 

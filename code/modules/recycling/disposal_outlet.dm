@@ -12,7 +12,7 @@
 	var/active = FALSE // Code appendix.
 	var/tmp/turf/target	// this will be where the output objects are 'thrown' to.
 	var/mode = 0
-	EXPIRY_DECLARE(start_eject)
+	var/start_eject = 0
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?
 
 /obj/structure/disposaloutlet/proc/connect_disposal_outlet()

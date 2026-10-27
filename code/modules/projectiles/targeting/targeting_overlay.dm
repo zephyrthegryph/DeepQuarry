@@ -13,7 +13,7 @@
 	var/mob/living/aiming_at   // Who are we currently targeting, if anyone?
 	var/tmp/mob/owner	// Who do we belong to?
 	var/locked =    0          // Have we locked on?
-	EXPIRY_DECLARE(lock_time) // When -will- we lock on?
+	COOLDOWN_DECLARE(lock_time) // When -will- we lock on?
 	var/active =    0          // Is our owner intending to take hostages?
 	var/target_permissions = 0 // Permission bitflags.
 
@@ -107,7 +107,7 @@ CAPABILITIES(/obj/aiming_overlay)
 		cancel_aiming()
 		return
 
-	if(!locked && EXPIRY_EXPIRED(src, lock_time, CLOCK_WORLD))
+	if(!locked && COOLDOWN_LAPSED(src, lock_time))
 		set_locked(1)
 		to_chat(owner(), span_notice("You are locked onto your target."))
 		to_chat(aiming_at, span_danger("The gun is trained on you!"))
@@ -179,7 +179,7 @@ CAPABILITIES(/obj/aiming_overlay)
 	rel_add(aiming_at, nameof(aiming_at.aimed), src)
 	toggle_active(1)
 	set_locked(0)
-	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
+	COOLDOWN_START(src, lock_time, 2.5 SECONDS)
 
 
 /obj/aiming_overlay/draw(datum/look/look)

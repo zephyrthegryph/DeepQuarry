@@ -20,7 +20,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
 //a talking gas mask!
 /obj/item/clothing/mask/gas/poltergeist
 	var/list/heard_talk
-	EXPIRY_DECLARE(last_twitch)
+	var/last_twitch = 0
 	var/max_stored_messages = 100
 	/// Is it worn and has it something to say? The echo every() below runs while it is.
 	var/echoing = FALSE
@@ -57,9 +57,9 @@ CAPABILITIES(/obj/item/clothing/mask/gas/poltergeist)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	var/charges = 0
 	var/list/nearby_mobs
-	EXPIRY_DECLARE(last_bloodcall)
+	var/last_bloodcall = 0
 	var/bloodcall_interval = 50
-	EXPIRY_DECLARE(last_eat)
+	var/last_eat = 0
 	var/eat_interval = 100
 	var/wight_check_index = 1
 	var/list/shadow_wights

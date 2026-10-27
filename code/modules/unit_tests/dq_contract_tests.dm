@@ -1,5 +1,12 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
+/// Drops the cooldown under `key` from one of the contracts system's tables (by var name), if it has one.
+/proc/dq_contract_cooldown_clear(table, key)
+	var/list/cooldowns = SScontracts.vars[table]
+	var/datum/contract_cooldown/cooldown = LAZYACCESS(cooldowns, key)
+	if(cooldown)
+		rel_remove(SScontracts, table, cooldown)
+
 /proc/dq_contract_test_scan(obj/item/paper/paper, mob/living/carbon/human/subject, scan_time, contract_id)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 	var/list/markers = list()
@@ -124,7 +131,7 @@
 			candidates_before_decline++
 	TEST_ASSERT(declined.decline(), "one-click decline did not close an offered contract")
 	TEST_ASSERT_EQUAL(declined.closure_code, CONTRACT_CLOSE_DECLINED, "decline did not record its lifecycle outcome")
-	TEST_ASSERT(SScontracts.offer_cooldowns[declined.offer_key] > world.time, "declined offer did not enter cooldown")
+	TEST_ASSERT(contract_cooldown_running(SScontracts.offer_cooldowns, declined.offer_key), "declined offer did not enter cooldown")
 	var/candidates_after_decline = 0
 	for(var/datum/contract_offer_candidate/candidate in SScontracts.offer_candidates)
 		if(candidate.definition_id == "dq_offer_lifecycle_test")
@@ -158,7 +165,7 @@
 	if(held_station_offer)
 		rel_add(SScontracts, nameof(SScontracts.offered_contracts), held_station_offer)
 	for(var/offer_key in test_keys)
-		SScontracts.offer_cooldowns -= offer_key
+		dq_contract_cooldown_clear(nameof(SScontracts.offer_cooldowns), offer_key)
 
 	var/list/priority_keys = list("dq-priority-standing-1", "dq-priority-standing-2", "dq-priority-standing-3", "dq-priority-urgent")
 	for(var/index in 1 to 3)
@@ -174,7 +181,7 @@
 		if(contract.offer_key in priority_keys)
 			qdel(contract)
 	for(var/key in priority_keys)
-		SScontracts.offer_cooldowns -= key
+		dq_contract_cooldown_clear(nameof(SScontracts.offer_cooldowns), key)
 
 /datum/unit_test/dq_contract_event_lifecycle
 
@@ -519,7 +526,7 @@
 	TEST_ASSERT(after_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
 	original_routine.cancel("Lifecycle test")
 	TEST_ASSERT(SScontracts.find_candidate(original_routine.offer_key), "closing a standing medical offer did not queue its cooldown-safe replacement")
-	TEST_ASSERT(SScontracts.offer_cooldowns[original_routine.offer_key] > world.time, "closing a standing offer did not enforce its publication cooldown")
+	TEST_ASSERT(contract_cooldown_running(SScontracts.offer_cooldowns, original_routine.offer_key), "closing a standing offer did not enforce its publication cooldown")
 
 /datum/unit_test/dq_contract_staged_requirement_unique_tiers
 
@@ -1866,7 +1873,7 @@
 	if(old_window)
 		SScontracts.opportunity_windows -= window_key
 		qdel(old_window)
-	SScontracts.opportunity_cooldowns -= window_key
+	dq_contract_cooldown_clear(nameof(SScontracts.opportunity_cooldowns), window_key)
 
 	var/list/fact_a = list("fact_id" = "guardrail-a", "fact_revision" = 1, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 100))
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", fact_a, "guardrail-a:1"), "first broker fact was rejected")
@@ -1926,7 +1933,7 @@
 	SScontracts.opportunity_windows -= window_key
 	qdel(window)
 	TEST_ASSERT(QDELETED(teardown_record), "window teardown retires the exact remaining observation")
-	SScontracts.opportunity_cooldowns -= window_key
+	dq_contract_cooldown_clear(nameof(SScontracts.opportunity_cooldowns), window_key)
 
 /datum/unit_test/dq_opportunity_contract_catalog
 
@@ -2004,7 +2011,7 @@
 	var/datum/contract_opportunity_window/window = SScontracts.opportunity_windows[window_key]
 	SScontracts.opportunity_windows -= window_key
 	qdel(window)
-	SScontracts.opportunity_cooldowns -= window_key
+	dq_contract_cooldown_clear(nameof(SScontracts.opportunity_cooldowns), window_key)
 	own_take_member(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[account_number]")
 	qdel(record)
 
@@ -2033,7 +2040,7 @@
 	var/datum/contract_opportunity_window/window = SScontracts.opportunity_windows[window_key]
 	SScontracts.opportunity_windows -= window_key
 	qdel(window)
-	SScontracts.opportunity_cooldowns -= window_key
+	dq_contract_cooldown_clear(nameof(SScontracts.opportunity_cooldowns), window_key)
 
 /datum/unit_test/dq_social_contract_grading_and_stakeholders
 

@@ -10,5 +10,5 @@
 	if(world.time - last > 5)
 		return
 	x = world.time
-	EXPIRY_SET(src, declared_a, 5)
-	EXPIRY_SET(src, undeclared_map, 5)
+	COOLDOWN_START_OWN(src, declared_a, 5)
+	COOLDOWN_START_OWN(src, undeclared_map, 5)

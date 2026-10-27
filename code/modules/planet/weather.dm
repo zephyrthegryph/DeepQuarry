@@ -7,8 +7,8 @@
 	var/wind_speed = 0 // How fast or slow a mob can be due to wind acting on them.
 	var/list/allowed_weather_types // Assoc list of weather identifiers, containing the actual weather datum.
 	var/list/roundstart_weather_chances // Assoc list of weather identifiers and their odds of being picked to happen at roundstart.
-	EXPIRY_DECLARE(next_weather_shift) // world.time when the weather subsystem will advance the forecast.
-	EXPIRY_DECLARE(imminent_weather_shift) // world.time when weather will shift towards pre-set imminent weather type.
+	COOLDOWN_DECLARE(next_weather_shift) // world.time when the weather subsystem will advance the forecast.
+	COOLDOWN_DECLARE(imminent_weather_shift) // world.time when weather will shift towards pre-set imminent weather type.
 	// ALLOW(instance_list): d: build_forecast() always keeps it filled
 	var/list/forecast = list() // A list of what the weather will be in the future. This allows it to be pre-determined and planned around.
 
@@ -54,7 +54,7 @@ CAPABILITIES(/datum/weather_holder)
 		old_light_modifier = current_weather.light_modifier // We store the old one, so we can determine if recalculating the sun is needed.
 		old_weather = current_weather
 	rel_set(src, nameof(current_weather), LAZYACCESS(allowed_weather_types, new_weather))
-	EXPIRY_SET(src, next_weather_shift, rand(current_weather.timer_low_bound, current_weather.timer_high_bound) MINUTES, CLOCK_WORLD)
+	COOLDOWN_START(src, next_weather_shift, rand(current_weather.timer_low_bound, current_weather.timer_high_bound) MINUTES)
 	if(current_weather != old_weather)
 		if(istype(old_weather)) // At roundstart this is null.
 			old_weather.process_sounds() // Ensure that people who should hear the ending sound will hear it.
@@ -73,9 +73,9 @@ CAPABILITIES(/datum/weather_holder)
 
 /// The planet's weather step (its planet calls it every 2 s).
 /datum/weather_holder/proc/weather_tick()
-	if(imminent_weather && EXPIRY_EXPIRED(src, imminent_weather_shift, CLOCK_WORLD))
+	if(imminent_weather && COOLDOWN_LAPSED(src, imminent_weather_shift))
 		proceed_to_imminent_weather()
-	else if(!imminent_weather && EXPIRY_EXPIRED(src, next_weather_shift, CLOCK_WORLD))
+	else if(!imminent_weather && COOLDOWN_LAPSED(src, next_weather_shift))
 		if(!current_weather) // Roundstart (hopefully).
 			initialize_weather()
 		else
@@ -108,7 +108,7 @@ CAPABILITIES(/datum/weather_holder)
 	if(!(weather_to_queue in allowed_weather_types))
 		return
 	imminent_weather = weather_to_queue
-	EXPIRY_SET(src, imminent_weather_shift, 90 SECONDS, CLOCK_WORLD)
+	COOLDOWN_START(src, imminent_weather_shift, 90 SECONDS)
 
 /datum/weather_holder/proc/proceed_to_imminent_weather()
 	var/new_weather = imminent_weather

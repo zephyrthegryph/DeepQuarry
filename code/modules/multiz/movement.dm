@@ -896,7 +896,8 @@
 		blind = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	perform_op(L, L, "climb_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = src, "time" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
+	stamp_now(L, climb_started, CLOCK_WORLD)
+	perform_op(L, L, "climb_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = src, "time" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_grace" = grace_time))
 
 /// Asks the climber whether to try without tools; `answered` is the callback that goes on with the climb.
 /proc/climb_ask_confirm(datum/owner, mob/living/L, answered)
@@ -947,8 +948,8 @@
 /mob/living/proc/climb_wall_interrupted(datum/act/op/A)
 	var/turf/simulated/wall = A.arg("wall")
 	var/turf/above_mob = A.arg("above_mob")
-	var/fall_at = A.arg("fall_at")
-	if(QDELETED(wall) || ELAPSED_SINCE(wall, fall_at, CLOCK_WORLD) <= 0)
+	var/fall_grace = A.arg("fall_grace")
+	if(QDELETED(wall) || stamp_elapsed(src, climb_started, CLOCK_WORLD) <= fall_grace)
 		return
 	forceMove(above_mob)
 	act_message(src, wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
@@ -1063,7 +1064,8 @@
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	perform_op(src, src, "climb_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
+	stamp_now(src, climb_started, CLOCK_WORLD)
+	perform_op(src, src, "climb_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_grace" = grace_time))
 
 /// "Bring it!" goes on with the climb; anything else (or no answer) ends it.
 /mob/living/proc/climb_down_confirmed(datum/act/request/A)
@@ -1093,8 +1095,8 @@
 /mob/living/proc/climb_down_interrupted(datum/act/op/A)
 	var/turf/front_of_us = A.arg("front_of_us")
 	var/turf/below_wall = A.arg("below_wall")
-	var/fall_at = A.arg("fall_at")
-	if(ELAPSED_SINCE(src, fall_at, CLOCK_WORLD) <= 0)
+	var/fall_grace = A.arg("fall_grace")
+	if(stamp_elapsed(src, climb_started, CLOCK_WORLD) <= fall_grace)
 		return
 	src.forceMove(front_of_us)
 	act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), \

@@ -330,7 +330,8 @@
 /// job PNGs are still cleaned up when the preferences are deleted mid-render.
 /datum/preferences/proc/dq_poll_preview_jobs(generation, list/jobs, list/ready, scale_x, scale_y, had_client)
 	var/datum/dq_preview_poll/poll = new
-	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
+	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list())
+	COOLDOWN_START(poll, timeout_at, DQ_PREVIEW_JOB_TIMEOUT)
 	rel_set(poll, nameof(poll.prefs), src)
 	rel_add(SScharacter_setup, nameof(/datum/system/character_setup::preview_polls), poll)
 	// The declared repeat polls once a tick while this holds, starting next tick: never in the
@@ -342,8 +343,10 @@
 /datum/dq_preview_poll
 	/// The preferences the render is for (a relation view: null once they are deleted)
 	var/datum/preferences/prefs
-	/// generation, jobs, ready, scale_x, scale_y, had_client, outputs, deadline.
+	/// generation, jobs, ready, scale_x, scale_y, had_client, outputs.
 	var/list/state
+	/// When the render gives up waiting for its jobs.
+	COOLDOWN_DECLARE(timeout_at)
 
 /// Jobs still outstanding: poll_step() runs once a tick while set.
 /datum/dq_preview_poll/var/polling = FALSE
@@ -366,7 +369,7 @@ CAPABILITIES(/datum/dq_preview_poll)
 		var/output = rustg_iconforge_check(jobs[dir_key][1])
 		if(output != RUSTG_JOB_NO_RESULTS_YET)
 			outputs[dir_key] = output
-	if(length(outputs) < length(jobs) && ELAPSED_SINCE(null, state[8], CLOCK_WORLD) <= 0)
+	if(length(outputs) < length(jobs) && ELAPSED(src, timeout_at, CLOCK_WORLD) <= 0)
 		return // the declared repeat polls again next tick
 	set_polling(FALSE)
 	if(prefs)

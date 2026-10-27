@@ -9,7 +9,7 @@
 /datum/contract_opportunity_observation
 	var/fact_key
 	var/revision = 0
-	EXPIRY_DECLARE(occurred_at)
+	var/occurred_at = 0
 	var/value = 0
 	var/actor_key
 	var/list/diversity_values
@@ -107,8 +107,8 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 /datum/contract_opportunity_window
 	var/key
 	var/bucket
-	EXPIRY_DECLARE(created_at)
-	EXPIRY_DECLARE(last_event_at)
+	var/created_at = 0
+	var/last_event_at = 0
 	var/latched = FALSE
 	var/list/facts_by_signal
 	/// Owns the records indexed by facts_by_signal; the nested maps retain their lookup order.
@@ -303,7 +303,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 		"offer_kind" = CONTRACT_OFFER_OPPORTUNITY,
 		"opportunity_rule" = id,
 		"opportunity_bucket" = window.bucket,
-		"opportunity_triggered_at" = EXPIRY_AT(null, CLOCK_WORLD, 0),
+		"opportunity_triggered_at" = TIME_NOW(CLOCK_WORLD),
 		"trigger_event_id" = event.id,
 		"trigger_area" = event.area_name,
 		"trigger_signals" = deepCopyList(signal_snapshots),
@@ -324,7 +324,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 	return !!queued || !!controller.find_live_offer(offer_key) || !!controller.find_candidate(offer_key)
 
 /datum/contract_opportunity_history_entry
-	EXPIRY_DECLARE(time)
+	var/time = 0
 	var/rule_id
 	var/bucket
 	var/event_id

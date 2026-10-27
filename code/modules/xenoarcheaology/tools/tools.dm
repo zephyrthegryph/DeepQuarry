@@ -41,9 +41,9 @@ MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
 
-	EXPIRY_DECLARE(last_scan_time)
+	var/last_scan_time = 0
 	var/scan_delay = 25
-	EXPIRY_DECLARE(last_repopulation_time)
+	var/last_repopulation_time = 0
 	var/repopulation_delay = 600 //Anti spam.
 
 CAPABILITIES(/obj/item/ano_scanner)

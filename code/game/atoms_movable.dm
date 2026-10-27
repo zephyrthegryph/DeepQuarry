@@ -7,7 +7,7 @@
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
 	var/tmp/move_speed = 10
-	EXPIRY_TMP_DECLARE(l_move_time)
+	var/tmp/l_move_time = 0
 	l_move_time = 1
 	var/datum/thrownthing/throwing // running: set only mid-throw
 	// throw_source lives in code/datums/sparse_vars/movable_misc.dm

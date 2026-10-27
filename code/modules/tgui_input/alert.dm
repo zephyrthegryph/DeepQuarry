@@ -57,7 +57,7 @@
 	/// The button that the user has pressed, null if no selection has been made
 	var/choice
 	/// The time at which the tgui_modal was created, for displaying timeout progress.
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	/// The lifespan of the tgui_modal, after which the window will close and delete itself.
 	var/timeout
 	/// The bool that controls if this modal should grab window focus

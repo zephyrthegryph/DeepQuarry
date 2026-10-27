@@ -15,7 +15,7 @@
 //
 // All initial(var) values are immutable defaults — DO NOT assign to src.* in
 // behavior code unless you're prepared for every mob in the round to share
-// that change. State lives on brain.behavior_state[type] (cooldowns) or on
+// that change. State lives on brain.behavior_state_of(type) (cooldowns) or on
 // the source.
 //
 // STANCE CONVENTION: Most behaviors call simple_mob.attack_target() / shoot_target()
@@ -51,7 +51,7 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 	var/priority_class = DQ_BEHAVIOR_PRIORITY_NORMAL
 
 	/// Cooldown after a successful execution, in deciseconds. 0 = no cooldown.
-	/// Applied to brain.behavior_state[type] for innate behaviors only —
+	/// Applied to brain.behavior_state_of(type) for innate behaviors only —
 	/// item-granted behaviors (requires_held_source = TRUE) MUST gate via the
 	/// source's own state (e.g. gun.next_fire_time, grenade.active). The
 	/// dq_combat_ai_item_granted_behaviors_have_no_brain_cooldown unit test
@@ -141,7 +141,7 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 
 /// True if the behavior's cooldown (per-source if item-granted) has expired.
 /datum/ai_behavior/proc/is_off_cooldown(datum/ai_brain/brain, atom/source)
-	return !BEFORE(src, brain.cooldown_until(type, source), CLOCK_WORLD)
+	return !brain.cooldown_active(type, source)
 
 /// Override to limit a behavior to a specific mob shape. Cheaper than checking
 /// in evaluate() because the brain caches eligibility once per slow tick.

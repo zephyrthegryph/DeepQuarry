@@ -28,7 +28,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 	var/author = "P. Pubbie"
 	var/spacetime = ""
 	var/opinion = 0
-	EXPIRY_DECLARE(ticks)
+	var/ticks = 0
 	var/tmp/datum/stock/about
 	var/outlet = ""
 	var/static/list/outlets = list()

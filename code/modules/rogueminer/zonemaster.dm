@@ -9,7 +9,7 @@
 	var/tmp/obj/effect/shuttle_landmark/myshuttle_landmark
 
 	//world.time
-	EXPIRY_DECLARE(prepared_at)
+	var/prepared_at = 0
 
 	//accepting shuttles
 	var/ready = 0

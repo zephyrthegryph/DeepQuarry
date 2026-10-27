@@ -259,7 +259,7 @@
 	var/tmp/list/belly_surrounding		// Lazy. A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
 	var/bellytemperature = T20C				// Temperature applied to humans in the belly.
 	var/temperature_damage = FALSE			// Does temperature damage prey?
-	EXPIRY_TMP_DECLARE(last_transfer_log)				// Prevent server message spam!
+	var/tmp/last_transfer_log = 0				// Prevent server message spam!
 	var/tmp/next_transfer_log = 0				// Prevent server message spam!
 	var/tmp/entrance_log_count = 0				// Entrance count before spawm
 	flags = NOREACT							// We dont want bellies to start bubling nonstop due to people mixing when transfering and making different reagents

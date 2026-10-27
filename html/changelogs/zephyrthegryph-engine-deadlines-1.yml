@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The admin never-respawn setting works: a respawn record carries an explicit forbidden flag, time_till_respawn and the lobby, ghost and pAI paths refuse it, and the allow-respawn verb asks for confirmation before lifting it"
+  - refactor: "EXPIRY_DECLARE, EXPIRY_SET, EXPIRY_EXTEND, EXPIRY_CLEAR, EXPIRY_ACTIVE, EXPIRY_EXPIRED, EXPIRY_LEFT and EXPIRY_ON_LAPSE are gone: an end time is a COOLDOWN var (COOLDOWN_EXTEND, COOLDOWN_RUNNING, COOLDOWN_LAPSED and an _OWN family for the datum's own clock), a start time a plain stamp var, and the guest pass lapse is an after() timer"
+  - code_imp: "TIME_NOW(clock, owner) is the one clock read; EXPIRY_AT and EXPIRY_NOW are gone, STAMP, ELAPSED and the COOLDOWN macros are built on it, and changeling power cooldowns use the new COOLDOWN_KEYED_* table"

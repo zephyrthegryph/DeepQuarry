@@ -17,7 +17,7 @@
 
 	// Printing state variables
 	var/is_printing = FALSE		// If true, printer is busy cloning.
-	EXPIRY_DECLARE(print_end_time) // World time when printing will finish
+	COOLDOWN_DECLARE(print_end_time) // World time when printing will finish
 	var/tmp/obj/item/electronic_assembly/queued_assembly	// The assembly being cloned.
 
 /obj/item/integrated_circuit_printer/proc/finish_printing()
@@ -500,7 +500,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 	// Start the printing process
 	rel_set(src, nameof(queued_assembly), assembly)
 	set_is_printing(TRUE)
-	EXPIRY_SET(src, print_end_time, print_time, CLOCK_WORLD)
+	COOLDOWN_START(src, print_end_time, print_time)
 
 	after(src, print_time, PROC_REF(finish_printing))
 

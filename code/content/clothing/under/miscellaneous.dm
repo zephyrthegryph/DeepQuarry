@@ -1912,7 +1912,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 	w_class = ITEMSIZE_TINY
 	glove_level = 1
 	var/original_size
-	EXPIRY_DECLARE(last_activated)
+	var/last_activated = 0
 	var/emagged = FALSE
 	var/target_size = 1
 
@@ -1926,7 +1926,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 		if(!read_once(H.vore_prefs.resizable))
 			return
 		if(H.size_multiplier != target_size)
-			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
+			if(!(ELAPSED(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			STAMP(src, last_activated, CLOCK_WORLD)

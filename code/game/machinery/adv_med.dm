@@ -118,7 +118,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 			"subject_ref" = identity.id,
 			"subject_id" = identity.id,
 			"subject_name" = scanned_human.real_name,
-			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
+			"scan_time" = TIME_NOW(CLOCK_WORLD),
 			"snapshot" = medical_trial_snapshot(scanned_human),
 			"trial_markers" = scanned_human.medical_trial_marker_snapshot(),
 			"operator_account" = operator_account?.account_number,
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 			"actor_account" = operator_account?.account_number,
 			"department" = DEPARTMENT_MEDICAL,
 			"evidence_ids" = list(evidence_id),
-			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
+			"scan_time" = TIME_NOW(CLOCK_WORLD),
 			"detail" = "Authenticated body scan printed",
 		), "medical-scan:[evidence_id]", src, A.actor, scanned_human)
 	return OP_OK

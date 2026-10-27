@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 	name = "Heavy Scrubber Control"
 	zone = "This computer is operating industrial scrubbers nearby."
 	var/scrub_id = "generic"
-	EXPIRY_DECLARE(last_scan)
+	var/last_scan = 0
 
 /obj/machinery/computer/area_atmos/tag/scanscrubbers()
 	if(last_scan && ELAPSED(src, last_scan, CLOCK_WORLD) < 20 SECONDS)

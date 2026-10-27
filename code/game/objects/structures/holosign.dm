@@ -50,7 +50,7 @@ CAPABILITIES(/obj/structure/holosign)
 	desc = "A holobarrier that uses biometrics to detect viruses. Denies passing to personnel with easily-detected, malicious viruses. Good for quarantines."
 	icon_state = "holo_medical"
 	alpha = 125
-	EXPIRY_DECLARE(buzzed)
+	COOLDOWN_DECLARE(buzzed)
 	rad_insulation = RAD_NO_INSULATION
 
 /obj/structure/holosign/barrier/medical/CanPass(atom/movable/mover, border_dir)
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/structure/holosign/barrier/medical)
 	if(ishuman(AM) && !CheckHuman(AM))
 		if(COOLDOWN_FINISHED(src, buzzed))
 			play_sfx(get_turf(src), SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
-			EXPIRY_SET(src, buzzed, 6 SECONDS, CLOCK_WORLD)
+			COOLDOWN_START(src, buzzed, 6 SECONDS)
 
 		set_icon_state("holo_medical-deny")
 		after(src, 10 SECONDS, PROC_REF(reset_deny_icon), key = "medical_holosign_deny_reset")

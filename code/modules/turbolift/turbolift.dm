@@ -15,7 +15,7 @@
 	var/fire_mode = FALSE								// Flag to indicate firefighter mode is active.
 
 	var/tmp/moving_upwards
-	EXPIRY_TMP_DECLARE(next_process) // world.time process() should next do something
+	COOLDOWN_TMP_DECLARE(next_process) // world.time process() should next do something
 
 /// Used for controller processing: lift_step() drives the lift while set (every()).
 /datum/turbolift/var/tmp/busy_state
@@ -108,7 +108,7 @@ CAPABILITIES(/datum/turbolift)
 
 
 /datum/turbolift/proc/lift_step(datum/act/timer/A)
-	if(EXPIRY_ACTIVE(src, next_process, CLOCK_WORLD))
+	if(COOLDOWN_RUNNING(src, next_process))
 		return
 	switch(busy_state)
 		if(LIFT_MOVING)
@@ -126,7 +126,7 @@ CAPABILITIES(/datum/turbolift)
 		if(LIFT_WAITING_A)
 			var/area/turbolift/origin = locate(current_floor().area_ref)
 			control_panel_interior.visible_message(span_infoplain(span_bold("The elevator") + " announces, \"[origin.lift_announce_str]\""))
-			EXPIRY_SET(src, next_process, floor_wait_delay, CLOCK_WORLD)
+			COOLDOWN_START(src, next_process, floor_wait_delay)
 			set_busy_state(LIFT_WAITING_B)
 		if(LIFT_WAITING_B)
 			if(length(queued_floors))
@@ -157,7 +157,7 @@ CAPABILITIES(/datum/turbolift)
 		if(!doors_closing)
 			close_doors()
 			doors_closing = 1
-			EXPIRY_SET(src, next_process, 1 SECOND, CLOCK_WORLD) // Wait for doors to close
+			COOLDOWN_START(src, next_process, 1 SECOND) // Wait for doors to close
 			return 1
 		else // We failed to close the doors - probably, someone is blocking them; stop trying to move
 			doors_closing = 0
@@ -179,7 +179,7 @@ CAPABILITIES(/datum/turbolift)
 		target_floor().arrived(src)
 		rel_clear(src, nameof(target_floor))
 
-		EXPIRY_SET(src, next_process, 15, CLOCK_WORLD)
+		COOLDOWN_START(src, next_process, 1.5 SECONDS)
 		set_busy_state(LIFT_WAITING_A)
 		return 1
 
@@ -211,7 +211,7 @@ CAPABILITIES(/datum/turbolift)
 	rel_set(src, nameof(current_floor), next_floor)
 	control_panel_interior.visible_message("The elevator [moving_upwards ? "rises" : "descends"] smoothly.")
 
-	EXPIRY_SET(src, next_process, (next_floor.delay_time || move_delay), CLOCK_WORLD)
+	COOLDOWN_START(src, next_process, (next_floor.delay_time || move_delay))
 	return 1
 
 /datum/turbolift/proc/queue_move_to(datum/turbolift_floor/floor)

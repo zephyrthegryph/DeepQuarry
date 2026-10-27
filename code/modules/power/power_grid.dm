@@ -316,7 +316,7 @@ PROC_SUMMARY(/proc/vg_power_region_read)
 	var/material_loss_watts = 0
 	var/material_pending_heat = 0
 	var/material_pending_heat_elapsed = 0
-	EXPIRY_DECLARE(last_material_process)
+	var/last_material_process = 0
 
 CAPABILITIES(/datum/material_power_overlay)
 	owns_one(nameof(material_graph), /datum/material_power_graph)

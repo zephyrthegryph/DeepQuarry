@@ -9,8 +9,8 @@
 	var/board_key
 	var/offer_kind
 	var/reason
-	EXPIRY_DECLARE(created_at)
-	var/expires_at
+	var/created_at = 0
+	COOLDOWN_DECLARE(expires_at)
 	var/priority = 50
 	var/list/context
 
@@ -28,7 +28,7 @@
 	context = _context ? deepCopyList(_context) : list()
 
 /datum/contract_lifecycle_entry
-	EXPIRY_DECLARE(time)
+	var/time = 0
 	var/action
 	var/contract_id
 	var/definition_id

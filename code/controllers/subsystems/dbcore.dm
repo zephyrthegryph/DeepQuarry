@@ -4,7 +4,7 @@ SYSTEM_DEF(dbcore)
 	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_EARLY
 
-	EXPIRY_DECLARE(failed_connection_timeout)
+	COOLDOWN_DECLARE(failed_connection_timeout)
 
 	var/schema_mismatch = 0
 	var/db_minor = 0
@@ -62,11 +62,11 @@ SYSTEM_DEF(dbcore)
 	if(IsConnected())
 		return TRUE
 
-	if(EXPIRY_EXPIRED(src, failed_connection_timeout, CLOCK_WORLD)) //it's been more than 5 seconds since we failed to connect, reset the counter
+	if(COOLDOWN_LAPSED(src, failed_connection_timeout)) //it's been more than 5 seconds since we failed to connect, reset the counter
 		failed_connections = 0
 
 	if(failed_connections > 5) //If it failed to establish a connection more than 5 times in a row, don't bother attempting to connect for 5 seconds.
-		EXPIRY_SET(src, failed_connection_timeout, 5 SECONDS, CLOCK_WORLD)
+		COOLDOWN_START(src, failed_connection_timeout, 5 SECONDS)
 		return FALSE
 
 	if(!CONFIG_GET(flag/sql_enabled))

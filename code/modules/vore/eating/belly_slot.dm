@@ -22,7 +22,7 @@
 	var/tmp/cycle_token
 	/// The period the clock runs at, and when it last ran a cycle.
 	var/tmp/cycle_period
-	EXPIRY_TMP_DECLARE(cycle_last)
+	var/tmp/cycle_last = 0
 
 /// The inside of a belly: sealed (its own air and temperature), and it reaches the
 /// mobs inside it. Outside effects don't pass the predator's body into it; the

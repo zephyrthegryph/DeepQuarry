@@ -21,7 +21,7 @@
 	attacktext = list("scratches")
 	see_in_dark = 8
 	minbodytemp = 0
-	EXPIRY_DECLARE(well_fed)
+	var/well_fed = 0
 
 	vore_bump_chance = 0
 	vore_digest_chance = 50

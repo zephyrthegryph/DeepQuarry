@@ -846,7 +846,7 @@ CAPABILITIES(/obj/structure/plushie/beepsky)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "nymphplushie"
 	w_class = ITEMSIZE_TINY
-	EXPIRY_DECLARE(last_message)
+	var/last_message = 0
 	var/pokephrase = "Uww!"
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
 	// owned: the item hidden inside the plushie, kept in its contents
@@ -2999,7 +2999,7 @@ CAPABILITIES(/obj/item/toy/partypopper)
 	icon = 'icons/obj/items.dmi'
 	icon_state = "acorn_branch"
 	w_class = ITEMSIZE_SMALL
-	EXPIRY_DECLARE(next_use)
+	COOLDOWN_DECLARE(next_use)
 	var/registered_mob // Weak handle of the one person who may use it; a registrant who is gone frees the branch for the next person.
 
 CAPABILITIES(/obj/item/toy/acorn_branch)
@@ -3032,7 +3032,7 @@ CAPABILITIES(/obj/item/toy/acorn_branch)
 	var/spawnloc = get_turf(H)
 	var/obj/item/I = new /obj/item/reagent_containers/food/snacks/acorn(spawnloc)
 	H.put_in_inactive_hand(I)
-	EXPIRY_SET(src, next_use, 30 SECONDS, CLOCK_WORLD)
+	COOLDOWN_START(src, next_use, 30 SECONDS)
 	act_message(H, src, others = span_notice("%U% pulls an acorn from %T%!"))
 	return OP_OK
 

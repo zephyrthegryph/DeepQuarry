@@ -5,7 +5,7 @@
 /datum/shuttle/autodock
 	/// Relation view: who holds the launch lock (the user or console that launched it). Tells the controller whether this shuttle needs processing, also attempts to prevent double-use
 	var/tmp/datum/in_use
-	EXPIRY_DECLARE(last_dock_attempt_time)
+	var/last_dock_attempt_time = 0
 
 	var/docking_controller_tag = null // ID of the controller on the shuttle (If multiple, this is the default one)
 	var/datum/embedded_program/docking/shuttle_docking_controller // Controller on the shuttle (the one in use)

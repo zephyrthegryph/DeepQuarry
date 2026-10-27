@@ -125,7 +125,9 @@ CAPABILITIES(/obj/item/paicard)
 /proc/pai_join_refusal(mob/user)
 	READS_FROM() // respawn timers, bans and preferences are asked when the ghost clicks
 	var/time_till_respawn = user.time_till_respawn()
-	if(time_till_respawn > 0) // Nonzero time to respawn (-1, never allowed, only ever warned: the handler says so)
+	if(time_till_respawn == RESPAWN_NEVER)
+		return "Respawning is not allowed!"
+	if(time_till_respawn > 0) // Nonzero time to respawn
 		return "You can't do that yet! You died too recently. You need to wait another [round(time_till_respawn/10/60, 0.1)] minutes."
 	if(jobban_isbanned(user, JOB_PAI))
 		return "You cannot join a pAI card when you are banned from playing as a pAI."
@@ -147,8 +149,9 @@ CAPABILITIES(/obj/item/paicard)
 /obj/item/paicard/proc/paicard_observer_inhabit(datum/act/op/A)
 	if(pai) //Have a person in them already?
 		return OP_DECLINE
-	if(A.actor.time_till_respawn() == -1) // Special case, never allowed to respawn (the old code only warned)
+	if(A.actor.time_till_respawn() == RESPAWN_NEVER) // Special case, never allowed to respawn
 		to_chat(A.actor, span_warning("Respawning is not allowed!"))
+		return OP_DECLINE
 	var/datum/prompt/R = A.answer
 	if(R?.value == "Load pAI Data")
 		ghost_inhabit(A.actor)

@@ -4,5 +4,5 @@
 	if(world.time < last_use + delay)
 		return
 	x = world.time
-	EXPIRY_SET(src, undeclared_ut, 5)
-	EXPIRY_DECLARE(ut_declared)
+	COOLDOWN_START_OWN(src, undeclared_ut, 5)
+	COOLDOWN_DECLARE(ut_declared)

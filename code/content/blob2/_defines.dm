@@ -11,3 +11,7 @@
 
 #define BLOB_CHUNK_CONSTANT		0
 #define BLOB_CHUNK_TOGGLE		1
+
+/// Least time between two pulses of one blob tile, and between two of its heals.
+#define BLOB_PULSE_INTERVAL (1 SECOND)
+#define BLOB_HEAL_INTERVAL (2 SECONDS)

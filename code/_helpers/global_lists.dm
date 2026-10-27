@@ -25,9 +25,6 @@ GLOBAL_LIST_INIT(restricted_camera_networks, list(NETWORK_ERT,NETWORK_MERCENARY,
 			HERM = "Shi/Hir"\
 			)
 
-// Times that players are allowed to respawn ("ckey" = world.time)
-GLOBAL_LIST_EMPTY(respawn_timers)
-
 // Holomaps
 GLOBAL_LIST_EMPTY(holomap_markers)
 

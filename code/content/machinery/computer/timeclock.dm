@@ -227,7 +227,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		return TRUE
 
 /obj/item/card/id
-	EXPIRY_DECLARE(last_job_switch)
+	var/last_job_switch = 0
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
