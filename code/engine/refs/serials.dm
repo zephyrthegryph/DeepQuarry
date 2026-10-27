@@ -30,6 +30,7 @@ GLOBAL_LIST_EMPTY(serial_counters)
 
 /// The next number of `kind`, or of its run for `key` when a key is given. Null (reported) from a persisted kind nobody has seeded.
 /proc/serial_issue(kind, key)
+	READS_FROM() // a serial is a record number: the counter is identity bookkeeping, not state a draw or condition depends on
 	var/datum/serial/S = serial_for(kind)
 	if(!S)
 		return null

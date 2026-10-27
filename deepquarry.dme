@@ -2665,6 +2665,7 @@
 #include "code\engine\refs\members.dm"
 #include "code\engine\refs\ownership.dm"
 #include "code\engine\refs\prototypes.dm"
+#include "code\engine\refs\ref_text.dm"
 #include "code\engine\refs\serials.dm"
 #include "code\engine\refs\shared.dm"
 #include "code\engine\refs\table.dm"

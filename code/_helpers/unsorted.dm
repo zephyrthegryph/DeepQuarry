@@ -1388,18 +1388,6 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 // \ref behaviour got changed in 512 so this is necesary to replicate old behaviour.
 // If it ever becomes necesary to get a more performant REF(), this lies here in wait
 // #define REF(thing) (thing && istype(thing, /datum) && (thing:datum_flags & DF_USE_TAG) && thing:tag ? "[thing:tag]" : "\ref[thing]")
-/proc/REF(input)
-	READS_FROM() // the text of a reference (its tag flag is bookkeeping for the text, not an input of a value)
-	if(istype(input, /datum))
-		var/datum/thing = input
-		if(thing.datum_flags & DF_USE_TAG)
-			if(!thing.tag)
-				thing.datum_flags &= ~DF_USE_TAG
-				stack_trace("A ref was requested of an object with DF_USE_TAG set but no tag: [thing]")
-			else
-				return "\[[url_encode(thing.tag)]\]"
-	return "\ref[input]" // ALLOW(ref_text): REF() is the one primitive that builds a reference text for a request-local href
-
 // Painlessly creates an <a href=...> element.
 // First argument is where to send the Topic call to when clicked. Should be a reference to an object. This is generally src, but not always.
 // Second one is for all the params that will be sent. Uses an assoc list (e.g. "value" = "5").
