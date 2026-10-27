@@ -264,7 +264,4 @@
 /datum/sellable/organ/sell_error(obj/source)
 	if(!istype(source.loc, /obj/structure/closet/crate/freezer))
 		return "Error: Product was improperly packaged. Send contents in freezer crate to preserve contents for transport."
-	var/obj/item/organ/internal/organ_stuff = source
-	if(organ_stuff.health != initial(organ_stuff.health) )
-		return "Error: Product was damaged on arrival."
 	return null
