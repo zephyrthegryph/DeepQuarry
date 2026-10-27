@@ -219,6 +219,25 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	brig.timer_end()
 	TEST_ASSERT(!brig.timing && !after_pending(brig, "end"), "a finished brig timer kept a timer pending")
 
+/// A type-level every() gated on a capability key (the sleeper's treatment, when = all_of(STAT_OPERABLE, OCCUPANT_POD_OCCUPIED)) parks while the
+/// pod is empty and wakes when someone gets in: the key publishes every change, so nothing polls an empty pod.
+/datum/unit_test/dq_om_pod_every_parks_on_capability_key
+
+/datum/unit_test/dq_om_pod_every_parks_on_capability_key/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/sleeper/sleeper = allocate(/obj/machinery/sleeper, T)
+	sleeper.set_grid_power(TRUE)
+	sleeper.set_broken_condition(FALSE)
+	kernel_drain_now()
+	TEST_ASSERT(!every_running(sleeper), "an empty sleeper's treatment every() is armed (it polls an empty pod)")
+	TEST_ASSERT(length(sleeper.rx?.every_parked), "an empty sleeper's treatment every() is not parked")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	move_into(sleeper, OCCUPANT_SLOT_SLEEPER, H)
+	kernel_drain_now()
+	TEST_ASSERT(occupant_pod_occupied(sleeper), "the human did not get into the sleeper")
+	TEST_ASSERT(every_running(sleeper), "an occupied, powered sleeper's treatment every() did not wake")
+	sleeper.slot_remove(H, T)
+
 /// Started work (code/library/machine/started_work.dm): the work of a machine that is not operable parks (no step runs) and runs again by
 /// itself when power returns.
 /datum/unit_test/dq_started_work_waits_for_power

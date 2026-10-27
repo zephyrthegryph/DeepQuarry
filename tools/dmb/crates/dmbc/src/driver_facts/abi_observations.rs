@@ -124,12 +124,6 @@ impl dm_session::ObservationHost<Query, Answer, Domain> for Current<'_> {
             Query::Semantic(query) => Answer::Semantic(self.resolver.resolve(*query)),
         }
     }
-    fn version(&self, domain: &Domain) -> Option<u128> {
-        match domain {
-            Domain::Inputs | Domain::BatchInputs => None,
-            Domain::Semantic(domain) => self.resolver.domain_version(*domain),
-        }
-    }
     fn equivalent(&self, a: &Answer, b: &Answer) -> bool {
         a == b
             || match (a, b) {

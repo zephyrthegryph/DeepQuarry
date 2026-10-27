@@ -16,7 +16,7 @@ type Data = {
 export type file = {
   name: string;
   type: string;
-  uid: number;
+  uid: string;
   size: number;
   undeletable: BooleanLike;
 };
@@ -68,18 +68,18 @@ export const NtosFileManager = (props) => {
               <FileTable
                 files={files}
                 usbconnected={usbconnected}
-                onUpload={(file: number) => act('PRG_copytousb', { uid: file })}
-                onDelete={(file: number) =>
+                onUpload={(file: string) => act('PRG_copytousb', { uid: file })}
+                onDelete={(file: string) =>
                   act('PRG_deletefile', { uid: file })
                 }
-                onOpen={(file: number) => act('PRG_openfile', { uid: file })}
-                onRename={(file: number, newName: string) =>
+                onOpen={(file: string) => act('PRG_openfile', { uid: file })}
+                onRename={(file: string, newName: string) =>
                   act('PRG_rename', {
                     uid: file,
                     new_name: newName,
                   })
                 }
-                onDuplicate={(file: number) => act('PRG_clone', { uid: file })}
+                onDuplicate={(file: string) => act('PRG_clone', { uid: file })}
               />
             </Section>
             {(usbconnected && (
@@ -88,20 +88,20 @@ export const NtosFileManager = (props) => {
                   usbmode
                   files={usbfiles}
                   usbconnected={usbconnected}
-                  onUpload={(file: number) =>
+                  onUpload={(file: string) =>
                     act('PRG_copyfromusb', { uid: file })
                   }
-                  onDelete={(file: number) =>
+                  onDelete={(file: string) =>
                     act('PRG_deletefile', { uid: file })
                   }
-                  onOpen={(file: number) => act('PRG_openfile', { uid: file })}
-                  onRename={(file: number, newName: string) =>
+                  onOpen={(file: string) => act('PRG_openfile', { uid: file })}
+                  onRename={(file: string, newName: string) =>
                     act('PRG_rename', {
                       uid: file,
                       new_name: newName,
                     })
                   }
-                  onDuplicate={(file: number) =>
+                  onDuplicate={(file: string) =>
                     act('PRG_clone', { uid: file })
                   }
                 />
@@ -141,11 +141,11 @@ const FileTable = (props: {
   files: file[];
   usbconnected: BooleanLike;
   usbmode?: boolean;
-  onUpload: (file: number) => void;
-  onDelete: (file: number) => void;
-  onRename: (file: number, newName: string) => void;
-  onOpen: (file: number) => void;
-  onDuplicate: (file: number) => void;
+  onUpload: (file: string) => void;
+  onDelete: (file: string) => void;
+  onRename: (file: string, newName: string) => void;
+  onOpen: (file: string) => void;
+  onDuplicate: (file: string) => void;
 }) => {
   const {
     files = [],

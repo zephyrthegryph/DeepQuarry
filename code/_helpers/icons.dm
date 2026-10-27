@@ -514,15 +514,14 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 /// Gets a dummy savefile for usage in icon generation.
 /// Savefiles generated from this proc will be empty.
 /proc/get_dummy_savefile(from_failure = FALSE)
-	var/static/next_id = 0
-	if(next_id++ > 9)
-		next_id = 0
+	var/static/slot = 0 // one of ten rotating scratch files, not an entity id
+	slot = (slot + 1) % 10
 	// dq_scratch_tag makes this path unique per DreamDaemon process: two
 	// worlds that happen to share a working directory (a sharded dm-test run
 	// boots N worlds in the same worktree) would otherwise round-robin
 	// through the SAME tmp/dummy-save-N.sav paths and race each other for
 	// the file (observed as "cannot open savefile buffer dummy for write").
-	var/savefile_path = "tmp/dummy-save-[GLOB.dq_scratch_tag]-[next_id].sav"
+	var/savefile_path = "tmp/dummy-save-[GLOB.dq_scratch_tag]-[slot].sav"
 	try
 		if(fexists(savefile_path))
 			fdel(savefile_path)

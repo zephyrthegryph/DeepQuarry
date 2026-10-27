@@ -748,7 +748,6 @@ impl SharedAdaptedDeclarations {
             intrinsics,
             seed.is_none(),
             normalization,
-            normalization.is_some(),
             structural,
         )
         .map_err(|error| {
@@ -823,9 +822,6 @@ impl SharedAdaptedDeclarations {
             },
         )?);
         drop(_occurrence_timer);
-        let publish_timer = dm_profile::detail_timer("tree.publish_selection_owner");
-        tree.publish_selection_owner();
-        drop(publish_timer);
         let tree = Arc::new(tree);
         Ok(TreeSnapshot { tree, occurrences })
     }

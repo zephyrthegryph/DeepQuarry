@@ -218,8 +218,8 @@ impl Resolver for Host<'_> {
     fn resolve(&self, q: ResolveQuery) -> dm_ir::ResolvedMeaning {
         self.0.resolve(q)
     }
-    fn domain_version(&self, d: dm_ir::ReadDomain) -> Option<u128> {
-        self.0.domain_version(d)
+    fn answer_world(&self) -> Option<u128> {
+        self.0.answer_world()
     }
 }
 pub(super) fn keys(
@@ -372,7 +372,7 @@ pub(super) fn modifier_facts_reused_in<'a>(
         if captured {
             let _ = keys[ordinal].admitted.set(Arc::clone(&keys[ordinal].input));
             let reads = recording.reads();
-            let versions = recording.domain_receipts();
+            let versions = Vec::new();
             if let Some(weight) = crate::heap_census::resident_modifier_weight(
                 &keys[ordinal].input,
                 &keys[ordinal].bytes,

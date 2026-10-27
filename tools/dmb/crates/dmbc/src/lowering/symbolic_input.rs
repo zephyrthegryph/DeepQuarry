@@ -414,7 +414,6 @@ impl SessionSymbolicMemo {
         &self,
         key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
         prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
-        host: &R,
         request_admission: Option<&RequestAdmission<'_, R>>,
         candidates: Option<&RequestCandidates<'_, '_, R>>,
         observer: &crate::lowering_memo::RecordingResolver<'_, R>,
@@ -442,7 +441,6 @@ impl SessionSymbolicMemo {
                                         record,
                                         key,
                                         prepared_tail,
-                                        host,
                                         request_admission,
                                         observer,
                                         frontend,
@@ -475,7 +473,6 @@ impl SessionSymbolicMemo {
                     record,
                     key,
                     prepared_tail,
-                    host,
                     request_admission,
                     observer,
                     frontend,
@@ -498,14 +495,13 @@ impl SessionSymbolicMemo {
                         .visit_borrowed_receipted_with_value(
                             digest,
                             &|candidate| locator.matches(candidate),
-                            &mut |reads, _, record| {
+                            &mut |reads, _, _| {
                                 // The private publication producer stages a clone
                                 // of this SAME record.reads owner and qualified
                                 // record.versions owner. Ordinary cross-host
                                 // lease lookup still requires exact replay.
                                 validate_published_record(
                                     reads,
-                                    record,
                                     request_admission,
                                     observer,
                                 )
@@ -535,7 +531,6 @@ impl SessionSymbolicMemo {
             &record,
             key,
             prepared_tail,
-            host,
             request_admission,
             observer,
             frontend,
@@ -554,7 +549,6 @@ impl SessionSymbolicMemo {
         record: &Arc<Record>,
         key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
         prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
-        host: &R,
         request_admission: Option<&RequestAdmission<'_, R>>,
         observer: &crate::lowering_memo::RecordingResolver<'_, R>,
         frontend: &ColdFrontend,
@@ -570,40 +564,16 @@ impl SessionSymbolicMemo {
             self.declines.key_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
-        let oracle_only = request_admission.filter(|admission| admission.has_oracle());
         let changed = if reads_validated {
             false
-        } else if let Some(admission) = oracle_only {
-            // The session's answer table certifies every semantic read; no domain version is issued.
-            partial_admission::changed(admission, &record.reads, &[], observer).is_some()
+        } else if let Some(admission) = request_admission {
+            // Every recorded answer is proven: by the session's answer table, else by replay.
+            partial_admission::changed(admission, &record.reads, observer).is_some()
         } else {
-            let matching =
-                partial_admission::matching_domains(&record.versions, host, request_admission);
-            let fully_certified = !host.observes_reads()
-                && record.reads.iter().all(|read| {
-                    read.domain == read.query.domain() && matching.contains(&read.domain)
-                });
-            if fully_certified {
-                // Candidate-specific complete certificates do not populate a shared
-                // leaf verdict. Each accepted leaf still reaches the observer.
-                record.reads.visit_storage(|view| {
-                    if let dm_session::ReceiptStorageView::Flat(leaf) = view {
-                        observer.record_admitted(leaf);
-                    }
-                });
-                false
-            } else if let Some(admission) = request_admission {
-                // Preserve this candidate's exact matching issuer domains;
-                // unknown/changed domains still replay every positive/negative
-                // edge. Partial admission never seeds a full-leaf verdict.
-                partial_admission::changed(admission, &record.reads, &record.versions, observer)
-                    .is_some()
-            } else {
-                record
-                    .reads
-                    .iter()
-                    .any(|read| !same_meaning(&observer.resolve(read.query), &read.answer))
-            }
+            record
+                .reads
+                .iter()
+                .any(|read| !same_meaning(&observer.resolve(read.query), &read.answer))
         };
         if changed {
             self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
@@ -652,7 +622,7 @@ impl SessionSymbolicMemo {
                 },
                 versions: {
                     // Equal domain receipts are the predecessor's allocation, not a copy per session.
-                    let current = observer.domain_receipts();
+                    let current = Vec::new();
                     if record.versions[..] == current[..] {
                         Arc::clone(&record.versions)
                     } else {
@@ -766,12 +736,11 @@ impl SessionSymbolicMemo {
 
 fn validate_published_record<R: Resolver>(
     reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
-    record: &Record,
     admission: Option<&RequestAdmission<'_, R>>,
     observer: &crate::lowering_memo::RecordingResolver<'_, R>,
 ) -> Option<dm_ir::ResolveQuery> {
     if let Some(admission) = admission {
-        admission.first_changed_receipted(reads, &record.versions, |leaf| {
+        admission.first_changed_receipted(reads, |leaf| {
             observer.record_admitted(leaf)
         })
     } else {
@@ -824,7 +793,7 @@ pub(super) fn disk_admission<R: Resolver>(
     promotion: &crate::lowering_memo_wire::ResidentPromotion<'_>,
 ) -> Option<Admission> {
     let store = Arc::clone(memo.symbolic.as_ref()?);
-    let (reads, versions) = promotion.current_observations(host);
+    let reads = promotion.current_observations(host);
     let reads = receipt_groups::grouped(&store.receipt_groups, reads);
     Some(Admission {
         previous: None,
@@ -834,7 +803,7 @@ pub(super) fn disk_admission<R: Resolver>(
         disk: None,
         key: key.into(),
         reads,
-        versions: versions.into(),
+        versions: Vec::new().into(),
         relative_debug: promotion.relative_debug.as_slice().into(),
         world: None,
     })
@@ -891,7 +860,7 @@ pub(super) fn accepted_admission<R: Resolver>(
         disk: None,
         key: key.into(),
         reads,
-        versions: current.domain_receipts().into(),
+        versions: Vec::new().into(),
         relative_debug: accepted.value.relative_debug.as_slice().into(),
         world: None,
     })

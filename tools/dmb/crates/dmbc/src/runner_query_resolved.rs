@@ -25,10 +25,10 @@ impl dm_ir::Resolver for ResolverOwner {
             Self::Analysis(owner) => owner.observes_reads(),
         }
     }
-    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+    fn answer_world(&self) -> Option<u128> {
         match self {
-            Self::Native(owner) => owner.domain_version(domain),
-            Self::Analysis(owner) => owner.domain_version(domain),
+            Self::Native(owner) => owner.answer_world(),
+            Self::Analysis(owner) => owner.answer_world(),
         }
     }
     fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {

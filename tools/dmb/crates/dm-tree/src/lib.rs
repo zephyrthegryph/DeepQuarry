@@ -126,19 +126,6 @@ pub enum Target {
     Type(TypeId),
     Member(MemberId),
 }
-/// Whole-owner callable certificates, computed the first time anything asks. With an issuer the
-/// selection certificates are demand driven and a build never reads these; computing them for
-/// every owner on every declaration edit took 0.2 s.
-#[derive(Default)]
-pub(crate) struct OwnerCallables(std::sync::OnceLock<Arc<std::collections::BTreeMap<SymbolId, u128>>>);
-impl std::fmt::Debug for OwnerCallables {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("OwnerCallables")
-            .field("computed", &self.0.get().is_some())
-            .finish()
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct SemanticTree {
     symbols: Arc<SymbolTable>,
@@ -146,17 +133,7 @@ pub struct SemanticTree {
     members: MemberArena,
     host_selections: Arc<host_declaration_selection::Selections>,
     member_callable_names: Arc<std::collections::BTreeMap<SymbolId, u8>>,
-    owner_hierarchy: Arc<std::collections::BTreeMap<SymbolId, u128>>,
     owner_ancestry: Arc<std::collections::BTreeMap<SymbolId, Arc<[SymbolId]>>>,
-    owner_callables: Arc<OwnerCallables>,
-    owner_callable_demands: Arc<owner_metadata::CallableDemands>,
-    owner_callable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId, bool), u128>>,
-    owner_variable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId), u128>>,
-    owner_certificate_issuer: Option<Arc<owner_metadata::RetainedMetadata>>,
-    selection_publication_deferred: bool,
-    /// Set by a clean change-set carry (no type removed): publication may skip
-    /// the demand-store sweep. Never set on a full construction.
-    selection_prune_skippable: bool,
     /// The classified declaration change from the tree this one was derived from.
     change_since: Option<Arc<change_set::ChangeSince>>,
     /// Types ensured by the root and engine rows, before any authored row;
@@ -282,45 +259,11 @@ impl SemanticTree {
     pub fn shared_symbols(&self) -> Arc<SymbolTable> {
         Arc::clone(&self.symbols)
     }
-    /// Diagnostic access to the current immutable hierarchy certificate index.
-    /// Tokens are process-local; no certificate grants authority by itself.
-    /// Borrowed census owner; the store's mutation and certificate issuance APIs
-    /// stay private to the semantic normalization pipeline.
-    pub fn owner_certificate_issuer(&self) -> Option<&Arc<owner_metadata::RetainedMetadata>> {
-        self.owner_certificate_issuer.as_ref()
-    }
-    pub fn owner_variable_selection_certificates(
-        &self,
-    ) -> &Arc<std::collections::BTreeMap<(SymbolId, SymbolId), u128>> {
-        &self.owner_variable_selections
-    }
-    /// Queried-name certificate index for this immutable current tree.
-    pub fn owner_callable_demand_certificates(&self) -> &Arc<owner_metadata::CallableDemands> {
-        &self.owner_callable_demands
-    }
-    pub fn owner_callable_selection_certificates(
-        &self,
-    ) -> &Arc<std::collections::BTreeMap<(SymbolId, SymbolId, bool), u128>> {
-        &self.owner_callable_selections
-    }
-    pub fn owner_callable_certificates(&self) -> &Arc<std::collections::BTreeMap<SymbolId, u128>> {
-        self.owner_callables.0.get_or_init(|| {
-            Arc::new(
-                self.owner_certificate_issuer
-                    .as_ref()
-                    .map(|issuer| issuer.certify_callables(self))
-                    .unwrap_or_default(),
-            )
-        })
-    }
     /// Exact hierarchy payload owners admitted by the existing retained issuer.
     pub fn owner_ancestry_storage(
         &self,
     ) -> &Arc<std::collections::BTreeMap<SymbolId, Arc<[SymbolId]>>> {
         &self.owner_ancestry
-    }
-    pub fn owner_hierarchy_certificates(&self) -> &Arc<std::collections::BTreeMap<SymbolId, u128>> {
-        &self.owner_hierarchy
     }
     pub fn identity(&self) -> u128 {
         self.identity
@@ -514,7 +457,6 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         intrinsics,
         rebuild_inventory,
         normalization,
-        false,
     )
 }
 pub(crate) fn build_with_intrinsic_members_indexed_publication(
@@ -527,7 +469,6 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
         &declaration_contributions::KeyedDeclarations,
         &owner_normalization::RetainedNormalization,
     )>,
-    selection_publication_deferred: bool,
 ) -> Result<SemanticTree, TreeError> {
     build_with_intrinsic_members_structural(
         symbols,
@@ -536,7 +477,6 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
         intrinsics,
         rebuild_inventory,
         normalization,
-        selection_publication_deferred,
         None,
     )
 }
@@ -550,7 +490,6 @@ pub(crate) fn build_with_intrinsic_members_structural(
         &declaration_contributions::KeyedDeclarations,
         &owner_normalization::RetainedNormalization,
     )>,
-    selection_publication_deferred: bool,
     structural: Option<metadata_update::StructuralMetadata<'_>>,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
@@ -684,15 +623,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         members: MemberArena::default(),
         host_selections: Arc::new(Default::default()),
         member_callable_names: Arc::new(Default::default()),
-        owner_hierarchy: Arc::new(Default::default()),
         owner_ancestry: Arc::new(Default::default()),
-        owner_callables: Arc::new(Default::default()),
-        owner_callable_demands: Arc::new(Default::default()),
-        owner_callable_selections: Arc::new(Default::default()),
-        owner_variable_selections: Arc::new(Default::default()),
-        owner_certificate_issuer: None,
-        selection_publication_deferred,
-        selection_prune_skippable: false,
         change_since: None,
         authored_type_start: None,
         default_edits: None,
@@ -949,22 +880,15 @@ pub(crate) fn build_with_intrinsic_members_structural(
         tree_identity::declaration_identity_view(skeletons, fields)
     };
     drop(identity_profile);
-    let _certify_timer = dm_profile::detail_timer("tree.certify_owners");
+    let _ancestry_timer = dm_profile::detail_timer("tree.owner_ancestry");
     if let Some((_, retained)) = normalization {
-        tree.owner_certificate_issuer = Some(Arc::clone(&retained.metadata));
-        let (versions, paths) = retained.metadata.certify_hierarchy(&tree);
-        tree.owner_hierarchy = Arc::new(versions);
-        tree.owner_ancestry = Arc::new(paths);
-        tree.owner_callable_selections = Arc::new(retained.metadata.certify_selections(&tree));
-        tree.owner_variable_selections = Arc::new(retained.metadata.certify_variables(&tree));
+        tree.owner_ancestry = Arc::new(retained.metadata.owner_ancestry(&tree));
     }
     Ok(tree)
 }
-mod token_digest;
 mod tree_identity;
 use tree_identity::metadata_fingerprint;
 mod resolver_impl;
-pub use resolver_impl::{TREE_DOMAIN_VERSION_CALLS, TREE_DOMAIN_VERSION_NANOS};
 mod resolver_member_names;
 
 #[cfg(test)]

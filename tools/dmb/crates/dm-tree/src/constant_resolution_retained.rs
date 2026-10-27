@@ -37,10 +37,6 @@ impl ScalarFacts {
     }
 }
 impl ScalarFacts {
-    /// Issued process-local receipts; map node overhead is not exposed.
-    pub fn certificates(&self) -> &Arc<BTreeMap<ScalarQuery, u64>> {
-        &self.domain.certificates
-    }
     pub fn requested(&self) -> &Arc<[ScalarQuery]> {
         &self.requested
     }
@@ -100,7 +96,7 @@ mod tests {
 impl ScalarSnapshot {
     /// Refuse public projections whose issued immutable authority was replaced.
     pub fn retain_facts(&self) -> Option<ScalarFacts> {
-        self.domain_version(dm_ir::ReadDomain::Tree)?;
+        dm_ir::Resolver::answer_world(self)?;
         if !Arc::ptr_eq(&self.requested, &self.issued_domain.requested)
             || !Arc::ptr_eq(&self.dependencies, &self.issued_domain.dependencies)
             || !Arc::ptr_eq(&self.predefined_reads, &self.issued_domain.predefined_reads)

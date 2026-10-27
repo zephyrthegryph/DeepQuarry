@@ -3,7 +3,6 @@
 typed	code/modules/admin/view_variables_panel.dm	@/datum/view_variables_panel::thing
 call	code/contracts/acts/context.dm	@/datum/act/action::reply
 call	code/controllers/configuration/config_entry.dm	@/datum/config_entry::config_entry_value
-call	code/datums/prompts/sequence.dm	@/datum/ask_sequence::answerer_w
 call	code/modules/asset_cache/asset_cache_item.dm	@/datum/asset_cache_item::resource
 call	code/modules/asset_cache/asset_list.dm	@/datum/asset/simple::assets
 call	code/modules/scripting/Interpreter/Interpreter.dm	@/datum/n_Interpreter::returnVal

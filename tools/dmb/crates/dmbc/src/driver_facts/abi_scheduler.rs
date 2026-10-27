@@ -15,7 +15,6 @@ struct Candidate {
     /// row has none: recipes only exist in private stores).
     value: Option<Arc<Artifact>>,
     reads: Receipt<Query, Answer, Domain>,
-    versions: Arc<[(Domain, u128)]>,
 }
 /// No verdict survives this request. Missing certificates use ordinary exact
 /// replay; local Inputs and the actual current predecessor are never certified
@@ -67,7 +66,6 @@ pub(super) fn admitted(
                                     unit: row.unit.clone(),
                                     value: None,
                                     reads: row.reads.clone(),
-                                    versions: row.versions.clone(),
                                 },
                             );
                             store
@@ -92,8 +90,8 @@ pub(super) fn admitted(
             if let ObservedArtifactStorageView::Entry {
                 key,
                 reads,
-                versions,
                 value,
+                ..
             } = view
             {
                 let Artifact::Unit(unit) = value.as_ref() else {
@@ -118,7 +116,6 @@ pub(super) fn admitted(
                         unit: unit.clone(),
                         value: Some(Arc::clone(value)),
                         reads: reads.clone(),
-                        versions: versions.clone(),
                     },
                 );
             }
@@ -196,7 +193,6 @@ pub(super) fn admitted(
             let _changed_stage = dm_profile::stage("abi.sched.changed");
             if abi_artifacts::admission::changed(
                 &candidate.reads,
-                &candidate.versions,
                 &current,
                 admission,
             )

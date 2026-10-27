@@ -23,8 +23,7 @@ pub use layout::StaticLayout;
 /// Immutable lexical overlay. A miss is authoritative only for the exact
 /// captured procedure inventory; other procedure contexts stay unsupported.
 pub struct StaticResolver<'a, R: dm_ir::Resolver> {
-    domain_version: Option<u128>,
-    underlying_version: Option<u128>,
+    answer_world: Option<u128>,
     pub underlying: &'a R,
     inventory: Arc<StaticInventory>,
 }
@@ -48,8 +47,8 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
         underlying: &'a R,
         inventory: Arc<StaticInventory>,
     ) -> Result<Self, String> {
-        let domain_version = underlying
-            .domain_version(dm_ir::ReadDomain::Tree)
+        let answer_world = underlying
+            .answer_world()
             .map(|base| {
                 let mut hash = xxhash_rust::xxh3::Xxh3::new();
                 hash.update(b"dm-procedure-static-domain-v1\0");
@@ -72,8 +71,7 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
                 hash.digest128()
             });
         Ok(Self {
-            domain_version,
-            underlying_version: underlying.domain_version(dm_ir::ReadDomain::Tree),
+            answer_world,
             underlying,
             inventory,
         })
@@ -85,20 +83,10 @@ impl<R: dm_ir::Resolver> dm_ir::Resolver for StaticResolver<'_, R> {
         self.underlying.observes_reads()
     }
 
-    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
-        match domain {
-            dm_ir::ReadDomain::OwnerProcedureStatic(procedure) => {
-                self.inventory.certificate(procedure)
-            }
-            dm_ir::ReadDomain::Tree => {
-                if self.underlying.domain_version(domain) == self.underlying_version {
-                    self.domain_version
-                } else {
-                    None
-                }
-            }
-            other => self.underlying.domain_version(other),
-        }
+    /// The underlying world and this exact static inventory (fixed at construction: the underlying resolver is
+    /// immutable).
+    fn answer_world(&self) -> Option<u128> {
+        self.answer_world
     }
     fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
         match query {
@@ -469,15 +457,15 @@ mod tests {
         assert!(!unobserved.observes_reads());
     }
     #[test]
-    fn domain_version_certifies_empty_static_inventory_and_invalidates_new_declarations() {
+    fn answer_world_names_empty_static_inventory_and_changes_with_new_declarations() {
         use dm_ir::{ReadDomain, Resolver};
         struct Base;
         impl Resolver for Base {
             fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
                 dm_ir::ResolvedMeaning::Unsupported(query)
             }
-            fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-                (domain == ReadDomain::Tree).then_some(9)
+            fn answer_world(&self) -> Option<u128> {
+                Some(9)
             }
         }
         let id = identity();
@@ -488,8 +476,8 @@ mod tests {
         let changed = capture(id, &parsed.items).unwrap();
         let new = StaticResolver::new(&base, &[(id, changed)]).unwrap();
         assert_ne!(
-            old.domain_version(ReadDomain::Tree),
-            new.domain_version(ReadDomain::Tree)
+            old.answer_world(),
+            new.answer_world()
         );
         let query = dm_ir::ResolveQuery::ProcedureStatic {
             procedure: id,

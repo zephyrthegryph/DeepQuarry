@@ -176,7 +176,7 @@ impl MapMemo {
         if self.retained.is_some() {
             let maps: Arc<[MapPlan]> = maps.to_vec().into();
             let reads = recording.reads();
-            let versions = recording.domain_receipts();
+            let versions = Vec::new();
             let artifacts: Arc<[InitializationArtifact]> = artifacts.into();
             let unit_keys: Vec<_> = self
                 .current

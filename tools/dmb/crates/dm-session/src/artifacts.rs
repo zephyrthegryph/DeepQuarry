@@ -256,13 +256,9 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         // Both routes preserve the same exact-key candidate loop and replay core.
         self.visit_receipted_with(
             key,
-            &mut |reads, versions| {
-                let matching = crate::observations::certified_domains(versions, |domain| {
-                    resolver.version(domain)
-                });
+            &mut |reads, _| {
                 crate::observations::first_changed_iter(
                     reads.iter(),
-                    &matching,
                     |query| resolver.answer(query),
                     |current, previous| resolver.equivalent(current, previous),
                 )
@@ -284,7 +280,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         self.visit_receipted_with(
             key,
-            &mut |reads, versions| request.first_changed_receipted(reads, versions, |_| {}),
+            &mut |reads, _| request.first_changed_receipted(reads, |_| {}),
             accept,
         )
     }

@@ -512,6 +512,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(!length(mine))
 			GLOB.op_pending_by_actor -= registered_ref
 	registered_ref = null
+	if(actor && !QDELETED(actor))
+		PUBLISH_LEGACY(actor, /datum/notice/do_after_ended)
 
 /// The open question is shown again to its answerer (they clicked the same thing a second time): its window comes to the front instead of a second one opening.
 /datum/pending_op/proc/focus_prompt()
@@ -588,6 +590,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		P.registered = TRUE
 		P.registered_ref = "[REF(A.actor)]"
 		LAZYADD(GLOB.op_pending_by_actor[P.registered_ref], P)
+		PUBLISH_LEGACY(A.actor, /datum/notice/do_after_began)
 	GLOB.op_pending_all["[REF(P)]"] = ref_token(P)
 	if((P.claim_mask & CLAIM_TARGET) && A.target)
 		P.claim_target(A.target)

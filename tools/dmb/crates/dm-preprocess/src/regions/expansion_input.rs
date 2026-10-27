@@ -44,7 +44,6 @@ impl ExpansionInputReceipt {
                 },
                 Answer::Macro(read.definition.clone()),
                 (),
-                None,
             );
         }
         for (ordinal, file, expected) in record.location_reads() {
@@ -55,7 +54,6 @@ impl ExpansionInputReceipt {
                 },
                 Answer::Location(Some(expected.clone())),
                 (),
-                None,
             );
         }
         Some((

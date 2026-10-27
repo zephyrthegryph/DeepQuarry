@@ -11,9 +11,6 @@ impl ObservationHost<u8, bool, u8> for Host {
         self.calls.fetch_add(1, Ordering::Relaxed);
         self.version != Some(7) || self.observing
     }
-    fn version(&self, _: &u8) -> Option<u128> {
-        self.version
-    }
     fn observes_answers(&self) -> bool {
         self.observing
     }

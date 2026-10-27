@@ -1,7 +1,6 @@
 //! Explicit intrinsic completeness and name-indexed shared-variable inventory.
 use super::*;
 use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M};
-use std::collections::BTreeMap;
 
 /// Authoritative intrinsic member inventory for one pinned engine configuration.
 /// Supply all intrinsic fields/procs/verbs, including untyped fields. A shared
@@ -49,7 +48,6 @@ pub(crate) struct ResolverInventory {
     // Positive counterexamples remain valid even when other engine rows are
     // uncaptured. Absence and a single shared candidate still need completeness.
     non_unique: HashSet<SymbolId>,
-    pub(crate) unique_certificates: BTreeMap<SymbolId, u128>,
 }
 impl SemanticTree {
     /// Borrow the captured intrinsic roster without cloning a catalog. Positive
@@ -172,10 +170,6 @@ impl SemanticTree {
         }
         entries.sort_by_key(|e| (e.owner, e.name, e.kind as u8, e.shared_owner));
         entries.dedup();
-        self.owner_callables = Arc::new(Default::default());
-        self.owner_callable_demands = Arc::new(Default::default());
-        self.owner_callable_selections = Arc::new(Default::default());
-        self.owner_variable_selections = Arc::new(Default::default());
         let source_identity = *Arc::make_mut(&mut self.inventory)
             .source_identity
             .get_or_insert(self.identity);
@@ -190,18 +184,16 @@ impl SemanticTree {
         } else {
             self.rebuild_inventory_on_executor(executor);
         }
-        if let Some(issuer) = &self.owner_certificate_issuer {
-            self.owner_callables = Arc::new(Default::default());
-            self.owner_callable_selections = Arc::new(issuer.certify_selections(&self));
-            self.owner_variable_selections = Arc::new(issuer.certify_variables(&self));
-        }
         Ok(self)
     }
-    pub(crate) fn publish_selection_owner(&mut self) {
-        self.selection_publication_deferred = false;
-        if let Some(issuer) = &self.owner_certificate_issuer {
-            issuer.bind_selection_owner(self);
-        }
+    /// Every owner's ancestry, recomputed after the type roster changed.
+    pub(crate) fn rebuild_owner_ancestry(&mut self) {
+        let ancestry = self
+            .types
+            .iter()
+            .map(|node| (node.path, crate::owner_metadata::ancestry(self, node.path)))
+            .collect();
+        self.owner_ancestry = Arc::new(ancestry);
     }
     pub(crate) fn refresh_metadata_identity(
         &mut self,
@@ -221,25 +213,6 @@ impl SemanticTree {
         } else {
             self.identity = source_identity;
         }
-        self.owner_callable_demands = Arc::new(Default::default());
-        let started = std::time::Instant::now();
-        self.owner_variable_selections = self.owner_certificate_issuer.as_ref().map_or_else(
-            || Arc::new(Default::default()),
-            |issuer| Arc::new(issuer.certify_variables(self)),
-        );
-        let variables = started.elapsed();
-        self.owner_callable_selections = self.owner_certificate_issuer.as_ref().map_or_else(
-            || Arc::new(Default::default()),
-            |issuer| Arc::new(issuer.certify_selections(self)),
-        );
-        let selections = started.elapsed() - variables;
-        // Whole-owner callable certificates are computed when asked for, not on every edit.
-        self.owner_callables = Arc::new(Default::default());
-        crate::change_set::record_outcome(format!(
-            "frontend certify detail: variables={:.3}s selections={:.3}s",
-            variables.as_secs_f64(),
-            selections.as_secs_f64(),
-        ));
     }
     pub(crate) fn complete_answer(&self, query: Q, answer: M) -> M {
         if !self.inventory.hierarchy_certified && matches!(query, Q::Parent(_) | Q::Ancestry(_)) {

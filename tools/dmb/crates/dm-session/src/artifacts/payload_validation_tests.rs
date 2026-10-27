@@ -42,18 +42,14 @@ fn payload_validation_is_reentrant_and_declined_consumers_never_claim() {
         .is_none());
 }
 #[test]
-fn payload_validation_preserves_variant_order_and_replays_changed_versions() {
+fn payload_validation_preserves_variant_order_and_replays_each_variant() {
     struct Host {
         answers: std::cell::Cell<usize>,
-        version: Option<u128>,
     }
     impl ObservationHost<u32, bool, ()> for Host {
         fn answer(&self, _: &u32) -> bool {
             self.answers.set(self.answers.get() + 1);
             false
-        }
-        fn version(&self, _: &()) -> Option<u128> {
-            self.version
         }
     }
     let store: Arc<ObservedArtifactStore<u128, u32, bool, ()>> =
@@ -90,7 +86,6 @@ fn payload_validation_preserves_variant_order_and_replays_changed_versions() {
         .is_some());
     let host = Host {
         answers: std::cell::Cell::new(0),
-        version: Some(7),
     };
     let admission = crate::ReceiptAdmission::new(&host);
     let mut order = Vec::new();
@@ -99,13 +94,14 @@ fn payload_validation_preserves_variant_order_and_replays_changed_versions() {
         &key,
         &mut |reads, _, payload| {
             order.push(**payload);
-            admission.first_changed_receipted(reads, &[((), **payload)], |leaf| edges += leaf.len())
+            admission.first_changed_receipted(reads, |leaf| edges += leaf.len())
         },
         &mut |_| true,
     );
     assert_eq!(order, vec![8, 7]);
     assert_eq!(*selected.as_ref().unwrap().value, 7);
-    assert_eq!(host.answers.get(), 1);
+    // Each variant's recorded answer is replayed: the newest one differs, the older one is admitted.
+    assert_eq!(host.answers.get(), 2);
     assert_eq!(edges, 1);
     drop(old);
     drop(newest);

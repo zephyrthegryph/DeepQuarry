@@ -74,7 +74,6 @@ CAPABILITIES(/datum/thrownthing)
 /datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, then, datum/then_owner, list/then_with, target_zone)
 	. = ..()
 	rel_set(src, nameof(subject), thrownthing)
-	observe(thrownthing, /datum/notice/living_turf_collision, src, then(PROC_REF(hit_atom)))
 	rel_set(src, nameof(starting_turf), get_turf(thrownthing))
 	var/turf/target_turf = get_turf(target)
 	rel_set(src, nameof(target_turf), target_turf)
@@ -120,8 +119,6 @@ CAPABILITIES(/datum/thrownthing)
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
 /datum/thrownthing/lifecycle_dematerialize()
 	. = ..()
-	if(!QDELETED(subject))
-		unobserve(subject, /datum/notice/living_turf_collision, src)
 	SSthrow_steps.kernel_leave(src)
 
 /// One server tick of flight on the throwing lane (was SSthrowing.fire()).
@@ -229,12 +226,6 @@ CAPABILITIES(/datum/thrownthing)
 		thrownthing.fall()
 
 	spent(src)
-
-/datum/thrownthing/proc/hit_atom(datum/act/notice/N)
-	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/source = N.target
-	var/atom/A = source
-	finalize(hit=TRUE, t_target=A)
 
 /datum/thrownthing/proc/hitcheck(turf/T)
 	var/atom/movable/hit_thing

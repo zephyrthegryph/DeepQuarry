@@ -201,16 +201,14 @@ impl StartupArtifacts {
         ledger.record(
             Query::Static(procedure),
             Answer::Static(Arc::clone(&declarations)),
-            None,
-            None,
-        );
+            None);
         // Current-roster store has no byte admission budget. Exact owner
         // accounting belongs to explicit census, not a hot-path heap walk.
         let layout = dm_tree::procedure_statics::StaticLayout::capture(procedure, declarations)?;
         let owner = self.values.insert_with_owned(
             key,
             ledger.reads(),
-            ledger.domain_receipts(),
+            Vec::new(),
             0,
             || Artifact::Layout(Arc::new(layout)),
         )?;

@@ -133,6 +133,9 @@ pub struct ProcedureMemo {
     explanation_limit: usize,
     /// Owner of this request's ABI disk transport on a retained store (detaches when the request ends).
     pub(crate) abi_disk: Option<crate::driver_facts::AbiDiskLease>,
+    /// A request-local answer table for a memo without a session store (a one-shot compile): its stored disk records
+    /// and stage receipts are proven by answers too, so no domain version is issued for them.
+    pub(crate) answers: Option<Arc<crate::query_db::QueryDb>>,
 }
 pub type CachePublisher = dyn Fn(Vec<dm_cache::Record>) -> Result<(), String> + Send + Sync;
 #[derive(Clone)]
@@ -212,7 +215,10 @@ impl ProcedureMemo {
         self.dep_index = std::sync::OnceLock::from(index);
     }
     pub(crate) fn query_db(&self) -> Option<&Arc<crate::query_db::QueryDb>> {
-        self.symbolic.as_ref()?.query_db()
+        match self.symbolic.as_ref() {
+            Some(symbolic) => symbolic.query_db(),
+            None => self.answers.as_ref(),
+        }
     }
     /// This request reuses the retained initializer stage output; the stores that output claims
     /// from keep their published claims instead of publishing this request's (see
@@ -297,6 +303,7 @@ impl ProcedureMemo {
             publishable: true,
             values: Arc::new(LoweringMemo::default()),
             symbolic: None,
+            answers: None,
             initializers: None,
             startup: None,
             abi: None,
@@ -356,6 +363,7 @@ impl ProcedureMemo {
             publishable: true,
             values: Arc::new(LoweringMemo::with_limit(limits.resident_bytes)),
             symbolic: None,
+            answers: None,
             initializers: None,
             startup: None,
             abi: None,
@@ -837,7 +845,6 @@ pub(crate) fn key(
 }
 
 // Compatibility names preserve all existing procedure memo and wire consumers.
-pub(crate) use dm_session::matching_domains;
 pub use dm_session::{ArtifactStore as LoweringMemo, RecordingResolver, ResolverRead};
 
 #[cfg(test)]

@@ -101,8 +101,6 @@ pub(super) fn rebuild_retained(
         .facts_on_executor(tree, declarations, executor)
         .unwrap_or_else(|| facts(tree, executor, None));
     reduce(tree, facts, None);
-    let certificates = retained.certify_uniqueness(tree);
-    Arc::make_mut(&mut tree.inventory).unique_certificates = certificates;
 }
 fn reduce(tree: &mut SemanticTree, facts: Vec<Option<Fact>>, selected: Option<&HashSet<SymbolId>>) {
     let mut unique = HashMap::new();
@@ -165,34 +163,11 @@ fn reduce(tree: &mut SemanticTree, facts: Vec<Option<Fact>>, selected: Option<&H
     }
     let inventory = Arc::make_mut(&mut tree.inventory);
     if let Some(selected) = selected {
-        // A certificate attests one name's (slot, non_unique, complete) inputs. Names
-        // outside the selection keep theirs; a selected name keeps its token only when
-        // its reduced inputs come out unchanged.
-        let before: HashMap<SymbolId, (Option<Option<(SymbolId, SymbolId)>>, bool)> = selected
-            .iter()
-            .map(|name| {
-                (
-                    *name,
-                    (
-                        inventory.unique.get(name).copied(),
-                        inventory.non_unique.contains(name),
-                    ),
-                )
-            })
-            .collect();
         inventory.unique.retain(|name, _| !selected.contains(name));
         inventory.non_unique.retain(|name| !selected.contains(name));
         inventory.unique.extend(unique);
         inventory.non_unique.extend(non_unique);
-        let unique = &inventory.unique;
-        let non_unique = &inventory.non_unique;
-        inventory.unique_certificates.retain(|name, _| {
-            before.get(name).is_none_or(|previous| {
-                *previous == (unique.get(name).copied(), non_unique.contains(name))
-            })
-        });
     } else {
-        inventory.unique_certificates.clear();
         inventory.unique = unique;
         inventory.non_unique = non_unique;
     }

@@ -11,7 +11,6 @@ pub(crate) struct PinnedEngineProviders {
 }
 pub(super) struct CallableProviders {
     pub closed: Arc<intrinsic_methods::ClosedNamespace>,
-    pub issuer: Option<u64>,
     pub engine: u128,
     pub retained: RetainedMethods,
     pub methods: NativeMethods,
@@ -48,7 +47,6 @@ impl OrdinaryGlobalNames {
 pub(super) struct VariableProviders {
     pub native_types: Arc<BTreeSet<SymbolId>>,
     pub native_callable_names: Arc<BTreeSet<SymbolId>>,
-    pub issuer: Option<u64>,
     pub spellings: SymbolTable,
     pub intrinsic: BTreeSet<SymbolId>,
     pub constants: ConstantCatalog,
@@ -74,16 +72,7 @@ impl CallableProviders {
                     .ok_or("native callable name absent")
             })
             .collect::<Result<BTreeSet<_>, _>>()?;
-        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
-        let issuer = NEXT
-            .fetch_update(
-                std::sync::atomic::Ordering::Relaxed,
-                std::sync::atomic::Ordering::Relaxed,
-                |value| value.checked_add(1),
-            )
-            .ok();
         Ok(Self {
-            issuer,
             engine: engine.identity(),
             closed: intrinsic_methods::ClosedNamespace::capture(&catalog)?,
             retained,
@@ -249,18 +238,9 @@ impl VariableProviders {
             bytes.extend_from_slice(&name.bits().to_le_bytes());
         }
 
-        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
-        let issuer = NEXT
-            .fetch_update(
-                std::sync::atomic::Ordering::Relaxed,
-                std::sync::atomic::Ordering::Relaxed,
-                |value| value.checked_add(1),
-            )
-            .ok();
         Ok(Self {
             native_types: Arc::new(native_types),
             native_callable_names: Arc::new(native_callable_names),
-            issuer,
             spellings: catalog_symbols,
             intrinsic,
             constants: pinned_constants,

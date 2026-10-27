@@ -18,7 +18,7 @@ type Data = {
   download_netspeed: number | undefined;
   download_name: string | undefined;
   uploading: BooleanLike;
-  upload_uid: number | undefined;
+  upload_uid: string | undefined;
   upload_clients: number | undefined;
   upload_haspassword: BooleanLike;
   upload_filename: string | undefined;
@@ -27,13 +27,13 @@ type Data = {
 };
 
 type server = {
-  uid: number;
+  uid: string;
   filename: string;
   size: number;
   haspassword: BooleanLike;
 };
 
-type uploadFile = { uid: number; filename: string; size: number };
+type uploadFile = { uid: string; filename: string; size: number };
 
 export const NtosNetTransfer = (props) => {
   const { data } = useBackend<Data>();
@@ -177,8 +177,8 @@ const P2PAvailable = (props) => {
     >
       {(servers.length && (
         <LabeledList>
-          {servers.map((server: server) => (
-            <LabeledList.Item label={server.uid} key={server.uid}>
+          {servers.map((server: server, index: number) => (
+            <LabeledList.Item label={`Server ${index + 1}`} key={server.uid}>
               {!!server.haspassword && <Icon name="lock" mr={1} />}
               {server.filename}&nbsp; ({server.size}GQ)&nbsp;
               <Button

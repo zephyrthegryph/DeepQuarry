@@ -52,6 +52,7 @@ n="$(git diff --name-only origin/master HEAD -- lanes | wc -l)"
 if [ -n "${DQ_STUB_CAP_ABOVE:-}" ] && [ "$n" -gt "$DQ_STUB_CAP_ABOVE" ]; then echo "FOCUSED RUN CAPPED: the 10 minute wall-clock cap was hit"; exit 1; fi
 echo "$*" >>"${DQ_STUB_ARGS_LOG:-/dev/null}"
 echo "dc=${DQ_GATE_DREAMCHECKER:-}" >>"${DQ_STUB_DC_LOG:-/dev/null}"
+echo "dcdisjoint=${DQ_GATE_DC_DISJOINT:-} root=${DQ_TRAIN_ROOT_KEY:-}" >>"${DQ_STUB_DCD_LOG:-/dev/null}"
 echo "stub gates: ok (tests: $*)"
 STUB
 cat >tools/dq_push_master.sh <<'STUB'
@@ -225,6 +226,23 @@ kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
 out="$(train run 2>&1)"
 check "a dead integrator's lock is replaced" 'grep -q "replacing the lock of a dead integrator" <<<"$out" && in_master lane/m'
 
+# ---- the lock is exclusive under a race; a lane that lands clears a stale bounce record (27 October: two integrators, rx/readback-notices) --
+lk="$tmp/lockrace"; mkdir -p "$lk/log"
+sed -n '/^alive() {/,/^}/p;/^now() {/p;/^tlog() {/p;/^lockdir_pid() {/p;/^lockdir_alive() {/p;/^lock_take() {/,/^}/p;/^lock_owned() {/p' tools/dq_train.sh >"$lk/fns.sh"
+for i in 1 2 3 4 5 6 7 8; do # separate processes: an integrator's identity is its own $$
+	STATE="$lk" LOGS="$lk/log" LOCK_NAME=run.lock SELF=x bash -c '. "$1"; if lock_take; then echo "$$" >>"$2/winners"; sleep 4; fi' _ "$lk/fns.sh" "$lk" &
+done
+wait
+check "eight integrators racing for the lock: exactly one takes it" '[ "$(wc -l <"$lk/winners")" = 1 ]'
+STATE="$lk" LOGS="$lk/log" LOCK_NAME=run.lock SELF=x bash -c '. "$1"; lock_take && lock_owned' _ "$lk/fns.sh" && lk2=1 || lk2=0
+check "a dead winner's lock is taken over (once)" '[ "$lk2" = 1 ] && grep -q "replacing the lock of a dead integrator" "$lk/log/train.log"'
+grep -q 'lock_owned; then LOCK_HELD=0; tlog "the run lock is held by pid' tools/dq_train.sh && lo=1 || lo=0
+check "an integrator that no longer owns the run lock stops before a cycle" '[ "$lo" = 1 ]'
+mk lane/sb lanes/sb.txt fine; train enqueue --tests tsb >/dev/null 2>&1; back
+printf 'branch=lane/sb\ntip=%s\nbounced=now\nreason=racing integrator\n' "$(git rev-parse lane/sb)" >"$DQ_TRAIN_STATE/bounced/lane_sb.q"
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a lane that lands clears its stale bounce record" 'in_master lane/sb && [ ! -f "$DQ_TRAIN_STATE/bounced/lane_sb.q" ] && grep -q "lane/sb: cleared its stale bounce record" <<<"$out"'
+
 # ---- a bisect spans cycles: one attempt per cycle, the bad lane is bounced, the rest land, a newcomer waits --------------------------------
 rm -f "$DQ_TRAIN_STATE/batch_limit" "$DQ_TRAIN_STATE/bisect.lanes" "$DQ_TRAIN_STATE/bisect.cache"
 for n in 1 2 3 4 5 6; do
@@ -356,7 +374,10 @@ out="$(train precheck-run 2>&1)"
 check "a conflict only in a ratchet baseline is not bounced by the probe" '! grep -q "PRECHECK conflict: lane/pbl .*does not merge with origin/master" <<<"$out"'
 train dequeue lane/pbl >/dev/null 2>&1
 export DQ_STUB_ARGS_LOG="$tmp/pre-args.log"; : >"$DQ_STUB_ARGS_LOG"
+export DQ_STUB_DCD_LOG="$tmp/dcd.log"; : >"$DQ_STUB_DCD_LOG"
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a prechecked batch whose lanes change different DreamChecker inputs keeps their DreamChecker verdicts" 'grep -q "^dcdisjoint=every lane passed DreamChecker in its precheck" "$DQ_STUB_DCD_LOG" && grep -q "the batch keeps those verdicts" <<<"$out"'
+unset DQ_STUB_DCD_LOG
 check "the prechecked lanes land; the failed one never joined a batch" 'in_master lane/pa && in_master lane/pc && in_master lane/pe && ! in_master lane/pb && ! grep -q "chosen=\[[^]]*lane/pb" "$DQ_TRAIN_STATE/log/train.log"'
 check "the batch says it is prechecked and has no cycle deadline" 'grep -q "all prechecked; bisect to the end" <<<"$out" && grep -q "no cycle deadline" <<<"$out"'
 check "lanes sharing an area run their own tests; a lane sharing none does not" 'grep -q "tpa" "$DQ_STUB_ARGS_LOG" && grep -q "tpe" "$DQ_STUB_ARGS_LOG" && ! grep -q "tpc" "$DQ_STUB_ARGS_LOG" && grep -q "own tests do not run in this batch.*lane/pc" "$DQ_TRAIN_STATE/log/train.log"'
@@ -375,6 +396,14 @@ check "a prechecked batch takes more lanes than DQ_TRAIN_MAX_LANES" 'grep -q "he
 check "its bisect ends in the same cycle despite the passed deadline: the interacting lane is bounced, nine land" 'grep -q "BOUNCED lane/q8" <<<"$out" && ! grep -q "bisect unfinished" <<<"$out" && for n in 1 2 3 4 5 6 7 9 10; do in_master "lane/q$n" || exit 1; done; ! in_master lane/q8'
 check "the halves ran at once in the second worktree" 'grep -q "halves in parallel" <<<"$out" && grep -q "parallel bisect: \[" "$DQ_TRAIN_STATE"/log/cycle-*.log && grep -q "^$tmp/wt2 " "$DQ_STUB_WHERE"'
 unset DQ_STUB_WHERE
+# a lane that touches a global path (maps/): the batch runs DreamChecker itself
+export DQ_STUB_DCD_LOG="$tmp/dcd2.log"; : >"$DQ_STUB_DCD_LOG"
+mk lane/pg maps/m.txt fine; train enqueue --tests "tpg" >/dev/null 2>&1; back
+mk lane/ph lanes/ph/f.txt fine; train enqueue --tests "tph" >/dev/null 2>&1; back
+train precheck-run >/dev/null 2>&1
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a batch with a lane on a global path runs DreamChecker (no trusted verdict)" 'in_master lane/pg && in_master lane/ph && grep -q "^dcdisjoint= " "$DQ_STUB_DCD_LOG" && ! grep -q "^dcdisjoint=every" "$DQ_STUB_DCD_LOG"'
+unset DQ_STUB_DCD_LOG
 # no verdict after the wait limit (the prechecker is not running here): the lane rides the old way
 mk lane/pw lanes/pw/f.txt fine; train enqueue --tests "tpw" >/dev/null 2>&1; back
 out="$(DQ_TRAIN_PRECHECK_WAIT_MIN=0 DQ_TRAIN_ONCE=1 train run 2>&1)"
@@ -403,6 +432,26 @@ git fetch -q origin; git switch -q --detach origin/master
 ) && dcok=1 || dcok=0
 check "the DreamChecker key ignores docs and tools, follows DM, generated DM and the binary; a pass is found by its key only" '[ "$dcok" = 1 ]'
 back
+
+# ---- a proof records DreamChecker's pass, so a gate that reuses the proof (no gen) keeps the verdict --------------------------------------
+(
+	. tools/dq_proof_cache.sh
+	export DQ_PROOF_DIR="$tmp/proofs"
+	DQ_PROOF_DC=abc123 proof_store t1 m1 "a b" 2 0 0 0 0 ""
+	proof_store t2 m1 "a b" 2 0 0 0 0 ""
+	grep -qx "dreamchecker=abc123" "$tmp/proofs/t1.proof" && ! grep -q "^dreamchecker=" "$tmp/proofs/t2.proof"
+) && pdc=1 || pdc=0
+check "a proof records the DreamChecker binary that passed on its tree, and only when it passed" '[ "$pdc" = 1 ]'
+
+# ---- the integrator and the prechecker wake on a change, not after a fixed sleep -----------------------------------------------------------
+mkdir -p "$tmp/wc"
+( sleep 3; : >"$tmp/wc/new" ) &
+t0=$(date +%s)
+( . <(sed -n '/^wait_change() {/,/^}/p' tools/dq_train.sh); wait_change 30 "$tmp/wc" )
+t1=$(date +%s); wait
+check "wait_change returns when the directory changes, well before its limit" '[ $((t1 - t0)) -lt 15 ]'
+grep -q 'integrator_alive; then tlog "integrator already running.*precheck_ensure; return 0' tools/dq_train.sh && ens=1 || ens=0
+check "an enqueue starts the prechecker even while an integrator runs" '[ "$ens" = 1 ]'
 
 # ---- the integrator updates itself from origin/master between cycles ---------------------------------------------------------------------
 # It runs from a snapshot ($STATE/self). Cases: a change to a snapshot script on master re-execs it (same pid, same lock, the new code runs,
