@@ -475,12 +475,14 @@ pre_probe_conflict() { # <branch> <tip> <master>: 0 = merges (or only the manife
 	CONFLICT_FILES=""
 	common="$(G rev-parse --path-format=absolute --git-common-dir)"
 	scratch="$(mktemp -d "${TMPDIR:-/tmp}/dq-preprobe.XXXXXX")"
-	out="$(GIT_OBJECT_DIRECTORY="$scratch" GIT_ALTERNATE_OBJECT_DIRECTORIES="$common/objects" G merge-tree --write-tree --name-only --no-messages "$3" "$2" 2>/dev/null)" || rc=$?
+	# with the repository's merge drivers (tools/dq_git_safe.sh: shrink-only baselines, the manifest's include sets), as the real merge has them
+	out="$(cd "$(repo_dir)" && { [ -f tools/dq_git_safe.sh ] && . tools/dq_git_safe.sh; GIT_OBJECT_DIRECTORY="$scratch" GIT_ALTERNATE_OBJECT_DIRECTORIES="$common/objects" git merge-tree --write-tree --name-only --no-messages "$3" "$2"; } 2>/dev/null)" || rc=$?
 	rm -rf "$scratch"
 	[ "$rc" -eq 1 ] || return 0 # clean, or merge-tree could not tell (the full precheck merges for real)
 	CONFLICT_FILES="$(tail -n +2 <<<"$out" | awk 'NF' | sort -u)"
 	# the manifest merges by sets, shared docs by union (tools/dq_merge_batch.sh doc_union_conflict): neither is a conflict here
-	f="$(grep -vE '^(deepquarry\.dme|AGENTS\.md|CLAUDE\.md|doc/.*\.md|tools/.*/doc/[^/]*\.md)$' <<<"$CONFLICT_FILES")"
+	# files with a merge driver or a union rule (baselines, the manifest, the unit-test list) never stop the real merge either
+	f="$(grep -vE '^(deepquarry\.dme|AGENTS\.md|CLAUDE\.md|doc/.*\.md|tools/.*/doc/[^/]*\.md|tools/ci/[^/]*_baseline\.txt|tools/ci/sys_baseline/.*\.txt|code/modules/unit_tests/_unit_tests\.dm)$' <<<"$CONFLICT_FILES")"
 	[ -n "$f" ] || return 0
 	return 1
 }

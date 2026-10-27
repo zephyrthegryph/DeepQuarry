@@ -345,6 +345,12 @@ check "status shows each lane's precheck" 'status_has "lane/pa  tip.*precheck: p
 git switch -q lane/pb; train enqueue --tests "tpb" >/dev/null 2>&1; back
 check "enqueueing a bounced tip again asks for a fresh precheck" 'status_has "lane/pb  tip.*precheck: none" && [ -z "$(ls "$DQ_TRAIN_STATE/precheck/v" | grep "^lane_pb@")" ]'
 train dequeue lane/pb >/dev/null 2>&1
+# a conflict confined to a file with a merge driver (a ratchet baseline) is not a conflict for the probe
+mk lane/pbl tools/ci/x_baseline.txt "lane side"; train enqueue --tests "tpbl" >/dev/null 2>&1; back
+git fetch -q origin; git switch -q --detach origin/master; mkdir -p tools/ci; echo "master side" >tools/ci/x_baseline.txt; git add -A; git commit -q -m "master baseline"; git push -q origin HEAD:refs/heads/master; back
+out="$(train precheck-run 2>&1)"
+check "a conflict only in a ratchet baseline is not bounced by the probe" '! grep -q "PRECHECK conflict: lane/pbl .*does not merge with origin/master" <<<"$out"'
+train dequeue lane/pbl >/dev/null 2>&1
 export DQ_STUB_ARGS_LOG="$tmp/pre-args.log"; : >"$DQ_STUB_ARGS_LOG"
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "the prechecked lanes land; the failed one never joined a batch" 'in_master lane/pa && in_master lane/pc && in_master lane/pe && ! in_master lane/pb && ! grep -q "chosen=\[[^]]*lane/pb" "$DQ_TRAIN_STATE/log/train.log"'
