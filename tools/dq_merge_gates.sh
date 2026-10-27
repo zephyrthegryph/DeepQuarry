@@ -111,6 +111,16 @@ for ref in $lanes; do
 	fi
 	lane_tips="$lane_tips${lane_tips:+,}$tip"
 done
+# The train's light precheck (DQ_GATE_LIGHT=1): a light lane (docs, tools, Rust) is checked on its merge with master by the light batch's
+# own cheap checks, nothing else; the light cycle then lands it without repeating them (tools/dq_train.sh light_trust).
+if [ "${DQ_GATE_LIGHT:-0}" = 1 ]; then
+	t0=$(date +%s)
+	bash tools/dq_light_checks.sh origin/master HEAD; rc=$?
+	echo "light-checks $(( $(date +%s) - t0 ))s rc=$rc" >>"$timings"
+	[ "$rc" -eq 0 ] || { echo "dq_merge_gates: FAILED: light checks (tools/dq_light_checks.sh)" >&2; exit 1; }
+	echo "dq_merge_gates: light checks passed on ${short}"
+	exit 0
+fi
 # A tree that already carries a covering proof (tools/dq_land.sh and dq_lane_ready.sh prove it before the lock) needs none of the steps
 # that exist to prepare a gate run: the generated files, the baseline shrink were all settled when the proof was
 # made (the tree is byte-identical), and the lock is held across every second spent here.

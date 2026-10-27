@@ -47,6 +47,7 @@ if [ "${DQ_GATE_ONLY_DC:-0}" = 1 ]; then
 	echo "stub dreamchecker: ok"; exit 0
 fi
 echo "defer=${DQ_GATE_DC_DEFER:-}" >>"${DQ_STUB_DEFER_LOG:-/dev/null}"
+[ "${DQ_GATE_LIGHT:-0}" = 1 ] && { echo "light $*" >>"${DQ_STUB_LIGHT_LOG:-/dev/null}"; echo "stub light checks: ok"; exit 0; }
 if grep -rq BAD lanes 2>/dev/null; then echo "stub gates: BAD present"; echo "dq_merge_gates: FAILED: tests (logs data/merge-gates/x.tests.log)" >&2; exit 1; fi
 echo "worlds=${DQ_MAIN_WORLDS:-} split=${DQ_MAIN_WORLD_TESTS:-}" >>"${DQ_STUB_WORLDS_LOG:-/dev/null}"
 # DQ_STUB_MOVE=<branch>: the lane commits more while its batch is being gated (once)
@@ -77,6 +78,7 @@ cat >tools/dq_land_batch.sh <<'STUB'
 #!/usr/bin/env bash
 # stub light batch: merge every queued branch (origin/<b>) onto origin/master, skip conflicts, push
 set -u
+echo "trust=${DQ_LIGHT_TRUST:-}" >>"${DQ_STUB_LIGHT_LOG:-/dev/null}"
 Q="${DQ_LANE_POOL_STATE:?}/light-queue"
 git fetch -q origin
 git switch -q --detach origin/master
@@ -252,6 +254,20 @@ printf 'branch=lane/sb\ntip=%s\nbounced=now\nreason=racing integrator\n' "$(git 
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "a lane that lands clears its stale bounce record" 'in_master lane/sb && [ ! -f "$DQ_TRAIN_STATE/bounced/lane_sb.q" ] && grep -q "lane/sb: cleared its stale bounce record" <<<"$out"'
 
+# ---- queue files are written whole and edited under the queue lock; a malformed entry is skipped and reported (27 October: perf/refresh-timer) --
+mk lane/qa lanes/qa.txt fine; train enqueue --tests tqa >/dev/null 2>&1; back
+printf 'push_refusals=1\n' >"$DQ_TRAIN_STATE/queue/lane_ghost.q"     # what an append after a bounce's rm used to leave
+st="$(train status 2>&1)"
+check "status reports a malformed queue entry and moves it aside" 'grep -q "malformed queue entries.*lane_ghost.q" <<<"$st" && [ ! -f "$DQ_TRAIN_STATE/queue/lane_ghost.q" ] && ls "$DQ_TRAIN_STATE/malformed" | grep -q "^lane_ghost.q"'
+fns2="$tmp/qfns.sh"; { echo 'STATE="$1"; Q="$STATE/queue"; LOGS="$STATE/log"'; sed -n '/^now() {/p;/^tlog() {/p;/^fname() {/p;/^qfile() {/p;/^qget() {/p;/^qlock() {/,/^}/p;/^qunlock() {/p;/^q_wellformed() {/p;/^qedit() {/,/^}/p;/^bump_push_refusals() {/,/^}/p' tools/dq_train.sh; } >"$fns2"
+rm -f "$DQ_TRAIN_STATE/queue/lane_qa.q"                               # a bounce removed it
+bash -c '. "$1" "$2"; bump_push_refusals lane/qa >/dev/null' _ "$fns2" "$DQ_TRAIN_STATE"
+check "an edit after a bounce removed the file never re-creates it" '[ ! -f "$DQ_TRAIN_STATE/queue/lane_qa.q" ]'
+train enqueue --tests tqa >/dev/null 2>&1 || { git switch -q lane/qa; train enqueue --tests tqa >/dev/null 2>&1; back; }
+bash -c '. "$1" "$2"; bump_push_refusals lane/qa >/dev/null; bump_push_refusals lane/qa >/dev/null' _ "$fns2" "$DQ_TRAIN_STATE"
+check "edits keep the entry whole" 'grep -q "^push_refusals=2$" "$DQ_TRAIN_STATE/queue/lane_qa.q" && grep -q "^tip=" "$DQ_TRAIN_STATE/queue/lane_qa.q" && grep -q "^tests=tqa" "$DQ_TRAIN_STATE/queue/lane_qa.q" && [ ! -d "$DQ_TRAIN_STATE/queue.lock" ]'
+train dequeue lane/qa >/dev/null 2>&1
+
 # ---- a bisect spans cycles: one attempt per cycle, the bad lane is bounced, the rest land, a newcomer waits --------------------------------
 rm -f "$DQ_TRAIN_STATE/batch_limit" "$DQ_TRAIN_STATE/bisect.lanes" "$DQ_TRAIN_STATE/bisect.cache"
 for n in 1 2 3 4 5 6; do
@@ -420,6 +436,16 @@ check "a DreamChecker failure is pinned on its lane: bounced; the others pass" '
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "the DreamChecker-batched lanes land; the culprit does not" 'in_master lane/da && in_master lane/dc && in_master lane/dd && ! in_master lane/db'
 unset DQ_STUB_DCRUN_LOG DQ_STUB_DEFER_LOG
+# light lanes are prechecked too; the light cycle then lands them without repeating the checks
+export DQ_STUB_LIGHT_LOG="$tmp/light.log"; : >"$DQ_STUB_LIGHT_LOG"
+mk lane/la docs/la.txt fine; git push -q origin lane/la 2>/dev/null; train enqueue --light >/dev/null 2>&1; back
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a light lane waits for its light precheck" '! in_master lane/la'
+out="$(train precheck-run 2>&1)"
+check "the prechecker runs the light checks for a light lane" 'grep -q "PRECHECK pass: lane/la " <<<"$out" && grep -q "^light --lanes lane/la" "$DQ_STUB_LIGHT_LOG"'
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a prechecked light lane lands without repeating its checks" 'in_master lane/la && grep -q "^trust=every lane passed these checks" "$DQ_STUB_LIGHT_LOG" && grep -q "cheap checks are not repeated" <<<"$out"'
+unset DQ_STUB_LIGHT_LOG
 # a lane that touches a global path (maps/): the batch runs DreamChecker itself
 export DQ_STUB_DCD_LOG="$tmp/dcd2.log"; : >"$DQ_STUB_DCD_LOG"
 mk lane/pg maps/m.txt fine; train enqueue --tests "tpg" >/dev/null 2>&1; back

@@ -925,3 +925,12 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
   (`precheck/dc/`). The batch gate's DreamChecker trust (above) measures master's changes from the DreamChecker run's master. A gate that
   reuses a proof with no DreamChecker verdict covering its tree runs DreamChecker itself, so the push never falls back to the full
   production build. `DQ_TRAIN_DC_BATCH=0` returns to one DreamChecker per precheck.
+- **Light lanes are prechecked.** Compiler lanes ride the light path; their cargo tests made each light cycle about 10 minutes, and light
+  lanes go first, so every DM lane waited behind them (lane wait 22 -> 4 -> 14.7 min, 27 October). The prechecker now runs a light lane's
+  cheap checks on its merge with master (`DQ_GATE_LIGHT`, in a precheck worker beside the gates), the light cycle takes a light lane once
+  that passed (or after the wait limit), and lands it without repeating the checks (`DQ_LIGHT_TRUST` to `dq_land_batch.sh`) when master
+  changed nothing in the lane's areas since (`light_area`: a compiler crate, `tools/<x>`, a top-level script, a directory; a parent area
+  such as `tools/dmb` overlaps its crates). `DQ_TRAIN_LIGHT_PRECHECK=0` turns it off.
+- **Queue files are written whole.** Every change to a queue file holds `queue.lock` and replaces the file by rename; an edit to a file a
+  bounce removed is dropped, never appended into a new one (an append left `perf/refresh-timer` queued with no tip, tests or enqueue time).
+  A malformed entry (no seq, branch or tip) is moved to `malformed/`, logged, listed by `status`, and never gated.
