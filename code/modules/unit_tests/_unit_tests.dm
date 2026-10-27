@@ -218,6 +218,7 @@
 #include "dq_smoothing_pins.dm"
 #include "dq_lifeform_lifetimes_tests.dm"
 #include "dq_init_phase0_tests.dm"
+#include "dq_rights2text_tests.dm"
 #include "dq_robot_init_tests.dm"
 #include "dq_lifeform_params_tests.dm"
 #include "dq_lifeform_per_type_tests.dm"
