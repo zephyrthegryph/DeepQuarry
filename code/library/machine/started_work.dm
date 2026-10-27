@@ -12,6 +12,10 @@
 //   started_work(step = PROC_REF(x), unpowered = TRUE)          ...and it runs while the machine is not operable too (a step that reads power itself)
 //   started_work(step = PROC_REF(x), gate = PROC_REF(y))        ...and a step runs only when y(A) answers TRUE (a computed test, asked each
 //                                                                interval; a list of PROC_REFs must all answer TRUE)
+//   started_work(..., gate = PROC_REF(y), wakes_on = list(nameof(v)), gate_waits = TRUE)
+//                                                                ...and y reads only what wakes_on names: a closed gate stops the work (it
+//                                                                parks, no timer runs) and a change of one of those starts it again, instead of
+//                                                                asking y every interval of an idle round
 //
 // This is the final form of the machine pipeline's step stage (the old machine_step() with MACHINE_WAKE() and PROCESS_KILL, deleted): the old wake and sleep
 // calls on a machine that declares started work were work_start() and work_stop().
@@ -19,7 +23,7 @@
 MSG_DEF_SELF(started_work/stopped, "It isn't running.")
 MSG_DEF_SELF(started_work/running, "It is running.")
 
-CAPABILITY_TYPE(started_work, CAP_STARTED_WORK, /datum/capability/lib/started_work, key = NONE, step = null, interval = MACHINE_SERVICE_INTERVAL, starts = FALSE, when = null, wakes_on = null, gate = null, unpowered = FALSE)
+CAPABILITY_TYPE(started_work, CAP_STARTED_WORK, /datum/capability/lib/started_work, key = NONE, step = null, interval = MACHINE_SERVICE_INTERVAL, starts = FALSE, when = null, wakes_on = null, gate = null, unpowered = FALSE, gate_waits = FALSE)
 cap_keys(CAP_STARTED_WORK, ACTIVE = MSG(started_work/stopped), WAITING_POWER = MSG(started_work/running))
 
 /datum/capability/lib/started_work
@@ -51,6 +55,8 @@ cap_keys(CAP_STARTED_WORK, ACTIVE = MSG(started_work/stopped), WAITING_POWER = M
 /datum/capability/lib/started_work/proc/run_step(datum/act/timer/A)
 	for(var/test in (islist(gate) ? gate : (gate ? list(gate) : null)))
 		if(!call(A.holder, test)()) // no arguments: a gate may be a proc with optional parameters of its own (operable())
+			if(gate_waits && length(wakes_on))
+				key_set(A.holder, STARTED_WORK_ACTIVE, FALSE) // a change of what the gate reads (wakes_on) starts it again
 			return
 	if(call(A.holder, step)(A) == PROCESS_KILL)
 		key_set(A.holder, STARTED_WORK_ACTIVE, FALSE)

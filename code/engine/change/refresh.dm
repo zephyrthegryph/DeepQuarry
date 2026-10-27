@@ -137,15 +137,40 @@
 /// periodic work and no open window. The same rule entity_raise_change() applies, so a setter on such an atom costs no
 /// queue entry and no refresh.
 /proc/refresh_wanted(datum/E)
-	if(!isatom(E) || ismob(E) || E.refresh_queued || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+	if(E.refresh_queued || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+		return TRUE
+	if(!isatom(E))
+		return datum_refresh_wanted(E)
+	if(ismob(E))
 		return TRUE
 	return GLOB.type_derives_cache[E.type] != 0
 
 /// refresh_wanted() for an entity already in the queue (its refresh_queued is set, so it is not a reason to run).
 /proc/refresh_wanted_queued(datum/E)
-	if(!isatom(E) || ismob(E) || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+	if(E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+		return TRUE
+	if(!isatom(E))
+		return datum_refresh_wanted(E)
+	if(ismob(E))
 		return TRUE
 	return GLOB.type_derives_cache[E.type] != 0
+
+/// A refresh of a datum that is not an atom has no look and no verbs: it re-derives its derived() values (TYPE_DERIVES_DEPS) and runs the side
+/// effects (push_to_rust(), on_state_changed()) a type overrides (TYPE_DERIVES_SIDE, found by the first refresh's probe), and its windows and
+/// periodic gate, which refresh_wanted() checks per instance. A type with none of them (a kernel histogram counting every tick, a system's
+/// bookkeeping) costs no queue entry and no refresh for its tracked writes. Unknown types (TYPE_DERIVES_PENDING) refresh once and are probed.
+/proc/datum_refresh_wanted(datum/D)
+	return !!(datum_derive_flags(D) & (TYPE_DERIVES_PENDING | TYPE_DERIVES_DEPS | TYPE_DERIVES_SIDE))
+
+/// The TYPE_DERIVES_* known for a datum's (not an atom's) type, in the same per-type memo as the atoms' (type_derive_flags()).
+/proc/datum_derive_flags(datum/D)
+	var/known = GLOB.type_derives_cache[D.type]
+	if(!isnull(known))
+		return known
+	. = TYPE_DERIVES_PENDING
+	if(derived_table_of(D))
+		. |= TYPE_DERIVES_DEPS
+	GLOB.type_derives_cache[D.type] = .
 
 /// E itself has nothing to refresh, but an owner whose capability draws it still redraws (refresh_mark()'s owner rule).
 /proc/refresh_mark_owner(datum/E, mask, channel)
@@ -470,6 +495,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			GLOB.derive_probing = FALSE
 			probe_found = GLOB.derive_probe_found
 		refresh_sweep_track(A)
+	else if(!isatom(D))
+		// A datum's first refresh probes whether its type overrides the side effects (datum_refresh_wanted()).
+		probing = datum_derive_flags(D) & TYPE_DERIVES_PENDING
 	if(mask & DEP_UI)
 		refresh_ui(D)
 	// The side effects. While the type is probed, the base procs report whether the engine reached them directly: a type
@@ -502,6 +530,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		side = TRUE
 	if(probing)
 		GLOB.derive_side_probing = FALSE
+		GLOB.derive_side_base_reached = FALSE // the probe's scratch flag: read above, never left set between refreshes
 		// Type-pure: the type overrides draw()/hidden_verbs()/granted_verbs()/the side effects or it doesn't, whatever
 		// this instance's state drew or hid (review: never record a negative from one result).
 		type_derive_record(D, probe_found & TYPE_DERIVES_LOOK, probe_found & TYPE_DERIVES_VERBS, side)

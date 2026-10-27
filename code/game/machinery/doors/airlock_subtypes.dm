@@ -104,10 +104,18 @@
 	open_sound_powered = 'sound/machines/door/space1o.ogg'
 	close_sound_powered = 'sound/machines/door/space1c.ogg'
 
+/// TRUE once the door is found where weather can reach it (a planet's level, or a shuttle that may land on one): set after the map load.
+/obj/machinery/door/airlock/external/var/freeze_exposed = FALSE
+
 /obj/machinery/door/airlock/external/can_freeze(datum/act/A)
-	return TRUE
+	return freeze_exposed
+
+/// After the map load: a door off every planet and outside every shuttle never meets the weather, so its freeze check stays parked.
+/obj/machinery/door/airlock/external/proc/note_freeze_exposure(datum/act/A)
+	set_freeze_exposed(airlock_weather_exposed(src))
 
 CAPABILITIES(/obj/machinery/door/airlock/external)
+	after_init(0, then(PROC_REF(note_freeze_exposure)))
 	every(15 SECONDS, then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze))
 
 /obj/machinery/door/airlock/external/bolted
@@ -128,10 +136,18 @@ CAPABILITIES(/obj/machinery/door/airlock/external)
 	open_sound_powered = 'sound/machines/door/space1o.ogg'
 	close_sound_powered = 'sound/machines/door/space1c.ogg'
 
+/// TRUE once the door is found where weather can reach it (a planet's level, or a shuttle that may land on one): set after the map load.
+/obj/machinery/door/airlock/glass_external/var/freeze_exposed = FALSE
+
 /obj/machinery/door/airlock/glass_external/can_freeze(datum/act/A)
-	return TRUE
+	return freeze_exposed
+
+/// After the map load: a door off every planet and outside every shuttle never meets the weather, so its freeze check stays parked.
+/obj/machinery/door/airlock/glass_external/proc/note_freeze_exposure(datum/act/A)
+	set_freeze_exposed(airlock_weather_exposed(src))
 
 CAPABILITIES(/obj/machinery/door/airlock/glass_external)
+	after_init(0, then(PROC_REF(note_freeze_exposure)))
 	every(15 SECONDS, then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze))
 
 /obj/machinery/door/airlock/glass
