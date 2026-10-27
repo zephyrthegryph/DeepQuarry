@@ -28,8 +28,11 @@ pub(super) struct PassState {
 impl PassState {
     /// Whether a subtree that started from `self` starts the same from `other`.
     pub(super) fn same(&self, other: &Self) -> bool {
-        self.environment.same_bindings(&other.environment)
-            && self.conditionals == other.conditionals
+        self.environment.same_bindings(&other.environment) && self.same_apart_from_macros(other)
+    }
+    /// Everything but the macro environment is the same.
+    pub(super) fn same_apart_from_macros(&self, other: &Self) -> bool {
+        self.conditionals == other.conditionals
             && self.file_dirs == other.file_dirs
             && self.file_dir_definitions == other.file_dir_definitions
             && self.file_dir_origins == other.file_dir_origins
@@ -63,6 +66,10 @@ pub(super) struct SubtreeRecord {
     pub(super) reads: Vec<Arc<PathBuf>>,
     /// Every path the subtree adds to the plan's dependency set (reads and non-text includes).
     pub(super) dependencies: Vec<PathBuf>,
+    /// Every macro name the subtree's directives read or wrote (sorted, unique): the part of the incoming macro
+    /// environment the subtree depends on. A later pass whose environment differs only in other names adopts the
+    /// subtree with those bindings carried into its regions (`DirectivePass::adopt_previous_inner`).
+    pub(super) tested: Arc<[Arc<str>]>,
 }
 
 /// A subtree record with the position it had in the plan that produced it.
@@ -122,6 +129,8 @@ pub struct PlanReuse {
     pub regions: Vec<Option<usize>>,
     /// Include subtrees adopted whole.
     pub subtrees: usize,
+    /// Of those, adopted although the macro environment differed in bindings they never read.
+    pub rebased_subtrees: usize,
     /// Occurrences, regions and items adopted inside them.
     pub occurrences: usize,
     pub copied_regions: usize,

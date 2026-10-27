@@ -5,7 +5,7 @@ use crate::{Macro, MacroLookup};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
-struct Binding {
+pub(super) struct Binding {
     definition: Arc<Macro>,
     origin: Option<DefinitionOrigin>,
 }
@@ -61,7 +61,59 @@ fn binding_digest(name: &str, binding: &Binding) -> u128 {
     }
     hash.digest128()
 }
+/// The bindings in which one environment differs from another (`MacroEnvironment::delta_from`): each name with the
+/// binding it has (`None`: undefined), sorted by name. Applied to the other environment it gives the first.
+#[derive(Clone, Debug, Default)]
+pub(super) struct EnvDelta(Vec<(Arc<str>, Option<Arc<Binding>>)>);
+impl EnvDelta {
+    pub(super) fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub(super) fn len(&self) -> usize {
+        self.0.len()
+    }
+    pub(super) fn contains(&self, name: &str) -> bool {
+        self.0.binary_search_by(|(entry, _)| entry.as_ref().cmp(name)).is_ok()
+    }
+}
 impl MacroEnvironment {
+    /// This environment with `delta`'s bindings set (or removed).
+    pub(super) fn apply(&self, delta: &EnvDelta) -> Self {
+        let mut out = self.clone();
+        for (name, binding) in &delta.0 {
+            if let Some(old) = out.bindings.remove(name.as_ref()) {
+                out.fingerprint ^= binding_digest(name, &old);
+            }
+            if let Some(binding) = binding {
+                out.fingerprint ^= binding_digest(name, binding);
+                out.bindings.insert(Arc::clone(name), Arc::clone(binding));
+            }
+        }
+        out
+    }
+    /// The bindings (by content: definition and definition site) in which `self` differs from `base`, so that
+    /// `base.apply(&delta)` holds the same bindings as `self`; `None` when more than `limit` differ.
+    pub(super) fn delta_from(&self, base: &Self, limit: usize) -> Option<EnvDelta> {
+        let mut out = Vec::new();
+        for difference in base.bindings.diff(&self.bindings) {
+            let entry = match difference {
+                im::ordmap::DiffItem::Add(name, binding) => (Arc::clone(name), Some(Arc::clone(binding))),
+                im::ordmap::DiffItem::Update { old, new } => {
+                    if binding_digest(old.0, old.1) == binding_digest(new.0, new.1) {
+                        continue;
+                    }
+                    (Arc::clone(new.0), Some(Arc::clone(new.1)))
+                }
+                im::ordmap::DiffItem::Remove(name, _) => (Arc::clone(name), None),
+            };
+            out.push(entry);
+            if out.len() > limit {
+                return None;
+            }
+        }
+        out.sort_by(|a, b| a.0.cmp(&b.0));
+        Some(EnvDelta(out))
+    }
     /// Digest of every binding; equal digests and lengths mean equal environments (a 128-bit
     /// collision aside, which `DMB_FRONTEND_VERIFY` would expose by comparing against a full pass).
     pub fn fingerprint(&self) -> u128 {

@@ -61,6 +61,10 @@ pub struct DirectiveRecord {
     inputs: usize,
 }
 impl DirectiveRecord {
+    /// The macro names whose definition or presence the interval's directives read.
+    pub(super) fn read_names(&self) -> impl Iterator<Item = &Arc<str>> {
+        self.reads.iter().map(|read| &read.name)
+    }
     /// Includes record Arc, owned capacities and every nested shared allocation;
     /// duplicate Arc identities are conservatively charged per occurrence.
     pub fn retained_size_bytes(&self) -> usize {
