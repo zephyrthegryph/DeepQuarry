@@ -91,7 +91,7 @@ CAPABILITIES(/datum/system/machines)
 		var/id = cable.get_power_region()
 		if(id && !power_material_overlays[id])
 			rel_add(src, nameof(power_material_overlays), new /datum/material_power_overlay(id), id)
-	for(var/id in power_material_overlays)
+	for(var/id in assoc_to_keys(power_material_overlays)) // a copy: an overlay removed below must not shift the walk
 		var/datum/material_power_overlay/overlay = power_material_overlays[id]
 		if(!power_grids.lookup(id) || !overlay.process_material_network())
 			rel_remove(src, nameof(power_material_overlays), overlay) // owned: removing it disposes of it

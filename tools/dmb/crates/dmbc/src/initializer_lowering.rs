@@ -632,7 +632,9 @@ fn lower_group<R: Resolver>(
     }
     let debug = CapturedOrigins {
         origins: DebugOrigins { entries },
-        ops: frontend.plan.final_macros.contains_key("DEBUG"),
+        // Debug ops are always emitted; a build without DEBUG strips them at link (`symbolic::debug_strip`), so the
+        // lowered code is the same for every define set.
+        ops: true,
     };
     // Current classification and provenance are always validated above.
     // Exact authored values and policy-issued array dimensions describe the

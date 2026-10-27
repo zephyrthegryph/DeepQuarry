@@ -107,7 +107,7 @@ fn request(root: &Path) -> (Arc<LazyDisk>, crate::lowering_memo::ProcedureMemo) 
     let disk = Arc::new(LazyDisk::new(root.into()));
     let mut host = crate::runner_host::BuildHost::one_shot();
     let memo = host
-        .procedure_memo(37, Some(Arc::clone(&disk)), true)
+        .procedure_memo(37, 37, Some(Arc::clone(&disk)), true)
         .unwrap();
     (disk, memo)
 }
@@ -170,7 +170,7 @@ fn one_shot_shared_initializer_disk_rebinds_and_recomputes_only_changed_write() 
 #[test]
 fn one_shot_without_disk_still_uses_shared_initializer_core() {
     let mut host = crate::runner_host::BuildHost::one_shot();
-    let memo = host.procedure_memo(1, None, true).unwrap();
+    let memo = host.procedure_memo(1, 1, None, true).unwrap();
     let source = "/datum/example\n    var/list/value = list(7)\n";
     equal(&run(source, Some(&memo)), &run(source, None));
     assert_eq!(
@@ -413,7 +413,7 @@ fn modified_initializer_disk_reissues_moved_nested_ast_and_declines_changed_inpu
     }
     let mut host = crate::runner_host::BuildHost::one_shot();
     let current = host
-        .procedure_memo(38, Some(Arc::new(LazyDisk::new(root.0.clone()))), true)
+        .procedure_memo(38, 38, Some(Arc::new(LazyDisk::new(root.0.clone()))), true)
         .unwrap();
     equal(&run(source, Some(&current)), &run(source, None));
     assert_eq!(

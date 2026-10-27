@@ -32,7 +32,7 @@ fn frontend(
 #[test]
 fn post_frontend_pruning_keeps_current_callable_owner_and_releases_detached_predecessor() {
     let mut host = BuildHost::default();
-    let memo = host.procedure_memo(3, None, true).unwrap();
+    let memo = host.procedure_memo(3, 3, None, true).unwrap();
     let store = Arc::clone(memo.startup.as_ref().unwrap());
     // A request gets its own view of the host's startup owner (`StartupArtifacts::for_request`); the owner is what must survive.
     let owner = Arc::clone(&host.startup.as_ref().unwrap().1);
