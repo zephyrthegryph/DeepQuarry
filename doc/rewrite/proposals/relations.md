@@ -144,6 +144,24 @@ Today an entity is named by: `own_key` ("id:num:type", `ownership.dm:33-55`), `e
 - `own_key` is internal to the relation engine; `adj_handle` and `vg_entity` are engine-only Rust handles, never in content.
 - **Stored `REF()` / `locate(text)` is banned.** A REF text may be built and resolved inside one request (a Topic href `?src=[REF(src)]`). Lint `ref_text`: a `REF()` / `\ref[` result assigned to a var, list, assoc key or deferred argument is reported; ratchet on `\ref[`; a `locate()` whose argument is such a value is reported. Known stored-text sites to convert: `mob_chunk` watchers and `living_refs` (`code/modules/mob/mob_chunks.dm:18-23, 33-34`), pack `sightings` ("ref text of a mob", `code/modules/combat_ai/pack/pack.dm:33`), the `REF(host)` key in `SStgui.modals` (`code/controllers/subsystems/tgui.dm:745`), `contracts.dm:105`, and the engine's own staleness keys (`code/engine/change/staleness.dm`, `refresh.dm`: engine, exempt by path).
 
+**D9a. One handle: `ref_token()` (coordinator decision, 2026-10-27).** The round-stable, deletion-safe name of an entity is `ref_token(D)` ("id:gen"
+for a datum, the turf key for a turf, "@ckey#connection" for a client), resolved with `resolve_token(h)` (`code/engine/time/handles.dm`). There is no
+second uid scheme for the same purpose: one way to name an entity.
+- **Why one handle.** It is already the engine's name for an entity everywhere: about 850 `ref_token(` calls in 268 files under `code/` (41 in
+  `code/engine/`: timers and their keyed forms, I/O callbacks, timed actions, prompts and requests) and about 160 `resolve_token(` calls
+  **(grep, 2026-10-27)**; the `entity_handle` name it replaced has no callers left. A second scheme would make every reader ask which one a key is.
+- **Why it is safe.** A deleted datum's slot is freed and its generation bumped, so a stale handle resolves null, never to whatever reuses the slot or the
+  address; the slot table holds text, so a handle never keeps its target alive; a turf handle carries its z-level's generation, a client handle its
+  connection. A counter-minted id or a `REF()` text has none of this: nothing clears it when its entity goes, and a `REF()` text can name the next datum at
+  the same address.
+- **What stays.** A number that is player-facing data rather than a way to find the entity again (a contract's "DQ-12", an NTNet card id, a cell's
+  number in a UI list) is a record field, not a handle; such a site says so with `// ALLOW(entity_ids): <reason>`. Saved data still stores ids, ckeys or
+  names, never a handle (D10, `saved_handle`).
+- **Lint `entity_ids`** (`tools/analyze/src/lints/entity_ids.rs`, shrink-only baseline `tools/ci/entity_ids_baseline.txt` seeded at its switch-on): rule
+  `counter_id` reports an id minted from a counter (`X++` / `++X` on a counter named `*uid*`, `id`, `*_id`, `next_*id`, `*_id_counter`, `*_id_ticker`),
+  rule `ref_key` a `REF()` text embedded in a list key (`L["[REF(x)]"]`, `L -= "a-[REF(x)]"`), the form `ref_text`'s patterns miss. The engine (which
+  implements the handles and keeps ordering serials), tests and generated output are exempt by path (`[lint.entity_ids]` in `tools/ci/lint_scopes.toml`).
+
 ### D10. Turf and client vars become handles; saved handles are banned (was D7, plus approved item 6)
 Today `/turf` and `/client` are not references to the lint, so any var of them is unchecked (about 145 turf-typed and 46 client-typed member lines, by a line-pattern count **(approximate)**; the baseline has 20 `@/client::` sites).
 - A turf var is a `ref_one`-class declaration whose stored form is a handle. Turfs are not deleted, but their identity changes when a z-level is recycled: the generation is already on the handle (`handles.dm:52-54`), so a stale turf handle resolves null (`handles.dm:205-231`).
