@@ -85,9 +85,6 @@
 	log_attack("PROTEAN RIG: [src] caught a severity [band] explosion; [key_name(myprotean)] took [taken].")
 	return OP_OK
 
-CAPABILITIES(/obj/item/rig/protean)
-	extend(/datum/act/hit/explosion, instead(when(PROC_REF(rig_has_protean)), then(PROC_REF(rig_blast))))
-
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The rig becomes that protean's control cluster.
 /obj/item/rig/protean/proc/bind_protean(mob/living/carbon/human/P)
 	if(!istype(P))
@@ -150,6 +147,7 @@ MSG_DEF_SELF(protean_rig/module_class, "The hardsuit already has a module of tha
 MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
 
 CAPABILITIES(/obj/item/rig/protean)
+	extend(/datum/act/hit/explosion, instead(when(PROC_REF(rig_has_protean)), then(PROC_REF(rig_blast))))
 	ref_one(nameof(soaking_wearer), /mob/living/carbon/human)
 	ref_one(nameof(assimilated_rig), /obj/item/rig)
 	configure(item_worn(flags = NOSTRIP))
