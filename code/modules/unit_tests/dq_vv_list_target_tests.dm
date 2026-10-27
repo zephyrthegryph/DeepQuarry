@@ -8,7 +8,7 @@
 	panel.set_view_target(viewed)
 	TEST_ASSERT(istype(panel.thing, /datum/vv_list_target), "a list target is held as a wrapper")
 	TEST_ASSERT(panel.view_target() == viewed, "and the panel reads the list back through view_target()")
-	TEST_ASSERT_EQUAL(panel.refid, REF(viewed), "with the handle of the list, not of the wrapper")
+	TEST_ASSERT_EQUAL(panel.refid(), REF(viewed), "with the handle of the list, not of the wrapper")
 	var/datum/vv_list_target/wrapper = panel.thing
 
 	var/datum/plain = new /datum

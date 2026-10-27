@@ -24,14 +24,12 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 
 /datum/vv_list_target/New(list/viewed)
 	..()
-	items = viewed // ALLOW(ownership): a view of someone else's list; the wrapper is a handle on it and never owns its members
+	items = viewed
 
 /datum/view_variables_panel
 	var/tmp/client/owner
 	/// The datum being viewed, or the /datum/vv_list_target wrapping the list being viewed.
 	var/datum/thing
-	/// Saved ref string so refresh actions land on the same target.
-	var/refid
 
 /datum/view_variables_panel/New(client/owner_client)
 	..()
@@ -53,6 +51,10 @@ CAPABILITIES(/datum/view_variables_panel)
 		return wrapped.items
 	return thing
 
+/// The handle text of the viewed target, built when asked (a REF text is never stored).
+/datum/view_variables_panel/proc/refid()
+	return REF(view_target())
+
 /// Points the panel at `target` (a datum, or a list, which is wrapped), letting go of the wrapper of the target it had.
 /datum/view_variables_panel/proc/set_view_target(target)
 	var/datum/vv_list_target/old = thing
@@ -60,7 +62,6 @@ CAPABILITIES(/datum/view_variables_panel)
 	if(islist(target) || (!isdatum(target) && hascall(target, "Cut"))) // a list, or an object that behaves as one (an appearance's overlays)
 		new_thing = new /datum/vv_list_target(target)
 	rel_set(src, nameof(thing), new_thing)
-	refid = REF(target)
 	if(istype(old))
 		spent(old)
 
@@ -93,7 +94,7 @@ CAPABILITIES(/datum/view_variables_panel)
 
 /datum/view_variables_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["ref"] = refid
+	data["ref"] = refid()
 	var/list/merged_1 = ui_data_datum_view_variables_panel(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -116,8 +117,8 @@ CAPABILITIES(/datum/view_variables_panel)
 	else
 		type_text = "[maybe_datum.type]"
 	data["type"] = type_text
-	data["ref_for_paste"] = "@[copytext(refid, 2, -1)]"
-	data["title"] = "[viewed] ([refid]) = [type_text]"
+	data["ref_for_paste"] = "@[copytext(refid(), 2, -1)]"
+	data["title"] = "[viewed] ([refid()]) = [type_text]"
 
 	// Atom-specific cords + sprite handling.
 	if(isatom(thing))
@@ -145,12 +146,12 @@ CAPABILITIES(/datum/view_variables_panel)
 	if(is_listy)
 		raw_dropdown = list(
 			"---",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_ADD)]'>Add Item</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_ERASE_NULLS)]'>Remove Nulls</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_ERASE_DUPES)]'>Remove Dupes</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_SET_LENGTH)]'>Set len</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_SHUFFLE)]'>Shuffle</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_EXPOSE)]'>Show VV To Player</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_ADD)]'>Add Item</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_ERASE_NULLS)]'>Remove Nulls</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_ERASE_DUPES)]'>Remove Dupes</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_SET_LENGTH)]'>Set len</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_SHUFFLE)]'>Shuffle</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_EXPOSE)]'>Show VV To Player</option>",
 			"---",
 		)
 		data["dropdown"] = parse_dropdown_options(raw_dropdown, user)
