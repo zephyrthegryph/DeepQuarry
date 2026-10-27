@@ -15,6 +15,8 @@ pub struct ClassProjections {
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+    /// The session's query database: owner receipts are proven by its answer table and record no domain versions.
+    answers: Option<Arc<crate::query_db::QueryDb>>,
 }
 pub(super) type ProjectionAttempt = dm_session::ArtifactAttempt<ProjectionLeases>;
 pub(super) struct ProjectionLeases {
@@ -82,6 +84,7 @@ impl Default for ClassProjections {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            answers: None,
         }
     }
 }
@@ -171,7 +174,13 @@ impl ClassProjections {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            answers: self.answers.clone(),
         }
+    }
+    /// Prove owner receipts by `db`'s answer table instead of domain versions (a session with a query database).
+    pub(crate) fn with_answers(mut self, db: Option<Arc<crate::query_db::QueryDb>>) -> Self {
+        self.answers = db;
+        self
     }
     pub fn publish_successful(&self) -> bool {
         self.attempt.publish_successful()
@@ -276,6 +285,22 @@ impl ClassProjections {
             self.declined.fetch_add(1, Ordering::Relaxed);
             return None;
         };
+        // With a query database, a stored owner's reads are proven by the session's answer table (one answer per query,
+        // shared with every stage of the request; `DMB_QUERY_VERIFY=1` checks the tree gives the same answers) and its
+        // receipts carry no domain versions. Without one, the tree's domain versions certify them as before.
+        let answer = |query: &ResolveQuery| Resolver::resolve(tree, *query);
+        let answers = self
+            .answers
+            .as_deref()
+            .filter(|db| db.answers_bound_to(tree))
+            .map(|db| db.request_answers(&answer));
+        let admission = dm_session::ReceiptAdmission::with_oracle(
+            tree,
+            answers.as_ref().map(|answers| {
+                answers as &dyn dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning>
+            }),
+        );
+        let versioned = answers.is_none();
         // Owners are independent: compare each with its retained projection in parallel (43k owners).
         use rayon::prelude::*;
         let keys: Vec<_> = keys.into_iter().collect();
@@ -292,7 +317,12 @@ impl ClassProjections {
                             .with_pending(|leases| {
                                 leases
                                     .values
-                                    .visit_explained(&key, tree, &mut |value| {
+                                    .visit_receipted_with(
+                                        &key,
+                                        &mut |reads, versions| {
+                                            admission.first_changed_receipted(reads, versions, |_| {})
+                                        },
+                                        &mut |value| {
                                         let matches = value.inputs.len() == inputs.len()
                                             && value.values.len() == value.inputs.len()
                                             && inputs.iter().zip(&value.inputs).all(
@@ -300,8 +330,10 @@ impl ClassProjections {
                                             );
                                         rejected_local_input |= !matches;
                                         matches
-                                    })
+                                    },
+                                    )
                                     .0
+                                    .map(|accepted| accepted.value)
                             })
                             .flatten();
                     if hit.is_some() {
@@ -324,7 +356,7 @@ impl ClassProjections {
                             inputs,
                             produced: Vec::new(),
                             rejected_local_input,
-                            recorder: RecordingResolver::new(tree),
+                            recorder: RecordingResolver::with_versions(tree, versioned),
                             next: 0,
                             pending,
                             prefetched: Default::default(),
