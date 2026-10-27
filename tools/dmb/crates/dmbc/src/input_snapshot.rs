@@ -219,6 +219,8 @@ pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 
 pub struct RecordingInputs<P = FileSystemInputs> {
     provider: P,
+    /// Watcher position at creation: every fact recorded later was observed after it.
+    created: Option<crate::fs_watch::WatchToken>,
     snapshot: Mutex<InputSnapshot>,
     exact_reuse: bool,
     prepared: Option<std::sync::Arc<PreparedInputArtifacts>>,
@@ -228,7 +230,11 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     pub fn new(provider: P, scanned_ns: u128) -> Self {
         let mut snapshot = InputSnapshot::new(scanned_ns);
         snapshot.generated_outputs = provider.generated_outputs().cloned().unwrap_or_default();
+        let created = provider.watch_token();
+        // Merged retained parts narrow this (`InputSnapshot::merge`).
+        snapshot.watch.replace(created);
         Self {
+            created,
             provider,
             snapshot: Mutex::new(snapshot),
             exact_reuse: false,
@@ -248,16 +254,39 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .shape())
     }
     pub fn snapshot(&self) -> io::Result<InputSnapshot> {
-        Ok(self
+        let snapshot = self
             .snapshot
             .lock()
             .map_err(|_| invalid("input capture mutex poisoned"))?
-            .clone())
+            .clone();
+        self.mark(&snapshot);
+        Ok(snapshot)
     }
     pub fn into_snapshot(self) -> io::Result<InputSnapshot> {
-        self.snapshot
+        let snapshot = self
+            .snapshot
             .into_inner()
-            .map_err(|_| invalid("input capture mutex poisoned"))
+            .map_err(|_| invalid("input capture mutex poisoned"))?;
+        let mark = match (self.created, self.provider.watch_token(), snapshot.watch.get()) {
+            (Some(created), Some(now), Some(merged)) => {
+                crate::fs_watch::earlier(created, now).and_then(|token| crate::fs_watch::earlier(token, merged))
+            }
+            _ => None,
+        };
+        snapshot.watch.replace(mark);
+        Ok(snapshot)
+    }
+    /// A recorded fact was observed after this capture began, through a provider whose observations follow its own
+    /// position (a provider that answers from earlier proofs reports theirs), so the earlier of the two proves them all.
+    /// A merged retained part narrows it further (`InputSnapshot::merge`).
+    fn mark(&self, snapshot: &InputSnapshot) {
+        let mark = match (self.created, self.provider.watch_token(), snapshot.watch.get()) {
+            (Some(created), Some(now), Some(merged)) => {
+                crate::fs_watch::earlier(created, now).and_then(|token| crate::fs_watch::earlier(token, merged))
+            }
+            _ => None,
+        };
+        snapshot.watch.replace(mark);
     }
     /// Capture a binary compiler input through the same exact read ledger.
     pub fn read_binary(&self, path: &Path) -> io::Result<Vec<u8>> {
@@ -387,6 +416,9 @@ impl WatchMark {
     }
     fn set(&self, token: crate::fs_watch::WatchToken) {
         *self.0.lock().unwrap_or_else(|e| e.into_inner()) = Some(token);
+    }
+    fn replace(&self, token: Option<crate::fs_watch::WatchToken>) {
+        *self.0.lock().unwrap_or_else(|e| e.into_inner()) = token;
     }
 }
 impl Clone for WatchMark {
@@ -589,6 +621,7 @@ impl InputSnapshot {
         next.folders = self.folders.clone();
         next.generated_outputs = self.generated_outputs.clone();
         next.negative_files = self.negative_files.clone();
+        next.watch.replace(self.watch.get());
         Ok(next)
     }
     /// Merge a freshly validated retained domain into this capture. Conflicting
@@ -663,6 +696,12 @@ impl InputSnapshot {
             }
         }
         self.scanned_ns = self.scanned_ns.min(other.scanned_ns);
+        // Both parts must be current at the merged position: the earlier of their marks, none if either lacks one.
+        let merged = match (self.watch.get(), other.watch.get()) {
+            (Some(own), Some(other)) => crate::fs_watch::earlier(own, other),
+            _ => None,
+        };
+        self.watch.replace(merged);
         Ok(())
     }
     /// Paths of every recorded file input, in path order.

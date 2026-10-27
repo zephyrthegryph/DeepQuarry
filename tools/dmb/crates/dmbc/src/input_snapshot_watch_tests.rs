@@ -150,3 +150,56 @@ fn a_snapshot_outside_every_watched_root_is_always_proven() {
         assert_eq!(provider.asked(), 1);
     }
 }
+
+#[test]
+fn a_recorded_capture_is_marked_at_its_start_and_merging_keeps_the_earlier_mark() {
+    crate::fs_watch::enable();
+    let root = crate::test_scratch::dir("watched-capture");
+    let folder = root.join("icons");
+    let sounds = root.join("sound");
+    std::fs::create_dir_all(&folder).unwrap();
+    std::fs::create_dir_all(&sounds).unwrap();
+    std::fs::write(folder.join("a.dmi"), b"a").unwrap();
+    std::fs::write(sounds.join("b.ogg"), b"b").unwrap();
+    // The first access of an entry in a while updates its last-access time, which the watcher sees as a change of the
+    // directory: touch everything once before watching, as every earlier build has on a real tree.
+    FileSystemInputs.read(&sounds.join("b.ogg")).unwrap();
+    FileSystemInputs.list(&folder).unwrap();
+    crate::fs_watch::arm(&root);
+    crate::fs_watch::sync(&root);
+    assert!(crate::fs_watch::covered(&root), "the watcher did not arm");
+    let later = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos()
+        + 10_000_000_000;
+    let provider = Counting { stamps: Cell::new(0), listings: Cell::new(0) };
+    let capture = RecordingInputs::new(&provider, later);
+    capture.read_binary(&sounds.join("b.ogg")).unwrap();
+    capture.record_search_folder(&folder).unwrap();
+    let captured = capture.into_snapshot().unwrap();
+    provider.asked();
+    // Recorded after the capture began, and nothing changed since: nothing is asked.
+    crate::fs_watch::sync(&root);
+    let (report, refreshed) = captured.validate(&provider, false, later).unwrap();
+    assert!(report.unchanged());
+    assert_eq!(provider.asked(), 0);
+    let (report, _) = refreshed.validate(&provider, false, later).unwrap();
+    assert!(report.unchanged());
+    assert_eq!(provider.asked(), 0);
+    // Selecting files keeps the mark; merging with an unmarked part drops it.
+    let selected = refreshed.select_files(&[sounds.join("b.ogg")].into_iter().collect()).unwrap();
+    let (report, _) = selected.validate(&provider, false, later).unwrap();
+    assert!(report.unchanged());
+    assert_eq!(provider.asked(), 0);
+    let mut merged = refreshed.clone();
+    merged.merge(&InputSnapshot::new(later)).unwrap();
+    let (report, _) = merged.validate(&provider, false, later).unwrap();
+    assert!(report.unchanged());
+    assert_eq!(provider.asked(), 2);
+    // A new entry in the listed folder after the capture began is found.
+    std::fs::write(folder.join("new.dmi"), b"n").unwrap();
+    crate::fs_watch::sync(&root);
+    let (report, _) = captured.validate(&provider, false, later).unwrap();
+    assert_eq!(report.changed, vec![canonical_path(&folder)]);
+}

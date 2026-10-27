@@ -156,8 +156,9 @@ fn invalidate(path: &str, subtree: bool) {
 ///
 /// Every event appends the changed entry and its directory under one sequence number, taken under the log lock, so a
 /// [`WatchToken`] read under the same lock orders exactly: an event logged at or before the token was applied before
-/// anything observed after it. A loss (overflow, read error, sync timeout, a newly armed root) or a full log starts a
-/// new epoch, and a token of another epoch proves nothing.
+/// anything observed after it. A loss (overflow, read error, sync timeout) or a full log starts a new epoch, and a
+/// token of another epoch proves nothing. A newly armed root is logged as one changed subtree once its watcher is
+/// proven, so only tokens taken before that re-prove it.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct WatchToken {
     epoch: u64,
@@ -203,6 +204,12 @@ pub fn token() -> Option<WatchToken> {
     Some(WatchToken { epoch: log.epoch, seq: log.seq })
 }
 
+/// The earlier of two positions of one epoch: facts gathered at or after each are current at or after it. `None` across
+/// epochs (a loss in between proves nothing).
+pub fn earlier(a: WatchToken, b: WatchToken) -> Option<WatchToken> {
+    (a.epoch == b.epoch).then(|| if a.seq <= b.seq { a } else { b })
+}
+
 /// What changed after a token: directories named by an event, and keys whose whole subtree changed.
 pub struct Changes {
     dirs: std::collections::HashSet<String>,
@@ -226,6 +233,7 @@ impl Changes {
     pub fn len(&self) -> usize {
         self.dirs.len() + self.subtrees.len()
     }
+
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -423,8 +431,6 @@ mod windows {
             all.retain(|existing| existing.key != state.key);
             all.push(Arc::clone(&state));
         }
-        // Nothing under this root was logged before now: a token taken earlier must not prove it.
-        lose_log();
         let handle_value = handle as usize;
         let thread_state = Arc::clone(&state);
         let spawned = std::thread::Builder::new()
@@ -441,6 +447,9 @@ mod windows {
         // The first cookie is usually lost (the reader thread has not issued its first read yet), so
         // probe in short rounds: the same 3 s worst case as before, but a normal arm costs tens of ms.
         if (0..60).any(|_| cookie(root, &state, std::time::Duration::from_millis(50))) {
+            // Nothing under this root was logged before the watcher was proven: a token taken earlier must not prove any
+            // of it, so the whole root counts as changed at this point of the log.
+            log_change(&state.key, true);
             state.healthy.store(true, Ordering::Release);
             crate::daemon_eprintln!("native fs watch: armed {}", root.display());
         } else {
