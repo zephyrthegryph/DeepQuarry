@@ -1,3 +1,0 @@
-fit wearer=Human: ALLOW
-equip wearer=Human: this suit is not designed for you
-

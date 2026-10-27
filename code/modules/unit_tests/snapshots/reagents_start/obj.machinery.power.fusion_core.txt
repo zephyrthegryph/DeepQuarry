@@ -1,3 +1,0 @@
-/obj/machinery/power/fusion_core vol=10000 holder=/datum/reagents 
-/obj/machinery/power/fusion_core/mapped vol=10000 holder=/datum/reagents 
-

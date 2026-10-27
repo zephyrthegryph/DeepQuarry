@@ -1,2 +1,0 @@
-equip wearer=Human: you need a horse-taur half to wear this
-

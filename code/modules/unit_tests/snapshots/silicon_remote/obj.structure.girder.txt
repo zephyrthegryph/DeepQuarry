@@ -1,2 +1,0 @@
-@obj.structure robot|none
-@obj.structure ai|none

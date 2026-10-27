@@ -15,7 +15,7 @@ the wave is converted with it (the legacy and the entry forms do not inherit fro
     --paths P...   only the DECLARE_LOOT sites in these files or directories (default: every site)
     --tests        include code/modules/unit_tests/ (left alone by default)
     --check        print what would change; write nothing
-    --list         print the declared types, one per line, and exit (the owners of snapshots/loot/owners.txt)
+    --list         print the declared types, one per line, and exit
 
 Residue (left as it is, printed): a LOOT_ macro this table does not know, a comment inside the macro, a type whose block is the legacy
 CAPABILITIES(T, entries...) form.
@@ -212,18 +212,6 @@ def main(argv):
                 wave.add(s.path)
                 changed = True
 
-    if "--wave-owners" in argv:
-        # The wave's declarations and the ones whose tables name them (a nested table or spawner): what the roll pin's subset test proves for the wave.
-        names = set(wave)
-        for s in sites:
-            text = " ".join(s.specs)
-            if any(re.search(re.escape(p) + r"(?![\w/])", text) for p in wave):
-                names.add(s.path)
-        out_path = os.path.join(ROOT, "data", "loot_pin_subset.txt")
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        with open(out_path, "w", newline="\n") as fh:
-            fh.write("\n".join(sorted(names)) + "\n")
-        print(f"wave owners: {len(wave)} declared + {len(names) - len(wave)} nesting them -> data/loot_pin_subset.txt")
     # A converted pure table is a type: every LOOT_REF(P) of it, wherever it stands, is P.
     converted_tables = {p for p in wave if p.startswith("/loot/")}
     ref_edits = 0

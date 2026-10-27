@@ -1,2 +1,0 @@
-equip wearer=Human: the collar doesn't fit you
-

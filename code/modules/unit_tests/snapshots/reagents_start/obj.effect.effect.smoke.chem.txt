@@ -1,3 +1,0 @@
-/obj/effect/effect/smoke/chem vol=500 holder=/datum/reagents 
-/obj/effect/effect/smoke/chem/transparent vol=500 holder=/datum/reagents 
-

@@ -468,8 +468,8 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   without an instance, compiled once at world setup by the `static_entries` system
   (`code/engine/declare/static_entries.dm`), looked up with `loot_decl_for()` / `map_resolver_proc()`.
   `DECLARE_LOOT`, the `LOOT_*` rows, `MAP_RESOLVER` and `MAP_RESOLVER_VARS` are hard-banned. Don't add
-  hand-rolled spawn code. Pins: `dq_loot_roll_pin`, `dq_loot_search_pin`, `dq_resolver_table_pin`,
-  `dq_resolver_reader_pin` (`code/modules/unit_tests/snapshots/loot/`).
+  hand-rolled spawn code. Tests: `dq_loot_roll_yields_table_item`, `dq_loot_search_yields_once_per_searcher`,
+  `dq_map_resolver_inherited` (`code/modules/unit_tests/dq_loot_behaviour.dm`).
 - **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
   every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through

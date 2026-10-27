@@ -1,3 +1,0 @@
-human|/obj/item/multitool menu: Configure
-human|/obj/item/multitool menu: Toggle
-human|/obj/item/multitool click: Click: Configure

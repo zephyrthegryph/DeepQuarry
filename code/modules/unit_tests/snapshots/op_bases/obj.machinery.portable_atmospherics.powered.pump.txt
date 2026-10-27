@@ -1,6 +1,0 @@
-human|/obj/item/tank menu: Climb
-human|/obj/item/tank menu: Use
-human|/obj/item/tank click: Click: Use
-human|/obj/item/tool/wrench menu: Climb
-human|/obj/item/tool/wrench menu: Wrench
-human|/obj/item/tool/wrench click: Click: Wrench
