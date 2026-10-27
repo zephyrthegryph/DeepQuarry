@@ -854,3 +854,33 @@ same stable topological sort). What it would buy:
 What it costs: dmbc must reproduce `gen_dme.py`'s sort byte for byte (or call it) so DreamMaker, which still reads the `.dme`, sees
 the same order; a disagreement would be a native-vs-DreamMaker difference the CI cross-check (`tools/ci/dm_equiv.sh`) catches. Keep
 the `.dme` either way.
+
+
+## `#define` edits: re-plan only the include subtrees that read the changed macros (step 5, started 2026-10-26)
+
+An include subtree's directive interpretation depends on the macros its directives read (`#if`, `#ifdef`, `defined()`,
+directive-memo hits) and write (`#define`, `#undef`), not on the whole incoming environment. Each `SubtreeRecord` now keeps
+those names (`tested`); the ordered pass tracks how its macro environment differs from the previous pass's at the same
+point (`EnvDelta`, at most 64 bindings, by content and definition site) and adopts a subtree whose other incoming state is
+equal and whose tested names are outside the delta, with the delta applied to the environment of every copied segment,
+to its outgoing state and to its carried records (`DirectivePass::carried_delta`, `MacroEnvironment::apply` /
+`delta_from`). A rebased region is not mapped to the previous one, so its expansion is proven again by the macros it
+reads (the expansion memo). Tests: `manifest_changes_renumber_adopted_subtrees_or_decline_them` (a manifest `#define` edit
+now adopts the three subtrees that do not read it) and `a_define_edit_reruns_only_the_subtrees_whose_directives_read_it`,
+both comparing every plan and expansion with a full pass.
+
+Measured, production tree, `BAD_INIT_SLEPT` (defined in `code/__defines/_atoms.dm`, read only in two bodies) edited twice
+per round, interleaved against the published compiler: subtrees adopted 10 -> 5872 (state declines 5944 -> 0); the
+request was already a body-level patch on both (4.6-7.9 s against 5.3-6.3 s, frontend 0.9-1.5 s on both): 5917 regions
+are still expanded again (memo-verified), which is where the frontend time of such an edit goes. `dmb-equiv` of the
+output after the edits against a fresh compile: EQUIVALENT, two rounds.
+
+**Rebased regions keep their expansion (compiler/test-increment-2).** `PlanReuse::rebased_regions` names, for every region
+of a rebased subtree, the previous region and the macro names whose bindings differ; `expand_regions_reusing` copies the
+previous expansion when its recorded macro reads (`ExpansionRecord::reads`, which include names read while absent) name
+none of them. Same measurement: regions expanded again 5917 -> 30-32 (13174 reused); frontend of the edit 1.0-1.1 s in the
+quieter round against 2.1-2.3 s for the previous slice (the other round was loaded on both sides). Test
+`a_new_macro_used_in_adopted_text_expands_that_text_again`. `dmb-equiv` against a fresh compile: EQUIVALENT, two rounds.
+
+Next: start a new define variant (the unit-test world) from the active variant's plan, so the test
+world's plan, regions and expansions are an increment over the game's.
