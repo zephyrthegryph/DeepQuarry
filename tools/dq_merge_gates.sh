@@ -318,7 +318,14 @@ job_dm() {
 }
 job_dreamchecker() {
 	# DQ_DREAMCHECKER=1 makes a missing DreamChecker an error the verdict below catches (no 'dream-checker: passed' line), never a silent pass.
-	DQ_DREAMCHECKER=1 tools/build/build.sh dream-checker
+	# One DreamChecker at a time machine-wide (machine slot class "dreamchecker", capacity 1, DQ_SLOTS_DREAMCHECKER): two at once (the
+	# precheck workers, or a precheck beside the batch gate) took 600-700 s each against 335 s alone (27 October). The batch gate's
+	# priority 0 goes first. DQ_GATE_DC_PARALLEL=1 runs it without the slot.
+	if [ "${DQ_GATE_DC_PARALLEL:-0}" != 1 ] && [ -f tools/dq_machine_slots.sh ]; then
+		DQ_DREAMCHECKER=1 bash tools/dq_machine_slots.sh run dreamchecker --label "dreamchecker $short" -- tools/build/build.sh dream-checker
+	else
+		DQ_DREAMCHECKER=1 tools/build/build.sh dream-checker
+	fi
 }
 job_ratchets() {
 	# The analyze caches are content-addressed and stamped with the engine's own source hash and lint_scopes.toml (tools/analyze/README.md,

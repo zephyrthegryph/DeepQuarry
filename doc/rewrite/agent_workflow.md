@@ -910,3 +910,6 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
   it). `lock_take` now writes the owner into a private directory and renames it into place (a lock never exists without its owner); a
   dead lock is moved aside and checked to still be the dead owner's before it goes; and the integrator checks it still owns `run.lock`
   before every cycle (`lock_owned`), exiting otherwise. `mark_landed` clears a bounce record whose tip is in master.
+- **One DreamChecker at a time.** Two at once (both precheck workers, or a precheck beside the batch gate) took 600-700 s each against
+  335 s alone. The gates' dreamchecker job now holds the machine slot class `dreamchecker` (capacity 1, `DQ_SLOTS_DREAMCHECKER`); the
+  batch gate's priority 0 goes first. `DQ_GATE_DC_PARALLEL=1` runs it without the slot.
