@@ -9,9 +9,13 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	name = "blast probe"
 	max_integrity = 100
 
-/obj/structure/dq_blast_probe/ex_act(severity)
+/// Records that the blast reached the probe (ex_act() starts the explode action), and leaves the default to land.
+/obj/structure/dq_blast_probe/proc/log_blast(datum/act/A)
 	GLOB.dq_blast_probe_log += type
-	return ..()
+	return HOOK_DECLINE
+
+CAPABILITIES(/obj/structure/dq_blast_probe)
+	extend(/datum/act/explode, instead(then(PROC_REF(log_blast))))
 
 /obj/structure/dq_blast_probe/alpha
 /obj/structure/dq_blast_probe/beta

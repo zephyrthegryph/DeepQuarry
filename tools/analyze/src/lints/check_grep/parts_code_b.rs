@@ -105,10 +105,12 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "damage_ratchet_on_non_turf_ex_act_overrides_d5",
             "damage: ratchet on non-turf ex_act() overrides (D5)",
-            "non-turf ex_act() overrides over the ratchet. Let the blast packet land (max_integrity, armour, BOMB_PROOF); keep only orthogonal effects and chain to ..().",
+            "non-turf ex_act() overrides are banned. Let the blast packet land (max_integrity, armour, BOMB_PROOF), or take the blast with extend(/datum/act/hit/explosion, instead(then(PROC_REF(x)))) in the type's CAPABILITIES (x(datum/act/hit/explosion/A) reads A.packet.severity).",
             Files::Code,
             line(r"^/(atom|obj|mob|area)[A-Za-z0-9_/]*/ex_act\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, mob/living) start the explosion action and deliver the packet; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/modules/mob/living/living_defense.dm")]),
         Part::new(
             "damage_ratchet_on_atom_break_set_broken_overrides_d4",
             "damage: ratchet on atom_break()/set_broken() overrides (D4)",
