@@ -348,7 +348,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	rel_set(src, nameof(loot_panel), new /datum/lootpanel(src))
 
-	EXPIRY_STAMP(src, connection_time, CLOCK_WORLD)
+	STAMP(src, connection_time, CLOCK_WORLD)
 	connection_realtime = world.realtime
 	connection_timeofday = world.timeofday
 

@@ -444,3 +444,5 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		if(XCUR_ORE)
 			return MEDIUM_ORE_STOCK
 	return null
+
+SCHEMA(/datum/xform, material_template, schema_path(/datum/material_template))

@@ -142,7 +142,7 @@
 	if(QDELETED(src) || !running)
 		return
 	if(!loop_started_at)
-		EXPIRY_STAMP(src, loop_started_at, CLOCK_WORLD)
+		STAMP(src, loop_started_at, CLOCK_WORLD)
 	if(max_loops && ELAPSED(src, loop_started_at, CLOCK_WORLD) >= mid_length * max_loops)
 		stop()
 		return

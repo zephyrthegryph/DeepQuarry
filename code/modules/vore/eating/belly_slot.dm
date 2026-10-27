@@ -88,7 +88,7 @@ CAPABILITY_TYPE(belly_cycle, CAP_BELLY_CYCLE, /datum/capability/belly_cycle, key
 			cancel_after(src, "liquid_timer")
 		cycle_period = belly_cycle_period()
 		if(!cycle_token)
-			EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
+			STAMP(src, cycle_last, CLOCK_WORLD)
 			cycle_token = TRUE
 			grant(src, /datum/capability/belly_cycle, src)
 		return
@@ -110,7 +110,7 @@ CAPABILITY_TYPE(belly_cycle, CAP_BELLY_CYCLE, /datum/capability/belly_cycle, key
 	if(QDELETED(src) || !cycle_token)
 		return
 	var/seconds = (world.time - cycle_last) / (1 SECONDS)
-	EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
+	STAMP(src, cycle_last, CLOCK_WORLD)
 	belly_cycle(seconds)
 	if(!QDELETED(src) && !belly_occupied())
 		belly_reschedule()

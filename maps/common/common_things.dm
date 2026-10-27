@@ -66,7 +66,7 @@
 
 /obj/effect/step_trigger/lost_in_space/bluespace/Trigger(A)
 	if(ELAPSED(src, last_sound, CLOCK_WORLD) > 5 SECONDS)
-		EXPIRY_STAMP(src, last_sound, CLOCK_WORLD)
+		STAMP(src, last_sound, CLOCK_WORLD)
 		play_sfx(src, SFX_EFFECTS_SUPERMATTER, 1.5)
 	if(ismob(A) && prob(5))//lucky day
 		var/destturf = locate(rand(5,world.maxx-5),rand(5,world.maxy-5),pick(using_map.station_levels))

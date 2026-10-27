@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "STAMP/ELAPSED is the one var timestamp pair (EXPIRY_STAMP removed); a base type's table stamps are stamp_now()/stamp_elapsed()"
+  - code_imp: "The kernel work clock is a typed number from world.time down to the sequence execution token, so the last_at clamp is gone"

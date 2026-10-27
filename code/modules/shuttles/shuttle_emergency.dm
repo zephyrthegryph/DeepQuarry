@@ -27,7 +27,7 @@
 
 	//update move_time and launch_time so we get correct ETAs
 	move_time = travel_time
-	EXPIRY_STAMP(SSemergency_shuttle, launch_time, CLOCK_WORLD)
+	STAMP(SSemergency_shuttle, launch_time, CLOCK_WORLD)
 
 	..(destination, interim, travel_time, direction)
 

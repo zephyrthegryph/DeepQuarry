@@ -72,8 +72,8 @@ CAPABILITIES(/datum/expedition_site)
 	z_level = _z_level
 	difficulty = _difficulty
 	rel_set(src, nameof(landing), _landing)
-	EXPIRY_STAMP(src, generated_at, CLOCK_WORLD)
-	EXPIRY_STAMP(src, last_occupied, CLOCK_WORLD)
+	STAMP(src, generated_at, CLOCK_WORLD)
+	STAMP(src, last_occupied, CLOCK_WORLD)
 	rel_clear(src, nameof(participants))
 
 

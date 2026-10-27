@@ -22,7 +22,7 @@
 	board_key = _board_key
 	offer_kind = _offer_kind
 	reason = _reason
-	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
+	STAMP(src, created_at, CLOCK_WORLD)
 	expires_at = _expires_at
 	priority = _priority
 	context = _context ? deepCopyList(_context) : list()
@@ -38,7 +38,7 @@
 
 /datum/contract_lifecycle_entry/New(_action, _contract_id, _definition_id, _offer_key, _board_key, _reason)
 	. = ..()
-	EXPIRY_STAMP(src, time, CLOCK_WORLD)
+	STAMP(src, time, CLOCK_WORLD)
 	action = _action
 	contract_id = _contract_id
 	definition_id = _definition_id

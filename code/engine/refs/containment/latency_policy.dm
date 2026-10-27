@@ -35,7 +35,7 @@
  */
 /proc/dq_latent_touch(atom/movable/A)
 	if(A)
-		STAMP(A, latent_touched_at, CLOCK_WORLD)
+		stamp_now(A, latent_touched_at, CLOCK_WORLD)
 
 // ---- Policy ----
 
@@ -93,7 +93,7 @@ GLOBAL_VAR_INIT(latency_last_ineligible, "")
 		GLOB.latency_last_ineligible = "[A.type] is in a stock slot"
 		return
 	var/delay = A.loc?.latent_idle_delay_value()
-	var/idle = STAMP_ELAPSED(A, latent_touched_at, CLOCK_WORLD)
+	var/idle = stamp_elapsed(A, latent_touched_at, CLOCK_WORLD)
 	if(idle < delay)
 		GLOB.latency_last_ineligible = "[A.type] idle [idle] of [delay]"
 		return

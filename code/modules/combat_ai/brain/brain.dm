@@ -108,7 +108,7 @@ CAPABILITIES(/datum/ai_brain)
 	if(holder.client)
 		on_holder_login(holder)
 	rebuild_behaviors()
-	EXPIRY_STAMP(src, born_at, CLOCK_WORLD)
+	STAMP(src, born_at, CLOCK_WORLD)
 	set_ai_state(state_set()["calm"])
 	seek_pack()
 	return ..()
@@ -322,7 +322,7 @@ CAPABILITIES(/datum/ai_brain)
 /// use this to decide whether a calm brain may hibernate), FALSE otherwise.
 /datum/ai_brain/proc/pick_and_run()
 	selection_dirty = FALSE
-	EXPIRY_STAMP(src, last_pick_at, CLOCK_WORLD)
+	STAMP(src, last_pick_at, CLOCK_WORLD)
 	assess_state()
 	if(!effective_behaviors || !length(effective_behaviors))
 		return FALSE
@@ -449,7 +449,7 @@ CAPABILITIES(/datum/ai_brain)
 			// This prevents caves-are-dark from dropping the target the instant
 			// the player steps one tile out of the narrow view() cone.
 			if(!lose_threat_at)
-				EXPIRY_STAMP(src, lose_threat_at, CLOCK_WORLD)
+				STAMP(src, lose_threat_at, CLOCK_WORLD)
 				return  // Start the grace timer; don't drop yet.
 			if(BEFORE(src, lose_threat_at + DQ_LOSE_THREAT_TIMEOUT, CLOCK_WORLD))
 				return  // Still within the grace period.

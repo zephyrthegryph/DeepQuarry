@@ -93,7 +93,7 @@
 	for(var/evidence_id in unique_ids)
 		var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 		evidence.consumed_by = contract_id
-		EXPIRY_STAMP(evidence, consumed_at, CLOCK_WORLD)
+		STAMP(evidence, consumed_at, CLOCK_WORLD)
 	emit_contract_event(CONTRACT_EVENT_EVIDENCE_CONSUMED, list(
 		"contract_id" = contract_id,
 		"evidence_ids" = unique_ids.Copy(),

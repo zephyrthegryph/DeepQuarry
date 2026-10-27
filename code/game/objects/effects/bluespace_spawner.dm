@@ -12,7 +12,7 @@
 	EXPIRY_DECLARE(init_time)
 
 /obj/effect/bspawner/proc/stamp_creation_time()
-	EXPIRY_STAMP(src, init_time, CLOCK_WORLD)
+	STAMP(src, init_time, CLOCK_WORLD)
 
 CAPABILITIES(/obj/effect/bspawner)
 	setup(PROC_REF(stamp_creation_time))

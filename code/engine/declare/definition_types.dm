@@ -94,6 +94,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	/// Index of the measurement system (km_bind_behaviours()); 0 until the registry binds it.
 	var/system_idx = 0
 
+SCHEMA(/datum/scheduled_behaviour, system_key, schema_text())
+
 /datum/scheduled_behaviour/proc/tick(datum/E, dt)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
@@ -383,3 +385,4 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/service_definition)
 
 /datum/scheduled_behaviour/internal
 	abstract_type = /datum/scheduled_behaviour/internal
+SCHEMA(/datum/scheduled_behaviour, system_idx, num())

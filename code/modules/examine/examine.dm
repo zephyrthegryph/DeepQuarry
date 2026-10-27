@@ -9,6 +9,8 @@
 
 /atom/
 
+SCHEMA(/atom, description_fluff, schema_text())
+
 /**
  * Generated mechanics text: what the atom's properties mean in play (a weapon's
  * damage, armour ratings, a gun's fire modes). Types add lines generated from

@@ -833,6 +833,12 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "EXPIRY_STAMP = STAMP(D, var, clock) records now in a var (code/__defines/sys_expiry.dm); a base type stamps with stamp_now(D, name, clock)",
+  "STAMP_ELAPSED = ELAPSED(D, var, clock) reads a var stamp; a base type's table stamp is stamp_elapsed(D, name, clock) (code/__defines/engine/sparse_slots.dm)",
+  "STAMP_AT = stamp_set(D, name, point) (code/__defines/engine/sparse_slots.dm)",
+  "STAMP_POINT = stamp_point(D, name) (code/__defines/engine/sparse_slots.dm)",
+  "STAMPED = stamp_has(D, name) (code/__defines/engine/sparse_slots.dm)",
+  "STAMP_CLEAR = stamp_clear(D, name) (code/__defines/engine/sparse_slots.dm)",
   "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
   "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
   "datum/gas_reaction = a gas reaction is a transformation: a type under /transformation/gas with a transformation(medium = MEDIUM_GAS, takes = list(gas(type, moles)), holds = temperature_in(lo, hi)) entry (code/ATMOSPHERICS/gasmixtures/reactions.dm)",

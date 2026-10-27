@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/cell)
 		material_discharge_credit = material_discharge_limit
 	else
 		material_discharge_credit = min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit)
-	EXPIRY_STAMP(src, material_discharge_updated, CLOCK_WORLD)
+	STAMP(src, material_discharge_updated, CLOCK_WORLD)
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
 	var/temperature = material_service_of(src)?.temperature() || T20C

@@ -64,7 +64,7 @@
 	src.state_static = ui_state
 	if (timeout)
 		src.timeout = timeout
-		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+		STAMP(src, start_time, CLOCK_WORLD)
 		expire(timeout)
 	if(user)
 		src.preset_colors = text_or_null(user.read_preference(/datum/preference/text/preset_colors))

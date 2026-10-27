@@ -537,3 +537,5 @@
 /datum/body/proc/get_consciousness()
 	ensure_vitals()
 	return consciousness
+
+SCHEMA(/mob/living, body_type, schema_path(/datum/body))

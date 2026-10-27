@@ -66,7 +66,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 	set_dead(0)
 	set_age(1)
 	set_health(seed.get_trait(TRAIT_ENDURANCE))
-	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
+	STAMP(src, lastcycle, CLOCK_WORLD)
 	check_health()
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/remove_dead()

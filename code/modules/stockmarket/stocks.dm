@@ -61,7 +61,7 @@ CAPABILITIES(/datum/stock)
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
 		rel_add(src, nameof(articles), A) // appended: newest article is last
-	EXPIRY_STAMP(A, ticks, CLOCK_WORLD)
+	STAMP(A, ticks, CLOCK_WORLD)
 
 /datum/stock/proc/generateEvents()
 	var/list/types = typesof(/datum/stockEvent) - /datum/stockEvent
@@ -187,7 +187,7 @@ CAPABILITIES(/datum/stock)
 	average_shares /= 2
 	available_shares /= 2
 	current_value *= 2
-	EXPIRY_STAMP(src, last_unification, CLOCK_WORLD)
+	STAMP(src, last_unification, CLOCK_WORLD)
 
 /datum/stock/proc/stock_tick(elapsed_steps = 1)
 	for (var/B in borrows)

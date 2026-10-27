@@ -29,7 +29,7 @@ CAPABILITIES(/datum/system/vis_overlays)
 		if(!overlay)
 			continue // taken out of the cache since this sweep's snapshot
 		if(!overlay.unused && !length(overlay.vis_locs))
-			EXPIRY_STAMP(overlay, unused, CLOCK_WORLD)
+			STAMP(overlay, unused, CLOCK_WORLD)
 		else if(overlay.unused && ELAPSED(overlay, unused, CLOCK_WORLD) > overlay.cache_expiration)
 			own_take_member(src, nameof(vis_overlay_cache), key)
 			lapsed(overlay)

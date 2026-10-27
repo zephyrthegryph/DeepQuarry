@@ -150,3 +150,5 @@
 			continue
 		for(var/i in 1 to amount)
 			new path(T)
+
+SCHEMA(/obj, debris_type, schema_path(/atom/movable))

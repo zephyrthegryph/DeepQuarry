@@ -360,7 +360,7 @@ A var that reactive code reads is tracked without a `TRACKED()` line (doc/rewrit
   as a type-level default. This also keeps the `tracked` and `init` lints from contradicting each other: the init ratchet fingerprints each imperative
   line of an `Initialize()` body, so rewriting those lines to setter calls would have read as new init debt. A write to ANOTHER object's tracked var, and
   any write in `on_holder_init()`, `after_init()` or another proc, is judged as anywhere else.
-* Known holes (the staleness checker is the cross-check): a write inside a macro (`EXPIRY_STAMP(src, v, clock)` expands to `src.v = ...`), a
+* Known holes (the staleness checker is the cross-check): a write inside a macro (`STAMP(src, v, clock)` expands to `src.v = ...`), a
   `?.` write, and a write through a receiver the lint cannot type are not seen by the text-based `tracked` lint.
 
 ### Tracked lists (`gens/tracked_lists.rs`)

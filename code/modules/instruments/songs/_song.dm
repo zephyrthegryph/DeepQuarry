@@ -134,7 +134,7 @@
  * Checks and stores which mobs can hear us. Terminates sounds for mobs that leave our range.
  */
 /datum/song/proc/do_hearcheck()
-	EXPIRY_STAMP(src, last_hearcheck, CLOCK_WORLD)
+	STAMP(src, last_hearcheck, CLOCK_WORLD)
 	var/list/old = hearing_mobs ? hearing_mobs.Copy() : list()
 	var/turf/source = get_turf(parent())
 	// FIXME

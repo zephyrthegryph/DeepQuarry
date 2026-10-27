@@ -140,7 +140,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 		investigate_log("turned " + span_red("off") + " by [user?.key]","singulo")
 	else
 		set_active(1)
-		EXPIRY_STAMP(src, material_last_charge, CLOCK_WORLD)
+		STAMP(src, material_last_charge, CLOCK_WORLD)
 		balloon_alert_visible("turned on")
 		shot_number = 0
 		fire_delay = get_initial_fire_delay()
@@ -199,7 +199,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 		service.output_joules += desired_beam
 		service.set_loss_joules(service.loss_joules + (required_energy - desired_beam))
 		service.set_last_output_watts(desired_beam / max(fire_delay / 10, 0.1))
-		EXPIRY_STAMP(service, last_work_time, CLOCK_WORLD)
+		STAMP(service, last_work_time, CLOCK_WORLD)
 		service.add_heat(required_energy - desired_beam)
 
 	play_sfx(src, SFX_WEAPONS_EMITTER)

@@ -138,7 +138,7 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 /obj/item/walkpod/proc/start_stop_song()
 	if(current_track() && playing)
 		media_url = current_track().url
-		EXPIRY_STAMP(src, media_start_time, CLOCK_WORLD)
+		STAMP(src, media_start_time, CLOCK_WORLD)
 		runechat_message("*&nbsp;[current_track().display()]&nbsp;*", specific_viewers = list(listener()))
 	else
 		media_url = ""

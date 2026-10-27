@@ -302,7 +302,7 @@
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
 	log_world("RM(stats): PREP [myarea()] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
-	EXPIRY_STAMP(src, prepared_at, CLOCK_WORLD)
+	STAMP(src, prepared_at, CLOCK_WORLD)
 	GLOB.rm_controller.mark_ready(src)
 	return myarea()
 

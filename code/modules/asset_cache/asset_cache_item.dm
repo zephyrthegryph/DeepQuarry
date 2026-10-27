@@ -25,6 +25,8 @@
 	/// TRUE for keeping local asset names when browse_rsc backend is used
 	var/keep_local_name = FALSE
 
+SCHEMA(/datum/asset_cache_item, hash, schema_text())
+
 ///pass in a valid file_hash if you have one to save it from needing to do it again.
 ///pass in a valid dmi file path string e.g. "icons/path/to/dmi_file.dmi" to make generating the hash less expensive
 /datum/asset_cache_item/New(name, file, file_hash, dmi_file_path)

@@ -98,7 +98,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.chemblast(target)
-	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
+	STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------
@@ -147,7 +147,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.dangerbolt(target)
-	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
+	STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------
@@ -184,7 +184,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.homingcluster(target)
-	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
+	STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

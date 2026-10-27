@@ -21,7 +21,7 @@
 		harvested = 1 //We're in a harvester. We need special handling for this.
 	if(isliving(holder.loc))
 		holder = holder.loc
-	EXPIRY_STAMP(src, last_bloodcall, CLOCK_WORLD)
+	STAMP(src, last_bloodcall, CLOCK_WORLD)
 	if(ishuman(M))
 		play_sfx(holder, SFX_HALLUCINATIONS_WAIL)
 
@@ -70,7 +70,7 @@
 	if(ELAPSED(src, last_eat, CLOCK_WORLD) >= eat_interval)
 		var/obj/effect/decal/cleanable/blood/B = locate_in_list(range(2,holder), /obj/effect/decal/cleanable/blood)
 		if(B)
-			EXPIRY_STAMP(src, last_eat, CLOCK_WORLD)
+			STAMP(src, last_eat, CLOCK_WORLD)
 			B.moveToNullspace()
 			if(istype(B, /obj/effect/decal/cleanable/blood/drip))
 				charges += 0.25

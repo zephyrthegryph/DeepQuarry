@@ -14,14 +14,9 @@
 /// (analyzers, admin tools).
 /proc/robot_upgrade_prototype(upgrade_type)
 	RETURN_TYPE(/obj/item/borg/upgrade)
-	var/static/list/prototypes = list()
 	if(!ispath(upgrade_type, /obj/item/borg/upgrade))
 		return null
-	var/obj/item/borg/upgrade/proto = prototypes[upgrade_type]
-	if(!proto)
-		proto = new upgrade_type(null)
-		prototypes[upgrade_type] = proto
-	return proto
+	return dq_proto(upgrade_type)
 
 // --- Basic: robot variables -----------------------------------------------------------------
 
