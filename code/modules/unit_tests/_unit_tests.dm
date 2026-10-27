@@ -1437,6 +1437,7 @@
 #include "dq_typed_values_defaults_fit.dm"
 #include "dq_a2_item_init.dm"
 #include "dq_init_sweep5_tests.dm"
+#include "dq_setup_early_tests.dm"
 #include "dq_setup_base_tails_tests.dm"
 #include "dq_base_vars_wave2_tests.dm"
 #include "dq_base_vars_wave3_tests.dm"
