@@ -16,6 +16,11 @@ pub enum WarningCode {
     AccidentalAssign,
     /// `#warn text`: printed as `warning: #warn text` without a code.
     WarnDirective,
+    /// A procedure-local's name used before its `var/` line in a block that encloses the use:
+    /// printed as `NAME: use of NAME precedes its definition`.
+    VarBeforeDef,
+    /// The `var/` line a `VarBeforeDef` use precedes.
+    VarBeforeDefDefinition,
 }
 impl WarningCode {
     pub fn name(self) -> &'static str {
@@ -29,6 +34,7 @@ impl WarningCode {
             Self::UnusedVar => "unused_var",
             Self::AccidentalAssign => "accidental_assign",
             Self::WarnDirective => "warn",
+            Self::VarBeforeDef | Self::VarBeforeDefDefinition => "var_before_def",
         }
     }
 }
@@ -42,6 +48,8 @@ impl WarningCode {
                 | Self::DefinitionAfterOverride
                 | Self::UnusedVar
                 | Self::WarnDirective
+                | Self::VarBeforeDef
+                | Self::VarBeforeDefDefinition
         )
     }
     pub fn message(self) -> &'static str {
@@ -58,6 +66,8 @@ impl WarningCode {
                 "assignment in condition, may have intended == operator instead"
             }
             Self::WarnDirective => "",
+            Self::VarBeforeDef => "precedes its definition",
+            Self::VarBeforeDefDefinition => "definition is here",
             Self::ListWithoutFilter => "it is recommended that you use an object filter or 'anything' when combining constant input types with lists",
         }
     }
