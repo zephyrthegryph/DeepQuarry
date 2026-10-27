@@ -1016,3 +1016,66 @@ Targets not met. Largest remaining growth: test variant `query_db::AnswerValues`
 116, joined text 80, directives 72, environment 46) about 430, `RequestAnswers` 98, `LeafProofs` 79, receipt pool 72;
 root B: startup capture 66, `RequestAnswers` 65, joined text 61, classification 57, frame contribution 56, preprocessor
 about 230. The preprocessor family needs per-file sharing keyed by (bytes, start state), step 3 of the test-variant plan.
+
+## Shared per-file preprocessing, answer queries and output images (design, 2026-10-27)
+
+Measured with `bench/shared_store_probe.sh` (cold disk cache through `DMB_CACHE_DIR`, compiler/memory-2): root A 5.27 GB,
+test variant +2.66 GB, root B +1.49 GB. The 1 GB targets need about 1.7 GB off the test variant and 0.5 GB off root B. The
+three largest families that are copies of something another session or variant already holds:
+
+| family | test variant | root B |
+|---|---|---|
+| preprocessor (plan, environments, hydrated rows, traces, origin rows, joined text) | about 450 MB | about 240 MB |
+| answer tables (`AnswerValues`, `RequestAnswers`, `LeafProofs`) | about 315 MB | about 95 MB |
+| retained DMB image and row lists | about 140 MB | about 60 MB |
+
+### 1. Preprocessing as per-file results keyed by what they read (step 3 of the test-variant plan)
+
+**What is per session today.** Expansion records (`ExpansionRecord`, keyed by region source and control digest, validated
+by the macro definitions they read) and expansion-input admissions are already daemon-wide. Everything derived from them
+is rebuilt per session: the directive plan's regions and segment environments (`directives`, `environment`), the hydrated
+output rows of every region (`region_memo::hydrate`), their macro traces (`trace_arena`), the flat origin arena (one 32-byte
+row per output line), and the joined text. A start state that differs anywhere (the test variant defines `UNIT_TESTS`
+before almost every file) makes a whole-environment key useless: no file after `_compile_options.dm` would be shared. So
+the key is the file's bytes plus the answers to the macros it reads, exactly as expansion records already work, not the
+start environment's fingerprint.
+
+**The unit.** A region (the text between two include directives of one file) is the unit; a file's result is the list of
+its regions' results. Each region result is an immutable shared object reached from its expansion record:
+
+- *Region rows* (slice P1): the region's provenance rows relative to the region (output offsets from the region start,
+  source span, source line, local trace index) and its trace table. Built once per record and per set of macro definition
+  origins the traces name (a macro defined at the same place in both variants gives equal rows), held by the record
+  (weakly pooled), so two sessions that hydrate the same record share one row table. The session's origin arena becomes a
+  list of `(rows, first output line, output base, region, path)` chunks, one per region (about 14k instead of 1.5M rows),
+  found by a galloping search from the last chunk asked.
+- *Region plan* (slice P2): the region's segments and effects, with segment environments replaced by what expansion and
+  validation actually use: the definitions the region reads (already in the record) and a shared persistent environment
+  only where a later directive in the same region needs the whole state. A variant's plan adopts a region result whose
+  read definitions are equal instead of re-interpreting and rebasing its environment (the earlier attempt to seed the
+  test plan from the game plan rebased whole environments and cost +0.14 GB).
+- *Joined text* stays one contiguous string per variant (the lexer and every span consumer need it); it is the only
+  per-variant copy of the program text. Region record texts are not duplicated into it twice: a session keeps the joined
+  text, records keep their own text, and nothing else holds a third copy.
+
+**Slices.** P1 region rows (hydrate, traces, origin arena; expected test -110 MB, root B -100 MB). P2 region plans shared
+across variants and roots (directives, environments, directive memo; expected test -150 MB, root B -100 MB). Each slice is
+proven by `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile of both variants, the six-session
+contract tests, and a warm-speed A/B within 5 percent.
+
+### 2. Smaller answer queries
+
+`dm_ir::ResolveQuery` is 48 bytes with 16-byte alignment because `ResourceIn::search_context` is a `u128`. Every answer slot
+value, receipt observation and query-keyed map pays for it. `search_context` becomes `SearchContext([u64; 2])` (same
+`Serialize`/`Deserialize` as `u128`, so no persisted format changes), which makes the query 40 bytes with 8-byte alignment;
+the answer value stores its hash as `[u64; 2]` for the same reason. A codemod updates the construction and match sites.
+Expected: `AnswerValues` 96-byte allocations to 64, observations in receipts 16 bytes smaller each.
+
+### 3. One DMB image for two variants
+
+The retained encoded image (`RetainedGeneration`'s current `EncodedDmb`, about 105 MB) and its row lists are kept per
+variant. The test variant's image differs from the game image in a minority of rows. The retained image becomes a chunked
+image: fixed-size chunks (64 KiB) interned by content in a daemon-wide weak pool, the image a list of chunk handles plus
+length. Writing the output file and hashing stream over the chunks; the exact-hit path returns the chunk list. Two
+variants whose images agree on most chunks hold those chunks once. Expected: test -60..90 MB, root B -50..90 MB (root B's
+image equals root A's except for line-number debug rows).

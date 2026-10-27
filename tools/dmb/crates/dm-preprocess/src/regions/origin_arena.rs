@@ -1,4 +1,5 @@
 //! Immutable indexed line provenance, with exact wide fallback.
+use super::expansion::output_lines::OutputLines;
 use super::{ExpandedOrigin, MacroExpansion};
 use dm_syntax::Span;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
@@ -51,16 +52,32 @@ impl Compact {
         }
     }
 }
+/// One region's rows in an arena: the region's shared hydrated rows (see `RowsPool`), placed at `first` (the arena index
+/// of its first row) and `output_base` (where its output starts in the joined text).
+#[derive(Debug, Clone)]
+struct Chunk {
+    lines: Arc<OutputLines>,
+    /// The largest relative output end of `lines`, so a moved chunk is checked without walking its rows.
+    output_len: u32,
+    first: u32,
+    output_base: u32,
+    region: u32,
+    path: u32,
+}
 #[derive(Debug)]
 enum Records {
     Compact(Box<[Compact]>),
     Wide(Box<[Wide]>),
+    /// Rows by region: a session holds one chunk per region, not one row per output line.
+    Chunked { chunks: Box<[Chunk]>, len: usize },
 }
 #[derive(Debug)]
 struct Inner {
     records: Records,
     paths: Box<[Arc<PathBuf>]>,
     traces: Box<[Arc<Vec<MacroExpansion>>]>,
+    /// The chunk the last lookup landed in (lookups mostly move forward a little).
+    hint: std::sync::atomic::AtomicUsize,
 }
 /// Clones share immutable records and the original exact path/trace allocations.
 #[derive(Clone)]
@@ -76,6 +93,7 @@ impl Default for ExpandedOriginArena {
             records: Records::Compact(Box::new([])),
             paths: Box::new([]),
             traces: Box::new([]),
+            hint: Default::default(),
         }))
     }
 }
@@ -88,7 +106,29 @@ impl ExpandedOriginArena {
         match &self.0.records {
             Records::Compact(v) => v.len(),
             Records::Wide(v) => v.len(),
+            Records::Chunked { len, .. } => *len,
         }
+    }
+    /// The chunk holding row `index` (`index < len`).
+    fn chunk_of(&self, chunks: &[Chunk], index: usize) -> usize {
+        use std::sync::atomic::Ordering::Relaxed;
+        let holds = |at: usize| {
+            chunks.get(at).is_some_and(|chunk| {
+                chunk.first as usize <= index && index < chunk.first as usize + chunk.lines.len()
+            })
+        };
+        let hint = self.0.hint.load(Relaxed);
+        let found = if holds(hint) {
+            hint
+        } else if holds(hint + 1) {
+            hint + 1
+        } else {
+            chunks.partition_point(|chunk| chunk.first as usize <= index) - 1
+        };
+        if found != hint {
+            self.0.hint.store(found, Relaxed);
+        }
+        found
     }
     pub fn is_empty(&self) -> bool {
         self.len() == 0
@@ -100,6 +140,26 @@ impl ExpandedOriginArena {
         let value = match &self.0.records {
             Records::Compact(v) => v.get(index)?.wide(index),
             Records::Wide(v) => *v.get(index)?,
+            Records::Chunked { chunks, len } => {
+                if index >= *len {
+                    return None;
+                }
+                let chunk = &chunks[self.chunk_of(chunks, index)];
+                let (output, source_line, source_span, traces) =
+                    chunk.lines.view(index - chunk.first as usize);
+                let base = chunk.output_base as usize;
+                return Some(ExpandedOriginView {
+                    origin: OriginView {
+                        output_line: index + 1,
+                        path: &self.0.paths[chunk.path as usize],
+                        source_line,
+                    },
+                    output_span: Span::new(base + output.start, base + output.end),
+                    source_span,
+                    region: chunk.region as usize,
+                    macro_expansions: traces,
+                });
+            }
         };
         Some(ExpandedOriginView {
             origin: OriginView {
@@ -203,6 +263,8 @@ impl ExpandedOriginArena {
         match &self.0.records {
             Records::Compact(v) => boxed(v, &mut visit),
             Records::Wide(v) => boxed(v, &mut visit),
+            // The rows themselves are the records' shared allocations (census: expansion records).
+            Records::Chunked { chunks, .. } => boxed(chunks, &mut visit),
         }
         boxed(&self.0.paths, &mut visit);
         boxed(&self.0.traces, &mut visit);
@@ -222,7 +284,7 @@ pub(super) enum RowPart {
         region: usize,
         new_start: usize,
         path: Arc<PathBuf>,
-        lines: Vec<super::expansion::output_lines::Line>,
+        lines: Arc<OutputLines>,
     },
 }
 impl ExpandedOriginArena {
@@ -232,6 +294,9 @@ impl ExpandedOriginArena {
     /// full). Path and trace tables carry over; entries no row names any more are dropped once
     /// they are a quarter of a table.
     pub(super) fn assembled(&self, parts: Vec<RowPart>) -> Option<Self> {
+        if let Records::Chunked { chunks: old, .. } = &self.0.records {
+            return self.assembled_chunks(old, parts);
+        }
         let Records::Compact(old) = &self.0.records else {
             return None;
         };
@@ -270,12 +335,12 @@ impl ExpandedOriginArena {
                         }
                     };
                     let mut last_trace: Option<(usize, usize)> = None;
-                    for (relative, source_line, source_span, trace) in lines {
-                        let pointer = Arc::as_ptr(&trace) as usize;
+                    for (relative, source_line, source_span, trace) in lines.iter() {
+                        let pointer = Arc::as_ptr(trace) as usize;
                         let index = match last_trace.filter(|(known, _)| *known == pointer) {
                             Some((_, index)) => index,
                             None => {
-                                traces.push(trace);
+                                traces.push(Arc::clone(trace));
                                 traces.len() - 1
                             }
                         };
@@ -333,6 +398,109 @@ impl ExpandedOriginArena {
             records: Records::Compact(records.into_boxed_slice()),
             paths: paths.into_boxed_slice(),
             traces: traces.into_boxed_slice(),
+            hint: Default::default(),
+        })))
+    }
+    /// `assembled` for a chunked arena: reused runs move whole chunks (they are region-aligned), fresh regions add theirs.
+    fn assembled_chunks(&self, old: &[Chunk], parts: Vec<RowPart>) -> Option<Self> {
+        let mut paths = self.0.paths.to_vec();
+        let mut chunks: Vec<Chunk> = Vec::with_capacity(old.len() + 16);
+        let mut rows = 0usize;
+        for part in parts {
+            match part {
+                RowPart::Reuse {
+                    rows: range,
+                    output_shift,
+                    region_shift,
+                } => {
+                    let mut at = old.partition_point(|chunk| (chunk.first as usize) < range.start);
+                    let mut end = range.start;
+                    while end < range.end {
+                        let chunk = old.get(at)?;
+                        if chunk.first as usize != end {
+                            return None;
+                        }
+                        let output_base = i64::from(chunk.output_base) + output_shift;
+                        u32::try_from(output_base + i64::from(chunk.output_len)).ok()?;
+                        chunks.push(Chunk {
+                            lines: Arc::clone(&chunk.lines),
+                            output_len: chunk.output_len,
+                            first: u32::try_from(rows).ok()?,
+                            output_base: u32::try_from(output_base).ok()?,
+                            region: u32::try_from(i64::from(chunk.region) + region_shift).ok()?,
+                            path: chunk.path,
+                        });
+                        rows += chunk.lines.len();
+                        end += chunk.lines.len();
+                        at += 1;
+                    }
+                    if end != range.end {
+                        return None;
+                    }
+                }
+                RowPart::Fresh {
+                    region,
+                    new_start,
+                    path,
+                    lines,
+                } => {
+                    if lines.len() == 0 {
+                        continue;
+                    }
+                    if !matches!(*lines, OutputLines::Compact(_)) {
+                        return None;
+                    }
+                    let output_len = u32::try_from(lines.output_end()).ok()?;
+                    u32::try_from(new_start + output_len as usize).ok()?;
+                    let path = match paths.iter().rposition(|known| Arc::ptr_eq(known, &path)) {
+                        Some(index) => index,
+                        None => {
+                            paths.push(path);
+                            paths.len() - 1
+                        }
+                    };
+                    let len = lines.len();
+                    chunks.push(Chunk {
+                        lines,
+                        output_len,
+                        first: u32::try_from(rows).ok()?,
+                        output_base: u32::try_from(new_start).ok()?,
+                        region: u32::try_from(region).ok()?,
+                        path: u32::try_from(path).ok()?,
+                    });
+                    rows += len;
+                }
+            }
+        }
+        u32::try_from(rows).ok()?;
+        // Drop path entries nothing names once they are a quarter of the table.
+        let mut used = vec![false; paths.len()];
+        for chunk in &chunks {
+            used[chunk.path as usize] = true;
+        }
+        if used.iter().filter(|used| !**used).count() * 4 > used.len() {
+            let mut next = 0u32;
+            let map: Vec<u32> = used
+                .iter()
+                .map(|used| {
+                    let index = next;
+                    next += u32::from(*used);
+                    index
+                })
+                .collect();
+            for chunk in &mut chunks {
+                chunk.path = map[chunk.path as usize];
+            }
+            paths = paths.into_iter().zip(&used).filter_map(|(value, used)| used.then_some(value)).collect();
+        }
+        Some(Self(Arc::new(Inner {
+            records: Records::Chunked {
+                chunks: chunks.into_boxed_slice(),
+                len: rows,
+            },
+            paths: paths.into_boxed_slice(),
+            traces: Box::new([]),
+            hint: Default::default(),
         })))
     }
 }
@@ -373,6 +541,9 @@ impl<'a> IntoIterator for &'a ExpandedOriginArena {
 /// Only the producer owns these temporary lookup maps. They do not survive publication.
 #[derive(Default)]
 pub(super) struct OriginArenaBuilder {
+    /// Region chunks (`push_region`); empty once rows were pushed one by one.
+    chunks: Vec<Chunk>,
+    chunk_rows: usize,
     compact: Vec<Compact>,
     wide: Option<Vec<Wide>>,
     paths: Vec<Arc<PathBuf>>,
@@ -383,29 +554,95 @@ pub(super) struct OriginArenaBuilder {
     trace_indexes: HashMap<usize, usize>,
 }
 impl OriginArenaBuilder {
-    pub(super) fn with_capacity(capacity: usize) -> Self {
+    /// A builder for about `regions` regions.
+    pub(super) fn with_capacity(regions: usize) -> Self {
         Self {
-            compact: Vec::with_capacity(capacity),
+            chunks: Vec::with_capacity(regions),
             ..Self::default()
         }
     }
     pub(super) fn len(&self) -> usize {
-        self.wide.as_ref().map_or(self.compact.len(), Vec::len)
+        self.chunk_rows + self.wide.as_ref().map_or(self.compact.len(), Vec::len)
     }
-    pub(super) fn push(&mut self, origin: ExpandedOrigin) {
-        let path_pointer = Arc::as_ptr(&origin.origin.path) as usize;
-        let path = match self
+    fn path_index(&mut self, path: &Arc<PathBuf>) -> usize {
+        let path_pointer = Arc::as_ptr(path) as usize;
+        let index = match self
             .last_path
             .filter(|(pointer, _)| *pointer == path_pointer)
         {
             Some((_, index)) => index,
             None => *self.path_indexes.entry(path_pointer).or_insert_with(|| {
                 let i = self.paths.len();
-                self.paths.push(origin.origin.path);
+                self.paths.push(Arc::clone(path));
                 i
             }),
         };
-        self.last_path = Some((path_pointer, path));
+        self.last_path = Some((path_pointer, index));
+        index
+    }
+    /// One region's rows, starting at `output_base` in the joined text. The rows are held by pointer (shared with every
+    /// session that hydrated the same rows); a region that does not fit the compact layout turns the arena into rows.
+    pub(super) fn push_region(
+        &mut self,
+        lines: Arc<OutputLines>,
+        output_base: usize,
+        region: usize,
+        path: Arc<PathBuf>,
+    ) {
+        if lines.len() == 0 {
+            return;
+        }
+        let output_len = lines.output_end();
+        let fits = self.wide.is_none()
+            && self.compact.is_empty()
+            && matches!(*lines, OutputLines::Compact(_))
+            && u32::try_from(output_base + output_len).is_ok()
+            && u32::try_from(region).is_ok()
+            && u32::try_from(self.chunk_rows + lines.len()).is_ok();
+        if !fits {
+            self.unchunk();
+            self.push_rows(&lines, output_base, region, &path);
+            return;
+        }
+        let path = self.path_index(&path);
+        let len = lines.len();
+        self.chunks.push(Chunk {
+            lines,
+            output_len: output_len as u32,
+            first: self.chunk_rows as u32,
+            output_base: output_base as u32,
+            region: region as u32,
+            path: path as u32,
+        });
+        self.chunk_rows += len;
+    }
+    /// Turn the chunks pushed so far into rows (a later region needs the row layout).
+    fn unchunk(&mut self) {
+        let chunks = std::mem::take(&mut self.chunks);
+        self.chunk_rows = 0;
+        for chunk in chunks {
+            let path = Arc::clone(&self.paths[chunk.path as usize]);
+            self.push_rows(&chunk.lines, chunk.output_base as usize, chunk.region as usize, &path);
+        }
+    }
+    fn push_rows(&mut self, lines: &OutputLines, output_base: usize, region: usize, path: &Arc<PathBuf>) {
+        for (relative, source_line, source_span, traces) in lines.iter() {
+            let output_line = self.len() + 1;
+            self.push(ExpandedOrigin {
+                origin: super::Origin {
+                    output_line,
+                    path: Arc::clone(path),
+                    source_line,
+                },
+                output_span: Span::new(output_base + relative.start, output_base + relative.end),
+                source_span,
+                region,
+                macro_expansions: Arc::clone(traces),
+            });
+        }
+    }
+    pub(super) fn push(&mut self, origin: ExpandedOrigin) {
+        let path = self.path_index(&origin.origin.path);
         let trace_pointer = Arc::as_ptr(&origin.macro_expansions) as usize;
         let traces = match self
             .last_trace
@@ -458,10 +695,15 @@ impl OriginArenaBuilder {
         ExpandedOriginArena(Arc::new(Inner {
             records: match self.wide {
                 Some(v) => Records::Wide(v.into_boxed_slice()),
+                None if !self.chunks.is_empty() => Records::Chunked {
+                    chunks: self.chunks.into_boxed_slice(),
+                    len: self.chunk_rows,
+                },
                 None => Records::Compact(self.compact.into_boxed_slice()),
             },
             paths: self.paths.into_boxed_slice(),
             traces: self.traces.into_boxed_slice(),
+            hint: Default::default(),
         }))
     }
 }
