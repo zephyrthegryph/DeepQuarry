@@ -15,7 +15,7 @@ impl Resolver for Host {
             // Seeds captured under a project search context ask for resources in that context.
             Q::Resource(path) | Q::ResourceIn { path, .. } => M::Resource {
                 path,
-                content: self.0,
+                content: self.0.into(),
             },
             _ => M::Unsupported(query),
         }

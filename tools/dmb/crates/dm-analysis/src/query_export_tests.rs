@@ -25,7 +25,7 @@ fn resolver_negatives_and_unknowns_remain_distinct_and_wide_keys_roundtrip() {
         ResolveQuery::Var { owner, name },
         ResolveQuery::ResourceIn {
             path: name,
-            search_context: u128::MAX,
+            search_context: u128::MAX.into(),
         },
     ];
     let mut bytes = Vec::new();
@@ -117,7 +117,7 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
         &ResolvedMeaning::Member {
             owner,
             name,
-            fingerprint: 1,
+            fingerprint: 1.into(),
             data: Arc::new(data.clone()),
         },
     )
@@ -134,7 +134,7 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
         &ResolvedMeaning::Member {
             owner,
             name,
-            fingerprint: 2,
+            fingerprint: 2.into(),
             data: Arc::new(data),
         },
     )

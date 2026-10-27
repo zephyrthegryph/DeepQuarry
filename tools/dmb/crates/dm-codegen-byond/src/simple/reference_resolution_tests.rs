@@ -14,7 +14,7 @@ impl dm_ir::Resolver for TypedGlobal {
             Q::GlobalVar(n) if n == name => R::Member {
                 owner,
                 name,
-                fingerprint: 0,
+                fingerprint: 0.into(),
                 data: std::sync::Arc::new(dm_ir::DeclarationMeaning {
                     declared_type: Some(path),
                     ..Default::default()

@@ -233,7 +233,7 @@ fn captured_resource_literal_and_static_alias_keep_symbolic_path() {
                     ResolvedMeaning::Member {
                         owner,
                         name,
-                        fingerprint: 4,
+                        fingerprint: 4.into(),
                         data: std::sync::Arc::new(dm_ir::DeclarationMeaning::default()),
                     }
                 }
@@ -244,7 +244,7 @@ fn captured_resource_literal_and_static_alias_keep_symbolic_path() {
                     ResolvedMeaning::Member {
                         owner: SymbolId::of("/"),
                         name,
-                        fingerprint: 3,
+                        fingerprint: 3.into(),
                         data: std::sync::Arc::new(dm_ir::DeclarationMeaning {
                             flags: 2,
                             initializer: self.constant.clone(),
@@ -254,9 +254,9 @@ fn captured_resource_literal_and_static_alias_keep_symbolic_path() {
                 }
                 ResolveQuery::ResourceIn {
                     path,
-                    search_context: 17,
-                } if path == SymbolId::of("asset.txt") => {
-                    ResolvedMeaning::Resource { path, content: 123 }
+                    search_context,
+                } if search_context == 17 && path == SymbolId::of("asset.txt") => {
+                    ResolvedMeaning::Resource { path, content: 123.into() }
                 }
                 _ => ResolvedMeaning::Unsupported(query),
             }

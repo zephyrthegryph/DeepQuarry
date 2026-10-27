@@ -253,7 +253,7 @@ fn nonlocal_deletion_requires_exact_nonopaque_writable_metadata() {
                     M::Member {
                         owner,
                         name,
-                        fingerprint: 1,
+                        fingerprint: 1.into(),
                         data: std::sync::Arc::new(data),
                     }
                 }

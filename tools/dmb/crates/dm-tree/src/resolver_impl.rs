@@ -34,7 +34,7 @@ impl dm_ir::Resolver for SemanticTree {
                         owner: self.types[node.owner.index()].path,
                         name: node.name,
                         data: Arc::clone(&node.metadata),
-                        fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes),
+                        fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes).into(),
                     }
                 })
                 .unwrap_or(M::Missing)
@@ -268,7 +268,7 @@ impl dm_ir::Resolver for SemanticTree {
                                         owner: self.types[node.owner.index()].path,
                                         name: node.name,
                                         data: Arc::clone(&node.metadata),
-                                        fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes),
+                                        fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes).into(),
                                     }
                                 })
                                 .collect(),
@@ -298,7 +298,7 @@ impl dm_ir::Resolver for SemanticTree {
                                 data: Arc::clone(&node.metadata),
                                 fingerprint: xxhash_rust::xxh3::xxh3_128(
                                     &bytes.signature.canonical_bytes(),
-                                ),
+                                ).into(),
                             },
                             None => M::Unsupported(query),
                         }
@@ -318,7 +318,7 @@ impl dm_ir::Resolver for SemanticTree {
                             owner: self.types[node.owner.index()].path,
                             name: node.name,
                             data: Arc::clone(&node.metadata),
-                            fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes.canonical_bytes()),
+                            fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes.canonical_bytes()).into(),
                         },
                         None => M::Unsupported(query),
                     }

@@ -383,7 +383,7 @@ impl Resolver for ScalarSnapshot {
         ResolvedMeaning::Member {
             owner: actual_owner,
             name,
-            fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes),
+            fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes).into(),
             data: Arc::new(data),
         }
     }
