@@ -59,6 +59,11 @@ pub trait SnapshotProvider {
     fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
         paths.iter().map(|path| self.digest(path)).collect()
     }
+    /// The directory watcher's position at or before this provider's first observation (`fs_watch::token`). A provider
+    /// that answers from an earlier capture, or from anything but the watched file system, returns None.
+    fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
+        None
+    }
 }
 impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
     fn generated_outputs(&self) -> Option<&BTreeSet<PathBuf>> {
@@ -82,6 +87,9 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
     fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
         (**self).digest_many(paths)
     }
+    fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
+        (**self).watch_token()
+    }
 }
 
 pub struct FileSystemInputs;
@@ -91,6 +99,10 @@ pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;
 impl SnapshotProvider for FileSystemInputs {
+    /// Live reads: every observation follows the call.
+    fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
+        crate::fs_watch::token()
+    }
     fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
         const SERIAL_BELOW: usize = 16;
         const THREADS: usize = 4;
@@ -207,6 +219,8 @@ pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 
 pub struct RecordingInputs<P = FileSystemInputs> {
     provider: P,
+    /// Watcher position at creation: every fact recorded later was observed after it.
+    created: Option<crate::fs_watch::WatchToken>,
     snapshot: Mutex<InputSnapshot>,
     exact_reuse: bool,
     prepared: Option<std::sync::Arc<PreparedInputArtifacts>>,
@@ -216,7 +230,11 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     pub fn new(provider: P, scanned_ns: u128) -> Self {
         let mut snapshot = InputSnapshot::new(scanned_ns);
         snapshot.generated_outputs = provider.generated_outputs().cloned().unwrap_or_default();
+        let created = provider.watch_token();
+        // Merged retained parts narrow this (`InputSnapshot::merge`).
+        snapshot.watch.replace(created);
         Self {
+            created,
             provider,
             snapshot: Mutex::new(snapshot),
             exact_reuse: false,
@@ -236,16 +254,39 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .shape())
     }
     pub fn snapshot(&self) -> io::Result<InputSnapshot> {
-        Ok(self
+        let snapshot = self
             .snapshot
             .lock()
             .map_err(|_| invalid("input capture mutex poisoned"))?
-            .clone())
+            .clone();
+        self.mark(&snapshot);
+        Ok(snapshot)
     }
     pub fn into_snapshot(self) -> io::Result<InputSnapshot> {
-        self.snapshot
+        let snapshot = self
+            .snapshot
             .into_inner()
-            .map_err(|_| invalid("input capture mutex poisoned"))
+            .map_err(|_| invalid("input capture mutex poisoned"))?;
+        let mark = match (self.created, self.provider.watch_token(), snapshot.watch.get()) {
+            (Some(created), Some(now), Some(merged)) => {
+                crate::fs_watch::earlier(created, now).and_then(|token| crate::fs_watch::earlier(token, merged))
+            }
+            _ => None,
+        };
+        snapshot.watch.replace(mark);
+        Ok(snapshot)
+    }
+    /// A recorded fact was observed after this capture began, through a provider whose observations follow its own
+    /// position (a provider that answers from earlier proofs reports theirs), so the earlier of the two proves them all.
+    /// A merged retained part narrows it further (`InputSnapshot::merge`).
+    fn mark(&self, snapshot: &InputSnapshot) {
+        let mark = match (self.created, self.provider.watch_token(), snapshot.watch.get()) {
+            (Some(created), Some(now), Some(merged)) => {
+                crate::fs_watch::earlier(created, now).and_then(|token| crate::fs_watch::earlier(token, merged))
+            }
+            _ => None,
+        };
+        snapshot.watch.replace(mark);
     }
     /// Capture a binary compiler input through the same exact read ledger.
     pub fn read_binary(&self, path: &Path) -> io::Result<Vec<u8>> {
@@ -364,6 +405,34 @@ impl PartialEq for StructureProof {
 }
 impl Eq for StructureProof {}
 
+/// The watcher position at which this snapshot's facts were last proven equal to the file system, entry for entry
+/// (stamps included). Like `StructureProof` it is private, absent from the wire and from equality: a decoded snapshot
+/// starts without one and is proven in full once.
+#[derive(Debug, Default)]
+struct WatchMark(Mutex<Option<crate::fs_watch::WatchToken>>);
+impl WatchMark {
+    fn get(&self) -> Option<crate::fs_watch::WatchToken> {
+        *self.0.lock().unwrap_or_else(|e| e.into_inner())
+    }
+    fn set(&self, token: crate::fs_watch::WatchToken) {
+        *self.0.lock().unwrap_or_else(|e| e.into_inner()) = Some(token);
+    }
+    fn replace(&self, token: Option<crate::fs_watch::WatchToken>) {
+        *self.0.lock().unwrap_or_else(|e| e.into_inner()) = token;
+    }
+}
+impl Clone for WatchMark {
+    fn clone(&self) -> Self {
+        Self(Mutex::new(self.get()))
+    }
+}
+impl PartialEq for WatchMark {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+impl Eq for WatchMark {}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct InputSnapshot {
     pub scanned_ns: u128,
@@ -373,6 +442,8 @@ pub struct InputSnapshot {
     generated_outputs: BTreeSet<PathBuf>,
     #[serde(skip)]
     structure_proof: StructureProof,
+    #[serde(skip)]
+    watch: WatchMark,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -420,6 +491,15 @@ impl InputSnapshot {
     }
     pub fn generated_outputs(&self) -> &BTreeSet<PathBuf> {
         &self.generated_outputs
+    }
+    /// The watcher position this snapshot's facts are current at (see `WatchMark`). A copy of the same facts that
+    /// went through the wire (a session record decoded again) may take it back with [`Self::adopt_watch_mark`].
+    pub(crate) fn watch_mark(&self) -> Option<crate::fs_watch::WatchToken> {
+        self.watch.get()
+    }
+    /// Only for a snapshot whose recorded facts equal those of the one the mark was taken from.
+    pub(crate) fn adopt_watch_mark(&self, mark: Option<crate::fs_watch::WatchToken>) {
+        self.watch.replace(mark);
     }
     fn generated_policy_matches(&self, provider: &impl SnapshotProvider) -> bool {
         self.folders.is_empty()
@@ -483,6 +563,7 @@ impl InputSnapshot {
             generated_outputs: BTreeSet::new(),
             // All later insertion methods validate their individual facts.
             structure_proof: StructureProof(OnceLock::from(())),
+            watch: WatchMark::default(),
         }
     }
 
@@ -549,6 +630,7 @@ impl InputSnapshot {
         next.folders = self.folders.clone();
         next.generated_outputs = self.generated_outputs.clone();
         next.negative_files = self.negative_files.clone();
+        next.watch.replace(self.watch.get());
         Ok(next)
     }
     /// Merge a freshly validated retained domain into this capture. Conflicting
@@ -623,6 +705,12 @@ impl InputSnapshot {
             }
         }
         self.scanned_ns = self.scanned_ns.min(other.scanned_ns);
+        // Both parts must be current at the merged position: the earlier of their marks, none if either lacks one.
+        let merged = match (self.watch.get(), other.watch.get()) {
+            (Some(own), Some(other)) => crate::fs_watch::earlier(own, other),
+            _ => None,
+        };
+        self.watch.replace(merged);
         Ok(())
     }
     /// Paths of every recorded file input, in path order.
@@ -774,6 +862,8 @@ impl InputSnapshot {
         stop_on_change: bool,
     ) -> io::Result<(Validation, Self)> {
         self.check_structure()?;
+        // Taken before the first observation through the provider (or the provider's own capture position).
+        let token = provider.watch_token();
         let mut report = Validation::default();
         let mut next = Self::new(now_ns);
         next.generated_outputs = self.generated_outputs.clone();
@@ -781,11 +871,42 @@ impl InputSnapshot {
             report.changed.extend(self.folders.keys().cloned());
             return Ok((report, next));
         }
+        // Watched inputs: an entry whose directory no watcher event named since this snapshot was last proven entry for
+        // entry is still what was recorded, so it is carried without asking the provider. Exact mode assumes nothing
+        // about metadata and proves everything; so does a snapshot never proven under the watcher (decoded, captured).
+        let changes = match (exact, self.watch.get(), token) {
+            (false, Some(since), Some(now)) => crate::fs_watch::changes_since(since, now),
+            _ => None,
+        };
+        let mut clean_memo: Option<(PathBuf, bool)> = None;
+        let mut clean = |path: &Path| -> bool {
+            let (Some(changes), Some(dir)) = (changes.as_ref(), path.parent()) else {
+                return false;
+            };
+            if let Some((last, answer)) = &clean_memo {
+                if last.as_path() == dir {
+                    return *answer;
+                }
+            }
+            let answer = changes.clean(dir);
+            clean_memo = Some((dir.to_owned(), answer));
+            answer
+        };
+        // Whether `next` records exactly this snapshot's facts (every stamp equal), which proves this one at `token` too.
+        let mut identical = true;
+        let mut carried = 0usize;
         // Stamps first (cheap): a file whose stamp matches is kept as it was. The files that must be re-read (a stamp that
         // differs, which is every file when a checkout's files were swapped for another worktree's identical ones) are hashed
         // on several threads afterwards: serially that was 8 s of a cross-worktree patch.
         let mut to_hash: Vec<(&PathBuf, &FileInput)> = Vec::new();
         for (path, old) in &self.files {
+            let racy = old.stamp.modified_ns.abs_diff(self.scanned_ns) <= 2_000_000_000;
+            // A racy or identity-less entry is proven exactly as on the unwatched path.
+            if !racy && old.stamp.file_id.is_some() && clean(path) {
+                next.files.insert(path.clone(), old.clone());
+                carried += 1;
+                continue;
+            }
             let stamp = match provider.stamp(path) {
                 Ok(stamp) => stamp,
                 Err(error) if error.kind() == io::ErrorKind::NotFound => {
@@ -797,7 +918,6 @@ impl InputSnapshot {
                 }
                 Err(error) => return Err(error),
             };
-            let racy = old.stamp.modified_ns.abs_diff(self.scanned_ns) <= 2_000_000_000;
             if exact || old.stamp.file_id.is_none() || stamp != old.stamp || racy {
                 to_hash.push((path, old));
             } else {
@@ -806,11 +926,12 @@ impl InputSnapshot {
         }
         if self.files.len() > 1000 && std::env::var_os("DMB_TIMINGS_DETAIL").is_some() {
             crate::daemon_eprintln!(
-                "detail inputs.validate counts: files={} to_hash={} folders={} negatives={} exact={exact}",
+                "detail inputs.validate counts: files={} to_hash={} folders={} negatives={} exact={exact} watched_changes={} carried={carried}",
                 self.files.len(),
                 to_hash.len(),
                 self.folders.len(),
-                self.negative_files.len()
+                self.negative_files.len(),
+                changes.as_ref().map_or_else(|| "none".to_string(), |changes| changes.len().to_string()),
             );
         }
         // A validation that stops at the first change probes one file before fanning out: a changed tree usually shows in the
@@ -832,6 +953,7 @@ impl InputSnapshot {
         for ((path, old), digest) in to_hash.into_iter().zip(digests) {
             let (read_stamp, content) = digest?;
             report.rehashed += 1;
+            identical &= read_stamp == old.stamp;
             next.record_verified_digest(path, read_stamp, content)?;
             if next.files[path].content != old.content {
                 report.changed.push(path.clone());
@@ -840,18 +962,25 @@ impl InputSnapshot {
                 }
             }
         }
+        identical &= report.changed.is_empty();
         for (path, old) in &self.folders {
+            if changes.as_ref().is_some_and(|changes| changes.clean(path)) {
+                next.folders.insert(path.clone(), old.clone());
+                continue;
+            }
             let listing = self.filter_generated(path, provider.list(path)?);
             next.record_folder(path, listing.clone())?;
             if &listing != old {
+                identical = false;
                 report.changed.push(path.clone());
                 if stop_on_change {
                     return Ok((report, next));
                 }
             }
         }
+        let negatives: Vec<&PathBuf> = self.negative_files.iter().filter(|path| !clean(path)).collect();
         if stop_on_change {
-            for path in &self.negative_files {
+            for path in negatives {
                 match provider.stamp(path) {
                     Ok(_) => {
                         report.changed.push(path.clone());
@@ -862,9 +991,18 @@ impl InputSnapshot {
                 }
             }
         } else {
-            self.validate_negatives(provider, &mut report)?;
+            let before = report.changed.len();
+            Self::validate_negative_paths(negatives.into_iter(), provider, &mut report)?;
+            identical &= report.changed.len() == before;
         }
         next.negative_files = self.negative_files.clone();
+        if let Some(token) = token {
+            // `next` is what the provider showed at `token`; when it equals this snapshot, so is this one.
+            next.watch.set(token);
+            if identical {
+                self.watch.set(token);
+            }
+        }
         Ok((report, next))
     }
 
@@ -899,7 +1037,14 @@ impl InputSnapshot {
         provider: &impl SnapshotProvider,
         report: &mut Validation,
     ) -> io::Result<()> {
-        for path in &self.negative_files {
+        Self::validate_negative_paths(self.negative_files.iter(), provider, report)
+    }
+    fn validate_negative_paths<'a>(
+        paths: impl Iterator<Item = &'a PathBuf>,
+        provider: &impl SnapshotProvider,
+        report: &mut Validation,
+    ) -> io::Result<()> {
+        for path in paths {
             match provider.stamp(path) {
                 Ok(_) => report.changed.push(path.clone()),
                 Err(error) if error.kind() == io::ErrorKind::NotFound => {}
@@ -931,3 +1076,6 @@ fn check_listing(listing: &FolderListing) -> io::Result<()> {
 #[cfg(test)]
 #[path = "input_snapshot_tests.rs"]
 mod tests;
+#[cfg(all(test, windows))]
+#[path = "input_snapshot_watch_tests.rs"]
+mod watch_tests;

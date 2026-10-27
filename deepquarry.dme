@@ -2384,8 +2384,6 @@
 #include "code\datums\observation\stat_set.dm"
 #include "code\datums\observation\turf_enterexit.dm"
 #include "code\content\turfs\simulated\outdoors\sky_effect.dm"
-#include "code\datums\om_events\atom_events.dm"
-#include "code\datums\om_events\signal_events.dm"
 #include "code\datums\operations\routes.dm"
 #include "code\datums\outfits\horror_killers.dm"
 #include "code\datums\outfits\outfit.dm"

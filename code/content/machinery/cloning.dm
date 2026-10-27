@@ -533,8 +533,8 @@ CAPABILITIES(/obj/machinery/clonepod/full)
 	if(!implanted)
 		return "ERROR"
 	else
-		if(isliving(implanted))
-			var/mob/living/L = implanted
+		var/mob/living/L = imp_in || loc // made inside the body by the cloning computer, it sits in the mob without imp_in
+		if(isliving(L))
 			healthstring = "[round(L.oxygen_debt())] - [round(L.injury_load(INJURY_CATEGORY_THERMAL))] - [round(L.injury_load(INJURY_CATEGORY_TOXIC))] - [round(L.injury_load(INJURY_CATEGORY_PHYSICAL))]"
 		if(!healthstring)
 			healthstring = "ERROR"
