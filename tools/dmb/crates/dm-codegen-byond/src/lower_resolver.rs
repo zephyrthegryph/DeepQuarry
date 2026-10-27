@@ -251,13 +251,13 @@ impl ProjectResolver<'_> {
                 let query = match self.resource_search_context {
                     Some(search_context) => Q::ResourceIn {
                         path: SymbolId::of(path),
-                        search_context,
+                        search_context: search_context.into(),
                     },
                     None => Q::Resource(SymbolId::of(path)),
                 };
                 match self.answer(query).map_err(|error| error.reason)? {
                     M::Resource { path, content } => {
-                        Ok(dm_ir::CapturedModifiedResource { path, content })
+                        Ok(dm_ir::CapturedModifiedResource { path, content: content.get() })
                     }
                     _ => Err("modified resource needs a positive captured payload identity".into()),
                 }
@@ -411,12 +411,13 @@ impl ProjectResolver<'_> {
         let query = match self.resource_search_context {
             Some(search_context) => Q::ResourceIn {
                 path: path_id,
-                search_context,
+                search_context: search_context.into(),
             },
             None => Q::Resource(path_id),
         };
         match self.answer(query)? {
             M::Resource { path, content } => {
+                let content = content.get();
                 let old = self.resources.borrow_mut().insert(path, content);
                 if old.is_some_and(|old| old != content) {
                     return Err(self.error(query, "conflicting captured resource content"));

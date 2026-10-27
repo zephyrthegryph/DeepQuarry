@@ -266,12 +266,12 @@ mod equivalence_tests {
         };
         let exact = Answer::Semantic(ResolvedMeaning::Missing);
         assert!(host.equivalent(&exact, &exact));
-        let retained = |wire_proc, engine_identity| {
+        let retained = |wire_proc, engine_identity: u128| {
             Answer::Semantic(ResolvedMeaning::RetainedProc {
                 declaring_owner: dm_ir::SymbolId::of("/datum/native"),
                 name: dm_ir::SymbolId::of("method"),
                 verb: false,
-                engine_identity,
+                engine_identity: engine_identity.into(),
                 wire_proc,
             })
         };

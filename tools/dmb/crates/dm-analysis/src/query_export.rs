@@ -82,7 +82,7 @@ fn answer(symbols: &SymbolTable, meaning: &ResolvedMeaning) -> Result<Value, Exp
                 &M::Member {
                     owner: identity.owner,
                     name: identity.name,
-                    fingerprint: 0,
+                    fingerprint: 0.into(),
                     data: data.clone(),
                 },
             )?;

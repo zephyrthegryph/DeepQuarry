@@ -23,7 +23,7 @@ fn exact_answer_equality_preserves_canonical_physical_index_fallback() {
         declaring_owner: SymbolId::of("/datum"),
         name: SymbolId::of("New"),
         verb: false,
-        engine_identity: 7,
+        engine_identity: 7.into(),
         wire_proc: 1,
     };
     let mut b = a.clone();
@@ -39,7 +39,7 @@ fn exact_answer_equality_preserves_canonical_physical_index_fallback() {
         engine_identity, ..
     } = &mut b
     {
-        *engine_identity = 8;
+        *engine_identity = 8.into();
     }
     assert!(!equivalent(&a, &b));
 }

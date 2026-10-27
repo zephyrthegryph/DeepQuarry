@@ -130,7 +130,7 @@ impl PortableResolvedAnswer {
                 Self::Member {
                     owner: *owner,
                     name: *name,
-                    fingerprint: *fingerprint,
+                    fingerprint: (*fingerprint).into(),
                     data,
                     opaque,
                 }
@@ -186,7 +186,7 @@ impl PortableResolvedAnswer {
             },
             ResolvedMeaning::Resource { path, content } => Self::Resource {
                 path: *path,
-                content: *content,
+                content: (*content).into(),
             },
             _ => return None,
         })
@@ -229,7 +229,7 @@ impl PortableResolvedAnswer {
             },
             Self::Resource { path, content } => ResolvedMeaning::Resource {
                 path: *path,
-                content: *content,
+                content: (*content).into(),
             },
             Self::Symbols(values) => ResolvedMeaning::Symbols(Arc::from(values.as_slice())),
             Self::Members(values) => {
@@ -253,7 +253,7 @@ impl PortableResolvedAnswer {
             } => ResolvedMeaning::Member {
                 owner: *owner,
                 name: *name,
-                fingerprint: *fingerprint,
+                fingerprint: (*fingerprint).into(),
                 data: restore_data(data, opaque)?,
             },
             Self::Declaration {
@@ -305,7 +305,7 @@ mod tests {
                 declaring_owner: SymbolId::of("/datum"),
                 name: SymbolId::of("New"),
                 verb: false,
-                engine_identity: 1,
+                engine_identity: 1.into(),
                 wire_proc: 7
             })
             .is_none()
@@ -372,7 +372,7 @@ mod tests {
             ResolvedMeaning::Member {
                 owner: SymbolId::of("/obj"),
                 name: SymbolId::of("amount"),
-                fingerprint: 9,
+                fingerprint: 9.into(),
                 data: Arc::new(crate::DeclarationMeaning::default()),
             },
         ]));
@@ -387,7 +387,7 @@ mod tests {
         let opaque = ResolvedMeaning::Member {
             owner: SymbolId::of("/obj"),
             name: SymbolId::of("x"),
-            fingerprint: 1,
+            fingerprint: 1.into(),
             data: Arc::new(crate::DeclarationMeaning {
                 inherited_opaque: Some(crate::OpaqueFieldBase {
                     owner: SymbolId::of("/atom"),

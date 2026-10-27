@@ -31,7 +31,7 @@ impl Resolver for Host {
                     owner: SymbolId::of("/datum"),
                     name,
                     data: Arc::new(Default::default()),
-                    fingerprint: 2,
+                    fingerprint: 2.into(),
                 },
                 None => M::Unsupported(query),
             },
@@ -244,7 +244,7 @@ fn source_and_engine_parent_proofs_keep_incomplete_negatives_unknown() {
             declaring_owner: ancestor.owner,
             name: ancestor.name,
             verb: false,
-            engine_identity: 17,
+            engine_identity: 17.into(),
             wire_proc: 9,
         },
     ] {

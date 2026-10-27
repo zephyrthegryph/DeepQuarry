@@ -122,7 +122,7 @@ fn pinned_receiver_methods_lower_dynamically_without_fabricated_abi() {
             declaring_owner: icon,
             name: icon_states,
             verb: false,
-            engine_identity: engine.identity(),
+            engine_identity: engine.identity().into(),
             wire_proc: 7
         }
     );

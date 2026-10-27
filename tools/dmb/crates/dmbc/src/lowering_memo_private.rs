@@ -281,7 +281,7 @@ impl DescriptorWire {
             let query = match self.resource_context {
                 Some(search_context) => Q::ResourceIn {
                     path: SymbolId::of(literal),
-                    search_context,
+                    search_context: search_context.into(),
                 },
                 None => Q::Resource(SymbolId::of(literal)),
             };
