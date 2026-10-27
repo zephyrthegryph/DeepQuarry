@@ -34,6 +34,8 @@
 /datum/unit_test/dq_chem_item_spawn_soap/Run()
 	var/turf/T = dq_chem_spawn_react(list(REAGENT_ID_COOKINGOIL = 10, REAGENT_ID_LYE = 2))
 	TEST_ASSERT_EQUAL(dq_chem_spawn_take(T, /obj/item/soap), 1, "cooking oil and lye make one soap")
+	T = dq_chem_spawn_react(list(REAGENT_ID_PROTEIN = 10, REAGENT_ID_LYE = 10))
+	TEST_ASSERT_EQUAL(dq_chem_spawn_take(T, /obj/item/soap/homemade), 1, "protein and lye make one homemade soap (the rule used to make none)")
 
 /datum/unit_test/dq_chem_item_spawn_sheets
 	boot_needs = list()

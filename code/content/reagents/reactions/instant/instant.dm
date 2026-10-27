@@ -633,7 +633,8 @@ CAPABILITIES(/transformation/chem/instant/soapification/alt)
 
 CAPABILITIES(/transformation/chem/instant/soapification/gibs)
 	configure(transformation(name = "Soapification Gibs", id = "soapificationgibs",
-		takes = list(reagent(REAGENT_ID_PROTEIN, 10), reagent(REAGENT_ID_LYE, 10)), spawns = spawns(/obj/item/soap/homemade, 1, per = SPAWN_PER_MADE)))
+		takes = list(reagent(REAGENT_ID_PROTEIN, 10), reagent(REAGENT_ID_LYE, 10)), made = 1,
+		spawns = spawns(/obj/item/soap/homemade, 1, per = SPAWN_PER_MADE)))
 
 /*Carpet Creation*/
 
