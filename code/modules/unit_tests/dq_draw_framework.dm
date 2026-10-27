@@ -395,3 +395,18 @@
 	dq_set_blood_color(C, "#aa0000")
 	refresh_flush()
 	TEST_ASSERT(C.rx?.look_key != before, "a bloodied garment draws its stain from the tracked blood colour, without add_blood() adding an overlay")
+
+/// Movables with the same look share one generic blocker appearance (emissive_blocker_generic()), and it still blocks: emissive plane,
+/// the blocker colour, the movable's dir.
+/datum/unit_test/dq_draw_generic_blocker_is_shared
+
+/datum/unit_test/dq_draw_generic_blocker_is_shared/Run()
+	var/turf/T = test_floor()
+	var/obj/item/tool/crowbar/A = allocate(/obj/item/tool/crowbar, T)
+	var/obj/item/tool/crowbar/B = allocate(/obj/item/tool/crowbar, T)
+	TEST_ASSERT(A.priority_overlays && A.priority_overlays == B.priority_overlays, "two crowbars hold the same blocker appearance")
+	var/mutable_appearance/MA = new(A.priority_overlays)
+	TEST_ASSERT_EQUAL(MA.plane, PLANE_EMISSIVE, "the shared blocker is on the emissive plane")
+	TEST_ASSERT_EQUAL(MA.dir, A.dir, "and faces the movable's way")
+	var/turned = emissive_blocker_generic(A.icon, A.icon_state, A.alpha, turn(A.dir, 90), A.appearance_flags)
+	TEST_ASSERT(turned != A.priority_overlays, "another dir is another blocker")
