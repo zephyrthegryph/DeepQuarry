@@ -4,107 +4,21 @@ stored	code/_helpers/sorts/comparators.dm	a = REF(a)
 stored	code/_helpers/sorts/comparators.dm	b = REF(b)
 stored	code/_helpers/sorts/comparators.dm	a = REF(a)
 stored	code/_helpers/sorts/comparators.dm	b = REF(b)
-stored	code/controllers/kernel/host.dm	"ref" = REF(system),
-stored	code/controllers/subsystems/contracts.dm	var/key = REF(source)
-stored	code/controllers/subsystems/contracts.dm	"id" = REF(requirement),
-stored	code/controllers/subsystems/contracts_damage_batch_api.dm	var/key = REF(source)
-stored	code/controllers/subsystems/tgui.dm	return rel_take(SStgui, nameof(SStgui.modals), key = REF(host))
-stored	code/datums/behaviours/sellable.dm	"physical_item_id" = REF(source),
 stored	code/datums/capabilities/debug_verbs.dm	var/ref_text = REF(target)
 stored	code/datums/helper_datums/stack_end_detector.dm	_canary_ref = REF(_canary)
-stored	code/domains/atmos/area_air_device.dm	air_uid_text = REF(src)
 stored	code/game/atom/atom_vv.dm	var/refid = REF(src)
-stored	code/game/machinery/air_alarm.dm	"service_id" = REF(src),
-stored	code/game/machinery/camera/tracking.dm	var/mob_ref = REF(M)
-stored	code/game/machinery/iv_drip.dm	"container_id" = REF(beaker),
-stored	code/game/objects/items/devices/scanners/motiontracker_api.dm	var/rfe = REF(At)
-stored	code/game/objects/items/weapons/mop.dm	"target_id" = REF(T),
-stored	code/game/objects/objs.dm	"physical_item_id" = REF(src),
 stored	code/modules/admin/view_variables/debug_variable_appearance.dm	appearance_ref = REF(appearance_father)
 stored	code/modules/admin/view_variables_panel.dm	dq_vv_panel.refid = REF(thing)
-stored	code/modules/client/record_updater.dm	review.console = REF(COM)
-stored	code/modules/client/statpanel_service.dm	"ref" = REF(S),
-stored	code/modules/client/verbs/character_directory.dm	LAZYSET(GLOB.chardirectory_photos, REF(src), base64)
-stored	code/modules/combat_ai/pack/perception.dm	var/key = REF(L)
-stored	code/modules/combat_ai/pack/perception.dm	var/my_ref = REF(B)
-stored	code/modules/contracts/agent_fieldwork.dm	var/shipment_ref = REF(crate) // a ref string: the payload stays plain data
-stored	code/modules/contracts/contract_event.dm	source_ref = REF(source)
-stored	code/modules/contracts/contract_event.dm	location_ref = REF(source_turf)
-stored	code/modules/contracts/damage_batch.dm	source_ref = REF(source)
-stored	code/modules/contracts/damage_batch.dm	location_ref = REF(source_turf)
-stored	code/modules/contracts/medical_trial_side_contracts.dm	"shipment_ref" = REF(shipment),
-stored	code/modules/contracts/social_framework.dm	"atom_id" = REF(source),
-stored	code/modules/contracts/social_framework.dm	"atom_id" = REF(source),
-stored	code/modules/contracts/social_framework.dm	"atom_id" = REF(source),
-stored	code/modules/economy/sales_lots.dm	snapshot[REF(cargo)] = "[cargo.type]"
-stored	code/modules/economy/sales_lots.dm	var/item_ref = REF(item)
-stored	code/modules/economy/sales_lots.dm	var/item_ref = REF(item)
-stored	code/modules/economy/sales_lots.dm	var/matching_ref = REF(matching_item)
-stored	code/modules/economy/sales_lots.dm	var/stock_ref = REF(stock_item)
-stored	code/modules/economy/sales_lots.dm	var/item_ref = REF(item)
-stored	code/modules/economy/sales_lots.dm	var/item_ref = REF(item)
-stored	code/modules/economy/service_invoices.dm	"physical_item_id" = REF(item),
-stored	code/modules/events/supply_demand.dm	"shortage_id" = REF(src),
-stored	code/modules/events/supply_demand.dm	"shortage_id" = REF(src),
-stored	code/modules/integrated_electronics/core/circuit_serialization.dm	component_indices[REF(IC)] = component_index
-stored	code/modules/integrated_electronics/core/circuit_serialization.dm	"ref" = REF(IC),
-stored	code/modules/integrated_electronics/core/circuit_serialization.dm	"ref" = REF(IC),
-stored	code/modules/integrated_electronics/core/integrated_circuit.dm	data["ref"] = REF(src)
-stored	code/modules/integrated_electronics/core/integrated_circuit.dm	pindata["ref"] = REF(io)
-stored	code/modules/integrated_electronics/core/integrated_circuit.dm	"ref" = REF(linked),
-stored	code/modules/integrated_electronics/core/integrated_circuit.dm	"holder_ref" = REF(linked.holder()),
-stored	code/modules/logging/log_holder.dm	var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = REF(logged))
-stored	code/modules/materials/containers/material_container.dm	"ref" = REF(material),
 stored	code/modules/materials/registry.dm	key = REF(key)
 stored	code/modules/materials/registry.dm	value = REF(value)
-stored	code/modules/mob/living/bot/bot.dm	var/past_key = REF(A)
-stored	code/modules/mob/living/bot/cleanbot.dm	var/cleaned_target_id = REF(D)
-stored	code/modules/mob/living/bot/cleanbot.dm	"bot_id" = REF(src),
-stored	code/modules/mob/living/bot/cleanbot.dm	var/cleaned_turf_id = REF(loc)
-stored	code/modules/mob/living/bot/cleanbot.dm	"bot_id" = REF(src),
-stored	code/modules/mob/living/bot/medbot.dm	"bot_id" = REF(src),
-stored	code/modules/mob/living/bot/mulebot.dm	"bot_id" = REF(src),
 stored	code/modules/mob/living/living.dm	var/refid = REF(src)
-stored	code/modules/mob/living/silicon/pai/api.dm	var/ghost_key = REF(ghost) // keyed by ref text: a ghost-less timestamp table, not a relation
-stored	code/modules/mob/living/silicon/pai/api.dm	asked[REF(ghost)] = EXPIRY_AT(null, CLOCK_WORLD, 0)
-stored	code/modules/mob/living/silicon/pai/api.dm	"ref" = REF(ghost),
-stored	code/modules/power/apc.dm	"service_id" = REF(src),
-stored	code/modules/power/supermatter/supermatter.dm	"machine_id" = REF(src),
-stored	code/modules/power/supermatter/supermatter.dm	"machine_id" = REF(src),
 ref_macro	code/_helpers/icons.dm	var/icon_ref = "\ref[icon]"
 ref_macro	code/_helpers/icons.dm	var/icon_ref = "\ref[rsc_ref]"
 ref_macro	code/_helpers/icons.dm	var/rsc_ref_ref = "\ref[rsc_ref]"
 ref_macro	code/_helpers/unsorted.dm	return "<a href='byond://?src=\ref[D];[arglist]'>[content]</a>"
 ref_macro	code/_helpers/unsorted.dm	return "\ref[input]"
 ref_macro	code/_helpers/unsorted.dm	return "<a href='byond://?src=\ref[href_src];[list2params(href_params)]'>[href_text]</a>"
-ref_macro	code/datums/vis_overlay_api.dm	var/cache_id = "\ref[overlay]@{[world.time]}"
-ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
-ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
-ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.mind = "\ref[subject.mind]"
-ref_macro	code/game/machinery/computer/message.dm	M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
 ref_macro	code/game/objects/items/devices/ticket_printer.dm	var/final = "<head><style>body {font-family: Verdana; background-color: #C1BDA3;}</style></head><center><h3>Nanotrasen Security Citation</h3><hr>This security citation has been issued to <br><big>[capitalize(ticket_name)]</big></center><b>Reason</b>:<br><i>[details]</i><hr><center><small>See your local representative at Central Command after the shift is over to resolve this issue.</small><br><img src=\ref['html/images/ntlogo.png']></center>"
 ref_macro	code/modules/admin/verbs/SDQL2/SDQL_2.dm	select_refs["\ref[i]"] = TRUE
 ref_macro	code/modules/client/preferences/preview_async.dm	var/ref_key = "\ref[icon_ref]"
-ref_macro	code/modules/holomap/mapper.dm	var/marker_cache_key = "\ref[HC]_[HC.marker_prefix]_[mob_indicator]"
-ref_macro	code/modules/holomap/mapper.dm	var/marker_cache_key = "\ref[HB]_marker"
-ref_macro	code/modules/integrated_electronics/core/pins.dm	return A ? "(\ref[A] \[Ref\])" : "(null)"
-ref_macro	code/modules/integrated_electronics/subtypes/converters.dm	result = "\ref[A]"
-ref_macro	code/modules/integrated_electronics/subtypes/illegal.dm	exonet.make_address("EPv2_Discovery_circuit-\ref[src]")
-ref_macro	code/modules/integrated_electronics/subtypes/input.dm	exonet.make_address("EPv2_circuit-\ref[src]")
-ref_macro	code/modules/mob/dead/observer/observer.dm	throw_alert("\ref[source]_notify_revive", /atom/movable/screen/alert/notify_cloning, new_master = source)
 ref_macro	code/modules/mob/living/carbon/human/life.dm	key += "|\ref[limb_image][limb_image.color]"
-ref_macro	code/modules/pda/messenger.dm	if(LAZYFIND(conversations, "\ref[P]"))
-ref_macro	code/modules/pda/messenger.dm	convopdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "1")))
-ref_macro	code/modules/pda/messenger.dm	pdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "0")))
-ref_macro	code/modules/pda/messenger.dm	var/target_ref = "\ref[P]"
-ref_macro	code/modules/pda/messenger.dm	receive_message(list("sent" = 1, "owner" = "[P.owner]", "job" = "[P.ownjob]", "message" = "[t]", "target" = "\ref[P]"), "\ref[P]")
-ref_macro	code/modules/pda/messenger.dm	PM.receive_message(list("sent" = 0, "owner" = "[pda().owner]", "job" = "[pda().ownjob]", "message" = "[t]", "target" = "\ref[pda()]"), "\ref[pda()]")
-ref_macro	code/modules/pda/messenger.dm	modified_message["target"] = "\ref[M]"
-ref_macro	code/modules/pda/messenger.dm	P.receive_message(modified_message, "\ref[M]")
-ref_macro	code/modules/projectiles/projectile.dm	var/tempref = "\ref[src]"
-ref_macro	code/modules/reagents/reagent_containers/syringes.dm	var/hash = md5(name_to_use + "\ref[target]")
-ref_macro	code/modules/turbolift/turbolift_map.dm	cfloor.set_area_ref("\ref[A]")
-ref_macro	code/modules/vore/eating/panel_databackend/vorepanel_soulcatcher_data.dm	var/list/info = list("displayText" = "[soul]", "value" = "\ref[soul]")
-ref_macro	code/modules/vore/eating/vorepanel.dm	key = "\ref[target][M.real_name]"
-ref_macro	code/modules/xenobio/items/weapons.dm	return (isnull(working) || working == "\ref[A.target]") ? null : MSG(req_failed)
-ref_macro	code/modules/xenobio/items/weapons.dm	grinding = "\ref[A.target]"

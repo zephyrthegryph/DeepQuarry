@@ -763,7 +763,7 @@ CAPABILITIES(/datum/prompt/number/material_insert)
 
 		data += list(list(
 			"name" = material.name,
-			"ref" = REF(material),
+			"ref" = ref_token(material),
 			"amount" = amount,
 			"color" = material.icon_colour,
 			"sheets" = round(amount / SHEET_MATERIAL_AMOUNT),

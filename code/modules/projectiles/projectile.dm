@@ -535,7 +535,7 @@ CAPABILITIES(/obj/item/projectile)
 	// dying projectile adopts nothing): the cache is made detached and handed to the timer.
 	var/datum/beam_components_cache/drawn = new
 	if(tracer_type)
-		var/tempref = "\ref[src]"
+		var/tempref = ref_token(src)
 		for(var/i in 1 to length(points) - 1)
 			generate_tracer_between_points(points[i], points[i + 1], drawn, tracer_type, color, duration, hitscan_light_range, hitscan_light_color_override, hitscan_light_intensity, tempref)
 	if(muzzle_type && duration > 0)

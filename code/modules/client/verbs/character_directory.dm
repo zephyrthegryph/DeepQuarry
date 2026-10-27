@@ -57,11 +57,14 @@ CAPABILITIES(/datum/character_directory)
 
 GLOBAL_LIST_EMPTY(chardirectory_photos)
 /mob/proc/set_chardirectory_photo(base64)
-	LAZYSET(GLOB.chardirectory_photos, REF(src), base64)
+	var/key = ref_token(src)
+	if(key)
+		LAZYSET(GLOB.chardirectory_photos, key, base64)
 
 /mob/proc/get_chardirectory_photo()
-	if(LAZYACCESS(GLOB.chardirectory_photos, REF(src)))
-		return LAZYACCESS(GLOB.chardirectory_photos, REF(src))
+	var/cached = LAZYACCESS(GLOB.chardirectory_photos, ref_token(src))
+	if(cached)
+		return cached
 
 	var/icon/F = getFlatIcon(src, defdir = SOUTH, no_anim = TRUE)
 	var/new_base64 = "'data:image/png;base64,[icon2base64(F)]'"

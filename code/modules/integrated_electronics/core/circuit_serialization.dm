@@ -87,7 +87,7 @@
 
 	// First pass: serialize components and build index lookup
 	for(var/obj/item/integrated_circuit/IC in contents)
-		component_indices[REF(IC)] = component_index
+		component_indices[ref_token(IC)] = component_index
 
 		var/list/component_data = list(
 			"i" = component_index,  // Shortened key: index
@@ -100,7 +100,7 @@
 
 		// Include position data if available
 		for(var/list/pos_data in component_positions)
-			if(pos_data["ref"] == REF(IC))
+			if(pos_data["ref"] == ref_token(IC))
 				component_data["x"] = pos_data["x"]  // x position
 				component_data["y"] = pos_data["y"]  // y position
 				break
@@ -157,13 +157,13 @@
 	var/list/recorded_connections = list()  // Track connections to avoid duplicates
 
 	for(var/obj/item/integrated_circuit/IC in contents)
-		var/source_component_index = component_indices[REF(IC)]
+		var/source_component_index = component_indices[ref_token(IC)]
 
 		// Check output connections (only process outputs to avoid duplicates)
 		for(var/i = 1, i <= IC.outputs.len, i++)
 			var/datum/integrated_io/output_pin = IC.outputs[i]
 			for(var/datum/integrated_io/linked_pin in output_pin.linked)
-				var/target_component_index = component_indices[REF(linked_pin.holder())]
+				var/target_component_index = component_indices[ref_token(linked_pin.holder())]
 				if(target_component_index)
 					var/target_pin_type = "u"  // u = unknown
 					var/target_pin_index = 0
@@ -200,7 +200,7 @@
 		for(var/i = 1, i <= IC.activators.len, i++)
 			var/datum/integrated_io/activate/activator_pin = IC.activators[i]
 			for(var/datum/integrated_io/linked_pin in activator_pin.linked)
-				var/target_component_index = component_indices[REF(linked_pin.holder())]
+				var/target_component_index = component_indices[ref_token(linked_pin.holder())]
 				if(target_component_index)
 					var/target_pin_type = "u"  // u = unknown
 					var/target_pin_index = 0
@@ -394,7 +394,7 @@
 		if(component_data["x"] != null && component_data["y"] != null)
 			// Store position in assembly for later UI restoration
 			UNTYPED_LIST_ADD(assembly.component_positions, list(
-				"ref" = REF(IC),
+				"ref" = ref_token(IC),
 				"x" = component_data["x"],
 				"y" = component_data["y"]
 			))
@@ -403,7 +403,7 @@
 			var/default_x = ((component_index - 1) % 4) * 200 + 50  // 4 components per row, 200px apart
 			var/default_y = ((component_index - 1) / 4) * 150 + 50  // 150px between rows
 			UNTYPED_LIST_ADD(assembly.component_positions, list(
-				"ref" = REF(IC),
+				"ref" = ref_token(IC),
 				"x" = default_x,
 				"y" = default_y
 			))

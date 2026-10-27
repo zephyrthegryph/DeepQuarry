@@ -25,15 +25,15 @@ sparse(/obj, obj_flags, type = num)
 		"actor_account" = producer_account,
 		"department" = department,
 		"origin_department" = department,
-		"physical_item_id" = REF(src),
+		"physical_item_id" = ref_token(src),
 		"item_type" = type,
 		"item_name" = name,
-		"fact_id" = "production:[REF(src)]",
+		"fact_id" = "production:[ref_token(src)]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
 		"metrics" = list("value" = sparse_get_or(src, economic_export_value, 0)),
 		"detail" = "Fabricated [name] for [department].",
-	), "item-produced:[REF(src)]", src)
+	), "item-produced:[ref_token(src)]", src)
 	// Preserve specialized export valuation and never count an object twice.
 	make_sellable(/datum/sellable/manufactured)
 

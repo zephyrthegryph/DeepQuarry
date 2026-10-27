@@ -156,10 +156,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			"department" = DEPARTMENT_ENGINEERING,
 			"machine_kind" = "supermatter",
 			"station_machine" = stationcrystal && (z in using_map.station_levels),
-			"machine_id" = REF(src),
+			"machine_id" = ref_token(src),
 			"metrics" = list("eer" = -1, "integrity" = 0),
 			"detail" = "Supermatter telemetry ended",
-		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
+		), "supermatter-destroyed:[ref_token(src)]:[world.time]", src)
 	..()
 
 /obj/machinery/power/supermatter/proc/get_status()
@@ -511,10 +511,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			"department" = DEPARTMENT_ENGINEERING,
 			"machine_kind" = "supermatter",
 			"station_machine" = stationcrystal && (z in using_map.station_levels),
-			"machine_id" = REF(src),
+			"machine_id" = ref_token(src),
 			"metrics" = telemetry_metrics,
 			"detail" = "Supermatter telemetry reported [round(power)] Relative EER at [round(get_integrity())]% integrity",
-		), "supermatter-telemetry:[REF(src)]:[world.time]", src)
+		), "supermatter-telemetry:[ref_token(src)]:[world.time]", src)
 
 /// The look (the draw sweep: from its layers).
 /obj/machinery/power/supermatter/draw(datum/look/look)

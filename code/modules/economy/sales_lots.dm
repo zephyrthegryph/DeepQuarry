@@ -25,7 +25,7 @@
 			var/obj/item/paper/document = cargo
 			if(document.shipping_ledger_data)
 				continue
-		snapshot[REF(cargo)] = "[cargo.type]"
+		snapshot[ref_token(cargo)] = "[cargo.type]"
 	return snapshot
 
 /obj/structure/closet/crate/proc/shipping_ledger_valid()
@@ -252,7 +252,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/department_storefront, REGISTRY_TRANSACTION_D
 		to_chat(user, span_warning("You cannot release [item] into the storefront."))
 		return OP_OK
 	item.forceMove(src)
-	var/item_ref = REF(item)
+	var/item_ref = ref_token(item)
 	set_stock_suggested_prices_at(item_ref, suggested)
 	set_stock_prices_at(item_ref, price)
 	stock_stocker_accounts[item_ref] = user.mind?.initial_account()?.account_number || 0
@@ -290,7 +290,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/list/rows_by_key = list()
 	// Listing never materializes (systems.md §18): stock is placed real by the stocking action.
 	FOR_REAL_CONTENTS(var/obj/item/item as anything, src)
-		var/item_ref = REF(item)
+		var/item_ref = ref_token(item)
 		var/listing_key = "[item.type]|[stock_prices[item_ref]]"
 		var/list/row = rows_by_key[listing_key]
 		if(row)
@@ -328,7 +328,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/obj/item/card/id/id_card = user.GetIdCard()
 	var/datum/money_account/customer = get_account(id_card?.associated_account_number)
 	var/datum/money_account/provider = storefront_provider()
-	var/price = stock_prices[REF(item)]
+	var/price = stock_prices[ref_token(item)]
 	if(!customer || !provider || !isnum(price) || price <= 0 || customer == provider)
 		return FALSE
 	return customer.security_level
@@ -340,7 +340,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 /// The price the buyer sees when the PIN is asked, kept with the question.
 /obj/machinery/department_storefront/proc/buy_price(datum/act/op/A)
 	var/obj/item/item = A.args["ref"]
-	return istype(item) ? stock_prices[REF(item)] : null
+	return istype(item) ? stock_prices[ref_token(item)] : null
 
 /// The PIN question of a purchase: the price it was asked at.
 /datum/prompt/number/storefront_pin
@@ -380,7 +380,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
 	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
-	var/item_ref = item ? REF(item) : null
+	var/item_ref = item ? ref_token(item) : null
 	if(!item || !storefront_staff_authorized(user))
 		return FALSE
 	var/new_price = price
@@ -389,7 +389,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/old_price = stock_prices[item_ref]
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		var/matching_ref = REF(matching_item)
+		var/matching_ref = ref_token(matching_item)
 		if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
 			set_stock_prices_at(matching_ref, round(new_price))
 	return TRUE
@@ -406,7 +406,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	set_markup_percent(round(new_markup))
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		var/stock_ref = REF(stock_item)
+		var/stock_ref = ref_token(stock_item)
 		set_stock_prices_at(stock_ref, max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100)))
 	return TRUE
 
@@ -417,7 +417,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/obj/item/card/id/id_card = user.GetIdCard()
 	var/datum/money_account/customer = get_account(id_card?.associated_account_number)
 	var/datum/money_account/provider = storefront_provider()
-	var/item_ref = REF(item)
+	var/item_ref = ref_token(item)
 	var/price = stock_prices[item_ref]
 	if(!customer || !provider || !isnum(price) || price <= 0 || customer == provider)
 		to_chat(user, span_warning("The sale could not be authorized."))
@@ -460,7 +460,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	return TRUE
 
 /obj/machinery/department_storefront/proc/storefront_forget_item(obj/item/item)
-	var/item_ref = REF(item)
+	var/item_ref = ref_token(item)
 	remove_stock_prices(item_ref)
 	remove_stock_suggested_prices(item_ref)
 	stock_stocker_accounts -= item_ref

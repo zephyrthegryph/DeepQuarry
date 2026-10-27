@@ -207,7 +207,7 @@ CAPABILITIES(/datum/vore_look)
 			var/mob/living/simple_mob/S = M
 			key = "[S.icon_living]"
 		else
-			key = "\ref[target][M.real_name]"
+			key = "[ref_token(target)][M.real_name]"
 	if(nom_icons[key])
 		. = nom_icons[key]
 	else

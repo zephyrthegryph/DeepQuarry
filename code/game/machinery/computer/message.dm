@@ -366,7 +366,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 
 		var/datum/data/pda/app/messenger/M = customrecepient().find_program(/datum/data/pda/app/messenger)
 		if(M)
-			M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
+			M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = ref_token(PDARec)), ref_token(PDARec))
 	//Finally..
 	ResetMessage()
 	. = TRUE
