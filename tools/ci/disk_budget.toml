@@ -42,6 +42,8 @@ total_gb = 60
 floor_gb = 50
 # Under the floor every cap is scaled to this percentage and min_idle_min drops to 5.
 aggressive_pct = 50
+# Free space the housekeeping keeps: under it the (detached, throttled) enforcement runs aggressive, long before the floor refuses work.
+target_free_gb = 80
 min_idle_min = 30
 # A directory size walked within this many minutes is reused instead of walked again.
 index_ttl_min = 30
