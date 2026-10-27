@@ -553,4 +553,12 @@ suenq lane/su3 su3
 out="$(DQ_TRAIN_TEST_SELF_SIG=stale DQ_TRAIN_STATE="$su" DQ_TRAIN_ONCE=1 bash "$su/self/dq_train.sh" run 2>&1)"; rc=$?
 check "a process whose snapshot another train process refreshed re-execs into it, once" '[ "$rc" = 0 ] && [ "$(grep -c "refreshed by another train process; re-exec" <<<"$out")" = 1 ] && in_master lane/su3'
 
+# The train's DreamChecker batch runs the real gates with --no-tests and no --tests: no test world runs, so an unstamped lane must not be refused.
+check "the gates refuse an unstamped lane only when a test world runs, and no longer name the retired lane-ready script" 'grep -q "\[ \"\$run_tests\" -eq 1 \]" <(grep -B1 -A3 "unstamped\[@\]} -gt 0" "$here/tools/dq_merge_gates.sh") && ! grep -q "Run tools/dq_lane_ready.sh in the lane" "$here/tools/dq_merge_gates.sh" && grep -q "REFUSED: no test list for unstamped" "$here/tools/dq_merge_gates.sh"'
+
+# the train's DreamChecker batch runs dq_merge_gates.sh --no-tests with no --tests: no test world runs, so an unstamped lane is not refused
+gates_refusal="$(grep -n 'REFUSED: no test list for unstamped' "$here/tools/dq_merge_gates.sh")"
+check "the gates refuse an unstamped lane only when a test world will run (--no-tests batches pass)" 'grep -B1 -q "\[ \"\$run_tests\" -eq 1 \]; then" "$here/tools/dq_merge_gates.sh" && grep -q "unstamped\[@\]} -gt 0 \] && \[ \${#tests_arg\[@\]} -eq 0 \] && \[ \"\$run_tests\" -eq 1 \]" "$here/tools/dq_merge_gates.sh"'
+check "the unstamped-lane refusal no longer points at the retired dq_lane_ready.sh" '[ -n "$gates_refusal" ] && ! grep -q "dq_lane_ready" <<<"$gates_refusal"'
+
 [ "$fail" = 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
