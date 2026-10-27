@@ -3,11 +3,10 @@
 	desc = "Should anything ever go wrong..."
 	icon = 'icons/obj/radio.dmi'
 	icon_state = "red_phone"
-	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/phone)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_thrown(force = 2.0))
 	configure(item_combat(force = 3.0, attack_verbs = list("called", "rang")))
 	configure(item_sounds(hit = SFX_WEAPONS_RING, drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
@@ -34,7 +33,6 @@ CAPABILITIES(/obj/item/rsp)
 	icon_state = "bike_horn"
 	item_state = "bike_horn"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 15
 	var/honk_sound = SFX_ITEMS_BIKEHORN
 	var/cooldown = 0
 	var/honk_text = FALSE
@@ -42,7 +40,7 @@ CAPABILITIES(/obj/item/rsp)
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/bikehorn)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 15, throw_speed = 3))
 	configure(item_worn(slots = SLOT_HOLSTER))
 	configure(item_thrown(force = 3))
 	configure(item_combat(attack_verbs = list("HONKED")))
@@ -69,11 +67,10 @@ CAPABILITIES(/obj/item/bikehorn)
 	icon = 'icons/obj/items.dmi'
 	icon_state = "c_tube"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 5
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/c_tube)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 5, throw_speed = 4))
 	configure(item_thrown(force = 1))
 
 /obj/item/disk
@@ -113,11 +110,10 @@ CAPABILITIES(/obj/item/disk)
 	var/traitor_frequency = 0.0
 	item_state = "radio"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 100)
 
 CAPABILITIES(/obj/item/SWF_uplink)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
@@ -131,11 +127,10 @@ CAPABILITIES(/obj/item/SWF_uplink)
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/staff)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 3.0, attack_verbs = list("bludgeoned", "whacked", "disciplined")))
 
@@ -157,11 +152,10 @@ CAPABILITIES(/obj/item/staff)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "stick"
 	item_state = "cane"
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/staff/stick)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 3.0))
 
@@ -211,13 +205,12 @@ CAPABILITIES(/obj/item/module)
 	icon_state = "flash"
 	w_class = ITEMSIZE_TINY
 	item_state = "electronic"
-	throw_range = 20
 
 MSG_DEF_SELF(camera_bug/none, "No bugged functioning cameras found.")
 
 /// Using it asks which bugged camera to watch (the old attack_self).
 CAPABILITIES(/obj/item/camera_bug)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	op("use", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(has_bugged_cameras), because = MSG(camera_bug/none))), asks(/datum/prompt/choice, fields = list("question" = "Select the camera to observe", "title" = "Select Camera", "choices" = computed(PROC_REF(camera_choices)), "timeout" = 0), step = "k232"), then(PROC_REF(interaction_self)))
 
 /// The functioning bugged cameras.

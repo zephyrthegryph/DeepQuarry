@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Retired prompt_flow(), flow_select(), flow_sql() and flow_http_get(): the login checks, the DB bans, polls and Discord/whitelist chat commands now read the database and HTTP through sql_ask()/http_ask() callbacks on the I/O lane, in the same order as before."
+  - bugfix: "A poll vote or reply whose insert failed no longer tells the player it succeeded."

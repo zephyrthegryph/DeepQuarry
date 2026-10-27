@@ -107,7 +107,6 @@ pub mod resource_order;
 
 pub mod captured_non_text_driver;
 pub mod compile_driver;
-pub mod declaration_patch;
 mod request_lease;
 pub mod required_types;
 pub mod retained_output;

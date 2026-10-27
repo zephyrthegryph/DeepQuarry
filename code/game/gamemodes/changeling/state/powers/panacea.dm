@@ -24,7 +24,7 @@
 
 	C.clear_radiation()
 	C.set_sdisabilities(0)
-	C.disabilities = 0
+	C.set_disabilities(0)
 	C.reagents.clear_reagents()
 	C.ingested.clear_reagents()
 

@@ -10,8 +10,7 @@
 	EXPIRY_TMP_DECLARE(l_move_time)
 	l_move_time = 1
 	var/datum/thrownthing/throwing // running: set only mid-throw
-	var/tmp/datum/throw_source
-	var/throw_range = 7
+	// throw_source lives in code/datums/sparse_vars/movable_misc.dm
 	// moved_recently lives in code/datums/sparse_vars/movable_misc.dm
 	var/item_state = null // Used to specify the item state for the on-mob overlays.
 	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
@@ -143,7 +142,7 @@
 		pulledby.stop_pulling()
 
 	stop_orbit()
-	rel_clear(src, nameof(throw_source))
+	sparse_ref_set(src, throw_source, null)
 	rel_clear(src, nameof(riding_datum))
 	set_recursive_listening(NON_LISTENING_ATOM)
 

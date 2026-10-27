@@ -28,16 +28,17 @@
 	var/message = sanitize_or_reflect(asked.value, src) // Reflect too long messages, within reason
 	if(!message)
 		return
-	emote(asked.act, asked.m_type, message)
+	emote(asked.act, asked.m_type, message, typed = TRUE)
 
 /// Whether the custom emote is audible: emote() runs again with the type (its checks are made again).
 /mob/proc/emote_audible_answered(datum/act/request/A)
 	var/datum/prompt/choice/emote_audible/asked = A.answer
 	if(!asked || isnull(asked.value))
 		return
-	emote(asked.act, asked.value == "Yes" ? AUDIBLE_MESSAGE : VISIBLE_MESSAGE, asked.message)
+	emote(asked.act, asked.value == "Yes" ? AUDIBLE_MESSAGE : VISIBLE_MESSAGE, asked.message, typed = TRUE)
 
-/mob/proc/emote(act, m_type, message)
+/// `typed`: the player typed this emote (a say or me entry, or the answer to its prompt), as against the game making the mob emote.
+/mob/proc/emote(act, m_type, message, typed = FALSE)
 	set waitfor = FALSE // ALLOW(scheduler): waits on a prompt (custom emote tgui_input_text/tgui_alert)
 	// s-s-snowflake
 	if(src.stat == DEAD && act != "deathgasp")
@@ -45,7 +46,7 @@
 	if(is_paralyzed())
 		return
 
-	if(usr == src) //client-called emote
+	if(typed) //client-called emote
 		if (client && (client.prefs.muted & MUTE_IC))
 			to_chat(src, span_warning("You cannot send IC messages (muted)."))
 			return
@@ -76,7 +77,7 @@
 			return
 
 		if(act == "me")
-			return custom_emote(m_type, message)
+			return custom_emote(m_type, message, typed = typed)
 
 		if(act == "custom")
 			if(!message)
@@ -85,7 +86,7 @@
 			if (!m_type)
 				open_request(src, /datum/prompt/choice/emote_audible, PROC_REF(emote_audible_answered), answerer = src, question = "Is this an audible emote?", title = "Emote", choices = list("Yes", "No"), buttons = TRUE, act = act, message = message)
 				return
-			return custom_emote(m_type, message)
+			return custom_emote(m_type, message, typed = typed)
 
 	var/full_act = act
 	var/splitpoint = findtext(act, " ")
@@ -105,7 +106,7 @@
 	// Emotes the game makes a mob do (symptoms, reagents, reflexes) aren't typed
 	// by the player: a phrase that isn't a registered key is shown as a custom
 	// emote in the third person, and one the mob can't use is skipped silently.
-	var/involuntary = (usr != src)
+	var/involuntary = !typed
 	if(!istype(use_emote))
 		if(involuntary)
 			automatic_custom_emote(VISIBLE_MESSAGE, third_person_phrase(full_act), check_stat = TRUE)
@@ -192,7 +193,7 @@
 	return list("pretext" = pretext, "nametext" = nametext, "subtext" = subtext)
 
 // Specific mob type exceptions below.
-/mob/living/silicon/ai/emote(act, type, message)
+/mob/living/silicon/ai/emote(act, type, message, typed = FALSE)
 	var/obj/machinery/hologram/holopad/T = src.holo
 	if(T && LAZYACCESS(T.masters, src)) //Is the AI using a holopad?
 		src.holopad_emote(message)

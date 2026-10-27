@@ -10,7 +10,6 @@
 	icon_state = "health"
 	item_state = "healthanalyzer"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 	MATERIAL_BULK(MAT_STEEL, 200)
 	/// The diagnostic profile this analyzer scans with.
 	var/profile_type = /datum/diagnostic_profile/health_analyzer
@@ -34,7 +33,7 @@
 
 
 CAPABILITIES(/obj/item/healthanalyzer)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 10, throw_speed = 5))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
@@ -138,7 +137,7 @@ CAPABILITIES(/obj/item/healthanalyzer)
 	if(!ishuman(M))
 		return
 	var/mob/living/carbon/human/H = M
-	for(var/datum/genetics/side_effect/side_effect in H.genetic_side_effects)
+	for(var/datum/genetics/side_effect/side_effect in H.genetic_side_effects())
 		var/datum/reagent/Rd = SSchemistry.ready().chemical_reagents[side_effect.antidote_reagent]
 		. += span_danger("Patient is suffering from [side_effect.name]. [Rd ? "Treatment: [Rd]" : "There is no known treatment."]")
 	if(H.get_addiction_to_reagent(REAGENT_ID_ASUSTENANCE) > 0)

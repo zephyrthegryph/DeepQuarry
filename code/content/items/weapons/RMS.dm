@@ -33,7 +33,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 5000)
 
@@ -236,7 +235,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 
 
 CAPABILITIES(/obj/item/rms)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_handling(preserve = FALSE))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 7))

@@ -6,24 +6,30 @@
 
 STATIC_ENTRY(item_rules)
 
-/proc/item_rules(sprite_sheets_obj = null, actions_types = null)
+/proc/item_rules(sprite_sheets_obj = null, actions_types = null, storage_cost = null, climbing_delay = null, abstract = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_ITEM_RULES, null, list("sprite_sheets_obj" = sprite_sheets_obj, "actions_types" = actions_types))
+	return entry_make(ENTRY_ITEM_RULES, null, list("sprite_sheets_obj" = sprite_sheets_obj, "actions_types" = actions_types, "storage_cost" = storage_cost, "climbing_delay" = climbing_delay, "abstract" = abstract))
 
 /datum/type_trait/item_rules
 	var/list/sprite_sheets_obj = null
 	var/list/actions_types = null
+	var/storage_cost = null
+	var/climbing_delay = 1
+	var/abstract = FALSE
 
 /datum/type_trait/item_rules/copy_values(datum/type_trait/item_rules/into)
 	into.sprite_sheets_obj = sprite_sheets_obj
 	into.actions_types = actions_types
+	into.storage_cost = storage_cost
+	into.climbing_delay = climbing_delay
+	into.abstract = abstract
 
 /datum/entry_engine/type_trait/item_rules
 	kind = ENTRY_ITEM_RULES
 	trait_type = /datum/type_trait/item_rules
 	publish_key = ITEM_RULES_KEY
 	base_type = /obj/item
-	var_names = list("sprite_sheets_obj" = "sprite_sheets_obj", "actions_types" = "actions_types")
+	var_names = list("sprite_sheets_obj" = "sprite_sheets_obj", "actions_types" = "actions_types", "storage_cost" = "storage_cost", "climbing_delay" = "climbing_delay", "abstract" = "abstract")
 
 /// The holder's item_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/item_rules_of, ITEM_RULES_KEY)
@@ -41,3 +47,12 @@ READS_AS(/proc/item_rules_of, ITEM_RULES_KEY)
 
 /obj/item/proc/set_actions_types(value)
 	return set_trait(src, ENTRY_ITEM_RULES, "actions_types", value)
+
+/obj/item/proc/set_storage_cost(value)
+	return set_trait(src, ENTRY_ITEM_RULES, "storage_cost", value)
+
+/obj/item/proc/set_climbing_delay(value)
+	return set_trait(src, ENTRY_ITEM_RULES, "climbing_delay", value)
+
+/obj/item/proc/set_abstract(value)
+	return set_trait(src, ENTRY_ITEM_RULES, "abstract", value)

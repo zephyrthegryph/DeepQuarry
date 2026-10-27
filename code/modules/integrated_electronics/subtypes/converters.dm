@@ -84,7 +84,7 @@
 	pull_data()
 	var/atom/A = get_pin_data(IC_INPUT, 1)
 	if(A && istype(A))
-		result = "\ref[A]"
+		result = ref_token(A)
 
 	set_pin_data(IC_OUTPUT, 1, result)
 	push_data()
@@ -102,7 +102,7 @@
 
 /obj/item/integrated_circuit/converter/refdecode/do_work()
 	pull_data()
-	set_pin_data(IC_OUTPUT, 1, ic_ref(locate(get_pin_data(IC_INPUT, 1))))
+	set_pin_data(IC_OUTPUT, 1, ic_ref(resolve_token(get_pin_data(IC_INPUT, 1))))
 	push_data()
 	activate_pin(2)
 

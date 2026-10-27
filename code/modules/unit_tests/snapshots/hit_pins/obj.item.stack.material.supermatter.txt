@@ -4,7 +4,7 @@ emag | pixel_x: -1 -> 0
 emag | pixel_y: 7 -> 0
 emag | refresh_queued: DEP_ALL -> 0
 emag | slowdown: 0 -> 0.1
-emag | throw_range: 3 -> 1
+emag | type_trait_overrides: null -> list(1)
 emag | w_class: 3 -> 1
 emp 1 | refresh_queued: DEP_ALL -> 0
 emp 2 | refresh_queued: DEP_ALL -> 0

@@ -33,9 +33,9 @@
 	if (reagents.reagent_list.len > 0)
 		var/datum/reagent/reagent = reagents.get_master_reagent()
 		if(reagent.price_tag)
-			price_tag = reagent.price_tag
+			set_price_tag(reagent.price_tag)
 		else
-			price_tag = null
+			set_price_tag(null)
 	return
 
 /// A drink that is shut takes nobody.
@@ -225,11 +225,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/golden_cup)
 /obj/item/reagent_containers/food/drinks/milk
 	name = "milk carton"
 	desc = "It's milk. White and nutritious goodness!"
-	description_fluff = "A product of NanoPastures. Who would have thought that cows would thrive in zero-G?"
 	icon_state = "milk"
 	item_state = "carton"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/milk)
+	configure(atom_rules(description_fluff = "A product of NanoPastures. Who would have thought that cows would thrive in zero-G?"))
 	configure(item_handling(center_x = 16, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_MILK = 50)))
@@ -237,11 +237,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/milk)
 /obj/item/reagent_containers/food/drinks/soymilk
 	name = "soymilk carton"
 	desc = "It's soy milk. White and nutritious goodness!"
-	description_fluff = "A product of NanoPastures. For those skeptical that cows can thrive in zero-G."
 	icon_state = "soymilk"
 	item_state = "carton"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/soymilk)
+	configure(atom_rules(description_fluff = "A product of NanoPastures. For those skeptical that cows can thrive in zero-G."))
 	configure(item_handling(center_x = 16, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_SOYMILK = 50)))
@@ -249,12 +249,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/soymilk)
 /obj/item/reagent_containers/food/drinks/smallmilk
 	name = "small milk carton"
 	desc = "It's milk. White and nutritious goodness!"
-	description_fluff = "A product of NanoPastures. Who would have thought that cows would thrive in zero-G?"
 	volume = 30
 	icon_state = "mini-milk"
 	item_state = "carton"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallmilk)
+	configure(atom_rules(description_fluff = "A product of NanoPastures. Who would have thought that cows would thrive in zero-G?"))
 	configure(item_handling(center_x = 16, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_MILK = 30)))
@@ -262,12 +262,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallmilk)
 /obj/item/reagent_containers/food/drinks/smallchocmilk
 	name = "small chocolate milk carton"
 	desc = "It's milk! This one is in delicious chocolate flavour."
-	description_fluff = "A product of NanoPastures. Who would have thought that cows would thrive in zero-G?"
 	volume = 30
 	icon_state = "mini-milk_choco"
 	item_state = "carton"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallchocmilk)
+	configure(atom_rules(description_fluff = "A product of NanoPastures. Who would have thought that cows would thrive in zero-G?"))
 	configure(item_handling(center_x = 16, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_CHOCOLATEMILK = 30)))
@@ -275,11 +275,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallchocmilk)
 /obj/item/reagent_containers/food/drinks/coffee
 	name = "\improper Robust Coffee"
 	desc = "Careful, the beverage you're about to enjoy is extremely hot."
-	description_fluff = "Fresh coffee is almost unheard of outside of planets and stations where it is grown. Robust Coffee proudly advertises the six separate times it is freeze-dried during the production process of every cup of instant."
 	icon_state = "coffee"
 	trash = /obj/item/trash/coffee
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/coffee)
+	configure(atom_rules(price_tag = 3, description_fluff = "Fresh coffee is almost unheard of outside of planets and stations where it is grown. Robust Coffee proudly advertises the six separate times it is freeze-dried during the production process of every cup of instant."))
 	configure(item_handling(center_x = 15, center_y = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_COFFEE = 30)))
@@ -287,12 +287,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/coffee)
 /obj/item/reagent_containers/food/drinks/tea
 	name = "cup of Duke Purple tea"
 	desc = "An insult to Duke Purple is an insult to the Space Queen! Any proper gentleman will fight you, if you sully this tea."
-	description_fluff = "Duke Purple is NanoPasture's proprietary strain of black tea, noted for its strong but otherwise completely non-distinctive flavour."
 	icon_state = "chai_vended"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/tea)
+	configure(atom_rules(price_tag = 3, description_fluff = "Duke Purple is NanoPasture's proprietary strain of black tea, noted for its strong but otherwise completely non-distinctive flavour."))
 	configure(item_handling(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_TEA = 30)))
@@ -300,12 +300,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/tea)
 /obj/item/reagent_containers/food/drinks/decaf_tea
 	name = "cup of Count Mauve decaffeinated tea"
 	desc = "Why should bedtime stop you from enjoying a nice cuppa?"
-	description_fluff = "Count Mauve is a milder strain of NanoPasture's proprietary black tea, noted for its strong but otherwise completely non-distinctive flavour and total lack of caffeination."
 	icon_state = "chai_vended"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf_tea)
+	configure(atom_rules(description_fluff = "Count Mauve is a milder strain of NanoPasture's proprietary black tea, noted for its strong but otherwise completely non-distinctive flavour and total lack of caffeination."))
 	configure(item_handling(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_TEADECAF = 30)))
@@ -321,12 +321,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/ice)
 /obj/item/reagent_containers/food/drinks/h_chocolate
 	name = "cup of Counselor's Choice hot cocoa"
 	desc = "Who needs character traits when you can enjoy a hot mug of cocoa?"
-	description_fluff = "Counselor's Choice brand hot cocoa is made with a blend of hot water and non-dairy milk powder substitute, in a compromise destined to annoy all parties."
 	icon_state = "coffee"
 	item_state = "hot_choc"
 	trash = /obj/item/trash/coffee
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/h_chocolate)
+	configure(atom_rules(price_tag = 3, description_fluff = "Counselor's Choice brand hot cocoa is made with a blend of hot water and non-dairy milk powder substitute, in a compromise destined to annoy all parties."))
 	configure(item_handling(center_x = 15, center_y = 13))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_HOTCOCO = 30)))
@@ -334,12 +334,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/h_chocolate)
 /obj/item/reagent_containers/food/drinks/greentea
 	name = "cup of green tea"
 	desc = "Exceptionally traditional, delightfully subtle."
-	description_fluff = "Tea remains an important tradition in many cultures originating on Earth. Among these, green tea is probably the most traditional of the bunch... Though the vending machines of the modern era hardly do it justice."
 	icon_state = "greentea_vended"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/greentea)
+	configure(atom_rules(description_fluff = "Tea remains an important tradition in many cultures originating on Earth. Among these, green tea is probably the most traditional of the bunch... Though the vending machines of the modern era hardly do it justice."))
 	configure(item_handling(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_GREENTEA = 30)))
@@ -347,12 +347,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/greentea)
 /obj/item/reagent_containers/food/drinks/chaitea
 	name = "cup of chai tea"
 	desc = "The name is redundant but the flavor is delicious!"
-	description_fluff = "Chai Tea - tea blended with a spice mix of cinnamon and cloves - borders on a national drink on Kishar."
 	icon_state = "chai_vended"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/chaitea)
+	configure(atom_rules(description_fluff = "Chai Tea - tea blended with a spice mix of cinnamon and cloves - borders on a national drink on Kishar."))
 	configure(item_handling(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_CHAITEA = 30)))
@@ -360,12 +360,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/chaitea)
 /obj/item/reagent_containers/food/drinks/decaf
 	name = "cup of decaf coffee"
 	desc = "Coffee with all the wake-up sucked out."
-	description_fluff = "A trial run on two NanoTrasen stations in 2481 attempted to replace all vending machine coffee with decaf in order to combat an epidemic of caffeine addiction. After two days, three major industrial accidents and a death, the initiative was cancelled. Decaf is now thankfully optional."
 	icon_state = "coffee"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf)
+	configure(atom_rules(description_fluff = "A trial run on two NanoTrasen stations in 2481 attempted to replace all vending machine coffee with decaf in order to combat an epidemic of caffeine addiction. After two days, three major industrial accidents and a death, the initiative was cancelled. Decaf is now thankfully optional."))
 	configure(item_handling(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_DECAF = 30)))
@@ -373,11 +373,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf)
 /obj/item/reagent_containers/food/drinks/dry_ramen
 	name = "Cup Ramen"
 	desc = "Just add 10ml water and boil! A taste that reminds you of your school years."
-	description_fluff = "Konohagakure Brand Ramen has been an instant meal staple for centuries. Cheap, quick and available in over two hundred varieties - though most taste like artifical chicken."
 	icon_state = "ramen"
 	trash = /obj/item/trash/ramen
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
+	configure(atom_rules(price_tag = 5, description_fluff = "Konohagakure Brand Ramen has been an instant meal staple for centuries. Cheap, quick and available in over two hundred varieties - though most taste like artifical chicken."))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_DRYRAMEN = 30)))

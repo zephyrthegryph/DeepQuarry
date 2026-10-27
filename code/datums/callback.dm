@@ -54,8 +54,9 @@
 	delegate = proctocall
 	if (length(args) > 2)
 		arguments = args.Copy(3)
-	if(usr)
-		rel_set(src, nameof(user), usr)
+	var/mob/actor = input_actor() // the native input's acting mob, captured so a later Invoke runs as it
+	if(actor)
+		rel_set(src, nameof(user), actor)
 
 /world/proc/ImmediateInvokeAsync(thingtocall, proctocall, ...)
 	set waitfor = FALSE // ALLOW(scheduler): INVOKE_ASYNC primitive (goes with the last INVOKE_ASYNC caller)
@@ -71,7 +72,7 @@
 		call(thingtocall, proctocall)(arglist(calling_arguments))
 
 /datum/callback/proc/Invoke(...)
-	if(!usr)
+	if(!input_actor())
 		var/mob/M = user
 		if(M)
 			return world.PushUsr(M, src)
@@ -94,7 +95,7 @@
 /datum/callback/proc/InvokeAsync(...)
 	set waitfor = FALSE // ALLOW(scheduler): InvokeAsync primitive (goes with the last async caller)
 
-	if(!usr)
+	if(!input_actor())
 		var/mob/M = user
 		if(M)
 			return world.PushUsr(M, src)

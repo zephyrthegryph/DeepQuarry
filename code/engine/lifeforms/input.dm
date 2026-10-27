@@ -159,7 +159,7 @@
 	return FALSE
 
 /// The acting mob of the native input running now (usr), for the engine's own entry points. Content gets its actor as an argument.
-/proc/input_actor()
+/proc/input_actor() as /mob
 	return usr
 
 /// A compatibility callback has an engine-level invocation interface.

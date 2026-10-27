@@ -53,7 +53,7 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 	gem().use_speech(message, src, eyeobj)
 
 // Emote proc for captured souls
-/mob/living/carbon/brain/caught_soul/vore/custom_emote(m_type, message)
+/mob/living/carbon/brain/caught_soul/vore/custom_emote(m_type, message, typed = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(STAT_MUTED)) return FALSE
 	gem().use_emote(message,src,eyeobj)

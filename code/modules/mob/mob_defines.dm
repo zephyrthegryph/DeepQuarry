@@ -11,7 +11,6 @@
 	layer = MOB_LAYER
 	plane = MOB_PLANE
 	animate_movement = 2
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 	///when this be added to vis_contents of something it inherit something.plane, important for visualisation of mob in openspace.
 	vis_flags = VIS_INHERIT_PLANE
 
@@ -36,22 +35,12 @@
 	*/
 
 
-	var/computer_id = null
 	var/list/logging
 
 	var/memory = ""
-	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
-	var/other = 0.0
 	var/real_name = null
-	var/nickname = null
-	var/flavor_text = ""
-	var/med_record = ""
-	var/sec_record = ""
-	var/gen_record = ""
-	var/exploit_record = ""
 	var/blinded = null
-	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
 	var/is_shifted = FALSE // Edit; pixel shifting
@@ -74,9 +63,7 @@
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 
 	var/bodytemperature = BODYTEMP_NORMAL
-	var/charges = 0.0
 
-	var/losebreath = 0.0//Carbon
 	var/m_intent = I_RUN//Living
 	/// Set around a holder-driven forced step (a chair/wheelchair moving its
 	/// own buckled occupant directly, handle_buckled_mob_movement()) so
@@ -87,10 +74,9 @@
 
 	var/tmp/datum/hud/hud_used = null
 
-	var/tmp/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
 
-	var/inertia_dir = 0
+	// inertia_dir (the direction a drifting mob keeps going) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 
 	var/job = null//Living
@@ -109,14 +95,12 @@
 	var/list/mutations //Carbon -- Doohl
 	//see: setup.dm for list of mutations
 
-	var/voice_name = "unidentifiable voice"
 
 
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
 
-//The last mob/living/carbon to push/drag/grab this mob (mostly used by slimes friend recognition)
-	var/tmp/mob/living/LAssailant = null
+// LAssailant (the last mob/living/carbon to push/drag/grab this mob) is a weak sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
 	// Spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm): a relation list.
@@ -127,7 +111,6 @@
 
 	mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 
-	var/update_icon = 1 //Set to 1 to trigger update_icons() at the next life() call
 
 	var/status_flags = CANPUSH	//bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH. Status immunities and godmode are effects (EFFECT_IMMUNE_*, EFFECT_GODMODE).
 
@@ -136,16 +119,13 @@
 
 
 
-	var/obj/control_object //Used by admins to possess objects. All mobs should have this var
 
 	//Whether or not mobs can understand other mobtypes. These stay in /mob so that ghosts can hear everything.
 	var/universal_speak = 0 // Set to 1 to enable the mob to speak to everyone -- TLE
 
 	var/stance_damage = 0 //Whether this mob's ability to stand has been affected
 
-	//If set, indicates that the client "belonging" to this (clientless) mob is currently controlling some other mob
-	//so don't treat them as being SSD even though their client var is null.
-	var/tmp/mob/teleop = null
+	// teleop (the mob this clientless mob's player is controlling, so it is not treated as SSD) is a weak sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
@@ -156,47 +136,37 @@
 	var/seedarkness = 1	//Determines mob's ability to see shadows. 1 = Normal vision, 0 = darkvision
 
 
-	var/custom_speech_bubble = "default"
-
 	var/low_priority = FALSE //Skip processing life() if there's just no players on this Z-level
 
 	var/default_pixel_x = 0 //For offsetting mobs
 	var/default_pixel_y = 0
 
 
-	var/registered_z
+	// registered_z (the z-level the mob is listed under in players_by_zlevel) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 
 	///List of progress bars this mob is currently seeing for actions
-	var/tmp/list/progressbars = null //for stacking do_after bars
+	// progressbars (the do_after bars this mob is seeing, for stacking) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
-
-	///Allows a datum to intercept all click calls this mob is the source of
-	var/tmp/datum/click_intercept
 
 	var/tmp/datum/focus //What receives our keyboard inputs. src by default
 
-	/// dict of custom stat tabs with data
-	var/list/list/misc_tabs = list() // ALLOW(instance_list): d: per-mob misc_tabs, filled at runtime; mobs are few
+	// misc_tabs (custom stat tabs with data) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 	// Membership list maintained by /datum/action Grant()/Remove(): a relation list.
 	var/tmp/list/datum/action/actions
 
 
-	var/custom_footstep = FOOTSTEP_MOB_SHOE
 
 
 CAPABILITIES(/mob)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = FALSE))
 	preset(nameof(lastarea), PROC_REF(start_lastarea))
 	setup(PROC_REF(finish_mob_setup))
 	mob_rules(universal_understand = 0, forced_psay = FALSE, vent_crawl_time = 4.5 SECONDS)
-	configure(movable_motion(unacidable = FALSE))
 	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
 	cooldowns(next_emote, next_emote_refresh)
 	stamps(last_move_time) // when the client last moved this mob, for movement smoothing
-	ref_one(nameof(lastattacker), /mob, weak = TRUE) // the last mob to hit this one with a weapon (attack logs and death records); a gone attacker reads as none
-	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
-	ref_one(nameof(click_intercept), /datum)
 	ref_one(nameof(hovered_atom_view), /atom)
 	ref_one(nameof(focus), /datum, starts = PROC_REF(start_focus)) // what receives the mob's keyboard input (itself by default)
 	ref_one(nameof(mind), /datum/mind)
@@ -212,13 +182,13 @@ CAPABILITIES(/mob)
 	// per-subtype constant tables: every instance of a type shares one list
 	per_type(nameof(speak_emote), TYPE_PROC_REF(/datum, per_type_own))
 	per_type(nameof(shouldnt_see), TYPE_PROC_REF(/datum, per_type_own))
-	ref_one(nameof(control_object)) // the object an admin possesses
+	links(LINK_END(/mob, LK_POSSESSING), LINK_END(/obj, LK_POSSESSED_BY), sparse = TRUE, b_many = TRUE) // the object an admin possesses (possessed_obj_of())
 	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
 	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
 	ref_many(nameof(spell_list))
 	ref_many(nameof(actions))
 	ref_many(nameof(pinned), /obj/item) // Borrowed objects pinning the mob to a wall.
-	owns_many(nameof(mapobjs), /atom/movable/screen) // the camera-overview map screens this mob is shown: disposed of when cleared
+	links(LINK_END(/mob, LK_MAPOBJS), LINK_END(/atom/movable/screen, LK_MAPOBJ_OF), sparse = TRUE, a_many = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the camera-overview map screens this mob is shown, gone with it (mapobjs())
 	ref_many(nameof(embedded), /obj/item) // Items embedded in a mob with no organs to hold them: a deleted item leaves the list.
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
@@ -228,28 +198,22 @@ CAPABILITIES(/mob)
 	// A spin (animations.dm): a quarter turn every lap, whatever the mob does meanwhile; not an action, so it keeps nothing and holds nothing.
 	op("spin", ai(), claims(0), takes("left", "speed", "facing"), wait(PROC_REF(spin_lap_time), keeps = 0, repeats = PROC_REF(spin_more), after_step = PROC_REF(spin_step)))
 	mob_state()
-	ref_one(nameof(teleop))
 	telekinetic_reach()
 	godmode_immunities()
 	every(1 DECISECONDS, then(PROC_REF(dizzy_shake_tick)), when = nameof(dizzy_shaking))
 	every(1 DECISECONDS, then(PROC_REF(jittery_shake_tick)), when = nameof(jittery_shaking))
 	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
-	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
+	links(LINK_END(/mob, LK_BELLY_OVERLAY), LINK_END(/datum/belly_overlay_tgui, LK_BELLY_OVERLAY_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the belly overlay window datum, gone with the mob (belly_overlay_window())
 	owns_one(nameof(dna), /datum/dna)
 	owns_one(nameof(hud_used), /datum/hud)
-	owns_one(nameof(machine_shim), /datum/using_machine_shim)
+	links(LINK_END(/mob, LK_MACHINE_SHIM), LINK_END(/datum/using_machine_shim, LK_MACHINE_SHIM_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the helper that releases a used machine when the mob leaves it, gone with the mob (machine_shim())
 	owns_one(nameof(remote_view), /datum/remote_view)
-	owns_one(nameof(vorePanel), /datum/vore_look)
+	links(LINK_END(/mob, LK_VORE_PANEL), LINK_END(/datum/vore_look, LK_VORE_PANEL_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the vore panel window datum, gone with the mob (vore_panel())
 	owns_many(nameof(spell_masters), /atom/movable/screen/movable/spell_master)
 	owns_many(nameof(vore_organs))
 	owns_many(nameof(alerts))
 	owns_many(nameof(screens))
 	// Selected, spontaneous and previewed bellies are borrowed views, separate from owned vore_organs.
-	ref_one(nameof(spont_belly_front))
-	ref_one(nameof(spont_belly_rear))
-	ref_one(nameof(spont_belly_left))
-	ref_one(nameof(spont_belly_right))
-	ref_one(nameof(previewing_belly))
 	hover(PROC_REF(hover_input))
 	op("flavor_more", topic("flavor_more"), then(PROC_REF(topic_flavor_more)))
 	op("flavor_change", topic("flavor_change", arg("flavor_change", schema_text(32), optional = TRUE)), needs(req_self()), then(PROC_REF(topic_flavor_change)))
@@ -302,7 +266,6 @@ CAPABILITIES(/mob)
 
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
-	var/accumulated_rads = 0 	// For radiation stuff.
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

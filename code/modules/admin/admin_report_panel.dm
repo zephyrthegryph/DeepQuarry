@@ -97,7 +97,7 @@ CAPABILITIES(/datum/admin_report)
 	if(!user?.client)
 		return
 	var/datum/admin_report/R = new(title, user, host)
-	R.set_body_html(body_html)
+	R.set_body_html(body_html) // its links may carry HREF_TOKEN_PLACEHOLDER, filled when the window data is sent
 	R.tgui_interact(user)
 
 // StockChart — typed line/bar chart panel for stock share-value displays.

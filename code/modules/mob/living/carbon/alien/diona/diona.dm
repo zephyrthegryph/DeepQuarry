@@ -26,7 +26,6 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 
 /mob/living/carbon/alien/diona
 	name = "diona nymph"
-	voice_name = "diona nymph"
 	adult_form = /mob/living/carbon/human
 	can_namepick_as_adult = 1
 	adult_name = "diona gestalt"
@@ -73,7 +72,7 @@ CAPABILITIES(/mob/living/carbon/alien/diona)
 	configure(mob_rules(universal_understand = 0))
 	configure(living_rules(composition_reagent = REAGENT_ID_NUTRIMENT))
 	setup(PROC_REF(prepare_diona_species))
-	configure(mob_kind(death_message = "expires with a pitiful chirrup..."))
+	configure(mob_kind(death_message = "expires with a pitiful chirrup...", voice_name = "diona nymph"))
 	configure(mob_movement(pull_size = ITEMSIZE_SMALL, pull_mobs = MOB_PULL_SMALLER))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	knows(LANGUAGE_ROOTGLOBAL)

@@ -470,6 +470,7 @@ CAPABILITIES(/obj/item/storage/box/snappops)
 
 
 CAPABILITIES(/obj/item/storage/box/matches)
+	configure(atom_rules(price_tag = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
 	configure(storage(accepts = list(/obj/item/flame/match)))

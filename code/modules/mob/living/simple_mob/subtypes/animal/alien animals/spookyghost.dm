@@ -68,6 +68,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
+	configure(living_rules(delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(death_message = "fades away!"))
@@ -97,7 +98,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 	playsound(src, projectilesound, 80, 1)
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/on_death(gibbed)
 	. = ..()
@@ -149,7 +149,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/on_death(gibbed)
 	. = ..()
@@ -172,6 +171,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 		src.injure(INJURY_BURN, 1, source = T) // Light sears it.
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(death_message = "fades away!"))
 	after_init(35 SECONDS, then(PROC_REF(fade_out)))

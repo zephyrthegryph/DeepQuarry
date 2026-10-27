@@ -170,7 +170,7 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 		problems |= OXY_DAMAGE
 	if(user.radiation > 0)
 		problems |= ACUTE_RADIATION_DOSE
-	if(user.accumulated_rads > 0)
+	if(user.accumulated_rads() > 0)
 		problems |= CHRONIC_RADIATION_DOSE
 	for(var/tag in list(TREAT_TISSUE_REPAIR, TREAT_BURN_CARE))
 		if(_dq_band_rank(demand?[tag]) >= _dq_band_rank(DIAG_BAND_SEVERE))

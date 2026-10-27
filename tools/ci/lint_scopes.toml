@@ -181,7 +181,6 @@ record_accessor_prefixes = ["set_", "get_"]
 "/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/game/atoms_movable.dm:294), held by all movables"
 "/atom/movable/throwing" = "read on every footstep and bump: footstep.dm throw check (code/datums/behaviours/footstep.dm:70), Bump finalize (code/game/atoms_movable.dm:376)"
 "/atom/light_sources" = "read on every Moved(): the loop that updates each light source on the mover (code/game/atoms_movable.dm:322), walked for all movers"
-"/atom/movable/blocks_emissive" = "read on every overlay update of an atom: the emissive blocker build (code/modules/lighting/emissive_blocker_overlays.dm:13)"
 "/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/modules/mob/living/living_movement.dm:20) and mob_movement.dm:21"
 "/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/modules/mob/living/living_movement.dm:51) and carbon.dm:382"
 "/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"
@@ -722,6 +721,7 @@ legacy_forms_converted = [
   "code/modules/vote/",
   "code/modules/weapons/",
   "code/modules/xenoarcheaology/artifacts/predefined/",
+  "code/content/xenoarcheaology/artifacts/predefined/",
   "code/modules/xenoarcheaology/effects/",
   "code/content/xenoarcheaology/effects/",
   "code/modules/xenoarcheaology/finds/",
@@ -783,7 +783,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
-admin_rights_shrink_only_baseline_one_mechanism_admin_can = 2
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 1
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 102
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
 objects_ratchet_on_legacy_interactions = 0
@@ -1206,6 +1206,10 @@ banned = [
   "client_ask = open_request(src, /datum/prompt/x, PROC_REF(entered), answerer = mob, ...) in the client proc, the answer handled in the handler",
   "cast_ask = target_questions(user) returning question_step() specs on the spell, the answers read in targets_from_answers(user, asked)",
   "flow_ask = a question sequence (code/datums/prompts/sequence.dm): ask_admin(/datum/ask_sequence/admin/x, subject, steps, PROC_REF(done)) with question_step() specs, or ask_child() for a shared picker; an op asks with asks() steps",
+  "prompt_flow = a read that carries on from its answer: sql_ask(owner, sql, params, PROC_REF(next), context...) and sql_answer_rows() (code/engine/io/db.dm); a question is a question sequence or asks()",
+  "flow_select = sql_ask(owner, sql, params, PROC_REF(next), context...), the rows read with sql_answer_rows(result, error, what) in the callback (code/engine/io/db.dm)",
+  "flow_sql = sql_ask(owner, sql, params, PROC_REF(next)) when the callback reads the outcome, sql_write(sql, params) when nobody does",
+  "flow_http_get = http_ask(owner, url, PROC_REF(next), context...) (code/engine/io/db.dm); the response is null when the request failed",
   "rerun_ask_on = asks(/datum/prompt/kind, fields = list(...), step = \"name\", answerer = PROC_REF(x)) on the op",
   "topic_rerun_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the topic op; read the answer with A.step_value(\"name\")",
   "ban_topic_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the op; repeat a step with repeats = PROC_REF(x)",

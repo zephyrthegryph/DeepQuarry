@@ -149,8 +149,8 @@ CAPABILITIES(/datum/rig_power_system)
 			offline = 1
 	else if(offline)
 		offline = 0
-		if(istype(W) && !W.wearing_rig)
-			rel_set(W, nameof(W.wearing_rig), holder())
+		if(istype(W) && !W.wearing_rig())
+			link_make(W, LK_WEARING_RIG, holder())
 		if(!istype(holder(), /obj/item/rig/protean))
 			holder().slowdown = initial(holder().slowdown)
 

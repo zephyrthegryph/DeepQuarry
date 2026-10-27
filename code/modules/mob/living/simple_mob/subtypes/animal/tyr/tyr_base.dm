@@ -14,7 +14,6 @@
 	//I know very little of this and yes, I copy and pasted from ants
 	swallowTime = 3 SECONDS
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 10
 	vore_stomach_name = "Stomach"
 	vore_default_item_mode = IM_DIGEST
@@ -26,6 +25,7 @@
 	vore_standing_too = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr)
+	configure(living_rules(vore_capacity = 1))
 	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE))
 

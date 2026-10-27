@@ -14,7 +14,7 @@
 				// end
 				if( (sparse_get(M, lastKnownIP) == source.client.address) )
 					matches += "IP ([source.client.address])"
-				if( (source.client.connection != "web") && (M.computer_id == source.client.computer_id) )
+				if( (source.client.connection != "web") && (sparse_get(M, computer_id) == source.client.computer_id) )
 					if(matches)	matches += " and "
 					matches += "ID ([source.client.computer_id])"
 					if(!CONFIG_GET(flag/disable_cid_warn_popup))
@@ -36,7 +36,7 @@
 
 	registry_join(REGISTRY_PLAYERS, src)
 	sparse_set(src, lastKnownIP, client.address)
-	computer_id	= client.computer_id
+	sparse_set(src, computer_id, client.computer_id)
 	log_access("Mob Login: [key_name(src)] was assigned to a [type] ([tag])")
 	update_Login_details(src)
 	world.update_status()

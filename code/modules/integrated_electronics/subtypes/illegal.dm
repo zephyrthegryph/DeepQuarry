@@ -31,7 +31,7 @@ CAPABILITIES(/obj/item/integrated_circuit/illegal/EPv2_Discoverer)
 	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
 /obj/item/integrated_circuit/illegal/EPv2_Discoverer/proc/prepare_discovery_address()
-	exonet.make_address("EPv2_Discovery_circuit-\ref[src]")
+	exonet.make_address("EPv2_Discovery_circuit-[ref_token(src)]")
 	desc += "<br>This circuit's EPv2 address is: [exonet.address]"
 	rel_set(src, nameof(node), get_exonet_node())
 	message_admins("A EPv2 Discovery circuit has been created. [REF(src)]")

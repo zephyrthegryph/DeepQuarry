@@ -905,93 +905,14 @@ fn run_build_attempt(
             }
         };
         dm_profile::request_mark("patch.early_admission_started");
-        // Declaration patches (appended callables, numeric defaults) for edits the general path
-        // has not absorbed yet. Any unproven condition declines (logged) and the general path runs.
-        let tree = &frontend.snapshot.tree;
-        let patched = match (&generation, &patch_shape) {
-            (Some(generation), Some(shape))
-                if tree.appended_callables().is_some() || tree.default_edits().is_some() =>
-            {
-                let patch_started = Instant::now();
-                let attempt = (|| {
-                    let inputs = snapshot_memo
-                        .get(&inputs_capture, nontext.retained_resource_inputs())
-                        .map_err(|error| format!("input admission: {error}"))?;
-                    dm_profile::request_mark("patch.inputs_snapshot");
-                    dmbc::declaration_patch::try_patch(dmbc::declaration_patch::PatchRequest {
-                        generation,
-                        shape,
-                        frontend: &frontend,
-                        resolver: &nontext.resolver,
-                        engine,
-                        engine_bytes: bytes,
-                        references: &links.references,
-                        spellings: &links.inventory.spellings,
-                        resource_search_context: Some(nontext.resource_search_context),
-                        inputs,
-                        archive: nontext.archive_identity(),
-                        executor,
-                        memo: procedure_memo.as_ref(),
-                        workers,
-                        project: &project,
-                    })
-                })();
-                match attempt {
-                    Ok(patched) => {
-                        dmbc::compile_stats::note_patch(patched.changed_bodies);
-                        dmbc::declaration_patch::note_applied(&project);
-                        dmbc::daemon_eprintln!(
-                            "native declaration patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
-                            patched.changed_bodies,
-                            patched.shifted_initializers,
-                            patched.patched_rows,
-                            patch_started.elapsed().as_secs_f64()
-                        );
-                        Some(patched)
-                    }
-                    Err(reason) => {
-                        dmbc::daemon_eprintln!(
-                            "native declaration patch: declined after {:.3}s: {reason}",
-                            patch_started.elapsed().as_secs_f64()
-                        );
-                        None
-                    }
-                }
-            }
-            _ => None,
-        };
         if generation.is_none() {
             dmbc::compile_stats::note_full("no retained generation (cold session)");
         }
         dm_profile::request_mark("patch.attempted");
-        // A patch or an incremental output claims nothing it reused in the procedure memo;
+        // An incremental output claims nothing it reused in the procedure memo;
         // publishing its request lease would replace (evict) every resident record.
-        let declaration_patched = patched.is_some();
         let incremental = std::cell::Cell::new(false);
-        let compile_result = if let Some(patched) = patched {
-            let (resolver, _stage, publication) = nontext.into_composition_parts();
-            let (abi, startup) = patched.query;
-            query_attempt
-                .capture_resolved_host(&frontend, resolver, abi, startup)
-                .map_err(|error| {
-                    dmbc::request_failure::RequestFailure::internal(format!(
-                        "native internal: query host capture: {error}"
-                    ))
-                })?;
-            let explanations = runner_report::explanations(&frontend, None);
-            drop(frontend);
-            Ok::<_, dmbc::cold::ColdError>((
-                dmbc::cold::ColdOutput {
-                    dmb: patched.dmb,
-                    timings: Default::default(),
-                    warnings: patched.warnings,
-                    startup: None,
-                },
-                publication,
-                explanations,
-                None,
-            ))
-        } else { (|| {
+        let compile_result = { (|| {
             let values = dmbc::type_values::CapturedTypeValues::pinned(&frontend, engine)
                 .map_err(dmbc::cold::ColdError::RuntimeTypeValues)?;
             let values = dmbc::resource_values::CapturedResourceValues::new(
@@ -1110,7 +1031,7 @@ fn run_build_attempt(
                 linking_inputs_seconds, compilation_started.elapsed().as_secs_f64(),
                 total.elapsed().as_secs_f64());
         }
-        let built_on_retained = declaration_patched || incremental.get();
+        let built_on_retained = incremental.get();
         let (output, publication, explanations, patch_records) = match compile_result {
             Ok(output) => output,
             Err(dmbc::cold::ColdError::Lowering(diagnostics)) => {

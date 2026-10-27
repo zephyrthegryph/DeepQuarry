@@ -7,7 +7,6 @@ FIRE ALARM
 	icon = 'icons/obj/monitors.dmi'
 	icon_state = "fire"
 	layer = ABOVE_WINDOW_LAYER
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	var/detecting = 1.0
@@ -35,7 +34,7 @@ FIRE ALARM
 /obj/machinery/firealarm/var/timing = 0
 
 CAPABILITIES(/obj/machinery/firealarm)
-	configure(movable_motion(unacidable = TRUE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE, unacidable = TRUE))
 	setup(PROC_REF(sync_initial_security_level))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))

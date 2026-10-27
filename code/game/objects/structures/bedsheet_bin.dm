@@ -11,7 +11,6 @@ LINEN BINS
 	icon_state = "sheet"
 	plane = MOB_PLANE
 	layer = BELOW_MOB_LAYER
-	throw_range = 2
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
@@ -31,7 +30,7 @@ TYPE_TABLE_DECLARE(/obj/item/bedsheet, bedsheet_dream_messages, list("white"))
 	return OP_OK
 
 CAPABILITIES(/obj/item/bedsheet)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 2, throw_speed = 1))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))

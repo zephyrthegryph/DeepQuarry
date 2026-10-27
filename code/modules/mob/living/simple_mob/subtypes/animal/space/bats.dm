@@ -30,14 +30,13 @@
 
 	has_langs = list(LANGUAGE_MOUSE, LANGUAGE_ECHOSONG)		// Haha squeak
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
-	say_list_type = /datum/say_list/mouse	// Close enough
 
 	var/scare_chance = 15
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/bats)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(say_list_type = /datum/say_list/mouse))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 

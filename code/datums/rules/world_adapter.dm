@@ -79,7 +79,7 @@
 /// A rule's heat node: an atom's temperature, watched through native heat
 /// watches that follow its body (code/modules/heat/heat.dm).
 /datum/dq_rx_node
-	/// The atom whose temperature this is: a one-sided back view (the atom owns us in rx_node).
+	/// The atom whose temperature this is: a one-sided back view (the atom is linked to us by LK_RX_NODE).
 	var/atom/node_atom
 	/// The node's watches (/datum/native_watch/heat).
 	var/list/watches
@@ -95,8 +95,10 @@ CAPABILITIES(/datum/dq_rx_node)
 /datum/dq_rx_node/proc/atom_of()
 	return QDELETED(node_atom) ? null : node_atom
 
-/// The atom's heat node, if a rule made one.
-/atom/var/tmp/datum/dq_rx_node/rx_node
+/// The atom's heat node (LK_RX_NODE, gone with the atom), if a rule made one.
+/proc/rx_node_of(atom/A)
+	RETURN_TYPE(/datum/dq_rx_node)
+	return link_get(A, LK_RX_NODE)
 
 
 /// A node watch fired: wake the rule binding.
@@ -150,9 +152,11 @@ CAPABILITIES(/datum/dq_rx_node)
 
 /// A heat node for atom `A`.
 /proc/dq_rx_node_new(atom/A)
-	if(!A.rx_node)
-		rel_set(A, nameof(/atom::rx_node), new /datum/dq_rx_node(A))
-	return A.rx_node
+	var/datum/dq_rx_node/node = rx_node_of(A)
+	if(!node)
+		node = new /datum/dq_rx_node(A)
+		link_make(A, LK_RX_NODE, node)
+	return node
 
 /// Sets the node's temperature (tests and DM authority): the atom gets a body
 /// at `value`, isolated from its surroundings so the value holds.

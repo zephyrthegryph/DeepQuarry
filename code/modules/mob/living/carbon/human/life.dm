@@ -88,12 +88,12 @@
 		return FALSE
 	if(B.dirty & BODY_DIRTY_CONDITIONS)
 		return TRUE
-	if(LAZYLEN(src.side_effects))
+	if(link_count(src, LK_SIDE_EFFECTS))
 		return TRUE
 	if(src.allergy > 0)
 		return TRUE
 	// A metric past its trigger: the affliction's severity follows the value continuously, so it is re-read every cycle.
-	if(src.radiation || src.accumulated_rads >= 100)
+	if(src.radiation || src.accumulated_rads() >= 100)
 		return TRUE
 	var/normal = src.dq_normal_body_temperature()
 	var/body_temp = src.body_temperature()
@@ -307,7 +307,7 @@
 
 /// MED-6: no dose and nothing accumulated to dissipate.
 /mob/living/carbon/human/life_radiation_due()
-	return src.radiation || src.accumulated_rads || act_wanted(src, /datum/act/live_radiation)
+	return src.radiation || src.accumulated_rads() || act_wanted(src, /datum/act/live_radiation)
 
 /// The dose is written only through the radiation writers, which publish MOB_KEY_RADIATION. This is the fallback.
 /mob/living/carbon/human/life_radiation_rewake()
@@ -325,7 +325,7 @@
 		src.purge_radiation(antirad * DQ_ANTIRAD_RADS_PER_LEVEL)
 	if(!src.radiation)
 		src.clear_alert("irradiated")
-		if(src.accumulated_rads)
+		if(src.accumulated_rads())
 			src.decay_radiation(0, -RADIATION_SPEED_COEFFICIENT) //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
 	//Radiation is a slow, insidious killer. Unless you get a massive dose, then the onset is sudden!
 	else if((src.life_tick % 5 == 0) || (src.radiation > 600))
@@ -502,11 +502,11 @@
 /// Loss of taste at 100 (2 Gy) is handled in taste.dm. Effects stack by threshold. Only
 /// organic bodies have them, and never while a live dose is still being taken.
 /mob/living/carbon/human/proc/life_radiation_chronic_radiation()
-	if(src.radiation || src.accumulated_rads < 100 || src.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE))
+	if(src.radiation || src.accumulated_rads() < 100 || src.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE))
 		return
 	if(!(src.biology() & BIOLOGY_ORGANIC))
 		return
-	var/rads = src.accumulated_rads
+	var/rads = src.accumulated_rads()
 	if(src.organ_in(O_EYES))
 		if(prob(5) && prob(rads * RADIATION_SPEED_COEFFICIENT))
 			to_chat(src, span_warning("Your eyes water."))
@@ -1226,7 +1226,7 @@
 		return TRUE
 	if((src.sdisabilities & (BLIND | DEAF)) || src.ear_damage)
 		return TRUE
-	if(src.species.get_ssd(src) && !src.client && !src.teleop)
+	if(src.species.get_ssd(src) && !src.client && !src.teleop())
 		return TRUE
 	if(src.species.vision_organ)
 		var/obj/item/organ/vision = src.organ_in(src.species.vision_organ)
@@ -1245,7 +1245,7 @@
 		return 0	// Cancelled by a component
 
 	//SSD check, if a logged player is awake put them back to sleep!
-	if(src.species.get_ssd(src) && !src.client && !src.teleop)
+	if(src.species.get_ssd(src) && !src.client && !src.teleop())
 		src.status_at_least(STAT_SLEEPING, 2)
 	if(src.stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
 		life_status_dead_senses()
@@ -1465,9 +1465,9 @@
 		life_hud_condition_overlays()
 		life_hud_nutrition_alert()
 		life_hud_sight_overlays()
-		if(!src.surrounding_belly() && !src.previewing_belly) // Belly fullscreens safety
+		if(!src.surrounding_belly() && !vore_previewing_of(src)) // Belly fullscreens safety
 			src.clear_fullscreen("belly")
-			src.belly_overlay_tgui?.hide() // hide TGUI belly overlay
+			src.belly_overlay_window()?.hide() // hide TGUI belly overlay
 		if(CONFIG_GET(flag/welder_vision) && life_hud_welder_vision())
 			src.claim_global_hud(GLOB.global_hud.darkMask)
 
@@ -1847,7 +1847,7 @@
 
 /// MED-6: no traumatic shock building and none to recover from.
 /mob/living/carbon/human/proc/life_shock_due()
-	return src.shock_stage > 0 || src.traumatic_shock >= 80
+	return src.shock_stage > 0 || src.current_pain() >= 80
 
 /// Pain and shock come through injure/mend and the body (MOB_KEY_HEALTH). This is the fallback.
 /mob/living/carbon/human/proc/life_shock_rewake()
@@ -1855,10 +1855,9 @@
 
 /// Traumatic shock stages from pain.
 /mob/living/carbon/human/proc/life_shock(datum/seq_frame/life/F)
-	src.updateshock()
 	if(in_godmode(src))
 		return 0	// Cancelled by a component
-	if(src.traumatic_shock >= 80 && src.can_feel_pain())
+	if(src.current_pain() >= 80 && src.can_feel_pain())
 		src.adjust_shock(1, "traumatic pain")
 	else
 		src.adjust_shock(-1, "recovery")
@@ -1868,32 +1867,32 @@
 		return 0
 
 	if(src.shock_stage == 10)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			src.custom_pain("[pick("It hurts so much", "You really need some painkillers", "Dear god, the pain")]!", 40)
 
 	if(src.shock_stage >= 30)
 		if(src.shock_stage == 30 && !isbelly(src.loc))
 			src.automatic_custom_emote(VISIBLE_MESSAGE, "is having trouble keeping their eyes open.", check_stat = TRUE)
 		src.status_at_least(STAT_BLURRY, 2)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			src.status_at_least(STAT_STUTTERING, 5)
 
 
 	if(src.shock_stage == 40)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 
 	if (src.shock_stage >= 60)
 		if(src.shock_stage == 60 && !isbelly(src.loc))
 			src.automatic_custom_emote(VISIBLE_MESSAGE, "'s body becomes limp.", check_stat = TRUE)
 		if (prob(2))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 			src.status_at_least(STAT_WEAKENED, 20)
 
 	if(src.shock_stage >= 80)
 		if (prob(5))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 				if(prob(20) && !isbelly(src.loc))
 					src.emote("pain")
@@ -1901,7 +1900,7 @@
 
 	if(src.shock_stage >= 120)
 		if (prob(2))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("You black out", "You feel like you could die any moment now", "You are about to lose consciousness")]!"))
 				if(prob(40) && !isbelly(src.loc))
 					src.emote("pain")
@@ -2232,7 +2231,6 @@
 /mob/living/carbon/human/rejuvenate()
 	restore_blood()
 	set_shock(0, "rejuvenate")
-	traumatic_shock = 0
 	..()
 
 // The defibrillation window needs no Life stage: the brain charges it on the body clock when

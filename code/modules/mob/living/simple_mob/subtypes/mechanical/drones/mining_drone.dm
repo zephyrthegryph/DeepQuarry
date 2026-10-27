@@ -39,7 +39,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/miningdrone
 
-	say_list_type = /datum/say_list/malf_drone/mining
 
 	tame_items = list(
 	/obj/item/ore/verdantium = 90,
@@ -66,6 +65,7 @@
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/mechanical/mining_drone, mining_drone_allowed_tools, list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
+	configure(living_rules(say_list_type = /datum/say_list/malf_drone/mining, delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 2.5 SECONDS, death_message = "suddenly breaks apart."))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
@@ -73,7 +73,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/mechanical/mining_drone
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mining_drone
 
@@ -173,7 +172,9 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mining_drone/scavenger, mining_dron
 /mob/living/simple_mob/mechanical/combat_drone/lesser/aerostat
 	desc = "A Vir System Authority automated combat drone with an aged apperance."
 	movement_cooldown = 10
-	say_list_type = /datum/say_list/malf_drone/drone_aerostat
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone/lesser/aerostat)
+	configure(living_rules(say_list_type = /datum/say_list/malf_drone/drone_aerostat))
 
 /datum/say_list/malf_drone/drone_aerostat
 	speak = list("ALERT.","Hostile-ile-ile entities dee-twhoooo-wected.","Threat parameterszzzz- szzet.","Bring sub-sub-sub-systems uuuup to combat alert alpha-a-a.")

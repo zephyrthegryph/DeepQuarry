@@ -89,14 +89,15 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list
 	name = "Harry the hivelessbot"
 	desc = "A severely corroded hivebot, covered in barnacles and seaweed."
 	endurance = 5 // 1 health
-	say_list_type = /datum/say_list/hivebot/harry
 	melee_damage_lower = 0
 	melee_damage_upper = 0
 	faction = FACTION_STATION
 	water_resist = 1 //Harry lives under the sea!
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry
-	delete_on_death = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/support/harry)
+	configure(living_rules(say_list_type = /datum/say_list/hivebot/harry, delete_on_death = TRUE))
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry/on_death(gibbed)
 	..()

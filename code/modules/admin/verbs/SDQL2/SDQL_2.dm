@@ -690,7 +690,7 @@ CAPABILITIES(/datum/SDQL2_query)
 
 /datum/SDQL2_query/proc/SDQL_print(object, list/text_list, print_nulls = TRUE)
 	if(is_proper_datum(object))
-		text_list += "<A href='byond://?_src_=vars;[HrefToken()];Vars=[REF(object)]'>[REF(object)]</A> : [object]"
+		text_list += "<A href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(object)]'>[REF(object)]</A> : [object]"
 		if(istype(object, /atom))
 			var/atom/A = object
 			var/turf/T = A.loc
@@ -768,9 +768,22 @@ CAPABILITIES(/datum/SDQL2_query)
 	for(var/arg in arguments)
 		new_args[++new_args.len] = SDQL_expression(source, arg)
 	if(object == GLOB) // Global proc.
+		sdql_center_default(procname, new_args)
 		procname = "/proc/[procname]"
 		return superuser? (call(procname)(new_args)) : (WrapAdminProcCall(GLOBAL_PROC, procname, new_args, requester))
 	return superuser? (call(object, procname)(new_args)) : (WrapAdminProcCall(object, procname, new_args, requester))
+
+/// The range wrappers (_range, _view, ...) centre on the query's requester when the query names no centre.
+/datum/SDQL2_query/proc/sdql_center_default(procname, list/new_args)
+	var/static/list/center_slot = list("_hearers" = 2, "_ohearers" = 2, "_orange" = 2, "_oview" = 2, "_oviewers" = 2, "_range" = 2)
+	var/slot = center_slot[procname]
+	if(!slot || length(new_args) >= slot)
+		return
+	if(procname == "_hearers" && !length(new_args))
+		new_args += world.view // the wrapper's own default depth
+	while(length(new_args) < slot - 1)
+		new_args += null
+	new_args += requester
 
 /datum/SDQL2_query/proc/SDQL_function_async(datum/object, procname, list/arguments, source)
 	set waitfor = FALSE // ALLOW(scheduler): SDQL async() runs an arbitrary admin-chosen proc
@@ -986,7 +999,7 @@ CAPABILITIES(/datum/SDQL2_query)
 		else
 			v = "SECRET"
 	else if(D != null && (!long || expression[start + 1] == ".") && sparse_slot_named(D, expression[start]))
-		v = _sparse_get(D, sparse_slot_named(D, expression[start]))
+		v = sparse_slot_value(D, sparse_slot_named(D, expression[start]))
 	else if(D != null && (!long || expression[start + 1] == ".") && !(expression[start] in D.vars) && type_trait_field_named(D, expression[start]))
 		v = vv_var_value(D, expression[start])
 	else if(D != null && long && expression[start + 1] == ":" && hascall(D, expression[start]))

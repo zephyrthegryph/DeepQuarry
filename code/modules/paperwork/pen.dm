@@ -22,7 +22,6 @@
 	icon_state = "pen"
 	item_state = "pen"
 	w_class = ITEMSIZE_TINY
-	throw_range = 15
 	MATERIAL_BULK(MAT_STEEL, 10)
 	var/colour = "black"	//what colour the ink is!
 	pressure_resistance = 2
@@ -32,7 +31,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pen)
-	configure(movable_motion(throw_speed = 7))
+	configure(movable_motion(throw_range = 15, throw_speed = 7))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
 	configure(item_thrown(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
@@ -173,14 +172,11 @@ CAPABILITIES(/obj/item/pen/reagent)
  */
 /obj/item/pen/blade
 	desc = "It's a normal black ink pen."
-	description_antag = "This pen can be transformed into a dangerous melee and thrown assassination weapon with an Alt-Click.\
-	When active, it cannot be caught safely."
 	name = "pen"
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "pen"
 	item_state = "pen"
 	w_class = ITEMSIZE_TINY
-	throw_range = 15
 
 	var/active = 0
 	var/active_embed_chance = 0
@@ -192,7 +188,9 @@ CAPABILITIES(/obj/item/pen/reagent)
 
 // Its alt-click comes before the pen's own (the old EXTEND listed the child's specs first).
 CAPABILITIES(/obj/item/pen/blade)
-	configure(movable_motion(throw_speed = 7))
+	configure(atom_rules(description_antag = "This pen can be transformed into a dangerous melee and thrown assassination weapon with an Alt-Click.\
+	When active, it cannot be caught safely."))
+	configure(movable_motion(throw_range = 15, throw_speed = 7))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
 	configure(item_thrown(force = 3))
 	configure(item_combat(armor_penetration = 20))

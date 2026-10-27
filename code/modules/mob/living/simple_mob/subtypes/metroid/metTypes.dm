@@ -8,7 +8,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 /mob/living/simple_mob/metroid/jellybrig //Security's pet
 	name = "Jellybrig"
 	desc = "This one scree's happily at you."
-	say_list_type = /datum/say_list/metroid
 	faction = "notmetroid"
 	endurance = 400
 	melee_damage_lower = 0
@@ -18,7 +17,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	armor_spec = "melee=50;bullet=-90;energy=-50;bomb=-100;bio=100;rad=100"
 	vore_active = 1
 	vore_bump_chance = 25
-	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING
 	vore_pounce_chance = 90 //Don't punch or grab this guy. He will grab you instead!
 	swallowTime = 1 SECONDS //Hungry little bastards.
@@ -26,6 +24,9 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	vore_digest_chance = 1		//Chance to switch to digest mode if resisted
 	vore_absorb_chance = 0
 	vore_escape_chance = 2		//Chance to escape if resisted.
+
+CAPABILITIES(/mob/living/simple_mob/metroid/jellybrig)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid))
 
 
 /mob/living/simple_mob/metroid/mine
@@ -71,7 +72,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "baby_dead"
 	icon_living = "baby"
 	icon_state = "baby"
-	say_list_type = /datum/say_list/metroid
 	endurance = 200
 	melee_damage_lower = 1
 	melee_damage_upper = 5
@@ -104,7 +104,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	is_juvenile = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
-	configure(living_rules(max_nutrition = 2200))
+	configure(living_rules(say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 
 /mob/living/simple_mob/metroid/juvenile/baby
 	arrival_sound = SFX_METROID_METROIDSEE
@@ -124,7 +124,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
 	icon_dead = "metroid_dead"
 	icon_living = "metroid"
 	icon_state = "metroid"
-	say_list_type = /datum/say_list/metroid
 	endurance = 250
 	melee_damage_lower = 2
 	melee_damage_upper = 9
@@ -158,7 +157,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
 
 	vore_active = 1
 	vore_bump_chance = 0
-	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING
 	vore_pounce_chance = 25 //Metroids only eat incapacitated targets
 	vore_default_mode = DM_DIGEST
@@ -168,7 +166,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
 	is_juvenile = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
-	configure(living_rules(max_nutrition = 2200))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 
 /mob/living/simple_mob/metroid/juvenile/super
 	arrival_sound = SFX_METROID_METROIDSEE
@@ -184,7 +182,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
 	icon_dead = "alpha_dead"
 	icon_living = "alpha"
 	icon_state = "alpha"
-	say_list_type = /datum/say_list/metroid
 	endurance = 300
 	melee_damage_lower = 10
 	melee_damage_upper = 15
@@ -211,7 +208,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
 	next = "/mob/living/simple_mob/metroid/juvenile/gamma"
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
-	configure(living_rules(max_nutrition = 2200))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 
 /mob/living/simple_mob/metroid/juvenile/alpha
 	arrival_sound = SFX_METROID_METROIDSEE
@@ -222,7 +219,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
 /mob/living/simple_mob/metroid/juvenile/alpha //active noms
 	vore_active = 1
 	vore_bump_chance = 0
-	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING
 	vore_pounce_chance = 15 //Alphas will try knocking targets over since they lost their stun ability from the initial phases.
 	vore_default_mode = DM_DIGEST
@@ -246,7 +242,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
 	icon_dead = "gamma_dead"
 	icon_living = "gamma"
 	icon_state = "gamma"
-	say_list_type = /datum/say_list/metroid
 	movement_cooldown = 2
 	endurance = 400
 	melee_damage_lower = 10
@@ -278,7 +273,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
 	next = "/mob/living/simple_mob/metroid/juvenile/zeta"
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
-	configure(living_rules(max_nutrition = 2200))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 
 /mob/living/simple_mob/metroid/juvenile/gamma
 	arrival_sound = SFX_METROID_METROIDGAMMA
@@ -289,7 +284,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
 /mob/living/simple_mob/metroid/juvenile/gamma //active noms
 	vore_active = 1
 	vore_bump_chance = 0
-	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING
 	vore_pounce_chance = 15
 	vore_default_mode = DM_DIGEST
@@ -326,7 +320,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
 	icon_dead = "zeta_dead"
 	icon_living = "zeta"
 	icon_state = "zeta"
-	say_list_type = /datum/say_list/metroid/zeta
 	movement_cooldown = 2
 	endurance = 500
 	melee_damage_lower = 15
@@ -364,7 +357,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
-	configure(living_rules(max_nutrition = 2200))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid/zeta, max_nutrition = 2200))
 	configure(mob_movement(makes_dirt = TRUE))
 
 /mob/living/simple_mob/metroid/juvenile/zeta
@@ -376,7 +369,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 /mob/living/simple_mob/metroid/juvenile/zeta //active noms
 	vore_active = 1
 	vore_bump_chance = 0
-	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING
 	vore_pounce_chance = 20
 	vore_default_mode = DM_DIGEST
@@ -412,7 +404,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 	icon_dead = "omega_dead"
 	icon_living = "omega"
 	icon_state = "omega"
-	say_list_type = /datum/say_list/metroid/omega
 	movement_cooldown = 2.5
 	endurance = 600
 	melee_damage_lower = 25
@@ -450,7 +441,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
-	configure(living_rules(max_nutrition = 2200))
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/metroid/omega, max_nutrition = 2200))
 	configure(mob_nature(death_sound = SFX_METROID_METROIDOMEGADEATH))
 	configure(mob_movement(makes_dirt = TRUE))
 
@@ -463,7 +454,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 /mob/living/simple_mob/metroid/juvenile/omega //active noms
 	vore_active = 1
 	vore_bump_chance = 0
-	vore_capacity = 2
 	vore_icons = SA_ICON_LIVING
 	vore_pounce_chance = 40
 	vore_default_mode = DM_DIGEST
@@ -499,7 +489,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 	icon_dead = "queen_dead"
 	icon_living = "queen"
 	icon_state = "queen"
-	say_list_type = /datum/say_list/metroid/queen
 	movement_cooldown = 3
 	endurance = 1000
 	melee_damage_lower = 30
@@ -537,7 +526,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
-	configure(living_rules(max_nutrition = 2200))
+	configure(living_rules(vore_capacity = 4, say_list_type = /datum/say_list/metroid/queen, max_nutrition = 2200))
 	configure(mob_nature(death_sound = SFX_METROID_METROIDQUEENDEATH))
 	configure(mob_movement(makes_dirt = TRUE))
 	after_init(0, then(PROC_REF(queen_metroid_ready)))
@@ -553,7 +542,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
 /mob/living/simple_mob/metroid/juvenile/queen //active noms
 	vore_active = 1
 	vore_bump_chance = 0
-	vore_capacity = 4
 	vore_icons = SA_ICON_LIVING
 	vore_pounce_chance = 60 //It's the queen, and it's hungry.
 	vore_default_mode = DM_DIGEST

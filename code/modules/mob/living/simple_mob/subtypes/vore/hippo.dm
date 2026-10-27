@@ -31,18 +31,15 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	can_buckle = TRUE
 	mount_offset_y = 20
 
-	say_list_type = /datum/say_list/hippo
 
 
 // Activate Noms!
 /mob/living/simple_mob/vore/hippo //I don't know why it's in a seperate line but everyone does it so i do it
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 15
 	vore_bump_emote = "lazily wraps its mouth around"
 	vore_standing_too = 1
@@ -56,7 +53,8 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/hippo)
-	configure(butchery_rules(meat_amount = 15))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/hippo))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

@@ -57,12 +57,10 @@
 				gene.activate(M,connected,flags)
 				if(M)
 					LAZYDISTINCTADD(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
-					M.update_icon = 1
 			// If Gene is NOT active:
 			else
 				gene.deactivate(M,connected,flags)
 				if(M)
 					LAZYREMOVE(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
-					M.update_icon = 1
 	// Inform anything attached of our mutation
 	PUBLISH_LEGACY(M, /datum/notice/mob_dna_mutation)

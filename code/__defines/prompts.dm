@@ -1,7 +1,4 @@
-// Prompt flows (code/datums/prompts/reruns.dm) and question sequences (code/datums/prompts/sequence.dm).
-
-/// Thrown by flow_io_answer() to unwind a prompt flow whose query is in flight; prompt_flow() catches it.
-#define PROMPT_FLOW_PENDING "prompt_flow_pending"
+// Question sequences (code/datums/prompts/sequence.dm).
 
 // ---- question sequences (code/datums/prompts/sequence.dm) ----
 /// One step of an ask_sequence(): question_step(key, /datum/prompt/x, field = value, ...).

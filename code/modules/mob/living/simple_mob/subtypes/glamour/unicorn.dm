@@ -7,7 +7,6 @@
 	desc = "A bright white horse-like creature with a golden horn protruding from its forehead. It's mane and hooves is a similarly golden."
 	tt_desc = "Equus unicornis"
 
-	vore_capacity = 2
 	endurance = 250
 
 	old_x = -16
@@ -16,7 +15,6 @@
 	pixel_x = -16
 	pixel_y = 0
 	mount_offset_y = 22
-	say_list_type = /datum/say_list/horse/unicorn
 	minbodytemp = 0
 	movement_cooldown = 1
 
@@ -33,6 +31,7 @@
 	projectile_accuracy = -20
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse/unicorn)
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/horse/unicorn))
 	configure(butchery_rules(meat_amount = 10))
 
 /mob/living/simple_mob/vore/horse/unicorn/load_default_bellies()

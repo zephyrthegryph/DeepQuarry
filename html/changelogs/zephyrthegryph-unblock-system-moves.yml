@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Seeds build their traits through default_traits() (a param default), and geosamples, seed piles and exported crates are made without New()/Initialize() overrides."

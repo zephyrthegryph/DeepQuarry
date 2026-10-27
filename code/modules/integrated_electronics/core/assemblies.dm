@@ -303,7 +303,7 @@ CAPABILITIES(/datum/ic_export_view)
 	// Find existing position entry or create new one
 	var/found = FALSE
 	for(var/list/pos_data in component_positions)
-		if(pos_data["ref"] == REF(C))
+		if(pos_data["ref"] == ref_token(C))
 			pos_data["x"] = new_x
 			pos_data["y"] = new_y
 			found = TRUE

@@ -2180,7 +2180,7 @@
 	var/datum/contract_event/event = SScontracts.recent_events[length(SScontracts.recent_events)]
 	TEST_ASSERT_EQUAL(event.event_type, CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, "the batch published the wrong event type")
 	TEST_ASSERT(findtext(event.data["detail"], "sustained 60 integrity damage"), "the fact did not carry the batch's total damage: [event.data["detail"]]")
-	TEST_ASSERT_EQUAL(event.value("atom_id"), REF(target), "the fact lost its atom identity")
+	TEST_ASSERT_EQUAL(event.value("atom_id"), ref_token(target), "the fact lost its atom identity")
 	// A batch below the reporting minimum publishes nothing.
 	SScontracts.begin_contract_batch()
 	SScontracts.queue_damage_report(target, 5)

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved 19 more base-type vars to their homes: mob nicknames, flavor text and records live in the bio profile, spontaneous vore bellies, progress bars, stat tabs and absorbed languages are sparse slots, and preview belly, possessed object, augment host and autofire gun are sparse links"

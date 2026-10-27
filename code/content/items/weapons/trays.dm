@@ -6,7 +6,6 @@
 	icon = 'icons/obj/food.dmi'
 	icon_state = "tray"
 	desc = "A metal tray to lay food on."
-	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 3000)
 	var/list/carrying // List of things on the tray. - Doohl
@@ -88,7 +87,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/tray)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_thrown(force = 10.0))
 	configure(item_sounds(drop = SFX_ITEMS_TRAYHIT1))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

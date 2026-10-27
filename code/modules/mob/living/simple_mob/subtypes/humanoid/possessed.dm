@@ -43,7 +43,6 @@
 	movement_sound = SFX_EFFECTS_FOOTSTEP_FLOOR1
 
 	//Simple mob merc so it stops, says something, then charges.
-	say_list_type = /datum/say_list/possessed //Set to Null on silenced.
 
 
 //	corpse = /obj/effect/landmark/mobcorpse/possessed

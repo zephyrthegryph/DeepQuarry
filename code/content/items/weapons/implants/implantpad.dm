@@ -6,7 +6,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "implantpad-0"
 	item_state = "electronic"
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	var/obj/item/implantcase/case = null
 	var/broadcasting = null
@@ -20,7 +19,7 @@
 
 
 CAPABILITIES(/obj/item/implantpad)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	interface("ImplantPad", title = "Implant Mini-Computer", input = in_hand())
 	op("take_case", hand(), when(all_of(PROC_REF(has_case), carried())), then(PROC_REF(case_taken)))
 	op("insert_case", item(/obj/item/implantcase), passes(), when(req(PROC_REF(has_no_case))), then(PROC_REF(case_inserted)))

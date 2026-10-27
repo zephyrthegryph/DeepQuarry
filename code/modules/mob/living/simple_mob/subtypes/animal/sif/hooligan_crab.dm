@@ -53,7 +53,6 @@
 	attack_injury_kind = INJURY_CUT
 	melee_attack_delay = 1 SECOND
 
-	meat_type = /obj/item/reagent_containers/food/snacks/crabmeat
 
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"
@@ -64,12 +63,12 @@
 
 	organ_names = /datum/decl/mob_organ_names/crab
 
-	say_list_type = /datum/say_list/crab
 
 	var/weaken_amount = 2 // Be careful with this number. High values will equal a permastun.
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/hooligan_crab)
-	configure(butchery_rules(meat_amount = 6))
+	configure(living_rules(say_list_type = /datum/say_list/crab))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat, meat_amount = 6))
 
 // Stuns the thing that got hit briefly.
 /mob/living/simple_mob/animal/sif/hooligan_crab/apply_melee_effects(atom/A)

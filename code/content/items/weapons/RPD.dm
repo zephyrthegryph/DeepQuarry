@@ -19,7 +19,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
 	flags = NOBLUDGEON
-	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	var/p_dir = NORTH 			// Next pipe will be built with this dir
 	var/p_flipped = FALSE		// If the next pipe should be built flipped
@@ -49,7 +48,7 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 
 // RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
 CAPABILITIES(/obj/item/pipe_dispenser)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 	owns_one(nameof(tool), /obj/item/tool/wrench/cyborg, starts = /obj/item/tool/wrench/cyborg)

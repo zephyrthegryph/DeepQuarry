@@ -240,8 +240,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 	/// This type's innate armour: a params string of points per key (see
 	/// code/game/atom/armor.dm). Read it through get_armor().
 	var/armor_spec
-	/// This instance's armour when it differs from its type's (set_armor()).
-	var/tmp/datum/armor/armor_override
+	// This instance's armour when it differs from its type's (set_armor()) is the weak armor_override slot below.
 
 /// This atom's armour. The one accessor: never read armour any other way.
 /atom/proc/get_armor()
@@ -252,7 +251,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 /// its type's.
 /atom/proc/set_armor(datum/armor/new_armor)
 	var/datum/armor/type_armor = dq_armor_from_spec(armor_spec)
-	rel_set(src, nameof(armor_override), (!new_armor || new_armor == type_armor) ? null : new_armor)
+	sparse_ref_set(src, armor_override, (!new_armor || new_armor == type_armor) ? null : new_armor)
 	armor_changed()
 
 /// Set one armour key on this instance.
@@ -288,6 +287,9 @@ GLOBAL_LIST_INIT(shield_slots, list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_SUIT
 			return
 	return 0
 
-/// Armor override (a relation view). A global helper keeps the proc off the base type.
+/// An instance's armour when it differs from its type's (the weak armor_override slot; the datum is interned, so it outlives any one holder).
+/// A global helper keeps the proc off the base type.
 /proc/atom_armor_override(atom/A) as /datum/armor
-	return A?.armor_override
+	return sparse_ref(A, armor_override)
+
+sparse(/atom, armor_override, type = weak)
