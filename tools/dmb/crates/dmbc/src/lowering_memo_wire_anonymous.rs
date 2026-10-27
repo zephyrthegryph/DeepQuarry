@@ -21,7 +21,7 @@ impl Candidates<'_> {
                 Candidate::Failure(value) => {
                     if value.identity.is_none()
                         && value.key.as_ref() == key
-                        && read_mismatch(&value.reads, &value.versions, host).is_none()
+                        && read_mismatch(&value.reads, host).is_none()
                     {
                         return AnonymousLookup {
                             errors: Some(
@@ -40,7 +40,7 @@ impl Candidates<'_> {
                 || value.abi.is_some()
                 || !value.helpers.is_empty()
                 || value.key != key
-                || read_mismatch(&value.reads, &value.versions, host).is_some()
+                || read_mismatch(&value.reads, host).is_some()
             {
                 continue;
             }

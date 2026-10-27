@@ -9,7 +9,6 @@ pub trait ResolvedReadObserver: Sync {
         query: ResolveQuery,
         answer: &ResolvedMeaning,
         domain: ReadDomain,
-        version: Option<u128>,
     );
 }
 /// Transparent observation must not intercept/change any provider answer.
@@ -34,8 +33,7 @@ impl<'a> TransparentReceiptObserver<'a> {
         query: ResolveQuery,
         answer: &ResolvedMeaning,
         domain: ReadDomain,
-        version: Option<u128>,
     ) {
-        self.observer.record_answer(query, answer, domain, version);
+        self.observer.record_answer(query, answer, domain);
     }
 }

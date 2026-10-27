@@ -245,7 +245,7 @@ impl RetainedOwnerShapes {
             let payload = self.store.insert_with_owned(
                 key(*owner),
                 ledger.reads(),
-                ledger.domain_receipts(),
+                Vec::new(),
                 0,
                 || LocalOwner {
                     rows,

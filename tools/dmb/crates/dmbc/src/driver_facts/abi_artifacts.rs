@@ -213,8 +213,8 @@ impl Resolver for BorrowedResolver<'_> {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.0.resolve(query)
     }
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.0.domain_version(domain)
+    fn answer_world(&self) -> Option<u128> {
+        self.0.answer_world()
     }
 }
 #[allow(clippy::too_many_arguments)] // This is the single optional artifact adapter around current ABI preparation.
@@ -308,7 +308,7 @@ pub(super) fn prepare(
             .store
             .visit_receipted_with(
                 &key,
-                &mut |reads, versions| admission::changed(reads, versions, current, admission),
+                &mut |reads, _| admission::changed(reads, current, admission),
                 &mut |value| matches!(value.as_ref(), Artifact::Unit(_)),
             )
             .0
@@ -331,7 +331,7 @@ pub(super) fn prepare(
     }
     drop(stage);
     // A session's answer table proves ABI receipts: their reads carry no domain version.
-    let recording = dm_session::RecordingResolver::with_versions(&base, store.query_db.is_none());
+    let recording = dm_session::RecordingResolver::new(&base);
     let issued_identity = dm_ir::ProcedureIdentity {
         owner: context.identity.owner,
         name: context.identity.name,
@@ -431,11 +431,7 @@ pub(super) fn prepare(
                 ) && a.domain == b.domain
             })
             .map_err(AbiError::invariant)?;
-        let versions: Vec<_> = recording
-            .domain_receipts()
-            .into_iter()
-            .map(|(domain, version)| (Domain::Semantic(domain), version))
-            .collect();
+        let versions: Vec<(Domain, u128)> = Vec::new();
         // Current-roster mode has no byte admission budget. This is an inline
         // accounting charge only; opt-in census separately walks actual owners.
         let charge = std::mem::size_of::<Artifact>()

@@ -74,14 +74,12 @@ impl StartupArtifacts {
             ledger.record(
                 Query::Resolver(read.query),
                 Answer::Resolver(read.answer),
-                Some(read.domain),
-                None,
-            );
+                Some(read.domain));
         }
         let owner = self.values.insert_fresh_with_owned(
             Arc::from(FINAL_KEY),
             ledger.reads(),
-            ledger.domain_receipts(),
+            Vec::new(),
             0,
             || Artifact::AllocationFinal(Arc::new(receipt)),
         );

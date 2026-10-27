@@ -313,7 +313,7 @@ impl MapMemo {
             maps,
             &value,
             reads.clone(),
-            recording.domain_receipts(),
+            Vec::new(),
         );
         if !persist {
             return Ok(value);

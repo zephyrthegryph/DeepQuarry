@@ -8,7 +8,7 @@
 use crate::declaration_contributions::{DeclarationFamily, KeyedDeclarations};
 use crate::SemanticTree;
 use dm_ir::SymbolId;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Mutex;
 
 #[derive(Debug, Default)]
@@ -121,17 +121,6 @@ impl StructuralChangeSet {
     /// Whether a per-owner, per-name demand certificate may differ between the
     /// two trees. Namespaces 4 and 5 are root member-name selectors (global per
     /// name); the rest walk the owner's ancestor chain.
-    pub(crate) fn demand_dirty(
-        &self,
-        tree: &SemanticTree,
-        (owner, name, namespace): (SymbolId, SymbolId, u8),
-    ) -> bool {
-        if matches!(namespace, 4 | 5) {
-            return self.names.contains(&name) || !self.hierarchy.is_empty();
-        }
-        Self::under(tree, owner, &self.hierarchy)
-            || (self.names.contains(&name) && Self::under(tree, owner, &self.member_owners))
-    }
     pub fn summary(&self) -> String {
         format!(
             "rows={} hierarchy={} member_owners={} names={} order_changed={}",
@@ -157,61 +146,3 @@ pub fn take_outcomes() -> Vec<String> {
     std::mem::take(&mut *LAST_OUTCOMES.lock().unwrap_or_else(|error| error.into_inner()))
 }
 
-impl SemanticTree {
-    /// Seed this tree's demand certificates with the previous tree's tokens for
-    /// every selection the change set leaves clean. Both trees must share the
-    /// same certificate issuer (the token store) and intrinsic inventory.
-    pub(crate) fn inherit_demand_tokens(
-        &mut self,
-        previous: &SemanticTree,
-        change: &StructuralChangeSet,
-    ) -> Result<(usize, usize), &'static str> {
-        if let Some(reason) = change.unclassified {
-            return Err(reason);
-        }
-        match (&self.owner_certificate_issuer, &previous.owner_certificate_issuer) {
-            (Some(current), Some(old)) if std::sync::Arc::ptr_eq(current, old) => {}
-            _ => return Err("different certificate issuer"),
-        }
-        if std::sync::Arc::ptr_eq(&self.owner_callable_demands, &previous.owner_callable_demands) {
-            return Err("demand owner shared with previous tree");
-        }
-        let old = previous.owner_callable_demands.snapshot();
-        let mut kept = Vec::with_capacity(old.len());
-        let mut dropped = 0;
-        // About 1.3M tokens over about 44k owners: decide each owner's ancestor tests once.
-        // (exists, under the hierarchy roots, under the member owners)
-        let mut owners: HashMap<SymbolId, (bool, bool, bool)> = HashMap::new();
-        for (selection, token) in old {
-            let (owner, name, namespace) = selection;
-            let &mut (exists, under_hierarchy, under_members) =
-                owners.entry(owner).or_insert_with(|| {
-                    (
-                        self.lookup_type(owner).is_some(),
-                        StructuralChangeSet::under(self, owner, &change.hierarchy),
-                        StructuralChangeSet::under(self, owner, &change.member_owners),
-                    )
-                });
-            let dirty = if matches!(namespace, 4 | 5) {
-                change.names.contains(&name) || !change.hierarchy.is_empty()
-            } else {
-                under_hierarchy || (change.names.contains(&name) && under_members)
-            };
-            debug_assert_eq!(dirty, change.demand_dirty(self, selection));
-            if exists && !dirty {
-                kept.push((selection, token));
-            } else {
-                dropped += 1;
-            }
-        }
-        let carried = kept.len();
-        self.owner_callable_demands.seed(kept);
-        // Pruning only drops demand tokens of owners that no longer exist; an added type or a moved
-        // hierarchy leaves nothing to prune (the full sweep over about 1.3M tokens took ~3 s).
-        self.selection_prune_skippable = change
-            .hierarchy
-            .iter()
-            .all(|owner| previous.lookup_type(*owner).is_none() || self.lookup_type(*owner).is_some());
-        Ok((carried, dropped))
-    }
-}

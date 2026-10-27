@@ -106,11 +106,6 @@ impl RetainedNormalization {
             ..Self::default()
         }
     }
-    /// A request-local owner (one-shot compile) that stores no name-demand receipts.
-    pub(crate) fn without_name_receipts(mut self) -> Self {
-        self.metadata = Arc::new(crate::owner_metadata::RetainedMetadata::default().without_receipts());
-        self
-    }
     pub(crate) fn fresh(&self) -> Self {
         Self {
             values: self.values.fresh(),
@@ -220,7 +215,7 @@ pub(crate) fn observe(
     query: SourceQuery,
 ) -> SourceAnswer {
     let answer = host.answer(query);
-    ledger.record(query, answer.clone(), query.domain(), None);
+    ledger.record(query, answer.clone(), query.domain());
     answer
 }
 pub(crate) fn parent(
@@ -423,7 +418,7 @@ impl RetainedNormalization {
                 .insert_with_receipt(
                     key(*owner),
                     receipts::share(ledger.reads(), &receipt_pool, &branching_paths),
-                    ledger.domain_receipts(),
+                    Vec::new(),
                     0,
                     || ResolvedOwner { members: payload },
                 )

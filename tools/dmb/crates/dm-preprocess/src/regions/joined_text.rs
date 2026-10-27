@@ -89,7 +89,7 @@ impl JoinedText {
         }
         let text = host.0.assemble();
         let ledger = ObservationLedger::default();
-        ledger.record(Query::OrderedEmission, host.0.clone(), (), None);
+        ledger.record(Query::OrderedEmission, host.0.clone(), ());
         self.values
             .insert_with(Arc::from(KEY), ledger.reads(), Vec::new(), 0, || {
                 text.clone()

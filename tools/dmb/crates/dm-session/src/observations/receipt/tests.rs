@@ -27,12 +27,8 @@ fn canonical_groups_preserve_conflicting_answers_and_domain_replay() {
     assert_eq!(receipt.iter().len(), 3);
     assert!(receipt.flat().is_none());
     assert_eq!(
-        first_changed_iter(receipt.iter(), &BTreeSet::new(), |_| 7, |a, b| a == b),
+        first_changed_iter(receipt.iter(), |_| 7, |a, b| a == b),
         Some(&1)
-    );
-    assert_eq!(
-        first_changed_iter(receipt.iter(), &BTreeSet::from([0]), |_| 7, |a, b| a == b),
-        Some(&2)
     );
     let clone = receipt.clone();
     let mut leaves = Vec::new();
@@ -79,9 +75,6 @@ fn grouped_lease_replays_exactly_across_issuers_and_releases_independently() {
     impl crate::ObservationHost<u8, u8, u8> for Host {
         fn answer(&self, _: &u8) -> u8 {
             self.0
-        }
-        fn version(&self, _: &u8) -> Option<u128> {
-            Some(9)
         }
     }
     let store = ObservedArtifactStore::<u8, u8, u8, u8>::shared_current_rosters();

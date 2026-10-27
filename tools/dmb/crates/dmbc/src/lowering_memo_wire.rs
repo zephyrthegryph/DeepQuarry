@@ -320,17 +320,10 @@ pub(crate) fn validate_versions(versions: &[(dm_ir::ReadDomain, u128)]) -> Resul
     }
     Ok(())
 }
-fn read_mismatch<R: Resolver, T: CanonicalRead>(
-    reads: &[T],
-    versions: &[(dm_ir::ReadDomain, u128)],
-    host: &R,
-) -> Option<ResolveQuery> {
-    let matching = crate::lowering_memo::matching_domains(versions, host);
+fn read_mismatch<R: Resolver, T: CanonicalRead>(reads: &[T], host: &R) -> Option<ResolveQuery> {
     reads.iter().find_map(|read| {
         let query = read.query();
-        (!matching.contains(&query.domain())
-            && host.resolve(query).canonical_bytes().as_slice() != read.answer())
-        .then_some(query)
+        (host.resolve(query).canonical_bytes().as_slice() != read.answer()).then_some(query)
     })
 }
 pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
@@ -451,7 +444,7 @@ pub(crate) fn decode_failure<R: Resolver>(
 
     (payload.key.as_ref() == key
         && payload.identity == identity
-        && read_mismatch(&payload.reads, &payload.versions, host).is_none())
+        && read_mismatch(&payload.reads, host).is_none())
     .then(|| {
         payload
             .errors
@@ -503,7 +496,7 @@ pub(crate) fn decode_executable<R: Resolver>(
         || !payload.helpers.is_empty()
         || payload.selected_references.is_some()
         || payload.key != key
-        || read_mismatch(&payload.reads, &payload.versions, host).is_some()
+        || read_mismatch(&payload.reads, host).is_some()
     {
         return None;
     }
@@ -841,11 +834,6 @@ impl Candidates<'_> {
                 // domain: issuing those resolves every domain's query again.
                 // Under the session's answer table the reads are proven by its answers: no version is issued.
                 let answered = answers.filter(|_| certified_world.is_none());
-                let current_versions = if certified_world.is_some() || answered.is_some() {
-                    Vec::new()
-                } else {
-                    CurrentReads::versions(host, &promotion.queries)
-                };
                 let checked = match answered {
                     Some(answers) => v.answered_reads(host, answers),
                     None => v.transparent_reads(host),
@@ -889,22 +877,17 @@ impl Candidates<'_> {
                             (pending_reads.as_ref(), host.transparent_receipt_observer())
                         {
                             for read in reads {
-                                let version = match (certified_world, answered) {
-                                    (None, None) => observer.provider().domain_version(read.domain),
-                                    _ => None,
-                                };
                                 observer.record_answer(
                                     read.query,
                                     &read.answer,
                                     read.domain,
-                                    version,
                                 );
                             }
                         }
                         promotion.current = pending_reads.and_then(|reads| match (certified_world, answered) {
                             (Some(world), _) => CurrentReads::certified(host, reads, world),
                             (None, Some(_)) => CurrentReads::answered(host, reads),
-                            (None, None) => CurrentReads::accepted(host, reads, current_versions),
+                            (None, None) => CurrentReads::accepted(host, reads),
                         });
                         if answered.is_some() {
                             promotion.versions.clear();
@@ -933,8 +916,8 @@ impl Candidates<'_> {
             result.miss = Some(crate::lowering_memo::MemoMissReason::NoExactVariant);
             let reads_timer = READS.time();
             let changed = match &value {
-                Candidate::Executable(v) => read_mismatch(&v.reads, &v.versions, host),
-                Candidate::Failure(v) => read_mismatch(&v.reads, &v.versions, host),
+                Candidate::Executable(v) => read_mismatch(&v.reads, host),
+                Candidate::Failure(v) => read_mismatch(&v.reads, host),
                 Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
             };
             drop(reads_timer);

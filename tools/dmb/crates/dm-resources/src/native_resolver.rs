@@ -69,7 +69,6 @@ pub struct NativeResourceRecord {
 }
 
 pub struct NativeResourceResolver<R> {
-    resource_domain: std::sync::OnceLock<u128>,
     tree: R,
     symbols: Arc<SymbolTable>,
     resources: Option<ResourceSet>,
@@ -191,7 +190,6 @@ impl<R: Resolver> NativeResourceResolver<R> {
             }
         }
         Ok(Self {
-            resource_domain: std::sync::OnceLock::new(),
             tree,
             symbols: Arc::new(symbols),
             aliases: resources
@@ -306,7 +304,6 @@ impl<R: Resolver> NativeResourceResolver<R> {
             lookups.insert((path, lookup.search_context), lookup.outcome);
         }
         Ok(Self {
-            resource_domain: std::sync::OnceLock::new(),
             tree,
             symbols: Arc::new(symbols),
             resources: None,
@@ -335,40 +332,9 @@ impl<R: Resolver> Resolver for NativeResourceResolver<R> {
         self.tree.observes_reads()
     }
 
-    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
-        if domain != dm_ir::ReadDomain::ResourceSearch {
-            return self.tree.domain_version(domain);
-        }
-        Some(*self.resource_domain.get_or_init(|| {
-            let mut hash = xxhash_rust::xxh3::Xxh3::new();
-            hash.update(b"dm-resource-answer-domain-v1\0");
-            let mut contexts: Vec<_> = self.contexts.iter().collect();
-            contexts.sort_by_key(|(id, _)| **id);
-            hash.update(&(contexts.len() as u64).to_le_bytes());
-            for (id, bytes) in contexts {
-                hash.update(&id.to_le_bytes());
-                hash.update(&(bytes.len() as u64).to_le_bytes());
-                hash.update(bytes);
-            }
-            let mut lookups: Vec<_> = self.lookups.iter().collect();
-            lookups.sort_by_key(|(key, _)| **key);
-            hash.update(&(lookups.len() as u64).to_le_bytes());
-            for ((path, context), outcome) in lookups {
-                hash.update(&path.bits().to_le_bytes());
-                hash.update(&context.to_le_bytes());
-                match outcome {
-                    CapturedResourceOutcome::Missing => hash.update(&[0]),
-                    CapturedResourceOutcome::Unsupported => hash.update(&[1]),
-                    CapturedResourceOutcome::Found(index) => {
-                        hash.update(&[2]);
-                        let record = &self.ordered[*index];
-                        hash.update(&record.alias.bits().to_le_bytes());
-                        hash.update(&record.content.to_le_bytes());
-                    }
-                }
-            }
-            hash.digest128()
-        }))
+    /// Resource searches are outside every answer world (they read the file system), so the world is the tree's.
+    fn answer_world(&self) -> Option<u128> {
+        self.tree.answer_world()
     }
 
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
@@ -501,7 +467,7 @@ mod tests {
     }
 
     #[test]
-    fn resource_domain_invalidates_captured_negative_lookup() {
+    fn captured_negative_and_positive_lookups_answer_differently() {
         // Context must be issued, including negative observations.
         let context = CapturedSearchContext::new(Arc::<[u8]>::from(&b"domain"[..]));
         let identity = context.identity();
@@ -521,10 +487,11 @@ mod tests {
         };
         let missing = build(CapturedResourceOutcome::Missing);
         let found = build(CapturedResourceOutcome::Found(0));
-        assert_ne!(
-            missing.domain_version(dm_ir::ReadDomain::ResourceSearch),
-            found.domain_version(dm_ir::ReadDomain::ResourceSearch)
-        );
+        let query = ResolveQuery::ResourceIn {
+            path: SymbolId::of("literal.txt"),
+            search_context: identity,
+        };
+        assert_ne!(missing.resolve(query), found.resolve(query));
     }
     #[test]
     fn qualified_outcomes_and_alias_order_are_independent() {
@@ -569,13 +536,6 @@ mod tests {
         let metadata =
             NativeResourceResolver::from_catalog(Tree, Arc::new(SymbolTable::default()), &restored)
                 .unwrap();
-        assert_eq!(
-            host.domain_version(dm_ir::ReadDomain::ResourceSearch),
-            metadata.domain_version(dm_ir::ReadDomain::ResourceSearch)
-        );
-        assert!(host
-            .domain_version(dm_ir::ReadDomain::ResourceSearch)
-            .is_some());
         assert!(metadata.resources().is_none());
         for context in [a, b, 0] {
             assert_eq!(

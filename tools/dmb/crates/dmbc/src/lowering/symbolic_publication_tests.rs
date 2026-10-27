@@ -34,7 +34,7 @@ fn selected(store: &SessionSymbolicMemo, key: &[u8]) -> Option<Arc<Record>> {
 }
 
 #[test]
-fn published_symbolic_candidate_uses_actual_qualified_versions_and_keeps_read_edges() {
+fn published_symbolic_candidate_replays_its_reads_and_keeps_read_edges() {
     struct Current {
         calls: std::sync::atomic::AtomicUsize,
         version: Option<u128>,
@@ -45,9 +45,6 @@ fn published_symbolic_candidate_uses_actual_qualified_versions_and_keeps_read_ed
         fn resolve(&self, _: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
             self.calls.fetch_add(1, Ordering::Relaxed);
             dm_ir::ResolvedMeaning::Presence(self.answer)
-        }
-        fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-            self.version
         }
         fn observes_reads(&self) -> bool {
             self.observing
@@ -69,7 +66,7 @@ fn published_symbolic_candidate_uses_actual_qualified_versions_and_keeps_read_ed
     assert!(first.publish_successful());
     drop(first);
     for (version, answer, observing, expected_hit, expected_calls, expected_edges) in [
-        (Some(7), false, false, true, 0, 1),
+        (Some(7), false, false, true, 1, 1),
         (Some(8), false, false, true, 1, 1),
         // A rejected nonobserving leaf is never delivered as admitted evidence.
         (None, true, false, false, 1, 0),
@@ -94,12 +91,9 @@ fn published_symbolic_candidate_uses_actual_qualified_versions_and_keeps_read_ed
                     .records
                     .visit_receipted_with_value(
                         &locator(identity(), b"qualified"),
-                        &mut |reads, versions, candidate| {
-                            assert_eq!(versions, candidate.versions.as_ref());
-                            assert_eq!(versions.as_ptr(), candidate.versions.as_ptr());
+                        &mut |reads, _, _| {
                             validate_published_record(
                                 reads,
-                                candidate,
                                 admission.as_ref(),
                                 &observer,
                             )

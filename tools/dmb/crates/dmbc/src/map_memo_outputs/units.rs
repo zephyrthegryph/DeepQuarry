@@ -255,7 +255,7 @@ impl MapMemo {
             crate::InitializerCode::from_admitted(stripped, code.requests().clone())
         };
         let reads = recording.reads();
-        let versions = recording.domain_receipts();
+        let versions = Vec::new();
         let Some(weight) = crate::heap_census::resident_map_unit_weight(
             &stripped,
             &key,

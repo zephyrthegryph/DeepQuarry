@@ -78,12 +78,6 @@ impl ObservationHost<Query, Answer, Domain> for Current<'_> {
             Query::Semantic(query) => Answer::Semantic(self.resolver.resolve(*query)),
         }
     }
-    fn version(&self, domain: &Domain) -> Option<u128> {
-        match domain {
-            Domain::Inputs | Domain::BatchInputs => None,
-            Domain::Semantic(domain) => self.resolver.domain_version(*domain),
-        }
-    }
     fn equivalent(&self, a: &Answer, b: &Answer) -> bool {
         a == b
             || match (a, b) {
@@ -190,7 +184,6 @@ pub(in crate::driver_facts) fn replay(
 pub(in crate::driver_facts) fn remember(
     store: &AbiArtifacts,
     inputs: Arc<Inputs>,
-    resolver: &dyn Resolver,
     capture: &Capture,
     prepared: &Arc<crate::driver_facts::PreparedAbiUnits>,
 ) {
@@ -232,17 +225,7 @@ pub(in crate::driver_facts) fn remember(
         }
         keys.push(key);
         units.push((entry.identity, unit.clone()));
-        let versions = reads
-            .iter()
-            .filter_map(|read| match &read.domain {
-                Domain::Semantic(domain) => resolver
-                    .domain_version(*domain)
-                    .map(|v| (read.domain.clone(), v)),
-                _ => None,
-            })
-            .collect::<BTreeMap<_, _>>()
-            .into_iter()
-            .collect::<Vec<_>>();
+        let versions: Vec<(Domain, u128)> = Vec::new();
         rows.push(Row {
             identity: entry.identity,
             unit: unit.clone(),
@@ -265,17 +248,7 @@ pub(in crate::driver_facts) fn remember(
         answer: Answer::BatchInputs(inputs),
     }];
     reads.extend(observations.into_values().flatten());
-    let versions: Vec<_> = reads
-        .iter()
-        .filter_map(|read| match &read.domain {
-            Domain::Semantic(domain) => resolver
-                .domain_version(*domain)
-                .map(|v| (read.domain.clone(), v)),
-            _ => None,
-        })
-        .collect::<BTreeMap<_, _>>()
-        .into_iter()
-        .collect();
+    let versions: Vec<(Domain, u128)> = Vec::new();
     let Ok(reads) = store.groups.intern_receipt(reads, |a, b| {
         matches!(
             (&a.query, &b.query),

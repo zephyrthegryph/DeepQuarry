@@ -170,13 +170,8 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         admission: &dm_session::observations::ReceiptAdmission<'_, Q, A, D, H>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<Arc<T>>, Option<Q>) {
-        let mut validate = |reads: &Receipt<Q, A, D>, versions: &[(D, u128)]| {
-            if admission.allows_certificate_reuse() {
-                admission.first_changed_receipted(reads, versions, |_| {})
-            } else {
-                admission.first_changed_receipted(reads, &[], |_| {})
-            }
-        };
+        let mut validate =
+            |reads: &Receipt<Q, A, D>, _: &[(D, u128)]| admission.first_changed_receipted(reads, |_| {});
         let (accepted, changed) = match &self.attempt {
             Some(attempt) => attempt
                 .with_pending(|lease| lease.visit_receipted_with(key, &mut validate, accept))

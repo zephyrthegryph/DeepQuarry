@@ -35,7 +35,6 @@ fn structural_chain_keeps_body_edits_but_rejects_metadata_and_chain_changes() {
         "/datum/base/proc/read(x=1)\n    return x\n/datum/base/child/read(x=1)\n    return ..()\n";
     let first = build_source(original, &retained);
     let answer = Resolver::resolve(&first, query());
-    let version = first.domain_version(query().domain()).unwrap();
     let M::Members(rows) = &answer else {
         panic!("source chain required")
     };
@@ -51,7 +50,6 @@ fn structural_chain_keeps_body_edits_but_rejects_metadata_and_chain_changes() {
         &retained,
     );
     assert_eq!(Resolver::resolve(&moved, query()), answer);
-    assert_eq!(moved.domain_version(query().domain()), Some(version));
     let executable = Q::OverrideChain {
         owner: SymbolId::of("/datum/base/child"),
         name: SymbolId::of("read"),
@@ -74,7 +72,6 @@ fn structural_chain_keeps_body_edits_but_rejects_metadata_and_chain_changes() {
             Resolver::resolve(&current, query()).canonical_bytes(),
             answer.canonical_bytes()
         );
-        assert_ne!(current.domain_version(query().domain()), Some(version));
     }
 }
 #[test]
@@ -139,8 +136,6 @@ fn actual_frontend_already_keeps_both_chain_answers_across_body_edits() {
         name: SymbolId::of("read"),
         verb: false,
     };
-    let structural_version = first.snapshot.tree.domain_version(query().domain());
-    let old_version = first.snapshot.tree.domain_version(old.domain());
     let current = build("// shifted current source\n/datum/base/proc/read(x=1)\n    return x+9\n/datum/base/child/read(x=1)\n    return ..()+2\n");
     // The admitted immutable semantic tree is shared even though body issuance changes.
     assert!(Arc::ptr_eq(&first.snapshot.tree, &current.snapshot.tree));
@@ -150,14 +145,6 @@ fn actual_frontend_already_keeps_both_chain_answers_across_body_edits() {
             Resolver::resolve(current.snapshot.tree.as_ref(), query)
         );
     }
-    assert_eq!(
-        current.snapshot.tree.domain_version(query().domain()),
-        structural_version
-    );
-    assert_eq!(
-        current.snapshot.tree.domain_version(old.domain()),
-        old_version
-    );
     assert_ne!(
         first.body(&first.bodies[0]).unwrap().children[0].header,
         current.body(&current.bodies[0]).unwrap().children[0].header

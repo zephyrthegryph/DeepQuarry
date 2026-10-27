@@ -224,7 +224,6 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             if let Some(mut input) = store.lookup(
                 &current_key,
                 &prepared_tail,
-                host,
                 request_admission,
                 candidates,
                 &recording,
@@ -593,7 +592,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         let mut admission = None;
         if let Ok(unit) = &result {
             let reads: Arc<[crate::lowering_memo::ResolverRead]> = recording.reads().into();
-            let versions: Arc<[(dm_ir::ReadDomain, u128)]> = recording.domain_receipts().into();
+            let versions: Arc<[(dm_ir::ReadDomain, u128)]> = Vec::new().into();
             let relative_debug = capture.borrow().debug.clone();
             if relative_debug.len() == unit.debug_origins.entries.len()
                 && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
@@ -650,7 +649,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                 Some(identity),
                 &recording.reads(),
                 errors,
-                &recording.domain_receipts(),
+                &Vec::new(),
             );
         }
         result.map(|unit| {

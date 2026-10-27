@@ -11,12 +11,6 @@ impl ObservationHost<Query, Answer, Domain> for SemanticHost<'_> {
             Query::Semantic(query) => Answer::Semantic(self.0.resolve(*query)),
         }
     }
-    fn version(&self, domain: &Domain) -> Option<u128> {
-        match domain {
-            Domain::Inputs | Domain::BatchInputs => None,
-            Domain::Semantic(domain) => self.0.domain_version(*domain),
-        }
-    }
     fn observes_answers(&self) -> bool {
         self.0.observes_reads()
     }
@@ -31,19 +25,7 @@ impl ObservationHost<Query, Answer, Domain> for SemanticHost<'_> {
             _ => self.answer(query),
         }
     }
-    fn version_for_admission(&self, domain: &Domain) -> Option<u128> {
-        match (domain, self.0.transparent_receipt_observer()) {
-            (Domain::Semantic(domain), Some(observer)) => {
-                observer.provider().domain_version(*domain)
-            }
-            _ => self.version(domain),
-        }
-    }
-    fn observe_admitted(
-        &self,
-        read: &dm_session::Observation<Query, Answer, Domain>,
-        version: Option<u128>,
-    ) {
+    fn observe_admitted(&self, read: &dm_session::Observation<Query, Answer, Domain>) {
         if let (
             Query::Semantic(query),
             Answer::Semantic(answer),
@@ -55,7 +37,7 @@ impl ObservationHost<Query, Answer, Domain> for SemanticHost<'_> {
             &read.domain,
             self.0.transparent_receipt_observer(),
         ) {
-            observer.record_answer(*query, answer, *domain, version);
+            observer.record_answer(*query, answer, *domain);
         }
     }
     fn equivalent(&self, a: &Answer, b: &Answer) -> bool {
@@ -68,7 +50,7 @@ impl ObservationHost<Query, Answer, Domain> for SemanticHost<'_> {
             }
     }
 }
-/// Semantic reads answered by the session's answer table; producer inputs fall back to versions.
+/// Semantic reads answered by the session's answer table; producer inputs are compared exactly.
 pub(in crate::driver_facts) struct SemanticAnswers<'a>(pub &'a crate::query_db::RequestAnswers<'a>);
 impl dm_session::AnswerOracle<Query, Answer> for SemanticAnswers<'_> {
     fn unchanged(&self, query: &Query, recorded: &Answer) -> Option<bool> {
@@ -85,24 +67,12 @@ pub(in crate::driver_facts) type Admission<'a> =
     ReceiptAdmission<'a, Query, Answer, Domain, SemanticHost<'a>>;
 pub(in crate::driver_facts) fn changed(
     reads: &Reads,
-    versions: &[(Domain, u128)],
     current: &Current<'_>,
     admission: Option<&Admission<'_>>,
 ) -> Option<Query> {
-    // Certified domains are issued only for leaves the admission cannot certify by answers.
-    let matching = std::cell::OnceCell::new();
-    let matching = || {
-        matching.get_or_init(|| match admission {
-            Some(request) => request.certified_domains(versions),
-            None => dm_session::observations::certified_domains(versions, |domain| {
-                current.version(domain)
-            }),
-        })
-    };
     let Some(admission) = admission else {
         return dm_session::observations::first_changed_iter(
             reads.iter(),
-            matching(),
             |query| current.answer(query),
             |a, b| current.equivalent(a, b),
         )
@@ -119,16 +89,11 @@ pub(in crate::driver_facts) fn changed(
                     && matches!(read.domain, Domain::Semantic(_))
             });
             if semantic && admission.allows_certificate_reuse() {
-                changed =
-                    admission.first_changed_receipted(&Reads::from(leaf.clone()), versions, |_| {});
-            } else if semantic && !leaf.iter().all(|read| matching().contains(&read.domain)) {
-                // No partial certificate becomes a shared leaf verdict.
-                changed = admission.first_changed(&Reads::from(leaf.clone()), |_| {});
+                changed = admission.first_changed_receipted(&Reads::from(leaf.clone()), |_| {});
             } else {
-                // Inputs and candidate-specific complete certificates remain local.
+                // Producer inputs are candidate-specific: compared here, never a shared leaf verdict.
                 changed = dm_session::observations::first_changed_iter(
                     leaf.iter(),
-                    matching(),
                     |query| current.answer(query),
                     |a, b| current.equivalent(a, b),
                 )
@@ -137,46 +102,4 @@ pub(in crate::driver_facts) fn changed(
         }
     });
     changed
-}
-
-#[cfg(test)]
-mod transparent_tests {
-    use super::*;
-    use dm_ir::{ResolveQuery, ResolvedMeaning, SymbolId};
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    struct Provider(AtomicUsize);
-    impl Resolver for Provider {
-        fn observes_reads(&self) -> bool {
-            false
-        }
-        fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
-            self.0.fetch_add(1, Ordering::Relaxed);
-            ResolvedMeaning::Missing
-        }
-        fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-            Some(7)
-        }
-    }
-    #[test]
-    fn abi_transparent_receipt_delivers_original_negative_without_provider_replay() {
-        let provider = Provider(AtomicUsize::new(0));
-        let recorder = dm_session::RecordingResolver::new(&provider);
-        let host = SemanticHost(&recorder);
-        let admission = ReceiptAdmission::new(&host);
-        let query = ResolveQuery::GlobalProc(SymbolId::of("absent"));
-        let domain = query.domain();
-        let reads = Reads::from(vec![dm_session::Observation {
-            query: Query::Semantic(query),
-            domain: Domain::Semantic(domain),
-            answer: Answer::Semantic(ResolvedMeaning::Missing),
-        }]);
-        assert!(admission
-            .first_changed_receipted(&reads, &[(Domain::Semantic(domain), 7)], |_| {})
-            .is_none());
-        assert_eq!(provider.0.load(Ordering::Relaxed), 0);
-        let actual = recorder.reads();
-        assert_eq!(actual.len(), 1);
-        assert_eq!(actual[0].query, query);
-        assert_eq!(actual[0].answer, ResolvedMeaning::Missing);
-    }
 }

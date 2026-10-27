@@ -491,10 +491,6 @@ fn symbol_only_update_replaces_lexical_authority_and_shares_semantic_owners() {
     assert!(tree.symbols().text(added).is_none());
     assert!(Arc::ptr_eq(&tree.types, &updated.types));
     assert!(Arc::ptr_eq(&tree.inventory, &updated.inventory));
-    assert!(Arc::ptr_eq(
-        &tree.owner_callable_demands,
-        &updated.owner_callable_demands
-    ));
     for (a, b) in tree.members.iter().zip(updated.members.iter()) {
         assert_eq!(a, b);
         assert!(Arc::ptr_eq(&a.metadata, &b.metadata));

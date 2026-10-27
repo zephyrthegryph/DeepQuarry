@@ -14,8 +14,14 @@ pub(super) fn one_shot(
         }
         None => crate::lowering_memo::ProcedureMemo::new(policy),
     };
-    memo.initializers =
-        Some(crate::initializer_policy::InitializerArtifacts::default().for_request(publishable));
+    // Every request proves its receipts by answers: a one-shot compile has its own table for this request.
+    let answers = Arc::new(crate::query_db::QueryDb::default());
+    memo.answers = Some(Arc::clone(&answers));
+    memo.initializers = Some(
+        crate::initializer_policy::InitializerArtifacts::default()
+            .with_query_db(&answers)
+            .for_request(publishable),
+    );
     memo.startup = Some(crate::startup::StartupArtifacts::default().for_request(publishable));
     // One-shot execution uses the same observed ABI producer/admission path,
     // including when disk is disabled. This owner is request-local; it retains
@@ -31,7 +37,8 @@ pub(super) fn one_shot(
             crate::driver_facts::AbiArtifacts::with_engine_owner(Arc::clone(owner))
         }
         (None, _) => crate::driver_facts::AbiArtifacts::default(),
-    }));
+    }
+    .with_query_db(&answers)));
     let mut fragments = crate::initializer_lowering::InitializerFragments::default();
     let mut assemblies = crate::initializer_lowering::InitializerAssemblies::default();
     if let Some(disk) = disk {

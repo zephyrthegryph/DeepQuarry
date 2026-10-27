@@ -261,7 +261,7 @@ impl Transport {
                 };
                 if let Some(observer) = &observer {
                     for read in &current_reads {
-                        observer.record_answer(read.query, &read.answer, read.domain, None);
+                        observer.record_answer(read.query, &read.answer, read.domain);
                     }
                 }
                 *accepted.borrow_mut() = Some(unit);

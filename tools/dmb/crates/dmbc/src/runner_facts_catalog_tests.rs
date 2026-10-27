@@ -37,7 +37,6 @@ fn catalog_stages_reuse_for_member_edits_and_type_membership_invalidates_runtime
     ];
     let mut previous_tree = None;
     let mut previous_scalar_artifact = None;
-    let mut previous_certificate = None;
     let meaning = dm_ir::ResolveQuery::Constant {
         owner: dm_ir::SymbolId::of("/datum/probe"),
         name: dm_ir::SymbolId::of("value"),
@@ -72,21 +71,7 @@ fn catalog_stages_reuse_for_member_edits_and_type_membership_invalidates_runtime
         });
         let value_artifact = value_artifact.expect("production scalar artifact populated");
         use dm_ir::Resolver;
-        let certificate = actual
-            .domain_version(meaning.domain())
-            .expect("actual engine-qualified scalar receipt");
         assert_eq!(actual.resolve(meaning), fresh.resolve(meaning));
-        assert_eq!(
-            scalar.domain_version(meaning.domain()),
-            value_artifact.certificate().map(u128::from)
-        );
-        if index == 1 {
-            assert_eq!(previous_certificate, Some(certificate));
-        }
-        if index == 2 {
-            assert_ne!(previous_certificate, Some(certificate));
-        }
-        previous_certificate = Some(certificate);
         if index == 1 {
             assert!(retained.scalar_hits.load(Ordering::Relaxed) > 0);
             assert!(Arc::ptr_eq(

@@ -330,9 +330,9 @@ impl DepIndex {
             _ => &self.initializer,
         }
     }
-    /// The world a request's reads are judged under: the resolver's `Tree` domain version.
+    /// The world a request's reads are judged under: the resolver's answer world.
     pub fn world_of(resolver: &dyn Resolver) -> Option<u128> {
-        resolver.domain_version(ReadDomain::Tree)
+        resolver.answer_world()
     }
     /// A stored ABI or initializer record's reads were replayed and passed under `world`:
     /// remember it for the next session (nothing to do for a record already known).
@@ -445,7 +445,7 @@ impl DepIndex {
         id: impl FnOnce() -> u128,
     ) -> Adoption {
         self.counts.offered.fetch_add(1, Ordering::Relaxed);
-        let Some(world) = host.domain_version(ReadDomain::Tree) else {
+        let Some(world) = host.answer_world() else {
             self.counts.no_world.fetch_add(1, Ordering::Relaxed);
             return Adoption::None;
         };
@@ -564,8 +564,8 @@ mod tests {
         fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
             ResolvedMeaning::Unsupported(query)
         }
-        fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-            (domain == ReadDomain::Tree).then_some(self.0).flatten()
+        fn answer_world(&self) -> Option<u128> {
+            self.0
         }
     }
     fn scratch(label: &str) -> std::path::PathBuf {
@@ -686,8 +686,8 @@ mod tests {
             self.resolves.fetch_add(1, Ordering::Relaxed);
             self.answer.clone()
         }
-        fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-            (domain == ReadDomain::Tree).then_some(11)
+        fn answer_world(&self) -> Option<u128> {
+            Some(11)
         }
     }
     fn counting(answer: ResolvedMeaning) -> Counting {

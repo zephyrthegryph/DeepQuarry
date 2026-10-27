@@ -75,7 +75,7 @@ fn admit(store: &AbiStore, key: &[u8], current: &Current<'_>) -> Option<Arc<Arti
     store
         .visit_receipted_with(
             key,
-            &mut |reads, versions| admission::changed(reads, versions, current, None),
+            &mut |reads, _| admission::changed(reads, current, None),
             &mut |value| matches!(value.as_ref(), Artifact::Unit(_)),
         )
         .0

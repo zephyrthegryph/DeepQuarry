@@ -1,52 +1,22 @@
 //! One dependency-recording path shared by all semantic artifact consumers.
 use crate::{Observation, ObservationLedger};
 use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
-/// Versions are immutable issuer facts. Missing/different receipts require every
-/// original positive or negative answer to be checked exactly.
-pub fn matching_domains<R: Resolver>(
-    versions: &[(ReadDomain, u128)],
-    resolver: &R,
-) -> std::collections::BTreeSet<ReadDomain> {
-    crate::observations::certified_domains(versions, |domain| resolver.domain_version(*domain))
-}
-
 pub type ResolverRead = Observation<ResolveQuery, ResolvedMeaning, ReadDomain>;
 
+/// Records every answer it gives; a receipt is proven later by its answers (an answer table or exact replay).
 pub struct RecordingResolver<'a, R: Resolver> {
     resolver: &'a R,
     ledger: ObservationLedger<ResolveQuery, ResolvedMeaning, ReadDomain>,
-    /// Record no domain version with the reads: a consumer whose receipts are proven by an answer table.
-    unversioned: bool,
 }
 impl<'a, R: Resolver> RecordingResolver<'a, R> {
     pub fn new(resolver: &'a R) -> Self {
         Self {
             resolver,
             ledger: ObservationLedger::default(),
-            unversioned: false,
         }
-    }
-    /// A recorder whose reads carry no domain version (`new` when `versioned`): for receipts a session's answer
-    /// table proves, so no version is issued for them.
-    pub fn with_versions(resolver: &'a R, versioned: bool) -> Self {
-        Self {
-            unversioned: !versioned,
-            ..Self::new(resolver)
-        }
-    }
-    fn version_of(&self, domain: ReadDomain) -> Option<u128> {
-        if self.unversioned {
-            return None;
-        }
-        self.ledger
-            .domain_receipt(&domain)
-            .unwrap_or_else(|| self.resolver.domain_version(domain))
     }
     pub fn reads(&self) -> Vec<ResolverRead> {
         self.ledger.reads()
-    }
-    pub fn domain_receipts(&self) -> Vec<(ReadDomain, u128)> {
-        self.ledger.domain_receipts()
     }
     /// Preserve every edge after exact replay against this same immutable host.
     /// Opaque observing hosts resolve normally. Transparent recorders import
@@ -58,20 +28,10 @@ impl<'a, R: Resolver> RecordingResolver<'a, R> {
                 && self.resolver.transparent_receipt_observer().is_none()
             {
                 self.resolve(read.query);
+            } else if self.transparent_receipt_observer().is_some() {
+                dm_ir::ResolvedReadObserver::record_answer(self, read.query, &read.answer, read.domain);
             } else {
-                let version = self.version_of(read.domain);
-                if self.transparent_receipt_observer().is_some() {
-                    dm_ir::ResolvedReadObserver::record_answer(
-                        self,
-                        read.query,
-                        &read.answer,
-                        read.domain,
-                        version,
-                    );
-                } else {
-                    self.ledger
-                        .record(read.query, read.answer.clone(), read.domain, version);
-                }
+                self.ledger.record(read.query, read.answer.clone(), read.domain);
             }
         }
     }
@@ -102,14 +62,13 @@ impl<R: Resolver> dm_ir::ResolvedReadObserver for RecordingResolver<'_, R> {
         query: ResolveQuery,
         answer: &ResolvedMeaning,
         domain: ReadDomain,
-        version: Option<u128>,
     ) {
         // Only transparent nested recorders participate. Semantic interceptors
         // cannot license this interface; ordinary resolve remains their path.
         if let Some(inner) = self.resolver.transparent_receipt_observer() {
-            inner.record_answer(query, answer, domain, version);
+            inner.record_answer(query, answer, domain);
         }
-        self.ledger.record(query, answer.clone(), domain, version);
+        self.ledger.record(query, answer.clone(), domain);
     }
 }
 impl<R: Resolver> Resolver for RecordingResolver<'_, R> {
@@ -122,21 +81,17 @@ impl<R: Resolver> Resolver for RecordingResolver<'_, R> {
         dm_ir::TransparentReceiptObserver::new(provider, self)
     }
 
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.resolver.domain_version(domain)
+    fn answer_world(&self) -> Option<u128> {
+        self.resolver.answer_world()
     }
     fn resolve_with_canonical(&self, query: ResolveQuery) -> dm_ir::CanonicalResolvedAnswer {
-        let version = self.version_of(query.domain());
         let answer = self.resolver.resolve_with_canonical(query);
-        self.ledger
-            .record(query, answer.answer().clone(), query.domain(), version);
+        self.ledger.record(query, answer.answer().clone(), query.domain());
         answer
     }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
-        let version = self.version_of(query.domain());
         let answer = self.resolver.resolve(query);
-        self.ledger
-            .record(query, answer.clone(), query.domain(), version);
+        self.ledger.record(query, answer.clone(), query.domain());
         answer
     }
 }
