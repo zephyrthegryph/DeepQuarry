@@ -256,7 +256,8 @@ cmd_enqueue() {
 	qlock; mv -f "$f.tmp" "$f"; qunlock
 	rm -f "$REPORTS/$(fname "$branch").md" "$BOUNCED/$(fname "$branch").q"
 	# enqueueing a tip again asks for a fresh precheck: forget this tip's verdicts and probe marks
-	find "$PRE/v" "$PRE/probe" -maxdepth 1 -type f -name "$(fname "$branch")@${tip:0:12}@*" -delete 2>/dev/null
+	find "$PRE/v" "$PRE/probe" "$PRE/dc/v" -maxdepth 1 -type f -name "$(fname "$branch")@${tip:0:12}@*" -delete 2>/dev/null
+	rm -f "$PRE/dc/solo/$(fname "$branch")"
 	tlog "enqueued $branch tip ${tip:0:10} light=$light tests=[${tests:-none}] owner=$owner ($ahead commit(s) ahead of origin/master)"
 	if [ "${DQ_TRAIN_NO_START:-0}" != 1 ]; then DQ_TRAIN_ORIGIN_REPO="$(pwd)" cmd_ensure; fi
 	echo "dq_train: $branch is queued. Release the slot now: bash tools/dq_lane_pool.sh release $branch   (the branch stays in the repository). Follow it: bash tools/dq_train.sh status"
@@ -567,7 +568,9 @@ dc_finalize() { # tpass lanes whose DreamChecker verdict arrived: pass, or bounc
 				tlog "PRECHECK pass: $b (tip ${tip:0:10}) on master $(qget "$vf" master | cut -c1-10) (DreamChecker: $(qget "$dvf" why))"
 				;;
 			fail)
-				sed -i -e 's/^verdict=tpass$/verdict=fail/' "$vf"
+				sed -i 's/^verdict=tpass$/verdict=fail/' "$vf"
+				# the verdict carries the DreamChecker reason: a later bounce of this verdict (a raced re-enqueue) must not print an empty one
+				{ grep -v '^why=' "$vf"; printf 'why=%s\n' "$(qget "$dvf" why)"; } >"$vf.tmp" && mv -f "$vf.tmp" "$vf"
 				tlog "PRECHECK fail: $b (tip ${tip:0:10}): $(qget "$dvf" why)"
 				bounce "$b" "precheck: $(qget "$dvf" why) (DreamChecker on origin/master $(qget "$dvf" master | cut -c1-10) with the queued lanes)" "$(qget "$dvf" log)"
 				;;

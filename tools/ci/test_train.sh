@@ -108,6 +108,9 @@ train() { bash tools/dq_train.sh "$@"; }
 in_master() { git fetch -q origin; git merge-base --is-ancestor "$1" origin/master; }
 status_has() { local o; o="$(train status 2>&1)"; grep -q -- "$1" <<<"$o"; } # not `status | grep -q`: grep exits early and pipefail fails the pipe
 
+# TEST_TRAIN_ONLY=dc runs only the DreamChecker-batch cases (their setup, then the section below), for a quick check of a change there.
+only="${TEST_TRAIN_ONLY:-}"
+if [ -z "$only" ]; then
 # ---- enqueue guards -------------------------------------------------------------------------------------------------------------
 mk lane/heavy-light lanes/hl.txt fine
 out="$(train enqueue --light 2>&1)"; rc=$?
@@ -365,6 +368,7 @@ out="$(DQ_TRAIN_AUTO_LIGHT=1 DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "the DM lane rides the next, heavy cycle" 'grep -q "heavy cycle: 1 lane(s) \[lane/hv\]" <<<"$out" && in_master lane/hv'
 
 
+fi
 # ---- prechecks: each heavy lane gated alone first; a lane that fails alone never joins a batch -------------------------------------------
 # Cases: before its precheck a lane waits (the batch takes only prechecked lanes); the prechecker passes good lanes, bounces a lane that
 # fails alone with a report, and bounces a lane that conflicts with master from the seconds-long probe without a gate run; verdicts are
@@ -374,6 +378,7 @@ check "the DM lane rides the next, heavy cycle" 'grep -q "heavy cycle: 1 lane(s)
 export DQ_TRAIN_PRECHECK=1 DQ_TRAIN_PRECHECK_POLL_SEC=1 DQ_TRAIN_PRECHECK_MIN_FREE_GB=0 DQ_TRAIN_PRECHECK_IDLE_ROUNDS=1 DQ_BATCH_PARALLEL_MIN_FREE_GB=0
 export DQ_TRAIN_PRECHECK_WAIT_MIN=999 DQ_TRAIN_PRECHECK_WAIT_SEC=0
 rm -f "$DQ_TRAIN_STATE/batch_limit" "$DQ_TRAIN_STATE/batch_limit_pre" "$DQ_TRAIN_STATE/bisect.lanes" "$DQ_TRAIN_STATE/bisect.cache"
+if [ "$only" != dc ]; then
 mk lane/pa lanes/pa/f.txt fine; train enqueue --tests "tpa" >/dev/null 2>&1; back
 mk lane/pb lanes/pb/f.txt BAD; train enqueue --tests "tpb" >/dev/null 2>&1; back
 mk lane/pc lanes/pc/f.txt fine; train enqueue --tests "tpc" >/dev/null 2>&1; back
@@ -422,6 +427,7 @@ check "a prechecked batch takes more lanes than DQ_TRAIN_MAX_LANES" 'grep -q "he
 check "its bisect ends in the same cycle despite the passed deadline: the interacting lane is bounced, nine land" 'grep -q "BOUNCED lane/q8" <<<"$out" && ! grep -q "bisect unfinished" <<<"$out" && for n in 1 2 3 4 5 6 7 9 10; do in_master "lane/q$n" || exit 1; done; ! in_master lane/q8'
 check "the halves ran at once in the second worktree" 'grep -q "halves in parallel" <<<"$out" && grep -q "parallel bisect: \[" "$DQ_TRAIN_STATE"/log/cycle-*.log && grep -q "^$tmp/wt2 " "$DQ_STUB_WHERE"'
 unset DQ_STUB_WHERE
+fi
 # the DreamChecker batch: one run for several queued lanes; a DreamChecker failure is pinned on its lane, the others pass
 export DQ_STUB_DCRUN_LOG="$tmp/dcrun.log" DQ_STUB_DEFER_LOG="$tmp/defer.log"; : >"$DQ_STUB_DCRUN_LOG"; : >"$DQ_STUB_DEFER_LOG"
 mk lane/da lanes/da/f.txt fine; train enqueue --tests "tda" >/dev/null 2>&1; back
@@ -433,9 +439,18 @@ check "prechecks defer DreamChecker to the DreamChecker batch" 'grep -q "^defer=
 check "one DreamChecker run covers several queued lanes" 'grep -q "DreamChecker batch: \[lane/da lane/db lane/dc\]" <<<"$out" && grep -q -- "--lanes lane/da lane/db lane/dc" "$DQ_STUB_DCRUN_LOG"'
 check "a lane that changes nothing DreamChecker reads needs no run" 'grep -q "PRECHECK pass: lane/dd " <<<"$out" && ! grep -q "lane/dd" "$DQ_STUB_DCRUN_LOG"'
 check "a DreamChecker failure is pinned on its lane: bounced; the others pass" 'grep -q "BOUNCED lane/db: precheck: DreamChecker" <<<"$out" && grep -q "PRECHECK pass: lane/da " <<<"$out" && grep -q "PRECHECK pass: lane/dc " <<<"$out"'
+# a DreamChecker fail carries a reason in the precheck verdict, and enqueueing the same tip again must not be bounced on the old DreamChecker verdict
+dbv="$(find "$DQ_TRAIN_STATE/precheck/v" -maxdepth 1 -type f -name 'lane_db@*' 2>/dev/null | head -n 1)"
+check "a DreamChecker fail leaves a non-empty reason in the precheck verdict" '[ -n "$dbv" ] && [ -n "$(sed -n "s/^why=//p" "$dbv" | head -n 1)" ] && grep -q "^verdict=fail" "$dbv"'
+dcruns_before="$(grep -c -- "--lanes lane/db" "$DQ_STUB_DCRUN_LOG")"
+git switch -q lane/db; train enqueue --tests "tdb" >/dev/null 2>&1; back
+out2="$(train precheck-run 2>&1)"
+check "the same tip enqueued again gets a fresh DreamChecker run, not a bounce on the stale verdict" '[ "$(grep -c -- "--lanes lane/db" "$DQ_STUB_DCRUN_LOG")" -gt "$dcruns_before" ]'
+check "that bounce names the DreamChecker reason (never an empty one)" 'grep -q "BOUNCED lane/db: precheck: DreamChecker" <<<"$out2" && ! grep -q "BOUNCED lane/db: precheck:  " <<<"$out2"'
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "the DreamChecker-batched lanes land; the culprit does not" 'in_master lane/da && in_master lane/dc && in_master lane/dd && ! in_master lane/db'
 unset DQ_STUB_DCRUN_LOG DQ_STUB_DEFER_LOG
+if [ "$only" = dc ]; then [ "$fail" = 0 ] && echo "ALL PASSED (TEST_TRAIN_ONLY=dc)" || { echo "SOME FAILED"; exit 1; }; exit 0; fi
 # light lanes are prechecked too; the light cycle then lands them without repeating the checks
 export DQ_STUB_LIGHT_LOG="$tmp/light.log"; : >"$DQ_STUB_LIGHT_LOG"
 mk lane/la docs/la.txt fine; git push -q origin lane/la 2>/dev/null; train enqueue --light >/dev/null 2>&1; back
