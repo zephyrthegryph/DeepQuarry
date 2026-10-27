@@ -22,6 +22,9 @@
 	/// Stores the original protection configuration, used for reset_to_default()
 	var/default_protection
 
+// A config entry's value is the number, text, flag or list its subtype parses; the default is the same kind.
+SCHEMA(/datum/config_entry, config_entry_value, schema_any())
+
 /datum/config_entry/New()
 	if(type == config_abstract_type)
 		CRASH("Abstract config entry [type] instatiated!")

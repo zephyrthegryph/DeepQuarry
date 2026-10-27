@@ -167,6 +167,9 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 	/// TRUE for keeping local asset names when browse_rsc backend is used
 	var/keep_local_name = FALSE
 
+// name => the file the subtype lists, replaced by its /datum/asset_cache_item when the asset registers.
+SCHEMA(/datum/asset/simple, assets, schema_any())
+
 /datum/asset/simple/register()
 	for(var/asset_name in assets)
 		var/datum/asset_cache_item/ACI = SSassets.register_asset(asset_name, assets[asset_name])
