@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Train prechecks run the lane's tests plus boot only (smoke and gameplay sets run once per batch), start above 12 GB of available RAM (MemAvailable), and dq_train.sh status reads state files only (about 2 s)"

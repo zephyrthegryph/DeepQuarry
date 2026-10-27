@@ -87,7 +87,8 @@ PRE_ON="${DQ_TRAIN_PRECHECK:-1}"
 PRE_WORKERS="${DQ_TRAIN_PRECHECK_WORKERS:-2}"
 PRE_WT_BASE="${DQ_TRAIN_PRE_WT:-E:/projects/dq-wt/train-pre}"   # worker N works in ${PRE_WT_BASE}N
 PRE_WAIT_MIN="${DQ_TRAIN_PRECHECK_WAIT_MIN:-45}"                 # an unprechecked lane rides the old way after waiting this long
-PRE_MIN_FREE_GB="${DQ_TRAIN_PRECHECK_MIN_FREE_GB:-16}"          # a precheck does not START below this much free RAM (the user's desktop)
+PRE_SMOKE_ARGS=(--no-smoke); [ "${DQ_TRAIN_PRECHECK_SMOKE:-0}" != 1 ] || PRE_SMOKE_ARGS=()
+PRE_MIN_FREE_GB="${DQ_TRAIN_PRECHECK_MIN_FREE_GB:-12}"          # a precheck does not START below this much free RAM (the user's desktop)
 MAX_LANES_PRE="${DQ_TRAIN_MAX_LANES_PRECHECKED:-20}"            # batch size when every lane is prechecked
 WT2="${DQ_TRAIN_WT2:-E:/projects/dq-wt/train-bisect}"           # the second worktree of a parallel bisect
 PRE="$STATE/precheck"
@@ -652,7 +653,7 @@ light_trust() { # <lanes...>: 0 and LIGHT_TRUST_WHY set when every lane's light 
 	return 0
 }
 lane_is_light() { [ "$(qget "$(qfile "$1")" light)" = 1 ]; }
-free_ram_gb() { awk '/^MemFree:/ {print int($2 / 1048576)}' /proc/meminfo 2>/dev/null || echo 999; }
+free_ram_gb() { awk '/^MemAvailable:/ {a=$2} /^MemFree:/ {f=$2} END {print int((a ? a : f) / 1048576)}' /proc/meminfo 2>/dev/null || echo 999; } # MemAvailable counts the Windows standby cache MemFree leaves out
 listed_in() { # <file> <branch>: the branch is a line of the file
 	[ -s "$1" ] && grep -qxF -- "$2" "$1"
 }
@@ -728,7 +729,8 @@ precheck_one() { # <worker n> <branch> <tip>
 			export DQ_GATE_LIGHT=1; unset DQ_GATE_DC_DEFER
 			bash tools/dq_merge_batch.sh --lanes "$b" --no-tests --no-dm
 		else
-			bash tools/dq_merge_batch.sh --lanes "$b" --lane-tests "$b=$tests" --no-dm
+			# lane tests + boot only: the smoke and gameplay sets run once per batch in the integrator's gate (DQ_TRAIN_PRECHECK_SMOKE=1: per precheck as before)
+			bash tools/dq_merge_batch.sh --lanes "$b" --lane-tests "$b=$tests" ${PRE_SMOKE_ARGS[@]+"${PRE_SMOKE_ARGS[@]}"} --no-dm
 		fi
 	) >"$log" 2>&1
 	rc=$?
@@ -836,7 +838,7 @@ cmd_precheck_run() {
 		fi
 		# start workers: cheap prechecks first (a lane that changes no DM reuses DreamChecker's verdict and patches nothing in the compile),
 		# then queue order; at most PRE_WORKERS at once, never below the free-RAM floor
-		if [ ${#want[@]} -gt 1 ] && [ ${#wpid[@]} -lt "$PRE_WORKERS" ]; then
+		if [ ${#want[@]} -gt 1 ] && [ ${#wpid[@]} -le "$PRE_WORKERS" ]; then
 			local cheap=() dear=()
 			for b in "${want[@]}"; do
 				if G diff --name-only "origin/master...$(qget "$(qfile "$b")" tip)" 2>/dev/null | grep -qE '^(code|maps|interface)/|\.dme$|\.dmm$'; then dear+=("$b"); else cheap+=("$b"); fi
@@ -844,7 +846,19 @@ cmd_precheck_run() {
 			want=("${cheap[@]+"${cheap[@]}"}" "${dear[@]+"${dear[@]}"}")
 		fi
 		for b in "${want[@]+"${want[@]}"}"; do
-			[ ${#wpid[@]} -lt "$PRE_WORKERS" ] || break
+			# A light lane (docs, tools: cheap checks, no compile) has its own worker slot "L": it never waits behind the heavy prechecks (21 minutes on 27 October)
+			# and the free-RAM floor does not apply to it. Heavy lanes use the PRE_WORKERS slots as before.
+			local is_l=0 hv=${#wpid[@]}
+			lane_is_light "$b" && is_l=1
+			[ -z "${wpid[L]:-}" ] || hv=$((hv - 1))
+			if [ "$is_l" = 1 ]; then
+				[ -z "${wpid[L]:-}" ] || continue
+				listed_in "$STATE/batch.lanes" "$b" && continue
+				precheck_one L "$b" "$(qget "$(qfile "$b")" tip)" &
+				wpid[L]=$!; wlane[L]="$b"
+				continue
+			fi
+			[ "$hv" -lt "$PRE_WORKERS" ] || break
 			if [ "$(free_ram_gb)" -lt "$PRE_MIN_FREE_GB" ]; then
 				[ "$ram_note" = 1 ] || tlog "prechecker: waiting: $(free_ram_gb) GB of RAM free (< $PRE_MIN_FREE_GB GB); no new precheck starts"
 				ram_note=1
@@ -1187,7 +1201,7 @@ heavy_cycle_gate() {
 	# precheck, no global path): each lane passed the smoke and gameplay sets on its merge with master, and master passed them on its own.
 	# What is left to prove is that the combination compiles and boots (dq_boot_gate). DQ_TRAIN_LONE_SMOKE=1 keeps the sets.
 	local smoke_args=()
-	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_LONE_SMOKE:-0}" != 1 ] && [ "${#SKIP_TESTS[@]}" -eq "${#CHOSEN[@]}" ]; then
+	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_PRECHECK_SMOKE:-0}" = 1 ] && [ "${DQ_TRAIN_LONE_SMOKE:-0}" != 1 ] && [ "${#SKIP_TESTS[@]}" -eq "${#CHOSEN[@]}" ]; then
 		smoke_args=(--no-smoke); tests_union="dq_boot_gate"
 		case " ${lane_test_args[*]} " in *" --tests dq_boot_gate "*) ;; *) lane_test_args+=(--tests dq_boot_gate) ;; esac
 		tlog "no lane of this batch interacts with another or with master since its precheck: compile and boot only (no smoke or gameplay sets)"
@@ -1217,6 +1231,7 @@ heavy_cycle_gate() {
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
 		export DQ_GATE_DREAMCHECKER=1
+		[ "${PRECHECKED_BATCH:-0}" != 1 ] || export DQ_GATE_CAP_MAX_MIN="${DQ_TRAIN_PRECHECKED_CAP_MIN:-20}"
 		[ -z "$dc_why" ] || export DQ_GATE_DC_DISJOINT="$dc_why"
 		[ -z "$warm_root" ] || export DQ_TRAIN_ROOT_KEY="$warm_root"
 		export DQ_BATCH_CACHE="$STATE/bisect.cache"
@@ -1426,47 +1441,88 @@ cmd_run() {
 }
 
 # ---- status, report, dequeue ----------------------------------------------------------------------------------------------------
-cmd_status() {
-	init_state
-	local f b age n=0
-	if integrator_alive; then
-		echo "integrator: RUNNING pid $(integrator_pid) since $(sed -n 's/^since=//p' "$STATE/run.lock/owner"); phase: $(cut -f2 "$STATE/cycle.txt" 2>/dev/null) ($(( $(date +%s) - $(cut -f1 "$STATE/cycle.txt" 2>/dev/null || echo 0) ))s ago)"
+cmd_status() { # reads state files only: no git, no network, and bash builtins instead of forks (an agent's status must answer in about a second)
+	[ -d "$Q" ] && [ -d "$PRE/v" ] && [ -d "$BOUNCED" ] && [ -d "$LANDED" ] || init_state
+	local f b n=0 now k v tphase tstamp since pst pvf pt pk pm pmaster psecs
+	printf -v now '%(%s)T' -1
+	local -A Fq=()
+	rd_kv() { local key val; Fq=(); while IFS='=' read -r key val || [ -n "$key" ]; do Fq["$key"]="$val"; done <"$1"; }
+	lk_alive() { # <lock dir name>: the owner file read with builtins; sets lk_pid
+		lk_pid=""; [ -f "$STATE/$1/owner" ] || return 1
+		rd_kv "$STATE/$1/owner"; lk_pid="${Fq[pid]:-}"
+		alive "$lk_pid" "${Fq[winpid]:-}"
+	}
+	local lk_pid
+	if lk_alive run.lock; then
+		rd_kv "$STATE/run.lock/owner"; since="${Fq[since]:-}"
+		tstamp=0; tphase=""
+		[ -f "$STATE/cycle.txt" ] && IFS=$'\t' read -r tstamp tphase <"$STATE/cycle.txt"
+		echo "integrator: RUNNING pid $lk_pid since $since; phase: $tphase ($(( now - ${tstamp:-0} ))s ago)"
 	else
-		echo "integrator: not running$([ -n "$(queue_branches)" ] && echo " (lanes are waiting: bash tools/dq_train.sh ensure)")"
+		local waiting=""
+		for f in "$Q"/*.q; do [ -e "$f" ] && { waiting=1; break; }; done
+		echo "integrator: not running$([ -n "$waiting" ] && echo " (lanes are waiting: bash tools/dq_train.sh ensure)")"
 	fi
 	if [ "$PRE_ON" = 1 ]; then
-		if prechecker_alive; then echo "prechecker: RUNNING pid $(lockdir_pid precheck.lock) ($PRE_WORKERS worker(s); now: $(for f in "$PRE/running"/*; do [ -e "$f" ] && printf '%s ' "$(qget "$f" branch)"; done))"
+		if lk_alive precheck.lock; then
+			local nowrun=""
+			for f in "$PRE/running"/*; do [ -e "$f" ] || continue; rd_kv "$f"; nowrun="$nowrun${Fq[branch]:-} "; done
+			echo "prechecker: RUNNING pid $lk_pid ($PRE_WORKERS worker(s); now: $nowrun)"
 		else echo "prechecker: not running"; fi
 	fi
-	queue_branches >/dev/null 2>&1   # moves any malformed entry aside first
-	if [ -n "$(ls "$STATE/malformed" 2>/dev/null)" ]; then
-		echo "malformed queue entries (moved aside, not gated; enqueue those lanes again): $(ls -t "$STATE/malformed" | head -n 5 | tr '\n' ' ')"
-	fi
-	echo "batch limit: $(cat "$STATE/batch_limit" 2>/dev/null || echo "$MAX_LANES (default)") lane(s) per cycle; prechecked batches: $(cat "$STATE/batch_limit_pre" 2>/dev/null || echo "$MAX_LANES_PRE (default)")"
+	# one pass over the queue: a malformed entry is moved aside by queue_branches (the only forking path, taken only when there is one)
+	local -a rows=()
+	local malformed_seen=0
+	for f in "$Q"/*.q; do
+		[ -e "$f" ] || continue
+		rd_kv "$f"
+		if [ -z "${Fq[seq]:-}" ] || [ -z "${Fq[branch]:-}" ] || [ -z "${Fq[tip]:-}" ]; then malformed_seen=1; continue; fi
+		rows+=("${Fq[seq]}|${Fq[branch]}|${Fq[tip]}|${Fq[light]:-}|${Fq[tests]:-}|${Fq[since]:-}|${Fq[attempts]:-}")
+	done
+	[ "$malformed_seen" = 0 ] || queue_branches >/dev/null 2>&1
+	local mal=""
+	for f in "$STATE/malformed"/*; do [ -e "$f" ] && mal="$mal$(basename "$f") "; done
+	[ -z "$mal" ] || echo "malformed queue entries (moved aside, not gated; enqueue those lanes again): ${mal:0:400}"
+	local bl blp
+	read -r bl <"$STATE/batch_limit" 2>/dev/null || bl="$MAX_LANES (default)"
+	read -r blp <"$STATE/batch_limit_pre" 2>/dev/null || blp="$MAX_LANES_PRE (default)"
+	echo "batch limit: $bl lane(s) per cycle; prechecked batches: $blp"
 	echo "queue:"
-	local pst pvf
-	for b in $(queue_branches); do
-		f="$(qfile "$b")"; n=$((n + 1)); pst=""
-		if [ "$PRE_ON" = 1 ] && [ "$(qget "$f" light)" != 1 ]; then
-			pst="$(pre_status "$b" "$(qget "$f" tip)")"; pvf="$(pre_verdict_file "$b" "$(qget "$f" tip)")"
-			[ -n "$pvf" ] && [ "$pst" != running ] && pst="$pst on master $(qget "$pvf" master | cut -c1-10) in $(qget "$pvf" secs)s"
+	local sorted
+	sorted="$(printf '%s\n' ${rows[@]+"${rows[@]}"} | sort -n -t'|' -k1,1)"
+	local seq br tip light tests sn att
+	while IFS='|' read -r seq br tip light tests sn att; do
+		[ -n "$br" ] || continue
+		n=$((n + 1)); pst=""
+		if [ "$PRE_ON" = 1 ] && [ "$light" != 1 ]; then
+			pk="${br//\//_}@${tip:0:12}"
+			pvf=""
+			for f in "$PRE/v/$pk@"*; do [ -e "$f" ] || continue; if [ -z "$pvf" ] || [ "$f" -nt "$pvf" ]; then pvf="$f"; fi; done
+			pst=none
+			if [ -f "$PRE/running/${br//\//_}" ]; then rd_kv "$PRE/running/${br//\//_}"; [ "${Fq[tip]:-}" = "$tip" ] && pst=running; fi
+			if [ "$pst" != running ] && [ -n "$pvf" ]; then
+				rd_kv "$pvf"; pst="${Fq[verdict]:-none}"
+				pmaster="${Fq[master]:-}"; psecs="${Fq[secs]:-}"
+				pst="$pst on master ${pmaster:0:10} in ${psecs}s"
+			fi
 			pst="  precheck: $pst"
 		fi
-		echo "  $b  tip $(qget "$f" tip | cut -c1-10)  $([ "$(qget "$f" light)" = 1 ] && echo light || echo "tests: $(qget "$f" tests)")  enqueued $(qget "$f" since)  gate attempts: $(qget "$f" attempts)$pst"
-	done
+		echo "  $br  tip ${tip:0:10}  $([ "$light" = 1 ] && echo light || echo "tests: $tests")  enqueued $sn  gate attempts: $att$pst"
+	done <<<"$sorted"
 	[ "$n" -gt 0 ] || echo "  (empty)"
 	n=0
 	echo "bounced (fix, then enqueue again):"
 	for f in "$BOUNCED"/*.q; do
 		[ -e "$f" ] || continue
-		n=$((n + 1))
-		echo "  $(qget "$f" branch): $(qget "$f" reason)"
-		echo "      report: $(qget "$f" report)"
+		n=$((n + 1)); rd_kv "$f"
+		echo "  ${Fq[branch]:-}: ${Fq[reason]:-}"
+		echo "      report: ${Fq[report]:-}"
 	done
 	[ "$n" -gt 0 ] || echo "  (none)"
 	echo "landed (latest 8):"
 	n=0
-	for f in $(ls -t "$LANDED"/*.landed 2>/dev/null | head -n 8); do echo "  $(qget "$f" branch)  $(qget "$f" landed)  master $(qget "$f" master | cut -c1-10)"; n=$((n + 1)); done
+	local lf pm
+	for lf in $(ls -t "$LANDED"/*.landed 2>/dev/null | head -n 8); do rd_kv "$lf"; pm="${Fq[master]:-}"; echo "  ${Fq[branch]:-}  ${Fq[landed]:-}  master ${pm:0:10}"; n=$((n + 1)); done
 	[ "$n" -gt 0 ] || echo "  (none yet)"
 	echo "log: $LOGS/train.log"
 }

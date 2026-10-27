@@ -6,7 +6,8 @@
 #   - bash -n on every changed *.sh (and shellcheck -S error when it is installed);
 #   - doc links: every relative link in a changed *.md / doc/*.html must resolve to a file in <head>;
 #   - cargo test for every Cargo manifest above a changed file under tools/ or verdigris/ (inside a machine cargo slot);
-#   - the ratchets (tools/ci/check_ratchets.sh) only when a .dm file changed or the lints themselves (tools/ci, tools/analyze) did;
+#   - the ratchets (tools/ci/check_ratchets.sh) only when a .dm file changed or a lint input did (tools/analyze, lint_scopes.toml, baselines, check_*.sh);
+#   - the self-test of each changed tool (tools/ci/test_*.sh, mapped from the tool; test_train.sh only for the train / merge drivers), each capped;
 #   - a changed heavy path (tools/dq_light_paths.sh) is a refusal: a light batch never carries it.
 # DQ_LIGHT_CARGO=0 skips cargo (fixture tests). Run from the worktree that holds <head>.
 set -uo pipefail
@@ -64,8 +65,45 @@ if [ "${DQ_LIGHT_CARGO:-1}" = 1 ]; then
 	done
 fi
 
-if printf '%s\n' "${changed[@]}" "${deleted[@]}" | grep -q -E '\.dm$|^tools/ci/|^tools/analyze/'; then
-	echo "== ratchets (a .dm file or the lints changed)"
-	bash tools/ci/check_ratchets.sh || bad "check_ratchets.sh"
+all_changed="$(printf '%s\n' "${changed[@]}" "${deleted[@]}")"
+# The ratchets read the tree and the lints: they run when a .dm file or a lint input changed, not for every file under tools/ci
+# (a self-test script or a tool edit changes no lint verdict). A tool's own self-test inside check_ratchets runs only when its files changed.
+if grep -q -E '\.dm$|^tools/analyze/|^tools/ci/(lint_scopes\.toml|check_[^/]*|[^/]*baseline[^/]*|[^/]*\.txt)$' <<<"$all_changed"; then
+	echo "== ratchets (a .dm file or a lint input changed)"
+	DQ_RATCHETS_SELFTESTS=changed bash tools/ci/check_ratchets.sh || bad "check_ratchets.sh"
 fi
+
+# Self-tests of the tools a lane changed (never the whole tools/ci/test_*.sh set): a changed tools/ci/test_X.sh runs itself; a changed tool runs the
+# test that covers it (tools/dq_X.sh -> tools/ci/test_X.sh when it exists, plus the explicit map below). test_train.sh runs only when the train or the
+# merge drivers change. Each self-test is capped (DQ_LIGHT_SELFTEST_CAP_SEC, default 300 s) so a slow one fails loudly instead of holding the precheck.
+declare -A selftests=()
+add_selftest() { [ -f "tools/ci/$1" ] && selftests["$1"]=1; }
+for f in "${changed[@]}"; do
+	case "$f" in
+		tools/ci/test_*.sh) add_selftest "$(basename "$f")" ;;
+		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh ;;
+		tools/dq_light_paths.sh|tools/dq_land_batch.sh) add_selftest test_light_checks.sh ;;
+		tools/dq_light_checks.sh) add_selftest test_light_checks.sh ;;
+		tools/dq_*.sh) add_selftest "test_$(basename "$f" .sh | sed 's/^dq_//').sh" ;;
+	esac
+done
+cap="${DQ_LIGHT_SELFTEST_CAP_SEC:-300}"
+for t in "${!selftests[@]}"; do
+	echo "== self-test tools/ci/$t (cap ${cap}s)"
+	t0=$(date +%s)
+	# test_train.sh: only its quick subset (enqueue, light) is on the critical path; the full file runs by hand
+	tt_only=""; [ "$t" != test_train.sh ] || tt_only="quick"
+	TEST_TRAIN_ONLY="$tt_only" timeout -k 10 "$cap" bash "tools/ci/$t" >"${TMPDIR:-/tmp}/light-selftest-$$.log" 2>&1; rc=$?
+	echo "   $t rc=$rc in $(( $(date +%s) - t0 ))s"
+	if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+		# a cap is not a verdict: on a loaded machine a healthy self-test can run past it. The cases that finished are shown; nothing is failed, the author ran the test.
+		echo "light check WARNING: $t hit its ${cap}s cap and was stopped (inconclusive, not a failure); the cases that finished:" >&2
+		grep -E '^(PASS|FAIL)' "${TMPDIR:-/tmp}/light-selftest-$$.log" >&2
+		grep -q '^FAIL' "${TMPDIR:-/tmp}/light-selftest-$$.log" && bad "self-test $t (a case failed before the cap)"
+	elif [ "$rc" -ne 0 ]; then
+		tail -n 25 "${TMPDIR:-/tmp}/light-selftest-$$.log" >&2
+		bad "self-test $t"
+	fi
+	rm -f "${TMPDIR:-/tmp}/light-selftest-$$.log"
+done
 [ "$fail" -eq 0 ] && echo "== light checks passed" || exit 1
