@@ -303,7 +303,8 @@ CAPABILITIES(/obj/structure/stairs/middle)
 	return OP_PASS
 
 /// The bump notice: `user` walked into it (was Bumped()).
-/obj/structure/stairs/middle/proc/bumped_by(datum/notice/bumped/N)
+/obj/structure/stairs/middle/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/mob/user = N.bumper
 	if(check_integrity() && bottom && (bottom in get_turf(user))) // Bottom must be enforced because the middle stairs don't actually need the bottom
 		bottom.use_stairs_instant(user)

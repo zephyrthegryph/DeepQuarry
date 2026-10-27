@@ -79,7 +79,8 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 
 
 /// The bump notice: `AM` walked into it (was Bumped()).
-/turf/unsimulated/wall/supermatter/proc/bumped_by(datum/notice/bumped/N)
+/turf/unsimulated/wall/supermatter/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/atom/AM = N.bumper
 	if(isliving(AM))
 		var/mob/living/M = AM

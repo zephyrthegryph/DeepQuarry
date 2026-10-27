@@ -45,7 +45,8 @@ CAPABILITIES(/turf/unsimulated/map/edge)
 				break
 
 /// The bump notice: `AM` walked into it (was Bumped()).
-/turf/unsimulated/map/edge/proc/bumped_by(datum/notice/bumped/N)
+/turf/unsimulated/map/edge/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/atom/movable/AM = N.bumper
 	if(wrap_buddy()?.map_is_to_my)
 		AM.forceMove(get_step(wrap_buddy(), wrap_buddy().map_is_to_my))

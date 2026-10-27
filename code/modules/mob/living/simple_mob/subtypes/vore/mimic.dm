@@ -340,7 +340,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/closet)
 	tryTrigger(AM)
 
 /// The bump notice: `AM` walked into it (was Bumped()).
-/obj/effect/floormimic/proc/bumped_by(datum/notice/bumped/N)
+/obj/effect/floormimic/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/atom/movable/AM = N.bumper
 	tryTrigger(AM)
 

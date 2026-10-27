@@ -29,7 +29,8 @@ CAPABILITIES(/obj/effect/decal/cleanable/chemcoating)
 		reagents.touch(A)
 
 /// The bump notice (was Bumped()).
-/obj/effect/decal/cleanable/chemcoating/proc/bumped_by(datum/notice/bumped/N)
+/obj/effect/decal/cleanable/chemcoating/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	touched_by(N.bumper)
 
 /obj/effect/decal/cleanable/chemcoating/Crossed(AM as mob|obj)

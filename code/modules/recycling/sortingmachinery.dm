@@ -18,7 +18,8 @@ CAPABILITIES(/obj/machinery/disposal/deliveryChute)
 	op("swallow", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT), label("Alt-click"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /// The bump notice: `AM` walked into it (was Bumped()). //Go straight into the chute
-/obj/machinery/disposal/deliveryChute/proc/bumped_by(datum/notice/bumped/N)
+/obj/machinery/disposal/deliveryChute/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/atom/movable/AM = N.bumper
 	if(QDELETED(AM) || istype(AM, /obj/item/projectile) || istype(AM, /obj/effect) || istype(AM, /obj/mecha))	return
 	switch(dir)

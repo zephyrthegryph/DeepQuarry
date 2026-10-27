@@ -112,7 +112,8 @@ MSG_DEF(boulder/dig_pending, null, null)
 	return OP_OK
 
 /// The bump notice: `AM` walked into it (was Bumped()).
-/obj/structure/boulder/proc/bumped_by(datum/notice/bumped/N)
+/obj/structure/boulder/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/atom/movable/AM = N.bumper
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM

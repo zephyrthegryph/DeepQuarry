@@ -281,7 +281,8 @@ CAPABILITIES(/turf/simulated/mineral)
 		update_archeo_overlays(Proj.excavation_amount)
 
 /// The bump notice: `AM` walked into it (was Bumped()).
-/turf/simulated/mineral/proc/bumped_by(datum/notice/bumped/N)
+/turf/simulated/mineral/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/atom/movable/AM = N.bumper
 
 

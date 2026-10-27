@@ -10,7 +10,8 @@
 	var/obj/target
 
 /// The bump notice: `M` walked into it (was Bumped()).
-/obj/structure/portal_event/proc/bumped_by(datum/notice/bumped/N)
+/obj/structure/portal_event/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/mob/M = N.bumper
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
@@ -220,7 +221,8 @@ CAPABILITIES(/obj/structure/portal_event)
 	anchored = TRUE
 
 /// The bump notice: `M` walked into it (was Bumped()).
-/obj/structure/portal_gateway/proc/bumped_by(datum/notice/bumped/N)
+/obj/structure/portal_gateway/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/mob/M = N.bumper
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc

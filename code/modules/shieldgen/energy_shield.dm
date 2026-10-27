@@ -299,7 +299,8 @@ CAPABILITIES(/obj/effect/shield)
 
 // Special treatment for meteors because they would otherwise penetrate right through the shield.
 /// The bump notice: `mover` walked into it (was Bumped()).
-/obj/effect/shield/proc/bumped_by(datum/notice/bumped/N)
+/obj/effect/shield/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/atom/movable/mover = N.bumper
 	if(!gen())
 		consume(src)

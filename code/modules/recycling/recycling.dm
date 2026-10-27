@@ -69,7 +69,8 @@ MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
 
 // Conveyors etc
 /// The bump notice: `A` walked into it (was Bumped()).
-/obj/machinery/recycling/proc/bumped_by(datum/notice/bumped/N)
+/obj/machinery/recycling/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	var/atom/A = N.bumper
 	if(!isitem(A))
 		return

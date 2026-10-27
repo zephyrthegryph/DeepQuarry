@@ -145,7 +145,8 @@ CAPABILITIES(/obj/effect/mine)
 	touched_by(AM)
 
 /// The bump notice (was Bumped()).
-/obj/effect/mine/proc/bumped_by(datum/notice/bumped/N)
+/obj/effect/mine/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
 	touched_by(N.bumper)
 
 /// Something walked into or over the mine: a vehicle, a mech or a living thing heavy enough on the ground sets it off.
