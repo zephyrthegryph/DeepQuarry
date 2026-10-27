@@ -1058,7 +1058,12 @@ its regions' results. Each region result is an immutable shared object reached f
   per-variant copy of the program text. Region record texts are not duplicated into it twice: a session keeps the joined
   text, records keep their own text, and nothing else holds a third copy.
 
-**Slices.** P1 region rows (hydrate, traces, origin arena; expected test -110 MB, root B -100 MB). P2 region plans shared
+**Slices.** P1 region rows (hydrate, traces, origin arena; expected test -110 MB, root B -100 MB). *P1 landed (compiler/preproc-rows):* test variant
++2.66 -> +2.57 GB, root A unchanged (5.29), root B unchanged (+1.49): a trace's definition origin carries the absolute path
+of the defining file, so root B's rows never equal root A's (next slice: project-relative definition paths). Body edits
+(three interleaved rounds, busy machine): stage times equal (frontend 0.37-0.44 s both arms, row assembly 0 vs 15 ms), wall
+medians of the calm round 5.76 vs 5.55 s. `dmb-equiv`: EQUIVALENT for the game variant (body edits + resource-folder
+change) and for the test variant built in the same daemon after the game variant plus a body edit (`eqtest.sh`). P2 region plans shared
 across variants and roots (directives, environments, directive memo; expected test -150 MB, root B -100 MB). Each slice is
 proven by `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile of both variants, the six-session
 contract tests, and a warm-speed A/B within 5 percent.
