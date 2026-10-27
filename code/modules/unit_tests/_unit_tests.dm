@@ -460,6 +460,7 @@
 #include "dq_xform_crafting_pin.dm"
 #include "dq_xform_smelting_pin.dm"
 #include "dq_transformation_tests.dm"
+#include "dq_xform_spawns_tests.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
 #include "dq_silicon_remote_pins.dm"
