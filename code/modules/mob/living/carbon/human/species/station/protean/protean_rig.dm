@@ -71,7 +71,7 @@
 /// through the protean's injure(), aimed at the core, like every other hit on
 /// the cluster (take_damage()). The cluster's own integrity never moves. An
 /// orphaned cluster is just an object.
-/obj/item/rig/protean/proc/rig_has_protean()
+/obj/item/rig/protean/proc/rig_has_protean(datum/act/A)
 	return myprotean && !QDELETED(src)
 
 /obj/item/rig/protean/proc/rig_blast(datum/act/hit/explosion/A)
