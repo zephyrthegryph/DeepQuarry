@@ -61,7 +61,7 @@ Equalities applied (each is a proven runtime identity, not a tolerance):
   instance is used (map cells, defaults, `PushVal inst`); a body of independent
   constant assignments `consts; SetVar src->.f` to distinct fields is sorted by
   field.
-* Proc lists: grouped by name; only the order within a name (precedence) is kept.
+* Proc lists (a type's and the world's): grouped by name; only the order within a name (precedence) is kept.
 * Builtin overrides: last entry wins.
 * Debug stream: compared as (instruction ordinal, file in effect, line) per
   DbgLine; a DbgFile that repeats the current file or is not followed by a

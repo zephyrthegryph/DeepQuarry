@@ -37,7 +37,7 @@
 	var/mins = rand(5*TIME_MULTIPLIER,20*TIME_MULTIPLIER)
 	next_phase = mins * (600*TIME_MULTIPLIER) + world.time
 	current_title = "Product demo"
-	current_desc = text_or_null(S.industry.detokenize("[S.name] will unveil a new product on an upcoming %industrial% conference held at spacetime [spacetime(next_phase)]"))
+	current_desc = S.industry.detokenize("[S.name] will unveil a new product on an upcoming %industrial% conference held at spacetime [spacetime(next_phase)]")
 	S.addEvent(src)
 
 

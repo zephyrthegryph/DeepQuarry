@@ -19,6 +19,8 @@
 	var/picked_rune
 	var/picked_beacon
 
+SCHEMA(/datum/spell/rune_write, picked_beacon, schema_text())
+
 /datum/spell/rune_write/target_questions(mob/user)
 	var/static/list/runes = list("Teleport", "Teleport Other", "Spawn a Tome", "Change Construct Type", "Convert", "EMP", "Drain Blood", "See Invisible", "Resurrect", "Hide Runes", "Reveal Runes", "Astral Journey", "Manifest a Ghost", "Imbue Talisman", "Sacrifice", "Wall", "Free Cultist", "Summon Cultist", "Deafen", "Blind", "BloodBoil", "Communicate", "Stun")
 	if(!GLOB.cultwords["travel"])

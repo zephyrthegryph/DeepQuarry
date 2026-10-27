@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The untyped lint resolves procs and PROC_REFs by owner type, not bare name; work_item sweep and a kernel local get their natural names back"

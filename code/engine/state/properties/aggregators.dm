@@ -49,6 +49,8 @@
 	var/alist/counts
 	var/entries = 0
 
+SCHEMA(/datum/property_accumulator, total, num())
+
 /datum/property_accumulator/New(aggregator)
 	..()
 	if(aggregator == PROP_AGG_NONE || !dq_property_valid_aggregator(aggregator))

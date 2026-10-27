@@ -75,6 +75,8 @@
 	/// True for a read folded in from derived() / generated_reads(): it feeds READERS, nothing runs.
 	var/implicit = FALSE
 
+SCHEMA(/datum/reaction, global_handler, bool())
+
 /**
  * Makes R a reaction of capability C: its handler is a PROC_REF on C, called as handler(holder, ...args) (the holder
  * first, then what the reaction's contract passes). A capability's reactions() uses it so its handlers live on the

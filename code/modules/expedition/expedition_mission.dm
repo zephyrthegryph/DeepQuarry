@@ -305,3 +305,5 @@ CAPABILITIES(/datum/expedition_mission)
 /// Accessor for the site var.
 /datum/expedition_mission/proc/site() as /datum/expedition_site
 	return site
+
+SCHEMA(/datum/expedition_mission, faction_type, int())

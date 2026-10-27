@@ -46,7 +46,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	system_owned = !holder_run
 	var/member_key = R.members
 	var/run_every = WORK_EVERY_TICK
-	var/urgent_only = FALSE
+	var/run_urgent = FALSE
 	var/list/run_after
 	switch(R.kind)
 		if(RXN_EVERY)
@@ -61,7 +61,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 		if(RXN_CROSS)
 			if(R.urgent)
 				// Runs only when requested: the cadence pass skips it (runnable() is FALSE without a pending crossing).
-				urgent_only = TRUE
+				run_urgent = TRUE
 				run_every = 10 MINUTES
 				holder_run = TRUE
 			else
@@ -73,7 +73,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	if(!holder_run)
 		var/datum/system/system_proto = owner_type
 		default_phase = initial(system_proto.phase)
-	..(R.handler, run_every, R.kind == RXN_EVERY ? R.when : null, member_key, R.phase || default_phase, run_after, R.budget || 0, R.lane || LANE_SIMULATION, urgent_only)
+	..(R.handler, run_every, R.kind == RXN_EVERY ? R.when : null, member_key, R.phase || default_phase, run_after, R.budget || 0, R.lane || LANE_SIMULATION, run_urgent)
 	name = "[R.kind == RXN_EVERY ? "every" : (R.kind == RXN_CROSS ? "on_cross" : "on_notice")] [R.handler]"
 
 /datum/work_item/reaction/item_key(owner_type)
