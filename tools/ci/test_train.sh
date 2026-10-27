@@ -20,13 +20,15 @@ export DQ_TRAIN_WT="$tmp/train-wt"
 export DQ_TRAIN_NO_START=1 DQ_TRAIN_NO_DISK_CHECK=1 DQ_TRAIN_RETRY_SEC=0
 export DQ_TRAIN_RUNS_DIRS="$tmp/no-runs"
 export DQ_FLAKE_LEDGER="$tmp/flakes.tsv"
+# The prechecker (section "prechecks" below) is off for the cases written before it; its own section turns it on.
+export DQ_TRAIN_PRECHECK=0 DQ_TRAIN_PRE_WT="$tmp/pre-wt" DQ_TRAIN_WT2="$tmp/wt2" DQ_GATE_VERDICTS="$tmp/verdicts"
 
 git init -q --bare "$tmp/origin.git"
 git clone -q "$tmp/origin.git" "$tmp/repo" 2>/dev/null
 cd "$tmp/repo"
 git config user.email t@t; git config user.name t
 mkdir -p tools/ci lanes docs
-cp "$here/tools/dq_train.sh" "$here/tools/dq_train_estimate.js" "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" "$here/tools/dq_light_paths.sh" "$here/tools/dq_gate_retry.sh" "$here/tools/dq_declared_tests.sh" tools/
+cp "$here/tools/dq_train.sh" "$here/tools/dq_train_estimate.js" "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" "$here/tools/dq_light_paths.sh" "$here/tools/dq_gate_retry.sh" "$here/tools/dq_declared_tests.sh" "$here/tools/dq_dme_resolve.sh" "$here/tools/dq_gate_verdicts.sh" tools/
 echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
 printf '#!/usr/bin/env bash\nexit 0\n' >tools/dq_disk_budget.sh  # stub: the integrator runs the disk gate from its SELF_DIR
 echo '# manifest' >tools/ci/disk_budget.toml
@@ -34,6 +36,8 @@ cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
 # stub gates: BAD in a lane file fails; with DQ_STUB_CAP_ABOVE=N a batch of more than N lane files looks like a killed test phase
 if grep -rq BAD lanes 2>/dev/null; then echo "stub gates: BAD present"; exit 1; fi
+if grep -rq PAIR1 lanes 2>/dev/null && grep -rq PAIR2 lanes 2>/dev/null; then echo "stub gates: PAIR1 and PAIR2 together"; exit 1; fi
+echo "$(pwd) $*" >>"${DQ_STUB_WHERE:-/dev/null}"
 n="$(git diff --name-only origin/master HEAD -- lanes | wc -l)"
 if [ -n "${DQ_STUB_CAP_ABOVE:-}" ] && [ "$n" -gt "$DQ_STUB_CAP_ABOVE" ]; then echo "FOCUSED RUN CAPPED: the 10 minute wall-clock cap was hit"; exit 1; fi
 echo "$*" >>"${DQ_STUB_ARGS_LOG:-/dev/null}"
@@ -72,6 +76,7 @@ main="$(git rev-parse --abbrev-ref HEAD)"
 mk() { # <branch> <file> <content> [shared-line]: a lane branch off origin/master, left as the current branch
 	git fetch -q origin
 	git switch -q -c "$1" origin/master
+	mkdir -p "$(dirname "$2")"
 	echo "$3" >"$2"
 	[ -z "${4:-}" ] || echo "$4" >shared.txt
 	git add -A; git commit -q -m "$1"
@@ -203,6 +208,9 @@ mk lane/m lanes/m.txt fine; train enqueue --tests tm >/dev/null 2>&1; back
 out="$(train run 2>&1)"; rc=$?
 check "a second integrator refuses to run beside a live one" '[ "$rc" = 0 ] && grep -q "already running" <<<"$out" && ! in_master lane/m'
 check "status names the running integrator" 'status_has "integrator: RUNNING pid $holder"'
+mkdir -p "$DQ_TRAIN_STATE/self"; echo "# the running integrator's snapshot" >"$DQ_TRAIN_STATE/self/dq_train.sh"
+git switch -q lane/m; DQ_TRAIN_NO_START=0 DQ_TRAIN_PRECHECK=1 train enqueue --tests tm >/dev/null 2>&1; back
+check "an enqueue beside a running integrator never replaces its snapshot or starts a prechecker" 'grep -qx "# the running integrator.s snapshot" "$DQ_TRAIN_STATE/self/dq_train.sh" && [ ! -d "$DQ_TRAIN_STATE/precheck.lock" ]'
 kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
 out="$(train run 2>&1)"
 check "a dead integrator's lock is replaced" 'grep -q "replacing the lock of a dead integrator" <<<"$out" && in_master lane/m'
@@ -269,6 +277,82 @@ check "a lane capped alone is bounced with the attempt log named" 'grep -q "^BAT
 out="$(bash tools/dq_merge_batch.sh --lanes "lane/p,lane/q" 2>&1)"
 check "a clean batch reports its lanes as good" 'grep -q "^BATCH_GOOD: lane/p lane/q" <<<"$out" && grep -q "^BATCH_CAPPED: $" <<<"$out"'
 
+# ---- prechecks: each heavy lane gated alone first; a lane that fails alone never joins a batch -------------------------------------------
+# Cases: before its precheck a lane waits (the batch takes only prechecked lanes); the prechecker passes good lanes, bounces a lane that
+# fails alone with a report, and bounces a lane that conflicts with master from the seconds-long probe without a gate run; verdicts are
+# keyed by (master, tip); a prechecked batch skips the own tests of lanes that share no area and runs those that do; it may exceed
+# DQ_TRAIN_MAX_LANES; its bisect runs to the end in one cycle past the deadline, both halves at once; a lane with no verdict after the
+# wait limit rides the old way.
+export DQ_TRAIN_PRECHECK=1 DQ_TRAIN_PRECHECK_POLL_SEC=1 DQ_TRAIN_PRECHECK_MIN_FREE_GB=0 DQ_TRAIN_PRECHECK_IDLE_ROUNDS=1 DQ_BATCH_PARALLEL_MIN_FREE_GB=0
+export DQ_TRAIN_PRECHECK_WAIT_MIN=999 DQ_TRAIN_PRECHECK_WAIT_SEC=0
+rm -f "$DQ_TRAIN_STATE/batch_limit" "$DQ_TRAIN_STATE/batch_limit_pre" "$DQ_TRAIN_STATE/bisect.lanes" "$DQ_TRAIN_STATE/bisect.cache"
+mk lane/pa lanes/pa/f.txt fine; train enqueue --tests "tpa" >/dev/null 2>&1; back
+mk lane/pb lanes/pb/f.txt BAD; train enqueue --tests "tpb" >/dev/null 2>&1; back
+mk lane/pc lanes/pc/f.txt fine; train enqueue --tests "tpc" >/dev/null 2>&1; back
+mk lane/pe lanes/pa/g.txt fine; train enqueue --tests "tpe" >/dev/null 2>&1; back
+mk lane/pk lanes/pk/f.txt fine "shared-pk"; train enqueue --tests "tpk" >/dev/null 2>&1; back
+git fetch -q origin; git switch -q --detach origin/master; echo "master-moves-shared" >shared.txt; git add -A; git commit -q -m "master changes shared"; git push -q origin HEAD:refs/heads/master; back
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a lane without a precheck verdict waits: no batch is gated" 'grep -q "waiting for prechecks" <<<"$out" && ! grep -q "heavy cycle" <<<"$out" && ! in_master lane/pa'
+out="$(train precheck-run 2>&1)"; rc=$?
+check "the prechecker passes the good lanes" '[ "$rc" = 0 ] && grep -q "PRECHECK pass: lane/pa " <<<"$out" && grep -q "PRECHECK pass: lane/pc " <<<"$out" && grep -q "PRECHECK pass: lane/pe " <<<"$out"'
+check "a lane that fails alone is bounced by its precheck, with a report" 'grep -q "PRECHECK fail: lane/pb " <<<"$out" && grep -q "BOUNCED lane/pb: precheck: " <<<"$out" && grep -q "BAD present" "$DQ_TRAIN_STATE/reports/lane_pb.md" && ! status_has "lane/pb  tip"'
+check "a lane that conflicts with master is bounced by the probe, without a gate run" 'grep -q "PRECHECK conflict: lane/pk .*shared.txt" <<<"$out" && grep -q "BOUNCED lane/pk: precheck: merge conflict" <<<"$out" && ! grep -q "precheck: lane/pk (tip" <<<"$out"'
+pa_tip="$(git rev-parse lane/pa)"; m_now="$(git rev-parse origin/master)"
+check "the verdict is keyed by (master, lane tip)" '[ -f "$DQ_TRAIN_STATE/precheck/v/lane_pa@${pa_tip:0:12}@${m_now:0:12}" ] && grep -q "^verdict=pass" "$DQ_TRAIN_STATE/precheck/v/lane_pa@${pa_tip:0:12}@${m_now:0:12}"'
+check "status shows each lane's precheck" 'status_has "lane/pa  tip.*precheck: pass on master"'
+git switch -q lane/pb; train enqueue --tests "tpb" >/dev/null 2>&1; back
+check "enqueueing a bounced tip again asks for a fresh precheck" 'status_has "lane/pb  tip.*precheck: none" && [ -z "$(ls "$DQ_TRAIN_STATE/precheck/v" | grep "^lane_pb@")" ]'
+train dequeue lane/pb >/dev/null 2>&1
+export DQ_STUB_ARGS_LOG="$tmp/pre-args.log"; : >"$DQ_STUB_ARGS_LOG"
+out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "the prechecked lanes land; the failed one never joined a batch" 'in_master lane/pa && in_master lane/pc && in_master lane/pe && ! in_master lane/pb && ! grep -q "chosen=\[[^]]*lane/pb" "$DQ_TRAIN_STATE/log/train.log"'
+check "the batch says it is prechecked and has no cycle deadline" 'grep -q "all prechecked; bisect to the end" <<<"$out" && grep -q "no cycle deadline" <<<"$out"'
+check "lanes sharing an area run their own tests; a lane sharing none does not" 'grep -q "tpa" "$DQ_STUB_ARGS_LOG" && grep -q "tpe" "$DQ_STUB_ARGS_LOG" && ! grep -q "tpc" "$DQ_STUB_ARGS_LOG" && grep -q "own tests do not run in this batch.*lane/pc" "$DQ_TRAIN_STATE/log/train.log"'
+# ten prechecked lanes (more than DQ_TRAIN_MAX_LANES=8), two of them fine alone but failing together: one cycle, past the deadline, both halves at once
+# the first prechecked cycle created it in the background; wait until it is ready (never used half-made)
+for _ in $(seq 1 60); do [ -e "$DQ_TRAIN_WT2/.git" ] && [ ! -f "$DQ_TRAIN_STATE/wt-creating/wt2" ] && break; sleep 1; done
+check "the first prechecked cycle created the parallel-bisect worktree in the background" '[ -e "$DQ_TRAIN_WT2/.git" ]'
+export DQ_STUB_WHERE="$tmp/where.log"; : >"$DQ_STUB_WHERE"
+for n in 1 2 3 4 5 6 7 8 9 10; do
+	c=fine; [ "$n" = 3 ] && c=PAIR1; [ "$n" = 8 ] && c=PAIR2
+	mk "lane/q$n" "lanes/q$n/f.txt" "$c"; train enqueue --tests "tq$n" >/dev/null 2>&1; back
+done
+train precheck-run >/dev/null 2>&1
+out="$(DQ_TRAIN_CYCLE_MAX_MIN=0 DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a prechecked batch takes more lanes than DQ_TRAIN_MAX_LANES" 'grep -q "heavy cycle: 10 lane(s)" <<<"$out"'
+check "its bisect ends in the same cycle despite the passed deadline: the interacting lane is bounced, nine land" 'grep -q "BOUNCED lane/q8" <<<"$out" && ! grep -q "bisect unfinished" <<<"$out" && for n in 1 2 3 4 5 6 7 9 10; do in_master "lane/q$n" || exit 1; done; ! in_master lane/q8'
+check "the halves ran at once in the second worktree" 'grep -q "halves in parallel" <<<"$out" && grep -q "parallel bisect: \[" "$DQ_TRAIN_STATE"/log/cycle-*.log && grep -q "^$tmp/wt2 " "$DQ_STUB_WHERE"'
+unset DQ_STUB_WHERE
+# no verdict after the wait limit (the prechecker is not running here): the lane rides the old way
+mk lane/pw lanes/pw/f.txt fine; train enqueue --tests "tpw" >/dev/null 2>&1; back
+out="$(DQ_TRAIN_PRECHECK_WAIT_MIN=0 DQ_TRAIN_ONCE=1 train run 2>&1)"
+check "a lane with no precheck verdict after the wait limit rides unprechecked" 'grep -q "they ride unprechecked" <<<"$out" && in_master lane/pw'
+export DQ_TRAIN_PRECHECK=0
+unset DQ_STUB_ARGS_LOG
+
+# ---- DreamChecker verdicts are keyed by what it reads (tools/dq_gate_verdicts.sh) ------------------------------------------------------
+git fetch -q origin; git switch -q --detach origin/master
+(
+	. tools/dq_gate_verdicts.sh
+	echo "fake dreamchecker" >"$tmp/dreamchecker.exe"; export DREAMCHECKER_EXE="$tmp/dreamchecker.exe"
+	mkdir -p code/engine/_generated; echo "// gen" >code/engine/_generated/g.dm; echo "code/engine/_generated/" >>.git/info/exclude
+	mkdir -p code doc; echo "/obj/a" >code/a.dm; echo d >doc/d.md; git add code/a.dm doc/d.md; git commit -q -m dc
+	k1="$(gate_dc_key)"
+	echo "more doc" >>doc/d.md; mkdir -p tools/x; echo s >tools/x/s.sh; git add -A doc tools/x; git commit -q -m "docs and tools only"
+	k2="$(gate_dc_key)"
+	echo "/obj/b" >>code/a.dm; git add code/a.dm; git commit -q -m "dm change"
+	k3="$(gate_dc_key)"
+	echo "// gen2" >code/engine/_generated/g.dm
+	k4="$(gate_dc_key)"
+	echo "fake dreamchecker v2" >"$tmp/dreamchecker.exe"
+	k5="$(gate_dc_key)"
+	gate_verdict_put dreamchecker "$k5" deadbeef
+	[ -n "$k1" ] && [ "$k1" = "$k2" ] && [ "$k2" != "$k3" ] && [ "$k3" != "$k4" ] && [ "$k4" != "$k5" ] && gate_verdict_has dreamchecker "$k5" >/dev/null && ! gate_verdict_has dreamchecker "$k4" >/dev/null
+) && dcok=1 || dcok=0
+check "the DreamChecker key ignores docs and tools, follows DM, generated DM and the binary; a pass is found by its key only" '[ "$dcok" = 1 ]'
+back
+
 # ---- the integrator updates itself from origin/master between cycles ---------------------------------------------------------------------
 # It runs from a snapshot ($STATE/self). Cases: a change to a snapshot script on master re-execs it (same pid, same lock, the new code runs,
 # the snapshot equals master's blobs, the queued lane still lands); a master whose dq_train.sh does not parse is refused loudly and the
@@ -304,5 +388,11 @@ cp -f "$su/self/dq_train.sh" "$tmp/su-before.sh"
 out="$(DQ_TRAIN_STATE="$su" DQ_TRAIN_ONCE=1 bash "$su/self/dq_train.sh" run 2>&1)"; rc=$?
 check "a master whose dq_train.sh does not parse is refused loudly" 'grep -q "SELF-UPDATE REFUSED" <<<"$out" && ! grep -q "changed on master; re-exec" <<<"$out"'
 check "the old copy keeps running, is not replaced, and still lands the lane" '[ "$rc" = 0 ] && cmp -s "$tmp/su-before.sh" "$su/self/dq_train.sh" && in_master lane/su2'
+# the integrator and the prechecker run the same snapshot: a process whose snapshot was refreshed by the other one re-execs into it
+git fetch -q origin; git switch -q --detach origin/master
+cp -f "$su/self/dq_train.sh" tools/dq_train.sh; git add -A; git commit -q -m "master: a dq_train.sh that parses again"; git push -q origin HEAD:refs/heads/master
+suenq lane/su3 su3
+out="$(DQ_TRAIN_TEST_SELF_SIG=stale DQ_TRAIN_STATE="$su" DQ_TRAIN_ONCE=1 bash "$su/self/dq_train.sh" run 2>&1)"; rc=$?
+check "a process whose snapshot another train process refreshed re-execs into it, once" '[ "$rc" = 0 ] && [ "$(grep -c "refreshed by another train process; re-exec" <<<"$out")" = 1 ] && in_master lane/su3'
 
 [ "$fail" = 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }

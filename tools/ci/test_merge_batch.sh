@@ -19,6 +19,7 @@ git config user.email t@t; git config user.name t
 mkdir -p tools
 cp "$here/tools/dq_gate_retry.sh" tools/
 cp "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" tools/
+cp "$here/tools/dq_dme_resolve.sh" tools/
 echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
 cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
@@ -27,6 +28,9 @@ echo "$*" >>"${DQ_STUB_ARGS:-/dev/null}"
 echo shrunk >>tools/ci/x_baseline.txt
 if [ -n "${DQ_STUB_USAGE_FAIL:-}" ] && grep -rq USAGEFAIL lanes 2>/dev/null; then . tools/dq_gate_retry.sh; echo x >"$DQ_STUB_ARGS.l"; gate_ensure_result "$DQ_STUB_ARGS.l" 2; exit 1; fi
 if grep -rq BAD lanes 2>/dev/null; then echo "stub gates: BAD present"; exit 1; fi
+# two lanes that are each fine alone but fail together (an interaction)
+if grep -rq PAIR1 lanes 2>/dev/null && grep -rq PAIR2 lanes 2>/dev/null; then echo "stub gates: PAIR1 and PAIR2 together"; exit 1; fi
+echo "$(pwd)" >>"${DQ_STUB_WHERE:-/dev/null}"
 git show HEAD:tools/ci/x_baseline.txt >tools/ci/x_baseline.txt
 echo "stub gates: ok"
 STUB
@@ -90,6 +94,54 @@ check "a bisect cut to one attempt per cycle still ends" '[ -z "$set_lanes" ] &&
 check "the bad lane is bounced, never deferred" 'case " $bounced_all " in *" m4 "*) true ;; *) false ;; esac && [ "$deferred_bad" = 0 ]'
 check "the five good lanes landed over the cycles" 'for n in 1 2 3 5 6; do git merge-base --is-ancestor "m$n" origin/master || exit 1; done; ! git merge-base --is-ancestor m4 origin/master'
 check "a later cycle resumed from saved verdicts" 'grep -q "resuming the bisect" "$tmp/cyc2.log"'
+
+# The parallel bisect (DQ_BATCH_WT2, a second worktree): both halves are gated at once; a culprit is found among six, and an interaction
+# (two lanes fine alone, failing together) bounces only the later one.
+git worktree add -q --detach "$tmp/wt2" origin/master
+export DQ_BATCH_WT2="$tmp/wt2" DQ_BATCH_PARALLEL_MIN_FREE_GB=0 DQ_STUB_WHERE="$tmp/where.log"
+: >"$DQ_STUB_WHERE"
+for n in 1 2 3 4 5 6; do if [ "$n" = 5 ]; then mk "p$n" "p$n.txt" BAD; else mk "p$n" "p$n.txt" fine; fi; done
+bash tools/dq_merge_batch.sh --lanes "p1,p2,p3,p4,p5,p6" >"$tmp/par.log" 2>&1; rc=$?
+check "the parallel bisect bounces only the bad lane" '[ "$rc" = 1 ] && grep -q "^BATCH_BOUNCED: p5|" "$tmp/par.log" && [ "$(grep -c "^BATCH_BOUNCED" "$tmp/par.log")" = 1 ] && grep -q "^BATCH_GOOD: .*p1" "$tmp/par.log" && for n in 1 2 3 4 6; do grep -q "^BATCH_GOOD: .*p$n" "$tmp/par.log" || exit 1; done'
+check "both halves ran at the same time, one in each worktree" 'grep -q "parallel bisect: \[" "$tmp/par.log" && grep -qxF "$tmp/wt2" "$DQ_STUB_WHERE" && grep -qvxF "$tmp/wt2" "$DQ_STUB_WHERE"'
+check "the branch holds the proved lanes in this worktree" 'for n in 1 2 3 4 6; do git merge-base --is-ancestor "p$n" rewrite/integ-current || exit 1; done; ! git merge-base --is-ancestor p5 rewrite/integ-current'
+mk x1 x1.txt PAIR1; mk y1 y1.txt fine; mk x2 x2.txt PAIR2
+bash tools/dq_merge_batch.sh --lanes "x1,y1,x2" >"$tmp/pair.log" 2>&1; rc=$?
+check "an interaction (two lanes fine alone) bounces the later lane only" '[ "$rc" = 1 ] && grep -q "^BATCH_BOUNCED: x2|" "$tmp/pair.log" && grep -q "^BATCH_GOOD: x1 y1$" "$tmp/pair.log"'
+out="$(DQ_BATCH_PARALLEL_MIN_FREE_GB=100000 bash tools/dq_merge_batch.sh --lanes "p1,p5" 2>&1)"
+check "with too little free RAM the bisect runs one attempt at a time" 'grep -q "one attempt at a time" <<<"$out" && grep -q "^BATCH_BOUNCED: p5|" <<<"$out" && ! grep -q "parallel bisect: \[" <<<"$out"'
+unset DQ_BATCH_WT2 DQ_STUB_WHERE
+
+# deepquarry.dme: a conflict in the manifest alone is resolved by merging the include sets (verified on disk), not bounced; a manifest
+# that names a file nobody has is still a conflict; a union merge that brings back an include one side deleted is repaired.
+git switch -q --detach origin/master
+mkdir -p code; for f in a b c; do echo "// $f" >"code/$f.dm"; done
+printf '#include "code\\a.dm"\n#include "code\\b.dm"\n' >deepquarry.dme
+git add -A; git commit -q -m "dme base"; git push -q origin HEAD:master; git fetch -q origin
+git switch -q -c dme1 origin/master; echo "// n1" >code/n1.dm; printf '#include "code\\n1.dm"\n' >>deepquarry.dme; git add -A; git commit -q -m dme1
+git switch -q --detach origin/master
+git switch -q -c dme2 origin/master; echo "// n2" >code/n2.dm; printf '#include "code\\n2.dm"\n' >>deepquarry.dme; git add -A; git commit -q -m dme2
+git switch -q --detach origin/master
+git switch -q -c dme3 origin/master; printf '#include "code\\ghost.dm"\n' >>deepquarry.dme; git add -A; git commit -q -m dme3
+git switch -q --detach origin/master
+bash tools/dq_merge_batch.sh --lanes "dme1,dme2" >"$tmp/dme.log" 2>&1; rc=$?
+check "a deepquarry.dme-only conflict is resolved by the include-set merge, nobody bounced" '[ "$rc" = 0 ] && grep -q "^BATCH_GOOD: dme1 dme2" "$tmp/dme.log" && git show rewrite/integ-current:deepquarry.dme | grep -qF "n1.dm" && git show rewrite/integ-current:deepquarry.dme | grep -qF "n2.dm" && grep -q "resolved a deepquarry.dme-only conflict" data/merge-batch/*.log'
+bash tools/dq_merge_batch.sh --lanes "dme1,dme3" >"$tmp/dme3.log" 2>&1; rc=$?
+check "a manifest naming a file that is not on disk stays a conflict and is bounced" '[ "$rc" = 1 ] && grep -q "^BATCH_BOUNCED: dme3|merge conflict" "$tmp/dme3.log" && grep -q "^BATCH_GOOD: dme1$" "$tmp/dme3.log"'
+. tools/dq_dme_resolve.sh
+printf 'A\nB\nC\n' >"$tmp/b"; printf 'A\nC\nX\n' >"$tmp/o"; printf 'A\nB\nT\nC\n' >"$tmp/t"
+dme_merge3 "$tmp/b" "$tmp/o" "$tmp/t" "$tmp/r"
+check "dme_merge3 keeps both sides' additions and both sides' removals" '[ "$(tr "\n" " " <"$tmp/r")" = "A T C X " ]'
+# union: master moves a.dm to moved.dm (its line deleted, a new one appended); a lane adds a line right after a.dm's line
+echo 'deepquarry.dme merge=union' >.git/info/attributes
+git switch -q -c dmeL origin/master; echo "// z" >code/z.dm
+awk '{print} /a\.dm/ {print "#include \"code\\\\z.dm\""}' deepquarry.dme >"$tmp/d" && cat "$tmp/d" >deepquarry.dme; git add -A; git commit -q -m dmeL
+git switch -q --detach origin/master
+git mv code/a.dm code/moved.dm; awk '!/a\.dm/ {print} /b\.dm/ {print "#include \"code\\\\c.dm\""}' deepquarry.dme >"$tmp/d" && cat "$tmp/d" >deepquarry.dme
+printf '#include "code\\moved.dm"\n' >>deepquarry.dme; git add -A; git commit -q -m "master moves a.dm"; git push -q origin HEAD:master; git fetch -q origin
+bash tools/dq_merge_batch.sh --lanes "dmeL" >"$tmp/dmeu.log" 2>&1; rc=$?
+check "an include the union merge brought back for a deleted file is dropped" '[ "$rc" = 0 ] && ! git show rewrite/integ-current:deepquarry.dme | grep -qF "code\\a.dm" && git show rewrite/integ-current:deepquarry.dme | grep -qF "z.dm" && git show rewrite/integ-current:deepquarry.dme | grep -qF "moved.dm"'
+rm -f .git/info/attributes
 
 # the proof cache
 . tools/dq_proof_cache.sh
