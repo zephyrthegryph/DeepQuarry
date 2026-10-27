@@ -934,3 +934,6 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
 - **Queue files are written whole.** Every change to a queue file holds `queue.lock` and replaces the file by rename; an edit to a file a
   bounce removed is dropped, never appended into a new one (an append left `perf/refresh-timer` queued with no tip, tests or enqueue time).
   A malformed entry (no seq, branch or tip) is moved to `malformed/`, logged, listed by `status`, and never gated.
+- **A compiler lane's light precheck publishes its compiler.** When a light precheck's merge changes `tools/dmb`, it also runs
+  `build.sh dmbc` (content-addressed), so the heavy gate after the lane lands finds the compiler instead of rebuilding it for 3-4
+  minutes (`prebuild-compiler` 180-273 s in four of the slow cycles on 27 October). `DQ_GATE_LIGHT_PREBUILD=0` turns it off.
