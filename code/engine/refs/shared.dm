@@ -34,11 +34,6 @@
 
 // ---------------------------------------------------------------- DEF freeze (test builds)
 
-#ifdef UNIT_TESTS
-/// "type ref" -> hash of the instance's vars at boot.
-GLOBAL_LIST_EMPTY(def_freeze_snapshot)
-#endif
-
 /// D's vars as name -> stable text digest (lists by content, datums by type and ref).
 /proc/def_freeze_digest(datum/D)
 	. = list()
@@ -74,29 +69,3 @@ GLOBAL_LIST_EMPTY(def_freeze_snapshot)
 			var/datum/D = isdatum(key) ? key : instances[key]
 			if(isdatum(D))
 				. |= D
-
-/// Boot (test builds): digest every registered instance.
-/proc/def_freeze_snapshot()
-	#ifdef UNIT_TESTS
-	GLOB.def_freeze_snapshot = list()
-	for(var/datum/D as anything in def_freeze_instances())
-		GLOB.def_freeze_snapshot["[D.type] [ref(D)]"] = def_freeze_digest(D)
-	#endif
-
-/// Test end: every registered instance whose vars changed since boot, as report lines.
-/proc/def_freeze_verify()
-	. = list()
-	#ifdef UNIT_TESTS
-	for(var/datum/D as anything in def_freeze_instances())
-		var/key = "[D.type] [ref(D)]"
-		var/list/old = GLOB.def_freeze_snapshot[key]
-		if(!islist(old))
-			continue
-		var/list/now = def_freeze_digest(D)
-		var/list/changed = list()
-		for(var/name in now)
-			if(old[name] != now[name])
-				changed += name
-		if(length(changed))
-			. += "DEF FROZEN: [D.type] ([ref(D)]) was written after boot: [jointext(changed, ", ")]"
-	#endif

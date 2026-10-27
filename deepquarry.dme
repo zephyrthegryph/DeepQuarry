@@ -2170,7 +2170,6 @@
 #include "code\controllers\measure\histogram.dm"
 #include "code\controllers\measure\meter.dm"
 #include "code\controllers\measure\report.dm"
-#include "code\controllers\measure\synthetic.dm"
 #include "code\controllers\measure\systems.dm"
 #include "code\controllers\observer_listener\atom\observer.dm"
 #include "code\controllers\subsystems\access.dm"
@@ -5901,4 +5900,6 @@
 #include "code\engine\_generated\auto_tracked.dm"
 #include "code\engine\_generated\tracked_lists.dm"
 #include "code\_generated\reads.dm"
+#include "code\tests\engine\test_only_defs.dm"
+#include "code\modules\unit_tests\_test_build_overrides.dm"
 // END_INCLUDE

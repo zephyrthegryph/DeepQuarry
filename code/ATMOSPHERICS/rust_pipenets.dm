@@ -461,15 +461,6 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /obj/machinery/atmospherics/proc/rust_device_stepped(moles, power_w, target_reached)
 	return
 
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-/// Test hook: steps every pipe device now, as a frame does once a period, and delivers their reports.
-/datum/system/air/proc/rust_step_pipe_devices()
-	if(!rust_pipe_device_count)
-		return
-	vg_frame_force_devices()
-	native_system().drain()
-#endif
-
 /// Publish the complete map topology once, then materialize all compatibility
 /// `/datum/pipe_network` wrappers from Rust's atomic connected-region result.
 /datum/system/air/proc/setup_rust_pipenets()
