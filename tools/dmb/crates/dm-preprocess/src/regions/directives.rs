@@ -334,6 +334,9 @@ struct DirectivePass<'a, P> {
     /// How the current macro environment differs from the previous pass's at the same point: the bindings a subtree
     /// adopted from that pass must take on (`adopt_previous_inner`). Empty while the two agree.
     delta: super::environment::EnvDelta,
+    /// Environments rebased under the current delta, by the environment they were made from: consecutive segments
+    /// share one environment, and so do their rebased copies (a persistent map per segment would cost a path copy each).
+    rebased: Vec<(MacroEnvironment, MacroEnvironment)>,
     trace: Vec<TraceEntry>,
     /// For every region created so far: the previous plan's region it copies, if any.
     region_map: Vec<Option<usize>>,
@@ -367,6 +370,7 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
             dependency_log: Vec::new(),
             tested_log: std::cell::RefCell::new(Vec::new()),
             delta: Default::default(),
+            rebased: Vec::new(),
             trace: Vec::new(),
             region_map: Vec::new(),
             reuse: PlanReuse::default(),
@@ -825,6 +829,18 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
 
     /// Whether the current environment is the previous pass's `before` plus the carried delta, updating the delta when
     /// it is not (a subtree that ran again changed what differs). At most a few dozen bindings may differ.
+    /// `environment` with the current delta applied, shared with every earlier rebase of the same environment.
+    fn rebase(&mut self, environment: &MacroEnvironment) -> MacroEnvironment {
+        if let Some((_, rebased)) = self.rebased.iter().find(|(from, _)| from.shares_storage_with(environment)) {
+            return rebased.clone();
+        }
+        let rebased = environment.apply(&self.delta);
+        if self.rebased.len() >= 16 {
+            self.rebased.remove(0);
+        }
+        self.rebased.push((environment.clone(), rebased.clone()));
+        rebased
+    }
     fn carried_delta(&mut self, current: &MacroEnvironment, before: &MacroEnvironment) -> bool {
         const LIMIT: usize = 64;
         if self.delta.is_empty() && current.same_bindings(before) {
@@ -836,6 +852,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         match current.delta_from(before, LIMIT) {
             Some(delta) => {
                 self.delta = delta;
+                self.rebased.clear();
                 true
             }
             None => false,
@@ -987,7 +1004,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         .iter()
                         .map(|segment| ExpansionSegment {
                             lines: segment.lines.clone(),
-                            macros: segment.macros.apply(&self.delta),
+                            macros: self.rebase(&segment.macros),
                         })
                         .collect(),
                 );
@@ -1019,26 +1036,27 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         }
         self.restore(&record.state_out);
         if rebase {
-            self.environment = self.environment.apply(&self.delta);
+            self.environment = self.rebase(&self.environment.clone());
             self.reuse.rebased_subtrees += 1;
         }
         self.tested_log.borrow_mut().extend(record.tested.iter().cloned());
         // Carry the subtree's records forward, renumbered, for the next pass.
         for carried in trace.within(entry.occurrence, record.occurrences) {
+            // A rebased subtree's records describe its regions as copied: the carried bindings are theirs too.
+            let carried_record = if rebase {
+                let mut rebased = (*carried.record).clone();
+                rebased.state_in.environment = self.rebase(&rebased.state_in.environment);
+                rebased.state_out.environment = self.rebase(&rebased.state_out.environment);
+                Arc::new(rebased)
+            } else {
+                Arc::clone(&carried.record)
+            };
             self.trace.push(TraceEntry {
                 key: carried.key,
                 occurrence: shift(carried.occurrence, occ_delta),
                 region: shift(carried.region, region_delta),
                 item: shift(carried.item, item_delta),
-                // A rebased subtree's records describe its regions as copied: the carried bindings are theirs too.
-                record: if rebase {
-                    let mut rebased = (*carried.record).clone();
-                    rebased.state_in.environment = rebased.state_in.environment.apply(&self.delta);
-                    rebased.state_out.environment = rebased.state_out.environment.apply(&self.delta);
-                    Arc::new(rebased)
-                } else {
-                    Arc::clone(&carried.record)
-                },
+                record: carried_record,
             });
         }
         self.reuse.subtrees += 1;
