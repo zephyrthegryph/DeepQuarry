@@ -3,6 +3,7 @@
 use super::*;
 pub(super) fn one_shot(
     policy: u128,
+    facts_policy: u128,
     disk: Option<Arc<disk::LazyDisk>>,
     publishable: bool,
     engine: Option<&Arc<RetainedEngine>>,
@@ -37,7 +38,7 @@ pub(super) fn one_shot(
         let transport = crate::initializer_lowering::disk::Transport::new(
             Arc::clone(&disk),
             owner.clone(),
-            policy,
+            facts_policy,
             publishable,
             None,
         );

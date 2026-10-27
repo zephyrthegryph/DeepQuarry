@@ -174,7 +174,8 @@ pub(crate) fn lower_with_memo<R: Resolver>(
             line_starts: &lines[atom.map],
             source_length: map.captured.source.len(),
             entry,
-            ops: frontend.plan.final_macros.contains_key("DEBUG"),
+            // Always emitted; stripped at link without DEBUG (`symbolic::debug_strip`).
+            ops: true,
             collector: RefCell::new(DebugOriginCollector::default()),
             offsets: RefCell::new(Vec::new()),
         };

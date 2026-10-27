@@ -28,8 +28,8 @@ pub(super) fn plan_incremental<P: SourceProvider>(
     previous: Option<&DirectivePlan>,
 ) -> (DirectivePlan, PlanReuse) {
     let previous = previous.filter(|previous| previous.trace.is_some());
-    // Only the include subtrees whose files changed run again, when the provider can say which.
-    if let Some(previous) = previous {
+    // Only the include subtrees whose files changed run again, when the provider can say which (same defines only).
+    if let Some(previous) = previous.filter(|previous| &previous.defines == defines) {
         if let Some(patched) = patch::patch(provider, memo, previous) {
             return patched;
         }
@@ -40,6 +40,7 @@ pub(super) fn plan_incremental<P: SourceProvider>(
         previous,
         canonical_path(project.parent().unwrap_or(Path::new(""))),
     );
+    pass.plan.defines = defines.clone();
     for (name, replacement) in [
         ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
         ("REGEX_QUOTE", "regex(message, 1)"),

@@ -476,7 +476,7 @@ fn run_build_attempt(
                 as Arc<dmbc::lowering_memo::CachePublisher>
         });
     let procedure_memo = host
-        .procedure_memo(memo_policy, cache_snapshot.clone(), publishable_artifacts)
+        .procedure_memo(memo_policy, facts_policy, cache_snapshot.clone(), publishable_artifacts)
         .map(|memo| {
             let memo = memo.with_explanation_limit(131072).with_facts_policy(facts_policy);
             match &cache_publisher {

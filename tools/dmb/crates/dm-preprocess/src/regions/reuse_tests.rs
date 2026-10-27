@@ -475,3 +475,21 @@ fn a_new_macro_used_in_adopted_text_expands_that_text_again() {
     let stats = defined.expansion.expect("expansion reuses what it can");
     assert!(stats.expanded >= 1, "{stats:?}");
 }
+
+#[test]
+fn a_plan_of_other_defines_is_a_base_for_the_ordered_pass_and_never_for_the_patch() {
+    let memo = Memo::default();
+    let zero = first(&defaults(), &memo);
+    // Same files, one more define (a unit-test world beside the game world): only c.dm reads N in a directive, and the
+    // new define is read by nothing, so every subtree but the manifest's own lines is adopted.
+    let provider = Prepared::new(&defaults(), Some(&zero.provider));
+    let defines: BTreeMap<String, String> = [("UNIT_TESTS".to_string(), "1".to_string())].into();
+    let full = plan_regions_with_memo(Path::new("project.dme"), &provider, &defines, &memo);
+    let (plan, reuse) =
+        plan_regions_incremental(Path::new("project.dme"), &provider, &defines, Some(&memo), Some(&zero.plan));
+    plans_equal(&plan, &full).unwrap_or_else(|why| panic!("plan {why}"));
+    assert_eq!(reuse.replanned, 0, "no changed file, but other defines: never the patch");
+    assert_eq!(reuse.subtrees, 4, "{reuse:?}");
+    assert_eq!(reuse.rebased_subtrees, 4, "{reuse:?}");
+    assert_eq!(plan.defines, defines);
+}

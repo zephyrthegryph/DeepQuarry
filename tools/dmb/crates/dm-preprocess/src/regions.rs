@@ -195,6 +195,9 @@ pub struct DirectivePlan {
     pub trace: Option<Arc<plan_trace::PlanTrace>>,
     /// The provider's input revision this plan was made at (`SourceProvider::revision`).
     pub input_revision: Option<u64>,
+    /// The caller's defines the plan was made with. A plan of other defines is a base for the ordered pass (it adopts
+    /// the subtrees that read none of the differing macros), never for the changed-files patch.
+    pub defines: BTreeMap<String, String>,
 }
 
 /// Sequentially interpret directives. Actual text expansion is a separate,

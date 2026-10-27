@@ -194,7 +194,7 @@ mod tests {
         let mut host = BuildHost::default();
         host.executor = Some(dm_exec::BuildExecutor::new_unbound(1).unwrap());
         let prepared = host.prepared_sources().unwrap();
-        let first = host.procedure_memo(4, None, true).unwrap();
+        let first = host.procedure_memo(4, 4, None, true).unwrap();
         let facts = host.host_facts().unwrap();
         let weak_facts = Arc::downgrade(&facts);
         drop(facts);
@@ -205,7 +205,7 @@ mod tests {
         assert!(host.executor.is_none());
         assert!(weak_generation.upgrade().is_some());
         assert!(weak_facts.upgrade().is_some());
-        let second = host.procedure_memo(4, None, true).unwrap();
+        let second = host.procedure_memo(4, 4, None, true).unwrap();
         assert!(Arc::ptr_eq(&first.values, &second.values));
         let symbolic_owner = Arc::clone(&host.symbolic.as_ref().unwrap().1);
         let initializer_owner = Arc::clone(&host.initializers.as_ref().unwrap().1);
@@ -214,7 +214,7 @@ mod tests {
         host.release_idle_artifacts();
         assert!(weak_generation.upgrade().is_some());
         assert!(weak_facts.upgrade().is_some());
-        let next = host.procedure_memo(4, None, true).unwrap();
+        let next = host.procedure_memo(4, 4, None, true).unwrap();
         assert!(!Arc::ptr_eq(&first.values, &next.values));
         assert!(Arc::ptr_eq(
             &symbolic_owner,

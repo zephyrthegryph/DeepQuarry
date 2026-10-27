@@ -44,13 +44,23 @@ impl RetainedSemanticTree {
                 .replace((project.to_path_buf(), defines.clone(), revision)),
         );
     }
+    /// The base frontend of the next request of `project`: the last one this state published, or the one it was seeded
+    /// with (`seed_previous_frontend`). Its defines may differ: the plan then adopts the include subtrees that read none
+    /// of the differing macros.
     pub(super) fn previous_frontend(
         &self,
         project: &std::path::Path,
-        defines: &std::collections::BTreeMap<String, String>,
+        _defines: &std::collections::BTreeMap<String, String>,
     ) -> Option<super::FrontendRevision> {
-        let (path, remembered, revision) = self.previous.as_ref()?;
-        (path == project && remembered == defines).then(|| revision.clone())
+        let (path, _, revision) = self.previous.as_ref()?;
+        (path == project).then(|| revision.clone())
+    }
+    /// Start a state that has no frontend of its own from `other`'s last one: a new define variant of a session (the
+    /// unit-test world beside the game world) is then planned and expanded as an increment over it.
+    pub fn seed_previous_frontend(&mut self, other: &Self) {
+        if self.previous.is_none() {
+            self.previous = other.previous.clone();
+        }
     }
     /// Stage source-neutral declaration claims for this request, independently
     /// of the current semantic/query tree. Dropping the guard aborts claims.
