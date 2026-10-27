@@ -417,11 +417,9 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
    next request proves them too (before, a slot first asked after the mark was never compared). Appended-callable outputs
    are marked like any other (they were retained without marks). A decline on the answer world now says whether the
    world or the resource searches differ, and each request logs `native answer world: tree=... world=...`.
-   Finding (not fixed): a body edit right after an appended-callable edit can still compile whole, "world differs": the
-   frontend splices one dirty declaration row on that body edit (`DMB_SPLICE_VERIFY=1`: "tree splice dirty=1 ... verified
-   equal") although no declaration changed, so the tree identity of the appended tree and of the next tree differ. The
-   appended member's row is recomputed differently on the request after the one that added it; making that row final
-   when it is added is the fix (dm-tree declaration contributions).
+   A body edit after an append builds on it. (A measurement script that re-appended an edited proc at the end of its
+   file moved that declaration after the appended one: the declaration order changed, the tree identity and answer
+   world with it, and the edit correctly compiled whole.)
 
 
 ## Persisted dependency index, step 2 (2026-10-24, lane `compiler/dep-index`)
