@@ -1,27 +1,8 @@
-//! Current immutable field observations issue symbolic reachability requests.
-//! Encounter placement stays request-local; source-bearing defaults decline.
+//! The symbolic reachability requests a field issues (its owners and the types its default names). Computed for every
+//! field of every request: a few pushes, cheaper than any stored lookup keyed by the field.
 use crate::class_projection::{FieldProjection, FieldRole};
-use crate::initializer_lowering::receipts::publication_store::PublicationStore as ObservedArtifactStore;
 use crate::initializer_policy::DefaultValue;
 use dm_ir::{SemanticValue, SymbolId};
-use dm_session::{Observation, ObservationHost};
-use std::sync::Arc;
-pub(crate) struct FieldRequests {
-    values: ObservedArtifactStore<Vec<SymbolId>, (), Arc<FieldProjection>, ()>,
-}
-impl Default for FieldRequests {
-    fn default() -> Self {
-        Self {
-            values: ObservedArtifactStore::shared_current_revision("required_types.field_requests"),
-        }
-    }
-}
-struct Current<'a>(&'a Arc<FieldProjection>);
-impl ObservationHost<(), Arc<FieldProjection>, ()> for Current<'_> {
-    fn answer(&self, _: &()) -> Arc<FieldProjection> {
-        Arc::clone(self.0)
-    }
-}
 fn values(value: &SemanticValue, requests: &mut Vec<SymbolId>) -> bool {
     match value {
         SemanticValue::Type(path)
@@ -70,66 +51,10 @@ pub(super) fn produce(field: &FieldProjection, requests: &mut Vec<SymbolId>) -> 
         _ => true,
     }
 }
-fn key(index: usize) -> Vec<u8> {
-    let mut key = b"dmbc-required-field-requests-v1\0".to_vec();
-    key.extend_from_slice(&(index as u64).to_le_bytes());
-    key
-}
-impl FieldRequests {
-    pub(crate) fn for_request(&self, publishable: bool) -> Self {
-        Self {
-            values: self.values.for_request(publishable),
-        }
-    }
-    pub(crate) fn publish_successful(&self) -> bool {
-        self.values.publish_successful()
-    }
-
-    pub(super) fn clear(&self) {
-        self.values.retain_current_keys(std::iter::empty::<&[u8]>());
-    }
-    pub(crate) fn visit_storage(
-        &self,
-        visitor: impl FnMut(
-            dm_session::ObservedArtifactStorageView<'_, Vec<SymbolId>, (), Arc<FieldProjection>, ()>,
-        ),
-    ) {
-        self.values.visit_storage(visitor);
-    }
-    pub(super) fn append(&self, fields: &[Arc<FieldProjection>], requests: &mut Vec<SymbolId>) {
-        let mut keys = Vec::with_capacity(fields.len());
-        for (index, field) in fields.iter().enumerate() {
-            let key = key(index);
-            if let Some(value) = self.values.lookup(&key, &Current(field)) {
-                keys.push(key);
-                requests.extend_from_slice(&value);
-                continue;
-            }
-            let mut value = Vec::new();
-            let retainable = produce(field, &mut value);
-            requests.extend_from_slice(&value);
-            if retainable {
-                keys.push(key.clone());
-                self.values.insert_with(
-                    key.into(),
-                    vec![Observation {
-                        domain: (),
-                        query: (),
-                        answer: Arc::clone(field),
-                    }],
-                    0,
-                    || value,
-                );
-            }
-        }
-        self.values
-            .retain_current_keys(keys.iter().map(Vec::as_slice));
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
     fn field(owner: &str, value: SemanticValue) -> Arc<FieldProjection> {
         Arc::new(FieldProjection {
             owner: SymbolId::of(owner),
@@ -181,8 +106,7 @@ mod tests {
         out
     }
     #[test]
-    fn current_fields_revalidate_reorder_prune_and_preserve_nested_value_encounter_order() {
-        let store = FieldRequests::default();
+    fn produce_matches_the_reference_order_including_nested_values_and_the_savefile_header() {
         let nested = SemanticValue::List(Arc::from([
             (
                 Some(SemanticValue::Type(SymbolId::of("/datum/key"))),
@@ -198,40 +122,10 @@ mod tests {
         header.role = FieldRole::Assignment;
         header.intrinsic = true;
         let fields = vec![field("/datum/a", nested), Arc::new(header)];
-        let run = |fields: &[Arc<FieldProjection>]| {
-            let mut actual = Vec::new();
-            store.append(fields, &mut actual);
-            assert_eq!(actual, legacy(fields));
-        };
-        run(&fields);
-        // Different Arc owners with equal immutable contents must also admit.
-        run(&fields
-            .iter()
-            .map(|field| Arc::new((**field).clone()))
-            .collect::<Vec<_>>());
-        let mut changed = fields.clone();
-        changed[0] = field(
-            "/datum/a",
-            SemanticValue::Type(SymbolId::of("/datum/changed")),
-        );
-        run(&changed);
-        changed.reverse();
-        run(&changed);
-        run(&changed[..1]);
-        let mut count = 0;
-        store.visit_storage(|view| {
-            if matches!(view, dm_session::ObservedArtifactStorageView::Entry { .. }) {
-                count += 1;
-            }
-        });
-        assert_eq!(count, 1);
-        run(&[]);
-        let mut count = 0;
-        store.visit_storage(|view| {
-            if matches!(view, dm_session::ObservedArtifactStorageView::Entry { .. }) {
-                count += 1;
-            }
-        });
-        assert_eq!(count, 0);
+        let mut actual = Vec::new();
+        for field in &fields {
+            produce(field, &mut actual);
+        }
+        assert_eq!(actual, legacy(&fields));
     }
 }
