@@ -40,7 +40,7 @@
 		return DQ_BEHAVIOR_FAILED
 	if(!brain.perform_attack_op(SM, target, "mob_attacks.shoot"))
 		return DQ_BEHAVIOR_FAILED
-	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
+	STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // --- Aimed shot (granted by held guns) --------------------------------------
@@ -87,5 +87,5 @@
 	if(!owner || !istype(G))
 		return DQ_BEHAVIOR_FAILED
 	brain.perform_attack_op(owner, target, "mob_attacks.fire", G)
-	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
+	STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE

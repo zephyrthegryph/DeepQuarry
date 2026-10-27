@@ -7,7 +7,7 @@
 // requests, and the UI-type generator, which prints schema_range_text().
 //
 // The kinds are written bool(), int(min, max), num(min, max, step), enum(list), flags(list), schema_text(max_len, sanitize =), schema_ref(type),
-// schema_path(type), list_of(schema), map_of(key, value) and row(type). BYOND owns the names text() and path(), so those two are spelled
+// schema_path(type), schema_msg(), list_of(schema), map_of(key, value) and row(type). BYOND owns the names text() and path(), so those two are spelled
 // schema_text() and schema_path().
 
 
@@ -125,6 +125,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/schema)
 	S.type_of = type
 	S.on_invalid = ON_INVALID_REJECT
 	schema_default(S, default)
+	return S
+
+/// A refusal reason: null, or a /datum/msg type path (MSG(cover/closed)), or a msg_text() list for text only known at run time.
+/proc/schema_msg()
+	var/datum/schema/S = new
+	S.kind = SCHEMA_MSG
+	S.type_of = /datum/msg
+	S.on_invalid = ON_INVALID_REJECT
 	return S
 
 /// A list whose members have the given schema.
@@ -318,6 +326,14 @@ PROC_SUMMARY(/proc/schema_check) // vars[] / call() dispatcher: the walk cannot 
 			if(ispath(value) && (!S.type_of || ispath(value, S.type_of)))
 				return list(value, null)
 			return list(SCHEMA_REJECT, "[value] is not a path under [S.type_of]")
+		if(SCHEMA_MSG)
+			if(isnull(value) || (ispath(value) && ispath(value, /datum/msg)))
+				return list(value, null)
+			if(islist(value))
+				var/list/text_msg = value
+				if(length(text_msg) && text_msg[1] == "msg_text")
+					return list(value, null)
+			return list(SCHEMA_REJECT, "[value] is not a message path under /datum/msg")
 		if(SCHEMA_ROW)
 			if(isdatum(value) && (!S.type_of || istype(value, S.type_of)))
 				return list(value, null)

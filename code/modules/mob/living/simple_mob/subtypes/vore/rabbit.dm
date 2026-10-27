@@ -28,9 +28,7 @@
 
 	movement_cooldown = 0
 
-	say_list_type = /datum/say_list/rabbit
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	// Vore vars
 	vore_active = 1
@@ -48,7 +46,8 @@
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
 CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
-	configure(butchery_rules(meat_amount = 3))
+	configure(living_rules(say_list_type = /datum/say_list/rabbit))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 3))
 	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = not(nameof(body_color)))
 	look_from(nameof(body_color), state = "rabbit_*", item = "rabbit_*", living = "rabbit_*", dead = "rabbit_*_dead", rest = "rabbit_*_rest")
 
@@ -80,7 +79,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
 
 	if(stance == I_HELP) // only patpet on help. :p
 		grumpiness = CLAMP(grumpiness + rand(5, 10), 0, 120)
-		EXPIRY_STAMP(src, last_pet, CLOCK_WORLD)
+		STAMP(src, last_pet, CLOCK_WORLD)
 
 	if(grumpiness > 90) // Annoyed bunbun :U
 		var/pounce_chance = CanPounceTarget(user)
@@ -155,9 +154,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
 
 	body_color = "killer" // Set this so New() doesn't try to randomize us.
 
-	say_list_type = /datum/say_list/rabbit
 
 CAPABILITIES(/mob/living/simple_mob/vore/rabbit/killer)
+	configure(living_rules(say_list_type = /datum/say_list/rabbit))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_gib))))
 
 /mob/living/simple_mob/vore/rabbit/killer/proc/blast_gib(datum/act/A)

@@ -15,7 +15,7 @@
 	// Damage taken below this is transferred back to the mob on release; this is NOT
 	// max_integrity, because a wounded mob petrifies into an already-weakened statue.
 	var/original_int = 100
-	var/stored_examine
+	var/list/stored_examine
 	var/identifier = "statue"
 	var/material = "stone"
 	var/adjective = "hardens"
@@ -97,7 +97,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	name = "[identifier] of [H.name]"
 	desc = "A very lifelike [identifier] made of [material]."
 	stored_examine = H.examine(H)
-	description_fluff = H.get_description_fluff()
+	set_description_fluff(H.get_description_fluff())
 
 	if(H?.buckled_to())
 		var/atom/movable/_tmp_buck_10 = H?.buckled_to()

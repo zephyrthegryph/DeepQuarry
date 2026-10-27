@@ -314,7 +314,7 @@
 		if("radiation")
 			return radiation
 		if("accumulated_rads")
-			return accumulated_rads
+			return accumulated_rads()
 		if("temp_above")
 			// Kelvin above the species' normal body temperature.
 			return max(0, body_temperature() - dq_normal_body_temperature())

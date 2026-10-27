@@ -58,8 +58,11 @@ CAPABILITIES(/datum/progressbar)
 	rel_set(src, nameof(user), User)
 
 	var/mob/bar_user = user
-	LAZYADDASSOCLIST(bar_user.progressbars, bar_loc, src)
-	var/list/bars = bar_user.progressbars[bar_loc]
+	var/list/user_bars = sparse_get(bar_user, progressbars)
+	if(!user_bars)
+		user_bars = sparse_set(bar_user, progressbars, list())
+	LAZYADDASSOCLIST(user_bars, bar_loc, src)
+	var/list/bars = user_bars[bar_loc]
 	listindex = bars.len
 
 	if(user().client)
@@ -78,7 +81,7 @@ CAPABILITIES(/datum/progressbar)
 /datum/progressbar/lifecycle_unbind()
 	var/mob/user = user()
 	if(user)
-		for(var/pb in user.progressbars?[bar_loc])
+		for(var/pb in sparse_get(user, progressbars)?[bar_loc])
 			var/datum/progressbar/progress_bar = pb
 			if(progress_bar == src || progress_bar.listindex <= listindex)
 				continue
@@ -88,7 +91,10 @@ CAPABILITIES(/datum/progressbar)
 			var/dist_to_travel = ICON_SIZE_Y + offset_y + (PROGRESSBAR_HEIGHT * (progress_bar.listindex - 1)) - PROGRESSBAR_HEIGHT
 			animate(progress_bar.bar, pixel_z = dist_to_travel, time = PROGRESSBAR_ANIMATION_TIME, easing = SINE_EASING)
 
-		LAZYREMOVEASSOC(user.progressbars, bar_loc, src)
+		var/list/user_bars = sparse_get(user, progressbars)
+		LAZYREMOVEASSOC(user_bars, bar_loc, src)
+		if(!user_bars)
+			sparse_set(user, progressbars, null)
 
 	if(user_client())
 		clean_user_client()
@@ -100,7 +106,7 @@ CAPABILITIES(/datum/progressbar)
 	var/datum/source = A.target
 
 	var/mob/dying_user = source
-	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
+	sparse_set(dying_user, progressbars, null) //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
 	rel_clear(src, nameof(user))
 	ended_with(src)
 
@@ -143,7 +149,7 @@ CAPABILITIES(/datum/progressbar)
 
 /// Fills the bar over `duration` deciseconds as a client-side animation: no server updates.
 /datum/progressbar/animate_fill(duration)
-	EXPIRY_STAMP(src, fill_started, CLOCK_WORLD)
+	STAMP(src, fill_started, CLOCK_WORLD)
 	fill_duration = max(duration, 1)
 	var/step_time = fill_duration / 20
 	animate(bar, icon_state = "prog_bar_5", time = step_time, flags = ANIMATION_PARALLEL)

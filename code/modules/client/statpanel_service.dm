@@ -121,22 +121,23 @@ SYSTEM_DEF(statpanels)
 
 /datum/system/statpanels/proc/update_misc_tabs(client/target,mob/target_mob)
 	target_mob.update_misc_tabs()
-	for(var/tab in target_mob.misc_tabs)
-		if(length(target_mob.misc_tabs[tab]) == 0 && (tab in target.misc_tabs))
+	var/list/mob_tabs = sparse_get(target_mob, misc_tabs)
+	for(var/tab in mob_tabs)
+		if(length(mob_tabs[tab]) == 0 && (tab in target.misc_tabs))
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
 
-		if(length(target_mob.misc_tabs[tab]) > 0)
+		if(length(mob_tabs[tab]) > 0)
 			if(!(tab in target.misc_tabs))
 				target.misc_tabs += tab
 				target.stat_panel.send_message("create_misc",tab)
 			target.stat_panel.send_message("update_misc",list(
 				TN = tab, \
-				TC = target_mob.misc_tabs[tab], \
+				TC = mob_tabs[tab], \
 			))
 
 	for(var/tab in target.misc_tabs)
-		if(!(tab in target_mob.misc_tabs))
+		if(!(tab in mob_tabs))
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
 
@@ -157,7 +158,7 @@ SYSTEM_DEF(statpanels)
 		generate_mc_data()
 	if(!mc_metrics || !BEFORE(src, mc_metrics_generated_at + 5 SECONDS, CLOCK_WORLD))
 		mc_metrics = generate_mc_metrics()
-		EXPIRY_STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
+		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
 	target.stat_panel.send_message("update_mc", list(
 		"mc_data" = mc_data,
 		"mc_metrics" = mc_metrics,
@@ -181,7 +182,7 @@ SYSTEM_DEF(statpanels)
 			"overrun" = S.tick_overrun,
 			"cost" = S.fire_cost,
 			"fires" = S.times_fired,
-			"ref" = REF(S),
+			"ref" = ref_token(S),
 		))
 	return list(
 		"tick_budget_ms" = world.tick_lag * 100,

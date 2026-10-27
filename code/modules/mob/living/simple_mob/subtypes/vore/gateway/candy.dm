@@ -32,12 +32,12 @@
 	damage_fatigue_mult = 0 //Candy creatures. They will fight to the bitter end unaffected by their wounds. Also they have 25 health, do they really need slowdown?
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy)
+	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/vore/candy
 	vore_active = 1
-	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
 	vore_min_size = RESIZE_SMALL
 	vore_pounce_chance = 0 // Beat them into crit before eating.
@@ -519,7 +519,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_roar(atom/target)
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
-		G.throw_at(G.throw_range, motion_of(G).throw_speed, src)
+		G.throw_at(motion_of(G).throw_range, motion_of(G).throw_speed, src)
 		G.set_det_time(grenade_timer)
 		G.activate(src)
 	if(prob(25))

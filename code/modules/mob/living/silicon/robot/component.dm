@@ -376,6 +376,7 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	item_rules()
 	item_handling(center_x = 16, center_y = 16, randpixel = 6, preserve = 0, no_attack_log = 0, no_random_knockdown = FALSE, cavity_implantable = TRUE) // how it is placed and handled: a type trait (code/game/objects/items/item_handling.dm)
 	setup(PROC_REF(share_tool_qualities))
@@ -407,7 +408,7 @@ CAPABILITIES(/obj/item)
 	op("collect_item", item(/obj/item/storage), label("Collect"), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_collected)))
 	op("gen_silicon_item_silicon_equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(all_of(req(/mob/living/silicon, of = ON_ACTOR), req_on_origin(ORIGIN_CLICK, req(/mob/living/silicon/robot, of = ON_ACTOR)))), needs(req(PROC_REF(item_in_robot_module))), then(PROC_REF(item_silicon_equip_module)))
 	ref_many(nameof(actions))
-	ref_one(nameof(my_augment))
+	links(LINK_END(/obj/item, LK_AUGMENT_HOST), LINK_END(/obj/item/organ, LK_AUGMENT_TOOLS), sparse = TRUE, b_many = TRUE) // the host organ of an integrated tool (item_my_augment())
 /// Other silicons preserve the module action's successful no-op.
 /mob/living/silicon/proc/equip_item_from_module(obj/item/I)
 	return OP_OK

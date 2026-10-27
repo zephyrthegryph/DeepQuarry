@@ -114,7 +114,7 @@ CAPABILITIES(/datum/thrownthing)
 
 	diagonal_error = dist_x/2 - dist_y
 
-	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+	STAMP(src, start_time, CLOCK_WORLD)
 
 
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
@@ -150,7 +150,7 @@ CAPABILITIES(/datum/thrownthing)
 		finalize()
 		return
 
-	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+	STAMP(src, last_move, CLOCK_WORLD)
 
 	var/area/A = get_area(AM.loc)
 	var/atom/step
@@ -217,7 +217,7 @@ CAPABILITIES(/datum/thrownthing)
 
 	if(ismob(thrownthing))
 		var/mob/M = thrownthing
-		M.inertia_dir = init_dir
+		sparse_set_or(M, inertia_dir, init_dir, 0)
 
 	if(t_target && !QDELETED(thrownthing))
 		thrownthing.throw_impact(t_target, src)
@@ -256,6 +256,6 @@ CAPABILITIES(/datum/thrownthing)
 #undef MAX_THROWING_DIST
 #undef MAX_TICKS_TO_MAKE_UP
 
-/// Throw source (a relation view). A global helper keeps the proc off the base type.
+/// Where a thrown movable was thrown from (the weak throw_source slot: a bottle thrown in anger). A global helper keeps the proc off the base type.
 /proc/movable_throw_source(atom/movable/AM) as /turf
-	return AM?.throw_source
+	return sparse_ref(AM, throw_source)

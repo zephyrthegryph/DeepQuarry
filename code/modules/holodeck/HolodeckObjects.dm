@@ -283,7 +283,6 @@ CAPABILITIES(/obj/item/holo)
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLOODY
 	var/active = 0
@@ -305,7 +304,7 @@ CAPABILITIES(/obj/item/holo)
 	return FALSE
 
 CAPABILITIES(/obj/item/holo/esword)
-	configure(movable_motion(throw_speed = 1, unacidable = TRUE))
+	configure(movable_motion(throw_range = 5, throw_speed = 1, unacidable = TRUE))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 3.0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -513,10 +512,9 @@ CAPABILITIES(/obj/machinery/readybutton)
 	icon_dead = "holo4"
 	alpha = 127
 	icon_gib = null
-	meat_type = null
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
-	configure(butchery_rules(meat_amount = 0))
+	configure(butchery_rules(meat_type = TRAIT_NONE, meat_amount = 0))
 	after_init(0, then(PROC_REF(init_hologram_light)))
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/init_hologram_light(datum/act/timer/A)

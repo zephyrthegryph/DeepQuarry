@@ -21,13 +21,10 @@
 
 	has_langs = list(LANGUAGE_GALCOM , LANGUAGE_ANIMAL)
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 
-	say_list_type = /datum/say_list/turkey
 
 	vore_active = 1
-	vore_capacity = 2
 	vore_bump_chance = 10
 	vore_pounce_chance = 10
 	vore_pounce_maxhealth = 999
@@ -72,7 +69,8 @@
 	look.state(state)
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
-	configure(butchery_rules(meat_amount = 100))
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/turkey))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 100))
 	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))
 
 /// Old attackby: feeding.

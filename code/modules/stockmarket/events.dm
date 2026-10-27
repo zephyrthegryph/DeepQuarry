@@ -37,12 +37,12 @@
 	var/mins = rand(5*TIME_MULTIPLIER,20*TIME_MULTIPLIER)
 	next_phase = mins * (600*TIME_MULTIPLIER) + world.time
 	current_title = "Product demo"
-	current_desc = text_or_null(S.industry.detokenize("[S.name] will unveil a new product on an upcoming %industrial% conference held at spacetime [spacetime(next_phase)]"))
+	current_desc = S.industry.detokenize("[S.name] will unveil a new product on an upcoming %industrial% conference held at spacetime [spacetime(next_phase)]")
 	S.addEvent(src)
 
 
 /datum/stockEvent/product/transition()
-	EXPIRY_STAMP(src, last_change, CLOCK_WORLD)
+	STAMP(src, last_change, CLOCK_WORLD)
 	switch (phase_id)
 		if (0)
 			EXPIRY_SET(src, next_phase, rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER), CLOCK_WORLD)

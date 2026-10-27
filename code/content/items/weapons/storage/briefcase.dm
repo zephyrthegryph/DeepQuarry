@@ -2,14 +2,13 @@
 	name = "briefcase"
 	desc = "It's made of AUTHENTIC faux-leather and has a price-tag still attached. Its owner must be a real professional."
 	icon_state = "briefcase"
-	throw_range = 4
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
 	use_sound = SFX_ITEMS_STORAGE_BRIEFCASE
 
 
 CAPABILITIES(/obj/item/storage/briefcase)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_combat(force = 8.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	configure(storage(max_size = ITEMSIZE_NORMAL))

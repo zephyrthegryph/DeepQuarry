@@ -6,24 +6,26 @@
 
 STATIC_ENTRY(machine_rules)
 
-/proc/machine_rules(heat_dissipation = null, maintenance_flags = null)
+/proc/machine_rules(heat_dissipation = null, maintenance_flags = null, heat_output = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_MACHINE_RULES, null, list("heat_dissipation" = heat_dissipation, "maintenance_flags" = maintenance_flags))
+	return entry_make(ENTRY_MACHINE_RULES, null, list("heat_dissipation" = heat_dissipation, "maintenance_flags" = maintenance_flags, "heat_output" = heat_output))
 
 /datum/type_trait/machine_rules
 	var/heat_dissipation = null
 	var/maintenance_flags = NONE
+	var/heat_output = 0
 
 /datum/type_trait/machine_rules/copy_values(datum/type_trait/machine_rules/into)
 	into.heat_dissipation = heat_dissipation
 	into.maintenance_flags = maintenance_flags
+	into.heat_output = heat_output
 
 /datum/entry_engine/type_trait/machine_rules
 	kind = ENTRY_MACHINE_RULES
 	trait_type = /datum/type_trait/machine_rules
 	publish_key = MACHINE_RULES_KEY
 	base_type = /obj/machinery
-	var_names = list("heat_dissipation" = "heat_dissipation", "maintenance_flags" = "maintenance_flags")
+	var_names = list("heat_dissipation" = "heat_dissipation", "maintenance_flags" = "maintenance_flags", "heat_output" = "heat_output")
 
 /// The holder's machine_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/machine_rules_of, MACHINE_RULES_KEY)

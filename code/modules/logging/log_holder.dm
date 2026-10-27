@@ -83,7 +83,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 		category_map[category.category] = category_data
 
 	clear_data_cache()
-	EXPIRY_STAMP(src, last_data_update, CLOCK_WORLD)
+	STAMP(src, last_data_update, CLOCK_WORLD)
 
 	set_data_cache_at("categories", category_map)
 	set_data_cache_at("last_data_update", last_data_update)
@@ -318,7 +318,7 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 			// A datum is logged as its saved state (code/datums/state/schema.dm), or
 			// as its type and ref when its state does not serialize.
 			var/datum/logged = data
-			var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = REF(logged))
+			var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = ref_token(logged))
 			semvers[logged.type] = "[logged.state_version].0.0"
 			data = recursive_jsonify(serialization_data, semvers)
 

@@ -28,7 +28,6 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_books.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_books.dmi'
 		)
-	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	var/deity_name = "Christ"
 	use_sound = SFX_BUREAUCRACY_BOOKOPEN
@@ -37,7 +36,7 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 // An item put into a bible turns a page first, and then goes on to the storage's insertion (passes()). Used in hand by a chaplain: the first use chooses the
 // skin from a ring around the user, a later one invokes the religion.
 CAPABILITIES(/obj/item/storage/bible)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	click_order(BIND_IN_HAND, "invoke", "skin")
 	configure(item_sounds(drop = SFX_BUREAUCRACY_BOOKCLOSE))
 	op("page_turn", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Put in"), then(PROC_REF(turn_page)), passes())

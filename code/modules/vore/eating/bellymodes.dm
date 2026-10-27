@@ -16,7 +16,7 @@
 	update_belly_surrounding() // Updates belly_surrounding list for indirect vore usage
 	// VERY early exit
 	if(!contents_count(src))
-		if(owner.previewing_belly == src)
+		if(vore_previewing_of(owner) == src)
 			HandleBellyReagentEffects()
 		return
 

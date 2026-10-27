@@ -11,7 +11,6 @@
 	faction = FACTION_FENNEC // Will protec other fenfens
 	endurance = 60
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox
 
 	response_help = "pats"
 	response_disarm = "gently pushes aside"
@@ -22,10 +21,10 @@
 	melee_damage_upper = 3
 	attacktext = list("bit")
 
-	say_list_type = /datum/say_list/fennix
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennix)
-	configure(butchery_rules(meat_amount = 5))
+	configure(living_rules(say_list_type = /datum/say_list/fennix))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox, meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 

@@ -1,15 +1,17 @@
-/mob/living/carbon/human
-	var/datum/unarmed_attack/default_attack
+/// The unarmed attack the human chose to use by default (LK_DEFAULT_ATTACK), or null.
+/mob/living/carbon/human/proc/default_attack()
+	RETURN_TYPE(/datum/unarmed_attack)
+	return link_get(src, LK_DEFAULT_ATTACK)
 
 /mob/living/carbon/human/proc/get_unarmed_attack(mob/living/carbon/human/target, hit_zone)
 	if(nif && nif.flag_check(NIF_C_HARDCLAWS,NIF_FLAGS_COMBAT))
 		return GLOB.unarmed_hardclaws
-	if(src.default_attack && src.default_attack.is_usable(src, target, hit_zone))
+	if(src.default_attack() && src.default_attack().is_usable(src, target, hit_zone))
 		if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
-			var/datum/unarmed_attack/soft_type = src.default_attack.get_sparring_variant()
+			var/datum/unarmed_attack/soft_type = src.default_attack().get_sparring_variant()
 			if(soft_type)
 				return soft_type
-		return src.default_attack
+		return src.default_attack()
 	if(get_equipped_item(SLOT_ID_GLOVES))
 		var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES)
 		if(istype(G) && G.special_attack && G.special_attack.is_usable(src, target, hit_zone))
@@ -18,12 +20,12 @@
 				if(soft_type)
 					return soft_type
 			return G.special_attack
-	if(src.default_attack && src.default_attack.is_usable(src, target, hit_zone))
+	if(src.default_attack() && src.default_attack().is_usable(src, target, hit_zone))
 		if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
-			var/datum/unarmed_attack/soft_type = src.default_attack.get_sparring_variant()
+			var/datum/unarmed_attack/soft_type = src.default_attack().get_sparring_variant()
 			if(soft_type)
 				return soft_type
-		return src.default_attack
+		return src.default_attack()
 	for(var/datum/unarmed_attack/u_attack in species.unarmed_attacks)
 		if(u_attack.is_usable(src, target, hit_zone))
 			if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
@@ -563,7 +565,7 @@ MSG_DEF_SELF(human/pressure_taken, span_warning("Someone is already applying pre
 
 
 /mob/living/carbon/human/proc/set_default_attack(datum/unarmed_attack/u_attack)
-	rel_set(src, nameof(default_attack), u_attack) // an attack the species owns
+	link_set_one(src, LK_DEFAULT_ATTACK, u_attack) // an attack the species owns
 
 /mob/living/carbon/human/proc/perform_cpr(mob/living/carbon/human/reviver)
 	// Check for sanity

@@ -354,8 +354,8 @@
 		var/mob/living/carbon/human/H = M
 		H.induce_arrhythmia(CARDIAC_RHYTHM_VF) // Hyperkalaemia fibrillates the heart; the arrest does the rest.
 		if(H.stat != 1)
-			if(H.losebreath >= 10)
-				H.losebreath = max(10, H.losebreath - 10)
+			if(H.losebreath() >= 10)
+				H.set_losebreath(max(10, H.losebreath() - 10))
 			H.status_at_least(STAT_WEAKENED, 10)
 
 /datum/reagent/toxin/potassium_chlorophoride
@@ -379,8 +379,8 @@
 		var/mob/living/carbon/human/H = M
 		H.induce_arrhythmia(CARDIAC_RHYTHM_ASYSTOLE) // A lethal-injection flatline; the arrest does the rest.
 		if(H.stat != 1)
-			if(H.losebreath >= 10)
-				H.losebreath = max(10, M.losebreath-10)
+			if(H.losebreath() >= 10)
+				H.set_losebreath(max(10, M.losebreath()-10))
 			H.status_at_least(STAT_WEAKENED, 10)
 
 /datum/reagent/toxin/zombiepowder
@@ -407,7 +407,7 @@
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
 		sparse_set(M, tod, stationtime2text())
-		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
+		STAMP(M, timeofdeath, CLOCK_WORLD)
 	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(STAT_MUTED, 10)
 	M.status_set(STAT_PARALYZED, max(M.status_units(STAT_PARALYZED), 10))
@@ -439,7 +439,7 @@
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
 		sparse_set(M, tod, stationtime2text())
-		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
+		STAMP(M, timeofdeath, CLOCK_WORLD)
 	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(STAT_MUTED, 10)
 	M.status_set(STAT_PARALYZED, max(M.status_units(STAT_PARALYZED), 10))
@@ -684,7 +684,7 @@
 			M.status_at_least(STAT_STUNNED, 6)
 		return
 	M.injure(INJURY_CORROSIVE, 3 * removed, source = src)
-	if(M.losebreath < 15)
+	if(M.losebreath() < 15)
 		M.AdjustLosebreath(1)
 
 /datum/reagent/mutagen

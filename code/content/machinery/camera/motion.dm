@@ -16,7 +16,7 @@
 /obj/machinery/camera/proc/newTarget(mob/target)
 	if (isAI(target)) return 0
 	if (detectTime == 0)
-		EXPIRY_STAMP(src, detectTime, CLOCK_WORLD) // start the clock
+		STAMP(src, detectTime, CLOCK_WORLD) // start the clock
 	if (!(target in motionTargets))
 		rel_add(src, nameof(motionTargets), target)
 		// Losing a target is event driven: it moves, dies or is deleted.

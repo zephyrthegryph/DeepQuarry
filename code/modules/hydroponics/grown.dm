@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	name = "[seed().seed_name]"
 	set_trash(seed().get_trash_type())
 
-	potency = num_or_null(seed().get_trait(TRAIT_POTENCY))
+	potency = seed().get_trait(TRAIT_POTENCY)
 
 	if(seed().chems)
 		update_desc()
@@ -452,3 +452,4 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed
 	return seed_static
 
+SCHEMA(/obj/item/reagent_containers/food/snacks/grown, potency, num())

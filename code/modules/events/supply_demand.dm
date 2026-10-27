@@ -43,11 +43,11 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 	for(var/datum/supply_demand_order/order in required_items)
 		total_quantity += order.qty_orig
 	emit_contract_event(CONTRACT_EVENT_SUPPLY_SHORTAGE_DECLARED, list(
-		"shortage_id" = REF(src),
+		"shortage_id" = ref_token(src),
 		"quantity_target" = max(4, total_quantity),
 		"variety_target" = max(2, min(length(required_items), 6)),
 		"detail" = "A live supply-shortage request opened for [total_quantity] units across [length(required_items)] categories.",
-	), "supply-shortage-declared:[REF(src)]")
+	), "supply-shortage-declared:[ref_token(src)]")
 
 /datum/event/supply_demand/announce()
 	var/message = "[using_map.company_short] is comparing accounts and the bean counters found our division "
@@ -146,12 +146,12 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 			var/delivered_quantity = max(1, quantity_before - meta.qty_need)
 			emit_contract_event(CONTRACT_EVENT_SUPPLY_SHORTAGE_DELIVERY, list(
 				"department" = DEPARTMENT_CARGO,
-				"shortage_id" = REF(src),
+				"shortage_id" = ref_token(src),
 				"item_type" = meta.type,
 				"item_name" = meta.name,
 				"metrics" = list("quantity" = delivered_quantity),
 				"detail" = "Delivered [delivered_quantity] [meta.name] toward the live shortage response.",
-			), "supply-shortage-delivery:[REF(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
+			), "supply-shortage-delivery:[ref_token(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
 			if(meta.qty_need <= 0)
 				own_take_member(src, nameof(required_items), meta)
 			return 1

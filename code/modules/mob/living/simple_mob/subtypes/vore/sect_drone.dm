@@ -43,11 +43,9 @@
 	grab_resist = 100 // you can't even wrap your arms around this thing, how could you hope to grab it???
 
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 70 // v hongry buggo
 	vore_icons = SA_ICON_LIVING
 
-	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat
 
 	//Beeg bug don't give a fuck about atmos. Something something, phoron mutation.
 	min_oxy = 0
@@ -75,11 +73,11 @@
 	can_buckle = TRUE
 	mount_offset_y = 7
 
-	say_list_type = /datum/say_list/sect_drone
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
-	configure(butchery_rules(meat_amount = 4))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/sect_drone))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 4))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(vore_eyes = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

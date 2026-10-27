@@ -30,8 +30,9 @@
 	var/static/list/xgm_id_to_type
 	if (isnull(xgm_id_to_type))
 		xgm_id_to_type = list()
-		for (var/datum/gas/gas_type as anything in subtypesof(/datum/gas))
-			xgm_id_to_type[initial(gas_type.id)] = gas_type
+		for (var/gas_path in subtypesof(/datum/gas))
+			var/datum/gas/gas_type = gas_path // typed only to read initial(); the list holds the path
+			xgm_id_to_type[initial(gas_type.id)] = gas_path
 	return xgm_id_to_type[gas_id_string]
 
 

@@ -352,7 +352,7 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 	payload["signature"] = signature
 	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	var/datum/medical_trial_participant/signed_participant = trial.participants?[identity.id]
-	EXPIRY_STAMP(signed_participant, consent_time, CLOCK_WORLD)
+	STAMP(signed_participant, consent_time, CLOCK_WORLD)
 	signed_participant.consent_evidence_id = evidence_id
 	rel_set(signed_participant, nameof(signed_participant.consent_record), paper)
 	paper.name = "signed VeyMed observation record - [subject.real_name]"
@@ -545,10 +545,10 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 	if(!process_contract_export_payload(shipment))
 		return FALSE
 	emit_contract_event(CONTRACT_EVENT_SHIPMENT_DEPARTED, list(
-		"shipment_ref" = REF(shipment),
+		"shipment_ref" = ref_token(shipment),
 		"shipment_name" = shipment.name,
 		"detail" = "Outbound freight departed aboard the supply shuttle",
-	), "shipment-departed:[REF(shipment)]", shipment)
+	), "shipment-departed:[ref_token(shipment)]", shipment)
 	return TRUE
 
 /proc/process_contract_export_payload(atom/movable/shipment)

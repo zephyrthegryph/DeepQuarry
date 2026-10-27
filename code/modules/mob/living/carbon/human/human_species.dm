@@ -1,7 +1,6 @@
 /mob/living/carbon/human/dummy
 	real_name = "Test Dummy"
 	status_flags = CANPUSH
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 /mob/living/carbon/human/dummy/proc/dummy_godmode_ready(datum/act/timer/A)
 	enable_godmode()
@@ -217,6 +216,7 @@ CAPABILITIES(/mob/living/carbon/human/sergal)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/carbon/human/dummy)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	configure(living_rules(has_huds = FALSE))
 	configure(mob_nature(no_vore = TRUE))
 	after_init(0, then(PROC_REF(dummy_godmode_ready)))

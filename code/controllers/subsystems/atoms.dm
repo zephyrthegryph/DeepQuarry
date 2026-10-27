@@ -52,7 +52,7 @@ SYSTEM_DEF(atoms)
 	atom_initialized = INITIALIZATION_INSSATOMS
 
 /datum/system/atoms/initialize()
-	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
+	STAMP(src, init_start_time, CLOCK_WORLD)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	booting = TRUE

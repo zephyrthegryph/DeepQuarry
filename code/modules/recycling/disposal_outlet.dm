@@ -127,7 +127,7 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 
 	flick("outlet-open", src)
 	if(ELAPSED(src, start_eject, CLOCK_WORLD) > 3 SECONDS)
-		EXPIRY_STAMP(src, start_eject, CLOCK_WORLD)
+		STAMP(src, start_eject, CLOCK_WORLD)
 		play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 		after(src, 2 SECONDS, PROC_REF(expel_contents), with = list(received_items, gas, TRUE), keeps_dead = TRUE)
 	else

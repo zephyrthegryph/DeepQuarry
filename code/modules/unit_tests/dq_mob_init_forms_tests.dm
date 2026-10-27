@@ -40,7 +40,7 @@
 
 	var/mob/living/simple_mob/vore/zorgoia/goia = allocate(/mob/living/simple_mob/vore/zorgoia, T)
 	TEST_ASSERT_EQUAL(goia.goia_overlays["main"], "zorgoia_main", "a zorgoia rolls its overlay table")
-	TEST_ASSERT(REAGENT_ID_STOXIN in goia.trait_injection_reagents, "and can inject its venoms")
+	TEST_ASSERT(REAGENT_ID_STOXIN in goia.injection_reagent_choices(), "and can inject its venoms")
 
 	var/mob/living/simple_mob/animal/giant_spider/spider = allocate(/mob/living/simple_mob/animal/giant_spider, T)
 	TEST_ASSERT(is_swarmer(spider), "a giant spider swarms from creation")

@@ -379,7 +379,7 @@ TYPE_TABLE(/datum/affliction/burn_shock, affliction_stages, list( \
 /datum/affliction/burn_shock/proc/total_burn(fresh = FALSE)
 	if(!fresh && burn_cache_time == world.time)
 		return burn_cache
-	EXPIRY_STAMP(src, burn_cache_time, CLOCK_WORLD)
+	STAMP(src, burn_cache_time, CLOCK_WORLD)
 	burn_cache = 0
 	var/mob/living/carbon/human/H = owner
 	if(istype(H))

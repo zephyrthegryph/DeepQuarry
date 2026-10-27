@@ -17,7 +17,7 @@
 	TEST_ASSERT(H.airway_obstructed(), "airway_obstructed() should report the obstruction")
 
 	sparse_set_or(H, failed_last_breath, 0, 0)
-	H.losebreath = 0
+	H.set_losebreath(0)
 	var/debt_before = H.oxygen_debt()
 	H.life_breathing_breathe()
 	TEST_ASSERT(sparse_get_or(H, failed_last_breath, 0), "breathing through a closed airway should fail")

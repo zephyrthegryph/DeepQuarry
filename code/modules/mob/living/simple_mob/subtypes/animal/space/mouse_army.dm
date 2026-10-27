@@ -42,9 +42,7 @@
 	has_langs = list("Mouse")
 
 	holder_type = /obj/item/holder/mouse
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
-	say_list_type = /datum/say_list/mouse
 
 
 	var/rank //pyro, operative, ammo, stealth. more to come. Do not leave blank.
@@ -52,6 +50,8 @@
 	species_sounds = "Mouse"
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	configure(living_rules(say_list_type = /datum/say_list/mouse))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(mob_rules(universal_understand = 1))
 	configure(mob_nature(pain_1p = list("squeaks", "squiks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -77,7 +77,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	set_layer(MOB_LAYER)
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
-		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
+		STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 	..()
 
 /mob/living/simple_mob/animal/space/mouse_army/cannot_use_vents()
@@ -89,7 +89,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	set_icon_state("mouse_[rank]_splat")
 	set_layer(MOB_LAYER)
 	if(client)
-		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
+		STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 //Base ported from vgstation. Operative Mice.
 //Icon artists: DeityLink and plosky1

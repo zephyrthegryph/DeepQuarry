@@ -56,14 +56,12 @@
 	minbodytemp = 0
 	maxbodytemp = 900
 
-	say_list_type = /datum/say_list/corrupthound
 
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_EAL) //Robots speak in beep, yes?
 
 	can_buckle = TRUE
 
 	vore_active = TRUE
-	vore_capacity = 1
 	vore_pounce_chance = 15
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 	vore_stomach_name = "fuel processor"
@@ -84,7 +82,9 @@
 
 	attacktext = list("malsnuggled","scrunched","squeezed","assaulted","violated")
 
-	say_list_type = /datum/say_list/corrupthound_prettyboi
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi)
+	configure(living_rules(say_list_type = /datum/say_list/corrupthound_prettyboi))
 
 /mob/living/simple_mob/vore/aggressive/corrupthound
 	biology = BIOLOGY_SYNTHETIC
@@ -109,6 +109,7 @@
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/corrupthound))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	configure(mob_kind(death_message = "shudders and collapses!"))
@@ -297,11 +298,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	minbodytemp = 150
 	maxbodytemp = 900
 
-	say_list_type = /datum/say_list/corrupthound/janihound
 	can_buckle = TRUE
 
 	vore_active = TRUE
-	vore_capacity = 2
 	vore_pounce_chance = 80 //hongry
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 	vore_stomach_name = "fuel processor"
@@ -351,6 +350,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/corrupthound/janihound))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_kind(death_message = "shudders and collapses!"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

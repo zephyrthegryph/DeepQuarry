@@ -27,11 +27,10 @@
 	attacktext = list("slashed")
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
-	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
-	configure(butchery_rules(meat_amount = 5))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat, meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
@@ -101,6 +100,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian)
 	icon_expected_width = 64
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress)
+	configure(living_rules(vore_capacity = 3))
 	configure(butchery_rules(meat_amount = 15))
 	configure(movable_motion(icon_height = 64))
 

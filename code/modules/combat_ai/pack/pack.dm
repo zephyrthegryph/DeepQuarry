@@ -30,7 +30,7 @@ ACTION(ai_pack_stir, FIXED, notice = /datum/notice/ai_pack_stirred)
 	/// TRUE while the pack's upkeep runs: its faction forms packs (pack_join_radius > 0). A pack of one in a faction that forms none has no timer at all.
 	var/needs_upkeep = FALSE
 	/// Perception state (perception.dm).
-	var/list/sightings = null     // ref text of a mob => list(spotter ref text, first seen at, seen, last classified at)
+	var/list/sightings = null     // handle of a mob (ref_token) => list(spotter handle, first seen at, seen, last classified at)
 	var/list/covered_ids = null   // the chunk ids watched now
 	var/list/chunk_tokens = null  // the chunk datums watched now
 	EXPIRY_DECLARE(last_perceived_at)

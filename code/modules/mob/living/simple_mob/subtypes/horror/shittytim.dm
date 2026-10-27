@@ -27,13 +27,13 @@
 	friendly = list("nuzzles", "boops", "headbumps against", "leans on")
 
 
-	say_list_type = /datum/say_list/BigTim
 
 /mob/living/simple_mob/horror/BigTim/on_death(gibbed)
 	play_sfx(src, SFX_H_SOUNDS_SHITTY_TIM)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/horror/BigTim)
+	configure(living_rules(say_list_type = /datum/say_list/BigTim))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
 
 /datum/say_list/BigTim

@@ -33,7 +33,6 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 	name = "advanced anomaly releaser"
 	desc = "Single-use injector that releases and stabilizes anomalies by injecting an unknown substance."
 	w_class = ITEMSIZE_SMALL
-	throw_range = 5
 
 	///icon state after being used up
 	var/used_icon_state = "anomaly_releaser_used"
@@ -49,7 +48,7 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 	var/gives_stats = TRUE
 
 CAPABILITIES(/obj/item/anomaly_releaser)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 5, throw_speed = 3))
 	configure(item_thrown(force = 0))
 
 /obj/item/anomaly_releaser/science
@@ -75,7 +74,6 @@ CAPABILITIES(/obj/item/anomaly_releaser)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "anom_scanner"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 	MATERIAL_BULK(MAT_STEEL, 200)
 
 
@@ -83,7 +81,7 @@ CAPABILITIES(/obj/item/anomaly_releaser)
 	var/obj/effect/anomaly/buffered_anomaly
 
 CAPABILITIES(/obj/item/anomaly_scanner)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 10, throw_speed = 5))
 	ref_one(nameof(buffered_anomaly), /obj/effect/anomaly)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

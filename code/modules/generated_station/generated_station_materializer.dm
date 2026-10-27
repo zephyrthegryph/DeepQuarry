@@ -349,7 +349,7 @@ CAPABILITIES(/datum/generated_station_materializer)
 		if(department)
 			var/area/generated_station/department_area = make_department_area(department.definition().id)
 			department_area.station_id = spec().id
-			department_area.department_id = text_or_null(department.id)
+			department_area.department_id = department.id
 			department_area.name = "[spec().name] [department.definition().name]"
 			rel_add(result, nameof(result.department_areas), department_area, node.id)
 		generation_checkpoint("Allocating station areas", 25)
@@ -916,7 +916,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		if(!A)
 			return FALSE
 		A.station_id = spec().id
-		A.department_id = text_or_null(department_id)
+		A.department_id = department_id
 		var/designation_key = "[department_id]/[module.role]"
 		designation_counts[designation_key] = (designation_counts[designation_key] || 0) + 1
 		var/designation_number = designation_counts[designation_key]
@@ -1604,3 +1604,4 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /// Accessor for the transit_area var.
 /datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
 	return transit_area
+SCHEMA(/area/generated_station, department_id, schema_text())

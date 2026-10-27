@@ -1,6 +1,5 @@
 /obj/structure/catwalk
 	name = "catwalk"
-	debris_type = /obj/item/stack/rods
 	desc = "Cats really don't like these things."
 	icon = 'icons/turf/catwalks.dmi'
 	icon_state = "catwalk"
@@ -91,6 +90,7 @@
 MSG_DEF_SELF(catwalk/plate_begins, span_notice("Placing tile..."))
 
 CAPABILITIES(/obj/structure/catwalk)
+	configure(obj_rules(debris_entry = list(/obj/item/stack/rods = 1)))
 	setup(PROC_REF(settle_on_tile), mapload = TRUE)
 	silicon_hand(adjacent = TRUE)
 	smoothing()

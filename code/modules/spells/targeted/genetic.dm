@@ -19,7 +19,7 @@ code\game\dna\genes\goon_powers.dm
 	for(var/mob/living/target in targets)
 		for(var/x in mutations)
 			target.add_mutation(x)
-		target.disabilities |= disabilities
+		target.add_disabilities(disabilities)
 		after(target, duration, TYPE_PROC_REF(/mob/living, genetic_spell_wears_off), with = list(mutations, disabilities))
 	return
 
@@ -67,4 +67,4 @@ code\game\dna\genes\goon_powers.dm
 /mob/living/proc/genetic_spell_wears_off(list/mutations, disabilities)
 	for(var/x in mutations)
 		remove_mutation(x)
-	src.disabilities &= ~disabilities
+	src.remove_disabilities(disabilities)

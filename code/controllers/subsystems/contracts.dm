@@ -102,7 +102,7 @@ SYSTEM_DEF(contracts)
 	GLOB.alldepartments |= CONTRACT_FAX_ENGINEERING
 
 /datum/system/contracts/proc/next_infrastructure_revision(atom/source)
-	var/key = REF(source)
+	var/key = ref_token(source)
 	var/revision = (infrastructure_fact_revisions[key] || 0) + 1
 	infrastructure_fact_revisions[key] = revision
 	return revision
@@ -287,7 +287,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	queue_medical_subject_reconciliation(subject)
 
 /datum/system/contracts/proc/queue_medical_subject_reconciliation(mob/living/carbon/human/subject)
-	var/key = subject ? REF(subject) : "global"
+	var/key = subject ? ref_token(subject) : "global"
 	if(pending_subject_reconciliations[key])
 		return
 	pending_subject_reconciliations[key] = TRUE
@@ -298,7 +298,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 
 /datum/system/contracts/proc/reconcile_subject_availability(key)
 	pending_subject_reconciliations -= key
-	var/mob/living/carbon/human/subject = key == "global" ? null : locate(key)
+	var/mob/living/carbon/human/subject = key == "global" ? null : resolve_token(key)
 	if(!istype(subject))
 		subject = null
 	if(QDELETED(subject))
@@ -483,7 +483,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 			event_occurrence_order.Cut(1, 2)
 			seen_event_occurrences -= expired_key
 	event.id = "DQ-CE-[next_event_id++]"
-	EXPIRY_STAMP(event, occurred_at, CLOCK_WORLD)
+	STAMP(event, occurred_at, CLOCK_WORLD)
 	events_published++
 	rel_add(src, nameof(recent_events), event)
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
@@ -564,7 +564,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	var/list/rows = list()
 	for(var/datum/contract_requirement/requirement in contract.requirements)
 		rows.Add(list(list(
-			"id" = REF(requirement),
+			"id" = ref_token(requirement),
 			"name" = requirement.name,
 			"description" = requirement.description,
 			"state" = requirement.state,

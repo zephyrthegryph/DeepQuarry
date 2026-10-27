@@ -115,12 +115,12 @@ Class Procs:
 	var/obj/item/circuitboard/circuit = null
 
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 SETTER(/obj/machinery, use_power)
 
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	machine_rules(maintenance_flags = NONE)
 	machine_usage(click_volume = 40, interact_offline = 0, wrench_time = 0, weld_time = 2 SECONDS) // how it is used and serviced: a type trait (code/game/machinery/machine_usage.dm)
 	uses_power(channel = EQUIP, idle = 0, active = 0) // what it draws: a type trait (machinery_power.dm); a subtype configure()s what it changes
@@ -296,11 +296,7 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 	// compile-time default per instance) -- qdel'ing the probe could run
 	// Destroy() cleanup that clears that list in place and corrupt it for
 	// every real instance of the type, not just this throwaway one.
-	var/static/list/probes = list()
-	var/atom/instance = probes[path]
-	if(!instance)
-		instance = new path
-		probes[path] = instance
+	var/atom/instance = dq_proto(path)
 	var/value = instance.vars[var_name]
 	cache[cache_key] = value
 	return value

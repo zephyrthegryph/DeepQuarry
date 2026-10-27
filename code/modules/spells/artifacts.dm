@@ -5,11 +5,10 @@
 	desc = "An incandescent orb of otherworldly energy, staring into it gives you vision beyond mortal means."
 	icon = 'icons/obj/projectiles.dmi'
 	icon_state = "bluespace"
-	throw_range = 7
 	injury_kind = INJURY_BURN
 
 CAPABILITIES(/obj/item/scrying)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 7, throw_speed = 3))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 	configure(item_sounds(hit = SFX_ITEMS_WELDER2))
@@ -28,6 +27,6 @@ CAPABILITIES(/obj/item/scrying)
 	to_chat(user, span_info("You can see... everything!"))
 	act_message(user, src, others = span_danger("%U% stares into %T%, %THEIR% eyes glazing over."))
 
-	rel_set(user, nameof(/mob::teleop), user.ghostize(1))
-	announce_ghost_joinleave(user.teleop, 1, "You feel that they used a powerful artifact to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place with their presence.")
+	sparse_ref_set(user, teleop, user.ghostize(1))
+	announce_ghost_joinleave(user.teleop(), 1, "You feel that they used a powerful artifact to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place with their presence.")
 	return TRUE

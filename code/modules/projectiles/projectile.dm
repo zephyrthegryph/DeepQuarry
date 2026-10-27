@@ -15,7 +15,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
 	var/hitsound_wall = null // Played when something hits a wall, or anything else that isn't a mob.
 
@@ -157,8 +156,10 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
+SCHEMA(/obj/item/projectile, def_zone, schema_text())
+
 CAPABILITIES(/obj/item/projectile)
-	configure(movable_motion(unacidable = TRUE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = TRUE))
 	setup(PROC_REF(item_projectile_setup))
 	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
 	owns_one(nameof(trajectory), /datum/point/vector)
@@ -229,7 +230,7 @@ CAPABILITIES(/obj/item/projectile)
 /obj/item/projectile/proc/pixel_move(trajectory_multiplier, hitscanning = FALSE)
 	if(!loc || !trajectory)
 		return
-	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
+	STAMP(src, last_projectile_move, CLOCK_WORLD)
 	if(homing)
 		process_homing()
 	var/forcemoved = FALSE
@@ -299,7 +300,7 @@ CAPABILITIES(/obj/item/projectile)
 		homing_offset_y = -homing_offset_y
 
 /obj/item/projectile/proc/projectile_step()
-	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+	STAMP(src, last_process, CLOCK_WORLD)
 	if(!loc || !fired || !trajectory)
 		fired = FALSE
 		return PROCESS_KILL
@@ -388,7 +389,7 @@ CAPABILITIES(/obj/item/projectile)
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
 	rel_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
-	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
+	STAMP(src, last_projectile_move, CLOCK_WORLD)
 	rel_clear(src, nameof(permutated))
 	originalRange = range
 	fired = TRUE
@@ -535,7 +536,7 @@ CAPABILITIES(/obj/item/projectile)
 	// dying projectile adopts nothing): the cache is made detached and handed to the timer.
 	var/datum/beam_components_cache/drawn = new
 	if(tracer_type)
-		var/tempref = "\ref[src]"
+		var/tempref = ref_token(src)
 		for(var/i in 1 to length(points) - 1)
 			generate_tracer_between_points(points[i], points[i + 1], drawn, tracer_type, color, duration, hitscan_light_range, hitscan_light_color_override, hitscan_light_intensity, tempref)
 	if(muzzle_type && duration > 0)

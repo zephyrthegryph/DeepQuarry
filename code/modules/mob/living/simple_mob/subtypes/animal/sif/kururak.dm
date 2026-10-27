@@ -48,14 +48,12 @@
 
 	armor_spec = "melee=30;bullet=15;laser=5;bomb=10;bio=100;rad=100"
 
-	say_list_type = /datum/say_list/kururak
 
 	special_attack_min_range = 0
 	special_attack_max_range = 4
 	special_attack_cooldown = 1 MINUTE
 
 	vore_active = TRUE
-	vore_capacity = 1
 	vore_pounce_chance = 15
 
 	// Players have 2 seperate cooldowns for these, while the AI must choose one. Both respect special_attack_cooldown
@@ -91,9 +89,9 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/kururak, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_amount = 5))
 	configure(mob_rules(universal_understand = 1))
-	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 	rolls(nameof(instinct), PROC_REF(roll_instinct))
 	// Digging into a mech's hatch (its melee strike): a second of clawing, beside the mech, then the pilot is dragged out.

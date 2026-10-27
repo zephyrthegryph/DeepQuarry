@@ -184,7 +184,7 @@ CAPABILITIES(/datum/trader_review)
 		if(ELAPSED_SINCE(src, trader.sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
 			var/sound = DEFAULTPICK(trader.interact_sound, null)
 			playsound(trader, sound, 25, FALSE, ignore_walls = FALSE)
-			EXPIRY_STAMP(trader, sound_lastplayed, CLOCK_WORLD)
+			STAMP(trader, sound_lastplayed, CLOCK_WORLD)
 	stage = "product"
 	open_request(src, /datum/prompt/choice/trader_review, PROC_REF(product_picked), answerer = actor, title = "Trader", question = "What would you like? You have [trader.get_value(trader.accepts)] banked with this trader.", choices = trader.products, timeout = 30 SECONDS)
 

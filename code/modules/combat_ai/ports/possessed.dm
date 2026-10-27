@@ -8,7 +8,7 @@
 /mob/living/simple_mob/humanoid/possessed
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/possessed)
-	configure(living_rules(use_modern_ai = TRUE))
+	configure(living_rules(say_list_type = /datum/say_list/possessed, use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 
 TYPE_TABLE(/mob/living/simple_mob/humanoid/possessed, get_ai_behaviors, list( \

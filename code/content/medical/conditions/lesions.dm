@@ -245,7 +245,7 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 		if(!can_regenerate())
 			return 0
 	else if(continuous)
-		EXPIRY_STAMP(src, stabilised_at, CLOCK_WORLD)
+		STAMP(src, stabilised_at, CLOCK_WORLD)
 	if(continuous)
 		amount *= LESION_TREATMENT_TICK_SCALE
 	if(is_full_repair(tag))

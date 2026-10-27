@@ -3,11 +3,10 @@
 	desc = "A rod of pure obsidian, its very presence disrupts and dampens the powers of paranormal phenomenae."
 	icon_state = "nullrod"
 	item_state = "nullrod"
-	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/nullrod)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 15))

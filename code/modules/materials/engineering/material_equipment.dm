@@ -93,7 +93,7 @@
 	set_loss_joules(loss_joules + (input_energy - useful_energy))
 	set_last_input_watts(input_energy / max(elapsed, 0.1))
 	set_last_output_watts(useful_energy / max(elapsed, 0.1))
-	EXPIRY_STAMP(src, last_work_time, CLOCK_WORLD)
+	STAMP(src, last_work_time, CLOCK_WORLD)
 	last_work_duration = elapsed
 	add_heat(input_energy - useful_energy)
 
@@ -129,7 +129,7 @@
 
 /obj/machinery/power/emitter/proc/charge_emitter()
 	var/elapsed = !material_last_charge ? 0 : max(ELAPSED(src, material_last_charge, CLOCK_WORLD), 0) / 10
-	EXPIRY_STAMP(src, material_last_charge, CLOCK_WORLD)
+	STAMP(src, material_last_charge, CLOCK_WORLD)
 	if(elapsed <= 0)
 		return
 	var/limit = emitter_output_limit()

@@ -133,7 +133,7 @@
 
 /mob/living/bot/cleanbot/proc/cleaned_target(datum/act/op/A)
 	var/atom/D = A.target
-	var/cleaned_target_id = REF(D)
+	var/cleaned_target_id = ref_token(D)
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/f = loc
 		f.dirt = 0
@@ -147,21 +147,21 @@
 			"method" = "cleanbot",
 			"cleaned_units" = 1,
 			"detail" = "[src] removed a station contaminant.",
-		), "sanitation-bot:[REF(src)]:[cleaned_target_id]:[world.time]", src)
+		), "sanitation-bot:[ref_token(src)]:[cleaned_target_id]:[world.time]", src)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
-			"bot_id" = REF(src),
+			"bot_id" = ref_token(src),
 			"task_kind" = "sanitation",
 			"target_id" = cleaned_target_id,
 			"successful" = TRUE,
 			"work_units" = 1,
 			"detail" = "[src] completed an autonomous sanitation task.",
-		), "automation:[REF(src)]:sanitation:[world.time]", src)
+		), "automation:[ref_token(src)]:sanitation:[world.time]", src)
 	if(D == target)
 		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 		rel_clear(src, nameof(target))
 /mob/living/bot/cleanbot/proc/cleaned_floor(datum/act/op/A)
-	var/cleaned_turf_id = REF(loc)
+	var/cleaned_turf_id = ref_token(loc)
 	if(blood)
 		wash(CLEAN_TYPE_BLOOD)
 	if(istype(loc, /turf/simulated))
@@ -177,16 +177,16 @@
 			"method" = "cleanbot",
 			"cleaned_units" = 1,
 			"detail" = "[src] sanitized a station floor.",
-		), "sanitation-bot:[REF(src)]:[cleaned_turf_id]:[world.time]", src)
+		), "sanitation-bot:[ref_token(src)]:[cleaned_turf_id]:[world.time]", src)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
-			"bot_id" = REF(src),
+			"bot_id" = ref_token(src),
 			"task_kind" = "sanitation",
 			"target_id" = cleaned_turf_id,
 			"successful" = TRUE,
 			"work_units" = 1,
 			"detail" = "[src] completed an autonomous sanitation task.",
-		), "automation:[REF(src)]:sanitation:[world.time]", src)
+		), "automation:[ref_token(src)]:sanitation:[world.time]", src)
 
 /mob/living/bot/cleanbot/explode()
 	set_on(0)
@@ -281,12 +281,11 @@ CAPABILITIES(/mob/living/bot/cleanbot)
 	name = "proxy bucket"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "bucket_proxy"
-	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Cleanbot"
 
 CAPABILITIES(/obj/item/bucket_sensor)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 5, throw_speed = 2))
 	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 3.0))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))

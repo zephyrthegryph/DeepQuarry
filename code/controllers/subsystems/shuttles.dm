@@ -52,7 +52,7 @@ SYSTEM_DEF(shuttles)
 	var/list/profile_type_calls = list()
 
 /datum/system/shuttles/initialize()
-	EXPIRY_STAMP(src, last_landmark_registration_time, CLOCK_WORLD)
+	STAMP(src, last_landmark_registration_time, CLOCK_WORLD)
 	// Find all declared shuttle datums and initailize them. (Okay, queue them for initialization a few lines further down)
 	for(var/shuttle_type in subtypesof(/datum/shuttle)) // This accounts for most shuttles, though away maps can queue up more.
 		var/datum/shuttle/shuttle = shuttle_type
@@ -134,7 +134,7 @@ SYSTEM_DEF(shuttles)
 		CRASH("Attempted to register shuttle landmark with tag [shuttle_landmark_tag], but it is already registered!")
 	if (istype(shuttle_landmark))
 		registered_shuttle_landmarks[shuttle_landmark_tag] = ref_token(shuttle_landmark)
-		EXPIRY_STAMP(src, last_landmark_registration_time, CLOCK_WORLD)
+		STAMP(src, last_landmark_registration_time, CLOCK_WORLD)
 
 		var/obj/effect/overmap/visitable/O = resolve_token(landmarks_still_needed[shuttle_landmark_tag])
 		if(O) //These need to be added to sectors, which we handle.

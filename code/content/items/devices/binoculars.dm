@@ -4,13 +4,12 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "binoculars"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 15
 
 
 MSG_DEF_SELF(binoculars/distracted, "You are too distracted to do that.")
 
 CAPABILITIES(/obj/item/binoculars)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 15, throw_speed = 3))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

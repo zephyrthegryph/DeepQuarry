@@ -94,7 +94,7 @@ SETTER(/datum/shuttle/autodock, shuttle_docking_controller)
 /datum/shuttle/autodock/dock()
 	if(active_docking_controller() && shuttle_docking_controller)
 		shuttle_docking_controller.initiate_docking(active_docking_controller().id_tag)
-		EXPIRY_STAMP(src, last_dock_attempt_time, CLOCK_WORLD)
+		STAMP(src, last_dock_attempt_time, CLOCK_WORLD)
 
 /datum/shuttle/autodock/undock()
 	if(shuttle_docking_controller)

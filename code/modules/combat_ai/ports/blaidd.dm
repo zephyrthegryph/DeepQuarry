@@ -145,7 +145,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 		return null
 	// First tick of a stare: start the grace timer, don't flee yet (freeze instead).
 	if(!B.blaidd_watched_since)
-		EXPIRY_STAMP(B, blaidd_watched_since, CLOCK_WORLD)
+		STAMP(B, blaidd_watched_since, CLOCK_WORLD)
 		return null
 	if(BEFORE(src, B.blaidd_watched_since + stare_grace, CLOCK_WORLD))
 		return null

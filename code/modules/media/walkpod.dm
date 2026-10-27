@@ -7,7 +7,6 @@
 /obj/item/walkpod
 	name ="\improper PodZu music player"
 	desc = "Portable music player! For when you need to ignore the rest of the world, there's only one choice: PodZu."
-	description_fluff = "A prestigious set: The ZuMan music player, and the HeadPods headphones, both 90th anniversary releases! Together they form the PodZu Music Player, famous in the local galactic cluster for pumping sick beats directly into your head."
 
 	icon = 'icons/obj/device.dmi'
 	icon_state = "podzu" // podzu_o, headpod, zuman
@@ -26,6 +25,7 @@
 	w_class = ITEMSIZE_COST_SMALL
 
 CAPABILITIES(/obj/item/walkpod)
+	configure(atom_rules(description_fluff = "A prestigious set: The ZuMan music player, and the HeadPods headphones, both 90th anniversary releases! Together they form the PodZu Music Player, famous in the local galactic cluster for pumping sick beats directly into your head."))
 	configure(item_worn(slots = SLOT_BELT))
 	ref_one(nameof(listener))
 	every(2 SECONDS, then(PROC_REF(walkpod_step)), when = nameof(listener))
@@ -138,7 +138,7 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 /obj/item/walkpod/proc/start_stop_song()
 	if(current_track() && playing)
 		media_url = current_track().url
-		EXPIRY_STAMP(src, media_start_time, CLOCK_WORLD)
+		STAMP(src, media_start_time, CLOCK_WORLD)
 		runechat_message("*&nbsp;[current_track().display()]&nbsp;*", specific_viewers = list(listener()))
 	else
 		media_url = ""

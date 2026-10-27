@@ -369,7 +369,7 @@ CAPABILITIES(/datum/faction_agent_record)
 	record.account_number = account.account_number
 	record.faction_id = faction_id
 	rel_set(record, nameof(record.agent_mind), user.mind)
-	EXPIRY_STAMP(record, candidate_started_at, CLOCK_WORLD)
+	STAMP(record, candidate_started_at, CLOCK_WORLD)
 	rel_add(src, nameof(agent_records), record, "[account.account_number]")
 	var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]
 	log_game("[key_name(user)] opened exclusive faction vetting with [faction?.name || faction_id].")
@@ -386,7 +386,7 @@ CAPABILITIES(/datum/faction_agent_record)
 	if(!record || record.tier != FACTION_AGENT_TIER_CANDIDATE)
 		return FALSE
 	record.set_tier(FACTION_AGENT_TIER_ACCREDITED)
-	EXPIRY_STAMP(record, appointed_at, CLOCK_WORLD)
+	STAMP(record, appointed_at, CLOCK_WORLD)
 	SScontracts?.queue_agent_offers(record.account_number, record.faction_id)
 	return TRUE
 
@@ -487,25 +487,28 @@ CAPABILITIES(/datum/faction_agent_record)
 		)))
 	return rows
 
-/mob/living
-	var/datum/faction_reputation_ledger/faction_reputation
+/// The mob's faction ledger (LK_FACTION_LEDGER), or null before ensure_faction_reputation().
+/mob/living/proc/faction_reputation()
+	RETURN_TYPE(/datum/faction_reputation_ledger)
+	return link_get(src, LK_FACTION_LEDGER)
 
 /// faction id -> affiliation choice (sparse slot faction_affiliations, a list).
 sparse(/mob/living, faction_affiliations, type = list)
 
 /mob/living/proc/ensure_faction_reputation() as /datum/faction_reputation_ledger
 	var/account_number = mind?.initial_account()?.account_number
+	var/datum/faction_reputation_ledger/current = faction_reputation()
 	if(account_number)
 		var/datum/faction_reputation_ledger/stable_ledger = GLOB.station_faction_relations.get_personal_ledger(account_number, FALSE)
 		if(!stable_ledger)
-			stable_ledger = GLOB.station_faction_relations.get_personal_ledger(account_number, TRUE, faction_reputation?.reputations)
-			stable_ledger.affiliations_initialized = faction_reputation?.affiliations_initialized || FALSE
-			if(faction_reputation?.positive_reputation_earned)
-				stable_ledger.positive_reputation_earned = faction_reputation.positive_reputation_earned.Copy()
-		rel_set(src, nameof(faction_reputation), stable_ledger)
-	if(!faction_reputation)
-		rel_set(src, nameof(faction_reputation), new /datum/faction_reputation_ledger())
-	return faction_reputation
+			stable_ledger = GLOB.station_faction_relations.get_personal_ledger(account_number, TRUE, current?.reputations)
+			stable_ledger.affiliations_initialized = current?.affiliations_initialized || FALSE
+			if(current?.positive_reputation_earned)
+				stable_ledger.positive_reputation_earned = current.positive_reputation_earned.Copy()
+		link_make(src, LK_FACTION_LEDGER, stable_ledger)
+	if(!faction_reputation())
+		link_make(src, LK_FACTION_LEDGER, new /datum/faction_reputation_ledger())
+	return faction_reputation()
 
 /mob/living/proc/get_faction_reputation(faction_id)
 	return ensure_faction_reputation().get_reputation(faction_id)

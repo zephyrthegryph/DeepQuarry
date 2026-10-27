@@ -16,7 +16,7 @@
 
 /datum/system/contracts
 	var/contract_batch_depth = 0
-	/// REF(atom) -> /datum/contract_damage_report, in first-hit order.
+	/// ref_token(atom) -> /datum/contract_damage_report, in first-hit order.
 	var/list/pending_damage_reports
 	/// window key -> TRUE when the batch revised it (the event is the window's batch_event).
 	var/list/pending_opportunity_windows
@@ -53,13 +53,13 @@ CAPABILITIES(/datum/system/contracts)
 
 /datum/contract_damage_report/New(atom/source)
 	. = ..()
-	source_ref = REF(source)
+	source_ref = ref_token(source)
 	source_type = source.type
 	name = source.name
 	max_integrity = source.max_integrity
 	var/turf/source_turf = get_turf(source)
 	if(source_turf)
-		location_ref = REF(source_turf)
+		location_ref = ref_token(source_turf)
 		x = source_turf.x
 		y = source_turf.y
 		z = source_turf.z

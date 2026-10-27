@@ -24,7 +24,6 @@
 	response_harm = "uselessly hits"
 	harm_intent_damage = 0
 
-	say_list_type = /datum/say_list/malf_drone
 
 	var/wreckage = /obj/effect/decal/mecha_wreckage/gygax/dark
 	var/pilot_type = null // Set to spawn a pilot when destroyed. Setting this also makes the mecha vulnerable to things that affect sentient minds.
@@ -33,7 +32,6 @@
 
 
 /mob/living/simple_mob/mechanical/mecha
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mecha
 
@@ -101,12 +99,12 @@
 	set_deflecting(FALSE)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	configure(living_rules(say_list_type = /datum/say_list/malf_drone, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	configure(mob_kind(death_message = "explodes!"))
 	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
 	rolls(nameof(name), PROC_REF(crewed_as), when = not(nameof(pilot_type)))
 	rolls(nameof(desc), PROC_REF(crewed_as), when = not(nameof(pilot_type)))
-	rolls(nameof(say_list_type), PROC_REF(crewed_as), when = nameof(pilot_type))
 
 /// A mecha with no pilot is a drone's, and says so; a piloted one talks like a mercenary (rolls()).
 /mob/living/simple_mob/mechanical/mecha/proc/crewed_as(datum/roller/R, target)
@@ -115,8 +113,12 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
 			return "autonomous [initial(name)]"
 		if("desc")
 			return "[initial(desc)] It appears to be piloted by a drone intelligence."
-		if("say_list_type")
-			return /datum/say_list/merc
+
+/// A piloted mecha talks like a mercenary; an unpiloted one keeps its drone's say list.
+/mob/living/simple_mob/mechanical/mecha/make_say_list(current)
+	if(pilot_type)
+		return /datum/say_list/merc
+	return ..()
 
 /// Old attackby: armour deflection.
 /mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(datum/act/op/A)

@@ -72,8 +72,7 @@
 		R.work.urgent_pending = null
 
 /// Phase U: runs pending requests, earliest deadline first, until the reserved slice is spent (`limit_abs`).
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-/datum/controller/kernel/proc/run_urgent(limit_abs, now = world.time)
+/datum/controller/kernel/proc/run_urgent(limit_abs, now)
 	if(!length(urgent_queue))
 		return
 	for(var/datum/urgent_request/R as anything in urgent_queue.Copy())

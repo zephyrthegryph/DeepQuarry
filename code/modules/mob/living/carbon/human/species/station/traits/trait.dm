@@ -81,7 +81,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/trait)
 		if(!(H.has_mutation(mutation)))
 			H.add_mutation(mutation)
 	if(disability)
-		H.disabilities |= disability // bitflag
+		H.add_disabilities(disability) // bitflag
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
 	grant(H, granted_verb(/mob/living/carbon/human/proc/trait_tutorial), src)
@@ -138,7 +138,7 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 	if(mutation)
 		H.remove_mutation(mutation)
 	if(disability)
-		H.disabilities &= ~disability // bitflag
+		H.remove_disabilities(disability) // bitflag
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities & (~sdisability)) // bitflag
 	if(special_env)

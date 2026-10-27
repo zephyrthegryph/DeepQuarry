@@ -12,7 +12,7 @@
 	var/launch_cooldown = 5 MINUTES
 
 /obj/machinery/firework_launcher/proc/stamp_launch_cooldown()
-	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
+	STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
 
 /obj/machinery/firework_launcher/RefreshParts()
 	set_launch_cooldown(5 MINUTES)
@@ -117,7 +117,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 	loaded_star().trigger_firework(WH)
 	spent(loaded_star(), user)
 	rel_clear(src, nameof(loaded_star))
-	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
+	STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
 	flick("launcher_launch", src)
 	return TRUE

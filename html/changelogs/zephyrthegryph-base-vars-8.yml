@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved per-type constants from base-type vars to trait blocks (object examine/explosion/debris/speech rules, item storage cost, abstract and climbing delay, mob footstep kind, delete on death, say list type, meat type, vore capacity, movable throw range, emissive blocking and lifetime, atom fluff and antag text, price tag, machine heat output) and moved last-bumped and latent-refusal timing to a sparse slot and the cooldown table."

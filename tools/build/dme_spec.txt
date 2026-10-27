@@ -1,0 +1,170 @@
+# The include spec of deepquarry.dme (tools/build/gen_dme.py writes the manifest from it and the files on disk).
+#
+# Every .dm file under a `scan` root is included, in path order, unless a rule below places it. A rule exists only where the order
+# changes what the compiled world does or whether it compiles; each says why. They were found by compiling the generated order against
+# the old hand-kept order and comparing the worlds (bash tools/ci/dme_order_equiv.sh, dmb-equiv, game and test builds): a rule that
+# is not needed is a bug, so drop it when its reason is gone (the generator refuses a rule that matches no file).
+
+# ---- what is included ----
+scan code
+scan interface
+scan maps/common
+scan maps/common_areas
+scan maps/common_submaps
+scan maps/~map_system
+scan maps/submaps/engine_submaps
+scan maps/~turfpacks
+file interface/skin.dmf
+
+# A module's closing file #undefs its macros: every file of the module before it.
+before code/modules/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+
+# Definition precedence. A type's var or proc defined in two files is the later file's (a proc's ..() calls the earlier one): these
+# pairs are the files that redefine what another file defines (mostly the former modular override files under code/content,
+# code/domains and the vore/serdy/alt files). Each keeps the order it had; folding the two definitions into one file removes the rule.
+before code/modules/emotes/definitions/audible.dm code/content/emotes/definitions/audiable.dm   # /datum/decl/emote/audible/gwah
+before code/modules/emotes/definitions/audible.dm code/content/emotes/definitions/audible_furry.dm   # .../audible/hiss
+before code/content/food/drinkingglass/metaglass.dm code/content/food/drinkgglass/metaglass.dm   # tequila_sunrise glass_icon_state
+before code/content/hydroponics/seedtypes/flowers.dm code/modules/hydro/plants.dm   # /datum/seed/flower/sunflower
+before code/modules/mob/new_player/sprite_accessories_ear.dm code/content/vore/appearance/sprite_accessories.dm   # ear sprite accessories
+before code/modules/materials/engineering/material_machines.dm code/content/research/tg/techwebs/nodes/mining_nodes.dm   # techweb material_processing
+before code/modules/mob/living/silicon/robot/drone/drone.dm code/modules/mob/living/silicon/drone/unify_drone.dm   # /mob/living/silicon/robot/drone
+before code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/** code/modules/mob/living/simple_mob/subtypes/animal/spider.dm   # giant spiders
+before code/modules/mob/living/simple_mob/donteatbossmonsters.dm code/modules/mob/living/simple_mob/subtypes/animal/spider.dm   # broodmother
+before code/modules/mob/living/simple_mob/subtypes/animal/spider.dm code/domains/ai/ports/broodmother.dm   # broodmother
+before code/modules/mob/living/simple_mob/subtypes/humanoid/mercs/** code/modules/mob/living/simple_mob/subtypes/humanoid/mercenary.dm   # mercs, vox
+before code/modules/mob/living/simple_mob/subtypes/humanoid/pirates.dm code/modules/mob/living/simple_mob/subtypes/humanoid/pirate.dm   # pirates
+before code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/ranged_damage.dm code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/orginalAlts.dm   # hivebots
+before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/durand.dm code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/combat.dm   # mecha mobs
+before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/marauder.dm code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/combat.dm
+before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/combat.dm
+before code/modules/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
+before code/modules/projectiles/projectile/beams.dm code/content/projectiles/guns/beam.dm   # phasers
+before code/modules/projectiles/projectile/bullets.dm code/content/projectiles/guns/bullet.dm   # bullets
+before code/content/projectiles/projectile/magnetic.dm code/content/projectiles/guns/magnetic.dm   # hunting flechette
+before code/modules/projectiles/guns/projectile/shotgun.dm code/content/projectiles/projectile/scatter.dm   # shotgun scatter
+before code/modules/food/food/snacks.dm code/modules/exploration/tyr_tribal_gear.dm   # honey ant snack
+before code/modules/pda/pda.dm code/content/pda/pda_subtypes.dm   # /obj/item/storage/box/PDAs
+before code/content/items/weapons/storage/boxes.dm code/content/casino/boxes_casino.dm   # casino boxes
+before code/content/hydroponics/seed_storage.dm code/modules/hydro/plantsstorage.dm   # seed storage machines
+before code/game/objects/structures/flora/flora.dm code/game/objects/structures/flora.dm   # /obj/structure/flora/bush
+before code/game/area/Away?Mission?areas.dm code/content/turfs/initialization/init.dm   # /area/area_after_init()
+before code/modules/mob/living/living_movement.dm code/content/vore/eating/stumblevore.dm   # /mob/living/Bump(), Crossed()
+before code/modules/mob/living/simple_mob/defense.dm code/content/vore/eating/simple_animal.dm   # /mob/living/simple_mob/hit_with_item()
+before code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm code/domains/ai/ports/slime_mob_overrides.dm   # xenobio slime examine(), update_mood()
+before code/modules/projectiles/gun.dm code/content/projectiles/targeting/targeting_gun.dm   # /obj/item/gun/dropped(), equipped()
+before code/modules/mob/holder.dm code/content/vore/resizing/holder_micro.dm   # /obj/item/holder/container_resist()
+before code/defines/obj/weapon.dm code/content/materials/material_stock_parts.dm   # /obj/item/stock_parts/get_rating()
+before code/ATMOSPHERICS/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/modules/overmap/ships/computers/helm.dm code/modules/flight_operations/flight_console.dm   # navigation ui_redirect()
+before code/datums/observation/turf_enterexit.dm code/content/turfs/simulated/outdoors/sky_effect.dm   # /turf/Entered()
+
+# Declaration before use, for DreamMaker: it warns when a type's var is set, or a proc overridden, before the file that declares it
+# (var_before_def, override_before_def). The native compiler does not care and the worlds are the same; these pairs keep DreamMaker's
+# warnings at what the old order gave (tools/ci/dm_equiv.sh compiles with both).
+before code/engine/declare/lifecycle.dm code/datums/lifecycle/declarations.dm          # validate_registries()
+before code/engine/hooks/content_adapters.dm code/datums/engine_adapters.dm            # bind_native(), send(), lookup(), ...
+before code/engine/parts/input_adapter.dm code/datums/engine_adapters.dm              # compatibility_topic()
+before code/engine/refs/transfer.dm code/datums/ownership/transfer.dm                 # record(), refusal()
+before code/engine/state/collapse.dm code/datums/state/collapse.dm                     # describe(), hook_blockers()
+before code/engine/state/construction.dm code/datums/state/construction_adapter.dm     # create()
+before code/engine/state/properties/providers.dm code/datums/properties/providers.dm   # validate_rules(), variant_values()
+before code/engine/state/schema.dm code/datums/state/latent_safe_types.dm              # register_defaults()
+before code/engine/state/serializer.dm code/datums/state/serializer.dm                 # identity(), lookup()
+before code/game/objects/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
+before code/modules/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm      # change_win_count()
+before code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm code/domains/ai/ports/possum.dm  # respond_to_damage()
+before code/modules/reagents/reagents/content/food.dm code/content/reagents/reagents/content/alcohol.dm      # nutriment_factor
+before code/modules/refinery/core/industrial_reagent_machines.dm code/content/refinery/core/industrial_reagent_pump.dm   # minimum_reagents_for_transfer
+before code/modules/stockmarket/stocks.dm code/modules/admin/admin_report_panel.dm     # displayValues()
+before code/content/integrated_electronics/core/special_pins/list_pin.dm code/content/integrated_electronics/list_pin_panel.dm   # interact()
+
+# The test trees are compiled through their aggregators (their own include lists, under UNIT_TESTS).
+skip code/modules/unit_tests/**
+file code/modules/unit_tests/_unit_tests.dm
+skip code/tests/**
+file code/tests/_tests.dm
+optional code/tests/engine/test_only_defs.dm                 # included directly, after the game (see the `last` rules)
+optional code/modules/unit_tests/_test_build_overrides.dm    # likewise
+skip code/modules/benchmarks/**   # code/modules/unit_tests/_unit_tests.dm includes them
+skip code/modules/balance/**      # likewise
+
+# Generated files (gitignored, so the scan never includes them; analyze gen and the Verdigris bindings step write them before every
+# compile, and a clean checkout lacks them: `file` includes them anyway).
+file code/__defines/verdigris/_bindings.dm         # tools/ci/gen_verdigris_bindings.sh
+file code/__defines/verdigris/_bindings_types.dm
+file code/engine/_generated/ids.dm
+file code/engine/_generated/reads.dm
+file code/engine/_generated/deps.dm
+file code/engine/_generated/plans.dm
+file code/engine/_generated/system_accessors.dm
+file code/engine/_generated/sparse_slots.dm
+file code/engine/_generated/declare.dm
+file code/engine/_generated/stats.dm
+file code/engine/_generated/actions.dm
+file code/engine/_generated/auto_tracked.dm
+file code/engine/_generated/tracked_lists.dm
+file code/_generated/reads.dm
+ifdef DOC_SNIPPETS tools/ci/generated/doc_snippets.dm
+
+# ---- order ----
+# What must come first: the compiler pragmas and compile options, then every macro file. The macros of a file are expanded only after
+# its #define, so a use earlier in the manifest compiles to other code or fails (`gen_dme.py --check` lists every such use).
+first code/__byond_version_compat.dm
+first code/__odlint.dm
+first code/__spaceman_dmm.dm
+first code/_compile_options.dm
+first code/_macros.dm
+first code/__defines/**
+first code/engine/_generated/ids.dm      # the ids the declaration markers declare (analyze gen declare_ids): before everything that names one
+first code/contracts/**                  # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
+first **/*_defines.dm                    # a module's own macro file (combat_ai, integrated_electronics, flight_operations, expedition, ...)
+first code/game/machinery/machinery_fields.dm   # declares the machine families' state vars (on, active, locked, mode) their files set
+
+# Macros defined in an ordinary file and used by others: the definer before its users.
+before code/modules/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
+before code/modules/heat/heat_bind_batch.dm code/ATMOSPHERICS/**              # HEAT_BODY_RESOLVE
+before code/modules/heat/heat_bind_batch.dm code/datums/rules/world_adapter.dm
+before code/modules/heat/heat_bind_batch.dm code/domains/heat/**
+before code/modules/heat/heat_bind_batch.dm code/modules/heat/heat.dm
+before code/game/atom/atom_type_table.dm code/controllers/subsystems/atoms_init.dm   # TYPE_TABLE_*
+before code/game/atom/atom_type_table.dm code/game/atom/atom_materialize.dm
+before code/engine/declare/entries.dm code/engine/actions/**                  # ENTRY_SLOTS, ENTRY_SLOT_LIST
+before code/engine/stats/contributes.dm code/engine/change/staleness.dm       # CV_PROC, CV_VAR
+before code/engine/stats/tables.dm code/engine/stats/recompute.dm             # TABLE_KEY
+before code/modules/overmap/overmap_shuttle.dm code/modules/flight_operations/api.dm   # waypoint_sector
+before code/library/reagents/reagent_flow.dm code/library/reagents/**          # REAGENT_FLOW_*
+before code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm code/content/power/supermatter/setup_supermatter.dm   # ATM_*
+before code/content/turfs/turf_cascade_service.dm code/content/turfs/turf_cascade_api.dm   # DEFAULT_CONVERSION_*
+before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_architecture_validation.dm   # GENERATED_STATION_TILE_*
+before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_infrastructure.dm
+before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_materializer.dm
+before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_tile_plan.dm
+before code/modules/generated_station/generated_station_tile_plan.dm code/modules/generated_station/generated_station_materializer.dm   # GENERATED_STATION_UTILITY_*
+
+# The test trees (compiled only under UNIT_TESTS) after the game, the cross-cutting test code (fixtures, driver: macros the unit tests
+# use) before the unit tests.
+last code/tests/_tests.dm
+last code/modules/unit_tests/_unit_tests.dm
+
+# The generated files last: they read macros of every file (CRYO_OCCUPANT_CONDUCTANCE, SLOT_ECHAIR_KIT, ...), and declare.dm writes
+# per-type facts over the types' own definitions.
+last code/engine/_generated/reads.dm
+last code/engine/_generated/deps.dm
+last code/engine/_generated/plans.dm
+last code/engine/change/plan.dm              # reads CGK_* of plans.dm (and OUTPUT_HOOK_DRAW of engine/present/outputs.dm)
+last code/engine/actions/admission_query.dm  # reads READ_KIND_* of reads.dm
+last code/engine/_generated/system_accessors.dm
+last code/engine/_generated/sparse_slots.dm
+last code/engine/_generated/declare.dm
+last code/engine/_generated/stats.dm
+last code/engine/_generated/actions.dm
+last code/engine/_generated/auto_tracked.dm
+last code/engine/_generated/tracked_lists.dm
+last code/_generated/reads.dm
+
+# Test-only definitions that need the game's macros in scope, then the test build's appended overrides: an override must come after
+# the definition it overrides (the later definition of a type's proc runs, its ..() calls the earlier), so they go after everything.
+# The files say why; they are compiled only under UNIT_TESTS.
+last code/tests/engine/test_only_defs.dm
+last code/modules/unit_tests/_test_build_overrides.dm

@@ -128,7 +128,7 @@
 	apply_current_stage()
 
 /datum/affliction/wound/proc/apply_current_stage()
-	min_damage = num_or_null(stage_damage(current_stage))
+	min_damage = stage_damage(current_stage)
 	set_desc(stage_desc(current_stage))
 	set_name(desc)
 
@@ -607,3 +607,4 @@
 	stages = list("melted wiring" = 50, "fused circuitry" = 30, "scorching" = 15, "scorch mark" = 5, "discolouration" = 0)
 
 #undef WOUND_HEMOSTATIC_BLEED_RATE
+SCHEMA(/datum/affliction/wound, min_damage, num())

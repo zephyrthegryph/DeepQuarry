@@ -44,7 +44,7 @@
 /datum/contract_event/New(_event_type, atom/source, mob/living/actor, mob/living/subject, list/context, _occurrence_id)
 	. = ..()
 	event_type = _event_type
-	EXPIRY_STAMP(src, occurred_at, CLOCK_WORLD)
+	STAMP(src, occurred_at, CLOCK_WORLD)
 	occurrence_id = _occurrence_id
 	data = context ? deepCopyList(context) : list()
 	fact_id = data["fact_id"] || occurrence_id
@@ -75,11 +75,11 @@
 		subject_id ||= identity?.id
 		subject_name ||= subject.real_name
 	if(source)
-		source_ref = REF(source)
+		source_ref = ref_token(source)
 		source_type = source.type
 		var/turf/source_turf = get_turf(source)
 		if(source_turf)
-			location_ref = REF(source_turf)
+			location_ref = ref_token(source_turf)
 			x = source_turf.x
 			y = source_turf.y
 			z = source_turf.z

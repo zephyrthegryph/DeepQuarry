@@ -238,7 +238,7 @@
 /datum/unit_test/dx_work_cross_urgent/Run()
 	var/datum/controller/kernel/K = kernel()
 	var/datum/rx_fx/F = allocate(/datum/rx_fx)
-	K.run_urgent(WORK_TEST_LIMIT) // nothing left over from another test
+	K.run_urgent(WORK_TEST_LIMIT, world.time) // nothing left over from another test
 	var/datum/work_item/reaction/W = rxw_item(F, RXN_CROSS)
 	TEST_ASSERT(W.urgent && !W.event, "an urgent on_cross is an urgent work item")
 	F.set_level(5)
@@ -249,7 +249,7 @@
 	F.set_level(25)
 	TEST_ASSERT_EQUAL(K.urgent_deduped, deduped + 1, "a second crossing of the same holder is deduped")
 	TEST_ASSERT_EQUAL(length(K.urgent_queue), 1, "still one request")
-	K.run_urgent(WORK_TEST_LIMIT)
+	K.run_urgent(WORK_TEST_LIMIT, world.time)
 	TEST_ASSERT_EQUAL(length(F.crossings), 1, "one delivery")
 	TEST_ASSERT_EQUAL(F.crossings[1][1], 2, "carrying the latest band")
 	TEST_ASSERT_EQUAL(F.crossings[1][2], 0, "and the band it left")
@@ -257,7 +257,7 @@
 	// Back where it started before the kernel ran: nothing to deliver.
 	F.set_level(3)
 	F.set_level(25)
-	K.run_urgent(WORK_TEST_LIMIT)
+	K.run_urgent(WORK_TEST_LIMIT, world.time)
 	TEST_ASSERT_EQUAL(length(F.crossings), 1, "a round trip inside one request delivers nothing")
 
 /// A holder destroyed with a request pending does not run it.
@@ -265,14 +265,14 @@
 
 /datum/unit_test/dx_work_cross_urgent_destroyed/Run()
 	var/datum/controller/kernel/K = kernel()
-	K.run_urgent(WORK_TEST_LIMIT) // nothing left over from another test
+	K.run_urgent(WORK_TEST_LIMIT, world.time) // nothing left over from another test
 	var/datum/rx_fx/F = new
 	F.set_level(5)
 	F.set_level(15)
 	TEST_ASSERT_EQUAL(length(K.urgent_queue), 1, "pending")
 	var/dropped = K.urgent_dropped
 	qdel(F)
-	K.run_urgent(WORK_TEST_LIMIT)
+	K.run_urgent(WORK_TEST_LIMIT, world.time)
 	TEST_ASSERT_EQUAL(K.urgent_dropped, dropped + 1, "the request for a destroyed holder is dropped")
 	TEST_ASSERT_EQUAL(length(K.urgent_queue), 0, "and nothing is left")
 

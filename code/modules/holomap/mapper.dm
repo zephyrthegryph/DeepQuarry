@@ -350,7 +350,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 		if(mob_indicator != HOLOMAP_ERROR)
 
 			// This is so specific because the icons are pixel_x and pixel_y only relative to OUR view of where THEY are relative to us
-			var/marker_cache_key = "\ref[HC]_[HC.marker_prefix]_[mob_indicator]"
+			var/marker_cache_key = "[ref_token(HC)]_[HC.marker_prefix]_[mob_indicator]"
 
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
@@ -378,7 +378,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 		if(!TB || (TB.z != T_z))
 			continue
 
-		var/marker_cache_key = "\ref[HB]_marker"
+		var/marker_cache_key = "[ref_token(HB)]_marker"
 		if(!(marker_cache_key in icon_image_cache))
 			var/atom/movable/screen/mapper/marker/mark = new()
 			mark.set_icon_state("beacon")

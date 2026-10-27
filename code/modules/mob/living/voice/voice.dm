@@ -40,7 +40,7 @@
 // Parameters: None
 // Description: Sets a timeofdeath variable, to fix the free respawn bug.
 /mob/living/voice/ghostize()
-	EXPIRY_STAMP(src, timeofdeath, CLOCK_WORLD)
+	STAMP(src, timeofdeath, CLOCK_WORLD)
 	. = ..()
 
 // Verb: hang_up()
@@ -99,7 +99,7 @@
 	//Speech bubbles.
 	if(comm)
 		var/speech_bubble_test = say_test(message)
-		var/speech_type = custom_speech_bubble
+		var/speech_type = bio.custom_speech_bubble
 		if(!speech_type || speech_type == "default")
 			speech_type = speech_bubble_appearance()
 		var/image/speech_bubble = generate_speech_bubble(comm, "[speech_type][speech_bubble_test]")

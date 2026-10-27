@@ -250,7 +250,7 @@ CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
 											sound = span_warning("an extremely rapid, thready, irregular heartbeat")
 
 							var/obj/item/organ/internal/lungs/L = M.organ_in(O_LUNGS)
-							if(!L || M.losebreath)
+							if(!L || M.losebreath())
 								sound += span_warning(" and no respiration")
 							else if(M.is_lung_ruptured() || M.oxygen_debt() > 50)
 								sound += span_warning(" and [pick("wheezing","gurgling")] sounds")
@@ -1082,7 +1082,7 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
+			STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
@@ -1090,7 +1090,7 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			fx_sparks(M, 3)
 		else
-			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
+			STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
@@ -1199,7 +1199,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/modified)
 			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
+			STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
@@ -1207,7 +1207,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/modified)
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			fx_sparks(M, 3)
 		else
-			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
+			STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
@@ -1280,7 +1280,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning)
 			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
+			STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			currently_shrinking = 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
@@ -1293,7 +1293,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning)
 				act_message(H, null, MSG_SELF(span_notice("The space around you distorts but stay the same size.")), \
 					MSG_OTHERS(span_warning("The space around %U% twists and turns for a moment but then nothing happens.")))
 				return
-			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
+			STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			currently_shrinking = 0

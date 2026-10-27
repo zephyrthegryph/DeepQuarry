@@ -8,8 +8,8 @@
 
 
 /atom/
-	var/description_fluff = null //Green text about the atom's fluff, if any exists.
-	var/description_antag = null //Malicious red text, for the antags.
+
+SCHEMA(/atom, description_fluff, schema_text())
 
 /**
  * Generated mechanics text: what the atom's properties mean in play (a weapon's
@@ -24,13 +24,13 @@
 	return
 
 /atom/proc/get_description_fluff()
-	if(description_fluff)
-		return description_fluff
+	if(atom_rules_of(src).description_fluff)
+		return atom_rules_of(src).description_fluff
 	return
 
 /atom/proc/get_description_antag()
-	if(description_antag)
-		return description_antag
+	if(atom_rules_of(src).description_antag)
+		return atom_rules_of(src).description_antag
 	return
 
 // This one is slightly different, in that it must return a list.
