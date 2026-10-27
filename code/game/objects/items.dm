@@ -4,7 +4,6 @@
 	w_class = ITEMSIZE_NORMAL
 
 	// r_speed removed (dead, 0 refs)
-	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	pass_flags = PASSTABLE
 	pressure_resistance = 5

@@ -164,6 +164,14 @@ PROC_SUMMARY(/proc/get_material_by_name) // a registry lookup: a name maps to it
  * Named arguments can appear in any order and we need them to appear after ordered arguments
  * We assume that no one will pass in a named argument with a value of null
  **/
+/// A non-text, non-number argument as part of a bespoke material id: a datum by its handle, a list by its JSON, anything else (a path) by its text.
+/proc/material_argument_id(argument)
+	if(isdatum(argument))
+		return ref_token(argument) || "deleted-[argument.type]"
+	if(islist(argument))
+		return json_encode(argument)
+	return "[argument]"
+
 /proc/GetIdFromArguments(list/arguments)
 	var/datum/material/mattype = arguments[1]
 	var/list/fullid = list("[initial(mattype.name) || mattype]")
@@ -174,11 +182,11 @@ PROC_SUMMARY(/proc/get_material_by_name) // a registry lookup: a name maps to it
 		if(istext(key))
 			value = arguments[key]
 		if(!(istext(key) || isnum(key)))
-			key = REF(key)
+			key = material_argument_id(key)
 		key = "[key]" // Key is stringified so numbers dont break things
 		if(!isnull(value))
 			if(!(istext(value) || isnum(value)))
-				value = REF(value)
+				value = material_argument_id(value)
 			named_arguments["[key]"] = value
 		else
 			fullid += "[key]"

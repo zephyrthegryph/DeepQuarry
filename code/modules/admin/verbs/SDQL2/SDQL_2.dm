@@ -669,7 +669,9 @@ CAPABILITIES(/datum/SDQL2_query)
 			obj_count_finished = select_refs
 			for(var/i in found)
 				SDQL_print(i, text_list, print_nulls)
-				select_refs["\ref[i]"] = TRUE
+				var/selected_handle = ref_token(i)
+				if(selected_handle)
+					select_refs[selected_handle] = TRUE
 				SDQL2_TICK_CHECK
 				SDQL2_HALT_CHECK
 			select_text = text_list

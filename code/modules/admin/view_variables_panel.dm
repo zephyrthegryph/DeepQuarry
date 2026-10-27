@@ -21,8 +21,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	var/tmp/client/owner
 	/// The datum or list currently being viewed.
 	var/thing
-	/// Saved ref string so refresh actions land on the same target.
-	var/refid
+
+/// The viewed target's ref text, built for this request (never kept).
+/datum/view_variables_panel/proc/current_ref()
+	return REF(thing)
 
 /datum/view_variables_panel/New(client/owner_client)
 	..()
@@ -65,7 +67,7 @@ CAPABILITIES(/datum/view_variables_panel)
 
 /datum/view_variables_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["ref"] = refid
+	data["ref"] = current_ref()
 	var/list/merged_1 = ui_data_datum_view_variables_panel(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -87,8 +89,8 @@ CAPABILITIES(/datum/view_variables_panel)
 	else
 		type_text = "[maybe_datum.type]"
 	data["type"] = type_text
-	data["ref_for_paste"] = "@[copytext(refid, 2, -1)]"
-	data["title"] = "[thing] ([refid]) = [type_text]"
+	data["ref_for_paste"] = "@[copytext(current_ref(), 2, -1)]"
+	data["title"] = "[thing] ([current_ref()]) = [type_text]"
 
 	// Atom-specific cords + sprite handling.
 	if(isatom(thing))
@@ -116,12 +118,12 @@ CAPABILITIES(/datum/view_variables_panel)
 	if(is_listy)
 		raw_dropdown = list(
 			"---",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_ADD)]'>Add Item</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_ERASE_NULLS)]'>Remove Nulls</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_ERASE_DUPES)]'>Remove Dupes</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_SET_LENGTH)]'>Set len</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_LIST_SHUFFLE)]'>Shuffle</option>",
-			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid, VV_HK_EXPOSE)]'>Show VV To Player</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(current_ref(), VV_HK_LIST_ADD)]'>Add Item</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(current_ref(), VV_HK_LIST_ERASE_NULLS)]'>Remove Nulls</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(current_ref(), VV_HK_LIST_ERASE_DUPES)]'>Remove Dupes</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(current_ref(), VV_HK_LIST_SET_LENGTH)]'>Set len</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(current_ref(), VV_HK_LIST_SHUFFLE)]'>Shuffle</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(current_ref(), VV_HK_EXPOSE)]'>Show VV To Player</option>",
 			"---",
 		)
 		data["dropdown"] = parse_dropdown_options(raw_dropdown, user)
@@ -228,7 +230,6 @@ CAPABILITIES(/datum/view_variables_panel)
 	if(!dq_vv_panel)
 		rel_set(src, nameof(dq_vv_panel), new /datum/view_variables_panel(src))
 	dq_vv_panel.thing = thing
-	dq_vv_panel.refid = REF(thing)
 	dq_vv_panel.tgui_interact(requester)
 	SStgui.update_uis(dq_vv_panel)
 

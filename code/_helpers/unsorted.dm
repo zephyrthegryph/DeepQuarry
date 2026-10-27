@@ -1127,7 +1127,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 /proc/topic_link(datum/D, arglist, content)
 	if(istype(arglist,/list))
 		arglist = list2params(arglist)
-	return "<a href='byond://?src=\ref[D];[arglist]'>[content]</a>"
+	return "<a href='byond://?src=[REF(D)];[arglist]'>[content]</a>"
 
 /proc/get_random_colour(simple, lower=0, upper=255)
 	var/colour
@@ -1398,7 +1398,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 				stack_trace("A ref was requested of an object with DF_USE_TAG set but no tag: [thing]")
 			else
 				return "\[[url_encode(thing.tag)]\]"
-	return "\ref[input]"
+	return "\ref[input]" // ALLOW(ref_text): REF() is the one primitive that builds a reference text for a request-local href
 
 // Painlessly creates an <a href=...> element.
 // First argument is where to send the Topic call to when clicked. Should be a reference to an object. This is generally src, but not always.
@@ -1406,7 +1406,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 // Note that object refs will be converted to text, as if \ref[thing] was done. To get the ref back on Topic() side, you will need to use locate().
 // Third one is the text that will be clickable.
 /proc/href(href_src, list/href_params, href_text)
-	return "<a href='byond://?src=\ref[href_src];[list2params(href_params)]'>[href_text]</a>"
+	return "<a href='byond://?src=[REF(href_src)];[list2params(href_params)]'>[href_text]</a>"
 
 // This is a helper for anything that wants to render the map in TGUI
 /proc/get_tgui_plane_masters()

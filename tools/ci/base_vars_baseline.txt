@@ -18,7 +18,6 @@ base_var	code/game/atoms_movable.dm	@/atom/movable::last_move
 base_var	code/game/atoms_movable.dm	@/atom/movable::move_speed
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_x
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_y
-base_var	code/game/objects/items.dm	@/obj/item::health
 base_var	code/game/objects/items.dm	@/obj/item::slowdown
 base_var	code/game/objects/items.dm	@/obj/item::identity_type
 base_var	code/game/objects/items.dm	@/obj/item::init_hide_identity
