@@ -29,4 +29,31 @@ check "merge_batch retries a no-result lane once with only its own tests, then d
 # the gates honour the train's analyze_tests trust
 check "dq_merge_gates skips analyze_tests on DQ_GATE_ANALYZE_TRUSTED and logs why" 'grep -q "analyze_tests trusted (not run)" "$here/tools/dq_merge_gates.sh"'
 
+
+# dq_merge_batch: one real conflict between two lanes must not poison the attempts after it (27 October, train-dc: 0 of 12 lanes passed).
+# A scratch repository, stub gates; lanes c1 and c2 conflict with each other only, g1 and g2 are clean: c2 waits, the rest pass, and no
+# attempt after the conflict starts dirty.
+r="$tmp/mb"; git init -q --bare "$r/origin.git"; git clone -q "$r/origin.git" "$r/w" 2>/dev/null
+(
+	cd "$r/w" || exit 1
+	git config user.email t@t; git config user.name t
+	mkdir -p tools lanes
+	cp "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_dme_resolve.sh" tools/
+	echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
+	printf '#!/usr/bin/env bash\necho "stub gates: ok"\n' >tools/dq_merge_gates.sh
+	echo base >shared.txt; printf 'data/\n' >.gitignore
+	git add -A; git commit -q -m init; git branch -M master; git push -q origin master; git fetch -q origin
+	for l in g1 c1 c2 g2; do
+		git switch -q -c "$l" origin/master
+		case "$l" in c*) echo "$l" >shared.txt ;; *) echo "$l" >"lanes/$l.txt" ;; esac
+		git add -A; git commit -q -m "$l"; git push -q origin "$l"
+	done
+	git switch -q --detach origin/master
+	bash tools/dq_merge_batch.sh --lanes "g1 c1 c2 g2" >"$r/out.txt" 2>&1
+) >/dev/null 2>&1
+mb_good="$(sed -n 's/^BATCH_GOOD: //p' "$r/out.txt" | tail -n 1)"
+mb_later="$(sed -n 's/^BATCH_LATER: //p' "$r/out.txt" | tail -n 1)"
+check "a lane-vs-lane conflict holds back only that lane; the clean lanes and the first of the pair pass" '[[ " $mb_good " == *" g1 "* && " $mb_good " == *" g2 "* && " $mb_good " == *" c1 "* ]] && [ "$(echo $mb_later)" = c2 ] && ! grep -q "started dirty" "$r/out.txt"'
+[ "$fail" -eq 0 ] || { echo "---- merge_batch output:"; tail -n 30 "$r/out.txt"; }
+
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }

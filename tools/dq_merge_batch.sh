@@ -120,10 +120,26 @@ attempt_run() {
 		cd "$dir" || exit 90
 		# Each attempt starts from a clean tree: the previous failed attempt may have left a baseline shrink behind.
 		dq_clean_tracked "dq_merge_batch: attempt started dirty" 2>&1 | tee -a "$log" >&2
+		# 27 October (train-dc): another process held the index lock, a failed merge could not be aborted, and every later attempt
+		# started dirty and was read as a lane conflict. A tree that is still dirty or mid-merge after cleaning is a setup error (90),
+		# never a lane's verdict.
+		if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ] || ! git diff --quiet HEAD 2>/dev/null; then
+			dq_clean_tracked "dq_merge_batch: attempt still dirty, second clean" 2>&1 | tee -a "$log" >&2
+			if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ] || ! git diff --quiet HEAD 2>/dev/null; then
+				echo "dq_merge_batch: SETUP ERROR: the tree is still dirty or mid-merge after cleaning (an index lock held by another process?)" | tee -a "$log" >&2
+				exit 90
+			fi
+		fi
 		git switch -q --detach origin/master >>"$log" 2>&1 || exit 90
 		for l in "$@"; do
+			mstart="$(wc -l <"$log" 2>/dev/null || echo 0)"
 			if ! git merge --no-ff --no-edit -q -m "Merge $l" "$(ref_of "$l")" >>"$log" 2>&1 && ! dme_resolve_conflict >>"$log" 2>&1 && ! doc_union_conflict >>"$log" 2>&1; then
-				git merge --abort >/dev/null 2>&1
+				git merge --abort >/dev/null 2>&1 || { git merge --abort >/dev/null 2>&1; dq_clean_tracked "dq_merge_batch: merge --abort failed; cleaning" >>"$log" 2>&1; }
+				# Only a content conflict names the lane; a lock, an unwritable index or local changes are setup errors (90).
+				if ! tail -n "+$((mstart + 1))" "$log" | grep -q '^CONFLICT ('; then
+					echo "dq_merge_batch: SETUP ERROR: merging $l failed without a content conflict (see $log); not the lane's fault" | tee -a "$log" >&2
+					exit 90
+				fi
 				echo "$l" >"$log.conflict"
 				echo "   $l conflicts with the batch; see $log" >&2
 				exit 91
@@ -291,6 +307,18 @@ remaining=("${lanes[@]}")
 while [ ${#remaining[@]} -gt 0 ]; do
 	set=("${good[@]+"${good[@]}"}" "${remaining[@]}")
 	attempt "${set[@]}"; rc=$?
+	if [ "$rc" -eq 90 ]; then
+		echo "== setup error in the attempt (not a lane verdict); cleaning and retrying it once"
+		dq_clean_tracked "dq_merge_batch: after a setup error"
+		NOCACHE=1 attempt "${set[@]}"; rc=$?
+		if [ "$rc" -eq 90 ]; then
+			echo "################################################################################"
+			echo "# SETUP ERROR twice: no lane is judged; [${remaining[*]}] are deferred to the next run"
+			echo "################################################################################"
+			deferred+=("${remaining[@]}"); remaining=()
+			break
+		fi
+	fi
 	if [ "$rc" -eq 91 ]; then
 		# a lane that cannot even merge: with master alone it merges -> it waits for the next cycle; with master it conflicts -> bounced
 		if merges_with_master "$CONFLICT"; then
@@ -353,7 +381,7 @@ while [ ${#remaining[@]} -gt 0 ]; do
 			mid=$(( ${#sub[@]} / 2 ))
 			L=("${sub[@]:0:mid}"); R=("${sub[@]:mid}")
 			attempt_pair "${good[*]-} ${L[*]}" "${good[*]-} ${R[*]}"
-			if [ "$RC_A" -eq 92 ] || [ "$RC_A" -eq 93 ] || [ "$RC_B" -eq 92 ] || [ "$RC_B" -eq 93 ]; then
+			if [ "$RC_A" -eq 90 ] || [ "$RC_B" -eq 90 ] || [ "$RC_A" -eq 92 ] || [ "$RC_A" -eq 93 ] || [ "$RC_B" -eq 92 ] || [ "$RC_B" -eq 93 ]; then
 				if [ "$RC_A" -eq 93 ] || [ "$RC_B" -eq 93 ]; then prc=93; else prc=92; fi
 				if [ "$RC_A" -eq 0 ]; then good+=("${L[@]}"); sub=("${R[@]}"); fi
 				break
@@ -390,7 +418,7 @@ while [ ${#remaining[@]} -gt 0 ]; do
 	while [ "$lo" -lt "$hi" ]; do
 		mid=$(( (lo + hi) / 2 ))
 		attempt "${good[@]+"${good[@]}"}" "${remaining[@]:0:mid}"; prc=$?
-		if [ "$prc" -eq 92 ] || [ "$prc" -eq 93 ]; then abort_rc=$prc; break; fi
+		if [ "$prc" -eq 90 ] || [ "$prc" -eq 92 ] || [ "$prc" -eq 93 ]; then abort_rc=$prc; break; fi
 		if [ "$prc" -eq 0 ]; then lo=$((mid + 1)); passed=$mid; elif [ "$prc" -eq 91 ]; then hi=$mid; else hi=$mid; fi
 	done
 	if [ "${abort_rc:-0}" -ne 0 ]; then
