@@ -410,9 +410,16 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
    switch builds on that lane's base). Measured, production tree, interleaved hot daemons, per round body edit, string
    edit, appended proc, body edit, string edit: patch-path steps 4.2-9.1 s (step 1 compiler) against 4.6-8.4 s (this
    branch) apart from one loaded round; `dmb-equiv` of the chain's output against a fresh `--no-daemon --no-cache` compile:
-   EQUIVALENT. Found, not changed: a body edit right after an appended-callable edit compiles whole ("answer world or
-   resource searches changed") on both compilers, because an appended output is retained without answer marks; that is
-   the next thing to absorb.
+   EQUIVALENT.
+7. **Answers settled after lowering (2026-10-26, compiler/one-path-marks).** An admitted output's answer version, context,
+   facts and mark are taken after the request lowered what it relowers (`Answered::settle`), not at admission: the
+   answers and resource searches the relowered and appended units asked first are now part of the published mark, so the
+   next request proves them too (before, a slot first asked after the mark was never compared). Appended-callable outputs
+   are marked like any other (they were retained without marks). A decline on the answer world now says whether the
+   world or the resource searches differ, and each request logs `native answer world: tree=... world=...`.
+   A body edit after an append builds on it. (A measurement script that re-appended an edited proc at the end of its
+   file moved that declaration after the appended one: the declaration order changed, the tree identity and answer
+   world with it, and the edit correctly compiled whole.)
 
 
 ## Persisted dependency index, step 2 (2026-10-24, lane `compiler/dep-index`)
@@ -777,6 +784,31 @@ interleaving; memory by `bench/shared_store_probe.sh` game then test):
 
 **Coordination.** A DM-side lane reduces `#ifdef UNIT_TESTS` guards in engine code so fewer game bodies differ; it records its
 progress here. The compiler side does not depend on it: steps 1-3 share whatever is equal.
+
+## Design option: the include spec as the project input (2026-10-27, lane `tools/generated-dme`)
+
+Not built; recorded for the query-core work. `deepquarry.dme` is generated now (`tools/build/gen_dme.py` from the files on disk and the
+ordering spec `tools/build/dme_spec.txt`: `scan` roots, `skip`s, `first`/`last` groups, `before` rules, each with its reason; the
+order dependences were found by compiling the generated order against the old hand order and comparing with dmb-equiv,
+`tools/ci/dme_order_equiv.sh`). The `.dme` stays on disk because DreamMaker, DreamChecker, the analyzer and CI read it.
+
+dmbc could take the spec directly instead of parsing the generated manifest: the `project` input row would be the spec text plus the
+directory listings of the scan roots (names only), and the manifest order a query over them (`manifest_order(spec, listing)`, the
+same stable topological sort). What it would buy:
+
+* A file added or removed changes one listing entry, not a 5,900-line manifest whose text the frontend diffs region by region today
+  (`program text outside bodies changed` declines incremental output on any manifest edit, which is why a lane that only adds a file
+  pays a structural change).
+* The order rules become typed edges the frontend can check: a macro use before its `#define` (what `gen_dme.py --check` reports
+  heuristically) is visible exactly in the preprocessor's expansion facts, so the spec could be verified by the compiler instead of a
+  token scan.
+* The include position of a file stops being an input of every file after it: today's `.dme` order is a total order, while the spec
+  only orders what genuinely depends on order (macros, the definition precedence of a proc defined twice on one type, global
+  initializer order); everything else could compile in any order, which the per-file queries already assume.
+
+What it costs: dmbc must reproduce `gen_dme.py`'s sort byte for byte (or call it) so DreamMaker, which still reads the `.dme`, sees
+the same order; a disagreement would be a native-vs-DreamMaker difference the CI cross-check (`tools/ci/dm_equiv.sh`) catches. Keep
+the `.dme` either way.
 
 
 ## `#define` edits: re-plan only the include subtrees that read the changed macros (step 5, started 2026-10-26)

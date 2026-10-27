@@ -16,7 +16,7 @@
 	var/print_delay = 100
 	var/base_print_delay = 100	// For Adminbus reasons
 	var/printing
-	var/loaded_dna //Blood sample for DNA hashing.
+	var/list/loaded_dna //Blood sample for DNA hashing.
 	var/malfunctioning = FALSE	// May cause rejection, or the printing of some alien limb instead!
 
 	var/complex_organs = FALSE	// Can it print more 'complex' organs?

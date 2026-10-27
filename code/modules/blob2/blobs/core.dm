@@ -233,3 +233,5 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 /// Whoever is set to be controlling the blob. Used when the blob is created.
 /obj/structure/blob/core/proc/controller() as /client
 	return controller
+
+SCHEMA(/obj/structure/blob/core, desired_blob_type, schema_path(/datum/blob_type))

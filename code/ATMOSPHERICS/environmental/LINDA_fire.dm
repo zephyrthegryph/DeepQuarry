@@ -158,7 +158,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 	if(QDELETED(src)) // It is actually possible for this hotspot to become qdeleted in perform_exposure() if another hotspot gets created (for example in fire_act() of fuel pools)
 		return // In this case, we want to just leave and let the new hotspot take over.
 
-	setDir(pick(GLOB.cardinals))
+	setDir(pick(GLOB.cardinal))
 	air_update_turf(FALSE, FALSE)
 
 	// fire_puff.ogg is a /tg/ asset CHOMP doesn't ship. Sound disabled until vendored.
@@ -357,7 +357,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 		return
 	fire_stage = stage
 	set_icon_state(stage)
-	set_dir(pick(GLOB.cardinals))
+	set_dir(pick(GLOB.cardinal))
 
 // a dying fire cools its tile and leaves its hot group.
 /obj/effect/hotspot/lifecycle_dematerialize()

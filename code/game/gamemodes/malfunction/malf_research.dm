@@ -16,7 +16,7 @@ CAPABILITIES(/datum/malf_research)
 
 /datum/malf_research/New()
 	setup_abilities()
-	EXPIRY_STAMP(src, last_tick, CLOCK_WORLD)
+	STAMP(src, last_tick, CLOCK_WORLD)
 
 
 // Proc:		setup_abilities()
@@ -51,10 +51,10 @@ CAPABILITIES(/datum/malf_research)
 // Description: Processes CPU gain and research progress based on "realtime" calculation.
 /datum/malf_research/proc/research_tick(idle = 0)
 	if(idle)		// No power or running on APU. Do nothing.
-		EXPIRY_STAMP(src, last_tick, CLOCK_WORLD)
+		STAMP(src, last_tick, CLOCK_WORLD)
 		return
 	var/time_diff = (world.time - last_tick)
-	EXPIRY_STAMP(src, last_tick, CLOCK_WORLD)
+	STAMP(src, last_tick, CLOCK_WORLD)
 	var/cpu_gained = time_diff * cpu_increase_per_tick
 	if(cpu_gained < 0)
 		return // This shouldn't happen, but just in case..

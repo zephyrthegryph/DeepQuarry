@@ -1022,7 +1022,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	if(istype(wearer()?.buckled_to(), /obj/vehicle))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
-		EXPIRY_STAMP(src, wearer_move_delay, CLOCK_WORLD)
+		STAMP(src, wearer_move_delay, CLOCK_WORLD)
 		var/atom/movable/_tmp_buck_13 = wearer()?.buckled_to()
 		return _tmp_buck_13.relaymove(wearer(), direction)
 

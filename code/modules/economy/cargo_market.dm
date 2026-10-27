@@ -607,7 +607,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	transaction.description = description
 	transaction.value = max(0, round(value))
 	transaction.account_number = account_number
-	EXPIRY_STAMP(transaction, occurred_at, CLOCK_WORLD)
+	STAMP(transaction, occurred_at, CLOCK_WORLD)
 	transaction.reservation_key = reservation_key
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[counterparty_id]
 	var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(reservation_key)
@@ -680,7 +680,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		"detail" = "An external buyer accepted [item.name] against [bid.profile.name].",
 	), "market-export:[REF(item)]:[bid.id]", item)
 	if(bid.fulfilled_units >= bid.target_units && !bid.completed_at)
-		EXPIRY_STAMP(bid, completed_at, CLOCK_WORLD)
+		STAMP(bid, completed_at, CLOCK_WORLD)
 		adjust_station_faction_reputation(counterparty.faction_id, 2)
 		adjust_department_faction_reputation(DEPARTMENT_CARGO, counterparty.faction_id, 6)
 		if(export.market_router_account)
@@ -807,7 +807,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			continue
 		var/datum/cargo_market_bid/bid = market_bids?[market_id]
 		if(bid)
-			EXPIRY_STAMP(bid, completed_at, CLOCK_WORLD)
+			STAMP(bid, completed_at, CLOCK_WORLD)
 			bid.reservation_key = null
 			bid.reserved_account = 0
 			bid.expires_at = min(bid.expires_at, next_market_refresh)

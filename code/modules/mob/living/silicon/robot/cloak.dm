@@ -156,7 +156,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	state.times_hit++
 	var/alpha_to_show = CLAMP((source.alpha+(damage*10)), source.alpha, 255) //The more damage we take, the more visible we become.
 	flick_cloak(source, alpha_to_show)
-	EXPIRY_STAMP(state, last_hit_time, CLOCK_WORLD)
+	STAMP(state, last_hit_time, CLOCK_WORLD)
 	if(damage >= 50 || state.times_hit >= cloak_durability)
 		to_chat(source, span_warning("Your cloak buzzes and fails after sustaining too much damage!!"))
 		drop_cloak(source, state)

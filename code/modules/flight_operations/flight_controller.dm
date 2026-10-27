@@ -94,7 +94,7 @@ CAPABILITIES(/datum/system/flight)
 		destination.orbit_inclination = 4
 	else
 		destination.kind = istype(target, /obj/effect/overmap/visitable/ship) ? FLIGHT_DEST_VESSEL : (target.base ? FLIGHT_DEST_STATION : FLIGHT_DEST_ORBIT)
-		destination.orbit_parent_id = text_or_null(first_planet_id())
+		destination.orbit_parent_id = first_planet_id()
 		destination.body_radius = destination.kind == FLIGHT_DEST_STATION ? 1.8 : 1.15
 		destination.body_color = destination.kind == FLIGHT_DEST_STATION ? "#bda5ff" : "#62d5ff"
 		destination.orbit_radius = destination.kind == FLIGHT_DEST_STATION ? 14 : 19
@@ -158,7 +158,7 @@ CAPABILITIES(/datum/system/flight)
 			var/mission_type = pick(mission_types)
 			var/difficulty = pick(EXP_DIFF_LOW, EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH)
 			var/datum/expedition_mission/mission = new mission_type(difficulty)
-			mission.faction_type = text_or_null(expedition_pick_faction(difficulty))
+			mission.faction_type = expedition_pick_faction(difficulty)
 			var/datum/expedition_site/site = SSexpedition.create_site_descriptor(mission, difficulty, null, null, planet.id)
 			if(!site)
 				spent(mission)
@@ -330,7 +330,7 @@ CAPABILITIES(/datum/system/flight)
 			return
 		if(!plan.arrival_port() && !plan.destination().expedition()?.landing_waypoint)
 			plan.state = FLIGHT_PLAN_ARRIVED
-			EXPIRY_STAMP(plan, arrival_at, CLOCK_WORLD)
+			STAMP(plan, arrival_at, CLOCK_WORLD)
 			plan.release_leases()
 			finish_plan(plan)
 			return
@@ -343,7 +343,7 @@ CAPABILITIES(/datum/system/flight)
 		if(!plan.vessel.shuttle() || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE && plan.vessel.shuttle().current_location() == expected_landmark))
 			set_vessel_docked_port(plan.vessel, plan.arrival_port())
 			plan.state = FLIGHT_PLAN_ARRIVED
-			EXPIRY_STAMP(plan, arrival_at, CLOCK_WORLD)
+			STAMP(plan, arrival_at, CLOCK_WORLD)
 			plan.release_leases()
 			finish_plan(plan)
 			return
@@ -353,7 +353,7 @@ CAPABILITIES(/datum/system/flight)
 /datum/system/flight/proc/enter_transit(datum/flight_plan/plan)
 	set_vessel_docked_port(plan.vessel, null)
 	plan.state = FLIGHT_PLAN_TRANSIT
-	EXPIRY_STAMP(plan, departure_at, CLOCK_WORLD)
+	STAMP(plan, departure_at, CLOCK_WORLD)
 	EXPIRY_SET(plan, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME, CLOCK_WORLD)
 	if(plan.generation_state != FLIGHT_GENERATION_RUNNING)
 		return TRUE

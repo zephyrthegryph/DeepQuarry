@@ -35,8 +35,8 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 	if(!site() || shuttle != site().assigned_shuttle())
 		return
 	site().status = EXP_STATUS_ACTIVE
-	EXPIRY_STAMP(site(), deployed_at, CLOCK_WORLD)
-	EXPIRY_STAMP(site(), last_occupied, CLOCK_WORLD)
+	STAMP(site(), deployed_at, CLOCK_WORLD)
+	STAMP(site(), last_occupied, CLOCK_WORLD)
 	for(var/area/A in shuttle.shuttle_area)
 		for(var/mob/living/L in contents_of(A))
 			rel_add(site(), nameof(/datum/expedition_site::participants), L)

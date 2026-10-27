@@ -164,6 +164,8 @@ CAPABILITIES(/datum/system/radio)
 
 	var/frequency = ZERO_FREQ
 
+SCHEMA(/datum/signal, frequency, num())
+
 /datum/signal/proc/copy_from(datum/signal/model)
 	rel_set(src, nameof(source), model.source)
 	transmission_method = model.transmission_method

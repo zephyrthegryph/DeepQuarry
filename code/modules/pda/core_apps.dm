@@ -455,7 +455,7 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 		pda().id.assignment = newassignment
 		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
 		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
-		EXPIRY_STAMP(pda().id, last_job_switch, CLOCK_WORLD)
+		STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
 		newjob.current_positions++
 		user.mind.assigned_role = text_or_null(pda().id.rank)
@@ -484,7 +484,7 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 		pda().id.assignment = ptojob.title
 		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
 		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
-		EXPIRY_STAMP(pda().id, last_job_switch, CLOCK_WORLD)
+		STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
 		user.mind.assigned_role = ptojob.title
 		user.mind.role_alt_title = ptojob.title

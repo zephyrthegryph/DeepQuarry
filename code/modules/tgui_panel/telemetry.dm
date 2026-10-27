@@ -27,7 +27,7 @@
  * Requests some telemetry from the client.
  */
 /datum/tgui_panel/proc/request_telemetry()
-	EXPIRY_STAMP(src, telemetry_requested_at, CLOCK_WORLD)
+	STAMP(src, telemetry_requested_at, CLOCK_WORLD)
 	telemetry_analyzed_at = null
 	window.send_message("telemetry/request", list(
 		"limits" = list(
@@ -49,7 +49,7 @@
 	if(telemetry_analyzed_at)
 		message_admins("[key_name(client())] sent telemetry more than once.")
 		return
-	EXPIRY_STAMP(src, telemetry_analyzed_at, CLOCK_WORLD)
+	STAMP(src, telemetry_analyzed_at, CLOCK_WORLD)
 	if(!payload)
 		return
 	telemetry_connections = payload["connections"]

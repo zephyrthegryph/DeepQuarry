@@ -178,7 +178,7 @@
 
 	shift_state = AB_SHIFT_NONE
 	if(from_temporary)
-		EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)
+		STAMP(src, last_shift, CLOCK_WORLD)
 
 
 /mob/living/simple_mob/vore/demon/verb/blood_burst()
@@ -201,7 +201,7 @@
 
 	play_sfx(src.loc, SFX_EFFECTS_BLOBATTACK, volume = 50)
 
-	EXPIRY_STAMP(src, blood_spawn, CLOCK_WORLD)
+	STAMP(src, blood_spawn, CLOCK_WORLD)
 
 	return
 
@@ -350,4 +350,4 @@
 	// Do this after the potential vore, so we get the belly
 
 	shift_state = AB_SHIFT_NONE
-	EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)
+	STAMP(src, last_shift, CLOCK_WORLD)

@@ -695,8 +695,30 @@ pub(crate) struct Answered {
     pub version: Option<u128>,
     pub context: Option<u128>,
     pub marks: Option<u64>,
+    /// Mark the table for this output once the request has asked everything it builds from (`settle`).
+    pub mark: bool,
     pub facts: Option<Arc<crate::query_db::AnswerFacts>>,
     pub restored: bool,
+}
+
+impl Answered {
+    /// After the request lowered what it relowers: the answers' version, context and facts as the output is built
+    /// from them (lowering may ask answers and resource searches admission did not), and the mark the next request
+    /// proves its answers against. Marking after lowering also marks the answers the relowered units asked first.
+    pub(crate) fn settle(&mut self, db: &crate::query_db::QueryDb) {
+        if let Some(version) = db.answers_version() {
+            self.version = Some(version);
+        }
+        if let Some(context) = db.answers_context() {
+            self.context = Some(context);
+        }
+        if let Some(facts) = db.answer_facts() {
+            self.facts = Some(Arc::new(facts));
+        }
+        if self.mark {
+            self.marks = Some(db.mark_published());
+        }
+    }
 }
 
 /// This request's answers: the table, the request's view of it and the worker count its proof
@@ -781,11 +803,15 @@ pub(crate) fn admit(
             appended.members.len(),
             appended.fields.len()
         );
+        // The table holds what the output is built from: answers this request asks under the new tree, and the
+        // retained ones every other unit was built from. Marked like any admitted output (`settle`), so the next
+        // request proves its answers against them (a body edit after an append builds on it).
         return Ok(Admitted {
             answered: Answered {
                 version: Some(answers),
                 context,
                 marks: None,
+                mark: proof.is_some() && !base.restored,
                 facts: None,
                 restored: base.restored,
             },
@@ -838,6 +864,7 @@ pub(crate) fn admit(
         version: Some(answers),
         context,
         marks: None,
+        mark: false,
         facts: proof.as_ref().and_then(|proof| proof.db.answer_facts()).map(Arc::new),
         restored: base.restored,
     };
@@ -873,7 +900,16 @@ pub(crate) fn admit(
             format!(" ({})", proof.db.answer_diff().summary())
         });
         if context.is_none() || base.answers_context != context {
-            return Err(format!("answer world or resource searches changed{detail}"));
+            let parts = match (base.facts.as_deref(), proof.as_ref().and_then(|proof| proof.db.answer_facts())) {
+                (Some(old), Some(new)) => format!(
+                    "; world {}, {} of {} resource searches as retained",
+                    if old.world == new.world { "equal" } else { "differs" },
+                    new.searches.iter().filter(|search| old.searches.contains(search)).count(),
+                    new.searches.len().max(old.searches.len())
+                ),
+                _ => String::new(),
+            };
+            return Err(format!("answer world or resource searches changed{detail}{parts}"));
         }
         let (Some(proof), Some(marks)) = (proof.as_ref(), base.marks) else {
             return Err(format!("answers changed, none marked for the retained output{detail}"));
@@ -886,9 +922,7 @@ pub(crate) fn admit(
             "native incremental output: {held} published answers asked again, none differ (tree identity only)"
         );
     }
-    if let Some(proof) = proof.as_ref().filter(|_| !answered.restored) {
-        answered.marks = Some(proof.db.mark_published());
-    }
+    answered.mark = proof.is_some() && !answered.restored;
     Ok(Admitted {
         answered,
         base,

@@ -149,7 +149,7 @@ CAPABILITIES(/datum/progressbar)
 
 /// Fills the bar over `duration` deciseconds as a client-side animation: no server updates.
 /datum/progressbar/animate_fill(duration)
-	EXPIRY_STAMP(src, fill_started, CLOCK_WORLD)
+	STAMP(src, fill_started, CLOCK_WORLD)
 	fill_duration = max(duration, 1)
 	var/step_time = fill_duration / 20
 	animate(bar, icon_state = "prog_bar_5", time = step_time, flags = ANIMATION_PARALLEL)

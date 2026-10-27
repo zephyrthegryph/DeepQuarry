@@ -143,7 +143,7 @@ CAPABILITIES(/obj/item/anodevice)
 		if(!inserted_battery().battery_effect.activated)
 			inserted_battery().battery_effect.ToggleActivate(1)
 		arm_emission_timer()
-		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+		STAMP(src, last_process, CLOCK_WORLD)
 	else
 		to_chat(user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
 	return TRUE
@@ -207,7 +207,7 @@ CAPABILITIES(/obj/item/anodevice)
 					//consume power equal to time passed
 					inserted_battery().use_power(world.time - last_process)
 
-				EXPIRY_STAMP(src, last_activation, CLOCK_WORLD)
+				STAMP(src, last_activation, CLOCK_WORLD)
 
 			//process the effect
 			inserted_battery().battery_effect.periodic_step()
@@ -219,7 +219,7 @@ CAPABILITIES(/obj/item/anodevice)
 		else
 			src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 			shutdown_emission()
-		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+		STAMP(src, last_process, CLOCK_WORLD)
 
 /// (Re)starts the emission's run: it ends `duration` from now (emission_timer_fired()).
 /obj/item/anodevice/proc/arm_emission_timer()

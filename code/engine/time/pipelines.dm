@@ -563,7 +563,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	var/datum/time_scheduler/sched = E.om_rec.sched
 	S.parked = TRUE
 	S.idle_frames = 0
-	EXPIRY_STAMP(S, parked_at, CLOCK_WORLD)
+	STAMP(S, parked_at, CLOCK_WORLD)
 	if(length(sched.parked) < pipe_idx)
 		sched.parked.len = pipe_idx
 	var/list/L = sched.parked[pipe_idx]

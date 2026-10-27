@@ -48,7 +48,7 @@ CAPABILITIES(/datum/tgui_panel)
 	after(src, 1 TICKS, PROC_REF(initialize_window))
 
 /datum/tgui_panel/proc/initialize_window()
-	EXPIRY_STAMP(src, initialized_at, CLOCK_WORLD)
+	STAMP(src, initialized_at, CLOCK_WORLD)
 	// Perform a clean initialization
 	window.initialize(
 		strict_mode = TRUE,

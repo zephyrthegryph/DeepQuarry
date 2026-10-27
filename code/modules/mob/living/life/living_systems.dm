@@ -450,14 +450,18 @@ sparse(/mob, global_hud_claims, type = list)
 		sparse_set(src, global_hud_claims, claims)
 	claims[overlay] = TRUE
 
+GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
+
+/// The overlays the global HUD owns, in the order reconcile_global_huds() walks them.
+/proc/build_global_hud_overlays()
+	return list(GLOB.global_hud.blurry, GLOB.global_hud.druggy, GLOB.global_hud.vimpaired, GLOB.global_hud.darkMask, GLOB.global_hud.nvg, GLOB.global_hud.thermal, GLOB.global_hud.meson, GLOB.global_hud.science, GLOB.global_hud.material, GLOB.global_hud.whitense, GLOB.global_hud.heavy_whitense)
+
 /mob/proc/reconcile_global_huds()
 	var/list/claims = sparse_get(src, global_hud_claims)
 	sparse_set(src, global_hud_claims, null)
 	if(!client)
 		return
-	var/static/list/owned
-	if(!owned)
-		owned = list(GLOB.global_hud.blurry, GLOB.global_hud.druggy, GLOB.global_hud.vimpaired, GLOB.global_hud.darkMask, GLOB.global_hud.nvg, GLOB.global_hud.thermal, GLOB.global_hud.meson, GLOB.global_hud.science, GLOB.global_hud.material, GLOB.global_hud.whitense, GLOB.global_hud.heavy_whitense)
+	var/list/owned = GLOBAL_TABLE_GET(global_hud_overlays)
 	for(var/overlay in owned)
 		var/shown = islist(overlay) ? (overlay[1] in client.screen) : (overlay in client.screen)
 		if(claims?[overlay])

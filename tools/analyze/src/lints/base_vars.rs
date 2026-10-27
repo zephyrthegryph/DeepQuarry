@@ -380,13 +380,21 @@ impl Lint for BaseVars {
         // On the typed tree: the vars each type declares, wherever and however they are written (a multi-var line, a nested
         // block, a macro that declares them), at their real line. The text parse is the fallback without a model.
         if let Some(sites) = recorded_into(out, || typed_sites(cx, &global_set, exempt_prefixes, exempt_files, &homes, &hot)) {
+            // A base var that carries a value schema (`SCHEMA(T, v, schema_path(...))`) is a typed value: its home is the trait field or sparse
+            // slot the schema types (doc/rewrite/proposals/typed_values.md section 5, step 4). The schema alone is no home (it saves no memory),
+            // so the site stays; the message names the schema so the conversion has its type.
+            let schemas = crate::sem::value_schema::ValueSchemas::build(&crate::sem::decls::Decls::get(cx.tree));
             for (rule, rel, line, ident) in sites {
                 if rule == "hot_home" {
                     let (key, msg) = ident.split_once('\t').unwrap_or((ident.as_str(), ""));
                     out.site_decl(rule, &rel, line as usize, msg.to_string(), format!("hot::{}", key));
                     continue;
                 }
-                out.site_decl(rule, &rel, line as usize, String::new(), ident);
+                let msg = match ident.split_once("::") {
+                    Some((o, v)) if rule == "base_var" && schemas.declared_on(o, v).is_some() => format!("{} carries a value schema: move it to the trait field or sparse slot that schema types", ident),
+                    _ => String::new(),
+                };
+                out.site_decl(rule, &rel, line as usize, msg, ident);
             }
             return;
         }

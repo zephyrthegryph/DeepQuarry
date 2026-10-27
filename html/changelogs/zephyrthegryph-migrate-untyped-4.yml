@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Declared 26 untyped value vars as typed or schema'd values (SCHEMA text, num, bool, int; typed list and image vars)"

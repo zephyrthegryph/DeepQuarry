@@ -260,7 +260,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 				message_admins("A singulo exists and a containment field has failed.")
 				investigate_log("has " + span_red("failed") + " whilst a singulo exists.","singulo")
 				log_game("FIELDGEN([x],[y],[z]) Containment failed while singulo/tesla exists.")
-		EXPIRY_STAMP(O, last_warning, CLOCK_WORLD)
+		STAMP(O, last_warning, CLOCK_WORLD)
 
 /obj/machinery/field_generator/pre_mapped
 	state = FLOOR_WELD_WELDED //Start welded.

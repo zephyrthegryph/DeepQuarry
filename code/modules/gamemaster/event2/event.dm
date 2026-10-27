@@ -118,7 +118,7 @@ This allows for events that have their announcement happen after the end itself.
 
 // Starts the event.
 /datum/event2/event/proc/execute()
-	EXPIRY_STAMP(src, time_started, CLOCK_WORLD)
+	STAMP(src, time_started, CLOCK_WORLD)
 
 	if(announce_delay_lower_bound)
 		announce_delay = rand(announce_delay_lower_bound, announce_delay_upper_bound ? announce_delay_upper_bound : announce_delay_lower_bound)
@@ -139,7 +139,7 @@ This allows for events that have their announcement happen after the end itself.
 // Don't override this, use `end()` for cleanup instead.
 /datum/event2/event/proc/finish()
 	finished = TRUE
-	EXPIRY_STAMP(src, time_finished, CLOCK_WORLD)
+	STAMP(src, time_finished, CLOCK_WORLD)
 
 // Called by admins wanting to stop an event immediately.
 /datum/event2/event/proc/abort()

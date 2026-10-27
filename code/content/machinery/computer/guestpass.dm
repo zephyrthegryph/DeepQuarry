@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/card/id/guest)
 		//rip guest pass </3
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + "deactivates %T%."))
 		set_icon_state("guest-invalid")
-		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
+		STAMP(src, expiration_time, CLOCK_WORLD)
 		set_expired(TRUE)
 
 /// The pass turns red when its expiry lapses, however it was made (terminal, admin spawn, map).

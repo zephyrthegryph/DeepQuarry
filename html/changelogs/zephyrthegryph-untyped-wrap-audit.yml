@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Removed text_or_null()/num_or_null() wraps that only satisfied the old untyped lint; the vars they fed now declare SCHEMA value types"

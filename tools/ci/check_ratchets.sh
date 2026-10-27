@@ -43,6 +43,10 @@ run_gen() { # <name> <script> <flag>
 }
 run_gen gen_capability_varmap_check tools/dx/gen_capability_varmap.py --check
 run_gen gen_capability_varmap_selftest tools/dx/gen_capability_varmap.py --selftest
+# deepquarry.dme is generated and committed: stale (a file added, moved or deleted without the build running), or a macro used before
+# its #define in the generated order, fails here with the regenerate command (python3 tools/build/gen_dme.py).
+run_gen gen_dme_check tools/build/gen_dme.py --check
+run_gen gen_dme_selftest tools/build/gen_dme.py --selftest
 
 # The generated DM (code/engine/_generated/, code/_generated/reads.dm, the tgui .d.ts) is not committed;
 # every build writes it, and so does this, before the lints that read it. It fails on what still matters:
@@ -69,7 +73,7 @@ if ! bash tools/ci/check_test_scratch.sh; then
 fi
 
 wait
-for name in gen_capability_varmap_check gen_capability_varmap_selftest; do
+for name in gen_capability_varmap_check gen_capability_varmap_selftest gen_dme_check gen_dme_selftest; do
 	echo "::group::$name"
 	cat "$gen_dir/$name.out"
 	if [ "$(cat "$gen_dir/$name.rc" 2>/dev/null || echo 1)" != "0" ]; then
