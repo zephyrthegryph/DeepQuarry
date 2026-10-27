@@ -5,9 +5,6 @@ impl ObservationHost<u8, u32, u8> for Host {
         self.0
     }
     // Deliberately identical numbers from unrelated issuers must NOT skip reads.
-    fn version(&self, _: &u8) -> Option<u128> {
-        Some(9)
-    }
 }
 fn reads(value: u32) -> Vec<Observation<u8, u32, u8>> {
     vec![Observation {

@@ -44,7 +44,7 @@ pub(crate) fn begin_answers<R: Resolver>(
     if let Some(db) = memo.and_then(|memo| memo.query_db()) {
         match startup.resolver(frontend, resolver) {
             Ok(statics) => {
-                let world = statics.domain_version(dm_ir::ReadDomain::Tree);
+                let world = dm_ir::Resolver::answer_world(&statics);
                 crate::daemon_eprintln!(
                     "native answer world: tree={:032x} world={:032x}",
                     frontend.snapshot.tree.declaration_identity(),

@@ -1,22 +1,14 @@
 //! Exact finite negative-variable qualification on the existing coverage owner.
 use super::*;
 
-// Positive enriched scalar IDs and structural negative IDs have independent
-// issuers. The provider half explicitly separates those branches, with checked
-// bounds so reserving two branch bits never truncates either issuer.
-pub(super) fn qualified(base: u128, provider: u64, negative: bool) -> Option<u128> {
-    qualified_tag(base, provider, u64::from(negative))
-}
-fn qualified_tag(base: u128, provider: u64, tag: u64) -> Option<u128> {
-    let provider = provider.checked_mul(4)?.checked_add(tag)?;
-    Some(super::compose_version(base, provider))
-}
 impl<R: Resolver + Send> EngineResolverHost<R> {
-    /// The named source receipt covers the authored selection even when the
-    /// incomplete intrinsic inventory makes its public presence Unsupported.
-    /// Pinned coverage closes only that intrinsic gap; exact current authored
-    /// absence is obtained from the same tree's declaration resolver.
-    pub(super) fn current_variable_absence(&self, query: Q) -> Option<u128> {
+    /// The pinned coverage closes the gap the incomplete intrinsic inventory leaves in the public presence answer.
+    /// It holds for this query when the source it was captured from has no authored declaration of the name on the
+    /// owner and the current tree answers the owner's ancestry and the name's presence exactly as that source does.
+    pub(super) fn current_variable_absence(&self, query: Q) -> bool {
+        self.variable_absence_of(query).is_some()
+    }
+    fn variable_absence_of(&self, query: Q) -> Option<()> {
         let (owner, name) = match query {
             Q::GlobalVar(name) => (SymbolId::of("/"), name),
             Q::Var { owner, name }
@@ -42,45 +34,18 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
         {
             return None;
         }
-        let presence = Q::HasMemberVar { owner, name };
-        if let Some(base) = coverage.source.domain_version(presence.domain()) {
-            return (self.tree.domain_version(presence.domain()) == Some(base)).then_some(base);
-        }
-        // Legacy one-shot source trees may not issue demanded-name tokens.
-        // Only previously admitted finite names may use their full semantic
-        // domain. The generalized root policy never borrows this fallback.
-        if !coverage.payload.names.contains(&name) {
-            return None;
-        }
-        let base = coverage.source.domain_version(dm_ir::ReadDomain::Tree)?;
-        (self.tree.domain_version(dm_ir::ReadDomain::Tree) == Some(base)).then_some(base)
+        let source: &dm_tree::SemanticTree = coverage.source.as_ref();
+        let same = |query: Q| dm_ir::Resolver::resolve(source, query) == self.tree.resolve(query);
+        (same(Q::Ancestry(owner)) && same(Q::HasMemberVar { owner, name })).then_some(())
     }
-    pub(super) fn predefined_absence_version(&self, name: SymbolId) -> Option<u128> {
-        let coverage = self.variable_absence.as_ref()?;
-        if self.constants.values.contains_key(&name)
-            || !coverage.payload.covers_predefined_absence(name)
-        {
-            return None;
-        }
-        // Ordinary names require a current named receipt; they cannot take the
-        // legacy finite-name whole-tree compatibility path.
-        let presence = Q::HasMemberVar {
-            owner: SymbolId::of("/"),
-            name,
+    /// A predefined constant name the pinned coverage proves absent from the source as a global variable.
+    pub(super) fn predefined_absence_proven(&self, name: SymbolId) -> bool {
+        let Some(coverage) = self.variable_absence.as_ref() else {
+            return false;
         };
-        coverage.source.domain_version(presence.domain())?;
-        let base = self.current_variable_absence(Q::GlobalVar(name))?;
-        qualified_tag(base, coverage.issuer?, 2)
-    }
-    pub(super) fn variable_negative_version(&self, query: Q) -> Option<u128> {
-        // Resolution uses current_variable_absence without calling this method,
-        // so qualification cannot recursively re-enter its own fallback.
-        if !matches!(self.resolve(query), M::Missing | M::Presence(false)) {
-            return None;
-        }
-        let base = self.current_variable_absence(query)?;
-        let coverage = self.variable_absence.as_ref()?;
-        qualified(base, coverage.issuer?, true)
+        !self.constants.values.contains_key(&name)
+            && coverage.payload.covers_predefined_absence(name)
+            && self.current_variable_absence(Q::GlobalVar(name))
     }
 }
 

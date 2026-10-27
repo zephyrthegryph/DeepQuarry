@@ -389,7 +389,7 @@ impl InitializerFragments {
             );
         }
         let reads = receipts::reads(key, semantic_reads);
-        let versions = receipts::versions(recorder.domain_receipts());
+        let versions = receipts::versions(Vec::new());
         let (stripped, captures) = fragment.clone().split_modified();
         let recipes = captures
             .iter()

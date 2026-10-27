@@ -1,7 +1,6 @@
 use super::*;
 #[derive(Default)]
 pub(super) struct Memo {
-    pub(super) certificates: BTreeMap<ScalarQuery, u64>,
     pub(super) values: BTreeMap<ScalarQuery, ScalarOutcome>,
     pub(super) active: Vec<ScalarQuery>,
     pub(super) edges: BTreeMap<ScalarQuery, BTreeSet<ScalarQuery>>,
@@ -58,7 +57,6 @@ impl Pass<'_> {
             while memo.inserted.len() > checkpoint.0 {
                 let inserted = memo.inserted.pop().unwrap();
                 memo.values.remove(&inserted);
-                memo.certificates.remove(&inserted);
                 memo.edges.remove(&inserted);
                 memo.reads.remove(&inserted);
             }
@@ -85,9 +83,6 @@ impl Pass<'_> {
                 let old = memo.predefined.insert(*name, value.clone());
                 memo.predefined_changes.push((*name, old));
             }
-            if let Some(certificate) = cached.certificate() {
-                memo.certificates.insert(query, certificate);
-            }
             cached.outcome.clone()
         } else {
             self.observe(ScalarReadQuery::PurePolicy);
@@ -98,9 +93,6 @@ impl Pass<'_> {
             && (matches!(value, ScalarOutcome::Cycle(_)) || memo.cyclic.contains(&query))
         {
             let active = memo.active.clone();
-            for active in &active {
-                memo.certificates.remove(active);
-            }
             memo.cyclic.extend(active);
         }
         if !reused && !memo.cyclic.contains(&query) {
@@ -127,7 +119,7 @@ impl Pass<'_> {
                     })
                     .collect::<Vec<_>>()
                     .into();
-                let admitted = artifacts.remember_certified(
+                artifacts.remember_certified(
                     query,
                     ScalarArtifact::captured(value.clone(), dependencies, predefined),
                     reads
@@ -135,9 +127,6 @@ impl Pass<'_> {
                         .map(|read| (read.query.clone(), read.answer.clone()))
                         .collect(),
                 );
-                if let Some(certificate) = admitted.and_then(|value| value.certificate()) {
-                    memo.certificates.insert(query, certificate);
-                }
             }
         }
         drop(memo);
@@ -338,7 +327,7 @@ impl Pass<'_> {
                 .reads
                 .entry(active)
                 .or_default()
-                .record(query, answer, (), None);
+                .record(query, answer, ());
         }
     }
     fn observe(&self, query: ScalarReadQuery) {

@@ -209,7 +209,7 @@ impl InitializerFragments {
         let retained = self.values.insert_with_owned(
             Arc::clone(&key.key),
             receipts::reads(key, recorder.reads()),
-            receipts::versions(recorder.domain_receipts()),
+            receipts::versions(Vec::new()),
             std::mem::size_of::<RetainedFragment>(),
             || RetainedFragment {
                 code: RetainedCode::Modified {

@@ -27,24 +27,15 @@ pub enum StorageQuery {
     Owner(SymbolId),
     Predecessor(DeclarationKey),
     Intrinsic(SymbolId, SymbolId),
-    Unique(SymbolId),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StorageAnswer {
     Owner(Option<Arc<[StorageInput]>>),
     Predecessor(Option<StorageFact>),
     Intrinsic(Option<IntrinsicMember>),
-    Unique(UniqueStorageInputs),
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct UniqueStorageInputs {
-    pub slot: Option<(SymbolId, SymbolId)>,
-    pub non_unique: bool,
-    pub complete: bool,
 }
 pub struct StorageOwner {
     pub facts: Arc<[(DeclarationKey, StorageFact)]>,
-    pub unique_token: Option<u128>,
 }
 pub(crate) type Store = ObservedArtifactStore<StorageOwner, StorageQuery, StorageAnswer, ()>;
 type Lease = dm_session::ObservedArtifactLease<StorageOwner, StorageQuery, StorageAnswer, ()>;
@@ -101,16 +92,12 @@ impl OwnerFacts {
 pub(crate) struct RetainedStorage {
     /// Facts by owner: content-defined, shareable between sessions.
     store: OwnerFacts,
-    /// Uniqueness certificates (`storage_uniqueness`): their tokens are issued by this process for this tree, so they
-    /// stay private even when the owner facts are shared.
-    unique: Store,
     hits: AtomicUsize,
 }
 impl Default for RetainedStorage {
     fn default() -> Self {
         Self {
             store: OwnerFacts::Local(Store::current_revision()),
-            unique: Store::current_revision(),
             hits: AtomicUsize::new(0),
         }
     }
@@ -138,7 +125,6 @@ struct Host<'a> {
 impl ObservationHost<StorageQuery, StorageAnswer, ()> for Host<'_> {
     fn answer(&self, query: &StorageQuery) -> StorageAnswer {
         match *query {
-            StorageQuery::Unique(name) => StorageAnswer::Unique(unique_inputs(self.tree, name)),
             StorageQuery::Owner(owner) => StorageAnswer::Owner(self.inputs.get(&owner).cloned()),
             StorageQuery::Predecessor(key) => {
                 StorageAnswer::Predecessor(self.resolved.get(&key).copied())
@@ -168,9 +154,7 @@ impl RetainedStorage {
             ObservedArtifactStorageView<'_, StorageOwner, StorageQuery, StorageAnswer, ()>,
         ),
     ) {
-        let mut visit = visit;
-        self.store.visit_storage(&mut visit);
-        self.unique.visit_storage(visit);
+        self.store.visit_storage(visit);
     }
     fn owner(
         &self,
@@ -185,7 +169,7 @@ impl RetainedStorage {
         } else {
             let ledger = ObservationLedger::default();
             let query = StorageQuery::Owner(owner);
-            ledger.record(query, host.answer(&query), (), None);
+            ledger.record(query, host.answer(&query), ());
             for input in host.inputs[&owner].iter() {
                 let query = if let Some(opaque) = &input.opaque {
                     Some(StorageQuery::Intrinsic(opaque.owner, opaque.name))
@@ -201,7 +185,7 @@ impl RetainedStorage {
                     None
                 };
                 if let Some(query) = query {
-                    ledger.record(query, host.answer(&query), (), None);
+                    ledger.record(query, host.answer(&query), ());
                 }
             }
             let facts: Arc<[_]> = owner_ids
@@ -214,16 +198,12 @@ impl RetainedStorage {
             self.store.insert_with(
                 key(owner),
                 ledger.reads(),
-                ledger.domain_receipts(),
+                Vec::new(),
                 || StorageOwner {
                     facts: Arc::clone(&facts),
-                    unique_token: None,
                 },
             );
-            Arc::new(StorageOwner {
-                facts,
-                unique_token: None,
-            })
+            Arc::new(StorageOwner { facts })
         }
     }
     #[cfg(test)]
@@ -554,6 +534,3 @@ mod tests {
     }
 }
 
-#[path = "storage_uniqueness.rs"]
-mod uniqueness;
-use uniqueness::unique_inputs;

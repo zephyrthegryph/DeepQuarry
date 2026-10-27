@@ -11,9 +11,6 @@ impl Resolver for Dependency {
             _ => ResolvedMeaning::Unsupported(query),
         }
     }
-    fn domain_version(&self, _: ReadDomain) -> Option<u128> {
-        None
-    }
 }
 struct Worker<'a> {
     resolver: &'a dyn Resolver,

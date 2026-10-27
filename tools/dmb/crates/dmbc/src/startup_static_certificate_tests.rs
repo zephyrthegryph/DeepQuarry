@@ -12,9 +12,6 @@ impl Resolver for Host {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         ResolvedMeaning::Unsupported(query)
     }
-    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
-        (domain == dm_ir::ReadDomain::Tree).then_some(self.0)
-    }
 }
 fn capture(
     source: &'static str,
@@ -71,8 +68,6 @@ fn admitted_static_layout_reuses_across_body_changes_and_certifies_exact_absence
     let host_b = Host(2);
     let first_view = a.view_revision(&first).unwrap();
     let first_resolver = first_view.resolver(&first, &host_a).unwrap();
-    let token = first_resolver.domain_version(query.domain()).unwrap();
-    assert_eq!(first_resolver.domain_version(absent.domain()), Some(token));
     assert_eq!(first_resolver.resolve(absent), ResolvedMeaning::Missing);
     let (second, b) = capture(
         "/proc/p()\n    var/static/cache=3\n    return cache+1\n/proc/q()\n    return 0\n",
@@ -81,7 +76,6 @@ fn admitted_static_layout_reuses_across_body_changes_and_certifies_exact_absence
     );
     let second_view = b.view_revision(&second).unwrap();
     let second_resolver = second_view.resolver(&second, &host_b).unwrap();
-    assert_eq!(second_resolver.domain_version(query.domain()), Some(token));
     assert_eq!(
         first_resolver.resolve(query),
         second_resolver.resolve(query)
@@ -97,7 +91,6 @@ fn admitted_static_layout_reuses_across_body_changes_and_certifies_exact_absence
         second_resolver.resolve(query),
         fresh_resolver.resolve(query)
     );
-    assert_eq!(fresh_resolver.domain_version(query.domain()), None);
     let (changed, c) = capture(
         "/proc/p()\n    var/static/cache=4\n    return cache\n",
         Some(&store),
@@ -105,7 +98,6 @@ fn admitted_static_layout_reuses_across_body_changes_and_certifies_exact_absence
     );
     let changed_view = c.view_revision(&changed).unwrap();
     let changed_resolver = changed_view.resolver(&changed, &host_b).unwrap();
-    assert_ne!(changed_resolver.domain_version(query.domain()), Some(token));
     let unknown = ResolveQuery::ProcedureStatic {
         procedure: dm_ir::ProcedureIdentity {
             name: SymbolId::of("uncaptured"),
@@ -113,17 +105,13 @@ fn admitted_static_layout_reuses_across_body_changes_and_certifies_exact_absence
         },
         name: SymbolId::of("cache"),
     };
-    assert_eq!(changed_resolver.domain_version(unknown.domain()), None);
     assert!(matches!(
         changed_resolver.resolve(unknown),
         ResolvedMeaning::Unsupported(_)
     ));
-    assert_eq!(first_resolver.domain_version(query.domain()), Some(token));
     let (empty, empty_facts) = capture("/proc/p()\n    return 0\n", Some(&store), &executor);
     let empty_view = empty_facts.view_revision(&empty).unwrap();
     let empty_resolver = empty_view.resolver(&empty, &host_b).unwrap();
-    assert!(empty_resolver.domain_version(query.domain()).is_some());
-    assert_ne!(empty_resolver.domain_version(query.domain()), Some(token));
     assert_eq!(empty_resolver.resolve(query), ResolvedMeaning::Missing);
     let (added, added_facts) = capture(
         "/proc/p()\n    var/static/absent=1\n    return absent\n",
@@ -132,10 +120,6 @@ fn admitted_static_layout_reuses_across_body_changes_and_certifies_exact_absence
     );
     let added_view = added_facts.view_revision(&added).unwrap();
     let added_resolver = added_view.resolver(&added, &host_b).unwrap();
-    assert_ne!(
-        added_resolver.domain_version(absent.domain()),
-        empty_resolver.domain_version(absent.domain())
-    );
     assert!(matches!(
         added_resolver.resolve(absent),
         ResolvedMeaning::ProcedureStatic(_)

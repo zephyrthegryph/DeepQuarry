@@ -508,11 +508,7 @@ impl MetadataDependencies {
         if types_changed {
             let by_path = Arc::clone(&tree.by_path);
             Arc::make_mut(&mut tree.host_selections).retain(|path, _| by_path.contains_key(path));
-            if let Some(issuer) = tree.owner_certificate_issuer.clone() {
-                let (versions, paths) = issuer.certify_hierarchy(&tree);
-                tree.owner_hierarchy = Arc::new(versions);
-                tree.owner_ancestry = Arc::new(paths);
-            }
+            tree.rebuild_owner_ancestry();
         }
         let _ = fresh;
         tree.appended_callables = appended.map(|(members, fields)| {

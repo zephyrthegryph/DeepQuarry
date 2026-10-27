@@ -17,9 +17,6 @@ impl Resolver for AncestryHost {
             self.base.resolve(query)
         }
     }
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.base.domain_version(domain)
-    }
 }
 fn ancestry_leaves(store: &InitializerArtifacts) -> Vec<Arc<[dm_session::ResolverRead]>> {
     let mut leaves = Vec::new();

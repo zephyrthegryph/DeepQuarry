@@ -281,10 +281,6 @@ fn shared_abi_semantic_leaf_keeps_current_inputs_and_invalidates_negative_next_r
         present: bool,
     }
     impl Resolver for CountHost {
-        fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-            self.versions.fetch_add(1, Ordering::Relaxed);
-            None
-        }
         fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
             self.calls.fetch_add(1, Ordering::Relaxed);
             if self.present {
@@ -341,16 +337,15 @@ fn shared_abi_semantic_leaf_keeps_current_inputs_and_invalidates_negative_next_r
         inputs: inputs.clone(),
         resolver: &host,
     };
-    assert!(admission::changed(&first, &versions, &current, Some(&shared)).is_none());
-    assert!(admission::changed(&second, &versions, &current, Some(&shared)).is_none());
-    assert_eq!(host.calls.load(Ordering::Relaxed), 1);
-    assert_eq!(host.versions.load(Ordering::Relaxed), 1);
+    assert!(admission::changed(&first, &current, Some(&shared)).is_none());
+    assert!(admission::changed(&second, &current, Some(&shared)).is_none());
+    // Each candidate's semantic read is replayed against the host (no stored version certifies it).
+    assert_eq!(host.calls.load(Ordering::Relaxed), 2);
     let mut changed_inputs = (*inputs).clone();
     changed_inputs.resource = Some(4);
     assert!(matches!(
         admission::changed(
             &second,
-            &[],
             &Current {
                 inputs: Arc::new(changed_inputs),
                 resolver: &host,
@@ -359,7 +354,8 @@ fn shared_abi_semantic_leaf_keeps_current_inputs_and_invalidates_negative_next_r
         ),
         Some(Query::Inputs)
     ));
-    assert_eq!(host.calls.load(Ordering::Relaxed), 1);
+    // A changed producer input declines before any semantic read is replayed.
+    assert_eq!(host.calls.load(Ordering::Relaxed), 2);
     let next = CountHost {
         calls: AtomicUsize::new(0),
         versions: AtomicUsize::new(0),
@@ -367,7 +363,7 @@ fn shared_abi_semantic_leaf_keeps_current_inputs_and_invalidates_negative_next_r
     };
     let semantic = admission::SemanticHost(&next);
     let shared = dm_session::ReceiptAdmission::new(&semantic);
-    assert!(matches!(admission::changed(&first, &versions, &Current {
+    assert!(matches!(admission::changed(&first, &Current {
         inputs, resolver: &next,
     }, Some(&shared)), Some(Query::Semantic(q)) if q == query));
     assert_eq!(next.calls.load(Ordering::Relaxed), 1);

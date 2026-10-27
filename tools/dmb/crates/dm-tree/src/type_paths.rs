@@ -53,11 +53,11 @@ impl RetainedTypePaths {
             .parent()
             .map(|parent| Arc::<str>::from(parent.as_str()));
         let ledger = ObservationLedger::default();
-        ledger.record(path, answer, (), None);
+        ledger.record(path, answer, ());
         self.store.insert_with(
             key(path),
             ledger.reads(),
-            ledger.domain_receipts(),
+            Vec::new(),
             0,
             || LexicalPath {
                 parent: parent.clone(),

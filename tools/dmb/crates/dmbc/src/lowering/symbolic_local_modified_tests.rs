@@ -94,9 +94,7 @@ fn prepare<'a, R: Resolver>(
         ),
         key: key.into(),
         reads: recorder.reads().into(),
-        // The request candidate roster requires the ordinary producer's issued
-        // domain versions. An empty ledger cannot certify these descriptor reads.
-        versions: recorder.domain_receipts().into(),
+        versions: Vec::new().into(),
         value: RecordValue::Executable(value.shared_artifact()),
         relative_debug: capture.borrow().debug.clone().into(),
         required_types: Arc::clone(value.required_types_owner()),
@@ -189,15 +187,6 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
                     .is_some(),
                 "unchanged source must retain the actual local issuer witnesses"
             );
-            for read in record.reads.iter() {
-                assert!(
-                    record.versions.iter().any(|(domain, version)| {
-                        *domain == read.domain && host.domain_version(*domain) == Some(*version)
-                    }),
-                    "descriptor read {:?} needs its issued current version {:?}; producer versions: {:?}",
-                    read.query, host.domain_version(read.domain), record.versions
-                );
-            }
         });
         let request = owner.for_request(false);
         db.next_request();

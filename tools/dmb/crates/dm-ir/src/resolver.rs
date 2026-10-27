@@ -422,10 +422,11 @@ pub trait Resolver: Sync {
         None
     }
 
-    /// Certifies every answer (including negatives and Unsupported) in this
-    /// domain for this immutable issuer. Custom/mutable hosts remain uncertified.
-    /// Include resolver schema and every precedence/overlay input; compute once.
-    fn domain_version(&self, _domain: ReadDomain) -> Option<u128> {
+    /// The identity of every answer this immutable resolver gives except resource searches (which read the file
+    /// system): its declarations, procedure statics, catalogs and every precedence/overlay input. Two resolvers with
+    /// equal worlds give equal answers to every other query, so an answer proven under one is carried to the other
+    /// without resolving (`QueryDb::begin_answers`) and the dependency index keys records on it. `None`: unnamed.
+    fn answer_world(&self) -> Option<u128> {
         None
     }
 

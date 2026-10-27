@@ -128,13 +128,6 @@ impl HeapCensus {
                     self.slice(owner, dependencies, true);
                 }
             }
-            if self.arc_object(owner, scalar.certificates()) {
-                self.collection_entries::<(dm_tree::constant_resolution::ScalarQuery, u64)>(
-                    owner,
-                    Arc::as_ptr(scalar.certificates()) as usize,
-                    scalar.certificates().len(),
-                );
-            }
             if self.arc_object(owner, &scalar.predefined_reads) {
                 self.collection_entries::<(
                     dm_ir::SymbolId,
