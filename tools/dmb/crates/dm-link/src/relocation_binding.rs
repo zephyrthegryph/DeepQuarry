@@ -25,18 +25,22 @@ impl SourceBindingAccess for SourceBindings {
 pub struct BoundRelocations<'code> {
     code: &'code SymbolicCode,
     resolved: HashMap<SymRef, u32>,
+    /// The answers in first-occurrence order of the code's distinct references.
+    ordered: Vec<u32>,
 }
-/// Complete successful current answers, immutable and privately issued.
+/// Complete successful current answers, immutable and privately issued: one index per distinct reference of the code
+/// they were bound for, in first-occurrence order. They compare only against answers bound for that same code.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BindingAnswers(Arc<HashMap<SymRef, u32>>);
+pub struct BindingAnswers(Arc<[u32]>);
 impl BindingAnswers {
-    pub fn storage(&self) -> (&Arc<HashMap<SymRef, u32>>, usize) {
-        (&self.0, self.0.capacity())
+    pub fn storage(&self) -> &Arc<[u32]> {
+        &self.0
     }
 }
 impl BoundRelocations<'_> {
+    /// Equal answers for the same code (the caller holds the code these answers were bound for).
     pub fn matches(&self, answers: &BindingAnswers) -> bool {
-        self.resolved == *answers.0
+        self.ordered[..] == answers.0[..]
     }
     pub fn encode_with_answers(self) -> Result<(ProcedureImage, BindingAnswers), LinkError> {
         let words = self
@@ -47,7 +51,7 @@ impl BoundRelocations<'_> {
             ProcedureImage {
                 words: Arc::new(words),
             },
-            BindingAnswers(Arc::new(self.resolved)),
+            BindingAnswers(self.ordered.into()),
         ))
     }
 
@@ -76,6 +80,7 @@ impl LinkTables {
         source: &(impl SourceBindingAccess + ?Sized),
     ) -> Result<BoundRelocations<'code>, LinkError> {
         let mut resolved = HashMap::new();
+        let mut ordered = Vec::new();
         for relocation in code.relocations() {
             let reference = relocation.reference;
             let std::collections::hash_map::Entry::Vacant(entry) = resolved.entry(reference) else {
@@ -104,8 +109,13 @@ impl LinkTables {
                 }
             };
             entry.insert(index);
+            ordered.push(index);
         }
-        Ok(BoundRelocations { code, resolved })
+        Ok(BoundRelocations {
+            code,
+            resolved,
+            ordered,
+        })
     }
 }
 #[cfg(test)]

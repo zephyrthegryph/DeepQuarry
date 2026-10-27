@@ -981,3 +981,27 @@ records. Checked against the compiler before the change: 416 fixture compiles (`
 
 Next: measure the test variant with both changes (memory probe, warm test build after a game build) and share the
 per-variant owners the probe names by content.
+
+## Memory toward the 1 GB targets (2026-10-27, lane `compiler/memory-1`)
+
+Probe `bench/shared_store_probe.sh` (allocation-sites release build, requested live GB; root A = production tree, then the A test
+variant `-DCBT -DCIBUILDING -DCITESTING -DDEBUG`, then root B = A with two comment lines). After domain versions were deleted
+(compiler/domain-version-out): A 5.63, test +2.97, B +1.49 (the doc's last figures were 6.80 / +3.06 / +1.58; the deleted
+certificate maps, demand tokens and domain memo account for most of root A's drop). This lane:
+
+- *Dense relocation answers.* `LatestImage` kept each procedure's relocation answers as `Arc<HashMap<SymRef, u32>>` (329 MB
+  over two variants). They are compared only for the same frozen code, so `BindingAnswers` is now `Arc<[u32]>` in
+  first-occurrence order of the code's distinct references.
+- *Exact-size images.* The encoded image was retained in the writer's doubled buffer (a 69 MB image in a 128 MB block; the
+  allocator does not shrink a large block in place). `CanonicalHash::finish` copies it into an exact allocation when the slack
+  exceeds 1/16.
+
+Result: A 5.38 (-0.25), test +2.80 (-0.17), B +1.50 (unchanged); private bytes A 6.90 (was 7.19), after test 10.16 (was 10.68).
+Speed (interleaved, own daemon per arm, lane base vs this lane): body edits per-round medians 4.92/4.93 and 4.14/4.04 s;
+added-type edits median 17.05 vs 16.38 s. `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile:
+EQUIVALENT (body edits + resource-folder change; added types under `DMB_QUERY_VERIFY=1`).
+
+Targets not met. Largest remaining growth: test variant `query_db::AnswerValues` 168, preprocessor (expansion 117, region memo
+116, joined text 80, directives 72, environment 46) about 430, `RequestAnswers` 98, `LeafProofs` 79, receipt pool 72;
+root B: startup capture 66, `RequestAnswers` 65, joined text 61, classification 57, frame contribution 56, preprocessor
+about 230. The preprocessor family needs per-file sharing keyed by (bytes, start state), step 3 of the test-variant plan.
