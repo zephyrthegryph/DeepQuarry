@@ -63,8 +63,111 @@ struct Variant<T, Q = ResolveQuery, A = ResolvedMeaning, D = ReadDomain> {
     /// (at most one per exact key), so rosters cost one bit per claim instead of a map entry per lease and key.
     holders: leased::Holders,
 }
+/// The variants of one hash. Almost every hash holds exactly one, which is stored inline instead of in a vector of its own.
+pub(super) enum Bucket<V> {
+    Empty,
+    One(V),
+    Many(Vec<V>),
+}
+impl<V> Default for Bucket<V> {
+    fn default() -> Self {
+        Self::Empty
+    }
+}
+impl<V: Clone> Clone for Bucket<V> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Empty => Self::Empty,
+            Self::One(value) => Self::One(value.clone()),
+            Self::Many(values) => Self::Many(values.clone()),
+        }
+    }
+}
+impl<V> Bucket<V> {
+    pub(super) fn push(&mut self, value: V) {
+        *self = match std::mem::take(self) {
+            Self::Empty => Self::One(value),
+            Self::One(first) => Self::Many(vec![first, value]),
+            Self::Many(mut values) => {
+                values.push(value);
+                Self::Many(values)
+            }
+        };
+    }
+    pub(super) fn capacity(&self) -> usize {
+        match self {
+            Self::Empty => 0,
+            Self::One(_) => 1,
+            Self::Many(values) => values.capacity(),
+        }
+    }
+    pub(super) fn retain(&mut self, mut keep: impl FnMut(&V) -> bool) {
+        *self = match std::mem::take(self) {
+            Self::Empty => Self::Empty,
+            Self::One(value) => {
+                if keep(&value) {
+                    Self::One(value)
+                } else {
+                    Self::Empty
+                }
+            }
+            Self::Many(mut values) => {
+                values.retain(|value| keep(value));
+                match values.len() {
+                    0 => Self::Empty,
+                    1 => Self::One(values.pop().unwrap()),
+                    _ => Self::Many(values),
+                }
+            }
+        };
+    }
+    pub(super) fn remove(&mut self, index: usize) -> V {
+        match std::mem::take(self) {
+            Self::Empty => panic!("remove from an empty bucket"),
+            Self::One(value) => {
+                assert_eq!(index, 0, "bucket index out of range");
+                value
+            }
+            Self::Many(mut values) => {
+                let removed = values.remove(index);
+                *self = match values.len() {
+                    0 => Self::Empty,
+                    1 => Self::One(values.pop().unwrap()),
+                    _ => Self::Many(values),
+                };
+                removed
+            }
+        }
+    }
+}
+impl<V> std::ops::Deref for Bucket<V> {
+    type Target = [V];
+    fn deref(&self) -> &[V] {
+        match self {
+            Self::Empty => &[],
+            Self::One(value) => std::slice::from_ref(value),
+            Self::Many(values) => values,
+        }
+    }
+}
+impl<V> std::ops::DerefMut for Bucket<V> {
+    fn deref_mut(&mut self) -> &mut [V] {
+        match self {
+            Self::Empty => &mut [],
+            Self::One(value) => std::slice::from_mut(value),
+            Self::Many(values) => values,
+        }
+    }
+}
+impl<'a, V> IntoIterator for &'a Bucket<V> {
+    type Item = &'a V;
+    type IntoIter = std::slice::Iter<'a, V>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
 struct Resident<T, Q, A, D> {
-    buckets: BTreeMap<u128, Vec<Variant<T, Q, A, D>>>,
+    buckets: BTreeMap<u128, Bucket<Variant<T, Q, A, D>>>,
     bytes: usize,
     /// Lease slots in use (bit set = held by a live lease).
     slots: u128,
@@ -102,7 +205,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         let state = self.state.write().unwrap_or_else(|error| error.into_inner());
         visit(ObservedArtifactStorageView::Store {
             buckets: state.buckets.len(),
-            entries: state.buckets.values().map(Vec::len).sum(),
+            entries: state.buckets.values().map(|bucket| bucket.len()).sum::<usize>(),
         });
         for bucket in state.buckets.values() {
             visit(ObservedArtifactStorageView::Bucket {
@@ -376,7 +479,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             state
                 .buckets
                 .entry(hash)
-                .or_insert_with(|| Vec::with_capacity(1))
+                .or_default()
                 .push(Variant {
                     key,
                     reads,
