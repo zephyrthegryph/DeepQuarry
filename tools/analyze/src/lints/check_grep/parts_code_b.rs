@@ -86,10 +86,12 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "heat_ratchet_on_fire_act_overrides_h3",
             "heat: ratchet on fire_act() overrides (H3)",
-            "fire_act() overrides over the ratchet. Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold instead.",
+            "fire_act() overrides are banned. Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold, or react with on_notice(/datum/notice/atom_fire_act, then(PROC_REF(x))).",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/fire_act\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, mob/living) are where fire exposure lands and is published; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/modules/mob/living/living_fire.dm")]),
         // Hard ban (temperature and energy writes outside code/domains): DM outside the gas and heat domains never writes a gas's or a solid's temperature or energy.
         Part::new(
             "heat_raw_temperature_writes",

@@ -3,6 +3,7 @@
 	var/shandler_noinit = FALSE
 
 CAPABILITIES(/turf/simulated)
+	on_notice(/datum/notice/atom_fire_act, then(PROC_REF(scorch_on_fire)))
 	setup(PROC_REF(rad_shielding_start))
 	setup(PROC_REF(simulated_start))
 	setup(PROC_REF(freelook_visibility_start))
