@@ -535,6 +535,7 @@
 #include "dq_om_core_fix_tests.dm"
 #include "dq_om_relations_tests.dm"
 #include "dq_om_notice_delivery_tests.dm"
+#include "dq_ref_text_handles_tests.dm"
 #include "dq_entity_handle_ids_tests.dm"
 #include "dq_entity_handle_keys_tests.dm"
 #include "dq_wired_notice_tests.dm"

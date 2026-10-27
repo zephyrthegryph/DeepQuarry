@@ -86,16 +86,16 @@
 
 /proc/cmp_embed_text_asc(a,b)
 	if(isdatum(a))
-		a = REF(a)
+		a = ref_token(a) // a stable name for the tie order, never resolved
 	if(isdatum(b))
-		b = REF(b)
+		b = ref_token(b)
 	return sorttext("[b]", "[a]")
 
 /proc/cmp_embed_text_dsc(a,b)
 	if(isdatum(a))
-		a = REF(a)
+		a = ref_token(a) // a stable name for the tie order, never resolved
 	if(isdatum(b))
-		b = REF(b)
+		b = ref_token(b)
 	return sorttext("[a]", "[b]")
 
 
