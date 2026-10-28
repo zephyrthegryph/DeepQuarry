@@ -330,6 +330,8 @@ struct Answers {
     current: std::sync::RwLock<AnswerRequest>,
     requests: std::sync::atomic::AtomicU64,
     resolved: std::sync::atomic::AtomicUsize,
+    /// Slots this request replaced (a slot already held, answered again: a changed or re-proven answer).
+    replaced: std::sync::atomic::AtomicUsize,
     carried: std::sync::atomic::AtomicUsize,
     /// Answers a stage's own resolver disagreed with (verification only).
     mismatches: std::sync::atomic::AtomicUsize,
@@ -354,6 +356,7 @@ impl Default for Answers {
             current: Default::default(),
             requests: std::sync::atomic::AtomicU64::new(0),
             resolved: Default::default(),
+            replaced: Default::default(),
             carried: Default::default(),
             mismatches: Default::default(),
             cleared: Default::default(),
@@ -370,8 +373,11 @@ impl Answers {
         if std::env::var_os("DMB_MEM_MARKS").is_some() {
             let o = |i: usize| self.values.outcomes[i].load(Ordering::Relaxed);
             eprintln!(
-                "answer values at request start (pool {:p}, slots {}): same={} other_answer={} dead={} absent={}",
-                &*self.values,
+                "answer table: request {} ended (resolved {}, carried {}, replaced {}); slots {}, values: same={} other_answer={} dead={} absent={}",
+                self.requests.load(Ordering::Relaxed),
+                self.resolved.load(Ordering::Relaxed),
+                self.carried.load(Ordering::Relaxed),
+                self.replaced.load(Ordering::Relaxed),
                 self.len(),
                 o(0),
                 o(1),
@@ -384,6 +390,7 @@ impl Answers {
         current.request = request;
         current.bind(None, 0);
         self.resolved.store(0, Ordering::Relaxed);
+        self.replaced.store(0, Ordering::Relaxed);
         self.carried.store(0, Ordering::Relaxed);
     }
     fn clear(&self) {
@@ -607,6 +614,9 @@ impl RequestAnswers<'_> {
         drop(timer);
         let value = answers.values.intern(id, query, &meaning);
         let prior = shard.lock().unwrap_or_else(|error| error.into_inner()).get(&id).cloned();
+        if prior.is_some() {
+            answers.replaced.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
         let slot = AnswerSlot::replaced_by(
             prior,
             AnswerSlot {

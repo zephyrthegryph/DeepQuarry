@@ -1239,3 +1239,15 @@ when it is built, or kept per session.
 
 **Proof per slice.** Cold output byte-identical to the previous binary, `shared_store_equiv.sh` EQUIVALENT, identical-worktree
 probe (A, test, B0) for the second-worktree extra, warm-edit speed on a quiet machine.
+
+### Answer table across define variants: measured (2026-10-27, lane `compiler/answer-replace`)
+
+`BuildHost` holds one `QueryDb` and `switch_variant` does not stash it. Counters printed at each request start
+(`DMB_MEM_MARKS=1`: resolved, carried, replaced slots, slot count, answer-value pool outcomes) on game, test, game, test, game in
+one daemon: a request replaces at most 145 slots, so the test request does not overwrite the game's answers; the answer-value pool
+(one instance) finds almost nothing for the test variant when the table is shared (`same` ~70 of 1.26M interns).
+Stashing the table per variant (tried): the pool then finds the game's values for the test request (`same` 110k) and the
+second test visit is a `patch` (37 s) instead of `full` (38-61 s), but steady-state memory after the five requests is +0.5 GB
+(7.06 against 6.53 GB requested), so it is not taken. Warm switches cost 25-60 s in every arrangement measured (patch
+sessions of 25-37 s, not the 5 s of a body edit), so the variant switch has a cost that is not the answer table; it needs a
+per-stage profile of a game -> test -> game sequence before anything else is changed.
