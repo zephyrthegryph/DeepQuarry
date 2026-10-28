@@ -94,6 +94,9 @@
 
 	/// The power alarm is raised (as Rust last reported).
 	var/power_alarm_raised = FALSE
+	/// APC_REPORT lines for charging-only reports: when the next may be written, and how many were folded into it since the last line.
+	COOLDOWN_DECLARE(report_log_cooldown)
+	var/report_log_skipped = 0
 	/// Power events applied (tests check that a settled APC hears none).
 	var/power_event_count = 0
 	/// The reference text of the cell whose charge became Rust's Apc.charge last (push_to_rust() reconciles a newly seated cell once).
@@ -581,7 +584,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(cell && pushed_cell_ref == REF(cell))
 		cell.set_charge(clamp(charge, 0, cell.maxcharge))
 	var/channels_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ
-	var/shown_changed = channels_changed || new_charging != charging || new_status != main_status || !!alarm != power_alarm_raised
+	var/structural_changed = channels_changed || new_status != main_status || !!alarm != power_alarm_raised
+	var/shown_changed = structural_changed || new_charging != charging
 	set_equipment(new_equipment)
 	set_lighting(new_lighting)
 	set_environ(new_environ)
@@ -596,7 +600,14 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		else
 			GLOB.power_alarm.clearAlarm(loc, src)
 	if(shown_changed)
-		log_world("APC_REPORT: [src] ([area]) channels [equipment]/[lighting]/[environ] charging [charging] status [main_status] alarm [alarm] charge [charge]")
+		// A channel, status or alarm change is always logged. The charging lamp flips back and forth on a settled station (about 18 reports a second over
+		// 310 APCs), so a charging-only report is logged once per APC_REPORT_LOG_INTERVAL and the line says how many it stands for.
+		if(structural_changed || COOLDOWN_FINISHED(src, report_log_cooldown))
+			log_world("APC_REPORT: [src] ([area]) channels [equipment]/[lighting]/[environ] charging [charging] status [main_status] alarm [alarm] charge [charge][report_log_skipped ? " ([report_log_skipped] charging-only reports since the last line)" : ""]")
+			report_log_skipped = 0
+			COOLDOWN_START(src, report_log_cooldown, APC_REPORT_LOG_INTERVAL)
+		else
+			report_log_skipped++
 	if(channels_changed)
 		apply_area_power()
 
