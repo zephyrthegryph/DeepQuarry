@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "deepquarry.dme records compile slots: a moved file keeps its old file's slot (tools/build/dme_moves.txt), so file moves are order-neutral; the unit test includer lives in code/tests/unit_tests"

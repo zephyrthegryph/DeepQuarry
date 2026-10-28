@@ -1,5 +1,5 @@
 ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_check_player_logs, R_ADMIN|R_MOD, "Check Mob Logs", mob/living/player in  REGISTRY_MEMBERS(REGISTRY_MOBS))
-	user.show_cmd_admin_check_player_logs(player.logging, player.name, player.ckey, player.mind?.special_role)
+	user.show_cmd_admin_check_player_logs(sparse_get(player, logging), player.name, player.ckey, player.mind?.special_role)
 
 //Views specific attack logs belonging to one player.
 /client/proc/show_cmd_admin_check_player_logs(list/mob_data, target_name, target_ckey, target_special, is_client)

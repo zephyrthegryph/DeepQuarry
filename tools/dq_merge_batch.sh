@@ -41,6 +41,7 @@ cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_dme_resolve.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_stale_includes.sh"
 merge_lock_require || exit 1
 
 lanes_arg=""
@@ -151,17 +152,11 @@ attempt_run() {
 		# A union-merged include list can bring back an include of a file one lane deleted (28 October: _unit_tests.dm kept
 		# dq_reagents_start_snapshot.dm after tests/cut-pins removed it, and two 20-minute attempts failed to compile). Such lines are
 		# dropped, amended into the last merge commit and REPORTED, never silently.
-		ut="code/modules/unit_tests/_unit_tests.dm"
-		if [ -f "$ut" ]; then
-			stale="$(sed -n 's/^#include "\([^"]*\)".*/\1/p' "$ut" | tr -d '\r' | while IFS= read -r inc; do [ -f "code/modules/unit_tests/${inc//\\//}" ] || echo "$inc"; done)"
-			if [ -n "$stale" ]; then
-				while IFS= read -r inc; do
-					grep -vxF "#include \"$inc\"" "$ut" >"$ut.tmp" && mv -f "$ut.tmp" "$ut"
-					echo "   STALE INCLUDE dropped from $ut: \"$inc\" (the file no longer exists after the merges)" | tee -a "$log" >&2
-				done <<<"$stale"
-				git add -- "$ut" && git commit -q --amend --no-edit || exit 90
-			fi
-		fi
+		for ut in code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm; do
+			[ -f "$ut" ] && dq_drop_stale_includes "$ut" "$(dirname "$ut")" "batch" 2>&1 | tee -a "$log" >&2
+		done
+		dq_drop_stale_includes deepquarry.dme . "batch" 2>&1 | tee -a "$log" >&2
+		if ! git diff --cached --quiet; then git commit -q --amend --no-edit || exit 90; fi
 		# deepquarry.dme is generated: whatever the merges made of it (the dq-dme driver, or a union for a lane that still edits it by hand),
 		# the batch carries the list its merged files give, amended into its last merge commit. A spec rule the batch made stale (a lane
 		# deleted or moved a file a rule names) fails the attempt like a gate, so the bisect names the lane.

@@ -266,13 +266,13 @@ usage() {
 	exit 2
 }
 
-# The .dm files the unit-test build compiles: deepquarry.dme's includes plus code/modules/unit_tests/_unit_tests.dm's (relative to that
+# The .dm files the unit-test build compiles: deepquarry.dme's includes plus code/tests/unit_tests/_unit_tests.dm's (relative to that
 # folder), as repo paths, one per line. A test type in a file nothing includes is not in the .dmb: focusing it names a test the world
 # doesn't have, which fails the run (and the boot gate) for no reason.
 included_files() {
 	{
 		awk -F'"' '/^#include "code.*\.dm"/ { print $2 }' deepquarry.dme
-		awk -F'"' '/^#include ".*\.dm"/ { print "code/modules/unit_tests/" $2 }' code/modules/unit_tests/_unit_tests.dm
+		awk -F'"' '/^#include ".*\.dm"/ { print "code/tests/unit_tests/" $2 }' code/tests/unit_tests/_unit_tests.dm
 	} | tr -d '\015' | tr '\134' '/' |
 		awk '{ n = split($0, a, "/"); k = 0; for (i = 1; i <= n; i++) { if (a[i] == "..") k--; else if (a[i] != ".") b[++k] = a[i] } o = b[1]; for (i = 2; i <= k; i++) o = o "/" b[i]; print o }'
 }
@@ -698,7 +698,17 @@ start_world() { # index
 			if [ -n "${W_SHARD[$i]}" ]; then export DQ_FOCUS_SHARD="${W_SHARD[$i]}"; fi
 			if [ -n "${W_PARAMS[$i]}" ]; then export DQ_WORLD_PARAMS="${W_PARAMS[$i]}"; fi
 			staleness_world_param
-			exec tools/build/build.sh dm-test "--focus=${W_FOCUS[$i]}" "--label=focused-${W_LABEL[$i]}" ${args[@]+"${args[@]}"}
+			# compile once per run: world 0 writes an explicit capture of the pair it compiled (build.ts runIsolatedTestWorld), the later
+			# worlds replay it (--focused-compiled-output) while the tree is unchanged (checked before each start, run_worlds)
+			local replay=()
+			if [ -n "${RUN_COMPILE_KEY:-}" ]; then
+				if [ "$i" = 0 ]; then export DQ_FOCUSED_CAPTURE_OUT="$RUN_CAPTURE"
+				elif [ -s "$RUN_CAPTURE" ] && [ -s "$RUN_CAPTURE.sha256" ]; then
+					replay=("--focused-compiled-output=$RUN_CAPTURE" "--focused-compiled-output-sha256=$(tr -d '[:space:]' <"$RUN_CAPTURE.sha256")")
+					echo "== world ${W_LABEL[$i]}: replays world 0's compile ($RUN_CAPTURE)"
+				fi
+			fi
+			exec tools/build/build.sh dm-test "--focus=${W_FOCUS[$i]}" "--label=focused-${W_LABEL[$i]}" ${args[@]+"${args[@]}"} ${replay[@]+"${replay[@]}"}
 		)
 		echo $? >"$log.rc.tmp" && mv -f "$log.rc.tmp" "$log.rc"
 	) >"$log" 2>&1 &
@@ -723,6 +733,9 @@ world_status() {
 	fi
 	return "$rec"
 }
+focused_compile_key() { # what the test .dmb depends on in this run: HEAD's tree, the uncommitted diff, untracked files, the run's arguments
+	{ git rev-parse 'HEAD^{tree}'; git diff HEAD 2>/dev/null; git status --porcelain=v1 -uall 2>/dev/null; printf '%s\n' "${args[@]-}" "${DQ_DEFINES:-}"; } | git hash-object --stdin
+}
 run_worlds() {
 	local began n i waited=0 running jsons=() rc=0 j shard W_DONE
 	began="$(date +%s)"
@@ -746,6 +759,12 @@ run_worlds() {
 		if [ -z "${DQ_FOCUS_TIMEOUT_MINUTES:-}" ]; then export DQ_FOCUS_TIMEOUT_MINUTES=45; fi
 		if [ ${#sweep_group[@]} -gt 0 ]; then sweep_notice "${sweep_group[*]}" "$sweep_requested" "$sweep_shards" "${world_cap:-?}" "$DQ_FOCUS_TIMEOUT_MINUTES"; fi
 	fi
+	# The compile key of this run: the tree, its uncommitted changes and the run's arguments. Later worlds reuse world 0's compile
+	# only while the key still holds when they start (checked again below). DQ_FOCUS_COMPILE_ONCE=0 compiles in every world.
+	RUN_COMPILE_KEY=""; RUN_CAPTURE="$(pwd -W 2>/dev/null || pwd)/data/focused-runs/capture.$$.json"; rm -f "$RUN_CAPTURE" "$RUN_CAPTURE.sha256" "$RUN_CAPTURE.receipt.json"
+	# a replay is a pinned single-world run of the same backend and defines: not with compiler-policy arguments (--dm-version, --warning, -D)
+	if [ "${DQ_FOCUS_COMPILE_ONCE:-1}" = 1 ] && [ ${#W_LABEL[@]} -gt 1 ] && ! printf '%s\n' "${args[@]-}" | grep -qE '^--(dm-version|warning|no-warning|define)|^-D'; then RUN_COMPILE_KEY="$(focused_compile_key)"; fi
+	[ -z "$RUN_COMPILE_KEY" ] || echo "== worlds: compile once (key ${RUN_COMPILE_KEY:0:12}): world 0 compiles, the other worlds replay its pair while the tree is unchanged"
 	start_world 0
 	# Wait for world 0 to finish compiling (it logs "Test world runN" when it launches), or to die.
 	while ! grep -q 'Test world run' "${W_LOG[0]}" 2>/dev/null; do
@@ -798,6 +817,10 @@ run_worlds() {
 				[ "$in_use" -ge "$gsize" ] && break
 			fi
 			if [ "$limited" -eq 1 ]; then export DQ_SLOTS_PREHELD=test_world; fi
+			if [ -n "$RUN_COMPILE_KEY" ] && [ "$(focused_compile_key)" != "$RUN_COMPILE_KEY" ]; then
+				echo "== worlds: the tree changed since world 0 compiled; world ${W_LABEL[$next]} compiles its own"
+				RUN_COMPILE_KEY=""
+			fi
 			start_world "$next"
 			unset DQ_SLOTS_PREHELD
 			next=$((next + 1))
@@ -810,6 +833,7 @@ run_worlds() {
 	done
 	slots_group_release 2>/dev/null || true
 	unset DQ_KEEP_DERIVED_DME
+	[ -z "${RUN_CAPTURE:-}" ] || rm -f "$RUN_CAPTURE" "$RUN_CAPTURE.sha256" "$RUN_CAPTURE.receipt.json"
 	: >"$combined_log"
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
 		world_status "$i"

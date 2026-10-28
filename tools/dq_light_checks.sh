@@ -11,6 +11,15 @@
 #   - a changed heavy path (tools/dq_light_paths.sh) is a refusal: a light batch never carries it.
 # DQ_LIGHT_CARGO=0 skips cargo (fixture tests). Run from the worktree that holds <head>.
 set -uo pipefail
+# light_cargo_target_args <manifest>: the --target a crate's tests need. The verdigris crates link byondapi-sys, which builds only for
+# the 32-bit target BYOND loads (28 October: perf/frame-stalls failed "BYOND API only functions with 32-bit/x86 targets" on the 64-bit
+# host target): on Windows they test as verdigris builds, i686-pc-windows-msvc (DQ_LIGHT_VERDIGRIS_TARGET overrides).
+light_cargo_target_args() {
+	case "$1" in
+		verdigris/*) case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) echo "--target ${DQ_LIGHT_VERDIGRIS_TARGET:-i686-pc-windows-msvc}" ;; *) [ -z "${DQ_LIGHT_VERDIGRIS_TARGET:-}" ] || echo "--target $DQ_LIGHT_VERDIGRIS_TARGET" ;; esac ;;
+	esac
+}
+[ "${1:-}" != --target-args ] || { light_cargo_target_args "$2"; exit 0; }
 cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_light_paths.sh"
 base="${1:?base}"; head="${2:-HEAD}"
@@ -51,6 +60,7 @@ for f in "${changed[@]}"; do
 	case "$f" in *.md|doc/*.html) check_links "$f" ;; esac
 done
 
+
 if [ "${DQ_LIGHT_CARGO:-1}" = 1 ]; then
 	declare -A manifests=()
 	for f in "${changed[@]}"; do
@@ -61,11 +71,20 @@ if [ "${DQ_LIGHT_CARGO:-1}" = 1 ]; then
 			d="$(dirname "$d")"
 		done
 	done
+	# every workspace crate that depends on a changed crate runs its tests too (cargo's reverse-dependency set, tools/light_cargo_rdeps.py)
+	if [ ${#manifests[@]} -gt 0 ] && [ -f tools/light_cargo_rdeps.py ]; then
+		while IFS= read -r rd; do
+			[ -n "$rd" ] && [ -z "${manifests[$rd]:-}" ] || continue
+			manifests["$rd"]=1
+			echo "== cargo: $rd depends on a changed crate; its tests run too"
+		done < <(python3 tools/light_cargo_rdeps.py "${!manifests[@]}" 2>/dev/null)
+	fi
 	for m in "${!manifests[@]}"; do
-		echo "== cargo test --manifest-path $m"
+		targs="$(light_cargo_target_args "$m")"
+		echo "== cargo test --manifest-path $m${targs:+ $targs}"
 		# Built outside the worktree (tools/dq_cargo_target.sh): a gate must never leave a debug target in the merge worktree.
 		CARGO_TARGET_DIR="$(bash tools/dq_cargo_target.sh "light-$(echo "$m" | tr '/' '-')")" \
-			bash tools/dq_machine_slots.sh run cargo --label "light-batch $m" -- env CARGO_INCREMENTAL=0 cargo test --manifest-path "$m" || bad "cargo test $m"
+			bash tools/dq_machine_slots.sh run cargo --label "light-batch $m" -- env CARGO_INCREMENTAL=0 cargo test --manifest-path "$m" $targs || bad "cargo test $m"
 	done
 fi
 
@@ -88,6 +107,7 @@ for f in "${changed[@]}"; do
 		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh; add_selftest test_train_decisions.sh ;;
 		tools/dq_light_paths.sh|tools/dq_land_batch.sh) add_selftest test_light_checks.sh ;;
 		tools/dq_light_checks.sh) add_selftest test_light_checks.sh; add_selftest test_train_decisions.sh ;;
+		tools/dq_stale_includes.sh|tools/dq_merge_master.sh|tools/light_cargo_rdeps.py) add_selftest test_train_decisions.sh ;;
 		tools/ci/lint_scopes_merge_driver.sh|tools/dq_git_safe.sh) add_selftest test_train_decisions.sh ;;
 		tools/dq_*.sh) add_selftest "test_$(basename "$f" .sh | sed 's/^dq_//').sh" ;;
 	esac

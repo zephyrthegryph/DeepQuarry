@@ -103,12 +103,15 @@ mod tests {
         BindingTables::validated(indexes, BTreeMap::new(), None)
     }
     #[test]
-    fn equal_binding_tables_of_two_sessions_share_one_allocation_until_dropped() {
+    fn equal_binding_tables_of_two_sessions_share_storage_but_not_issue_identity() {
         let first = tables(2);
         let second = tables(2);
-        assert!(first.same_owner(&second));
+        // Storage is shared, identity is not: each build keeps its own issue.
+        assert!(!first.same_owner(&second));
+        assert!(std::ptr::eq(first.assignments(), second.assignments()));
+        assert!(first.same_owner(&first.clone()));
         let different = tables(3);
-        assert!(!first.same_owner(&different));
+        assert!(!std::ptr::eq(first.assignments(), different.assignments()));
         assert_eq!(different.assignments().len(), 2);
         drop((first, second));
         // Nothing keeps a dropped table alive: the pool holds weak references only.
