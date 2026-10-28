@@ -441,7 +441,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 /// the globals are still being made.
 /proc/own_field_memo()
 	RETURN_TYPE(/list)
-	var/static/list/memo = list() // ALLOW(cache,sys_static_getter): relation writes run while the globals are being made; the memo is a per-type fact table
+	var/static/list/memo = list() // ALLOW(sys_static_getter): relation writes run while the globals are being made; the memo is a per-type fact table
 	return memo
 
 /// TRUE when something that never changes for holder's type reads var_name: a stat input, a draw one hop away, an OM field channel, a reaction
