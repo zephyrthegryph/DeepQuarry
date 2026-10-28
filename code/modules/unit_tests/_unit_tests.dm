@@ -502,6 +502,7 @@
 #include "dx_click_order_conversion.dm"
 #include "dx_click_order_golden.dm"
 #include "../../tests/unit_tests/dq_ability_tests.dm"
+#include "../../tests/unit_tests/dq_pickweight_tests.dm"
 #include "dq_living_ability_tests.dm"
 #include "dq_sys_sfx_tests.dm"
 #include "dq_sys_grants_tests.dm"
