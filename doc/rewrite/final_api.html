@@ -1260,6 +1260,12 @@ starts_args = list(...)                    <span class="c">// constructor argume
   <div class="prose"><p><strong>The init phase contract.</strong> An instance's init runs in four phases (with an early one for body parts), and each phase may read what the earlier ones made:</p>
     <ol>
       <li><strong>Params:</strong> <code>make()</code> arguments, <code>param(pos =)</code> constructor arguments, <code>per_type</code> tables and <code>rolls()</code> (preinit).</li>
+      <li><strong>Early setup</strong> (phase 0, after the early children and early params): <code>setup(PROC_REF(x), early = TRUE)</code> declares <code>x()</code>, the code a type ran
+        before <code>..()</code> in its <code>Initialize()</code> (an appearance assigned over the whole appearance, a shared list swapped in for the one the chain reads). It runs from
+        <code>InitAtom()</code> before the chain on both the chain path and the <code>init_from_table</code> path, ancestors first, a repeated proc once. It cannot combine with
+        <code>with_params</code> or <code>mapload</code>. <em>Design note:</em> the first plan was a <code>registers(registry_id, key =)</code> static entry for the three remaining
+        <code>Initialize()</code> overrides; reading them showed none registers anything (they set an appearance, a door fill and shared list vars on the instance), so the form that fits is
+        a phase 0 hook, which the existing phase 0 machinery (<code>params_early()</code>) already had room for.</li>
       <li><strong>Early children</strong> (phase 0, before the rest): an occupant declared <code>owns_one</code>/<code>owns_many(..., early = TRUE)</code> is built by
         <code>InitAtom()</code> before the <code>Initialize()</code> chain runs, after the params of <code>/atom/New()</code>: a body part a type&#39;s own code before <code>..()</code>
         reads (the AI&#39;s radio and laws, a human&#39;s DNA). It cannot read <code>rolls()</code>, which come later; <code>starts_set</code> applies to it then too.</li>
