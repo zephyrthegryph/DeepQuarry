@@ -1624,7 +1624,7 @@
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
 		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
-		key += "|\ref[limb_image][limb_image.color]"
+		key += "|[ref_token(E)][limb_image.color]" // a limb's hud image is made once and kept, so the limb names it
 	var/show_pain = trauma_val && src.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
 	if(key == sparse_get(src, health_doll_key))
@@ -2252,8 +2252,8 @@
 // === merged from life_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /// MED-6: neither gaining (well fed, gain on, under the cap) nor losing (starving, loss on).
 /mob/living/carbon/human/proc/life_weight_due()
-	var/gaining = sparse_get_or(src, weight_gain, 1) && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT
-	var/losing = sparse_get_or(src, weight_loss, 0.5) && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
+	var/gaining = sparse_get_or(src, weight_gain, 1) && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) < MAX_MOB_WEIGHT
+	var/losing = sparse_get_or(src, weight_loss, 0.5) && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) > MIN_MOB_WEIGHT
 	return gaining || losing
 
 /// Nutrition is written through set_nutrition() (MOB_KEY_NUTRITION). This is the fallback (weight preferences).
@@ -2263,11 +2263,11 @@
 /// Weight gain and loss from nutrition.
 /mob/living/carbon/human/proc/life_weight(datum/seq_frame/life/F)
 	if (nutrition_of(src) >= 0 && src.stat != 2)
-		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT && sparse_get_or(src, weight_gain, 1))
-			src.weight += src.species.metabolism*(0.01*sparse_get_or(src, weight_gain, 1))
+		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) < MAX_MOB_WEIGHT && sparse_get_or(src, weight_gain, 1))
+			sparse_set_or(src, weight, sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) + (src.species.metabolism*(0.01*sparse_get_or(src, weight_gain, 1))), DEFAULT_MOB_WEIGHT)
 
-		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && src.weight > MIN_MOB_WEIGHT && sparse_get_or(src, weight_loss, 0.5))
-			src.weight -= src.species.metabolism*(0.01*sparse_get_or(src, weight_loss, 0.5)) // starvation weight loss
+		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) > MIN_MOB_WEIGHT && sparse_get_or(src, weight_loss, 0.5))
+			sparse_set_or(src, weight, sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) - (src.species.metabolism*(0.01*sparse_get_or(src, weight_loss, 0.5))), DEFAULT_MOB_WEIGHT) // starvation weight loss
 
 //Our call for the NIF to do whatever
 /// MED-6: no NIF, nothing to run.

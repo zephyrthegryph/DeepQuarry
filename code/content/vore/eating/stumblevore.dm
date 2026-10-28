@@ -39,7 +39,7 @@
 			injure(INJURY_BLUNT, 0.5, source = M)
 			return
 
-	if(round(weight) > 474)
+	if(round(sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT)) > 474)
 		var/throwtarget = get_edge_target_turf(M, reverse_direction(M.dir))
 		act_message(M, src, others = span_vwarning("%U% bounces backwards off of %T%'s plush body!"))
 		M.throw_at(throwtarget, 5, 1) //it's funny and nobdy ever takes weight >474 so this is extremely rare

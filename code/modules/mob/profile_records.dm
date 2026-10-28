@@ -23,6 +23,8 @@
 	/// A human's examine text by zone ("general", "head", ...). Lazy.
 	var/list/flavor_texts
 	var/nickname = null
+	/// A custom species name the character gives itself (shown in place of the species name); null for none.
+	var/custom_species = null
 	/// The headset, backpack and PDA kinds the player chose.
 	var/headset = 1
 	var/backbag = 2

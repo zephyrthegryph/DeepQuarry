@@ -28,8 +28,8 @@ use crate::util::{is_py_space, py_lstrip, py_rstrip, py_strip};
 use crate::{pat, pat_match};
 
 const LINT: &str = "derived_reads";
-const SKIP_SITE_DIRS: &[&str] = &["code/modules/unit_tests/"];
-const GENERATED_SKIP_DIRS: &[&str] = &["code/modules/unit_tests/", "code/modules/benchmarks/"];
+const SKIP_SITE_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/unit_tests/"];
+const GENERATED_SKIP_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/"];
 pub(crate) const GENERATED_REL: &str = "code/_generated/reads.dm";
 const EXEMPT_VARS: &[&str] = &["cap_state", "cap_data"];
 const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];

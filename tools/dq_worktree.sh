@@ -37,7 +37,7 @@ in_use() { # <dir>: a process names the worktree on its command line (dd.exe, dm
 }
 merged_clean() { # <dir>
 	local d="$1" sha
-	[ -z "$(git -C "$d" status --porcelain --untracked-files=normal 2>/dev/null)" ] || return 1
+	[ -z "$(git --no-optional-locks -C "$d" status --porcelain --untracked-files=normal 2>/dev/null)" ] || return 1
 	sha="$(git -C "$d" rev-parse HEAD 2>/dev/null)" || return 1
 	git -C "$main" merge-base --is-ancestor "$sha" origin/master
 }

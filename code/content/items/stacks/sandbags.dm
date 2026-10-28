@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/stack/sandbags)
 
 /// A bigger pile slows its carrier more.
 /obj/item/stack/sandbags/proc/update_slowdown()
-	slowdown = round(get_amount() / 10, 0.1)
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, round(get_amount() / 10, 0.1))
 
 /obj/item/stack/sandbags/set_amount(new_amount, no_limits = FALSE)
 	. = ..()

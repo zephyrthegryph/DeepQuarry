@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Merge train: DreamChecker waits for 10 GB of available memory and an out-of-memory crash is retried instead of bouncing a lane; a batch keeps its lanes' DreamChecker verdicts only when at most one lane changes DM; light checks judge a lane by its own changes; lint_scopes.toml ceilings merge to the lower value instead of conflicting."

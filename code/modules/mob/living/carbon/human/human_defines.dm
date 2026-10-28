@@ -52,7 +52,6 @@
 	var/flapping = 0
 
 	// Custom Species Name
-	var/custom_species
 
 	var/block_hud
 

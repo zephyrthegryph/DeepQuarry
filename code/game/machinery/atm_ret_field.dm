@@ -106,6 +106,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma/impassable)
 		disable_field()
 
 CAPABILITIES(/obj/machinery/atmospheric_field_generator)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(field_broken)))
 	keeps_if(PROC_REF(no_duplicate_generator))
 	configure(uses_power(channel = ENVIRON, idle = 10, active = 2500))
 	emp_disable(7.5 SECONDS)
@@ -130,10 +131,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 		emp_act(3)
 	return HOOK_DECLINE
 
-/obj/machinery/atmospheric_field_generator/atom_break(damage_flag)
-	. = ..()
-	if(!.)
-		return
+/obj/machinery/atmospheric_field_generator/proc/field_broken(datum/act/A)
 	visible_message("The ARF-G cracks and shatters!", "You hear an uncomfortable metallic crunch.")
 	disable_field()
 

@@ -242,6 +242,9 @@ export const IconRepackTarget = new Juke.Target({
   // declaring an 'icons/gen/**/*.dmi' output makes Juke try to touch outputs
   // that may not exist yet, crashing the build. Let the python step gate itself.
   executes: async () => {
+    // The wall time is logged beside the repack's own figure: a gap between them is time outside the repack (27 October: 231 s against a
+    // 9.7 s repack, from a synchronous target beside it blocking the event loop; see VerdigrisBindingsCheckTarget).
+    const t0 = Date.now();
     await Juke.exec('python3', [
       '-m', 'tools.dq_icons.build_step',
       '--output', 'icons/gen',
@@ -251,6 +254,7 @@ export const IconRepackTarget = new Juke.Target({
       // dies; Windows does not kill child processes with their parent.
       env: { ...process.env, DQ_BUILD_PID: String(process.pid) },
     });
+    Juke.logger.info(`icon-repack: wall ${((Date.now() - t0) / 1000).toFixed(1)}s (process start to exit)`);
   },
 });
 
@@ -370,6 +374,7 @@ export const ValidateDmeTarget = new Juke.Target({
     // deepquarry.dme — exclude them from the "is it wired into the build" check.
     const EXCLUDED_PREFIXES = [
       'code/modules/unit_tests/',
+      'code/tests/unit_tests/',
     ];
 
     const missing: string[] = [];
@@ -477,7 +482,7 @@ const verdigrisBindingsCheckKey = (): string => {
 const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
 
 export const VerdigrisBindingsCheckTarget = new Juke.Target({
-  executes: () => {
+  executes: async () => {
     const full = !!process.env.CI || process.env.DQ_FULL_CHECKS === '1';
     const key = full ? null : verdigrisBindingsCheckKey();
     if (key) {
@@ -493,9 +498,19 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
         // no record yet
       }
     }
-    // The bindings are build output, not committed: write whatever is missing or out of date.
-    const written = generateVerdigrisBindings(process.cwd(), false);
-    if (written.length) Juke.logger.info(`verdigris bindings: wrote ${written.join(', ')}`);
+    // The bindings are build output, not committed: write whatever is missing or out of date. The generator reads every DM file
+    // (minutes on a loaded machine) synchronously; run in this process it blocked Bun's event loop, so the targets beside it (icon-repack:
+    // "231 s" for a 10 s repack on 27 October) could not even see their children exit. A child process keeps them running in parallel.
+    // DQ_VG_BINDINGS_INPROC=1 runs it in this process as before.
+    const t0 = Date.now();
+    if (process.env.DQ_VG_BINDINGS_INPROC === '1') {
+      const written = generateVerdigrisBindings(process.cwd(), false);
+      if (written.length) Juke.logger.info(`verdigris bindings: wrote ${written.join(', ')}`);
+    } else {
+      Juke.logger.info('verdigris bindings: inputs changed; regenerating in a child process');
+      await Juke.exec(process.execPath, ['tools/build/lib/verdigris_bindings.ts']);
+    }
+    Juke.logger.info(`verdigris bindings: regenerated in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
     if (key) {
       fs.mkdirSync('data', { recursive: true });
       fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString() }));
@@ -3611,6 +3626,33 @@ export const TguiLintTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeCheckTarget, TguiTscTarget],
 });
 
+// DreamChecker needs several GB and aborts ("memory allocation of N bytes failed") when the machine runs short (28 October: OOM with
+// 4.4 GB available). Every run waits until DQ_DC_MIN_AVAIL_GB (default 10) is available (os.freemem() is the OS's available memory,
+// standby cache included), logging the wait each minute; after DQ_DC_MEM_WAIT_MIN (default 30) it runs anyway and says so. 0 = no wait.
+async function waitForDreamCheckerMemory(): Promise<void> {
+  const needGb = Number(process.env.DQ_DC_MIN_AVAIL_GB ?? '10');
+  if (!(needGb > 0)) return;
+  const maxMs = Number(process.env.DQ_DC_MEM_WAIT_MIN ?? '30') * 60_000;
+  const t0 = Date.now();
+  let lastLog = 0;
+  for (;;) {
+    const availGb = os.freemem() / 2 ** 30;
+    if (availGb >= needGb) {
+      if (Date.now() - t0 > 1000) Juke.logger.info(`dream-checker: ${availGb.toFixed(1)} GB available after waiting ${Math.round((Date.now() - t0) / 1000)}s`);
+      return;
+    }
+    if (Date.now() - t0 >= maxMs) {
+      Juke.logger.warn(`dream-checker: still only ${availGb.toFixed(1)} GB available (< ${needGb} GB) after ${Math.round(maxMs / 60_000)} min; running anyway`);
+      return;
+    }
+    if (Date.now() - lastLog >= 60_000) {
+      Juke.logger.info(`dream-checker: waiting for memory: ${availGb.toFixed(1)} GB available, needs ${needGb} GB (DQ_DC_MIN_AVAIL_GB)`);
+      lastLog = Date.now();
+    }
+    await new Promise((r) => setTimeout(r, 5000));
+  }
+}
+
 // run SpacemanDMM dreamchecker before the DM compile if the
 // binary is available. Best-effort: if dreamchecker is not on PATH the target
 // no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
@@ -3628,6 +3670,7 @@ export const DreamCheckerTarget = new Juke.Target({
     return true;
   },
   executes: async () => {
+    await waitForDreamCheckerMemory();
     await runDreamChecker();
     Juke.logger.info('dream-checker: passed'); // the merge gates read this line (tools/dq_merge_gates.sh, job dreamchecker)
   },

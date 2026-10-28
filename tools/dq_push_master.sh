@@ -255,9 +255,22 @@ for round in 1 2 3; do
 		if [ -n "$pre_push_master" ]; then
 			bash tools/dq_prebuild_tools.sh "$pre_push_master" "$sha" || echo "dq_push_master: tool prebuild not started (non-fatal)"
 		fi
-		# Reclaim disk: every other worktree that is now clean and merged goes (build targets deleted first). Best effort.
-		bash tools/dq_worktree.sh gc || echo "dq_push_master: worktree cleanup failed (non-fatal); run tools/dq_worktree.sh gc"
-		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"
+		# Reclaim disk: every other worktree that is now clean and merged goes (build targets deleted first). Best effort, and DETACHED:
+		# it walks every worktree and its processes (minutes on a loaded machine) and the train's next cycle waited for it (27 October: a
+		# light landing spent ~3 of its 4.6 post-check minutes here). DQ_PUSH_GC=sync runs it in the foreground, DQ_PUSH_GC=0 skips it.
+		case "${DQ_PUSH_GC:-detach}" in
+			0) echo "== dq_push_master: worktree gc skipped (DQ_PUSH_GC=0)" ;;
+			sync) bash tools/dq_worktree.sh gc || echo "dq_push_master: worktree cleanup failed (non-fatal); run tools/dq_worktree.sh gc" ;;
+			*)
+				gc_log="data/push-gc-$(date +%Y%m%dT%H%M%S).log"; mkdir -p data
+				( nohup bash tools/dq_worktree.sh gc >"$gc_log" 2>&1 </dev/null & ) >/dev/null 2>&1
+				echo "== dq_push_master: worktree gc started detached (log $gc_log)"
+				;;
+		esac
+		lap "post-push (tool prebuild, gc start)"
+		if [ "$light" -eq 1 ]; then checked="light batch: tools/dq_light_checks.sh cheap checks; no DM build, DreamChecker, ratchets or analyze"
+		else checked="dm, DreamChecker, ratchets, analyze"; fi
+		echo "dq_push_master: pushed ${sha:0:12} (checked: $checked); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"
 		exit 0
 	fi
 	echo "dq_push_master: push rejected (master moved?); merging again"

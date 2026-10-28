@@ -22,6 +22,10 @@
 // alive: a datum BYOND collects without qdel() (a dropped species, a stack
 // canary) simply stops resolving, like one that was qdel()ed.
 
+/// A datum whose collection without qdel() is the signal it exists to give (a stack canary: BYOND frees it when the stack that held it ends). A
+/// handle to one resolves null once it is gone and files no HANDLE TARGET COLLECTED report; every other type's handle does.
+/datum/handle_sentinel
+
 GLOBAL_LIST_EMPTY(om_handle_slots)
 GLOBAL_LIST_EMPTY(om_handle_gens)
 /// Per handle slot: the type of the datum it names (for the collected-without-qdel report).
@@ -198,7 +202,9 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 		// target, BYOND freed the target at once (a nullspace holder turned into
 		// a handle by the LC-refs sweep). That var owns what it names.
 		var/list/types = GLOB.om_handle_types
-		entity_handle_collected_report(id <= length(types) ? types[id] : null)
+		var/target_type = id <= length(types) ? types[id] : null
+		if(!ispath(target_type, /datum/handle_sentinel))
+			entity_handle_collected_report(target_type)
 		entity_handle_slot_free(id)
 		return null
 	if(QDELETED(D))

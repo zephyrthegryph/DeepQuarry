@@ -12,7 +12,7 @@
 	desc = "This rather dangerous looking armor will hopefully shock your enemies, and not you in the process."
 	icon_state = "tesla_armor_1" //wip
 	blood_overlay_type = "armor"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = ""
 	var/active = 1	//Determines if the armor will zap or block
 	var/ready = 1 //Determines if the next attack will be blocked, as well if a strong lightning bolt is sent out at the attacker.

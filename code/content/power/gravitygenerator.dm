@@ -124,6 +124,7 @@ CAPABILITIES(/obj/machinery/gravity_generator)
 
 
 CAPABILITIES(/obj/machinery/gravity_generator/part)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(part_broken)))
 	ref_one(nameof(main_part), /obj/machinery/gravity_generator/main)
 	op("use", hand(), label("Use"), wait(0), when(req_empty_hand()), then(PROC_REF(forward_hand)))
 
@@ -144,10 +145,11 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 /obj/machinery/gravity_generator/part/get_status()
 	return main_part?.get_status()
 
-/obj/machinery/gravity_generator/part/atom_break(damage_flag)
-	. = ..()
+/// A broken part breaks the generator it belongs to.
+/obj/machinery/gravity_generator/part/proc/part_broken(datum/act/A)
+	var/datum/notice/machinery_broken/N = A
 	if(!QDELETED(main_part) && !main_part.broken_now())
-		main_part.atom_break(damage_flag)
+		main_part.atom_break(N.damage_flag)
 
 //
 // Generator which spawns with the station.
@@ -195,6 +197,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 // The main part: its window and breaker, its eight parts (owned), and its spin (spin_step(), every machine service interval while it spins
 // and is whole).
 CAPABILITIES(/obj/machinery/gravity_generator/main)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(main_broken)))
 	configure(uses_power(idle = 0, active = 30000, channel = ENVIRON))
 	after_init(0, then(PROC_REF(find_levels)))
 	owns_many(nameof(parts), /obj/machinery/gravity_generator/part)
@@ -260,13 +263,12 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 /obj/machinery/gravity_generator/main/proc/connected_parts()
 	return length(parts) == 8
 
-/obj/machinery/gravity_generator/main/atom_break(damage_flag)
-	. = ..()
-	if(!.)
-		return
+/// The generator breaking takes its parts with it and shuts gravity down.
+/obj/machinery/gravity_generator/main/proc/main_broken(datum/act/A)
+	var/datum/notice/machinery_broken/N = A
 	for(var/obj/machinery/gravity_generator/M in parts)
 		if(!M.broken_now())
-			M.atom_break(damage_flag)
+			M.atom_break(N.damage_flag)
 	set_charge_overlay(null)
 	set_charge_count(0)
 	set_breaker(FALSE)

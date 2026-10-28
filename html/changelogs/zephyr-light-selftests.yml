@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The train's light precheck runs only the self-tests of the tools a lane changed (each capped at 5 minutes) and the ratchets only for a .dm file or a lint input, instead of the ratchets plus every self-test"

@@ -11,7 +11,7 @@
 	icon_state = "breacher_rig_cheap"
 	armor_spec = "melee=60;bullet=45;laser=45;energy=10;bomb=50;bio=100;rad=20"
 	emp_protection = -20
-	slowdown = 3  //This is too much, reducing from 6 to 3.  May edit again in the future.
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 3) //This is too much, reducing from 6 to 3.  May edit again in the future.
 	offline_slowdown = 5
 	vision_restriction = 0  //This is dumb as hell and should be 0 if we want the suit to be even vaguely useful.
 	offline_vision_restriction = 2 //This actually serves as a good weakness for them, making them vulnerable to Ion weapons.
@@ -32,7 +32,7 @@ CAPABILITIES(/obj/item/rig/breacher)
 	icon_state = "breacher_rig"
 	armor_spec = "melee=85;bullet=80;laser=80;energy=40;bomb=80;bio=100;rad=60" //Still a tank just not indestructable
 	vision_restriction = 0
-	slowdown = 6
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 6)
 	offline_slowdown = 10
 
 CAPABILITIES(/obj/item/rig/breacher/fancy)
@@ -192,7 +192,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
 	armor_spec = "melee=25;bullet=5;laser=40;energy=45;bomb=50;bio=100;rad=100" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
 	offline_slowdown = 2.5
-	slowdown = 0
+	worn_factors = null
 	emp_protection = 40 //change this to 30 if too high.
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
@@ -231,7 +231,7 @@ CAPABILITIES(/obj/item/rig/vox/engineering)
 	armor_spec = "melee=60;bullet=50;laser=40;energy=10;bomb=20;bio=100;rad=50" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
 	offline_slowdown = 5
-	slowdown = 0
+	worn_factors = null
 	emp_protection = 40 //change this to 30 if too high.
 
 	req_one_access = list()

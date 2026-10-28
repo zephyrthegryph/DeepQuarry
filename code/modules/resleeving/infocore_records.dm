@@ -97,6 +97,8 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 	var/aflags
 	var/breath_type = GAS_O2
 
+SCHEMA(/datum/transhuman/body_record, weight, num(min = WEIGHT_MIN, max = WEIGHT_MAX, default = DEFAULT_MOB_WEIGHT))
+
 CAPABILITIES(/datum/transhuman/body_record)
 	owns_one(nameof(mydna), /datum/dna2/record)
 	ref_one(nameof(mind_ref))
@@ -138,10 +140,10 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 	//General stuff about them
 	set_synthetic(HAS_SYNTHETIC_BIOLOGY(M))
-	set_speciesname(M.custom_species ? M.custom_species : null)
+	set_speciesname(M.bio.custom_species ? M.bio.custom_species : null)
 	set_bodygender(M.gender)
 	sizemult = M.size_multiplier
-	weight = M.weight
+	weight = sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT)
 	aflags = M.appearance_flags
 	breath_type = M.species.breath_type
 
@@ -337,9 +339,9 @@ CAPABILITIES(/datum/transhuman/body_record)
 	PRIVATE_PROC(TRUE)
 	H.resize(sizemult, FALSE)
 	H.set_appearance_flags(aflags)
-	H.weight = weight
+	sparse_set_or(H, weight, weight, DEFAULT_MOB_WEIGHT)
 	if(speciesname)
-		H.custom_species = speciesname
+		H.bio.custom_species = speciesname
 
 /**
  * Specialty revival procs. Uses the BR for data, but needs to handle some weird logic for xenochi/slimes

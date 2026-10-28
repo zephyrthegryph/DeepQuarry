@@ -6,7 +6,7 @@
 	icon_state = "aegis_rig"
 	armor_spec = "melee=60;bullet=60;laser=60;energy=30;bomb=10;bio=100;rad=100"
 
-	slowdown = 6
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 6)
 
 	chest_type = /obj/item/clothing/suit/space/rig/ch/aegis
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ch/aegis

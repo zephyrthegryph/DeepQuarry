@@ -28,7 +28,7 @@
 #      deferred instead of judged,
 #   3d. DQ_BATCH_WT2=<a second worktree of this repository> (the train sets it for a batch of prechecked lanes): the bisect gates BOTH
 #      halves at once, good+L here and good+R there (attempt_pair); L failing narrows to L, L passing grows the proved set by L and narrows
-#      to R. One attempt at a time when free RAM is under DQ_BATCH_PARALLEL_MIN_FREE_GB (16) or DQ_BATCH_PARALLEL=0.
+#      to R. One attempt at a time when free RAM is under DQ_BATCH_PARALLEL_MIN_FREE_GB (12, on MemAvailable) or DQ_BATCH_PARALLEL=0.
 #   3e. deepquarry.dme: a merge that stops on the manifest alone is resolved by merging the include sets, and an include the union merge
 #      brought back for a file one side deleted is dropped (tools/dq_dme_resolve.sh; both verified against the files on disk).
 # Machine-readable result lines at the end (tools/dq_train.sh reads them): BATCH_GOOD: <lanes>, BATCH_DEFERRED: <lanes>, BATCH_CAPPED: 1|,
@@ -79,6 +79,7 @@ reasons=()
 blogs=()
 deferred=()
 capped=""
+noresult=()
 n_attempts=0
 real_attempts=0
 CACHE="${DQ_BATCH_CACHE:-}"
@@ -119,10 +120,26 @@ attempt_run() {
 		cd "$dir" || exit 90
 		# Each attempt starts from a clean tree: the previous failed attempt may have left a baseline shrink behind.
 		dq_clean_tracked "dq_merge_batch: attempt started dirty" 2>&1 | tee -a "$log" >&2
+		# 27 October (train-dc): another process held the index lock, a failed merge could not be aborted, and every later attempt
+		# started dirty and was read as a lane conflict. A tree that is still dirty or mid-merge after cleaning is a setup error (90),
+		# never a lane's verdict.
+		if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ] || ! git diff --quiet HEAD 2>/dev/null; then
+			dq_clean_tracked "dq_merge_batch: attempt still dirty, second clean" 2>&1 | tee -a "$log" >&2
+			if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ] || ! git diff --quiet HEAD 2>/dev/null; then
+				echo "dq_merge_batch: SETUP ERROR: the tree is still dirty or mid-merge after cleaning (an index lock held by another process?)" | tee -a "$log" >&2
+				exit 90
+			fi
+		fi
 		git switch -q --detach origin/master >>"$log" 2>&1 || exit 90
 		for l in "$@"; do
+			mstart="$(wc -l <"$log" 2>/dev/null || echo 0)"
 			if ! git merge --no-ff --no-edit -q -m "Merge $l" "$(ref_of "$l")" >>"$log" 2>&1 && ! dme_resolve_conflict >>"$log" 2>&1 && ! doc_union_conflict >>"$log" 2>&1; then
-				git merge --abort >/dev/null 2>&1
+				git merge --abort >/dev/null 2>&1 || { git merge --abort >/dev/null 2>&1; dq_clean_tracked "dq_merge_batch: merge --abort failed; cleaning" >>"$log" 2>&1; }
+				# Only a content conflict names the lane; a lock, an unwritable index or local changes are setup errors (90).
+				if ! tail -n "+$((mstart + 1))" "$log" | grep -q '^CONFLICT ('; then
+					echo "dq_merge_batch: SETUP ERROR: merging $l failed without a content conflict (see $log); not the lane's fault" | tee -a "$log" >&2
+					exit 90
+				fi
 				echo "$l" >"$log.conflict"
 				echo "   $l conflicts with the batch; see $log" >&2
 				exit 91
@@ -131,6 +148,20 @@ attempt_run() {
 			# only where the manifest is still hand-written, without tools/build/gen_dme.py)
 			[ -f tools/build/gen_dme.py ] || dme_repair_after_merge >>"$log" 2>&1
 		done
+		# A union-merged include list can bring back an include of a file one lane deleted (28 October: _unit_tests.dm kept
+		# dq_reagents_start_snapshot.dm after tests/cut-pins removed it, and two 20-minute attempts failed to compile). Such lines are
+		# dropped, amended into the last merge commit and REPORTED, never silently.
+		ut="code/modules/unit_tests/_unit_tests.dm"
+		if [ -f "$ut" ]; then
+			stale="$(sed -n 's/^#include "\([^"]*\)".*/\1/p' "$ut" | tr -d '\r' | while IFS= read -r inc; do [ -f "code/modules/unit_tests/${inc//\\//}" ] || echo "$inc"; done)"
+			if [ -n "$stale" ]; then
+				while IFS= read -r inc; do
+					grep -vxF "#include \"$inc\"" "$ut" >"$ut.tmp" && mv -f "$ut.tmp" "$ut"
+					echo "   STALE INCLUDE dropped from $ut: \"$inc\" (the file no longer exists after the merges)" | tee -a "$log" >&2
+				done <<<"$stale"
+				git add -- "$ut" && git commit -q --amend --no-edit || exit 90
+			fi
+		fi
 		# deepquarry.dme is generated: whatever the merges made of it (the dq-dme driver, or a union for a lane that still edits it by hand),
 		# the batch carries the list its merged files give, amended into its last merge commit. A spec rule the batch made stale (a lane
 		# deleted or moved a file a rule names) fails the attempt like a gate, so the bisect names the lane.
@@ -139,9 +170,16 @@ attempt_run() {
 				echo "   tools/build/gen_dme.py failed on the merged tree (a stale rule in tools/build/dme_spec.txt?); see $log" >&2
 				exit 1
 			fi
-			if ! git diff --quiet -- deepquarry.dme; then
-				git add -- deepquarry.dme && git commit -q --amend --no-edit
+			# Stage it whatever `git diff` says: a rewrite that diff reads as clean (line endings, racy stat) still left the file dirty for
+			# the gates' clean-tree check, which REFUSED every attempt (27 October, train-dc). Amend only when the staged content differs.
+			git add -- deepquarry.dme || { echo "   could not stage the regenerated deepquarry.dme (index lock?)" >>"$log"; exit 90; }
+			if ! git diff --cached --quiet -- deepquarry.dme; then
+				git commit -q --amend --no-edit || { echo "   could not amend the regenerated deepquarry.dme" >>"$log"; exit 90; }
 				echo "   regenerated deepquarry.dme into the batch's last merge commit" >>"$log"
+			fi
+			if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+				echo "   SETUP ERROR: tracked changes left after the manifest step:" >>"$log"; git status --porcelain --untracked-files=no >>"$log"
+				exit 90
 			fi
 		fi
 		# One gen/build/test pass for the whole combination: dq_merge_gates.sh does it on this HEAD.
@@ -152,8 +190,12 @@ attempt_run() {
 		lt="$(printf '%s\n' $lt | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
 		bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${lt:+--tests "$lt"} ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
 		rc=$?
+		# The gates' INFRA exit (95: gen died twice, no lane code ran) is a setup error: retried, then deferred, never a bounce.
+		if [ "$rc" -eq 95 ]; then echo "dq_merge_batch: SETUP ERROR: the gates hit an infra failure (gen); not a lane verdict" | tee -a "$log" >&2; rc=90; fi
 		# A killed test phase is a verdict on the size of the batch, not on a lane.
-		if [ "$rc" -ne 0 ] && grep -q '^FOCUSED RUN CAPPED' "$log"; then rc=93; fi
+		# A run killed at its cap, or one that ended with no pass/fail result at all ("FOCUSED RESULT: CAPPED or killed before a result",
+		# 27 October: forms/setup-early-test was bounced for a run that printed nothing), is no verdict on a lane either.
+		if [ "$rc" -ne 0 ] && grep -qE '^FOCUSED RUN CAPPED|^FOCUSED RESULT: CAPPED' "$log"; then rc=93; fi
 		# A failed gate leaves its in-job baseline shrink uncommitted: discard it now, so nothing leaks into the next attempt or cycle.
 		if [ "$rc" -ne 0 ]; then dq_clean_tracked "dq_merge_batch: failed gate left a tracked edit" 2>&1 | tee -a "$log" >&2; fi
 		exit "$rc"
@@ -232,8 +274,8 @@ attempt_pair() {
 WT2="${DQ_BATCH_WT2:-}"
 parallel_ok() {
 	[ -n "$WT2" ] && [ -e "$WT2/.git" ] && [ "${DQ_BATCH_PARALLEL:-1}" != 0 ] || return 1
-	local free_kb min_gb="${DQ_BATCH_PARALLEL_MIN_FREE_GB:-16}"
-	free_kb="$(awk '/^MemFree:/ {print $2}' /proc/meminfo 2>/dev/null)"
+	local free_kb min_gb="${DQ_BATCH_PARALLEL_MIN_FREE_GB:-12}"
+	free_kb="$(awk '/^MemAvailable:/ {a=$2} /^MemFree:/ {f=$2} END {print (a ? a : f)}' /proc/meminfo 2>/dev/null)" # MemAvailable counts the standby cache, like the prechecker
 	if [ -n "$free_kb" ] && [ "$free_kb" -lt $((min_gb * 1048576)) ]; then
 		echo "== the bisect runs one attempt at a time: $((free_kb / 1048576)) GB of RAM free (< ${min_gb} GB for a second compile session)"
 		return 1
@@ -288,6 +330,18 @@ remaining=("${lanes[@]}")
 while [ ${#remaining[@]} -gt 0 ]; do
 	set=("${good[@]+"${good[@]}"}" "${remaining[@]}")
 	attempt "${set[@]}"; rc=$?
+	if [ "$rc" -eq 90 ]; then
+		echo "== setup error in the attempt (not a lane verdict); cleaning and retrying it once"
+		dq_clean_tracked "dq_merge_batch: after a setup error"
+		NOCACHE=1 attempt "${set[@]}"; rc=$?
+		if [ "$rc" -eq 90 ]; then
+			echo "################################################################################"
+			echo "# SETUP ERROR twice: no lane is judged; [${remaining[*]}] are deferred to the next run"
+			echo "################################################################################"
+			deferred+=("${remaining[@]}"); remaining=()
+			break
+		fi
+	fi
 	if [ "$rc" -eq 91 ]; then
 		# a lane that cannot even merge: with master alone it merges -> it waits for the next cycle; with master it conflicts -> bounced
 		if merges_with_master "$CONFLICT"; then
@@ -310,6 +364,29 @@ while [ ${#remaining[@]} -gt 0 ]; do
 		deferred+=("${remaining[@]}"); remaining=()
 		break
 	fi
+	if [ ${#set[@]} -eq 1 ] && [ "$rc" -eq 93 ]; then
+		# One lane, and the test phase gave no result (capped or killed). That is not a failure: retry ONCE with only the lane's own tests
+		# (no smoke or gameplay sets). Still no result: the lane is deferred (stays queued; the train counts these and logs them loudly),
+		# never bounced for a run that said nothing.
+		echo "################################################################################"
+		echo "# NO RESULT: the test phase of ${set[0]} hit its cap or died without a verdict; retrying once with only its own tests"
+		echo "################################################################################"
+		save_pass=("${pass[@]+"${pass[@]}"}")
+		pass+=(--no-smoke)
+		NOCACHE=1 attempt "${set[@]}"; rc=$?
+		pass=("${save_pass[@]+"${save_pass[@]}"}")
+		if [ "$rc" -eq 0 ]; then
+			echo "== ${set[0]}: the retry with only its own tests passed"
+			good=("${set[@]}"); remaining=(); break
+		fi
+		if [ "$rc" -eq 93 ] || [ "$rc" -eq 92 ]; then
+			echo "################################################################################"
+			echo "# NO RESULT TWICE: ${set[0]} is DEFERRED (kept queued), not bounced; see ${attempt_log[${set[*]}]:-the attempt logs}"
+			echo "################################################################################"
+			deferred+=("${set[0]}"); noresult+=("${set[0]}")
+			good=(); remaining=(); break
+		fi
+	fi
 	if [ ${#set[@]} -eq 1 ]; then
 		if [ "$rc" -eq 93 ]; then
 			bounce "${set[0]}" "its tests do not fit the gate's test-phase cap alone (the run was killed at the cap): trim or split the lane's tests" "${attempt_log[${set[*]}]:-}"
@@ -327,7 +404,7 @@ while [ ${#remaining[@]} -gt 0 ]; do
 			mid=$(( ${#sub[@]} / 2 ))
 			L=("${sub[@]:0:mid}"); R=("${sub[@]:mid}")
 			attempt_pair "${good[*]-} ${L[*]}" "${good[*]-} ${R[*]}"
-			if [ "$RC_A" -eq 92 ] || [ "$RC_A" -eq 93 ] || [ "$RC_B" -eq 92 ] || [ "$RC_B" -eq 93 ]; then
+			if [ "$RC_A" -eq 90 ] || [ "$RC_B" -eq 90 ] || [ "$RC_A" -eq 92 ] || [ "$RC_A" -eq 93 ] || [ "$RC_B" -eq 92 ] || [ "$RC_B" -eq 93 ]; then
 				if [ "$RC_A" -eq 93 ] || [ "$RC_B" -eq 93 ]; then prc=93; else prc=92; fi
 				if [ "$RC_A" -eq 0 ]; then good+=("${L[@]}"); sub=("${R[@]}"); fi
 				break
@@ -364,7 +441,7 @@ while [ ${#remaining[@]} -gt 0 ]; do
 	while [ "$lo" -lt "$hi" ]; do
 		mid=$(( (lo + hi) / 2 ))
 		attempt "${good[@]+"${good[@]}"}" "${remaining[@]:0:mid}"; prc=$?
-		if [ "$prc" -eq 92 ] || [ "$prc" -eq 93 ]; then abort_rc=$prc; break; fi
+		if [ "$prc" -eq 90 ] || [ "$prc" -eq 92 ] || [ "$prc" -eq 93 ]; then abort_rc=$prc; break; fi
 		if [ "$prc" -eq 0 ]; then lo=$((mid + 1)); passed=$mid; elif [ "$prc" -eq 91 ]; then hi=$mid; else hi=$mid; fi
 	done
 	if [ "${abort_rc:-0}" -ne 0 ]; then
@@ -397,6 +474,7 @@ echo "BATCH_GOOD: ${good[*]-}"
 echo "BATCH_DEFERRED: ${deferred[*]-}"
 echo "BATCH_LATER: ${later[*]-}"
 echo "BATCH_CAPPED: ${capped}"
+echo "BATCH_NORESULT: ${noresult[*]-}"
 for i in "${!bounced[@]}"; do echo "BATCH_BOUNCED: ${bounced[$i]}|${reasons[$i]}|${blogs[$i]}"; done
 if [ ${#good[@]} -eq 0 ]; then
 	echo "dq_merge_batch: nothing passed; $BRANCH stays at origin/master"

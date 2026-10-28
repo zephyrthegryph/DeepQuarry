@@ -1,8 +1,7 @@
 ///////////////////// Mob Living /////////////////////
 /mob/living
 	// temp_languages (languages absorbed prey add to the pred) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
-	var/weight = 137					// Weight for mobs for weightgain system
-	var/metabolism = 0.0015
+	// weight (the weightgain system's body weight, DEFAULT_MOB_WEIGHT until set) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	var/vis_height = 32					// Sprite height used for resize features.
 
@@ -582,7 +581,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			taste_message += "a normal [H.custom_species ? H.custom_species : H.species.name]"
+			taste_message += "a normal [H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 		else
 			taste_message += "a plain old normal [src]"
 
@@ -631,7 +630,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			smell_message += "a normal [H.custom_species ? H.custom_species : H.species.name]"
+			smell_message += "a normal [H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 		else
 			smell_message += "a plain old normal [src]"
 

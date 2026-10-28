@@ -13,7 +13,7 @@
 	var/cell_type = null //Can put a starting cell here
 
 	density = TRUE //Is dense, but not anchored, so you can swap with it
-	slowdown = 1.5 //Heevvee.
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5) //Heevvee.
 
 	max_integrity = 100
 
@@ -276,13 +276,13 @@ CAPABILITIES(/obj/item/uav)
 		if(UAV_OFF) //Packing
 			set_state(UAV_PACKED)
 			set_w_class(ITEMSIZE_LARGE)
-			slowdown = 0.5
+			set_worn_factor(STAT_ITEM_ENCUMBRANCE, 0.5)
 			set_density(FALSE)
 			return TRUE
 		if(UAV_PACKED) //Unpacking
 			set_state(UAV_OFF)
 			set_w_class(ITEMSIZE_HUGE)
-			slowdown = 1.5
+			set_worn_factor(STAT_ITEM_ENCUMBRANCE, 1.5)
 			set_density(TRUE)
 			return TRUE
 	return FALSE
