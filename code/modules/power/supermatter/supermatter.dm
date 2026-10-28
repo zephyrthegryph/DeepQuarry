@@ -45,7 +45,6 @@
 #define SUPERMATTER_ACCENT_SOUND_COOLDOWN 2 SECONDS
 
 /obj/machinery/power/supermatter
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "Supermatter"
 	desc = "A strangely translucent and iridescent crystal. " + span_red("You get headaches just from looking at it.")
 	icon = 'icons/obj/supermatter.dmi'
