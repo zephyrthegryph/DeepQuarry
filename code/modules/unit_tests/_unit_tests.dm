@@ -1375,7 +1375,7 @@
 #include "dq_requirement_machine_selection_tests.dm"
 #include "dq_medical_native_slot_tests.dm"
 
-#include "../../tests/unit_tests/dq_acceptance_foundation_tests.dm"
+#include "dq_acceptance_foundation_tests.dm"
 #include "../../tests/unit_tests/dq_acceptance_tracking_tests.dm"
 #include "../../tests/unit_tests/dq_acceptance_old_grouped_tests.dm"
 #include "dq_native_slot_accepts_tests.dm"
