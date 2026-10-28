@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "atom_break() overrides are on_notice reactions (machinery_broken, and a new atom_broken notice for non-machinery); the atom_break override ratchet is a hard ban"

@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Type-level every() of 2 s or more starts each holder at its own phase of the interval, so instances armed on one tick no longer all run on one tick (idle burst ticks)"
+  - code_imp: "APC_REPORT lines for charging-only flips are written at most once per APC per 30 s and count the reports they stand for; channel, status and alarm changes are always written"
+  - code_imp: "The kernel meter histogram counts are plain vars (the meter wrote them 11k times per 133 s idle through tracked setters)"
+  - admin: "Localhost census probe (timer callbacks by owner type, tracked writes by var and writer) and a material service temperature-gap probe"

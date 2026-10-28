@@ -970,7 +970,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/can_remove_electronics(datum/act/A)
 	return !frozen && panel_open(src) && (operating < 0 || (!operating && weld_shut_welded(src) && !power_systems_on() && density && (!bolted || (broken_now()))))
 
-/obj/machinery/door/airlock/on_broken()
+/obj/machinery/door/airlock/on_broken(datum/act/A)
 	key_set(src, PANEL_OPEN, TRUE)
 	if(secured_wires)
 		drop_bolts(TRUE)

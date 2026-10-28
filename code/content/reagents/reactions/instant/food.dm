@@ -15,13 +15,7 @@ CAPABILITIES(/transformation/chem/instant/food/hell_ramen)
 CAPABILITIES(/transformation/chem/instant/food/tofu)
 	configure(transformation(name = "Tofu", id = REAGENT_ID_TOFU, takes = list(reagent(REAGENT_ID_SOYMILK, 10)),
 		catalysts = list(reagent(REAGENT_ID_ENZYME, 5)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/food/tofu, on_reaction)))
-
-/transformation/chem/instant/food/tofu/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/tofu(location)
-	return
+		spawns = spawns(/obj/item/reagent_containers/food/snacks/tofu, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/food/chocolate_bar
 
@@ -29,13 +23,7 @@ CAPABILITIES(/transformation/chem/instant/food/chocolate_bar)
 	configure(transformation(name = "Chocolate Bar Soy", id = "chocolate_bar_soy",
 		takes = list(reagent(REAGENT_ID_SOYMILK, 2), reagent(REAGENT_ID_COCO, 2), reagent(REAGENT_ID_SUGAR, 2)),
 		catalysts = list(reagent(REAGENT_ID_ENZYME, 5)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/food/chocolate_bar, on_reaction)))
-
-/transformation/chem/instant/food/chocolate_bar/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/chocolatebar(location)
-	return
+		spawns = spawns(/obj/item/reagent_containers/food/snacks/chocolatebar, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/food/chocolate_bar2
 
@@ -43,13 +31,7 @@ CAPABILITIES(/transformation/chem/instant/food/chocolate_bar2)
 	configure(transformation(name = "Chocolate Bar Milk", id = "chocolate_bar_milk",
 		takes = list(reagent(REAGENT_ID_MILK, 2), reagent(REAGENT_ID_COCO, 2), reagent(REAGENT_ID_SUGAR, 2)),
 		catalysts = list(reagent(REAGENT_ID_ENZYME, 5)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/food/chocolate_bar2, on_reaction)))
-
-/transformation/chem/instant/food/chocolate_bar2/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/chocolatebar(location)
-	return
+		spawns = spawns(/obj/item/reagent_containers/food/snacks/chocolatebar, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/food/cookingoilcorn
 
@@ -126,51 +108,27 @@ CAPABILITIES(/transformation/chem/instant/food/mayonnaise)
 CAPABILITIES(/transformation/chem/instant/food/cheesewheel)
 	configure(transformation(name = "Cheesewheel", id = "cheesewheel", takes = list(reagent(REAGENT_ID_MILK, 40)),
 		catalysts = list(reagent(REAGENT_ID_ENZYME, 5)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/food/cheesewheel, on_reaction)))
-
-/transformation/chem/instant/food/cheesewheel/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/sliceable/cheesewheel(location)
-	return
+		spawns = spawns(/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/food/meatball
 
 CAPABILITIES(/transformation/chem/instant/food/meatball)
 	configure(transformation(name = "Meatball", id = "meatball", takes = list(reagent(REAGENT_ID_PROTEIN, 3), reagent(REAGENT_ID_FLOUR, 5)),
 		catalysts = list(reagent(REAGENT_ID_ENZYME, 5)), made = 3,
-		then = TYPE_PROC_REF(/transformation/chem/instant/food/meatball, on_reaction)))
-
-/transformation/chem/instant/food/meatball/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/meatball(location)
-	return
+		spawns = spawns(/obj/item/reagent_containers/food/snacks/meatball, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/food/dough
 
 CAPABILITIES(/transformation/chem/instant/food/dough)
 	configure(transformation(name = "Dough", id = "dough", takes = list(reagent(REAGENT_ID_EGG, 3), reagent(REAGENT_ID_FLOUR, 10)),
 		blocked_by = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_BEER, 1), reagent(REAGENT_ID_SUGAR, 1)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/food/dough, on_reaction)))
-
-/transformation/chem/instant/food/dough/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/dough(location)
-	return
+		spawns = spawns(/obj/item/reagent_containers/food/snacks/dough, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/food/syntiflesh
 
 CAPABILITIES(/transformation/chem/instant/food/syntiflesh)
 	configure(transformation(name = "Syntiflesh", id = "syntiflesh", takes = list(reagent(REAGENT_ID_BLOOD, 5), reagent(REAGENT_ID_CLONEXADONE, 1)),
-		made = 1, then = TYPE_PROC_REF(/transformation/chem/instant/food/syntiflesh, on_reaction)))
-
-/transformation/chem/instant/food/syntiflesh/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/meat/syntiflesh(location)
-	return
+		made = 1, spawns = spawns(/obj/item/reagent_containers/food/snacks/meat/syntiflesh, 1, per = SPAWN_PER_MADE)))
 
 /*
 ====================
@@ -210,13 +168,7 @@ CAPABILITIES(/transformation/chem/instant/food/cakebatter)
 
 CAPABILITIES(/transformation/chem/instant/food/butter)
 	configure(transformation(name = "Butter", id = "butter", takes = list(reagent(REAGENT_ID_CREAM, 20), reagent(REAGENT_ID_SODIUMCHLORIDE, 1)),
-		made = 1, then = TYPE_PROC_REF(/transformation/chem/instant/food/butter, on_reaction)))
-
-/transformation/chem/instant/food/butter/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/spreads/butter(location)
-	return
+		made = 1, spawns = spawns(/obj/item/reagent_containers/food/snacks/spreads/butter, 1, per = SPAWN_PER_MADE)))
 
 
 //////////////////////////////////////////////
@@ -227,13 +179,7 @@ CAPABILITIES(/transformation/chem/instant/food/butter)
 CAPABILITIES(/transformation/chem/instant/cube/sagaru)
 	configure(transformation(name = "Saguwu", id = "cubedsagaru",
 		takes = list(reagent(REAGENT_ID_CHEESE, 1), reagent(REAGENT_ID_BLOOD, 1), reagent(REAGENT_ID_CLONEXADONE, 10)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/cube/sagaru, on_reaction)))
-
-/transformation/chem/instant/cube/sagaru/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/reagent_containers/food/snacks/monkeycube/sarucube(location)
-	return
+		spawns = spawns(/obj/item/reagent_containers/food/snacks/monkeycube/sarucube, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/food/blondiemix
 

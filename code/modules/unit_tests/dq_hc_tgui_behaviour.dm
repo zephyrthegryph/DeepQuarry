@@ -815,7 +815,7 @@
 	canswer(M, H, 150)
 	TEST_ASSERT(p2cl_has_question(H), "the unit of the weight is asked for")
 	canswer(M, H, "Pounds")
-	TEST_ASSERT_EQUAL(H.weight, 152, "the weight is set (rounded to four pounds)")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, weight, DEFAULT_MOB_WEIGHT), 152, "the weight is set (rounded to four pounds)")
 	var/flavor_key = "general"
 	H.bio.flavor_texts = list("general" = "")
 	cpress(M, H, "flavor_text", list("target" = flavor_key))

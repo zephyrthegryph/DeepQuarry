@@ -610,7 +610,7 @@
 /mob/living/carbon/human/fall_impact(atom/hit_atom, damage_min, damage_max, silent, planetary)
 	if(!species?.handle_falling(src, hit_atom, damage_min, damage_max, silent, planetary))
 		..()
-		if(weight > 325 || size_multiplier > 1.75)
+		if(sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) > 325 || size_multiplier > 1.75)
 			explosion(get_turf(hit_atom), -1, 0, 0)
 			var/turf/simulated/floor/hit_turf = get_turf(hit_atom)
 			if(istype(hit_turf))

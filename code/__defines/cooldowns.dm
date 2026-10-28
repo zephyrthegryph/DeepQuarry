@@ -7,6 +7,12 @@
  * Better performance over timer cooldowns, lower control. Same functionality.
 */
 
+/// Charging-only APC_REPORT lines are written at most this often per APC (apc.dm on_apc_report()).
+#define APC_REPORT_LOG_INTERVAL (30 SECONDS)
+/// Type-level every() runs of at least this interval start at a spread phase (type_every_phase()); the first run falls between this share of the interval and the whole of it.
+#define TYPE_EVERY_PHASE_MIN (2 SECONDS)
+#define TYPE_EVERY_PHASE_FLOOR 0.25
+
 #define COOLDOWN_DECLARE(cd_index) var/##cd_index = 0
 
 #define STATIC_COOLDOWN_DECLARE(cd_index) var/static/##cd_index = 0

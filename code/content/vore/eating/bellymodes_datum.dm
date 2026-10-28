@@ -83,7 +83,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 	var/damage_gain = (actual_brute + actual_burn + actual_tox + actual_clone*2)*(B.nutrition_percent / 100)
 	if(B.slow_digestion)
 		damage_gain = damage_gain * 0.5
-	var/offset = (1 + ((L.weight - 137) / 137)) // 130 pounds = .95 140 pounds = 1.02
+	var/offset = (1 + ((sparse_get_or(L, weight, DEFAULT_MOB_WEIGHT) - 137) / 137)) // 130 pounds = .95 140 pounds = 1.02
 	var/difference = B.owner.size_multiplier / L.size_multiplier
 
 	if(B.health_impacts_size)

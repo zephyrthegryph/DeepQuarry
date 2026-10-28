@@ -103,6 +103,15 @@ impl SharedStore {
     pub(crate) fn report(&self) -> String {
         let (record_bytes, records) = self.records.usage();
         let mut line = format!("dmbd shared store: memo records={records} ({record_bytes} B)");
+        let o = &self.answer_values.outcomes;
+        let o = |i: usize| o[i].load(std::sync::atomic::Ordering::Relaxed);
+        line.push_str(&format!(
+            "; answer values: same={} other_answer={} other_query={} new={}",
+            o(0),
+            o(1),
+            o(2),
+            o(3)
+        ));
         let cores = self.cores.lock().unwrap_or_else(|e| e.into_inner());
         let mut rows: Vec<_> = cores
             .iter()

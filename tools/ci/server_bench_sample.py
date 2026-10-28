@@ -31,7 +31,18 @@ import psutil
 LOAD_NAMES = ('dreamdaemon.exe', 'dd.exe', 'dmbc.exe', 'dm.exe', 'dreammaker.exe', 'cargo.exe', 'rustc.exe')
 
 
-def topic(port, query, timeout=10.0):
+def topic(port, query, timeout=10.0, tries=6):
+    """topic_once with retries: a world in a long tick refuses or times out connections for a few seconds."""
+    for attempt in range(tries):
+        try:
+            return topic_once(port, query, timeout)
+        except OSError:
+            if attempt == tries - 1:
+                raise
+            time.sleep(5)
+
+
+def topic_once(port, query, timeout=10.0):
     """One BYOND world/Topic call; returns the reply text (or a float as text)."""
     body = b'\x00' * 5 + ('?' + query).encode('utf-8') + b'\x00'
     packet = b'\x00\x83' + struct.pack('>H', len(body)) + body

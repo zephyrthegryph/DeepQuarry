@@ -531,7 +531,7 @@
 /datum/unit_test/dq_timed_pin_w2/weightlifter_lift/setup_scene()
 	user = person()
 	user.set_nutrition(start_nutrition)
-	user.weight = 150
+	sparse_set_or(user, weight, 150, DEFAULT_MOB_WEIGHT)
 	var/obj/structure/fitness/weightlifter/W = allocate(/obj/structure/fitness/weightlifter, run_loc_floor_bottom_left)
 	target = W
 	duration = 3 SECONDS + (W.weight * 10)
@@ -543,7 +543,7 @@
 	setup_scene()
 	var/mob/living/carbon/human/two = person()
 	two.set_nutrition(300)
-	two.weight = 150
+	sparse_set_or(two, weight, 150, DEFAULT_MOB_WEIGHT)
 	test_click(user, target, null)
 	TEST_ASSERT(!isnull(running(user)), "the first lifter runs")
 	test_click(two, target, null)

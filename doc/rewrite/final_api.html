@@ -672,6 +672,7 @@ LIST_STATE(T, var, alloc = LAZY | EAGER, kind = LIST | SET | MAP, owns = NONE | 
       <tr><td><code>ref(type)</code></td><td>An entity of that type, held as a handle</td><td>UI and request input name it by token (<a href="#refs">section 6</a>)</td></tr>
       <tr><td><code>path(type)</code></td><td>A type path that descends from <code>type</code></td><td></td></tr>
       <tr><td><code>list_of(schema)</code>, <code>map_of(k, v)</code></td><td>A list, or an associative list, whose members have the given schemas</td><td></td></tr>
+      <tr><td><code>schema_any()</code></td><td>Any value, entities included</td><td>The declaration of a var that carries whatever its producer hands it (a hook&#39;s reply, a config entry&#39;s number, text or list, a script&#39;s result, an asset&#39;s file until it registers): <code>SCHEMA(/datum/act/action, reply, schema_any())</code>. It is not a holder of entities (that is a relation, <code>ref_one</code>/<code>owns_one</code>); the <code>untyped</code> lint accepts a call&#39;s result in it and still reports an atom or datum assigned to it. A viewer target that may be a list is not <code>schema_any()</code>: the list is wrapped in a <code>/datum/vv_list_target</code> so the target var is a typed <code>/datum</code> relation</td></tr>
       <tr><td><code>row(type)</code></td><td>A typed record row, such as a SQL row, whose own vars carry schemas</td><td>An inline <code>row(field = schema, ...)</code> is allowed in <code>ui_shape</code></td></tr>
     </tbody>
   </table></div>

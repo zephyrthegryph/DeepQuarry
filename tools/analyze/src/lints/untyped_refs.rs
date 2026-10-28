@@ -26,7 +26,7 @@ use crate::sem::Sem;
 use crate::tree::CODE_DM;
 
 const HINT: &str = "give the var its type and declare it a relation (ref_one / owns_one, weak = TRUE for a null-check-only reader), or declare it a value: \
-`SCHEMA(T, var, schema_path(/base) | schema_msg() | schema_text() | num())` on its own line (doc/rewrite/proposals/typed_values.md)";
+`SCHEMA(T, var, schema_path(/base) | schema_msg() | schema_text() | num() | schema_any())` on its own line (doc/rewrite/proposals/typed_values.md)";
 const HINT_SCHEMA: &str = "the var's SCHEMA says it holds a path under a base (schema_path) or a /datum/msg path (schema_msg): assign a path that fits, or fix the declaration. \
 doc/rewrite/proposals/typed_values.md section 5";
 
@@ -43,7 +43,7 @@ static META: Meta = Meta {
             "Untyped vars assigned an atom or datum, or an unknown call result (doc/rewrite/proposals/relations.md D8). rule<TAB>file<TAB>text.",
             "Shrink-only: after a sweep run `analyze baseline --update --lint untyped`; it drops fixed sites and never adds one.",
         ],
-        banned: &[],
+        banned: &["typed", "call", "schema"],
     },
     rules: &[RuleMeta { name: "typed", hint: HINT }, RuleMeta { name: "call", hint: HINT }, RuleMeta { name: "schema", hint: HINT_SCHEMA }],
     allow: &[],
@@ -177,7 +177,9 @@ fn scan(cx: &Cx, out: &mut Sink, lits_out: &mut Lits) {
                                 }
                             }
                             // A var with a value schema is a value, never an entity: its assignments are checked against the schema instead.
-                            if let Some(kind) = schemas.find(sem, &o, &name) {
+                            let schema_kind = schemas.find(sem, &o, &name);
+                            let any_value = matches!(schema_kind, Some(ValueKind::Any));
+                            if let Some(kind) = schema_kind.filter(|_| !any_value) {
                                 let mut lits = Vec::new();
                                 path_literals(rhs, &mut lits);
                                 if let Some(bad) = lits.iter().find(|l| !schemas.accepts_path(sem, kind, l)) {
@@ -185,7 +187,7 @@ fn scan(cx: &Cx, out: &mut Sink, lits_out: &mut Lits) {
                                     let want = match kind {
                                         ValueKind::Path(b) => format!("a path under {}", b),
                                         ValueKind::Msg => "a /datum/msg path".to_string(),
-                                        ValueKind::Plain | ValueKind::Many => "a plain value".to_string(),
+                                        ValueKind::Plain | ValueKind::Many | ValueKind::Any => "a plain value".to_string(),
                                     };
                                     let slot = found.entry((o, name)).or_insert(("schema", Vec::new()));
                                     let note = format!("{} ({} is not {})", at, bad, want);
@@ -202,6 +204,10 @@ fn scan(cx: &Cx, out: &mut Sink, lits_out: &mut Lits) {
                                 None if is_call(rhs) && !values.is_value_call(&sc, rhs) => "call",
                                 None => return,
                             };
+                            // `schema_any()` declares the var carries whatever its producer returns: a call's result is that, an atom or datum is not.
+                            if any_value && rule == "call" {
+                                return;
+                            }
                             let at = format!("{}:{}", rel, engine_line(root, rel, line));
                             let slot = found.entry((o, name)).or_insert((rule, Vec::new()));
                             if rule == "typed" && slot.0 == "call" {

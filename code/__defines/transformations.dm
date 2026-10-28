@@ -73,3 +73,23 @@
 #define STACK_RECIPES_RODS "rods"
 #define STACK_RECIPES_STEEL_RECYCLER "steel_recycler"
 #define STACK_RECIPES_GLASS_RECYCLER "glass_recycler"
+
+// sets_off(): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm).
+/// Chemical smoke at the subject, carrying the reagents.
+#define XFORM_FX_SMOKE "smoke"
+/// Foam (variant 0 plain, 1 metal, 2 iron) at the subject.
+#define XFORM_FX_FOAM "foam"
+/// An explosion of reagents scaled by what the step made.
+#define XFORM_FX_EXPLOSION "explosion"
+/// An electromagnetic pulse scaled by what the step made.
+#define XFORM_FX_EMP "emp"
+
+// spawns(): where a product is made, and how many.
+/// At the turf of the subject (the only place built).
+#define SUBJECT_TURF "subject_turf"
+/// n copies each step the rule goes, whatever its extent (what every legacy tail did).
+#define SPAWN_PER_STEP "per_step"
+/// n copies per whole unit the step made: n * FLOOR(made).
+#define SPAWN_PER_MADE "per_made"
+/// One stack of n * FLOOR(made) units (nothing when that is 0).
+#define SPAWN_STACK_MADE "stack_made"

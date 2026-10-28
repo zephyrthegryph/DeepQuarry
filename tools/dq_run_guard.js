@@ -42,6 +42,35 @@ const marker = arg('--marker', '');
 const pollMs = Number(arg('--poll-ms', '3000'));
 const rootGraceMs = Number(arg('--root-grace-s', '20')) * 1000;
 const onKill = arg('--on-kill', '');
+// Boot is not test time (28 October: under load a world boot alone took 4-8 min of a 10 min cap, and test phases ended with no result).
+// With --boot-dir <dir> (the run's data/logs), the test cap counts from the first "Boot gate: clean" line a world writes there after the
+// guard started; until then the run may take --boot-cap-s (default 900) to compile and boot. Without --boot-dir: the old single cap.
+const bootDir = arg('--boot-dir', '');
+const bootCapMs = Number(arg('--boot-cap-s', '900')) * 1000;
+let bootAt = 0;
+const bootSeen = new Map(); // tests.log path -> bytes already scanned
+function bootClean() {
+	if (!bootDir || bootAt) return bootAt;
+	let dirs;
+	try { dirs = fs.readdirSync(bootDir); } catch { return 0; }
+	for (const d of dirs) {
+		const f = path.join(bootDir, d, 'tests.log');
+		let st;
+		try { st = fs.statSync(f); } catch { continue; }
+		if (st.mtimeMs < guardStart) continue;
+		const from = bootSeen.get(f) || 0;
+		if (st.size <= from) continue;
+		try {
+			const fd = fs.openSync(f, 'r');
+			const buf = Buffer.alloc(st.size - from);
+			fs.readSync(fd, buf, 0, buf.length, from);
+			fs.closeSync(fd);
+			bootSeen.set(f, st.size);
+			if (buf.toString('utf8').includes('Boot gate: clean')) { bootAt = Date.now(); log(`boot gate clean in ${f}; the ${Math.round(capMs / 1000)}s test cap counts from now`); return bootAt; }
+		} catch { /* best effort: try again next tick */ }
+	}
+	return 0;
+}
 if (!Number.isInteger(root) || root <= 0 || !(capMs > 0) || !registry) {
 	console.error('usage: dq_run_guard.js --root <pid> --cap-s <seconds> --registry <dir> [--queue-max-s N] [--marker file] [--poll-ms N] [--root-grace-s N] [--on-kill cmd]');
 	process.exit(2);
@@ -135,11 +164,16 @@ function tick() {
 	if (runningAt && someoneWaiting()) pausedMs += nowMs - lastTick;
 	lastTick = nowMs;
 	const queueCeiling = !runningAt ? nowMs >= guardStart + queueMaxMs : pausedMs >= queueMaxMs;
-	const overCap = queueCeiling || (runningAt && nowMs >= runningAt + capMs + pausedMs);
+	let limitMs = runningAt + capMs;
+	if (bootDir && runningAt) {
+		const b = bootClean();
+		limitMs = b ? Math.max(runningAt + capMs, b + capMs) : runningAt + Math.max(capMs, bootCapMs);
+	}
+	const overCap = queueCeiling || (runningAt && nowMs >= limitMs + pausedMs);
 	if (overCap) {
 		if (!cappedAt) {
 			cappedAt = Date.now();
-			log(queueCeiling ? `no slot after the queue ceiling (${Math.round(pausedMs / 1000)}s queued while running); stopping the run` : `wall-clock cap reached (${Math.round(pausedMs / 1000)}s of queueing not counted)`);
+			log(queueCeiling ? `no slot after the queue ceiling (${Math.round(pausedMs / 1000)}s queued while running); stopping the run` : `wall-clock cap reached (${Math.round(pausedMs / 1000)}s of queueing not counted; ${bootDir ? (bootAt ? `test cap from the boot gate, ${Math.round((Date.now() - bootAt) / 1000)}s after it` : `no world reached the boot gate within the ${Math.round(bootCapMs / 1000)}s boot cap`) : 'single cap'})`);
 			if (marker) { try { fs.writeFileSync(marker, `${queueCeiling ? 'queue-ceiling' : 'capped'}\npaused_s=${Math.round(pausedMs / 1000)}\n`); } catch { /* best effort */ } }
 		}
 		killRegistered('wall-clock cap');

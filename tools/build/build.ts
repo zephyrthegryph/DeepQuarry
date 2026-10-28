@@ -242,6 +242,9 @@ export const IconRepackTarget = new Juke.Target({
   // declaring an 'icons/gen/**/*.dmi' output makes Juke try to touch outputs
   // that may not exist yet, crashing the build. Let the python step gate itself.
   executes: async () => {
+    // The wall time is logged beside the repack's own figure: a gap between them is time outside the repack (27 October: 231 s against a
+    // 9.7 s repack, from a synchronous target beside it blocking the event loop; see VerdigrisBindingsCheckTarget).
+    const t0 = Date.now();
     await Juke.exec('python3', [
       '-m', 'tools.dq_icons.build_step',
       '--output', 'icons/gen',
@@ -251,6 +254,7 @@ export const IconRepackTarget = new Juke.Target({
       // dies; Windows does not kill child processes with their parent.
       env: { ...process.env, DQ_BUILD_PID: String(process.pid) },
     });
+    Juke.logger.info(`icon-repack: wall ${((Date.now() - t0) / 1000).toFixed(1)}s (process start to exit)`);
   },
 });
 
@@ -477,7 +481,7 @@ const verdigrisBindingsCheckKey = (): string => {
 const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
 
 export const VerdigrisBindingsCheckTarget = new Juke.Target({
-  executes: () => {
+  executes: async () => {
     const full = !!process.env.CI || process.env.DQ_FULL_CHECKS === '1';
     const key = full ? null : verdigrisBindingsCheckKey();
     if (key) {
@@ -493,9 +497,19 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
         // no record yet
       }
     }
-    // The bindings are build output, not committed: write whatever is missing or out of date.
-    const written = generateVerdigrisBindings(process.cwd(), false);
-    if (written.length) Juke.logger.info(`verdigris bindings: wrote ${written.join(', ')}`);
+    // The bindings are build output, not committed: write whatever is missing or out of date. The generator reads every DM file
+    // (minutes on a loaded machine) synchronously; run in this process it blocked Bun's event loop, so the targets beside it (icon-repack:
+    // "231 s" for a 10 s repack on 27 October) could not even see their children exit. A child process keeps them running in parallel.
+    // DQ_VG_BINDINGS_INPROC=1 runs it in this process as before.
+    const t0 = Date.now();
+    if (process.env.DQ_VG_BINDINGS_INPROC === '1') {
+      const written = generateVerdigrisBindings(process.cwd(), false);
+      if (written.length) Juke.logger.info(`verdigris bindings: wrote ${written.join(', ')}`);
+    } else {
+      Juke.logger.info('verdigris bindings: inputs changed; regenerating in a child process');
+      await Juke.exec(process.execPath, ['tools/build/lib/verdigris_bindings.ts']);
+    }
+    Juke.logger.info(`verdigris bindings: regenerated in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
     if (key) {
       fs.mkdirSync('data', { recursive: true });
       fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString() }));
