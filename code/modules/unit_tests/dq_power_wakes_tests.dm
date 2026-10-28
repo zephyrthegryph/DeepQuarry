@@ -59,18 +59,18 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 	refresh_flush()
 	TEST_ASSERT(probe.rx?.look_key != looks[probe], "the probe redrew dark")
 	TEST_ASSERT(alarm.rx?.look_key != looks[alarm], "the air alarm redrew dark")
-	var/parks_before = GLOB.every_activation_parks
+	var/parks_before = GLOB.every_activation_parks.n
 	test_time(2 SECONDS) // the probe's next interval comes due once, finds its gate false and parks
 	var/datum/activation/work = dq_power_wake_activation(probe)
 	TEST_ASSERT(length(work?.every_parked), "the probe's gated work parked behind its false gate")
-	TEST_ASSERT(GLOB.every_activation_parks > parks_before, "the park was counted")
+	TEST_ASSERT(GLOB.every_activation_parks.n > parks_before, "the park was counted")
 	var/steps_unpowered = probe.steps
-	var/parks_unpowered = GLOB.every_activation_parks
-	var/runs_unpowered = GLOB.every_activation_runs
+	var/parks_unpowered = GLOB.every_activation_parks.n
+	var/runs_unpowered = GLOB.every_activation_runs.n
 	test_time(20 SECONDS)
 	TEST_ASSERT_EQUAL(probe.steps, steps_unpowered, "no step while unpowered")
-	TEST_ASSERT_EQUAL(GLOB.every_activation_parks, parks_unpowered, "a parked every() holds no timer: it is not re-checked while unpowered")
-	TEST_NOTICE(src, "activation every() runs on the whole map over 20 unpowered seconds: [GLOB.every_activation_runs - runs_unpowered]")
+	TEST_ASSERT_EQUAL(GLOB.every_activation_parks.n, parks_unpowered, "a parked every() holds no timer: it is not re-checked while unpowered")
+	TEST_NOTICE(src, "activation every() runs on the whole map over 20 unpowered seconds: [GLOB.every_activation_runs.n - runs_unpowered]")
 
 	// Restore: the reverse, and the parked work wakes by itself.
 	A.set_channels(TRUE, TRUE, TRUE)

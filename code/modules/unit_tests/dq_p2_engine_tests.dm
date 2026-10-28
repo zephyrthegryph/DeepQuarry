@@ -99,12 +99,12 @@
 
 /datum/unit_test/dq_p2_engine/hit_unhooked_allocates_nothing/run_gate()
 	var/obj/p2_hit/plain/plain = allocate(/obj/p2_hit/plain)
-	var/acts = GLOB.act_taken
+	var/acts = GLOB.act_taken.n
 	var/notices = GLOB.notice_taken
 	for(var/entry in list(0, DAMAGE_ENTRY_PROJECTILE, DAMAGE_ENTRY_EMP, DAMAGE_ENTRY_EXPLOSION, DAMAGE_ENTRY_BLOB, DAMAGE_ENTRY_WEAPON, DAMAGE_ENTRY_SHOCK, DAMAGE_ENTRY_THROWN))
 		deliver(plain, entry, 1)
 	deliver(plain, 0, 1, FIRE)
-	TEST_ASSERT_EQUAL(GLOB.act_taken, acts, "no act context was taken for an unhooked holder")
+	TEST_ASSERT_EQUAL(GLOB.act_taken.n, acts, "no act context was taken for an unhooked holder")
 	TEST_ASSERT_EQUAL(GLOB.notice_taken, notices, "and no notice")
 	TEST_ASSERT(plain.get_integrity() < plain.max_integrity, "yet the hits landed")
 

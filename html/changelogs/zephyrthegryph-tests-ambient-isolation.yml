@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The unit-test runner restores the regulated rooms (Telecomms, processing strata) after any test that let kernel time or native world steps pass, and every shared-floor picker claims the restore first and prefers quiet rooms; 37 per-test restore_ambient_after() calls are gone"
+  - code_imp: "Diagnostic counters are declared as counters (GLOBAL_COUNTER, /datum/counter), so the state guard skips them by kind instead of by name; a real global flag flip is still reported"
+  - code_imp: "Added vg_world_steps_run(): the native world steps run by hand"

@@ -76,7 +76,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	var/mood = ":3" // Icon to use to display 'mood', as an overlay.
 
 
-	species_sounds = "Slime"
 
 /mob/living/simple_mob/slime/get_available_emotes()
 	return GLOB.slime_default_emotes.Copy()
@@ -87,6 +86,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
+	configure(living_rules(species_sounds = "Slime"))
 	configure(living_rules(say_list_type = /datum/say_list/slime, use_modern_ai = TRUE, composition_reagent = REAGENT_ID_SLIMEJELLY))
 	setup(PROC_REF(start_glowing))
 	configure(mob_nature(pain_1p = list("squish", "squelch"), pain_3p = list("squishes", "squelches")))

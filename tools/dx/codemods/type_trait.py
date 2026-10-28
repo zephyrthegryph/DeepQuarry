@@ -108,6 +108,12 @@ SPECS = {
         skip={"code/modules/mob/living/living_rules.dm"},
         skip_refs=r"(^|\.)species$",
     ),
+    "mob_species_sounds": dict(
+        base="/mob/living", ctor="living_rules", reader="living_rules_of", type_reader="living_rules_of_type",
+        fields={"species_sounds": "species_sounds"},
+        skip={"code/modules/mob/living/living_rules.dm", "code/game/sound.dm"},
+        skip_refs=r"(^|\.)species$",
+    ),
     "mob_rules": dict(
         base="/mob", ctor="mob_rules", reader="mob_rules_of", type_reader="mob_rules_of_type",
         fields={"universal_understand": "universal_understand", "forced_psay": "forced_psay", "vent_crawl_time": "vent_crawl_time"},

@@ -34,9 +34,9 @@
 	vore_active = TRUE
 	vore_icons = SA_ICON_LIVING
 
-	species_sounds = "Canine"
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf)
+	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))

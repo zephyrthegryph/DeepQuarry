@@ -179,6 +179,7 @@ pub use string_registration::{
     StringRegistration, StringRegistrationEvent, StringRegistrationSource,
 };
 mod bindings;
+mod shared_pool;
 pub use bindings::{BindingTables, RetainedBindings};
 #[derive(Clone, Debug)]
 pub struct LinkTables {

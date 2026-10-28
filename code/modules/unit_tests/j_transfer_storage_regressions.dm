@@ -32,13 +32,13 @@ CAPABILITIES(/datum/dq_native_transfer_query_probe)
 	rel_set(P, nameof(P.mover), mover)
 	observe(box, /datum/act/insert, P, needs(req(TYPE_PROC_REF(/datum/dq_native_transfer_query_probe, admission))))
 	var/datum/act/op/query = acceptance_act(box, box, item, null, mover, "s1_picky")
-	var/lease_count = GLOB.act_taken
+	var/lease_count = GLOB.act_taken.n
 	TEST_ASSERT_EQUAL(act_context(query.type, P, query.target, query.actor, query), query, "Receiver rebind preserves the existing query lease")
 	TEST_ASSERT_EQUAL(op_subject(query, ON_HOLDER), P, "Receiver rebind uses the real listener")
 	TEST_ASSERT_EQUAL(query.destination, box, "Receiver rebind preserves physical destination")
 	TEST_ASSERT_EQUAL(query.target, item, "Receiver rebind preserves the candidate")
 	TEST_ASSERT_EQUAL(query.mover, mover, "Receiver rebind preserves the mover")
-	TEST_ASSERT_EQUAL(GLOB.act_taken, lease_count, "Receiver rebind does not begin a world action")
+	TEST_ASSERT_EQUAL(GLOB.act_taken.n, lease_count, "Receiver rebind does not begin a world action")
 	acceptance_act_release(query)
 	var/datum/rx_state/S = rx_of(box)
 	var/before_generation = S.hooks_generation
@@ -103,7 +103,7 @@ CAPABILITIES(/datum/dq_native_transfer_query_probe)
 	TEST_ASSERT_EQUAL(resident.get_amount(), 3, "Two real charge sources use the limiting amount")
 	var/used_before = L.used["budget"]
 	var/cost_before = L.entries[resident][LEDGER_E_COST]
-	var/taken = GLOB.act_taken
+	var/taken = GLOB.act_taken.n
 	var/notices = GLOB.notice_taken
 	TEST_ASSERT_EQUAL(L.current_used("budget"), 3, "Pure budget reads current charged minimum before a drain")
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(candidate, box, "budget", null), "there's no room for it", "Immediate generic edit refuses candidate at actual capacity")
@@ -111,7 +111,7 @@ CAPABILITIES(/datum/dq_native_transfer_query_probe)
 	TEST_ASSERT_EQUAL(L.entries[resident][LEDGER_E_COST], cost_before, "Query leaves insertion-time entry cost untouched")
 	TEST_ASSERT_EQUAL(resident.loc, box, "Query leaves resident custody unchanged")
 	TEST_ASSERT_EQUAL(candidate.loc, T, "Refusal leaves candidate outside")
-	TEST_ASSERT_EQUAL(GLOB.act_taken, taken, "Query dispatches no world action")
+	TEST_ASSERT_EQUAL(GLOB.act_taken.n, taken, "Query dispatches no world action")
 	TEST_ASSERT_EQUAL(GLOB.notice_taken, notices, "Query emits no notice")
 	var/list/reads = dq_ledger_read_keys(candidate, box, "budget", null)
 	TEST_ASSERT(contains_read(reads, resident, nameof(resident.synths)), "Current resident source membership is watched")
@@ -178,7 +178,7 @@ CAPABILITIES(/obj/item/dq_budget_refs)
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(candidate, box, "budget"), "there's no room for it", "Full real budget refuses")
 	rel_remove(resident, nameof(resident.sources), right)
 	TEST_ASSERT_EQUAL(L.used["budget"], 3, "Generic REF removal deliberately leaves stale insertion-time accounting")
-	var/taken = GLOB.act_taken
+	var/taken = GLOB.act_taken.n
 	var/notices = GLOB.notice_taken
 	TEST_ASSERT_EQUAL(L.current_used("budget"), 2, "Signed negative delta reflects generic unlink before drain")
 	TEST_ASSERT_NULL(dq_ledger_refusal(candidate, box, "budget"), "Two plus one fits without repairing cache")
@@ -186,14 +186,14 @@ CAPABILITIES(/obj/item/dq_budget_refs)
 	TEST_ASSERT_EQUAL(L.entries[resident][LEDGER_E_COST], 3, "Entry cost remains insertion-time value")
 	qdel(left)
 	TEST_ASSERT_EQUAL(length(resident.sources), 0, "Real declared REF clears deleted source")
-	taken = GLOB.act_taken
+	taken = GLOB.act_taken.n
 	notices = GLOB.notice_taken
 	TEST_ASSERT_EQUAL(L.current_used("budget"), 0, "Source death produces full negative stale delta without drain")
 	TEST_ASSERT_NULL(dq_ledger_refusal(candidate, box, "budget"), "Deleted cost source allows candidate immediately")
 	TEST_ASSERT_EQUAL(L.used["budget"], 3, "Death query preserves cached budget")
 	TEST_ASSERT_EQUAL(resident.loc, box, "Queries preserve resident custody")
 	TEST_ASSERT_EQUAL(candidate.loc, T, "Queries preserve candidate custody")
-	TEST_ASSERT_EQUAL(GLOB.act_taken, taken, "Queries after REF death dispatch no world action")
+	TEST_ASSERT_EQUAL(GLOB.act_taken.n, taken, "Queries after REF death dispatch no world action")
 	TEST_ASSERT_EQUAL(GLOB.notice_taken, notices, "Queries after REF death publish no world notice")
 
 /obj/item/dq_live_budget_box/unbounded
@@ -242,13 +242,13 @@ CAPABILITIES(/obj/item/dq_budget_refs)
 	var/size_before = H.size_multiplier
 	U.set_original_size(size_before + 0.25)
 	var/restore = U.original_size
-	var/taken = GLOB.act_taken
+	var/taken = GLOB.act_taken.n
 	var/notices = GLOB.notice_taken
 	TEST_ASSERT_NULL(dq_ledger_refusal(U, B, CONTAINER_SLOT_STORAGE, H), "Silent native storage query permits real removable garment")
 	TEST_ASSERT_EQUAL(H.size_multiplier, size_before, "Pure query does not resize wearer")
 	TEST_ASSERT_EQUAL(U.original_size, restore, "Pure query does not consume saved resize effect")
 	TEST_ASSERT_EQUAL(U.loc, H, "Pure query preserves equipped custody")
-	TEST_ASSERT_EQUAL(GLOB.act_taken, taken, "Pure query starts no world action")
+	TEST_ASSERT_EQUAL(GLOB.act_taken.n, taken, "Pure query starts no world action")
 	TEST_ASSERT_EQUAL(GLOB.notice_taken, notices, "Pure query emits no notice")
 	TEST_ASSERT(H.unEquip(U, target = T), "Actual ordinary removal retains legacy resize effects")
 	TEST_ASSERT_EQUAL(U.loc, T, "Actual removal drops garment at real destination")

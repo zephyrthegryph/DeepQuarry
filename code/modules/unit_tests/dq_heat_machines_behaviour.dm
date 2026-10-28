@@ -36,7 +36,6 @@
 	abstract_type = /datum/unit_test/dq_heat_bt
 
 /datum/unit_test/dq_heat_bt/Run()
-	restore_ambient_after() // heat_bt_run() advances world time: the map freezer pumps and the telecomms plating conducts into the 80 K server rooms meanwhile
 	test_driver_begin()
 	test_rng(1)
 	run_bt()

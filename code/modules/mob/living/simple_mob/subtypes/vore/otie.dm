@@ -41,7 +41,6 @@
 	var/tame_chance = 50 //It's a fiddy-fiddy default you may get a buddy pal or you may get mauled and ate. Win-win!
 
 
-	species_sounds = "Canine"
 
 // Activate Noms!
 
@@ -228,6 +227,7 @@
 	icon_rest = "hotiesc_rest"
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie)
+	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/otie))
 	configure(butchery_rules(meat_amount = 6))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

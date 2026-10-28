@@ -1126,7 +1126,7 @@
 
 /datum/vore_look/proc/attr_b_belly_sprite_to_affect(mob/user, list/params, extra)
 	var/belly_choice = params["val"]
-	if(!(belly_choice in host().vore_icon_bellies))
+	if(!(belly_choice in living_rules_of(host()).vore_icon_bellies))
 		return FALSE
 	vore_selected_of(host()).belly_sprite_to_affect = belly_choice
 	PUBLISH(host(), belly_change)

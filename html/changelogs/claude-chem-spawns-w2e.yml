@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "The yellow extract's lightning and EMP, and the nuclear extract's radiation pulse, declare what they do (fixed EMP ranges, a lightning strike, a radiation pulse, each with an optional delay)"

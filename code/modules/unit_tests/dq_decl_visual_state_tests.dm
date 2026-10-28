@@ -7,7 +7,6 @@
 	status_policies()
 /datum/unit_test/dq_decl_visual/proc/scope_fixture()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 /datum/unit_test/dq_decl_visual/proc/layer_of(atom/A, state)
 	for(var/layer in A.overlays)
 		var/mutable_appearance/L = new(layer)

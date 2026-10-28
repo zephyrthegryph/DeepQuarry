@@ -47,7 +47,6 @@
 	vore_default_mode = DM_HEAL
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to snap up"
-	species_sounds = "Canine"
 
 /mob/living/simple_mob/vore/greatwolf/black
 	name = "great black wolf"
@@ -88,6 +87,7 @@
 	movement_cooldown = -1.5 // 1.5 Downstream
 
 CAPABILITIES(/mob/living/simple_mob/vore/greatwolf)
+	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 2))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
