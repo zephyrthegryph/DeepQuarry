@@ -36,12 +36,11 @@
 	pass_flags = PASSTABLE
 	density = FALSE
 	friendly = list("pats")
-	climbing_delay = 2.0
 
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
-	configure(living_rules(say_list_type = /datum/say_list/mothroach))
+	configure(living_rules(say_list_type = /datum/say_list/mothroach, climbing_delay = 2.0))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(can_climb = TRUE))

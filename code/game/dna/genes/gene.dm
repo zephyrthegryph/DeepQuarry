@@ -17,7 +17,22 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gene)
 * Is the gene active in this mob's DNA?
 */
 /datum/gene/proc/is_active(mob/M) // Traitgenes edit - Removed /dna/ from path
-	return (M.active_genes && (name in M.active_genes)) // Traitgenes edit - Use name instead, cannot use type with dynamically setup traitgenes. It is always unique due to the block number being appended to it.
+	return (name in sparse_get(M, active_genes)) // Traitgenes edit - Use name instead, cannot use type with dynamically setup traitgenes. It is always unique due to the block number being appended to it.
+
+/// Records that this gene is switched on (or off) in `M`: the names of a mob's switched-on genes are its sparse slot active_genes.
+/datum/gene/proc/mark_active(mob/M, active)
+	var/list/names = sparse_get(M, active_genes)
+	if(active)
+		if(!names)
+			names = list()
+			sparse_set(M, active_genes, names)
+		names |= name
+		return
+	if(!names)
+		return
+	names -= name
+	if(!length(names))
+		sparse_set(M, active_genes, null)
 
 // Return 1 if we can activate.
 // HANDLE MUTCHK_FORCED HERE!

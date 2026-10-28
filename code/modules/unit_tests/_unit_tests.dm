@@ -458,6 +458,7 @@
 #include "dq_xform_sets_off_effects_tests.dm"
 #include "dq_xform_select_pin.dm"
 #include "dq_xform_cooking_make.dm"
+#include "dq_xform_paint_data.dm"
 #include "dq_xform_grinding_pin.dm"
 #include "dq_xform_fusion_pin.dm"
 #include "dq_xform_stack_pin.dm"

@@ -31,7 +31,6 @@
 	custom_eye_color = "#00CC00"
 	mount_offset_y = 30
 	vore_fullness_ex = list("stomach" = 0, "neck1" = 0, "neck2" = 0, "neck3" = 0, "neck4" = 0)
-	vore_icon_bellies = list("stomach", "neck1", "neck2", "neck3", "neck4")
 	vore_icons = 0
 	vore_pounce_chance = 100
 	vore_pounce_maxhealth = 200
@@ -257,7 +256,7 @@
 	return FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
-	configure(living_rules(vore_capacity_ex = list("stomach" = 1, "neck1" = 1, "neck2" = 1, "neck3" = 1, "neck4" = 1), say_list_type = /datum/say_list/swoopie, adminbus_trash = TRUE))
+	configure(living_rules(vore_icon_bellies = list("stomach", "neck1", "neck2", "neck3", "neck4"), vore_capacity_ex = list("stomach" = 1, "neck1" = 1, "neck2" = 1, "neck3" = 1, "neck4" = 1), say_list_type = /datum/say_list/swoopie, adminbus_trash = TRUE))
 	configure(mob_movement(bump = 0))
 	op("swoopie_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Toggle Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_disarm)))
 	op("swoopie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_grab)))

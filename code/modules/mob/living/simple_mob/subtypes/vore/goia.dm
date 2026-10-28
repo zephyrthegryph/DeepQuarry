@@ -46,7 +46,6 @@
 	vore_default_item_mode = IM_DIGEST
 
 
-	species_sounds = "None"
 
 	//This is copypastad from protean code, hope it isnt too painful lol
 	// ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
@@ -218,6 +217,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
+	configure(living_rules(species_sounds = "None"))
 	configure(living_rules(vore_capacity = 3))
 	configure(butchery_rules(meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

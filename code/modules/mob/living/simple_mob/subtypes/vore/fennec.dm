@@ -45,9 +45,9 @@
 	attacktext = list("bapped")
 
 
-	species_sounds = "Vulpine"
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec)
+	configure(living_rules(species_sounds = "Vulpine"))
 	configure(living_rules(say_list_type = /datum/say_list/fennec))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox, meat_amount = 2))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))

@@ -41,7 +41,6 @@
 
 	nom_mob = TRUE
 
-	species_sounds = "Canine" // Argue about whether it should have canine or feline later
 
 /datum/category_item/catalogue/fauna/leopardmander
 	name = "Sivian Fauna - Va'aen Drake"
@@ -56,6 +55,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
+	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 4))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
