@@ -67,7 +67,7 @@ ORIG_ARGS=("$@")
 # Every file the integrator runs from SELF_DIR (the snapshot under $STATE/self), relative to tools/. The ONE place to list them: ensure
 # copies these, and the self-update compares and refreshes these. A script the cycle runs through "$SELF_DIR/..." goes here
 # (tools/ci/test_train.sh fails when one is missing); dq_declared_tests.sh and dq_light_paths.sh are enqueue-only (the lane's checkout).
-SNAP_FILES=(dq_train.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml train/lane_times.py)
+SNAP_FILES=(dq_train.sh dq_gate_verdicts.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml train/lane_times.py)
 STATE="${DQ_TRAIN_STATE:-E:/dq-cache/train}"
 WT="${DQ_TRAIN_WT:-E:/projects/dq-wt/train-base}"
 TBRANCH="${DQ_TRAIN_BRANCH:-train/integ}"
