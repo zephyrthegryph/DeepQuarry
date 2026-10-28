@@ -30,6 +30,8 @@ check "merge_batch retries a no-result lane once with only its own tests, then d
 check "dq_merge_gates skips analyze_tests on DQ_GATE_ANALYZE_TRUSTED and logs why" 'grep -q "analyze_tests trusted (not run)" "$here/tools/dq_merge_gates.sh"'
 
 
+check "a gen failure is shown, retried, then an infra exit that merge_batch treats as a setup error" 'grep -q "exit 95" "$here/tools/dq_merge_gates.sh" && grep -q "\"\$rc\" -eq 95" "$here/tools/dq_merge_batch.sh"'
+
 # dq_merge_batch: one real conflict between two lanes must not poison the attempts after it (27 October, train-dc: 0 of 12 lanes passed).
 # A scratch repository, stub gates; lanes c1 and c2 conflict with each other only, g1 and g2 are clean: c2 waits, the rest pass, and no
 # attempt after the conflict starts dirty.

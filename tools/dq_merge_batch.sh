@@ -169,6 +169,8 @@ attempt_run() {
 		lt="$(printf '%s\n' $lt | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
 		bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${lt:+--tests "$lt"} ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
 		rc=$?
+		# The gates' INFRA exit (95: gen died twice, no lane code ran) is a setup error: retried, then deferred, never a bounce.
+		if [ "$rc" -eq 95 ]; then echo "dq_merge_batch: SETUP ERROR: the gates hit an infra failure (gen); not a lane verdict" | tee -a "$log" >&2; rc=90; fi
 		# A killed test phase is a verdict on the size of the batch, not on a lane.
 		# A run killed at its cap, or one that ended with no pass/fail result at all ("FOCUSED RESULT: CAPPED or killed before a result",
 		# 27 October: forms/setup-early-test was bounced for a run that printed nothing), is no verdict on a lane either.

@@ -121,7 +121,22 @@ if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ "$reproof" -eq 0 
 fi
 # The generated files must be fresh before the HEAD is stamped.
 if [ "$early_reuse" -eq 0 ]; then
-	tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
+	# 28 October (train-pre2): gen died right after "Starting 'dme'" with no message and the lane was bounced. gen runs no lane code:
+	# its output is kept and shown, a failure is retried once, and a second failure is an INFRA error (exit 95; dq_merge_batch.sh retries
+	# or defers it, never bounces a lane for it).
+	gen_log="data/merge-gates/gen-$$.log"; mkdir -p data/merge-gates
+	if ! tools/build/build.sh gen >"$gen_log" 2>&1; then
+		gen_rc=$?
+		cat "$gen_log"
+		echo "dq_merge_gates: gen failed (rc=$gen_rc; output above); retrying once" >&2
+		if ! tools/build/build.sh gen >"$gen_log" 2>&1; then
+			gen_rc=$?
+			cat "$gen_log"
+			echo "dq_merge_gates: INFRA: gen failed twice (rc=$gen_rc; output above, log $gen_log); not a lane verdict" >&2
+			exit 95
+		fi
+	fi
+	cat "$gen_log"; rm -f "$gen_log"
 fi
 lap "gen and fetch"
 # The build's gen step regenerated deepquarry.dme (tools/build/gen_dme.py). On an unpushed merge commit (a batch) a changed manifest is
