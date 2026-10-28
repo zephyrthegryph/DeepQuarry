@@ -910,6 +910,7 @@
 #include "interim_computer_frame_glass_material.dm"
 #include "interim_ghost_hud_actor.dm"
 #include "interim_pylon_pulverize.dm"
+#include "dq_custom_species_tests.dm"
 #include "dq_generic_hit_takeover_tests.dm"
 #include "interim_airlock_id_wire_pulse.dm"
 #include "interim_nif_size_actor.dm"
