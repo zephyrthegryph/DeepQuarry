@@ -33,6 +33,8 @@
 # What it still leaves to dq_push_master.sh: the second merge of origin/master, and any stamp it cannot honor (a different HEAD,
 # an unclean tree). It never runs build.sh lint (DreamChecker + analyze + tgui lint, all covered above).
 set -uo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 # The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
 export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
@@ -400,7 +402,11 @@ else
 	gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
 fi
 [ -z "${early_prep_done:-}" ] || rm -f "$early_prep_log" "$early_prep_log.rc"
-if [ -n "$tools_pid" ]; then wait "$tools_pid" || echo "dq_merge_gates: warning: compiler prebuild failed; the jobs build it themselves"; fi
+if [ -n "$tools_pid" ]; then
+	# the compiler is in the shared cache now: the test job's dq_focused_test.sh need not prepare it again (~30 s of Bun start-up and a
+	# cache probe on a loaded machine, 28 October)
+	if wait "$tools_pid"; then export DQ_FOCUSED_NO_TOOL_PREBUILD=1; else echo "dq_merge_gates: warning: compiler prebuild failed; the jobs build it themselves"; fi
+fi
 
 job_tests() { gate_tests_with_retry "${tests[@]}"; } # one isolated retry tells a flake from a failure (tools/dq_gate_retry.sh)
 job_dm() {

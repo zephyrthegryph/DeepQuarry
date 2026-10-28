@@ -33,6 +33,8 @@
 # Logs: data/push-check/<sha>.{dm,ratchets,analyze}.log. It never runs checkout, reset, restore, stash or cherry-pick.
 # tools/hooks/pre-push refuses a push to master that did not come from here (install: tools/hooks/install_pre_push.sh).
 set -uo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 cd "$(git rev-parse --show-toplevel)"
 # The analyzer is the local dev-fast build unless DQ_ANALYZE_PROFILE says otherwise: release and dev-fast are the same source
 # (the findings are identical; CI builds release), and a release build is a 2-4 minute non-incremental compile.
@@ -123,6 +125,13 @@ verify_landed() { # <sha>
 }
 
 mkdir -p data/push-check
+# The stamp verdict of one commit, computed once (28 October: dq_push_stamp.sh ran three times on the same commit per push, ~10 s each on
+# a loaded machine; nothing it reads changes between the calls). Prints the verdict; exit status as dq_push_stamp.sh.
+_stamp_sha=""; _stamp_out=""; _stamp_rc=1
+stamp_of() {
+	if [ "$1" != "$_stamp_sha" ]; then _stamp_out="$(bash tools/dq_push_stamp.sh "$1" 2>&1)"; _stamp_rc=$?; _stamp_sha="$1"; fi
+	printf '%s\n' "$_stamp_out"; return "$_stamp_rc"
+}
 for round in 1 2 3; do
 	if why="$(dirty)"; then die "$why: commit (or remove) them first"; fi
 	echo "== dq_push_master: round $round: merging origin/master"
@@ -151,7 +160,7 @@ for round in 1 2 3; do
 	if [ "$light" -eq 0 ] && [ "${DQ_PUSH_FULL:-0}" != "1" ]; then
 		if git notes --ref=lane-ready show "$sha" 2>/dev/null | grep -q '"ok":true' && git merge-base --is-ancestor origin/master "$sha"; then
 			fast_skip="a lane-ready stamp is on exactly this commit and it contains origin/master (fast-forward): the gates already ran on this tree"
-		elif bash tools/dq_push_stamp.sh "$sha" >/dev/null 2>&1; then
+		elif stamp_of "$sha" >/dev/null 2>&1; then
 			read -r -a _par <<<"$(git rev-list --parents -n 1 "$sha" | cut -d' ' -f2-)"
 			if [ "${#_par[@]}" -eq 2 ]; then
 				_lane=""; _mp=""
@@ -173,7 +182,8 @@ for round in 1 2 3; do
 	# Re-proof: the lane's (or batch's) stamp went stale only because master moved while it was being gated, and its own commits are
 	# unchanged (a stamp on exactly its tip). Instead of refusing and sending it round another 30 minute lap that master can outrun
 	# again, the gates run its full stamped test list on this merged tree; that run is the fresh stamp, and it records reproof_of.
-	if ! pre_stamp="$(bash tools/dq_push_stamp.sh "$sha" 2>&1)" && [ "${DQ_PUSH_NO_REPROOF:-0}" != "1" ] && bash tools/dq_reproof_source.sh "$sha" >/dev/null 2>&1; then
+	stamp_of "$sha" >/dev/null; pre_stamp="$_stamp_out"
+	if [ "$_stamp_rc" -ne 0 ] && [ "${DQ_PUSH_NO_REPROOF:-0}" != "1" ] && bash tools/dq_reproof_source.sh "$sha" >/dev/null 2>&1; then
 		echo "== re-proof: ${pre_stamp:0:300}"
 		echo "== re-proof: running the stamped test list on the merged tree ${sha:0:12} (tools/dq_merge_gates.sh --reproof)"
 		reproof_lanes="${expected_tips[*]-}"
@@ -230,7 +240,7 @@ for round in 1 2 3; do
 	if why="$(dirty)"; then die "the tree changed during the checks: $why"; fi
 	# The tests: HEAD (or each parent of a merge, docs/data-only commits on top excepted) must carry a passing lane-ready or
 	# merge-gates stamp (tools/dq_push_stamp.sh, agent_workflow.md section 14). The pre-push hook checks the same.
-	stamp_verdict="$(bash tools/dq_push_stamp.sh "$sha")" || die "$stamp_verdict"
+	stamp_of "$sha" >/dev/null; stamp_verdict="$_stamp_out"; [ "$_stamp_rc" -eq 0 ] || die "$stamp_verdict"
 	echo "== test stamp: $stamp_verdict"
 
 	for t in "${expected_tips[@]-}"; do
