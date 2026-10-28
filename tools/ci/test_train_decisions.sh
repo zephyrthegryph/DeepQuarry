@@ -142,6 +142,12 @@ printf 'a = 1\nimproper = 2\nbump = 2\ntransform = 46\ndata = 42\n\n[l]\n# c1\nx
 printf 'a = 1\nimproper = 2\nbump = 17\ntransform = 37\ndata = 42\n\n[l]\n# c1\n# c2 added\nx = 1\n' >"$ls_d/B3"
 (cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O3" "$ls_d/A3" "$ls_d/B3" lint_scopes.toml) >/dev/null 2>&1; ls_rc3=$?
 check "lint_scopes driver: adjacent lowered ceilings merge although the other side added a line elsewhere (gr/bumped-notices 09:52)" '[ "$ls_rc3" = 0 ] && grep -qx "bump = 2" "$ls_d/A3" && grep -qx "transform = 37" "$ls_d/A3" && grep -qx "# c2 added" "$ls_d/A3" && ! grep -q "<<<<" "$ls_d/A3"'
+# the 12:00 case: theirs MOVED a ceiling out of the block (the block's sides differ in length); ours lowered a neighbour
+printf 'bump = 17\ntails = 46\nprocs = 42\nhit = 0\n\n# end\n' >"$ls_d/O4"
+printf 'bump = 2\ntails = 46\nprocs = 42\nhit = 0\n\n# end\n' >"$ls_d/A4"
+printf 'bump = 17\ntails = 37\nhit = 0\n\n# end\nprocs = 0\n' >"$ls_d/B4"
+(cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O4" "$ls_d/A4" "$ls_d/B4" lint_scopes.toml) >/dev/null 2>&1; ls_rc4=$?
+check "lint_scopes driver: a ceiling block whose sides differ in length (a key moved) merges by key (gr/bumped-notices 12:00)" '[ "$ls_rc4" = 0 ] && [ "$(grep -c "^procs" "$ls_d/A4")" = 1 ] && grep -qx "procs = 0" "$ls_d/A4" && grep -qx "bump = 2" "$ls_d/A4" && grep -qx "tails = 37" "$ls_d/A4"'
 printf '[x]\nname = "one"\n' >"$ls_d/O2"; printf '[x]\nname = "two"\n' >"$ls_d/A2"; printf '[x]\nname = "three"\n' >"$ls_d/B2"
 (cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O2" "$ls_d/A2" "$ls_d/B2" lint_scopes.toml) >/dev/null 2>&1; ls_rc2=$?
 check "lint_scopes driver: a text disagreement is still a conflict" '[ "$ls_rc2" != 0 ] && grep -q "<<<<<<<" "$ls_d/A2"'

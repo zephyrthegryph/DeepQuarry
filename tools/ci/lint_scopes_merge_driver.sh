@@ -21,8 +21,24 @@ LC_ALL=C awk '
 	function isceil(l) { return l ~ /^[ \t]*[A-Za-z0-9_.-]+[ \t]*=[ \t]*[0-9]+[ \t]*\r?$/ }
 	function key(l) { sub(/[ \t]*=.*/, "", l); gsub(/[ \t]/, "", l); return l }
 	function num(l) { sub(/^[^=]*=[ \t]*/, "", l); return l + 0 }
+	function allceil(   i) { for (i = 1; i <= na; i++) if (!isceil(A[i])) return 0; for (i = 1; i <= nb; i++) if (!isceil(B[i])) return 0; for (i = 1; i <= no; i++) if (!isceil(O[i])) return 0; return 1 }
+	# A block of nothing but ceilings merges by KEY when its sides differ in length (a side moved, added or removed a ceiling line):
+	# a key one side removed and the other kept unchanged is removed; a key one side added is added; both changed it: the lower wins.
+	function keyed(   i, k, ka, kb, ko, va, vb, vo, ord, n) {
+		split("", va); split("", vb); split("", vo); split("", ord); n = 0
+		for (i = 1; i <= no; i++) vo[key(O[i])] = O[i]
+		for (i = 1; i <= na; i++) va[key(A[i])] = A[i]
+		for (i = 1; i <= nb; i++) { vb[key(B[i])] = B[i]; ord[++n] = key(B[i]) }
+		for (i = 1; i <= na; i++) { k = key(A[i]); if (!(k in vb)) ord[++n] = k }
+		for (i = 1; i <= n; i++) {
+			k = ord[i]; ka = (k in va); kb = (k in vb); ko = (k in vo)
+			if (ka && kb) { if (va[k] == vb[k] || va[k] == vo[k]) print vb[k]; else if (vb[k] == vo[k]) print va[k]; else { print (num(va[k]) <= num(vb[k])) ? va[k] : vb[k]; printf("lint_scopes merge: %s: both sides changed it; kept the lower\n", k) > "/dev/stderr" } }
+			else if (ka && !kb) { if (!ko) print va[k]; else if (va[k] != vo[k]) { bad = 1 } }   # theirs removed (or moved out) a key ours kept: dropped; ours changed it: a real conflict
+			else if (kb && !ka) { if (!ko) print vb[k]; else if (vb[k] != vo[k]) { bad = 1 } }
+		}
+	}
 	function flush(   i, a, b, o) {
-		if (na != nb || na != no) { bad = 1; dump(); return }
+		if (na != nb || na != no) { if (allceil()) { keyed(); if (bad) dump(); return } bad = 1; dump(); return }
 		for (i = 1; i <= na; i++) {
 			a = A[i]; b = B[i]; o = O[i]
 			if (a == b || a == o) { R[i] = b; continue }
