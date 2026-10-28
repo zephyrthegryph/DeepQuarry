@@ -141,7 +141,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	set_speciesname(M.custom_species ? M.custom_species : null)
 	set_bodygender(M.gender)
 	sizemult = M.size_multiplier
-	weight = M.weight
+	weight = sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT)
 	aflags = M.appearance_flags
 	breath_type = M.species.breath_type
 
@@ -337,7 +337,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	PRIVATE_PROC(TRUE)
 	H.resize(sizemult, FALSE)
 	H.set_appearance_flags(aflags)
-	H.weight = weight
+	sparse_set_or(H, weight, weight, DEFAULT_MOB_WEIGHT)
 	if(speciesname)
 		H.custom_species = speciesname
 

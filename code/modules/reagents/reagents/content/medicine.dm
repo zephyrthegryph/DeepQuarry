@@ -2019,8 +2019,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/lipozilase/affect_blood(mob/living/carbon/M, alien, removed)
 	M.adjust_nutrition(-20 * removed)
-	if(M.weight > 50)
-		M.weight = max(50, M.weight - 1.5 * removed) // B23: 0.3 a tick at REM, scaled by what was metabolised
+	if(sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) > 50)
+		sparse_set_or(M, weight, max(50, sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) - 1.5 * removed), DEFAULT_MOB_WEIGHT) // B23: 0.3 a tick at REM, scaled by what was metabolised
 
 /datum/reagent/lipostipo // The drug that rapidly increases weight.
 	name = REAGENT_LIPOSTIPO
@@ -2038,8 +2038,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 /datum/reagent/lipostipo/affect_blood(mob/living/carbon/M, alien, removed)
 	// B23: the weight-gain drug feeds (it was a copy of lipozilase and starved you).
 	M.adjust_nutrition(20 * removed)
-	if(M.weight < 500)
-		M.weight = min(500, M.weight + 1.5 * removed)
+	if(sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) < 500)
+		sparse_set_or(M, weight, min(500, sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) + 1.5 * removed), DEFAULT_MOB_WEIGHT)
 
 /datum/reagent/polymorph
 	name = REAGENT_POLYMORPH

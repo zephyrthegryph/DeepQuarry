@@ -20,13 +20,13 @@ CAPABILITIES(/obj/machinery/fitness)
 	if(nutrition_of(user) < 70)
 		to_chat(user, span_notice("You need more energy to workout with the [src]!"))
 
-	else if(user.weight < 70)
+	else if(sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT) < 70)
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
 
 	else //If they have enough nutrition and body weight, they can exercise.
 		user.setClickCooldown(cooldown)
 		user.adjust_nutrition(-10 * weightloss_power)
-		user.weight -= 0.25 * weightloss_power * (0.01 * sparse_get_or(user, weight_loss, 0.5))
+		sparse_set_or(user, weight, sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT) - (0.25 * weightloss_power * (0.01 * sparse_get_or(user, weight_loss, 0.5))), DEFAULT_MOB_WEIGHT)
 		flick("[icon_state]2", src)
 		var/message = pick(messages)
 		to_chat(user, span_notice("[message]."))
@@ -121,7 +121,7 @@ CAPABILITIES(/obj/machinery/scale)
 	if(user.loc != loc)
 		to_chat(user, span_notice("You need to be standing on top of the scale for it to work!"))
 		return OP_OK
-	if(user.weight) //Just in case.
-		var/kilograms = round(text2num(user.weight),4) / 2.20463
-		act_message(src, user, others = span_notice("%U% displays a reading of [user.weight]lb / [kilograms]kg when %T% stands on it."))
+	if(sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT)) //Just in case.
+		var/kilograms = round(text2num(sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT)),4) / 2.20463
+		act_message(src, user, others = span_notice("%U% displays a reading of [sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT)]lb / [kilograms]kg when %T% stands on it."))
 	return OP_OK

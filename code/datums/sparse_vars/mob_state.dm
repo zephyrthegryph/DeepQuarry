@@ -30,6 +30,8 @@ sparse(/mob, riftimage, type = /image)
 
 // /mob/living
 sparse(/mob/living, adminbus_eat_minerals, type = bool)
+// Body weight in pounds for the weightgain system; reads as DEFAULT_MOB_WEIGHT when unset (sparse_get_or / sparse_set_or).
+sparse(/mob/living, weight, type = num)
 sparse(/mob/living, body_effect_serial, type = num)
 sparse(/mob/living, last_instability, type = num)
 sparse(/mob/living, melee_swing_serial, type = num)
