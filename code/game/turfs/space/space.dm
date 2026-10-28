@@ -20,15 +20,6 @@
 	var/forced_dirs = 0 //Force this one to pretend it's an overedge turf
 	init_from_table = TRUE
 
-// ALLOW(init/FRAMEWORK): assigning appearance replaces the whole appearance, so it must run before the base init applies the mapper colour
-/turf/space/Initialize(mapload)
-	space_appearance()
-	return ..()
-
-/turf/space/table_initialize()
-	space_appearance()
-	..()
-
 /// Starlight and the edge/dust sprite, picked from the turf's position.
 /turf/space/proc/space_appearance()
 	PRIVATE_PROC(TRUE)
@@ -106,6 +97,7 @@
 		set_glow(src, GLOW(0, null, null))
 
 CAPABILITIES(/turf/space)
+	setup(PROC_REF(space_appearance), early = TRUE) // assigning appearance replaces the whole appearance: before the chain applies the mapper colour
 	op("space_build", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Build"), then(PROC_REF(space_build)))
 
 /// Old attackby: rods build a lattice, tiles plate it, roofing patches the ceiling.
