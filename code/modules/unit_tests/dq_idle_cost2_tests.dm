@@ -21,7 +21,7 @@
 	var/obj/machinery/embedded_controller/radio/simple_docking_controller/controller = allocate(/obj/machinery/embedded_controller/radio/simple_docking_controller, run_loc_floor_bottom_left)
 	var/datum/embedded_program/docking/simple/program = controller.program
 	TEST_ASSERT_NOTNULL(program, "the controller has a docking program")
-	program.id_tag = "dq_test_dock"
+	program.set_id_tag("dq_test_dock")
 	program.tag_door = "dq_test_dock_hatch"
 	var/datum/signal/door_report = new
 	door_report.data = list("tag" = program.tag_door, "door_status" = "closed", "lock_status" = "locked")
