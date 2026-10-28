@@ -240,6 +240,31 @@ struct PhaseTimer {
     at: std::time::Instant,
     /// Wall time of the top-level phases so far this frame, microseconds.
     total_us: u64,
+    /// The thread's CPU time when the frame began, microseconds (see [`thread_cpu_us`]).
+    cpu_start_us: u64,
+}
+
+/// CPU time this thread has used, microseconds (Windows `GetThreadTimes`; 0 elsewhere). A slow frame whose wall time far exceeds the CPU time it used
+/// was not computing: it was descheduled or blocked, not slow work.
+#[cfg(windows)]
+fn thread_cpu_us() -> u64 {
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetCurrentThread() -> isize;
+        fn GetThreadTimes(thread: isize, created: *mut u64, exited: *mut u64, kernel: *mut u64, user: *mut u64) -> i32;
+    }
+    let (mut created, mut exited, mut kernel, mut user) = (0u64, 0u64, 0u64, 0u64);
+    // SAFETY: GetThreadTimes writes four FILETIMEs (two 32-bit halves, little endian: one u64 each) for the calling thread's pseudo-handle.
+    let ok = unsafe { GetThreadTimes(GetCurrentThread(), &mut created, &mut exited, &mut kernel, &mut user) };
+    if ok == 0 {
+        return 0;
+    }
+    (kernel + user) / 10 // 100 ns units
+}
+
+#[cfg(not(windows))]
+fn thread_cpu_us() -> u64 {
+    0
 }
 
 /// A frame at least this long (microseconds) adds its own per-phase times to the `frame.slow_us.<phase>` counters, so the
@@ -261,7 +286,7 @@ impl PhaseTimer {
     fn start() -> Self {
         crate::metrics::registry().counter("frame.count").inc();
         TRACE.with_borrow_mut(Vec::clear);
-        Self { at: std::time::Instant::now(), total_us: 0 }
+        Self { at: std::time::Instant::now(), total_us: 0, cpu_start_us: thread_cpu_us() }
     }
 
     fn lap(&mut self, phase: &str) {
@@ -281,6 +306,10 @@ impl PhaseTimer {
         let registry = crate::metrics::registry();
         registry.counter("frame.slow_count").inc();
         registry.counter("frame.slow_us.total").add(self.total_us);
+        // On the CPU against off it: a frame that waited (descheduled, blocked) shows its wall time here and little CPU time.
+        let cpu_us = thread_cpu_us().saturating_sub(self.cpu_start_us);
+        registry.counter("frame.slow_us.on_cpu").add(cpu_us.min(self.total_us));
+        registry.counter("frame.slow_us.off_cpu").add(self.total_us.saturating_sub(cpu_us));
         TRACE.with_borrow(|t| {
             for (phase, us) in t {
                 registry.counter(&format!("frame.slow_us.{phase}")).add(*us);
@@ -318,6 +347,34 @@ mod tests {
         }
         assert_eq!(at, page.len(), "the page is whole records: {page:?}");
         out
+    }
+
+    /// A slow frame files its wall time split into the CPU it used and the time it did not run: the two always add up to the frame.
+    #[test]
+    fn a_slow_frame_splits_its_wall_time_into_on_and_off_cpu() {
+        let registry = crate::metrics::registry();
+        let before = |name: &str| registry.counter(name).get();
+        let (total0, on0, off0) = (before("frame.slow_us.total"), before("frame.slow_us.on_cpu"), before("frame.slow_us.off_cpu"));
+        let mut timer = PhaseTimer::start();
+        // A frame past the slow line whose wall time the thread mostly spent not running (nothing was computed here).
+        timer.total_us = SLOW_FRAME_US + 5_000;
+        timer.finish();
+        let total = before("frame.slow_us.total") - total0;
+        let on = before("frame.slow_us.on_cpu") - on0;
+        let off = before("frame.slow_us.off_cpu") - off0;
+        assert_eq!(total, SLOW_FRAME_US + 5_000, "the slow frame was filed");
+        assert_eq!(on + off, total, "on-CPU and off-CPU time add up to the frame");
+        assert!(off > total / 2, "a frame that computed nothing was mostly off the CPU ({off} of {total} us)");
+    }
+
+    #[test]
+    fn a_quick_frame_files_no_slow_time() {
+        let registry = crate::metrics::registry();
+        let total0 = registry.counter("frame.slow_us.total").get();
+        let mut timer = PhaseTimer::start();
+        timer.total_us = 10;
+        timer.finish();
+        assert_eq!(registry.counter("frame.slow_us.total").get(), total0);
     }
 
     #[test]
