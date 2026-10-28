@@ -1179,3 +1179,32 @@ carried ones by answer hash; only units whose recorded answers must be compared 
 number of units the edit invalidates (hundreds) times one decode of a few KB, under 20 ms, against a 5 s edit. Not started:
 it needs slice 1's census to size the stub threshold, and the equivalence run to prove a spilled unit validates exactly as a
 resident one.
+
+### Content-addressed sharing across sessions: plan (2026-10-27, lane `compiler/key-pool`)
+
+**Finding.** A second worktree with byte-identical files (other path only) still adds +1.39 GB (game session 4.81, test variant
++2.42). Only the memoized expansion records, answer values, artifact cores and output images are shared today, and they are
+shared because each was given a pool by hand. Everything built around them is rebuilt per session from equal inputs: the answer
+table slots (`RequestAnswers` 67 MB), `MetadataDependencies` 54, procedure rows 49, classification keys and rosters 49,
+`frame_contribution` 46, macro environments 36, word lists 36, link tables 33, member arena 32.
+
+**Rule.** A value a session builds from inputs that hash equal is one allocation, found through a process-wide weak pool keyed by
+the content digest and decided by the bytes (the pattern of `output_pool.rs`, `RecordPool` below). Nothing path-bearing is part
+of the identity: definition origins are project-relative (landed), and a value that still names an absolute path is relativized
+when it is built, or kept per session.
+
+**Layers, in order.**
+1. *Keys and leaves* (this lane): `dm_session::key_pool::share` canonicalizes the artifact key bytes a session builds
+   (classification, lowering records, symbolic shared keys), so rosters and location memos of equal sessions hold one allocation.
+   Enabled where the shared store is (`private("keys")` turns it off).
+2. *Answer table*: split `AnswerSlot` into the immutable `(id -> Arc<AnswerValue>)` part, shared per tree digest (equal trees give
+   equal answers; the tree identity is already a content digest) and a per-session overlay of the mutable request, stamp,
+   born/changed and base fields. A session at the same tree digest as another starts from the shared map and copies on first
+   write. Expected: `RequestAnswers` 67 -> about 15 MB per extra identical session.
+3. *Derived tables* (`MetadataDependencies`, procedure rows, member arena, frame contribution, link tables): each is a pure
+   function of the tree digest plus its inputs, so they are built once per digest and held by `Arc`, with the per-session
+   difference (the dirty set) kept beside them. Each is its own slice, measured on the identical-worktree probe first.
+4. *Test variant*: the same pools apply with the variant's own digest; only values whose inputs differ are new.
+
+**Proof per slice.** Cold output byte-identical to the previous binary, `shared_store_equiv.sh` EQUIVALENT, identical-worktree
+probe (A, test, B0) for the second-worktree extra, warm-edit speed on a quiet machine.

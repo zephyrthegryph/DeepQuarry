@@ -211,7 +211,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                     let duplicate = duplicates.entry(key.clone()).or_default();
                     key.extend_from_slice(&(*duplicate as u128).to_le_bytes());
                     *duplicate += 1;
-                    Arc::<[u8]>::from(key)
+                    dm_session::key_pool::share(Arc::<[u8]>::from(key))
                 })
                 .collect::<Vec<_>>(),
         );

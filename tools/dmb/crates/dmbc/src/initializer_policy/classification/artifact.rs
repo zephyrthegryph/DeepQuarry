@@ -532,7 +532,7 @@ pub(super) fn classify_one(
     let prepared = factory
         .factory
         .recording_policy_identity()
-        .map(|policy| Arc::<[u8]>::from(key(write, fact, reuse, policy)));
+        .map(|policy| dm_session::key_pool::share(Arc::<[u8]>::from(key(write, fact, reuse, policy))));
     classify_one_keyed(
         write,
         symbols,
