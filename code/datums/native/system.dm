@@ -34,6 +34,12 @@
 	/// The `frame.us.*` counters at the last slow-frame report, so the next report names the phases that grew (NATIVE_SLOW_FRAME_MS).
 	var/list/slow_frame_prev
 	var/slow_frames = 0
+	/// The last delivery's time per record kind, ms (changed, notices, crossed), and its slowest single record: how long it took and what it was.
+	var/delivery_changed_ms = 0
+	var/delivery_notices_ms = 0
+	var/delivery_crossed_ms = 0
+	var/last_slowest_ms = 0
+	var/last_slowest = ""
 	/// world.tick_lag as last sent to Rust.
 	var/tick_lag_sent = 0
 	/// The wheel tick of the last frame (elapsed ticks are measured from it).
@@ -110,7 +116,7 @@
 		if(delta >= 1000)
 			grew[copytext(name, 15)] = round(delta / 1000, 0.1)
 	slow_frame_prev = now_us
-	log_world("NATIVE_SLOW_FRAME: frame [frames] took [round(last_frame_ms, 0.1)] ms, of which vg_frame [round(vg_ms, 0.1)] ms and delivery [round(last_frame_ms - vg_ms, 0.1)] ms (records [last_records], changed [last_changed], notices [last_notices]); Rust phases of the slow frames since the previous report, ms (frame.slow_us.*, empty when Rust saw no frame over 100 ms): [json_encode(grew)]")
+	log_world("NATIVE_SLOW_FRAME: frame [frames] took [round(last_frame_ms, 0.1)] ms, of which vg_frame [round(vg_ms, 0.1)] ms and delivery [round(last_frame_ms - vg_ms, 0.1)] ms (records [last_records], changed [last_changed], notices [last_notices]); delivery ms by kind: changed [round(delivery_changed_ms, 0.1)], notices [round(delivery_notices_ms, 0.1)], crossed [round(delivery_crossed_ms, 0.1)], slowest record [round(last_slowest_ms, 0.1)] ms ([last_slowest]); Rust phases of the slow frames since the previous report, ms (frame.slow_us.*, empty when Rust saw no frame over 100 ms): [json_encode(grew)]")
 
 /// Test hook: drains what Rust holds now without pacing it (after vg_world_run_steps()).
 /datum/system/native/proc/drain()
@@ -124,6 +130,11 @@
 	last_notices = 0
 	last_crossed = 0
 	pipe_devices_last = 0
+	delivery_changed_ms = 0
+	delivery_notices_ms = 0
+	delivery_crossed_ms = 0
+	last_slowest_ms = 0
+	last_slowest = ""
 	var/i = 1
 	while(i + 3 <= n)
 		var/kind = box[i]
@@ -133,6 +144,7 @@
 		var/p = i + 4
 		i = p + count
 		last_records++
+		var/record_start = TICK_USAGE_REAL
 		switch(kind)
 			if(NATIVE_REC_CHANGED)
 				last_changed++
@@ -143,6 +155,19 @@
 			if(NATIVE_REC_CROSSED)
 				last_crossed++
 				on_crossed(a, b, box, p, count)
+		var/record_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - record_start)
+		switch(kind)
+			if(NATIVE_REC_CHANGED)
+				delivery_changed_ms += record_ms
+			if(NATIVE_REC_NOTICE)
+				delivery_notices_ms += record_ms
+			if(NATIVE_REC_CROSSED)
+				delivery_crossed_ms += record_ms
+		if(record_ms > last_slowest_ms)
+			// Named only when it is the slowest so far: a delivery's records are many and quick, and only the slow one is worth a string.
+			last_slowest_ms = record_ms
+			var/datum/target = SSvg.entity_lookup(a)
+			last_slowest = "[kind == NATIVE_REC_CHANGED ? "CHANGED" : (kind == NATIVE_REC_NOTICE ? "NOTICE" : "CROSSED")] a=[a] b=[b] payload=[count] target=[target ? target.type : "none"]"
 
 /// CHANGED (`a`, `key`): the gas watch's observation goes to the machine service's queue, a world watch's
 /// change wake to its lane, anything else is a change of the entity's datum.

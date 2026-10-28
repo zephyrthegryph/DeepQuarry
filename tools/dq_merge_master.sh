@@ -16,6 +16,7 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_stale_includes.sh"
 # In the shared merge worktree only the batch that holds the merge lock may merge; and a merge never starts on a tree with staged or
 # modified tracked files (another batch's half-finished merge, or work a merge would have to set aside).
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
@@ -80,6 +81,13 @@ if [ ${#tracked[@]} -gt 0 ]; then
 	git rm -r -q --cached -- "${tracked[@]}"
 fi
 
+# Includes of files the merge deleted (a union merge of an include list brings them back): dropped from the merge and reported.
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 && [ -z "$(git diff --name-only --diff-filter=U -- code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm deepquarry.dme)" ]; then
+	for ut in code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm; do
+		[ -f "$ut" ] && dq_drop_stale_includes "$ut" "$(dirname "$ut")" "dq_merge_master"
+	done
+	dq_drop_stale_includes deepquarry.dme . "dq_merge_master"
+fi
 mapfile -t remaining < <(git diff --name-only --diff-filter=U)
 if [ ${#remaining[@]} -gt 0 ]; then
 	echo

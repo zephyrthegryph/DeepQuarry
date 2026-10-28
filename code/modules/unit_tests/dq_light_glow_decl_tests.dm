@@ -1,8 +1,8 @@
-// Light fixtures declare the glow and draw of the bulb they start with (code/modules/power/lighting_glow_decls.dm), so a fixture's first
+// Light fixtures declare the glow and draw of the bulb they start with (code/modules/power/lighting_fixture_glow.dm), so a fixture's first
 // refresh_light() writes nothing it does not change. These tests hold the declarations to the bulbs and the init state to the old arithmetic.
 
 /// Every light fixture type declares exactly what its starting bulb gives: glow range, power and colour, and the active draw refresh_light()
-/// computes from them. A mismatch prints the line to paste into lighting_glow_decls.dm (the file is generated from this test's output).
+/// computes from them. A mismatch prints the line to paste into lighting_fixture_glow.dm (the test prints the lines to put there).
 /datum/unit_test/dq_light_glow_declared
 
 /datum/unit_test/dq_light_glow_declared/Run()
@@ -22,7 +22,7 @@
 		if(glow.range != range || glow.power != bulb.brightness_power || glow.color != bulb.brightness_color || draw.active != active)
 			lines += "CAPABILITIES([type])\n\tconfigure(light_glow(range = [range], power = [bulb.brightness_power], color = \"[bulb.brightness_color]\"))\n\tconfigure(uses_power(idle = [draw.idle], active = [range] * [bulb.brightness_power] * LIGHTING_POWER_FACTOR, channel = LIGHT))"
 	if(length(lines))
-		log_world("dq_light_glow_declared: paste into code/modules/power/lighting_glow_decls.dm:\n[jointext(lines, "\n\n")]")
+		log_world("dq_light_glow_declared: paste into code/modules/power/lighting_fixture_glow.dm:\n[jointext(lines, "\n\n")]")
 	TEST_ASSERT(!length(lines), "[length(lines)] of [checked] light fixture types declare another glow or draw than their starting bulb (the world log has the lines)")
 
 /// A fixture initialised on a powered and on an unpowered tile ends in the state refresh_light()'s arithmetic gives: lit with its bulb's glow and the

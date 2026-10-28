@@ -19,24 +19,29 @@
 /// every other test's, regardless of order.
 /proc/heat_test_turf()
 	var/static/list/handed_out = list()
-	for(var/turf/simulated/floor/T in world)
-		if(handed_out[T])
-			continue
-		var/turf/simulated/floor/east = get_step(T, EAST)
-		if(!istype(east) || handed_out[east])
-			continue
-		// Real room air on both, not just an air datum: an earlier atmos test can
-		// leave a floor drained or at 2.7 K, and a body there has nothing to relax
-		// toward (seen only once sharding changed which tests ran first).
-		if(T.heat_has_air() && east.heat_has_air() && heat_test_room_air(T) && heat_test_room_air(east))
-			handed_out[T] = TRUE
-			handed_out[east] = TRUE
-			// Handed out at room temperature with their own cells: an earlier test
-			// (a vacuum or space-floor round trip) can leave a floor at 2.7 K,
-			// which only showed up once sharding changed the test order.
-			heat_test_restore(T)
-			heat_test_restore(east)
-			return T
+	GLOB.current_test?.capture_ambient() // the floor handed out is a shared world floor: the put-back covers it
+	// The first pass keeps to rooms the map does not regulate (their thermostats and vents drift while world time passes); the second takes what is left.
+	for(var/pass in 1 to 2)
+		for(var/turf/simulated/floor/T in world)
+			if(handed_out[T])
+				continue
+			if(pass == 1 && unit_test_regulated_room(T))
+				continue
+			var/turf/simulated/floor/east = get_step(T, EAST)
+			if(!istype(east) || handed_out[east])
+				continue
+			// Real room air on both, not just an air datum: an earlier atmos test can
+			// leave a floor drained or at 2.7 K, and a body there has nothing to relax
+			// toward (seen only once sharding changed which tests ran first).
+			if(T.heat_has_air() && east.heat_has_air() && heat_test_room_air(T) && heat_test_room_air(east))
+				handed_out[T] = TRUE
+				handed_out[east] = TRUE
+				// Handed out at room temperature with their own cells: an earlier test
+				// (a vacuum or space-floor round trip) can leave a floor at 2.7 K,
+				// which only showed up once sharding changed the test order.
+				heat_test_restore(T)
+				heat_test_restore(east)
+				return T
 
 /// Whether `T` holds roughly a standard cell of air near room temperature.
 /proc/heat_test_room_air(turf/simulated/floor/T)
@@ -103,7 +108,6 @@
 /datum/unit_test/dq_heat_body_is_created_on_divergence_and_relaxes
 
 /datum/unit_test/dq_heat_body_is_created_on_divergence_and_relaxes/Run()
-	restore_ambient_after() // the steps below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/obj/item/I = allocate(/obj/item/tool/wrench, heat_test_turf())
 	var/ambient = I.get_temperature()
 	TEST_ASSERT_NULL(I.heat_body, "an item at ambient temperature already has a heat body")
@@ -129,7 +133,6 @@
 /datum/unit_test/dq_heat_deleting_a_hot_item_leaves_its_tile_unchanged
 
 /datum/unit_test/dq_heat_deleting_a_hot_item_leaves_its_tile_unchanged/Run()
-	restore_ambient_after() // the steps below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/turf/T = heat_test_turf()
 	TEST_ASSERT_NOTNULL(T, "no floor to test on")
 	var/obj/item/I = allocate(/obj/item/tool/wrench, T)
@@ -198,7 +201,6 @@
 /datum/unit_test/dq_heat_body_on_a_reservoir_reads_its_relaxed_temperature
 
 /datum/unit_test/dq_heat_body_on_a_reservoir_reads_its_relaxed_temperature/Run()
-	restore_ambient_after() // the steps below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/turf/simulated/floor/T = heat_test_turf()
 	TEST_ASSERT_NOTNULL(T, "no floor to test on")
 	// A planet turf's gas cell is a reservoir (verdigris/ffi/src/gas/mod.rs register_turf()).

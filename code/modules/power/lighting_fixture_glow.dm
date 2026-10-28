@@ -1,7 +1,7 @@
 // The glow and draw each light fixture type starts with: its starting bulb's (light_type) brightness, the range raised as set_glow() raises it, and
 // the active draw refresh_light() computes from them. Declared per type, the fixture's first refresh_light() on a powered tile writes nothing,
-// where it made every fixture copy its type's trait and publish it. Generated from dq_light_glow_declared's output (it prints the lines again when a
-// bulb or a fixture type changes); do not edit by hand.
+// where it made every fixture copy its type's trait and publish it. Kept in step by dq_light_glow_declared, which fails and prints
+// the lines to put here when a bulb or a fixture type changes.
 
 CAPABILITIES(/obj/machinery/light/small)
 	configure(light_glow(range = 4, power = 1, color = "#FFFEB8"))

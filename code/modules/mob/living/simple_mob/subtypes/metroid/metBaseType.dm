@@ -53,7 +53,6 @@
 	var/next
 
 
-	species_sounds = "Metroid"
 
 /// The screech it gives as it appears (after_init()), or null for a quiet kind.
 /mob/living/simple_mob/metroid/var/arrival_sound = null
@@ -63,6 +62,7 @@
 		play_sfx(src, arrival_sound)
 
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	configure(living_rules(species_sounds = "Metroid"))
 	configure(living_rules(say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat, meat_amount = 6))
 	configure(mob_nature(can_pain_emote = TRUE, pain_1p = list("skree"), pain_3p = list("skrees")))

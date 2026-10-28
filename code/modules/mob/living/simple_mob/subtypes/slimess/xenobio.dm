@@ -81,7 +81,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soulstone)
 CAPABILITIES(/transformation/chem/instant/slime/redspace_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_redspace_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/redspace),
-		effects = sets_off(XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
+		effects = sets_off(kind = XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 
 /transformation/chem/instant/slime/slime_mindbreaker
@@ -123,7 +123,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_neofire)
 CAPABILITIES(/transformation/chem/instant/slime/dark_liquidfire)
 	configure(transformation(name = "Slime Secert Guard", id = "m_slime_guardian", takes = list(reagent(REAGENT_ID_LIQUIDFIRE, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/feysight, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/feysight, lasts = 10 MINUTES)))
 
 
 
@@ -139,7 +139,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_deathblood)
 CAPABILITIES(/transformation/chem/instant/slime/dark_liquidlife)
 	configure(transformation(name = "Slime Secert Overcharge", id = "m_slime_darkspeed", takes = list(reagent(REAGENT_ID_LIQUIDLIFE, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark),
-		effects = sets_off(XFORM_FX_AREA, range = 49, body_effect = /datum/body_effect/sprinting, lasts = 5 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 49, body_effect = /datum/body_effect/sprinting, lasts = 5 MINUTES)))
 
 
 
@@ -274,7 +274,7 @@ CAPABILITIES(/transformation/chem/instant/slime/waterdupe)
 CAPABILITIES(/transformation/chem/instant/slime/oceanboon)
 	configure(transformation(name = "Carp Boon", id = "m_carp_boon", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/oceanic),
-		effects = sets_off(XFORM_FX_AREA, range = 21, body_effect = /datum/body_effect/healingtide, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 21, body_effect = /datum/body_effect/healingtide, lasts = 10 MINUTES)))
 
 
 /transformation/chem/instant/slime/warplague
@@ -330,14 +330,7 @@ CAPABILITIES(/transformation/chem/instant/slime/warplague)
 CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
 	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse2", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nuclear),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_radpulse, on_reaction)))
-
-/transformation/chem/instant/slime/nuclear_radpulse/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_green_pulse), with = list(holder.my_atom))
-	..()
+		effects = sets_off(kind = XFORM_FX_RADIATION, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, range = 7, strength = 30)))
 
 
 /transformation/chem/instant/slime/nuclear_emitter
@@ -345,12 +338,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
 CAPABILITIES(/transformation/chem/instant/slime/nuclear_emitter)
 	configure(transformation(name = "Slime Radiation Emitter", id = "m_green_emitter2", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/green),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_emitter, on_reaction)))
-
-/transformation/chem/instant/slime/nuclear_emitter/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slime_irradiator, 1, audit = "Green extract reaction (radiation emitter)")))
 
 
 /transformation/chem/instant/slime/nuclear_radium
@@ -458,7 +446,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareslime)
 CAPABILITIES(/transformation/chem/instant/slime/nightmarewater)
 	configure(transformation(name = "nightmare water", id = "m_nightmare_water", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nightmare),
-		effects = sets_off(XFORM_FX_AREA, range = 3, body_effect = list(/datum/body_effect/faraday, /datum/body_effect/blastshield), lasts = 1 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 3, body_effect = list(/datum/body_effect/faraday, /datum/body_effect/blastshield), lasts = 1 MINUTES)))
 
 
 /transformation/chem/instant/slime/nightmarejelly
@@ -485,7 +473,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareblood)
 CAPABILITIES(/transformation/chem/instant/slime/nightmarephoron)
 	configure(transformation(name = "nightmare phoron", id = "m_nightmare_phoron", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nightmare),
-		effects = sets_off(XFORM_FX_AREA, range = 14, body_effect = /datum/body_effect/berserk_exhaustion, lasts = 1 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 14, body_effect = /datum/body_effect/berserk_exhaustion, lasts = 1 MINUTES)))
 
 
 
@@ -551,7 +539,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soundblood)
 CAPABILITIES(/transformation/chem/instant/slime/soundphoron)
 	configure(transformation(name = "sound phoron", id = "m_sound_phoron", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sound),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/aura/soothingsong, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/aura/soothingsong, lasts = 10 MINUTES)))
 
 
 /transformation/chem/instant/slime/soundwater
@@ -567,12 +555,3 @@ CAPABILITIES(/transformation/chem/instant/slime/soundjelly)
 	configure(transformation(name = "sound slimejelly", id = "m_sound_slimejelly", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sound),
 		spawns = spawns(/obj/item/stack/material/glass/plastitanium, 1, amount = 5)))
-/// The green extract's radiation pulse, five seconds after it starts to vibrate.
-/proc/slime_green_pulse(atom/source)
-	radiation_pulse(
-		source,
-		max_range = 7,
-		threshold = RAD_MEDIUM_INSULATION,
-		chance = 100,
-		strength = 30
-	)

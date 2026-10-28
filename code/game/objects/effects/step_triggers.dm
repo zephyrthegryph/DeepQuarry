@@ -281,7 +281,7 @@ CAPABILITIES(/obj/effect/step_trigger/autostrip)
 	// Traitgenes new remove genes code, didn't want to solve per-trait unique mutation shenanigans... So we just strip your entire genome. This is an admin anti-powergaming tool anyway.
 	if(remove_mutations)
 		for(var/datum/gene/gene in GLOB.dna_genes)
-			if(gene.name in H.active_genes)
+			if(gene.name in sparse_get(H, active_genes))
 				// Setup injector
 				var/obj/item/dnainjector/D = new /obj/item/dnainjector(locker)
 				D.name = initial(D.name) + " - RESTORE: [gene.name]" //lazy, but we may as well support base genes... even if unused...

@@ -6,7 +6,6 @@
 
 
 	vore_fullness_ex = list("stomach" = 0, "taur belly" = 0)
-	vore_icon_bellies = list("stomach", "taur belly")
 	var/struggle_anim_stomach = FALSE
 	var/struggle_anim_taur = FALSE
 
@@ -1191,9 +1190,9 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 	// Traitgenes Disable all traits currently active, before prefs.copy_to() is applied, as it refreshes the traits list!
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
-		if(gene.name in active_genes)
+		if(gene.name in sparse_get(src, active_genes))
 			gene.deactivate(src)
-			LAZYREMOVE(active_genes, gene.name)
+			gene.mark_active(src, FALSE)
 
 	// Reapply markings/appearance from prefs for player mobs
 	if(client) //just to be sure

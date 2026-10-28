@@ -1251,3 +1251,18 @@ second test visit is a `patch` (37 s) instead of `full` (38-61 s), but steady-st
 (7.06 against 6.53 GB requested), so it is not taken. Warm switches cost 25-60 s in every arrangement measured (patch
 sessions of 25-37 s, not the 5 s of a body edit), so the variant switch has a cost that is not the answer table; it needs a
 per-stage profile of a game -> test -> game sequence before anything else is changed.
+
+### Game -> test switch patches again (2026-10-28, lane `compiler/switch-decline`)
+
+Diagnosis: a switch of define set clears the answer table (project key changed), and `patch` then required either valid marks
+(dropped by the clear) or `base.restored`. The retained test output held 3838 resource searches in its facts while the cleared
+table held none ("world equal, 0 of 3838 resource searches as retained (retained output held 3838, this request 0)"), so the
+patch was declined and the whole program rebuilt (initializers 1.8 s, lowering 2.2, symbolic linking 2.9, composition 2.6).
+Test -> game did not decline because the game output's facts hold no searches. The facts path (`prove_facts`: same declarations,
+same answer world, each stored search asked again) that proves an output restored from storage is exactly what an output whose
+marks were dropped needs, so it now also runs when the base kept facts and its marks no longer stand (`QueryDb::marks_stand`).
+Matched, back to back, same machine (game/test alternating, 7 requests; walls of the game -> test switches): before 14.7 s and
+24.9 s (both declined), after 8.1 s and 9.7 s (patch, "3838 resource searches asked again, none differ"); test -> game
+10.1/6.9/9.2 s before, 7.7/6.1/12.0 s after (unchanged within noise); private bytes equal (about 8.0 GB). Proof:
+`shared_store_equiv.sh` EQUIVALENT for the standard run and for game/test alternating three times on one root; `cargo test -p dmbc
+--lib` 1107 passed.

@@ -10,8 +10,8 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
-	TEST_ASSERT_NULL(H.logging, "a fresh human owns no logging list")
-	TEST_ASSERT_NULL(H.active_genes, "a fresh human owns no active_genes list")
+	TEST_ASSERT_NULL(sparse_get(H, logging), "a fresh human owns no logging list")
+	TEST_ASSERT_NULL(sparse_get(H, active_genes), "a fresh human owns no active_genes list")
 	TEST_ASSERT_NULL(H.body_effect_origins, "a fresh human owns no body effect lists")
 	TEST_ASSERT_NULL(sparse_get(H, temp_languages), "a fresh human owns no temp_languages list")
 	TEST_ASSERT_NULL(sparse_get(H, custom_heat), "a fresh human owns no custom_heat list")
@@ -26,7 +26,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 
-	TEST_ASSERT_NULL(M.logging, "a fresh simple_mob owns no logging list")
+	TEST_ASSERT_NULL(sparse_get(M, logging), "a fresh simple_mob owns no logging list")
 	TEST_ASSERT_NULL(M.body_effect_origins, "a fresh simple_mob owns no body effect lists")
 	TEST_ASSERT_NULL(M.friends, "a fresh simple_mob owns no friends list")
 
@@ -49,7 +49,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 
-	TEST_ASSERT_NULL(R.logging, "a fresh robot owns no logging list")
+	TEST_ASSERT_NULL(sparse_get(R, logging), "a fresh robot owns no logging list")
 	TEST_ASSERT_NULL(R.body_effect_origins, "a fresh robot owns no body effect lists")
 	TEST_ASSERT_NULL(R.robotdecal_on, "a fresh robot owns no robotdecal_on list")
 	TEST_ASSERT_NULL(R.sprite_extra_customization, "a fresh robot owns no sprite_extra_customization list")
@@ -72,3 +72,18 @@
 	open_request(H, /datum/prompt/text, TYPE_PROC_REF(/mob/living, injection_verb_chosen), answerer = H, timeout = 0, question = "verb?", title = "verb")
 	request_answer(H, null)
 	TEST_ASSERT(!sparse_get_or(H, trait_injection_verb, "bite"), "an answer with no text leaves no means, so the injection is refused")
+
+/// log_message() keeps a mob's own log in its sparse logging slot (message type -> lines), event ids counting up, when the database log is off.
+/datum/unit_test/dq_mob_own_log
+/datum/unit_test/dq_mob_own_log/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	set_config(/datum/config_entry/flag/database_logging, FALSE)
+	TEST_ASSERT_NULL(sparse_get(H, logging), "a fresh human owns no log")
+	H.log_message("first line", LOG_SAY, log_globally = FALSE)
+	H.log_message("second line", LOG_SAY, log_globally = FALSE)
+	var/list/own = sparse_get(H, logging)
+	TEST_ASSERT_NOTNULL(own, "logging a message creates the log")
+	var/list/lines = own[GLOB.logtype_to_string[LOG_SAY]]
+	TEST_ASSERT_EQUAL(length(lines), 2, "both lines are kept under their message type")
+	TEST_ASSERT_EQUAL(lines[2]["event_id"], 1, "the second line's event id counts the first")
+	TEST_ASSERT_EQUAL(lines[2]["message"], "second line", "the line keeps its text")

@@ -84,6 +84,16 @@
 /// An electromagnetic pulse scaled by what the step made.
 #define XFORM_FX_EMP "emp"
 
+/// A plain explosion with rolled ranges (blast = list(devastation, heavy, light, flash), each a number or list(lo, hi)).
+#define XFORM_FX_BLAST "blast"
+/// A frost smoke cloud of `amount` at the subject.
+#define XFORM_FX_FROST "frost"
+/// A procedure on the subject, `delay` later, after an optional admin line, message and sound.
+#define XFORM_FX_LATER "later"
+/// A lightning strike on the subject's turf (delay, audit, tell, sfx as for XFORM_FX_LATER).
+#define XFORM_FX_LIGHTNING "lightning"
+/// A radiation pulse from the subject: range and strength (delay, audit, tell, sfx as above).
+#define XFORM_FX_RADIATION "radiation"
 /// A body effect on every mob within a range of the subject.
 #define XFORM_FX_AREA "area"
 

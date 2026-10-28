@@ -876,8 +876,12 @@ pub(crate) fn admit(
             "native incremental output: {} numeric defaults edited, answers not compared",
             variable_values.len()
         );
-    } else if base.answers != Some(answers) && base.restored && base.marks.is_none() {
-        // An output restored from storage has no marked table to ask again; it kept the facts its version
+    } else if base.answers != Some(answers)
+        && base.facts.is_some()
+        && base.marks.map_or(base.restored, |marks| !proof.as_ref().is_some_and(|proof| proof.db.marks_stand(marks)))
+    {
+        // An output restored from storage, or one whose marked table was dropped since it was published (a switch to
+        // another define set clears the table), has no marked table to ask again; it kept the facts its version
         // hashes. The declarations and the answer world equal its own prove every answer they determine, and
         // each resource search it read is asked again.
         let (Some(proof), Some(stored)) = (proof.as_ref(), base.facts.as_ref()) else {
@@ -902,10 +906,14 @@ pub(crate) fn admit(
         if context.is_none() || base.answers_context != context {
             let parts = match (base.facts.as_deref(), proof.as_ref().and_then(|proof| proof.db.answer_facts())) {
                 (Some(old), Some(new)) => format!(
-                    "; world {}, {} of {} resource searches as retained",
+                    "; world {}, {} of {} resource searches as retained (retained output held {}, this request {}; {} of this request's queries are in the retained output with another answer; sample {:?})",
                     if old.world == new.world { "equal" } else { "differs" },
                     new.searches.iter().filter(|search| old.searches.contains(search)).count(),
-                    new.searches.len().max(old.searches.len())
+                    new.searches.len().max(old.searches.len()),
+                    old.searches.len(),
+                    new.searches.len(),
+                    new.searches.iter().filter(|(query, hash)| old.searches.iter().any(|(q, h)| q == query && h != hash)).count(),
+                    new.searches.iter().find(|search| !old.searches.contains(search)),
                 ),
                 _ => String::new(),
             };

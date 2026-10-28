@@ -35,7 +35,6 @@
 	mount_offset_y = 12
 
 
-	species_sounds = "Feline"
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/panther
 	vore_active = 1
@@ -43,6 +42,7 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
+	configure(living_rules(species_sounds = "Feline"))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/panther))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 8))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

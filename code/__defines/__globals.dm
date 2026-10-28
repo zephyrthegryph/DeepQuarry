@@ -62,6 +62,8 @@
 
 /// Create a typed global with an initializer expression
 #define GLOBAL_DATUM_INIT(X, Typepath, InitValue) GLOBAL_RAW(Typepath/##X); GLOBAL_MANAGED(X, InitValue)
+/// Declares `X` as a diagnostic counter (/datum/counter, code/engine/state/counter.dm): GLOB.X.n++ to count, GLOB.X.n to read. The unit-test state guard skips it by kind.
+#define GLOBAL_COUNTER(X) GLOBAL_DATUM_INIT(X, /datum/counter, new)
 
 /// Create an untyped null global
 #define GLOBAL_VAR(X) GLOBAL_RAW(/##X); GLOBAL_UNMANAGED(X)
