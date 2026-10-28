@@ -574,6 +574,17 @@ dc_finalize() { # tpass lanes whose DreamChecker verdict arrived: pass, or bounc
 				tlog "PRECHECK pass: $b (tip ${tip:0:10}) on master $(qget "$vf" master | cut -c1-10) (DreamChecker: $(qget "$dvf" why))"
 				;;
 			fail)
+				# A DreamChecker failure on an older master, or from a batch run (several lanes), is not proof against this lane today
+				# (28 October: lanes bounced at 00:28 on a 22:14 batch on 8d956975f3 whose attempts all failed on a dirty tree). Such a
+				# verdict is dropped and the lane is checked ALONE on current master next; only a solo failure on current master bounces.
+				local cur_m; cur_m="$(G rev-parse origin/master 2>/dev/null)"
+				local once="$PRE/dc/solo/$(fname "$b")@${tip:0:12}.rechecked" dm; dm="$(qget "$dvf" master)"
+				if [ "$dm" != "$cur_m" ] || [ ! -f "$once" ]; then
+					tlog "DreamChecker fail for $b (on master ${dm:0:10}; current ${cur_m:0:10}) is dropped: the lane is checked ALONE on current master next, and only that verdict can bounce it ($(qget "$dvf" why))"
+					rm -f "$dvf"; : >"$PRE/dc/solo/$(fname "$b")"
+					[ "$dm" != "$cur_m" ] || : >"$once"
+					continue
+				fi
 				sed -i 's/^verdict=tpass$/verdict=fail/' "$vf"
 				# the verdict carries the DreamChecker reason: a later bounce of this verdict (a raced re-enqueue) must not print an empty one
 				{ grep -v '^why=' "$vf"; printf 'why=%s\n' "$(qget "$dvf" why)"; } >"$vf.tmp" && mv -f "$vf.tmp" "$vf"

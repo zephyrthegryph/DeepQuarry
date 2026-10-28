@@ -156,9 +156,16 @@ attempt_run() {
 				echo "   tools/build/gen_dme.py failed on the merged tree (a stale rule in tools/build/dme_spec.txt?); see $log" >&2
 				exit 1
 			fi
-			if ! git diff --quiet -- deepquarry.dme; then
-				git add -- deepquarry.dme && git commit -q --amend --no-edit
+			# Stage it whatever `git diff` says: a rewrite that diff reads as clean (line endings, racy stat) still left the file dirty for
+			# the gates' clean-tree check, which REFUSED every attempt (27 October, train-dc). Amend only when the staged content differs.
+			git add -- deepquarry.dme || { echo "   could not stage the regenerated deepquarry.dme (index lock?)" >>"$log"; exit 90; }
+			if ! git diff --cached --quiet -- deepquarry.dme; then
+				git commit -q --amend --no-edit || { echo "   could not amend the regenerated deepquarry.dme" >>"$log"; exit 90; }
 				echo "   regenerated deepquarry.dme into the batch's last merge commit" >>"$log"
+			fi
+			if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+				echo "   SETUP ERROR: tracked changes left after the manifest step:" >>"$log"; git status --porcelain --untracked-files=no >>"$log"
+				exit 90
 			fi
 		fi
 		# One gen/build/test pass for the whole combination: dq_merge_gates.sh does it on this HEAD.
