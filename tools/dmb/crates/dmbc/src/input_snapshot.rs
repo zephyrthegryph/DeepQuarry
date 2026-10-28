@@ -854,6 +854,20 @@ impl InputSnapshot {
         let (report, next) = self.validate_impl(provider, exact, now_ns, true)?;
         Ok(report.unchanged().then_some((report, next)))
     }
+    /// As [`Self::validate_for_reuse`], but a changed snapshot is returned with the report of what changed (the first change: the
+    /// validation stops there) instead of `None`.
+    pub(crate) fn validate_for_reuse_reporting(
+        &self,
+        provider: &impl SnapshotProvider,
+        exact: bool,
+        now_ns: u128,
+    ) -> io::Result<(Validation, Self)> {
+        self.validate_impl(provider, exact, now_ns, true)
+    }
+    /// The content digest recorded for a file input, if it is one.
+    pub(crate) fn recorded_content(&self, path: &Path) -> Option<u128> {
+        self.files.get(path).map(|file| file.content)
+    }
     fn validate_impl(
         &self,
         provider: &impl SnapshotProvider,
