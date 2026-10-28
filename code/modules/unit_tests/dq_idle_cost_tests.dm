@@ -50,3 +50,20 @@
 		qdel(A.terminal)
 	if(A.cell)
 		qdel(A.cell)
+
+/// A service stays awake for heat that moves its assembly, not for a gap to the air: a cell 290 K off a vacuum sink whose link moves nothing sleeps.
+/datum/unit_test/dq_material_service_sleeps_when_heat_does_not_move_it
+
+/datum/unit_test/dq_material_service_sleeps_when_heat_does_not_move_it/Run()
+	var/turf/simulated/floor/T = gas_level_test_room()
+	var/obj/item/cell/high/C = new(T)
+	var/datum/material_service/service = material_service_of(C)
+	TEST_ASSERT_NOTNULL(service, "a cell has a material service")
+	var/datum/gas_mixture/ambient = T.return_air()
+	service.last_environment_temperature = service.temperature()
+	TEST_ASSERT(!service.refresh_heat_links(ambient), "an assembly whose temperature did not move since the last sample holds no flowing heat, whatever its air's temperature")
+	service.last_environment_temperature = service.temperature() + 5 * MATERIAL_THERMAL_RESOLUTION
+	TEST_ASSERT(service.refresh_heat_links(ambient), "an assembly whose temperature moved since the last sample is still taking heat")
+	cancel_after(service, "material_service")
+	service.timer = FALSE
+	qdel(C)

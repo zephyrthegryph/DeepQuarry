@@ -464,6 +464,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		var/static/list/edges = list(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 20)
 		var/list/hist = list()
 		var/list/over = list()
+		var/list/samples = list()
 		var/awake = 0
 		var/total = 0
 		for(var/datum/material_service/service)
@@ -485,7 +486,10 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			hist[label]++
 			if(gap >= 0.5)
 				over["[owner.type]"]++
-		return json_encode(list("services" = total, "awake" = awake, "gap_k" = hist, "owner_types_over_0.5K" = over))
+				if(length(samples) < 8)
+					var/list/store = heat_store_state(service.heat_store)
+					samples += list(list("owner" = "[owner.type]", "loc" = "[owner.loc?.type]", "at" = "[at?.type] ([at?.x],[at?.y],[at?.z])", "assembly_k" = round(service.temperature(), 0.01), "air_k" = air ? round(air.return_temperature(), 0.01) : "no air", "store" = store, "ambient_link" = !!service.ambient_link, "ports" = length(service.port_links), "active" = service.active, "next_update" = service.next_update - world.time))
+		return json_encode(list("services" = total, "awake" = awake, "gap_k" = hist, "owner_types_over_0.5K" = over, "samples" = samples))
 
 	// Localhost-only census of timer callbacks and tracked writes (code/engine/time/census.dm): `census&on=1` starts it, `census` reads it,
 	// `census&reset=1` clears it, `census&on=0` stops it.
