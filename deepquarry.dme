@@ -2570,6 +2570,7 @@
 #include "code\engine\actions\work.dm"
 #include "code\engine\declare\explain.dm"
 #include "code\engine\declare\graph.dm"
+#include "code\engine\declare\init_plan.dm"
 #include "code\engine\declare\lifecycle.dm"
 #include "code\datums\lifecycle\declarations.dm"
 #include "code\engine\declare\link_state.dm"

@@ -222,6 +222,7 @@ SYSTEM_DEF(atoms)
 	#ifdef TESTING
 	testing("Initialized [count] atoms in [batch.chunks] chunks, [batch.yields] yields")
 	#endif
+	init_plan_trace("atom init batch") // logs only when this batch compiled new plans
 
 /datum/system/atoms/proc/map_loader_begin(source)
 	set_tracked_initalized(INITIALIZATION_INSSATOMS, source)
