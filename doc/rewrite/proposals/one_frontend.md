@@ -125,3 +125,79 @@ parse; the end state removes the analyze process and one of two parses. Exact sa
 - Coupling to two active compiler lanes in `tools/dmb`. Mitigation: do not edit their files until they land.
 - Single resident process is a single point of failure for gates. Mitigation: standalone fallbacks
   stay available behind env vars until each phase has a clean landing record.
+
+## 9. Measured: what the merge would share (2026-10-28, master 3db4c46d2f)
+
+Same tree, cold caches. The analyze numbers are a sampling heap profile (every allocation of 1 MiB or more, 1 in 64 of 4 KiB to
+1 MiB, 1 in 65,536 of smaller ones, attributed to the first dreammaker or dq_analyze frames) taken at the peak; dhat was too slow
+(two runs hit the 30 minute cap). The dmbc numbers are the allocation-sites probe after one game compile. Sampled figures are
+estimates, not exact bytes.
+
+| Run | Wall | Peak | Notes |
+|---|---|---|---|
+| `analyze check --no-cache` (cold) | 47.7 s | 3,675 MB working set | sampled heap at peak 2,126 MB; the rest is allocator overhead and untracked small objects |
+| text-only lint (tree loaded, no model) | 12 s | 1,348 MB | |
+| `analyze sem reads` | 10 s | 1,410 MB | |
+| `analyze frontend-diff` | 9.4 s | 552 MB | |
+| dmbc game compile (one session) | n/a | 4,108 MB private, 2,377 MB requested-live | 2,087 MB sampled |
+
+analyze resident model by owner (MB, sampled at peak):
+
+| Owner | MB |
+|---|---|
+| dreammaker proc-body AST (expression, group, statement, prefab) | about 490 |
+| dreammaker object tree (vars, procs, docs) | about 236 |
+| dreammaker lexer and constants | about 62 |
+| analyze text layer: compiled regex patterns | about 340 |
+| analyze text layer: comment-stripped text | about 180 |
+| analyze text layer: tree load | about 83 |
+| analyze lint indexes (stored_refs 98, value_procs 91, dx 54, schema 34, ownership 31, other) | about 330 |
+| sem walks and Sem::build | about 230 |
+
+dmbc frontend owners on the same tree (MB):
+
+| Owner | MB |
+|---|---|
+| dm_tree (declarations, normalization, metadata, adapter, shapes, indexes) | 811 |
+| dm_preprocess (expansion 109, prepared source 76, joined text 62, region memo 56, environment 50, trace arena 45, source text 35, directives 28) | 479 |
+| source bytes held by the input layer | 80 |
+| dm_ir symbols | 40 |
+| frontend total | about 1,410 |
+| session memo machinery (dm_session: receipt pool 234, artifact stores 177) | 419 |
+| lowering, ABI and policy (dmbc) | 264 |
+| codegen | 22 |
+
+Pairs (could one serve the other's consumers):
+
+| Pair | analyze / dreammaker | dmbc | Verdict |
+|---|---|---|---|
+| source text | text layer about 263 MB (stripped text and tree load) | prepared comment-aware source about 220 MB | shareable: 100-260 MB estimated (an inference, not measured); the regex patterns (340 MB) stay |
+| preprocessor | streams tokens, no resident region store | 479 MB incremental region and expansion state | not shareable: dmbc's is incremental state analyze does not use |
+| parse and AST | full proc-body AST about 490 MB, needed by the sem walks and DreamChecker | no persistent AST; typed statements parsed on demand into dm_syntax types | dmbc cannot serve dreammaker consumers without rewriting every sem walk and DreamChecker check |
+| object tree and model | about 236 MB | 811 MB (adds per-owner receipts, contributions and dependency tracking for incrementality) | the small Sem surface (ty, var_decl, proc_ref, proc_body, owner_candidates, def_at) could be implemented on dmbc's model; proc_body brings the AST problem back |
+| symbols | string interning inside the maps | 40 MB | not worth sharing |
+
+Parser comparison: dreammaker holds about 790 MB (AST, tree, lexer); it patches one file in about 70 ms but a define or macro
+change is a full parse; it serves analyze (about 60 lints, only the sem family needs the parse) and DreamChecker. dmbc's frontend
+holds about 1,410 MB including its preprocessor and incremental state; a body edit costs about 0.5 s of frontend; it serves the
+byte-exact compile. Neither can replace the other's consumers cheaply.
+
+Recommendation: keep both parsers for now; share what is shareable (the daemon, the file and text layer) and move consumers onto
+dmbc's model only where the surface is small. DreamChecker's 386 s is its serial checks, not its parse, so a parser choice does
+not remove it. Replacing analyze's dreammaker AST and tree with dmbc's would save at most about 790 MB at the price of the
+rewrite above; replacing dmbc's tree with dreammaker's would drop 811 MB toward 236 MB but is not feasible (dmbc's
+incrementality needs the receipts).
+
+## 10. Revised phase plan
+
+Supersedes section 4 where they differ; each phase is its own lane and proves itself.
+
+- P1: parallel DreamChecker checks on the shared dreammaker model (the analyze process runs DreamChecker over its own loaded tree,
+  with the checks split across threads). Blocked on the user's download OK for the dreamchecker crate. Exit measure: wall, peak RSS
+  against the 386 s / 1.05 GB standalone, diagnostics byte-identical on master and three seeded trees.
+- P2: the dmbc daemon hosts analyze and the dreammaker model as one resident process; `analyze` becomes a thin client. Saves the
+  per-gate model load (7-8 s parse, 3.7 GB transient) and the second resident process. Proof: ratchet parity, DreamChecker parity.
+- P3: a shared file and text layer (estimated 100-260 MB): one read and one comment-stripped view of each file for dmbc's prepared
+  source and analyze's text lints. Proof: `dmb-equiv`, `shared_store_equiv`, ratchet parity.
+- P4 (optional, long term): move the sem walks and checks onto dmbc's model by implementing analyze's Sem surface there, and give
+  proc bodies a dmbc-side AST the walks can read. Only after P1-P3 land and only if the memory or maintenance case holds.

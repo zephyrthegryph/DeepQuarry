@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The native delivery times each record: NATIVE_SLOW_FRAME logs the time per record kind and names the slowest record (kind, entity, notice code, target type)"

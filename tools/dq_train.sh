@@ -962,7 +962,7 @@ warm_train_root() { # the train compile root (merge, pre<N>) whose test build is
 	echo "$best"
 }
 dc_inputs() { # <rev range>: the DreamChecker input files it changes (what gate_dc_key hashes, less the two include lists every lane touches: deepquarry.dme and the unit tests' _unit_tests.dm)
-	G diff --name-only "$1" 2>/dev/null | awk '/^(doc|tools|tgui|html\/changelogs|\.github|SQL)\// || /\.md$/ || /^deepquarry\.dme$/ || /^code\/modules\/unit_tests\/_unit_tests\.dm$/ { next } { print }' | sort -u
+	G diff --name-only "$1" 2>/dev/null | awk '/^(doc|tools|tgui|html\/changelogs|\.github|SQL)\// || /\.md$/ || /^deepquarry\.dme$/ || /^code\/(modules|tests)\/unit_tests\/_unit_tests\.dm$/ { next } { print }' | sort -u
 }
 dc_disjoint() { # <lanes...>: 0 and DC_DISJOINT_WHY set when the batch may keep the lanes' DreamChecker verdicts
 	local b tip vf pm seen="" files f master dvf dm_lanes=0
