@@ -6,13 +6,13 @@ import { useBackend } from 'tgui/backend';
 import {
   Box,
   Button,
-  ColorBox,
   Dropdown,
   Input,
   Stack,
   TextArea,
 } from 'tgui-core/components';
 import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
+import { PaletteEditor, PrefColorSwatch } from './colors';
 import { ColorizedImage, ColorizedImageButton } from './helper_components';
 import type { PrefWidgetItem } from './types';
 
@@ -179,40 +179,46 @@ export const PrefWidget = ({ item }: Props) => {
       );
 
     case 'color': {
-      const hex = String(item.value ?? '#000000');
       // A pref may declare a sentinel value meaning "no colour chosen" (runechat_color's
       // black means "colour from the name"); show its label, not a black swatch.
+      const hex = String(item.value ?? '#000000');
       const unsetValue = item.props?.unset_value as string | undefined;
+      const unsetLabel = String(item.props?.unset_label ?? 'Unset');
       const isUnset =
         unsetValue !== undefined &&
         hex.toLowerCase() === String(unsetValue).toLowerCase();
-      // Color picking is a BYOND-side modal — tgui-core has no native color input. Fire
-      // dq_pick_color and let the DM middleware open tgui_color_picker; the resulting
-      // write comes back through the normal data-poll flow.
+      const unsetButton =
+        unsetValue !== undefined && !isUnset ? (
+          <Button
+            fluid
+            icon="undo"
+            onClick={() => sendUpdate(act, item.key, unsetValue)}
+          >
+            {unsetLabel}
+          </Button>
+        ) : undefined;
       return (
         <Stack align="center">
-          {!isUnset && (
-            <Stack.Item>
-              <ColorBox color={hex} />
-            </Stack.Item>
-          )}
           <Stack.Item>
-            <Button onClick={() => act('dq_pick_color', { key: item.key })}>
-              {isUnset ? String(item.props?.unset_label ?? 'Unset') : hex}
-            </Button>
-          </Stack.Item>
-          {unsetValue !== undefined && !isUnset && (
-            <Stack.Item>
-              <Button
-                icon="undo"
-                tooltip={String(item.props?.unset_label ?? 'Unset')}
-                onClick={() => sendUpdate(act, item.key, unsetValue)}
+            {isUnset ? (
+              <Button onClick={() => act('dq_pick_color', { key: item.key })}>
+                {unsetLabel}
+              </Button>
+            ) : (
+              <PrefColorSwatch
+                prefKey={item.key}
+                value={hex}
+                showHex
+                extra={unsetButton}
               />
-            </Stack.Item>
-          )}
+            )}
+          </Stack.Item>
         </Stack>
       );
     }
+
+    case 'palette':
+      return <PaletteEditor value={item.value} />;
 
     case 'segmented':
       return (
@@ -309,6 +315,10 @@ export const PrefWidget = ({ item }: Props) => {
 /// "fadeup_low", "default") is shown capitalized with spaces, anything already
 /// written for people ("Arrivals Shuttle", "A+") is shown as is.
 function humanizeChoice(value: string): string {
+  // A sprite accessory path ("/datum/sprite_accessory/tail/special/orca_tail") reads as its last part.
+  if (value.startsWith('/datum/')) {
+    value = value.slice(value.lastIndexOf('/') + 1);
+  }
   if (!/^[a-z][a-z0-9_]*$/.test(value)) return value;
   const spaced = value.replace(/_/g, ' ');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
@@ -337,7 +347,8 @@ const ThumbgridPicker = ({
 }) => {
   const choices = normalizeChoices(item.choices);
   const thumbs = item.thumbnails ?? {};
-  const [open, setOpen] = useState(false);
+  // props.open: the caller wants the picker shown at once (an "Add tail" button).
+  const [open, setOpen] = useState(!!item.props?.open);
   const [search, setSearch] = useState('');
   const currentVal = String(item.value ?? '');
   const currentThumb = thumbs[currentVal];

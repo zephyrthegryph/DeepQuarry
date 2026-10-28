@@ -12,6 +12,12 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
 import { CategoryPage } from './CategoryPage';
+import {
+  ColorToolsContext,
+  normalizeHex,
+  PALETTE_KEY,
+  paletteFromValue,
+} from './colors';
 import { labelForCategory } from './labels';
 import {
   buildSearchIndex,
@@ -194,6 +200,21 @@ export const DQCharacterSetup = () => {
     (c) => !moreCategories.includes(c),
   );
   const [highlight, setHighlight] = useState<string | null>(null);
+  const [colorClipboard, setColorClipboard] = useState<string[] | null>(null);
+  const references: Record<string, string> = {};
+  for (const [name, key] of [
+    ['Skin', 'skin_color'],
+    ['Hair', 'hair_color'],
+  ]) {
+    const hex = normalizeHex(values[key]);
+    if (hex) references[name] = hex;
+  }
+  const colorTools = {
+    palette: paletteFromValue(values[PALETTE_KEY]),
+    clipboard: colorClipboard,
+    setClipboard: setColorClipboard,
+    references,
+  };
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
   // Rebuilt when a category structure arrives (the prefetch fills every tab).
   const searchKey = `${categoryIndex.join('|')}#${Object.keys(categoryCache).length}#${structureVersion}`;
@@ -403,13 +424,15 @@ export const DQCharacterSetup = () => {
                       style={{ height: pageIsFullHeight ? '100%' : 'auto' }}
                     >
                       <SearchHighlightContext.Provider value={highlight}>
-                        <CategoryPage
-                          page={selectedPage}
-                          staticData={editorStaticCache}
-                          values={values}
-                          editorData={editorDataCache}
-                          fillHeight={pageIsFullHeight}
-                        />
+                        <ColorToolsContext.Provider value={colorTools}>
+                          <CategoryPage
+                            page={selectedPage}
+                            staticData={editorStaticCache}
+                            values={values}
+                            editorData={editorDataCache}
+                            fillHeight={pageIsFullHeight}
+                          />
+                        </ColorToolsContext.Provider>
                       </SearchHighlightContext.Provider>
                     </Box>
                   ) : (
