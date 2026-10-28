@@ -856,6 +856,13 @@ impl QueryDb {
         }
         Ok(facts.searches.len())
     }
+    /// Whether the table still holds the answers marked as `marks`: no later marking and no drop since.
+    pub(crate) fn marks_stand(&self, marks: u64) -> bool {
+        use std::sync::atomic::Ordering::Relaxed;
+        marks != 0
+            && self.answers.epoch.load(Relaxed) == marks
+            && self.answers.drops.load(Relaxed) == self.answers.marked_drops.load(Relaxed)
+    }
     /// Record every held answer as the answer of the output that was just published. Called
     /// once the request's output is the retained one (its tree is the current tree, so each
     /// slot a stage asked holds the value that output was built from). The number returned
@@ -1337,6 +1344,35 @@ mod tests {
         unversioned.next_request();
         unversioned.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
         assert!(unversioned.answer_facts().is_none() && unversioned.answers_version().is_none());
+    }
+
+    #[test]
+    fn a_published_output_whose_table_was_cleared_is_proven_by_its_facts() {
+        let searches = ["icons/a.dmi", "icons/b.dmi"];
+        let db = QueryDb::default();
+        open_with_searches(&db, BASE, 9, true, &asked(), &searches);
+        let facts = db.answer_facts().expect("a bound tree and a versioned world");
+        let marks = db.mark_published();
+        assert!(db.marks_stand(marks));
+        assert!(!db.marks_stand(marks + 1) && !db.marks_stand(0));
+        // A define-set switch clears the table: the marks no longer stand and the table holds none of the searches.
+        db.answers.clear();
+        assert!(!db.marks_stand(marks));
+        let (_, resolve) = open_with_searches(&db, BASE, 9, true, &[], &[]);
+        assert_eq!(db.answer_facts().map(|now| now.searches.len()), Some(0));
+        // The retained output's facts still prove it: same declarations, same world, each search asked again.
+        assert_eq!(db.prove_facts(&db.request_answers(&resolve), &facts), Ok(2));
+        assert_eq!(db.answer_facts().map(|now| now.searches), Some(facts.searches.clone()));
+        // A changed declaration, a changed world and a search that now answers differently decline.
+        let edited = QueryDb::default();
+        let (_, resolve) = open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
+        assert!(edited.prove_facts(&edited.request_answers(&resolve), &facts).unwrap_err().contains("declarations"));
+        let world = QueryDb::default();
+        let (_, resolve) = open_with_searches(&world, BASE, 10, true, &[], &[]);
+        assert!(world.prove_facts(&world.request_answers(&resolve), &facts).unwrap_err().contains("world"));
+        let moved = QueryDb::default();
+        let (_, resolve) = open_with_searches(&moved, BASE, 9, false, &[], &[]);
+        assert!(moved.prove_facts(&moved.request_answers(&resolve), &facts).unwrap_err().contains("resource searches"));
     }
 
     #[test]

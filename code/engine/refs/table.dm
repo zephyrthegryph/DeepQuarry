@@ -398,6 +398,15 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /// This is the one path a relation write marks what reads it: a list view written in place (a member added or removed) and a single ref come here alike, so a reader
 /// is marked once per write and a var nothing reads marks nothing (a bookkeeping list stays free to be written from anywhere).
 /proc/own_field_changed(datum/holder, var_name)
+	// The fast path (perf/own-field-memo): a var that no static reader of the holder's type follows (own_field_static_work(), memoized per
+	// type) and that no live index names (derived reads and hop keys grow at run time, so they are asked every time) on a holder with no
+	// dynamic reader (an observer, a worn watch, an activation's hook all live on holder.rx) has nothing to publish: the full path would run
+	// every check below and do nothing.
+	if(holder && !GLOB.own_field_memo_off && !GLOB?.derived_read_vars?[var_name] && !GLOB?.change_hop_keys?[var_name])
+		var/datum/rx_state/S = holder.rx
+		if((!S || (!S.observed && !S.worn_watched && !S.hooks)) && !own_field_static_work(holder, var_name))
+			GLOB.own_field_memo_spared++
+			return
 	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
 	if(GLOB?.derived_read_vars?[var_name])
 		derived_var_touched(holder, var_name)
@@ -422,6 +431,62 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	var/channel = fields[var_name]
 	if(channel)
 		state_changed(holder, channel)
+
+/// TRUE runs own_field_changed()'s full path for every write (the parity test, debugging).
+GLOBAL_VAR_INIT(own_field_memo_off, FALSE)
+/// Writes own_field_changed() answered from the memo without running its checks (the boot bench reads it).
+GLOBAL_VAR_INIT(own_field_memo_spared, 0)
+
+/// type -> var name -> TRUE/FALSE: whether a static reader of the type follows the var. A static, not a GLOB list: relation writes run while
+/// the globals are still being made.
+/proc/own_field_memo()
+	RETURN_TYPE(/list)
+	var/static/list/memo = list() // ALLOW(sys_static_getter): relation writes run while the globals are being made; the memo is a per-type fact table
+	return memo
+
+/// TRUE when something that never changes for holder's type reads var_name: a stat input, a draw one hop away, an OM field channel, a reaction
+/// of the type, a lifecycle form or a type-level on_change. Memoized per (type, var) once every table it folds is built; before that it is
+/// asked fresh every time (an unbuilt table answers "nothing yet" without caching).
+/proc/own_field_static_work(datum/holder, var_name)
+	var/list/memo = own_field_memo()
+	var/list/by_var = memo[holder.type]
+	if(by_var)
+		var/known = by_var[var_name]
+		if(!isnull(known))
+			return known
+	. = own_field_static_readers(holder, var_name)
+	if(!GLOB?.draw_hop_vars_built || !islist(GLOB.rx_tables) || !islist(GLOB.change_index_by_type) || !GLOB.om_reg || table_of(holder) == table_empty())
+		return
+	if(!by_var)
+		by_var = list()
+		memo[holder.type] = by_var
+	by_var[var_name] = .
+
+/// own_field_static_work()'s answer, unmemoized: the static half of every check own_field_changed() runs.
+/proc/own_field_static_readers(datum/holder, var_name)
+	if(GLOB?.stat_input_keys?[var_name])
+		return TRUE
+	if(draw_hop_reads_var(var_name))
+		return TRUE
+	var/datum/definition_registry/R = GLOB?.om_reg
+	if(R && (R.fields_by_type[holder.type] || R.fields_of(holder.type))[var_name])
+		return TRUE
+	var/bits = plan_reader_bits(var_name, holder.type)
+	if(bits & PLAN_READ_REACT)
+		var/datum/rx_table/T = GLOB.rx_tables?[holder.type]
+		if(isnull(T))
+			T = rx_table_build(holder)
+		if(T && T.read_keys[var_name])
+			return TRUE
+	if((bits & PLAN_READ_LIFEFORM) && lifeform_watching(holder, var_name))
+		return TRUE
+	if((bits & PLAN_READ_HOOK) && islist(GLOB?.change_index_by_type))
+		var/index = GLOB.change_index_by_type[holder.type]
+		if(isnull(index))
+			index = change_index_of(holder)
+		if(index && index[var_name])
+			return TRUE
+	return FALSE
 
 /// The bare name of a proc path (/obj/foo/proc/bar -> "bar").
 /proc/own_proc_name(proc_path)

@@ -98,7 +98,6 @@
 	return out
 
 /datum/unit_test/dq_table_ref_hold/Run()
-	restore_ambient_after() // the cycles wait over a minute of world time: the telecomms freezer's thermostat starts pumping and cools its rooms meanwhile
 	var/turf/T = test_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the table test")
 	var/turf/control = dq_table_control_tile(T)

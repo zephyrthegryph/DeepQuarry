@@ -465,17 +465,17 @@ CAPABILITIES(/obj/forms_holder)
 	GLOB.forms_trace = TRUE
 	standing(H, toward = "wolves", value = STANDING_WARY, source = a)
 	TEST_ASSERT_EQUAL(H.changes, 1, "placing a row publishes standing_changed")
-	var/misses = GLOB.standing_cache_misses
-	var/hits = GLOB.standing_cache_hits
+	var/misses = GLOB.standing_cache_misses.n
+	var/hits = GLOB.standing_cache_hits.n
 	standing_toward(H, S)
 	standing_toward(H, S)
 	standing_toward(H, S)
-	TEST_ASSERT_EQUAL(GLOB.standing_cache_misses, misses + 1, "the first read computes")
-	TEST_ASSERT_EQUAL(GLOB.standing_cache_hits, hits + 2, "the next two are cached")
-	var/drops = GLOB.standing_cache_drops
+	TEST_ASSERT_EQUAL(GLOB.standing_cache_misses.n, misses + 1, "the first read computes")
+	TEST_ASSERT_EQUAL(GLOB.standing_cache_hits.n, hits + 2, "the next two are cached")
+	var/drops = GLOB.standing_cache_drops.n
 	var/datum/forms_source/b = allocate(/datum/forms_source)
 	standing(H, toward = "wolves", value = STANDING_HOSTILE, source = b)
-	TEST_ASSERT_EQUAL(GLOB.standing_cache_drops, drops + 1, "a row change drops the cache")
+	TEST_ASSERT_EQUAL(GLOB.standing_cache_drops.n, drops + 1, "a row change drops the cache")
 	TEST_ASSERT_EQUAL(H.changes, 2, "and publishes")
 	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_HOSTILE, "so the next read sees the new row")
 	unstanding(H, "wolves", b)

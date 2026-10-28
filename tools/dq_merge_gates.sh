@@ -320,13 +320,30 @@ if [ -n "$proof_file" ]; then
 fi
 
 # ---- running the gates -----------------------------------------------------------------------------------------------------
+# sccache's server dropping a compile ("error reading compile response from server", os error 10054) is the cache, not the code.
+gate_sccache_failure() { grep -qiE 'error reading compile response from server|sccache: error: (failed to|connection)|failed to (connect|execute compile).*sccache|os error 10054' "$1" 2>/dev/null; }
 gate() { # <name> <command...>: one step in the foreground
-	local name="$1" t0 rc
+	local name="$1" t0 rc glog
 	shift
 	echo "== gate: $name"
 	t0=$(date +%s)
-	"$@"
-	rc=$?
+	glog="data/merge-gates/gate-$name-$$.log"; mkdir -p data/merge-gates
+	"$@" 2>&1 | tee "$glog"
+	rc=${PIPESTATUS[0]}
+	# 28 October (tests/ambient-isolation, prepare): sccache's server dropped the connection while building vg-ffi and the lane was
+	# bounced. A step that failed on sccache runs once more without it (RUSTC_WRAPPER unset, SCCACHE disabled); a second sccache
+	# failure is INFRA (exit 95: retried or deferred by dq_merge_batch.sh, never a lane verdict).
+	if [ "$rc" -ne 0 ] && gate_sccache_failure "$glog"; then
+		echo "== gate: $name failed on sccache (the compile cache's server, not the code); retrying once without sccache"
+		RUSTC_WRAPPER= SCCACHE_DISABLE=1 CARGO_BUILD_RUSTC_WRAPPER= "$@" 2>&1 | tee "$glog"
+		rc=${PIPESTATUS[0]}
+		if [ "$rc" -ne 0 ] && gate_sccache_failure "$glog"; then
+			echo "$name $(( $(date +%s) - t0 ))s rc=$rc (sccache)" | tee -a "$timings"
+			echo "dq_merge_gates: INFRA: '$name' failed on sccache twice (log $glog); not a lane verdict" >&2
+			exit 95
+		fi
+	fi
+	rm -f "$glog"
 	echo "$name $(( $(date +%s) - t0 ))s rc=$rc" | tee -a "$timings"
 	if [ "$rc" -ne 0 ]; then
 		echo "dq_merge_gates: FAILED at '$name' (exit $rc); fix it, recommit, rerun" >&2
@@ -545,6 +562,12 @@ if [ ${#failed[@]} -gt 0 ]; then
 		tail -n 40 "data/merge-gates/$short.$n.log" >&2
 		grep -h '^FOCUSED RESULT:\|^FOCUSED RUN CAPPED\|^dq_focused_test: REFUSED' "data/merge-gates/$short.$n.log" >&2 || true
 	done
+	# DreamChecker that died of memory ("memory allocation of N bytes failed") judged nothing: when it is the only failure, the gate
+	# exits INFRA (95; dq_merge_batch.sh retries or defers), never a verdict on a lane.
+	if [ "${failed[*]}" = dreamchecker ] && grep -qE 'memory allocation of [0-9]+ bytes failed' "data/merge-gates/$short.dreamchecker.log" 2>/dev/null; then
+		echo "dq_merge_gates: INFRA: DreamChecker ran out of memory (data/merge-gates/$short.dreamchecker.log); not a lane verdict" >&2
+		exit 95
+	fi
 	echo "dq_merge_gates: FAILED: ${failed[*]} (logs data/merge-gates/$short.<job>.log); fix it, recommit, rerun" >&2
 	exit 1
 fi
@@ -580,6 +603,7 @@ else
 		else
 			echo "dq_merge_gates: FAILED: dreamchecker (log data/merge-gates/$short.dreamchecker.log)" >&2
 			tail -n 40 "data/merge-gates/$short.dreamchecker.log" >&2
+			grep -qE 'memory allocation of [0-9]+ bytes failed' "data/merge-gates/$short.dreamchecker.log" && { echo "dq_merge_gates: INFRA: DreamChecker ran out of memory; not a lane verdict" >&2; exit 95; }
 			exit 1
 		fi
 	fi

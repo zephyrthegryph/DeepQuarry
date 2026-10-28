@@ -276,7 +276,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	var/message_range = world.view
 	var/italics = 0
 	var/do_sound = TRUE
-	if(!sparse_get(src, voice_sounds_list) || !sparse_get(src, voice_sounds_list).len)
+	if(!length(sparse_get(src, voice_sounds_list)))
 		do_sound = FALSE
 
 	//Speaking into radios

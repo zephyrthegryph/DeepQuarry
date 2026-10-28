@@ -374,6 +374,7 @@ export const ValidateDmeTarget = new Juke.Target({
     // deepquarry.dme — exclude them from the "is it wired into the build" check.
     const EXCLUDED_PREFIXES = [
       'code/modules/unit_tests/',
+      'code/tests/unit_tests/',
     ];
 
     const missing: string[] = [];
@@ -3625,6 +3626,33 @@ export const TguiLintTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeCheckTarget, TguiTscTarget],
 });
 
+// DreamChecker needs several GB and aborts ("memory allocation of N bytes failed") when the machine runs short (28 October: OOM with
+// 4.4 GB available). Every run waits until DQ_DC_MIN_AVAIL_GB (default 10) is available (os.freemem() is the OS's available memory,
+// standby cache included), logging the wait each minute; after DQ_DC_MEM_WAIT_MIN (default 30) it runs anyway and says so. 0 = no wait.
+async function waitForDreamCheckerMemory(): Promise<void> {
+  const needGb = Number(process.env.DQ_DC_MIN_AVAIL_GB ?? '10');
+  if (!(needGb > 0)) return;
+  const maxMs = Number(process.env.DQ_DC_MEM_WAIT_MIN ?? '30') * 60_000;
+  const t0 = Date.now();
+  let lastLog = 0;
+  for (;;) {
+    const availGb = os.freemem() / 2 ** 30;
+    if (availGb >= needGb) {
+      if (Date.now() - t0 > 1000) Juke.logger.info(`dream-checker: ${availGb.toFixed(1)} GB available after waiting ${Math.round((Date.now() - t0) / 1000)}s`);
+      return;
+    }
+    if (Date.now() - t0 >= maxMs) {
+      Juke.logger.warn(`dream-checker: still only ${availGb.toFixed(1)} GB available (< ${needGb} GB) after ${Math.round(maxMs / 60_000)} min; running anyway`);
+      return;
+    }
+    if (Date.now() - lastLog >= 60_000) {
+      Juke.logger.info(`dream-checker: waiting for memory: ${availGb.toFixed(1)} GB available, needs ${needGb} GB (DQ_DC_MIN_AVAIL_GB)`);
+      lastLog = Date.now();
+    }
+    await new Promise((r) => setTimeout(r, 5000));
+  }
+}
+
 // run SpacemanDMM dreamchecker before the DM compile if the
 // binary is available. Best-effort: if dreamchecker is not on PATH the target
 // no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
@@ -3642,6 +3670,7 @@ export const DreamCheckerTarget = new Juke.Target({
     return true;
   },
   executes: async () => {
+    await waitForDreamCheckerMemory();
     await runDreamChecker();
     Juke.logger.info('dream-checker: passed'); // the merge gates read this line (tools/dq_merge_gates.sh, job dreamchecker)
   },

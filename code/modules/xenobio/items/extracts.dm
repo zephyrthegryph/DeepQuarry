@@ -328,7 +328,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_heatwave)
 CAPABILITIES(/transformation/chem/instant/slime/orange_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_orange_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/orange),
-		effects = sets_off(XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
+		effects = sets_off(kind = XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 /transformation/chem/instant/slime/orange_pyrotoxin
 
@@ -354,14 +354,8 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_pyrotoxin)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_lightning)
 	configure(transformation(name = "Slime Lightning", id = "m_yellow_lightning", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_lightning, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_LATER, audit = "Yellow extract reaction (lightning)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_lightning))))
 
-/transformation/chem/instant/slime/yellow_lightning/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Yellow extract reaction (lightning) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_lightning), with = list(holder.my_atom))
-	..()
 
 /transformation/chem/instant/slime/yellow_flashlight
 
@@ -375,14 +369,8 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_flashlight)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_emp)
 	configure(transformation(name = "Slime EMP", id = "m_yellow_emp", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_emp, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_LATER, audit = "Yellow extract reaction (emp)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_emp))))
 
-/transformation/chem/instant/slime/yellow_emp/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_emp), with = list(holder.my_atom))
-	..()
 
 /transformation/chem/instant/slime/yellow_battery
 
@@ -433,15 +421,8 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_random_mobs)
 CAPABILITIES(/transformation/chem/instant/slime/gold_hostile_mob)
 	configure(transformation(name = "Slime Hostile Mob", id = "m_gold_hostile_mob", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/gold),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_hostile_mob, on_reaction)))
+		spawns = spawns("xenobio_gold_mobs_hostile", 1, scatter = 3, audit = "Gold extract reaction (dangerous mob)")))
 
-/transformation/chem/instant/slime/gold_hostile_mob/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Gold extract reaction (dangerous mob) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	var/type_to_spawn = pickweight(GLOB.xenobio_gold_mobs_hostile)
-	var/mob/living/C = new type_to_spawn(get_turf(holder.my_atom))
-	for(var/l = 1, l <= rand(1, 3), l++)
-		step(C, pick(NORTH,SOUTH,EAST,WEST))
-	..()
 
 /transformation/chem/instant/slime/gold_safe_mob
 
@@ -634,7 +615,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_cold_snap)
 CAPABILITIES(/transformation/chem/instant/slime/dark_blue_temp_resist)
 	configure(transformation(name = "Slime Temperature Resistance", id = "m_darkblue_temperature_resist", takes = list(reagent(REAGENT_ID_BLOOD, 5)),
 		made = 1, holds = subject_is(/obj/item/slime_extract/dark_blue),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_temp_resist, lasts = 5 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_temp_resist, lasts = 5 MINUTES)))
 
 
 /datum/body_effect/slime_temp_resist
@@ -768,26 +749,16 @@ CAPABILITIES(/transformation/chem/instant/slime/red_ferality)
 CAPABILITIES(/transformation/chem/instant/slime/green_radpulse)
 	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/green),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/green_radpulse, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_LATER, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_start_emitting))))
 
-/transformation/chem/instant/slime/green_radpulse/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	if(istype(holder.my_atom, /obj/item/slime_extract/green))
-		after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_start_emitting), with = list(holder.my_atom))
 
 /transformation/chem/instant/slime/green_emitter
 
 CAPABILITIES(/transformation/chem/instant/slime/green_emitter)
 	configure(transformation(name = "Slime Radiation Emitter", id = "m_green_emitter", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/green),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/green_emitter, on_reaction)))
+		spawns = spawns(/obj/item/slime_irradiator, 1, audit = "Green extract reaction (radiation emitter)")))
 
-/transformation/chem/instant/slime/green_emitter/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
-	..()
 
 /transformation/chem/instant/slime/green_radium
 
@@ -1136,7 +1107,7 @@ CAPABILITIES(/transformation/chem/instant/slime/sapphire_sapience)
 CAPABILITIES(/transformation/chem/instant/slime/ruby_swole)
 	configure(transformation(name = "Slime Strength", id = "m_ruby_strength", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/ruby),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_strength, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_strength, lasts = 10 MINUTES)))
 
 
 /datum/body_effect/slime_strength
@@ -1217,7 +1188,7 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_push)
 CAPABILITIES(/transformation/chem/instant/slime/emerald_agility)
 	configure(transformation(name = "Slime Agility", id = "m_emerald_agility", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/emerald),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_agility, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_agility, lasts = 10 MINUTES)))
 
 
 /datum/body_effect/slime_agility
@@ -1236,7 +1207,7 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_agility)
 CAPABILITIES(/transformation/chem/instant/slime/emerald_speed)
 	configure(transformation(name = "Slime Speed", id = "m_emerald_speed", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/emerald),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_speed, lasts = 1 MINUTE)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_speed, lasts = 1 MINUTE)))
 
 
 /datum/body_effect/slime_speed

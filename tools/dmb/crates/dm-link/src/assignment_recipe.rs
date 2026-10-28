@@ -1,6 +1,6 @@
 //! Exact successful allocation inputs on the existing retained binding owner.
 use super::*;
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub(super) struct AssignmentRecipe {
     fixed: Vec<(Key, u32)>,
     orders: BTreeMap<Table, Vec<Key>>,
@@ -8,6 +8,16 @@ pub(super) struct AssignmentRecipe {
     prefixes: BTreeMap<Table, u32>,
 }
 impl AssignmentRecipe {
+    /// Bucket selector for the shared pool; equality decides sharing.
+    pub(super) fn fingerprint(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        self.fixed.len().hash(&mut hasher);
+        for (table, order) in &self.orders {
+            (*table as u8, order.len()).hash(&mut hasher);
+        }
+        hasher.finish()
+    }
     pub(super) fn capture(inventory: &LinkInventory) -> Self {
         Self {
             fixed: inventory.fixed.clone(),

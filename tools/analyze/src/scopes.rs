@@ -206,7 +206,7 @@ mod tests {
 [allow]
 known = ["x"]
 [lint.sys]
-exempt_prefixes = ["code/modules/unit_tests/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
 [lint.scheduler]
 exempt_contains = ["/unit_tests/"]
 [lint.scheduler.lists]

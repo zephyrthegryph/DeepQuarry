@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The midnight rollover count is now state of the wall clock itself, so a unit test that runs across midnight is no longer failed as a state leak."
