@@ -27,4 +27,21 @@
 	TEST_ASSERT_NOTNULL(X, "the chem smoke rule exists")
 	TEST_ASSERT_EQUAL(length(X.effect_rows), 1, "the chem smoke rule sets off one smoke")
 
+/// A nested list in a part's arguments survives construction, interning and the row compile.
+/datum/unit_test/dq_part_nested_list_argument
+	boot_needs = list()
+
+/datum/unit_test/dq_part_nested_list_argument/Run()
+	var/datum/entry/part/effect/sets_off/part = sets_off(XFORM_FX_BLAST, chance = 7, blast = list(-1, list(-1, 1), list(1, 2), list(3, 5)))
+	TEST_ASSERT_EQUAL(part.args["kind"], XFORM_FX_BLAST, "the kind is kept next to a nested list: [json_encode(part.args)]")
+	TEST_ASSERT_EQUAL(part.args["chance"], 7, "so is the chance")
+	var/list/blast = part.args["blast"]
+	TEST_ASSERT_EQUAL(length(blast), 4, "the list has its four members")
+	var/list/second = blast[2]
+	TEST_ASSERT(islist(second) && second[2] == 1, "a member that is itself a list is intact")
+	var/datum/entry/part/effect/sets_off/same = sets_off(XFORM_FX_BLAST, chance = 7, blast = list(-1, list(-1, 1), list(1, 2), list(3, 5)))
+	TEST_ASSERT(same == part, "the same arguments intern to the same part")
+	var/datum/entry/part/effect/sets_off/other = sets_off(XFORM_FX_BLAST, chance = 7, blast = list(-1, list(-1, 2), list(1, 2), list(3, 5)))
+	TEST_ASSERT(other != part, "a different nested value is a different part")
+
 #endif
