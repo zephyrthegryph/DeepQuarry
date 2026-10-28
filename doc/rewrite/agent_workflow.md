@@ -982,3 +982,8 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
 - **The disk floor no longer costs 24 minutes a cycle.** Below the floor the gate trims the cache synchronously (19:08-19:32Z on
   28 October, freeing nothing that was not protected); after a refusal the train only re-reads the free space for
   `DQ_TRAIN_FLOOR_RETRY_MIN` (30) minutes before trimming again.
+- **Smoke and gameplay sets run in every precheck** (`DQ_TRAIN_PRECHECK_SMOKE=1`, the default since 28 October 2026). At 20:40Z two
+  prechecked lanes took a 38-minute cycle (21 min of it the old disk-floor trim, then a full gate) because the sets were due at the
+  integrator's every-4th-landing cadence, which also blocked the fast-forward. A precheck now runs them in its already booted world
+  (~1 min), records `smoke=1` in its verdict, and such a lane never waits for `smoke_due`; its landing resets the cadence counter.
+  `DQ_TRAIN_PRECHECK_SMOKE=0` restores lane tests + boot only in the precheck and the cadence in the integrator.

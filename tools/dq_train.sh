@@ -89,7 +89,10 @@ PRE_ON="${DQ_TRAIN_PRECHECK:-1}"
 PRE_WORKERS="${DQ_TRAIN_PRECHECK_WORKERS:-2}"
 PRE_WT_BASE="${DQ_TRAIN_PRE_WT:-E:/projects/dq-wt/train-pre}"   # worker N works in ${PRE_WT_BASE}N
 PRE_WAIT_MIN="${DQ_TRAIN_PRECHECK_WAIT_MIN:-45}"                 # an unprechecked lane rides the old way after waiting this long
-PRE_SMOKE_ARGS=(--no-smoke); [ "${DQ_TRAIN_PRECHECK_SMOKE:-0}" != 1 ] || PRE_SMOKE_ARGS=()
+# 28 October: the smoke/gameplay sets run in every precheck (one booted world, ~1 min more) instead of every 4th integrator gate, which
+# forced a full 15-38 min cycle on prechecked lanes (20:40Z). A lane whose precheck ran them (verdict smoke=1) never waits for the cadence.
+# DQ_TRAIN_PRECHECK_SMOKE=0: lane tests + boot only, the sets at the integrator's cadence (smoke_due) as before.
+PRE_SMOKE_ARGS=(); [ "${DQ_TRAIN_PRECHECK_SMOKE:-1}" = 1 ] || PRE_SMOKE_ARGS=(--no-smoke)
 PRE_MIN_FREE_GB="${DQ_TRAIN_PRECHECK_MIN_FREE_GB:-12}"          # a precheck does not START below this much free RAM (the user's desktop)
 MAX_LANES_PRE="${DQ_TRAIN_MAX_LANES_PRECHECKED:-20}"            # batch size when every lane is prechecked
 WT2="${DQ_TRAIN_WT2:-E:/projects/dq-wt/train-bisect}"           # the second worktree of a parallel bisect
@@ -773,12 +776,12 @@ fast_land_pick() {
 	local b tip vf m sha cur key dvf
 	FAST_LANE=""; FAST_SHA=""; FAST_WHY_NOT=""
 	[ "${DQ_TRAIN_FAST_LAND:-1}" = 1 ] && [ "${PRECHECKED_BATCH:-0}" = 1 ] || return 1
-	smoke_due 1 && { FAST_WHY_NOT="the smoke/gameplay sets are due"; return 1; }
 	cur="$(G rev-parse origin/master)"
 	for b in "${CHOSEN[@]}"; do
 		lane_is_light "$b" && continue
 		tip="${TIP_OF[$b]}"; vf="$(pre_verdict_file "$b" "$tip")"
 		[ "$(qget "$vf" verdict)" = pass ] || continue
+		if ! lanes_smoked "$b" && smoke_due 1; then FAST_WHY_NOT="the smoke/gameplay sets are due ($b's precheck did not run them)"; continue; fi
 		m="$(qget "$vf" master)"; sha="$(qget "$vf" merge)"
 		[ "$m" = "$cur" ] || { FAST_WHY_NOT="$b was prechecked on ${m:0:10}, master is ${cur:0:10}"; continue; }
 		[ -n "$sha" ] || { FAST_WHY_NOT="$b has no kept precheck merge"; continue; }
@@ -822,7 +825,7 @@ fast_land() { # pushes FAST_SHA (a fast-forward of origin/master) from the train
 	[ "$(G rev-parse origin/master)" = "$sha" ] || { tlog "fast-forward push of $b returned 0 but origin/master is not ${sha:0:10}"; return 1; }
 	mark_landed "$b" "${TIP_OF[$b]}" "$sha"
 	G update-ref -d "refs/train/proof/$(fname "$b")" 2>/dev/null
-	echo $(( $(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) + 1 )) >"$STATE/smoke_skipped"
+	if lanes_smoked "$b"; then echo 0 >"$STATE/smoke_skipped"; else echo $(( $(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) + 1 )) >"$STATE/smoke_skipped"; fi
 	CYCLE_PROGRESS=1
 	tlog "pushed: origin/master ${sha:0:10} carries [$b] (proof: precheck-ff; cycle $(( $(date +%s) - CYCLE_T0 ))s, push $(( $(date +%s) - t0 ))s; smoke/gameplay sets skipped, $(cat "$STATE/smoke_skipped") proof landing(s) since they last ran)"
 	fast_land_more "$b"
@@ -924,7 +927,10 @@ precheck_one() { # <worker n> <branch> <tip>
 	fi
 	# the lane may have moved or been withdrawn while it was checked: record the verdict, bounce only what is still queued at this tip
 	pre_record "$b" "$tip" "$master" "$verdict" "$secs" "$log" "${why:-}"
-	if [ "$is_light" = 0 ] && { [ "$verdict" = pass ] || [ "$verdict" = tpass ]; }; then pre_proof_save "$b" "$tip" "$master" "$wt"; fi
+	if [ "$is_light" = 0 ] && { [ "$verdict" = pass ] || [ "$verdict" = tpass ]; }; then
+		[ ${#PRE_SMOKE_ARGS[@]} -gt 0 ] || { vf_s="$(pre_verdict_file "$b" "$tip")"; [ -z "$vf_s" ] || echo "smoke=1" >>"$vf_s"; }
+		pre_proof_save "$b" "$tip" "$master" "$wt"
+	fi
 	rm -f "$PRE/running/$(fname "$b")"
 	tlog "PRECHECK $verdict: $b (tip ${tip:0:10}) on master ${master:0:10} in ${secs}s"
 	if [ "$verdict" = fail ] || [ "$verdict" = conflict ]; then
@@ -1172,6 +1178,9 @@ analyze_trusted() { # <lanes...>: 0 and ANALYZE_TRUST_WHY set when the batch may
 # Smoke and gameplay sets on a proof landing (a prechecked batch with no interaction): prechecks run each lane's own tests and the boot gate
 # only, so the sets run once every DQ_TRAIN_SMOKE_EVERY proof landings (default 4) and on any batch of DQ_TRAIN_SMOKE_AT_LANES lanes or more
 # (default 5): one run covers several lanes. State: smoke_skipped (proof landings since the sets last ran).
+lanes_smoked() { # <lanes...>: 0 when every lane's precheck ran the smoke/gameplay sets on its merge with master (verdict smoke=1)
+	local b; for b in "$@"; do [ "$(qget "$(pre_verdict_file "$b" "${TIP_OF[$b]:-$(qget "$(qfile "$b")" tip)}")" smoke)" = 1 ] || return 1; done; return 0
+}
 smoke_due() { # <batch size>: 0 when this proof landing runs the sets
 	local every="${DQ_TRAIN_SMOKE_EVERY:-4}" at="${DQ_TRAIN_SMOKE_AT_LANES:-5}" k
 	k="$(cat "$STATE/smoke_skipped" 2>/dev/null)"; case "$k" in ''|*[!0-9]*) k=0 ;; esac
@@ -1465,7 +1474,7 @@ heavy_cycle_gate() {
 	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_LONE_SMOKE:-0}" != 1 ] && [ "${#SKIP_TESTS[@]}" -eq "${#CHOSEN[@]}" ]; then
 		tests_union="dq_boot_gate"
 		case " ${lane_test_args[*]} " in *" --tests dq_boot_gate "*) ;; *) lane_test_args+=(--tests dq_boot_gate) ;; esac
-		if smoke_due "${#CHOSEN[@]}"; then
+		if ! lanes_smoked "${CHOSEN[@]}" && smoke_due "${#CHOSEN[@]}"; then
 			proof_kind="precheck+smoke"
 			tlog "PROOF precheck+smoke: no lane interacts with another or with master since its precheck; compile + boot, and the smoke/gameplay sets are due (every ${DQ_TRAIN_SMOKE_EVERY:-4} proof landings or ${DQ_TRAIN_SMOKE_AT_LANES:-5}+ lanes)"
 		else
