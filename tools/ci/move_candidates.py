@@ -61,6 +61,8 @@ def target_of(rel):
     if parts[0] != "code" or len(parts) < 3 or rel.startswith(NEW_TREE):
         return None
     top = parts[1]
+    if top == "game" and parts[2] == "objects" and len(parts) > 4:
+        return "code/content/" + "/".join(parts[3:])  # doc section 22 M07: objects/{items,structures,effects} -> content/{items,structures,effects}
     if top in ("modules", "game", "datums") and len(parts) > 3:
         name = parts[2]
         layer = DOMAINS.get(name, "content/" + name)
