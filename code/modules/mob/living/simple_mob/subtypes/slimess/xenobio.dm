@@ -81,16 +81,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soulstone)
 CAPABILITIES(/transformation/chem/instant/slime/redspace_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_redspace_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/redspace),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/redspace_smoke, on_reaction)))
-
-/transformation/chem/instant/slime/redspace_smoke/on_reaction(datum/reagents/holder)
-	var/location = get_turf(holder.my_atom)
-	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
-	S.attach(location)
-	S.set_up(holder, 120, 0, location)
-	play_sfx(location, SFX_EFFECTS_SMOKE)
-	S.start()
-	..()
+		effects = sets_off(EFFECT_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 
 /transformation/chem/instant/slime/slime_mindbreaker

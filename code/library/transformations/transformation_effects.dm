@@ -20,6 +20,8 @@
 	var/divisor = 1
 	var/list/divisors
 	var/skip_in_tests = FALSE
+	/// A fixed size for smoke or foam, in place of what the step made; null for the latter.
+	var/amount
 
 /// The rows of a rule's `effects` argument (one sets_off() or a list of them), or null (reported) when one is wrong.
 /proc/xform_effect_rows(type, origin, effects_argument)
@@ -42,6 +44,7 @@
 		row.divisor = arguments["divisor"] || 1
 		row.divisors = arguments["divisors"]
 		row.skip_in_tests = !!arguments["skip_in_tests"]
+		row.amount = arguments["amount"]
 		if(kind == EFFECT_EMP && (!islist(row.divisors) || length(row.divisors) != 4))
 			declare_report("[origin]: [type]: sets_off(EFFECT_EMP) takes divisors = list(a, b, c, d)")
 			return null
@@ -69,7 +72,7 @@
 			if(EFFECT_SMOKE)
 				var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 				S.attach(location)
-				S.set_up(holder, made, 0, location)
+				S.set_up(holder, isnull(row.amount) ? made : row.amount, 0, location)
 				if(row.sfx)
 					play_sfx(location, row.sfx)
 				S.start()
@@ -80,7 +83,7 @@
 					for(var/mob/M in viewers(5, location))
 						to_chat(M, span_warning(row.tell))
 				var/datum/effect/effect/system/foam_spread/s = new()
-				s.set_up(made, location, holder, row.variant)
+				s.set_up(isnull(row.amount) ? made : row.amount, location, holder, row.variant)
 				s.start()
 				if(row.clears && !isliving(subject))
 					holder.clear_reagents()

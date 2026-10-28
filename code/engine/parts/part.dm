@@ -621,8 +621,8 @@
 /// sets_off(kind, ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): EFFECT_SMOKE, EFFECT_FOAM,
 /// EFFECT_EXPLOSION, EFFECT_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
 /// (no powergaming a tiny amount); `tell` is what viewers within 5 see; `variant` is the foam kind; `divisor` scales an explosion (made / divisor) and
-/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world.
-/proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null)
+/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made.
+/proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null, amount = null)
 	var/list/arguments = list("kind" = kind)
 	if(!isnull(clears))
 		arguments["clears"] = clears
@@ -638,6 +638,8 @@
 		arguments["divisors"] = divisors
 	if(!isnull(skip_in_tests))
 		arguments["skip_in_tests"] = skip_in_tests
+	if(!isnull(amount))
+		arguments["amount"] = amount
 	return part_make(/datum/entry/part/effect/sets_off, arguments)
 
 /datum/entry/part/effect/sets_off
