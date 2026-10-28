@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"df5634c6271f581055ae23613c159a77a96faf8b","ok":true,"passed":2,"failed":0,"new_failed":0,"lanes":"tools/world-compile-once","tests":["dq_boot_gate","dq_state_guard_midnight_is_clock"],"reproof_of":"","reproof_reason":"","tests_json":"data/test-runs/20261028T112326_df5634c627.json","created":"2026-10-28T11:24:08Z"}
