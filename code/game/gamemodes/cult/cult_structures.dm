@@ -17,7 +17,6 @@
 	icon_state = "forge"
 
 /obj/structure/cult/pylon
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "Pylon"
 	desc = "A floating crystal that hums with an unearthly energy."
 	icon_state = "pylon"

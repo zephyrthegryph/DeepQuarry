@@ -76,6 +76,30 @@ GLOBAL_LIST_INIT(preference_editors_by_key, init_preference_editors_by_key())
 /datum/preference_editor/proc/build_ui_static_data(datum/preferences/preferences)
 	return list()
 
+/// What this editor's static payload depends on, as a string: payloads are built once per server per key and
+/// shared by every player (GLOB.dq_editor_static_shared), and the key is the catalog's version, so a slot load or
+/// an edit that leaves it alone resends nothing. "" = depends on nothing. null = depends on the player in a way a
+/// key can't name: built per prefs datum and versioned by a counter. Override with every input your
+/// build_ui_static_data reads.
+/datum/preference_editor/proc/static_cache_key(datum/preferences/preferences)
+	return ""
+
+/// editor key -> (static_cache_key -> payload). Shared, read-only once built: never write into a payload.
+GLOBAL_LIST_EMPTY(dq_editor_static_shared)
+
+/// The shared payload for an editor at its current key (built on first use), or null when the editor is per-player.
+/proc/dq_editor_static_shared_payload(datum/preference_editor/editor, datum/preferences/preferences)
+	var/cache_key = editor.static_cache_key(preferences)
+	if(isnull(cache_key))
+		return null
+	var/list/by_key = GLOB.dq_editor_static_shared[editor.key]
+	if(!islist(by_key))
+		by_key = list()
+		GLOB.dq_editor_static_shared[editor.key] = by_key
+	if(!(cache_key in by_key))
+		by_key[cache_key] = editor.build_ui_static_data(preferences) || list()
+	return by_key[cache_key]
+
 /// Handle an atomic multi-pref action sent from the UI: each editor routes its own actions (its handle_action() override, arguments through their
 /// schemas) and runs before_action() first. Returns one of:
 ///   PREF_UPDATE_ACCEPTED  — apply preview, persist, refresh UI

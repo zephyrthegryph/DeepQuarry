@@ -1,5 +1,4 @@
 /obj/machinery/smartfridge/tcrystal
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "Telecrystal storage"
 	desc = "Some kind of storage machine that only accepts telecrystals"
 	icon_state = "donkvendor"

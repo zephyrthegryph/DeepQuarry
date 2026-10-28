@@ -87,7 +87,9 @@ const ZoneSwitcher = ({
   paramKey: string;
 }) => {
   const { act } = useBackend();
-  const [selected, setSelected] = useState<string>(zones[0] ?? '');
+  const [picked, setSelected] = useState<string>(zones[0] ?? '');
+  // The zones arrive with the editor's catalog, after the first render: until the player picks one, show the first.
+  const selected = zones.includes(picked) ? picked : (zones[0] ?? '');
   const value = getValue(selected);
   const [draft, setDraft] = useState(value);
 

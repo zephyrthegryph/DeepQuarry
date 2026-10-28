@@ -1,6 +1,5 @@
 
 /obj/structure/blob
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "blob"
 	icon = 'icons/mob/blob.dmi'
 	desc = "A thick wall of writhing tendrils."
