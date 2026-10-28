@@ -28,6 +28,8 @@ sparse(/mob, vantag_hud, type = num)
 sparse(/mob, active_genes, type = list)
 // The sounds the mob's speech and emotes play (a pick from this list); set by preferences or login.
 sparse(/mob, voice_sounds_list, type = list)
+// The mob's own log, message type -> list of timestamped lines (log_message(); the admin player-log viewer reads it). Unused when database_logging is on.
+sparse(/mob, logging, type = list)
 sparse(/mob, narsimage, type = /image)
 sparse(/mob, narglow, type = /image)
 sparse(/mob, riftimage, type = /image)
