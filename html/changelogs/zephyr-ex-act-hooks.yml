@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Non-turf ex_act() overrides (humans, silicons, simple mobs, mechas, anomalies, protean rigs) are explosion hit hooks; the override ratchet is a hard ban"

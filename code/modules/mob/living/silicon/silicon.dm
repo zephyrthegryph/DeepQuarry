@@ -35,6 +35,7 @@
 	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(silicon_blast))))
 	configure(mob_kind(voice_name = "synthesized voice"))
 	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
 	configure(living_rules(has_huds = TRUE))
@@ -296,9 +297,12 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /mob/living/silicon/binarycheck()
 	return 1
 
-/mob/living/silicon/ex_act(severity)
-	if(..())
-		return
+/// A blast on a silicon (the explosion hit hook): the severity ladder below.
+/mob/living/silicon/proc/silicon_blast(datum/act/hit/explosion/A)
+	silicon_blast_ladder(A.packet.severity)
+	return OP_OK
+
+/mob/living/silicon/proc/silicon_blast_ladder(severity)
 	if(!blinded)
 		flash_eyes()
 

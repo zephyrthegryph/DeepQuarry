@@ -528,8 +528,9 @@ CAPABILITIES(/transformation/stack/base__defense_wire)
 		return ITEM_INTERACT_SUCCESS
 	..()
 
-/obj/item/stack/material/attack_generic(mob/living/user) //Allow adminbussed mobs to eat ore if they click it while NOT on help intent.
+/obj/item/stack/material/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/user = A.attacker
 	if(user.handle_eat_minerals(src))
-		return ITEM_INTERACT_SUCCESS
-	..()
+		return OP_OK // Allow adminbussed mobs to eat ore if they click it while NOT on help intent.
+	return HOOK_DECLINE
 

@@ -117,7 +117,7 @@ pub enum ResolveQuery {
     /// FILE_DIR and source-directory search state qualify relative resources.
     ResourceIn {
         path: SymbolId,
-        search_context: u128,
+        search_context: crate::PackedU128,
     },
     // Append new variants: persisted serde enum indices must remain stable.
     /// Runtime method dispatch anchors to the nearest inherited source formal,
@@ -220,25 +220,25 @@ pub enum ResolvedMeaning {
         declaring_owner: SymbolId,
         name: SymbolId,
         verb: bool,
-        engine_identity: u128,
+        engine_identity: crate::PackedU128,
         wire_proc: u32,
     },
     Member {
         owner: SymbolId,
         name: SymbolId,
-        fingerprint: u128,
+        fingerprint: crate::PackedU128,
         data: Arc<DeclarationMeaning>,
     },
     Resource {
         path: SymbolId,
-        content: u128,
+        content: crate::PackedU128,
     },
     /// Exact source structural answer; occurrence and predecessor are symbolic,
     /// never dense arena/output indices. Executable content is intentionally absent.
     Declaration {
         identity: crate::ProcedureIdentity,
         definition: ProcedureDefinition,
-        previous: Option<crate::ProcedureIdentity>,
+        previous: Option<Box<crate::ProcedureIdentity>>,
         data: Arc<DeclarationMeaning>,
     },
 }
@@ -467,11 +467,11 @@ mod tests {
             ResolvedMeaning::Symbols(vec![owner, name].into()).canonical_bytes(),
             ResolvedMeaning::Symbols(vec![name, owner].into()).canonical_bytes()
         );
-        let retained = |wire_proc, engine_identity| ResolvedMeaning::RetainedProc {
+        let retained = |wire_proc, engine_identity: u128| ResolvedMeaning::RetainedProc {
             declaring_owner: owner,
             name,
             verb: false,
-            engine_identity,
+            engine_identity: engine_identity.into(),
             wire_proc,
         };
         assert_eq!(
@@ -488,11 +488,11 @@ mod tests {
         let path = SymbolId::of("icons/probe.dmi");
         let first = ResolveQuery::ResourceIn {
             path,
-            search_context: 1,
+            search_context: 1.into(),
         };
         let second = ResolveQuery::ResourceIn {
             path,
-            search_context: 2,
+            search_context: 2.into(),
         };
         assert_eq!(first.domain(), ReadDomain::ResourceSearch);
         assert_ne!(first, second);

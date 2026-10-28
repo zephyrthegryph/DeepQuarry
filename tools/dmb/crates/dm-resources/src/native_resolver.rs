@@ -343,6 +343,7 @@ impl<R: Resolver> Resolver for NativeResourceResolver<R> {
                 path,
                 search_context,
             } => {
+                let search_context = search_context.get();
                 if !self.contexts.contains_key(&search_context) {
                     return ResolvedMeaning::Unsupported(query);
                 }
@@ -351,7 +352,7 @@ impl<R: Resolver> Resolver for NativeResourceResolver<R> {
                         let record = &self.ordered[*index];
                         ResolvedMeaning::Resource {
                             path: record.alias,
-                            content: record.content,
+                            content: record.content.into(),
                         }
                     }
                     Some(CapturedResourceOutcome::Missing) => ResolvedMeaning::Missing,
@@ -479,7 +480,7 @@ mod tests {
                 [context.clone()],
                 [CapturedResourceLookup {
                     path: "literal.txt".into(),
-                    search_context: identity,
+                    search_context: identity.into(),
                     outcome,
                 }],
             )
@@ -489,7 +490,7 @@ mod tests {
         let found = build(CapturedResourceOutcome::Found(0));
         let query = ResolveQuery::ResourceIn {
             path: SymbolId::of("literal.txt"),
-            search_context: identity,
+            search_context: identity.into(),
         };
         assert_ne!(missing.resolve(query), found.resolve(query));
     }
@@ -518,15 +519,15 @@ mod tests {
             ],
         )
         .unwrap();
-        let query = |context| ResolveQuery::ResourceIn {
+        let query = |context: u128| ResolveQuery::ResourceIn {
             path: SymbolId::of("literal.txt"),
-            search_context: context,
+            search_context: context.into(),
         };
         assert_eq!(
             host.resolve(query(a)),
             ResolvedMeaning::Resource {
                 path: SymbolId::of("a.txt"),
-                content: xxh3_128(b"same exact bytes")
+                content: xxh3_128(b"same exact bytes").into()
             }
         );
         let catalog = host.catalog();

@@ -16,6 +16,7 @@
 
 
 CAPABILITIES(/mob/living)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	setup(PROC_REF(prime_hud_list))
 	setup(PROC_REF(start_ai_brain))
 	living_rules(use_modern_ai = FALSE, has_huds = FALSE, max_nutrition = MAX_NUTRITION, fire_reaction = FIRE_REACTION_BURN, fire_trigger_verb = "ignited", fire_heats_body = FALSE, force_max_speed = 0, adminbus_trash = FALSE, parasitic = FALSE, appendage_color = "#e03997", vore_shred_time = 45 SECONDS, low_sorting_priority = FALSE)

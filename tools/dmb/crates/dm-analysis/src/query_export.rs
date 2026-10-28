@@ -82,13 +82,13 @@ fn answer(symbols: &SymbolTable, meaning: &ResolvedMeaning) -> Result<Value, Exp
                 &M::Member {
                     owner: identity.owner,
                     name: identity.name,
-                    fingerprint: 0,
+                    fingerprint: 0.into(),
                     data: data.clone(),
                 },
             )?;
             metadata.as_object_mut().unwrap().remove("fingerprint");
             metadata["kind"] = json!("declaration_metadata");
-            json!({"status":"known","kind":"declaration","owner":symbol(symbols,identity.owner),"name":symbol(symbols,identity.name),"verb":identity.verb,"occurrence":identity.occurrence,"definition":format!("{definition:?}"),"previous":previous.map(|id|json!({"owner":symbol(symbols,id.owner),"name":symbol(symbols,id.name),"verb":id.verb,"occurrence":id.occurrence})),"metadata":metadata})
+            json!({"status":"known","kind":"declaration","owner":symbol(symbols,identity.owner),"name":symbol(symbols,identity.name),"verb":identity.verb,"occurrence":identity.occurrence,"definition":format!("{definition:?}"),"previous":previous.as_deref().map(|id|json!({"owner":symbol(symbols,id.owner),"name":symbol(symbols,id.name),"verb":id.verb,"occurrence":id.occurrence})),"metadata":metadata})
         }
         M::Resource { path, content } => {
             json!({"status":"known","kind":"resource","path":symbol(symbols,*path),"content":format!("{content:032x}")})

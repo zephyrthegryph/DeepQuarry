@@ -703,7 +703,7 @@ mod tests {
         let world_read = ResolveQuery::GlobalProc(SymbolId::of("absent"));
         let catalog_read = ResolveQuery::ResourceIn {
             path: SymbolId::of("a.dmi"),
-            search_context: 0,
+            search_context: 0.into(),
         };
         let reads = vec![
             (world_read, ResolvedMeaning::Missing.canonical_bytes()),

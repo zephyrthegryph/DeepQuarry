@@ -81,7 +81,10 @@ MSG_DEF(barricade/repairing, null, span_notice("%U% begins to repair %T%."))
 	dismantle()
 	return ..()
 
-/obj/structure/barricade/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/barricade/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	if(material == get_material_by_name(MAT_RESIN))
 		play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
@@ -93,7 +96,7 @@ MSG_DEF(barricade/repairing, null, span_notice("%U% begins to repair %T%."))
 		play_sfx(src, SFX_WEAPONS_SMASH)
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
-	return
+	return OP_OK
 
 /obj/structure/barricade/proc/dismantle()
 	material.place_dismantled_product(get_turf(src))

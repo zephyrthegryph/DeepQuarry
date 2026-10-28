@@ -19,7 +19,7 @@ fn positive_member_proc_does_not_require_opposite_namespace_absence() {
             } if name == SymbolId::of("authored") => M::Member {
                 owner,
                 name,
-                fingerprint: 1,
+                fingerprint: 1.into(),
                 data: std::sync::Arc::new(Default::default()),
             },
             Q::Proc {
@@ -40,7 +40,7 @@ fn positive_member_proc_does_not_require_opposite_namespace_absence() {
             } if name == SymbolId::of("verb_only") => M::Member {
                 owner,
                 name,
-                fingerprint: 2,
+                fingerprint: 2.into(),
                 data: std::sync::Arc::new(Default::default()),
             },
             Q::MethodProcedureValue { owner, name, verb }

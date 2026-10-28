@@ -92,13 +92,16 @@ CAPABILITIES(/obj/structure/girder/displaced)
 	update_integrity(displaced_health)
 	cover = 25
 
-/obj/structure/girder/attack_generic(mob/user, damage, attack_message = "smashes apart")
+/obj/structure/girder/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb || "smashes apart"
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
-		return 0
+		return OP_OK
 	user.do_attack_animation(src)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	after(src, 0.1 SECONDS, PROC_REF(dismantle))
-	return 1
+	return OP_OK
 
 /obj/structure/girder/bullet_act(obj/item/projectile/Proj)
 	//Girders only provide partial cover. There's a chance that the projectiles will just pass through. (unless you are trying to shoot the girder)

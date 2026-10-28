@@ -87,7 +87,7 @@ impl RetainedMethods {
                             declaring_owner: node.path,
                             name,
                             verb,
-                            engine_identity: self.engine_identity,
+                            engine_identity: self.engine_identity.into(),
                             wire_proc,
                         },
                     });

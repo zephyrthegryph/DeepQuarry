@@ -102,7 +102,7 @@ Rules that hold under both old and new forms:
 - Don't override `Destroy()`; use `qdel()` and put consequences in `on_destroy(force)`. Never `del()`.
 - Prefer `Initialize(mapload, ...)`; always chain `..()` in lifecycle overrides. An `Initialize()` override sets per-instance
   state only and carries `// ALLOW(init/INSTANCE_STATE|CTOR_ARGS|FRAMEWORK): <reason>`; starting contents are `starts =`
-  (`owns_one`/`owns_many`/`slot`), capability setup is `on_holder_init(A)`, an Initialize() tail that needs `mapload` or returns `INITIALIZE_HINT_QDEL` is `setup(PROC_REF(x), mapload = TRUE)` (`x(mapload)` returns the hint), work after the map load or a timer from init is
+  (`owns_one`/`owns_many`/`slot`), capability setup is `on_holder_init(A)`, an Initialize() tail that needs `mapload` or returns `INITIALIZE_HINT_QDEL` is `setup(PROC_REF(x), mapload = TRUE)` (`x(mapload)` returns the hint), an Initialize() head (code that ran before `..()`) is `setup(PROC_REF(x), early = TRUE)`, work after the map load or a timer from init is
   `after_init(delay, then(PROC_REF(x)))` in `CAPABILITIES`. `LateInitialize()` and `INITIALIZE_HINT_LATELOAD` are gone.
 - Tracking is automatic: don't declare `TRACKED(...)` (hard-banned outside the generated file). Write a var that reactive code reads through its generated `set_v(...)`; the `tracked` lint (hard error) rejects a raw write and `analyze fix --apply` rewrites it. A setter with side effects is a hand-written `set_v()` plus `SETTER(T, v)`. Construction (`Initialize()`/`New()` writing the instance's own var) is not a change and stays raw.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
@@ -128,7 +128,7 @@ What is still open, and still correct to write where a file already uses it:
 
 - The `BF_*` body factors themselves are done: they are stats on `/mob/living`. A `factors = alist(...)` var on a flyweight or prototype (a body effect, affliction, reagent, trait, perk or form type) is final data read by its type's one reader, not open work (`doc/rewrite/proposals/stat_layer.md` §8, end); `factors_converted` is only for types that move the table into the entry itself.
 - `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/modules/admin/view_variables/pickers.dm`).
-- The init, `base_vars` and raw-overlay ratchets (baselines shrink as files convert).
+- The `base_vars` ratchet (its baseline shrinks as files convert). The init, raw-overlay, untyped and escape_hatches ratchets are at 0 and hard-banned.
 - File moves into the new tree (§3c).
 
 Run `bash tools/ci/legacy_form_counts.sh` for the current census. If you touch a file that still
@@ -468,8 +468,8 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   without an instance, compiled once at world setup by the `static_entries` system
   (`code/engine/declare/static_entries.dm`), looked up with `loot_decl_for()` / `map_resolver_proc()`.
   `DECLARE_LOOT`, the `LOOT_*` rows, `MAP_RESOLVER` and `MAP_RESOLVER_VARS` are hard-banned. Don't add
-  hand-rolled spawn code. Pins: `dq_loot_roll_pin`, `dq_loot_search_pin`, `dq_resolver_table_pin`,
-  `dq_resolver_reader_pin` (`code/modules/unit_tests/snapshots/loot/`).
+  hand-rolled spawn code. Tests: `dq_loot_roll_yields_table_item`, `dq_loot_search_yields_once_per_searcher`,
+  `dq_map_resolver_inherited` (`code/modules/unit_tests/dq_loot_behaviour.dm`).
 - **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
   every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through

@@ -348,6 +348,9 @@ struct DirectivePass<'a, P> {
     file_dir_definitions: Vec<Macro>,
     environment: MacroEnvironment,
     file_dir_origins: Vec<Option<DefinitionOrigin>>,
+    /// Definition-site path of each file by its occurrence path's allocation: relative to the project directory, so
+    /// macro traces (and the region rows that hold them) are equal in every worktree of one project.
+    definition_paths: HashMap<usize, (Arc<PathBuf>, Arc<PathBuf>)>,
     // Includes splice their directives into the same encounter stream.
     conditionals: Vec<Conditional>,
     detail: PassDetail,
@@ -386,6 +389,7 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
             file_dir_origins: Vec::new(),
             conditionals: Vec::new(),
             detail: PassDetail::default(),
+            definition_paths: HashMap::new(),
         }
     }
 }
@@ -440,12 +444,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     let line = lines.get(*input).expect("checked recovery directive index");
                     recoveries.insert(line.source_span.start);
                 }
-                directive_memo::Action::Text(input) => {
-                    let line = lines
-                        .get(*input)
-                        .expect("recorded directive input outside range");
-                    let _ = line;
-                    pending.push(lines.offset() + *input);
+                directive_memo::Action::Text { first, count } => {
+                    assert!(
+                        lines.get(*first + *count - 1).is_some(),
+                        "recorded directive input outside range"
+                    );
+                    for input in *first..*first + *count {
+                        pending.push(lines.offset() + input);
+                    }
                 }
                 directive_memo::Action::Freeze => self.freeze_lines(region, pending),
                 directive_memo::Action::Multiple => {
@@ -504,7 +510,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         name: String,
         definition: Macro,
     ) {
-        let path = self.plan.occurrences[occurrence].path.clone();
+        let path = self.definition_path(occurrence);
         if let Some(recording) = self.recording.as_mut() {
             recording.actions.push(directive_memo::Action::Define {
                 input: recording.current,
@@ -539,6 +545,22 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         self.environment
             .insert(&name, definition.clone(), Some(origin));
         self.plan.final_macros.insert(name, definition);
+    }
+    /// Where a definition in `occurrence`'s file is reported: the file's path relative to the project directory (the
+    /// absolute path when the file lies outside it). Consumers resolve it against `DirectivePlan::project_dir`.
+    fn definition_path(&mut self, occurrence: usize) -> Arc<PathBuf> {
+        let path = &self.plan.occurrences[occurrence].path;
+        let key = Arc::as_ptr(path) as usize;
+        if let Some((_, relative)) = self.definition_paths.get(&key) {
+            return Arc::clone(relative);
+        }
+        let relative = match path.strip_prefix(&self.plan.project_dir) {
+            Ok(relative) if !relative.as_os_str().is_empty() => Arc::new(relative.to_path_buf()),
+            _ => Arc::clone(path),
+        };
+        // The occurrence path is held with its entry, so its address names it for as long as the entry lives.
+        self.definition_paths.insert(key, (Arc::clone(path), Arc::clone(&relative)));
+        relative
     }
     fn apply_undef(&mut self, region: usize, name: &str) {
         if let Some(recording) = self.recording.as_mut() {
@@ -1184,7 +1206,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         let mut hit = None;
                         memo.visit_directive_candidates(context.2, &mut |record| {
                             let accepted = record.matches(
-                                context.0,
+                                context.0.as_str(),
                                 context.1,
                                 end - cursor,
                                 &self.environment,
@@ -1223,7 +1245,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         self.recording = Some(directive_memo::Recording::new(
                             cursor,
                             end,
-                            context,
+                            (&context.0, context.1, context.2),
                             &self.conditionals,
                             &self.plan.file_dirs,
                             &self.file_dir_definitions,
@@ -1245,9 +1267,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             let Some(syntax) = prepared.directive(cursor - 1) else {
                 if active {
                     if let Some(recording) = self.recording.as_mut() {
-                        recording
-                            .actions
-                            .push(directive_memo::Action::Text(recording.current));
+                        recording.push_text();
                     }
                     pending.push(cursor - 1);
                 }

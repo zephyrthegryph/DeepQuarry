@@ -275,7 +275,7 @@ mod tests {
             declaring_owner: id,
             name: SymbolId::of("work"),
             verb: true,
-            engine_identity: 123,
+            engine_identity: 123.into(),
             wire_proc: 9,
         };
         let mut deep = ResolvedMeaning::Missing;
@@ -357,11 +357,11 @@ mod tests {
         let queries = [
             ResolveQuery::ResourceIn {
                 path: name,
-                search_context: 1,
+                search_context: 1.into(),
             },
             ResolveQuery::ResourceIn {
                 path: name,
-                search_context: 2,
+                search_context: 2.into(),
             },
             ResolveQuery::Proc {
                 owner,

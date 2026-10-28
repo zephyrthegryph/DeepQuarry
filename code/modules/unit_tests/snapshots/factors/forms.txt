@@ -1,2 +1,0 @@
-/datum/form/promethean_blob|1|1 => incoming_physical=0.75 incoming_thermal=2
-

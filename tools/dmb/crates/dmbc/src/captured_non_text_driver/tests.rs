@@ -274,7 +274,7 @@ fn map_skin_asset_capture_produces_shared_inventory_and_initializer_artifact() {
     assert!(matches!(
         output.resolver.resolve(dm_ir::ResolveQuery::ResourceIn {
             path: SymbolId::of("asset.txt"),
-            search_context: output.resource_search_context,
+            search_context: output.resource_search_context.into(),
         }),
         dm_ir::ResolvedMeaning::Resource { .. }
     ));

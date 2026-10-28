@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Light lanes get their own precheck worker so they never wait behind heavy prechecks, and a prechecked batch's gate allows a 20-minute test cap instead of 10 on a loaded machine"

@@ -1,3 +1,0 @@
-@obj.machinery.appliance robot|none
-+1 menu: Toggle door
-@obj.machinery.appliance ai|none
