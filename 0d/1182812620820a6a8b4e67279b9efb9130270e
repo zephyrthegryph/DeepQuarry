@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"0d1182812620820a6a8b4e67279b9efb9130270e","ok":true,"passed":2,"failed":0,"new_failed":0,"lanes":"charsetup/tabs-widgets","tests":["dq_charsetup_category_order","dq_ui_capture_prefs"],"reproof_of":"","reproof_reason":"","tests_json":"data/test-runs/20261028T211613_0d11828126.json","created":"2026-10-28T21:16:36Z"}
