@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Light checks: when a Rust crate changes, every workspace crate that depends on it runs its tests too."
