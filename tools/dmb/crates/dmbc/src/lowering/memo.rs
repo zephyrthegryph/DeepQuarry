@@ -605,7 +605,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                 if symbolic {
                     admission = symbolic_input::admission(
                         memo,
-                        dm_session::key_pool::share(Arc::from(key.as_slice())),
+                        Arc::from(key.as_slice()),
                         Arc::clone(&reads),
                         relative_debug.clone(),
                         compact,

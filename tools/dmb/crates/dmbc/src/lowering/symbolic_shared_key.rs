@@ -16,7 +16,7 @@ impl From<Arc<[u8]>> for SharedKey {
 }
 impl From<Vec<u8>> for SharedKey {
     fn from(bytes: Vec<u8>) -> Self {
-        dm_session::key_pool::share(Arc::<[u8]>::from(bytes)).into()
+        Arc::<[u8]>::from(bytes).into()
     }
 }
 impl Deref for SharedKey {

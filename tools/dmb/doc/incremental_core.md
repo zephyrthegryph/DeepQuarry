@@ -1194,9 +1194,11 @@ of the identity: definition origins are project-relative (landed), and a value t
 when it is built, or kept per session.
 
 **Layers, in order.**
-1. *Keys and leaves* (this lane): `dm_session::key_pool::share` canonicalizes the artifact key bytes a session builds
-   (classification, lowering records, symbolic shared keys), so rosters and location memos of equal sessions hold one allocation.
-   Enabled where the shared store is (`private("keys")` turns it off).
+1. *Keys and leaves* (tried, **taken out**): a weak content pool for the artifact key bytes (classification, lowering, symbolic
+   shared keys). Same-session A/B on the identical-worktree probe (master with the other lanes' savings: game 4.82 GB, test
+   +1.29, second worktree +1.24): the second worktree -40 MB, the test variant +14 MB, but the game session +75 MB, because the
+   pool's own table (a digest and a weak handle per key, about a million keys) costs more than the shared bytes save. A pool
+   per key is the wrong grain; share the table that holds the keys (layers 2 and 3) instead.
 2. *Answer table*: split `AnswerSlot` into the immutable `(id -> Arc<AnswerValue>)` part, shared per tree digest (equal trees give
    equal answers; the tree identity is already a content digest) and a per-session overlay of the mutable request, stamp,
    born/changed and base fields. A session at the same tree digest as another starts from the shared map and copies on first
