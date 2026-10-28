@@ -8,7 +8,7 @@ pub struct BindingTables {
     inner: Arc<BindingData>,
 }
 #[derive(Debug, PartialEq, Eq)]
-struct BindingData {
+pub(super) struct BindingData {
     indexes: BTreeMap<Key, u32>,
     slots: BTreeMap<SymbolId, (SymbolId, SymbolId)>,
 }
@@ -23,8 +23,10 @@ impl BindingTables {
         {
             return previous.clone();
         }
+        // A second session of the same inputs builds an equal table; hold one allocation for both.
+        let fingerprint = super::shared_pool::fingerprint(&indexes);
         Self {
-            inner: Arc::new(BindingData { indexes, slots }),
+            inner: super::shared_pool::bindings(fingerprint, BindingData { indexes, slots }),
         }
     }
     pub fn assignments(&self) -> &BTreeMap<Key, u32> {
@@ -161,7 +163,10 @@ impl RetainedBindings {
             true,
         )?;
         let recipe = match captured {
-            Some(recipe) => Arc::new(recipe),
+            Some(recipe) => {
+                let fingerprint = recipe.fingerprint();
+                super::shared_pool::recipe(fingerprint, recipe)
+            }
             None => {
                 self.assignment_reuses
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
