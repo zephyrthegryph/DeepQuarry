@@ -22,6 +22,14 @@
 	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", list()), "no rows")
 	GLOB.declare_report_capture = null
 	TEST_ASSERT_EQUAL(length(reported), 3, "each refusal was reported ([jointext(reported, "; ")])")
+	TEST_ASSERT_EQUAL(length(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_LIGHTNING, delay = 5 SECONDS, tell = TRUE))), 1, "a lightning row needs nothing else")
+	TEST_ASSERT_EQUAL(length(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_RADIATION, range = 7, strength = 30))), 1, "a radiation row takes range and strength")
+	TEST_ASSERT_EQUAL(length(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_EMP, ranges = list(2, 4, 7, 10)))), 1, "an EMP row takes fixed ranges")
+	var/list/radiation_reports = list()
+	GLOB.declare_report_capture = radiation_reports
+	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_RADIATION, range = 7)), "a radiation row without a strength")
+	GLOB.declare_report_capture = null
+	TEST_ASSERT_EQUAL(length(radiation_reports), 1, "is refused with one report")
 	// The converted rules compiled their rows at world setup.
 	var/datum/xform/X = xform_of(/transformation/chem/instant/chemsmoke)
 	TEST_ASSERT_NOTNULL(X, "the chem smoke rule exists")
