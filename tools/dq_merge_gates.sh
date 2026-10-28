@@ -400,7 +400,11 @@ else
 	gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
 fi
 [ -z "${early_prep_done:-}" ] || rm -f "$early_prep_log" "$early_prep_log.rc"
-if [ -n "$tools_pid" ]; then wait "$tools_pid" || echo "dq_merge_gates: warning: compiler prebuild failed; the jobs build it themselves"; fi
+if [ -n "$tools_pid" ]; then
+	# the compiler is in the shared cache now: the test job's dq_focused_test.sh need not prepare it again (~30 s of Bun start-up and a
+	# cache probe on a loaded machine, 28 October)
+	if wait "$tools_pid"; then export DQ_FOCUSED_NO_TOOL_PREBUILD=1; else echo "dq_merge_gates: warning: compiler prebuild failed; the jobs build it themselves"; fi
+fi
 
 job_tests() { gate_tests_with_retry "${tests[@]}"; } # one isolated retry tells a flake from a failure (tools/dq_gate_retry.sh)
 job_dm() {

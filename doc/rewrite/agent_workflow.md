@@ -967,3 +967,17 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
   `dq_push_master.sh` needs no `dreamchecker` stamp and its fallback `build.sh dm` compiles without it. The native compiler's own
   diagnostics (var-before-def included) still gate every compile. `DQ_TRAIN_DREAMCHECKER=1` restores the previous behaviour, nothing
   was deleted; CI and `build.sh lint` still run DreamChecker.
+- **More lanes per fast cycle (`precheck-merge`).** After the fast-forward, every other chosen lane that was prechecked on the same
+  master, shares no area with what landed since (the `select_prechecked` interaction rule, no global path) and merges cleanly lands as
+  `merge(new origin/master, its stamped precheck merge)`: `dq_push_stamp.sh` accepts it as a merge of master into one stamped parent,
+  and `dq_push_master.sh` compiles it and runs the ratchets before pushing (no test world). Anything else stays queued for a fresh
+  precheck. `DQ_TRAIN_FAST_LAND_MORE=0` turns it off.
+- **One compile root for all precheck workers** (`deepquarry-pre1`, `tools/build/lib/compile_root.ts`): the daemon's 8 GB budget keeps
+  about one session, so two worker roots evicted each other (cold 108 s compiles) while the single native compile slot serialised them
+  anyway (one worker queued 305 s). `DQ_TRAIN_PRE_SHARED_ROOT=0` restores a root per worker. The gate's own compiler prebuild now
+  spares the test job its second compiler preparation (`DQ_FOCUSED_NO_TOOL_PREBUILD=1`, ~30 s).
+- **Status shows every step.** `cycle.txt` names the queue/tips step, batch selection, the disk floor check, the fast-forward check,
+  pushes and the gate with its log; `status` adds the gate's newest `== gate:` step. The `cycle:` line logs the preamble seconds.
+- **The disk floor no longer costs 24 minutes a cycle.** Below the floor the gate trims the cache synchronously (19:08-19:32Z on
+  28 October, freeing nothing that was not protected); after a refusal the train only re-reads the free space for
+  `DQ_TRAIN_FLOOR_RETRY_MIN` (30) minutes before trimming again.
