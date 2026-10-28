@@ -1425,6 +1425,7 @@
 #include "dq_init_sweep5_tests.dm"
 #include "dq_atom_broken_notice_tests.dm"
 #include "dq_blast_hooks_tests.dm"
+#include "dq_vv_list_target_tests.dm"
 #include "dq_setup_early_tests.dm"
 #include "dq_setup_base_tails_tests.dm"
 #include "dq_base_vars_wave2_tests.dm"
