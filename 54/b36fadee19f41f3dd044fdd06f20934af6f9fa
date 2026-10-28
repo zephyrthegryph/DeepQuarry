@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"54b36fadee19f41f3dd044fdd06f20934af6f9fa","ok":true,"passed":1,"failed":0,"new_failed":0,"lanes":"fix/flavor-default","tests":["dq_ui_capture_prefs"],"reproof_of":"","reproof_reason":"","tests_json":"data/test-runs/20261028T202626_54b36fadee.json","created":"2026-10-28T20:26:45Z"}
