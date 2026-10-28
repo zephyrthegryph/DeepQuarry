@@ -67,7 +67,7 @@ export const TraitPicker = ({ data, staticData }: EditorProps) => {
         py={0.5}
         style={{
           backgroundColor: 'rgba(255,255,255,0.05)',
-          borderRadius: '2px',
+          borderRadius: '0.167em',
         }}
       >
         <Stack align="center">
@@ -109,8 +109,14 @@ export const TraitPicker = ({ data, staticData }: EditorProps) => {
           />
         </Box>
       </Box>
-      <Stack>
-        <Stack.Item grow basis={0}>
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15em), 1fr))',
+          gap: '0.5em',
+        }}
+      >
+        <Box style={{ minWidth: 0 }}>
           <TraitColumn
             label="Positive"
             categoryKey="pos"
@@ -119,8 +125,8 @@ export const TraitPicker = ({ data, staticData }: EditorProps) => {
             allTraits={s.all_traits}
             search={search}
           />
-        </Stack.Item>
-        <Stack.Item grow basis={0}>
+        </Box>
+        <Box style={{ minWidth: 0 }}>
           <TraitColumn
             label="Neutral"
             categoryKey="neu"
@@ -129,8 +135,8 @@ export const TraitPicker = ({ data, staticData }: EditorProps) => {
             allTraits={s.all_traits}
             search={search}
           />
-        </Stack.Item>
-        <Stack.Item grow basis={0}>
+        </Box>
+        <Box style={{ minWidth: 0 }}>
           <TraitColumn
             label="Negative"
             categoryKey="neg"
@@ -139,8 +145,8 @@ export const TraitPicker = ({ data, staticData }: EditorProps) => {
             allTraits={s.all_traits}
             search={search}
           />
-        </Stack.Item>
-      </Stack>
+        </Box>
+      </Box>
     </Box>
   );
 };
@@ -253,7 +259,7 @@ const TraitRow = ({
     meta.cost === 0 ? '0' : meta.cost > 0 ? `+${meta.cost}` : `${meta.cost}`;
   return (
     <Box mb={0.1} fontSize="0.85em">
-      <Box style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <Box style={{ display: 'flex', alignItems: 'center', gap: '0.333em' }}>
         <Button
           compact
           icon={icon}
@@ -272,7 +278,7 @@ const TraitRow = ({
             minWidth: 0,
             display: 'flex',
             alignItems: 'baseline',
-            gap: '4px',
+            gap: '0.333em',
           }}
           onClick={() => setOpen((v) => !v)}
         >

@@ -11,16 +11,25 @@
 
 // explicit category order so the top-tab buttons don't dance every refresh.
 // Categories not listed here fall to the end in alphabetical order. Names must match the
-// `category` field tag_pref writes onto singletons (see _pref_metadata.dm).
+// `category` field tag_pref writes onto singletons (see _pref_metadata.dm). The tabs a
+// player opens on every new character come first (Identity, Looks, Loadout, Jobs).
 GLOBAL_LIST_INIT(dq_category_order, list(
 	"identity",
-	"factions",
 	"appearance",
-	"size_voice",
 	"loadout",
 	"occupation",
 	"traits",
 	"mind_body",
+	"size_voice",
+	"factions",
+	"antag",
+	"game",
+	"misc",
+))
+
+// Rarely-changed categories: the window folds them under one "More" tab (in this order,
+// after every other tab). They stay ordinary categories on the wire; only the tab strip groups them.
+GLOBAL_LIST_INIT(dq_more_categories, list(
 	"antag",
 	"game",
 	"misc",
@@ -474,6 +483,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	data["dq_cache_key"] = "[REF(prefs_datum)]-[prefs_datum.default_slot]"
 	data["dq_active_category"] = prefs_datum.dq_active_category
 	data["dq_category_index"] = prefs_datum.dq_category_index
+	data["dq_more_categories"] = GLOB.dq_more_categories
 	data["dq_structure_version"] = prefs_datum.dq_category_structure_version
 
 	var/window_id = ui?.window()?.id || "unpooled"

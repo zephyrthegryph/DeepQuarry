@@ -1,7 +1,7 @@
 // DQAdd — Auto-renders a single /datum/preference widget. The DM side picks the widget
 // type via /datum/preference.get_widget(); this component dispatches to the right control.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
@@ -9,11 +9,10 @@ import {
   ColorBox,
   Dropdown,
   Input,
-  NumberInput,
-  Slider,
   Stack,
   TextArea,
 } from 'tgui-core/components';
+import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
 import { ColorizedImage, ColorizedImageButton } from './helper_components';
 import type { PrefWidgetItem } from './types';
 
@@ -76,132 +75,71 @@ const BufferedTextArea = ({
   );
 };
 
-/// Slider that buffers server value vs. local drag state. tgui-core's Slider
-/// fires onChange only on release. We track local value via tickWhileDragging
-/// → keep our useState in sync with the user's drag position, and commit
-/// only when the user releases (delta vs. last-committed serverValue).
-/// Server-side value updates during drag are ignored so the thumb doesn't
-/// snap mid-drag.
-const BufferedSlider = ({
-  serverValue,
-  min,
-  max,
-  step,
-  onCommit,
-}: {
-  serverValue: number;
-  min: number;
-  max: number;
-  step: number;
-  onCommit: (v: number) => void;
-}) => {
-  const decimals = decimalsForStep(step);
-  const format = (v: number) => v.toFixed(decimals);
-  const [local, setLocal] = useState(serverValue);
-  const interacting = useRef(false);
-  // Sync to server value only when the user isn't currently interacting.
-  // Without this guard, a poll-time push of the previous value would yank
-  // the thumb back mid-drag and cause the cursor/thumb mismatch.
-  useEffect(() => {
-    if (!interacting.current) setLocal(serverValue);
-  }, [serverValue]);
-  // tickWhileDragging makes onChange fire as the user drags. We use that to
-  // update local state and mark interacting=true. We can't tell drag-end from
-  // a normal commit just from event types; instead we mark not-interacting on
-  // a short timeout after the last tick, which is when the user has released.
-  const interactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Cancel any pending commit timer if we unmount mid-interaction.
-  useEffect(
-    () => () => {
-      if (interactionTimer.current) clearTimeout(interactionTimer.current);
-    },
-    [],
-  );
-  return (
-    <Slider
-      minValue={min}
-      maxValue={max}
-      step={step}
-      value={local}
-      format={format}
-      animated={false}
-      tickWhileDragging
-      onChange={(_, v) => {
-        interacting.current = true;
-        const rounded = roundTo(v, decimals);
-        setLocal(rounded);
-        if (interactionTimer.current) clearTimeout(interactionTimer.current);
-        interactionTimer.current = setTimeout(() => {
-          interacting.current = false;
-          if (rounded !== serverValue) onCommit(rounded);
-        }, 120);
-      }}
-    />
-  );
-};
+/// Choice lists at or under this many entries (with short labels) render as a segmented row.
+const SEGMENTED_MAX = 4;
+const SEGMENTED_MAX_LABEL_CHARS = 36;
+/// Choice lists over this many entries get a filter box.
+const SEARCHABLE_MIN = 9;
 
-const BufferedNumberInput = ({
-  serverValue,
-  min,
-  max,
-  step,
-  onCommit,
-}: {
-  serverValue: number;
-  min: number;
-  max: number;
-  step: number;
-  onCommit: (v: number) => void;
-}) => {
-  const decimals = decimalsForStep(step);
-  const format = (v: number) => v.toFixed(decimals);
-  const [local, setLocal] = useState(serverValue);
-  const interacting = useRef(false);
-  useEffect(() => {
-    if (!interacting.current) setLocal(serverValue);
-  }, [serverValue]);
-  const interactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Cancel any pending commit timer if we unmount mid-interaction.
-  useEffect(
-    () => () => {
-      if (interactionTimer.current) clearTimeout(interactionTimer.current);
-    },
-    [],
-  );
-  return (
-    <NumberInput
-      fluid
-      value={local}
-      minValue={min}
-      maxValue={max}
-      step={step}
-      format={format}
-      animated={false}
-      onChange={(v) => {
-        interacting.current = true;
-        const rounded = roundTo(v, decimals);
-        setLocal(rounded);
-        if (interactionTimer.current) clearTimeout(interactionTimer.current);
-        interactionTimer.current = setTimeout(() => {
-          interacting.current = false;
-          if (rounded !== serverValue) onCommit(rounded);
-        }, 120);
-      }}
-    />
-  );
+export type ResolvedWidget =
+  | 'text'
+  | 'longtext'
+  | 'number'
+  | 'switch'
+  | 'color'
+  | 'segmented'
+  | 'dropdown'
+  | 'search_dropdown'
+  | 'multi'
+  | 'thumbgrid'
+  | 'palette'
+  | 'none';
+
+/// The one place that decides which control a pref gets. The server's hint (get_widget) says
+/// what kind of value it is; the control for that kind is chosen here, the same way on every
+/// tab: toggles are switches, short choice lists segmented buttons, long ones a searchable
+/// dropdown, numbers a slider plus a box.
+export const resolveWidget = (item: PrefWidgetItem): ResolvedWidget => {
+  switch (item.widget) {
+    case 'boolean':
+      return 'switch';
+    case 'number':
+    case 'slider':
+      return 'number';
+    case 'radio':
+    case 'dropdown': {
+      const choices = normalizeChoices(item.choices);
+      const chars = choices.reduce((n, [, label]) => n + label.length, 0);
+      if (
+        choices.length > 0 &&
+        choices.length <= SEGMENTED_MAX &&
+        chars <= SEGMENTED_MAX_LABEL_CHARS
+      ) {
+        return 'segmented';
+      }
+      return choices.length >= SEARCHABLE_MIN ? 'search_dropdown' : 'dropdown';
+    }
+    case 'text':
+    case 'longtext':
+    case 'color':
+    case 'multi':
+    case 'thumbgrid':
+    case 'palette':
+      return item.widget;
+    case 'hidden':
+    case 'editor':
+      return 'none';
+    default:
+      return 'text';
+  }
 };
 
 export const PrefWidget = ({ item }: Props) => {
   const { act } = useBackend();
 
-  switch (item.widget) {
+  switch (resolveWidget(item)) {
     case 'text':
-      // BufferedInput: buffers locally and flushes on blur/Enter. Without buffering, the
-      // ~1Hz tgui poll lands between keystrokes and yanks the caret position; the user
-      // ends up retyping. Same pattern VoreMessagesEditor uses for its own draft.
-      //
-      // Width is unconstrained so the input fills its grid cell — the WidgetGrid in
-      // CategoryPage caps each cell at the column width.
+      // Buffered: flushes on blur/Enter so the ~1 Hz poll can't yank the caret mid-typing.
       return (
         <BufferedTextInput
           value={String(item.value ?? '')}
@@ -222,21 +160,7 @@ export const PrefWidget = ({ item }: Props) => {
       const max = Number((item.props.max as number | undefined) ?? 100);
       const step = Number((item.props.step as number | undefined) ?? 1);
       return (
-        <BufferedNumberInput
-          serverValue={Number(item.value ?? min)}
-          min={min}
-          max={max}
-          step={step}
-          onCommit={(v) => sendUpdate(act, item.key, v)}
-        />
-      );
-    }
-    case 'slider': {
-      const min = Number((item.props.min as number | undefined) ?? 0);
-      const max = Number((item.props.max as number | undefined) ?? 100);
-      const step = Number((item.props.step as number | undefined) ?? 1);
-      return (
-        <BufferedSlider
+        <SliderBox
           serverValue={Number(item.value ?? min)}
           min={min}
           max={max}
@@ -246,15 +170,12 @@ export const PrefWidget = ({ item }: Props) => {
       );
     }
 
-    case 'boolean':
+    case 'switch':
       return (
-        <Button
-          selected={!!item.value}
-          icon={item.value ? 'check' : 'xmark'}
-          onClick={() => sendUpdate(act, item.key, !item.value)}
-        >
-          {item.value ? 'Yes' : 'No'}
-        </Button>
+        <Switch
+          checked={!!item.value}
+          onToggle={() => sendUpdate(act, item.key, !item.value)}
+        />
       );
 
     case 'color': {
@@ -293,6 +214,24 @@ export const PrefWidget = ({ item }: Props) => {
       );
     }
 
+    case 'segmented':
+      return (
+        <Segmented
+          options={normalizeChoices(item.choices)}
+          value={String(item.value ?? '')}
+          onSelect={(val) => sendUpdate(act, item.key, val)}
+        />
+      );
+
+    case 'search_dropdown':
+      return (
+        <SearchableDropdown
+          options={normalizeChoices(item.choices)}
+          value={String(item.value ?? '')}
+          onSelect={(val) => sendUpdate(act, item.key, val)}
+        />
+      );
+
     case 'dropdown': {
       const choices = normalizeChoices(item.choices);
       const options = choices.map(([val, label]) => ({
@@ -300,12 +239,9 @@ export const PrefWidget = ({ item }: Props) => {
         displayText: label,
       }));
       const currentVal = String(item.value ?? '');
-      // tgui-core Dropdown doesn't look up the option label from the value on its own —
-      // if `selected` is a string it just renders that string. Override with displayText.
+      // tgui-core Dropdown doesn't look up the option label from the value on its own.
       const currentLabel =
         options.find((o) => o.value === currentVal)?.displayText ?? currentVal;
-      // `fluid` is the supported way to make Dropdown fill its container width;
-      // `width="100%"` is documented as deprecated/layout-breaking in tgui-core.
       return (
         <Dropdown
           fluid
@@ -314,23 +250,6 @@ export const PrefWidget = ({ item }: Props) => {
           options={options}
           onSelected={(val) => sendUpdate(act, item.key, val)}
         />
-      );
-    }
-    case 'radio': {
-      const choices = normalizeChoices(item.choices);
-      return (
-        <Stack wrap>
-          {choices.map(([val, label]) => (
-            <Stack.Item key={val}>
-              <Button
-                selected={item.value === val}
-                onClick={() => sendUpdate(act, item.key, val)}
-              >
-                {label}
-              </Button>
-            </Stack.Item>
-          ))}
-        </Stack>
       );
     }
 
@@ -368,8 +287,7 @@ export const PrefWidget = ({ item }: Props) => {
         />
       );
 
-    case 'hidden':
-    case 'editor':
+    case 'none':
       return null;
 
     default:
@@ -404,23 +322,6 @@ function normalizeChoices(
     return choices.map((v) => [v, humanizeChoice(v)]);
   }
   return Object.entries(choices);
-}
-
-/// Step 0.1 → 1 decimal; 0.01 → 2; 1 → 0. JS floats can produce 0.7000000000000001
-/// during slider arithmetic; we use toFixed(decimals) for display + roundTo for the
-/// wire value so the savefile doesn't get a bunch of phantom decimals.
-function decimalsForStep(step: number): number {
-  if (!Number.isFinite(step) || step <= 0) return 0;
-  if (step >= 1) return 0;
-  const s = step.toString();
-  const dotIdx = s.indexOf('.');
-  if (dotIdx < 0) return 0;
-  return s.length - dotIdx - 1;
-}
-
-function roundTo(value: number, decimals: number): number {
-  const factor = 10 ** decimals;
-  return Math.round(value * factor) / factor;
 }
 
 /// Inline thumbnail picker. The Change button toggles a panel that expands
@@ -492,8 +393,8 @@ const ThumbgridPicker = ({
           mt={0.5}
           p={0.5}
           style={{
-            borderRadius: '4px',
-            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '0.3em',
+            border: '0.0833em solid rgba(255,255,255,0.1)',
             background: 'rgba(0,0,0,0.2)',
           }}
         >
@@ -506,7 +407,7 @@ const ThumbgridPicker = ({
               onChange={(v) => setSearch(v)}
             />
           </Box>
-          <Box style={{ maxHeight: '260px', overflowY: 'auto' }}>
+          <Box style={{ maxHeight: '18em', overflowY: 'auto' }}>
             <Stack wrap>
               {filtered.map(([val, label]) => {
                 const t = thumbs[val];

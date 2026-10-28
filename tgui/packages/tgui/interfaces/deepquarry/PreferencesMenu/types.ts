@@ -13,6 +13,7 @@ export type PrefWidgetKind =
   | 'radio'
   | 'thumbgrid'
   | 'multi'
+  | 'palette'
   | 'editor'
   | 'hidden';
 
@@ -59,6 +60,8 @@ export type CharacterPreviewAssets = {
 export type CharacterSetupData = {
   dq_categories?: PrefCategory[];
   dq_category_index?: string[];
+  /// Rarely-changed categories the tab strip folds under one "More" tab (GLOB.dq_more_categories).
+  dq_more_categories?: string[];
   dq_category_patch?: Record<string, PrefCategory>;
   dq_active_category?: string;
   dq_cache_key?: string;
