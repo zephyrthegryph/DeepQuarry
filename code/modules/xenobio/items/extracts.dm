@@ -354,7 +354,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_pyrotoxin)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_lightning)
 	configure(transformation(name = "Slime Lightning", id = "m_yellow_lightning", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		effects = sets_off(kind = XFORM_FX_LATER, audit = "Yellow extract reaction (lightning)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_lightning))))
+		effects = sets_off(kind = XFORM_FX_LIGHTNING, audit = "Yellow extract reaction (lightning)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS)))
 
 
 /transformation/chem/instant/slime/yellow_flashlight
@@ -369,7 +369,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_flashlight)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_emp)
 	configure(transformation(name = "Slime EMP", id = "m_yellow_emp", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		effects = sets_off(kind = XFORM_FX_LATER, audit = "Yellow extract reaction (emp)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_emp))))
+		effects = sets_off(kind = XFORM_FX_EMP, audit = "Yellow extract reaction (emp)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, ranges = list(2, 4, 7, 10), fire_sfx = SFX_EFFECTS_PHASEIN)))
 
 
 /transformation/chem/instant/slime/yellow_battery
@@ -1362,15 +1362,6 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_unity)
 		target_turf.assume_gas(GAS_O2, 66, 1500+T0C)
 		target_turf.hotspot_expose(1500+T0C, 400)
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
-
-/proc/slime_extract_lightning(atom/extract)
-	var/turf/T = get_turf(extract)
-	if(istype(T))
-		lightning_strike(T)
-
-/proc/slime_extract_emp(atom/extract)
-	empulse(get_turf(extract), 2, 4, 7, 10) // As strong as a normal EMP grenade.
-	play_sfx(extract, SFX_EFFECTS_PHASEIN, 0.75)
 
 /proc/slime_extract_start_emitting(atom/extract)
 	var/obj/item/slime_extract/X = extract

@@ -49,6 +49,11 @@ CAPABILITIES(/transformation/dq_spawn/never)
 CAPABILITIES(/transformation/dq_spawn/frosty)
 	configure(transformation(takes = list(reagent(REAGENT_ID_POTASSIUM, 1)), made = 1, effects = sets_off(kind = XFORM_FX_FROST, amount = 3, chance = 100)))
 
+/transformation/dq_spawn/timed_pulse
+
+CAPABILITIES(/transformation/dq_spawn/timed_pulse)
+	configure(transformation(takes = list(reagent(REAGENT_ID_NITROGEN, 1)), made = 1, effects = sets_off(kind = XFORM_FX_EMP, delay = 1 SECOND, ranges = list(1, 1, 1, 1))))
+
 /// An item that notes the pulse.
 /obj/item/dq_emp_probe
 	var/pulsed = 0
@@ -157,6 +162,21 @@ CAPABILITIES(/transformation/dq_spawn/frosty)
 		qdel(F)
 	TEST_ASSERT(frost > 0, "the frost row made a frost cloud")
 	GLOB.dq_later_log.Cut()
+	test_driver_end()
+
+/datum/unit_test/dq_xform_sets_off_timed_emp
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_timed_emp/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/obj/item/dq_emp_probe/near = allocate(/obj/item/dq_emp_probe, T)
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_NITROGEN, 1, safety = 1)
+	xform_settle_reagents(H)
+	TEST_ASSERT_EQUAL(near.pulsed, 0, "a fixed-range pulse with a delay waits")
+	test_time(2 SECONDS)
+	TEST_ASSERT(near.pulsed > 0, "and goes off after the delay with its fixed ranges")
 	test_driver_end()
 
 #endif

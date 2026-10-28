@@ -330,7 +330,7 @@ CAPABILITIES(/transformation/chem/instant/slime/warplague)
 CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
 	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse2", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nuclear),
-		effects = sets_off(kind = XFORM_FX_LATER, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_green_pulse))))
+		effects = sets_off(kind = XFORM_FX_RADIATION, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, range = 7, strength = 30)))
 
 
 /transformation/chem/instant/slime/nuclear_emitter
@@ -555,12 +555,3 @@ CAPABILITIES(/transformation/chem/instant/slime/soundjelly)
 	configure(transformation(name = "sound slimejelly", id = "m_sound_slimejelly", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sound),
 		spawns = spawns(/obj/item/stack/material/glass/plastitanium, 1, amount = 5)))
-/// The green extract's radiation pulse, five seconds after it starts to vibrate.
-/proc/slime_green_pulse(atom/source)
-	radiation_pulse(
-		source,
-		max_range = 7,
-		threshold = RAD_MEDIUM_INSULATION,
-		chance = 100,
-		strength = 30
-	)
