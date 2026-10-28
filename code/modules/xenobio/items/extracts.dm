@@ -171,32 +171,8 @@ CAPABILITIES(/transformation/chem/instant/slime/blue_stability)
 CAPABILITIES(/transformation/chem/instant/slime/blue_calm)
 	configure(transformation(name = "Slime Calm", id = "m_blue_calm", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/blue),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/blue_calm, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_CALM, sfx = SFX_EFFECTS_PHASEIN)))
 
-/transformation/chem/instant/slime/blue_calm/on_reaction(datum/reagents/holder)
-	for(var/mob/living/simple_mob/slime/S in view(get_turf(holder.my_atom)))
-		if(S.stat)
-			continue
-
-		if(istype(S, /mob/living/simple_mob/slime/xenobio))
-			var/mob/living/simple_mob/slime/xenobio/X = S
-			if(X.harmless)
-				continue
-			if(!X.client)
-				X.relax()
-
-		S.remove_body_effect(/datum/body_effect/berserk)
-
-		if(S.client) // Player slimes always have free will.
-			to_chat(S, span_warning("An intense wave of relaxing calm is felt from inside, but you remain in control of yourself."))
-
-	for(var/mob/living/carbon/human/H in view(get_turf(holder.my_atom)))
-		if(H.species?.is_slime_bodied)
-			H.remove_body_effect(/datum/body_effect/berserk)
-			to_chat(H, span_warning("An intense wave of relaxing calm is felt from inside, but you remain in control of yourself."))
-
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	..()
 
 /transformation/chem/instant/slime/blue_cryotoxin
 
@@ -263,14 +239,8 @@ CAPABILITIES(/transformation/chem/instant/slime/purple_fertility)
 CAPABILITIES(/transformation/chem/instant/slime/orange_fire)
 	configure(transformation(name = "Slime Fire", id = "m_orange_fire", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/orange),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/orange_fire, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_BURN, audit = "Orange extract reaction (fire)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, fire_sfx = SFX_EFFECTS_PHASEIN, gases = list(GAS_VOLATILE_FUEL = 33, GAS_O2 = 66), temperature = 1500 + T0C, hotspot = list(1500 + T0C, 400), range = 2, line_of_sight = TRUE)))
 
-/transformation/chem/instant/slime/orange_fire/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_fire), with = list(holder.my_atom))
-	..()
 
 /transformation/chem/instant/slime/orange_heatwave
 
@@ -620,34 +590,8 @@ CAPABILITIES(/transformation/chem/instant/slime/red_mutation)
 CAPABILITIES(/transformation/chem/instant/slime/red_enrage)
 	configure(transformation(name = "Slime Enrage", id = "m_red_enrage", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/red),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/red_enrage, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_ENRAGE, audit = "Red extract reaction (enrage)", sfx = SFX_EFFECTS_PHASEIN)))
 
-/transformation/chem/instant/slime/red_enrage/on_reaction(datum/reagents/holder)
-	for(var/mob/living/simple_mob/slime/S in view(get_turf(holder.my_atom)))
-		if(S.stat)
-			continue
-
-		if(istype(S, /mob/living/simple_mob/slime/xenobio))
-			var/mob/living/simple_mob/slime/xenobio/X = S
-			if(X.harmless)
-				continue
-			if(!X.client)
-				X.enrage()
-
-		S.apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
-
-		if(S.client) // Player slimes always have free will.
-			to_chat(S, span_warning("An intense wave of rage is felt from inside, but you remain in control of yourself."))
-
-	for(var/mob/living/carbon/human/H in view(get_turf(holder.my_atom)))
-		if(H.species?.is_slime_bodied)
-			H.apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
-			to_chat(H, span_warning("An intense wave of rage is felt from inside, but you remain in control of yourself."))
-
-	log_and_message_admins("Red extract reaction (enrage) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	..()
 
 /transformation/chem/instant/slime/red_hotsauce
 
@@ -1045,11 +989,8 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_swole)
 CAPABILITIES(/transformation/chem/instant/slime/ruby_pull)
 	configure(transformation(name = "Slime Pull", id = "m_ruby_pull", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/ruby),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/ruby_pull, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PULL, range = 3, pulses = 3, sfx = SFX_WEAPONS_GAUSS_SHOOT)))
 
-/transformation/chem/instant/slime/ruby_pull/on_reaction(datum/reagents/holder)
-	var/location = get_turf(holder.my_atom)
-	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
 #ifndef UNIT_TESTS
 	// The pull keeps its timers and its record after it ends, which the end-of-run ownership audit reports as a leak: the pins settle this rule in a test world.
 	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
@@ -1069,25 +1010,8 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_brute_juice)
 CAPABILITIES(/transformation/chem/instant/slime/ruby_push)
 	configure(transformation(name = "Slime Push", id = "m_ruby_push", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/ruby),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/ruby_push, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PUSH, range = 3, fire_sfx = SFX_WEAPONS_GAUSS_SHOOT)))
 
-/transformation/chem/instant/slime/ruby_push/on_reaction(datum/reagents/holder)
-	var/location = get_turf(holder.my_atom)
-	for(var/X in orange(3, location))
-		var/atom/movable/AM = X
-		if(!ismovable(X) || istype(X, /obj/effect/overlay))
-			continue
-
-		if(isobj(X))
-			var/obj/O = X
-			if(O.anchored)
-				continue
-
-		var/throwdir = get_dir(location, AM)
-		AM.throw_at(get_edge_target_turf(AM, throwdir), 3, 1, src)
-
-	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
-	..()
 
 // *****************
 // * Emerald slime *
@@ -1252,16 +1176,6 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_unity)
 		spawns = spawns(/obj/item/slimepotion/unity, 1)))
 // Delayed extract reactions, five seconds after the extract starts to vibrate, on the
 // extract's clock (a deleted extract never goes off).
-
-/proc/slime_extract_fire(atom/extract)
-	var/turf/simulated/T = get_turf(extract)
-	if(!istype(T))
-		return
-	for(var/turf/simulated/target_turf in view(2, T))
-		target_turf.assume_gas(GAS_VOLATILE_FUEL, 33, 1500+T0C)
-		target_turf.assume_gas(GAS_O2, 66, 1500+T0C)
-		target_turf.hotspot_expose(1500+T0C, 400)
-	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
 
 /proc/slime_extract_start_emitting(atom/extract)
 	var/obj/item/slime_extract/X = extract

@@ -54,6 +54,21 @@ CAPABILITIES(/transformation/dq_spawn/frosty)
 CAPABILITIES(/transformation/dq_spawn/timed_pulse)
 	configure(transformation(takes = list(reagent(REAGENT_ID_NITROGEN, 1)), made = 1, effects = sets_off(kind = XFORM_FX_EMP, delay = 1 SECOND, ranges = list(1, 1, 1, 1))))
 
+/transformation/dq_spawn/shove
+
+CAPABILITIES(/transformation/dq_spawn/shove)
+	configure(transformation(takes = list(reagent(REAGENT_ID_NITROGEN, 2)), made = 1, effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PUSH, range = 2)))
+
+/transformation/dq_spawn/soothe
+
+CAPABILITIES(/transformation/dq_spawn/soothe)
+	configure(transformation(takes = list(reagent(REAGENT_ID_PHORON, 1)), made = 1, effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_CALM)))
+
+/transformation/dq_spawn/rile
+
+CAPABILITIES(/transformation/dq_spawn/rile)
+	configure(transformation(takes = list(reagent(REAGENT_ID_HYDROGEN, 1)), made = 1, effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_ENRAGE)))
+
 /// An item that notes the pulse.
 /obj/item/dq_emp_probe
 	var/pulsed = 0
@@ -178,5 +193,37 @@ CAPABILITIES(/transformation/dq_spawn/timed_pulse)
 	test_time(2 SECONDS)
 	TEST_ASSERT(near.pulsed > 0, "and goes off after the delay with its fixed ranges")
 	test_driver_end()
+
+/datum/unit_test/dq_xform_sets_off_gravity_push
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_gravity_push/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/turf/side = locate(T.x + 1, T.y, T.z)
+	var/obj/item/dq_emp_probe/loose = allocate(/obj/item/dq_emp_probe, side)
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_NITROGEN, 2, safety = 1)
+	xform_settle_reagents(H)
+	test_time(2 SECONDS)
+	TEST_ASSERT(loose.x > side.x, "a loose item beside the vessel was thrown away from it")
+	test_driver_end()
+
+/datum/unit_test/dq_xform_sets_off_mood
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_mood/Run()
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/slime/xenobio/slime = allocate(/mob/living/simple_mob/slime/xenobio, T)
+	slime.apply_body_effect(/datum/body_effect/berserk, 5 MINUTES)
+	TEST_ASSERT(slime.has_body_effect(/datum/body_effect/berserk), "the slime starts berserk")
+	var/datum/reagents/dq_spawn_fixture/calm = dq_spawn_holder(T)
+	calm.add_reagent(REAGENT_ID_PHORON, 1, safety = 1)
+	xform_settle_reagents(calm)
+	TEST_ASSERT(!slime.has_body_effect(/datum/body_effect/berserk), "a calm mood takes the berserk off a slime in view")
+	var/datum/reagents/dq_spawn_fixture/rile = dq_spawn_holder(T)
+	rile.add_reagent(REAGENT_ID_HYDROGEN, 1, safety = 1)
+	xform_settle_reagents(rile)
+	TEST_ASSERT(slime.has_body_effect(/datum/body_effect/berserk), "an enraged mood puts it back")
 
 #endif
