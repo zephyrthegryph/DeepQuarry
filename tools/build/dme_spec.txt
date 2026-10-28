@@ -47,7 +47,7 @@ before code/modules/food/food/snacks.dm code/modules/exploration/tyr_tribal_gear
 before code/modules/pda/pda.dm code/content/pda/pda_subtypes.dm   # /obj/item/storage/box/PDAs
 before code/content/items/weapons/storage/boxes.dm code/content/casino/boxes_casino.dm   # casino boxes
 before code/content/hydroponics/seed_storage.dm code/modules/hydro/plantsstorage.dm   # seed storage machines
-before code/game/objects/structures/flora/flora.dm code/game/objects/structures/flora.dm   # /obj/structure/flora/bush
+before code/game/objects/structures/flora/flora.dm code/content/structures/flora.dm   # /obj/structure/flora/bush
 before code/game/area/Away?Mission?areas.dm code/content/turfs/initialization/init.dm   # /area/area_after_init()
 before code/modules/mob/living/living_movement.dm code/content/vore/eating/stumblevore.dm   # /mob/living/Bump(), Crossed()
 before code/modules/mob/living/simple_mob/defense.dm code/content/vore/eating/simple_animal.dm   # /mob/living/simple_mob/hit_with_item()
