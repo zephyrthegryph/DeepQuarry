@@ -1408,6 +1408,7 @@
 #include "../../modules/unit_tests/dq_mob_visuals_tests.dm"
 #include "../../modules/unit_tests/gameplay/_harness.dm"
 #include "../../modules/unit_tests/gameplay/arrival.dm"
+#include "../../modules/unit_tests/gameplay/lights.dm"
 #include "../../modules/unit_tests/gameplay/lungs.dm"
 #include "../../modules/unit_tests/gameplay/clothing.dm"
 #include "../../modules/unit_tests/gameplay/doors_power.dm"

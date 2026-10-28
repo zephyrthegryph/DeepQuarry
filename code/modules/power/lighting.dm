@@ -338,7 +338,7 @@ CAPABILITIES(/obj/machinery/light)
 			correct_range = brightness_range
 			correct_power = brightness_power
 			correct_color = brightness_color
-		if(!light_on || glow_of(src).range != correct_range || glow_of(src).power != correct_power || glow_of(src).color != correct_color || overlay_color != correct_overlay)
+		if(glow_of(src).range != correct_range || glow_of(src).power != correct_power || glow_of(src).color != correct_color || overlay_color != correct_overlay)
 			if(!auto_flicker)
 				switchcount++
 			if(rigged)
@@ -366,7 +366,6 @@ CAPABILITIES(/obj/machinery/light)
 	else
 		set_use_power(USE_POWER_IDLE)
 		set_glow(src, GLOW(0, null, null))
-	update_light()
 	update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.

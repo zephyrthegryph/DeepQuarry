@@ -235,6 +235,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 
 //////////////Containment Field START
 /obj/machinery/shieldwall
+		light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 		name = "Shield"
 		desc = "An energy shield."
 		icon = 'icons/effects/effects.dmi'
