@@ -7,7 +7,6 @@
  */
 
 /obj/machinery/slot_machine
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "slot machine"
 	desc = "A gambling machine designed to give you false hope and rob you of your wealth, hence why it's often called a one armed bandit."
 	icon = 'icons/obj/casino_ch.dmi'
@@ -148,7 +147,6 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
  */
 
 /obj/machinery/station_slot_machine
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "station slot machine"
 	desc = "A gambling machine owned by NanoTrasen, designed to take Thalers as opposed to casino chips."
 	icon = 'icons/obj/casino.dmi'

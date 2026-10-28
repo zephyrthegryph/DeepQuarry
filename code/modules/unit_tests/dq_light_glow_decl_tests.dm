@@ -65,7 +65,19 @@
 /// Every object type that declares a light (glow range and power above 0) casts it once initialised: a static light has its light source and a
 /// movable one its overlay light, unless the light is dark on purpose: its glow went to 0 (set_glow(src, GLOW_OFF)), or the type declares
 /// `light_on = FALSE` against the /atom default (a lamp that starts switched off). Nothing else may leave a declared light without a source.
+/// The first look is applied before the check (a look's light, look.glow(), is the type's own runtime state). The types in `must_cast` were
+/// kept dark only by the old default and are lit by their own logic at spawn: each must cast, whatever it declares.
 /datum/unit_test/dq_light_declared_glow_casts
+	var/list/must_cast = list(
+		/obj/machinery/power/supermatter, // its glow follows its power (shift_light()); it starts at the declared one
+		/obj/singularity, // lit at every size; an energy ball's mini-balls are the exception (set_glow(GLOW_OFF) at setup)
+		/obj/structure/cult/pylon, // lit while whole; broken it goes dark (set_glow(GLOW_OFF)) until repaired
+		/obj/machinery/slot_machine, // lit while powered (its look's glow); unpowered or broken it is dark
+		/obj/machinery/station_slot_machine,
+		/obj/machinery/smartfridge/tcrystal,
+		/obj/structure/marker_beacon,
+		/obj/structure/prop/dark_node, // a dark light (power -20): it casts shadow
+	)
 
 /datum/unit_test/dq_light_declared_glow_casts/Run()
 	var/turf/at = run_loc_floor_bottom_left
@@ -86,8 +98,18 @@
 		for(var/turf/T as anything in room)
 			had += T.contents
 		var/obj/O = new type(at)
+		refresh_flush() // the first look, and with it a look's light
 		if(!QDELETED(O))
 			checked++
+			var/must = FALSE
+			for(var/root in must_cast)
+				if(istype(O, root))
+					must = TRUE
+			var/obj/singularity/energy_ball/ball = O
+			if(istype(ball) && ball.miniball)
+				must = FALSE
+			if(must && !(atom_casts_light(O) && O.light))
+				bad += "[type]: must cast its light at spawn (light_on [O.light_on], glow [glow_of(O).range]/[glow_of(O).power], source [!!O.light])"
 			var/datum/type_trait/light_glow/glow = glow_of(O)
 			var/system = atom_rules_of(O).light_system
 			if(glow.range && glow.power)
