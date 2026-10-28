@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"723ca1c2ecbce32adf81e8c702f89d9ac4faf464","ok":true,"passed":1,"failed":0,"new_failed":0,"lanes":"fix/pref-metadata-order","tests":["dq_pref_metadata_tags_survive"],"reproof_of":"","reproof_reason":"","tests_json":"data/test-runs/20261028T163350_723ca1c2ec.json","created":"2026-10-28T16:34:24Z"}
