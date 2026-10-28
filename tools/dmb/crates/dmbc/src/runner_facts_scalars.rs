@@ -35,12 +35,12 @@ pub(super) fn key(query: ScalarQuery) -> Vec<u8> {
 impl ScalarArtifacts for CurrentScalars<'_> {
     fn accept_policy(
         &self,
-        decode: fn(&str) -> Option<Vec<u8>>,
+        decode: fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
         nameof: fn(&dm_syntax::Expr) -> Option<String>,
     ) -> bool {
         std::ptr::fn_addr_eq(
             decode,
-            crate::compile_driver::scalar_decode as fn(&str) -> Option<Vec<u8>>,
+            crate::compile_driver::scalar_decode as fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
         ) && std::ptr::fn_addr_eq(
             nameof,
             crate::compile_driver::scalar_nameof as fn(&dm_syntax::Expr) -> Option<String>,

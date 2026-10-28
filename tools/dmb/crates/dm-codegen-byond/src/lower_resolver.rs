@@ -245,7 +245,7 @@ impl ProjectResolver<'_> {
             SymbolId::of(lexical_owner),
             self.resource_search_context,
             fields,
-            |raw| crate::decode_constant_string_literal(raw).ok().flatten(),
+            |raw| crate::decode_native_constant_string_literal(raw).ok().flatten(),
             None,
             |path| {
                 let query = match self.resource_search_context {
@@ -698,8 +698,9 @@ fn query_subject(query: Q) -> &'static str {
         Q::Proc { .. } | Q::GlobalProc(_) => "procedure",
         Q::HasMemberProc { .. } => "procedure presence",
         Q::ProcedureValue { .. } | Q::MethodProcedureValue { .. } => "procedure reference",
-        Q::OverrideChain { .. } | Q::DeclarationChain { .. } => "procedure override chain",
+        Q::OverrideChain { .. } | Q::DeclarationChain { .. } | Q::SourceDeclarationChain { .. } => "procedure override chain",
         Q::MemberCallableName(_) | Q::MemberCallableVerbName(_) => "dynamic member call",
+        Q::IntrinsicCallable { .. } | Q::IntrinsicCallableName(_) => "intrinsic procedure provenance",
         Q::Signature(_) => "procedure signature",
         Q::ProcedureStatic { .. } => "procedure static variable",
         Q::Type(_) | Q::Parent(_) | Q::Ancestry(_) => "type hierarchy",

@@ -265,7 +265,7 @@ mod tests {
         let before_modified = procedure(unit, &args.0, b"key", &args.1).unwrap();
         let expression = dm_syntax::Expr {
             kind: dm_syntax::ExprKind::Group(Box::new(dm_syntax::Expr {
-                kind: dm_syntax::ExprKind::Literal("x".repeat(10000)),
+                kind: dm_syntax::ExprKind::Literal("x".repeat(10000).into()),
                 span: dm_syntax::Span::new(0, 10000),
             })),
             span: dm_syntax::Span::new(0, 10000),

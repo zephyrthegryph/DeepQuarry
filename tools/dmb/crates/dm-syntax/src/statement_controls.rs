@@ -255,6 +255,7 @@ pub(super) fn control_body(
     item: &Item,
     keyword: &str,
     diagnostics: &mut Vec<Diagnostic>,
+    origins: &mut Vec<ControlOrigin>,
 ) -> Vec<Statement> {
     let rest = item
         .header
@@ -263,16 +264,16 @@ pub(super) fn control_body(
         .unwrap_or("")
         .trim_start();
     let Some(close) = control_close(rest) else {
-        return parse_sequence(&item.children, diagnostics);
+        return parse_sequence(&item.children, diagnostics, origins);
     };
     let inline = rest[close + 1..].trim().trim_end_matches(';').trim();
     if inline.is_empty() {
-        return parse_sequence(&item.children, diagnostics);
+        return parse_sequence(&item.children, diagnostics, origins);
     }
     let mut nested = item.clone();
     nested.header = inline.into();
     nested.header_span.start += item.header.find(inline).unwrap_or(0);
-    parse_sequence(&[nested], diagnostics)
+    parse_sequence(&[nested], diagnostics, origins)
 }
 
 fn split_for_clauses(clause: &str) -> Vec<&str> {
@@ -307,13 +308,34 @@ pub(super) fn parse_control_condition(
     )
 }
 
+pub(super) fn parse_control_condition_origin(
+    item: &Item,
+    keyword: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+    origins: &mut Vec<ControlOrigin>,
+) -> Option<Expr> {
+    let (clause, opening) = control_clause_origin(item, keyword, diagnostics)?;
+    let condition = parse_expr(clause, item.header_span.start + item.header.find(clause).unwrap_or(0), diagnostics)?;
+    origins.push(ControlOrigin { condition: condition.span, opening });
+    Some(condition)
+}
+
 pub(super) fn control_clause<'a>(
     item: &'a Item,
     keyword: &str,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<&'a str> {
+    control_clause_origin(item, keyword, diagnostics).map(|(clause, _)| clause)
+}
+
+fn control_clause_origin<'a>(
+    item: &'a Item,
+    keyword: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<(&'a str, Span)> {
     let header = item.header.trim();
-    let rest = header.strip_prefix(keyword)?.trim_start();
+    let after_keyword = header.strip_prefix(keyword)?;
+    let rest = after_keyword.trim_start();
     let Some(close) = control_close(rest) else {
         diagnostics.push(Diagnostic {
             span: item.header_span,
@@ -323,7 +345,9 @@ pub(super) fn control_clause<'a>(
         return None;
     };
     let clause = &rest[1..close];
-    Some(clause.trim())
+    let offset = item.header_span.start + (item.header.len() - item.header.trim_start().len())
+        + keyword.len() + (after_keyword.len() - rest.len());
+    Some((clause.trim(), Span::new(offset, offset + 1)))
 }
 
 pub(super) fn parse_expr(
@@ -356,46 +380,7 @@ pub(super) fn parse_expr(
 }
 
 fn shift_expr(expr: &mut Expr, offset: usize) {
-    expr.span.start += offset;
-    expr.span.end += offset;
-    match &mut expr.kind {
-        ExprKind::Unary { value, .. }
-        | ExprKind::Group(value)
-        | ExprKind::TypeFilter { value, .. } => shift_expr(value, offset),
-        ExprKind::Binary { lhs, rhs, .. } => {
-            shift_expr(lhs, offset);
-            shift_expr(rhs, offset);
-        }
-        ExprKind::Conditional {
-            condition,
-            then_value,
-            else_value,
-        } => {
-            shift_expr(condition, offset);
-            shift_expr(then_value, offset);
-            shift_expr(else_value, offset);
-        }
-        ExprKind::Call { callee, args } => {
-            shift_expr(callee, offset);
-            for arg in args {
-                shift_expr(arg, offset);
-            }
-        }
-        ExprKind::ObjectInitializer { object, fields } => {
-            shift_expr(object, offset);
-            for (_, value) in fields {
-                shift_expr(value, offset);
-            }
-        }
-        ExprKind::Member { object, .. }
-        | ExprKind::SafeMember { object, .. }
-        | ExprKind::StaticMember { object, .. } => shift_expr(object, offset),
-        ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
-            shift_expr(object, offset);
-            shift_expr(index, offset);
-        }
-        ExprKind::Ident(_) | ExprKind::Literal(_) | ExprKind::TypePath(_) => {}
-    }
+    crate::shift_expression(expr, offset);
 }
 
 pub(super) fn starts_keyword(source: &str, keyword: &str) -> bool {

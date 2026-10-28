@@ -22,6 +22,24 @@ impl dm_preprocess::SourceProvider for Source {
 }
 
 #[test]
+fn source_only_callable_queries_prove_source_absence_without_inventing_engine_knowledge() {
+    struct Text(&'static str);
+    impl dm_preprocess::SourceProvider for Text {
+        fn read(&self, _: &Path) -> Result<String, String> { Ok(self.0.into()) }
+    }
+    let before = frontend::build(Path::new("p.dme"), &Text("/datum/base\n"), &BTreeMap::new(), 1).unwrap();
+    let query = Q::SourceDeclarationChain { owner: SymbolId::of("/datum/base"), name: SymbolId::of("added"), verb: false };
+    assert_eq!(Resolver::resolve(before.snapshot.tree.as_ref(), query), M::Missing);
+    assert!(matches!(Resolver::resolve(before.snapshot.tree.as_ref(), Q::Proc { owner: SymbolId::of("/datum/base"), name: SymbolId::of("added"), verb: false }), M::Unsupported(_)));
+    let added = frontend::build(Path::new("p.dme"), &Text("/datum/base/proc/added()\n    return 1\n"), &BTreeMap::new(), 1).unwrap();
+    let body_edit = frontend::build(Path::new("p.dme"), &Text("/datum/base/proc/added()\n    return 2\n"), &BTreeMap::new(), 1).unwrap();
+    let answer = Resolver::resolve(added.snapshot.tree.as_ref(), query);
+    assert!(matches!(&answer, M::Members(rows) if rows.len() == 1));
+    assert_eq!(answer, Resolver::resolve(body_edit.snapshot.tree.as_ref(), query), "source declaration answers exclude executable bodies");
+    assert_ne!(M::Missing.canonical_bytes(), answer.canonical_bytes());
+}
+
+#[test]
 fn methods_anchor_to_certified_inherited_formals_while_literals_stay_strict() {
     let frontend = frontend::build(Path::new("project.dme"), &Source, &BTreeMap::new(), 1).unwrap();
     let tree = frontend.snapshot.tree.as_ref();

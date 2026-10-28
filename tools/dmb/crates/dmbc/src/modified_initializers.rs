@@ -487,7 +487,7 @@ fn prepare_value(
                 value,
                 |_| None,
                 |raw| {
-                    dm_codegen_byond::decode_constant_string_literal(raw)
+                    dm_codegen_byond::decode_native_constant_string_literal(raw)
                         .ok()
                         .flatten()
                 },
@@ -499,10 +499,10 @@ fn prepare_value(
             .ok_or("modified pure call has no certified scalar value")?;
             result.kind = match scalar {
                 dm_tree::constants::Constant::Number(number) if number.is_finite() => {
-                    ExprKind::Literal(number.to_string())
+                    ExprKind::Literal(number.to_string().into())
                 }
                 dm_tree::constants::Constant::Text(text) => ExprKind::Literal(
-                    serde_json::to_string(&text).map_err(|error| error.to_string())?,
+                    serde_json::to_string(&text).map_err(|error| error.to_string())?.into(),
                 ),
                 dm_tree::constants::Constant::Null => ExprKind::Ident("null".into()),
                 _ => return Err("modified pure call result representation is unsupported".into()),

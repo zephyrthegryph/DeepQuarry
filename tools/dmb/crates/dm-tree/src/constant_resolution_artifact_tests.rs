@@ -24,7 +24,7 @@ fn key(query: ScalarQuery) -> Vec<u8> {
     query.encode(&mut bytes);
     bytes
 }
-fn decode(raw: &str) -> Option<Vec<u8>> {
+fn decode(raw: &dm_syntax::LiteralText) -> Option<Vec<u8>> {
     Some(raw.as_bytes().to_vec())
 }
 fn nameof(_: &Expr) -> Option<String> {
@@ -38,10 +38,10 @@ impl ScalarArtifacts for Store {
     }
     fn accept_policy(
         &self,
-        decoder: fn(&str) -> Option<Vec<u8>>,
+        decoder: fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
         names: fn(&Expr) -> Option<String>,
     ) -> bool {
-        std::ptr::fn_addr_eq(decoder, decode as fn(&str) -> Option<Vec<u8>>)
+        std::ptr::fn_addr_eq(decoder, decode as fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>)
             && std::ptr::fn_addr_eq(names, nameof as fn(&Expr) -> Option<String>)
     }
     fn lookup(
@@ -194,7 +194,7 @@ fn cycle_and_cycle_ancestors_never_enter_retained_store() {
 fn opaque_backend_and_pure_call_policy_decline_retention() {
     let store = Store::default();
     let source = tests::snapshot("/datum/probe\n    var/const/a = 1\n");
-    fn custom(_: &str) -> Option<Vec<u8>> {
+    fn custom(_: &dm_syntax::LiteralText) -> Option<Vec<u8>> {
         None
     }
     resolve_pinned_with_artifacts(
@@ -242,5 +242,3 @@ fn opaque_backend_and_pure_call_policy_decline_retention() {
         }
     });
 }
-
-

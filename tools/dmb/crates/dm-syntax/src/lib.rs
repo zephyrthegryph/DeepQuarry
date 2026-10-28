@@ -37,9 +37,11 @@ pub use audit::{
 };
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
-    ForControl, ForInitializer, ParsedBody, Statement, StatementKind, SwitchAlternative,
+    ControlOrigin, ForControl, ForInitializer, ParsedBody, Statement, StatementKind, SwitchAlternative,
     SwitchCase,
 };
+#[cfg(test)]
+mod control_origin_tests;
 pub use visit::{
     for_each_expression_child, visit_expression, visit_statement_view, visit_statements, NodeStep,
     TypedVisitor, VisitDecision, VisitReport,
@@ -166,7 +168,7 @@ pub struct AstFile {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExprKind {
     Ident(String),
-    Literal(String),
+    Literal(LiteralText),
     TypePath(String),
     Unary {
         op: String,
@@ -231,6 +233,9 @@ pub struct ParsedExpr {
     pub diagnostics: Vec<Diagnostic>,
 }
 
+pub mod literal;
+pub use literal::{shift_expression, LiteralText};
+
 mod expression_parser;
 pub use expression_parser::parse_expression;
 mod expression_continuation;
@@ -253,3 +258,4 @@ pub use statement_filter::filter_statements;
 
 mod statement_view;
 pub use statement_view::{StatementMask, StatementView};
+pub mod numeric_form;

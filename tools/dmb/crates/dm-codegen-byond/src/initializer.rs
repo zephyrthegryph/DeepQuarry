@@ -323,7 +323,7 @@ fn admit_modified_rhs(value: &dm_syntax::Expr) -> Result<(), InitializerError> {
         ExprKind::Ident(name) if name == "null" => (),
         ExprKind::Literal(raw) => {
             if raw.starts_with('"') || raw.starts_with('@') || raw.starts_with("{\"") {
-                match crate::decode_constant_string_literal(raw) {
+                match crate::decode_native_constant_string_literal(raw) {
                     Ok(Some(_)) => (),
                     _ => {
                         return Err(InitializerError::Unsupported(

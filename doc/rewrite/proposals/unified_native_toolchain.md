@@ -237,11 +237,12 @@ Important remaining limitations:
 - The query retains lossless syntax for lowering fallback alongside typed syntax;
   transient lossless clones and the ownership census still need work before
   claiming a single fully shared executable representation.
-- Native `untyped` contributions are assignment facts only. The current production
-  lint additionally depends on identity-resolved whole-tree value-proc inference,
-  locals receiving call results, value schemas and baseline/ALLOW policy. Those
-  must be ported and independently compared before cutover. A function-name
-  allowlist was removed from the draft because it cannot establish those proofs.
+- The original native `untyped` contributions remain the small assignment-fact
+  interface. The follow-up native whole-program policy now extracts value-proc,
+  local-transfer, argument-escape, polymorphic dispatch, mutable-field and schema
+  facts. It is undergoing independent comparison, not enabled in production.
+  Full-tree builtin coverage and the production baseline/configuration adapter
+  must still be proved before cutover.
 - Checker configuration/pragma integration, the remaining diagnostic families,
   SCC summaries, retractable indexes, transactional generation and thin production
   clients are still outstanding. No production parity or speedup is claimed.
@@ -289,3 +290,98 @@ whether parsing emitted a diagnostic. Compile-only behavior remains unchanged;
 its own diagnostics/acceptance policy is not replaced by this analysis check.
 The four return-equation tests passed, and the focused regression covering the
 malformed body, missing loop body and valid explicit-empty loop passed.
+
+
+### Whole-program policy and shared literals (in progress)
+
+The native policy borrows compiler-issued bodies and identity-qualified resolver
+answers, solves return/parameter/local/field equations as one SCC task, and keeps
+call-source classification separate from internal value-local proofs, matching
+the reference policy's conservative boundary. Raw SCHEMA markers use the native
+lexer and the existing semantic type hierarchy; they do not introduce another DM
+parser. The independent legacy policy and its parser are unchanged oracles.
+
+`LiteralText` now retains native interpolation expressions in the issuing syntax
+owner. Emission, typed visits, checker rules and native constant decoding borrow
+those leaves. Physical source mappings survive CR removal, continued expressions
+and nested literals. Declaration-only strings still have an explicit raw-source
+boundary. Unsupported bodies keep the prior lossless registration path rather
+than silently dropping unrepresented string leaves. The ownership census counts
+retained literal caches without causing a parse.
+
+A seeded comparison exposed the native `in` binding power exceeding assignment,
+and inclusion of `in` in a ternary's else operand. The shared primary grammar now
+puts membership below both. The additional `ambiguous_in_lhs` policy is implemented
+against that same AST; exact follow-token origins it cannot establish cause an
+explicit error, not a guessed location. It remains a partial checker port.
+
+The native untyped fixture matches all 36 findings from an independently built
+legacy producer: all five fields (rule, file, line, message, identity), evidence
+and row order, and multiplicity. The oracle rejects an empty seeded reference
+and hashes its producers and fixture inputs. This remains an unconfigured fixture
+comparison, not whole-project admission or production-tool convergence.
+
+The shared syntax crate's 123 tests passed. Subsequent analysis and compiler-host
+verification is recorded below. No production tool cutover, full-checker coverage,
+warm-edit speedup or full-host memory bound is claimed by this checkpoint.
+
+
+### Retained policy proofs and declaration consumers (2026-10-28)
+
+Whole-program value proofs can now outlive the temporary frontend. Archive and
+live paths borrow the same semantic owner and statement syntax; policy scopes
+use the proof's exact resolver binding and validate archive/config issuance even
+for empty or exempt reports. Configured exemptions are bound before inference.
+The owned proof retains equations, SCC results and policy summaries, with weak
+input evidence rather than an AST, source arena or copied object model.
+
+The compiler query DB has a value-proof family (Kind 5), with explicit dependency
+edges to issued body-syntax nodes (Kind 4). A repeated request shares the proof;
+evicting it recomputes inference without reparsing resident syntax. Foreign graphs
+and equal-source foreign issuances are rejected. Inputs and expired metadata are
+pruned together. This is revision-scoped reuse: it does not establish relative-AST
+reuse across shifted edits or a total host/RSS bound.
+
+A bounded daemon migration query executes native untyped policy in-process and
+returns findings only. It captures raw schema markers before releasing source
+owners and labels its scope `captured_compiled_sources`; it neither represents
+noncompiled workspace markers nor applies Analyze baselines/ALLOW/config admission.
+Its explicit partial-coverage flag and strict reply validation prevent a client
+from treating the fixture endpoint as complete Analyze support. Both executable
+checker and policy queries use the existing daemon's worker admission.
+
+New declaration consumers select tracked-list markers and lifecycle-definition
+rosters from borrowed native declarations and source occurrences. Their legacy
+raw scanners, output emitters and admission remain untouched. Incomplete intrinsic
+metadata is an error, not an assumed absent field. Legacy lone-CR display-line
+correction still needs a captured-source projection before lifecycle cutover.
+
+Three checker families now have native implementations: `ambiguous_not_bitwise`,
+`ambiguous_in_lhs`, and `invalid_set_value`. The separate policy normalizer covers
+pinned family overrides, display thresholds, severity aliases and CLI treatment;
+TOML loading and inherited proc directives remain client responsibilities. Review
+identified further bitwise traversal/order cases, now covered by adversarial
+fixtures. All 49 diagnostics across nine independent checker fixtures match in
+message, severity, location, notes and order. This does not certify every input
+to those families or the remaining checker families.
+
+The build-time pinned builtin extractor validates reference source and macro
+hashes before emitting declarations (20 explicit types, 444 field/default rows,
+378 callable rows, 28 hierarchy types). It preserves effective macro semantics,
+including discarded parameter defaults, and explicitly does not certify current
+runtime inventory/ABI completeness. Native metadata import remains to be done.
+
+An ancestry audit found that missing builtin parent facts could omit a legal
+object-returning override from a dynamic call's value proof. Value inference and
+lifecycle selection now require authoritative ancestry answers. Unknown ancestry
+refuses explicitly; it never establishes a negative subtype result. The oracle
+fixtures use a generated, hash-pinned reference hierarchy, with incomplete member
+inventory clearly marked. Production engine defaults are unchanged.
+
+Current verification: 131 analysis-library tests, 11 compiler integration tests
+and the host's native-untyped query test pass. The seeded untyped fixture still
+matches all 36 reference findings exactly. Protocol validation, literal
+registration, budget and heap-census regressions pass. Repository ratchets pass
+and the production DreamChecker run reports zero diagnostics. Rust builds still
+emit warnings. No production CLI switch or performance claim is made here; most
+Analyze policies/generators and checker families still need ports.

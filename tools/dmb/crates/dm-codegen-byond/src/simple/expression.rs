@@ -263,27 +263,26 @@ impl Compiler<'_> {
                         && literal.ends_with("\"}")
                         && literal.len() >= 4)
                 {
-                    let value = if literal.starts_with("{\"") {
-                        &literal[2..literal.len() - 2]
-                    } else {
-                        &literal[1..literal.len() - 1]
-                    };
-                    let (template, expressions) = parse_interpolated_string(value)
-                        .map_err(|reason| error(statement, &reason))?;
+                    let parts = literal
+                        .parts()
+                        .map_err(|reason| error(statement, reason))?
+                        .ok_or_else(|| error(statement, "missing native string literal parts"))?;
+                    let template = &parts.template;
+                    let expressions = &parts.expressions;
                     if expressions.is_empty() {
                         let value = match String::from_utf8(template.clone()) {
                             Ok(value) => self.intern_string(&value),
-                            Err(_) => self.intern_format_template(template),
+                            Err(_) => self.intern_format_template(template.clone()),
                         };
                         self.emit(
                             opcode::PUSH_VAL,
                             vec![Word::Value(ValueWord::String(value))],
                         );
                     } else {
-                        for expression in &expressions {
+                        for expression in expressions {
                             self.expression(expression, statement)?;
                         }
-                        let key = self.intern_format_template(template);
+                        let key = self.intern_format_template(template.clone());
                         self.emit(
                             2,
                             vec![
@@ -412,7 +411,7 @@ impl Compiler<'_> {
                 if dm_syntax::is_literal_identifier(name) {
                     self.record_selection(expr, name, dm_ir::SelectedMeaning::Literal);
                     let literal = Expr {
-                        kind: ExprKind::Literal(name.clone()),
+                        kind: ExprKind::Literal(name.clone().into()),
                         span: expr.span,
                     };
                     return self.expression(&literal, statement);
@@ -1034,7 +1033,7 @@ pub(super) fn constant_text_truth(expr: &Expr) -> Option<bool> {
     if raw.starts_with("@'") {
         return None;
     }
-    match decode_constant_string_literal(raw) {
+    match decode_native_constant_string_literal(raw) {
         Ok(Some(text)) => Some(!text.is_empty()),
         _ => None,
     }

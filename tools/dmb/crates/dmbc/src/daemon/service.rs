@@ -935,6 +935,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                         query,
                         super::query::SourceQuery::SelectedReferences { .. }
                             | super::query::SourceQuery::BodyModel { .. }
+                            | super::query::SourceQuery::NativeCheckerFixture { .. }
+                            | super::query::SourceQuery::NativeUntypedFixture { .. }
                     )
                 });
                 let _permit = if executable {

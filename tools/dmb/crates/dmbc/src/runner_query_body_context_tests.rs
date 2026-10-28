@@ -1,3 +1,23 @@
+#[path = "../../dm-analysis/examples/support/reference_hierarchy.rs"]
+mod reference_hierarchy;
+
+fn seeded_source<P: dm_preprocess::SourceProvider>(
+    project: &std::path::Path,
+    provider: &P,
+    defines: &std::collections::BTreeMap<String, String>,
+    workers: usize,
+) -> Result<dm_tree::frontend::ColdFrontend, Vec<dm_tree::frontend::Diagnostic>> {
+    dm_tree::frontend::build_with_config(
+        project,
+        provider,
+        defines,
+        dm_tree::frontend::FrontendConfig {
+            workers,
+            engine: Some(&reference_hierarchy::seed()),
+            observer: None,
+        },
+    )
+}
 use super::*;
 use crate::daemon::query::{evaluate_snapshot, QueryRequest, SourceQuery};
 struct Source(&'static str);
@@ -13,7 +33,7 @@ fn build(text: &'static str) -> ColdFrontend {
         &Default::default(),
         dm_tree::frontend::FrontendConfig {
             workers: 1,
-            engine: None,
+            engine: Some(&reference_hierarchy::seed()),
             observer: None,
         },
     )
@@ -26,21 +46,33 @@ fn native_checker_question_executes_in_process_with_explicit_partial_coverage() 
     let frontend = build("/proc/example(x)\n    return !x & 1\n").with_body_queries(db.clone());
     let snapshot = SourceSnapshot::capture(&frontend);
     let mut bytes = Vec::new();
-    snapshot.write_native_checker(0, "disabled", &frontend.snapshot.tree, &mut bytes).unwrap();
+    snapshot
+        .write_native_checker(0, "disabled", &frontend.snapshot.tree, &mut bytes)
+        .unwrap();
     let disabled: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(disabled["diagnostics"].as_array().unwrap().len(), 0);
-    assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0, "disabled policy must not parse");
+    assert_eq!(
+        db.db().stats(dm_query::Kind(4)).computed,
+        0,
+        "disabled policy must not parse"
+    );
     bytes.clear();
-    snapshot.write_native_checker(0, "error", &frontend.snapshot.tree, &mut bytes).unwrap();
+    snapshot
+        .write_native_checker(0, "error", &frontend.snapshot.tree, &mut bytes)
+        .unwrap();
     let findings: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(findings["full_checker_parity"], false);
     assert_eq!(findings["diagnostics"].as_array().unwrap().len(), 1);
     assert_eq!(findings["diagnostics"][0]["severity"], "error");
     assert_eq!(findings["diagnostics"][0]["line"], 2);
     assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 1);
-    assert!(snapshot.write_native_checker(0, "typo", &frontend.snapshot.tree, &mut Vec::new()).is_err());
+    assert!(snapshot
+        .write_native_checker(0, "typo", &frontend.snapshot.tree, &mut Vec::new())
+        .is_err());
     let shifted = build("// shifted\n/proc/example(x)\n    return x\n");
-    assert!(snapshot.write_native_checker(0, "warning", &shifted.snapshot.tree, &mut Vec::new()).is_err());
+    assert!(snapshot
+        .write_native_checker(0, "warning", &shifted.snapshot.tree, &mut Vec::new())
+        .is_err());
 }
 #[test]
 fn body_context_pages_share_current_owner_and_reject_semantic_stable_source_edits() {
@@ -189,4 +221,48 @@ fn lazy_body_model_matches_full_current_parser_after_frontend_release() {
     assert!(
         evaluate_snapshot(&request, &replacement.snapshot.tree, &state.lock().unwrap()).is_err()
     );
+}
+
+#[test]
+fn native_untyped_query_uses_retained_sources_and_same_syntax_graph() {
+    let db = Arc::new(crate::query_db::QueryDb::default());
+    let (mut snapshot, tree) = {
+        let frontend = seeded_source(
+            std::path::Path::new("code/probe.dm"),
+            &Source(
+                "/datum/probe\n    var/saved\n    proc/use(datum/value)\n        saved = value\n",
+            ),
+            &Default::default(),
+            1,
+        )
+        .unwrap()
+        .with_body_queries(db.clone());
+        let archive = frontend.body_archive().unwrap();
+        archive.parse(0).unwrap();
+        (
+            SourceSnapshot::capture(&frontend),
+            Arc::clone(&frontend.snapshot.tree),
+        )
+    };
+    snapshot.native_value_queries = Some(db.clone());
+    let mut bytes = Vec::new();
+    snapshot
+        .write_native_untyped_fixture(std::path::Path::new("."), &tree, &mut bytes)
+        .unwrap();
+    let response: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(response["findings"].as_array().unwrap().len(), 1);
+    assert_eq!(response["findings"][0]["identity"], "/datum/probe::saved");
+    assert_eq!(response["findings"][0]["line"], 2);
+    assert_eq!(response["findings"][0]["rule"], "typed");
+    assert_eq!(response["full_policy_parity"], false);
+    assert_eq!(response["raw_marker_scope"], "captured_compiled_sources");
+    assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 1);
+    let foreign = build("/datum/other\n    var/different\n");
+    assert!(snapshot
+        .write_native_untyped_fixture(
+            std::path::Path::new("."),
+            &foreign.snapshot.tree,
+            &mut Vec::new()
+        )
+        .is_err());
 }

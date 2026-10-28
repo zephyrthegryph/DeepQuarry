@@ -138,6 +138,25 @@ pub enum ResolveQuery {
     MemberCallableName(SymbolId),
     /// Dynamic selector namespace: procedures take priority over verbs by name.
     MemberCallableVerbName(SymbolId),
+    /// Exact authored source chain, excluding uncaptured engine procedures.
+    /// Missing certifies source absence only. Consumers still need the pinned
+    /// engine's builtin contract before interpreting that absence as a builtin.
+    SourceDeclarationChain {
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+    },
+    /// Whether the captured engine declares this callable on the receiver or
+    /// an ancestor, independently of any authored override or shadow. Positive
+    /// captured rows are definitive; absence requires a complete inventory.
+    IntrinsicCallable {
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+    },
+    /// Whether any non-global engine proc or verb has this name. Source
+    /// procedures never count, and root global builtins are not methods.
+    IntrinsicCallableName(SymbolId),
 }
 
 /// Source declaration form is independent of its executable implementation.
@@ -152,9 +171,13 @@ pub enum ProcedureDefinition {
 impl ResolveQuery {
     pub const fn domain(self) -> ReadDomain {
         match self {
-            Self::MemberCallableVerbName(_) | Self::MemberCallableName(_) => {
-                ReadDomain::OwnerCallable(self)
-            }
+            // Intrinsic presence, hierarchy and inventory completeness are all
+            // part of the tree's engine-qualified answer world. Do not reuse a
+            // source-only owner certificate for these provenance questions.
+            Self::IntrinsicCallable { .. } | Self::IntrinsicCallableName(_) => ReadDomain::Tree,
+            Self::SourceDeclarationChain { .. }
+            | Self::MemberCallableVerbName(_)
+            | Self::MemberCallableName(_) => ReadDomain::OwnerCallable(self),
             Self::ProcedureStatic { procedure, .. } => ReadDomain::OwnerProcedureStatic(procedure),
             Self::Resource(_) | Self::ResourceIn { .. } => ReadDomain::ResourceSearch,
             Self::Type(owner) | Self::Parent(owner) | Self::Ancestry(owner) => {

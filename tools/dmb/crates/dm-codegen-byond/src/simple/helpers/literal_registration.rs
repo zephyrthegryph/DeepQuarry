@@ -1,5 +1,6 @@
 //! Constant payload leaves through the same interpolation parser as emission.
-use super::{string_literal_parts, Expr, ExprKind};
+use super::{Expr, ExprKind};
+use dm_syntax::LiteralText;
 
 /// Visit cooked constant string literal payloads in source expression order.
 /// A dynamic template is not itself a constant payload; all its interpolation
@@ -10,15 +11,21 @@ pub fn visit_constant_string_literals(
     raw: &str,
     mut visitor: impl FnMut(&[u8]),
 ) -> Result<(), String> {
-    visit_literal(raw, &mut visitor)
+    visit_literal(&LiteralText::from(raw), &mut visitor)
 }
 
-fn visit_literal(raw: &str, visitor: &mut dyn FnMut(&[u8])) -> Result<(), String> {
-    let Some((bytes, expressions)) = string_literal_parts(raw)? else {
+pub fn visit_native_constant_string_literals(
+    raw: &LiteralText,
+    mut visitor: impl FnMut(&[u8]),
+) -> Result<(), String> {
+    visit_literal(raw, &mut visitor)
+}
+fn visit_literal(raw: &LiteralText, visitor: &mut dyn FnMut(&[u8])) -> Result<(), String> {
+    let Some(parts) = raw.parts().map_err(str::to_owned)? else {
         return Ok(());
     };
-    if expressions.is_empty() {
-        visitor(&bytes);
+    if parts.expressions.is_empty() {
+        visitor(&parts.template);
         return Ok(());
     }
     struct Leaves<'a> {
@@ -37,14 +44,18 @@ fn visit_literal(raw: &str, visitor: &mut dyn FnMut(&[u8])) -> Result<(), String
                     return dm_syntax::VisitDecision::Stop;
                 }
             }
-            dm_syntax::VisitDecision::Descend
+            if matches!(expression.kind, ExprKind::Literal(_)) {
+                dm_syntax::VisitDecision::Skip
+            } else {
+                dm_syntax::VisitDecision::Descend
+            }
         }
     }
     let mut leaves = Leaves {
         visitor,
         error: None,
     };
-    for expression in &expressions {
+    for expression in &parts.expressions {
         dm_syntax::visit_expression(expression, &mut leaves);
         if let Some(error) = leaves.error.take() {
             return Err(error);

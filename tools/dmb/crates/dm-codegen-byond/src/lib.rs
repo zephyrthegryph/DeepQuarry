@@ -32,10 +32,11 @@ pub use simple::{
     compile_statement_view_with_resolver, compile_statement_view_with_resolver_and_references,
     compile_statement_view_with_resolver_and_references_at, compile_typed_scopes_with_resolver,
     compile_typed_statements_with_resolver, decode_constant_string_literal,
+    decode_native_constant_string_literal,
     nameof_diagnostic_recovery, nameof_reference, observe_reference_source_features,
     observe_reference_source_features_with_lexical_locals, typed_statement_view_supported,
     typed_statements_supported, typed_statements_supported_for_capture,
-    visit_constant_string_literals, ArgumentMetadata, DebugSourceProvider, DiagnosticAnchor,
+    visit_constant_string_literals, visit_native_constant_string_literals, ArgumentMetadata, DebugSourceProvider, DiagnosticAnchor,
     LowerBindings, LowerError, LowerErrorKind, LowerRelated, LowerSpan, NameofDiagnosticRecovery,
     ProcedureWarning, SharedLowerBindings, SimpleProc, SourceFeatures,
 };

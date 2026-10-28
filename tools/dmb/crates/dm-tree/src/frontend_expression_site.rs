@@ -14,6 +14,9 @@ impl ParsedBody<'_> {
         let Some(body) = self.statement_body() else {
             return Ok(None);
         };
+        if !body.syntax_complete() {
+            return Ok(None);
+        }
         let mut found = None;
         let mut duplicate = false;
         statements(&body.parsed().statements, &mut |expr| {
@@ -28,46 +31,9 @@ impl ParsedBody<'_> {
 }
 fn expression<'a>(expr: &'a Expr, visit: &mut impl FnMut(&'a Expr)) {
     visit(expr);
-    use ExprKind as E;
-    match &expr.kind {
-        E::Ident(_) | E::Literal(_) | E::TypePath(_) => {}
-        E::Unary { value, .. } | E::Group(value) | E::TypeFilter { value, .. } => {
-            expression(value, visit)
-        }
-        E::Binary { lhs, rhs, .. } => {
-            expression(lhs, visit);
-            expression(rhs, visit);
-        }
-        E::Conditional {
-            condition,
-            then_value,
-            else_value,
-        } => {
-            expression(condition, visit);
-            expression(then_value, visit);
-            expression(else_value, visit);
-        }
-        E::Call { callee, args } => {
-            expression(callee, visit);
-            for arg in args {
-                expression(arg, visit);
-            }
-        }
-        E::Member { object, .. }
-        | E::StaticMember { object, .. }
-        | E::SafeMember { object, .. } => expression(object, visit),
-        E::ObjectInitializer { object, fields } => {
-            expression(object, visit);
-            for (_, value) in fields {
-                expression(value, visit);
-            }
-        }
-        E::Index { object, index } | E::SafeIndex { object, index } => {
-            expression(object, visit);
-            expression(index, visit);
-        }
-    }
+    dm_syntax::for_each_expression_child(expr, |_, child| expression(child, visit));
 }
+
 fn optional<'a>(expr: &'a Option<Expr>, visit: &mut impl FnMut(&'a Expr)) {
     if let Some(expr) = expr {
         expression(expr, visit);

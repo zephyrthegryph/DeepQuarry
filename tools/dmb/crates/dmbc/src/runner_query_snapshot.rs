@@ -1,5 +1,7 @@
 //! Current source query projection: shared issued occurrences, paths, and revision only.
 //! Immutable issued source owners are shared; no full frontend revision is retained.
+#[path = "runner_query_native_policy.rs"]
+mod native_policy;
 #[path = "runner_query_occurrence_pages.rs"]
 mod occurrence_pages;
 #[path = "runner_query_resolved.rs"]
@@ -39,6 +41,9 @@ pub(crate) struct SourceSnapshot {
     selected: selected::SelectedRows,
     resolved: Option<resolved::ResolvedContext>,
     replay_proof: Option<ReplayProof>,
+    native_schema_markers: Result<dm_analysis::value_schemas::Schemas, String>,
+    native_value_input: Option<Arc<dm_analysis::value_query::ArchiveValueInput>>,
+    native_value_queries: Option<Arc<dyn dm_analysis::value_query::ArchiveValueQueries>>,
 }
 struct ReplayProof {
     inputs: crate::input_snapshot::InputSnapshot,
@@ -60,26 +65,43 @@ impl ReplayProof {
 impl SourceSnapshot {
     /// Partial migration endpoint: findings only, never a model round-trip.
     pub(crate) fn write_native_checker(
-        &self, ordinal: u32, severity: &str, tree: &dm_tree::SemanticTree,
+        &self,
+        ordinal: u32,
+        severity: &str,
+        tree: &dm_tree::SemanticTree,
         output: &mut impl std::io::Write,
     ) -> std::io::Result<()> {
         use dm_analysis::checks::Severity;
         use std::io;
         crate::daemon::control::checkpoint()?;
-        let archive = self.body_archive.as_ref().filter(|archive| archive.matches_tree(tree))
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "current body archive unavailable"))?;
-        if ordinal as usize >= archive.len() { return Err(io::Error::other("body ordinal unavailable")); }
+        let archive = self
+            .body_archive
+            .as_ref()
+            .filter(|archive| archive.matches_tree(tree))
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::NotFound, "current body archive unavailable")
+            })?;
+        if ordinal as usize >= archive.len() {
+            return Err(io::Error::other("body ordinal unavailable"));
+        }
         let policy = match severity {
-            "disabled" => Severity::Disabled, "warning" => Severity::Warning, "error" => Severity::Error,
+            "disabled" => Severity::Disabled,
+            "warning" => Severity::Warning,
+            "error" => Severity::Error,
             _ => return Err(io::Error::other("unknown native checker fixture policy")),
         };
         let mut rows = Vec::new();
         if policy != Severity::Disabled {
-            let body = archive.parse(ordinal as usize).map_err(|error| io::Error::other(error.message))?;
-            let diagnostics = dm_analysis::checks::archived_ambiguous_not_bitwise(&body, policy).map_err(io::Error::other)?;
+            let body = archive
+                .parse(ordinal as usize)
+                .map_err(|error| io::Error::other(error.message))?;
+            let diagnostics = dm_analysis::checks::archived_ambiguous_not_bitwise(&body, policy)
+                .map_err(io::Error::other)?;
             for diagnostic in diagnostics {
                 crate::daemon::control::checkpoint()?;
-                let origin = body.location(diagnostic.span.start).ok_or_else(|| io::Error::other("checker origin unavailable"))?;
+                let origin = body
+                    .location(diagnostic.span.start)
+                    .ok_or_else(|| io::Error::other("checker origin unavailable"))?;
                 rows.push(serde_json::json!({
                     "family": diagnostic.family, "severity": severity,
                     "expanded_span": [diagnostic.span.start, diagnostic.span.end],
@@ -92,13 +114,17 @@ impl SourceSnapshot {
                 }));
             }
         }
-        serde_json::to_writer(&mut *output, &serde_json::json!({
-            "row": "source_native_checker_fixture", "schema": "dm-session-source-query-v1",
-            "source_revision": format!("{:032x}", self.source_revision),
-            "semantic_revision": format!("{:032x}", tree.identity()),
-            "ordinal": ordinal, "family": "ambiguous_not_bitwise", "policy": severity,
-            "full_checker_parity": false, "diagnostics": rows,
-        })).map_err(io::Error::other)?;
+        serde_json::to_writer(
+            &mut *output,
+            &serde_json::json!({
+                "row": "source_native_checker_fixture", "schema": "dm-session-source-query-v1",
+                "source_revision": format!("{:032x}", self.source_revision),
+                "semantic_revision": format!("{:032x}", tree.identity()),
+                "ordinal": ordinal, "family": "ambiguous_not_bitwise", "policy": severity,
+                "full_checker_parity": false, "diagnostics": rows,
+            }),
+        )
+        .map_err(io::Error::other)?;
         output.write_all(b"\n")
     }
 
@@ -106,6 +132,8 @@ impl SourceSnapshot {
     /// Existing request handles remain immutable; pinned lightweight rows survive.
     pub(crate) fn release_body_queries(&mut self) {
         self.body_archive = None;
+        self.native_value_input = None;
+        self.native_value_queries = None;
         self.resolved = None;
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
@@ -127,6 +155,24 @@ impl SourceSnapshot {
         self.selected.census(census);
         if let Some(resolved) = &self.resolved {
             resolved.census(census);
+        }
+        match &self.native_schema_markers {
+            Ok(schemas) => schemas.visit_storage(|entries| {
+                census.collection_entries::<(
+                    (dm_ir::SymbolId, dm_ir::SymbolId),
+                    dm_analysis::value_schemas::Kind,
+                )>(
+                    "query_snapshot.native_schema_markers",
+                    entries as *const _ as usize,
+                    entries.len(),
+                );
+                for kind in entries.values() {
+                    if let dm_analysis::value_schemas::Kind::Path(path) = kind {
+                        census.string("query_snapshot.native_schema_markers", path);
+                    }
+                }
+            }),
+            Err(error) => census.string("query_snapshot.native_schema_markers.error", error),
         }
         if let Some(proof) = &self.replay_proof {
             proof
@@ -205,6 +251,10 @@ impl SourceSnapshot {
         let source_revision = dm_analysis::tree_export::source_revision(frontend);
         drop(revision_timer);
         let _timer = dm_profile::detail_timer("query_capture.rest");
+        let body_archive = frontend.body_archive();
+        let native_value_input = body_archive.as_ref().map(|archive| {
+            dm_analysis::value_query::ArchiveValueInput::new(Arc::clone(archive), &[])
+        });
         Self {
             tree: Arc::clone(&frontend.snapshot.tree),
             source_revision,
@@ -213,8 +263,11 @@ impl SourceSnapshot {
             selected: Default::default(),
             resolved: None,
             replay_proof: None,
+            native_schema_markers: native_policy::capture_schemas(frontend),
+            native_value_input,
+            native_value_queries: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
-            body_archive: frontend.body_archive(),
+            body_archive,
             bodies: frontend
                 .callable_roster()
                 .ok()
@@ -332,6 +385,24 @@ impl QueryAttempt {
             finished: false,
             configuration: None,
             enabled,
+        }
+    }
+    pub(crate) fn capture_with_queries(
+        &mut self,
+        frontend: &ColdFrontend,
+        queries: Arc<crate::query_db::QueryDb>,
+    ) {
+        self.capture(frontend);
+        if self.enabled {
+            if let Some(snapshot) = self
+                .state
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .snapshot
+                .as_mut()
+            {
+                snapshot.native_value_queries = Some(queries);
+            }
         }
     }
     pub(crate) fn capture(&mut self, frontend: &ColdFrontend) {

@@ -12,6 +12,7 @@ use dm_preprocess::regions::prepared_source::PreparedSource;
 use std::sync::{Arc, Mutex};
 
 mod body_syntax;
+mod value_proofs;
 
 const SOURCE: Kind = Kind(1);
 const PROJECT: Kind = Kind(2);
@@ -40,6 +41,8 @@ pub struct QueryDb {
     id: u64,
     db: Db,
     body_charge: Arc<std::sync::atomic::AtomicUsize>,
+    value_charge: Arc<std::sync::atomic::AtomicUsize>,
+    value_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_analysis::value_query::ArchiveValueInput>>>,
     body_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_tree::frontend::BodySyntaxInput>>>,
     /// Current answers of every query a stored unit read (see `answer` below).
     answers: Answers,
@@ -65,6 +68,8 @@ impl Default for QueryDb {
         let db = Db::new();
         let body_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         body_syntax::register(&db, Arc::clone(&body_charge));
+        let value_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        value_proofs::register(&db, Arc::clone(&value_charge));
         db.define_input(SOURCE, "source");
         db.define_input(PROJECT, "project");
         db.define(PROGRAM, "program", |ctx, params| {
@@ -83,6 +88,8 @@ impl Default for QueryDb {
         static NEXT_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
             body_charge,
+            value_charge,
+            value_inputs: Mutex::new(BTreeMap::new()),
             body_inputs: Mutex::new(BTreeMap::new()),
             id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             db,
@@ -506,7 +513,8 @@ fn answer_reachable(
         | Q::ProcedureValue { owner, name, .. }
         | Q::OverrideChain { owner, name, .. }
         | Q::MethodProcedureValue { owner, name, .. }
-        | Q::DeclarationChain { owner, name, .. } => change.owner_name_dirty(tree, owner, name),
+        | Q::DeclarationChain { owner, name, .. }
+        | Q::SourceDeclarationChain { owner, name, .. } => change.owner_name_dirty(tree, owner, name),
         Q::Type(path) | Q::Parent(path) | Q::Ancestry(path) => {
             change.owner_name_dirty(tree, path, dm_ir::SymbolId::of("\0dm-query-no-member"))
         }

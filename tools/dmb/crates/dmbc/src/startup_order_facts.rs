@@ -122,6 +122,7 @@ impl OrderEvents {
 pub(crate) struct Facts {
     pub refs: Vec<Ref>,
     pub world: bool,
+    unsupported: bool,
 }
 
 pub(crate) fn expression_facts(source: &str, owner: SymbolId) -> Option<Facts> {
@@ -131,7 +132,7 @@ pub(crate) fn expression_facts(source: &str, owner: SymbolId) -> Option<Facts> {
     }
     let mut facts = Facts::default();
     walk(&parsed.expr?, owner, &mut facts);
-    Some(facts)
+    (!facts.unsupported).then_some(facts)
 }
 
 /// The declared type of a variable that has an initializer is one more reference of that initializer. A typed list
@@ -157,7 +158,15 @@ fn walk(expr: &Expr, owner: SymbolId, out: &mut Facts) {
                 out.refs.push(Ref::Ident(SymbolId::of(name)));
             }
         }
-        ExprKind::Literal(_) => {}
+        ExprKind::Literal(text) => match text.parts() {
+            Ok(Some(parts)) => {
+                for expression in &parts.expressions {
+                    walk(expression, owner, out);
+                }
+            }
+            Ok(None) => (),
+            Err(_) => out.unsupported = true,
+        },
         ExprKind::TypePath(path) => type_path(path, owner, out),
         ExprKind::Unary { value, .. } => walk(value, owner, out),
         ExprKind::Binary { lhs, rhs, .. } => {

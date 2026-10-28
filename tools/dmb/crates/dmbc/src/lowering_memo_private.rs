@@ -84,7 +84,7 @@ impl ExprWire {
         use ExprKind as E;
         match &value.kind {
             E::Ident(v) => Self::Ident(v.clone()),
-            E::Literal(v) => Self::Literal(v.clone()),
+            E::Literal(v) => Self::Literal(v.to_string()),
             E::TypePath(v) => Self::TypePath(v.clone()),
             E::Unary { op, value } => Self::Unary(op.clone(), Box::new(Self::capture(value))),
             E::Binary { op, lhs, rhs } => Self::Binary(
@@ -157,7 +157,7 @@ impl ExprWire {
             |value: Self, budget: &mut usize| value.rebuild(depth + 1, budget).map(Box::new);
         let kind = match self {
             Self::Ident(v) => E::Ident(v),
-            Self::Literal(v) => E::Literal(v),
+            Self::Literal(v) => E::Literal(v.into()),
             Self::TypePath(v) => E::TypePath(v),
             Self::Unary(op, v) => E::Unary {
                 op,
@@ -308,7 +308,7 @@ impl DescriptorWire {
             self.resource_context,
             &fields,
             |raw| {
-                dm_codegen_byond::decode_constant_string_literal(raw)
+                dm_codegen_byond::decode_native_constant_string_literal(raw)
                     .ok()
                     .flatten()
             },

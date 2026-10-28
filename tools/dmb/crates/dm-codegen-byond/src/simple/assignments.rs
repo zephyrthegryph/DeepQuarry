@@ -924,7 +924,8 @@ fn path_like_target(statement: &str) -> bool {
 /// so a shared (`global`) variable behind it can be read or written without evaluating it.
 pub(super) fn is_reference_chain(expr: &Expr) -> bool {
     match &expr.kind {
-        ExprKind::Ident(_) | ExprKind::TypePath(_) | ExprKind::Literal(_) => true,
+        ExprKind::Literal(text) => text.parts().is_ok_and(|parts| parts.is_none_or(|parts| parts.expressions.is_empty())),
+        ExprKind::Ident(_) | ExprKind::TypePath(_) => true,
         ExprKind::Group(inner) => is_reference_chain(inner),
         ExprKind::Member { object, .. } => is_reference_chain(object),
         _ => false,

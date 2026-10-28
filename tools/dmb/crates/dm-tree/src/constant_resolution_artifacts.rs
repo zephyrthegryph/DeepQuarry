@@ -54,7 +54,7 @@ impl ScalarArtifact {
 pub trait ScalarArtifacts {
     fn accept_policy(
         &self,
-        _decode: fn(&str) -> Option<Vec<u8>>,
+        _decode: fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
         _nameof: fn(&Expr) -> Option<String>,
     ) -> bool {
         false

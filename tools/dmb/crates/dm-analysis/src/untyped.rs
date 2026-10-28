@@ -10,7 +10,7 @@ use dm_syntax::{
     Expr, ExprKind, ForControl, ForInitializer, NodeStep, Span, Statement, StatementKind,
     TypedVisitor, VisitDecision,
 };
-use dm_tree::frontend::{ColdFrontend, ParsedBody};
+use dm_tree::frontend::{ArchivedBody, ColdFrontend, ParsedBody, StatementBody};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
@@ -105,9 +105,62 @@ pub fn contributions(
     exempt_types: &[String],
 ) -> Result<Vec<Contribution>, Unsupported> {
     let view = BodyView::new(frontend, body).map_err(Unsupported)?;
-    let tree = &frontend.snapshot.tree;
+    let mut walker = scope(frontend, body, resolver, exempt_types)?;
+    dm_syntax::visit_statements(&view.syntax().parsed().statements, &mut walker);
+    if let Some(error) = walker.error {
+        return Err(error);
+    }
+    Ok(walker.found.into_values().collect())
+}
+
+pub(crate) fn scope<'a, R: Resolver + ?Sized>(
+    frontend: &'a ColdFrontend,
+    body: &ParsedBody<'_>,
+    resolver: &'a R,
+    exempt_types: &'a [String],
+) -> Result<Walker<'a, R>, Unsupported> {
+    let view = BodyView::new(frontend, body).map_err(Unsupported)?;
+    scope_from(
+        &frontend.snapshot.tree,
+        body.occurrence().member,
+        view.syntax(),
+        resolver,
+        exempt_types,
+    )
+}
+
+/// Archive inputs authenticate their own semantic owner. There is deliberately
+/// no caller-supplied tree/member parameter that could rebind source metadata.
+pub(crate) fn archived_scope<'a, R: Resolver + ?Sized>(
+    body: &'a ArchivedBody<'_>,
+    resolver: &'a R,
+    exempt_types: &'a [String],
+) -> Result<Walker<'a, R>, Unsupported> {
+    scope_from(
+        body.tree(),
+        body.occurrence().member,
+        body.statement_body(),
+        resolver,
+        exempt_types,
+    )
+}
+
+/// Called only after the live-body issuance check, or with archive-owned parts.
+/// This borrows declarations and syntax; it constructs only policy-local facts.
+pub(crate) fn scope_from<'a, R: Resolver + ?Sized>(
+    tree: &'a dm_tree::SemanticTree,
+    member: dm_tree::MemberId,
+    syntax: &StatementBody,
+    resolver: &'a R,
+    exempt_types: &'a [String],
+) -> Result<Walker<'a, R>, Unsupported> {
+    if !syntax.syntax_complete() {
+        return Err(Unsupported(
+            "body has unsupported or malformed native syntax".into(),
+        ));
+    }
     let member = tree
-        .member(body.occurrence().member)
+        .member(member)
         .ok_or_else(|| Unsupported("missing issued member".into()))?;
     let owner = tree
         .type_node(member.owner)
@@ -129,26 +182,21 @@ pub fn contributions(
             declaration_type(tree, parameter.declared_type, parameter.list_element_type)?,
         );
     }
-    dm_syntax::visit_statements(&view.syntax().parsed().statements, &mut locals);
+    dm_syntax::visit_statements(&syntax.parsed().statements, &mut locals);
     if locals.unsupported {
         return Err(Unsupported(
             "native local declaration coverage is incomplete".into(),
         ));
     }
-    let mut walker = Walker {
-        frontend,
+    Ok(Walker {
+        tree,
         resolver,
         owner,
         locals: locals.types,
         exempt_types,
         found: BTreeMap::new(),
         error: None,
-    };
-    dm_syntax::visit_statements(&view.syntax().parsed().statements, &mut walker);
-    if let Some(error) = walker.error {
-        return Err(error);
-    }
-    Ok(walker.found.into_values().collect())
+    })
 }
 
 fn declaration_type(
@@ -239,17 +287,17 @@ impl TypedVisitor for Locals {
     }
 }
 
-struct Walker<'a, R> {
-    frontend: &'a ColdFrontend,
+pub(crate) struct Walker<'a, R: ?Sized> {
+    tree: &'a dm_tree::SemanticTree,
     resolver: &'a R,
-    owner: SymbolId,
-    locals: HashMap<String, String>,
+    pub(crate) owner: SymbolId,
+    pub(crate) locals: HashMap<String, String>,
     exempt_types: &'a [String],
     found: BTreeMap<(SymbolId, SymbolId), Contribution>,
     error: Option<Unsupported>,
 }
-impl<R: Resolver> Walker<'_, R> {
-    fn field(
+impl<R: Resolver + ?Sized> Walker<'_, R> {
+    pub(crate) fn field(
         &self,
         owner: SymbolId,
         name: &str,
@@ -259,16 +307,34 @@ impl<R: Resolver> Walker<'_, R> {
             name: SymbolId::of(name),
         };
         match self.resolver.resolve(query) {
-            M::Member { owner, data, .. } if data.inherited_opaque.is_none() => {
-                Ok(Some((owner, data)))
+            M::Member { data, .. } if data.inherited_opaque.is_none() => {
+                // An inherited default override does not declare another slot.
+                // The compiler's storage query supplies its formal owner.
+                let storage = Q::VarStorage {
+                    owner,
+                    name: SymbolId::of(name),
+                };
+                let declaring_owner = match self.resolver.resolve(storage) {
+                    M::Slot { owner, .. } => owner,
+                    M::InstanceField {
+                        declaring_owner, ..
+                    } => declaring_owner,
+                    _ => {
+                        return Err(Unsupported(format!(
+                            "field storage is incomplete: {storage:?}"
+                        )))
+                    }
+                };
+                Ok(Some((declaring_owner, data)))
             }
             M::Missing => Ok(None),
             _ => Err(Unsupported(format!(
-                "field lookup is incomplete: {query:?}"
+                "field lookup is incomplete: {}::{name} ({query:?})",
+                self.tree.symbols().text(owner).unwrap_or("<unknown owner>")
             ))),
         }
     }
-    fn is_ref(&self, ty: &str) -> Result<bool, Unsupported> {
+    pub(crate) fn is_ref(&self, ty: &str) -> Result<bool, Unsupported> {
         if ty.is_empty()
             || ty == "/"
             || NOT_REFS
@@ -299,7 +365,7 @@ impl<R: Resolver> Walker<'_, R> {
         self.field(owner, name)?
             .map(|(_, metadata)| {
                 declaration_type(
-                    &self.frontend.snapshot.tree,
+                    self.tree,
                     metadata.declared_type,
                     metadata.list_element_type,
                 )
@@ -307,21 +373,35 @@ impl<R: Resolver> Walker<'_, R> {
             .transpose()
     }
     fn return_type(&self, owner: SymbolId, name: &str) -> Result<Option<String>, Unsupported> {
-        let query = if owner == SymbolId::of("/") {
-            Q::GlobalProc(SymbolId::of(name))
-        } else {
-            Q::Proc {
-                owner,
-                name: SymbolId::of(name),
-                verb: false,
-            }
+        let query = Q::SourceDeclarationChain {
+            owner,
+            name: SymbolId::of(name),
+            verb: false,
         };
         let metadata = match self.resolver.resolve(query) {
-            M::Member { data, .. } => data,
+            M::Members(rows) => rows
+                .iter()
+                .find_map(|row| match row {
+                    M::Declaration {
+                        data,
+                        definition: dm_ir::ProcedureDefinition::Declare,
+                        ..
+                    } => Some(data.clone()),
+                    _ => None,
+                })
+                .or_else(|| {
+                    rows.iter().find_map(|row| match row {
+                        M::Declaration { data, .. } => Some(data.clone()),
+                        _ => None,
+                    })
+                })
+                .ok_or_else(|| Unsupported("source return declaration missing".into()))?,
             M::Missing if owner != SymbolId::of("/") => {
                 return self.return_type(SymbolId::of("/"), name)
             }
-            M::Missing | M::IntrinsicProc { .. } | M::RetainedProc { .. } => return Ok(None),
+            // This is absence of a SOURCE annotation, not proof of a builtin's
+            // result. Value classification still requires its own contract.
+            M::Missing => return Ok(None),
             _ => {
                 return Err(Unsupported(format!(
                     "return declaration is incomplete: {query:?}"
@@ -336,7 +416,7 @@ impl<R: Resolver> Walker<'_, R> {
             return Ok(None);
         };
         let text = annotation
-            .source_text(self.frontend.snapshot.tree.symbols())
+            .source_text(self.tree.symbols())
             .ok_or_else(|| Unsupported("unknown return annotation symbol".into()))?;
         let compact: String = text.chars().filter(|ch| !ch.is_whitespace()).collect();
         Ok((compact.starts_with('/')
@@ -345,19 +425,21 @@ impl<R: Resolver> Walker<'_, R> {
             }))
         .then_some(compact))
     }
-    fn type_of(&self, expression: &Expr) -> Result<Option<String>, Unsupported> {
+    pub(crate) fn type_of(&self, expression: &Expr) -> Result<Option<String>, Unsupported> {
         Ok(match &ungroup(expression).kind {
             ExprKind::Ident(name) => {
                 if name == "src" {
-                    self.frontend
-                        .snapshot
-                        .tree
+                    self.tree
                         .symbols()
                         .text(self.owner)
                         .filter(|owner| *owner != "/")
                         .map(str::to_owned)
                 } else if name == "global" {
                     Some("/".into())
+                } else if name == "." {
+                    Some(String::new())
+                } else if name == "world" {
+                    Some("/world".into())
                 } else if name == "usr" {
                     Some("/mob".into())
                 } else if let Some(ty) = self.locals.get(name) {
@@ -379,7 +461,10 @@ impl<R: Resolver> Walker<'_, R> {
             | ExprKind::SafeMember {
                 object, selector, ..
             } => match self.type_of(object)? {
-                Some(owner) => self.field_type(SymbolId::of(&owner), selector)?,
+                Some(owner) if !owner.is_empty() => {
+                    self.field_type(SymbolId::of(&owner), selector)?
+                }
+                Some(_) => None,
                 None => None,
             },
             ExprKind::Index { object, .. } | ExprKind::SafeIndex { object, .. } => {
@@ -417,12 +502,12 @@ impl<R: Resolver> Walker<'_, R> {
             _ => None,
         })
     }
-    fn place(
+    pub(crate) fn place(
         &self,
         expression: &Expr,
     ) -> Result<Option<(SymbolId, SymbolId, Arc<DeclarationMeaning>)>, Unsupported> {
         let (receiver, name) = match &ungroup(expression).kind {
-            ExprKind::Ident(name) if !self.locals.contains_key(name) => {
+            ExprKind::Ident(name) if name != "." && !self.locals.contains_key(name) => {
                 let field = match self.field(self.owner, name)? {
                     some @ Some(_) => some,
                     None => self.field(SymbolId::of("/"), name)?,
@@ -437,7 +522,7 @@ impl<R: Resolver> Walker<'_, R> {
             } => (object.as_ref(), selector),
             _ => return Ok(None),
         };
-        let Some(owner) = self.type_of(receiver)? else {
+        let Some(owner) = self.type_of(receiver)?.filter(|owner| !owner.is_empty()) else {
             return Ok(None);
         };
         Ok(self
@@ -474,7 +559,7 @@ impl<R: Resolver> Walker<'_, R> {
         Ok(())
     }
 }
-impl<R: Resolver> TypedVisitor for Walker<'_, R> {
+impl<R: Resolver + ?Sized> TypedVisitor for Walker<'_, R> {
     fn statement(&mut self, statement: &Statement, _: &[NodeStep]) -> VisitDecision {
         if let StatementKind::Assign { target, op, value } = &statement.kind {
             if op == "=" {

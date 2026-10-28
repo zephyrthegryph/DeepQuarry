@@ -124,12 +124,27 @@ pub enum StatementKind {
     Unsupported,
 }
 
+/// Exact primary-parser control delimiter, retained separately from expression
+/// spans so whitespace and multiline conditions never require guessed offsets.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ControlOrigin {
+    pub condition: Span,
+    pub opening: Span,
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ParsedBody {
     pub statements: Vec<Statement>,
+    pub control_origins: Vec<ControlOrigin>,
     pub diagnostics: Vec<Diagnostic>,
     /// Source-issued grammar context, kept separate to preserve semantic error order.
     pub pending_bodies: Vec<crate::PendingBody>,
+}
+
+impl ParsedBody {
+    pub fn control_origin(&self, condition: Span) -> Option<Span> {
+        self.control_origins.iter().find(|origin| origin.condition == condition).map(|origin| origin.opening)
+    }
 }
 
 /// Parse the body of a structural `Proc` or `Verb` item. Unsupported forms are retained as
@@ -152,7 +167,7 @@ pub fn parse_proc_body(proc: &Item) -> ParsedBody {
 /// Parse a procedure body when its owning declaration is already known.
 pub fn parse_body_items(items: &[Item]) -> ParsedBody {
     let mut result = ParsedBody::default();
-    result.statements = parse_sequence(items, &mut result.diagnostics);
+    result.statements = parse_sequence(items, &mut result.diagnostics, &mut result.control_origins);
     result
 }
 
@@ -172,7 +187,7 @@ pub fn parse_body_items_with_context(
     parsed
 }
 
-fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Vec<Statement> {
+fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Vec<Statement> {
     let mut statements = Vec::new();
     let mut index = 0;
     while index < items.len() {
@@ -207,7 +222,7 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Vec<Stat
             {
                 end += 1;
             }
-            statements.push(parse_if(item, &items[index + 1..end], diagnostics));
+            statements.push(parse_if(item, &items[index + 1..end], diagnostics, origins));
             index = end;
             continue;
         }
@@ -215,10 +230,10 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Vec<Stat
             if let Some(next) = items.get(index + 1).filter(|next| {
                 starts_keyword(next.header.trim(), "while") && next.children.is_empty()
             }) {
-                if let Some(condition) = parse_control_condition(next, "while", diagnostics) {
+                if let Some(condition) = parse_control_condition_origin(next, "while", diagnostics, origins) {
                     statements.push(Statement {
                         kind: StatementKind::DoWhile {
-                            body: parse_sequence(&item.children, diagnostics),
+                            body: parse_sequence(&item.children, diagnostics, origins),
                             condition,
                         },
                         span: Span::new(item.span.start, next.span.end),
@@ -264,10 +279,10 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Vec<Stat
             if let Some(catch_binding) = catch_binding {
                 statements.push(Statement {
                     kind: StatementKind::Try {
-                        body: parse_sequence(&item.children, diagnostics),
+                        body: parse_sequence(&item.children, diagnostics, origins),
                         catch_binding,
                         catch_header_span: catch.header_span,
-                        catch_body: parse_sequence(&catch.children, diagnostics),
+                        catch_body: parse_sequence(&catch.children, diagnostics, origins),
                     },
                     span: Span::new(item.span.start, catch.span.end),
                     header_span: item.header_span,
@@ -305,15 +320,15 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Vec<Stat
             index += 1;
             continue;
         }
-        statements.push(parse_one(item, diagnostics));
+        statements.push(parse_one(item, diagnostics, origins));
         index += 1;
     }
     statements
 }
 
-fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Statement {
-    let condition = parse_control_condition(item, "if", diagnostics);
-    let then_branch = control_body(item, "if", diagnostics);
+fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Statement {
+    let condition = parse_control_condition_origin(item, "if", diagnostics, origins);
+    let then_branch = control_body(item, "if", diagnostics, origins);
     let mut span = item.span;
     let else_branch = if let Some((other, remaining)) = else_items.split_first() {
         span.end = else_items.last().unwrap().span.end;
@@ -326,18 +341,18 @@ fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>)
                     message: "duplicate else clause".into(),
                 });
             }
-            parse_sequence(&other.children, diagnostics)
+            parse_sequence(&other.children, diagnostics, origins)
         } else if let Some(rest) = header.strip_prefix("else").map(str::trim_start) {
             if !starts_keyword(rest, "if") {
                 let mut inline = other.clone();
                 inline.header = rest.trim_end_matches(';').into();
                 inline.header_span.start += other.header.find(rest).unwrap_or(0);
-                parse_sequence(&[inline], diagnostics)
+                parse_sequence(&[inline], diagnostics, origins)
             } else {
                 let mut nested = other.clone();
                 nested.header = rest.into();
                 nested.header_span.start += other.header.find(rest).unwrap_or(0);
-                vec![parse_if(&nested, remaining, diagnostics)]
+                vec![parse_if(&nested, remaining, diagnostics, origins)]
             }
         } else {
             diagnostics.push(Diagnostic {
@@ -365,7 +380,7 @@ fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>)
     }
 }
 
-fn parse_one(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Statement {
+fn parse_one(item: &Item, diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Statement {
     let header = item.header.trim();
     if crate::return_has_block(header, !item.children.is_empty()) {
         diagnostics.push(Diagnostic {
@@ -378,17 +393,17 @@ fn parse_one(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Statement {
     let kind = if starts_keyword(header, "while") {
         parse_control_condition(item, "while", diagnostics).map(|condition| StatementKind::While {
             condition,
-            body: control_body(item, "while", diagnostics),
+            body: control_body(item, "while", diagnostics, origins),
         })
     } else if starts_keyword(header, "for") {
         parse_for(item, diagnostics).map(|control| StatementKind::For {
             control,
-            body: control_body(item, "for", diagnostics),
+            body: control_body(item, "for", diagnostics, origins),
         })
     } else if starts_keyword(header, "switch") {
-        parse_switch(item, diagnostics)
+        parse_switch(item, diagnostics, origins)
     } else if starts_keyword(header, "spawn") {
-        parse_spawn(item, diagnostics)
+        parse_spawn(item, diagnostics, origins)
     } else if starts_keyword(header, "set") {
         parse_set(item, diagnostics)
     } else if header == "return" {
@@ -414,7 +429,7 @@ fn parse_one(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Statement {
     } else if let Some(label) = header.strip_suffix(':') {
         Some(StatementKind::Label {
             name: label.trim().into(),
-            body: parse_sequence(&item.children, diagnostics),
+            body: parse_sequence(&item.children, diagnostics, origins),
         })
     } else if header == "break" {
         Some(StatementKind::Break)
@@ -494,7 +509,7 @@ fn parse_set(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<Statement
     })
 }
 
-fn parse_spawn(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<StatementKind> {
+fn parse_spawn(item: &Item, diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Option<StatementKind> {
     let header = item.header.trim();
     let rest = header.strip_prefix("spawn")?.trim_start();
     let (delay, inline) = if rest.is_empty() {
@@ -553,12 +568,12 @@ fn parse_spawn(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<Stateme
         None => None,
     };
     let body = if inline.is_empty() {
-        parse_sequence(&item.children, diagnostics)
+        parse_sequence(&item.children, diagnostics, origins)
     } else {
         let mut inline_item = item.clone();
         inline_item.header = inline.into();
         inline_item.header_span.start += item.header.find(inline).unwrap_or(0);
-        parse_sequence(&[inline_item], diagnostics)
+        parse_sequence(&[inline_item], diagnostics, origins)
     };
     Some(StatementKind::Spawn { delay, body })
 }
@@ -720,7 +735,7 @@ fn parse_var_header(
     Some(StatementKind::Var { declaration, value })
 }
 
-fn parse_switch(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<StatementKind> {
+fn parse_switch(item: &Item, diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Option<StatementKind> {
     let selector = parse_control_condition(item, "switch", diagnostics)?;
     let mut cases = Vec::new();
     let mut else_branch = Vec::new();
@@ -741,12 +756,12 @@ fn parse_switch(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<Statem
                 .trim_end_matches(';')
                 .trim();
             else_branch = if inline.is_empty() {
-                parse_sequence(&case.children, diagnostics)
+                parse_sequence(&case.children, diagnostics, origins)
             } else {
                 let mut nested = case.clone();
                 nested.header = inline.into();
                 nested.header_span.start += case.header.find(inline).unwrap_or(0);
-                parse_sequence(&[nested], diagnostics)
+                parse_sequence(&[nested], diagnostics, origins)
             };
             continue;
         }
@@ -784,7 +799,7 @@ fn parse_switch(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<Statem
         }
         cases.push(SwitchCase {
             alternatives,
-            body: control_body(case, "if", diagnostics),
+            body: control_body(case, "if", diagnostics, origins),
         });
     }
     Some(StatementKind::Switch {
@@ -806,7 +821,8 @@ mod tests {
 /// An expression that only names and builds values: evaluating it changes nothing.
 fn is_effect_free(expr: &Expr) -> bool {
     match &expr.kind {
-        ExprKind::Ident(_) | ExprKind::Literal(_) | ExprKind::TypePath(_) => true,
+        ExprKind::Literal(text) => text.parts().is_ok_and(|parts| parts.is_none_or(|parts| parts.expressions.iter().all(is_effect_free))),
+        ExprKind::Ident(_) | ExprKind::TypePath(_) => true,
         ExprKind::Group(inner) => is_effect_free(inner),
         ExprKind::Member { object, via_colon: false, .. } => is_effect_free(object),
         ExprKind::Unary { op, value } => matches!(op.as_str(), "-" | "!" | "~") && is_effect_free(value),

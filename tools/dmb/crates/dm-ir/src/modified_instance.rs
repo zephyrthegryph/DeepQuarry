@@ -58,7 +58,7 @@ impl ModifiedInstance {
         lexical_owner: SymbolId,
         resource_context: Option<u128>,
         fields: &[(String, Expr)],
-        decode: impl Fn(&str) -> Option<Vec<u8>>,
+        decode: impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
         calls: Option<&dyn crate::constants::PureCalls>,
         resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
     ) -> Result<Self, String> {
@@ -79,7 +79,7 @@ impl ModifiedInstance {
         lexical_owner: SymbolId,
         resource_context: Option<u128>,
         fields: &[(String, Expr)],
-        decode: impl Fn(&str) -> Option<Vec<u8>>,
+        decode: impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
         calls: Option<&dyn crate::constants::PureCalls>,
         resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
         observer: Option<&dyn Fn(&Expr)>,
@@ -101,7 +101,7 @@ impl ModifiedInstance {
         lexical_owner: SymbolId,
         resource_context: Option<u128>,
         fields: &[(String, Expr)],
-        decode: impl Fn(&str) -> Option<Vec<u8>>,
+        decode: impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
         calls: Option<&dyn crate::constants::PureCalls>,
         resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
         observer: Option<&dyn Fn(&Expr)>,
@@ -147,7 +147,7 @@ impl ModifiedInstance {
         lexical_owner: SymbolId,
         resource_context: Option<u128>,
         fields: &[(String, Expr)],
-        decode: impl Fn(&str) -> Option<Vec<u8>>,
+        decode: impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
         calls: Option<&dyn crate::constants::PureCalls>,
     ) -> Result<Self, String> {
         Self::capture_with_resources(
@@ -223,7 +223,7 @@ impl ModifiedInstance {
 }
 fn contains_resources(value: &Expr) -> bool {
     match &value.kind {
-        ExprKind::Literal(value) => value.starts_with('\''),
+        ExprKind::Literal(value) => value.starts_with('\'') || value.parts().map_or(true, |parts| parts.is_some_and(|parts| parts.expressions.iter().any(contains_resources))),
         ExprKind::Unary { value, .. }
         | ExprKind::Group(value)
         | ExprKind::TypeFilter { value, .. } => contains_resources(value),
@@ -280,7 +280,7 @@ fn expression(
             text(value, bytes);
         }
         ExprKind::Literal(value) => {
-            if let Some(proof) = resources.get(value) {
+            if let Some(proof) = resources.get(value.as_str()) {
                 bytes.push(17);
                 bytes.extend_from_slice(&proof.content.to_le_bytes());
                 return;
@@ -388,7 +388,7 @@ fn expression(
 }
 fn normalize_with_resources(
     value: &Expr,
-    decode: &impl Fn(&str) -> Option<Vec<u8>>,
+    decode: &impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
     calls: Option<&dyn crate::constants::PureCalls>,
     capture: &impl Fn(&str) -> Result<(), String>,
     observer: Option<&dyn Fn(&Expr)>,
@@ -420,15 +420,15 @@ fn normalize_with_resources(
     .map_err(|error| error.reason)?
     {
         let kind = match scalar {
-            Constant::Number(number) if number.is_finite() => ExprKind::Literal(number.to_string()),
+            Constant::Number(number) if number.is_finite() => ExprKind::Literal(number.to_string().into()),
             Constant::Text(text) => {
-                ExprKind::Literal(serde_json::to_string(&text).map_err(|error| error.to_string())?)
+                ExprKind::Literal(serde_json::to_string(&text).map_err(|error| error.to_string())?.into())
             }
             Constant::EncodedText(bytes) => ExprKind::Literal(
                 serde_json::to_string(&String::from_utf8(bytes).map_err(|_| {
                     "modified scalar text needs an exact byte-valued representation"
                 })?)
-                .map_err(|error| error.to_string())?,
+                .map_err(|error| error.to_string())?.into(),
             ),
             Constant::Null => ExprKind::Ident("null".into()),
             Constant::TypePath(path) => ExprKind::TypePath(path),

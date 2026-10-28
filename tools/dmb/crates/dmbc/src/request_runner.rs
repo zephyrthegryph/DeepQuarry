@@ -548,6 +548,7 @@ fn run_build_attempt(
     }
     let host_facts = if executable { host.host_facts() } else { None };
     let query_db = host.retains_artifacts().then(|| std::sync::Arc::clone(host.query_db()));
+    let source_policy_queries = std::sync::Arc::clone(host.query_db());
     let (frontend_memo, execution, mut semantic_state) = host.execution(
         workers,
         expansion_memo
@@ -683,7 +684,7 @@ fn run_build_attempt(
     if progress_enabled {
         dmbc::daemon_eprintln!("native directive lookups: {}", crate::runner_host::memo_lookups_report());
     }
-    query_attempt.capture(&frontend);
+    query_attempt.capture_with_queries(&frontend, std::sync::Arc::clone(&source_policy_queries));
     dm_profile::request_mark("frontend.query_capture");
     if command == BuildCommand::Compile {
         // DreamMaker rejects these; the native pipeline would accept them.

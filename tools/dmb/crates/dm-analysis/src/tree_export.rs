@@ -145,7 +145,7 @@ fn modified_expression(value: &dm_syntax::Expr) -> Value {
     use dm_syntax::ExprKind;
     match &value.kind {
         ExprKind::Ident(text) => json!({"kind":"identifier","text":text}),
-        ExprKind::Literal(text) => json!({"kind":"literal","text":text}),
+        ExprKind::Literal(text) => json!({"kind":"literal","text":text.as_str()}),
         ExprKind::TypePath(path) => json!({"kind":"type_path","path":path}),
         ExprKind::Unary { op, value } => {
             json!({"kind":"unary","operator":op,"value":modified_expression(value)})

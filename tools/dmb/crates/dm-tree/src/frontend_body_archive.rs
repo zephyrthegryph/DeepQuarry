@@ -10,6 +10,7 @@ pub struct BodyArchive {
     syntax: Arc<DeclarationSyntax>,
     bodies: Arc<[BodyOccurrence]>,
     tree: Arc<SemanticTree>,
+    declarations: Arc<crate::OccurrenceTable>,
     mapping: Arc<SourceExportMapping>,
     callables: Arc<CallableRoster>,
     body_indices: Arc<HashMap<OccurrenceId, usize>>,
@@ -21,6 +22,10 @@ pub struct ArchivedBody<'a> {
     header: Item,
 }
 impl ArchivedBody<'_> {
+    /// Exact archive issuance, not equality of source bytes or semantic hashes.
+    pub fn belongs_to(&self, archive: &BodyArchive) -> bool {
+        std::ptr::eq(self.archive, archive)
+    }
     pub fn occurrence(&self) -> &BodyOccurrence {
         self.occurrence
     }
@@ -56,6 +61,7 @@ impl ColdFrontend {
             syntax: Arc::clone(&self.issued_syntax),
             bodies: Arc::clone(&self.issued_bodies),
             tree: Arc::clone(&self.snapshot.tree),
+            declarations: Arc::clone(&self.snapshot.occurrences),
             mapping: Arc::clone(self.source_export_mapping()?),
             callables: Arc::clone(&self.callable_roster),
             body_indices: Arc::clone(&self.body_by_declaration),
@@ -63,6 +69,41 @@ impl ColdFrontend {
     }
 }
 impl BodyArchive {
+    /// Existing issued syntax inputs for dependency edges in the same graph.
+    pub fn syntax_inputs(&self) -> Option<&[Arc<BodySyntaxInput>]> {
+        self.body_queries
+            .as_ref()
+            .map(|queries| queries.inputs.as_ref())
+    }
+    /// Semantic policies must use the compiler's graph, not another host that
+    /// happens to parse equal source bytes.
+    pub fn uses_body_queries(&self, host: &dyn BodySyntaxQueries) -> bool {
+        self.body_queries
+            .as_ref()
+            .is_some_and(|queries| std::ptr::addr_eq(queries.host.as_ref(), host))
+    }
+    /// Borrow the same immutable semantic owner captured from the compiler.
+    pub fn tree(&self) -> &SemanticTree {
+        &self.tree
+    }
+    /// Issued body roster in compiler source order, without copying metadata.
+    pub fn occurrences(&self) -> &[BodyOccurrence] {
+        &self.bodies
+    }
+    pub fn location(&self, expanded_offset: usize) -> Option<SourceLocation> {
+        self.mapping.output(expanded_offset)
+    }
+    /// First authored occurrence of this archive's member. Member IDs are
+    /// meaningful only in `tree()`; no foreign tree or source table is accepted.
+    /// This borrows the existing target/occurrence index and provenance projection.
+    pub fn member_location(&self, member: crate::MemberId) -> Option<SourceLocation> {
+        self.tree.member(member)?;
+        let ordinal = *self
+            .declarations
+            .for_target(crate::Target::Member(member))
+            .first()?;
+        self.mapping.location_of(ordinal)
+    }
     pub fn body_index(&self, declaration: OccurrenceId) -> Option<usize> {
         self.body_indices.get(&declaration).copied()
     }
@@ -169,3 +210,7 @@ pub(super) fn parse_statements(
         stored_candidates,
     })
 }
+
+#[cfg(test)]
+#[path = "frontend_body_archive_tests.rs"]
+mod tests;

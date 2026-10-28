@@ -27,6 +27,11 @@ impl BodySyntaxInput {
     pub fn key(&self) -> u64 {
         self.id
     }
+    /// Pre-parse admission estimate, identical to the resulting syntax charge.
+    /// This is a bounded-cohort estimate, not a bound on allocations or RSS.
+    pub fn budget_charge(&self) -> usize {
+        syntax_budget_charge(self.span.end.saturating_sub(self.span.start))
+    }
     pub(super) fn obtain(
         self: &Arc<Self>,
         host: &dyn BodySyntaxQueries,
@@ -70,7 +75,21 @@ impl BodySyntax {
     /// Provisional admission charge until the shared ownership census supplies
     /// exact AST allocation sizes. Does not claim to measure process RSS.
     pub fn budget_charge(&self) -> usize {
-        self.input_bytes.saturating_mul(64).saturating_add(4096)
+        syntax_budget_charge(self.input_bytes)
+    }
+}
+
+fn syntax_budget_charge(input_bytes: usize) -> usize {
+    input_bytes.saturating_mul(64).saturating_add(4096)
+}
+
+#[cfg(test)]
+mod budget_tests {
+    #[test]
+    fn input_and_result_admission_estimate_has_shared_saturating_boundaries() {
+        assert_eq!(super::syntax_budget_charge(0), 4096);
+        assert_eq!(super::syntax_budget_charge(1), 4160);
+        assert_eq!(super::syntax_budget_charge(usize::MAX), usize::MAX);
     }
 }
 

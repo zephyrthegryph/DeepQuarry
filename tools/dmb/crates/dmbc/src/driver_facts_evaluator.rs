@@ -190,7 +190,7 @@ impl DriverEvaluator<'_> {
                     self.resource_search_context,
                     fields,
                     |raw| {
-                        dm_codegen_byond::decode_constant_string_literal(raw)
+                        dm_codegen_byond::decode_native_constant_string_literal(raw)
                             .ok()
                             .flatten()
                     },
@@ -485,7 +485,7 @@ impl DriverEvaluator<'_> {
                     }
                 }
             },
-            |raw| match dm_codegen_byond::decode_constant_string_literal(raw) {
+            |raw| match dm_codegen_byond::decode_native_constant_string_literal(raw) {
                 Ok(value) => value,
                 Err(error) => {
                     *failure.borrow_mut() = Some(error);

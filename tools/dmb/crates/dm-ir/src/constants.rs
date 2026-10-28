@@ -3,7 +3,7 @@
 //! this crate does not depend on BYOND encoding or lowering. Unknown/runtime/list
 //! expressions return None; they must not be cached as a negative declaration.
 //! Pure evaluation of declaration expressions. Runtime operations remain unfurled.
-use dm_syntax::{parse_expression, Expr, ExprKind};
+use dm_syntax::{parse_expression, Expr, ExprKind, LiteralText};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
@@ -67,7 +67,7 @@ pub trait PureCalls: Sync {
 pub fn evaluate_with(
     source: &str,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
 ) -> Option<Constant> {
     evaluate_with_resources(source, resolve, decode, nameof, |_| None)
@@ -83,7 +83,7 @@ pub fn procedure_literal_query(path: &str) -> Option<crate::ResolveQuery> {
 pub fn evaluate_with_resources(
     source: &str,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
 ) -> Option<Constant> {
@@ -94,12 +94,14 @@ pub fn evaluate_with_resources(
     evaluate_expr_with_resources(parsed.expr.as_ref()?, resolve, decode, nameof, resource)
 }
 /// Evaluate an already parsed expression through the same scalar interpreter.
+/// The decoder borrows the literal issued in `expression`, including its shared
+/// interpolation syntax. It must not reconstruct a literal from raw spelling.
 /// The caller owns syntax diagnostics and supplies the same captured callbacks
 /// as the string entry; this API neither reparses nor infers resource authority.
 pub fn evaluate_expr_with_resources(
     expression: &Expr,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
 ) -> Option<Constant> {
@@ -110,7 +112,7 @@ pub fn evaluate_expr_with_resources(
 pub fn evaluate_with_resources_and_calls(
     source: &str,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
@@ -127,7 +129,7 @@ pub fn evaluate_with_resources_and_calls(
 pub fn evaluate_expr_with_resources_and_calls(
     expression: &Expr,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
@@ -142,7 +144,7 @@ pub fn evaluate_expr_with_resources_and_calls(
 pub fn evaluate_expr_with_resources_and_calls_and_nameof_observer(
     expression: &Expr,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
@@ -162,7 +164,7 @@ mod reference_observer;
 fn eval(
     expr: &Expr,
     resolve: &impl Fn(&str) -> Option<Constant>,
-    decode: &impl Fn(&str) -> Option<Vec<u8>>,
+    decode: &impl Fn(&LiteralText) -> Option<Vec<u8>>,
     nameof: &impl Fn(&Expr) -> Option<String>,
     resource: &impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
@@ -525,7 +527,7 @@ mod tests {
                     reads.borrow_mut().push(format!("resolve:{name}"));
                     matches!(name, "seed" | "/datum::seed").then_some(Constant::Number(5.0))
                 };
-                let decode = |raw: &str| {
+                let decode = |raw: &LiteralText| {
                     reads.borrow_mut().push(format!("decode:{raw}"));
                     Some(vec![0xff, 0x80])
                 };
@@ -623,6 +625,34 @@ mod tests {
             Constant::EncodedText(vec![b'a']).canonical_bytes()
         );
     }
+    #[test]
+    fn parsed_decoder_borrows_the_exact_issued_literal_and_preserves_policy() {
+        let parsed = parse_expression(r#""[unobserved()]""#);
+        assert!(parsed.diagnostics.is_empty());
+        let expression = parsed.expr.as_ref().unwrap();
+        let ExprKind::Literal(issued) = &expression.kind else {
+            panic!()
+        };
+        let parts = issued.parts().unwrap().unwrap();
+        let seen = std::cell::Cell::new(0);
+        let result = evaluate_expr_with_resources(
+            expression,
+            |_| None,
+            |received| {
+                assert!(std::ptr::eq(received, issued));
+                assert!(std::ptr::eq(received.parts().unwrap().unwrap(), parts));
+                seen.set(seen.get() + 1);
+                // The evaluator must preserve its caller's decoding contract rather
+                // than silently replace it with an additional builtin policy.
+                Some(vec![0xff, 0x80])
+            },
+            |_| None,
+            |_| None,
+        );
+        assert_eq!(seen.get(), 1);
+        assert_eq!(result, Some(Constant::EncodedText(vec![0xff, 0x80])));
+    }
+
     #[test]
     fn unsupported_runtime_and_list_expressions_remain_unresolved() {
         assert_eq!(evaluate("list(1,2)"), None);

@@ -517,11 +517,6 @@ impl TypedVisitor for Binder {
                 );
                 return VisitDecision::Skip;
             }
-            ExprKind::Literal(text) if text.starts_with('"') && text.contains('[') => self.gap(
-                path,
-                node.span,
-                "string interpolation references are not represented as typed children",
-            ),
             _ => {}
         }
         VisitDecision::Descend

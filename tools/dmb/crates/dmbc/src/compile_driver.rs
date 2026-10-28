@@ -72,8 +72,8 @@ pub(crate) fn scalars_with_artifacts(
     )
 }
 
-pub(crate) fn scalar_decode(raw: &str) -> Option<Vec<u8>> {
-    dm_codegen_byond::decode_constant_string_literal(raw)
+pub(crate) fn scalar_decode(raw: &dm_syntax::LiteralText) -> Option<Vec<u8>> {
+    dm_codegen_byond::decode_native_constant_string_literal(raw)
         .ok()
         .flatten()
 }

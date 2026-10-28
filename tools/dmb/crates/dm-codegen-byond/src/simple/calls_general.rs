@@ -668,7 +668,7 @@ fn hex_color_components(text: &[u8]) -> Option<Vec<u32>> {
 fn constant_color_text(arg: &Expr) -> Option<Vec<u8>> {
     match &arg.kind {
         ExprKind::Group(inner) => constant_color_text(inner),
-        ExprKind::Literal(raw) => decode_constant_string_literal(raw).ok().flatten(),
+        ExprKind::Literal(raw) => decode_native_constant_string_literal(raw).ok().flatten(),
         ExprKind::Call { callee, args }
             if matches!(&callee.kind, ExprKind::Ident(name) if name == "rgb")
                 && (args.len() == 3 || args.len() == 4) =>

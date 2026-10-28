@@ -124,7 +124,7 @@ impl Compiler<'_> {
             _ => return None,
         };
         Some(Expr {
-            kind: ExprKind::Literal(text),
+            kind: ExprKind::Literal(text.into()),
             span,
         })
     }

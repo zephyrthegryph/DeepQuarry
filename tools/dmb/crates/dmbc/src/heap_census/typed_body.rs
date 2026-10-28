@@ -28,6 +28,30 @@ fn boxed<'a>(c: &mut HeapCensus, owner: &str, value: &'a Expr, pending: &mut Vec
     }
 }
 impl HeapCensus {
+    fn literal<'a>(
+        &mut self,
+        owner: &str,
+        text: &'a dm_syntax::LiteralText,
+        pending: &mut Vec<Node<'a>>,
+    ) {
+        if let Some((pointer, bytes)) = text.shared_storage() {
+            if !self.buffer(owner, pointer, bytes, bytes) {
+                return;
+            }
+        }
+        self.string(owner, text.raw_storage());
+        match text.retained_parts() {
+            Some(Ok(Some(parts))) => {
+                self.vec_payload(owner, &parts.template);
+                if self.vec_payload(owner, &parts.expressions) {
+                    pending.extend(parts.expressions.iter().map(Node::Expr));
+                }
+            }
+            Some(Err(error)) => self.string(owner, error),
+            _ => (),
+        }
+    }
+
     pub(crate) fn typed_body(&mut self, owner: &str, body: &dm_tree::frontend::StatementBody) {
         // HashSet buckets and controls are private; report logical entries as lower bounds.
         let (headers, capacity) = body.declaration_header_storage();
@@ -41,6 +65,7 @@ impl HeapCensus {
         self.typed_parsed_body(owner, body.parsed());
     }
     fn typed_parsed_body(&mut self, owner: &str, parsed: &dm_syntax::ParsedBody) {
+        self.vec_payload(owner, &parsed.control_origins);
         self.vec_payload(owner, &parsed.pending_bodies);
         if self.vec_payload(owner, &parsed.diagnostics) {
             for diagnostic in &parsed.diagnostics {
@@ -199,9 +224,8 @@ impl HeapCensus {
                     }
                 }
                 Node::Expr(value) => match &value.kind {
-                    ExprKind::Ident(text) | ExprKind::Literal(text) | ExprKind::TypePath(text) => {
-                        self.string(owner, text)
-                    }
+                    ExprKind::Ident(text) | ExprKind::TypePath(text) => self.string(owner, text),
+                    ExprKind::Literal(text) => self.literal(owner, text, &mut pending),
                     ExprKind::Unary { op, value } => {
                         self.string(owner, op);
                         boxed(self, owner, value, &mut pending);
@@ -267,7 +291,7 @@ mod tests {
     fn typed_nested_boxes_vectors_and_strings_are_counted_once() {
         let text = String::from("payload");
         let inner = Box::new(Expr {
-            kind: ExprKind::Literal(text),
+            kind: ExprKind::Literal(text.into()),
             span: dm_syntax::Span::new(0, 7),
         });
         let parsed = dm_syntax::ParsedBody {
@@ -281,10 +305,15 @@ mod tests {
                 raw_header: String::from("return"),
             }],
             diagnostics: Vec::new(),
+            control_origins: vec![dm_syntax::ControlOrigin {
+                condition: dm_syntax::Span::new(1, 2),
+                opening: dm_syntax::Span::new(0, 1),
+            }],
             pending_bodies: Vec::new(),
         };
         let expected =
-            parsed.statements.capacity() * size_of::<Statement>() + size_of::<Expr>() + 7 + 6;
+            parsed.statements.capacity() * size_of::<Statement>() + size_of::<Expr>() + 7 + 6
+                + parsed.control_origins.capacity() * size_of::<dm_syntax::ControlOrigin>();
         let mut census = HeapCensus::new("test");
         census.typed_parsed_body("typed", &parsed);
         census.typed_parsed_body("alias", &parsed);

@@ -110,3 +110,28 @@ fn unsupported_nodes_and_missing_loop_bodies_do_not_become_clean_checker_results
         })
         .unwrap();
 }
+
+#[test]
+fn checker_sees_bitwise_negation_inside_a_shared_interpolated_literal() {
+    let frontend = build(
+        Path::new("p.dme"),
+        &Source("/proc/test(a, b)\n    return \"[!a & b]\"\n"),
+        &Default::default(),
+        1,
+    )
+    .unwrap();
+    let bodies = BodyArena::new_typed(&frontend, |_| true);
+    bodies
+        .with_parsed(&frontend.bodies[0], |body| {
+            let view = BodyView::new(&frontend, body).unwrap();
+            let found = view.ambiguous_not_bitwise(Severity::Warning);
+            assert_eq!(found.len(), 1);
+            assert_eq!(
+                found[0].message,
+                "Ambiguous `!` on left side of bitwise `&` operator"
+            );
+            assert_eq!(view.location(&found[0]).unwrap().line, 2);
+            assert_eq!(found[0].span.start, "/proc/test(a, b)\n    return ".len());
+        })
+        .unwrap();
+}

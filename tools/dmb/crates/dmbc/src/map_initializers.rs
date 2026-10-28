@@ -360,45 +360,5 @@ pub(crate) fn prepare_unit_expressions(
     Ok(expressions)
 }
 fn offset_expression(expression: &mut dm_syntax::Expr, offset: usize) {
-    use dm_syntax::ExprKind;
-    expression.span.start += offset;
-    expression.span.end += offset;
-    match &mut expression.kind {
-        ExprKind::Ident(_) | ExprKind::Literal(_) | ExprKind::TypePath(_) => {}
-        ExprKind::Unary { value, .. }
-        | ExprKind::Group(value)
-        | ExprKind::TypeFilter { value, .. } => offset_expression(value, offset),
-        ExprKind::Binary { lhs, rhs, .. } => {
-            offset_expression(lhs, offset);
-            offset_expression(rhs, offset);
-        }
-        ExprKind::Conditional {
-            condition,
-            then_value,
-            else_value,
-        } => {
-            for value in [condition, then_value, else_value] {
-                offset_expression(value, offset);
-            }
-        }
-        ExprKind::Call { callee, args } => {
-            offset_expression(callee, offset);
-            for value in args {
-                offset_expression(value, offset);
-            }
-        }
-        ExprKind::Member { object, .. }
-        | ExprKind::StaticMember { object, .. }
-        | ExprKind::SafeMember { object, .. } => offset_expression(object, offset),
-        ExprKind::ObjectInitializer { object, fields } => {
-            offset_expression(object, offset);
-            for (_, value) in fields {
-                offset_expression(value, offset);
-            }
-        }
-        ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
-            offset_expression(object, offset);
-            offset_expression(index, offset);
-        }
-    }
+    dm_syntax::shift_expression(expression, offset);
 }

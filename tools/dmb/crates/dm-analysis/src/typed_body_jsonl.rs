@@ -126,7 +126,7 @@ impl<W: Write> TypedVisitor for Rows<'_, W> {
 fn expression_syntax(kind: &ExprKind) -> Value {
     match kind {
         ExprKind::Ident(name) => json!({"kind":"identifier","name":name}),
-        ExprKind::Literal(text) => json!({"kind":"literal","text":text}),
+        ExprKind::Literal(text) => json!({"kind":"literal","text":text.as_str()}),
         ExprKind::TypePath(path) => json!({"kind":"type_path","path":path}),
         ExprKind::Unary { op, .. } => json!({"kind":"unary","operator":op}),
         ExprKind::Binary { op, .. } => json!({"kind":"binary","operator":op}),

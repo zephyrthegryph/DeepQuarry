@@ -124,7 +124,7 @@ fn value_expression(value: &RuntimeValue) -> std::borrow::Cow<'_, dm_syntax::Exp
                                 .iter()
                                 .map(|size| Expr {
                                     span,
-                                    kind: ExprKind::Literal(size.to_string()),
+                                    kind: ExprKind::Literal(size.to_string().into()),
                                 })
                                 .collect(),
                         },

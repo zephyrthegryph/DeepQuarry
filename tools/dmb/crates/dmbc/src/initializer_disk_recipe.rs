@@ -167,7 +167,8 @@ fn expression(out: &mut Vec<u8>, value: &dm_syntax::Expr, depth: usize) -> Optio
         // Until an exact portable resource closure is shared with this stage,
         // resource-bearing recipes execute the ordinary producer.
         Literal(text) if text.starts_with('\'') => return None,
-        Ident(text) | Literal(text) | TypePath(text) => {
+        Literal(text) => { out.push(1); part(out, text.as_bytes()); }
+        Ident(text) | TypePath(text) => {
             out.push(match value.kind {
                 Ident(_) => 0,
                 Literal(_) => 1,

@@ -567,9 +567,27 @@ impl StatementBody {
                 || self.parsed.pending_bodies.iter().any(|pending| pending.missing_body()
                     || pending.termination == dm_syntax::BodyTermination::Unknown)
             { return false; }
-            struct Coverage;
-            impl dm_syntax::TypedVisitor for Coverage {}
-            dm_syntax::visit_statements(&self.parsed.statements, &mut Coverage).unsupported_statements == 0
+            struct Coverage<'a> { valid: bool, parsed: &'a dm_syntax::ParsedBody }
+            impl dm_syntax::TypedVisitor for Coverage<'_> {
+                fn statement(&mut self, node: &dm_syntax::Statement, _: &[dm_syntax::NodeStep]) -> dm_syntax::VisitDecision {
+                    if let dm_syntax::StatementKind::If { condition, .. } | dm_syntax::StatementKind::DoWhile { condition, .. } = &node.kind {
+                        if self.parsed.control_origin(condition.span).is_none() {
+                            self.valid = false;
+                            return dm_syntax::VisitDecision::Stop;
+                        }
+                    }
+                    dm_syntax::VisitDecision::Descend
+                }
+                fn expression(&mut self, node: &dm_syntax::Expr, _: &[dm_syntax::NodeStep]) -> dm_syntax::VisitDecision {
+                    if let dm_syntax::ExprKind::Literal(text) = &node.kind {
+                        if text.parts().is_err() { self.valid = false; return dm_syntax::VisitDecision::Stop; }
+                    }
+                    dm_syntax::VisitDecision::Descend
+                }
+            }
+            let mut coverage = Coverage { valid: true, parsed: &self.parsed };
+            let report = dm_syntax::visit_statements(&self.parsed.statements, &mut coverage);
+            coverage.valid && report.unsupported_statements == 0
         })
     }
     pub fn parsed(&self) -> &dm_syntax::ParsedBody {

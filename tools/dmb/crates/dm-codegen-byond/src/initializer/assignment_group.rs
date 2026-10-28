@@ -71,7 +71,8 @@ impl<'a> PreparedAssignmentGroup<'a> {
         }
         for (assignment, continuation) in self.assignments.iter().zip(&values) {
             if continuation.is_some_and(|value| !value.emit_assignment)
-                && !matches!(&assignment.value.kind, dm_syntax::ExprKind::Ident(value) | dm_syntax::ExprKind::Literal(value) if value == "null")
+                && !(matches!(&assignment.value.kind, dm_syntax::ExprKind::Ident(value) if value == "null")
+                    || matches!(&assignment.value.kind, dm_syntax::ExprKind::Literal(value) if value == "null"))
             {
                 return Err(InitializerError::Invalid(
                     "value-only array continuation requires authored null".into(),
@@ -134,7 +135,10 @@ impl<'a> PreparedAssignmentGroup<'a> {
             InitializerError::Invalid("initializer assignment fragment index missing".into())
         })?;
         let debug = LocalDebug {
-            ops: self.context.debug.is_none_or(|provider| provider.emits_debug_ops()),
+            ops: self
+                .context
+                .debug
+                .is_none_or(|provider| provider.emits_debug_ops()),
         };
         let code = crate::simple::compile_assignment_fragment_with_resolver(
             crate::typed_scopes::AssignmentScope {

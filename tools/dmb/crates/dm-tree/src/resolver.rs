@@ -326,6 +326,47 @@ impl SemanticTree {
     }
     pub(crate) fn resolve_inventory(&self, query: Q) -> M {
         match query {
+            Q::IntrinsicCallable { owner, name, verb } => {
+                let kind = if verb {
+                    MemberKind::Verb
+                } else {
+                    MemberKind::Proc
+                };
+                let root = SymbolId::of("/");
+                let mut current = self.lookup_type(owner);
+                while let Some(id) = current {
+                    let path = self.types[id.index()].path;
+                    // Root globals are not inherited instance methods.
+                    if owner != root && path == root {
+                        break;
+                    }
+                    if self.inventory.index.contains_key(&(path, name, kind)) {
+                        return M::Presence(true);
+                    }
+                    current = self.parent(id);
+                }
+                if self.inventory.complete {
+                    M::Presence(false)
+                } else {
+                    M::Unsupported(query)
+                }
+            }
+            Q::IntrinsicCallableName(name) => {
+                // Reuse the captured inventory, not a second builtin table or
+                // source-name index. The shared query host may memoize this
+                // engine-qualified projection along with other resolutions.
+                if self.inventory.intrinsic.iter().any(|entry| {
+                    entry.name == name
+                        && entry.owner != SymbolId::of("/")
+                        && matches!(entry.kind, MemberKind::Proc | MemberKind::Verb)
+                }) {
+                    M::Presence(true)
+                } else if self.inventory.complete {
+                    M::Presence(false)
+                } else {
+                    M::Unsupported(query)
+                }
+            }
             Q::UniqueStaticVar(name) => {
                 if self.inventory.non_unique.contains(&name) {
                     return M::Missing;
@@ -378,6 +419,10 @@ impl SemanticTree {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "intrinsic_callable_tests.rs"]
+mod intrinsic_callable_tests;
 
 #[cfg(test)]
 mod tests {

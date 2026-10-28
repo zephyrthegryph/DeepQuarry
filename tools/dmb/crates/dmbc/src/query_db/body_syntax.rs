@@ -11,7 +11,7 @@ use std::sync::{
 };
 
 pub(super) const BODY_SYNTAX: Kind = Kind(4);
-const BUDGET: usize = 128 * 1024 * 1024;
+pub(super) const BUDGET: usize = 128 * 1024 * 1024;
 
 #[derive(Debug)]
 struct Params {
@@ -48,6 +48,7 @@ impl std::fmt::Debug for QueryDb {
 }
 impl BodySyntaxQueries for QueryDb {
     fn begin_revision(&self) {
+        self.prune_value_proofs();
         let mut inputs = self.body_inputs.lock().unwrap_or_else(|e| e.into_inner());
         inputs.retain(|key, input| {
             if input.strong_count() > 0 {
@@ -98,4 +99,21 @@ impl BodySyntaxQueries for QueryDb {
             })?;
         result.as_ref().clone()
     }
+}
+
+/// Record a real syntax dependency of a derived policy query. The archive's
+/// later parse request borrows this exact cached value through its host.
+pub(super) fn observe(
+    ctx: &mut dm_query::Ctx<'_>,
+    input: &Arc<BodySyntaxInput>,
+) -> Result<(), QueryError> {
+    let key = Key::new(BODY_SYNTAX, input.key().into());
+    ctx.get::<Result<Arc<BodySyntax>, Diagnostic>>(
+        key,
+        Arc::new(Params {
+            input: Arc::downgrade(input),
+            key,
+        }),
+    )?;
+    Ok(())
 }

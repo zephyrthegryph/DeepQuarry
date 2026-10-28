@@ -1,5 +1,6 @@
 //! Bounded read-only queries against an existing retained semantic snapshot.
 use serde::{Deserialize, Serialize};
+mod native_policy;
 #[path = "query/occurrence_pages.rs"]
 mod occurrence_pages;
 #[path = "query/selected_envelope.rs"]
@@ -75,6 +76,9 @@ pub enum SourceQuery {
     },
     /// Migration-only policy findings, NOT complete checker coverage. The body
     /// is consumed in-process from the compiler archive; only findings cross IPC.
+    NativeUntypedFixture {
+        root: PathBuf,
+    },
     NativeCheckerFixture {
         ordinal: u32,
         severity: String,
@@ -156,6 +160,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                 expected_source.as_deref(),
             )?;
             validate_body_requests(&reply, &source_questions)?;
+            native_policy::validate_requested(&reply, &source_questions)?;
             validate_resolved_requests(&reply, &source_questions)?;
             occurrence_pages::validate_requested(&reply, &source_questions)?;
             semantic_pages::validate_requested(&reply, &source_questions)?;
@@ -300,6 +305,20 @@ pub(super) fn validate_reply(
                 if nested["schema"] != "dm-resolved-query-v1" || nested["row"] != "resolved_query" {
                     return Err(io::Error::other("invalid resolved row"));
                 }
+            }
+            source_rows += 1;
+            continue;
+        }
+        if row["row"] == "source_native_untyped_fixture" {
+            if row["schema"] != "dm-session-source-query-v1"
+                || row["source_revision"].as_str() != reply.source_revision.as_deref()
+                || row["semantic_revision"].as_str() != Some(reply.revision.as_str())
+                || row["full_policy_parity"] != false
+                || row["raw_marker_scope"] != "captured_compiled_sources"
+                || row["admission"] != "raw_findings"
+                || row["findings"].as_array().is_none()
+            {
+                return Err(io::Error::other("invalid native untyped fixture envelope"));
             }
             source_rows += 1;
             continue;
@@ -564,6 +583,10 @@ pub(crate) fn evaluate_snapshot(
             snapshot.write_body_model(*ordinal, tree, &mut output)?;
             continue;
         }
+        if let SourceQuery::NativeUntypedFixture { root } = question {
+            snapshot.write_native_untyped_fixture(root, tree, &mut output)?;
+            continue;
+        }
         if let SourceQuery::NativeCheckerFixture { ordinal, severity } = question {
             snapshot.write_native_checker(*ordinal, severity, tree, &mut output)?;
             continue;
@@ -578,6 +601,7 @@ pub(crate) fn evaluate_snapshot(
             SourceQuery::ResolvedQueries { .. }
             | SourceQuery::BodyModel { .. }
             | SourceQuery::NativeCheckerFixture { .. }
+            | SourceQuery::NativeUntypedFixture { .. }
             | SourceQuery::SelectedReferences { .. }
             | SourceQuery::OccurrencesPage { .. }
             | SourceQuery::BodyContextsPage { .. }

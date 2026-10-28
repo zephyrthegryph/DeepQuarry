@@ -12,13 +12,28 @@ impl dm_preprocess::SourceProvider for Files {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let project = std::env::args().nth(1).ok_or("expected a .dme path")?;
+    let family = std::env::args()
+        .nth(2)
+        .unwrap_or_else(|| "ambiguous_not_bitwise".into());
+    if !matches!(
+        family.as_str(),
+        "ambiguous_not_bitwise" | "ambiguous_in_lhs" | "invalid_set_value"
+    ) {
+        return Err("unknown native checker family".into());
+    }
     let frontend = build(Path::new(&project), &Files, &Default::default(), 1)
         .map_err(|errors| format!("native frontend failed: {errors:?}"))?;
     let bodies = BodyArena::new_typed(&frontend, |_| true);
-    for occurrence in frontend.bodies.iter() {
+    for (_, occurrence) in dm_analysis::checker_order::bodies(&frontend)? {
         bodies.with_parsed(occurrence, |body| -> Result<(), String> {
             let view = BodyView::new(&frontend, body)?;
-            for diagnostic in view.ambiguous_not_bitwise(Severity::Warning) {
+            let diagnostics = match family.as_str() {
+                "ambiguous_not_bitwise" => view.ambiguous_not_bitwise(Severity::Warning),
+                "ambiguous_in_lhs" => view.ambiguous_in_lhs(Severity::Warning)?,
+                "invalid_set_value" => dm_analysis::checks_invalid_set::check(&view, Severity::Warning)?,
+                _ => unreachable!(),
+            };
+            for diagnostic in diagnostics {
                 let source = view.location(&diagnostic).ok_or("diagnostic has no origin")?;
                 println!("{}", serde_json::json!({
                     "family": diagnostic.family, "severity": "warning",

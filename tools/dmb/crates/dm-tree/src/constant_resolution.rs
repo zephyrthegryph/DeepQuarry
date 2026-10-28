@@ -65,7 +65,7 @@ pub enum ScalarOutcome {
 pub struct ScalarBackend<'a> {
     /// Caller-pinned decoder/nameof policy identity, mandatory for cache identity.
     pub identity: u128,
-    pub decode_string: &'a dyn Fn(&str) -> Option<Vec<u8>>,
+    pub decode_string: &'a dyn Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
     pub nameof: &'a dyn Fn(&Expr) -> Option<String>,
 }
 
@@ -155,7 +155,7 @@ pub fn resolve_pinned_with_artifacts(
     snapshot: &TreeSnapshot,
     requests: &[ScalarQuery],
     identity: u128,
-    decode: fn(&str) -> Option<Vec<u8>>,
+    decode: fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
     nameof: fn(&Expr) -> Option<String>,
     predefined: Option<&dyn Resolver>,
     calls: Option<&dyn PureCalls>,
@@ -648,7 +648,7 @@ mod tests {
         let source = snapshot(
             "/datum/probe\n    var/const/text = \"value\"\n    var/const/named = nameof(text)\n",
         );
-        let decoder = |_: &str| Some(vec![0xff, 0x80]);
+        let decoder = |_: &dm_syntax::LiteralText| Some(vec![0xff, 0x80]);
         let nameof = |_: &Expr| Some("chosen".into());
         let backend = ScalarBackend {
             identity: 123,

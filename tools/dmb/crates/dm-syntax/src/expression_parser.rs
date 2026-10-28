@@ -497,7 +497,7 @@ impl ExprParser {
             }
             TokenKind::Ident if token.text == "null" => Some(Expr {
                 span,
-                kind: ExprKind::Literal(token.text),
+                kind: ExprKind::Literal(crate::LiteralText::at(token.text, span.start)),
             }),
             TokenKind::Ident => Some(Expr {
                 span,
@@ -505,7 +505,7 @@ impl ExprParser {
             }),
             TokenKind::Number | TokenKind::String | TokenKind::Resource => Some(Expr {
                 span,
-                kind: ExprKind::Literal(token.text),
+                kind: ExprKind::Literal(crate::LiteralText::at(token.text, span.start)),
             }),
             TokenKind::Operator if matches!(token.text.as_str(), "-" | "+" | "!" | "~" | "*") => {
                 if matches!(token.text.as_str(), "-" | "+")
@@ -687,7 +687,7 @@ impl ExprParser {
             ("&", 11, 12),
             // `in` is the loosest operator of all, below `?:`: `a in b ? c : d` is `a in (b ? c : d)` and
             // `a || b in c` is `(a || b) in c` (dm.exe 516.1687).
-            ("in", 2, 3),
+            ("in", 0, 1),
             ("==", 13, 14),
             ("!=", 13, 14),
             ("<>", 13, 14),
@@ -745,11 +745,47 @@ impl ExprParser {
 mod incomplete_tests {
     use super::*;
     #[test]
+    fn membership_is_below_assignment_and_both_sides_of_ternary() {
+        for source in ["a = b in c", "a ? b : c in d"] {
+            let parsed = parse_expression(source);
+            assert!(
+                parsed.diagnostics.is_empty(),
+                "{source}: {:?}",
+                parsed.diagnostics
+            );
+            let ExprKind::Binary { op, lhs, .. } = parsed.expr.unwrap().kind else {
+                panic!("{source}")
+            };
+            assert_eq!(op, "in");
+            assert!(
+                matches!(lhs.kind, ExprKind::Binary { ref op, .. } if op == "=")
+                    || matches!(lhs.kind, ExprKind::Conditional { .. }),
+                "{source}"
+            );
+        }
+        let parsed = parse_expression("a in b ? c : d");
+        let ExprKind::Binary { op, rhs, .. } = parsed.expr.unwrap().kind else {
+            panic!()
+        };
+        assert_eq!(op, "in");
+        assert!(matches!(rhs.kind, ExprKind::Conditional { .. }));
+        let parsed = parse_expression("a in b = c");
+        let ExprKind::Binary { op, rhs, .. } = parsed.expr.unwrap().kind else {
+            panic!()
+        };
+        assert_eq!(op, "in");
+        assert!(matches!(rhs.kind, ExprKind::Binary { ref op, .. } if op == "="));
+    }
+    #[test]
     fn prefix_pointer_dereference_parses_after_a_binary_operator() {
         // DreamMaker 516.1681 accepts `a +* 2` and `a * * 2` (fixtures/diagnostics/cases/bad_operator).
         for source in ["a +* 2", "a * * 2", "*a", "a -* 2"] {
             let parsed = parse_expression(source);
-            assert!(parsed.diagnostics.is_empty(), "{source}: {:?}", parsed.diagnostics);
+            assert!(
+                parsed.diagnostics.is_empty(),
+                "{source}: {:?}",
+                parsed.diagnostics
+            );
         }
     }
     #[test]

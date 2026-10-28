@@ -71,7 +71,12 @@ pub fn visit_expression(expression: &Expr, visitor: &mut impl TypedVisitor) -> V
 /// One authoritative child-index convention for visitors and typed-node recipes.
 pub fn for_each_expression_child<'a>(node: &'a Expr, mut visit: impl FnMut(usize, &'a Expr)) {
     match &node.kind {
-        ExprKind::Ident(_) | ExprKind::Literal(_) | ExprKind::TypePath(_) => {}
+        ExprKind::Literal(text) => {
+            if let Ok(Some(parts)) = text.parts() {
+                for (index, expression) in parts.expressions.iter().enumerate() { visit(index, expression); }
+            }
+        }
+        ExprKind::Ident(_) | ExprKind::TypePath(_) => {}
         ExprKind::Unary { value, .. }
         | ExprKind::TypeFilter { value, .. }
         | ExprKind::Group(value) => visit(0, value),
