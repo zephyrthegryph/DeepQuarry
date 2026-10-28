@@ -330,7 +330,7 @@ CAPABILITIES(/transformation/chem/instant/slime/warplague)
 CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
 	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse2", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nuclear),
-		effects = sets_off(kind = XFORM_FX_RADIATION, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, range = 7, strength = 30)))
+		effects = sets_off(kind = XFORM_FX_RADIATION, sfx_volume = 0.75, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, range = 7, strength = 30)))
 
 
 /transformation/chem/instant/slime/nuclear_emitter

@@ -627,11 +627,26 @@
 /// sets_off(kind = ..., ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): XFORM_FX_SMOKE, XFORM_FX_FOAM,
 /// XFORM_FX_EXPLOSION, XFORM_FX_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
 /// (no powergaming a tiny amount); `tell` is what viewers within 5 see; `variant` is the foam kind; `divisor` scales an explosion (made / divisor) and
-/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made; XFORM_FX_AREA applies `body_effect` (a path or a list of them) for `lasts` to every mob within `range` of the subject. `chance` (percent) gates the whole row (rolled first); XFORM_FX_BLAST takes `blast` = list(devastation, heavy, light, flash), each a number or list(lo, hi) rolled with rand() in order; XFORM_FX_FROST uses `amount`; XFORM_FX_LATER calls the GLOBAL_PROC_REF `handler` on the subject after `delay`, after the `audit` line, the `tell` message and the `sfx` sound. XFORM_FX_LIGHTNING, XFORM_FX_RADIATION (`range`, `strength`) and XFORM_FX_EMP with fixed `ranges` = list(a, b, c, d) take the same `audit`, `tell`, `sfx` and an optional `delay`, then `fire_sfx` when they go.
+/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made; XFORM_FX_AREA applies `body_effect` (a path or a list of them) for `lasts` to every mob within `range` of the subject. `chance` (percent) gates the whole row (rolled first); XFORM_FX_BLAST takes `blast` = list(devastation, heavy, light, flash), each a number or list(lo, hi) rolled with rand() in order; XFORM_FX_FROST uses `amount`; XFORM_FX_LATER calls the GLOBAL_PROC_REF `handler` on the subject after `delay`, after the `audit` line, the `tell` message and the `sfx` sound. XFORM_FX_LIGHTNING, XFORM_FX_RADIATION (`range`, `strength`) and XFORM_FX_EMP with fixed `ranges` = list(a, b, c, d) take the same `audit`, `tell`, `sfx` and an optional `delay`, then `fire_sfx` when they go. XFORM_FX_GRAVITY takes `direction`, `range`, `pulses` (pull) and `empties` (clear the holder whatever it is); XFORM_FX_BURN takes `gases` (gas = amount), `scale_by_made`, `temperature`, `hotspot` = list(temperature, volume), `range`, `line_of_sight`, `floors_only` and `consumes` (a reagent id removed from the holder); XFORM_FX_MOOD takes `mood`; `sfx_volume` is the volume multiplier of `sfx` and `fire_sfx` (play_sfx's volume_mult; null is 1). XFORM_FX_CONTAGION takes `edit` and, for evolving, `levels` = list(min, max) or `symptoms`.
 /proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null, amount = null, range = null, body_effect = null, lasts = null, chance = null, blast = null, delay = null, handler = null, audit = null,
 	strength = null,
 	fire_sfx = null,
-	ranges = null)
+	ranges = null,
+	direction = null,
+	pulses = null,
+	empties = null,
+	gases = null,
+	scale_by_made = null,
+	temperature = null,
+	hotspot = null,
+	line_of_sight = null,
+	floors_only = null,
+	consumes = null,
+	mood = null,
+	edit = null,
+	levels = null,
+	symptoms = null,
+	sfx_volume = null)
 	var/list/arguments = list("kind" = kind)
 	if(!isnull(clears))
 		arguments["clears"] = clears
@@ -671,6 +686,36 @@
 		arguments["fire_sfx"] = fire_sfx
 	if(!isnull(ranges))
 		arguments["ranges"] = ranges
+	if(!isnull(direction))
+		arguments["direction"] = direction
+	if(!isnull(pulses))
+		arguments["pulses"] = pulses
+	if(!isnull(empties))
+		arguments["empties"] = empties
+	if(!isnull(gases))
+		arguments["gases"] = gases
+	if(!isnull(scale_by_made))
+		arguments["scale_by_made"] = scale_by_made
+	if(!isnull(temperature))
+		arguments["temperature"] = temperature
+	if(!isnull(hotspot))
+		arguments["hotspot"] = hotspot
+	if(!isnull(line_of_sight))
+		arguments["line_of_sight"] = line_of_sight
+	if(!isnull(floors_only))
+		arguments["floors_only"] = floors_only
+	if(!isnull(consumes))
+		arguments["consumes"] = consumes
+	if(!isnull(mood))
+		arguments["mood"] = mood
+	if(!isnull(edit))
+		arguments["edit"] = edit
+	if(!isnull(levels))
+		arguments["levels"] = levels
+	if(!isnull(symptoms))
+		arguments["symptoms"] = symptoms
+	if(!isnull(sfx_volume))
+		arguments["sfx_volume"] = sfx_volume
 	return part_make(/datum/entry/part/effect/sets_off, arguments)
 
 /datum/entry/part/effect/sets_off
