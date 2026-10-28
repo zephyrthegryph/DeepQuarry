@@ -327,7 +327,9 @@ GLOBAL_LIST_INIT(dq_pick_c, list(/obj/item/dq_spawn_probe/c))
 	TEST_ASSERT_EQUAL(choice[3], 5, "the chosen table's amount comes with it")
 	var/datum/entry/part/pick_from/filtered = pick_from(choices = list(list(1, types_of(/obj/item/dq_spawn_probe/family, where = GLOBAL_PROC_REF(dq_pick_not_skipped)))))
 	var/list/kept = xform_pick_table(X, filtered.args["choices"])
-	TEST_ASSERT(/obj/item/dq_spawn_probe/family in kept && /obj/item/dq_spawn_probe/family/kid in kept && !(/obj/item/dq_spawn_probe/family/kid/skipped in kept), "types_of() keeps the path and the subtypes the predicate accepts")
+	TEST_ASSERT((/obj/item/dq_spawn_probe/family in kept), "types_of() keeps the path itself")
+	TEST_ASSERT((/obj/item/dq_spawn_probe/family/kid in kept), "and the subtypes the predicate accepts")
+	TEST_ASSERT(!(/obj/item/dq_spawn_probe/family/kid/skipped in kept), "but not the one it refuses")
 	// A name that is not a GLOB var is refused at compile, naming the way to write it.
 	var/list/reported = list()
 	GLOB.declare_report_capture = reported
