@@ -1972,8 +1972,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/get_display_species()
 	//Shows species in tooltip
-	if(src.custom_species)
-		return custom_species
+	if(bio.custom_species)
+		return bio.custom_species
 	//Beepboops get special text if obviously beepboop
 	if(looksSynthetic())
 		if(gender == MALE)
