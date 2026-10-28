@@ -541,104 +541,88 @@ CAPABILITIES(/transformation/chem/instant/luminol)
 /* Solidification */
 
 /transformation/chem/instant/solidification
-	var/sheet_to_give = /obj/item/stack/material/iron
 
 CAPABILITIES(/transformation/chem/instant/solidification)
 	configure(transformation(name = "Solid Iron", id = "solidiron",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/solidification, on_reaction)))
-
-/transformation/chem/instant/solidification/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/sheets = FLOOR(created_volume,1)
-	if(sheets)
-		new sheet_to_give(get_turf(holder.my_atom), sheets)
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET)), made = 1, spawns = spawns(/obj/item/stack/material/iron, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/phoron
-	sheet_to_give = /obj/item/stack/material/phoron
 
 CAPABILITIES(/transformation/chem/instant/solidification/phoron)
 	configure(transformation(name = "Solid Phoron", id = "solidphoron",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_PHORON, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_PHORON, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/phoron, 1, per = SPAWN_STACK_MADE)))
 
 
 /transformation/chem/instant/solidification/silver
-	sheet_to_give = /obj/item/stack/material/silver
 
 CAPABILITIES(/transformation/chem/instant/solidification/silver)
 	configure(transformation(name = "Solid Silver", id = "solidsilver",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_SILVER, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_SILVER, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/silver, 1, per = SPAWN_STACK_MADE)))
 
 
 /transformation/chem/instant/solidification/gold
-	sheet_to_give = /obj/item/stack/material/gold
 
 CAPABILITIES(/transformation/chem/instant/solidification/gold)
 	configure(transformation(name = "Solid Gold", id = "solidgold",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_GOLD, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_GOLD, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/gold, 1, per = SPAWN_STACK_MADE)))
 
 
 /transformation/chem/instant/solidification/platinum
-	sheet_to_give = /obj/item/stack/material/platinum
 
 CAPABILITIES(/transformation/chem/instant/solidification/platinum)
 	configure(transformation(name = "Solid Platinum", id = "solidplatinum",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_PLATINUM, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_PLATINUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/platinum, 1, per = SPAWN_STACK_MADE)))
 
 
 /transformation/chem/instant/solidification/uranium
-	sheet_to_give = /obj/item/stack/material/uranium
 
 CAPABILITIES(/transformation/chem/instant/solidification/uranium)
 	configure(transformation(name = "Solid Uranium", id = "soliduranium",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_URANIUM, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_URANIUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/uranium, 1, per = SPAWN_STACK_MADE)))
 
 
 /transformation/chem/instant/solidification/hydrogen
-	sheet_to_give = /obj/item/stack/material/mhydrogen
 
 CAPABILITIES(/transformation/chem/instant/solidification/hydrogen)
 	configure(transformation(name = "Solid Hydrogen", id = "solidhydrogen",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 100), reagent(REAGENT_ID_HYDROGEN, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 100), reagent(REAGENT_ID_HYDROGEN, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/mhydrogen, 1, per = SPAWN_STACK_MADE)))
 
 
 // These are from Xenobio.
 /transformation/chem/instant/solidification/steel
-	sheet_to_give = /obj/item/stack/material/steel
 
 CAPABILITIES(/transformation/chem/instant/solidification/steel)
 	configure(transformation(name = "Solid Steel", id = "solidsteel",
 		takes = list(reagent(REAGENT_ID_FROSTOIL, 10), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_CARBON, REAGENTS_PER_SHEET)),
-		blocked_by = list(reagent(REAGENT_ID_PLATINUM, 1))))
+		blocked_by = list(reagent(REAGENT_ID_PLATINUM, 1)),
+		spawns = spawns(/obj/item/stack/material/steel, 1, per = SPAWN_STACK_MADE)))
 
 
 /transformation/chem/instant/solidification/plasteel
-	sheet_to_give = /obj/item/stack/material/plasteel
 
 CAPABILITIES(/transformation/chem/instant/solidification/plasteel)
 	configure(transformation(name = "Solid Plasteel", id = "solidplasteel",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 10), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_CARBON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_PLATINUM, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 10), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_CARBON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_PLATINUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/plasteel, 1, per = SPAWN_STACK_MADE)))
 
 
 /transformation/chem/instant/plastication
 
 CAPABILITIES(/transformation/chem/instant/plastication)
 	configure(transformation(name = "Plastic", id = "solidplastic", takes = list(reagent(REAGENT_ID_PACID, 1), reagent(REAGENT_ID_PLASTICIDE, 2)),
-		made = 1, then = TYPE_PROC_REF(/transformation/chem/instant/plastication, on_reaction)))
-
-/transformation/chem/instant/plastication/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/sheets = FLOOR(created_volume,1)
-	if(sheets)
-		new /obj/item/stack/material/plastic(get_turf(holder.my_atom), sheets)
+		made = 1, spawns = spawns(/obj/item/stack/material/plastic, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/soapification
 
 CAPABILITIES(/transformation/chem/instant/soapification)
 	configure(transformation(name = "Soapification", id = "soapification", takes = list(reagent(REAGENT_ID_COOKINGOIL, 10), reagent(REAGENT_ID_LYE, 2)),
-		made = 1, then = TYPE_PROC_REF(/transformation/chem/instant/soapification, on_reaction)))
-
-/transformation/chem/instant/soapification/proc/on_reaction(datum/reagents/holder, created_volume)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/soap(get_turf(holder.my_atom))
+		made = 1, spawns = spawns(/obj/item/soap, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/soapification/alt
 
@@ -649,87 +633,71 @@ CAPABILITIES(/transformation/chem/instant/soapification/alt)
 
 CAPABILITIES(/transformation/chem/instant/soapification/gibs)
 	configure(transformation(name = "Soapification Gibs", id = "soapificationgibs",
-		takes = list(reagent(REAGENT_ID_PROTEIN, 10), reagent(REAGENT_ID_LYE, 10)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/soapification/gibs, on_reaction)))
-
-/transformation/chem/instant/soapification/gibs/on_reaction(datum/reagents/holder, created_volume)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/soap/homemade(get_turf(holder.my_atom))
+		takes = list(reagent(REAGENT_ID_PROTEIN, 10), reagent(REAGENT_ID_LYE, 10)), made = 1,
+		spawns = spawns(/obj/item/soap/homemade, 1, per = SPAWN_PER_MADE)))
 
 /*Carpet Creation*/
 
 /transformation/chem/instant/carpetify
-	var/carpet_type = /obj/item/stack/tile/carpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify)
 	configure(transformation(name = "Carpet", id = "redcarpet", takes = list(reagent(REAGENT_ID_LIQUIDCARPET, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
-		made = 2, then = TYPE_PROC_REF(/transformation/chem/instant/carpetify, on_reaction)))
-
-/transformation/chem/instant/carpetify/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/sheets = FLOOR(created_volume,1)
-	if(sheets)
-		new carpet_type(get_turf(holder.my_atom), sheets)
+		made = 2, spawns = spawns(/obj/item/stack/tile/carpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/bcarpet
-	carpet_type = /obj/item/stack/tile/carpet/bcarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/bcarpet)
 	configure(transformation(name = "Black Carpet", id = "blackcarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETB, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETB, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/bcarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/blucarpet
-	carpet_type = /obj/item/stack/tile/carpet/blucarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/blucarpet)
 	configure(transformation(name = "Blue Carpet", id = "bluecarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETBLU, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETBLU, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/blucarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/turcarpet
-	carpet_type = /obj/item/stack/tile/carpet/turcarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/turcarpet)
 	configure(transformation(name = "Turquise Carpet", id = "turcarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETTUR, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETTUR, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/turcarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/sblucarpet
-	carpet_type = /obj/item/stack/tile/carpet/sblucarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/sblucarpet)
 	configure(transformation(name = "Silver Blue Carpet", id = "sblucarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETSBLU, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETSBLU, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/sblucarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/clowncarpet
-	carpet_type = /obj/item/stack/tile/carpet/gaycarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/clowncarpet)
 	configure(transformation(name = "Clown Carpet", id = "clowncarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETC, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETC, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/gaycarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/pcarpet
-	carpet_type = /obj/item/stack/tile/carpet/purcarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/pcarpet)
 	configure(transformation(name = "Purple Carpet", id = "purplecarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETP, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETP, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/purcarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/ocarpet
-	carpet_type = /obj/item/stack/tile/carpet/oracarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/ocarpet)
 	configure(transformation(name = "Orange Carpet", id = "orangecarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETO, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETO, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/oracarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/concrete
 
 CAPABILITIES(/transformation/chem/instant/concrete)
 	configure(transformation(name = "Concrete", id = "concretereagent",
-		takes = list(reagent(REAGENT_ID_CALCIUM, 2), reagent(REAGENT_ID_SILICATE, 2), reagent(REAGENT_ID_WATER, 2)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/concrete, on_reaction)))
-
-/transformation/chem/instant/concrete/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/sheets = FLOOR(created_volume,1)
-	if(sheets)
-		new /obj/item/stack/material/concrete(get_turf(holder.my_atom), sheets)
+		takes = list(reagent(REAGENT_ID_CALCIUM, 2), reagent(REAGENT_ID_SILICATE, 2), reagent(REAGENT_ID_WATER, 2)), made = 1, spawns = spawns(/obj/item/stack/material/concrete, 1, per = SPAWN_STACK_MADE)))
 
 /* Grenade reactions */
 
@@ -1609,18 +1577,18 @@ CAPABILITIES(/transformation/chem/instant/alizene)
 
 // Frost oil reactions for material sheets
 /transformation/chem/instant/solidification/aluminium
-	sheet_to_give = /obj/item/stack/material/aluminium
 
 CAPABILITIES(/transformation/chem/instant/solidification/aluminium)
 	configure(transformation(name = "Solid Aluminium", id = "solidaluminium",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_ALUMINIUM, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_ALUMINIUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/aluminium, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/copper
-	sheet_to_give = /obj/item/stack/material/copper
 
 CAPABILITIES(/transformation/chem/instant/solidification/copper)
 	configure(transformation(name = "Solid Copper", id = "solidcopper",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_COPPER, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_COPPER, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/copper, 1, per = SPAWN_STACK_MADE)))
 
 //YW stuff
 /transformation/chem/instant/benzilate
@@ -1999,11 +1967,11 @@ CAPABILITIES(/transformation/chem/instant/neoliquidfire)
 
 //Some extra metal solidification reactions
 /transformation/chem/instant/solidification/deuterium
-	sheet_to_give = /obj/item/stack/material/deuterium
 
 CAPABILITIES(/transformation/chem/instant/solidification/deuterium)
 	configure(transformation(name = "Solid Deuterium", id = "soliddeuterium",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_DEUTERIUM, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_DEUTERIUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/deuterium, 1, per = SPAWN_STACK_MADE)))
 
 //Injectable toxin reactions
 /transformation/chem/instant/succubi_paralize

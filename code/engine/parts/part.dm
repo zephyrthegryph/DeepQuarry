@@ -595,8 +595,25 @@
 	part_name = "becomes"
 
 /// spawns(T, n): adds n of T where the holder is.
-/proc/spawns(spawn_type, n = 1)
-	return part_make(/datum/entry/part/effect/spawns, list("type" = spawn_type, "n" = n))
+/// A transformation also takes the rest (code/library/transformations/transformation_spawns.dm): `at`, `per`, `amount`, `scatter`, `inherit`, `tell` and
+/// `audit` are carried only when given, so an op's part is the same interned part as before.
+/proc/spawns(spawn_type, n = 1, at = null, per = null, amount = null, scatter = null, inherit = null, tell = null, audit = null)
+	var/list/arguments = list("type" = spawn_type, "n" = n)
+	if(!isnull(at))
+		arguments["at"] = at
+	if(!isnull(per))
+		arguments["per"] = per
+	if(!isnull(amount))
+		arguments["amount"] = amount
+	if(!isnull(scatter))
+		arguments["scatter"] = scatter
+	if(!isnull(inherit))
+		arguments["inherit"] = inherit
+	if(!isnull(tell))
+		arguments["tell"] = tell
+	if(!isnull(audit))
+		arguments["audit"] = audit
+	return part_make(/datum/entry/part/effect/spawns, arguments)
 
 /datum/entry/part/effect/spawns
 	part_name = "spawns"
