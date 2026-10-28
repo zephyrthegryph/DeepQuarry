@@ -1347,6 +1347,35 @@ mod tests {
     }
 
     #[test]
+    fn a_published_output_whose_table_was_cleared_is_proven_by_its_facts() {
+        let searches = ["icons/a.dmi", "icons/b.dmi"];
+        let db = QueryDb::default();
+        open_with_searches(&db, BASE, 9, true, &asked(), &searches);
+        let facts = db.answer_facts().expect("a bound tree and a versioned world");
+        let marks = db.mark_published();
+        assert!(db.marks_stand(marks));
+        assert!(!db.marks_stand(marks + 1) && !db.marks_stand(0));
+        // A define-set switch clears the table: the marks no longer stand and the table holds none of the searches.
+        db.answers.clear();
+        assert!(!db.marks_stand(marks));
+        let (_, resolve) = open_with_searches(&db, BASE, 9, true, &[], &[]);
+        assert_eq!(db.answer_facts().map(|now| now.searches.len()), Some(0));
+        // The retained output's facts still prove it: same declarations, same world, each search asked again.
+        assert_eq!(db.prove_facts(&db.request_answers(&resolve), &facts), Ok(2));
+        assert_eq!(db.answer_facts().map(|now| now.searches), Some(facts.searches.clone()));
+        // A changed declaration, a changed world and a search that now answers differently decline.
+        let edited = QueryDb::default();
+        let (_, resolve) = open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
+        assert!(edited.prove_facts(&edited.request_answers(&resolve), &facts).unwrap_err().contains("declarations"));
+        let world = QueryDb::default();
+        let (_, resolve) = open_with_searches(&world, BASE, 10, true, &[], &[]);
+        assert!(world.prove_facts(&world.request_answers(&resolve), &facts).unwrap_err().contains("world"));
+        let moved = QueryDb::default();
+        let (_, resolve) = open_with_searches(&moved, BASE, 9, false, &[], &[]);
+        assert!(moved.prove_facts(&moved.request_answers(&resolve), &facts).unwrap_err().contains("resource searches"));
+    }
+
+    #[test]
     fn an_answer_first_asked_after_the_mark_is_not_compared() {
         let db = QueryDb::default();
         request(&db, BASE);
