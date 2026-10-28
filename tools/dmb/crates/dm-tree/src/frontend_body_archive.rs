@@ -164,6 +164,7 @@ pub(super) fn parse_statements(
     }
     Arc::new(StatementBody {
         parsed,
+        syntax_complete: std::sync::OnceLock::new(),
         declaration_headers,
         stored_candidates,
     })

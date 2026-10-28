@@ -47,7 +47,7 @@ impl<'a> BodyView<'a> {
         let syntax = body
             .statement_body()
             .ok_or("body has no issued typed model")?;
-        if !syntax.parsed().diagnostics.is_empty() {
+        if !syntax.syntax_complete() {
             return Err("body has unsupported or malformed native syntax".into());
         }
         Ok(Self {
@@ -82,7 +82,7 @@ pub fn archived_ambiguous_not_bitwise(
     body: &dm_tree::frontend::ArchivedBody<'_>,
     severity: Severity,
 ) -> Result<Vec<Diagnostic>, String> {
-    if !body.statement_body().parsed().diagnostics.is_empty() {
+    if !body.statement_body().syntax_complete() {
         return Err("body has unsupported or malformed native syntax".into());
     }
     Ok(check_negated_bitwise(body.statement_body(), severity))

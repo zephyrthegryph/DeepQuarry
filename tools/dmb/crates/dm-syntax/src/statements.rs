@@ -133,7 +133,9 @@ pub struct ParsedBody {
 }
 
 /// Parse the body of a structural `Proc` or `Verb` item. Unsupported forms are retained as
-/// `StatementKind::Unsupported` and always carry a diagnostic; callers must reject such bodies.
+/// `StatementKind::Unsupported`. Some diagnostics are deferred, so an empty
+/// diagnostic list does not certify coverage: callers must reject unsupported
+/// nodes and unresolved/missing pending bodies before claiming a complete model.
 pub fn parse_proc_body(proc: &Item) -> ParsedBody {
     let mut result = ParsedBody::default();
     if !matches!(proc.kind, ItemKind::Proc | ItemKind::Verb) {

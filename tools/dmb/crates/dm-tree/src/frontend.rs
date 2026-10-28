@@ -552,10 +552,26 @@ pub struct ParsedBody<'a> {
 /// Full lossless children are released once the target admits this model.
 pub struct StatementBody {
     parsed: dm_syntax::ParsedBody,
+    syntax_complete: std::sync::OnceLock<bool>,
     declaration_headers: std::collections::HashSet<(usize, usize)>,
     stored_candidates: bool,
 }
 impl StatementBody {
+    /// Recovering syntax can contain Unsupported nodes without a parser
+    /// diagnostic (some semantic diagnostics are deferred). Analysis consumers
+    /// must reject both, not turn an omitted node into a successful proof.
+    /// Shared once per issued syntax owner; compile-only callers stay lazy.
+    pub fn syntax_complete(&self) -> bool {
+        *self.syntax_complete.get_or_init(|| {
+            if !self.parsed.diagnostics.is_empty()
+                || self.parsed.pending_bodies.iter().any(|pending| pending.missing_body()
+                    || pending.termination == dm_syntax::BodyTermination::Unknown)
+            { return false; }
+            struct Coverage;
+            impl dm_syntax::TypedVisitor for Coverage {}
+            dm_syntax::visit_statements(&self.parsed.statements, &mut Coverage).unsupported_statements == 0
+        })
+    }
     pub fn parsed(&self) -> &dm_syntax::ParsedBody {
         &self.parsed
     }

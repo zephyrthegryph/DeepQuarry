@@ -268,3 +268,24 @@ fixpoint without recursive query fetches or Rust recursion. Its tests cover a
 recursive group becoming non-value, recovering, splitting and losing a dependency,
 plus a 20,000-node chain. The complete native extraction of production value-proc
 and schema facts remains outstanding; this solver is not yet its replacement.
+
+
+### Native return-equation extraction follow-up
+
+`value_expressions` now derives procedure return/result-slot equations directly
+from borrowed native syntax. Its semantic host must supply identity-resolved call
+and field/argument proofs; it cannot certify a scalar from a function spelling.
+Native global-call corpus tests connect actual compiler-issued `ProcedureIdentity`
+values to the SCC solver, including recursion and an entity exit repaired to a
+scalar exit. This is still NOT the complete production value-proc extractor:
+mutable-field eligibility, polymorphic/unknown dispatch, argument escape barriers,
+configuration reads, local transfer and value-schema policy remain to be ported.
+
+A seeded malformed body (`return (`) exposed an important native contract gap:
+it produces an Unsupported statement with an empty diagnostic list. The new
+analysis consumers now use a lazy, shared StatementBody coverage check, rejecting
+Unsupported nodes and unresolved/missing pending loop bodies, independently of
+whether parsing emitted a diagnostic. Compile-only behavior remains unchanged;
+its own diagnostics/acceptance policy is not replaced by this analysis check.
+The four return-equation tests passed, and the focused regression covering the
+malformed body, missing loop body and valid explicit-empty loop passed.

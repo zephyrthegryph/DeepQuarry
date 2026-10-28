@@ -2,6 +2,7 @@
 pub mod checks;
 pub mod untyped;
 pub mod value_equations;
+pub mod value_expressions;
 pub mod tree_export;
 pub mod typed_body;
 pub mod typed_body_jsonl;

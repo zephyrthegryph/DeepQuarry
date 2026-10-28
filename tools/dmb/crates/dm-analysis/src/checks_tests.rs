@@ -72,3 +72,41 @@ fn equal_source_does_not_authorize_a_foreign_issuance() {
         })
         .unwrap();
 }
+
+#[test]
+fn unsupported_nodes_and_missing_loop_bodies_do_not_become_clean_checker_results() {
+    for source in [
+        "/proc/test()\n    return (\n",
+        "/proc/test()\n    for(var/x in list())\n",
+    ] {
+        let frontend = build(
+            Path::new("project.dme"),
+            &Source(source),
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let arena = BodyArena::new_typed(&frontend, |_| true);
+        arena
+            .with_parsed(&frontend.bodies[0], |body| {
+                assert!(BodyView::new(&frontend, body).is_err(), "{source}");
+            })
+            .unwrap();
+    }
+    let frontend = build(
+        Path::new("project.dme"),
+        &Source("/proc/test()\n    for(var/x in list());\n    return 1\n"),
+        &Default::default(),
+        1,
+    )
+    .unwrap();
+    let arena = BodyArena::new_typed(&frontend, |_| true);
+    arena
+        .with_parsed(&frontend.bodies[0], |body| {
+            assert!(
+                BodyView::new(&frontend, body).is_ok(),
+                "explicit empty loop is valid"
+            );
+        })
+        .unwrap();
+}
