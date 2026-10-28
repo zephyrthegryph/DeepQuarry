@@ -30,6 +30,10 @@
 	var/delay
 	var/handler
 	var/audit
+	var/strength
+	var/fire_sfx
+	/// XFORM_FX_EMP: four fixed ranges (instead of divisors scaled by what was made).
+	var/list/ranges
 	var/list/body_effects
 	var/lasts
 
@@ -45,11 +49,11 @@
 		if(isnull(kind))
 			// A kind passed positionally whose text equals another parameter name binds as that parameter (BYOND), leaving `kind` empty.
 			for(var/name in arguments)
-				if(name == XFORM_FX_SMOKE || name == XFORM_FX_FOAM || name == XFORM_FX_EXPLOSION || name == XFORM_FX_EMP || name == XFORM_FX_AREA || name == XFORM_FX_BLAST || name == XFORM_FX_FROST || name == XFORM_FX_LATER)
+				if(name == XFORM_FX_SMOKE || name == XFORM_FX_FOAM || name == XFORM_FX_EXPLOSION || name == XFORM_FX_EMP || name == XFORM_FX_AREA || name == XFORM_FX_BLAST || name == XFORM_FX_LIGHTNING || name == XFORM_FX_RADIATION || name == XFORM_FX_FROST || name == XFORM_FX_LATER)
 					declare_report("[origin]: [type]: sets_off() arrived with no kind while it has an argument named \"[name]\", which is also a kind: the kind was passed positionally and bound as that argument. Write sets_off(kind = ...)")
 					return null
-		if(kind != XFORM_FX_SMOKE && kind != XFORM_FX_FOAM && kind != XFORM_FX_EXPLOSION && kind != XFORM_FX_EMP && kind != XFORM_FX_AREA && kind != XFORM_FX_BLAST && kind != XFORM_FX_FROST && kind != XFORM_FX_LATER)
-			declare_report("[origin]: [type]: sets_off([kind]) is not XFORM_FX_SMOKE, XFORM_FX_FOAM, XFORM_FX_EXPLOSION, XFORM_FX_EMP, XFORM_FX_AREA, XFORM_FX_BLAST, XFORM_FX_FROST or XFORM_FX_LATER")
+		if(kind != XFORM_FX_SMOKE && kind != XFORM_FX_FOAM && kind != XFORM_FX_EXPLOSION && kind != XFORM_FX_EMP && kind != XFORM_FX_AREA && kind != XFORM_FX_BLAST && kind != XFORM_FX_FROST && kind != XFORM_FX_LATER && kind != XFORM_FX_LIGHTNING && kind != XFORM_FX_RADIATION)
+			declare_report("[origin]: [type]: sets_off([kind]) is not XFORM_FX_SMOKE, XFORM_FX_FOAM, XFORM_FX_EXPLOSION, XFORM_FX_EMP, XFORM_FX_AREA, XFORM_FX_BLAST, XFORM_FX_FROST, XFORM_FX_LATER, XFORM_FX_LIGHTNING or XFORM_FX_RADIATION")
 			return null
 		var/datum/xform_effect/row = new
 		row.kind = kind
@@ -67,11 +71,17 @@
 		row.delay = arguments["delay"]
 		row.handler = arguments["handler"]
 		row.audit = arguments["audit"]
+		row.strength = arguments["strength"]
+		row.fire_sfx = arguments["fire_sfx"]
+		row.ranges = arguments["ranges"]
 		var/body_effect = arguments["body_effect"]
 		row.body_effects = islist(body_effect) ? body_effect : (body_effect ? list(body_effect) : null)
 		row.lasts = arguments["lasts"]
-		if(kind == XFORM_FX_EMP && (!islist(row.divisors) || length(row.divisors) != 4))
-			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_EMP) takes divisors = list(a, b, c, d)")
+		if(kind == XFORM_FX_EMP && !(islist(row.divisors) && length(row.divisors) == 4) && !(islist(row.ranges) && length(row.ranges) == 4))
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_EMP) takes divisors = list(a, b, c, d) or ranges = list(a, b, c, d)")
+			return null
+		if(kind == XFORM_FX_RADIATION && (!isnum(row.range) || !isnum(row.strength)))
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_RADIATION) takes range = n and strength = n")
 			return null
 		if(kind == XFORM_FX_AREA && (!isnum(row.range) || !length(row.body_effects)))
 			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_AREA) takes range = n and body_effect = a path or a list of paths")
@@ -156,7 +166,42 @@
 					for(var/effect_path in row.body_effects)
 						L.apply_body_effect(effect_path, row.lasts, subject) // the extract is the origin: the old tails passed the rule, which a body effect refuses (an origin is an atom)
 			if(XFORM_FX_EMP)
-				var/list/d = row.divisors
-				empulse(location, round(made / d[1]), round(made / d[2]), round(made / d[3]), round(made / d[4]), 1)
-				if(row.clears && !isliving(subject))
-					holder.clear_reagents()
+				if(row.ranges)
+					xform_effect_timed(subject, row)
+				else
+					var/list/d = row.divisors
+					empulse(location, round(made / d[1]), round(made / d[2]), round(made / d[3]), round(made / d[4]), 1)
+					if(row.clears && !isliving(subject))
+						holder.clear_reagents()
+			if(XFORM_FX_LIGHTNING, XFORM_FX_RADIATION)
+				xform_effect_timed(subject, row)
+
+/// The kinds that need no vessel (a fixed EMP, a lightning strike, a radiation pulse): the audit line, message and sound now, then the effect now or `delay` later.
+/proc/xform_effect_timed(atom/subject, datum/xform_effect/row)
+	if(row.audit)
+		log_and_message_admins("[row.audit] has been activated in [get_area(subject)].  Last fingerprints: [subject.forensic_data?.get_lastprint()]", null)
+	if(row.tell)
+		subject.visible_message(span_danger("\The [subject] begins to vibrate violently!"))
+	if(row.sfx)
+		play_sfx(subject, row.sfx, 0.75)
+	if(row.delay)
+		after(subject, row.delay, GLOBAL_PROC_REF(xform_effect_fire), with = list(subject, row))
+	else
+		xform_effect_fire(subject, row)
+
+/// Does the effect of a timed row on `subject`: the EMP, the strike or the pulse.
+/proc/xform_effect_fire(atom/subject, datum/xform_effect/row)
+	if(!subject || QDELETED(subject))
+		return
+	var/turf/location = get_turf(subject)
+	switch(row.kind)
+		if(XFORM_FX_EMP)
+			var/list/r = row.ranges
+			empulse(location, r[1], r[2], r[3], r[4])
+		if(XFORM_FX_LIGHTNING)
+			if(istype(location, /turf))
+				lightning_strike(location)
+		if(XFORM_FX_RADIATION)
+			radiation_pulse(subject, max_range = row.range, threshold = RAD_MEDIUM_INSULATION, chance = 100, strength = row.strength)
+	if(row.fire_sfx)
+		play_sfx(subject, row.fire_sfx, 0.75)
