@@ -240,7 +240,7 @@
 			return FALSE
 		for(var/list/choice in choices)
 			if(length(choice) < 2)
-				declare_report("[origin]: [type]: a pick_from() choice is list(weight, source[, amount])")
+				declare_report("[origin]: [type]: a pick_from() choice is list(weight, source) or list(weight, source, amount)")
 				return FALSE
 			var/weight = choice[1]
 			if(islist(weight))
