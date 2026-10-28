@@ -130,6 +130,7 @@ CAPABILITIES(/transformation/dq_spawn/frosty)
 	boot_needs = list()
 
 /datum/unit_test/dq_xform_sets_off_later_chance_blast/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	GLOB.dq_later_log.Cut()
 	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
@@ -155,5 +156,7 @@ CAPABILITIES(/transformation/dq_spawn/frosty)
 		frost++
 		qdel(F)
 	TEST_ASSERT(frost > 0, "the frost row made a frost cloud")
+	GLOB.dq_later_log.Cut()
+	test_driver_end()
 
 #endif
