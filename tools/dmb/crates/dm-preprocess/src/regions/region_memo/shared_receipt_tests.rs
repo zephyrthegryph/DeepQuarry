@@ -43,14 +43,13 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
         }]),
         locations: Arc::new(vec![(0, false, "12".into())]),
         lines: Arc::new(vec![Line {
-            output_start: 0,
-            output_end: 2,
+            output: Span::new(0, 2),
             input: 0,
-            traces: Box::new([Trace {
+            traces: vec![Trace {
                 name: "X".into(),
                 invocation_span: Span::new(0, 1),
                 replacement_chain: Arc::from([Arc::from("X")]),
-            }]),
+            }],
         }]),
         diagnostics: Arc::new(vec![Error {
             input: 0,
@@ -64,8 +63,8 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
         .lines
         .iter()
         .map(|line| LegacyLine {
-            output: line.output(),
-            input: line.input(),
+            output: line.output,
+            input: line.input,
             traces: line
                 .traces
                 .iter()

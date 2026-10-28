@@ -3,13 +3,13 @@ use crate::{SourceText, SourceTextStorage};
 use serde::{Deserialize, Deserializer, Serializer};
 use std::{mem::align_of, sync::Arc};
 
-pub(in crate::regions) fn serialize<S: Serializer>(
+pub(super) fn serialize<S: Serializer>(
     text: &SourceText,
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(text.as_str())
 }
-pub(in crate::regions) fn deserialize<'de, D: Deserializer<'de>>(
+pub(super) fn deserialize<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<SourceText, D::Error> {
     Arc::<str>::deserialize(deserializer).map(SourceText::from)

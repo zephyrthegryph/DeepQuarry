@@ -444,14 +444,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     let line = lines.get(*input).expect("checked recovery directive index");
                     recoveries.insert(line.source_span.start);
                 }
-                directive_memo::Action::Text { first, count } => {
-                    assert!(
-                        lines.get(*first + *count - 1).is_some(),
-                        "recorded directive input outside range"
-                    );
-                    for input in *first..*first + *count {
-                        pending.push(lines.offset() + input);
-                    }
+                directive_memo::Action::Text(input) => {
+                    let line = lines
+                        .get(*input)
+                        .expect("recorded directive input outside range");
+                    let _ = line;
+                    pending.push(lines.offset() + *input);
                 }
                 directive_memo::Action::Freeze => self.freeze_lines(region, pending),
                 directive_memo::Action::Multiple => {
@@ -1206,7 +1204,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         let mut hit = None;
                         memo.visit_directive_candidates(context.2, &mut |record| {
                             let accepted = record.matches(
-                                context.0.as_str(),
+                                context.0,
                                 context.1,
                                 end - cursor,
                                 &self.environment,
@@ -1245,7 +1243,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         self.recording = Some(directive_memo::Recording::new(
                             cursor,
                             end,
-                            (&context.0, context.1, context.2),
+                            context,
                             &self.conditionals,
                             &self.plan.file_dirs,
                             &self.file_dir_definitions,
@@ -1267,7 +1265,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             let Some(syntax) = prepared.directive(cursor - 1) else {
                 if active {
                     if let Some(recording) = self.recording.as_mut() {
-                        recording.push_text();
+                        recording
+                            .actions
+                            .push(directive_memo::Action::Text(recording.current));
                     }
                     pending.push(cursor - 1);
                 }

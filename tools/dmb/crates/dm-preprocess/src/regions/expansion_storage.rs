@@ -80,14 +80,7 @@ impl ExpansionRecord {
         visit(arc_storage(&self.lines));
         visit(vector_storage(&self.lines));
         for line in self.lines.iter() {
-            // An untraced line owns no buffer: the boxed slice is empty and dangling.
-            if !line.traces.is_empty() {
-                visit(ExpansionStorageView::Buffer {
-                    address: line.traces.as_ptr() as usize,
-                    payload_bytes: line.traces.len().saturating_mul(size_of::<Trace>()),
-                    capacity_bytes: line.traces.len().saturating_mul(size_of::<Trace>()),
-                });
-            }
+            visit(vector_storage(&line.traces));
             for trace in &line.traces {
                 visit(ExpansionStorageView::Text(&trace.name));
                 visit(slice_storage(&trace.replacement_chain));
@@ -130,14 +123,13 @@ mod tests {
             reads: Arc::new(vec![]),
             locations: Arc::new(vec![(0, false, String::from("location"))]),
             lines: Arc::new(vec![Line {
-                output_start: 0,
-                output_end: 6,
+                output: Span::new(0, 6),
                 input: 0,
-                traces: Box::new([Trace {
+                traces: vec![Trace {
                     name: Arc::from("macro"),
                     invocation_span: Span::new(0, 1),
                     replacement_chain: chain,
-                }]),
+                }],
             }]),
             diagnostics: Arc::new(vec![Error {
                 input: 0,
