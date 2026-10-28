@@ -240,19 +240,6 @@ impl AnswerValues {
         } else {
             self.outcomes[3].fetch_add(1, Relaxed);
         }
-        if std::env::var_os("DMB_MEM_MARKS").is_some() {
-            let total: u64 = self.outcomes.iter().map(|o| o.load(Relaxed)).sum();
-            if total % 250_000 == 0 {
-                eprintln!(
-                    "answer values pool {:p}: same={} other_answer={} other_query={} new={}",
-                    self,
-                    self.outcomes[0].load(Relaxed),
-                    self.outcomes[1].load(Relaxed),
-                    self.outcomes[2].load(Relaxed),
-                    self.outcomes[3].load(Relaxed)
-                );
-            }
-        }
         let value = Arc::new(AnswerValue { hash, positive: positive_answer(meaning), query: *query });
         pooled.insert(id as u64, Arc::downgrade(&value));
         value
@@ -380,6 +367,18 @@ impl Default for Answers {
 impl Answers {
     fn next_request(&self) {
         use std::sync::atomic::Ordering;
+        if std::env::var_os("DMB_MEM_MARKS").is_some() {
+            let o = |i: usize| self.values.outcomes[i].load(Ordering::Relaxed);
+            eprintln!(
+                "answer values at request start (pool {:p}, slots {}): same={} other_answer={} dead={} absent={}",
+                &*self.values,
+                self.len(),
+                o(0),
+                o(1),
+                o(2),
+                o(3)
+            );
+        }
         let request = self.requests.fetch_add(1, Ordering::SeqCst) + 1;
         let mut current = self.current.write().unwrap_or_else(|error| error.into_inner());
         current.request = request;
