@@ -465,6 +465,35 @@ for n in "${names[@]}"; do
 		pid[$n]=$!
 	fi
 done
+# Fail fast (28 October: two 20-minute attempts ran every job to the end after the test build failed to compile in 5 s): when the test
+# build reports compile errors, the sibling jobs are stopped (their process trees, our own gate jobs only) and the gate returns at once.
+# DQ_GATE_FAIL_FAST=0 waits for every job as before.
+gate_kill_tree() { # <msys pid>: the job subshell and every descendant (native ones through taskkill /T)
+	local p="$1" c w
+	for c in $(ps -ef 2>/dev/null | awk -v p="$p" '$3 == p {print $2}'); do gate_kill_tree "$c"; done
+	w="$(cat "/proc/$p/winpid" 2>/dev/null)"
+	[ -z "$w" ] || taskkill //T //F //PID "$w" >/dev/null 2>&1
+	kill -9 "$p" 2>/dev/null
+}
+if [ "$serial" -eq 0 ] && [ "${DQ_GATE_FAIL_FAST:-1}" = 1 ] && [ -n "${pid[tests]:-}" ]; then
+	tlog_ff="data/merge-gates/$short.tests.log"
+	while kill -0 "${pid[tests]}" 2>/dev/null; do
+		if grep -qE '^deepquarry\.test\.dmb - [1-9][0-9]* errors?' "$tlog_ff" 2>/dev/null; then
+			echo "== FAIL FAST: the test build does not compile; stopping the other gate jobs:"
+			grep -E ':error: ' "$tlog_ff" | head -n 10 | sed 's/^/   /'
+			for n in "${names[@]}"; do
+				[ "$n" = tests ] && continue
+				if kill -0 "${pid[$n]}" 2>/dev/null; then
+					gate_kill_tree "${pid[$n]}"
+					echo "130 $(date +%s)" >"data/merge-gates/$short.$n.log.rc"
+					echo "   stopped: $n (the batch fails on the compile error; this job's verdict is moot)"
+				fi
+			done
+			break
+		fi
+		sleep 3
+	done
+fi
 for n in "${names[@]}"; do
 	[ "$serial" -eq 1 ] || wait "${pid[$n]}" 2>/dev/null
 done

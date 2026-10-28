@@ -34,6 +34,8 @@ check "a gen failure is shown, retried, then an infra exit that merge_batch trea
 
 check "test worlds run below normal (not idle) and log it; ratchets cap rayon beside a world" 'grep -q "PRIORITY_BELOW_NORMAL" "$here/tools/build/lib/byond.ts" && grep -q "world priority:" "$here/tools/build/lib/byond.ts" && grep -q "RAYON_NUM_THREADS=" "$here/tools/dq_merge_gates.sh"'
 
+check "the gates stop sibling jobs when the test build fails to compile" 'grep -q "FAIL FAST: the test build does not compile" "$here/tools/dq_merge_gates.sh"'
+
 # dq_merge_batch: one real conflict between two lanes must not poison the attempts after it (27 October, train-dc: 0 of 12 lanes passed).
 # A scratch repository, stub gates; lanes c1 and c2 conflict with each other only, g1 and g2 are clean: c2 waits, the rest pass, and no
 # attempt after the conflict starts dirty.
@@ -50,6 +52,7 @@ r="$tmp/mb"; git init -q --bare "$r/origin.git"; git clone -q "$r/origin.git" "$
 	for l in g1 c1 c2 g2; do
 		git switch -q -c "$l" origin/master
 		case "$l" in c*) echo "$l" >shared.txt ;; *) echo "$l" >"lanes/$l.txt" ;; esac
+		if [ "$l" = g1 ]; then mkdir -p code/modules/unit_tests; echo x >code/modules/unit_tests/here.dm; printf '#include "here.dm"\n#include "gone.dm"\n' >code/modules/unit_tests/_unit_tests.dm; fi
 		git add -A; git commit -q -m "$l"; git push -q origin "$l"
 	done
 	git switch -q --detach origin/master
@@ -58,6 +61,7 @@ r="$tmp/mb"; git init -q --bare "$r/origin.git"; git clone -q "$r/origin.git" "$
 mb_good="$(sed -n 's/^BATCH_GOOD: //p' "$r/out.txt" | tail -n 1)"
 mb_later="$(sed -n 's/^BATCH_LATER: //p' "$r/out.txt" | tail -n 1)"
 check "a lane-vs-lane conflict holds back only that lane; the clean lanes and the first of the pair pass" '[[ " $mb_good " == *" g1 "* && " $mb_good " == *" g2 "* && " $mb_good " == *" c1 "* ]] && [ "$(echo $mb_later)" = c2 ] && ! grep -q "started dirty" "$r/out.txt"'
+check "a merged include of a file that no longer exists is dropped and reported" 'grep -q "STALE INCLUDE dropped .*gone.dm" "$r/out.txt"'
 [ "$fail" -eq 0 ] || { echo "---- merge_batch output:"; tail -n 30 "$r/out.txt"; }
 
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
