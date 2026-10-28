@@ -240,6 +240,9 @@ struct Trace {
 struct TraceTables {
     names: Box<[Arc<str>]>,
     chains: Box<[Arc<[Arc<str>]>]>,
+    /// The macro traces of the lines that have any; a line names its set by 1-based index, 0 meaning none. Most lines
+    /// expand nothing, so they carry no per-line slice.
+    sets: Box<[Box<[Trace]>]>,
 }
 impl TraceTables {
     fn name(&self, trace: &Trace) -> &Arc<str> {
@@ -251,6 +254,12 @@ impl TraceTables {
     fn span(trace: &Trace) -> Span {
         Span::new(trace.start as usize, trace.end as usize)
     }
+    fn set(&self, line: &Line) -> &[Trace] {
+        match line.trace_set.checked_sub(1) {
+            Some(index) => &self.sets[index as usize],
+            None => &[],
+        }
+    }
 }
 /// Builds [`TraceTables`] in first-seen order, so equal logical records get equal tables.
 #[derive(Default)]
@@ -259,6 +268,7 @@ struct TraceInterner {
     name_ids: std::collections::HashMap<Arc<str>, u32>,
     chains: Vec<Arc<[Arc<str>]>>,
     chain_ids: std::collections::HashMap<Arc<[Arc<str>]>, u32>,
+    sets: Vec<Box<[Trace]>>,
 }
 impl TraceInterner {
     /// `None` when an id or offset does not fit in u32; the caller then records nothing for this expansion.
@@ -288,10 +298,19 @@ impl TraceInterner {
             end: u32::try_from(span.end).ok()?,
         })
     }
+    /// The 1-based id of a line's trace set, 0 for a line without traces; `None` when the ids run out.
+    fn set(&mut self, traces: Box<[Trace]>) -> Option<u32> {
+        if traces.is_empty() {
+            return Some(0);
+        }
+        self.sets.push(traces);
+        u32::try_from(self.sets.len()).ok()
+    }
     fn finish(self) -> TraceTables {
         TraceTables {
             names: self.names.into_boxed_slice(),
             chains: self.chains.into_boxed_slice(),
+            sets: self.sets.into_boxed_slice(),
         }
     }
 }
@@ -302,7 +321,8 @@ struct Line {
     output_start: u32,
     output_end: u32,
     input: u32,
-    traces: Box<[Trace]>,
+    /// 1-based index into [`TraceTables::sets`]; 0 for a line without macro traces.
+    trace_set: u32,
 }
 impl Line {
     fn output(&self) -> Span {
@@ -315,8 +335,8 @@ impl Line {
         LineWire {
             output: self.output(),
             input: self.input(),
-            traces: self
-                .traces
+            traces: tables
+                .set(self)
                 .iter()
                 .map(|trace| TraceWire {
                     name: Arc::clone(tables.name(trace)),
@@ -332,15 +352,18 @@ impl Line {
             output_start: narrow(line.output.start)?,
             output_end: narrow(line.output.end)?,
             input: narrow(line.input)?,
-            traces: line
-                .traces
-                .iter()
-                .map(|trace| {
-                    interner
-                        .trace(&trace.name, trace.invocation_span, &trace.replacement_chain)
-                        .ok_or("expansion trace offset exceeds u32")
-                })
-                .collect::<Result<_, _>>()?,
+            trace_set: {
+                let traces = line
+                    .traces
+                    .iter()
+                    .map(|trace| {
+                        interner
+                            .trace(&trace.name, trace.invocation_span, &trace.replacement_chain)
+                            .ok_or("expansion trace offset exceeds u32")
+                    })
+                    .collect::<Result<Box<[Trace]>, _>>()?;
+                interner.set(traces).ok_or("expansion trace set count exceeds u32")?
+            },
         })
     }
 }
@@ -504,9 +527,14 @@ impl ExpansionRecord {
                 )
             }))
             .saturating_add(vector(&self.locations, |(_, _, name)| name.capacity()))
-            .saturating_add(vector(&self.lines, |line| {
-                line.traces.len().saturating_mul(std::mem::size_of::<Trace>())
-            }))
+            .saturating_add(vector(&self.lines, |_| 0))
+            .saturating_add(slice::<Box<[Trace]>>(self.trace_tables.sets.len()))
+            .saturating_add(
+                self.trace_tables
+                    .sets
+                    .iter()
+                    .fold(0usize, |bytes, set| bytes.saturating_add(slice::<Trace>(set.len()))),
+            )
             .saturating_add(slice::<Arc<str>>(self.trace_tables.names.len()))
             .saturating_add(
                 self.trace_tables
@@ -750,12 +778,15 @@ pub(super) fn expand(
                 output_start: u32::try_from(span.start).ok()?,
                 output_end: u32::try_from(span.end).ok()?,
                 input: u32::try_from(ordinal).ok()?,
-                traces: traces
-                    .iter()
-                    .map(|trace| {
-                        interner.trace(&trace.name, trace.invocation_span, &trace.replacement_chain)
-                    })
-                    .collect::<Option<Box<[Trace]>>>()?,
+                trace_set: {
+                    let set = traces
+                        .iter()
+                        .map(|trace| {
+                            interner.trace(&trace.name, trace.invocation_span, &trace.replacement_chain)
+                        })
+                        .collect::<Option<Box<[Trace]>>>()?;
+                    interner.set(set)?
+                },
             })
         })
         .collect::<Option<Vec<_>>>()
@@ -802,7 +833,7 @@ pub(super) fn expand(
         .into_iter()
         .map(|((segment, name), definition)| MacroRead {
             segment,
-            name: Arc::from(name),
+            name: super::intern_wire::name(&name),
             definition,
         })
         .collect();
@@ -848,8 +879,9 @@ fn hydrate(
         super::expansion::output_lines::OutputLineBuilder::with_capacity(record.lines.len());
     for line in record.lines.iter() {
         let (segment, current) = input[line.input()];
-        let traces = line
-            .traces
+        let traces = record
+            .trace_tables
+            .set(line)
             .iter()
             .map(|trace| {
                 let name = record.trace_tables.name(trace);
