@@ -109,7 +109,7 @@ CAPABILITIES(/transformation/chem/distilling/berserkjuice)
 	configure(transformation(name = "Distilling Brute Juice", id = "distill_brutejuice",
 		takes = list(reagent(REAGENT_ID_BIOMASS, 1), reagent(REAGENT_ID_HYPERZINE, 3), reagent(REAGENT_ID_SYNAPTIZINE, 2), reagent(REAGENT_ID_PHORON, 1)),
 		makes = list(reagent(REAGENT_ID_BERSERKMED, 3)), energy = per_step(4 * 1000), holds = temperature_in(T0C + 600, T0C + 700),
-		effects = sets_off(XFORM_FX_BLAST, chance = 1, blast = list(-1, "-1:1", "1:2", "3:5"))))
+		effects = sets_off(XFORM_FX_BLAST, chance = 1, blast = list(-1, list(-1, 1), list(1, 2), list(3, 5)))))
 
 
 /transformation/chem/distilling/cryogel

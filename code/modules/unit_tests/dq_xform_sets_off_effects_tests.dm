@@ -42,7 +42,7 @@ CAPABILITIES(/transformation/dq_spawn/later)
 /transformation/dq_spawn/never
 
 CAPABILITIES(/transformation/dq_spawn/never)
-	configure(transformation(takes = list(reagent(REAGENT_ID_SILICON, 1)), made = 1, effects = list(sets_off(XFORM_FX_LATER, delay = 1 SECOND, handler = GLOBAL_PROC_REF(dq_later_probe), chance = 0), sets_off(XFORM_FX_BLAST, blast = list(-1, "-1:-1", -1, -1)))))
+	configure(transformation(takes = list(reagent(REAGENT_ID_SILICON, 1)), made = 1, effects = list(sets_off(XFORM_FX_LATER, delay = 1 SECOND, handler = GLOBAL_PROC_REF(dq_later_probe), chance = 0), sets_off(XFORM_FX_BLAST, blast = list(-1, list(-1, -1), -1, -1)))))
 
 /transformation/dq_spawn/frosty
 

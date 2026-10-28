@@ -131,11 +131,7 @@
 			if(XFORM_FX_BLAST)
 				var/list/b = list()
 				for(var/part in row.blast)
-					if(istext(part)) // "lo:hi" is rolled with rand() in order
-						var/list/span = splittext(part, ":")
-						b += rand(text2num(span[1]), text2num(span[2]))
-					else
-						b += part
+					b += islist(part) ? rand(part[1], part[2]) : part
 				explosion(location, b[1], b[2], b[3], b[4])
 			if(XFORM_FX_FROST)
 				var/datum/effect/effect/system/smoke_spread/frost/F = new (subject)
