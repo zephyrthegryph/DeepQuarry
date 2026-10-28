@@ -1,9 +1,9 @@
 // sets_off(): the stock effects a reagent step sets off (doc/rewrite/proposals/transformations.md section 6, stock parts for the common tail).
 //
-//   sets_off(XFORM_FX_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)
-//   sets_off(XFORM_FX_FOAM, variant = 0|1|2, tell = "The solution spews out foam!", clears = TRUE)
-//   sets_off(XFORM_FX_EXPLOSION, divisor = 10, skip_in_tests = TRUE)
-//   sets_off(XFORM_FX_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)
+//   sets_off(kind = XFORM_FX_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)
+//   sets_off(kind = XFORM_FX_FOAM, variant = 0|1|2, tell = "The solution spews out foam!", clears = TRUE)
+//   sets_off(kind = XFORM_FX_EXPLOSION, divisor = 10, skip_in_tests = TRUE)
+//   sets_off(kind = XFORM_FX_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)
 //
 // Each kind does what the old on_reaction() tail it replaces did, in the same order: the viewers' message, the effect's set_up and start, then the
 // holder's clearing. `made` is what the step made (what the tail used to be told as created_volume). `clears` empties the holder unless it is a living
@@ -65,16 +65,16 @@
 		row.body_effects = islist(body_effect) ? body_effect : (body_effect ? list(body_effect) : null)
 		row.lasts = arguments["lasts"]
 		if(kind == XFORM_FX_EMP && (!islist(row.divisors) || length(row.divisors) != 4))
-			declare_report("[origin]: [type]: sets_off(XFORM_FX_EMP) takes divisors = list(a, b, c, d)")
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_EMP) takes divisors = list(a, b, c, d)")
 			return null
 		if(kind == XFORM_FX_AREA && (!isnum(row.range) || !length(row.body_effects)))
-			declare_report("[origin]: [type]: sets_off(XFORM_FX_AREA) takes range = n and body_effect = a path or a list of paths")
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_AREA) takes range = n and body_effect = a path or a list of paths")
 			return null
 		if(kind == XFORM_FX_BLAST && (!islist(row.blast) || length(row.blast) != 4))
-			declare_report("[origin]: [type]: sets_off(XFORM_FX_BLAST) takes blast = list(devastation, heavy, light, flash)")
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_BLAST) takes blast = list(devastation, heavy, light, flash)")
 			return null
 		if(kind == XFORM_FX_LATER && (!isnum(row.delay) || !row.handler))
-			declare_report("[origin]: [type]: sets_off(XFORM_FX_LATER) takes delay = n and handler = GLOBAL_PROC_REF(x)")
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_LATER) takes delay = n and handler = GLOBAL_PROC_REF(x)")
 			return null
 		rows += row
 	if(!length(rows))

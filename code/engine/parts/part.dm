@@ -618,7 +618,7 @@
 /datum/entry/part/effect/spawns
 	part_name = "spawns"
 
-/// sets_off(kind, ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): XFORM_FX_SMOKE, XFORM_FX_FOAM,
+/// sets_off(kind = ..., ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): XFORM_FX_SMOKE, XFORM_FX_FOAM,
 /// XFORM_FX_EXPLOSION, XFORM_FX_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
 /// (no powergaming a tiny amount); `tell` is what viewers within 5 see; `variant` is the foam kind; `divisor` scales an explosion (made / divisor) and
 /// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made; XFORM_FX_AREA applies `body_effect` (a path or a list of them) for `lasts` to every mob within `range` of the subject. `chance` (percent) gates the whole row (rolled first); XFORM_FX_BLAST takes `blast` = list(devastation, heavy, light, flash), each a number or list(lo, hi) rolled with rand() in order; XFORM_FX_FROST uses `amount`; XFORM_FX_LATER calls the GLOBAL_PROC_REF `handler` on the subject after `delay`, after the `audit` line, the `tell` message and the `sfx` sound.

@@ -328,7 +328,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_heatwave)
 CAPABILITIES(/transformation/chem/instant/slime/orange_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_orange_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/orange),
-		effects = sets_off(XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
+		effects = sets_off(kind = XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 /transformation/chem/instant/slime/orange_pyrotoxin
 
@@ -354,7 +354,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_pyrotoxin)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_lightning)
 	configure(transformation(name = "Slime Lightning", id = "m_yellow_lightning", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		effects = sets_off(XFORM_FX_LATER, audit = "Yellow extract reaction (lightning)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_lightning))))
+		effects = sets_off(kind = XFORM_FX_LATER, audit = "Yellow extract reaction (lightning)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_lightning))))
 
 
 /transformation/chem/instant/slime/yellow_flashlight
@@ -369,7 +369,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_flashlight)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_emp)
 	configure(transformation(name = "Slime EMP", id = "m_yellow_emp", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		effects = sets_off(XFORM_FX_LATER, audit = "Yellow extract reaction (emp)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_emp))))
+		effects = sets_off(kind = XFORM_FX_LATER, audit = "Yellow extract reaction (emp)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_emp))))
 
 
 /transformation/chem/instant/slime/yellow_battery
@@ -615,7 +615,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_cold_snap)
 CAPABILITIES(/transformation/chem/instant/slime/dark_blue_temp_resist)
 	configure(transformation(name = "Slime Temperature Resistance", id = "m_darkblue_temperature_resist", takes = list(reagent(REAGENT_ID_BLOOD, 5)),
 		made = 1, holds = subject_is(/obj/item/slime_extract/dark_blue),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_temp_resist, lasts = 5 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_temp_resist, lasts = 5 MINUTES)))
 
 
 /datum/body_effect/slime_temp_resist
@@ -749,7 +749,7 @@ CAPABILITIES(/transformation/chem/instant/slime/red_ferality)
 CAPABILITIES(/transformation/chem/instant/slime/green_radpulse)
 	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/green),
-		effects = sets_off(XFORM_FX_LATER, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_start_emitting))))
+		effects = sets_off(kind = XFORM_FX_LATER, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_start_emitting))))
 
 
 /transformation/chem/instant/slime/green_emitter
@@ -1107,7 +1107,7 @@ CAPABILITIES(/transformation/chem/instant/slime/sapphire_sapience)
 CAPABILITIES(/transformation/chem/instant/slime/ruby_swole)
 	configure(transformation(name = "Slime Strength", id = "m_ruby_strength", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/ruby),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_strength, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_strength, lasts = 10 MINUTES)))
 
 
 /datum/body_effect/slime_strength
@@ -1188,7 +1188,7 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_push)
 CAPABILITIES(/transformation/chem/instant/slime/emerald_agility)
 	configure(transformation(name = "Slime Agility", id = "m_emerald_agility", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/emerald),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_agility, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_agility, lasts = 10 MINUTES)))
 
 
 /datum/body_effect/slime_agility
@@ -1207,7 +1207,7 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_agility)
 CAPABILITIES(/transformation/chem/instant/slime/emerald_speed)
 	configure(transformation(name = "Slime Speed", id = "m_emerald_speed", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/emerald),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_speed, lasts = 1 MINUTE)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_speed, lasts = 1 MINUTE)))
 
 
 /datum/body_effect/slime_speed

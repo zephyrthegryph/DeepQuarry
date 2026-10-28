@@ -6,27 +6,27 @@
 /transformation/dq_spawn/foam
 
 CAPABILITIES(/transformation/dq_spawn/foam)
-	configure(transformation(takes = list(reagent(REAGENT_ID_SODIUM, 1)), made = 12, effects = sets_off(XFORM_FX_FOAM, variant = 0, clears = TRUE)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_SODIUM, 1)), made = 12, effects = sets_off(kind = XFORM_FX_FOAM, variant = 0, clears = TRUE)))
 
 /transformation/dq_spawn/smoke
 
 CAPABILITIES(/transformation/dq_spawn/smoke)
-	configure(transformation(takes = list(reagent(REAGENT_ID_ALUMINIUM, 1)), made = 12, effects = sets_off(XFORM_FX_SMOKE, clears = TRUE)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_ALUMINIUM, 1)), made = 12, effects = sets_off(kind = XFORM_FX_SMOKE, clears = TRUE)))
 
 /transformation/dq_spawn/pulse
 
 CAPABILITIES(/transformation/dq_spawn/pulse)
-	configure(transformation(takes = list(reagent(REAGENT_ID_COPPER, 1)), made = 24, effects = sets_off(XFORM_FX_EMP, divisors = list(24, 12, 12, 12), clears = TRUE)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_COPPER, 1)), made = 24, effects = sets_off(kind = XFORM_FX_EMP, divisors = list(24, 12, 12, 12), clears = TRUE)))
 
 /transformation/dq_spawn/bang
 
 CAPABILITIES(/transformation/dq_spawn/bang)
-	configure(transformation(takes = list(reagent(REAGENT_ID_LEAD, 1)), made = 2, effects = sets_off(XFORM_FX_EXPLOSION, divisor = 1)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_LEAD, 1)), made = 2, effects = sets_off(kind = XFORM_FX_EXPLOSION, divisor = 1)))
 
 /transformation/dq_spawn/aura
 
 CAPABILITIES(/transformation/dq_spawn/aura)
-	configure(transformation(takes = list(reagent(REAGENT_ID_LITHIUM, 1)), made = 1, effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/entangled, lasts = 4 SECONDS)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_LITHIUM, 1)), made = 1, effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/entangled, lasts = 4 SECONDS)))
 
 /// The subjects the delayed fixture handler was called on.
 GLOBAL_LIST_EMPTY(dq_later_log)
@@ -37,17 +37,17 @@ GLOBAL_LIST_EMPTY(dq_later_log)
 /transformation/dq_spawn/later
 
 CAPABILITIES(/transformation/dq_spawn/later)
-	configure(transformation(takes = list(reagent(REAGENT_ID_CARBON, 1)), made = 1, effects = sets_off(XFORM_FX_LATER, delay = 2 SECONDS, handler = GLOBAL_PROC_REF(dq_later_probe), chance = 100)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_CARBON, 1)), made = 1, effects = sets_off(kind = XFORM_FX_LATER, delay = 2 SECONDS, handler = GLOBAL_PROC_REF(dq_later_probe), chance = 100)))
 
 /transformation/dq_spawn/never
 
 CAPABILITIES(/transformation/dq_spawn/never)
-	configure(transformation(takes = list(reagent(REAGENT_ID_SILICON, 1)), made = 1, effects = list(sets_off(XFORM_FX_LATER, delay = 1 SECOND, handler = GLOBAL_PROC_REF(dq_later_probe), chance = 0), sets_off(XFORM_FX_BLAST, blast = list(-1, list(-1, -1), -1, -1)))))
+	configure(transformation(takes = list(reagent(REAGENT_ID_SILICON, 1)), made = 1, effects = list(sets_off(kind = XFORM_FX_LATER, delay = 1 SECOND, handler = GLOBAL_PROC_REF(dq_later_probe), chance = 0), sets_off(kind = XFORM_FX_BLAST, blast = list(-1, list(-1, -1), -1, -1)))))
 
 /transformation/dq_spawn/frosty
 
 CAPABILITIES(/transformation/dq_spawn/frosty)
-	configure(transformation(takes = list(reagent(REAGENT_ID_POTASSIUM, 1)), made = 1, effects = sets_off(XFORM_FX_FROST, amount = 3, chance = 100)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_POTASSIUM, 1)), made = 1, effects = sets_off(kind = XFORM_FX_FROST, amount = 3, chance = 100)))
 
 /// An item that notes the pulse.
 /obj/item/dq_emp_probe

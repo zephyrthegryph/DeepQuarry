@@ -81,7 +81,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soulstone)
 CAPABILITIES(/transformation/chem/instant/slime/redspace_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_redspace_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/redspace),
-		effects = sets_off(XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
+		effects = sets_off(kind = XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 
 /transformation/chem/instant/slime/slime_mindbreaker
@@ -123,7 +123,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_neofire)
 CAPABILITIES(/transformation/chem/instant/slime/dark_liquidfire)
 	configure(transformation(name = "Slime Secert Guard", id = "m_slime_guardian", takes = list(reagent(REAGENT_ID_LIQUIDFIRE, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/feysight, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/feysight, lasts = 10 MINUTES)))
 
 
 
@@ -139,7 +139,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_deathblood)
 CAPABILITIES(/transformation/chem/instant/slime/dark_liquidlife)
 	configure(transformation(name = "Slime Secert Overcharge", id = "m_slime_darkspeed", takes = list(reagent(REAGENT_ID_LIQUIDLIFE, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark),
-		effects = sets_off(XFORM_FX_AREA, range = 49, body_effect = /datum/body_effect/sprinting, lasts = 5 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 49, body_effect = /datum/body_effect/sprinting, lasts = 5 MINUTES)))
 
 
 
@@ -274,7 +274,7 @@ CAPABILITIES(/transformation/chem/instant/slime/waterdupe)
 CAPABILITIES(/transformation/chem/instant/slime/oceanboon)
 	configure(transformation(name = "Carp Boon", id = "m_carp_boon", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/oceanic),
-		effects = sets_off(XFORM_FX_AREA, range = 21, body_effect = /datum/body_effect/healingtide, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 21, body_effect = /datum/body_effect/healingtide, lasts = 10 MINUTES)))
 
 
 /transformation/chem/instant/slime/warplague
@@ -330,7 +330,7 @@ CAPABILITIES(/transformation/chem/instant/slime/warplague)
 CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
 	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse2", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nuclear),
-		effects = sets_off(XFORM_FX_LATER, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_green_pulse))))
+		effects = sets_off(kind = XFORM_FX_LATER, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_green_pulse))))
 
 
 /transformation/chem/instant/slime/nuclear_emitter
@@ -446,7 +446,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareslime)
 CAPABILITIES(/transformation/chem/instant/slime/nightmarewater)
 	configure(transformation(name = "nightmare water", id = "m_nightmare_water", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nightmare),
-		effects = sets_off(XFORM_FX_AREA, range = 3, body_effect = list(/datum/body_effect/faraday, /datum/body_effect/blastshield), lasts = 1 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 3, body_effect = list(/datum/body_effect/faraday, /datum/body_effect/blastshield), lasts = 1 MINUTES)))
 
 
 /transformation/chem/instant/slime/nightmarejelly
@@ -473,7 +473,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareblood)
 CAPABILITIES(/transformation/chem/instant/slime/nightmarephoron)
 	configure(transformation(name = "nightmare phoron", id = "m_nightmare_phoron", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nightmare),
-		effects = sets_off(XFORM_FX_AREA, range = 14, body_effect = /datum/body_effect/berserk_exhaustion, lasts = 1 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 14, body_effect = /datum/body_effect/berserk_exhaustion, lasts = 1 MINUTES)))
 
 
 
@@ -539,7 +539,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soundblood)
 CAPABILITIES(/transformation/chem/instant/slime/soundphoron)
 	configure(transformation(name = "sound phoron", id = "m_sound_phoron", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sound),
-		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/aura/soothingsong, lasts = 10 MINUTES)))
+		effects = sets_off(kind = XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/aura/soothingsong, lasts = 10 MINUTES)))
 
 
 /transformation/chem/instant/slime/soundwater

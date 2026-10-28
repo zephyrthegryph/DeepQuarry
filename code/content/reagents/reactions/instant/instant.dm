@@ -706,7 +706,7 @@ CAPABILITIES(/transformation/chem/instant/concrete)
 CAPABILITIES(/transformation/chem/instant/explosion_potassium)
 	configure(transformation(name = "Explosion", id = "explosion_potassium",
 		takes = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_POTASSIUM, 1)), made = 2, says = "",
-		effects = sets_off(XFORM_FX_EXPLOSION, divisor = 10)))
+		effects = sets_off(kind = XFORM_FX_EXPLOSION, divisor = 10)))
 
 /transformation/chem/instant/flash_powder
 
@@ -742,7 +742,7 @@ CAPABILITIES(/transformation/chem/instant/flash_powder)
 
 CAPABILITIES(/transformation/chem/instant/emp_pulse)
 	configure(transformation(name = "EMP Pulse", id = "emp_pulse", takes = list(reagent(REAGENT_ID_URANIUM, 1), reagent(REAGENT_ID_IRON, 1)), made = 2,
-		effects = sets_off(XFORM_FX_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)))
+		effects = sets_off(kind = XFORM_FX_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)))
 
 /transformation/chem/instant/nitroglycerin
 
@@ -750,7 +750,7 @@ CAPABILITIES(/transformation/chem/instant/nitroglycerin)
 	configure(transformation(name = REAGENT_NITROGLYCERIN, id = REAGENT_ID_NITROGLYCERIN,
 		takes = list(reagent(REAGENT_ID_GLYCEROL, 1), reagent(REAGENT_ID_PACID, 1), reagent(REAGENT_ID_SACID, 1)),
 		makes = list(reagent(REAGENT_ID_NITROGLYCERIN, 2)), important = TRUE,
-		effects = sets_off(XFORM_FX_EXPLOSION, divisor = 2, skip_in_tests = TRUE)))
+		effects = sets_off(kind = XFORM_FX_EXPLOSION, divisor = 2, skip_in_tests = TRUE)))
 
 /transformation/chem/instant/napalm
 
@@ -772,27 +772,27 @@ CAPABILITIES(/transformation/chem/instant/napalm)
 CAPABILITIES(/transformation/chem/instant/chemsmoke)
 	configure(transformation(name = "Chemsmoke", id = "chemsmoke",
 		takes = list(reagent(REAGENT_ID_POTASSIUM, 1), reagent(REAGENT_ID_SUGAR, 1), reagent(REAGENT_ID_PHOSPHORUS, 1)),
-		made = 0.4, effects = sets_off(XFORM_FX_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)))
+		made = 0.4, effects = sets_off(kind = XFORM_FX_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)))
 
 /transformation/chem/instant/foam
 
 CAPABILITIES(/transformation/chem/instant/foam)
 	configure(transformation(name = "Foam", id = "foam", takes = list(reagent(REAGENT_ID_FLUOROSURFACTANT, 1), reagent(REAGENT_ID_WATER, 1)), made = 2,
-		says = "The solution violently bubbles!", effects = sets_off(XFORM_FX_FOAM, variant = 0, clears = TRUE, tell = "The solution spews out foam!")))
+		says = "The solution violently bubbles!", effects = sets_off(kind = XFORM_FX_FOAM, variant = 0, clears = TRUE, tell = "The solution spews out foam!")))
 
 /transformation/chem/instant/metalfoam
 
 CAPABILITIES(/transformation/chem/instant/metalfoam)
 	configure(transformation(name = "Metal Foam", id = "metalfoam",
 		takes = list(reagent(REAGENT_ID_ALUMINIUM, 3), reagent(REAGENT_ID_FOAMINGAGENT, 1), reagent(REAGENT_ID_PACID, 1)),
-		made = 5, effects = sets_off(XFORM_FX_FOAM, variant = 1, tell = "The solution spews out a metalic foam!")))
+		made = 5, effects = sets_off(kind = XFORM_FX_FOAM, variant = 1, tell = "The solution spews out a metalic foam!")))
 
 /transformation/chem/instant/ironfoam
 
 CAPABILITIES(/transformation/chem/instant/ironfoam)
 	configure(transformation(name = "Iron Foam", id = "ironlfoam",
 		takes = list(reagent(REAGENT_ID_IRON, 3), reagent(REAGENT_ID_FOAMINGAGENT, 1), reagent(REAGENT_ID_PACID, 1)), made = 5,
-		effects = sets_off(XFORM_FX_FOAM, variant = 2, tell = "The solution spews out a metalic foam!")))
+		effects = sets_off(kind = XFORM_FX_FOAM, variant = 2, tell = "The solution spews out a metalic foam!")))
 
 /* Paint */
 

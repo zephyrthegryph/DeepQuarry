@@ -85,7 +85,7 @@
 #define XFORM_FX_EMP "emp"
 
 /// A plain explosion with rolled ranges (blast = list(devastation, heavy, light, flash), each a number or list(lo, hi)).
-#define XFORM_FX_BLAST "blast_roll" // not "blast": a text argument equal to a parameter name of sets_off() is read as that parameter, and the kind came back null
+#define XFORM_FX_BLAST "blast"
 /// A frost smoke cloud of `amount` at the subject.
 #define XFORM_FX_FROST "frost"
 /// A procedure on the subject, `delay` later, after an optional admin line, message and sound.
