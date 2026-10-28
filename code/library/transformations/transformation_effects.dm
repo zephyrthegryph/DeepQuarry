@@ -1,9 +1,9 @@
 // sets_off(): the stock effects a reagent step sets off (doc/rewrite/proposals/transformations.md section 6, stock parts for the common tail).
 //
-//   sets_off(XFORM_FX_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)
-//   sets_off(XFORM_FX_FOAM, variant = 0|1|2, tell = "The solution spews out foam!", clears = TRUE)
-//   sets_off(XFORM_FX_EXPLOSION, divisor = 10, skip_in_tests = TRUE)
-//   sets_off(XFORM_FX_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)
+//   sets_off(kind = XFORM_FX_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)
+//   sets_off(kind = XFORM_FX_FOAM, variant = 0|1|2, tell = "The solution spews out foam!", clears = TRUE)
+//   sets_off(kind = XFORM_FX_EXPLOSION, divisor = 10, skip_in_tests = TRUE)
+//   sets_off(kind = XFORM_FX_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)
 //
 // Each kind does what the old on_reaction() tail it replaces did, in the same order: the viewers' message, the effect's set_up and start, then the
 // holder's clearing. `made` is what the step made (what the tail used to be told as created_volume). `clears` empties the holder unless it is a living
@@ -24,6 +24,12 @@
 	var/amount
 	/// XFORM_FX_AREA: the radius, the body effect path(s) and how long they last (null: until removed).
 	var/range
+	/// Percent chance the row goes at all (null: always); rolled before anything else.
+	var/chance
+	var/list/blast
+	var/delay
+	var/handler
+	var/audit
 	var/list/body_effects
 	var/lasts
 
@@ -36,8 +42,14 @@
 			return null
 		var/list/arguments = E.args
 		var/kind = arguments["kind"]
-		if(kind != XFORM_FX_SMOKE && kind != XFORM_FX_FOAM && kind != XFORM_FX_EXPLOSION && kind != XFORM_FX_EMP && kind != XFORM_FX_AREA)
-			declare_report("[origin]: [type]: sets_off([kind]) is not XFORM_FX_SMOKE, XFORM_FX_FOAM, XFORM_FX_EXPLOSION, XFORM_FX_EMP or XFORM_FX_AREA")
+		if(isnull(kind))
+			// A kind passed positionally whose text equals another parameter name binds as that parameter (BYOND), leaving `kind` empty.
+			for(var/name in arguments)
+				if(name == XFORM_FX_SMOKE || name == XFORM_FX_FOAM || name == XFORM_FX_EXPLOSION || name == XFORM_FX_EMP || name == XFORM_FX_AREA || name == XFORM_FX_BLAST || name == XFORM_FX_FROST || name == XFORM_FX_LATER)
+					declare_report("[origin]: [type]: sets_off() arrived with no kind while it has an argument named \"[name]\", which is also a kind: the kind was passed positionally and bound as that argument. Write sets_off(kind = ...)")
+					return null
+		if(kind != XFORM_FX_SMOKE && kind != XFORM_FX_FOAM && kind != XFORM_FX_EXPLOSION && kind != XFORM_FX_EMP && kind != XFORM_FX_AREA && kind != XFORM_FX_BLAST && kind != XFORM_FX_FROST && kind != XFORM_FX_LATER)
+			declare_report("[origin]: [type]: sets_off([kind]) is not XFORM_FX_SMOKE, XFORM_FX_FOAM, XFORM_FX_EXPLOSION, XFORM_FX_EMP, XFORM_FX_AREA, XFORM_FX_BLAST, XFORM_FX_FROST or XFORM_FX_LATER")
 			return null
 		var/datum/xform_effect/row = new
 		row.kind = kind
@@ -50,14 +62,25 @@
 		row.skip_in_tests = !!arguments["skip_in_tests"]
 		row.amount = arguments["amount"]
 		row.range = arguments["range"]
+		row.chance = arguments["chance"]
+		row.blast = arguments["blast"]
+		row.delay = arguments["delay"]
+		row.handler = arguments["handler"]
+		row.audit = arguments["audit"]
 		var/body_effect = arguments["body_effect"]
 		row.body_effects = islist(body_effect) ? body_effect : (body_effect ? list(body_effect) : null)
 		row.lasts = arguments["lasts"]
 		if(kind == XFORM_FX_EMP && (!islist(row.divisors) || length(row.divisors) != 4))
-			declare_report("[origin]: [type]: sets_off(XFORM_FX_EMP) takes divisors = list(a, b, c, d)")
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_EMP) takes divisors = list(a, b, c, d)")
 			return null
 		if(kind == XFORM_FX_AREA && (!isnum(row.range) || !length(row.body_effects)))
-			declare_report("[origin]: [type]: sets_off(XFORM_FX_AREA) takes range = n and body_effect = a path or a list of paths")
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_AREA) takes range = n and body_effect = a path or a list of paths")
+			return null
+		if(kind == XFORM_FX_BLAST && (!islist(row.blast) || length(row.blast) != 4))
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_BLAST) takes blast = list(devastation, heavy, light, flash)")
+			return null
+		if(kind == XFORM_FX_LATER && (!isnum(row.delay) || !row.handler))
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_LATER) takes delay = n and handler = GLOBAL_PROC_REF(x)")
 			return null
 		rows += row
 	if(!length(rows))
@@ -78,6 +101,8 @@
 			return
 		if(GLOB.xform_trace)
 			log_world("XFORM: [X.rule_type] sets off [row.kind] for [made] made, in [subject] ([subject.type])")
+		if(!isnull(row.chance) && !prob(row.chance))
+			continue
 		var/turf/location = get_turf(subject)
 		switch(row.kind)
 			if(XFORM_FX_SMOKE)
@@ -109,6 +134,23 @@
 				else
 					holder.clear_reagents() // no powergaming by creating a tiny amount of this
 				e.start()
+			if(XFORM_FX_BLAST)
+				var/list/b = list()
+				for(var/part in row.blast)
+					b += islist(part) ? rand(part[1], part[2]) : part
+				explosion(location, b[1], b[2], b[3], b[4])
+			if(XFORM_FX_FROST)
+				var/datum/effect/effect/system/smoke_spread/frost/F = new (subject)
+				F.set_up(row.amount, 0, location)
+				F.start()
+			if(XFORM_FX_LATER)
+				if(row.audit)
+					log_and_message_admins("[row.audit] has been activated in [get_area(subject)].  Last fingerprints: [subject.forensic_data?.get_lastprint()]", null)
+				if(row.tell)
+					subject.visible_message(span_danger("\The [subject] begins to vibrate violently!"))
+				if(row.sfx)
+					play_sfx(subject, row.sfx, 0.75)
+				after(subject, row.delay, row.handler, with = list(subject))
 			if(XFORM_FX_AREA)
 				for(var/mob/living/L in range(row.range, subject))
 					for(var/effect_path in row.body_effects)
