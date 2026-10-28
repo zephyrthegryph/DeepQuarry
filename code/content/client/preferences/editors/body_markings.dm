@@ -9,6 +9,7 @@
 //   "set_zone_color" { marking, zone, color }
 //   "toggle_zone"   { marking, zone, on }
 //   "toggle_all"    { marking, on }
+//   "set_color_value" { marking, color, zone? }  (a palette pick: no picker, the colour is given)
 
 /datum/preference_editor/body_markings
 	key = "body_markings"
@@ -23,7 +24,44 @@
 	var/list/payload = list()
 	for(var/M in markings)
 		payload[M] = markings[M]
-	return list("markings" = payload)
+	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
+	return list(
+		"markings" = payload,
+		"species" = S?.name,
+		"incompatible" = dq_incompatible_markings(preferences),
+	)
+
+/// Names of the markings the character's species (or custom base) cannot wear, the ones
+/// get_available_styles() leaves out. Memoised per species/base pair (it walks ~700 markings).
+/datum/preference_editor/body_markings/proc/dq_incompatible_markings(datum/preferences/preferences)
+	var/static/list/by_species = list()
+	var/cache_key = "[preferences.read_preference(/datum/preference/choiced/species)]|[preferences.read_preference(/datum/preference/text/human/custom_base)]"
+	if(!islist(by_species[cache_key]))
+		var/list/allowed = preferences.get_available_styles(GLOB.body_marking_styles_list)
+		var/list/out = list()
+		for(var/name in GLOB.body_marking_styles_list)
+			if(!(name in allowed))
+				out += name
+		by_species[cache_key] = out
+	var/list/cached = by_species[cache_key]
+	return cached.Copy()
+
+/datum/preference_editor/body_markings/proc/ui_act_set_color_value(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/M = params["marking"]
+	var/color = params["color"]
+	if(!islist(markings) || !(M in markings) || !istext(color) || !findtext(color, GLOB.is_color))
+		return PREF_UPDATE_REJECTED
+	color = sanitize_hexcolor(color)
+	var/zone = params["zone"]
+	if(zone)
+		if(!islist(markings[M]) || !islist(markings[M][zone]))
+			return PREF_UPDATE_REJECTED
+		markings[M][zone]["color"] = color
+	else
+		markings[M] = preferences.mass_edit_marking_list(M, FALSE, TRUE, markings[M], color = color)
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/body_markings/build_ui_static_data(datum/preferences/preferences)
 	var/list/styles = list()
@@ -232,6 +270,12 @@ CAPABILITIES(/datum/prompt/color/prefs)
 				return PREF_UPDATE_REJECTED
 			before_action(preferences, user, action)
 			return ui_act_set_color(user, typed, preferences, null, action)
+		if("set_color_value")
+			typed = payload_args(src, params, list("marking" = schema_text(4096), "color" = schema_text(16), "zone" = schema_text(64)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_color_value(user, typed, preferences, null, action)
 		if("set_zone_color")
 			typed = payload_args(src, params, list("marking" = null, "zone" = schema_text(4096)))
 			if(!typed)

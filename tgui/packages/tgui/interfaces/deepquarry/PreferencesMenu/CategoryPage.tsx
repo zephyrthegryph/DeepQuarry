@@ -14,6 +14,7 @@
 import { Box, Section } from 'tgui-core/components';
 import { getEditor } from './editors';
 import { labelForGroup, labelForKey } from './labels';
+import { LooksPage, looksHasBody } from './LooksPage';
 import { PrefWidget } from './PrefWidget';
 import {
   editorAnchor,
@@ -60,6 +61,17 @@ export const CategoryPage = ({
   editorData,
   fillHeight,
 }: Props) => {
+  if (page.category === 'appearance' && looksHasBody(page)) {
+    return (
+      <LooksPage
+        page={page}
+        staticData={staticData}
+        values={values}
+        editorData={editorData}
+      />
+    );
+  }
+
   if (fillHeight) {
     return (
       <Box style={{ height: '100%' }}>
@@ -114,6 +126,39 @@ export const CategoryPage = ({
   );
 };
 
+const noStyle = (v: unknown) =>
+  ['', 'none', 'null'].includes(
+    String(v ?? '')
+      .trim()
+      .toLowerCase(),
+  );
+
+/// Rows that only mean something while another setting is on: hidden until it is
+/// (the setting itself stays saved). Keys are savefile keys.
+export const DEPENDENT_ROWS: Record<
+  string,
+  (values: Record<string, unknown>) => boolean
+> = {
+  synth_color_rgb: (v) => !!v.synth_color,
+  grad_color: (v) => !noStyle(v.grad_style_name),
+  facial_color: (v) =>
+    !['shaved', ''].includes(String(v.facial_style_name ?? '').toLowerCase()),
+  ear_secondary_style: (v) => !noStyle(v.ear_style),
+  secondary_ears_alpha: (v) => !noStyle(v.ear_secondary_style),
+  ears_color1: (v) => !noStyle(v.ear_style),
+  ears_color2: (v) => !noStyle(v.ear_style),
+  ears_color3: (v) => !noStyle(v.ear_style),
+  ears_alpha: (v) => !noStyle(v.ear_style),
+  tail_color1: (v) => !noStyle(v.tail_style),
+  tail_color2: (v) => !noStyle(v.tail_style),
+  tail_color3: (v) => !noStyle(v.tail_style),
+  tail_alpha: (v) => !noStyle(v.tail_style),
+  wing_color1: (v) => !noStyle(v.wing_style),
+  wing_color2: (v) => !noStyle(v.wing_style),
+  wing_color3: (v) => !noStyle(v.wing_style),
+  wing_alpha: (v) => !noStyle(v.wing_style),
+};
+
 /// Widget rows inside a single group: a two-column grid (label, control) sized in em so it
 /// follows the theme font and the display scale. The label column fits the longest label up to
 /// a cap and wraps beyond it, so a long label never pushes the control out of the panel.
@@ -133,9 +178,11 @@ export const WidgetGrid = ({
       alignItems: 'center',
     }}
   >
-    {widgets.map((item) => (
-      <WidgetRow key={item.key} item={item} values={values} />
-    ))}
+    {widgets
+      .filter((item) => DEPENDENT_ROWS[item.key]?.(values) ?? true)
+      .map((item) => (
+        <WidgetRow key={item.key} item={item} values={values} />
+      ))}
   </Box>
 );
 
