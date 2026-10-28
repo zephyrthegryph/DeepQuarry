@@ -65,7 +65,10 @@ export type CharacterSetupData = {
   dq_structure_version?: number;
   dq_values?: Record<string, unknown>;
   dq_editor_data?: Record<string, Record<string, unknown>>;
-  dq_editor_versions?: Record<string, number>;
+  /// A shared catalog is versioned by its cache key (string), a per-player one by a counter.
+  dq_editor_versions?: Record<string, number | string>;
+  /// Bumped server-side when the preview changes; the frames ship only when this window's copy is older.
+  character_preview_version?: number;
   dq_editor_static_patch?: Record<string, Record<string, unknown>>;
   dq_editor_static?: Record<string, Record<string, unknown>>;
   /// Server-rendered base64 PNGs of the mannequin (one per cardinal

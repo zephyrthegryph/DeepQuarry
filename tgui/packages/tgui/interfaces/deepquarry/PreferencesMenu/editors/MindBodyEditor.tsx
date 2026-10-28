@@ -941,8 +941,8 @@ type TreeDims = {
 // 16 → 12) so a Body tree with two wrapped subtree rows × 3 tiers each fits
 // the available pane height without triggering the section's vertical scroll.
 const FULL_DIMS: TreeDims = {
-  NODE_W: 78,
-  NODE_H: 60,
+  NODE_W: 88,
+  NODE_H: 64,
   COL_GAP: 8,
   ROW_GAP: 16,
   SUBTREE_ROW_GAP: 12,
@@ -956,8 +956,8 @@ const FULL_DIMS: TreeDims = {
 const dimsForSubRoleCount = (count: number): TreeDims => {
   if (count <= 2) {
     return {
-      NODE_W: 72,
-      NODE_H: 64,
+      NODE_W: 80,
+      NODE_H: 66,
       COL_GAP: 6,
       ROW_GAP: 18,
       SUBTREE_ROW_GAP: 12,
@@ -966,8 +966,8 @@ const dimsForSubRoleCount = (count: number): TreeDims => {
   }
   if (count === 3) {
     return {
-      NODE_W: 56,
-      NODE_H: 56,
+      NODE_W: 62,
+      NODE_H: 60,
       COL_GAP: 4,
       ROW_GAP: 14,
       SUBTREE_ROW_GAP: 10,
@@ -1411,7 +1411,7 @@ const PerkNode = ({
   // show only the icon. Description still lives in the Tooltip on hover, so the
   // info is still reachable; the icon-only render just doesn't try to cram
   // 8-char names into a 46-px node.
-  const compact = nodeWidth < 60;
+  const compact = nodeWidth < 50;
   const iconSize = nodeWidth < 50 ? 1.1 : nodeWidth < 65 ? 1.35 : 1.6;
   const bg = selected
     ? `linear-gradient(180deg, ${accent}44, ${accent}11)`
@@ -1472,7 +1472,8 @@ const PerkNode = ({
           borderRadius: '8px',
           background: bg,
           border,
-          opacity: disabled ? 0.55 : 1,
+          // Locked nodes stay readable: dim the frame, not the text.
+          opacity: disabled ? 0.8 : 1,
           transition: 'all 120ms',
           boxShadow: selected
             ? `0 0 8px ${accent}88`
@@ -1503,7 +1504,7 @@ const PerkNode = ({
               color: selected
                 ? '#fff'
                 : disabled
-                  ? 'rgba(255,255,255,0.3)'
+                  ? 'rgba(255,255,255,0.5)'
                   : accent,
               filter: selected ? `drop-shadow(0 0 4px ${accent})` : undefined,
             }}
@@ -1556,14 +1557,20 @@ const PerkNode = ({
           <>
             <Box
               style={{
-                color: selected ? '#fff' : 'rgba(255,255,255,0.92)',
+                color: selected
+                  ? '#fff'
+                  : disabled
+                    ? 'rgba(255,255,255,0.75)'
+                    : 'rgba(255,255,255,0.92)',
                 fontWeight: selected ? 'bold' : 'normal',
                 lineHeight: '1.05',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 width: '100%',
-                fontSize: '0.68em',
+                // Theme-relative (the window's font scales with the user's display
+                // scale); 0.68em came out at ~8 px.
+                fontSize: '0.9em',
               }}
             >
               {perk.name}
@@ -1576,7 +1583,7 @@ const PerkNode = ({
                 padding: '0 5px',
                 borderRadius: '5px',
                 lineHeight: '1.2',
-                fontSize: '0.62em',
+                fontSize: '0.85em',
               }}
             >
               {perk.cost}

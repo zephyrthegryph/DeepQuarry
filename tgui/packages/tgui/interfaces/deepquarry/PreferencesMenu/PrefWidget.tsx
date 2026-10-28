@@ -259,19 +259,36 @@ export const PrefWidget = ({ item }: Props) => {
 
     case 'color': {
       const hex = String(item.value ?? '#000000');
+      // A pref may declare a sentinel value meaning "no colour chosen" (runechat_color's
+      // black means "colour from the name"); show its label, not a black swatch.
+      const unsetValue = item.props?.unset_value as string | undefined;
+      const isUnset =
+        unsetValue !== undefined &&
+        hex.toLowerCase() === String(unsetValue).toLowerCase();
       // Color picking is a BYOND-side modal — tgui-core has no native color input. Fire
       // dq_pick_color and let the DM middleware open tgui_color_picker; the resulting
       // write comes back through the normal data-poll flow.
       return (
         <Stack align="center">
-          <Stack.Item>
-            <ColorBox color={hex} />
-          </Stack.Item>
+          {!isUnset && (
+            <Stack.Item>
+              <ColorBox color={hex} />
+            </Stack.Item>
+          )}
           <Stack.Item>
             <Button onClick={() => act('dq_pick_color', { key: item.key })}>
-              {hex}
+              {isUnset ? String(item.props?.unset_label ?? 'Unset') : hex}
             </Button>
           </Stack.Item>
+          {unsetValue !== undefined && !isUnset && (
+            <Stack.Item>
+              <Button
+                icon="undo"
+                tooltip={String(item.props?.unset_label ?? 'Unset')}
+                onClick={() => sendUpdate(act, item.key, unsetValue)}
+              />
+            </Stack.Item>
+          )}
         </Stack>
       );
     }
@@ -370,12 +387,21 @@ export const PrefWidget = ({ item }: Props) => {
   }
 };
 
+/// A flat choice list carries raw values; an all-lowercase identifier ("male",
+/// "fadeup_low", "default") is shown capitalized with spaces, anything already
+/// written for people ("Arrivals Shuttle", "A+") is shown as is.
+function humanizeChoice(value: string): string {
+  if (!/^[a-z][a-z0-9_]*$/.test(value)) return value;
+  const spaced = value.replace(/_/g, ' ');
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 function normalizeChoices(
   choices: PrefWidgetItem['choices'],
 ): Array<[string, string]> {
   if (!choices) return [];
   if (Array.isArray(choices)) {
-    return choices.map((v) => [v, v]);
+    return choices.map((v) => [v, humanizeChoice(v)]);
   }
   return Object.entries(choices);
 }

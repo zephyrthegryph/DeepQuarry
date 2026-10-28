@@ -22,8 +22,14 @@ let catalogOwner = '';
 let cachedStructureVersion = 0;
 const categoryCache: Record<string, PrefCategory> = {};
 const editorStaticCache: Record<string, Record<string, unknown>> = {};
-const editorStaticVersions: Record<string, number> = {};
+const editorStaticVersions: Record<string, number | string> = {};
 const editorDataCache: Record<string, Record<string, unknown>> = {};
+/// Widget values and preview frames persist across updates: the server sends values for
+/// the categories it is answering for, and the preview only when it changed.
+const valuesCache: Record<string, unknown> = {};
+let previewCache: CharacterPreviewAssets = {};
+/// The owner (prefs + slot) whose every-tab prefetch has been requested.
+let prefetchedOwner = '';
 
 const clearRecord = (record: Record<string, unknown>) => {
   for (const key of Object.keys(record)) delete record[key];
@@ -176,6 +182,7 @@ export const DQCharacterSetup = () => {
     clearRecord(editorStaticCache);
     clearRecord(editorStaticVersions);
     clearRecord(editorDataCache);
+    clearRecord(valuesCache);
   }
   const structureVersion = data.dq_structure_version ?? 1;
   if (cachedStructureVersion !== structureVersion) {
@@ -193,10 +200,14 @@ export const DQCharacterSetup = () => {
     editorStaticVersions[key] = data.dq_editor_versions?.[key] ?? 1;
   }
   Object.assign(editorDataCache, data.dq_editor_data ?? {});
+  Object.assign(valuesCache, data.dq_values ?? {});
+  if (data.character_preview_assets) {
+    previewCache = data.character_preview_assets;
+  }
 
   const categoryIndex = data.dq_category_index ?? Object.keys(categoryCache);
-  const values = data.dq_values ?? {};
-  const previewAssets = data.character_preview_assets ?? {};
+  const values = valuesCache;
+  const previewAssets = previewCache;
   const [selected, setSelected] = useState<string | null>(null);
 
   // Land on the first available category once data arrives. Without this, the initial
@@ -239,6 +250,20 @@ export const DQCharacterSetup = () => {
     selected,
     selectedPage,
   ]);
+
+  // Once the first page has its catalogs, ask for every other tab in the background so
+  // later switches render from this cache at once (the server's answer then only
+  // refreshes values).
+  useEffect(() => {
+    if (prefetchedOwner === owner || !selectedPage || missingEditorCatalog) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      prefetchedOwner = owner;
+      act('dq_prefetch_categories');
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [act, owner, selectedPage, missingEditorCatalog]);
 
   const pageIsFullHeight =
     selectedPage?.groups.some((g) =>
