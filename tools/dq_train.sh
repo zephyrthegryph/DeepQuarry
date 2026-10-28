@@ -348,7 +348,7 @@ self_update() {
 	fi
 	[ "$sig" != "$SELF_UPDATE_BAD" ] || return 0
 	if [ $(( $(date +%s) - SELF_UPDATE_LAST )) -lt 30 ]; then return 0; fi # never a tight re-exec loop
-	stage="$STATE/self.new"
+	stage="$STATE/self.new.$$"   # per process: the integrator and the prechecker update at the same moment and deleted each other's stage (cannot read tools/...: 5 times since 27 October)
 	rm -rf "$stage"; mkdir -p "$stage/ci" "$stage/train" || return 0
 	for f in "${SNAP_FILES[@]}"; do
 		G show "origin/master:tools/$f" >"$stage/$f" 2>/dev/null || { tlog "ERROR: self-update: cannot read tools/$f from origin/master; keeping the current scripts"; SELF_UPDATE_BAD="$sig"; rm -rf "$stage"; return 0; }
