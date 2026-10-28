@@ -33,7 +33,5 @@ base_var	code/modules/mob/living/life/life_om.dm	@/mob/living::life_set
 base_var	code/modules/mob/mob_defines.dm	@/mob::logging
 base_var	code/modules/mob/mob_defines.dm	@/mob::bodytemperature
 base_var	code/modules/mob/mob_defines.dm	@/mob::faction
-base_var	code/modules/vore/eating/living.dm	@/mob/living::weight
-base_var	code/modules/vore/eating/living.dm	@/mob/living::metabolism
 list_init	code/modules/projectiles/targeting/targeting_mob.dm	@/mob/living::aimed
 list_init	code/modules/refinery/core/industrial_reagent_grinder.dm	@/obj/machinery/reagent_refinery/grinder::holdingitems

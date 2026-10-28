@@ -479,7 +479,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 
 /// Weight, size, voice and sprite offsets.
 /mob/living/carbon/human/proc/copy_physique_from(mob/living/carbon/human/character)
-	weight			= character.weight
+	sparse_set_or(src, weight, sparse_get_or(character, weight, DEFAULT_MOB_WEIGHT), DEFAULT_MOB_WEIGHT)
 	sparse_set_or(src, weight_gain, sparse_get_or(character, weight_gain, 1), 1)
 	sparse_set_or(src, weight_loss, sparse_get_or(character, weight_loss, 0.5), 0.5)
 	set_fuzzy(character.fuzzy)

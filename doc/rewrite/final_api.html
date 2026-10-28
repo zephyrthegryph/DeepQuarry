@@ -672,6 +672,7 @@ LIST_STATE(T, var, alloc = LAZY | EAGER, kind = LIST | SET | MAP, owns = NONE | 
       <tr><td><code>ref(type)</code></td><td>An entity of that type, held as a handle</td><td>UI and request input name it by token (<a href="#refs">section 6</a>)</td></tr>
       <tr><td><code>path(type)</code></td><td>A type path that descends from <code>type</code></td><td></td></tr>
       <tr><td><code>list_of(schema)</code>, <code>map_of(k, v)</code></td><td>A list, or an associative list, whose members have the given schemas</td><td></td></tr>
+      <tr><td><code>schema_any()</code></td><td>Any value, entities included</td><td>The declaration of a var that carries whatever its producer hands it (a hook&#39;s reply, a config entry&#39;s number, text or list, a script&#39;s result, an asset&#39;s file until it registers): <code>SCHEMA(/datum/act/action, reply, schema_any())</code>. It is not a holder of entities (that is a relation, <code>ref_one</code>/<code>owns_one</code>); the <code>untyped</code> lint accepts a call&#39;s result in it and still reports an atom or datum assigned to it. A viewer target that may be a list is not <code>schema_any()</code>: the list is wrapped in a <code>/datum/vv_list_target</code> so the target var is a typed <code>/datum</code> relation</td></tr>
       <tr><td><code>row(type)</code></td><td>A typed record row, such as a SQL row, whose own vars carry schemas</td><td>An inline <code>row(field = schema, ...)</code> is allowed in <code>ui_shape</code></td></tr>
     </tbody>
   </table></div>
@@ -1260,6 +1261,12 @@ starts_args = list(...)                    <span class="c">// constructor argume
   <div class="prose"><p><strong>The init phase contract.</strong> An instance's init runs in four phases (with an early one for body parts), and each phase may read what the earlier ones made:</p>
     <ol>
       <li><strong>Params:</strong> <code>make()</code> arguments, <code>param(pos =)</code> constructor arguments, <code>per_type</code> tables and <code>rolls()</code> (preinit).</li>
+      <li><strong>Early setup</strong> (phase 0, after the early children and early params): <code>setup(PROC_REF(x), early = TRUE)</code> declares <code>x()</code>, the code a type ran
+        before <code>..()</code> in its <code>Initialize()</code> (an appearance assigned over the whole appearance, a shared list swapped in for the one the chain reads). It runs from
+        <code>InitAtom()</code> before the chain on both the chain path and the <code>init_from_table</code> path, ancestors first, a repeated proc once. It cannot combine with
+        <code>with_params</code> or <code>mapload</code>. <em>Design note:</em> the first plan was a <code>registers(registry_id, key =)</code> static entry for the three remaining
+        <code>Initialize()</code> overrides; reading them showed none registers anything (they set an appearance, a door fill and shared list vars on the instance), so the form that fits is
+        a phase 0 hook, which the existing phase 0 machinery (<code>params_early()</code>) already had room for.</li>
       <li><strong>Early children</strong> (phase 0, before the rest): an occupant declared <code>owns_one</code>/<code>owns_many(..., early = TRUE)</code> is built by
         <code>InitAtom()</code> before the <code>Initialize()</code> chain runs, after the params of <code>/atom/New()</code>: a body part a type&#39;s own code before <code>..()</code>
         reads (the AI&#39;s radio and laws, a human&#39;s DNA). It cannot read <code>rolls()</code>, which come later; <code>starts_set</code> applies to it then too.</li>

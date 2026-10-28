@@ -3,6 +3,8 @@
 A conversion keeps behaviour. Where it could not, or where keeping it would have kept a bug, the change is listed here with its reason, and the
 test that pinned the old behaviour was edited in the same commit. (conversion_guide.md section 2.)
 
+> Note: the tests named below as pins (`dq_hit_pin`, `dq_conversion_pin`, `dq_loot_roll_pin`, `dq_loot_search_pin`, `dq_resolver_reader_pin`, the requirement `*_pin` sweeps and the snapshot files they read) were deleted in the ceremony-test cut; the entries stay as the record of why each change was made.
+
 **base_vars tooling (lane bv-traits, `doc/rewrite/proposals/base_vars.md`).** `set_trait(holder, kind, field, value)` is the one trait writer;
 the domain setters call it. A runtime-loaded map, `vars_write()` and admin VV route a write of a var that moved into a trait block (or
 `@kind.field`, which VV now lists) through it; a map edit of any other unknown var is a stack trace instead of a runtime. A compiled map

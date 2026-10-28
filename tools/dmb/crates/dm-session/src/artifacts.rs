@@ -64,7 +64,7 @@ struct Variant<T, Q = ResolveQuery, A = ResolvedMeaning, D = ReadDomain> {
     holders: leased::Holders,
 }
 /// The variants of one hash. Almost every hash holds exactly one, which is stored inline instead of in a vector of its own.
-pub(super) enum Bucket<V> {
+pub(crate) enum Bucket<V> {
     Empty,
     One(V),
     Many(Vec<V>),
@@ -84,7 +84,7 @@ impl<V: Clone> Clone for Bucket<V> {
     }
 }
 impl<V> Bucket<V> {
-    pub(super) fn push(&mut self, value: V) {
+    pub(crate) fn push(&mut self, value: V) {
         *self = match std::mem::take(self) {
             Self::Empty => Self::One(value),
             Self::One(first) => Self::Many(vec![first, value]),
@@ -94,14 +94,14 @@ impl<V> Bucket<V> {
             }
         };
     }
-    pub(super) fn capacity(&self) -> usize {
+    pub(crate) fn capacity(&self) -> usize {
         match self {
             Self::Empty => 0,
             Self::One(_) => 1,
             Self::Many(values) => values.capacity(),
         }
     }
-    pub(super) fn retain(&mut self, mut keep: impl FnMut(&V) -> bool) {
+    pub(crate) fn retain(&mut self, mut keep: impl FnMut(&V) -> bool) {
         *self = match std::mem::take(self) {
             Self::Empty => Self::Empty,
             Self::One(value) => {

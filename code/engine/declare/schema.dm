@@ -135,6 +135,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/schema)
 	S.on_invalid = ON_INVALID_REJECT
 	return S
 
+/// Any value at all, entities included: the declaration of a var that carries whatever its producer hands it (a hook's reply, a config entry's
+/// number, text or list, a script's result, an asset's file until it is registered). It is the one honest spelling of "no single kind" for a var
+/// that is not a long-lived holder of entities (a var that keeps an entity is a relation: ref_one(), owns_one()). The `untyped` lint accepts it
+/// for a call's result and still reports an atom or datum assigned to it.
+/proc/schema_any(default = null)
+	var/datum/schema/S = new
+	S.kind = SCHEMA_ANY
+	S.on_invalid = ON_INVALID_REJECT
+	schema_default(S, default)
+	return S
+
 /// A list whose members have the given schema.
 /proc/list_of(datum/schema/member, default = null)
 	var/datum/schema/S = new
@@ -334,6 +345,8 @@ PROC_SUMMARY(/proc/schema_check) // vars[] / call() dispatcher: the walk cannot 
 				if(length(text_msg) && text_msg[1] == "msg_text")
 					return list(value, null)
 			return list(SCHEMA_REJECT, "[value] is not a message path under /datum/msg")
+		if(SCHEMA_ANY)
+			return list(value, null)
 		if(SCHEMA_ROW)
 			if(isdatum(value) && (!S.type_of || istype(value, S.type_of)))
 				return list(value, null)
@@ -489,6 +502,8 @@ GLOBAL_VAR(schema_log_capture)
 			return "text[S.max_len ? " max [S.max_len]" : ""]"
 		if(SCHEMA_ENUM)
 			return "enum"
+		if(SCHEMA_ANY)
+			return "any value"
 	return S.kind
 
 /// The top-level arguments of a declaration's source text "num(0, MAX, step = 1)": a list of trimmed argument texts, or null.

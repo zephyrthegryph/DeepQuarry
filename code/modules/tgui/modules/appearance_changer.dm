@@ -623,7 +623,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			new_weight = round(text2num(new_weight),4)
 		if(unit_of_measurement == "Kilograms")
 			new_weight = round(2.20462*text2num(new_weight),4)
-		owner().weight = sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, owner().weight)
+		sparse_set_or(owner(), weight, sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, sparse_get_or(owner(), weight, DEFAULT_MOB_WEIGHT)), DEFAULT_MOB_WEIGHT)
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
 	return FALSE
@@ -968,7 +968,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	data["size_scale"] = player_size_name(owner().size_multiplier)
 	data["scale_appearance"] = owner().dna.scale_appearance ? "Fuzzy" : "Sharp"
 	data["offset_override"] = owner().dna.offset_override ? "Odd" : "Even"
-	data["weight"] = owner().weight
+	data["weight"] = sparse_get_or(owner(), weight, DEFAULT_MOB_WEIGHT)
 	data["digitigrade"] = owner().looks.digitigrade
 	data["blood_reagent"] = owner().dna.blood_reagents
 	data["blood_color"] = owner().dna.blood_color
@@ -1342,7 +1342,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	owner().dna.blood_color = current_project.mydna.dna.blood_color
 	owner().resize(current_project.sizemult, FALSE)
 	owner().appearance_flags = current_project.aflags
-	owner().weight = current_project.weight
+	sparse_set_or(owner(), weight, current_project.weight, DEFAULT_MOB_WEIGHT)
 	if(current_project.speciesname)
 		owner().custom_species = current_project.speciesname
 	// Add listeners back

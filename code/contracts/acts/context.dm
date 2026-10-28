@@ -160,4 +160,7 @@ CAPABILITIES(/datum/act/timer)
 
 SCHEMA(/datum/act/action, reason, schema_msg())
 
+// What the taking hook answered: its handler's return value, whatever it is (a veto payload, an ITEM_INTERACT_* result, a name).
+SCHEMA(/datum/act/action, reply, schema_any())
+
 SCHEMA(/datum/op_result, reason, schema_msg())

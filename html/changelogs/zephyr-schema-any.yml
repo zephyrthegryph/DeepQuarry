@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added schema_any() for vars that carry whatever their producer returns, and typed the variable viewer's target (a list is wrapped in /datum/vv_list_target); the untyped lint is hard-banned at 0"

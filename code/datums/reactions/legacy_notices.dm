@@ -461,6 +461,13 @@
 	src.source_ = source_
 	src.flags = flags
 
+/// From /atom/atom_break(damage_flag): the atom crossed its integrity_failure threshold. (damage_flag)
+/datum/notice/atom_broken
+	var/damage_flag
+
+/datum/notice/atom_broken/fill(damage_flag)
+	src.damage_flag = damage_flag
+
 /// From /obj/machinery/atom_break(damage_flag): (damage_flag)
 /datum/notice/machinery_broken
 	var/damage_flag

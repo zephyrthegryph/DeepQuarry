@@ -59,6 +59,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 	/// The setup() / name_prefix() hooks in declaration order, split by phase at build: lists of (handler, prefix) (handler, prefix, mapload) rows (setup_run() walks one, no entry reads).
 	var/list/setup_rows_plain
 	var/list/setup_rows_params
+	/// The setup(early = TRUE) handlers in declaration order (setup_early() runs them in phase 0, before the Initialize() chain).
+	var/list/setup_rows_early
 	var/datum/centry/tooltip
 	/// var name -> list of /datum/centry of the forms that follow that var (registry keys, radio frequencies, derives inputs, lives_while).
 	var/list/watch
@@ -141,7 +143,14 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 	for(var/datum/centry/C as anything in P.setups)
 		var/datum/entry/E = C.item
 		var/row = list(E.args["handler"], E.args["prefix"], E.args["mapload"])
-		if(E.args["with_params"])
+		if(E.args["early"])
+			if(!isatom(D))
+				declare_report("[C.origin]: setup([E.args["handler"]], early = TRUE) on [D.type]: only an atom has a phase 0 before its Initialize() chain")
+			else if(!hascall(D, E.args["handler"]))
+				declare_report("[C.origin]: setup([E.args["handler"]], early = TRUE) on [D.type]: no such proc")
+			else
+				LAZYADD(P.setup_rows_early, E.args["handler"])
+		else if(E.args["with_params"])
 			P.setup_with_params = TRUE
 			LAZYADD(P.setup_rows_params, list(row))
 		else
@@ -168,7 +177,7 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 		var/datum/entry/E = C.item
 		if(E.args["instead"] && !hascall(D, E.args["instead"]))
 			declare_report("[C.origin]: keeps_if(instead = [E.args["instead"]]) on [D.type]: no such proc")
-	P.init = !!(P.setups || P.keeps_if || P.contains || P.knows || P.param_applies || P.param_drops || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
+	P.init = !!(P.setup_rows_plain || P.setup_rows_params || P.keeps_if || P.contains || P.knows || P.param_applies || P.param_drops || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
 	for(var/kind_list in list(P.registries, P.radios, P.derives, P.lives_while, P.adjacencies))
 		for(var/datum/centry/C as anything in kind_list)
 			var/datum/entry/E = C.item
@@ -235,7 +244,7 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 		return
 	if(P.keeps_if)
 		keeps_if_init(holder, P)
-	if(P.setups && isatom(holder))
+	if((P.setup_rows_plain || P.setup_rows_params) && isatom(holder))
 		setup_note(holder, P)
 	if(P.contains)
 		roll_creator_push(holder) // what it creates rolls from its stream

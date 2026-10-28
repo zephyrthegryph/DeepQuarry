@@ -357,6 +357,8 @@ pub(super) fn expand_region(
             &mut diagnostics,
         );
     }
+    // The text is retained in the record and the joined output: release the builder's growth slack.
+    text_buffer.shrink_to_fit();
     RegionOutput {
         text: text_buffer.into(),
         receipt: None,

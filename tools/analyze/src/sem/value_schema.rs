@@ -21,6 +21,9 @@ pub enum ValueKind {
     Msg,
     /// `bool()`, `int()`, `num()`, `enum()`, `flags()`, `schema_text()`: a plain value.
     Plain,
+    /// `schema_any()`: any value, entities included (a hook's reply, a config entry's value). The lints accept a call's result in it and still
+    /// report an atom or datum assigned to it.
+    Any,
     /// `list_of(v)` / `map_of(k, v)` whose members are values: a container of values, never of entities.
     Many,
 }
@@ -37,6 +40,7 @@ pub fn kind_of(expr: &str) -> Option<ValueKind> {
             Some(ValueKind::Path(first.trim().to_string()))
         }
         "schema_msg" => Some(ValueKind::Msg),
+        "schema_any" => Some(ValueKind::Any),
         "bool" | "int" | "num" | "enum" | "flags" | "schema_text" => Some(ValueKind::Plain),
         "list_of" | "map_of" => {
             let inner = &e[open + 1..];
@@ -107,7 +111,7 @@ impl ValueSchemas {
             ValueKind::Path(base) => base.is_empty() || sem.is_subtype(lit, base),
             ValueKind::Msg => sem.is_subtype(lit, "/datum/msg"),
             ValueKind::Plain => false,
-            ValueKind::Many => true,
+            ValueKind::Many | ValueKind::Any => true,
         }
     }
 }
@@ -121,6 +125,7 @@ mod tests {
         assert_eq!(kind_of("schema_path(/obj/item/stack)"), Some(ValueKind::Path("/obj/item/stack".into())));
         assert_eq!(kind_of("schema_path(/obj/item/fish, /obj/item/fish/koi)"), Some(ValueKind::Path("/obj/item/fish".into())));
         assert_eq!(kind_of(" schema_msg() "), Some(ValueKind::Msg));
+        assert_eq!(kind_of("schema_any()"), Some(ValueKind::Any));
         assert_eq!(kind_of("schema_text(40)"), Some(ValueKind::Plain));
         assert_eq!(kind_of("int(0, 5)"), Some(ValueKind::Plain));
         assert_eq!(kind_of("schema_ref(/obj)"), None);

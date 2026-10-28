@@ -26,6 +26,8 @@
 	var/keep_local_name = FALSE
 
 SCHEMA(/datum/asset_cache_item, hash, schema_text())
+// The file the asset represents: a file, an icon or a path, as the registering code handed it.
+SCHEMA(/datum/asset_cache_item, resource, schema_any())
 
 ///pass in a valid file_hash if you have one to save it from needing to do it again.
 ///pass in a valid dmi file path string e.g. "icons/path/to/dmi_file.dmi" to make generating the hash less expensive

@@ -20,8 +20,7 @@
 /obj/item/modular_computer/proc/computer_broken()
 	return get_integrity() < max_integrity * integrity_failure
 
-/obj/item/modular_computer/atom_break(damage_flag)
-	. = ..()
+/obj/item/modular_computer/proc/chassis_broken(datum/act/A)
 	if(enabled)
 		shutdown_computer()
 

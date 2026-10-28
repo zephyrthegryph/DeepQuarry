@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native frames of 150 ms or more are logged with the Rust phases that grew (NATIVE_SLOW_FRAME); the Rust frame files per-phase times of slow frames under frame.slow_us.*; a localhost vgframe probe returns them"
+  - code_imp: "Added the mapload_init benchmark scenario (per-type Initialize cost on the map-load path) and per-type init counts next to init_times.json"

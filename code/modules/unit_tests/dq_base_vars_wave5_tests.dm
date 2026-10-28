@@ -13,6 +13,7 @@
 		list(/mob, "voice_sounds_list", list("x"), null),
 		list(/mob/living, "custom_link", "example.org", null),
 		list(/mob/living, "eggs", 3, 0),
+		list(/mob/living, "weight", 150, DEFAULT_MOB_WEIGHT),
 		list(/mob/living, "failed_last_breath", 1, 0),
 		list(/mob/living, "summoned", TRUE, null),
 		list(/mob/living/carbon/human, "heartbeat", 2, 0),

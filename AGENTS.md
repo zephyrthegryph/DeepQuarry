@@ -102,13 +102,14 @@ Rules that hold under both old and new forms:
 - Don't override `Destroy()`; use `qdel()` and put consequences in `on_destroy(force)`. Never `del()`.
 - Prefer `Initialize(mapload, ...)`; always chain `..()` in lifecycle overrides. An `Initialize()` override sets per-instance
   state only and carries `// ALLOW(init/INSTANCE_STATE|CTOR_ARGS|FRAMEWORK): <reason>`; starting contents are `starts =`
-  (`owns_one`/`owns_many`/`slot`), capability setup is `on_holder_init(A)`, an Initialize() tail that needs `mapload` or returns `INITIALIZE_HINT_QDEL` is `setup(PROC_REF(x), mapload = TRUE)` (`x(mapload)` returns the hint), work after the map load or a timer from init is
+  (`owns_one`/`owns_many`/`slot`), capability setup is `on_holder_init(A)`, an Initialize() tail that needs `mapload` or returns `INITIALIZE_HINT_QDEL` is `setup(PROC_REF(x), mapload = TRUE)` (`x(mapload)` returns the hint), an Initialize() head (code that ran before `..()`) is `setup(PROC_REF(x), early = TRUE)`, work after the map load or a timer from init is
   `after_init(delay, then(PROC_REF(x)))` in `CAPABILITIES`. `LateInitialize()` and `INITIALIZE_HINT_LATELOAD` are gone.
 - Tracking is automatic: don't declare `TRACKED(...)` (hard-banned outside the generated file). Write a var that reactive code reads through its generated `set_v(...)`; the `tracked` lint (hard error) rejects a raw write and `analyze fix --apply` rewrites it. A setter with side effects is a hand-written `set_v()` plus `SETTER(T, v)`. Construction (`Initialize()`/`New()` writing the instance's own var) is not a change and stays raw.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
   (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/__defines/_lists.dm`).
   A `TRACKED` list var is mutated through its generated `add_<v>()`, `include_<v>()`, `remove_<v>()`, `set_<v>_at()`, `clear_<v>()`,
   `insert_<v>()`, `swap_<v>()`, `cut_<v>()` (`tracked_lists.dm`); `analyze fix` rewrites `LAZYADD`, `.Add()`, `v[i] = x` and the rest.
+- A var that carries whatever its producer returns (a hook's reply, a config value) is declared `SCHEMA(T, var, schema_any())` on its own line; the `untyped` lint is hard-banned (typed, call, schema), so an untyped var assigned an atom, datum or call result is a relation (`ref_one`/`owns_one`) or a `SCHEMA`.
 - Sounds are sets: `play_sfx(atom, SFX_ID)`; sparks are `fx_sparks(atom, amount)`.
 - SQL is parameterized only; ask players with typed prompts, not raw `input()`/`alert()`.
 - Cache appearances, not raw `/icon`. Don't add an `/atom` proc for something only one capability uses.

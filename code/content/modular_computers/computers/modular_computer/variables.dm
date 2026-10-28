@@ -76,6 +76,7 @@
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 
 CAPABILITIES(/obj/item/modular_computer)
+	on_notice(/datum/notice/atom_broken, then(PROC_REF(chassis_broken)))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(install_presets))
 	configure(item_handling(center_x = 0, center_y = 0, randpixel = 0))

@@ -36,6 +36,8 @@ sparse(/mob, riftimage, type = /image)
 sparse(/mob/living, adminbus_eat_minerals, type = bool)
 // Reagent id -> addiction counter, for every addiction tracked (built up, active or in withdrawal): mob/living/carbon/addictions.dm.
 sparse(/mob/living/carbon, addiction_counters, type = list)
+// Body weight in pounds for the weightgain system; reads as DEFAULT_MOB_WEIGHT when unset (sparse_get_or / sparse_set_or).
+sparse(/mob/living, weight, type = num)
 sparse(/mob/living, body_effect_serial, type = num)
 // Body effect type -> list of timed-stack names (body_effect_stack_names()).
 sparse(/mob/living, body_effect_timers, type = list)
