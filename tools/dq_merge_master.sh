@@ -82,8 +82,10 @@ if [ ${#tracked[@]} -gt 0 ]; then
 fi
 
 # Includes of files the merge deleted (a union merge of an include list brings them back): dropped from the merge and reported.
-if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 && [ -z "$(git diff --name-only --diff-filter=U -- code/modules/unit_tests/_unit_tests.dm deepquarry.dme)" ]; then
-	dq_drop_stale_includes code/modules/unit_tests/_unit_tests.dm code/modules/unit_tests "dq_merge_master"
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 && [ -z "$(git diff --name-only --diff-filter=U -- code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm deepquarry.dme)" ]; then
+	for ut in code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm; do
+		[ -f "$ut" ] && dq_drop_stale_includes "$ut" "$(dirname "$ut")" "dq_merge_master"
+	done
 	dq_drop_stale_includes deepquarry.dme . "dq_merge_master"
 fi
 mapfile -t remaining < <(git diff --name-only --diff-filter=U)

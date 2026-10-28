@@ -60,7 +60,7 @@ STUB
 	for l in g1 c1 c2 g2; do
 		git switch -q -c "$l" origin/master
 		mkdir -p lanes; case "$l" in c*) echo "$l" >shared.txt ;; *) echo "$l" >"lanes/$l.txt" ;; esac
-		if [ "$l" = g1 ]; then mkdir -p code/modules/unit_tests; echo x >code/modules/unit_tests/here.dm; printf '#include "here.dm"\n#include "gone.dm"\n' >code/modules/unit_tests/_unit_tests.dm; fi
+		if [ "$l" = g1 ]; then mkdir -p code/tests/unit_tests; echo x >code/tests/unit_tests/here.dm; printf '#include "here.dm"\n#include "gone.dm"\n' >code/tests/unit_tests/_unit_tests.dm; fi
 		git add -A; git commit -q -m "$l"; git push -q origin "$l"
 	done
 	git switch -q --detach origin/master
@@ -159,7 +159,7 @@ si="$tmp/si"; mkdir -p "$si"; (
 	dq_drop_stale_includes deepquarry.dme . test
 ) >"$si.out" 2>&1
 check "stale includes are dropped and reported in _unit_tests.dm and deepquarry.dme; existing ones stay" 'grep -q "moved_away.dm" "$si.out" && grep -q "gone.dm" "$si.out" && ! grep -q moved_away "$si/code/modules/unit_tests/_unit_tests.dm" && grep -q "here.dm" "$si/code/modules/unit_tests/_unit_tests.dm" && grep -q "kept.dm" "$si/deepquarry.dme" && ! grep -q "gone.dm" "$si/deepquarry.dme" && [ -n "$(git -C "$si" diff --cached --name-only)" ]'
-check "dq_merge_master.sh drops stale includes during a merge" 'grep -q "dq_drop_stale_includes code/modules/unit_tests/_unit_tests.dm" "$here/tools/dq_merge_master.sh"'
+check "dq_merge_master.sh drops stale includes during a merge" 'grep -q "code/tests/unit_tests/_unit_tests.dm" "$here/tools/dq_merge_master.sh" && grep -q "dq_drop_stale_includes" "$here/tools/dq_merge_master.sh"'
 
 # gates: an sccache server drop is infra (retried without sccache, then exit 95); a real compile error is not
 eval "$(sed -n '/^gate_sccache_failure() {/p' "$here/tools/dq_merge_gates.sh")"

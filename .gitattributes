@@ -64,3 +64,4 @@ tools/dmb/fixtures/diagnostics/cases/string_backslash_crlf_block.dm -text
 ## tools/ci/lint_scopes.toml: ceilings only go down, and adjacent lowered ceilings must not conflict (tools/ci/lint_scopes_merge_driver.sh,
 ## supplied by tools/dq_git_safe.sh like dq-baseline; by hand: git config merge.dq-lint-scopes.driver "bash tools/ci/lint_scopes_merge_driver.sh %O %A %B %P").
 tools/ci/lint_scopes.toml merge=dq-lint-scopes
+tools/build/dme_moves.txt merge=union
