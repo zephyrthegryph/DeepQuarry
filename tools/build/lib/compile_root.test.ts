@@ -40,8 +40,7 @@ test('variant keys are the manifest stem and the feature is on by default', () =
   expect(rootKeyFor('E:/projects/dq-wt/pool-2/deepquarry.dme', 'E:/projects/dq-wt/pool-2', {})).toBe('deepquarry');
   // The train's precheck workers and its parallel-bisect worktree each have a root of their own.
   expect(rootKeyFor('E:/projects/dq-wt/train-pre1/deepquarry.test.dme', 'E:/projects/dq-wt/train-pre1', {})).toBe('deepquarry-pre1');
-  expect(rootKeyFor('E:/projects/dq-wt/train-pre2/deepquarry.test.dme', 'E:/projects/dq-wt/train-pre2/', {})).toBe('deepquarry-pre1');
-  expect(rootKeyFor('E:/projects/dq-wt/train-pre2/deepquarry.test.dme', 'E:/projects/dq-wt/train-pre2/', { DQ_TRAIN_PRE_SHARED_ROOT: '0' })).toBe('deepquarry-pre2');
+  expect(rootKeyFor('E:/projects/dq-wt/train-pre2/deepquarry.test.dme', 'E:/projects/dq-wt/train-pre2/', {})).toBe('deepquarry-pre2');
   expect(rootKeyFor('E:/projects/dq-wt/train-bisect/deepquarry.test.dme', 'E:/projects/dq-wt/train-bisect', {})).toBe('deepquarry-bisect');
   expect(rootKeyFor('E:/projects/dq-wt/train-prefix/deepquarry.dme', 'E:/projects/dq-wt/train-prefix', {})).toBe('deepquarry');
   // The train's gate may borrow the warm root of a precheck worker (DQ_TRAIN_ROOT_KEY); nobody else does, and only known train roots.

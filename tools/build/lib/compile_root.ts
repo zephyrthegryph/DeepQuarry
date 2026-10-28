@@ -75,11 +75,7 @@ export function rootKeyFor(dme: string, worktree: string, env: NodeJS.ProcessEnv
   // own: they run beside the train's gate and each other, and each only ever holds master plus one lane (a worker's next precheck patches
   // from its previous one) or master plus part of a batch. In the shared lane root they would queue behind every lane's focused run.
   const pre = norm(env.DQ_TRAIN_PRE_WT ?? 'E:/projects/dq-wt/train-pre');
-  // 28 October: the daemon's 8 GB budget keeps about one session, so two worker roots evicted each other (every precheck compile cold,
-  // 108 s instead of ~39 s) while the one native compile slot serialised them anyway (a worker queued 305 s). By default every worker
-  // shares the root of worker 1: one warm session for all prechecks and the train's gate; it still never holds a lane's focused run.
-  // DQ_TRAIN_PRE_SHARED_ROOT=0: a root per worker as before.
-  if (wt.startsWith(pre) && /^[0-9]+$/.test(wt.slice(pre.length))) return `${rootKey(dme)}-pre${env.DQ_TRAIN_PRE_SHARED_ROOT === '0' ? wt.slice(pre.length) : '1'}`;
+  if (wt.startsWith(pre) && /^[0-9]+$/.test(wt.slice(pre.length))) return `${rootKey(dme)}-pre${wt.slice(pre.length)}`;
   if (wt === norm(env.DQ_TRAIN_WT2 ?? 'E:/projects/dq-wt/train-bisect')) return `${rootKey(dme)}-bisect`;
   return rootKey(dme);
 }

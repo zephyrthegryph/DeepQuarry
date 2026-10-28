@@ -972,10 +972,11 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
   `merge(new origin/master, its stamped precheck merge)`: `dq_push_stamp.sh` accepts it as a merge of master into one stamped parent,
   and `dq_push_master.sh` compiles it and runs the ratchets before pushing (no test world). Anything else stays queued for a fresh
   precheck. `DQ_TRAIN_FAST_LAND_MORE=0` turns it off.
-- **One compile root for all precheck workers** (`deepquarry-pre1`, `tools/build/lib/compile_root.ts`): the daemon's 8 GB budget keeps
-  about one session, so two worker roots evicted each other (cold 108 s compiles) while the single native compile slot serialised them
-  anyway (one worker queued 305 s). `DQ_TRAIN_PRE_SHARED_ROOT=0` restores a root per worker. The gate's own compiler prebuild now
-  spares the test job its second compiler preparation (`DQ_FOCUSED_NO_TOOL_PREBUILD=1`, ~30 s).
+- **No compiler daemon in the train (user order, 28 October 2026).** `dq_train.sh`, `dq_merge_batch.sh`, `dq_merge_gates.sh`,
+  `dq_focused_test.sh`, `dq_push_master.sh` and `dq_land_batch.sh` export `DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0` whatever the
+  caller's environment, so no train process starts a dmbc daemon. Precheck workers keep a compile root each. The gate's own compiler
+  prebuild spares the test job its second compiler preparation (`DQ_FOCUSED_NO_TOOL_PREBUILD=1`, ~30 s). `dq_push_master.sh` computes
+  a commit's stamp verdict once per push (it ran `dq_push_stamp.sh` three times, ~10 s each).
 - **Status shows every step.** `cycle.txt` names the queue/tips step, batch selection, the disk floor check, the fast-forward check,
   pushes and the gate with its log; `status` adds the gate's newest `== gate:` step. The `cycle:` line logs the preamble seconds.
 - **The disk floor no longer costs 24 minutes a cycle.** Below the floor the gate trims the cache synchronously (19:08-19:32Z on

@@ -33,6 +33,8 @@
 # What it still leaves to dq_push_master.sh: the second merge of origin/master, and any stamp it cannot honor (a different HEAD,
 # an unclean tree). It never runs build.sh lint (DreamChecker + analyze + tgui lint, all covered above).
 set -uo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 # The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
 export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
