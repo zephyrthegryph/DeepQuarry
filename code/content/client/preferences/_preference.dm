@@ -42,8 +42,9 @@
 /// For instance, hair color being supplemental to hair.
 #define SUPPLEMENTAL_FEATURE_KEY "supplemental_feature"
 
-/// An assoc list list of types to instantiated `/datum/preference` instances
-GLOBAL_LIST_INIT(preference_entries, init_preference_entries())
+/// An assoc list list of types to instantiated `/datum/preference` instances.
+/// Keeps the singletons if pref_metadata_table initialized first and already tagged them.
+GLOBAL_LIST_INIT(preference_entries, preference_entries || init_preference_entries())
 
 /// An assoc list of preference entries by their `savefile_key`
 GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
