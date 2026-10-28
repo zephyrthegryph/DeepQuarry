@@ -337,7 +337,7 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
             let bucket = state
                 .buckets
                 .entry(hash)
-                .or_insert_with(|| Vec::with_capacity(1));
+                .or_default();
             bucket.push(Variant {
                 key: Arc::clone(&key),
                 reads: receipt.reads,
@@ -594,7 +594,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         let bucket = state
             .buckets
             .entry(hash)
-            .or_insert_with(|| Vec::with_capacity(1));
+            .or_default();
         let (value, key) = if let Some(existing) = existing {
             existing
         } else {

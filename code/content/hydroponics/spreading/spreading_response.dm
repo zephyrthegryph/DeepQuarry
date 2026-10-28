@@ -28,8 +28,10 @@
 		if(isturf(loc))
 			sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
-/obj/effect/plant/attack_generic(mob/user)
+/obj/effect/plant/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	manual_unbuckle(user)
+	return OP_OK
 
 /obj/effect/plant/Crossed(atom/movable/O)
 	if(O.is_incorporeal())

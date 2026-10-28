@@ -112,11 +112,10 @@ CAPABILITIES(/obj/structure/expedition_survey_beacon)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/structure/expedition_demo_target)
-	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
-/obj/structure/expedition_demo_target/proc/smashed_by(datum/act/hit/generic/A)
+/obj/structure/expedition_demo_target/smashed_by(datum/act/hit/generic/A)
 	var/mob/user = A.attacker
 	var/damage = A.damage
 	user.setClickCooldown(user.get_attack_speed())

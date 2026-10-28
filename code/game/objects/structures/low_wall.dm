@@ -234,7 +234,10 @@ MSG_DEF_SELF(low_wall/assembling_window, span_notice("Assembling window..."))
 	dismantle()
 	return ..()
 
-/obj/structure/low_wall/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/low_wall/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)

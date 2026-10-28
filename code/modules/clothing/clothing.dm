@@ -457,6 +457,7 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
 	configure(movable_motion(cone_y = 11))
 	configure(item_worn(covers = HEAD, slots = SLOT_HEAD))
@@ -495,9 +496,10 @@ CAPABILITIES(/obj/item/clothing/head)
 	var/mob/user = A.actor
 	return mob_wear_hat(user) ? OP_OK : OP_DECLINE
 
-/obj/item/clothing/head/attack_generic(mob/user)
-	if(!mob_wear_hat(user))
-		return ..()
+/obj/item/clothing/head/proc/smashed_by(datum/act/hit/generic/A)
+	if(!mob_wear_hat(A.attacker))
+		return HOOK_DECLINE
+	return OP_OK
 
 /obj/item/clothing/head/proc/mob_wear_hat(mob/user)
 	if(!Adjacent(user))
