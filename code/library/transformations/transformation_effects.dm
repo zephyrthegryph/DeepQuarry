@@ -112,7 +112,7 @@
 			if(XFORM_FX_AREA)
 				for(var/mob/living/L in range(row.range, subject))
 					for(var/effect_path in row.body_effects)
-						L.apply_body_effect(effect_path, row.lasts, owner)
+						L.apply_body_effect(effect_path, row.lasts, subject) // the extract is the origin: the old tails passed the rule, which a body effect refuses (an origin is an atom)
 			if(XFORM_FX_EMP)
 				var/list/d = row.divisors
 				empulse(location, round(made / d[1]), round(made / d[2]), round(made / d[3]), round(made / d[4]), 1)

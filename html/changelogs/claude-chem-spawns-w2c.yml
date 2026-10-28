@@ -2,3 +2,4 @@ author: "claude"
 delete-after: true
 changes:
   - refactor: "Slime extract reactions that give nearby creatures a body effect declare it"
+  - bugfix: "Slime extract reactions that grant a body effect (strength, agility, speed, temperature resistance and the dark, ocean, nightmare and sound ones) work again: they passed a rule as the effect origin, which was refused"
