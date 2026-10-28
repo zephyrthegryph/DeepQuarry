@@ -480,6 +480,7 @@ legacy_forms_converted = [
   "code/game/mecha/working/",
   "code/content/mecha/",
   "code/game/objects/effects/",
+  "code/content/effects/",
   "code/game/objects/items/",
   "code/content/items/",
   "code/game/objects/random/",
