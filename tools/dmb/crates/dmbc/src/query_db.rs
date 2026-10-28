@@ -856,6 +856,13 @@ impl QueryDb {
         }
         Ok(facts.searches.len())
     }
+    /// Whether the table still holds the answers marked as `marks`: no later marking and no drop since.
+    pub(crate) fn marks_stand(&self, marks: u64) -> bool {
+        use std::sync::atomic::Ordering::Relaxed;
+        marks != 0
+            && self.answers.epoch.load(Relaxed) == marks
+            && self.answers.drops.load(Relaxed) == self.answers.marked_drops.load(Relaxed)
+    }
     /// Record every held answer as the answer of the output that was just published. Called
     /// once the request's output is the retained one (its tree is the current tree, so each
     /// slot a stage asked holds the value that output was built from). The number returned
