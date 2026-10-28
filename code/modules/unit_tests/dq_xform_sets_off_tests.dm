@@ -15,9 +15,13 @@
 	TEST_ASSERT_EQUAL(row.tell, "Foam!", "the message is carried")
 	rows = xform_effect_rows(/transformation/chem/instant/emp_pulse, "test", list(sets_off(EFFECT_EMP, divisors = list(24, 20, 18, 14)), sets_off(EFFECT_SMOKE)))
 	TEST_ASSERT_EQUAL(length(rows), 2, "a list of two rows compiles to two, in order")
+	var/list/reported = list()
+	GLOB.declare_report_capture = reported
 	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/emp_pulse, "test", sets_off(EFFECT_EMP)), "a pulse needs its four divisors")
 	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off("confetti")), "an unknown kind")
 	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", list()), "no rows")
+	GLOB.declare_report_capture = null
+	TEST_ASSERT_EQUAL(length(reported), 3, "each refusal was reported ([jointext(reported, "; ")])")
 	// The converted rules compiled their rows at world setup.
 	var/datum/xform/X = xform_of(/transformation/chem/instant/chemsmoke)
 	TEST_ASSERT_NOTNULL(X, "the chem smoke rule exists")
