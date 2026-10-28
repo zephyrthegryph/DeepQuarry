@@ -86,8 +86,8 @@
 		if(kind == XFORM_FX_AREA && (!isnum(row.range) || !length(row.body_effects)))
 			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_AREA) takes range = n and body_effect = a path or a list of paths")
 			return null
-		if(kind == XFORM_FX_BLAST && (!islist(row.blast) || length(row.blast) != 4))
-			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_BLAST) takes blast = list(devastation, heavy, light, flash)")
+		if(kind == XFORM_FX_BLAST && (!islist(row.blast) || length(row.blast) < 3 || length(row.blast) > 4))
+			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_BLAST) takes blast = list(devastation, heavy, light) or list(devastation, heavy, light, flash)")
 			return null
 		if(kind == XFORM_FX_LATER && (!isnum(row.delay) || !row.handler))
 			declare_report("[origin]: [type]: sets_off(kind = XFORM_FX_LATER) takes delay = n and handler = GLOBAL_PROC_REF(x)")
@@ -148,7 +148,9 @@
 				var/list/b = list()
 				for(var/part in row.blast)
 					b += islist(part) ? rand(part[1], part[2]) : part
-				explosion(location, b[1], b[2], b[3], b[4])
+				if(row.sfx)
+					play_sfx(subject, row.sfx, 0.75)
+				explosion(location, b[1], b[2], b[3], length(b) >= 4 ? b[4] : null)
 			if(XFORM_FX_FROST)
 				var/datum/effect/effect/system/smoke_spread/frost/F = new (subject)
 				F.set_up(row.amount, 0, location)
