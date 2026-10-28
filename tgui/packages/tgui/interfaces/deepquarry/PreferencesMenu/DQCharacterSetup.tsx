@@ -7,11 +7,18 @@
 // pixels with image-rendering: pixelated. See /datum/preferences/proc/update_character_previews
 // in code/modules/client/preferences.dm.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
 import { CategoryPage } from './CategoryPage';
+import { labelForCategory } from './labels';
+import {
+  buildSearchIndex,
+  type SearchHit,
+  SearchHighlightContext,
+  SettingsSearch,
+} from './search';
 import type {
   CharacterPreviewAssets,
   CharacterSetupData,
@@ -133,35 +140,6 @@ const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
   );
 };
 
-// Consolidated, shorter labels so all tabs fit on one row at the default window width.
-// Keys match /datum/preference.category values written by tag_pref(). Categories without
-// an override here fall back to titleCase(category).
-const CATEGORY_LABELS: Record<string, string> = {
-  identity: 'Identity',
-  factions: 'Factions',
-  appearance: 'Looks',
-  // Renamed from "Body" so the new Mind & Body specialty tab can own that word; the
-  // size_voice category is really size sliders + voice prefs, "Size" is closer anyway.
-  size_voice: 'Size',
-  loadout: 'Loadout',
-  occupation: 'Jobs',
-  traits: 'Traits',
-  mind_body: 'Mind & Body',
-  antag: 'Antag',
-  vore: 'Vore',
-  game: 'Game',
-  misc: 'Misc',
-};
-
-const titleCase = (s: string) =>
-  s.replace(
-    /(^|[_\s])([a-z])/g,
-    (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase(),
-  );
-
-const labelForCategory = (key: string) =>
-  CATEGORY_LABELS[key] ?? titleCase(key);
-
 // Editors that fill their container and manage their own internal scrolling. When the
 // active page hosts one of these, the wrapping Section drops `scrollable` so we don't
 // get a redundant outer scrollbar on top of the editor's own (and the editor gets to
@@ -209,6 +187,57 @@ export const DQCharacterSetup = () => {
   const values = valuesCache;
   const previewAssets = previewCache;
   const [selected, setSelected] = useState<string | null>(null);
+  const moreCategories = (data.dq_more_categories ?? []).filter((c) =>
+    categoryIndex.includes(c),
+  );
+  const mainCategories = categoryIndex.filter(
+    (c) => !moreCategories.includes(c),
+  );
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
+  // Rebuilt when a category structure arrives (the prefetch fills every tab).
+  const searchKey = `${categoryIndex.join('|')}#${Object.keys(categoryCache).length}#${structureVersion}`;
+  const searchHits = useMemo(
+    () => buildSearchIndex(categoryIndex, categoryCache),
+    [searchKey],
+  );
+  const selectCategory = (category: string) => {
+    setSelected(category);
+    act('dq_select_category', {
+      category,
+      force_catalogs: !categoryCache[category],
+    });
+  };
+  const jumpTo = (hit: SearchHit) => {
+    if (hit.category !== selected) selectCategory(hit.category);
+    setPendingAnchor(hit.anchor || null);
+    setHighlight(hit.anchor || null);
+  };
+  // After a jump, wait for the page to render the anchor, then scroll it into view.
+  useEffect(() => {
+    if (!pendingAnchor) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      const el = document.querySelector(
+        `[data-dq-anchor="${CSS.escape(pendingAnchor)}"]`,
+      );
+      tries++;
+      if (el) {
+        el.scrollIntoView({ block: 'center' });
+        setPendingAnchor(null);
+        clearInterval(timer);
+      } else if (tries > 40) {
+        setPendingAnchor(null);
+        clearInterval(timer);
+      }
+    }, 50);
+    return () => clearInterval(timer);
+  }, [pendingAnchor]);
+  useEffect(() => {
+    if (!highlight) return;
+    const timer = setTimeout(() => setHighlight(null), 2500);
+    return () => clearTimeout(timer);
+  }, [highlight]);
 
   // Land on the first available category once data arrives. Without this, the initial
   // poll with empty `categories` locks `selected = null` and the tab strip renders
@@ -313,6 +342,7 @@ export const DQCharacterSetup = () => {
                   <Button icon="copy" onClick={() => act('copy')}>
                     Copy
                   </Button>
+                  <SettingsSearch hits={searchHits} onPick={jumpTo} />
                   <Box style={{ flex: 1 }} />
                   <Button
                     icon="sliders"
@@ -325,23 +355,46 @@ export const DQCharacterSetup = () => {
               </Stack.Item>
               <Stack.Item>
                 <Tabs fluid>
-                  {categoryIndex.map((category) => (
+                  {mainCategories.map((category) => (
                     <Tabs.Tab
                       key={category}
                       selected={category === selected}
-                      onClick={() => {
-                        setSelected(category);
-                        act('dq_select_category', {
-                          category,
-                          force_catalogs: !categoryCache[category],
-                        });
-                      }}
+                      onClick={() => selectCategory(category)}
                     >
                       {labelForCategory(category)}
                     </Tabs.Tab>
                   ))}
+                  {moreCategories.length > 0 && (
+                    <Tabs.Tab
+                      key="__more"
+                      icon="ellipsis"
+                      selected={!!selected && moreCategories.includes(selected)}
+                      onClick={() => {
+                        if (!selected || !moreCategories.includes(selected)) {
+                          selectCategory(moreCategories[0]);
+                        }
+                      }}
+                    >
+                      More
+                    </Tabs.Tab>
+                  )}
                 </Tabs>
               </Stack.Item>
+              {!!selected && moreCategories.includes(selected) && (
+                <Stack.Item>
+                  <Tabs>
+                    {moreCategories.map((category) => (
+                      <Tabs.Tab
+                        key={category}
+                        selected={category === selected}
+                        onClick={() => selectCategory(category)}
+                      >
+                        {labelForCategory(category)}
+                      </Tabs.Tab>
+                    ))}
+                  </Tabs>
+                </Stack.Item>
+              )}
               <Stack.Item grow>
                 <Section fill fitted scrollable={!pageIsFullHeight}>
                   {selectedPage ? (
@@ -349,13 +402,15 @@ export const DQCharacterSetup = () => {
                       p={0.5}
                       style={{ height: pageIsFullHeight ? '100%' : 'auto' }}
                     >
-                      <CategoryPage
-                        page={selectedPage}
-                        staticData={editorStaticCache}
-                        values={values}
-                        editorData={editorDataCache}
-                        fillHeight={pageIsFullHeight}
-                      />
+                      <SearchHighlightContext.Provider value={highlight}>
+                        <CategoryPage
+                          page={selectedPage}
+                          staticData={editorStaticCache}
+                          values={values}
+                          editorData={editorDataCache}
+                          fillHeight={pageIsFullHeight}
+                        />
+                      </SearchHighlightContext.Provider>
                     </Box>
                   ) : (
                     <Box p={2} color="label">
