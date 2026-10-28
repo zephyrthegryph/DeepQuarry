@@ -229,11 +229,25 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 		if(type_every_parkable(holder, C) && !type_every_gate(holder, C))
 			type_every_park(holder, index)
 			continue
-		type_every_schedule(holder, C, index)
+		type_every_schedule(holder, C, index, TRUE)
 
-/proc/type_every_schedule(datum/holder, datum/centry/C, index)
+/// The first delay of a type-level every() of `interval`, spread: map load arms a type's instances on one tick and an exact interval would make them all
+/// run on one tick for the rest of the round (the burst ticks of an idle station). Intervals under TYPE_EVERY_PHASE_MIN are left alone. The phase
+/// comes from a golden-ratio sequence (an even spread, no random stream used); the run after the first keeps the interval, so the offset stays.
+/proc/type_every_phase(interval)
+	if(interval < TYPE_EVERY_PHASE_MIN)
+		return interval
+	var/static/phase = 0
+	phase += 0.6180339887
+	phase -= round(phase)
+	return max(1 TICKS, round(interval * (TYPE_EVERY_PHASE_FLOOR + (1 - TYPE_EVERY_PHASE_FLOOR) * phase), 1 TICKS))
+
+/proc/type_every_schedule(datum/holder, datum/centry/C, index, phased = FALSE)
 	var/datum/entry/E = C.item
-	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index), keeps_dead = TRUE)
+	var/delay = every_interval(holder, E)
+	if(phased)
+		delay = type_every_phase(delay)
+	after(holder, delay, GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index), keeps_dead = TRUE)
 
 /// TRUE when the type-level every() `C` is held by its own `when =` alone (no enclosing when() block) and that condition is built only of tracked vars of the
 /// holder (nameof(var), not/all_of/any_of of those): every write of such a var publishes, so the every() PARKS while the condition is false (no timer

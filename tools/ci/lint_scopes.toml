@@ -122,8 +122,9 @@ exempt_files = ["code/__defines/tgs.dm"]
 # Vars the read-driven inference (tools/analyze/src/gens/auto_tracked.rs) never gives a generated setter: `var` for any type, `/type::var` for
 # one. Engine lifecycle state whose writes are on the qdel and bridge hot paths and which reactive code reads only through QDELETED() and
 # its siblings; the destroy itself publishes through on_destroy().
-exclude = ["gc_destroyed", "vg_entity", "datum_flags"]
+exclude = ["gc_destroyed", "vg_entity", "datum_flags", "/datum/km_hist::count", "/datum/km_depth_hist::count"]
 # (datum_flags: lifecycle bits the engine sets inside a refresh (cadence_start) and during destroy; a setter would mark the holder from its own refresh.)
+# (km_hist/km_depth_hist count: the kernel meter bumps it for every sample of every system each tick, ~11k writes in 133 s idle; only the report reads it, so a tracked write was pure overhead.)
 # Vars the inference tracks although no reactive code reads them in a way it can see, or no `set_v()` call is typed to their type: their callers reach the
 # machine through an accessor the call scan cannot type (`connected().set_locked(...)`, `machine().set_active(...)`) while another type owns a
 # hand-written `set_v`; or a base-type var a `when(nameof(v))` gate reads that only subtypes' defaults ever set (base_vars wants it housed).
@@ -798,7 +799,7 @@ damage_ratchet_on_atom_break_set_broken_overrides_d4 = 0
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 0
 bump_ratchet_on_bumped_overrides = 17
-transform_ratchet_on_bespoke_then_tails = 132
+transform_ratchet_on_bespoke_then_tails = 66
 transform_ratchet_on_bespoke_data_procs = 42
 generic_hit_ratchet_on_attack_generic_overrides = 0
 

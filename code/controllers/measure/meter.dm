@@ -331,7 +331,7 @@ CAPABILITIES(/datum/tick_meter)
 				hist.min_seen = ms
 			if(ms > hist.max_seen)
 				hist.max_seen = ms
-			hist.set_count(hist.count + 1)
+			hist.count++
 			stats.ticks++
 			stats.ms_lo += ms
 			if(stats.ms_lo >= KM_FLUSH_MS)

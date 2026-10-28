@@ -73,3 +73,13 @@
 #define STACK_RECIPES_RODS "rods"
 #define STACK_RECIPES_STEEL_RECYCLER "steel_recycler"
 #define STACK_RECIPES_GLASS_RECYCLER "glass_recycler"
+
+// spawns(): where a product is made, and how many.
+/// At the turf of the subject (the only place built).
+#define SUBJECT_TURF "subject_turf"
+/// n copies each step the rule goes, whatever its extent (what every legacy tail did).
+#define SPAWN_PER_STEP "per_step"
+/// n copies per whole unit the step made: n * FLOOR(made).
+#define SPAWN_PER_MADE "per_made"
+/// One stack of n * FLOOR(made) units (nothing when that is 0).
+#define SPAWN_STACK_MADE "stack_made"
