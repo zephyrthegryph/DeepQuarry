@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Merge train: the test cap counts from the boot gate (compile + boot get their own 15-minute cap), batches run master's merge_batch instead of a stale checkout, the prechecker drains and re-execs when master's train scripts change, and the parallel bisect checks MemAvailable against a 12 GB floor."

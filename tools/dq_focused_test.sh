@@ -488,9 +488,12 @@ start_run_guard() {
 	command -v cygpath >/dev/null 2>&1 && WORLD_REGISTRY="$(cygpath -m "$WORLD_REGISTRY")"
 	mkdir -p "$WORLD_REGISTRY"
 	export DQ_WORLD_REGISTRY="$WORLD_REGISTRY"
-	nohup node tools/dq_run_guard.js --root "$root" --cap-s "$cap_sec" --queue-max-s "${DQ_FOCUSED_QUEUE_MAX_SEC:-5400}" --registry "$WORLD_REGISTRY" --marker "$CAP_MARKER" --poll-ms "${DQ_FOCUSED_GUARD_POLL_MS:-3000}" --on-kill "bash tools/dq_machine_slots.sh reap" >"$GUARD_LOG" 2>&1 </dev/null &
+	# compile + boot get their own cap (DQ_FOCUSED_BOOT_CAP_MIN, default 15); an explicit DQ_FOCUSED_MAX_SEC (the self-tests) caps both
+	local boot_cap_s=$(( ${DQ_FOCUSED_BOOT_CAP_MIN:-15} * 60 ))
+	case "${DQ_FOCUSED_MAX_SEC:-}" in '' | *[!0-9]* | 0) ;; *) boot_cap_s="$cap_sec" ;; esac
+	nohup node tools/dq_run_guard.js --root "$root" --cap-s "$cap_sec" --queue-max-s "${DQ_FOCUSED_QUEUE_MAX_SEC:-5400}" --registry "$WORLD_REGISTRY" --marker "$CAP_MARKER" --poll-ms "${DQ_FOCUSED_GUARD_POLL_MS:-3000}" --boot-dir "${DQ_FOCUSED_BOOT_DIR:-data/logs}" --boot-cap-s "$boot_cap_s" --on-kill "bash tools/dq_machine_slots.sh reap" >"$GUARD_LOG" 2>&1 </dev/null &
 	disown $! 2>/dev/null || true
-	echo "dq_focused_test: hard cap $CAP_MIN min for the whole run (DQ_FOCUSED_MAX_MIN); worlds die with this shell (guard log $GUARD_LOG)"
+	echo "dq_focused_test: hard cap $CAP_MIN min for the tests, counted from the boot gate (DQ_FOCUSED_MAX_MIN); compile + boot may take $(( boot_cap_s / 60 )) min (DQ_FOCUSED_BOOT_CAP_MIN); worlds die with this shell (guard log $GUARD_LOG)"
 }
 start_run_guard
 
