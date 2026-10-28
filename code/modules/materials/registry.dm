@@ -167,7 +167,8 @@ PROC_SUMMARY(/proc/get_material_by_name) // a registry lookup: a name maps to it
 /// A non-text, non-number argument as part of a bespoke material id: a datum by its handle, a list by its JSON, anything else (a path) by its text.
 /proc/material_argument_id(argument)
 	if(isdatum(argument))
-		return ref_token(argument) || "deleted-[argument.type]"
+		var/datum/thing = argument
+		return ref_token(thing) || "deleted-[thing.type]"
 	if(islist(argument))
 		return json_encode(argument)
 	return "[argument]"
