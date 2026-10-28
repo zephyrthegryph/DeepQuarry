@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Transformations gain a spawns() part: the atoms a reagent rule makes, counted per step or per unit made, drawn by weight, scattered, inheriting the subject's heat"
