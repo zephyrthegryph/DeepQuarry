@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - bugfix: "Unit tests: the midnight rollover counter is clock state, so a test running across midnight is no longer failed as a state leak."
+  - bugfix: "The midnight rollover count is now state of the wall clock itself, so a unit test that runs across midnight is no longer failed as a state leak."
