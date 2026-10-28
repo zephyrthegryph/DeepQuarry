@@ -991,14 +991,6 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_pull)
 		holds = subject_is(/obj/item/slime_extract/ruby),
 		effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PULL, range = 3, pulses = 3, sfx = SFX_WEAPONS_GAUSS_SHOOT)))
 
-#ifndef UNIT_TESTS
-	// The pull keeps its timers and its record after it ends, which the end-of-run ownership audit reports as a leak: the pins settle this rule in a test world.
-	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
-	s.set_up(3, 3, location)
-	s.start()
-#endif
-	..()
-
 /transformation/chem/instant/slime/ruby_brute_juice
 
 CAPABILITIES(/transformation/chem/instant/slime/ruby_brute_juice)

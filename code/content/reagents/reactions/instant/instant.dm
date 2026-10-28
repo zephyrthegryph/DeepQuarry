@@ -1449,14 +1449,6 @@ CAPABILITIES(/transformation/chem/instant/dontcrossthebeams)
 		takes = list(reagent(REAGENT_ID_MICROCILLIN, 1), reagent(REAGENT_ID_MACROCILLIN, 1)),
 		effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PULL, range = 3, pulses = 3, sfx = SFX_WEAPONS_GAUSS_SHOOT, empties = TRUE)))
 
-#ifndef UNIT_TESTS
-	// The pull keeps its timers and its record after it ends, which the end-of-run ownership audit reports as a leak: the pins settle this rule in a test world.
-	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
-	s.set_up(3, 3, location)
-	s.start()
-#endif
-	holder.clear_reagents()
-
 ///////////////////////////////////////////////////////////////////////////////////
 /// TF chemicals
 /transformation/chem/instant/amorphorovir
