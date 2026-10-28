@@ -354,6 +354,7 @@
 #include "../../tests/unit_tests/dq_explosion_batch_tests.dm"
 #include "dq_light_glow_decl_tests.dm"
 #include "dq_materialize_batch_tests.dm"
+#include "dq_own_field_memo_tests.dm"
 #include "dq_map_load_job_tests.dm"
 #include "dq_turf_damage_tests.dm"
 #include "dq_turf_edges_tests.dm"
