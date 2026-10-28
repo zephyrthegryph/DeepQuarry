@@ -67,6 +67,8 @@
 	if(!E || QDELING(E))
 		return
 	OP_PURE_GUARD("[E.type][var_name ? ".[var_name]" : ""] was written")
+	if(GLOB.census_on)
+		census_state_note(E, var_name, caller)
 	if(GLOB.state_batch_depth)
 		state_batch_queue(E, channel, var_name)
 		return

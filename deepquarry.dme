@@ -2721,6 +2721,7 @@
 #include "code\engine\stats\recompute.dm"
 #include "code\engine\stats\vars_write.dm"
 #include "code\engine\time\after.dm"
+#include "code\engine\time\census.dm"
 #include "code\engine\time\clocks.dm"
 #include "code\engine\time\cooldown_keyed.dm"
 #include "code\engine\time\deadlines.dm"

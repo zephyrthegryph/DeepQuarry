@@ -302,6 +302,20 @@ SELF_SIG="${DQ_TRAIN_TEST_SELF_SIG:-$(git hash-object --no-filters "$SELF" 2>/de
 # (git show, no checkout), check that it parses, and exec the new dq_train.sh with the same arguments. The run lock and the integrator's
 # identity are kept (DQ_TRAIN_REEXEC=1 makes the new process adopt its own lock). A new version that does not parse is never run: the
 # old copy keeps going and the refusal is logged loudly once per master version.
+# self_update_pending: 0 when master's train scripts differ from this process's snapshot (no fetch: the caller fetched this round).
+# The prechecker only re-execs with no worker running; with three worker slots busy back to back it never was idle and ran a 3-hour-old
+# script (28 October: it bounced chem/spawns-w1 on a capped run the landed code defers). A pending update drains it: no new precheck.
+self_update_pending() {
+	[ "${DQ_TRAIN_SELF_UPDATE:-1}" = 1 ] || return 1
+	in_snapshot || return 1
+	local f want cur
+	for f in "${SNAP_FILES[@]}"; do
+		want="$(G rev-parse -q --verify "origin/master:tools/$f" 2>/dev/null)" || continue
+		cur="$(git hash-object --no-filters "$STATE/self/$f" 2>/dev/null)"
+		[ "$cur" = "$want" ] || return 0
+	done
+	[ -n "$SELF_SIG" ] && [ "$(git hash-object --no-filters "$SELF" 2>/dev/null)" != "$SELF_SIG" ]
+}
 self_update() {
 	[ "${DQ_TRAIN_SELF_UPDATE:-1}" = 1 ] || return 0
 	in_snapshot || return 0
@@ -539,6 +553,9 @@ dc_batch_run() { # <master> <lanes...>: one DreamChecker run on master + the lan
 		cd "$WT_DC" || exit 99
 		export DQ_MERGE_BRANCH="train/dc" DQ_MERGE_SESSION="train-dc-$$" DQ_DREAMMAKER_GATE=0 DQ_GATE_DREAMCHECKER=1 DQ_GATE_ONLY_DC=1
 		unset DQ_BATCH_DEADLINE DQ_BATCH_CACHE DQ_BATCH_WT2 DQ_SLOT_PRIORITY DQ_GATE_DC_DEFER DQ_GATE_DC_DISJOINT
+		# run master's merge_batch, not whatever the last batch left checked out here (28 October: a 03:04 batch ran the
+		# pre-landing script and bisected off a no-result cap). The tree is clean here (merge_batch refuses otherwise).
+		train_sync_tools
 		bash tools/dq_merge_batch.sh --lanes "$*" --no-tests --no-dm
 	) >"$log" 2>&1
 	good="$(sed -n 's/^BATCH_GOOD: //p' "$log" | tail -n 1)"
@@ -738,9 +755,15 @@ precheck_one() { # <worker n> <branch> <tip>
 		set -f
 		if [ "$is_light" = 1 ]; then
 			export DQ_GATE_LIGHT=1; unset DQ_GATE_DC_DEFER
+			# run master's merge_batch, not whatever the last batch left checked out here (28 October: a 03:04 batch ran the
+			# pre-landing script and bisected off a no-result cap). The tree is clean here (merge_batch refuses otherwise).
+			train_sync_tools
 			bash tools/dq_merge_batch.sh --lanes "$b" --no-tests --no-dm
 		else
 			# lane tests + boot only: the smoke and gameplay sets run once per batch in the integrator's gate (DQ_TRAIN_PRECHECK_SMOKE=1: per precheck as before)
+			# run master's merge_batch, not whatever the last batch left checked out here (28 October: a 03:04 batch ran the
+			# pre-landing script and bisected off a no-result cap). The tree is clean here (merge_batch refuses otherwise).
+			train_sync_tools
 			bash tools/dq_merge_batch.sh --lanes "$b" --lane-tests "$b=$tests" ${PRE_SMOKE_ARGS[@]+"${PRE_SMOKE_ARGS[@]}"} --no-dm
 		fi
 	) >"$log" 2>&1
@@ -808,6 +831,14 @@ cmd_precheck_run() {
 		[ ${#wpid[@]} -gt 0 ] || self_update
 		G fetch -q origin 2>/dev/null
 		master="$(G rev-parse origin/master 2>/dev/null)"
+		drain=0
+		if [ ${#wpid[@]} -gt 0 ] && self_update_pending; then
+			drain=1
+			[ "${drain_note:-0}" = 1 ] || tlog "prechecker: master changed the train scripts; no new precheck starts until the ${#wpid[@]} running finish, then it re-execs onto them"
+			drain_note=1
+		else
+			drain_note=0
+		fi
 		want=()
 		for b in $(queue_branches); do
 			f="$(qfile "$b")"; tip="$(qget "$f" tip)"
@@ -857,6 +888,7 @@ cmd_precheck_run() {
 			want=("${cheap[@]+"${cheap[@]}"}" "${dear[@]+"${dear[@]}"}")
 		fi
 		for b in "${want[@]+"${want[@]}"}"; do
+			[ "$drain" = 0 ] || break
 			# A light lane (docs, tools: cheap checks, no compile) has its own worker slot "L": it never waits behind the heavy prechecks (21 minutes on 27 October)
 			# and the free-RAM floor does not apply to it. Heavy lanes use the PRE_WORKERS slots as before.
 			local is_l=0 hv=${#wpid[@]}
@@ -997,6 +1029,14 @@ smoke_due() { # <batch size>: 0 when this proof landing runs the sets
 	[ "$1" -ge "$at" ] || [ $((k + 1)) -ge "$every" ]
 }
 
+train_sync_tools() { # in a train worktree: detach onto the fetched origin/master so its tools are master's (logged when they moved)
+	local before after
+	before="$(git rev-parse -q --verify HEAD 2>/dev/null)"
+	git fetch -q origin 2>/dev/null
+	git switch -q --detach origin/master 2>/dev/null || { echo "train: could not move $(pwd) to origin/master; running its current tools"; return 0; }
+	after="$(git rev-parse HEAD)"
+	[ "$before" = "$after" ] || echo "train: $(pwd) moved to origin/master ${after:0:10} before the batch (tools as on master)"
+}
 # ---- one cycle ------------------------------------------------------------------------------------------------------------------
 LOCK_HELD=0
 declare -A TIP_OF
@@ -1320,6 +1360,9 @@ heavy_cycle_gate() {
 		export DQ_BATCH_CACHE="$STATE/bisect.cache"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
+		# run master's merge_batch, not whatever the last batch left checked out here (28 October: a 03:04 batch ran the
+		# pre-landing script and bisected off a no-result cap). The tree is clean here (merge_batch refuses otherwise).
+		train_sync_tools
 		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" "${lane_test_args[@]}" ${smoke_args[@]+"${smoke_args[@]}"} --no-dm
 	) >"$out" 2>&1
 	rc=$?

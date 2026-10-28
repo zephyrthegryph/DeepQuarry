@@ -553,14 +553,11 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	var/share = length(port_links) ? port_conductance() / length(port_links) : 0
 	for(var/id in port_links)
 		vg_heat_edge_set(id, HEAT_PARAM_CONDUCTANCE, share)
-	var/now = temperature()
-	if(ambient && abs(now - ambient.return_temperature()) >= MATERIAL_THERMAL_RESOLUTION)
-		return TRUE
-	if(length(port_links))
-		for(var/datum/gas_mixture/air as anything in owner().material_service_gases())
-			if(air.heat_capacity() > 0 && abs(air.return_temperature() - now) >= MATERIAL_THERMAL_RESOLUTION)
-				return TRUE
-	return FALSE
+	// Heat flows while it moves the assembly: awake only if the temperature moved since the last sample. A gap to the air alone is not flow: a cell on
+	// an airless floor or in CentCom (turfs with no heat simulation, a vacuum sink) sits 290 K off its air with a link that moves nothing, and used to
+	// be polled forever (265 of the 266 awake services of an idle station were such cells). A change in the surroundings wakes it through the gas
+	// watches and environment_changed(); retiring (settle_heat()) still needs the gap to be closed (material_service_can_retire()).
+	return abs(temperature() - last_environment_temperature) >= MATERIAL_THERMAL_RESOLUTION
 
 /// At its surroundings' temperature, before it retires: what it still holds over its air's temperature goes to the air.
 /datum/material_service/proc/settle_heat()

@@ -31,6 +31,7 @@
 
 /// A floor with sealed standard air, snapshotted so the test's restore puts it back.
 /datum/unit_test/proc/gas_level_test_room()
+	restore_ambient_after() // the tests below advance world time: the Telecomms rooms cool and their vents and thermostats act, which the leak guard would blame on the test
 	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
 	TEST_ASSERT_NOTNULL(pair, "no clear floor for the gas level test")
 	var/turf/simulated/floor/T = pair[1]
@@ -68,6 +69,7 @@
 /datum/unit_test/dq_gas_level_artifact_follows_its_move
 
 /datum/unit_test/dq_gas_level_artifact_follows_its_move/Run()
+	restore_ambient_after() // the Telecomms rooms' vents and thermostats act while world time passes, which the leak guard would blame on the test
 	var/list/pair = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(pair, "no clear two-tile run for the gas level test")
 	var/turf/simulated/floor/T = pair[1]

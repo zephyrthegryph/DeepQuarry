@@ -28,7 +28,7 @@
 #      deferred instead of judged,
 #   3d. DQ_BATCH_WT2=<a second worktree of this repository> (the train sets it for a batch of prechecked lanes): the bisect gates BOTH
 #      halves at once, good+L here and good+R there (attempt_pair); L failing narrows to L, L passing grows the proved set by L and narrows
-#      to R. One attempt at a time when free RAM is under DQ_BATCH_PARALLEL_MIN_FREE_GB (16) or DQ_BATCH_PARALLEL=0.
+#      to R. One attempt at a time when free RAM is under DQ_BATCH_PARALLEL_MIN_FREE_GB (12, on MemAvailable) or DQ_BATCH_PARALLEL=0.
 #   3e. deepquarry.dme: a merge that stops on the manifest alone is resolved by merging the include sets, and an include the union merge
 #      brought back for a file one side deleted is dropped (tools/dq_dme_resolve.sh; both verified against the files on disk).
 # Machine-readable result lines at the end (tools/dq_train.sh reads them): BATCH_GOOD: <lanes>, BATCH_DEFERRED: <lanes>, BATCH_CAPPED: 1|,
@@ -274,8 +274,8 @@ attempt_pair() {
 WT2="${DQ_BATCH_WT2:-}"
 parallel_ok() {
 	[ -n "$WT2" ] && [ -e "$WT2/.git" ] && [ "${DQ_BATCH_PARALLEL:-1}" != 0 ] || return 1
-	local free_kb min_gb="${DQ_BATCH_PARALLEL_MIN_FREE_GB:-16}"
-	free_kb="$(awk '/^MemFree:/ {print $2}' /proc/meminfo 2>/dev/null)"
+	local free_kb min_gb="${DQ_BATCH_PARALLEL_MIN_FREE_GB:-12}"
+	free_kb="$(awk '/^MemAvailable:/ {a=$2} /^MemFree:/ {f=$2} END {print (a ? a : f)}' /proc/meminfo 2>/dev/null)" # MemAvailable counts the standby cache, like the prechecker
 	if [ -n "$free_kb" ] && [ "$free_kb" -lt $((min_gb * 1048576)) ]; then
 		echo "== the bisect runs one attempt at a time: $((free_kb / 1048576)) GB of RAM free (< ${min_gb} GB for a second compile session)"
 		return 1
