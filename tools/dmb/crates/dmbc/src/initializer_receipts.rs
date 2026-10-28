@@ -141,7 +141,8 @@ impl Binding {
 // These select candidates only; collisions or shifted duplicates still replay Inputs.
 pub(crate) fn fragment_locator(write: &InitializerWrite) -> Vec<u8> {
     use dm_ir::{InitializerTarget, InitializerValue};
-    let mut key = b"initializer-fragment-placement-v5".to_vec();
+    // Short version tag: this locator is a prefix of every retained initializer key.
+    let mut key = b"ifp\x06".to_vec();
     match write.target {
         InitializerTarget::ProcedureStatic(identity) => {
             key.push(0);
@@ -266,12 +267,12 @@ mod equivalence_tests {
         };
         let exact = Answer::Semantic(ResolvedMeaning::Missing);
         assert!(host.equivalent(&exact, &exact));
-        let retained = |wire_proc, engine_identity| {
+        let retained = |wire_proc, engine_identity: u128| {
             Answer::Semantic(ResolvedMeaning::RetainedProc {
                 declaring_owner: dm_ir::SymbolId::of("/datum/native"),
                 name: dm_ir::SymbolId::of("method"),
                 verb: false,
-                engine_identity,
+                engine_identity: engine_identity.into(),
                 wire_proc,
             })
         };

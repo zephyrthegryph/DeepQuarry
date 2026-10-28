@@ -34,13 +34,13 @@ fn replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection() {
     let previous = ResolvedMeaning::Member {
         owner: dm_ir::SymbolId::of("/probe"),
         name: dm_ir::SymbolId::of("value"),
-        fingerprint: 1,
+        fingerprint: 1.into(),
         data: Arc::clone(&data),
     };
     assert!(super::super::same_meaning(&previous, &previous));
     let mut current = previous.clone();
     if let ResolvedMeaning::Member { fingerprint, .. } = &mut current {
-        *fingerprint = 2;
+        *fingerprint = 2.into();
     }
     assert_ne!(current, previous);
     assert!(super::super::same_meaning(&current, &previous));

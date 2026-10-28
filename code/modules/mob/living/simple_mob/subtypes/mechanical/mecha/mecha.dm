@@ -132,11 +132,11 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
 		return
 	return OP_DECLINE
 
-/mob/living/simple_mob/mechanical/mecha/ex_act(severity)
+/mob/living/simple_mob/mechanical/mecha/blast_severity(severity)
 	if(prob(deflect_chance))
 		severity++ // This somewhat misleadingly makes it less severe.
 		deflect_sprite()
-	..(severity)
+	return severity
 
 /datum/decl/mob_organ_names/mecha
 TYPE_TABLE(/datum/decl/mob_organ_names/mecha, mob_organ_hit_zones, list("central chassis", "control module", "hydraulics", "left arm", "right arm", "left leg", "right leg", "sensor suite", "radiator", "power supply", "left equipment mount", "right equipment mount"))

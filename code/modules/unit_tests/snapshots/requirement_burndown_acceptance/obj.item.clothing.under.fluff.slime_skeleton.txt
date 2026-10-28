@@ -1,3 +1,0 @@
-fit wearer=Human: ALLOW
-equip wearer=Human: only slimes can wear this
-

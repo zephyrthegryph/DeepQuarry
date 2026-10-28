@@ -52,7 +52,7 @@
 		var/keymsg = "[C.key]"
 		if(C.is_afk())
 			keymsg += " (AFK)"
-		else if(C.holder.fakekey)
+		else if(admin_fakekey(C))
 			keymsg += " (Stealth)"
 		else if(isobserver(C.mob))
 			keymsg += " (Ghost)"

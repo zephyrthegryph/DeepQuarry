@@ -341,8 +341,8 @@ mod tests {
                     }
                     dm_ir::ResolveQuery::ResourceIn {
                         path,
-                        search_context: 1,
-                    } => dm_ir::ResolvedMeaning::Resource { path, content: 9 },
+                        search_context,
+                    } if search_context == 1 => dm_ir::ResolvedMeaning::Resource { path, content: 9.into() },
                     _ => dm_ir::ResolvedMeaning::Unsupported(query),
                 }
             }

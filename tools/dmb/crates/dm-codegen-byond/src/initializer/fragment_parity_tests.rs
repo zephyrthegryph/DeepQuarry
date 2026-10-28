@@ -21,7 +21,7 @@ impl Resolver for Host {
                 ResolvedMeaning::Member {
                     owner: SymbolId::of("/"),
                     name,
-                    fingerprint: name.bits() as u128,
+                    fingerprint: (name.bits() as u128).into(),
                     data: std::sync::Arc::new(dm_ir::DeclarationMeaning::default()),
                 }
             }

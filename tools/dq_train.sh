@@ -91,6 +91,9 @@ PRE_MIN_FREE_GB="${DQ_TRAIN_PRECHECK_MIN_FREE_GB:-16}"          # a precheck doe
 MAX_LANES_PRE="${DQ_TRAIN_MAX_LANES_PRECHECKED:-20}"            # batch size when every lane is prechecked
 WT2="${DQ_TRAIN_WT2:-E:/projects/dq-wt/train-bisect}"           # the second worktree of a parallel bisect
 PRE="$STATE/precheck"
+LIGHT_PRE="${DQ_TRAIN_LIGHT_PRECHECK:-1}"                         # light lanes are prechecked too (their cheap checks, beside the gates)
+DC_BATCH="${DQ_TRAIN_DC_BATCH:-1}"                               # DreamChecker once for all queued lanes (dc_batch_run), not once per precheck
+WT_DC="${DQ_TRAIN_DC_WT:-E:/projects/dq-wt/train-dc}"           # the DreamChecker batch's worktree
 Q="$STATE/queue"
 BOUNCED="$STATE/bounced"
 LANDED="$STATE/landed"
@@ -98,16 +101,48 @@ REPORTS="$STATE/reports"
 LOGS="$STATE/log"
 
 die() { echo "dq_train: $*" >&2; exit 1; }
-init_state() { mkdir -p "$Q" "$BOUNCED" "$LANDED" "$REPORTS" "$LOGS" "$STATE/self" "$PRE/v" "$PRE/running" "$PRE/probe" || die "cannot create $STATE"; }
+init_state() { mkdir -p "$Q" "$BOUNCED" "$LANDED" "$REPORTS" "$LOGS" "$STATE/self" "$PRE/v" "$PRE/running" "$PRE/probe" "$PRE/dc/v" "$PRE/dc/solo" || die "cannot create $STATE"; }
 now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 # Every decision goes to the log (and to stdout).
 tlog() { local line; line="$(now) train[$$]: $*"; echo "$line"; echo "$line" >>"$LOGS/train.log" 2>/dev/null || true; }
 fname() { printf '%s' "$1" | tr '/' '_'; }
 qfile() { echo "$Q/$(fname "$1").q"; }
 qget() { sed -n "s/^$2=//p" "$1" 2>/dev/null | head -n 1; }
-queue_branches() { # oldest first
-	local f
-	for f in "$Q"/*.q; do [ -e "$f" ] && printf '%s %s\n' "$(qget "$f" seq)" "$(qget "$f" branch)"; done | sort -n | awk '{print $2}'
+# Queue files are only ever replaced whole (write a temp file, rename it) and every change to one holds the queue lock, so a bounce that
+# removes a lane's file can never race an edit into a half-written one (27 October: an append after a bounce's rm left
+# perf/refresh-timer queued with no tip, tests or enqueue time). A file without seq, branch or tip is moved to malformed/ and reported.
+qlock() {
+	local i=0
+	while ! mkdir "$STATE/queue.lock" 2>/dev/null; do
+		i=$((i + 1))
+		# a holder that died mid-change leaves the lock: after 2 minutes it is stale (changes take milliseconds)
+		if [ "$i" -ge 100 ] && [ -n "$(find "$STATE/queue.lock" -maxdepth 0 -mmin +2 2>/dev/null)" ]; then rmdir "$STATE/queue.lock" 2>/dev/null; i=0; fi
+		sleep 0.1
+	done
+}
+qunlock() { rmdir "$STATE/queue.lock" 2>/dev/null; return 0; }
+q_wellformed() { [ -n "$(qget "$1" seq)" ] && [ -n "$(qget "$1" branch)" ] && [ -n "$(qget "$1" tip)" ]; }
+qedit() { # <branch> <sed args...>: change a lane's queue file in place, atomically; nothing when it is gone (never re-created)
+	local b="$1" f
+	shift
+	f="$(qfile "$b")"
+	qlock
+	if [ -f "$f" ] && q_wellformed "$f"; then sed "$@" "$f" >"$f.tmp.$$" && mv -f "$f.tmp.$$" "$f"; fi
+	rm -f "$f.tmp.$$"
+	qunlock
+}
+queue_branches() { # oldest first; a malformed entry is moved aside to malformed/ and reported, never gated
+	local f m
+	for f in "$Q"/*.q; do
+		[ -e "$f" ] || continue
+		if ! q_wellformed "$f"; then
+			m="$STATE/malformed/$(basename "$f").$(date +%Y%m%dT%H%M%S)"
+			mkdir -p "$STATE/malformed" && mv -f "$f" "$m" 2>/dev/null && \
+				tlog "WARNING: malformed queue entry $(basename "$f") (no seq, branch or tip): moved to $m and skipped; enqueue the lane again" >&2
+			continue
+		fi
+		printf '%s %s\n' "$(qget "$f" seq)" "$(qget "$f" branch)"
+	done | sort -n | awk '{print $2}'
 }
 alive() { # <msys pid> [winpid]
 	[ -n "${1:-}" ] || return 1
@@ -217,10 +252,12 @@ cmd_enqueue() {
 	fi
 	owner="${DQ_LANE_OWNER:-${USERNAME:-${USER:-unknown}}}"
 	f="$(qfile "$branch")"
-	printf 'seq=%s\nbranch=%s\ntip=%s\ntests=%s\nlight=%s\nowner=%s\nsince=%s\nattempts=0\n' "$(date +%s%N)" "$branch" "$tip" "$tests" "$light" "$owner" "$(now)" >"$f.tmp" && mv -f "$f.tmp" "$f" || die "could not write $f"
+	printf 'seq=%s\nbranch=%s\ntip=%s\ntests=%s\nlight=%s\nowner=%s\nsince=%s\nattempts=0\n' "$(date +%s%N)" "$branch" "$tip" "$tests" "$light" "$owner" "$(now)" >"$f.tmp" || die "could not write $f"
+	qlock; mv -f "$f.tmp" "$f"; qunlock
 	rm -f "$REPORTS/$(fname "$branch").md" "$BOUNCED/$(fname "$branch").q"
 	# enqueueing a tip again asks for a fresh precheck: forget this tip's verdicts and probe marks
-	find "$PRE/v" "$PRE/probe" -maxdepth 1 -type f -name "$(fname "$branch")@${tip:0:12}@*" -delete 2>/dev/null
+	find "$PRE/v" "$PRE/probe" "$PRE/dc/v" -maxdepth 1 -type f -name "$(fname "$branch")@${tip:0:12}@*" -delete 2>/dev/null
+	rm -f "$PRE/dc/solo/$(fname "$branch")"
 	tlog "enqueued $branch tip ${tip:0:10} light=$light tests=[${tests:-none}] owner=$owner ($ahead commit(s) ahead of origin/master)"
 	if [ "${DQ_TRAIN_NO_START:-0}" != 1 ]; then DQ_TRAIN_ORIGIN_REPO="$(pwd)" cmd_ensure; fi
 	echo "dq_train: $branch is queued. Release the slot now: bash tools/dq_lane_pool.sh release $branch   (the branch stays in the repository). Follow it: bash tools/dq_train.sh status"
@@ -377,10 +414,12 @@ bounce() { # <branch> <reason> [<logfile>]
 		echo "and \`bash tools/ci/check_ratchets.sh --changed-only\`, commit, and \`bash tools/dq_train.sh enqueue --tests \"...\"\` again."
 		echo "A conflict: \`bash tools/dq_merge_master.sh\` in the lane first. The cycle's full log: $LOGS/ (cycle-*.log); decisions: $LOGS/train.log."
 	} >"$rep"
+	qlock
 	if [ -f "$f" ]; then
-		{ cat "$f"; echo "bounced=$(now)"; echo "reason=$why"; echo "report=$rep"; } >"$BOUNCED/$(fname "$b").q"
+		{ cat "$f"; echo "bounced=$(now)"; echo "reason=$why"; echo "report=$rep"; } >"$BOUNCED/$(fname "$b").q.tmp.$$" && mv -f "$BOUNCED/$(fname "$b").q.tmp.$$" "$BOUNCED/$(fname "$b").q"
 		rm -f "$f"
 	fi
+	qunlock
 	tlog "BOUNCED $b: $why (report $rep)"
 }
 # A lane enqueued without --light whose change touches no DM path, compiler or build tool runs no DM world: it rides the light path
@@ -394,7 +433,7 @@ promote_light() { # <branch>
 		/\.(dm|dme|dmm|dmf|dmi|dmb|rsc)$/ || /^(maps|icons|code|interface|sound|tgui)\// || /^tools\/(dmb|build)\// { heavy = 1 }
 		END { exit heavy ? 0 : 1 }' && return 0
 	if [ "$(G rev-parse -q --verify "refs/remotes/origin/$b" 2>/dev/null)" != "$tip" ] && ! G push -q origin "$tip:refs/heads/$b" 2>/dev/null; then return 0; fi
-	sed -i "s/^light=.*/light=1/" "$f"
+	qedit "$b" -e "s/^light=.*/light=1/"
 	tlog "$b changes no DM, compiler or build tool: it rides the light path (no DM world)"
 }
 adopt_tip() { # <branch> <queued tip> <current tip>: 0 = the queue now holds the current tip; 1 = bounced (a light lane that cannot be pushed)
@@ -407,7 +446,7 @@ adopt_tip() { # <branch> <queued tip> <current tip>: 0 = the queue now holds the
 			return 1
 		fi
 	fi
-	sed -i -e "s/^tip=.*/tip=$cur/" -e "s/^attempts=.*/attempts=0/" "$f"
+	qedit "$b" -e "s/^tip=.*/tip=$cur/" -e "s/^attempts=.*/attempts=0/"
 	tlog "adopted the new tip of $b (${old:0:10} -> ${cur:0:10}): it stays queued, no bounce"
 	return 0
 }
@@ -430,12 +469,13 @@ mark_landed() { # <branch> <snapshot tip> <master sha>
 	fi
 	tlog "LANDED $b (tip ${tip:0:10}) in origin/master ${sha:0:10}"
 }
-bump_attempts() { local f n; f="$(qfile "$1")"; [ -f "$f" ] || return 0; n="$(qget "$f" attempts)"; n=$(( ${n:-0} + 1 )); sed -i "s/^attempts=.*/attempts=$n/" "$f"; }
+bump_attempts() { local f n; f="$(qfile "$1")"; [ -f "$f" ] || return 0; n="$(qget "$f" attempts)"; n=$(( ${n:-0} + 1 )); qedit "$1" -e "s/^attempts=.*/attempts=$n/"; }
 
 bump_push_refusals() { # <branch>: counts non-"master moved" push refusals in the queue file; prints the new count
 	local f n; f="$(qfile "$1")"; [ -f "$f" ] || { echo 0; return 0; }
 	n="$(qget "$f" push_refusals)"; n=$(( ${n:-0} + 1 ))
-	if grep -q '^push_refusals=' "$f"; then sed -i "s/^push_refusals=.*/push_refusals=$n/" "$f"; else echo "push_refusals=$n" >>"$f"; fi
+	# never an append: an append to a file a bounce just removed created a queue entry with nothing but this line
+	if grep -q '^push_refusals=' "$f"; then qedit "$1" -e "s/^push_refusals=.*/push_refusals=$n/"; else qedit "$1" -e "\$a push_refusals=$n"; fi
 	echo "$n"
 }
 
@@ -465,6 +505,151 @@ pre_status() { # <branch> <tip>: pass | fail | conflict | error | running | none
 pre_record() { # <branch> <tip> <master> <verdict> <secs> <log> [why]
 	local f="$PRE/v/$(pre_key "$1" "$2")@${3:0:12}"
 	printf 'branch=%s\ntip=%s\nmaster=%s\nverdict=%s\nsecs=%s\nlog=%s\nwhy=%s\nwhen=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "${7:-}" "$(now)" >"$f.tmp" && mv -f "$f.tmp" "$f"
+}
+# ---- DreamChecker for the queued lanes, in one run (27 October: one SpacemanDMM run is ~340 s and cannot check single files) --------------
+# A precheck defers DreamChecker (DQ_GATE_DC_DEFER) and records "tpass" when everything else passed. The prechecker runs DreamChecker ONCE on
+# origin/master plus every queued lane that has no DreamChecker verdict yet (dc_batch_run: tools/dq_merge_batch.sh --no-tests with
+# DQ_GATE_ONLY_DC in WT_DC; a failure bisects to the culprit lane), and a lane that changes no DreamChecker input passes at once. A tpass
+# lane with a DreamChecker pass becomes "pass" (dc_finalize); a DreamChecker failure bounces it with the log. A lane that conflicted with
+# another lane of the run, or a run that broke, is checked alone next ($PRE/dc/solo). DQ_TRAIN_DC_BATCH=0: per-precheck DreamChecker.
+dc_verdict_file() { find "$PRE/dc/v" -maxdepth 1 -type f -name "$(pre_key "$1" "$2")@*" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n 1 | cut -d' ' -f2-; }
+dc_status() { # <branch> <tip>: pass | fail | none. A verdict older than the lane's queue entry (it was enqueued again since) is none: whatever script enqueued it, a stale DreamChecker fail never bounces the new entry
+	local f w q; f="$(dc_verdict_file "$1" "$2")"
+	[ -n "$f" ] || { echo none; return 0; }
+	w="$(qget "$f" when)"; q="$(qget "$(qfile "$1")" since)"
+	if [ -n "$w" ] && [ -n "$q" ] && [[ "$w" < "$q" ]]; then echo none; else qget "$f" verdict; fi
+}
+dc_record() { # <branch> <tip> <master> <verdict> <log> <why>
+	local f="$PRE/dc/v/$(pre_key "$1" "$2")@${3:0:12}"
+	printf 'branch=%s\ntip=%s\nmaster=%s\nverdict=%s\nlog=%s\nwhy=%s\nwhen=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$(now)" >"$f.tmp" && mv -f "$f.tmp" "$f"
+}
+lane_tip_now() { G rev-parse -q --verify "refs/heads/$1^{commit}" 2>/dev/null || G rev-parse -q --verify "refs/remotes/origin/$1^{commit}" 2>/dev/null; }
+dc_needs_run() { # <tip> <master>: 0 when the lane changes something DreamChecker reads
+	G diff --name-only "$2...$1" 2>/dev/null | grep -qE '^tools/analyze/|^SpacemanDMM\.toml$' && return 0
+	[ -n "$(dc_inputs "$2...$1")" ]
+}
+dc_batch_run() { # <master> <lanes...>: one DreamChecker run on master + the lanes (a background job of the prechecker)
+	local master="$1" log good line lane why lg b
+	shift
+	ensure_wt_at "$WT_DC" || { tlog "DreamChecker batch: no worktree $WT_DC"; return 0; }
+	log="$LOGS/dcbatch-$(date +%Y%m%dT%H%M%S).log"
+	tlog "DreamChecker batch: [$*] on origin/master ${master:0:10} in $WT_DC; log $log"
+	(
+		cd "$WT_DC" || exit 99
+		export DQ_MERGE_BRANCH="train/dc" DQ_MERGE_SESSION="train-dc-$$" DQ_DREAMMAKER_GATE=0 DQ_GATE_DREAMCHECKER=1 DQ_GATE_ONLY_DC=1
+		unset DQ_BATCH_DEADLINE DQ_BATCH_CACHE DQ_BATCH_WT2 DQ_SLOT_PRIORITY DQ_GATE_DC_DEFER DQ_GATE_DC_DISJOINT
+		bash tools/dq_merge_batch.sh --lanes "$*" --no-tests --no-dm
+	) >"$log" 2>&1
+	good="$(sed -n 's/^BATCH_GOOD: //p' "$log" | tail -n 1)"
+	for b in $good; do dc_record "$b" "$(lane_tip_now "$b")" "$master" pass "$log" "passed with [$*]"; done
+	while IFS= read -r line; do
+		[ -n "$line" ] || continue
+		lane="${line%%|*}"; why="${line#*|}"; lg="${why##*|}"; why="${why%|*}"
+		case "$why" in
+			*"merge conflict"*) : >"$PRE/dc/solo/$(fname "$lane")" ;;
+			*) if [ -f "$WT_DC/$lg" ]; then lg="$WT_DC/$lg"; else lg="$log"; fi; dc_record "$lane" "$(lane_tip_now "$lane")" "$master" fail "$lg" "DreamChecker: $why" ;;
+		esac
+	done < <(sed -n 's/^BATCH_BOUNCED: //p' "$log")
+	for b in $(sed -n 's/^BATCH_LATER: //p' "$log" | tail -n 1); do : >"$PRE/dc/solo/$(fname "$b")"; done
+	# a run that judged nobody (it broke): each lane is checked alone next; a lone lane that breaks is an error, retried later
+	if [ -z "$good" ] && ! grep -q '^BATCH_BOUNCED: ' "$log"; then
+		if [ $# -eq 1 ]; then dc_record "$1" "$(lane_tip_now "$1")" "$master" error "$log" "the DreamChecker run did not finish"
+		else for b in "$@"; do : >"$PRE/dc/solo/$(fname "$b")"; done; fi
+	fi
+	tlog "DreamChecker batch done: pass=[${good:-}] (log $log)"
+	return 0
+}
+dc_finalize() { # tpass lanes whose DreamChecker verdict arrived: pass, or bounced
+	local b tip vf dv dvf
+	for b in $(queue_branches); do
+		tip="$(qget "$(qfile "$b")" tip)"
+		[ "$(pre_status "$b" "$tip")" = tpass ] || continue
+		dv="$(dc_status "$b" "$tip")"
+		vf="$(pre_verdict_file "$b" "$tip")"
+		dvf="$(dc_verdict_file "$b" "$tip")"
+		case "$dv" in
+			pass)
+				sed -i 's/^verdict=tpass$/verdict=pass/' "$vf"
+				tlog "PRECHECK pass: $b (tip ${tip:0:10}) on master $(qget "$vf" master | cut -c1-10) (DreamChecker: $(qget "$dvf" why))"
+				;;
+			fail)
+				sed -i 's/^verdict=tpass$/verdict=fail/' "$vf"
+				# the verdict carries the DreamChecker reason: a later bounce of this verdict (a raced re-enqueue) must not print an empty one
+				{ grep -v '^why=' "$vf"; printf 'why=%s\n' "$(qget "$dvf" why)"; } >"$vf.tmp" && mv -f "$vf.tmp" "$vf"
+				tlog "PRECHECK fail: $b (tip ${tip:0:10}): $(qget "$dvf" why)"
+				bounce "$b" "precheck: $(qget "$dvf" why) (DreamChecker on origin/master $(qget "$dvf" master | cut -c1-10) with the queued lanes)" "$(qget "$dvf" log)"
+				;;
+		esac
+	done
+}
+dc_pending() { # a queued lane waits for a DreamChecker verdict that a run can still give (tpass without a verdict)
+	local b tip
+	[ "$DC_BATCH" = 1 ] || return 1
+	for b in $(queue_branches); do
+		tip="$(qget "$(qfile "$b")" tip)"
+		[ "$(pre_status "$b" "$tip")" = tpass ] && [ "$(dc_status "$b" "$tip")" = none ] && return 0
+	done
+	return 1
+}
+dc_candidates() { # <master>: the queued heavy lanes that need a DreamChecker run now (a solo one alone); records no-input passes
+	local master="$1" b tip st solo=() many=()
+	for b in $(queue_branches); do
+		lane_is_light "$b" && continue
+		listed_in "$STATE/batch.lanes" "$b" && continue
+		tip="$(qget "$(qfile "$b")" tip)"
+		[ "$(lane_tip_now "$b")" = "$tip" ] || continue
+		case "$(pre_status "$b" "$tip")" in fail|conflict) continue ;; esac
+		st="$(dc_status "$b" "$tip")"
+		case "$st" in
+			none) ;;
+			error) [ -n "$(find "$(dc_verdict_file "$b" "$tip")" -mmin +"${DQ_TRAIN_PRECHECK_RETRY_MIN:-30}" 2>/dev/null)" ] || continue ;;
+			*) continue ;;
+		esac
+		if ! dc_needs_run "$tip" "$master"; then dc_record "$b" "$tip" "$master" pass "" "it changes nothing DreamChecker reads"; continue; fi
+		if [ -f "$PRE/dc/solo/$(fname "$b")" ]; then solo+=("$b"); else many+=("$b"); fi
+	done
+	if [ ${#solo[@]} -gt 0 ]; then rm -f "$PRE/dc/solo/$(fname "${solo[0]}")"; echo "${solo[0]}"; return 0; fi
+	[ ${#many[@]} -gt 0 ] && printf '%s\n' "${many[@]}" | head -n "${DQ_TRAIN_DC_BATCH_MAX:-12}"
+	return 0
+}
+# ---- light prechecks (27 October: compiler lanes ride the light path; their cargo tests made each light cycle ~10 min, ahead of every DM lane) --
+# The prechecker runs a light lane's cheap checks on its merge with master (DQ_GATE_LIGHT) beside the gates. The light cycle takes a light
+# lane once that passed (or when prechecks are off, or after the wait limit), and lands it without repeating the checks when master changed
+# nothing in the lane's areas since (light_trust: a crate, tools/<x>, or a directory; a parent area such as tools/dmb overlaps its crates).
+light_area() { awk '{ n = split($0, p, "/"); if (p[1] == "tools" && p[2] == "dmb" && p[3] == "crates" && n > 4) print p[1] "/" p[2] "/" p[3] "/" p[4]; else if (p[1] == "tools" && n > 3) print p[1] "/" p[2]; else if (p[1] == "tools" && n == 2) print $0; else if (n > 1) { sub(/\/[^\/]*$/, "", $0); print } else print "." }' | sort -u; }
+light_ready() { # <branch>: a light lane may ride now
+	local b="$1" tip st since_s
+	[ "$PRE_ON" = 1 ] && [ "$LIGHT_PRE" = 1 ] || return 0
+	tip="${TIP_OF[$b]:-$(qget "$(qfile "$b")" tip)}"
+	st="$(pre_status "$b" "$tip")"
+	[ "$st" = pass ] && return 0
+	case "$st" in fail|conflict) return 1 ;; esac
+	since_s="$(date -d "$(qget "$(qfile "$b")" since)" +%s 2>/dev/null || date +%s)"
+	[ $(( $(date +%s) - since_s )) -ge $(( PRE_WAIT_MIN * 60 )) ]
+}
+light_trust() { # <lanes...>: 0 and LIGHT_TRUST_WHY set when every lane's light precheck still holds on current origin/master
+	local b tip vf pm master la ma a m seen=""
+	LIGHT_TRUST_WHY=""
+	[ "$PRE_ON" = 1 ] && [ "$LIGHT_PRE" = 1 ] || return 1
+	master="$(G rev-parse origin/master 2>/dev/null)" || return 1
+	for b in "$@"; do
+		tip="${TIP_OF[$b]:-$(qget "$(qfile "$b")" tip)}"
+		vf="$(pre_verdict_file "$b" "$tip")"
+		[ -n "$vf" ] && [ "$(qget "$vf" verdict)" = pass ] || return 1
+		pm="$(qget "$vf" master)"
+		G merge-base --is-ancestor "$pm" "$master" 2>/dev/null || return 1
+		if [ "$pm" != "$master" ]; then
+			la="$(G diff --name-only "$master...$tip" | light_area)"
+			ma="$(G diff --name-only "$pm" "$master" | light_area)"
+			for a in $la; do for m in $ma; do
+				case "$a/" in "$m/"*) return 1 ;; esac
+				case "$m/" in "$a/"*) return 1 ;; esac
+			done; done
+		fi
+		seen="$seen $b@${pm:0:10}"
+	done
+	LIGHT_TRUST_WHY="every lane passed these checks in its light precheck (${seen# }) and master changed nothing in their areas since"
+	return 0
 }
 lane_is_light() { [ "$(qget "$(qfile "$1")" light)" = 1 ]; }
 free_ram_gb() { awk '/^MemFree:/ {print int($2 / 1048576)}' /proc/meminfo 2>/dev/null || echo 999; }
@@ -526,6 +711,7 @@ precheck_one() { # <worker n> <branch> <tip>
 	local n="$1" b="$2" tip="$3" wt="${PRE_WT_BASE}$1" master log out t0 secs good bl why lg verdict tests rc
 	t0=$(date +%s)
 	tests="$(qget "$(qfile "$b")" tests)"
+	local is_light=0; lane_is_light "$b" && is_light=1
 	printf 'branch=%s\ntip=%s\nworker=%s\npid=%s\nsince=%s\n' "$b" "$tip" "$n" "$BASHPID" "$(now)" >"$PRE/running/$(fname "$b")"
 	ensure_wt_at "$wt" || { rm -f "$PRE/running/$(fname "$b")"; pre_record "$b" "$tip" "unknown" error 0 "" "no precheck worktree $wt"; return 0; }
 	G fetch -q origin 2>/dev/null
@@ -535,9 +721,15 @@ precheck_one() { # <worker n> <branch> <tip>
 	(
 		cd "$wt" || exit 99
 		export DQ_MERGE_BRANCH="train/pre$n" DQ_MERGE_SESSION="train-pre$n-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN" DQ_GATE_DREAMCHECKER=1
+		[ "$DC_BATCH" = 1 ] && export DQ_GATE_DC_DEFER=1
 		unset DQ_BATCH_DEADLINE DQ_BATCH_CACHE DQ_BATCH_WT2 DQ_SLOT_PRIORITY
 		set -f
-		bash tools/dq_merge_batch.sh --lanes "$b" --lane-tests "$b=$tests" --no-dm
+		if [ "$is_light" = 1 ]; then
+			export DQ_GATE_LIGHT=1; unset DQ_GATE_DC_DEFER
+			bash tools/dq_merge_batch.sh --lanes "$b" --no-tests --no-dm
+		else
+			bash tools/dq_merge_batch.sh --lanes "$b" --lane-tests "$b=$tests" --no-dm
+		fi
 	) >"$log" 2>&1
 	rc=$?
 	secs=$(( $(date +%s) - t0 ))
@@ -545,6 +737,8 @@ precheck_one() { # <worker n> <branch> <tip>
 	bl="$(sed -n 's/^BATCH_BOUNCED: //p' "$log" | tail -n 1)"
 	if [[ " $good " == *" $b "* ]]; then
 		verdict=pass
+		# DreamChecker was deferred to the DreamChecker batch: the precheck passes once that verdict is in (dc_finalize)
+		[ "$DC_BATCH" = 1 ] && [ "$is_light" = 0 ] && [ "$(dc_status "$b" "$tip")" != pass ] && verdict=tpass
 	elif [ -n "$bl" ]; then
 		why="${bl#*|}"; lg="${why##*|}"; why="${why%|*}"
 		case "$why" in *"merge conflict"*) verdict=conflict ;; *) verdict=fail ;; esac
@@ -584,8 +778,11 @@ cmd_precheck_run() {
 	# old verdicts and probe marks (keyed by tips and masters long gone) are disposable
 	find "$PRE/probe" "$PRE/v" -type f -mtime +"${DQ_TRAIN_PRECHECK_KEEP_DAYS:-3}" -delete 2>/dev/null
 	declare -A wpid=() wlane=()
-	local i b tip f master want idle_rounds=0 ram_note=0
+	local i b tip f master want idle_rounds=0 ram_note=0 dcpid="" dcl=()
 	while :; do
+		# reap the DreamChecker batch, settle the lanes waiting for it
+		if [ -n "$dcpid" ] && ! kill -0 "$dcpid" 2>/dev/null; then wait "$dcpid" 2>/dev/null; dcpid=""; fi
+		[ "$DC_BATCH" = 1 ] && dc_finalize
 		# reap finished workers
 		for i in "${!wpid[@]}"; do
 			if ! kill -0 "${wpid[$i]}" 2>/dev/null; then wait "${wpid[$i]}" 2>/dev/null; unset "wpid[$i]" "wlane[$i]"; fi
@@ -601,8 +798,9 @@ cmd_precheck_run() {
 		want=()
 		for b in $(queue_branches); do
 			f="$(qfile "$b")"; tip="$(qget "$f" tip)"
-			lane_is_light "$b" && continue
+			lane_is_light "$b" && [ "$LIGHT_PRE" != 1 ] && continue
 			listed_in "$STATE/batch.lanes" "$b" && continue
+			listed_in "$STATE/light.lanes" "$b" && continue
 			listed_in "$STATE/bisect.lanes" "$b" && continue
 			case "$(pre_status "$b" "$tip")" in
 				none) ;;
@@ -624,7 +822,13 @@ cmd_precheck_run() {
 			for i in "${!wlane[@]}"; do [ "${wlane[$i]}" = "$b" ] && running_it=1; done
 			[ "$running_it" = 1 ] || want+=("$b")
 		done
-		if [ ${#want[@]} -eq 0 ] && [ ${#wpid[@]} -eq 0 ]; then
+		# the DreamChecker batch: one run at a time, for every queued lane still without a verdict (beside the prechecks)
+		if [ "$DC_BATCH" = 1 ] && [ -z "$dcpid" ]; then
+			mapfile -t dcl < <(dc_candidates "$master")
+			if [ ${#dcl[@]} -gt 0 ] && [ -n "${dcl[0]}" ] && [ "$(free_ram_gb)" -ge "$PRE_MIN_FREE_GB" ]; then dc_batch_run "$master" "${dcl[@]}" & dcpid=$!; fi
+			dc_finalize
+		fi
+		if [ ${#want[@]} -eq 0 ] && [ ${#wpid[@]} -eq 0 ] && [ -z "$dcpid" ] && ! dc_pending; then
 			idle_rounds=$((idle_rounds + 1))
 			if [ "$idle_rounds" -ge "${DQ_TRAIN_PRECHECK_IDLE_ROUNDS:-2}" ]; then tlog "prechecker: nothing to precheck; exits"; exit 0; fi
 		else
@@ -632,7 +836,7 @@ cmd_precheck_run() {
 		fi
 		# start workers: cheap prechecks first (a lane that changes no DM reuses DreamChecker's verdict and patches nothing in the compile),
 		# then queue order; at most PRE_WORKERS at once, never below the free-RAM floor
-		if [ ${#want[@]} -gt 1 ] && [ ${#wpid[@]} -lt "$PRE_WORKERS" ]; then
+		if [ ${#want[@]} -gt 1 ] && [ ${#wpid[@]} -le "$PRE_WORKERS" ]; then
 			local cheap=() dear=()
 			for b in "${want[@]}"; do
 				if G diff --name-only "origin/master...$(qget "$(qfile "$b")" tip)" 2>/dev/null | grep -qE '^(code|maps|interface)/|\.dme$|\.dmm$'; then dear+=("$b"); else cheap+=("$b"); fi
@@ -640,7 +844,19 @@ cmd_precheck_run() {
 			want=("${cheap[@]+"${cheap[@]}"}" "${dear[@]+"${dear[@]}"}")
 		fi
 		for b in "${want[@]+"${want[@]}"}"; do
-			[ ${#wpid[@]} -lt "$PRE_WORKERS" ] || break
+			# A light lane (docs, tools: cheap checks, no compile) has its own worker slot "L": it never waits behind the heavy prechecks (21 minutes on 27 October)
+			# and the free-RAM floor does not apply to it. Heavy lanes use the PRE_WORKERS slots as before.
+			local is_l=0 hv=${#wpid[@]}
+			lane_is_light "$b" && is_l=1
+			[ -z "${wpid[L]:-}" ] || hv=$((hv - 1))
+			if [ "$is_l" = 1 ]; then
+				[ -z "${wpid[L]:-}" ] || continue
+				listed_in "$STATE/batch.lanes" "$b" && continue
+				precheck_one L "$b" "$(qget "$(qfile "$b")" tip)" &
+				wpid[L]=$!; wlane[L]="$b"
+				continue
+			fi
+			[ "$hv" -lt "$PRE_WORKERS" ] || break
 			if [ "$(free_ram_gb)" -lt "$PRE_MIN_FREE_GB" ]; then
 				[ "$ram_note" = 1 ] || tlog "prechecker: waiting: $(free_ram_gb) GB of RAM free (< $PRE_MIN_FREE_GB GB); no new precheck starts"
 				ram_note=1
@@ -652,8 +868,10 @@ cmd_precheck_run() {
 			precheck_one "$i" "$b" "$(qget "$(qfile "$b")" tip)" &
 			wpid[$i]=$!; wlane[$i]="$b"
 		done
-		[ "${DQ_TRAIN_ONCE:-0}" = 1 ] && [ ${#wpid[@]} -eq 0 ] && [ ${#want[@]} -eq 0 ] && exit 0
-		if [ ${#wpid[@]} -gt 0 ]; then
+		[ "${DQ_TRAIN_ONCE:-0}" = 1 ] && [ ${#wpid[@]} -eq 0 ] && [ ${#want[@]} -eq 0 ] && [ -z "$dcpid" ] && ! dc_pending && exit 0
+		if [ -n "$dcpid" ] && [ ${#wpid[@]} -eq 0 ]; then
+			local w=0; while [ "$w" -lt "${DQ_TRAIN_PRECHECK_POLL_SEC:-60}" ] && kill -0 "$dcpid" 2>/dev/null; do sleep 2; w=$((w + 2)); done
+		elif [ ${#wpid[@]} -gt 0 ]; then
 			# wake when a worker ends, at most DQ_TRAIN_PRECHECK_POLL_SEC later (new lanes are looked at then)
 			local w=0; while [ "$w" -lt "${DQ_TRAIN_PRECHECK_POLL_SEC:-60}" ]; do sleep 2; w=$((w + 2)); for i in "${!wpid[@]}"; do kill -0 "${wpid[$i]}" 2>/dev/null || break 2; done; done
 		else
@@ -698,11 +916,11 @@ warm_train_root() { # the train compile root (merge, pre<N>) whose test build is
 	done
 	echo "$best"
 }
-dc_inputs() { # <rev range>: the DreamChecker input files it changes (what gate_dc_key hashes, less the manifest every lane touches)
-	G diff --name-only "$1" 2>/dev/null | awk '/^(doc|tools|tgui|html\/changelogs|\.github|SQL)\// || /\.md$/ || /^deepquarry\.dme$/ { next } { print }' | sort -u
+dc_inputs() { # <rev range>: the DreamChecker input files it changes (what gate_dc_key hashes, less the two include lists every lane touches: deepquarry.dme and the unit tests' _unit_tests.dm)
+	G diff --name-only "$1" 2>/dev/null | awk '/^(doc|tools|tgui|html\/changelogs|\.github|SQL)\// || /\.md$/ || /^deepquarry\.dme$/ || /^code\/modules\/unit_tests\/_unit_tests\.dm$/ { next } { print }' | sort -u
 }
 dc_disjoint() { # <lanes...>: 0 and DC_DISJOINT_WHY set when the batch may keep the lanes' DreamChecker verdicts
-	local b tip vf pm seen="" files f master
+	local b tip vf pm seen="" files f master dvf
 	DC_DISJOINT_WHY=""
 	[ "${DQ_TRAIN_DC_DISJOINT:-1}" = 1 ] || return 1
 	master="$(G rev-parse origin/master 2>/dev/null)" || return 1
@@ -712,6 +930,8 @@ dc_disjoint() { # <lanes...>: 0 and DC_DISJOINT_WHY set when the batch may keep 
 		vf="$(pre_verdict_file "$b" "$tip")"
 		[ -n "$vf" ] && [ "$(qget "$vf" verdict)" = pass ] || return 1
 		pm="$(qget "$vf" master)"
+		# the DreamChecker verdict may come from a later master (the DreamChecker batch): what changed since THAT master matters
+		dvf="$(dc_verdict_file "$b" "$tip")"; if [ -n "$dvf" ] && [ "$(qget "$dvf" verdict)" = pass ] && [ -n "$(qget "$dvf" master)" ]; then pm="$(qget "$dvf" master)"; fi
 		[ -n "$pm" ] && G merge-base --is-ancestor "$pm" "$master" 2>/dev/null || return 1
 		global_hit "$master...$tip" && return 1
 		G diff --name-only "$master...$tip" 2>/dev/null | grep -qE '^tools/analyze/|^SpacemanDMM\.toml$' && return 1
@@ -759,7 +979,7 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 	local limit b union est lane_tests
 	# Light lanes (docs, tools, Rust: no DM world, minutes) go first and alone, so they never ride, or wait for, a DM gate.
 	if [ ! -s "$STATE/bisect.lanes" ] && [ "${DQ_TRAIN_LIGHT_FIRST:-1}" = 1 ]; then
-		for b in "${VALID[@]}"; do lane_is_light "$b" && CHOSEN+=("$b"); done
+		for b in "${VALID[@]}"; do lane_is_light "$b" && light_ready "$b" && CHOSEN+=("$b"); done
 		if [ ${#CHOSEN[@]} -gt 0 ]; then BATCH_LIMIT_NOW="light first"; BATCH_EST=0; set +f; return 0; fi
 	fi
 	if [ -s "$STATE/bisect.lanes" ]; then
@@ -785,7 +1005,7 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 		local P=() U=() W=() st since_s nowt
 		nowt=$(date +%s)
 		for b in "${VALID[@]}"; do
-			if lane_is_light "$b"; then P+=("$b"); continue; fi
+			if lane_is_light "$b"; then light_ready "$b" && P+=("$b"); continue; fi
 			st="$(pre_status "$b" "${TIP_OF[$b]}")"
 			case "$st" in
 				pass) P+=("$b") ;;
@@ -914,7 +1134,10 @@ light_cycle() { # CHOSEN are all light
 	for b in "${CHOSEN[@]}"; do
 		printf 'branch=%s\ntip=%s\nowner=train\nsince=%s\n' "$b" "${TIP_OF[$b]}" "$(now)" >"$lq/$(fname "$b").q"
 	done
-	( cd "$(repo_dir)" && DQ_LANE_POOL_STATE="$lstate" DQ_MERGE_SESSION="train-light-$$" bash tools/dq_land_batch.sh run ) >"$out" 2>&1
+	local trust=""
+	if light_trust "${CHOSEN[@]}"; then trust="$LIGHT_TRUST_WHY"; tlog "light cycle: the cheap checks are not repeated: $trust"; fi
+	printf '%s\n' "${CHOSEN[@]}" >"$STATE/light.lanes"
+	( cd "$(repo_dir)" && DQ_LANE_POOL_STATE="$lstate" DQ_MERGE_SESSION="train-light-$$" DQ_LIGHT_TRUST="$trust" bash tools/dq_land_batch.sh run ) >"$out" 2>&1
 	rc=$?
 	G fetch -q origin
 	for b in "${CHOSEN[@]}"; do
@@ -935,7 +1158,7 @@ light_cycle() { # CHOSEN are all light
 			rm -f "$lq"/*.q
 		done
 	fi
-	rm -f "$lq"/*.q
+	rm -f "$lq"/*.q "$STATE/light.lanes"
 	sha="$(G rev-parse origin/master)"
 	for b in "${CHOSEN[@]}"; do
 		if [[ " ${unlanded[*]-} " == *" $b "* ]]; then
@@ -972,6 +1195,15 @@ heavy_cycle_gate() {
 	tests_union="$(printf '%s\n' $tests_union | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
 	set +f
 	if [ -z "${tests_union// /}" ]; then tests_union="dq_boot_gate"; lane_test_args+=(--tests dq_boot_gate); fi
+	# Nothing in a prechecked batch interacts (every lane's own tests skipped: no shared area with another lane or with master since its
+	# precheck, no global path): each lane passed the smoke and gameplay sets on its merge with master, and master passed them on its own.
+	# What is left to prove is that the combination compiles and boots (dq_boot_gate). DQ_TRAIN_LONE_SMOKE=1 keeps the sets.
+	local smoke_args=()
+	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_LONE_SMOKE:-0}" != 1 ] && [ "${#SKIP_TESTS[@]}" -eq "${#CHOSEN[@]}" ]; then
+		smoke_args=(--no-smoke); tests_union="dq_boot_gate"
+		case " ${lane_test_args[*]} " in *" --tests dq_boot_gate "*) ;; *) lane_test_args+=(--tests dq_boot_gate) ;; esac
+		tlog "no lane of this batch interacts with another or with master since its precheck: compile and boot only (no smoke or gameplay sets)"
+	fi
 	deadline=$(( $(date +%s) + CYCLE_MAX_MIN * 60 ))
 	local wt2_use="" deadline_use="$deadline" limit_file="$STATE/batch_limit" limit_max="$MAX_LANES"
 	if [ "${PRECHECKED_BATCH:-0}" = 1 ]; then
@@ -986,7 +1218,7 @@ heavy_cycle_gate() {
 	[ -z "$warm_root" ] || [ "$warm_root" = merge ] || tlog "compile root: the batch compiles in deepquarry-$warm_root (the train root compiled last: its daemon session is the warm one)"
 	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && dc_disjoint "${CHOSEN[@]}"; then dc_why="$DC_DISJOINT_WHY"; tlog "dreamchecker: $dc_why; the batch keeps those verdicts"; fi
 	phase "gate: ${CHOSEN[*]}"
-	tlog "heavy cycle: ${#CHOSEN[@]} lane(s) [${CHOSEN[*]}]$([ "${PRECHECKED_BATCH:-0}" = 1 ] && echo " (all prechecked; bisect to the end$([ -n "$wt2_use" ] && echo ", halves in parallel"))"), tests [$tests_union] (+ smoke set, est ~${BATCH_EST}s), test cap ${TEST_MAX_MIN} min, $([ -n "$deadline_use" ] && echo "no new attempt after $(date -u -d "@$deadline" +%H:%MZ 2>/dev/null || echo "$CYCLE_MAX_MIN min")" || echo "no cycle deadline"); log $out"
+	tlog "heavy cycle: ${#CHOSEN[@]} lane(s) [${CHOSEN[*]}]$([ "${PRECHECKED_BATCH:-0}" = 1 ] && echo " (all prechecked; bisect to the end$([ -n "$wt2_use" ] && echo ", halves in parallel"))"), tests [$tests_union] ($([ ${#smoke_args[@]} -gt 0 ] && echo "no smoke set" || echo "+ smoke set"), est ~${BATCH_EST}s), test cap ${TEST_MAX_MIN} min, $([ -n "$deadline_use" ] && echo "no new attempt after $(date -u -d "@$deadline" +%H:%MZ 2>/dev/null || echo "$CYCLE_MAX_MIN min")" || echo "no cycle deadline"); log $out"
 	for b in "${CHOSEN[@]}"; do bump_attempts "$b"; done
 	(
 		cd "$WT" || exit 99
@@ -997,12 +1229,13 @@ heavy_cycle_gate() {
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
 		export DQ_GATE_DREAMCHECKER=1
+		[ "${PRECHECKED_BATCH:-0}" != 1 ] || export DQ_GATE_CAP_MAX_MIN="${DQ_TRAIN_PRECHECKED_CAP_MIN:-20}"
 		[ -z "$dc_why" ] || export DQ_GATE_DC_DISJOINT="$dc_why"
 		[ -z "$warm_root" ] || export DQ_TRAIN_ROOT_KEY="$warm_root"
 		export DQ_BATCH_CACHE="$STATE/bisect.cache"
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
-		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" "${lane_test_args[@]}" --no-dm
+		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" "${lane_test_args[@]}" ${smoke_args[@]+"${smoke_args[@]}"} --no-dm
 	) >"$out" 2>&1
 	rc=$?
 	good="$(sed -n 's/^BATCH_GOOD: //p' "$out" | tail -n 1)"
@@ -1217,6 +1450,10 @@ cmd_status() {
 	if [ "$PRE_ON" = 1 ]; then
 		if prechecker_alive; then echo "prechecker: RUNNING pid $(lockdir_pid precheck.lock) ($PRE_WORKERS worker(s); now: $(for f in "$PRE/running"/*; do [ -e "$f" ] && printf '%s ' "$(qget "$f" branch)"; done))"
 		else echo "prechecker: not running"; fi
+	fi
+	queue_branches >/dev/null 2>&1   # moves any malformed entry aside first
+	if [ -n "$(ls "$STATE/malformed" 2>/dev/null)" ]; then
+		echo "malformed queue entries (moved aside, not gated; enqueue those lanes again): $(ls -t "$STATE/malformed" | head -n 5 | tr '\n' ' ')"
 	fi
 	echo "batch limit: $(cat "$STATE/batch_limit" 2>/dev/null || echo "$MAX_LANES (default)") lane(s) per cycle; prechecked batches: $(cat "$STATE/batch_limit_pre" 2>/dev/null || echo "$MAX_LANES_PRE (default)")"
 	echo "queue:"

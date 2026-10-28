@@ -201,11 +201,11 @@ impl DriverEvaluator<'_> {
                             .ok_or("modified resource scalar has no captured search context")?;
                         let query = ResolveQuery::ResourceIn {
                             path: SymbolId::of(path),
-                            search_context,
+                            search_context: search_context.into(),
                         };
                         match self.resolver.resolve(query) {
                         ResolvedMeaning::Resource { path, content } => {
-                            Ok(dm_ir::CapturedModifiedResource { path, content })
+                            Ok(dm_ir::CapturedModifiedResource { path, content: content.get() })
                         }
                         _ => Err(
                             "modified resource scalar has no positive captured payload identity"
@@ -510,7 +510,7 @@ impl DriverEvaluator<'_> {
                 let path = SymbolId::of(path);
                 let query = ResolveQuery::ResourceIn {
                     path,
-                    search_context,
+                    search_context: search_context.into(),
                 };
                 match self.resolver.resolve(query) {
                     ResolvedMeaning::Resource { path: found, .. } if found == path => Some(path),
@@ -704,7 +704,7 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
             .ok_or("initializer resource identity lacks captured context")?;
         match self.resolver.resolve(ResolveQuery::ResourceIn {
             path: *path,
-            search_context,
+            search_context: search_context.into(),
         }) {
             ResolvedMeaning::Resource {
                 path: found,

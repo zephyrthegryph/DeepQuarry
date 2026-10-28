@@ -219,7 +219,7 @@ mod resource_explanation_tests {
         let path = dm_ir::SymbolId::of("contract-resource.txt");
         let value = super::explained_query(dm_ir::ResolveQuery::ResourceIn {
             path,
-            search_context: u128::MAX,
+            search_context: u128::MAX.into(),
         });
         assert_eq!(
             value["ResourceIn"]["search_context"],

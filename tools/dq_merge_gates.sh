@@ -161,6 +161,24 @@ timings="data/merge-gates/$short.timings"
 rm -f "data/merge-gates/$short".{ok,ratchets.ok,dm.ok,dreamchecker.ok,analyze.ok}
 : >"$timings"
 wall_start=$(date +%s)
+# The train's light precheck (DQ_GATE_LIGHT=1): a light lane (docs, tools, Rust) is checked on its merge with master by the light batch's
+# own cheap checks, nothing else; the light cycle then lands it without repeating them (tools/dq_train.sh light_trust).
+if [ "${DQ_GATE_LIGHT:-0}" = 1 ]; then
+	t0=$(date +%s)
+	bash tools/dq_light_checks.sh origin/master HEAD; rc=$?
+	echo "light-checks $(( $(date +%s) - t0 ))s rc=$rc" >>"$timings"
+	[ "$rc" -eq 0 ] || { echo "dq_merge_gates: FAILED: light checks (tools/dq_light_checks.sh)" >&2; exit 1; }
+	echo "dq_merge_gates: light checks passed on ${short}"
+	# A compiler lane: build and publish the compiler of this merged tree now (content-addressed, tools/build/lib/dmbc_cache.ts), so the
+	# heavy gate after it lands finds it instead of rebuilding for 3-4 minutes on its critical path (27 October: prebuild-compiler 180-273 s).
+	if [ -n "$(git diff --name-only origin/master HEAD -- tools/dmb 2>/dev/null)" ] && [ "${DQ_GATE_LIGHT_PREBUILD:-1}" = 1 ]; then
+		t0=$(date +%s)
+		tools/build/build.sh dmbc >/dev/null 2>&1; rc=$?
+		echo "light-prebuild-compiler $(( $(date +%s) - t0 ))s rc=$rc" >>"$timings"
+		[ "$rc" -eq 0 ] || echo "dq_merge_gates: warning: the compiler prebuild failed (rc=$rc); the heavy gate builds it" >&2
+	fi
+	exit 0
+fi
 
 if [ "$tgui" -eq 0 ] && git rev-parse -q --verify origin/master >/dev/null; then
 	if ! git diff --quiet "$(git merge-base origin/master HEAD)" HEAD -- tgui/ ':!tgui/packages/tgui/interfaces/generated'; then tgui=1; fi
@@ -233,8 +251,9 @@ if [ -n "$lanes" ]; then
 			UNSTAMPED) unstamped+=("$(awk '{print $2}' <<<"$row")") ;;
 		esac
 	done
-	if [ ${#unstamped[@]} -gt 0 ] && [ ${#tests_arg[@]} -eq 0 ]; then
-		echo "dq_merge_gates: REFUSED: no lane-ready stamp on: ${unstamped[*]}. Run tools/dq_lane_ready.sh in the lane, or name its tests: --tests \"a b c\"" >&2
+	# --no-tests (the train's DreamChecker batch) runs no test world, so a lane's proof is the train's own precheck and a stamp decides nothing.
+	if [ ${#unstamped[@]} -gt 0 ] && [ ${#tests_arg[@]} -eq 0 ] && [ "$run_tests" -eq 1 ]; then
+		echo "dq_merge_gates: REFUSED: no test list for unstamped lane(s): ${unstamped[*]}. Name the lane's tests: --tests \"a b c\" (the train passes them from the queue record: tools/dq_train.sh enqueue --tests ...)" >&2
 		exit 2
 	fi
 fi
@@ -382,6 +401,11 @@ elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
 		dc_ok=1
 		echo "dreamchecker reused 0s" >>"$timings"
 		echo "== gates: dreamchecker reused: its inputs (key ${dc_key:0:12}) are identical to a tree that passed it ($dc_prev)"
+	elif [ "${DQ_GATE_DC_DEFER:-0}" = 1 ]; then
+		# The train's precheck: DreamChecker is judged for all queued lanes at once by the prechecker's DreamChecker batch (dq_train.sh
+		# dc_batch_run), not once per lane here. No stamp is written; the lane's precheck passes only with that verdict.
+		echo "dreamchecker deferred 0s" >>"$timings"
+		echo "== gates: dreamchecker deferred to the train's DreamChecker batch"
 	elif [ -n "${DQ_GATE_DC_DISJOINT:-}" ]; then
 		# The train's prechecked batch (tools/dq_train.sh dc_disjoint): every lane passed DreamChecker alone on its merge with master, and
 		# no two of them (nor master since the lane's precheck) change the same DreamChecker input file. Not stored as a verdict for the key.
@@ -394,6 +418,11 @@ elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
 fi
 [ "$tgui" -eq 1 ] && names+=(tgui)
 [ "$analyze_tests" -eq 1 ] && names+=(analyze_tests)
+if [ "${DQ_GATE_ONLY_DC:-0}" = 1 ]; then
+	# the train's DreamChecker batch: only DreamChecker on this combination (gen ran above); every other job belongs to the prechecks
+	only=(); for n in "${names[@]}"; do [ "$n" = dreamchecker ] && only+=(dreamchecker); done
+	names=(${only[@]+"${only[@]}"})
+fi
 echo "== gates in parallel: ${names[*]}$([ "$run_tests" -eq 1 ] && echo " (${#tests[@]} test(s): ${tests[*]:0:6}$([ ${#tests[@]} -gt 6 ] && echo ' ...'))")"
 for n in "${names[@]}"; do
 	log="data/merge-gates/$short.$n.log"
@@ -474,6 +503,26 @@ else
 	elif [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ] && dc_key="$(gate_dc_key 2>/dev/null)" && dc_prev="$(gate_verdict_has dreamchecker "$dc_key")"; then
 		dc_ok=1
 		echo "== gates: dreamchecker reused with the proof: its inputs (key ${dc_key:0:12}) passed before ($dc_prev)"
+	fi
+	# No verdict covers this tree (a proof made by a precheck that deferred DreamChecker, and no trust): run it here, never leave it to the
+	# push's full production build. gen first: the early reuse skipped it.
+	if [ "$dc_ok" -eq 0 ] && [ "$no_dm" -eq 1 ] && [ "${DQ_GATE_DREAMCHECKER:-0}" = 1 ]; then
+		echo "== gates: dreamchecker on the reused proof's tree (no verdict covers it)"
+		t0=$(date +%s)
+		tools/build/build.sh gen >/dev/null 2>&1
+		if [ -f tools/dq_machine_slots.sh ]; then
+			DQ_DREAMCHECKER=1 bash tools/dq_machine_slots.sh run dreamchecker --label "dreamchecker $short" -- tools/build/build.sh dream-checker
+		else
+			DQ_DREAMCHECKER=1 tools/build/build.sh dream-checker
+		fi >"data/merge-gates/$short.dreamchecker.log" 2>&1
+		echo "dreamchecker $(( $(date +%s) - t0 ))s rc=$?" >>"$timings"
+		if grep -q "dream-checker: passed" "data/merge-gates/$short.dreamchecker.log" && grep -q "Found 0 diagnostics" "data/merge-gates/$short.dreamchecker.log"; then
+			dc_ok=1; dc_key="$(gate_dc_key 2>/dev/null)" && gate_verdict_put dreamchecker "$dc_key" "$sha"
+		else
+			echo "dq_merge_gates: FAILED: dreamchecker (log data/merge-gates/$short.dreamchecker.log)" >&2
+			tail -n 40 "data/merge-gates/$short.dreamchecker.log" >&2
+			exit 1
+		fi
 	fi
 	echo "proof-reused 0s" >>"$timings"
 fi

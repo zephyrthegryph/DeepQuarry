@@ -19,24 +19,52 @@
 //
 //	CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
 //		setup(PROC_REF(claim_zlevel), mapload = TRUE)   // x(mapload): return INITIALIZE_HINT_QDEL when it cannot stay
+//
+// setup(PROC_REF(x), early = TRUE) is the hook that is the head of an Initialize(): the code a type ran before `..()`. It runs in phase 0
+// (InitAtom(), setup_early()), after the early children and the early params and before the Initialize() chain, so the parent's own init and
+// every form of the root see what it set. Both ways into a type's init take it: a type on the init_from_table path has no Initialize() to
+// override, and a mapper-coloured one that takes the chain still gets it first. x() takes no arguments and returns nothing. It cannot combine
+// with with_params or mapload (those run after the chain). Only for work the chain reads: an appearance that replaces the whole appearance, a
+// cache a parent reads, a list var swapped for a shared one.
+//
+//	CAPABILITIES(/turf/space)
+//		setup(PROC_REF(space_appearance), early = TRUE)   // was: /turf/space/Initialize() { space_appearance(); return ..() }
 
 /// with_params opts into the constructor-completion phase: the complete Initialize
 /// chain has returned, but keep=FALSE arguments have not been dropped yet. Ordinary
 /// setup on an opted-in holder runs after parameter drop; other holders retain
 /// their existing setup-before-drop ordering. Rejected constructors run neither phase.
 /// mapload = TRUE: the hook is x(mapload) and returns an init hint (see the head of this file).
-/proc/setup(handler, with_params = FALSE, mapload = FALSE)
+/proc/setup(handler, with_params = FALSE, mapload = FALSE, early = FALSE)
 	if(!istext(handler))
 		declare_report("setup(): the hook is PROC_REF(x), got [handler]")
 		return null
 	if(mapload && with_params)
 		declare_report("setup([handler]): mapload = TRUE cannot combine with with_params = TRUE; the constructor-completion phase cannot return an init hint")
 		return null
-	return entry_make(ENTRY_SETUP, "setup:[handler]", list("handler" = handler, "with_params" = !!with_params, "mapload" = !!mapload))
+	if(early && (with_params || mapload))
+		declare_report("setup([handler]): early = TRUE runs before the Initialize() chain and cannot combine with with_params or mapload (those run after it)")
+		return null
+	return entry_make(ENTRY_SETUP, "setup:[handler]", list("handler" = handler, "with_params" = !!with_params, "mapload" = !!mapload, "early" = !!early))
 
 /// name_prefix(prefix): the instance's name starts with `prefix` (a text, or a PROC_REF answering one) at the setup phase.
 /proc/name_prefix(prefix)
 	return entry_make(ENTRY_SETUP, "setup:name_prefix", list("prefix" = prefix))
+
+/// Phase 0 (InitAtom(), after the early children and the early params, before the Initialize() chain): the setup(early = TRUE) hooks, in
+/// declaration order, ancestors first. Returns TRUE when the type has any.
+/proc/setup_early(atom/A)
+	var/datum/lifeform_plan/P = lifeform_plan_of(A)
+	if(!P.setup_rows_early)
+		return FALSE
+	for(var/handler in P.setup_rows_early)
+		try
+			call(A, handler)()
+		catch(var/exception/e)
+			stack_trace("setup([handler], early = TRUE) on [A.type]: [e] ([e.file]:[e.line])")
+		if(QDELETED(A))
+			break
+	return TRUE
 
 /// instance -> TRUE while its setup hooks wait for Initialize() to return. A real global: atoms initialize while the globals are still being made.
 GLOBAL_REAL_VAR(list/setup_pending)

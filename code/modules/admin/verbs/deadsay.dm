@@ -7,7 +7,7 @@ ADMIN_VERB(dsay, R_HOLDER, "Dsay", "Speak to the dead.", ADMIN_CATEGORY_CHAT, ms
 		to_chat(user, span_warning("You have deadchat muted."))
 		return
 
-	var/stafftype = uppertext(user.holder.rank_names())
+	var/stafftype = uppertext(admin_rank_names(user))
 
 	msg = sanitize(msg)
 	log_admin("DSAY: [key_name(user)] : [msg]")
@@ -15,6 +15,6 @@ ADMIN_VERB(dsay, R_HOLDER, "Dsay", "Speak to the dead.", ADMIN_CATEGORY_CHAT, ms
 	if (!msg)
 		return
 
-	say_dead_direct(span_name("[stafftype]([user.holder.fakekey ? user.holder.fakekey : user.key])") + " says, " + span_message("\"[msg]\""))
+	say_dead_direct(span_name("[stafftype]([admin_fakekey(user) ? admin_fakekey(user) : user.key])") + " says, " + span_message("\"[msg]\""))
 
 	feedback_add_details("admin_verb","D") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

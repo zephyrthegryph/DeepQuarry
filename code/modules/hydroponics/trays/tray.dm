@@ -137,6 +137,7 @@ MSG_DEF_SELF(hydroponics/not_by_this, "You can't do that.")
 // A tray grows while it is not cryogenically frozen: started work whose step runs each machine interval while there is something to grow or
 // soak in, and parks on its growth timer between cycles (schedule_growth_wake()); planting, reagents and the freezer start it again.
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(movable_motion(unacidable = TRUE))
 	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	setup(PROC_REF(prepare_tray_scratch_and_connection))
@@ -194,14 +195,15 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 		SStgui.update_uis(src)
 	return OP_OK
 
-/obj/machinery/portable_atmospherics/hydroponics/attack_generic(mob/user)
+/obj/machinery/portable_atmospherics/hydroponics/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 
 	// Why did I ever think this was a good idea. TODO: move this onto the nymph mob.
 	if(istype(user,/mob/living/carbon/alien/diona))
 		var/mob/living/carbon/alien/diona/nymph = user
 
 		if(nymph.stat == DEAD || nymph.has_status(STAT_PARALYZED) || nymph.has_status(STAT_WEAKENED) || nymph.has_status(STAT_STUNNED) || nymph.restrained())
-			return
+			return OP_OK
 
 		if(weedlevel > 0)
 			nymph.reagents.add_reagent(REAGENT_ID_GLUCOSE, weedlevel)
@@ -216,7 +218,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 		else
 			act_message(nymph, src, MSG_SELF(span_notice("You roll around in %T% for a bit.")), \
 				MSG_OTHERS(span_notice(span_bold("%U%") + " rolls around in %T% for a bit.")))
-		return
+		return OP_OK
 
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 /obj/machinery/portable_atmospherics/hydroponics/var/frozen = 0

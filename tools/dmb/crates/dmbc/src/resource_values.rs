@@ -11,10 +11,10 @@ pub fn key(
 ) -> Result<dm_link::Key, ProjectionError> {
     let query = ResolveQuery::ResourceIn {
         path,
-        search_context,
+        search_context: search_context.into(),
     };
     match resolver.resolve(query) {
-        ResolvedMeaning::Resource { content, .. } => Ok(dm_link::Key::Resource(content)),
+        ResolvedMeaning::Resource { content, .. } => Ok(dm_link::Key::Resource(content.get())),
         ResolvedMeaning::Missing => Err(ProjectionError::Unsupported(
             "resource scalar has a captured negative lookup".into(),
         )),
@@ -146,10 +146,10 @@ mod tests {
             match query {
                 ResolveQuery::ResourceIn {
                     path,
-                    search_context: 7,
-                } if path == SymbolId::of("literal-name.dmi") => ResolvedMeaning::Resource {
+                    search_context,
+                } if search_context == 7 && path == SymbolId::of("literal-name.dmi") => ResolvedMeaning::Resource {
                     path: SymbolId::of("icons/gen/actual.dmi"),
-                    content: 42,
+                    content: 42.into(),
                 },
                 _ => ResolvedMeaning::Unsupported(query),
             }

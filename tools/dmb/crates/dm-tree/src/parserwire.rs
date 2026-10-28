@@ -9,7 +9,9 @@ use serde::{Deserialize, Serialize};
 // Older fragments may contain semantically misplaced declaration facts.
 // Revision 11 binds malformed-signature cursors to current expanded text.
 // Revision 12 distinguishes safe dot and safe colon expression selectors.
-pub(super) const VERSION: u32 = 12;
+// Revision 13 stores the payload deflated: it is retained once per declaration chunk by the fragment memo and the
+// expansion record, and the encoded AST is highly repetitive.
+pub(super) const VERSION: u32 = 13;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -120,7 +122,37 @@ fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
             .collect::<Option<_>>()?,
     })
 }
+/// CPU time and call counts of the payload codec per request (`DMB_TIMINGS_DETAIL=1`).
+static DEFLATE: dm_profile::Accumulator = dm_profile::Accumulator::new("parserwire.deflate");
+static INFLATE: dm_profile::Accumulator = dm_profile::Accumulator::new("parserwire.inflate");
+fn deflate(raw: &[u8]) -> Result<Vec<u8>, String> {
+    use std::io::Write;
+    let _timed = DEFLATE.time();
+    let mut encoder = flate2::write::DeflateEncoder::new(
+        Vec::with_capacity(raw.len() / 3 + 16),
+        flate2::Compression::fast(),
+    );
+    encoder.write_all(raw).map_err(|error| error.to_string())?;
+    let mut bytes = encoder.finish().map_err(|error| error.to_string())?;
+    bytes.shrink_to_fit();
+    Ok(bytes)
+}
+fn inflate(bytes: &[u8]) -> Option<Vec<u8>> {
+    use std::io::Read;
+    let _timed = INFLATE.time();
+    let mut raw = Vec::with_capacity(bytes.len().saturating_mul(3));
+    flate2::read::DeflateDecoder::new(bytes).read_to_end(&mut raw).ok()?;
+    Some(raw)
+}
 pub(super) fn encode_with_facts(
+    items: &[Item],
+    errors: &[Diagnostic],
+    offset: usize,
+    facts: Option<Vec<u8>>,
+) -> Result<Vec<u8>, String> {
+    deflate(&encode_raw(items, errors, offset, facts)?)
+}
+fn encode_raw(
     items: &[Item],
     errors: &[Diagnostic],
     offset: usize,
@@ -153,7 +185,8 @@ pub(super) fn encode_with_facts(
 }
 type DecodedFacts = (Vec<Item>, Vec<Diagnostic>, Option<Vec<u8>>);
 pub(super) fn decode_with_facts(bytes: &[u8], source: &str) -> Option<DecodedFacts> {
-    let payload: Payload = dm_wire::decode(VERSION, bytes, bytes.len()).ok()?;
+    let raw = inflate(bytes)?;
+    let payload: Payload = dm_wire::decode(VERSION, &raw, raw.len()).ok()?;
     if payload.version != VERSION {
         return None;
     }
@@ -200,8 +233,9 @@ mod tests {
             message: "preserved diagnostic".into(),
         }];
         let bytes = encode_with_facts(&items, &errors, 0, Some(vec![1, 2, 3])).unwrap();
-        let owned: Payload = dm_wire::decode(VERSION, &bytes, bytes.len()).unwrap();
-        assert_eq!(bytes, dm_wire::encode(VERSION, &owned).unwrap());
+        let raw = inflate(&bytes).unwrap();
+        let owned: Payload = dm_wire::decode(VERSION, &raw, raw.len()).unwrap();
+        assert_eq!(raw, dm_wire::encode(VERSION, &owned).unwrap());
         let (decoded, diagnostics, facts) = decode_with_facts(&bytes, source).unwrap();
         assert_eq!(decoded, items);
         assert_eq!(diagnostics, errors);
@@ -214,7 +248,9 @@ mod tests {
         let ast = dm_syntax::parse_declaration_skeleton(source);
         let items = super::super::compact_declarations(ast.items, 0);
         let current = encode_with_facts(&items, &[], 0, None).unwrap();
-        let mut previous: Payload = dm_wire::decode(VERSION, &current, current.len()).unwrap();
+        let current_raw = inflate(&current).unwrap();
+        let mut previous: Payload =
+            dm_wire::decode(VERSION, &current_raw, current_raw.len()).unwrap();
         previous.version = PREVIOUS_VERSION;
         let old_wire = dm_wire::encode(PREVIOUS_VERSION, &previous).unwrap();
         assert!(decode_with_facts(&old_wire, source).is_none());

@@ -98,7 +98,7 @@ CAPABILITIES(/datum/view_variables_panel)
 		data["coords"] = null
 
 	// Marker flags.
-	var/datum/admins/holder = owner() ? owner().holder : null
+	var/datum/admins/holder = owner() ? admin_holder_of(owner()) : null
 	var/datum/thing_datum = is_listy ? null : thing
 	data["marked"] = (holder && holder.marked_datum() == thing)
 	data["tagged_index"] = (holder && LAZYFIND(holder.tagged_datums, thing)) || 0

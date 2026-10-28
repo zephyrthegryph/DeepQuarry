@@ -106,7 +106,7 @@
 
 /// The token `actor` holds for admin links: their own holder's, or the world's when they have no holder.
 /datum/proc/op_topic_token_held(mob/actor)
-	var/datum/admins/holder = actor?.client?.holder
+	var/datum/admins/holder = admin_holder_of(actor?.client)
 	return holder ? holder.href_token : GLOB.href_token
 
 /datum/op_topic_refused(mob/actor, key, reason, list/href_list)

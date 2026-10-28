@@ -9,7 +9,7 @@ impl Resolver for Host {
             ResolveQuery::RuntimeType(path) => ResolvedMeaning::Symbol(path),
             ResolveQuery::Resource(path) => ResolvedMeaning::Resource {
                 path,
-                content: self.resource,
+                content: self.resource.into(),
             },
             _ => ResolvedMeaning::Unsupported(q),
         }

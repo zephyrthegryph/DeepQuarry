@@ -1,3 +1,0 @@
-/obj/machinery/shower vol=200 holder=/datum/reagents water=200
-/obj/machinery/shower/dq_decl_probe vol=50 holder=/datum/reagents ethanol=50
-

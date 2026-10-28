@@ -23,7 +23,7 @@ impl Resolver for Declarations {
             M::Member {
                 owner,
                 name,
-                fingerprint: 1,
+                fingerprint: 1.into(),
                 data: Arc::new(data),
             }
         };

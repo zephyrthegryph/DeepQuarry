@@ -1083,6 +1083,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/dog_teleporter, REGISTRY_DOG_TELEPORTERS)
 	lets_go(AM)
 
 CAPABILITIES(/obj/effect/dog_teleporter)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	ref_one(nameof(target), /obj/effect/dog_teleporter)
 	op("dog_teleport", hand(), then(PROC_REF(interaction_dog_teleport)))
 
@@ -1092,9 +1093,9 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	lets_go(user)
 	return TRUE
 
-/obj/effect/dog_teleporter/attack_generic(mob/user)
-	. = ..()
-	lets_go(user)
+/obj/effect/dog_teleporter/proc/smashed_by(datum/act/hit/generic/A)
+	lets_go(A.attacker)
+	return HOOK_DECLINE
 
 /obj/effect/dog_teleporter/proc/lets_go(atom/movable/AM as mob|obj)	//Wahoo! Here we go!
 	if(reciever)
@@ -1437,11 +1438,12 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 				if(prob(5))
 					to_chat(L, span_warning("\The [src] throbs heavily around you..."))
 
-/obj/structure/auto_flesh_door/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/auto_flesh_door/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	. = ..()
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!Adjacent(user))
-		return
+		return OP_OK
 	else if(user.faction == faction)
 		SwitchState()
 	else if(!user.combat_mode)
@@ -1452,6 +1454,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% hammers on %T%!")), MSG_BLIND(span_warning("Someone hammers loudly on %T%!")))
 		playsound(src, knock_sound, 50, 0, 3)
 		set_countdown(countdown - 25)
+	return OP_OK
 
 /// Old attack_hand.
 /obj/structure/auto_flesh_door/proc/interaction_hand(datum/act/op/A, stance)

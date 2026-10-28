@@ -15,7 +15,7 @@
 	// ALLOW(sys_topic_raw_dispatch): routes forwarded links by _src_ exactly as client/Topic does, then hands them to the dispatcher.
 	switch(href_list["_src_"])
 		if("holder")
-			var/datum/admins/holder = user?.client?.holder
+			var/datum/admins/holder = admin_holder_of(user?.client)
 			if(holder)
 				holder.Topic(href_str, href_list)
 			return

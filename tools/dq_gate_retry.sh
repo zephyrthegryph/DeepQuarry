@@ -46,7 +46,9 @@ gate_cap_minutes() {
 	local n="${1:-0}" cap
 	case "$n" in '' | *[!0-9]*) n=0 ;; esac
 	cap=$(( 5 + n ))
-	[ "$cap" -gt 10 ] && cap=10
+	# the ceiling is 10 minutes; the train raises it (DQ_GATE_CAP_MAX_MIN) for a batch whose lanes already passed alone, so a loaded machine does not bounce a lane that no test failed
+	local ceil="${DQ_GATE_CAP_MAX_MIN:-10}"
+	[ "$cap" -gt "$ceil" ] && cap="$ceil"
 	echo "$cap"
 }
 

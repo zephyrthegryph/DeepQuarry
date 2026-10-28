@@ -89,7 +89,12 @@ cmd_run() {
 		done
 		[ ${#merged[@]} -gt 0 ] || { echo "dq_land_batch: nothing to merge" >&2; exit 3; }
 		sha="$(git rev-parse HEAD)"
-		bash tools/dq_light_checks.sh origin/master HEAD || { echo "dq_land_batch: the cheap checks failed; nothing was pushed" >&2; exit 1; }
+		if [ -n "${DQ_LIGHT_TRUST:-}" ]; then
+			# the batch train prechecked every lane with these same checks and master changed nothing they read since (dq_train.sh light_trust)
+			echo "== light checks: not repeated: $DQ_LIGHT_TRUST"
+		else
+			bash tools/dq_light_checks.sh origin/master HEAD || { echo "dq_land_batch: the cheap checks failed; nothing was pushed" >&2; exit 1; }
+		fi
 		git notes --ref=light-batch add -f -m "{\"ok\":true,\"commit\":\"$sha\",\"branches\":\"${merged[*]}\"}" "$sha" || exit 1
 		tips=""; for b in "${merged[@]}"; do tips="$tips origin/$b"; done
 		bash tools/dq_push_master.sh --light --expect "$tips" || exit 1

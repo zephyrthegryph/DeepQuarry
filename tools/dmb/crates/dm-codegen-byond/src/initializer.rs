@@ -568,7 +568,7 @@ mod tests {
                     ResolvedMeaning::Member {
                         owner: SymbolId::of("/"),
                         name,
-                        fingerprint: 1,
+                        fingerprint: 1.into(),
                         data: std::sync::Arc::new(dm_ir::DeclarationMeaning::default()),
                     }
                 }

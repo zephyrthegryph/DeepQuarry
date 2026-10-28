@@ -852,8 +852,8 @@ GLOBAL_VAR_INIT(login_seq, 0)
 /// The writes: nothing reads them back, so they go out without holding the gate. Every check has passed: the client is admitted.
 /client/proc/login_record_and_admit(sql_id)
 	var/admin_rank = "Player"
-	if(src.holder)
-		admin_rank = src.holder.rank_names()
+	if(admin_can(src, 0))
+		admin_rank = admin_rank_names(src)
 
 	var/sql_ckey = src.ckey
 	var/sql_ip = src.address

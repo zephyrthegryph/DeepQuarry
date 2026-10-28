@@ -14,6 +14,8 @@ pub mod builtin_names;
 pub mod header_compat;
 pub use warnings::WarningCode;
 
+mod packed_u128;
+pub use packed_u128::PackedU128;
 mod symbols;
 pub use symbols::{SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
 mod string_roster;

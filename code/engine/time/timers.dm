@@ -475,11 +475,11 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		// A timer is a dispatched call: its owner may have state_changed (dx_conventions.md §1). Its derived procs
 		// re-run; no channel is raised (refresh_dispatched()). A fire that ran nothing of the owner's (an every() whose gate
 		// skipped the run, or that only queued it: timer_fire_quiet) changed nothing to redraw: a polling every() on an idle or
-		// unpowered machine redrew it on every interval.
+		// unpowered machine redrew it on every interval. A fire that ran re-derives the rest but not the look (refresh_dispatched()).
 		var/quiet = GLOB.timer_fire_quiet
 		GLOB.timer_fire_quiet = FALSE
 		if(!quiet && !istype(E, /datum/timer_owner))
-			refresh_dispatched(E)
+			refresh_dispatched(E, TRUE) // its tracked writes marked their own outputs: no blanket redraw
 	timers_reschedule(rec)
 
 // ---------------------------------------------------------------- keyed timers

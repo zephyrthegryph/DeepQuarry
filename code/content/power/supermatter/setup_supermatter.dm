@@ -15,7 +15,7 @@
 	set desc = "Allows you to start the Supermatter engine."
 
 	if (!istype(src,/datum/admins))
-		src = usr.client.holder
+		src = admin_holder_of(usr.client)
 	if (!istype(src,/datum/admins))
 		to_chat(usr, "Error: you are not an admin!")
 		return

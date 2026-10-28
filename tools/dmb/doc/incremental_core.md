@@ -1092,3 +1092,120 @@ image: fixed-size chunks (64 KiB) interned by content in a daemon-wide weak pool
 length. Writing the output file and hashing stream over the chunks; the exact-hit path returns the chunk list. Two
 variants whose images agree on most chunks hold those chunks once. Expected: test -60..90 MB, root B -50..90 MB (root B's
 image equals root A's except for line-number debug rows).
+
+### Measured: packed queries (2) and project-relative traces (P1 follow-up) (2026-10-27, lanes `compiler/packed-queries`, `compiler/relative-traces`)
+
+Probe `bench/shared_store_probe.sh` (allocation-sites release build, fresh `DMB_CACHE_DIR`, requested live GB; root A, the A
+test variant, root B = a copy at another path with two comment lines), one run per lane. The reference figures are those of
+compiler/memory-2 above (A 5.27, test +2.66, B +1.49); they were not re-measured on the lane base.
+
+| lane | A | test variant | root B |
+|---|---|---|---|
+| memory-2 (reference) | 5.27 | +2.66 | +1.49 |
+| packed-queries | 5.14 | +2.61 | +1.47 |
+| relative-traces | 5.28 | +2.58 | +1.41 |
+
+- *Packed queries.* `ResolveQuery` 48 -> 32 bytes and `ResolvedMeaning` 80 -> 64 (`dm_ir::PackedU128`, two `u64` words, the
+  serde, hash, order and canonical bytes of the `u128` it replaces; a unit test pins the sizes). The output is byte-identical to
+  the previous compiler's (`.dmb` and `.rsc`, game and test), and `shared_store_equiv.sh` (six interleaved builds in one daemon
+  against cold references) is EQUIVALENT. Warm body edits on a quiet machine, four edits per arm, interleaved by pair:
+  4.74 s before / 5.08 s after in the first pair, 5.53 s before / 4.97 s after with the arms swapped (the second arm of a pair
+  is slower in both): equal within the noise.
+- *Relative traces.* A trace's definition origin is relative to the project directory, so root B's region rows equal root A's:
+  in the root B growth `region_memo` fell from 65 to 24 MB and `directives` from 38 to 22 MB.
+- *What the sites say is left.* Test variant (MB): `AnswerValues` 137, `region_memo` 116, `expansion` 113, `writing` (the
+  retained image) 112, `LeafProofs` 112, `RequestAnswers` 109, `directives` 88, `joined_text` 81, `leased` 69, `receipt_pool`
+  65. Root B: `RequestAnswers` 65, `joined_text` 60, `MetadataDependencies` 54, `environment` 54,
+  `assemble_procedure_rows` 49, `classification` 49, `frame_contribution` 46, `BoundRelocations` 40, `word_lists` 36.
+- *Findings that change the plan.* (a) The expansion records are already one allocation per content in `SharedRecords`
+  (`runner_host_memo.rs`); the preprocessor growth of the test variant is the per-session structures built from them (plan,
+  hydrated rows, joined text), not the records. (b) The macro environment is already a persistent map (`im::OrdMap`, segments
+  clone it), so "stop copying environments" is not a copy to remove: the cost is that the test plan builds its own maps from a
+  different start state, and the earlier seeding experiment measured that rebasing them costs more than it saves. P2 as
+  designed above (region results keyed by the definitions they read, adopted by a variant's plan without re-interpreting the
+  region) is a rewrite of plan adoption, not a patch, and is not started. (c) A slot of the answer table
+  (`RequestAnswers`: `HashMap<u128, AnswerSlot>`, 48 bytes per entry) is per session and about 65 MB per extra session; a
+  `[u64; 2]` key does not shrink it (the slot is 32 bytes), only dropping `base` (8 bytes) from the slot would, and that
+  needs the published-base set kept elsewhere.
+- *Joined text, design.* Every consumer of `ExpandedRegions::text` takes `&str` with absolute offsets (`frontend_parse.rs`
+  chunking, `frontend_grammar_roster.rs` span checks, `debug_sources.rs`, `argument_sources.rs`, `issued_arena`/`same_view`
+  as the authority of every span). A chunked text is `ChunkedText { pieces: Arc<[Piece]>, starts: Arc<[usize]> }` with
+  `slice(range) -> Cow<str>` (borrowed when the range lies in one piece, which holds for every declaration chunk that does
+  not cross an include boundary, copied otherwise), `find`, `is_char_boundary` and `same_view` over piece identity, and
+  a piece is the region output text the expansion record already holds, so the joined copy (60 to 80 MB per session) is not
+  held at all. The lexer keeps running per declaration chunk, which is already how large cold frontends lex. It touches
+  about 40 call sites and the issued-arena authority, so it lands as its own lane with the six-session contract tests; until
+  then identical joined texts of two roots can be interned like output images (saves 60 MB only for a second worktree at the
+  same commit, nothing for the test variant or for the probe's edited root B).
+
+### Receipt ledgers: measured shape and the compaction/spill design (2026-10-27, lane `compiler/receipt-design`)
+
+**Where the bytes are.** In the game session (root A, 5.28 GB requested) the read ledgers are the largest family:
+`observations::receipt_pool` 380 MB (the interned leaves, `Arc<[Observation<Q, A, D>]>`), `observations::receipt` 75 MB, and the
+receipt conversions inside `artifacts::leased` (`insert_with_owned`, `insert_qualified`: about 300 MB of the 459 attributed to
+it; the rest of `leased` is the `Arc<T>` boxes of stored values and the per-hash bucket vectors, not rosters). An
+`Observation<ResolveQuery, ResolvedMeaning, ReadDomain>` is now 88 bytes (32 query + 48 answer + domain, 8-aligned), so the
+pool holds about 4 million observations.
+
+**Facts that bound the design.**
+1. Equality of receipts is by value (`entry.reads == reads`, `ReceiptGroupPool::intern`), and the replay oracle
+   (`AnswerOracle::unchanged`) hashes the recorded answer (`answer_hash`) before comparing; the stored answer is otherwise
+   read by about 160 sites (`.answer`) in dm-codegen-byond, dm-tree and dmbc (ABI admission, driver facts, dependency index, the
+   portable disk form). So a hash-only observation is not a drop-in: those sites need the meaning.
+2. Distinct answers are far fewer than observations (most are `Missing`, `Presence`, `DeclaredType`, `Symbol`, and the same
+   `Member` rows asked by many units), but nothing shares them today: each observation owns its `ResolvedMeaning` inline.
+3. `JoinedText` cannot be freed after the parse: its `SourceText` is the same allocation `ExpandedRegions::text` holds (the pool
+   stores a clone of the view, not a copy), and the frontend keeps that text for warm re-parse, the diagnostic cursor and as the
+   authority of every span (`issued_arena`). Dropping the pool entry frees nothing.
+
+**Slice 1, compaction (answer by shared handle).** `Observation::answer` becomes a handle to an interned immutable answer:
+`Arc<ResolvedMeaning>` taken from a daemon-wide weak pool keyed by `answer_hash` and verified by value (the pattern of
+`output_pool.rs` and `AnswerValues`, which already interns the answer value per query id). An observation is then 32 + 8 + 1,
+48 bytes with padding, 40 bytes smaller, and equal answers are one allocation across ledgers. `Arc<T: Eq>` compares by pointer
+first, so receipt equality gets faster. Sites that read `.answer` keep working through `Deref` for method calls; pattern
+matches take `&*answer`. Interning happens where observations are recorded (`reads.rs` ledger `record`), which already
+computes the answer's hash for the answer table, so the cost is one pool lookup per recorded read. Expected: receipt_pool
+380 -> about 220 MB (the pool holds 40 bytes less per observation) plus the sharing of repeated `Member` and `Declaration`
+answers; measured before landing with a census of observations by answer variant and distinct count (diagnostic in
+`heap_census`), because the gain is the distinct-to-total ratio and I have not measured it.
+
+**Slice 2, spill (ledgers of idle units to disk).** A memoized unit's ledger is read only to validate that unit on a later
+request. Ledgers of units untouched for N requests are written to the existing content-addressed disk cache as one record
+(keyed by the ledger digest, payload = `portable_answer` encoding, which is already the on-disk form of these answers) and the
+resident `Receipt` is replaced by a stub of (digest, length). Rehydrate path: a validation that finds a stub reads the record
+back (the cache snapshot is memory-mapped, so a rehydrate is one lookup and decode, no I/O in the common case) and interns the
+decoded leaves again. Cost bound for a warm edit: a body edit validates the few units whose reads it can reach plus the
+carried ones by answer hash; only units whose recorded answers must be compared one by one rehydrate, so the bound is the
+number of units the edit invalidates (hundreds) times one decode of a few KB, under 20 ms, against a 5 s edit. Not started:
+it needs slice 1's census to size the stub threshold, and the equivalence run to prove a spilled unit validates exactly as a
+resident one.
+
+## Frontend memory proposals (2026-10-27, lane `perf/dmb-frontend-mem*`)
+
+Measured with the allocation-sites build run from its own target directory (the `.pdb` must sit next to the executable, or every
+site reads as unattributed). Owner shares move by about 40 MB between two probes of the same tree, so a change under that size is
+not visible in the owner table; compare `requested-live`.
+
+Landed: directive text runs, shared directive-record source, walk vector slack, expansion `Line` packing (game -234 MB, test extra
+-71 MB), then `prepared_source` viewing the original text for lines comments do not touch and releasing expansion text slack
+(game -61 MB, test extra -30 MB). Cold `.dmb` output byte-identical in both.
+
+Proposals that need a design decision, not a local edit:
+
+* **Adapter `canonical` bytes (about 60 MB, `adapter.rs` var initializers).** `MemberMetadata.canonical` is the serialized token
+  stream of the member header or initializer, kept next to the `SymbolicExpression` tokens that carry the same text. It is part of
+  the metadata's identity (`dm-ir` `declarations.rs` writes it into the canonical form, `adapter.rs` hashes it into `content`), so
+  it cannot simply be dropped. Option: derive it on demand from the tokens and the symbol table, and keep only the 128-bit
+  `content` hash; every reader of `.canonical` (dm-ir identity, `modified_instance`, `portable_meaning`) then needs the symbol
+  table at hand. Needs the owners of the metadata identity to agree on a derive-not-store rule.
+* **`MacroExpansion` repack (`trace_arena`, about 49 MB).** Each emitted line with expansions holds an `Arc<Vec<MacroExpansion>>`
+  of name `Arc`, invocation span, chain `Arc` and an optional definition origin `Arc` (about 48 bytes per trace plus the vector).
+  Replace by u32 name and chain ids into the region's `TraceArena` plus u32 spans, with the arena kept alive by the output rows.
+  Changes the `MacroExpansion` type every origin reader uses.
+* **Parse fragment payloads (about 247 MB, the largest unattributed site: `frontend_parse.rs` `Arc::from(bytes)` of the
+  `parserwire` encoding).** One `Arc<[u8]>` per declaration chunk is shared by the `FragmentRecord` and the declaration state
+  (`new_shared_source`), so compressing it in one holder saves nothing. Option: store it deflated in both with one decode in
+  `decode_with_facts`; the serialized AST is highly repetitive. Needs a warm-edit measurement before adopting (a decode per
+  reparse), and a `FRAGMENT_VERSION` bump.
+* **`joined_text` (about 60 MB)** is the memoized ordered join of every expansion output, kept deliberately so an unchanged
+  emission skips the join; it is not leaked. Dropping it trades the memory for a 60 MB copy per warm build.

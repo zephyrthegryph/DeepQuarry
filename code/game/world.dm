@@ -561,10 +561,10 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			var/list/admins = list()
 
 			for(var/client/C in GLOB.clients)
-				if(C.holder)
-					if(C.holder.fakekey)
+				if(admin_can(C, 0))
+					if(admin_fakekey(C))
 						continue
-					admins[C.key] = C.holder.rank_names()
+					admins[C.key] = admin_rank_names(C)
 				players += C.key
 				if(isliving(C.mob))
 					active++
@@ -582,8 +582,8 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			var/admins = 0
 
 			for(var/client/C in GLOB.clients)
-				if(C.holder)
-					if(C.holder.fakekey)
+				if(admin_can(C, 0))
+					if(admin_fakekey(C))
 						continue	//so stealthmins aren't revealed by the hub
 					admins++
 				s["player[n]"] = C.key

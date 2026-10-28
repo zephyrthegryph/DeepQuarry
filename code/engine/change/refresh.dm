@@ -198,16 +198,26 @@
 /// no OM channel is raised. Nothing a dispatch can change is unannounced: what it writes through setters raises
 /// its own channels. A blanket CHANGE_EXPLICIT here woke every pipeline that wakes on it (each life frame of a mob
 /// and each machine frame) once per timer, for nothing it reads.
-/proc/refresh_dispatched(datum/E)
+///
+/// `spare_draw` (a timer's fire): the look and verbs of an atom (not a mob) are not re-run. Every var a draw or a verb output reads is
+/// TRACKED (declared, or added by read-driven tracking, auto_tracked.dm), and a timer that wrote one already marked exactly that through
+/// its setter; a plain var the call wrote is read by no draw. A redraw after every fire repainted turrets, power monitors and sensors
+/// on each interval at idle (doc/rewrite/server_bench_20261027.md). The other outputs (values, periodic gate, windows, the Rust push,
+/// on_state_changed) still re-run.
+/proc/refresh_dispatched(datum/E, spare_draw = FALSE)
 	if(!E || QDELING(E) || E == GLOB.refresh_applying)
 		return
 	refresh_trace_note(E, CHANGE_EXPLICIT)
 	if(E.rel_watchers && !E.refresh_queued)
 		rel_notify_watchers(E)
+	var/mask = DEP_ALL
+	if(spare_draw && isatom(E) && !ismob(E))
+		mask = DEP_ALL & ~DEP_DRAW
+		GLOB.refresh_dispatched_draws_spared++
 	if(!refresh_wanted(E))
-		refresh_mark_owner(E, DEP_ALL, CHANGE_EXPLICIT)
+		refresh_mark_owner(E, mask, CHANGE_EXPLICIT)
 		return
-	refresh_mark(E, DEP_ALL, CHANGE_EXPLICIT)
+	refresh_mark(E, mask, CHANGE_EXPLICIT)
 
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
@@ -234,6 +244,8 @@
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// Timer fires whose owner's look was not re-run (refresh_dispatched(spare_draw)).
+GLOBAL_VAR_INIT(refresh_dispatched_draws_spared, 0)
 /// state_changed() calls on atoms still waiting for their init during a map load, answered without publishing (the boot bench reads it).
 GLOBAL_VAR_INIT(state_changed_preinit_skipped, 0)
 /// The number of the last refresh_drain() pass (the stamp of datum/refresh_pass).

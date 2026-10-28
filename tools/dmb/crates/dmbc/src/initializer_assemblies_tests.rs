@@ -14,14 +14,14 @@ impl Resolver for Host {
             ResolveQuery::GlobalVar(name) => ResolvedMeaning::Member {
                 owner: SymbolId::of("/"),
                 name,
-                fingerprint: 1,
+                fingerprint: 1.into(),
                 data: std::sync::Arc::new(dm_ir::DeclarationMeaning::default()),
             },
             ResolveQuery::DeclaredVarType { .. } => ResolvedMeaning::DeclaredType(None),
             ResolveQuery::RuntimeType(path) => ResolvedMeaning::Symbol(path),
             ResolveQuery::Resource(path) => ResolvedMeaning::Resource {
                 path,
-                content: self.0,
+                content: self.0.into(),
             },
             _ => ResolvedMeaning::Unsupported(query),
         }

@@ -103,10 +103,12 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "damage_ratchet_on_non_turf_ex_act_overrides_d5",
             "damage: ratchet on non-turf ex_act() overrides (D5)",
-            "non-turf ex_act() overrides over the ratchet. Let the blast packet land (max_integrity, armour, BOMB_PROOF); keep only orthogonal effects and chain to ..().",
+            "non-turf ex_act() overrides are banned. Let the blast packet land (max_integrity, armour, BOMB_PROOF), or take the blast with extend(/datum/act/hit/explosion, instead(then(PROC_REF(x)))) in the type's CAPABILITIES (x(datum/act/hit/explosion/A) reads A.packet.severity).",
             Files::Code,
             line(r"^/(atom|obj|mob|area)[A-Za-z0-9_/]*/ex_act\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, mob/living) start the explosion action and deliver the packet; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/modules/mob/living/living_defense.dm")]),
         Part::new(
             "damage_ratchet_on_atom_break_set_broken_overrides_d4",
             "damage: ratchet on atom_break()/set_broken() overrides (D4)",
@@ -117,10 +119,11 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "generic_hit_ratchet_on_attack_generic_overrides",
             "generic hit: ratchet on attack_generic() overrides",
-            "attack_generic() overrides over the ratchet. Take the generic hit over: extend(/datum/act/hit/generic, instead(then(PROC_REF(x)))) in the type's CAPABILITIES; HOOK_DECLINE lets the default attack land.",
+            "attack_generic() overrides are gone (banned; the /atom default stays). Take the generic hit over: extend(/datum/act/hit/generic, instead(then(PROC_REF(x)))) in the type's CAPABILITIES; HOOK_DECLINE lets the default attack land.",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/attack_generic\("),
-        ),
+        )
+        .flt(vec![drop(r"^[^:]+:\d+:/atom/proc/attack_generic\(")]),
         // Items, structures, effects and turfs (code/game/objects, code/game/turfs): the legacy forms of the items/structures
         // wave, shrink-only until each reaches zero and becomes a hard ban (tools/codemods/run_items_wave.sh, exclusions.txt).
         Part::new(

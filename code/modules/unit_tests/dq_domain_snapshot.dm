@@ -28,7 +28,3 @@
 			core.create_overmind(null, TRUE)
 		return core
 	return allocate(type, T)
-
-/// Abstract parent path of the i7 domain snapshots; each is a native pin capture (dq_conversion_pin) with its own rows directory.
-/datum/unit_test/dq_interaction_domain_snapshot
-	abstract_type = /datum/unit_test/dq_interaction_domain_snapshot

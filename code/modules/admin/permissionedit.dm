@@ -1,6 +1,6 @@
 
 ADMIN_VERB(edit_admin_permissions, R_PERMISSIONS, "Permissions Panel", "Edit admin permissions.", ADMIN_CATEGORY_SECRETS)
-	user.holder.edit_admin_permissions(PERMISSIONS_PAGE_PERMISSIONS)
+	admin_holder_of(user).edit_admin_permissions(PERMISSIONS_PAGE_PERMISSIONS)
 
 #define PERMISSIONS_LOGS_PER_PAGE 20
 /// List of all the actions you have ever been able to take in admin logs, keep in parity with the
@@ -20,7 +20,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 /// Prompt replays keep the original actor; changing owner or avatar cannot inherit an answer.
 /datum/admins/proc/permission_actor_valid(mob/user)
-	if(!user || QDELETED(user) || !user.client || owner() != user.client || user.client.holder != src) // ALLOW(check_grep): identity check that the caller holds this very admin datum
+	if(!user || QDELETED(user) || !user.client || owner() != user.client || admin_holder_of(user.client) != src)
 		return FALSE
 	return TRUE
 
@@ -273,7 +273,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(!use_db || (use_db && !legacy_only))
 		rank_names += "*New Rank*"
 	for(var/datum/admin_rank/admin_rank as anything in GLOB.admin_ranks)
-		if((admin_rank.rights & user.client.holder.can_edit_rights_flags()) != admin_rank.rights)
+		if((admin_rank.rights & admin_editable_rights(user.client)) != admin_rank.rights)
 			continue
 		if(use_db && admin_rank.source != RANK_SOURCE_DB && admin_rank.source != RANK_SOURCE_TXT)
 			continue
@@ -546,7 +546,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(IsAdminAdvancedProcCall())
 		to_chat(user, span_adminprefix("Rank Addition blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	if(user.client.holder.can_edit_rights_flags() == NONE)
+	if(admin_editable_rights(user.client) == NONE)
 		to_chat(user, span_adminprefix("You are not allowed to add any rights."), confidential = TRUE)
 		return
 
@@ -564,15 +564,15 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 	var/rights = replay_state["rights"]
 	if(isnull(rights))
-		open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = replay_state.Copy(), step_name = "rights", title = "New rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = user.client.holder.can_edit_rights_flags())
+		open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = replay_state.Copy(), step_name = "rights", title = "New rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = admin_editable_rights(user.client))
 		return
 	var/excluded_rights = replay_state["excluded_rights"]
 	if(isnull(excluded_rights))
-		open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = replay_state.Copy(), step_name = "excluded_rights", title = "New excluded rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = user.client.holder.can_edit_rights_flags())
+		open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = replay_state.Copy(), step_name = "excluded_rights", title = "New excluded rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = admin_editable_rights(user.client))
 		return
 	var/edit_rights = replay_state["edit_rights"]
 	if(isnull(edit_rights))
-		open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = replay_state.Copy(), step_name = "edit_rights", title = "New editing rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = user.client.holder.can_edit_rights_flags())
+		open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = replay_state.Copy(), step_name = "edit_rights", title = "New editing rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = admin_editable_rights(user.client))
 		return
 
 	var/use_db = FALSE
@@ -665,7 +665,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		to_chat(user, span_adminprefix("Rank Deletion blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 	for(var/datum/admin_rank/R in GLOB.admin_ranks)
-		if(R.name == admin_rank && ((R.rights & user.client.holder.can_edit_rights_flags()) != R.rights))
+		if(R.name == admin_rank && ((R.rights & admin_editable_rights(user.client)) != R.rights))
 			to_chat(user, span_adminprefix("You don't have edit rights to all the rights this rank has, rank deletion not permitted."), confidential = TRUE)
 			return
 
@@ -776,7 +776,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(target_rank.name != admin_rank) // Somehow
 		to_chat(user, span_adminprefix("Passed rank does not match target, somehow."), confidential = TRUE)
 		return
-	if((target_rank.rights & user.client.holder.can_edit_rights_flags()) != target_rank.rights)
+	if((target_rank.rights & admin_editable_rights(user.client)) != target_rank.rights)
 		to_chat(user, span_adminprefix("You don't have edit rights to all the rights this rank has, you aren't allowed to modify it."), confidential = TRUE)
 		return
 
@@ -878,7 +878,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 				return
 		var/new_flags = replay_state["flags:[what_to_edit]"]
 		if(isnull(new_flags))
-			open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = replay_state.Copy(), step_name = "flags:[what_to_edit]", title = "Editing [target_rank.name] [what_to_edit]", bitfield = "admin_flags", default = existing_flags, editable = user.client.holder.can_edit_rights_flags())
+			open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = replay_state.Copy(), step_name = "flags:[what_to_edit]", title = "Editing [target_rank.name] [what_to_edit]", bitfield = "admin_flags", default = existing_flags, editable = admin_editable_rights(user.client))
 			return
 
 		// Gotta turn it off and on again

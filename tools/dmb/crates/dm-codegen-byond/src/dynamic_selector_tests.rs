@@ -197,7 +197,7 @@ fn authored_call_return_annotation_types_nested_field_context() {
                 } if owner == self.identity.owner && name == self.identity.name => M::Member {
                     owner,
                     name,
-                    fingerprint: 1,
+                    fingerprint: 1.into(),
                     data: self.metadata.clone(),
                 },
                 Q::MethodProcedureValue {
@@ -343,7 +343,7 @@ fn authored_global_access_records_exact_root_slot_sidecar() {
                 Q::GlobalVar(actual) if actual == name => M::Member {
                     owner: root,
                     name,
-                    fingerprint: 1,
+                    fingerprint: 1.into(),
                     data: std::sync::Arc::new(Default::default()),
                 },
                 Q::VarStorage {
