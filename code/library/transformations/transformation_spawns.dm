@@ -166,7 +166,8 @@
 		var/weight = choices[i][1]
 		if(islist(weight))
 			weight = xform_pick_weight(weight)
-		weights["[i]"] = weight
+		if(weight > 0) // pickweight() counts a weight of 0 as 1, so a table with no weight is left out
+			weights["[i]"] = weight
 	var/chosen = text2num(pickweight(weights))
 	if(!chosen)
 		return null
@@ -194,7 +195,8 @@
 		var/weight = choices[i][1]
 		if(islist(weight))
 			weight = xform_pick_weight(weight)
-		weights["[i]"] = weight
+		if(weight > 0) // pickweight() counts a weight of 0 as 1, so a table with no weight is left out
+			weights["[i]"] = weight
 	var/chosen = text2num(pickweight(weights))
 	return chosen ? choices[chosen] : null
 
