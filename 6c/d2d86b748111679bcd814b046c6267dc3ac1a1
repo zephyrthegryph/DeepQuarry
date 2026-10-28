@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"6cd2d86b748111679bcd814b046c6267dc3ac1a1","ok":true,"passed":1,"failed":0,"new_failed":0,"lanes":"fix/pref-metadata-order","tests":["dq_boot_gate"],"reproof_of":"","reproof_reason":"","tests_json":"data/test-runs/20261028T164506_6cd2d86b74.json","created":"2026-10-28T16:45:28Z"}
