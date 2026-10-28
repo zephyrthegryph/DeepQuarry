@@ -11,8 +11,11 @@
 
 	var/static/tag_number = 0
 
-/datum/map_report/New(datum/parsed_map/map)
+/datum/map_report/New(datum/parsed_map/map, list/bad_paths, list/bad_keys, loadable = TRUE)
 	original_path = map.original_path || "Untitled"
+	src.bad_paths = bad_paths
+	src.bad_keys = bad_keys
+	src.loadable = loadable
 	join_registries()
 
 REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
@@ -35,16 +38,17 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 /// Returns a [/datum/map_report] if there are errors or warnings, or `FALSE` for a clean map. A report whose `loadable` is TRUE holds warnings only
 /// (unknown object paths the loader skips, stacked turfs): the map still loads. Callers refuse a map only on a report that is not loadable.
 /datum/parsed_map/proc/check_for_errors()
-	var/datum/map_report/report = new(src)
-	. = report
-
+	// The findings are gathered first: a report is made only for a map that has one (a report joins the map-report registry when it is made).
+	var/list/bad_paths = list()
+	var/list/bad_keys
+	var/loadable = TRUE
 	// build_cache will check bad paths for us
-	LAZYINITLIST(report.bad_paths); var/list/modelCache = build_cache(TRUE, report.bad_paths)
+	var/list/modelCache = build_cache(TRUE, bad_paths)
 
 	var/static/regex/area_or_turf = regex(@"/(turf|area)/")
-	for(var/path in report.bad_paths)
+	for(var/path in bad_paths)
 		if(area_or_turf.Find("[path]", 1, 1))
-			report.set_loadable(FALSE)
+			loadable = FALSE
 
 	// check for tiles with the wrong number of turfs or areas
 	for(var/key in modelCache)
@@ -62,19 +66,19 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 			areas += ispath(path, /area)
 
 		if(turfs == 0)
-			report.set_loadable(FALSE)
-			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "no turf")
+			loadable = FALSE
+			LAZYINITLIST(bad_keys); LAZYADD(bad_keys[key], "no turf")
 		else if(turfs > 1)
-			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "[turfs] stacked turfs")
+			LAZYINITLIST(bad_keys); LAZYADD(bad_keys[key], "[turfs] stacked turfs")
 
 		if(areas != 1)
-			report.set_loadable(FALSE)
-			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "[areas] areas instead of 1")
+			loadable = FALSE
+			LAZYINITLIST(bad_keys); LAZYADD(bad_keys[key], "[areas] areas instead of 1")
 
-	if(length(report.bad_paths) || length(report.bad_keys) || !report.loadable)
-		// keep the report around so it can be referenced later
-		report.tag = "mapreport_[++report.tag_number]"
-		report.set_crashed(FALSE)
-	else
-		qdel(report) // a clean map keeps no report (it joined the map-report registry when it was made)
+	if(!length(bad_paths) && !length(bad_keys) && loadable)
 		return FALSE
+	var/datum/map_report/report = new(src, bad_paths, bad_keys, loadable)
+	// keep the report around so it can be referenced later
+	report.tag = "mapreport_[++report.tag_number]"
+	report.set_crashed(FALSE)
+	return report
