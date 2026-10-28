@@ -125,6 +125,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_draw_catches_raw_write/Run()
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found) // the check counts what it finds: teardown restores the count
 	GLOB.staleness_expected = TRUE
 	var/obj/stale_lamp/L = allocate(/obj/stale_lamp)
 	refresh_flush()
