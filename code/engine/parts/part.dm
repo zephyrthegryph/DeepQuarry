@@ -595,11 +595,55 @@
 	part_name = "becomes"
 
 /// spawns(T, n): adds n of T where the holder is.
-/proc/spawns(spawn_type, n = 1)
-	return part_make(/datum/entry/part/effect/spawns, list("type" = spawn_type, "n" = n))
+/// A transformation also takes the rest (code/library/transformations/transformation_spawns.dm): `at`, `per`, `amount`, `scatter`, `inherit`, `tell` and
+/// `audit` are carried only when given, so an op's part is the same interned part as before.
+/proc/spawns(spawn_type, n = 1, at = null, per = null, amount = null, scatter = null, inherit = null, tell = null, audit = null)
+	var/list/arguments = list("type" = spawn_type, "n" = n)
+	if(!isnull(at))
+		arguments["at"] = at
+	if(!isnull(per))
+		arguments["per"] = per
+	if(!isnull(amount))
+		arguments["amount"] = amount
+	if(!isnull(scatter))
+		arguments["scatter"] = scatter
+	if(!isnull(inherit))
+		arguments["inherit"] = inherit
+	if(!isnull(tell))
+		arguments["tell"] = tell
+	if(!isnull(audit))
+		arguments["audit"] = audit
+	return part_make(/datum/entry/part/effect/spawns, arguments)
 
 /datum/entry/part/effect/spawns
 	part_name = "spawns"
+
+/// sets_off(kind, ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): XFORM_FX_SMOKE, XFORM_FX_FOAM,
+/// XFORM_FX_EXPLOSION, XFORM_FX_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
+/// (no powergaming a tiny amount); `tell` is what viewers within 5 see; `variant` is the foam kind; `divisor` scales an explosion (made / divisor) and
+/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made.
+/proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null, amount = null)
+	var/list/arguments = list("kind" = kind)
+	if(!isnull(clears))
+		arguments["clears"] = clears
+	if(!isnull(tell))
+		arguments["tell"] = tell
+	if(!isnull(sfx))
+		arguments["sfx"] = sfx
+	if(!isnull(variant))
+		arguments["variant"] = variant
+	if(!isnull(divisor))
+		arguments["divisor"] = divisor
+	if(!isnull(divisors))
+		arguments["divisors"] = divisors
+	if(!isnull(skip_in_tests))
+		arguments["skip_in_tests"] = skip_in_tests
+	if(!isnull(amount))
+		arguments["amount"] = amount
+	return part_make(/datum/entry/part/effect/sets_off, arguments)
+
+/datum/entry/part/effect/sets_off
+	part_name = "sets_off"
 
 /// opens_ui(): opens the holder's window for the actor.
 /proc/opens_ui()

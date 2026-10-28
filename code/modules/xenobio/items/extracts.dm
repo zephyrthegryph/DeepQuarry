@@ -85,24 +85,14 @@ CAPABILITIES(/transformation/chem/instant/slime)
 CAPABILITIES(/transformation/chem/instant/slime/grey_new_slime)
 	configure(transformation(name = "Slime Spawn", id = "m_grey_spawn", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/grey),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/grey_new_slime, on_reaction)))
-
-/transformation/chem/instant/slime/grey_new_slime/on_reaction(datum/reagents/holder)
-	holder.my_atom.visible_message(span_warning("Infused with phoron, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
-	new /mob/living/simple_mob/slime/xenobio(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio, 1, tell = span_warning("Infused with phoron, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 
 /transformation/chem/instant/slime/grey_monkey
 
 CAPABILITIES(/transformation/chem/instant/slime/grey_monkey)
 	configure(transformation(name = "Slime Monkey", id = "m_grey_monkey", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/grey),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/grey_monkey, on_reaction)))
-
-/transformation/chem/instant/slime/grey_monkey/on_reaction(datum/reagents/holder)
-	for(var/i = 1 to 5) // Increased number of monkey cubes from 4 to 5
-		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/reagent_containers/food/snacks/monkeycube, 5)))
 
 /transformation/chem/instant/slime/grey_slimejelly
 
@@ -128,51 +118,28 @@ CAPABILITIES(/transformation/chem/instant/slime/grey_slimejelly)
 CAPABILITIES(/transformation/chem/instant/slime/metal_materials_basic)
 	configure(transformation(name = "Slime Basic Construction Materials", id = "m_metal_basic", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/metal),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/metal_materials_basic, on_reaction)))
-
-/transformation/chem/instant/slime/metal_materials_basic/on_reaction(datum/reagents/holder)
-	for(var/i = 1 to 3)
-		var/type_to_spawn = pickweight(GLOB.xenobio_metal_materials_normal)
-		new type_to_spawn(get_turf(holder.my_atom), 10)
-	..()
+		spawns = spawns("xenobio_metal_materials_normal", 3, amount = 10)))
 
 /transformation/chem/instant/slime/metal_materials_adv
 
 CAPABILITIES(/transformation/chem/instant/slime/metal_materials_adv)
 	configure(transformation(name = "Slime Advanced Construction Materials", id = "m_metal_adv", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/metal),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/metal_materials_adv, on_reaction)))
-
-/transformation/chem/instant/slime/metal_materials_adv/on_reaction(datum/reagents/holder)
-	for(var/i = 1 to 2)
-		var/type_to_spawn = pickweight(GLOB.xenobio_metal_materials_adv)
-		new type_to_spawn(get_turf(holder.my_atom), 10)
-	..()
+		spawns = spawns("xenobio_metal_materials_adv", 2, amount = 10)))
 
 /transformation/chem/instant/slime/metal_materials_weird
 
 CAPABILITIES(/transformation/chem/instant/slime/metal_materials_weird)
 	configure(transformation(name = "Slime Weird Construction Materials", id = "m_metal_weird", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/metal),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/metal_materials_weird, on_reaction)))
-
-/transformation/chem/instant/slime/metal_materials_weird/on_reaction(datum/reagents/holder)
-	for(var/i = 1 to 3)
-		var/type_to_spawn = pickweight(GLOB.xenobio_metal_materials_weird)
-		new type_to_spawn(get_turf(holder.my_atom), 5)
-	..()
+		spawns = spawns("xenobio_metal_materials_weird", 3, amount = 5)))
 
 /transformation/chem/instant/slime/metal_materials_steel
 
 CAPABILITIES(/transformation/chem/instant/slime/metal_materials_steel)
 	configure(transformation(name = "Slime Weird Construction Materials", id = "m_metal_steel", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)),
 		made = 1, holds = subject_is(/obj/item/slime_extract/metal),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/metal_materials_steel, on_reaction)))
-
-/transformation/chem/instant/slime/metal_materials_steel/on_reaction(datum/reagents/holder)
-	new /obj/item/stack/material/steel(get_turf(holder.my_atom), 25)
-	..()
-
+		spawns = spawns(/obj/item/stack/material/steel, 1, amount = 25)))
 // ***************
 // * Blue slimes *
 // ***************
@@ -197,11 +164,7 @@ CAPABILITIES(/transformation/chem/instant/slime/blue_frostoil)
 CAPABILITIES(/transformation/chem/instant/slime/blue_stability)
 	configure(transformation(name = "Slime Stability", id = "m_blue_stability", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/blue),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/blue_stability, on_reaction)))
-
-/transformation/chem/instant/slime/blue_stability/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/stabilizer(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/stabilizer, 1)))
 
 /transformation/chem/instant/slime/blue_calm
 
@@ -260,45 +223,28 @@ CAPABILITIES(/transformation/chem/instant/slime/blue_cryotoxin)
 CAPABILITIES(/transformation/chem/instant/slime/purple_steroid)
 	configure(transformation(name = "Slime Steroid", id = "m_purple_steroid", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/purple),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/purple_steroid, on_reaction)))
-
-/transformation/chem/instant/slime/purple_steroid/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/steroid(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/steroid, 1)))
 
 /transformation/chem/instant/slime/purple_infertility
 
 CAPABILITIES(/transformation/chem/instant/slime/purple_infertility)
 	configure(transformation(name = "Slime Infetility", id = "m_purple_infertility", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/purple),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/purple_infertility, on_reaction)))
-
-/transformation/chem/instant/slime/purple_infertility/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/infertility(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/infertility, 1)))
 
 /transformation/chem/instant/slime/purple_shrink
 
 CAPABILITIES(/transformation/chem/instant/slime/purple_shrink)
 	configure(transformation(name = "Slime Shrink", id = "m_purple_shrink", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/purple),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/purple_shrink, on_reaction)))
-
-/transformation/chem/instant/slime/purple_shrink/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/shrink(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/shrink, 1)))
 
 /transformation/chem/instant/slime/purple_fertility
 
 CAPABILITIES(/transformation/chem/instant/slime/purple_fertility)
 	configure(transformation(name = "Slime Fetility", id = "m_purple_fertility", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/purple),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/purple_fertility, on_reaction)))
-
-/transformation/chem/instant/slime/purple_fertility/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/fertility(get_turf(holder.my_atom))
-	..()
-
+		spawns = spawns(/obj/item/slimepotion/fertility, 1)))
 // *****************
 // * Orange slimes *
 // *****************
@@ -382,16 +328,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_heatwave)
 CAPABILITIES(/transformation/chem/instant/slime/orange_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_orange_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/orange),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/orange_smoke, on_reaction)))
-
-/transformation/chem/instant/slime/orange_smoke/on_reaction(datum/reagents/holder)
-	var/location = get_turf(holder.my_atom)
-	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
-	S.attach(location)
-	S.set_up(holder, 120, 0, location)
-	play_sfx(location, SFX_EFFECTS_SMOKE)
-	S.start()
-	..()
+		effects = sets_off(XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 /transformation/chem/instant/slime/orange_pyrotoxin
 
@@ -431,11 +368,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_lightning)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_flashlight)
 	configure(transformation(name = "Slime Flashlight", id = "m_yellow_flashlight", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_flashlight, on_reaction)))
-
-/transformation/chem/instant/slime/yellow_flashlight/on_reaction(datum/reagents/holder)
-	new /obj/item/flashlight/slime(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/flashlight/slime, 1)))
 
 /transformation/chem/instant/slime/yellow_emp
 
@@ -456,12 +389,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_emp)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_battery)
 	configure(transformation(name = "Slime Cell", id = "m_yellow_cell", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_battery, on_reaction)))
-
-/transformation/chem/instant/slime/yellow_battery/on_reaction(datum/reagents/holder)
-	new /obj/item/cell/slime(get_turf(holder.my_atom))
-	..()
-
+		spawns = spawns(/obj/item/cell/slime, 1)))
 // ***************
 // * Gold slimes *
 // ***************
@@ -538,12 +466,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_safe_mob)
 CAPABILITIES(/transformation/chem/instant/slime/gold_materials_gold)
 	configure(transformation(name = "Slime Gold", id = "m_gold_gold", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/gold),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_materials_gold, on_reaction)))
-
-/transformation/chem/instant/slime/gold_materials_gold/on_reaction(datum/reagents/holder)
-	new /obj/item/stack/material/gold(get_turf(holder.my_atom), 10)
-	..()
-
+		spawns = spawns(/obj/item/stack/material/gold, 1, amount = 10)))
 // *****************
 // * Silver slimes *
 // *****************
@@ -562,13 +485,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_materials_gold)
 CAPABILITIES(/transformation/chem/instant/slime/silver_materials_basic)
 	configure(transformation(name = "Slime Basic Science Materials", id = "m_silver_basic", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/silver),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/silver_materials_basic, on_reaction)))
-
-/transformation/chem/instant/slime/silver_materials_basic/on_reaction(datum/reagents/holder)
-	for(var/i = 1 to 2)
-		var/type_to_spawn = pickweight(GLOB.xenobio_silver_materials_basic)
-		new type_to_spawn(get_turf(holder.my_atom), 5)
-	..()
+		spawns = spawns("xenobio_silver_materials_basic", 2, amount = 5)))
 
 /transformation/chem/instant/slime/silver_materials_adv
 
@@ -611,12 +528,7 @@ CAPABILITIES(/transformation/chem/instant/slime/silver_materials_random)
 CAPABILITIES(/transformation/chem/instant/slime/silver_materials_silver)
 	configure(transformation(name = "Slime Silver", id = "m_silver_silver", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/silver),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/silver_materials_silver, on_reaction)))
-
-/transformation/chem/instant/slime/silver_materials_silver/on_reaction(datum/reagents/holder)
-	new /obj/item/stack/material/silver(get_turf(holder.my_atom), 10)
-	..()
-
+		spawns = spawns(/obj/item/stack/material/silver, 1, amount = 10)))
 // **********************
 // * Dark Purple slimes *
 // **********************
@@ -751,12 +663,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_ice)
 CAPABILITIES(/transformation/chem/instant/slime/dark_blue_death)
 	configure(transformation(name = "Slime Death", id = "m_darkblue_death", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark_blue),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_blue_death, on_reaction)))
-
-/transformation/chem/instant/slime/dark_blue_death/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/death(get_turf(holder.my_atom))
-	..()
-
+		spawns = spawns(/obj/item/slimepotion/death, 1)))
 // **************
 // * Red slimes *
 // **************
@@ -776,11 +683,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_death)
 CAPABILITIES(/transformation/chem/instant/slime/red_mutation)
 	configure(transformation(name = "Slime Mutation", id = "m_red_mutation", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/red),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/red_mutation, on_reaction)))
-
-/transformation/chem/instant/slime/red_mutation/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/mutator(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/mutator, 1)))
 
 /transformation/chem/instant/slime/red_enrage
 
@@ -827,12 +730,7 @@ CAPABILITIES(/transformation/chem/instant/slime/red_hotsauce)
 CAPABILITIES(/transformation/chem/instant/slime/red_ferality)
 	configure(transformation(name = "Slime Ferality", id = "m_red_ferality", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/red),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/red_ferality, on_reaction)))
-
-/transformation/chem/instant/slime/red_ferality/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/ferality(get_turf(holder.my_atom))
-	..()
-
+		spawns = spawns(/obj/item/slimepotion/ferality, 1)))
 // ***************
 // * Green slime *
 // ***************
@@ -906,12 +804,7 @@ CAPABILITIES(/transformation/chem/instant/slime/green_radium)
 CAPABILITIES(/transformation/chem/instant/slime/green_uranium)
 	configure(transformation(name = "Slime Uranium", id = "m_green_uranium", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/green),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/green_uranium, on_reaction)))
-
-/transformation/chem/instant/slime/green_uranium/on_reaction(datum/reagents/holder)
-	new /obj/item/stack/material/uranium(get_turf(holder.my_atom), 10)
-	..()
-
+		spawns = spawns(/obj/item/stack/material/uranium, 1, amount = 10)))
 // ***************
 // * Pink slimes *
 // ***************
@@ -1037,23 +930,14 @@ CAPABILITIES(/transformation/chem/instant/slime/oil_explosion)
 CAPABILITIES(/transformation/chem/instant/slime/bluespace_crystals)
 	configure(transformation(name = "Slime Bluespace Crystals", id = "m_bs_crystals", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/bluespace),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_crystals, on_reaction)))
-
-/transformation/chem/instant/slime/bluespace_crystals/on_reaction(datum/reagents/holder)
-	for(var/i = 1 to 5)
-		new /obj/item/slime_crystal(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slime_crystal, 5)))
 
 /transformation/chem/instant/slime/bluespace_pouch
 
 CAPABILITIES(/transformation/chem/instant/slime/bluespace_pouch)
 	configure(transformation(name = "Slime Bluespace Pouch", id = "m_bs_pouch", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/bluespace),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_pouch, on_reaction)))
-
-/transformation/chem/instant/slime/bluespace_pouch/on_reaction(datum/reagents/holder)
-	new /obj/item/storage/backpack/holding/slime(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/storage/backpack/holding/slime, 1)))
 
 /transformation/chem/instant/slime/bluespace_chaotic_tele
 
@@ -1081,12 +965,7 @@ CAPABILITIES(/transformation/chem/instant/slime/bluespace_chaotic_tele)
 CAPABILITIES(/transformation/chem/instant/slime/bluespace_teleporter)
 	configure(transformation(name = "Slime Bluespace Teleporter", id = "m_bs_teleporter", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/bluespace),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_teleporter, on_reaction)))
-
-/transformation/chem/instant/slime/bluespace_teleporter/on_reaction(datum/reagents/holder)
-	new /obj/item/disposable_teleporter/slime(get_turf(holder.my_atom))
-	..()
-
+		spawns = spawns(/obj/item/disposable_teleporter/slime, 1)))
 // *******************
 // * Cerulean slimes *
 // *******************
@@ -1106,33 +985,21 @@ CAPABILITIES(/transformation/chem/instant/slime/bluespace_teleporter)
 CAPABILITIES(/transformation/chem/instant/slime/cerulean_enhancer)
 	configure(transformation(name = "Slime Enhancer", id = "m_cerulean_enhancer", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/cerulean),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/cerulean_enhancer, on_reaction)))
-
-/transformation/chem/instant/slime/cerulean_enhancer/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/enhancer(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/enhancer, 1)))
 
 /transformation/chem/instant/slime/cerulean_reinvigoration
 
 CAPABILITIES(/transformation/chem/instant/slime/cerulean_reinvigoration)
 	configure(transformation(name = "Slime Reinvigoration", id = "m_cerulean_reinvigoration", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/cerulean),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/cerulean_reinvigoration, on_reaction)))
-
-/transformation/chem/instant/slime/cerulean_reinvigoration/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/reinvigoration(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/reinvigoration, 1)))
 
 /transformation/chem/instant/slime/cerulean_potion_mimic
 
 CAPABILITIES(/transformation/chem/instant/slime/cerulean_potion_mimic)
 	configure(transformation(name = "Slime Potion Mimic", id = "m_cerulean_potion_mimic", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/cerulean),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/cerulean_potion_mimic, on_reaction)))
-
-/transformation/chem/instant/slime/cerulean_potion_mimic/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/mimic(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/mimic, 1)))
 
 /transformation/chem/instant/slime/cerulean_random_potion
 
@@ -1164,11 +1031,7 @@ CAPABILITIES(/transformation/chem/instant/slime/cerulean_random_potion)
 CAPABILITIES(/transformation/chem/instant/slime/amber_slimefood)
 	configure(transformation(name = "Slime Feeding", id = "m_amber_slime_food", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/amber),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/amber_slimefood, on_reaction)))
-
-/transformation/chem/instant/slime/amber_slimefood/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/feeding(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/feeding, 1)))
 
 /transformation/chem/instant/slime/amber_random_food
 
@@ -1229,11 +1092,7 @@ CAPABILITIES(/transformation/chem/instant/slime/amber_goop)
 CAPABILITIES(/transformation/chem/instant/slime/sapphire_promethean)
 	configure(transformation(name = "Slime Promethean", id = "m_sapphire_promethean", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sapphire),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/sapphire_promethean, on_reaction)))
-
-/transformation/chem/instant/slime/sapphire_promethean/on_reaction(datum/reagents/holder)
-	new /obj/item/slime_cube(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slime_cube, 1)))
 
 /transformation/chem/instant/slime/sapphire_mutation
 
@@ -1262,12 +1121,7 @@ CAPABILITIES(/transformation/chem/instant/slime/sapphire_plushies)
 CAPABILITIES(/transformation/chem/instant/slime/sapphire_sapience)
 	configure(transformation(name = "Slime Sapience", id = "m_sapphire_sapience", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sapphire),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/sapphire_sapience, on_reaction)))
-
-/transformation/chem/instant/slime/sapphire_sapience/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/sapience(get_turf(holder.my_atom))
-	..()
-
+		spawns = spawns(/obj/item/slimepotion/sapience, 1)))
 // ***************
 // * Ruby slimes *
 // ***************
@@ -1453,45 +1307,28 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_hell)
 CAPABILITIES(/transformation/chem/instant/slime/light_pink_friendship)
 	configure(transformation(name = "Slime Friendship", id = "m_lightpink_friendship", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/light_pink),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/light_pink_friendship, on_reaction)))
-
-/transformation/chem/instant/slime/light_pink_friendship/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/friendship(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/friendship, 1)))
 
 /transformation/chem/instant/slime/light_pink_loyalty
 
 CAPABILITIES(/transformation/chem/instant/slime/light_pink_loyalty)
 	configure(transformation(name = "Slime Loyalty", id = "m_lightpink_loyalty", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/light_pink),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/light_pink_loyalty, on_reaction)))
-
-/transformation/chem/instant/slime/light_pink_loyalty/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/loyalty(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/loyalty, 1)))
 
 /transformation/chem/instant/slime/light_pink_docility
 
 CAPABILITIES(/transformation/chem/instant/slime/light_pink_docility)
 	configure(transformation(name = "Slime Docility", id = "m_lightpink_docility", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/light_pink),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/light_pink_docility, on_reaction)))
-
-/transformation/chem/instant/slime/light_pink_docility/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/docility(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slimepotion/docility, 1)))
 
 /transformation/chem/instant/slime/light_pink_obedience
 
 CAPABILITIES(/transformation/chem/instant/slime/light_pink_obedience)
 	configure(transformation(name = "Slime Obedience", id = "m_lightpink_obedience", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/light_pink),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/light_pink_obedience, on_reaction)))
-
-/transformation/chem/instant/slime/light_pink_obedience/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/obedience(get_turf(holder.my_atom))
-	..()
-
+		spawns = spawns(/obj/item/slimepotion/obedience, 1)))
 // ******************
 // * Rainbow slimes *
 // ******************
@@ -1557,12 +1394,7 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_colors)
 CAPABILITIES(/transformation/chem/instant/slime/rainbow_unity)
 	configure(transformation(name = "Slime Unity", id = "m_rainbow_unity", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/rainbow),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/rainbow_unity, on_reaction)))
-
-/transformation/chem/instant/slime/rainbow_unity/on_reaction(datum/reagents/holder)
-	new /obj/item/slimepotion/unity(get_turf(holder.my_atom))
-	..()
-
+		spawns = spawns(/obj/item/slimepotion/unity, 1)))
 // Delayed extract reactions, five seconds after the extract starts to vibrate, on the
 // extract's clock (a deleted extract never goes off).
 
