@@ -169,4 +169,8 @@ check "an sccache connection failure is classified as infra" 'gate_sccache_failu
 check "a real Rust compile error is not classified as sccache infra" '! gate_sccache_failure "$tmp/sc2.log"'
 check "the gate retries without sccache and exits 95 on a second sccache failure" 'grep -q "RUSTC_WRAPPER= SCCACHE_DISABLE=1" "$here/tools/dq_merge_gates.sh" && grep -q "failed on sccache twice" "$here/tools/dq_merge_gates.sh"'
 
+# light checks: the verdigris crates test for the 32-bit target BYOND loads (byondapi-sys refuses the 64-bit host); other crates use the host
+lc_v="$(bash "$here/tools/dq_light_checks.sh" --target-args verdigris/ffi/Cargo.toml)"; lc_t="$(bash "$here/tools/dq_light_checks.sh" --target-args tools/dmb/crates/dmbc/Cargo.toml)"
+check "light checks test the verdigris crates for i686 and other crates for the host" '{ [ "$lc_v" = "--target i686-pc-windows-msvc" ] || ! uname -s | grep -qE "MINGW|MSYS|CYGWIN"; } && [ -z "$lc_t" ]'
+
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
