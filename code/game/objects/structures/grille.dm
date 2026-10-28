@@ -19,6 +19,7 @@
 	look.state("[initial(icon_state)][destroyed ? "-b" : ""]")
 
 CAPABILITIES(/obj/structure/grille)
+	on_notice(/datum/notice/atom_broken, then(PROC_REF(grille_broken)))
 	configure(obj_rules(explosion_resistance = 1))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_destroys))))
@@ -173,8 +174,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	to_chat(user, span_notice("You place the [WD] on [src]."))
 
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
-/obj/structure/grille/atom_break(damage_flag)
-	. = ..()
+/obj/structure/grille/proc/grille_broken(datum/act/A)
 	if(!destroyed)
 		set_density(FALSE)
 		set_destroyed(TRUE)

@@ -162,8 +162,7 @@
 
 // pipe affected by explosion
 // Light damage leaves broken pipe segments in place.
-/obj/structure/disposalpipe/atom_break(damage_flag)
-	. = ..()
+/obj/structure/disposalpipe/proc/pipe_broken(datum/act/A)
 	broken(1)
 
 // Heavy damage clears the pipe entirely.
@@ -174,6 +173,7 @@
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct
 CAPABILITIES(/obj/structure/disposalpipe)
+	on_notice(/datum/notice/atom_broken, then(PROC_REF(pipe_broken)))
 	configure(movable_motion(unacidable = TRUE))
 	op("use_welder", lit_welder(fuel = 0), label("Slice the pipe"), needs(req(PROC_REF(plating_refusal), silent = TRUE)), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)), on_interrupt(PROC_REF(welder_act_tool_failed)))
 

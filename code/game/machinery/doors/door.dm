@@ -59,6 +59,7 @@ MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
 CAPABILITIES(/obj/machinery/door)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(on_broken)))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(atom_shielding(announce_bands = TRUE))
 	setup(PROC_REF(settle_door_state))
@@ -393,13 +394,8 @@ CAPABILITIES(/obj/machinery/door)
 /obj/machinery/door/on_update_integrity(old_value, new_value)
 	. = ..()
 
-/obj/machinery/door/atom_break(damage_flag)
-	. = ..()
-	if(.)
-		on_broken()
-
 /// What a door does when it breaks, after the base machinery break.
-/obj/machinery/door/proc/on_broken()
+/obj/machinery/door/proc/on_broken(datum/act/A)
 	visible_message("[name] breaks!")
 
 /// The look: a shut door shows "door1", an open one "door0" (density is tracked, so a swing redraws it). Subtypes draw their own.
