@@ -205,6 +205,7 @@
 #include "dq_mob_init_forms_tests.dm"
 #include "dq_idle_cost_tests.dm"
 #include "dq_idle_cost2_tests.dm"
+#include "dq_global_guard_tests.dm"
 #include "dq_init_sweep_6_tests.dm"
 #include "dq_init_wave_4_tests.dm"
 #include "dq_mob_living_init_chain_tests.dm"

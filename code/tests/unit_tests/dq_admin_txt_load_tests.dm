@@ -2,7 +2,6 @@
 /datum/unit_test/dq_admin_txt_load
 
 /datum/unit_test/dq_admin_txt_load/Run()
-	restore_ambient_after() // test_time(5 MINUTES) below lets the world run those minutes
 	var/old_directory = global.config.directory
 	var/old_legacy = CONFIG_GET(flag/admin_legacy_system)
 	var/list/old_datums = GLOB.admin_datums.Copy()

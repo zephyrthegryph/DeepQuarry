@@ -2983,6 +2983,7 @@
 #include "code\datums\state\collapse.dm"
 #include "code\engine\state\construction.dm"
 #include "code\datums\state\construction_adapter.dm"
+#include "code\engine\state\counter.dm"
 #include "code\engine\state\derived_values.dm"
 #include "code\engine\state\field_tables.dm"
 #include "code\engine\state\lifecycle_hooks.dm"
