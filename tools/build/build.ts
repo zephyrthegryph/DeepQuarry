@@ -1990,10 +1990,10 @@ function classifyDomain(filePath: string): string {
 }
 
 /** The unit-test source files the build includes (`#include`d from
- * code/modules/unit_tests/_unit_tests.dm). A file left out of it declares
+ * code/tests/unit_tests/_unit_tests.dm). A file left out of it declares
  * types the world doesn't have, so the source scans below skip it. */
 function includedUnitTestFiles(): string[] {
-  const dir = 'code/modules/unit_tests';
+  const dir = 'code/tests/unit_tests';
   const text = fs.readFileSync(`${dir}/_unit_tests.dm`, 'utf-8');
   const files: string[] = [];
   for (const match of text.matchAll(/^\s*#include\s+"([^"]+\.dm)"/gm)) {

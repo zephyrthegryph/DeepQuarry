@@ -39,7 +39,7 @@ use super::SemHandle;
 pub const OUT_DIR: &str = "code/engine/_generated";
 
 /// The directories whose files .dme compiles only in a test build (`#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)`
-/// in code/tests/_tests.dm and code/modules/unit_tests/_unit_tests.dm).
+/// in code/tests/_tests.dm and code/tests/unit_tests/_unit_tests.dm).
 pub const TEST_ONLY_DIRS: &[&str] = &["code/tests/", "code/modules/unit_tests/"];
 
 /// The guard a generator wraps test-only declarations in.

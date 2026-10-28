@@ -266,13 +266,13 @@ usage() {
 	exit 2
 }
 
-# The .dm files the unit-test build compiles: deepquarry.dme's includes plus code/modules/unit_tests/_unit_tests.dm's (relative to that
+# The .dm files the unit-test build compiles: deepquarry.dme's includes plus code/tests/unit_tests/_unit_tests.dm's (relative to that
 # folder), as repo paths, one per line. A test type in a file nothing includes is not in the .dmb: focusing it names a test the world
 # doesn't have, which fails the run (and the boot gate) for no reason.
 included_files() {
 	{
 		awk -F'"' '/^#include "code.*\.dm"/ { print $2 }' deepquarry.dme
-		awk -F'"' '/^#include ".*\.dm"/ { print "code/modules/unit_tests/" $2 }' code/modules/unit_tests/_unit_tests.dm
+		awk -F'"' '/^#include ".*\.dm"/ { print "code/tests/unit_tests/" $2 }' code/tests/unit_tests/_unit_tests.dm
 	} | tr -d '\015' | tr '\134' '/' |
 		awk '{ n = split($0, a, "/"); k = 0; for (i = 1; i <= n; i++) { if (a[i] == "..") k--; else if (a[i] != ".") b[++k] = a[i] } o = b[1]; for (i = 2; i <= k; i++) o = o "/" b[i]; print o }'
 }

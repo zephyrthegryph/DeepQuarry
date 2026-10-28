@@ -152,7 +152,9 @@ attempt_run() {
 		# A union-merged include list can bring back an include of a file one lane deleted (28 October: _unit_tests.dm kept
 		# dq_reagents_start_snapshot.dm after tests/cut-pins removed it, and two 20-minute attempts failed to compile). Such lines are
 		# dropped, amended into the last merge commit and REPORTED, never silently.
-		dq_drop_stale_includes code/modules/unit_tests/_unit_tests.dm code/modules/unit_tests "batch" 2>&1 | tee -a "$log" >&2
+		for ut in code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm; do
+			[ -f "$ut" ] && dq_drop_stale_includes "$ut" "$(dirname "$ut")" "batch" 2>&1 | tee -a "$log" >&2
+		done
 		dq_drop_stale_includes deepquarry.dme . "batch" 2>&1 | tee -a "$log" >&2
 		if ! git diff --cached --quiet; then git commit -q --amend --no-edit || exit 90; fi
 		# deepquarry.dme is generated: whatever the merges made of it (the dq-dme driver, or a union for a lane that still edits it by hand),
