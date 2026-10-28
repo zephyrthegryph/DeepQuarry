@@ -1,2 +1,0 @@
-equip wearer=Human: it doesn't fit
-

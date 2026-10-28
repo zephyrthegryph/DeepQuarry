@@ -1,7 +1,7 @@
 /**
  * Snapshot files: a recorded snapshot kept as one text file per type, outside the DM.
  *
- * A snapshot test (the i7 interaction snapshots, the conversion pins in dq_conversion_pins.dm) records a few
+ * A snapshot test (the xform pins, the UI pins) records a few
  * text rows per type. The rows live in `code/modules/unit_tests/snapshots/<snapshot>/<type>.txt`, where
  * <type> is the type path without its leading slash and with `/` written as `.`
  * (`/obj/machinery/atm` is `obj.machinery.atm.txt`), one row per line. So:
@@ -10,20 +10,12 @@
  *     conflicted on nearly every parallel conversion);
  *   - the files are read at run time, not compiled: a snapshot-only change reuses the cached .dmb;
  *   - the set of types is the set of files: adding a type is adding its file (an empty file is a type
- *     not recorded yet, which the next run records instead of failing; tools/dq_pin.sh makes them).
+ *     not recorded yet, which the next run records instead of failing).
  *
  * Blessing: `bash tools/dq_focused_test.sh --bless <test>` (world param snapshot-bless=1) writes each type's
  * current rows over its file instead of failing; review the diff and commit it. Without it, a mismatch fails
  * with every differing row, and the current rows are written to data/test-snapshots/<snapshot>/ for a look.
  * Guide: doc/rewrite/snapshot_pins.md.
- *
- * Factored op pins (tools/dq_pin_factor.py): the rows every type inherits are written once, in a base file
- * `snapshots/op_bases/<base type>.txt`, one block per group (`actor|held item`). A type file then reads
- *   `@obj.item human|none`   the base block of that group, followed by its delta:
- *   `-menu: Pick up`         a block row this type does not have (`<group> menu: Pick up`),
- *   `+2 menu: Use`           a row it adds, at index 2 (0-based) of the group;
- * any other line is a literal row. dq_snapshot_file_rows() expands it back to exactly the recorded rows, so
- * comparison is unchanged. A bless writes plain rows; dq_focused_test.sh re-factors them after the run.
  */
 
 #define DQ_SNAPSHOT_ROOT "code/modules/unit_tests/snapshots/"
@@ -36,8 +28,6 @@
 /proc/dq_snapshot_blessing()
 	return world.params?["snapshot-bless"] == "1"
 
-#define DQ_SNAPSHOT_BASES "code/modules/unit_tests/snapshots/op_bases/"
-
 /// The lines of one snapshot file as written (blank lines dropped, CRLF tolerated).
 /proc/dq_snapshot_plain_rows(file_name)
 	. = list()
@@ -49,76 +39,9 @@
 		if(length(line))
 			. += line
 
-/// The rows of one snapshot file, a factored op pin expanded against its base blocks.
+/// The rows of one snapshot file.
 /proc/dq_snapshot_file_rows(file_name)
-	. = dq_snapshot_plain_rows(file_name)
-	for(var/line in .)
-		if(copytext(line, 1, 2) == "@")
-			return dq_snapshot_expand(., file_name)
-
-/// The op-pin group of a row: the text before its first space when that holds a `|` (`human|/obj/item/tool/crowbar`), else null.
-/proc/dq_snapshot_row_group(row)
-	var/space = findtext(row, " ")
-	if(space <= 1)
-		return null
-	var/key = copytext(row, 1, space)
-	return findtext(key, "|") ? key : null
-
-/// The rows of `base`'s block for group `key` (snapshots/op_bases/<base>.txt, read once per run), or null.
-/proc/dq_snapshot_base_block(base, key)
-	var/static/list/blocks_by_base = list()
-	var/list/blocks = blocks_by_base[base]
-	if(!blocks)
-		blocks = list()
-		for(var/row in dq_snapshot_plain_rows("[DQ_SNAPSHOT_BASES][base].txt"))
-			var/group = dq_snapshot_row_group(row)
-			if(!group)
-				continue
-			var/list/block = blocks[group]
-			if(!block)
-				block = list()
-				blocks[group] = block
-			block += row
-		blocks_by_base[base] = blocks
-	return blocks[key]
-
-/// Expands a factored op pin (see the header): `@base group` lines with their `-row` / `+index row` deltas.
-/proc/dq_snapshot_expand(list/lines, file_name)
-	. = list()
-	var/list/group_rows
-	var/group
-	var/count = length(lines)
-	for(var/i in 1 to count + 1)
-		var/line = i <= count ? lines[i] : null
-		var/first = line ? copytext(line, 1, 2) : null
-		if(group_rows && (first == "-" || first == "+"))
-			if(first == "-")
-				group_rows -= "[group] [copytext(line, 2)]"
-			else
-				var/plus_space = findtext(line, " ")
-				var/index = text2num(copytext(line, 2, plus_space)) + 1
-				var/row = "[group] [copytext(line, plus_space + 1)]"
-				if(index > length(group_rows))
-					group_rows += row
-				else
-					group_rows.Insert(index, row)
-			continue
-		if(group_rows)
-			. += group_rows
-			group_rows = null
-		if(isnull(line))
-			break
-		if(first != "@")
-			. += line
-			continue
-		var/space = findtext(line, " ")
-		group = copytext(line, space + 1)
-		var/list/block = dq_snapshot_base_block(copytext(line, 2, space), group)
-		if(!block)
-			// A row no capture produces, so the comparison fails and names the reference.
-			. += "unresolved snapshot base in [file_name]: [line] (python3 tools/dq_pin_factor.py)"
-			continue
-		group_rows = block.Copy()
+	return dq_snapshot_plain_rows(file_name)
 
 /**
  * Every type recorded under `dir`: an assoc list type => its rows, in type order. A file whose name is
@@ -162,7 +85,7 @@
 	for(var/type in actual_by_type)
 		var/list/actual = actual_by_type[type]
 		var/list/expected = expected_by_type[type] || list()
-		// An empty file is a type not recorded yet (tools/dq_pin.sh makes one): record it, don't fail.
+		// An empty file is a type not recorded yet record it, don't fail.
 		if(!length(expected) && length(actual))
 			dq_snapshot_write(dir, type, actual)
 			fdel(dq_snapshot_type_file("data/test-snapshots/[name]/", type))

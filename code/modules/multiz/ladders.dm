@@ -34,20 +34,19 @@ CAPABILITIES(/obj/structure/ladder)
 	after_init(0, then(PROC_REF(init_connect)))
 	// Climbing it (climbLadder()): the climber stays beside it for the climb time.
 	op("climb_ladder", ai(), needs(req_capable()), takes("target_ladder", "time"), wait(PROC_REF(ladder_climb_time)), then(PROC_REF(climb_done)))
-	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
 	op("hand", hand(), label("Use"), ungated(), needs(req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = all_of(nameof(target_down), nameof(target_up))), then(PROC_REF(interaction_hand)))
 	op("deconstruct", tool(TOOL_WELDER), label("Deconstruct"), needs(req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(deconstruct_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(deconstruct_done)))
 	op("ladder_ghost_climb", observer(), label("Climb"), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = all_of(nameof(target_down), nameof(target_up))), then(PROC_REF(ladder_ghost_climb)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
-/obj/structure/ladder/proc/smashed_by(datum/act/hit/generic/A)
+/obj/structure/ladder/smashed_by(datum/act/hit/generic/A)
 	var/mob/user = A.attacker
 	//Simple Animal
 	if(isanimal(user))
 		attack_hand(user)
 	else
-		return HOOK_DECLINE
+		return ..()
 
 /obj/structure/ladder/proc/deconstruct_begins(datum/act/op/A)
 	return msg_text("You start to deconstruct %T%.", "%U% starts to deconstruct %T%.", "You hear welding")

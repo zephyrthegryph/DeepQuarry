@@ -116,6 +116,7 @@ MSG_DEF_SELF(porta_turret/wrecked, "It is wrecked: pry it apart instead.")
 MSG_DEF(porta_turret/haywire, "You short out %T%'s threat assessment circuits.", "")
 
 CAPABILITIES(/obj/machinery/porta_turret)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(atom_rules(description_antag = "Turrets can be emagged to target anyone and everyone, on lethals, and cannot be turned off if emagged."))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	ref_one(nameof(last_target), /mob/living)
@@ -296,7 +297,9 @@ CAPABILITIES(/obj/machinery/porta_turret)
 		return
 	play_sfx(src, SFX_MACHINES_BUZZBEEP, 3)
 
-/obj/machinery/porta_turret/attack_generic(mob/living/L, damage)
+/obj/machinery/porta_turret/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/L = A.attacker
+	var/damage = A.damage
 	if(isanimal(L))
 		var/mob/living/simple_mob/S = L
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
@@ -305,9 +308,9 @@ CAPABILITIES(/obj/machinery/porta_turret)
 			receive_generic_attack(S, incoming_damage)
 			S.do_attack_animation(src)
 			attempt_retaliate(incoming_damage)
-			return 1
+			return OP_OK
 		visible_message(span_infoplain(span_bold("\The [L]") + " bonks \the [src]'s casing!"))
-	return ..()
+	return HOOK_DECLINE
 
 // While the cover is down the turret is heavily armored: incoming damage is
 // cut to an eighth, and anything that small is shrugged off entirely.

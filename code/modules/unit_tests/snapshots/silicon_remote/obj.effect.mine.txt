@@ -1,2 +1,0 @@
-@obj.effect robot|none
-@obj.effect ai|none

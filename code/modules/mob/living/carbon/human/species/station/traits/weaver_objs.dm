@@ -8,6 +8,7 @@
 	density = FALSE
 
 CAPABILITIES(/obj/effect/weaversilk)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
 	op("hit_weaversilk", item(/obj/item), label("Interaction hit weaversilk"), then(PROC_REF(interaction_hit_weaversilk)))
 	op("tear_weaversilk", hand(), stance(I_HURT), label("Tear down"), then(PROC_REF(interaction_tear_weaversilk)))
@@ -40,9 +41,12 @@ CAPABILITIES(/obj/effect/weaversilk)
 	T?.feed_lingering_fire(0.1)
 	destroyed(src, null, BURN)
 
-/obj/effect/weaversilk/attack_generic(mob/user as mob, damage)
+/obj/effect/weaversilk/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	if(damage)
 		consume(src, user)
+	return OP_OK
 
 /// Old attack_hand on harm intent: tear the silk down by hand.
 /obj/effect/weaversilk/proc/interaction_tear_weaversilk(datum/act/op/A)

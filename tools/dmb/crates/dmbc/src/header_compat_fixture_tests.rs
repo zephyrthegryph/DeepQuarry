@@ -167,7 +167,7 @@ fn build_source_text(source: &str) -> String {
     format!("{outcome:?}")
 }
 
-/// `world.vars` iterates like `global.vars` and a datum's `vars` (the probe `dq_compiler_behaviour` dumps all three; it did not compile
+/// `world.vars` iterates like `global.vars` and a datum's `vars` (it did not compile
 /// natively while the catalog had no `vars` on /world).
 #[test]
 fn world_vars_can_be_iterated() {

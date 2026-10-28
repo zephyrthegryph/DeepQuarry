@@ -207,7 +207,8 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 		if(L != user)
 			.++
 
-/obj/structure/micro_tunnel/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/micro_tunnel/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	perform_op(user, src, micro_tunnel_holds(src, user) ? "inside_use" : "use", null, ORIGIN_SYSTEM)
 	return ..()
 
