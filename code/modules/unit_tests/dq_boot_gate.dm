@@ -11,3 +11,33 @@
 /datum/unit_test/dq_boot_gate/Run()
 	// A clean boot reads boot_unclean as null; the run's verdict comes from FinishTestRun().
 	TEST_ASSERT(isnull(GLOB.boot_unclean), GLOB.boot_unclean)
+
+/// A flag only the state-guard test writes: the guard's control case (a 0/1 flag a test leaves changed is a leak).
+GLOBAL_VAR_INIT(dq_state_guard_probe, 0)
+
+/// The state guard treats the midnight rollover counter as clock state: the real-time clock crossing midnight during a
+/// test bumps it, and that is no test's leak (28 October: gr/bumped-notices was bounced for dq_boot_gate at 00:00:05).
+/// A real flag the test leaves changed is still reported, so the guard itself is not loosened.
+/datum/unit_test/dq_state_guard_midnight_is_clock
+	boot_needs = list()
+
+/datum/unit_test/dq_state_guard_midnight_is_clock/Run()
+	var/list/before = unit_test_globals_snapshot()
+	var/rollovers = GLOB.midnight_rollovers
+	GLOB.midnight_rollovers = rollovers + 1 // what update_midnight_rollover() does at midnight
+	var/list/found = list()
+	unit_test_globals_guard(before, type, found)
+	GLOB.midnight_rollovers = rollovers
+	for(var/line in found)
+		TEST_ASSERT(!findtext(line, "midnight_rollovers"), "the guard reported the clock's rollover as a leak: [line]")
+	// control: a 0/1 flag changed in between is still a leak
+	before = unit_test_globals_snapshot()
+	GLOB.dq_state_guard_probe = 1
+	found = list()
+	unit_test_globals_guard(before, type, found)
+	GLOB.dq_state_guard_probe = 0
+	var/flagged = FALSE
+	for(var/line in found)
+		if(findtext(line, "dq_state_guard_probe"))
+			flagged = TRUE
+	TEST_ASSERT(flagged, "the guard no longer reports a changed flag: [jointext(found, " | ")]")

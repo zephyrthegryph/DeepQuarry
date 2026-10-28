@@ -1317,6 +1317,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
 		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
+		"midnight_rollovers" = TRUE, // clock state: the real-time clock crossing midnight bumps it (update_midnight_rollover, time.dm), whatever test is running (28 October: dq_boot_gate "leaked" it at 00:00:05)
 	)
 	return ignored
 
