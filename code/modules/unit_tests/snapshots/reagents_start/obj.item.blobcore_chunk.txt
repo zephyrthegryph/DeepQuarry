@@ -1,2 +1,0 @@
-/obj/item/blobcore_chunk vol=120 holder=/datum/reagents 
-

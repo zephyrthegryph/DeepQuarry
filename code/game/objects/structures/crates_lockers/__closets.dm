@@ -457,14 +457,17 @@ CAPABILITIES(/obj/structure/closet)
 /obj/structure/closet/proc/closet_lock_look()
 	return "unlocked"
 
-/obj/structure/closet/attack_generic(mob/user, damage, attack_message = "destroys")
+/obj/structure/closet/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb || "destroys"
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
-		return
+		return OP_OK
 	user.do_attack_animation(src)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	dump_contents()
 	expire(0.1 SECONDS)
-	return 1
+	return OP_OK
 
 /obj/structure/closet/proc/req_breakout()
 	if(opened)

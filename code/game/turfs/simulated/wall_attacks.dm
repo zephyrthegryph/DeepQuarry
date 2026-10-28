@@ -104,24 +104,29 @@
 	try_touch(user, rotting)
 	return OP_OK
 
-/turf/simulated/wall/attack_generic(mob/user, damage, attack_message)
-
+/turf/simulated/wall/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	radiate()
 	user.setClickCooldown(user.get_attack_speed())
 	var/rotting = (locate_on(src, /obj/effect/overlay/wallrot))
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD * 2)
 		try_touch(user, rotting)
-		return
+		return OP_OK
 
 	if(rotting)
-		return success_smash(user)
+		success_smash(user)
+		return OP_OK
 
 	if(reinf_material)
 		if(damage >= max(material.hardness, reinf_material.hardness) )
-			return success_smash(user)
+			success_smash(user)
+			return OP_OK
 	else if(damage >= material.hardness)
-		return success_smash(user)
-	return fail_smash(user)
+		success_smash(user)
+		return OP_OK
+	fail_smash(user)
+	return OP_OK
 
 /// Old attackby: mounting, roofing, crumbling a rotten wall, thermite and frames; anything else touches it.
 /turf/simulated/wall/proc/wall_item(datum/act/op/A)

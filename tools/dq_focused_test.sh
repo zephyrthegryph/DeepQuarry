@@ -9,7 +9,7 @@
 #   bash tools/dq_focused_test.sh --some-flag=x name                       # any other --flag goes to dm-test
 #   bash tools/dq_focused_test.sh --profile-tests name                     # per-test proc profile (data/logs/runN/profile/)
 #   bash tools/dq_focused_test.sh --boot                                   # boot only: fails on any boot runtime or warning
-#   bash tools/dq_focused_test.sh --bless dq_conversion_pin                # snapshot tests rewrite their recorded rows (doc/rewrite/snapshot_pins.md)
+#   bash tools/dq_focused_test.sh --bless dq_xform_pin                      # snapshot tests rewrite their recorded rows (doc/rewrite/snapshot_pins.md)
 #   bash tools/dq_focused_test.sh --split-slow <slow-test> dq_boot_gate    # DQ_SLOW_TESTS in a second world, at the same time
 #   bash tools/dq_focused_test.sh --detach <tests>                         # start in the background; prints a run id
 #   bash tools/dq_focused_test.sh --status <runid>                         # poll a detached run (exit 0 passed, 1 failed, 3 running)
@@ -536,19 +536,19 @@ focus="$FOCUS_ARG"
 #   main   the tests that are not slow
 #   slow   slow tests (DQ_SLOW_TESTS names them), together in one world
 #   sweep  whole-type sweep pins, sharded (below)
-# Whole-type sweep pins too long for one world (dq_fresh_look_default: two fresh instances of every creatable obj and mob type; dq_loot_roll_pin: 306 declarations x 1000 spawns and qdels, about 45 minutes in one world, past
+# Whole-type sweep pins too long for one world (dq_fresh_look_default: two fresh instances of every creatable obj and mob type; a sweep test past
 # the 15 minute focused timeout): they run as DQ_SWEEP_SHARDS (default 4; --sweep-shards=N) worlds, each rolling its slice of the declarations
 # (DQ_FOCUS_SHARD=i/N; the test slices through sweep_types()) and comparing the rows it made. Not used with --bless or --repeat (a record is
 # whole), nor with --no-split-slow or DQ_FOCUS_SPLIT=0 (one world, as before).
 # sweep_notice <pins> <requested shards> <actual shards> <world cap> <timeout minutes>: the one line that says what a sweep run costs. A sweep pin
-# is a long test (dq_loot_roll_pin is about 45 minutes in one world), not a hang: a cap below the requested shard count makes each slice longer, and
+# is a long test (a sweep can take tens of minutes in one world), not a hang: a cap below the requested shard count makes each slice longer, and
 # a loaded machine longer still; the world prints nothing while a slice runs, and only the watchdog ends it.
 sweep_notice() {
 	local note="== sweep: $1 runs as $3 shard world(s), one slice each, silent until it ends (watchdog $5 min)"
 	if [ "$3" -lt "$2" ]; then note+="; $2 were asked for but the machine has $4 test-world slot(s), so each slice is $2/$3 times longer"; fi
 	echo "$note"
 }
-sweep_pins=" dq_loot_roll_pin dq_fresh_look_default dq_stat_index_oracle dq_change_reader_plan_oracle "
+sweep_pins=" dq_fresh_look_default dq_stat_index_oracle dq_change_reader_plan_oracle "
 sweep_on=0
 if [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [ "$sweep_shards" -gt 1 ]; then sweep_on=1; fi
 main_group=()
@@ -593,16 +593,7 @@ status_write running "tests=${#tests[@]}" "split=$do_split"
 
 # The one-line verdict every run ends with, parsed from dm-test's "Unit-test summary: N passed, M failed, K skipped ...
 # (saved data/test-runs/X.json)" line(s). $1 = the combined log; $2 = exit code; $3 = json (split runs pass their merged one).
-# A run that blessed or recorded op pins wrote them as plain rows: factor them back against the shared base blocks
-# (code/modules/unit_tests/snapshots/op_bases/, tools/dq_pin_factor.py; doc/rewrite/snapshot_pins.md "Factored op pins").
-pin_factor_after_run() {
-	if [ -n "$(git status --porcelain -- code/modules/unit_tests/snapshots 2>/dev/null)" ]; then
-		"${PYTHON:-python3}" tools/dq_pin_factor.py || echo "dq_pin_factor failed: run python3 tools/dq_pin_factor.py before committing the pins" >&2
-	fi
-}
-
 print_result() {
-	pin_factor_after_run
 	if [ -f "${WORLD_REGISTRY:-/nonexistent}/.running" ]; then
 		local ran_at
 		ran_at="$(tr -cd '0-9' <"$WORLD_REGISTRY/.running")"

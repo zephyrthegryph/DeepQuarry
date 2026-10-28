@@ -285,7 +285,10 @@
 
 // End BS12 momentum-transfer code.
 
-/mob/living/attack_generic(mob/user, damage, attack_message)
+/mob/living/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb
 	if(istype(user,/mob/living))
 		var/mob/living/L = user
 		if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
@@ -296,7 +299,7 @@
 
 	if(!damage)
 		react_to_entry(DAMAGE_ENTRY_GENERIC, 0, user, user)
-		return
+		return OP_OK
 
 	receive_generic_attack(user, damage)
 	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_mob attacks
@@ -304,7 +307,7 @@
 		ai_brain.react_to_attack(user)
 	act_message(user, src, others = span_danger("%U% has [attack_message] %T%!"))
 	user.do_attack_animation(src)
-	return 1
+	return OP_OK
 
 /// What kind of wound a generic (usually animal) attack from `user` leaves:
 /// simple mobs declare their melee kind; anything else is a blunt blow.

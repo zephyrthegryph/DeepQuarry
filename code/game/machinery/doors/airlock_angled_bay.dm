@@ -86,10 +86,6 @@
 	/// Optional: If door_color_icon is not null, this color will be applied to the door color overlay
 	var/door_color
 
-/obj/machinery/door/airlock/angled_bay/Initialize(mapload)
-	obtain_icon()
-	. = ..()
-
 /obj/machinery/door/airlock/angled_bay/proc/obtain_icon()
 	var/icon/fill_icon
 	switch(fill_type)
@@ -464,6 +460,9 @@
 #undef FILL_METAL
 #undef FILL_GLASS
 #undef FILL_COLOR
+
+CAPABILITIES(/obj/machinery/door/airlock/angled_bay)
+	setup(PROC_REF(obtain_icon), early = TRUE) // the fill sets glass and opacity, which the airlock chain reads
 
 CAPABILITIES(/obj/machinery/door/airlock/angled_bay/double)
 	setup(PROC_REF(configure_double_bounds))

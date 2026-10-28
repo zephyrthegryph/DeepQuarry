@@ -1,2 +1,0 @@
-@obj.item.storage robot|none
-@obj ai|none

@@ -65,6 +65,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 
 CAPABILITIES(/obj/effect/plant)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	keeps_if(PROC_REF(not_on_open_turf))
 	keeps_if(PROC_REF(plant_controller_exists), warn = "Plant controller does not exist and the plant requires it")
 	setup(PROC_REF(take_seed), mapload = TRUE)

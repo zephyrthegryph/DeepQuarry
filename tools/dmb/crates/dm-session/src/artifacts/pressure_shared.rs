@@ -289,7 +289,7 @@ fn shared_index_charge<T, Q, A, D: Copy + Ord>(
     let envelope = bucket
         .capacity()
         .saturating_mul(std::mem::size_of::<Variant<T, Q, A, D>>())
-        .saturating_add(scalar_slot::<u128, Vec<Variant<T, Q, A, D>>>());
+        .saturating_add(scalar_slot::<u128, Bucket<Variant<T, Q, A, D>>>());
     full.saturating_sub(envelope)
 }
 #[cfg(test)]

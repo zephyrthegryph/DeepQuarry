@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added setup(PROC_REF(x), early = TRUE), a declared hook that runs before the Initialize() chain; space turfs, angled bay airlocks and bellies use it instead of Initialize() overrides"
+  - code_imp: "The init ratchet's init_lines rule is hard-banned at 0 and the escape_hatches baseline is empty (the Kernel counts as the engine for usr)"
