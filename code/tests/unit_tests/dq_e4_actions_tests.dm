@@ -57,14 +57,14 @@
 
 /datum/unit_test/dq_e4/act_pass_allocates_nothing/run_e4()
 	var/obj/e4_fixture/plain/P = allocate(/obj/e4_fixture/plain)
-	var/before = GLOB.act_taken
+	var/before = GLOB.act_taken.n
 	var/notices_before = GLOB.notice_taken
 	var/datum/act/e4_plain/F = ACT_ATTEMPT(P, e4_plain)
 	TEST_ASSERT_EQUAL(F, ACT_PASS, "nothing hooks it and no one listens: ACT_PASS")
 	act_done(F)
 	act_cancel(F)
 	TEST_ASSERT_EQUAL(ACT_FINAL(F, amount, 7), 7, "ACT_FINAL on ACT_PASS reads the caller's local")
-	TEST_ASSERT_EQUAL(GLOB.act_taken, before, "no act was allocated")
+	TEST_ASSERT_EQUAL(GLOB.act_taken.n, before, "no act was allocated")
 	TEST_ASSERT_EQUAL(GLOB.notice_taken, notices_before, "no notice either")
 	var/datum/object_pool/pool = GLOB.object_pools[/datum/act/e4_plain]
 	TEST_ASSERT(!pool || pool.taken == 0, "the pool of the act type was never touched")

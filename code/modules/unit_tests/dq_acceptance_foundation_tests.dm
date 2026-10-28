@@ -625,7 +625,7 @@ CAPABILITIES(/obj/item/dq_acceptance_role_destination)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	set_global(nameof(GLOB.act_next_actor), actor)
 	set_global(nameof(GLOB.act_next_authority), AUTH_ADMIN)
-	var/acts_before = GLOB.act_taken
+	var/acts_before = GLOB.act_taken.n
 	var/notices_before = GLOB.notice_taken
 	var/datum/act/action/A = act_begin(/datum/act/insert, holder)
 	TEST_ASSERT_NOTNULL(A, "Real world act begins below the depth cap")
@@ -640,11 +640,11 @@ CAPABILITIES(/obj/item/dq_acceptance_role_destination)
 	TEST_ASSERT_EQUAL(bound_authority, AUTH_ADMIN, "World action consumes next authority")
 	TEST_ASSERT_NULL(GLOB.act_next_actor, "World action clears next actor")
 	TEST_ASSERT_NULL(GLOB.act_next_authority, "World action clears next authority")
-	TEST_ASSERT_EQUAL(GLOB.act_taken, acts_before + 1, "World action increments its cumulative counter exactly once")
+	TEST_ASSERT_EQUAL(GLOB.act_taken.n, acts_before + 1, "World action increments its cumulative counter exactly once")
 	TEST_ASSERT_EQUAL(GLOB.notice_taken, notices_before, "Binding alone publishes no notice")
 	set_global(nameof(GLOB.act_next_actor), actor)
 	set_global(nameof(GLOB.act_next_authority), AUTH_ADMIN)
-	var/query_acts_before = GLOB.act_taken
+	var/query_acts_before = GLOB.act_taken.n
 	var/query_notices_before = GLOB.notice_taken
 	var/violations_before = length(GLOB.op_pure_violations)
 	op_pure_begin()
@@ -659,7 +659,7 @@ CAPABILITIES(/obj/item/dq_acceptance_role_destination)
 	TEST_ASSERT_EQUAL(query_actor, actor, "Query receives its explicit mover")
 	TEST_ASSERT_EQUAL(GLOB.act_next_actor, actor, "Pure query does not consume next world actor")
 	TEST_ASSERT_EQUAL(GLOB.act_next_authority, AUTH_ADMIN, "Pure query does not consume next world authority")
-	TEST_ASSERT_EQUAL(GLOB.act_taken, query_acts_before, "Pure query does not begin a world act")
+	TEST_ASSERT_EQUAL(GLOB.act_taken.n, query_acts_before, "Pure query does not begin a world act")
 	TEST_ASSERT_EQUAL(GLOB.notice_taken, query_notices_before, "Pure query publishes no notice")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pure_violations), violations_before, "Query binder stays within pure context contract")
 
