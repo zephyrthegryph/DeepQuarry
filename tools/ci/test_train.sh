@@ -5,6 +5,9 @@
 # TEST_TRAIN_ONLY=<scenario[,scenario]> runs only those: enqueue light heavy push precheck dc bisect lock selfupdate stamp; "quick" = enqueue,light.
 # Elapsed seconds are printed at the end; the target is under two minutes.
 set -uo pipefail
+# Hermetic: the train's own environment (a precheck runs this inside the prechecker, which exports DQ_TRAIN_ORIGIN_REPO and friends) must
+# not reach the scratch train, or it reads the real repository (28 October: "lane/doc: the branch no longer exists"). TEST_TRAIN_* stays.
+for _v in $(compgen -e | grep -E '^(DQ_|GIT_CONFIG_)'); do unset "$_v"; done; unset _v
 # Each scenario owns a scratch repository and state, so with no TEST_TRAIN_ONLY they run side by side (TEST_TRAIN_JOBS at a time, default 1: a loaded desktop ran out of memory at 6):
 # the wall time is the slowest scenario, not the sum (every git and bash spawn costs hundreds of ms on a loaded Windows machine).
 if [ -z "${TEST_TRAIN_ONLY:-}" ]; then

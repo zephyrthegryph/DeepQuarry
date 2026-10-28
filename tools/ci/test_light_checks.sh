@@ -2,6 +2,9 @@
 # Self-test of the light path (tools/dq_light_paths.sh, dq_light_checks.sh, dq_land_batch.sh submit) in a scratch repository.
 #   bash tools/ci/test_light_checks.sh
 set -uo pipefail
+# Hermetic: the train's own environment (a precheck runs this inside the prechecker, which exports DQ_TRAIN_ORIGIN_REPO and friends) must
+# not reach the scratch train, or it reads the real repository (28 October: "lane/doc: the branch no longer exists"). TEST_TRAIN_* stays.
+for _v in $(compgen -e | grep -E '^(DQ_|GIT_CONFIG_)'); do unset "$_v"; done; unset _v
 here="$(cd "$(dirname "$0")/../.." && pwd)"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 fail=0
