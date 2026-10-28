@@ -298,7 +298,9 @@ CAPABILITIES(/obj/structure/table)
 	attack_alien(A.actor)
 	return OP_OK
 
-/obj/structure/table/attack_generic(mob/user as mob, damage)
+/obj/structure/table/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	if(damage >= 10)
 		if(reinforced() && prob(70))
 			act_message(user, src, others = span_danger("%U% smashes against %T%!"))
@@ -309,7 +311,7 @@ CAPABILITIES(/obj/structure/table)
 			act_message(user, src, others = span_danger("%U% tears apart %T%!"))
 			src.break_to_parts()
 			user.do_attack_animation(src)
-			return 1
+			return OP_OK
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " scratches at %T%!"))
 	return ..()
 

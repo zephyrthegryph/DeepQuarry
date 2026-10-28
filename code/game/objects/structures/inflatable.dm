@@ -115,14 +115,17 @@ CAPABILITIES(/obj/structure/inflatable)
 	deflating = TRUE
 	deflate()
 
-/obj/structure/inflatable/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/inflatable/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	user.do_attack_animation(src)
 	if(get_integrity() - damage <= 0)
 		act_message(user, src, others = span_danger("%U% [attack_verb] open %T%!"))
 	else
 		act_message(user, src, others = span_danger("%U% [attack_verb] at %T%!"))
 	receive_generic_attack(user, damage)
-	return 1
+	return OP_OK
 
 // Reaching 0 integrity tears the membrane open.
 /obj/structure/inflatable/atom_destruction(damage_flag)

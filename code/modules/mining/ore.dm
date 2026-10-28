@@ -7,6 +7,7 @@
 	var/material
 
 CAPABILITIES(/obj/item/ore)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(item_handling(randpixel = 8))
 	owns_one(nameof(geologic_data), /datum/geosample)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
@@ -182,10 +183,11 @@ CAPABILITIES(/obj/item/ore/glass)
 		return ITEM_INTERACT_SUCCESS
 	..()
 
-/obj/item/ore/attack_generic(mob/living/user) //Allow adminbussed mobs to eat ore if they click it while NOT on help intent.
+/obj/item/ore/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/user = A.attacker
 	if(user.handle_eat_minerals(src))
-		return ITEM_INTERACT_SUCCESS
-	..()
+		return OP_OK // Allow adminbussed mobs to eat ore if they click it while NOT on help intent.
+	return HOOK_DECLINE
 
 /obj/item/ore_chunk
 	name = "ore chunk"

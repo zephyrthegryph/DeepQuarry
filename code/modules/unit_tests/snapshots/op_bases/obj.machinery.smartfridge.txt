@@ -1,3 +1,0 @@
-ai|none menu: Open controls
-ai|none menu: Use
-ai|none click: Click: Open controls
