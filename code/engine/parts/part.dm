@@ -618,6 +618,31 @@
 /datum/entry/part/effect/spawns
 	part_name = "spawns"
 
+/// sets_off(kind, ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): EFFECT_SMOKE, EFFECT_FOAM,
+/// EFFECT_EXPLOSION, EFFECT_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
+/// (no powergaming a tiny amount); `tell` is what viewers within 5 see; `variant` is the foam kind; `divisor` scales an explosion (made / divisor) and
+/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world.
+/proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null)
+	var/list/arguments = list("kind" = kind)
+	if(!isnull(clears))
+		arguments["clears"] = clears
+	if(!isnull(tell))
+		arguments["tell"] = tell
+	if(!isnull(sfx))
+		arguments["sfx"] = sfx
+	if(!isnull(variant))
+		arguments["variant"] = variant
+	if(!isnull(divisor))
+		arguments["divisor"] = divisor
+	if(!isnull(divisors))
+		arguments["divisors"] = divisors
+	if(!isnull(skip_in_tests))
+		arguments["skip_in_tests"] = skip_in_tests
+	return part_make(/datum/entry/part/effect/sets_off, arguments)
+
+/datum/entry/part/effect/sets_off
+	part_name = "sets_off"
+
 /// opens_ui(): opens the holder's window for the actor.
 /proc/opens_ui()
 	return part_make(/datum/entry/part/effect/opens_ui)

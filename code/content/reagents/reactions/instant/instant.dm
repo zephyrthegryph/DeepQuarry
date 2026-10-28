@@ -706,22 +706,7 @@ CAPABILITIES(/transformation/chem/instant/concrete)
 CAPABILITIES(/transformation/chem/instant/explosion_potassium)
 	configure(transformation(name = "Explosion", id = "explosion_potassium",
 		takes = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_POTASSIUM, 1)), made = 2, says = "",
-		then = TYPE_PROC_REF(/transformation/chem/instant/explosion_potassium, on_reaction)))
-
-/transformation/chem/instant/explosion_potassium/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/datum/effect/effect/system/reagents_explosion/e = new()
-	e.set_up(round (created_volume/10, 1), holder.my_atom, 0, 0)
-	if(isliving(holder.my_atom))
-		e.amount *= 0.5
-		var/mob/living/L = holder.my_atom
-		if(L.stat != DEAD)
-			e.amount *= 0.5
-	else
-		holder.clear_reagents() //No more powergaming by creating a tiny amount of this
-	//VORESTation Add End
-	e.start()
-	// holder.clear_reagents() // Removal
-	return
+		effects = sets_off(EFFECT_EXPLOSION, divisor = 10)))
 
 /transformation/chem/instant/flash_powder
 
@@ -757,16 +742,7 @@ CAPABILITIES(/transformation/chem/instant/flash_powder)
 
 CAPABILITIES(/transformation/chem/instant/emp_pulse)
 	configure(transformation(name = "EMP Pulse", id = "emp_pulse", takes = list(reagent(REAGENT_ID_URANIUM, 1), reagent(REAGENT_ID_IRON, 1)), made = 2,
-		then = TYPE_PROC_REF(/transformation/chem/instant/emp_pulse, on_reaction)))
-
-/transformation/chem/instant/emp_pulse/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	// 100 created volume = 4 heavy range & 7 light range. A few tiles smaller than traitor EMP grandes.
-	// 200 created volume = 8 heavy range & 14 light range. 4 tiles larger than traitor EMP grenades.
-	empulse(location, round(created_volume / 24), round(created_volume / 20), round(created_volume / 18), round(created_volume / 14), 1)
-	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
-		holder.clear_reagents()
-	return
+		effects = sets_off(EFFECT_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)))
 
 /transformation/chem/instant/nitroglycerin
 
@@ -774,25 +750,7 @@ CAPABILITIES(/transformation/chem/instant/nitroglycerin)
 	configure(transformation(name = REAGENT_NITROGLYCERIN, id = REAGENT_ID_NITROGLYCERIN,
 		takes = list(reagent(REAGENT_ID_GLYCEROL, 1), reagent(REAGENT_ID_PACID, 1), reagent(REAGENT_ID_SACID, 1)),
 		makes = list(reagent(REAGENT_ID_NITROGLYCERIN, 2)), important = TRUE,
-		then = TYPE_PROC_REF(/transformation/chem/instant/nitroglycerin, on_reaction)))
-
-// If it becomes possible to make this without exploding and clearing reagents, remove the UNIT_TESTS wrapper
-/transformation/chem/instant/nitroglycerin/proc/on_reaction(datum/reagents/holder, created_volume)
-#ifndef UNIT_TESTS
-	var/datum/effect/effect/system/reagents_explosion/e = new()
-	e.set_up(round (created_volume/2, 1), holder.my_atom, 0, 0)
-	if(isliving(holder.my_atom))
-		e.amount *= 0.5
-		var/mob/living/L = holder.my_atom
-		if(L.stat!=DEAD)
-			e.amount *= 0.5
-	else
-		holder.clear_reagents() //No more powergaming by creating a tiny amount of this
-	e.start()
-
-	// holder.clear_reagents() // Removal
-#endif
-	return
+		effects = sets_off(EFFECT_EXPLOSION, divisor = 2, skip_in_tests = TRUE)))
 
 /transformation/chem/instant/napalm
 
@@ -814,73 +772,27 @@ CAPABILITIES(/transformation/chem/instant/napalm)
 CAPABILITIES(/transformation/chem/instant/chemsmoke)
 	configure(transformation(name = "Chemsmoke", id = "chemsmoke",
 		takes = list(reagent(REAGENT_ID_POTASSIUM, 1), reagent(REAGENT_ID_SUGAR, 1), reagent(REAGENT_ID_PHOSPHORUS, 1)),
-		made = 0.4, then = TYPE_PROC_REF(/transformation/chem/instant/chemsmoke, on_reaction)))
-
-/transformation/chem/instant/chemsmoke/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
-	S.attach(location)
-	S.set_up(holder, created_volume, 0, location)
-	play_sfx(location, SFX_EFFECTS_SMOKE)
-	S.start()
-	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
-		holder.clear_reagents()
-	return
+		made = 0.4, effects = sets_off(EFFECT_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)))
 
 /transformation/chem/instant/foam
 
 CAPABILITIES(/transformation/chem/instant/foam)
 	configure(transformation(name = "Foam", id = "foam", takes = list(reagent(REAGENT_ID_FLUOROSURFACTANT, 1), reagent(REAGENT_ID_WATER, 1)), made = 2,
-		says = "The solution violently bubbles!", then = TYPE_PROC_REF(/transformation/chem/instant/foam, on_reaction)))
-
-/transformation/chem/instant/foam/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-
-	for(var/mob/M in viewers(5, location))
-		to_chat(M, span_warning("The solution spews out foam!"))
-
-	var/datum/effect/effect/system/foam_spread/s = new()
-	s.set_up(created_volume, location, holder, 0)
-	s.start()
-	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
-		holder.clear_reagents()
-	return
+		says = "The solution violently bubbles!", effects = sets_off(EFFECT_FOAM, variant = 0, clears = TRUE, tell = "The solution spews out foam!")))
 
 /transformation/chem/instant/metalfoam
 
 CAPABILITIES(/transformation/chem/instant/metalfoam)
 	configure(transformation(name = "Metal Foam", id = "metalfoam",
 		takes = list(reagent(REAGENT_ID_ALUMINIUM, 3), reagent(REAGENT_ID_FOAMINGAGENT, 1), reagent(REAGENT_ID_PACID, 1)),
-		made = 5, then = TYPE_PROC_REF(/transformation/chem/instant/metalfoam, on_reaction)))
-
-/transformation/chem/instant/metalfoam/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-
-	for(var/mob/M in viewers(5, location))
-		to_chat(M, span_warning("The solution spews out a metalic foam!"))
-
-	var/datum/effect/effect/system/foam_spread/s = new()
-	s.set_up(created_volume, location, holder, 1)
-	s.start()
-	return
+		made = 5, effects = sets_off(EFFECT_FOAM, variant = 1, tell = "The solution spews out a metalic foam!")))
 
 /transformation/chem/instant/ironfoam
 
 CAPABILITIES(/transformation/chem/instant/ironfoam)
 	configure(transformation(name = "Iron Foam", id = "ironlfoam",
 		takes = list(reagent(REAGENT_ID_IRON, 3), reagent(REAGENT_ID_FOAMINGAGENT, 1), reagent(REAGENT_ID_PACID, 1)), made = 5,
-		then = TYPE_PROC_REF(/transformation/chem/instant/ironfoam, on_reaction)))
-
-/transformation/chem/instant/ironfoam/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-
-	for(var/mob/M in viewers(5, location))
-		to_chat(M, span_warning("The solution spews out a metalic foam!"))
-
-	var/datum/effect/effect/system/foam_spread/s = new()
-	s.set_up(created_volume, location, holder, 2)
-	s.start()
-	return
+		effects = sets_off(EFFECT_FOAM, variant = 2, tell = "The solution spews out a metalic foam!")))
 
 /* Paint */
 

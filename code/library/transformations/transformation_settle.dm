@@ -111,6 +111,8 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		xform_book_energy(X, holder)
 	if(X.spawn_rows)
 		xform_run_spawns(X, holder, amt_produced)
+	if(X.effect_rows)
+		xform_run_effects(X, holder, amt_produced)
 	if(X.then_proc)
 		call(owner, X.then_proc)(holder, amt_produced)
 

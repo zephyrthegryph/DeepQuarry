@@ -445,6 +445,7 @@
 #include "dq_snapshot_files.dm"
 #include "dq_xform_pins.dm"
 #include "dq_chem_item_spawn_tests.dm"
+#include "dq_xform_sets_off_tests.dm"
 #include "dq_xform_select_pin.dm"
 #include "dq_xform_cooking_make.dm"
 #include "dq_xform_grinding_pin.dm"
