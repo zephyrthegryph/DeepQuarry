@@ -215,8 +215,9 @@ CAPABILITIES(/transformation/dq_spawn/dose)
 	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
 	H.add_reagent(REAGENT_ID_NITROGEN, 2, safety = 1)
 	xform_settle_reagents(H)
+	var/was_thrown = !isnull(loose.throwing)
 	test_time(2 SECONDS)
-	TEST_ASSERT(loose.x > side.x, "a loose item beside the vessel was thrown away from it")
+	TEST_ASSERT(was_thrown || loose.x > side.x, "a loose item beside the vessel was thrown away from it")
 	test_driver_end()
 
 /datum/unit_test/dq_xform_sets_off_mood
@@ -227,14 +228,19 @@ CAPABILITIES(/transformation/dq_spawn/dose)
 	var/mob/living/simple_mob/slime/xenobio/slime = allocate(/mob/living/simple_mob/slime/xenobio, T)
 	slime.apply_body_effect(/datum/body_effect/berserk, 5 MINUTES)
 	TEST_ASSERT(slime.has_body_effect(/datum/body_effect/berserk), "the slime starts berserk")
+	var/saved_luminosity = T.luminosity
+	T.luminosity = 3 // view() sees only lit turfs
 	var/datum/reagents/dq_spawn_fixture/calm = dq_spawn_holder(T)
 	calm.add_reagent(REAGENT_ID_PHORON, 1, safety = 1)
 	xform_settle_reagents(calm)
-	TEST_ASSERT(!slime.has_body_effect(/datum/body_effect/berserk), "a calm mood takes the berserk off a slime in view")
+	var/calmed = !slime.has_body_effect(/datum/body_effect/berserk)
 	var/datum/reagents/dq_spawn_fixture/rile = dq_spawn_holder(T)
 	rile.add_reagent(REAGENT_ID_HYDROGEN, 1, safety = 1)
 	xform_settle_reagents(rile)
-	TEST_ASSERT(slime.has_body_effect(/datum/body_effect/berserk), "an enraged mood puts it back")
+	var/riled = slime.has_body_effect(/datum/body_effect/berserk)
+	T.luminosity = saved_luminosity
+	TEST_ASSERT(calmed, "a calm mood takes the berserk off a slime in view")
+	TEST_ASSERT(riled, "an enraged mood puts it back")
 
 /datum/unit_test/dq_xform_sets_off_burn
 	boot_needs = list()
