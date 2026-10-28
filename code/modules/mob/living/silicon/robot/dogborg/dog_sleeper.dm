@@ -595,7 +595,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	var/volume = 0
 	if(ishuman(T))
 		var/mob/living/carbon/human/Prey = T
-		volume = (Prey.bloodstr.total_volume + Prey.ingested.total_volume + Prey.touching.total_volume + Prey.weight) * Prey.size_multiplier
+		volume = (Prey.bloodstr.total_volume + Prey.ingested.total_volume + Prey.touching.total_volume + sparse_get_or(Prey, weight, DEFAULT_MOB_WEIGHT)) * Prey.size_multiplier
 	if(water)
 		water.add_charge(volume)
 	if(T.reagents)
