@@ -14,14 +14,14 @@ type ExternalState = {
 type Data = {
   externals: Record<string, ExternalState>;
   internals: Record<string, string>;
+  external_labels?: Record<string, string>;
+  internal_labels?: Record<string, string>;
+  external_order?: string[];
+  internal_order?: string[];
 };
 
 type Static = {
-  external_labels: Record<string, string>;
-  internal_labels: Record<string, string>;
-  limb_models: string[];
-  external_order: string[];
-  internal_order: string[];
+  limb_models?: string[];
 };
 
 const EXTERNAL_STATES: Array<{
@@ -49,10 +49,11 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
   const send = (action: string, params: Record<string, unknown>) =>
     act('dq_editor_action', { editor: 'organs', action, params });
 
-  const externalOrder =
-    s.external_order ?? Object.keys(s.external_labels ?? {});
-  const internalOrder =
-    s.internal_order ?? Object.keys(s.internal_labels ?? {});
+  // Rows come from the per-update data; only the robolimb model list is a catalog.
+  const externalLabels = d.external_labels ?? {};
+  const internalLabels = d.internal_labels ?? {};
+  const externalOrder = d.external_order ?? Object.keys(d.externals ?? {});
+  const internalOrder = d.internal_order ?? Object.keys(d.internals ?? {});
   const limbModels = s.limb_models ?? [];
   const modelOptions = limbModels.map((m) => ({ value: m, displayText: m }));
 
@@ -82,7 +83,7 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
               }}
             >
               <Box style={{ flex: '0 0 80px' }}>
-                {s.external_labels?.[limb] ?? limb}
+                {externalLabels[limb] ?? limb}
               </Box>
               <Box style={{ flex: '0 0 auto', display: 'flex', gap: '2px' }}>
                 {EXTERNAL_STATES.map((opt) => (
@@ -133,7 +134,7 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
               }}
             >
               <Box style={{ flex: '0 0 100px' }}>
-                {s.internal_labels?.[organ] ?? organ}
+                {internalLabels[organ] ?? organ}
               </Box>
               <Box style={{ flex: 1, display: 'flex', gap: '2px' }}>
                 {INTERNAL_STATES.map((opt) => (
