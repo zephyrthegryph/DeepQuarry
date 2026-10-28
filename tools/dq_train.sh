@@ -1451,6 +1451,7 @@ light_cycle() { # CHOSEN are all light
 heavy_cycle() { # the lanes being gated are listed in batch.lanes while it runs (the prechecker leaves them alone)
 	local hrc
 	printf '%s\n' "${CHOSEN[@]}" >"$STATE/batch.lanes"
+	GATE_T0=$(date +%s)   # the gate and push alone; "cycle" also counts the preamble, the disk floor check and any fast-land attempts
 	heavy_cycle_gate; hrc=$?
 	rm -f "$STATE/batch.lanes"
 	return "$hrc"
@@ -1515,7 +1516,9 @@ heavy_cycle_gate() {
 		cd "$WT" || exit 99
 		export DQ_MERGE_BRANCH="$TBRANCH" DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN"
 		# the union of tests in TEST_WORLDS worlds at once (any list over 8 selectors is split)
-		export DQ_MAIN_WORLDS="$TEST_WORLDS" DQ_MAIN_WORLD_TESTS="${DQ_TRAIN_WORLD_SPLIT_AT:-8}"
+		# 28 October: 22 tests ran in 3 s in all, but each of the two worlds took ~230 s to compile-replay and boot: the union stays in ONE world
+		# up to 60 selectors (the focused runner's own default); DQ_TRAIN_WORLD_SPLIT_AT lowers it again
+		export DQ_MAIN_WORLDS="$TEST_WORLDS" DQ_MAIN_WORLD_TESTS="${DQ_TRAIN_WORLD_SPLIT_AT:-60}"
 		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1 DQ_BATCH_DEADLINE="$deadline_use" DQ_BATCH_WT2="$wt2_use"
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
@@ -1632,7 +1635,7 @@ heavy_cycle_gate() {
 	fi
 	if [ "$smoke_ran" = 1 ]; then echo 0 >"$STATE/smoke_skipped"
 	else echo $(( $(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) + 1 )) >"$STATE/smoke_skipped"; fi
-	tlog "pushed: origin/master ${sha:0:10} carries [$good] (proof: $proof_kind; cycle $(( $(date +%s) - CYCLE_T0 ))s; smoke/gameplay sets $([ "$smoke_ran" = 1 ] && echo ran || echo "skipped, $(cat "$STATE/smoke_skipped") proof landing(s) since they last ran"))"
+	tlog "pushed: origin/master ${sha:0:10} carries [$good] (proof: $proof_kind; gate+push $(( $(date +%s) - GATE_T0 ))s, cycle $(( $(date +%s) - CYCLE_T0 ))s; smoke/gameplay sets $([ "$smoke_ran" = 1 ] && echo ran || echo "skipped, $(cat "$STATE/smoke_skipped") proof landing(s) since they last ran"))"
 }
 
 cycle() {

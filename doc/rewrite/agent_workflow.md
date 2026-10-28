@@ -992,3 +992,9 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
   shares an area with the lane and no global path, it lands as `merge(new master, its stamped precheck merge)` with the push's compile
   and ratchets (`precheck-merge`). 21:03Z: `fix/flavor-default`, prechecked before two tool lanes landed, took a full gate instead.
   Whatever does not land this way goes through the gate in the same cycle.
+- **One test world per gate; leaner push.** The batch gate keeps its test union in one world up to 60 selectors
+  (`DQ_TRAIN_WORLD_SPLIT_AT`, was 8): the 85239fc051 gate ran 22 tests in 3 s of test time but booted two worlds at ~230 s each.
+  `dq_push_master.sh` skips its round-1 fetch when the strict check fetched seconds earlier, verifies the landing from the
+  remote-tracking ref the push updated (a fetch only when that does not hold the commit), computes the stamp verdict once, and logs
+  laps for setup/lock and the stamp verdict. The `pushed:` line reports `gate+push` seconds next to the whole cycle (which also counts
+  the preamble and the disk floor check).
