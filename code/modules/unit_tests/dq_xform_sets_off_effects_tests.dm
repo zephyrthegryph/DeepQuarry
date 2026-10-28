@@ -23,6 +23,11 @@ CAPABILITIES(/transformation/dq_spawn/pulse)
 CAPABILITIES(/transformation/dq_spawn/bang)
 	configure(transformation(takes = list(reagent(REAGENT_ID_LEAD, 1)), made = 2, effects = sets_off(XFORM_FX_EXPLOSION, divisor = 1)))
 
+/transformation/dq_spawn/aura
+
+CAPABILITIES(/transformation/dq_spawn/aura)
+	configure(transformation(takes = list(reagent(REAGENT_ID_LITHIUM, 1)), made = 1, effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/entangled, lasts = 4 SECONDS)))
+
 /// An item that notes the pulse.
 /obj/item/dq_emp_probe
 	var/pulsed = 0
@@ -86,5 +91,18 @@ CAPABILITIES(/transformation/dq_spawn/bang)
 		qdel(S)
 	TEST_ASSERT(sparks > 0, "the tiny explosion went off as sparks")
 	TEST_ASSERT_EQUAL(H.total_volume, 0, "an explosion in a non-living vessel empties it before it goes off")
+
+/datum/unit_test/dq_xform_sets_off_area
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_area/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/near = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/far = allocate(/mob/living/carbon/human, locate(T.x + 3, T.y, T.z))
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_LITHIUM, 1, safety = 1)
+	xform_settle_reagents(H)
+	TEST_ASSERT(near.has_body_effect(/datum/body_effect/entangled), "a mob within range gets the body effect")
+	TEST_ASSERT(!far.has_body_effect(/datum/body_effect/entangled), "a mob out of range does not")
 
 #endif

@@ -634,12 +634,8 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_cold_snap)
 CAPABILITIES(/transformation/chem/instant/slime/dark_blue_temp_resist)
 	configure(transformation(name = "Slime Temperature Resistance", id = "m_darkblue_temperature_resist", takes = list(reagent(REAGENT_ID_BLOOD, 5)),
 		made = 1, holds = subject_is(/obj/item/slime_extract/dark_blue),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_blue_temp_resist, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_temp_resist, lasts = 5 MINUTES)))
 
-/transformation/chem/instant/slime/dark_blue_temp_resist/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(1, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/slime_temp_resist, 5 MINUTES, src)
-	..()
 
 /datum/body_effect/slime_temp_resist
 	name = "slime temperature resistance"
@@ -1140,12 +1136,8 @@ CAPABILITIES(/transformation/chem/instant/slime/sapphire_sapience)
 CAPABILITIES(/transformation/chem/instant/slime/ruby_swole)
 	configure(transformation(name = "Slime Strength", id = "m_ruby_strength", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/ruby),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/ruby_swole, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_strength, lasts = 10 MINUTES)))
 
-/transformation/chem/instant/slime/ruby_swole/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(1, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/slime_strength, 10 MINUTES, src)
-	..()
 
 /datum/body_effect/slime_strength
 	name = "slime strength"
@@ -1225,12 +1217,8 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_push)
 CAPABILITIES(/transformation/chem/instant/slime/emerald_agility)
 	configure(transformation(name = "Slime Agility", id = "m_emerald_agility", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/emerald),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/emerald_agility, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_agility, lasts = 10 MINUTES)))
 
-/transformation/chem/instant/slime/emerald_agility/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(1, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/slime_agility, 10 MINUTES, src)
-	..()
 
 /datum/body_effect/slime_agility
 	name = "slime agility"
@@ -1248,12 +1236,8 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_agility)
 CAPABILITIES(/transformation/chem/instant/slime/emerald_speed)
 	configure(transformation(name = "Slime Speed", id = "m_emerald_speed", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/emerald),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/emerald_speed, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/slime_speed, lasts = 1 MINUTE)))
 
-/transformation/chem/instant/slime/emerald_speed/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(1, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/slime_speed, 1 MINUTE, src)
-	..()
 
 /datum/body_effect/slime_speed
 	name = "slime speed"

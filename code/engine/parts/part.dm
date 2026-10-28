@@ -621,8 +621,8 @@
 /// sets_off(kind, ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): XFORM_FX_SMOKE, XFORM_FX_FOAM,
 /// XFORM_FX_EXPLOSION, XFORM_FX_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
 /// (no powergaming a tiny amount); `tell` is what viewers within 5 see; `variant` is the foam kind; `divisor` scales an explosion (made / divisor) and
-/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made.
-/proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null, amount = null)
+/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made; XFORM_FX_AREA applies `body_effect` (a path or a list of them) for `lasts` to every mob within `range` of the subject.
+/proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null, amount = null, range = null, body_effect = null, lasts = null)
 	var/list/arguments = list("kind" = kind)
 	if(!isnull(clears))
 		arguments["clears"] = clears
@@ -640,6 +640,12 @@
 		arguments["skip_in_tests"] = skip_in_tests
 	if(!isnull(amount))
 		arguments["amount"] = amount
+	if(!isnull(range))
+		arguments["range"] = range
+	if(!isnull(body_effect))
+		arguments["body_effect"] = body_effect
+	if(!isnull(lasts))
+		arguments["lasts"] = lasts
 	return part_make(/datum/entry/part/effect/sets_off, arguments)
 
 /datum/entry/part/effect/sets_off

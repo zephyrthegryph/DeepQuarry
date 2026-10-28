@@ -112,7 +112,7 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	if(X.spawn_rows)
 		xform_run_spawns(X, holder, amt_produced)
 	if(X.effect_rows)
-		xform_run_effects(X, holder, amt_produced)
+		xform_run_effects(X, holder, amt_produced, owner)
 	if(X.then_proc)
 		call(owner, X.then_proc)(holder, amt_produced)
 
