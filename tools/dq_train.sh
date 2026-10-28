@@ -67,7 +67,7 @@ ORIG_ARGS=("$@")
 # Every file the integrator runs from SELF_DIR (the snapshot under $STATE/self), relative to tools/. The ONE place to list them: ensure
 # copies these, and the self-update compares and refreshes these. A script the cycle runs through "$SELF_DIR/..." goes here
 # (tools/ci/test_train.sh fails when one is missing); dq_declared_tests.sh and dq_light_paths.sh are enqueue-only (the lane's checkout).
-SNAP_FILES=(dq_train.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml train/lane_times.py)
+SNAP_FILES=(dq_train.sh dq_gate_verdicts.sh dq_train_estimate.js dq_disk_budget.sh ci/disk_budget.toml train/lane_times.py)
 STATE="${DQ_TRAIN_STATE:-E:/dq-cache/train}"
 WT="${DQ_TRAIN_WT:-E:/projects/dq-wt/train-base}"
 TBRANCH="${DQ_TRAIN_BRANCH:-train/integ}"
@@ -736,6 +736,87 @@ pre_probe_conflict() { # <branch> <tip> <master>: 0 = merges (or only the manife
 # One precheck: the lane merged onto current origin/master in worker worktree N, and the gates a batch would run (tools/dq_merge_batch.sh
 # on that one lane: DreamChecker reused when no DM changed, analyze_tests only when the analyzer or its scopes changed, the lane's tests
 # plus the smoke set). Runs as a background job of the prechecker; it records the verdict and bounces a lane that fails alone.
+# ---- the precheck proof of a lone lane (28 October: a one-line lane took 15-25 min because the integrator re-merged and re-gated the very
+# tree its precheck had just proven) ------------------------------------------------------------------------------------------------------
+# pre_proof_save keeps what a later fast-forward landing needs: the precheck merge commit (pinned by refs/train/proof/<lane> so the worker
+# reusing its worktree cannot lose it), its tree, its DreamChecker input key and copies of its gate stamps ($PRE/proof/<sha12>/).
+pre_proof_save() { # <branch> <tip> <master> <worktree>
+	local b="$1" tip="$2" master="$3" wt="$4" sha p1 p2 short dir key vf
+	sha="$(git -C "$wt" rev-parse -q --verify HEAD 2>/dev/null)" || return 0
+	p1="$(git -C "$wt" rev-parse -q --verify "HEAD^1" 2>/dev/null)"; p2="$(git -C "$wt" rev-parse -q --verify "HEAD^2" 2>/dev/null)"
+	if [ "$p1" != "$master" ] || [ "$p2" != "$tip" ]; then tlog "proof: $b's precheck HEAD ${sha:0:10} is not the plain merge of master ${master:0:10} + tip ${tip:0:10}; no fast-forward proof"; return 0; fi
+	git -C "$wt" diff --quiet && git -C "$wt" diff --cached --quiet || { tlog "proof: $b's precheck tree is dirty; no fast-forward proof"; return 0; }
+	short="${sha:0:12}"
+	[ "$(cat "$wt/data/merge-gates/$short.ratchets.ok" 2>/dev/null)" = "$sha" ] && [ -f "$wt/data/merge-gates/$short.ok" ] || { tlog "proof: $b's precheck left no gate stamps on ${short}; no fast-forward proof"; return 0; }
+	dir="$PRE/proof/$short"; mkdir -p "$dir" || return 0
+	cp -f "$wt/data/merge-gates/$short".{ok,ratchets.ok,analyze.ok} "$dir/" 2>/dev/null || return 0
+	[ -f "$wt/data/merge-gates/$short.dreamchecker.ok" ] && cp -f "$wt/data/merge-gates/$short.dreamchecker.ok" "$dir/"
+	key="$(cd "$wt" && . tools/dq_gate_verdicts.sh && gate_dc_key 2>/dev/null)" || key=""
+	G update-ref "refs/train/proof/$(fname "$b")" "$sha" 2>/dev/null
+	vf="$(pre_verdict_file "$b" "$tip")"
+	[ -n "$vf" ] && printf 'merge=%s\nmerge_tree=%s\ndckey=%s\n' "$sha" "$(git -C "$wt" rev-parse "$sha^{tree}")" "$key" >>"$vf"
+	tlog "proof: $b precheck merge ${sha:0:10} (tree $(git -C "$wt" rev-parse --short=10 "$sha^{tree}"), DreamChecker key ${key:0:10}) kept for a fast-forward landing"
+}
+# fast_land_pick: FAST_LANE/FAST_SHA set when a chosen lane can land by pushing its precheck merge commit as is: its precheck passed on
+# exactly the current origin/master (nothing landed since), the commit is still master + the queued tip with the recorded tree, its gate
+# stamps are kept, and DreamChecker passed on identical inputs (the keyed verdict of the same DreamChecker key, or the lane changes
+# nothing DreamChecker reads). Smoke/gameplay sets due (smoke_due) -> the full cycle runs them. DQ_TRAIN_FAST_LAND=0 turns it off.
+fast_land_pick() {
+	local b tip vf m sha cur key dvf
+	FAST_LANE=""; FAST_SHA=""; FAST_WHY_NOT=""
+	[ "${DQ_TRAIN_FAST_LAND:-1}" = 1 ] && [ "${PRECHECKED_BATCH:-0}" = 1 ] || return 1
+	smoke_due 1 && { FAST_WHY_NOT="the smoke/gameplay sets are due"; return 1; }
+	cur="$(G rev-parse origin/master)"
+	for b in "${CHOSEN[@]}"; do
+		lane_is_light "$b" && continue
+		tip="${TIP_OF[$b]}"; vf="$(pre_verdict_file "$b" "$tip")"
+		[ "$(qget "$vf" verdict)" = pass ] || continue
+		m="$(qget "$vf" master)"; sha="$(qget "$vf" merge)"
+		[ "$m" = "$cur" ] || { FAST_WHY_NOT="$b was prechecked on ${m:0:10}, master is ${cur:0:10}"; continue; }
+		[ -n "$sha" ] || { FAST_WHY_NOT="$b has no kept precheck merge"; continue; }
+		[ "$(G rev-parse -q --verify "$sha^1" 2>/dev/null)" = "$cur" ] && [ "$(G rev-parse -q --verify "$sha^2" 2>/dev/null)" = "$tip" ] || { FAST_WHY_NOT="$b's precheck merge is not master + its tip"; continue; }
+		[ "$(G rev-parse "$sha^{tree}" 2>/dev/null)" = "$(qget "$vf" merge_tree)" ] || continue
+		[ -f "$PRE/proof/${sha:0:12}/${sha:0:12}.ratchets.ok" ] || continue
+		key="$(qget "$vf" dckey)"
+		if [ -f "$PRE/proof/${sha:0:12}/${sha:0:12}.dreamchecker.ok" ]; then :
+		elif [ -n "$key" ] && (. "$SELF_DIR/dq_gate_verdicts.sh" 2>/dev/null || . "$(repo_dir)/tools/dq_gate_verdicts.sh"; gate_verdict_has dreamchecker "$key" >/dev/null); then :
+		elif ! dc_needs_run "$tip" "$cur"; then :
+		else FAST_WHY_NOT="no DreamChecker pass on $b's exact inputs (key ${key:0:10})"; continue; fi
+		FAST_LANE="$b"; FAST_SHA="$sha"; return 0
+	done
+	return 1
+}
+fast_land() { # pushes FAST_SHA (a fast-forward of origin/master) from the train worktree; 0 = landed, 1 = not (the full cycle runs)
+	local b="$FAST_LANE" sha="$FAST_SHA" short="${FAST_SHA:0:12}" pushlog prc t0
+	t0=$(date +%s)
+	ensure_wt || return 1
+	pushlog="$LOGS/fastland-$(date +%Y%m%dT%H%M%S).push.log"
+	phase "fast-forward: $b"
+	printf '%s\n' "$b" >"$STATE/batch.lanes"
+	tlog "PROOF precheck-ff: $b's precheck proved merge ${sha:0:10} on origin/master $(G rev-parse --short=10 origin/master), still the tip; pushing that commit as a fast-forward (no re-merge, no re-gate); log $pushlog"
+	(
+		cd "$WT" || exit 99
+		git fetch -q origin 2>/dev/null
+		git switch -q --detach "$sha" || exit 98
+		mkdir -p data/merge-gates && cp -f "$PRE/proof/$short"/* data/merge-gates/ || exit 97
+		echo "$sha" >"data/merge-gates/$short.dreamchecker.ok"   # fast_land_pick proved a DreamChecker pass on these exact inputs
+		export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1
+		[ "${DQ_TRAIN_DRY_RUN:-0}" = 1 ] && export DQ_PUSH_DRY_RUN=1
+		bash tools/dq_push_master.sh --expect "$b"
+	) >"$pushlog" 2>&1
+	prc=$?
+	rm -f "$STATE/batch.lanes"
+	if [ "$prc" -ne 0 ]; then tlog "fast-forward landing of $b refused (rc=$prc: $(grep -m1 -E 'REFUSED|rejected' "$pushlog" | head -c 200)); the full cycle runs"; return 1; fi
+	[ "${DQ_TRAIN_DRY_RUN:-0}" = 1 ] && { tlog "DRY RUN: $b would fast-forward"; return 0; }
+	G fetch -q origin
+	[ "$(G rev-parse origin/master)" = "$sha" ] || { tlog "fast-forward push of $b returned 0 but origin/master is not ${sha:0:10}"; return 1; }
+	mark_landed "$b" "${TIP_OF[$b]}" "$sha"
+	G update-ref -d "refs/train/proof/$(fname "$b")" 2>/dev/null
+	echo $(( $(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) + 1 )) >"$STATE/smoke_skipped"
+	CYCLE_PROGRESS=1
+	tlog "pushed: origin/master ${sha:0:10} carries [$b] (proof: precheck-ff; cycle $(( $(date +%s) - CYCLE_T0 ))s, push $(( $(date +%s) - t0 ))s; smoke/gameplay sets skipped, $(cat "$STATE/smoke_skipped") proof landing(s) since they last ran)"
+	return 0
+}
 precheck_one() { # <worker n> <branch> <tip>
 	local n="$1" b="$2" tip="$3" wt="${PRE_WT_BASE}$1" master log out t0 secs good bl why lg verdict tests rc
 	t0=$(date +%s)
@@ -783,6 +864,7 @@ precheck_one() { # <worker n> <branch> <tip>
 	fi
 	# the lane may have moved or been withdrawn while it was checked: record the verdict, bounce only what is still queued at this tip
 	pre_record "$b" "$tip" "$master" "$verdict" "$secs" "$log" "${why:-}"
+	if [ "$is_light" = 0 ] && { [ "$verdict" = pass ] || [ "$verdict" = tpass ]; }; then pre_proof_save "$b" "$tip" "$master" "$wt"; fi
 	rm -f "$PRE/running/$(fname "$b")"
 	tlog "PRECHECK $verdict: $b (tip ${tip:0:10}) on master ${master:0:10} in ${secs}s"
 	if [ "$verdict" = fail ] || [ "$verdict" = conflict ]; then
@@ -1527,6 +1609,11 @@ cycle() {
 		elif [ "$drc" -ne 0 ]; then
 			tlog "WARNING: the disk gate failed internally (rc=$drc, not a floor breach); running the cycle"
 		fi
+		if fast_land_pick && fast_land; then
+			tlog "cycle done in $(( $(date +%s) - t0 ))s (fast-forward of $FAST_LANE; the other chosen lanes ride the next cycle)"
+			return 0
+		fi
+		[ -z "${FAST_WHY_NOT:-}" ] || tlog "no fast-forward landing: $FAST_WHY_NOT"
 		heavy_cycle
 	fi
 	local rc=$?

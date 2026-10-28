@@ -30,6 +30,18 @@
 	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_RADIATION, range = 7)), "a radiation row without a strength")
 	GLOB.declare_report_capture = null
 	TEST_ASSERT_EQUAL(length(radiation_reports), 1, "is refused with one report")
+	TEST_ASSERT_EQUAL(length(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PUSH, range = 3))), 1, "a push needs a direction and a range")
+	TEST_ASSERT_EQUAL(length(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_BURN, gases = list(GAS_VOLATILE_FUEL = 1), temperature = 500, range = 1))), 1, "a burn needs gases, a temperature and a range")
+	TEST_ASSERT_EQUAL(length(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_MOOD, mood = MOOD_CALM))), 1, "a mood row")
+	TEST_ASSERT_EQUAL(length(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(0, 2)))), 1, "an evolve takes levels")
+	var/list/new_kind_reports = list()
+	GLOB.declare_report_capture = new_kind_reports
+	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_GRAVITY, direction = "sideways", range = 3)), "an unknown gravity direction")
+	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_BURN, gases = list(GAS_VOLATILE_FUEL = 1))), "a burn without a temperature and range")
+	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_MOOD, mood = "sulky")), "an unknown mood")
+	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE)), "an evolve without levels")
+	GLOB.declare_report_capture = null
+	TEST_ASSERT_EQUAL(length(new_kind_reports), 4, "each was reported ([jointext(new_kind_reports, "; ")])")
 	// The converted rules compiled their rows at world setup.
 	var/datum/xform/X = xform_of(/transformation/chem/instant/chemsmoke)
 	TEST_ASSERT_NOTNULL(X, "the chem smoke rule exists")

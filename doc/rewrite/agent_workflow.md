@@ -937,3 +937,27 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
 - **A compiler lane's light precheck publishes its compiler.** When a light precheck's merge changes `tools/dmb`, it also runs
   `build.sh dmbc` (content-addressed), so the heavy gate after the lane lands finds the compiler instead of rebuilding it for 3-4
   minutes (`prebuild-compiler` 180-273 s in four of the slow cycles on 27 October). `DQ_GATE_LIGHT_PREBUILD=0` turns it off.
+
+### 29d. A lone prechecked lane lands as a fast-forward (28 October 2026, `train/speed`)
+
+Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z as 6cd2d86b74): precheck 10.1 min, DreamChecker batch
+14.4 min beside it (the critical path), then the integrator re-merged the same lane on the same master and re-ran compile + boot for
+9.0 min before pushing. That last step proved nothing new: the tree was byte-identical to the one the precheck had just gated.
+
+- **The precheck keeps its proof.** A passing heavy precheck records `merge=` (its merge commit), `merge_tree=` and `dckey=` (the
+  DreamChecker input key, `gate_dc_key`) in its verdict, copies its gate stamps to `$PRE/proof/<sha12>/`, and pins the commit with
+  `refs/train/proof/<lane>` so a reused worker worktree cannot lose it (`pre_proof_save`). Not kept when HEAD is not exactly
+  master + the lane tip (a baseline-shrink commit on top, say) or the tree is dirty.
+- **Proof `precheck-ff`.** When a chosen lane's precheck ran on exactly the current `origin/master` (nothing landed since), its merge
+  commit is still `origin/master` + the queued tip with the recorded tree, its stamps are kept, and DreamChecker passed on identical
+  inputs (the keyed verdict for `dckey`, a stamp from the precheck itself, or the lane changes nothing DreamChecker reads), the integrator
+  detaches the train worktree onto that commit, restores the stamps and runs `dq_push_master.sh` (strict, no re-proof): a fast-forward,
+  no re-merge, no re-gate (`fast_land_pick`, `fast_land`). Any failed check, or a refused push, falls back to the full cycle in the same
+  cycle and logs why (`no fast-forward landing: ...`). The smoke/gameplay sets keep their cadence: when `smoke_due`, the full cycle runs
+  them. One lane lands per fast cycle; the other chosen lanes ride the next cycle (their precheck master is then stale, so they take the
+  `precheck` proof). `DQ_TRAIN_FAST_LAND=0` turns it off.
+- **Shared verdigris bindings.** `verdigris-bindings-check` (48-49 s of the 54-62 s `prepare`, in every train worktree after any master
+  that adds or removes a `.dm`) stores its outputs by check key in `E:/dq-cache/vg-bindings` (`DQ_VG_BINDINGS_CACHE`, `off` disables);
+  a worktree with the same key copies them in instead of regenerating.
+- **DreamChecker stays whole-tree.** SpacemanDMM 1.11 is a prebuilt binary with no incremental or per-file mode, and a scoped run would
+  not give a full run's diagnostics. Its verdict is reused only on identical inputs (`gate_dc_key`).
