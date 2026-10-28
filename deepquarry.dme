@@ -5370,6 +5370,7 @@
 #include "code\modules\power\debug_items.dm"
 #include "code\modules\power\grid_checker.dm"
 #include "code\modules\power\lighting.dm"
+#include "code\modules\power\lighting_glow_decls.dm"
 #include "code\modules\power\port_gen.dm"
 #include "code\modules\power\power.dm"
 #include "code\modules\power\power_grid.dm"
