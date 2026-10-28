@@ -102,7 +102,6 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 	return OP_OK
 
 /obj/structure/marker_beacon
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "marker beacon"
 	desc = "A prismatic path illumination device. It is anchored in place and glowing steadily."
 	icon = 'icons/obj/lighting.dmi'
