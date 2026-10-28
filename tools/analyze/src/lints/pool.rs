@@ -183,7 +183,7 @@ impl Lint for Pool {
 
     fn selftest(&self) -> Result<String, String> {
         let mut scope = LintScope::default();
-        scope.lists.insert("exempt_prefixes".into(), vec!["code/modules/unit_tests/".into(), "code/datums/lifecycle/pool.dm".into()]);
+        scope.lists.insert("exempt_prefixes".into(), vec!["code/modules/unit_tests/".into(), "code/tests/unit_tests/".into(), "code/datums/lifecycle/pool.dm".into()]);
         let run = |files: Vec<(&str, &str)>| -> usize {
             let fs: Vec<SourceFile> = files.iter().map(|(r, t)| SourceFile::from_text(r, t)).collect();
             let refs: Vec<&SourceFile> = fs.iter().collect();
