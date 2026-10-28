@@ -12,6 +12,16 @@ use std::{
     sync::{Arc, Mutex, OnceLock, Weak},
 };
 
+/// Per-call cost of the pool (lock wait, bucket sweep, equality checks) when `DMB_TIMINGS_DETAIL=1`.
+fn log_cost(label: &str, started: std::time::Instant, compared: usize, adopted: bool) {
+    static ENABLED: OnceLock<bool> = OnceLock::new();
+    if *ENABLED.get_or_init(|| std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1")) {
+        eprintln!(
+            "detail link.pool.{label}: {:.4}s compared={compared} adopted={adopted}",
+            started.elapsed().as_secs_f64()
+        );
+    }
+}
 struct Pool<T> {
     buckets: Mutex<Buckets<T>>,
 }
@@ -28,7 +38,8 @@ impl<T: PartialEq> Pool<T> {
             }),
         }
     }
-    fn share(&self, fingerprint: u64, value: T) -> Arc<T> {
+    fn share(&self, label: &str, fingerprint: u64, value: T) -> Arc<T> {
+        let started = std::time::Instant::now();
         let mut buckets = self.buckets.lock().unwrap_or_else(|e| e.into_inner());
         if buckets.map.len() >= buckets.sweep_at {
             buckets.map.retain(|_, bucket| {
@@ -39,15 +50,19 @@ impl<T: PartialEq> Pool<T> {
         }
         let bucket = buckets.map.entry(fingerprint).or_default();
         bucket.retain(|entry| entry.strong_count() > 0);
+        let mut compared = 0usize;
         for entry in bucket.iter() {
             if let Some(held) = entry.upgrade() {
+                compared += 1;
                 if *held == value {
+                    log_cost(label, started, compared, true);
                     return held;
                 }
             }
         }
         let shared = Arc::new(value);
         bucket.push(Arc::downgrade(&shared));
+        log_cost(label, started, compared, false);
         shared
     }
 }
@@ -66,14 +81,14 @@ pub(super) fn bindings(
     data: super::bindings::BindingData,
 ) -> Arc<super::bindings::BindingData> {
     static POOL: OnceLock<Pool<super::bindings::BindingData>> = OnceLock::new();
-    POOL.get_or_init(Pool::new).share(fingerprint, data)
+    POOL.get_or_init(Pool::new).share("bindings", fingerprint, data)
 }
 pub(super) fn recipe(
     fingerprint: u64,
     recipe: super::assignment_recipe::AssignmentRecipe,
 ) -> Arc<super::assignment_recipe::AssignmentRecipe> {
     static POOL: OnceLock<Pool<super::assignment_recipe::AssignmentRecipe>> = OnceLock::new();
-    POOL.get_or_init(Pool::new).share(fingerprint, recipe)
+    POOL.get_or_init(Pool::new).share("recipe", fingerprint, recipe)
 }
 
 #[cfg(test)]
