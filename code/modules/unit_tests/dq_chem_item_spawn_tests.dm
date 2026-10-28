@@ -50,4 +50,20 @@
 	T = dq_chem_spawn_react(list(REAGENT_ID_FROSTOIL = 5, REAGENT_ID_IRON = REAGENTS_PER_SHEET))
 	TEST_ASSERT_EQUAL(dq_chem_spawn_take(T, /obj/item/stack/material/iron), 1, "frost oil and iron make one iron sheet")
 
+/// A slime extract reaction that spawns still spends a use of the extract (the base slime rule's tail), and goes inert on the last one.
+/datum/unit_test/dq_chem_item_spawn_extract_uses
+	boot_needs = list()
+
+/datum/unit_test/dq_chem_item_spawn_extract_uses/Run()
+	var/turf/T = test_floor()
+	var/obj/item/slime_extract/grey/E = allocate(/obj/item/slime_extract/grey, T)
+	E.uses = 2
+	E.reagents.add_reagent(REAGENT_ID_BLOOD, 5)
+	TEST_ASSERT_EQUAL(dq_chem_spawn_take(T, /obj/item/reagent_containers/food/snacks/monkeycube), 5, "a grey extract with blood makes five monkey cubes")
+	TEST_ASSERT_EQUAL(E.uses, 1, "the reaction spent one use")
+	E.reagents.add_reagent(REAGENT_ID_BLOOD, 5)
+	TEST_ASSERT_EQUAL(dq_chem_spawn_take(T, /obj/item/reagent_containers/food/snacks/monkeycube), 5, "the second use makes five more")
+	TEST_ASSERT_EQUAL(E.uses, 0, "the extract is spent")
+	TEST_ASSERT(findtext(E.name, "inert"), "a spent extract is called inert")
+
 #endif
