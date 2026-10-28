@@ -171,7 +171,7 @@ CAPABILITIES(/transformation/chem/instant/slime/blue_stability)
 CAPABILITIES(/transformation/chem/instant/slime/blue_calm)
 	configure(transformation(name = "Slime Calm", id = "m_blue_calm", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/blue),
-		effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_CALM, sfx = SFX_EFFECTS_PHASEIN)))
+		effects = sets_off(kind = XFORM_FX_MOOD, sfx_volume = 0.75, mood = MOOD_CALM, sfx = SFX_EFFECTS_PHASEIN)))
 
 
 /transformation/chem/instant/slime/blue_cryotoxin
@@ -239,7 +239,7 @@ CAPABILITIES(/transformation/chem/instant/slime/purple_fertility)
 CAPABILITIES(/transformation/chem/instant/slime/orange_fire)
 	configure(transformation(name = "Slime Fire", id = "m_orange_fire", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/orange),
-		effects = sets_off(kind = XFORM_FX_BURN, audit = "Orange extract reaction (fire)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, fire_sfx = SFX_EFFECTS_PHASEIN, gases = list(GAS_VOLATILE_FUEL = 33, GAS_O2 = 66), temperature = 1500 + T0C, hotspot = list(1500 + T0C, 400), range = 2, line_of_sight = TRUE)))
+		effects = sets_off(kind = XFORM_FX_BURN, sfx_volume = 0.75, audit = "Orange extract reaction (fire)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, fire_sfx = SFX_EFFECTS_PHASEIN, gases = list(GAS_VOLATILE_FUEL = 33, GAS_O2 = 66), temperature = 1500 + T0C, hotspot = list(1500 + T0C, 400), range = 2, line_of_sight = TRUE)))
 
 
 /transformation/chem/instant/slime/orange_heatwave
@@ -324,7 +324,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_pyrotoxin)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_lightning)
 	configure(transformation(name = "Slime Lightning", id = "m_yellow_lightning", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		effects = sets_off(kind = XFORM_FX_LIGHTNING, audit = "Yellow extract reaction (lightning)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS)))
+		effects = sets_off(kind = XFORM_FX_LIGHTNING, sfx_volume = 0.75, audit = "Yellow extract reaction (lightning)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS)))
 
 
 /transformation/chem/instant/slime/yellow_flashlight
@@ -339,7 +339,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_flashlight)
 CAPABILITIES(/transformation/chem/instant/slime/yellow_emp)
 	configure(transformation(name = "Slime EMP", id = "m_yellow_emp", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/yellow),
-		effects = sets_off(kind = XFORM_FX_EMP, audit = "Yellow extract reaction (emp)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, ranges = list(2, 4, 7, 10), fire_sfx = SFX_EFFECTS_PHASEIN)))
+		effects = sets_off(kind = XFORM_FX_EMP, sfx_volume = 0.75, audit = "Yellow extract reaction (emp)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, ranges = list(2, 4, 7, 10), fire_sfx = SFX_EFFECTS_PHASEIN)))
 
 
 /transformation/chem/instant/slime/yellow_battery
@@ -590,7 +590,7 @@ CAPABILITIES(/transformation/chem/instant/slime/red_mutation)
 CAPABILITIES(/transformation/chem/instant/slime/red_enrage)
 	configure(transformation(name = "Slime Enrage", id = "m_red_enrage", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/red),
-		effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_ENRAGE, audit = "Red extract reaction (enrage)", sfx = SFX_EFFECTS_PHASEIN)))
+		effects = sets_off(kind = XFORM_FX_MOOD, sfx_volume = 0.75, mood = MOOD_ENRAGE, audit = "Red extract reaction (enrage)", sfx = SFX_EFFECTS_PHASEIN)))
 
 
 /transformation/chem/instant/slime/red_hotsauce
@@ -646,7 +646,7 @@ CAPABILITIES(/transformation/chem/instant/slime/red_ferality)
 CAPABILITIES(/transformation/chem/instant/slime/green_radpulse)
 	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/green),
-		effects = sets_off(kind = XFORM_FX_LATER, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_start_emitting))))
+		effects = sets_off(kind = XFORM_FX_LATER, sfx_volume = 0.75, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_start_emitting))))
 
 
 /transformation/chem/instant/slime/green_emitter
@@ -748,7 +748,7 @@ CAPABILITIES(/transformation/chem/instant/slime/oil_oil)
 CAPABILITIES(/transformation/chem/instant/slime/oil_fakesplosion)
 	configure(transformation(name = "Slime Fake Explosion", id = "m_oil_fakeboom", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/oil),
-		effects = sets_off(kind = XFORM_FX_BLAST, blast = list(0, 0, 0), sfx = SFX_EFFECTS_PHASEIN)))
+		effects = sets_off(kind = XFORM_FX_BLAST, sfx_volume = 0.75, blast = list(0, 0, 0), sfx = SFX_EFFECTS_PHASEIN)))
 
 
 /transformation/chem/instant/slime/oil_explosion

@@ -48,6 +48,7 @@
 	var/edit
 	var/list/levels
 	var/list/symptoms
+	var/sfx_volume
 	var/list/body_effects
 	var/lasts
 
@@ -102,6 +103,7 @@
 		row.edit = arguments["edit"]
 		row.levels = arguments["levels"]
 		row.symptoms = arguments["symptoms"]
+		row.sfx_volume = arguments["sfx_volume"]
 		var/body_effect = arguments["body_effect"]
 		row.body_effects = islist(body_effect) ? body_effect : (body_effect ? list(body_effect) : null)
 		row.lasts = arguments["lasts"]
@@ -192,7 +194,7 @@
 				for(var/part in row.blast)
 					b += islist(part) ? rand(part[1], part[2]) : part
 				if(row.sfx)
-					play_sfx(subject, row.sfx, 0.75)
+					xform_play_sfx(subject, row.sfx, row.sfx_volume)
 				explosion(location, b[1], b[2], b[3], length(b) >= 4 ? b[4] : null)
 			if(XFORM_FX_FROST)
 				var/datum/effect/effect/system/smoke_spread/frost/F = new (subject)
@@ -204,7 +206,7 @@
 				if(row.tell)
 					subject.visible_message(span_danger("\The [subject] begins to vibrate violently!"))
 				if(row.sfx)
-					play_sfx(subject, row.sfx, 0.75)
+					xform_play_sfx(subject, row.sfx, row.sfx_volume)
 				after(subject, row.delay, row.handler, with = list(subject))
 			if(XFORM_FX_AREA)
 				for(var/mob/living/L in range(row.range, subject))
@@ -232,7 +234,7 @@
 	if(row.tell)
 		subject.visible_message(span_danger("\The [subject] begins to vibrate violently!"))
 	if(row.sfx)
-		play_sfx(subject, row.sfx, 0.75)
+		xform_play_sfx(subject, row.sfx, row.sfx_volume)
 	if(row.delay)
 		after(subject, row.delay, GLOBAL_PROC_REF(xform_effect_fire), with = list(subject, row, made))
 	else
@@ -290,7 +292,7 @@
 			if(row.consumes)
 				holder?.del_reagent(row.consumes)
 	if(row.fire_sfx)
-		play_sfx(subject, row.fire_sfx, 0.75)
+		xform_play_sfx(subject, row.fire_sfx, row.sfx_volume)
 
 /// XFORM_FX_MOOD: calms or enrages the slimes the subject can see, and slime-bodied people. A player slime always keeps free will.
 /proc/xform_effect_mood(atom/subject, datum/xform_effect/row)
@@ -324,7 +326,7 @@
 	if(row.audit)
 		log_and_message_admins("[row.audit] has been activated in [get_area(subject)].  Last fingerprints: [subject.forensic_data?.get_lastprint()]", null)
 	if(row.sfx)
-		play_sfx(subject, row.sfx, 0.75)
+		xform_play_sfx(subject, row.sfx, row.sfx_volume)
 
 /// XFORM_FX_CONTAGION: edits the engineered contagion carried in the blood of `holder`, if there is any.
 /proc/xform_effect_contagion(datum/reagents/holder, datum/xform_effect/row)
@@ -345,3 +347,7 @@
 			D.Neuter()
 		if(CONTAGION_FALTER)
 			D.Falter()
+
+/// Plays a sound at `volume_mult` times its usual volume (null: the usual volume).
+/proc/xform_play_sfx(atom/subject, sfx, volume_mult = null)
+	play_sfx(subject, sfx, isnull(volume_mult) ? 1 : volume_mult)

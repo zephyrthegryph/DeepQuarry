@@ -69,6 +69,16 @@ CAPABILITIES(/transformation/dq_spawn/soothe)
 CAPABILITIES(/transformation/dq_spawn/rile)
 	configure(transformation(takes = list(reagent(REAGENT_ID_HYDROGEN, 1)), made = 1, effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_ENRAGE)))
 
+/transformation/dq_spawn/ignite
+
+CAPABILITIES(/transformation/dq_spawn/ignite)
+	configure(transformation(takes = list(reagent(REAGENT_ID_OXYGEN, 1)), made = 4, effects = sets_off(kind = XFORM_FX_BURN, gases = list(GAS_VOLATILE_FUEL = 1), scale_by_made = TRUE, temperature = 500, range = 0, floors_only = TRUE)))
+
+/transformation/dq_spawn/dose
+
+CAPABILITIES(/transformation/dq_spawn/dose)
+	configure(transformation(takes = list(reagent(REAGENT_ID_IRON, 1)), made = 1, effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_PICKY, symptoms = list(/datum/viral_trait/sneeze))))
+
 /// An item that notes the pulse.
 /obj/item/dq_emp_probe
 	var/pulsed = 0
@@ -225,5 +235,36 @@ CAPABILITIES(/transformation/dq_spawn/rile)
 	rile.add_reagent(REAGENT_ID_HYDROGEN, 1, safety = 1)
 	xform_settle_reagents(rile)
 	TEST_ASSERT(slime.has_body_effect(/datum/body_effect/berserk), "an enraged mood puts it back")
+
+/datum/unit_test/dq_xform_sets_off_burn
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_burn/Run()
+	var/turf/T = dq_containment_floor()
+	TEST_ASSERT_NOTNULL(T, "a clean floor to burn on")
+	var/datum/gas_mixture/air = T.return_air()
+	var/before = air.get_moles(GAS_VOLATILE_FUEL)
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_OXYGEN, 1, safety = 1)
+	xform_settle_reagents(H)
+	TEST_ASSERT(T.return_air().get_moles(GAS_VOLATILE_FUEL) > before, "the burn rule put fuel on the vessel's tile, scaled by what the step made")
+
+/datum/unit_test/dq_xform_sets_off_contagion
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_contagion/Run()
+	set_global(nameof(GLOB.archive_diseases), list())
+	var/turf/T = test_floor()
+	var/datum/affliction/contagion/engineered/strain = allocate(/datum/affliction/contagion/engineered, FALSE)
+	var/datum/viral_trait/sneeze/prototype = dq_proto(/datum/viral_trait/sneeze)
+	TEST_ASSERT(!strain.HasSymptom(prototype), "the strain starts without the symptom")
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_BLOOD, 5, safety = 1)
+	var/datum/reagent/blood/B = locate_in_list(H.reagent_list, /datum/reagent/blood)
+	TEST_ASSERT_NOTNULL(B, "the vessel holds blood")
+	B.data = list("viruses" = list(strain))
+	H.add_reagent(REAGENT_ID_IRON, 1, safety = 1)
+	xform_settle_reagents(H)
+	TEST_ASSERT(strain.HasSymptom(prototype), "the picky evolve added the one symptom it was given")
 
 #endif
