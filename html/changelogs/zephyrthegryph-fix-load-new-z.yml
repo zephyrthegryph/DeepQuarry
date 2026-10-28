@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "Loading a map onto a new z-level no longer refuses maps whose only faults are unknown object paths."

@@ -161,4 +161,12 @@ si="$tmp/si"; mkdir -p "$si"; (
 check "stale includes are dropped and reported in _unit_tests.dm and deepquarry.dme; existing ones stay" 'grep -q "moved_away.dm" "$si.out" && grep -q "gone.dm" "$si.out" && ! grep -q moved_away "$si/code/modules/unit_tests/_unit_tests.dm" && grep -q "here.dm" "$si/code/modules/unit_tests/_unit_tests.dm" && grep -q "kept.dm" "$si/deepquarry.dme" && ! grep -q "gone.dm" "$si/deepquarry.dme" && [ -n "$(git -C "$si" diff --cached --name-only)" ]'
 check "dq_merge_master.sh drops stale includes during a merge" 'grep -q "dq_drop_stale_includes code/modules/unit_tests/_unit_tests.dm" "$here/tools/dq_merge_master.sh"'
 
+# gates: an sccache server drop is infra (retried without sccache, then exit 95); a real compile error is not
+eval "$(sed -n '/^gate_sccache_failure() {/p' "$here/tools/dq_merge_gates.sh")"
+printf 'error: failed to compile vg-ffi\nsccache: error reading compile response from server\nCaused by: An existing connection was forcibly closed by the remote host. (os error 10054)\n' >"$tmp/sc1.log"
+printf 'error[E0425]: cannot find value `x` in this scope\n  --> src/lib.rs:3:5\nwarning: build used sccache at C:/sccache\n' >"$tmp/sc2.log"
+check "an sccache connection failure is classified as infra" 'gate_sccache_failure "$tmp/sc1.log"'
+check "a real Rust compile error is not classified as sccache infra" '! gate_sccache_failure "$tmp/sc2.log"'
+check "the gate retries without sccache and exits 95 on a second sccache failure" 'grep -q "RUSTC_WRAPPER= SCCACHE_DISABLE=1" "$here/tools/dq_merge_gates.sh" && grep -q "failed on sccache twice" "$here/tools/dq_merge_gates.sh"'
+
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
