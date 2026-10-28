@@ -57,7 +57,7 @@ CAPABILITIES(/transformation/dq_spawn/timed_pulse)
 /transformation/dq_spawn/shove
 
 CAPABILITIES(/transformation/dq_spawn/shove)
-	configure(transformation(takes = list(reagent(REAGENT_ID_NITROGEN, 2)), made = 1, effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PUSH, range = 2)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_RADIUM, 2)), made = 1, effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PUSH, range = 2)))
 
 /transformation/dq_spawn/soothe
 
@@ -213,7 +213,7 @@ CAPABILITIES(/transformation/dq_spawn/dose)
 	var/turf/side = locate(T.x + 1, T.y, T.z)
 	var/obj/item/dq_emp_probe/loose = allocate(/obj/item/dq_emp_probe, side)
 	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
-	H.add_reagent(REAGENT_ID_NITROGEN, 2, safety = 1)
+	H.add_reagent(REAGENT_ID_RADIUM, 2, safety = 1)
 	xform_settle_reagents(H)
 	var/datum/thrownthing/flight = loose.throwing
 	TEST_ASSERT_NOTNULL(flight, "the rule threw the loose item")
