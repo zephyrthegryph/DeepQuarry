@@ -77,7 +77,7 @@ import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } fr
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
-import { loadFocusedCompiledOutput, type CapturedCompiledRun } from './lib/focused_compiled_run';
+import { captureFocusedCompiledOutput, loadFocusedCompiledOutput, type CapturedCompiledRun } from './lib/focused_compiled_run';
 import { copyWritableRuntimePair } from './lib/runtime_pair_copy';
 
 import {
@@ -1599,6 +1599,25 @@ async function runIsolatedTestWorld(
     fs.writeFileSync(`${compilerReceipt.file}.captured-output.json`, `${JSON.stringify(options.capturedRun.evidence, null, 2)}\n`, { flag: 'wx' });
   }
   Juke.logger.info(`Compiler attempt evidence: ${compilerReceipt.file}`);
+  // Compile once per focused run (tools/dq_focused_test.sh): world 0 issues an explicit capture of the pair it just compiled
+  // (lib/focused_compiled_run.ts) to DQ_FOCUSED_CAPTURE_OUT, with its SHA256 beside it; the later worlds of the same run replay it
+  // with --focused-compiled-output instead of a second full native compile (28 October: the daemon's sessions were evicted by its
+  // memory budget in 49 of 64 runs, so every extra world paid 50-111 s for a byte-identical pair).
+  const captureOut = process.env.DQ_FOCUSED_CAPTURE_OUT;
+  if (captureOut && !options.capturedRun && compiled.kind !== 'conventional') {
+    try {
+      // pin a frozen copy of the compile receipt: world 0 finalizes its own receipt when its world ends, which would break the pin
+      const frozenReceipt = path.resolve(`${captureOut}.receipt.json`);
+      fs.copyFileSync(compilerReceipt.file, frozenReceipt, fs.constants.COPYFILE_EXCL);
+      const capture = captureFocusedCompiledOutput(frozenReceipt, compiled, path.resolve(dmbFile), path.resolve(dmbFile.replace(/\.dmb$/, '.rsc')));
+      const text = `${JSON.stringify(capture, null, 2)}\n`;
+      fs.writeFileSync(captureOut, text, { flag: 'wx' });
+      fs.writeFileSync(`${captureOut}.sha256`, `${createHash('sha256').update(text).digest('hex')}\n`, { flag: 'wx' });
+      Juke.logger.info(`focused capture: wrote ${captureOut} for the run's other worlds`);
+    } catch (error) {
+      Juke.logger.warn(`focused capture: not written (${error instanceof Error ? error.message : error}); the other worlds compile their own`);
+    }
+  }
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
   // The copy is named for this process as well as the slot. Slot names are reused, and a previous occupant's file can still be
@@ -3658,7 +3677,7 @@ async function waitForDreamCheckerMemory(): Promise<void> {
 // no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
 // local dev can skip it without consequence.
 export const DreamCheckerTarget = new Juke.Target({
-  dependsOn: [GenTarget], // it lints the generated DM too
+  dependsOn: [GenTarget, VerdigrisBindingsCheckTarget], // it lints the generated DM too, and the gitignored verdigris bindings (a stale copy gave a false 'undefined proc vg_world_steps_run')
   inputs: ['code/**/*.dm', 'deepquarry.dme'],
   onlyWhen: () => {
     if (!findDreamChecker()) {
