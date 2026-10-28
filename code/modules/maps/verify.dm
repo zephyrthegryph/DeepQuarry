@@ -32,7 +32,8 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 
 /// Check a parsed but not yet loaded map for errors.
 ///
-/// Returns a [/datum/map_report] if there are errors or `FALSE` otherwise.
+/// Returns a [/datum/map_report] if there are errors or warnings, or `FALSE` for a clean map. A report whose `loadable` is TRUE holds warnings only
+/// (unknown object paths the loader skips, stacked turfs): the map still loads. Callers refuse a map only on a report that is not loadable.
 /datum/parsed_map/proc/check_for_errors()
 	var/datum/map_report/report = new(src)
 	. = report
@@ -75,4 +76,5 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 		report.tag = "mapreport_[++report.tag_number]"
 		report.set_crashed(FALSE)
 	else
+		qdel(report) // a clean map keeps no report (it joined the map-report registry when it was made)
 		return FALSE
