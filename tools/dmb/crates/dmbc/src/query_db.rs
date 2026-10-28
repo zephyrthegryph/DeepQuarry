@@ -215,20 +215,42 @@ const VALUE_SHARDS: usize = 64;
 /// aligns to; the pooled value's own query settles a collision): weak, so nothing is kept alive by it. A value whose
 /// key is already pooled with another query or hash (two sessions disagreeing about one answer) is simply not pooled.
 pub(crate) struct AnswerValues {
+    /// Interning outcomes (diagnostic, `DMB_MEM_MARKS`): found equal, found with another answer, found for another query, new.
+    pub(crate) outcomes: [std::sync::atomic::AtomicU64; 4],
     shards: Box<[Mutex<std::collections::HashMap<u64, std::sync::Weak<AnswerValue>>>]>,
 }
 impl Default for AnswerValues {
     fn default() -> Self {
-        Self { shards: (0..VALUE_SHARDS).map(|_| Mutex::new(Default::default())).collect() }
+        Self { outcomes: Default::default(), shards: (0..VALUE_SHARDS).map(|_| Mutex::new(Default::default())).collect() }
     }
 }
 impl AnswerValues {
     fn intern(&self, id: u128, query: &dm_ir::ResolveQuery, meaning: &dm_ir::ResolvedMeaning) -> Arc<AnswerValue> {
         let hash = answer_hash(meaning);
         let mut pooled = self.shards[(id as usize) % VALUE_SHARDS].lock().unwrap_or_else(|error| error.into_inner());
+        use std::sync::atomic::Ordering::Relaxed;
         if let Some(held) = pooled.get(&(id as u64)).and_then(std::sync::Weak::upgrade) {
             if held.hash == hash && held.query == *query {
+                self.outcomes[0].fetch_add(1, Relaxed);
                 return held;
+            }
+            self.outcomes[if held.query == *query { 1 } else { 2 }].fetch_add(1, Relaxed);
+        } else if pooled.contains_key(&(id as u64)) {
+            self.outcomes[2].fetch_add(1, Relaxed);
+        } else {
+            self.outcomes[3].fetch_add(1, Relaxed);
+        }
+        if std::env::var_os("DMB_MEM_MARKS").is_some() {
+            let total: u64 = self.outcomes.iter().map(|o| o.load(Relaxed)).sum();
+            if total % 250_000 == 0 {
+                eprintln!(
+                    "answer values pool {:p}: same={} other_answer={} other_query={} new={}",
+                    self,
+                    self.outcomes[0].load(Relaxed),
+                    self.outcomes[1].load(Relaxed),
+                    self.outcomes[2].load(Relaxed),
+                    self.outcomes[3].load(Relaxed)
+                );
             }
         }
         let value = Arc::new(AnswerValue { hash, positive: positive_answer(meaning), query: *query });
