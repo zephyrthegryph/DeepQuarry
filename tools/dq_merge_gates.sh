@@ -87,7 +87,7 @@ done
 git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then
 	echo "dq_merge_gates: REFUSED: uncommitted changes to tracked files; commit the merge first (the stamp names an exact HEAD)" >&2
-	exit 1
+	exit 95 # INFRA: a dirty batch tree is the tooling's state, not a lane verdict (dq_merge_batch.sh retries or defers it)
 fi
 # --lanes names lanes that are not merged yet: this is a batch. The batch driver merges them (one build, one union of
 # tests) and bisects by lane on a failure, calling this script again per attempt with --no-auto-merge (tools/dq_merge_batch.sh).
@@ -107,7 +107,8 @@ for ref in $lanes; do
 	if [ -z "$tip" ]; then echo "dq_merge_gates: REFUSED: lane '$ref' does not resolve to a commit" >&2; exit 2; fi
 	if ! git merge-base --is-ancestor "$tip" HEAD; then
 		echo "dq_merge_gates: REFUSED: lane '$ref' (${tip:0:12}) is not in HEAD; merge it into this branch first (git merge --no-ff $ref)" >&2
-		exit 1
+		# INFRA (95): the merge did not happen, or the lane's ref moved after it; no lane code was judged (28 October: hit/fire-act-wave bounced on this)
+		exit 95
 	fi
 	lane_tips="$lane_tips${lane_tips:+,}$tip"
 done
@@ -369,6 +370,13 @@ job_dreamchecker() {
 	fi
 }
 job_ratchets() {
+	# Beside a test world the analyzer takes half the cores (rayon), not all of them: on 28 October an `analyze check` on 10.75 cores
+	# starved the gate's world into a cap with no result. DQ_RATCHET_THREADS overrides; RAYON_NUM_THREADS set by the caller wins.
+	if [ "$run_tests" -eq 1 ] && [ -z "${RAYON_NUM_THREADS:-}" ]; then
+		local nc; nc="$(nproc 2>/dev/null || echo 8)"
+		export RAYON_NUM_THREADS="${DQ_RATCHET_THREADS:-$(( nc > 3 ? nc / 2 : 1 ))}"
+		echo "ratchets: RAYON_NUM_THREADS=$RAYON_NUM_THREADS (a test world runs beside this job; $nc cores)"
+	fi
 	# The analyze caches are content-addressed and stamped with the engine's own source hash and lint_scopes.toml (tools/analyze/README.md,
 	# "Caches and truth"; tests/cache_truth.rs holds the property), so a warm run answers as a cold one does, also when the analyzer changed.
 	# The gate runs warm; a COLD run (private cache, ~4 min) only with DQ_GATE_COLD=1 or DQ_GATE_COLD_EVERY_MIN=<n> (default 0: never on the

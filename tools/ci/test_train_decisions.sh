@@ -32,6 +32,8 @@ check "dq_merge_gates skips analyze_tests on DQ_GATE_ANALYZE_TRUSTED and logs wh
 
 check "a gen failure is shown, retried, then an infra exit that merge_batch treats as a setup error" 'grep -q "exit 95" "$here/tools/dq_merge_gates.sh" && grep -q "\"\$rc\" -eq 95" "$here/tools/dq_merge_batch.sh"'
 
+check "test worlds run below normal (not idle) and log it; ratchets cap rayon beside a world" 'grep -q "PRIORITY_BELOW_NORMAL" "$here/tools/build/lib/byond.ts" && grep -q "world priority:" "$here/tools/build/lib/byond.ts" && grep -q "RAYON_NUM_THREADS=" "$here/tools/dq_merge_gates.sh"'
+
 # dq_merge_batch: one real conflict between two lanes must not poison the attempts after it (27 October, train-dc: 0 of 12 lanes passed).
 # A scratch repository, stub gates; lanes c1 and c2 conflict with each other only, g1 and g2 are clean: c2 waits, the rest pass, and no
 # attempt after the conflict starts dirty.
