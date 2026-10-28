@@ -276,3 +276,47 @@ CAPABILITIES(/transformation/dq_spawn/ranged)
 	// Nothing leaks.
 	TEST_ASSERT_EQUAL(length(dq_spawn_probes_on(T)), 0, "no probe is left")
 	GLOB.dq_spawn_log.Cut()
+
+// pick_from(): two-step choice of what a spawns() row makes.
+GLOBAL_LIST_INIT(dq_pick_a, list(/obj/item/dq_spawn_probe/a))
+GLOBAL_LIST_INIT(dq_pick_b, list(/obj/item/dq_spawn_probe/b, /obj/item/dq_spawn_probe/b, /obj/item/dq_spawn_probe/b))
+GLOBAL_LIST_INIT(dq_pick_c, list(/obj/item/dq_spawn_probe/c))
+
+/// A parent and two children, for the subtypes_of() source.
+/obj/item/dq_spawn_probe/family
+/obj/item/dq_spawn_probe/family/kid
+/obj/item/dq_spawn_probe/family/kid/skipped
+
+/datum/unit_test/dq_xform_spawns_pick_from
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_spawns_pick_from/Run()
+	var/turf/T = test_floor()
+	var/datum/xform/X = xform_of(/transformation/dq_spawn/per_step)
+	// A zero-weight table is never chosen; a "len:" weight is the list's length (3 against 1).
+	var/datum/entry/part/pick_from/zero = pick_from(choices = list(list(1, "dq_pick_a"), list(0, "dq_pick_b")))
+	for(var/i in 1 to 20)
+		var/list/table = xform_pick_table(X, zero.args["choices"])
+		TEST_ASSERT_EQUAL(table[1], /obj/item/dq_spawn_probe/a, "only the table with weight 1 is chosen")
+	var/datum/entry/part/pick_from/measured = pick_from(choices = list(list(1, "dq_pick_a"), list("len:dq_pick_b", "dq_pick_b")))
+	var/got_a = 0
+	var/got_b = 0
+	for(var/i in 1 to 400)
+		var/list/table = xform_pick_table(X, measured.args["choices"])
+		if(table[1] == /obj/item/dq_spawn_probe/a)
+			got_a++
+		else
+			got_b++
+	TEST_ASSERT(got_a > 40 && got_a < 160, "table a is chosen about a quarter of the time ([got_a] of 400)")
+	TEST_ASSERT_EQUAL(got_a + got_b, 400, "every pick settles on a table")
+	// A list of names is their union; subtypes_of() drops the excepted subtypes.
+	var/datum/entry/part/pick_from/union = pick_from(choices = list(list(1, list("dq_pick_a", "dq_pick_c"))))
+	var/list/merged = xform_pick_table(X, union.args["choices"])
+	TEST_ASSERT_EQUAL(length(merged), 2, "the union has both tables' members")
+	var/datum/entry/part/pick_from/family = pick_from(choices = list(list(1, subtypes_of(/obj/item/dq_spawn_probe/family, except = list(/obj/item/dq_spawn_probe/family/kid)))))
+	var/list/found = xform_pick_table(X, family.args["choices"])
+	TEST_ASSERT(/obj/item/dq_spawn_probe/family/kid in found, "the excepted path itself stays")
+	TEST_ASSERT(!(/obj/item/dq_spawn_probe/family/kid/skipped in found), "its subtypes go")
+	// The row compiles with a pick_from as its what.
+	var/list/rows = xform_spawn_rows(/transformation/dq_spawn, "test", spawns(spawn_type = zero, n = 2))
+	TEST_ASSERT_EQUAL(length(rows), 1, "a spawns() row takes a pick_from")

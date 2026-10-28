@@ -396,25 +396,8 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_battery)
 CAPABILITIES(/transformation/chem/instant/slime/gold_random_mobs)
 	configure(transformation(name = "Slime Random Mobs", id = "m_gold_random_mobs", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/gold),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_random_mobs, on_reaction)))
+		spawns = spawns(spawn_type = pick_from(choices = list(list(1, "xenobio_gold_mobs_bosses"), list(99, list("xenobio_gold_mobs_safe", "xenobio_gold_mobs_hostile", "xenobio_gold_mobs_birds")))), n = 3, scatter = 3, audit = "Gold extract reaction (random mobs)")))
 
-/transformation/chem/instant/slime/gold_random_mobs/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Gold extract reaction (random mobs) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	var/type_to_spawn
-	var/list/all_spawnable_types = list()
-	all_spawnable_types += GLOB.xenobio_gold_mobs_safe
-	all_spawnable_types += GLOB.xenobio_gold_mobs_hostile
-	all_spawnable_types += GLOB.xenobio_gold_mobs_birds
-	for(var/j = 1, j <= 3, j++)
-		if(prob(1))
-			type_to_spawn = pickweight(GLOB.xenobio_gold_mobs_bosses)
-		else
-			type_to_spawn = pickweight(all_spawnable_types)
-
-		var/mob/living/C = new type_to_spawn(get_turf(holder.my_atom))
-		for(var/l = 1, l <= rand(1, 3), l++)
-			step(C, pick(NORTH,SOUTH,EAST,WEST))
-	..()
 
 /transformation/chem/instant/slime/gold_hostile_mob
 
@@ -429,18 +412,8 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_hostile_mob)
 CAPABILITIES(/transformation/chem/instant/slime/gold_safe_mob)
 	configure(transformation(name = "Slime Safe Mob", id = "m_gold_safe_mob", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/gold),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_safe_mob, on_reaction)))
+		spawns = spawns(spawn_type = pick_from(choices = list(list(1, "xenobio_gold_mobs_birds"), list("len:xenobio_gold_mobs_safe", "xenobio_gold_mobs_safe"))), n = 1, scatter = 3)))
 
-/transformation/chem/instant/slime/gold_safe_mob/on_reaction(datum/reagents/holder)
-	var/type_to_spawn
-	if(prob(100/(GLOB.xenobio_gold_mobs_safe.len + 1)))
-		type_to_spawn = pickweight(GLOB.xenobio_gold_mobs_birds)
-	else
-		type_to_spawn = pickweight(GLOB.xenobio_gold_mobs_safe)
-	var/mob/living/C = new type_to_spawn(get_turf(holder.my_atom))
-	for(var/l = 1, l <= rand(1, 3), l++)
-		step(C, pick(NORTH,SOUTH,EAST,WEST))
-	..()
 
 /transformation/chem/instant/slime/gold_materials_gold
 
@@ -1072,16 +1045,8 @@ CAPABILITIES(/transformation/chem/instant/slime/sapphire_mutation)
 CAPABILITIES(/transformation/chem/instant/slime/sapphire_plushies)
 	configure(transformation(name = "Slime Plushies", id = "m_sapphire_plushies", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sapphire),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/sapphire_plushies, on_reaction)))
+		spawns = spawns(spawn_type = pick_from(choices = list(list(1, subtypes_of(/obj/item/toy/plushie, except = list(/obj/item/toy/plushie/therapy))))), n = list(3, 5))))
 
-/transformation/chem/instant/slime/sapphire_plushies/on_reaction(datum/reagents/holder)
-	var/spawn_type
-	var/list/possible_types = subtypesof(/obj/item/toy/plushie)
-	possible_types -= subtypesof(/obj/item/toy/plushie/therapy)
-	for(var/i = 1 to rand(3, 5))
-		spawn_type = pickweight(possible_types)
-		new spawn_type(get_turf(holder.my_atom))
-	..()
 
 /transformation/chem/instant/slime/sapphire_sapience
 

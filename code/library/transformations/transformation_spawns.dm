@@ -43,7 +43,7 @@
 			return null
 		var/list/arguments = E.args
 		var/what = arguments["type"]
-		if(!ispath(what) && !islist(what) && !(istext(what) && length(what)))
+		if(!ispath(what) && !islist(what) && !istype(what, /datum/entry/part/pick_from) && !(istext(what) && length(what)))
 			declare_report("[origin]: [type]: spawns() names a type, a weighted list or the name of a global list, not [what]")
 			return null
 		var/at = arguments["at"] || SUBJECT_TURF
@@ -78,6 +78,9 @@
 
 /// The weighted list or type a row's `what` names now. Null (logged) when the global list is not there.
 /proc/xform_spawn_source(datum/xform/X, datum/xform_spawn/row)
+	if(istype(row.what, /datum/entry/part/pick_from))
+		var/datum/entry/part/pick_from/pick = row.what
+		return xform_pick_table(X, pick.args["choices"])
 	if(!istext(row.what))
 		return row.what
 	var/list/table = GLOB.vars[row.what]
@@ -137,3 +140,40 @@
 			if(row.scatter)
 				for(var/step_count = 1, step_count <= rand(1, row.scatter), step_count++)
 					step(made_thing, pick(NORTH, SOUTH, EAST, WEST))
+
+/// The table a pick_from() settles on now: one of its choices by weight, then that choice's source as a list of types (weighted or not).
+/proc/xform_pick_table(datum/xform/X, list/choices)
+	var/list/weights = list()
+	for(var/i in 1 to length(choices))
+		var/weight = choices[i][1]
+		if(istext(weight) && findtext(weight, "len:") == 1)
+			var/list/measured = GLOB.vars[copytext(weight, 5)]
+			weight = islist(measured) ? length(measured) : 0
+		weights["[i]"] = weight
+	var/chosen = text2num(pickweight(weights))
+	if(!chosen)
+		return null
+	return xform_pick_source(X, choices[chosen][2])
+
+/// A pick_from() source as a list of types: a GLOB list's name, a list of names (their union), or subtypes_of().
+/proc/xform_pick_source(datum/xform/X, source)
+	if(istext(source))
+		var/list/table = GLOB.vars[source]
+		if(!islist(table) || !length(table))
+			log_world("XFORM: [X.rule_type] picks from GLOB.[source], which is not a list with entries")
+			return null
+		return table
+	var/list/parts = source
+	if(length(parts) && parts[1] == "subtypes")
+		var/list/found = subtypesof(parts[2])
+		for(var/excluded in parts[3])
+			found -= subtypesof(excluded)
+		return found
+	var/list/union = list()
+	for(var/name in parts)
+		var/list/table = GLOB.vars[name]
+		if(!islist(table))
+			log_world("XFORM: [X.rule_type] picks from GLOB.[name], which is not a list")
+			continue
+		union += table
+	return union

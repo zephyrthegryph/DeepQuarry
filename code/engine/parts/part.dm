@@ -670,6 +670,20 @@
 /datum/entry/part/effect/sets_off
 	part_name = "sets_off"
 
+/// pick_from(choices = list(list(weight, source), ...)): what a spawns() row makes, chosen in two steps. A table is picked by weight, then a type from the table
+/// by its own weights. `weight` is a number, or "len:<name>" for the length of the GLOB list <name> (a one-in-(n+1) chance is weights 1 and "len:<name>").
+/// `source` is the name of a GLOB list of types (weighted or not), a list of such names (their union), or subtypes_of(path, except = list(paths)) for the
+/// subtypes of a path less the subtypes of the excepted paths. Name `choices` in the call.
+/proc/pick_from(list/choices)
+	return part_make(/datum/entry/part/pick_from, list("choices" = choices))
+
+/datum/entry/part/pick_from
+	part_name = "pick_from"
+
+/// subtypes_of(path, except = list(paths)): a pick_from() source: the subtypes of `path`, less the subtypes of each excepted path.
+/proc/subtypes_of(path, list/except = null)
+	return list("subtypes", path, except)
+
 /// opens_ui(): opens the holder's window for the actor.
 /proc/opens_ui()
 	return part_make(/datum/entry/part/effect/opens_ui)
