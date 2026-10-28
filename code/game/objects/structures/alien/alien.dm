@@ -25,12 +25,15 @@ CAPABILITIES(/obj/structure/alien)
 	play_sfx(loc, SFX_EFFECTS_ATTACKBLOB, 2)
 	return HOOK_DECLINE
 
-/obj/structure/alien/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/alien/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
-	return
+	return OP_OK
 
 /obj/structure/alien/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

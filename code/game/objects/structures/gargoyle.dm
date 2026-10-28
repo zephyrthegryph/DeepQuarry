@@ -265,10 +265,14 @@ CAPABILITIES(/obj/structure/gargoyle)
 		return //gargoyle quick regenerates, the others don't, so let's not have them getting too damaged
 	take_damage(amount, BRUTE, MELEE, sound_effect = FALSE)
 
-/obj/structure/gargoyle/attack_generic(mob/user, damage, attack_message = "hits")
+/obj/structure/gargoyle/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb || "hits"
 	user.do_attack_animation(src)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	damage(damage)
+	return OP_OK
 
 /// Old attackby with a wrench: anchor or free the statue (not over open space).
 /// A statue is not anchored over space.

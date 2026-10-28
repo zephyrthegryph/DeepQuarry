@@ -217,7 +217,10 @@ MSG_DEF(simple_door/digging, null, span_danger("%U% starts digging %T%!"))
 /obj/structure/simple_door/projectile_damage(obj/item/projectile/P, def_zone)
 	return receive_projectile(P, def_zone, 0.1)
 
-/obj/structure/simple_door/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/simple_door/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	if(material == get_material_by_name(MAT_RESIN))
 		play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
@@ -227,6 +230,7 @@ MSG_DEF(simple_door/digging, null, span_danger("%U% starts digging %T%!"))
 		play_sfx(src, SFX_WEAPONS_SMASH)
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
+	return OP_OK
 
 /obj/structure/simple_door/proc/Dismantle(devastated = 0)
 	deconstruct(!devastated)

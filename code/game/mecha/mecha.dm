@@ -184,6 +184,7 @@
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
 CAPABILITIES(/obj/mecha)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(assemble_mecha))
 	// The climb in and the brain install are the actor's four seconds; the held item may change (IGNORE_HELD_ITEM).
@@ -2578,11 +2579,14 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	return 0
 
 //This is for mobs mostly.
-/obj/mecha/attack_generic(mob/user, damage, attack_message)
+/obj/mecha/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb
 
 	user.setClickCooldown(user.get_attack_speed())
 	if(!damage)
-		return 0
+		return OP_OK
 
 	src.mecha_log_message("Attacked. Attacker - [user].",1)
 	user.do_attack_animation(src)
@@ -2599,7 +2603,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		act_message(user, src, others = "%U%'s attack doesn't dent %T% armor")
 		src.log_append_to_last("Armor saved.")
 		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
-		return
+		return OP_OK
 
 	else
 		mech_body_plan().injure(src, damage, MELEE)
@@ -2608,7 +2612,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 		add_attack_logs(user, src, "attacked")
 
-	return 1
+	return OP_OK
 
 /////////////////////////////////////////
 //////// Mecha process() helpers ////////
