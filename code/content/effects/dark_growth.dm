@@ -105,6 +105,7 @@ CAPABILITIES(/obj/effect/dark/floor)
 	return !isspace(loc)
 
 /obj/structure/prop/dark_node
+	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "crystal cluster"
 	desc = "A large cluster of bluespace crystals, dark energy crackles within it."
 	layer = ABOVE_TURF_LAYER+0.01

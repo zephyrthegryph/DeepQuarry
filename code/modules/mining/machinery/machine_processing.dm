@@ -194,6 +194,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 /**********************Mineral processing unit**************************/
 
 /obj/machinery/mineral/processing_unit
+	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "material processor" //This isn't actually a goddamn furnace, we're in space and it's processing platinum and flammable phoron...
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "furnace"
