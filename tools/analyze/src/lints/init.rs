@@ -53,7 +53,7 @@ static META: Meta = Meta {
             "Initialize() ratchet sites (the init lint, tools/analyze/src/lints/init.rs; doc/rewrite/final_api.html sections 6 and 17).",
             "rule<TAB>file<TAB>text; an init_lines row is an identity (@owner::Initialize::target). Shrink-only: fix sites, then `analyze baseline --update --lint init`.",
         ],
-        banned: &["late_initialize", "turf_on_materialize", "table_init_overrides"],
+        banned: &["late_initialize", "turf_on_materialize", "table_init_overrides", "init_lines"],
     },
     rules: &[
         RuleMeta {

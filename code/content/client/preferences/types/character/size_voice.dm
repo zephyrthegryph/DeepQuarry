@@ -33,7 +33,7 @@
 	return 137
 
 /datum/preference/numeric/human/weight_vr/apply_to_human(mob/living/carbon/human/target, value)
-	target.weight = value
+	sparse_set_or(target, weight, value, DEFAULT_MOB_WEIGHT)
 
 
 /datum/preference/numeric/human/weight_gain

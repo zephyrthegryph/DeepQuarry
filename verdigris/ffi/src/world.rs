@@ -676,9 +676,7 @@ impl PaceLaps {
     fn lap(&mut self, part: &'static str) {
         let now = std::time::Instant::now();
         #[allow(clippy::cast_possible_truncation)]
-        crate::metrics::registry()
-            .counter(&format!("frame.us.{part}"))
-            .add((now - self.0).as_micros() as u64);
+        crate::frame::trace_lap(part, (now - self.0).as_micros() as u64);
         self.0 = now;
     }
 }

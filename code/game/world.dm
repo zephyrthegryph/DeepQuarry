@@ -508,6 +508,15 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			out[kind] = list("total" = total, "keys" = length(rows), "top" = top)
 		return json_encode(out)
 
+	// Localhost-only: the Rust frame's cumulative phase counters (frame.us.*) and the slow-frame count, for per-phase deltas between two calls.
+	if (diag == "vgframe")
+		var/list/rust = verdigris_metrics_list()
+		var/list/out = list("slow_frames" = native_system().slow_frames, "frames" = native_system().frames)
+		for(var/name in rust)
+			if(findtext(name, "frame.us.") == 1 || findtext(name, "frame.slow") == 1 || findtext(name, "world.awake.") == 1)
+				out[name] = rust[name]
+		return json_encode(out)
+
 	// Localhost-only "why does this type redraw": `markprobe&type=/obj/x` counts where the marks of /obj/x come from (refresh_mark_probe_note(),
 	// the four callers above the mark) from now on; `markprobe` alone returns the 40 busiest sources and stops.
 	if (diag == "markprobe")

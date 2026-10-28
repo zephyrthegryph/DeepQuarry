@@ -111,7 +111,8 @@ CAPABILITIES(/mob/living/simple_mob/construct)
 	..()
 	ghostize()
 
-/mob/living/simple_mob/construct/attack_generic(mob/user)
+/mob/living/simple_mob/construct/smashed_by(datum/act/hit/generic/G)
+	var/mob/user = G.attacker
 	if(istype(user, /mob/living/simple_mob/construct/artificer))
 		var/mob/living/simple_mob/construct/artificer/A = user
 		if(is_injured())
@@ -120,7 +121,7 @@ CAPABILITIES(/mob/living/simple_mob/construct)
 			act_message(user, src, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " mends some of %T%'s wounds.")))
 		else
 			to_chat(user, span_notice("\The [src] is undamaged."))
-		return
+		return OP_OK
 	return ..()
 
 /mob/living/simple_mob/construct/examine(mob/user)

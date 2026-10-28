@@ -37,8 +37,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::logging
 base_var	code/modules/mob/mob_defines.dm	@/mob::bodytemperature
 base_var	code/modules/mob/mob_defines.dm	@/mob::faction
 base_var	code/modules/mob/mob_defines.dm	@/mob::active_genes
-base_var	code/modules/vore/eating/living.dm	@/mob/living::weight
-base_var	code/modules/vore/eating/living.dm	@/mob/living::metabolism
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_icon_bellies
 base_var	code/modules/vore/eating/mob.dm	@/mob::voice_sounds_list
 list_init	code/modules/projectiles/targeting/targeting_mob.dm	@/mob/living::aimed

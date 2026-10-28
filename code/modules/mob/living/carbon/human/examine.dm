@@ -437,7 +437,7 @@
 	if(!show_pudge() || !vore_prefs.weight_message_visible) //Some clothing or equipment can hide this.
 		return ""
 	var/message = ""
-	var/weight_examine = round(weight)
+	var/weight_examine = round(sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT))
 	switch(weight_examine)
 		if(0 to 74)
 			message = vore_prefs.weight_messages[1]

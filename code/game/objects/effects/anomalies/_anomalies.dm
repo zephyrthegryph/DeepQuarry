@@ -26,6 +26,7 @@
 	proximity_tracked = TRUE
 
 CAPABILITIES(/obj/effect/anomaly)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(anomaly_blast))))
 	setup(PROC_REF(note_impact_area), mapload = TRUE)
 	setup(PROC_REF(start_initial_countdown))
 	setup(PROC_REF(configure_core))
@@ -108,11 +109,11 @@ CAPABILITIES(/obj/effect/anomaly)
 /obj/effect/anomaly/proc/detonate()
 	return
 
-/obj/effect/anomaly/ex_act(strength)
-	if(strength <= 1)
+/// Anomalies take no blast damage; only the worst blast consumes one.
+/obj/effect/anomaly/proc/anomaly_blast(datum/act/hit/explosion/A)
+	if(A.packet.severity <= 1)
 		consume(src)
-		return TRUE
-	return FALSE
+	return OP_OK
 
 /obj/effect/anomaly/proc/anomalyNeutralize()
 	new /obj/effect/effect/smoke(loc)

@@ -37,6 +37,10 @@
 		params_early(A, length(arguments) ? arguments[1] : FALSE)
 		if(QDELETED(A))
 			return TRUE
+		// And the head of the type's Initialize(): setup(PROC_REF(x), early = TRUE) (code/engine/lifeforms/setup.dm).
+		setup_early(A)
+		if(QDELETED(A))
+			return TRUE
 
 	// Type-table fast path (atom_type_table.dm): an Initialize-free type skips the proc chain.
 	// A mapper-set colour needs /atom/Initialize()'s colour handling, and extra New() args an override.

@@ -647,7 +647,7 @@ fn entry_index_charge<T, Q, A, D: Copy + Ord>(
     bucket
         .capacity()
         .saturating_mul(std::mem::size_of::<Variant<T, Q, A, D>>())
-        .saturating_add(scalar_slot::<u128, Vec<Variant<T, Q, A, D>>>())
+        .saturating_add(scalar_slot::<u128, Bucket<Variant<T, Q, A, D>>>())
 }
 
 fn detach<T, Q, A, D>(

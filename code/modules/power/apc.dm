@@ -152,6 +152,7 @@ MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.",
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
 CAPABILITIES(/obj/machinery/power/apc)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(apc_broken)))
 	configure(atom_rules(description_antag = "This can be emagged to unlock it.  It will cause the APC to have a blue error screen. \
 	Wires can be pulsed remotely with a signaler attached to it.  A powersink will also drain any APCs connected to the same wire the powersink is on."))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE, unacidable = TRUE))
@@ -872,10 +873,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 // Damage / destruction
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/atom_break(damage_flag)
-	. = ..()
-	if(!.)
-		return
+/obj/machinery/power/apc/proc/apc_broken(datum/act/A)
 	visible_message(span_warning("[src]'s screen flickers suddenly, then explodes in a rain of sparks and small debris!"))
 	set_operating(0)
 

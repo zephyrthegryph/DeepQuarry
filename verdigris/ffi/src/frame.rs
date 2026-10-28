@@ -230,6 +230,7 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
         );
     }
     timer.lap("outbox");
+    timer.finish();
     Ok(out)
 }
 
@@ -237,20 +238,54 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
 /// `verdigris_metrics_list()` and every bench mark), so a change in the frame's cost names the phase that moved.
 struct PhaseTimer {
     at: std::time::Instant,
+    /// Wall time of the top-level phases so far this frame, microseconds.
+    total_us: u64,
+}
+
+/// A frame at least this long (microseconds) adds its own per-phase times to the `frame.slow_us.<phase>` counters, so the
+/// slow frame is named by its phase and not hidden in the cumulative `frame.us.*` totals of the quick ones.
+const SLOW_FRAME_US: u64 = 100_000;
+
+thread_local! {
+    /// Every lap of the frame in progress (the nested `pace_*` ones too): `(phase, microseconds)`.
+    static TRACE: std::cell::RefCell<Vec<(String, u64)>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Adds one lap to the cumulative counter and to the trace of the frame in progress.
+pub(crate) fn trace_lap(phase: &str, us: u64) {
+    crate::metrics::registry().counter(&format!("frame.us.{phase}")).add(us);
+    TRACE.with_borrow_mut(|t| t.push((phase.to_owned(), us)));
 }
 
 impl PhaseTimer {
     fn start() -> Self {
         crate::metrics::registry().counter("frame.count").inc();
-        Self { at: std::time::Instant::now() }
+        TRACE.with_borrow_mut(Vec::clear);
+        Self { at: std::time::Instant::now(), total_us: 0 }
     }
 
     fn lap(&mut self, phase: &str) {
         let now = std::time::Instant::now();
         #[allow(clippy::cast_possible_truncation)]
         let us = (now - self.at).as_micros() as u64;
-        crate::metrics::registry().counter(&format!("frame.us.{phase}")).add(us);
+        trace_lap(phase, us);
+        self.total_us += us;
         self.at = now;
+    }
+
+    /// Ends the frame: a slow one files its trace under `frame.slow_us.*`.
+    fn finish(&self) {
+        if self.total_us < SLOW_FRAME_US {
+            return;
+        }
+        let registry = crate::metrics::registry();
+        registry.counter("frame.slow_count").inc();
+        registry.counter("frame.slow_us.total").add(self.total_us);
+        TRACE.with_borrow(|t| {
+            for (phase, us) in t {
+                registry.counter(&format!("frame.slow_us.{phase}")).add(*us);
+            }
+        });
     }
 }
 

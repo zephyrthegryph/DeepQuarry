@@ -279,8 +279,8 @@ CAPABILITIES(/obj/item/entrepreneur/dumbbell)
 	var/mob/user = M
 	M.adjust_nutrition(-10)
 	to_chat(user, span_notice("You successfully perform a [src] exercise!"))
-	if(M.weight > 50)
-		M.weight -= 0.5
+	if(sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) > 50)
+		sparse_set_or(M, weight, sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) - (0.5), DEFAULT_MOB_WEIGHT)
 
 //////Paranormal Investigator stuff
 

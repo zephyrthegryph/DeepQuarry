@@ -92,6 +92,7 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 
 
 CAPABILITIES(/obj/machinery/light)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(light_broken)))
 	configure(uses_power(idle = 2, active = 10, channel = LIGHT))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)
@@ -862,8 +863,7 @@ CAPABILITIES(/obj/machinery/light)
 		installed_light.set_status(status)
 	refresh_light()
 
-/obj/machinery/light/atom_break(damage_flag)
-	. = ..()
+/obj/machinery/light/proc/light_broken(datum/act/A)
 	broken()
 
 /obj/machinery/light/atom_fix()

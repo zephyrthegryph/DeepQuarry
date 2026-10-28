@@ -280,6 +280,7 @@
 			. += var_name
 
 CAPABILITIES(/obj/belly)
+	setup(PROC_REF(belly_share_lists), early = TRUE) // the shared list vars are swapped in before the chain reads them
 	configure(atom_rules(emp_protection = EMP_PROTECT_ALL))
 	setup(PROC_REF(bind_to_owner))
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
@@ -298,11 +299,6 @@ CAPABILITIES(/obj/belly)
 	ref_many(nameof(items_preserved))
 	ref_one(nameof(ownegg))
 	ref_one(nameof(owner))
-
-// ALLOW(init/INSTANCE_STATE): the shared list vars must be swapped in before the parent initializer reads them
-/obj/belly/Initialize(mapload)
-	belly_share_lists() // before anything reads the list vars
-	return ..()
 
 /// A belly made inside a mob binds to it (setup()); made anywhere else it is probably just in a prefs list.
 // The static option tables, read through a typed receiver: a static read through a local does not evaluate the local, and an untyped receiver

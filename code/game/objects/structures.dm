@@ -13,6 +13,7 @@
 	// Structures shrug off a plain telekinetic grab or poke; ones that react declare an INTERACT_TK.
 
 CAPABILITIES(/obj/structure)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	configure(obj_rules(tk_reach = FALSE))
 
@@ -44,13 +45,16 @@ CAPABILITIES(/obj/structure)
 	if(!QDELETED(src))
 		destroyed(src)
 
-/obj/structure/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	if(!breakable || damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
-		return 0
+		return OP_OK
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T% apart!"))
 	user.do_attack_animation(src)
 	expire(1)
-	return 1
+	return OP_OK
 
 /obj/structure/proc/can_visually_connect()
 	return anchored

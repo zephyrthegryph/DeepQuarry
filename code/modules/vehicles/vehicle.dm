@@ -54,6 +54,7 @@ CAPABILITIES(/datum/vehicle_dummy_load)
 STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/vehicle)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(buckle_rules(movable = 1, lying = 0))
 	configure(light_glow(range = 3))
 	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine, starts = /datum/looping_sound/idle_carengine)
@@ -418,14 +419,17 @@ CAPABILITIES(/obj/vehicle)
 /obj/vehicle/proc/update_stats()
 	return
 
-/obj/vehicle/attack_generic(mob/user, damage, attack_message)
+/obj/vehicle/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb
 	if(!damage)
-		return
+		return OP_OK
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	add_attack_logs(user, src, "attacked")
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
-	return 1
+	return OP_OK
 
 // Thin override so any damage source leaks a little oil on mechanical vehicles.
 /obj/vehicle/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)

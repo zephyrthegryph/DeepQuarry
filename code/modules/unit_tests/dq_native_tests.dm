@@ -249,3 +249,18 @@
 	native_frame(world.tick_lag, NATIVE_WAKE_BUDGET)
 	TEST_ASSERT_EQUAL(N.frames, frames + 2, "a scheduler on injected time ran a frame")
 	sched.manual_time = saved_time
+
+/// A native frame past NATIVE_SLOW_FRAME_MS is reported with the Rust phases that grew: the report counts itself and keeps the counters
+/// the next report diffs against.
+/datum/unit_test/dq_native_slow_frame_is_reported
+
+/datum/unit_test/dq_native_slow_frame_is_reported/Run()
+	var/datum/system/native/N = native_system()
+	var/before = N.slow_frames
+	var/list/saved = N.slow_frame_prev
+	N.report_slow_frame()
+	N.report_slow_frame()
+	TEST_ASSERT_EQUAL(N.slow_frames, before + 2, "each slow-frame report counts itself")
+	TEST_ASSERT(islist(N.slow_frame_prev), "a report keeps the phase counters for the next one to diff")
+	N.slow_frame_prev = saved
+	N.slow_frames = before

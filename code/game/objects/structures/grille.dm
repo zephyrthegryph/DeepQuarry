@@ -19,6 +19,7 @@
 	look.state("[initial(icon_state)][destroyed ? "-b" : ""]")
 
 CAPABILITIES(/obj/structure/grille)
+	on_notice(/datum/notice/atom_broken, then(PROC_REF(grille_broken)))
 	configure(obj_rules(explosion_resistance = 1))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_destroys))))
@@ -173,8 +174,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	to_chat(user, span_notice("You place the [WD] on [src]."))
 
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
-/obj/structure/grille/atom_break(damage_flag)
-	. = ..()
+/obj/structure/grille/proc/grille_broken(datum/act/A)
 	if(!destroyed)
 		set_density(FALSE)
 		set_destroyed(TRUE)
@@ -229,11 +229,14 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	return 0
 
 
-/obj/structure/grille/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/grille/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
-	return 1
+	return OP_OK
 
 // Used in mapping to avoid
 /obj/structure/grille/broken

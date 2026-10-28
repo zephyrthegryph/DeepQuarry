@@ -256,7 +256,8 @@ cmd_enqueue() {
 	qlock; mv -f "$f.tmp" "$f"; qunlock
 	rm -f "$REPORTS/$(fname "$branch").md" "$BOUNCED/$(fname "$branch").q"
 	# enqueueing a tip again asks for a fresh precheck: forget this tip's verdicts and probe marks
-	find "$PRE/v" "$PRE/probe" -maxdepth 1 -type f -name "$(fname "$branch")@${tip:0:12}@*" -delete 2>/dev/null
+	find "$PRE/v" "$PRE/probe" "$PRE/dc/v" -maxdepth 1 -type f -name "$(fname "$branch")@${tip:0:12}@*" -delete 2>/dev/null
+	rm -f "$PRE/dc/solo/$(fname "$branch")"
 	tlog "enqueued $branch tip ${tip:0:10} light=$light tests=[${tests:-none}] owner=$owner ($ahead commit(s) ahead of origin/master)"
 	if [ "${DQ_TRAIN_NO_START:-0}" != 1 ]; then DQ_TRAIN_ORIGIN_REPO="$(pwd)" cmd_ensure; fi
 	echo "dq_train: $branch is queued. Release the slot now: bash tools/dq_lane_pool.sh release $branch   (the branch stays in the repository). Follow it: bash tools/dq_train.sh status"
@@ -512,7 +513,12 @@ pre_record() { # <branch> <tip> <master> <verdict> <secs> <log> [why]
 # lane with a DreamChecker pass becomes "pass" (dc_finalize); a DreamChecker failure bounces it with the log. A lane that conflicted with
 # another lane of the run, or a run that broke, is checked alone next ($PRE/dc/solo). DQ_TRAIN_DC_BATCH=0: per-precheck DreamChecker.
 dc_verdict_file() { find "$PRE/dc/v" -maxdepth 1 -type f -name "$(pre_key "$1" "$2")@*" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n 1 | cut -d' ' -f2-; }
-dc_status() { local f; f="$(dc_verdict_file "$1" "$2")"; if [ -n "$f" ]; then qget "$f" verdict; else echo none; fi; }
+dc_status() { # <branch> <tip>: pass | fail | none. A verdict older than the lane's queue entry (it was enqueued again since) is none: whatever script enqueued it, a stale DreamChecker fail never bounces the new entry
+	local f w q; f="$(dc_verdict_file "$1" "$2")"
+	[ -n "$f" ] || { echo none; return 0; }
+	w="$(qget "$f" when)"; q="$(qget "$(qfile "$1")" since)"
+	if [ -n "$w" ] && [ -n "$q" ] && [[ "$w" < "$q" ]]; then echo none; else qget "$f" verdict; fi
+}
 dc_record() { # <branch> <tip> <master> <verdict> <log> <why>
 	local f="$PRE/dc/v/$(pre_key "$1" "$2")@${3:0:12}"
 	printf 'branch=%s\ntip=%s\nmaster=%s\nverdict=%s\nlog=%s\nwhy=%s\nwhen=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$(now)" >"$f.tmp" && mv -f "$f.tmp" "$f"
@@ -567,7 +573,9 @@ dc_finalize() { # tpass lanes whose DreamChecker verdict arrived: pass, or bounc
 				tlog "PRECHECK pass: $b (tip ${tip:0:10}) on master $(qget "$vf" master | cut -c1-10) (DreamChecker: $(qget "$dvf" why))"
 				;;
 			fail)
-				sed -i -e 's/^verdict=tpass$/verdict=fail/' "$vf"
+				sed -i 's/^verdict=tpass$/verdict=fail/' "$vf"
+				# the verdict carries the DreamChecker reason: a later bounce of this verdict (a raced re-enqueue) must not print an empty one
+				{ grep -v '^why=' "$vf"; printf 'why=%s\n' "$(qget "$dvf" why)"; } >"$vf.tmp" && mv -f "$vf.tmp" "$vf"
 				tlog "PRECHECK fail: $b (tip ${tip:0:10}): $(qget "$dvf" why)"
 				bounce "$b" "precheck: $(qget "$dvf" why) (DreamChecker on origin/master $(qget "$dvf" master | cut -c1-10) with the queued lanes)" "$(qget "$dvf" log)"
 				;;
@@ -828,7 +836,7 @@ cmd_precheck_run() {
 		fi
 		# start workers: cheap prechecks first (a lane that changes no DM reuses DreamChecker's verdict and patches nothing in the compile),
 		# then queue order; at most PRE_WORKERS at once, never below the free-RAM floor
-		if [ ${#want[@]} -gt 1 ] && [ ${#wpid[@]} -lt "$PRE_WORKERS" ]; then
+		if [ ${#want[@]} -gt 1 ] && [ ${#wpid[@]} -le "$PRE_WORKERS" ]; then
 			local cheap=() dear=()
 			for b in "${want[@]}"; do
 				if G diff --name-only "origin/master...$(qget "$(qfile "$b")" tip)" 2>/dev/null | grep -qE '^(code|maps|interface)/|\.dme$|\.dmm$'; then dear+=("$b"); else cheap+=("$b"); fi
@@ -836,7 +844,19 @@ cmd_precheck_run() {
 			want=("${cheap[@]+"${cheap[@]}"}" "${dear[@]+"${dear[@]}"}")
 		fi
 		for b in "${want[@]+"${want[@]}"}"; do
-			[ ${#wpid[@]} -lt "$PRE_WORKERS" ] || break
+			# A light lane (docs, tools: cheap checks, no compile) has its own worker slot "L": it never waits behind the heavy prechecks (21 minutes on 27 October)
+			# and the free-RAM floor does not apply to it. Heavy lanes use the PRE_WORKERS slots as before.
+			local is_l=0 hv=${#wpid[@]}
+			lane_is_light "$b" && is_l=1
+			[ -z "${wpid[L]:-}" ] || hv=$((hv - 1))
+			if [ "$is_l" = 1 ]; then
+				[ -z "${wpid[L]:-}" ] || continue
+				listed_in "$STATE/batch.lanes" "$b" && continue
+				precheck_one L "$b" "$(qget "$(qfile "$b")" tip)" &
+				wpid[L]=$!; wlane[L]="$b"
+				continue
+			fi
+			[ "$hv" -lt "$PRE_WORKERS" ] || break
 			if [ "$(free_ram_gb)" -lt "$PRE_MIN_FREE_GB" ]; then
 				[ "$ram_note" = 1 ] || tlog "prechecker: waiting: $(free_ram_gb) GB of RAM free (< $PRE_MIN_FREE_GB GB); no new precheck starts"
 				ram_note=1
@@ -1209,6 +1229,7 @@ heavy_cycle_gate() {
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
 		export DQ_GATE_DREAMCHECKER=1
+		[ "${PRECHECKED_BATCH:-0}" != 1 ] || export DQ_GATE_CAP_MAX_MIN="${DQ_TRAIN_PRECHECKED_CAP_MIN:-20}"
 		[ -z "$dc_why" ] || export DQ_GATE_DC_DISJOINT="$dc_why"
 		[ -z "$warm_root" ] || export DQ_TRAIN_ROOT_KEY="$warm_root"
 		export DQ_BATCH_CACHE="$STATE/bisect.cache"
