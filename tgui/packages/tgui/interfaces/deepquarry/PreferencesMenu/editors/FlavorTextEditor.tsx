@@ -107,7 +107,7 @@ const ZoneSwitcher = ({
         style={{
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '4px',
+          gap: '0.333em',
         }}
       >
         {zones.map((z) => (

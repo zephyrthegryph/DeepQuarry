@@ -332,8 +332,8 @@ export const DQCharacterSetup = () => {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px',
-                    padding: '2px 0',
+                    gap: '0.333em',
+                    padding: '0.167em 0',
                   }}
                 >
                   <Button icon="folder-open" onClick={() => act('load')}>

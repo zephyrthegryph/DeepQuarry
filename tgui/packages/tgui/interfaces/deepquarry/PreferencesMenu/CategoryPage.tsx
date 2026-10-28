@@ -1,8 +1,8 @@
 // DQAdd — Renders a single category page.
 //
 // Layout strategy:
-//  - Page level: CSS grid auto-fit minmax(380, 1fr). On the standard left pane
-//    (~1100 px at the 3:1 Stack ratio) we get ~2-3 group panels per row.
+//  - Page level: CSS grid, one column when narrow and two when two ~26em panels fit
+//    (sizes in em, so the theme font and display scale decide, never more than two).
 //  - Major editors span all columns via `gridColumn: '1 / -1'`.
 //  - Inside each group, widgets pack as a sub-grid auto-fit minmax(220, 1fr).
 //  - Group containers are tight `fitted` Sections so the padding tax is paid
@@ -82,8 +82,10 @@ export const CategoryPage = ({
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-        gap: '6px',
+        // One column when narrow, two when there is room for two ~26em panels, never more.
+        gridTemplateColumns:
+          'repeat(auto-fit, minmax(min(100%, max(26em, calc(50% - 0.25em))), 1fr))',
+        gap: '0.5em',
         alignItems: 'start',
       }}
     >
@@ -125,7 +127,7 @@ export const WidgetGrid = ({
   <Box
     style={{
       display: 'grid',
-      gridTemplateColumns: 'minmax(6em, max-content) minmax(0, 1fr)',
+      gridTemplateColumns: 'minmax(min(100%, 6em), max-content) minmax(0, 1fr)',
       columnGap: '0.75em',
       rowGap: '0.3em',
       alignItems: 'center',

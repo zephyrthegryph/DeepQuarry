@@ -13,6 +13,7 @@ export type PrefWidgetKind =
   | 'radio'
   | 'thumbgrid'
   | 'multi'
+  | 'palette'
   | 'editor'
   | 'hidden';
 
