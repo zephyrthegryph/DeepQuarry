@@ -173,4 +173,14 @@ check "the gate retries without sccache and exits 95 on a second sccache failure
 lc_v="$(bash "$here/tools/dq_light_checks.sh" --target-args verdigris/ffi/Cargo.toml)"; lc_t="$(bash "$here/tools/dq_light_checks.sh" --target-args tools/dmb/crates/dmbc/Cargo.toml)"
 check "light checks test the verdigris crates for i686 and other crates for the host" '{ [ "$lc_v" = "--target i686-pc-windows-msvc" ] || ! uname -s | grep -qE "MINGW|MSYS|CYGWIN"; } && [ -z "$lc_t" ]'
 
+# light checks: a changed crate's workspace dependents run their tests too (28 October: a dm-link change shipped a dmbc bug)
+rd="$tmp/rd"; mkdir -p "$rd/ws/crates/base/src" "$rd/ws/crates/user/src" "$rd/ws/crates/other/src"
+printf '[workspace]\nmembers = ["crates/*"]\nresolver = "2"\n' >"$rd/ws/Cargo.toml"
+printf '[package]\nname = "base"\nversion = "0.1.0"\nedition = "2021"\n' >"$rd/ws/crates/base/Cargo.toml"
+printf '[package]\nname = "user"\nversion = "0.1.0"\nedition = "2021"\n[dependencies]\nbase = { path = "../base" }\n' >"$rd/ws/crates/user/Cargo.toml"
+printf '[package]\nname = "other"\nversion = "0.1.0"\nedition = "2021"\n' >"$rd/ws/crates/other/Cargo.toml"
+for c in base user other; do echo "" >"$rd/ws/crates/$c/src/lib.rs"; done
+rd_out="$(cd "$rd" && python3 "$here/tools/light_cargo_rdeps.py" ws/crates/base/Cargo.toml)"
+check "a changed crate's workspace dependents are added to the light cargo tests (and unrelated crates are not)" '[ "$rd_out" = "ws/crates/user/Cargo.toml" ] && grep -q "light_cargo_rdeps.py" "$here/tools/dq_light_checks.sh"'
+
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
