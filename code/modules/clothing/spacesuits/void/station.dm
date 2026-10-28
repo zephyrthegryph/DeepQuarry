@@ -18,7 +18,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering)
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
 	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;cold=60"
 	breach_threshold = 14 //These are kinda thicc
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering)
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE))
@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/construction)
 	icon_state = "rig-engineering_con"
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit_con", slot_l_hand_str = "eng_voidsuit_con")
 	armor_spec = "melee=40;bullet=15;laser=25;energy=15;bomb=35;bio=100;rad=50;cold=60"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/construction)
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/construction)
 	desc = "A bulky industrial voidsuit. It's a few generations old, but a reliable design and radiation shielding make up for the lack of climate control."
 	icon_state = "rig-engineeringalt"
 	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=45;bio=100;rad=100;cold=60"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 /obj/item/clothing/head/helmet/space/void/engineering/salvage
 	name = "salvage voidsuit helmet"
@@ -102,7 +102,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/construction)
 	desc = "A hand-me-down salvage voidsuit. It has obviously had a lot of repair work done to its radiation shielding."
 	icon_state = "rig-engineeringsav"
 	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=45;bio=100;rad=100;cold=60"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 //Mining
 
@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/construction)
 	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=55;bio=100;rad=50;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 
 //Mining Surplus Voidsuit
 
@@ -139,7 +139,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/construction)
 	icon_state = "rig-miningalt"
 	name = "frontier mining voidsuit"
 	desc = "A cheap prospecting voidsuit. What it lacks in comfort it makes up for in armor plating and street cred."
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 //Medical
 /obj/item/clothing/head/helmet/space/void/medical
@@ -195,7 +195,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/bio)
 	item_state_slots = list(slot_r_hand_str = "medical_voidsuit_bio", slot_l_hand_str = "medical_voidsuit_bio")
 	armor_spec = "melee=55;bullet=15;laser=20;energy=15;bomb=15;bio=100;rad=75;cold=60"
 	breach_threshold = 16 //Extra Thicc
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/medical/bio)
 	configure(item_protection(max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE))
@@ -215,7 +215,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/medical/bio)
 	name = "lightweight medical voidsuit"
 	desc = "A more recent model of Vey-Med voidsuit, exchanging physical protection for fully unencumbered movement and a complete range of motion. It possesses advanced autoadaptive systems and doesn't need to be cycled to change species fit for most large humanoids."
 	icon_state = "rig-medicalalt"
-	slowdown = 0
+	worn_factors = null
 	armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"
 	no_cycle = TRUE
 
@@ -232,7 +232,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/medical/bio)
 	name = "nonadaptive lightweight medical voidsuit"
 	desc = "A more recent model of Vey-Med voidsuit, exchanging physical protection for fully unencumbered movement and a complete range of motion. This specific model lacks the autoadaption feature as a cost-saving measure."
 	icon_state = "rig-medicalalt"
-	slowdown = 0
+	worn_factors = null
 	armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"
 
 //Security
@@ -256,7 +256,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security)
 	armor_spec = "melee=50;bullet=25;laser=25;energy=15;bomb=45;bio=100;rad=10;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security)
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO))
@@ -318,7 +318,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/atmos)
 	item_state_slots = list(slot_r_hand_str = "atmos_voidsuit", slot_l_hand_str = "atmos_voidsuit")
 	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=50;fire=80"
 	breach_threshold = 16 //Extra Thicc
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/atmos)
 	configure(item_protection(max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+15000, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE))
@@ -337,7 +337,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/atmos)
 	icon_state = "rig-atmosalt"
 	name = "heavy duty atmos voidsuit"
 	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;fire=80"
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 
 //Exploration
 /obj/item/clothing/head/helmet/space/void/exploration
@@ -437,7 +437,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_mining_bay"
 	item_state = null
-	slowdown = 0
+	worn_factors = null
 
 /obj/item/clothing/head/helmet/space/void/mining/alt2
 	desc = "A surplus Solgov voidsuit helmet. Seems more fancy than what's usually found on the frontier."
@@ -451,7 +451,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_excavation_bay"
 	item_state = null
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 /obj/item/clothing/head/helmet/space/anomaly/alt
 	desc = "A surplus Solgov helmet. Seems more fancy than what's usually found on the frontier."
@@ -466,7 +466,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_secalt_bay"
 	item_state = null
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 /obj/item/clothing/head/helmet/space/void/security/riot/alt
 	desc = "A surplus Solgov voidsuit helmet. Seems more fancy than what's usually found on the frontier."
@@ -480,7 +480,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_pilot_bay"
 	item_state = null
-	slowdown = 0
+	worn_factors = null
 
 /obj/item/clothing/head/helmet/space/void/pilot/alt2
 	desc = "A surplus Solgov voidsuit helmet. Seems more fancy than what's usually found on the frontier."
@@ -494,7 +494,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_medicalalt_bay"
 	item_state = null
-	slowdown = 0
+	worn_factors = null
 
 /obj/item/clothing/head/helmet/space/void/medical/alt2
 	desc = "A surplus Solgov voidsuit helmet. Seems more fancy than what's usually found on the frontier."
@@ -508,7 +508,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_explorer_bay"
 	item_state = null
-	slowdown = 0
+	worn_factors = null
 
 /obj/item/clothing/head/helmet/space/void/exploration/alt2
 	desc = "A surplus Solgov voidsuit helmet. Seems more fancy than what's usually found on the frontier."
@@ -522,7 +522,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_engineeringalt_bay"
 	item_state = null
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 /obj/item/clothing/head/helmet/space/void/engineering/alt2
 	desc = "A surplus Solgov voidsuit helmet. Seems more fancy than what's usually found on the frontier."
@@ -536,7 +536,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_atmosalt_bay"
 	item_state = null
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 /obj/item/clothing/head/helmet/space/void/atmos/alt2
 	desc = "A surplus Solgov voidsuit helmet. Seems more fancy than what's usually found on the frontier."
@@ -550,7 +550,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 	icon_state = "void_command_bay"
 	item_state = null
-	slowdown = 1.0
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.0)
 
 /obj/item/clothing/head/helmet/space/void/captain/alt
 	desc = "A surplus Solgov voidsuit helmet. Seems more fancy than what's usually found on the frontier."

@@ -54,6 +54,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
 /datum/unit_test/dq_ai_pack_of_one
 
 /datum/unit_test/dq_ai_pack_of_one/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/combat_ai_tactics_subject, ai_floor(0))
 	var/datum/ai_brain/B = S.ai_brain
 	TEST_ASSERT_NOTNULL(B.pack, "a new brain has no pack")
@@ -120,6 +121,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
 /datum/unit_test/dq_ai_pack_shared_sight_and_alert_delay
 
 /datum/unit_test/dq_ai_pack_shared_sight_and_alert_delay/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/datum/faction_data/data = dq_faction_data_for("test_pack")
 	var/old_delay = data.alert_delay
 	data.alert_delay = 0.75 SECONDS
@@ -146,6 +148,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
 /datum/unit_test/dq_ai_pack_spread_targeting
 
 /datum/unit_test/dq_ai_pack_spread_targeting/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/mob/living/simple_mob/A = pack_mob(0)
 	pack_mob(0)
 	pack_mob(1)
@@ -166,6 +169,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
 /datum/unit_test/dq_ai_pack_focus_targeting
 
 /datum/unit_test/dq_ai_pack_focus_targeting/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/mob/living/simple_mob/A = pack_mob(0, /mob/living/simple_mob/combat_ai_pack_subject/focus)
 	pack_mob(0, /mob/living/simple_mob/combat_ai_pack_subject/focus)
 	pack_mob(1, /mob/living/simple_mob/combat_ai_pack_subject/focus)
@@ -183,6 +187,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
 /datum/unit_test/dq_ai_pack_perception_parity
 
 /datum/unit_test/dq_ai_pack_perception_parity/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/combat_ai_tactics_subject, ai_floor(0))
 	var/datum/ai_brain/B = S.ai_brain
 	var/mob/living/carbon/human/seen = pack_human(1)

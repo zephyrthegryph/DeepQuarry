@@ -13,7 +13,7 @@
 	item_state = "buildpipe"
 
 	density = TRUE
-	slowdown = 10 //It's a vehicle frame, what do you expect?
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 10) //It's a vehicle frame, what do you expect?
 	w_class = ITEMSIZE_HUGE
 
 	var/tmp/obj/item/cell/cell

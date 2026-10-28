@@ -2,6 +2,10 @@
 // charge from 0 to 100%
 // fits in APC to provide backup power
 
+/// Power cell numbers (the id a cell shows in nanoUI lists).
+SERIAL_DEF(power_cell, 1, FALSE)
+SCHEMA(/obj/item/cell, c_uid, num())
+
 /obj/item/cell
 	material_template = /datum/material_template/cell
 	material_total = 2 * SHEET_MATERIAL_AMOUNT
@@ -11,7 +15,6 @@
 	icon_state = "b_st"
 	item_state = "cell"
 	w_class = ITEMSIZE_NORMAL
-	var/static/cell_uid = 1		// Unique ID of this power cell. Used to reduce bunch of uglier code in nanoUI.
 	var/c_uid
 	var/charge = 1000	// maximum charge on spawn
 	var/maxcharge = 1000
@@ -80,7 +83,7 @@ CAPABILITIES(/obj/item/cell)
 	// always need a service datum; it sleeps dependency-driven when stable.
 	apply_blueprint_effects()
 	enable_material_service()
-	c_uid = cell_uid++
+	c_uid = next_serial(power_cell)
 
 /obj/item/cell/get_cell()
 	return src

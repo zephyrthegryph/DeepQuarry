@@ -8,7 +8,7 @@
 	icon_state = "merc_rig"
 	suit_type = "crimson hardsuit"
 	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=60"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva

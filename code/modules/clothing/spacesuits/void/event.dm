@@ -39,7 +39,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/engineering)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. This one in particular seems to be an ode to the Ship of Theseus, but the insulation and radiation proofing are top-notch. The chestplate bears the logo of an old shipyard - though you don't recognize the name."
 	icon_state = "rig-vintageengi"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 
@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/marine)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer marines swear by these old things, even if new powered hardsuits have more features and better armor. The blue markings indicate this as the marine/guard variant, likely from a merchant ship."
 	icon_state = "rig-vintagemarine"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 	armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/officer)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer spacers swear by these old things, even if new powered hardsuits have more features and better armor. This variant appears to be an officer's, and has the best protection of all the old models."
 	icon_state = "rig-vintageofficer"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 	armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.1 //Heavily Armored
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/pilot)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer spacers swear by these old things, even if new powered hardsuits have more features and better armor. The royal blue markings indicate this is the pilot's variant; low protection but ultra-lightweight."
 	icon_state = "rig-vintagepilot"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	slowdown = 0
+	worn_factors = null
 	armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/pilot)
@@ -228,7 +228,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/mercenary)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer mercs swear by these old things, even if new powered hardsuits have more features and better armor. The red markings indicate this as the mercenary variant. The company ID has been scratched off."
 	icon_state = "rig-vintagemerc"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	slowdown = 1.5 //the tradeoff for being hot shit almost on par with a crimson suit is that it slows you down even more
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5) //the tradeoff for being hot shit almost on par with a crimson suit is that it slows you down even more
 	armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
@@ -426,7 +426,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"
 
 	no_cycle = TRUE
-	slowdown = 2.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2.5)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
 	fits_as(FIT_ALTEVIAN)
@@ -457,7 +457,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
 	icon_state = "breaker_suit"
 
 	armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	breach_threshold = 14
 
 

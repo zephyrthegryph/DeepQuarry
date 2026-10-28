@@ -1624,7 +1624,7 @@
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
 		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
-		key += "|\ref[limb_image][limb_image.color]"
+		key += "|[ref_token(E)][limb_image.color]" // a limb's hud image is made once and kept, so the limb names it
 	var/show_pain = trauma_val && src.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
 	if(key == sparse_get(src, health_doll_key))
