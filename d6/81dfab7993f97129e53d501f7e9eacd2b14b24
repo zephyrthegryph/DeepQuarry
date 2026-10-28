@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"d681dfab7993f97129e53d501f7e9eacd2b14b24","ok":true,"passed":1,"failed":0,"new_failed":0,"lanes":"gr/bumped-notices","tests":["dq_bumped_notice_mine"],"reproof_of":"","reproof_reason":"","tests_json":"data/test-runs/20261028T144121_d681dfab79.json","created":"2026-10-28T14:41:47Z"}
