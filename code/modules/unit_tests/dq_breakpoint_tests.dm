@@ -34,7 +34,6 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 /datum/unit_test/dq_breakpoint_rules_declared
 
 /datum/unit_test/dq_breakpoint_rules_declared/Run()
-	restore_ambient_after() // breaking throws sparks and runs the area's machines while world time passes: the rooms put back what they had
 	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
 	var/datum/rule/breaks = rules[/datum/rule/integrity_breaks]
 	var/datum/rule/destroyed = rules[/datum/rule/integrity_destroyed]
@@ -65,7 +64,6 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 /datum/unit_test/dq_machine_break_parity
 
 /datum/unit_test/dq_machine_break_parity/Run()
-	restore_ambient_after() // breaking throws sparks and runs the area's machines while world time passes: the rooms put back what they had
 	var/turf/T = dq_containment_floor()
 	var/datum/dq_breakpoint_listener/listener = new
 	var/obj/machinery/dq_breakpoint_probe/probe = allocate(/obj/machinery/dq_breakpoint_probe, T)
@@ -114,7 +112,6 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 /datum/unit_test/dq_machine_break_real_types
 
 /datum/unit_test/dq_machine_break_real_types/Run()
-	restore_ambient_after() // breaking throws sparks and runs the area's machines while world time passes: the rooms put back what they had
 	var/turf/T = dq_containment_floor()
 	var/datum/dq_breakpoint_listener/listener = new
 	for(var/path in list(/obj/machinery/computer, /obj/machinery/door/airlock, /obj/machinery/station_map, /obj/machinery/camera))
@@ -136,7 +133,6 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 /datum/unit_test/dq_damage_flavour_bands
 
 /datum/unit_test/dq_damage_flavour_bands/Run()
-	restore_ambient_after() // the test floor is in the Telecomms compartment, which cools by design while world time passes
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/railing/railing = allocate(/obj/structure/railing, T)
@@ -176,7 +172,6 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 /datum/unit_test/dq_destruction_debris
 
 /datum/unit_test/dq_destruction_debris/Run()
-	restore_ambient_after() // breaking throws sparks and runs the area's machines while world time passes: the rooms put back what they had
 	var/turf/T = dq_containment_floor()
 	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		qdel(R)

@@ -745,6 +745,11 @@ GLOBAL_VAR(dq_test_select_names)
 /// its own conduction, which no air snapshot sees.
 #define UNIT_TEST_SOLID_LEAK_KELVIN 5
 
+/// A test during which at least this much world time passed (deciseconds) has the regulated rooms put back at its end without asking (restore_ambient_after()).
+#define UNIT_TEST_AUTO_RESTORE_DS (1 SECONDS)
+/// ... or during which the native world ran at least this many frames or hand-run steps (vg_frame_count(), vg_world_steps_run(): a test may step the world either way).
+#define UNIT_TEST_AUTO_RESTORE_FRAMES 10
+
 /// The most a floor outside the map-machinery rooms may drift while the clock runs and still be put back as ambient, K.
 #define UNIT_TEST_AMBIENT_FLOOR_KELVIN 15
 
@@ -788,6 +793,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		if(A.cell && A.area)
 			apcs[A] = list(A.cell.charge, A.area.power_equip, A.area.power_light, A.area.power_environ)
 	ambient = list("air" = all, "only" = only, "solids" = baseline?["solids"] || unit_test_solid_snapshot(), "apcs" = apcs, "machine_areas" = machine_areas, "thermostats" = thermostats)
+
+/// restore_ambient_after() once, at the first moment a test claims a shared world floor (dq_atmos_test_snapshot_air()): the put-back then covers the floors the
+/// test declares afterwards, which the end-of-test restore would leave to the leak guard, and a test needs no call of its own.
+/datum/unit_test/proc/capture_ambient()
+	if(!ambient)
+		restore_ambient_after()
 
 /datum/unit_test/proc/put_ambient_back()
 	var/list/was = ambient
@@ -1203,6 +1214,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 			world.Profile(PROFILE_CLEAR)
 			world.Profile(PROFILE_START)
 		duration = REALTIMEOFDAY
+		var/clock_before = TIME_NOW(CLOCK_WORLD)
+		var/frames_before = vg_frame_count() + vg_world_steps_run()
 		tick_start_index = Kernel.perf_samples_total + 1
 		INVOKE_ASYNC(test, TYPE_PROC_REF(/datum/unit_test, RunWrapped))
 		var/waited_ds = 0
@@ -1215,6 +1228,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
 		staleness_test_end(test, current_index >= total_tests)
 		test.restore_atmos()
+		// A test that let world time pass (the kernel's clock, or the native world's frames: the tests step either) has the regulated rooms put back whether or not its
+		// author asked (restore_ambient_after()): the leak guards below stay strict and judge only what the test itself changed.
+		if(!test.ambient && (TIME_NOW(CLOCK_WORLD) - clock_before >= UNIT_TEST_AUTO_RESTORE_DS || vg_frame_count() + vg_world_steps_run() - frames_before >= UNIT_TEST_AUTO_RESTORE_FRAMES))
+			test.restore_ambient_after()
 		test.put_ambient_back() // last, right before the guards read: the regulated rooms swing several kelvin a second, so a put-back made earlier would be stale by then
 
 		duration = REALTIMEOFDAY - duration
@@ -1308,9 +1325,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"dview_mob" = TRUE, // a lazily created singleton (the first dview() call makes it): nothing a test could put back
 		"latency_last_ineligible" = TRUE, // diagnostic text the latency tooling writes about the last pin it refused; it is not simulation state
 		"latency_last_pin_reason" = TRUE, // diagnostic text, same writer: the reason for the last pin
-		"act_taken" = TRUE, // a cumulative counter of the world actions taken (act.dm): it is 0 or 1 early in a fresh run, so it reads as a flag
-		"coalesce_absorbed" = TRUE, // a cumulative counter of the actions the coalescer absorbed (coalesce.dm), same reading
-		"standing_cache_hits" = TRUE, "standing_cache_misses" = TRUE, "standing_cache_drops" = TRUE, // diagnostic counters of the standing cache (standings.dm): 0 or 1 early in a run so they read as flags; tests read them as deltas
 		"staleness_late_parked" = TRUE, // the staleness checker's per-summary counter: the kernel drains bump it mid-test when they first reach a pre-test entity, and staleness_test_end() zeroes it itself
 		"starting_legal_nifsoft" = TRUE, // a lazily built cache (the nifsoft shop's legal product list, made on its first stock): rebuilding it is the same as keeping it
 		"starting_illegal_nifsoft" = TRUE, // a lazily built cache, same as the legal list: the shop's illegal product list
@@ -1554,6 +1568,18 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	return names
 
 /// The atmospherics machines and air alarms on the map when the first test starts (built once), the set the machine guard watches.
+/// TRUE when `T` stands in a room the map regulates: an area holding a vent, scrubber, freezer, heater or air alarm. Their thermostats and pumps act on the air and floors as world
+/// time passes, so such a room is never a quiet scratch room for a test (the Telecomms compartments and the processing strata drifted tens of kelvin under four tests).
+/proc/unit_test_regulated_room(turf/T)
+	var/static/list/regulated
+	if(!regulated)
+		regulated = list()
+		for(var/obj/machinery/M as anything in unit_test_machines_tracked())
+			if(istype(M, /obj/machinery/alarm) || istype(M, /obj/machinery/atmospherics/unary/vent_pump) || istype(M, /obj/machinery/atmospherics/unary/vent_scrubber) \
+				|| istype(M, /obj/machinery/atmospherics/unary/freezer) || istype(M, /obj/machinery/atmospherics/unary/heater))
+				regulated[get_area(M)] = TRUE
+	return !!regulated[get_area(T)]
+
 /proc/unit_test_machines_tracked()
 	var/static/list/cache
 	if(cache)

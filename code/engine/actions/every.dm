@@ -125,10 +125,10 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		GLOB.timer_fire_quiet = TRUE // a skipped run changed nothing of the holder's
 	if(!gated && A.runs && !GLOB.every_gate_faulted && activation_every_parkable(A, E))
 		LAZYOR(A.every_parked, E.sig) // parked: no timer until its gate publishes true (activation_every_wake())
-		GLOB.every_activation_parks++
+		GLOB.every_activation_parks.n++
 		return
 	if(gated)
-		GLOB.every_activation_runs++
+		GLOB.every_activation_runs.n++
 	if(gated && E.args["members"])
 		every_members_start(holder, A, E)
 		return
@@ -145,8 +145,8 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		activation_every_arm(A, E)
 
 /// Activation every() runs (its handler ran) and parks since boot: what a test reads to see work stop while its gate is false.
-GLOBAL_VAR_INIT(every_activation_runs, 0)
-GLOBAL_VAR_INIT(every_activation_parks, 0)
+GLOBAL_COUNTER(every_activation_runs)
+GLOBAL_COUNTER(every_activation_parks)
 
 /datum/activation
 	/// The signatures of the every() entries of this activation parked behind their false `when =` (no timer is pending for them).
