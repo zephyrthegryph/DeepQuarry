@@ -4,7 +4,6 @@
 
 // status values shared between lighting fixtures and items
 #define LIGHT_BULB_TEMPERATURE 400 //K - used value for a 60W bulb
-#define LIGHTING_POWER_FACTOR 2		//2W per luminosity * range
 #define LIGHT_EMERGENCY_POWER_USE 0.2 //How much power emergency lights will consume per tick
 
 DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_instance), SC_NEVER)
@@ -93,7 +92,8 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 
 CAPABILITIES(/obj/machinery/light)
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(light_broken)))
-	configure(uses_power(idle = 2, active = 10, channel = LIGHT))
+	configure(light_glow(range = 6, power = 1, color = "#E0EFF0")) // the starting tube's glow and draw (lighting_glow_decls.dm says why)
+	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)
 	owns_one(nameof(installed_light), /obj/item/light)
@@ -1201,7 +1201,6 @@ CAPABILITIES(/obj/item/light)
 	w_class = ITEMSIZE_TINY
 
 #undef LIGHT_BULB_TEMPERATURE
-#undef LIGHTING_POWER_FACTOR
 #undef LIGHT_EMERGENCY_POWER_USE
 
 // I hate the way macros look stupid standing near lights. I don't care how absurd this looks.
@@ -1381,6 +1380,8 @@ CAPABILITIES(/obj/item/light)
 
 /// A wall torch is no socket to smash or fill.
 CAPABILITIES(/obj/machinery/light/small/torch)
+	configure(light_glow(range = 6, power = 1, color = "#fabf87"))
+	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
 	// a wall torch is no socket to smash
 	without("melee_hit")
 	without("insert")
@@ -1403,6 +1404,8 @@ CAPABILITIES(/obj/machinery/light/small/torch)
 /// A floor lamp: a shade turns the switch into a hand toggle, the wrench bolts it down, the screwdriver takes the shade off. A silicon touch toggles
 /// it too (it has no emergency lighting of its own to toggle).
 CAPABILITIES(/obj/machinery/light/flamp)
+	configure(light_glow(range = 6, power = 1, color = "#FFFEB8"))
+	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
 	setup(PROC_REF(start_up_lamp))
 	click_order(BIND_HAND, "toggle", "remove")
 	click_order(TOOL_SCREWDRIVER, "remove_shade", "open_casing")
