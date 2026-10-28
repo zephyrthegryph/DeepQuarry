@@ -85,7 +85,7 @@ CAPABILITIES(/transformation/chem/instant/slime)
 CAPABILITIES(/transformation/chem/instant/slime/grey_new_slime)
 	configure(transformation(name = "Slime Spawn", id = "m_grey_spawn", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/grey),
-		spawns = spawns(/mob/living/simple_mob/slime/xenobio, 1, tell = span_warning("Infused with phoron, the core begins to quiver and grow, and soon a new baby slime emerges from it!")))
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio, 1, tell = span_warning("Infused with phoron, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 
 /transformation/chem/instant/slime/grey_monkey
 

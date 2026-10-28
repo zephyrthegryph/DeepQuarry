@@ -33,14 +33,14 @@ CAPABILITIES(/transformation/chem/instant/slime/senseenhancer)
 CAPABILITIES(/transformation/chem/instant/slime/secertslime)
 	configure(transformation(name = "Secert Slime ", id = "sepia_swapm", takes = list(reagent(REAGENT_ID_BLOOD, 5), reagent(REAGENT_ID_WATER, 5)),
 		made = 1, holds = subject_is(/obj/item/slime_extract/sepia),
-		spawns = spawns(/mob/living/simple_mob/slime/xenobio/redspace, 1, tell = span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!")))
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio/redspace, 1, tell = span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 
 /transformation/chem/instant/slime/sepia_new_slime
 
 CAPABILITIES(/transformation/chem/instant/slime/sepia_new_slime)
 	configure(transformation(name = "Slime Spawn", id = "m_sepia_spawn", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sepia),
-		spawns = spawns(/mob/living/simple_mob/slime/xenobio/sepia, 1, tell = span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!")))
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio/sepia, 1, tell = span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 /mob/living/simple_mob/slime/xenobio/redspace
 	desc = "This slime is rather unknown and strange."
 	color = "#A50021"
@@ -165,7 +165,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_liquidlife)
 CAPABILITIES(/transformation/chem/instant/slime/dark_carpotoxin)
 	configure(transformation(name = "Slime Dark Secert ", id = "m_fish_slime", takes = list(reagent(REAGENT_ID_CARPOTOXIN, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark),
-		spawns = spawns(/mob/living/simple_mob/slime/xenobio/oceanic, 1, tell = span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!")))
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio/oceanic, 1, tell = span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 
 /transformation/chem/instant/slime/dark_spidertoxin
 
@@ -308,7 +308,7 @@ CAPABILITIES(/transformation/chem/instant/slime/oceanboon)
 CAPABILITIES(/transformation/chem/instant/slime/warplague)
 	configure(transformation(name = "Nuclear Slime Summon", id = "m_nuclear_slime", takes = list(reagent(REAGENT_ID_MINDBREAKER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/plague),
-		spawns = spawns(/mob/living/simple_mob/slime/xenobio/nuclear, 1, tell = span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!")))
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio/nuclear, 1, tell = span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 /mob/living/simple_mob/slime/xenobio/nuclear
 	desc = "This slime is rather unknown and strange."
 	color = "#006600"
@@ -423,7 +423,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareslime)
 	configure(transformation(name = "Nightmare Slime Summon ", id = "m_nightmare_slime",
 		takes = list(reagent(REAGENT_ID_BLOOD, 5), reagent(REAGENT_ID_PHORON, 5), reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dream),
-		spawns = spawns(/mob/living/simple_mob/slime/xenobio/nightmare, 1, tell = span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!")))
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio/nightmare, 1, tell = span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 /mob/living/simple_mob/slime/xenobio/nightmare
 	desc = "This slime is rather unknown and strange."
 	color = "#993366"
@@ -531,7 +531,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmarephoron)
 CAPABILITIES(/transformation/chem/instant/slime/redspace_sound)
 	configure(transformation(name = "Slime Sound Creation", id = "m_make_sound", takes = list(reagent(REAGENT_ID_MINDBREAKER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/redspace),
-		spawns = spawns(/mob/living/simple_mob/slime/xenobio/sound, 1, tell = span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!")))
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio/sound, 1, tell = span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 /mob/living/simple_mob/slime/xenobio/sound
 	desc = "This slime is rather unknown and strange."
 	color = "#808080"
@@ -598,7 +598,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soundphoron)
 CAPABILITIES(/transformation/chem/instant/slime/soundwater)
 	configure(transformation(name = "sound water", id = "m_sound_water", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sound),
-		spawns = spawns(/mob/living/simple_mob/slime/xenobio/sound, 1, tell = span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!")))
+		spawns = spawns(/mob/living/simple_mob/slime/xenobio/sound, 1, tell = span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))))
 
 /transformation/chem/instant/slime/soundjelly
 
