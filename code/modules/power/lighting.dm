@@ -338,7 +338,7 @@ CAPABILITIES(/obj/machinery/light)
 			correct_range = brightness_range
 			correct_power = brightness_power
 			correct_color = brightness_color
-		if(glow_of(src).range != correct_range || glow_of(src).power != correct_power || glow_of(src).color != correct_color || overlay_color != correct_overlay)
+		if(!light_on || glow_of(src).range != correct_range || glow_of(src).power != correct_power || glow_of(src).color != correct_color || overlay_color != correct_overlay)
 			if(!auto_flicker)
 				switchcount++
 			if(rigged)

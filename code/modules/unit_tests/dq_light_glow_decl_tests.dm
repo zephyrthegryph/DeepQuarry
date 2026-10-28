@@ -1,5 +1,5 @@
 // Light fixtures declare the glow and draw of the bulb they start with (code/modules/power/lighting_fixture_glow.dm), so a fixture's first
-// refresh_light() writes nothing it does not change. These tests hold the declarations to the bulbs and the init state to the old arithmetic.
+// refresh_light() writes nothing it does not change, though it still turns the light source on. These tests hold the declarations to the bulbs and the init state to the old arithmetic.
 
 /// Every light fixture type declares exactly what its starting bulb gives: glow range, power and colour, and the active draw refresh_light()
 /// computes from them. A mismatch prints the line to paste into lighting_fixture_glow.dm (the test prints the lines to put there).
@@ -50,6 +50,7 @@
 			TEST_ASSERT_EQUAL(glow.range, light_glow_cast_range(range), "[type] lit: glow range")
 			TEST_ASSERT_EQUAL(glow.power, power, "[type] lit: glow power")
 			TEST_ASSERT_EQUAL(glow.color, color, "[type] lit: glow colour")
+			TEST_ASSERT(L.light_on && L.light, "[type] lit: no light source (the fixture shows on but lights nothing)")
 		else if(!L.emergency_mode)
 			TEST_ASSERT_EQUAL(glow.range, 0, "[type] dark: glow range")
 		TEST_ASSERT_EQUAL(power_of(L).active, glow.range * glow.power * LIGHTING_POWER_FACTOR, "[type]: the active draw follows the glow")
