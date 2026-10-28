@@ -965,8 +965,8 @@ dc_inputs() { # <rev range>: the DreamChecker input files it changes (what gate_
 	G diff --name-only "$1" 2>/dev/null | awk '/^(doc|tools|tgui|html\/changelogs|\.github|SQL)\// || /\.md$/ || /^deepquarry\.dme$/ || /^code\/modules\/unit_tests\/_unit_tests\.dm$/ { next } { print }' | sort -u
 }
 dc_disjoint() { # <lanes...>: 0 and DC_DISJOINT_WHY set when the batch may keep the lanes' DreamChecker verdicts
-	local b tip vf pm seen="" files f master dvf
-	DC_DISJOINT_WHY=""
+	local b tip vf pm seen="" files f master dvf dm_lanes=0
+	DC_DISJOINT_WHY=""; DC_DISJOINT_WHY_NOT=""
 	[ "${DQ_TRAIN_DC_DISJOINT:-1}" = 1 ] || return 1
 	master="$(G rev-parse origin/master 2>/dev/null)" || return 1
 	declare -A owner=()
@@ -981,8 +981,15 @@ dc_disjoint() { # <lanes...>: 0 and DC_DISJOINT_WHY set when the batch may keep 
 		global_hit "$master...$tip" && return 1
 		G diff --name-only "$master...$tip" 2>/dev/null | grep -qE '^tools/analyze/|^SpacemanDMM\.toml$' && return 1
 		files="$(dc_inputs "$master...$tip")"
-		# what master changed since this lane's precheck must not touch the lane's files (master's own gate checked master)
-		if [ "$pm" != "$master" ] && [ -n "$files" ] && [ -n "$(comm -12 <(printf '%s\n' "$files") <(dc_inputs "$pm..$master"))" ]; then return 1; fi
+		# Disjoint FILES are not enough: DreamChecker's diagnostics in one file depend on declarations in every other (a lane deletes a
+		# var another lane's file reads: each passes alone, together they fail). The verdict a lane earned alone covers the batch only when
+		# nothing else in the tree it was checked on changed: at most ONE lane of the batch changes DreamChecker inputs, and master changed
+		# none since that lane's verdict. Lanes without DreamChecker inputs add nothing to check.
+		if [ -n "$files" ]; then
+			dm_lanes=$((dm_lanes + 1))
+			[ "$dm_lanes" -le 1 ] || { DC_DISJOINT_WHY_NOT="two lanes change DreamChecker inputs"; return 1; }
+			if [ "$pm" != "$master" ] && [ -n "$(dc_inputs "$pm..$master")" ]; then DC_DISJOINT_WHY_NOT="master changed DreamChecker inputs since $b's verdict"; return 1; fi
+		fi
 		while IFS= read -r f; do
 			[ -n "$f" ] || continue
 			[ -z "${owner[$f]:-}" ] || return 1
@@ -990,7 +997,7 @@ dc_disjoint() { # <lanes...>: 0 and DC_DISJOINT_WHY set when the batch may keep 
 		done <<<"$files"
 		seen="$seen $b@${pm:0:10}"
 	done
-	DC_DISJOINT_WHY="every lane passed DreamChecker in its precheck (${seen# }) and no two change the same DreamChecker input"
+	DC_DISJOINT_WHY="every lane passed DreamChecker in its precheck (${seen# }); at most one changes DreamChecker inputs and master changed none since its verdict"
 	return 0
 }
 
@@ -1338,7 +1345,7 @@ heavy_cycle_gate() {
 	local dc_why="" warm_root
 	warm_root="$(warm_train_root)"
 	[ -z "$warm_root" ] || [ "$warm_root" = merge ] || tlog "compile root: the batch compiles in deepquarry-$warm_root (the train root compiled last: its daemon session is the warm one)"
-	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && dc_disjoint "${CHOSEN[@]}"; then dc_why="$DC_DISJOINT_WHY"; tlog "dreamchecker: $dc_why; the batch keeps those verdicts"; fi
+	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && dc_disjoint "${CHOSEN[@]}"; then dc_why="$DC_DISJOINT_WHY"; tlog "dreamchecker: $dc_why; the batch keeps those verdicts"; elif [ "${PRECHECKED_BATCH:-0}" = 1 ]; then tlog "dreamchecker runs: ${DC_DISJOINT_WHY_NOT:-a lane has no DreamChecker pass on a compatible master}"; fi
 	local an_why=""
 	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && analyze_trusted "${CHOSEN[@]}"; then an_why="$ANALYZE_TRUST_WHY"; tlog "analyze_tests: $an_why; the batch keeps that verdict"; fi
 	phase "gate: ${CHOSEN[*]}"
@@ -1694,5 +1701,6 @@ case "${1:-}" in
 	run) cmd_run ;;
 	precheck-run) cmd_precheck_run ;;
 	lanes) shift; cmd_lanes "$@" ;;
+	__lib) return 0 2>/dev/null || exit 0 ;; # sourced by tools/ci/test_train_decisions.sh for its functions
 	*) sed -n '2,12p' "$0"; exit 2 ;;
 esac
