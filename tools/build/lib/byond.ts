@@ -517,13 +517,17 @@ function runDreamDaemonWithWatchdog(
       options.onSpawn(child.pid);
     }
     const unregisterWorld = registerWorldProcess(child.pid, path.basename(exe));
-    // A test world runs at idle priority: the machine is also the user's desktop, and a world only needs the CPU nothing else wants.
-    // DQ_PRIORITY=normal keeps the old behaviour.
+    // A test world runs below normal priority, the same class as every build and lint we start. It used to run at IDLE: then any of our
+    // own below-normal work (an `analyze check` on 10+ cores) starved it, boots took 4-8 min and test phases hit their caps with no result
+    // (28 October; resources_maps 72.9 s in a gate against 5.7 s unloaded). DQ_WORLD_PRIORITY=idle restores that; DQ_PRIORITY=normal
+    // keeps the world at the build's priority.
     if (child.pid && process.env.DQ_PRIORITY !== 'normal') {
+      const idle = process.env.DQ_WORLD_PRIORITY === 'idle';
       try {
-        os.setPriority(child.pid, os.constants.priority.PRIORITY_LOW);
+        os.setPriority(child.pid, idle ? os.constants.priority.PRIORITY_LOW : os.constants.priority.PRIORITY_BELOW_NORMAL);
+        console.log(`world priority: ${idle ? 'idle' : 'below normal'} (pid ${child.pid}; DQ_WORLD_PRIORITY=idle for idle)`);
       } catch {
-        // best effort: the world runs at the build's priority
+        console.log(`world priority: could not be set (pid ${child.pid}); it runs at the build's priority`);
       }
     }
     let settled = false;
