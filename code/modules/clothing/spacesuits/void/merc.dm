@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/merc/fire)
 	desc = "A blackened suit that has had many of its protective plates coated in or replaced with high-grade thermal insulation, to protect against incineration. Property of Gorlex Marauders."
 	armor_spec = "melee=50;bullet=40;laser=60;energy=20;bomb=50;bio=100;rad=50;cold=60"
 	breach_threshold = 18 //Super Extra Thicc
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/merc/fire)
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, /obj/item/material/twohanded/fireaxe, /obj/item/flamethrower))

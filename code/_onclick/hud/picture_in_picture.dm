@@ -1,3 +1,6 @@
+/// Picture-in-picture window numbers: a window's skin name is "camera-" and its number.
+SERIAL_DEF(pic_in_pic, 1, FALSE)
+
 /atom/movable/screen/movable/pic_in_pic
 	name = "Picture-in-picture"
 	screen_loc = "CENTER"
@@ -6,6 +9,8 @@
 	var/width = 0
 	var/height = 0
 	var/list/shown_to
+	/// The skin name of this window's popup ("camera-<number>"), set when its views are prepared.
+	var/popup_name
 	var/list/viewing_turfs
 	var/atom/movable/screen/component_button/button_x
 	var/atom/movable/screen/component_button/button_expand
@@ -35,8 +40,9 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	owns_one(nameof(popup_screen), /atom/movable/screen/map_view_tg, starts = /atom/movable/screen/map_view_tg, starts_args = NO_LOC)
 
 /atom/movable/screen/movable/pic_in_pic/proc/prepare_popup_views()
+	popup_name = "camera-[next_serial(pic_in_pic)]"
 	make_backgrounds()
-	popup_screen.generate_view("camera-[REF(src)]_map")
+	popup_screen.generate_view("[popup_name]_map")
 
 
 // hides itself from every client it is shown to.
@@ -47,7 +53,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 
 /atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	if(component == button_x)
-		user?.client?.close_popup("camera-[REF(src)]")
+		user?.client?.close_popup(popup_name)
 		spent(src, user)
 	else if(component == button_expand)
 		set_view_size(width+1, height+1)
@@ -182,9 +188,9 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 /atom/movable/screen/movable/pic_in_pic/proc/pop_to_screen(mob/user)
 	if(!user?.client)
 		return
-	if(user.client.screen_maps["camera-[REF(src)]_map"])
+	if(user.client.screen_maps["[popup_name]_map"])
 		return
-	user.client.setup_popup("camera-[REF(src)]", width, height, 2, "1984")
+	user.client.setup_popup(popup_name, width, height, 2, "1984")
 	popup_screen.display_to(user)
 	observe(user, /datum/notice/popup_cleared, src, then(PROC_REF(on_popup_clear)))
 
@@ -192,7 +198,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/source = A.target
 	var/datum/notice/popup_cleared/event = A
-	if(event.window_id == "camera-[REF(src)]")
+	if(event.window_id == popup_name)
 		unobserve(source, /datum/notice/popup_cleared, src)
 		popup_screen.hide_from(source)
 

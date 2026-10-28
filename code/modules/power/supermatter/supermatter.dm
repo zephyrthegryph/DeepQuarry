@@ -140,7 +140,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 /// Takes its id, and counts as a station crystal on a station level.
 /obj/machinery/power/supermatter/proc/take_id_and_station()
-	uid = gl_uid++
+	uid = next_serial(machinery)
 	if(src.z in using_map.station_levels) // Looping Alarms
 		stationcrystal = TRUE // Looping Alarms
 

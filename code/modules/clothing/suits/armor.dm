@@ -63,7 +63,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/riot)
 	icon_state = "bulletproof"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
 	blood_overlay_type = "armor"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/bulletproof)
@@ -79,7 +79,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/bulletproof)
 	desc = "A vest that excels in protecting the wearer against energy projectiles."
 	icon_state = "armor_reflec"
 	blood_overlay_type = "armor"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/laserproof)
@@ -114,7 +114,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/laserproof)
 	desc = "A vest that protects the wearer from several common types of weaponry."
 	icon_state = "combat"
 	blood_overlay_type = "armor"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat)
@@ -125,7 +125,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat)
 	desc = "A suit of armor most often used by Special Weapons and Tactics squads. Includes padded vest with pockets along with shoulder and kneeguards."
 	icon_state = "swatarmor"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/tactical)
@@ -137,7 +137,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tactical)
 	desc = "A heavily armored suit that protects against moderate damage. Used in special operations."
 	icon_state = "deathsquad"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 	w_class = ITEMSIZE_HUGE
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=100;rad=100"
 
@@ -179,7 +179,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/det_suit)
 	icon_state = "alien_speed"
 	blood_overlay_type = "armor"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
-	slowdown = -1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -1)
 	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;rad=40"
 	var/block_chance = 20
 
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/alien)
 	name = "alien protection suit"
 	desc = "It's really resilient yet lightweight, so it's probably meant to be armor. Strangely enough it seems to have been designed for a humanoid shape."
 	icon_state = "alien_tank"
-	slowdown = 0
+	worn_factors = null
 	armor_spec = "melee=70;bullet=70;laser=70;energy=70;bomb=70;rad=40"
 	block_chance = 40
 
@@ -357,7 +357,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/jensen)
 	icon_state = "flexitac"
 	item_state = "flexitac"
 	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
 	configure(item_protection(cold_parts = CHEST, min_cold = T0C - 20))
@@ -383,7 +383,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
 	icon_state = "webvest"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 /obj/item/clothing/suit/storage/vest/heavy/officer
 	name = "officer heavy armor vest"
@@ -424,7 +424,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
 	icon_state = "mercwebvest"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
-	slowdown = 0
+	worn_factors = null
 
 //All of the armor below is mostly unused
 
@@ -448,7 +448,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/centcomm)
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	armor_spec = "melee=90;bullet=80;laser=10;energy=10;bomb=80"
 	w_class = ITEMSIZE_HUGE // Very bulky, very heavy.
-	slowdown = 5 // If you're a tank you're gonna move like a tank.
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 5) // If you're a tank you're gonna move like a tank.
 
 CAPABILITIES(/obj/item/clothing/suit/armor/heavy)
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
@@ -762,7 +762,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_costume/bedevere)
 	icon = 'icons/obj/clothing/knights_vr.dmi'
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
 	flags = THICKMATERIAL
-	slowdown=0
+	worn_factors = null
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35" // Inferior to sec vests in bullet/laser but better for environmental protection.
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_explo)
@@ -794,7 +794,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_explo)
 /obj/item/clothing/suit/armor/pcarrier/primative
 	name = "makeshift suit"
 	desc = "A lightweight makeshift plate carrier vest"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	icon_state = "explorer"
 	flags = THICKMATERIAL
 
@@ -807,7 +807,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/primative)
 /obj/item/clothing/suit/storage/vest/viper_suit // Still WIP but functional.
 	name = "viper combat suit"
 	desc = "A suit of armor designed for naga-appearing creatures. Offers modest protection for its light weight."
-	slowdown = 0.2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.2)
 	icon = 'icons/mob/viper_suit_ch.dmi'
 	icon_override = 'icons/mob/viper_suit_ch.dmi'
 	icon_state = "viper_suit"

@@ -22,8 +22,12 @@
 		damage_taken[i] += packet.amounts[i]
 	return 0
 
-/obj/item/dq_path_probe/fire_act(exposed_temperature, exposed_volume)
-	hottest_fire = max(hottest_fire, exposed_temperature)
+/obj/item/dq_path_probe/proc/note_fire(datum/act/A)
+	var/datum/notice/atom_fire_act/N = A
+	hottest_fire = max(hottest_fire, N.exposed_temperature)
+
+CAPABILITIES(/obj/item/dq_path_probe)
+	on_notice(/datum/notice/atom_fire_act, then(PROC_REF(note_fire)))
 
 /// A probe that also covers what is under it: half insulation, half armour.
 /obj/item/dq_path_probe/padded

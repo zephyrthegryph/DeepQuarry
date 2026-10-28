@@ -26,7 +26,7 @@
 	desc = "The last suit you'll ever wear."
 	icon_state = "internalaffairs_rig"
 	armor_spec = ""
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 
@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/rig/internalaffairs)
 	desc = "A heavy, powerful hardsuit used by construction crews and mining corporations."
 	icon_state = "engineering_rig"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_slowdown = 5
 	offline_vision_restriction = 2
 	emp_protection = -20
@@ -101,7 +101,7 @@ CAPABILITIES(/obj/item/rig/industrial)
 	desc = "A light hardsuit for repairs and maintenance to the outside of habitats and vessels."
 	icon_state = "eva_rig"
 	armor_spec = "melee=30;bullet=10;laser=20;energy=25;bomb=20;bio=100;rad=100"
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0.5
 	offline_vision_restriction = 1
 
@@ -142,7 +142,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/eva)
 	desc = "An advanced hardsuit that protects against hazardous, low pressure environments. Shines with a high polish." // Hardsuit
 	icon_state = "ce_rig"
 	armor_spec = "melee=40;bullet=10;laser=30;energy=25;bomb=40;bio=100;rad=100"
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
@@ -171,11 +171,11 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ce)
 	name = "advanced boots"
 /obj/item/clothing/shoes/magboots/rig/ce/set_slowdown()
 	if(magpulse)
-		slowdown = shoes ? max(SHOES_SLOWDOWN, shoes.slowdown) : SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, shoes ? max(SHOES_SLOWDOWN, shoes.worn_factor(STAT_ITEM_ENCUMBRANCE)) : SHOES_SLOWDOWN)	//So you can't put on magboots to make you walk faster.
 	else if(shoes)
-		slowdown = shoes.slowdown
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, shoes.worn_factor(STAT_ITEM_ENCUMBRANCE))
 	else
-		slowdown = SHOES_SLOWDOWN
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, SHOES_SLOWDOWN)
 
 /obj/item/rig/ce/equipped
 
@@ -197,7 +197,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ce)
 	desc = "An Anomalous Material Interaction hardsuit that protects against the strangest energies the universe can throw at it."
 	icon_state = "science_rig"
 	armor_spec = "melee=45;bullet=5;laser=45;energy=80;bomb=100;bio=100;rad=100"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_vision_restriction = 1
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/hazmat
@@ -239,7 +239,7 @@ CAPABILITIES(/obj/item/rig/hazmat)
 	desc = "A durable suit designed for medical rescue in high risk areas."
 	icon_state = "medical_rig"
 	armor_spec = "melee=30;bullet=15;laser=20;energy=60;bomb=30;bio=100;rad=100"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_vision_restriction = 1
 	seal_delay = 5
 
@@ -273,7 +273,7 @@ CAPABILITIES(/obj/item/rig/medical)
 	desc = "A Security hardsuit designed for prolonged EVA in dangerous environments."
 	icon_state = "hazard_rig"
 	armor_spec = "melee=60;bullet=40;laser=30;energy=15;bomb=60;bio=100;rad=30"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 
@@ -310,7 +310,7 @@ CAPABILITIES(/obj/item/rig/hazard)
 	cell_type = /obj/item/cell/hyper
 
 	// Copied from CE rig
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
@@ -439,7 +439,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/focalpoint)
 	boot_type = null
 	glove_type = null
 
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 1
 	offline_vision_restriction = 2
 	armor_spec = "melee=20;bullet=5;laser=10;energy=5;bomb=35;bio=100;rad=20"
@@ -455,7 +455,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/focalpoint)
 	desc = "A bubble helmet that maximizes the field of view. A state of the art holographic display provides a stream of information."
 	icon_state = "null_rig"
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
-	slowdown = 0
+	worn_factors = null
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/zero)
 	configure(item_rules(sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM))
@@ -463,7 +463,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/zero)
 /obj/item/clothing/suit/space/rig/zero
 	icon_state = "null_rig"
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
-	slowdown = 0
+	worn_factors = null
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/zero)
 	configure(item_rules(sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM))
@@ -488,7 +488,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/zero)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/baymed
 
 	// speedy paper
-	slowdown = -0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)
 	armor_spec = "melee=10;bullet=5;laser=10;energy=5;bomb=25;bio=100;rad=20"
 
 
@@ -553,7 +553,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/baymed)
 	boot_type = /obj/item/clothing/shoes/magboots/rig/ce/bayeng
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/bayeng
 
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 5 // very bulky
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
 
@@ -620,7 +620,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/bayeng)
 	boot_type = /obj/item/clothing/shoes/magboots/rig/pathfinder
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/pathfinder
 
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_slowdown = 4 // bulky
 	offline_vision_restriction = 2 // doesn't even have a way to see out without power
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
@@ -722,7 +722,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/ch)
 	suit_type = "pursuit hardsuit"
 	desc = "A Security hardsuit designed for chasing down the grey tide."
 	armor_spec = "melee=60;bullet=40;laser=40;energy=25;bomb=50;bio=100;rad=30"
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 	offline_slowdown = 3
 	offline_vision_restriction = 1
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ch/pursuit

@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Serial numbers (contracts, market listings, NTNet card ids, power cells, machinery, log entries, the SQL round number) come from one declared, logged counter form"

@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate)
 	name = "ballistic armor plate"
 	desc = "A woven armor plate with additional plating, providing good protection against high-velocity trauma. Attaches to a plate carrier."
 	icon_state = "armor_ballistic"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=10;bullet=70;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/bulletproof)
@@ -144,7 +144,7 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/bulletproof)
 	name = "riot armor plate"
 	desc = "A thick armor plate with additional padding, providing good protection against low-velocity trauma. Attaches to a plate carrier."
 	icon_state = "armor_riot"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=70;bullet=10;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/riot)
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/riot)
 	name = "ablative armor plate"
 	desc = "A durasteel-scaled synthetic armor plate, providing good protection against lasers. Attaches to a plate carrier."
 	icon_state = "armor_ablative"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=10;bullet=10;laser=70;energy=50"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/laserproof)

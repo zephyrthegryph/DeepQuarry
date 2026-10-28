@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/clothing/accessory/bracelet/friendship)
 /obj/item/clothing/accessory/bracelet/material
 	icon_state = "materialbracelet"
 	material_slowdown_multiplier = 0
-	slowdown = 0
+	worn_factors = null
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
 

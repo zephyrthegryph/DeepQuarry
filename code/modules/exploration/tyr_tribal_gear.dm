@@ -158,7 +158,7 @@ CAPABILITIES(/obj/item/melee/agate_hammer)
 /obj/item/clothing/suit/armor/tyrtribalcloak
 	name = "leaf cloak"
 	desc = "A strange cloak made of leaves and fiber. A strange residue resides upon the equipment"
-	slowdown = 0.2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.2)
 	icon = 'icons/mob/tribal_gear.dmi'
 	icon_override = 'icons/mob/tribal_gear.dmi'
 	icon_state = "lilly_cloak"
@@ -262,7 +262,7 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 	active_force = 10
 	active_armourpen = 60
 	active_throwforce = 40
-	slowdown = 2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	defend_chance = 70
 	projectile_parry_chance = 70
 	active_w_class = ITEMSIZE_HUGE

@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 	icon_state = "space"
 	w_class = ITEMSIZE_HUGE // So you can't fit this in your bag and be prepared at all times.
 	flags = PHORONGUARD
-	slowdown = 1 // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1) // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
 	armor_spec = "bio=100;rad=50;cold=60"
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
 	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.

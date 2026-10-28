@@ -1,6 +1,7 @@
 // Operating condition is owned by the assembly, independently of a machine's
 // on/off processing roster. Stable assemblies retain watches but no timer.
-GLOBAL_VAR_INIT(next_material_assembly_id, 0)
+/// Material assembly numbers ("ME-3").
+SERIAL_DEF(material_assembly, 1, FALSE)
 
 /datum/gas
 	var/material_corrosivity = 0
@@ -226,7 +227,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	rel_set(src, nameof(owner), holder)
 	var/datum/material_assembly/assembly = material_assembly(holder)
 	if(!assembly.assembly_id)
-		assembly.assembly_id = "ME-[++GLOB.next_material_assembly_id]"
+		assembly.assembly_id = "ME-[next_serial(material_assembly)]"
 	STAMP(src, last_update, CLOCK_WORLD)
 	STAMP(src, chemical_last_update, CLOCK_WORLD)
 	initialize_thermal_stock()

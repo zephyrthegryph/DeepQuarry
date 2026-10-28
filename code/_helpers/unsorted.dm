@@ -1127,7 +1127,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 /proc/topic_link(datum/D, arglist, content)
 	if(istype(arglist,/list))
 		arglist = list2params(arglist)
-	return "<a href='byond://?src=\ref[D];[arglist]'>[content]</a>"
+	return "<a href='byond://?src=[REF(D)];[arglist]'>[content]</a>"
 
 /proc/get_random_colour(simple, lower=0, upper=255)
 	var/colour
@@ -1388,25 +1388,13 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 // \ref behaviour got changed in 512 so this is necesary to replicate old behaviour.
 // If it ever becomes necesary to get a more performant REF(), this lies here in wait
 // #define REF(thing) (thing && istype(thing, /datum) && (thing:datum_flags & DF_USE_TAG) && thing:tag ? "[thing:tag]" : "\ref[thing]")
-/proc/REF(input)
-	READS_FROM() // the text of a reference (its tag flag is bookkeeping for the text, not an input of a value)
-	if(istype(input, /datum))
-		var/datum/thing = input
-		if(thing.datum_flags & DF_USE_TAG)
-			if(!thing.tag)
-				thing.datum_flags &= ~DF_USE_TAG
-				stack_trace("A ref was requested of an object with DF_USE_TAG set but no tag: [thing]")
-			else
-				return "\[[url_encode(thing.tag)]\]"
-	return "\ref[input]"
-
 // Painlessly creates an <a href=...> element.
 // First argument is where to send the Topic call to when clicked. Should be a reference to an object. This is generally src, but not always.
 // Second one is for all the params that will be sent. Uses an assoc list (e.g. "value" = "5").
 // Note that object refs will be converted to text, as if \ref[thing] was done. To get the ref back on Topic() side, you will need to use locate().
 // Third one is the text that will be clickable.
 /proc/href(href_src, list/href_params, href_text)
-	return "<a href='byond://?src=\ref[href_src];[list2params(href_params)]'>[href_text]</a>"
+	return "<a href='byond://?src=[REF(href_src)];[list2params(href_params)]'>[href_text]</a>"
 
 // This is a helper for anything that wants to render the map in TGUI
 /proc/get_tgui_plane_masters()

@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer/gravity)
 	icon_state = "seccloak" //custom sprite for this for sure.
 	armor_spec = ""
 	block_chance = 35
-	slowdown = -0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)
 
 //uggg, why isnt this apart of the base material melee weapons
 /obj/item/material/twohanded/fireaxe/scythe/harvester/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")

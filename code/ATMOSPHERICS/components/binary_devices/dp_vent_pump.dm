@@ -152,7 +152,7 @@
 
 /// A step's result: the flow and the power it drew, billed.
 /obj/machinery/atmospherics/binary/dp_vent_pump/rust_device_stepped(moles, power_w, target_reached)
-	set_last_flow_rate(abs(moles))
+	atmos_note_flow_rate(src, abs(moles))
 	set_last_power_draw(power_w)
 	if(power_w > 0)
 		use_power(power_w)

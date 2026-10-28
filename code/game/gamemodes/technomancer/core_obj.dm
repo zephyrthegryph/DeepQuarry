@@ -262,7 +262,7 @@ CAPABILITIES(/obj/spellbutton)
 	energy = 7000
 	max_energy = 7000
 	regen_rate = 70 //100 seconds to full
-	slowdown = -0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)
 	instability_modifier = 0.9
 	cooldown_modifier = 0.9
 
@@ -276,7 +276,7 @@ CAPABILITIES(/obj/spellbutton)
 	energy = 20000
 	max_energy = 20000
 	regen_rate = 25 //800 seconds to full
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	instability_modifier = 1.0
 	spell_power_modifier = 1.4
 

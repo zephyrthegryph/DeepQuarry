@@ -143,11 +143,11 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	if(!istype(occupant))
 		return span_blue(span_bold("Occupant Statistics:")) + "<br>\The [src] is empty."
 	var/list/dat = list(span_blue(span_bold("Occupant Statistics:")))
-	if(occupant.custom_species)
+	if(occupant.bio.custom_species)
 		if(occupant.species.name == SPECIES_CUSTOM)
-			dat += span_blue("Sapient Species: [occupant.custom_species]")
+			dat += span_blue("Sapient Species: [occupant.bio.custom_species]")
 		else
-			dat += span_blue("Sapient Species: [occupant.custom_species] \[Similar biology to [occupant.species.name]\]")
+			dat += span_blue("Sapient Species: [occupant.bio.custom_species] \[Similar biology to [occupant.species.name]\]")
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/body_scanner, src, TRUE) // D9: a printed scan is an explicit scan
 	dat += D.render_chat()
 	spent(D)

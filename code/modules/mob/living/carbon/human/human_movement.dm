@@ -71,17 +71,17 @@
 	. += calculate_turf_slowdown(T, direct)
 
 	// Item related slowdown.
-	var/item_tally = calculate_item_encumbrance()
+	var/item_tally = src.item_encumbrance
 
 	// Dragging heavy objects will also slow you down, similar to above.
 	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling)
 		if(istype(pulling, /obj/item))
 			var/obj/item/pulled = pulling
-			item_tally += max(pulled.slowdown, 0)
+			item_tally += max(pulled.worn_factor(STAT_ITEM_ENCUMBRANCE), 0)
 		else if(ishuman(pulling))
 			var/mob/living/carbon/human/H = pulling
-			var/their_slowdown = max(H.calculate_item_encumbrance(), 1)
+			var/their_slowdown = max(H.item_encumbrance, 1)
 			item_tally = max(item_tally, their_slowdown) // If our slowdown is less than theirs, then we become as slow as them (before species modifires).
 
 	if(item_tally > 0) //ALT-ENCUMBERANCE
@@ -112,57 +112,6 @@
 		sparse_set(src, pose, null)
 		sparse_set(src, pose_move, FALSE)
 		remove_pose_indicator()
-
-// This calculates the amount of slowdown to receive from items worn. This does NOT include species modifiers.
-// It is in a seperate place to avoid an infinite loop situation with dragging mobs dragging each other.
-// Also its nice to have these things seperated.
-
-//Return FALSE for no encumberance
-/mob/proc/calculate_item_encumbrance()
-	return FALSE
-
-/mob/living/carbon/human/calculate_item_encumbrance()
-	/// We check for all the items the wearer has that cause slowdown (positive or negative)
-	/// We then multiply the postive ones by our species.item_slowdown_mod to slow us down more, while we leave negative ones untouched.
-	/// Heavy things in your hands are affected by this change, UNLESS the thing in your hand speeds you up, in which case it doesn't.
-	/// Before you look at the below for(), yes, I know. It looks ugly. However, it is REQUIRED to be done this way instead of using get_equipped_items() as that makes a new list and does a LOT. This proc is called once (or up to 3 times if someone is being dragged) every time someone moves. Making hundreds of new lists() every second is a good way to destroy you CPU.
-
-	/// If this is STILL proving to be too resource intensive, I have left the old code commented out underneath this.
-	/// Just search this file for lines labled as "ALT-ENCUMBERANCE" that are commented out.
-	/// Just comment out the below code, uncomment out the version labeled 'ALT-ENCUMBERANCE', and you'll be back to the old system.
-
-	var/total_item_slowdown = 0
-	var/slowdown_mod = species.item_slowdown_mod //HIGHER = MAKES YOU SLOWER
-	for(var/slot in list(get_equipped_item(SLOT_ID_BACK), get_equipped_item(SLOT_ID_BELT), get_equipped_item(SLOT_ID_EAR_L), get_equipped_item(SLOT_ID_EAR_R), get_equipped_item(SLOT_ID_EYES), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_SHOES), get_equipped_item(SLOT_ID_ID), get_equipped_item(SLOT_ID_MASK), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_UNIFORM))) //Two things to note here. ONE: If you add a new inventory slot, ADD IT HERE. Two: If we ever get a global list on human of all the inventory slots (MINUS HANDS) add it here.
-		if(!slot) //ZOOM
-			continue
-		var/obj/item/I = slot
-		if(istype(I))
-			var/item_slowdown = I.slowdown //Positive == Slows you down. Negative == Speeds you up.
-			if(item_slowdown != 0) //If it's a positive number, we multiply it by out slowdown mod. Otherwise, don't do anything special.
-				if(item_slowdown > 0 && slowdown_mod > 0)
-					item_slowdown = item_slowdown * (slowdown_mod)
-
-				/// Adminbus / future proofing. These should NEVER get called unless someone down the line does something crazy
-				else if(slowdown_mod < 0 && item_slowdown < 0)
-					item_slowdown = -(item_slowdown * slowdown_mod)
-				else if(slowdown_mod < 0 && item_slowdown > 0)
-					item_slowdown = item_slowdown + slowdown_mod //Yes, this is + (Adding a negative), not multiplied. You are not making the 5 slowdown rigsuit give you 5*X speed. You're getting 5-X slowdown instead.
-			total_item_slowdown += item_slowdown
-	for(var/hands in list(get_equipped_item(SLOT_ID_HAND_L), get_equipped_item(SLOT_ID_HAND_R))) //Hands get special treatment. We want slowdown_mod
-		if(!hands)
-			continue
-		var/obj/item/H = hands
-		var/item_slowdown = H.slowdown
-		if(item_slowdown > 0)
-			total_item_slowdown += item_slowdown * slowdown_mod
-		else
-			continue
-
-	. += total_item_slowdown
-
-	//ALT-ENCUMBERANCE below here
-	//ALT-ENCUMBERANCE end
 
 // Similar to above, but for turf slowdown.
 /mob/living/carbon/human/proc/calculate_turf_slowdown(turf/T, direct)

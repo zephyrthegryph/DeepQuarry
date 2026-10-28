@@ -972,7 +972,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/joan)
 	suit has seen combat."
 
 	armor_spec = "melee=50;bullet=40;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60" //These values were taken from the combat rigs and adjusted to be weaker than said rigs.
-	slowdown = 0
+	worn_factors = null
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joansuit"

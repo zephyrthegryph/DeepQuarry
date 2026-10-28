@@ -5,7 +5,7 @@
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "clockwork_rig"
 	armor_spec = "melee=70;bullet=55;laser=65;energy=65;bomb=65;rad=100"
-	slowdown = 2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	offline_slowdown = 4
 	offline_vision_restriction = 1
 	emp_protection = 40

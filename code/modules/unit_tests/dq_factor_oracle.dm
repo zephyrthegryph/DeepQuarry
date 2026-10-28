@@ -178,8 +178,40 @@
 		acc = oracle_accumulate(acc, F.factors)
 	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
 		if(I.worn_factors)
-			acc = oracle_accumulate(acc, I.worn_factors)
+			var/alist/table = alist()
+			for(var/stat in I.worn_factors)
+				if(stat != STAT_ITEM_ENCUMBRANCE)
+					table[stat] = I.worn_factors[stat]
+			acc = oracle_accumulate(acc, table)
+	var/encumbrance = oracle_item_encumbrance(H)
+	if(encumbrance)
+		acc = oracle_accumulate(acc, alist(STAT_ITEM_ENCUMBRANCE = encumbrance))
 	return acc
+
+/// What the equipment a human carries adds to its movement delay, folded the way the old calculate_item_encumbrance() did: the worn slots (not suit
+/// storage or pockets) scale a slowdown by the species' item_slowdown_mod and leave a speed-up alone, a held item counts only when it slows.
+/proc/oracle_item_encumbrance(mob/living/carbon/human/H)
+	var/mod = H.species?.item_slowdown_mod
+	if(isnull(mod))
+		mod = 1
+	var/total = 0
+	for(var/slot in list(SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_EYES, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_ID, SLOT_ID_MASK, SLOT_ID_SUIT, SLOT_ID_UNIFORM))
+		var/obj/item/I = H.get_equipped_item(slot)
+		if(!istype(I))
+			continue
+		var/v = I.worn_factor(STAT_ITEM_ENCUMBRANCE)
+		if(v > 0 && mod > 0)
+			v *= mod
+		else if(mod < 0 && v < 0)
+			v = -(v * mod)
+		else if(mod < 0 && v > 0)
+			v += mod
+		total += v
+	for(var/hand in list(SLOT_ID_HAND_L, SLOT_ID_HAND_R))
+		var/obj/item/held = H.get_equipped_item(hand)
+		if(istype(held) && held.worn_factor(STAT_ITEM_ENCUMBRANCE) > 0)
+			total += held.worn_factor(STAT_ITEM_ENCUMBRANCE) * mod
+	return total
 
 /// The vector the old fold gives this body now, keyed by stat id; null when no source contributes.
 /datum/body/proc/oracle_fold()

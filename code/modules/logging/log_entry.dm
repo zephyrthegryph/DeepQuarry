@@ -4,11 +4,12 @@
 // Current Schema: 1.0.0
 // [timestamp, category, message, data, world_state, semver_store, id, schema_version]
 
+/// Log entry ids (the first is 0).
+SERIAL_DEF(log_entry, 0, FALSE)
+SCHEMA(/datum/log_entry, id, num())
+
 /// A datum which contains log information.
 /datum/log_entry
-	/// Next id to assign to a log entry.
-	var/static/next_id = 0
-
 	/// Unique id of the log entry.
 	var/id
 
@@ -39,7 +40,7 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 /datum/log_entry/New(timestamp, category, message, flags, list/data, list/semver_store)
 	..()
 
-	src.id = next_id++
+	src.id = next_serial(log_entry)
 	src.timestamp = timestamp
 	src.category = category
 	src.flags = flags

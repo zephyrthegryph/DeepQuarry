@@ -1,3 +1,6 @@
+/// Cargo market listing, bid and transaction numbers ("MKT-L-3"), one sequence; the market restarts it when it is rebuilt.
+SERIAL_DEF(market, 1, FALSE)
+
 /// A reusable description of goods an external buyer will accept. Market
 /// demand is expressed as ordinary type paths and economic provenance; it does
 /// not require dedicated export items or shipment machinery.
@@ -344,7 +347,6 @@ CAPABILITIES(/datum/cargo_market_bid)
 	var/list/market_listings
 	var/list/market_bids
 	var/list/market_transactions
-	var/next_market_id = 1
 	COOLDOWN_DECLARE(next_market_refresh)
 	var/market_generation = 0
 
@@ -357,7 +359,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	rel_take_all(src, nameof(market_listings))
 	rel_take_all(src, nameof(market_bids))
 	rel_take_all(src, nameof(market_transactions))
-	next_market_id = 1
+	serial_reset(market)
 	market_generation = 0
 	for(var/counterparty_type as anything in subtypesof(/datum/cargo_market_counterparty))
 		if(is_abstract(counterparty_type))
@@ -414,7 +416,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		for(var/listing_index in 1 to min(CARGO_MARKET_LISTINGS_PER_PARTY, length(eligible_packs)))
 			var/datum/supply_pack/selected_pack = pick_n_take(eligible_packs)
 			var/datum/cargo_market_listing/listing = new
-			listing.id = "MKT-L-[next_market_id++]"
+			listing.id = "MKT-L-[next_serial(market)]"
 			listing.counterparty_id = counterparty.id
 			listing.pack = selected_pack
 			listing.unit_price = cargo_market_seller_price(counterparty, selected_pack)
@@ -427,7 +429,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			var/profile_path = pick_n_take(profile_paths)
 			var/datum/cargo_market_profile/profile = new profile_path
 			var/datum/cargo_market_bid/bid = new
-			bid.id = "MKT-B-[next_market_id++]"
+			bid.id = "MKT-B-[next_serial(market)]"
 			bid.counterparty_id = counterparty.id
 			rel_set(bid, nameof(bid.profile), profile)
 			bid.target_units = rand(profile.minimum_units, profile.maximum_units)
@@ -600,7 +602,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 
 /datum/system/supply/proc/record_market_transaction(transaction_type, counterparty_id, description, value, account_number = 0, cover_name, reservation_key) as /datum/cargo_market_transaction
 	var/datum/cargo_market_transaction/transaction = new
-	transaction.id = "MKT-T-[next_market_id++]"
+	transaction.id = "MKT-T-[next_serial(market)]"
 	transaction.transaction_type = transaction_type
 	transaction.counterparty_id = counterparty_id
 	transaction.cover_name = cover_name
@@ -733,7 +735,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		return null
 	var/datum/supply_pack/selected_pack = pick(eligible_packs)
 	var/datum/cargo_market_listing/listing = new
-	listing.id = "MKT-L-[next_market_id++]"
+	listing.id = "MKT-L-[next_serial(market)]"
 	listing.counterparty_id = counterparty.id
 	listing.pack = selected_pack
 	listing.unit_price = cargo_market_seller_price(counterparty, selected_pack)
@@ -749,7 +751,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	var/profile_path = cargo_market_profile_path(profile_id)
 	var/datum/cargo_market_profile/profile = new profile_path
 	var/datum/cargo_market_bid/bid = new
-	bid.id = "MKT-B-[next_market_id++]"
+	bid.id = "MKT-B-[next_serial(market)]"
 	bid.counterparty_id = counterparty.id
 	rel_set(bid, nameof(bid.profile), profile)
 	bid.target_units = max(profile.minimum_units, target_units)

@@ -125,9 +125,9 @@ MSG_DEF_SELF(accessory/slot_taken, "Something is already attached there.")
 	worn_protection_changed()
 
 /obj/item/clothing/proc/update_accessory_slowdown()
-	slowdown = initial(slowdown)
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
 	for(var/obj/item/clothing/accessory/A in accessories)
-		slowdown += A.slowdown
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, worn_factor(STAT_ITEM_ENCUMBRANCE) + (A.worn_factor(STAT_ITEM_ENCUMBRANCE)))
 
 /obj/item/clothing/proc/removetie_verb()
 	set name = "Remove Accessory"

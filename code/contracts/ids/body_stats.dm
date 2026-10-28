@@ -38,6 +38,9 @@ STAT(/mob/living, resp_rate, SUM)
 
 // --- Combat and mobility ------------------------------------------------------------------------------------------------------
 STAT(/mob/living, slowdown, SUM, bounds = list(-10, 20))
+/// The slowdown the equipment carried adds to the movement delay (the worn and held items' `worn_factors`, each scaled by the species' item_slowdown_mod): human_movement.dm
+/// scales a positive total by that mod again, so it is a stat of its own and not part of `slowdown`.
+STAT(/mob/living, item_encumbrance, SUM)
 STAT(/mob/living, penalty_scale, PRODUCT, bounds = list(0, 4))
 STAT(/mob/living, haste, MAX, base = 0, bounds = list(0, 1), schema = num(0, INFINITY))
 STAT(/mob/living, accuracy, SUM)

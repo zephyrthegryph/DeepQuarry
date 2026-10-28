@@ -16,9 +16,11 @@
 	w_class = ITEMSIZE_SMALL
 	var/fire_acts = 0
 
-/obj/item/dq_h3_fire_probe/fire_act(exposed_temperature, exposed_volume)
+/obj/item/dq_h3_fire_probe/proc/count_fire(datum/act/A)
 	fire_acts++
-	return ..()
+
+CAPABILITIES(/obj/item/dq_h3_fire_probe)
+	on_notice(/datum/notice/atom_fire_act, then(PROC_REF(count_fire)))
 
 /// Puts the test floor's air back at room temperature (burning test objects heat it).
 /proc/dq_h3_cool_floor(turf/open/T)

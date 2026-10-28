@@ -149,7 +149,7 @@ CAPABILITIES(/obj/item/storage/box/fluff)
 	icon_state = "joanbag"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	item_state = "duffle_med"
-	slowdown = 0
+	worn_factors = null
 	can_tilt = 0
 
 //joanrisu:Katarina Eine
@@ -164,7 +164,7 @@ CAPABILITIES(/obj/item/storage/box/fluff)
 	)
 	name = "Katarina's Workbag"
 	desc = "A duffle bag Katarina uses to carry her tools."
-	slowdown = 0
+	worn_factors = null
 
 //Razerwing:Archer Maximus
 /obj/item/storage/box/fluff/archermaximus

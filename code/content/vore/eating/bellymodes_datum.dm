@@ -302,7 +302,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 			B.ownegg().icon_scale_y = clamp(0.25 * B.ownegg().w_class, 0.25, scale_clamp)
 		B.ownegg().update_transform()
 		if(B.ownegg().w_class > 4)
-			B.ownegg().slowdown = 4
+			B.ownegg().set_worn_factor(STAT_ITEM_ENCUMBRANCE, 4)
 		rel_clear(B, nameof(B.ownegg))
 		return GLOB.digest_result_update
 	return
