@@ -961,3 +961,9 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
   a worktree with the same key copies them in instead of regenerating.
 - **DreamChecker stays whole-tree.** SpacemanDMM 1.11 is a prebuilt binary with no incremental or per-file mode, and a scoped run would
   not give a full run's diagnostics. Its verdict is reused only on identical inputs (`gate_dc_key`).
+- **DreamChecker is OFF in the train (`DQ_TRAIN_DREAMCHECKER=0`, the default since 28 October 2026, the user's decision).** No
+  precheck, DreamChecker batch, batch gate, fast-forward landing or train push runs DreamChecker or waits for its verdict: the prechecks
+  pass without `tpass`, `fast_land_pick` requires no DreamChecker verdict, and the train exports `DQ_PUSH_NO_DREAMCHECKER=1`, under which
+  `dq_push_master.sh` needs no `dreamchecker` stamp and its fallback `build.sh dm` compiles without it. The native compiler's own
+  diagnostics (var-before-def included) still gate every compile. `DQ_TRAIN_DREAMCHECKER=1` restores the previous behaviour, nothing
+  was deleted; CI and `build.sh lint` still run DreamChecker.

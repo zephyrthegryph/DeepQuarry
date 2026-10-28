@@ -93,7 +93,13 @@ MAX_LANES_PRE="${DQ_TRAIN_MAX_LANES_PRECHECKED:-20}"            # batch size whe
 WT2="${DQ_TRAIN_WT2:-E:/projects/dq-wt/train-bisect}"           # the second worktree of a parallel bisect
 PRE="$STATE/precheck"
 LIGHT_PRE="${DQ_TRAIN_LIGHT_PRECHECK:-1}"                         # light lanes are prechecked too (their cheap checks, beside the gates)
+# DreamChecker in the train (28 October 2026, user decision): OFF by default. With DQ_TRAIN_DREAMCHECKER=0 no precheck, DreamChecker
+# batch, batch gate, fast-forward landing or train push runs it or waits for its verdict; the native compiler's own diagnostics still gate.
+# DQ_TRAIN_DREAMCHECKER=1 turns everything below back on as it was (agent_workflow.md section 29d).
+TRAIN_DC="${DQ_TRAIN_DREAMCHECKER:-0}"
 DC_BATCH="${DQ_TRAIN_DC_BATCH:-1}"                               # DreamChecker once for all queued lanes (dc_batch_run), not once per precheck
+[ "$TRAIN_DC" = 1 ] || DC_BATCH=0
+[ "$TRAIN_DC" = 1 ] || export DQ_PUSH_NO_DREAMCHECKER=1   # dq_push_master.sh: no dreamchecker stamp required, none run
 WT_DC="${DQ_TRAIN_DC_WT:-E:/projects/dq-wt/train-dc}"           # the DreamChecker batch's worktree
 Q="$STATE/queue"
 BOUNCED="$STATE/bounced"
@@ -342,7 +348,7 @@ self_update() {
 	fi
 	[ "$sig" != "$SELF_UPDATE_BAD" ] || return 0
 	if [ $(( $(date +%s) - SELF_UPDATE_LAST )) -lt 30 ]; then return 0; fi # never a tight re-exec loop
-	stage="$STATE/self.new"
+	stage="$STATE/self.new.$$"   # per process: the integrator and the prechecker update at the same moment and deleted each other's stage (cannot read tools/...: 5 times since 27 October)
 	rm -rf "$stage"; mkdir -p "$stage/ci" "$stage/train" || return 0
 	for f in "${SNAP_FILES[@]}"; do
 		G show "origin/master:tools/$f" >"$stage/$f" 2>/dev/null || { tlog "ERROR: self-update: cannot read tools/$f from origin/master; keeping the current scripts"; SELF_UPDATE_BAD="$sig"; rm -rf "$stage"; return 0; }
@@ -778,7 +784,8 @@ fast_land_pick() {
 		[ "$(G rev-parse "$sha^{tree}" 2>/dev/null)" = "$(qget "$vf" merge_tree)" ] || continue
 		[ -f "$PRE/proof/${sha:0:12}/${sha:0:12}.ratchets.ok" ] || continue
 		key="$(qget "$vf" dckey)"
-		if [ -f "$PRE/proof/${sha:0:12}/${sha:0:12}.dreamchecker.ok" ]; then :
+		if [ "$TRAIN_DC" != 1 ]; then :   # DreamChecker is off in the train: no verdict is required
+		elif [ -f "$PRE/proof/${sha:0:12}/${sha:0:12}.dreamchecker.ok" ]; then :
 		elif [ -n "$key" ] && (. "$SELF_DIR/dq_gate_verdicts.sh" 2>/dev/null || . "$(repo_dir)/tools/dq_gate_verdicts.sh"; gate_verdict_has dreamchecker "$key" >/dev/null); then :
 		elif ! dc_needs_run "$tip" "$cur"; then :
 		else FAST_WHY_NOT="no DreamChecker pass on $b's exact inputs (key ${key:0:10})"; continue; fi
@@ -799,7 +806,7 @@ fast_land() { # pushes FAST_SHA (a fast-forward of origin/master) from the train
 		git fetch -q origin 2>/dev/null
 		git switch -q --detach "$sha" || exit 98
 		mkdir -p data/merge-gates && cp -f "$PRE/proof/$short"/* data/merge-gates/ || exit 97
-		echo "$sha" >"data/merge-gates/$short.dreamchecker.ok"   # fast_land_pick proved a DreamChecker pass on these exact inputs
+		[ "$TRAIN_DC" != 1 ] || echo "$sha" >"data/merge-gates/$short.dreamchecker.ok"   # fast_land_pick proved a DreamChecker pass on these exact inputs
 		export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1
 		[ "${DQ_TRAIN_DRY_RUN:-0}" = 1 ] && export DQ_PUSH_DRY_RUN=1
 		bash tools/dq_push_master.sh --expect "$b"
@@ -830,7 +837,7 @@ precheck_one() { # <worker n> <branch> <tip>
 	tlog "precheck: $b (tip ${tip:0:10}) on origin/master ${master:0:10} in $wt; log $log"
 	(
 		cd "$wt" || exit 99
-		export DQ_MERGE_BRANCH="train/pre$n" DQ_MERGE_SESSION="train-pre$n-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN" DQ_GATE_DREAMCHECKER=1
+		export DQ_MERGE_BRANCH="train/pre$n" DQ_MERGE_SESSION="train-pre$n-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN" DQ_GATE_DREAMCHECKER="$TRAIN_DC"
 		[ "$DC_BATCH" = 1 ] && export DQ_GATE_DC_DEFER=1
 		unset DQ_BATCH_DEADLINE DQ_BATCH_CACHE DQ_BATCH_WT2 DQ_SLOT_PRIORITY
 		set -f
@@ -1427,7 +1434,8 @@ heavy_cycle_gate() {
 	local dc_why="" warm_root
 	warm_root="$(warm_train_root)"
 	[ -z "$warm_root" ] || [ "$warm_root" = merge ] || tlog "compile root: the batch compiles in deepquarry-$warm_root (the train root compiled last: its daemon session is the warm one)"
-	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && dc_disjoint "${CHOSEN[@]}"; then dc_why="$DC_DISJOINT_WHY"; tlog "dreamchecker: $dc_why; the batch keeps those verdicts"; elif [ "${PRECHECKED_BATCH:-0}" = 1 ]; then tlog "dreamchecker runs: ${DC_DISJOINT_WHY_NOT:-a lane has no DreamChecker pass on a compatible master}"; fi
+	if [ "$TRAIN_DC" != 1 ]; then tlog "dreamchecker: off in the train (DQ_TRAIN_DREAMCHECKER=0); the compiler's own diagnostics gate"
+	elif [ "${PRECHECKED_BATCH:-0}" = 1 ] && dc_disjoint "${CHOSEN[@]}"; then dc_why="$DC_DISJOINT_WHY"; tlog "dreamchecker: $dc_why; the batch keeps those verdicts"; elif [ "${PRECHECKED_BATCH:-0}" = 1 ]; then tlog "dreamchecker runs: ${DC_DISJOINT_WHY_NOT:-a lane has no DreamChecker pass on a compatible master}"; fi
 	local an_why=""
 	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && analyze_trusted "${CHOSEN[@]}"; then an_why="$ANALYZE_TRUST_WHY"; tlog "analyze_tests: $an_why; the batch keeps that verdict"; fi
 	phase "gate: ${CHOSEN[*]}"
@@ -1441,7 +1449,7 @@ heavy_cycle_gate() {
 		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1 DQ_BATCH_DEADLINE="$deadline_use" DQ_BATCH_WT2="$wt2_use"
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
-		export DQ_GATE_DREAMCHECKER=1
+		export DQ_GATE_DREAMCHECKER="$TRAIN_DC"
 		[ "${PRECHECKED_BATCH:-0}" != 1 ] || export DQ_GATE_CAP_MAX_MIN="${DQ_TRAIN_PRECHECKED_CAP_MIN:-20}"
 		[ -z "$dc_why" ] || export DQ_GATE_DC_DISJOINT="$dc_why"
 		[ -z "$an_why" ] || export DQ_GATE_ANALYZE_TRUSTED="$an_why"

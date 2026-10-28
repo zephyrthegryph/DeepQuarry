@@ -189,7 +189,7 @@ for round in 1 2 3; do
 		[ "${DQ_PUSH_FULL:-0}" != "1" ] && [ -f "data/merge-gates/${sha:0:12}.$1.ok" ] && [ "$(cat "data/merge-gates/${sha:0:12}.$1.ok")" = "$sha" ]
 	}
 	gate_sha_ok() { [ -f "data/merge-gates/${sha:0:12}.ok" ] && [ "$(sed -n 's/^sha=//p' "data/merge-gates/${sha:0:12}.ok" | tail -n 1)" = "$sha" ]; }
-	if ! stamped dm && [ "${DQ_PUSH_TRUST_GATE_DM:-0}" = "1" ] && [ "${DQ_PUSH_FULL:-0}" != "1" ] && stamped ratchets && stamped dreamchecker && gate_sha_ok; then
+	if ! stamped dm && [ "${DQ_PUSH_TRUST_GATE_DM:-0}" = "1" ] && [ "${DQ_PUSH_FULL:-0}" != "1" ] && stamped ratchets && { stamped dreamchecker || [ "${DQ_PUSH_NO_DREAMCHECKER:-0}" = 1 ]; } && gate_sha_ok; then
 		# The train gates run --no-dm on purpose: the test build compile proved the code compiles on this exact tree, so a second full
 		# native compile here only repeats it. DreamChecker is NOT trusted without its own stamp: the gate's dreamchecker job stamps the exact
 		# HEAD (data/merge-gates/<sha>.dreamchecker.ok); a gate without it falls through to the full build below. CI keeps the DreamMaker compile.
@@ -199,9 +199,15 @@ for round in 1 2 3; do
 	else
 		echo "== build.sh dm on ${sha:0:12} (log $log.dm.log)"
 		rm -f deepquarry.dmb # never "up to date": DreamChecker runs inside the dm target
+		# DQ_PUSH_NO_DREAMCHECKER=1 (the train with DQ_TRAIN_DREAMCHECKER=0): the compile only; DreamChecker neither runs nor is required
+		if [ "${DQ_PUSH_NO_DREAMCHECKER:-0}" = 1 ]; then
+			echo "== DreamChecker: off (DQ_PUSH_NO_DREAMCHECKER=1); the compiler's own diagnostics gate"
+			DQ_DREAMCHECKER=0 tools/build/build.sh dm >"$log.dm.log" 2>&1 || { tail -40 "$log.dm.log"; die "build.sh dm failed"; }
+		else
 		DQ_DREAMCHECKER=1 tools/build/build.sh dm >"$log.dm.log" 2>&1 || { tail -40 "$log.dm.log"; die "build.sh dm failed"; }
 		grep -q "dream-checker: passed" "$log.dm.log" || die "DreamChecker did not run (install it: tools/ci/install_spaceman_dmm.sh); see $log.dm.log"
 		grep -q "Found 0 diagnostics" "$log.dm.log" || { grep -iE "error|warning" "$log.dm.log" | head -30; die "DreamChecker reported diagnostics; see $log.dm.log"; }
+		fi
 		grep -qE "deepquarry\.dmb - 0 errors" "$log.dm.log" || die "the compiler did not report 0 errors; see $log.dm.log"
 	fi
 
