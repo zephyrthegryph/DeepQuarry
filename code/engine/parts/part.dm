@@ -597,7 +597,9 @@
 /// spawns(T, n): adds n of T where the holder is.
 /// A transformation also takes the rest (code/library/transformations/transformation_spawns.dm): `at`, `per`, `amount`, `scatter`, `inherit`, `tell` and
 /// `audit` are carried only when given, so an op's part is the same interned part as before.
-/proc/spawns(spawn_type, n = 1, at = null, per = null, amount = null, scatter = null, inherit = null, tell = null, audit = null)
+/proc/spawns(spawn_type, n = 1, at = null, per = null, amount = null, scatter = null, inherit = null, tell = null, audit = null,
+	sfx = null,
+	scatter_chance = null)
 	var/list/arguments = list("type" = spawn_type, "n" = n)
 	if(!isnull(at))
 		arguments["at"] = at
@@ -613,6 +615,10 @@
 		arguments["tell"] = tell
 	if(!isnull(audit))
 		arguments["audit"] = audit
+	if(!isnull(sfx))
+		arguments["sfx"] = sfx
+	if(!isnull(scatter_chance))
+		arguments["scatter_chance"] = scatter_chance
 	return part_make(/datum/entry/part/effect/spawns, arguments)
 
 /datum/entry/part/effect/spawns
@@ -670,10 +676,11 @@
 /datum/entry/part/effect/sets_off
 	part_name = "sets_off"
 
-/// pick_from(choices = list(list(weight, source), ...)): what a spawns() row makes, chosen in two steps. A table is picked by weight, then a type from the table
-/// by its own weights. `weight` is a number, or "len:<name>" for the length of the GLOB list <name> (a one-in-(n+1) chance is weights 1 and "len:<name>").
-/// `source` is the name of a GLOB list of types (weighted or not), a list of such names (their union), or subtypes_of(path, except = list(paths)) for the
-/// subtypes of a path less the subtypes of the excepted paths. Name `choices` in the call.
+/// pick_from(choices = list(list(weight, source, amount), ...)): what a spawns() row makes, chosen in two steps. A table is picked by weight, then a type from
+/// the table by its own weights. `weight` is a number, length_of(nameof(GLOB.x)) (the length of that list: a one-in-(n+1) chance is weights 1 and length_of(x))
+/// or weight_sum_of(list(nameof(GLOB.x), ...)) (the sum of the weights in those lists). `source` is nameof(GLOB.x) for a list of types (weighted or not), a list of
+/// such names (their union), subtypes_of(path, except = list(paths)) or types_of(path, where = GLOBAL_PROC_REF(pred)). `amount` (optional) is the second
+/// constructor argument of what that choice makes. Every name must be a GLOB var: a typo fails at the boot gate. Name `choices` in the call.
 /proc/pick_from(list/choices)
 	return part_make(/datum/entry/part/pick_from, list("choices" = choices))
 
@@ -683,6 +690,18 @@
 /// subtypes_of(path, except = list(paths)): a pick_from() source: the subtypes of `path`, less the subtypes of each excepted path.
 /proc/subtypes_of(path, list/except = null)
 	return list("subtypes", path, except)
+
+/// types_of(path, where = GLOBAL_PROC_REF(pred)): a pick_from() source: `path` and its subtypes for which pred(type) is true.
+/proc/types_of(path, where = null)
+	return list("types", path, where)
+
+/// length_of(nameof(GLOB.x)): a pick_from() weight: how many entries that list has.
+/proc/length_of(list_name)
+	return list("length_of", list_name)
+
+/// weight_sum_of(list(nameof(GLOB.x), ...)): a pick_from() weight: the sum of the weights of the entries of those lists (an entry without a weight counts 1).
+/proc/weight_sum_of(list/list_names)
+	return list("weight_sum_of", list_names)
 
 /// opens_ui(): opens the holder's window for the actor.
 /proc/opens_ui()

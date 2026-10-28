@@ -118,21 +118,21 @@ CAPABILITIES(/transformation/chem/instant/slime/grey_slimejelly)
 CAPABILITIES(/transformation/chem/instant/slime/metal_materials_basic)
 	configure(transformation(name = "Slime Basic Construction Materials", id = "m_metal_basic", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/metal),
-		spawns = spawns("xenobio_metal_materials_normal", 3, amount = 10)))
+		spawns = spawns(nameof(GLOB.xenobio_metal_materials_normal), 3, amount = 10)))
 
 /transformation/chem/instant/slime/metal_materials_adv
 
 CAPABILITIES(/transformation/chem/instant/slime/metal_materials_adv)
 	configure(transformation(name = "Slime Advanced Construction Materials", id = "m_metal_adv", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/metal),
-		spawns = spawns("xenobio_metal_materials_adv", 2, amount = 10)))
+		spawns = spawns(nameof(GLOB.xenobio_metal_materials_adv), 2, amount = 10)))
 
 /transformation/chem/instant/slime/metal_materials_weird
 
 CAPABILITIES(/transformation/chem/instant/slime/metal_materials_weird)
 	configure(transformation(name = "Slime Weird Construction Materials", id = "m_metal_weird", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/metal),
-		spawns = spawns("xenobio_metal_materials_weird", 3, amount = 5)))
+		spawns = spawns(nameof(GLOB.xenobio_metal_materials_weird), 3, amount = 5)))
 
 /transformation/chem/instant/slime/metal_materials_steel
 
@@ -396,7 +396,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_battery)
 CAPABILITIES(/transformation/chem/instant/slime/gold_random_mobs)
 	configure(transformation(name = "Slime Random Mobs", id = "m_gold_random_mobs", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/gold),
-		spawns = spawns(spawn_type = pick_from(choices = list(list(1, "xenobio_gold_mobs_bosses"), list(99, list("xenobio_gold_mobs_safe", "xenobio_gold_mobs_hostile", "xenobio_gold_mobs_birds")))), n = 3, scatter = 3, audit = "Gold extract reaction (random mobs)")))
+		spawns = spawns(spawn_type = pick_from(choices = list(list(1, nameof(GLOB.xenobio_gold_mobs_bosses)), list(99, list(nameof(GLOB.xenobio_gold_mobs_safe), nameof(GLOB.xenobio_gold_mobs_hostile), nameof(GLOB.xenobio_gold_mobs_birds))))), n = 3, scatter = 3, audit = "Gold extract reaction (random mobs)")))
 
 
 /transformation/chem/instant/slime/gold_hostile_mob
@@ -404,7 +404,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_random_mobs)
 CAPABILITIES(/transformation/chem/instant/slime/gold_hostile_mob)
 	configure(transformation(name = "Slime Hostile Mob", id = "m_gold_hostile_mob", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/gold),
-		spawns = spawns("xenobio_gold_mobs_hostile", 1, scatter = 3, audit = "Gold extract reaction (dangerous mob)")))
+		spawns = spawns(nameof(GLOB.xenobio_gold_mobs_hostile), 1, scatter = 3, audit = "Gold extract reaction (dangerous mob)")))
 
 
 /transformation/chem/instant/slime/gold_safe_mob
@@ -412,7 +412,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_hostile_mob)
 CAPABILITIES(/transformation/chem/instant/slime/gold_safe_mob)
 	configure(transformation(name = "Slime Safe Mob", id = "m_gold_safe_mob", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/gold),
-		spawns = spawns(spawn_type = pick_from(choices = list(list(1, "xenobio_gold_mobs_birds"), list("len:xenobio_gold_mobs_safe", "xenobio_gold_mobs_safe"))), n = 1, scatter = 3)))
+		spawns = spawns(spawn_type = pick_from(choices = list(list(1, nameof(GLOB.xenobio_gold_mobs_birds)), list(length_of(nameof(GLOB.xenobio_gold_mobs_safe)), nameof(GLOB.xenobio_gold_mobs_safe)))), n = 1, scatter = 3)))
 
 
 /transformation/chem/instant/slime/gold_materials_gold
@@ -439,7 +439,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_materials_gold)
 CAPABILITIES(/transformation/chem/instant/slime/silver_materials_basic)
 	configure(transformation(name = "Slime Basic Science Materials", id = "m_silver_basic", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/silver),
-		spawns = spawns("xenobio_silver_materials_basic", 2, amount = 5)))
+		spawns = spawns(nameof(GLOB.xenobio_silver_materials_basic), 2, amount = 5)))
 
 /transformation/chem/instant/slime/silver_materials_adv
 
@@ -458,24 +458,8 @@ CAPABILITIES(/transformation/chem/instant/slime/silver_materials_adv)
 CAPABILITIES(/transformation/chem/instant/slime/silver_materials_random)
 	configure(transformation(name = "Slime Random Materials", id = "m_silver_random", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/silver),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/silver_materials_random, on_reaction)))
+		spawns = spawns(spawn_type = pick_from(choices = list(list(weight_sum_of(list(nameof(GLOB.xenobio_metal_materials_normal), nameof(GLOB.xenobio_metal_materials_adv), nameof(GLOB.xenobio_metal_materials_weird), nameof(GLOB.xenobio_silver_materials_basic), nameof(GLOB.xenobio_silver_materials_adv))), list(nameof(GLOB.xenobio_metal_materials_normal), nameof(GLOB.xenobio_metal_materials_adv), nameof(GLOB.xenobio_metal_materials_weird), nameof(GLOB.xenobio_silver_materials_basic), nameof(GLOB.xenobio_silver_materials_adv)), 5), list(weight_sum_of(list(nameof(GLOB.xenobio_silver_materials_special))), nameof(GLOB.xenobio_silver_materials_special), 1))), n = 3)))
 
-/transformation/chem/instant/slime/silver_materials_random/on_reaction(datum/reagents/holder)
-	var/type_to_spawn
-	var/amount = 5
-	var/all_spawnable_types = list()
-	all_spawnable_types += GLOB.xenobio_metal_materials_normal
-	all_spawnable_types += GLOB.xenobio_metal_materials_adv
-	all_spawnable_types += GLOB.xenobio_metal_materials_weird
-	all_spawnable_types += GLOB.xenobio_silver_materials_basic
-	all_spawnable_types += GLOB.xenobio_silver_materials_adv
-	all_spawnable_types += GLOB.xenobio_silver_materials_special
-	for(var/i = 1 to 3)
-		type_to_spawn = pickweight(all_spawnable_types)
-		if(type_to_spawn in GLOB.xenobio_silver_materials_special)
-			amount = 1
-		new type_to_spawn(get_turf(holder.my_atom), amount)
-	..()
 
 /transformation/chem/instant/slime/silver_materials_silver
 
@@ -978,22 +962,8 @@ CAPABILITIES(/transformation/chem/instant/slime/amber_slimefood)
 CAPABILITIES(/transformation/chem/instant/slime/amber_random_food)
 	configure(transformation(name = "Slime Random Food", id = "m_amber_random_food", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/amber),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/amber_random_food, on_reaction)))
+		spawns = spawns(spawn_type = pick_from(choices = list(list(1, subtypes_of(/obj/item/reagent_containers/food/snacks)))), n = list(2, 4), scatter = 3, scatter_chance = 50, sfx = SFX_EFFECTS_PHASEIN)))
 
-/transformation/chem/instant/slime/amber_random_food/on_reaction(datum/reagents/holder)
-	var/list/edibles = subtypesof(/obj/item/reagent_containers/food/snacks)
-
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN)
-
-	for(var/i = 1 to rand(2, 4))
-		var/chosen = pick(edibles)
-		var/obj/B = new chosen
-		if(B)
-			B.forceMove(get_turf(holder.my_atom))
-			if(prob(50))
-				for(var/j = 1, j <= rand(1, 3), j++)
-					step(B, pick(NORTH,SOUTH,EAST,WEST))
-	..()
 
 /transformation/chem/instant/slime/amber_snack
 
@@ -1267,23 +1237,8 @@ CAPABILITIES(/transformation/chem/instant/slime/light_pink_obedience)
 CAPABILITIES(/transformation/chem/instant/slime/rainbow_random_slime)
 	configure(transformation(name = "Slime Random Slime", id = "m_rainow_random_slime", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/rainbow),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/rainbow_random_slime, on_reaction)))
+		spawns = spawns(spawn_type = pick_from(choices = list(list(1, types_of(/mob/living/simple_mob/slime/xenobio, where = GLOBAL_PROC_REF(xform_rainbow_candidate))))), n = 1)))
 
-/transformation/chem/instant/slime/rainbow_random_slime/on_reaction(datum/reagents/holder)
-	var/mob/living/simple_mob/slime/xenobio/S
-	var/list/slime_types = typesof(/mob/living/simple_mob/slime/xenobio)
-
-	while(slime_types.len)
-		S = pick(slime_types)
-		if(initial(S.rainbow_core_candidate) == TRUE)
-			break
-		else
-			slime_types -= S
-			S = null
-
-	if(S)
-		new S(get_turf(holder.my_atom))
-	..()
 
 /transformation/chem/instant/slime/rainbow_random_extract
 
@@ -1337,3 +1292,8 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_unity)
 	explosion(get_turf(extract), 1 * power, 3 * power, 6 * power)
 	if(!QDELETED(extract)) // Explosion may or may not have deleted the extract.
 		destroyed(extract, null, "explosion")
+
+/// pick_from() filter for the rainbow extract: a slime type whose rainbow_core_candidate is set.
+/proc/xform_rainbow_candidate(path)
+	var/mob/living/simple_mob/slime/xenobio/S = path
+	return initial(S.rainbow_core_candidate) == TRUE
