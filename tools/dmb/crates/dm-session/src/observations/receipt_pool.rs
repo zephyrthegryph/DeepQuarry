@@ -6,7 +6,8 @@ use std::{
     sync::{Arc, Mutex, Weak},
 };
 const MAX_CANDIDATES: usize = 8;
-type Groups<Q, A, D> = BTreeMap<(Q, usize), Vec<Weak<[Observation<Q, A, D>]>>>;
+/// Nearly every locator names one leaf, so a bucket stores a single weak handle inline (no vector of its own).
+type Groups<Q, A, D> = BTreeMap<(Q, usize), crate::artifacts::Bucket<Weak<[Observation<Q, A, D>]>>>;
 pub struct ReceiptGroupPool<Q, A, D> {
     groups: Mutex<Groups<Q, A, D>>,
 }

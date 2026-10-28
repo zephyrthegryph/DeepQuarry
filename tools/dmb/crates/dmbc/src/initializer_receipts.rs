@@ -141,7 +141,8 @@ impl Binding {
 // These select candidates only; collisions or shifted duplicates still replay Inputs.
 pub(crate) fn fragment_locator(write: &InitializerWrite) -> Vec<u8> {
     use dm_ir::{InitializerTarget, InitializerValue};
-    let mut key = b"initializer-fragment-placement-v5".to_vec();
+    // Short version tag: this locator is a prefix of every retained initializer key.
+    let mut key = b"ifp\x06".to_vec();
     match write.target {
         InitializerTarget::ProcedureStatic(identity) => {
             key.push(0);
