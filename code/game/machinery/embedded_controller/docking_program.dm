@@ -147,6 +147,13 @@
 			if (receive_tag == tag_target)
 				reset()
 
+/// A docking controller wakes for a docking signal addressed to it, or for any traffic while a dock is in progress (door and sensor reports finish it).
+/// The station's door and sensor broadcasts reached every controller on the frequency and each started a work step (35 controllers, 3 ms a step) for nothing.
+/datum/embedded_program/docking/signal_requires_processing(datum/signal/signal, receive_method, receive_param)
+	if(signal.data["recipient"] == id_tag)
+		return TRUE
+	return dock_state != STATE_UNDOCKED || response_sent || resend_counter > 0
+
 /datum/embedded_program/docking/periodic_step()
 	switch(dock_state)
 		if (STATE_DOCKING)	//waiting for our docking port to be ready for docking

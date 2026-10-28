@@ -403,9 +403,21 @@ CAPABILITIES(/obj/machinery/porta_turret)
 /obj/machinery/porta_turret/proc/scan_candidates()
 	return mobs_in_view(world.view, src)
 
+/// TRUE when some mob (in a container or buckled to something too: its turf counts) is within `range` tiles of the turret in both axes. The cheap test
+/// before scan() asks view() what it sees, which walks every movable in the area (0.5 ms a look, on 15 turrets, all round, with nobody about).
+/obj/machinery/porta_turret/proc/mob_nearby(range)
+	var/turf/here = get_turf(src)
+	if(!here)
+		return FALSE
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		var/turf/there = get_turf(M)
+		if(there && there.z == here.z && abs(there.x - here.x) <= range && abs(there.y - here.y) <= range)
+			return TRUE
+	return FALSE
+
 /// One look around while armed: it fires at the best target it sees (the cover comes down `timeout` frames after its last shot).
 /obj/machinery/porta_turret/proc/scan(datum/act/timer/A)
-	if(!last_fired) // We cannot fire anyway until our cooldown ends.
+	if(!last_fired && mob_nearby(world.view + 1)) // We cannot fire anyway until our cooldown ends, and there is nothing to look at with no mob near.
 		var/list/targets = list()			//list of primary targets
 		var/list/secondarytargets = list()	//targets that are least important
 		for(var/mob/M in scan_candidates())
