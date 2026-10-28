@@ -215,9 +215,15 @@ CAPABILITIES(/transformation/dq_spawn/dose)
 	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
 	H.add_reagent(REAGENT_ID_NITROGEN, 2, safety = 1)
 	xform_settle_reagents(H)
-	var/was_thrown = !isnull(loose.throwing)
-	test_time(2 SECONDS)
-	TEST_ASSERT(was_thrown || loose.x > side.x, "a loose item beside the vessel was thrown away from it")
+	var/datum/thrownthing/flight = loose.throwing
+	TEST_ASSERT_NOTNULL(flight, "the rule threw the loose item")
+	var/steps = 0
+	while(!QDELETED(flight) && steps++ < 100)
+		// world.time is frozen inside a test; a throw's pace is measured from its start_time, so age it one server tick per slot.
+		flight.start_time -= world.tick_lag
+		test_time(1)
+	TEST_ASSERT(QDELETED(flight), "the throw never landed")
+	TEST_ASSERT(get_dist(loose, T) > get_dist(side, T), "the item landed further from the vessel than it started")
 	test_driver_end()
 
 /datum/unit_test/dq_xform_sets_off_mood
