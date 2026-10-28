@@ -201,3 +201,24 @@ Supersedes section 4 where they differ; each phase is its own lane and proves it
   source and analyze's text lints. Proof: `dmb-equiv`, `shared_store_equiv`, ratchet parity.
 - P4 (optional, long term): move the sem walks and checks onto dmbc's model by implementing analyze's Sem surface there, and give
   proc bodies a dmbc-side AST the walks can read. Only after P1-P3 land and only if the memory or maintenance case holds.
+
+### 11.1 Measured before building (2026-10-28, `analyze check`, dev-fast binary, master 5d714d9e5b)
+
+| Run | Wall |
+|---|---|
+| cold, empty private cache | 55.8 s |
+| warm, nothing changed | 3.7 s, then 1.1 s |
+| one-line body edit (`mob_spawner.dm`) | 27.2 s; 18.4 s on a repeat |
+
+In the body-edit run the tree load is 69 ms, `Decls` 0.18 s, and the model store patches the one file in 0.54 s. The remaining
+18-27 s is whole-tree semantic lints re-running over all 106,171 stored proc bodies (untyped 17.3 s, requirement_bool 9.5 s,
+setter_publishes 5.5 s, sem/handlers 5.1 s, lifeforms 4.5 s, untracked_inputs 4.5 s, read_back 4.4 s, sem/reads 4.0 s; the figures
+overlap because they run in parallel and share the model build). A resident process removes process start, cache loading and
+the compiled regex patterns (about 1-4 s), not that. P2a is therefore parked: the speed lever is making those lints incremental
+per file (or per proc), and only then does a resident process pay for itself in memory and start-up.
+
+The trigger for folding the resident analyze into the dmbc process (reading A in this section) is P3: once the shared file and
+text layer needs dmbc's prepared source and analyze's text views to be the same in-memory objects, the two must share an address
+space. Until then B (a sibling process on the same daemon conventions) is enough, and the protocol and namespace stay shaped so
+that moving the server into dmbc is a link change: the endpoint name `an-<worktree root hash>`, the request and reply
+frames, and the registry record do not depend on the hosting process.
