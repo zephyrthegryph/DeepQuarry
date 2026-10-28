@@ -22,6 +22,10 @@
 	var/skip_in_tests = FALSE
 	/// A fixed size for smoke or foam, in place of what the step made; null for the latter.
 	var/amount
+	/// XFORM_FX_AREA: the radius, the body effect path(s) and how long they last (null: until removed).
+	var/range
+	var/list/body_effects
+	var/lasts
 
 /// The rows of a rule's `effects` argument (one sets_off() or a list of them), or null (reported) when one is wrong.
 /proc/xform_effect_rows(type, origin, effects_argument)
@@ -32,8 +36,8 @@
 			return null
 		var/list/arguments = E.args
 		var/kind = arguments["kind"]
-		if(kind != XFORM_FX_SMOKE && kind != XFORM_FX_FOAM && kind != XFORM_FX_EXPLOSION && kind != XFORM_FX_EMP)
-			declare_report("[origin]: [type]: sets_off([kind]) is not XFORM_FX_SMOKE, XFORM_FX_FOAM, XFORM_FX_EXPLOSION or XFORM_FX_EMP")
+		if(kind != XFORM_FX_SMOKE && kind != XFORM_FX_FOAM && kind != XFORM_FX_EXPLOSION && kind != XFORM_FX_EMP && kind != XFORM_FX_AREA)
+			declare_report("[origin]: [type]: sets_off([kind]) is not XFORM_FX_SMOKE, XFORM_FX_FOAM, XFORM_FX_EXPLOSION, XFORM_FX_EMP or XFORM_FX_AREA")
 			return null
 		var/datum/xform_effect/row = new
 		row.kind = kind
@@ -45,8 +49,15 @@
 		row.divisors = arguments["divisors"]
 		row.skip_in_tests = !!arguments["skip_in_tests"]
 		row.amount = arguments["amount"]
+		row.range = arguments["range"]
+		var/body_effect = arguments["body_effect"]
+		row.body_effects = islist(body_effect) ? body_effect : (body_effect ? list(body_effect) : null)
+		row.lasts = arguments["lasts"]
 		if(kind == XFORM_FX_EMP && (!islist(row.divisors) || length(row.divisors) != 4))
 			declare_report("[origin]: [type]: sets_off(XFORM_FX_EMP) takes divisors = list(a, b, c, d)")
+			return null
+		if(kind == XFORM_FX_AREA && (!isnum(row.range) || !length(row.body_effects)))
+			declare_report("[origin]: [type]: sets_off(XFORM_FX_AREA) takes range = n and body_effect = a path or a list of paths")
 			return null
 		rows += row
 	if(!length(rows))
@@ -55,7 +66,7 @@
 	return rows
 
 /// Runs every sets_off() row of `X` for a step of `holder` that made `made`. Called by xform_effects().
-/proc/xform_run_effects(datum/xform/X, datum/reagents/holder, made)
+/proc/xform_run_effects(datum/xform/X, datum/reagents/holder, made, datum/owner)
 	for(var/datum/xform_effect/row as anything in X.effect_rows)
 #ifdef UNIT_TESTS
 		if(row.skip_in_tests)
@@ -98,6 +109,10 @@
 				else
 					holder.clear_reagents() // no powergaming by creating a tiny amount of this
 				e.start()
+			if(XFORM_FX_AREA)
+				for(var/mob/living/L in range(row.range, subject))
+					for(var/effect_path in row.body_effects)
+						L.apply_body_effect(effect_path, row.lasts, subject) // the extract is the origin: the old tails passed the rule, which a body effect refuses (an origin is an atom)
 			if(XFORM_FX_EMP)
 				var/list/d = row.divisors
 				empulse(location, round(made / d[1]), round(made / d[2]), round(made / d[3]), round(made / d[4]), 1)

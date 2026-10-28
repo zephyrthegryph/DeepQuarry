@@ -84,6 +84,9 @@
 /// An electromagnetic pulse scaled by what the step made.
 #define XFORM_FX_EMP "emp"
 
+/// A body effect on every mob within a range of the subject.
+#define XFORM_FX_AREA "area"
+
 // spawns(): where a product is made, and how many.
 /// At the turf of the subject (the only place built).
 #define SUBJECT_TURF "subject_turf"
