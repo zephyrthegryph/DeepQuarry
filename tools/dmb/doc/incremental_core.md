@@ -1179,3 +1179,33 @@ carried ones by answer hash; only units whose recorded answers must be compared 
 number of units the edit invalidates (hundreds) times one decode of a few KB, under 20 ms, against a 5 s edit. Not started:
 it needs slice 1's census to size the stub threshold, and the equivalence run to prove a spilled unit validates exactly as a
 resident one.
+
+## Frontend memory proposals (2026-10-27, lane `perf/dmb-frontend-mem*`)
+
+Measured with the allocation-sites build run from its own target directory (the `.pdb` must sit next to the executable, or every
+site reads as unattributed). Owner shares move by about 40 MB between two probes of the same tree, so a change under that size is
+not visible in the owner table; compare `requested-live`.
+
+Landed: directive text runs, shared directive-record source, walk vector slack, expansion `Line` packing (game -234 MB, test extra
+-71 MB), then `prepared_source` viewing the original text for lines comments do not touch and releasing expansion text slack
+(game -61 MB, test extra -30 MB). Cold `.dmb` output byte-identical in both.
+
+Proposals that need a design decision, not a local edit:
+
+* **Adapter `canonical` bytes (about 60 MB, `adapter.rs` var initializers).** `MemberMetadata.canonical` is the serialized token
+  stream of the member header or initializer, kept next to the `SymbolicExpression` tokens that carry the same text. It is part of
+  the metadata's identity (`dm-ir` `declarations.rs` writes it into the canonical form, `adapter.rs` hashes it into `content`), so
+  it cannot simply be dropped. Option: derive it on demand from the tokens and the symbol table, and keep only the 128-bit
+  `content` hash; every reader of `.canonical` (dm-ir identity, `modified_instance`, `portable_meaning`) then needs the symbol
+  table at hand. Needs the owners of the metadata identity to agree on a derive-not-store rule.
+* **`MacroExpansion` repack (`trace_arena`, about 49 MB).** Each emitted line with expansions holds an `Arc<Vec<MacroExpansion>>`
+  of name `Arc`, invocation span, chain `Arc` and an optional definition origin `Arc` (about 48 bytes per trace plus the vector).
+  Replace by u32 name and chain ids into the region's `TraceArena` plus u32 spans, with the arena kept alive by the output rows.
+  Changes the `MacroExpansion` type every origin reader uses.
+* **Parse fragment payloads (about 247 MB, the largest unattributed site: `frontend_parse.rs` `Arc::from(bytes)` of the
+  `parserwire` encoding).** One `Arc<[u8]>` per declaration chunk is shared by the `FragmentRecord` and the declaration state
+  (`new_shared_source`), so compressing it in one holder saves nothing. Option: store it deflated in both with one decode in
+  `decode_with_facts`; the serialized AST is highly repetitive. Needs a warm-edit measurement before adopting (a decode per
+  reparse), and a `FRAGMENT_VERSION` bump.
+* **`joined_text` (about 60 MB)** is the memoized ordered join of every expansion output, kept deliberately so an unchanged
+  emission skips the join; it is not leaked. Dropping it trades the memory for a 60 MB copy per warm build.
