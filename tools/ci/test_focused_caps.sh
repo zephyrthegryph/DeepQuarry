@@ -21,7 +21,7 @@ cleanup() {
 trap cleanup EXIT
 
 R="$T/repo"
-mkdir -p "$R/tools/build" "$R/code" "$R/code/modules/unit_tests" "$T/bin" "$T/slots"
+mkdir -p "$R/tools/build" "$R/code" "$R/code/tests/unit_tests" "$T/bin" "$T/slots"
 export DQ_FOCUSED_NO_TOOL_PREBUILD=1 # the fake tree has a stub build.sh; the prebuild is not what this test measures
 for f in dq_focused_test.sh dq_test_tiers.sh dq_run_guard.js dq_machine_slots.sh dq_below_normal.sh; do cp "$ROOT/tools/$f" "$R/tools/$f"; done
 # The fake world: a process whose image name matches the guard's pattern (dreamdaemon), sleeping.
@@ -32,7 +32,7 @@ case "$SLEEP" in *.exe) cp "$SLEEP" "$T/bin/dreamdaemon.exe" ;; *) cp "$SLEEP" "
 cat >"$R/deepquarry.dme" <<'EOF'
 #include "code\t.dm"
 EOF
-: >"$R/code/modules/unit_tests/_unit_tests.dm"
+: >"$R/code/tests/unit_tests/_unit_tests.dm"
 cat >"$R/code/t.dm" <<'EOF'
 /datum/unit_test/big_sweep
 	tier = TEST_TIER_EXHAUSTIVE

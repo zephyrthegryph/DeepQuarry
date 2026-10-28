@@ -60,7 +60,7 @@ STUB
 	for l in g1 c1 c2 g2; do
 		git switch -q -c "$l" origin/master
 		mkdir -p lanes; case "$l" in c*) echo "$l" >shared.txt ;; *) echo "$l" >"lanes/$l.txt" ;; esac
-		if [ "$l" = g1 ]; then mkdir -p code/modules/unit_tests; echo x >code/modules/unit_tests/here.dm; printf '#include "here.dm"\n#include "gone.dm"\n' >code/modules/unit_tests/_unit_tests.dm; fi
+		if [ "$l" = g1 ]; then mkdir -p code/tests/unit_tests; echo x >code/tests/unit_tests/here.dm; printf '#include "here.dm"\n#include "gone.dm"\n' >code/tests/unit_tests/_unit_tests.dm; fi
 		git add -A; git commit -q -m "$l"; git push -q origin "$l"
 	done
 	git switch -q --detach origin/master

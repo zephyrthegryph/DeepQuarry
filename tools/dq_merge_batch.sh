@@ -151,9 +151,9 @@ attempt_run() {
 		# A union-merged include list can bring back an include of a file one lane deleted (28 October: _unit_tests.dm kept
 		# dq_reagents_start_snapshot.dm after tests/cut-pins removed it, and two 20-minute attempts failed to compile). Such lines are
 		# dropped, amended into the last merge commit and REPORTED, never silently.
-		ut="code/modules/unit_tests/_unit_tests.dm"
+		ut="code/tests/unit_tests/_unit_tests.dm"
 		if [ -f "$ut" ]; then
-			stale="$(sed -n 's/^#include "\([^"]*\)".*/\1/p' "$ut" | tr -d '\r' | while IFS= read -r inc; do [ -f "code/modules/unit_tests/${inc//\\//}" ] || echo "$inc"; done)"
+			stale="$(sed -n 's/^#include "\([^"]*\)".*/\1/p' "$ut" | tr -d '\r' | while IFS= read -r inc; do [ -f "code/tests/unit_tests/${inc//\\//}" ] || echo "$inc"; done)"
 			if [ -n "$stale" ]; then
 				while IFS= read -r inc; do
 					grep -vxF "#include \"$inc\"" "$ut" >"$ut.tmp" && mv -f "$ut.tmp" "$ut"
