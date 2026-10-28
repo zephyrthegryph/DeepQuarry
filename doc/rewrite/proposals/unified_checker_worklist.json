@@ -1,0 +1,1139 @@
+{
+  "construction_sites": [
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "insert",
+      "line": 408
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "insert",
+      "line": 412
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "insert",
+      "line": 417
+    },
+    {
+      "destination": "native configuration and procedure-setting queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "directive_value_to_truthy",
+      "line": 462
+    },
+    {
+      "destination": "native configuration and procedure-setting queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "add_directive_or_error",
+      "line": 613
+    },
+    {
+      "destination": "native configuration and procedure-setting queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "add_directive_or_error",
+      "line": 624
+    },
+    {
+      "destination": "native SCC inference and retractable call contributions",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_proc_call_tree",
+      "line": 645
+    },
+    {
+      "destination": "native SCC inference and retractable call contributions",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_proc_call_tree",
+      "line": 674
+    },
+    {
+      "destination": "native SCC inference and retractable call contributions",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_proc_call_tree",
+      "line": 685
+    },
+    {
+      "destination": "native SCC inference and retractable call contributions",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_proc_call_tree",
+      "line": 705
+    },
+    {
+      "destination": "native SCC inference and retractable call contributions",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_proc_call_tree",
+      "line": 725
+    },
+    {
+      "destination": "native SCC inference and retractable call contributions",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_proc_call_tree",
+      "line": 736
+    },
+    {
+      "destination": "native configuration and procedure-setting queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "gather_settings",
+      "line": 807
+    },
+    {
+      "destination": "native configuration and procedure-setting queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "gather_settings",
+      "line": 814
+    },
+    {
+      "destination": "native configuration and procedure-setting queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "gather_settings",
+      "line": 828
+    },
+    {
+      "destination": "native configuration and procedure-setting queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "gather_settings",
+      "line": 842
+    },
+    {
+      "destination": "native SCC inference and retractable call contributions",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "finish_check_kwargs",
+      "line": 916
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "static_type",
+      "line": 972
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "error",
+      "line": 977
+    },
+    {
+      "destination": "native declaration queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_var_defs",
+      "line": 1013
+    },
+    {
+      "destination": "native declaration queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_var_defs",
+      "line": 1019
+    },
+    {
+      "destination": "native declaration queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_var_defs",
+      "line": 1026
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "run",
+      "line": 1196
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "run",
+      "line": 1204
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "run",
+      "line": 1212
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "run",
+      "line": 1220
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_block",
+      "line": 1233
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_block",
+      "line": 1243
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "loop_condition_check",
+      "line": 1261
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "loop_condition_check",
+      "line": 1266
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_control_condition",
+      "line": 1276
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_control_condition",
+      "line": 1282
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1298
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1321
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1349
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1365
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1373
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1380
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1390
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1447
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1452
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1458
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1485
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1532
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1561
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1605
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1610
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_statement",
+      "line": 1616
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_expression",
+      "line": 1694
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_expression",
+      "line": 1705
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_expression",
+      "line": 1713
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_expression",
+      "line": 1721
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_term",
+      "line": 1800
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_term",
+      "line": 1812
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_term",
+      "line": 1831
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_term",
+      "line": 1871
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_term",
+      "line": 1890
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_term",
+      "line": 1900
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_term",
+      "line": 1910
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_term",
+      "line": 1921
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_new",
+      "line": 2049
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2116
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2128
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2134
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2143
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2148
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2161
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2166
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2171
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2177
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2185
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2200
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2209
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2217
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2222
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2235
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2240
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2245
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2251
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_follow",
+      "line": 2259
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_operator_overload",
+      "line": 2309
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_negated_bitwise",
+      "line": 2337
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_filter_flag",
+      "line": 2369
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_filter_flag",
+      "line": 2380
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_filter_flag",
+      "line": 2387
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_filter_flag",
+      "line": 2394
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "check_filter_flag",
+      "line": 2401
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_call",
+      "line": 2412
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_call",
+      "line": 2444
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_call",
+      "line": 2489
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_call",
+      "line": 2525
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_call",
+      "line": 2531
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_call",
+      "line": 2536
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/lib.rs",
+      "function": "visit_call",
+      "line": 2542
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/switch_rand_range.rs",
+      "function": "check_switch_rand_range",
+      "line": 33
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/switch_rand_range.rs",
+      "function": "check_switch_rand_range",
+      "line": 58
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/type_expr.rs",
+      "function": "visit_expression",
+      "line": 181
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/type_expr.rs",
+      "function": "visit_term",
+      "line": 199
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/type_expr.rs",
+      "function": "visit_term",
+      "line": 213
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/type_expr.rs",
+      "function": "visit_follow",
+      "line": 236
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/type_expr.rs",
+      "function": "visit_follow",
+      "line": 241
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/type_expr.rs",
+      "function": "visit_follow",
+      "line": 258
+    },
+    {
+      "destination": "native typed-body, CFG and expression queries",
+      "file": "crates/dreamchecker/src/type_expr.rs",
+      "function": "visit_follow",
+      "line": 264
+    }
+  ],
+  "coverage_complete": false,
+  "families": [
+    {
+      "family": "ambiguous_in_lhs",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "ambiguous_in_lhs",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_expression",
+          "line": 1696
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "ambiguous_in_lhs",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_expression",
+          "line": 1707
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "ambiguous_in_lhs",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_expression",
+          "line": 1715
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "ambiguous_in_lhs",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_expression",
+          "line": 1723
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "ambiguous_not_bitwise",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "ambiguous_not_bitwise",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_negated_bitwise",
+          "line": 2338
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "control_condition_static",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "control_condition_static",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_control_condition",
+          "line": 1277
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "control_condition_static",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_control_condition",
+          "line": 1283
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "disabled_directive",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "disabled_directive",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "insert",
+          "line": 413
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "field_access_static_type",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "field_access_static_type",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_follow",
+          "line": 2150
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "final_var",
+      "sites": [
+        {
+          "destination": "native declaration queries",
+          "family": "final_var",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_var_defs",
+          "line": 1020
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "if_condition_determinate",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "if_condition_determinate",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_statement",
+          "line": 1374
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "if_condition_determinate",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_statement",
+          "line": 1381
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "incompatible_directive",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "incompatible_directive",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "insert",
+          "line": 409
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "invalid_lint_directive_value",
+      "sites": [
+        {
+          "destination": "native configuration and procedure-setting queries",
+          "family": "invalid_lint_directive_value",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "add_directive_or_error",
+          "line": 638
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "invalid_set_value",
+      "sites": [
+        {
+          "destination": "native configuration and procedure-setting queries",
+          "family": "invalid_set_value",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "gather_settings",
+          "line": 816
+        },
+        {
+          "destination": "native configuration and procedure-setting queries",
+          "family": "invalid_set_value",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "gather_settings",
+          "line": 830
+        },
+        {
+          "destination": "native configuration and procedure-setting queries",
+          "family": "invalid_set_value",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "gather_settings",
+          "line": 844
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "loop_condition_determinate",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "loop_condition_determinate",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "loop_condition_check",
+          "line": 1262
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "loop_condition_determinate",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "loop_condition_check",
+          "line": 1267
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "must_be_pure",
+      "sites": [
+        {
+          "destination": "native SCC inference and retractable call contributions",
+          "family": "must_be_pure",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_proc_call_tree",
+          "line": 706
+        },
+        {
+          "destination": "native SCC inference and retractable call contributions",
+          "family": "must_be_pure",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_proc_call_tree",
+          "line": 727
+        },
+        {
+          "destination": "native SCC inference and retractable call contributions",
+          "family": "must_be_pure",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_proc_call_tree",
+          "line": 738
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "must_call_parent",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "must_call_parent",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "run",
+          "line": 1214
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "must_not_override",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "must_not_override",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "run",
+          "line": 1206
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "must_not_sleep",
+      "sites": [
+        {
+          "destination": "native SCC inference and retractable call contributions",
+          "family": "must_not_sleep",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_proc_call_tree",
+          "line": 647
+        },
+        {
+          "destination": "native SCC inference and retractable call contributions",
+          "family": "must_not_sleep",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_proc_call_tree",
+          "line": 676
+        },
+        {
+          "destination": "native SCC inference and retractable call contributions",
+          "family": "must_not_sleep",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_proc_call_tree",
+          "line": 687
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "no_typehint_implicit_new",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "no_typehint_implicit_new",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_term",
+          "line": 1911
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "override_missing_keyword_arg",
+      "sites": [
+        {
+          "destination": "native SCC inference and retractable call contributions",
+          "family": "override_missing_keyword_arg",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "finish_check_kwargs",
+          "line": 917
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "private_proc",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "private_proc",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "run",
+          "line": 1198
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "private_proc",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_follow",
+          "line": 2201
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "private_proc",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_call",
+          "line": 2413
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "private_var",
+      "sites": [
+        {
+          "destination": "native declaration queries",
+          "family": "private_var",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "check_var_defs",
+          "line": 1027
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "private_var",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_follow",
+          "line": 2129
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "proc_call_static_type",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "proc_call_static_type",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_follow",
+          "line": 2224
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "proc_has_no_parent",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "proc_has_no_parent",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_term",
+          "line": 1891
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "protected_proc",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "protected_proc",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_follow",
+          "line": 2210
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "protected_var",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "protected_var",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_follow",
+          "line": 2135
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "redefined_proc",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "redefined_proc",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "run",
+          "line": 1221
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "set_has_no_effect",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "set_has_no_effect",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_block",
+          "line": 1244
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "sets_directive_twice",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "sets_directive_twice",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "insert",
+          "line": 419
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "unknown_linter_setting",
+      "sites": [
+        {
+          "destination": "native configuration and procedure-setting queries",
+          "family": "unknown_linter_setting",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "add_directive_or_error",
+          "line": 614
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    },
+    {
+      "family": "unreachable_code",
+      "sites": [
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "unreachable_code",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_block",
+          "line": 1234
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "unreachable_code",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_statement",
+          "line": 1366
+        },
+        {
+          "destination": "native typed-body, CFG and expression queries",
+          "family": "unreachable_code",
+          "file": "crates/dreamchecker/src/lib.rs",
+          "function": "visit_statement",
+          "line": 1391
+        }
+      ],
+      "status": "reference-only; native parity not established"
+    }
+  ],
+  "files": [
+    {
+      "file": "crates/dreamchecker/src/lib.rs",
+      "sha256": "dd17edc32409c5f9a8c2ca31b55386b6bcfdd309d9c0455627c667b0d9f45fdd"
+    },
+    {
+      "file": "crates/dreamchecker/src/main.rs",
+      "sha256": "98b0cdce6e9ec1b3b7472fd902bd189782667435eb649aecd0f3a66962fb3fdc"
+    },
+    {
+      "file": "crates/dreamchecker/src/switch_rand_range.rs",
+      "sha256": "e29bbe76766a3245999977267ede3363d60292de9ea1fc2ab325902613b1284d"
+    },
+    {
+      "file": "crates/dreamchecker/src/test_helpers.rs",
+      "sha256": "83aa6b12b6ad2aee28b3713fa87cb069e6606ae731e7a8bc5d1a05d8ccd5001b"
+    },
+    {
+      "file": "crates/dreamchecker/src/type_expr.rs",
+      "sha256": "d6553fa12004a2f3bc79265cb480ab87463aedc39e8b542fe1bbe1ce5c93f90f"
+    }
+  ],
+  "license_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+  "required_commit": "0290db5c752fa292f9824521515b603a2afd11dc",
+  "schema": "dq-checker-coverage-worklist-v1",
+  "source_pin_verified_by_this_tool": false,
+  "unclassified_contracts": [
+    "Untagged constructions and forwarded parser/constant errors need message and location parity.",
+    "Pragmas, severity defaults, suppression, multiplicity and note order require differential fixtures.",
+    "A lexical worklist does not prove inference coverage or native grammar completeness."
+  ]
+}

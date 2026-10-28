@@ -1,0 +1,270 @@
+# Unified native compiler, Analyze and DreamChecker
+
+Status: proposed implementation plan, 2026-10-28. All new interfaces named here are proposals, not existing APIs.
+
+## Decision and endpoint
+
+The native compiler frontend becomes the single source of program structure. One native daemon per worktree serves compilation, Analyze policies/generation and ported DreamChecker checks over one immutable revision and one dependency-tracked query graph. Analyze and checker command lines become clients; a combined gate requests the union of their work once.
+
+This supersedes the optional convergence in origin/master's `one_frontend.md`. That file is absent from this checkout, so this is a separate proposal rather than overwriting another lane's document.
+
+Done means:
+
+- No production Analyze or checker request invokes SpacemanDMM's parser or builds its ObjectTree.
+- File bytes, expansions, symbols, declarations, procedure syntax, resolved references and common facts have one logical owner. Consumers borrow handles, not copies of the whole tree.
+- Concurrent consumers of a query share its computation and result.
+- Edits rerun the affected dependency closure, including other files when necessary; they do not automatically rerun every semantic check.
+- Existing diagnostic coverage, configuration, suppressions, baselines, generated outputs and CLI behavior are preserved and accounted for.
+- Benchmarks demonstrate lower total CPU and combined memory, as well as lower wall time.
+
+Compilation, raw-source lints and checker inference have distinct work. Complete reuse means eliminating duplicate prerequisites; it cannot eliminate the unique work each product requires. A shared process alone does not meet this plan.
+
+## Evidence and implementation anchors
+
+Historical measurements from Claude sessions and origin/master's design need reproduction at a fixed commit:
+
+| Work | Recorded cost | Consequence |
+|---|---|---|
+| DreamChecker | 385.6 s wall, 380 s CPU, 1.05 GB | Port and incrementally schedule checking, not only parsing |
+| Analyze cold | 41-56 s, about 3.7 GB peak working set | Remove the separate model and duplicate indexes |
+| Analyze after body edit | 18-27 s | Whole-tree semantic walks must become incremental |
+| Native warm body edit | about 4.5-6 s | Preserve compile-only performance |
+| Native quiet cold game build | 74.5 s, including 23.1 s cache write | Measure response time separately from deferred completion |
+
+Source inspected in this checkout:
+
+- `tools/dmb/crates/dm-query/src/lib.rs`: dependency recording, reverse edges, early cutoff, value eviction, shared computation. Cross-thread query cycles can deadlock; recursive inference must not issue cyclic blocking fetches.
+- `tools/dmb/crates/dm-syntax/src/lib.rs`: spans, body parser, visitors, lexical scopes and reference roles. The module explicitly disclaims complete expression coverage: inventory actual gaps before promising parity.
+- `tools/dmb/crates/dm-analysis/src/lib.rs`: existing typed-body and tree-export surfaces. Extend this analysis layer instead of inventing a separate frontend.
+- `tools/dmb/crates/dmbc/src/query_db.rs`, `runner_analysis.rs`, `analysis_export.rs`, `engine_catalog.rs`: integration, native analysis and builtin-model audit points.
+- `tools/analyze/src/sem/mod.rs`: Sem owns dreammaker ObjectTree; ProcBody exposes dreammaker AST and parameters. Its current interface is not representation-independent.
+- `tools/analyze/src/sem/body_facts.rs`: fact-digest reuse already exists, but changed facts can still cause whole-tree rebuilds.
+- `tools/analyze/src/tree.rs`, `strip.rs`, `incr.rs`, `sem/walk_cache.rs`: text semantics and cache contracts to preserve.
+- `tools/analyze/vendor/README.md`: current parser pin. Only the checker executable was found under `~/SpacemanDMM`; its pass inventory requires pinned source.
+
+Memory figures from different runs use different accounting methods and revisions. Do not add sampled heap, private bytes and working set or treat them as a controlled cumulative comparison.
+
+## Target ownership and layering
+
+| Layer | Owner / proposed placement | Shared products |
+|---|---|---|
+| Request host | existing dmbc daemon | admitted revision, cancellation, CPU and memory budgets |
+| Source | native input snapshot and dm-preprocess | bytes, hashes, include/define dependencies, expansions and origin maps |
+| Syntax | dm-syntax | immutable per-body syntax arenas and demanded raw/trivia views |
+| Program model | dm-tree and dm-ir | declaration IDs, hierarchy, signatures, builtins, lookup results |
+| Common semantics | dm-analysis using existing query store | scopes, resolved refs, body facts, CFGs, summaries, reverse indexes |
+| Compilation | existing lowering/link/codegen | compiler-specific products using common semantics where equivalent |
+| Analyze | dq-analyze library, later consumer crate if useful | ratchets, annotations, project checks, generators, codemods |
+| Checker | proposed dm-check library | ported DreamChecker diagnostic policies and inference |
+
+The host links consumer libraries. Shared framework crates must not depend on project ratchet policies or the dmbc executable. Audit the Cargo graph before extraction to avoid cycles; wholesale file moves are not required first.
+
+Checker policy remains separate from compiler acceptance. A warning-only inference pass must not become mandatory compilation work. Preserve separate rule identities even when facts are shared.
+
+## Revision, query and source contracts
+
+Capture immutable revisions from root, manifest, ordered includes, defines, compiler/builtin version and relevant configuration. Every response and published artifact belongs to a specific revision. Separate define sets are distinct semantic views over shared content. Equal bytes are not equal issuance identity: retain the binding-table identity fix.
+
+Use existing query identity/dependency machinery after auditing its receipt requirements, not another cache of the same facts. Register source, declarations, bodies and configuration as inputs. Split configuration by effect: baseline edits rejudge findings; severity edits rerender diagnostics; neither should reparse procedures.
+
+| Proposed query family | Dependencies | Consumers |
+|---|---|---|
+| Body syntax/scopes | expanded body tokens, grammar version | all three |
+| Declaration/lookup | relevant owner/hierarchy/name buckets/builtins | all three |
+| Body facts | syntax and resolutions actually consulted | Analyze, checker, compiler where useful |
+| CFG | body syntax | checker, semantic lints, compatible lowering |
+| Inference summary | local facts and consulted signatures/summaries | checker and relevant lints |
+| Diagnostics | facts/summaries and rule config | respective checker/lint |
+| Policy judgement | diagnostics, scopes, ALLOW, baseline | Analyze |
+
+Never key every result by a whole-tree digest: it recreates today's invalidation. Record failed lookups and name-bucket dependencies so adding a missing declaration invalidates prior misses. Hierarchy/order changes may legitimately affect many queries; measure and report that fanout.
+
+Raw, stripped and expanded text are distinct. Preserve Analyze's two stripping contracts and source markers such as CAPABILITIES that preprocess away. Cache each necessary text view once by content and view version. Do not replace source-based rules with approximate semantic rules. Spans retain raw provenance, macro expansion chains, include sites and configured display paths. Equal content can share storage across roots without sharing root-specific issue identity.
+
+## Incremental semantics and checking
+
+Produce compact common facts once: reads, writes, calls, local bindings, returns, control flow and provenance. Use IDs/spans instead of copied names/trees. Demand additional facts lazily; do not make compilation pay for a maximal checker record.
+
+Global indexes become collections of per-procedure contributions. An edit or deletion retracts old contributions and adds new ones. Reverse dependencies identify affected consumers. Rendering order is deterministic independently of worker order.
+
+Value-proc classification and checker inference may recurse. Partition the affected call/dependency graph into strongly connected components (SCCs); solve each recursive component as a fixed-point task and schedule its acyclic condensation graph. Never let workers block on a cycle of ordinary query fetches. Recompute affected SCC membership when edges change. Across revisions support retraction and shrinking summaries, not only additions. An unchanged public summary stops invalidation downstream.
+
+Inventory the pinned checker before setting concurrency boundaries. Pure per-procedure checks use the host pool; hierarchy checks use explicit dependency tasks; global checks merge contributions deterministically. Do not assume the current checker is thread-safe or that all compiler resolutions exactly match its inference rules.
+
+## Hosting, scheduling and memory
+
+One daemon per worktree under existing machine-wide admission, priority and daemon caps. A single bounded executor prevents nested Rayon/compiler pools oversubscribing the desktop. Same-revision requests coalesce common work. Cancelling one client does not cancel work another subscriber needs. Long cold checks leave bounded capacity for interactive work.
+
+Read snapshots and serialized publication coexist. Generation is a revision transition: analyze source R, stage generated outputs, admit R+1 containing them, then compile/check R+1. Never mutate files underneath an active borrowed snapshot. Baseline/codemod writes serialize, validate source preconditions and publish atomically. A client must not blindly replay a possibly completed write after a lost connection.
+
+Use one memory ledger for bytes, syntax, facts, images, query values, dependency metadata, pinned revisions and running-job scratch. Count shared allocations once; measure private bytes and working set too. Apply existing total daemon limits rather than granting Analyze another independent budget. Evict reconstructible values first; cap metadata and obsolete revisions as well. Active readers pin revisions, so admission queues work if pinned state leaves insufficient headroom.
+
+Busy clients queue/coalesce; they do not spawn a duplicate whole analyzer after a timeout. Standalone reference mode is explicit validation tooling. Crashes fail clearly or retry only safe read-only work; no partial findings are accepted. Rebuilt consumer libraries initially relink and retire the unified host. Accept/measure that development cost instead of keeping a second production frontend. Session restoration is a later optimization, not a reason to introduce a dynamic plugin ABI now.
+
+## Implementation sequence
+
+Each stage is a series of reviewable lanes using current pool/train workflow. Preserve existing debug tracing; do not edit another active lane in place.
+
+| Stage | Deliverable | Exit proof |
+|---|---|---|
+| 0. Inventory | Pin checker source/license; enumerate every diagnostic family and Analyze semantic consumer; audit syntax/builtins; reproducible benchmark harness | Every check assigned a destination; fixed-commit cold/warm/edit CPU, wall and memory baseline |
+| 1. Native contract | Borrowed body visitor, stable handles, origins/config inputs, builtin coverage, native Sem facade under shadow mode | Declaration/body-fact/location parity on fixtures and real tree; no duplicate AST in native path |
+| 2. Shared Analyze | Link Analyze policies to native host; port semantic walkers and generation in bounded groups; reuse source views | Per-group reference findings and generated bytes match; shared prerequisites compute once |
+| 3. Incremental facts | Per-proc contributions, negative dependencies, reverse indexes, SCC summary engine | Cross-file invalidation/retraction tests; ordinary body edits avoid unrelated whole-tree walks |
+| 4. Checker port | Port declaration checks first, then local/CFG checks and recursive inference onto shared facts | Every diagnostic family matches pinned reference corpus; complete coverage matrix |
+| 5. Unified requests | Thin clients, combined gate, common executor/ledger, generation transition and transactional writes | One host, one native frontend; concurrent requests, cancellation, restart and writes proven |
+| 6. Cutover | Default native Analyze/checker; remove production ObjectTree/parser and obsolete duplicate caches | Sustained parity/performance; reference executables remain independent CI oracles until explicitly retired |
+
+Stages 2-4 can interleave by consumer. A borrowed transitional adapter is acceptable; constructing and retaining a complete dreammaker ObjectTree from native data is not the endpoint. JSON exports are debugging/parity artifacts, not the in-process data path.
+
+Stage 0 must inspect checker source before estimating the port. This is plausibly weeks of staged work, not a few wrapper changes. Re-estimate from the pass matrix rather than announcing a completion date now.
+
+## Validation and performance gates
+
+Use fixed commits, identical define sets/trees and interleaved reference/candidate runs. Report medians/spread, CPU seconds, peak private/working set, retained memory, allocation owners, query executions/hits, and invalidated fanout. Include quiet and representative loaded runs. Distinguish warm-memory, warm-disk and empty-cache cases, and reply latency from background cache completion. Timing instrumentation must aggregate rather than print per-file thousands of times.
+
+Required scenarios:
+
+- Unchanged request and ordinary body edit.
+- Return-summary edit affecting another file; deleted var still referenced elsewhere.
+- Changed inherited signature; new declaration satisfying a negative lookup.
+- Recursive group edit/deletion, macro/define/include-order change.
+- Checker pragma/severity edit; lint scopes/ALLOW/baseline-only edit.
+- Generated setter/read transition, malformed syntax and error recovery.
+- Game/test alternation, two identical roots, memory eviction and daemon restart.
+
+Independent proof tracks:
+
+1. Compilation: production DreamMaker compile cross-check, dmb-equiv, shared_store_equiv and relevant focused runtime tests. No full DM suite unless integration or user authorization requires it.
+2. Analyze: ratchet parity, ALLOW-use accounting, baseline identity and byte-identical generated outputs/codemod edits. No raised baselines.
+3. Checker: diagnostic code/severity/message/span/suppression/multiplicity against pinned checker. Preserve deterministic CLI rendering; sorting is a comparison aid, not permission to change output order.
+
+Use seeded errors and differential fixtures for builtins, inheritance, macros, strings/interpolation and malformed programs. A zero-diagnostic master run cannot prove checker coverage. Resolve differences with named reproducers; do not silently drop unsupported checks or replace the native compiler's compatibility gate with self-comparison.
+
+Engineering targets, not measured promises:
+
+| Scenario | Target |
+|---|---|
+| Warm unchanged all-three | <= 1 s after admission, no repeated syntax/semantic computation |
+| Typical body edit all-three | <= 7 s, and <= 2 s overhead over native compilation alone |
+| Cold all-three | At least 2x lower wall time and 40% lower CPU than measured sequential baseline |
+| Memory | No duplicate AST/object tree; combined measured peak below retained compiler plus existing standalone-checker/analyzer peak |
+| Compile-only | <= 5% median latency regression; no eager checker loading |
+
+The 1 GB total goal is not guaranteed by consolidation. Compiler receipts, images and resources already retain several GB. Establish an ownership budget after the vertical slice before committing to an absolute cap.
+
+## First concrete lane
+
+Acquire the pinned checker source, create its pass/coverage matrix, and prototype shared native facts for Analyze's `untyped` plus one checker diagnostic family. Exercise a compile + Analyze + checker request and a body edit, counting actual source reads, parses, resolutions and fact executions. Demonstrate the same in-memory handles and computations serve all three. This vertical slice, not a sibling daemon retaining the old model, is the first implementation milestone.
+
+## Stage 0 implementation checkpoint (2026-10-28)
+
+Implemented `tools/dmb/scripts/unified_frontend_inventory.py` and six unit tests.
+The inventory records source hashes and line-level lexical dependencies, native interface anchors,
+configuration and explicit missing/unverified checker coverage. It does not certify semantic parity.
+
+Run: `python tools/dmb/scripts/unified_frontend_inventory.py`.
+Optional: `--checker-source <SpacemanDMM checkout>`; `--require-checker-source` exits nonzero when absent.
+An available checkout is reported as pin-unverified until independently checked.
+
+Current checkout results (files, not registered rule counts):
+
+| Area | Rust files | Direct dreammaker references | Semantic-review candidates |
+|---|---:|---:|---:|
+| codemods | 4 | 0 | 2 |
+| frontend | 1 | 1 | 1 |
+| gens | 12 | 1 | 11 |
+| lints | 98 | 6 | 36 |
+| sem | 22 | 13 | 20 |
+
+All seven inventoried native contract files exist. This does not prove those contracts cover every checker operation.
+Full-tree inventory was run twice and was deterministic; all six audit tests passed.
+
+Environment limitations: the session launcher cannot start MSYS Bash (0xC0000142), so lane leasing and
+build-slot scripts cannot run. Moving temporary Python tests to the writable workspace fixed their
+temp-file failures but did not fix Bash. Local network download failed; the pinned checker source is
+not present, so diagnostic-family enumeration remains incomplete. No native build, production cutover,
+benchmark, merge or push has been performed. Stage 0 is started, not complete.
+
+
+## Active compiler lane checkpoint (2026-10-28)
+
+Lane `compiler/unified-analysis`, pool-c2, started at `26044d00aff5`.
+Bash, the cargo-slot wrapper and downloads work in this session; the earlier
+launcher limitation above is historical.
+
+Pinned checker source was obtained from the exact commit
+`0290db5c752fa292f9824521515b603a2afd11dc` (the GitHub commit response was checked).
+The codeload archive SHA256 is
+`60cd3f4ed8b8231a342d7bedd40b2d292a275cb267a70d06699306706c9ed98c`.
+The independent suite-1.11 Windows checker executable SHA256 is
+`bafd54168a539e61d8c3f71d9778e92de76d7ffbf11c693541e10be10c9633ba`.
+Diagnostic wording/policy ported from that source retains its GPL attribution.
+
+`unified_checker_worklist.json` enumerates 28 literal family names and 103
+construction sites. It is a lexical worklist, NOT a coverage certificate:
+untagged/forwarded diagnostics, parser diagnostics, builtin knowledge, checker
+settings, pragmas, suppression accounting and provenance still require audit.
+
+The first native policy is `ambiguous_not_bitwise`. It borrows compiler-issued
+`StatementBody`, checks issuance, preserves the three ordered reference notes,
+allows warning/error/disabled policy independently of compiler acceptance, and
+covers `&`, `|` and `^`. Fixture comparison is against the pinned independent
+checker, not another rendering of native facts. Expanded fixture columns do not
+claim character-level inverse mapping through macros.
+
+The optional native body query uses Kind(4) in the compiler's existing
+`dm_query::Db`. A private frontend-issued input supplies syntax; graph parameters
+hold only weak input handles. Compiler `BodyArena` and archived source queries
+receive the same typed syntax allocation. Foreign parser issuances are rejected
+although their source text is equal. Dead issuance metadata is collected at the
+next frontend admission; values are evictable and recomputable. An estimated
+128 MiB admission budget limits this new derived-value family; this is NOT yet
+the required total host memory budget or an RSS measurement.
+
+`DMB_UNIFIED_ANALYSIS` opts a retained compiler host into this migration path.
+The default compiler path and production checker/analyzer gates remain intact.
+This is intentional until parity passes, not a claim that unification has landed.
+The read-only `NativeCheckerFixture` source question executes this one policy
+in-process; IPC carries findings only and explicitly reports incomplete coverage.
+It is not a replacement checker command.
+
+Important remaining limitations:
+
+- Keys are conservative per parser issuance, so shifted/edited bodies cannot
+  reuse absolute spans incorrectly, but cross-revision relative-AST reuse is not
+  implemented. This does NOT yet meet the warm-edit target.
+- The query retains lossless syntax for lowering fallback alongside typed syntax;
+  transient lossless clones and the ownership census still need work before
+  claiming a single fully shared executable representation.
+- Native `untyped` contributions are assignment facts only. The current production
+  lint additionally depends on identity-resolved whole-tree value-proc inference,
+  locals receiving call results, value schemas and baseline/ALLOW policy. Those
+  must be ported and independently compared before cutover. A function-name
+  allowlist was removed from the draft because it cannot establish those proofs.
+- Checker configuration/pragma integration, the remaining diagnostic families,
+  SCC summaries, retractable indexes, transactional generation and thin production
+  clients are still outstanding. No production parity or speedup is claimed.
+
+
+Validation of this checkpoint (not production convergence):
+
+- Source inventory Python tests: 6 passed; checker inventory/oracle tests: 5 passed.
+- Native `dm-analysis` library: 31 passed, including policy, binding and SCC cases.
+- Query per-key retention accounting: 1 passed.
+- Shared native integration: 7 passed (same syntax and memoized resolution,
+  concurrent parse-once, changed revisions, foreign issuance, eviction, cleanup).
+- In-process checker-question regression: 1 passed; disabled policy parses no body.
+- Independent pinned checker fixture: 3 diagnostics matched, including ordered
+  notes and unexpanded fixture columns. Full-checker parity remains false.
+
+All Rust work ran through the cargo machine slot, at below-normal priority and
+with at most two cargo jobs. No shared compiler was built or published. The
+candidate and reference tools use disposable E: caches. No DM full suite, look
+pins or baseline changes were used.
+
+The pure `value_equations` solver now computes deterministic SCCs and a greatest
+fixpoint without recursive query fetches or Rust recursion. Its tests cover a
+recursive group becoming non-value, recovering, splitting and losing a dependency,
+plus a 20,000-node chain. The complete native extraction of production value-proc
+and schema facts remains outstanding; this solver is not yet its replacement.
