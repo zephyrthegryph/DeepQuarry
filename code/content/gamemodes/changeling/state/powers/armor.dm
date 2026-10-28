@@ -75,9 +75,9 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling)
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 
 /obj/item/clothing/shoes/magboots/changeling/set_slowdown()
-	slowdown = shoes? max(SHOES_SLOWDOWN, shoes.slowdown): SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, shoes? max(SHOES_SLOWDOWN, shoes.worn_factor(STAT_ITEM_ENCUMBRANCE)): SHOES_SLOWDOWN)	//So you can't put on magboots to make you walk faster.
 	if (magpulse)
-		slowdown += 1		//It's already tied to a slowdown suit, 6 slowdown is huge.
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, worn_factor(STAT_ITEM_ENCUMBRANCE) + (1))		//It's already tied to a slowdown suit, 6 slowdown is huge.
 
 /// Old attack_self. Runs the magboots toggle first, as the old ..() did (so it toggles twice; kept as it was). The parent's op ("magboots_toggle_self")
 /// reaches this override.
@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling)
 	desc = "A tough, hard covering of black chitin."
 	icon_state = "lingarmor"
 	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60" //It costs 3 points, so it should be very protective.
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling/armored)
 	setup(PROC_REF(form_initial_armor))

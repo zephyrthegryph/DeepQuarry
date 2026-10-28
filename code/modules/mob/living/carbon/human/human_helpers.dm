@@ -421,7 +421,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	if(istype(species, /datum/species/shapeshifter))
 		set_wrapped_bodytype(bodytype)
 
-	custom_species	= character.custom_species
+	bio.custom_species = character.bio.custom_species
 	bio.custom_say = character.bio.custom_say
 	bio.custom_ask = character.bio.custom_ask
 	bio.custom_whisper = character.bio.custom_whisper

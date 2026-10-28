@@ -5,7 +5,7 @@
 	icon_state = "railgun"
 	power_cost = 300
 	w_class = ITEMSIZE_HUGE
-	slowdown = 1	// Slowdown equals slowdown_worn, until we decide to import the system to differentiate between held and worn items
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1) // Slowdown equals slowdown_worn, until we decide to import the system to differentiate between held and worn items
 	fire_delay = 1
 
 	load_type = /obj/item/rcd_ammo
@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun)
 	capacitor = /obj/item/stock_parts/capacitor
 	fire_delay = 0.1
 
-	slowdown = 2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	slowdown_held = 3
 	slowdown_worn = 2
 
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/automatic)
 
 	w_class = ITEMSIZE_HUGE //.
 
-	slowdown = 0
+	worn_factors = null
 	slowdown_held = 0
 	slowdown_worn = 0
 
@@ -128,7 +128,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
 	move_delay = 0 // Pistols have move_delay of 0
 
 
-	slowdown = 0
+	worn_factors = null
 	slowdown_held = 0
 	slowdown_worn = 0
 
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
 
 	w_class = ITEMSIZE_HUGE //.
 
-	slowdown = 0
+	worn_factors = null
 	slowdown_held = 0.3
 	slowdown_worn = 0
 

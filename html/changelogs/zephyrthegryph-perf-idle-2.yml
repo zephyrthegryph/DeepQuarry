@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Vent, scrubber, injector and gate flow readings are written only when the one-decimal value they display changes"
+  - code_imp: "Docking controllers wake for signals addressed to them or while a dock is in progress, not for every door broadcast on the frequency"
+  - code_imp: "Turrets look around only when a mob is within view range"

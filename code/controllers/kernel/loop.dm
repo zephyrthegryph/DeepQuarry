@@ -95,7 +95,7 @@ CAPABILITIES(/datum/controller/kernel)
 
 	//setup the stack overflow detector
 	rel_set(src, nameof(stack_end_detector), new /datum/stack_end_detector())
-	var/datum/stack_canary/canary = stack_end_detector.prime_canary()
+	var/datum/handle_sentinel/stack_canary/canary = stack_end_detector.prime_canary()
 	canary.use_variable()
 	//the actual loop.
 	while (1)

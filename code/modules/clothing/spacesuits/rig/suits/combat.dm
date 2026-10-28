@@ -7,7 +7,7 @@
 	icon_state = "security_rig"
 	suit_type = "combat hardsuit"
 	armor_spec = "melee=80;bullet=70;laser=60;energy=15;bomb=80;bio=100;rad=60"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 
@@ -39,7 +39,7 @@
 	icon_state = "military_rig"
 	suit_type = "military hardsuit"
 	armor_spec = "melee=80;bullet=75;laser=65;energy=15;bomb=80;bio=100;rad=40"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 

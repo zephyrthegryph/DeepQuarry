@@ -7,7 +7,7 @@ MATERIAL_MIX(/obj/item/rig/ch/precursor, list(MAT_PLASTEEL = 1200, MAT_GOLD = 50
 	icon_state = "precursor_rig"
 	armor_spec = "melee=50;bullet=50;laser=70;energy=70;bomb=60;bio=100;rad=80"
 	var/block_chance = 15
-	slowdown = 0
+	worn_factors = null
 
 	chest_type = /obj/item/clothing/suit/space/rig/ch/precursor
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ch/precursor

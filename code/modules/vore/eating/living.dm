@@ -581,7 +581,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			taste_message += "a normal [H.custom_species ? H.custom_species : H.species.name]"
+			taste_message += "a normal [H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 		else
 			taste_message += "a plain old normal [src]"
 
@@ -630,7 +630,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			smell_message += "a normal [H.custom_species ? H.custom_species : H.species.name]"
+			smell_message += "a normal [H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 		else
 			smell_message += "a plain old normal [src]"
 

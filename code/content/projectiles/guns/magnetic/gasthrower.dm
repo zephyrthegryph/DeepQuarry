@@ -7,7 +7,7 @@
 	icon = 'icons/obj/railgun.dmi'
 	one_handed_penalty = 20
 	w_class = ITEMSIZE_LARGE
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 
 	burst = 3
 	burst_delay = 1

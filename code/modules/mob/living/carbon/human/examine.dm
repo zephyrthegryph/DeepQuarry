@@ -109,8 +109,8 @@
 /mob/living/carbon/human/proc/examine_name_ender(skip_gear, skip_body, looks_synth)
 	if((skip_gear & EXAMINE_SKIPJUMPSUIT) && (skip_body & EXAMINE_SKIPFACE))
 		return ""
-	if(custom_species)
-		return ", a " + span_bold("[src.custom_species]")
+	if(bio.custom_species)
+		return ", a " + span_bold("[bio.custom_species]")
 	if(looks_synth)
 		var/use_gender = "a synthetic"
 		if(gender == MALE)

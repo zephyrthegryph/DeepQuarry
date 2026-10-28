@@ -52,12 +52,12 @@ STATIC_ENTRY(transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 
-/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, spawns = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null)
+/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, spawns = null, effects = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
-		"notice" = notice, "spawns" = spawns, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
+		"notice" = notice, "spawns" = spawns, "effects" = effects, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
 		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen, "crafted" = crafted))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
@@ -201,6 +201,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/then_proc
 	/// The compiled spawns() rows of the rule (xform_spawn_rows()), or null.
 	var/list/spawn_rows
+	/// The compiled sets_off() rows of the rule (xform_effect_rows()), or null.
+	var/list/effect_rows
 	var/important = FALSE
 	// ---- derived at compile ----
 	/// The first take's key: the index key.
@@ -388,6 +390,13 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 			return null
 		X.spawn_rows = xform_spawn_rows(type, origin, arguments["spawns"])
 		if(!X.spawn_rows)
+			return null
+	if(arguments["effects"])
+		if(X.medium != MEDIUM_REAGENTS)
+			declare_report("[origin]: [type]: effects = sets_off() is built for the reagents medium only")
+			return null
+		X.effect_rows = xform_effect_rows(type, origin, arguments["effects"])
+		if(!X.effect_rows)
 			return null
 	X.wiki = arguments["wiki"] || 0
 	if(X.medium == MEDIUM_FIELD)

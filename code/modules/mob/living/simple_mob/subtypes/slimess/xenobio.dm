@@ -81,16 +81,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soulstone)
 CAPABILITIES(/transformation/chem/instant/slime/redspace_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_redspace_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/redspace),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/redspace_smoke, on_reaction)))
-
-/transformation/chem/instant/slime/redspace_smoke/on_reaction(datum/reagents/holder)
-	var/location = get_turf(holder.my_atom)
-	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
-	S.attach(location)
-	S.set_up(holder, 120, 0, location)
-	play_sfx(location, SFX_EFFECTS_SMOKE)
-	S.start()
-	..()
+		effects = sets_off(XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 
 /transformation/chem/instant/slime/slime_mindbreaker
@@ -132,13 +123,9 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_neofire)
 CAPABILITIES(/transformation/chem/instant/slime/dark_liquidfire)
 	configure(transformation(name = "Slime Secert Guard", id = "m_slime_guardian", takes = list(reagent(REAGENT_ID_LIQUIDFIRE, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_liquidfire, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/feysight, lasts = 10 MINUTES)))
 
 
-/transformation/chem/instant/slime/dark_liquidfire/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(1, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/feysight, 10 MINUTES, src)
-	..()
 
 /transformation/chem/instant/slime/dark_deathblood
 
@@ -152,12 +139,8 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_deathblood)
 CAPABILITIES(/transformation/chem/instant/slime/dark_liquidlife)
 	configure(transformation(name = "Slime Secert Overcharge", id = "m_slime_darkspeed", takes = list(reagent(REAGENT_ID_LIQUIDLIFE, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_liquidlife, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 49, body_effect = /datum/body_effect/sprinting, lasts = 5 MINUTES)))
 
-/transformation/chem/instant/slime/dark_liquidlife/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(49, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/sprinting, 5 MINUTES, src)
-	..()
 
 
 /transformation/chem/instant/slime/dark_carpotoxin
@@ -211,12 +194,7 @@ CAPABILITIES(/transformation/chem/instant/slime/plague_toxin)
 
 CAPABILITIES(/transformation/chem/instant/slime/virusdish)
 	configure(transformation(name = "Virus dish", id = "m_plague_dish", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
-		holds = subject_is(/obj/item/slime_extract/plague),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/virusdish, on_reaction)))
-
-/transformation/chem/instant/slime/virusdish/on_reaction(datum/reagents/holder)
-	// new /obj/item/virusdish(get_turf(holder.my_atom))
-	..()
+		holds = subject_is(/obj/item/slime_extract/plague))) // makes nothing; the base slime tail still spends a use
 
 /transformation/chem/instant/slime/obj/item/slime_extract/plague_jelly
 
@@ -296,12 +274,8 @@ CAPABILITIES(/transformation/chem/instant/slime/waterdupe)
 CAPABILITIES(/transformation/chem/instant/slime/oceanboon)
 	configure(transformation(name = "Carp Boon", id = "m_carp_boon", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/oceanic),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/oceanboon, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 21, body_effect = /datum/body_effect/healingtide, lasts = 10 MINUTES)))
 
-/transformation/chem/instant/slime/oceanboon/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(21, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/healingtide, 10 MINUTES, src)
-	..()
 
 /transformation/chem/instant/slime/warplague
 
@@ -484,13 +458,8 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareslime)
 CAPABILITIES(/transformation/chem/instant/slime/nightmarewater)
 	configure(transformation(name = "nightmare water", id = "m_nightmare_water", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nightmare),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarewater, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 3, body_effect = list(/datum/body_effect/faraday, /datum/body_effect/blastshield), lasts = 1 MINUTES)))
 
-/transformation/chem/instant/slime/nightmarewater/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(3, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/faraday, 1 MINUTES, src)
-		L.apply_body_effect(/datum/body_effect/blastshield, 1 MINUTES, src)
-	..()
 
 /transformation/chem/instant/slime/nightmarejelly
 
@@ -516,12 +485,8 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareblood)
 CAPABILITIES(/transformation/chem/instant/slime/nightmarephoron)
 	configure(transformation(name = "nightmare phoron", id = "m_nightmare_phoron", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nightmare),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarephoron, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 14, body_effect = /datum/body_effect/berserk_exhaustion, lasts = 1 MINUTES)))
 
-/transformation/chem/instant/slime/nightmarephoron/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(14, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 1 MINUTES, src)
-	..()
 
 
 
@@ -586,12 +551,8 @@ CAPABILITIES(/transformation/chem/instant/slime/soundblood)
 CAPABILITIES(/transformation/chem/instant/slime/soundphoron)
 	configure(transformation(name = "sound phoron", id = "m_sound_phoron", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/sound),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundphoron, on_reaction)))
+		effects = sets_off(XFORM_FX_AREA, range = 1, body_effect = /datum/body_effect/aura/soothingsong, lasts = 10 MINUTES)))
 
-/transformation/chem/instant/slime/soundphoron/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(1, holder.my_atom))
-		L.apply_body_effect(/datum/body_effect/aura/soothingsong, 10 MINUTES, src)
-	..()
 
 /transformation/chem/instant/slime/soundwater
 

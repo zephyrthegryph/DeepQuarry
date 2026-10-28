@@ -74,6 +74,19 @@
 #define STACK_RECIPES_STEEL_RECYCLER "steel_recycler"
 #define STACK_RECIPES_GLASS_RECYCLER "glass_recycler"
 
+// sets_off(): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm).
+/// Chemical smoke at the subject, carrying the reagents.
+#define XFORM_FX_SMOKE "smoke"
+/// Foam (variant 0 plain, 1 metal, 2 iron) at the subject.
+#define XFORM_FX_FOAM "foam"
+/// An explosion of reagents scaled by what the step made.
+#define XFORM_FX_EXPLOSION "explosion"
+/// An electromagnetic pulse scaled by what the step made.
+#define XFORM_FX_EMP "emp"
+
+/// A body effect on every mob within a range of the subject.
+#define XFORM_FX_AREA "area"
+
 // spawns(): where a product is made, and how many.
 /// At the turf of the subject (the only place built).
 #define SUBJECT_TURF "subject_turf"

@@ -6,7 +6,7 @@
 	suit_type = "light suit"
 	armor_spec = "melee=50;bullet=15;laser=50;energy=10;bomb=25"
 	emp_protection = 10
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/hacker)
 	icon_state = "ninja_rig"
 	armor_spec = "melee=50;bullet=15;laser=30;energy=10;bomb=25;bio=100;rad=30"
 	emp_protection = 40 //change this to 30 if too high.
-	slowdown = 0
+	worn_factors = null
 
 	chest_type = /obj/item/clothing/suit/space/rig/light/ninja
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/light/ninja

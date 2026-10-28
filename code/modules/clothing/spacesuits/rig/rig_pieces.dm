@@ -50,7 +50,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig)
 
 /obj/item/clothing/suit/space/rig
 	name = "chestpiece"
-	slowdown = 0
+	worn_factors = null
 	//will reach 10 breach damage after 25 laser carbine blasts, 3 revolver hits, or ~1 PTR hit. Completely immune to smg or sts hits.
 	breach_threshold = 38
 	resilience = 0.2

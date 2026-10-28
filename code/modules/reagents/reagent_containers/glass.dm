@@ -401,7 +401,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood)
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = 120
 	volume = 2000
-	slowdown = 2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle)
 	configure(reagent_container(rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER))

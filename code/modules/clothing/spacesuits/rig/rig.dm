@@ -96,6 +96,8 @@
 	var/obj/item/storage/backpack/rig_storage
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+SCHEMA(/obj/item/rig, offline_slowdown, num())
+
 CAPABILITIES(/obj/item/rig)
 	configure(item_rules(actions_types = list(/datum/action/item_action/hardsuit_interface, /datum/action/item_action/toggle_heatsink)))
 	configure(movable_motion(unacidable = TRUE))

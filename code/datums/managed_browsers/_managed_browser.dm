@@ -1,4 +1,5 @@
-GLOBAL_VAR(managed_browser_id_ticker)
+/// Managed browser window numbers (a window's id is its base id and this number).
+SERIAL_DEF(managed_browser, 0, FALSE)
 
 // This holds information on managing a /datum/browser object.
 // Managing can include things like persisting the state of specific information inside of this object, receiving Topic() calls, or deleting itself when the window is closed.
@@ -23,7 +24,7 @@ GLOBAL_VAR(managed_browser_id_ticker)
 		return
 
 	rel_set(src, nameof(my_client), new_client)
-	browser_id = "[base_browser_id]-[GLOB.managed_browser_id_ticker++]"
+	browser_id = "[base_browser_id]-[next_serial(managed_browser)]"
 
 	if(display_when_created)
 		display()

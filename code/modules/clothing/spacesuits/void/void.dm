@@ -20,7 +20,7 @@
 	icon_state = "void"
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
 	desc = "A high-tech dark red space suit. Used for AI satellite maintenance."
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 	special_hood_handling = TRUE
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
@@ -321,7 +321,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	desc = "Hostile Environment Cross-Kinetic Suit: A suit designed to withstand the wide variety of hazards from \[REDACTED\]. It wasn't enough for its last owner."
 	icon_state = "hostile_env"
 	item_state = "hostile_env"
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 
 /obj/item/clothing/head/helmet/space/void/syndicate_contract
@@ -364,7 +364,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
 	item_state = "autoloksuit"
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
 	armor_spec = "melee=15;bullet=5;laser=5;energy=5;bomb=5;bio=100;rad=80;cold=60"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	breach_threshold = 6 //this thing is basically tissue paper
 	w_class = ITEMSIZE_NORMAL //if it's snug, high-tech, and made of relatively soft materials, it should be much easier to store!
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB

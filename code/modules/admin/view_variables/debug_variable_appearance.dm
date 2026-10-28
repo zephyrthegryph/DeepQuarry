@@ -33,17 +33,17 @@
 // That we can override procs on and store other vars on and such.
 /mutable_appearance/appearance_mirror
 	// So people can see where it came from
-	var/appearance_ref
+	var/appearance_source
 
 // arg is actually an appearance, typed as mutable_appearance as closest mirror
 /mutable_appearance/appearance_mirror/New(mutable_appearance/appearance_father)
 	. = ..() // /mutable_appearance/New() copies over all the appearance vars MAs care about by default
-	appearance_ref = REF(appearance_father)
+	appearance_source = appearance_father
 
 // This means if the appearance loses refs before a click it's gone, but that's consistent to other datums so it's fine
 // Need to ref the APPEARANCE because we just free on our own, which sorta fucks this operation up you know?
 /mutable_appearance/appearance_mirror/get_vv_link_ref()
-	return appearance_ref
+	return REF(appearance_source)
 
 /mutable_appearance/appearance_mirror/can_vv_get(var_name)
 	var/static/datum/beloved = new()

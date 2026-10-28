@@ -16,7 +16,7 @@
 	require a very potent supply of an energy of some kind in order to function."
 	icon_state = "reactive"
 	blood_overlay_type = "armor"
-	slowdown = 0
+	worn_factors = null
 	armor_spec = ""
 	var/active = 0
 	var/damage_to_energy_multiplier = 50.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 750 energy cost

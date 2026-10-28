@@ -481,10 +481,12 @@ legacy_forms_converted = [
   "code/game/mecha/working/",
   "code/content/mecha/",
   "code/game/objects/effects/",
+  "code/content/effects/",
   "code/game/objects/items/",
   "code/content/items/",
   "code/game/objects/random/",
   "code/game/objects/structures/",
+  "code/content/structures/",
   "code/game/turfs/flooring/",
   "code/content/turfs/flooring/",
   "code/game/turfs/initialization/",
@@ -630,13 +632,21 @@ legacy_forms_converted = [
   "code/modules/mob/living/silicon/robot/sprites/",
   "code/modules/mob/living/silicon/robot/subtypes/exploration/",
   "code/modules/mob/living/simple_mob/subtypes/animal/borer/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/borer/",
   "code/modules/mob/living/simple_mob/subtypes/animal/farm animals/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/farm animals/",
   "code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/giant_spider/",
   "code/modules/mob/living/simple_mob/subtypes/animal/hyena/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/hyena/",
   "code/modules/mob/living/simple_mob/subtypes/animal/passive/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/passive/",
   "code/modules/mob/living/simple_mob/subtypes/animal/sif/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/sif/",
   "code/modules/mob/living/simple_mob/subtypes/animal/space/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/space/",
   "code/modules/mob/living/simple_mob/subtypes/animal/tyr/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/tyr/",
   "code/modules/mob/living/simple_mob/subtypes/blob/",
   "code/modules/mob/living/simple_mob/subtypes/bullet_heck/",
   "code/modules/mob/living/simple_mob/subtypes/gateway/",
@@ -645,8 +655,10 @@ legacy_forms_converted = [
   "code/modules/mob/living/simple_mob/subtypes/humanoid/",
   "code/modules/mob/living/simple_mob/subtypes/illusion/",
   "code/modules/mob/living/simple_mob/subtypes/mechanical/",
+  "code/content/mobs/living/simple_mob/subtypes/mechanical/",
   "code/modules/mob/living/simple_mob/subtypes/metroid/",
   "code/modules/mob/living/simple_mob/subtypes/occult/",
+  "code/content/mobs/living/simple_mob/subtypes/occult/",
   "code/modules/mob/living/simple_mob/subtypes/plant/",
   "code/modules/mob/living/simple_mob/subtypes/slime/feral/",
   "code/modules/mob/living/simple_mob/subtypes/slimess/",
@@ -793,13 +805,13 @@ tools_use_tool_banned = 0
 objects_ratchet_on_damage_reactions = 0
 objects_ratchet_on_declare_emag = 0
 objects_ratchet_on_periodic = 0
-heat_ratchet_on_fire_act_overrides_h3 = 6
+heat_ratchet_on_fire_act_overrides_h3 = 0
 damage_ratchet_on_non_turf_ex_act_overrides_d5 = 0
 damage_ratchet_on_atom_break_set_broken_overrides_d4 = 0
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 0
 bump_ratchet_on_bumped_overrides = 17
-transform_ratchet_on_bespoke_then_tails = 66
+transform_ratchet_on_bespoke_then_tails = 46
 transform_ratchet_on_bespoke_data_procs = 42
 generic_hit_ratchet_on_attack_generic_overrides = 0
 

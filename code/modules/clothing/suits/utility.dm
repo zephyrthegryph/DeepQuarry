@@ -16,7 +16,7 @@
 	icon_state = "firesuit"
 	item_state_slots = list(slot_r_hand_str = "black_suit", slot_l_hand_str = "black_suit")
 	w_class = ITEMSIZE_LARGE//bulky item
-	slowdown = 1.0
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.0)
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/fire)
@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/clothing/suit/fire/firefighter)
 	name = "atmospheric firesuit"
 	desc = "A suit that protects against extreme fire and heat."
 	icon_state = "atmos_firesuit"
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 
 CAPABILITIES(/obj/item/clothing/suit/fire/heavy)
 	configure(item_protection(max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/clothing/head/bomb_hood)
 	desc = "A suit designed for safety when handling explosives."
 	icon_state = "bombsuit"
 	w_class = ITEMSIZE_LARGE//bulky item
-	slowdown = 2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	armor_spec = "bomb=100"
 	resistance_flags = BOMB_PROOF
 
@@ -101,7 +101,7 @@ CAPABILITIES(/obj/item/clothing/head/radiation)
 	desc = "A suit that protects against radiation. Label: Made with lead, do not eat insulation."
 	icon_state = "rad"
 	w_class = ITEMSIZE_LARGE//bulky item
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	armor_spec = "bio=60;rad=100"
 
 
@@ -117,7 +117,7 @@ CAPABILITIES(/obj/item/clothing/suit/radiation)
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_override = 'icons/inventory/suit/mob_teshari.dmi'
 	icon_state = "rad_fitted"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 
 /obj/item/clothing/head/radiation/teshari

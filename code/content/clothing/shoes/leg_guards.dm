@@ -1,7 +1,7 @@
 /obj/item/clothing/shoes/leg_guard
 	name = DEVELOPER_WARNING_NAME // "leg guards"
 	desc = "These will protect your legs and feet."
-	slowdown = SHOES_SLOWDOWN+0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 	w_class = ITEMSIZE_NORMAL
 	step_volume_mod = 1.3
 	can_hold_knife = TRUE
@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/combat)
 	desc = "These will protect your legs and feet from a variety of weapons while still allowing mobility."
 	icon_state = "leg_guards_flexitac"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	slowdown = SHOES_SLOWDOWN+0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard/flexitac)

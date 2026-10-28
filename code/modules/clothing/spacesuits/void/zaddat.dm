@@ -3,7 +3,7 @@
 	desc = "A Hegemony-designed utilitarian environment suit helmet, still common among the Spacer Zaddat."
 	icon_state = "zaddat_hegemony"
 	item_state_slots = list(slot_r_hand_str = "syndicate", slot_l_hand_str = "syndicate")
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "bio=100;rad=70;cold=60" //realistically would have some armor but balance.
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat)
@@ -15,7 +15,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat)
 /obj/item/clothing/suit/space/void/zaddat
 	name = "\improper Hegemony Shroud"
 	desc = "A Hegemony environment suit, still favored by the Spacer Zaddat because of its durability and ease of manufacture."
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 	armor_spec = "bio=100;rad=70;cold=60"
 	icon_state = "zaddat_hegemony"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat //shrouds come with helmets built-in

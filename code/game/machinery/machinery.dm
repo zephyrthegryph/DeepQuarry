@@ -1,3 +1,7 @@
+/// Machine uid numbers (and the supermatter's, which shares the sequence).
+SERIAL_DEF(machinery, 1, FALSE)
+SCHEMA(/obj/machinery, uid, num())
+
 /*
 Overview:
 	Used to create objects that need a per step proc call.  Default definition of 'New()'
@@ -38,8 +42,8 @@ Class Variables:
 	uid (num)
 		Unique id of machine across all machines.
 
-	gl_uid (global num)
-		Next uid value in sequence
+	next_serial(machinery)
+		Next uid value in sequence (the machinery serial kind)
 
 	stat (bitflag)
 		Machine status bit flags.
@@ -111,7 +115,6 @@ Class Procs:
 	/// null until then. The circuit board is not in this list; see `circuit`.
 	var/list/component_parts = null
 	var/tmp/uid
-	var/global/gl_uid = 1
 	var/obj/item/circuitboard/circuit = null
 
 
@@ -458,8 +461,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		. += span_notice("Installed material parts: [jointext(manifest, "; ")].")
 
 /obj/machinery/proc/assign_uid()
-	set_uid(gl_uid)
-	gl_uid++
+	set_uid(next_serial(machinery))
 
 /obj/machinery/proc/state(msg)
 	for(var/mob/O in hearers(src, null))

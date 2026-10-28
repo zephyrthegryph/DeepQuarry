@@ -20,7 +20,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/wolfbrigade)
 	icon_state = "wbsuit2"
 	item_state = "wbsuit2-mob"
 	blood_overlay_type = "suit"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=80;bullet=70;laser=50;energy=50;bomb=100;rad=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/armor/wolfbrigade2)
