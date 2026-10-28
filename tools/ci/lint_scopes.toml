@@ -484,6 +484,7 @@ legacy_forms_converted = [
   "code/content/items/",
   "code/game/objects/random/",
   "code/game/objects/structures/",
+  "code/content/structures/",
   "code/game/turfs/flooring/",
   "code/content/turfs/flooring/",
   "code/game/turfs/initialization/",
