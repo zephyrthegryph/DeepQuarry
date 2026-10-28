@@ -97,6 +97,8 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 	var/aflags
 	var/breath_type = GAS_O2
 
+SCHEMA(/datum/transhuman/body_record, weight, num(min = WEIGHT_MIN, max = WEIGHT_MAX, default = DEFAULT_MOB_WEIGHT))
+
 CAPABILITIES(/datum/transhuman/body_record)
 	owns_one(nameof(mydna), /datum/dna2/record)
 	ref_one(nameof(mind_ref))
