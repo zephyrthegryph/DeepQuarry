@@ -114,12 +114,14 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 	to_chat(A.actor, span_notice("You unfasten the frame."))
 	replace_with(src, /obj/item/frame/mirror)
 
-/obj/structure/mirror/attack_generic(mob/user, damage)
+/obj/structure/mirror/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 
 	user.do_attack_animation(src)
 	if(shattered && glass)
 		play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
-		return 0
+		return OP_OK
 
 	if(damage)
 		act_message(user, src, others = span_danger("%U% smashes %T%!"))
@@ -127,7 +129,7 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 			shatter()
 	else
 		act_message(user, src, others = span_danger("%U% hits %T% and bounces off!"))
-	return 1
+	return OP_OK
 
 // The following mirror is ~special~.
 /obj/structure/mirror/raider

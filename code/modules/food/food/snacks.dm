@@ -155,6 +155,7 @@
 	look.overlay(coating_look, when = !!coating_look)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(item_handling(center_x = 16, center_y = 16))
 	configure(item_combat(force = 0))
 	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
@@ -335,9 +336,10 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 ////////////////////////////////////////////////////////////////////////////////
 /// FOOD END
 ////////////////////////////////////////////////////////////////////////////////
-/obj/item/reagent_containers/food/snacks/attack_generic(mob/living/user)
+/obj/item/reagent_containers/food/snacks/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/user = A.attacker
 	if(!isanimal(user) && !isalien(user))
-		return
+		return OP_OK
 	act_message(user, src, MSG_SELF(span_info("You nibble away at %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " nibbles away at %T%.")))
 	user.balloon_alert_visible("nibbles away at \the [src].","nibbled away at \the [src].")
 	set_bitecount(bitecount + 1)
@@ -346,6 +348,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
 	after(user, 0.5 SECONDS, GLOBAL_PROC_REF(food_finished_emote), with = list(user, !reagents?.total_volume))
 	On_Consume(user)
+	return OP_OK
 
 //////////////////////////////////////////////////
 ////////////////////////////////////////////Snacks

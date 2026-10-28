@@ -1,6 +1,0 @@
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag click: Click: Use
-human|/obj/item/card/id menu: Swipe ID
-human|/obj/item/card/id click: Click: Swipe ID
-human|/obj/item/tool/wrench menu: Use wrench
-human|/obj/item/tool/wrench click: Click: Use wrench

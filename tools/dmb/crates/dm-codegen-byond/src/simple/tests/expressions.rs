@@ -312,7 +312,7 @@ fn bare_declaration_resets_on_a_goto_loop() {
 }
 
 /// Constants measured on DreamMaker 516.1687 (a grid of 196 operand pairs per operator, compiled with `dm.exe` and read back
-/// with `dmb-equiv dump-proc`; the unit-test world repeats the whole grid at runtime: `dq_compiler_behaviour`).
+/// with `dmb-equiv dump-proc`).
 #[test]
 fn constant_folds_match_dreammaker() {
     for (source, expected) in [

@@ -257,7 +257,10 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	replace_with(src, B)
 	return B
 
-/obj/structure/blob/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/blob/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	user.do_attack_animation(src)
@@ -270,6 +273,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 		damage = overmind.blob_type.on_received_damage(src, damage, BRUTE, user)
 
 	adjust_integrity(-damage)
+	return OP_OK
 
 /// Old attack_hand.
 /obj/structure/blob/proc/interaction_hand(datum/act/op/A)

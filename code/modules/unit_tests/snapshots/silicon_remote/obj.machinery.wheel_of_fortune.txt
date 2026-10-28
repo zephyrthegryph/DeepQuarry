@@ -1,3 +1,0 @@
-@obj.machinery robot|none
-+1 menu: Change interval
-@obj.machinery ai|none
