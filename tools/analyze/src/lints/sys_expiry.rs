@@ -48,7 +48,7 @@ const RULES: &[RuleMeta] = &[
 
 const SKIP: &[&str] = &["code/datums/om/", "code/controllers/master.dm", "code/controllers/failsafe.dm"];
 /// `cooldown_lint.SKIP_DIRS`.
-const COOLDOWN_SKIP_DIRS: &[&str] = &["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"];
+const COOLDOWN_SKIP_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/unit_tests/", "code/controllers/", "code/datums/om/"];
 
 /// `CMP` of both modules (a compare operator that is not a shift, `==`, `!=` or `>>`).
 macro_rules! cmp {

@@ -47,7 +47,7 @@ fn scan_one(index: &FwlIndex, fields: &crate::dm::field_write::Fields, f: &Sourc
             out.push(("field_write", v.line));
         }
     }
-    if !rel.starts_with("code/modules/unit_tests/") {
+    if !rel.starts_with("code/modules/unit_tests/") && !rel.starts_with("code/tests/unit_tests/") {
         let mut proc_name: Option<String> = None;
         for (i, line) in code_lines.iter().enumerate() {
             let no = i + 1;
