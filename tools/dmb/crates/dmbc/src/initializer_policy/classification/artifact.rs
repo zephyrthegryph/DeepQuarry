@@ -323,16 +323,22 @@ pub(super) fn key(
     reuse: InitializerReuse<'_>,
     factory_policy: u128,
 ) -> Vec<u8> {
-    let mut key = b"dmbc-initializer-classification-v6-folded-features\0".to_vec();
-    key.extend_from_slice(&reuse.policy.to_le_bytes());
-    key.extend_from_slice(&factory_policy.to_le_bytes());
+    // The version tag, both policies and the resource context are identical for every write of one classification, so
+    // the key carries their 128-bit digest instead of the roughly 100 bytes themselves (one key per initializer write
+    // is retained several times over).
+    let mut context = b"dmbc-initializer-classification-v7-context-digest\0".to_vec();
+    context.extend_from_slice(&reuse.policy.to_le_bytes());
+    context.extend_from_slice(&factory_policy.to_le_bytes());
     match reuse.resource_search_context {
-        Some(context) => {
-            key.push(1);
-            key.extend_from_slice(&context.to_le_bytes());
+        Some(value) => {
+            context.push(1);
+            context.extend_from_slice(&value.to_le_bytes());
         }
-        None => key.push(0),
+        None => context.push(0),
     }
+    let mut key = Vec::with_capacity(64);
+    key.push(7);
+    key.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(&context).to_le_bytes());
     match fact {
         ModifierFact::Known(flags) => {
             key.push(0);
