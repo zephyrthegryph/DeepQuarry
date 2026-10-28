@@ -446,12 +446,8 @@ CAPABILITIES(/transformation/chem/instant/slime/silver_materials_basic)
 CAPABILITIES(/transformation/chem/instant/slime/silver_materials_adv)
 	configure(transformation(name = "Slime Advanced Science Materials", id = "m_silver_adv", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/silver),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/silver_materials_adv, on_reaction)))
+		spawns = spawns(spawn_type = nameof(GLOB.xenobio_silver_materials_adv), n = 1, amount = 3)))
 
-/transformation/chem/instant/slime/silver_materials_adv/on_reaction(datum/reagents/holder)
-	var/type_to_spawn = pickweight(GLOB.xenobio_silver_materials_adv)
-	new type_to_spawn(get_turf(holder.my_atom), 3)
-	..()
 
 /transformation/chem/instant/slime/silver_materials_random
 
@@ -808,12 +804,8 @@ CAPABILITIES(/transformation/chem/instant/slime/oil_oil)
 CAPABILITIES(/transformation/chem/instant/slime/oil_fakesplosion)
 	configure(transformation(name = "Slime Fake Explosion", id = "m_oil_fakeboom", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/oil),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/oil_fakesplosion, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_BLAST, blast = list(0, 0, 0), sfx = SFX_EFFECTS_PHASEIN)))
 
-/transformation/chem/instant/slime/oil_fakesplosion/on_reaction(datum/reagents/holder)
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	explosion(get_turf(holder.my_atom), 0, 0, 0)
-	..()
 
 /transformation/chem/instant/slime/oil_explosion
 
@@ -930,12 +922,8 @@ CAPABILITIES(/transformation/chem/instant/slime/cerulean_potion_mimic)
 CAPABILITIES(/transformation/chem/instant/slime/cerulean_random_potion)
 	configure(transformation(name = "Slime Random Potion", id = "m_cerulean_random_potion", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/cerulean),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/cerulean_random_potion, on_reaction)))
+		spawns = spawns(spawn_type = nameof(GLOB.xenobio_cerulean_potions), n = 1)))
 
-/transformation/chem/instant/slime/cerulean_random_potion/on_reaction(datum/reagents/holder)
-	var/spawn_type = pickweight(GLOB.xenobio_cerulean_potions)
-	new spawn_type(get_turf(holder.my_atom))
-	..()
 
 // ****************
 // * Amber slimes *
@@ -970,12 +958,8 @@ CAPABILITIES(/transformation/chem/instant/slime/amber_random_food)
 CAPABILITIES(/transformation/chem/instant/slime/amber_snack)
 	configure(transformation(name = "Slime Snack", id = "m_amber_snack", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/amber),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/amber_snack, on_reaction)))
+		spawns = spawns(spawn_type = /obj/item/reagent_containers/food/snacks/slime, n = list(3, 5))))
 
-/transformation/chem/instant/slime/amber_snack/on_reaction(datum/reagents/holder)
-	for(var/i = 1 to rand(3, 5))
-		new /obj/item/reagent_containers/food/snacks/slime(get_turf(holder.my_atom))
-	..()
 
 /transformation/chem/instant/slime/amber_goop
 
@@ -1245,12 +1229,8 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_random_slime)
 CAPABILITIES(/transformation/chem/instant/slime/rainbow_random_extract)
 	configure(transformation(name = "Slime Random Extract", id = "m_rainow_random_extract", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/rainbow),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/rainbow_random_extract, on_reaction)))
+		spawns = spawns(spawn_type = nameof(GLOB.xenobio_rainbow_extracts), n = 1)))
 
-/transformation/chem/instant/slime/rainbow_random_extract/on_reaction(datum/reagents/holder)
-	var/spawn_type = pickweight(GLOB.xenobio_rainbow_extracts)
-	new spawn_type(get_turf(holder.my_atom))
-	..()
 
 /transformation/chem/instant/slime/rainbow_colors
 
