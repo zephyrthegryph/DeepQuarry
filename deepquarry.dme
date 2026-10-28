@@ -5889,7 +5889,6 @@
 #include "maps\~turfpacks\turfpacks.dm"
 #include "maps\~turfpacks\unsim_turfs\unsim_turfs_special.dm"
 #ifdef DOC_SNIPPETS
-#include "tools\ci\generated\doc_snippets.dm"
 #endif
 #include "code\tests\_tests.dm"
 #include "code\tests\unit_tests\_unit_tests.dm"

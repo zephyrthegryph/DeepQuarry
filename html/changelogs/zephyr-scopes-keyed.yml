@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "lint_scopes.toml merge driver: a block of ceilings where one side moved, added or removed a key merges by key, keeping the lower value."
