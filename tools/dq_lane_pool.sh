@@ -122,7 +122,7 @@ _wt_clean_full() { # <path>: no tracked change, no untracked non-ignored file, n
 	for m in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do [ -e "$GD/$m" ] && return 1; done
 	# Fast path, one git start instead of three: a status with no line at all (nothing staged, modified or untracked) is clean by every
 	# definition below. Anything it does list goes on to the exact checks, which also forgive a CR-only difference.
-	o="$(git -C "$wt" status --porcelain=v1 --untracked-files=normal 2>/dev/null)" && [ -z "$o" ] && return 0
+	o="$(git --no-optional-locks -C "$wt" status --porcelain=v1 --untracked-files=normal 2>/dev/null)" && [ -z "$o" ] && return 0
 	# the untracked listing runs beside the refresh and the diff (a git start costs a few hundred ms on a loaded host), and no head/$(...) forks
 	exec {fd}< <(git -C "$wt" ls-files --others --exclude-standard 2>/dev/null)
 	git -C "$wt" update-index -q --refresh >/dev/null 2>&1
@@ -251,7 +251,7 @@ release_slot() { # <slot> <force> <keep_outputs>
 				rm -f "$STATE_DIR/pool-$i.lease"
 				return 0
 			fi
-			git -C "$wt" status --short | head -n 8 >&2
+			git --no-optional-locks -C "$wt" status --short | head -n 8 >&2
 			die "$wt is not clean (above): commit or finish it, then release (--force records the release only)"
 		fi
 		retire_daemon "$wt"
