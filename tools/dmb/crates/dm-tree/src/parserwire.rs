@@ -122,8 +122,12 @@ fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
             .collect::<Option<_>>()?,
     })
 }
+/// CPU time and call counts of the payload codec per request (`DMB_TIMINGS_DETAIL=1`).
+static DEFLATE: dm_profile::Accumulator = dm_profile::Accumulator::new("parserwire.deflate");
+static INFLATE: dm_profile::Accumulator = dm_profile::Accumulator::new("parserwire.inflate");
 fn deflate(raw: &[u8]) -> Result<Vec<u8>, String> {
     use std::io::Write;
+    let _timed = DEFLATE.time();
     let mut encoder = flate2::write::DeflateEncoder::new(
         Vec::with_capacity(raw.len() / 3 + 16),
         flate2::Compression::fast(),
@@ -135,6 +139,7 @@ fn deflate(raw: &[u8]) -> Result<Vec<u8>, String> {
 }
 fn inflate(bytes: &[u8]) -> Option<Vec<u8>> {
     use std::io::Read;
+    let _timed = INFLATE.time();
     let mut raw = Vec::with_capacity(bytes.len().saturating_mul(3));
     flate2::read::DeflateDecoder::new(bytes).read_to_end(&mut raw).ok()?;
     Some(raw)
