@@ -29,15 +29,15 @@ before code/content/hydroponics/seedtypes/flowers.dm code/modules/hydro/plants.d
 before code/modules/mob/new_player/sprite_accessories_ear.dm code/content/vore/appearance/sprite_accessories.dm   # ear sprite accessories
 before code/modules/materials/engineering/material_machines.dm code/content/research/tg/techwebs/nodes/mining_nodes.dm   # techweb material_processing
 before code/modules/mob/living/silicon/robot/drone/drone.dm code/modules/mob/living/silicon/drone/unify_drone.dm   # /mob/living/silicon/robot/drone
-before code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/** code/modules/mob/living/simple_mob/subtypes/animal/spider.dm   # giant spiders
-before code/modules/mob/living/simple_mob/donteatbossmonsters.dm code/modules/mob/living/simple_mob/subtypes/animal/spider.dm   # broodmother
-before code/modules/mob/living/simple_mob/subtypes/animal/spider.dm code/domains/ai/ports/broodmother.dm   # broodmother
+before code/content/mobs/living/simple_mob/subtypes/animal/giant_spider/** code/content/mobs/living/simple_mob/subtypes/animal/spider.dm   # giant spiders
+before code/modules/mob/living/simple_mob/donteatbossmonsters.dm code/content/mobs/living/simple_mob/subtypes/animal/spider.dm   # broodmother
+before code/content/mobs/living/simple_mob/subtypes/animal/spider.dm code/domains/ai/ports/broodmother.dm   # broodmother
 before code/modules/mob/living/simple_mob/subtypes/humanoid/mercs/** code/modules/mob/living/simple_mob/subtypes/humanoid/mercenary.dm   # mercs, vox
 before code/modules/mob/living/simple_mob/subtypes/humanoid/pirates.dm code/modules/mob/living/simple_mob/subtypes/humanoid/pirate.dm   # pirates
-before code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/ranged_damage.dm code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/orginalAlts.dm   # hivebots
-before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/durand.dm code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/combat.dm   # mecha mobs
-before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/marauder.dm code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/combat.dm
-before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/combat.dm
+before code/content/mobs/living/simple_mob/subtypes/mechanical/hivebot/ranged_damage.dm code/content/mobs/living/simple_mob/subtypes/mechanical/hivebot/orginalAlts.dm   # hivebots
+before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/durand.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm   # mecha mobs
+before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/marauder.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm
+before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm
 before code/modules/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/modules/projectiles/projectile/beams.dm code/content/projectiles/guns/beam.dm   # phasers
 before code/modules/projectiles/projectile/bullets.dm code/content/projectiles/guns/bullet.dm   # bullets
@@ -73,7 +73,7 @@ before code/engine/state/schema.dm code/datums/state/latent_safe_types.dm       
 before code/engine/state/serializer.dm code/datums/state/serializer.dm                 # identity(), lookup()
 before code/game/objects/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
 before code/modules/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm      # change_win_count()
-before code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm code/domains/ai/ports/possum.dm  # respond_to_damage()
+before code/content/mobs/living/simple_mob/subtypes/animal/passive/possum.dm code/domains/ai/ports/possum.dm  # respond_to_damage()
 before code/modules/reagents/reagents/content/food.dm code/content/reagents/reagents/content/alcohol.dm      # nutriment_factor
 before code/modules/refinery/core/industrial_reagent_machines.dm code/content/refinery/core/industrial_reagent_pump.dm   # minimum_reagents_for_transfer
 before code/modules/stockmarket/stocks.dm code/modules/admin/admin_report_panel.dm     # displayValues()
