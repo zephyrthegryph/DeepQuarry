@@ -80,6 +80,11 @@ CAPABILITIES(/transformation/dq_spawn/bang)
 	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
 	H.add_reagent(REAGENT_ID_LEAD, 1, safety = 1)
 	xform_settle_reagents(H)
+	var/sparks = 0
+	for(var/obj/effect/effect/sparks/S in range(3, T))
+		sparks++
+		qdel(S)
+	TEST_ASSERT(sparks > 0, "the tiny explosion went off as sparks")
 	TEST_ASSERT_EQUAL(H.total_volume, 0, "an explosion in a non-living vessel empties it before it goes off")
 
 #endif
