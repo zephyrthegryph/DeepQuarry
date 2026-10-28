@@ -330,14 +330,7 @@ CAPABILITIES(/transformation/chem/instant/slime/warplague)
 CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
 	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse2", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nuclear),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_radpulse, on_reaction)))
-
-/transformation/chem/instant/slime/nuclear_radpulse/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_green_pulse), with = list(holder.my_atom))
-	..()
+		effects = sets_off(XFORM_FX_LATER, audit = "Green extract reaction (radiation pulse)", tell = TRUE, sfx = SFX_EFFECTS_PHASEIN, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_green_pulse))))
 
 
 /transformation/chem/instant/slime/nuclear_emitter
@@ -345,12 +338,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
 CAPABILITIES(/transformation/chem/instant/slime/nuclear_emitter)
 	configure(transformation(name = "Slime Radiation Emitter", id = "m_green_emitter2", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/green),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_emitter, on_reaction)))
-
-/transformation/chem/instant/slime/nuclear_emitter/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
-	..()
+		spawns = spawns(/obj/item/slime_irradiator, 1, audit = "Green extract reaction (radiation emitter)")))
 
 
 /transformation/chem/instant/slime/nuclear_radium
