@@ -17,6 +17,25 @@ pub(super) struct MethodRoster {
     pub membership: Arc<[Key]>,
 }
 impl MethodRoster {
+    /// The live roster of a session that produced these same inputs, else a new one. A second worktree or variant of the
+    /// same tree issues equal inputs, so it adopts the first one's roster and skips building its own.
+    pub(super) fn shared(inputs: Vec<MethodInput>) -> Arc<Self> {
+        static POOL: std::sync::OnceLock<crate::shared_pool::Pool<MethodRoster>> = std::sync::OnceLock::new();
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        inputs.len().hash(&mut hasher);
+        for input in &inputs {
+            (input.owner, input.name, input.verb, input.declared).hash(&mut hasher);
+        }
+        let fingerprint = hasher.finish();
+        let pending = std::cell::RefCell::new(Some(inputs));
+        POOL.get_or_init(crate::shared_pool::Pool::new).get_or_build(
+            "method_roster",
+            fingerprint,
+            |held| pending.borrow().as_ref().is_some_and(|inputs| held.inputs.as_ref() == inputs.as_slice()),
+            || Self::produce(pending.borrow_mut().take().expect("inputs consumed once")),
+        )
+    }
     /// Current contributions have already passed the ordinary producer and its
     /// receipt admission. Exact ordered equality includes every namespace/key.
     pub(super) fn input(&self, ordinal: usize) -> Option<&MethodInput> {
