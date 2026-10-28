@@ -29,6 +29,8 @@
 //   capacity      CAPACITY_TRUNCATE (the only one built): a product that does not fit is clamped to the free volume, as chemistry always did (D10).
 //   says, plays   the message and the sound of a settle in which the rule fired (once per settle). says = "" says nothing.
 //   notice        a /datum/notice/transformed subtype to publish instead of the plain one.
+//   spawns        spawns(what, n, at, ...) or a list of them: the atoms a step makes (code/library/transformations/transformation_spawns.dm). Runs after the
+//                 energy and before `then`, in declaration order.
 //   then          TYPE_PROC_REF(/type, x): the bespoke tail, x(holder, made); counted by the lints. A reagent rule's tail is the legacy on_reaction().
 //   important     admin-visible when mixed (the legacy log_is_important).
 //   wiki          WIKI_X flags: what the in-game wiki and the handbooks do with the rule (hide it, file it under food or drinks).
@@ -56,12 +58,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 /proc/data_from_reagent(reagent_id, key, default)
 	return list(reagent_id, key, default)
 
-/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, with_data = null, data_from = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null)
+/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, with_data = null, data_from = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, spawns = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "with_data" = with_data, "data_from" = data_from, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
-		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
+		"notice" = notice, "spawns" = spawns, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
 		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen, "crafted" = crafted))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
@@ -207,6 +209,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/wiki = 0
 	var/notice_type = /datum/notice/transformed
 	var/then_proc
+	/// The compiled spawns() rows of the rule (xform_spawn_rows()), or null.
+	var/list/spawn_rows
 	var/important = FALSE
 	// ---- derived at compile ----
 	/// The first take's key: the index key.
@@ -390,6 +394,13 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.notice_type = arguments["notice"]
 	X.then_proc = "[xform_proc_name(arguments["then"])]" // a proc name (text): "" when there is none
 	X.important = !!arguments["important"]
+	if(arguments["spawns"])
+		if(X.medium != MEDIUM_REAGENTS)
+			declare_report("[origin]: [type]: spawns() is built for the reagents medium only")
+			return null
+		X.spawn_rows = xform_spawn_rows(type, origin, arguments["spawns"])
+		if(!X.spawn_rows)
+			return null
 	X.wiki = arguments["wiki"] || 0
 	if(X.medium == MEDIUM_FIELD)
 		if(length(X.takes) >= 2)

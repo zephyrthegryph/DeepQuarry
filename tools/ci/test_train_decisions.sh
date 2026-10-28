@@ -46,22 +46,33 @@ r="$tmp/mb"; git init -q --bare "$r/origin.git"; git clone -q "$r/origin.git" "$
 	mkdir -p tools lanes
 	cp "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_dme_resolve.sh" tools/
 	echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
-	printf '#!/usr/bin/env bash\necho "stub gates: ok"\n' >tools/dq_merge_gates.sh
+	cat >tools/dq_merge_gates.sh <<'STUB'
+#!/usr/bin/env bash
+# DQ_STUB_NORESULT=1: two or more lane files give a test phase with no result (the 28 October 03:04 case)
+if [ "${DQ_STUB_NORESULT:-0}" = 1 ] && [ "$(ls lanes 2>/dev/null | wc -l)" -gt 1 ]; then
+	echo "FOCUSED RESULT: CAPPED or killed before a result (exit 0): the focused run printed no result line"
+	echo "dq_merge_gates: FAILED: tests (logs data/merge-gates/x.<job>.log)" >&2; exit 1
+fi
+echo "stub gates: ok"
+STUB
 	echo base >shared.txt; printf 'data/\n' >.gitignore
 	git add -A; git commit -q -m init; git branch -M master; git push -q origin master; git fetch -q origin
 	for l in g1 c1 c2 g2; do
 		git switch -q -c "$l" origin/master
-		case "$l" in c*) echo "$l" >shared.txt ;; *) echo "$l" >"lanes/$l.txt" ;; esac
+		mkdir -p lanes; case "$l" in c*) echo "$l" >shared.txt ;; *) echo "$l" >"lanes/$l.txt" ;; esac
 		if [ "$l" = g1 ]; then mkdir -p code/modules/unit_tests; echo x >code/modules/unit_tests/here.dm; printf '#include "here.dm"\n#include "gone.dm"\n' >code/modules/unit_tests/_unit_tests.dm; fi
 		git add -A; git commit -q -m "$l"; git push -q origin "$l"
 	done
 	git switch -q --detach origin/master
 	bash tools/dq_merge_batch.sh --lanes "g1 c1 c2 g2" >"$r/out.txt" 2>&1
+	git switch -q --detach origin/master
+	DQ_STUB_NORESULT=1 bash tools/dq_merge_batch.sh --lanes "g1 g2" >"$r/noresult.txt" 2>&1
 ) >/dev/null 2>&1
 mb_good="$(sed -n 's/^BATCH_GOOD: //p' "$r/out.txt" | tail -n 1)"
 mb_later="$(sed -n 's/^BATCH_LATER: //p' "$r/out.txt" | tail -n 1)"
 check "a lane-vs-lane conflict holds back only that lane; the clean lanes and the first of the pair pass" '[[ " $mb_good " == *" g1 "* && " $mb_good " == *" g2 "* && " $mb_good " == *" c1 "* ]] && [ "$(echo $mb_later)" = c2 ] && ! grep -q "started dirty" "$r/out.txt"'
 check "a merged include of a file that no longer exists is dropped and reported" 'grep -q "STALE INCLUDE dropped .*gone.dm" "$r/out.txt"'
+check "a 2-lane attempt with no test result defers both lanes and bisects nobody (03:04: move/effects-wave was blamed)" '! grep -q "^BATCH_BOUNCED: ." "$r/noresult.txt" && grep -q "^BATCH_DEFERRED: .*g1" "$r/noresult.txt" && grep -q "^BATCH_DEFERRED: .*g2" "$r/noresult.txt"'
 [ "$fail" -eq 0 ] || { echo "---- merge_batch output:"; tail -n 30 "$r/out.txt"; }
 
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
