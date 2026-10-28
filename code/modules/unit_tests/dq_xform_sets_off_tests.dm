@@ -54,6 +54,14 @@
 		var/datum/entry/part/effect/sets_off/part = sets_off(kind = colliding, chance = 5, amount = 2)
 		TEST_ASSERT_EQUAL(part.args["kind"], colliding, "the kind \"[colliding]\" stays the kind: [json_encode(part.args)]")
 		TEST_ASSERT_EQUAL(part.args["chance"], 5, "and the chance is still the chance for \"[colliding]\"")
+	// A positional call that collides is refused at compile, naming the cause.
+	var/list/reported = list()
+	GLOB.declare_report_capture = reported
+	var/datum/entry/part/effect/sets_off/bad = sets_off(XFORM_FX_BLAST, blast = list(-1, -1, 1, 2))
+	TEST_ASSERT_NULL(xform_effect_rows(/transformation/chem/instant/foam, "test", bad), "a kind that bound as another argument is refused")
+	GLOB.declare_report_capture = null
+	TEST_ASSERT_EQUAL(length(reported), 1, "with one report")
+	TEST_ASSERT(findtext(reported[1], "kind = "), "that names the by-name form: [jointext(reported, "; ")]")
 	var/datum/entry/part/effect/sets_off/blast = sets_off(kind = XFORM_FX_BLAST, blast = list(-1, -1, 1, 2))
 	TEST_ASSERT_EQUAL(blast.args["kind"], XFORM_FX_BLAST, "the real blast kind is the kind")
 

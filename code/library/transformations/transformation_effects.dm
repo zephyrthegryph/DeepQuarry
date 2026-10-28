@@ -42,6 +42,12 @@
 			return null
 		var/list/arguments = E.args
 		var/kind = arguments["kind"]
+		if(isnull(kind))
+			// A kind passed positionally whose text equals another parameter name binds as that parameter (BYOND), leaving `kind` empty.
+			for(var/name in arguments)
+				if(name == XFORM_FX_SMOKE || name == XFORM_FX_FOAM || name == XFORM_FX_EXPLOSION || name == XFORM_FX_EMP || name == XFORM_FX_AREA || name == XFORM_FX_BLAST || name == XFORM_FX_FROST || name == XFORM_FX_LATER)
+					declare_report("[origin]: [type]: sets_off() arrived with no kind while it has an argument named \"[name]\", which is also a kind: the kind was passed positionally and bound as that argument. Write sets_off(kind = ...)")
+					return null
 		if(kind != XFORM_FX_SMOKE && kind != XFORM_FX_FOAM && kind != XFORM_FX_EXPLOSION && kind != XFORM_FX_EMP && kind != XFORM_FX_AREA && kind != XFORM_FX_BLAST && kind != XFORM_FX_FROST && kind != XFORM_FX_LATER)
 			declare_report("[origin]: [type]: sets_off([kind]) is not XFORM_FX_SMOKE, XFORM_FX_FOAM, XFORM_FX_EXPLOSION, XFORM_FX_EMP, XFORM_FX_AREA, XFORM_FX_BLAST, XFORM_FX_FROST or XFORM_FX_LATER")
 			return null
