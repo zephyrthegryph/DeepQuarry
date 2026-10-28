@@ -188,6 +188,7 @@
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_admin_accessors_tests.dm"
 #include "../../modules/unit_tests/dq_atmos_tests.dm"
+#include "../../modules/unit_tests/dq_bumped_notice_tests.dm"
 #include "dq_air_guard_tests.dm"
 #include "../../modules/unit_tests/dq_thermostat_init_tests.dm"
 #include "../../modules/unit_tests/dq_after_init_tests.dm"
