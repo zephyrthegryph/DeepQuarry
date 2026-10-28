@@ -19,6 +19,29 @@ fn build(text: &'static str) -> ColdFrontend {
     )
     .unwrap()
 }
+
+#[test]
+fn native_checker_question_executes_in_process_with_explicit_partial_coverage() {
+    let db = Arc::new(crate::query_db::QueryDb::default());
+    let frontend = build("/proc/example(x)\n    return !x & 1\n").with_body_queries(db.clone());
+    let snapshot = SourceSnapshot::capture(&frontend);
+    let mut bytes = Vec::new();
+    snapshot.write_native_checker(0, "disabled", &frontend.snapshot.tree, &mut bytes).unwrap();
+    let disabled: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(disabled["diagnostics"].as_array().unwrap().len(), 0);
+    assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0, "disabled policy must not parse");
+    bytes.clear();
+    snapshot.write_native_checker(0, "error", &frontend.snapshot.tree, &mut bytes).unwrap();
+    let findings: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(findings["full_checker_parity"], false);
+    assert_eq!(findings["diagnostics"].as_array().unwrap().len(), 1);
+    assert_eq!(findings["diagnostics"][0]["severity"], "error");
+    assert_eq!(findings["diagnostics"][0]["line"], 2);
+    assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 1);
+    assert!(snapshot.write_native_checker(0, "typo", &frontend.snapshot.tree, &mut Vec::new()).is_err());
+    let shifted = build("// shifted\n/proc/example(x)\n    return x\n");
+    assert!(snapshot.write_native_checker(0, "warning", &shifted.snapshot.tree, &mut Vec::new()).is_err());
+}
 #[test]
 fn body_context_pages_share_current_owner_and_reject_semantic_stable_source_edits() {
     let original = build("/proc/read()\n    set waitfor = 0\n    return 1\n");

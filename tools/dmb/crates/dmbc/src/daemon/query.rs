@@ -73,6 +73,12 @@ pub enum SourceQuery {
     Provenance {
         ordinal: u32,
     },
+    /// Migration-only policy findings, NOT complete checker coverage. The body
+    /// is consumed in-process from the compiler archive; only findings cross IPC.
+    NativeCheckerFixture {
+        ordinal: u32,
+        severity: String,
+    },
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryItem {
@@ -298,6 +304,19 @@ pub(super) fn validate_reply(
             source_rows += 1;
             continue;
         }
+        if row["row"] == "source_native_checker_fixture" {
+            if row["schema"] != "dm-session-source-query-v1"
+                || row["source_revision"].as_str() != reply.source_revision.as_deref()
+                || row["semantic_revision"].as_str() != Some(reply.revision.as_str())
+                || row["full_checker_parity"] != false
+                || row["family"] != "ambiguous_not_bitwise"
+                || row["diagnostics"].as_array().is_none()
+            {
+                return Err(io::Error::other("invalid native checker fixture envelope"));
+            }
+            source_rows += 1;
+            continue;
+        }
         if row["row"] == "source_body_model" {
             if row["schema"] != "dm-session-source-query-v1"
                 || row["source_revision"].as_str() != reply.source_revision.as_deref()
@@ -409,6 +428,9 @@ impl QueryRequest {
         }
         if self.source_queries.iter().any(|query| matches!(query, SourceQuery::ResolvedQueries { queries } if queries.is_empty() || queries.iter().any(|item| item.subject.as_ref().is_some_and(|subject| subject.len() > 256)))) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "resolved query batch is empty or subject exceeds limit"));
+        }
+        if self.source_queries.iter().any(|query| matches!(query, SourceQuery::NativeCheckerFixture { severity, .. } if !matches!(severity.as_str(), "disabled" | "warning" | "error"))) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "native checker fixture severity must be disabled, warning or error"));
         }
         if self.source_queries.iter().any(|query| matches!(query, SourceQuery::OccurrencesPage { limit, .. } | SourceQuery::BodyContextsPage { limit, .. } if !(1..=128).contains(limit))) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "occurrence page limit must be 1..128"));
@@ -542,6 +564,10 @@ pub(crate) fn evaluate_snapshot(
             snapshot.write_body_model(*ordinal, tree, &mut output)?;
             continue;
         }
+        if let SourceQuery::NativeCheckerFixture { ordinal, severity } = question {
+            snapshot.write_native_checker(*ordinal, severity, tree, &mut output)?;
+            continue;
+        }
         if let SourceQuery::SelectedReferences { ordinal } = question {
             snapshot.write_selected(*ordinal, &mut output)?;
             continue;
@@ -551,6 +577,7 @@ pub(crate) fn evaluate_snapshot(
             SourceQuery::Provenance { ordinal } => (*ordinal, true),
             SourceQuery::ResolvedQueries { .. }
             | SourceQuery::BodyModel { .. }
+            | SourceQuery::NativeCheckerFixture { .. }
             | SourceQuery::SelectedReferences { .. }
             | SourceQuery::OccurrencesPage { .. }
             | SourceQuery::BodyContextsPage { .. }

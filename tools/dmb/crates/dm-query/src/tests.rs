@@ -334,3 +334,20 @@ fn million_queries_revalidate_in_parallel() {
     eprintln!("million: cold {cold:?}, revalidate after one change {warm:?}");
     assert_eq!(db.stats(PARITY).computed, N as u64 + 1);
 }
+
+
+#[test]
+fn per_key_value_charge_tracks_eviction_and_removal() {
+    let db = Db::new();
+    let kind = Kind(61000);
+    let key = Key::new(kind, 1);
+    db.define(kind, "charge-test", |_, _| Ok(Outcome::new(7u32, 7, 123)));
+    assert_eq!(db.value_bytes_at(key), 0);
+    assert_eq!(*db.get::<u32>(key, Arc::new(())).unwrap(), 7);
+    assert_eq!(db.value_bytes_at(key), 123);
+    db.evict_values(&[kind]);
+    assert_eq!(db.value_bytes_at(key), 0);
+    db.get::<u32>(key, Arc::new(())).unwrap();
+    db.remove(key);
+    assert_eq!(db.value_bytes_at(key), 0);
+}

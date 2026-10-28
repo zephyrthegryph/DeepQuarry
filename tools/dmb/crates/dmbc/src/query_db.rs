@@ -11,6 +11,8 @@ use std::path::PathBuf;
 use dm_preprocess::regions::prepared_source::PreparedSource;
 use std::sync::{Arc, Mutex};
 
+mod body_syntax;
+
 const SOURCE: Kind = Kind(1);
 const PROJECT: Kind = Kind(2);
 const PROGRAM: Kind = Kind(3);
@@ -37,6 +39,8 @@ pub struct QueryDb {
     /// database, or from before a restart, is not one this log can answer for.
     id: u64,
     db: Db,
+    body_charge: Arc<std::sync::atomic::AtomicUsize>,
+    body_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_tree::frontend::BodySyntaxInput>>>,
     /// Current answers of every query a stored unit read (see `answer` below).
     answers: Answers,
     /// Read lists of the stored lowering units, rebuilt only for new stored values.
@@ -59,6 +63,8 @@ const CHANGE_LOG: usize = 64;
 impl Default for QueryDb {
     fn default() -> Self {
         let db = Db::new();
+        let body_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        body_syntax::register(&db, Arc::clone(&body_charge));
         db.define_input(SOURCE, "source");
         db.define_input(PROJECT, "project");
         db.define(PROGRAM, "program", |ctx, params| {
@@ -76,6 +82,8 @@ impl Default for QueryDb {
         });
         static NEXT_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
+            body_charge,
+            body_inputs: Mutex::new(BTreeMap::new()),
             id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             db,
             answers: Answers::default(),

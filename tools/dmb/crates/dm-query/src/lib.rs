@@ -554,6 +554,13 @@ impl Db {
         self.all_shards().map(|state| state.nodes.values().map(|node| node.bytes).sum::<usize>()).sum()
     }
 
+    /// Current retained-value charge for one key, without scanning the graph.
+    /// Parameters/metadata are separate; an evicted or absent value costs zero.
+    pub fn value_bytes_at(&self, key: Key) -> usize {
+        self.shards[shard_of(key)].state.lock().unwrap_or_else(|e| e.into_inner())
+            .nodes.get(&key).map_or(0, |node| node.bytes)
+    }
+
     pub fn len(&self) -> usize {
         self.all_shards().map(|state| state.nodes.len()).sum()
     }

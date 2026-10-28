@@ -651,7 +651,16 @@ fn run_build_attempt(
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
     dmbc::daemon::control::checkpoint()?;
     let frontend = dm_tree::frontend::FrontendRevision::new(match frontend_result {
-        Ok(frontend) => frontend,
+        Ok(frontend) => {
+            // Migration opt-in until all checker/lint parity and memory gates
+            // pass. Compile-only users keep the existing lazy body path.
+            if std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
+                match query_db.as_ref() {
+                    Some(db) => frontend.with_body_queries(Arc::clone(db) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>),
+                    None => frontend,
+                }
+            } else { frontend }
+        },
         Err(mut diagnostics) => {
             dmbc::diagnostics::refine(&mut diagnostics);
             dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;

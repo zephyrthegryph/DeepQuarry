@@ -58,6 +58,50 @@ impl ReplayProof {
     }
 }
 impl SourceSnapshot {
+    /// Partial migration endpoint: findings only, never a model round-trip.
+    pub(crate) fn write_native_checker(
+        &self, ordinal: u32, severity: &str, tree: &dm_tree::SemanticTree,
+        output: &mut impl std::io::Write,
+    ) -> std::io::Result<()> {
+        use dm_analysis::checks::Severity;
+        use std::io;
+        crate::daemon::control::checkpoint()?;
+        let archive = self.body_archive.as_ref().filter(|archive| archive.matches_tree(tree))
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "current body archive unavailable"))?;
+        if ordinal as usize >= archive.len() { return Err(io::Error::other("body ordinal unavailable")); }
+        let policy = match severity {
+            "disabled" => Severity::Disabled, "warning" => Severity::Warning, "error" => Severity::Error,
+            _ => return Err(io::Error::other("unknown native checker fixture policy")),
+        };
+        let mut rows = Vec::new();
+        if policy != Severity::Disabled {
+            let body = archive.parse(ordinal as usize).map_err(|error| io::Error::other(error.message))?;
+            let diagnostics = dm_analysis::checks::archived_ambiguous_not_bitwise(&body, policy).map_err(io::Error::other)?;
+            for diagnostic in diagnostics {
+                crate::daemon::control::checkpoint()?;
+                let origin = body.location(diagnostic.span.start).ok_or_else(|| io::Error::other("checker origin unavailable"))?;
+                rows.push(serde_json::json!({
+                    "family": diagnostic.family, "severity": severity,
+                    "expanded_span": [diagnostic.span.start, diagnostic.span.end],
+                    "expression_span": [diagnostic.expression_span.start, diagnostic.expression_span.end],
+                    "file": origin.path, "line": origin.line,
+                    "include_occurrence": origin.include_occurrence,
+                    "include_chain": origin.include_chain,
+                    "message": diagnostic.message,
+                    "notes": diagnostic.notes.iter().map(|note| &note.message).collect::<Vec<_>>(),
+                }));
+            }
+        }
+        serde_json::to_writer(&mut *output, &serde_json::json!({
+            "row": "source_native_checker_fixture", "schema": "dm-session-source-query-v1",
+            "source_revision": format!("{:032x}", self.source_revision),
+            "semantic_revision": format!("{:032x}", tree.identity()),
+            "ordinal": ordinal, "family": "ambiguous_not_bitwise", "policy": severity,
+            "full_checker_parity": false, "diagnostics": rows,
+        })).map_err(io::Error::other)?;
+        output.write_all(b"\n")
+    }
+
     /// Detach optional heavy source/selection owners under idle pressure.
     /// Existing request handles remain immutable; pinned lightweight rows survive.
     pub(crate) fn release_body_queries(&mut self) {

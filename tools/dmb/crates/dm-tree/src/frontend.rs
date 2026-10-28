@@ -232,6 +232,7 @@ pub struct ColdFrontend {
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
     source_export_mapping: Arc<source_export_mapping::SourceExportMapping>,
+    body_queries: Option<body_queries::BodyQueries>,
 }
 
 impl ColdFrontend {
@@ -353,6 +354,19 @@ impl ColdFrontend {
     ) -> Result<ParsedBody<'a>, Diagnostic> {
         self.compact_body(occurrence)?;
         let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
+        if let Some(queries) = &self.body_queries {
+            let ordinal = self.body_by_declaration[&occurrence.declaration];
+            let shared = queries.inputs[ordinal].obtain(queries.host.as_ref())?;
+            return Ok(ParsedBody {
+                statements: None,
+                statement_attempted: false,
+                static_receipt: std::sync::OnceLock::new(),
+                item: shared.item.clone(),
+                shared_syntax: Some(shared),
+                issuer: self,
+                occurrence: issued,
+            });
+        }
         let item = dm_syntax::parse_proc_at_span(&self.issued_arena, issued.expanded_span)
             .map_err(|error| Diagnostic {
                 kind: syntax_kind(error.kind),
@@ -364,6 +378,7 @@ impl ColdFrontend {
             })?;
         Ok(ParsedBody {
             statements: None,
+            shared_syntax: None,
             statement_attempted: false,
             static_receipt: std::sync::OnceLock::new(),
             item,
@@ -501,11 +516,14 @@ impl<'a> IssuedBodyInput<'a> {
     }
 }
 
-#[path = "frontend_relative_declarations.rs"]
-mod relative_declarations;
 #[path = "frontend_body_code.rs"]
 mod body_code;
+#[path = "frontend_relative_declarations.rs"]
+mod relative_declarations;
 pub use body_code::IssuedBodyCode;
+#[path = "frontend_body_queries.rs"]
+mod body_queries;
+pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};
 #[path = "frontend_body_archive.rs"]
 mod body_archive;
 pub use body_archive::{ArchivedBody, BodyArchive};
@@ -524,6 +542,7 @@ mod expression_site;
 pub struct ParsedBody<'a> {
     static_receipt: std::sync::OnceLock<Result<Arc<IssuedStaticPlan>, String>>,
     item: Item,
+    shared_syntax: Option<Arc<body_queries::BodySyntax>>,
     statements: Option<Arc<StatementBody>>,
     statement_attempted: bool,
     issuer: &'a ColdFrontend,
@@ -584,12 +603,22 @@ impl ParsedBody<'_> {
         supported: fn(&[dm_syntax::Statement]) -> bool,
     ) -> Self {
         self.statement_attempted = true;
-        self.statements = Some(body_archive::parse_statements(
-            &mut self.item,
-            &self.issuer.issued_arena,
-            &self.issuer.issued_syntax,
-            supported,
-        ));
+        self.statements = if let Some(shared) = self.shared_syntax.take() {
+            let statements = Arc::clone(&shared.statements);
+            if statements.parsed().diagnostics.is_empty()
+                && supported(&statements.parsed().statements)
+            {
+                self.item.children = Vec::new();
+            }
+            Some(statements)
+        } else {
+            Some(body_archive::parse_statements(
+                &mut self.item,
+                &self.issuer.issued_arena,
+                &self.issuer.issued_syntax,
+                supported,
+            ))
+        };
 
         self
     }
@@ -741,7 +770,9 @@ impl Mapping<'_> {
         let index = self
             .expanded
             .origins
-            .partition_point_near(self.hints.row.get(), |origin| origin.output_span.end <= offset);
+            .partition_point_near(self.hints.row.get(), |origin| {
+                origin.output_span.end <= offset
+            });
         self.hints.row.set(index);
         self.expanded
             .origins
@@ -869,8 +900,7 @@ fn resolution_error(
                         member.name == *name
                             && member.kind == *kind
                             && authored_ancestry(*owner, skeletons, symbols).contains(&member.owner)
-                    })
-                        || symbols.text(*name).is_none_or(|name| {
+                    }) || symbols.text(*name).is_none_or(|name| {
                         let plain = plain_datum_owner(*owner, skeletons, symbols);
                         match kind {
                             MemberKind::Var => dm_ir::builtin_names::is_builtin_var_in(plain, name),

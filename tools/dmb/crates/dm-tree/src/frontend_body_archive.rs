@@ -5,6 +5,7 @@ use crate::SemanticTree;
 /// Only ColdFrontend can issue this archive. Coordinates belong to this exact
 /// tree/source/syntax owner; an archive cannot be rebound to a different revision.
 pub struct BodyArchive {
+    body_queries: Option<body_queries::BodyQueries>,
     source: dm_preprocess::SourceText,
     syntax: Arc<DeclarationSyntax>,
     bodies: Arc<[BodyOccurrence]>,
@@ -50,6 +51,7 @@ impl ColdFrontend {
             return None;
         }
         Some(Arc::new(BodyArchive {
+            body_queries: self.body_queries.clone(),
             source: self.issued_arena.clone(),
             syntax: Arc::clone(&self.issued_syntax),
             bodies: Arc::clone(&self.issued_bodies),
@@ -89,6 +91,19 @@ impl BodyArchive {
             > 1024 * 1024
         {
             return Err(internal("body archive query exceeds 1 MiB input limit"));
+        }
+        if let Some(queries) = &self.body_queries {
+            let shared = queries.inputs[ordinal].obtain(queries.host.as_ref())?;
+            let mut header = shared.item.clone();
+            if shared.statements.parsed().diagnostics.is_empty() {
+                header.children = Vec::new();
+            }
+            return Ok(ArchivedBody {
+                archive: self,
+                occurrence,
+                statements: Arc::clone(&shared.statements),
+                header,
+            });
         }
         let mut item = dm_syntax::parse_proc_at_span(&self.source, occurrence.expanded_span)
             .map_err(|error| Diagnostic {
