@@ -6,6 +6,9 @@ use super::*;
 #[derive(Clone, Debug)]
 pub struct BindingTables {
     inner: Arc<BindingData>,
+    /// Identity of this build. Equal tables of independent sessions share `inner` storage, but reuse admission keys on
+    /// the build that issued the tables, so two sessions never admit each other's cached plans by equal value.
+    issue: Arc<()>,
 }
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct BindingData {
@@ -27,13 +30,14 @@ impl BindingTables {
         let fingerprint = super::shared_pool::fingerprint(&indexes);
         Self {
             inner: super::shared_pool::bindings(fingerprint, BindingData { indexes, slots }),
+            issue: Arc::new(()),
         }
     }
     pub fn assignments(&self) -> &BTreeMap<Key, u32> {
         &self.inner.indexes
     }
     pub fn same_owner(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.inner, &other.inner)
+        Arc::ptr_eq(&self.issue, &other.issue)
     }
     /// Actual immutable owner descriptor and logical index counts for opt-in census.
     /// Private BTree nodes and Arc control blocks are deliberately not estimated.
