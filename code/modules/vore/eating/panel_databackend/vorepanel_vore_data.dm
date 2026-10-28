@@ -256,7 +256,7 @@
 			if(VISUALS_TAB)
 				var/list/silicon_control = list(
 					"silicon_belly_overlay_preference"	= selected.silicon_belly_overlay_preference,
-					"belly_sprite_option_shown" = LAZYLEN(owner.vore_icon_bellies) >= 1 ? TRUE : FALSE,
+					"belly_sprite_option_shown" = LAZYLEN(living_rules_of(owner).vore_icon_bellies) >= 1 ? TRUE : FALSE,
 					"belly_sprite_to_affect" = selected.belly_sprite_to_affect
 				)
 				var/list/belly_fullscreens
@@ -296,7 +296,7 @@
 				"resist_animation" = selected.resist_triggers_animation,
 				"voresprite_size_factor" = selected.size_factor_for_sprite,
 				"belly_sprite_to_affect" = selected.belly_sprite_to_affect,
-				"belly_sprite_options" = host().vore_icon_bellies,
+				"belly_sprite_options" = living_rules_of(host()).vore_icon_bellies,
 				"undergarment_chosen" = selected.undergarment_chosen,
 				"undergarment_if_none" = selected.undergarment_if_none || "None",
 				"undergarment_options" = GLOB.global_underwear.categories,

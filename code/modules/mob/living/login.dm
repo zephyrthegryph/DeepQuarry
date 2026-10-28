@@ -55,12 +55,12 @@
 			add_vore_panel_button()
 
 
-	if(!length(voice_sounds_list))
+	if(!length(sparse_get(src, voice_sounds_list)))
 		if(client.prefs.read_preference(/datum/preference/text/human/voice_sound))
 			var/prefsound = client.prefs.read_preference(/datum/preference/text/human/voice_sound)
-			voice_sounds_list = get_talk_sound(prefsound)
+			sparse_set(src, voice_sounds_list, get_talk_sound(prefsound))
 		else
-			voice_sounds_list = DEFAULT_TALK_SOUNDS
+			sparse_set(src, voice_sounds_list, DEFAULT_TALK_SOUNDS)
 	resize(size_multiplier, animate = FALSE, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE, aura_animation = FALSE)
 	init_vore(TRUE)
 

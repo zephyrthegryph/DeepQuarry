@@ -76,7 +76,7 @@
 		"aestethic_messages" = compile_aesthetic_messages(owner),
 		"vore_sprite_color" = owner.vore_prefs.vore_sprite_color,
 		"vore_sprite_multiply" = owner.vore_prefs.vore_sprite_multiply,
-		"vore_icon_options" = owner.vore_icon_bellies,
+		"vore_icon_options" = living_rules_of(owner).vore_icon_bellies,
 		// spont options
 		"spont_rear" = sparse_get(owner, spont_belly_rear),
 		"spont_front" = sparse_get(owner, spont_belly_front),
