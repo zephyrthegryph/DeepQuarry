@@ -1,0 +1,5 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "Character setup: one control per kind on every tab: switches for on/off, segmented buttons for short choices, a filterable dropdown for long lists, and a slider with a number box for numbers."
+  - qol: "Character setup: layout sized in em, one or two columns by available width; trait columns and toggles wrap instead of overflowing at 150% display scaling."

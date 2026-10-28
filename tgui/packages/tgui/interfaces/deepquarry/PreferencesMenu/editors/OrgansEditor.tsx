@@ -61,8 +61,8 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: '12px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 30em), 1fr))',
+        gap: '1em',
       }}
     >
       <Box>
@@ -77,15 +77,17 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '2px 0',
+                gap: '0.5em',
+                padding: '0.167em 0',
                 fontSize: '0.9em',
               }}
             >
-              <Box style={{ flex: '0 0 80px' }}>
+              <Box style={{ flex: '0 0 6.667em' }}>
                 {externalLabels[limb] ?? limb}
               </Box>
-              <Box style={{ flex: '0 0 auto', display: 'flex', gap: '2px' }}>
+              <Box
+                style={{ flex: '0 0 auto', display: 'flex', gap: '0.167em' }}
+              >
                 {EXTERNAL_STATES.map((opt) => (
                   <Button
                     key={opt.key}
@@ -128,15 +130,15 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '2px 0',
+                gap: '0.5em',
+                padding: '0.167em 0',
                 fontSize: '0.9em',
               }}
             >
-              <Box style={{ flex: '0 0 100px' }}>
+              <Box style={{ flex: '0 0 8.333em' }}>
                 {internalLabels[organ] ?? organ}
               </Box>
-              <Box style={{ flex: 1, display: 'flex', gap: '2px' }}>
+              <Box style={{ flex: 1, display: 'flex', gap: '0.167em' }}>
                 {INTERNAL_STATES.map((opt) => (
                   <Button
                     key={opt.key}
