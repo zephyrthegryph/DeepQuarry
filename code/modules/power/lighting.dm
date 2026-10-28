@@ -92,7 +92,7 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 
 CAPABILITIES(/obj/machinery/light)
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(light_broken)))
-	configure(light_glow(range = 6, power = 1, color = "#E0EFF0")) // the starting tube's glow and draw (lighting_glow_decls.dm says why)
+	configure(light_glow(range = 6, power = 1, color = "#E0EFF0")) // the starting tube's glow and draw (lighting_fixture_glow.dm says why)
 	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)

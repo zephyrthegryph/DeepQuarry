@@ -152,5 +152,5 @@ do { \
 /// The awake sunlight handlers live in the membership store under this key (relations proposal D12): a deleted handler leaves it by itself.
 #define SUNLIGHT_AWAKE_KEY "lighting:sunlight_awake"
 
-/// A light fixture draws 2 W per luminosity * range (refresh_light(); the fixtures declare it per type, lighting_glow_decls.dm).
+/// A light fixture draws 2 W per luminosity * range (refresh_light(); the fixtures declare it per type, lighting_fixture_glow.dm).
 #define LIGHTING_POWER_FACTOR 2
