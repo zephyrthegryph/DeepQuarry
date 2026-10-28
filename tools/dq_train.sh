@@ -840,26 +840,34 @@ fast_land() { # pushes FAST_SHA (a fast-forward of origin/master) from the train
 # DQ_TRAIN_FAST_LAND_MORE=0: one lane per cycle.
 fast_land_more() {
 	[ "${DQ_TRAIN_FAST_LAND_MORE:-1}" = 1 ] || return 0
-	local first="$1" b tip vf pm cur tree c pushlog prc t0 hit landed_areas
+	local first="$1" b tip vf pm cur tree c pushlog prc t0 hit landed_areas base heavy
 	for b in "${CHOSEN[@]}"; do
 		[ "$b" != "$first" ] || continue
 		lane_is_light "$b" && continue
 		t0=$(date +%s)
 		tip="${TIP_OF[$b]}"; vf="$(pre_verdict_file "$b" "$tip")"
-		[ "$(qget "$vf" verdict)" = pass ] && [ "$(qget "$vf" master)" = "$FAST_BASE" ] || { tlog "fast-land more: $b was not prechecked on ${FAST_BASE:0:10}; next cycle"; continue; }
+		# each lane against the master its own precheck ran on (the fast-forward's base, or an older master that moved since)
+		base="$(qget "$vf" master)"
+		[ "$(qget "$vf" verdict)" = pass ] && [ -n "$base" ] && G merge-base --is-ancestor "$base" origin/master 2>/dev/null || { tlog "fast-land more: $b has no passing precheck on an ancestor of origin/master; next cycle"; continue; }
+		if ! lanes_smoked "$b" && smoke_due 1; then tlog "fast-land more: $b's precheck did not run the smoke/gameplay sets and they are due; next cycle"; continue; fi
 		pm="$(qget "$vf" merge)"
 		[ -n "$pm" ] && [ "$(G rev-parse -q --verify "$pm^2" 2>/dev/null)" = "$tip" ] || { tlog "fast-land more: $b has no kept precheck merge; next cycle"; continue; }
 		G fetch -q origin 2>/dev/null; cur="$(G rev-parse origin/master)"
-		if global_hit "$FAST_BASE..$cur" || global_hit "$FAST_BASE...$tip"; then tlog "fast-land more: $b or what landed touches a global path; next cycle"; continue; fi
-		landed_areas="$(lane_areas "$FAST_BASE..$cur" | sort -u)"
-		hit="$(comm -12 <(printf '%s\n' "$landed_areas") <(lane_areas "$FAST_BASE...$tip" | sort -u) | awk 'NF' | head -n 3 | tr '\n' ' ')"
-		[ -z "$hit" ] || { tlog "fast-land more: $b shares areas with what just landed ($hit); next cycle"; continue; }
+		# what master changed since the lane's precheck: nothing heavy (docs, tools, Rust: tools/dq_light_paths.sh) cannot change the
+		# lane's game tests; otherwise it must share no area with the lane and touch no global path (select_prechecked's rule)
+		heavy="$(. "$(repo_dir)/tools/dq_light_paths.sh" 2>/dev/null && G diff --name-only "$base" "$cur" | while IFS= read -r f; do light_heavy_path "$f" && echo "$f"; done | head -n 1)"
+		if [ -n "$heavy" ]; then
+			if global_hit "$base..$cur" || global_hit "$base...$tip"; then tlog "fast-land more: $b or what master changed since its precheck touches a global path; next cycle"; continue; fi
+			landed_areas="$(lane_areas "$base..$cur" | sort -u)"
+			hit="$(comm -12 <(printf '%s\n' "$landed_areas") <(lane_areas "$base...$tip" | sort -u) | awk 'NF' | head -n 3 | tr '\n' ' ')"
+			[ -z "$hit" ] || { tlog "fast-land more: $b shares areas with what master changed since its precheck ($hit); next cycle"; continue; }
+		fi
 		tree="$(G merge-tree --write-tree "$cur" "$pm" 2>/dev/null | head -n 1)" && [ -n "$tree" ] || { tlog "fast-land more: $b does not merge cleanly onto ${cur:0:10}; next cycle"; continue; }
-		c="$(G commit-tree "$tree" -p "$cur" -p "$pm" -m "Merge $b (train fast-land on ${cur:0:10}; precheck ${pm:0:10} on ${FAST_BASE:0:10})")" || continue
+		c="$(G commit-tree "$tree" -p "$cur" -p "$pm" -m "Merge $b (train fast-land on ${cur:0:10}; precheck ${pm:0:10} on ${base:0:10})")" || continue
 		pushlog="$LOGS/fastland-$(date +%Y%m%dT%H%M%S)-more.push.log"
 		phase "fast-land more: $b"
 		printf '%s\n' "$b" >"$STATE/batch.lanes"
-		tlog "PROOF precheck-merge: $b (precheck ${pm:0:10} on ${FAST_BASE:0:10}) shares no area with what landed since; pushing merge ${c:0:10} onto ${cur:0:10} (the push compiles and runs the ratchets on it; no test world); log $pushlog"
+		tlog "PROOF precheck-merge: $b (precheck ${pm:0:10} on ${base:0:10}) $([ -n "$heavy" ] && echo "shares no area with what master changed since" || echo "and master changed nothing heavy since"); pushing merge ${c:0:10} onto ${cur:0:10} (the push compiles and runs the ratchets on it; no test world); log $pushlog"
 		(
 			cd "$WT" || exit 99
 			git switch -q --detach "$c" || exit 98
@@ -1701,6 +1709,16 @@ cycle() {
 			return 0
 		fi
 		[ -z "${FAST_WHY_NOT:-}" ] || tlog "no fast-forward landing: $FAST_WHY_NOT"
+		# master moved since the prechecks: each lane may still land on its precheck proof as a merge onto the new master
+		if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_FAST_LAND:-1}" = 1 ]; then
+			local before_n=${#CHOSEN[@]} still=() b
+			fast_land_more ""
+			for b in "${CHOSEN[@]}"; do [ -f "$(qfile "$b")" ] && [ "$(qget "$(qfile "$b")" tip)" = "${TIP_OF[$b]}" ] && ! G merge-base --is-ancestor "${TIP_OF[$b]}" origin/master 2>/dev/null && still+=("$b"); done
+			if [ ${#still[@]} -lt "$before_n" ]; then
+				tlog "cycle done in $(( $(date +%s) - t0 ))s (landed $(( before_n - ${#still[@]} )) lane(s) on their precheck proof; [${still[*]-}] ride the next cycle)"
+				return 0
+			fi
+		fi
 		heavy_cycle
 	fi
 	local rc=$?

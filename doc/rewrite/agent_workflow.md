@@ -987,3 +987,8 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
   integrator's every-4th-landing cadence, which also blocked the fast-forward. A precheck now runs them in its already booted world
   (~1 min), records `smoke=1` in its verdict, and such a lane never waits for `smoke_due`; its landing resets the cadence counter.
   `DQ_TRAIN_PRECHECK_SMOKE=0` restores lane tests + boot only in the precheck and the cadence in the integrator.
+- **A lane whose master moved still lands on its precheck proof.** When no fast-forward applies, each chosen lane is checked against the
+  master its own precheck ran on: if master changed nothing heavy since (docs, tools, Rust: `tools/dq_light_paths.sh`), or nothing that
+  shares an area with the lane and no global path, it lands as `merge(new master, its stamped precheck merge)` with the push's compile
+  and ratchets (`precheck-merge`). 21:03Z: `fix/flavor-default`, prechecked before two tool lanes landed, took a full gate instead.
+  Whatever does not land this way goes through the gate in the same cycle.
