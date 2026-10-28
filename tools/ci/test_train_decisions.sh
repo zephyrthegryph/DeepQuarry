@@ -75,4 +75,69 @@ check "a merged include of a file that no longer exists is dropped and reported"
 check "a 2-lane attempt with no test result defers both lanes and bisects nobody (03:04: move/effects-wave was blamed)" '! grep -q "^BATCH_BOUNCED: ." "$r/noresult.txt" && grep -q "^BATCH_DEFERRED: .*g1" "$r/noresult.txt" && grep -q "^BATCH_DEFERRED: .*g2" "$r/noresult.txt"'
 [ "$fail" -eq 0 ] || { echo "---- merge_batch output:"; tail -n 30 "$r/out.txt"; }
 
+# dq_light_checks.sh: a light lane merged onto an older master, checked against a newer origin/master, is judged by its own changes only
+# (28 October: tools/analyze-dreamchecker, docs only, was bounced for master's own .dm landings).
+lc="$tmp/lc"; git init -q --bare "$lc/origin.git"; git clone -q "$lc/origin.git" "$lc/w" 2>/dev/null
+(
+	cd "$lc/w" || exit 1
+	git config user.email t@t; git config user.name t
+	mkdir -p tools doc code; cp "$here/tools/dq_light_checks.sh" "$here/tools/dq_light_paths.sh" tools/
+	echo a >doc/a.md; echo x >code/x.dm; git add -A; git commit -q -m init; git branch -M master; git push -q origin master
+	git switch -q -c lane; echo b >doc/b.md; git add -A; git commit -q -m lane
+	git switch -q --detach origin/master; git merge -q --no-ff --no-edit lane      # the precheck's merge, on the old master
+	git switch -q -c newer origin/master; echo y >>code/x.dm; git add -A; git commit -q -m "master moves (heavy)"; git push -q origin HEAD:master
+	git switch -q --detach "HEAD@{2}" 2>/dev/null || git switch -q --detach "$(git rev-list -n1 --merges --all)"
+	git fetch -q origin
+	DQ_LIGHT_CARGO=0 bash tools/dq_light_checks.sh origin/master HEAD >"$lc/out.txt" 2>&1
+) >/dev/null 2>&1
+check "light checks count only the lane's changes when master moved since its merge" '! grep -q "heavy paths in a light batch" "$lc/out.txt" && grep -q "1 changed file" "$lc/out.txt"'
+
+# dc_disjoint (the batch keeps its lanes' DreamChecker verdicts): a seeded cross-lane diagnostic. Lane A removes a var, lane B's
+# other file reads it; each passed DreamChecker alone, together they fail. Disjoint files must not keep the verdicts: the batch runs
+# DreamChecker and so catches it. One DM lane plus a docs-only lane keeps them.
+dd="$tmp/dd"; git init -q --bare "$dd/origin.git"; git clone -q "$dd/origin.git" "$dd/w" 2>/dev/null
+(
+	cd "$dd/w" || exit 1
+	git config user.email t@t; git config user.name t
+	mkdir -p code doc
+	printf '/obj/thing\n\tvar/power = 1\n' >code/a.dm; printf '/obj/thing/proc/use()\n\treturn 0\n' >code/b.dm; echo d >doc/x.md
+	git add -A; git commit -q -m init; git branch -M master; git push -q origin master
+	git switch -q -c lane/a origin/master; printf '/obj/thing\n' >code/a.dm; git commit -qam "a: drop power"; git push -q origin lane/a
+	git switch -q -c lane/b origin/master; printf '/obj/thing/proc/use()\n\treturn power\n' >code/b.dm; git commit -qam "b: read power"; git push -q origin lane/b
+	git switch -q -c lane/d origin/master; echo e >>doc/x.md; git commit -qam "docs"; git push -q origin lane/d
+	git switch -q --detach origin/master
+) >/dev/null 2>&1
+dd_run() { # <lanes...>: prints "keep" or "run"
+	(
+		set +u
+		unset DQ_TRAIN_DC_DISJOINT
+		export DQ_TRAIN_STATE="$dd/state" DQ_TRAIN_WT="$dd/no-wt" DQ_TRAIN_ORIGIN_REPO="$dd/w" DQ_TRAIN_NO_START=1
+		cd "$dd/w" || exit 1
+		. "$here/tools/dq_train.sh" __lib
+		init_state
+		m="$(git rev-parse origin/master)"
+		for b in "$@"; do
+			t="$(git rev-parse "$b")"
+			printf 'seq=1\nbranch=%s\ntip=%s\ntests=\nlight=0\n' "$b" "$t" >"$(qfile "$b")"
+			printf 'branch=%s\ntip=%s\nmaster=%s\nverdict=pass\n' "$b" "$t" "$m" >"$PRE/v/$(pre_key "$b" "$t")@${m:0:12}"
+			printf 'branch=%s\ntip=%s\nmaster=%s\nverdict=pass\n' "$b" "$t" "$m" >"$PRE/dc/v/$(pre_key "$b" "$t")@${m:0:12}"
+		done
+		if dc_disjoint "$@"; then echo keep; else echo "run ($DC_DISJOINT_WHY_NOT)"; fi
+	) 2>/dev/null
+}
+dd_ab="$(dd_run lane/a lane/b)"; dd_ad="$(dd_run lane/a lane/d)"
+check "a seeded cross-lane DreamChecker break (disjoint files) makes the batch run DreamChecker" '[ "$dd_ab" = "run (two lanes change DreamChecker inputs)" ]'
+check "one DM lane plus a docs-only lane keeps the precheck DreamChecker verdict" '[ "$dd_ad" = keep ]'
+
+# lint_scopes.toml merge driver: adjacent lowered ceilings merge (the lower wins on the same key); a real disagreement still conflicts.
+ls_d="$tmp/lsd"; mkdir -p "$ls_d"
+printf '[lint.check_grep.ceilings]\nalpha = 10\nbeta = 20\ngamma = 30\n' >"$ls_d/O"
+printf '[lint.check_grep.ceilings]\nalpha = 9\nbeta = 18\ngamma = 30\n' >"$ls_d/A"
+printf '[lint.check_grep.ceilings]\nalpha = 10\nbeta = 17\ngamma = 25\n' >"$ls_d/B"
+(cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O" "$ls_d/A" "$ls_d/B" lint_scopes.toml) >/dev/null 2>&1; ls_rc=$?
+check "lint_scopes driver: adjacent and same-key lowered ceilings merge to the lower values" '[ "$ls_rc" = 0 ] && [ "$(cat "$ls_d/A")" = "$(printf "[lint.check_grep.ceilings]\nalpha = 9\nbeta = 17\ngamma = 25")" ]'
+printf '[x]\nname = "one"\n' >"$ls_d/O2"; printf '[x]\nname = "two"\n' >"$ls_d/A2"; printf '[x]\nname = "three"\n' >"$ls_d/B2"
+(cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O2" "$ls_d/A2" "$ls_d/B2" lint_scopes.toml) >/dev/null 2>&1; ls_rc2=$?
+check "lint_scopes driver: a text disagreement is still a conflict" '[ "$ls_rc2" != 0 ] && grep -q "<<<<<<<" "$ls_d/A2"'
+
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }

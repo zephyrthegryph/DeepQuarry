@@ -14,6 +14,10 @@ set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_light_paths.sh"
 base="${1:?base}"; head="${2:-HEAD}"
+# The lane's own changes: diff from the merge base, never from <base> itself. A precheck merged onto an older master is diffed
+# against a newer origin/master when master moved meanwhile, and a two-dot diff then counted master's own landings as the
+# lane's (28 October: a docs-only lane was bounced for "heavy paths" from 24dac9cec2).
+mb="$(git merge-base "$base" "$head" 2>/dev/null)" && [ -n "$mb" ] && base="$mb"
 fail=0
 bad() { echo "light check FAILED: $*" >&2; fail=1; }
 mapfile -t changed < <(git diff --name-only --diff-filter=ACMR "$base" "$head")
@@ -83,7 +87,8 @@ for f in "${changed[@]}"; do
 		tools/ci/test_*.sh) add_selftest "$(basename "$f")" ;;
 		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh; add_selftest test_train_decisions.sh ;;
 		tools/dq_light_paths.sh|tools/dq_land_batch.sh) add_selftest test_light_checks.sh ;;
-		tools/dq_light_checks.sh) add_selftest test_light_checks.sh ;;
+		tools/dq_light_checks.sh) add_selftest test_light_checks.sh; add_selftest test_train_decisions.sh ;;
+		tools/ci/lint_scopes_merge_driver.sh|tools/dq_git_safe.sh) add_selftest test_train_decisions.sh ;;
 		tools/dq_*.sh) add_selftest "test_$(basename "$f" .sh | sed 's/^dq_//').sh" ;;
 	esac
 done

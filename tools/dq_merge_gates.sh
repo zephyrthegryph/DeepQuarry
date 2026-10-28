@@ -545,6 +545,12 @@ if [ ${#failed[@]} -gt 0 ]; then
 		tail -n 40 "data/merge-gates/$short.$n.log" >&2
 		grep -h '^FOCUSED RESULT:\|^FOCUSED RUN CAPPED\|^dq_focused_test: REFUSED' "data/merge-gates/$short.$n.log" >&2 || true
 	done
+	# DreamChecker that died of memory ("memory allocation of N bytes failed") judged nothing: when it is the only failure, the gate
+	# exits INFRA (95; dq_merge_batch.sh retries or defers), never a verdict on a lane.
+	if [ "${failed[*]}" = dreamchecker ] && grep -qE 'memory allocation of [0-9]+ bytes failed' "data/merge-gates/$short.dreamchecker.log" 2>/dev/null; then
+		echo "dq_merge_gates: INFRA: DreamChecker ran out of memory (data/merge-gates/$short.dreamchecker.log); not a lane verdict" >&2
+		exit 95
+	fi
 	echo "dq_merge_gates: FAILED: ${failed[*]} (logs data/merge-gates/$short.<job>.log); fix it, recommit, rerun" >&2
 	exit 1
 fi
@@ -580,6 +586,7 @@ else
 		else
 			echo "dq_merge_gates: FAILED: dreamchecker (log data/merge-gates/$short.dreamchecker.log)" >&2
 			tail -n 40 "data/merge-gates/$short.dreamchecker.log" >&2
+			grep -qE 'memory allocation of [0-9]+ bytes failed' "data/merge-gates/$short.dreamchecker.log" && { echo "dq_merge_gates: INFRA: DreamChecker ran out of memory; not a lane verdict" >&2; exit 95; }
 			exit 1
 		fi
 	fi
