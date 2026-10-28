@@ -980,6 +980,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
         }
         Request::Build(request) => {
             dm_profile::request_marks_begin();
+            // A death during this build is quoted from here by the next daemon start of this namespace.
+            super::crash_trace::note_request(&format!("build project={}", request.project.display()));
             if discovery {
                 return protocol::send(
                     &mut stream,
