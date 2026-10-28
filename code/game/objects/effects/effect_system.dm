@@ -5,7 +5,6 @@ it needs to create more trails.A beaker could have a steam_trail_follow system s
 would spawn and follow the beaker, even if it is carried or thrown.
 */
 /obj/effect
-	light_on = TRUE
 	uses_integrity = FALSE
 
 /obj/effect/effect
@@ -13,7 +12,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	icon = 'icons/effects/effects.dmi'
 	mouse_opacity = 0
 	pass_flags = PASSTABLE | PASSGRILLE
-	light_on = TRUE
 	plane = ABOVE_OBJ_PLANE
 
 CAPABILITIES(/obj/effect/effect)
