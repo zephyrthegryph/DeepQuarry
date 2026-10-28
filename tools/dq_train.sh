@@ -89,7 +89,10 @@ PRE_ON="${DQ_TRAIN_PRECHECK:-1}"
 PRE_WORKERS="${DQ_TRAIN_PRECHECK_WORKERS:-2}"
 PRE_WT_BASE="${DQ_TRAIN_PRE_WT:-E:/projects/dq-wt/train-pre}"   # worker N works in ${PRE_WT_BASE}N
 PRE_WAIT_MIN="${DQ_TRAIN_PRECHECK_WAIT_MIN:-45}"                 # an unprechecked lane rides the old way after waiting this long
-PRE_SMOKE_ARGS=(--no-smoke); [ "${DQ_TRAIN_PRECHECK_SMOKE:-0}" != 1 ] || PRE_SMOKE_ARGS=()
+# 28 October: the smoke/gameplay sets run in every precheck (one booted world, ~1 min more) instead of every 4th integrator gate, which
+# forced a full 15-38 min cycle on prechecked lanes (20:40Z). A lane whose precheck ran them (verdict smoke=1) never waits for the cadence.
+# DQ_TRAIN_PRECHECK_SMOKE=0: lane tests + boot only, the sets at the integrator's cadence (smoke_due) as before.
+PRE_SMOKE_ARGS=(); [ "${DQ_TRAIN_PRECHECK_SMOKE:-1}" = 1 ] || PRE_SMOKE_ARGS=(--no-smoke)
 PRE_MIN_FREE_GB="${DQ_TRAIN_PRECHECK_MIN_FREE_GB:-12}"          # a precheck does not START below this much free RAM (the user's desktop)
 MAX_LANES_PRE="${DQ_TRAIN_MAX_LANES_PRECHECKED:-20}"            # batch size when every lane is prechecked
 WT2="${DQ_TRAIN_WT2:-E:/projects/dq-wt/train-bisect}"           # the second worktree of a parallel bisect
@@ -773,12 +776,12 @@ fast_land_pick() {
 	local b tip vf m sha cur key dvf
 	FAST_LANE=""; FAST_SHA=""; FAST_WHY_NOT=""
 	[ "${DQ_TRAIN_FAST_LAND:-1}" = 1 ] && [ "${PRECHECKED_BATCH:-0}" = 1 ] || return 1
-	smoke_due 1 && { FAST_WHY_NOT="the smoke/gameplay sets are due"; return 1; }
 	cur="$(G rev-parse origin/master)"
 	for b in "${CHOSEN[@]}"; do
 		lane_is_light "$b" && continue
 		tip="${TIP_OF[$b]}"; vf="$(pre_verdict_file "$b" "$tip")"
 		[ "$(qget "$vf" verdict)" = pass ] || continue
+		if ! lanes_smoked "$b" && smoke_due 1; then FAST_WHY_NOT="the smoke/gameplay sets are due ($b's precheck did not run them)"; continue; fi
 		m="$(qget "$vf" master)"; sha="$(qget "$vf" merge)"
 		[ "$m" = "$cur" ] || { FAST_WHY_NOT="$b was prechecked on ${m:0:10}, master is ${cur:0:10}"; continue; }
 		[ -n "$sha" ] || { FAST_WHY_NOT="$b has no kept precheck merge"; continue; }
@@ -822,7 +825,7 @@ fast_land() { # pushes FAST_SHA (a fast-forward of origin/master) from the train
 	[ "$(G rev-parse origin/master)" = "$sha" ] || { tlog "fast-forward push of $b returned 0 but origin/master is not ${sha:0:10}"; return 1; }
 	mark_landed "$b" "${TIP_OF[$b]}" "$sha"
 	G update-ref -d "refs/train/proof/$(fname "$b")" 2>/dev/null
-	echo $(( $(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) + 1 )) >"$STATE/smoke_skipped"
+	if lanes_smoked "$b"; then echo 0 >"$STATE/smoke_skipped"; else echo $(( $(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) + 1 )) >"$STATE/smoke_skipped"; fi
 	CYCLE_PROGRESS=1
 	tlog "pushed: origin/master ${sha:0:10} carries [$b] (proof: precheck-ff; cycle $(( $(date +%s) - CYCLE_T0 ))s, push $(( $(date +%s) - t0 ))s; smoke/gameplay sets skipped, $(cat "$STATE/smoke_skipped") proof landing(s) since they last ran)"
 	fast_land_more "$b"
@@ -837,26 +840,34 @@ fast_land() { # pushes FAST_SHA (a fast-forward of origin/master) from the train
 # DQ_TRAIN_FAST_LAND_MORE=0: one lane per cycle.
 fast_land_more() {
 	[ "${DQ_TRAIN_FAST_LAND_MORE:-1}" = 1 ] || return 0
-	local first="$1" b tip vf pm cur tree c pushlog prc t0 hit landed_areas
+	local first="$1" b tip vf pm cur tree c pushlog prc t0 hit landed_areas base heavy
 	for b in "${CHOSEN[@]}"; do
 		[ "$b" != "$first" ] || continue
 		lane_is_light "$b" && continue
 		t0=$(date +%s)
 		tip="${TIP_OF[$b]}"; vf="$(pre_verdict_file "$b" "$tip")"
-		[ "$(qget "$vf" verdict)" = pass ] && [ "$(qget "$vf" master)" = "$FAST_BASE" ] || { tlog "fast-land more: $b was not prechecked on ${FAST_BASE:0:10}; next cycle"; continue; }
+		# each lane against the master its own precheck ran on (the fast-forward's base, or an older master that moved since)
+		base="$(qget "$vf" master)"
+		[ "$(qget "$vf" verdict)" = pass ] && [ -n "$base" ] && G merge-base --is-ancestor "$base" origin/master 2>/dev/null || { tlog "fast-land more: $b has no passing precheck on an ancestor of origin/master; next cycle"; continue; }
+		if ! lanes_smoked "$b" && smoke_due 1; then tlog "fast-land more: $b's precheck did not run the smoke/gameplay sets and they are due; next cycle"; continue; fi
 		pm="$(qget "$vf" merge)"
 		[ -n "$pm" ] && [ "$(G rev-parse -q --verify "$pm^2" 2>/dev/null)" = "$tip" ] || { tlog "fast-land more: $b has no kept precheck merge; next cycle"; continue; }
 		G fetch -q origin 2>/dev/null; cur="$(G rev-parse origin/master)"
-		if global_hit "$FAST_BASE..$cur" || global_hit "$FAST_BASE...$tip"; then tlog "fast-land more: $b or what landed touches a global path; next cycle"; continue; fi
-		landed_areas="$(lane_areas "$FAST_BASE..$cur" | sort -u)"
-		hit="$(comm -12 <(printf '%s\n' "$landed_areas") <(lane_areas "$FAST_BASE...$tip" | sort -u) | awk 'NF' | head -n 3 | tr '\n' ' ')"
-		[ -z "$hit" ] || { tlog "fast-land more: $b shares areas with what just landed ($hit); next cycle"; continue; }
+		# what master changed since the lane's precheck: nothing heavy (docs, tools, Rust: tools/dq_light_paths.sh) cannot change the
+		# lane's game tests; otherwise it must share no area with the lane and touch no global path (select_prechecked's rule)
+		heavy="$(. "$(repo_dir)/tools/dq_light_paths.sh" 2>/dev/null && G diff --name-only "$base" "$cur" | while IFS= read -r f; do light_heavy_path "$f" && echo "$f"; done | head -n 1)"
+		if [ -n "$heavy" ]; then
+			if global_hit "$base..$cur" || global_hit "$base...$tip"; then tlog "fast-land more: $b or what master changed since its precheck touches a global path; next cycle"; continue; fi
+			landed_areas="$(lane_areas "$base..$cur" | sort -u)"
+			hit="$(comm -12 <(printf '%s\n' "$landed_areas") <(lane_areas "$base...$tip" | sort -u) | awk 'NF' | head -n 3 | tr '\n' ' ')"
+			[ -z "$hit" ] || { tlog "fast-land more: $b shares areas with what master changed since its precheck ($hit); next cycle"; continue; }
+		fi
 		tree="$(G merge-tree --write-tree "$cur" "$pm" 2>/dev/null | head -n 1)" && [ -n "$tree" ] || { tlog "fast-land more: $b does not merge cleanly onto ${cur:0:10}; next cycle"; continue; }
-		c="$(G commit-tree "$tree" -p "$cur" -p "$pm" -m "Merge $b (train fast-land on ${cur:0:10}; precheck ${pm:0:10} on ${FAST_BASE:0:10})")" || continue
+		c="$(G commit-tree "$tree" -p "$cur" -p "$pm" -m "Merge $b (train fast-land on ${cur:0:10}; precheck ${pm:0:10} on ${base:0:10})")" || continue
 		pushlog="$LOGS/fastland-$(date +%Y%m%dT%H%M%S)-more.push.log"
 		phase "fast-land more: $b"
 		printf '%s\n' "$b" >"$STATE/batch.lanes"
-		tlog "PROOF precheck-merge: $b (precheck ${pm:0:10} on ${FAST_BASE:0:10}) shares no area with what landed since; pushing merge ${c:0:10} onto ${cur:0:10} (the push compiles and runs the ratchets on it; no test world); log $pushlog"
+		tlog "PROOF precheck-merge: $b (precheck ${pm:0:10} on ${base:0:10}) $([ -n "$heavy" ] && echo "shares no area with what master changed since" || echo "and master changed nothing heavy since"); pushing merge ${c:0:10} onto ${cur:0:10} (the push compiles and runs the ratchets on it; no test world); log $pushlog"
 		(
 			cd "$WT" || exit 99
 			git switch -q --detach "$c" || exit 98
@@ -924,7 +935,10 @@ precheck_one() { # <worker n> <branch> <tip>
 	fi
 	# the lane may have moved or been withdrawn while it was checked: record the verdict, bounce only what is still queued at this tip
 	pre_record "$b" "$tip" "$master" "$verdict" "$secs" "$log" "${why:-}"
-	if [ "$is_light" = 0 ] && { [ "$verdict" = pass ] || [ "$verdict" = tpass ]; }; then pre_proof_save "$b" "$tip" "$master" "$wt"; fi
+	if [ "$is_light" = 0 ] && { [ "$verdict" = pass ] || [ "$verdict" = tpass ]; }; then
+		[ ${#PRE_SMOKE_ARGS[@]} -gt 0 ] || { vf_s="$(pre_verdict_file "$b" "$tip")"; [ -z "$vf_s" ] || echo "smoke=1" >>"$vf_s"; }
+		pre_proof_save "$b" "$tip" "$master" "$wt"
+	fi
 	rm -f "$PRE/running/$(fname "$b")"
 	tlog "PRECHECK $verdict: $b (tip ${tip:0:10}) on master ${master:0:10} in ${secs}s"
 	if [ "$verdict" = fail ] || [ "$verdict" = conflict ]; then
@@ -1172,6 +1186,9 @@ analyze_trusted() { # <lanes...>: 0 and ANALYZE_TRUST_WHY set when the batch may
 # Smoke and gameplay sets on a proof landing (a prechecked batch with no interaction): prechecks run each lane's own tests and the boot gate
 # only, so the sets run once every DQ_TRAIN_SMOKE_EVERY proof landings (default 4) and on any batch of DQ_TRAIN_SMOKE_AT_LANES lanes or more
 # (default 5): one run covers several lanes. State: smoke_skipped (proof landings since the sets last ran).
+lanes_smoked() { # <lanes...>: 0 when every lane's precheck ran the smoke/gameplay sets on its merge with master (verdict smoke=1)
+	local b; for b in "$@"; do [ "$(qget "$(pre_verdict_file "$b" "${TIP_OF[$b]:-$(qget "$(qfile "$b")" tip)}")" smoke)" = 1 ] || return 1; done; return 0
+}
 smoke_due() { # <batch size>: 0 when this proof landing runs the sets
 	local every="${DQ_TRAIN_SMOKE_EVERY:-4}" at="${DQ_TRAIN_SMOKE_AT_LANES:-5}" k
 	k="$(cat "$STATE/smoke_skipped" 2>/dev/null)"; case "$k" in ''|*[!0-9]*) k=0 ;; esac
@@ -1434,6 +1451,7 @@ light_cycle() { # CHOSEN are all light
 heavy_cycle() { # the lanes being gated are listed in batch.lanes while it runs (the prechecker leaves them alone)
 	local hrc
 	printf '%s\n' "${CHOSEN[@]}" >"$STATE/batch.lanes"
+	GATE_T0=$(date +%s)   # the gate and push alone; "cycle" also counts the preamble, the disk floor check and any fast-land attempts
 	heavy_cycle_gate; hrc=$?
 	rm -f "$STATE/batch.lanes"
 	return "$hrc"
@@ -1465,7 +1483,7 @@ heavy_cycle_gate() {
 	if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_LONE_SMOKE:-0}" != 1 ] && [ "${#SKIP_TESTS[@]}" -eq "${#CHOSEN[@]}" ]; then
 		tests_union="dq_boot_gate"
 		case " ${lane_test_args[*]} " in *" --tests dq_boot_gate "*) ;; *) lane_test_args+=(--tests dq_boot_gate) ;; esac
-		if smoke_due "${#CHOSEN[@]}"; then
+		if ! lanes_smoked "${CHOSEN[@]}" && smoke_due "${#CHOSEN[@]}"; then
 			proof_kind="precheck+smoke"
 			tlog "PROOF precheck+smoke: no lane interacts with another or with master since its precheck; compile + boot, and the smoke/gameplay sets are due (every ${DQ_TRAIN_SMOKE_EVERY:-4} proof landings or ${DQ_TRAIN_SMOKE_AT_LANES:-5}+ lanes)"
 		else
@@ -1498,7 +1516,9 @@ heavy_cycle_gate() {
 		cd "$WT" || exit 99
 		export DQ_MERGE_BRANCH="$TBRANCH" DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN"
 		# the union of tests in TEST_WORLDS worlds at once (any list over 8 selectors is split)
-		export DQ_MAIN_WORLDS="$TEST_WORLDS" DQ_MAIN_WORLD_TESTS="${DQ_TRAIN_WORLD_SPLIT_AT:-8}"
+		# 28 October: 22 tests ran in 3 s in all, but each of the two worlds took ~230 s to compile-replay and boot: the union stays in ONE world
+		# up to 60 selectors (the focused runner's own default); DQ_TRAIN_WORLD_SPLIT_AT lowers it again
+		export DQ_MAIN_WORLDS="$TEST_WORLDS" DQ_MAIN_WORLD_TESTS="${DQ_TRAIN_WORLD_SPLIT_AT:-60}"
 		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1 DQ_BATCH_DEADLINE="$deadline_use" DQ_BATCH_WT2="$wt2_use"
 		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
 		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
@@ -1615,7 +1635,7 @@ heavy_cycle_gate() {
 	fi
 	if [ "$smoke_ran" = 1 ]; then echo 0 >"$STATE/smoke_skipped"
 	else echo $(( $(cat "$STATE/smoke_skipped" 2>/dev/null || echo 0) + 1 )) >"$STATE/smoke_skipped"; fi
-	tlog "pushed: origin/master ${sha:0:10} carries [$good] (proof: $proof_kind; cycle $(( $(date +%s) - CYCLE_T0 ))s; smoke/gameplay sets $([ "$smoke_ran" = 1 ] && echo ran || echo "skipped, $(cat "$STATE/smoke_skipped") proof landing(s) since they last ran"))"
+	tlog "pushed: origin/master ${sha:0:10} carries [$good] (proof: $proof_kind; gate+push $(( $(date +%s) - GATE_T0 ))s, cycle $(( $(date +%s) - CYCLE_T0 ))s; smoke/gameplay sets $([ "$smoke_ran" = 1 ] && echo ran || echo "skipped, $(cat "$STATE/smoke_skipped") proof landing(s) since they last ran"))"
 }
 
 cycle() {
@@ -1692,6 +1712,16 @@ cycle() {
 			return 0
 		fi
 		[ -z "${FAST_WHY_NOT:-}" ] || tlog "no fast-forward landing: $FAST_WHY_NOT"
+		# master moved since the prechecks: each lane may still land on its precheck proof as a merge onto the new master
+		if [ "${PRECHECKED_BATCH:-0}" = 1 ] && [ "${DQ_TRAIN_FAST_LAND:-1}" = 1 ]; then
+			local before_n=${#CHOSEN[@]} still=() b
+			fast_land_more ""
+			for b in "${CHOSEN[@]}"; do [ -f "$(qfile "$b")" ] && [ "$(qget "$(qfile "$b")" tip)" = "${TIP_OF[$b]}" ] && ! G merge-base --is-ancestor "${TIP_OF[$b]}" origin/master 2>/dev/null && still+=("$b"); done
+			if [ ${#still[@]} -lt "$before_n" ]; then
+				tlog "cycle done in $(( $(date +%s) - t0 ))s (landed $(( before_n - ${#still[@]} )) lane(s) on their precheck proof; [${still[*]-}] ride the next cycle)"
+				return 0
+			fi
+		fi
 		heavy_cycle
 	fi
 	local rc=$?

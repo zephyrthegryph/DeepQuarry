@@ -53,6 +53,7 @@ lap() { echo "== dq_push_master: $1 $(( $(date +%s) - _lap_t ))s"; _lap_t=$(date
 merge_lock_require || exit 1
 merge_lock_busy begin
 trap 'merge_lock_busy end' EXIT
+lap "setup and merge lock"
 # The batch ends with the push wherever it ran from: a lane that restamps and pushes from its own worktree after a refused push still frees
 # the lock it holds (the old check only released from inside the merge worktree, which leaked the lock on that path).
 release_batch() { merge_lock_busy end; if merge_lock_holder_check 2>/dev/null; then merge_lock_release; fi; }
@@ -106,8 +107,10 @@ if [ -n "$start_lane_tips" ]; then
 fi
 strict=0
 if [ "${DQ_PUSH_STRICT:-}" = "1" ] || { [ "${DQ_PUSH_STRICT:-}" != "0" ] && [ "$(git rev-parse --abbrev-ref HEAD)" = "rewrite/integ-current" ]; }; then strict=1; fi
+fetched_at=0
 if [ "$strict" -eq 1 ] && [ -n "$start_base" ]; then
 	git fetch -q origin || die "git fetch failed"
+	fetched_at=$(date +%s)
 	now_master="$(git rev-parse origin/master)"
 	[ "$now_master" = "$start_base" ] || die "origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}): re-run tools/dq_merge_worktree.sh, the merges and tools/dq_merge_gates.sh, then push again"
 fi
@@ -115,7 +118,8 @@ fi
 # After a push: origin/master must contain what was pushed and every expected lane tip. A no-op push exits 0 in git; this does not.
 verify_landed() { # <sha>
 	local t miss=()
-	git fetch -q origin || die "git fetch failed after the push; cannot confirm it landed"
+	# a successful push updated refs/remotes/origin/master to what the remote accepted; fetch only when it does not hold the commit
+	git merge-base --is-ancestor "$1" origin/master 2>/dev/null || git fetch -q origin || die "git fetch failed after the push; cannot confirm it landed"
 	git merge-base --is-ancestor "$1" origin/master || die "after the push origin/master ($(git rev-parse --short=12 origin/master)) does not contain ${1:0:12}"
 	for t in "${expected_tips[@]-}"; do
 		[ -n "$t" ] || continue
@@ -136,7 +140,8 @@ for round in 1 2 3; do
 	if why="$(dirty)"; then die "$why: commit (or remove) them first"; fi
 	echo "== dq_push_master: round $round: merging origin/master"
 	lap "start"
-	git fetch -q origin || die "git fetch failed"
+	# the strict check fetched seconds ago: round 1 needs no second fetch (~4 s each on this machine); later rounds always fetch
+	if [ "$round" -gt 1 ] || [ $(( $(date +%s) - fetched_at )) -gt 20 ]; then git fetch -q origin || die "git fetch failed"; fi
 	if [ "$light" -eq 1 ] && ! git merge-base --is-ancestor origin/master HEAD; then
 		die "--light: origin/master moved since the batch was merged ($(git rev-parse --short=12 origin/master) is not in HEAD): run the light batch again"
 	elif git merge-base --is-ancestor origin/master HEAD; then
@@ -157,6 +162,7 @@ for round in 1 2 3; do
 	# very tree. If HEAD contains origin/master (a fast-forward) nothing changed since; if master moved and HEAD is the clean re-merge of a stamped
 	# lane, the compile and checks rerun only when master's changes since the lane's base touch DM code (tools/dq_light_paths.sh heavy paths).
 	fast_skip=""
+	stamp_of "$sha" >/dev/null; lap "stamp verdict"
 	if [ "$light" -eq 0 ] && [ "${DQ_PUSH_FULL:-0}" != "1" ]; then
 		if git notes --ref=lane-ready show "$sha" 2>/dev/null | grep -q '"ok":true' && git merge-base --is-ancestor origin/master "$sha"; then
 			fast_skip="a lane-ready stamp is on exactly this commit and it contains origin/master (fast-forward): the gates already ran on this tree"

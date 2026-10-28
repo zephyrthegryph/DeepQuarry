@@ -982,3 +982,19 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
 - **The disk floor no longer costs 24 minutes a cycle.** Below the floor the gate trims the cache synchronously (19:08-19:32Z on
   28 October, freeing nothing that was not protected); after a refusal the train only re-reads the free space for
   `DQ_TRAIN_FLOOR_RETRY_MIN` (30) minutes before trimming again.
+- **Smoke and gameplay sets run in every precheck** (`DQ_TRAIN_PRECHECK_SMOKE=1`, the default since 28 October 2026). At 20:40Z two
+  prechecked lanes took a 38-minute cycle (21 min of it the old disk-floor trim, then a full gate) because the sets were due at the
+  integrator's every-4th-landing cadence, which also blocked the fast-forward. A precheck now runs them in its already booted world
+  (~1 min), records `smoke=1` in its verdict, and such a lane never waits for `smoke_due`; its landing resets the cadence counter.
+  `DQ_TRAIN_PRECHECK_SMOKE=0` restores lane tests + boot only in the precheck and the cadence in the integrator.
+- **A lane whose master moved still lands on its precheck proof.** When no fast-forward applies, each chosen lane is checked against the
+  master its own precheck ran on: if master changed nothing heavy since (docs, tools, Rust: `tools/dq_light_paths.sh`), or nothing that
+  shares an area with the lane and no global path, it lands as `merge(new master, its stamped precheck merge)` with the push's compile
+  and ratchets (`precheck-merge`). 21:03Z: `fix/flavor-default`, prechecked before two tool lanes landed, took a full gate instead.
+  Whatever does not land this way goes through the gate in the same cycle.
+- **One test world per gate; leaner push.** The batch gate keeps its test union in one world up to 60 selectors
+  (`DQ_TRAIN_WORLD_SPLIT_AT`, was 8): the 85239fc051 gate ran 22 tests in 3 s of test time but booted two worlds at ~230 s each.
+  `dq_push_master.sh` skips its round-1 fetch when the strict check fetched seconds earlier, verifies the landing from the
+  remote-tracking ref the push updated (a fetch only when that does not hold the commit), computes the stamp verdict once, and logs
+  laps for setup/lock and the stamp verdict. The `pushed:` line reports `gate+push` seconds next to the whole cycle (which also counts
+  the preamble and the disk floor check).
