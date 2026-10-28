@@ -49,7 +49,6 @@
 	name = "glowing growth"
 	desc = "Weird glowing organic growth."
 	layer = ABOVE_TURF_LAYER+0.01
-	light_on = TRUE
 
 	var/node_range = NODERANGE
 
