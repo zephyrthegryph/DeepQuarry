@@ -618,8 +618,8 @@
 /datum/entry/part/effect/spawns
 	part_name = "spawns"
 
-/// sets_off(kind, ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): EFFECT_SMOKE, EFFECT_FOAM,
-/// EFFECT_EXPLOSION, EFFECT_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
+/// sets_off(kind, ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): XFORM_FX_SMOKE, XFORM_FX_FOAM,
+/// XFORM_FX_EXPLOSION, XFORM_FX_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
 /// (no powergaming a tiny amount); `tell` is what viewers within 5 see; `variant` is the foam kind; `divisor` scales an explosion (made / divisor) and
 /// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made.
 /proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null, amount = null)

@@ -81,7 +81,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soulstone)
 CAPABILITIES(/transformation/chem/instant/slime/redspace_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_redspace_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/redspace),
-		effects = sets_off(EFFECT_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
+		effects = sets_off(XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 
 /transformation/chem/instant/slime/slime_mindbreaker

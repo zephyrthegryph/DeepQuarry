@@ -328,7 +328,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_heatwave)
 CAPABILITIES(/transformation/chem/instant/slime/orange_smoke)
 	configure(transformation(name = "Slime Smoke", id = "m_orange_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/orange),
-		effects = sets_off(EFFECT_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
+		effects = sets_off(XFORM_FX_SMOKE, amount = 120, sfx = SFX_EFFECTS_SMOKE)))
 
 /transformation/chem/instant/slime/orange_pyrotoxin
 

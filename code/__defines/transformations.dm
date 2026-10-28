@@ -76,13 +76,13 @@
 
 // sets_off(): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm).
 /// Chemical smoke at the subject, carrying the reagents.
-#define EFFECT_SMOKE "smoke"
+#define XFORM_FX_SMOKE "smoke"
 /// Foam (variant 0 plain, 1 metal, 2 iron) at the subject.
-#define EFFECT_FOAM "foam"
+#define XFORM_FX_FOAM "foam"
 /// An explosion of reagents scaled by what the step made.
-#define EFFECT_EXPLOSION "explosion"
+#define XFORM_FX_EXPLOSION "explosion"
 /// An electromagnetic pulse scaled by what the step made.
-#define EFFECT_EMP "emp"
+#define XFORM_FX_EMP "emp"
 
 // spawns(): where a product is made, and how many.
 /// At the turf of the subject (the only place built).

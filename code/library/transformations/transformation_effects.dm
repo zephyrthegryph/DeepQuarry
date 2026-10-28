@@ -1,9 +1,9 @@
 // sets_off(): the stock effects a reagent step sets off (doc/rewrite/proposals/transformations.md section 6, stock parts for the common tail).
 //
-//   sets_off(EFFECT_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)
-//   sets_off(EFFECT_FOAM, variant = 0|1|2, tell = "The solution spews out foam!", clears = TRUE)
-//   sets_off(EFFECT_EXPLOSION, divisor = 10, skip_in_tests = TRUE)
-//   sets_off(EFFECT_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)
+//   sets_off(XFORM_FX_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)
+//   sets_off(XFORM_FX_FOAM, variant = 0|1|2, tell = "The solution spews out foam!", clears = TRUE)
+//   sets_off(XFORM_FX_EXPLOSION, divisor = 10, skip_in_tests = TRUE)
+//   sets_off(XFORM_FX_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)
 //
 // Each kind does what the old on_reaction() tail it replaces did, in the same order: the viewers' message, the effect's set_up and start, then the
 // holder's clearing. `made` is what the step made (what the tail used to be told as created_volume). `clears` empties the holder unless it is a living
@@ -32,8 +32,8 @@
 			return null
 		var/list/arguments = E.args
 		var/kind = arguments["kind"]
-		if(kind != EFFECT_SMOKE && kind != EFFECT_FOAM && kind != EFFECT_EXPLOSION && kind != EFFECT_EMP)
-			declare_report("[origin]: [type]: sets_off([kind]) is not EFFECT_SMOKE, EFFECT_FOAM, EFFECT_EXPLOSION or EFFECT_EMP")
+		if(kind != XFORM_FX_SMOKE && kind != XFORM_FX_FOAM && kind != XFORM_FX_EXPLOSION && kind != XFORM_FX_EMP)
+			declare_report("[origin]: [type]: sets_off([kind]) is not XFORM_FX_SMOKE, XFORM_FX_FOAM, XFORM_FX_EXPLOSION or XFORM_FX_EMP")
 			return null
 		var/datum/xform_effect/row = new
 		row.kind = kind
@@ -45,8 +45,8 @@
 		row.divisors = arguments["divisors"]
 		row.skip_in_tests = !!arguments["skip_in_tests"]
 		row.amount = arguments["amount"]
-		if(kind == EFFECT_EMP && (!islist(row.divisors) || length(row.divisors) != 4))
-			declare_report("[origin]: [type]: sets_off(EFFECT_EMP) takes divisors = list(a, b, c, d)")
+		if(kind == XFORM_FX_EMP && (!islist(row.divisors) || length(row.divisors) != 4))
+			declare_report("[origin]: [type]: sets_off(XFORM_FX_EMP) takes divisors = list(a, b, c, d)")
 			return null
 		rows += row
 	if(!length(rows))
@@ -69,7 +69,7 @@
 			log_world("XFORM: [X.rule_type] sets off [row.kind] for [made] made, in [subject] ([subject.type])")
 		var/turf/location = get_turf(subject)
 		switch(row.kind)
-			if(EFFECT_SMOKE)
+			if(XFORM_FX_SMOKE)
 				var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 				S.attach(location)
 				S.set_up(holder, isnull(row.amount) ? made : row.amount, 0, location)
@@ -78,7 +78,7 @@
 				S.start()
 				if(row.clears && !isliving(subject))
 					holder.clear_reagents()
-			if(EFFECT_FOAM)
+			if(XFORM_FX_FOAM)
 				if(row.tell)
 					for(var/mob/M in viewers(5, location))
 						to_chat(M, span_warning(row.tell))
@@ -87,7 +87,7 @@
 				s.start()
 				if(row.clears && !isliving(subject))
 					holder.clear_reagents()
-			if(EFFECT_EXPLOSION)
+			if(XFORM_FX_EXPLOSION)
 				var/datum/effect/effect/system/reagents_explosion/e = new()
 				e.set_up(round(made / row.divisor, 1), subject, 0, 0)
 				if(isliving(subject))
@@ -98,7 +98,7 @@
 				else
 					holder.clear_reagents() // no powergaming by creating a tiny amount of this
 				e.start()
-			if(EFFECT_EMP)
+			if(XFORM_FX_EMP)
 				var/list/d = row.divisors
 				empulse(location, round(made / d[1]), round(made / d[2]), round(made / d[3]), round(made / d[4]), 1)
 				if(row.clears && !isliving(subject))

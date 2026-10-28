@@ -6,22 +6,22 @@
 /transformation/dq_spawn/foam
 
 CAPABILITIES(/transformation/dq_spawn/foam)
-	configure(transformation(takes = list(reagent(REAGENT_ID_SODIUM, 1)), made = 12, effects = sets_off(EFFECT_FOAM, variant = 0, clears = TRUE)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_SODIUM, 1)), made = 12, effects = sets_off(XFORM_FX_FOAM, variant = 0, clears = TRUE)))
 
 /transformation/dq_spawn/smoke
 
 CAPABILITIES(/transformation/dq_spawn/smoke)
-	configure(transformation(takes = list(reagent(REAGENT_ID_ALUMINIUM, 1)), made = 12, effects = sets_off(EFFECT_SMOKE, clears = TRUE)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_ALUMINIUM, 1)), made = 12, effects = sets_off(XFORM_FX_SMOKE, clears = TRUE)))
 
 /transformation/dq_spawn/pulse
 
 CAPABILITIES(/transformation/dq_spawn/pulse)
-	configure(transformation(takes = list(reagent(REAGENT_ID_COPPER, 1)), made = 24, effects = sets_off(EFFECT_EMP, divisors = list(24, 12, 12, 12), clears = TRUE)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_COPPER, 1)), made = 24, effects = sets_off(XFORM_FX_EMP, divisors = list(24, 12, 12, 12), clears = TRUE)))
 
 /transformation/dq_spawn/bang
 
 CAPABILITIES(/transformation/dq_spawn/bang)
-	configure(transformation(takes = list(reagent(REAGENT_ID_LEAD, 1)), made = 2, effects = sets_off(EFFECT_EXPLOSION, divisor = 1)))
+	configure(transformation(takes = list(reagent(REAGENT_ID_LEAD, 1)), made = 2, effects = sets_off(XFORM_FX_EXPLOSION, divisor = 1)))
 
 /// An item that notes the pulse.
 /obj/item/dq_emp_probe
