@@ -3386,6 +3386,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_passive_gate_one_way_flow
 
 /datum/unit_test/dq_passive_gate_one_way_flow/Run()
+	restore_ambient_after() // the frames below advance world time: the Telecomms floor this finds cools by design
 	var/turf/simulated/floor/T = null
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
