@@ -116,13 +116,8 @@ CAPABILITIES(/obj/effect/dark/floor)
 
 	var/node_range = 9
 
-/obj/structure/prop/dark_node/proc/init_dark_light(datum/act/timer/A)
-	set_glow(src, GLOW(glow_of(src).range, -20, "#FFFFFF"))
-
-
 CAPABILITIES(/obj/structure/prop/dark_node)
-	configure(light_glow(range = 3))
-	after_init(0, then(PROC_REF(init_dark_light)))
+	configure(light_glow(range = 3, power = -20, color = "#FFFFFF")) // a dark light: it casts shadow, declared so it needs no write at init
 	every(2 SECONDS, then(PROC_REF(dark_node_step)))
 
 // its dark tiles unlink and wither.
@@ -194,7 +189,7 @@ CAPABILITIES(/obj/effect/dark)
 	node_range = 5
 
 CAPABILITIES(/obj/structure/prop/dark_node/dust)
-	configure(light_glow(range = 1))
+	configure(light_glow(range = MINIMUM_USEFUL_LIGHT_RANGE, power = -20, color = "#FFFFFF"))
 
 /obj/structure/prop/dark_node/statue
 	name = "phoronic cascade"
@@ -204,4 +199,4 @@ CAPABILITIES(/obj/structure/prop/dark_node/dust)
 	node_range = 15
 
 CAPABILITIES(/obj/structure/prop/dark_node/statue)
-	configure(light_glow(range = 5))
+	configure(light_glow(range = 5, power = -20, color = "#FFFFFF"))

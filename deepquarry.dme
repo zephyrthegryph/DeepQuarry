@@ -4697,6 +4697,7 @@
 #include "code\content\client\preferences\types\character\background.dm"
 #include "code\content\client\preferences\types\character\body_basic.dm"
 #include "code\content\client\preferences\types\character\body_styles.dm"
+#include "code\content\client\preferences\types\character\color_palette.dm"
 #include "code\content\client\preferences\types\character\composite_body.dm"
 #include "code\content\client\preferences\types\character\composite_language.dm"
 #include "code\content\client\preferences\types\character\composite_loadout.dm"

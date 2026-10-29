@@ -108,6 +108,9 @@ export type PrewarmDecision = { variant: PrewarmVariant; release: () => void } |
 /** Decide whether to prewarm now and, if so, take the lock. */
 export function planPrewarm(binDir: string, env: NodeJS.ProcessEnv = process.env): PrewarmDecision {
   if (!prewarmEnabled(env)) return { skipped: 'DQ_DMBC_PREWARM=0' };
+  // No daemon keeps a prewarmed session, so a prewarm would be one whole cold compile thrown away.
+  if (env.DQ_NATIVE_NO_DAEMON === '1') return { skipped: 'DQ_NATIVE_NO_DAEMON=1' };
+  if (env.DMB_DAEMON_AUTOSTART === '0') return { skipped: 'DMB_DAEMON_AUTOSTART=0' };
   const variant = lastVariant(daemonStateDir(env));
   if (!variant) return { skipped: 'no compile in the last 6 hours' };
   if (!enoughMemoryToPrewarm(os.freemem(), prewarmNeedBytes(env))) return { skipped: `under ${(prewarmNeedBytes(env) / 1e9).toFixed(0)} GB of free memory (${(os.freemem() / 1e9).toFixed(1)} GB free)` };

@@ -82,5 +82,12 @@ TYPE_TABLE(/datum/preference/choiced/human/vantag_preference, pref_choices, GLOB
 /datum/preference/choiced/human/vantag_preference/create_default_value()
 	return VANTAG_NONE
 
+/// Values are HUD icon states (VANTAG_NONE is "hudblank"); the dropdown shows each one's role name.
+/datum/preference/choiced/human/vantag_preference/get_pref_choices(datum/preferences/preferences)
+	var/list/out = list()
+	for(var/choice in GLOB.vantag_choices_list)
+		out["[choice]"] = GLOB.vantag_choices_list[choice]
+	return out
+
 /datum/preference/choiced/human/vantag_preference/apply_to_human(mob/living/carbon/human/target, value)
 	target.set_vantag_pref(value)

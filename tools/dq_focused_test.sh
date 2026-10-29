@@ -62,6 +62,8 @@
 # directory and results file (data/runs/runN), and is killed after
 # DQ_FOCUS_TIMEOUT_MINUTES (default 15) with the last log lines printed.
 set -euo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 
 cd "$(dirname "$0")/.."
 . tools/dq_below_normal.sh

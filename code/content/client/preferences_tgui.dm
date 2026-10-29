@@ -54,11 +54,18 @@
 	// flicker between pointer / default. Catalogs stay in static_data;
 	// preview lives here. The bytes round-trip every poll tick (~50 KB
 	// when populated) but only re-render PreviewPane in React.
-	if(character_preview_b64)
+	// Shipped to a window only when its copy is older (dq_preview_version): the base64
+	// frames are ~50 KB and every tab switch and edit sends an update. React keeps the last
+	// copy it received.
+	var/datum/tgui/open_ui = SStgui.get_open_ui(user, src) // the window the data is for (a pooled window keeps its own versions)
+	var/preview_window_id = open_ui?.window()?.id || "unpooled"
+	data["character_preview_version"] = dq_preview_version
+	if(character_preview_b64 && dq_window_preview_versions?[preview_window_id] != dq_preview_version)
 		data["character_preview_assets"] = character_preview_b64
+		set_dq_window_preview_versions_at(preview_window_id, dq_preview_version)
 
 	for(var/datum/preference_middleware/preference_middleware as anything in middleware)
-		data += preference_middleware.get_ui_data(user, SStgui.get_open_ui(user, src)) // the window the data is for (a pooled window keeps its own versions)
+		data += preference_middleware.get_ui_data(user, open_ui)
 
 	data["dq_server_profile"] = list(
 		"pre_backend_ms" = dq_open_requested_at ? (REALTIMEOFDAY - dq_open_requested_at) * 100 : 0,
@@ -211,6 +218,8 @@
 	// already-written player prefs — costing ~2s of synchronous, blocking savefile I/O on the
 	// close click. Keep the preview byte cache warm and queue one async straggler-flush.
 	SScharacter_setup.queue_preferences_save(src)
+	// A reopened window may have a fresh page: send it the preview again.
+	set_dq_window_preview_versions(null)
 
 /datum/preferences/proc/create_character_profiles()
 	var/list/profiles = list()

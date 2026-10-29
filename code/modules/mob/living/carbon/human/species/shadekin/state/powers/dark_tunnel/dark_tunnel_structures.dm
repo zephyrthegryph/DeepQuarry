@@ -41,7 +41,6 @@ CAPABILITIES(/obj/structure/dark_portal)
 	desc = "A large portal. Touching it without going through may alter the destination."
 	var/list/destination_station_areas // Override this in map files!
 	var/list/destination_wilderness_areas // Override this in map files!
-	light_on = TRUE
 
 /obj/structure/dark_portal/hub/close_portal()
 	rel_set(src, nameof(locked), src)

@@ -166,3 +166,18 @@
 
 /datum/preference/toggle/human/animations_toggle/apply_to_human(mob/living/carbon/human/target, value)
 	return
+
+
+// Ears, tail and wings are optional: an empty value (the default) means the character has none, and the
+// character setup's "Remove" writes it. Any other value must still be one of the styles on offer.
+/datum/preference/text/human/ear_style/validate(datum/preferences/preferences, value)
+	return !value || ..()
+
+/datum/preference/text/human/ear_secondary_style/validate(datum/preferences/preferences, value)
+	return !value || ..()
+
+/datum/preference/text/human/tail_style/validate(datum/preferences/preferences, value)
+	return !value || ..()
+
+/datum/preference/text/human/wing_style/validate(datum/preferences/preferences, value)
+	return !value || ..()

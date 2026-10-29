@@ -23,7 +23,20 @@
 	widget = PREF_WIDGET_HIDDEN  // accumulated trait-point pool, managed by the trait picker
 
 /datum/preference/numeric/human/starting_trait_points/create_default_value()
-	return 0
+	return STARTING_SPECIES_POINTS
+
+/datum/preference/numeric/human/starting_trait_points/create_informed_default_value(datum/preferences/preferences)
+	var/datum/species/S = GLOB.all_species[preferences?.read_preference(/datum/preference/choiced/species)]
+	return S ? S.trait_points : STARTING_SPECIES_POINTS
+
+/// The trait point budget a character has: its species' points, or the saved custom budget when an admin set traits_cheating.
+/// Read live rather than trusting the saved number, which only moved on a species change (a character that never changed
+/// species kept the old default of 0 and could take no positive trait).
+/datum/preferences/proc/trait_point_budget()
+	if(read_preference(/datum/preference/numeric/human/traits_cheating))
+		return read_preference(/datum/preference/numeric/human/starting_trait_points)
+	var/datum/species/S = GLOB.all_species[read_preference(/datum/preference/choiced/species)]
+	return S ? S.trait_points : STARTING_SPECIES_POINTS
 
 /datum/preference/numeric/human/starting_trait_points/apply_to_human(mob/living/carbon/human/target, value)
 	return

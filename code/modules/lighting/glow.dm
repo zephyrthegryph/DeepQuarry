@@ -6,10 +6,12 @@
 //	set_glow(src, GLOW_OFF)                                  // dark
 //	glow_of(A).range / .power / .color                       // what the light system casts; glow_of_type(path) for a type's declaration
 //
-// A type's light is a type trait (code/engine/declare/type_traits.dm): a light_on gate decides whether it is cast, so a lamp that starts off
-// declares its light and turns it on later. set_glow() gives the atom its own copy (set_trait()) and, as set_glow(src, GLOW(null, null, null)) did, turns the light on
-// for a range above 0 and off for 0. A look's light (look.glow(), look_glow()) goes through set_glow() too. The light system
-// (update_light(), /datum/light_source, overlay lighting) reads only glow_of().
+// A type's light is a type trait (code/engine/declare/type_traits.dm). It is cast as declared: /atom/var/light_on (the switch) is TRUE by default,
+// so a declared glow lights with no write at init, and a lamp that starts off declares `light_on = FALSE` (dq_light_declared_glow_casts holds
+// every declared light to that). set_glow() gives the atom its own copy (set_trait()) and, as set_glow(src, GLOW(null, null, null)) did, turns the
+// light on for a range above 0 and off for 0. A look's light (look.glow(), look_glow()) goes through set_glow() too. The light system
+// (update_light(), /datum/light_source, overlay lighting) reads only glow_of() and atom_casts_light(); the setters (set_light_range() and the rest)
+// each reconcile the source, so a caller that skips set_glow() because nothing changed cannot leave the source out of step.
 
 STATIC_ENTRY(light_glow)
 
@@ -75,6 +77,4 @@ READS_AS(/proc/glow_of, LIGHT_GLOW_KEY)
 		changed = TRUE
 	if(!isnull(on) && A.set_light_on(on) != null)
 		changed = TRUE
-	if(changed && atom_rules_of(A).light_system == STATIC_LIGHT)
-		A.update_light()
-	return changed
+	return changed // each setter reconciled the light source (light_changed())

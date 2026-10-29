@@ -366,7 +366,6 @@ CAPABILITIES(/obj/machinery/light)
 	else
 		set_use_power(USE_POWER_IDLE)
 		set_glow(src, GLOW(0, null, null))
-	update_light()
 	update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.

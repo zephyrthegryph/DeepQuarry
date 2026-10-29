@@ -511,7 +511,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	var/list/_neu_traits = client.prefs.read_preference(/datum/preference/typed_list/traits/neu_traits)
 	var/list/_neg_traits = client.prefs.read_preference(/datum/preference/typed_list/traits/neg_traits)
 	var/list/megalist = _pos_traits + _neu_traits + _neg_traits
-	var/points_left = client.prefs.read_preference(/datum/preference/numeric/human/starting_trait_points)
+	var/points_left = client.prefs.trait_point_budget()
 	var/traits_left = client.prefs.read_preference(/datum/preference/numeric/human/max_traits)
 	var/pref_synth = client.prefs.read_preference(/datum/preference/toggle/human/dirty_synth) // migrated
 	var/pref_meat = client.prefs.read_preference(/datum/preference/toggle/human/gross_meatbag) // migrated

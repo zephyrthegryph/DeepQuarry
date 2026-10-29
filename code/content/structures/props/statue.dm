@@ -64,7 +64,6 @@ CAPABILITIES(/obj/structure/prop/statue/phoron)
 	configure(light_glow(range = 2, power = 3, color = "#cc66ff"))
 
 /obj/structure/prop/statue/phoron
-	light_on = TRUE
 
 /obj/structure/prop/statue/pillar
 	name = "pillar"

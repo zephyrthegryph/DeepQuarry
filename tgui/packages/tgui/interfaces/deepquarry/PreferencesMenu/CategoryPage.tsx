@@ -1,8 +1,8 @@
 // DQAdd — Renders a single category page.
 //
 // Layout strategy:
-//  - Page level: CSS grid auto-fit minmax(380, 1fr). On the standard left pane
-//    (~1100 px at the 3:1 Stack ratio) we get ~2-3 group panels per row.
+//  - Page level: CSS grid, one column when narrow and two when two ~26em panels fit
+//    (sizes in em, so the theme font and display scale decide, never more than two).
 //  - Major editors span all columns via `gridColumn: '1 / -1'`.
 //  - Inside each group, widgets pack as a sub-grid auto-fit minmax(220, 1fr).
 //  - Group containers are tight `fitted` Sections so the padding tax is paid
@@ -11,9 +11,18 @@
 //    (longtext) have been compacted (TextArea height 3em) so they don't
 //    dominate vertical space.
 
-import { Box, LabeledList, Section } from 'tgui-core/components';
+import { Box, Section } from 'tgui-core/components';
 import { getEditor } from './editors';
+import { labelForGroup, labelForKey } from './labels';
+import { LooksPage, looksHasBody } from './LooksPage';
 import { PrefWidget } from './PrefWidget';
+import {
+  editorAnchor,
+  groupAnchor,
+  highlightStyle,
+  prefAnchor,
+  useSearchHighlight,
+} from './search';
 import type {
   PrefCategory,
   PrefGroup,
@@ -30,157 +39,6 @@ type Props = {
   /// grid layout and let the editor own the container directly.
   fillHeight?: boolean;
 };
-
-const titleCase = (s: string) =>
-  s.replace(
-    /(^|[_\s])([a-z])/g,
-    (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase(),
-  );
-
-// User-facing names for groups that don't pretty-print well via titleCase.
-// titleCase("ooc_notes") yields "Ooc Notes" (looks wrong); titleCase("mind_body")
-// yields "Mind Body" (should be "Mind & Body"). Keys match the `group` field
-// emitted by tag_pref on the DM side.
-const GROUP_LABELS: Record<string, string> = {
-  ooc_notes: 'OOC Notes',
-  speech_verbs: 'Speech Verbs',
-  starting_kit: 'Starting Kit',
-  be_special: 'Antag Roles',
-  mind_body: 'Mind & Body',
-  size_voice: 'Size & Voice',
-  pai: 'pAI Card',
-  nif: 'NIF',
-  background: 'Background',
-};
-
-const labelForGroup = (key: string) => GROUP_LABELS[key] ?? titleCase(key);
-
-// User-facing names for prefs whose DM-side savefile_key is short/cryptic
-// (h_style, s_tone, etc.) and whose display_label isn't set. titleCase("s_tone")
-// produces "S Tone" which is unhelpful; this map fixes the common cases without
-// requiring a DM-side touch on every pref. If a pref has display_label set on
-// the DM side (item.label), that always wins.
-const PREF_KEY_LABELS: Record<string, string> = {
-  s_tone: 'Skin Tone',
-  skin_color: 'Skin Color',
-  eyes_color: 'Eye Color',
-  hair_color: 'Hair Color',
-  facial_color: 'Facial Hair Color',
-  grad_color: 'Gradient Color',
-  h_style: 'Hair Style',
-  f_style: 'Facial Hair Style',
-  grad_style: 'Hair Gradient',
-  ear_style: 'Ear Style',
-  ear_secondary_style: 'Secondary Ear Style',
-  ears_color1: 'Ear Color (Primary)',
-  ears_color2: 'Ear Color (Secondary)',
-  ears_color3: 'Ear Color (Tertiary)',
-  ears_alpha: 'Ear Opacity',
-  tail_style: 'Tail Style',
-  tail_color1: 'Tail Color (Primary)',
-  tail_color2: 'Tail Color (Secondary)',
-  tail_color3: 'Tail Color (Tertiary)',
-  tail_alpha: 'Tail Opacity',
-  wing_style: 'Wing Style',
-  wing_color1: 'Wing Color (Primary)',
-  wing_color2: 'Wing Color (Secondary)',
-  wing_color3: 'Wing Color (Tertiary)',
-  wing_alpha: 'Wing Opacity',
-  b_type: 'Blood Type',
-  blood_reagents: 'Blood Reagent',
-  blood_color: 'Blood Color',
-  real_name: 'Name',
-  nickname: 'Nickname',
-  bday_announce: 'Announce Birthday',
-  digitigrade: 'Digitigrade Legs',
-  custom_link: 'Custom Link',
-  custom_say: 'Custom Say Verb',
-  custom_whisper: 'Custom Whisper Verb',
-  custom_ask: 'Custom Ask Verb',
-  custom_exclaim: 'Custom Exclaim Verb',
-  birthplace: 'Birthplace',
-  citizenship: 'Citizenship',
-  faction: 'Faction',
-  home_system: 'Home System',
-  religion: 'Religion',
-  economic_status: 'Economic Status',
-  preferred_language: 'Preferred Language',
-  runechat_color: 'Runechat Color',
-  med_record: 'Medical Record',
-  sec_record: 'Security Record',
-  gen_record: 'General Record',
-  ooc_notes: 'General Notes',
-  ooc_notes_likes: 'Likes',
-  ooc_notes_dislikes: 'Dislikes',
-  ooc_notes_favs: 'Favorites',
-  ooc_notes_maybes: 'Maybes',
-  private_notes: 'Private Notes',
-  ooc_notes_style: 'Use Stylized Display',
-  // The DM savefile_keys for OOC notes use CamelCase and one has a typo
-  // ("OOC_Notes_Disikes"). Map every actual key emitted so the UI is consistent.
-  OOC_Notes: 'General Notes',
-  OOC_Notes_Likes: 'Likes',
-  OOC_Notes_Disikes: 'Dislikes',
-  OOC_Notes_Maybes: 'Maybes',
-  OOC_Notes_Favs: 'Favorites',
-  OOC_Notes_System: 'Use Stylized Display',
-  Private_Notes: 'Private Notes',
-  synth_color: 'Synth Color',
-  synth_markings: 'Synth Markings',
-  preview_loadout: 'Show Loadout in Preview',
-  preview_job: 'Show Job in Preview',
-  animations_toggle: 'Preview Animations',
-  voice_freq: 'Voice Frequency',
-  voice_sound: 'Voice Sound',
-  custom_speech_bubble: 'Custom Speech Bubble',
-  custom_footstep: 'Custom Footstep',
-  species_sound: 'Species Sound',
-  fuzzy: 'Fuzzy Rendering',
-  offset_override: 'Override Pixel Offset',
-  spawnpoint: 'Spawn Point',
-  gender: 'Gender',
-  resleeve_lock: 'Lock Resleeve',
-  resleeve_scan: 'Allow Resleeve Scan',
-  mind_scan: 'Allow Mind Scan',
-  capture_crystal: 'Use Capture Crystal',
-  auto_backup_implant: 'Auto Backup Implant',
-  borg_petting: 'Allow Borg Petting',
-  show_in_directory: 'Show in Vore Directory',
-  directory_tag: 'Vore Tag',
-  directory_gendertag: 'Directory Gender',
-  directory_sexualitytag: 'Sexuality',
-  directory_erptag: 'ERP Tag',
-  directory_ad: 'Directory Ad',
-  ignore_shoes: 'Ignore Shoes',
-  sensorpref: 'Sensor Default',
-  autohiss: 'Autohiss',
-  vore_egg_type: 'Egg Type',
-  pai_name: 'pAI Name',
-  pai_description: 'Description',
-  pai_role: 'Role',
-  pai_ad: 'Ad Text',
-  pai_comments: 'Comments',
-  pai_eye_color: 'Eye Color',
-  pai_chassis: 'Chassis',
-  pai_emotion: 'Default Emotion',
-  // Actual savefile_keys for pAI prefs are CamelCase (Pai_Name, Pai_Desc, etc.).
-  Pai_Name: 'pAI Name',
-  Pai_Desc: 'Description',
-  Pai_Role: 'Role',
-  Pai_Ad: 'Ad Text',
-  Pai_Comments: 'Comments',
-  Pai_EyeColor: 'Eye Color',
-  Pai_Chassis: 'Chassis',
-  Pai_Emotion: 'Default Emotion',
-  antag_faction: 'Antag Faction',
-  antag_vis: 'Antag Visibility',
-  vantag_volunteer: 'Volunteer for Visitor-Antag',
-  vantag_preference: 'Visitor-Antag Type',
-  exploit_record: 'Exploitable Record',
-};
-
-const labelForKey = (key: string, override?: string | null) =>
-  override ?? PREF_KEY_LABELS[key] ?? titleCase(key);
 
 /// Editors whose own UI is wide enough that a half-column grid cell can't
 /// host them comfortably. Groups containing one of these get
@@ -203,12 +61,24 @@ export const CategoryPage = ({
   editorData,
   fillHeight,
 }: Props) => {
+  if (page.category === 'appearance' && looksHasBody(page)) {
+    return (
+      <LooksPage
+        page={page}
+        staticData={staticData}
+        values={values}
+        editorData={editorData}
+      />
+    );
+  }
+
   if (fillHeight) {
     return (
       <Box style={{ height: '100%' }}>
         {page.groups.map((group, gi) => (
           <GroupBlock
             key={`${gi}-${group.group}`}
+            category={page.category}
             group={group}
             staticData={staticData}
             values={values}
@@ -224,8 +94,10 @@ export const CategoryPage = ({
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-        gap: '6px',
+        // One column when narrow, two when there is room for two ~26em panels, never more.
+        gridTemplateColumns:
+          'repeat(auto-fit, minmax(min(100%, max(26em, calc(50% - 0.25em))), 1fr))',
+        gap: '0.5em',
         alignItems: 'start',
       }}
     >
@@ -241,6 +113,7 @@ export const CategoryPage = ({
             }
           >
             <GroupBlock
+              category={page.category}
               group={group}
               staticData={staticData}
               values={values}
@@ -253,24 +126,93 @@ export const CategoryPage = ({
   );
 };
 
-/// Widget rows inside a single group. We render each widget on its own row
-/// (one LabeledList per group) so the label column auto-sizes to fit the
-/// longest label and every widget column lines up. Multi-column packing
-/// looked nice for short labels but caused dropdowns/inputs to overflow
-/// inconsistently when one cell's value was longer than the next.
-const WidgetGrid = ({
+const noStyle = (v: unknown) =>
+  ['', 'none', 'null'].includes(
+    String(v ?? '')
+      .trim()
+      .toLowerCase(),
+  );
+
+/// Rows that only mean something while another setting is on: hidden until it is
+/// (the setting itself stays saved). Keys are savefile keys.
+export const DEPENDENT_ROWS: Record<
+  string,
+  (values: Record<string, unknown>) => boolean
+> = {
+  synth_color_rgb: (v) => !!v.synth_color,
+  grad_color: (v) => !noStyle(v.grad_style_name),
+  facial_color: (v) =>
+    !['shaved', ''].includes(String(v.facial_style_name ?? '').toLowerCase()),
+  ear_secondary_style: (v) => !noStyle(v.ear_style),
+  secondary_ears_alpha: (v) => !noStyle(v.ear_secondary_style),
+  ears_color1: (v) => !noStyle(v.ear_style),
+  ears_color2: (v) => !noStyle(v.ear_style),
+  ears_color3: (v) => !noStyle(v.ear_style),
+  ears_alpha: (v) => !noStyle(v.ear_style),
+  tail_color1: (v) => !noStyle(v.tail_style),
+  tail_color2: (v) => !noStyle(v.tail_style),
+  tail_color3: (v) => !noStyle(v.tail_style),
+  tail_alpha: (v) => !noStyle(v.tail_style),
+  wing_color1: (v) => !noStyle(v.wing_style),
+  wing_color2: (v) => !noStyle(v.wing_style),
+  wing_color3: (v) => !noStyle(v.wing_style),
+  wing_alpha: (v) => !noStyle(v.wing_style),
+};
+
+/// Widget rows inside a single group: a two-column grid (label, control) sized in em so it
+/// follows the theme font and the display scale. The label column fits the longest label up to
+/// a cap and wraps beyond it, so a long label never pushes the control out of the panel.
+export const WidgetGrid = ({
   widgets,
   values,
 }: {
   widgets: PrefWidgetItem[];
   values: Record<string, unknown>;
 }) => (
-  <LabeledList>
-    {widgets.map((item) => (
-      <LabeledList.Item
-        key={item.key}
-        label={labelForKey(item.key, item.label)}
+  <Box
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'minmax(min(100%, 6em), max-content) minmax(0, 1fr)',
+      columnGap: '0.75em',
+      rowGap: '0.3em',
+      alignItems: 'center',
+    }}
+  >
+    {widgets
+      .filter((item) => DEPENDENT_ROWS[item.key]?.(values) ?? true)
+      .map((item) => (
+        <WidgetRow key={item.key} item={item} values={values} />
+      ))}
+  </Box>
+);
+
+const WidgetRow = ({
+  item,
+  values,
+}: {
+  item: PrefWidgetItem;
+  values: Record<string, unknown>;
+}) => {
+  const anchor = prefAnchor(item.key);
+  const lit = useSearchHighlight(anchor);
+  return (
+    <Box
+      data-dq-anchor={anchor}
+      style={{
+        display: 'contents',
+      }}
+    >
+      <Box
+        color="label"
+        style={{
+          maxWidth: '14em',
+          overflowWrap: 'anywhere',
+          ...highlightStyle(lit),
+        }}
       >
+        {labelForKey(item.key, item.label)}:
+      </Box>
+      <Box style={{ minWidth: 0, ...highlightStyle(lit) }}>
         <PrefWidget
           item={{
             ...item,
@@ -279,18 +221,20 @@ const WidgetGrid = ({
               : item.value,
           }}
         />
-      </LabeledList.Item>
-    ))}
-  </LabeledList>
-);
+      </Box>
+    </Box>
+  );
+};
 
 const GroupBlock = ({
+  category,
   group,
   staticData,
   values,
   editorData,
   fillHeight,
 }: {
+  category: string;
   group: PrefGroup;
   staticData?: Record<string, Record<string, unknown>>;
   values: Record<string, unknown>;
@@ -302,6 +246,8 @@ const GroupBlock = ({
   );
   const editors = group.items.filter((i) => i.type === 'editor');
   const hasTitle = !!group.group;
+  const anchor = groupAnchor(category, group.group);
+  const lit = useSearchHighlight(anchor);
 
   // Full-height editor pages (Loadout, Mind & Body) MUST fill the panel. Render the editor(s)
   // directly in a height:100% container even when the group carries a title — a titled, non-fill
@@ -341,7 +287,11 @@ const GroupBlock = ({
   }
 
   return (
-    <Section title={hasTitle ? labelForGroup(group.group) : null}>
+    <Section
+      title={hasTitle ? labelForGroup(group.group) : null}
+      data-dq-anchor={anchor}
+      style={highlightStyle(lit)}
+    >
       {widgets.length > 0 && <WidgetGrid widgets={widgets} values={values} />}
       {editors.map((item, idx) => (
         <Box
@@ -368,12 +318,19 @@ const EditorBlock = ({
   editorData: Record<string, Record<string, unknown>>;
   staticData?: Record<string, Record<string, unknown>>;
 }) => {
+  const anchor = editorAnchor(item.key);
+  const lit = useSearchHighlight(anchor);
   if (item.type !== 'editor') return null;
   const Editor = getEditor(item.key);
   return (
-    <Editor
-      data={editorData[item.key] ?? item.data ?? {}}
-      staticData={staticData?.[item.key]}
-    />
+    <Box
+      data-dq-anchor={anchor}
+      style={{ height: '100%', ...highlightStyle(lit) }}
+    >
+      <Editor
+        data={editorData[item.key] ?? item.data ?? {}}
+        staticData={staticData?.[item.key]}
+      />
+    </Box>
   );
 };

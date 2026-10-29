@@ -182,7 +182,6 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	can_atmos_pass = ATMOS_PASS_NO
 	var/basestate = "arfg_field"
 
-	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
 /obj/structure/atmospheric_retention_field/draw(datum/look/look)

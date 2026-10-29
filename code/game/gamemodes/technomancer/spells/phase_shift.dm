@@ -19,7 +19,6 @@ CAPABILITIES(/obj/item/spell/phase_shift)
 	configure(light_glow(range = 3, power = 2, color = "#FA58F4"))
 
 /obj/item/spell/phase_shift
-	light_on = TRUE
 
 /obj/effect/phase_shift
 	resistance_flags = BOMB_PROOF
@@ -29,7 +28,6 @@ CAPABILITIES(/obj/item/spell/phase_shift)
 	icon_state = "rift"
 
 /obj/effect/phase_shift
-	light_on = TRUE
 
 // whatever phased inside comes back out on the turf.
 CAPABILITIES(/obj/effect/phase_shift)

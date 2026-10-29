@@ -33,6 +33,8 @@
 # What it still leaves to dq_push_master.sh: the second merge of origin/master, and any stamp it cannot honor (a different HEAD,
 # an unclean tree). It never runs build.sh lint (DreamChecker + analyze + tgui lint, all covered above).
 set -uo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 # The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
 export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
@@ -51,7 +53,10 @@ merge_lock_require || exit 1
 _lap_t0=$(date +%s)
 lap() { echo "== gates: $1 +$(( $(date +%s) - _lap_t0 ))s"; } # where the pre-proof seconds go (the lock is held across them)
 merge_lock_busy begin
-trap 'merge_lock_busy end' EXIT
+early_prep_pid=""
+# an early prepare (below) never outlives the script: every exit waits for it (it writes build output into this tree)
+gates_exit() { [ -z "${early_prep_pid:-}" ] || wait "$early_prep_pid" 2>/dev/null; merge_lock_busy end; }
+trap gates_exit EXIT
 
 orig_args=("$@")
 automerge=1
@@ -150,6 +155,15 @@ if [ "$early_reuse" -eq 0 ] && ! git diff --quiet -- deepquarry.dme; then
 		echo "dq_merge_gates: deepquarry.dme is stale on this commit: commit the regenerated one (python3 tools/build/gen_dme.py)" >&2
 		exit 1
 	fi
+fi
+# prepare (icon repack, manifest check, verdigris, map bounds) reads none of what the steps below change (the baselines under tools/ci, the
+# test list): it starts here, in the background, and the gate waits for it instead of running it after them (28 October: ~11 s of the
+# precheck's 43 s before the jobs). Same command as `gate prepare`; a failure runs `gate prepare` again (its retries). DQ_GATE_EARLY_PREPARE=0: off.
+if [ "$early_reuse" -eq 0 ] && [ "${DQ_GATE_EARLY_PREPARE:-1}" = 1 ] && [ "${DQ_GATE_LIGHT:-0}" != 1 ]; then
+	mkdir -p data/merge-gates
+	early_prep_log="data/merge-gates/early-prepare-$$.log"
+	( t0=$(date +%s); tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds >"$early_prep_log" 2>&1; echo "$? $(( $(date +%s) - t0 ))" >"$early_prep_log.rc" ) &
+	early_prep_pid=$!
 fi
 pre_shrink_tree="$(proof_tree HEAD)" # the tree a plain merge makes; the shrink below changes it (proof_alias_baseline_shrink)
 # A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk into the merge commit, instead of a separate
@@ -356,8 +370,21 @@ failed=()
 dm_ok=0
 dc_ok=0
 declare -A pid start
+# the early prepare finishes before anything else runs in this tree (a reused proof needs none of it, but must not leave it running)
+early_prep_rc=""
+if [ -n "$early_prep_pid" ]; then
+	wait "$early_prep_pid" 2>/dev/null
+	early_prep_rc="$(cut -d' ' -f1 "$early_prep_log.rc" 2>/dev/null)"
+	early_prep_done="$early_prep_pid"; early_prep_pid=""
+fi
 if [ "$reused" -eq 0 ]; then
-gate gen tools/build/build.sh gen
+if [ "$early_reuse" -eq 0 ]; then
+	# gen ran at the top of this script on this very tree (the manifest amend and the baseline shrink touch no gen input)
+	echo "gen early 0s" >>"$timings"
+	echo "== gate: gen (ran before the lane checks; not repeated)"
+else
+	gate gen tools/build/build.sh gen
+fi
 # The compiler and the lint engine come from the shared caches (published after the push that changed them, tools/dq_prebuild_tools.sh).
 # When one is still missing, build it HERE, once, overlapped with prepare, and before the parallel jobs start: the jobs then all hit the
 # cache instead of queueing separate cargo builds (dm and tests each ran the dmbc target). DQ_GATE_PREBUILD_TOOLS=0 turns it off.
@@ -366,8 +393,20 @@ if [ "${DQ_GATE_PREBUILD_TOOLS:-1}" = "1" ] && [ "$no_dm" -eq 0 -o "$run_tests" 
 	( t0=$(date +%s); tools/build/build.sh dmbc; rc=$?; echo "prebuild-compiler $(( $(date +%s) - t0 ))s rc=$rc" | tee -a "$timings"; exit $rc ) &
 	tools_pid=$!
 fi
-gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
-if [ -n "$tools_pid" ]; then wait "$tools_pid" || echo "dq_merge_gates: warning: compiler prebuild failed; the jobs build it themselves"; fi
+if [ "$early_prep_rc" = 0 ]; then
+	cat "$early_prep_log"
+	echo "prepare $(cut -d' ' -f2 "$early_prep_log.rc")s rc=0 (early, overlapped)" >>"$timings"
+	echo "== gate: prepare (started early, overlapped with the lane checks; passed)"
+else
+	[ -z "${early_prep_done:-}" ] || { cat "$early_prep_log" 2>/dev/null; echo "== gate: the early prepare failed (rc=${early_prep_rc:-?}); running it again"; }
+	gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
+fi
+[ -z "${early_prep_done:-}" ] || rm -f "$early_prep_log" "$early_prep_log.rc"
+if [ -n "$tools_pid" ]; then
+	# the compiler is in the shared cache now: the test job's dq_focused_test.sh need not prepare it again (~30 s of Bun start-up and a
+	# cache probe on a loaded machine, 28 October)
+	if wait "$tools_pid"; then export DQ_FOCUSED_NO_TOOL_PREBUILD=1; else echo "dq_merge_gates: warning: compiler prebuild failed; the jobs build it themselves"; fi
+fi
 
 job_tests() { gate_tests_with_retry "${tests[@]}"; } # one isolated retry tells a flake from a failure (tools/dq_gate_retry.sh)
 job_dm() {

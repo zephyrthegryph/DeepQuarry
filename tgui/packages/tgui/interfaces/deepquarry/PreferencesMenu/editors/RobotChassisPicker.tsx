@@ -160,21 +160,21 @@ const ChassisPickerModal = ({
       background: 'rgba(0,0,0,0.85)',
       display: 'flex',
       flexDirection: 'column',
-      padding: '12px',
+      padding: '1em',
     }}
   >
     <Box
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        marginBottom: '8px',
+        gap: '0.667em',
+        marginBottom: '0.667em',
       }}
     >
       <Box bold fontSize="1.1em" style={{ marginRight: 'auto' }}>
         Choose a Cyborg Chassis
       </Box>
-      <Box style={{ minWidth: '220px' }}>
+      <Box style={{ minWidth: '18.333em' }}>
         <Dropdown
           fluid
           selected={selectedModule}
@@ -207,8 +207,9 @@ const ChassisPickerModal = ({
           minHeight: 0,
           overflowY: 'auto',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-          gap: '8px',
+          gridTemplateColumns:
+            'repeat(auto-fit, minmax(min(100%, 11.667em), 1fr))',
+          gap: '0.667em',
           alignContent: 'start',
         }}
       >
@@ -250,8 +251,8 @@ const ChassisCard = ({
     onClick={onClick}
     style={{
       cursor: 'pointer',
-      padding: '8px',
-      borderRadius: '4px',
+      padding: '0.667em',
+      borderRadius: '0.333em',
       background: isSelected
         ? 'rgba(52,152,219,0.22)'
         : 'rgba(255,255,255,0.04)',
@@ -261,8 +262,8 @@ const ChassisCard = ({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '4px',
-      minHeight: '120px',
+      gap: '0.333em',
+      minHeight: '10em',
     }}
   >
     <Box
@@ -271,7 +272,7 @@ const ChassisCard = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '64px',
+        minHeight: '5.333em',
       }}
     >
       {thumb ? (

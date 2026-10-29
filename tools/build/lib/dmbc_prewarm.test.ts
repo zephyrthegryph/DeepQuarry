@@ -59,6 +59,8 @@ describe('the prewarm lock and the decision', () => {
     expect(enoughMemoryToPrewarm(30e9, 20e9)).toBe(true);
     expect(enoughMemoryToPrewarm(10e9, 20e9)).toBe(false);
     expect('skipped' in planPrewarm(bin, { DQ_DMBC_PREWARM: '0' })).toBe(true);
+    expect(planPrewarm(bin, { DQ_NATIVE_NO_DAEMON: '1', DMB_DAEMON_DIR: state })).toEqual({ skipped: 'DQ_NATIVE_NO_DAEMON=1' });
+    expect(planPrewarm(bin, { DMB_DAEMON_AUTOSTART: '0', DMB_DAEMON_DIR: state })).toEqual({ skipped: 'DMB_DAEMON_AUTOSTART=0' });
     const nothing = planPrewarm(bin, { DMB_DAEMON_DIR: state });
     expect(nothing).toEqual({ skipped: 'no compile in the last 6 hours' });
   });

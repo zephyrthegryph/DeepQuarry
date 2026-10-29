@@ -8,6 +8,7 @@ CAPABILITIES(/datum/vehicle_dummy_load)
 	ref_one(nameof(actual_load), /atom/movable)
 
 /obj/vehicle
+	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "vehicle"
 	icon = 'icons/obj/vehicles.dmi'
 	layer = MOB_LAYER + 0.1 //so it sits above objects including mobs

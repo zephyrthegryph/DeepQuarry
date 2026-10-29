@@ -18,7 +18,6 @@ CAPABILITIES(/obj/item/spell/spawner/destablize)
 	configure(light_glow(range = 3, power = 2, color = "#C26DDE"))
 
 /obj/item/spell/spawner/destablize
-	light_on = TRUE
 
 /obj/item/spell/spawner/destablize/on_ranged_cast(atom/hit_atom, mob/user)
 	if(within_range(hit_atom) && pay_energy(2000))
@@ -30,7 +29,6 @@ CAPABILITIES(/obj/item/spell/spawner/destablize)
 	desc = "This can't be good..."
 	icon_state = "blueshatter"
 	time_to_die = null
-	light_on = TRUE
 	var/pulses_remaining = 40 // Lasts 20 seconds.
 	var/instability_power = 5
 	var/instability_range = 6

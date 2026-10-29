@@ -118,6 +118,13 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/list/dq_window_category_versions
 	/// Category whose mutable editor state is currently being produced.
 	var/dq_active_category = "identity"
+	/// Bumped whenever character_preview_b64 changes; the ~50 KB of base64 ships to a window only when its copy is older.
+	var/dq_preview_version = 1
+	/// window id -> last delivered dq_preview_version
+	var/list/dq_window_preview_versions
+	/// Window ids that asked (once, after opening) for every tab's structure, values, editor data and catalogs,
+	/// so later tab switches render from the client's cache at once.
+	var/list/dq_prefetch_by_window
 	/// REALTIMEOFDAY captured immediately before opening Preferences.
 	var/dq_open_requested_at
 	/// Most recent synchronous mannequin composition cost in milliseconds.
@@ -262,6 +269,7 @@ CAPABILITIES(/datum/preferences)
 
 /datum/preferences/proc/clear_character_previews()
 	dq_preview_generation++
+	set_dq_preview_version(dq_preview_version + 1)
 	set_character_preview_b64(null)
 
 

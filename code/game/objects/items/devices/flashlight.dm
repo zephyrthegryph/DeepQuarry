@@ -14,6 +14,7 @@
 
 MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/flashlight
+	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "flashlight"
 	desc = "A hand-held emergency light."
 	icon = 'icons/obj/lighting.dmi'
@@ -74,9 +75,7 @@ CAPABILITIES(/obj/item/flashlight)
 		look.state("[initial(icon_state)]-on")
 
 /obj/item/flashlight/proc/update_brightness()
-	set_light_on(on)
-	if(atom_rules_of(src).light_system == STATIC_LIGHT)
-		update_light()
+	set_light_on(on) // the setter reconciles the light source
 
 /obj/item/flashlight/examine(mob/user)
 	. = ..()

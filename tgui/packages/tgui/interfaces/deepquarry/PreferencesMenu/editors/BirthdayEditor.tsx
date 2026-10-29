@@ -57,7 +57,7 @@ export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
       <Stack.Item color="label">Month</Stack.Item>
       <Stack.Item>
         <Dropdown
-          width="140px"
+          width="11.667em"
           selected={monthVal}
           displayText={monthLabel}
           options={monthOptions}
@@ -69,7 +69,7 @@ export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
       </Stack.Item>
       <Stack.Item>
         <Dropdown
-          width="80px"
+          width="6.667em"
           selected={dayVal}
           displayText={dayLabel}
           options={dayOptions}

@@ -214,7 +214,7 @@ const TopHeader = ({
     style={{
       background:
         'linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02))',
-      borderRadius: '4px',
+      borderRadius: '0.333em',
       border: '1px solid rgba(255,255,255,0.08)',
     }}
   >
@@ -284,8 +284,8 @@ const SidePill = ({
       onMouseLeave={() => setHover(false)}
       style={{
         cursor: 'pointer',
-        padding: '8px 16px',
-        borderRadius: '8px',
+        padding: '0.667em 1.333em',
+        borderRadius: '0.667em',
         backgroundColor: active
           ? accent
           : hover
@@ -298,11 +298,11 @@ const SidePill = ({
         textAlign: 'center',
         letterSpacing: '0.05em',
         transition: 'all 120ms',
-        boxShadow: active ? `0 0 8px ${accent}88` : 'none',
+        boxShadow: active ? `0 0 0.667em ${accent}88` : 'none',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '8px',
+        gap: '0.667em',
       }}
     >
       <Icon name={icon} size={1.2} />
@@ -316,14 +316,14 @@ const SidePill = ({
 const AgeBadge = ({ age }: { age: number }) => (
   <Box
     style={{
-      padding: '4px 10px',
-      borderRadius: '8px',
+      padding: '0.333em 0.833em',
+      borderRadius: '0.667em',
       border: '1px solid rgba(255,255,255,0.12)',
       background:
         'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18))',
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '8px',
+      gap: '0.667em',
     }}
   >
     <Icon
@@ -505,8 +505,8 @@ const MindActiveDepartment = ({
                 idx < subTrees.length - 1
                   ? '1px dotted rgba(255,255,255,0.22)'
                   : 'none',
-              paddingLeft: idx === 0 ? 0 : '6px',
-              paddingRight: idx === subTrees.length - 1 ? 0 : '6px',
+              paddingLeft: idx === 0 ? 0 : '0.5em',
+              paddingRight: idx === subTrees.length - 1 ? 0 : '0.5em',
             }}
           >
             <SubRoleColumn
@@ -556,8 +556,8 @@ const SubRoleColumn = ({
           fontSize: '0.75em',
           opacity: 0.6,
           textTransform: 'uppercase',
-          marginBottom: '4px',
-          textShadow: `0 0 4px ${accent}33`,
+          marginBottom: '0.333em',
+          textShadow: `0 0 0.333em ${accent}33`,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -638,7 +638,7 @@ const CategoryChip = ({
   return (
     <Tooltip
       content={
-        <Box style={{ maxWidth: '260px' }}>
+        <Box style={{ maxWidth: '21.667em' }}>
           <Box bold style={{ color: cat.color }}>
             {cat.name}
           </Box>
@@ -656,8 +656,8 @@ const CategoryChip = ({
         onMouseLeave={() => setHover(false)}
         style={{
           cursor: 'pointer',
-          padding: '3px 6px',
-          borderRadius: '12px',
+          padding: '0.25em 0.5em',
+          borderRadius: '1em',
           backgroundColor: bg,
           border: `1px solid ${border}`,
           color: fg,
@@ -667,8 +667,8 @@ const CategoryChip = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '4px',
-          boxShadow: isActive ? `0 0 6px ${cat.color}66` : 'none',
+          gap: '0.333em',
+          boxShadow: isActive ? `0 0 0.5em ${cat.color}66` : 'none',
           width: '100%',
           minWidth: 0,
           whiteSpace: 'nowrap',
@@ -692,8 +692,8 @@ const CategoryChip = ({
               backgroundColor: isActive
                 ? 'rgba(255,255,255,0.25)'
                 : `${cat.color}44`,
-              borderRadius: '7px',
-              padding: '0 4px',
+              borderRadius: '0.583em',
+              padding: '0 0.333em',
               fontSize: '0.8em',
               fontWeight: 'bold',
               flexShrink: 0,
@@ -823,12 +823,12 @@ const PoolFillBar = ({
       <Box
         style={{
           display: 'flex',
-          height: '8px',
-          borderRadius: '4px',
+          height: '0.667em',
+          borderRadius: '0.333em',
           overflow: 'hidden',
           backgroundColor: 'rgba(0,0,0,0.4)',
           border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: 'inset 0 0 4px rgba(0,0,0,0.4)',
+          boxShadow: 'inset 0 0 0.333em rgba(0,0,0,0.4)',
         }}
       >
         <Box
@@ -836,7 +836,7 @@ const PoolFillBar = ({
             width: `${fillPct}%`,
             background: `linear-gradient(180deg, ${accent}, ${accent}cc)`,
             transition: 'width 200ms',
-            boxShadow: `0 0 4px ${accent}`,
+            boxShadow: `0 0 0.333em ${accent}`,
           }}
         />
       </Box>
@@ -869,8 +869,8 @@ const SubTreeChip = ({
       onMouseLeave={() => setHover(false)}
       style={{
         cursor: 'pointer',
-        padding: '2px 8px',
-        borderRadius: '10px',
+        padding: '0.167em 0.667em',
+        borderRadius: '0.833em',
         backgroundColor: isActive
           ? `${accent}cc`
           : hover
@@ -883,7 +883,7 @@ const SubTreeChip = ({
         transition: 'all 120ms',
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '5px',
+        gap: '0.417em',
       }}
     >
       {tree.icon && <Icon name={tree.icon} />}
@@ -894,8 +894,8 @@ const SubTreeChip = ({
             backgroundColor: isActive
               ? 'rgba(255,255,255,0.25)'
               : `${accent}44`,
-            borderRadius: '7px',
-            padding: '0 5px',
+            borderRadius: '0.583em',
+            padding: '0 0.417em',
             fontSize: '0.85em',
           }}
         >
@@ -941,8 +941,8 @@ type TreeDims = {
 // 16 → 12) so a Body tree with two wrapped subtree rows × 3 tiers each fits
 // the available pane height without triggering the section's vertical scroll.
 const FULL_DIMS: TreeDims = {
-  NODE_W: 78,
-  NODE_H: 60,
+  NODE_W: 88,
+  NODE_H: 64,
   COL_GAP: 8,
   ROW_GAP: 16,
   SUBTREE_ROW_GAP: 12,
@@ -956,8 +956,8 @@ const FULL_DIMS: TreeDims = {
 const dimsForSubRoleCount = (count: number): TreeDims => {
   if (count <= 2) {
     return {
-      NODE_W: 72,
-      NODE_H: 64,
+      NODE_W: 80,
+      NODE_H: 66,
       COL_GAP: 6,
       ROW_GAP: 18,
       SUBTREE_ROW_GAP: 12,
@@ -966,8 +966,8 @@ const dimsForSubRoleCount = (count: number): TreeDims => {
   }
   if (count === 3) {
     return {
-      NODE_W: 56,
-      NODE_H: 56,
+      NODE_W: 62,
+      NODE_H: 60,
       COL_GAP: 4,
       ROW_GAP: 14,
       SUBTREE_ROW_GAP: 10,
@@ -1411,7 +1411,7 @@ const PerkNode = ({
   // show only the icon. Description still lives in the Tooltip on hover, so the
   // info is still reachable; the icon-only render just doesn't try to cram
   // 8-char names into a 46-px node.
-  const compact = nodeWidth < 60;
+  const compact = nodeWidth < 50;
   const iconSize = nodeWidth < 50 ? 1.1 : nodeWidth < 65 ? 1.35 : 1.6;
   const bg = selected
     ? `linear-gradient(180deg, ${accent}44, ${accent}11)`
@@ -1430,7 +1430,7 @@ const PerkNode = ({
   return (
     <Tooltip
       content={
-        <Box style={{ maxWidth: '300px' }}>
+        <Box style={{ maxWidth: '25em' }}>
           <Box bold style={{ color: accent }} mb={0.25}>
             <Icon name={perk.icon} mr={0.5} />
             {perk.name}
@@ -1439,8 +1439,8 @@ const PerkNode = ({
               ml={1}
               style={{
                 fontSize: '0.78em',
-                padding: '1px 6px',
-                borderRadius: '8px',
+                padding: '1px 0.5em',
+                borderRadius: '0.667em',
                 backgroundColor: `${accent}44`,
                 color: '#fff',
                 fontWeight: 'bold',
@@ -1468,16 +1468,17 @@ const PerkNode = ({
           cursor: clickable ? 'pointer' : 'default',
           width: '100%',
           height: '100%',
-          padding: '4px 3px',
-          borderRadius: '8px',
+          padding: '0.333em 0.25em',
+          borderRadius: '0.667em',
           background: bg,
           border,
-          opacity: disabled ? 0.55 : 1,
+          // Locked nodes stay readable: dim the frame, not the text.
+          opacity: disabled ? 0.8 : 1,
           transition: 'all 120ms',
           boxShadow: selected
-            ? `0 0 8px ${accent}88`
+            ? `0 0 0.667em ${accent}88`
             : hover && !disabled
-              ? `0 0 6px ${accent}55`
+              ? `0 0 0.5em ${accent}55`
               : 'none',
           textAlign: 'center',
           display: 'flex',
@@ -1503,9 +1504,11 @@ const PerkNode = ({
               color: selected
                 ? '#fff'
                 : disabled
-                  ? 'rgba(255,255,255,0.3)'
+                  ? 'rgba(255,255,255,0.5)'
                   : accent,
-              filter: selected ? `drop-shadow(0 0 4px ${accent})` : undefined,
+              filter: selected
+                ? `drop-shadow(0 0 0.333em ${accent})`
+                : undefined,
             }}
           />
           {selected && (
@@ -1516,14 +1519,14 @@ const PerkNode = ({
                 right: -2,
                 background: accent,
                 borderRadius: '50%',
-                width: compact ? '12px' : '16px',
-                height: compact ? '12px' : '16px',
+                width: compact ? '1em' : '1.333em',
+                height: compact ? '1em' : '1.333em',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: compact ? '0.6em' : '0.7em',
                 color: '#fff',
-                boxShadow: '0 0 4px rgba(0,0,0,0.7)',
+                boxShadow: '0 0 0.333em rgba(0,0,0,0.7)',
               }}
             >
               <Icon name="check" />
@@ -1537,8 +1540,8 @@ const PerkNode = ({
                 right: -2,
                 background: 'rgba(0,0,0,0.7)',
                 borderRadius: '50%',
-                width: compact ? '12px' : '16px',
-                height: compact ? '12px' : '16px',
+                width: compact ? '1em' : '1.333em',
+                height: compact ? '1em' : '1.333em',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1556,14 +1559,20 @@ const PerkNode = ({
           <>
             <Box
               style={{
-                color: selected ? '#fff' : 'rgba(255,255,255,0.92)',
+                color: selected
+                  ? '#fff'
+                  : disabled
+                    ? 'rgba(255,255,255,0.75)'
+                    : 'rgba(255,255,255,0.92)',
                 fontWeight: selected ? 'bold' : 'normal',
                 lineHeight: '1.05',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 width: '100%',
-                fontSize: '0.68em',
+                // Theme-relative (the window's font scales with the user's display
+                // scale); 0.68em came out at ~8 px.
+                fontSize: '0.9em',
               }}
             >
               {perk.name}
@@ -1573,10 +1582,10 @@ const PerkNode = ({
                 color: accent,
                 fontWeight: 'bold',
                 background: `${accent}22`,
-                padding: '0 5px',
-                borderRadius: '5px',
+                padding: '0 0.417em',
+                borderRadius: '0.417em',
                 lineHeight: '1.2',
-                fontSize: '0.62em',
+                fontSize: '0.85em',
               }}
             >
               {perk.cost}

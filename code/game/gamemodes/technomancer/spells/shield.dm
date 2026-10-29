@@ -21,7 +21,6 @@ CAPABILITIES(/obj/item/spell/shield)
 	configure(light_glow(range = 3, power = 2, color = "#006AFF"))
 
 /obj/item/spell/shield
-	light_on = TRUE
 
 /obj/item/spell/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(user.incapacitated())

@@ -1194,7 +1194,6 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	id = "mouth_b"
 
 /obj/effect/dog_teleporter/exit
-	light_on = TRUE
 	name = "exit"
 	desc = "You can see the light at the end of the tunnel!"
 	icon_state = "exit_b"
@@ -1208,7 +1207,6 @@ CAPABILITIES(/obj/effect/dog_teleporter/exit)
 	configure(light_glow(range = 5, power = 1, color = "#ffffff"))
 
 /obj/effect/dog_teleporter/mouth_return
-	light_on = TRUE
 	name = "light"
 	desc = "You can see the light shining in from above!"
 	icon_state = "exit_b"

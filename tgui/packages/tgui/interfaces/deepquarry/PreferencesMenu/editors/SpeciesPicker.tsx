@@ -160,15 +160,15 @@ const SpeciesPickerModal = ({
         background: 'rgba(0,0,0,0.88)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '12px',
+        padding: '1em',
       }}
     >
       <Box
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          marginBottom: '8px',
+          gap: '0.667em',
+          marginBottom: '0.667em',
         }}
       >
         <Box bold fontSize="1.1em" style={{ marginRight: 'auto' }}>
@@ -179,7 +179,7 @@ const SpeciesPickerModal = ({
           placeholder="Search…"
           value={search}
           onChange={(v) => setSearch(v)}
-          width="240px"
+          width="20em"
         />
         <Button icon="xmark" color="bad" onClick={onClose}>
           Close
@@ -191,8 +191,9 @@ const SpeciesPickerModal = ({
           minHeight: 0,
           overflowY: 'auto',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '10px',
+          gridTemplateColumns:
+            'repeat(auto-fit, minmax(min(100%, 23.333em), 1fr))',
+          gap: '0.833em',
           alignContent: 'start',
         }}
       >
@@ -225,8 +226,8 @@ const SpeciesCard = ({
   return (
     <Box
       style={{
-        padding: '8px 10px',
-        borderRadius: '4px',
+        padding: '0.667em 0.833em',
+        borderRadius: '0.333em',
         background: isSelected
           ? 'rgba(52,152,219,0.22)'
           : isSynthetic
@@ -239,14 +240,14 @@ const SpeciesCard = ({
             : '1px solid rgba(255,255,255,0.08)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '6px',
+        gap: '0.5em',
       }}
     >
       <Box
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '0.667em',
           cursor: 'pointer',
         }}
         onClick={onPick}
@@ -278,7 +279,11 @@ const SpeciesCard = ({
             )}
           </Box>
           {meta.pitch && (
-            <Box color="label" fontSize="0.8em" style={{ marginTop: '2px' }}>
+            <Box
+              color="label"
+              fontSize="0.8em"
+              style={{ marginTop: '0.167em' }}
+            >
               {meta.pitch}
             </Box>
           )}
@@ -288,7 +293,7 @@ const SpeciesCard = ({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
+          gap: '0.5em',
         }}
       >
         <Button
@@ -312,9 +317,9 @@ const SpeciesCard = ({
           style={{
             background: 'rgba(0,0,0,0.25)',
             border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '3px',
-            padding: '6px 8px',
-            maxHeight: '160px',
+            borderRadius: '0.25em',
+            padding: '0.5em 0.667em',
+            maxHeight: '13.333em',
             overflowY: 'auto',
             fontSize: '0.85em',
             lineHeight: '1.35',

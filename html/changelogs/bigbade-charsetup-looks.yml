@@ -1,0 +1,8 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - rscadd: "Character setup Looks tab: a clickable body diagram picks a region (head, ears, tail, wings, torso, arms, legs, hands and feet) and shows only its styles, colours and markings; Whole body shows everything."
+  - rscadd: "Character setup: each body part has one colour strip (primary, secondary, tertiary and opacity) with copy and paste between parts and match skin / match hair links."
+  - rscadd: "Character setup: a per-character palette of up to 8 colours, offered first in every colour picker (saved with the character)."
+  - rscadd: "Character setup: markings are layers with a thumbnail, body-part chips, colour, visibility switch and reordering; the marking picker is searchable, previews on the body and lists species-compatible markings first."
+  - qol: "Character setup: ears, tail and wings collapse to an Add button when the character has none, and can be removed again; rows that do nothing (gradient colour without a gradient, synth colour while off) are hidden."

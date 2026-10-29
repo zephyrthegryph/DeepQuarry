@@ -3,7 +3,8 @@
 // /datum/preference_editor/persistence.
 
 import { useBackend } from 'tgui/backend';
-import { Box, Button } from 'tgui-core/components';
+import { Box } from 'tgui-core/components';
+import { Switch } from '../controls';
 import type { EditorProps } from './index';
 
 type Data = {
@@ -24,31 +25,24 @@ export const PersistenceEditor = ({ data, staticData }: EditorProps) => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '4px',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 16em), 1fr))',
+        gap: '0.35em 1em',
       }}
     >
-      {flagOrder.map((flag) => {
-        const on = !!d.flags?.[flag];
-        return (
-          <Button
-            key={flag}
-            fluid
-            selected={on}
-            color={on ? 'good' : undefined}
-            icon={on ? 'square-check' : 'square'}
-            onClick={() =>
-              act('dq_editor_action', {
-                editor: 'persistence',
-                action: 'toggle_flag',
-                params: { flag },
-              })
-            }
-          >
-            {labels[flag] ?? flag}
-          </Button>
-        );
-      })}
+      {flagOrder.map((flag) => (
+        <Switch
+          key={flag}
+          checked={!!d.flags?.[flag]}
+          label={labels[flag] ?? flag}
+          onToggle={() =>
+            act('dq_editor_action', {
+              editor: 'persistence',
+              action: 'toggle_flag',
+              params: { flag },
+            })
+          }
+        />
+      ))}
     </Box>
   );
 };

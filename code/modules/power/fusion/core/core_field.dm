@@ -42,7 +42,6 @@
 	var/light_max_power = 5
 
 	// lit at its minimum from the start (static light vars, applied when it materializes)
-	light_on = TRUE
 	var/last_range = 2
 	var/last_power = 3
 

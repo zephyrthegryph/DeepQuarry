@@ -1,0 +1,5 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "Character setup: tabs now open Identity, Looks, Loadout, Jobs first; rarely-changed tabs (Antag, Game) sit under one More tab."
+  - rscadd: "Character setup: a search box finds any setting by name, group, tab or editor and jumps to it, switching tabs and highlighting the field."

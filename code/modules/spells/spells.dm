@@ -254,7 +254,6 @@ CAPABILITIES(/obj/item/spell/unrestricted)
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_on = TRUE
 
 CAPABILITIES(/obj/item/spell/unrestricted/mend)
 	configure(light_glow(color = "#FF5C5C", power = -2))

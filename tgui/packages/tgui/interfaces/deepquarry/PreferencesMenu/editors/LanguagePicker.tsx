@@ -92,8 +92,8 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
               <Stack.Item>
                 <Box
                   style={{
-                    padding: '2px 8px',
-                    borderRadius: '10px',
+                    padding: '0.167em 0.667em',
+                    borderRadius: '0.833em',
                     backgroundColor:
                       room === 0
                         ? 'rgba(231,76,60,0.2)'
@@ -123,8 +123,8 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
               mb={1}
               p={0.5}
               style={{
-                borderLeft: '3px solid rgba(255,255,255,0.3)',
-                paddingLeft: '8px',
+                borderLeft: '0.25em solid rgba(255,255,255,0.3)',
+                paddingLeft: '0.667em',
                 background: 'rgba(255,255,255,0.04)',
                 fontSize: '0.9em',
               }}
@@ -225,9 +225,9 @@ const PrefixSlot = ({
       onClick={onClick}
       style={{
         cursor: 'pointer',
-        width: '88px',
-        padding: '4px 6px',
-        borderRadius: '6px',
+        width: '7.333em',
+        padding: '0.333em 0.5em',
+        borderRadius: '0.5em',
         border: `1px solid ${
           char ? 'rgba(52,152,219,0.6)' : 'rgba(255,255,255,0.18)'
         }`,
@@ -291,7 +291,7 @@ const LanguageRow = ({
       px={1}
       py={0.5}
       style={{
-        borderRadius: '4px',
+        borderRadius: '0.333em',
         background: selected
           ? 'rgba(52,152,219,0.08)'
           : 'rgba(255,255,255,0.03)',
@@ -312,8 +312,8 @@ const LanguageRow = ({
                   ml={1}
                   style={{
                     fontSize: '0.72em',
-                    padding: '0 6px',
-                    borderRadius: '8px',
+                    padding: '0 0.5em',
+                    borderRadius: '0.667em',
                     backgroundColor: 'rgba(231,76,60,0.2)',
                     color: '#E74C3C',
                     fontWeight: 'bold',

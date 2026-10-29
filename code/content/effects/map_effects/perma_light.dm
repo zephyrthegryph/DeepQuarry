@@ -4,7 +4,6 @@
 	name = "permanent light"
 	icon_state = "permalight"
 
-	light_on = TRUE
 
 /obj/effect/map_effect/perma_light/brighter
 	name = "permanent light (bright)"

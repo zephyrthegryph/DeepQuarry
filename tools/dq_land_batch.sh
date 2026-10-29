@@ -20,6 +20,8 @@
 # Queue state: <DQ_LANE_POOL_STATE>/light-queue/<branch>.q (default E:/dq-cache/lane-pool/light-queue). Nothing here runs checkout, reset,
 # restore, stash or cherry-pick, or deletes a lock file.
 set -uo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 cd "$(git rev-parse --show-toplevel)"
 here="$(pwd)"
 . "$here/tools/dq_git_safe.sh"

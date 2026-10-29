@@ -212,6 +212,7 @@ fi
 if want dc; then
 # ---- the DreamChecker batch: one run for several lanes; a fail is pinned on its lane with a reason; a re-enqueued tip is judged afresh ----
 pre_on
+export DQ_TRAIN_DREAMCHECKER=1   # DreamChecker is off in the train by default; this scenario covers it switched on
 export DQ_STUB_DCRUN_LOG="$tmp/dcrun.log" DQ_STUB_DEFER_LOG="$tmp/defer.log"; : >"$DQ_STUB_DCRUN_LOG"; : >"$DQ_STUB_DEFER_LOG"
 mk lane/da lanes/da/f.txt fine; train enqueue --tests "tda" >/dev/null 2>&1; back
 mk lane/db lanes/db/f.txt DCFAIL; train enqueue --tests "tdb" >/dev/null 2>&1; back
@@ -226,7 +227,7 @@ out2="$(train precheck-run 2>&1)"
 check "the same tip enqueued again gets a fresh DreamChecker run, not a bounce on the stale verdict, and still names the reason" '[ "$(grep -c -- "--lanes lane/db" "$DQ_STUB_DCRUN_LOG")" -gt "$runs0" ] && grep -q "BOUNCED lane/db: precheck: DreamChecker" <<<"$out2"'
 out="$(DQ_TRAIN_ONCE=1 train run 2>&1)"
 check "the DreamChecker-batched lanes land; the culprit does not" 'in_master lane/da && in_master lane/dc && ! in_master lane/db'
-unset DQ_STUB_DCRUN_LOG DQ_STUB_DEFER_LOG
+unset DQ_STUB_DCRUN_LOG DQ_STUB_DEFER_LOG DQ_TRAIN_DREAMCHECKER
 export DQ_TRAIN_PRECHECK=0
 fi
 

@@ -10,7 +10,6 @@
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_OFF
-	light_on = TRUE
 	var/tmp/obj/machinery/field_generator/FG1
 	var/tmp/obj/machinery/field_generator/FG2
 	var/list/shockdirs

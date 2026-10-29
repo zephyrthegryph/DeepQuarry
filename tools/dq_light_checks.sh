@@ -74,6 +74,8 @@ if [ "${DQ_LIGHT_CARGO:-1}" = 1 ]; then
 	# every workspace crate that depends on a changed crate runs its tests too (cargo's reverse-dependency set, tools/light_cargo_rdeps.py)
 	if [ ${#manifests[@]} -gt 0 ] && [ -f tools/light_cargo_rdeps.py ]; then
 		while IFS= read -r rd; do
+			# Windows Python prints CRLF; a kept \r made every reverse dependency 'manifest path ... does not exist'.
+			rd=${rd%$'\r'}
 			[ -n "$rd" ] && [ -z "${manifests[$rd]:-}" ] || continue
 			manifests["$rd"]=1
 			echo "== cargo: $rd depends on a changed crate; its tests run too"

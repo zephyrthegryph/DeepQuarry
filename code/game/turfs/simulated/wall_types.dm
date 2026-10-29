@@ -118,7 +118,6 @@ TYPE_TABLE(/turf/simulated/wall/log_sif, wall_forced_materials, list(MAT_SIFLOG)
 	icon = 'icons/turf/shuttle_alien.dmi'
 	icon_state = "alien"
 	base_state = "alien"
-	light_on = TRUE
 	block_tele = TRUE // Will be used for dungeons so this is needed to stop cheesing with handteles.
 
 CAPABILITIES(/turf/simulated/shuttle/wall/alien)

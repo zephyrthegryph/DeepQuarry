@@ -849,7 +849,6 @@ CAPABILITIES(/obj/item/gps/computer)
 	icon_base = "donkvendor"
 	icon_contents = null
 	icon = 'icons/obj/survival_pod_vend.dmi'
-	light_on = TRUE
 	pixel_y = -4
 	max_n_of_items = 100
 
@@ -919,7 +918,6 @@ CAPABILITIES(/obj/structure/fans)
 	icon_state = "hardlight"
 	buildstackamount = 2
 
-	light_on = TRUE
 
 CAPABILITIES(/obj/structure/fans/hardlight)
 	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))

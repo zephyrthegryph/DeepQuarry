@@ -50,22 +50,22 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 	var/list/internals = list()
 	for(var/name in TYPE_TABLE_GET(src, internal_organ_labels))
 		internals[name] = organ_data[name] || "normal"
+	// Labels and order ride with the data (a few hundred bytes): as a catalog they arrived
+	// one round-trip after the page, and until then the section showed bare headings.
 	return list(
 		"externals" = externals,
 		"internals" = internals,
+		"external_labels" = TYPE_TABLE_GET(src, external_limb_labels),
+		"internal_labels" = TYPE_TABLE_GET(src, internal_organ_labels),
+		"external_order"  = list(BP_TORSO, BP_HEAD, BP_GROIN, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT),
+		"internal_order"  = list(O_HEART, O_LUNGS, O_LIVER, O_KIDNEYS, O_SPLEEN, O_STOMACH, O_INTESTINE, O_VOICE, O_EYES, O_BRAIN),
 	)
 
 /datum/preference_editor/organs/build_ui_static_data(datum/preferences/preferences)
 	var/list/limb_models = list()
 	for(var/key in GLOB.all_robolimbs)
 		limb_models += key
-	return list(
-		"external_labels" = TYPE_TABLE_GET(src, external_limb_labels),
-		"internal_labels" = TYPE_TABLE_GET(src, internal_organ_labels),
-		"limb_models"     = limb_models,
-		"external_order"  = list(BP_TORSO, BP_HEAD, BP_GROIN, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT),
-		"internal_order"  = list(O_HEART, O_LUNGS, O_LIVER, O_KIDNEYS, O_SPLEEN, O_STOMACH, O_INTESTINE, O_VOICE, O_EYES, O_BRAIN),
-	)
+	return list("limb_models" = limb_models)
 
 /datum/preference_editor/organs/proc/ui_act_set_external_status(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/limb = params["limb"]
