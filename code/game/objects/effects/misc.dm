@@ -74,7 +74,6 @@ CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
 	desc = "Tell a coder if you're seeing this."
 	icon_state = "nothing"
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	light_on = TRUE
 
 CAPABILITIES(/obj/effect/dummy/lighting_obj)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))

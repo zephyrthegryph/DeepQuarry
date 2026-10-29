@@ -1,0 +1,10 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - bugfix: "Character setup keeps a character's saved name, age and birthday instead of showing random defaults when the prefs load without a live client."
+  - bugfix: "Traits: the point budget comes from your species (every species starts with 1 point, Custom Species 2), so positive traits are affordable again."
+  - bugfix: "Antag tab shows Visitor-Antag role names instead of icon states; label fixes across the Looks/Antag tabs (Uplink Location, Synth Color, ear opacity)."
+  - bugfix: "Organs & Cybernetics lists its limbs and organs without waiting for the catalog."
+  - qol: "Runechat colour shows 'Automatic (from name)' instead of a black swatch, with a reset button."
+  - qol: "Mind & Body skill nodes use readable, theme-relative text; locked nodes stay legible."
+  - qol: "Character setup tabs switch faster: shared catalogs, catalogs ship with the switch, all tabs prefetched once, preview frames sent only when they change."

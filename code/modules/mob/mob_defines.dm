@@ -35,7 +35,6 @@
 	*/
 
 
-	var/list/logging
 
 	var/memory = ""
 	var/transforming = null	//Carbon

@@ -5,6 +5,7 @@ use std::{
     time::Duration,
 };
 mod build_admission;
+mod crash_trace;
 pub mod control;
 mod cache_gc;
 /// One cache pass with the configured size and age caps (`dmbc --cache-gc`).
@@ -104,6 +105,8 @@ fn output_binding(stream: Arc<Mutex<transport::Stream>>) -> OutputBinding {
     OutputBinding
 }
 pub fn serve() -> io::Result<()> {
+    // Held until a clean return: leaving it behind marks this daemon as having died.
+    let _trace = crash_trace::install();
     // A resident session replaces large published claim groups on every request.
     dm_session::release_replaced_in_background(true);
     service::serve()

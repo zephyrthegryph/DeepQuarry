@@ -61,12 +61,12 @@ export const FactionAffiliationsEditor = ({
         display: 'grid',
         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
         gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
-        gap: '8px',
+        gap: '0.667em',
         width: '100%',
         height: '100%',
         minWidth: 0,
         minHeight: 0,
-        padding: '8px',
+        padding: '0.667em',
         overflow: 'hidden',
         boxSizing: 'border-box',
       }}
@@ -85,8 +85,8 @@ export const FactionAffiliationsEditor = ({
               overflow: 'hidden',
               boxSizing: 'border-box',
               border: `1px solid ${faction.color}88`,
-              borderTop: `4px solid ${faction.color}`,
-              borderRadius: '5px',
+              borderTop: `0.333em solid ${faction.color}`,
+              borderRadius: '0.417em',
               background: `linear-gradient(145deg, ${faction.color}22, rgba(24,30,39,.98) 48%)`,
             }}
           >
@@ -96,9 +96,9 @@ export const FactionAffiliationsEditor = ({
                   <Stack.Item>
                     <Box
                       style={{
-                        width: '58px',
-                        height: '58px',
-                        borderRadius: '9px',
+                        width: '4.833em',
+                        height: '4.833em',
+                        borderRadius: '0.75em',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -106,8 +106,9 @@ export const FactionAffiliationsEditor = ({
                         border: '1px solid rgba(255,255,255,.25)',
                         color: '#fff',
                         fontWeight: 800,
-                        fontSize: faction.acronym.length > 4 ? '10px' : '15px',
-                        boxShadow: `0 0 12px ${faction.color}33`,
+                        fontSize:
+                          faction.acronym.length > 4 ? '0.833em' : '1.25em',
+                        boxShadow: `0 0 1em ${faction.color}33`,
                       }}
                     >
                       {faction.acronym}
@@ -116,7 +117,7 @@ export const FactionAffiliationsEditor = ({
                   <Stack.Item grow basis={0} style={{ minWidth: 0 }}>
                     <Box
                       bold
-                      fontSize="16px"
+                      fontSize="1.333em"
                       textAlign="center"
                       color="#f0f5fa"
                       mb={0.75}
@@ -126,7 +127,7 @@ export const FactionAffiliationsEditor = ({
                     </Box>
                     <Box
                       color="label"
-                      fontSize="12px"
+                      fontSize="1em"
                       lineHeight={1.3}
                       textAlign="center"
                     >
@@ -156,7 +157,7 @@ export const FactionAffiliationsEditor = ({
                         }
                         onClick={() => setAffiliation(faction.id, choice)}
                         style={{
-                          borderBottom: `2px solid ${AFFILIATION_COLORS[choice] ?? '#9aa0aa'}`,
+                          borderBottom: `0.167em solid ${AFFILIATION_COLORS[choice] ?? '#9aa0aa'}`,
                         }}
                       >
                         {choice}

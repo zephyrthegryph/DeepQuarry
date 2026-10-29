@@ -29,7 +29,7 @@
 	return list(
 		"blood_color" = preferences.read_preference(/datum/preference/color/human/blood_color),
 		"traits_cheating" = preferences.read_preference(/datum/preference/numeric/human/traits_cheating),
-		"starting_trait_points" = preferences.read_preference(/datum/preference/numeric/human/starting_trait_points),
+		"starting_trait_points" = preferences.trait_point_budget(),
 		"max_traits" = preferences.read_preference(/datum/preference/numeric/human/max_traits),
 		"points_used" = points_used,
 		"total_traits" = total_traits,
