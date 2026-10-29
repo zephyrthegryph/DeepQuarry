@@ -87,9 +87,14 @@ impl KeyIndex {
                         let prefix = marker_option(m, "prefix").map(|p| p.trim_matches('"').to_string()).unwrap_or_else(|| n.clone());
                         collect_ops(&m.body, Some(&prefix), &mut k.ops);
                         // A CAPABILITY_TYPE's ops are written in the `entries()` of its datum.
-                        if m.name == "CAPABILITY_TYPE" {
+                        // A CAPABILITY_DEF's are written in the entries() of /datum/capability/def/<name>.
+                        let entries_type = match m.name.as_str() {
+                            "CAPABILITY_TYPE" => m.args.get(2).cloned(),
+                            _ => Some(format!("/datum/capability/def/{}", n)),
+                        };
+                        {
                             let selected = marker_option(m, "key").map(|v| v != "NONE").unwrap_or(false);
-                            if let Some(ty) = m.args.get(2) {
+                            if let Some(ty) = entries_type.as_ref() {
                                 for (t, op) in decls.entry_ops.iter().filter(|(t, _)| t == ty) {
                                     let _ = t;
                                     k.ops.insert(format!("{}.{}", prefix, op));
