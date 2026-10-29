@@ -43,9 +43,9 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 	)
 	var/safeword
 
-	faction = FACTION_SUCCUBUS
 
 CAPABILITIES(/mob/living/simple_mob/vore/succubus)
+	configure(mob_rules(faction = FACTION_SUCCUBUS))
 	configure(living_rules(say_list_type = /datum/say_list/succubus))
 	rolls(nameof(safeword), PROC_REF(roll_safeword))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))

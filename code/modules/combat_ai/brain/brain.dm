@@ -494,7 +494,7 @@ CAPABILITIES(/datum/ai_brain)
 	var/grudge = grudge_value(attacker)
 	if(!isnull(grudge) && dq_standing_disposition(grudge) <= DQ_DISPOSITION_HOSTILE)
 		return TRUE
-	if(holder.faction && attacker.faction == holder.faction)
+	if(mob_rules_of(holder).faction && mob_rules_of(attacker).faction == mob_rules_of(holder).faction)
 		dqai_log("[holder] brain: ignoring hit from faction-mate [attacker]")
 		return FALSE
 	if(disposition_to(attacker) >= DQ_DISPOSITION_ALLY)

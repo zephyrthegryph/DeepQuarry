@@ -32,6 +32,7 @@
 //! merged here (a wake is already merged per subscriber by the scheduler).
 //! The DM side is `/datum/system/native` (`code/datums/native/system.dm`).
 
+use vg_core::metrics::MetricsRegistry;
 use std::cell::RefCell;
 
 use byondapi::prelude::*;
@@ -255,6 +256,31 @@ struct PhaseTimer {
     at: std::time::Instant,
     /// Wall time of the top-level phases so far this frame, microseconds.
     total_us: u64,
+    /// The thread's CPU time when the frame began, microseconds (see [`thread_cpu_us`]).
+    cpu_start_us: u64,
+}
+
+/// CPU time this thread has used, microseconds (Windows `GetThreadTimes`; 0 elsewhere). A slow frame whose wall time far exceeds the CPU time it used
+/// was not computing: it was descheduled or blocked, not slow work.
+#[cfg(windows)]
+fn thread_cpu_us() -> u64 {
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetCurrentThread() -> isize;
+        fn GetThreadTimes(thread: isize, created: *mut u64, exited: *mut u64, kernel: *mut u64, user: *mut u64) -> i32;
+    }
+    let (mut created, mut exited, mut kernel, mut user) = (0u64, 0u64, 0u64, 0u64);
+    // SAFETY: GetThreadTimes writes four FILETIMEs (two 32-bit halves, little endian: one u64 each) for the calling thread's pseudo-handle.
+    let ok = unsafe { GetThreadTimes(GetCurrentThread(), &mut created, &mut exited, &mut kernel, &mut user) };
+    if ok == 0 {
+        return 0;
+    }
+    (kernel + user) / 10 // 100 ns units
+}
+
+#[cfg(not(windows))]
+fn thread_cpu_us() -> u64 {
+    0
 }
 
 /// A frame at least this long (microseconds) adds its own per-phase times to the `frame.slow_us.<phase>` counters, so the
@@ -276,7 +302,7 @@ impl PhaseTimer {
     fn start() -> Self {
         crate::metrics::registry().counter("frame.count").inc();
         TRACE.with_borrow_mut(Vec::clear);
-        Self { at: std::time::Instant::now(), total_us: 0 }
+        Self { at: std::time::Instant::now(), total_us: 0, cpu_start_us: thread_cpu_us() }
     }
 
     fn lap(&mut self, phase: &str) {
@@ -288,14 +314,23 @@ impl PhaseTimer {
         self.at = now;
     }
 
-    /// Ends the frame: a slow one files its trace under `frame.slow_us.*`.
+    /// Ends the frame: a slow one files its trace under `frame.slow_us.*` in the process registry.
     fn finish(&self) {
+        let cpu_us = thread_cpu_us().saturating_sub(self.cpu_start_us);
+        self.file_slow(crate::metrics::registry(), cpu_us);
+    }
+
+    /// Files this frame into `registry` when it was slow: its per-phase times, and its wall time split into `cpu_us` on the CPU and the rest off it. The
+    /// clock readings come in as arguments, so a test fixes them instead of timing real work.
+    fn file_slow(&self, registry: &MetricsRegistry, cpu_us: u64) {
         if self.total_us < SLOW_FRAME_US {
             return;
         }
-        let registry = crate::metrics::registry();
         registry.counter("frame.slow_count").inc();
         registry.counter("frame.slow_us.total").add(self.total_us);
+        // On the CPU against off it: a frame that waited (descheduled, blocked) shows its wall time here and little CPU time.
+        registry.counter("frame.slow_us.on_cpu").add(cpu_us.min(self.total_us));
+        registry.counter("frame.slow_us.off_cpu").add(self.total_us.saturating_sub(cpu_us));
         TRACE.with_borrow(|t| {
             for (phase, us) in t {
                 registry.counter(&format!("frame.slow_us.{phase}")).add(*us);
@@ -333,6 +368,42 @@ mod tests {
         }
         assert_eq!(at, page.len(), "the page is whole records: {page:?}");
         out
+    }
+
+    /// A slow frame files its wall time split into the CPU it used and the time it did not run: the two always add up to the frame. Fixed durations and a
+    /// private registry: nothing here depends on how loaded the machine is or on what another test files.
+    #[test]
+    fn a_slow_frame_splits_its_wall_time_into_on_and_off_cpu() {
+        let registry = MetricsRegistry::new();
+        let mut timer = PhaseTimer::start();
+        timer.total_us = SLOW_FRAME_US + 5_000;
+        timer.file_slow(&registry, 1_500);
+        assert_eq!(registry.counter("frame.slow_us.total").get(), SLOW_FRAME_US + 5_000, "the slow frame was filed");
+        assert_eq!(registry.counter("frame.slow_us.on_cpu").get(), 1_500, "the CPU it used");
+        assert_eq!(registry.counter("frame.slow_us.off_cpu").get(), SLOW_FRAME_US + 3_500, "the rest it spent off the CPU");
+        assert_eq!(registry.counter("frame.slow_count").get(), 1);
+    }
+
+    /// CPU time cannot exceed the wall time it was used in: a reading past it is capped, and the frame still adds up.
+    #[test]
+    fn a_cpu_reading_past_the_frame_is_capped() {
+        let registry = MetricsRegistry::new();
+        let mut timer = PhaseTimer::start();
+        timer.total_us = SLOW_FRAME_US;
+        timer.file_slow(&registry, SLOW_FRAME_US * 3);
+        assert_eq!(registry.counter("frame.slow_us.on_cpu").get(), SLOW_FRAME_US);
+        assert_eq!(registry.counter("frame.slow_us.off_cpu").get(), 0);
+    }
+
+    /// A frame under the slow line files nothing, however the clock read.
+    #[test]
+    fn a_quick_frame_files_no_slow_time() {
+        let registry = MetricsRegistry::new();
+        let mut timer = PhaseTimer::start();
+        timer.total_us = SLOW_FRAME_US - 1;
+        timer.file_slow(&registry, 0);
+        assert_eq!(registry.counter("frame.slow_us.total").get(), 0);
+        assert_eq!(registry.counter("frame.slow_count").get(), 0);
     }
 
     #[test]

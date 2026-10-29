@@ -25,9 +25,9 @@
 		"countessnude"
 	)
 
-	faction = FACTION_VAMPIRE
 
 CAPABILITIES(/mob/living/simple_mob/vore/vampire)
+	configure(mob_rules(faction = FACTION_VAMPIRE))
 	configure(living_rules(say_list_type = /datum/say_list/count))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
 	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))

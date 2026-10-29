@@ -8,7 +8,6 @@
 	icon_living = "meowl"
 	icon_state = "meowl"
 	icon_rest = "meowl_rest"
-	faction = FACTION_MEOWL
 	friendly = list("nudges", "sniffs on", "rumbles softly at", "nuzzles")
 	response_help = "pets"
 	response_disarm = "shoves"
@@ -99,6 +98,7 @@
 		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly."))
 
 CAPABILITIES(/mob/living/simple_mob/vore/meowl)
+	configure(mob_rules(faction = FACTION_MEOWL))
 	configure(living_rules(vore_capacity = 1))
 	op("meowl_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(meowl_interaction_feed)))
 

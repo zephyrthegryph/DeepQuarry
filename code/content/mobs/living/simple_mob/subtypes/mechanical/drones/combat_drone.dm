@@ -39,7 +39,6 @@
 	icon_dead = "drone_dead"
 	has_eye_glow = TRUE
 
-	faction = FACTION_MALF_DRONE
 
 	endurance = 50 // Shield has 150 for total of 200.
 	movement_cooldown = 1.5
@@ -58,6 +57,7 @@
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
+	configure(mob_rules(faction = FACTION_MALF_DRONE))
 	configure(living_rules(say_list_type = /datum/say_list/malf_drone, delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "suddenly breaks apart."))

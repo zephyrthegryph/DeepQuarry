@@ -189,4 +189,19 @@ for c in base user other; do echo "" >"$rd/ws/crates/$c/src/lib.rs"; done
 rd_out="$(cd "$rd" && python3 "$here/tools/light_cargo_rdeps.py" ws/crates/base/Cargo.toml)"
 check "a changed crate's workspace dependents are added to the light cargo tests (and unrelated crates are not)" '[ "$rd_out" = "ws/crates/user/Cargo.toml" ] && grep -q "light_cargo_rdeps.py" "$here/tools/dq_light_checks.sh"'
 
+# self-update hashing must not depend on the cwd: a process started from a lane checkout that was later released (broken gitdir) hashed
+# every snapshot file as "" and re-exec'd every ~85 s for 11 hours (28-29 October). fhash runs from $STATE.
+fh_d="$tmp/fh"; mkdir -p "$fh_d/state" "$fh_d/badcwd"; printf 'gitdir: %s/missing\n' "$fh_d" >"$fh_d/badcwd/.git"; printf 'x\n' >"$fh_d/f"
+fh_want="$(git hash-object --no-filters "$fh_d/f")"
+fh_got="$( cd "$fh_d/badcwd" && DQ_TRAIN_STATE="$fh_d/state" DQ_TRAIN_NO_START=1 bash -c '. "$1" __lib; fhash "$2"' _ "$here/tools/dq_train.sh" "$fh_d/f" 2>/dev/null )"
+check "the self-update file hash works from a working directory with a broken gitdir" '[ -n "$fh_want" ] && [ "$fh_got" = "$fh_want" ]'
+
+# moved_heavy: master changes that touch no heavy path (docs, tools) are not an interaction for a prechecked lane
+mh_run() { # <from> <to>
+	( set +u; export DQ_TRAIN_STATE="$dd/state" DQ_TRAIN_WT="$dd/no-wt" DQ_TRAIN_ORIGIN_REPO="$here" DQ_TRAIN_NO_START=1
+	  cd "$dd/w" || exit 1; . "$here/tools/dq_train.sh" __lib; G() { git -C "$dd/w" "$@"; }; repo_dir() { echo "$here"; }; moved_heavy "$1" "$2" ) 2>/dev/null
+}
+mh_docs="$(mh_run origin/master origin/lane/d)"; mh_code="$(mh_run origin/master origin/lane/a)"
+check "master changes that touch no heavy path are not an interaction (moved_heavy is empty for docs, names code)" '[ -z "$mh_docs" ] && [ "$mh_code" = "code/a.dm" ]'
+
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }

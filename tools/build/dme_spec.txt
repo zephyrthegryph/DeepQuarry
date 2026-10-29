@@ -32,8 +32,8 @@ before code/modules/mob/living/silicon/robot/drone/drone.dm code/modules/mob/liv
 before code/content/mobs/living/simple_mob/subtypes/animal/giant_spider/** code/content/mobs/living/simple_mob/subtypes/animal/spider.dm   # giant spiders
 before code/modules/mob/living/simple_mob/donteatbossmonsters.dm code/content/mobs/living/simple_mob/subtypes/animal/spider.dm   # broodmother
 before code/content/mobs/living/simple_mob/subtypes/animal/spider.dm code/domains/ai/ports/broodmother.dm   # broodmother
-before code/modules/mob/living/simple_mob/subtypes/humanoid/mercs/** code/modules/mob/living/simple_mob/subtypes/humanoid/mercenary.dm   # mercs, vox
-before code/modules/mob/living/simple_mob/subtypes/humanoid/pirates.dm code/modules/mob/living/simple_mob/subtypes/humanoid/pirate.dm   # pirates
+before code/content/mobs/living/simple_mob/subtypes/humanoid/mercs/** code/content/mobs/living/simple_mob/subtypes/humanoid/mercenary.dm   # mercs, vox
+before code/content/mobs/living/simple_mob/subtypes/humanoid/pirates.dm code/content/mobs/living/simple_mob/subtypes/humanoid/pirate.dm   # pirates
 before code/content/mobs/living/simple_mob/subtypes/mechanical/hivebot/ranged_damage.dm code/content/mobs/living/simple_mob/subtypes/mechanical/hivebot/orginalAlts.dm   # hivebots
 before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/durand.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm   # mecha mobs
 before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/marauder.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm

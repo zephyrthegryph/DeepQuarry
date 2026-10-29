@@ -6,7 +6,6 @@
 	name = "Laity"
 	real_name = "Laity"
 	construct_type = "Laity"
-	faction = "purity"
 	desc = "A small construct of the purity worshippers mechanical followers, not hardy or particularly strong, very numerous."
 	icon_state = "laity"
 	icon_living = "laity"
@@ -20,3 +19,6 @@
 	attacktext = list("rammed")
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 0
+
+CAPABILITIES(/mob/living/simple_mob/construct/laity)
+	configure(mob_rules(faction = "purity"))

@@ -6,7 +6,6 @@
 	name = "Cardinal"
 	real_name = "Cardinal"
 	construct_type = "Cardinal"
-	faction = "purity"
 	desc = "A large sized construct of the purity worshippers mechanical followers, one of their most advanced, it is the left hand of purification, tasked with the ultimate protection and ultimately defense of all under its charge, it will stop at nothing to protect its flock from harm."
 	icon_state = "cardinal"
 	icon_living = "cardinal"
@@ -79,4 +78,5 @@ TYPE_TABLE(/datum/decl/mob_organ_names/juggernaut, mob_organ_hit_zones, list("bo
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/construct/cardinal)
+	configure(mob_rules(faction = "purity"))
 	immune_to_incapacitation()

@@ -7,7 +7,6 @@
 	icon_dead = "tomato_dead"
 
 
-	faction = FACTION_PLANTS
 	endurance = 15
 	poison_resist = 1.0
 
@@ -26,6 +25,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/tomato)
+	configure(mob_rules(faction = FACTION_PLANTS))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/tomatomeat, meat_amount = 4))
 	configure(mob_nature(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

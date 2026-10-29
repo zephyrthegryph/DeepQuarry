@@ -190,8 +190,8 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/tmp/list/entries
 	/// Things recorded, for sync()'s fast path.
 	var/tracked = 0
-	/// Entry serials only increase, so an entry id is never reused.
-	var/next_serial = 0
+	/// Entry serials only increase (the last one issued), so an entry id is never reused.
+	var/last_serial = 0
 	/// Measure accumulators (ledger_measure_ids order) then tag-word
 	/// accumulators. Each is made when its first value arrives.
 	var/tmp/list/accumulators
@@ -338,7 +338,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/cost = def.cost(holder, thing)
 	var/list/snapshot = dq_ledger_contribution(thing)
 	var/key = def.keyed ? thing.slot_key() : null
-	entries[thing] = list(id, ++next_serial, cost, snapshot, key)
+	entries[thing] = list(id, ++last_serial, cost, snapshot, key)
 	if(def.keyed && !isnull(key))
 		index_key(id, key, thing)
 	var/list/things = slots[id]
@@ -419,7 +419,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		thing.on_unslotted(holder, old_id, flags)
 	var/datum/relation_definition/slot/def = def_by_id(new_id)
 	entry[LEDGER_E_SLOT] = new_id
-	entry[LEDGER_E_SERIAL] = ++next_serial
+	entry[LEDGER_E_SERIAL] = ++last_serial
 	entry[LEDGER_E_COST] = def.cost(holder, thing)
 	var/key = def.keyed ? thing.slot_key() : null
 	entry[LEDGER_E_KEY] = key

@@ -1,0 +1,42 @@
+/mob/living/simple_mob/vore/turkey
+	name = "turkey"
+	desc = "A large turkey, all ready for stuffing."
+	tt_desc = "Meleagris gallopavo"
+
+	icon_state = "turkey"
+	icon_living = "turkey"
+	icon_dead = "turkeydead"
+	icon_rest = "turkeyrest"
+	icon = 'icons/mob/vore.dmi'
+
+	endurance = 25
+
+
+	response_help = "pats"
+	response_disarm = "gently pushes aside"
+	response_harm = "hits"
+
+	harm_intent_damage = 3
+	melee_damage_lower = 3
+	melee_damage_upper = 1
+	attacktext = list("pecked")
+
+
+
+	vore_active = 1
+	vore_bump_chance = 10
+	vore_bump_emote	= "greedily leaps at"
+	vore_default_mode = DM_HOLD
+	vore_icons = SA_ICON_LIVING
+
+CAPABILITIES(/mob/living/simple_mob/vore/turkey)
+	configure(mob_rules(faction = FACTION_TURKEY))
+	configure(living_rules(say_list_type = /datum/say_list/turkey))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/rawturkey, meat_amount = 1))
+	configure(mob_nature(name_the_meat = FALSE))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+
+/datum/say_list/turkey
+	speak = list("GOBBLEGOBBLE!","Gobble?","Gobblegobble...")
+	emote_hear = list("gobbles!")
+	emote_see = list("flaps its wings","pecks something on the floor","puffs up its feathers")

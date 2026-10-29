@@ -1570,6 +1570,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return
 	var/datum/notice/op_done/N = notice_take(/datum/notice/op_done)
 	N.op_key = A.key
+	rel_set(N, nameof(N.op_actor), A.actor)
+	rel_set(N, nameof(N.op_subject), A.target)
 	N.refusal = A.reason // a listener of refusals (on_op(..., outcome = ACT_REFUSED)) reads why
 	notice_publish(holder, N, outcome)
 

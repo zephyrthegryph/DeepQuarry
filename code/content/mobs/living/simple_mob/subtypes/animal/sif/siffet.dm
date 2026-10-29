@@ -18,7 +18,6 @@
 	tt_desc = "S Pruinaeictis velocis" //Sivian frost weasel, fast
 	catalogue_data = list(/datum/category_item/catalogue/fauna/siffet)
 
-	faction =FACTION_SIFFET
 
 	mob_size = MOB_SMALL
 
@@ -38,6 +37,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/siffet)
+	configure(mob_rules(faction = FACTION_SIFFET))
 	configure(living_rules(say_list_type = /datum/say_list/siffet))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 

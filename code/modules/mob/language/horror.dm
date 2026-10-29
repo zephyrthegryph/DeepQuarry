@@ -28,7 +28,7 @@
 			var/turf/T = get_turf(human_speaker)
 			if(T)
 				var/obj/effect/spider/spiderling/non_growing/horror/spider = new /obj/effect/spider/spiderling/non_growing/horror(get_turf(human_speaker))
-				spider.faction = human_speaker.faction
+				spider.faction = mob_rules_of(human_speaker).faction
 				spider.set_color("[human_speaker.species.blood_color]")
 				spider.name = "writhing tendril mass"
 				spider.desc = "A small, writhing mass of flesh and tendrils."

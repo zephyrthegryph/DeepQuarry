@@ -37,10 +37,12 @@
 	var/seen_armour
 	endurance = 100
 
-	faction = FACTION_GLAMOUR
 
 	melee_damage_lower = 5
 	melee_damage_upper = 7
+
+CAPABILITIES(/mob/living/simple_mob/homunculus/evil)
+	configure(mob_rules(faction = FACTION_GLAMOUR))
 
 
 /mob/living/simple_mob/homunculus/evil/life_type_pre(datum/seq_frame/life/F)

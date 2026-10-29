@@ -69,7 +69,7 @@ CAPABILITIES(/obj/structure/mob_spawner)
 		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
-			L.faction = mob_faction
+			L.set_faction(mob_faction)
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(src))
@@ -163,7 +163,7 @@ CAPABILITIES(/obj/structure/mob_spawner/scanner)
 		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
-			L.faction = mob_faction
+			L.set_faction(mob_faction)
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(spawn_turf))
@@ -189,7 +189,7 @@ CAPABILITIES(/obj/structure/mob_spawner/scanner)
 		return
 	if(COOLDOWN_FINISHED(src, spawn_cooldown))
 		for(var/mob/living/A in mobs_in_range) //No more calling fucking range(10) every goddamn processing tick, christ.
-			if ((A.faction != mob_faction) && A.ckey)
+			if ((mob_rules_of(A).faction != mob_faction) && A.ckey)
 				var/chosen_mob = choose_spawn()
 				if(chosen_mob)
 					do_spawn(chosen_mob)

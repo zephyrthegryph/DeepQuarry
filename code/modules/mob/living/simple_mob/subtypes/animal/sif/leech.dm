@@ -24,7 +24,6 @@
 	tt_desc = "S Hirudinea phorus"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/iceleech)
 
-	faction = FACTION_LEECH
 
 	icon_state = "leech"
 	item_state = "brainslug"
@@ -97,6 +96,7 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
+	configure(mob_rules(faction = FACTION_LEECH))
 	configure(living_rules(say_list_type = /datum/say_list/leech, use_modern_ai = TRUE))
 	configure(mob_rules(universal_understand = 1))
 	ref_one(nameof(host_bodypart), /obj/item/organ/external)

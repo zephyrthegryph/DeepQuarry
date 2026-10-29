@@ -6,10 +6,10 @@
 	icon_state = "larva"
 	language = LANGUAGE_HIVEMIND
 	endurance = 50
-	faction = FACTION_XENO
 	max_grown = 325 //Increase larva growth time due to not needing hosts.
 
 CAPABILITIES(/mob/living/carbon/alien/larva)
+	configure(mob_rules(faction = FACTION_XENO))
 	knows(LANGUAGE_XENOLINGUA)
 	initial_contents(/obj/item/organ/internal/xenos/hivenode)
 

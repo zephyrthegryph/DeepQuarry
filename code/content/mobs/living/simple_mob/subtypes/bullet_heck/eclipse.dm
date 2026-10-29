@@ -1,0 +1,179 @@
+/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top
+	name = "astral collective cryo top"
+	icon_state = "mecha_top"
+	icon_living = "mecha_top"
+	endurance = 3000
+	wreckage = /obj/item/melee/energy/sword/top_shield
+	desc = "It appears to be spinning at rapid speeds; enough to deflect projectiles. The air around it feels frigid."
+	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/chillingwind
+	projectiletype = /obj/item/projectile/energy/eclipse_boss/chillingwind
+	pilot_type = /mob/living/simple_mob/humanoid/astral_collective/purity
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/do_special_attack(atom/A, stance)
+	rng_cycle = rand(1,3)
+	switch(stance)
+		if(I_HURT) //phase1
+			switch(attackcycle)
+				if(1)
+					specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/chillingwind
+					after(src, 0.5 SECONDS, PROC_REF(rising_star), with = list(A, rng_cycle, 7))
+					attackcycle = 0
+				if(2)
+					specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/chillingwind
+					after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), with = list(A, rng_cycle, 18))
+					attackcycle = 0
+				if(3)
+					after(src, 0.5 SECONDS, PROC_REF(summon_puddles), with = list(A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball))
+					attackcycle = 0
+		if(I_GRAB) //phase2
+			switch(attackcycle)
+				if(1)
+					specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/chillingwind
+					after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), with = list(A, 3, 8))
+					attackcycle = 0
+				if(2)
+					specialattackprojectile = /obj/item/projectile/arc/blue_energy/precusor
+					after(src, 0.5 SECONDS, PROC_REF(chain_burst), with = list(A, rng_cycle, 6))
+					attackcycle = 0
+				if(3)
+					after(src, 0.5 SECONDS, PROC_REF(summon_puddles), with = list(A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball))
+					attackcycle = 0
+		if(I_DISARM) //phase3
+			switch(attackcycle)
+				if(1)
+					after(src, 0.5 SECONDS, PROC_REF(summon_puddles), with = list(A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball))
+					attackcycle = 0
+				if(2)
+					specialattackprojectile = /obj/item/projectile/arc/blue_energy/precusor
+					after(src, 0.5 SECONDS, PROC_REF(checker_board), with = list(A, rng_cycle))
+					attackcycle = 0
+				if(3)
+					projectiletype = /obj/item/projectile/energy/eclipse_boss/chillingwind
+					after(src, 0.5 SECONDS, PROC_REF(dual_spin), with = list(A, rng_cycle, 8))
+					attackcycle = 0
+
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.frozen_aura()
+	..()
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/proc/frozen_aura()
+	for(var/mob/living/L in view(src, 14))
+		if(!IIsAlly(L))
+			L.apply_body_effect(/datum/body_effect/chilled, 3, src)
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo
+	name = "astral collective deflection saucer"
+	icon_state = "UPshield_mecha"
+	icon_living = "UPshield_mecha"
+	desc = "A metallic flying saucer, a reflective barrier around it."
+	icon = 'icons/mob/eclipse.dmi'
+	endurance = 1500
+	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/metalsphere
+	projectiletype = /obj/item/projectile/energy/eclipse_boss/metalsphere
+	wreckage = /obj/item/prop/deconstructable/gigacell
+	pilot_type = /mob/living/simple_mob/humanoid/astral_collective/purity
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo)
+	configure(mob_rules(faction = FACTION_ECLIPSE))
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo/do_special_attack(atom/A, stance)
+	switch(stance)
+		if(I_HURT) //phase1
+			switch(attackcycle)
+				if(1)
+					after(src, 0.5 SECONDS, PROC_REF(cross_spin), with = list(A, 2, 5))
+					attackcycle = 0
+					parry_chance = 100
+					set_icon_state("UPshield_mecha")
+				if(2)
+					after(src, 0.5 SECONDS, PROC_REF(rising_star), with = list(A, 3, 7))
+					attackcycle = 0
+					parry_chance = 100
+					set_icon_state("UPshield_mecha")
+				if(3)
+					after(src, 0.5 SECONDS, PROC_REF(random_firing), with = list(A, 10, 1, 7))
+					attackcycle = 0
+					set_icon_state("shield_mecha")
+		if(I_GRAB) //phase2
+			switch(attackcycle)
+				if(1)
+					after(src, 0.5 SECONDS, PROC_REF(dual_spin), with = list(A, 2, 5))
+					attackcycle = 0
+					parry_chance = 100
+					set_icon_state("UPshield_mecha")
+				if(2)
+					after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), with = list(A, 3, 8))
+					attackcycle = 0
+					parry_chance = 100
+					set_icon_state("UPshield_mecha")
+				if(3)
+					after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), with = list(A, 10, 1, 7))
+					attackcycle = 0
+					set_icon_state("shield_mecha")
+		if(I_DISARM) //phase3
+			switch(attackcycle)
+				if(1)
+					after(src, 0.5 SECONDS, PROC_REF(dual_spin), with = list(A, 2, 4))
+					attackcycle = 0
+					parry_chance = 100
+					set_icon_state("UPshield_mecha")
+				if(2)
+					after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), with = list(A, 3, 15))
+					attackcycle = 0
+					parry_chance = 100
+					set_icon_state("UPshield_mecha")
+				if(3)
+					after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), with = list(A, 10, 1, 5))
+					attackcycle = 0
+					parry_chance = 0
+					set_icon_state("shield_mecha")
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/janus
+	name = "astral collective janus"
+	icon_state = "astral_janus"
+	icon_living = "astral_janus"
+	desc = "A janus made from stolen tech."
+	endurance = 4500
+	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/energyjavelin
+	projectiletype = /obj/item/projectile/energy/eclipse_boss/energyjavelin
+	wreckage = /obj/item/prop/deconstructable/gigacell
+	pilot_type = /mob/living/simple_mob/humanoid/astral_collective/purity
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/janus/do_special_attack(atom/A, stance)
+	rng_cycle = rand(1,3)
+	switch(stance)
+		if(I_HURT) //phase1
+			switch(attackcycle)
+				if(1)
+					after(src, 0.5 SECONDS, PROC_REF(gattlingfire), with = list(A, rng_cycle, 4, 7))
+					attackcycle = 0
+				if(2)
+					after(src, 0.5 SECONDS, PROC_REF(rising_star), with = list(A, rng_cycle, 7))
+					attackcycle = 0
+				if(3)
+					after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), with = list(A, 4, rng_cycle, 5))
+					attackcycle = 0
+		if(I_GRAB) //phase2
+			switch(attackcycle)
+				if(1)
+					after(src, 0.5 SECONDS, PROC_REF(death_wall), with = list(A, rng_cycle, 9))
+					attackcycle = 0
+				if(2)
+					after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), with = list(A, rng_cycle))
+					attackcycle = 0
+				if(3)
+					after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), with = list(A, rng_cycle, 7))
+					attackcycle = 0
+		if(I_DISARM) //phase3
+			switch(attackcycle)
+				if(1)
+					after(src, 2.5 SECONDS, PROC_REF(summon_puddles), with = list(A, rng_cycle, /datum/body_effect/mmo_drop/blade_boss_short))
+					attackcycle = 0
+				if(2)
+					after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), with = list(A, 3, 12))
+					attackcycle = 0
+				if(3)
+					after(src, 0.5 SECONDS, PROC_REF(cross_spin), with = list(A, rng_cycle, 3))
+					attackcycle = 0

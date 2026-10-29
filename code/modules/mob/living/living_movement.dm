@@ -214,7 +214,7 @@ default behaviour is:
 		now_pushing = FALSE
 
 /mob/living/CanPass(atom/movable/mover, turf/target)
-	if(istype(mover, /obj/structure/blob) && faction == "blob") //Blobs should ignore things on their faction.
+	if(istype(mover, /obj/structure/blob) && mob_rules_of(src).faction == "blob") //Blobs should ignore things on their faction.
 		return TRUE
 	return ..()
 

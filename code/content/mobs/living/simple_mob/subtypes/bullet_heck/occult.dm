@@ -1,0 +1,62 @@
+/mob/living/simple_mob/mechanical/mecha/eclipse/occult
+	name = "Occult Construct"
+	desc = "A strange robotic creature."
+	endurance = 900
+
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
+
+	pilot_type = /mob/living/simple_mob/humanoid/cultist/tesh
+	wreckage = /obj/item/cell/device/weapon/recharge/cult
+
+
+	icon_state = "bloodguardian"
+	icon_living = "bloodguardian"
+
+	icon = 'icons/mob/ghost.dmi'
+
+	size_multiplier = 2.5
+	movement_cooldown = 4
+
+	projectiletype = /obj/item/projectile/energy/blood_bullet
+
+	loot_list = list(/obj/item/stock_parts/scanning_module = 80,
+		/obj/item/stock_parts/micro_laser = 80,
+		/obj/item/stock_parts/capacitor = 80,
+		/obj/item/stock_parts/manipulator = 80,
+		/obj/item/stock_parts/matter_bin = 80,
+		/obj/item/prop/deconstructable/gigacell = 100
+		)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/occult)
+	configure(mob_rules(faction = FACTION_CULT))
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
+
+
+/obj/item/projectile/energy/blood_bullet
+	name = "blood bolt"
+	icon_state = "red_pellet"
+	damage = 8 //A little more then 12 hits to kill
+	speed = 8
+	crawl_destroy = TRUE
+	hits_phased = TRUE //because the wierd redspace stuff being able to touch the other extradimensional thing seems intresting
+
+CAPABILITIES(/obj/item/projectile/energy/blood_bullet)
+	configure(item_combat(armor_penetration = 60))
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/occult
+	icon_state = "bloodguardian"
+	icon_living = "bloodguardian"
+	specialattackprojectile = /obj/item/projectile/energy/blood_bullet
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/occult/do_special_attack(atom/A, stance)
+	rng_cycle = rand(1,2)
+	switch(attackcycle)
+		if(1)
+			after(src, 0.5 SECONDS, PROC_REF(summon_puddles), with = list(A, 3, /datum/body_effect/mmo_drop/lingering/blood_flower))
+			attackcycle = 0
+		if(2)
+			after(src, 0.5 SECONDS, PROC_REF(summon_puddles), with = list(A, 3, /datum/body_effect/mmo_drop/occult_fireball))
+			attackcycle = 0
+		if(3)
+			after(src, 1.5 SECONDS, PROC_REF(cross_spin), with = list(A, rng_cycle, 3))
+			attackcycle = 0

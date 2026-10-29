@@ -126,15 +126,23 @@ type Lits = BTreeMap<(String, String), Evidence>;
 
 fn scan(cx: &Cx, out: &mut Sink, lits_out: &mut Lits) {
     {
+        let t_scan = std::time::Instant::now();
+        let trace = std::env::var_os("DQ_ANALYZE_TRACE").is_some();
         let Some(sem) = cx.sem() else {
             out.note("untyped: the semantic model is unavailable; nothing checked");
             return;
         };
         let sem: &Sem = &sem;
+        if trace {
+            eprintln!("untyped: model ready after {:.2?}", t_scan.elapsed());
+        }
         let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: Vec::new(), cache: Default::default() };
         let w = Walker { sem, kinds: &kinds };
         let values = ValueProcs::build(sem, &w);
         let schemas = ValueSchemas::build(&Decls::get(cx.tree));
+        if trace {
+            eprintln!("untyped: value procs and schemas built after {:.2?}", t_scan.elapsed());
+        }
         let root = &cx.tree.root;
         // (declaring type, var) -> (rule, every "file:line" that assigns it an offending value)
         let mut found: BTreeMap<(String, String), (&'static str, Vec<String>)> = BTreeMap::new();
@@ -220,6 +228,9 @@ fn scan(cx: &Cx, out: &mut Sink, lits_out: &mut Lits) {
                     });
                 }
             }
+        }
+        if trace {
+            eprintln!("untyped: body walk done after {:.2?}", t_scan.elapsed());
         }
         let mut rows: Vec<(String, u32, &'static str, String, String)> = Vec::new();
         for ((o, name), (rule, at)) in found {

@@ -67,7 +67,7 @@
 	var/turf/surface = test_floor()
 	var/mob/living/simple_mob/vore/bigdragon/dragon = allocate(/mob/living/simple_mob/vore/bigdragon/friendly, surface)
 	var/mob/living/simple_mob/vore/bigdragon/target = allocate(/mob/living/simple_mob/vore/bigdragon/friendly, get_step(surface, EAST))
-	TEST_ASSERT_EQUAL(dragon.faction, target.faction, "Actual two dragons naturally share a faction")
+	TEST_ASSERT_EQUAL(mob_rules_of(dragon).faction, mob_rules_of(target).faction, "Actual two dragons naturally share a faction")
 	TEST_ASSERT_NULL(dragon.ai_brain.primary_threat, "New dragon has no automatic primary threat")
 	dragon.ai_brain.add_personal(target, DQ_DISPOSITION_HOSTILE, 0, "initial public selection")
 	dragon.dq_use_combat_move()
