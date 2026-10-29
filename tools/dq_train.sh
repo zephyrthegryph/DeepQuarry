@@ -308,7 +308,12 @@ snap_syntax_ok() { # <dir>: every script in it parses; prints the first failure
 }
 SELF_UPDATE_BAD=""
 SELF_UPDATE_LAST="${DQ_TRAIN_REEXEC_AT:-0}"
-SELF_SIG="${DQ_TRAIN_TEST_SELF_SIG:-$(git hash-object --no-filters "$SELF" 2>/dev/null)}" # the code this process runs (self_update notices a refreshed snapshot)
+# fhash <file>: the git blob id of a file, independent of the caller's working directory. A long-running train process inherits the cwd of
+# the lane checkout that started it; once that checkout is released, reset or its gitdir pruned, a bare `git hash-object` there fails, every
+# snapshot file then read as "changed on master", and the prechecker re-exec'd every ~85 s for 11 hours (28-29 October: 440 re-execs) and
+# never started a second precheck while one ran (self_update_pending was true forever). Run it from $STATE, a plain directory.
+fhash() { ( cd "$STATE" 2>/dev/null || cd / || exit 1; git hash-object --no-filters -- "$1" 2>/dev/null ); }
+SELF_SIG="${DQ_TRAIN_TEST_SELF_SIG:-$(fhash "$SELF")}" # the code this process runs (self_update notices a refreshed snapshot)
 # Between cycles, never in one: when a script of the snapshot differs from origin/master's copy, refresh the snapshot from origin/master
 # (git show, no checkout), check that it parses, and exec the new dq_train.sh with the same arguments. The run lock and the integrator's
 # identity are kept (DQ_TRAIN_REEXEC=1 makes the new process adopt its own lock). A new version that does not parse is never run: the
@@ -322,10 +327,11 @@ self_update_pending() {
 	local f want cur
 	for f in "${SNAP_FILES[@]}"; do
 		want="$(G rev-parse -q --verify "origin/master:tools/$f" 2>/dev/null)" || continue
-		cur="$(git hash-object --no-filters "$STATE/self/$f" 2>/dev/null)"
+		cur="$(fhash "$STATE/self/$f")"
+		[ -n "$cur" ] || continue # unreadable here (not a difference): never pend a drain on a hash failure
 		[ "$cur" = "$want" ] || return 0
 	done
-	[ -n "$SELF_SIG" ] && [ "$(git hash-object --no-filters "$SELF" 2>/dev/null)" != "$SELF_SIG" ]
+	[ -n "$SELF_SIG" ] && [ "$(fhash "$SELF")" != "$SELF_SIG" ]
 }
 self_update() {
 	[ "${DQ_TRAIN_SELF_UPDATE:-1}" = 1 ] || return 0
@@ -337,13 +343,20 @@ self_update() {
 		if [ -z "$want" ]; then continue; fi # not on master (yet): nothing to refresh to
 		sig="$sig $want"
 		cur=""
-		[ -f "$STATE/self/$f" ] && cur="$(git hash-object --no-filters "$STATE/self/$f" 2>/dev/null)"
+		if [ -f "$STATE/self/$f" ]; then
+			cur="$(fhash "$STATE/self/$f")"
+			if [ -z "$cur" ]; then
+				# cannot hash an existing file: that is a tooling fault, not a master change; never re-exec on it (log once per process)
+				[ "${SELF_HASH_WARNED:-0}" = 1 ] || tlog "WARNING: self-update: cannot hash $STATE/self/$f (cwd $(pwd 2>&1 | head -c 120)); keeping the current scripts"
+				SELF_HASH_WARNED=1; return 0
+			fi
+		fi
 		[ "$cur" = "$want" ] || changed+=("$f")
 	done
 	if [ ${#changed[@]} -eq 0 ]; then
 		# The snapshot is current, but another process of the train (the integrator or the prechecker: both run it) may have refreshed it
 		# after this one started: re-exec into it, or this process keeps running the old code until it exits.
-		if [ -n "$SELF_SIG" ] && [ "$(git hash-object --no-filters "$SELF" 2>/dev/null)" != "$SELF_SIG" ] && [ $(( $(date +%s) - SELF_UPDATE_LAST )) -ge 30 ] \
+		if [ -n "$SELF_SIG" ] && [ "$(fhash "$SELF")" != "$SELF_SIG" ] && [ $(( $(date +%s) - SELF_UPDATE_LAST )) -ge 30 ] \
 			&& d="$(snap_syntax_ok "$STATE/self")"; then
 			tlog "self-update: $SELF was refreshed by another train process; re-exec"
 			export DQ_TRAIN_REEXEC=1 DQ_TRAIN_REEXEC_AT="$(date +%s)"
