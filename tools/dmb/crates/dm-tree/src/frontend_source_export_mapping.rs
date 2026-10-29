@@ -9,6 +9,7 @@ struct IncludeCoordinates {
     parent: Option<usize>,
 }
 pub struct SourceExportMapping {
+    acquisitions:Arc<[Option<dm_preprocess::AcquiredSource>]>,
     origins: dm_preprocess::regions::ExpandedOriginArena,
     arena: dm_preprocess::WeakSourceText,
     tree: Weak<crate::SemanticTree>,
@@ -124,6 +125,7 @@ impl SourceExportMapping {
             );
         }
         Self {
+            acquisitions:plan.occurrences.iter().enumerate().map(|(id,_)|plan.source_acquisitions.get(&id).cloned()).collect::<Vec<_>>().into(),
             origins: expanded.origins.clone(),
             arena: expanded.text.downgrade(),
             tree: Arc::downgrade(tree),
@@ -138,7 +140,11 @@ impl SourceExportMapping {
         }
     }
     fn admits(&self, current: &ColdFrontend) -> bool {
-        self.origins.same_owner(&current.expanded.origins)
+        self.acquisitions.len()==current.plan.occurrences.len()
+            && self.acquisitions.iter().enumerate().all(|(id,old)|match(old,current.plan.source_acquisitions.get(&id)){
+                (None,None)=>true,(Some(old),Some(new))=>old.same_binding(new),_=>false,
+            })
+            && self.origins.same_owner(&current.expanded.origins)
             && self
                 .arena
                 .upgrade()
@@ -164,6 +170,9 @@ impl SourceExportMapping {
                         && old.parent == new.parent
                 })
     }
+    /// Borrow only this authenticated mapping's per-occurrence binding. Missing
+    /// producer evidence stays None; no synthetic proof from source contents.
+    pub fn source_acquisition(&self,occurrence:usize)->Option<&dm_preprocess::AcquiredSource>{self.acquisitions.get(occurrence)?.as_ref()}
     /// A join token only; exact current owner/coordinates separately admit capture.
     pub fn coordinate_fingerprint(&self) -> u128 {
         self.coordinate_fingerprint

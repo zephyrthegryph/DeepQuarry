@@ -49,3 +49,17 @@ pub const LEGACY_SEMANTICS_ENABLED: bool = cfg!(feature="legacy-sem");
 pub mod lifecycle_source;
 #[cfg(feature="native-policy")]
 pub mod captured_decl_policy;
+
+#[cfg(feature="native-policy")]
+pub mod captured_init_policy;
+pub mod base_var_hot_policy;
+pub mod raw_declaration_policy;
+pub mod raw_marker_policy;
+pub mod value_schema_policy;
+pub mod base_var_candidate_policy;
+#[cfg(feature="native-policy")]
+pub mod captured_base_var_hot_policy;
+#[cfg(feature="native-policy")]
+pub mod captured_base_var_candidates;
+#[cfg(feature="native-policy")]
+pub mod captured_base_vars_policy;

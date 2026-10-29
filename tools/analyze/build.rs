@@ -71,8 +71,8 @@ fn main() {
             discover(&dir)
         } else {
             match sub {
-                "lints" => native_policy_roster::MODULES.iter().map(|(module,_)|(*module).to_string()).chain(std::iter::once("decl".to_string())).collect(),
-                "dm" => vec!["dx".to_string(), "sys".to_string(), "pylines".to_string()],
+                "lints" => native_policy_roster::MODULES.iter().map(|(module,_)|(*module).to_string()).chain(["decl".to_string(),"init".to_string()]).collect(),
+                "dm" => vec!["dx".to_string(), "sys".to_string(), "pylines".to_string(),"walk".to_string()],
                 _ => continue,
             }
         };

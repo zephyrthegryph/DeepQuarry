@@ -576,3 +576,40 @@ variants/files. No current binaries or lock files were deleted by the agent.
 Production Analyze/checker defaults remain unchanged; subsequent acquisition
 certificate, remaining semantic policies/generators and full inference work are
 not yet certified, and end-to-end performance targets remain unmeasured.
+
+### Acquisition, return facts and complete Init/BaseVars rule checkpoint
+
+This cohort passes 78 distinct focused library tests (including eleven existing
+legacy-helper regressions), eleven shared-graph integration tests, and the real
+daemon Compile/Prepare/query/edit/retraction smoke in 21.95 seconds. The two
+initial test failures were diagnosed and repaired: the frontend capture wrapper
+now forwards actual acquisition receipts, and the no-read fixture uses timestamps
+outside the existing racy-write window. A separate regression retains that
+window's required reread. Init annotation state is restored on success, errors
+and panics without changing its original annotation acquisition order.
+
+Independent old Engine.scan comparisons match seventeen Init sites and twelve
+sites covering all four BaseVars rules, including exact consumed annotations
+and notes. Separate hot-home and candidate fixtures also match. These are
+complete rule matchers over explicit captured fixtures, not whole-workspace
+discovery, baseline judgment or production endpoint cutover.
+
+The checker adds eleven exact independently pinned diagnostics across authored
+return headers and constructor argument roots. Covered fixtures now total 156
+diagnostics across 23 fixtures, still partial checker coverage. Initial return
+settings borrow the original primary BodySyntax query; unimplemented field
+static-type warnings remain Unsupported. The runtime return-annotation parser
+was deliberately left unchanged because malformed-input admission differs from
+the new strict policy-only token projection.
+
+All ratchets pass. Regeneration rewrote zero outputs; hashes of all 382 checked
+generated files remain identical, preserving the preceding zero-diagnostic
+DreamChecker result on unchanged DM inputs. No look pins or full suite ran.
+
+Source acquisition now preserves original encoding and private current-read
+receipts separately from interned lexical identity, including warm authenticated
+reissue. This checkpoint does not yet enable semantic encoding admission or
+claim idle lexical-owner reclamation: the guard, retention census and lightweight
+lease repair are the next cohort. Production tool defaults remain unchanged;
+full policy/generator migration, checker inference, combined cutover and actual
+cold/warm/edited performance proofs remain outstanding.

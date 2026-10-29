@@ -1,0 +1,4 @@
+[lint.init]
+exempt_files = ["code/exempt.dm"]
+[lint.init.lists]
+init_roots = ["/obj/core = fixture owns the root initialization chain"]

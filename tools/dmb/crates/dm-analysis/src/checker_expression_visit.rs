@@ -98,6 +98,7 @@ pub fn linear<'a>(
     let view = BodyView::new(frontend, body)?;
     let mut walker = Walker::new(
         &frontend.snapshot.tree,
+        None,
         &frontend.expanded.text,
         body.occurrence().member,
         resolver,
@@ -123,6 +124,7 @@ pub fn evaluated<'a>(
     let view = BodyView::new(frontend, body)?;
     let mut walker = Walker::new(
         &frontend.snapshot.tree,
+        None,
         &frontend.expanded.text,
         body.occurrence().member,
         resolver,
@@ -145,6 +147,7 @@ pub fn archived<'a>(
     }
     let mut walker = Walker::new(
         archive.tree(),
+        Some(archive),
         archive.expanded_source(),
         body.occurrence().member,
         resolver,
@@ -157,6 +160,7 @@ pub fn archived<'a>(
 }
 struct Walker<'a, 'r, R: ?Sized> {
     tree: &'a SemanticTree,
+    prefix_archive: Option<&'a BodyArchive>,
     source: &'a str,
     member: MemberId,
     resolver: &'r R,
@@ -169,6 +173,7 @@ struct Walker<'a, 'r, R: ?Sized> {
 impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
     fn new(
         tree: &'a SemanticTree,
+        prefix_archive: Option<&'a BodyArchive>,
         source: &'a str,
         member: MemberId,
         resolver: &'r R,
@@ -218,6 +223,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         }
         Ok(Walker {
             tree,
+            prefix_archive,
             source,
             member,
             resolver,
@@ -369,7 +375,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 match answer {
                     M::Members(rows) => {
                         for row in rows.iter() {
-                            let M::Declaration { data, .. } = row else {
+                            let M::Declaration { identity, data, .. } = row else {
                                 return Err("member-call directive chain malformed".into());
                             };
                             if data
@@ -377,10 +383,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                                 .as_ref()
                                 .is_some_and(|p| !p.settings.is_empty())
                             {
-                                return Err(
-                                    "inherited member-call directive context not yet evaluated"
-                                        .into(),
-                                );
+                                crate::checker_return_facts::validate_source_directives(self.tree,self.prefix_archive,*identity)?;
                             }
                         }
                     }
@@ -394,16 +397,11 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 .procedure
                 .as_ref()
                 .ok_or("callable signature unavailable")?;
-            if !metadata.settings.is_empty() || metadata.signature.return_annotation.is_some() {
-                return Err(
-                    "checker callable directives/return type context is not yet evaluated".into(),
-                );
+            if !metadata.settings.is_empty() {
+                let CallableFact::Source{identity,..}=&fact else {return Err("unexpected source directive metadata provenance".into());};
+                crate::checker_return_facts::validate_source_directives(self.tree,self.prefix_archive,*identity)?;
             }
         }
-        let returned = match &fact {
-            CallableFact::Source { .. } => TypeFact::Unknown,
-            _ => TypeFact::Deferred("fixed builtin return-type policy is not yet imported"),
-        };
         self.events.push(Event::ResolvedCall {
             expression,
             at,
@@ -411,13 +409,50 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             fact,
         });
         self.arguments(args)?;
-        Ok(returned)
+        let returned=crate::checker_return_facts::return_hint_with_prefix(self.tree,self.resolver,self.profile,receiver,SymbolId::of(name),self.prefix_archive)?;
+        checked_type(self.tree,self.resolver,returned.declared_type,returned.list_element_type)
+    }
+    fn construct(&mut self, expression:&'a Expr, form:dm_syntax::native_special_forms::Constructor<'a>, hint:Option<SymbolId>)->Result<TypeFact,String> {
+        use dm_syntax::native_special_forms::Constructor;
+        let (owner,args)=match form {
+            Constructor::Dynamic=>return Ok(TypeFact::Unknown), // old NewMiniExpr TODO skips target/args
+            Constructor::Implicit{args}=>{
+                let Some(owner)=hint else {self.events.push(Event::MissingImplicitNewHint{expression});return Ok(TypeFact::Unknown);};
+                (owner,args)
+            }
+            Constructor::Static{path,args}=>{
+                if !path.starts_with('/') {return Err("relative constructor path needs primary navigation facts".into());}
+                (SymbolId::of(path),args)
+            }
+        };
+        let _=checked_type(self.tree,self.resolver,Some(owner),None)?;
+        let new=crate::checker_call_facts::callable_any(self.tree,self.resolver,self.profile,owner,SymbolId::of("New"))?;
+        if matches!(new,CallableFact::Missing) {
+            if ["/list","/alist","/vector","/pixloc"].iter().any(|name|owner==SymbolId::of(name)) {
+                return Ok(TypeFact::Unknown); // intentionally does NOT visit args
+            }
+            return Err("constructor missing-New diagnostic is not yet implemented".into());
+        }
+        self.ordinary_call(expression,expression.span,"New",owner,args,false)?;
+        // visit_new's IsType assumption does NOT set Analysis.static_ty. Never
+        // turn runtime construction provenance into a static receiver type.
+        Ok(TypeFact::Unknown)
     }
     fn expression(
         &mut self,
         expression: &'a Expr,
         hint: Option<SymbolId>,
     ) -> Result<TypeFact, String> {
+        if let Some(form)=dm_syntax::native_special_forms::constructor(expression).map_err(str::to_owned)? {
+            return self.construct(expression,form,hint);
+        }
+        if let Some(form)=dm_syntax::native_special_forms::locate(expression).map_err(str::to_owned)? {
+            self.arguments(form.args)?;
+            if let Some(container)=form.in_list {self.expression(container,None)?;}
+            // Pinned locate's IsType assumption (even its 3-argument form)
+            // leaves Analysis.static_ty unset. Do not invent receiver typing.
+            return Ok(TypeFact::Unknown);
+        }
         match &expression.kind {
             ExprKind::Ident(name) => {
                 if let Some(ty) = self.locals.get(&SymbolId::of(name)) {
@@ -520,14 +555,6 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 )
             }
             ExprKind::Call { callee, args } => match &callee.kind {
-                ExprKind::Ident(name) if name == "new" => {
-                    if hint.is_some() {
-                        return Err("implicit new with hint needs constructor call context".into());
-                    }
-                    self.events
-                        .push(Event::MissingImplicitNewHint { expression });
-                    Ok(TypeFact::Unknown)
-                }
                 ExprKind::Ident(name) if name == ".." => {
                     let fact = checks_parent_call::parent_fact_in_profile(
                         self.tree,
@@ -573,8 +600,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                         "call"
                             | "call_ext"
                             | "input"
-                            | "locate"
-                            | "pick"
+                                | "pick"
                             | "as"
                             | "null"
                             | "__PROC__"
@@ -678,27 +704,6 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                         checked_type(self.tree, self.resolver, element, None)
                     }
                     other => Ok(other),
-                }
-            }
-            ExprKind::Unary { op, value } if op == "new" || op == "new()" => {
-                if op == "new()" {
-                    if hint.is_some() {
-                        return Err("implicit new with hint needs constructor call context".into());
-                    }
-                    self.events
-                        .push(Event::MissingImplicitNewHint { expression });
-                    return Ok(TypeFact::Unknown);
-                }
-                let target = match &value.kind {
-                    ExprKind::Call { callee, .. } => callee.as_ref(),
-                    _ => value.as_ref(),
-                };
-                match &target.kind {
-                    // Pinned NewMiniExpr is TODO and visits neither target nor args.
-                    ExprKind::Ident(_) | ExprKind::Member { .. } => Ok(TypeFact::Unknown),
-                    _ => {
-                        Err("static constructor needs pinned New call/type/argument context".into())
-                    }
                 }
             }
             ExprKind::Unary { .. } => {

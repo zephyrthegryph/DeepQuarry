@@ -98,6 +98,7 @@ struct Data {
     raw: View,
     code: OnceLock<View>,
     clean: OnceLock<View>,
+    marker: OnceLock<dm_preprocess::SourceText>,
 }
 
 pub struct SourceFile {
@@ -145,6 +146,7 @@ impl SourceFile {
                 raw: View::new(read_text(&self.abs)),
                 code: OnceLock::new(),
                 clean: OnceLock::new(),
+marker: OnceLock::new(),
             }
         })
     }
@@ -179,6 +181,11 @@ impl SourceFile {
             .get_or_init(|| View::new(strip::sanitize(&d.raw.text)))
     }
 
+    /// Same-length comment-masked marker text, acquired once from captured raw.
+    pub(crate) fn marker(&self)->&dm_preprocess::SourceText{
+        let data=self.data();data.marker.get_or_init(||crate::raw_marker_policy::strip_comments_keep_strings(&data.raw.text).into())
+    }
+
     /// 1-based raw line.
     pub fn line(&self, n: usize) -> &str {
         self.raw().line(n)
@@ -202,6 +209,7 @@ impl SourceFile {
             raw: View::shared(text),
             code: OnceLock::new(),
             clean: OnceLock::new(),
+marker: OnceLock::new(),
         });
         SourceFile {
             rel: rel.into(),
@@ -224,6 +232,7 @@ impl SourceFile {
             raw: View::new(text),
             code: OnceLock::new(),
             clean: OnceLock::new(),
+marker: OnceLock::new(),
         });
         let h = u128::from_le_bytes(hash.as_bytes()[..16].try_into().unwrap());
         SourceFile {
@@ -517,6 +526,7 @@ impl Tree {
                             raw: View::new(text),
                             code: OnceLock::new(),
                             clean: OnceLock::new(),
+marker: OnceLock::new(),
                         });
                         SourceFile {
                             fkey: file_key(&rel, hash),

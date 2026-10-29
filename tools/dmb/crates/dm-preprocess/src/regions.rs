@@ -173,6 +173,8 @@ pub enum OrderedItem {
 
 #[derive(Clone, Debug, Default)]
 pub struct DirectivePlan {
+    /// Per-current-include acquisition binding, separate from interned text.
+    pub source_acquisitions: BTreeMap<usize,crate::AcquiredSource>,
     pub source_texts: BTreeMap<PathBuf, crate::SourceText>,
     pub occurrences: Vec<IncludeOccurrence>,
     pub regions: Vec<IncludeRegion>,

@@ -265,3 +265,5 @@ mod constructor_boundary_tests;
 
 mod local_declaration;
 pub use local_declaration::{local_type_path, project_local_declaration, LocalDeclaration};
+
+pub mod native_special_forms;

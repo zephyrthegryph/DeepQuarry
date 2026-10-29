@@ -101,3 +101,16 @@ fn unresolved_fix_hints_and_declaration_shapes_discard_all_partial_findings() {
         );
     }
 }
+
+#[test]
+fn return_header_builtin_and_inherited_receiver_types_match_pinned_observations() {
+    let rows=observations(include_str!("../../../fixtures/unified_checks/return_header_fields/probe.dm")).unwrap();
+    let expected=[
+        (11,11,"absent_header","/datum/target"),
+        (12,18,"absent_inherited_header","/datum/target"),
+        (13,22,"absent_default_header","/datum/target"),
+        (14,22,"absent_builtin","/turf"),
+        (15,25,"absent_block_element","/turf"),
+    ];
+    assert_eq!(rows,expected.map(|(line,column,name,owner)|(line,column,format!("undefined field: {name:?} on {owner}"))).to_vec());
+}

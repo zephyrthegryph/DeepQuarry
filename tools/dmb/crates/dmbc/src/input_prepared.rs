@@ -30,6 +30,8 @@ pub mod counters {
     }
 }
 pub struct PreparedInputPayload {
+    // None means an old/unproven payload, never inferred UTF8 from text.
+    acquisition:Option<dm_preprocess::AcquiredSource>,
     source: Arc<PreparedSource>,
     inputs: InputSnapshot,
     original_bytes: Option<dm_resources::SharedBytes>,
@@ -175,12 +177,14 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             drop(merge_timer);
             let _insert_timer = INSERT.time();
             let source = Arc::clone(&hit.source);
+            let acquisition=self.refresh_source_acquisition(&path,&source,hit.acquisition.as_ref())?;
             let original_bytes=hit.original_bytes.clone();
             if let Some(bytes)=&original_bytes{self.remember_exceptional_source(&path,bytes.clone())?;}
             owner
                 .values
                 .insert_with(key, Vec::new(), 0, || PreparedInputPayload {
                     source: Arc::clone(&source),
+                    acquisition,
                     inputs: refreshed,
                     original_bytes,
                 });
@@ -197,9 +201,10 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             std::sync::atomic::Ordering::Relaxed,
         );
         let prepare_started = std::time::Instant::now();
+        let acquisition=self.acquire_recorded_source(&path,bytes)?;
         let source = {
             let _stage = dm_profile::stage("input_scan.lexical_prepare");
-            dm_preprocess::regions::prepared_source::shared_prepared(self.decode_recorded_source(&path,bytes)?.into())
+            Arc::clone(acquisition.prepared())
         };
         counters::PREPARE_NS.fetch_add(
             prepare_started.elapsed().as_nanos() as u64,
@@ -220,6 +225,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .values
             .insert_with(key, Vec::new(), 0, || PreparedInputPayload {
                 source: Arc::clone(&source),
+                acquisition:Some(acquisition),
                 inputs,
                 original_bytes,
             });

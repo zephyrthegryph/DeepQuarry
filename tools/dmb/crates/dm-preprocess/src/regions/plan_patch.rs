@@ -312,6 +312,9 @@ fn assemble(
     reuse.regions = region_map;
     Some((
         DirectivePlan {
+            // Never carry an old ledger binding through a retained plan.
+            // The outer planner projects only current authenticated leases.
+            source_acquisitions: BTreeMap::new(),
             source_texts,
             occurrences,
             regions,

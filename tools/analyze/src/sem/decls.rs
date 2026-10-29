@@ -15,6 +15,7 @@ use std::sync::Arc;
 
 use crate::tree::{SourceFile, Tree, CODE_DM};
 use crate::{pat, pat_match};
+pub use crate::raw_marker_policy::{strip_comments_keep_strings,split_args,matching_paren};
 
 /// Marker names the engine reads at the start of a statement.
 pub const MARKERS: &[&str] = &[
@@ -354,67 +355,6 @@ struct FileDecls {
 }
 
 /// `text` with comments blanked (same length, newlines kept); strings are kept intact.
-pub fn strip_comments_keep_strings(text: &str) -> String {
-    let b = text.as_bytes();
-    let mut out = b.to_vec();
-    let mut i = 0;
-    let n = b.len();
-    while i < n {
-        match b[i] {
-            b'"' => {
-                // A string: skip to the closing quote ("\\" escapes; `[ ]` interpolation is left alone).
-                i += 1;
-                while i < n && b[i] != b'"' && b[i] != b'\n' {
-                    if b[i] == b'\\' && i + 1 < n {
-                        i += 1;
-                    }
-                    i += 1;
-                }
-                i += 1;
-            }
-            b'\'' => {
-                i += 1;
-                while i < n && b[i] != b'\'' && b[i] != b'\n' {
-                    i += 1;
-                }
-                i += 1;
-            }
-            b'/' if i + 1 < n && b[i + 1] == b'/' => {
-                while i < n && b[i] != b'\n' {
-                    out[i] = b' ';
-                    i += 1;
-                }
-            }
-            b'/' if i + 1 < n && b[i + 1] == b'*' => {
-                let mut depth = 0;
-                while i < n {
-                    if i + 1 < n && b[i] == b'/' && b[i + 1] == b'*' {
-                        depth += 1;
-                        out[i] = b' ';
-                        out[i + 1] = b' ';
-                        i += 2;
-                    } else if i + 1 < n && b[i] == b'*' && b[i + 1] == b'/' {
-                        depth -= 1;
-                        out[i] = b' ';
-                        out[i + 1] = b' ';
-                        i += 2;
-                        if depth == 0 {
-                            break;
-                        }
-                    } else {
-                        if b[i] != b'\n' {
-                            out[i] = b' ';
-                        }
-                        i += 1;
-                    }
-                }
-            }
-            _ => i += 1,
-        }
-    }
-    String::from_utf8(out).unwrap_or_default()
-}
-
 /// The ops a `stages(VAR, stage_step(from, to, parts..., key = "k"), ...)` call's arguments stand for (code/library/structures/stages.dm), as
 /// `op(...)` argument lists: `"key", when(req_stage(VAR, from)), sets(VAR, to), parts...`. The key is `k`, else `<var>_<from>_<to>` with the var
 /// the `nameof(...)` of VAR. Readers of op declarations (the op keys, op_order) treat a stages() call as these ops.
@@ -450,81 +390,7 @@ pub fn stages_op_args(stages_args: &str) -> Vec<String> {
 }
 
 /// Splits `s` at top-level commas (not inside (), [], {} or strings), trimming each piece.
-pub fn split_args(s: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut depth = 0i32;
-    let mut cur = String::new();
-    let mut in_str = false;
-    let mut prev = '\0';
-    for c in s.chars() {
-        if in_str {
-            cur.push(c);
-            if c == '"' && prev != '\\' {
-                in_str = false;
-            }
-            prev = c;
-            continue;
-        }
-        match c {
-            '"' => {
-                in_str = true;
-                cur.push(c);
-            }
-            '(' | '[' | '{' => {
-                depth += 1;
-                cur.push(c);
-            }
-            ')' | ']' | '}' => {
-                depth -= 1;
-                cur.push(c);
-            }
-            ',' if depth == 0 => {
-                out.push(cur.trim().to_string());
-                cur.clear();
-            }
-            _ => cur.push(c),
-        }
-        prev = c;
-    }
-    let last = cur.trim().to_string();
-    if !last.is_empty() || !out.is_empty() {
-        out.push(last);
-    }
-    out
-}
-
 /// Index of the `)` matching the `(` at `open` in `s`, or None.
-pub fn matching_paren(s: &str, open: usize) -> Option<usize> {
-    let b = s.as_bytes();
-    let mut depth = 0i32;
-    let mut in_str = false;
-    let mut i = open;
-    while i < b.len() {
-        let c = b[i];
-        if in_str {
-            if c == b'\\' {
-                i += 1;
-            } else if c == b'"' {
-                in_str = false;
-            }
-        } else {
-            match c {
-                b'"' => in_str = true,
-                b'(' => depth += 1,
-                b')' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        return Some(i);
-                    }
-                }
-                _ => {}
-            }
-        }
-        i += 1;
-    }
-    None
-}
-
 /// The ENTRY_PROC marker of a global proc whose first statement (`t`, on `line`) is `return list(...)` holding declaration entries.
 #[allow(clippy::too_many_arguments)]
 fn entry_proc(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t: &str, name: String, head_line: u32, rel: &str, out: &mut Vec<Marker>) {
@@ -563,8 +429,7 @@ fn cap_entries(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t
 }
 
 fn scan_file(f: &SourceFile) -> FileDecls {
-    let text = f.text();
-    let stripped = strip_comments_keep_strings(text);
+    let stripped = f.marker().as_str();
     let mut starts: Vec<u32> = vec![0];
     for (i, b) in stripped.bytes().enumerate() {
         if b == b'\n' {
@@ -609,32 +474,13 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         if t.is_empty() {
             continue;
         }
-        // Marker at statement start.
-        let name_end = t.find(|c: char| !(c.is_alphanumeric() || c == '_')).unwrap_or(t.len());
-        let name = &t[..name_end];
-        if MARKERS.contains(&name) && t[name_end..].trim_start().starts_with('(') {
-            let line_off = starts[ln0] as usize;
-            let col = line.len() - t.len() + name_end;
-            let open = line_off + col + t[name_end..].find('(').unwrap();
-            if let Some(close) = matching_paren(&stripped, open) {
-                // Block form (`CAPABILITIES(T)` followed by indented entry statements): the body is the header's arguments and
-                // the entries, joined with commas in place of the entry-ending newlines, so every byte keeps its offset.
-                let at_col0 = line.len() == t.len();
-                let block_end = if at_col0 && BLOCK_MARKERS.contains(&name) { block_extent(&stripped, close) } else { None };
-                let body = match block_end {
-                    Some(end) => block_body(&stripped, open + 1, close, end),
-                    None => stripped[open + 1..close].to_string(),
-                };
-                fd.markers.push(Marker {
-                    name: name.to_string(),
-                    rel: f.rel.clone(),
-                    line: ln,
-                    args: split_args(&body),
-                    body,
-                    body_offset: open + 1,
-                    line_starts: starts.clone(),
-                });
-            }
+        // Same borrowed statement-marker policy used by schema hint queries.
+        if let Some(marker)=crate::raw_marker_policy::statement_marker(&stripped,starts[ln0] as usize,line,MARKERS) {
+            let name=marker.name;let open=marker.open;let close=marker.close;
+            let at_col0=line.len()==t.len();
+            let block_end=if at_col0&&BLOCK_MARKERS.contains(&name){block_extent(&stripped,close)}else{None};
+            let body=match block_end{Some(end)=>block_body(&stripped,open+1,close,end),None=>stripped[open+1..close].to_string()};
+            fd.markers.push(Marker{name:name.to_string(),rel:f.rel.clone(),line:ln,args:split_args(&body),body,body_offset:open+1,line_starts:starts.clone()});
         }
         if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
             fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));

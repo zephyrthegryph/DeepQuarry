@@ -664,6 +664,17 @@ struct Captured<'a, P> {
 }
 
 impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
+    fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{
+        let acquired=self.provider.acquired_source(path)?;
+        if let Some(acquired)=&acquired{
+            self.sources.borrow_mut().insert(path.to_owned(),acquired.prepared().original().clone());
+        }
+        Ok(acquired)
+    }
+    fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{
+        // Projection only: never call read/prepared_source to obtain evidence.
+        self.provider.source_acquisition(path,text)
+    }
     fn prepared_source(
         &self,
         path: &Path,
@@ -1091,3 +1102,7 @@ pub(crate) use declaration_state::shared::SharedContributionStore;
 #[cfg(test)]
 #[path = "frontend_settings_receipt_tests.rs"]
 mod settings_receipt_tests;
+
+#[path="frontend_initial_setting_prefix.rs"]
+mod initial_setting_prefix;
+pub use initial_setting_prefix::InitialSettingPrefix;

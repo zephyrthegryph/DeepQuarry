@@ -219,7 +219,11 @@ pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 
 #[path="input_source_original.rs"]
 mod source_original;
+#[path="input_source_acquisition.rs"]
+mod source_acquisition;
 pub struct RecordingInputs<P = FileSystemInputs> {
+    source_issuer:std::sync::Arc<()>,
+    source_acquisitions:Mutex<BTreeMap<PathBuf,dm_preprocess::AcquiredSource>>,
     exceptional_originals: Mutex<BTreeMap<PathBuf,source_original::ExceptionalOriginal>>,
     provider: P,
     /// Watcher position at creation: every fact recorded later was observed after it.
@@ -237,6 +241,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         // Merged retained parts narrow this (`InputSnapshot::merge`).
         snapshot.watch.replace(created);
         Self {
+            source_issuer:std::sync::Arc::new(()),
+            source_acquisitions:Mutex::new(BTreeMap::new()),
             created,
             provider,
             snapshot: Mutex::new(snapshot),
@@ -356,6 +362,13 @@ fn decode_owned_source(bytes: Vec<u8>) -> String {
     }
 }
 impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
+    fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{
+        if let Some(source)=self.prepared_impl(path).map_err(|e|e.to_string())?{
+            return Ok(self.current_source_acquisition(path,source.original()));
+        }
+        self.read_recorded(path).and_then(|bytes|self.acquire_recorded_source(path,bytes)).map(Some).map_err(|e|e.to_string())
+    }
+    fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.current_source_acquisition(path,text)}
     fn prepared_source(
         &self,
         path: &Path,

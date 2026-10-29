@@ -216,3 +216,22 @@ fn unsupported_array_binding_discards_all_earlier_control_events() {
     let error = observe_mode("/datum/example/proc/probe(a)\n    missing_earlier()\n    for(var/datum/item[1] in list())\n        missing_later()\n", true).unwrap_err();
     assert!(error.contains("array"));
 }
+
+#[test]
+fn constructors_and_locate_preserve_exact_visited_argument_roots() {
+    let rows=observe_mode(include_str!("../../../fixtures/unified_checks/constructor_call_roots/probe.dm"),true).unwrap();
+    let missing=rows.iter().filter(|row|row.0=="missing").map(|row|(row.1.as_str(),row.2,row.3)).collect::<Vec<_>>();
+    assert_eq!(missing,[
+        ("missing_ctor_arg",3,23),("missing_inferred_arg",4,36),
+        ("missing_locate_arg",7,12),("missing_locate_plain",8,12),
+        ("missing_clause",9,12),("missing_container",9,38),
+    ]);
+}
+#[test]
+fn unresolved_source_settings_and_new_locate_static_warnings_remain_atomic_unsupported() {
+    for source in [
+        "/datum/target\n/proc/make()\n    set SpacemanDMM_return_type=/datum/target\n    return null\n/proc/probe()\n    make().field\n",
+        "/datum/target\n/proc/probe()\n    new /datum/target().field\n",
+        "/proc/probe()\n    locate(1,2,3).field\n",
+    ] { assert!(observe_mode(source,true).is_err(),"{source}"); }
+}

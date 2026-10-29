@@ -585,3 +585,5 @@ mod tests {
         }));
     }
 }
+
+mod symbolic_type_path;

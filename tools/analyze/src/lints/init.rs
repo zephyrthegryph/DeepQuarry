@@ -141,22 +141,35 @@ impl Lint for Init {
     /// text rule could not see (a nested block, a macro that writes the proc) counts too; the body lines a definition owns are
     /// bounded by indentation and read as text (`world_reads` names macros the parser expands away). Without a model, the text
     /// rule (`scan_text`).
-    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let files = cx.files();
-        let key = incr::ctx_key(&cx.all_files().iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
-        let typed: Option<Vec<(String, u32, String, String)>> = incr::cached("init-typed-defs", key, || {
-            cx.sem().map(|sem| {
-                crate::sem::procs::proc_defs(&sem, &["Initialize", "LateInitialize", "on_materialize"])
-                    .into_iter()
-                    .map(|d| (d.rel, d.header, d.owner, d.name))
-                    .collect()
-            })
-        });
+    fn scan_tree(&self,cx:&Cx,out:&mut Sink) {
+        #[cfg(feature="legacy-sem")]
+        {
+            let key=incr::ctx_key(&cx.all_files().iter().map(|f|(f.rel.as_str(),f.fkey)).collect::<Vec<_>>());
+            let typed:Option<Vec<(String,u32,String,String)>>=incr::cached("init-typed-defs",key,||cx.sem().map(|sem|crate::sem::procs::proc_defs(&sem,&["Initialize","LateInitialize","on_materialize"]).into_iter().map(|d|(d.rel,d.header,d.owner,d.name)).collect()));
+            self.scan_headers(cx,out,typed.as_deref(),false);
+        }
+        #[cfg(not(feature="legacy-sem"))]
+        {let _=(cx,out);panic!("init requires explicitly injected native lifecycle facts");}
+    }
+
+    // No parity: the reason codes and the LateInitialize ban have no Python counterpart (init_lint.py is gone).
+    fn parity(&self) -> Option<Parity> {
+        None
+    }
+}
+
+pub(crate) fn captured_metadata()->&'static Meta {&META}
+pub(crate) fn scan_captured(cx:&Cx,out:&mut Sink,headers:&[(String,u32,String,String)]) {
+    Init.scan_headers(cx,out,Some(headers),true);
+}
+impl Init {
+    fn scan_headers(&self,cx:&Cx,out:&mut Sink,typed:Option<&[(String,u32,String,String)]>,captured:bool) {
+        let files=cx.files();
         let roots = init_roots(cx);
         match typed {
             Some(defs) => {
                 let mut by_rel: HashMap<&str, Vec<(u32, Def, String)>> = HashMap::new();
-                for (rel, header, owner, name) in &defs {
+                for (rel, header, owner, name) in defs {
                     let kind = match name.as_str() {
                         "Initialize" => Def::Init,
                         "LateInitialize" => Def::Late,
@@ -194,12 +207,7 @@ impl Lint for Init {
                 }
             }
         }
-        self.table_init(cx, out);
-    }
-
-    // No parity: the reason codes and the LateInitialize ban have no Python counterpart (init_lint.py is gone).
-    fn parity(&self) -> Option<Parity> {
-        None
+        self.table_init(cx, out, captured);
     }
 }
 
@@ -207,9 +215,9 @@ impl Init {
     /// `table_init_violations(files)` over every file, exempt ones included. Per-file facts (the
     /// `init_from_table` flags and the headers the ALLOW question did not keep) are cached by content;
     /// the cross-file part (last flag in walk order wins, nearest flagged ancestor) is a cheap merge.
-    fn table_init(&self, cx: &Cx, out: &mut Sink) {
+    fn table_init(&self, cx: &Cx, out: &mut Sink, captured:bool) {
         let all = cx.all_files();
-        let facts = recorded_into(out, || incr::facts("init-table", &all, table_facts));
+        let facts = recorded_into(out, || if captured {all.iter().map(|f|table_facts(f)).collect()}else{incr::facts("init-table", &all, table_facts)});
         let with: Vec<(&SourceFile, &TableFacts)> = all.iter().copied().zip(facts.iter()).filter(|(_, fa)| !fa.flags.is_empty() || !fa.headers.is_empty()).collect();
         let by_rel: HashMap<&str, &TableFacts> = with.iter().map(|(f, fa)| (f.rel.as_str(), *fa)).collect();
         let sel: Vec<&SourceFile> = with.iter().map(|(f, _)| *f).collect();
@@ -259,7 +267,7 @@ impl Init {
                     None => {}
                 }
                 let world_read = crate::pat!(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(");
-                for n in crate::sem::procs::body_lines(lines, number as u32) {
+                for n in crate::lifecycle_source::body_lines(lines, number as u32) {
                     let code = before_slashes(lines[n - 1]);
                     let stmt = code.trim();
                     let super_call = matches!(stmt.replace(' ', "").as_str(), ".=..()" | "..()" | "return..()" | "return" | "return.");

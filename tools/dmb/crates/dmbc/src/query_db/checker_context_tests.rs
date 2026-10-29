@@ -165,3 +165,89 @@ fn transparent_answers_without_compiler_owner_provenance_are_not_authority() {
     assert!(CheckerContext::live(&frontend, &wrapper, profile).is_err());
     assert!(CheckerContext::archived(&archive, db.as_ref(), &wrapper, profile).is_err());
 }
+
+fn prefix_identity(archive:&dm_tree::frontend::BodyArchive,name:&str)->dm_ir::ProcedureIdentity {
+    for occurrence in archive.occurrences() {
+        let member=archive.tree().member(occurrence.member).unwrap();
+        if member.name==SymbolId::of(name) {
+            return dm_ir::ProcedureIdentity {owner:archive.tree().type_node(member.owner).unwrap().path,
+                name:member.name,verb:member.kind==dm_tree::MemberKind::Verb,
+                occurrence:archive.tree().member_occurrence(occurrence.member).unwrap()};
+        }
+    }panic!("missing issued prefix fixture {name}")
+}
+#[test]
+fn initial_settings_are_a_contiguous_primary_syntax_prefix_not_a_flat_metadata_list() {
+    const SOURCE:&str="/datum/target\n/proc/early()\n    set SpacemanDMM_return_type=/datum/target\n    return null\n/proc/late()\n    . = null\n    set SpacemanDMM_return_type=/datum/target\n    return null\n/proc/conditional()\n    if(1)\n        set SpacemanDMM_return_type=/datum/target\n    return null\n";
+    let db=Arc::new(QueryDb::default());let frontend=build(SOURCE,&db);
+    let archive=frontend.body_archive().unwrap();
+    for (name,count) in [("early",1),("late",0),("conditional",0)] {
+        let id=prefix_identity(&archive,name);
+        let first=archive.with_initial_setting_prefix(id,|proof| {
+            assert!(proof.belongs_to(&archive));assert!(std::ptr::eq(proof.tree(),archive.tree()));
+            assert_eq!(proof.identity(),id);assert_eq!(proof.settings().len(),count);
+            (proof.settings().iter().map(|s|s.header_span).collect::<Vec<_>>(),proof.first_non_setting())
+        }).unwrap();
+        db.db.evict_values(&[body_syntax::BODY_SYNTAX]);
+        let rebuilt=archive.with_initial_setting_prefix(id,|proof| {
+            (proof.settings().iter().map(|s|s.header_span).collect::<Vec<_>>(),proof.first_non_setting())
+        }).unwrap();assert_eq!(first,rebuilt);
+    }
+    let profile=archive.tree().checker_builtin_profile().unwrap();
+    for (name,expected) in [("early",Some(SymbolId::of("/datum/target"))),("late",None),("conditional",None)] {
+        let hint=dm_analysis::checker_return_facts::return_hint_with_prefix(archive.tree(),archive.tree(),profile,
+            SymbolId::of("/"),SymbolId::of(name),Some(&archive)).unwrap();
+        assert_eq!(hint.declared_type,expected,"{name}");
+    }
+    let foreign=build(SOURCE,&db).body_archive().unwrap();
+    assert!(dm_analysis::checker_return_facts::return_hint_with_prefix(archive.tree(),archive.tree(),profile,
+        SymbolId::of("/"),SymbolId::of("early"),Some(&foreign)).is_err());
+    assert!(dm_analysis::checker_return_facts::return_hint(archive.tree(),archive.tree(),profile,
+        SymbolId::of("/"),SymbolId::of("early")).is_err());
+    let wrong=dm_ir::ProcedureIdentity{occurrence:u32::MAX,..prefix_identity(&archive,"early")};
+    assert!(archive.with_initial_setting_prefix(wrong,|_|()).is_err());
+}
+#[test]
+fn initial_return_settings_override_headers_in_order_and_null_clears_the_hint() {
+    const SOURCE:&str="/datum/target\n/proc/last() as /datum/target\n    set name=\"last\"\n    set SpacemanDMM_return_type=/turf\n    set SpacemanDMM_return_type=/datum/target\n    return null\n/proc/clear() as /datum/target\n    set SpacemanDMM_return_type=null\n    return null\n";
+    let db=Arc::new(QueryDb::default());let frontend=build(SOURCE,&db);let archive=frontend.body_archive().unwrap();
+    let profile=archive.tree().checker_builtin_profile().unwrap();
+    for (name,expected) in [("last",Some(SymbolId::of("/datum/target"))),("clear",None)] {
+        assert_eq!(dm_analysis::checker_return_facts::return_hint_with_prefix(archive.tree(),archive.tree(),profile,
+            SymbolId::of("/"),SymbolId::of(name),Some(&archive)).unwrap().declared_type,expected);
+    }
+}
+#[test]
+fn source_edit_retracts_prefix_without_mutating_the_old_issued_archive() {
+    let db=Arc::new(QueryDb::default());
+    let old=build("/proc/probe()\n    set SpacemanDMM_return_type=/turf\n    return null\n",&db);
+    let new=build("/proc/probe()\n    . = null\n    set SpacemanDMM_return_type=/turf\n    return null\n",&db);
+    let a=old.body_archive().unwrap();let b=new.body_archive().unwrap();
+    assert_eq!(a.with_initial_setting_prefix(prefix_identity(&a,"probe"),|p|p.settings().len()).unwrap(),1);
+    assert_eq!(b.with_initial_setting_prefix(prefix_identity(&b,"probe"),|p|p.settings().len()).unwrap(),0);
+    assert_eq!(a.with_initial_setting_prefix(prefix_identity(&a,"probe"),|p|p.settings().len()).unwrap(),1);
+}
+#[test]
+fn independent_three_row_prefix_fixture_retains_the_unimplemented_warning_as_unsupported() {
+    const SOURCE:&str=include_str!("../../../../fixtures/unified_checks/return_prefix/probe.dm");
+    let db=Arc::new(QueryDb::default());let frontend=build(SOURCE,&db);let archive=frontend.body_archive().unwrap();
+    let profile=archive.tree().checker_builtin_profile().unwrap();
+    let context=CheckerContext::archived(&archive,db.as_ref(),archive.tree(),profile).unwrap();
+    for (ordinal,occurrence) in archive.occurrences().iter().enumerate() {
+        let name=archive.tree().member(occurrence.member).unwrap().name;
+        let body=archive.parse(ordinal).unwrap();
+        if name==SymbolId::of("late") {
+            let rows=dm_analysis::checks_set_no_effect::archived(&body,Severity::Error).unwrap();
+            assert_eq!(rows.len(),1);assert_eq!(rows[0].message,"set statement not at the top of the proc");
+            assert_eq!(archive.location(rows[0].span.start).unwrap().line,7);
+        }
+        if name==SymbolId::of("probe") {
+            // Do NOT drop late().absent_late or filter the independent oracle's
+            // warning. Atomic failure explicitly admits incomplete coverage.
+            assert!(context.variables_archived(&body,true).is_err());
+        }
+    }
+    let hint=dm_analysis::checker_return_facts::return_hint_with_prefix(archive.tree(),archive.tree(),profile,
+        SymbolId::of("/"),SymbolId::of("early"),Some(&archive)).unwrap();
+    assert_eq!(hint.declared_type,Some(SymbolId::of("/datum/target")));
+}

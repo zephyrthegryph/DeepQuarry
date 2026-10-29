@@ -91,21 +91,10 @@ static META: Meta = Meta {
     lists: &["list_init_exempt_prefixes", "list_init_exempt_files", "base_var_home_macros", "base_var_home_relations", "base_var_home_types", "record_accessor_prefixes", "hot_ceiling"],
 };
 
-pub const BASE_TYPES: &[&str] = &[
-    "/atom",
-    "/atom/movable",
-    "/obj",
-    "/obj/item",
-    "/obj/machinery",
-    "/mob",
-    "/mob/living",
-    "/mob/living/carbon",
-    "/mob/living/carbon/human",
-];
-/// Shortest justification a `base_var_home_hot` entry may carry.
-pub const HOT_MIN_JUSTIFICATION: usize = 40;
-const HOT_TABLE: &str = "base_var_home_hot";
-const SCOPES_FILE: &str = "tools/ci/lint_scopes.toml";
+pub use crate::base_var_hot_policy::{BASE_TYPES,HOT_MIN_JUSTIFICATION};
+use crate::base_var_hot_policy::{HOT_TABLE,SCOPES_FILE,homes_in,hot_problems};
+#[cfg(test)]
+use crate::base_var_hot_policy::hot_key;
 const NO_INSTANCE_COST: &[&str] = &["const", "static", "global"];
 
 struct BaseVars;
@@ -138,67 +127,10 @@ struct Facts {
 /// The `(type, var)` pairs the home macros name in `text`, and the vars declared as relations: an entry of a
 /// `base_var_home_relations` kind (`ref_one(nameof(v))`, `owns_many(nameof(/T::v))`) in the `CAPABILITIES(T)` block of the
 /// var's own type, or either end of a `links(/A::a, /B::b)` (doc/rewrite/proposals/base_vars.md: references live in relations).
-fn homes_in(text: &str, macros: &[String], relations: &[String]) -> Vec<(String, String)> {
-    let mut out = Vec::new();
-    for m in pat!(r"(?m)^[ 	]*([A-Z_]+)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures_iter(text) {
-        if macros.iter().any(|x| x == m.s(1)) {
-            out.push((m.s(2).to_string(), m.s(3).to_string()));
-        }
-    }
-    if relations.is_empty() {
-        return out;
-    }
-    let block = pat!(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)");
-    let entry = pat!(r"\b([a-z_]+)\(\s*nameof\(\s*(?:(/[\w/]+)::|(?:src|[A-Za-z_]\w*)\.)?(\w+)\s*\)");
-    let link_end = pat!(r"(/[\w/]+)::(\w+)");
-    let mut owner: Option<String> = None;
-    for line in text.lines() {
-        if !line.starts_with('\t') && !line.starts_with(' ') && !line.trim().is_empty() {
-            owner = block.captures(line).map(|c| c.s(1).to_string());
-        }
-        for c in entry.captures_iter(line) {
-            if !relations.iter().any(|x| x == c.s(1)) {
-                continue;
-            }
-            if let Some(explicit) = c.get(2) {
-                out.push((explicit.to_string(), c.s(3).to_string()));
-            } else if let Some(o) = &owner {
-                out.push((o.clone(), c.s(3).to_string()));
-            }
-        }
-        if relations.iter().any(|x| x == "links") && line.contains("links(") {
-            if let Some(i) = line.find("links(") {
-                for c in link_end.captures_iter(&line[i..]) {
-                    out.push((c.s(1).to_string(), c.s(2).to_string()));
-                }
-            }
-        }
-    }
-    out
-}
-
 fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String], macros: &[String], relations: &[String]) -> Facts {
     let mut out = Facts::default();
-    if f.rel.starts_with("code/") {
-        let text = f.raw().text.as_str();
-        out.homes = homes_in(f.code().text.as_str(), macros, relations);
-        if text.contains("GLOBAL_DATUM_INIT") {
-            // The trailing `\x08` is the Python's literal backspace (see dm/singletons.rs).
-            let mut set: BTreeSet<String> = BTreeSet::new();
-            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\x08").captures_iter(text) {
-                set.insert(m.s(1).to_string());
-            }
-            out.singles = set.into_iter().collect();
-        }
-        if text.contains("SYSTEM_DEF(") {
-            // SYSTEM_DEF(x) declares the one instance of /datum/system/x.
-            let mut set: BTreeSet<String> = out.singles.iter().cloned().collect();
-            for m in pat!(r"(?m)^SYSTEM_DEF\((\w+)\)").captures_iter(text) {
-                set.insert(format!("/datum/system/{}", m.s(1)));
-            }
-            out.singles = set.into_iter().collect();
-        }
-    }
+    let shared=crate::base_var_candidate_policy::file_facts(f,macros,relations);
+    out.homes=shared.homes;out.singles=shared.singles;
     if f.hidden {
         return out; // the vars come from the non-hidden files only
     }
@@ -316,48 +248,6 @@ pub fn unified_oracle_supplement(sem: &crate::sem::Sem) -> Vec<serde_json::Value
 }
 
 /// The `(type, var)` a `base_var_home_hot` key names: `/atom/movable/pressure_resistance` is `(/atom/movable, pressure_resistance)`.
-fn hot_key(key: &str) -> Option<(&str, &str)> {
-    let (owner, name) = key.rsplit_once('/')?;
-    if owner.is_empty() || name.is_empty() || !owner.starts_with('/') {
-        return None;
-    }
-    Some((owner, name))
-}
-
-/// What is wrong with the hot table: `(key, message)`. `declared` is the `(type, var)` pairs that exist as counted base vars, or
-/// None when there is no model to check existence against (the text fallback).
-fn hot_problems(hot: &std::collections::BTreeMap<String, String>, declared: Option<&HashSet<(String, String)>>, homed: &HashSet<(String, String)>, ceiling: Option<usize>) -> Vec<(String, String)> {
-    let mut out = Vec::new();
-    if let Some(c) = ceiling {
-        if hot.len() > c {
-            out.push(("base_var_home_hot".to_string(), format!("the hot list has {} entries, over hot_ceiling {} (the ceiling only falls; a new entry is a reviewed design change)", hot.len(), c)));
-        }
-    }
-    for (key, why) in hot {
-        let Some((owner, name)) = hot_key(key) else {
-            out.push((key.clone(), format!("`{}` is not a `<type>/<var>` key", key)));
-            continue;
-        };
-        if homed.contains(&(owner.to_string(), name.to_string())) {
-            out.push((key.clone(), format!("`{}` is already homed by a TRACKED/STAT/SETTER declaration or a relation: drop the entry", key)));
-        }
-        if !BASE_TYPES.contains(&owner) {
-            out.push((key.clone(), format!("`{}`: {} is not a base type", key, owner)));
-        } else if let Some(d) = declared {
-            if !d.contains(&(owner.to_string(), name.to_string())) {
-                out.push((key.clone(), format!("`{}` is stale: {} declares no counted var `{}`", key, owner, name)));
-            }
-        }
-        let why = why.trim();
-        if why.chars().count() < HOT_MIN_JUSTIFICATION {
-            out.push((key.clone(), format!("`{}` needs a justification of at least {} characters (has {})", key, HOT_MIN_JUSTIFICATION, why.chars().count())));
-        } else if !why.contains(".dm") {
-            out.push((key.clone(), format!("`{}`: the justification must name the hot reader (a .dm file and the proc that reads it)", key)));
-        }
-    }
-    out
-}
-
 /// `hot_ceiling` from the scope lists (a one-element list holding the number), None when absent or malformed.
 fn hot_ceiling(cx: &Cx) -> Option<usize> {
     cx.list("hot_ceiling").first().and_then(|v| v.trim().parse().ok())
@@ -372,24 +262,14 @@ fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String]
     let home_types = cx.list("base_var_home_types");
     let accessor_prefixes = cx.list("record_accessor_prefixes");
     let by_rel: HashMap<&str, &SourceFile> = all.iter().filter(|f| !f.hidden).map(|f| (f.rel.as_str(), *f)).collect();
-    let empty: HashSet<String> = HashSet::new();
     let mut out = Vec::new();
     let declared: HashSet<(String, String)> = vars.iter().filter(|v| v.base).map(|v| (v.owner.clone(), v.name.clone())).collect();
-    for v in &vars {
-        let Some(f) = by_rel.get(v.rel.as_str()) else { continue };
-        if crate::dm::sys::kept_recorded(f, v.line as usize, "base_vars") {
-            continue;
-        }
-        let housed = homes.contains(&(v.owner.clone(), v.name.clone())) || hot.contains_key(&format!("{}/{}", v.owner, v.name)) || home_types.iter().any(|h| v.vtype == *h || v.vtype.starts_with(&format!("{}/", h)));
-        if v.base && !housed {
-            out.push(("base_var", v.rel.clone(), v.line, format!("{}::{}", v.owner, v.name)));
-        }
-        if v.list_init {
-            let exempt = exempt_prefixes.iter().any(|p| v.rel.starts_with(p.as_str())) || exempt_files.iter().any(|e| *e == v.rel);
-            if !exempt && !is_singleton(&v.owner, &empty) && !singletons.contains(&v.owner) && !crate::dm::sys::kept_recorded(f, v.line as usize, "instance_list") {
-                out.push(("list_init", v.rel.clone(), v.line, format!("{}::{}", v.owner, v.name)));
-            }
-        }
+    for v in &vars{
+        let Some(f)=by_rel.get(v.rel.as_str())else{continue};
+        let view=crate::base_var_candidate_policy::VarView{rel:&v.rel,line:v.line,owner:&v.owner,name:&v.name,vtype:&v.vtype,base:v.base,list_init:v.list_init};
+        let Some(checked)=crate::base_var_candidate_policy::classify(view,f,singletons,exempt_prefixes,exempt_files,homes,hot,home_types)else{continue};
+        if checked.base{out.push(("base_var",v.rel.clone(),v.line,format!("{}::{}",v.owner,v.name)));}
+        if checked.list{out.push(("list_init",v.rel.clone(),v.line,format!("{}::{}",v.owner,v.name)));}
     }
     for (key, msg) in hot_problems(hot, Some(&declared), homes, hot_ceiling(cx)) {
         out.push(("hot_home", SCOPES_FILE.to_string(), 1, format!("{}\t{}", key, msg)));
@@ -440,7 +320,7 @@ impl Lint for BaseVars {
                     continue;
                 }
                 let msg = match ident.split_once("::") {
-                    Some((o, v)) if rule == "base_var" && schemas.declared_on(o, v).is_some() => format!("{} carries a value schema: move it to the trait field or sparse slot that schema types", ident),
+                    Some((o, v)) if rule == "base_var" && schemas.declared_on(o, v).is_some() => crate::value_schema_policy::hint_message(ident.as_str()),
                     _ => String::new(),
                 };
                 out.site_decl(rule, &rel, line as usize, msg, ident);

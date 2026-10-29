@@ -1,0 +1,19 @@
+[lint.base_vars]
+exempt_files = ["code/compiled.dm"]
+[lint.base_vars.lists]
+base_var_home_macros = ["TRACKED"]
+base_var_home_relations = ["owns_one", "links"]
+hot_ceiling = ["2"]
+[lint.base_vars.tables.base_var_home_hot]
+"/atom/one" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"/atom/hidden" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"/atom/no_reader" = "This long justification omits the required source filename and reader path"
+"/atom/homed" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"/atom/relation" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"/atom/linked" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"/atom/tmp_one" = "hot"
+"/atom/static_one" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"/atom/uncompiled" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"/atom/missing" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"/datum/other/nonbase" = "code/reader.dm /atom/proc/tick reads this field on every active tick"
+"bad_key" = "code/reader.dm /atom/proc/tick reads this field on every active tick"

@@ -343,6 +343,14 @@ impl<'a, P> PreparedSourceProvider<'a, P> {
     }
 }
 impl<P: crate::SourceProvider> crate::SourceProvider for PreparedSourceProvider<'_, P> {
+    fn acquired_source(&self,path:&Path)->Result<Option<crate::AcquiredSource>,String>{
+        if let Some(source)=self.captures.get(path){
+            Ok(self.fallback.source_acquisition(path,source.original()))
+        }else{self.fallback.acquired_source(path)}
+    }
+    fn source_acquisition(&self,path:&Path,text:&SourceText)->Option<crate::AcquiredSource>{
+        self.fallback.source_acquisition(path,text)
+    }
     fn read(&self, path: &Path) -> Result<String, String> {
         match self.captures.get(path) {
             Some(source) => Ok(source.original().to_string()),

@@ -49,3 +49,5 @@ pub mod checks_undefined_proc;
 
 pub mod checker_variable_facts;
 pub mod checks_undefined_variable;
+
+pub mod checker_return_facts;

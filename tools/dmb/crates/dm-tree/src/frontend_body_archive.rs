@@ -69,6 +69,10 @@ impl ColdFrontend {
     }
 }
 impl BodyArchive {
+    /// Acquisition provenance belongs to this exact issued source mapping.
+    pub fn source_acquisition(&self,include_occurrence:usize)->Option<&dm_preprocess::AcquiredSource>{
+        self.mapping.source_acquisition(include_occurrence)
+    }
     /// Existing issued syntax inputs for dependency edges in the same graph.
     pub fn syntax_inputs(&self) -> Option<&[Arc<BodySyntaxInput>]> {
         self.body_queries
@@ -224,3 +228,7 @@ pub(super) fn parse_statements(
 #[cfg(test)]
 #[path = "frontend_body_archive_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path="frontend_acquisition_tests.rs"]
+mod acquisition_tests;

@@ -1,0 +1,7 @@
+[lint.base_vars.lists]
+base_var_home_macros = ["TRACKED", "STAT", "SETTER"]
+base_var_home_relations = ["owns_one", "owns_many", "links"]
+base_var_home_types = ["/datum/hud"]
+record_accessor_prefixes = ["set_", "get_"]
+[lint.base_vars.tables.base_var_home_hot]
+"/atom/base_plain" = "short"

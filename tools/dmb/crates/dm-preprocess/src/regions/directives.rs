@@ -20,7 +20,23 @@ pub(super) fn plan_with_memo<P: SourceProvider>(
 ) -> (DirectivePlan, PlanReuse) {
     plan_incremental(project, provider, defines, memo, None)
 }
-pub(super) fn plan_incremental<P: SourceProvider>(
+pub(super) fn plan_incremental<P:SourceProvider>(
+    project:&Path,provider:&P,defines:&BTreeMap<String,String>,memo:Option<&dyn ExpansionMemo>,previous:Option<&DirectivePlan>,
+)->(DirectivePlan,PlanReuse){
+    let (mut plan,reuse)=plan_incremental_impl(project,provider,defines,memo,previous);
+    plan.source_acquisitions.clear();
+    for (occurrence,include) in plan.occurrences.iter().enumerate(){
+        if let Some(text)=plan.source_texts.get(include.path.as_ref()){
+            if let Some(acquired)=provider.source_acquisition(include.path.as_ref(),text){
+                // This only checks producer pairing; original-byte authority is
+                // the opaque acquisition binding, not equal text or a hash.
+                if acquired.prepared().original().same_view(text){plan.source_acquisitions.insert(occurrence,acquired);}
+            }
+        }
+    }
+    (plan,reuse)
+}
+fn plan_incremental_impl<P: SourceProvider>(
     project: &Path,
     provider: &P,
     defines: &BTreeMap<String, String>,
@@ -1126,11 +1142,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         }
         self.depend(path.as_ref());
         let source_started = std::time::Instant::now();
-        let prepared = match self.provider.prepared_source(&path) {
-            Some(prepared) => prepared,
-            None => match self.provider.read(&path) {
-                Ok(source) => prepared_source::shared_prepared(source.into()),
-                Err(error) => {
+        let issued=self.provider.acquired_source(&path);
+        let prepared_result=issued.and_then(|acquired|match acquired{
+            Some(acquired)=>Ok(Arc::clone(acquired.prepared())),
+            None=>match self.provider.prepared_source(&path){Some(prepared)=>Ok(prepared),None=>self.provider.read(&path).map(|source|prepared_source::shared_prepared(source.into()))},
+        });
+        let prepared=match prepared_result{
+            Ok(prepared)=>prepared,
+            Err(error)=>{
                     // DreamMaker reports an unreadable include at its #include
                     // directive, naming the authored operand.
                     let current = &self.plan.occurrences[occurrence];
@@ -1164,8 +1183,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         None => self.error(occurrence, 1, DiagnosticKind::Io, error),
                     }
                     return;
-                }
-            },
+                },
         };
         self.detail.provider += source_started.elapsed();
         self.plan
