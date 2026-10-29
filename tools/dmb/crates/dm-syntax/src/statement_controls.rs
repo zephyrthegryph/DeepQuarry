@@ -19,10 +19,16 @@ pub(super) fn split_top_level_keyword<'a>(
 }
 
 pub(super) fn split_case_alternatives(source: &str) -> Vec<&str> {
+    split_case_alternatives_with_tokens(source).0
+}
+pub(super) fn split_case_alternatives_with_tokens(
+    source: &str,
+) -> (Vec<&str>, crate::SpannedLexed) {
     let mut parts = Vec::new();
     let mut start = 0;
     let mut depth = 0;
-    for token in crate::lex_spans(source).tokens {
+    let lexical = crate::lex_spans(source);
+    for token in &lexical.tokens {
         match token.text(source) {
             "(" | "[" => depth += 1,
             ")" | "]" => depth -= 1,
@@ -34,17 +40,28 @@ pub(super) fn split_case_alternatives(source: &str) -> Vec<&str> {
         }
     }
     parts.push(&source[start..]);
-    parts
+    (parts, lexical)
 }
 
-pub(super) fn parse_for(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<ForControl> {
-    let clause = control_clause(item, "for", diagnostics)?;
+pub(super) fn parse_for(
+    item: &Item,
+    diagnostics: &mut Vec<Diagnostic>,
+    origins: &mut BodyOrigins<'_>,
+) -> Option<ForControl> {
+    let (clause, _, lexical, clause_base) = control_clause_origin_tokens(item, "for", diagnostics)?;
     let base = item.header_span.start + item.header.find(clause).unwrap_or(0);
     if (clause.starts_with("var/") || starts_keyword(clause, "var"))
         && !clause.contains(['=', ',', ';'])
         && !clause.contains(" in ")
         && !clause.contains(" to ")
     {
+        origins.local_binding(
+            clause,
+            &lexical,
+            clause_base,
+            clause,
+            crate::LocalSourceKind::ForBinding,
+        );
         return Some(ForControl::All {
             declaration: clause.trim().into(),
         });
@@ -61,6 +78,15 @@ pub(super) fn parse_for(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Optio
             return None;
         }
         let pair = split_case_alternatives(binding);
+        if binding.starts_with("var/") || starts_keyword(binding, "var") {
+            origins.local_parts(
+                clause,
+                &lexical,
+                clause_base,
+                &pair,
+                crate::LocalSourceKind::ForBinding,
+            );
+        }
         if pair.len() > 2 || pair.iter().any(|part| part.trim().is_empty()) {
             diagnostics.push(Diagnostic {
                 span: item.header_span,
@@ -119,6 +145,13 @@ pub(super) fn parse_for(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Optio
             });
             return None;
         }
+        origins.local_binding(
+            clause,
+            &lexical,
+            clause_base,
+            binding,
+            crate::LocalSourceKind::ForBinding,
+        );
         return parse_range_control(binding, start_source, remainder, clause, base, diagnostics);
     }
     let mut parts = split_for_clauses(clause);
@@ -147,6 +180,13 @@ pub(super) fn parse_for(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Optio
             } else {
                 None
             };
+            origins.local_binding(
+                clause,
+                &lexical,
+                clause_base,
+                declaration,
+                crate::LocalSourceKind::ForInitializer,
+            );
             Some(ForInitializer::Declare {
                 declaration: declaration.into(),
                 value,
@@ -235,8 +275,15 @@ fn control_close(rest: &str) -> Option<usize> {
     if !rest.starts_with('(') {
         return None;
     }
+    let lexical = crate::lex_spans(rest);
+    control_close_tokens(rest, &lexical.tokens)
+}
+fn control_close_tokens(rest: &str, tokens: &[crate::SpanToken]) -> Option<usize> {
+    if !rest.starts_with('(') {
+        return None;
+    }
     let mut depth = 0;
-    for token in crate::lex_spans(rest).tokens {
+    for token in tokens {
         match token.text(rest) {
             "(" => depth += 1,
             ")" => {
@@ -255,7 +302,7 @@ pub(super) fn control_body(
     item: &Item,
     keyword: &str,
     diagnostics: &mut Vec<Diagnostic>,
-    origins: &mut Vec<ControlOrigin>,
+    origins: &mut BodyOrigins<'_>,
 ) -> Vec<Statement> {
     let rest = item
         .header
@@ -312,11 +359,18 @@ pub(super) fn parse_control_condition_origin(
     item: &Item,
     keyword: &str,
     diagnostics: &mut Vec<Diagnostic>,
-    origins: &mut Vec<ControlOrigin>,
+    origins: &mut BodyOrigins<'_>,
 ) -> Option<Expr> {
     let (clause, opening) = control_clause_origin(item, keyword, diagnostics)?;
-    let condition = parse_expr(clause, item.header_span.start + item.header.find(clause).unwrap_or(0), diagnostics)?;
-    origins.push(ControlOrigin { condition: condition.span, opening });
+    let condition = parse_expr(
+        clause,
+        item.header_span.start + item.header.find(clause).unwrap_or(0),
+        diagnostics,
+    )?;
+    origins.push(ControlOrigin {
+        condition: condition.span,
+        opening,
+    });
     Some(condition)
 }
 
@@ -333,10 +387,19 @@ fn control_clause_origin<'a>(
     keyword: &str,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<(&'a str, Span)> {
+    control_clause_origin_tokens(item, keyword, diagnostics)
+        .map(|(clause, opening, _, _)| (clause, opening))
+}
+fn control_clause_origin_tokens<'a>(
+    item: &'a Item,
+    keyword: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<(&'a str, Span, crate::SpannedLexed, usize)> {
     let header = item.header.trim();
     let after_keyword = header.strip_prefix(keyword)?;
     let rest = after_keyword.trim_start();
-    let Some(close) = control_close(rest) else {
+    let mut lexical = crate::lex_spans(rest);
+    let Some(close) = control_close_tokens(rest, &lexical.tokens) else {
         diagnostics.push(Diagnostic {
             span: item.header_span,
             kind: DiagnosticKind::Statement,
@@ -345,9 +408,26 @@ fn control_clause_origin<'a>(
         return None;
     };
     let clause = &rest[1..close];
-    let offset = item.header_span.start + (item.header.len() - item.header.trim_start().len())
-        + keyword.len() + (after_keyword.len() - rest.len());
-    Some((clause.trim(), Span::new(offset, offset + 1)))
+    let offset = item.header_span.start
+        + (item.header.len() - item.header.trim_start().len())
+        + keyword.len()
+        + (after_keyword.len() - rest.len());
+    let clause = clause.trim();
+    let start = clause.as_ptr() as usize - rest.as_ptr() as usize;
+    let end = start + clause.len();
+    lexical
+        .tokens
+        .retain(|token| token.span.start >= start && token.span.end <= end);
+    for token in &mut lexical.tokens {
+        token.span.start -= start;
+        token.span.end -= start;
+    }
+    Some((
+        clause,
+        Span::new(offset, offset + 1),
+        lexical,
+        offset + start,
+    ))
 }
 
 pub(super) fn parse_expr(

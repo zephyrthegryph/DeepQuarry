@@ -458,6 +458,7 @@ fn bind_intent(
     files: Vec<crate::policy_request::PolicyInputFile>,
 ) -> crate::policy_request::AdmittedPolicyRequest {
     crate::policy_request::PolicyInputRequest {
+        workspace: None,
         files,
         search_folders: vec![],
     }
@@ -637,6 +638,7 @@ fn binding_requires_exact_explicit_search_scope_not_incidental_folder_proofs() {
     let folder = std::env::current_dir().unwrap().join("policy-search-scope");
     let empty = PolicyInputRequest::default().admit().unwrap();
     let expected = PolicyInputRequest {
+        workspace: None,
         files: vec![],
         search_folders: vec![folder.clone()],
     }
@@ -732,4 +734,188 @@ fn capture_census_deduplicates_owner_aliases_and_does_not_retain_extra_source() 
     );
     drop(captured);
     assert!(weak.upgrade().is_none());
+}
+
+fn manifest_intent(
+    path: PathBuf,
+    role: crate::policy_request::PolicyInputRole,
+) -> crate::policy_request::AdmittedPolicyRequest {
+    bind_intent(vec![crate::policy_request::PolicyInputFile {
+        path,
+        role,
+        required: false,
+    }])
+}
+#[test]
+fn untyped_manifest_requires_exact_requested_role_and_recorded_absence() {
+    use crate::policy_request::PolicyInputRole;
+    use dq_analyze::captured_untyped::ManifestRead;
+    let (_, inputs, frontend, root) = binding_setup();
+    let unrequested = capture(&frontend, &inputs, &[], &[])
+        .unwrap()
+        .bind_request(&bind_intent(vec![]))
+        .unwrap();
+    assert!(unrequested.untyped_manifest(&root).is_err());
+    let manifest = root.join("deepquarry.dme");
+    let intent = manifest_intent(manifest.clone(), PolicyInputRole::DmSource);
+    let captured = capture(&frontend, &inputs, &intent.capture_files(), &[])
+        .unwrap()
+        .bind_request(&intent)
+        .unwrap();
+    assert!(matches!(
+        captured.untyped_manifest(&root).unwrap(),
+        ManifestRead::ProvenUnavailable
+    ));
+    assert!(captured.untyped_manifest(&root.join("foreign")).is_err());
+    let wrong = manifest_intent(manifest, PolicyInputRole::Configuration);
+    let captured = capture(&frontend, &inputs, &wrong.capture_files(), &[])
+        .unwrap()
+        .bind_request(&wrong)
+        .unwrap();
+    assert!(captured.untyped_manifest(&root).is_err());
+}
+#[test]
+fn untyped_uncompiled_manifest_preserves_exact_bom_crlf_and_policy_revision() {
+    use crate::policy_request::PolicyInputRole;
+    use dq_analyze::captured_untyped::ManifestRead;
+    let (memory, inputs, frontend, root) = binding_setup();
+    let path = root.join("deepquarry.dme");
+    let bytes =
+        b"\xef\xbb\xbf#include \"code/a.dm\"\r\n#if 0\r\n#include \"code/b.dm\"\r\n#endif\r\n";
+    memory.put(path.to_str().unwrap(), bytes);
+    let intent = manifest_intent(path.clone(), PolicyInputRole::DmSource);
+    let captured = capture(&frontend, &inputs, &intent.capture_files(), &[])
+        .unwrap()
+        .bind_request(&intent)
+        .unwrap();
+    match captured.untyped_manifest(&root).unwrap() {
+        ManifestRead::OriginalBytes(original) => assert_eq!(original, bytes),
+        _ => panic!("uncompiled original bytes were not retained"),
+    }
+    let pin = captured.policy_revision();
+    // Query is a prepared-frame read, not IO. Provider mutation cannot mix bytes.
+    memory.put(path.to_str().unwrap(), b"// changed manifest\n");
+    match captured.untyped_manifest(&root).unwrap() {
+        ManifestRead::OriginalBytes(original) => assert_eq!(original, bytes),
+        _ => panic!("manifest authority changed without prepare"),
+    }
+    let next_inputs = RecordingInputs::new(memory, 2);
+    let next_front =
+        dm_tree::frontend::build(&root.join("p.dme"), &next_inputs, &Default::default(), 1)
+            .unwrap();
+    let next = capture(&next_front, &next_inputs, &intent.capture_files(), &[])
+        .unwrap()
+        .bind_request(&intent)
+        .unwrap();
+    assert_eq!(
+        frontend.source_export_revision(),
+        next_front.source_export_revision()
+    );
+    assert_ne!(pin, next.policy_revision());
+    assert_ne!(
+        captured.policy().revision().policy_inputs,
+        next.policy().revision().policy_inputs
+    );
+}
+#[test]
+fn untyped_compiled_manifest_uses_private_original_receipt_with_bom() {
+    use dq_analyze::captured_untyped::ManifestRead;
+    let root = std::env::current_dir()
+        .unwrap()
+        .join("compiled-manifest-receipt");
+    let path = root.join("deepquarry.dme");
+    let bytes = b"\xef\xbb\xbf/datum/probe\r\n";
+    let memory = Memory::default();
+    memory.put(path.to_str().unwrap(), bytes);
+    let inputs = RecordingInputs::new(memory, 1);
+    let frontend = dm_tree::frontend::build(&path, &inputs, &Default::default(), 1).unwrap();
+    let captured = capture(&frontend, &inputs, &[], &[])
+        .unwrap()
+        .bind_request(&bind_intent(vec![]))
+        .unwrap();
+    match captured.untyped_manifest(&root).unwrap() {
+        ManifestRead::CompiledOriginalBytes(original) => assert_eq!(original, bytes),
+        _ => panic!("compiled BOM original was reconstructed or discarded"),
+    }
+}
+#[test]
+fn untyped_input_registry_is_canonical_exact_archive_and_bounded_metadata_only() {
+    let (_, inputs, frontend, _) = binding_setup();
+    let capture = capture(&frontend, &inputs, &[], &[])
+        .unwrap()
+        .bind_request(&bind_intent(vec![]))
+        .unwrap();
+    let before = capture.budget_charge();
+    let a = capture
+        .untyped_input(&["/datum/b".into(), "/datum/a".into(), "/datum/a".into()])
+        .unwrap();
+    let b = capture
+        .untyped_input(&["/datum/a".into(), "/datum/b".into()])
+        .unwrap();
+    assert!(Arc::ptr_eq(&a, &b));
+    assert!(Arc::ptr_eq(a.archive(), capture.policy().archive()));
+    assert_eq!(a.exempt_types(), &["/datum/a", "/datum/b"]);
+    assert!(capture.budget_charge() > before);
+    assert!(capture.untyped_input(&["x".repeat(65537)]).is_err());
+    for n in 0..15 {
+        capture.untyped_input(&[format!("/datum/p{n}")]).unwrap();
+    }
+    assert!(capture.untyped_input(&["/datum/overflow".into()]).is_err());
+    assert!(Arc::ptr_eq(
+        &a,
+        &capture
+            .untyped_input(&["/datum/b".into(), "/datum/a".into()])
+            .unwrap()
+    ));
+}
+
+#[derive(Clone)]
+struct DeniedManifest(Memory);
+impl SnapshotProvider for DeniedManifest {
+    fn stamp(&self, path: &Path) -> io::Result<Stamp> {
+        if path.file_name().is_some_and(|p| p == "deepquarry.dme") {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+        self.0.stamp(path)
+    }
+    fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
+        if path.file_name().is_some_and(|p| p == "deepquarry.dme") {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+        self.0.read(path)
+    }
+    fn list(&self, path: &Path) -> io::Result<FolderListing> {
+        self.0.list(path)
+    }
+}
+#[test]
+fn untyped_manifest_optional_read_error_never_becomes_absence() {
+    let root = std::env::current_dir().unwrap().join("denied-manifest");
+    let memory = Memory::default();
+    memory.put(root.join("p.dme").to_str().unwrap(), b"/datum/probe\n");
+    let inputs = RecordingInputs::new(DeniedManifest(memory), 1);
+    let frontend =
+        dm_tree::frontend::build(&root.join("p.dme"), &inputs, &Default::default(), 1).unwrap();
+    let intent = manifest_intent(
+        root.join("deepquarry.dme"),
+        crate::policy_request::PolicyInputRole::DmSource,
+    );
+    assert!(capture(&frontend, &inputs, &intent.capture_files(), &[]).is_err());
+}
+#[test]
+fn untyped_manifest_mutated_private_negative_map_cannot_override_positive_fact() {
+    let (memory, inputs, frontend, root) = binding_setup();
+    let path = root.join("deepquarry.dme");
+    memory.put(path.to_str().unwrap(), b"// present\n");
+    let intent = manifest_intent(
+        path.clone(),
+        crate::policy_request::PolicyInputRole::DmSource,
+    );
+    let mut c = capture(&frontend, &inputs, &intent.capture_files(), &[])
+        .unwrap()
+        .bind_request(&intent)
+        .unwrap();
+    c.manifest_originals.insert(path.clone(), None);
+    c.missing.push(path);
+    assert!(c.untyped_manifest(&root).is_err());
 }

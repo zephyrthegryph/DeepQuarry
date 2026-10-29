@@ -184,6 +184,38 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         let mapping = frontend
             .source_export_mapping()
             .ok_or_else(|| invalid("semantic source mapping is not current compiler issuance"))?;
+        self.semantic_source_evidence_parts(
+            mapping,
+            files,
+            frontend
+                .plan
+                .occurrences
+                .iter()
+                .enumerate()
+                .map(|(index, row)| (index, &row.path)),
+        )
+    }
+    pub(crate) fn diagnostic_source_evidence(
+        &self,
+        frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+    ) -> io::Result<Arc<SemanticSourceEvidence>> {
+        if !frontend.receipt().authenticates(frontend.tree())
+            || !frontend.archive().matches_tree(frontend.tree())
+        {
+            return Err(invalid("diagnostic evidence original graph differs"));
+        }
+        self.semantic_source_evidence_parts(
+            frontend.mapping(),
+            frontend.files(),
+            frontend.includes(),
+        )
+    }
+    fn semantic_source_evidence_parts<'a>(
+        &self,
+        mapping: &Arc<SourceExportMapping>,
+        files: &[dm_tree::frontend::SourceFile],
+        includes: impl Iterator<Item = (usize, &'a Arc<PathBuf>)>,
+    ) -> io::Result<Arc<SemanticSourceEvidence>> {
         // Lookup only: this is the compiler's existing source roster, not a model.
         let sources: BTreeMap<_, _> = files
             .iter()
@@ -191,18 +223,18 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .map(|file| (file.path.as_path(), &file.text))
             .collect();
         let mut entries = Vec::new();
-        for (occurrence, include) in frontend.plan.occurrences.iter().enumerate() {
-            let source = sources.get(include.path.as_path());
+        for (occurrence, path) in includes {
+            let source = sources.get(path.as_path());
             let acquisition = mapping
                 .source_acquisition(occurrence)
                 .filter(|value| {
-                    self.validate_source_lease(include.path.as_ref(), value)
+                    self.validate_source_lease(path.as_ref(), value)
                         && source.is_some_and(|source| value.source_text().same_view(source))
                 })
                 .cloned();
             entries.push(Entry {
                 occurrence,
-                path: Arc::clone(&include.path),
+                path: Arc::clone(path),
                 acquisition,
             });
         }

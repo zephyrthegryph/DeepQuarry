@@ -21,7 +21,9 @@ pub mod maps;
 mod member_arena;
 mod member_binding;
 use member_binding::{MemberRead, MemberWrite};
+pub mod diagnostic_declarations;
 mod member_normalization;
+pub use diagnostic_declarations::DiagnosticDeclarations;
 mod metadata_update;
 pub use host_declaration_selection::HostDeclarationSelection;
 pub mod owner_callable;
@@ -32,12 +34,12 @@ pub use member_arena::MemberArena;
 pub use owner_normalization::{
     NormalizationStorageView, ResolvedMember, SharedNormalizedDeclarations,
 };
+pub mod checker_builtins;
 pub mod non_text;
 mod normalize;
 mod procedure;
 pub mod procedure_statics;
 mod resolver;
-pub mod checker_builtins;
 pub mod settings;
 pub mod type_paths;
 mod variable_facts;
@@ -482,6 +484,50 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
     )
 }
 pub(crate) fn build_with_intrinsic_members_structural(
+    symbols: SymbolTable,
+    skeletons: skeleton_roster::SkeletonView<'_>,
+    fields: &[dm_ir::OpaqueFieldBase],
+    intrinsics: &[IntrinsicMember],
+    rebuild_inventory: bool,
+    normalization: Option<(
+        &declaration_contributions::KeyedDeclarations,
+        &owner_normalization::RetainedNormalization,
+    )>,
+    structural: Option<metadata_update::StructuralMetadata<'_>>,
+) -> Result<SemanticTree, TreeError> {
+    build_with_intrinsic_members_structural_mode(
+        symbols,
+        skeletons,
+        fields,
+        intrinsics,
+        rebuild_inventory,
+        normalization,
+        structural,
+        None,
+    )
+}
+/// Same builder, no retained/runtime normalization cache is admitted in this
+/// initial diagnostic-only domain. Declarations are not retried or reparsed.
+pub(crate) fn build_checker_diagnostic_members(
+    symbols: SymbolTable,
+    skeletons: skeleton_roster::SkeletonView<'_>,
+    fields: &[dm_ir::OpaqueFieldBase],
+    intrinsics: &[IntrinsicMember],
+    rebuild_inventory: bool,
+    diagnostics: &mut diagnostic_declarations::DiagnosticDeclarationReceipt,
+) -> Result<SemanticTree, TreeError> {
+    build_with_intrinsic_members_structural_mode(
+        symbols,
+        skeletons,
+        fields,
+        intrinsics,
+        rebuild_inventory,
+        None,
+        None,
+        Some(diagnostics),
+    )
+}
+fn build_with_intrinsic_members_structural_mode(
     mut symbols: SymbolTable,
     skeletons: skeleton_roster::SkeletonView<'_>,
     fields: &[dm_ir::OpaqueFieldBase],
@@ -492,6 +538,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         &owner_normalization::RetainedNormalization,
     )>,
     structural: Option<metadata_update::StructuralMetadata<'_>>,
+    diagnostics: Option<&mut diagnostic_declarations::DiagnosticDeclarationReceipt>,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -813,13 +860,14 @@ pub(crate) fn build_with_intrinsic_members_structural(
         )?
     } else {
         let member_count = members.len();
-        member_normalization::resolve_previous(
+        member_normalization::resolve_previous_diagnostic(
             &tree,
             &mut members,
             &modes,
             root,
             &callable_kinds,
             0..member_count,
+            diagnostics,
         )?;
         None
     };

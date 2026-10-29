@@ -54,6 +54,33 @@ fn cleaned_type(
     Ok((!kept.is_empty()).then(|| format!("/{}", kept.join("/"))))
 }
 impl BodyArchive {
+    /// Flags are independent of normalized value typing (for example nested
+    /// arrays); this borrows the same original formal/cursor-issued metadata.
+    pub fn checker_variable_qualifiers(
+        &self,
+        formal: MemberId,
+        profile: PackedU128,
+    ) -> Result<u8, String> {
+        self.tree()
+            .validate_checker_builtin_profile(profile)
+            .map_err(|e| format!("checker qualifier profile: {e:?}"))?;
+        let node = self
+            .tree()
+            .member(formal)
+            .ok_or("checker qualifier formal unavailable")?;
+        if node.kind != MemberKind::Var
+            || node.definition != DefinitionMode::Declare
+            || node.metadata.inherited_opaque.is_some()
+        {
+            return Err("checker qualifier needs exact authored formal".into());
+        }
+        let ordinal = *self
+            .declarations
+            .for_target(crate::Target::Member(formal))
+            .first()
+            .ok_or("checker qualifier formal occurrence unavailable")?;
+        self.mapping.declaration_checker_qualifiers(ordinal)
+    }
     pub fn checker_variable_properties(
         &self,
         formal: MemberId,

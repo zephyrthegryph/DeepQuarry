@@ -23,6 +23,8 @@ struct Index {
     negative: BTreeSet<PathBuf>,
     folders: BTreeMap<PathBuf, FolderListing>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    policy_directories: BTreeMap<PathBuf, crate::input_snapshot::PolicyDirectoryObservation>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     acquired_source_alias_v1: BTreeMap<PathBuf, crate::input_snapshot::SourceAliasRecord>,
     // Versioned physical evidence is optional: old journals remain valid for
     // observed-only replay, but cannot license strict physical containment.
@@ -302,6 +304,48 @@ impl SnapshotProvider for Inputs {
             }
             other => other,
         }
+    }
+    fn policy_directory(
+        &self,
+        path: &Path,
+        follow: bool,
+        limit: usize,
+    ) -> io::Result<Option<crate::input_snapshot::PolicyDirectoryListing>> {
+        let path = canonical_path(path);
+        if let Self::Replay(journal) = self {
+            let index = journal
+                .index
+                .lock()
+                .map_err(|_| invalid("verification mutex poisoned"))?;
+            let old = index
+                .policy_directories
+                .get(&path)
+                .ok_or_else(|| Journal::unknown(&path))?;
+            if old.follow_root != follow {
+                return Err(invalid("journal directory follow-root contract changed"));
+            }
+            return Ok(Some(old.listing.clone()));
+        }
+        let value = FileSystemInputs.policy_directory(&path, follow, limit)?;
+        if let (Self::Recording(journal), Some(listing)) = (self, value.as_ref()) {
+            let mut index = journal
+                .index
+                .lock()
+                .map_err(|_| invalid("verification mutex poisoned"))?;
+            let observation = crate::input_snapshot::PolicyDirectoryObservation {
+                follow_root: follow,
+                listing: listing.clone(),
+            };
+            if index
+                .policy_directories
+                .get(&path)
+                .is_some_and(|old| old != &observation)
+            {
+                return Err(invalid("journal typed directory changed during capture"));
+            }
+            index.policy_directories.insert(path, observation);
+        }
+        Ok(value)
     }
     fn source_alias(
         &self,
@@ -681,6 +725,14 @@ impl SnapshotProvider for ProofStampedInputs<'_> {
         limit: usize,
     ) -> io::Result<Option<CapturedInputRead>> {
         self.inner.read_policy_bounded(path, limit)
+    }
+    fn policy_directory(
+        &self,
+        path: &Path,
+        follow: bool,
+        limit: usize,
+    ) -> io::Result<Option<crate::input_snapshot::PolicyDirectoryListing>> {
+        self.inner.policy_directory(path, follow, limit)
     }
     fn source_alias(
         &self,

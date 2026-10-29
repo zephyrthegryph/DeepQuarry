@@ -66,6 +66,11 @@ impl HeapCensus {
     }
     fn typed_parsed_body(&mut self, owner: &str, parsed: &dm_syntax::ParsedBody) {
         self.vec_payload(owner, &parsed.control_origins);
+        if self.vec_payload(owner, parsed.local_variables.storage()) {
+            for local in parsed.local_variables.storage() {
+                self.slice(owner, &local.type_components, true);
+            }
+        }
         self.vec_payload(owner, &parsed.pending_bodies);
         if self.vec_payload(owner, &parsed.diagnostics) {
             for diagnostic in &parsed.diagnostics {
@@ -310,10 +315,13 @@ mod tests {
                 opening: dm_syntax::Span::new(0, 1),
             }],
             pending_bodies: Vec::new(),
+            local_variables: Default::default(),
         };
-        let expected =
-            parsed.statements.capacity() * size_of::<Statement>() + size_of::<Expr>() + 7 + 6
-                + parsed.control_origins.capacity() * size_of::<dm_syntax::ControlOrigin>();
+        let expected = parsed.statements.capacity() * size_of::<Statement>()
+            + size_of::<Expr>()
+            + 7
+            + 6
+            + parsed.control_origins.capacity() * size_of::<dm_syntax::ControlOrigin>();
         let mut census = HeapCensus::new("test");
         census.typed_parsed_body("typed", &parsed);
         census.typed_parsed_body("alias", &parsed);
@@ -328,5 +336,33 @@ mod tests {
                 .shared_encounters
                 > 0
         );
+    }
+}
+
+#[cfg(test)]
+mod local_fact_census_tests {
+    use super::*;
+    #[test]
+    fn local_fact_vector_and_each_box_are_in_actual_typed_body_census() {
+        let syntax=dm_syntax::parse("/proc/p()\n    var/SpacemanDMM_private/datum/x\n    var/SpacemanDMM_protected/list/datum/y[2]\n");
+        let mut parsed = dm_syntax::parse_proc_body(&syntax.items[0]);
+        let facts = parsed.local_variables.entries().unwrap();
+        assert_eq!(facts.len(), 2);
+        let expected = parsed.local_variables.storage().capacity()
+            * size_of::<dm_syntax::LocalVariableSyntax>()
+            + facts
+                .iter()
+                .map(|f| f.type_components.len() * size_of::<dm_syntax::Span>())
+                .sum::<usize>();
+        let mut before = HeapCensus::new("with_locals");
+        before.typed_parsed_body("typed", &parsed);
+        let before = before.finish().unique_known_capacity_bytes;
+        let retained = std::mem::take(&mut parsed.local_variables);
+        let mut after = HeapCensus::new("without_locals");
+        after.typed_parsed_body("typed", &parsed);
+        let after = after.finish().unique_known_capacity_bytes;
+        assert!(expected > 0);
+        assert_eq!(before - after, expected as u64);
+        assert_eq!(retained.entries().unwrap().len(), 2);
     }
 }

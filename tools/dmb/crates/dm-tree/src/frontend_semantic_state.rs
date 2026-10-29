@@ -18,7 +18,11 @@ pub struct RetainedSemanticTree {
     splices: u64,
     /// The last published frontend with the project and defines it was built for: the base the next
     /// request's plan and expansion adopt their unchanged include subtrees and regions from.
-    previous: Option<(std::path::PathBuf, std::collections::BTreeMap<String, String>, super::FrontendRevision)>,
+    previous: Option<(
+        std::path::PathBuf,
+        std::collections::BTreeMap<String, String>,
+        super::FrontendRevision,
+    )>,
 }
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
@@ -39,10 +43,11 @@ impl RetainedSemanticTree {
     ) {
         // The replaced revision usually owns the last references to the previous request's tree,
         // syntax and body arena.
-        release_in_background(
-            self.previous
-                .replace((project.to_path_buf(), defines.clone(), revision)),
-        );
+        release_in_background(self.previous.replace((
+            project.to_path_buf(),
+            defines.clone(),
+            revision,
+        )));
     }
     pub(super) fn previous_frontend(
         &self,
@@ -525,10 +530,8 @@ impl RetainedSemanticTree {
                 .as_mut()
                 .expect("updated tree has its retained producer");
             // The previous request's tree, index and occurrence index are freed off the request path.
-            let replaced_index = std::mem::replace(
-                &mut entry.occurrence_index,
-                occurrences.target_index(),
-            );
+            let replaced_index =
+                std::mem::replace(&mut entry.occurrence_index, occurrences.target_index());
             let replaced_tree = std::mem::replace(&mut entry.tree, Arc::clone(&tree));
             let replaced_contributions = std::mem::replace(
                 &mut entry.index,
@@ -555,7 +558,11 @@ impl RetainedSemanticTree {
                 self.symbol_only_rebinds += 1;
             }
             tick!("capture_dependencies");
-            report!(if spliced_dependencies { "splice" } else { "update" });
+            report!(if spliced_dependencies {
+                "splice"
+            } else {
+                "update"
+            });
             return Ok(TreeSnapshot {
                 tree,
                 occurrences: Arc::new(occurrences),
@@ -605,7 +612,9 @@ impl RetainedSemanticTree {
         match (self.entry.as_ref(), index.as_ref()) {
             (Some(entry), Some(current)) if same_engine(entry.engine.as_ref(), engine) => {
                 match Arc::get_mut(&mut snapshot.tree) {
-                    Some(tree) => record_change_since(&entry.tree, &entry.index, tree, current, "rebuild"),
+                    Some(tree) => {
+                        record_change_since(&entry.tree, &entry.index, tree, current, "rebuild")
+                    }
                     None => crate::change_set::record_outcome(
                         "demand tokens full (rebuilt tree already shared)".into(),
                     ),
@@ -708,3 +717,7 @@ pub(crate) fn release_in_background<T: Send + 'static>(value: T) {
         .name("dmb-release".into())
         .spawn(move || drop(value));
 }
+
+#[path = "frontend_diagnostic_retained_records.rs"]
+mod diagnostic_retained_records;
+pub(crate) use diagnostic_retained_records::DiagnosticRetainedRecords;

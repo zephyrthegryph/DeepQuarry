@@ -1,0 +1,13 @@
+#define CALL plain()
+#define FIELD unknown
+#define ID(X) X
+#define DECL /proc/macro_plain()
+DECL
+    return null
+/proc/plain()
+    return null
+/proc/probe()
+    CALL.unknown
+    plain().FIELD
+    ID(plain()).unknown
+    macro_plain().unknown

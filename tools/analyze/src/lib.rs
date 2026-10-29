@@ -78,3 +78,15 @@ pub mod untyped_member_policy;
 #[cfg(feature = "native-policy")]
 pub mod captured_untyped;
 pub mod untyped_policy_metadata;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_player_link;
+pub mod player_link_policy;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_sparse_slots;
+pub mod sparse_slots_policy;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_weak_raw_read;
+pub mod weak_relation_policy;

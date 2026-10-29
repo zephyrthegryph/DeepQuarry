@@ -41,6 +41,17 @@ pub(crate) fn resolve_previous<M: crate::member_binding::MemberWrite + ?Sized>(
     callable_kinds: &crate::callable_namespace::CallableKinds,
     indices: impl IntoIterator<Item = usize>,
 ) -> Result<(), TreeError> {
+    resolve_previous_diagnostic(tree, members, modes, root, callable_kinds, indices, None)
+}
+pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite + ?Sized>(
+    tree: &SemanticTree,
+    members: &mut M,
+    modes: &[DefinitionMode],
+    root: SymbolId,
+    callable_kinds: &crate::callable_namespace::CallableKinds,
+    indices: impl IntoIterator<Item = usize>,
+    mut diagnostics: Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>,
+) -> Result<(), TreeError> {
     for i in indices {
         callable_namespace::validate_explicit(
             tree,
@@ -93,12 +104,17 @@ pub(crate) fn resolve_previous<M: crate::member_binding::MemberWrite + ?Sized>(
                         }
                         declaration_owner = tree.parent(owner);
                     }
-                    return Err(TreeError::InheritedDuplicate {
+                    let error = TreeError::InheritedDuplicate {
                         owner: tree.types[node.owner.index()].path,
                         previous_owner: tree.types[previous_owner.index()].path,
                         name: node.name,
                         kind: node.kind,
-                    });
+                    };
+                    if let Some(receipt) = diagnostics.as_deref_mut() {
+                        receipt.accept(error)?;
+                    } else {
+                        return Err(error);
+                    }
                 }
             }
             members.set_previous(i, previous);

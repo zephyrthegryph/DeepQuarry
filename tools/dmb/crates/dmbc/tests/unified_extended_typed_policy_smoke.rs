@@ -1,4 +1,4 @@
-//! Explicit five-policy IPC proof. Build first, release the cargo slot, then
+//! Explicit six-policy IPC proof. Build first, release the cargo slot, then
 //! invoke this ignored test from its built executable. It never starts Cargo,
 //! publishes a compiler, chooses an arbitrary scratch root, or retires peers.
 #[path = "../../../shared/test_scratch.rs"]
@@ -54,7 +54,7 @@ fn extended_native_typed_policy_ipc_matches_independent_legacy_engine() {
         .arg(bash_path(&repository))
         .env("DQ_PRIORITY", "low")
         .output()
-        .expect("start bounded owned five-policy IPC coordinator");
+        .expect("start bounded owned six-policy IPC coordinator");
     assert!(
         output.status.success(),
         "extended typed-policy IPC failed\nstdout:{}\nstderr:{}\nscratch:{}",

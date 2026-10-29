@@ -60,4 +60,9 @@ pub mod checks_implicit_new;
 
 pub mod checker_static_type_notes;
 pub mod checks_proc_static;
+pub mod checks_variable_visibility;
 pub mod untyped_member_native;
+
+pub mod player_link_native;
+
+pub mod weak_raw_read_native;

@@ -217,7 +217,7 @@ impl SourceSnapshot {
             for diagnostic in found {
                 crate::daemon::control::checkpoint()?;
                 let origin = archive
-                    .original_note_origin(diagnostic.span.start)
+                    .source_note_point(diagnostic.span.start)
                     .map_err(io::Error::other)?;
                 rows.push(serde_json::json!({"family":diagnostic.family,"severity":severity(level),"file":origin.path,"line":origin.line,
                     "expanded_span":[diagnostic.span.start,diagnostic.span.end],"expression_span":[diagnostic.expression_span.start,diagnostic.expression_span.end],
@@ -238,3 +238,16 @@ impl SourceSnapshot {
 #[cfg(test)]
 #[path = "runner_query_named_policy_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+pub(super) fn visibility_test_fixture(source: &str, checker: Option<&[u8]>) -> SourceSnapshot {
+    tests::semantic_snapshot_primary(source, checker, true)
+}
+
+#[cfg(test)]
+pub(super) fn visibility_test_fixture_result(
+    source: &str,
+    checker: Option<&[u8]>,
+) -> Result<SourceSnapshot, Vec<dm_tree::frontend::Diagnostic>> {
+    tests::semantic_snapshot_primary_result(source, checker, true)
+}

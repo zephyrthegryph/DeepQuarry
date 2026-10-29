@@ -3,6 +3,8 @@
 use super::*;
 #[path = "analyze_policy.rs"]
 mod analyze_policy;
+#[path = "workspace_raw.rs"]
+pub(super) mod workspace;
 use crate::runner_host::policy_capture::CapturedPolicyInputs;
 use dm_analysis::policy_inputs::{PolicyRole, TextView};
 use dq_analyze::{
@@ -30,17 +32,38 @@ const RESULT_BUDGET: usize = 64 * 1024 * 1024;
 const MAX_NODES: usize = 4096;
 const MAX_FILES: usize = 128;
 const MAX_AGE: Duration = Duration::from_secs(5 * 60);
+#[path = "raw_policy_operational_abort.rs"]
+mod operational_abort;
+use operational_abort::OperationalAbort;
+pub(super) struct Admission {
+    abort: OperationalAbort,
+    limit: AtomicUsize,
+    denied: std::sync::atomic::AtomicBool,
+}
+impl Default for Admission {
+    fn default() -> Self {
+        Self {
+            abort: OperationalAbort::default(),
+            limit: AtomicUsize::new(RESULT_BUDGET),
+            denied: std::sync::atomic::AtomicBool::new(false),
+        }
+    }
+}
 pub(super) struct State {
+    pub(super) admission: Arc<Admission>,
     // Coordination/weak leases only. Every reusable source view/config/finding
     // is a value in Db, never another map of analysis payloads.
     gate: Mutex<()>,
+    workspace: workspace::State,
     leases: Mutex<BTreeMap<Key, Lease>>,
     pub(super) charge: Arc<AtomicUsize>,
 }
 impl Default for State {
     fn default() -> Self {
         Self {
+            admission: Arc::new(Admission::default()),
             gate: Mutex::new(()),
+            workspace: workspace::State::default(),
             leases: Mutex::new(BTreeMap::new()),
             charge: Arc::new(AtomicUsize::new(0)),
         }
@@ -135,16 +158,44 @@ fn sort_files(root: &Path, files: &mut [PathBuf]) {
     });
 }
 
-fn error_hash(error: &str) -> u128 {
-    let mut bytes = b"native-raw-policy-error-v1\0".to_vec();
-    bytes.extend_from_slice(error.as_bytes());
-    dm_query::hash_bytes(&bytes)
+/// Cached Result payload plus its Arc header. Capacity, not current text
+/// length, is retained even when an error was shortened after construction.
+fn result_error_charge<T>(error: &String) -> usize {
+    std::mem::size_of::<Result<T, String>>() + 2 * std::mem::size_of::<usize>() + error.capacity()
 }
-pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>) {
-    analyze_policy::register_analyze(db, Arc::clone(&charge));
+fn retain_derived(
+    charge: &AtomicUsize,
+    bytes: usize,
+    admission: &Admission,
+    key: Key,
+) -> Result<(), QueryError> {
+    admission.abort.before_outcome(key)?;
+    if charge
+        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |used| {
+            used.checked_add(bytes)
+                .filter(|n| *n <= admission.limit.load(Ordering::Relaxed).min(RESULT_BUDGET))
+        })
+        .is_err()
+    {
+        admission.denied.store(true, Ordering::Relaxed);
+        return Err(QueryError::Missing(key));
+    }
+    Ok(())
+}
+
+fn error_hash(error: &str) -> u128 {
+    let mut hash = xxhash_rust::xxh3::Xxh3::new();
+    hash.update(b"native-raw-policy-error-v1\0");
+    hash.update(error.as_bytes());
+    hash.digest128()
+}
+pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admission>) {
+    workspace::register_with_admission(db, Arc::clone(&admission));
+    analyze_policy::register_analyze(db, Arc::clone(&charge), Arc::clone(&admission));
     db.define_input(RAW_FILE, "native-raw-shared-file");
     db.define_input(RAW_CONFIG, "native-raw-captured-config");
     let scope_charge = Arc::clone(&charge);
+    let scope_admission = Arc::clone(&admission);
     db.define(
         RAW_SCOPE,
         "native-raw-resolved-scope",
@@ -152,13 +203,23 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>) {
             let params = params
                 .downcast_ref::<ScopeParams>()
                 .expect("raw scope params");
+            scope_admission.abort.before_outcome(params.config)?;
             let configuration = ctx.input::<ConfigData>(params.config)?;
+            let available = scope_admission
+                .limit
+                .load(Ordering::Relaxed)
+                .saturating_sub(scope_charge.load(Ordering::Relaxed));
+            if configuration.config.budget_charge() > available {
+                scope_admission.denied.store(true, Ordering::Relaxed);
+                return Err(QueryError::Missing(params.config));
+            }
             let result = configuration.config.scope(params.name).map(Arc::new);
             let (hash, bytes) = match &result {
                 Ok(scope) => (scope.fingerprint(), scope.budget_charge()),
-                Err(error) => (error_hash(error), 1024),
+                Err(error) => (error_hash(error), result_error_charge::<Arc<Scope>>(error)),
             };
-            scope_charge.fetch_add(bytes, Ordering::Relaxed);
+            retain_derived(&scope_charge, bytes, &scope_admission, params.config)?;
+            scope_admission.abort.before_outcome(params.config)?;
             Ok(Outcome::new(result, hash, bytes))
         },
     );
@@ -169,25 +230,68 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>) {
             let params = params
                 .downcast_ref::<FileParams>()
                 .expect("raw file params");
+            admission.abort.before_outcome(params.file)?;
             let file = ctx.input::<FileData>(params.file)?;
             let scope = ctx.get::<Result<Arc<Scope>, String>>(
                 params.scope,
                 Arc::new(params.scope_params.clone()),
             )?;
+            let available = admission
+                .limit
+                .load(Ordering::Relaxed)
+                .saturating_sub(charge.load(Ordering::Relaxed));
             let result = match scope.as_ref() {
-                Ok(scope) => file.file.scan(scope).map(Arc::new),
+                Ok(scope) => file
+                    .file
+                    .scan_budgeted(scope, MAX_FIXTURE_SITES, available.saturating_sub(512))
+                    .map(Arc::new),
                 Err(error) => Err(error.clone()),
             };
             let (hash, bytes) = match &result {
                 Ok(rows) => (rows.fingerprint(), rows.budget_charge()),
-                Err(error) => (error_hash(error), 1024),
+                Err(error) => (
+                    error_hash(error),
+                    result_error_charge::<Arc<Findings>>(error),
+                ),
             };
-            charge.fetch_add(bytes, Ordering::Relaxed);
+            retain_derived(&charge, bytes, &admission, params.file)?;
+            admission.abort.before_outcome(params.file)?;
             Ok(Outcome::new(result, hash, bytes))
         },
     );
 }
 impl QueryDb {
+    fn begin_result_admission_locked(&self) -> io::Result<()> {
+        self.raw_policy.admission.abort.begin();
+        let limit = RESULT_BUDGET
+            .checked_sub(self.workspace_result_charge_locked()?)
+            .ok_or_else(|| invalid("shared native policy result budget exhausted"))?;
+        self.raw_policy
+            .admission
+            .limit
+            .store(limit, Ordering::Relaxed);
+        self.raw_policy
+            .admission
+            .denied
+            .store(false, Ordering::Relaxed);
+        Ok(())
+    }
+    fn derived_query_error(&self, context: &str, error: QueryError) -> io::Error {
+        if let Some(original) = self.raw_policy.admission.abort.take_error() {
+            return original;
+        }
+        if self.raw_policy.admission.abort.is_aborted() {
+            return io::Error::new(
+                io::ErrorKind::Interrupted,
+                "native policy operation aborted",
+            );
+        }
+        if self.raw_policy.admission.denied.load(Ordering::Relaxed) {
+            invalid("shared native policy result budget exhausted before cache publication")
+        } else {
+            invalid(format!("{context}: {error:?}"))
+        }
+    }
     pub(crate) fn raw_policy_cache_stats(&self) -> CacheStats {
         let _gate = self
             .raw_policy
@@ -210,14 +314,22 @@ impl QueryDb {
                 });
             }
         }
+        let nodes = leases.len();
+        let inputs = leases.values().map(|lease| lease.bytes).sum();
+        drop(leases);
+        let (workspace_nodes, workspace_bytes) = self.workspace_counts_locked();
         CacheStats {
             retained_shared_view_capacity: storage
                 .values()
                 .copied()
                 .fold(0usize, usize::saturating_add),
-            nodes: leases.len(),
-            input_and_param_estimate: leases.values().map(|lease| lease.bytes).sum(),
-            derived_estimate: self.raw_policy.charge.load(Ordering::Relaxed),
+            nodes: nodes.saturating_add(workspace_nodes),
+            input_and_param_estimate: inputs,
+            derived_estimate: self
+                .raw_policy
+                .charge
+                .load(Ordering::Relaxed)
+                .saturating_add(workspace_bytes),
         }
     }
 
@@ -253,6 +365,7 @@ impl QueryDb {
             self.db.remove(*key);
         }
         leases.clear();
+        self.workspace_clear_locked();
         self.raw_policy.charge.store(0, Ordering::Relaxed);
     }
     pub(crate) fn prune_raw_policy(&self) {
@@ -278,6 +391,8 @@ impl QueryDb {
             self.db.remove(*key);
         }
         leases.clear();
+        drop(leases);
+        self.workspace_clear_locked();
         self.raw_policy.charge.store(0, Ordering::Relaxed);
     }
     pub(crate) fn raw_cohort(
@@ -349,6 +464,7 @@ impl QueryDb {
             .leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
+        self.workspace_prune_expired_locked(now);
         leases.retain(|key, lease| {
             if lease.owner.strong_count() == 0
                 || now.saturating_duration_since(lease.touched) > MAX_AGE
@@ -370,6 +486,21 @@ impl QueryDb {
                 true
             }
         });
+        // A cutoff can keep the prior cached owner after a fresh Outcome was
+        // constructed. Reconcile only live derived lease values at request
+        // boundaries, rather than accumulating those publications forever.
+        let retained = leases
+            .keys()
+            .filter(|key| {
+                matches!(
+                    key.kind,
+                    RAW_FINDINGS | RAW_SCOPE | analyze_policy::ANALYZE_FINDINGS
+                )
+            })
+            .fold(0usize, |n, key| {
+                n.saturating_add(self.db.value_bytes_at(*key))
+            });
+        self.raw_policy.charge.store(retained, Ordering::Relaxed);
     }
     fn raw_admit_locked(
         &self,
@@ -397,11 +528,16 @@ impl QueryDb {
             .map(|(_, l)| l.bytes)
             .sum::<usize>()
             .saturating_add(charge);
+        // Raw fixture and production page nodes share this family bound.
+        // Only trim page memo values if the incoming regular cohort needs room.
+        self.workspace_trim_locked(MAX_NODES - planned.len(), RESULT_BUDGET);
+        let workspace_nodes = self.workspace_nodes_locked();
         let mut count = leases
             .keys()
             .filter(|key| !planned.contains_key(*key))
             .count()
-            + planned.len();
+            + planned.len()
+            + workspace_nodes;
         let mut old: Vec<_> = leases
             .iter()
             .filter(|(key, _)| !planned.contains_key(*key))
@@ -556,6 +692,7 @@ impl QueryDb {
             configuration: config_key,
             sources,
         } = self.raw_prepare_locked(cohort, &ordered, now)?;
+        self.begin_result_admission_locked()?;
         let mut runs = Vec::new();
         let mut total_sites = 0usize;
         for name in ordered {
@@ -586,7 +723,11 @@ impl QueryDb {
                             scope_params: scope_params.clone(),
                         }),
                     )
-                    .map_err(|e| io::Error::other(format!("native raw query: {e:?}")))?;
+                    .map_err(|e| self.derived_query_error("native raw query", e))?;
+                self.workspace_trim_locked(
+                    MAX_NODES,
+                    RESULT_BUDGET.saturating_sub(self.raw_policy.charge.load(Ordering::Relaxed)),
+                );
                 let result = result
                     .as_ref()
                     .as_ref()

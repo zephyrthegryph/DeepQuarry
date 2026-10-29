@@ -199,7 +199,10 @@ impl ByteLayoutBuilder {
         let Some(raw) = lease.source_text().get(source_span.range()) else {
             return;
         };
-        if body_without_line_ending(raw).contains('\n') {
+        if body_without_line_ending(raw).contains(['\r', '\n'])
+            || body_without_line_ending(raw).len()
+                != body_without_line_ending(line.text.as_ref()).len()
+        {
             return;
         }
         self.macro_lines.push(index);
@@ -1004,6 +1007,161 @@ mod macro_line_receipt_tests {
         expanded
             .origins
             .original_policy_line(index, occurrence, lease, offset)
+    }
+    fn note(
+        expanded: &super::super::ExpandedRegions,
+        plan: &DirectivePlan,
+        lease: &SourceAcquisitionLease,
+        offset: usize,
+    ) -> Result<OriginalByteCursor, &'static str> {
+        let index = expanded
+            .origins
+            .partition_point(|row| row.output_span.end <= offset);
+        let row = expanded.origins.get(index).unwrap();
+        expanded.origins.source_note_cursor(
+            index,
+            plan.regions[row.region].occurrence,
+            lease,
+            offset,
+        )
+    }
+    #[test]
+    fn primary_macro_token_points_preserve_outer_invocation_and_adjacent_bytes() {
+        // Independent pinned old checker: CALL.unknown=5:9,
+        // ID(plain()).unknown=6:16, ID(ACCESS(B))=7:5.
+        let raw="#define CALL plain()\n#define ID(X) X\n#define ACCESS(P) P.p\n/proc/p()\n    CALL.unknown\n    ID(plain()).unknown\n    ID(ACCESS(B))\n";
+        let (source, plan) = fixture(raw);
+        let expanded = crate::regions::expand_regions_text(&plan, 1);
+        let offsets = expanded
+            .text
+            .match_indices(".unknown")
+            .map(|(i, _)| i)
+            .collect::<Vec<_>>();
+        assert_eq!(offsets.len(), 2);
+        for (offset, expected) in offsets.into_iter().zip([(5, 9), (6, 16)]) {
+            let point = note(&expanded, &plan, source.0.lease(), offset).unwrap();
+            assert_eq!((point.line, point.byte_column), expected);
+        }
+        let at = expanded.text.rfind("B.p").unwrap() + 1;
+        let point = note(&expanded, &plan, source.0.lease(), at).unwrap();
+        assert_eq!((point.line, point.byte_column), (7, 5));
+        assert_eq!(
+            source.0.lease().source_text().as_bytes()[point.source_offset],
+            b'I'
+        );
+        let index = expanded
+            .origins
+            .partition_point(|row| row.output_span.end <= at);
+        let row = expanded.origins.get(index).unwrap();
+        assert!(expanded
+            .origins
+            .original_byte_cursor(
+                index,
+                plan.regions[row.region].occurrence,
+                source.0.lease(),
+                at
+            )
+            .is_err());
+        let foreign = AcquiredSource::from_original_bytes(raw.as_bytes().to_vec(), ());
+        assert!(note(&expanded, &plan, foreign.lease(), at).is_err());
+        let reissued = source.0.reissued(());
+        assert!(note(&expanded, &plan, reissued.lease(), at).is_err());
+    }
+    #[test]
+    fn macro_invocation_columns_count_acquired_utf8_comment_bytes() {
+        let raw="#define ACCESS(P) P.p\n/datum/base\n    var/SpacemanDMM_private/p = null\n/datum/other/proc/check(datum/base/B)\n    return /* é漢 */ ACCESS(B)\n";
+        let (source, plan) = fixture(raw);
+        let expanded = crate::regions::expand_regions_text(&plan, 1);
+        let at = expanded.text.rfind("B.p").unwrap() + 1;
+        let point = note(&expanded, &plan, source.0.lease(), at).unwrap();
+        assert_eq!((point.line, point.byte_column), (5, 24));
+    }
+    #[test]
+    fn macro_bare_declaration_next_token_uses_real_lf_never_synthetic_eof() {
+        for ending in ["\n", ""] {
+            let raw =
+                format!("#define FIELD var/SpacemanDMM_private/p\n/datum/base\n    FIELD{ending}");
+            let (source, plan) = fixture(&raw);
+            let expanded = crate::regions::expand_regions_text(&plan, 1);
+            let at = expanded.text.rfind('\n').unwrap();
+            let got = note(&expanded, &plan, source.0.lease(), at);
+            if ending.is_empty() {
+                assert!(got.is_err());
+            } else {
+                let got = got.unwrap();
+                assert_eq!((got.line, got.byte_column), (3, 10));
+            }
+        }
+    }
+    #[test]
+    fn macro_receipts_are_reissued_from_disk_and_do_not_retain_original_owners() {
+        let raw = "#define ID(X) X\n/proc/p()\n    ID(B.p)\n";
+        let memo = DiskMemo::default();
+        let (old, oldplan) = fixture(raw);
+        let cold = crate::regions::expand_regions_text_with_memo(&oldplan, 1, &memo);
+        let at = cold.text.find("B.p").unwrap() + 1;
+        assert_eq!(
+            note(&cold, &oldplan, old.0.lease(), at)
+                .unwrap()
+                .byte_column,
+            5
+        );
+        let (current, plan) = fixture(raw);
+        let warm = crate::regions::expand_regions_text_with_memo(&plan, 1, &memo);
+        assert_eq!(
+            note(&warm, &plan, current.0.lease(), at)
+                .unwrap()
+                .byte_column,
+            5
+        );
+        assert!(note(&warm, &plan, old.0.lease(), at).is_err());
+        // The receipt census exposes real sparse buffers, not source copies or
+        // synthesized capacity estimates. Existing visit consumers deduplicate pointers.
+        let index = warm
+            .origins
+            .partition_point(|row| row.output_span.end <= at);
+        let proof = warm.origins.macro_points_for_row(index).unwrap();
+        let pointer = proof.as_ptr() as usize;
+        let exact_bytes = std::mem::size_of_val(proof.as_ref());
+        let lifetime = Arc::downgrade(proof);
+        let mut buffers = Vec::new();
+        warm.origins
+            .visit_storage(|p, n, b| buffers.push((p, n, b)));
+        assert!(
+            buffers
+                .iter()
+                .any(|&(p, _, b)| p == pointer && b == exact_bytes),
+            "census must expose this actual point allocation, not a same-sized unrelated buffer"
+        );
+        let identity = current.0.lease().identity();
+        drop(plan);
+        drop(current);
+        assert!(
+            !identity.is_alive(),
+            "macro point receipts retain only scalar token intervals, never raw acquisitions"
+        );
+        assert_eq!(cold.text, warm.text);
+        drop(warm);
+        assert!(
+            lifetime.upgrade().is_none(),
+            "memo weak pools cannot retain point payloads after the archive drops"
+        );
+    }
+    #[test]
+    fn held_and_interpolated_transforms_do_not_gain_macro_byte_receipts() {
+        for raw in [
+            "#define ID(X) X\n/proc/p()\n    ID(\n#if 1\n        B.p)\n#endif\n",
+            "#define VALUE 7\n/proc/p()\n    return \"[VALUE]\"\n",
+        ] {
+            let (source, plan) = fixture(raw);
+            let expanded = crate::regions::expand_regions_text(&plan, 1);
+            let at = expanded
+                .text
+                .find("B.p")
+                .or_else(|| expanded.text.find('7'))
+                .unwrap();
+            assert!(note(&expanded, &plan, source.0.lease(), at).is_err());
+        }
     }
     #[test]
     fn direct_single_physical_macro_line_has_bound_line_only_receipt() {

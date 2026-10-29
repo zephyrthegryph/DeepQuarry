@@ -27,6 +27,11 @@ pub enum BuildCommand {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BuildRequest {
     pub command: BuildCommand,
+    /// Explicit checker-only inherited-variable diagnostic preparation profile.
+    /// False preserves ordinary strict compilation/preparation admission.
+    #[serde(default)]
+    pub diagnostic_declarations: bool,
+
     /// Cooperative execution budget only; never a semantic/cache identity input.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_seconds: Option<u16>,
@@ -58,24 +63,36 @@ pub struct BuildRequest {
 
 pub(crate) fn validate_timeout_seconds(value: Option<u16>) -> std::io::Result<()> {
     if value.is_some_and(|seconds| !(1..=300).contains(&seconds)) {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
-            "request timeout_seconds must be an integer in 1..300"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "request timeout_seconds must be an integer in 1..300",
+        ));
     }
     Ok(())
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Command {
-    Query { request: PathBuf, jsonl: bool },
+    Query {
+        request: PathBuf,
+        jsonl: bool,
+    },
     /// Export only facts already present in an explicitly pinned retained session.
     QueryExport {
         request: PathBuf,
         limits: crate::daemon::query::semantic_client::ExportLimits,
     },
     Help,
-    Gc { project: PathBuf },
-    Stats { project: PathBuf },
-    Explain { project: PathBuf, target: String },
+    Gc {
+        project: PathBuf,
+    },
+    Stats {
+        project: PathBuf,
+    },
+    Explain {
+        project: PathBuf,
+        target: String,
+    },
     Verify(Vec<String>),
     Build(Box<BuildRequest>),
 }
@@ -110,4 +127,18 @@ pub enum BuildOutcome {
 pub enum CommandOutcome {
     Completed,
     Build(BuildOutcome),
+}
+
+pub(crate) fn validate_diagnostic_declarations(request: &BuildRequest) -> std::io::Result<()> {
+    if request.diagnostic_declarations
+        && (request.command != BuildCommand::PrepareQuery
+            || request.no_daemon
+            || request
+                .policy_inputs
+                .as_ref()
+                .is_none_or(|policy| policy.workspace.is_some()))
+    {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"diagnostic_declarations requires retained PrepareQuery and explicit non-workspace policy inputs"));
+    }
+    Ok(())
 }

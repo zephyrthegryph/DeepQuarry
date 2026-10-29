@@ -255,6 +255,9 @@ impl BodyArchive {
     pub fn original_note_origin(&self, offset: usize) -> Result<SourceNoteOrigin, String> {
         self.mapping.original_note_origin(offset)
     }
+    pub fn source_note_point(&self, offset: usize) -> Result<SourceNoteOrigin, String> {
+        self.mapping.source_note_point(offset)
+    }
     pub fn callable_note_origin(
         &self,
         identity: dm_ir::ProcedureIdentity,
@@ -294,7 +297,7 @@ impl BodyArchive {
         let opening = body
             .signature_opening_parenthesis()
             .ok_or("primary callable opening token unavailable")?;
-        self.original_note_origin(opening.start)
+        self.source_note_point(opening.start)
     }
 }
 
@@ -332,6 +335,13 @@ impl BodyArchive {
         self.mapping
             .declaration_policy_line(self.member_policy_occurrence(member)?)
     }
+    pub fn member_primary_policy_span(
+        &self,
+        member: crate::MemberId,
+    ) -> Result<dm_syntax::Span, String> {
+        self.mapping
+            .declaration_primary_policy_span(self.member_policy_occurrence(member)?)
+    }
     pub fn member_policy_point(&self, member: crate::MemberId) -> Result<SourceNoteOrigin, String> {
         self.mapping
             .declaration_policy_point(self.member_policy_occurrence(member)?)
@@ -341,3 +351,13 @@ impl BodyArchive {
 #[path = "frontend_checker_variable_properties.rs"]
 mod checker_variable_properties;
 pub use checker_variable_properties::CheckerVariableProperties;
+
+impl BodyArchive {
+    pub fn member_source_note_point(
+        &self,
+        member: crate::MemberId,
+    ) -> Result<SourceNoteOrigin, String> {
+        self.mapping
+            .declaration_source_note_point(self.member_policy_occurrence(member)?)
+    }
+}

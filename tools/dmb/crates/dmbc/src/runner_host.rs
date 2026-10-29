@@ -21,6 +21,10 @@ pub(crate) mod policy_capture;
 pub(crate) mod query_snapshot;
 #[path = "runner_host_resources.rs"]
 pub(crate) mod resources;
+#[path = "runner_host/workspace_capture.rs"]
+pub(crate) mod workspace_capture;
+#[path = "runner_host/workspace_discovery.rs"]
+pub(crate) mod workspace_discovery;
 pub(crate) use engine_payload::{EnginePayload, EnginePayloads};
 pub(crate) use memo::SharedRecords;
 #[path = "runner_executor_pool.rs"]

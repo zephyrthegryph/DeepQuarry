@@ -14,12 +14,14 @@ fn file(name: &str, required: bool) -> PolicyInputFile {
 #[test]
 fn admission_is_canonical_order_independent_and_joins_requiredness() {
     let first = PolicyInputRequest {
+        workspace: None,
         files: vec![file("b.dm", false), file("a.dm", true), file("b.dm", true)],
         search_folders: vec![path("z"), path("a"), path("z")],
     }
     .admit()
     .unwrap();
     let second = PolicyInputRequest {
+        workspace: None,
         files: vec![file("b.dm", true), file("a.dm", true)],
         search_folders: vec![path("a"), path("z")],
     }
@@ -152,4 +154,42 @@ fn policy_revision_ignores_scan_clock_but_binds_directory_and_absence_facts() {
         captured_revision(11, &negative, &request).unwrap(),
         captured_revision(11, &later, &request).unwrap()
     );
+}
+
+#[test]
+fn workspace_intent_is_normalized_distinct_and_cannot_mix_explicit_inputs() {
+    let workspace = WorkspacePolicyRequest {
+        root: path("root"),
+        recursive_roots: vec![path("root/code"), path("root/code")],
+        configuration: path("root/scopes.toml"),
+    };
+    let request = PolicyInputRequest {
+        workspace: Some(workspace.clone()),
+        ..Default::default()
+    }
+    .admit()
+    .unwrap();
+    assert_eq!(request.workspace().unwrap().recursive_roots.len(), 1);
+    assert!(PolicyInputRequest {
+        workspace: Some(workspace.clone()),
+        files: vec![file("a.dm", true)],
+        ..Default::default()
+    }
+    .admit()
+    .is_err());
+    assert!(PolicyInputRequest {
+        workspace: Some(workspace),
+        search_folders: vec![path("root")],
+        ..Default::default()
+    }
+    .admit()
+    .is_err());
+    let encoded = serde_json::to_value(PolicyInputRequest::default().admit().unwrap()).unwrap();
+    assert!(
+        encoded.get("workspace").is_none(),
+        "old explicit identity serialization remains byte-compatible"
+    );
+    let roundtrip: AdmittedPolicyRequest =
+        serde_json::from_slice(&serde_json::to_vec(&request).unwrap()).unwrap();
+    assert_eq!(request, roundtrip);
 }

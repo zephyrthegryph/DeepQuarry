@@ -35,6 +35,7 @@ impl HeapCensus {
             }
         });
         self.semantic_source_evidence(capture.semantic_source_evidence());
+        self.policy_directory_facts(capture.facts());
         let policy = capture.policy();
         self.body_archive(policy.archive());
         self.source_export_mapping(policy.mapping());
@@ -57,6 +58,37 @@ impl HeapCensus {
             if let Some(bytes) = bytes {
                 if self.arc_object(owner, bytes.shared_owner()) {
                     self.vec_payload(owner, bytes.shared_owner().bytes());
+                }
+            }
+        });
+        self.unknown(
+            "query_snapshot.policy_inputs.manifest_originals",
+            "BTreeMap nodes not exposed; exact payload owners deduplicated below",
+        );
+        capture.visit_manifest_originals(|path, bytes| {
+            let owner = "query_snapshot.policy_inputs.manifest_originals";
+            self.path(owner, path);
+            if let Some(bytes) = bytes {
+                if self.arc_object(owner, bytes.shared_owner()) {
+                    self.vec_payload(owner, bytes.shared_owner().bytes());
+                }
+            }
+        });
+        self.unknown(
+            "query_snapshot.policy_inputs.untyped_inputs",
+            "Bounded issuance registry nodes not exposed; no derived values cached here",
+        );
+        capture.visit_untyped_inputs(|key, input| {
+            let owner = "query_snapshot.policy_inputs.untyped_inputs";
+            self.slice(owner, key, false);
+            for text in key {
+                self.string(owner, text);
+            }
+            if self.arc_object(owner, input) {
+                self.body_archive(input.archive());
+                self.slice(owner, input.exempt_types(), false);
+                for text in input.exempt_types() {
+                    self.string(owner, text);
                 }
             }
         });
@@ -106,6 +138,46 @@ impl HeapCensus {
         );
         for path in capture.missing_paths() {
             self.path("query_snapshot.policy_inputs.missing", path);
+        }
+    }
+}
+
+impl HeapCensus {
+    pub(crate) fn policy_directory_facts(&mut self, facts: &crate::input_snapshot::InputSnapshot) {
+        let owner = "policy_input.typed_directory_metadata";
+        facts.visit_policy_directory_accounting(|address, count| {
+            self.collection_entries::<(
+                usize,
+                std::sync::Weak<Vec<crate::input_snapshot::PolicyDirectoryEntry>>,
+            )>("policy_input.typed_directory_accounting", address, count);
+        });
+        self.collection_entries::<(PathBuf, crate::input_snapshot::PolicyDirectoryObservation)>(
+            owner,
+            facts.policy_directories() as *const _ as usize,
+            facts.policy_directories().len(),
+        );
+        self.unknown(owner,"BTreeMap node allocator overhead excluded; Arc control headers accounted conservatively in admission, not RSS");
+        for (path, observation) in facts.policy_directories() {
+            self.path(owner, path);
+            if let crate::input_snapshot::PolicyDirectoryListing::Present(entries) =
+                &observation.listing
+            {
+                entries.visit_storage(|storage| match storage {
+                    crate::input_snapshot::PolicyDirectoryStorage::Owner { address, bytes } => {
+                        self.buffer(owner, address, bytes, bytes);
+                    }
+                    crate::input_snapshot::PolicyDirectoryStorage::Buffer {
+                        address,
+                        logical,
+                        capacity,
+                    } => {
+                        self.buffer(owner, address, logical, capacity);
+                    }
+                    crate::input_snapshot::PolicyDirectoryStorage::Name(name) => {
+                        self.string(owner, name)
+                    }
+                });
+            }
         }
     }
 }

@@ -22,6 +22,9 @@ use walkdir::WalkDir;
 
 use crate::strip;
 use crate::util;
+#[path = "tree_captured_budget.rs"]
+mod captured_budget;
+pub(crate) use captured_budget::visit_source_storage;
 
 pub type Hash = u128;
 /// Namespaced live-allocation keys; these are storage observations, never authority.
@@ -113,6 +116,7 @@ struct DerivedViews {
     marker: OnceLock<dm_preprocess::SourceText>,
 }
 struct Data {
+    captured_budget: Option<Arc<captured_budget::Budget>>,
     // Current-capture authority and derived-content reuse have distinct owners.
     raw: View,
     views: Arc<DerivedViews>,
@@ -160,6 +164,7 @@ impl SourceFile {
                 }
             }
             Data {
+                captured_budget: None,
                 raw: View::new(read_text(&self.abs)),
                 views: Arc::new(DerivedViews::default()),
             }
@@ -185,23 +190,68 @@ impl SourceFile {
         let d = self.data();
         d.views.code.get_or_init(|| {
             text_probe();
-            View::new(strip::code_only(&d.raw.text))
+            if let Some(budget) = &d.captured_budget {
+                let Some(permit) =
+                    budget.reserve(captured_budget::transform_bound(&d.raw.text, 12))
+                else {
+                    return captured_budget::empty_view();
+                };
+                let view = match captured_budget::indexed(strip::code_only(&d.raw.text).into()) {
+                    Ok(view) => view,
+                    Err(error) => {
+                        budget.fail(error);
+                        return captured_budget::empty_view();
+                    }
+                };
+                permit.complete(|visit| captured_budget::view_storage(&view, visit));
+                view
+            } else {
+                View::new(strip::code_only(&d.raw.text))
+            }
         })
     }
 
     /// Same-length sanitized text (`_dx_dm.sanitize_text`).
     pub fn clean(&self) -> &View {
         let d = self.data();
-        d.views
-            .clean
-            .get_or_init(|| View::new(strip::sanitize(&d.raw.text)))
+        d.views.clean.get_or_init(|| {
+            if let Some(budget) = &d.captured_budget {
+                let Some(permit) = budget.reserve(captured_budget::transform_bound(&d.raw.text, 6))
+                else {
+                    return captured_budget::empty_view();
+                };
+                let view = match captured_budget::indexed(strip::sanitize(&d.raw.text).into()) {
+                    Ok(view) => view,
+                    Err(error) => {
+                        budget.fail(error);
+                        return captured_budget::empty_view();
+                    }
+                };
+                permit.complete(|visit| captured_budget::view_storage(&view, visit));
+                view
+            } else {
+                View::new(strip::sanitize(&d.raw.text))
+            }
+        })
     }
 
     /// Same-length comment-masked marker text, acquired once from captured raw.
     pub(crate) fn marker(&self) -> &dm_preprocess::SourceText {
         let data = self.data();
         data.views.marker.get_or_init(|| {
-            crate::raw_marker_policy::strip_comments_keep_strings(&data.raw.text).into()
+            if let Some(budget) = &data.captured_budget {
+                let Some(permit) =
+                    budget.reserve(captured_budget::transform_bound(&data.raw.text, 4))
+                else {
+                    return String::new().into();
+                };
+                let text: dm_preprocess::SourceText =
+                    crate::raw_marker_policy::strip_comments_keep_strings(&data.raw.text).into();
+                permit.complete(|visit| captured_budget::source_storage(&text, visit));
+                text
+            } else {
+                crate::raw_marker_policy::strip_comments_keep_strings(&data.raw.text).into()
+            }
         })
     }
 
@@ -225,6 +275,7 @@ impl SourceFile {
         let size = text.len() as u64;
         let data = OnceLock::new();
         let _ = data.set(Data {
+            captured_budget: None,
             raw: View::shared(text),
             views: Arc::new(DerivedViews::default()),
         });
@@ -240,6 +291,71 @@ impl SourceFile {
         }
     }
 
+    /// Capture-only constructor: raw index and every later lazy reserve their
+    /// own allocations. Authority is still supplied by the native acquisition.
+    pub(crate) fn from_shared_budgeted(
+        rel: &str,
+        abs: PathBuf,
+        text: dm_preprocess::SourceText,
+        limit: usize,
+    ) -> Result<SourceFile, String> {
+        let metadata = std::mem::size_of::<SourceFile>()
+            + std::mem::size_of::<Data>()
+            + std::mem::size_of::<DerivedViews>()
+            + rel.len()
+            + abs.capacity();
+        let budget = captured_budget::Budget::new(limit, metadata)?;
+        budget.remember(|visit| captured_budget::source_storage(&text, visit));
+        if let Some(error) = budget.error() {
+            return Err(error);
+        }
+        let lines = text
+            .bytes()
+            .filter(|b| *b == b'\n')
+            .count()
+            .checked_add(1)
+            .and_then(|n| n.checked_mul(4));
+        let permit = budget.reserve(lines).ok_or_else(|| {
+            budget
+                .error()
+                .unwrap_or_else(|| "captured raw index budget unavailable".into())
+        })?;
+        let size = text.len() as u64;
+        let hash = hash_bytes(text.as_bytes());
+        let raw = captured_budget::indexed(text)?;
+        permit.complete(|visit| captured_budget::view_storage(&raw, visit));
+        if let Some(error) = budget.error() {
+            return Err(error);
+        }
+        let data = OnceLock::new();
+        let _ = data.set(Data {
+            captured_budget: Some(budget),
+            raw,
+            views: Arc::new(DerivedViews::default()),
+        });
+        Ok(SourceFile {
+            rel: rel.into(),
+            abs,
+            size,
+            mtime_ns: 0,
+            hash,
+            fkey: file_key(rel, hash),
+            hidden: rel.split('/').any(|c| c.starts_with('.')),
+            data,
+        })
+    }
+    pub(crate) fn captured_budget_error(&self) -> Option<String> {
+        let data = self.data();
+        let budget = data.captured_budget.as_ref()?;
+        budget.remember(|visit| self.visit_policy_storage(visit));
+        budget.error()
+    }
+    pub(crate) fn captured_budget_charge(&self) -> usize {
+        self.data()
+            .captured_budget
+            .as_ref()
+            .map_or(0, |budget| budget.charge())
+    }
     /// Rebind an equal-content cache view to this capture's raw SourceText.
     /// This is content reuse only; the private native host must authenticate the
     /// current capture BEFORE calling this method. No hash grants authority.
@@ -248,11 +364,22 @@ impl SourceFile {
         path: &Path,
         text: dm_preprocess::SourceText,
     ) -> Result<SourceFile, String> {
+        if self
+            .data()
+            .captured_budget
+            .as_ref()
+            .is_some_and(|budget| budget.scoped())
+        {
+            return Err(
+                "a scoped source-view budget cannot be detached by content rebinding".into(),
+            );
+        }
         if self.abs != path || self.raw().text.as_bytes() != text.as_bytes() {
             return Err("cached source path/content contradicts current capture".into());
         }
         let data = OnceLock::new();
         let _ = data.set(Data {
+            captured_budget: self.data().captured_budget.clone(),
             raw: View::shared(text),
             views: Arc::clone(&self.data().views),
         });
@@ -272,64 +399,24 @@ impl SourceFile {
     /// is not a heap/RSS measurement and must be paired with preflight limits.
     pub(crate) fn visit_policy_storage(&self, mut visit: impl FnMut(PolicyStorageKey, usize)) {
         use PolicyStorageClass as K;
-        fn text(
-            source: &dm_preprocess::SourceText,
-            visit: &mut impl FnMut(PolicyStorageKey, usize),
-        ) {
-            let mut backing = 0;
-            source.visit_storage(|id, header, storage| {
-                backing = id;
-                visit(
-                    PolicyStorageKey(K::TextBacking, id),
-                    header.saturating_add(2 * std::mem::size_of::<usize>()),
-                );
-                use dm_preprocess::SourceTextStorage;
-                match storage {
-                    SourceTextStorage::Original(value) => visit(
-                        PolicyStorageKey(K::OriginalPayload, value.as_ptr() as usize),
-                        value.len().saturating_add(2 * std::mem::size_of::<usize>()),
-                    ),
-                    SourceTextStorage::Transformed(value) if value.capacity() > 0 => visit(
-                        PolicyStorageKey(K::TransformedPayload, value.as_ptr() as usize),
-                        value.capacity(),
-                    ),
-                    SourceTextStorage::Transformed(_) => {}
-                }
-            });
-            // Memo data reallocates; charge its current maximum by stable Backing.
-            source.visit_fingerprint_storage(|_, _, capacity| {
-                visit(PolicyStorageKey(K::FingerprintMemo, backing), capacity)
-            });
-        }
-        fn view(view: &View, visit: &mut impl FnMut(PolicyStorageKey, usize)) {
-            text(&view.text, visit);
-            if view.starts.capacity() > 0 {
-                visit(
-                    PolicyStorageKey(K::LineStarts, view.starts.as_ptr() as usize),
-                    view.starts
-                        .capacity()
-                        .saturating_mul(std::mem::size_of::<u32>()),
-                );
-            }
-        }
         let data = self.data();
         visit(
             PolicyStorageKey(K::Record, data as *const Data as usize),
             std::mem::size_of::<Data>(),
         );
-        view(&data.raw, &mut visit);
+        captured_budget::view_storage(&data.raw, &mut visit);
         visit(
             PolicyStorageKey(K::Record, Arc::as_ptr(&data.views) as usize),
             std::mem::size_of::<DerivedViews>().saturating_add(2 * std::mem::size_of::<usize>()),
         );
         if let Some(code) = data.views.code.get() {
-            view(code, &mut visit);
+            captured_budget::view_storage(code, &mut visit);
         }
         if let Some(clean) = data.views.clean.get() {
-            view(clean, &mut visit);
+            captured_budget::view_storage(clean, &mut visit);
         }
         if let Some(marker) = data.views.marker.get() {
-            text(marker, &mut visit);
+            captured_budget::source_storage(marker, &mut visit);
         }
     }
 
@@ -339,6 +426,7 @@ impl SourceFile {
         let hash = blake3::hash(text.as_bytes());
         let cell = OnceLock::new();
         let _ = cell.set(Data {
+            captured_budget: None,
             raw: View::new(text),
             views: Arc::new(DerivedViews::default()),
         });
@@ -389,14 +477,20 @@ impl Select {
     }
 
     pub fn matches(&self, f: &SourceFile) -> bool {
-        if f.hidden && !self.hidden {
+        self.matches_parts(&f.rel, f.hidden)
+    }
+    pub(crate) fn matches_path(&self, rel: &str) -> bool {
+        self.matches_parts(rel, rel.split('/').any(|c| c.starts_with('.')))
+    }
+    fn matches_parts(&self, rel: &str, hidden: bool) -> bool {
+        if hidden && !self.hidden {
             return false;
         }
-        let ext = f.ext();
+        let ext = rel.rsplit_once('.').map_or("", |(_, ext)| ext);
         self.roots.iter().any(|(dir, e)| {
             *e == ext
                 && (dir.is_empty()
-                    || (f.rel.starts_with(dir) && f.rel.as_bytes().get(dir.len()) == Some(&b'/')))
+                    || (rel.starts_with(dir) && rel.as_bytes().get(dir.len()) == Some(&b'/')))
         })
     }
 }
@@ -631,6 +725,7 @@ impl Tree {
                             util::universal_newlines(String::from_utf8_lossy(&bytes).into_owned());
                         let cell = OnceLock::new();
                         let _ = cell.set(Data {
+                            captured_budget: None,
                             raw: View::new(text),
                             views: Arc::new(DerivedViews::default()),
                         });

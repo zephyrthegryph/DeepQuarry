@@ -20,6 +20,14 @@ impl<P: SnapshotProvider> SnapshotProvider for GeneratedOutputInputs<P> {
     ) -> io::Result<Option<CapturedInputRead>> {
         self.provider.read_policy_bounded(path, limit)
     }
+    fn policy_directory(
+        &self,
+        path: &Path,
+        follow: bool,
+        limit: usize,
+    ) -> io::Result<Option<PolicyDirectoryListing>> {
+        self.provider.policy_directory(path, follow, limit)
+    }
     fn source_alias(
         &self,
         path: &Path,

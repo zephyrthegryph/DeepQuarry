@@ -33,36 +33,31 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
             body_syntax::observe(ctx, syntax)?;
         }
         let result = input.compute();
-        let bytes = result.as_ref().map_or(1024, |proof| proof.budget_charge());
-        charged.fetch_add(bytes, Ordering::Relaxed);
+        let envelope = std::mem::size_of::<Result<Arc<ArchiveValueProof>, Unsupported>>()
+            + 2 * std::mem::size_of::<usize>();
+        let bytes = result.as_ref().map_or_else(
+            |e| e.0.capacity().saturating_add(envelope),
+            |proof| proof.budget_charge().saturating_add(envelope),
+        );
+        // Failed inference is not a nominal1024-byte loophole. No publication
+        // (including a cached error) may exceed this existing derived family cap.
+        if charged
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |old| {
+                old.checked_add(bytes).filter(|n| *n <= BUDGET)
+            })
+            .is_err()
+        {
+            return Err(QueryError::Missing(params.key));
+        }
         Ok(Outcome::new(result, params.key.id, bytes))
     });
 }
 impl QueryDb {
-    pub(super) fn prune_value_proofs(&self) {
-        self.value_inputs
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .retain(|key, input| {
-                if input.strong_count() > 0 {
-                    return true;
-                }
-                let freed = self.db.value_bytes_at(*key);
-                self.db.remove(*key);
-                let _ =
-                    self.value_charge
-                        .try_update(Ordering::Relaxed, Ordering::Relaxed, |bytes| {
-                            Some(bytes.saturating_sub(freed))
-                        });
-                false
-            });
-    }
-}
-impl ArchiveValueQueries for QueryDb {
-    fn value_proof(
+    pub(super) fn prepare_value_input(
         &self,
         input: &Arc<ArchiveValueInput>,
-    ) -> Result<Arc<ArchiveValueProof>, Unsupported> {
+    ) -> Result<(), Unsupported> {
+        self.prune_value_proofs();
         if !input.archive().uses_body_queries(self) {
             return Err(Unsupported(
                 "value proofs require the compiler's existing syntax graph".into(),
@@ -98,6 +93,34 @@ impl ArchiveValueQueries for QueryDb {
                     Some(bytes.saturating_sub(freed))
                 });
         }
+        Ok(())
+    }
+    pub(super) fn prune_value_proofs(&self) {
+        self.value_inputs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|key, input| {
+                if input.strong_count() > 0 {
+                    return true;
+                }
+                let freed = self.db.value_bytes_at(*key);
+                self.db.remove(*key);
+                let _ =
+                    self.value_charge
+                        .try_update(Ordering::Relaxed, Ordering::Relaxed, |bytes| {
+                            Some(bytes.saturating_sub(freed))
+                        });
+                false
+            });
+    }
+}
+impl ArchiveValueQueries for QueryDb {
+    fn value_proof(
+        &self,
+        input: &Arc<ArchiveValueInput>,
+    ) -> Result<Arc<ArchiveValueProof>, Unsupported> {
+        self.prepare_value_input(input)?;
+        let key = Key::new(VALUE_PROOFS, input.key().into());
         let answer = self
             .db
             .get::<Result<Arc<ArchiveValueProof>, Unsupported>>(
@@ -121,11 +144,15 @@ impl ArchiveValueQueries for QueryDb {
 /// Pure preflight: arithmetic overflow is refusal, never a truncated cohort.
 fn admit_syntax_cohort(charges: impl IntoIterator<Item = usize>) -> Result<usize, Unsupported> {
     charges.into_iter().try_fold(0usize, |total, charge| {
-        total.checked_add(charge).filter(|&bytes| bytes <= body_syntax::BUDGET)
-            .ok_or_else(|| Unsupported(format!(
-                "native value proof syntax cohort exceeds {}-byte migration admission budget",
-                body_syntax::BUDGET,
-            )))
+        total
+            .checked_add(charge)
+            .filter(|&bytes| bytes <= body_syntax::BUDGET)
+            .ok_or_else(|| {
+                Unsupported(format!(
+                    "native value proof syntax cohort exceeds {}-byte migration admission budget",
+                    body_syntax::BUDGET,
+                ))
+            })
     })
 }
 
@@ -136,8 +163,14 @@ mod budget_tests {
     #[test]
     fn value_syntax_cohort_accepts_empty_and_exact_budget() {
         assert_eq!(admit_syntax_cohort([]).unwrap(), 0);
-        assert_eq!(admit_syntax_cohort([body_syntax::BUDGET]).unwrap(), body_syntax::BUDGET);
-        assert_eq!(admit_syntax_cohort([body_syntax::BUDGET - 1, 1]).unwrap(), body_syntax::BUDGET);
+        assert_eq!(
+            admit_syntax_cohort([body_syntax::BUDGET]).unwrap(),
+            body_syntax::BUDGET
+        );
+        assert_eq!(
+            admit_syntax_cohort([body_syntax::BUDGET - 1, 1]).unwrap(),
+            body_syntax::BUDGET
+        );
     }
     #[test]
     fn value_syntax_cohort_rejects_over_budget_and_overflow_without_parsing() {
@@ -145,4 +178,29 @@ mod budget_tests {
         assert!(admit_syntax_cohort([usize::MAX]).is_err());
         assert!(admit_syntax_cohort([1, usize::MAX]).is_err());
     }
+}
+
+/// A real Kind10 -> Kind5 edge. This reuses the registered body syntax graph;
+/// it never computes a parallel value model from the policy wrapper.
+pub(super) fn observe(
+    ctx: &mut dm_query::Ctx<'_>,
+    input: &Arc<ArchiveValueInput>,
+) -> Result<Arc<ArchiveValueProof>, String> {
+    let key = Key::new(VALUE_PROOFS, input.key().into());
+    let answer = ctx
+        .get::<Result<Arc<ArchiveValueProof>, Unsupported>>(
+            key,
+            Arc::new(Params {
+                input: Arc::downgrade(input),
+                key,
+            }),
+        )
+        .map_err(|e| format!("native value proof dependency failed: {e:?}"))?;
+    let proof = answer
+        .as_ref()
+        .as_ref()
+        .map(Arc::clone)
+        .map_err(|e| e.0.clone())?;
+    proof.validate_for(input).map_err(|e| e.0)?;
+    Ok(proof)
 }

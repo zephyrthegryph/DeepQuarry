@@ -96,6 +96,7 @@ fn setup(
 fn intent(source: &Path, config: &Path) -> crate::policy_request::AdmittedPolicyRequest {
     use crate::policy_request::*;
     PolicyInputRequest {
+        workspace: None,
         files: vec![
             PolicyInputFile {
                 path: source.into(),
@@ -140,6 +141,29 @@ fn dos_request_reuses_verbatim_acquired_source_once_and_warm_typed_findings_keep
     assert!(
         captured.policy().file(&source).is_none(),
         "provider key is not rewritten or duplicated"
+    );
+    assert!(
+        std::ptr::eq(
+            captured.compiled_source_file(&source).unwrap(),
+            captured
+                .compiled_source_file(primary.path.as_ref())
+                .unwrap()
+        ),
+        "issued alias returns the SAME original compiled policy file"
+    );
+    assert!(captured.compiled_source_file(&config).is_none());
+    assert!(captured
+        .compiled_source_file(&root.join("foreign.dm"))
+        .is_none());
+    let implicit = capture(&frontend, &inputs, &[], &[]).unwrap();
+    assert!(
+        implicit.compiled_source_file(&source).is_none(),
+        "equivalent prefix alone cannot mint an unrequested alias"
+    );
+    assert_eq!(
+        reads.load(Ordering::Relaxed),
+        before + 1,
+        "membership queries and an implicit compiled capture perform no IO"
     );
     let mut aliases = 0;
     captured.visit_source_aliases(|path, alias| {

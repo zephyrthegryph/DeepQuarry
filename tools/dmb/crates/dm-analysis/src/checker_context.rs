@@ -114,6 +114,22 @@ impl<'a, R: Resolver + ?Sized> CheckerContext<'a, R> {
             severity,
         )
     }
+    pub fn variable_visibility_archived(
+        &self,
+        policy: &crate::check_policy::CheckerPolicy,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<Vec<crate::checks_variable_visibility::Configured>, String> {
+        let Owner::Archive(archive) = self.owner else {
+            return Err("visibility context is not archive-owned".into());
+        };
+        crate::checks_variable_visibility::scan_with_checkpoint(
+            archive,
+            self.resolver,
+            self.profile,
+            policy,
+            checkpoint,
+        )
+    }
     pub fn fields_archived(
         &self,
         body: &ArchivedBody<'_>,

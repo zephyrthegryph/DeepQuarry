@@ -214,3 +214,28 @@ impl SourceAcquisitionLease {
         SourceAcquisitionIdentity(Arc::downgrade(&self.0))
     }
 }
+
+/// Compare-only ORIGINAL acquisition identity. Warm reissuance preserves it
+/// only after the paired prepared-input ledger was validated. A genuinely new
+/// read gets another identity even if its decoded storage was interned equal.
+/// This weak token is an optimization key, not a source/receipt authority.
+#[derive(Clone)]
+pub struct OriginalAcquisitionIdentity(std::sync::Weak<Original>);
+impl OriginalAcquisitionIdentity {
+    pub fn same_live_original(&self, other: &Self) -> bool {
+        self.0.strong_count() != 0
+            && other.0.strong_count() != 0
+            && std::sync::Weak::ptr_eq(&self.0, &other.0)
+    }
+    pub fn visit_storage(&self, mut visit: impl FnMut(AcquisitionStorage<'_>)) {
+        visit(AcquisitionStorage::Object {
+            address: self.0.as_ptr() as usize,
+            bytes: std::mem::size_of::<Original>(),
+        });
+    }
+}
+impl SourceAcquisitionLease {
+    pub fn original_identity(&self) -> OriginalAcquisitionIdentity {
+        OriginalAcquisitionIdentity(Arc::downgrade(&self.0.original))
+    }
+}

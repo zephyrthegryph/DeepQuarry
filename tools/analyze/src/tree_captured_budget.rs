@@ -1,0 +1,241 @@
+//! Capture-only admission for the EXISTING source views. No lexer/parser/model.
+//! Reservations cover builder high-water; completed owners are charged by the
+//! same live allocation census used elsewhere. Legacy SourceFiles have no budget.
+use super::{PolicyStorageClass as K, PolicyStorageKey, View};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
+
+const OWNER_METADATA: usize = 8192;
+struct State {
+    limit: usize,
+    base: usize,
+    reserved: usize,
+    owners: BTreeMap<PolicyStorageKey, usize>,
+    error: Option<String>,
+}
+pub(super) struct Budget(Mutex<State>);
+pub(super) struct Reservation<'a> {
+    budget: &'a Budget,
+    amount: usize,
+}
+
+impl Budget {
+    pub(super) fn new(limit: usize, metadata: usize) -> Result<Arc<Self>, String> {
+        let base = metadata
+            .checked_add(OWNER_METADATA)
+            .ok_or("captured view metadata overflow")?;
+        if base > limit {
+            return Err("captured source metadata exceeds available input budget".into());
+        }
+        Ok(Arc::new(Self(Mutex::new(State {
+            limit,
+            base,
+            reserved: 0,
+            owners: BTreeMap::new(),
+            error: None,
+        }))))
+    }
+    fn used(s: &State) -> Option<usize> {
+        s.owners
+            .values()
+            .try_fold(s.base, |n, bytes| n.checked_add(*bytes))
+    }
+    pub(super) fn charge(&self) -> usize {
+        let s = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        Self::used(&s).unwrap_or(usize::MAX)
+    }
+    pub(super) fn scoped(&self) -> bool {
+        self.0.lock().unwrap_or_else(|e| e.into_inner()).limit != usize::MAX
+    }
+    pub(super) fn error(&self) -> Option<String> {
+        self.0
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .error
+            .clone()
+    }
+    pub(super) fn reserve(&self, bytes: Option<usize>) -> Option<Reservation<'_>> {
+        let mut s = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        if s.error.is_some() {
+            return None;
+        }
+        let fits = bytes
+            .and_then(|bytes| Self::used(&s)?.checked_add(s.reserved)?.checked_add(bytes))
+            .is_some_and(|n| n <= s.limit);
+        if !fits {
+            s.error = Some(
+                "captured source view allocation exceeds remaining input-family budget".into(),
+            );
+            return None;
+        }
+        let amount = bytes.expect("checked above");
+        s.reserved += amount;
+        Some(Reservation {
+            budget: self,
+            amount,
+        })
+    }
+    pub(super) fn fail(&self, error: String) {
+        self.0
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .error
+            .get_or_insert(error);
+    }
+    fn remember_locked(
+        s: &mut State,
+        collect: impl FnOnce(&mut dyn FnMut(PolicyStorageKey, usize)),
+    ) {
+        collect(&mut |key, bytes| {
+            s.owners
+                .entry(key)
+                .and_modify(|old| *old = (*old).max(bytes))
+                .or_insert(bytes);
+        });
+        if Self::used(&s)
+            .and_then(|n| n.checked_add(s.reserved))
+            .is_none_or(|n| n > s.limit)
+        {
+            s.error.get_or_insert_with(|| {
+                "captured source actual retained capacity exceeds input-family budget".into()
+            });
+        }
+    }
+    pub(super) fn remember(&self, collect: impl FnOnce(&mut dyn FnMut(PolicyStorageKey, usize))) {
+        let mut s = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        Self::remember_locked(&mut s, collect);
+    }
+}
+impl Reservation<'_> {
+    pub(super) fn complete(
+        mut self,
+        collect: impl FnOnce(&mut dyn FnMut(PolicyStorageKey, usize)),
+    ) {
+        let mut s = self.budget.0.lock().unwrap_or_else(|e| e.into_inner());
+        s.reserved -= self.amount;
+        self.amount = 0;
+        Budget::remember_locked(&mut s, collect);
+    }
+}
+impl Drop for Reservation<'_> {
+    fn drop(&mut self) {
+        if self.amount != 0 {
+            let mut s = self.budget.0.lock().unwrap_or_else(|e| e.into_inner());
+            s.reserved = s.reserved.saturating_sub(self.amount);
+        }
+    }
+}
+
+pub(super) fn source_storage(
+    source: &dm_preprocess::SourceText,
+    visit: &mut dyn FnMut(PolicyStorageKey, usize),
+) {
+    let mut backing = 0;
+    source.visit_storage(|id, header, storage| {
+        backing = id;
+        visit(
+            PolicyStorageKey(K::TextBacking, id),
+            header.saturating_add(2 * std::mem::size_of::<usize>()),
+        );
+        match storage {
+            dm_preprocess::SourceTextStorage::Original(value) => visit(
+                PolicyStorageKey(K::OriginalPayload, value.as_ptr() as usize),
+                value.len().saturating_add(2 * std::mem::size_of::<usize>()),
+            ),
+            dm_preprocess::SourceTextStorage::Transformed(value) if value.capacity() > 0 => visit(
+                PolicyStorageKey(K::TransformedPayload, value.as_ptr() as usize),
+                value.capacity(),
+            ),
+            dm_preprocess::SourceTextStorage::Transformed(_) => (),
+        }
+    });
+    source.visit_fingerprint_storage(|_, _, capacity| {
+        visit(PolicyStorageKey(K::FingerprintMemo, backing), capacity)
+    });
+}
+pub(super) fn view_storage(view: &View, visit: &mut dyn FnMut(PolicyStorageKey, usize)) {
+    source_storage(&view.text, visit);
+    if view.starts.capacity() > 0 {
+        visit(
+            PolicyStorageKey(K::LineStarts, view.starts.as_ptr() as usize),
+            view.starts
+                .capacity()
+                .saturating_mul(std::mem::size_of::<u32>()),
+        );
+    }
+}
+pub(crate) fn visit_source_storage(
+    source: &dm_preprocess::SourceText,
+    mut visit: impl FnMut(PolicyStorageKey, usize),
+) {
+    source_storage(source, &mut visit)
+}
+
+/// Existing transformations never increase newline count. Their output buffers
+/// may grow on malformed quotes, so reserve ample temporary space (including
+/// lossy conversion), not an assumed same-length string. Each lazy pays only
+/// when it is demanded; completed capacities replace the reservation.
+pub(super) fn transform_bound(raw: &str, multiplier: usize) -> Option<usize> {
+    let lines = raw.bytes().filter(|b| *b == b'\n').count().checked_add(1)?;
+    raw.len()
+        .checked_mul(multiplier)?
+        .checked_add(lines.checked_mul(4)?)?
+        .checked_add(4096)
+}
+pub(super) fn empty_view() -> View {
+    View::shared(String::new().into())
+}
+
+pub(super) fn indexed(text: dm_preprocess::SourceText) -> Result<View, String> {
+    if text.len() > u32::MAX as usize {
+        return Err("captured view exceeds native line-index range".into());
+    }
+    let count = text
+        .bytes()
+        .filter(|b| *b == b'\n')
+        .count()
+        .checked_add(1)
+        .ok_or("captured view line count overflow")?;
+    let mut starts = Vec::new();
+    starts
+        .try_reserve_exact(count)
+        .map_err(|_| "captured view line-index allocation refused")?;
+    // try_reserve_exact has no amortized growth; still verify actual capacity.
+    if starts.capacity() > count {
+        return Err("captured view allocator exceeded reserved index capacity".into());
+    }
+    starts.push(0u32);
+    starts.extend(
+        text.bytes()
+            .enumerate()
+            .filter_map(|(i, b)| (b == b'\n').then_some((i + 1) as u32)),
+    );
+    Ok(View { text, starts })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn denied_reservation_is_sticky_and_does_not_allocate_a_view() {
+        let b = Budget::new(OWNER_METADATA + 32, 0).unwrap();
+        assert!(b.reserve(Some(33)).is_none());
+        assert!(b.error().is_some());
+        assert!(b.reserve(Some(0)).is_none());
+    }
+    #[test]
+    fn same_live_text_is_charged_once_and_reservation_releases_on_error() {
+        let b = Budget::new(65536, 0).unwrap();
+        let text: dm_preprocess::SourceText = "a\nb\n".to_owned().into();
+        b.remember(|v| source_storage(&text, v));
+        let before = b.charge();
+        b.remember(|v| source_storage(&text, v));
+        assert_eq!(before, b.charge());
+        {
+            let _r = b.reserve(Some(4096)).unwrap();
+        }
+        assert!(b.reserve(Some(65536 - before)).is_some());
+    }
+}

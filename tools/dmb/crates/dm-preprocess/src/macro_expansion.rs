@@ -39,6 +39,52 @@ fn expand_mode(
     )
 }
 
+/// Native expansion-issued source point, relative to one direct physical line.
+/// Invocation output is a constant point; unchanged source is affine. These
+/// values are deliberately absent from memo wire formats.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct MacroBytePoint {
+    pub(crate) output: Span,
+    pub(crate) source_start: usize,
+    pub(crate) invocation: bool,
+}
+fn push_byte_point(points: &mut Vec<MacroBytePoint>, point: MacroBytePoint) {
+    if point.output.start == point.output.end {
+        return;
+    }
+    if let Some(previous) = points.last_mut() {
+        if !previous.invocation
+            && !point.invocation
+            && previous.output.end == point.output.start
+            && previous.source_start + previous.output.end - previous.output.start
+                == point.source_start
+        {
+            previous.output.end = point.output.end;
+            return;
+        }
+    }
+    points.push(point);
+}
+pub(crate) fn expand_traced_points(
+    source: &str,
+    macros: &dyn MacroLookup,
+    location: ExpandLocation<'_>,
+    trace: &mut MacroTrace<'_>,
+) -> Result<(String, Option<Vec<MacroBytePoint>>), String> {
+    let mut points = Some(Vec::new());
+    let text = expand_mode_disabled_traced_points(
+        source,
+        macros,
+        0,
+        location,
+        false,
+        &mut Vec::new(),
+        &mut Some(trace),
+        &mut points,
+    )?;
+    Ok((text, points))
+}
+
 type MacroTrace<'a> = dyn FnMut(&str, Span, &[&str]) + 'a;
 
 /// The diagnostic for a macro call whose closing parenthesis is not on the logical line.
@@ -95,6 +141,29 @@ fn expand_mode_disabled_traced<'a>(
     disabled: &mut Vec<&'a str>,
     trace: &mut Option<&mut MacroTrace<'_>>,
 ) -> Result<String, String> {
+    expand_mode_disabled_traced_points(
+        source,
+        macros,
+        depth,
+        location,
+        substitute_only,
+        disabled,
+        trace,
+        &mut None,
+    )
+}
+
+#[allow(clippy::sliced_string_as_bytes)]
+fn expand_mode_disabled_traced_points<'a>(
+    source: &str,
+    macros: &'a dyn MacroLookup,
+    depth: usize,
+    location: ExpandLocation<'_>,
+    substitute_only: bool,
+    disabled: &mut Vec<&'a str>,
+    trace: &mut Option<&mut MacroTrace<'_>>,
+    points: &mut Option<Vec<MacroBytePoint>>,
+) -> Result<String, String> {
     if depth > 32 {
         return Err("macro expansion exceeded depth 32".into());
     }
@@ -108,183 +177,143 @@ fn expand_mode_disabled_traced<'a>(
     let mut out = String::new();
     let mut i = 0;
     while i < tokens.len() {
-        let token = &tokens[i];
-        let token_text = token.text(source);
-        if token.kind == TokenKind::String {
-            if token_text.starts_with("@\"") {
-                out.push_str(token_text);
-                i += 1;
-                continue;
-            }
-            out.push_str(&expand_interpolations(
-                token_text,
-                macros,
-                depth + 1,
-                location,
-                substitute_only,
-                disabled,
-                trace,
-            )?);
-            i += 1;
-            continue;
-        }
-        if token.kind == TokenKind::Ident {
-            // `defined` consumes a macro *name*. Function-like macros may
-            // introduce it only after parameter substitution, so protect its
-            // operand during the later ordinary expansion pass as well.
-            if token_text == "defined" && !substitute_only {
-                let mut operand = i + 1;
-                while tokens.get(operand).is_some_and(|next| {
-                    matches!(next.kind, TokenKind::Whitespace | TokenKind::Newline)
-                }) {
-                    operand += 1;
+        let first = i;
+        let output_start = out.len();
+        let mut invocation = false;
+        let mut unsupported = false;
+        let next = (|| -> Result<usize, String> {
+            let token = &tokens[i];
+            let token_text = token.text(source);
+            if token.kind == TokenKind::String {
+                if token_text.starts_with("@\"") {
+                    out.push_str(token_text);
+                    return Ok(i + 1);
                 }
-                if tokens
-                    .get(operand)
-                    .is_some_and(|next| next.text(source) == "(")
-                {
-                    operand += 1;
+                let expanded = expand_interpolations(
+                    token_text,
+                    macros,
+                    depth + 1,
+                    location,
+                    substitute_only,
+                    disabled,
+                    trace,
+                )?;
+                unsupported = expanded != token_text;
+                out.push_str(&expanded);
+                return Ok(i + 1);
+            }
+            if token.kind == TokenKind::Ident {
+                // `defined` consumes a macro *name*. Function-like macros may
+                // introduce it only after parameter substitution, so protect its
+                // operand during the later ordinary expansion pass as well.
+                if token_text == "defined" && !substitute_only {
+                    let mut operand = i + 1;
                     while tokens.get(operand).is_some_and(|next| {
                         matches!(next.kind, TokenKind::Whitespace | TokenKind::Newline)
                     }) {
                         operand += 1;
                     }
-                }
-                if let Some(name) = tokens
-                    .get(operand)
-                    .filter(|next| next.kind == TokenKind::Ident)
-                {
-                    out.push_str(&source[token.span.start..name.span.end]);
-                    i = operand + 1;
-                    continue;
-                }
-            }
-            if let Some((name, def)) = macros
-                .get_key_value(token_text)
-                .filter(|_| !disabled.contains(&token_text))
-            {
-                if let Some(params) = &def.parameters {
-                    let Some(open) = tokens.get(i + 1).filter(|t| t.text(source) == "(") else {
-                        out.push_str(token_text);
-                        i += 1;
-                        continue;
-                    };
-                    let _ = open;
-                    let (mut args, after) = parse_arguments(&tokens, source, i + 1)?;
-                    if args.is_empty() && params.len() == 1 && !def.variadic {
-                        args.push(String::new());
-                    }
-                    let required = params.len() - usize::from(def.variadic);
-                    if args.len() < required || (!def.variadic && args.len() != required) {
-                        // DreamMaker's wording; the count detail is not part of it.
-                        let _ = (token_text, required);
-                        return Err("incorrect number of macro arguments".into());
-                    }
-                    let args = if def.variadic {
-                        let mut packed = args[..required].to_vec();
-                        packed.push(args[required..].join(","));
-                        packed
-                    } else {
-                        args
-                    };
-                    if !substitute_only {
-                        if let Some(callback) = trace.as_deref_mut() {
-                            callback(name, token.span, disabled);
-                        }
-                    }
-                    // Expand arguments before disabling this invocation. A
-                    // nested F(F(x)) is valid; only F inside F's replacement
-                    // is recursive. Paste/stringification consume raw spelling.
-                    let raw_parameters = raw_macro_parameters(def, macros, &mut BTreeSet::new());
-                    let args = params
-                        .iter()
-                        .zip(args)
-                        .map(|(parameter, argument)| {
-                            if substitute_only || raw_parameters.contains(parameter.as_str()) {
-                                Ok(argument)
-                            } else {
-                                expand_mode_disabled_traced(
-                                    &argument,
-                                    macros,
-                                    depth + 1,
-                                    location,
-                                    false,
-                                    disabled,
-                                    trace,
-                                )
-                            }
-                        })
-                        .collect::<Result<Vec<_>, String>>()?;
-                    let replacements = params
-                        .iter()
-                        .cloned()
-                        .zip(args)
-                        .map(|(name, replacement)| {
-                            (
-                                name,
-                                Macro {
-                                    parameters: None,
-                                    variadic: false,
-                                    replacement,
-                                },
-                            )
-                        })
-                        .collect::<BTreeMap<_, _>>();
-                    let substituted =
-                        expand_mode(&def.replacement, &replacements, depth + 1, location, true)?;
-                    disabled.push(name);
-                    let expanded = expand_mode_disabled_traced(
-                        &substituted,
-                        macros,
-                        depth + 1,
-                        location,
-                        false,
-                        disabled,
-                        trace,
-                    );
-                    disabled.pop();
-                    out.push_str(&expanded?);
-                    i = after;
-                    continue;
-                }
-                if !substitute_only {
-                    if let Some(callback) = trace.as_deref_mut() {
-                        callback(name, token.span, disabled);
-                    }
-                }
-                if substitute_only {
-                    out.push_str(&def.replacement);
-                } else {
-                    // Rescan an object alias together with its following call
-                    // arguments, so ALIAS(x) -> FUNCTION(x) actually invokes
-                    // the function macro rather than leaving its name behind.
-                    let mut target = def.replacement.trim();
-                    let mut seen = BTreeSet::new();
-                    while seen.insert(target) {
-                        let Some(alias) = macros.get(target) else {
-                            break;
-                        };
-                        if alias.parameters.is_some() {
-                            break;
-                        }
-                        target = alias.replacement.trim();
-                    }
-                    if macros
-                        .get(target)
-                        .is_some_and(|definition| definition.parameters.is_some())
-                        && tokens
-                            .get(i + 1)
-                            .is_some_and(|token| token.text(source) == "(")
+                    if tokens
+                        .get(operand)
+                        .is_some_and(|next| next.text(source) == "(")
                     {
-                        let (_, after) = parse_arguments(&tokens, source, i + 1)?;
-                        let call = format!(
-                            "{}{}",
-                            def.replacement,
-                            &source[tokens[i + 1].span.start..tokens[after - 1].span.end]
-                        );
+                        operand += 1;
+                        while tokens.get(operand).is_some_and(|next| {
+                            matches!(next.kind, TokenKind::Whitespace | TokenKind::Newline)
+                        }) {
+                            operand += 1;
+                        }
+                    }
+                    if let Some(name) = tokens
+                        .get(operand)
+                        .filter(|next| next.kind == TokenKind::Ident)
+                    {
+                        out.push_str(&source[token.span.start..name.span.end]);
+                        return Ok(operand + 1);
+                    }
+                }
+                if let Some((name, def)) = macros
+                    .get_key_value(token_text)
+                    .filter(|_| !disabled.contains(&token_text))
+                {
+                    if let Some(params) = &def.parameters {
+                        let Some(open) = tokens.get(i + 1).filter(|t| t.text(source) == "(") else {
+                            out.push_str(token_text);
+                            return Ok(i + 1);
+                        };
+                        let _ = open;
+                        invocation = true;
+                        let (mut args, after) = parse_arguments(&tokens, source, i + 1)?;
+                        if args.is_empty() && params.len() == 1 && !def.variadic {
+                            args.push(String::new());
+                        }
+                        let required = params.len() - usize::from(def.variadic);
+                        if args.len() < required || (!def.variadic && args.len() != required) {
+                            // DreamMaker's wording; the count detail is not part of it.
+                            let _ = (token_text, required);
+                            return Err("incorrect number of macro arguments".into());
+                        }
+                        let args = if def.variadic {
+                            let mut packed = args[..required].to_vec();
+                            packed.push(args[required..].join(","));
+                            packed
+                        } else {
+                            args
+                        };
+                        if !substitute_only {
+                            if let Some(callback) = trace.as_deref_mut() {
+                                callback(name, token.span, disabled);
+                            }
+                        }
+                        // Expand arguments before disabling this invocation. A
+                        // nested F(F(x)) is valid; only F inside F's replacement
+                        // is recursive. Paste/stringification consume raw spelling.
+                        let raw_parameters =
+                            raw_macro_parameters(def, macros, &mut BTreeSet::new());
+                        let args = params
+                            .iter()
+                            .zip(args)
+                            .map(|(parameter, argument)| {
+                                if substitute_only || raw_parameters.contains(parameter.as_str()) {
+                                    Ok(argument)
+                                } else {
+                                    expand_mode_disabled_traced(
+                                        &argument,
+                                        macros,
+                                        depth + 1,
+                                        location,
+                                        false,
+                                        disabled,
+                                        trace,
+                                    )
+                                }
+                            })
+                            .collect::<Result<Vec<_>, String>>()?;
+                        let replacements = params
+                            .iter()
+                            .cloned()
+                            .zip(args)
+                            .map(|(name, replacement)| {
+                                (
+                                    name,
+                                    Macro {
+                                        parameters: None,
+                                        variadic: false,
+                                        replacement,
+                                    },
+                                )
+                            })
+                            .collect::<BTreeMap<_, _>>();
+                        let substituted = expand_mode(
+                            &def.replacement,
+                            &replacements,
+                            depth + 1,
+                            location,
+                            true,
+                        )?;
                         disabled.push(name);
                         let expanded = expand_mode_disabled_traced(
-                            &call,
+                            &substituted,
                             macros,
                             depth + 1,
                             location,
@@ -294,113 +323,175 @@ fn expand_mode_disabled_traced<'a>(
                         );
                         disabled.pop();
                         out.push_str(&expanded?);
-                        i = after;
-                        continue;
+                        return Ok(after);
                     }
-                    disabled.push(name);
-                    let expanded = expand_mode_disabled_traced(
-                        &def.replacement,
-                        macros,
-                        depth + 1,
-                        location,
-                        false,
-                        disabled,
-                        trace,
-                    );
-                    disabled.pop();
-                    out.push_str(&expanded?);
-                }
-                i += 1;
-                continue;
-            }
-            if token_text == "__LINE__" {
-                macros.location_read(false);
-                out.push_str(&location.line.to_string());
-                i += 1;
-                continue;
-            }
-            if token_text == "__FILE__" {
-                macros.location_read(true);
-                out.push('"');
-                for ch in location.file_name.chars() {
-                    if matches!(ch, '\\' | '"') {
-                        out.push('\\');
-                    }
-                    out.push(ch);
-                }
-                out.push('"');
-                i += 1;
-                continue;
-            }
-        }
-        if token_text == "#"
-            && tokens
-                .get(i + 1)
-                .is_some_and(|next| next.text(source) == "#")
-        {
-            if let Some(next) = tokens.get(i + 2) {
-                if next.kind == TokenKind::Ident
-                    && macros.get(next.text(source)).is_some_and(|definition| {
-                        definition.parameters.is_none() && definition.replacement.is_empty()
-                    })
-                {
-                    while out.ends_with(char::is_whitespace) {
-                        out.pop();
-                    }
-                    if out.ends_with(',') {
-                        out.pop();
-                    }
-                    i += 3;
-                    continue;
-                }
-            }
-            while out.ends_with(char::is_whitespace) {
-                out.pop();
-            }
-            i += 2;
-            while tokens
-                .get(i)
-                .is_some_and(|next| next.kind == TokenKind::Whitespace)
-            {
-                i += 1;
-            }
-            continue;
-        }
-        if token_text == "#" {
-            if let Some(next) = tokens.get(i + 1) {
-                if next.text(source) == "INF"
-                    && out.as_bytes().last() == Some(&b'.')
-                    && out[..out.len() - 1]
-                        .as_bytes()
-                        .last()
-                        .is_some_and(u8::is_ascii_digit)
-                {
-                    out.push_str("#INF");
-                    i += 2;
-                    continue;
-                }
-                if next.kind == TokenKind::Ident {
-                    if let Some(argument) = macros
-                        .get(next.text(source))
-                        .filter(|definition| definition.parameters.is_none())
-                    {
-                        out.push('"');
-                        for ch in argument.replacement.chars() {
-                            if matches!(ch, '\\' | '"') {
-                                out.push('\\');
-                            }
-                            out.push(ch);
+                    if !substitute_only {
+                        if let Some(callback) = trace.as_deref_mut() {
+                            callback(name, token.span, disabled);
                         }
-                        out.push('"');
-                        i += 2;
-                        continue;
                     }
+                    invocation = true;
+                    if substitute_only {
+                        out.push_str(&def.replacement);
+                    } else {
+                        // Rescan an object alias together with its following call
+                        // arguments, so ALIAS(x) -> FUNCTION(x) actually invokes
+                        // the function macro rather than leaving its name behind.
+                        let mut target = def.replacement.trim();
+                        let mut seen = BTreeSet::new();
+                        while seen.insert(target) {
+                            let Some(alias) = macros.get(target) else {
+                                break;
+                            };
+                            if alias.parameters.is_some() {
+                                break;
+                            }
+                            target = alias.replacement.trim();
+                        }
+                        if macros
+                            .get(target)
+                            .is_some_and(|definition| definition.parameters.is_some())
+                            && tokens
+                                .get(i + 1)
+                                .is_some_and(|token| token.text(source) == "(")
+                        {
+                            let (_, after) = parse_arguments(&tokens, source, i + 1)?;
+                            let call = format!(
+                                "{}{}",
+                                def.replacement,
+                                &source[tokens[i + 1].span.start..tokens[after - 1].span.end]
+                            );
+                            disabled.push(name);
+                            let expanded = expand_mode_disabled_traced(
+                                &call,
+                                macros,
+                                depth + 1,
+                                location,
+                                false,
+                                disabled,
+                                trace,
+                            );
+                            disabled.pop();
+                            out.push_str(&expanded?);
+                            return Ok(after);
+                        }
+                        disabled.push(name);
+                        let expanded = expand_mode_disabled_traced(
+                            &def.replacement,
+                            macros,
+                            depth + 1,
+                            location,
+                            false,
+                            disabled,
+                            trace,
+                        );
+                        disabled.pop();
+                        out.push_str(&expanded?);
+                    }
+                    return Ok(i + 1);
+                }
+                if token_text == "__LINE__" {
+                    unsupported = true;
+                    macros.location_read(false);
+                    out.push_str(&location.line.to_string());
+                    return Ok(i + 1);
+                }
+                if token_text == "__FILE__" {
+                    unsupported = true;
+                    macros.location_read(true);
+                    out.push('"');
+                    for ch in location.file_name.chars() {
+                        if matches!(ch, '\\' | '"') {
+                            out.push('\\');
+                        }
+                        out.push(ch);
+                    }
+                    out.push('"');
+                    return Ok(i + 1);
                 }
             }
-            return Err("unsupported # token outside macro stringification".into());
+            if token_text == "#"
+                && tokens
+                    .get(i + 1)
+                    .is_some_and(|next| next.text(source) == "#")
+            {
+                unsupported = true;
+                if let Some(next) = tokens.get(i + 2) {
+                    if next.kind == TokenKind::Ident
+                        && macros.get(next.text(source)).is_some_and(|definition| {
+                            definition.parameters.is_none() && definition.replacement.is_empty()
+                        })
+                    {
+                        while out.ends_with(char::is_whitespace) {
+                            out.pop();
+                        }
+                        if out.ends_with(',') {
+                            out.pop();
+                        }
+                        unsupported = true;
+                        return Ok(i + 3);
+                    }
+                }
+                while out.ends_with(char::is_whitespace) {
+                    out.pop();
+                }
+                i += 2;
+                while tokens
+                    .get(i)
+                    .is_some_and(|next| next.kind == TokenKind::Whitespace)
+                {
+                    i += 1;
+                }
+                return Ok(i);
+            }
+            if token_text == "#" {
+                if let Some(next) = tokens.get(i + 1) {
+                    if next.text(source) == "INF"
+                        && out.as_bytes().last() == Some(&b'.')
+                        && out[..out.len() - 1]
+                            .as_bytes()
+                            .last()
+                            .is_some_and(u8::is_ascii_digit)
+                    {
+                        out.push_str("#INF");
+                        return Ok(i + 2);
+                    }
+                    if next.kind == TokenKind::Ident {
+                        if let Some(argument) = macros
+                            .get(next.text(source))
+                            .filter(|definition| definition.parameters.is_none())
+                        {
+                            unsupported = true;
+                            out.push('"');
+                            for ch in argument.replacement.chars() {
+                                if matches!(ch, '\\' | '"') {
+                                    out.push('\\');
+                                }
+                                out.push(ch);
+                            }
+                            out.push('"');
+                            return Ok(i + 2);
+                        }
+                    }
+                }
+                return Err("unsupported # token outside macro stringification".into());
+            }
+            out.push_str(token_text);
+            Ok(i + 1)
+        })()?;
+        if unsupported || out.len() < output_start {
+            *points = None;
+        } else if let Some(points) = points {
+            push_byte_point(
+                points,
+                MacroBytePoint {
+                    output: Span::new(output_start, out.len()),
+                    source_start: tokens[first].span.start,
+                    invocation,
+                },
+            );
         }
-        out.push_str(token_text);
-        i += 1;
+        i = next;
     }
     Ok(out)
 }

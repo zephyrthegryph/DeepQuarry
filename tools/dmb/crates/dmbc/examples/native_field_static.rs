@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (ordinal, _) in dm_analysis::checker_order::bodies(&front)? {
         let body = archive.parse(ordinal).map_err(|e| e.message)?;
         for row in context.fields_archived(&body, Severity::Warning)? {
-            let original = archive.original_note_origin(row.span.start)?;
+            let original = archive.source_note_point(row.span.start)?;
             output.push(
                 serde_json::json!({"family":row.family,"severity":"warning","file":original.path,
                 "line":original.line,"expanded_column":original.byte_column,"message":row.message,

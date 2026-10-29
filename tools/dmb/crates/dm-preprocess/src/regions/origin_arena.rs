@@ -278,7 +278,17 @@ impl ExpandedOriginArena {
             Records::Compact(v) => boxed(v, &mut visit),
             Records::Wide(v) => boxed(v, &mut visit),
             // The rows themselves are the records' shared allocations (census: expansion records).
-            Records::Chunked { chunks, .. } => boxed(chunks, &mut visit),
+            Records::Chunked { chunks, .. } => {
+                boxed(chunks, &mut visit);
+                for chunk in chunks.iter() {
+                    visit(
+                        Arc::as_ptr(&chunk.lines) as usize,
+                        1,
+                        std::mem::size_of_val(chunk.lines.as_ref()),
+                    );
+                    chunk.lines.visit_owned_storage(&mut visit);
+                }
+            }
         }
         boxed(&self.0.paths, &mut visit);
         boxed(&self.0.traces, &mut visit);
@@ -472,7 +482,10 @@ impl ExpandedOriginArena {
                     if lines.len() == 0 {
                         continue;
                     }
-                    if !matches!(*lines, OutputLines::Compact(_)) {
+                    if !matches!(
+                        *lines,
+                        OutputLines::Compact(_) | OutputLines::Certified { .. }
+                    ) {
                         return None;
                     }
                     let output_len = u32::try_from(lines.output_end()).ok()?;
@@ -627,7 +640,10 @@ impl OriginArenaBuilder {
         let output_len = lines.output_end();
         let fits = self.wide.is_none()
             && self.compact.is_empty()
-            && matches!(*lines, OutputLines::Compact(_))
+            && matches!(
+                *lines,
+                OutputLines::Compact(_) | OutputLines::Certified { .. }
+            )
             && u32::try_from(output_base + output_len).is_ok()
             && u32::try_from(region).is_ok()
             && u32::try_from(self.chunk_rows + lines.len()).is_ok();
@@ -869,6 +885,88 @@ impl ExpandedOriginArena {
             .as_ref()
             .ok_or("native original byte layout was not issued")?
             .locate(index, origin, occurrence, lease, offset)
+    }
+    pub(super) fn macro_points_for_row(
+        &self,
+        index: usize,
+    ) -> Option<&Arc<[crate::macro_expansion::MacroBytePoint]>> {
+        let Records::Chunked { chunks, len } = &self.0.records else {
+            return None;
+        };
+        if index >= *len {
+            return None;
+        }
+        let chunk = &chunks[self.chunk_of(chunks, index)];
+        chunk.lines.macro_points(index - chunk.first as usize)
+    }
+    /// Checker token point. Physical projection remains strict above: macro
+    /// output is not physical source text, even when its invocation is known.
+    pub fn source_note_cursor(
+        &self,
+        index: usize,
+        occurrence: usize,
+        lease: &crate::SourceAcquisitionLease,
+        offset: usize,
+    ) -> Result<super::origin_byte_layout::OriginalByteCursor, &'static str> {
+        if let Ok(point) = self.original_byte_cursor(index, occurrence, lease, offset) {
+            return Ok(point);
+        }
+        let origin = self
+            .get(index)
+            .ok_or("native checker origin row unavailable")?;
+        let line = self.original_policy_line(index, occurrence, lease, offset)?;
+        let points = self
+            .macro_points_for_row(index)
+            .ok_or("macro byte point was not issued for this transform")?;
+        let delta = offset
+            .checked_sub(origin.output_span.start)
+            .ok_or("macro output before row")?;
+        let raw = lease
+            .source_text()
+            .get(origin.source_span.range())
+            .ok_or("macro original physical line unavailable")?;
+        let body = raw.trim_end_matches(['\r', '\n']);
+        if body.contains(['\r', '\n']) {
+            return Err("macro physical line is joined");
+        }
+        let column = if delta + 1 == origin.output_span.end - origin.output_span.start {
+            // The existing region emitter appends LF after direct line expansion.
+            // A real acquired LF is required: final synthetic EOF is never a
+            // physical byte. Bare macro declarations consume this next token.
+            if !raw.ends_with('\n') {
+                return Err("macro terminator is synthetic EOF");
+            }
+            body.len() + usize::from(raw.ends_with("\r\n"))
+        } else {
+            let point = points
+                .get(points.partition_point(|point| point.output.end <= delta))
+                .filter(|point| point.output.start <= delta && delta < point.output.end)
+                .ok_or("macro output byte outside issued token intervals")?;
+            let column = point
+                .source_start
+                .checked_add(if point.invocation {
+                    0
+                } else {
+                    delta - point.output.start
+                })
+                .ok_or("macro original byte column overflow")?;
+            if column >= body.len() {
+                return Err("macro point outside physical body");
+            }
+            column
+        };
+        if column >= raw.len() || !raw.is_char_boundary(column) {
+            return Err("macro original point outside certified physical bytes");
+        }
+        Ok(super::origin_byte_layout::OriginalByteCursor {
+            line,
+            byte_column: column + 1,
+            source_offset: origin
+                .source_span
+                .start
+                .checked_add(column)
+                .ok_or("macro source offset overflow")?,
+        })
     }
     pub(super) fn equivalent_byte_layout(&self, other: &Self) -> bool {
         match (&self.1, &other.1) {

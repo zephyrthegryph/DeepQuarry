@@ -233,6 +233,7 @@ pub struct ColdFrontend {
     pub emission_order: Arc<[OccurrenceId]>,
     source_export_mapping: Arc<source_export_mapping::SourceExportMapping>,
     body_queries: Option<body_queries::BodyQueries>,
+    reused_body_queries: bool,
 }
 
 impl ColdFrontend {
@@ -738,10 +739,14 @@ impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
 #[cfg(test)]
 #[path = "frontend_ast_capacity.rs"]
 mod ast_capacity;
+#[path = "frontend_diagnostic_preparation.rs"]
+mod diagnostic_preparation;
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
+pub use diagnostic_preparation::{DiagnosticFrontend, DiagnosticSourceView};
 pub use pipeline::{
-    build, build_with_config, build_with_executor, build_with_executor_and_semantic_state,
+    build, build_for_checker_diagnostics, build_for_checker_diagnostics_with_state,
+    build_with_config, build_with_executor, build_with_executor_and_semantic_state,
     build_with_executor_and_semantic_state_for_policy, build_with_expansion_memo,
 };
 #[path = "frontend_semantic_state.rs"]
@@ -749,6 +754,7 @@ mod semantic_state;
 #[path = "frontend_symbol_catalog.rs"]
 pub(crate) mod symbol_catalog;
 pub use crate::owner_normalization::NormalizationStorageView;
+pub(crate) use semantic_state::DiagnosticRetainedRecords;
 pub use semantic_state::RetainedSemanticTree;
 #[path = "frontend_grammar_roster.rs"]
 mod grammar_roster;
@@ -1184,3 +1190,6 @@ mod primary_cursor_rebase_tests {
         .unwrap();
     }
 }
+
+#[path = "frontend_unchanged_program.rs"]
+mod unchanged_program;

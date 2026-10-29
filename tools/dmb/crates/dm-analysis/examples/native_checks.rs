@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 _ => unreachable!(),
             };
             for diagnostic in diagnostics {
-                let source=frontend.source_export_mapping().ok_or("original mapping unavailable")?.original_note_origin(diagnostic.span.start)?;
+                let source=frontend.source_export_mapping().ok_or("original mapping unavailable")?.source_note_point(diagnostic.span.start)?;
                 output.push( serde_json::json!({
                     "family": diagnostic.family, "severity": match diagnostic.severity { Severity::Warning => "warning", Severity::Error => "error", Severity::Disabled => return Err("disabled diagnostic was emitted".into()) },
                     "file": source.path, "line": source.line,

@@ -54,7 +54,10 @@ fn total(db: &Db, n: u128) -> u64 {
     *db.get::<u64>(key(TOTAL, n), param(n)).unwrap()
 }
 fn runs(counts: &Arc<[AtomicUsize; 2]>) -> (usize, usize) {
-    (counts[0].load(Ordering::SeqCst), counts[1].load(Ordering::SeqCst))
+    (
+        counts[0].load(Ordering::SeqCst),
+        counts[1].load(Ordering::SeqCst),
+    )
 }
 
 #[test]
@@ -118,7 +121,11 @@ fn dependencies_follow_the_branch_taken_and_reverse_edges_update() {
     db.define_input(INPUT, "input");
     db.define(CHOOSE, "choose", |ctx, _| {
         let pick = *ctx.input::<u64>(input(0))?;
-        let n = if pick == 0 { *ctx.input::<u64>(input(1))? } else { *ctx.input::<u64>(input(2))? };
+        let n = if pick == 0 {
+            *ctx.input::<u64>(input(1))?
+        } else {
+            *ctx.input::<u64>(input(2))?
+        };
         outcome(n)
     });
     set(&db, 0, 0);
@@ -162,7 +169,10 @@ fn a_cycle_is_an_error_not_a_hang() {
     let error = db.get::<u64>(key(CYCLE, 0), param(0)).unwrap_err();
     assert!(matches!(error, QueryError::Cycle(_)), "{error:?}");
     // The failed nodes are not left busy: a second attempt gives the same answer.
-    assert!(matches!(db.get::<u64>(key(CYCLE, 0), param(0)), Err(QueryError::Cycle(_))));
+    assert!(matches!(
+        db.get::<u64>(key(CYCLE, 0), param(0)),
+        Err(QueryError::Cycle(_))
+    ));
 }
 
 #[test]
@@ -202,9 +212,11 @@ fn eviction_only_touches_the_named_kinds() {
 fn removing_a_dependency_reruns_its_dependants() {
     let db = Db::new();
     db.define_input(INPUT, "input");
-    db.define(CHOOSE, "present", |ctx, _| match ctx.input::<u64>(input(1)) {
-        Ok(value) => outcome(*value),
-        Err(_) => outcome(0),
+    db.define(CHOOSE, "present", |ctx, _| {
+        match ctx.input::<u64>(input(1)) {
+            Ok(value) => outcome(*value),
+            Err(_) => outcome(0),
+        }
     });
     set(&db, 1, 7);
     let present = key(CHOOSE, 0);
@@ -249,7 +261,9 @@ fn a_panicking_query_does_not_wedge_the_node() {
     });
     set(&db, 1, 1);
     let flaky = key(NOISE, 0);
-    let first = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| db.get::<u64>(flaky, param(0))));
+    let first = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        db.get::<u64>(flaky, param(0))
+    }));
     assert!(first.is_err());
     assert_eq!(*db.get::<u64>(flaky, param(0)).unwrap(), 5);
 }
@@ -335,7 +349,6 @@ fn million_queries_revalidate_in_parallel() {
     assert_eq!(db.stats(PARITY).computed, N as u64 + 1);
 }
 
-
 #[test]
 fn per_key_value_charge_tracks_eviction_and_removal() {
     let db = Db::new();
@@ -350,4 +363,31 @@ fn per_key_value_charge_tracks_eviction_and_removal() {
     db.get::<u32>(key, Arc::new(())).unwrap();
     db.remove(key);
     assert_eq!(db.value_bytes_at(key), 0);
+}
+
+#[test]
+fn retained_observation_never_revalidates_and_scoped_input_can_drop() {
+    let counts = counters();
+    let db = database(&counts);
+    set(&db, 1, 3);
+    set(&db, BASE, 10);
+    assert_eq!(total(&db, 1), 11);
+    set(&db, 1, 4);
+    assert_eq!(*db.retained_value::<u64>(key(TOTAL, 1)).unwrap(), 11);
+    assert_eq!(runs(&counts), (1, 1));
+    assert_eq!(total(&db, 1), 10);
+    assert_eq!(runs(&counts), (2, 2));
+    assert_eq!(db.evict_value_at(input(1)), 0); // inputs have no derived charge
+    assert!(db.retained_value::<u64>(input(1)).is_none());
+    assert!(db.set_input(input(1), 4u64, 5)); // refill even equal hash
+    assert_eq!(total(&db, 1), 10);
+}
+#[test]
+fn retained_observation_cannot_compute_missing_or_wrong_typed_values() {
+    let counts = counters();
+    let db = database(&counts);
+    assert!(db.retained_value::<u64>(key(TOTAL, 1)).is_none());
+    assert_eq!(runs(&counts), (0, 0));
+    set(&db, 1, 4);
+    assert!(db.retained_value::<String>(input(1)).is_none());
 }

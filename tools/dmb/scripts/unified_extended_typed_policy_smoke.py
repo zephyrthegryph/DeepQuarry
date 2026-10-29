@@ -32,12 +32,18 @@ SOURCE = '''/atom
 /proc/native_policy_check(holder)
     req_bool(1)
     holder.native_policy_danger
+/mob/native_policy/proc/player_check(mob/P)
+    P.key = "player"
+/datum/native_policy_implicit
+    var/reference
+    proc/store(datum/native_policy_implicit/P)
+        reference = P
 /atom
     var/include_eof_policy_value'''
 CONFIG = '''[lint.base_vars.lists]
 record_accessor_prefixes = ["get_", "set_"]
 '''
-ORDER = ['init', 'decl', 'base_vars', 'requirement_bool', 'untyped_member']
+ORDER = ['init', 'decl', 'base_vars', 'requirement_bool', 'untyped_member', 'player_link', 'untyped']
 
 
 def reference(oracle, root):
@@ -52,8 +58,21 @@ def reference(oracle, root):
 
 
 def observe(smoke, project, engine, pins, root, config):
+    # Full untyped's manifest contract selects the ORIGINAL provider key. Read
+    # that scalar path from the current native occurrence issuer; do not infer
+    # a Windows alias from text equality or reconstruct any semantic model.
+    page = smoke.query(project, engine, pins, [{'OccurrencesPage': {'start': 0, 'limit': 1}}])
+    assert len(page) == 1 and len(page[0]['items']) == 1, page
+    provider_source = Path(page[0]['items'][0]['path'])
+    assert provider_source.name == 'compiled.dm' and provider_source.parent.name == 'code', page
+    provider_root = provider_source.parent.parent
+    if os.name == 'nt' and provider_root != root:
+        unissued = smoke.query(project, engine, pins, [{'NativeAnalyzePolicyFixture': {
+            'root': str(root), 'configuration': str(config), 'lints': ['untyped'],
+        }}], success=False)
+        assert unissued.returncode != 0 and 'manifest alias' in unissued.stderr, unissued.stderr
     rows = smoke.query(project, engine, pins, [{'NativeAnalyzePolicyFixture': {
-        'root': str(root), 'configuration': str(config), 'lints': list(reversed(ORDER)),
+        'root': str(provider_root), 'configuration': str(config), 'lints': list(reversed(ORDER)),
     }}])
     assert len(rows) == 1 and rows[0]['row'] == 'source_native_analyze_policy_fixture', rows
     row = rows[0]
@@ -97,7 +116,9 @@ def main():
                           '[lint.decl]\nexempt_files=["code/compiled.dm"]\n'
                           '[lint.base_vars]\nexempt_files=["code/compiled.dm"]\n'
                           '[lint.requirement_bool]\nexempt_files=["code/compiled.dm"]\n'
-                          '[lint.untyped_member]\nexempt_files=["code/compiled.dm"]\n',
+                          '[lint.untyped_member]\nexempt_files=["code/compiled.dm"]\n'
+                          '[lint.player_link]\nexempt_files=["code/compiled.dm"]\n'
+                          '[lint.untyped]\nexempt_files=["code/compiled.dm"]\n',
                           encoding='utf8', newline='\n')
         changed = smoke.prepare(project, engine)
         assert changed['source_revision'] == first['source_revision'], 'configuration changed compiler source facts'
@@ -116,7 +137,9 @@ def main():
         before_rows = observe(smoke, project, engine, source_before, root, config)
         source.write_text(SOURCE.replace('var/static/native_policy_danger', 'var/native_policy_danger')
                           .replace('/proc/req_bool(value)\n    return value\n', '')
-                          .replace('    req_bool(1)\n', ''), encoding='utf8', newline='\n')
+                          .replace('    req_bool(1)\n', '')
+                          .replace('        reference = P\n', '        return\n')
+                          .replace('    P.key = "player"\n', ''), encoding='utf8', newline='\n')
         source_after = smoke.prepare(project, engine)
         assert source_after['source_revision'] != source_before['source_revision'], 'source edit reused compiler pin'
         assert source_after['policy_revision'] != source_before['policy_revision'], 'source edit reused policy pin'
@@ -124,7 +147,7 @@ def main():
         expected_source = reference(args.oracle, root)
         assert source_rows['results'] == expected_source, {'reference': expected_source, 'native': source_rows}
         assert source_rows['results'] != before_rows['results'], 'source-only edit did not invalidate findings'
-        for name in ['requirement_bool', 'untyped_member']:
+        for name in ['requirement_bool', 'untyped_member', 'player_link', 'untyped']:
             assert not next(row for row in source_rows['results'] if row['name'] == name)['sites'], name
         (smoke.root / 'extended-typed-evidence.json').write_text(json.dumps({
             'initial': initial, 'changed': updated, 'source_changed': source_rows, 'calls': smoke.calls,
@@ -132,7 +155,7 @@ def main():
         }, indent=2), encoding='utf8')
     finally:
         smoke.retire()
-    print('native typed-policy IPC matches independent old Engine.scan for five admitted policies')
+    print(f'native typed-policy IPC matches independent old Engine.scan for {len(ORDER)} admitted policies')
 
 
 if __name__ == '__main__':

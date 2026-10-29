@@ -1,0 +1,7 @@
+/datum/base
+    var/SpacemanDMM_private/p = null
+/datum/base/child
+    p = null
+/proc/test(datum/base/B)
+    var/SpacemanDMM_private/local
+    B.p

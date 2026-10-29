@@ -10,7 +10,7 @@ use std::{
     collections::BTreeMap,
     io,
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{Arc, Mutex},
 };
 
 #[derive(Clone)]
@@ -33,6 +33,10 @@ pub(crate) struct CapturedPolicyInputs {
     explicit_search_folders: Vec<PathBuf>,
     policy_revision: Option<u128>,
     configuration_bytes: BTreeMap<PathBuf, Option<dm_resources::SharedBytes>>,
+    // Only explicitly requested noncompiled root-manifest reads/negative facts.
+    manifest_originals: BTreeMap<PathBuf, Option<dm_resources::SharedBytes>>,
+    // Issuance owners only. Derived values stay exclusively in Kind5.
+    untyped_inputs: Mutex<BTreeMap<Vec<String>, Arc<dm_analysis::value_query::ArchiveValueInput>>>,
 }
 /// Retention admission for this bounded migration capture, not a process-RSS
 /// or peak-read-allocation guarantee. SourceText owners can be shared, so the
@@ -40,6 +44,164 @@ pub(crate) struct CapturedPolicyInputs {
 /// equal bytes. Metadata remains a conservative admission estimate.
 pub(crate) const MAX_POLICY_CAPTURE_CHARGE: usize = 64 * 1024 * 1024;
 impl CapturedPolicyInputs {
+    pub(crate) fn untyped_manifest(
+        &self,
+        root: &Path,
+    ) -> io::Result<dq_analyze::captured_untyped::ManifestRead<'_>> {
+        use crate::input_snapshot::{recorded_source_original, RecordedSourceOriginal};
+        use dq_analyze::captured_untyped::ManifestRead;
+        if self.policy_revision.is_none() {
+            return Err(io::Error::other("manifest needs bound intent"));
+        }
+        self.semantic_sources.check(self.policy.mapping())?;
+        let path = canonical_path(&root.join("deepquarry.dme"));
+        let mut compiled: Option<&[u8]> = None;
+        for (candidate, lease) in self.policy.mapping().source_acquisitions() {
+            if dm_preprocess::regions::relative_filesystem_path(candidate, root).as_deref()
+                == Some(Path::new("deepquarry.dme"))
+                && canonical_path(candidate) != path
+            {
+                return Err(io::Error::other(
+                    "manifest alias is not an exact root provider key",
+                ));
+            }
+            if canonical_path(candidate) != path {
+                continue;
+            }
+            let lease = lease.ok_or_else(|| io::Error::other("manifest acquisition absent"))?;
+            let bytes = match recorded_source_original(lease)? {
+                RecordedSourceOriginal::Utf8(text) => text.as_bytes(),
+                RecordedSourceOriginal::Bytes(bytes) => bytes.as_slice(),
+            };
+            if compiled.is_some_and(|prior| prior != bytes) {
+                return Err(io::Error::other("manifest acquisitions contradict"));
+            }
+            compiled = Some(bytes);
+        }
+        if let Some(bytes) = compiled {
+            return Ok(ManifestRead::CompiledOriginalBytes(bytes));
+        }
+        match self.manifest_originals.get(&path) {
+            Some(Some(bytes))
+                if self
+                    .policy
+                    .file(&path)
+                    .is_some_and(|f| f.role() == PolicyRole::DmSource && !f.is_compiled()) =>
+            {
+                let hash = xxhash_rust::xxh3::xxh3_128(bytes.as_slice());
+                if !self
+                    .facts
+                    .files()
+                    .any(|f| f.path == path && f.content == hash)
+                {
+                    return Err(io::Error::other(
+                        "manifest original lacks exact recorded content fact",
+                    ));
+                }
+                Ok(ManifestRead::OriginalBytes(bytes.as_slice()))
+            }
+            Some(None) if self.missing.contains(&path) && self.policy.file(&path).is_none() => {
+                let mut negative = false;
+                self.facts
+                    .visit_recorded_storage(|_, _, missing, _| negative = missing.contains(&path));
+                if !negative {
+                    return Err(io::Error::other("manifest absence is not recorded"));
+                }
+                Ok(ManifestRead::ProvenUnavailable)
+            }
+            _ => Err(io::Error::other(
+                "root manifest requires an explicit optional DmSource request",
+            )),
+        }
+    }
+    /// Original compiled membership, including ONLY aliases certified at capture.
+    /// Never infer identity from prefix spelling or perform filesystem IO at query time.
+    pub(crate) fn compiled_source_file(
+        &self,
+        requested: &Path,
+    ) -> Option<&dm_analysis::policy_inputs::PolicyFile> {
+        let requested = canonical_path(requested);
+        let primary = self
+            .source_aliases
+            .get(&requested)
+            .map(|proof| proof.primary_path())
+            .unwrap_or(requested.as_path());
+        self.policy
+            .file(primary)
+            .filter(|file| file.is_compiled() && file.role() == PolicyRole::DmSource)
+    }
+    pub(crate) fn untyped_input(
+        &self,
+        exemptions: &[String],
+    ) -> io::Result<Arc<dm_analysis::value_query::ArchiveValueInput>> {
+        if self.policy_revision.is_none() {
+            return Err(io::Error::other("value input needs bound intent"));
+        }
+        // Bound the small issuance registry before canonical-key allocation.
+        let bytes = exemptions
+            .iter()
+            .try_fold(0usize, |n, s| n.checked_add(s.len() + 64))
+            .ok_or_else(|| io::Error::other("exemption metadata overflow"))?;
+        if bytes > 64 * 1024 || exemptions.len() > 4096 {
+            return Err(io::Error::other(
+                "untyped exemption metadata exceeds admission",
+            ));
+        }
+        let mut key = exemptions.to_vec();
+        key.sort();
+        key.dedup();
+        let mut registry = self
+            .untyped_inputs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if let Some(input) = registry.get(&key) {
+            return Ok(Arc::clone(input));
+        }
+        if registry.len() >= 16 {
+            return Err(io::Error::other("untyped issuance registry is full"));
+        }
+        // Each retained entry owns two bounded canonical lists plus metadata.
+        // Admission is checked under the registry lock before creating its owner.
+        let retained = registry.iter().fold(0usize, |n, (key, input)| {
+            n.saturating_add(untyped_owner_charge(key, input))
+        });
+        let planned = key
+            .capacity()
+            .saturating_mul(std::mem::size_of::<String>())
+            .saturating_add(key.iter().map(|s| s.capacity()).sum::<usize>())
+            .saturating_mul(2)
+            .saturating_add(512);
+        let base = self.budget_charge_base().saturating_add(retained);
+        admit_capture_charge(base.saturating_add(planned))?;
+        let input = dm_analysis::value_query::ArchiveValueInput::new(
+            Arc::clone(self.policy.archive()),
+            &key,
+        );
+        admit_capture_charge(base.saturating_add(untyped_owner_charge(&key, &input)))?;
+        registry.insert(key, Arc::clone(&input));
+        Ok(input)
+    }
+    pub(crate) fn visit_untyped_inputs(
+        &self,
+        mut visit: impl FnMut(&[String], &Arc<dm_analysis::value_query::ArchiveValueInput>),
+    ) {
+        for (key, input) in self
+            .untyped_inputs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+        {
+            visit(key, input);
+        }
+    }
+    pub(crate) fn visit_manifest_originals(
+        &self,
+        mut visit: impl FnMut(&PathBuf, Option<&dm_resources::SharedBytes>),
+    ) {
+        for (path, bytes) in &self.manifest_originals {
+            visit(path, bytes.as_ref());
+        }
+    }
     pub(crate) fn semantic_source_evidence(
         &self,
     ) -> &Arc<crate::input_snapshot::SemanticSourceEvidence> {
@@ -49,6 +211,11 @@ impl CapturedPolicyInputs {
         mut self,
         request: &crate::policy_request::AdmittedPolicyRequest,
     ) -> io::Result<Self> {
+        if request.workspace().is_some() {
+            return Err(io::Error::other(
+                "workspace intent requires its native workspace producer",
+            ));
+        }
         if request.search_folders() != self.explicit_search_folders.as_slice() {
             return Err(io::Error::other(
                 "captured explicit search scope differs from policy request",
@@ -155,6 +322,15 @@ impl CapturedPolicyInputs {
         }
         Ok(self)
     }
+    pub(crate) fn bind_diagnostic_profile(mut self) -> io::Result<Self> {
+        let pin = self.policy_revision.ok_or_else(|| {
+            io::Error::other("diagnostic profile requires exact bound policy intent")
+        })?;
+        let mut identity = b"native-diagnostic-inherited-variable-v1\0".to_vec();
+        identity.extend_from_slice(&pin.to_le_bytes());
+        self.policy_revision = Some(xxhash_rust::xxh3::xxh3_128(&identity));
+        Ok(self)
+    }
     pub(crate) fn policy_revision(&self) -> Option<u128> {
         self.policy_revision
     }
@@ -227,6 +403,17 @@ impl CapturedPolicyInputs {
         combined.merge(&self.facts).is_ok() && combined.same_recorded_facts(complete)
     }
     pub fn budget_charge(&self) -> usize {
+        self.budget_charge_base().saturating_add(
+            self.untyped_inputs
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .iter()
+                .fold(0usize, |n, (key, input)| {
+                    n.saturating_add(untyped_owner_charge(key, input))
+                }),
+        )
+    }
+    fn budget_charge_base(&self) -> usize {
         let mut owners = owner_charge::Owners::default();
         let mut charge = 4096usize;
         charge = charge.saturating_add(
@@ -248,7 +435,11 @@ impl CapturedPolicyInputs {
                 }
             }
         }
-        for (path, bytes) in &self.configuration_bytes {
+        for (path, bytes) in self
+            .configuration_bytes
+            .iter()
+            .chain(self.manifest_originals.iter())
+        {
             charge = charge
                 .saturating_add(128)
                 .saturating_add(path.as_os_str().as_encoded_bytes().len());
@@ -297,6 +488,7 @@ impl CapturedPolicyInputs {
                 .saturating_add(alias.metadata_charge());
         }
         charge = charge.saturating_add(self.semantic_sources.budget_charge());
+        charge = charge.saturating_add(self.facts.policy_directory_accounting_retained_charge());
         charge.saturating_add(owners.totals().charge().unwrap_or(usize::MAX))
     }
 }
@@ -314,6 +506,68 @@ pub(crate) fn capture<P: SnapshotProvider>(
     requested: &[RequestedPolicyFile],
     search_folders: &[PathBuf],
 ) -> io::Result<CapturedPolicyInputs> {
+    capture_source(
+        CaptureSource::Compiled(frontend),
+        inputs,
+        requested,
+        search_folders,
+    )
+}
+pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
+    frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+    inputs: &RecordingInputs<P>,
+    requested: &[RequestedPolicyFile],
+    search_folders: &[PathBuf],
+) -> io::Result<CapturedPolicyInputs> {
+    if !frontend.receipt().authenticates(frontend.tree())
+        || !frontend.archive().matches_tree(frontend.tree())
+    {
+        return Err(io::Error::other("diagnostic policy original graph differs"));
+    }
+    capture_source(
+        CaptureSource::Diagnostic(frontend),
+        inputs,
+        requested,
+        search_folders,
+    )
+}
+// Only original issued handles are dispatched; the capture loop remains ONE.
+enum CaptureSource<'a, 'b> {
+    Compiled(&'a ColdFrontend),
+    Diagnostic(&'a dm_tree::frontend::DiagnosticSourceView<'b>),
+}
+impl CaptureSource<'_, '_> {
+    fn files(&self) -> &[dm_tree::frontend::SourceFile] {
+        match self {
+            Self::Compiled(f) => &f.files,
+            Self::Diagnostic(f) => f.files(),
+        }
+    }
+    fn capture_policy(
+        &self,
+        extra: Vec<HostCapture>,
+    ) -> Result<PolicyInputs, dm_analysis::policy_inputs::CaptureError> {
+        match self {
+            Self::Compiled(f) => PolicyInputs::capture(f, extra),
+            Self::Diagnostic(f) => PolicyInputs::capture_diagnostic(f, extra),
+        }
+    }
+    fn evidence<P: SnapshotProvider>(
+        &self,
+        inputs: &RecordingInputs<P>,
+    ) -> io::Result<Arc<crate::input_snapshot::SemanticSourceEvidence>> {
+        match self {
+            Self::Compiled(f) => inputs.semantic_source_evidence(f),
+            Self::Diagnostic(f) => inputs.diagnostic_source_evidence(f),
+        }
+    }
+}
+fn capture_source<P: SnapshotProvider>(
+    frontend: CaptureSource<'_, '_>,
+    inputs: &RecordingInputs<P>,
+    requested: &[RequestedPolicyFile],
+    search_folders: &[PathBuf],
+) -> io::Result<CapturedPolicyInputs> {
     let initial = inputs.snapshot()?;
     let raw_digests: BTreeMap<_, _> = initial
         .files()
@@ -321,7 +575,7 @@ pub(crate) fn capture<P: SnapshotProvider>(
         .collect();
     let mut sources = BTreeMap::new();
     let mut requests = BTreeMap::new();
-    for file in frontend.files.iter().filter(|file| file.captured) {
+    for file in frontend.files().iter().filter(|file| file.captured) {
         let path = canonical_path(file.path.as_ref());
         let content = raw_digests.get(path.as_path()).copied().ok_or_else(|| {
             io::Error::other("policy capture lacks compiler's recorded source fact")
@@ -365,6 +619,7 @@ pub(crate) fn capture<P: SnapshotProvider>(
     let mut extra = Vec::new();
     let mut missing = Vec::new();
     let mut configuration_bytes = BTreeMap::new();
+    let mut manifest_originals = BTreeMap::new();
     let mut source_aliases = BTreeMap::new();
     for (path, request) in requests {
         let mut primary = path.clone();
@@ -438,9 +693,19 @@ pub(crate) fn capture<P: SnapshotProvider>(
             if request.role == PolicyRole::Configuration {
                 configuration_bytes.insert(path.clone(), None);
             }
+            if request.role == PolicyRole::DmSource
+                && path.file_name().is_some_and(|n| n == "deepquarry.dme")
+            {
+                manifest_originals.insert(path.clone(), None);
+            }
             missing.push(path);
             continue;
         };
+        if request.role == PolicyRole::DmSource
+            && path.file_name().is_some_and(|n| n == "deepquarry.dme")
+        {
+            manifest_originals.insert(path.clone(), Some(bytes.clone()));
+        }
         let path = Arc::new(path);
         let native = if request.role == PolicyRole::DmSource {
             let text = SourceText::from(dm_preprocess::decode_source_bytes(bytes.as_slice()));
@@ -466,10 +731,10 @@ pub(crate) fn capture<P: SnapshotProvider>(
         }
         extra.push(HostCapture::analyze_raw(path, request.role, raw));
     }
-    let policy = PolicyInputs::capture(frontend, extra).map_err(io::Error::other)?;
+    let policy = frontend.capture_policy(extra).map_err(io::Error::other)?;
     let facts = inputs.snapshot()?;
     let captured = CapturedPolicyInputs {
-        semantic_sources: inputs.semantic_source_evidence(frontend)?,
+        semantic_sources: frontend.evidence(inputs)?,
         source_aliases,
         policy,
         facts,
@@ -477,9 +742,26 @@ pub(crate) fn capture<P: SnapshotProvider>(
         explicit_search_folders,
         policy_revision: None,
         configuration_bytes,
+        manifest_originals,
+        untyped_inputs: Mutex::new(BTreeMap::new()),
     };
     admit_capture_charge(captured.budget_charge())?;
     Ok(captured)
+}
+fn untyped_owner_charge(
+    key: &Vec<String>,
+    input: &dm_analysis::value_query::ArchiveValueInput,
+) -> usize {
+    // Registry coordinates + input Arc/header only. The shared archive is
+    // already counted by capture, and Kind5 owns the derived proof separately.
+    let mut bytes = 256usize
+        .saturating_add(std::mem::size_of_val(input))
+        .saturating_add(key.capacity().saturating_mul(std::mem::size_of::<String>()))
+        .saturating_add(std::mem::size_of_val(input.exempt_types()));
+    for text in key.iter().chain(input.exempt_types()) {
+        bytes = bytes.saturating_add(text.capacity());
+    }
+    bytes
 }
 fn admit_capture_charge(charge: usize) -> io::Result<()> {
     if charge > MAX_POLICY_CAPTURE_CHARGE {

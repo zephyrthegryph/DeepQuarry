@@ -568,3 +568,231 @@ fn inherited_override_and_null_source_hints_use_selected_body_not_receiver_forma
         "15:6: return type evaluated to None"
     );
 }
+
+#[test]
+fn primary_local_ledger_reissues_current_spans_after_warm_body_chunk_shift() {
+    use dm_tree::frontend::RetainedSemanticTree;
+    use std::path::Path;
+    struct Original(
+        String,
+        std::cell::RefCell<
+            std::collections::BTreeMap<std::path::PathBuf, dm_preprocess::AcquiredSource>,
+        >,
+    );
+    impl dm_preprocess::SourceProvider for Original {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Err("must acquire original bytes".into())
+        }
+        fn acquired_source(
+            &self,
+            path: &Path,
+        ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+            if !self.1.borrow().contains_key(path) {
+                self.1.borrow_mut().insert(
+                    path.into(),
+                    dm_preprocess::AcquiredSource::from_original_bytes(
+                        self.0.as_bytes().to_vec(),
+                        (),
+                    ),
+                );
+            }
+            Ok(self.1.borrow().get(path).cloned())
+        }
+        fn source_acquisition(
+            &self,
+            path: &Path,
+            text: &dm_preprocess::SourceText,
+        ) -> Option<dm_preprocess::AcquiredSource> {
+            self.1
+                .borrow()
+                .get(path)
+                .filter(|source| source.lease().source_text().same_view(text))
+                .cloned()
+        }
+    }
+    let tail = (0..1024)
+        .map(|i| format!("/proc/q_tail{i}()"))
+        .find(|h| {
+            h.bytes().fold(0xcbf29ce484222325u64, |v, b| {
+                (v ^ u64::from(b)).wrapping_mul(0x100000001b3)
+            }) & 15
+                == 0
+        })
+        .unwrap();
+    const BODY:&str="/proc/p()\n    var/SpacemanDMM_private/a\n    var/SpacemanDMM_private/datum/array[2]\n    for(var/SpacemanDMM_protected/datum/b in list())\n        continue\n    try\n        throw 1\n    catch(var/SpacemanDMM_private/datum/c)\n        return\n";
+    let old_source = format!("/proc/q()\n    return 1\n{tail}\n    return 1\n{BODY}");
+    let new_source = format!(
+        "// shifted preceding source\n\n/proc/q()\n    return 333\n{tail}\n    return 333\n{BODY}"
+    );
+    let db = Arc::new(QueryDb::default());
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let mut state = RetainedSemanticTree::default();
+    let build = |state: &mut RetainedSemanticTree, source: String| {
+        dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
+            Path::new("local-shift.dme"),
+            &Original(source, Default::default()),
+            &Default::default(),
+            FrontendConfig {
+                workers: 1,
+                engine: None,
+                observer: None,
+            },
+            None,
+            &executor,
+            Some(state),
+            true,
+        )
+        .unwrap()
+        .with_body_queries(db.clone())
+    };
+    let old = build(&mut state, old_source);
+    let old_archive = old.body_archive().unwrap();
+    let ordinal = old_archive
+        .occurrences()
+        .iter()
+        .position(|b| old_archive.tree().member(b.member).unwrap().name == SymbolId::of("p"))
+        .unwrap();
+    let old_body = old_archive.parse(ordinal).unwrap();
+    let old_code = old.body_code(old_body.occurrence()).unwrap();
+    let old_locals = old_body
+        .statement_body()
+        .parsed()
+        .local_variables
+        .entries()
+        .unwrap();
+    assert_eq!(old_locals.len(), 4);
+    let old_points = old_locals
+        .iter()
+        .map(|v| old_archive.original_note_origin(v.anchor.start).unwrap())
+        .collect::<Vec<_>>();
+    let new = build(&mut state, new_source);
+    let new_archive = new.body_archive().unwrap();
+    let ordinal = new_archive
+        .occurrences()
+        .iter()
+        .position(|b| new_archive.tree().member(b.member).unwrap().name == SymbolId::of("p"))
+        .unwrap();
+    let new_body = new_archive.parse(ordinal).unwrap();
+    let new_code = new.body_code(new_body.occurrence()).unwrap();
+    assert!(
+        Arc::ptr_eq(old_code.identity(), new_code.identity()),
+        "unchanged real native code chunk must be reused"
+    );
+    assert_ne!(
+        old_code.occurrence().expanded_span.start,
+        new_code.occurrence().expanded_span.start
+    );
+    assert!(
+        !std::ptr::eq(old_body.statement_body(), new_body.statement_body()),
+        "absolute-coordinate typed syntax needs a CURRENT issuance"
+    );
+    let locals = new_body
+        .statement_body()
+        .parsed()
+        .local_variables
+        .entries()
+        .unwrap();
+    assert_eq!(locals.len(), 4);
+    for ((before, old_point), current) in old_locals.iter().zip(old_points).zip(locals) {
+        assert_ne!(before.anchor.start, current.anchor.start);
+        assert_ne!(before.name.start, current.name.start);
+        assert_eq!(before.type_components.len(), current.type_components.len());
+        for (a, b) in before
+            .type_components
+            .iter()
+            .zip(current.type_components.iter())
+        {
+            assert_ne!(a.start, b.start);
+        }
+        let point = new_archive
+            .original_note_origin(current.anchor.start)
+            .unwrap();
+        assert_eq!(point.line, old_point.line + 2);
+        assert_eq!(point.byte_column, old_point.byte_column);
+        assert_eq!(
+            before.type_path(old_archive.expanded_source()).unwrap(),
+            current.type_path(new_archive.expanded_source()).unwrap()
+        );
+        assert_eq!(
+            &old_archive.expanded_source()[before.name.range()],
+            &new_archive.expanded_source()[current.name.range()]
+        );
+    }
+    let warm = new_archive.parse(ordinal).unwrap();
+    assert!(
+        std::ptr::eq(warm.statement_body(), new_body.statement_body()),
+        "same current graph query reuses one parse"
+    );
+    assert_eq!(
+        db.db().stats(dm_query::Kind(4)).computed,
+        2,
+        "one body parse per actual current input, not a second policy AST"
+    );
+}
+
+#[test]
+fn primary_macro_field_and_proc_points_match_pinned_checker_without_source_reconstruction() {
+    for (source, proc_call) in [
+        (
+            include_str!("../../../../fixtures/unified_checks/macro_field_byte/probe.dme"),
+            false,
+        ),
+        (
+            include_str!("../../../../fixtures/unified_checks/macro_proc_byte/probe.dme"),
+            true,
+        ),
+    ] {
+        let db = Arc::new(QueryDb::default());
+        let front = build_note_source(source, &db);
+        let archive = front.body_archive().unwrap();
+        let profile = archive.tree().checker_builtin_profile().unwrap();
+        let context =
+            CheckerContext::archived(&archive, db.as_ref(), archive.tree(), profile).unwrap();
+        let mut actual = Vec::new();
+        for (ordinal, _) in dm_analysis::checker_order::bodies(&front).unwrap() {
+            let body = archive.parse(ordinal).unwrap();
+            let rows = if proc_call {
+                context.proc_static_archived(&body, Severity::Warning)
+            } else {
+                context.fields_archived(&body, Severity::Warning)
+            }
+            .unwrap();
+            for row in rows {
+                let at = archive.source_note_point(row.span.start).unwrap();
+                actual.push((
+                    at.line,
+                    at.byte_column,
+                    row.notes
+                        .iter()
+                        .map(|n| n.legacy_text())
+                        .collect::<Vec<_>>(),
+                ));
+            }
+        }
+        assert_eq!(
+            actual,
+            vec![
+                (
+                    10,
+                    9,
+                    vec!["7:12: add a return type annotation to /proc/plain".to_owned()]
+                ),
+                (
+                    11,
+                    12,
+                    vec!["7:12: add a return type annotation to /proc/plain".to_owned()]
+                ),
+                (
+                    12,
+                    16,
+                    vec!["7:12: add a return type annotation to /proc/plain".to_owned()]
+                ),
+                (
+                    13,
+                    18,
+                    vec!["5:1: add a return type annotation to /proc/macro_plain".to_owned()]
+                ),
+            ]
+        );
+    }
+}

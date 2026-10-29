@@ -9,7 +9,7 @@ pub fn notes(
     at: Span,
     hint: Option<(ReturnFixHint, Span)>,
 ) -> Result<Vec<Note>, String> {
-    let warning_source = archive.original_note_origin(at.start)?;
+    let warning_source = archive.source_note_point(at.start)?;
     let mut notes = Vec::new();
     if let Some((fix, call)) = hint {
         let (source, message) = match fix {
@@ -34,7 +34,7 @@ pub fn notes(
                 )
             }
             ReturnFixHint::EvaluatedNone => (
-                archive.original_note_origin(call.start)?,
+                archive.source_note_point(call.start)?,
                 "return type evaluated to None".into(),
             ),
             ReturnFixHint::None => {

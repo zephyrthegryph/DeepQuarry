@@ -25,6 +25,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::scopes::LintScope;
 use crate::tree::{Select, SourceFile, Tree};
+#[path = "lint_captured_sink.rs"]
+mod captured_sink;
 
 /// One flagged place. `msg` is the text after the `[lint/rule]` tag; empty means "the source line".
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -61,6 +63,8 @@ pub struct Sink {
     /// Set by `scan_file`: the file being scanned (so `site` can stamp `rel`).
     #[serde(skip)]
     pub cur: String,
+    #[serde(skip)]
+    bound: Option<captured_sink::Bound>,
 }
 
 impl Sink {
@@ -70,33 +74,89 @@ impl Sink {
 
     /// A site in the file being scanned (`scan_file`).
     pub fn site(&mut self, rule: &str, line: usize) {
-        self.sites.push(Site { rule: rule.to_string(), rel: self.cur.clone(), line: line as u32, msg: String::new(), key: String::new(), ident: String::new() });
+        self.push_site(Site {
+            rule: rule.to_string(),
+            rel: self.cur.clone(),
+            line: line as u32,
+            msg: String::new(),
+            key: String::new(),
+            ident: String::new(),
+        });
     }
 
     pub fn site_msg(&mut self, rule: &str, line: usize, msg: impl Into<String>) {
-        self.sites.push(Site { rule: rule.to_string(), rel: self.cur.clone(), line: line as u32, msg: msg.into(), key: String::new(), ident: String::new() });
+        self.push_site(Site {
+            rule: rule.to_string(),
+            rel: self.cur.clone(),
+            line: line as u32,
+            msg: msg.into(),
+            key: String::new(),
+            ident: String::new(),
+        });
     }
 
     /// A site in any file (`scan_tree`).
     pub fn site_in(&mut self, rule: &str, rel: &str, line: usize) {
-        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: String::new(), key: String::new(), ident: String::new() });
+        self.push_site(Site {
+            rule: rule.to_string(),
+            rel: rel.to_string(),
+            line: line as u32,
+            msg: String::new(),
+            key: String::new(),
+            ident: String::new(),
+        });
     }
 
     pub fn site_in_msg(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>) {
-        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: String::new(), ident: String::new() });
+        self.push_site(Site {
+            rule: rule.to_string(),
+            rel: rel.to_string(),
+            line: line as u32,
+            msg: msg.into(),
+            key: String::new(),
+            ident: String::new(),
+        });
     }
 
-    pub fn site_keyed(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>, key: impl Into<String>) {
-        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: key.into(), ident: String::new() });
+    pub fn site_keyed(
+        &mut self,
+        rule: &str,
+        rel: &str,
+        line: usize,
+        msg: impl Into<String>,
+        key: impl Into<String>,
+    ) {
+        self.push_site(Site {
+            rule: rule.to_string(),
+            rel: rel.to_string(),
+            line: line as u32,
+            msg: msg.into(),
+            key: key.into(),
+            ident: String::new(),
+        });
     }
 
     /// A declaration site: `ident` is `owner::var`, the baseline fingerprint (see [`Site::ident`]).
-    pub fn site_decl(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>, ident: impl Into<String>) {
-        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: String::new(), ident: ident.into().replace(['\t', '\n', '\r'], " ") });
+    pub fn site_decl(
+        &mut self,
+        rule: &str,
+        rel: &str,
+        line: usize,
+        msg: impl Into<String>,
+        ident: impl Into<String>,
+    ) {
+        self.push_site(Site {
+            rule: rule.to_string(),
+            rel: rel.to_string(),
+            line: line as u32,
+            msg: msg.into(),
+            key: String::new(),
+            ident: ident.into().replace(['\t', '\n', '\r'], " "),
+        });
     }
 
     pub fn note(&mut self, text: impl Into<String>) {
-        self.notes.push(text.into());
+        self.push_note(text.into());
     }
 
     /// `allowed(raw_lines, number, lint)`: is line `number` of `f` kept by an annotation for
@@ -123,9 +183,14 @@ impl Sink {
     }
 
     fn use_allow(&mut self, f: &SourceFile, at: usize, lint: &str, code: Option<String>) {
-        let u = AllowUse { rel: f.rel.clone(), line: at as u32, name: lint.to_string(), code: code.unwrap_or_default() };
+        let u = AllowUse {
+            rel: f.rel.clone(),
+            line: at as u32,
+            name: lint.to_string(),
+            code: code.unwrap_or_default(),
+        };
         if !self.allow_used.contains(&u) {
-            self.allow_used.push(u);
+            self.push_allow(u);
         }
     }
 }
@@ -147,7 +212,10 @@ pub enum Policy {
         banned: &'static [&'static str],
     },
     /// Count ceilings keyed by `Site::key` (`name count` lines).
-    Ceilings { baseline: &'static str, header: &'static [&'static str] },
+    Ceilings {
+        baseline: &'static str,
+        header: &'static [&'static str],
+    },
     /// Any site fails; nothing is baselined.
     Hard,
     /// The lint's `finish` decides.
@@ -198,7 +266,11 @@ pub struct Cx<'a> {
 impl<'a> Cx<'a> {
     /// In-scope files minus the lint's configured exemptions, sorted by path.
     pub fn files(&self) -> Vec<&'a SourceFile> {
-        self.tree.select(&self.meta.select).into_iter().filter(|f| !self.scope.exempt(&f.rel)).collect()
+        self.tree
+            .select(&self.meta.select)
+            .into_iter()
+            .filter(|f| !self.scope.exempt(&f.rel))
+            .collect()
     }
 
     /// In-scope files including exempt ones (for an index that must see everything).
@@ -269,7 +341,12 @@ pub trait Lint: Send + Sync {
     }
 
     /// Custom baseline rewrite for [`Policy::Custom`].
-    fn update_baseline(&self, _cx: &Cx, _run: &Run, _mode: crate::baseline::Mode) -> std::io::Result<String> {
+    fn update_baseline(
+        &self,
+        _cx: &Cx,
+        _run: &Run,
+        _mode: crate::baseline::Mode,
+    ) -> std::io::Result<String> {
         Ok(String::new())
     }
 
@@ -283,7 +360,12 @@ pub trait Lint: Send + Sync {
     /// Parity only: rewrites the engine's raw findings into the shape the legacy script's output
     /// can be compared in (a script that prints counts instead of sites, merges duplicate checks,
     /// ...). `root` is the tree that was scanned. Default: unchanged.
-    fn parity_normalize(&self, _root: &std::path::Path, _scope: &LintScope, findings: Vec<crate::parity::Finding>) -> Vec<crate::parity::Finding> {
+    fn parity_normalize(
+        &self,
+        _root: &std::path::Path,
+        _scope: &LintScope,
+        findings: Vec<crate::parity::Finding>,
+    ) -> Vec<crate::parity::Finding> {
         findings
     }
 
@@ -310,6 +392,9 @@ impl Registry {
     }
 
     pub fn find(&self, name: &str) -> Option<&dyn Lint> {
-        self.lints.iter().find(|l| l.meta().name == name).map(|b| b.as_ref())
+        self.lints
+            .iter()
+            .find(|l| l.meta().name == name)
+            .map(|b| b.as_ref())
     }
 }

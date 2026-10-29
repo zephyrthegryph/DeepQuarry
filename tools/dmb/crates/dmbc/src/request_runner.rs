@@ -11,6 +11,8 @@ use std::{
 pub(crate) mod runner_facts;
 #[path = "runner_report.rs"]
 mod runner_report;
+#[path="runner_owner_observation.rs"]
+mod owner_observation;
 #[path = "runner_resources.rs"]
 mod runner_resources;
 use runner_resources::{OutputResourceSink, ResourceOutputs};
@@ -19,7 +21,7 @@ mod runner_cache_records;
 #[path = "runner_configuration.rs"]
 mod runner_configuration;
 #[path = "runner_freshness.rs"]
-mod runner_freshness;
+pub(crate) mod runner_freshness;
 #[path = "runner_generated_paths.rs"]
 mod runner_generated_paths;
 use runner_cache_records::publish_cache_records;
@@ -86,6 +88,8 @@ pub fn run_build_with_host(
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     crate::request::validate_timeout_seconds(request.timeout_seconds)?;
+    crate::request::validate_diagnostic_declarations(&request)?;
+    if request.diagnostic_declarations && !host.retains_artifacts(){return Err(std::io::Error::other("diagnostic preparation requires the existing retained query owner").into());}
     // Service-bound requests inherit the original admission+execution deadline;
     // local requests issue it once, outside freshness retries.
     let _deadline_binding = if crate::daemon::control::WorkerContext::capture().is_none() {
@@ -121,8 +125,10 @@ fn run_build_attempt(
     // A retried attempt reports its own diagnostics; count only those.
     dmbc::diagnostics::begin(request.warnings.clone());
     let request_profile = dm_profile::stage("request.prepare");
+    crate::request::validate_diagnostic_declarations(&request)?;
     let BuildRequest {
         command,
+        diagnostic_declarations,
         timeout_seconds: _,
         policy_inputs,
         project,
@@ -448,11 +454,14 @@ fn run_build_attempt(
     drop(session_profile);
     dm_profile::detail_mark("session_validation", total);
     let engine_profile = dm_profile::stage("engine_capture");
+    let engine_capture_started=Instant::now();
+    if progress_enabled { dmbc::daemon_eprintln!("native stage request.engine_capture: started"); }
     // An authenticated unchanged session needs no decoded engine or bootstrap
     // catalog. The key above pins exact engine bytes and this compiler/policy.
     let engine_capture = engine_bytes
         .map(|bytes| host.engine(project.clone(), defines.clone(), bootstrap_catalog, bytes))
         .transpose()?;
+    if progress_enabled { dmbc::daemon_eprintln!("native stage request.engine_capture: {:.3}s",engine_capture_started.elapsed().as_secs_f64()); }
     if engine_capture.is_none() {
         host.clear_regions();
     }
@@ -619,6 +628,7 @@ fn run_build_attempt(
             let mut configuration = format!("{project:?} {defines:?} ").into_bytes();
             configuration.extend_from_slice(&memo_policy.to_le_bytes());
             configuration.push(u8::from(bootstrap_catalog));
+            configuration.extend_from_slice(if diagnostic_declarations {b"checker-declaration-domain-v1".as_slice()}else{b"strict-declaration-domain-v1".as_slice()});
             crate::policy_request::append_identity(&mut configuration, policy_inputs.as_ref())?;
             match query_db.revise(inputs.sources(), dm_query::hash_bytes(&configuration)) {
                 Ok(revision) => dmbc::daemon_eprintln!("native query db: {revision:?}"),
@@ -645,6 +655,40 @@ fn run_build_attempt(
         drop(source_context_profile);
         dm_profile::detail_mark("source_context", total);
         let _frontend_profile = dm_profile::stage("frontend");
+        if diagnostic_declarations {
+            // Select the original builder's diagnostic mode BEFORE construction.
+            // Valid graphs transfer the SAME owner; no strict-failure retry.
+            let prepared=match dm_tree::frontend::build_for_checker_diagnostics_with_state(&project,&provider,&defines,
+                dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
+                frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state)){Ok(frontend)=>frontend,Err(mut diagnostics)=>{
+                dmbc::diagnostics::refine(&mut diagnostics);
+                dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(),&diagnostics)?;
+                let kind=dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic|diagnostic.kind));
+                return Err(dmbc::request_failure::RequestFailure{kind,message:"diagnostic preparation did not produce an admitted original declaration graph".into()}.into());
+            }};
+            match prepared.try_into_compilable_retained(&mut *semantic_state){
+                Ok(frontend)=>Ok(frontend),
+                Err(prepared)=>{
+                    if prepared.source_view()?.receipt().errors().is_empty(){return Err(std::io::Error::other("valid diagnostic program lacks complete original retained records; reuse unsupported").into());}
+                    let prepared=prepared.with_body_queries(std::sync::Arc::clone(&source_policy_queries) as std::sync::Arc<dyn dm_tree::frontend::BodySyntaxQueries>)?;
+                    let view=prepared.source_view()?;
+                    let intent=policy_inputs.as_ref().ok_or("diagnostic preparation requires explicit policy input contract")?;
+                    let captured=std::sync::Arc::new(crate::runner_host::policy_capture::capture_diagnostic(&view,&inputs_capture,&intent.capture_files(),intent.search_folders())?.bind_request(intent)?.bind_diagnostic_profile()?);
+                    query_attempt.stage_diagnostic(&view,std::sync::Arc::clone(&source_policy_queries),std::sync::Arc::clone(&captured))?;
+                    // The staged frame is invisible to all queries and cache
+                    // reads until the COMPLETE original input closure passes.
+                    let staged=query_attempt.pending_diagnostic_policy().ok_or("diagnostic original staged capture unavailable")?;
+                    let admission=runner_freshness::admit_diagnostic_captured(&inputs_capture,None,&input_provider,generated_paths,staged)?.1;
+                    input_provider.finish()?;
+                    inputs_capture.finish_prepared()?;
+                    dmbc::daemon::control::checkpoint()?;
+                    query_attempt.admit_diagnostic_policy(admission)?;
+                    let outcome=BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners};
+                    query_attempt.finish_analyzed();
+                    return Ok(outcome);
+                }
+            }
+        }else{
         dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
             &project,
             &provider,
@@ -659,8 +703,9 @@ fn run_build_attempt(
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             executor,
             Some(&mut *semantic_state),
-            policy_inputs.is_some() || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
+            policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none()) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
         )
+        }
     };
     dm_profile::detail_mark("frontend", total);
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
@@ -669,7 +714,7 @@ fn run_build_attempt(
         Ok(frontend) => {
             // Migration opt-in until all checker/lint parity and memory gates
             // pass. Compile-only users keep the existing lazy body path.
-            if policy_inputs.is_some() || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
+            if policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none()) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
                 match query_db.as_ref() {
                     Some(db) => frontend.with_body_queries(Arc::clone(db) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>),
                     None => frontend,
@@ -689,6 +734,7 @@ fn run_build_attempt(
             return Err(failure.into());
         }
     });
+    owner_observation::emit("frontend",&frontend,source_policy_queries.as_ref(),&*semantic_state);
     dm_profile::request_mark("frontend.revision");
     if retains_query_owners {
         // The next request adopts this revision's unchanged include subtrees and regions.
@@ -701,6 +747,28 @@ fn run_build_attempt(
     // Opt-in migration: empty explicit lists capture only compiled raw views.
     // The helper can accept host-requested extra paths once admission exposes
     // them; this does not crawl or claim complete workspace coverage.
+    if let Some(workspace) = policy_inputs.as_ref().and_then(|request| request.workspace()) {
+        let discovery_started=Instant::now();
+        if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.discovery: started"); }
+        dm_profile::request_mark("workspace.discovery.start");
+        let discovery = std::sync::Arc::new(crate::runner_host::workspace_discovery::discover(
+            &inputs_capture, crate::runner_host::workspace_discovery::DiscoveryContract {
+                root: workspace.root.clone(), recursive_roots: workspace.recursive_roots.clone(),
+            })?);
+        if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.discovery: {:.3}s sources={} directories={}",discovery_started.elapsed().as_secs_f64(),discovery.files().len(),discovery.directory_paths().count()); }
+        dm_profile::request_mark("workspace.discovery.done");
+        let capture_started=Instant::now();
+        if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.original_capture: started"); }
+        dm_profile::request_mark("workspace.capture.start");
+        let captured = crate::runner_host::workspace_capture::capture(&frontend, &inputs_capture, discovery, &workspace.configuration)?;
+        if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.original_capture: {:.3}s sources={}",capture_started.elapsed().as_secs_f64(),captured.file_count()); }
+        dm_profile::request_mark("workspace.capture.done");
+        let frame_started=Instant::now();
+        if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.frame_staging: started"); }
+        query_attempt.capture_with_workspace_recorded_sources(&frontend, std::sync::Arc::clone(&source_policy_queries), captured, workspace, &inputs_capture)?;
+        if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.frame_staging: {:.3}s",frame_started.elapsed().as_secs_f64()); }
+        dm_profile::request_mark("workspace.frame_staged");
+    } else {
     let raw_policy = if let Some(request) = policy_inputs.as_ref() {
         let files = request.capture_files();
         let captured = crate::runner_host::policy_capture::capture(&frontend, &inputs_capture, &files, request.search_folders())?.bind_request(request)?;
@@ -710,6 +778,7 @@ fn run_build_attempt(
         Some(std::sync::Arc::new(captured))
     } else { None };
     query_attempt.capture_with_recorded_sources(&frontend, std::sync::Arc::clone(&source_policy_queries), raw_policy, &inputs_capture)?;
+    }
     dm_profile::request_mark("frontend.query_capture");
     dmbc::heap_census::emit_if_enabled("input_source_originals.current",|census|census.exceptional_source_inputs(&inputs_capture))?;
     if command == BuildCommand::Compile {
@@ -1007,6 +1076,7 @@ fn run_build_attempt(
                         .capture_resolved_host(&frontend, resolver, abi, startup)
                         .map_err(|error| dmbc::cold::ColdError::InitializerInvariant(format!("query host capture: {error}")))?;
                     let explanations = runner_report::explanations(&frontend, None);
+                    owner_observation::emit("compiled_source",&frontend,source_policy_queries.as_ref(),&*semantic_state);
                     drop(frontend);
                     return Ok::<_, dmbc::cold::ColdError>((
                         dmbc::cold::ColdOutput {
@@ -1055,6 +1125,7 @@ fn run_build_attempt(
             )?;
             dm_profile::request_mark("compilation.sealed");
             // The sealed composition retains exact output facts and no source owners.
+            owner_observation::emit("compiled_source",&frontend,source_policy_queries.as_ref(),&*semantic_state);
             drop(frontend);
             dm_profile::request_mark("compilation.frontend_dropped");
             let output =
@@ -1202,14 +1273,22 @@ fn run_build_attempt(
                 .and_then(|current| early.finish(&current))
         });
         let early_admitted = early_inputs.is_some();
-        let publication_inputs = match early_inputs {
+        let (publication_inputs, workspace_admission, source_admission) = if let Some(workspace) = query_attempt.pending_workspace() {
+            let (inputs, admission) = runner_freshness::admit_workspace_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths, workspace)?;
+            (inputs, Some(admission), None)
+        } else if let Some(frame) = query_attempt.pending_source() {
+            let (inputs, admission) = runner_freshness::admit_source_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths, frame)?;
+            (inputs, None, Some(admission))
+        } else { (match early_inputs {
             Some(inputs) => inputs,
             None => runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths)?,
-        };
+        }, None, None) };
         let live_admitted = early_admitted || !matches!(input_provider, dmbc::frozen_inputs::Inputs::Replay(_));
         dmbc::daemon_eprintln!("native publication admission: early={early_admitted} live={live_admitted}");
         input_provider.finish()?;
         inputs_capture.finish_prepared()?;
+        if let Some(admission) = workspace_admission { query_attempt.admit_workspace_policy(admission)?; }
+        if let Some(admission) = source_admission { query_attempt.admit_source_frame(admission)?; }
         dm_profile::request_mark("publication.inputs_admitted");
         dmbc::daemon::control::begin_publication()?;
         let pair = match &publication.archive {
@@ -1406,21 +1485,56 @@ fn run_build_attempt(
         });
     }
     if command == BuildCommand::PrepareQuery {
-        let outcome = runner_analysis::prepare_query(
+        let owners_started=Instant::now();
+        if progress_enabled { dmbc::daemon_eprintln!("native stage query_prepare.owners: started"); }
+        dm_profile::request_mark("query_prepare.owners.start");
+        let outcome = runner_analysis::prepare_query_observed(
             &frontend, engine_capture.as_ref(), host_facts.as_deref(), executor,
-            procedure_memo.as_ref(), memo_policy, &mut query_attempt, retains_query_owners,
+            procedure_memo.as_ref(), memo_policy, &mut query_attempt, retains_query_owners, progress_enabled,
         )?;
+        if progress_enabled { dmbc::daemon_eprintln!("native stage query_prepare.owners: {:.3}s",owners_started.elapsed().as_secs_f64()); }
+        dm_profile::request_mark("query_prepare.owners.done");
+        let freshness_started=Instant::now();
+        if progress_enabled { dmbc::daemon_eprintln!("native stage query_prepare.freshness: started"); }
+        dm_profile::request_mark("query_prepare.freshness.start");
         // Preparation is not output publication, but its pins still require the
         // ordinary captured-input freshness barrier before becoming current.
-        runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?;
+        let (workspace_admission, source_admission) = if let Some(workspace) = query_attempt.pending_workspace() {
+            (Some(runner_freshness::admit_workspace_captured(&inputs_capture, None, &input_provider, generated_paths, workspace)?.1), None)
+        } else if let Some(frame) = query_attempt.pending_source() {
+            (None, Some(runner_freshness::admit_source_captured(&inputs_capture, None, &input_provider, generated_paths, frame)?.1))
+        } else { runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?; (None, None) };
         input_provider.finish()?;
         inputs_capture.finish_prepared()?;
         dmbc::daemon::control::checkpoint()?;
+        if let Some(admission) = workspace_admission { query_attempt.admit_workspace_policy(admission)?; }
+        if let Some(admission) = source_admission { query_attempt.admit_source_frame(admission)?; }
+        if progress_enabled { dmbc::daemon_eprintln!("native stage query_prepare.freshness: {:.3}s",freshness_started.elapsed().as_secs_f64()); }
+        dm_profile::request_mark("query_prepare.freshness.done");
+        let outcome = match outcome {
+            BuildOutcome::QueryPrepared { semantic_revision, source_revision, retained, .. } => BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: query_attempt.policy_revision().map(|pin| format!("{pin:032x}")), retained },
+            other => other,
+        };
         query_attempt.finish_analyzed();
+        owner_observation::emit("prepared",&frontend,source_policy_queries.as_ref(),&*semantic_state);
         return Ok(outcome);
     }
-    runner_analysis::finish(&frontend, engine_capture.as_ref(), host_facts.as_deref(), executor,
-        procedure_memo.as_ref(), memo_policy, command, &mut query_attempt, total)
+    let outcome = runner_analysis::finish(&frontend, engine_capture.as_ref(), host_facts.as_deref(), executor,
+        procedure_memo.as_ref(), memo_policy, command, &mut query_attempt, total)?;
+    // Source/ABI query epochs produced by analysis exports obey the same closure
+    // admission as PrepareQuery; exporting rows is not publication authority.
+    let (workspace_admission, source_admission) = if let Some(workspace) = query_attempt.pending_workspace() {
+        (Some(runner_freshness::admit_workspace_captured(&inputs_capture, None, &input_provider, generated_paths, workspace)?.1), None)
+    } else if let Some(frame) = query_attempt.pending_source() {
+        (None, Some(runner_freshness::admit_source_captured(&inputs_capture, None, &input_provider, generated_paths, frame)?.1))
+    } else { runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?; (None, None) };
+    input_provider.finish()?;
+    inputs_capture.finish_prepared()?;
+    dmbc::daemon::control::checkpoint()?;
+    if let Some(admission) = workspace_admission { query_attempt.admit_workspace_policy(admission)?; }
+    if let Some(admission) = source_admission { query_attempt.admit_source_frame(admission)?; }
+    query_attempt.finish_analyzed();
+    Ok(outcome)
     });
     dm_profile::request_mark("runner.execution_joined");
     drop(frontend_memo);

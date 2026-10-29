@@ -241,3 +241,39 @@ fn ordinary_untyped_capture_cannot_silently_substitute_unissued_compatibility_or
         .scan(&input, proof, ManifestRead::Compiled, || Ok(()));
     assert!(result.err().unwrap().contains("producer was not requested"));
 }
+
+#[test]
+fn host_original_compiled_manifest_preserves_facade_rows_and_rejects_substitution() {
+    let (root, inputs) = build_inputs(
+        "/datum/probe\n    var/item\n    proc/save(datum/probe/P)\n        item = P\n",
+    );
+    let input = ArchiveValueInput::new(Arc::clone(inputs.archive()), &[]);
+    let policy = CapturedUntyped::capture(&root, &inputs, Configuration::ProvenMissing).unwrap();
+    let original = b"#include \"code/probe.dm\"\n";
+    let old = policy
+        .scan(
+            &input,
+            input.compute().unwrap(),
+            ManifestRead::Compiled,
+            || Ok(()),
+        )
+        .unwrap();
+    let host = policy
+        .scan(
+            &input,
+            input.compute().unwrap(),
+            ManifestRead::CompiledOriginalBytes(original),
+            || Ok(()),
+        )
+        .unwrap();
+    assert_eq!(host.run.sites, old.run.sites);
+    assert_eq!(host.run.notes, old.run.notes);
+    assert!(policy
+        .scan(
+            &input,
+            input.compute().unwrap(),
+            ManifestRead::CompiledOriginalBytes(b"#include \"other.dm\"\n"),
+            || Ok(())
+        )
+        .is_err());
+}

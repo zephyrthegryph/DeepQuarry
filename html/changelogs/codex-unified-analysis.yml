@@ -5,3 +5,4 @@ changes:
   - bugfix: "Prevent native compiler daemons from keeping a caller's output pipes open on Windows."
   - bugfix: "Decode carriage returns consistently in native raw string literals."
   - bugfix: "Resolve explicit global native calls without selecting a same-named member."
+  - bugfix: "Keep a native compiler daemon available after a long analysis request finishes."

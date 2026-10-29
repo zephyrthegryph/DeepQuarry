@@ -207,3 +207,19 @@ required-features = ["legacy-sem"]
 name = "write_index_owner"
 path = "tests/write_index_owner.rs"
 required-features = ["legacy-sem"]
+
+[[example]]
+name = "unified_player_link"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name = "unified_legacy_workspace_raw"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name = "unified_sparse_slots"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name="unified_weak_raw_read"
+required-features=["legacy-sem","native-policy"]

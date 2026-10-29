@@ -1028,3 +1028,5 @@ mod receipts;
 
 #[path = "heap_census/acquisition.rs"]
 mod acquisition;
+
+mod workspace_policy;

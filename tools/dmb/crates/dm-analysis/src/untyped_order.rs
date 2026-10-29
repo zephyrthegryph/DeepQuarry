@@ -14,6 +14,7 @@ use dm_syntax::{
 trait Observer {
     fn expression(&mut self, _: &Expr, _: Span) {}
     fn assignment(&mut self, _: &Expr, _: &Expr, _: Span) {}
+    fn statement_assignment(&mut self, _: &Expr, _: &Expr, _: Span) {}
 }
 struct Assignments<'a, F>(&'a mut F);
 impl<F: FnMut(&Expr, &Expr, Span)> Observer for Assignments<'_, F> {
@@ -26,6 +27,18 @@ impl<F: FnMut(&Expr, Span)> Observer for Expressions<'_, F> {
     fn expression(&mut self, node: &Expr, at: Span) {
         self.0(node, at);
     }
+}
+struct StatementAssignments<'a, F>(&'a mut F);
+impl<F: FnMut(&Expr, &Expr, Span)> Observer for StatementAssignments<'_, F> {
+    fn statement_assignment(&mut self, a: &Expr, b: &Expr, at: Span) {
+        self.0(a, b, at);
+    }
+}
+pub(crate) fn statement_assignments(
+    statements: &[Statement],
+    emit: &mut impl FnMut(&Expr, &Expr, Span),
+) {
+    walk(statements, &mut StatementAssignments(emit));
 }
 pub(crate) fn assignments(statements: &[Statement], emit: &mut impl FnMut(&Expr, &Expr, Span)) {
     walk(statements, &mut Assignments(emit));
@@ -40,6 +53,14 @@ fn walk(statements: &[Statement], emit: &mut impl Observer) {
 }
 
 fn expression(node: &Expr, at: Span, emit: &mut impl Observer) {
+    if let ExprKind::Binary { op, lhs, rhs } = &node.kind {
+        if op == "=" {
+            emit.statement_assignment(lhs, rhs, at);
+        }
+    }
+    expression_tree(node, at, emit);
+}
+fn expression_tree(node: &Expr, at: Span, emit: &mut impl Observer) {
     emit.expression(node, at);
     if let ExprKind::Binary { op, lhs, rhs } = &node.kind {
         if op == "=" {
@@ -49,7 +70,7 @@ fn expression(node: &Expr, at: Span, emit: &mut impl Observer) {
     if let ExprKind::Call { callee, .. } = &node.kind {
         if matches!(&callee.kind, ExprKind::StaticMember { .. }) {
             // Pinned Follow::ProcReference discards its parsed argument list.
-            expression(callee, at, emit);
+            expression_tree(callee, at, emit);
             return;
         }
     }
@@ -58,13 +79,13 @@ fn expression(node: &Expr, at: Span, emit: &mut impl Observer) {
             // Legacy New* walk visits arguments, never target mini-expressions.
             if let ExprKind::Call { args, .. } = &value.kind {
                 for arg in args {
-                    expression(arg, at, emit);
+                    expression_tree(arg, at, emit);
                 }
             }
             return;
         }
     }
-    for_each_expression_child(node, |_, child| expression(child, at, emit));
+    for_each_expression_child(node, |_, child| expression_tree(child, at, emit));
 }
 
 /// `parse_if` retains the `else` prefix in the whole span, but advances the
@@ -207,10 +228,11 @@ fn statement_walk(statement: &Statement, emit: &mut impl Observer) {
         }
         StatementKind::Assign { target, op, value } => {
             if op == "=" {
+                emit.statement_assignment(target, value, at);
                 emit.assignment(target, value, at);
             }
-            expression(target, at, emit);
-            expression(value, at, emit);
+            expression_tree(target, at, emit);
+            expression_tree(value, at, emit);
         }
         StatementKind::Label { body, .. } => walk(body, emit),
         StatementKind::Goto(_)
@@ -294,5 +316,24 @@ mod tests {
             [("nested".into(), 2), ("other".into(), 3), ("outer".into(), 4),
              ("inner".into(), 4), ("last".into(), 5)]
         );
+    }
+}
+
+#[cfg(test)]
+mod statement_root_tests {
+    #[test]
+    fn statement_assignment_observer_excludes_nested_arguments_and_rhs_assignments() {
+        let source="/proc/test()\n    outer = inner = 1\n    call(named = 2)\n    (grouped = 3)\n    if(condition = 4)\n        body = 5\n";
+        let syntax = dm_syntax::parse(source);
+        assert!(syntax.diagnostics.is_empty());
+        let body = dm_syntax::parse_proc_body(&syntax.items[0]);
+        assert!(body.diagnostics.is_empty());
+        let mut found = Vec::new();
+        super::statement_assignments(&body.statements, &mut |target, _, _| {
+            if let dm_syntax::ExprKind::Ident(n) = &target.kind {
+                found.push(n.clone());
+            }
+        });
+        assert_eq!(found, ["outer", "condition", "body"]);
     }
 }

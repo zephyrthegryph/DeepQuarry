@@ -3,9 +3,10 @@
 use super::*;
 use dq_analyze::{
     captured_base_vars_policy::BorrowedBaseVarsPolicy, captured_decl_policy::BorrowedDeclPolicy,
-    captured_init_policy::BorrowedInitPolicy, captured_raw_policy::CapturedRawPolicy,
-    captured_requirement_bool::BorrowedRequirementBool,
-    captured_untyped_member::BorrowedUntypedMember,
+    captured_init_policy::BorrowedInitPolicy, captured_player_link::BorrowedPlayerLink,
+    captured_raw_policy::CapturedRawPolicy, captured_requirement_bool::BorrowedRequirementBool,
+    captured_untyped::BorrowedUntyped, captured_untyped_member::BorrowedUntypedMember,
+    captured_weak_raw_read::BorrowedWeakRawRead,
 };
 pub(super) const ANALYZE_FINDINGS: Kind = Kind(10);
 pub(crate) const ANALYZE_FIXTURE_LINTS: &[&str] = dq_analyze::captured_policy_metadata::LINTS;
@@ -19,6 +20,7 @@ struct Params {
     root: PathBuf,
     ordered: Vec<String>,
     result: Key,
+    value_input: Option<Weak<dm_analysis::value_query::ArchiveValueInput>>,
 }
 struct Runs {
     runs: Vec<RawRun>,
@@ -41,7 +43,7 @@ fn ordered_names(names: &[String]) -> io::Result<Vec<String>> {
         .map(|name| name.to_string())
         .collect())
 }
-pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
+pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admission>) {
     db.define(
         ANALYZE_FINDINGS,
         "native-analyze-cross-file-policy",
@@ -49,10 +51,11 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
             let p = params
                 .downcast_ref::<Params>()
                 .expect("typed policy params");
+            admission.abort.before_outcome(p.result)?;
             // Issuance is checked on BOTH a cache hit at entry and actual execution.
             let capture = p.capture.upgrade().ok_or(QueryError::Missing(p.result))?;
             let evidence = capture.semantic_source_evidence();
-            let admission = if evidence.key() != p.evidence_key {
+            let evidence_admission = if evidence.key() != p.evidence_key {
                 Err("semantic evidence issuance changed".to_string())
             } else {
                 evidence
@@ -68,7 +71,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
                 .map(|key| ctx.input::<FileData>(*key))
                 .collect::<Result<Vec<_>, _>>()?;
             let result = (|| -> Result<Vec<RawRun>, String> {
-                admission?;
+                evidence_admission?;
                 config
                     .require_original(
                         capture
@@ -76,7 +79,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
                             .map_err(|e| e.to_string())?,
                     )
                     .map_err(|e| e.to_string())?;
-                crate::daemon::control::checkpoint().map_err(|e| e.to_string())?;
+                admission.abort.scan_checkpoint()?;
                 let files = sources
                     .iter()
                     .map(|source| Arc::clone(&source.file))
@@ -90,8 +93,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
                 let mut runs = Vec::new();
                 let mut sites = 0usize;
                 for name in &p.ordered {
-                    let checkpoint =
-                        || crate::daemon::control::checkpoint().map_err(|e| e.to_string());
+                    let checkpoint = || admission.abort.scan_checkpoint();
                     let run = match name.as_str() {
                         "init" => {
                             BorrowedInitPolicy::capture(&raw, capture.policy())?.scan(checkpoint)?
@@ -107,6 +109,27 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
                         }
                         "untyped_member" => BorrowedUntypedMember::capture(&raw, capture.policy())?
                             .scan(checkpoint)?,
+                        "weak_raw_read" => BorrowedWeakRawRead::capture(&raw, capture.policy())?
+                            .scan(checkpoint)?,
+                        "untyped" => {
+                            let input = p
+                                .value_input
+                                .as_ref()
+                                .and_then(Weak::upgrade)
+                                .ok_or("untyped input issuance is no longer current")?;
+                            if !Arc::ptr_eq(input.archive(), capture.policy().archive()) {
+                                return Err("untyped archive issuance differs".into());
+                            }
+                            let manifest = capture
+                                .untyped_manifest(&p.root)
+                                .map_err(|e| e.to_string())?;
+                            let proof = super::super::value_proofs::observe(ctx, &input)?;
+                            BorrowedUntyped::capture(&raw, capture.policy())?
+                                .scan(&input, proof, manifest, checkpoint)?
+                        }
+                        "player_link" => {
+                            BorrowedPlayerLink::capture(&raw, capture.policy())?.scan(checkpoint)?
+                        }
                         _ => return Err("typed policy whitelist differs".into()),
                     };
                     sites = sites
@@ -141,7 +164,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
                 if actual > INPUT_BUDGET {
                     return Err("typed source views exceed retained view admission".into());
                 }
-                crate::daemon::control::checkpoint().map_err(|e| e.to_string())?;
+                admission.abort.scan_checkpoint()?;
                 Ok(runs)
             })();
             let (hash, bytes) = match &result {
@@ -159,9 +182,10 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
                     }
                     (dm_query::hash_bytes(&fingerprint), bytes)
                 }
-                Err(error) => (error_hash(error), 1024),
+                Err(error) => (error_hash(error), result_error_charge::<Vec<RawRun>>(error)),
             };
-            charge.fetch_add(bytes, Ordering::Relaxed);
+            retain_derived(&charge, bytes, &admission, p.result)?;
+            admission.abort.before_outcome(p.result)?;
             Ok(Outcome::new(result, hash, bytes))
         },
     );
@@ -188,6 +212,24 @@ impl QueryDb {
         // An empty raw-lint list requests no
         // raw findings/scope nodes, only the existing file/config nodes.
         let prepared = self.raw_prepare_locked(cohort, &[], now)?;
+        let value_input = if ordered.iter().any(|name| name == "untyped") {
+            // Manifest role/original/absence authority checked BEFORE cache lookup.
+            cohort.capture.untyped_manifest(&cohort.root)?;
+            let config = self
+                .db
+                .input::<ConfigData>(prepared.configuration)
+                .ok_or_else(|| invalid("prepared config absent"))?;
+            let exemptions = config
+                .config
+                .typed_policy_list("untyped", "exempt_types")
+                .map_err(io::Error::other)?;
+            let input = cohort.capture.untyped_input(&exemptions)?;
+            self.prepare_value_input(&input)
+                .map_err(|e| io::Error::other(e.0))?;
+            Some(input)
+        } else {
+            None
+        };
         let result_key = key(
             ANALYZE_FINDINGS,
             &(
@@ -201,6 +243,7 @@ impl QueryDb {
         );
         let planned = BTreeMap::from([(result_key, 1024)]);
         self.raw_admit_locked(cohort, &planned, now)?;
+        self.begin_result_admission_locked()?;
         let result = self
             .db
             .get::<Result<Vec<RawRun>, String>>(
@@ -214,9 +257,10 @@ impl QueryDb {
                     root: cohort.root.clone(),
                     ordered,
                     result: result_key,
+                    value_input: value_input.as_ref().map(Arc::downgrade),
                 }),
             )
-            .map_err(|error| io::Error::other(format!("native typed policy query: {error:?}")))?;
+            .map_err(|error| self.derived_query_error("native typed policy query", error))?;
         if self.raw_retained_view_bytes_locked()? > INPUT_BUDGET
             || self.raw_policy.charge.load(Ordering::Relaxed) > RESULT_BUDGET
         {
@@ -255,6 +299,7 @@ mod extended_roster_tests {
         let old = ["base_vars", "decl", "init"].map(str::to_owned);
         assert_eq!(ordered_names(&old).unwrap(), ["init", "decl", "base_vars"]);
         let all = [
+            "player_link",
             "untyped_member",
             "base_vars",
             "requirement_bool",
@@ -269,15 +314,20 @@ mod extended_roster_tests {
                 "decl",
                 "base_vars",
                 "requirement_bool",
-                "untyped_member"
+                "untyped_member",
+                "player_link"
             ]
         );
         assert!(
-            ordered_names(&["untyped".to_owned()]).is_err(),
-            "full untyped is NOT admitted by this cohort"
+            ordered_names(&["untyped".to_owned()]).is_ok(),
+            "full untyped uses host manifest and same-Db value proof admission"
         );
         assert!(
             ordered_names(&["requirement_bool".to_owned(), "requirement_bool".to_owned()]).is_err()
         );
     }
 }
+
+#[cfg(test)]
+#[path = "analyze_policy_untyped_tests.rs"]
+mod untyped_tests;

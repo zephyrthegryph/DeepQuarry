@@ -45,6 +45,13 @@ impl TypeFact {
 }
 #[derive(Clone, Debug)]
 pub enum Event<'a> {
+    ResolvedField {
+        expression: &'a Expr,
+        at: Span,
+        name: &'a str,
+        receiver: SymbolId,
+        fact: crate::checker_variable_facts::VariableFact,
+    },
     FieldWithoutStaticType {
         expression: &'a Expr,
         at: Span,
@@ -111,6 +118,7 @@ pub fn linear<'a>(
     let mut walker = Walker::new(
         &frontend.snapshot.tree,
         None,
+        &view.syntax().parsed().local_variables,
         &frontend.expanded.text,
         body.occurrence().member,
         resolver,
@@ -137,6 +145,7 @@ pub fn evaluated<'a>(
     let mut walker = Walker::new(
         &frontend.snapshot.tree,
         None,
+        &view.syntax().parsed().local_variables,
         &frontend.expanded.text,
         body.occurrence().member,
         resolver,
@@ -160,6 +169,7 @@ pub fn archived<'a>(
     let mut walker = Walker::new(
         archive.tree(),
         Some(archive),
+        &body.statement_body().parsed().local_variables,
         archive.expanded_source(),
         body.occurrence().member,
         resolver,
@@ -170,22 +180,43 @@ pub fn archived<'a>(
         events: walker.events,
     })
 }
+/// Checker facts for an existing native local binding, not another model.
+/// The proof is intentionally narrow: authored null/literal initialization,
+/// with no later reassignment, argument escape, or unsupported initializer.
+#[derive(Clone, Copy, Debug)]
+struct LocalFact {
+    ty: TypeFact,
+    declaration: Option<Span>,
+    mutation_pure: bool,
+}
+impl LocalFact {
+    fn unproved(ty: TypeFact) -> Self {
+        Self {
+            ty,
+            declaration: None,
+            mutation_pure: false,
+        }
+    }
+}
 struct Walker<'a, 'r, R: ?Sized> {
     tree: &'a SemanticTree,
     prefix_archive: Option<&'a BodyArchive>,
+    local_syntax: &'a dm_syntax::LocalVariableLedger,
     source: &'a str,
     member: MemberId,
     resolver: &'r R,
     profile: PackedU128,
     owner: SymbolId,
-    locals: BTreeMap<SymbolId, TypeFact>,
+    locals: BTreeMap<SymbolId, LocalFact>,
     events: Vec<Event<'a>>,
-    scopes: Vec<BTreeMap<SymbolId, TypeFact>>,
+    scopes: Vec<BTreeMap<SymbolId, LocalFact>>,
+    in_arguments: bool,
 }
 impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
     fn new(
         tree: &'a SemanticTree,
         prefix_archive: Option<&'a BodyArchive>,
+        local_syntax: &'a dm_syntax::LocalVariableLedger,
         source: &'a str,
         member: MemberId,
         resolver: &'r R,
@@ -212,10 +243,13 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             ("caller", TypeFact::Known(SymbolId::of("/callee"))),
             ("global", TypeFact::Known(SymbolId::of("/"))),
         ] {
-            locals.insert(SymbolId::of(name), ty);
+            locals.insert(SymbolId::of(name), LocalFact::unproved(ty));
         }
         if owner != SymbolId::of("/") {
-            locals.insert(SymbolId::of("src"), TypeFact::Known(owner));
+            locals.insert(
+                SymbolId::of("src"),
+                LocalFact::unproved(TypeFact::Known(owner)),
+            );
         }
         for parameter in metadata.signature.parameters.iter() {
             if parameter.array.is_some() {
@@ -225,17 +259,18 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             }
             locals.insert(
                 parameter.name,
-                checked_type(
+                LocalFact::unproved(checked_type(
                     tree,
                     resolver,
                     parameter.declared_type,
                     parameter.list_element_type,
-                )?,
+                )?),
             );
         }
         Ok(Walker {
             tree,
             prefix_archive,
+            local_syntax,
             source,
             member,
             resolver,
@@ -244,17 +279,19 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             locals,
             events: Vec::new(),
             scopes: Vec::new(),
+            in_arguments: false,
         })
     }
     fn leaf_statement(&mut self, statement: &'a Statement) -> Result<bool, String> {
         match &statement.kind {
             StatementKind::Set { .. } => (),
             StatementKind::Var { declaration, value } => {
-                self.declaration(declaration, value.as_ref())?
+                self.declaration(declaration, value.as_ref(), statement.header_span)?
             }
             StatementKind::Assign { target, value, .. } => {
                 let hint = self.expression(target, None)?.receiver()?;
                 self.expression(value, hint)?;
+                self.invalidate_local_target(target);
             }
             StatementKind::Expression(value) | StatementKind::Call(value) => {
                 if let ExprKind::Binary { op, lhs, .. } = &value.kind {
@@ -292,7 +329,74 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
 
         Ok(false)
     }
-    fn declaration(&mut self, declaration: &'a str, value: Option<&'a Expr>) -> Result<(), String> {
+    fn declaration(
+        &mut self,
+        declaration: &'a str,
+        value: Option<&'a Expr>,
+        at: Span,
+    ) -> Result<(), String> {
+        let expected_name = dm_syntax::local_name(declaration);
+        let matches = self
+            .local_syntax
+            .entries()
+            .map_err(str::to_owned)?
+            .iter()
+            .filter(|fact| {
+                fact.anchor.start >= at.start
+                    && fact.anchor.start < at.end
+                    && expected_name
+                        .is_none_or(|name| self.source.get(fact.name.range()) == Some(name))
+            })
+            .collect::<Vec<_>>();
+        if matches.len() > 1 {
+            return Err("native local declaration fact is ambiguous".into());
+        }
+        if let Some(fact) = matches.first() {
+            // The local fact currently proves the suffix's type container only.
+            // Old var_suffix can synthesize new /list(dimensions), whose argument
+            // traversal depends on the actual /list/New; nonempty for bindings
+            // also change parser shape. Do not turn absent dimension roots into
+            // a falsely clean evaluated contribution.
+            if fact.array_suffix {
+                return Err(
+                    "local array suffix needs primary dimension/constructor and for-shape proof"
+                        .into(),
+                );
+            }
+
+            let name = self
+                .source
+                .get(fact.name.range())
+                .ok_or("native local name span unavailable")?;
+            let ty = match fact.type_path(self.source).map_err(str::to_owned)? {
+                None => TypeFact::Unknown,
+                Some(path) => {
+                    let projected = dm_syntax::project_declaration_type(&path);
+                    checked_issued_type(
+                        self.tree,
+                        self.resolver,
+                        Some(SymbolId::of(projected.runtime_path)),
+                        projected
+                            .list_element_path
+                            .map(|tail| SymbolId::of(&format!("/{tail}"))),
+                    )?
+                }
+            };
+            if let Some(value) = value {
+                self.expression(value, ty.receiver()?)?;
+            }
+            self.locals.insert(
+                SymbolId::of(name),
+                LocalFact {
+                    ty,
+                    declaration: Some(fact.name),
+                    mutation_pure: literal_mutation_origin(value)?,
+                },
+            );
+            return Ok(());
+        }
+        // Catch/plain legacy projection remains conservative. A missing primary
+        // receipt never authorizes stripping a checker-looking type component.
         let projection =
             dm_syntax::project_local_declaration(declaration).map_err(str::to_owned)?;
         let ty = if let Some(declared) = projection.declared_type {
@@ -315,13 +419,36 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         if let Some(value) = value {
             self.expression(value, ty.receiver()?)?;
         }
-        self.locals.insert(SymbolId::of(projection.name), ty);
+        self.locals
+            .insert(SymbolId::of(projection.name), LocalFact::unproved(ty));
         Ok(())
     }
     fn variable_type(
         &self,
         fact: &crate::checker_variable_facts::VariableFact,
     ) -> Result<TypeFact, String> {
+        if let (Some(archive), Some(formal)) = (self.prefix_archive, fact.formal) {
+            let qualified = fact
+                .metadata
+                .declared_type
+                .into_iter()
+                .chain(fact.metadata.list_element_type)
+                .any(|id| {
+                    self.tree
+                        .symbols()
+                        .text(id)
+                        .is_some_and(dm_syntax::has_checker_qualifiers)
+                });
+            if qualified || fact.metadata.array.is_some() {
+                let properties = archive.checker_variable_properties(formal, self.profile)?;
+                return checked_issued_type(
+                    self.tree,
+                    self.resolver,
+                    properties.declared_type,
+                    properties.list_element_type,
+                );
+            }
+        }
         if fact.metadata.flags & !15 != 0 || fact.metadata.array.is_some() {
             return Err("field modifiers/arrays need complete native declaration context".into());
         }
@@ -338,9 +465,42 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 ExprKind::Binary { op, lhs, rhs } if op == "=" && kwarg_key(lhs)? => rhs.as_ref(),
                 _ => argument,
             };
-            self.expression(value, None)?;
+            let previous = self.in_arguments;
+            self.in_arguments = true;
+            let result = self.expression(value, None);
+            self.in_arguments = previous;
+            result?;
         }
         Ok(())
+    }
+    fn invalidate_local_name(&mut self, name: SymbolId) {
+        let Some(current) = self.locals.get_mut(&name) else {
+            return;
+        };
+        current.mutation_pure = false;
+        let declaration = current.declaration;
+        // Preserve this invalidation even if an inner declaration later
+        // shadows the same name before leave_scope restores its parent map.
+        for saved in self.scopes.iter_mut() {
+            if let Some(older) = saved.get_mut(&name) {
+                if older.declaration == declaration {
+                    older.mutation_pure = false;
+                }
+            }
+        }
+    }
+    fn invalidate_local_target(&mut self, target: &Expr) {
+        match &target.kind {
+            ExprKind::Ident(name) => {
+                self.invalidate_local_name(SymbolId::of(name));
+            }
+            ExprKind::Group(value) => self.invalidate_local_target(value),
+            ExprKind::Index { object, .. }
+            | ExprKind::SafeIndex { object, .. }
+            | ExprKind::Member { object, .. }
+            | ExprKind::SafeMember { object, .. } => self.invalidate_local_target(object),
+            _ => (),
+        }
     }
     fn ordinary_call(
         &mut self,
@@ -531,8 +691,11 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         }
         match &expression.kind {
             ExprKind::Ident(name) => {
-                if let Some(ty) = self.locals.get(&SymbolId::of(name)) {
-                    return Ok(*ty);
+                if let Some(ty) = self.locals.get(&SymbolId::of(name)).map(|fact| fact.ty) {
+                    if self.in_arguments {
+                        self.invalidate_local_name(SymbolId::of(name));
+                    }
+                    return Ok(ty);
                 }
                 // Pinned `type` is a prefab/value fact, not a field declaration.
                 if matches!(name.as_str(), "type" | "null") {
@@ -616,6 +779,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 let right =
                     self.expression(rhs, if op == "=" { left.receiver()? } else { None })?;
                 if op == "=" {
+                    self.invalidate_local_target(lhs);
                     return Ok(right);
                 }
                 // Exact pinned visit_binary: only these LHS-list operations
@@ -794,7 +958,17 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                     receiver,
                     SymbolId::of(selector),
                 )? {
-                    Some(fact) => self.variable_type(&fact),
+                    Some(fact) => {
+                        let ty = self.variable_type(&fact)?;
+                        self.events.push(Event::ResolvedField {
+                            expression,
+                            at,
+                            name: selector,
+                            receiver,
+                            fact,
+                        });
+                        Ok(ty)
+                    }
                     None => {
                         self.events.push(Event::MissingField {
                             expression,
@@ -814,6 +988,42 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                         checked_type(self.tree, self.resolver, element, None)
                     }
                     other => Ok(other),
+                }
+            }
+            ExprKind::Unary { op, value }
+                if matches!(op.as_str(), "pre++" | "post++" | "pre--" | "post--") =>
+            {
+                // The original parser issued this operator + operand shape.
+                // Verify its primary token bytes before evaluating the operand.
+                let _at = increment_origin(self.source, expression, value, op)?;
+                let ExprKind::Ident(name) = &value.kind else {
+                    return Err(
+                        "increment target needs native non-local/overload purity facts".into(),
+                    );
+                };
+                let Some(local) = self.locals.get(&SymbolId::of(name)) else {
+                    return Err(
+                        "increment target needs native non-local mutation purity facts".into(),
+                    );
+                };
+                if !local.mutation_pure {
+                    return Err(
+                        "local increment needs native initializer/assignment/escape purity proof"
+                            .into(),
+                    );
+                }
+                let operand = self.expression(value, None)?;
+                match operand {
+                    // Exact pinned check_operator_overload: StaticType::None
+                    // returns Analysis::empty, clearing any return fix hint.
+                    // A direct local target has no non-local impurity effect.
+                    TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) => {
+                        Ok(TypeFact::Unhinted)
+                    }
+                    _ => Err(
+                        "typed increment needs native operator overload/error and purity context"
+                            .into(),
+                    ),
                 }
             }
             ExprKind::Unary { .. } => {
@@ -836,7 +1046,15 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         self.scopes.push(self.locals.clone());
     }
     fn leave_scope(&mut self, _: ScopeKind) {
-        self.locals = self.scopes.pop().expect("paired pinned traversal scope");
+        let mut previous = self.scopes.pop().expect("paired pinned traversal scope");
+        for (name, older) in previous.iter_mut() {
+            if self.locals.get(name).is_some_and(|current| {
+                current.declaration == older.declaration && !current.mutation_pure
+            }) {
+                older.mutation_pure = false;
+            }
+        }
+        self.locals = previous;
     }
     fn leaf(&mut self, statement: &'a Statement) -> Result<(), String> {
         self.leaf_statement(statement).map(|_| ())
@@ -865,10 +1083,10 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         binding: &'a str,
         value: Option<&'a Expr>,
         always_untyped: bool,
-        _: Span,
+        at: Span,
     ) -> Result<(), String> {
         if dm_syntax::local_name(binding).is_some() {
-            return self.declaration(binding, value);
+            return self.declaration(binding, value, at);
         }
         if always_untyped {
             if binding.is_empty() || !binding.chars().all(|c| c.is_alphanumeric() || c == '_') {
@@ -877,14 +1095,34 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
             if let Some(value) = value {
                 Walker::expression(self, value, None)?;
             }
-            self.locals.insert(SymbolId::of(binding), TypeFact::Unknown);
+            self.locals.insert(
+                SymbolId::of(binding),
+                LocalFact::unproved(TypeFact::Unknown),
+            );
         }
         // Existing (nondeclared) range bindings deliberately skip their start.
         Ok(())
     }
     fn catch_binding(&mut self, binding: Option<&'a str>, at: Span) -> Result<(), String> {
         if let Some(binding) = binding {
-            self.binding(binding, None, true, at)?;
+            if binding.trim().is_empty() {
+                return Ok(());
+            }
+            let issued = self
+                .local_syntax
+                .entries()
+                .map_err(str::to_owned)?
+                .iter()
+                .any(|fact| {
+                    fact.source_kind == dm_syntax::LocalSourceKind::CatchBinding
+                        && fact.anchor.start >= at.start
+                        && fact.anchor.start < at.end
+                });
+            if issued {
+                self.declaration(binding, None, at)?;
+            } else {
+                self.binding(binding, None, true, at)?;
+            }
         }
         Ok(())
     }
@@ -895,12 +1133,29 @@ fn checked_type(
     owner: Option<SymbolId>,
     element: Option<SymbolId>,
 ) -> Result<TypeFact, String> {
+    checked_type_impl(tree, resolver, owner, element, false)
+}
+fn checked_issued_type(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    owner: Option<SymbolId>,
+    element: Option<SymbolId>,
+) -> Result<TypeFact, String> {
+    checked_type_impl(tree, resolver, owner, element, true)
+}
+fn checked_type_impl(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    owner: Option<SymbolId>,
+    element: Option<SymbolId>,
+    issued: bool,
+) -> Result<TypeFact, String> {
     for ty in owner.into_iter().chain(element) {
         let spelling = tree
             .symbols()
             .text(ty)
             .ok_or("declared type lacks native symbol spelling")?;
-        if dm_syntax::has_checker_qualifiers(spelling) {
+        if !issued && dm_syntax::has_checker_qualifiers(spelling) {
             return Err(
                 "checker-specific declaration flags require primary compiler metadata".into(),
             );
@@ -941,6 +1196,73 @@ fn kwarg_key(expression: &Expr) -> Result<bool, String> {
         },
         _ => false,
     })
+}
+/// Native primary literal shape only. No inferred alias purity or evaluation
+/// of an initializer a second time. Unsupported forms stay unproved.
+fn literal_mutation_origin(value: Option<&Expr>) -> Result<bool, String> {
+    let Some(value) = value else { return Ok(true) };
+    match &value.kind {
+        ExprKind::Literal(text) => match text.parts().map_err(str::to_owned)? {
+            Some(parts) => Ok(!parts
+                .lexical
+                .map_err(|e| format!("local mutation literal shape: {e:?}"))?
+                .interpolated
+                && parts.expressions.is_empty()),
+            None => Ok(true),
+        },
+        ExprKind::Group(value) => literal_mutation_origin(Some(value)),
+        _ => Ok(false),
+    }
+}
+/// The ORIGINAL expression parser already distinguishes pre/post operators.
+/// This validates its exact primary spans; no tokenization/source reparse or
+/// inferred source column is used. Non-whitespace gaps remain unsupported.
+fn increment_origin(
+    source: &str,
+    expression: &Expr,
+    operand: &Expr,
+    op: &str,
+) -> Result<Span, String> {
+    let (prefix, token) = match op {
+        "pre++" => (true, "++"),
+        "post++" => (false, "++"),
+        "pre--" => (true, "--"),
+        "post--" => (false, "--"),
+        _ => return Err("not an issued increment/decrement shape".into()),
+    };
+    let (span, gap) = if prefix {
+        if operand.span.end != expression.span.end {
+            return Err("prefix operand end differs from primary expression".into());
+        }
+        let end = expression
+            .span
+            .start
+            .checked_add(token.len())
+            .ok_or("prefix operator span overflow")?;
+        (
+            Span::new(expression.span.start, end),
+            source.get(end..operand.span.start),
+        )
+    } else {
+        if operand.span.start != expression.span.start {
+            return Err("postfix operand start differs from primary expression".into());
+        }
+        let start = expression
+            .span
+            .end
+            .checked_sub(token.len())
+            .ok_or("postfix operator span underflow")?;
+        (
+            Span::new(start, expression.span.end),
+            source.get(operand.span.end..start),
+        )
+    };
+    if source.get(span.range()) != Some(token)
+        || !gap.is_some_and(|gap| gap.chars().all(char::is_whitespace))
+    {
+        return Err("increment token/gap differs from primary operator proof".into());
+    }
+    Ok(span)
 }
 /// Verify the primary-issued receiver/selector gap rather than assuming a -1
 /// column. Comments/other tokens need retained primary origin metadata.

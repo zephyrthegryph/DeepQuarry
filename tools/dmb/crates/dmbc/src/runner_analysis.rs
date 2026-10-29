@@ -64,8 +64,8 @@ pub(super) fn finish(
         timings.provenance_and_body_indexing.as_secs_f64(),
         timings.total.as_secs_f64(),
     );
-    // Partial analysis exports do not certify a fully populated compile session.
-    query_attempt.finish_analyzed();
+    // Partial exports do not certify a compile session. The runner admits the
+    // staged original source closure before marking this query frame current.
     Ok(BuildOutcome::Analyzed {
         semantic_rows: counts.semantic_rows,
         occurrence_rows: counts.occurrence_rows,
@@ -74,8 +74,8 @@ pub(super) fn finish(
     })
 }
 
-/// Explicit preparation carries the ordinary BuildRequest source configuration.
-/// It emits no model and never lowers procedures or publishes executable artifacts.
+/// Test fixtures use the original unobserved preparation contract.
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn prepare_query(
     frontend: &dm_tree::frontend::FrontendRevision,
@@ -87,6 +87,33 @@ pub(crate) fn prepare_query(
     query_attempt: &mut crate::runner_host::query_snapshot::QueryAttempt,
     retained: bool,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    prepare_query_observed(
+        frontend,
+        engine_capture,
+        host_facts,
+        executor,
+        procedure_memo,
+        memo_policy,
+        query_attempt,
+        retained,
+        false,
+    )
+}
+
+/// Explicit preparation carries the ordinary BuildRequest source configuration.
+/// It emits no model and never lowers procedures or publishes executable artifacts.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn prepare_query_observed(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    engine_capture: Option<&Arc<crate::runner_host::RetainedEngine>>,
+    host_facts: Option<&runner_facts::RetainedHostFacts>,
+    executor: &dm_exec::BuildExecutor,
+    procedure_memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    memo_policy: u128,
+    query_attempt: &mut crate::runner_host::query_snapshot::QueryAttempt,
+    retained: bool,
+    progress_enabled: bool,
+) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     crate::daemon::control::checkpoint()?;
     let engine = engine_capture.ok_or("query preparation requires pinned engine")?;
     let (resolver, _) = runner_facts::prepare_retained(frontend, engine, host_facts)?;
@@ -97,7 +124,14 @@ pub(crate) fn prepare_query(
         frontend,
         dm_codegen_byond::typed_statements_supported_for_capture,
     );
-    let (startup, prepared) = crate::analysis_export::prepare_query_owners(
+    let report = |name: &'static str, started: bool, elapsed: std::time::Duration| {
+        if started {
+            crate::daemon_eprintln!("native stage {name}: started");
+        } else {
+            crate::daemon_eprintln!("native stage {name}: {:.3}s", elapsed.as_secs_f64());
+        }
+    };
+    let (startup, prepared) = crate::analysis_export::prepare_query_owners_observed(
         frontend,
         &engine.snapshot,
         &resolver,
@@ -105,6 +139,7 @@ pub(crate) fn prepare_query(
         executor,
         memo,
         &bodies,
+        progress_enabled.then_some(&report as &dyn Fn(&'static str, bool, std::time::Duration)),
     )?;
     if !prepared.prepared.diagnostics.is_empty() {
         let diagnostics = crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)?;
@@ -132,7 +167,9 @@ pub(crate) fn prepare_query(
             "{:032x}",
             dm_analysis::tree_export::source_revision(frontend)
         ),
-        policy_revision: query_attempt.policy_revision().map(|pin| format!("{pin:032x}")),
+        policy_revision: query_attempt
+            .policy_revision()
+            .map(|pin| format!("{pin:032x}")),
         retained,
     })
 }

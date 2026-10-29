@@ -206,6 +206,10 @@ impl RegionReceipt {
     pub fn output_span(&self) -> Span {
         self.output
     }
+    /// Number of original provenance rows issued by this receipt.
+    pub fn origin_row_count(&self) -> usize {
+        self.rows
+    }
     pub fn record(&self) -> &Arc<ExpansionRecord> {
         &self.record
     }
@@ -320,7 +324,7 @@ impl TraceInterner {
 }
 /// One emitted line of a record. Offsets are u32 and an untraced line holds no allocation: records keep one per output
 /// line, so the struct is the dominant cost of a large expansion record. The wire form is [`LineWire`], unchanged.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 struct Line {
     output_start: u32,
     output_end: u32,
@@ -328,6 +332,17 @@ struct Line {
     /// 1-based index into [`TraceTables::sets`]; 0 for a line without macro traces.
     trace_set: u32,
 }
+// Producer provenance is transient, not serialized record identity. The
+// original byte-for-byte wire and equality contract predate these private bits.
+impl PartialEq for Line {
+    fn eq(&self, other: &Self) -> bool {
+        self.output_start == other.output_start
+            && self.output_end == other.output_end
+            && self.input == other.input
+            && self.trace_set & TRACE_SET_MASK == other.trace_set & TRACE_SET_MASK
+    }
+}
+impl Eq for Line {}
 impl Line {
     fn output(&self) -> Span {
         Span::new(self.output_start as usize, self.output_end as usize)
@@ -339,7 +354,6 @@ impl Line {
         LineWire {
             output: self.output(),
             input: self.input(),
-            single_physical_macro_line: self.trace_set & SINGLE_PHYSICAL_MACRO_LINE != 0,
             traces: tables
                 .set(self)
                 .iter()
@@ -371,11 +385,9 @@ impl Line {
                 let set = interner
                     .set(traces)
                     .ok_or("expansion trace set count exceeds reserved index range")?;
-                set | if line.single_physical_macro_line {
-                    SINGLE_PHYSICAL_MACRO_LINE
-                } else {
-                    0
-                }
+                // Disk fields are logical expansion data only. Actual current
+                // expansion must reissue every private provenance bit.
+                set
             },
         })
     }
@@ -385,7 +397,6 @@ struct LineWire {
     #[serde(with = "span_wire")]
     output: Span,
     input: usize,
-    single_physical_macro_line: bool,
     traces: Vec<TraceWire>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -508,7 +519,10 @@ impl RowsPool {
         if let Some(held) = pooled
             .iter()
             .filter_map(std::sync::Weak::upgrade)
-            .find(|held| held.same_rows(&lines))
+            .find(|held| {
+                held.same_rows(&lines)
+                    && (lines.needs_macro_point_issuance() || !held.needs_macro_point_issuance())
+            })
         {
             return held;
         }
@@ -943,6 +957,18 @@ fn hydrate(
         );
     }
     output.lines = record.rows.intern(Arc::new(lines.finish()));
+    if output.lines.needs_macro_point_issuance() {
+        // Deserialized spans are hints, not macro byte authority. Reissue via
+        // the real expander using CURRENT plan inputs, never by searching text.
+        let issued = super::expansion::expand_region(plan, index, None);
+        if issued.text == output.text {
+            if let Some(bound) = output.lines.with_issued_provenance_from(&issued.lines) {
+                // Keep record-owned names/chains and CURRENT definition origins.
+                // Only the real issuer's private provenance is grafted across.
+                output.lines = record.rows.intern(Arc::new(bound));
+            }
+        }
+    }
     for error in record.diagnostics.iter() {
         output.diagnostics.push(Diagnostic {
             path: path.clone(),

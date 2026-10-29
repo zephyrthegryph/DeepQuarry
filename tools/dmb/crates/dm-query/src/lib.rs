@@ -68,7 +68,11 @@ pub struct Outcome {
 }
 impl Outcome {
     pub fn new<T: Any + Send + Sync>(value: T, hash: Hash, bytes: usize) -> Self {
-        Self { value: Arc::new(value), hash, bytes }
+        Self {
+            value: Arc::new(value),
+            hash,
+            bytes,
+        }
     }
 }
 
@@ -167,7 +171,10 @@ impl Db {
     pub fn new() -> Self {
         Self {
             shards: (0..SHARDS)
-                .map(|_| Shard { state: Mutex::new(State::default()), wake: Condvar::new() })
+                .map(|_| Shard {
+                    state: Mutex::new(State::default()),
+                    wake: Condvar::new(),
+                })
                 .collect(),
             revision: AtomicU64::new(1),
             kinds: RwLock::new(HashMap::new()),
@@ -177,16 +184,27 @@ impl Db {
     }
 
     fn lock(&self, key: Key) -> MutexGuard<'_, State> {
-        self.shards[shard_of(key)].state.lock().unwrap_or_else(|error| error.into_inner())
+        self.shards[shard_of(key)]
+            .state
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
     }
     fn wake(&self, key: Key) {
         self.shards[shard_of(key)].wake.notify_all();
     }
     fn wait<'a>(&self, key: Key, guard: MutexGuard<'a, State>) -> MutexGuard<'a, State> {
-        self.shards[shard_of(key)].wake.wait(guard).unwrap_or_else(|error| error.into_inner())
+        self.shards[shard_of(key)]
+            .wake
+            .wait(guard)
+            .unwrap_or_else(|error| error.into_inner())
     }
     fn all_shards(&self) -> impl Iterator<Item = MutexGuard<'_, State>> {
-        self.shards.iter().map(|shard| shard.state.lock().unwrap_or_else(|error| error.into_inner()))
+        self.shards.iter().map(|shard| {
+            shard
+                .state
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+        })
     }
 
     /// Register an input kind (values set with [`Db::set_input`]).
@@ -194,7 +212,13 @@ impl Db {
         self.kinds
             .write()
             .unwrap_or_else(|error| error.into_inner())
-            .insert(kind, Arc::new(KindDef { name, compute: None }));
+            .insert(
+                kind,
+                Arc::new(KindDef {
+                    name,
+                    compute: None,
+                }),
+            );
     }
 
     /// Register a derived kind. `compute` must be deterministic in the values it reads.
@@ -207,7 +231,13 @@ impl Db {
         self.kinds
             .write()
             .unwrap_or_else(|error| error.into_inner())
-            .insert(kind, Arc::new(KindDef { name, compute: Some(Box::new(compute)) }));
+            .insert(
+                kind,
+                Arc::new(KindDef {
+                    name,
+                    compute: Some(Box::new(compute)),
+                }),
+            );
     }
 
     fn kind_def(&self, kind: Kind) -> Result<Arc<KindDef>, QueryError> {
@@ -228,7 +258,10 @@ impl Db {
         self.verify.store(on, Ordering::Relaxed);
     }
     pub fn verify_failures(&self) -> Vec<String> {
-        self.verify_failures.lock().unwrap_or_else(|error| error.into_inner()).clone()
+        self.verify_failures
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone()
     }
 
     /// Set an input. Returns whether it changed (the revision advances only then).
@@ -290,12 +323,52 @@ impl Db {
         downcast(done.value, key).ok()
     }
 
+    /// Observe an already-retained value without computing/revalidating it or
+    /// recording a dependency. The returned value may be stale: callers may use
+    /// it ONLY as an optimization after independently authenticating every
+    /// contribution against their current input. Never an admission proof.
+    pub fn retained_value<T: Any + Send + Sync>(&self, key: Key) -> Option<Arc<T>> {
+        let state = self.shards[shard_of(key)]
+            .state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let node = state.nodes.get(&key)?;
+        if node.busy.is_some() {
+            return None;
+        }
+        node.value.as_ref()?.clone().downcast::<T>().ok()
+    }
+
+    /// Drop one input or derived payload after a scoped consumer finishes.
+    /// Preserve its dependency/hash metadata; a subsequent input must be
+    /// reinstalled, and a subsequent derived read recomputes normally.
+    /// Never evict a value while its query is being computed.
+    pub fn evict_value_at(&self, key: Key) -> usize {
+        let mut state = self.shards[shard_of(key)]
+            .state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let Some(node) = state.nodes.get_mut(&key) else {
+            return 0;
+        };
+        if node.busy.is_some() {
+            return 0;
+        }
+        node.value = None;
+        std::mem::take(&mut node.bytes)
+    }
+
     /// Revalidate and return only the content hash.
     pub fn hash(&self, key: Key, params: Value) -> Result<Hash, QueryError> {
         Ok(self.ensure(key, Some(params), false)?.hash)
     }
 
-    fn ensure(&self, key: Key, params: Option<Value>, need_value: bool) -> Result<Done, QueryError> {
+    fn ensure(
+        &self,
+        key: Key,
+        params: Option<Value>,
+        need_value: bool,
+    ) -> Result<Done, QueryError> {
         let me = std::thread::current().id();
         loop {
             let mut state = self.lock(key);
@@ -326,7 +399,11 @@ impl Db {
                 return self.run(key, &params, revision, true);
             };
             if node.input {
-                return Ok(Done { value: node.value.clone(), hash: node.hash, changed_at: node.changed_at });
+                return Ok(Done {
+                    value: node.value.clone(),
+                    hash: node.hash,
+                    changed_at: node.changed_at,
+                });
             }
             if let Some(params) = params.clone() {
                 node.params = params;
@@ -346,7 +423,11 @@ impl Db {
                     drop(state);
                     return self.run(key, &params, revision, false);
                 }
-                return Ok(Done { value: node.value.clone(), hash: node.hash, changed_at: node.changed_at });
+                return Ok(Done {
+                    value: node.value.clone(),
+                    hash: node.hash,
+                    changed_at: node.changed_at,
+                });
             }
             node.busy = Some(me);
             let deps = node.deps.clone();
@@ -354,7 +435,11 @@ impl Db {
             let params = node.params.clone();
             let never = verified == 0;
             drop(state);
-            let mut guard = Busy { db: self, key, armed: true };
+            let mut guard = Busy {
+                db: self,
+                key,
+                armed: true,
+            };
             let mut clean = !never;
             if clean {
                 for dep in deps {
@@ -383,7 +468,11 @@ impl Db {
                 let node = state.nodes.get_mut(&key).expect("busy node stays");
                 node.verified_at = revision;
                 node.busy = None;
-                done = Done { value: node.value.clone(), hash: node.hash, changed_at: node.changed_at };
+                done = Done {
+                    value: node.value.clone(),
+                    hash: node.hash,
+                    changed_at: node.changed_at,
+                };
             }
             state.stats.entry(key.kind).or_default().green += 1;
             let have_value = done.value.is_some();
@@ -409,20 +498,45 @@ impl Db {
     }
 
     fn verify_green(&self, key: Key, params: &Value, hash: Hash) {
-        let Ok(def) = self.kind_def(key.kind) else { return };
+        let Ok(def) = self.kind_def(key.kind) else {
+            return;
+        };
         let Some(compute) = &def.compute else { return };
-        let mut ctx = Ctx { db: self, deps: Vec::new(), seen: HashSet::new() };
+        let mut ctx = Ctx {
+            db: self,
+            deps: Vec::new(),
+            seen: HashSet::new(),
+        };
         let message = match compute(&mut ctx, params) {
             Ok(outcome) if outcome.hash == hash => return,
-            Ok(_) => format!("{} {:x}: green but recomputed value differs", def.name, key.id),
-            Err(error) => format!("{} {:x}: green but recompute failed: {error:?}", def.name, key.id),
+            Ok(_) => format!(
+                "{} {:x}: green but recomputed value differs",
+                def.name, key.id
+            ),
+            Err(error) => format!(
+                "{} {:x}: green but recompute failed: {error:?}",
+                def.name, key.id
+            ),
         };
-        self.verify_failures.lock().unwrap_or_else(|error| error.into_inner()).push(message);
+        self.verify_failures
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .push(message);
     }
 
     /// Run the function of a node already marked busy by this thread.
-    fn run(&self, key: Key, params: &Value, revision: u64, fresh: bool) -> Result<Done, QueryError> {
-        let mut guard = Busy { db: self, key, armed: true };
+    fn run(
+        &self,
+        key: Key,
+        params: &Value,
+        revision: u64,
+        fresh: bool,
+    ) -> Result<Done, QueryError> {
+        let mut guard = Busy {
+            db: self,
+            key,
+            armed: true,
+        };
         let fail = |db: &Db, guard: &mut Busy<'_>, error: QueryError| {
             if fresh {
                 db.drop_fresh(key);
@@ -437,7 +551,11 @@ impl Db {
         let Some(compute) = def.compute.as_ref() else {
             return fail(self, &mut guard, QueryError::UnknownKind(key.kind));
         };
-        let mut ctx = Ctx { db: self, deps: Vec::new(), seen: HashSet::new() };
+        let mut ctx = Ctx {
+            db: self,
+            deps: Vec::new(),
+            seen: HashSet::new(),
+        };
         let result = compute(&mut ctx, params);
         let deps = ctx.deps;
         let outcome = match result {
@@ -451,7 +569,11 @@ impl Db {
         {
             let Some(node) = state.nodes.get_mut(&key) else {
                 guard.armed = false;
-                return Ok(Done { value: Some(outcome.value), hash: outcome.hash, changed_at: revision });
+                return Ok(Done {
+                    value: Some(outcome.value),
+                    hash: outcome.hash,
+                    changed_at: revision,
+                });
             };
             cutoff = node.verified_at != 0 && node.hash == outcome.hash;
             if !cutoff {
@@ -463,7 +585,11 @@ impl Db {
             old_deps = std::mem::replace(&mut node.deps, deps.clone());
             node.verified_at = revision;
             node.busy = None;
-            done = Done { value: Some(outcome.value), hash: outcome.hash, changed_at: node.changed_at };
+            done = Done {
+                value: Some(outcome.value),
+                hash: outcome.hash,
+                changed_at: node.changed_at,
+            };
         }
         let stats = state.stats.entry(key.kind).or_default();
         stats.computed += 1;
@@ -551,14 +677,21 @@ impl Db {
 
     /// Estimated bytes held by derived values.
     pub fn value_bytes(&self) -> usize {
-        self.all_shards().map(|state| state.nodes.values().map(|node| node.bytes).sum::<usize>()).sum()
+        self.all_shards()
+            .map(|state| state.nodes.values().map(|node| node.bytes).sum::<usize>())
+            .sum()
     }
 
     /// Current retained-value charge for one key, without scanning the graph.
     /// Parameters/metadata are separate; an evicted or absent value costs zero.
     pub fn value_bytes_at(&self, key: Key) -> usize {
-        self.shards[shard_of(key)].state.lock().unwrap_or_else(|e| e.into_inner())
-            .nodes.get(&key).map_or(0, |node| node.bytes)
+        self.shards[shard_of(key)]
+            .state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .nodes
+            .get(&key)
+            .map_or(0, |node| node.bytes)
     }
 
     pub fn len(&self) -> usize {
@@ -606,7 +739,11 @@ impl Ctx<'_> {
     }
 
     /// Read a derived query's value.
-    pub fn get<T: Any + Send + Sync>(&mut self, key: Key, params: Value) -> Result<Arc<T>, QueryError> {
+    pub fn get<T: Any + Send + Sync>(
+        &mut self,
+        key: Key,
+        params: Value,
+    ) -> Result<Arc<T>, QueryError> {
         self.note(key);
         self.db.get(key, params)
     }

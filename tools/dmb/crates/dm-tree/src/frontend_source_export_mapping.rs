@@ -114,6 +114,27 @@ impl SourceExportMapping {
     ) -> &Arc<[Option<dm_preprocess::SourceAcquisitionLease>]> {
         &self.acquisitions
     }
+    pub(super) fn declaration_compatibility_issued(&self) -> bool {
+        self.declaration_compatibility.is_some()
+    }
+    pub(super) fn reissue_unchanged(&self, current: &ColdFrontend) -> Self {
+        // Only the native whole-program producer calls this after original
+        // acquisition, plan, bytes and exact coordinate equality checks.
+        let mut result = Self::capture(
+            &current.plan,
+            &current.expanded,
+            &current.files,
+            &current.source_by_path,
+            &current.snapshot.occurrences,
+            &current.snapshot.tree,
+            self.declaration_cursors.clone(),
+            self.declaration_qualifiers.clone(),
+        );
+        if let Some(rows) = &self.declaration_compatibility {
+            result.bind_declaration_compatibility(rows.clone());
+        }
+        result
+    }
     pub(super) fn capture(
         plan: &DirectivePlan,
         expanded: &ExpandedRegions,
@@ -535,6 +556,36 @@ impl SourceExportMapping {
             byte_column: cursor.byte_column,
         })
     }
+    /// Genuine checker token provenance, including native-issued macro invocation points.
+    pub fn source_note_point(&self, offset: usize) -> Result<SourceNoteOrigin, String> {
+        let index = self
+            .origins
+            .partition_point(|origin| origin.output_span.end <= offset);
+        let origin = self
+            .origins
+            .get(index)
+            .ok_or("note has no native expanded origin")?;
+        let (include, _) = *self
+            .regions
+            .get(origin.region)
+            .ok_or("note region unavailable")?;
+        let acquired = self
+            .source_acquisition(include)
+            .ok_or("note original acquisition unavailable")?;
+        let cursor = self
+            .origins
+            .source_note_cursor(index, include, acquired, offset)
+            .map_err(str::to_owned)?;
+        let coordinates = self
+            .includes
+            .get(include)
+            .ok_or("note include coordinates unavailable")?;
+        Ok(SourceNoteOrigin {
+            path: Arc::clone(&coordinates.path),
+            line: cursor.line,
+            byte_column: cursor.byte_column,
+        })
+    }
 }
 
 /// Intentionally has NO column: only the producer proved physical policy line.
@@ -726,10 +777,26 @@ impl SourceExportMapping {
     }
     /// Same primary cursor/occurrence proof as the line API, but requires an
     /// actual byte point. A LINE-only macro receipt must NEVER invent a column.
+    pub fn declaration_primary_policy_span(
+        &self,
+        ordinal: OccurrenceId,
+    ) -> Result<dm_syntax::Span, String> {
+        let at = self.declaration_policy_cursor(ordinal)?;
+        Ok(dm_syntax::Span::new(at, at))
+    }
     pub fn declaration_policy_point(
         &self,
         ordinal: OccurrenceId,
     ) -> Result<SourceNoteOrigin, String> {
         self.original_note_origin(self.declaration_policy_cursor(ordinal)?)
+    }
+}
+
+impl SourceExportMapping {
+    pub fn declaration_source_note_point(
+        &self,
+        ordinal: OccurrenceId,
+    ) -> Result<SourceNoteOrigin, String> {
+        self.source_note_point(self.declaration_policy_cursor(ordinal)?)
     }
 }

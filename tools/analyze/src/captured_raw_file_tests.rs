@@ -180,3 +180,136 @@ fn per_file_report_accepts_safe_drive_alias_without_rewriting_provider_key() {
     )
     .is_err());
 }
+
+#[test]
+fn scope_reuse_compares_exact_interpretation_not_only_fingerprint() {
+    let first = Config::capture(Configuration::ProvenMissing)
+        .unwrap()
+        .scope("scheduler")
+        .unwrap();
+    let mut other = Config::capture(Configuration::Captured(
+        b"[lint.scheduler]\nexempt_files = ['code/a.dm']\n",
+    ))
+    .unwrap()
+    .scope("scheduler")
+    .unwrap();
+    other.hash = first.hash; // forced cache collision cannot authorize reuse
+    assert!(!first.equivalent_to(&other));
+    let same = Config::capture(Configuration::Captured(b"# irrelevant comment\n"))
+        .unwrap()
+        .scope("scheduler")
+        .unwrap();
+    assert!(first.equivalent_to(&same));
+}
+
+#[test]
+fn captured_view_denial_never_becomes_clean_even_for_a_later_exempt_scope() {
+    let root = std::env::current_dir().unwrap();
+    let path = root.join("code/budget_denial.dm");
+    let text: dm_preprocess::SourceText =
+        format!("// {}\n/proc/p()\n    sleep(1)\n", "x".repeat(32768)).into();
+    let full = File::capture_budgeted(&root, &path, text.clone(), 256 * 1024 * 1024).unwrap();
+    let tiny = File::capture_budgeted(&root, &path, text, full.budget_charge() + 8192).unwrap();
+    let normal = Config::capture(Configuration::ProvenMissing)
+        .unwrap()
+        .scope("scheduler")
+        .unwrap();
+    assert!(
+        tiny.scan(&normal).is_err(),
+        "a denied code lazy cannot emit empty clean rows"
+    );
+    let exempt = Config::capture(Configuration::Captured(
+        b"[lint.scheduler]\nexempt_prefixes=['code/']\n",
+    ))
+    .unwrap()
+    .scope("scheduler")
+    .unwrap();
+    assert!(
+        tiny.scan(&exempt).is_err(),
+        "sticky denial is checked before an early exemption too"
+    );
+}
+#[test]
+fn captured_nine_and_a_half_megabyte_file_uses_demanded_capacity_not_blanket_32x() {
+    let root = std::env::current_dir().unwrap();
+    let path = root.join("code/large_bounded.dm");
+    let text: dm_preprocess::SourceText = format!(
+        "// {}\n/proc/large_bounded()\n    return\n",
+        "x".repeat(9_541_787)
+    )
+    .into();
+    let limit = 256 * 1024 * 1024;
+    assert!(text.len() * 32 > limit);
+    let file = File::capture_budgeted(&root, &path, text, limit).unwrap();
+    let scope = Config::capture(Configuration::ProvenMissing)
+        .unwrap()
+        .scope("scheduler")
+        .unwrap();
+    assert!(file.scan(&scope).unwrap().run.sites.is_empty());
+    let source = &file.tree.files[0];
+    assert!(source.code().text.contains("/proc/large_bounded"));
+    assert_eq!(source.clean().text.len(), source.raw().text.len());
+    assert!(source.marker().contains("/proc/large_bounded"));
+    file.require_view_budget().unwrap();
+    let mut owners = std::collections::BTreeMap::new();
+    file.visit_policy_storage(|key, bytes| {
+        owners
+            .entry(key)
+            .and_modify(|n: &mut usize| *n = (*n).max(bytes))
+            .or_insert(bytes);
+    });
+    assert!(owners.values().sum::<usize>() < limit);
+    assert!(file.budget_charge() < limit);
+    assert!(
+        file.budget_charge() < source.raw().text.len() * 16,
+        "only demanded retained capacities are charged"
+    );
+}
+#[test]
+fn path_exclusion_uses_the_same_selection_and_scope_including_hidden_files() {
+    let config = Config::capture(Configuration::Captured(
+        b"[lint.scheduler]\nexempt_prefixes=['code/generated/']\n",
+    ))
+    .unwrap();
+    let scope = config.scope("scheduler").unwrap();
+    assert!(scope
+        .empty_findings_if_excluded("code/generated/file.dm")
+        .unwrap()
+        .is_some());
+    assert!(scope
+        .empty_findings_if_excluded("code/.hidden/file.dm")
+        .unwrap()
+        .is_some());
+    assert!(scope
+        .empty_findings_if_excluded("maps/file.dm")
+        .unwrap()
+        .is_some());
+    assert!(scope
+        .empty_findings_if_excluded("code/file.dm")
+        .unwrap()
+        .is_none());
+}
+
+#[test]
+fn streaming_fingerprint_is_byte_identical_to_original_json_digest() {
+    let scope = Config::capture(Configuration::ProvenMissing)
+        .unwrap()
+        .scope("scheduler")
+        .unwrap();
+    let file = File::capture(
+        &root(),
+        &root().join("code/a.dm"),
+        "/proc/p()\n    sleep(1)\n".to_owned().into(),
+    )
+    .unwrap();
+    let rows = file.scan(&scope).unwrap();
+    let bytes = serde_json::to_vec(&(
+        &rows.name,
+        &rows.run.sites,
+        &rows.run.notes,
+        &rows.allow_used,
+    ))
+    .unwrap();
+    let expected = u128::from_le_bytes(blake3::hash(&bytes).as_bytes()[..16].try_into().unwrap());
+    assert_eq!(rows.fingerprint(), expected);
+}

@@ -1,0 +1,3 @@
+[diagnostics]
+private_var="off"
+variable_redeclaration="off"

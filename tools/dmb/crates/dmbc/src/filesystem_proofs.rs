@@ -310,6 +310,14 @@ impl SnapshotProvider for BulkFileSystemProofs {
     ) -> io::Result<Option<CapturedInputRead>> {
         crate::input_snapshot::FileSystemInputs.read_policy_bounded(path, limit)
     }
+    fn policy_directory(
+        &self,
+        path: &Path,
+        follow: bool,
+        limit: usize,
+    ) -> io::Result<Option<crate::input_snapshot::PolicyDirectoryListing>> {
+        crate::input_snapshot::FileSystemInputs.policy_directory(path, follow, limit)
+    }
     fn source_alias(
         &self,
         path: &Path,

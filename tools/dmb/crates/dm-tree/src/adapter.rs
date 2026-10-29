@@ -626,6 +626,18 @@ pub enum SnapshotError {
     Inventory(crate::InventoryError),
 }
 impl AdaptedDeclarations {
+    /// Finish the original builder in the narrow checker diagnostic domain.
+    /// Only inherited VAR redeclarations are retained as errors. All other
+    /// structural failures still refuse; ordinary finish/compile stays strict.
+    pub fn finish_checker_diagnostic_observed(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
+        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+        executor: &dm_exec::BuildExecutor,
+    ) -> Result<crate::DiagnosticDeclarations, SnapshotError> {
+        SharedAdaptedDeclarations::from(self)
+            .finish_checker_diagnostic_observed(seed, on_error, executor)
+    }
     /// Append expansion fragments in semantic emission order. Symbol collisions
     /// are checked even when independently parsed fragments share numeric IDs.
     pub fn append(&mut self, other: AdaptedDeclarations) -> Result<(), dm_ir::SymbolCollision> {
@@ -685,17 +697,36 @@ impl AdaptedDeclarations {
             executor,
             normalization,
             None,
+            None,
         )
     }
 }
 impl SharedAdaptedDeclarations {
+    pub(crate) fn finish_checker_diagnostic_observed(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
+        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+        executor: &dm_exec::BuildExecutor,
+    ) -> Result<crate::DiagnosticDeclarations, SnapshotError> {
+        let mut receipt = crate::diagnostic_declarations::DiagnosticDeclarationReceipt::new();
+        let snapshot = self.finish_execution(
+            seed,
+            on_error,
+            Some(executor),
+            None,
+            None,
+            Some(&mut receipt),
+        )?;
+        Ok(crate::DiagnosticDeclarations::bind(snapshot, receipt))
+    }
+
     pub(crate) fn finish_with_engine_observed_on_executor(
         self,
         seed: Option<&crate::frontend::EngineSeed>,
         on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_execution(seed, on_error, Some(executor), None, None)
+        self.finish_execution(seed, on_error, Some(executor), None, None, None)
     }
     pub(crate) fn finish_with_engine_normalization(
         self,
@@ -708,7 +739,14 @@ impl SharedAdaptedDeclarations {
         )>,
         structural: Option<crate::metadata_update::StructuralMetadata<'_>>,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_execution(seed, on_error, Some(executor), normalization, structural)
+        self.finish_execution(
+            seed,
+            on_error,
+            Some(executor),
+            normalization,
+            structural,
+            None,
+        )
     }
     fn finish_execution(
         self,
@@ -720,6 +758,7 @@ impl SharedAdaptedDeclarations {
             &crate::owner_normalization::RetainedNormalization,
         )>,
         structural: Option<crate::metadata_update::StructuralMetadata<'_>>,
+        diagnostics: Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let origins = self.origins.into_owned();
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
@@ -747,15 +786,25 @@ impl SharedAdaptedDeclarations {
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
         let build_timer = dm_profile::detail_timer("tree.build_members");
-        let mut tree = crate::build_with_intrinsic_members_structural(
-            self.symbols,
-            skeletons.view(),
-            fields,
-            intrinsics,
-            seed.is_none(),
-            normalization,
-            structural,
-        )
+        let mut tree = match diagnostics {
+            Some(receipt) => crate::build_checker_diagnostic_members(
+                self.symbols,
+                skeletons.view(),
+                fields,
+                intrinsics,
+                seed.is_none(),
+                receipt,
+            ),
+            None => crate::build_with_intrinsic_members_structural(
+                self.symbols,
+                skeletons.view(),
+                fields,
+                intrinsics,
+                seed.is_none(),
+                normalization,
+                structural,
+            ),
+        }
         .map_err(|error| {
             let error = SnapshotError::Tree(error);
             on_error(

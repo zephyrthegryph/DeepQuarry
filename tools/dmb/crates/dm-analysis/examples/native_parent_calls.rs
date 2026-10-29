@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         arena.with_parsed(occurrence,|body|->Result<(),String> {
             let diagnostics=checks_parent_call::check_in_profile(&frontend,body,resolver,Some(profile),Severity::Error)?;
             for row in diagnostics {
-                let location=frontend.source_export_mapping().ok_or("original mapping unavailable")?.original_note_origin(row.span.start)?;
+                let location=frontend.source_export_mapping().ok_or("original mapping unavailable")?.source_note_point(row.span.start)?;
                 output.push(serde_json::json!({"family":row.family,"severity":"error","file":location.path,"line":location.line,
                     "expanded_column":location.byte_column,
                     "message":row.message,"notes":row.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>()}));

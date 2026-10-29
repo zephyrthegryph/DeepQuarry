@@ -65,6 +65,7 @@ fn capture_project(
         .unwrap()
         .with_body_queries(db.clone());
     let intent = PolicyInputRequest {
+        workspace: None,
         files: vec![PolicyInputFile {
             path: root().join("scopes.toml"),
             role: PolicyInputRole::Configuration,
@@ -430,7 +431,11 @@ fn concurrent_pinned_cohorts_are_serialized_without_cross_config_answers() {
 #[test]
 fn idle_raw_cache_release_drops_last_source_owner_after_capture_is_gone() {
     let db = Arc::new(QueryDb::default());
-    let input = cohort(&db, BEFORE, None);
+    // shared_prepared intentionally shares exact text process-wide across live
+    // sessions. This lifetime test needs a unique source so unrelated parallel
+    // tests cannot be legitimate last owners of the same immutable arena.
+    const UNIQUE: &[u8] = b"/proc/a()\n    sleep(1) // idle raw release owner fixture\n";
+    let input = cohort(&db, UNIQUE, None);
     let issued_path = input
         .files
         .iter()
@@ -537,4 +542,207 @@ fn forced_equal_source_hash_cannot_reuse_foreign_raw_findings() {
         .to_string()
         .contains("cached raw source path/bytes contradict"));
     assert_eq!(db.db.stats(RAW_FINDINGS).computed, computed);
+}
+
+#[test]
+fn cached_error_charge_uses_capacity_and_atomic_admission_never_publishes_over_limit() {
+    let mut error = String::with_capacity(64 * 1024);
+    error.push('x');
+    let expected = error.capacity()
+        + std::mem::size_of::<Result<Arc<Findings>, String>>()
+        + 2 * std::mem::size_of::<usize>();
+    assert_eq!(result_error_charge::<Arc<Findings>>(&error), expected);
+    assert_eq!(
+        result_error_charge::<Vec<RawRun>>(&error),
+        error.capacity()
+            + std::mem::size_of::<Result<Vec<RawRun>, String>>()
+            + 2 * std::mem::size_of::<usize>()
+    );
+    let charge = AtomicUsize::new(7);
+    let key = Key::new(RAW_FINDINGS, 991);
+    let admission = Admission::default();
+    admission.limit.store(expected + 7, Ordering::Relaxed);
+    retain_derived(&charge, expected, &admission, key).unwrap();
+    assert_eq!(charge.load(Ordering::Relaxed), expected + 7);
+    assert!(retain_derived(&charge, 1, &admission, key).is_err());
+    assert_eq!(charge.load(Ordering::Relaxed), expected + 7);
+    let mut old = b"native-raw-policy-error-v1\0".to_vec();
+    old.extend_from_slice(error.as_bytes());
+    assert_eq!(error_hash(&error), dm_query::hash_bytes(&old));
+}
+
+#[test]
+fn raw_scope_cached_error_retains_actual_bytes_or_is_refused_without_a_value() {
+    let q = QueryDb::default();
+    let config = Key::new(RAW_CONFIG, 992);
+    q.db.set_input(
+        config,
+        ConfigData {
+            config: Arc::new(Config::capture(Configuration::ProvenMissing).unwrap()),
+            hash: 1,
+            original: None,
+        },
+        1,
+    );
+    let denied = Key::new(RAW_SCOPE, 993);
+    q.raw_policy.admission.limit.store(0, Ordering::Relaxed);
+    assert!(q
+        .db
+        .get::<Result<Arc<Scope>, String>>(
+            denied,
+            Arc::new(ScopeParams {
+                config,
+                name: "not-admitted",
+            })
+        )
+        .is_err());
+    assert!(q
+        .db
+        .retained_value::<Result<Arc<Scope>, String>>(denied)
+        .is_none());
+    assert_eq!(q.raw_policy.charge.load(Ordering::Relaxed), 0);
+    let admitted = denied; // same params/node must observe current mutable headroom
+    q.raw_policy
+        .admission
+        .limit
+        .store(RESULT_BUDGET, Ordering::Relaxed);
+    q.raw_policy
+        .admission
+        .denied
+        .store(false, Ordering::Relaxed);
+    let result =
+        q.db.get::<Result<Arc<Scope>, String>>(
+            admitted,
+            Arc::new(ScopeParams {
+                config,
+                name: "not-admitted",
+            }),
+        )
+        .unwrap();
+    let error = result.as_ref().as_ref().err().unwrap();
+    let expected = result_error_charge::<Arc<Scope>>(error);
+    assert_eq!(q.db.value_bytes_at(admitted), expected);
+    assert_eq!(q.raw_policy.charge.load(Ordering::Relaxed), expected);
+    assert_eq!(
+        q.workspace_result_charge_locked().unwrap(),
+        0,
+        "raw global charge must not be counted again as workspace payload"
+    );
+}
+
+#[test]
+fn request_boundary_reconciles_global_reservations_to_live_derived_values_only() {
+    let q = Arc::new(QueryDb::default());
+    let input = cohort(&q, BEFORE, None);
+    let rows = q.raw_findings(&input, &names()).unwrap();
+    assert_eq!(rows.runs[0].run.sites.len(), 2);
+    let expected = q
+        .raw_policy
+        .leases
+        .lock()
+        .unwrap()
+        .keys()
+        .filter(|key| {
+            matches!(
+                key.kind,
+                RAW_FINDINGS | RAW_SCOPE | analyze_policy::ANALYZE_FINDINGS
+            )
+        })
+        .map(|key| q.db.value_bytes_at(*key))
+        .sum::<usize>();
+    // A generic Db early cutoff may retain the previous value after a fresh
+    // Outcome reserved its bytes. Model that conservative reservation, without
+    // forging any input, policy result or compiler/source authority.
+    q.raw_policy.charge.fetch_add(128, Ordering::Relaxed);
+    let _gate = q.raw_policy.gate.lock().unwrap();
+    q.raw_prune_locked(Instant::now());
+    assert_eq!(q.raw_policy.charge.load(Ordering::Relaxed), expected);
+}
+#[test]
+fn raw_mid_compute_cancellation_is_not_a_cached_semantic_refusal() {
+    let db = Arc::new(QueryDb::default());
+    let input = cohort(&db, BEFORE, None);
+    let expected = db.raw_findings(&input, &names()).unwrap();
+    db.db.evict_values(&[RAW_FINDINGS]);
+    let revision = db.db.revision();
+    let token = crate::daemon::control::Cancellation::default();
+    db.raw_policy
+        .admission
+        .abort
+        .cancel_on_poll(3, token.clone());
+    let binding = crate::daemon::control::bind_with_deadline(
+        token,
+        std::time::Instant::now() + std::time::Duration::from_secs(60),
+    );
+    let error = db
+        .raw_findings(&input, &names())
+        .err()
+        .expect("actual cancellation after raw scanning");
+    assert_eq!(error.kind(), io::ErrorKind::Interrupted);
+    assert_eq!(crate::request_failure::exit_code(&error), 75);
+    assert_eq!(db.raw_policy.admission.abort.poll_count(), 3);
+    let leases = db.raw_policy.leases.lock().unwrap();
+    assert!(leases.keys().filter(|k| k.kind == RAW_FINDINGS).all(|k| db
+        .db
+        .retained_value::<Result<Arc<Findings>, String>>(*k)
+        .is_none()));
+    drop(leases);
+    assert!(
+        db.raw_policy.admission.abort.is_aborted(),
+        "taking original error must not unlatch publication denial"
+    );
+    drop(binding);
+    db.raw_policy.admission.abort.disarm();
+    let again = db.raw_findings(&input, &names()).unwrap();
+    assert_eq!(
+        revision,
+        db.db.revision(),
+        "retry uses SAME source/capture/input revision"
+    );
+    assert_eq!(
+        serde_json::to_value(&again.runs[0].run.sites).unwrap(),
+        serde_json::to_value(&expected.runs[0].run.sites).unwrap()
+    );
+}
+#[test]
+fn typed_scanner_mid_compute_cancellation_retries_same_captured_input() {
+    let db = Arc::new(QueryDb::default());
+    let input = cohort(&db, b"/datum/probe/Initialize()\n    return 1\n", None);
+    let names = vec!["init".to_string()];
+    let expected = db.analyze_fixture_findings(&input, &names).unwrap();
+    db.db.evict_values(&[analyze_policy::ANALYZE_FINDINGS]);
+    let revision = db.db.revision();
+    let token = crate::daemon::control::Cancellation::default();
+    db.raw_policy
+        .admission
+        .abort
+        .cancel_on_poll(4, token.clone());
+    let binding = crate::daemon::control::bind_with_deadline(
+        token,
+        std::time::Instant::now() + std::time::Duration::from_secs(60),
+    );
+    let error = db
+        .analyze_fixture_findings(&input, &names)
+        .err()
+        .expect("actual scanner callback cancellation");
+    assert_eq!(error.kind(), io::ErrorKind::Interrupted);
+    assert_eq!(crate::request_failure::exit_code(&error), 75);
+    assert_eq!(db.raw_policy.admission.abort.poll_count(), 4);
+    let leases = db.raw_policy.leases.lock().unwrap();
+    assert!(leases
+        .keys()
+        .filter(|k| k.kind == analyze_policy::ANALYZE_FINDINGS)
+        .all(|k| db
+            .db
+            .retained_value::<Result<Vec<RawRun>, String>>(*k)
+            .is_none()));
+    drop(leases);
+    drop(binding);
+    db.raw_policy.admission.abort.disarm();
+    let again = db.analyze_fixture_findings(&input, &names).unwrap();
+    assert_eq!(revision, db.db.revision());
+    assert_eq!(
+        serde_json::to_value(&again.runs[0].run.sites).unwrap(),
+        serde_json::to_value(&expected.runs[0].run.sites).unwrap()
+    );
 }

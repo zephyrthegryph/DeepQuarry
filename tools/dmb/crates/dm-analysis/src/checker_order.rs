@@ -18,6 +18,12 @@ pub fn bodies(frontend: &ColdFrontend) -> Result<Vec<(usize, &BodyOccurrence)>, 
     order(&frontend.snapshot.tree, &frontend.bodies)
 }
 
+/// Same lexical checker order projected over the ORIGINAL archive roster.
+pub fn archived_bodies(
+    archive: &dm_tree::frontend::BodyArchive,
+) -> Result<Vec<(usize, &BodyOccurrence)>, String> {
+    order(archive.tree(), archive.occurrences())
+}
 fn components(path: &str) -> Vec<&str> {
     path.split('/').filter(|part| !part.is_empty()).collect()
 }

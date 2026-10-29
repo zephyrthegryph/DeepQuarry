@@ -303,9 +303,16 @@ pub fn canonical_path(path: &Path) -> PathBuf {
 
 /// Compare lexical filesystem containment without changing provider keys or
 /// authored provenance. Only equivalent ordinary Windows drive spellings unify.
+/// Candidate-index key only. It does not authorize an alias or rewrite a
+/// provider key: an admitted alias still needs the provider's private receipt.
+/// Equal keys are EXACTLY an empty relative_filesystem_path comparison.
+pub fn filesystem_comparison_key(path: &Path) -> PathBuf {
+    path_prefix::equivalent_prefix(canonical_path(path))
+}
+
 pub fn relative_filesystem_path(path: &Path, root: &Path) -> Option<PathBuf> {
-    let path = path_prefix::equivalent_prefix(canonical_path(path));
-    let root = path_prefix::equivalent_prefix(canonical_path(root));
+    let path = filesystem_comparison_key(path);
+    let root = filesystem_comparison_key(root);
     path.strip_prefix(root).ok().map(Path::to_path_buf)
 }
 

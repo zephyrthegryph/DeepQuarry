@@ -323,7 +323,7 @@ pub fn findings<'a>(
 }
 
 type Groups = BTreeMap<(SymbolId, SymbolId), (Rule, Vec<String>)>;
-fn ordered_bodies<'a>(
+pub(crate) fn ordered_bodies<'a>(
     tree: &SemanticTree,
     bodies: &'a [BodyOccurrence],
 ) -> Result<Vec<(usize, &'a BodyOccurrence)>, Unsupported> {

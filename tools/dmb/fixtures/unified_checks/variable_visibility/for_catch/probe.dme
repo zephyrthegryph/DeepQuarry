@@ -1,0 +1,15 @@
+/datum/base
+    var/SpacemanDMM_private/p=null
+/proc/test()
+    for(var/SpacemanDMM_private/x=1; x<2; x++)
+        continue
+    for(var/SpacemanDMM_protected/y in list(1))
+        continue
+    try
+        throw 1
+    catch(var/SpacemanDMM_private/datum/base/B)
+        B.p
+    try
+        throw 1
+    catch(datum/base/C)
+        C.p

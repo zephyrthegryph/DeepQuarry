@@ -43,6 +43,7 @@ fn root() -> PathBuf {
 }
 fn intent(files: &[RequestedPolicyFile], folders: &[PathBuf]) -> AdmittedPolicyRequest {
     PolicyInputRequest {
+        workspace: None,
         files: files
             .iter()
             .map(|file| PolicyInputFile {

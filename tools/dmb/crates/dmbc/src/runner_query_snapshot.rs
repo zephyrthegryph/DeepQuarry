@@ -2,6 +2,9 @@
 //! Immutable issued source owners are shared; no full frontend revision is retained.
 #[path = "runner_query_control_batch.rs"]
 mod control_batch;
+#[path = "runner_query_source_admission.rs"]
+mod source_admission;
+pub(crate) use source_admission::SourceFrameCapture;
 #[path = "runner_query_named_policy.rs"]
 mod named_policy;
 #[path = "runner_query_native_policy.rs"]
@@ -17,6 +20,8 @@ mod raw_policy;
 mod resolved;
 #[path = "runner_query_selected.rs"]
 mod selected;
+#[path = "runner_query_variable_visibility.rs"]
+mod variable_visibility;
 use dm_tree::frontend::ColdFrontend;
 use std::{
     collections::BTreeMap,
@@ -38,6 +43,8 @@ impl Default for QueryState {
     }
 }
 pub(crate) struct SourceSnapshot {
+    diagnostic_declarations:
+        Option<Arc<dm_tree::diagnostic_declarations::DiagnosticDeclarationReceipt>>,
     semantic_sources: Option<Arc<crate::input_snapshot::SemanticSourceEvidence>>,
     tree: Arc<dm_tree::SemanticTree>,
     pub(crate) source_revision: u128,
@@ -48,6 +55,7 @@ pub(crate) struct SourceSnapshot {
     bodies: Option<Arc<[dm_tree::frontend::BodyOccurrence]>>,
     body_archive: Option<Arc<dm_tree::frontend::BodyArchive>>,
     native_policy_inputs: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
+    native_workspace: Option<Arc<crate::runner_host::workspace_capture::WorkspaceCapture>>,
     source_mapping: Option<Arc<dm_tree::frontend::SourceExportMapping>>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
     selected: selected::SelectedRows,
@@ -130,7 +138,7 @@ impl SourceSnapshot {
                     .location(diagnostic.span.start)
                     .ok_or_else(|| io::Error::other("checker origin unavailable"))?;
                 let original = archive
-                    .original_note_origin(diagnostic.span.start)
+                    .source_note_point(diagnostic.span.start)
                     .map_err(io::Error::other)?;
                 rows.push(serde_json::json!({
                     "family": diagnostic.family, "severity": severity,
@@ -166,6 +174,8 @@ impl SourceSnapshot {
         }
         self.body_archive = None;
         self.native_policy_inputs = None;
+        self.native_workspace = None;
+        self.diagnostic_declarations = None;
         self.native_value_input = None;
         self.native_value_queries = None;
         self.resolved = None;
@@ -183,6 +193,18 @@ impl SourceSnapshot {
         if let Some(archive) = &self.body_archive {
             census.body_archive(archive);
         }
+        if let Some(receipt) = &self.diagnostic_declarations {
+            if census.arc_object("query_snapshot.diagnostic_receipt", receipt) {
+                receipt.visit_error_storage(|address, logical, capacity| {
+                    census.exposed_buffer(
+                        "query_snapshot.diagnostic_receipt.errors",
+                        address,
+                        logical,
+                        capacity,
+                    );
+                });
+            }
+        }
         if let Some(evidence) = &self.semantic_sources {
             census.semantic_source_evidence(evidence);
         }
@@ -194,6 +216,9 @@ impl SourceSnapshot {
         }
         if let Some(policy) = &self.native_policy_inputs {
             census.policy_capture(policy);
+        }
+        if let Some(workspace) = &self.native_workspace {
+            workspace.census(census);
         }
         if let Some(mapping) = &self.source_mapping {
             census.source_export_mapping(mapping);
@@ -221,6 +246,7 @@ impl SourceSnapshot {
             Err(error) => census.string("query_snapshot.native_schema_markers.error", error),
         }
         if let Some(proof) = &self.replay_proof {
+            census.policy_directory_facts(&proof.inputs);
             proof
                 .inputs
                 .visit_recorded_storage(|files, folders, negative, generated| {
@@ -318,6 +344,7 @@ impl SourceSnapshot {
             dm_analysis::value_query::ArchiveValueInput::new(Arc::clone(archive), &[])
         });
         Self {
+            diagnostic_declarations: None,
             semantic_sources: policy
                 .as_ref()
                 .map(|policy| Arc::clone(policy.semantic_source_evidence())),
@@ -338,6 +365,7 @@ impl SourceSnapshot {
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             body_archive,
             native_policy_inputs: policy,
+            native_workspace: None,
             bodies: frontend
                 .callable_roster()
                 .ok()
@@ -441,6 +469,12 @@ pub(crate) struct QueryAttempt {
     enabled: bool,
     finished: bool,
     configuration: Option<crate::session::Configuration>,
+    pending_diagnostic: Option<SourceSnapshot>,
+    pending_source: Option<(SourceSnapshot, Arc<SourceFrameCapture>)>,
+    pending_workspace: Option<(
+        Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        Arc<crate::query_db::QueryDb>,
+    )>,
 }
 impl QueryAttempt {
     pub(crate) fn new(state: Arc<Mutex<QueryState>>, enabled: bool) -> Self {
@@ -454,8 +488,103 @@ impl QueryAttempt {
             captured: false,
             finished: false,
             configuration: None,
+            pending_workspace: None,
+            pending_diagnostic: None,
+            pending_source: None,
             enabled,
         }
+    }
+    pub(crate) fn pending_workspace(
+        &self,
+    ) -> Option<Arc<crate::runner_host::workspace_capture::WorkspaceCapture>> {
+        self.pending_workspace
+            .as_ref()
+            .map(|(capture, _)| Arc::clone(capture))
+    }
+    pub(crate) fn admit_workspace_policy(
+        &mut self,
+        admission: crate::request_runner::runner_freshness::WorkspacePolicyAdmission,
+    ) -> std::io::Result<()> {
+        let (capture, queries) = self
+            .pending_workspace
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("no staged workspace frame"))?;
+        if !Arc::ptr_eq(capture, admission.capture()) {
+            return Err(std::io::Error::other(
+                "workspace admission belongs to another capture",
+            ));
+        }
+        crate::daemon::control::checkpoint()?;
+        let (snapshot, frame) = self
+            .pending_source
+            .as_mut()
+            .ok_or_else(|| std::io::Error::other("workspace source frame unavailable"))?;
+        frame.require_snapshot(snapshot)?;
+        let mapping = snapshot
+            .source_mapping
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("workspace source map unavailable"))?;
+        if !capture.matches_source(mapping, snapshot.source_revision)
+            || snapshot
+                .native_raw_queries
+                .as_ref()
+                .is_none_or(|current| !Arc::ptr_eq(current, queries))
+        {
+            return Err(std::io::Error::other(
+                "workspace admission source/Db frame differs",
+            ));
+        }
+        snapshot.policy_revision = Some(capture.policy_revision());
+        snapshot.native_workspace = Some(Arc::clone(capture));
+        let (snapshot, _) = self
+            .pending_source
+            .take()
+            .expect("validated staged workspace");
+        self.state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .snapshot = Some(snapshot);
+        self.captured = true;
+        self.pending_workspace = None;
+        Ok(())
+    }
+    pub(crate) fn capture_with_workspace_recorded_sources<
+        P: crate::input_snapshot::SnapshotProvider,
+    >(
+        &mut self,
+        frontend: &ColdFrontend,
+        queries: Arc<crate::query_db::QueryDb>,
+        workspace: Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        request: &crate::policy_request::WorkspacePolicyRequest,
+        inputs: &crate::input_snapshot::RecordingInputs<P>,
+    ) -> std::io::Result<()> {
+        if !workspace.matches_frontend(frontend)
+            || !workspace.matches_request(request)
+            || !workspace.is_recorded_in(&inputs.snapshot()?)
+        {
+            return Err(std::io::Error::other(
+                "workspace policy capture differs from current original request",
+            ));
+        }
+        if !self.enabled {
+            return Ok(());
+        }
+        let evidence = inputs.semantic_source_evidence(frontend)?;
+        let mut snapshot = SourceSnapshot::capture(frontend);
+        let mapping = snapshot
+            .source_mapping
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("workspace source mapping unavailable"))?;
+        // Raw policy needs original byte ownership, not semantic UTF8. A later
+        // AST question must still independently check evidence.check(mapping).
+        evidence.require_mapping(mapping)?;
+        snapshot.semantic_sources = Some(evidence);
+        self.pending_workspace = Some((workspace, Arc::clone(&queries)));
+        snapshot.native_raw_queries = Some(Arc::clone(&queries));
+        snapshot.native_value_queries = Some(queries);
+        self.pending_diagnostic = None;
+        self.stage_source_snapshot(snapshot, inputs.snapshot()?)?;
+        Ok(())
     }
     pub(crate) fn capture_with_recorded_sources<P: crate::input_snapshot::SnapshotProvider>(
         &mut self,
@@ -464,34 +593,45 @@ impl QueryAttempt {
         policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
         inputs: &crate::input_snapshot::RecordingInputs<P>,
     ) -> std::io::Result<()> {
+        self.pending_workspace = None;
+        self.pending_diagnostic = None;
+        self.pending_source = None;
         if !self.enabled {
-            return self.capture_with_queries(frontend, queries, policy);
+            return Ok(());
+        }
+        if policy.as_ref().is_some_and(|policy| {
+            policy.policy_revision().is_none() || !policy.policy().matches_frontend(frontend)
+        }) {
+            return Err(std::io::Error::other(
+                "recorded policy differs from current bound compiler issuance",
+            ));
         }
         let evidence = inputs.semantic_source_evidence(frontend)?;
-        self.capture_with_queries(frontend, queries, policy)?;
-        if self.enabled {
-            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-            let snapshot = state
-                .snapshot
-                .as_mut()
-                .ok_or_else(|| std::io::Error::other("semantic source capture unavailable"))?;
-            let mapping = snapshot
-                .source_mapping
-                .as_ref()
-                .ok_or_else(|| std::io::Error::other("semantic source mapping unavailable"))?;
-            // Bind exact mapping even if compatibility check will fail later;
-            // raw captures/Compile must remain usable for incompatible bytes.
-            evidence.require_mapping(mapping)?;
-            snapshot.semantic_sources = Some(evidence);
-        }
-        Ok(())
+        let mut snapshot = SourceSnapshot::capture_policy(frontend, policy);
+        let mapping = snapshot
+            .source_mapping
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("semantic source mapping unavailable"))?;
+        // This binds original bytes even when a later semantic AST query must
+        // decline incompatible encoding. Raw policy/Compile remain meaningful.
+        evidence.require_mapping(mapping)?;
+        snapshot.semantic_sources = Some(evidence);
+        snapshot.native_raw_queries = Some(Arc::clone(&queries));
+        snapshot.native_value_queries = Some(queries);
+        self.stage_source_snapshot(snapshot, inputs.snapshot()?)
     }
+    // Deliberate fixture scaffolding: production publication always stages and
+    // consumes the existing complete captured-input freshness receipt.
+    #[cfg(test)]
     pub(crate) fn capture_with_queries(
         &mut self,
         frontend: &ColdFrontend,
         queries: Arc<crate::query_db::QueryDb>,
         policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
     ) -> std::io::Result<()> {
+        self.pending_source = None;
+        self.pending_workspace = None;
+        self.pending_diagnostic = None;
         if policy
             .as_ref()
             .is_some_and(|policy| policy.policy_revision().is_none())
@@ -520,7 +660,11 @@ impl QueryAttempt {
         self.captured = true;
         Ok(())
     }
+    #[cfg(test)]
     pub(crate) fn capture(&mut self, frontend: &ColdFrontend) {
+        self.pending_source = None;
+        self.pending_workspace = None;
+        self.pending_diagnostic = None;
         if !self.enabled {
             return;
         }
@@ -570,27 +714,26 @@ impl QueryAttempt {
         if !self.enabled {
             return Ok(());
         }
-        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        let snapshot = state
-            .snapshot
-            .as_mut()
-            .filter(|snapshot| snapshot.matches_tree(&frontend.snapshot.tree))
-            .ok_or_else(|| {
-                std::io::Error::other("current resolved capture differs from query source")
-            })?;
-        if !Arc::ptr_eq(&snapshot.occurrences, &frontend.snapshot.occurrences)
-            || snapshot
-                .bodies
-                .as_ref()
-                .is_none_or(|bodies| !Arc::ptr_eq(bodies, &frontend.bodies))
-            || !context.matches_current(frontend)
-        {
-            return Err(std::io::Error::other(
-                "resolved capture current source owners differ",
-            ));
-        }
-        snapshot.resolved = Some(context);
-        Ok(())
+        self.with_current_source(|snapshot| {
+            if !snapshot.matches_tree(&frontend.snapshot.tree) {
+                return Err(std::io::Error::other(
+                    "current resolved capture differs from query source",
+                ));
+            }
+            if !Arc::ptr_eq(&snapshot.occurrences, &frontend.snapshot.occurrences)
+                || snapshot
+                    .bodies
+                    .as_ref()
+                    .is_none_or(|bodies| !Arc::ptr_eq(bodies, &frontend.bodies))
+                || !context.matches_current(frontend)
+            {
+                return Err(std::io::Error::other(
+                    "resolved capture current source owners differ",
+                ));
+            }
+            snapshot.resolved = Some(context);
+            Ok(())
+        })
     }
     pub(crate) fn capture_selected(
         &mut self,
@@ -603,23 +746,24 @@ impl QueryAttempt {
         frontend
             .body_input(current.occurrence())
             .map_err(|diagnostic| std::io::Error::other(diagnostic.message))?;
-        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        let snapshot = state.snapshot.as_mut().ok_or_else(|| {
-            std::io::Error::other("selected capture lacks current source snapshot")
-        })?;
-        if !snapshot.matches_tree(&frontend.snapshot.tree)
-            || !Arc::ptr_eq(&snapshot.occurrences, &frontend.snapshot.occurrences)
-        {
-            return Err(std::io::Error::other(
-                "selected capture source snapshot mismatch",
-            ));
-        }
-        snapshot.selected.capture(current);
-        Ok(())
+        self.with_current_source(|snapshot| {
+            if !snapshot.matches_tree(&frontend.snapshot.tree)
+                || !Arc::ptr_eq(&snapshot.occurrences, &frontend.snapshot.occurrences)
+            {
+                return Err(std::io::Error::other(
+                    "selected capture source snapshot mismatch",
+                ));
+            }
+            snapshot.selected.capture(current);
+            Ok(())
+        })
     }
     /// Issued only after this captured frontend's successful publication inputs
     /// passed the same post-publication restat used for the session record.
     pub(crate) fn policy_revision(&self) -> Option<u128> {
+        if self.pending_source.is_some() || self.pending_diagnostic.is_some() {
+            return None;
+        }
         self.state
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -645,6 +789,15 @@ impl QueryAttempt {
         if let Some(snapshot) = &mut state.snapshot {
             // Resources may extend this request ledger, but cannot omit policy
             // absence/folder facts. Text revision equality is not replay proof.
+            if snapshot
+                .native_workspace
+                .as_ref()
+                .is_some_and(|capture| !capture.is_recorded_in(inputs))
+            {
+                snapshot.replay_proof = None;
+                crate::daemon_eprintln!("native workspace replay proof refused: capture facts absent from completed ledger");
+                return;
+            }
             if snapshot
                 .native_policy_inputs
                 .as_ref()
@@ -717,6 +870,9 @@ impl Drop for QueryAttempt {
             if self.captured {
                 if let Some(snapshot) = &mut state.snapshot {
                     snapshot.outcome = "frontend_analyzed_build_failed";
+                    // Pending workspace owners never enter this snapshot.
+                    // A previously freshness-admitted frontend policy may stay
+                    // valid when only later backend/publication work failed.
                 }
             }
         }
@@ -838,3 +994,148 @@ impl SourceSnapshot {
 #[cfg(test)]
 #[path = "runner_query_acquisition_release_tests.rs"]
 mod acquisition_release_tests;
+
+#[path = "runner_query_workspace_native_guard.rs"]
+pub(crate) mod workspace_native_guard;
+#[cfg(test)]
+#[path = "runner_query_workspace_raw_tests.rs"]
+mod workspace_raw_tests;
+
+#[path = "runner_query_workspace_policy.rs"]
+mod workspace_policy;
+
+impl SourceSnapshot {
+    fn capture_diagnostic(
+        frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+        queries: Arc<crate::query_db::QueryDb>,
+        policy: Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
+    ) -> std::io::Result<Self> {
+        let archive = frontend.archive();
+        if !frontend.receipt().authenticates(frontend.tree())
+            || !Arc::ptr_eq(archive, policy.policy().archive())
+            || policy.policy_revision().is_none()
+            || !archive.uses_body_queries(queries.as_ref())
+        {
+            return Err(std::io::Error::other(
+                "diagnostic original graph/policy/Db issuance differs",
+            ));
+        }
+        policy
+            .semantic_source_evidence()
+            .check(frontend.mapping())?;
+        Ok(Self {
+            diagnostic_declarations: Some(Arc::clone(frontend.receipt())),
+            semantic_sources: Some(Arc::clone(policy.semantic_source_evidence())),
+            tree: Arc::clone(frontend.tree()),
+            source_revision: frontend.source_revision(),
+            policy_revision: policy.policy_revision(),
+            outcome: "diagnostic_frontend_admitted",
+            occurrences: Arc::clone(frontend.occurrences()),
+            bodies: Some(Arc::clone(frontend.bodies())),
+            body_archive: Some(Arc::clone(archive)),
+            native_policy_inputs: Some(policy),
+            native_workspace: None,
+            source_mapping: Some(Arc::clone(frontend.mapping())),
+            paths: frontend
+                .files()
+                .iter()
+                .map(|file| (file.id, Arc::clone(&file.path)))
+                .collect(),
+            selected: Default::default(),
+            resolved: None,
+            replay_proof: None,
+            native_schema_markers: Err(
+                "diagnostic-only source has no runtime value-schema admission".into(),
+            ),
+            native_value_input: None,
+            native_value_queries: None,
+            native_raw_queries: Some(queries),
+        })
+    }
+    /// Only the current published diagnostic frame supplies this owner; no
+    /// equal-hash sibling or old executable patch-base tree is substituted.
+    /// Choose the exact current prepared original owner. A valid consuming
+    /// diagnostic-to-ordinary transfer need not rebuild RetainedSemanticTree's
+    /// older executable patch-base entry merely to serve read-only queries.
+    pub(crate) fn prepared_query_tree(&self) -> Option<&Arc<dm_tree::SemanticTree>> {
+        if let Some(tree) = self.diagnostic_tree() {
+            return Some(tree);
+        }
+        self.resolved.as_ref()?.checker_resolver(&self.tree).ok()?;
+        Some(&self.tree)
+    }
+    pub(crate) fn diagnostic_tree(&self) -> Option<&Arc<dm_tree::SemanticTree>> {
+        self.diagnostic_declarations
+            .as_ref()
+            .filter(|receipt| receipt.authenticates(&self.tree))
+            .map(|_| &self.tree)
+    }
+}
+impl QueryAttempt {
+    pub(crate) fn stage_diagnostic(
+        &mut self,
+        frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+        queries: Arc<crate::query_db::QueryDb>,
+        policy: Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
+    ) -> std::io::Result<()> {
+        if !self.enabled {
+            return Err(std::io::Error::other(
+                "diagnostic queries require the existing query owner",
+            ));
+        }
+        self.pending_source = None;
+        self.pending_workspace = None;
+        self.pending_diagnostic = Some(SourceSnapshot::capture_diagnostic(
+            frontend, queries, policy,
+        )?);
+        Ok(())
+    }
+    pub(crate) fn pending_diagnostic_policy(
+        &self,
+    ) -> Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>> {
+        self.pending_diagnostic
+            .as_ref()
+            .and_then(|snapshot| snapshot.native_policy_inputs.as_ref().map(Arc::clone))
+    }
+    pub(crate) fn admit_diagnostic_policy(
+        &mut self,
+        admission: crate::request_runner::runner_freshness::DiagnosticPolicyAdmission,
+    ) -> std::io::Result<()> {
+        let snapshot = self
+            .pending_diagnostic
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("no staged diagnostic original frame"))?;
+        let policy = snapshot
+            .native_policy_inputs
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("staged diagnostic capture missing"))?;
+        if !Arc::ptr_eq(policy, admission.capture())
+            || snapshot.diagnostic_tree().is_none()
+            || !snapshot.body_archive.as_ref().is_some_and(|archive| {
+                snapshot
+                    .native_raw_queries
+                    .as_ref()
+                    .is_some_and(|db| archive.uses_body_queries(db.as_ref()))
+            })
+        {
+            return Err(std::io::Error::other(
+                "diagnostic freshness proof belongs to another original frame",
+            ));
+        }
+        snapshot.require_semantic_source_encoding()?;
+        let snapshot = self
+            .pending_diagnostic
+            .take()
+            .expect("validated staged original");
+        self.state
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .snapshot = Some(snapshot);
+        self.captured = true;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+#[path = "runner_query_diagnostic_tests.rs"]
+mod diagnostic_tests;

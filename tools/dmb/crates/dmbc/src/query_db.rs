@@ -5,25 +5,38 @@
 //! (`project`). The derived `program` query reads every input in canonical order; it is green
 //! exactly when no input changed. Later steps hang the frontend, per-unit and output queries off
 //! these inputs and replace the per-stage stores.
+use dm_preprocess::regions::prepared_source::PreparedSource;
 use dm_query::{Db, Key, Kind, Outcome, QueryError, Value};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use dm_preprocess::regions::prepared_source::PreparedSource;
 use std::sync::{Arc, Mutex};
 
 mod body_syntax;
-mod value_proofs;
 mod raw_policy;
+pub use raw_policy::workspace::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};
+mod value_proofs;
+pub(crate) use raw_policy::workspace::{
+    CurrentFile as CurrentWorkspaceRawFile, SourceProof as WorkspaceRawSourceProof,
+};
 
 const SOURCE: Kind = Kind(1);
 const PROJECT: Kind = Kind(2);
 const PROGRAM: Kind = Kind(3);
 
 fn source_key(path: &std::path::Path) -> Key {
-    Key::new(SOURCE, dm_query::hash_bytes(path.as_os_str().as_encoded_bytes()))
+    Key::new(
+        SOURCE,
+        dm_query::hash_bytes(path.as_os_str().as_encoded_bytes()),
+    )
 }
-const PROJECT_KEY: Key = Key { kind: PROJECT, id: 0 };
-const PROGRAM_KEY: Key = Key { kind: PROGRAM, id: 0 };
+const PROJECT_KEY: Key = Key {
+    kind: PROJECT,
+    id: 0,
+};
+const PROGRAM_KEY: Key = Key {
+    kind: PROGRAM,
+    id: 0,
+};
 
 /// What one revision did.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -44,7 +57,8 @@ pub struct QueryDb {
     body_charge: Arc<std::sync::atomic::AtomicUsize>,
     value_charge: Arc<std::sync::atomic::AtomicUsize>,
     raw_policy: raw_policy::State,
-    value_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_analysis::value_query::ArchiveValueInput>>>,
+    value_inputs:
+        Mutex<BTreeMap<Key, std::sync::Weak<dm_analysis::value_query::ArchiveValueInput>>>,
     body_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_tree::frontend::BodySyntaxInput>>>,
     /// Current answers of every query a stored unit read (see `answer` below).
     answers: Answers,
@@ -72,8 +86,12 @@ impl Default for QueryDb {
         body_syntax::register(&db, Arc::clone(&body_charge));
         let value_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         value_proofs::register(&db, Arc::clone(&value_charge));
-        let raw_policy=raw_policy::State::default();
-        raw_policy::register(&db,Arc::clone(&raw_policy.charge));
+        let raw_policy = raw_policy::State::default();
+        raw_policy::register(
+            &db,
+            Arc::clone(&raw_policy.charge),
+            Arc::clone(&raw_policy.admission),
+        );
         db.define_input(SOURCE, "source");
         db.define_input(PROJECT, "project");
         db.define(PROGRAM, "program", |ctx, params| {
@@ -120,7 +138,10 @@ impl QueryDb {
         let mut changed_paths = Vec::new();
         // A new request: every answer is proven again (or carried) before it is used.
         self.answers.next_request();
-        let mut previous = self.sources.lock().unwrap_or_else(|error| error.into_inner());
+        let mut previous = self
+            .sources
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         let mut current = BTreeMap::new();
         let mut changed = 0;
         for (path, source) in sources.iter() {
@@ -155,7 +176,10 @@ impl QueryDb {
         let params: Value = Arc::new(keys);
         self.db.hash(PROGRAM_KEY, params)?;
         {
-            let mut log = self.changes.lock().unwrap_or_else(|error| error.into_inner());
+            let mut log = self
+                .changes
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
             log.push_back(RevisionChange {
                 before: revision_before,
                 after: self.db.revision(),
@@ -195,14 +219,18 @@ impl dm_preprocess::SourceChanges for QueryDb {
         if revision == current {
             return Some(Arc::new(std::collections::BTreeSet::new()));
         }
-        let log = self.changes.lock().unwrap_or_else(|error| error.into_inner());
+        let log = self
+            .changes
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         let mut entries = log.iter().skip_while(|entry| entry.after <= revision);
         let first = entries.next()?;
         // The log must reach back to `revision`: its first later entry starts at or before it.
         if first.before > revision {
             return None;
         }
-        let mut changed: std::collections::BTreeSet<PathBuf> = first.paths.iter().cloned().collect();
+        let mut changed: std::collections::BTreeSet<PathBuf> =
+            first.paths.iter().cloned().collect();
         for entry in entries {
             changed.extend(entry.paths.iter().cloned());
         }
@@ -241,13 +269,25 @@ pub(crate) struct AnswerValues {
 }
 impl Default for AnswerValues {
     fn default() -> Self {
-        Self { outcomes: Default::default(), shards: (0..VALUE_SHARDS).map(|_| Mutex::new(Default::default())).collect() }
+        Self {
+            outcomes: Default::default(),
+            shards: (0..VALUE_SHARDS)
+                .map(|_| Mutex::new(Default::default()))
+                .collect(),
+        }
     }
 }
 impl AnswerValues {
-    fn intern(&self, id: u128, query: &dm_ir::ResolveQuery, meaning: &dm_ir::ResolvedMeaning) -> Arc<AnswerValue> {
+    fn intern(
+        &self,
+        id: u128,
+        query: &dm_ir::ResolveQuery,
+        meaning: &dm_ir::ResolvedMeaning,
+    ) -> Arc<AnswerValue> {
         let hash = answer_hash(meaning);
-        let mut pooled = self.shards[(id as usize) % VALUE_SHARDS].lock().unwrap_or_else(|error| error.into_inner());
+        let mut pooled = self.shards[(id as usize) % VALUE_SHARDS]
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         use std::sync::atomic::Ordering::Relaxed;
         if let Some(held) = pooled.get(&(id as u64)).and_then(std::sync::Weak::upgrade) {
             if held.hash == hash && held.query == *query {
@@ -260,14 +300,21 @@ impl AnswerValues {
         } else {
             self.outcomes[3].fetch_add(1, Relaxed);
         }
-        let value = Arc::new(AnswerValue { hash, positive: positive_answer(meaning), query: *query });
+        let value = Arc::new(AnswerValue {
+            hash,
+            positive: positive_answer(meaning),
+            query: *query,
+        });
         pooled.insert(id as u64, Arc::downgrade(&value));
         value
     }
     /// Drop entries whose last slot is gone (a weak entry would otherwise keep its allocation).
     fn prune(&self) {
         for shard in self.shards.iter() {
-            shard.lock().unwrap_or_else(|error| error.into_inner()).retain(|_, value| value.strong_count() > 0);
+            shard
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .retain(|_, value| value.strong_count() > 0);
         }
     }
 }
@@ -301,7 +348,11 @@ impl AnswerSlot {
             Some(prior) => {
                 proved.born = prior.born;
                 proved.base = prior.base;
-                proved.changed = if prior.value.hash != proved.value.hash { proved.request } else { prior.changed };
+                proved.changed = if prior.value.hash != proved.value.hash {
+                    proved.request
+                } else {
+                    prior.changed
+                };
             }
             None => proved.born = proved.request,
         }
@@ -323,12 +374,20 @@ struct AnswerRequest {
 }
 impl Default for AnswerRequest {
     fn default() -> Self {
-        Self { request: 0, tree: None, world: 0, stamp: 0, stamps: vec![(0, 0)] }
+        Self {
+            request: 0,
+            tree: None,
+            world: 0,
+            stamp: 0,
+            stamps: vec![(0, 0)],
+        }
     }
 }
 impl AnswerRequest {
     fn identity(&self) -> u128 {
-        self.tree.as_ref().map_or(0, |tree| tree.declaration_identity())
+        self.tree
+            .as_ref()
+            .map_or(0, |tree| tree.declaration_identity())
     }
     /// Make `(identity, world)` this request's stamp.
     fn bind(&mut self, tree: Option<Arc<dm_tree::SemanticTree>>, world: u128) {
@@ -372,7 +431,9 @@ impl Default for Answers {
     fn default() -> Self {
         Self {
             values: crate::shared_store::answer_values(),
-            shards: (0..ANSWER_SHARDS).map(|_| Mutex::new(Default::default())).collect(),
+            shards: (0..ANSWER_SHARDS)
+                .map(|_| Mutex::new(Default::default()))
+                .collect(),
             current: Default::default(),
             requests: std::sync::atomic::AtomicU64::new(0),
             resolved: Default::default(),
@@ -406,7 +467,10 @@ impl Answers {
             );
         }
         let request = self.requests.fetch_add(1, Ordering::SeqCst) + 1;
-        let mut current = self.current.write().unwrap_or_else(|error| error.into_inner());
+        let mut current = self
+            .current
+            .write()
+            .unwrap_or_else(|error| error.into_inner());
         current.request = request;
         current.bind(None, 0);
         self.resolved.store(0, Ordering::Relaxed);
@@ -414,16 +478,31 @@ impl Answers {
         self.carried.store(0, Ordering::Relaxed);
     }
     fn clear(&self) {
-        let request = self.current.read().unwrap_or_else(|error| error.into_inner()).request;
-        self.cleared.store(request, std::sync::atomic::Ordering::Relaxed);
-        self.drops.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let request = self
+            .current
+            .read()
+            .unwrap_or_else(|error| error.into_inner())
+            .request;
+        self.cleared
+            .store(request, std::sync::atomic::Ordering::Relaxed);
+        self.drops
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         for shard in self.shards.iter() {
-            shard.lock().unwrap_or_else(|error| error.into_inner()).clear();
+            shard
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .clear();
         }
-        self.resource_queries.lock().unwrap_or_else(|error| error.into_inner()).clear();
+        self.resource_queries
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clear();
         {
             // No slot names a stamp now: keep only the open request's.
-            let mut current = self.current.write().unwrap_or_else(|error| error.into_inner());
+            let mut current = self
+                .current
+                .write()
+                .unwrap_or_else(|error| error.into_inner());
             let open = current.stamps[current.stamp as usize];
             current.stamps = vec![(0, 0)];
             if open != (0, 0) {
@@ -438,7 +517,12 @@ impl Answers {
     fn len(&self) -> usize {
         self.shards
             .iter()
-            .map(|shard| shard.lock().unwrap_or_else(|error| error.into_inner()).len())
+            .map(|shard| {
+                shard
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .len()
+            })
             .sum()
     }
 }
@@ -461,14 +545,22 @@ pub(crate) struct AnswerDiff {
 impl AnswerDiff {
     /// One line for a decline reason or a log.
     pub(crate) fn summary(&self) -> String {
-        let shown: Vec<String> =
-            self.changed.iter().take(8).map(|id| format!("{:08x}", (*id >> 96) as u32)).collect();
+        let shown: Vec<String> = self
+            .changed
+            .iter()
+            .take(8)
+            .map(|id| format!("{:08x}", (*id >> 96) as u32))
+            .collect();
         format!(
             "request {}: {} answers changed [{}{}], {} fresh, {} held{}",
             self.request,
             self.changed.len(),
             shown.join(" "),
-            if self.changed.len() > shown.len() { " ..." } else { "" },
+            if self.changed.len() > shown.len() {
+                " ..."
+            } else {
+                ""
+            },
             self.fresh,
             self.held,
             if self.cleared { ", table cleared" } else { "" },
@@ -481,7 +573,8 @@ impl AnswerDiff {
 fn verify_answers() -> bool {
     static VERIFY: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *VERIFY.get_or_init(|| {
-        cfg!(debug_assertions) || std::env::var_os("DMB_QUERY_VERIFY").is_some_and(|value| value == "1")
+        cfg!(debug_assertions)
+            || std::env::var_os("DMB_QUERY_VERIFY").is_some_and(|value| value == "1")
     })
 }
 fn query_id(query: &dm_ir::ResolveQuery) -> u128 {
@@ -519,7 +612,9 @@ fn answer_reachable(
         | Q::OverrideChain { owner, name, .. }
         | Q::MethodProcedureValue { owner, name, .. }
         | Q::DeclarationChain { owner, name, .. }
-        | Q::SourceDeclarationChain { owner, name, .. } => change.owner_name_dirty(tree, owner, name),
+        | Q::SourceDeclarationChain { owner, name, .. } => {
+            change.owner_name_dirty(tree, owner, name)
+        }
         Q::Type(path) | Q::Parent(path) | Q::Ancestry(path) => {
             change.owner_name_dirty(tree, path, dm_ir::SymbolId::of("\0dm-query-no-member"))
         }
@@ -572,7 +667,10 @@ impl RequestAnswers<'_> {
     /// The current answer hash of `query` (`id` is its [`query_id`]).
     fn current(&self, id: u128, query: &dm_ir::ResolveQuery) -> u128 {
         let answers = &self.db.answers;
-        let current = answers.current.read().unwrap_or_else(|error| error.into_inner());
+        let current = answers
+            .current
+            .read()
+            .unwrap_or_else(|error| error.into_inner());
         let identity = current.identity();
         let shard = &answers.shards[(id as usize) % ANSWER_SHARDS];
         let open = slot_request(current.request);
@@ -598,7 +696,9 @@ impl RequestAnswers<'_> {
                     slot.request = open;
                     let hash = slot.value.hash;
                     drop(slots);
-                    answers.carried.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    answers
+                        .carried
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     if verify_answers() {
                         self.verify(query, hash, "carried from the same answer world");
                     }
@@ -618,25 +718,35 @@ impl RequestAnswers<'_> {
                             return !answer_reachable(&UNCHANGED, tree, query);
                         }
                         tree.change_since().is_some_and(|change| {
-                            change.from_identity == slot_tree && !answer_reachable(change, tree, query)
+                            change.from_identity == slot_tree
+                                && !answer_reachable(change, tree, query)
                         })
                     });
                 if carried {
                     slot.request = open;
                     slot.stamp = current.stamp;
-                    answers.carried.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    answers
+                        .carried
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     return slot.value.hash;
                 }
             }
         }
-        static RESOLVE: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.resolve");
+        static RESOLVE: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("query.answer.resolve");
         let timer = RESOLVE.time();
         let meaning = (self.answer)(query);
         drop(timer);
         let value = answers.values.intern(id, query, &meaning);
-        let prior = shard.lock().unwrap_or_else(|error| error.into_inner()).get(&id).cloned();
+        let prior = shard
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .get(&id)
+            .cloned();
         if prior.is_some() {
-            answers.replaced.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            answers
+                .replaced
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }
         let slot = AnswerSlot::replaced_by(
             prior,
@@ -649,7 +759,9 @@ impl RequestAnswers<'_> {
                 base: None,
             },
         );
-        answers.resolved.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        answers
+            .resolved
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         if matches!(query.domain(), dm_ir::ReadDomain::ResourceSearch) {
             answers
                 .resource_queries
@@ -658,7 +770,10 @@ impl RequestAnswers<'_> {
                 .insert(id, *query);
         }
         let hash = slot.value.hash;
-        shard.lock().unwrap_or_else(|error| error.into_inner()).insert(id, slot);
+        shard
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .insert(id, slot);
         hash
     }
     /// Every stage shares one answer per query, so every stage's resolver must give it: a
@@ -667,7 +782,11 @@ impl RequestAnswers<'_> {
     fn verify(&self, query: &dm_ir::ResolveQuery, hash: u128, how: &str) {
         let own = answer_hash(&(self.answer)(query));
         if own != hash {
-            let mismatches = self.db.answers.mismatches.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let mismatches = self
+                .db
+                .answers
+                .mismatches
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             if mismatches < 8 {
                 eprintln!("native answer mismatch ({how}): {query:?}");
             }
@@ -687,9 +806,19 @@ impl RequestAnswers<'_> {
             return true;
         }
         let answers = &self.db.answers;
-        let request = slot_request(answers.current.read().unwrap_or_else(|error| error.into_inner()).request);
+        let request = slot_request(
+            answers
+                .current
+                .read()
+                .unwrap_or_else(|error| error.into_inner())
+                .request,
+        );
         let shard = &answers.shards[(id as usize) % ANSWER_SHARDS];
-        if let Some(slot) = shard.lock().unwrap_or_else(|error| error.into_inner()).get_mut(&id) {
+        if let Some(slot) = shard
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .get_mut(&id)
+        {
             slot.changed = request;
         }
         false
@@ -705,7 +834,8 @@ impl dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning> for R
     }
 }
 
-type ReadLeaf = Arc<[dm_session::Observation<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>]>;
+type ReadLeaf =
+    Arc<[dm_session::Observation<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>]>;
 /// One interned read leaf with, per read, its (query id, recorded answer hash). Equal leaves are one allocation in every
 /// unit, session and variant (the receipt pool interns them), so their proof lists are derived once. The query itself is
 /// the leaf's own (same order), not a second copy: a derived entry is 32 bytes, not 64.
@@ -727,20 +857,29 @@ pub(crate) struct LeafProofs {
 impl LeafProofs {
     fn proof(&self, leaf: &ReadLeaf) -> Arc<LeafReads> {
         let address = Arc::as_ptr(leaf) as *const () as usize;
-        let mut leaves = self.leaves.lock().unwrap_or_else(|error| error.into_inner());
+        let mut leaves = self
+            .leaves
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         if let Some(held) = leaves.get(&address).and_then(std::sync::Weak::upgrade) {
             return held;
         }
         let proof = Arc::new(LeafReads {
             owner: Arc::clone(leaf),
-            reads: leaf.iter().map(|read| (query_id(&read.query), answer_hash(&read.answer))).collect(),
+            reads: leaf
+                .iter()
+                .map(|read| (query_id(&read.query), answer_hash(&read.answer)))
+                .collect(),
         });
         leaves.insert(address, Arc::downgrade(&proof));
         proof
     }
     /// Drop entries whose last unit is gone.
     fn prune(&self) {
-        self.leaves.lock().unwrap_or_else(|error| error.into_inner()).retain(|_, proof| proof.strong_count() > 0);
+        self.leaves
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .retain(|_, proof| proof.strong_count() > 0);
     }
 }
 
@@ -752,7 +891,10 @@ pub(crate) struct UnitProofs {
 }
 impl Default for UnitProofs {
     fn default() -> Self {
-        Self { units: Default::default(), leaves: crate::shared_store::leaf_proofs() }
+        Self {
+            units: Default::default(),
+            leaves: crate::shared_store::leaf_proofs(),
+        }
     }
 }
 
@@ -778,8 +920,11 @@ impl QueryDb {
     ) {
         let world = world.unwrap_or(0);
         let (request, stamp) = {
-            let mut current =
-                self.answers.current.write().unwrap_or_else(|error| error.into_inner());
+            let mut current = self
+                .answers
+                .current
+                .write()
+                .unwrap_or_else(|error| error.into_inner());
             current.bind(Some(Arc::clone(tree)), world);
             (current.request, current.stamp)
         };
@@ -801,7 +946,14 @@ impl QueryDb {
                 id,
                 AnswerSlot::replaced_by(
                     prior,
-                    AnswerSlot { request: slot_request(request), stamp, value, born: 0, changed: 0, base: None },
+                    AnswerSlot {
+                        request: slot_request(request),
+                        stamp,
+                        value,
+                        born: 0,
+                        changed: 0,
+                        base: None,
+                    },
                 ),
             );
         }
@@ -813,8 +965,15 @@ impl QueryDb {
     /// Whether this request's answers are bound to `tree` itself ([`Self::begin_answers`] ran with it): only then may a
     /// stage that resolves through `tree` share the table.
     pub(crate) fn answers_bound_to(&self, tree: &dm_tree::SemanticTree) -> bool {
-        let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
-        current.tree.as_deref().is_some_and(|bound| std::ptr::eq(bound, tree))
+        let current = self
+            .answers
+            .current
+            .read()
+            .unwrap_or_else(|error| error.into_inner());
+        current
+            .tree
+            .as_deref()
+            .is_some_and(|bound| std::ptr::eq(bound, tree))
     }
     pub(crate) fn answers_version(&self) -> Option<u128> {
         self.answer_facts().map(|facts| facts.version())
@@ -830,15 +989,22 @@ impl QueryDb {
     /// not version its answers or no tree is bound.
     pub(crate) fn answer_facts(&self) -> Option<AnswerFacts> {
         let (tree, world) = {
-            let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
+            let current = self
+                .answers
+                .current
+                .read()
+                .unwrap_or_else(|error| error.into_inner());
             (current.tree.as_ref()?.declaration_identity(), current.world)
         };
         if world == 0 {
             return None;
         }
         let mut searches: Vec<(u128, dm_ir::ResolveQuery, u128)> = {
-            let queries =
-                self.answers.resource_queries.lock().unwrap_or_else(|error| error.into_inner());
+            let queries = self
+                .answers
+                .resource_queries
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
             queries
                 .iter()
                 .map(|(id, query)| {
@@ -852,28 +1018,52 @@ impl QueryDb {
         Some(AnswerFacts {
             tree,
             world,
-            searches: searches.into_iter().map(|(_, query, hash)| (query, hash)).collect(),
+            searches: searches
+                .into_iter()
+                .map(|(_, query, hash)| (query, hash))
+                .collect(),
         })
     }
     /// Prove, in this request, the answers an output restored from storage was built from: the
     /// declarations and the answer world are the stored ones (so every answer they determine is
     /// equal), and each stored resource search still answers as it did. Asking a search holds it
     /// in the table, so the table afterwards holds every search the stored output read.
-    pub(crate) fn prove_facts(&self, answers: &RequestAnswers<'_>, facts: &AnswerFacts) -> Result<usize, String> {
-        static PROVE: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.prove_facts");
+    pub(crate) fn prove_facts(
+        &self,
+        answers: &RequestAnswers<'_>,
+        facts: &AnswerFacts,
+    ) -> Result<usize, String> {
+        static PROVE: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("query.answer.prove_facts");
         let _timer = PROVE.time();
         {
-            let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
-            if current.tree.as_ref().map(|tree| tree.declaration_identity()) != Some(facts.tree) {
+            let current = self
+                .answers
+                .current
+                .read()
+                .unwrap_or_else(|error| error.into_inner());
+            if current
+                .tree
+                .as_ref()
+                .map(|tree| tree.declaration_identity())
+                != Some(facts.tree)
+            {
                 return Err("the declarations differ from the stored output's".into());
             }
             if current.world == 0 || current.world != facts.world {
                 return Err("the answer world differs from the stored output's".into());
             }
         }
-        let differing = facts.searches.iter().filter(|(query, hash)| !answers.unchanged_hash(query, *hash)).count();
+        let differing = facts
+            .searches
+            .iter()
+            .filter(|(query, hash)| !answers.unchanged_hash(query, *hash))
+            .count();
         if differing > 0 {
-            return Err(format!("{differing} of {} resource searches answer differently", facts.searches.len()));
+            return Err(format!(
+                "{differing} of {} resource searches answer differently",
+                facts.searches.len()
+            ));
         }
         Ok(facts.searches.len())
     }
@@ -891,12 +1081,18 @@ impl QueryDb {
     pub(crate) fn mark_published(&self) -> u64 {
         use std::sync::atomic::Ordering::Relaxed;
         for shard in self.answers.shards.iter() {
-            for slot in shard.lock().unwrap_or_else(|error| error.into_inner()).values_mut() {
+            for slot in shard
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .values_mut()
+            {
                 slot.base = Some(Arc::clone(&slot.value));
             }
         }
         self.answers.values.prune();
-        self.answers.marked_drops.store(self.answers.drops.load(Relaxed), Relaxed);
+        self.answers
+            .marked_drops
+            .store(self.answers.drops.load(Relaxed), Relaxed);
         self.answers.epoch.fetch_add(1, Relaxed) + 1
     }
     /// Ask again, under this request's tree, every answer the published output was built from
@@ -914,7 +1110,8 @@ impl QueryDb {
         marks: u64,
         workers: usize,
     ) -> Result<usize, String> {
-        static PROVE: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.prove_base");
+        static PROVE: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("query.answer.prove_base");
         let _timer = PROVE.time();
         use std::sync::atomic::Ordering::Relaxed;
         if marks == 0 || self.answers.epoch.load(Relaxed) != marks {
@@ -926,11 +1123,9 @@ impl QueryDb {
         let mut held: Vec<(u128, dm_ir::ResolveQuery, u128)> = Vec::new();
         for shard in self.answers.shards.iter() {
             let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
-            held.extend(
-                slots
-                    .iter()
-                    .filter_map(|(id, slot)| slot.base.as_ref().map(|base| (*id, base.query, base.hash))),
-            );
+            held.extend(slots.iter().filter_map(|(id, slot)| {
+                slot.base.as_ref().map(|base| (*id, base.query, base.hash))
+            }));
         }
         let threads = workers.clamp(1, 16);
         let chunk = held.len().div_ceil(threads).max(1);
@@ -939,14 +1134,22 @@ impl QueryDb {
                 .chunks(chunk)
                 .map(|part| {
                     scope.spawn(move || {
-                        part.iter().filter(|(id, query, base)| !answers.matches(*id, query, *base)).count()
+                        part.iter()
+                            .filter(|(id, query, base)| !answers.matches(*id, query, *base))
+                            .count()
                     })
                 })
                 .collect();
-            handles.into_iter().map(|handle| handle.join().expect("answer proof worker")).sum()
+            handles
+                .into_iter()
+                .map(|handle| handle.join().expect("answer proof worker"))
+                .sum()
         });
         if differing > 0 {
-            return Err(format!("{differing} of {} published answers changed", held.len()));
+            return Err(format!(
+                "{differing} of {} published answers changed",
+                held.len()
+            ));
         }
         Ok(held.len())
     }
@@ -960,10 +1163,19 @@ impl QueryDb {
         static DIFF: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.diff");
         let _timer = DIFF.time();
         use std::sync::atomic::Ordering;
-        let request = self.answers.current.read().unwrap_or_else(|error| error.into_inner()).request;
+        let request = self
+            .answers
+            .current
+            .read()
+            .unwrap_or_else(|error| error.into_inner())
+            .request;
         let cleared = self.answers.cleared.load(Ordering::Relaxed) == request;
         let open = slot_request(request);
-        let mut diff = AnswerDiff { request, cleared, ..Default::default() };
+        let mut diff = AnswerDiff {
+            request,
+            cleared,
+            ..Default::default()
+        };
         for shard in self.answers.shards.iter() {
             let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
             diff.held += slots.len();
@@ -980,7 +1192,9 @@ impl QueryDb {
     }
     /// Answers a stage's resolver disagreed with in verification (see [`RequestAnswers`]).
     pub(crate) fn answer_mismatches(&self) -> usize {
-        self.answers.mismatches.load(std::sync::atomic::Ordering::Relaxed)
+        self.answers
+            .mismatches
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
     /// Open a request without source inputs (fixtures): every answer is proven again.
     #[cfg(test)]
@@ -1015,16 +1229,27 @@ impl QueryDb {
         let started = std::time::Instant::now();
         // Each unit's read list, built once per stored value.
         let units: Vec<Arc<UnitReads>> = {
-            let mut cache = self.unit_proofs.units.lock().unwrap_or_else(|error| error.into_inner());
+            let mut cache = self
+                .unit_proofs
+                .units
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
             let mut live = std::collections::HashMap::with_capacity(stored.len());
             let units = stored
                 .iter()
                 .map(|(_, artifact)| {
                     let address = Arc::as_ptr(&artifact.value) as *const () as usize;
                     let unit = cache.remove(&address).unwrap_or_else(|| {
-                        let leaves = artifact.reads.leaves().map(|leaf| self.unit_proofs.leaves.proof(leaf)).collect();
+                        let leaves = artifact
+                            .reads
+                            .leaves()
+                            .map(|leaf| self.unit_proofs.leaves.proof(leaf))
+                            .collect();
                         let owner: Arc<dyn std::any::Any + Send + Sync> = artifact.value.clone();
-                        Arc::new(UnitReads { _owner: owner, leaves })
+                        Arc::new(UnitReads {
+                            _owner: owner,
+                            leaves,
+                        })
                     });
                     live.insert(address, Arc::clone(&unit));
                     unit
@@ -1045,10 +1270,11 @@ impl QueryDb {
                         part.iter()
                             .map(|unit| {
                                 unit.leaves.iter().all(|leaf| {
-                                    leaf.owner
-                                        .iter()
-                                        .zip(leaf.reads.iter())
-                                        .all(|(read, (id, recorded))| answers.matches(*id, &read.query, *recorded))
+                                    leaf.owner.iter().zip(leaf.reads.iter()).all(
+                                        |(read, (id, recorded))| {
+                                            answers.matches(*id, &read.query, *recorded)
+                                        },
+                                    )
                                 })
                             })
                             .collect::<Vec<_>>()
@@ -1091,7 +1317,10 @@ mod tests {
 
     fn sources(files: &[(&str, &str)]) -> PreparedSources {
         PreparedSources::from_prepared(files.iter().map(|(path, text)| {
-            (PathBuf::from(path), Arc::new(PreparedSource::new(Arc::from(*text))))
+            (
+                PathBuf::from(path),
+                Arc::new(PreparedSource::new(Arc::from(*text))),
+            )
         }))
         .unwrap()
     }
@@ -1099,12 +1328,18 @@ mod tests {
     #[test]
     fn program_is_green_only_when_no_input_changed() {
         let db = QueryDb::default();
-        let first = db.revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1).unwrap();
+        let first = db
+            .revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1)
+            .unwrap();
         assert!(!first.green);
         assert_eq!((first.sources, first.changed), (2, 2));
-        let same = db.revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1).unwrap();
+        let same = db
+            .revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1)
+            .unwrap();
         assert!(same.green, "{same:?}");
-        let edited = db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y")]), 1).unwrap();
+        let edited = db
+            .revise(&sources(&[("a.dm", "x2"), ("b.dm", "y")]), 1)
+            .unwrap();
         assert!(!edited.green);
         assert_eq!(edited.changed, 1);
         let removed = db.revise(&sources(&[("a.dm", "x2")]), 1).unwrap();
@@ -1134,7 +1369,11 @@ mod tests {
             std::path::Path::new("slots.dme"),
             &Text(text.into()),
             &Default::default(),
-            dm_tree::frontend::FrontendConfig { workers: 1, engine: Some(&seed), observer: None },
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
         )
         .unwrap();
         Arc::clone(&front.snapshot.tree)
@@ -1147,22 +1386,47 @@ mod tests {
         use dm_ir::ResolveQuery as Q;
         let owner = symbol("/datum/a");
         vec![
-            Q::Var { owner, name: symbol("charges") },
-            Q::Var { owner, name: symbol("label") },
-            Q::HasMemberVar { owner, name: symbol("charges") },
-            Q::HasMemberProc { owner, name: symbol("run") },
-            Q::HasMemberProc { owner, name: symbol("extra") },
-            Q::Proc { owner, name: symbol("run"), verb: false },
+            Q::Var {
+                owner,
+                name: symbol("charges"),
+            },
+            Q::Var {
+                owner,
+                name: symbol("label"),
+            },
+            Q::HasMemberVar {
+                owner,
+                name: symbol("charges"),
+            },
+            Q::HasMemberProc {
+                owner,
+                name: symbol("run"),
+            },
+            Q::HasMemberProc {
+                owner,
+                name: symbol("extra"),
+            },
+            Q::Proc {
+                owner,
+                name: symbol("run"),
+                verb: false,
+            },
         ]
     }
     /// Open a request on `text`, ask every query, and return the diff against the request before.
     fn request(db: &QueryDb, text: &str) -> (AnswerDiff, Vec<(u128, u128)>) {
         let tree = tree(text);
         db.next_request();
-        db.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
-        let resolver = |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
+        db.begin_answers(&tree, None, &|query| {
+            dm_ir::Resolver::resolve(tree.as_ref(), *query)
+        });
+        let resolver =
+            |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
         let answers = db.request_answers(&resolver);
-        let hashes = asked().iter().map(|q| (query_id(q), answers.current(query_id(q), q))).collect();
+        let hashes = asked()
+            .iter()
+            .map(|q| (query_id(q), answers.current(query_id(q), q)))
+            .collect();
         (db.answer_diff(), hashes)
     }
     const BASE: &str = "/datum/a
@@ -1176,13 +1440,21 @@ mod tests {
     fn one_edited_default_changes_exactly_one_answer() {
         let db = QueryDb::default();
         let (first, base) = request(&db, BASE);
-        assert_eq!((first.changed.len(), first.fresh), (0, asked().len()), "{first:?}");
+        assert_eq!(
+            (first.changed.len(), first.fresh),
+            (0, asked().len()),
+            "{first:?}"
+        );
         let (same, _) = request(&db, BASE);
         assert_eq!(same.changed, Vec::<u128>::new(), "{same:?}");
         assert_eq!(same.fresh, 0);
         let (edited, now) = request(&db, &BASE.replace("= 25", "= 26"));
-        let differing: Vec<u128> =
-            base.iter().zip(&now).filter(|(a, b)| a.1 != b.1).map(|(a, _)| a.0).collect();
+        let differing: Vec<u128> = base
+            .iter()
+            .zip(&now)
+            .filter(|(a, b)| a.1 != b.1)
+            .map(|(a, _)| a.0)
+            .collect();
         assert_eq!(edited.changed, differing, "{edited:?}");
         assert_eq!(edited.changed.len(), 1, "{edited:?}");
         assert_eq!(edited.changed[0], query_id(&asked()[0]));
@@ -1202,11 +1474,20 @@ mod tests {
     fn an_added_proc_changes_only_the_answers_that_named_it() {
         let db = QueryDb::default();
         request(&db, BASE);
-        let (added, _) = request(&db, &format!("{BASE}/datum/a/proc/extra()
+        let (added, _) = request(
+            &db,
+            &format!(
+                "{BASE}/datum/a/proc/extra()
 	return 3
-"));
+"
+            ),
+        );
         assert_eq!(added.changed, vec![query_id(&asked()[4])], "{added:?}");
-        assert!(added.summary().contains(": 1 answers changed"), "{}", added.summary());
+        assert!(
+            added.summary().contains(": 1 answers changed"),
+            "{}",
+            added.summary()
+        );
     }
 
     #[test]
@@ -1228,11 +1509,17 @@ mod tests {
         let db = QueryDb::default();
         let edited = tree(&BASE.replace("= 25", "= 26"));
         db.next_request();
-        db.begin_answers(&edited, None, &|query| dm_ir::Resolver::resolve(edited.as_ref(), *query));
-        let resolver = |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(edited.as_ref(), *query);
+        db.begin_answers(&edited, None, &|query| {
+            dm_ir::Resolver::resolve(edited.as_ref(), *query)
+        });
+        let resolver =
+            |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(edited.as_ref(), *query);
         let answers = db.request_answers(&resolver);
         for (query, (id, hash)) in asked().iter().zip(&recorded) {
-            assert_eq!(answers.matches(*id, query, *hash), *id != query_id(&asked()[0]));
+            assert_eq!(
+                answers.matches(*id, query, *hash),
+                *id != query_id(&asked()[0])
+            );
         }
         let diff = db.answer_diff();
         assert_eq!(diff.changed, vec![query_id(&asked()[0])], "{diff:?}");
@@ -1243,8 +1530,11 @@ mod tests {
     fn prove(db: &QueryDb, text: &str, marks: u64) -> Result<usize, String> {
         let tree = tree(text);
         db.next_request();
-        db.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
-        let resolver = |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
+        db.begin_answers(&tree, None, &|query| {
+            dm_ir::Resolver::resolve(tree.as_ref(), *query)
+        });
+        let resolver =
+            |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
         db.prove_against_base(&db.request_answers(&resolver), marks, 2)
     }
 
@@ -1255,11 +1545,19 @@ mod tests {
         let marks = db.mark_published();
         // A body edit, and a proc nothing marked asked about: the declaration identity differs
         // for the second, every marked answer is the same.
-        assert_eq!(prove(&db, &BASE.replace("return 1", "return 2"), marks), Ok(asked().len()));
-        let unrelated = format!("{BASE}/datum/a/proc/other()
+        assert_eq!(
+            prove(&db, &BASE.replace("return 1", "return 2"), marks),
+            Ok(asked().len())
+        );
+        let unrelated = format!(
+            "{BASE}/datum/a/proc/other()
 	return 3
-");
-        assert_ne!(tree(BASE).declaration_identity(), tree(&unrelated).declaration_identity());
+"
+        );
+        assert_ne!(
+            tree(BASE).declaration_identity(),
+            tree(&unrelated).declaration_identity()
+        );
         assert_eq!(prove(&db, &unrelated, marks), Ok(asked().len()));
     }
 
@@ -1270,9 +1568,16 @@ mod tests {
         let marks = db.mark_published();
         let default = prove(&db, &BASE.replace("= 25", "= 26"), marks).unwrap_err();
         assert!(default.starts_with("1 of "), "{default}");
-        let proc = prove(&db, &format!("{BASE}/datum/a/proc/extra()
+        let proc = prove(
+            &db,
+            &format!(
+                "{BASE}/datum/a/proc/extra()
 	return 3
-"), marks).unwrap_err();
+"
+            ),
+            marks,
+        )
+        .unwrap_err();
         assert!(proc.starts_with("1 of "), "{proc}");
     }
 
@@ -1294,7 +1599,9 @@ mod tests {
         request(&db, BASE);
         let first = db.mark_published();
         let second = db.mark_published();
-        assert!(prove(&db, BASE, first).unwrap_err().contains("another output"));
+        assert!(prove(&db, BASE, first)
+            .unwrap_err()
+            .contains("another output"));
         assert!(prove(&db, BASE, second).is_ok());
         db.answers.clear();
         assert!(prove(&db, BASE, second).unwrap_err().contains("dropped"));
@@ -1308,7 +1615,10 @@ mod tests {
         present: bool,
         asked: &[dm_ir::ResolveQuery],
         searches: &[&str],
-    ) -> (Arc<dm_tree::SemanticTree>, Box<dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning + Sync>) {
+    ) -> (
+        Arc<dm_tree::SemanticTree>,
+        Box<dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning + Sync>,
+    ) {
         let tree = tree(text);
         let resolver_tree = Arc::clone(&tree);
         let resolve = move |query: &dm_ir::ResolveQuery| match query {
@@ -1336,7 +1646,9 @@ mod tests {
         // The build the output was retained from: every query asked, two resource searches held.
         let built = QueryDb::default();
         open_with_searches(&built, BASE, 9, true, &asked(), &searches);
-        let facts = built.answer_facts().expect("a bound tree and a versioned world");
+        let facts = built
+            .answer_facts()
+            .expect("a bound tree and a versioned world");
         assert_eq!(facts.searches.len(), 2);
         assert_eq!(Some(facts.version()), built.answers_version());
         assert_eq!(Some(facts.context()), built.answers_context());
@@ -1344,26 +1656,43 @@ mod tests {
         let later = QueryDb::default();
         let (_, resolve) = open_with_searches(&later, BASE, 9, true, &asked()[..3], &[]);
         assert_ne!(later.answers_version(), built.answers_version());
-        assert_eq!(later.prove_facts(&later.request_answers(&resolve), &facts), Ok(2));
+        assert_eq!(
+            later.prove_facts(&later.request_answers(&resolve), &facts),
+            Ok(2)
+        );
         // Asking the stored searches holds them: the table now describes the same answers as the stored output.
         assert_eq!(later.answers_context(), built.answers_context());
-        assert_eq!(later.answer_facts().map(|facts| facts.searches), Some(facts.searches.clone()));
+        assert_eq!(
+            later.answer_facts().map(|facts| facts.searches),
+            Some(facts.searches.clone())
+        );
         // A search that answers differently, other declarations and another answer world are each refused.
         let moved = QueryDb::default();
         let (_, resolve) = open_with_searches(&moved, BASE, 9, false, &asked()[..3], &[]);
-        let error = moved.prove_facts(&moved.request_answers(&resolve), &facts).unwrap_err();
+        let error = moved
+            .prove_facts(&moved.request_answers(&resolve), &facts)
+            .unwrap_err();
         assert!(error.starts_with("2 of 2 resource searches"), "{error}");
         let edited = QueryDb::default();
-        let (_, resolve) = open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
-        assert!(edited.prove_facts(&edited.request_answers(&resolve), &facts).unwrap_err().contains("declarations"));
+        let (_, resolve) =
+            open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
+        assert!(edited
+            .prove_facts(&edited.request_answers(&resolve), &facts)
+            .unwrap_err()
+            .contains("declarations"));
         let other_world = QueryDb::default();
         let (_, resolve) = open_with_searches(&other_world, BASE, 10, true, &[], &[]);
-        assert!(other_world.prove_facts(&other_world.request_answers(&resolve), &facts).unwrap_err().contains("world"));
+        assert!(other_world
+            .prove_facts(&other_world.request_answers(&resolve), &facts)
+            .unwrap_err()
+            .contains("world"));
         // No world, no facts: the table cannot version its answers.
         let unversioned = QueryDb::default();
         let tree = tree(BASE);
         unversioned.next_request();
-        unversioned.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
+        unversioned.begin_answers(&tree, None, &|query| {
+            dm_ir::Resolver::resolve(tree.as_ref(), *query)
+        });
         assert!(unversioned.answer_facts().is_none() && unversioned.answers_version().is_none());
     }
 
@@ -1372,7 +1701,9 @@ mod tests {
         let searches = ["icons/a.dmi", "icons/b.dmi"];
         let db = QueryDb::default();
         open_with_searches(&db, BASE, 9, true, &asked(), &searches);
-        let facts = db.answer_facts().expect("a bound tree and a versioned world");
+        let facts = db
+            .answer_facts()
+            .expect("a bound tree and a versioned world");
         let marks = db.mark_published();
         assert!(db.marks_stand(marks));
         assert!(!db.marks_stand(marks + 1) && !db.marks_stand(0));
@@ -1383,17 +1714,30 @@ mod tests {
         assert_eq!(db.answer_facts().map(|now| now.searches.len()), Some(0));
         // The retained output's facts still prove it: same declarations, same world, each search asked again.
         assert_eq!(db.prove_facts(&db.request_answers(&resolve), &facts), Ok(2));
-        assert_eq!(db.answer_facts().map(|now| now.searches), Some(facts.searches.clone()));
+        assert_eq!(
+            db.answer_facts().map(|now| now.searches),
+            Some(facts.searches.clone())
+        );
         // A changed declaration, a changed world and a search that now answers differently decline.
         let edited = QueryDb::default();
-        let (_, resolve) = open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
-        assert!(edited.prove_facts(&edited.request_answers(&resolve), &facts).unwrap_err().contains("declarations"));
+        let (_, resolve) =
+            open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
+        assert!(edited
+            .prove_facts(&edited.request_answers(&resolve), &facts)
+            .unwrap_err()
+            .contains("declarations"));
         let world = QueryDb::default();
         let (_, resolve) = open_with_searches(&world, BASE, 10, true, &[], &[]);
-        assert!(world.prove_facts(&world.request_answers(&resolve), &facts).unwrap_err().contains("world"));
+        assert!(world
+            .prove_facts(&world.request_answers(&resolve), &facts)
+            .unwrap_err()
+            .contains("world"));
         let moved = QueryDb::default();
         let (_, resolve) = open_with_searches(&moved, BASE, 9, false, &[], &[]);
-        assert!(moved.prove_facts(&moved.request_answers(&resolve), &facts).unwrap_err().contains("resource searches"));
+        assert!(moved
+            .prove_facts(&moved.request_answers(&resolve), &facts)
+            .unwrap_err()
+            .contains("resource searches"));
     }
 
     #[test]
@@ -1404,10 +1748,16 @@ mod tests {
         // A stage asks something new in the next request (a new unit's read): it has no base.
         let tree = tree(BASE);
         db.next_request();
-        db.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
-        let resolver = |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
+        db.begin_answers(&tree, None, &|query| {
+            dm_ir::Resolver::resolve(tree.as_ref(), *query)
+        });
+        let resolver =
+            |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
         let answers = db.request_answers(&resolver);
-        let novel = dm_ir::ResolveQuery::HasMemberVar { owner: symbol("/datum/a"), name: symbol("novel") };
+        let novel = dm_ir::ResolveQuery::HasMemberVar {
+            owner: symbol("/datum/a"),
+            name: symbol("novel"),
+        };
         answers.current(query_id(&novel), &novel);
         assert_eq!(db.prove_against_base(&answers, marks, 1), Ok(asked().len()));
     }
@@ -1416,13 +1766,17 @@ mod tests {
     fn the_change_log_answers_which_sources_changed_since_a_revision() {
         use dm_preprocess::SourceChanges;
         let db = QueryDb::default();
-        db.revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1).unwrap();
+        db.revise(&sources(&[("a.dm", "x"), ("b.dm", "y")]), 1)
+            .unwrap();
         let at_first = db.revision();
         assert!(db.changes_since(at_first).unwrap().is_empty());
-        db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y")]), 1).unwrap();
+        db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y")]), 1)
+            .unwrap();
         let after_a = db.revision();
-        db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y"), ("c.dm", "z")]), 1).unwrap();
-        db.revise(&sources(&[("a.dm", "x2"), ("c.dm", "z")]), 1).unwrap();
+        db.revise(&sources(&[("a.dm", "x2"), ("b.dm", "y"), ("c.dm", "z")]), 1)
+            .unwrap();
+        db.revise(&sources(&[("a.dm", "x2"), ("c.dm", "z")]), 1)
+            .unwrap();
         let path = |name: &str| PathBuf::from(name);
         let since_first = db.changes_since(at_first).unwrap();
         assert_eq!(
@@ -1439,7 +1793,8 @@ mod tests {
         assert!(db.changes_since(db.revision() + 1).is_none());
         assert!(QueryDb::default().changes_since(at_first).is_none());
         for step in 0..(CHANGE_LOG + 2) {
-            db.revise(&sources(&[("a.dm", &format!("v{step}")), ("c.dm", "z")]), 1).unwrap();
+            db.revise(&sources(&[("a.dm", &format!("v{step}")), ("c.dm", "z")]), 1)
+                .unwrap();
         }
         assert!(db.changes_since(at_first).is_none());
     }

@@ -399,6 +399,56 @@ impl SemanticTree {
         self.validate_checker_builtin_profile(profile).ok()?;
         Some(profile)
     }
+    /// Exact checker/source type presence, independent of runtime ABI member
+    /// completeness. Engine-only extra types are NOT checker source types.
+    /// `declarations()` is the authored roster: finish_with_engine removes the
+    /// seed prefix (adapter.rs), and retained builds preserve that same roster.
+    pub fn checker_source_type_presence(
+        &self,
+        profile: PackedU128,
+        path: &str,
+    ) -> Result<bool, CheckerBuiltinError> {
+        self.validate_checker_builtin_profile(profile)?;
+        let symbol = SymbolId::of(path);
+        if self
+            .symbols
+            .text(symbol)
+            .is_some_and(|actual| actual != path)
+        {
+            return Err(CheckerBuiltinError::Symbol(
+                "checker source type spelling collision".into(),
+            ));
+        }
+        if data::PARENTS.iter().any(|(builtin, _)| *builtin == path) {
+            return Ok(true);
+        }
+        if !path.starts_with('/') || path.len() == 1 {
+            return Ok(false);
+        }
+        for target in self.declarations() {
+            let owner = match target {
+                crate::Target::Type(id) => self.type_node(*id),
+                crate::Target::Member(id) => self.member(*id).and_then(|m| self.type_node(m.owner)),
+            }
+            .ok_or(CheckerBuiltinError::Shape(
+                "authored type target is unavailable",
+            ))?;
+            let name = self
+                .symbols
+                .text(owner.path)
+                .ok_or(CheckerBuiltinError::Shape(
+                    "authored type spelling is unavailable",
+                ))?;
+            if name == path
+                || name
+                    .strip_prefix(path)
+                    .is_some_and(|tail| tail.starts_with('/'))
+            {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
     /// Fixed spelling projection. No source symbol is interned or copied.
     pub fn checker_builtin_spelling(
         &self,

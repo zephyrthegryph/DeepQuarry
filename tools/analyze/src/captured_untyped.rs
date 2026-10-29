@@ -20,6 +20,8 @@ use std::{path::Path, sync::Arc};
 /// original bytes or recorded negative facts to this SAME policy revision.
 pub enum ManifestRead<'a> {
     Compiled,
+    /// Host authenticates these exact original bytes with its private acquisition receipt.
+    CompiledOriginalBytes(&'a [u8]),
     OriginalBytes(&'a [u8]),
     ProvenUnavailable,
 }
@@ -225,6 +227,35 @@ impl<'a> BorrowedUntyped<'a> {
                         == dm_preprocess::regions::canonical_path(&manifest_path)
                 });
         let order = match manifest {
+            ManifestRead::CompiledOriginalBytes(bytes) => {
+                if !positive_compiled_manifest {
+                    return Err("original compiled manifest receipt has no compiled member".into());
+                }
+                // Original UTF8/BOM is not reconstructed from stripped SourceText.
+                // The private host receipt authenticates bytes; this cross-check
+                // keeps a malformed facade caller from mixing another manifest.
+                for (path, lease) in self.inputs.mapping().source_acquisitions() {
+                    if dm_preprocess::regions::canonical_path(path)
+                        != dm_preprocess::regions::canonical_path(&manifest_path)
+                    {
+                        continue;
+                    }
+                    let lease = lease.ok_or("manifest original acquisition unknown")?;
+                    let expected = match lease.encoding() {
+                        dm_preprocess::SourceEncoding::Utf8 => bytes,
+                        dm_preprocess::SourceEncoding::Utf8Bom => bytes
+                            .strip_prefix(b"\xef\xbb\xbf")
+                            .ok_or("manifest BOM receipt contradicts original")?,
+                        _ => return Err("manifest original is not certified UTF8".into()),
+                    };
+                    if expected != lease.source_text().as_bytes() {
+                        return Err("manifest receipt contradicts source acquisition".into());
+                    }
+                }
+                std::str::from_utf8(bytes)
+                    .map(crate::raw_marker_policy::dme_include_order)
+                    .unwrap_or_default()
+            }
             ManifestRead::OriginalBytes(bytes) => {
                 if positive_compiled_manifest
                     || self

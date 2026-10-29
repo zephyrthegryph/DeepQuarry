@@ -101,6 +101,21 @@ fn equal_decoded_revision_does_not_admit_current_incompatible_none_policy_checke
         .write_native_checker(0, "warning", &new.snapshot.tree, &mut refused)
         .is_err());
     assert!(refused.is_empty());
+    for explicit in [None, Some(root().join("SpacemanDMM.toml"))] {
+        let mut visibility = Vec::new();
+        let error = current
+            .write_native_configured_variable_visibility(
+                &root().join("code/native_encoding.dm"),
+                explicit.as_deref(),
+                &new.snapshot.tree,
+                &mut visibility,
+            )
+            .unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("original source encoding lacks legacy semantic parity"));
+        assert!(visibility.is_empty());
+    }
     assert_eq!(
         db.db().stats(dm_query::Kind(4)).computed,
         before,
@@ -139,6 +154,19 @@ fn unknown_string_provider_cannot_return_clean_none_policy_checker_rows() {
         .write_native_checker(0, "disabled", &frontend.snapshot.tree, &mut output)
         .is_err());
     assert!(output.is_empty());
+    let mut visibility = Vec::new();
+    let error = snapshot
+        .write_native_configured_variable_visibility(
+            &root().join("code/native_encoding.dm"),
+            None,
+            &frontend.snapshot.tree,
+            &mut visibility,
+        )
+        .unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("semantic source original encoding unproven"));
+    assert!(visibility.is_empty());
 }
 #[test]
 fn incompatible_original_still_has_byte_faithful_raw_policy_findings() {
@@ -146,6 +174,7 @@ fn incompatible_original_still_has_byte_faithful_raw_policy_findings() {
     let (inputs, frontend) = source(b"/proc/probe()\n    // \x80\n    sleep(1)\n", &db);
     let config = root().join("scopes.toml");
     let intent = PolicyInputRequest {
+        workspace: None,
         files: vec![PolicyInputFile {
             path: config.clone(),
             role: PolicyInputRole::Configuration,

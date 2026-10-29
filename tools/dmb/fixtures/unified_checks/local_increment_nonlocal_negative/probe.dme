@@ -1,0 +1,4 @@
+/datum/probe
+    var/datum/target
+/datum/probe/proc/test()
+    target++

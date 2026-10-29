@@ -136,6 +136,7 @@ pub struct ControlOrigin {
 pub struct ParsedBody {
     pub statements: Vec<Statement>,
     pub control_origins: Vec<ControlOrigin>,
+    pub local_variables: crate::LocalVariableLedger,
     pub diagnostics: Vec<Diagnostic>,
     /// Source-issued grammar context, kept separate to preserve semantic error order.
     pub pending_bodies: Vec<crate::PendingBody>,
@@ -143,7 +144,10 @@ pub struct ParsedBody {
 
 impl ParsedBody {
     pub fn control_origin(&self, condition: Span) -> Option<Span> {
-        self.control_origins.iter().find(|origin| origin.condition == condition).map(|origin| origin.opening)
+        self.control_origins
+            .iter()
+            .find(|origin| origin.condition == condition)
+            .map(|origin| origin.opening)
     }
 }
 
@@ -167,7 +171,11 @@ pub fn parse_proc_body(proc: &Item) -> ParsedBody {
 /// Parse a procedure body when its owning declaration is already known.
 pub fn parse_body_items(items: &[Item]) -> ParsedBody {
     let mut result = ParsedBody::default();
-    result.statements = parse_sequence(items, &mut result.diagnostics, &mut result.control_origins);
+    let mut origins = BodyOrigins {
+        controls: &mut result.control_origins,
+        locals: &mut result.local_variables,
+    };
+    result.statements = parse_sequence(items, &mut result.diagnostics, &mut origins);
     result
 }
 
@@ -187,7 +195,93 @@ pub fn parse_body_items_with_context(
     parsed
 }
 
-fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Vec<Statement> {
+/// One existing native parser pass owns control AND local declaration origins.
+struct BodyOrigins<'a> {
+    controls: &'a mut Vec<ControlOrigin>,
+    locals: &'a mut crate::LocalVariableLedger,
+}
+impl BodyOrigins<'_> {
+    fn push(&mut self, origin: ControlOrigin) {
+        self.controls.push(origin);
+    }
+    fn local_parts(
+        &mut self,
+        source: &str,
+        lexed: &crate::SpannedLexed,
+        base: usize,
+        parts: &[&str],
+        kind: crate::LocalSourceKind,
+    ) {
+        if !lexed.diagnostics.is_empty() {
+            self.locals
+                .decline("native local token query has lexical errors");
+            return;
+        }
+        for (index, part) in parts.iter().enumerate() {
+            let part = part.trim();
+            // `part` is a slice supplied by the EXISTING native grammar, not
+            // looked up by matching equal text or reparsed by checker policy.
+            let start = part.as_ptr() as usize - source.as_ptr() as usize;
+            let end = start + part.len();
+            let first = lexed.tokens.partition_point(|t| t.span.end <= start);
+            let last = lexed.tokens.partition_point(|t| t.span.start < end);
+            let Some(tokens) = lexed.tokens.get(first..last) else {
+                self.locals.decline("native local token slice unavailable");
+                return;
+            };
+            let preceding = if index == 0 {
+                None
+            } else {
+                let token = lexed.tokens[..first].iter().rev().find(|t| {
+                    !matches!(
+                        t.kind,
+                        crate::TokenKind::Whitespace
+                            | crate::TokenKind::Comment
+                            | crate::TokenKind::Newline
+                    )
+                });
+                match token {
+                    Some(token) if token.text(source) == "," => Some(token.span),
+                    _ => {
+                        self.locals
+                            .decline("native preceding comma token unavailable");
+                        return;
+                    }
+                }
+            };
+            self.locals.issue(
+                source,
+                tokens,
+                index == 0,
+                base,
+                if index == 0 {
+                    kind
+                } else {
+                    crate::LocalSourceKind::CommaContinuation
+                },
+                preceding,
+            );
+        }
+    }
+    fn local_binding(
+        &mut self,
+        source: &str,
+        lexed: &crate::SpannedLexed,
+        base: usize,
+        binding: &str,
+        kind: crate::LocalSourceKind,
+    ) {
+        if binding.starts_with("var/") || starts_keyword(binding, "var") {
+            self.local_parts(source, lexed, base, &[binding], kind);
+        }
+    }
+}
+
+fn parse_sequence(
+    items: &[Item],
+    diagnostics: &mut Vec<Diagnostic>,
+    origins: &mut BodyOrigins<'_>,
+) -> Vec<Statement> {
     let mut statements = Vec::new();
     let mut index = 0;
     while index < items.len() {
@@ -196,6 +290,9 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &m
         if !item.children.is_empty()
             && (header == "var" || (header.starts_with("var/") && !header.contains('=')))
         {
+            origins
+                .locals
+                .decline("native local declaration blocks are outside pinned parser grammar");
             parse_var_block(
                 &item.children,
                 &format!("{}/", header.trim_end_matches('/')),
@@ -207,7 +304,16 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &m
         }
         if (header.starts_with("var/") || starts_keyword(header, "var")) && item.children.is_empty()
         {
-            let parts = split_case_alternatives(header);
+            let (parts, lexical) = split_case_alternatives_with_tokens(header);
+            let base =
+                item.header_span.start + (header.as_ptr() as usize - item.header.as_ptr() as usize);
+            origins.local_parts(
+                header,
+                &lexical,
+                base,
+                &parts,
+                crate::LocalSourceKind::Statement,
+            );
             if parts.len() > 1 {
                 parse_var_parts(item, "", diagnostics, &mut statements);
                 index += 1;
@@ -230,7 +336,9 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &m
             if let Some(next) = items.get(index + 1).filter(|next| {
                 starts_keyword(next.header.trim(), "while") && next.children.is_empty()
             }) {
-                if let Some(condition) = parse_control_condition_origin(next, "while", diagnostics, origins) {
+                if let Some(condition) =
+                    parse_control_condition_origin(next, "while", diagnostics, origins)
+                {
                     statements.push(Statement {
                         kind: StatementKind::DoWhile {
                             body: parse_sequence(&item.children, diagnostics, origins),
@@ -277,6 +385,42 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &m
                 None
             };
             if let Some(catch_binding) = catch_binding {
+                if catch_binding
+                    .as_ref()
+                    .is_some_and(|binding| !binding.trim().is_empty())
+                {
+                    let source = catch_header[6..catch_header.len() - 1].trim();
+                    let lexical = crate::lex_spans(source);
+                    let first = lexical
+                        .tokens
+                        .iter()
+                        .filter(|t| {
+                            !matches!(
+                                t.kind,
+                                crate::TokenKind::Whitespace
+                                    | crate::TokenKind::Comment
+                                    | crate::TokenKind::Newline
+                            )
+                        })
+                        .collect::<Vec<_>>();
+                    let has_var = first.len() > 1 && first[0].text(source) == "var";
+                    let base = catch.header_span.start
+                        + (source.as_ptr() as usize - catch.header.as_ptr() as usize);
+                    if lexical.diagnostics.is_empty() {
+                        origins.locals.issue(
+                            source,
+                            &lexical.tokens,
+                            has_var,
+                            base,
+                            crate::LocalSourceKind::CatchBinding,
+                            None,
+                        );
+                    } else {
+                        origins
+                            .locals
+                            .decline("native catch token grammar unavailable");
+                    }
+                }
                 statements.push(Statement {
                     kind: StatementKind::Try {
                         body: parse_sequence(&item.children, diagnostics, origins),
@@ -326,7 +470,12 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &m
     statements
 }
 
-fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Statement {
+fn parse_if(
+    item: &Item,
+    else_items: &[Item],
+    diagnostics: &mut Vec<Diagnostic>,
+    origins: &mut BodyOrigins<'_>,
+) -> Statement {
     let condition = parse_control_condition_origin(item, "if", diagnostics, origins);
     let then_branch = control_body(item, "if", diagnostics, origins);
     let mut span = item.span;
@@ -380,7 +529,11 @@ fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>,
     }
 }
 
-fn parse_one(item: &Item, diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Statement {
+fn parse_one(
+    item: &Item,
+    diagnostics: &mut Vec<Diagnostic>,
+    origins: &mut BodyOrigins<'_>,
+) -> Statement {
     let header = item.header.trim();
     if crate::return_has_block(header, !item.children.is_empty()) {
         diagnostics.push(Diagnostic {
@@ -396,7 +549,7 @@ fn parse_one(item: &Item, diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<C
             body: control_body(item, "while", diagnostics, origins),
         })
     } else if starts_keyword(header, "for") {
-        parse_for(item, diagnostics).map(|control| StatementKind::For {
+        parse_for(item, diagnostics, origins).map(|control| StatementKind::For {
             control,
             body: control_body(item, "for", diagnostics, origins),
         })
@@ -509,7 +662,11 @@ fn parse_set(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<Statement
     })
 }
 
-fn parse_spawn(item: &Item, diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Option<StatementKind> {
+fn parse_spawn(
+    item: &Item,
+    diagnostics: &mut Vec<Diagnostic>,
+    origins: &mut BodyOrigins<'_>,
+) -> Option<StatementKind> {
     let header = item.header.trim();
     let rest = header.strip_prefix("spawn")?.trim_start();
     let (delay, inline) = if rest.is_empty() {
@@ -735,7 +892,11 @@ fn parse_var_header(
     Some(StatementKind::Var { declaration, value })
 }
 
-fn parse_switch(item: &Item, diagnostics: &mut Vec<Diagnostic>, origins: &mut Vec<ControlOrigin>) -> Option<StatementKind> {
+fn parse_switch(
+    item: &Item,
+    diagnostics: &mut Vec<Diagnostic>,
+    origins: &mut BodyOrigins<'_>,
+) -> Option<StatementKind> {
     let selector = parse_control_condition(item, "switch", diagnostics)?;
     let mut cases = Vec::new();
     let mut else_branch = Vec::new();
@@ -821,18 +982,41 @@ mod tests {
 /// An expression that only names and builds values: evaluating it changes nothing.
 fn is_effect_free(expr: &Expr) -> bool {
     match &expr.kind {
-        ExprKind::Literal(text) => text.parts().is_ok_and(|parts| parts.is_none_or(|parts| parts.expressions.iter().all(is_effect_free))),
+        ExprKind::Literal(text) => text.parts().is_ok_and(|parts| {
+            parts.is_none_or(|parts| parts.expressions.iter().all(is_effect_free))
+        }),
         ExprKind::Ident(_) | ExprKind::TypePath(_) => true,
         ExprKind::Group(inner) => is_effect_free(inner),
-        ExprKind::Member { object, via_colon: false, .. } => is_effect_free(object),
-        ExprKind::Unary { op, value } => matches!(op.as_str(), "-" | "!" | "~") && is_effect_free(value),
+        ExprKind::Member {
+            object,
+            via_colon: false,
+            ..
+        } => is_effect_free(object),
+        ExprKind::Unary { op, value } => {
+            matches!(op.as_str(), "-" | "!" | "~") && is_effect_free(value)
+        }
         ExprKind::Binary { op, lhs, rhs } => {
-            matches!(op.as_str(), "+" | "-" | "*" | "/" | "%" | "|" | "&" | "^" | "==" | "!=" | "<" | ">" | "<=" | ">=")
-                && is_effect_free(lhs)
+            matches!(
+                op.as_str(),
+                "+" | "-"
+                    | "*"
+                    | "/"
+                    | "%"
+                    | "|"
+                    | "&"
+                    | "^"
+                    | "=="
+                    | "!="
+                    | "<"
+                    | ">"
+                    | "<="
+                    | ">="
+            ) && is_effect_free(lhs)
                 && is_effect_free(rhs)
         }
         ExprKind::Call { callee, args } => {
-            matches!(&callee.kind, ExprKind::Ident(name) if name == "list") && args.iter().all(is_effect_free)
+            matches!(&callee.kind, ExprKind::Ident(name) if name == "list")
+                && args.iter().all(is_effect_free)
         }
         _ => false,
     }

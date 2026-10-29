@@ -174,8 +174,34 @@ impl PolicyInputs {
             .body_archive()
             .ok_or(CaptureError::ForeignCompilerInputs)?;
         let source_revision = frontend.source_export_revision();
+        Self::capture_original_parts(archive, mapping, source_revision, &frontend.files, extra)
+    }
+    pub fn capture_diagnostic(
+        frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+        extra: impl IntoIterator<Item = HostCapture>,
+    ) -> Result<Self, CaptureError> {
+        if !frontend.receipt().authenticates(frontend.tree())
+            || !frontend.archive().matches_tree(frontend.tree())
+        {
+            return Err(CaptureError::ForeignCompilerInputs);
+        }
+        Self::capture_original_parts(
+            Arc::clone(frontend.archive()),
+            Arc::clone(frontend.mapping()),
+            frontend.source_revision(),
+            frontend.files(),
+            extra,
+        )
+    }
+    fn capture_original_parts(
+        archive: Arc<BodyArchive>,
+        mapping: Arc<SourceExportMapping>,
+        source_revision: u128,
+        source_files: &[dm_tree::frontend::SourceFile],
+        extra: impl IntoIterator<Item = HostCapture>,
+    ) -> Result<Self, CaptureError> {
         let mut files = BTreeMap::new();
-        for source in frontend.files.iter().filter(|file| file.captured) {
+        for source in source_files.iter().filter(|file| file.captured) {
             insert(
                 &mut files,
                 Arc::clone(&source.path),
@@ -195,7 +221,7 @@ impl PolicyInputs {
                 false,
             )?;
         }
-        let semantic_revision = frontend.snapshot.tree.identity();
+        let semantic_revision = archive.tree().identity();
         let revision = PolicyRevision {
             compiler_source: source_revision,
             policy_inputs: digest(source_revision, semantic_revision, &files),

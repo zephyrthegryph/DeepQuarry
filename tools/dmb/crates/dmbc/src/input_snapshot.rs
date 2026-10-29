@@ -48,6 +48,14 @@ pub trait SnapshotProvider {
     fn read_policy_bounded(&self, _: &Path, _: usize) -> io::Result<Option<CapturedInputRead>> {
         Ok(None)
     }
+    fn policy_directory(
+        &self,
+        _: &Path,
+        _: bool,
+        _: usize,
+    ) -> io::Result<Option<PolicyDirectoryListing>> {
+        Ok(None)
+    }
     fn source_alias(
         &self,
         _: &Path,
@@ -82,6 +90,14 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
         limit: usize,
     ) -> io::Result<Option<CapturedInputRead>> {
         (**self).read_policy_bounded(path, limit)
+    }
+    fn policy_directory(
+        &self,
+        path: &Path,
+        follow: bool,
+        limit: usize,
+    ) -> io::Result<Option<PolicyDirectoryListing>> {
+        (**self).policy_directory(path, follow, limit)
     }
     fn source_alias(
         &self,
@@ -120,8 +136,15 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
 mod source_alias;
 pub(crate) use source_alias::{AcquiredSourceAlias, SourceAliasRecord};
 pub use source_alias::{SourceAliasChallenge, SourceAliasProof};
+#[path = "input_policy_directories.rs"]
+mod policy_directories;
 #[path = "input_policy_read.rs"]
 mod policy_read;
+pub(crate) use policy_directories::PolicyDirectoryStorage;
+pub use policy_directories::{
+    PolicyDirectoryEntries, PolicyDirectoryEntry, PolicyDirectoryListing,
+    PolicyDirectoryObservation, PolicyEntryKind,
+};
 pub struct FileSystemInputs;
 #[path = "input_generated_outputs.rs"]
 mod generated;
@@ -135,6 +158,14 @@ impl SnapshotProvider for FileSystemInputs {
         limit: usize,
     ) -> io::Result<Option<CapturedInputRead>> {
         policy_read::filesystem_bounded_read(path, limit).map(Some)
+    }
+    fn policy_directory(
+        &self,
+        path: &Path,
+        follow: bool,
+        limit: usize,
+    ) -> io::Result<Option<PolicyDirectoryListing>> {
+        policy_directories::filesystem_policy_directory(path, follow, limit).map(Some)
     }
     fn source_alias(
         &self,
@@ -532,6 +563,11 @@ pub struct InputSnapshot {
     pub scanned_ns: u128,
     files: BTreeMap<PathBuf, FileInput>,
     folders: BTreeMap<PathBuf, FolderListing>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    policy_directories: BTreeMap<PathBuf, PolicyDirectoryObservation>,
+    // Resource bookkeeping only; never part of facts, wire identity or authority.
+    #[serde(skip)]
+    policy_directory_accounting: policy_directories::DirectoryChargeMemo,
     negative_files: BTreeSet<PathBuf>,
     generated_outputs: BTreeSet<PathBuf>,
     #[serde(skip)]
@@ -558,7 +594,9 @@ impl InputSnapshot {
     pub(crate) fn shape(&self) -> (usize, usize, usize) {
         (
             self.files.len(),
-            self.folders.len(),
+            self.folders
+                .len()
+                .saturating_add(self.policy_directories.len()),
             self.negative_files.len(),
         )
     }
@@ -567,6 +605,7 @@ impl InputSnapshot {
     pub(crate) fn same_recorded_facts(&self, other: &Self) -> bool {
         self.files == other.files
             && self.folders == other.folders
+            && self.policy_directories == other.policy_directories
             && self.negative_files == other.negative_files
             && self.generated_outputs == other.generated_outputs
     }
@@ -659,6 +698,8 @@ impl InputSnapshot {
             scanned_ns,
             files: BTreeMap::new(),
             folders: BTreeMap::new(),
+            policy_directories: BTreeMap::new(),
+            policy_directory_accounting: Default::default(),
             negative_files: BTreeSet::new(),
             generated_outputs: BTreeSet::new(),
             // All later insertion methods validate their individual facts.
@@ -711,6 +752,9 @@ impl InputSnapshot {
         if listings && self.negative_files != other.negative_files {
             return Some("negative file lookups".into());
         }
+        if self.policy_directories != other.policy_directories {
+            return Some("policy directory kind/follow-root observations".into());
+        }
         if self.generated_outputs != other.generated_outputs {
             return Some("generated outputs".into());
         }
@@ -742,6 +786,9 @@ impl InputSnapshot {
     pub fn merge(&mut self, other: &Self) -> io::Result<()> {
         let _timer = dm_profile::detail_timer("snapshot.merge.check_structure");
         other.check_structure()?;
+        for (path, v) in &other.policy_directories {
+            self.record_policy_directory(path, v.follow_root, v.listing.clone())?;
+        }
         drop(_timer);
         let _timer = dm_profile::detail_timer("snapshot.merge.files");
         if !other.folders.is_empty() && other.generated_outputs != self.generated_outputs {
@@ -923,6 +970,12 @@ impl InputSnapshot {
             }
             check_listing(listing)?;
         }
+        for (path, v) in &self.policy_directories {
+            if canonical_path(path) != *path {
+                return Err(invalid("noncanonical policy directory"));
+            }
+            v.listing.check()?;
+        }
         for path in &self.negative_files {
             if canonical_path(path) != *path || self.files.contains_key(path) {
                 return Err(invalid("invalid negative input record"));
@@ -1091,6 +1144,19 @@ impl InputSnapshot {
                 }
             }
         }
+        for (path, old) in &self.policy_directories {
+            let listing = provider
+                .policy_directory(path, old.follow_root, 64 * 1024 * 1024)?
+                .ok_or_else(|| invalid("provider cannot revalidate typed policy directory"))?;
+            next.record_policy_directory(path, old.follow_root, listing.clone())?;
+            if listing != old.listing {
+                identical = false;
+                report.changed.push(path.clone());
+                if stop_on_change {
+                    return Ok((report, next));
+                }
+            }
+        }
         let negatives: Vec<&PathBuf> = self
             .negative_files
             .iter()
@@ -1143,6 +1209,15 @@ impl InputSnapshot {
         }
         for (path, listing) in &self.folders {
             if self.filter_generated(path, provider.list(path)?) != *listing {
+                report.changed.push(path.clone());
+            }
+        }
+        for (path, old) in &self.policy_directories {
+            let listing = provider
+                .policy_directory(path, old.follow_root, 64 * 1024 * 1024)?
+                .ok_or_else(|| invalid("typed directory publication proof unavailable"))?;
+            listing.check()?;
+            if listing != old.listing {
                 report.changed.push(path.clone());
             }
         }

@@ -60,6 +60,7 @@ fn snapshot_with_scopes(checker: Option<&[u8]>, scopes: &[u8]) -> SourceSnapshot
             .unwrap()
             .with_body_queries(db.clone());
     let intent = PolicyInputRequest {
+        workspace: None,
         files: vec![
             PolicyInputFile {
                 path: root.join("scopes.toml"),
@@ -239,6 +240,20 @@ fn invalid_utf8_scopes_match_analyze_read_failure_default_without_lossy_repair()
 
 // Same native compiler source owner, engine receipt and successful preparation.
 fn semantic_snapshot(source: &str, checker: Option<&[u8]>) -> SourceSnapshot {
+    semantic_snapshot_primary(source, checker, false)
+}
+pub(super) fn semantic_snapshot_primary(
+    source: &str,
+    checker: Option<&[u8]>,
+    primary: bool,
+) -> SourceSnapshot {
+    semantic_snapshot_primary_result(source, checker, primary).unwrap()
+}
+pub(super) fn semantic_snapshot_primary_result(
+    source: &str,
+    checker: Option<&[u8]>,
+    primary: bool,
+) -> Result<SourceSnapshot, Vec<dm_tree::frontend::Diagnostic>> {
     let root = root();
     let mut host = crate::runner_host::BuildHost::one_shot();
     let engine = host
@@ -255,8 +270,9 @@ fn semantic_snapshot(source: &str, checker: Option<&[u8]>) -> SourceSnapshot {
     }
     let inputs = RecordingInputs::new(Memory(files), 1);
     let db = Arc::new(crate::query_db::QueryDb::default());
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
     let frontend = dm_tree::frontend::FrontendRevision::new(
-        dm_tree::frontend::build_with_config(
+        dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
             &root.join("project.dme"),
             &inputs,
             &Default::default(),
@@ -265,11 +281,15 @@ fn semantic_snapshot(source: &str, checker: Option<&[u8]>) -> SourceSnapshot {
                 engine: Some(engine.frontend_seed()),
                 observer: None,
             },
-        )
-        .unwrap()
+            None,
+            &executor,
+            None,
+            primary,
+        )?
         .with_body_queries(db.clone()),
     );
     let intent = PolicyInputRequest {
+        workspace: None,
         files: vec![PolicyInputFile {
             path: root.join("SpacemanDMM.toml"),
             role: PolicyInputRole::Configuration,
@@ -292,7 +312,7 @@ fn semantic_snapshot(source: &str, checker: Option<&[u8]>) -> SourceSnapshot {
     attempt
         .capture_with_queries(&frontend, db, Some(captured))
         .unwrap();
-    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+
     let prepared = crate::request_runner::runner_analysis::prepare_query(
         &frontend,
         Some(&engine),
@@ -312,7 +332,7 @@ fn semantic_snapshot(source: &str, checker: Option<&[u8]>) -> SourceSnapshot {
     drop(attempt);
     drop(frontend);
     let result = state.lock().unwrap().snapshot.take().unwrap();
-    result
+    Ok(result)
 }
 fn semantic_row(
     snapshot: &SourceSnapshot,
@@ -434,21 +454,69 @@ fn untagged_variable_errors_use_exact_retained_host_and_ignore_fake_named_overri
     assert_eq!(row["diagnostics"][0]["line"], 2);
 }
 
+// Independently observed with the SHA-pinned checker suite-1.11, source
+// commit 0290db5c752fa292f9824521515b603a2afd11dc. Original static source has
+// zero errors; the single-variable witness below proves this is not a disabled
+// family/default-empty row. DATA evidence: host-negative-repair-probes/.
 #[test]
-fn checker_storage_gap_does_not_narrow_native_stored_local_lowering() {
-    let snapshot = semantic_snapshot(
-        "/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    return shared\n",
-        None,
-    );
+fn checker_static_local_inventory_matches_old_clean_source_and_nonempty_witness() {
+    let source="/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    return shared\n";
+    let snapshot = semantic_snapshot(source, None);
     let declaration = snapshot.body_archive.as_ref().unwrap().occurrences()[0]
         .declaration
         .0;
     let mut selected = Vec::new();
     snapshot.write_selected(declaration, &mut selected).unwrap();
     assert!(String::from_utf8(selected).unwrap().contains("shared"));
-    // The ordinary runtime still lowers its issued static inventory. The
-    // checker must honestly refuse its not-yet-implemented local storage view.
-    assert!(semantic_row(&snapshot, 0, "undefined_variable").is_err());
+    let row = semantic_row(&snapshot, 0, "undefined_variable").unwrap();
+    assert_eq!(row["diagnostics"], serde_json::json!([]));
+    let witness=semantic_snapshot("/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    return shared + missing_after_shared\n",None);
+    let row = semantic_row(&witness, 0, "undefined_variable").unwrap();
+    let rows = row["diagnostics"].as_array().unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(
+        rows[0]["message"],
+        "undefined var: \"missing_after_shared\""
+    );
+    assert_eq!(rows[0]["severity"], "error");
+    assert_eq!(rows[0]["line"], 4);
+    assert_eq!(rows[0]["notes"], serde_json::json!([]));
+    let point = witness
+        .body_archive
+        .as_ref()
+        .unwrap()
+        .original_note_origin(rows[0]["expanded_span"][0].as_u64().unwrap() as usize)
+        .unwrap();
+    assert_eq!((point.line, point.byte_column), (4, 21));
+}
+#[test]
+fn checker_storage_gap_does_not_narrow_native_stored_local_lowering() {
+    let runtime=semantic_snapshot("/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    return shared\n",None);
+    let declaration = runtime.body_archive.as_ref().unwrap().occurrences()[0]
+        .declaration
+        .0;
+    let mut selected = Vec::new();
+    runtime.write_selected(declaration, &mut selected).unwrap();
+    assert!(String::from_utf8(selected).unwrap().contains("shared"));
+    // Runtime static lowering remains supported. The later actual primary
+    // array suffix still lacks checker dimension/constructor traversal proof.
+    let snapshot=semantic_snapshot("/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    missing_earlier\n    var/datum/typed[1]\n    return shared\n",None);
+    let mut bytes = Vec::new();
+    let error = snapshot
+        .write_native_configured_checker(
+            0,
+            "undefined_variable",
+            &root().join("project.dme"),
+            None,
+            &snapshot.tree,
+            &mut bytes,
+        )
+        .unwrap_err();
+    assert!(error.to_string().contains("local array suffix"), "{error}");
+    assert!(
+        bytes.is_empty(),
+        "earlier undefined-variable row escaped later array refusal"
+    );
 }
 
 #[test]
@@ -510,28 +578,88 @@ fn configured_checker_original_byte_positions_survive_retained_host() {
     assert_eq!((origin.line, origin.byte_column), (2, 17));
 }
 #[test]
-fn configured_checker_unproved_later_macro_position_writes_no_partial_row() {
+fn configured_checker_simple_macro_uses_exact_pinned_invocation_byte_points() {
+    // Actual pinned checker: warnings at 3:2 and 4:2, each with these three notes.
     let snapshot = semantic_snapshot(
         "#define MASK !a & b\n/proc/probe(a,b)\n\t!a & b\n\tMASK\n",
         None,
     );
-    let mut bytes = Vec::new();
-    let result = snapshot.write_native_configured_checker(
-        0,
-        "ambiguous_not_bitwise",
-        &root().join("project.dme"),
-        None,
-        &snapshot.tree,
-        &mut bytes,
-    );
-    assert!(
-        result.is_err(),
-        "a transformed location was silently projected"
-    );
-    assert!(
-        bytes.is_empty(),
-        "earlier rows escaped a later unproved location"
-    );
+    let row = semantic_row(&snapshot, 0, "ambiguous_not_bitwise").unwrap();
+    let rows = row["diagnostics"].as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    for (diagnostic, line) in rows.iter().zip([3, 4]) {
+        assert_eq!(diagnostic["severity"], "warning");
+        assert_eq!(diagnostic["line"], line);
+        assert_eq!(
+            diagnostic["message"],
+            "Ambiguous `!` on left side of bitwise `&` operator"
+        );
+        assert_eq!(
+            diagnostic["notes"],
+            serde_json::json!([
+                "Did you mean `!(x & y)`?",
+                "Did you mean `!x && y`?",
+                "Did you mean `~x & y`?"
+            ])
+        );
+        let point = snapshot
+            .body_archive
+            .as_ref()
+            .unwrap()
+            .source_note_point(diagnostic["expanded_span"][0].as_u64().unwrap() as usize)
+            .unwrap();
+        assert_eq!((point.line, point.byte_column), (line as usize, 2));
+    }
+}
+#[test]
+fn configured_checker_unproved_later_macro_position_writes_no_partial_row() {
+    // Original primary byte-layout tests explicitly withhold receipts for
+    // joined physical macro lines and expanded string interpolation. Pinned
+    // checker actually reports both cases at 3:2 and 4:2; neither is a parse gap.
+    let cases = [
+        "#define MASK !a & b\n/proc/probe(a,b)\n\t!a & b\n\tMASK \\\n\t\t\n",
+        "#define MASK !a & b\n/proc/probe(a,b)\n\t!a & b\n\t\"[MASK]\"\n",
+    ];
+    for source in cases {
+        let snapshot = semantic_snapshot(source, None);
+        let archive = snapshot.body_archive.as_ref().unwrap();
+        let body = archive.parse(0).unwrap();
+        let candidates = dm_analysis::checks::archived_ambiguous_not_bitwise(
+            &body,
+            dm_analysis::checks::Severity::Warning,
+        )
+        .unwrap();
+        assert_eq!(
+            candidates.len(),
+            2,
+            "fixture must reach two real checker findings"
+        );
+        let first = archive.source_note_point(candidates[0].span.start).unwrap();
+        assert_eq!((first.line, first.byte_column), (3, 2));
+        assert!(
+            archive.source_note_point(candidates[1].span.start).is_err(),
+            "unissued transformed point unexpectedly acquired authority"
+        );
+        let mut bytes = Vec::new();
+        let error = snapshot
+            .write_native_configured_checker(
+                0,
+                "ambiguous_not_bitwise",
+                &root().join("project.dme"),
+                None,
+                &snapshot.tree,
+                &mut bytes,
+            )
+            .unwrap_err();
+        assert!(
+            error.to_string().contains("macro") || error.to_string().contains("original"),
+            "{error}"
+        );
+        assert!(
+            bytes.is_empty(),
+            "earlier warning escaped a later unissued original position"
+        );
+    }
 }
 
 #[test]
@@ -572,20 +700,48 @@ fn implicit_new_real_tag_default_override_disabled_and_suppressed_arguments() {
     );
 }
 #[test]
-fn implicit_new_unsupported_later_context_does_not_emit_partial_row() {
+fn implicit_new_static_local_source_matches_exact_pinned_diagnostic() {
     let snapshot = semantic_snapshot("/proc/p()\n    new()\n    var/static/datum/kept\n", None);
+    let row = semantic_row(&snapshot, 0, "no_typehint_implicit_new").unwrap();
+    let rows = row["diagnostics"].as_array().unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["severity"], "error");
+    assert_eq!(
+        rows[0]["message"],
+        "no type hint available on implicit new()"
+    );
+    assert_eq!(rows[0]["line"], 2);
+    assert_eq!(rows[0]["notes"], serde_json::json!([]));
+    let point = snapshot
+        .body_archive
+        .as_ref()
+        .unwrap()
+        .original_note_origin(rows[0]["expanded_span"][0].as_u64().unwrap() as usize)
+        .unwrap();
+    assert_eq!((point.line, point.byte_column), (2, 5));
+}
+#[test]
+fn implicit_new_unsupported_later_context_does_not_emit_partial_row() {
+    let snapshot = semantic_snapshot(
+        "/proc/p()\n    new()\n    var/static/datum/kept\n    var/datum/typed[1]\n",
+        None,
+    );
     let mut bytes = Vec::new();
-    assert!(snapshot
+    let error = snapshot
         .write_native_configured_checker(
             0,
             "no_typehint_implicit_new",
             &root().join("project.dme"),
             None,
             &snapshot.tree,
-            &mut bytes
+            &mut bytes,
         )
-        .is_err());
-    assert!(bytes.is_empty());
+        .unwrap_err();
+    assert!(error.to_string().contains("local array suffix"), "{error}");
+    assert!(
+        bytes.is_empty(),
+        "earlier implicit-new error escaped unsupported primary array context"
+    );
 }
 
 #[test]

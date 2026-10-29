@@ -140,3 +140,27 @@ fn lightweight_lease_keeps_exact_source_and_receipt_but_releases_lexical_owner()
     drop(lease);
     assert!(original.upgrade().is_none());
 }
+
+#[test]
+fn original_weak_identity_survives_warm_binding_only() {
+    let a = AcquiredSource::from_original_bytes(b"// a\n".to_vec(), 1u64);
+    let b = a.reissued(2u64);
+    let c = AcquiredSource::from_original_bytes(b"// a\n".to_vec(), 3u64);
+    let id = a.lease().original_identity();
+    assert!(id.same_live_original(&b.lease().original_identity()));
+    assert!(!id.same_live_original(&c.lease().original_identity()));
+    drop(a);
+    drop(b);
+    assert!(!id.same_live_original(&id)); // Weak allocation is not a live proof
+}
+#[test]
+fn original_weak_identity_does_not_confuse_interned_encoding_aliases() {
+    // The native compatibility decoder maps byte 0x80 to the euro sign.
+    let a = AcquiredSource::from_original_bytes("// €\n".as_bytes().to_vec(), 1u64);
+    let b = AcquiredSource::from_original_bytes(b"// \x80\n".to_vec(), 2u64);
+    assert!(Arc::ptr_eq(a.prepared(), b.prepared()));
+    assert!(!a
+        .lease()
+        .original_identity()
+        .same_live_original(&b.lease().original_identity()));
+}

@@ -47,6 +47,7 @@ fn snapshot() -> SourceSnapshot {
         .unwrap()
         .with_body_queries(db.clone());
     let intent = PolicyInputRequest {
+        workspace: None,
         files: vec![PolicyInputFile {
             path: root().join("SpacemanDMM.toml"),
             role: PolicyInputRole::Configuration,

@@ -22,6 +22,7 @@ fn shared() -> Arc<Shared> {
 fn key(destination: &str) -> RequestKey {
     RequestKey {
         command: RequestCommand::Compile,
+        diagnostic_declarations: false,
         defines: BTreeMap::new(),
         engine: None,
         bootstrap: true,
@@ -35,10 +36,7 @@ fn key(destination: &str) -> RequestKey {
 fn newer_request_cancels_a_real_capacity_waiter_without_taking_a_permit() {
     let shared = shared();
     let occupied = shared.acquire(8).unwrap();
-    let slot = shared.slot(
-        PathBuf::from("E:/fixture/queue.dme"),
-        None,
-    );
+    let slot = shared.slot(PathBuf::from("E:/fixture/queue.dme"), None);
     let request_key = key("E:/fixture/queue.dme");
     let old_token = control::Cancellation::default();
     let old = LatestRequest::register(&slot, request_key.clone(), old_token.clone());
@@ -83,10 +81,7 @@ fn newer_request_cancels_a_real_capacity_waiter_without_taking_a_permit() {
 #[test]
 fn independent_output_destinations_do_not_cancel_each_other() {
     let shared = shared();
-    let slot = shared.slot(
-        PathBuf::from("E:/fixture/project.dme"),
-        None,
-    );
+    let slot = shared.slot(PathBuf::from("E:/fixture/project.dme"), None);
     let a = control::Cancellation::default();
     let b = control::Cancellation::default();
     let first = LatestRequest::register(&slot, key("E:/fixture/a/world.dme"), a.clone());

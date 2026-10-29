@@ -105,16 +105,38 @@ pub(crate) fn prepare_query_owners<'a, R: dm_ir::Resolver>(
     ),
     Box<dyn std::error::Error>,
 > {
-    let startup = crate::startup::capture_revision_facts_with_executor_and_bodies_and_artifacts(
-        frontend,
-        spellings,
-        executor,
-        bodies,
-        memo.startup.as_deref(),
-    )?;
+    prepare_query_owners_observed(
+        frontend, engine, resolver, spellings, executor, memo, bodies, None,
+    )
+}
+pub(crate) fn prepare_query_owners_observed<'a, R: dm_ir::Resolver>(
+    frontend: &'a dm_tree::frontend::FrontendRevision,
+    engine: &crate::engine::EngineSnapshot,
+    resolver: &R,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    bodies: &BodyArena<'a>,
+    observer: Option<&dyn Fn(&'static str, bool, std::time::Duration)>,
+) -> Result<
+    (
+        crate::startup::CapturedStartup<'a>,
+        crate::driver_facts::PreparedPinnedSourceAbi,
+    ),
+    Box<dyn std::error::Error>,
+> {
+    let startup = observe_prepare_stage("query_prepare.startup", observer, || {
+        crate::startup::capture_revision_facts_with_executor_and_bodies_and_artifacts(
+            frontend,
+            spellings,
+            executor,
+            bodies,
+            memo.startup.as_deref(),
+        )
+    })?;
     let startup = startup.view_revision(frontend)?;
     crate::daemon::control::checkpoint()?;
-    let prepared =
+    let prepared = observe_prepare_stage("query_prepare.source_abi", observer, || {
         crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
             frontend,
             engine,
@@ -123,8 +145,27 @@ pub(crate) fn prepare_query_owners<'a, R: dm_ir::Resolver>(
             None,
             executor,
             memo.abi.as_deref(),
-        )?;
+        )
+    })?;
     Ok((startup, prepared))
+}
+
+fn observe_prepare_stage<T>(
+    name: &'static str,
+    observer: Option<&dyn Fn(&'static str, bool, std::time::Duration)>,
+    compute: impl FnOnce() -> T,
+) -> T {
+    let profile = dm_profile::stage(name);
+    let started = std::time::Instant::now();
+    if let Some(observe) = observer {
+        observe(name, true, std::time::Duration::ZERO);
+    }
+    let result = compute();
+    if let Some(observe) = observer {
+        observe(name, false, started.elapsed());
+    }
+    drop(profile);
+    result
 }
 
 /// Transfer only actual immutable preparation owners after successful analysis.
@@ -380,5 +421,33 @@ mod tests {
             .iter()
             .filter(|row| row["schema"] == "dm-lexical-body-analysis-v1")
             .all(|row| row["semantic_resolution_complete"] != true));
+    }
+}
+
+#[cfg(test)]
+mod prepare_stage_observer_tests {
+    use super::*;
+    #[test]
+    fn prepare_observer_keeps_one_computation_and_reports_error_stage_end() {
+        let events = std::cell::RefCell::new(Vec::new());
+        let calls = std::cell::Cell::new(0usize);
+        let observe = |name, started, _| events.borrow_mut().push((name, started));
+        let result: Result<usize, &str> =
+            observe_prepare_stage("test.prepare", Some(&observe), || {
+                calls.set(calls.get() + 1);
+                Err("original failure")
+            });
+        assert_eq!(result, Err("original failure"));
+        assert_eq!(calls.get(), 1);
+        assert_eq!(
+            *events.borrow(),
+            vec![("test.prepare", true), ("test.prepare", false)]
+        );
+        let value = observe_prepare_stage("test.prepare", None, || {
+            calls.set(calls.get() + 1);
+            7
+        });
+        assert_eq!(value, 7);
+        assert_eq!(calls.get(), 2);
     }
 }

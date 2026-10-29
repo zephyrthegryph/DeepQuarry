@@ -17,6 +17,8 @@ mod raw_policy;
 mod selected_envelope;
 pub mod semantic_client;
 mod semantic_pages;
+mod variable_visibility;
+mod workspace_policy;
 use std::{
     collections::BTreeMap,
     io::{self, Write},
@@ -98,6 +100,14 @@ pub enum SourceQuery {
         lints: Vec<String>,
     },
 
+    /// Raw-only typed discovery, bound to the current exact workspace policy pin.
+    NativeWorkspaceRawPolicy {
+        root: PathBuf,
+        configuration: PathBuf,
+        lints: Vec<String>,
+        cursor: Option<crate::query_db::WorkspaceCursor>,
+        limit: usize,
+    },
     /// Explicit typed-policy fixture only, not production workspace admission.
     NativeAnalyzePolicyFixture {
         root: PathBuf,
@@ -129,6 +139,11 @@ pub enum SourceQuery {
     NativeConfiguredChecker {
         ordinal: u32,
         family: String,
+        environment: PathBuf,
+        configuration: Option<PathBuf>,
+    },
+    /// All variable-visibility producer categories, not a per-body tag subset.
+    NativeConfiguredVariableVisibility {
         environment: PathBuf,
         configuration: Option<PathBuf>,
     },
@@ -225,7 +240,9 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                     matches!(query, SourceQuery::NativeUntypedFixture { .. })
                         || named_policy::reads_policy(query)
                         || control_batch::reads_policy(query)
+                        || variable_visibility::reads_policy(query)
                         || raw_policy::reads_policy(query)
+                        || workspace_policy::reads_policy(query)
                         || analyze_policy::reads_policy(query)
                 })
             {
@@ -235,7 +252,9 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
             native_policy::validate_requested(&reply, &source_questions)?;
             named_policy::validate_requested(&reply, &source_questions)?;
             control_batch::validate_requested(&reply, &source_questions)?;
+            variable_visibility::validate_requested(&reply, &source_questions)?;
             raw_policy::validate_requested(&reply, &source_questions)?;
+            workspace_policy::validate_requested(&reply, &source_questions)?;
             analyze_policy::validate_requested(&reply, &source_questions)?;
             validate_resolved_requests(&reply, &source_questions)?;
             occurrence_pages::validate_requested(&reply, &source_questions)?;
@@ -353,6 +372,19 @@ fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQue
                 io::Error::new(io::ErrorKind::InvalidData, "invalid native lint roster")
             })?,
         },
+        Some("source_native_workspace_raw_policy") => SourceQuery::NativeWorkspaceRawPolicy {
+            root: path("root")?,
+            configuration: path("configuration")?,
+            cursor: if row["offset"].as_u64().unwrap_or(0) == 0 {
+                None
+            } else {
+                Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(|_| io::Error::new(io::ErrorKind::InvalidData,"invalid workspace continuation schema"))?)
+            },
+            limit: 128,
+            lints: serde_json::from_value(row["requested_lints"].clone()).map_err(|_| {
+                io::Error::new(io::ErrorKind::InvalidData, "invalid workspace lint roster")
+            })?,
+        },
         Some("source_native_analyze_policy_fixture") => SourceQuery::NativeAnalyzePolicyFixture {
             root: path("root")?,
             configuration: path("configuration")?,
@@ -366,6 +398,12 @@ fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQue
             rule: text("rule")?,
             configuration: path("configuration")?,
         },
+        Some("source_native_configured_variable_visibility") => {
+            SourceQuery::NativeConfiguredVariableVisibility {
+                environment: path("environment")?,
+                configuration: configuration()?,
+            }
+        }
         Some("source_native_configured_checker") => SourceQuery::NativeConfiguredChecker {
             ordinal: ordinal()?,
             family: text("family")?,
@@ -431,7 +469,9 @@ fn validate_native_outer_row(
     native_policy::validate_requested(&single, &shape.source_queries)?;
     named_policy::validate_requested(&single, &shape.source_queries)?;
     control_batch::validate_requested(&single, &shape.source_queries)?;
+    variable_visibility::validate_requested(&single, &shape.source_queries)?;
     raw_policy::validate_requested(&single, &shape.source_queries)?;
+    workspace_policy::validate_requested(&single, &shape.source_queries)?;
     analyze_policy::validate_requested(&single, &shape.source_queries)
 }
 
@@ -617,7 +657,9 @@ impl QueryRequest {
         self.timeout()?;
         named_policy::validate_request(self)?;
         control_batch::validate_request(self)?;
+        variable_visibility::validate_request(self)?;
         raw_policy::validate_request(self)?;
+        workspace_policy::validate_request(self)?;
         analyze_policy::validate_request(self)?;
         let source_count = self
             .source_queries
@@ -711,6 +753,20 @@ pub(crate) fn evaluate_snapshot(
     state: &crate::runner_host::query_snapshot::QueryState,
 ) -> io::Result<QueryReply> {
     request.validate()?;
+    if state
+        .snapshot
+        .as_ref()
+        .is_some_and(|snapshot| snapshot.diagnostic_tree().is_some())
+        && (!request.queries.is_empty()
+            || request.source_queries.iter().any(|question| {
+                !matches!(
+                    question,
+                    SourceQuery::NativeConfiguredVariableVisibility { .. }
+                )
+            }))
+    {
+        return Err(io::Error::other("diagnostic declaration frame admits only whole variable-visibility checker questions; no ordinary ABI/model query"));
+    }
     let revision = format!("{:032x}", tree.identity());
     if request
         .expected_revision
@@ -750,7 +806,9 @@ pub(crate) fn evaluate_snapshot(
             matches!(query, SourceQuery::NativeUntypedFixture { .. })
                 || named_policy::reads_policy(query)
                 || control_batch::reads_policy(query)
+                || variable_visibility::reads_policy(query)
                 || raw_policy::reads_policy(query)
+                || workspace_policy::reads_policy(query)
                 || analyze_policy::reads_policy(query)
         })
     {
@@ -826,6 +884,25 @@ pub(crate) fn evaluate_snapshot(
             )?;
             continue;
         }
+        if let SourceQuery::NativeWorkspaceRawPolicy {
+            root,
+            configuration,
+            lints,
+            cursor,
+            limit,
+        } = question
+        {
+            snapshot.write_native_workspace_raw_policy(
+                root,
+                configuration,
+                lints,
+                cursor.as_ref(),
+                *limit,
+                tree,
+                &mut output,
+            )?;
+            continue;
+        }
         if let SourceQuery::NativeAnalyzePolicyFixture {
             root,
             configuration,
@@ -847,6 +924,19 @@ pub(crate) fn evaluate_snapshot(
         }
         if let SourceQuery::NativeCheckerFixture { ordinal, severity } = question {
             snapshot.write_native_checker(*ordinal, severity, tree, &mut output)?;
+            continue;
+        }
+        if let SourceQuery::NativeConfiguredVariableVisibility {
+            environment,
+            configuration,
+        } = question
+        {
+            snapshot.write_native_configured_variable_visibility(
+                environment,
+                configuration.as_deref(),
+                tree,
+                &mut output,
+            )?;
             continue;
         }
         if let SourceQuery::NativeConfiguredControlBatch {
@@ -905,10 +995,12 @@ pub(crate) fn evaluate_snapshot(
             | SourceQuery::NativeCheckerFixture { .. }
             | SourceQuery::NativeUntypedFixture { .. }
             | SourceQuery::NativeRawPolicyFixture { .. }
+            | SourceQuery::NativeWorkspaceRawPolicy { .. }
             | SourceQuery::NativeAnalyzePolicyFixture { .. }
             | SourceQuery::NativeNamedRule { .. }
             | SourceQuery::NativeConfiguredChecker { .. }
             | SourceQuery::NativeConfiguredControlBatch { .. }
+            | SourceQuery::NativeConfiguredVariableVisibility { .. }
             | SourceQuery::SelectedReferences { .. }
             | SourceQuery::OccurrencesPage { .. }
             | SourceQuery::BodyContextsPage { .. }

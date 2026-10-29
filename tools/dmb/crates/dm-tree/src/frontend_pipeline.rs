@@ -96,8 +96,93 @@ pub fn build_with_executor_and_semantic_state_for_policy<P: SourceProvider>(
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
     executor: &dm_exec::BuildExecutor,
+    semantic_state: Option<&mut RetainedSemanticTree>,
+    require_primary_headers: bool,
+) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    build_with_executor_and_semantic_state_for_policy_mode(
+        project,
+        provider,
+        defines,
+        config,
+        memo,
+        executor,
+        semantic_state,
+        require_primary_headers,
+        None,
+    )
+}
+/// Select this mode UP FRONT. Never retry a failed strict build as a checker
+/// graph. It uses the exact same parser/adapter/builder and refuses all errors
+/// outside the explicitly recorded inherited-VAR declaration domain.
+pub fn build_for_checker_diagnostics<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<DiagnosticFrontend, Vec<Diagnostic>> {
+    let mut receipt = None;
+    let frontend = build_with_executor_and_semantic_state_for_policy_mode(
+        project,
+        provider,
+        defines,
+        config,
+        memo,
+        executor,
+        None,
+        true,
+        Some(&mut receipt),
+    )?;
+    DiagnosticFrontend::bind(
+        frontend,
+        receipt.ok_or_else(|| {
+            vec![internal(
+                "diagnostic builder did not issue its original graph receipt",
+            )]
+        })?,
+    )
+}
+pub fn build_for_checker_diagnostics_with_state<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
+    state: Option<&mut RetainedSemanticTree>,
+) -> Result<DiagnosticFrontend, Vec<Diagnostic>> {
+    let mut receipt = None;
+    let frontend = build_with_executor_and_semantic_state_for_policy_mode(
+        project,
+        provider,
+        defines,
+        config,
+        memo,
+        executor,
+        state,
+        true,
+        Some(&mut receipt),
+    )?;
+    DiagnosticFrontend::bind(
+        frontend,
+        receipt.ok_or_else(|| {
+            vec![internal(
+                "diagnostic builder did not issue its original graph receipt",
+            )]
+        })?,
+    )
+}
+fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
     mut semantic_state: Option<&mut RetainedSemanticTree>,
     require_primary_headers: bool,
+    diagnostic: Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
     let declaration_request = semantic_state
         .as_ref()
@@ -387,6 +472,55 @@ pub fn build_with_executor_and_semantic_state_for_policy<P: SourceProvider>(
         files.len(),
     );
     drop(profile_stage);
+    // Current native preparation/planning/expansion has issued ALL new input
+    // facts and acquisition leases. Reuse no program merely from a hash.
+    drop(mapping);
+    let (plan, expanded, files, by_path, mut timings) = if diagnostics.is_empty()
+        && previous
+            .as_ref()
+            .zip(semantic_state.as_ref())
+            .is_some_and(|(old, state)| state.admits_remembered_owner(old, config.engine))
+    {
+        let old = previous
+            .as_ref()
+            .expect("checked original remembered owner");
+        match ColdFrontend::reissue_unchanged_program(
+            old,
+            plan,
+            expanded,
+            files,
+            by_path,
+            timings,
+            require_primary_headers,
+        ) {
+            Ok(mut frontend) => {
+                frontend.timings.total = total_start.elapsed();
+                if let Some(state) = semantic_state.as_deref_mut() {
+                    state.record_original_program_reuse();
+                }
+                // Return through the same private branch below, never parse or
+                // normalize an unchanged program a second time.
+                if let Some(slot) = diagnostic {
+                    *slot=Some(crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_valid_tree(&frontend.snapshot.tree));
+                }
+                if let Some(request) = &declaration_request {
+                    request.publish_successful();
+                }
+                return Ok(frontend);
+            }
+            Err(parts) => parts,
+        }
+    } else {
+        (plan, expanded, files, by_path, timings)
+    };
+    let mapping = Mapping {
+        projection: Default::default(),
+        plan: &plan,
+        expanded: &expanded,
+        files: &files,
+        by_path: &by_path,
+        hints: Default::default(),
+    };
     let parse_start = Instant::now();
     observe(
         config,
@@ -550,11 +684,37 @@ pub fn build_with_executor_and_semantic_state_for_policy<P: SourceProvider>(
                 config.engine.map_or(&[][..], |seed| &seed.intrinsics[..]),
             ));
         };
-    let snapshot = match semantic_state.as_deref_mut() {
-        Some(state) => state.resolve(adapted, config.engine, on_error, executor),
-        None => adapted.finish_with_engine_observed_on_executor(config.engine, on_error, executor),
-    }
-    .map_err(|_| resolution_diagnostic.expect("resolution failure must notify observer"))?;
+    let diagnostic_records = diagnostic.as_ref().and_then(|_| {
+        semantic_state.as_deref().and_then(|state| {
+            super::DiagnosticRetainedRecords::capture(&adapted, config.engine, Some(state))
+        })
+    });
+    let snapshot = if let Some(slot) = diagnostic {
+        let prepared = adapted
+            .finish_checker_diagnostic_observed(config.engine, on_error, executor)
+            .map_err(|_| {
+                resolution_diagnostic
+                    .take()
+                    .expect("fatal diagnostic preparation notifies original observer")
+            })?;
+        let (snapshot, mut receipt) = prepared.into_parts();
+        if receipt.errors().is_empty() {
+            receipt.retained_records =
+                diagnostic_records.map(|records| records.bind(&snapshot.tree));
+        }
+
+        *slot = Some(receipt);
+        snapshot
+    } else {
+        let snapshot = match semantic_state.as_deref_mut() {
+            Some(state) => state.resolve(adapted, config.engine, on_error, executor),
+            None => {
+                adapted.finish_with_engine_observed_on_executor(config.engine, on_error, executor)
+            }
+        }
+        .map_err(|_| resolution_diagnostic.expect("resolution failure must notify observer"))?;
+        snapshot
+    };
     timings.tree_resolution = resolution_start.elapsed();
     observe(
         config,
@@ -710,6 +870,7 @@ pub fn build_with_executor_and_semantic_state_for_policy<P: SourceProvider>(
     ));
     let mut frontend = ColdFrontend {
         body_queries: None,
+        reused_body_queries: false,
         source_export_mapping,
         callable_roster,
         abi_settings_complete,

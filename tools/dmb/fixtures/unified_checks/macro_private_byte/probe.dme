@@ -1,0 +1,11 @@
+#define PRIVATE var/SpacemanDMM_private/p = null
+#define BARE var/SpacemanDMM_private/q
+#define ACCESS(P) P.p
+#define ID(X) X
+/datum/base
+    PRIVATE
+    BARE
+/datum/other/proc/check(datum/base/B)
+    return ACCESS(B)
+/datum/other/proc/check2(datum/base/B)
+    return ID(B.q)

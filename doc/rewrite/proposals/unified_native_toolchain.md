@@ -701,3 +701,69 @@ dreamchecker. All ratchets pass and all 382 generated hashes remain unchanged.
 These are selected proofs, not complete-toolchain coverage or a performance
 claim. Complete workspace discovery/paging, more checker families and generators,
 inference, production client cutover and end-to-end performance proof remain.
+
+### Original-owner reuse, workspace policies and further checker facts
+
+The current host admits complete `player_link`, `weak_raw_read` and `untyped`
+policy facades over the same original native body/declaration owners. The
+`untyped` host route records its real value-equation dependency in the existing
+QueryDb. These remain explicit captured-input contracts; an unissued manifest
+alias is refused rather than guessed. The `sparse_slots` generator policy also
+has an original-view producer and independent old-generator comparison; it is
+not yet the production generator client.
+
+Diagnostic declaration preparation can retain the original native tree despite
+an inherited-variable redeclaration that strict compilation rejects. This is an
+explicit diagnostic profile, not a fallback parser. An actual daemon test proves
+that a following valid compile reuses the same tree, syntax, body inputs and Db,
+with one original parse/rebuild. Source, plan, engine and acquisition changes
+still invalidate that reuse. Source frames are staged before the final freshness
+check, so cancellation or a stale candidate cannot replace the published frame.
+
+Primary local declaration/visibility facts, increment expressions and macro
+invocation note receipts now serve additional checker consumers. Reporting a
+legacy macro invocation point remains distinct from claiming an original
+physical-byte position. Unissued multiline transforms, local-array constructors
+and other missing syntax contracts still refuse explicitly; they are not clean
+checker results. Independent pinned-checker fixtures cover the admitted cases.
+
+The raw-workspace producer captures its original source and directory closure
+once during preparation, then serves bounded pages from that frame. One actual
+main-project comparison captured 7,273 sources and matched all 27 admitted raw
+policies against the independent old Engine, including sites, notes and ALLOW
+accounting (226 output records, two pages and an exact warm-page repeat). It uses
+the main DME, not a substitute fixture project. This proves that raw policy group,
+not every semantic lint, generator or checker family.
+
+That correctness run also exposed and repaired a daemon idle-clock bug: a long
+request could finish after the idle period measured from its arrival, causing
+retirement before the next page. Idle age now restarts on connection completion.
+Page resource accounting uses one operation-local inventory of existing Outcome
+owners, with weak handles in inputs, conservative coordination admission and
+cleanup on success, refusal or cancellation. It does not duplicate source or
+semantic payloads. Real cancellation is returned as an operational error and
+cannot become a cached semantic refusal.
+
+The actual run took 23.922 seconds to prepare and 127.625 seconds for the first
+raw query; subsequent page and warm-page requests took 0.188 and 0.140 seconds.
+These are observations from one correctness run under shared-machine load, not
+benchmarks or an overall speedup claim. Cold performance still needs work.
+Production clients/defaults are unchanged. Full inference/checker migration,
+further policies/generators, unified installation/gates and end-to-end resource
+and performance proofs remain required before cutover. Unapplied DATA drafts
+are not implementation or validation evidence.
+
+Checkpoint verification: the affected resource/checker repair selections contain
+54 distinct passing Rust tests after one diagnosed fixture repair; the shared
+query-graph integration has eleven passes, and the original daemon and three
+policy IPC checks pass. Earlier current-cohort proofs include the seven-policy
+IPC comparison, original-owner reuse and diagnostic-profile IPC, independent
+player-link/weak-read/untyped oracles and exact checker-location fixtures.
+Ratchets pass, all 382 compared generated-file hashes are unchanged, and a fresh
+DreamChecker run reports zero diagnostics. Its elapsed time was 632.849 seconds
+under below-normal shared-machine priority; this was the independent cross-check,
+not a native performance result. The normal native host dependency graph has
+neither dreammaker nor dreamchecker. The main-workspace proof coordinator and its
+bounded-evidence tests are tracked, so its integration entry point does not rely
+on ignored working-data scripts. No production defaults or compiler publication
+changed, and no pins, full suite or benchmarks were run.

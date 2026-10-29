@@ -25,6 +25,7 @@ pub struct Scope {
     scope: LintScope,
     hash: u128,
     charge: usize,
+    exact: Arc<[u8]>,
 }
 #[derive(Clone, Debug)]
 pub struct Findings {
@@ -59,11 +60,21 @@ impl File {
         if text.len() > captured_raw_policy::MAX_FIXTURE_FILE_BYTES {
             return Err("raw source exceeds per-file fixture admission".into());
         }
-        Self::capture_budgeted(root, path, text, usize::MAX)
+        let length = text.len();
+        let mut file = Self::capture_budgeted(root, path, text, usize::MAX)?;
+        // The bounded fixture cache keeps its existing conservative estimate.
+        file.charge = length
+            .checked_mul(32)
+            .and_then(|n| {
+                n.checked_add(8192 + 4 * (root.as_os_str().len() + path.as_os_str().len()))
+            })
+            .ok_or("fixture source accounting overflow")?;
+        Ok(file)
     }
     /// Production source batches derive admission from the host's existing
     /// input-family resource budget. The fixture constructor keeps its limit.
-    /// This estimate precedes line-index/lazy-view allocation; it is not RSS.
+    /// Each raw index/lazy reserves before allocation and records its actual
+    /// retained capacities afterward; this is not an RSS or CPU guarantee.
     pub fn capture_budgeted(
         root: &Path,
         path: &Path,
@@ -79,25 +90,10 @@ impl File {
         let relative = dm_preprocess::regions::relative_filesystem_path(&path, &root)
             .ok_or("captured raw source lies outside policy root")?;
         let rel = relative.to_string_lossy().replace('\\', "/");
-        let paths = rel
-            .len()
-            .checked_add(path.as_os_str().as_encoded_bytes().len())
-            .and_then(|n| n.checked_add(root.as_os_str().as_encoded_bytes().len()))
-            .ok_or("raw file path accounting overflow")?;
-        let charge = text
-            .len()
-            .checked_mul(32)
-            .and_then(|n| paths.checked_mul(4).and_then(|paths| n.checked_add(paths)))
-            .and_then(|n| n.checked_add(2048))
-            .ok_or("raw file retention accounting overflow")?;
-        if charge > available {
-            return Err("raw source exceeds remaining input-family resource budget".into());
-        }
+        let file = SourceFile::from_shared_budgeted(&rel, path, text, available)?;
+        let charge = file.captured_budget_charge();
         Ok(Self {
-            tree: Tree::from_captured_files(
-                root,
-                vec![SourceFile::from_shared_text(&rel, path, text)],
-            ),
+            tree: Tree::from_captured_files(root, vec![file]),
             charge,
         })
     }
@@ -112,7 +108,12 @@ impl File {
     }
     /// Conservative cache admission estimate; not allocator/RSS accounting.
     pub fn budget_charge(&self) -> usize {
-        self.charge
+        self.charge.max(self.tree.files[0].captured_budget_charge())
+    }
+    pub fn require_view_budget(&self) -> Result<(), String> {
+        self.tree.files[0]
+            .captured_budget_error()
+            .map_or(Ok(()), Err)
     }
     /// Equal cache fingerprints permit reuse only after exact current content
     /// and path verification; this proves content reuse, not source issuance.
@@ -121,6 +122,7 @@ impl File {
         path: &Path,
         raw: &dm_preprocess::SourceText,
     ) -> Result<(), String> {
+        self.require_view_budget()?;
         let file = &self.tree.files[0];
         if file.abs != path || file.raw().text.as_bytes() != raw.as_bytes() {
             return Err("cached raw source path/bytes contradict current capture".into());
@@ -138,6 +140,22 @@ impl File {
         self.tree.files[0].visit_policy_storage(visit);
     }
     pub fn scan(&self, scope: &Scope) -> Result<Findings, String> {
+        self.scan_budgeted(
+            scope,
+            captured_raw_policy::MAX_FIXTURE_SITES,
+            64 * 1024 * 1024,
+        )
+    }
+    /// The caller reserves the current page/family headroom before a policy
+    /// can retain any findings; fixed per-file caps do not license that much
+    /// additional memory when prior page/cache/output owners remain alive.
+    pub fn scan_budgeted(
+        &self,
+        scope: &Scope,
+        rows: usize,
+        bytes: usize,
+    ) -> Result<Findings, String> {
+        self.require_view_budget()?;
         let lint = captured_raw_policy::registry()
             .find(scope.name)
             .ok_or("raw lint registry entry missing")?;
@@ -149,13 +167,22 @@ impl File {
             meta: lint.meta(),
             scope: &scope.scope,
         };
-        let mut sink = Sink::new();
+        let mut sink = Sink::bounded(
+            rows.min(captured_raw_policy::MAX_FIXTURE_SITES),
+            bytes.min(64 * 1024 * 1024),
+        );
         let result = catch_unwind(AssertUnwindSafe(|| {
             for file in cx.files() {
-                sink.cur = file.rel.clone();
+                sink.set_current(&file.rel);
                 lint.scan_file(&cx, file, &mut sink);
             }
         }));
+        // A denied lazy must never escape as an empty clean scan, including
+        // callers that do not otherwise demand any view on this invocation.
+        self.require_view_budget()?;
+        if let Some(error) = sink.admission_error() {
+            return Err(error);
+        }
         if let Some(error) = self.tree.captured_violation() {
             return Err(error);
         }
@@ -200,6 +227,16 @@ impl Config {
     pub fn budget_charge(&self) -> usize {
         self.charge
     }
+    /// Same interpreted scopes as typed adapters; not the raw-only roster.
+    pub fn typed_policy_list(&self, name: &str, list: &str) -> Result<Vec<String>, String> {
+        let meta = crate::captured_policy_metadata::metadata(name)
+            .ok_or("typed policy is not admitted")?;
+        Ok(self
+            .scopes
+            .for_lint(meta.name, meta.group)
+            .list(list)
+            .to_vec())
+    }
     pub(crate) fn shared_scopes(&self) -> Arc<Scopes> {
         Arc::clone(&self.scopes)
     }
@@ -230,10 +267,39 @@ impl Config {
             scope,
             hash,
             charge: bytes.len().saturating_mul(32).saturating_add(2048),
+            exact: bytes.into(),
         })
     }
 }
+/// Actual live source storage; identities are census/dedup keys, never authority.
+pub fn visit_source_storage(
+    text: &dm_preprocess::SourceText,
+    visit: impl FnMut(crate::tree::PolicyStorageKey, usize),
+) {
+    crate::tree::visit_source_storage(text, visit)
+}
 impl Scope {
+    /// Exactly the existing Cx::files metadata selection, before any source view.
+    pub fn excludes_path(&self, rel: &str) -> Result<bool, String> {
+        let lint = captured_raw_policy::registry()
+            .find(self.name)
+            .ok_or("raw lint registry entry missing")?;
+        if lint.meta().scan != ScanKind::File {
+            return Err("raw lint changed its per-file contract".into());
+        }
+        Ok(!lint.meta().select.matches_path(rel) || self.scope.exempt(rel))
+    }
+    pub fn empty_findings_if_excluded(&self, rel: &str) -> Result<Option<Findings>, String> {
+        Ok(self.excludes_path(rel)?.then(|| Findings {
+            name: self.name.into(),
+            run: Run::default(),
+            allow_used: Vec::new(),
+        }))
+    }
+    /// Exact interpreted policy, not its cache hash, authenticates reuse.
+    pub fn equivalent_to(&self, other: &Self) -> bool {
+        self.name == other.name && self.exact.as_ref() == other.exact.as_ref()
+    }
     pub fn fingerprint(&self) -> u128 {
         self.hash
     }
@@ -243,14 +309,28 @@ impl Scope {
 }
 impl Findings {
     pub fn fingerprint(&self) -> u128 {
-        let bytes = serde_json::to_vec(&(
-            &self.name,
-            &self.run.sites,
-            &self.run.notes,
-            &self.allow_used,
-        ))
+        struct HashWriter(blake3::Hasher);
+        impl std::io::Write for HashWriter {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                self.0.update(bytes);
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        let mut writer = HashWriter(blake3::Hasher::new());
+        serde_json::to_writer(
+            &mut writer,
+            &(
+                &self.name,
+                &self.run.sites,
+                &self.run.notes,
+                &self.allow_used,
+            ),
+        )
         .expect("raw finding fields serialize");
-        u128::from_le_bytes(blake3::hash(&bytes).as_bytes()[..16].try_into().unwrap())
+        u128::from_le_bytes(writer.0.finalize().as_bytes()[..16].try_into().unwrap())
     }
     pub fn budget_charge(&self) -> usize {
         let site_text = self
@@ -352,5 +432,41 @@ mod workspace_budget_tests {
                     .len()
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod result_headroom_tests {
+    use super::*;
+    #[test]
+    fn scan_refuses_exhausted_result_headroom_instead_of_using_the_fixture_limit() {
+        let root = std::env::current_dir().unwrap();
+        let path = root.join("code/headroom.dm");
+        let source: dm_preprocess::SourceText = "/proc/p()\n    sleep(1)\n".to_owned().into();
+        let file = File::capture(&root, &path, source).unwrap();
+        let scope = Config::capture(Configuration::ProvenMissing)
+            .unwrap()
+            .scope("scheduler")
+            .unwrap();
+        assert_eq!(file.scan(&scope).unwrap().run.sites.len(), 1);
+        assert!(file.scan_budgeted(&scope, 0, 65536).is_err());
+        assert!(file.scan_budgeted(&scope, 1, 1024).is_err());
+        assert_eq!(
+            file.scan_budgeted(&scope, 1, 65536)
+                .unwrap()
+                .run
+                .sites
+                .len(),
+            1
+        );
+        // Even an excluded path cannot turn an exhausted resource latch into
+        // a successful empty finding container.
+        let excluded = Config::capture(Configuration::Captured(
+            b"[lint.scheduler]\nexempt_prefixes=['code/']\n",
+        ))
+        .unwrap()
+        .scope("scheduler")
+        .unwrap();
+        assert!(file.scan_budgeted(&excluded, 10, 1).is_err());
     }
 }

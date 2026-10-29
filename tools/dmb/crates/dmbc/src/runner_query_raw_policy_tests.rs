@@ -44,15 +44,17 @@ fn fixture(config: Option<&[u8]>, role: PolicyInputRole) -> (PathBuf, PathBuf, S
         },
         1,
     );
-    let queries=Arc::new(crate::query_db::QueryDb::default());
+    let queries = Arc::new(crate::query_db::QueryDb::default());
     let frontend = dm_tree::frontend::build(
         &root.join("code/sample.dm"),
         &ledger,
         &Default::default(),
         1,
     )
-    .unwrap().with_body_queries(queries.clone());
+    .unwrap()
+    .with_body_queries(queries.clone());
     let request = PolicyInputRequest {
+        workspace: None,
         files: vec![PolicyInputFile {
             path: configuration.clone(),
             role,
@@ -71,9 +73,9 @@ fn fixture(config: Option<&[u8]>, role: PolicyInputRole) -> (PathBuf, PathBuf, S
     .unwrap()
     .bind_request(&request)
     .unwrap();
-    let mut snapshot=SourceSnapshot::capture_policy(&frontend,Some(Arc::new(captured)));
-    snapshot.native_raw_queries=Some(queries);
-    (root,configuration,snapshot)
+    let mut snapshot = SourceSnapshot::capture_policy(&frontend, Some(Arc::new(captured)));
+    snapshot.native_raw_queries = Some(queries);
+    (root, configuration, snapshot)
 }
 fn run(
     snapshot: &SourceSnapshot,

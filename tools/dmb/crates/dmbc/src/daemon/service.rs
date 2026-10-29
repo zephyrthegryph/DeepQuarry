@@ -13,6 +13,8 @@ use std::{
     },
     time::{Duration, Instant},
 };
+#[path = "service_activity.rs"]
+mod activity;
 #[path = "admission_deadline.rs"]
 mod admission_deadline;
 #[path = "admission_limits.rs"]
@@ -71,6 +73,7 @@ impl EngineIdentity {
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct RequestKey {
     command: RequestCommand,
+    diagnostic_declarations: bool,
     defines: BTreeMap<String, String>,
     engine: Option<EngineIdentity>,
     bootstrap: bool,
@@ -83,6 +86,7 @@ impl RequestKey {
     fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path) -> Self {
         Self {
             command: request.command.into(),
+            diagnostic_declarations: request.diagnostic_declarations,
             defines: request.defines.clone(),
             engine: request.engine_template.as_deref().map(EngineIdentity::of),
             bootstrap: request.bootstrap_catalog,
@@ -688,6 +692,7 @@ static PRESSURE_RECLAIMED: Mutex<Option<Instant>> = Mutex::new(None);
 #[cfg(feature = "allocation-sites")]
 static DIAG_RELEASED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static BUILDS_FINISHED: AtomicU64 = AtomicU64::new(0);
+static CONNECTIONS_FINISHED: AtomicU64 = AtomicU64::new(0);
 static BUILDS_RECLAIMED: AtomicU64 = AtomicU64::new(0);
 struct Permit(Arc<Shared>, usize);
 impl Drop for Permit {
@@ -731,7 +736,8 @@ impl Drop for SpillOnExit {
 struct Connection(Arc<Shared>);
 impl Drop for Connection {
     fn drop(&mut self) {
-        self.0.connections.fetch_sub(1, Ordering::AcqRel);
+        // Completion precedes the zero-connection idle decision.
+        activity::finished(&CONNECTIONS_FINISHED,&self.0.connections);
     }
 }
 pub(super) fn serve() -> io::Result<()> {
@@ -780,7 +786,8 @@ pub(super) fn serve() -> io::Result<()> {
     // Whatever way the daemon leaves (retired while idle, superseded, idle limit), the session it takes away is stored first: the
     // daemon that replaces it patches from the stored patch base instead of compiling the whole program.
     let _spill_on_exit = SpillOnExit(Arc::clone(&shared));
-    let mut activity = Instant::now();
+    let mut activity =
+        activity::Activity::new(Instant::now(), CONNECTIONS_FINISHED.load(Ordering::Acquire));
     // Housekeeping (allocator reclaim, tier releases that can take tens of
     // seconds) runs on its own thread so it can never stall request acceptance.
     {
@@ -807,6 +814,7 @@ pub(super) fn serve() -> io::Result<()> {
     loop {
         let retiring = shared.retiring.load(Ordering::Acquire);
         let incoming = listeners.poll(retiring, Instant::now())?;
+        activity.observe_completed(Instant::now(), CONNECTIONS_FINISHED.load(Ordering::Acquire));
         if retiring && retiring_since.is_none() {
             retiring_since = Some(Instant::now());
         }
@@ -875,6 +883,10 @@ pub(super) fn serve() -> io::Result<()> {
             return Ok(());
         }
         if shared.exit_ready(incoming.is_some(), activity.elapsed()) {
+            // Completion can race the clock sample and zero-connection check.
+            if !activity.matches_completed(CONNECTIONS_FINISHED.load(Ordering::Acquire)) {
+                continue;
+            }
             super::emit_stderr(format_args!(
                 "dmbd exiting pid={} retiring={} idle-seconds={}",
                 std::process::id(),
@@ -887,7 +899,7 @@ pub(super) fn serve() -> io::Result<()> {
             Some(incoming) => {
                 let stream = incoming.stream;
                 let discovery = incoming.discovery;
-                activity = Instant::now();
+                activity.accepted(Instant::now());
                 super::resident::touch();
                 if shared.connections.fetch_add(1, Ordering::AcqRel) >= 16 {
                     shared.connections.fetch_sub(1, Ordering::AcqRel);
@@ -994,10 +1006,12 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                             | super::query::SourceQuery::NativeCheckerFixture { .. }
                             | super::query::SourceQuery::NativeUntypedFixture { .. }
                             | super::query::SourceQuery::NativeRawPolicyFixture { .. }
+                            | super::query::SourceQuery::NativeWorkspaceRawPolicy { .. }
                             | super::query::SourceQuery::NativeAnalyzePolicyFixture { .. }
                             | super::query::SourceQuery::NativeNamedRule { .. }
                             | super::query::SourceQuery::NativeConfiguredChecker { .. }
                             | super::query::SourceQuery::NativeConfiguredControlBatch { .. }
+                            | super::query::SourceQuery::NativeConfiguredVariableVisibility { .. }
                     )
                 });
                 let _permit = if executable {
@@ -1017,14 +1031,19 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                         "query session holds another define set or manifest as its active variant; build this one first",
                     ));
                 }
-                let tree = host.query_tree().ok_or_else(|| {
-                    io::Error::new(
-                        io::ErrorKind::NotFound,
-                        "query semantic snapshot unavailable or evicted",
-                    )
-                })?;
                 let state = host.query_state();
                 let state = state.lock().unwrap_or_else(|error| error.into_inner());
+                let tree = state
+                    .snapshot
+                    .as_ref()
+                    .and_then(|snapshot| snapshot.prepared_query_tree())
+                    .or_else(|| host.query_tree())
+                    .ok_or_else(|| {
+                        io::Error::new(
+                            io::ErrorKind::NotFound,
+                            "query semantic snapshot unavailable or evicted",
+                        )
+                    })?;
                 let reply = super::query::evaluate_snapshot(&request, tree, &state)?;
                 control::checkpoint()?;
                 Ok(reply)
@@ -1402,6 +1421,7 @@ mod tests {
         let shared = shared();
         let slot = shared.slot(PathBuf::from("E:/fixture/project.dme"), None);
         let key = RequestKey {
+            diagnostic_declarations: false,
             command: RequestCommand::Compile,
             defines: BTreeMap::new(),
             engine: None,
@@ -1585,5 +1605,27 @@ mod tests {
             );
             assert_eq!(RequestKey::of(&request, &request.project), baseline_request);
         }
+    }
+    #[test]
+    fn strict_and_diagnostic_preparation_do_not_supersede_different_admission_domains() {
+        let manifest = std::env::current_dir()
+            .unwrap()
+            .join("diagnostic-key/p.dme");
+        let args = vec![
+            "prepare-query".into(),
+            manifest.to_string_lossy().into_owned(),
+        ];
+        let crate::request::Command::Build(request) = crate::cli::parse(&args).unwrap() else {
+            panic!("expected request")
+        };
+        let strict = RequestKey::of(&request, &manifest);
+        let mut diagnostic = (*request).clone();
+        diagnostic.diagnostic_declarations = true;
+        assert_ne!(strict, RequestKey::of(&diagnostic, &manifest));
+        assert_eq!(
+            SessionKey::of(manifest.clone(), Some(&request)),
+            SessionKey::of(manifest.clone(), Some(&diagnostic)),
+            "same original owner/session, distinct request admission identity"
+        );
     }
 }

@@ -246,85 +246,90 @@ pub(super) fn expand_region(
                 .map_or(&segment.macros as &dyn crate::MacroLookup, |lookup| lookup);
             let source = line.text.trim_end_matches(['\r', '\n']);
             let mut joined = false;
+            let mut macro_points = None;
             // Empty indentation cannot contain a macro, interpolation, lexical
             // error or traced invocation. Keep the original source slice instead
             // of lexing and copying it; recorder input ordinals still advance.
-            let (text, meta): (Cow<str>, PreparedLineView<'_>) =
-                if held.is_empty() && source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
-                    (Cow::Borrowed(source), line)
-                } else if !held.is_empty() {
-                    let mut text = String::new();
-                    for earlier in &held {
-                        text.push_str(earlier.text.trim_end_matches(['\r', '\n']));
-                        text.push('\n');
+            let (text, meta): (Cow<str>, PreparedLineView<'_>) = if held.is_empty()
+                && source.bytes().all(|byte| matches!(byte, b' ' | b'\t'))
+            {
+                (Cow::Borrowed(source), line)
+            } else if !held.is_empty() {
+                let mut text = String::new();
+                for earlier in &held {
+                    text.push_str(earlier.text.trim_end_matches(['\r', '\n']));
+                    text.push('\n');
+                }
+                text.push_str(source);
+                match expand_traced(
+                    &text,
+                    lookup,
+                    // A call that stayed open over several lines reads `__LINE__` as the line it ends on plus the lines it
+                    // held back (measured against DreamMaker 516.1687: a call over n lines on 5..11 reads 17).
+                    ExpandLocation {
+                        file_name: &file_name,
+                        line: end_line(line, source) + held.len(),
+                    },
+                    &mut trace,
+                ) {
+                    Ok(text) => {
+                        joined = true;
+                        (Cow::Owned(text), held[0])
                     }
-                    text.push_str(source);
-                    match expand_traced(
-                        &text,
-                        lookup,
-                        // A call that stayed open over several lines reads `__LINE__` as the line it ends on plus the lines it
-                        // held back (measured against DreamMaker 516.1687: a call over n lines on 5..11 reads 17).
-                        ExpandLocation {
-                            file_name: &file_name,
-                            line: end_line(line, source) + held.len(),
-                        },
-                        &mut trace,
-                    ) {
-                        Ok(text) => {
-                            joined = true;
-                            (Cow::Owned(text), held[0])
-                        }
-                        Err(message)
-                            if message == crate::MISSING_CALL_CLOSE
-                                && held.len() < crate::MAX_OPEN_CALL_LINES =>
-                        {
-                            held.push(line);
-                            continue;
-                        }
-                        Err(_) => {
-                            // Not a call later lines close: the held lines stand
-                            // alone, and so does this one.
-                            held.push(line);
-                            flush_held(
-                                &mut held,
-                                &segment.macros,
-                                &file_name,
-                                plan,
-                                region.occurrence,
-                                &mut trace_arena,
-                                &mut text_buffer,
-                                &mut lines,
-                                &mut diagnostics,
-                            );
-                            continue;
-                        }
+                    Err(message)
+                        if message == crate::MISSING_CALL_CLOSE
+                            && held.len() < crate::MAX_OPEN_CALL_LINES =>
+                    {
+                        held.push(line);
+                        continue;
                     }
-                } else {
-                    match expand_traced(
-                        source,
-                        lookup,
-                        ExpandLocation {
-                            file_name: &file_name,
-                            line: end_line(line, source),
-                        },
-                        &mut trace,
-                    ) {
-                        Ok(text) => (Cow::Owned(text), line),
-                        Err(message) if message == crate::MISSING_CALL_CLOSE => {
-                            held.push(line);
-                            continue;
-                        }
-                        Err(message) => {
-                            diagnostics.push(Diagnostic {
-                                path: plan.occurrences[region.occurrence].path.as_ref().clone(),
-                                line: line.source_line,
-                                kind: DiagnosticKind::Macro,
-                                message,
-                            });
-                            (Cow::Borrowed(source), line)
-                        }
+                    Err(_) => {
+                        // Not a call later lines close: the held lines stand
+                        // alone, and so does this one.
+                        held.push(line);
+                        flush_held(
+                            &mut held,
+                            &segment.macros,
+                            &file_name,
+                            plan,
+                            region.occurrence,
+                            &mut trace_arena,
+                            &mut text_buffer,
+                            &mut lines,
+                            &mut diagnostics,
+                        );
+                        continue;
                     }
-                };
+                }
+            } else {
+                match crate::macro_expansion::expand_traced_points(
+                    source,
+                    lookup,
+                    ExpandLocation {
+                        file_name: &file_name,
+                        line: end_line(line, source),
+                    },
+                    &mut trace,
+                ) {
+                    Ok((text, points)) => {
+                        macro_points = points.map(|points| Arc::from(points.into_boxed_slice()));
+                        (Cow::Owned(text), line)
+                    }
+                    Err(message) if message == crate::MISSING_CALL_CLOSE => {
+                        held.push(line);
+                        continue;
+                    }
+                    Err(message) => {
+                        diagnostics.push(Diagnostic {
+                            path: plan.occurrences[region.occurrence].path.as_ref().clone(),
+                            line: line.source_line,
+                            kind: DiagnosticKind::Macro,
+                            message,
+                        });
+                        (Cow::Borrowed(source), line)
+                    }
+                }
+            };
             if joined {
                 held.clear();
             }
@@ -341,7 +346,7 @@ pub(super) fn expand_region(
                 let start = text_buffer.len();
                 text_buffer.push_str(part);
                 text_buffer.push('\n');
-                lines.push_with_single_macro_line(
+                lines.push_with_macro_points(
                     (
                         Span::new(start, text_buffer.len()),
                         meta.source_line,
@@ -349,6 +354,10 @@ pub(super) fn expand_region(
                         macro_expansions.clone(),
                     ),
                     single_physical_macro_line,
+                    !macro_expansions.is_empty(),
+                    single_physical_macro_line
+                        .then(|| macro_points.clone())
+                        .flatten(),
                 );
             }
         }
@@ -424,12 +433,17 @@ fn flush_held(
             let start = text_buffer.len();
             text_buffer.push_str(part);
             text_buffer.push('\n');
-            lines.push((
-                Span::new(start, text_buffer.len()),
-                line.source_line,
-                line.source_span,
-                macro_expansions.clone(),
-            ));
+            lines.push_with_macro_points(
+                (
+                    Span::new(start, text_buffer.len()),
+                    line.source_line,
+                    line.source_span,
+                    macro_expansions.clone(),
+                ),
+                false,
+                !macro_expansions.is_empty(),
+                None,
+            );
         }
     }
 }

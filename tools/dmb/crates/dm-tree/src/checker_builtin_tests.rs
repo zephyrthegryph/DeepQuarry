@@ -231,3 +231,89 @@ fn checker_queries_borrow_original_owner_without_cow_or_world_mutation() {
     assert_eq!(Arc::strong_count(&source.symbols), count);
     assert_eq!(source.symbols.text(builtin).map(str::to_owned), old_symbol);
 }
+
+#[test]
+fn visibility_qualifier_domain_uses_actual_formal_declarations_not_value_overrides() {
+    let catalog = super::pinned_catalog().unwrap();
+    let mut declared = 0;
+    let mut value_only = 0;
+    for row in catalog
+        .declarations
+        .iter()
+        .filter(|row| row.kind == MemberKind::Var)
+    {
+        match row.definition {
+            DefinitionMode::Declare => {
+                declared += 1;
+                let flags = row
+                    .reference_flags
+                    .expect("pinned formal has complete source qualifier flags");
+                assert_eq!(flags & (16|32|64),0,"profile must supply builtin note provenance before introducing a qualified builtin");
+            }
+            DefinitionMode::Override => {
+                value_only += 1;
+                assert_eq!(
+                    row.reference_flags, None,
+                    "value-only row must not invent a new declaration's flags"
+                );
+            }
+            other => panic!("unexpected pinned var producer {other:?}"),
+        }
+    }
+    assert!(declared > 0);
+    assert_eq!(value_only, 11);
+}
+
+#[test]
+fn checker_source_type_presence_excludes_engine_only_types_but_includes_authored_prefixes() {
+    let mut symbols = SymbolTable::default();
+    let mut parents = Vec::new();
+    for &(path, parent) in data::PARENTS {
+        symbols.intern(path).unwrap();
+        parents.push((SymbolId::of(path), parent.map(SymbolId::of)));
+    }
+    symbols.intern("/datum/runtime_only").unwrap();
+    parents.push((
+        SymbolId::of("/datum/runtime_only"),
+        Some(SymbolId::of("/datum")),
+    ));
+    let seed = crate::frontend::EngineSeed {
+        identity: 1,
+        symbols,
+        hierarchy: crate::EngineHierarchy { schema: 2, parents },
+        intrinsics: Arc::from([]),
+        fields: Arc::from([]),
+    };
+    let authored = crate::from_ast(
+        &dm_syntax::parse("/datum/authored/child/proc/read()\n    return null\n"),
+        // Match the real frontend: engine hierarchy IDs must belong to the
+        // authored adapter symbol roster before finish_with_engine().
+        seed.symbols.clone(),
+        FileId(0),
+        0,
+        0,
+    )
+    .unwrap();
+    let snapshot = authored.finish_with_engine(Some(&seed)).unwrap();
+    let tree = &snapshot.tree;
+    let profile = tree.checker_builtin_profile().unwrap();
+    assert!(tree
+        .lookup_type(SymbolId::of("/datum/runtime_only"))
+        .is_some());
+    assert!(!tree
+        .checker_source_type_presence(profile, "/datum/runtime_only")
+        .unwrap());
+    assert!(tree.checker_source_type_presence(profile, "/mob").unwrap());
+    assert!(tree
+        .checker_source_type_presence(profile, "/datum/authored")
+        .unwrap());
+    assert!(tree
+        .checker_source_type_presence(profile, "/datum/authored/child")
+        .unwrap());
+    assert!(!tree
+        .checker_source_type_presence(profile, "/datum/not_declared")
+        .unwrap());
+    assert!(tree
+        .checker_source_type_presence(PackedU128::from(0u128), "/mob")
+        .is_err());
+}

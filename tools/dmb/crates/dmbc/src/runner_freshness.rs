@@ -70,13 +70,32 @@ pub(super) fn admit(
         validation.changed.iter().take(8).collect::<Vec<_>>()
     );
     for path in validation.changed.iter().take(8) {
-        if let Some(crate::input_snapshot::FolderListing::Present(old)) = inputs.folders().get(path) {
-            if let crate::input_snapshot::FolderListing::Present(mut current) = provider.list(path)? {
-                current.retain(|name| !inputs.generated_outputs().contains(
-                    &dm_preprocess::regions::canonical_path(&path.join(name))));
-                let removed: Vec<_> = old.iter().filter(|name| current.binary_search(name).is_err()).take(8).collect();
-                let added: Vec<_> = current.iter().filter(|name| old.binary_search(name).is_err()).take(8).collect();
-                crate::daemon_eprintln!("native changed folder {:?}: added {:?}, removed {:?}", path, added, removed);
+        if let Some(crate::input_snapshot::FolderListing::Present(old)) = inputs.folders().get(path)
+        {
+            if let crate::input_snapshot::FolderListing::Present(mut current) =
+                provider.list(path)?
+            {
+                current.retain(|name| {
+                    !inputs
+                        .generated_outputs()
+                        .contains(&dm_preprocess::regions::canonical_path(&path.join(name)))
+                });
+                let removed: Vec<_> = old
+                    .iter()
+                    .filter(|name| current.binary_search(name).is_err())
+                    .take(8)
+                    .collect();
+                let added: Vec<_> = current
+                    .iter()
+                    .filter(|name| old.binary_search(name).is_err())
+                    .take(8)
+                    .collect();
+                crate::daemon_eprintln!(
+                    "native changed folder {:?}: added {:?}, removed {:?}",
+                    path,
+                    added,
+                    removed
+                );
             }
         }
     }
@@ -168,7 +187,12 @@ pub(super) fn snapshot_captured<P: SnapshotProvider>(
 /// request needs it at early admission, at the patch gate and at publication.
 #[derive(Default)]
 pub(super) struct SnapshotMemo {
-    cached: std::sync::Mutex<Option<(((usize, usize, usize), Option<(usize, usize, usize)>), InputSnapshot)>>,
+    cached: std::sync::Mutex<
+        Option<(
+            ((usize, usize, usize), Option<(usize, usize, usize)>),
+            InputSnapshot,
+        )>,
+    >,
 }
 impl SnapshotMemo {
     pub(super) fn get<P: SnapshotProvider>(
@@ -291,4 +315,104 @@ mod tests {
         .is_err());
         assert_eq!(journals, 1);
     }
+}
+
+/// Unforgeable within sibling modules: issued only after the existing complete
+/// captured-input freshness barrier succeeds for this exact workspace owner.
+pub(crate) struct WorkspacePolicyAdmission {
+    capture: std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+}
+impl WorkspacePolicyAdmission {
+    pub(crate) fn capture(
+        &self,
+    ) -> &std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture> {
+        &self.capture
+    }
+}
+pub(crate) fn admit_workspace_captured<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &crate::frozen_inputs::Inputs,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    workspace: std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+) -> Result<(InputSnapshot, WorkspacePolicyAdmission), Box<dyn Error>> {
+    let inputs = admit_captured(capture, retained, provider, generated_outputs)?;
+    if !workspace.is_recorded_in(&inputs) {
+        return Err(std::io::Error::other("admitted input closure omits workspace facts").into());
+    }
+    Ok((inputs, WorkspacePolicyAdmission { capture: workspace }))
+}
+
+/// Issued only by the existing complete original input-freshness barrier.
+/// A diagnostic frame is private/staged until this exact capture is admitted.
+pub(crate) struct DiagnosticPolicyAdmission {
+    capture: std::sync::Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
+}
+impl DiagnosticPolicyAdmission {
+    pub(crate) fn capture(
+        &self,
+    ) -> &std::sync::Arc<crate::runner_host::policy_capture::CapturedPolicyInputs> {
+        &self.capture
+    }
+}
+pub(crate) fn admit_diagnostic_captured<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &crate::frozen_inputs::Inputs,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    policy: std::sync::Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
+) -> Result<(InputSnapshot, DiagnosticPolicyAdmission), Box<dyn Error>> {
+    let inputs = admit_captured(capture, retained, provider, generated_outputs)?;
+    if !policy.is_recorded_in(&inputs) {
+        return Err(
+            std::io::Error::other("admitted input closure omits diagnostic policy facts").into(),
+        );
+    }
+    Ok((inputs, DiagnosticPolicyAdmission { capture: policy }))
+}
+
+/// Normal source/policy/ABI query frames use the same final closure barrier.
+/// A matching hash, an early frontend, or a dropped attempt cannot mint this.
+pub(crate) struct SourceFrameAdmission {
+    frame: std::sync::Arc<crate::runner_host::query_snapshot::SourceFrameCapture>,
+}
+impl SourceFrameAdmission {
+    pub(crate) fn frame(
+        &self,
+    ) -> &std::sync::Arc<crate::runner_host::query_snapshot::SourceFrameCapture> {
+        &self.frame
+    }
+}
+pub(crate) fn admit_source_captured<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &crate::frozen_inputs::Inputs,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    frame: std::sync::Arc<crate::runner_host::query_snapshot::SourceFrameCapture>,
+) -> Result<(InputSnapshot, SourceFrameAdmission), Box<dyn Error>> {
+    let inputs = admit_captured(capture, retained, provider, generated_outputs)?;
+    seal_source_admission(inputs, frame)
+}
+fn seal_source_admission(
+    inputs: InputSnapshot,
+    frame: std::sync::Arc<crate::runner_host::query_snapshot::SourceFrameCapture>,
+) -> Result<(InputSnapshot, SourceFrameAdmission), Box<dyn Error>> {
+    if !frame.is_recorded_in(&inputs) {
+        return Err(std::io::Error::other("admitted closure omits staged source facts").into());
+    }
+    crate::daemon::control::checkpoint()?;
+    Ok((inputs, SourceFrameAdmission { frame }))
+}
+/// Real provider restat for deterministic publication-race tests. This still
+/// executes the same complete closure barrier; there is no test-only receipt
+/// constructor or success boolean that could bypass freshness.
+#[cfg(test)]
+pub(crate) fn admit_source_captured_with_provider_for_test<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    provider: &impl SnapshotProvider,
+    frame: std::sync::Arc<crate::runner_host::query_snapshot::SourceFrameCapture>,
+) -> Result<(InputSnapshot, SourceFrameAdmission), Box<dyn Error>> {
+    let inputs = capture.snapshot()?;
+    admit(&inputs, provider)?;
+    seal_source_admission(inputs, frame)
 }

@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (_, occurrence) in checker_order::bodies(&frontend)? {
         arena.with_parsed(occurrence,|body|->Result<(),String> {
             for row in checks_undefined_proc::check_evaluated(&frontend,body,resolver,profile,true)? {
-                let source=frontend.source_export_mapping().ok_or("original mapping unavailable")?.original_note_origin(row.span.start)?;
+                let source=frontend.source_export_mapping().ok_or("original mapping unavailable")?.source_note_point(row.span.start)?;
                 output.push(serde_json::json!({"family":row.family,"severity":"error","file":source.path,"line":source.line,
                     "expanded_column":source.byte_column,
                     "message":row.message,"notes":row.notes.iter().map(|n|n.legacy_text()).collect::<Vec<_>>()}));

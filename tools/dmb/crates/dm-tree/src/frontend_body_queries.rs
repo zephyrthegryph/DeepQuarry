@@ -114,6 +114,20 @@ impl ColdFrontend {
     /// Opt in only after declaration construction. The source, occurrence list
     /// and syntax are captured together; callers cannot substitute foreign ASTs.
     pub fn with_body_queries(mut self, host: Arc<dyn BodySyntaxQueries>) -> Self {
+        if self.reused_body_queries
+            && self.source_export_mapping().is_some()
+            && self.callable_roster().is_ok()
+            && self
+                .body_queries
+                .as_ref()
+                .is_some_and(|queries| Arc::ptr_eq(&queries.host, &host))
+        {
+            // Native same-original-acquisition/whole-program proof reissued the
+            // source wrapper; the immutable original parser input is unchanged.
+            self.reused_body_queries = false;
+            return self;
+        }
+        self.reused_body_queries = false;
         host.begin_revision();
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         let inputs = self

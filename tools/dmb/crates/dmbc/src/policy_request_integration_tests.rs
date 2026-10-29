@@ -5,6 +5,7 @@ use crate::{
 };
 fn intent(required: bool) -> crate::policy_request::AdmittedPolicyRequest {
     PolicyInputRequest {
+        workspace: None,
         files: vec![PolicyInputFile {
             path: std::env::temp_dir().join("policy-intent-fixture/a.dm"),
             role: PolicyInputRole::DmSource,
@@ -165,6 +166,7 @@ fn foreign_policy_pin_is_rejected_while_source_revision_remains_unchanged() {
         .unwrap();
     let source = dm_analysis::tree_export::source_revision(&frontend);
     let next = PolicyInputRequest {
+        workspace: None,
         files: vec![PolicyInputFile {
             path: root.join("marker.dm"),
             role: PolicyInputRole::DmSource,
@@ -215,17 +217,28 @@ fn foreign_policy_pin_is_rejected_while_source_revision_remains_unchanged() {
 fn configured_session_open_preserves_admitted_policy_intent_during_canonical_check() {
     let root = crate::test_scratch::dir("policy-intent-session-open");
     let manifest = root.join("project.dme");
-    let base = crate::session::Configuration::new(&root, &manifest, Default::default(), 1, 2, 3).unwrap();
+    let base =
+        crate::session::Configuration::new(&root, &manifest, Default::default(), 1, 2, 3).unwrap();
     let empty = PolicyInputRequest::default().admit().unwrap();
     let explicit = PolicyInputRequest {
-        files: vec![PolicyInputFile { path: root.join("marker.dm"), role: PolicyInputRole::DmSource, required: true }],
+        workspace: None,
+        files: vec![PolicyInputFile {
+            path: root.join("marker.dm"),
+            role: PolicyInputRole::DmSource,
+            required: true,
+        }],
         search_folders: vec![root.join("search")],
-    }.admit().unwrap();
+    }
+    .admit()
+    .unwrap();
     for admitted in [None, Some(&empty), Some(&explicit)] {
         let configuration = base.clone().with_policy_inputs(admitted);
         let identity = configuration.identity().unwrap();
         let owner = crate::session::SessionRecords::open(configuration.clone()).unwrap();
-        assert!(root.join(".dmbc/input-sessions").join(format!("{identity:032x}")).is_dir());
+        assert!(root
+            .join(".dmbc/input-sessions")
+            .join(format!("{identity:032x}"))
+            .is_dir());
         drop(owner);
         // Preserving admitted intent must not weaken the original path check.
         let mut noncanonical = configuration;

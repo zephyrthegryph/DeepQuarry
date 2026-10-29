@@ -775,3 +775,6 @@ fn is_unknown_call(expression: &Expr) -> bool {
 #[cfg(test)]
 #[path = "untyped_tests.rs"]
 mod tests;
+
+#[path = "untyped_player_link_receiver.rs"]
+mod player_link_receiver;

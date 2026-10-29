@@ -169,7 +169,10 @@ fn first_argument_error_and_existing_messages_are_preserved() {
             "invalid define name \"9INVALID\"",
         ),
         (vec!["compile"], "a project manifest is required"),
-        (vec!["unknown"], "expected analyze, compile or prepare-query"),
+        (
+            vec!["unknown"],
+            "expected analyze, compile or prepare-query",
+        ),
     ] {
         assert_eq!(parse_args(&arguments).unwrap_err().to_string(), expected);
     }
@@ -333,12 +336,58 @@ fn request_execution_budget_is_optional_and_backward_compatible_on_wire() {
         for seconds in ["1", "300"] {
             let value = build(&[command, "a.dme", "--request-timeout-seconds", seconds]);
             assert_eq!(value.timeout_seconds, Some(seconds.parse().unwrap()));
-            let transported: BuildRequest = serde_json::from_value(serde_json::to_value(&value).unwrap()).unwrap();
+            let transported: BuildRequest =
+                serde_json::from_value(serde_json::to_value(&value).unwrap()).unwrap();
             assert_eq!(transported, value);
         }
         for seconds in ["", "0", "301", "-1", "+1", "1.5", " 1", "65536"] {
-            assert!(parse_args(&[command,"a.dme","--request-timeout-seconds",seconds]).is_err(), "{command} {seconds}");
+            assert!(
+                parse_args(&[command, "a.dme", "--request-timeout-seconds", seconds]).is_err(),
+                "{command} {seconds}"
+            );
         }
     }
-    assert!(parse_args(&["compile","a.dme","--request-timeout-seconds","1","--request-timeout-seconds","2"]).is_err());
+    assert!(parse_args(&[
+        "compile",
+        "a.dme",
+        "--request-timeout-seconds",
+        "1",
+        "--request-timeout-seconds",
+        "2"
+    ])
+    .is_err());
+}
+
+#[test]
+fn diagnostic_profile_is_opt_in_and_never_compiler_admission() {
+    let strict = build(&["prepare-query", "p.dme"]);
+    assert!(!strict.diagnostic_declarations);
+    let mut selected = build(&[
+        "prepare-query",
+        "p.dme",
+        "--diagnostic-declarations",
+        "--policy-inputs-json",
+        "{}",
+    ]);
+    assert!(selected.diagnostic_declarations);
+    assert!(crate::request::validate_diagnostic_declarations(&selected).is_ok());
+    let encoded = serde_json::to_value(&selected).unwrap();
+    assert_eq!(encoded["diagnostic_declarations"], true);
+    selected.command = BuildCommand::Compile;
+    assert!(crate::request::validate_diagnostic_declarations(&selected).is_err());
+    selected.command = BuildCommand::AnalyzeResolved;
+    assert!(crate::request::validate_diagnostic_declarations(&selected).is_err());
+    selected.command = BuildCommand::PrepareQuery;
+    selected.no_daemon = true;
+    assert!(crate::request::validate_diagnostic_declarations(&selected).is_err());
+    selected.no_daemon = false;
+    selected.policy_inputs = None;
+    assert!(crate::request::validate_diagnostic_declarations(&selected).is_err());
+    let mut legacy = serde_json::to_value(&strict).unwrap();
+    legacy
+        .as_object_mut()
+        .unwrap()
+        .remove("diagnostic_declarations");
+    let decoded: BuildRequest = serde_json::from_value(legacy).unwrap();
+    assert!(!decoded.diagnostic_declarations);
 }

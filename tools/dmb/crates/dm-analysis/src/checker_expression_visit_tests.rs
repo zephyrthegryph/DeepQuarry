@@ -42,6 +42,9 @@ fn observe_mode(
                 };
                 for event in walk.events {
                     let (kind, name, at) = match event {
+                        // Resolved fields are an observation for visibility;
+                        // this fixture asserts the existing call-event stream.
+                        Event::ResolvedField { .. } => continue,
                         Event::FieldWithoutStaticType { name, at, .. } => {
                             ("field_static", name, at)
                         }
@@ -251,4 +254,105 @@ fn unresolved_live_settings_and_parameter_local_origins_remain_atomic_unsupporte
         "/proc/probe(x)\n    x.field\n",
         "/proc/probe()\n    var/x\n    x.field\n",
     ] { assert!(observe_mode(source,true).is_err(),"{source}"); }
+}
+
+#[test]
+fn issued_array_type_container_does_not_certify_dimension_evaluation_or_for_shape() {
+    for suffix in [
+        "[]",
+        "[1]",
+        "[missing_dimension()]",
+        "[1][][missing_dimension()]",
+    ] {
+        let source=format!("/datum/example/proc/probe()\n    missing_earlier()\n    var/datum/value{suffix}\n    missing_later()\n");
+        let error = observe_mode(&source, true).unwrap_err();
+        assert!(error.contains("array"), "{suffix}: {error}");
+    }
+}
+
+#[test]
+fn common_local_increments_visit_control_without_losing_final_calls() {
+    let source="/proc/probe()\n    var/i=0\n    i++\n    ++i\n    i--\n    --i\n    for(var/j=0; j<2; j++)\n        visible_body()\n    visible_tail()\n";
+    let rows = observe_mode(source, true).unwrap();
+    assert_eq!(
+        rows.iter().map(|r| r.1.as_str()).collect::<Vec<_>>(),
+        ["visible_body", "visible_tail"]
+    );
+}
+#[test]
+fn local_increment_clears_receiver_static_fix_hint_for_followed_access() {
+    let rows =
+        observe("/proc/probe()\n    var/i=0\n    (i++).field\n    (++i).method()\n").unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|r| (r.0.as_str(), r.1.as_str(), r.2, r.3))
+            .collect::<Vec<_>>(),
+        [
+            ("field_static", "field", 3, 10),
+            ("unknown_receiver", "method", 4, 10),
+        ]
+    );
+}
+#[test]
+fn typed_and_nonlocal_increments_remain_explicitly_unsupported() {
+    for source in [
+        "/proc/probe(datum/D)\n    D++\n",
+        "/proc/probe(list/L)\n    --L\n",
+        "/datum/probe\n    var/x\n/datum/probe/proc/test()\n    x++\n",
+        "/proc/probe(datum/D)\n    ++D.value\n",
+    ] {
+        assert!(
+            observe(source).unwrap_err().contains("increment"),
+            "{source}"
+        );
+    }
+}
+#[test]
+fn increment_origin_requires_real_primary_operator_and_operand_boundaries() {
+    let parsed = dm_syntax::parse_expression("count++");
+    let expression = parsed.expr.as_ref().unwrap();
+    let ExprKind::Unary { op, value } = &expression.kind else {
+        panic!("primary unary missing")
+    };
+    let source = "count++".to_owned();
+    assert_eq!(
+        increment_origin(&source, expression, value, op).unwrap(),
+        Span::new(5, 7)
+    );
+    assert!(increment_origin(&source.replace("++", "--"), expression, value, op).is_err());
+    let mut foreign = expression.clone();
+    foreign.span.start += 1;
+    assert!(increment_origin(&source, &foreign, value, op).is_err());
+}
+
+#[test]
+fn increment_purity_never_treats_parameters_or_local_aliases_as_fresh_literals() {
+    for source in [
+        "/proc/p(i)\n    i++\n",
+        "/datum/example\n    var/value\n/datum/example/proc/p()\n    var/i=value\n    i++\n",
+        "/proc/p(parameter)\n    var/i=parameter\n    i++\n",
+        "/proc/p()\n    var/i=0\n    var/alias=i\n    alias++\n",
+    ] {
+        assert!(
+            observe_mode(source, true).unwrap_err().contains("purity"),
+            "{source}"
+        );
+    }
+}
+#[test]
+fn reassignment_branch_and_argument_escape_invalidate_local_mutation_proof() {
+    for source in [
+        "/proc/p(parameter)\n    var/i=0\n    i=parameter\n    i++\n",
+        "/proc/p(parameter)\n    var/i=0\n    if(parameter)\n        i=parameter\n    i++\n",
+        "/proc/consume(x)\n    return\n/proc/p()\n    var/i=0\n    consume(i)\n    i++\n",
+        "/proc/p(parameter)\n    var/i=0\n    if(parameter)\n        i=parameter\n        var/i=0\n    i++\n",
+    ] {assert!(observe_mode(source,true).unwrap_err().contains("purity"),"{source}");}
+}
+#[test]
+fn inner_shadow_does_not_replace_the_exact_outer_literal_proof() {
+    let rows=observe_mode("/proc/p(condition)\n    var/i=0\n    if(condition)\n        var/i=condition\n    i++\n    visible_tail()\n",true).unwrap();
+    assert_eq!(
+        rows.iter().map(|r| r.1.as_str()).collect::<Vec<_>>(),
+        ["visible_tail"]
+    );
 }

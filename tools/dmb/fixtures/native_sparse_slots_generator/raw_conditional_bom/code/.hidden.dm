@@ -1,0 +1,1 @@
+sparse(/obj/x, hidden)

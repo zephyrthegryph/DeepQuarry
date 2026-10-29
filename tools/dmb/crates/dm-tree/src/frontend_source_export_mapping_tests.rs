@@ -226,7 +226,7 @@ fn primary_variable_points_use_exact_tokens_and_never_line_only_macro_columns() 
                 .then(|| self.0.clone())
         }
     }
-    let source="/datum/probe\n\tvar/bare\n\tvar/array[2]\n\tvar/multi = list(\n\t\t1)\n/datum/probe\n\tmulti = null\n#define FIELD var/macro_decl\n/datum/probe\n\tFIELD\n";
+    let source="/datum/probe\n\tvar/bare\n\tvar/array[2]\n\tvar/multi = list(\n\t\t1)\n/datum/probe\n\tmulti = null\n#define FIELD var/macro_decl\n/datum/probe\n\tFIELD\n/proc/point_tail()\n\treturn null\n";
     let f = build_with_config(
         Path::new("points.dm"),
         &Bytes(dm_preprocess::AcquiredSource::from_original_bytes(
@@ -266,6 +266,10 @@ fn primary_variable_points_use_exact_tokens_and_never_line_only_macro_columns() 
         .resolve(owner, SymbolId::of("macro_decl"), MemberKind::Var)
         .unwrap();
     assert_eq!(archive.member_policy_line(macro_decl).unwrap().line, 10);
+    // This is a different, primary-issued token provenance API. The old strict
+    // byte projection remains refused below.
+    let point = archive.member_source_note_point(macro_decl).unwrap();
+    assert_eq!((point.line, point.byte_column), (10, 7));
     assert!(
         archive.member_policy_point(macro_decl).is_err(),
         "a proven macro line is not a proven byte column"

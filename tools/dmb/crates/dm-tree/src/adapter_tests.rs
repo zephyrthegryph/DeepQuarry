@@ -781,3 +781,87 @@ fn malformed_signature_current_expanded_cursor_survives_compact_frontend() {
         }
     }
 }
+
+#[test]
+fn diagnostic_declarations_preserve_original_declares_without_changing_compile_rejection() {
+    let source = "/datum/base\n    var/p = 1\n/datum/base/child\n    var/p = 2\n";
+    let adapted = from_ast(
+        &dm_syntax::parse(source),
+        SymbolTable::default(),
+        FileId(3),
+        7,
+        11,
+    )
+    .unwrap();
+    let strict = adapted.clone().finish().unwrap_err();
+    assert!(matches!(
+        strict,
+        SnapshotError::Tree(crate::TreeError::InheritedDuplicate {
+            kind: MemberKind::Var,
+            ..
+        })
+    ));
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let result = adapted
+        .clone()
+        .finish_checker_diagnostic_observed(None, |_, _, _| {}, &executor)
+        .unwrap();
+    assert!(!result.runtime_admissible());
+    assert!(result.authenticates(result.tree()));
+    assert_eq!(result.errors().len(), 1);
+    assert_eq!(
+        result.errors()[0],
+        crate::TreeError::InheritedDuplicate {
+            owner: SymbolId::of("/datum/base/child"),
+            previous_owner: SymbolId::of("/datum/base"),
+            name: SymbolId::of("p"),
+            kind: MemberKind::Var
+        }
+    );
+    let parent = result
+        .tree()
+        .lookup_type(SymbolId::of("/datum/base"))
+        .unwrap();
+    let child = result
+        .tree()
+        .lookup_type(SymbolId::of("/datum/base/child"))
+        .unwrap();
+    let base = result
+        .tree()
+        .resolve(parent, SymbolId::of("p"), MemberKind::Var)
+        .unwrap();
+    let own = result
+        .tree()
+        .resolve(child, SymbolId::of("p"), MemberKind::Var)
+        .unwrap();
+    assert_eq!(
+        result.tree().member(own).unwrap().definition,
+        DefinitionMode::Declare
+    );
+    assert_eq!(result.tree().member(own).unwrap().previous, Some(base));
+    assert_eq!(
+        result.occurrences().source_order().len(),
+        adapted.origins.len()
+    );
+    assert!(adapted.finish().is_err(),"diagnostic success must not change the default compiler or poison a shared normalization cache");
+}
+#[test]
+fn diagnostic_declaration_domain_refuses_every_non_var_or_non_inherited_error() {
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    for source in [
+        "/datum/base\n    var/p=1\n    var/p=2\n",
+        "/datum/base/proc/p()\n/datum/base/child/proc/p()\n",
+    ] {
+        let adapted = from_ast(
+            &dm_syntax::parse(source),
+            SymbolTable::default(),
+            FileId(3),
+            7,
+            11,
+        )
+        .unwrap();
+        assert!(adapted
+            .finish_checker_diagnostic_observed(None, |_, _, _| {}, &executor)
+            .is_err());
+    }
+}

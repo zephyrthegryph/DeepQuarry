@@ -26,6 +26,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "base_vars",
             "requirement_bool",
             "untyped_member",
+            "player_link",
+            "weak_raw_read",
+            "untyped",
         ]
         .contains(name)
     }) {

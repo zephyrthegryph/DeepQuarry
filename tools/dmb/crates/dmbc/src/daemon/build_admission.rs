@@ -14,9 +14,14 @@ pub(super) fn validate(request: &BuildRequest) -> Result<(), RequestFailure> {
     }
     crate::request::validate_timeout_seconds(request.timeout_seconds)
         .map_err(|error| RequestFailure::invalid_request(error.to_string()))?;
+    crate::request::validate_diagnostic_declarations(request)
+        .map_err(|error| RequestFailure::invalid_request(error.to_string()))?;
     absolute("project", &request.project)?;
     if let Some(policy) = &request.policy_inputs {
-        policy.clone().admit().map_err(|error| RequestFailure::invalid_request(error.to_string()))?;
+        policy
+            .clone()
+            .admit()
+            .map_err(|error| RequestFailure::invalid_request(error.to_string()))?;
     }
     for (name, path) in [
         ("engine_template", &request.engine_template),
@@ -49,6 +54,7 @@ mod tests {
         BuildRequest {
             timeout_seconds: None,
             command: BuildCommand::Compile,
+            diagnostic_declarations: false,
             policy_inputs: None,
             project: absolute_path("world.dme"),
             defines: BTreeMap::new(),
@@ -124,12 +130,12 @@ mod tests {
     #[test]
     fn wire_execution_budgets_are_validated_before_admission() {
         let mut current = request();
-        for seconds in [0,301,u16::MAX] {
-            current.timeout_seconds=Some(seconds);
-            assert_eq!(validate(&current).unwrap_err().kind.exit_code(),64);
+        for seconds in [0, 301, u16::MAX] {
+            current.timeout_seconds = Some(seconds);
+            assert_eq!(validate(&current).unwrap_err().kind.exit_code(), 64);
         }
-        for seconds in [1,300] {
-            current.timeout_seconds=Some(seconds);
+        for seconds in [1, 300] {
+            current.timeout_seconds = Some(seconds);
             validate(&current).unwrap();
         }
     }
