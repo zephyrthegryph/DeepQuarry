@@ -381,7 +381,6 @@ MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing 
 	name = "unusual potted plant"
 	desc = "This is an unusual plant. It's bulbous ends emit a soft blue light."
 	icon_state = "plant-09"
-	light_on = TRUE
 	catalogue_data = list(/datum/category_item/catalogue/flora/sif_tree)
 
 CAPABILITIES(/obj/structure/flora/pottedplant/unusual)
@@ -441,7 +440,6 @@ CAPABILITIES(/obj/structure/flora/pottedplant/unusual)
 	name = "subterranean potted plant"
 	desc = "This is a subterranean plant. It's bulbous ends glow faintly."
 	icon_state = "plant-20"
-	light_on = TRUE
 
 CAPABILITIES(/obj/structure/flora/pottedplant/subterranean)
 	configure(light_glow(range = 2, power = 0.6, color = "#FF6633"))
@@ -557,7 +555,6 @@ CAPABILITIES(/obj/random/pottedplant)
 	name = "subterranean bulbs"
 	desc = "This is a subterranean plant. It's bulbous ends glow faintly."
 	icon_state = "glowplant"
-	light_on = TRUE
 	catalogue_data = list(/datum/category_item/catalogue/flora/subterranean_bulbs)
 	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/cavebulbs = 1)
 	harvest_tool = /obj/item/material/knife

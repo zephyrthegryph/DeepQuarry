@@ -76,134 +76,83 @@ CAPABILITIES(/transformation/chem/instant/virus_food_size)
 		makes = list(reagent(REAGENT_ID_SIZEVIRUSFOOD, 2))))
 
 /transformation/chem/instant/mix_virus
-	var/level_min = 0
-	var/level_max = 2
 
 CAPABILITIES(/transformation/chem/instant/mix_virus)
 	configure(transformation(name = "Mix Virus", id = "mixvirus", takes = list(reagent(REAGENT_ID_VIRUSFOOD, 1)),
-		catalysts = list(reagent(REAGENT_ID_BLOOD, 1)), then = TYPE_PROC_REF(/transformation/chem/instant/mix_virus, on_reaction)))
+		catalysts = list(reagent(REAGENT_ID_BLOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(0, 2))))
 
 /transformation/chem/instant/mix_virus/picky
-	var/list/symptoms
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/picky)
-	/// /datum/viral_trait type paths the evolution may pick from.
-	configure(transformation(id = "mixviruspicky", then = TYPE_PROC_REF(/transformation/chem/instant/mix_virus/picky, on_reaction)))
-
-/transformation/chem/instant/mix_virus/proc/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
-	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
-		if(D)
-			D.Evolve(level_min, level_max)
-
-/transformation/chem/instant/mix_virus/picky/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
-	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
-		if(D)
-			D.PickyEvolve(symptoms)
+	configure(transformation(id = "mixviruspicky", effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_PICKY)))
 
 /transformation/chem/instant/mix_virus/mix_virus_2
-	level_min = 2
-	level_max = 4
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_2)
-	configure(transformation(name = "Mix Virus 2", id = "mixvirus2", takes = list(reagent(REAGENT_ID_MUTAGEN, 1))))
+	configure(transformation(name = "Mix Virus 2", id = "mixvirus2", takes = list(reagent(REAGENT_ID_MUTAGEN, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(2, 4))))
 
 /transformation/chem/instant/mix_virus/mix_virus_3
-	level_min = 4
-	level_max = 6
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_3)
-	configure(transformation(name = "Mix Virus 3", id = "mixvirus3", takes = list(reagent(REAGENT_ID_VIRUSFOOD, 1), reagent(REAGENT_ID_PHORON, 1))))
+	configure(transformation(name = "Mix Virus 3", id = "mixvirus3", takes = list(reagent(REAGENT_ID_VIRUSFOOD, 1), reagent(REAGENT_ID_PHORON, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(4, 6))))
 
 /transformation/chem/instant/mix_virus/mix_virus_4
-	level_min = 5
-	level_max = 6
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_4)
-	configure(transformation(name = "Mix Virus 4", id = "mixvirus4", takes = list(reagent(REAGENT_ID_URANIUM, 1))))
+	configure(transformation(name = "Mix Virus 4", id = "mixvirus4", takes = list(reagent(REAGENT_ID_URANIUM, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(5, 6))))
 
 /transformation/chem/instant/mix_virus/mix_virus_5
-	level_min = 3
-	level_max = 3
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_5)
-	configure(transformation(name = "Mix Virus 5", id = "mixvirus5", takes = list(reagent(REAGENT_ID_MUTAGENVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus 5", id = "mixvirus5", takes = list(reagent(REAGENT_ID_MUTAGENVIRUSFOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(3, 3))))
 
 /transformation/chem/instant/mix_virus/mix_virus_6
-	level_min = 4
-	level_max = 4
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_6)
-	configure(transformation(name = "Mix Virus 6", id = "mixvirus6", takes = list(reagent(REAGENT_ID_SUGARVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus 6", id = "mixvirus6", takes = list(reagent(REAGENT_ID_SUGARVIRUSFOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(4, 4))))
 
 /transformation/chem/instant/mix_virus/mix_virus_7
-	level_min = 5
-	level_max = 5
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_7)
-	configure(transformation(name = "Mix Virus 7", id = "mixvirus7", takes = list(reagent(REAGENT_ID_WEAKPHORONVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus 7", id = "mixvirus7", takes = list(reagent(REAGENT_ID_WEAKPHORONVIRUSFOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(5, 5))))
 
 /transformation/chem/instant/mix_virus/mix_virus_8
-	level_min = 6
-	level_max = 6
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_8)
-	configure(transformation(name = "Mix Virus 8", id = "mixvirus8", takes = list(reagent(REAGENT_ID_PHORONVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus 8", id = "mixvirus8", takes = list(reagent(REAGENT_ID_PHORONVIRUSFOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(6, 6))))
 
 /transformation/chem/instant/mix_virus/mix_virus_9
-	level_min = 1
-	level_max = 1
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_9)
-	configure(transformation(name = "Mix Virus 9", id = "mixvirus9", takes = list(reagent(REAGENT_ID_ADRANOLVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus 9", id = "mixvirus9", takes = list(reagent(REAGENT_ID_ADRANOLVIRUSFOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(1, 1))))
 
 /transformation/chem/instant/mix_virus/mix_virus_10
-	level_min = 6
-	level_max = 7
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_10)
-	configure(transformation(name = "Mix Virus 10", id = "mixvirus10", takes = list(reagent(REAGENT_ID_URANIUMVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus 10", id = "mixvirus10", takes = list(reagent(REAGENT_ID_URANIUMVIRUSFOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(6, 7))))
 
 /transformation/chem/instant/mix_virus/mix_virus_11
-	level_min = 7
-	level_max = 7
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_11)
-	configure(transformation(name = "Mix Virus 11", id = "mixvirus11", takes = list(reagent(REAGENT_ID_UNSTABLEURANIUMVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus 11", id = "mixvirus11", takes = list(reagent(REAGENT_ID_UNSTABLEURANIUMVIRUSFOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(7, 7))))
 
 /transformation/chem/instant/mix_virus/mix_virus_12
-	level_min = 8
-	level_max = 8
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/mix_virus_12)
-	configure(transformation(name = "Mix Virus 12", id = "mixvirus12", takes = list(reagent(REAGENT_ID_STABLEURANIUMVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus 12", id = "mixvirus12", takes = list(reagent(REAGENT_ID_STABLEURANIUMVIRUSFOOD, 1)), effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_EVOLVE, levels = list(8, 8))))
 
 /transformation/chem/instant/mix_virus/picky/size
-	symptoms = list(
-		/datum/viral_trait/size,
-		/datum/viral_trait/size/grow,
-		/datum/viral_trait/size/shrink
-	)
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/picky/size)
-	configure(transformation(name = "Mix Virus Size", id = "mixvirussize", takes = list(reagent(REAGENT_ID_SIZEVIRUSFOOD, 1))))
+	configure(transformation(name = "Mix Virus Size", id = "mixvirussize", takes = list(reagent(REAGENT_ID_SIZEVIRUSFOOD, 1)),
+		effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_PICKY, symptoms = list(/datum/viral_trait/size, /datum/viral_trait/size/grow, /datum/viral_trait/size/shrink))))
 
 /transformation/chem/instant/mix_virus/rem_virus
 
 CAPABILITIES(/transformation/chem/instant/mix_virus/rem_virus)
 	configure(transformation(name = "Devolve Virus", id = "remvirus", takes = list(reagent(REAGENT_ID_ADRANOL, 1)),
 		catalysts = list(reagent(REAGENT_ID_BLOOD, 1)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/mix_virus/rem_virus, on_reaction)))
-
-/transformation/chem/instant/mix_virus/rem_virus/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
-	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
-		if(D)
-			D.Devolve()
+		effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_DEVOLVE)))
 
 /transformation/chem/instant/antibodies
 
@@ -216,25 +165,11 @@ CAPABILITIES(/transformation/chem/instant/antibodies)
 CAPABILITIES(/transformation/chem/instant/neuter_virus)
 	configure(transformation(name = "Neuter Virus", id = "neutervirus", takes = list(reagent(REAGENT_ID_IMMUNOSUPRIZINE, 1)),
 		catalysts = list(reagent(REAGENT_ID_BLOOD, 1)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/neuter_virus, on_reaction)))
-
-/transformation/chem/instant/neuter_virus/proc/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
-	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
-		if(D)
-			D.Neuter()
+		effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_NEUTER)))
 
 /transformation/chem/instant/falter_virus
 
 CAPABILITIES(/transformation/chem/instant/falter_virus)
 	configure(transformation(name = "Falter Virus", id = "faltervirus", takes = list(reagent(REAGENT_ID_SPACEACILLIN, 1)),
 		catalysts = list(reagent(REAGENT_ID_BLOOD, 1)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/falter_virus, on_reaction)))
-
-/transformation/chem/instant/falter_virus/proc/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
-	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
-		if(D)
-			D.Falter()
+		effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_FALTER)))

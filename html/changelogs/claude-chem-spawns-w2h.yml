@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Gravity pulls and pushes, gas fires, slime mood waves and virus edits declare what they do"
+  - bugfix: "The ruby extract's push throws things as the extract, not as its reaction rule, which the throw refused"

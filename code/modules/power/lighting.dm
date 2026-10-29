@@ -92,7 +92,7 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 
 CAPABILITIES(/obj/machinery/light)
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(light_broken)))
-	configure(light_glow(range = 6, power = 1, color = "#E0EFF0")) // the starting tube's glow and draw (lighting_glow_decls.dm says why)
+	configure(light_glow(range = 6, power = 1, color = "#E0EFF0")) // the starting tube's glow and draw (lighting_fixture_glow.dm says why)
 	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)
@@ -366,7 +366,6 @@ CAPABILITIES(/obj/machinery/light)
 	else
 		set_use_power(USE_POWER_IDLE)
 		set_glow(src, GLOW(0, null, null))
-	update_light()
 	update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
