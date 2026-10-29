@@ -81,7 +81,6 @@ CAPABILITIES(/obj/effect/directional_shield)
 	but allow those projectiles to leave the shield from the inside.  Blocking too many damaging projectiles will cause the shield to fail."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "signmaker_sec"
-	light_on = TRUE
 	var/active = FALSE					// If it's on.
 	// The projector's integrity is the shield's strength: how much damage the shield blocks before breaking.
 	// This is a shared pool for all shields attached to this projector. It is fairly high, but shields are

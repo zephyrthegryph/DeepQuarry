@@ -31,6 +31,8 @@ CAPABILITIES(/obj/singularity/energy_ball)
 /obj/singularity/energy_ball/proc/prepare_energy_ball_glow()
 	if(!miniball)
 		set_glow(src, GLOW(10, 7, "#EEEEFF"))
+	else
+		set_glow(src, GLOW_OFF) // a mini-ball orbits the big one and casts nothing of its own (not the singularity's declared light)
 
 // its orbiting mini-balls go with it.
 /obj/singularity/energy_ball/on_destroy(force)
