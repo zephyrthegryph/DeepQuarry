@@ -152,6 +152,13 @@ cap_gb = 2
 keep = 4
 age_days = 30
 
+[cache.vg-bindings]
+# Generated verdigris bindings by check key (tools/build/build.ts VerdigrisBindingsCheckTarget, DQ_VG_BINDINGS_CACHE): a few KB each.
+policy = children-lru
+cap_gb = 1
+keep = 20
+age_days = 7
+
 [cache.dmb-daemon]
 policy = state
 log_max_mb = 64

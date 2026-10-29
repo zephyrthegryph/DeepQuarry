@@ -52,6 +52,8 @@
 #define PREF_WIDGET_EDITOR      "editor"
 /// Server-managed; not rendered as an editable control.
 #define PREF_WIDGET_HIDDEN      "hidden"
+/// A list of colours: the character's saved palette (/datum/preference/color_palette).
+#define PREF_WIDGET_PALETTE     "palette"
 
 // Sentinel returned by /datum/preferences/proc/update_preference_v2() and
 // /datum/preference_editor.handle_action().

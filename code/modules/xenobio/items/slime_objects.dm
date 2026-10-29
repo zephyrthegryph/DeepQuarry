@@ -251,7 +251,6 @@ CAPABILITIES(/obj/item/flashlight/slime)
 	desc = "A slimy ball that appears to be glowing from bioluminesence."
 	icon = 'icons/mob/slimes_vr.dmi'
 	icon_state = "irradiator"
-	light_on = TRUE // lit from the start: static light vars are applied when it materializes (on_materialize() -> update_light())
 	w_class = ITEMSIZE_TINY
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses

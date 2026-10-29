@@ -480,6 +480,59 @@ const verdigrisBindingsCheckKey = (): string => {
   return hash.digest('hex');
 };
 const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
+// The shared store of generated bindings by check key (DQ_VG_BINDINGS_CACHE, default E:/dq-cache/vg-bindings; `off` disables it).
+// An entry is the generator's output files for that key; a worktree with the same key copies them in instead of regenerating.
+const VG_BINDINGS_OUTPUTS = [
+  'code/__defines/verdigris/_bindings.dm',
+  'code/__defines/verdigris/_bindings_types.dm',
+  'code/__defines/verdigris/_component_schemas.dm',
+  'verdigris/ffi/src/abi.rs',
+];
+const sharedBindingsRoot = (): string | null => {
+  const env = process.env.DQ_VG_BINDINGS_CACHE;
+  if (env === 'off') return null;
+  if (env) return env;
+  return fs.existsSync('E:/dq-cache') ? 'E:/dq-cache/vg-bindings' : null;
+};
+const sharedBindingsDir = (key: string): string | null => {
+  const root = sharedBindingsRoot();
+  return root ? `${root}/${key.slice(0, 32)}` : null;
+};
+const restoreSharedBindings = (key: string): boolean => {
+  const dir = sharedBindingsDir(key);
+  if (!dir || !fs.existsSync(`${dir}/complete`)) return false;
+  try {
+    for (const rel of VG_BINDINGS_OUTPUTS) {
+      const src = `${dir}/${rel.replace(/\//g, '__')}`;
+      if (!fs.existsSync(src)) continue; // optional output (component schemas) absent for this key
+      const want = fs.readFileSync(src);
+      if (fs.existsSync(rel) && fs.readFileSync(rel).equals(want)) continue;
+      fs.mkdirSync(rel.slice(0, rel.lastIndexOf('/')), { recursive: true });
+      fs.writeFileSync(rel, want);
+      Juke.logger.info(`verdigris bindings: restored ${rel} from the shared store`);
+    }
+    fs.utimesSync(`${dir}/complete`, new Date(), new Date());
+    Juke.logger.info(`verdigris bindings: inputs match a shared check (${dir}); not regenerated`);
+    return true;
+  } catch (e) {
+    Juke.logger.warn(`verdigris bindings: shared store entry ${dir} unusable (${e}); regenerating`);
+    return false;
+  }
+};
+const storeSharedBindings = (key: string): void => {
+  const dir = sharedBindingsDir(key);
+  if (!dir) return;
+  try {
+    const tmp = `${dir}.tmp-${process.pid}`;
+    fs.mkdirSync(tmp, { recursive: true });
+    for (const rel of VG_BINDINGS_OUTPUTS) if (fs.existsSync(rel)) fs.copyFileSync(rel, `${tmp}/${rel.replace(/\//g, '__')}`);
+    fs.writeFileSync(`${tmp}/complete`, new Date().toISOString());
+    if (fs.existsSync(dir)) fs.rmSync(tmp, { recursive: true, force: true });
+    else fs.renameSync(tmp, dir);
+  } catch (e) {
+    Juke.logger.warn(`verdigris bindings: could not store the shared entry (${e})`);
+  }
+};
 
 export const VerdigrisBindingsCheckTarget = new Juke.Target({
   executes: async () => {
@@ -497,6 +550,13 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
       } catch {
         // no record yet
       }
+      // Shared across worktrees by the same key (28 October: each train worktree regenerated the same bindings, ~49 s on the
+      // precheck's and the DreamChecker batch's critical path, at every master that added or removed a .dm file).
+      if (restoreSharedBindings(key)) {
+        fs.mkdirSync('data', { recursive: true });
+        fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString(), sharedFrom: sharedBindingsDir(key) }));
+        return;
+      }
     }
     // The bindings are build output, not committed: write whatever is missing or out of date. The generator reads every DM file
     // (minutes on a loaded machine) synchronously; run in this process it blocked Bun's event loop, so the targets beside it (icon-repack:
@@ -513,7 +573,12 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
     Juke.logger.info(`verdigris bindings: regenerated in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
     if (key) {
       fs.mkdirSync('data', { recursive: true });
-      fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString() }));
+      // The generator writes verdigris/ffi/src/abi.rs, one of the key's own inputs: the key after it ran is the one the next run
+      // computes, so it is the one recorded (the key before it ran made the next run regenerate again), and both are shared.
+      const after = verdigrisBindingsCheckKey();
+      fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key: after, checkedAt: new Date().toISOString() }));
+      storeSharedBindings(key);
+      if (after !== key) storeSharedBindings(after);
     }
   },
 });

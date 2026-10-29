@@ -13,6 +13,7 @@
 	COOLDOWN_DECLARE(dig_cooldown)
 
 CAPABILITIES(/obj/structure/boulder)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 	rolls(nameof(excavation_level), range_of(5, 50))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -110,8 +111,10 @@ MSG_DEF(boulder/dig_pending, null, null)
 		consume(src, user)
 	return OP_OK
 
-/obj/structure/boulder/Bumped(AM)
-	. = ..()
+/// The bump notice: `AM` walked into it (was Bumped()).
+/obj/structure/boulder/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/movable/AM = N.bumper
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
 		var/obj/item/pickaxe/P = H.get_inactive_hand()
