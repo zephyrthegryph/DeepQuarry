@@ -22,6 +22,7 @@ GLOBAL_ALIST_EMPTY(map_sectors)
 	var/tmp/turf/unsimulated/map/edge/wrap_buddy
 
 CAPABILITIES(/turf/unsimulated/map/edge)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	after_init(0, then(PROC_REF(find_wrap)))
 	ref_one(nameof(wrap_buddy))
 
@@ -43,11 +44,13 @@ CAPABILITIES(/turf/unsimulated/map/edge)
 				rel_set(src, nameof(wrap_buddy), T)
 				break
 
-/turf/unsimulated/map/edge/Bumped(atom/movable/AM)
+/// The bump notice: `AM` walked into it (was Bumped()).
+/turf/unsimulated/map/edge/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/movable/AM = N.bumper
 	if(wrap_buddy()?.map_is_to_my)
 		AM.forceMove(get_step(wrap_buddy(), wrap_buddy().map_is_to_my))
 	else
-		. = ..()
 
 CAPABILITIES(/turf/unsimulated/map)
 	setup(PROC_REF(name_and_number_from_coordinates))

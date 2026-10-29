@@ -302,22 +302,32 @@ Checks if a list has the same entries and values as an element of big.
 		result = first ^ second
 	return result
 
-//Pretends to pick an element based on its weight but really just seems to pick a random element.
+/// Picks a key of an assoc list by weight. A null weight (a plain list entry) counts as 1; a weight of 0 or below is never picked. The list is
+/// only read, never written. An empty list, or one whose weights are all 0 or below, returns null.
 /proc/pickweight(list/L)
 	var/total = 0
-	var/item
-	for (item in L)
-		if (!L[item])
-			L[item] = 1
-		total += L[item]
+	for(var/item in L)
+		var/weight = L[item]
+		if(isnull(weight))
+			weight = 1
+		if(isnum(weight) && weight > 0)
+			total += weight
+	if(total <= 0)
+		return null
 
-	total = rand(1, total)
-	for (item in L)
-		total -=L [item]
-		if (total <= 0)
+	var/roll = rand() * total
+	var/last = null
+	for(var/item in L)
+		var/weight = L[item]
+		if(isnull(weight))
+			weight = 1
+		if(!isnum(weight) || weight <= 0)
+			continue
+		last = item
+		roll -= weight
+		if(roll < 0)
 			return item
-
-	return null
+	return last // float rounding at the top of the range
 
 //Pick a random element from the list and remove it from the list.
 /proc/pick_n_take(list/listfrom)

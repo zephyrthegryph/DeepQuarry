@@ -90,6 +90,10 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 
 /// The APC is not polled: Rust's ApcTick reports a channel change (a manual override written straight into Rust here), the frame's outbox
 /// delivers it, the area's channel follows and the machine on it flips. A settled APC is reported nothing.
+/// Steps an APC under its charge ceiling must see surplus before its charging lamp comes on (the chargecount threshold in laws.rs), and how many steps the test gives the lamp to settle.
+#define APC_CHARGE_START_STEPS 10
+#define APC_CHARGE_SETTLE_STEPS 60
+
 /datum/unit_test/dq_power_wakes_apc_report
 
 /datum/unit_test/dq_power_wakes_apc_report/Run()
@@ -105,13 +109,27 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 	TEST_ASSERT(apc.area.power_environ, "the APC powers its area's environment channel: [dq_power_door_state(door)]; rust channels [apc.get_channels(0)]/[apc.get_channels(1)]/[apc.get_channels(2)] reported [apc.get_reported()] heard [apc.power_event_count]")
 	TEST_ASSERT(!door.power_lost(), "the airlock has power")
 
-	// Settled: Rust reports nothing, whatever steps run.
+	// Settled: Rust reports nothing, whatever steps run. An APC under its charge ceiling starts charging only after APC_CHARGE_START_STEPS steps of surplus (its
+	// chargecount, verdigris/domains/power/src/laws.rs), so where in that count the world happens to be when this test begins moves with how many steps ran
+	// before it (the boot, the tests ahead): step until the lamp has held for longer than the count, then the quiet is the APC's, not luck.
+	var/held = 0
+	var/last_charging = apc.charging
+	for(var/i in 1 to APC_CHARGE_SETTLE_STEPS)
+		dq_power_test_step()
+		held = (apc.charging == last_charging) ? held + 1 : 0
+		last_charging = apc.charging
+		if(held > APC_CHARGE_START_STEPS)
+			break
+	test_drain()
+	TEST_ASSERT(held > APC_CHARGE_START_STEPS, "the APC's charging lamp settled within [APC_CHARGE_SETTLE_STEPS] steps (held [held], lamp [apc.charging])")
 	var/heard = apc.power_event_count
 	var/charge = apc.get_charge()
+	var/charging_before = apc.charging
+	var/status_before = apc.main_status
 	for(var/i in 1 to 5)
 		dq_power_test_step()
 	if(round(apc.get_charge() * 100 / max(apc.cell.maxcharge, 1)) == round(charge * 100 / max(apc.cell.maxcharge, 1)))
-		TEST_ASSERT_EQUAL(apc.power_event_count, heard, "a settled APC is reported nothing")
+		TEST_ASSERT_EQUAL(apc.power_event_count, heard, "a settled APC is reported nothing (charge [charge] -> [apc.get_charge()] of [apc.cell.maxcharge], charging [charging_before] -> [apc.charging], external status [status_before] -> [apc.main_status], channels [apc.equipment]/[apc.lighting]/[apc.environ], alarm [apc.power_alarm_raised])")
 
 	// Rust turns the environment channel off: the report brings it to DM and the airlock goes dark.
 	native_write(apc, NATIVE_APC_CHANNELS, POWERCHAN_OFF, POWER_CHANNEL_ENVIRON)

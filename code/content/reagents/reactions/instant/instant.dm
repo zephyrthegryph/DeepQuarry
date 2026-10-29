@@ -750,15 +750,8 @@ CAPABILITIES(/transformation/chem/instant/nitroglycerin)
 CAPABILITIES(/transformation/chem/instant/napalm)
 	configure(transformation(name = "Napalm", id = "napalm",
 		takes = list(reagent(REAGENT_ID_ALUMINIUM, 1), reagent(REAGENT_ID_PHORON, 1), reagent(REAGENT_ID_SACID, 1)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/napalm, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_BURN, gases = list(GAS_VOLATILE_FUEL = 1), scale_by_made = TRUE, temperature = 400 + T0C, hotspot = list(700, 400), range = 0, floors_only = TRUE, consumes = "napalm")))
 
-/transformation/chem/instant/napalm/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/turf/location = get_turf(holder.my_atom.loc)
-	for(var/turf/simulated/floor/target_tile in range(0,location))
-		target_tile.assume_gas(GAS_VOLATILE_FUEL, created_volume, 400+T0C)
-		target_tile.hotspot_expose(700, 400)
-	holder.del_reagent("napalm")
-	return
 
 /transformation/chem/instant/chemsmoke
 
@@ -1454,18 +1447,7 @@ CAPABILITIES(/transformation/chem/instant/normalcillin)
 CAPABILITIES(/transformation/chem/instant/dontcrossthebeams)
 	configure(transformation(name = "Don't Cross The Beams", id = "dontcrossthebeams",
 		takes = list(reagent(REAGENT_ID_MICROCILLIN, 1), reagent(REAGENT_ID_MACROCILLIN, 1)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/dontcrossthebeams, on_reaction)))
-
-/transformation/chem/instant/dontcrossthebeams/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
-#ifndef UNIT_TESTS
-	// The pull keeps its timers and its record after it ends, which the end-of-run ownership audit reports as a leak: the pins settle this rule in a test world.
-	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
-	s.set_up(3, 3, location)
-	s.start()
-#endif
-	holder.clear_reagents()
+		effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PULL, range = 3, pulses = 3, sfx = SFX_WEAPONS_GAUSS_SHOOT, empties = TRUE)))
 
 ///////////////////////////////////////////////////////////////////////////////////
 /// TF chemicals

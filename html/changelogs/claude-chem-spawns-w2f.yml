@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "The gold extract's mob spawns and the sapphire extract's plushies declare their weighted choice of table"
