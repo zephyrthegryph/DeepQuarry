@@ -11,6 +11,7 @@ dm-profile = { path = "../dm-profile" }
 dm-ir = { path = "../dm-ir" }
 dm-session = { path = "../dm-session" }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 dm-syntax = { path = "../dm-syntax" }
 
 dm-preprocess = { path = "../dm-preprocess" }

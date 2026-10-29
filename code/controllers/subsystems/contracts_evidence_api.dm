@@ -15,7 +15,7 @@
 			subject_identities -= body_key
 			subject_identities[key] = identity
 	if(!identity)
-		identity = new("DQ-SUB-[next_subject_id++]", subject)
+		identity = new("DQ-SUB-[next_serial(contract_subject)]", subject)
 		subject_identities[key] = identity
 		subject_identities[identity.id] = identity
 	else
@@ -34,7 +34,7 @@
 /datum/system/contracts/proc/register_evidence(kind, subject_id, creator_account, atom/source, list/payload)
 	if(!kind)
 		return null
-	var/id = "DQ-EV-[next_evidence_id++]"
+	var/id = "DQ-EV-[next_serial(contract_evidence)]"
 	var/datum/contract_evidence/evidence = new(id, kind, subject_id, creator_account, source, payload)
 	rel_add(src, nameof(evidence_by_id), evidence, id)
 	emit_contract_event(CONTRACT_EVENT_EVIDENCE_REGISTERED, list(

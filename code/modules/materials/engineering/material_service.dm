@@ -1,6 +1,7 @@
 // Operating condition is owned by the assembly, independently of a machine's
 // on/off processing roster. Stable assemblies retain watches but no timer.
-GLOBAL_VAR_INIT(next_material_assembly_id, 0)
+/// Material assembly numbers ("ME-3").
+SERIAL_DEF(material_assembly, 1, FALSE)
 
 /datum/gas
 	var/material_corrosivity = 0
@@ -226,7 +227,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	rel_set(src, nameof(owner), holder)
 	var/datum/material_assembly/assembly = material_assembly(holder)
 	if(!assembly.assembly_id)
-		assembly.assembly_id = "ME-[++GLOB.next_material_assembly_id]"
+		assembly.assembly_id = "ME-[next_serial(material_assembly)]"
 	STAMP(src, last_update, CLOCK_WORLD)
 	STAMP(src, chemical_last_update, CLOCK_WORLD)
 	initialize_thermal_stock()
@@ -553,14 +554,11 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	var/share = length(port_links) ? port_conductance() / length(port_links) : 0
 	for(var/id in port_links)
 		vg_heat_edge_set(id, HEAT_PARAM_CONDUCTANCE, share)
-	var/now = temperature()
-	if(ambient && abs(now - ambient.return_temperature()) >= MATERIAL_THERMAL_RESOLUTION)
-		return TRUE
-	if(length(port_links))
-		for(var/datum/gas_mixture/air as anything in owner().material_service_gases())
-			if(air.heat_capacity() > 0 && abs(air.return_temperature() - now) >= MATERIAL_THERMAL_RESOLUTION)
-				return TRUE
-	return FALSE
+	// Heat flows while it moves the assembly: awake only if the temperature moved since the last sample. A gap to the air alone is not flow: a cell on
+	// an airless floor or in CentCom (turfs with no heat simulation, a vacuum sink) sits 290 K off its air with a link that moves nothing, and used to
+	// be polled forever (265 of the 266 awake services of an idle station were such cells). A change in the surroundings wakes it through the gas
+	// watches and environment_changed(); retiring (settle_heat()) still needs the gap to be closed (material_service_can_retire()).
+	return abs(temperature() - last_environment_temperature) >= MATERIAL_THERMAL_RESOLUTION
 
 /// At its surroundings' temperature, before it retires: what it still holds over its air's temperature goes to the air.
 /datum/material_service/proc/settle_heat()

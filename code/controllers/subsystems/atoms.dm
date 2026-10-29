@@ -47,6 +47,7 @@ SYSTEM_DEF(atoms)
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	var/list/mapload_init_times = list()
+	var/list/mapload_init_counts = list()
 	#endif
 
 	atom_initialized = INITIALIZATION_INSSATOMS
@@ -166,6 +167,7 @@ SYSTEM_DEF(atoms)
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	rustg_file_write(json_encode(mapload_init_times), "[GLOB.log_directory]/init_times.json")
+	rustg_file_write(json_encode(mapload_init_counts), "[GLOB.log_directory]/init_counts.json")
 	#endif
 
 /// Binds every power machine node the batch queued in one Rust call (after the cables, so the

@@ -22,7 +22,7 @@ CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
 	desc = "Rubber boots"
 	name = "galoshes"
 	icon_state = "galoshes"
-	slowdown = SHOES_SLOWDOWN+0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 	resistance_flags = ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/galoshes)
@@ -120,7 +120,7 @@ CAPABILITIES(/obj/item/clothing/shoes/sandal/marisa)
 	desc = "The prankster's standard-issue clowning shoes. Damn they're huge!"
 	name = "clown shoes"
 	icon_state = "clown"
-	slowdown = SHOES_SLOWDOWN+0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 	//removed built in squeak sounds
 
 CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
@@ -201,7 +201,7 @@ CAPABILITIES(/obj/item/clothing/shoes/slippers)
 	name = "swimming fins"
 	icon_state = "flippers"
 	item_state_slots = list(slot_r_hand_str = "galoshes", slot_l_hand_str = "galoshes")
-	slowdown = SHOES_SLOWDOWN+0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 
 CAPABILITIES(/obj/item/clothing/shoes/swimmingfins)
 	fits_anyone()
@@ -356,11 +356,11 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 
 /obj/item/clothing/shoes/magboots/adv/set_slowdown()
 	if(magpulse)
-		slowdown = shoes ? max(SHOES_SLOWDOWN, shoes.slowdown) : SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, shoes ? max(SHOES_SLOWDOWN, shoes.worn_factor(STAT_ITEM_ENCUMBRANCE)) : SHOES_SLOWDOWN)	//So you can't put on magboots to make you walk faster.
 	else if(shoes)
-		slowdown = shoes.slowdown
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, shoes.worn_factor(STAT_ITEM_ENCUMBRANCE))
 	else
-		slowdown = SHOES_SLOWDOWN
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, SHOES_SLOWDOWN)
 
 // Armor Versions Here
 /obj/item/clothing/shoes/knight
@@ -472,7 +472,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 	name = "absorbent galoshes"
 	icon = 'icons/inventory/feet/item.dmi'
 	icon_state = "galoshes_dry"
-	slowdown = SHOES_SLOWDOWN+0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 
 
 

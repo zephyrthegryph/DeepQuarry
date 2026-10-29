@@ -1,31 +1,24 @@
 #!/usr/bin/env bash
-# Records conversion pins: a generated snapshot of what a person can do with each named type (its interaction
-# menu per actor and held tool, the refusals, what a click does, its wires, its op keys). Run it BEFORE converting
-# a type; after the conversion, `bash tools/dq_focused_test.sh dq_conversion_pin` shows every row that changed.
-# Guide: doc/rewrite/snapshot_pins.md. Test: code/modules/unit_tests/dq_conversion_pins.dm.
+# Records window-data pins (dq_ui_pins.dm): what a window host shows after scripted state changes.
+# Guide: doc/rewrite/snapshot_pins.md.
 #
-#   bash tools/dq_pin.sh /obj/machinery/foo [/obj/machinery/bar ...]   # make the empty pin files and record them
-#   bash tools/dq_pin.sh --rm /obj/machinery/foo                       # drop a pin (the type is gone or hand-pinned)
-#   bash tools/dq_pin.sh --hit /obj/item/foo [...]                     # a hit pin: what an EMP, a blast, a shot, a blob, a throw and an
-#                                                                       # emag change on a fresh one (snapshots/hit_pins/, test dq_hit_pin)
-#   bash tools/dq_pin.sh --ui /datum/foo_panel [...]                    # a window-data pin: what a window host shows after scripted state
-#                                                                       # changes (snapshots/ui_pins/, test dq_ui_data_pin, a /datum/ui_pin driver)
+#   bash tools/dq_pin.sh --ui /datum/foo_panel [...]   # make the empty pin file (snapshots/ui_pins/, test dq_ui_data_pin, a /datum/ui_pin driver)
+#   bash tools/dq_pin.sh --rm --ui /datum/foo_panel    # drop one
 #
-# A pin is one file, code/modules/unit_tests/snapshots/pins/<type with / as .>.txt; an empty file is recorded on
-# the next run of dq_conversion_pin instead of failing it. Commit the recorded files with the conversion.
+# A pin is one file, code/modules/unit_tests/snapshots/ui_pins/<type with / as .>.txt; an empty file is recorded on
+# the next run of dq_ui_data_pin instead of failing it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dir="code/modules/unit_tests/snapshots/pins"
-test="dq_conversion_pin"
+dir="code/modules/unit_tests/snapshots/ui_pins"
+test="dq_ui_data_pin"
 remove=0
 types=()
 for arg in "$@"; do
 	case "$arg" in
 		--rm) remove=1 ;;
-		--hit) dir="code/modules/unit_tests/snapshots/hit_pins"; test="dq_hit_pin" ;;
 		--ui) dir="code/modules/unit_tests/snapshots/ui_pins"; test="dq_ui_data_pin" ;;
-		-h|--help) sed -n '2,15p' "$0"; exit 0 ;;
+		-h|--help) sed -n '2,10p' "$0"; exit 0 ;;
 		/*) types+=("$arg") ;;
 		*) echo "not a type path (it starts with /): $arg" >&2; exit 2 ;;
 	esac

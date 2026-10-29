@@ -379,6 +379,11 @@ mod os {
 
 use os::wait_exit;
 
+/// True when no process has this pid (diagnostics only: a reused pid reads as alive).
+pub(super) fn process_gone(pid: u32) -> bool {
+    wait_exit(pid, Duration::ZERO)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

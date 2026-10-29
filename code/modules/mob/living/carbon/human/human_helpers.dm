@@ -421,7 +421,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	if(istype(species, /datum/species/shapeshifter))
 		set_wrapped_bodytype(bodytype)
 
-	custom_species	= character.custom_species
+	bio.custom_species = character.bio.custom_species
 	bio.custom_say = character.bio.custom_say
 	bio.custom_ask = character.bio.custom_ask
 	bio.custom_whisper = character.bio.custom_whisper
@@ -479,7 +479,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 
 /// Weight, size, voice and sprite offsets.
 /mob/living/carbon/human/proc/copy_physique_from(mob/living/carbon/human/character)
-	weight			= character.weight
+	sparse_set_or(src, weight, sparse_get_or(character, weight, DEFAULT_MOB_WEIGHT), DEFAULT_MOB_WEIGHT)
 	sparse_set_or(src, weight_gain, sparse_get_or(character, weight_gain, 1), 1)
 	sparse_set_or(src, weight_loss, sparse_get_or(character, weight_loss, 0.5), 0.5)
 	set_fuzzy(character.fuzzy)
@@ -492,4 +492,4 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		species.icon_scale_y = character.species.icon_scale_y
 		update_transform()
 	resize(character.size_multiplier, animate = TRUE, ignore_prefs = TRUE)
-	voice_sounds_list = character.voice_sounds_list
+	sparse_set(src, voice_sounds_list, sparse_get(character, voice_sounds_list))

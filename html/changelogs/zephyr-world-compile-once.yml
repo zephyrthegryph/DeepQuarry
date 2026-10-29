@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Focused test runs compile the test build once: later worlds replay world 0's pinned compile instead of compiling it again. DreamChecker regenerates the verdigris bindings first. Merging master drops and reports includes of deleted files, and lint_scopes.toml ceilings lowered on both sides merge hunk by hunk."

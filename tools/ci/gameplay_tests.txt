@@ -6,3 +6,6 @@ dq_gameplay/*
 dq_keybinding_winset_creates_macros
 dq_admin_txt_load
 dq_client_verb_holder_grants
+# Lights: every object type with a declared light casts it once initialised (perf/light-glow shipped fixtures that looked lit and cast nothing;
+# dq_gameplay/light_fixture_lights_the_room above checks the light reaches the floor). ~17 s of world time: it spawns every lit type once.
+dq_light_declared_glow_casts

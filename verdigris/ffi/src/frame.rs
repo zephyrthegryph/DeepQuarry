@@ -78,11 +78,13 @@ struct Clock {
     /// The next frame steps the world once, whatever the pacer owes ([`frame_force_devices`]).
     force_step: bool,
     frames: u64,
+    /// World steps run by hand ([`note_steps`], `vg_world_run_steps`): time the native world passed outside the frame.
+    steps: u64,
 }
 
 thread_local! {
     static CLOCK: RefCell<Clock> = const {
-        RefCell::new(Clock { tick_seconds: 0.05, now: 0, force_step: false, frames: 0 })
+        RefCell::new(Clock { tick_seconds: 0.05, now: 0, force_step: false, frames: 0, steps: 0 })
     };
 }
 
@@ -103,6 +105,19 @@ fn frame_set_tick_lag(tick_lag: ByondValue) -> Result<ByondValue> {
 fn frame_count() -> Result<ByondValue> {
     #[allow(clippy::cast_precision_loss)]
     Ok(ByondValue::from(CLOCK.with_borrow(|c| c.frames) as f32))
+}
+
+/// Counts `n` world steps run outside the frame (tests and admin tools step the world directly): `vg_world_steps_run()` reads the total, so a harness can tell that
+/// native world time passed even though no frame ran.
+pub(crate) fn note_steps(n: u64) {
+    CLOCK.with_borrow_mut(|c| c.steps += n);
+}
+
+/// The world steps run by hand since boot (tests: whether native world time passed during one).
+#[auxmacros::bind("/proc/world_steps_run")]
+fn world_steps_run() -> Result<ByondValue> {
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(CLOCK.with_borrow(|c| c.steps) as f32))
 }
 
 /// Test hook: makes the next frame step the world once, so the pipe devices' law
@@ -230,6 +245,7 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
         );
     }
     timer.lap("outbox");
+    timer.finish();
     Ok(out)
 }
 
@@ -237,20 +253,54 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
 /// `verdigris_metrics_list()` and every bench mark), so a change in the frame's cost names the phase that moved.
 struct PhaseTimer {
     at: std::time::Instant,
+    /// Wall time of the top-level phases so far this frame, microseconds.
+    total_us: u64,
+}
+
+/// A frame at least this long (microseconds) adds its own per-phase times to the `frame.slow_us.<phase>` counters, so the
+/// slow frame is named by its phase and not hidden in the cumulative `frame.us.*` totals of the quick ones.
+const SLOW_FRAME_US: u64 = 100_000;
+
+thread_local! {
+    /// Every lap of the frame in progress (the nested `pace_*` ones too): `(phase, microseconds)`.
+    static TRACE: std::cell::RefCell<Vec<(String, u64)>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Adds one lap to the cumulative counter and to the trace of the frame in progress.
+pub(crate) fn trace_lap(phase: &str, us: u64) {
+    crate::metrics::registry().counter(&format!("frame.us.{phase}")).add(us);
+    TRACE.with_borrow_mut(|t| t.push((phase.to_owned(), us)));
 }
 
 impl PhaseTimer {
     fn start() -> Self {
         crate::metrics::registry().counter("frame.count").inc();
-        Self { at: std::time::Instant::now() }
+        TRACE.with_borrow_mut(Vec::clear);
+        Self { at: std::time::Instant::now(), total_us: 0 }
     }
 
     fn lap(&mut self, phase: &str) {
         let now = std::time::Instant::now();
         #[allow(clippy::cast_possible_truncation)]
         let us = (now - self.at).as_micros() as u64;
-        crate::metrics::registry().counter(&format!("frame.us.{phase}")).add(us);
+        trace_lap(phase, us);
+        self.total_us += us;
         self.at = now;
+    }
+
+    /// Ends the frame: a slow one files its trace under `frame.slow_us.*`.
+    fn finish(&self) {
+        if self.total_us < SLOW_FRAME_US {
+            return;
+        }
+        let registry = crate::metrics::registry();
+        registry.counter("frame.slow_count").inc();
+        registry.counter("frame.slow_us.total").add(self.total_us);
+        TRACE.with_borrow(|t| {
+            for (phase, us) in t {
+                registry.counter(&format!("frame.slow_us.{phase}")).add(*us);
+            }
+        });
     }
 }
 

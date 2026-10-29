@@ -35,7 +35,6 @@
 	*/
 
 
-	var/list/logging
 
 	var/memory = ""
 	var/transforming = null	//Carbon
@@ -130,7 +129,6 @@
 	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
 
-	var/list/active_genes
 	var/mob_size = MOB_MEDIUM
 
 	var/seedarkness = 1	//Determines mob's ability to see shadows. 1 = Normal vision, 0 = darkvision

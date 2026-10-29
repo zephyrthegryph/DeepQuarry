@@ -21,15 +21,19 @@
 		"name" = name,
 		"ckey" = ckey,
 		"loc" = loc_name(src),
-		"event_id" = LAZYLEN(LAZYACCESS(logging, smessage_type)),
+		"event_id" = LAZYLEN(LAZYACCESS(sparse_get(src, logging), smessage_type)),
 		"message" = message,
 		"color" = color
 	)
 
 	if(!CONFIG_GET(flag/database_logging))
-		if(!islist(LAZYACCESS(logging, smessage_type)))
-			LAZYSET(logging, smessage_type, list())
-		UNTYPED_LIST_ADD(logging[smessage_type], timestamped_message)
+		var/list/own_log = sparse_get(src, logging)
+		if(!own_log)
+			own_log = list()
+			sparse_set(src, logging, own_log)
+		if(!islist(own_log[smessage_type]))
+			own_log[smessage_type] = list()
+		UNTYPED_LIST_ADD(own_log[smessage_type], timestamped_message)
 
 	if(HAS_CONNECTED_PLAYER(src))
 		if(CONFIG_GET(flag/database_logging))

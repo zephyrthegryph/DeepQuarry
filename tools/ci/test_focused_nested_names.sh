@@ -15,10 +15,10 @@ fail() { echo "FAIL: $*"; fails=$((fails + 1)); }
 eval "$(sed -n '/^included_files() {/,/^}/p' "$ROOT/tools/dq_focused_test.sh")"
 eval "$(sed -n '/^test_types() {/,/^}/p' "$ROOT/tools/dq_focused_test.sh")"
 
-cd "$T" && git init -q . && mkdir -p code/modules/unit_tests
-echo '#include "code\modules\unit_tests\_unit_tests.dm"' >deepquarry.dme
-printf '#include "fixture.dm"\n' >code/modules/unit_tests/_unit_tests.dm
-cat >code/modules/unit_tests/fixture.dm <<'DM'
+cd "$T" && git init -q . && mkdir -p code/tests/unit_tests
+echo '#include "code\tests\unit_tests\_unit_tests.dm"' >deepquarry.dme
+printf '#include "fixture.dm"\n' >code/tests/unit_tests/_unit_tests.dm
+cat >code/tests/unit_tests/fixture.dm <<'DM'
 /datum/unit_test/plain_top
 /datum/unit_test/dq_eg2/proc/run_gate()
 	return

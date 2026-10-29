@@ -541,104 +541,81 @@ CAPABILITIES(/transformation/chem/instant/luminol)
 /* Solidification */
 
 /transformation/chem/instant/solidification
-	var/sheet_to_give = /obj/item/stack/material/iron
 
 CAPABILITIES(/transformation/chem/instant/solidification)
 	configure(transformation(name = "Solid Iron", id = "solidiron",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/solidification, on_reaction)))
-
-/transformation/chem/instant/solidification/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/sheets = FLOOR(created_volume,1)
-	if(sheets)
-		new sheet_to_give(get_turf(holder.my_atom), sheets)
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET)), made = 1, spawns = spawns(/obj/item/stack/material/iron, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/phoron
-	sheet_to_give = /obj/item/stack/material/phoron
 
 CAPABILITIES(/transformation/chem/instant/solidification/phoron)
 	configure(transformation(name = "Solid Phoron", id = "solidphoron",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_PHORON, REAGENTS_PER_SHEET))))
-
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_PHORON, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/phoron, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/silver
-	sheet_to_give = /obj/item/stack/material/silver
 
 CAPABILITIES(/transformation/chem/instant/solidification/silver)
 	configure(transformation(name = "Solid Silver", id = "solidsilver",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_SILVER, REAGENTS_PER_SHEET))))
-
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_SILVER, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/silver, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/gold
-	sheet_to_give = /obj/item/stack/material/gold
 
 CAPABILITIES(/transformation/chem/instant/solidification/gold)
 	configure(transformation(name = "Solid Gold", id = "solidgold",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_GOLD, REAGENTS_PER_SHEET))))
-
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_GOLD, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/gold, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/platinum
-	sheet_to_give = /obj/item/stack/material/platinum
 
 CAPABILITIES(/transformation/chem/instant/solidification/platinum)
 	configure(transformation(name = "Solid Platinum", id = "solidplatinum",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_PLATINUM, REAGENTS_PER_SHEET))))
-
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_PLATINUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/platinum, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/uranium
-	sheet_to_give = /obj/item/stack/material/uranium
 
 CAPABILITIES(/transformation/chem/instant/solidification/uranium)
 	configure(transformation(name = "Solid Uranium", id = "soliduranium",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_URANIUM, REAGENTS_PER_SHEET))))
-
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_URANIUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/uranium, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/hydrogen
-	sheet_to_give = /obj/item/stack/material/mhydrogen
 
 CAPABILITIES(/transformation/chem/instant/solidification/hydrogen)
 	configure(transformation(name = "Solid Hydrogen", id = "solidhydrogen",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 100), reagent(REAGENT_ID_HYDROGEN, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 100), reagent(REAGENT_ID_HYDROGEN, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/mhydrogen, 1, per = SPAWN_STACK_MADE)))
 
 
 // These are from Xenobio.
 /transformation/chem/instant/solidification/steel
-	sheet_to_give = /obj/item/stack/material/steel
 
 CAPABILITIES(/transformation/chem/instant/solidification/steel)
 	configure(transformation(name = "Solid Steel", id = "solidsteel",
 		takes = list(reagent(REAGENT_ID_FROSTOIL, 10), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_CARBON, REAGENTS_PER_SHEET)),
-		blocked_by = list(reagent(REAGENT_ID_PLATINUM, 1))))
-
+		blocked_by = list(reagent(REAGENT_ID_PLATINUM, 1)),
+		spawns = spawns(/obj/item/stack/material/steel, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/plasteel
-	sheet_to_give = /obj/item/stack/material/plasteel
 
 CAPABILITIES(/transformation/chem/instant/solidification/plasteel)
 	configure(transformation(name = "Solid Plasteel", id = "solidplasteel",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 10), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_CARBON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_PLATINUM, REAGENTS_PER_SHEET))))
-
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 10), reagent(REAGENT_ID_IRON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_CARBON, REAGENTS_PER_SHEET), reagent(REAGENT_ID_PLATINUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/plasteel, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/plastication
 
 CAPABILITIES(/transformation/chem/instant/plastication)
 	configure(transformation(name = "Plastic", id = "solidplastic", takes = list(reagent(REAGENT_ID_PACID, 1), reagent(REAGENT_ID_PLASTICIDE, 2)),
-		made = 1, then = TYPE_PROC_REF(/transformation/chem/instant/plastication, on_reaction)))
-
-/transformation/chem/instant/plastication/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/sheets = FLOOR(created_volume,1)
-	if(sheets)
-		new /obj/item/stack/material/plastic(get_turf(holder.my_atom), sheets)
+		made = 1, spawns = spawns(/obj/item/stack/material/plastic, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/soapification
 
 CAPABILITIES(/transformation/chem/instant/soapification)
 	configure(transformation(name = "Soapification", id = "soapification", takes = list(reagent(REAGENT_ID_COOKINGOIL, 10), reagent(REAGENT_ID_LYE, 2)),
-		made = 1, then = TYPE_PROC_REF(/transformation/chem/instant/soapification, on_reaction)))
-
-/transformation/chem/instant/soapification/proc/on_reaction(datum/reagents/holder, created_volume)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/soap(get_turf(holder.my_atom))
+		made = 1, spawns = spawns(/obj/item/soap, 1, per = SPAWN_PER_MADE)))
 
 /transformation/chem/instant/soapification/alt
 
@@ -649,87 +626,71 @@ CAPABILITIES(/transformation/chem/instant/soapification/alt)
 
 CAPABILITIES(/transformation/chem/instant/soapification/gibs)
 	configure(transformation(name = "Soapification Gibs", id = "soapificationgibs",
-		takes = list(reagent(REAGENT_ID_PROTEIN, 10), reagent(REAGENT_ID_LYE, 10)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/soapification/gibs, on_reaction)))
-
-/transformation/chem/instant/soapification/gibs/on_reaction(datum/reagents/holder, created_volume)
-	for(var/i = 1, i <= created_volume, i++)
-		new /obj/item/soap/homemade(get_turf(holder.my_atom))
+		takes = list(reagent(REAGENT_ID_PROTEIN, 10), reagent(REAGENT_ID_LYE, 10)), made = 1,
+		spawns = spawns(/obj/item/soap/homemade, 1, per = SPAWN_PER_MADE)))
 
 /*Carpet Creation*/
 
 /transformation/chem/instant/carpetify
-	var/carpet_type = /obj/item/stack/tile/carpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify)
 	configure(transformation(name = "Carpet", id = "redcarpet", takes = list(reagent(REAGENT_ID_LIQUIDCARPET, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
-		made = 2, then = TYPE_PROC_REF(/transformation/chem/instant/carpetify, on_reaction)))
-
-/transformation/chem/instant/carpetify/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/sheets = FLOOR(created_volume,1)
-	if(sheets)
-		new carpet_type(get_turf(holder.my_atom), sheets)
+		made = 2, spawns = spawns(/obj/item/stack/tile/carpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/bcarpet
-	carpet_type = /obj/item/stack/tile/carpet/bcarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/bcarpet)
 	configure(transformation(name = "Black Carpet", id = "blackcarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETB, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETB, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/bcarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/blucarpet
-	carpet_type = /obj/item/stack/tile/carpet/blucarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/blucarpet)
 	configure(transformation(name = "Blue Carpet", id = "bluecarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETBLU, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETBLU, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/blucarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/turcarpet
-	carpet_type = /obj/item/stack/tile/carpet/turcarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/turcarpet)
 	configure(transformation(name = "Turquise Carpet", id = "turcarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETTUR, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETTUR, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/turcarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/sblucarpet
-	carpet_type = /obj/item/stack/tile/carpet/sblucarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/sblucarpet)
 	configure(transformation(name = "Silver Blue Carpet", id = "sblucarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETSBLU, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETSBLU, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/sblucarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/clowncarpet
-	carpet_type = /obj/item/stack/tile/carpet/gaycarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/clowncarpet)
 	configure(transformation(name = "Clown Carpet", id = "clowncarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETC, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETC, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/gaycarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/pcarpet
-	carpet_type = /obj/item/stack/tile/carpet/purcarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/pcarpet)
 	configure(transformation(name = "Purple Carpet", id = "purplecarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETP, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETP, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/purcarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/carpetify/ocarpet
-	carpet_type = /obj/item/stack/tile/carpet/oracarpet
 
 CAPABILITIES(/transformation/chem/instant/carpetify/ocarpet)
 	configure(transformation(name = "Orange Carpet", id = "orangecarpet",
-		takes = list(reagent(REAGENT_ID_LIQUIDCARPETO, 2), reagent(REAGENT_ID_PLASTICIDE, 1))))
+		takes = list(reagent(REAGENT_ID_LIQUIDCARPETO, 2), reagent(REAGENT_ID_PLASTICIDE, 1)),
+		spawns = spawns(/obj/item/stack/tile/carpet/oracarpet, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/concrete
 
 CAPABILITIES(/transformation/chem/instant/concrete)
 	configure(transformation(name = "Concrete", id = "concretereagent",
-		takes = list(reagent(REAGENT_ID_CALCIUM, 2), reagent(REAGENT_ID_SILICATE, 2), reagent(REAGENT_ID_WATER, 2)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/concrete, on_reaction)))
-
-/transformation/chem/instant/concrete/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/sheets = FLOOR(created_volume,1)
-	if(sheets)
-		new /obj/item/stack/material/concrete(get_turf(holder.my_atom), sheets)
+		takes = list(reagent(REAGENT_ID_CALCIUM, 2), reagent(REAGENT_ID_SILICATE, 2), reagent(REAGENT_ID_WATER, 2)), made = 1, spawns = spawns(/obj/item/stack/material/concrete, 1, per = SPAWN_STACK_MADE)))
 
 /* Grenade reactions */
 
@@ -738,22 +699,7 @@ CAPABILITIES(/transformation/chem/instant/concrete)
 CAPABILITIES(/transformation/chem/instant/explosion_potassium)
 	configure(transformation(name = "Explosion", id = "explosion_potassium",
 		takes = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_POTASSIUM, 1)), made = 2, says = "",
-		then = TYPE_PROC_REF(/transformation/chem/instant/explosion_potassium, on_reaction)))
-
-/transformation/chem/instant/explosion_potassium/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/datum/effect/effect/system/reagents_explosion/e = new()
-	e.set_up(round (created_volume/10, 1), holder.my_atom, 0, 0)
-	if(isliving(holder.my_atom))
-		e.amount *= 0.5
-		var/mob/living/L = holder.my_atom
-		if(L.stat != DEAD)
-			e.amount *= 0.5
-	else
-		holder.clear_reagents() //No more powergaming by creating a tiny amount of this
-	//VORESTation Add End
-	e.start()
-	// holder.clear_reagents() // Removal
-	return
+		effects = sets_off(kind = XFORM_FX_EXPLOSION, divisor = 10)))
 
 /transformation/chem/instant/flash_powder
 
@@ -789,16 +735,7 @@ CAPABILITIES(/transformation/chem/instant/flash_powder)
 
 CAPABILITIES(/transformation/chem/instant/emp_pulse)
 	configure(transformation(name = "EMP Pulse", id = "emp_pulse", takes = list(reagent(REAGENT_ID_URANIUM, 1), reagent(REAGENT_ID_IRON, 1)), made = 2,
-		then = TYPE_PROC_REF(/transformation/chem/instant/emp_pulse, on_reaction)))
-
-/transformation/chem/instant/emp_pulse/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	// 100 created volume = 4 heavy range & 7 light range. A few tiles smaller than traitor EMP grandes.
-	// 200 created volume = 8 heavy range & 14 light range. 4 tiles larger than traitor EMP grenades.
-	empulse(location, round(created_volume / 24), round(created_volume / 20), round(created_volume / 18), round(created_volume / 14), 1)
-	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
-		holder.clear_reagents()
-	return
+		effects = sets_off(kind = XFORM_FX_EMP, divisors = list(24, 20, 18, 14), clears = TRUE)))
 
 /transformation/chem/instant/nitroglycerin
 
@@ -806,113 +743,42 @@ CAPABILITIES(/transformation/chem/instant/nitroglycerin)
 	configure(transformation(name = REAGENT_NITROGLYCERIN, id = REAGENT_ID_NITROGLYCERIN,
 		takes = list(reagent(REAGENT_ID_GLYCEROL, 1), reagent(REAGENT_ID_PACID, 1), reagent(REAGENT_ID_SACID, 1)),
 		makes = list(reagent(REAGENT_ID_NITROGLYCERIN, 2)), important = TRUE,
-		then = TYPE_PROC_REF(/transformation/chem/instant/nitroglycerin, on_reaction)))
-
-// If it becomes possible to make this without exploding and clearing reagents, remove the UNIT_TESTS wrapper
-/transformation/chem/instant/nitroglycerin/proc/on_reaction(datum/reagents/holder, created_volume)
-#ifndef UNIT_TESTS
-	var/datum/effect/effect/system/reagents_explosion/e = new()
-	e.set_up(round (created_volume/2, 1), holder.my_atom, 0, 0)
-	if(isliving(holder.my_atom))
-		e.amount *= 0.5
-		var/mob/living/L = holder.my_atom
-		if(L.stat!=DEAD)
-			e.amount *= 0.5
-	else
-		holder.clear_reagents() //No more powergaming by creating a tiny amount of this
-	e.start()
-
-	// holder.clear_reagents() // Removal
-#endif
-	return
+		effects = sets_off(kind = XFORM_FX_EXPLOSION, divisor = 2, skip_in_tests = TRUE)))
 
 /transformation/chem/instant/napalm
 
 CAPABILITIES(/transformation/chem/instant/napalm)
 	configure(transformation(name = "Napalm", id = "napalm",
 		takes = list(reagent(REAGENT_ID_ALUMINIUM, 1), reagent(REAGENT_ID_PHORON, 1), reagent(REAGENT_ID_SACID, 1)), made = 1,
-		then = TYPE_PROC_REF(/transformation/chem/instant/napalm, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_BURN, gases = list(GAS_VOLATILE_FUEL = 1), scale_by_made = TRUE, temperature = 400 + T0C, hotspot = list(700, 400), range = 0, floors_only = TRUE, consumes = "napalm")))
 
-/transformation/chem/instant/napalm/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/turf/location = get_turf(holder.my_atom.loc)
-	for(var/turf/simulated/floor/target_tile in range(0,location))
-		target_tile.assume_gas(GAS_VOLATILE_FUEL, created_volume, 400+T0C)
-		target_tile.hotspot_expose(700, 400)
-	holder.del_reagent("napalm")
-	return
 
 /transformation/chem/instant/chemsmoke
 
 CAPABILITIES(/transformation/chem/instant/chemsmoke)
 	configure(transformation(name = "Chemsmoke", id = "chemsmoke",
 		takes = list(reagent(REAGENT_ID_POTASSIUM, 1), reagent(REAGENT_ID_SUGAR, 1), reagent(REAGENT_ID_PHOSPHORUS, 1)),
-		made = 0.4, then = TYPE_PROC_REF(/transformation/chem/instant/chemsmoke, on_reaction)))
-
-/transformation/chem/instant/chemsmoke/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
-	S.attach(location)
-	S.set_up(holder, created_volume, 0, location)
-	play_sfx(location, SFX_EFFECTS_SMOKE)
-	S.start()
-	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
-		holder.clear_reagents()
-	return
+		made = 0.4, effects = sets_off(kind = XFORM_FX_SMOKE, clears = TRUE, sfx = SFX_EFFECTS_SMOKE)))
 
 /transformation/chem/instant/foam
 
 CAPABILITIES(/transformation/chem/instant/foam)
 	configure(transformation(name = "Foam", id = "foam", takes = list(reagent(REAGENT_ID_FLUOROSURFACTANT, 1), reagent(REAGENT_ID_WATER, 1)), made = 2,
-		says = "The solution violently bubbles!", then = TYPE_PROC_REF(/transformation/chem/instant/foam, on_reaction)))
-
-/transformation/chem/instant/foam/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-
-	for(var/mob/M in viewers(5, location))
-		to_chat(M, span_warning("The solution spews out foam!"))
-
-	var/datum/effect/effect/system/foam_spread/s = new()
-	s.set_up(created_volume, location, holder, 0)
-	s.start()
-	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
-		holder.clear_reagents()
-	return
+		says = "The solution violently bubbles!", effects = sets_off(kind = XFORM_FX_FOAM, variant = 0, clears = TRUE, tell = "The solution spews out foam!")))
 
 /transformation/chem/instant/metalfoam
 
 CAPABILITIES(/transformation/chem/instant/metalfoam)
 	configure(transformation(name = "Metal Foam", id = "metalfoam",
 		takes = list(reagent(REAGENT_ID_ALUMINIUM, 3), reagent(REAGENT_ID_FOAMINGAGENT, 1), reagent(REAGENT_ID_PACID, 1)),
-		made = 5, then = TYPE_PROC_REF(/transformation/chem/instant/metalfoam, on_reaction)))
-
-/transformation/chem/instant/metalfoam/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-
-	for(var/mob/M in viewers(5, location))
-		to_chat(M, span_warning("The solution spews out a metalic foam!"))
-
-	var/datum/effect/effect/system/foam_spread/s = new()
-	s.set_up(created_volume, location, holder, 1)
-	s.start()
-	return
+		made = 5, effects = sets_off(kind = XFORM_FX_FOAM, variant = 1, tell = "The solution spews out a metalic foam!")))
 
 /transformation/chem/instant/ironfoam
 
 CAPABILITIES(/transformation/chem/instant/ironfoam)
 	configure(transformation(name = "Iron Foam", id = "ironlfoam",
 		takes = list(reagent(REAGENT_ID_IRON, 3), reagent(REAGENT_ID_FOAMINGAGENT, 1), reagent(REAGENT_ID_PACID, 1)), made = 5,
-		then = TYPE_PROC_REF(/transformation/chem/instant/ironfoam, on_reaction)))
-
-/transformation/chem/instant/ironfoam/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-
-	for(var/mob/M in viewers(5, location))
-		to_chat(M, span_warning("The solution spews out a metalic foam!"))
-
-	var/datum/effect/effect/system/foam_spread/s = new()
-	s.set_up(created_volume, location, holder, 2)
-	s.start()
-	return
+		effects = sets_off(kind = XFORM_FX_FOAM, variant = 2, tell = "The solution spews out a metalic foam!")))
 
 /* Paint */
 
@@ -921,103 +787,70 @@ CAPABILITIES(/transformation/chem/instant/ironfoam)
 CAPABILITIES(/transformation/chem/instant/red_paint)
 	configure(transformation(name = "Red paint", id = "red_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKRED, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/red_paint, send_data)))
-
-/transformation/chem/instant/red_paint/proc/send_data()
-	return "#FE191A"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#FE191A"))
 
 /transformation/chem/instant/orange_paint
 
 CAPABILITIES(/transformation/chem/instant/orange_paint)
 	configure(transformation(name = "Orange paint", id = "orange_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKORANGE, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/orange_paint, send_data)))
-
-/transformation/chem/instant/orange_paint/proc/send_data()
-	return "#FFBE4F"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#FFBE4F"))
 
 /transformation/chem/instant/yellow_paint
 
 CAPABILITIES(/transformation/chem/instant/yellow_paint)
 	configure(transformation(name = "Yellow paint", id = "yellow_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKYELLOW, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/yellow_paint, send_data)))
-
-/transformation/chem/instant/yellow_paint/proc/send_data()
-	return "#FDFE7D"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#FDFE7D"))
 
 /transformation/chem/instant/green_paint
 
 CAPABILITIES(/transformation/chem/instant/green_paint)
 	configure(transformation(name = "Green paint", id = "green_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKGREEN, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/green_paint, send_data)))
-
-/transformation/chem/instant/green_paint/proc/send_data()
-	return "#18A31A"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#18A31A"))
 
 /transformation/chem/instant/blue_paint
 
 CAPABILITIES(/transformation/chem/instant/blue_paint)
 	configure(transformation(name = "Blue paint", id = "blue_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKBLUE, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/blue_paint, send_data)))
-
-/transformation/chem/instant/blue_paint/proc/send_data()
-	return "#247CFF"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#247CFF"))
 
 /transformation/chem/instant/purple_paint
 
 CAPABILITIES(/transformation/chem/instant/purple_paint)
 	configure(transformation(name = "Purple paint", id = "purple_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKPURPLE, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/purple_paint, send_data)))
-
-/transformation/chem/instant/purple_paint/proc/send_data()
-	return "#CC0099"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#CC0099"))
 
 /transformation/chem/instant/grey_paint //mime
 
 CAPABILITIES(/transformation/chem/instant/grey_paint)
 	configure(transformation(name = "Grey paint", id = "grey_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKGREY, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/grey_paint, send_data)))
-
-/transformation/chem/instant/grey_paint/proc/send_data()
-	return "#808080"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#808080"))
 
 /transformation/chem/instant/brown_paint
 
 CAPABILITIES(/transformation/chem/instant/brown_paint)
 	configure(transformation(name = "Brown paint", id = "brown_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKBROWN, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/brown_paint, send_data)))
-
-/transformation/chem/instant/brown_paint/proc/send_data()
-	return "#846F35"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#846F35"))
 
 /transformation/chem/instant/blood_paint
 
 CAPABILITIES(/transformation/chem/instant/blood_paint)
 	configure(transformation(name = "Blood paint", id = "blood_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_BLOOD, 2)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/blood_paint, send_data)))
-
-/transformation/chem/instant/blood_paint/proc/send_data(datum/reagents/T)
-	var/t = T.get_data(REAGENT_ID_BLOOD)
-	if(t && t["blood_colour"])
-		return t["blood_colour"]
-	return "#FE191A" // Probably red
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), data_from = data_from_reagent(REAGENT_ID_BLOOD, "blood_colour", "#FE191A")))
 
 /transformation/chem/instant/milk_paint
 
 CAPABILITIES(/transformation/chem/instant/milk_paint)
 	configure(transformation(name = "Milk paint", id = "milk_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MILK, 5)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/milk_paint, send_data)))
-
-/transformation/chem/instant/milk_paint/proc/send_data()
-	return "#F0F8FF"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#F0F8FF"))
 
 /transformation/chem/instant/orange_juice_paint
 
@@ -1025,10 +858,7 @@ CAPABILITIES(/transformation/chem/instant/orange_juice_paint)
 	configure(transformation(name = "Orange juice paint", id = "orange_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_ORANGEJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/orange_juice_paint, send_data)))
-
-/transformation/chem/instant/orange_juice_paint/proc/send_data()
-	return "#E78108"
+		with_data = "#E78108"))
 
 /transformation/chem/instant/tomato_juice_paint
 
@@ -1036,20 +866,14 @@ CAPABILITIES(/transformation/chem/instant/tomato_juice_paint)
 	configure(transformation(name = "Tomato juice paint", id = "tomato_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_TOMATOJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/tomato_juice_paint, send_data)))
-
-/transformation/chem/instant/tomato_juice_paint/proc/send_data()
-	return "#731008"
+		with_data = "#731008"))
 
 /transformation/chem/instant/lime_juice_paint
 
 CAPABILITIES(/transformation/chem/instant/lime_juice_paint)
 	configure(transformation(name = "Lime juice paint", id = "lime_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_LIMEJUICE, 5)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/lime_juice_paint, send_data)))
-
-/transformation/chem/instant/lime_juice_paint/proc/send_data()
-	return "#365E30"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#365E30"))
 
 /transformation/chem/instant/carrot_juice_paint
 
@@ -1057,10 +881,7 @@ CAPABILITIES(/transformation/chem/instant/carrot_juice_paint)
 	configure(transformation(name = "Carrot juice paint", id = "carrot_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_CARROTJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/carrot_juice_paint, send_data)))
-
-/transformation/chem/instant/carrot_juice_paint/proc/send_data()
-	return "#973800"
+		with_data = "#973800"))
 
 /transformation/chem/instant/berry_juice_paint
 
@@ -1068,10 +889,7 @@ CAPABILITIES(/transformation/chem/instant/berry_juice_paint)
 	configure(transformation(name = "Berry juice paint", id = "berry_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_BERRYJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/berry_juice_paint, send_data)))
-
-/transformation/chem/instant/berry_juice_paint/proc/send_data()
-	return "#990066"
+		with_data = "#990066"))
 
 /transformation/chem/instant/grape_juice_paint
 
@@ -1079,10 +897,7 @@ CAPABILITIES(/transformation/chem/instant/grape_juice_paint)
 	configure(transformation(name = "Grape juice paint", id = "grape_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_GRAPEJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/grape_juice_paint, send_data)))
-
-/transformation/chem/instant/grape_juice_paint/proc/send_data()
-	return "#863333"
+		with_data = "#863333"))
 
 /transformation/chem/instant/poisonberry_juice_paint
 
@@ -1090,10 +905,7 @@ CAPABILITIES(/transformation/chem/instant/poisonberry_juice_paint)
 	configure(transformation(name = "Poison berry juice paint", id = "poisonberry_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_POISONBERRYJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/poisonberry_juice_paint, send_data)))
-
-/transformation/chem/instant/poisonberry_juice_paint/proc/send_data()
-	return "#863353"
+		with_data = "#863353"))
 
 /transformation/chem/instant/watermelon_juice_paint
 
@@ -1101,10 +913,7 @@ CAPABILITIES(/transformation/chem/instant/watermelon_juice_paint)
 	configure(transformation(name = "Watermelon juice paint", id = "watermelon_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_WATERMELONJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/watermelon_juice_paint, send_data)))
-
-/transformation/chem/instant/watermelon_juice_paint/proc/send_data()
-	return "#B83333"
+		with_data = "#B83333"))
 
 /transformation/chem/instant/lemon_juice_paint
 
@@ -1112,10 +921,7 @@ CAPABILITIES(/transformation/chem/instant/lemon_juice_paint)
 	configure(transformation(name = "Lemon juice paint", id = "lemon_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_LEMONJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/lemon_juice_paint, send_data)))
-
-/transformation/chem/instant/lemon_juice_paint/proc/send_data()
-	return "#AFAF00"
+		with_data = "#AFAF00"))
 
 /transformation/chem/instant/banana_juice_paint
 
@@ -1123,10 +929,7 @@ CAPABILITIES(/transformation/chem/instant/banana_juice_paint)
 	configure(transformation(name = "Banana juice paint", id = "banana_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_BANANA, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/banana_juice_paint, send_data)))
-
-/transformation/chem/instant/banana_juice_paint/proc/send_data()
-	return "#C3AF00"
+		with_data = "#C3AF00"))
 
 /transformation/chem/instant/potato_juice_paint
 
@@ -1134,30 +937,22 @@ CAPABILITIES(/transformation/chem/instant/potato_juice_paint)
 	configure(transformation(name = "Potato juice paint", id = "potato_juice_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_POTATOJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/potato_juice_paint, send_data)))
-
-/transformation/chem/instant/potato_juice_paint/proc/send_data()
-	return "#302000"
+		with_data = "#302000"))
 
 /transformation/chem/instant/carbon_paint
 
 CAPABILITIES(/transformation/chem/instant/carbon_paint)
 	configure(transformation(name = "Carbon paint", id = "carbon_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_CARBON, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/carbon_paint, send_data)))
-
-/transformation/chem/instant/carbon_paint/proc/send_data()
-	return "#333333"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#333333"))
 
 /transformation/chem/instant/aluminum_paint
 
 CAPABILITIES(/transformation/chem/instant/aluminum_paint)
 	configure(transformation(name = "Aluminum paint", id = "aluminum_paint",
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_ALUMINIUM, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/aluminum_paint, send_data)))
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#F0F8FF"))
 
-/transformation/chem/instant/aluminum_paint/proc/send_data()
-	return "#F0F8FF"
 
 /*Carpet Recoloring*/
 /transformation/chem/instant/carpetdye
@@ -1299,20 +1094,14 @@ CAPABILITIES(/transformation/chem/instant/titanium_oxidation)
 CAPABILITIES(/transformation/chem/instant/metal_paint)
 	configure(transformation(name = "Metallic white paint", id = "metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINK, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/metal_paint, send_data)))
-
-/transformation/chem/instant/metal_paint/proc/send_data()
-	return "#b2d1da"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#b2d1da"))
 
 /transformation/chem/instant/red_metal_paint
 
 CAPABILITIES(/transformation/chem/instant/red_metal_paint)
 	configure(transformation(name = "Metallic red paint", id = "red_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKRED, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/red_metal_paint, send_data)))
-
-/transformation/chem/instant/red_metal_paint/proc/send_data()
-	return "#ff7a7a"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#ff7a7a"))
 
 /transformation/chem/instant/orange_metal_paint
 
@@ -1320,10 +1109,7 @@ CAPABILITIES(/transformation/chem/instant/orange_metal_paint)
 	configure(transformation(name = "Metallic orange paint", id = "orange_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKORANGE, 1)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/orange_metal_paint, send_data)))
-
-/transformation/chem/instant/orange_metal_paint/proc/send_data()
-	return "#ffd690"
+		with_data = "#ffd690"))
 
 /transformation/chem/instant/yellow_metal_paint
 
@@ -1331,10 +1117,7 @@ CAPABILITIES(/transformation/chem/instant/yellow_metal_paint)
 	configure(transformation(name = "Metallic yellow paint", id = "yellow_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKYELLOW, 1)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/yellow_metal_paint, send_data)))
-
-/transformation/chem/instant/yellow_metal_paint/proc/send_data()
-	return "#ffffab"
+		with_data = "#ffffab"))
 
 /transformation/chem/instant/green_metal_paint
 
@@ -1342,20 +1125,14 @@ CAPABILITIES(/transformation/chem/instant/green_metal_paint)
 	configure(transformation(name = "Metallic green paint", id = "green_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKGREEN, 1)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/green_metal_paint, send_data)))
-
-/transformation/chem/instant/green_metal_paint/proc/send_data()
-	return "#69d76b"
+		with_data = "#69d76b"))
 
 /transformation/chem/instant/blue_metal_paint
 
 CAPABILITIES(/transformation/chem/instant/blue_metal_paint)
 	configure(transformation(name = "Metallic blue paint", id = "blue_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKBLUE, 1)),
-		makes = list(reagent(REAGENT_ID_PAINT, 5)), data = TYPE_PROC_REF(/transformation/chem/instant/blue_metal_paint, send_data)))
-
-/transformation/chem/instant/blue_metal_paint/proc/send_data()
-	return "#81aff5"
+		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#81aff5"))
 
 /transformation/chem/instant/purple_metal_paint
 
@@ -1363,10 +1140,7 @@ CAPABILITIES(/transformation/chem/instant/purple_metal_paint)
 	configure(transformation(name = "Metallic purple paint", id = "purple_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKPURPLE, 1)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/purple_metal_paint, send_data)))
-
-/transformation/chem/instant/purple_metal_paint/proc/send_data()
-	return "#e77acc"
+		with_data = "#e77acc"))
 
 /transformation/chem/instant/brown_metal_paint
 
@@ -1374,10 +1148,7 @@ CAPABILITIES(/transformation/chem/instant/brown_metal_paint)
 	configure(transformation(name = "Metallic brown paint", id = "brown_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_MARKERINKBROWN, 1)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/brown_metal_paint, send_data)))
-
-/transformation/chem/instant/brown_metal_paint/proc/send_data()
-	return "#827655"
+		with_data = "#827655"))
 
 /transformation/chem/instant/orange_juice_metal_paint
 
@@ -1385,10 +1156,7 @@ CAPABILITIES(/transformation/chem/instant/orange_juice_metal_paint)
 	configure(transformation(name = "Metallic orange juice paint", id = "orange_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_ORANGEJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/orange_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/orange_juice_metal_paint/proc/send_data()
-	return "#e2a254"
+		with_data = "#e2a254"))
 
 /transformation/chem/instant/tomato_juice_metal_paint
 
@@ -1396,10 +1164,7 @@ CAPABILITIES(/transformation/chem/instant/tomato_juice_metal_paint)
 	configure(transformation(name = "Metallic tomato juice paint", id = "tomato_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_TOMATOJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/tomato_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/tomato_juice_metal_paint/proc/send_data()
-	return "#934e49"
+		with_data = "#934e49"))
 
 /transformation/chem/instant/lime_juice_metal_paint
 
@@ -1407,10 +1172,7 @@ CAPABILITIES(/transformation/chem/instant/lime_juice_metal_paint)
 	configure(transformation(name = "Metallic lime juice paint", id = "lime_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_LIMEJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/lime_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/lime_juice_metal_paint/proc/send_data()
-	return "#556c51"
+		with_data = "#556c51"))
 
 /transformation/chem/instant/carrot_juice_metal_paint
 
@@ -1418,10 +1180,7 @@ CAPABILITIES(/transformation/chem/instant/carrot_juice_metal_paint)
 	configure(transformation(name = "Metallic carrot juice paint", id = "carrot_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_CARROTJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/carrot_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/carrot_juice_metal_paint/proc/send_data()
-	return "#a06a4b"
+		with_data = "#a06a4b"))
 
 /transformation/chem/instant/berry_juice_metal_paint
 
@@ -1429,10 +1188,7 @@ CAPABILITIES(/transformation/chem/instant/berry_juice_metal_paint)
 	configure(transformation(name = "Metallic berry juice paint", id = "berry_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_BERRYJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/berry_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/berry_juice_metal_paint/proc/send_data()
-	return "#ae5892"
+		with_data = "#ae5892"))
 
 /transformation/chem/instant/grape_juice_metal_paint
 
@@ -1440,10 +1196,7 @@ CAPABILITIES(/transformation/chem/instant/grape_juice_metal_paint)
 	configure(transformation(name = "Metallic grape juice paint", id = "grape_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_GRAPEJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/grape_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/grape_juice_metal_paint/proc/send_data()
-	return "#925e5e"
+		with_data = "#925e5e"))
 
 /transformation/chem/instant/poisonberry_juice_metal_paint
 
@@ -1451,10 +1204,7 @@ CAPABILITIES(/transformation/chem/instant/poisonberry_juice_metal_paint)
 	configure(transformation(name = "Metallic poison berry juice paint", id = "poisonberry_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_POISONBERRYJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/poisonberry_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/poisonberry_juice_metal_paint/proc/send_data()
-	return "#683c4d"
+		with_data = "#683c4d"))
 
 /transformation/chem/instant/watermelon_juice_metal_paint
 
@@ -1462,10 +1212,7 @@ CAPABILITIES(/transformation/chem/instant/watermelon_juice_metal_paint)
 	configure(transformation(name = "Metallic watermelon juice paint", id = "watermelon_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_WATERMELONJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/watermelon_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/watermelon_juice_metal_paint/proc/send_data()
-	return "#a47a7a"
+		with_data = "#a47a7a"))
 
 /transformation/chem/instant/lemon_juice_metal_paint
 
@@ -1473,10 +1220,7 @@ CAPABILITIES(/transformation/chem/instant/lemon_juice_metal_paint)
 	configure(transformation(name = "Metallic lemon juice paint", id = "lemon_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_LEMONJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/lemon_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/lemon_juice_metal_paint/proc/send_data()
-	return "#8f8f5c"
+		with_data = "#8f8f5c"))
 
 /transformation/chem/instant/banana_juice_metal_paint
 
@@ -1484,10 +1228,7 @@ CAPABILITIES(/transformation/chem/instant/banana_juice_metal_paint)
 	configure(transformation(name = "Metallic banana juice paint", id = "banana_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_BANANA, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/banana_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/banana_juice_metal_paint/proc/send_data()
-	return "#9c9129"
+		with_data = "#9c9129"))
 
 /transformation/chem/instant/potato_juice_metal_paint
 
@@ -1495,10 +1236,7 @@ CAPABILITIES(/transformation/chem/instant/potato_juice_metal_paint)
 	configure(transformation(name = "Metallic potato juice paint", id = "potato_juice_metal_paint",
 		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_POTATOJUICE, 5)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)),
-		data = TYPE_PROC_REF(/transformation/chem/instant/potato_juice_metal_paint, send_data)))
-
-/transformation/chem/instant/potato_juice_metal_paint/proc/send_data()
-	return "#2e2a21"
+		with_data = "#2e2a21"))
 
 /transformation/chem/instant/aphrodisiac
 
@@ -1609,18 +1347,18 @@ CAPABILITIES(/transformation/chem/instant/alizene)
 
 // Frost oil reactions for material sheets
 /transformation/chem/instant/solidification/aluminium
-	sheet_to_give = /obj/item/stack/material/aluminium
 
 CAPABILITIES(/transformation/chem/instant/solidification/aluminium)
 	configure(transformation(name = "Solid Aluminium", id = "solidaluminium",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_ALUMINIUM, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_ALUMINIUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/aluminium, 1, per = SPAWN_STACK_MADE)))
 
 /transformation/chem/instant/solidification/copper
-	sheet_to_give = /obj/item/stack/material/copper
 
 CAPABILITIES(/transformation/chem/instant/solidification/copper)
 	configure(transformation(name = "Solid Copper", id = "solidcopper",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_COPPER, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_COPPER, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/copper, 1, per = SPAWN_STACK_MADE)))
 
 //YW stuff
 /transformation/chem/instant/benzilate
@@ -1709,18 +1447,7 @@ CAPABILITIES(/transformation/chem/instant/normalcillin)
 CAPABILITIES(/transformation/chem/instant/dontcrossthebeams)
 	configure(transformation(name = "Don't Cross The Beams", id = "dontcrossthebeams",
 		takes = list(reagent(REAGENT_ID_MICROCILLIN, 1), reagent(REAGENT_ID_MACROCILLIN, 1)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/dontcrossthebeams, on_reaction)))
-
-/transformation/chem/instant/dontcrossthebeams/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
-#ifndef UNIT_TESTS
-	// The pull keeps its timers and its record after it ends, which the end-of-run ownership audit reports as a leak: the pins settle this rule in a test world.
-	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
-	s.set_up(3, 3, location)
-	s.start()
-#endif
-	holder.clear_reagents()
+		effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PULL, range = 3, pulses = 3, sfx = SFX_WEAPONS_GAUSS_SHOOT, empties = TRUE)))
 
 ///////////////////////////////////////////////////////////////////////////////////
 /// TF chemicals
@@ -1999,11 +1726,11 @@ CAPABILITIES(/transformation/chem/instant/neoliquidfire)
 
 //Some extra metal solidification reactions
 /transformation/chem/instant/solidification/deuterium
-	sheet_to_give = /obj/item/stack/material/deuterium
 
 CAPABILITIES(/transformation/chem/instant/solidification/deuterium)
 	configure(transformation(name = "Solid Deuterium", id = "soliddeuterium",
-		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_DEUTERIUM, REAGENTS_PER_SHEET))))
+		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_DEUTERIUM, REAGENTS_PER_SHEET)),
+		spawns = spawns(/obj/item/stack/material/deuterium, 1, per = SPAWN_STACK_MADE)))
 
 //Injectable toxin reactions
 /transformation/chem/instant/succubi_paralize

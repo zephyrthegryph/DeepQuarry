@@ -86,10 +86,12 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "heat_ratchet_on_fire_act_overrides_h3",
             "heat: ratchet on fire_act() overrides (H3)",
-            "fire_act() overrides over the ratchet. Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold instead.",
+            "fire_act() overrides are banned. Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold, or react with on_notice(/datum/notice/atom_fire_act, then(PROC_REF(x))).",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/fire_act\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, mob/living) are where fire exposure lands and is published; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/modules/mob/living/living_fire.dm")]),
         // Hard ban (temperature and energy writes outside code/domains): DM outside the gas and heat domains never writes a gas's or a solid's temperature or energy.
         Part::new(
             "heat_raw_temperature_writes",
@@ -112,10 +114,12 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "damage_ratchet_on_atom_break_set_broken_overrides_d4",
             "damage: ratchet on atom_break()/set_broken() overrides (D4)",
-            "atom_break()/set_broken() overrides over the ratchet. Declare integrity_failure / broken_icon_state instead.",
+            "atom_break()/set_broken() overrides are banned. Declare integrity_failure / broken_icon_state, and react with on_notice(/datum/notice/machinery_broken | /datum/notice/atom_broken, then(PROC_REF(x))) in the type's CAPABILITIES.",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/(atom_break|set_broken)\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, machinery) are the one place the break is written and published; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/atom_defense.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/game/machinery/machinery.dm")]),
         Part::new(
             "generic_hit_ratchet_on_attack_generic_overrides",
             "generic hit: ratchet on attack_generic() overrides",
@@ -263,7 +267,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "transform_ratchet_on_bespoke_data_procs",
             "transform: ratchet on bespoke data procs",
-            "a chemical transformation with a bespoke data = TYPE_PROC_REF(...) over the ratchet. Product data is a pure function of the settle; the count only falls (doc/rewrite/proposals/transformations.md section 6).",
+            "a chemical transformation with a data = TYPE_PROC_REF(...) is gone (banned). Declare the product's data: with_data = constant, or data_from = data_from_reagent(id, key, default) (doc/rewrite/proposals/transformations.md section 6).",
             Files::Code,
             line(r"\bdata = TYPE_PROC_REF\(/transformation/chem/"),
         ),

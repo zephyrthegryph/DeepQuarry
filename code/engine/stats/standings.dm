@@ -31,9 +31,9 @@
 	var/list/standing_cache
 
 /// How the cache fared, for tests and the trace.
-GLOBAL_VAR_INIT(standing_cache_hits, 0)
-GLOBAL_VAR_INIT(standing_cache_misses, 0)
-GLOBAL_VAR_INIT(standing_cache_drops, 0)
+GLOBAL_COUNTER(standing_cache_hits)
+GLOBAL_COUNTER(standing_cache_misses)
+GLOBAL_COUNTER(standing_cache_drops)
 
 /// The H_KEY text of a subject, or null when it names none (a deleted datum cannot be given a row, an empty faction names nothing). `live` FALSE reads the
 /// key of a datum that is going away too, for the lookups and releases that name a subject whatever its state.
@@ -144,7 +144,7 @@ GLOBAL_VAR_INIT(standing_cache_drops, 0)
 /proc/standing_rows_changed(datum/E, key)
 	var/datum/stat_record/rec = E?.rx?.stats
 	if(rec?.standing_cache)
-		GLOB.standing_cache_drops++
+		GLOB.standing_cache_drops.n++
 		forms_trace("standing", "[E.type]: a row toward [key] changed; [length(rec.standing_cache)] cached answer(s) dropped")
 		rec.standing_cache = null
 	else
@@ -167,9 +167,9 @@ GLOBAL_VAR_INIT(standing_cache_drops, 0)
 	if(cache_key)
 		var/list/hit = rec.standing_cache?[cache_key]
 		if(hit && hit[2] == faction && hit[3] == player)
-			GLOB.standing_cache_hits++
+			GLOB.standing_cache_hits.n++
 			return isnull(hit[1]) ? default : hit[1]
-	GLOB.standing_cache_misses++
+	GLOB.standing_cache_misses.n++
 	var/list/winner = standing_resolve(rec, key, faction, player)
 	var/value = winner ? winner[H_VALUE] : null
 	if(cache_key)

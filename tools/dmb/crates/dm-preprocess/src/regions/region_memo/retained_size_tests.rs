@@ -15,6 +15,7 @@ fn retained_records_charge_owned_capacity_and_duplicate_shared_backings() {
         reads: Arc::new(Vec::new()),
         locations: Arc::new(Vec::new()),
         lines: Arc::new(Vec::new()),
+        trace_tables: Default::default(),
         diagnostics: Arc::new(Vec::new()),
         fragments: Vec::new(),
         rows: Default::default(),

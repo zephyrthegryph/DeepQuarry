@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Worn and held item slowdown is an item encumbrance worn factor feeding a body stat; damaged organs are refused again when sold"

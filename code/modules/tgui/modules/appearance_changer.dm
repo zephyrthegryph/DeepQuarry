@@ -237,7 +237,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/change_race(mob/user, race, custom_name)
 	if(owner().change_species(race))
 		if(race == "Custom Species")
-			owner().custom_species = custom_name
+			owner().bio.custom_species = custom_name
 		cut_data()
 		generate_data(user, owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
@@ -556,14 +556,14 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/race_name_default(datum/act/op/A)
-	return owner().custom_species
+	return owner().bio.custom_species
 
 /datum/tgui_module/appearance_changer/proc/ui_act_race_name(datum/act/op/A)
 	if(!A.answer)
 		return FALSE
 	var/new_name = A.answer.value
 	if(can_change(owner(), APPEARANCE_RACE)) // new name can be empty, it uses base species if so
-		owner().custom_species = new_name
+		owner().bio.custom_species = new_name
 		return TRUE
 	return FALSE
 
@@ -623,7 +623,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			new_weight = round(text2num(new_weight),4)
 		if(unit_of_measurement == "Kilograms")
 			new_weight = round(2.20462*text2num(new_weight),4)
-		owner().weight = sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, owner().weight)
+		sparse_set_or(owner(), weight, sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, sparse_get_or(owner(), weight, DEFAULT_MOB_WEIGHT)), DEFAULT_MOB_WEIGHT)
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
 	return FALSE
@@ -745,7 +745,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().dna.real_name = owner().real_name
 		owner().dna.base_species = S.base_species
 		sparse_set(owner(), resleeve_lock, FALSE)
-		owner().custom_species = "Custom Sleeve" // Custom name
+		owner().bio.custom_species = "Custom Sleeve" // Custom name
 		DC.set_selected_record(TRUE)
 	return TRUE
 
@@ -961,14 +961,14 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			// Drop out early, as we have nothing to edit, and are on the BR menu for the designer
 			return data
 	// species/body
-	data["species_name"] = owner().custom_species
+	data["species_name"] = owner().bio.custom_species
 	data["use_custom_icon"] = (owner().species.selects_bodytype >= SELECTS_BODYTYPE_CUSTOM)
 	data["base_icon"] = owner().species.base_species
 	data["synthetic"] = owner().synthetic ? "Yes" : "No"
 	data["size_scale"] = player_size_name(owner().size_multiplier)
 	data["scale_appearance"] = owner().dna.scale_appearance ? "Fuzzy" : "Sharp"
 	data["offset_override"] = owner().dna.offset_override ? "Odd" : "Even"
-	data["weight"] = owner().weight
+	data["weight"] = sparse_get_or(owner(), weight, DEFAULT_MOB_WEIGHT)
 	data["digitigrade"] = owner().looks.digitigrade
 	data["blood_reagent"] = owner().dna.blood_reagents
 	data["blood_color"] = owner().dna.blood_color
@@ -1342,9 +1342,9 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	owner().dna.blood_color = current_project.mydna.dna.blood_color
 	owner().resize(current_project.sizemult, FALSE)
 	owner().appearance_flags = current_project.aflags
-	owner().weight = current_project.weight
+	sparse_set_or(owner(), weight, current_project.weight, DEFAULT_MOB_WEIGHT)
 	if(current_project.speciesname)
-		owner().custom_species = current_project.speciesname
+		owner().bio.custom_species = current_project.speciesname
 	// Add listeners back
 	dq_add_recursive_move(owner())
 	observe(owner(), /datum/notice/movable_attempted_move, src, then(PROC_REF(update_active_camera_screen)))

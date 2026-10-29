@@ -336,6 +336,7 @@
 	// can_feel_pain() caller (and any factor reader) sees it the same way.
 	var/static/alist/no_pain_grant = alist(STAT_PAIN_IMMUNITY = 1)
 	set_factor_source(FACTOR_SOURCE_NO_PAIN, (S && (S.flags & NO_PAIN)) ? no_pain_grant : null)
+	sync_worn_factors() // the species' item_slowdown_mod scales what the carried items add
 
 /// The current form's table (a form is worn until another replaces it).
 /datum/body/humanoid/sync_form_factors()
@@ -348,13 +349,42 @@
 /datum/body/humanoid/sync_worn_factors()
 	var/mob/living/carbon/human/H = owner
 	var/list/kept = list()
+	var/mod = H.species?.item_slowdown_mod
+	if(isnull(mod))
+		mod = 1
+	var/obj/item/stored = H.get_equipped_item(SLOT_ID_SUIT_STORAGE) // worn, but never encumbering
 	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
 		if(!I.worn_factors)
 			continue
+		var/alist/table = I.worn_factors
+		if(table[STAT_ITEM_ENCUMBRANCE])
+			table = alist()
+			for(var/stat in I.worn_factors)
+				table[stat] = I.worn_factors[stat]
+			table[STAT_ITEM_ENCUMBRANCE] = (I == stored) ? 0 : worn_encumbrance(I.worn_factors[STAT_ITEM_ENCUMBRANCE], mod)
 		var/key = "[FACTOR_SOURCE_WORN][ref_token(I)]"
 		kept += key
-		set_factor_source(key, I.worn_factors)
+		set_factor_source(key, table)
+	// A held item adds its encumbrance only when it slows the carrier.
+	for(var/hand in list(SLOT_ID_HAND_L, SLOT_ID_HAND_R))
+		var/obj/item/held = H.get_equipped_item(hand)
+		if(!istype(held) || held.worn_factor(STAT_ITEM_ENCUMBRANCE) <= 0)
+			continue
+		var/key = "[FACTOR_SOURCE_WORN][ref_token(held)]"
+		kept += key
+		set_factor_source(key, alist(STAT_ITEM_ENCUMBRANCE = held.worn_factor(STAT_ITEM_ENCUMBRANCE) * mod))
 	drop_factor_sources(FACTOR_SOURCE_WORN, kept)
+
+/// What a worn item's encumbrance `value` adds to its wearer whose species scales item slowdown by `mod` (HIGHER = SLOWER). A slowdown is scaled by the
+/// mod, a speed-up is left alone; the negative-mod branches are for admin-edited species.
+/proc/worn_encumbrance(value, mod)
+	if(value > 0 && mod > 0)
+		return value * mod
+	if(mod < 0 && value < 0)
+		return -(value * mod)
+	if(mod < 0 && value > 0)
+		return value + mod // adding a negative: a 5 slowdown rigsuit gives 5 - X, not 5 * X
+	return value
 
 /// The species' analgesic sensitivity (chem_strength_pain) scales every
 /// reagent's analgesia: the extra share is a part of the reagent's dose record.

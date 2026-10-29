@@ -654,6 +654,8 @@ impl Drop for Permit {
 struct SpillOnExit(Arc<Shared>);
 impl Drop for SpillOnExit {
     fn drop(&mut self) {
+        // Retire, idle exit and supersession all end here: no cache batch is left unpublished.
+        crate::cache_flush::wait_all();
         let slots: Vec<(SessionKey, Arc<Slot>)> = self
             .0
             .slots
@@ -980,6 +982,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
         }
         Request::Build(request) => {
             dm_profile::request_marks_begin();
+            // A death during this build is quoted from here by the next daemon start of this namespace.
+            super::crash_trace::note_request(&format!("build project={}", request.project.display()));
             if discovery {
                 return protocol::send(
                     &mut stream,

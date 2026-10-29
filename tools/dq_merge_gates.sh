@@ -33,6 +33,8 @@
 # What it still leaves to dq_push_master.sh: the second merge of origin/master, and any stamp it cannot honor (a different HEAD,
 # an unclean tree). It never runs build.sh lint (DreamChecker + analyze + tgui lint, all covered above).
 set -uo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 # The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
 export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
@@ -51,7 +53,10 @@ merge_lock_require || exit 1
 _lap_t0=$(date +%s)
 lap() { echo "== gates: $1 +$(( $(date +%s) - _lap_t0 ))s"; } # where the pre-proof seconds go (the lock is held across them)
 merge_lock_busy begin
-trap 'merge_lock_busy end' EXIT
+early_prep_pid=""
+# an early prepare (below) never outlives the script: every exit waits for it (it writes build output into this tree)
+gates_exit() { [ -z "${early_prep_pid:-}" ] || wait "$early_prep_pid" 2>/dev/null; merge_lock_busy end; }
+trap gates_exit EXIT
 
 orig_args=("$@")
 automerge=1
@@ -87,7 +92,7 @@ done
 git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then
 	echo "dq_merge_gates: REFUSED: uncommitted changes to tracked files; commit the merge first (the stamp names an exact HEAD)" >&2
-	exit 1
+	exit 95 # INFRA: a dirty batch tree is the tooling's state, not a lane verdict (dq_merge_batch.sh retries or defers it)
 fi
 # --lanes names lanes that are not merged yet: this is a batch. The batch driver merges them (one build, one union of
 # tests) and bisects by lane on a failure, calling this script again per attempt with --no-auto-merge (tools/dq_merge_batch.sh).
@@ -107,7 +112,8 @@ for ref in $lanes; do
 	if [ -z "$tip" ]; then echo "dq_merge_gates: REFUSED: lane '$ref' does not resolve to a commit" >&2; exit 2; fi
 	if ! git merge-base --is-ancestor "$tip" HEAD; then
 		echo "dq_merge_gates: REFUSED: lane '$ref' (${tip:0:12}) is not in HEAD; merge it into this branch first (git merge --no-ff $ref)" >&2
-		exit 1
+		# INFRA (95): the merge did not happen, or the lane's ref moved after it; no lane code was judged (28 October: hit/fire-act-wave bounced on this)
+		exit 95
 	fi
 	lane_tips="$lane_tips${lane_tips:+,}$tip"
 done
@@ -121,7 +127,22 @@ if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ "$reproof" -eq 0 
 fi
 # The generated files must be fresh before the HEAD is stamped.
 if [ "$early_reuse" -eq 0 ]; then
-	tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
+	# 28 October (train-pre2): gen died right after "Starting 'dme'" with no message and the lane was bounced. gen runs no lane code:
+	# its output is kept and shown, a failure is retried once, and a second failure is an INFRA error (exit 95; dq_merge_batch.sh retries
+	# or defers it, never bounces a lane for it).
+	gen_log="data/merge-gates/gen-$$.log"; mkdir -p data/merge-gates
+	if ! tools/build/build.sh gen >"$gen_log" 2>&1; then
+		gen_rc=$?
+		cat "$gen_log"
+		echo "dq_merge_gates: gen failed (rc=$gen_rc; output above); retrying once" >&2
+		if ! tools/build/build.sh gen >"$gen_log" 2>&1; then
+			gen_rc=$?
+			cat "$gen_log"
+			echo "dq_merge_gates: INFRA: gen failed twice (rc=$gen_rc; output above, log $gen_log); not a lane verdict" >&2
+			exit 95
+		fi
+	fi
+	cat "$gen_log"; rm -f "$gen_log"
 fi
 lap "gen and fetch"
 # The build's gen step regenerated deepquarry.dme (tools/build/gen_dme.py). On an unpushed merge commit (a batch) a changed manifest is
@@ -134,6 +155,15 @@ if [ "$early_reuse" -eq 0 ] && ! git diff --quiet -- deepquarry.dme; then
 		echo "dq_merge_gates: deepquarry.dme is stale on this commit: commit the regenerated one (python3 tools/build/gen_dme.py)" >&2
 		exit 1
 	fi
+fi
+# prepare (icon repack, manifest check, verdigris, map bounds) reads none of what the steps below change (the baselines under tools/ci, the
+# test list): it starts here, in the background, and the gate waits for it instead of running it after them (28 October: ~11 s of the
+# precheck's 43 s before the jobs). Same command as `gate prepare`; a failure runs `gate prepare` again (its retries). DQ_GATE_EARLY_PREPARE=0: off.
+if [ "$early_reuse" -eq 0 ] && [ "${DQ_GATE_EARLY_PREPARE:-1}" = 1 ] && [ "${DQ_GATE_LIGHT:-0}" != 1 ]; then
+	mkdir -p data/merge-gates
+	early_prep_log="data/merge-gates/early-prepare-$$.log"
+	( t0=$(date +%s); tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds >"$early_prep_log" 2>&1; echo "$? $(( $(date +%s) - t0 ))" >"$early_prep_log.rc" ) &
+	early_prep_pid=$!
 fi
 pre_shrink_tree="$(proof_tree HEAD)" # the tree a plain merge makes; the shrink below changes it (proof_alias_baseline_shrink)
 # A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk into the merge commit, instead of a separate
@@ -195,6 +225,13 @@ changed_since_base=""
 if git rev-parse -q --verify origin/master >/dev/null; then changed_since_base="$(git diff --name-only "$(git merge-base origin/master HEAD)" HEAD 2>/dev/null)"; fi
 changed_match() { grep -qE "$1" <<<"$changed_since_base"; }
 if changed_match '^tools/(analyze|dmb)/'; then analyze_tests=1; fi
+# The train sets DQ_GATE_ANALYZE_TRUSTED=<why> when every lane that changes tools/analyze or tools/dmb passed these tests in its precheck
+# and master changed neither since (tools/dq_train.sh analyze_trusted): the job is skipped and the reason logged, like DQ_GATE_DC_DISJOINT.
+if [ "$analyze_tests" -eq 1 ] && [ -n "${DQ_GATE_ANALYZE_TRUSTED:-}" ]; then
+	analyze_tests=0
+	echo "== gates: analyze_tests trusted (not run): $DQ_GATE_ANALYZE_TRUSTED"
+	echo "analyze_tests trusted 0s" >>"${timings:-/dev/null}"
+fi
 dc_inputs_changed=1
 changed_match '\.(dm|dme|dmm|dmf)$|^(code|maps|interface)/|^SpacemanDMM\.toml$|^tools/analyze/' || dc_inputs_changed=0
 lint_inputs_changed=1
@@ -297,13 +334,30 @@ if [ -n "$proof_file" ]; then
 fi
 
 # ---- running the gates -----------------------------------------------------------------------------------------------------
+# sccache's server dropping a compile ("error reading compile response from server", os error 10054) is the cache, not the code.
+gate_sccache_failure() { grep -qiE 'error reading compile response from server|sccache: error: (failed to|connection)|failed to (connect|execute compile).*sccache|os error 10054' "$1" 2>/dev/null; }
 gate() { # <name> <command...>: one step in the foreground
-	local name="$1" t0 rc
+	local name="$1" t0 rc glog
 	shift
 	echo "== gate: $name"
 	t0=$(date +%s)
-	"$@"
-	rc=$?
+	glog="data/merge-gates/gate-$name-$$.log"; mkdir -p data/merge-gates
+	"$@" 2>&1 | tee "$glog"
+	rc=${PIPESTATUS[0]}
+	# 28 October (tests/ambient-isolation, prepare): sccache's server dropped the connection while building vg-ffi and the lane was
+	# bounced. A step that failed on sccache runs once more without it (RUSTC_WRAPPER unset, SCCACHE disabled); a second sccache
+	# failure is INFRA (exit 95: retried or deferred by dq_merge_batch.sh, never a lane verdict).
+	if [ "$rc" -ne 0 ] && gate_sccache_failure "$glog"; then
+		echo "== gate: $name failed on sccache (the compile cache's server, not the code); retrying once without sccache"
+		RUSTC_WRAPPER= SCCACHE_DISABLE=1 CARGO_BUILD_RUSTC_WRAPPER= "$@" 2>&1 | tee "$glog"
+		rc=${PIPESTATUS[0]}
+		if [ "$rc" -ne 0 ] && gate_sccache_failure "$glog"; then
+			echo "$name $(( $(date +%s) - t0 ))s rc=$rc (sccache)" | tee -a "$timings"
+			echo "dq_merge_gates: INFRA: '$name' failed on sccache twice (log $glog); not a lane verdict" >&2
+			exit 95
+		fi
+	fi
+	rm -f "$glog"
 	echo "$name $(( $(date +%s) - t0 ))s rc=$rc" | tee -a "$timings"
 	if [ "$rc" -ne 0 ]; then
 		echo "dq_merge_gates: FAILED at '$name' (exit $rc); fix it, recommit, rerun" >&2
@@ -316,8 +370,21 @@ failed=()
 dm_ok=0
 dc_ok=0
 declare -A pid start
+# the early prepare finishes before anything else runs in this tree (a reused proof needs none of it, but must not leave it running)
+early_prep_rc=""
+if [ -n "$early_prep_pid" ]; then
+	wait "$early_prep_pid" 2>/dev/null
+	early_prep_rc="$(cut -d' ' -f1 "$early_prep_log.rc" 2>/dev/null)"
+	early_prep_done="$early_prep_pid"; early_prep_pid=""
+fi
 if [ "$reused" -eq 0 ]; then
-gate gen tools/build/build.sh gen
+if [ "$early_reuse" -eq 0 ]; then
+	# gen ran at the top of this script on this very tree (the manifest amend and the baseline shrink touch no gen input)
+	echo "gen early 0s" >>"$timings"
+	echo "== gate: gen (ran before the lane checks; not repeated)"
+else
+	gate gen tools/build/build.sh gen
+fi
 # The compiler and the lint engine come from the shared caches (published after the push that changed them, tools/dq_prebuild_tools.sh).
 # When one is still missing, build it HERE, once, overlapped with prepare, and before the parallel jobs start: the jobs then all hit the
 # cache instead of queueing separate cargo builds (dm and tests each ran the dmbc target). DQ_GATE_PREBUILD_TOOLS=0 turns it off.
@@ -326,8 +393,20 @@ if [ "${DQ_GATE_PREBUILD_TOOLS:-1}" = "1" ] && [ "$no_dm" -eq 0 -o "$run_tests" 
 	( t0=$(date +%s); tools/build/build.sh dmbc; rc=$?; echo "prebuild-compiler $(( $(date +%s) - t0 ))s rc=$rc" | tee -a "$timings"; exit $rc ) &
 	tools_pid=$!
 fi
-gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
-if [ -n "$tools_pid" ]; then wait "$tools_pid" || echo "dq_merge_gates: warning: compiler prebuild failed; the jobs build it themselves"; fi
+if [ "$early_prep_rc" = 0 ]; then
+	cat "$early_prep_log"
+	echo "prepare $(cut -d' ' -f2 "$early_prep_log.rc")s rc=0 (early, overlapped)" >>"$timings"
+	echo "== gate: prepare (started early, overlapped with the lane checks; passed)"
+else
+	[ -z "${early_prep_done:-}" ] || { cat "$early_prep_log" 2>/dev/null; echo "== gate: the early prepare failed (rc=${early_prep_rc:-?}); running it again"; }
+	gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
+fi
+[ -z "${early_prep_done:-}" ] || rm -f "$early_prep_log" "$early_prep_log.rc"
+if [ -n "$tools_pid" ]; then
+	# the compiler is in the shared cache now: the test job's dq_focused_test.sh need not prepare it again (~30 s of Bun start-up and a
+	# cache probe on a loaded machine, 28 October)
+	if wait "$tools_pid"; then export DQ_FOCUSED_NO_TOOL_PREBUILD=1; else echo "dq_merge_gates: warning: compiler prebuild failed; the jobs build it themselves"; fi
+fi
 
 job_tests() { gate_tests_with_retry "${tests[@]}"; } # one isolated retry tells a flake from a failure (tools/dq_gate_retry.sh)
 job_dm() {
@@ -347,6 +426,13 @@ job_dreamchecker() {
 	fi
 }
 job_ratchets() {
+	# Beside a test world the analyzer takes half the cores (rayon), not all of them: on 28 October an `analyze check` on 10.75 cores
+	# starved the gate's world into a cap with no result. DQ_RATCHET_THREADS overrides; RAYON_NUM_THREADS set by the caller wins.
+	if [ "$run_tests" -eq 1 ] && [ -z "${RAYON_NUM_THREADS:-}" ]; then
+		local nc; nc="$(nproc 2>/dev/null || echo 8)"
+		export RAYON_NUM_THREADS="${DQ_RATCHET_THREADS:-$(( nc > 3 ? nc / 2 : 1 ))}"
+		echo "ratchets: RAYON_NUM_THREADS=$RAYON_NUM_THREADS (a test world runs beside this job; $nc cores)"
+	fi
 	# The analyze caches are content-addressed and stamped with the engine's own source hash and lint_scopes.toml (tools/analyze/README.md,
 	# "Caches and truth"; tests/cache_truth.rs holds the property), so a warm run answers as a cold one does, also when the analyzer changed.
 	# The gate runs warm; a COLD run (private cache, ~4 min) only with DQ_GATE_COLD=1 or DQ_GATE_COLD_EVERY_MIN=<n> (default 0: never on the
@@ -435,6 +521,35 @@ for n in "${names[@]}"; do
 		pid[$n]=$!
 	fi
 done
+# Fail fast (28 October: two 20-minute attempts ran every job to the end after the test build failed to compile in 5 s): when the test
+# build reports compile errors, the sibling jobs are stopped (their process trees, our own gate jobs only) and the gate returns at once.
+# DQ_GATE_FAIL_FAST=0 waits for every job as before.
+gate_kill_tree() { # <msys pid>: the job subshell and every descendant (native ones through taskkill /T)
+	local p="$1" c w
+	for c in $(ps -ef 2>/dev/null | awk -v p="$p" '$3 == p {print $2}'); do gate_kill_tree "$c"; done
+	w="$(cat "/proc/$p/winpid" 2>/dev/null)"
+	[ -z "$w" ] || taskkill //T //F //PID "$w" >/dev/null 2>&1
+	kill -9 "$p" 2>/dev/null
+}
+if [ "$serial" -eq 0 ] && [ "${DQ_GATE_FAIL_FAST:-1}" = 1 ] && [ -n "${pid[tests]:-}" ]; then
+	tlog_ff="data/merge-gates/$short.tests.log"
+	while kill -0 "${pid[tests]}" 2>/dev/null; do
+		if grep -qE '^deepquarry\.test\.dmb - [1-9][0-9]* errors?' "$tlog_ff" 2>/dev/null; then
+			echo "== FAIL FAST: the test build does not compile; stopping the other gate jobs:"
+			grep -E ':error: ' "$tlog_ff" | head -n 10 | sed 's/^/   /'
+			for n in "${names[@]}"; do
+				[ "$n" = tests ] && continue
+				if kill -0 "${pid[$n]}" 2>/dev/null; then
+					gate_kill_tree "${pid[$n]}"
+					echo "130 $(date +%s)" >"data/merge-gates/$short.$n.log.rc"
+					echo "   stopped: $n (the batch fails on the compile error; this job's verdict is moot)"
+				fi
+			done
+			break
+		fi
+		sleep 3
+	done
+fi
 for n in "${names[@]}"; do
 	[ "$serial" -eq 1 ] || wait "${pid[$n]}" 2>/dev/null
 done
@@ -486,6 +601,12 @@ if [ ${#failed[@]} -gt 0 ]; then
 		tail -n 40 "data/merge-gates/$short.$n.log" >&2
 		grep -h '^FOCUSED RESULT:\|^FOCUSED RUN CAPPED\|^dq_focused_test: REFUSED' "data/merge-gates/$short.$n.log" >&2 || true
 	done
+	# DreamChecker that died of memory ("memory allocation of N bytes failed") judged nothing: when it is the only failure, the gate
+	# exits INFRA (95; dq_merge_batch.sh retries or defers), never a verdict on a lane.
+	if [ "${failed[*]}" = dreamchecker ] && grep -qE 'memory allocation of [0-9]+ bytes failed' "data/merge-gates/$short.dreamchecker.log" 2>/dev/null; then
+		echo "dq_merge_gates: INFRA: DreamChecker ran out of memory (data/merge-gates/$short.dreamchecker.log); not a lane verdict" >&2
+		exit 95
+	fi
 	echo "dq_merge_gates: FAILED: ${failed[*]} (logs data/merge-gates/$short.<job>.log); fix it, recommit, rerun" >&2
 	exit 1
 fi
@@ -521,6 +642,7 @@ else
 		else
 			echo "dq_merge_gates: FAILED: dreamchecker (log data/merge-gates/$short.dreamchecker.log)" >&2
 			tail -n 40 "data/merge-gates/$short.dreamchecker.log" >&2
+			grep -qE 'memory allocation of [0-9]+ bytes failed' "data/merge-gates/$short.dreamchecker.log" && { echo "dq_merge_gates: INFRA: DreamChecker ran out of memory; not a lane verdict" >&2; exit 95; }
 			exit 1
 		fi
 	fi

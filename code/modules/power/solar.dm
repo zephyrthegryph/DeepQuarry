@@ -38,6 +38,7 @@ MSG_DEF(solar/glass_off, "You take the glass off the solar panel.", "%U% takes t
 // its exposure (cos^2 of its angle off the sun, 0 past 90 degrees, 0 obscured), summed by the controller into one persistent supply. A crowbar
 // takes the glass off; a hostile swing with anything strikes it.
 CAPABILITIES(/obj/machinery/power/solar)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(solar_broken)))
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(prepare_reinforced_integrity))
 	configure(uses_power(idle = 0, active = 0))
@@ -87,10 +88,8 @@ CAPABILITIES(/obj/machinery/power/solar)
 	return OP_OK
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
-/obj/machinery/power/solar/atom_break(damage_flag)
-	. = ..()
-	if(.)
-		broken()
+/obj/machinery/power/solar/proc/solar_broken(datum/act/A)
+	broken()
 
 // Once broken, further damage shatters it into shards.
 /obj/machinery/power/solar/atom_destruction(damage_flag)

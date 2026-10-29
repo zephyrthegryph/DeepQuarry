@@ -209,7 +209,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 .map(|(write, &fact)| {
                     let mut key = artifact::key(write, fact, reuse, policy);
                     let duplicate = duplicates.entry(key.clone()).or_default();
-                    key.extend_from_slice(&(*duplicate as u128).to_le_bytes());
+                    key.extend_from_slice(&(*duplicate as u32).to_le_bytes());
                     *duplicate += 1;
                     Arc::<[u8]>::from(key)
                 })

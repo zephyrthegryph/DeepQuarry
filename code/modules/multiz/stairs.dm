@@ -237,6 +237,7 @@ CAPABILITIES(/obj/structure/stairs/bottom)
 	var/obj/structure/stairs/bottom/bottom = null
 
 CAPABILITIES(/obj/structure/stairs/middle)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	keeps_if(PROC_REF(has_level_above), warn = "Stair created without level above")
 	links(/obj/structure/stairs/middle::top, /obj/structure/stairs/top::middle)
 	climb()
@@ -301,7 +302,10 @@ CAPABILITIES(/obj/structure/stairs/middle)
 		user.forceMove(get_turf(top)) // You can't really drag things when you have to climb up the gap in the stairs yourself
 	return OP_PASS
 
-/obj/structure/stairs/middle/Bumped(mob/user)
+/// The bump notice: `user` walked into it (was Bumped()).
+/obj/structure/stairs/middle/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/mob/user = N.bumper
 	if(check_integrity() && bottom && (bottom in get_turf(user))) // Bottom must be enforced because the middle stairs don't actually need the bottom
 		bottom.use_stairs_instant(user)
 

@@ -11,7 +11,9 @@
 // pack (any member's brain `traced`) or GLOB.ai_trace_all asks for it.
 
 /// Packs made since boot (tests and the trace read these).
-GLOBAL_VAR_INIT(ai_pack_serial, 0)
+/// AI pack numbers ("pack #3" in the log).
+SERIAL_DEF(ai_pack, 1, FALSE)
+SCHEMA(/datum/ai_pack, serial, num())
 GLOBAL_VAR_INIT(ai_pack_merges, 0)
 GLOBAL_VAR_INIT(ai_pack_splits, 0)
 
@@ -51,7 +53,7 @@ CAPABILITIES(/datum/ai_pack)
 
 /datum/ai_pack/New(faction)
 	. = ..()
-	serial = ++GLOB.ai_pack_serial
+	serial = next_serial(ai_pack)
 	faction_key = faction
 	var/datum/faction_data/data = dq_faction_data_for(faction)
 	if(data.pack_join_radius > 0)

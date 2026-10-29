@@ -25,7 +25,7 @@
 	TEST_ASSERT(query.finished, "the actual bounded query finishes after the run control executes")
 	TEST_ASSERT_EQUAL(query.text_state(), "####IDLE", "the actual query returns to its idle state")
 	TEST_ASSERT_EQUAL(length(query.select_refs), 1, "the actual actor-contents search selects exactly one object")
-	TEST_ASSERT(query.select_refs[REF(target)], "the actual select result identifies the actor's exact pen")
+	TEST_ASSERT(query.select_refs[ref_token(target)], "the actual select result identifies the actor's exact pen")
 	TEST_ASSERT_EQUAL(target.loc, actor, "the select query preserves the selected pen's actual location")
 	query.admin_halt(bystander)
 	TEST_ASSERT_EQUAL(query.text_state(), "####IDLE", "an idle query retains the existing halt guard")

@@ -123,10 +123,10 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
         py={0.5}
         style={{
           backgroundColor: 'rgba(255,255,255,0.05)',
-          borderRadius: '2px',
+          borderRadius: '0.167em',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '0.667em',
         }}
       >
         <Box inline color="green" bold>
@@ -149,7 +149,7 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
           If none available:
         </Box>
         <Dropdown
-          width="220px"
+          width="18.333em"
           selected={altVal}
           displayText={altLabel}
           options={altOpts}
@@ -203,8 +203,8 @@ const DepartmentBlock = ({
       fontSize="0.85em"
       style={{
         backgroundColor: dept.color ? `${dept.color}33` : 'rgba(0,0,0,0.25)',
-        borderLeft: dept.color ? `3px solid ${dept.color}` : undefined,
-        borderRadius: '2px',
+        borderLeft: dept.color ? `0.25em solid ${dept.color}` : undefined,
+        borderRadius: '0.167em',
         textTransform: 'uppercase',
         letterSpacing: '0.5px',
       }}
@@ -272,8 +272,8 @@ const JobRow = ({
       style={{
         display: 'flex',
         alignItems: 'center',
-        padding: '0 4px',
-        borderLeft: `4px solid ${barColor}`,
+        padding: '0 0.333em',
+        borderLeft: `0.333em solid ${barColor}`,
         backgroundColor:
           priority !== 'off' && !blocked
             ? `${barColor}22`
@@ -284,7 +284,7 @@ const JobRow = ({
         cursor: 'pointer',
         userSelect: 'none',
         marginBottom: '1px',
-        minHeight: '20px',
+        minHeight: '1.667em',
         fontSize: '0.9em',
       }}
       onClick={() => cycleTo(false)}
@@ -304,7 +304,7 @@ const JobRow = ({
           onContextMenu={(e: React.MouseEvent) => e.stopPropagation()}
         >
           <Dropdown
-            width="150px"
+            width="12.5em"
             selected={altSel}
             displayText={altSel}
             options={altOpts}
@@ -349,7 +349,7 @@ const JobRow = ({
           backgroundColor="bad"
           color="white"
           fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '2px' }}
+          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
         >
           {blockReason}
         </Box>
@@ -362,7 +362,7 @@ const JobRow = ({
           backgroundColor="good"
           color="white"
           fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '2px' }}
+          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
         >
           WL
         </Box>
@@ -375,7 +375,7 @@ const JobRow = ({
           backgroundColor="average"
           color="white"
           fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '2px' }}
+          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
         >
           AGE {job.min_age}+
         </Box>

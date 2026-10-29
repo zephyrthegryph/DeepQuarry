@@ -249,3 +249,30 @@
 	native_frame(world.tick_lag, NATIVE_WAKE_BUDGET)
 	TEST_ASSERT_EQUAL(N.frames, frames + 2, "a scheduler on injected time ran a frame")
 	sched.manual_time = saved_time
+
+/// A delivery times each record and keeps the slowest one with what it was, so a slow delivery names the record that took the time.
+/datum/unit_test/dq_native_delivery_names_its_slowest_record
+
+/datum/unit_test/dq_native_delivery_names_its_slowest_record/Run()
+	var/datum/system/native/N = native_system()
+	// Two CROSSED records for a watch handle nobody holds: each is dropped by on_crossed(), and each is timed.
+	N.deliver(list(NATIVE_REC_CROSSED, 0, 0, 0, NATIVE_REC_CROSSED, 0, 1, 0))
+	TEST_ASSERT_EQUAL(N.last_records, 2, "both records were delivered")
+	TEST_ASSERT(N.delivery_crossed_ms >= N.last_slowest_ms, "the kind total is at least its slowest record")
+	TEST_ASSERT(N.delivery_changed_ms == 0 && N.delivery_notices_ms == 0, "only the crossed kind was timed")
+	TEST_ASSERT(N.last_slowest_ms > 0 ? findtext(N.last_slowest, "CROSSED") : !length(N.last_slowest), "the slowest record, when one was timed, is named by its kind")
+
+/// A native frame past NATIVE_SLOW_FRAME_MS is reported with the Rust phases that grew: the report counts itself and keeps the counters
+/// the next report diffs against.
+/datum/unit_test/dq_native_slow_frame_is_reported
+
+/datum/unit_test/dq_native_slow_frame_is_reported/Run()
+	var/datum/system/native/N = native_system()
+	var/before = N.slow_frames
+	var/list/saved = N.slow_frame_prev
+	N.report_slow_frame()
+	N.report_slow_frame()
+	TEST_ASSERT_EQUAL(N.slow_frames, before + 2, "each slow-frame report counts itself")
+	TEST_ASSERT(islist(N.slow_frame_prev), "a report keeps the phase counters for the next one to diff")
+	N.slow_frame_prev = saved
+	N.slow_frames = before

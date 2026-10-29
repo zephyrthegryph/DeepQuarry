@@ -238,7 +238,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat)
 	desc = "A softly-glowing, brass-colored button up winter coat. Instead of a zipper tab, it has a brass cog with a tiny red gemstone inset."
 	icon_state = "coatratvar"
 	hoodtype = /obj/item/clothing/head/hood/winter/ratvar
-	light_on = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/ratvar)
 	configure(light_glow(range = 3, power = 1, color = "#B18B25"))
@@ -254,7 +253,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/ratvar)
 	desc = "A starry winter coat that even glows softly."
 	icon_state = "coatcosmic"
 	hoodtype = /obj/item/clothing/head/hood/winter/cosmic
-	light_on = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/cosmic)
 	configure(light_glow(power = 1.8, range = 1.2))
@@ -395,7 +393,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight)
 	icon_state = "robin"
 	hoodtype = /obj/item/clothing/head/hood/robin
 	armor_spec = "melee=70;bullet=40;laser=10"
-	slowdown = -1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -1)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/robin)
 	configure(item_protection(siemens = 3))
@@ -407,7 +405,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/robin)
 	icon_state = "chain"
 	hoodtype = /obj/item/clothing/head/hood/chain
 	armor_spec = "melee=60;bullet=10;laser=10"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/chain)
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_knight_headgear)))

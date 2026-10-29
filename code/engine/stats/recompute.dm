@@ -523,16 +523,42 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 	var/list/entries = GLOB.stat_hop_index[key]
 	if(!entries)
 		return
-	for(var/list/entry as anything in entries)
-		var/reader_type = entry[1]
-		var/datum/stat_hop/hop = entry[2]
-		var/list/frontier
-		if(hop.fast)
-			var/list/direct = E.rx?.stats?.hop_in?[hop.rel_var]
-			frontier = direct ? direct.Copy() : list()
+	var/list/targets = stat_hop_targets(E, key, entries)
+	for(var/i in 1 to length(targets) step 2)
+		stat_hop_reach(targets[i], targets[i + 1])
+
+/// One reader reached through `hop`: settled at once or marked for the next marked drain.
+/proc/stat_hop_reach(datum/reader, datum/stat_hop/hop)
+	var/settle = GLOB.stat_force_settle || hop.settle
+	if(hop.ct)
+		if(settle == SETTLE_INLINE)
+			stat_ct_update(reader, hop.ct)
 		else
-			frontier = list(E)
-		for(var/i in (hop.fast ? 0 : length(hop.path)) to 1 step -1)
+			stat_mark_ct(reader, hop.ct)
+		return
+	var/datum/stat_def/def = GLOB.stat_defs[hop.skey]
+	if(!def)
+		return
+	if(settle == SETTLE_INLINE)
+		stat_settle_def(reader, def)
+	else
+		stat_mark(reader, def)
+
+/// Every (reader, hop) a write to `key` on E reaches, flat: reader, hop, reader, hop... An entry is a reader type and its hop; a reader of that type or a subtype is
+/// reached through it. A single-relation hop (`fast`) reads the readers straight off E's reverse index, and the hops of one relation share that list: each reader
+/// looks up the hops its type has (stat_hops_of_type(), built once per reader type) instead of every entry scanning every reader, which was entries x readers
+/// istype() tests for one channel flip of a 555-machine area (60-265 ms).
+/proc/stat_hop_targets(datum/E, key, list/entries)
+	var/list/targets = list()
+	var/list/fast_rels
+	for(var/list/entry as anything in entries)
+		var/datum/stat_hop/hop = entry[2]
+		if(hop.fast)
+			LAZYSET(fast_rels, hop.rel_var, TRUE)
+			continue
+		var/reader_type = entry[1]
+		var/list/frontier = list(E)
+		for(var/i in length(hop.path) to 1 step -1)
 			var/segment = hop.path[i]
 			var/list/next_frontier = list()
 			for(var/datum/at as anything in frontier)
@@ -542,23 +568,42 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 			frontier = next_frontier
 			if(!length(frontier))
 				break
-		var/settle = GLOB.stat_force_settle || hop.settle
 		for(var/datum/reader as anything in frontier)
-			if(!istype(reader, reader_type))
-				continue
-			if(hop.ct)
-				if(settle == SETTLE_INLINE)
-					stat_ct_update(reader, hop.ct)
-				else
-					stat_mark_ct(reader, hop.ct)
-				continue
-			var/datum/stat_def/def = GLOB.stat_defs[hop.skey]
-			if(!def)
-				continue
-			if(settle == SETTLE_INLINE)
-				stat_settle_def(reader, def)
-			else
-				stat_mark(reader, def)
+			if(istype(reader, reader_type))
+				targets += list(reader, hop)
+	for(var/rel_var in fast_rels)
+		var/list/direct = E.rx?.stats?.hop_in?[rel_var]
+		if(!length(direct))
+			continue
+		var/list/by_type = stat_hops_by_type(key, rel_var, entries)
+		for(var/datum/reader as anything in direct.Copy())
+			var/list/hops = by_type[reader.type]
+			if(isnull(hops))
+				hops = stat_hops_of_type(by_type, reader.type, entries, rel_var)
+			for(var/datum/stat_hop/hop as anything in hops)
+				targets += list(reader, hop)
+	return targets
+
+/// key|relation -> reader type -> the fast hops of that relation a reader of the type is reached through (an entry's reader type or a supertype of it): cleared
+/// whenever a type registers its hops (contributes.dm), so it never outlives the index it was built from.
+GLOBAL_LIST_EMPTY(stat_hop_applicable)
+
+/proc/stat_hops_by_type(key, rel_var, list/entries)
+	var/index_key = "[key]|[rel_var]"
+	var/list/by_type = GLOB.stat_hop_applicable[index_key]
+	if(!by_type)
+		by_type = list()
+		GLOB.stat_hop_applicable[index_key] = by_type
+	return by_type
+
+/proc/stat_hops_of_type(list/by_type, reader_type, list/entries, rel_var)
+	var/list/hops = list()
+	for(var/list/entry as anything in entries)
+		var/datum/stat_hop/hop = entry[2]
+		if(hop.fast && hop.rel_var == rel_var && ispath(reader_type, entry[1]))
+			hops += hop
+	by_type[reader_type] = hops
+	return hops
 
 /// The singleton a SYSTEM_ACCESSOR's system name stands for: a GLOB `<name>_service` (a lazy system) or the `SS<name>` real global that
 /// SYSTEM_DEF declares. Indexing a vars list by a name it does not hold is a runtime, so each is looked up only when it exists.

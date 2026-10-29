@@ -9,7 +9,6 @@
 
 /datum/unit_test/dq_pin_constructor_repairs/proc/scope_fixture()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 /datum/unit_test/dq_pin_constructor_repairs/internal_storage
 /datum/unit_test/dq_pin_constructor_repairs/internal_storage/Run()

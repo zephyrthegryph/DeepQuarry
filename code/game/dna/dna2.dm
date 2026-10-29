@@ -164,7 +164,7 @@ SCHEMA(/datum/dna, base_species, schema_text())
 			break
 
 	// Technically custom_species is not part of the UI, but this place avoids merge problems.
-	src.custom_species = character.custom_species
+	src.custom_species = character.bio.custom_species
 	src.base_species = character.species.base_species
 	src.blood_color = character.species.blood_color
 	src.blood_reagents = character.species.blood_reagents
@@ -362,7 +362,7 @@ SCHEMA(/datum/dna, base_species, schema_text())
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Custom species and other cosmetic vars
-	H.custom_species = custom_species
+	H.bio.custom_species = custom_species
 	H.bio.custom_say = custom_say
 	H.bio.custom_ask = custom_ask
 	H.bio.custom_whisper = custom_whisper

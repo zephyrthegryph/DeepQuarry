@@ -57,4 +57,4 @@ CAPABILITIES(/obj/item/clothing/under/nanotrasen)
 	icon_state = "webvest"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)

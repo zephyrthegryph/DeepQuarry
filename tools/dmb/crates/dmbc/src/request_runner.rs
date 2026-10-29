@@ -265,6 +265,8 @@ fn run_build_attempt(
         }
         dm_profile::request_mark("session.watch_synced");
     }
+    // Daemon sessions retain artifacts; only they outlive the request and may publish the cache batch afterwards.
+    let defer_cache_batch = host.retains_artifacts();
     let compiler = if executable && (!no_cache || host.retains_artifacts()) {
         let compiler = dmbc::daemon::compiler_identity()?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
@@ -1308,7 +1310,43 @@ fn run_build_attempt(
             memo.publish_successful();
         }
         dm_profile::request_mark("finalization.memo_published");
-        let cache_batch_stats = memo_cache.as_ref().map(|cache| match cache.finish_batch() {
+        // A daemon replies once the output is installed and publishes the cache batch in the background (`cache_flush`); a
+        // one-shot compile exits when the request ends, so it publishes here.
+        let cache_batch_stats = memo_cache.as_ref().map(|cache| {
+            if defer_cache_batch {
+                if let Some(root) = cache.root().map(std::path::Path::to_path_buf) {
+                    return match cache.take_batch() {
+                        Ok(dmbc::runner_disk::TakenBatch::Spool(spool)) => {
+                            dmbc::cache_flush::defer(root, "request batch", move || {
+                                spool.finish().map_err(|error| error.to_string()).map(|report| {
+                                    format!(
+                                        "segment {} records={} variants={}",
+                                        report.segment.map_or_else(|| "none".to_owned(), |id| format!("{id:032x}")),
+                                        report.records,
+                                        report.variants
+                                    )
+                                })
+                            });
+                            serde_json::json!({"segment":null,"committed_records":0,"committed_variants":0,
+                                "status":"deferred","scope":"one_request_completed_batch"})
+                        }
+                        Ok(dmbc::runner_disk::TakenBatch::Report(report)) => serde_json::json!({
+                            "segment": report.segment.map(|id| format!("{id:032x}")),
+                            "committed_records": report.records,
+                            "committed_variants": report.variants,
+                            "status": "completed",
+                            "scope": "one_request_completed_batch",
+                        }),
+                        Err(error) => {
+                            dmbc::daemon_eprintln!("native cache publication skipped: {error}");
+                            serde_json::json!({"segment":null,"committed_records":0,
+                                "committed_variants":0,"status":"failed","error":error,
+                                "scope":"one_request_completed_batch"})
+                        }
+                    };
+                }
+            }
+            match cache.finish_batch() {
             Ok(report) => serde_json::json!({
                 "segment": report.segment.map(|id| format!("{id:032x}")),
                 "committed_records": report.records,
@@ -1321,6 +1359,7 @@ fn run_build_attempt(
                 serde_json::json!({"segment":null,"committed_records":0,
                     "committed_variants":0,"status":"failed","error":error,
                     "scope":"one_request_completed_batch"})
+            }
             }
         });
         dm_profile::request_mark("finalization.cache_batch");
@@ -1336,7 +1375,7 @@ fn run_build_attempt(
         });
         let declaration_stats = frontend_report.declaration_reuse;
         dmbc::daemon_eprintln!("native declaration reuse: {declaration_stats}");
-        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"frontend_stage_wall_seconds":frontend_report.frontend_stage_wall_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"cache_batch":cache_batch_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
+        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"frontend_stage_wall_seconds":frontend_report.frontend_stage_wall_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"cache_batch":cache_batch_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":runner_report::explanations_value(&explanations)});
         let mut stats = stats;
         stats["metadata_resolution"] = frontend_report.metadata_resolution;
         dm_profile::request_mark("finalization.stats_built");

@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Chemistry reactions that make items (food, soap, sheets, carpet) declare what they spawn. Items made by a reaction now start at the temperature of the reaction vessel instead of dropping its heat."
+  - bugfix: "Protein and lye now make a bar of homemade soap (the reaction produced none)"

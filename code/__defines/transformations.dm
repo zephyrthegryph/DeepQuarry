@@ -73,3 +73,53 @@
 #define STACK_RECIPES_RODS "rods"
 #define STACK_RECIPES_STEEL_RECYCLER "steel_recycler"
 #define STACK_RECIPES_GLASS_RECYCLER "glass_recycler"
+
+// sets_off(): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm).
+/// Chemical smoke at the subject, carrying the reagents.
+#define XFORM_FX_SMOKE "smoke"
+/// Foam (variant 0 plain, 1 metal, 2 iron) at the subject.
+#define XFORM_FX_FOAM "foam"
+/// An explosion of reagents scaled by what the step made.
+#define XFORM_FX_EXPLOSION "explosion"
+/// An electromagnetic pulse scaled by what the step made.
+#define XFORM_FX_EMP "emp"
+
+/// A plain explosion with rolled ranges (blast = list(devastation, heavy, light, flash), each a number or list(lo, hi)).
+#define XFORM_FX_BLAST "blast"
+/// A frost smoke cloud of `amount` at the subject.
+#define XFORM_FX_FROST "frost"
+/// A procedure on the subject, `delay` later, after an optional admin line, message and sound.
+#define XFORM_FX_LATER "later"
+/// A lightning strike on the subject's turf (delay, audit, tell, sfx as for XFORM_FX_LATER).
+#define XFORM_FX_LIGHTNING "lightning"
+/// A radiation pulse from the subject: range and strength (delay, audit, tell, sfx as above).
+#define XFORM_FX_RADIATION "radiation"
+/// A gravity effect around the subject: direction GRAVITY_PULL (the grav_pull system draws movable things in) or GRAVITY_PUSH (they are thrown away).
+#define XFORM_FX_GRAVITY "gravity"
+#define GRAVITY_PULL "pull"
+#define GRAVITY_PUSH "push"
+/// Gas added to turfs around the subject with a hotspot (gases, temperature, hotspot, range, line_of_sight, floors_only, scale_by_made, consumes).
+#define XFORM_FX_BURN "burn"
+/// A mood put on the slimes (and slime-bodied people) the subject can see: MOOD_CALM or MOOD_ENRAGE.
+#define XFORM_FX_MOOD "mood"
+#define MOOD_CALM "calm"
+#define MOOD_ENRAGE "enrage"
+/// An edit of the engineered contagion in the blood the subject holds: CONTAGION_EVOLVE (levels), CONTAGION_PICKY (symptoms), CONTAGION_DEVOLVE, CONTAGION_NEUTER, CONTAGION_FALTER.
+#define XFORM_FX_CONTAGION "contagion"
+#define CONTAGION_EVOLVE "evolve"
+#define CONTAGION_PICKY "picky"
+#define CONTAGION_DEVOLVE "devolve"
+#define CONTAGION_NEUTER "neuter"
+#define CONTAGION_FALTER "falter"
+/// A body effect on every mob within a range of the subject.
+#define XFORM_FX_AREA "area"
+
+// spawns(): where a product is made, and how many.
+/// At the turf of the subject (the only place built).
+#define SUBJECT_TURF "subject_turf"
+/// n copies each step the rule goes, whatever its extent (what every legacy tail did).
+#define SPAWN_PER_STEP "per_step"
+/// n copies per whole unit the step made: n * FLOOR(made).
+#define SPAWN_PER_MADE "per_made"
+/// One stack of n * FLOOR(made) units (nothing when that is 0).
+#define SPAWN_STACK_MADE "stack_made"

@@ -116,6 +116,9 @@ static SHARED: std::sync::OnceLock<Arc<Store>> = std::sync::OnceLock::new();
 /// shares them between its sessions: equal regions of two sessions (a second worktree, the game and the test variant)
 /// are one allocation, and every hit is still validated against the asking plan's own macros, locations and shape. A
 /// process that never calls this (a one-shot compile, a unit test) keeps private admissions.
+pub(super) fn sharing() -> bool {
+    SHARED.get().is_some()
+}
 pub fn share_expansion_inputs() {
     SHARED.get_or_init(Store::shared_current_rosters);
 }

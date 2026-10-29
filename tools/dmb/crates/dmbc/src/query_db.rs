@@ -215,21 +215,30 @@ const VALUE_SHARDS: usize = 64;
 /// aligns to; the pooled value's own query settles a collision): weak, so nothing is kept alive by it. A value whose
 /// key is already pooled with another query or hash (two sessions disagreeing about one answer) is simply not pooled.
 pub(crate) struct AnswerValues {
+    /// Interning outcomes (diagnostic, `DMB_MEM_MARKS`): found equal, found with another answer, found for another query, new.
+    pub(crate) outcomes: [std::sync::atomic::AtomicU64; 4],
     shards: Box<[Mutex<std::collections::HashMap<u64, std::sync::Weak<AnswerValue>>>]>,
 }
 impl Default for AnswerValues {
     fn default() -> Self {
-        Self { shards: (0..VALUE_SHARDS).map(|_| Mutex::new(Default::default())).collect() }
+        Self { outcomes: Default::default(), shards: (0..VALUE_SHARDS).map(|_| Mutex::new(Default::default())).collect() }
     }
 }
 impl AnswerValues {
     fn intern(&self, id: u128, query: &dm_ir::ResolveQuery, meaning: &dm_ir::ResolvedMeaning) -> Arc<AnswerValue> {
         let hash = answer_hash(meaning);
         let mut pooled = self.shards[(id as usize) % VALUE_SHARDS].lock().unwrap_or_else(|error| error.into_inner());
+        use std::sync::atomic::Ordering::Relaxed;
         if let Some(held) = pooled.get(&(id as u64)).and_then(std::sync::Weak::upgrade) {
             if held.hash == hash && held.query == *query {
+                self.outcomes[0].fetch_add(1, Relaxed);
                 return held;
             }
+            self.outcomes[if held.query == *query { 1 } else { 2 }].fetch_add(1, Relaxed);
+        } else if pooled.contains_key(&(id as u64)) {
+            self.outcomes[2].fetch_add(1, Relaxed);
+        } else {
+            self.outcomes[3].fetch_add(1, Relaxed);
         }
         let value = Arc::new(AnswerValue { hash, positive: positive_answer(meaning), query: *query });
         pooled.insert(id as u64, Arc::downgrade(&value));
@@ -321,6 +330,8 @@ struct Answers {
     current: std::sync::RwLock<AnswerRequest>,
     requests: std::sync::atomic::AtomicU64,
     resolved: std::sync::atomic::AtomicUsize,
+    /// Slots this request replaced (a slot already held, answered again: a changed or re-proven answer).
+    replaced: std::sync::atomic::AtomicUsize,
     carried: std::sync::atomic::AtomicUsize,
     /// Answers a stage's own resolver disagreed with (verification only).
     mismatches: std::sync::atomic::AtomicUsize,
@@ -345,6 +356,7 @@ impl Default for Answers {
             current: Default::default(),
             requests: std::sync::atomic::AtomicU64::new(0),
             resolved: Default::default(),
+            replaced: Default::default(),
             carried: Default::default(),
             mismatches: Default::default(),
             cleared: Default::default(),
@@ -358,11 +370,27 @@ impl Default for Answers {
 impl Answers {
     fn next_request(&self) {
         use std::sync::atomic::Ordering;
+        if std::env::var_os("DMB_MEM_MARKS").is_some() {
+            let o = |i: usize| self.values.outcomes[i].load(Ordering::Relaxed);
+            eprintln!(
+                "answer table: request {} ended (resolved {}, carried {}, replaced {}); slots {}, values: same={} other_answer={} dead={} absent={}",
+                self.requests.load(Ordering::Relaxed),
+                self.resolved.load(Ordering::Relaxed),
+                self.carried.load(Ordering::Relaxed),
+                self.replaced.load(Ordering::Relaxed),
+                self.len(),
+                o(0),
+                o(1),
+                o(2),
+                o(3)
+            );
+        }
         let request = self.requests.fetch_add(1, Ordering::SeqCst) + 1;
         let mut current = self.current.write().unwrap_or_else(|error| error.into_inner());
         current.request = request;
         current.bind(None, 0);
         self.resolved.store(0, Ordering::Relaxed);
+        self.replaced.store(0, Ordering::Relaxed);
         self.carried.store(0, Ordering::Relaxed);
     }
     fn clear(&self) {
@@ -586,6 +614,9 @@ impl RequestAnswers<'_> {
         drop(timer);
         let value = answers.values.intern(id, query, &meaning);
         let prior = shard.lock().unwrap_or_else(|error| error.into_inner()).get(&id).cloned();
+        if prior.is_some() {
+            answers.replaced.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
         let slot = AnswerSlot::replaced_by(
             prior,
             AnswerSlot {
@@ -824,6 +855,13 @@ impl QueryDb {
             return Err(format!("{differing} of {} resource searches answer differently", facts.searches.len()));
         }
         Ok(facts.searches.len())
+    }
+    /// Whether the table still holds the answers marked as `marks`: no later marking and no drop since.
+    pub(crate) fn marks_stand(&self, marks: u64) -> bool {
+        use std::sync::atomic::Ordering::Relaxed;
+        marks != 0
+            && self.answers.epoch.load(Relaxed) == marks
+            && self.answers.drops.load(Relaxed) == self.answers.marked_drops.load(Relaxed)
     }
     /// Record every held answer as the answer of the output that was just published. Called
     /// once the request's output is the retained one (its tree is the current tree, so each
@@ -1306,6 +1344,35 @@ mod tests {
         unversioned.next_request();
         unversioned.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
         assert!(unversioned.answer_facts().is_none() && unversioned.answers_version().is_none());
+    }
+
+    #[test]
+    fn a_published_output_whose_table_was_cleared_is_proven_by_its_facts() {
+        let searches = ["icons/a.dmi", "icons/b.dmi"];
+        let db = QueryDb::default();
+        open_with_searches(&db, BASE, 9, true, &asked(), &searches);
+        let facts = db.answer_facts().expect("a bound tree and a versioned world");
+        let marks = db.mark_published();
+        assert!(db.marks_stand(marks));
+        assert!(!db.marks_stand(marks + 1) && !db.marks_stand(0));
+        // A define-set switch clears the table: the marks no longer stand and the table holds none of the searches.
+        db.answers.clear();
+        assert!(!db.marks_stand(marks));
+        let (_, resolve) = open_with_searches(&db, BASE, 9, true, &[], &[]);
+        assert_eq!(db.answer_facts().map(|now| now.searches.len()), Some(0));
+        // The retained output's facts still prove it: same declarations, same world, each search asked again.
+        assert_eq!(db.prove_facts(&db.request_answers(&resolve), &facts), Ok(2));
+        assert_eq!(db.answer_facts().map(|now| now.searches), Some(facts.searches.clone()));
+        // A changed declaration, a changed world and a search that now answers differently decline.
+        let edited = QueryDb::default();
+        let (_, resolve) = open_with_searches(&edited, &BASE.replace("= 25", "= 26"), 9, true, &[], &[]);
+        assert!(edited.prove_facts(&edited.request_answers(&resolve), &facts).unwrap_err().contains("declarations"));
+        let world = QueryDb::default();
+        let (_, resolve) = open_with_searches(&world, BASE, 10, true, &[], &[]);
+        assert!(world.prove_facts(&world.request_answers(&resolve), &facts).unwrap_err().contains("world"));
+        let moved = QueryDb::default();
+        let (_, resolve) = open_with_searches(&moved, BASE, 9, false, &[], &[]);
+        assert!(moved.prove_facts(&moved.request_answers(&resolve), &facts).unwrap_err().contains("resource searches"));
     }
 
     #[test]

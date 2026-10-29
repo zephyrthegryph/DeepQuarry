@@ -44,7 +44,6 @@
 	var/obj/item/clothing/head/hat = null // The hat the Sakimm may be wearing.
 	var/static/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
 	var/randomize_size = TRUE
-	species_sounds = "Raccoon"
 
 /mob/living/simple_mob/animal/sif/sakimm/verb/remove_hat()
 	set name = "Remove Hat"
@@ -111,6 +110,7 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	configure(living_rules(species_sounds = "Raccoon"))
 	configure(living_rules(say_list_type = /datum/say_list/sakimm, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_amount = 3))
 	configure(mob_rules(universal_understand = 1))

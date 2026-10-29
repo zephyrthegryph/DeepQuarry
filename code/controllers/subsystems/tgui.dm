@@ -618,7 +618,8 @@ CAPABILITIES(/datum/system/tgui)
  * required ui datum/tgui The UI to be added.
  */
 /datum/system/tgui/proc/on_open(datum/tgui/ui)
-	ui.user?.tgui_open_uis |= ui
+	if(ui.user)
+		LAZYOR(ui.user.tgui_open_uis, ui)
 	LAZYOR(ui.src_object().open_tguis, ui)
 	rel_add(src, nameof(all_uis), ui)
 	sync_autoupdate(ui)
@@ -638,7 +639,7 @@ CAPABILITIES(/datum/system/tgui)
 	rel_remove(src, nameof(autoupdating), ui)
 	// If the user exists, remove it from them too.
 	if(ui.user)
-		ui.user.tgui_open_uis -= ui
+		LAZYREMOVE(ui.user.tgui_open_uis, ui)
 	if(ui.src_object())
 		LAZYREMOVE(ui.src_object().open_tguis, ui)
 	return TRUE

@@ -52,7 +52,7 @@
 /datum/dq_preview_flattener
 	/// Set to a reason string when the appearance can't be expressed exactly.
 	var/unsupported
-	/// "\ref[runtime icon]" -> on-disk DMI copy, shared by every direction of one render.
+	/// runtime icon file -> on-disk DMI copy, shared by every direction of one render.
 	var/list/runtime_paths
 
 /// A sprite object in the rust-g iconforge format. Always frame 1, like getFlatIcon(no_anim = TRUE).
@@ -75,9 +75,8 @@
 			return null
 		return icon_string
 	// Runtime-generated icon (a dyn.rsc cache reference). Copy it to disk under its hash.
-	var/ref_key = "\ref[icon_ref]"
-	if(LAZYACCESS(runtime_paths, ref_key))
-		return LAZYACCESS(runtime_paths, ref_key)
+	if(LAZYACCESS(runtime_paths, icon_ref))
+		return LAZYACCESS(runtime_paths, icon_ref)
 	dq_preview_ensure_dirs()
 	var/staging = "[DQ_PREVIEW_RUNTIME_ICON_DIR]staging-[rand(1, 999999)].dmi"
 	if(!fcopy(icon_ref, staging))
@@ -88,7 +87,7 @@
 	if(!rustg_file_exists(path))
 		fcopy(staging, path)
 	fdel(staging)
-	LAZYSET(runtime_paths, ref_key, path)
+	LAZYSET(runtime_paths, icon_ref, path)
 	return path
 
 /// Number of dirs an icon state has, from rust-g metadata. Null (and unsupported) if unknown.
@@ -301,6 +300,9 @@
 		flat.Scale(max(1, round(flat.Width() * scale_x)), max(1, round(flat.Height() * scale_y)))
 	return icon2base64(flat)
 
+/// Preview sheet numbers: each rendered direction gets its own sheet name.
+SERIAL_DEF(preview_sheet, 1, FALSE)
+
 /**
  * Starts a preview render. `sprites` (dir key -> iconforge sprite) is composited
  * by rust-g off-thread; `ready` (key -> base-64) holds parts already done
@@ -313,11 +315,10 @@
 	if(!length(sprites))
 		dq_apply_preview_result(generation, ready)
 		return generation
-	var/static/job_serial = 0
 	dq_preview_ensure_dirs()
 	var/list/jobs = list()
 	for(var/dir_key in sprites)
-		var/sheet_name = "preview_[++job_serial]_[dir_key]"
+		var/sheet_name = "preview_[next_serial(preview_sheet)]_[dir_key]"
 		var/job_id = rustg_iconforge_generate_async(DQ_PREVIEW_JOB_DIR, sheet_name, json_encode(list("preview" = sprites[dir_key])), FALSE, FALSE, TRUE)
 		jobs[dir_key] = list(job_id, sheet_name)
 	dq_preview_jobs_in_flight++
@@ -438,6 +439,7 @@ CAPABILITIES(/datum/dq_preview_poll)
 	LAZYINITLIST(character_preview_b64)
 	for(var/key in result)
 		set_character_preview_b64_at(key, result[key])
+	set_dq_preview_version(dq_preview_version + 1)
 	dq_schedule_data_push()
 	return TRUE
 

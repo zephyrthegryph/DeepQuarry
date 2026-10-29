@@ -1179,3 +1179,90 @@ carried ones by answer hash; only units whose recorded answers must be compared 
 number of units the edit invalidates (hundreds) times one decode of a few KB, under 20 ms, against a 5 s edit. Not started:
 it needs slice 1's census to size the stub threshold, and the equivalence run to prove a spilled unit validates exactly as a
 resident one.
+
+## Frontend memory proposals (2026-10-27, lane `perf/dmb-frontend-mem*`)
+
+Measured with the allocation-sites build run from its own target directory (the `.pdb` must sit next to the executable, or every
+site reads as unattributed). Owner shares move by about 40 MB between two probes of the same tree, so a change under that size is
+not visible in the owner table; compare `requested-live`.
+
+Landed: directive text runs, shared directive-record source, walk vector slack, expansion `Line` packing (game -234 MB, test extra
+-71 MB), then `prepared_source` viewing the original text for lines comments do not touch and releasing expansion text slack
+(game -61 MB, test extra -30 MB). Cold `.dmb` output byte-identical in both.
+
+Proposals that need a design decision, not a local edit:
+
+* **Adapter `canonical` bytes (about 60 MB, `adapter.rs` var initializers).** `MemberMetadata.canonical` is the serialized token
+  stream of the member header or initializer, kept next to the `SymbolicExpression` tokens that carry the same text. It is part of
+  the metadata's identity (`dm-ir` `declarations.rs` writes it into the canonical form, `adapter.rs` hashes it into `content`), so
+  it cannot simply be dropped. Option: derive it on demand from the tokens and the symbol table, and keep only the 128-bit
+  `content` hash; every reader of `.canonical` (dm-ir identity, `modified_instance`, `portable_meaning`) then needs the symbol
+  table at hand. Needs the owners of the metadata identity to agree on a derive-not-store rule.
+* **`MacroExpansion` repack (`trace_arena`, about 49 MB).** Each emitted line with expansions holds an `Arc<Vec<MacroExpansion>>`
+  of name `Arc`, invocation span, chain `Arc` and an optional definition origin `Arc` (about 48 bytes per trace plus the vector).
+  Replace by u32 name and chain ids into the region's `TraceArena` plus u32 spans, with the arena kept alive by the output rows.
+  Changes the `MacroExpansion` type every origin reader uses.
+* **Parse fragment payloads (about 247 MB, the largest unattributed site: `frontend_parse.rs` `Arc::from(bytes)` of the
+  `parserwire` encoding).** One `Arc<[u8]>` per declaration chunk is shared by the `FragmentRecord` and the declaration state
+  (`new_shared_source`), so compressing it in one holder saves nothing. Option: store it deflated in both with one decode in
+  `decode_with_facts`; the serialized AST is highly repetitive. Needs a warm-edit measurement before adopting (a decode per
+  reparse), and a `FRAGMENT_VERSION` bump.
+* **`joined_text` (about 60 MB)** is the memoized ordered join of every expansion output, kept deliberately so an unchanged
+  emission skips the join; it is not leaked. Dropping it trades the memory for a 60 MB copy per warm build.
+### Content-addressed sharing across sessions: plan (2026-10-27, lane `compiler/key-pool`)
+
+**Finding.** A second worktree with byte-identical files (other path only) still adds +1.39 GB (game session 4.81, test variant
++2.42). Only the memoized expansion records, answer values, artifact cores and output images are shared today, and they are
+shared because each was given a pool by hand. Everything built around them is rebuilt per session from equal inputs: the answer
+table slots (`RequestAnswers` 67 MB), `MetadataDependencies` 54, procedure rows 49, classification keys and rosters 49,
+`frame_contribution` 46, macro environments 36, word lists 36, link tables 33, member arena 32.
+
+**Rule.** A value a session builds from inputs that hash equal is one allocation, found through a process-wide weak pool keyed by
+the content digest and decided by the bytes (the pattern of `output_pool.rs`, `RecordPool` below). Nothing path-bearing is part
+of the identity: definition origins are project-relative (landed), and a value that still names an absolute path is relativized
+when it is built, or kept per session.
+
+**Layers, in order.**
+1. *Keys and leaves* (tried, **taken out**): a weak content pool for the artifact key bytes (classification, lowering, symbolic
+   shared keys). Same-session A/B on the identical-worktree probe (master with the other lanes' savings: game 4.82 GB, test
+   +1.29, second worktree +1.24): the second worktree -40 MB, the test variant +14 MB, but the game session +75 MB, because the
+   pool's own table (a digest and a weak handle per key, about a million keys) costs more than the shared bytes save. A pool
+   per key is the wrong grain; share the table that holds the keys (layers 2 and 3) instead.
+2. *Answer table*: split `AnswerSlot` into the immutable `(id -> Arc<AnswerValue>)` part, shared per tree digest (equal trees give
+   equal answers; the tree identity is already a content digest) and a per-session overlay of the mutable request, stamp,
+   born/changed and base fields. A session at the same tree digest as another starts from the shared map and copies on first
+   write. Expected: `RequestAnswers` 67 -> about 15 MB per extra identical session.
+3. *Derived tables* (`MetadataDependencies`, procedure rows, member arena, frame contribution, link tables): each is a pure
+   function of the tree digest plus its inputs, so they are built once per digest and held by `Arc`, with the per-session
+   difference (the dirty set) kept beside them. Each is its own slice, measured on the identical-worktree probe first.
+4. *Test variant*: the same pools apply with the variant's own digest; only values whose inputs differ are new.
+
+**Proof per slice.** Cold output byte-identical to the previous binary, `shared_store_equiv.sh` EQUIVALENT, identical-worktree
+probe (A, test, B0) for the second-worktree extra, warm-edit speed on a quiet machine.
+
+### Answer table across define variants: measured (2026-10-27, lane `compiler/answer-replace`)
+
+`BuildHost` holds one `QueryDb` and `switch_variant` does not stash it. Counters printed at each request start
+(`DMB_MEM_MARKS=1`: resolved, carried, replaced slots, slot count, answer-value pool outcomes) on game, test, game, test, game in
+one daemon: a request replaces at most 145 slots, so the test request does not overwrite the game's answers; the answer-value pool
+(one instance) finds almost nothing for the test variant when the table is shared (`same` ~70 of 1.26M interns).
+Stashing the table per variant (tried): the pool then finds the game's values for the test request (`same` 110k) and the
+second test visit is a `patch` (37 s) instead of `full` (38-61 s), but steady-state memory after the five requests is +0.5 GB
+(7.06 against 6.53 GB requested), so it is not taken. Warm switches cost 25-60 s in every arrangement measured (patch
+sessions of 25-37 s, not the 5 s of a body edit), so the variant switch has a cost that is not the answer table; it needs a
+per-stage profile of a game -> test -> game sequence before anything else is changed.
+
+### Game -> test switch patches again (2026-10-28, lane `compiler/switch-decline`)
+
+Diagnosis: a switch of define set clears the answer table (project key changed), and `patch` then required either valid marks
+(dropped by the clear) or `base.restored`. The retained test output held 3838 resource searches in its facts while the cleared
+table held none ("world equal, 0 of 3838 resource searches as retained (retained output held 3838, this request 0)"), so the
+patch was declined and the whole program rebuilt (initializers 1.8 s, lowering 2.2, symbolic linking 2.9, composition 2.6).
+Test -> game did not decline because the game output's facts hold no searches. The facts path (`prove_facts`: same declarations,
+same answer world, each stored search asked again) that proves an output restored from storage is exactly what an output whose
+marks were dropped needs, so it now also runs when the base kept facts and its marks no longer stand (`QueryDb::marks_stand`).
+Matched, back to back, same machine (game/test alternating, 7 requests; walls of the game -> test switches): before 14.7 s and
+24.9 s (both declined), after 8.1 s and 9.7 s (patch, "3838 resource searches asked again, none differ"); test -> game
+10.1/6.9/9.2 s before, 7.7/6.1/12.0 s after (unchanged within noise); private bytes equal (about 8.0 GB). Proof:
+`shared_store_equiv.sh` EQUIVALENT for the standard run and for game/test alternating three times on one root; `cargo test -p dmbc
+--lib` 1107 passed.

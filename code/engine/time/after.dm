@@ -89,10 +89,13 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		if(isnull(handler_args[position]))
 			log_qdel("OM: timer [handler] dropped: argument [position] no longer exists")
 			return
+	var/census_start = GLOB.census_on ? TICK_USAGE_REAL : null
 	if(deferred_proc_is_global(handler))
 		call(handler)(arglist(handler_args || list()))
 	else
 		call(holder, handler)(arglist(handler_args || list()))
+	if(!isnull(census_start))
+		census_timer_note(holder, handler, TICK_DELTA_TO_MS(TICK_USAGE_REAL - census_start))
 
 /**
  * The one timer (the third time form, next to timed_set() and COOLDOWN_*): calls `handler` after `delay`

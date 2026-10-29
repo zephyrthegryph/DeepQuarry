@@ -125,10 +125,10 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		GLOB.timer_fire_quiet = TRUE // a skipped run changed nothing of the holder's
 	if(!gated && A.runs && !GLOB.every_gate_faulted && activation_every_parkable(A, E))
 		LAZYOR(A.every_parked, E.sig) // parked: no timer until its gate publishes true (activation_every_wake())
-		GLOB.every_activation_parks++
+		GLOB.every_activation_parks.n++
 		return
 	if(gated)
-		GLOB.every_activation_runs++
+		GLOB.every_activation_runs.n++
 	if(gated && E.args["members"])
 		every_members_start(holder, A, E)
 		return
@@ -145,8 +145,8 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		activation_every_arm(A, E)
 
 /// Activation every() runs (its handler ran) and parks since boot: what a test reads to see work stop while its gate is false.
-GLOBAL_VAR_INIT(every_activation_runs, 0)
-GLOBAL_VAR_INIT(every_activation_parks, 0)
+GLOBAL_COUNTER(every_activation_runs)
+GLOBAL_COUNTER(every_activation_parks)
 
 /datum/activation
 	/// The signatures of the every() entries of this activation parked behind their false `when =` (no timer is pending for them).
@@ -229,11 +229,25 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 		if(type_every_parkable(holder, C) && !type_every_gate(holder, C))
 			type_every_park(holder, index)
 			continue
-		type_every_schedule(holder, C, index)
+		type_every_schedule(holder, C, index, TRUE)
 
-/proc/type_every_schedule(datum/holder, datum/centry/C, index)
+/// The first delay of a type-level every() of `interval`, spread: map load arms a type's instances on one tick and an exact interval would make them all
+/// run on one tick for the rest of the round (the burst ticks of an idle station). Intervals under TYPE_EVERY_PHASE_MIN are left alone. The phase
+/// comes from a golden-ratio sequence (an even spread, no random stream used); the run after the first keeps the interval, so the offset stays.
+/proc/type_every_phase(interval)
+	if(interval < TYPE_EVERY_PHASE_MIN)
+		return interval
+	var/static/phase = 0
+	phase += 0.6180339887
+	phase -= round(phase)
+	return max(1 TICKS, round(interval * (TYPE_EVERY_PHASE_FLOOR + (1 - TYPE_EVERY_PHASE_FLOOR) * phase), 1 TICKS))
+
+/proc/type_every_schedule(datum/holder, datum/centry/C, index, phased = FALSE)
 	var/datum/entry/E = C.item
-	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index), keeps_dead = TRUE)
+	var/delay = every_interval(holder, E)
+	if(phased)
+		delay = type_every_phase(delay)
+	after(holder, delay, GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index), keeps_dead = TRUE)
 
 /// TRUE when the type-level every() `C` is held by its own `when =` alone (no enclosing when() block) and that condition is built only of tracked vars of the
 /// holder (nameof(var), not/all_of/any_of of those): every write of such a var publishes, so the every() PARKS while the condition is false (no timer

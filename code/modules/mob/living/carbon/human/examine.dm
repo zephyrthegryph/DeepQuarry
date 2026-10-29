@@ -109,8 +109,8 @@
 /mob/living/carbon/human/proc/examine_name_ender(skip_gear, skip_body, looks_synth)
 	if((skip_gear & EXAMINE_SKIPJUMPSUIT) && (skip_body & EXAMINE_SKIPFACE))
 		return ""
-	if(custom_species)
-		return ", a " + span_bold("[src.custom_species]")
+	if(bio.custom_species)
+		return ", a " + span_bold("[bio.custom_species]")
 	if(looks_synth)
 		var/use_gender = "a synthetic"
 		if(gender == MALE)
@@ -437,7 +437,7 @@
 	if(!show_pudge() || !vore_prefs.weight_message_visible) //Some clothing or equipment can hide this.
 		return ""
 	var/message = ""
-	var/weight_examine = round(weight)
+	var/weight_examine = round(sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT))
 	switch(weight_examine)
 		if(0 to 74)
 			message = vore_prefs.weight_messages[1]

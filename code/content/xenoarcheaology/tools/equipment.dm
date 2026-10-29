@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/clothing/head/bio_hood/anomaly)
 	icon_state = "cespace_suit"
 	item_state = "cespace_suit"
 	armor_spec = "bio=100;rad=100;cold=60"
-	slowdown = 1
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 	// Pressure protection inherited from space suits
 
 

@@ -380,6 +380,9 @@ CAPABILITIES(/obj/machinery/blackbox_recorder)
 		rows += list(list(FV.get_variable(), FV.get_value(), FV.get_details()))
 	io_job(null, /datum/io_backend/sql, "SELECT MAX(round_id) AS round_id FROM erro_feedback", null, /proc/blackbox_write_feedback_rows, rows)
 
+/// The erro_feedback round numbers: a saved sequence, seeded from the highest round the table holds.
+SERIAL_DEF(feedback_round, 1, TRUE)
+
 /// io_job() callback: writes the blackbox's captured feedback rows under the next round id.
 /proc/blackbox_write_feedback_rows(list/result, error, list/rows)
 	if(error)
@@ -390,7 +393,10 @@ CAPABILITIES(/obj/machinery/blackbox_recorder)
 		round_id = row[1]
 	if(!isnum(round_id))
 		round_id = text2num(round_id)
-	round_id++
+	if(!isnum(round_id))
+		round_id = 0 // an empty table: the first round is 1
+	round_id = serial_seed(feedback_round, round_id)
+	round_id = next_serial(feedback_round)
 	for(var/list/row in rows)
 		sql_write("INSERT INTO erro_feedback VALUES (null, Now(), :round_id, :fv_variable, :fv_value, :fv_details)", list("round_id" = round_id, "fv_variable" = row[1], "fv_value" = row[2], "fv_details" = row[3]))
 

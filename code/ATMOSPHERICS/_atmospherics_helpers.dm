@@ -22,12 +22,18 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	machine.debug = !machine.debug
 	to_chat(user, span_debug_info("[machine]: Debug messages toggled [machine.debug? "on" : "off"]."))
 
+/// A device's flow reading, written only when the value its gauge and window show (one decimal) changes: a settled station's vents reported a
+/// slightly different flow every frame, and each tracked write is published, re-derived and redrawn (8,700 writes in 138 s of idle on one vent type).
+/proc/atmos_note_flow_rate(obj/machinery/atmospherics/device, rate)
+	if(round(rate, 0.1) != round(device.last_flow_rate, 0.1))
+		device.set_last_flow_rate(rate)
+
 /// The flow meter and debug line of a move that happened: `moved` is the list vg_pump()/vg_scrub() returned,
 /// list(moles, power_draw, flow_volume).
 /proc/atmos_note_flow(obj/machinery/M, list/moved)
 	if(istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.set_last_flow_rate(moved[3])
+		atmos_note_flow_rate(A, moved[3])
 		if(A.debug)
 			A.visible_message("[A]: moles transferred = [moved[1]] mol, power = [round(moved[2], 0.1)] W")
 	else if(istype(M, /obj/machinery/portable_atmospherics))

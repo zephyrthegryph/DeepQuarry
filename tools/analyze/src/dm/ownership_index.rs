@@ -84,6 +84,7 @@ pub const HANDLE_OK: &[&str] = &[
     "code/engine/refs/containment/",
     "code/datums/containment/stock.dm",
     "code/modules/unit_tests/",
+    "code/tests/unit_tests/",
 ];
 
 pub const ENTITY_ROOTS: &[&str] = &["/datum", "/atom", "/obj", "/mob", "/turf"];

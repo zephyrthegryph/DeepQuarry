@@ -5,9 +5,6 @@
 	VAR_PROTECTED/possible_transfer_amounts = REFINERY_DEFAULT_TRANSFER_AMOUNTS
 	VAR_PROTECTED/reagent_type = /datum/reagents
 
-/obj/machinery/reagent_refinery/Initialize(mapload)
-	. = ..()
-
 // its reagents are flushed.
 /obj/machinery/reagent_refinery/on_destroy(force)
 	reagent_flush()

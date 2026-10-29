@@ -1,0 +1,506 @@
+// Unit tests for the DQ combat AI framework.
+//
+// Coverage:
+//   - static audits of behaviors (flyweight, well-formed, player verbs)
+//   - faction registry
+//   - runtime brain spawn on simple_mob Initialize
+//   - target / threat promotion (give_target, damage notify, forget)
+//   - faction vs. personal disposition resolution
+//   - item-granted behavior declaration
+//
+// This file is #included from code/modules/unit_tests/_unit_tests.dm so the
+// TEST_ASSERT* macros are in scope. The combat_ai defines header is re-included
+// here (DM dedupes identical includes) because the test block compiles before
+// the combat_ai framework includes later in the DME.
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+#include "../../modules/combat_ai/_defines.dm"
+
+// Test-only mob with a fixed modern-AI behavior set, so these tests don't
+// depend on any shipped creature's tuning.
+/mob/living/simple_mob/combat_ai_test_subject
+	name = "combat AI test subject"
+	icon = 'icons/mob/animal.dmi'
+	icon_state = "tiger"
+	icon_living = "tiger"
+	icon_dead = "tiger-dead"
+	faction = FACTION_CREATURE
+	endurance = 90
+	melee_damage_lower = 8
+	melee_damage_upper = 14
+	movement_cooldown = 2
+	has_hands = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/combat_ai_test_subject)
+	configure(living_rules(use_modern_ai = TRUE))
+	configure(mob_nature(can_pain_emote = FALSE))
+	configure(mob_kind(attack_cooldown = 1.2 SECONDS))
+
+TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_behaviors, list( \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/threaten, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/charge_slam, \
+	/datum/ai_behavior/flee_low_hp, \
+	/datum/ai_behavior/idle_wander, \
+))
+
+TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selectors, list( \
+		/datum/target_selector/prefer_players, \
+		/datum/target_selector/closest, \
+	))
+
+// --- static: behaviors are flyweights ----------------------------------
+
+/datum/unit_test/dq_combat_ai_spatial_sleep_wakes
+
+/datum/unit_test/dq_combat_ai_spatial_sleep_wakes/Run()
+	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob)
+	M.forceMove(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/datum/ai_brain/B = M.ai_brain
+	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
+	rel_clear(B, nameof(B.primary_threat))
+	B.active_behavior_type = null
+	TEST_ASSERT(B.park_calm(), "calm brain refused to park")
+	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "a parked brain remained awake")
+	// Somebody walks in: the pack, which watches the chunks around its members, perceives it and wakes the brain.
+	var/mob/living/visitor = allocate(/mob/living, run_loc_floor_top_right)
+	var/wakes = B.wakes
+	visitor.forceMove(M.loc)
+	B.pack.perceive(TRUE)
+	// Not loop_running(): a woken calm brain with nothing to do is due at once and may park again before this line runs.
+	TEST_ASSERT(B.wakes > wakes, "a mob arriving near a parked brain did not wake it")
+// dq_get_behavior(T) must return the same singleton across calls — the
+// flyweight contract is what makes per-mob state on brain.behavior_state /
+// source items work. A bug that returned a fresh instance per call would
+// break cooldowns silently.
+
+/datum/unit_test/dq_combat_ai_behaviors_are_flyweight
+
+/datum/unit_test/dq_combat_ai_behaviors_are_flyweight/Run()
+	for(var/T in subtypesof(/datum/ai_behavior))
+		var/datum/ai_behavior/A = dq_get_behavior(T)
+		var/datum/ai_behavior/B = dq_get_behavior(T)
+		TEST_ASSERT(A == B, "dq_get_behavior([T]) returned two different instances")
+		TEST_ASSERT(istype(A, T), "dq_get_behavior([T]) returned wrong type [A.type]")
+
+
+// --- static: every behavior has a non-default name and a valid priority --
+// Behaviors with name = "abstract behavior" leak into the player verb
+// dropdown as garbage. priority_class outside the defined enum will sort
+// strangely against innate vs override picks.
+
+/datum/unit_test/dq_combat_ai_behaviors_well_formed
+
+/datum/unit_test/dq_combat_ai_behaviors_well_formed/Run()
+	var/list/failures = list()
+	for(var/T in subtypesof(/datum/ai_behavior))
+		var/datum/ai_behavior/B = dq_get_behavior(T)
+		if(B.name == "abstract behavior")
+			failures += "[T] has default name"
+		if(B.priority_class < DQ_BEHAVIOR_PRIORITY_BACKGROUND || B.priority_class > DQ_BEHAVIOR_PRIORITY_INTERRUPT)
+			failures += "[T] has invalid priority_class [B.priority_class]"
+		if(B.target_kind != DQ_TARGET_NONE && B.target_kind != DQ_TARGET_MOB && B.target_kind != DQ_TARGET_TURF && B.target_kind != DQ_TARGET_ITEM && B.target_kind != DQ_TARGET_SELF)
+			failures += "[T] has invalid target_kind [B.target_kind]"
+	if(length(failures))
+		TEST_FAIL("behaviors malformed: [jointext(failures, "; ")]")
+
+
+// --- static: item-granted behaviors must not declare brain-managed cooldowns ---
+// brain.set_cooldown short-circuits when source != null (the source item owns
+// its own cooldown). A behavior with requires_held_source = TRUE and
+// cooldown != 0 would silently never cool down — its cooldown field is a lie.
+// Behaviors that need a real cooldown must gate via the source item's state
+// (e.g. gun.next_fire_time, grenade.active).
+
+/datum/unit_test/dq_combat_ai_item_granted_behaviors_have_no_brain_cooldown
+
+/datum/unit_test/dq_combat_ai_item_granted_behaviors_have_no_brain_cooldown/Run()
+	var/list/failures = list()
+	for(var/T in subtypesof(/datum/ai_behavior))
+		var/datum/ai_behavior/B = dq_get_behavior(T)
+		if(B.requires_held_source && B.cooldown != 0)
+			failures += "[T] sets cooldown = [B.cooldown] but requires_held_source = TRUE; brain.set_cooldown will silently no-op"
+	if(length(failures))
+		TEST_FAIL("item-granted behaviors with brain cooldowns: [jointext(failures, "; ")]")
+
+
+// --- static: every player-castable behavior returns a complete info list -
+// The Use-Combat-Move dispatcher reads info["name"] / "auto_target" /
+// "category". A missing key would show a blank entry or break target
+// resolution. We don't enforce "desc" because verb tooltips degrade
+// gracefully.
+
+/datum/unit_test/dq_combat_ai_player_verbs_well_formed
+
+/datum/unit_test/dq_combat_ai_player_verbs_well_formed/Run()
+	var/list/failures = list()
+	for(var/T in subtypesof(/datum/ai_behavior))
+		var/datum/ai_behavior/B = dq_get_behavior(T)
+		var/list/info = TYPE_TABLE_GET(B, get_player_verb_info)
+		if(!info)
+			continue
+		if(!info["name"])
+			failures += "[T].get_player_verb_info missing 'name'"
+		if(!("auto_target" in info))
+			failures += "[T].get_player_verb_info missing 'auto_target'"
+	if(length(failures))
+		TEST_FAIL("player verbs malformed: [jointext(failures, "; ")]")
+
+
+// --- static: faction registry builds with every faction_key -----------
+// dq_build_faction_registry runs on the first faction lookup. If a /datum/faction_data
+// subtype has a faction_key but isn't registered, lookups fall through to
+// the default datum and the relationships are silently ignored.
+
+/datum/unit_test/dq_combat_ai_faction_registry_populates
+
+/datum/unit_test/dq_combat_ai_faction_registry_populates/Run()
+	dq_build_faction_registry()
+	var/list/expected_keys = list()
+	for(var/T in typesof(/datum/faction_data))
+		var/datum/faction_data/template = T
+		var/key = initial(template.faction_key)
+		if(key)
+			expected_keys += key
+	for(var/key in expected_keys)
+		TEST_ASSERT(GLOB.dq_faction_data[key], "faction [key] not registered in dq_faction_data")
+		var/datum/faction_data/got = GLOB.dq_faction_data[key]
+		TEST_ASSERT(istype(got), "faction [key] entry [got] is not a /datum/faction_data")
+
+
+// --- runtime: brain spawns on simple_mob Initialize -------------------
+// The /mob/living re-open at the bottom of mob_living.dm calls
+// initialize_ai_brain after the parent chain. simple_mob.use_modern_ai is
+// TRUE by default, so any vanilla simple_mob should come up with a brain.
+
+/datum/unit_test/dq_combat_ai_brain_spawns_on_simple_mob
+
+/datum/unit_test/dq_combat_ai_brain_spawns_on_simple_mob/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	TEST_ASSERT_NOTNULL(S.ai_brain, "combat_ai_test_subject spawned without an ai_brain")
+	TEST_ASSERT(S.ai_brain.holder == S, "brain.holder doesn't point back to the mob")
+	TEST_ASSERT_NOTNULL(S.ai_brain.model, "brain.model wasn't created")
+	TEST_ASSERT(length(S.ai_brain.target_selector_chain), "brain has no target_selector_chain")
+
+
+// --- runtime: give_target sets primary_threat and a personal HOSTILE ---
+// Public API for telling a brain "fight this thing." Used by capture
+// crystal, taming pacifiers, vore mob anger triggers, etc.
+
+/datum/unit_test/dq_combat_ai_give_target_sets_threat
+
+/datum/unit_test/dq_combat_ai_give_target_sets_threat/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	S.ai_brain.give_target(H)
+	TEST_ASSERT_EQUAL(S.ai_brain.primary_threat, H, "give_target didn't set primary_threat")
+	// Personal entry should exist and mark them HOSTILE.
+	TEST_ASSERT(S.ai_brain.check_attacker(H), "give_target didn't add a personal HOSTILE entry")
+
+
+// --- runtime: forget_everything wipes targets and personal ------------
+// Used by technomancer control / release, by tame potions, by despawn
+// cleanups.
+
+/datum/unit_test/dq_combat_ai_forget_clears_state
+
+/datum/unit_test/dq_combat_ai_forget_clears_state/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	S.ai_brain.give_target(H)
+	S.ai_brain.forget_everything()
+	TEST_ASSERT_NULL(S.ai_brain.primary_threat, "forget_everything left a primary_threat")
+	TEST_ASSERT(!S.ai_brain.check_attacker(H), "forget_everything left a personal entry")
+
+
+// --- runtime: damage routes through brain and promotes attacker -------
+// attack_generic is the simple_mob<->simple_mob fight path; damage_hooks.dm
+// re-opens it to call dq_notify_damage. The brain should add a personal
+// HOSTILE entry for the attacker even if it isn't already a threat.
+
+/datum/unit_test/dq_combat_ai_damage_promotes_attacker
+
+/datum/unit_test/dq_combat_ai_damage_promotes_attacker/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/simple_mob/combat_ai_test_subject/aggressor = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	// Faction-mates don't feud over friendly fire (should_retaliate_against()).
+	victim.ai_brain.notify_damage(10, INJURY_BLUNT, aggressor)
+	TEST_ASSERT(!victim.ai_brain.check_attacker(aggressor), "a faction-mate's hit shouldn't make it HOSTILE")
+	aggressor.faction = "combat_ai_test_other"
+	// Direct notify (the hook does the same after attack_generic).
+	victim.ai_brain.notify_damage(10, INJURY_BLUNT, aggressor)
+	TEST_ASSERT(victim.ai_brain.check_attacker(aggressor), "notify_damage didn't promote attacker to HOSTILE")
+
+
+// --- runtime: personal disposition wins over faction default ----------
+// Faction-mate would normally be ALLY. add_personal(HOSTILE) overrides
+// that, which is what makes "your buddy got drugged into attacking you"
+// work.
+
+/datum/unit_test/dq_combat_ai_personal_overrides_faction
+
+/datum/unit_test/dq_combat_ai_personal_overrides_faction/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/simple_mob/combat_ai_test_subject/mate = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	// Same faction → ALLY by default.
+	TEST_ASSERT_EQUAL(S.ai_brain.disposition_to(mate), DQ_DISPOSITION_ALLY, "same-faction default should be ALLY")
+	S.ai_brain.add_personal(mate, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "test")
+	TEST_ASSERT_EQUAL(S.ai_brain.disposition_to(mate), DQ_DISPOSITION_HOSTILE, "personal HOSTILE should override faction ALLY")
+
+
+// --- runtime: grenade declares throw_grenade as a granted behavior -----
+// The grant declarations are the contract the brain.rebuild_behaviors loop
+// reads. A broken declaration would silently strip the item-granted moves.
+
+/datum/unit_test/dq_combat_ai_grenade_grants_throw_behavior
+
+/datum/unit_test/dq_combat_ai_grenade_grants_throw_behavior/Run()
+	var/obj/item/grenade/G = allocate(/obj/item/grenade)
+	var/list/granted = TYPE_TABLE_GET(G, item_granted_behaviors)
+	TEST_ASSERT_NOTNULL(granted, "grenade returned null from item_granted_behaviors")
+	TEST_ASSERT(/datum/ai_behavior/throw_grenade in granted, "grenade doesn't grant /datum/ai_behavior/throw_grenade")
+
+
+// --- runtime: gun declares aimed_shot as a granted behavior -----------
+
+/datum/unit_test/dq_combat_ai_gun_grants_aimed_shot_behavior
+
+/datum/unit_test/dq_combat_ai_gun_grants_aimed_shot_behavior/Run()
+	var/obj/item/gun/G = allocate(/obj/item/gun)
+	var/list/granted = TYPE_TABLE_GET(G, item_granted_behaviors)
+	TEST_ASSERT_NOTNULL(granted, "gun returned null from item_granted_behaviors")
+	TEST_ASSERT(/datum/ai_behavior/aimed_shot in granted, "gun doesn't grant /datum/ai_behavior/aimed_shot")
+
+
+// --- runtime: brain.rebuild_behaviors actually merges held-item grants -
+// The grant declaration is meaningless unless the brain's per-tick rebuild
+// rolls the held items into effective_behaviors. This test exercises the
+// full path with a human (has hands) opted into the modern brain.
+
+/datum/unit_test/dq_combat_ai_rebuild_merges_held_grants
+
+/datum/unit_test/dq_combat_ai_rebuild_merges_held_grants/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.set_use_modern_ai(TRUE)
+	H.initialize_ai_brain()
+	TEST_ASSERT_NOTNULL(H.ai_brain, "brain wasn't created after opt-in re-init")
+	var/obj/item/grenade/G = allocate(/obj/item/grenade)
+	H.put_in_hands(G)
+	H.ai_brain.rebuild_behaviors()
+	TEST_ASSERT(/datum/ai_behavior/throw_grenade in H.ai_brain.effective_behaviors, "rebuild_behaviors didn't merge held grenade's granted behavior into effective_behaviors")
+	TEST_ASSERT_EQUAL(H.ai_brain.behavior_source(/datum/ai_behavior/throw_grenade), G, "throw_grenade's source isn't the grenade itself")
+
+
+// --- runtime: give_destination + tick walks the mob ------------------
+// give_destination plus a few ticks of walk_to_destination should at
+// least change the mob's position OR set the destination on the brain.
+
+/datum/unit_test/dq_combat_ai_give_destination_records_target
+
+/datum/unit_test/dq_combat_ai_give_destination_records_target/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	// The DQ test map doesn't ship the unit-test landmarks. Grab any
+	// simulated floor on z=1
+	// as a workable destination — give_destination just stores it.
+	var/turf/dest = null
+	for(var/turf/simulated/T in block(locate(1, 1, 1), locate(world.maxx, world.maxy, 1)))
+		dest = T
+		break
+	TEST_ASSERT_NOTNULL(dest, "no simulated floor available on z=1 for destination")
+	S.ai_brain.give_destination(dest)
+	TEST_ASSERT_EQUAL(S.ai_brain.destination(), dest, "give_destination didn't record the turf on the brain")
+
+
+// --- runtime: stop_active clears busy and marks selection dirty -------
+// Regression guard. The defensive busy=FALSE / selection_dirty=TRUE in
+// stop_active is what unsticks the brain if a behavior's start() runtimes
+// before clearing its own busy flag. Removing those lines would re-introduce
+// the freeze that the audit pass caught.
+
+/datum/unit_test/dq_combat_ai_stop_active_clears_busy
+
+/datum/unit_test/dq_combat_ai_stop_active_clears_busy/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	// Simulate a blocks_reselection behavior in flight.
+	S.ai_busy_begin()
+	TEST_ASSERT(S.ai_brain.is_busy(), "a hold claims the mob: its brain is busy")
+	S.ai_brain.selection_dirty = FALSE
+	S.ai_brain.active_behavior_type = /datum/ai_behavior/charge_slam
+	S.ai_brain.stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+	TEST_ASSERT(!S.ai_brain.is_busy(), "stop_active didn't end the busy hold")
+	TEST_ASSERT_EQUAL(S.ai_brain.selection_dirty, TRUE, "stop_active didn't set selection_dirty")
+	TEST_ASSERT_NULL(S.ai_brain.active_behavior_type, "stop_active didn't clear active_behavior_type")
+
+
+// --- runtime: on_holder_login adds the player dispatcher verb --------
+// The Use-Combat-Move verb is added lazily when a client takes over the mob
+// (via /datum/notice/mob_login). Test the handler directly — calling it adds the
+// verb. If the wiring breaks, possessed mobs silently lose their moves.
+
+/datum/unit_test/dq_combat_ai_login_adds_player_verb
+
+/datum/unit_test/dq_combat_ai_login_adds_player_verb/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	// AI-only mob: verb must NOT be present yet (would bloat verbs list of
+	// every wild critter).
+	TEST_ASSERT(!(/mob/living/proc/dq_use_combat_move in S.verbs), "verb was added before client login")
+	// Simulate the login signal handler firing.
+	S.ai_brain.on_holder_login(S)
+	TEST_ASSERT(/mob/living/proc/dq_use_combat_move in S.verbs, "on_holder_login didn't add the dispatcher verb")
+
+
+// --- runtime: set_attack_on_sight flips ai_attack_on_sight -------------------
+// Legacy callers (technomancer control, xenoarch effects, vore mobs)
+// write set_attack_on_sight(FALSE) to suppress aggression.
+
+/datum/unit_test/dq_combat_ai_set_hostile_flips_attack_on_sight
+
+/datum/unit_test/dq_combat_ai_set_hostile_flips_attack_on_sight/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	S.ai_attack_on_sight = TRUE
+	S.ai_brain.set_attack_on_sight(FALSE)
+	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, FALSE, "set_attack_on_sight(FALSE) didn't flip ai_attack_on_sight")
+	S.ai_brain.set_attack_on_sight(TRUE)
+	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, TRUE, "set_attack_on_sight(TRUE) didn't flip ai_attack_on_sight")
+
+
+// --- runtime: fast processing is combat-scoped ---------------------------
+
+/datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped
+
+/datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an idle AI brain is not on the calm cadence")
+	hunter.ai_brain.give_target(target, TRUE)
+	TEST_ASSERT(hunter.ai_brain.action_interval() <= DQ_ACTION_TICK, "an AI brain with a combat target is not on the action cadence")
+	hunter.ai_brain.lose_target()
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an AI brain stayed on the action cadence after losing its combat target")
+
+
+// --- runtime: aggro-on-damage: retaliate_to_attacker drives primary_threat ---
+//
+// Regression test for the three-symptom cluster reported after the combat-AI
+// merge. Before the fix:
+//   (a) notify_damage with a real attacker set last_attacker on the world model
+//       and personal HOSTILE, then dispatch_behavior_signal fired retaliate's
+//       on_signal → invalidate_selection, so on the next handle_tactics call
+//       pick_and_run would evaluate retaliate_to_attacker; BUT
+//   (b) update_primary_threat() ran on the PRECEDING slow tick and immediately
+//       cleared primary_threat because visible_hostiles was empty (attacker
+//       not in view() range). retaliate_to_attacker.start() then set
+//       primary_threat, which held until the NEXT slow tick, which cleared it
+//       again → mob never committed to an attack behavior for more than 250ms.
+//
+// After the fix: update_primary_threat respects the personal-HOSTILE entry
+// (set by notify_damage) and retains primary_threat while that entry lives,
+// so the mob stays locked on the out-of-view attacker for the duration.
+//
+// This test exercises both paths headlessly (no map, no slow tick):
+//   1. Damage in-view: primary_threat set and held.
+//   2. Damage out-of-view: primary_threat set and RETAINED after calling
+//      update_primary_threat with an empty visible_hostiles list.
+//   3. retaliate_to_attacker is in the test subject's behavior list.
+
+/datum/unit_test/dq_combat_ai_aggro_on_damage_out_of_view
+
+/datum/unit_test/dq_combat_ai_aggro_on_damage_out_of_view/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human)
+
+	TEST_ASSERT_NOTNULL(victim.ai_brain, "victim spawned without an ai_brain")
+
+	// Confirm retaliate_to_attacker is in the behavior list.
+	victim.ai_brain.rebuild_behaviors()
+	TEST_ASSERT(/datum/ai_behavior/retaliate_to_attacker in victim.ai_brain.effective_behaviors, \
+		"retaliate_to_attacker is not in combat_ai_test_subject effective_behaviors after rebuild")
+
+	// Simulate attacker hitting the victim (out of view — visible_hostiles is empty
+	// because we never ran update_perception and the mobs aren't on a live map).
+	victim.ai_brain.notify_damage(10, INJURY_BLUNT, attacker)
+
+	// notify_damage should: record last_attacker, add personal HOSTILE, invalidate selection.
+	TEST_ASSERT(victim.ai_brain.check_attacker(attacker), \
+		"notify_damage didn't add personal HOSTILE entry for attacker")
+
+	// Manually invoke update_primary_threat. visible_hostiles is empty (never populated
+	// by update_perception), so the old code would clear primary_threat here.
+	// First, let retaliate_to_attacker drive primary_threat by running pick_and_run directly.
+	victim.ai_brain.pick_and_run()
+	TEST_ASSERT_EQUAL(victim.ai_brain.primary_threat, attacker, \
+		"pick_and_run didn't set primary_threat to attacker via retaliate_to_attacker")
+
+	// Now simulate a second slow tick: update_primary_threat should start the
+	// grace timer but NOT clear the threat yet (lose_threat_at just got set).
+	victim.ai_brain.update_primary_threat()
+	TEST_ASSERT_EQUAL(victim.ai_brain.primary_threat, attacker, \
+		"update_primary_threat cleared primary_threat immediately on first tick after attacker left view — mob would freeze instead of pursuing")
+	TEST_ASSERT(victim.ai_brain.lose_threat_at > 0, \
+		"update_primary_threat didn't start the lose_threat_at grace timer")
+
+	// Sanity: once the grace period expires, the threat IS eventually released.
+	// Fast-forward the timer past the timeout by back-dating lose_threat_at.
+	victim.ai_brain.lose_threat_at = world.time - DQ_LOSE_THREAT_TIMEOUT - 1
+	victim.ai_brain.update_primary_threat()
+	TEST_ASSERT_NULL(victim.ai_brain.primary_threat, \
+		"update_primary_threat should clear primary_threat after DQ_LOSE_THREAT_TIMEOUT expires")
+
+
+// --- runtime: react_to_attack sets last_attacker on world model ----------
+// Regression guard for the null_holder runtime: react_to_attack must not
+// crash when called on a brain whose holder is null (Destroy in progress),
+// and must set model.last_attacker so retaliate_to_attacker.evaluate() works.
+
+/datum/unit_test/dq_combat_ai_react_to_attack_sets_last_attacker
+
+/datum/unit_test/dq_combat_ai_react_to_attack_sets_last_attacker/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human)
+
+	// react_to_attack is called from hit_with_weapon when a player swings a knife.
+	victim.ai_brain.react_to_attack(attacker)
+
+	// Should have set last_attacker on the world model.
+	TEST_ASSERT_EQUAL(victim.ai_brain.model.get_last_attacker(), attacker, \
+		"react_to_attack didn't record last_attacker on the world model — retaliate_to_attacker.evaluate() will return null")
+
+	// Should have set primary_threat (it was null before).
+	TEST_ASSERT_EQUAL(victim.ai_brain.primary_threat, attacker, \
+		"react_to_attack didn't set primary_threat when it was null")
+
+	// null-holder safety: calling react_to_attack after brain.holder = null must
+	// not runtime. Simulate the vore-eating case from the confirmed runtime log.
+	var/mob/living/simple_mob/combat_ai_test_subject/victim2 = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	victim2.ai_brain.holder = null  // Simulate partial Destroy / eaten state.
+	victim2.ai_brain.react_to_attack(attacker)  // Must not runtime.
+	// If we reach here, no crash — test passes implicitly.
+
+// --- runtime: a brain's path is a /datum/io/path request ---------------
+// smart_step_toward() asks the path system and steps directly until the answer lands in have_path(): the caller never waits.
+
+/datum/unit_test/dq_combat_ai_path_is_a_request
+
+/datum/unit_test/dq_combat_ai_path_is_a_request/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/turf/start = get_turf(S)
+	var/turf/goal = locate(start.x + 4, start.y, start.z)
+	TEST_ASSERT(isturf(goal), "the test block is wide enough")
+	var/datum/ai_brain/brain = S.ai_brain
+	brain.smart_step_toward(goal)
+	// The path system answers inside the call when the tick has room, else a few ticks later: either way one request, never more.
+	if(brain.path_pending)
+		TEST_ASSERT(!brain.smart_step_toward(goal), "a second call while the request waits asks nothing more and steps nothing")
+	for(var/waited in 1 to 100)
+		if(!brain.path_pending)
+			break
+		wait_ticks(1)
+	TEST_ASSERT(!brain.path_pending, "the path system answered")
+	TEST_ASSERT(length(brain.planned_path) >= 1 || brain.path_failed_at, "the answer is a cached path, or the failure backoff")
+	if(length(brain.planned_path))
+		TEST_ASSERT_EQUAL(brain.path_goal(), goal, "the path is to the asked goal")
+
+
+#endif

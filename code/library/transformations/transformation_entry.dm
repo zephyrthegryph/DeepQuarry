@@ -21,12 +21,16 @@
 //   makes         the terms produced.   The product of a reagent rule is its first reagent term.
 //   made          units per reaction unit that the tail is told were made when the rule has no product term (a rule that spawns things reports how many).
 //   data          TYPE_PROC_REF(/type, x): x(holder, extent) returns the data of the product, read before anything is taken.
+//   with_data     the constant data of the product (a paint's colour), for a rule whose data does not depend on the settle.
+//   data_from     data_from_reagent(id, key, default): the data of the product is `key` of the data the holder's reagent `id` carries (a paint takes the blood's colour), else `default`.
 //   energy        per_step(joules): booked once per step, into the air around the subject (heat_to = XFORM_HEAT_AIR, the default) or its own heat body.
 //   takes_ambient list(gas(id, moles)): gas taken from the air around the subject once per step.
 //   priority      PRIORITY_X: lower first. Within a priority the rules run in `order`, which is stamped from the declaration order (D5).
 //   capacity      CAPACITY_TRUNCATE (the only one built): a product that does not fit is clamped to the free volume, as chemistry always did (D10).
 //   says, plays   the message and the sound of a settle in which the rule fired (once per settle). says = "" says nothing.
 //   notice        a /datum/notice/transformed subtype to publish instead of the plain one.
+//   spawns        spawns(what, n, at, ...) or a list of them: the atoms a step makes (code/library/transformations/transformation_spawns.dm). Runs after the
+//                 energy and before `then`, in declaration order.
 //   then          TYPE_PROC_REF(/type, x): the bespoke tail, x(holder, made); counted by the lints. A reagent rule's tail is the legacy on_reaction().
 //   important     admin-visible when mixed (the legacy log_is_important).
 //   wiki          WIKI_X flags: what the in-game wiki and the handbooks do with the rule (hide it, file it under food or drinks).
@@ -50,13 +54,19 @@ STATIC_ENTRY(transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 
-/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null)
+/// A product whose data is one key of the data a reagent in the settled holder carries, else a default: `data_from = data_from_reagent(REAGENT_ID_BLOOD, "blood_colour", "#FE191A")`.
+/proc/data_from_reagent(reagent_id, key, default)
+	return list(reagent_id, key, default)
+
+/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, spawns = null, effects = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null,
+		with_data = null, data_from = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
-		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
-		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen, "crafted" = crafted))
+		"notice" = notice, "spawns" = spawns, "effects" = effects, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
+		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen, "crafted" = crafted, \
+		"with_data" = with_data, "data_from" = data_from))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
 /proc/half_life(ticks)
@@ -186,6 +196,10 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/yield = 1
 	var/floor = 2
 	var/data_proc
+	/// The constant data of the product (a paint's colour), or null: `with_data =`. Wins nothing over data_proc; a rule declares one of the two.
+	var/data_const
+	/// list(reagent id, key, default) from `data_from = data_from_reagent(...)`: the product's data is that key of the settled holder's reagent data, else the default.
+	var/list/data_from
 	var/energy = 0
 	var/heat_to = XFORM_HEAT_AIR
 	var/priority = PRIORITY_DEFAULT
@@ -197,6 +211,10 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/wiki = 0
 	var/notice_type = /datum/notice/transformed
 	var/then_proc
+	/// The compiled spawns() rows of the rule (xform_spawn_rows()), or null.
+	var/list/spawn_rows
+	/// The compiled sets_off() rows of the rule (xform_effect_rows()), or null.
+	var/list/effect_rows
 	var/important = FALSE
 	// ---- derived at compile ----
 	/// The first take's key: the index key.
@@ -361,6 +379,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	if(!isnull(arguments["floor"]))
 		X.floor = arguments["floor"]
 	X.data_proc = "[xform_proc_name(arguments["data"])]" // a proc name (text): "" when there is none
+	X.data_const = arguments["with_data"]
+	X.data_from = arguments["data_from"]
 	if(!isnull(arguments["energy"]))
 		X.energy = arguments["energy"]
 	if(arguments["heat_to"])
@@ -378,6 +398,20 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.notice_type = arguments["notice"]
 	X.then_proc = "[xform_proc_name(arguments["then"])]" // a proc name (text): "" when there is none
 	X.important = !!arguments["important"]
+	if(arguments["spawns"])
+		if(X.medium != MEDIUM_REAGENTS)
+			declare_report("[origin]: [type]: spawns() is built for the reagents medium only")
+			return null
+		X.spawn_rows = xform_spawn_rows(type, origin, arguments["spawns"])
+		if(!X.spawn_rows)
+			return null
+	if(arguments["effects"])
+		if(X.medium != MEDIUM_REAGENTS)
+			declare_report("[origin]: [type]: effects = sets_off() is built for the reagents medium only")
+			return null
+		X.effect_rows = xform_effect_rows(type, origin, arguments["effects"])
+		if(!X.effect_rows)
+			return null
 	X.wiki = arguments["wiki"] || 0
 	if(X.medium == MEDIUM_FIELD)
 		if(length(X.takes) >= 2)
@@ -429,7 +463,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.min_temp = X.bands[1][1]
 		X.max_temp = X.bands[1][2]
 	X.subject_type = text2path("[xform_cond_subject_type(X.holds)]") // a type path, or null
-	X.plain = !X.then_proc && !X.data_proc && !xform_cond_calls_proc(X.holds)
+	X.plain = !X.then_proc && !X.data_proc && isnull(X.data_const) && !X.data_from && !xform_cond_calls_proc(X.holds)
 	return X
 
 /// The medium a currency lives in, when a rule does not name one.

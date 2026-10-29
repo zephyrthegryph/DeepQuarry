@@ -5,7 +5,6 @@
 	icon = 'icons/turf/outdoors.dmi'
 	icon_state = "lava"
 	edge_blending_priority = -1
-	light_on = TRUE
 	movement_cost = 2
 	can_build_into_floor = TRUE
 	can_be_plated = FALSE

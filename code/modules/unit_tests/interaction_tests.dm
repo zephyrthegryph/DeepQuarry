@@ -121,9 +121,11 @@ CAPABILITIES(/atom/movable/unit_test_interaction_target)
 	var/break_calls = 0
 	var/fix_calls = 0
 
-/obj/machinery/unit_test_integrity_lifecycle/atom_break(damage_flag)
-	. = ..()
+/obj/machinery/unit_test_integrity_lifecycle/proc/count_break(datum/act/A)
 	break_calls++
+
+CAPABILITIES(/obj/machinery/unit_test_integrity_lifecycle)
+	on_notice(/datum/notice/atom_broken, then(PROC_REF(count_break)))
 
 /obj/machinery/unit_test_integrity_lifecycle/atom_fix()
 	. = ..()

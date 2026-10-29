@@ -7,8 +7,9 @@
 //!
 //! Rules:
 //! * `counter_id`: an id minted from a counter, `X++` / `++X` where the counter's name says it is an id (`*uid*`, `id`, `*_id`,
-//!   `next_*id`, `*_id_counter`, `*_id_ticker`, `id_assign`). Name the entity by `ref_token()`; a player-facing serial or record number
-//!   that is data, not a way to find the entity again, keeps its site with `// ALLOW(entity_ids): <why it is not a handle>`.
+//!   `next_*id`, `*_id_counter`, `*_id_ticker`, `id_assign`, `serial*`, `*_serial`). Name the entity by `ref_token()`; a player-facing serial or record number
+//!   that is data, not a way to find the entity again, is declared with `SERIAL_DEF(kind, first, persisted)` and taken with
+//!   `next_serial(kind)` (`code/engine/refs/serials.dm`): one logged counter per kind. A hand-rolled counter is a hard ban, with no baseline.
 //! * `ref_key`: a `REF()` / `ref()` text embedded in a list key (`L["[REF(x)]"]`, `L -= "a-[REF(x)]"`): the stored-text form `ref_text`
 //!   does not see. Key the list by `ref_token(x)`.
 //!
@@ -20,7 +21,7 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_DM};
 
 const H_COUNTER: &str = "do not mint an entity id from a counter: ref_token(D) is the one deletion-safe, round-stable handle (resolve_token(h) finds the entity \
-again, null once it is gone). A serial that is player-facing data keeps its site with ALLOW(entity_ids) and a reason. doc/rewrite/proposals/relations.md D9";
+again, null once it is gone). A serial that is player-facing data is a SERIAL_DEF kind taken with next_serial(kind) (code/engine/refs/serials.dm). doc/rewrite/proposals/relations.md D9a";
 const H_REF_KEY: &str = "do not key a list by a REF() text: it outlives its entity and can name the next one at that address; key it by ref_token(D). \
 doc/rewrite/proposals/relations.md D9";
 
@@ -37,7 +38,7 @@ static META: Meta = Meta {
             "Ad-hoc entity ids: counters minted as ids and REF() text list keys (doc/rewrite/proposals/relations.md D9). rule<TAB>file<TAB>normalized line.",
             "Shrink-only: after a sweep run `analyze baseline --update --lint entity_ids`; it drops fixed sites and never adds one.",
         ],
-        banned: &[],
+        banned: &["counter_id", "ref_key"],
     },
     rules: &[RuleMeta { name: "counter_id", hint: H_COUNTER }, RuleMeta { name: "ref_key", hint: H_REF_KEY }],
     allow: &[],
@@ -57,7 +58,7 @@ impl EntityIds {
     fn new() -> EntityIds {
         EntityIds {
             counter: Pat::new(r"(?:\+\+\s*(?:[A-Za-z_]\w*\.)?([A-Za-z_]\w*)|(?<![\w.])(?:[A-Za-z_]\w*\.)?([A-Za-z_]\w*)\s*\+\+)"),
-            id_name: Pat::new(r"(?i)(?:uid|^id$|_id$|^next_\w*id$|_id_(?:counter|ticker)$|^id_assign$)"),
+            id_name: Pat::new(r"(?i)(?:uid|^id$|_id$|^next_\w*id$|_id_(?:counter|ticker)$|^id_assign$|^(?:next_)?serial\w*$|_serial$)"),
             ref_key: vec![
                 Pat::new(r#"\[\s*"[^"\n]*\[\s*(?:REF|ref)\("#),
                 Pat::new(r#"(?<![+|])-=\s*"[^"\n]*\[\s*(?:REF|ref)\("#),
@@ -140,10 +141,12 @@ mod tests {
             "\tbrowser_id = \"[base]-[GLOB.managed_browser_id_ticker++]\"",
             "\t\tid++",
             "\tsrc.id = next_id++",
+            "\tserial = next_serial++",
+            "\tGLOB.card_serial++",
         ] {
             assert!(l.counter_id(hit), "{hit}");
         }
-        for miss in ["\tidx++", "\tgid++", "\tserial = ++next_serial", "\ttimes_idle++", "\tL[++L.len] = x", "\tvalid++"] {
+        for miss in ["\tidx++", "\tgid++", "\ttimes_idle++", "\tL[++L.len] = x", "\tvalid++"] {
             assert!(!l.counter_id(miss), "{miss}");
         }
     }

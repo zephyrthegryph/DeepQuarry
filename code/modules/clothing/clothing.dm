@@ -438,6 +438,7 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 
 
 /obj/item/clothing/head
+	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = DEVELOPER_WARNING_NAME // "Head"
 	icon = 'icons/inventory/head/item.dmi'
 	item_icons = list(
@@ -484,10 +485,7 @@ CAPABILITIES(/obj/item/clothing/head)
 	return OP_DECLINE
 
 /obj/item/clothing/head/proc/update_flashlight(mob/user = null)
-	set_light_on(!light_on)
-
-	if(atom_rules_of(src).light_system == STATIC_LIGHT)
-		update_light()
+	set_light_on(!light_on) // the setter reconciles the light source
 
 	user.update_mob_action_buttons()
 
@@ -589,7 +587,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
-	slowdown = SHOES_SLOWDOWN
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN)
 	var/overshoes = 0
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/feet/mob_teshari.dmi',

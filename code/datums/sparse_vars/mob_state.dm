@@ -24,13 +24,25 @@ sparse(/mob, skip_buckled_move_redirect, type = bool)
 sparse(/mob, get_rig_stats, type = num)
 sparse(/mob, m_int, type = text)
 sparse(/mob, vantag_hud, type = num)
+// Names of the genes switched on in this mob's DNA (/datum/gene/proc/mark_active).
+sparse(/mob, active_genes, type = list)
+// The sounds the mob's speech and emotes play (a pick from this list); set by preferences or login.
+sparse(/mob, voice_sounds_list, type = list)
+// The mob's own log, message type -> list of timestamped lines (log_message(); the admin player-log viewer reads it). Unused when database_logging is on.
+sparse(/mob, logging, type = list)
 sparse(/mob, narsimage, type = /image)
 sparse(/mob, narglow, type = /image)
 sparse(/mob, riftimage, type = /image)
 
 // /mob/living
 sparse(/mob/living, adminbus_eat_minerals, type = bool)
+// Reagent id -> addiction counter, for every addiction tracked (built up, active or in withdrawal): mob/living/carbon/addictions.dm.
+sparse(/mob/living/carbon, addiction_counters, type = list)
+// Body weight in pounds for the weightgain system; reads as DEFAULT_MOB_WEIGHT when unset (sparse_get_or / sparse_set_or).
+sparse(/mob/living, weight, type = num)
 sparse(/mob/living, body_effect_serial, type = num)
+// Body effect type -> list of timed-stack names (body_effect_stack_names()).
+sparse(/mob/living, body_effect_timers, type = list)
 sparse(/mob/living, last_instability, type = num)
 sparse(/mob/living, melee_swing_serial, type = num)
 sparse(/mob/living, ventcrawl_layer, type = num)

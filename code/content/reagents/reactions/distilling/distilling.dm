@@ -109,14 +109,8 @@ CAPABILITIES(/transformation/chem/distilling/berserkjuice)
 	configure(transformation(name = "Distilling Brute Juice", id = "distill_brutejuice",
 		takes = list(reagent(REAGENT_ID_BIOMASS, 1), reagent(REAGENT_ID_HYPERZINE, 3), reagent(REAGENT_ID_SYNAPTIZINE, 2), reagent(REAGENT_ID_PHORON, 1)),
 		makes = list(reagent(REAGENT_ID_BERSERKMED, 3)), energy = per_step(4 * 1000), holds = temperature_in(T0C + 600, T0C + 700),
-		then = TYPE_PROC_REF(/transformation/chem/distilling/berserkjuice, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_BLAST, chance = 1, blast = list(-1, list(-1, 1), list(1, 2), list(3, 5)))))
 
-
-/transformation/chem/distilling/berserkjuice/proc/on_reaction(datum/reagents/holder, created_volume)
-	if(prob(1))
-		var/turf/T = get_turf(holder.my_atom)
-		explosion(T, -1, rand(-1, 1), rand(1,2), rand(3,5))
-	return
 
 /transformation/chem/distilling/cryogel
 
@@ -125,17 +119,10 @@ CAPABILITIES(/transformation/chem/distilling/cryogel)
 		takes = list(reagent(REAGENT_ID_FROSTOIL, 7), reagent(REAGENT_ID_ENZYME, 3), reagent(REAGENT_ID_PLASTICIDE, 3), reagent(REAGENT_ID_FOAMINGAGENT, 2)),
 		blocked_by = list(reagent(REAGENT_ID_WATER, 5)), makes = list(reagent(REAGENT_ID_CRYOSLURRY, 1)),
 		energy = per_step(20 * 1000), holds = temperature_in(T0C + 10, T20C + 15),
-		then = TYPE_PROC_REF(/transformation/chem/distilling/cryogel, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_FROST, chance = 1, amount = 6)))
 
 // I know this doesn't make sense, and this is a baindaid fix but distiller code refuses to go this low, even with correct variables
 
-/transformation/chem/distilling/cryogel/proc/on_reaction(datum/reagents/holder, created_volume)
-	if(prob(1))
-		var/turf/T = get_turf(holder.my_atom)
-		var/datum/effect/effect/system/smoke_spread/frost/F = new (holder.my_atom)
-		F.set_up(6, 0, T)
-		F.start()
-	return
 
 /transformation/chem/distilling/lichpowder
 
