@@ -285,6 +285,7 @@ fn run_build_attempt(
         None
     };
     let mut shared_proofs = None;
+    let mut rejected_contents: Vec<(PathBuf, u128)> = Vec::new();
     if command == BuildCommand::Compile && !no_cache {
         let compiler = compiler.expect("configured compiler identity");
         let configuration = runner_configuration::session(
@@ -340,6 +341,7 @@ fn run_build_attempt(
                         }
                     },
                     &mut shared_proofs,
+                    &mut rejected_contents,
                 )?
             {
                 let pair_verification_started = Instant::now();
