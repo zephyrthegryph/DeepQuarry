@@ -6,7 +6,6 @@
 	icon_living = "goat"
 	icon_dead = "goat_dead"
 
-	faction = FACTION_GOAT
 
 	endurance = 40
 
@@ -23,6 +22,7 @@
 	var/datum/reagents/udder = null
 
 CAPABILITIES(/mob/living/simple_mob/animal/goat)
+	configure(mob_rules(faction = FACTION_GOAT))
 	configure(living_rules(say_list_type = /datum/say_list/goat))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))
 	owns_one(nameof(udder), /datum/reagents, starts = /datum/reagents, starts_args = list(NO_LOC, 50, OWNER)) // 50 units, held by the goat

@@ -508,7 +508,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 		return
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
 		rel_set(src, nameof(bound_mob), new spawn_mob_type(src)) //Well let's spawn it then!
-		bound_mob.faction = user.faction
+		bound_mob.set_faction(mob_rules_of(user).faction)
 		set_spawn_mob_type(null)
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
@@ -609,7 +609,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	if(isanimal(bound_mob))
 		var/mob/living/simple_mob/M = bound_mob
 		M.ai_brain.go_wake()		//Okay it's time to do work, let's wake up!
-	bound_mob.faction = owner.faction	//Let's make sure we aren't hostile to our owner or their friends
+	bound_mob.set_faction(mob_rules_of(owner).faction)//Let's make sure we aren't hostile to our owner or their friends
 	act_message(bound_mob, src, MSG_SELF("The world around you rematerialize as you are unleashed from %T% next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will."), MSG_OTHERS("\The [user]'s [src] flashes, %U% appears in an instant!!!"))
 	animate_action(get_turf(bound_mob))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
@@ -1045,7 +1045,7 @@ sparse(/mob/living, capture_crystal, type = bool)
 		return
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
 		rel_set(src, nameof(bound_mob), new spawn_mob_type(src)) //Well let's spawn it then!
-		bound_mob.faction = user.faction
+		bound_mob.set_faction(mob_rules_of(user).faction)
 		set_spawn_mob_type(null)
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.

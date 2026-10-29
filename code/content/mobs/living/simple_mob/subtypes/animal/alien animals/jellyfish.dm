@@ -24,7 +24,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	has_eye_glow = TRUE
 	density = FALSE
 
-	faction = FACTION_JELLYFISH
 	endurance = 100
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
@@ -101,6 +100,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	configure(mob_rules(faction = FACTION_JELLYFISH))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/jellyfish, delete_on_death = TRUE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/jellyfishcore, meat_amount = 0))
 	ref_one(nameof(budded_from), /mob/living/simple_mob/vore/alienanimals/space_jellyfish)
@@ -116,7 +116,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 	enable_swarming()
 	GLOB.jellyfish_count++
 	if(parent)
-		parent.faction = faction
+		parent.set_faction(mob_rules_of(src).faction)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish
 

@@ -8,7 +8,6 @@
 	icon_living = "ddraig"
 	icon_state = "ddraig"
 	icon_rest = "ddraig_rest"
-	faction = FACTION_GLAMOUR
 	catalogue_data = list(/datum/category_item/catalogue/fauna/ddraig)
 	old_x = -32
 	old_y = 0
@@ -80,6 +79,7 @@
 	movement_cooldown = -3
 
 CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
+	configure(mob_rules(faction = FACTION_GLAMOUR))
 	configure(living_rules(vore_capacity = 3))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -380,7 +380,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	set_glamour_shift(FALSE)
 	var/mob/living/new_mob = spawn_polymorph_mob(beast_type)
 	if(new_mob && isliving(new_mob))
-		new_mob.faction = faction
+		new_mob.set_faction(mob_rules_of(src).faction)
 		grant(new_mob, granted_verb(/mob/living/proc/revert_beast_form), new_mob)
 		grant(new_mob, granted_verb(/mob/living/proc/set_size), new_mob)
 		transfer_mob_identity(new_mob)

@@ -14,6 +14,7 @@
 /mob/living/simple_mob/glitch_boss
 
 CAPABILITIES(/mob/living/simple_mob/glitch_boss)
+	configure(mob_rules(faction = FACTION_MATH))
 	configure(living_rules(delete_on_death = TRUE, use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

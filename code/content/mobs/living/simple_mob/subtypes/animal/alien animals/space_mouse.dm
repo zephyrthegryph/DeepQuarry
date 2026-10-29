@@ -17,7 +17,6 @@
 	icon_living = "space_mouse"
 	icon_dead = "space_mouse_dead"
 
-	faction = FACTION_SPACE_MOUSE
 	endurance = 20
 	movement_cooldown = -1
 
@@ -59,6 +58,7 @@
 	vore_default_item_mode = IM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/dustjumper)
+	configure(mob_rules(faction = FACTION_SPACE_MOUSE))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/mouse))
 	configure(mob_rules(universal_understand = 1))
 

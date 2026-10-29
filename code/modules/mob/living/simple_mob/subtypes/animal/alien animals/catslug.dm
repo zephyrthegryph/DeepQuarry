@@ -27,7 +27,6 @@
 	icon_rest = "catslug_rest"
 	icon = 'icons/mob/alienanimals_x32.dmi'
 
-	faction = FACTION_CATSLUG
 	endurance = 50
 	movement_cooldown = -1
 	holder_type = /obj/item/holder/catslug
@@ -100,6 +99,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		))
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
+	configure(mob_rules(faction = FACTION_CATSLUG))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/catslug, climbing_delay = 2.0))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
@@ -682,7 +682,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/cargoslug)
 	icon_living = "capslug"
 	icon_rest = "capslug_rest"
 	icon_dead = "capslug_dead"
-	faction = FACTION_NEUTRAL
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/capslug)
 	holder_type = /obj/item/holder/catslug/custom/capslug
 	myid_access = list(ACCESS_HEADS, ACCESS_KEYCARD_AUTH)		//Same access as a bridge secretary.
@@ -730,7 +729,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/cargoslug)
 	icon_dead = "syndislug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)
 	myid_access = list(ACCESS_MAINT_TUNNELS, ACCESS_SYNDICATE, ACCESS_EXTERNAL_AIRLOCKS)
-	faction = FACTION_SYNDICATE
 	endurance = 100		//Tough noodles
 	taser_kill = 0
 	melee_damage_lower = 15
@@ -1115,6 +1113,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 */
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/capslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/capslug)
 
@@ -1123,6 +1122,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/d
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/deathslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
+	configure(mob_rules(faction = FACTION_SYNDICATE))
 	configure(living_rules(say_list_type = /datum/say_list/catslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/syndislug)
 

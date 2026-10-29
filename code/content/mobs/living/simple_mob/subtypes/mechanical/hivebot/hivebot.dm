@@ -5,7 +5,6 @@
 	icon_state = "basic"
 	icon_living = "basic"
 
-	faction = FACTION_HIVEBOT
 
 	endurance = 3 LASERS_TO_KILL
 	water_resist = 0.5
@@ -21,6 +20,7 @@
 /mob/living/simple_mob/mechanical/hivebot
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot)
+	configure(mob_rules(faction = FACTION_HIVEBOT))
 	configure(living_rules(say_list_type = /datum/say_list/hivebot, delete_on_death = TRUE))
 
 /mob/living/simple_mob/mechanical/hivebot/on_death(gibbed)

@@ -1,0 +1,74 @@
+/mob/living/simple_mob/vore/bee
+	name = "space bumble bee"
+	desc = "Buzz buzz."
+
+	icon_state = "bee"
+	icon_living = "bee"
+	icon_dead = "bee-dead"
+	icon = 'icons/mob/vore.dmi'
+
+	response_help = "pets"
+	response_disarm = "gently pushes aside"
+	response_harm = "hits"
+
+	movement_cooldown = 1.5
+	endurance = 25
+
+	harm_intent_damage = 4
+	melee_damage_lower = 2
+	melee_damage_upper = 4
+	attacktext = list("stung")
+
+
+
+	//Space bees aren't affected by atmos.
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+
+
+	var/poison_type = REAGENT_ID_SPIDERTOXIN	// The reagent that gets injected when it attacks, can be changed to different toxin.
+	var/poison_chance = 10			// Chance for injection to occur.
+	var/poison_per_bite = 1			// Amount added per injection.
+
+
+CAPABILITIES(/mob/living/simple_mob/vore/bee)
+	configure(mob_rules(faction = FACTION_BEE))
+	configure(living_rules(say_list_type = /datum/say_list/bee))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 5))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	after_init(0, then(PROC_REF(bee_swarm_ready)))
+
+/mob/living/simple_mob/vore/bee/proc/bee_swarm_ready(datum/act/timer/A)
+	enable_swarming()
+
+/mob/living/simple_mob/vore/bee/Process_Spacemove(check_drift = 0)
+	return 1	//No drifting in space for space bee!
+
+// Activate Noms!
+/mob/living/simple_mob/vore/bee
+	vore_active = 1
+	vore_icons = SA_ICON_LIVING
+
+/mob/living/simple_mob/vore/bee/apply_melee_effects(atom/A)
+	if(isliving(A))
+		var/mob/living/L = A
+		if(L.reagents)
+			var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
+			if(L.can_inject(src, null, target_zone))
+				inject_poison(L, target_zone)
+
+// Does actual poison injection, after all checks passed.
+/mob/living/simple_mob/vore/bee/proc/inject_poison(mob/living/L, target_zone)
+	if(prob(poison_chance))
+		to_chat(L, span_warning("You feel a tiny prick."))
+		L.reagents.add_reagent(poison_type, poison_per_bite)
+
+/datum/say_list/bee
+	speak = list("Buzzzz")

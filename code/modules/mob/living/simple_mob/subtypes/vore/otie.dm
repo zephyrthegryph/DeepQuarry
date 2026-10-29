@@ -15,7 +15,6 @@
 	icon_living = "otie"
 	icon_dead = "otie-dead"
 	icon_rest = "otie_rest"
-	faction = FACTION_OTIE
 	endurance = 150
 	minbodytemp = 200
 	melee_damage_lower = 10
@@ -63,7 +62,6 @@
 	icon_living = "photie"
 	icon_dead = "photie-dead"
 	icon_rest = "photie_rest"
-	faction = FACTION_VIRGO3B
 	tame_chance = 5 // Only a 1 in 20 chance of success. It's feral. What do you expect?
 	// Lazy way of making sure this otie survives outside.
 	min_oxy = 0
@@ -75,6 +73,9 @@
 	min_n2 = 0
 	max_n2 = 0
 	has_eye_glow = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/feral)
+	configure(mob_rules(faction = FACTION_VIRGO3B))
 
 /mob/living/simple_mob/vore/otie/feral/chubby
 	name = "chubby mutated feral otie"
@@ -91,7 +92,6 @@
 	icon_living = "hotie"
 	icon_dead = "hotie-dead"
 	icon_rest = "hotie_rest"
-	faction = FACTION_CULT
 	tame_chance = 20
 	// Lazy way of making sure this otie survives outside.
 	min_oxy = 0
@@ -105,11 +105,16 @@
 	maxbodytemp = 1000
 	has_eye_glow = TRUE
 
+CAPABILITIES(/mob/living/simple_mob/vore/otie/red)
+	configure(mob_rules(faction = FACTION_CULT))
+
 /mob/living/simple_mob/vore/otie/red/friendly //gets the pet2tame feature and doesn't kill you right away
 	name = "red otie"
 	desc = "Seems this ominous looking longdog has been infused with wicked infernal forces. This one seems rather peaceful though."
-	faction = FACTION_NEUTRAL
 	tamed = 1
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/red/friendly)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 
 /mob/living/simple_mob/vore/otie/red/chubby //gets the pet2tame feature and doesn't kill you right away
 	name = "chubby red otie"
@@ -117,14 +122,18 @@
 	icon_state = "hotiec"
 	icon_living = "hotiec"
 	icon_rest = "hotiec_rest"
-	faction = FACTION_NEUTRAL
 	tamed = 1
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/red/chubby)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 
 /mob/living/simple_mob/vore/otie/friendly //gets the pet2tame feature and doesn't kill you right away
 	name = "otie"
 	desc = "The classic bioengineered longdog. This one might even tolerate you!"
-	faction = FACTION_NEUTRAL
 	tamed = 1
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/friendly)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 
 /mob/living/simple_mob/vore/otie/friendly/chubby
 	name = "chubby otie"
@@ -139,8 +148,10 @@
 	icon_state = "cotie"
 	icon_living = "cotie"
 	icon_rest = "cotie_rest"
-	faction = FACTION_NEUTRAL
 	tamed = 1
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/cotie)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 
 /mob/living/simple_mob/vore/otie/cotie/chubby
 	name = "chubby tamed otie"
@@ -174,7 +185,6 @@
 	icon_living = "sotie"
 	icon_rest = "sotie_rest"
 	icon_dead = "sotie-dead"
-	faction = FACTION_NEUTRAL
 	endurance = 200 //armored or something
 	tamed = 1
 	has_eye_glow = TRUE
@@ -183,6 +193,9 @@
 
 	var/check_records = 0 // If true, arrests people without a record.
 	var/check_arrest = 1 // If true, arrests people who are set to arrest.
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/security)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 
 /mob/living/simple_mob/vore/otie/security/chubby
 	name = "chubby guard otie"
@@ -227,6 +240,7 @@
 	icon_rest = "hotiesc_rest"
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie)
+	configure(mob_rules(faction = FACTION_OTIE))
 	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/otie))
 	configure(butchery_rules(meat_amount = 6))
@@ -306,7 +320,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie)
 						AI.set_follow(friend)
 						if(tamed != 1)
 							tamed = 1
-							faction = M.faction
+							set_faction(mob_rules_of(M).faction)
 			return OP_OK
 
 		if(I_GRAB)

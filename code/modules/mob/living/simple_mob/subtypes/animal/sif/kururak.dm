@@ -23,7 +23,6 @@
 	tt_desc = "S Felidae fluctursora"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/kururak)
 
-	faction = FACTION_KURUAK
 
 	icon_state = "bigcat"
 	icon_living = "bigcat"
@@ -89,6 +88,7 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	configure(mob_rules(faction = FACTION_KURUAK))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/kururak, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_amount = 5))
 	configure(mob_rules(universal_understand = 1))
@@ -327,7 +327,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 				continue
 			if(!K.ai_brain)
 				continue
-			if(K.faction != src.faction)
+			if(mob_rules_of(K).faction != mob_rules_of(src).faction)
 				continue
 			var/datum/ai_brain/AI = K.ai_brain
 			to_chat(K, span_notice("The pack leader wishes for you to follow them."))

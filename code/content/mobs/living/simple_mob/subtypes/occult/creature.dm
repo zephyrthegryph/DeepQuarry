@@ -7,7 +7,6 @@
 	icon_dead = "otherthing-dead"
 
 
-	faction = FACTION_CREATURE
 
 	endurance = 40
 
@@ -29,6 +28,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/creature)
+	configure(mob_rules(faction = FACTION_CREATURE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
@@ -44,7 +44,6 @@ CAPABILITIES(/mob/living/simple_mob/creature)
 // Cult Variant
 /mob/living/simple_mob/creature/cult
 
-	faction = FACTION_CULT
 
 	min_oxy = 0
 	max_oxy = 0
@@ -59,6 +58,7 @@ CAPABILITIES(/mob/living/simple_mob/creature)
 	supernatural = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/creature/cult)
+	configure(mob_rules(faction = FACTION_CULT))
 	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
 
 /mob/living/simple_mob/creature/cult/cultify()

@@ -9,7 +9,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 96
 
-	faction = FACTION_CLOWN
 
 	loot_list = list(/obj/item/bikehorn = 100)
 
@@ -19,6 +18,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/clowns/big/c_shift/honkelemental)
+	configure(mob_rules(faction = FACTION_CLOWN))
 	configure(living_rules(say_list_type = /datum/say_list/clown))
 
 /datum/say_list/clown

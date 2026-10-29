@@ -75,13 +75,13 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 		return TRUE
 	else if(isliving(mover))
 		var/mob/living/L = mover
-		if(L.faction == faction)
+		if(mob_rules_of(L).faction == faction)
 			return TRUE
 	else if(istype(mover, /obj/item/projectile))
 		var/obj/item/projectile/P = mover
 		if(istype(P.firer, /obj/structure/blob))
 			return TRUE
-		if(istype(P.firer) && P.firer.faction == faction)
+		if(istype(P.firer) && mob_rules_of(P.firer).faction == faction)
 			return TRUE
 	return FALSE
 
@@ -399,7 +399,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	if(!P)
 		return
 
-	if(istype(P.firer) && P.firer.faction == faction)
+	if(istype(P.firer) && mob_rules_of(P.firer).faction == faction)
 		return
 
 	return ..()

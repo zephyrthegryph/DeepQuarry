@@ -69,7 +69,7 @@
 	if(incapacitated(INCAPACITATION_DISABLED))
 		return 0 // Can't currently hurt you if it's stunned.
 
-	var/friendly = threatened.faction == faction
+	var/friendly = mob_rules_of(threatened).faction == mob_rules_of(src).faction
 
 	var/threat = guess_threat_level(threatened)
 

@@ -258,7 +258,7 @@
 	if(M.stat == DEAD)
 		to_chat(user, span_warning("The animal is dead!"))
 		return ..()
-	if(M.faction == user.faction)
+	if(mob_rules_of(M).faction == mob_rules_of(user).faction)
 		to_chat(user, span_warning("\The [M] is already loyal to your species!"))
 		return ..()
 	if(!(M.ai_brain != null))
@@ -269,7 +269,7 @@
 
 	to_chat(user, span_notice("You feed \the [M] the agent. It will now try to murder things that want to murder you instead."))
 	to_chat(M, span_notice("\The [user] feeds you \the [src], and feel that the others will regard you as an outsider now."))
-	M.faction = user.faction
+	M.set_faction(mob_rules_of(user).faction)
 	AI.remove_target() // So hostile things stop attacking people even if not hostile anymore.
 	if(istype(M, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/slime = M

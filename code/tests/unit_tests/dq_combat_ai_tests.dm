@@ -25,7 +25,6 @@
 	icon_state = "tiger"
 	icon_living = "tiger"
 	icon_dead = "tiger-dead"
-	faction = FACTION_CREATURE
 	endurance = 90
 	melee_damage_lower = 8
 	melee_damage_upper = 14
@@ -33,6 +32,7 @@
 	has_hands = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/combat_ai_test_subject)
+	configure(mob_rules(faction = FACTION_CREATURE))
 	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	configure(mob_kind(attack_cooldown = 1.2 SECONDS))
@@ -229,7 +229,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	// Faction-mates don't feud over friendly fire (should_retaliate_against()).
 	victim.ai_brain.notify_damage(10, INJURY_BLUNT, aggressor)
 	TEST_ASSERT(!victim.ai_brain.check_attacker(aggressor), "a faction-mate's hit shouldn't make it HOSTILE")
-	aggressor.faction = "combat_ai_test_other"
+	aggressor.set_faction("combat_ai_test_other")
 	// Direct notify (the hook does the same after attack_generic).
 	victim.ai_brain.notify_damage(10, INJURY_BLUNT, aggressor)
 	TEST_ASSERT(victim.ai_brain.check_attacker(aggressor), "notify_damage didn't promote attacker to HOSTILE")

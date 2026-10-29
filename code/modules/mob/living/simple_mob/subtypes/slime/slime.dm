@@ -31,7 +31,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	glow_intensity = 2
 	gender = NEUTER
 
-	faction = FACTION_SLIME // Note that slimes are hostile to other slimes of different color regardless of faction (unless Unified).
 	endurance = 150
 	movement_cooldown = -1
 	pass_flags = PASSTABLE
@@ -86,6 +85,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
+	configure(mob_rules(faction = FACTION_SLIME))
 	configure(living_rules(species_sounds = "Slime"))
 	configure(living_rules(say_list_type = /datum/say_list/slime, use_modern_ai = TRUE, composition_reagent = REAGENT_ID_SLIMEJELLY))
 	setup(PROC_REF(start_glowing))

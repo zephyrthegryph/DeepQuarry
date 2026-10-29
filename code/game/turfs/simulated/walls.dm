@@ -664,7 +664,7 @@ CAPABILITIES(/turf/simulated/wall)
 		if("HOSTILE TO ALL")
 			turret_faction = null
 		if("HOSTILE TO ENEMIES")
-			turret_faction = user.faction
+			turret_faction = mob_rules_of(user).faction
 	mode_index = rcd_mode_index(RCD_TURRET)
 	rcd_mode_changed(user, "Turrets")
 

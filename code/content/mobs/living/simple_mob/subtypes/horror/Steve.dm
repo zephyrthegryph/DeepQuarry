@@ -1,0 +1,50 @@
+/mob/living/simple_mob/horror/Steve
+	reaction_sound = SFX_H_SOUNDS_HOLLA
+	name = "???"
+	desc = "A formless blob of flesh with one, giant, everblinking eye. It has a large machine gun and a watercooler stuck stright into its skin."
+
+	icon_state = "Steve"
+	icon_living = "Steve"
+	icon_dead = "sg_head"
+	icon_rest = "Steve"
+	icon = 'icons/mob/horror_show/GHPS.dmi'
+	icon_gib = "generic_gib"
+
+	attack_sound = SFX_H_SOUNDS_MUMBLE
+
+	endurance = 175
+
+	melee_damage_lower = 25
+	melee_damage_upper = 35
+	grab_resist = 100
+
+	projectiletype = /obj/item/projectile/bullet/pistol/medium
+	projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
+
+	needs_reload = TRUE
+	reload_max = 20
+
+	response_help = "pets the"
+	response_disarm = "bops the"
+	response_harm = "hits the"
+	attacktext = list("smashed")
+	friendly = list("nuzzles", "boops", "bumps against", "leans on")
+
+
+
+/mob/living/simple_mob/horror/Steve/on_death(gibbed)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
+	..()
+
+CAPABILITIES(/mob/living/simple_mob/horror/Steve)
+	configure(mob_rules(faction = "horror"))
+	configure(living_rules(say_list_type = /datum/say_list/Steve))
+	configure(mob_kind(attack_cooldown = 5))
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
+
+/datum/say_list/Steve
+	speak = list("Uuurrgh?","Aauuugghh...", "AAARRRGH!")
+	emote_hear = list("shrieks horrifically", "groans in pain", "cries", "whines")
+	emote_see = list("blinks aggressively at", "shakes violently in place", "stares aggressively")
+	say_maybe_target = list("Uuurrgghhh?")
+	say_got_target = list("AAAHHHHH!")

@@ -23,7 +23,6 @@
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
-	faction = FACTION_LAMIA
 
 	// Vore tags
 	vore_active = 1
@@ -50,6 +49,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/lamia)
+	configure(mob_rules(faction = FACTION_LAMIA))
 	configure(living_rules(vore_icon_bellies = list("stomach", "tail"), vore_capacity_ex = list("stomach" = 1, "tail" = 1), vore_capacity = 1, say_list_type = /datum/say_list/lamia))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 

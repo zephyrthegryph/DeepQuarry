@@ -234,7 +234,7 @@
 /mob/observer/blob/proc/can_attack(mob/living/L)
 	if(!istype(L))
 		return FALSE
-	if(L.faction == blob_type.faction)
+	if(mob_rules_of(L).faction == blob_type.faction)
 		return FALSE // No friendly fire.
 	if(locate_within(get_turf(L), /obj/structure/blob))
 		return FALSE // Already has a blob over them.

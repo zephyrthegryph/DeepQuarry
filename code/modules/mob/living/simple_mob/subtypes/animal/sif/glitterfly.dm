@@ -27,7 +27,6 @@
 	tt_desc = "S Lepidoptera adamas"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/glitterfly)
 
-	faction = FACTION_NEUTRAL
 
 	icon_state = "butterfly"
 	icon_living = "butterfly"
@@ -59,6 +58,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 	configure(atom_rules(description_fluff = "Glitterflies tend to have a wingspan equivalent to the length of an average human head."))
 	configure(living_rules(say_list_type = /datum/say_list/glitterfly))
 	configure(mob_movement(hovering = TRUE))
