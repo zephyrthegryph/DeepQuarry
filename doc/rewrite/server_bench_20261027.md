@@ -48,3 +48,20 @@ shared_cache misses 31, emissive_blocker_attach 16 (91 k), turf/space table_init
 - Boot: skip state_changed work for writes on atoms still in map load; cache emissive blocker appearances.
 
 Landed: perf/idle-polling and perf/datum-refresh (with the probes) in master e9fb35fefe.
+
+## Idle fixes and frame stalls (2026-10-28)
+
+Landed since the first table: perf/idle-1 (type-level `every()` first runs phase-spread, APC_REPORT charging lines folded per APC, meter counts plain, cells that move no heat stop polling), perf/idle-2 (vent flow written on a display change, docking controllers wake only for their own signals, turrets look only with a mob near), perf/live-2 (the NATIVE_SLOW_FRAME log, `frame.slow_us.*`, the `vgframe` probe).
+
+Idle steady window (0 players, about 12 min after 2000 settle ticks), machine 58-100 % busy with other lanes:
+
+| | first table (idle1) | merged master (soak2) | merged master (soak4) |
+|---|---|---|---|
+| tick usage mean / p50 / p95 / p99 | 17.9 / 6.2 / 72 / 91 % | 15.0 / 4.4 / 40 / 82 % | 17.5 / 4.8 / 45 / 86 % |
+| om_core ms/s | 60.2 | 34.5 | 32.4 |
+| om_appearance ms/s | 11.0 | 4.5 | 3.4 |
+| om_native ms/s | 32.8 | 42.6 | 66.7 (stalls) |
+
+om_native rose because of the stalls below, not because of work. Awake material services 266 -> 1, timer fires 10,357 -> 5,240 per 133 s (perf/idle-1).
+
+Multi-second native frames, measured with the CPU-time split (`frame.slow_us.on_cpu` / `off_cpu`, per slow frame, microseconds the thread was running against waiting): in soak4, 11,844 ms of the 11,954 ms Rust spent in slow frames (99 %) was off the CPU; 109 ms was computing. The phases named (`pace_stage`, `pace_apply`, `pace_step`) take about 0.16 ms when the thread runs, so a 200 ms to 2.5 s `pace_stage` is the thread not running, not slow work. The stalls fall in the windows where the machine is at 100 % CPU, and the world runs at BelowNormal priority (`Get-Process dd`): the local stalls are scheduler starvation of a below-normal process by other agents' builds. Two more stalls (a 1.0 s `vg_frame` where Rust saw no frame over 100 ms, and DM-side `deliver` taking 1.4 s and 5.1 s for 27 records) are outside Rust and are not explained by the CPU split. Whether the live GCP server stalls is unmeasured here: run it with this build and read NATIVE_SLOW_FRAME's `off_cpu` and `on_cpu`.

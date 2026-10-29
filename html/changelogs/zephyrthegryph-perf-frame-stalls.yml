@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The native frame's slow-frame counters split each slow frame into CPU time used and time off the CPU (frame.slow_us.on_cpu / off_cpu), and NATIVE_SLOW_FRAME logs them: a stall is told apart as slow work or a thread that was not running"
