@@ -11,4 +11,9 @@ dm-ir = { path = "../dm-ir" }
 dm-tree = { path = "../dm-tree" }
 dm-syntax = { path = "../dm-syntax" }
 serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+# Exact reference TOML grammar/error contract; this is not the production DM frontend.
+toml_checker = { package = "toml", version = "=0.5.11" }
+# Same grammar as current tools/analyze scopes parser; not checker TOML.
+toml_analyze = { package = "toml", version = "0.8" }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }

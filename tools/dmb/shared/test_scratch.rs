@@ -81,7 +81,10 @@ pub fn root() -> PathBuf {
 /// A fresh, empty, uniquely named directory under `root()` (unique across threads of this process).
 pub fn dir(label: &str) -> PathBuf {
     static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let path = root().join(format!("{label}-{}", NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
+    let path = root().join(format!(
+        "{label}-{}",
+        NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
     std::fs::create_dir_all(&path).expect("create test scratch directory");
     path
 }

@@ -1,9 +1,18 @@
 //! Current source query projection: shared issued occurrences, paths, and revision only.
 //! Immutable issued source owners are shared; no full frontend revision is retained.
+#[path = "runner_query_named_policy.rs"]
+mod named_policy;
+#[path = "runner_query_control_batch.rs"]
+mod control_batch;
 #[path = "runner_query_native_policy.rs"]
 mod native_policy;
 #[path = "runner_query_occurrence_pages.rs"]
 mod occurrence_pages;
+#[cfg(test)]
+#[path = "runner_query_policy_capture_tests.rs"]
+mod policy_capture_tests;
+#[path = "runner_query_raw_policy.rs"]
+mod raw_policy;
 #[path = "runner_query_resolved.rs"]
 mod resolved;
 #[path = "runner_query_selected.rs"]
@@ -31,11 +40,13 @@ impl Default for QueryState {
 pub(crate) struct SourceSnapshot {
     tree: Arc<dm_tree::SemanticTree>,
     pub(crate) source_revision: u128,
+    pub(crate) policy_revision: Option<u128>,
     pub(crate) outcome: &'static str,
     occurrences: Arc<dm_tree::OccurrenceTable>,
     /// Same immutable current producer owner; no parsed syntax or source arena.
     bodies: Option<Arc<[dm_tree::frontend::BodyOccurrence]>>,
     body_archive: Option<Arc<dm_tree::frontend::BodyArchive>>,
+    native_policy_inputs: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
     source_mapping: Option<Arc<dm_tree::frontend::SourceExportMapping>>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
     selected: selected::SelectedRows,
@@ -132,6 +143,7 @@ impl SourceSnapshot {
     /// Existing request handles remain immutable; pinned lightweight rows survive.
     pub(crate) fn release_body_queries(&mut self) {
         self.body_archive = None;
+        self.native_policy_inputs = None;
         self.native_value_input = None;
         self.native_value_queries = None;
         self.resolved = None;
@@ -148,6 +160,9 @@ impl SourceSnapshot {
         }
         if let Some(archive) = &self.body_archive {
             census.body_archive(archive);
+        }
+        if let Some(policy) = &self.native_policy_inputs {
+            census.policy_capture(policy);
         }
         if let Some(mapping) = &self.source_mapping {
             census.source_export_mapping(mapping);
@@ -247,27 +262,47 @@ impl SourceSnapshot {
         std::ptr::eq(self.tree.as_ref(), tree)
     }
     fn capture(frontend: &ColdFrontend) -> Self {
+        Self::capture_policy(frontend, None)
+    }
+    fn capture_policy(
+        frontend: &ColdFrontend,
+        policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
+    ) -> Self {
         let revision_timer = dm_profile::detail_timer("query_capture.source_revision");
         let source_revision = dm_analysis::tree_export::source_revision(frontend);
         drop(revision_timer);
         let _timer = dm_profile::detail_timer("query_capture.rest");
-        let body_archive = frontend.body_archive();
+        // The captured policy and body/value consumers share one issuance.
+        // Do not create and immediately discard another archive or rescan the
+        // compiled marker sources when a policy capture already supplies them.
+        let body_archive = match &policy {
+            Some(policy) => Some(Arc::clone(policy.policy().archive())),
+            None => frontend.body_archive(),
+        };
+        let native_schema_markers = match &policy {
+            Some(policy) => native_policy::capture_policy_schemas(policy.policy()),
+            None => native_policy::capture_schemas(frontend),
+        };
         let native_value_input = body_archive.as_ref().map(|archive| {
             dm_analysis::value_query::ArchiveValueInput::new(Arc::clone(archive), &[])
         });
         Self {
             tree: Arc::clone(&frontend.snapshot.tree),
             source_revision,
+            policy_revision: policy
+                .as_ref()
+                .and_then(|capture| capture.policy_revision()),
             outcome: "frontend_analyzed",
             source_mapping: frontend.source_export_mapping().cloned(),
             selected: Default::default(),
             resolved: None,
             replay_proof: None,
-            native_schema_markers: native_policy::capture_schemas(frontend),
+            native_schema_markers,
             native_value_input,
             native_value_queries: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             body_archive,
+            native_policy_inputs: policy,
             bodies: frontend
                 .callable_roster()
                 .ok()
@@ -391,19 +426,34 @@ impl QueryAttempt {
         &mut self,
         frontend: &ColdFrontend,
         queries: Arc<crate::query_db::QueryDb>,
-    ) {
-        self.capture(frontend);
-        if self.enabled {
-            if let Some(snapshot) = self
-                .state
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .snapshot
-                .as_mut()
-            {
-                snapshot.native_value_queries = Some(queries);
+        policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
+    ) -> std::io::Result<()> {
+        if policy
+            .as_ref()
+            .is_some_and(|policy| policy.policy_revision().is_none())
+        {
+            return Err(std::io::Error::other(
+                "raw policy capture has no admitted request binding",
+            ));
+        }
+        if !self.enabled {
+            return Ok(());
+        }
+        if let Some(policy) = &policy {
+            if !policy.policy().matches_frontend(frontend) {
+                return Err(std::io::Error::other(
+                    "raw policy capture differs from current compiler issuance",
+                ));
             }
         }
+        let mut snapshot = SourceSnapshot::capture_policy(frontend, policy);
+        snapshot.native_value_queries = Some(queries);
+        self.state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .snapshot = Some(snapshot);
+        self.captured = true;
+        Ok(())
     }
     pub(crate) fn capture(&mut self, frontend: &ColdFrontend) {
         if !self.enabled {
@@ -504,6 +554,14 @@ impl QueryAttempt {
     }
     /// Issued only after this captured frontend's successful publication inputs
     /// passed the same post-publication restat used for the session record.
+    pub(crate) fn policy_revision(&self) -> Option<u128> {
+        self.state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .snapshot
+            .as_ref()
+            .and_then(|snapshot| snapshot.policy_revision)
+    }
     pub(crate) fn configure(&mut self, configuration: crate::session::Configuration) {
         self.configuration = Some(configuration);
     }
@@ -520,6 +578,17 @@ impl QueryAttempt {
         };
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         if let Some(snapshot) = &mut state.snapshot {
+            // Resources may extend this request ledger, but cannot omit policy
+            // absence/folder facts. Text revision equality is not replay proof.
+            if snapshot
+                .native_policy_inputs
+                .as_ref()
+                .is_some_and(|policy| !policy.is_recorded_in(inputs))
+            {
+                snapshot.replay_proof = None;
+                crate::daemon_eprintln!("native policy replay proof refused: captured facts absent from completed ledger");
+                return;
+            }
             snapshot.replay_proof = Some(ReplayProof {
                 inputs: inputs.clone(),
                 configuration: configuration.clone(),

@@ -179,5 +179,58 @@ image; mutable_appearance/parent_type = path!(/image);
                 main(["--rust-hierarchy-output", "E:/unused-seed.rs", other, "E:/unused.json"])
 
 
+class NativeCheckerCatalogTests(unittest.TestCase):
+    def pinned_inputs(self):
+        return NativeBuiltinManifestTests().pinned_inputs()
+
+    def test_checker_catalog_preserves_exact_fixed_metadata_and_not_runtime_claims(self):
+        from native_builtin_manifest import build_rust_checker_catalog, checker_catalog_rows
+        source, macro = self.pinned_inputs()
+        manifest = build_manifest(source, macro)
+        rows = checker_catalog_rows(manifest)
+        self.assertEqual(len(rows), 842)
+        self.assertEqual(sum(r["kind"] in (2, 3) for r in rows), 378)
+        self.assertEqual(sum(r["kind"] == 1 for r in rows), 444)
+        north = next(r for r in rows if r["owner"] == "/" and r["name"] == "NORTH")
+        self.assertEqual((north["flags"], north["reference_flags"]), (2, 4))
+        self.assertEqual(north["default"]["f32_bits"], struct.unpack("<I", struct.pack("<f", 1))[0])
+        rust = build_rust_checker_catalog(source, macro)
+        self.assertIn("NEVER runtime ABI/slot completeness", rust)
+        self.assertNotIn("EngineSeed", rust)
+        self.assertIn("source_default:", rust)
+
+    def test_checker_catalog_is_deterministic_and_hash_matches_rust_importer(self):
+        from native_builtin_manifest import build_rust_checker_catalog, checker_catalog_bytes, checker_catalog_rows
+        source, macro = self.pinned_inputs()
+        rust = build_rust_checker_catalog(source, macro)
+        self.assertEqual(rust, build_rust_checker_catalog(source, macro))
+        directory = Path(__file__).resolve().parents[1] / "crates/dm-tree/src"
+        self.assertEqual((directory / "checker_builtin_data.rs").read_text(encoding="utf-8"), rust)
+        manifest = build_manifest(source, macro)
+        digest = sha256(checker_catalog_bytes(manifest, checker_catalog_rows(manifest)))
+        self.assertIn(digest, rust)
+        self.assertIn(digest, (directory / "checker_builtins.rs").read_text(encoding="utf-8"))
+        changed = checker_catalog_rows(manifest)
+        changed[0]["name"] = "forged"
+        self.assertNotEqual(sha256(checker_catalog_bytes(manifest, changed)), digest)
+
+    def test_checker_import_refuses_unpinned_inputs_and_unrepresentable_metadata(self):
+        from copy import deepcopy
+        from native_builtin_manifest import build_rust_checker_catalog, checker_catalog_rows
+        source, macro = self.pinned_inputs()
+        for original, interpretation in [(source+b"\n", macro), (source, macro+b"\n")]:
+            with self.assertRaises(Unsupported):
+                build_rust_checker_catalog(original, interpretation)
+        manifest = build_manifest(source, macro)
+        changed = deepcopy(manifest)
+        next(r for r in changed["declarations"] if r["kind"] == "field" and r["flags"] is not None)["flags"].append("private")
+        with self.assertRaisesRegex(Unsupported, "flag"):
+            checker_catalog_rows(changed)
+        changed = deepcopy(manifest)
+        next(r for r in changed["declarations"] if r["kind"] == "callable")["return_annotation"] = "num"
+        with self.assertRaisesRegex(Unsupported, "callable metadata"):
+            checker_catalog_rows(changed)
+
+
 if __name__ == "__main__":
     unittest.main()

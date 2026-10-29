@@ -362,15 +362,39 @@ impl<R: Resolver + ?Sized> Walker<'_, R> {
         }
     }
     fn field_type(&self, owner: SymbolId, name: &str) -> Result<Option<String>, Unsupported> {
-        self.field(owner, name)?
-            .map(|(_, metadata)| {
-                declaration_type(
-                    self.tree,
-                    metadata.declared_type,
-                    metadata.list_element_type,
-                )
-            })
-            .transpose()
+        // Receiver typing needs only the independent declared-type proof, not
+        // defaults, flags, a storage slot or a fabricated source declaration.
+        // Pinned native catalog fields can prove this even when Q::Var must
+        // refuse its larger metadata contract.
+        let query = Q::DeclaredVarType {
+            owner,
+            name: SymbolId::of(name),
+        };
+        let declared = match self.resolver.resolve(query) {
+            M::DeclaredType(declared) => declared,
+            M::Missing => return Ok(None),
+            _ => return Err(Unsupported(format!("field type is incomplete: {query:?}"))),
+        };
+        // Source list declarations carry element typing that the independent
+        // field-type query does not encode. Keep that authored precision; an
+        // opaque native /list proves no element type and stays plain /list.
+        let element = if declared == Some(SymbolId::of("/list")) {
+            match self.resolver.resolve(Q::Var {
+                owner,
+                name: SymbolId::of(name),
+            }) {
+                M::Member { data, .. } if data.inherited_opaque.is_none() => {
+                    if data.declared_type != declared {
+                        return Err(Unsupported("inconsistent source field type answers".into()));
+                    }
+                    data.list_element_type
+                }
+                _ => None,
+            }
+        } else {
+            None
+        };
+        Ok(Some(declaration_type(self.tree, declared, element)?))
     }
     fn return_type(&self, owner: SymbolId, name: &str) -> Result<Option<String>, Unsupported> {
         let query = Q::SourceDeclarationChain {

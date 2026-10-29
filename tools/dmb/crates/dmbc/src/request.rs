@@ -27,6 +27,11 @@ pub enum BuildCommand {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BuildRequest {
     pub command: BuildCommand,
+    /// Cooperative execution budget only; never a semantic/cache identity input.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout_seconds: Option<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy_inputs: Option<crate::policy_request::PolicyInputRequest>,
     pub project: PathBuf,
     pub defines: BTreeMap<String, String>,
     pub workers: usize,
@@ -51,6 +56,14 @@ pub struct BuildRequest {
     pub warnings: crate::diagnostics::WarningPolicy,
 }
 
+pub(crate) fn validate_timeout_seconds(value: Option<u16>) -> std::io::Result<()> {
+    if value.is_some_and(|seconds| !(1..=300).contains(&seconds)) {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
+            "request timeout_seconds must be an integer in 1..300"));
+    }
+    Ok(())
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Command {
     Query { request: PathBuf, jsonl: bool },
@@ -72,6 +85,8 @@ pub enum BuildOutcome {
     QueryPrepared {
         semantic_revision: String,
         source_revision: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        policy_revision: Option<String>,
         retained: bool,
     },
     Published {

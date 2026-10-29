@@ -16,6 +16,10 @@ use std::{
 #[derive(Default, Serialize, Deserialize)]
 struct Index {
     files: BTreeMap<PathBuf, (Stamp, u128)>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    policy_request_v1: Option<crate::policy_request::AdmittedPolicyRequest>,
+    #[serde(skip)]
+    policy_binding_seen: bool,
     negative: BTreeSet<PathBuf>,
     folders: BTreeMap<PathBuf, FolderListing>,
     // Versioned physical evidence is optional: old journals remain valid for
@@ -101,6 +105,18 @@ fn invalid(message: impl Into<String>) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message.into())
 }
 impl Inputs {
+    /// Bind intent and bytes; old journals allow only absent policy requests.
+    pub fn bind_policy_request(&self, request: Option<&crate::policy_request::AdmittedPolicyRequest>) -> io::Result<()> {
+        let journal = match self { Self::Live => return Ok(()), Self::Recording(journal) | Self::Replay(journal) => journal };
+        let mut index = journal.index.lock().map_err(|_| invalid("verification mutex poisoned"))?;
+        if matches!(self, Self::Replay(_)) || index.policy_binding_seen {
+            if index.policy_request_v1.as_ref() != request { return Err(invalid("verification policy-input request mismatch")); }
+        } else {
+            index.policy_request_v1 = request.cloned();
+            index.policy_binding_seen = true;
+        }
+        Ok(())
+    }
     /// Visit the existing journal's current borrowed roster. Live providers
     /// have no issued journal and return None. This does not finalize recording.
     pub fn with_access_view<R>(

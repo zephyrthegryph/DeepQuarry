@@ -21,9 +21,11 @@ pub fn quoted_end(rest: &str, block: bool, raw: bool) -> Option<usize> {
             escaped = false;
             continue;
         }
-        // Raw single-line quotes cannot use a backslash to continue a line.
-        // Raw block strings retain their multiline grammar.
-        if raw && !block && matches!(ch, '\r' | '\n') {
+        // DreamMaker drops CR bytes even inside raw text. A bare CR does
+        // not terminate the literal; LF still terminates a raw single-line
+        // quote (a raw backslash cannot continue it). Keep the original
+        // offsets/text here: runtime decoding removes CR later.
+        if raw && !block && ch == '\n' {
             return None;
         }
         if ch == '\\' && (!raw || interpolation_depth > 0) {
@@ -117,7 +119,8 @@ fn unterminated_message(rest: &str) -> &'static str {
 
 /// The text line opens an embedded expression (`[`) that it never closes.
 fn unclosed_embedding(line: &str) -> bool {
-    line.rfind('[').is_some_and(|open| !line[open..].contains(']'))
+    line.rfind('[')
+        .is_some_and(|open| !line[open..].contains(']'))
 }
 
 /// Lex into source-backed spans. The caller must retain `source` while reading token text.
@@ -524,4 +527,28 @@ pub fn lexical_balance(source: &str) -> LexicalBalance {
         pos += 1;
     }
     balance
+}
+
+#[cfg(test)]
+mod raw_carriage_return_tests {
+    use super::*;
+
+    #[test]
+    fn raw_single_line_cr_is_admitted_without_losing_source_offsets() {
+        let source = "@\"a\rb\"";
+        let tokens = lex_spans(source);
+        assert!(tokens.diagnostics.is_empty(), "{:?}", tokens.diagnostics);
+        assert_eq!(tokens.tokens.len(), 1);
+        assert_eq!(tokens.tokens[0].text(source), source);
+        assert_eq!(tokens.tokens[0].span.end, source.len());
+        let literal = crate::LiteralText::at(source.into(), 0);
+        assert_eq!(literal.parts().unwrap().unwrap().template, b"ab");
+    }
+
+    #[test]
+    fn raw_single_line_lf_remains_unterminated_even_after_cr() {
+        for source in ["@\"a\nb\"", "@\"a\r\nb\"", "@\"a\\\nb\""] {
+            assert!(!lex_spans(source).diagnostics.is_empty(), "{source:?}");
+        }
+    }
 }

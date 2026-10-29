@@ -10,6 +10,10 @@ impl dm_ir::Resolver for SemanticTree {
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
         hash.update(b"dm-tree-answer-domain-v1\0");
         hash.update(&self.identity.to_le_bytes());
+        if let Some(profile) = self.checker_builtin_profile() {
+            hash.update(b"checker-builtin-profile\0");
+            hash.update(&profile.to_le_bytes());
+        }
         Some(hash.digest128())
     }
 
@@ -40,6 +44,58 @@ impl dm_ir::Resolver for SemanticTree {
                 .unwrap_or(M::Missing)
         };
         let result = match query {
+            Q::CheckerIntrinsicCallable {
+                profile,
+                owner,
+                name,
+                verb,
+            } => {
+                return self.resolve_checker_builtin(
+                    query,
+                    profile,
+                    owner,
+                    name,
+                    if verb {
+                        MemberKind::Verb
+                    } else {
+                        MemberKind::Proc
+                    },
+                    true,
+                )
+            }
+            Q::CheckerBuiltinVar {
+                profile,
+                owner,
+                name,
+            } => {
+                return self.resolve_checker_builtin(
+                    query,
+                    profile,
+                    owner,
+                    name,
+                    MemberKind::Var,
+                    false,
+                )
+            }
+            Q::CheckerBuiltinProc {
+                profile,
+                owner,
+                name,
+                verb,
+            } => {
+                return self.resolve_checker_builtin(
+                    query,
+                    profile,
+                    owner,
+                    name,
+                    if verb {
+                        MemberKind::Verb
+                    } else {
+                        MemberKind::Proc
+                    },
+                    false,
+                )
+            }
             Q::Type(path) => self
                 .lookup_type(path)
                 .map(|_| M::Symbol(path))

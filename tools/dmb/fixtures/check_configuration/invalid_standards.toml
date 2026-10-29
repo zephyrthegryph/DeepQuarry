@@ -1,0 +1,2 @@
+[code_standards]
+disallow_relative_proc_definitions = "yes"

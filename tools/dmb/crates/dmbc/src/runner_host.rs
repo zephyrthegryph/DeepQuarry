@@ -15,6 +15,8 @@ mod idle_census;
 mod initializers;
 #[path = "runner_host_memo.rs"]
 mod memo;
+#[path = "runner_host/policy_capture.rs"]
+pub(crate) mod policy_capture;
 #[path = "runner_query_snapshot.rs"]
 pub(crate) mod query_snapshot;
 #[path = "runner_host_resources.rs"]
@@ -101,7 +103,10 @@ struct VariantState {
     startup: Option<(u128, Arc<crate::startup::StartupArtifacts>)>,
     abi: Option<(u128, Arc<crate::driver_facts::AbiArtifacts>)>,
     initializer_fragments: Option<(u128, Arc<crate::initializer_lowering::InitializerFragments>)>,
-    initializer_assemblies: Option<(u128, Arc<crate::initializer_lowering::InitializerAssemblies>)>,
+    initializer_assemblies: Option<(
+        u128,
+        Arc<crate::initializer_lowering::InitializerAssemblies>,
+    )>,
     class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
     required_types: Option<(u128, Arc<crate::required_types::RequiredTypeArtifacts>)>,
     link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
@@ -109,7 +114,10 @@ struct VariantState {
     generation: Option<(u128, Arc<crate::composition::RetainedGeneration>)>,
     host_facts: Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>>,
     resources: Option<Arc<resources::Resources>>,
-    symbolic: Option<(u128, Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>)>,
+    symbolic: Option<(
+        u128,
+        Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
+    )>,
 }
 
 #[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
@@ -379,12 +387,16 @@ impl BuildHost {
     /// True when the next edit can take the body-patch path: a retained generation with an installed patch base.
     /// A session that only answered an unchanged-input hit retains artifacts but no patch base.
     pub(crate) fn retains_patch_base(&self) -> bool {
-        self.generation.as_ref().is_some_and(|(_, generation)| generation.has_patch_base())
+        self.generation
+            .as_ref()
+            .is_some_and(|(_, generation)| generation.has_patch_base())
     }
     /// The image the retained patch base describes (None without one): a stored-record hit that would serve a different
     /// image must not leave the base behind (see `request_runner`).
     pub(crate) fn patch_base_image_hash(&self) -> Option<u128> {
-        self.generation.as_ref().and_then(|(_, generation)| generation.patch_base_image_hash())
+        self.generation
+            .as_ref()
+            .and_then(|(_, generation)| generation.patch_base_image_hash())
     }
     /// Retain map answers across requests; disk snapshots remain request-local.
     pub(crate) fn map_memo(
@@ -601,7 +613,13 @@ impl BuildHost {
         {
             self.link_bindings = Some((policy, Arc::new(Default::default())));
         }
-        memo.link_bindings = Some(self.link_bindings.as_ref().unwrap().1.for_request(publishable));
+        memo.link_bindings = Some(
+            self.link_bindings
+                .as_ref()
+                .unwrap()
+                .1
+                .for_request(publishable),
+        );
         if self
             .stages
             .as_ref()
@@ -710,8 +728,15 @@ impl BuildHost {
         self.variants.insert(leaving.configuration.clone(), stash);
         // A bounded number of variants stay: the session is "this tree under a few define sets" (production, test, bench).
         // The variant being entered leaves the stash below, so it is never the one dropped here.
-        while self.variants.len() > MAX_STASHED_VARIANTS + usize::from(self.variants.contains_key(&configuration)) {
-            let Some(victim) = self.variants.keys().find(|key| **key != configuration).cloned() else {
+        while self.variants.len()
+            > MAX_STASHED_VARIANTS + usize::from(self.variants.contains_key(&configuration))
+        {
+            let Some(victim) = self
+                .variants
+                .keys()
+                .find(|key| **key != configuration)
+                .cloned()
+            else {
                 break;
             };
             if let Some(state) = self.variants.remove(&victim) {
@@ -747,9 +772,11 @@ impl BuildHost {
                 // Not seeded from the left variant's frontend: measured, that adopted 4660 subtrees of the test world
                 // but cost more (rebased environments, +0.14 GB; frontend 7.4 s against 6.0 s) than the disk expansion
                 // memo already saves (doc/incremental_core.md, step 5).
-                self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::with_shared_normalized(Arc::clone(
-                    &retained.payload.normalized,
-                )));
+                self.semantic = Some(
+                    dm_tree::frontend::RetainedSemanticTree::with_shared_normalized(Arc::clone(
+                        &retained.payload.normalized,
+                    )),
+                );
             }
             retained
         };
@@ -760,7 +787,11 @@ impl BuildHost {
     }
     /// True when the active variant is this manifest under exactly these defines. A session holds several variants; queries read
     /// the active one, so a query for another variant must say so instead of answering from the wrong tree.
-    pub(crate) fn serves_variant(&self, project: &std::path::Path, defines: &BTreeMap<String, String>) -> bool {
+    pub(crate) fn serves_variant(
+        &self,
+        project: &std::path::Path,
+        defines: &BTreeMap<String, String>,
+    ) -> bool {
         // A build admits the pinned target defines (DM_VERSION, DM_BUILD) before it reaches the host; a query names the
         // caller's defines, so admit them the same way before comparing.
         let mut admitted = defines.clone();
@@ -952,13 +983,21 @@ mod tests {
         let mut host = BuildHost::with_shared_engines(Arc::new(EnginePayloads::default()));
         let testing = || BTreeMap::from([("CITESTING".to_string(), "1".to_string())]);
         let production = capture(&mut host, BTreeMap::new());
-        let maps = |policy| Some((policy, Arc::new(crate::map_memo::RetainedMaps::current_revision())));
+        let maps = |policy| {
+            Some((
+                policy,
+                Arc::new(crate::map_memo::RetainedMaps::current_revision()),
+            ))
+        };
         host.maps = maps(7);
         // The test define set is another variant of the same session: its own empty state, the same engine payload.
         let test = capture(&mut host, testing());
         assert!(!Arc::ptr_eq(&production, &test));
         assert!(Arc::ptr_eq(&production.payload, &test.payload));
-        assert!(host.maps.is_none(), "a new variant starts with no define-dependent state");
+        assert!(
+            host.maps.is_none(),
+            "a new variant starts with no define-dependent state"
+        );
         assert!(host.semantic.is_some());
         host.maps = maps(9);
         // Switching back resumes production's state (its patch base lives there), not a fresh one.
@@ -969,7 +1008,10 @@ mod tests {
         assert!(Arc::ptr_eq(&again, &test));
         assert_eq!(host.maps.as_ref().map(|(policy, _)| *policy), Some(9));
         assert!(host.serves_variant(std::path::Path::new("E:/fixture/world.dme"), &testing()));
-        assert!(!host.serves_variant(std::path::Path::new("E:/fixture/world.dme"), &BTreeMap::new()));
+        assert!(!host.serves_variant(
+            std::path::Path::new("E:/fixture/world.dme"),
+            &BTreeMap::new()
+        ));
         // Stashed variants are recomputable and go first under pressure.
         assert_eq!(host.release_stashed_variants(), 1);
         let cold = capture(&mut host, BTreeMap::new());
@@ -1094,7 +1136,10 @@ mod tests {
             abi.engine_owner().unwrap(),
             next_request.abi.as_ref().unwrap().engine_owner().unwrap(),
         ));
-        assert!(host.abi.is_none(), "one-shot ABI owner belongs to the request");
+        assert!(
+            host.abi.is_none(),
+            "one-shot ABI owner belongs to the request"
+        );
         assert!(request.initializer_fragments.is_some());
         assert!(request.initializer_assemblies.is_some());
         assert!(host.procedures.is_none());

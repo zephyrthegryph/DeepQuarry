@@ -1,0 +1,11 @@
+/proc/block_probe()
+    return @{"ab"}
+/proc/single_probe()
+    return @'ab'
+/world/New()
+    ..()
+    var/b=block_probe()
+    var/s=single_probe()
+    world.log << "BLOCK=[json_encode(b)]|[length(b)]"
+    world.log << "SINGLE=[json_encode(s)]|[length(s)]"
+    shutdown()

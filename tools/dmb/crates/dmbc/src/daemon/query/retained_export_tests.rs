@@ -32,6 +32,7 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         engine_template: None,
         bootstrap_catalog: false,
         expected_revision: Some(format!("{:032x}", frontend.snapshot.tree.identity())),
+        expected_policy_revision: None,
         expected_source_revision: Some(format!(
             "{:032x}",
             dm_analysis::tree_export::source_revision(&frontend)
@@ -176,6 +177,7 @@ fn export_rejects_invalid_aggregate_before_transport() {
         engine_template: None,
         bootstrap_catalog: false,
         expected_revision: Some("00000000000000000000000000000001".into()),
+        expected_policy_revision: None,
         expected_source_revision: Some("00000000000000000000000000000002".into()),
         queries: vec![],
         source_queries: vec![],

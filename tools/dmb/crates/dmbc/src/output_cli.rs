@@ -108,16 +108,19 @@ pub fn finish_command(
     if let CommandOutcome::Build(BuildOutcome::QueryPrepared {
         semantic_revision,
         source_revision,
+        policy_revision,
         retained,
     }) = &outcome
     {
         // Only emitted after the ordinary runner's captured-input restat.
-        serde_json::to_writer(&mut crate::daemon::stdout_writer(), &serde_json::json!({
+        let mut row = serde_json::json!({
             "row":"query_prepared", "schema":"dm-query-preparation-v1",
             "semantic_revision":semantic_revision, "source_revision":source_revision,
             "retained":retained, "complete":false,
             "coverage":"current frontend/startup/ABI host owners; executable body facts are lazy; no output publication"
-        })).map_err(io::Error::other)?;
+        });
+        if let Some(policy) = policy_revision { row["policy_revision"] = policy.clone().into(); }
+        serde_json::to_writer(&mut crate::daemon::stdout_writer(), &row).map_err(io::Error::other)?;
         crate::daemon::stdout_writer().write_all(b"\n")?;
     }
     if let Some(path) = path {

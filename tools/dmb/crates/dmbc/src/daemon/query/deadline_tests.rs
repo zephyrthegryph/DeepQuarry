@@ -47,6 +47,7 @@ fn cancelled_current_body_query_preserves_pinned_snapshot_for_retry() {
         engine_template: None,
         bootstrap_catalog: false,
         expected_revision: Some(format!("{:032x}", frontend.snapshot.tree.identity())),
+        expected_policy_revision: None,
         expected_source_revision: Some(format!(
             "{:032x}",
             dm_analysis::tree_export::source_revision(&frontend)

@@ -9,16 +9,43 @@ build = "build.rs"
 [[bin]]
 name = "analyze"
 path = "src/main.rs"
+required-features = ["legacy-sem"]
 
 [lib]
 name = "dq_analyze"
 path = "src/lib.rs"
 
+[features]
+default = ["legacy-sem"]
+legacy-sem = ["dep:dreammaker"]
+native-policy = ["dep:dm-analysis", "dep:dm-tree"]
+# Explicit independent migration oracle; never enabled by production defaults.
+unified-oracle = ["legacy-sem"]
+
+[[example]]
+name = "unified_legacy_base_vars"
+required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_legacy_records_data_only"
+required-features = ["legacy-sem"]
+
+[[example]]
+name = "unified_legacy_untyped"
+required-features = ["legacy-sem"]
+
+[[example]]
+name = "unified_raw_policy"
+required-features = ["legacy-sem", "native-policy"]
+
 [dependencies]
+dm-preprocess = { path = "../dmb/crates/dm-preprocess" }
+dm-analysis = { path = "../dmb/crates/dm-analysis", optional = true }
+dm-tree = { path = "../dmb/crates/dm-tree", optional = true }
 # The model, the walk store and every walk allocate millions of small values: a faster allocator is most of a warm run's CPU.
 mimalloc = { version = "0.1", default-features = false }
 # Parse-aware frontend: SpacemanDMM suite-1.11 dreammaker, vendored (vendor/README.md) to add model persistence.
-dreammaker = { path = "vendor/dreammaker" }
+dreammaker = { path = "vendor/dreammaker", optional = true }
 regex = "1"
 fancy-regex = "0.14"
 rayon = "1"

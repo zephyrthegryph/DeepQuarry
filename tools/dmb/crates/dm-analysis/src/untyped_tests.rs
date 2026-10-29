@@ -194,3 +194,142 @@ fn archive_scope_rejects_unrepresented_or_incomplete_body_syntax() {
         assert!(archived_scope(&body, body.tree(), &[]).is_err(), "{source}");
     }
 }
+
+#[path = "../examples/support/reference_hierarchy.rs"]
+mod reference_hierarchy;
+
+fn native_field_frontend(target: &str, identity: u128) -> dm_tree::frontend::ColdFrontend {
+    use dm_ir::{DeclaredTypeKnowledge as K, OpaqueFieldBase};
+    let mut seed = reference_hierarchy::seed();
+    seed.identity = identity;
+    // Synthetic test catalog extends the pinned hierarchy under its own identity.
+    seed.hierarchy.schema = identity;
+    let owner = seed.symbols.intern("/datum/native").unwrap();
+    seed.hierarchy
+        .parents
+        .push((owner, Some(SymbolId::of("/datum"))));
+    let target = seed.symbols.intern(target).unwrap();
+    let list = seed.symbols.intern("/list").unwrap();
+    let fields = [
+        ("typed", K::Known(target)),
+        ("loose", K::KnownUntyped),
+        ("opaque", K::Unsupported),
+        ("items", K::Known(list)),
+    ];
+    let mut bases = Vec::new();
+    let mut members = Vec::new();
+    for (name, declared_type) in fields {
+        let name = seed.symbols.intern(name).unwrap();
+        bases.push(OpaqueFieldBase {
+            owner,
+            name,
+            declared_type,
+        });
+        members.push(dm_tree::IntrinsicMember {
+            owner,
+            name,
+            kind: dm_tree::MemberKind::Var,
+            shared_owner: None,
+            instance_storage_proven: true,
+        });
+    }
+    seed.fields = bases.into();
+    seed.intrinsics = members.into();
+    dm_tree::frontend::build_with_config(Path::new("p.dme"),
+        &Source("/datum/target\n/datum/other\n/datum/source\n/datum/native/child\n    var/list/datum/source/authored\n    proc/test(datum/source/typed)\n        return typed\n"),
+        &Default::default(), dm_tree::frontend::FrontendConfig { workers: 1, engine: Some(&seed), observer: None }).unwrap()
+}
+
+#[test]
+fn native_declared_type_facts_do_not_require_full_metadata_or_storage() {
+    struct TypeOnly<'a>(&'a dm_tree::SemanticTree);
+    impl Resolver for TypeOnly<'_> {
+        fn resolve(&self, query: Q) -> M {
+            if matches!(query, Q::DeclaredVarType { .. }) {
+                Resolver::resolve(self.0, query)
+            } else {
+                M::Unsupported(query)
+            }
+        }
+    }
+    let frontend = native_field_frontend("/datum/target", 101);
+    let arena = BodyArena::new_typed(&frontend, |_| true);
+    arena
+        .with_parsed(&frontend.bodies[0], |body| {
+            let resolver = TypeOnly(&frontend.snapshot.tree);
+            let scope = scope(&frontend, body, &resolver, &[]).unwrap();
+            assert_eq!(
+                scope.field_type(scope.owner, "typed").unwrap().as_deref(),
+                Some("/datum/target")
+            );
+            assert_eq!(
+                scope.field_type(scope.owner, "loose").unwrap().as_deref(),
+                Some("")
+            );
+            assert_eq!(
+                scope.field_type(scope.owner, "items").unwrap().as_deref(),
+                Some("/list")
+            );
+            assert!(
+                scope.field_type(scope.owner, "opaque").is_err(),
+                "unknown never means untyped"
+            );
+            assert!(
+                scope.field(scope.owner, "authored").is_err(),
+                "reporting still needs full source/storage facts"
+            );
+        })
+        .unwrap();
+}
+
+#[test]
+fn source_list_precision_and_local_shadowing_survive_native_type_queries() {
+    let frontend = native_field_frontend("/datum/target", 102);
+    let arena = BodyArena::new_typed(&frontend, |_| true);
+    arena
+        .with_parsed(&frontend.bodies[0], |body| {
+            let scope = scope(&frontend, body, frontend.snapshot.tree.as_ref(), &[]).unwrap();
+            assert_eq!(
+                scope
+                    .field_type(scope.owner, "authored")
+                    .unwrap()
+                    .as_deref(),
+                Some("/list/datum/source")
+            );
+            let parsed = dm_syntax::parse_expression("typed");
+            assert!(parsed.diagnostics.is_empty());
+            let expression = parsed.expr.unwrap();
+            assert_eq!(
+                scope.type_of(&expression).unwrap().as_deref(),
+                Some("/datum/source")
+            );
+            let query = Q::Var {
+                owner: scope.owner,
+                name: SymbolId::of("typed"),
+            };
+            assert!(
+                matches!(Resolver::resolve(scope.resolver, query), M::Unsupported(_)),
+                "no fabricated source metadata"
+            );
+        })
+        .unwrap();
+}
+
+#[test]
+fn native_declared_type_changes_are_bound_to_engine_qualified_semantic_owner() {
+    let first = native_field_frontend("/datum/target", 103);
+    let second = native_field_frontend("/datum/other", 104);
+    assert_ne!(
+        first.snapshot.tree.identity(),
+        second.snapshot.tree.identity()
+    );
+    for (frontend, expected) in [(&first, "/datum/target"), (&second, "/datum/other")] {
+        let archive = frontend.body_archive().unwrap();
+        let body = archive.parse(0).unwrap();
+        let scope = archived_scope(&body, archive.tree(), &[]).unwrap();
+        assert_eq!(
+            scope.field_type(scope.owner, "typed").unwrap().as_deref(),
+            Some(expected)
+        );
+    }
+}

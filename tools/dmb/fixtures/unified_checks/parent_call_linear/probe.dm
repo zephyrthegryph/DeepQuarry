@@ -1,0 +1,7 @@
+/datum/example/proc/probe()
+    var/a = list(..(), (..()))
+    return ..(..())
+/datum/example/probe()
+    return ..()
+/datum/example/child/probe()
+    return ..()

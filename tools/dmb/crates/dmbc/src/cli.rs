@@ -86,6 +86,8 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
         _ => return Err("expected analyze, compile or prepare-query".into()),
     };
     let mut project = None;
+    let mut policy_inputs = None;
+    let mut timeout_seconds = None;
     let mut defines = BTreeMap::new();
     let mut workers = 2usize;
     let mut engine_template = None;
@@ -102,6 +104,23 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     let mut warnings = crate::diagnostics::WarningPolicy::default();
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            "--request-timeout-seconds" => {
+                if timeout_seconds.is_some() { return Err("--request-timeout-seconds accepts one budget".into()); }
+                let text = args.next().ok_or("--request-timeout-seconds requires an integer in 1..300")?;
+                if text.is_empty() || !text.bytes().all(|byte| byte.is_ascii_digit()) {
+                    return Err("--request-timeout-seconds requires an integer in 1..300".into());
+                }
+                let seconds = text.parse::<u16>().map_err(|_| "--request-timeout-seconds requires an integer in 1..300")?;
+                crate::request::validate_timeout_seconds(Some(seconds))?;
+                timeout_seconds = Some(seconds);
+            }
+            "--policy-inputs-json" => {
+                if policy_inputs.is_some() { return Err("--policy-inputs-json accepts one contract".into()); }
+                let value = args.next().ok_or("--policy-inputs-json requires inline JSON")?;
+                let request: crate::policy_request::PolicyInputRequest = serde_json::from_str(&value)?;
+                request.clone().admit()?;
+                policy_inputs = Some(request);
+            }
             "--warnings-as-errors" => warnings.as_errors = true,
             "--ignore-warning" => {
                 let codes = args.next().ok_or("--ignore-warning requires a warning code")?;
@@ -178,6 +197,8 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     }
     Ok(Command::Build(Box::new(BuildRequest {
         command,
+        timeout_seconds,
+        policy_inputs,
         project: project.ok_or("a project manifest is required")?,
         defines,
         workers,

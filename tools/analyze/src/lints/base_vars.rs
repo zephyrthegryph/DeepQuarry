@@ -299,6 +299,22 @@ fn record_procs(sem: &crate::sem::Sem) -> Vec<(String, u32, String)> {
     out
 }
 
+/// Independent migration oracle only: expose the existing, unchanged semantic
+/// supplements before raw homing/exemption/admission policy is applied.
+#[cfg(feature = "unified-oracle")]
+pub fn unified_oracle_supplement(sem: &crate::sem::Sem) -> Vec<serde_json::Value> {
+    let mut rows = Vec::new();
+    for declaration in typed_vars(sem) {
+        let mut row = serde_json::to_value(declaration).expect("serializable legacy supplement");
+        row["row"] = serde_json::json!("base_var_declaration");
+        rows.push(row);
+    }
+    for (rel, line, name) in record_procs(sem) {
+        rows.push(serde_json::json!({"row":"record_proc", "rel":rel, "line":line, "name":name}));
+    }
+    rows
+}
+
 /// The `(type, var)` a `base_var_home_hot` key names: `/atom/movable/pressure_resistance` is `(/atom/movable, pressure_resistance)`.
 fn hot_key(key: &str) -> Option<(&str, &str)> {
     let (owner, name) = key.rsplit_once('/')?;

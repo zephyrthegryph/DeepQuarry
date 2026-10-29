@@ -259,3 +259,6 @@ pub use statement_filter::filter_statements;
 mod statement_view;
 pub use statement_view::{StatementMask, StatementView};
 pub mod numeric_form;
+
+#[cfg(test)]
+mod constructor_boundary_tests;

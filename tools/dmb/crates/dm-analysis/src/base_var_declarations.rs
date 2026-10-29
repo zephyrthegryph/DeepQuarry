@@ -11,7 +11,7 @@ use dm_tree::{
     frontend::{BodyArchive, SourceLocation},
     DefinitionMode, MemberId, MemberKind, SemanticTree,
 };
-use std::{path::Path, sync::Arc};
+use std::{collections::BTreeMap, path::Path, sync::Arc};
 
 // Native declaration masks, defined by dm-tree's authored declaration adapter.
 // Global is a separate native mask, but shares STATIC's legacy policy meaning.
@@ -21,7 +21,10 @@ const NO_INSTANCE_COST: u32 = 1 | 2 | 8;
 pub struct BaseVarDeclaration<'a> {
     tree: &'a SemanticTree,
     pub declaration: MemberId,
+    /// Runtime-normalized selection, used for declaration metadata proof only.
     pub effective: MemberId,
+    /// Last authored same-owner value, matching legacy TypeVar.value policy.
+    pub source_value: MemberId,
     pub owner: SymbolId,
     pub name: SymbolId,
     pub metadata: &'a DeclarationMeaning,
@@ -141,25 +144,16 @@ fn effective_metadata<'a>(
 }
 
 fn file(root: &Path, source: &SourceLocation) -> String {
-    let relative = source.path.strip_prefix(root).unwrap_or(&source.path);
-    let text = relative.to_string_lossy().replace('\\', "/");
-    if !text.contains("/.") {
-        return text;
-    }
-    let mut out: Vec<&str> = Vec::new();
-    for segment in text.split('/') {
-        match segment {
-            "." => (),
-            ".." if out.last().is_some_and(|last| *last != "..") => {
-                out.pop();
-            }
-            _ => out.push(segment),
-        }
-    }
-    out.join("/")
+    // Report-only filesystem equivalence. Keep original provider/origin keys;
+    // only the shared safe ordinary-DOS/verbatim comparison may unify paths.
+    dm_preprocess::regions::relative_filesystem_path(source.path.as_path(), root)
+        .as_deref()
+        .unwrap_or(source.path.as_path())
+        .to_string_lossy()
+        .replace('\\', "/")
 }
 
-/// Legacy `typed_vars`: declarations only, effective same-owner initializer,
+/// Legacy `typed_vars`: declarations only, last authored same-owner initializer,
 /// declaration source location, caller-supplied base type set. Child defaults
 /// are not declarations and cannot manufacture rows on a subtype.
 ///
@@ -173,11 +167,50 @@ pub fn base_var_declarations<'a>(
     root: &Path,
 ) -> Result<Vec<BaseVarDeclaration<'a>>, Unsupported> {
     let tree = archive.tree();
-    let mut rows = Vec::new();
-    for (index, member) in tree.members().iter().enumerate() {
-        if member.kind != MemberKind::Var || member.definition != DefinitionMode::Declare {
+    // Runtime dispatch normalizes a formal before overrides. Legacy Analyze's
+    // TypeVar.value instead follows source encounter, including a later formal
+    // declaration replacing an earlier assignment. Preserve that policy using
+    // the compiler's authored ledger, not another parser or runtime inference.
+    struct Group {
+        formal: Option<MemberId>,
+        value: MemberId,
+        first: usize,
+    }
+    let mut groups: Vec<Group> = Vec::new();
+    let mut by_name = BTreeMap::new();
+    for (encounter, target) in tree.declarations().iter().enumerate() {
+        let dm_tree::Target::Member(id) = target else {
+            continue;
+        };
+        let member = tree
+            .member(*id)
+            .ok_or_else(|| Unsupported("base-var authored member is absent".into()))?;
+        if member.kind != MemberKind::Var {
             continue;
         }
+        let group = *by_name
+            .entry((member.owner.index(), member.name))
+            .or_insert_with(|| {
+                groups.push(Group {
+                    formal: None,
+                    value: *id,
+                    first: encounter,
+                });
+                groups.len() - 1
+            });
+        groups[group].value = *id;
+        if member.definition == DefinitionMode::Declare {
+            groups[group].formal = Some(*id);
+        }
+    }
+    let mut rows = Vec::new();
+    for group in groups {
+        let Some(declaration) = group.formal else {
+            continue;
+        };
+        let member = tree
+            .member(declaration)
+            .ok_or_else(|| Unsupported("base-var formal declaration is absent".into()))?;
         let owner = tree
             .type_node(member.owner)
             .ok_or_else(|| Unsupported("base-var declaration owner absent".into()))?
@@ -196,13 +229,19 @@ pub fn base_var_declarations<'a>(
             .text(owner)
             .ok_or_else(|| Unsupported("base-var owner spelling unavailable".into()))?;
         let base = base_types.contains(&owner_text);
-        let declaration = MemberId(
-            index
-                .try_into()
-                .map_err(|_| Unsupported("base-var member index overflow".into()))?,
-        );
-        let (effective, metadata) = effective_metadata(tree, declaration)?;
-        let list_init = empty_list(tree, metadata.initializer.as_ref())?;
+        let (effective, _) = effective_metadata(tree, declaration)?;
+        let value = tree
+            .member(group.value)
+            .ok_or_else(|| Unsupported("base-var authored value is absent".into()))?;
+        if value.owner != member.owner
+            || value.name != member.name
+            || value.metadata.inherited_opaque.is_some()
+        {
+            return Err(Unsupported(
+                "base-var authored initializer is incomplete or foreign".into(),
+            ));
+        }
+        let list_init = empty_list(tree, value.metadata.initializer.as_ref())?;
         if !base && !list_init {
             continue;
         }
@@ -212,19 +251,23 @@ pub fn base_var_declarations<'a>(
             .ok_or_else(|| {
                 Unsupported("base-var declaration has no issued source origin".into())
             })?;
-        rows.push(BaseVarDeclaration {
-            tree,
-            declaration,
-            effective,
-            owner,
-            name: member.name,
-            metadata: member.metadata.as_ref(),
-            source,
-            base,
-            list_init,
-        });
+        rows.push((
+            group.first,
+            BaseVarDeclaration {
+                tree,
+                declaration,
+                effective,
+                source_value: group.value,
+                owner,
+                name: member.name,
+                metadata: member.metadata.as_ref(),
+                source,
+                base,
+                list_init,
+            },
+        ));
     }
-    rows.sort_by(|a, b| {
+    rows.sort_by(|(first_a, a), (first_b, b)| {
         (
             file(root, &a.source),
             a.source.line,
@@ -235,8 +278,9 @@ pub fn base_var_declarations<'a>(
                 b.source.line,
                 tree.symbols().text(b.owner),
             ))
+            .then(first_a.cmp(first_b))
     });
-    Ok(rows)
+    Ok(rows.into_iter().map(|(_, row)| row).collect())
 }
 
 #[derive(Clone, Copy, Debug)]

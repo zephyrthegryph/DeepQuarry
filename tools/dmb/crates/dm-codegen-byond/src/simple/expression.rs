@@ -240,25 +240,14 @@ impl Compiler<'_> {
                     self.emit(opcode::PUSH_INT, vec![Word::Immediate(0)]);
                 } else if literal == "TRUE" {
                     self.emit(opcode::PUSH_INT, vec![Word::Immediate(1)]);
-                } else if literal.starts_with("@{\"")
-                    && literal.ends_with("\"}")
-                    && literal.len() >= 5
-                {
-                    let value = literal[3..literal.len() - 2].to_owned();
-                    self.intern_string(&value);
-                    self.emit(
-                        opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
-                    );
-                } else if literal.starts_with("@\"") && literal.ends_with('"') && literal.len() >= 3
-                {
-                    let value = literal[2..literal.len() - 1].to_owned();
-                    self.intern_string(&value);
-                    self.emit(
-                        opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
-                    );
-                } else if (literal.starts_with('"') && literal.ends_with('"') && literal.len() >= 2)
+                } else if (literal.starts_with("@\"")
+                    && literal.ends_with('"')
+                    && literal.len() >= 3)
+                    || (literal.starts_with("@{\"")
+                        && literal.ends_with("\"}")
+                        && literal.len() >= 5)
+                    || (literal.starts_with("@'") && literal.ends_with('\'') && literal.len() >= 3)
+                    || (literal.starts_with('"') && literal.ends_with('"') && literal.len() >= 2)
                     || (literal.starts_with("{\"")
                         && literal.ends_with("\"}")
                         && literal.len() >= 4)
@@ -291,14 +280,6 @@ impl Compiler<'_> {
                             ],
                         );
                     }
-                } else if literal.starts_with("@'") && literal.ends_with('\'') && literal.len() >= 3
-                {
-                    let value = literal[2..literal.len() - 1].to_owned();
-                    self.intern_string(&value);
-                    self.emit(
-                        opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
-                    );
                 } else if literal.starts_with('\'') && literal.ends_with('\'') && literal.len() >= 2
                 {
                     let path = &literal[1..literal.len() - 1];

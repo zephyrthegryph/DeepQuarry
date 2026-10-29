@@ -1,24 +1,40 @@
 //! Reusable analysis consumes the shared source model directly.
 pub mod checks;
 pub mod checks_ambiguous_in;
+pub mod tree_export;
+pub mod typed_body;
+pub mod typed_body_jsonl;
 pub mod untyped;
+pub mod untyped_native;
 pub mod value_equations;
 pub mod value_expressions;
 pub mod value_program;
 pub mod value_query;
 pub mod value_schemas;
-pub mod untyped_native;
-pub mod tree_export;
-pub mod typed_body;
-pub mod typed_body_jsonl;
 
 mod untyped_order;
 
-mod native_program;
+pub mod base_var_declarations;
+pub mod check_policy;
+pub mod checker_constant_shape;
+pub mod checker_order;
+pub mod checker_reachable;
+pub mod checks_control_static;
+pub mod check_configuration;
 pub mod checks_invalid_set;
 pub mod declaration_queries;
-pub mod check_policy;
 pub mod lifecycle_declarations;
-pub mod checker_order;
+mod native_program;
 pub mod policy_inputs;
-pub mod base_var_declarations;
+pub mod records_data_only;
+pub mod source_definitions;
+
+pub mod checks_flow;
+
+pub mod checks_set_no_effect;
+pub mod checks_control_policies;
+pub mod analyze_scope_config;
+
+pub mod checks_parent_call;
+
+pub mod checks_configured_control;

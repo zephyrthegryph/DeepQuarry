@@ -132,6 +132,7 @@ pub(crate) fn prepare_query(
             "{:032x}",
             dm_analysis::tree_export::source_revision(frontend)
         ),
+        policy_revision: query_attempt.policy_revision().map(|pin| format!("{pin:032x}")),
         retained,
     })
 }

@@ -74,6 +74,7 @@ pub enum CaptureError {
     DuplicateRole(PathBuf),
     ContradictoryText { path: PathBuf, view: TextView },
     MissingView { path: PathBuf, view: TextView },
+    InvalidSourceLine { path: PathBuf, line: usize },
     EmptyPath,
 }
 impl std::fmt::Display for CaptureError {
@@ -110,6 +111,30 @@ impl PolicyFile {
     }
     pub fn views(&self) -> impl Iterator<Item = (TextView, &SourceText)> {
         self.views.iter().map(|(&kind, text)| (kind, text))
+    }
+
+    /// Analyze's historical `engine_line` projection, using captured original
+    /// text instead of rereading the mutable checkout. A lone CR adds a display
+    /// line only when it precedes the native LF-based line, exactly as in the
+    /// reference policy. This formats an origin; it does not authenticate one.
+    pub fn analyze_display_line(&self, native_line: usize) -> Result<usize, CaptureError> {
+        let text = self.view(TextView::CompilerDecoded)?.as_str().as_bytes();
+        let mut line = 1usize;
+        let mut extra = 0usize;
+        for (offset, byte) in text.iter().enumerate() {
+            if *byte == b'\n' {
+                line += 1;
+            } else if *byte == b'\r' && text.get(offset + 1) != Some(&b'\n') && line < native_line {
+                extra += 1;
+            }
+        }
+        if native_line == 0 || native_line > line {
+            return Err(CaptureError::InvalidSourceLine {
+                path: self.path.as_ref().clone(),
+                line: native_line,
+            });
+        }
+        Ok(native_line + extra)
     }
 }
 

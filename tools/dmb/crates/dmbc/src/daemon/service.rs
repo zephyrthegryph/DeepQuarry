@@ -937,6 +937,10 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                             | super::query::SourceQuery::BodyModel { .. }
                             | super::query::SourceQuery::NativeCheckerFixture { .. }
                             | super::query::SourceQuery::NativeUntypedFixture { .. }
+                            | super::query::SourceQuery::NativeRawPolicyFixture { .. }
+                            | super::query::SourceQuery::NativeNamedRule { .. }
+                            | super::query::SourceQuery::NativeConfiguredChecker { .. }
+                            | super::query::SourceQuery::NativeConfiguredControlBatch { .. }
                     )
                 });
                 let _permit = if executable {
@@ -981,6 +985,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             }
         }
         Request::Build(request) => {
+            let preparation_started = Instant::now();
             dm_profile::request_marks_begin();
             // A death during this build is quoted from here by the next daemon start of this namespace.
             super::crash_trace::note_request(&format!("build project={}", request.project.display()));
@@ -1014,6 +1019,12 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     )),
                 );
             }
+            let preparation_deadline = match super::prepare_deadline::capture(request.command, request.timeout_seconds, preparation_started) {
+                Ok(deadline) => deadline,
+                Err(error) => return protocol::send(&mut stream, &Reply::Rejected(
+                    crate::request_failure::RequestFailure::invalid_request(error.to_string()),
+                )),
+            };
             transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
             let path = std::fs::canonicalize(&request.project)?;
             let accepted = match shared.accept_request() {
@@ -1041,8 +1052,16 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             protocol::send(&mut stream, &Reply::Accepted)?;
             let stream = Arc::new(Mutex::new(stream));
             let _output = super::output_binding(Arc::clone(&stream));
-            let _binding = control::bind(token);
-            let admission = admission_deadline::AdmissionDeadline::new(Instant::now());
+            let _binding = match preparation_deadline {
+                Some(deadline) => control::bind_with_deadline(token, deadline),
+                None => control::bind(token),
+            };
+            // One absolute deadline spans admission, coordinator work and the
+            // worker contexts captured by the existing cancellation boundary.
+            let admission = match preparation_deadline {
+                Some(deadline) => admission_deadline::AdmissionDeadline::at(deadline),
+                None => admission_deadline::AdmissionDeadline::new(Instant::now()),
+            };
             let _serial = match slot.lock_request_until(&admission) {
                 Ok(serial) => serial,
                 Err(error) => {
@@ -1463,5 +1482,18 @@ mod tests {
         request.engine_template = Some(other);
         assert!(!Arc::ptr_eq(&first, &shared.slot(path, Some(&request))));
         let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    #[test]
+    fn execution_budget_does_not_partition_semantic_session_or_request_identity() {
+        let args = vec!["compile".into(), "E:/fixture/project.dme".into()];
+        let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else { panic!("build expected") };
+        let baseline_session = SessionKey::of(request.project.clone(), Some(&request));
+        let baseline_request = RequestKey::of(&request, &request.project);
+        for seconds in [1,300] {
+            request.timeout_seconds = Some(seconds);
+            assert_eq!(SessionKey::of(request.project.clone(), Some(&request)), baseline_session);
+            assert_eq!(RequestKey::of(&request, &request.project), baseline_request);
+        }
     }
 }

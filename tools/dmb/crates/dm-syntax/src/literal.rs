@@ -8,10 +8,24 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
+/// Lexical facts needed by the pinned checker, before runtime text escapes.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct LiteralLexicalShape {
+    pub interpolated: bool,
+    pub pinned_segment_nonempty: bool,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LiteralLexicalError {
+    /// Removing CR changed an escape/interpolation boundary. The runtime
+    /// expression roster cannot certify the pinned lexical structure.
+    InterpolationBoundaryNormalization,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LiteralParts {
     pub template: Vec<u8>,
     pub expressions: Vec<Expr>,
+    pub lexical: Result<LiteralLexicalShape, LiteralLexicalError>,
 }
 #[derive(Debug)]
 struct LiteralState {
@@ -77,15 +91,12 @@ impl LiteralText {
         state
             .parts
             .get_or_init(|| {
-                string_literal_parts(&state.raw).map(|parts| {
-                    parts.map(|(template, mut expressions)| {
-                        for expression in &mut expressions {
+                retained_string_literal_parts(&state.raw).map(|parts| {
+                    parts.map(|mut parts| {
+                        for expression in &mut parts.expressions {
                             shift_expression(expression, state.origin);
                         }
-                        LiteralParts {
-                            template,
-                            expressions,
-                        }
+                        parts
                     })
                 })
             })
@@ -194,7 +205,10 @@ pub fn shift_expression(expression: &mut Expr, offset: usize) {
 }
 /// One shared literal parser for emission and source registration. Expression
 /// nodes exist only for this literal's interpolation leaves, never a whole body.
-fn string_literal_parts_clean(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, String> {
+fn string_literal_parts_clean(
+    raw: &str,
+    projection: RawProjection<'_>,
+) -> Result<Option<LiteralParts>, String> {
     // Raw literals preserve escapes and brackets exactly, including multiline text.
     let raw_value = if raw.starts_with("@{\"") && raw.ends_with("\"}") && raw.len() >= 5 {
         Some(&raw[3..raw.len() - 2])
@@ -207,7 +221,16 @@ fn string_literal_parts_clean(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>,
         None
     };
     if let Some(value) = raw_value {
-        return Ok(Some((value.as_bytes().to_vec(), Vec::new())));
+        return Ok(Some(LiteralParts {
+            template: value.as_bytes().to_vec(),
+            expressions: Vec::new(),
+            lexical: Ok(LiteralLexicalShape {
+                interpolated: false,
+                pinned_segment_nonempty: !projection
+                    .segment(value.as_ptr() as usize - raw.as_ptr() as usize, value.len())
+                    .is_empty(),
+            }),
+        }));
     }
     let value = if raw.starts_with("{\"") && raw.ends_with("\"}") && raw.len() >= 4 {
         &raw[2..raw.len() - 2]
@@ -216,19 +239,118 @@ fn string_literal_parts_clean(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>,
     } else {
         return Ok(None);
     };
-    let (bytes, mut expressions) = parse_interpolated_string_clean(value)?;
     let offset = value.as_ptr() as usize - raw.as_ptr() as usize;
-    for expression in &mut expressions {
+    let mut parts = parse_interpolated_string_clean(value, projection.offset(offset))?;
+    for expression in &mut parts.expressions {
         shift_expression(expression, offset);
     }
-    Ok(Some((bytes, expressions)))
+    Ok(Some(parts))
 }
 
-fn parse_interpolated_string_clean(value: &str) -> Result<(Vec<u8>, Vec<Expr>), String> {
+/// Projection of ranges issued by the primary interpolation parser onto the
+/// original literal. A start includes removed CR bytes after the preceding
+/// delimiter; an end includes removed CR bytes before the following delimiter.
+#[derive(Clone, Copy)]
+struct RawProjection<'a> {
+    original: &'a str,
+    positions: Option<&'a [usize]>,
+    base: usize,
+}
+impl<'a> RawProjection<'a> {
+    fn identity(original: &'a str) -> Self {
+        Self {
+            original,
+            positions: None,
+            base: 0,
+        }
+    }
+    fn offset(self, offset: usize) -> Self {
+        Self {
+            base: self.base + offset,
+            ..self
+        }
+    }
+    fn segment(self, start: usize, len: usize) -> &'a [u8] {
+        let start = self.base + start;
+        let end = start + len;
+        let (start, end) = match self.positions {
+            Some(positions) => (
+                if start == 0 {
+                    0
+                } else {
+                    positions[start - 1] + 1
+                },
+                positions.get(end).copied().unwrap_or(self.original.len()),
+            ),
+            None => (start, end),
+        };
+        &self.original.as_bytes()[start..end]
+    }
+}
+/// This scan never recognizes interpolation grammar. It observes only literal
+/// segment ranges already issued by the one primary parser. Pinned read_string
+/// retains ordinary escape bytes, but consumes an escaped CR or LF followed by
+/// skip_ws(true): all CR/indentation and at most one additional LF.
+fn observe_segment(
+    raw: &[u8],
+    shape: &mut LiteralLexicalShape,
+    error: &mut Option<LiteralLexicalError>,
+) {
+    let mut at = 0;
+    while at < raw.len() {
+        match raw[at] {
+            b'\\' => {
+                at += 1;
+                match raw.get(at) {
+                    Some(b'\r' | b'\n') => {
+                        at += 1;
+                        let mut additional_lf = false;
+                        while at < raw.len() {
+                            match raw[at] {
+                                b'\r' | b' ' | b'\t' => at += 1,
+                                b'\n' if !additional_lf => {
+                                    additional_lf = true;
+                                    at += 1;
+                                }
+                                _ => break,
+                            }
+                        }
+                    }
+                    Some(_) => {
+                        shape.pinned_segment_nonempty = true;
+                        at += 1;
+                    }
+                    None => {
+                        *error = Some(LiteralLexicalError::InterpolationBoundaryNormalization);
+                    }
+                }
+            }
+            b'[' => {
+                *error = Some(LiteralLexicalError::InterpolationBoundaryNormalization);
+                at += 1;
+            }
+            _ => {
+                shape.pinned_segment_nonempty = true;
+                at += 1;
+            }
+        }
+    }
+}
+
+fn parse_interpolated_string_clean(
+    value: &str,
+    projection: RawProjection<'_>,
+) -> Result<LiteralParts, String> {
     let mut template = Vec::new();
     let mut expressions = Vec::new();
     let mut next_marker = None;
     let mut substituted = false;
+    let mut lexical = LiteralLexicalShape {
+        interpolated: false,
+        pinned_segment_nonempty: false,
+    };
+    let mut segment_start = 0;
+    let mut segment_error = None;
     let mut at = 0;
     while at < value.len() {
         let ch = value[at..].chars().next().unwrap();
@@ -317,6 +439,12 @@ fn parse_interpolated_string_clean(value: &str) -> Result<(Vec<u8>, Vec<Expr>), 
             continue;
         }
         if ch == '[' {
+            observe_segment(
+                projection.segment(segment_start, at - segment_start),
+                &mut lexical,
+                &mut segment_error,
+            );
+            lexical.interpolated = true;
             let start = at + 1;
             let mut cursor = None;
             let mut depth = 1usize;
@@ -344,6 +472,7 @@ fn parse_interpolated_string_clean(value: &str) -> Result<(Vec<u8>, Vec<Expr>), 
             if value[start..cursor].trim().is_empty() {
                 template.extend([0xff, next_marker.take().unwrap_or(1)]);
                 at = cursor + 1;
+                segment_start = at;
                 continue;
             }
             let raw_expression = &value[start..cursor];
@@ -367,13 +496,23 @@ fn parse_interpolated_string_clean(value: &str) -> Result<(Vec<u8>, Vec<Expr>), 
             });
             template.extend([0xff, marker]);
             at = cursor + 1;
+            segment_start = at;
             continue;
         }
         let mut bytes = [0; 4];
         template.extend_from_slice(ch.encode_utf8(&mut bytes).as_bytes());
         at += ch.len_utf8();
     }
-    Ok((template, expressions))
+    observe_segment(
+        projection.segment(segment_start, value.len() - segment_start),
+        &mut lexical,
+        &mut segment_error,
+    );
+    Ok(LiteralParts {
+        template,
+        expressions,
+        lexical: segment_error.map_or(Ok(lexical), Err),
+    })
 }
 
 enum TextMacro {
@@ -597,29 +736,54 @@ fn remap(expression: &mut Expr, positions: &[usize], source: &str) {
         }
     }
 }
-pub fn string_literal_parts(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, String> {
+fn retained_string_literal_parts(raw: &str) -> Result<Option<LiteralParts>, String> {
     if !raw.contains('\r') {
-        return string_literal_parts_clean(raw);
+        return string_literal_parts_clean(raw, RawProjection::identity(raw));
     }
     let (cooked, positions) = without_cr(raw);
-    let mut parts = string_literal_parts_clean(&cooked)?;
-    if let Some((_, expressions)) = &mut parts {
-        for expr in expressions {
+    let mut parts = string_literal_parts_clean(
+        &cooked,
+        RawProjection {
+            original: raw,
+            positions: Some(&positions),
+            base: 0,
+        },
+    )?;
+    if let Some(parts) = &mut parts {
+        for expr in &mut parts.expressions {
             remap(expr, &positions, raw);
         }
     }
     Ok(parts)
 }
+/// Compatibility tuple projection; the single retained parser also issues
+/// lexical policy facts, which runtime-only tuple callers need not retain.
+pub fn string_literal_parts(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, String> {
+    retained_string_literal_parts(raw)
+        .map(|parts| parts.map(|parts| (parts.template, parts.expressions)))
+}
 pub fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Expr>), String> {
-    if !value.contains('\r') {
-        return parse_interpolated_string_clean(value);
-    }
-    let (cooked, positions) = without_cr(value);
-    let (template, mut expressions) = parse_interpolated_string_clean(&cooked)?;
-    for expr in &mut expressions {
-        remap(expr, &positions, value);
-    }
-    Ok((template, expressions))
+    let mut parts = if value.contains('\r') {
+        let (cooked, positions) = without_cr(value);
+        let mut parts = parse_interpolated_string_clean(
+            &cooked,
+            RawProjection {
+                original: value,
+                positions: Some(&positions),
+                base: 0,
+            },
+        )?;
+        for expr in &mut parts.expressions {
+            remap(expr, &positions, value);
+        }
+        parts
+    } else {
+        parse_interpolated_string_clean(value, RawProjection::identity(value))?
+    };
+    Ok((
+        std::mem::take(&mut parts.template),
+        std::mem::take(&mut parts.expressions),
+    ))
 }
 
 #[cfg(test)]
@@ -727,3 +891,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "literal_lexical_shape_tests.rs"]
+mod lexical_shape_tests;

@@ -39,6 +39,9 @@ enum Family {
     PredefinedConstant,
     ResourceIn,
     MethodProcedureValue,
+    CheckerIntrinsicCallable,
+    CheckerBuiltinVar,
+    CheckerBuiltinProc,
 }
 fn family(query: ResolveQuery) -> (Family, Option<SymbolId>) {
     use ResolveQuery::*;
@@ -58,6 +61,9 @@ fn family(query: ResolveQuery) -> (Family, Option<SymbolId>) {
         SourceDeclarationChain { owner, .. } => (Family::SourceDeclarationChain, Some(owner)),
         IntrinsicCallable { owner, .. } => (Family::IntrinsicCallable, Some(owner)),
         IntrinsicCallableName(_) => (Family::IntrinsicCallableName, None),
+        CheckerIntrinsicCallable { owner, .. } => (Family::CheckerIntrinsicCallable, Some(owner)),
+        CheckerBuiltinVar { owner, .. } => (Family::CheckerBuiltinVar, Some(owner)),
+        CheckerBuiltinProc { owner, .. } => (Family::CheckerBuiltinProc, Some(owner)),
         Signature(_) => (Family::Signature, None),
         GlobalVar(_) => (Family::GlobalVar, None),
         MemberCallableVerbName(_) => (Family::MemberCallableVerbName, None),

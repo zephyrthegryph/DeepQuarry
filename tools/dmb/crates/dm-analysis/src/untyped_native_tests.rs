@@ -360,3 +360,29 @@ fn inference_exemptions_are_bound_before_empty_reports_or_file_exemptions() {
     let body = archive.parse(0).unwrap();
     assert!(archived_body_evidence(&archive, &body, &values, &Schemas::default(), &[]).is_err());
 }
+
+#[cfg(windows)]
+#[test]
+fn dos_root_reports_real_verbatim_archive_finding_without_rewriting_origin() {
+    let source = "/datum/test\n    var/saved\n    proc/use(datum/arg)\n        saved = arg\n";
+    let authored = Path::new(r"\\?\E:\native-policy-fixture\code\probe.dm");
+    let frontend = build(authored, &Source(source), &Default::default(), 1).unwrap();
+    let archive = frontend.body_archive().unwrap();
+    let values = Values::build_archive(&archive, archive.tree(), &[]).unwrap();
+    let rows = archived_findings(&archive, &values, &Schemas::default(),
+        Path::new(r"E:\native-policy-fixture"), &[], |_| false).unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].file, "code/probe.dm");
+    assert!(rows[0].message.ends_with("code/probe.dm:4"));
+    // The reporting comparison never changes the compiler's issued location.
+    assert_eq!(archive.occurrences()[0].source.path.as_path(), authored);
+}
+#[cfg(windows)]
+#[test]
+fn report_projection_unifies_only_safe_drive_verbatim_spelling() {
+    let root = Path::new(r"E:\native-policy-fixture");
+    assert_eq!(relative(root, Path::new(r"\\?\E:\native-policy-fixture\code\x.dm")), "code/x.dm");
+    assert_ne!(relative(root, Path::new(r"\\.\E:\native-policy-fixture\code\x.dm")), "code/x.dm");
+    assert_ne!(relative(root, Path::new(r"\\?\UNC\server\share\native-policy-fixture\code\x.dm")), "code/x.dm");
+    assert_ne!(relative(root, Path::new(r"E:\native-policy-fixture-other\code\x.dm")), "code/x.dm");
+}

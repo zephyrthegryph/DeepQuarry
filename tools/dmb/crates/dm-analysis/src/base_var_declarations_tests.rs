@@ -65,11 +65,18 @@ fn effective_same_owner_default_controls_candidate_but_origin_is_the_formal() {
 }
 
 #[test]
-fn override_before_formal_preserves_the_native_formal_first_selection_contract() {
+fn later_formal_default_matches_legacy_source_value_not_runtime_normalization() {
     let a = archive("/datum/base\n    items = list()\n    var/list/items = null\n");
-    let rows = base_var_declarations(&a, &[], Path::new(".")).unwrap();
-    assert_eq!(names(&a, &rows), [("/datum/base", "items", 3, false, true)]);
-    assert_ne!(rows[0].declaration, rows[0].effective);
+    let rows = base_var_declarations(&a, &["/datum/base"], Path::new(".")).unwrap();
+    assert_eq!(names(&a, &rows), [("/datum/base", "items", 3, true, false)]);
+    assert_eq!(rows[0].source_value, rows[0].declaration);
+    assert_ne!(
+        rows[0].declaration, rows[0].effective,
+        "compiler runtime selection remains unchanged"
+    );
+    assert!(base_var_declarations(&a, &[], Path::new("."))
+        .unwrap()
+        .is_empty());
 }
 
 #[test]
@@ -154,4 +161,40 @@ fn missing_symbolic_initializer_spelling_is_incomplete_not_a_clean_non_list() {
         .into(),
     };
     assert!(empty_list(a.tree(), Some(&bad)).is_err());
+}
+
+#[test]
+fn same_line_field_ties_preserve_first_encounter_even_when_formal_is_later() {
+    // Legacy Type.vars is an IndexMap: the first assignment inserts z before a,
+    // and declaring z later keeps its position while replacing its value.
+    let a =
+        archive("/datum/base/z = list(); /datum/base/var/a = list(); /datum/base/var/z = null\n");
+    let rows = base_var_declarations(&a, &["/datum/base"], Path::new(".")).unwrap();
+    assert_eq!(
+        names(&a, &rows),
+        [
+            ("/datum/base", "z", 1, true, false),
+            ("/datum/base", "a", 1, true, true)
+        ]
+    );
+}
+
+#[test]
+fn default_overrides_cannot_change_the_formal_type_or_storage_flags() {
+    let a = archive("/datum/base\n    var/static/list/shared = null\n    shared = list()\n    var/global/list/world_shared = null\n    world_shared = list()\n    var/list/datum/items = null\n    items = list()\n");
+    let rows = base_var_declarations(&a, &["/datum/base"], Path::new(".")).unwrap();
+    assert_eq!(names(&a, &rows), [("/datum/base", "items", 6, true, true)]);
+    assert_eq!(rows[0].declared_type_text().unwrap(), "/list/datum");
+    assert_ne!(rows[0].source_value, rows[0].declaration);
+}
+
+#[cfg(windows)]
+#[test]
+fn report_path_uses_safe_dos_verbatim_equivalence_only() {
+    let a = archive("/datum/probe/proc/run()\n    return\n");
+    let mut source = a.occurrences()[0].source.clone();
+    source.path = std::sync::Arc::new(Path::new(r"\\?\E:\policy-report\code\probe.dm").to_path_buf());
+    assert_eq!(file(Path::new(r"E:\policy-report"), &source), "code/probe.dm");
+    source.path = std::sync::Arc::new(Path::new(r"\\.\E:\policy-report\code\probe.dm").to_path_buf());
+    assert_ne!(file(Path::new(r"E:\policy-report"), &source), "code/probe.dm");
 }

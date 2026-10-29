@@ -143,7 +143,7 @@ pub(crate) fn bare_hash(tree: &Tree, rel: &str) -> Hash {
     const STATEMENTS: &[&str] = &["return", "break", "continue", "else", "do", "sleep", "goto", "try", "catch", "finally", "spawn", "set", "new", "null"];
     let mut lines: Vec<String> = Vec::new();
     let code: String = match tree.get(rel) {
-        Some(f) => f.code().text.clone(),
+        Some(f) => f.code().text.to_string(),
         None => crate::strip::code_only(&text_of(tree, rel)),
     };
     for line in code.lines() {

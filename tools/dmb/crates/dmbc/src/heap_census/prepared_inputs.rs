@@ -27,6 +27,10 @@ impl HeapCensus {
             census.slice("prepared_inputs.key",key,true);
             census.receipt("prepared_inputs.reads", reads);
             if census.arc_object("prepared_inputs.payload",value) {
+                if let Some(bytes)=value.exceptional_original_bytes(){
+                    let owner="prepared_inputs.exceptional_original_bytes";
+                    if census.arc_object(owner,bytes.shared_owner()){census.vec_payload(owner,bytes.shared_owner().bytes());}
+                }
                 let source=value.source();
                 if census.arc_object("prepared_inputs.source",source) {
                     census.source_text("prepared_inputs.text",source.original());

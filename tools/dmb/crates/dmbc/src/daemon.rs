@@ -15,6 +15,9 @@ pub fn cache_gc_once() -> String {
 pub mod endpoint_descriptor;
 mod generation_listeners;
 mod lifecycle_deadline;
+pub(crate) mod prepare_deadline;
+#[cfg(windows)]
+mod windows_spawn;
 mod protocol;
 pub mod query;
 pub mod resident;
@@ -302,29 +305,23 @@ fn listener_absent(error: &io::Error) -> bool {
 }
 
 fn start() -> io::Result<()> {
-    let mut command = std::process::Command::new(std::env::current_exe()?);
-    command
-        .arg("--serve-daemon")
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr({
-            let directory = resident::state_dir();
-            std::fs::create_dir_all(&directory)?;
-            resident::rotate_lifecycle_log(&directory);
-            std::process::Stdio::from(
-                std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(directory.join("lifecycle.log"))?,
-            )
-        });
+    let directory = resident::state_dir();
+    std::fs::create_dir_all(&directory)?;
+    resident::rotate_lifecycle_log(&directory);
+    let log = std::fs::OpenOptions::new()
+        .create(true).append(true).open(directory.join("lifecycle.log"))?;
     #[cfg(windows)]
+    { windows_spawn::spawn(&std::env::current_exe()?, log) }
+    #[cfg(not(windows))]
     {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(0x08000000);
+        std::process::Command::new(std::env::current_exe()?)
+            .arg("--serve-daemon")
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::from(log))
+            .spawn()?;
+        Ok(())
     }
-    command.spawn()?;
-    Ok(())
 }
 
 #[cfg(test)]

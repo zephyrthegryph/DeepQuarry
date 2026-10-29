@@ -27,7 +27,7 @@ pub(crate) struct Binding;
 pub(super) fn bind(token: Cancellation) -> Binding {
     bind_inner(token, None)
 }
-pub(super) fn bind_with_deadline(token: Cancellation, deadline: Instant) -> Binding {
+pub(crate) fn bind_with_deadline(token: Cancellation, deadline: Instant) -> Binding {
     bind_inner(token, Some(deadline))
 }
 fn bind_inner(token: Cancellation, deadline: Option<Instant>) -> Binding {

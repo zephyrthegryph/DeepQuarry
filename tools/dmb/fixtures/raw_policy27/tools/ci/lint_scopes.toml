@@ -1,0 +1,4 @@
+[lint.scheduler]
+exempt_files=["code/exempt.dm"]
+[lint.legacy_forms.lists]
+banned=["update_icon"]

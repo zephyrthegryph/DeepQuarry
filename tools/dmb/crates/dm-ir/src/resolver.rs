@@ -157,6 +157,25 @@ pub enum ResolveQuery {
     /// Whether any non-global engine proc or verb has this name. Source
     /// procedures never count, and root global builtins are not methods.
     IntrinsicCallableName(SymbolId),
+    /// Fixed checker-DSL provenance, distinct from runtime intrinsic inventory.
+    /// A mismatched/unattached profile is Unsupported, never negative proof.
+    CheckerIntrinsicCallable {
+        profile: crate::PackedU128,
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+    },
+    CheckerBuiltinVar {
+        profile: crate::PackedU128,
+        owner: SymbolId,
+        name: SymbolId,
+    },
+    CheckerBuiltinProc {
+        profile: crate::PackedU128,
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+    },
 }
 
 /// Source declaration form is independent of its executable implementation.
@@ -174,7 +193,11 @@ impl ResolveQuery {
             // Intrinsic presence, hierarchy and inventory completeness are all
             // part of the tree's engine-qualified answer world. Do not reuse a
             // source-only owner certificate for these provenance questions.
-            Self::IntrinsicCallable { .. } | Self::IntrinsicCallableName(_) => ReadDomain::Tree,
+            Self::IntrinsicCallable { .. }
+            | Self::IntrinsicCallableName(_)
+            | Self::CheckerIntrinsicCallable { .. }
+            | Self::CheckerBuiltinVar { .. }
+            | Self::CheckerBuiltinProc { .. } => ReadDomain::Tree,
             Self::SourceDeclarationChain { .. }
             | Self::MemberCallableVerbName(_)
             | Self::MemberCallableName(_) => ReadDomain::OwnerCallable(self),

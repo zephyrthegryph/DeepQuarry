@@ -166,7 +166,7 @@ fn mutates_macros(text: &str) -> bool {
 fn text_of(tree: &Tree, root: &Path, path: &Path) -> Option<String> {
     let rel = crate::util::rel_slash(&abs_in(root, path), root);
     match tree.get(&rel) {
-        Some(f) => Some(f.code().text.clone()),
+        Some(f) => Some(f.code().text.to_string()),
         None => std::fs::read_to_string(abs_in(root, path)).ok(),
     }
 }

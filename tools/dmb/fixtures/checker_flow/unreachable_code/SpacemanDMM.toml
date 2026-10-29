@@ -1,0 +1,4 @@
+[diagnostics]
+control_condition_static = "off"
+if_condition_determinate = "off"
+loop_condition_determinate = "off"

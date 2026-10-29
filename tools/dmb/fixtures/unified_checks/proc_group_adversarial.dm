@@ -14,4 +14,3 @@
     return !a & b
 /datum/test/z(a, b)
     return !a | b
-

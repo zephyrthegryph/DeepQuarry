@@ -27,6 +27,7 @@ fn reply(rows: &[Value], source_query_count: usize) -> QueryReply {
         coverage: "partial".into(),
         query_count: 0,
         source_query_count,
+        policy_revision: None,
         source_revision: Some("source".into()),
         snapshot_outcome: "analyzed".into(),
         last_request_outcome: "analyzed".into(),
@@ -156,4 +157,45 @@ fn malformed_finding_arrays_and_fields_are_rejected() {
     let mut row = checker_row(7, "disabled");
     row["diagnostics"] = json!([diagnostic()]);
     assert!(validate_requested(&reply(&[row], 1), &[checker(7, "disabled")]).is_err());
+}
+
+#[test]
+fn explicit_policy_rows_bind_exact_reply_pin_and_scope() {
+    let pin = "a".repeat(32);
+    let mut row = untyped_row("root");
+    row["policy_revision"] = pin.clone().into();
+    row["raw_marker_scope"] = "explicit_captured_files".into();
+    let mut value = reply(&[row.clone()], 1);
+    value.policy_revision = Some(pin);
+    validate_requested(&value, &[untyped("root")]).unwrap();
+    for stale in [Value::Null, "b".repeat(32).into()] {
+        let mut bad = row.clone();
+        bad["policy_revision"] = stale;
+        value.jsonl = format!("{bad}\n");
+        assert!(validate_requested(&value, &[untyped("root")]).is_err());
+    }
+    let mut bad = row;
+    bad.as_object_mut().unwrap().remove("policy_revision");
+    value.jsonl = format!("{bad}\n");
+    assert!(validate_requested(&value, &[untyped("root")]).is_err());
+}
+
+#[test]
+fn legacy_none_never_accepts_explicit_policy_scope_or_unrequested_pin() {
+    validate_requested(&reply(&[untyped_row("root")], 1), &[untyped("root")]).unwrap();
+    let mut row = untyped_row("root");
+    row["raw_marker_scope"] = "explicit_captured_files".into();
+    assert!(validate_requested(&reply(&[row], 1), &[untyped("root")]).is_err());
+    for pin in [Value::Null, "a".repeat(32).into()] {
+        let mut row = untyped_row("root");
+        row["policy_revision"] = pin;
+        assert!(validate_requested(&reply(&[row], 1), &[untyped("root")]).is_err());
+    }
+}
+
+#[test]
+fn body_only_checker_does_not_fabricate_raw_policy_dependency() {
+    let mut value = reply(&[checker_row(3, "warning")], 1);
+    value.policy_revision = Some("a".repeat(32));
+    validate_requested(&value, &[checker(3, "warning")]).unwrap();
 }

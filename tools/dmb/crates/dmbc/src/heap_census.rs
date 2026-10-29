@@ -17,6 +17,7 @@ mod lexical_callable;
 mod local_shape;
 mod macro_environments;
 mod metadata_dependencies;
+mod policy_capture;
 mod resident_map_outputs;
 mod resolver_memo;
 mod source_text;
@@ -25,6 +26,7 @@ pub(crate) use resident_map_outputs::unit_weight as resident_map_unit_weight;
 pub(crate) use resident_map_outputs::weight as resident_map_outputs_weight;
 mod prepared;
 mod prepared_inputs;
+mod source_originals;
 mod relocation_metrics;
 #[cfg(test)]
 mod resident_abi;
@@ -984,8 +986,15 @@ pub fn emit_if_enabled(stage: &str, observe: impl FnOnce(&mut HeapCensus)) -> io
     };
     #[cfg(feature = "allocation-sites")]
     if let Some(sites) = std::env::var_os("DMB_ALLOC_SITES_PATH").filter(|path| !path.is_empty()) {
-        let text = format!("######## {stage}\n{}", dm_profile::allocation_sites::report(400));
-        if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(sites) {
+        let text = format!(
+            "######## {stage}\n{}",
+            dm_profile::allocation_sites::report(400)
+        );
+        if let Ok(mut file) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(sites)
+        {
             let _ = file.write_all(text.as_bytes());
         }
     }

@@ -517,6 +517,12 @@ pub fn prepare_verified_procedure(
         let name = symbols
             .text(setting.name)
             .ok_or_else(|| AbiError::invariant("setting name spelling unavailable"))?;
+        // Source/checker directives have no runtime ABI meaning. Compile admission
+        // rejects them before lowering; PrepareQuery retains them for policy.
+        // Do not evaluate their symbolic expressions as runtime constants.
+        if name.starts_with("SpacemanDMM_") {
+            continue;
+        }
         if setting.operation == SettingOperation::In && name != "src" {
             return Err(AbiError::source("only src supports an in setting"));
         }

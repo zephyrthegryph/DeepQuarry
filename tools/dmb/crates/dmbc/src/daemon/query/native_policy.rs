@@ -38,24 +38,24 @@ pub(super) fn validate_requested(reply: &QueryReply, requested: &[SourceQuery]) 
         }
         match question {
             SourceQuery::NativeUntypedFixture { root } => {
-                exact(
-                    &row,
-                    &[
-                        "row",
-                        "schema",
-                        "source_revision",
-                        "semantic_revision",
-                        "root",
-                        "full_policy_parity",
-                        "raw_marker_scope",
-                        "admission",
-                        "findings",
-                    ],
-                )?;
+                let mut keys = vec![
+                    "row", "schema", "source_revision", "semantic_revision", "root",
+                    "full_policy_parity", "raw_marker_scope", "admission", "findings",
+                ];
+                let expected_scope = if let Some(policy) = reply.policy_revision.as_deref() {
+                    keys.push("policy_revision");
+                    if row["policy_revision"].as_str() != Some(policy) {
+                        return Err(invalid("untyped policy revision differs from admitted reply"));
+                    }
+                    "explicit_captured_files"
+                } else { "captured_compiled_sources" };
+                // Legacy None accepts no new key (not even JSON null). A bound
+                // explicit capture must carry its exact independent policy pin.
+                exact(&row, &keys)?;
                 if row["row"] != "source_native_untyped_fixture"
                     || row["root"] != serde_json::to_value(root).map_err(io::Error::other)?
                     || row["full_policy_parity"] != false
-                    || row["raw_marker_scope"] != "captured_compiled_sources"
+                    || row["raw_marker_scope"].as_str() != Some(expected_scope)
                     || row["admission"] != "raw_findings"
                 {
                     return Err(invalid("untyped request metadata"));

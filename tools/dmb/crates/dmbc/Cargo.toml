@@ -10,6 +10,7 @@ allocation-counting = ["dm-profile/allocation-counting"]
 allocation-sites = ["allocation-counting", "dm-profile/allocation-sites"]
 
 [dependencies]
+dq-analyze = { path = "../../../analyze", default-features = false, features = ["native-policy"] }
 mimalloc = "0.1.52"
 rayon = "1.12"
 dm-profile = { path = "../dm-profile" }

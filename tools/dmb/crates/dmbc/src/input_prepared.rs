@@ -32,6 +32,7 @@ pub mod counters {
 pub struct PreparedInputPayload {
     source: Arc<PreparedSource>,
     inputs: InputSnapshot,
+    original_bytes: Option<dm_resources::SharedBytes>,
 }
 struct NoSemanticReads;
 impl dm_ir::Resolver for NoSemanticReads {
@@ -55,6 +56,7 @@ impl PreparedInputPayload {
     pub fn source(&self) -> &Arc<PreparedSource> {
         &self.source
     }
+    pub fn exceptional_original_bytes(&self)->Option<&dm_resources::SharedBytes>{self.original_bytes.as_ref()}
     pub fn inputs(&self) -> &InputSnapshot {
         &self.inputs
     }
@@ -173,11 +175,14 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             drop(merge_timer);
             let _insert_timer = INSERT.time();
             let source = Arc::clone(&hit.source);
+            let original_bytes=hit.original_bytes.clone();
+            if let Some(bytes)=&original_bytes{self.remember_exceptional_source(&path,bytes.clone())?;}
             owner
                 .values
                 .insert_with(key, Vec::new(), 0, || PreparedInputPayload {
                     source: Arc::clone(&source),
                     inputs: refreshed,
+                    original_bytes,
                 });
             return Ok(Some(source));
         }
@@ -194,7 +199,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         let prepare_started = std::time::Instant::now();
         let source = {
             let _stage = dm_profile::stage("input_scan.lexical_prepare");
-            dm_preprocess::regions::prepared_source::shared_prepared(decode_owned_source(bytes).into())
+            dm_preprocess::regions::prepared_source::shared_prepared(self.decode_recorded_source(&path,bytes)?.into())
         };
         counters::PREPARE_NS.fetch_add(
             prepare_started.elapsed().as_nanos() as u64,
@@ -208,6 +213,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .get(&path)
             .cloned()
             .ok_or_else(|| invalid("prepared input capture missing"))?;
+        let original_bytes=self.exceptional_source_bytes(&path)?;
         let mut inputs = InputSnapshot::new(now);
         inputs.files.insert(path, fact);
         owner
@@ -215,6 +221,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .insert_with(key, Vec::new(), 0, || PreparedInputPayload {
                 source: Arc::clone(&source),
                 inputs,
+                original_bytes,
             });
         Ok(Some(source))
     }

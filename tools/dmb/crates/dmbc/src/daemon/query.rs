@@ -1,8 +1,17 @@
 //! Bounded read-only queries against an existing retained semantic snapshot.
 use serde::{Deserialize, Serialize};
+mod named_policy;
+mod control_batch;
 mod native_policy;
 #[path = "query/occurrence_pages.rs"]
 mod occurrence_pages;
+#[cfg(test)]
+#[path = "query/policy_revision_shape_tests.rs"]
+mod policy_revision_shape_tests;
+#[cfg(test)]
+#[path = "query/native_outer_tests.rs"]
+mod native_outer_tests;
+mod raw_policy;
 #[path = "query/selected_envelope.rs"]
 mod selected_envelope;
 pub mod semantic_client;
@@ -26,6 +35,8 @@ pub struct QueryRequest {
     pub queries: Vec<QueryItem>,
     #[serde(default)]
     pub expected_source_revision: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_policy_revision: Option<String>,
     #[serde(default)]
     pub source_queries: Vec<SourceQuery>,
 }
@@ -79,9 +90,34 @@ pub enum SourceQuery {
     NativeUntypedFixture {
         root: PathBuf,
     },
+    /// Raw-only legacy policy over exact captured files/config; never a complete workspace.
+    NativeRawPolicyFixture {
+        root: PathBuf,
+        configuration: PathBuf,
+        lints: Vec<String>,
+    },
     NativeCheckerFixture {
         ordinal: u32,
         severity: String,
+    },
+    /// One migrated complete named rule over explicitly captured declarations;
+    /// never the complete Analyze lint, baseline judgement or workspace inventory.
+    NativeNamedRule {
+        root: PathBuf,
+        lint: String,
+        rule: String,
+        configuration: PathBuf,
+    },
+    /// One migrated body family with the complete pinned checker config schema.
+    /// Exact configuration bytes/absence must be in the captured policy revision.
+    /// One exact configured control-family union: one primary walk, event order.
+    /// Request-local projection only; no persistent flow cache or full checker claim.
+    NativeConfiguredControlBatch { ordinal: u32, families: Vec<String>, environment: PathBuf, configuration: Option<PathBuf> },
+    NativeConfiguredChecker {
+        ordinal: u32,
+        family: String,
+        environment: PathBuf,
+        configuration: Option<PathBuf>,
     },
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -100,6 +136,8 @@ pub struct QueryReply {
     /// Last admitted captured source, not an assertion about live filesystem
     /// bytes. A failed newer frontend may leave this predecessor queryable.
     pub source_revision: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy_revision: Option<String>,
     /// Outcome of the source/semantic capture answering this query.
     pub snapshot_outcome: String,
     /// Outcome of the latest attempted request, independently of its snapshot.
@@ -116,6 +154,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
     let expected = request.expected_revision.clone();
     let source_count = request.source_queries.len();
     let expected_source = request.expected_source_revision.clone();
+    let expected_policy = request.expected_policy_revision.clone();
     let source_questions = request.source_queries.clone();
     let cwd = std::env::current_dir()?;
     if !request.project.is_absolute() {
@@ -159,8 +198,30 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                 expected.as_deref(),
                 expected_source.as_deref(),
             )?;
+            if expected_policy.as_ref().is_some_and(|expected| {
+                !reply
+                    .policy_revision
+                    .as_ref()
+                    .is_some_and(|current| expected.eq_ignore_ascii_case(current))
+            }) {
+                return Err("retained policy query revision mismatch".into());
+            }
+            if reply.policy_revision.is_some()
+                && expected_policy.is_none()
+                && source_questions.iter().any(|query| {
+                    matches!(query, SourceQuery::NativeUntypedFixture { .. })
+                        || named_policy::reads_policy(query)
+                        || control_batch::reads_policy(query)
+                        || raw_policy::reads_policy(query)
+                })
+            {
+                return Err("explicit-policy result requires its requested policy pin".into());
+            }
             validate_body_requests(&reply, &source_questions)?;
             native_policy::validate_requested(&reply, &source_questions)?;
+            named_policy::validate_requested(&reply, &source_questions)?;
+            control_batch::validate_requested(&reply, &source_questions)?;
+            raw_policy::validate_requested(&reply, &source_questions)?;
             validate_resolved_requests(&reply, &source_questions)?;
             occurrence_pages::validate_requested(&reply, &source_questions)?;
             semantic_pages::validate_requested(&reply, &source_questions)?;
@@ -226,6 +287,73 @@ fn validate_body_requests(reply: &QueryReply, questions: &[SourceQuery]) -> io::
     }
     Ok(())
 }
+/// Describe scalar result-envelope metadata only. This is NOT request authority
+/// and never reconstructs a semantic model. execute() separately checks every
+/// row against the real requested roster after this outer shape/count admission.
+fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQuery>> {
+    let path = |name: &str| -> io::Result<PathBuf> {
+        serde_json::from_value(row[name].clone()).map_err(|_| io::Error::new(
+            io::ErrorKind::InvalidData, format!("invalid native {name} path")))
+    };
+    let text = |name: &str| -> io::Result<String> {
+        row[name].as_str().map(str::to_owned).ok_or_else(|| io::Error::new(
+            io::ErrorKind::InvalidData, format!("invalid native {name} text")))
+    };
+    let ordinal = || -> io::Result<u32> {
+        row["ordinal"].as_u64().and_then(|value| u32::try_from(value).ok())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "invalid native ordinal"))
+    };
+    let configuration = || -> io::Result<Option<PathBuf>> {
+        match row["configuration_explicit"].as_bool() {
+            Some(true) => path("configuration").map(Some),
+            Some(false) => Ok(None),
+            None => Err(io::Error::new(io::ErrorKind::InvalidData, "invalid native configuration selection")),
+        }
+    };
+    Ok(Some(match row["row"].as_str() {
+        Some("source_native_untyped_fixture") => SourceQuery::NativeUntypedFixture { root: path("root")? },
+        Some("source_native_checker_fixture") => SourceQuery::NativeCheckerFixture { ordinal: ordinal()?, severity: text("policy")? },
+        Some("source_native_raw_policy_fixture") => SourceQuery::NativeRawPolicyFixture {
+            root: path("root")?, configuration: path("configuration")?,
+            lints: serde_json::from_value(row["requested_lints"].clone()).map_err(|_| io::Error::new(io::ErrorKind::InvalidData,"invalid native lint roster"))?,
+        },
+        Some("source_native_named_rule") => SourceQuery::NativeNamedRule {
+            root: path("root")?, lint: text("lint")?, rule: text("rule")?, configuration: path("configuration")?,
+        },
+        Some("source_native_configured_checker") => SourceQuery::NativeConfiguredChecker {
+            ordinal: ordinal()?, family: text("family")?, environment: path("environment")?, configuration: configuration()?,
+        },
+        Some("source_native_configured_control_batch") => SourceQuery::NativeConfiguredControlBatch {
+            ordinal: ordinal()?, environment: path("environment")?, configuration: configuration()?,
+            families: serde_json::from_value(row["families"].clone()).map_err(|_| io::Error::new(io::ErrorKind::InvalidData,"invalid native control family roster"))?,
+        },
+        _ => return Ok(None),
+    }))
+}
+/// Reuse the exact cohort validators instead of duplicating their evolving
+/// schemas/raw-scope rules here. The one-row descriptor grants shape admission
+/// only; a foreign/missing/extra requested row is still rejected by execute().
+fn validate_native_outer_row(reply: &QueryReply, row: &serde_json::Value, question: SourceQuery) -> io::Result<()> {
+    let shape = QueryRequest {
+        timeout_seconds: None, project: PathBuf::new(), defines: BTreeMap::new(),
+        engine_template: None, bootstrap_catalog: false,
+        expected_revision: Some(reply.revision.clone()), expected_source_revision: reply.source_revision.clone(),
+        expected_policy_revision: reply.policy_revision.clone(), queries: Vec::new(), source_queries: vec![question],
+    };
+    shape.validate().map_err(|error| io::Error::new(io::ErrorKind::InvalidData, format!("invalid native row metadata: {error}")))?;
+    let single = QueryReply {
+        schema: reply.schema.clone(), revision: reply.revision.clone(), complete: reply.complete,
+        coverage: reply.coverage.clone(), query_count: 0, source_query_count: 1,
+        source_revision: reply.source_revision.clone(), policy_revision: reply.policy_revision.clone(),
+        snapshot_outcome: reply.snapshot_outcome.clone(), last_request_outcome: reply.last_request_outcome.clone(),
+        publication_pair: reply.publication_pair.clone(), jsonl: serde_json::to_string(row).map_err(io::Error::other)?,
+    };
+    native_policy::validate_requested(&single, &shape.source_queries)?;
+    named_policy::validate_requested(&single, &shape.source_queries)?;
+    control_batch::validate_requested(&single, &shape.source_queries)?;
+    raw_policy::validate_requested(&single, &shape.source_queries)
+}
+
 pub(super) fn validate_reply(
     reply: &QueryReply,
     count: usize,
@@ -246,6 +374,10 @@ pub(super) fn validate_reply(
         || reply.source_revision.as_ref().is_some_and(|revision| {
             revision.len() != 32 || !revision.bytes().all(|byte| byte.is_ascii_hexdigit())
         })
+        || reply.policy_revision.as_ref().is_some_and(|revision| {
+            revision.len() != 32 || !revision.bytes().all(|byte| byte.is_ascii_hexdigit())
+        })
+        || (reply.policy_revision.is_some() && reply.source_revision.is_none())
         || expected_source.is_some_and(|expected| {
             !reply
                 .source_revision
@@ -309,30 +441,8 @@ pub(super) fn validate_reply(
             source_rows += 1;
             continue;
         }
-        if row["row"] == "source_native_untyped_fixture" {
-            if row["schema"] != "dm-session-source-query-v1"
-                || row["source_revision"].as_str() != reply.source_revision.as_deref()
-                || row["semantic_revision"].as_str() != Some(reply.revision.as_str())
-                || row["full_policy_parity"] != false
-                || row["raw_marker_scope"] != "captured_compiled_sources"
-                || row["admission"] != "raw_findings"
-                || row["findings"].as_array().is_none()
-            {
-                return Err(io::Error::other("invalid native untyped fixture envelope"));
-            }
-            source_rows += 1;
-            continue;
-        }
-        if row["row"] == "source_native_checker_fixture" {
-            if row["schema"] != "dm-session-source-query-v1"
-                || row["source_revision"].as_str() != reply.source_revision.as_deref()
-                || row["semantic_revision"].as_str() != Some(reply.revision.as_str())
-                || row["full_checker_parity"] != false
-                || row["family"] != "ambiguous_not_bitwise"
-                || row["diagnostics"].as_array().is_none()
-            {
-                return Err(io::Error::other("invalid native checker fixture envelope"));
-            }
+        if let Some(question) = native_row_descriptor(&row)? {
+            validate_native_outer_row(reply, &row, question)?;
             source_rows += 1;
             continue;
         }
@@ -424,6 +534,9 @@ impl QueryRequest {
     }
     pub(crate) fn validate(&self) -> io::Result<()> {
         self.timeout()?;
+        named_policy::validate_request(self)?;
+        control_batch::validate_request(self)?;
+        raw_policy::validate_request(self)?;
         let source_count = self
             .source_queries
             .iter()
@@ -475,6 +588,7 @@ impl QueryRequest {
         if [
             self.expected_revision.as_ref(),
             self.expected_source_revision.as_ref(),
+            self.expected_policy_revision.as_ref(),
         ]
         .into_iter()
         .flatten()
@@ -531,6 +645,37 @@ pub(crate) fn evaluate_snapshot(
         .as_ref()
         .filter(|snapshot| snapshot.matches_tree(tree));
     let source_revision = snapshot.map(|snapshot| format!("{:032x}", snapshot.source_revision));
+    let policy_revision = snapshot
+        .and_then(|snapshot| snapshot.policy_revision)
+        .map(|pin| format!("{pin:032x}"));
+    if request
+        .expected_policy_revision
+        .as_ref()
+        .is_some_and(|expected| {
+            !policy_revision
+                .as_ref()
+                .is_some_and(|current| expected.eq_ignore_ascii_case(current))
+        })
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "retained policy query revision is stale or unavailable",
+        ));
+    }
+    if policy_revision.is_some()
+        && request.expected_policy_revision.is_none()
+        && request.source_queries.iter().any(|query| {
+            matches!(query, SourceQuery::NativeUntypedFixture { .. })
+                || named_policy::reads_policy(query)
+                        || control_batch::reads_policy(query)
+                || raw_policy::reads_policy(query)
+        })
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "explicit-policy query requires its exact policy revision",
+        ));
+    }
     if request
         .expected_source_revision
         .as_ref()
@@ -583,12 +728,58 @@ pub(crate) fn evaluate_snapshot(
             snapshot.write_body_model(*ordinal, tree, &mut output)?;
             continue;
         }
+        if let SourceQuery::NativeRawPolicyFixture {
+            root,
+            configuration,
+            lints,
+        } = question
+        {
+            snapshot.write_native_raw_policy_fixture(
+                root,
+                configuration,
+                lints,
+                tree,
+                &mut output,
+            )?;
+            continue;
+        }
         if let SourceQuery::NativeUntypedFixture { root } = question {
             snapshot.write_native_untyped_fixture(root, tree, &mut output)?;
             continue;
         }
         if let SourceQuery::NativeCheckerFixture { ordinal, severity } = question {
             snapshot.write_native_checker(*ordinal, severity, tree, &mut output)?;
+            continue;
+        }
+        if let SourceQuery::NativeConfiguredControlBatch { ordinal, families, environment, configuration } = question {
+            snapshot.write_native_configured_control_batch(*ordinal, families, environment, configuration.as_deref(), tree, &mut output)?;
+            continue;
+        }
+        if let SourceQuery::NativeNamedRule {
+            root,
+            lint,
+            rule,
+            configuration,
+        } = question
+        {
+            snapshot.write_native_named_rule(root, lint, rule, configuration, tree, &mut output)?;
+            continue;
+        }
+        if let SourceQuery::NativeConfiguredChecker {
+            ordinal,
+            family,
+            environment,
+            configuration,
+        } = question
+        {
+            snapshot.write_native_configured_checker(
+                *ordinal,
+                family,
+                environment,
+                configuration.as_deref(),
+                tree,
+                &mut output,
+            )?;
             continue;
         }
         if let SourceQuery::SelectedReferences { ordinal } = question {
@@ -602,6 +793,10 @@ pub(crate) fn evaluate_snapshot(
             | SourceQuery::BodyModel { .. }
             | SourceQuery::NativeCheckerFixture { .. }
             | SourceQuery::NativeUntypedFixture { .. }
+            | SourceQuery::NativeRawPolicyFixture { .. }
+            | SourceQuery::NativeNamedRule { .. }
+            | SourceQuery::NativeConfiguredChecker { .. }
+            | SourceQuery::NativeConfiguredControlBatch { .. }
             | SourceQuery::SelectedReferences { .. }
             | SourceQuery::OccurrencesPage { .. }
             | SourceQuery::BodyContextsPage { .. }
@@ -621,7 +816,7 @@ pub(crate) fn evaluate_snapshot(
     Ok(QueryReply {
         schema: "dm-session-query-v2".into(), revision, complete: false,
         coverage: "semantic tree and bounded revision-pinned semantic type/authored member-node/captured intrinsic roster selectors (intrinsic completeness explicit; inherited effective lookup uses parent links and Resolver, not an expanded roster) plus caller-selected issued declaration occurrences and source/definition spans; bounded lazy compiler-selected references and explicitly source-pinned current compiler-host queries; full aggregate executable coverage and implicit external host reads remain excluded".into(),
-        query_count: request.queries.len(), source_query_count: request.source_queries.len(), source_revision,
+        query_count: request.queries.len(), source_query_count: request.source_queries.len(), source_revision, policy_revision,
         snapshot_outcome: snapshot.map_or("semantic_snapshot_only", |snapshot| snapshot.outcome).into(),
         last_request_outcome: state.last_request_outcome.into(),
         publication_pair: state.publication_pair.clone(),
@@ -640,6 +835,7 @@ mod tests {
             bootstrap_catalog: false,
             expected_revision: None,
             queries: vec![],
+            expected_policy_revision: None,
             expected_source_revision: None,
             source_queries: vec![],
         }
@@ -869,6 +1065,7 @@ mod tests {
             coverage: "partial".into(),
             query_count: 0,
             source_query_count: 0,
+            policy_revision: None,
             source_revision: None,
             snapshot_outcome: "semantic_snapshot_only".into(),
             last_request_outcome: "unknown".into(),

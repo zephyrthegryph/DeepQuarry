@@ -45,6 +45,7 @@ fn selected_rows_require_current_pins_and_explicit_existing_producer_capture() {
         bootstrap_catalog: true,
         expected_revision: Some(format!("{:032x}", frontend.snapshot.tree.identity())),
         queries: vec![],
+        expected_policy_revision: None,
         expected_source_revision: Some(format!(
             "{:032x}",
             dm_analysis::tree_export::source_revision(&frontend)

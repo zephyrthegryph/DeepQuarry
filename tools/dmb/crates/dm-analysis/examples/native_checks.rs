@@ -6,7 +6,9 @@ use std::path::Path;
 struct Files;
 impl dm_preprocess::SourceProvider for Files {
     fn read(&self, path: &Path) -> Result<String, String> {
-        std::fs::read_to_string(path).map_err(|error| error.to_string())
+        std::fs::read(path)
+            .map(|bytes| dm_preprocess::decode_source_bytes(&bytes))
+            .map_err(|error| error.to_string())
     }
 }
 
@@ -17,7 +19,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|| "ambiguous_not_bitwise".into());
     if !matches!(
         family.as_str(),
-        "ambiguous_not_bitwise" | "ambiguous_in_lhs" | "invalid_set_value"
+        "ambiguous_not_bitwise"
+            | "ambiguous_in_lhs"
+            | "invalid_set_value"
+            | "control_condition_static"
+            | "unreachable_code"
+            | "loop_condition_determinate"
+            | "if_condition_determinate"
+            | "set_has_no_effect"
+            | "control_policies"
     ) {
         return Err("unknown native checker family".into());
     }
@@ -28,15 +38,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         bodies.with_parsed(occurrence, |body| -> Result<(), String> {
             let view = BodyView::new(&frontend, body)?;
             let diagnostics = match family.as_str() {
+                "control_policies" => dm_analysis::checks_control_policies::check(&view, &[
+                    (dm_analysis::checks_control_policies::Family::Static,Severity::Error),
+                    (dm_analysis::checks_control_policies::Family::Unreachable,Severity::Error),
+                    (dm_analysis::checks_control_policies::Family::LoopDeterminate,Severity::Error),
+                    (dm_analysis::checks_control_policies::Family::IfDeterminate,Severity::Error),
+                    (dm_analysis::checks_control_policies::Family::SettingPlacement,Severity::Error),
+                ])?,
                 "ambiguous_not_bitwise" => view.ambiguous_not_bitwise(Severity::Warning),
                 "ambiguous_in_lhs" => view.ambiguous_in_lhs(Severity::Warning)?,
                 "invalid_set_value" => dm_analysis::checks_invalid_set::check(&view, Severity::Warning)?,
+                "control_condition_static" => dm_analysis::checks_control_static::check(&view, Severity::Error)?,
+                "unreachable_code" => dm_analysis::checks_flow::check(&view, dm_analysis::checks_flow::Family::Unreachable, Severity::Error)?,
+                "loop_condition_determinate" => dm_analysis::checks_flow::check(&view, dm_analysis::checks_flow::Family::LoopDeterminate, Severity::Error)?,
+                "if_condition_determinate" => dm_analysis::checks_flow::check(&view, dm_analysis::checks_flow::Family::IfDeterminate, Severity::Error)?,
+                "set_has_no_effect" => dm_analysis::checks_set_no_effect::check(&view, Severity::Error)?,
                 _ => unreachable!(),
             };
             for diagnostic in diagnostics {
                 let source = view.location(&diagnostic).ok_or("diagnostic has no origin")?;
                 println!("{}", serde_json::json!({
-                    "family": diagnostic.family, "severity": "warning",
+                    "family": diagnostic.family, "severity": match diagnostic.severity { Severity::Warning => "warning", Severity::Error => "error", Severity::Disabled => return Err("disabled diagnostic was emitted".into()) },
                     "file": source.path, "line": source.line,
                     // Expanded column is an explicit fixture observation, not
                     // an inverse macro-substitution/source provenance claim.

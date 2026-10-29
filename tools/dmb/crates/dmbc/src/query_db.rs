@@ -1439,3 +1439,7 @@ mod tests {
         assert!(db.changes_since(at_first).is_none());
     }
 }
+
+#[cfg(test)]
+#[path = "query_db/control_batch_tests.rs"]
+mod control_batch_tests;

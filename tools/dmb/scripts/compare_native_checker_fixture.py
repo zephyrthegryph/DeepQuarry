@@ -38,7 +38,8 @@ def native_rows(text, family="ambiguous_not_bitwise"):
     rows = []
     for line in text.splitlines():
         row = json.loads(line)
-        if row.pop("family") != family:
+        accepted = {"control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect"} if family == "control_policies" else {family}
+        if row.pop("family") not in accepted:
             raise ValueError("fixture includes an unported diagnostic family")
         row["file"] = str(Path(row["file"]).resolve())
         row["column"] = row.pop("expanded_column")
@@ -50,7 +51,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--native", type=Path, required=True)
-    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value"), default="ambiguous_not_bitwise")
+    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent"), default="ambiguous_not_bitwise")
     parser.add_argument("fixture", type=Path)
     args = parser.parse_args()
     if hashlib.sha256(args.reference.read_bytes()).hexdigest() != PINNED_CHECKER_SHA256:

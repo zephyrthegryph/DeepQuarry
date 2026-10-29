@@ -1,6 +1,8 @@
 //! Build script: (1) discovers the lint modules under src/lints/ so adding a lint is adding a
 //! file (no shared registry to edit), and (2) hashes the engine's own sources into ENGINE_HASH,
 //! which keys the on-disk cache so a rebuilt engine never serves a stale result.
+#[path="src/native_policy_roster.rs"]
+mod native_policy_roster;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -53,10 +55,24 @@ fn main() {
 
     // ---- module discovery -----------------------------------------------------------------
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    let legacy = std::env::var_os("CARGO_FEATURE_LEGACY_SEM").is_some();
+    let _ = native_policy_roster::LINT_NAMES.len();
+    let mut native_registry=String::from("{\n");
+    for (module,_) in native_policy_roster::MODULES {
+        let _=writeln!(native_registry,"crate::lints::{}::register(&mut reg);",module);
+    }
+    native_registry.push_str("}\n");
+    fs::write(out_dir.join("native_policy_registry_gen.rs"),native_registry).unwrap();
     let base = manifest.display().to_string().replace('\\', "/");
     for (sub, with_register, reg_ty) in [("lints", true, "crate::lint::Registry"), ("gens", true, "Vec<Box<dyn crate::sem::gen::Generator>>"), ("codemods", true, "Vec<Box<dyn crate::codemod::Codemod>>"), ("dm", false, "")] {
         let dir = src.join(sub);
-        let mods = discover(&dir);
+        let mods = if legacy {discover(&dir)} else {
+            match sub {
+                "lints"=>native_policy_roster::MODULES.iter().map(|(module,_)|(*module).to_string()).collect(),
+                "dm"=>vec!["dx".to_string(),"sys".to_string()],
+                _=>continue,
+            }
+        };
         let mut gen = String::new();
         for m in &mods {
             let file = if dir.join(m).is_dir() { format!("{}/mod.rs", m) } else { format!("{}.rs", m) };

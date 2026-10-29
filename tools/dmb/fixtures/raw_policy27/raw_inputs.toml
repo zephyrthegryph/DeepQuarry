@@ -1,0 +1,1 @@
+sources = ["code/compiled.dm", "code/noncompiled.dm", "code/exempt.dm", "maps/query.dm", "code/.hidden/ignored.dm"]

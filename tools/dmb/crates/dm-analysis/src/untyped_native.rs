@@ -268,21 +268,13 @@ pub struct Finding {
     pub identity: String,
 }
 fn relative(root: &std::path::Path, path: &std::path::Path) -> String {
-    let path = path.to_string_lossy().replace('\\', "/");
-    let root = root
+    // Report-only filesystem equivalence. Keep original provider/origin keys;
+    // only the shared safe ordinary-DOS/verbatim comparison may unify paths.
+    dm_preprocess::regions::relative_filesystem_path(path, root)
+        .as_deref()
+        .unwrap_or(path)
         .to_string_lossy()
         .replace('\\', "/")
-        .trim_end_matches('/')
-        .to_owned();
-    if path
-        .get(..root.len())
-        .is_some_and(|prefix| prefix.eq_ignore_ascii_case(&root))
-        && path.as_bytes().get(root.len()) == Some(&b'/')
-    {
-        path[root.len() + 1..].into()
-    } else {
-        path
-    }
 }
 pub fn findings<'a>(
     frontend: &'a ColdFrontend,

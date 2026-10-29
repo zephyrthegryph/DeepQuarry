@@ -383,7 +383,16 @@ pub(crate) fn parse_setting(
             text[span.end..].trim(),
         )
     };
-    if !matches!(
+    // Checker annotations are shared source metadata, not runtime ABI settings.
+    // Only the native identifier spelling is admitted; ordinary unknown names
+    // remain errors. Compile-command policy rejects these annotations separately.
+    let checker_name = LexedHeader::new(name);
+    let checker_tokens = checker_name.view();
+    let checker_setting = name.starts_with("SpacemanDMM_")
+        && checker_name.valid()
+        && matches!(checker_tokens.tokens(), [token] if token.kind == TokenKind::Ident
+            && checker_tokens.spelling(token) == name);
+    if !checker_setting && !matches!(
         name,
         "name"
             | "desc"
@@ -681,6 +690,17 @@ mod tests {
         assert_eq!(symbols.text(setting.name), Some("src"));
         assert_eq!(symbols.text(setting.value.tokens[0].text), Some("world"));
         assert!(parse_setting("set imaginary = 1", &mut symbols).is_err());
+    }
+    #[test]
+    fn checker_prefix_settings_preserve_native_symbolic_metadata() {
+        let mut symbols = SymbolTable::default();
+        let setting = parse_setting("set SpacemanDMM_should_be_pure = candidate", &mut symbols).unwrap();
+        assert_eq!(symbols.text(setting.name), Some("SpacemanDMM_should_be_pure"));
+        assert_eq!(setting.operation, SettingOperation::Assign);
+        assert_eq!(symbols.text(setting.value.tokens[0].text), Some("candidate"));
+        for malformed in ["set SpacemanDMM_x.y = 1", "set SpacemanDMM_x y = 1", "set SpacemanDMM_x ="] {
+            assert!(parse_setting(malformed, &mut symbols).is_err(), "{malformed}");
+        }
     }
     #[test]
     fn operator_adjacency_is_semantic_not_ordinary_position() {

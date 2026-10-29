@@ -1,0 +1,62 @@
+//! Bounded independent checker oracle, not production runtime configuration.
+use dm_analysis::{checker_order, checks::Severity, checks_parent_call};
+use dm_tree::frontend::{build_with_config, BodyArena, FrontendConfig};
+use std::path::Path;
+#[path = "support/reference_hierarchy.rs"]
+mod reference_hierarchy;
+struct Files;
+impl dm_preprocess::SourceProvider for Files {
+    fn read(&self, path: &Path) -> Result<String, String> {
+        std::fs::read(path)
+            .map(|b| dm_preprocess::decode_source_bytes(&b))
+            .map_err(|e| e.to_string())
+    }
+}
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let project = std::env::args().nth(1).ok_or("expected .dme")?;
+    let family = std::env::args()
+        .nth(2)
+        .unwrap_or_else(|| "proc_has_no_parent".into());
+    if family != "proc_has_no_parent" {
+        return Err("this bounded oracle supports only proc_has_no_parent".into());
+    }
+    let seed = reference_hierarchy::seed();
+    let frontend = build_with_config(
+        Path::new(&project),
+        &Files,
+        &Default::default(),
+        FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .map_err(|e| format!("native frontend failed: {e:?}"))?;
+    // Immutable native snapshot decoration shares the existing source arenas;
+    // only the same native resolver inventory gains fixed checker builtin facts.
+    // No legacy source tree or second DM parser is present.
+    let resolver = frontend
+        .snapshot
+        .tree
+        .as_ref()
+        .clone()
+        .with_pinned_checker_builtins()
+        .map_err(|e| format!("checker builtin import failed: {e:?}"))?;
+    let profile = resolver
+        .checker_builtin_profile()
+        .ok_or("checker profile was not attached")?;
+    let arena = BodyArena::new_typed(&frontend, |_| true);
+    for (_, occurrence) in checker_order::bodies(&frontend)? {
+        arena.with_parsed(occurrence,|body|->Result<(),String> {
+            let diagnostics=checks_parent_call::check_in_profile(&frontend,body,&resolver,Some(profile),Severity::Error)?;
+            for row in diagnostics {
+                let location=frontend.location(row.span.start).ok_or("missing diagnostic source")?;
+                println!("{}",serde_json::json!({"family":row.family,"severity":"error","file":location.path,"line":location.line,
+                    "expanded_column":frontend.expanded.text[..row.span.start].rsplit('\n').next().unwrap().chars().count()+1,
+                    "message":row.message,"notes":row.notes.iter().map(|note|&note.message).collect::<Vec<_>>()}));
+            }
+            Ok(())
+        }).map_err(|e|e.message)??;
+    }
+    Ok(())
+}

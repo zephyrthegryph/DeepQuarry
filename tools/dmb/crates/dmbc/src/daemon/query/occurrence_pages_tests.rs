@@ -24,6 +24,7 @@ fn request(front: &dm_tree::frontend::ColdFrontend, start: u32, limit: u32) -> Q
         engine_template: None,
         bootstrap_catalog: false,
         expected_revision: Some(format!("{:032x}", front.snapshot.tree.identity())),
+        expected_policy_revision: None,
         expected_source_revision: Some(format!(
             "{:032x}",
             dm_analysis::tree_export::source_revision(front)
@@ -131,6 +132,7 @@ fn replay_configuration() -> crate::session::Configuration {
         compiler: 1,
         engine: 2,
         policy: 3,
+        policy_inputs: None,
     }
 }
 fn replay_inputs(scan: u128, content: u128) -> crate::input_snapshot::InputSnapshot {

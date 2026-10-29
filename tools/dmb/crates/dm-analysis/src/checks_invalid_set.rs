@@ -113,6 +113,7 @@ fn is_reference_term(value: &Expr) -> Result<bool, String> {
                 Ok(true)
             }
             ExprKind::Member { .. } | ExprKind::SafeMember { .. } => Ok(false),
+            ExprKind::Unary { op, .. } if op == "new" || op == "new()" => Ok(false),
             _ => Err(
                 "invalid_set_value needs a compiler-issued term/follow origin for this call".into(),
             ),

@@ -33,6 +33,7 @@ pub mod priority;
 pub mod publication_proof;
 pub mod publish;
 pub mod request;
+pub mod policy_request;
 pub mod request_failure;
 pub mod request_runner;
 pub mod resource_journal_coverage;
@@ -144,3 +145,6 @@ mod analysis_export;
 mod declared_read_validity_tests;
 #[cfg(test)]
 mod string_continuation_receipts;
+
+#[cfg(test)]
+mod policy_request_integration_tests;

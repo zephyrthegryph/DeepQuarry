@@ -130,6 +130,7 @@ impl Sem {
     }
 
     fn build_with(root: &Path, tree: &Tree, only: Option<&[String]>) -> Result<Sem, String> {
+        tree.require_legacy_semantics("legacy semantic model construction")?;
         // The synthesized .dme lives in a temp dir, so every path it names must be absolute.
         let abs_root: PathBuf = if root.is_absolute() { root.to_path_buf() } else { std::env::current_dir().map_err(|e| e.to_string())?.join(root) };
         let root = abs_root.as_path();
@@ -680,6 +681,7 @@ impl crate::lint::Cx<'_> {
 
 /// The memoized semantic model of `tree`.
 pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
+    if tree.require_legacy_semantics("legacy semantic model access").is_err(){return None}
     let b = tree.memo("sem/model", || SemBox {
         sem: {
             walk_cache::prefetch();

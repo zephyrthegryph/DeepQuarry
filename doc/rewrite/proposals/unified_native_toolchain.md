@@ -385,3 +385,120 @@ registration, budget and heap-census regressions pass. Repository ratchets pass
 and the production DreamChecker run reports zero diagnostics. Rust builds still
 emit warnings. No production CLI switch or performance claim is made here; most
 Analyze policies/generators and checker families still need ports.
+
+### Captured policy inputs and declaration parity (2026-10-28)
+
+Raw policy inputs now have a separate, immutable boundary beside the compiled
+file roster. Compiler-decoded text and Analyze's UTF-8-lossy/universal-newline
+view are distinct; ordinary identical views share the original `SourceText`.
+Policy-only files never become compiled declarations. Configuration, source
+membership and decoded views contribute to policy revision identity. Coverage
+remains explicitly limited to captured files, without a workspace-crawl claim.
+
+The opt-in compiler host captures those views through the same `RecordingInputs`
+ledger used for preparation. Optional missing files and requested directory
+listings are recorded as dependencies. Publication/replay must contain every
+captured fact, not merely equal text hashes. Policy, value and body consumers
+share one archive issuance; idle release drops their retained handles together.
+A conservative 64 MiB capture-admission charge is not a total allocation/RSS
+bound. The heap census reports shared text owners and unknown map backing.
+The next cohort adds explicit request admission, frozen intent receipts and a
+separate externally pinned policy revision. Those changes are not yet verified;
+the last verified opt-in runner supplied only compiled raw views.
+
+The base-variable supplement independently matches all 12 reference rows,
+including effective source defaults, same-line field order, list/array typing,
+record methods and macro origins. Analyze's last-authored initializer differs
+from runtime declaration normalization; the policy uses the native authored
+ledger to preserve that distinction. Source-definition queries likewise retain
+legacy variable-before-procedure and formal-before-override tie ordering.
+
+The complete named `base_vars/records_data_only` rule is ported, with raw source
+and configuration inputs explicit. This does not certify the other base-vars
+rules or their admission. Checker control-shape/traversal prerequisites and a
+bounded `control_condition_static` consumer are implemented; adversarial
+literal/constructor cases refuse rather than infer from insufficient syntax.
+The independent records-rule comparison matches all seven sites, and the
+control-static comparison matches nine diagnostics exactly. These observations
+do not establish full lint admission, checker configuration or macro parity.
+
+The last verified cohort passes 192 analysis tests, nine capture/replay tests,
+six native-query/protocol tests, eleven compiler integration tests and the
+compiler binary type check. The subsequent admission and syntax cohort is still
+awaiting verification. Production
+Analyze/checker entry points remain unchanged; full convergence and the cold,
+warm and edited-run performance objectives are not yet verified.
+
+### Public policy admission and independent checker expansion (2026-10-28)
+
+Explicit `policy_inputs` now travels through the ordinary compiler request,
+canonical session configuration and frozen input receipt. A separately pinned
+policy revision includes extra sources, configuration bytes and proven missing
+inputs; changing only a noncompiled policy input invalidates that pin without
+pretending that compiled source changed. Requests without this opt-in retain
+ordinary compiler configuration and serialization. The source/capture unit tests
+and eleven existing integration tests passed. The real Compile/IPC test exposed
+a canonical-configuration omission, now repaired and covered independently.
+
+The next actual IPC run also isolated a Windows launch defect: Compile completed
+in about 0.4 seconds, but the client exited while an autostarted daemon retained
+its capture pipe. An explicit probe measured client exit at 1.016 seconds, no
+pipe EOF after that exit, and EOF after retiring only that owned namespace.
+The production repair restricts inherited handles with an explicit
+Win32 startup allowlist. Two focused startup tests and the real Compile/IPC
+edit/retraction test now pass. Longer idle timeouts or
+file-backed test output are not used to conceal this failure.
+
+Eight checker families now have executable native consumers. Fresh independent
+comparisons match 72 diagnostics across fourteen isolated fixtures, preserving
+message, severity, position, notes, multiplicity and order. That includes the
+three flow families and setting placement. One fixture accidentally declared the
+builtin `range` proc; it now uses `range_probe` so its unrelated duplicate-proc
+diagnostic is not mistaken for an unreachable-code policy difference. The
+setting-placement fixture explicitly disables the independently tested
+unreachable-code family. Mixed control-policy ordering remains a separate
+verification cohort, not an inferred property of isolated-family parity.
+
+Six exact-byte runtime probes compare DreamMaker 516.1687 with the private native
+compiler. Five agree in value, length and bytes. They demonstrate that the pinned
+checker interprets CR escape boundaries differently from actual runtime, so
+runtime semantics are preserved. The sixth exposed a raw-CR admission failure,
+then a second emission path bypassing shared literal decoding. The lexer repair
+passes two focused tests; the emission repair still awaits verification. These
+observations do not certify other grammar or runtime cases.
+
+The staged host expansion reuses 27 existing raw-source policies over shared
+`SourceText`, with semantic-model and uncaptured-read attempts rejected before
+construction/I/O. Named-rule and configured-checker queries read captured
+configuration bytes from the same request. Baseline judgment, global unused-ALLOW
+aggregation, generators, remaining checker inference and production CLI cutover
+are not implemented by those endpoints. Their coverage flags remain explicitly
+partial. Captured fixture limits are admission bounds, not hard CPU/RSS claims.
+The expanded cohort, checker builtin metadata import and Windows repair are
+being verified together; no complete tool convergence or performance target is
+claimed here.
+
+### Verified expanded host checkpoint (2026-10-28)
+
+The real client/daemon test passes in 20.09 seconds, exercising Compile, warm
+queries, edits, finding retraction and stale-revision refusal. Six Windows
+report-path regressions and the captured raw-provider regression pass. Report
+projection equates safe DOS/verbatim paths without rewriting provider keys.
+This is a bounded fixture test, not a full-workspace performance measurement.
+
+Fresh independent checker comparisons now match 95 diagnostics across eighteen
+fixtures, including nineteen combined literal/control diagnostics and four
+parent-call diagnostics. Eight configured families and the bounded parent-call
+consumer remain partial coverage; these results do not establish full checker
+inference. The 27 reused raw policies independently match ten seeded sites,
+notes and annotation-use records against the old executable loader.
+
+The raw-CR lexer and shared-emission repairs pass focused tests. Actual private
+native and DreamMaker runs now agree in value, length and bytes for all three
+raw quote forms. The runtime/checker CR interpretation difference remains
+explicit rather than changing runtime behavior to match the checker.
+
+Per-file raw-policy QueryDb caching and original-owner checker-context expansion
+are the next unverified cohort. Production tool defaults remain unchanged;
+full policy/generator migration, checker inference, combined cutover and actual
+cold/warm/edited performance proofs remain outstanding.

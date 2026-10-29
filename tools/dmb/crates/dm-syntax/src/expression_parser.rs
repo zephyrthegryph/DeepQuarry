@@ -33,6 +33,9 @@ pub fn parse_expression(source: &str) -> ParsedExpr {
     }
 }
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum PostfixMode { Expression, ConstructorPrefab, ConstructorMini }
+
 struct ExprParser {
     tokens: Vec<Token>,
     index: usize,
@@ -65,7 +68,13 @@ impl ExprParser {
     }
 
     pub(super) fn expression(&mut self, min_bp: u8) -> Option<Expr> {
-        let mut lhs = self.prefix()?;
+        let lhs = self.prefix()?;
+        self.expression_from(min_bp, lhs, PostfixMode::Expression)
+    }
+
+    // Reuse the primary postfix grammar, but terminate a constructor target
+    // after its FIRST argument list. Later follows bind to the new object.
+    fn expression_from(&mut self, min_bp: u8, mut lhs: Expr, mode: PostfixMode) -> Option<Expr> {
         loop {
             if self.ternary_then_depth > 0
                 && self.peek().is_some_and(|token| token.text == ":")
@@ -78,7 +87,8 @@ impl ExprParser {
                 break;
             }
             if min_bp <= 26 {
-                if let Some(open) = self.take_text("{") {
+                if mode != PostfixMode::ConstructorMini && self.peek().is_some_and(|t| t.text == "{") {
+                    let open = self.take().unwrap();
                     let mut fields = Vec::new();
                     while self.peek().is_some_and(|next| next.text != "}") {
                         let Some(name) = self.take() else {
@@ -120,7 +130,7 @@ impl ExprParser {
                 if let (Some(first), Some(second)) =
                     (self.tokens.get(self.index), self.tokens.get(self.index + 1))
                 {
-                    if first.text == second.text
+                    if mode == PostfixMode::Expression && first.text == second.text
                         && matches!(first.text.as_str(), "+" | "-")
                         && first.span.end == second.span.start
                     {
@@ -144,6 +154,8 @@ impl ExprParser {
                 if self.peek().is_some_and(|token| token.text == "?")
                     && self.tokens.get(self.index + 1).is_some_and(|token| {
                         matches!(token.text.as_str(), "." | ":" | "[")
+                            && mode != PostfixMode::ConstructorPrefab
+                            && (mode == PostfixMode::Expression || token.text != "[")
                             && self.tokens[self.index].span.end == token.span.start
                     })
                 {
@@ -241,6 +253,7 @@ impl ExprParser {
                             args,
                         },
                     };
+                    if mode != PostfixMode::Expression { break; }
                     // `in` is an optional locate clause, so it belongs inside
                     // an enclosing prefix operator (`!locate(T) in L`).
                     if matches!(&lhs.kind, ExprKind::Call { callee, args }
@@ -260,7 +273,8 @@ impl ExprParser {
                     }
                     continue;
                 }
-                if let Some(open) = self.take_text("[") {
+                if mode == PostfixMode::Expression && self.peek().is_some_and(|t| t.text == "[") {
+                    let open = self.take().unwrap();
                     let index = self.expression_nested(0);
                     let end = self.take_text("]").map_or_else(
                         || {
@@ -280,7 +294,7 @@ impl ExprParser {
                     }
                     continue;
                 }
-                if self.peek().is_some_and(|t| t.text == "." || t.text == ":") {
+                if mode != PostfixMode::ConstructorPrefab && self.peek().is_some_and(|t| t.text == "." || t.text == ":") {
                     let separator = self.take().unwrap();
                     let is_static = separator.text == ":" && self.take_text(":").is_some();
                     let Some(selector) = self.take() else {
@@ -309,6 +323,7 @@ impl ExprParser {
                     continue;
                 }
             }
+            if mode != PostfixMode::Expression { break; }
             if min_bp <= 8 && self.take_text("as").is_some() {
                 let mut types = Vec::new();
                 let mut end = lhs.span.end;
@@ -486,13 +501,29 @@ impl ExprParser {
                         },
                     });
                 }
-                let value = self.expression(24)?;
+                let target = match self.peek() {
+                    Some(next) if next.kind == TokenKind::Ident => {
+                        let target = self.take().unwrap();
+                        Some((Expr { span: target.span, kind: ExprKind::Ident(target.text) }, PostfixMode::ConstructorMini))
+                    }
+                    Some(next) if matches!(next.text.as_str(), "/" | ".") => {
+                        let target = self.prefix()?;
+                        let mode = if matches!(target.kind, ExprKind::TypePath(_)) { PostfixMode::ConstructorPrefab } else { PostfixMode::ConstructorMini };
+                        Some((target, mode))
+                    }
+                    _ => None,
+                };
+                let Some((target, mode)) = target else {
+                    // A bare contextual new can precede a delimiter/operator,
+                    // not only end-of-input (for example list(new, new)).
+                    return Some(Expr { span, kind: ExprKind::Call {
+                        callee: Box::new(Expr { span, kind: ExprKind::Ident("new".into()) }), args: Vec::new(),
+                    }});
+                };
+                let value = self.expression_from(24, target, mode)?;
                 Some(Expr {
                     span: Span::new(span.start, value.span.end),
-                    kind: ExprKind::Unary {
-                        op: token.text,
-                        value: Box::new(value),
-                    },
+                    kind: ExprKind::Unary { op: token.text, value: Box::new(value) },
                 })
             }
             TokenKind::Ident if token.text == "null" => Some(Expr {

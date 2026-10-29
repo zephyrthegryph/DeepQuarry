@@ -107,24 +107,13 @@ fn row<'a>(
 }
 
 fn file(root: &Path, source: &SourceLocation) -> String {
-    // Same report-only relative slash spelling as Analyze. This does not alter
-    // origin ownership or read files from the mutable current checkout.
-    let relative = source.path.strip_prefix(root).unwrap_or(&source.path);
-    let text = relative.to_string_lossy().replace('\\', "/");
-    if !text.contains("/.") {
-        return text;
-    }
-    let mut out: Vec<&str> = Vec::new();
-    for segment in text.split('/') {
-        match segment {
-            "." => (),
-            ".." if out.last().is_some_and(|last| *last != "..") => {
-                out.pop();
-            }
-            _ => out.push(segment),
-        }
-    }
-    out.join("/")
+    // Report-only filesystem equivalence. Keep original provider/origin keys;
+    // only the shared safe ordinary-DOS/verbatim comparison may unify paths.
+    dm_preprocess::regions::relative_filesystem_path(source.path.as_path(), root)
+        .as_deref()
+        .unwrap_or(source.path.as_path())
+        .to_string_lossy()
+        .replace('\\', "/")
 }
 
 /// `sem::procs::proc_defs` ordering and each lifecycle lint's exact filter,

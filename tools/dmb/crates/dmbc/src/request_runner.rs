@@ -33,7 +33,7 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
                 .map(|()| CommandOutcome::Completed)
         }
         Command::Help => {
-            dmbc::daemon_println!("dmbc analyze|compile|prepare-query [--bodies|--resolved (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH] [--warnings-as-errors] [--ignore-warning CODE[,CODE...]]");
+            dmbc::daemon_println!("dmbc analyze|compile|prepare-query [--bodies|--resolved (analyze only)] [--request-timeout-seconds N] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH] [--warnings-as-errors] [--ignore-warning CODE[,CODE...]]");
             dmbc::daemon_println!(
                 "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT] | query REQUEST.json [--jsonl|--export-jsonl]"
             );
@@ -85,6 +85,14 @@ pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    crate::request::validate_timeout_seconds(request.timeout_seconds)?;
+    // Service-bound requests inherit the original admission+execution deadline;
+    // local requests issue it once, outside freshness retries.
+    let _deadline_binding = if crate::daemon::control::WorkerContext::capture().is_none() {
+        crate::daemon::prepare_deadline::capture(request.command, request.timeout_seconds, Instant::now())?
+            .map(|deadline| crate::daemon::control::bind_with_deadline(
+                crate::daemon::control::Cancellation::default(), deadline))
+    } else { None };
     let report = (request.command == BuildCommand::Compile).then(|| request.project.clone());
     dmbc::diagnostics::begin(request.warnings.clone());
     let result = runner_freshness::run(request, |request| run_build_attempt(request, host));
@@ -115,6 +123,8 @@ fn run_build_attempt(
     let request_profile = dm_profile::stage("request.prepare");
     let BuildRequest {
         command,
+        timeout_seconds: _,
+        policy_inputs,
         project,
         mut defines,
         workers,
@@ -132,6 +142,7 @@ fn run_build_attempt(
         trace_path,
         warnings: _,
     } = request;
+    let policy_inputs = policy_inputs.map(|request| request.admit()).transpose()?;
     let publishable_artifacts = command == BuildCommand::Compile;
     let project = std::fs::canonicalize(project)?;
     if record_inputs.is_some() && replay_inputs.is_some() {
@@ -177,6 +188,7 @@ fn run_build_attempt(
         (_, Some(directory)) => dmbc::frozen_inputs::Inputs::replay(directory)?,
         _ => dmbc::frozen_inputs::Inputs::Live,
     };
+    input_provider.bind_policy_request(policy_inputs.as_ref())?;
     // Stamps come from session validation's directory proofs once captured.
     let stamped_provider = dmbc::frozen_inputs::ProofStampedInputs::new(&input_provider);
     let generated_provider = dmbc::input_snapshot::GeneratedOutputInputs::new(
@@ -291,7 +303,7 @@ fn run_build_attempt(
             compiler,
             engine_identity,
             bootstrap_catalog,
-        )?;
+        )?.with_policy_inputs(policy_inputs.as_ref());
         query_attempt.configure(configuration.clone());
         let configured = dmbc::session::Session::from_locked(
             configuration,
@@ -607,6 +619,7 @@ fn run_build_attempt(
             let mut configuration = format!("{project:?} {defines:?} ").into_bytes();
             configuration.extend_from_slice(&memo_policy.to_le_bytes());
             configuration.push(u8::from(bootstrap_catalog));
+            crate::policy_request::append_identity(&mut configuration, policy_inputs.as_ref())?;
             match query_db.revise(inputs.sources(), dm_query::hash_bytes(&configuration)) {
                 Ok(revision) => dmbc::daemon_eprintln!("native query db: {revision:?}"),
                 Err(error) => dmbc::daemon_eprintln!("native query db: {error:?}"),
@@ -655,7 +668,7 @@ fn run_build_attempt(
         Ok(frontend) => {
             // Migration opt-in until all checker/lint parity and memory gates
             // pass. Compile-only users keep the existing lazy body path.
-            if std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
+            if policy_inputs.is_some() || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
                 match query_db.as_ref() {
                     Some(db) => frontend.with_body_queries(Arc::clone(db) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>),
                     None => frontend,
@@ -684,8 +697,20 @@ fn run_build_attempt(
     if progress_enabled {
         dmbc::daemon_eprintln!("native directive lookups: {}", crate::runner_host::memo_lookups_report());
     }
-    query_attempt.capture_with_queries(&frontend, std::sync::Arc::clone(&source_policy_queries));
+    // Opt-in migration: empty explicit lists capture only compiled raw views.
+    // The helper can accept host-requested extra paths once admission exposes
+    // them; this does not crawl or claim complete workspace coverage.
+    let raw_policy = if let Some(request) = policy_inputs.as_ref() {
+        let files = request.capture_files();
+        let captured = crate::runner_host::policy_capture::capture(&frontend, &inputs_capture, &files, request.search_folders())?.bind_request(request)?;
+        if !captured.facts().same_recorded_facts(&inputs_capture.snapshot()?) {
+            return Err(std::io::Error::other("raw policy ledger changed before source snapshot").into());
+        }
+        Some(std::sync::Arc::new(captured))
+    } else { None };
+    query_attempt.capture_with_queries(&frontend, std::sync::Arc::clone(&source_policy_queries), raw_policy)?;
     dm_profile::request_mark("frontend.query_capture");
+    dmbc::heap_census::emit_if_enabled("input_source_originals.current",|census|census.exceptional_source_inputs(&inputs_capture))?;
     if command == BuildCommand::Compile {
         // DreamMaker rejects these; the native pipeline would accept them.
         let source_errors = dmbc::source_checks::check(&frontend);

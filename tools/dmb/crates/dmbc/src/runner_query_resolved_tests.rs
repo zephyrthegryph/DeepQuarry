@@ -122,6 +122,7 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
         engine_template: None,
         bootstrap_catalog: true,
         expected_revision: Some(format!("{:032x}", tree.identity())),
+        expected_policy_revision: None,
         expected_source_revision: Some(format!("{source_revision:032x}")),
         queries: vec![],
         source_queries: vec![crate::daemon::query::SourceQuery::SelectedReferences {
@@ -239,6 +240,7 @@ fn explicit_query_preparation_issues_host_without_lowering_invalid_body() {
     let crate::request::BuildOutcome::QueryPrepared {
         semantic_revision,
         source_revision,
+        policy_revision: _,
         retained,
     } = result
     else {

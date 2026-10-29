@@ -253,6 +253,7 @@ mod tests {
             bootstrap_catalog: false,
             expected_revision: None,
             queries: Vec::new(),
+            expected_policy_revision: None,
             expected_source_revision: None,
             source_queries: Vec::new(),
         };
@@ -321,6 +322,7 @@ mod tests {
             engine_template: None,
             bootstrap_catalog: false,
             expected_revision: Some(format!("{:032x}", frontend.snapshot.tree.identity())),
+            expected_policy_revision: None,
             expected_source_revision: None,
             queries: vec![],
             source_queries: vec![],

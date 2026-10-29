@@ -320,3 +320,25 @@ fn query_preparation_carries_ordinary_configuration_without_analysis_modes() {
         );
     }
 }
+
+#[test]
+fn request_execution_budget_is_optional_and_backward_compatible_on_wire() {
+    let legacy = build(&["compile", "a.dme"]);
+    assert!(legacy.timeout_seconds.is_none());
+    let encoded = serde_json::to_value(&legacy).unwrap();
+    assert!(encoded.get("timeout_seconds").is_none());
+    let decoded: BuildRequest = serde_json::from_value(encoded).unwrap();
+    assert_eq!(decoded, legacy);
+    for command in ["compile", "analyze", "prepare-query"] {
+        for seconds in ["1", "300"] {
+            let value = build(&[command, "a.dme", "--request-timeout-seconds", seconds]);
+            assert_eq!(value.timeout_seconds, Some(seconds.parse().unwrap()));
+            let transported: BuildRequest = serde_json::from_value(serde_json::to_value(&value).unwrap()).unwrap();
+            assert_eq!(transported, value);
+        }
+        for seconds in ["", "0", "301", "-1", "+1", "1.5", " 1", "65536"] {
+            assert!(parse_args(&[command,"a.dme","--request-timeout-seconds",seconds]).is_err(), "{command} {seconds}");
+        }
+    }
+    assert!(parse_args(&["compile","a.dme","--request-timeout-seconds","1","--request-timeout-seconds","2"]).is_err());
+}

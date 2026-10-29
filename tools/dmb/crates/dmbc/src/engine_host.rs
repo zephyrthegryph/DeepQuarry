@@ -2,9 +2,9 @@
 #[path = "engine_constants.rs"]
 mod constants;
 mod engine_providers;
+mod namespace_absence;
 mod variable_coverage;
 mod variable_negative;
-mod namespace_absence;
 pub(crate) use variable_coverage::VariableCoverage;
 #[path = "intrinsic_methods.rs"]
 mod intrinsic_methods;
@@ -197,7 +197,9 @@ pub struct EngineResolverHost<R> {
 }
 impl<R: Resolver> EngineResolverHost<R> {
     /// Borrow the exact immutable source owner for retained ownership accounting.
-    pub(crate) fn shared_source(&self) -> &Arc<R> { &self.tree }
+    pub(crate) fn shared_source(&self) -> &Arc<R> {
+        &self.tree
+    }
     pub fn new(tree: Arc<R>, constants: ConstantCatalog, runtime: RuntimeAliasCatalog) -> Self {
         Self {
             answer_domain: std::sync::OnceLock::new(),
@@ -389,6 +391,10 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
 impl<R: Resolver + Send> EngineResolverHost<R> {
     fn resolve_current(&self, query: Q) -> M {
         match query {
+            // Checker-qualified catalogs never fall back to runtime providers.
+            Q::CheckerIntrinsicCallable { .. }
+            | Q::CheckerBuiltinVar { .. }
+            | Q::CheckerBuiltinProc { .. } => self.tree.resolve(query),
             Q::MemberCallableVerbName(_) => self
                 .intrinsic_methods
                 .as_ref()
@@ -622,8 +628,6 @@ fn verify_lexical_type_namespace(
 #[path = "engine_host/tests.rs"]
 mod tests;
 
-
 #[cfg(test)]
 #[path = "engine_host/nameof_native_tests.rs"]
 mod nameof_native_tests;
-

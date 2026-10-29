@@ -46,11 +46,43 @@ pub fn check(frontend: &ColdFrontend) -> Vec<Diagnostic> {
             errors.push(source_error(message, location));
         }
     }
+    errors.extend(checker_setting_errors(frontend));
     errors.extend(text_errors(frontend));
     errors.extend(raw_text_errors(frontend));
     dm_profile::request_mark("source_checks.text");
     errors.extend(unclosed_braces(frontend));
     dm_profile::request_mark("source_checks.braces");
+    errors
+}
+
+/// Compile-only admission policy. Shared frontend metadata retains checker
+/// annotations for analysis/PrepareQuery, but native Compile must continue to
+/// reject exactly the same setting names it rejected before this separation.
+/// Consume parser-issued settings, including lexical nested/unreachable settings;
+/// never reparse raw source or infer acceptance from runtime reachability.
+fn checker_setting_errors(frontend: &ColdFrontend) -> Vec<Diagnostic> {
+    fn visit(nodes: &[dm_ir::ProcedureSettingNode], symbols: &dm_ir::SymbolTable, location: &SourceLocation, out: &mut Vec<Diagnostic>) {
+        for node in nodes {
+            match node {
+                dm_ir::ProcedureSettingNode::Setting(setting) => {
+                    if let Some(name) = symbols.text(setting.name).filter(|name| name.starts_with("SpacemanDMM_")) {
+                        out.push(source_error(format!("unknown procedure setting: {name}"), Some(location.clone())));
+                    }
+                }
+                dm_ir::ProcedureSettingNode::Conditional { then_branch, else_branch, .. } => {
+                    visit(then_branch, symbols, location, out);
+                    visit(else_branch, symbols, location, out);
+                }
+                dm_ir::ProcedureSettingNode::UnsupportedContext { children, .. } => visit(children, symbols, location, out),
+            }
+        }
+    }
+    let mut errors = Vec::new();
+    for (body, owner) in frontend.bodies.iter().zip(frontend.settings_owner_storage().iter()) {
+        if let Some(owner) = owner {
+            visit(&owner.settings, frontend.snapshot.tree.symbols(), &body.source, &mut errors);
+        }
+    }
     errors
 }
 
@@ -992,6 +1024,10 @@ fn zero_divisor(number: &str, operator: &str, before_operator: &str) -> bool {
         _ => false,
     }
 }
+
+#[cfg(test)]
+#[path = "source_checks_checker_settings_tests.rs"]
+mod checker_settings_tests;
 
 #[cfg(test)]
 mod tests {

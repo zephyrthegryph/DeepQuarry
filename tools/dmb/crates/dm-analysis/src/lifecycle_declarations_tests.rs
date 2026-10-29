@@ -249,3 +249,14 @@ fn init_roster_does_not_require_the_decl_specific_ancestry_query() {
         ]
     );
 }
+
+#[cfg(windows)]
+#[test]
+fn report_path_uses_safe_dos_verbatim_equivalence_only() {
+    let a = archive("/datum/probe/proc/run()\n    return\n");
+    let mut source = a.occurrences()[0].source.clone();
+    source.path = std::sync::Arc::new(Path::new(r"\\?\E:\policy-report\code\probe.dm").to_path_buf());
+    assert_eq!(file(Path::new(r"E:\policy-report"), &source), "code/probe.dm");
+    source.path = std::sync::Arc::new(Path::new(r"\\.\E:\policy-report\code\probe.dm").to_path_buf());
+    assert_ne!(file(Path::new(r"E:\policy-report"), &source), "code/probe.dm");
+}

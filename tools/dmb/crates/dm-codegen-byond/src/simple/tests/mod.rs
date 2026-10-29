@@ -152,3 +152,5 @@ fn compile_fixture_proc_with_bindings(
 }
 
 mod preparsed;
+
+mod constructor_boundary;

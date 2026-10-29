@@ -10,6 +10,7 @@ fn query_request(build: &BuildRequest) -> QueryRequest {
         engine_template: build.engine_template.clone(),
         bootstrap_catalog: build.bootstrap_catalog,
         expected_revision: None,
+        expected_policy_revision: None,
         expected_source_revision: None,
         queries: Vec::new(),
         source_queries: Vec::new(),

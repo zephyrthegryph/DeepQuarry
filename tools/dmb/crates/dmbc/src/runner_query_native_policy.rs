@@ -15,6 +15,23 @@ pub(super) fn capture_schemas(frontend: &ColdFrontend) -> Result<Schemas, String
     }
     Ok(schemas)
 }
+pub(super) fn capture_policy_schemas(
+    inputs: &dm_analysis::policy_inputs::PolicyInputs,
+) -> Result<Schemas, String> {
+    use dm_analysis::policy_inputs::{PolicyRole, TextView};
+    let mut schemas = Schemas::default();
+    for file in inputs
+        .files()
+        .filter(|file| file.role() == PolicyRole::DmSource)
+    {
+        schemas.read_source(
+            file.view(TextView::AnalyzeRaw)
+                .map_err(|error| error.to_string())?
+                .as_str(),
+        )?;
+    }
+    Ok(schemas)
+}
 impl SourceSnapshot {
     /// Explicitly bounded migration endpoint. Full Analyze admission/config and
     /// raw noncompiled workspace coverage are not represented by this fixture.
@@ -65,13 +82,20 @@ impl SourceSnapshot {
                 })
             })
             .collect();
-        serde_json::to_writer(&mut *output, &serde_json::json!({
+        let raw_marker_scope = if self.native_policy_inputs.is_some() {
+            "explicit_captured_files"
+        } else {
+            "captured_compiled_sources"
+        };
+        let mut row = serde_json::json!({
             "row":"source_native_untyped_fixture","schema":"dm-session-source-query-v1","root":root,
             "source_revision":format!("{:032x}", self.source_revision),
             "semantic_revision":format!("{:032x}", tree.identity()),
-            "full_policy_parity":false,"raw_marker_scope":"captured_compiled_sources",
+            "full_policy_parity":false,"raw_marker_scope":raw_marker_scope,
             "admission":"raw_findings","findings":rows,
-        })).map_err(io::Error::other)?;
+        });
+        if let Some(policy) = self.policy_revision { row["policy_revision"] = format!("{policy:032x}").into(); }
+        serde_json::to_writer(&mut *output, &row).map_err(io::Error::other)?;
         output.write_all(b"\n")
     }
 }

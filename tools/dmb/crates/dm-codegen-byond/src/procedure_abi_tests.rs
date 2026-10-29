@@ -477,3 +477,15 @@ fn lexical_settings_apply_in_encounter_order_with_last_write_winning() {
     assert_eq!(result.layout.flags & 1, 0);
     assert_eq!(result.layout.flags & 0x100, 0x100);
 }
+
+#[test]
+fn checker_metadata_has_no_runtime_abi_or_constant_evaluation() {
+    let mut symbols = SymbolTable::default();
+    let metadata = metadata(&[("SpacemanDMM_should_be_pure", SettingOperation::Assign, "unknown_value")], &mut symbols);
+    let prepared = prepare_verified_procedure(
+        &metadata, &symbols, &[], ProcedureInputs::default(), InheritedAbi::Fresh,
+        |_| panic!("checker annotation must not evaluate a runtime constant"),
+    ).unwrap();
+    assert_eq!(prepared.layout, ProcLayout::default());
+    assert!(prepared.executable_body.is_empty());
+}

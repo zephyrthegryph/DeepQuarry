@@ -217,7 +217,10 @@ mod nontext;
 pub mod prepared;
 pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 
+#[path="input_source_original.rs"]
+mod source_original;
 pub struct RecordingInputs<P = FileSystemInputs> {
+    exceptional_originals: Mutex<BTreeMap<PathBuf,source_original::ExceptionalOriginal>>,
     provider: P,
     /// Watcher position at creation: every fact recorded later was observed after it.
     created: Option<crate::fs_watch::WatchToken>,
@@ -240,6 +243,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             exact_reuse: false,
             prepared: None,
             prepared_keys: Mutex::new(Vec::new()),
+            exceptional_originals: Mutex::new(BTreeMap::new()),
         }
     }
     pub fn with_exact_reuse(mut self, exact: bool) -> Self {
@@ -360,7 +364,7 @@ impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
     }
     fn read(&self, path: &Path) -> Result<String, String> {
         self.read_recorded(path)
-            .map(decode_owned_source)
+            .and_then(|bytes|self.decode_recorded_source(path,bytes))
             .map_err(|error| error.to_string())
     }
     fn retained_nontext(

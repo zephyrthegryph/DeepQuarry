@@ -23,6 +23,8 @@ pub struct Configuration {
     pub engine: u128,
     /// Includes interpretation schema, intrinsic/macro/pure-call policy pins.
     pub policy: u128,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) policy_inputs: Option<crate::policy_request::AdmittedPolicyRequest>,
 }
 
 impl Configuration {
@@ -48,7 +50,12 @@ impl Configuration {
             compiler,
             engine,
             policy,
+            policy_inputs: None,
         })
+    }
+    pub fn with_policy_inputs(mut self, request: Option<&crate::policy_request::AdmittedPolicyRequest>) -> Self {
+        self.policy_inputs = request.cloned();
+        self
     }
     pub fn identity(&self) -> io::Result<u128> {
         let bytes = serde_json::to_vec(&(SCHEMA, self)).map_err(invalid)?;
@@ -289,7 +296,7 @@ impl SessionRecords {
             configuration.compiler,
             configuration.engine,
             configuration.policy,
-        )?;
+        )?.with_policy_inputs(configuration.policy_inputs.as_ref());
         if checked != configuration {
             return Err(invalid("session configuration is not canonical"));
         }

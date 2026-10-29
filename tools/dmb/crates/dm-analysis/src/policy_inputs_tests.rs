@@ -330,3 +330,30 @@ fn prepared_policy_file_reuses_the_existing_lexical_owner_without_compiling_it()
         .lookup_type(dm_ir::SymbolId::of("/datum/uncompiled"))
         .is_none());
 }
+
+#[test]
+fn display_lines_preserve_the_legacy_lone_cr_projection_without_disk_reads() {
+    let frontend = frontend();
+    let path = Arc::new(PathBuf::from("code/newlines.dm"));
+    let inputs = PolicyInputs::capture(
+        &frontend,
+        [HostCapture::compiler_decoded(
+            path.clone(),
+            text("a\r\nb\rc\nd\n"),
+        )],
+    )
+    .unwrap();
+    let file = inputs.file(&path).unwrap();
+    assert_eq!(file.analyze_display_line(1).unwrap(), 1);
+    assert_eq!(file.analyze_display_line(2).unwrap(), 2);
+    assert_eq!(file.analyze_display_line(3).unwrap(), 4);
+    assert_eq!(file.analyze_display_line(4).unwrap(), 5);
+    assert!(matches!(
+        file.analyze_display_line(0),
+        Err(CaptureError::InvalidSourceLine { .. })
+    ));
+    assert!(matches!(
+        file.analyze_display_line(5),
+        Err(CaptureError::InvalidSourceLine { .. })
+    ));
+}
