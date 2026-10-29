@@ -84,6 +84,7 @@
 	turf_resource_types = TURF_HAS_MINERALS
 
 CAPABILITIES(/turf/simulated/mineral)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	setup(PROC_REF(roll_ore_and_detail))
 	owns_one(nameof(artifact_find), /datum/artifact_find)
 	owns_one(nameof(geologic_data), /datum/geosample)
@@ -279,9 +280,11 @@ CAPABILITIES(/turf/simulated/mineral)
 		set_excavation_level(excavation_level + Proj.excavation_amount)
 		update_archeo_overlays(Proj.excavation_amount)
 
-/turf/simulated/mineral/Bumped(AM)
+/// The bump notice: `AM` walked into it (was Bumped()).
+/turf/simulated/mineral/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/movable/AM = N.bumper
 
-	. = ..()
 
 	if(!density)
 		return .

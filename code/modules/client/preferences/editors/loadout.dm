@@ -384,6 +384,19 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		"underwear" = uw_data,
 	)
 
+/// The catalog is filtered by /datum/gear/proc/is_pickable_by: species (and its base), tail style, and a ckey
+/// allowlist on a few items. Players who share those share one catalog.
+/datum/preference_editor/loadout/static_cache_key(datum/preferences/preferences)
+	var/static/list/allowlisted_ckeys
+	if(!allowlisted_ckeys)
+		allowlisted_ckeys = list()
+		for(var/name in GLOB.gear_datums)
+			var/datum/gear/G = GLOB.gear_datums[name]
+			for(var/allowed in G.ckeywhitelist)
+				allowlisted_ckeys[allowed] = TRUE
+	var/ckey = preferences.client()?.ckey
+	return "[preferences.read_preference(/datum/preference/choiced/species)]|[preferences.read_preference(/datum/preference/text/human/custom_base)]|[preferences.read_preference(/datum/preference/text/human/tail_style)]|[ckey && allowlisted_ckeys[ckey] ? ckey : ""]"
+
 /datum/preference_editor/loadout/build_ui_static_data(datum/preferences/preferences)
 	// Catalog grouped by category, but every item carries its body slot so the React side
 	// can filter by slot when the user clicks one of the body-slot rows. Items whose

@@ -438,12 +438,12 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
         {/* LEFT: doll grid — body slots PLUS the multi-allowed buckets (Accessories /
             Other / Underwear). Compact 56×64 cells in a 5-row layout so the whole panel
             fits within the default window height without a page scrollbar. */}
-        <Stack.Item width="190px">
+        <Stack.Item width="15.833em">
           <Box
             style={{
               display: 'grid',
-              gridTemplateColumns: '56px 56px 56px',
-              gap: '3px',
+              gridTemplateColumns: '4.667em 4.667em 4.667em',
+              gap: '0.25em',
               justifyContent: 'center',
             }}
           >
@@ -454,7 +454,7 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                   return (
                     <Box
                       key={cellKey}
-                      style={{ width: '56px', height: '56px' }}
+                      style={{ width: '4.667em', height: '4.667em' }}
                     />
                   );
                 // Accessories bucket (slot_tie)
@@ -509,7 +509,7 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                   return (
                     <Box
                       key={cellKey}
-                      style={{ width: '56px', height: '56px' }}
+                      style={{ width: '4.667em', height: '4.667em' }}
                     />
                   );
                 const occupants = d.by_body_slot?.[cell] ?? [];
@@ -544,7 +544,7 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                 bold
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: '2px',
+                  borderRadius: '0.167em',
                 }}
               >
                 {filteredLabel}
@@ -586,7 +586,7 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                   style={{
                     height: '100%',
                     overflowY: 'auto',
-                    paddingRight: '4px',
+                    paddingRight: '0.333em',
                   }}
                 >
                   <UnderwearCatalog
@@ -685,19 +685,19 @@ const SlotCell = ({
         as="div"
         onClick={onClick}
         style={{
-          width: '56px',
-          height: '56px',
+          width: '4.667em',
+          height: '4.667em',
           backgroundColor: bgColor,
           border: selected
             ? '1px solid #0c0'
             : '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '3px',
+          borderRadius: '0.25em',
           cursor: 'pointer',
           userSelect: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '2px',
+          padding: '0.167em',
           boxSizing: 'border-box',
           position: 'relative',
           // Ghost cue (italic-grey effect on inherited or job-default items): wash the
@@ -758,19 +758,19 @@ const UnderwearSlotCell = ({
         as="div"
         onClick={onClick}
         style={{
-          width: '56px',
-          height: '56px',
+          width: '4.667em',
+          height: '4.667em',
           backgroundColor: bgColor,
           border: selected
             ? '1px solid #0c0'
             : '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '3px',
+          borderRadius: '0.25em',
           cursor: 'pointer',
           userSelect: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '2px',
+          padding: '0.167em',
           boxSizing: 'border-box',
           position: 'relative',
         }}
@@ -828,19 +828,19 @@ const MultiSlotCell = ({
         as="div"
         onClick={onClick}
         style={{
-          width: '56px',
-          height: '56px',
+          width: '4.667em',
+          height: '4.667em',
           backgroundColor: bgColor,
           border: selected
             ? '1px solid #0c0'
             : '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '3px',
+          borderRadius: '0.25em',
           cursor: 'pointer',
           userSelect: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '2px',
+          padding: '0.167em',
           boxSizing: 'border-box',
           position: 'relative',
         }}
@@ -1269,7 +1269,7 @@ const UnderwearCatalog = ({
         return (
           <Stack.Item key={category}>
             <Stack align="center">
-              <Stack.Item width="48px" textAlign="center">
+              <Stack.Item width="4em" textAlign="center">
                 {meta?.icon && meta.icon_state ? (
                   <ColorizedImage
                     iconRef={meta.icon}
@@ -1278,7 +1278,7 @@ const UnderwearCatalog = ({
                     size={32}
                   />
                 ) : (
-                  <Box width="32px" height="32px" />
+                  <Box width="2.667em" height="2.667em" />
                 )}
               </Stack.Item>
               <Stack.Item width="6em" color="label" fontSize="0.85em">
@@ -1373,7 +1373,7 @@ const CatalogScrollList = ({
       style={{
         height: '100%',
         overflowY: 'auto',
-        paddingRight: '4px',
+        paddingRight: '0.333em',
       }}
     >
       {visibleItems.length === 0 ? (
@@ -1513,8 +1513,8 @@ const CatalogRow = ({
           py={0.5}
           style={{
             backgroundColor: 'rgba(255,255,255,0.04)',
-            borderLeft: '2px solid #555',
-            borderRadius: '2px',
+            borderLeft: '0.167em solid #555',
+            borderRadius: '0.167em',
           }}
         >
           {/* Full-width tweaks first (text inputs, dropdowns, color picker) … */}
@@ -1588,7 +1588,7 @@ const FullWindowDatumPicker = ({
         zIndex: 10,
         display: 'flex',
         flexDirection: 'column',
-        padding: '12px',
+        padding: '1em',
       }}
     >
       <Stack mb={1} align="center">
@@ -1597,7 +1597,7 @@ const FullWindowDatumPicker = ({
             {title}
           </Box>
         </Stack.Item>
-        <Stack.Item width="320px">
+        <Stack.Item width="26.667em">
           <Input
             fluid
             expensive
