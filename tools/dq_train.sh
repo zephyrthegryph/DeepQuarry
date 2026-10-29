@@ -1350,6 +1350,10 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 # test budget counts only the tests that can show an interaction (lane_areas, global_hit above): every lane proved its own tests alone,
 # so a lane that shares no area with the rest of the batch, or with master's changes since its precheck, adds no test time. SKIP_TESTS
 # names the lanes whose own tests do not run in this batch (the smoke set and gameplay set always run).
+moved_heavy() { # <from> <to>: the first heavy path (tools/dq_light_paths.sh) changed between two revisions, nothing when none
+	( . "$(repo_dir)/tools/dq_light_paths.sh" 2>/dev/null || { echo "unknown (no dq_light_paths.sh)"; exit 0; }
+	  G diff --name-only "$1" "$2" | while IFS= read -r f; do light_heavy_path "$f" && echo "$f"; done | head -n 1 )
+}
 select_prechecked() { # <lanes...> in queue order
 	local limit b tip range pm g any_global=0 union base est cand o
 	local -A areas=() inter=() isglobal=()
@@ -1369,7 +1373,14 @@ select_prechecked() { # <lanes...> in queue order
 		# master moved since the lane's precheck: what it changed counts as one more lane of the batch
 		pm="$(qget "$(pre_verdict_file "$b" "$tip")" master)"
 		if [ -n "$pm" ] && [ "$(G rev-parse -q --verify "$pm^{commit}" 2>/dev/null)" ] && [ "$(G rev-parse origin/master)" != "$(G rev-parse "$pm^{commit}")" ]; then
-			if global_hit "$pm..origin/master" || [ -n "$(comm -12 <(lane_areas "$pm..origin/master") <(printf '%s\n' "${areas[$b]}" | sort -u) | awk 'NF' | head -n 1)" ]; then mine=1; fi
+			# Only a heavy change (code, maps, icons, tgui: tools/dq_light_paths.sh) can alter a lane's game tests. Docs, tools and Rust that
+			# master gained since the precheck are not an interaction, even under a "global" path such as tools/build/ (28 October: two
+			# single-lane cycles re-ran the full tests, 914 s each, after tools-only landings). fast_land_more applies the same rule.
+			if [ -n "$(moved_heavy "$pm" origin/master)" ]; then
+				if global_hit "$pm..origin/master" || [ -n "$(comm -12 <(lane_areas "$pm..origin/master") <(printf '%s\n' "${areas[$b]}" | sort -u) | awk 'NF' | head -n 1)" ]; then mine=1; fi
+			else
+				tlog "select: $b: master changed nothing heavy since its precheck (${pm:0:10}..origin/master); no interaction"
+			fi
 		fi
 		for o in "${CHOSEN[@]+"${CHOSEN[@]}"}"; do
 			if [ "$g" = 1 ] || [ -n "$(comm -12 <(printf '%s\n' "${areas[$o]}" | sort -u) <(printf '%s\n' "${areas[$b]}" | sort -u) | awk 'NF' | head -n 1)" ]; then
