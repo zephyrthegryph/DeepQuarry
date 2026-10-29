@@ -450,3 +450,140 @@ fn checker_storage_gap_does_not_narrow_native_stored_local_lowering() {
     // checker must honestly refuse its not-yet-implemented local storage view.
     assert!(semantic_row(&snapshot, 0, "undefined_variable").is_err());
 }
+
+#[test]
+fn field_static_warning_uses_retained_real_host_and_original_callable_note() {
+    let snapshot = semantic_snapshot(
+        "/proc/untyped()\n    return null\n/proc/probe()\n    untyped().field\n",
+        None,
+    );
+    let row = semantic_row(&snapshot, 1, "field_access_static_type").unwrap();
+    assert_eq!(row["full_checker_parity"], false);
+    assert_eq!(row["diagnostics"].as_array().unwrap().len(), 1);
+    assert_eq!(row["diagnostics"][0]["severity"], "warning");
+    assert_eq!(
+        row["diagnostics"][0]["message"],
+        "field access requires static type: \"field\""
+    );
+    assert_eq!(
+        row["diagnostics"][0]["notes"],
+        serde_json::json!(["1:14: add a return type annotation to /proc/untyped"])
+    );
+}
+
+#[test]
+fn field_static_real_tag_override_and_disabled_family_preserve_protocol() {
+    let source = "/proc/untyped()\n    return null\n/proc/probe()\n    untyped().field\n";
+    let raised = semantic_snapshot(
+        source,
+        Some(b"[diagnostics]\nfield_access_static_type='error'\n"),
+    );
+    let row = semantic_row(&raised, 1, "field_access_static_type").unwrap();
+    assert_eq!(row["diagnostics"][0]["severity"], "error");
+    let disabled = semantic_snapshot(
+        source,
+        Some(b"[diagnostics]\nfield_access_static_type='off'\n"),
+    );
+    assert!(
+        semantic_row(&disabled, 1, "field_access_static_type").unwrap()["diagnostics"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    assert!(semantic_row(&snapshot(None), 0, "field_access_static_type").is_err());
+}
+
+#[test]
+fn configured_checker_original_byte_positions_survive_retained_host() {
+    let snapshot = semantic_snapshot("/proc/probe(a,b)\n\tlist(\"é漢\"); !a & b\n", None);
+    let row = semantic_row(&snapshot, 0, "ambiguous_not_bitwise").unwrap();
+    let rows = row["diagnostics"].as_array().unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["line"], 2);
+    let offset = rows[0]["expanded_span"][0].as_u64().unwrap() as usize;
+    let origin = snapshot
+        .body_archive
+        .as_ref()
+        .unwrap()
+        .original_note_origin(offset)
+        .unwrap();
+    assert_eq!((origin.line, origin.byte_column), (2, 17));
+}
+#[test]
+fn configured_checker_unproved_later_macro_position_writes_no_partial_row() {
+    let snapshot = semantic_snapshot(
+        "#define MASK !a & b\n/proc/probe(a,b)\n\t!a & b\n\tMASK\n",
+        None,
+    );
+    let mut bytes = Vec::new();
+    let result = snapshot.write_native_configured_checker(
+        0,
+        "ambiguous_not_bitwise",
+        &root().join("project.dme"),
+        None,
+        &snapshot.tree,
+        &mut bytes,
+    );
+    assert!(
+        result.is_err(),
+        "a transformed location was silently projected"
+    );
+    assert!(
+        bytes.is_empty(),
+        "earlier rows escaped a later unproved location"
+    );
+}
+
+#[test]
+fn implicit_new_real_tag_default_override_disabled_and_suppressed_arguments() {
+    let source = "/proc/p()\n    new(hidden_missing())\n";
+    let default = semantic_snapshot(source, None);
+    let row = semantic_row(&default, 0, "no_typehint_implicit_new").unwrap();
+    assert_eq!(row["diagnostics"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        row["diagnostics"][0]["message"],
+        "no type hint available on implicit new()"
+    );
+    assert_eq!(row["diagnostics"][0]["severity"], "error");
+    assert_eq!(row["diagnostics"][0]["notes"], serde_json::json!([]));
+    assert!(
+        semantic_row(&default, 0, "undefined_proc").unwrap()["diagnostics"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    let raised = semantic_snapshot(
+        source,
+        Some(b"[diagnostics]\nno_typehint_implicit_new='warning'\n"),
+    );
+    assert_eq!(
+        semantic_row(&raised, 0, "no_typehint_implicit_new").unwrap()["diagnostics"][0]["severity"],
+        "warning"
+    );
+    let disabled = semantic_snapshot(
+        source,
+        Some(b"[diagnostics]\nno_typehint_implicit_new='off'\n"),
+    );
+    assert!(
+        semantic_row(&disabled, 0, "no_typehint_implicit_new").unwrap()["diagnostics"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+}
+#[test]
+fn implicit_new_unsupported_later_context_does_not_emit_partial_row() {
+    let snapshot = semantic_snapshot("/proc/p()\n    new()\n    var/static/datum/kept\n", None);
+    let mut bytes = Vec::new();
+    assert!(snapshot
+        .write_native_configured_checker(
+            0,
+            "no_typehint_implicit_new",
+            &root().join("project.dme"),
+            None,
+            &snapshot.tree,
+            &mut bytes
+        )
+        .is_err());
+    assert!(bytes.is_empty());
+}

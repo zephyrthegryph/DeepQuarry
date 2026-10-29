@@ -564,13 +564,26 @@ impl StatementBody {
     pub fn syntax_complete(&self) -> bool {
         *self.syntax_complete.get_or_init(|| {
             if !self.parsed.diagnostics.is_empty()
-                || self.parsed.pending_bodies.iter().any(|pending| pending.missing_body()
-                    || pending.termination == dm_syntax::BodyTermination::Unknown)
-            { return false; }
-            struct Coverage<'a> { valid: bool, parsed: &'a dm_syntax::ParsedBody }
+                || self.parsed.pending_bodies.iter().any(|pending| {
+                    pending.missing_body()
+                        || pending.termination == dm_syntax::BodyTermination::Unknown
+                })
+            {
+                return false;
+            }
+            struct Coverage<'a> {
+                valid: bool,
+                parsed: &'a dm_syntax::ParsedBody,
+            }
             impl dm_syntax::TypedVisitor for Coverage<'_> {
-                fn statement(&mut self, node: &dm_syntax::Statement, _: &[dm_syntax::NodeStep]) -> dm_syntax::VisitDecision {
-                    if let dm_syntax::StatementKind::If { condition, .. } | dm_syntax::StatementKind::DoWhile { condition, .. } = &node.kind {
+                fn statement(
+                    &mut self,
+                    node: &dm_syntax::Statement,
+                    _: &[dm_syntax::NodeStep],
+                ) -> dm_syntax::VisitDecision {
+                    if let dm_syntax::StatementKind::If { condition, .. }
+                    | dm_syntax::StatementKind::DoWhile { condition, .. } = &node.kind
+                    {
                         if self.parsed.control_origin(condition.span).is_none() {
                             self.valid = false;
                             return dm_syntax::VisitDecision::Stop;
@@ -578,14 +591,24 @@ impl StatementBody {
                     }
                     dm_syntax::VisitDecision::Descend
                 }
-                fn expression(&mut self, node: &dm_syntax::Expr, _: &[dm_syntax::NodeStep]) -> dm_syntax::VisitDecision {
+                fn expression(
+                    &mut self,
+                    node: &dm_syntax::Expr,
+                    _: &[dm_syntax::NodeStep],
+                ) -> dm_syntax::VisitDecision {
                     if let dm_syntax::ExprKind::Literal(text) = &node.kind {
-                        if text.parts().is_err() { self.valid = false; return dm_syntax::VisitDecision::Stop; }
+                        if text.parts().is_err() {
+                            self.valid = false;
+                            return dm_syntax::VisitDecision::Stop;
+                        }
                     }
                     dm_syntax::VisitDecision::Descend
                 }
             }
-            let mut coverage = Coverage { valid: true, parsed: &self.parsed };
+            let mut coverage = Coverage {
+                valid: true,
+                parsed: &self.parsed,
+            };
             let report = dm_syntax::visit_statements(&self.parsed.statements, &mut coverage);
             coverage.valid && report.unsupported_statements == 0
         })
@@ -664,16 +687,25 @@ struct Captured<'a, P> {
 }
 
 impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
-    fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{
-        let acquired=self.provider.acquired_source(path)?;
-        if let Some(acquired)=&acquired{
-            self.sources.borrow_mut().insert(path.to_owned(),acquired.prepared().original().clone());
+    fn acquired_source(
+        &self,
+        path: &Path,
+    ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+        let acquired = self.provider.acquired_source(path)?;
+        if let Some(acquired) = &acquired {
+            self.sources
+                .borrow_mut()
+                .insert(path.to_owned(), acquired.prepared().original().clone());
         }
         Ok(acquired)
     }
-    fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{
+    fn source_acquisition(
+        &self,
+        path: &Path,
+        text: &dm_preprocess::SourceText,
+    ) -> Option<dm_preprocess::AcquiredSource> {
         // Projection only: never call read/prepared_source to obtain evidence.
-        self.provider.source_acquisition(path,text)
+        self.provider.source_acquisition(path, text)
     }
     fn prepared_source(
         &self,
@@ -791,7 +823,7 @@ fn source_span(file: FileId, span: dm_syntax::Span) -> Result<Span, Vec<Diagnost
 
 #[path = "frontend_source_export_mapping.rs"]
 mod source_export_mapping;
-pub use source_export_mapping::SourceExportMapping;
+pub use source_export_mapping::{SourceExportMapping, SourceNoteOrigin, SourcePolicyLineOrigin};
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
 struct Mapping<'a> {
@@ -1103,6 +1135,6 @@ pub(crate) use declaration_state::shared::SharedContributionStore;
 #[path = "frontend_settings_receipt_tests.rs"]
 mod settings_receipt_tests;
 
-#[path="frontend_initial_setting_prefix.rs"]
+#[path = "frontend_initial_setting_prefix.rs"]
 mod initial_setting_prefix;
 pub use initial_setting_prefix::InitialSettingPrefix;

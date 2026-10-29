@@ -20,20 +20,51 @@ use serde::{Deserialize, Serialize};
 
 use crate::dm::ownership_index::{self as oi, Index};
 use crate::tree::{SourceFile, Tree, View};
-use crate::util::{py_lstrip, py_rstrip, py_strip, under};
+use crate::util::under;
 use crate::{pat, pat_match};
 
 pub use crate::raw_declaration_policy::MODIFIERS;
 pub const UNSAVED: &[&str] = &["tmp", "static", "global", "const"];
 /// Object type roots. A declared type under one of these holds a reference.
 pub const REF_ROOTS: &[&str] = &[
-    "/datum", "/atom", "/obj", "/mob", "/turf", "/area", "/image", "/icon", "/client", "/sound", "/matrix", "/mutable_appearance", "/savefile",
-    "/regex", "/database", "/exception", "/callback", "/decl",
+    "/datum",
+    "/atom",
+    "/obj",
+    "/mob",
+    "/turf",
+    "/area",
+    "/image",
+    "/icon",
+    "/client",
+    "/sound",
+    "/matrix",
+    "/mutable_appearance",
+    "/savefile",
+    "/regex",
+    "/database",
+    "/exception",
+    "/callback",
+    "/decl",
 ];
 /// Frozen definition / registry types that are never deleted (implicitly SHARED).
-pub const DEF_TYPES: &[&str] = &["/datum/material", "/datum/decl", "/decl", "/datum/language", "/datum/property_def", "/datum/msg"];
+pub const DEF_TYPES: &[&str] = &[
+    "/datum/material",
+    "/datum/decl",
+    "/decl",
+    "/datum/language",
+    "/datum/property_def",
+    "/datum/msg",
+];
 /// Base types whose vars are reported by `--report` (the tmp hygiene pass).
-pub const BASE_TYPES: &[&str] = &["/datum", "/atom", "/atom/movable", "/obj", "/obj/item", "/obj/machinery", "/mob"];
+pub const BASE_TYPES: &[&str] = &[
+    "/datum",
+    "/atom",
+    "/atom/movable",
+    "/obj",
+    "/obj/item",
+    "/obj/machinery",
+    "/mob",
+];
 /// Where `REGISTRY_TYPE(...)` rows live.
 pub const REGISTRY_FILE: &str = "code/datums/ownership/registry_types.dm";
 
@@ -69,7 +100,9 @@ impl Var {
 /// `ancestors(path)`: the path's prefixes, shortest first, the path included.
 pub fn ancestors(path: &str) -> Vec<String> {
     let segs: Vec<&str> = path.trim_matches('/').split('/').collect();
-    (1..=segs.len()).map(|i| format!("/{}", segs[..i].join("/"))).collect()
+    (1..=segs.len())
+        .map(|i| format!("/{}", segs[..i].join("/")))
+        .collect()
 }
 
 /// The type and its ancestors, root first. Everything inherits /datum, except the built-in roots
@@ -79,8 +112,15 @@ pub fn chain(path: &str) -> Vec<String> {
     if out[0] != "/datum" {
         let first = out[0].as_str();
         if matches!(first, "/obj" | "/mob" | "/turf" | "/area") {
-            let n = if matches!(first, "/obj" | "/mob") { 3 } else { 2 };
-            let mut pre: Vec<String> = ["/datum", "/atom", "/atom/movable"][..n].iter().map(|s| s.to_string()).collect();
+            let n = if matches!(first, "/obj" | "/mob") {
+                3
+            } else {
+                2
+            };
+            let mut pre: Vec<String> = ["/datum", "/atom", "/atom/movable"][..n]
+                .iter()
+                .map(|s| s.to_string())
+                .collect();
             pre.extend(out);
             out = pre;
         } else if first == "/atom" {
@@ -91,14 +131,40 @@ pub fn chain(path: &str) -> Vec<String> {
 }
 
 /// `split_decl`: `(name, mods, vtype, is_list)` of the path segments of a declaration, or None.
-fn push_var(decls: &mut HashMap<String, Vec<Var>>, owner: &str, d: (String, BTreeSet<String>, String, bool), rel: &str, line: usize) {
+fn push_var(
+    decls: &mut HashMap<String, Vec<Var>>,
+    owner: &str,
+    d: (String, BTreeSet<String>, String, bool),
+    rel: &str,
+    line: usize,
+) {
     let (name, mods, vtype, is_list) = d;
-    decls.entry(owner.to_string()).or_default().push(Var { owner: owner.to_string(), name, mods, vtype, is_list, path: rel.to_string(), line });
+    decls.entry(owner.to_string()).or_default().push(Var {
+        owner: owner.to_string(),
+        name,
+        mods,
+        vtype,
+        is_list,
+        path: rel.to_string(),
+        line,
+    });
 }
 
 /// `parse()` for one file's `code_only` view: appends to `decls` and `latent`.
-pub fn parse_file(rel:&str,code:&View,decls:&mut HashMap<String,Vec<Var>>,latent:&mut HashMap<String,bool>){
-    crate::raw_declaration_policy::visit_file(rel,code,|owner,parts,rel,line|push_var(decls,owner,parts,rel,line),|owner,value|{latent.insert(owner.to_string(),value);});
+pub fn parse_file(
+    rel: &str,
+    code: &View,
+    decls: &mut HashMap<String, Vec<Var>>,
+    latent: &mut HashMap<String, bool>,
+) {
+    crate::raw_declaration_policy::visit_file(
+        rel,
+        code,
+        |owner, parts, rel, line| push_var(decls, owner, parts, rel, line),
+        |owner, value| {
+            latent.insert(owner.to_string(), value);
+        },
+    );
 }
 
 /// `parse_codec_keys` for one file: `state_codecs()` keys are string literals, which `code_only`
@@ -111,10 +177,16 @@ pub fn parse_codec_keys_file(text: &str, codecs: &mut HashMap<String, HashSet<St
         let owner = m.s(1).replace("/proc", "");
         let end = m.end(0);
         let rest = &text[end..];
-        let stop = first_nonspace_line.find(rest).map(|e| e.start).unwrap_or(rest.len());
+        let stop = first_nonspace_line
+            .find(rest)
+            .map(|e| e.start)
+            .unwrap_or(rest.len());
         let body = &rest[..stop];
         for k in key.captures_iter(body) {
-            codecs.entry(owner.clone()).or_default().insert(k.s(1).to_string());
+            codecs
+                .entry(owner.clone())
+                .or_default()
+                .insert(k.s(1).to_string());
         }
     }
 }
@@ -176,34 +248,51 @@ impl Schema {
     }
 
     pub fn build(tree: &Tree, files: &[&SourceFile]) -> Schema {
-        let facts: Vec<SchemaFacts> = oi::sharded_facts("schema-facts-type-metadata-v2", files, |f| {
-            let mut decls: HashMap<String, Vec<Var>> = HashMap::new();
-            let mut latent: HashMap<String, bool> = HashMap::new();
-            parse_file(&f.rel, f.code(), &mut decls, &mut latent);
-            let mut codecs: HashMap<String, HashSet<String>> = HashMap::new();
-            parse_codec_keys_file(f.raw().text.as_str(), &mut codecs);
-            let mut out = SchemaFacts::default();
-            let mut owners: Vec<&String> = decls.keys().collect();
-            owners.sort();
-            for o in owners {
-                for v in &decls[o] {
-                    out.decls.push((o.clone(), v.name.clone(), v.mods.iter().cloned().collect(), v.vtype.clone(), v.is_list, v.line as u32));
+        let facts: Vec<SchemaFacts> =
+            oi::sharded_facts("schema-facts-type-metadata-v2", files, |f| {
+                let mut decls: HashMap<String, Vec<Var>> = HashMap::new();
+                let mut latent: HashMap<String, bool> = HashMap::new();
+                parse_file(&f.rel, f.code(), &mut decls, &mut latent);
+                let mut codecs: HashMap<String, HashSet<String>> = HashMap::new();
+                parse_codec_keys_file(f.raw().text.as_str(), &mut codecs);
+                let mut out = SchemaFacts::default();
+                let mut owners: Vec<&String> = decls.keys().collect();
+                owners.sort();
+                for o in owners {
+                    for v in &decls[o] {
+                        out.decls.push((
+                            o.clone(),
+                            v.name.clone(),
+                            v.mods.iter().cloned().collect(),
+                            v.vtype.clone(),
+                            v.is_list,
+                            v.line as u32,
+                        ));
+                    }
                 }
-            }
-            out.latent = latent.into_iter().collect();
-            out.latent.sort();
-            for (o, keys) in codecs {
-                let mut ks: Vec<String> = keys.into_iter().collect();
-                ks.sort();
-                out.codecs.push((o, ks));
-            }
-            out.codecs.sort();
-            out
-        });
-        let mut s = Schema { registry: registry_types(tree), ..Schema::default() };
+                out.latent = latent.into_iter().collect();
+                out.latent.sort();
+                for (o, keys) in codecs {
+                    let mut ks: Vec<String> = keys.into_iter().collect();
+                    ks.sort();
+                    out.codecs.push((o, ks));
+                }
+                out.codecs.sort();
+                out
+            });
+        let mut s = Schema {
+            registry: registry_types(tree),
+            ..Schema::default()
+        };
         for (f, x) in files.iter().zip(facts) {
             for (owner, name, mods, vtype, is_list, line) in x.decls {
-                push_var(&mut s.decls, &owner, (name, mods.into_iter().collect(), vtype, is_list), &f.rel, line as usize);
+                push_var(
+                    &mut s.decls,
+                    &owner,
+                    (name, mods.into_iter().collect(), vtype, is_list),
+                    &f.rel,
+                    line as usize,
+                );
             }
             for (t, v) in x.latent {
                 s.latent.insert(t, v);
@@ -228,14 +317,22 @@ impl Schema {
 
     /// `has_codec(owner, name, subject)`: a `state_codecs()` key `name` on `subject` or an ancestor.
     pub fn has_codec(&self, name: &str, subject: &str) -> bool {
-        chain(subject).iter().any(|a| self.codecs.get(a).map(|s| s.contains(name)).unwrap_or(false))
+        chain(subject).iter().any(|a| {
+            self.codecs
+                .get(a)
+                .map(|s| s.contains(name))
+                .unwrap_or(false)
+        })
     }
 
     /// Every type that is latent-safe, sorted.
     pub fn safe_types(&self) -> Vec<String> {
         let mut all: BTreeSet<&String> = self.decls.keys().collect();
         all.extend(self.latent.keys());
-        all.into_iter().filter(|t| self.effective_latent(t)).cloned().collect()
+        all.into_iter()
+            .filter(|t| self.effective_latent(t))
+            .cloned()
+            .collect()
     }
 }
 
@@ -279,30 +376,51 @@ impl OwnershipKinds {
                 };
                 usage.insert((m.s(3).to_string(), kind));
             }
-            KindFacts { usage: usage.into_iter().collect() }
+            KindFacts {
+                usage: usage.into_iter().collect(),
+            }
         });
         let mut usage: HashMap<String, BTreeSet<&'static str>> = HashMap::new();
         for x in facts {
             for (name, kind) in x.usage {
-                usage.entry(name).or_default().insert(KIND_NAMES[kind as usize]);
+                usage
+                    .entry(name)
+                    .or_default()
+                    .insert(KIND_NAMES[kind as usize]);
             }
         }
         // The declared form: the entries of CAPABILITIES(T) blocks (sem::decls reads the blocks, backslash form and block form alike).
         // hud_element(nameof(x), T) is an owns_one on the hud; hud_element(..., owned = FALSE) a ref_one.
         // profile(nameof(x), /datum/record/T) is an owns_one (code/engine/declare/profiles.dm).
-        let entry = regex::Regex::new(r"\b(owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)").expect("ownership entry pattern");
+        let entry = regex::Regex::new(
+            r"\b(owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)",
+        )
+        .expect("ownership entry pattern");
         let mut declared: HashMap<(String, String), &'static str> = HashMap::new();
         for m in crate::sem::decls::Decls::get(tree).markers_named("CAPABILITIES") {
             let Some(ty) = m.args.first() else { continue };
             for c in entry.captures_iter(&m.body) {
                 // The rest of the entry's line (a block may hold several entries on one line in the backslash form).
-                let rest = m.body[c.get(0).map(|x| x.end()).unwrap_or(0)..].split('\n').next().unwrap_or("");
+                let rest = m.body[c.get(0).map(|x| x.end()).unwrap_or(0)..]
+                    .split('\n')
+                    .next()
+                    .unwrap_or("");
                 let owned_hud = &c[1] == "hud_element" && !rest.contains("owned = FALSE");
-                let kind = if c[1].starts_with("owns_") || owned_hud || &c[1] == "profile" { "OWN" } else { "REL" };
-                declared.entry((ty.clone(), c[2].to_string())).or_insert(kind);
+                let kind = if c[1].starts_with("owns_") || owned_hud || &c[1] == "profile" {
+                    "OWN"
+                } else {
+                    "REL"
+                };
+                declared
+                    .entry((ty.clone(), c[2].to_string()))
+                    .or_insert(kind);
             }
         }
-        OwnershipKinds { idx, usage, declared }
+        OwnershipKinds {
+            idx,
+            usage,
+            declared,
+        }
     }
 
     pub fn kind(&self, owner: &str, name: &str) -> Option<String> {
@@ -314,7 +432,10 @@ impl OwnershipKinds {
         if let Some((_, d)) = self.idx.decl(owner, name) {
             return Some(d.macro_name.clone());
         }
-        self.usage.get(name).and_then(|k| k.iter().next()).map(|k| k.to_string())
+        self.usage
+            .get(name)
+            .and_then(|k| k.iter().next())
+            .map(|k| k.to_string())
     }
 }
 
@@ -324,7 +445,10 @@ mod tests {
 
     #[test]
     fn chain_adds_implicit_roots() {
-        assert_eq!(chain("/obj/item"), ["/datum", "/atom", "/atom/movable", "/obj", "/obj/item"]);
+        assert_eq!(
+            chain("/obj/item"),
+            ["/datum", "/atom", "/atom/movable", "/obj", "/obj/item"]
+        );
         assert_eq!(chain("/turf/x"), ["/datum", "/atom", "/turf", "/turf/x"]);
         assert_eq!(chain("/atom/movable"), ["/datum", "/atom", "/atom/movable"]);
         assert_eq!(chain("/datum/a"), ["/datum", "/datum/a"]);
@@ -351,20 +475,27 @@ mod tests {
 
     #[test]
     fn parse_inherited_latent_metadata_registration() {
-        let f = SourceFile::from_text("code/a.dm", concat!(
-            "/datum/type_metadata_registry/register_defaults()\n",
-            "\tregister(/obj/thing, TYPE_META_LATENT_SAFE, TRUE)\n",
-            "\tregister(/obj/thing/sub, TYPE_META_LATENT_SAFE, FALSE)\n",
-            "\tregister(/obj/other, TYPE_META_SLOT_HOOKS, TRUE)\n",
-            "/proc/unrelated()\n",
-            "\tregister(/obj/ignored, TYPE_META_LATENT_SAFE, TRUE)\n"));
+        let f = SourceFile::from_text(
+            "code/a.dm",
+            concat!(
+                "/datum/type_metadata_registry/register_defaults()\n",
+                "\tregister(/obj/thing, TYPE_META_LATENT_SAFE, TRUE)\n",
+                "\tregister(/obj/thing/sub, TYPE_META_LATENT_SAFE, FALSE)\n",
+                "\tregister(/obj/other, TYPE_META_SLOT_HOOKS, TRUE)\n",
+                "/proc/unrelated()\n",
+                "\tregister(/obj/ignored, TYPE_META_LATENT_SAFE, TRUE)\n"
+            ),
+        );
         let mut decls = HashMap::new();
         let mut latent = HashMap::new();
         parse_file(&f.rel, f.code(), &mut decls, &mut latent);
         assert_eq!(latent.len(), 2);
         assert!(latent["/obj/thing"]);
         assert!(!latent["/obj/thing/sub"]);
-        let schema = Schema { latent, ..Schema::default() };
+        let schema = Schema {
+            latent,
+            ..Schema::default()
+        };
         assert!(schema.effective_latent("/obj/thing/child"));
         assert!(!schema.effective_latent("/obj/thing/sub/child"));
     }

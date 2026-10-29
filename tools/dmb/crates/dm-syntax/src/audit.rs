@@ -153,8 +153,19 @@ pub fn for_each_stable_source_chunk(
     .0
 }
 
-/// Reparse exactly one procedure from the original source when lowering it.
+/// Primary-issued envelope and scalar lexical cursor, from the SAME AstFile.
+pub struct ProcedureWithOrigins {
+    pub item: Item,
+    pub opening_parenthesis: Option<Span>,
+}
+/// Compatibility wrapper retains the existing parser/runtime interface.
 pub fn parse_proc_at_span(source: &str, span: Span) -> Result<Item, Diagnostic> {
+    parse_proc_with_origins_at_span(source, span).map(|issued| issued.item)
+}
+pub fn parse_proc_with_origins_at_span(
+    source: &str,
+    span: Span,
+) -> Result<ProcedureWithOrigins, Diagnostic> {
     let Some(slice) = source.get(span.range()) else {
         return Err(Diagnostic {
             span,
@@ -176,8 +187,23 @@ pub fn parse_proc_at_span(source: &str, span: Span) -> Result<Item, Diagnostic> 
         });
     }
     let mut item = ast.items.remove(0);
+    // Token kinds exclude parentheses inside strings/comments. Selection runs
+    // before tokens are dropped, never a second lex/parse in a policy pass.
+    let opening_parenthesis = ast
+        .tokens
+        .iter()
+        .find(|token| {
+            token.span.start >= item.header_span.start
+                && token.span.end <= item.header_span.end
+                && token.kind == crate::TokenKind::Punctuation
+                && token.text == "("
+        })
+        .map(|token| Span::new(token.span.start + span.start, token.span.end + span.start));
     rebase_item(&mut item, span.start);
-    Ok(item)
+    Ok(ProcedureWithOrigins {
+        item,
+        opening_parenthesis,
+    })
 }
 
 fn rebase_item(item: &mut Item, offset: usize) {

@@ -1,6 +1,8 @@
 //! Per-file raw policy lives in the compiler's SAME Db. Only explicit captured
 //! bytes/config enter; no filesystem reads, DM parse or sibling result cache.
 use super::*;
+#[path = "analyze_policy.rs"]
+mod analyze_policy;
 use crate::runner_host::policy_capture::CapturedPolicyInputs;
 use dm_analysis::policy_inputs::{PolicyRole, TextView};
 use dq_analyze::{
@@ -56,6 +58,17 @@ struct FileData {
 struct ConfigData {
     config: Arc<Config>,
     hash: u128,
+    original: Option<dm_resources::SharedBytes>,
+}
+impl ConfigData {
+    fn require_original(&self, current: Option<&[u8]>) -> io::Result<()> {
+        if self.original.as_ref().map(|bytes| bytes.as_slice()) != current {
+            return Err(invalid(
+                "cached configuration bytes/absence contradict current capture",
+            ));
+        }
+        Ok(())
+    }
 }
 #[derive(Clone)]
 struct ScopeParams {
@@ -83,6 +96,11 @@ pub(crate) struct CacheStats {
     pub nodes: usize,
     pub input_and_param_estimate: usize,
     pub derived_estimate: usize,
+    pub retained_shared_view_capacity: usize,
+}
+struct PreparedRawInputs {
+    configuration: Key,
+    sources: Vec<(Key, u128, Arc<File>)>,
 }
 pub(crate) struct Results {
     input: Weak<Cohort>,
@@ -123,6 +141,7 @@ fn error_hash(error: &str) -> u128 {
     dm_query::hash_bytes(&bytes)
 }
 pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>) {
+    analyze_policy::register_analyze(db, Arc::clone(&charge));
     db.define_input(RAW_FILE, "native-raw-shared-file");
     db.define_input(RAW_CONFIG, "native-raw-captured-config");
     let scope_charge = Arc::clone(&charge);
@@ -180,13 +199,62 @@ impl QueryDb {
             .leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
+        let mut storage = BTreeMap::new();
+        for key in leases.keys().filter(|key| key.kind == RAW_FILE) {
+            if let Some(source) = self.db.input::<FileData>(*key) {
+                source.file.visit_policy_storage(|id, bytes| {
+                    storage
+                        .entry(id)
+                        .and_modify(|old: &mut usize| *old = (*old).max(bytes))
+                        .or_insert(bytes);
+                });
+            }
+        }
         CacheStats {
+            retained_shared_view_capacity: storage
+                .values()
+                .copied()
+                .fold(0usize, usize::saturating_add),
             nodes: leases.len(),
             input_and_param_estimate: leases.values().map(|lease| lease.bytes).sum(),
             derived_estimate: self.raw_policy.charge.load(Ordering::Relaxed),
         }
     }
 
+    fn raw_retained_view_bytes_locked(&self) -> io::Result<usize> {
+        let leases = self
+            .raw_policy
+            .leases
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let mut storage = BTreeMap::new();
+        for key in leases.keys().filter(|key| key.kind == RAW_FILE) {
+            if let Some(source) = self.db.input::<FileData>(*key) {
+                source.file.visit_policy_storage(|id, bytes| {
+                    storage
+                        .entry(id)
+                        .and_modify(|old: &mut usize| *old = (*old).max(bytes))
+                        .or_insert(bytes);
+                });
+            }
+        }
+        storage
+            .values()
+            .try_fold(0usize, |a, b| a.checked_add(*b))
+            .ok_or_else(|| invalid("raw retained view census overflow"))
+    }
+    fn raw_clear_locked(&self) {
+        let mut leases = self
+            .raw_policy
+            .leases
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        for key in leases.keys() {
+            self.db.remove(*key);
+        }
+        leases.clear();
+        self.raw_policy.charge.store(0, Ordering::Relaxed);
+    }
     pub(crate) fn prune_raw_policy(&self) {
         let _gate = self
             .raw_policy
@@ -287,7 +355,10 @@ impl QueryDb {
             {
                 let bytes = self.db.value_bytes_at(*key);
                 self.db.remove(*key);
-                if matches!(key.kind, RAW_FINDINGS | RAW_SCOPE) {
+                if matches!(
+                    key.kind,
+                    RAW_FINDINGS | RAW_SCOPE | analyze_policy::ANALYZE_FINDINGS
+                ) {
                     let _ = self.raw_policy.charge.fetch_update(
                         Ordering::Relaxed,
                         Ordering::Relaxed,
@@ -346,7 +417,10 @@ impl QueryDb {
                 count -= 1;
                 let bytes = self.db.value_bytes_at(key);
                 self.db.remove(key);
-                if matches!(key.kind, RAW_FINDINGS | RAW_SCOPE) {
+                if matches!(
+                    key.kind,
+                    RAW_FINDINGS | RAW_SCOPE | analyze_policy::ANALYZE_FINDINGS
+                ) {
                     let _ = self.raw_policy.charge.fetch_update(
                         Ordering::Relaxed,
                         Ordering::Relaxed,
@@ -367,22 +441,12 @@ impl QueryDb {
         }
         Ok(())
     }
-    pub(crate) fn raw_findings(
+    fn raw_prepare_locked(
         &self,
         cohort: &Arc<Cohort>,
-        names: &[String],
-    ) -> io::Result<Results> {
-        if cohort.issuer != self.id || !cohort.capture.policy().archive().uses_body_queries(self) {
-            return Err(invalid("foreign raw cohort issuance"));
-        }
-        let ordered = captured_raw_file::ordered_names(names).map_err(invalid)?;
-        let _gate = self
-            .raw_policy
-            .gate
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        let now = Instant::now();
-        self.raw_prune_locked(now);
+        ordered: &[&str],
+        now: Instant,
+    ) -> io::Result<PreparedRawInputs> {
         let config_key = key(RAW_CONFIG, &(&cohort.root, &cohort.configuration));
         let bytes = cohort.capture.configuration_bytes(&cohort.configuration)?;
         let config_hash = match bytes {
@@ -403,7 +467,10 @@ impl QueryDb {
             None => dm_query::hash_bytes(b"proven-missing"),
         };
         let configuration = match self.db.input::<ConfigData>(config_key) {
-            Some(old) if old.hash == config_hash => Arc::clone(&old.config),
+            Some(old) if old.hash == config_hash => {
+                old.require_original(bytes)?;
+                Arc::clone(&old.config)
+            }
             _ => Arc::new(
                 Config::capture(match bytes {
                     Some(b) => Configuration::Captured(b),
@@ -428,12 +495,17 @@ impl QueryDb {
                 .ok_or_else(|| invalid("raw source fingerprint unavailable"))?;
             let file_key = key(RAW_FILE, &(&cohort.root, path));
             let file = match self.db.input::<FileData>(file_key) {
-                Some(old) if old.hash == hash => Arc::clone(&old.file),
+                Some(old) if old.hash == hash => {
+                    old.file
+                        .require_current_source(path, raw)
+                        .map_err(invalid)?;
+                    Arc::clone(&old.file)
+                }
                 _ => Arc::new(File::capture(&cohort.root, path, raw.clone()).map_err(invalid)?),
             };
             planned.insert(file_key, file.budget_charge());
             sources.push((file_key, hash, file));
-            for name in &ordered {
+            for name in ordered {
                 let scope = key(RAW_SCOPE, &(config_key.id, name));
                 planned.insert(scope, 1024);
                 planned.insert(key(RAW_FINDINGS, &(file_key.id, scope.id)), 1024);
@@ -445,6 +517,7 @@ impl QueryDb {
             ConfigData {
                 config: configuration,
                 hash: config_hash,
+                original: cohort.capture.configuration_owner(&cohort.configuration)?,
             },
             config_hash,
         );
@@ -458,6 +531,31 @@ impl QueryDb {
                 *hash,
             );
         }
+        Ok(PreparedRawInputs {
+            configuration: config_key,
+            sources,
+        })
+    }
+    pub(crate) fn raw_findings(
+        &self,
+        cohort: &Arc<Cohort>,
+        names: &[String],
+    ) -> io::Result<Results> {
+        if cohort.issuer != self.id || !cohort.capture.policy().archive().uses_body_queries(self) {
+            return Err(invalid("foreign raw cohort issuance"));
+        }
+        let ordered = captured_raw_file::ordered_names(names).map_err(invalid)?;
+        let _gate = self
+            .raw_policy
+            .gate
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let now = Instant::now();
+        self.raw_prune_locked(now);
+        let PreparedRawInputs {
+            configuration: config_key,
+            sources,
+        } = self.raw_prepare_locked(cohort, &ordered, now)?;
         let mut runs = Vec::new();
         let mut total_sites = 0usize;
         for name in ordered {
@@ -516,3 +614,7 @@ impl QueryDb {
 #[cfg(test)]
 #[path = "raw_policy_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "raw_policy_config_authority_tests.rs"]
+mod config_authority_tests;

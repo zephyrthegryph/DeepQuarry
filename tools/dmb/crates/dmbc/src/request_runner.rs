@@ -708,7 +708,7 @@ fn run_build_attempt(
         }
         Some(std::sync::Arc::new(captured))
     } else { None };
-    query_attempt.capture_with_queries(&frontend, std::sync::Arc::clone(&source_policy_queries), raw_policy)?;
+    query_attempt.capture_with_recorded_sources(&frontend, std::sync::Arc::clone(&source_policy_queries), raw_policy, &inputs_capture)?;
     dm_profile::request_mark("frontend.query_capture");
     dmbc::heap_census::emit_if_enabled("input_source_originals.current",|census|census.exceptional_source_inputs(&inputs_capture))?;
     if command == BuildCommand::Compile {

@@ -26,6 +26,37 @@ impl dm_preprocess::SourceProvider for Source {
         Ok(self.0.into())
     }
 }
+// Explicit byte acquisition for the two legacy-policy admission tests.
+// Other tests below exercise native source/body APIs, not legacy decoding parity.
+impl crate::input_snapshot::SnapshotProvider for Source {
+    fn stamp(&self, _: &std::path::Path) -> std::io::Result<crate::input_snapshot::Stamp> {
+        Ok(crate::input_snapshot::Stamp {
+            size: self.0.len() as u64,
+            modified_ns: 1,
+            file_id: Some(1),
+        })
+    }
+    fn read(
+        &self,
+        path: &std::path::Path,
+    ) -> std::io::Result<(crate::input_snapshot::Stamp, Vec<u8>)> {
+        Ok((
+            crate::input_snapshot::SnapshotProvider::stamp(self, path)?,
+            self.0.as_bytes().to_vec(),
+        ))
+    }
+    fn list(&self, _: &std::path::Path) -> std::io::Result<crate::input_snapshot::FolderListing> {
+        Ok(crate::input_snapshot::FolderListing::Present(Vec::new()))
+    }
+}
+fn recorded_source(
+    project: &std::path::Path,
+    text: &'static str,
+) -> (crate::input_snapshot::RecordingInputs<Source>, ColdFrontend) {
+    let inputs = crate::input_snapshot::RecordingInputs::new(Source(text), 1);
+    let frontend = seeded_source(project, &inputs, &Default::default(), 1).unwrap();
+    (inputs, frontend)
+}
 fn build(text: &'static str) -> ColdFrontend {
     dm_tree::frontend::build_with_config(
         std::path::Path::new("fixture.dme"),
@@ -43,8 +74,13 @@ fn build(text: &'static str) -> ColdFrontend {
 #[test]
 fn native_checker_question_executes_in_process_with_explicit_partial_coverage() {
     let db = Arc::new(crate::query_db::QueryDb::default());
-    let frontend = build("/proc/example(x)\n    return !x & 1\n").with_body_queries(db.clone());
-    let snapshot = SourceSnapshot::capture(&frontend);
+    let (inputs, frontend) = recorded_source(
+        std::path::Path::new("fixture.dme"),
+        "/proc/example(x)\n    return !x & 1\n",
+    );
+    let frontend = frontend.with_body_queries(db.clone());
+    let mut snapshot = SourceSnapshot::capture(&frontend);
+    snapshot.semantic_sources = Some(inputs.semantic_source_evidence(&frontend).unwrap());
     let mut bytes = Vec::new();
     snapshot
         .write_native_checker(0, "disabled", &frontend.snapshot.tree, &mut bytes)
@@ -229,22 +265,16 @@ fn lazy_body_model_matches_full_current_parser_after_frontend_release() {
 fn native_untyped_query_uses_retained_sources_and_same_syntax_graph() {
     let db = Arc::new(crate::query_db::QueryDb::default());
     let (mut snapshot, tree) = {
-        let frontend = seeded_source(
+        let (inputs, frontend) = recorded_source(
             std::path::Path::new("code/probe.dm"),
-            &Source(
-                "/datum/probe\n    var/saved\n    proc/use(datum/value)\n        saved = value\n",
-            ),
-            &Default::default(),
-            1,
-        )
-        .unwrap()
-        .with_body_queries(db.clone());
+            "/datum/probe\n    var/saved\n    proc/use(datum/value)\n        saved = value\n",
+        );
+        let frontend = frontend.with_body_queries(db.clone());
         let archive = frontend.body_archive().unwrap();
         archive.parse(0).unwrap();
-        (
-            SourceSnapshot::capture(&frontend),
-            Arc::clone(&frontend.snapshot.tree),
-        )
+        let mut snapshot = SourceSnapshot::capture(&frontend);
+        snapshot.semantic_sources = Some(inputs.semantic_source_evidence(&frontend).unwrap());
+        (snapshot, Arc::clone(&frontend.snapshot.tree))
     };
     snapshot.native_value_queries = Some(db.clone());
     let mut bytes = Vec::new();

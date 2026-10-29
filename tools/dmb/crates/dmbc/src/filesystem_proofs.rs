@@ -301,6 +301,13 @@ fn ordinary_negative_name(name: &str) -> bool {
         && matches!(stem.as_bytes()[3], b'1'..=b'9'))
 }
 impl SnapshotProvider for BulkFileSystemProofs {
+    fn source_alias(
+        &self,
+        path: &Path,
+        challenge: &crate::input_snapshot::SourceAliasChallenge,
+    ) -> io::Result<Option<crate::input_snapshot::SourceAliasProof>> {
+        crate::input_snapshot::FileSystemInputs.source_alias(path, challenge)
+    }
     fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
         self.watch
     }
@@ -408,7 +415,10 @@ fn capture_directories_parallel(
         .min(8)
         .min(paths.len().div_ceil(MIN_CHUNK).max(1));
     if threads <= 1 {
-        return paths.iter().map(|path| crate::fs_watch::shared_proof(path, capture_directory)).collect();
+        return paths
+            .iter()
+            .map(|path| crate::fs_watch::shared_proof(path, capture_directory))
+            .collect();
     }
     let chunk = paths.len().div_ceil(threads);
     std::thread::scope(|scope| {

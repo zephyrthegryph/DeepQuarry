@@ -20,6 +20,21 @@ impl HeapCensus {
                 folder,
             );
         }
+        self.unknown("query_snapshot.policy_inputs.source_aliases","BTreeMap node capacity not exposed; acquired alias records and path payloads visited below");
+        capture.visit_source_aliases(|path, alias| {
+            let owner = "query_snapshot.policy_inputs.source_aliases";
+            self.path(owner, path);
+            if self.arc_object(owner, alias) {
+                alias.visit_challenge(|address, bytes| {
+                    self.buffer(owner, address, bytes, bytes);
+                });
+                alias.visit_metadata(|path| {
+                    self.path(owner, path);
+                });
+                self.source_acquisition(alias.lease());
+            }
+        });
+        self.semantic_source_evidence(capture.semantic_source_evidence());
         let policy = capture.policy();
         self.body_archive(policy.archive());
         self.source_export_mapping(policy.mapping());

@@ -33,12 +33,12 @@ mod visit;
 pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
     for_each_source_chunk_with_limits, for_each_stable_source_chunk, parse_proc_at_span,
-    ChunkReport, StreamingAudit,
+    parse_proc_with_origins_at_span, ChunkReport, ProcedureWithOrigins, StreamingAudit,
 };
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
-    ControlOrigin, ForControl, ForInitializer, ParsedBody, Statement, StatementKind, SwitchAlternative,
-    SwitchCase,
+    ControlOrigin, ForControl, ForInitializer, ParsedBody, Statement, StatementKind,
+    SwitchAlternative, SwitchCase,
 };
 #[cfg(test)]
 mod control_origin_tests;
@@ -267,3 +267,6 @@ mod local_declaration;
 pub use local_declaration::{local_type_path, project_local_declaration, LocalDeclaration};
 
 pub mod native_special_forms;
+
+#[cfg(test)]
+mod procedure_origin_tests;

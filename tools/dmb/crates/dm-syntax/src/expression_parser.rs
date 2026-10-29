@@ -5,16 +5,7 @@ use super::*;
 pub fn parse_expression(source: &str) -> ParsedExpr {
     let lexical = lex(source);
     let mut parser = ExprParser {
-        tokens: lexical
-            .tokens
-            .into_iter()
-            .filter(|t| {
-                !matches!(
-                    t.kind,
-                    TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
-                )
-            })
-            .collect(),
+        tokens: expression_tokens(lexical.tokens),
         index: 0,
         ternary_then_depth: 0,
         diagnostics: lexical.diagnostics,
@@ -33,8 +24,41 @@ pub fn parse_expression(source: &str) -> ParsedExpr {
     }
 }
 
+/// Project the existing lossless tokens to primary expression punctuation.
+/// Scope is maximal-munch BEFORE conditional/member parsing consumes colons.
+/// Trivia is discarded but original byte adjacency is still authoritative.
+fn expression_tokens(tokens: Vec<Token>) -> Vec<Token> {
+    let mut input = tokens
+        .into_iter()
+        .filter(|token| {
+            !matches!(
+                token.kind,
+                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+            )
+        })
+        .peekable();
+    let mut output = Vec::new();
+    while let Some(mut token) = input.next() {
+        if token.text == ":"
+            && input
+                .peek()
+                .is_some_and(|next| next.text == ":" && token.span.end == next.span.start)
+        {
+            let next = input.next().unwrap();
+            token.text.push(':');
+            token.span.end = next.span.end;
+        }
+        output.push(token);
+    }
+    output
+}
+
 #[derive(Clone, Copy, Eq, PartialEq)]
-enum PostfixMode { Expression, ConstructorPrefab, ConstructorMini }
+enum PostfixMode {
+    Expression,
+    ConstructorPrefab,
+    ConstructorMini,
+}
 
 struct ExprParser {
     tokens: Vec<Token>,
@@ -78,16 +102,14 @@ impl ExprParser {
         loop {
             if self.ternary_then_depth > 0
                 && self.peek().is_some_and(|token| token.text == ":")
-                && self
-                    .tokens
-                    .get(self.index + 1)
-                    .is_none_or(|token| token.text != ":")
                 && !self.colon_member_before_ternary_separator(&lhs)
             {
                 break;
             }
             if min_bp <= 26 {
-                if mode != PostfixMode::ConstructorMini && self.peek().is_some_and(|t| t.text == "{") {
+                if mode != PostfixMode::ConstructorMini
+                    && self.peek().is_some_and(|t| t.text == "{")
+                {
                     let open = self.take().unwrap();
                     let mut fields = Vec::new();
                     while self.peek().is_some_and(|next| next.text != "}") {
@@ -130,7 +152,8 @@ impl ExprParser {
                 if let (Some(first), Some(second)) =
                     (self.tokens.get(self.index), self.tokens.get(self.index + 1))
                 {
-                    if mode == PostfixMode::Expression && first.text == second.text
+                    if mode == PostfixMode::Expression
+                        && first.text == second.text
                         && matches!(first.text.as_str(), "+" | "-")
                         && first.span.end == second.span.start
                     {
@@ -253,7 +276,9 @@ impl ExprParser {
                             args,
                         },
                     };
-                    if mode != PostfixMode::Expression { break; }
+                    if mode != PostfixMode::Expression {
+                        break;
+                    }
                     // `in` is an optional locate clause, so it belongs inside
                     // an enclosing prefix operator (`!locate(T) in L`).
                     if matches!(&lhs.kind, ExprKind::Call { callee, args }
@@ -294,9 +319,13 @@ impl ExprParser {
                     }
                     continue;
                 }
-                if mode != PostfixMode::ConstructorPrefab && self.peek().is_some_and(|t| t.text == "." || t.text == ":") {
+                if mode != PostfixMode::ConstructorPrefab
+                    && self
+                        .peek()
+                        .is_some_and(|t| matches!(t.text.as_str(), "." | ":" | "::"))
+                {
                     let separator = self.take().unwrap();
-                    let is_static = separator.text == ":" && self.take_text(":").is_some();
+                    let is_static = separator.text == "::";
                     let Some(selector) = self.take() else {
                         self.error(separator.span, "expected member after selector");
                         break;
@@ -323,7 +352,9 @@ impl ExprParser {
                     continue;
                 }
             }
-            if mode != PostfixMode::Expression { break; }
+            if mode != PostfixMode::Expression {
+                break;
+            }
             if min_bp <= 8 && self.take_text("as").is_some() {
                 let mut types = Vec::new();
                 let mut end = lhs.span.end;
@@ -444,6 +475,33 @@ impl ExprParser {
         let token = self.take()?;
         let span = token.span;
         match token.kind {
+            TokenKind::Punctuation | TokenKind::Operator if token.text == "::" => {
+                let Some(name) = self.take() else {
+                    self.error(span, "expected global procedure name after ::");
+                    return None;
+                };
+                if name.kind != TokenKind::Ident {
+                    self.error(name.span, "expected global procedure name after ::");
+                    return None;
+                }
+                // The scope operator is retained by PRIMARY syntax. It is not
+                // a member receiver, unscoped identifier or text-side analysis.
+                // Global variable references remain outside this bounded form.
+                if !self.peek().is_some_and(|next| next.text == "(") {
+                    self.error(name.span, "global :: reference requires call syntax");
+                    return None;
+                }
+                Some(Expr {
+                    span: Span::new(span.start, name.span.end),
+                    kind: ExprKind::Unary {
+                        op: "::".into(),
+                        value: Box::new(Expr {
+                            span: name.span,
+                            kind: ExprKind::Ident(name.text),
+                        }),
+                    },
+                })
+            }
             TokenKind::Ident if token.text == "new" => {
                 if self.peek().is_none() {
                     return Some(Expr {
@@ -504,11 +562,21 @@ impl ExprParser {
                 let target = match self.peek() {
                     Some(next) if next.kind == TokenKind::Ident => {
                         let target = self.take().unwrap();
-                        Some((Expr { span: target.span, kind: ExprKind::Ident(target.text) }, PostfixMode::ConstructorMini))
+                        Some((
+                            Expr {
+                                span: target.span,
+                                kind: ExprKind::Ident(target.text),
+                            },
+                            PostfixMode::ConstructorMini,
+                        ))
                     }
                     Some(next) if matches!(next.text.as_str(), "/" | ".") => {
                         let target = self.prefix()?;
-                        let mode = if matches!(target.kind, ExprKind::TypePath(_)) { PostfixMode::ConstructorPrefab } else { PostfixMode::ConstructorMini };
+                        let mode = if matches!(target.kind, ExprKind::TypePath(_)) {
+                            PostfixMode::ConstructorPrefab
+                        } else {
+                            PostfixMode::ConstructorMini
+                        };
                         Some((target, mode))
                     }
                     _ => None,
@@ -516,14 +584,24 @@ impl ExprParser {
                 let Some((target, mode)) = target else {
                     // A bare contextual new can precede a delimiter/operator,
                     // not only end-of-input (for example list(new, new)).
-                    return Some(Expr { span, kind: ExprKind::Call {
-                        callee: Box::new(Expr { span, kind: ExprKind::Ident("new".into()) }), args: Vec::new(),
-                    }});
+                    return Some(Expr {
+                        span,
+                        kind: ExprKind::Call {
+                            callee: Box::new(Expr {
+                                span,
+                                kind: ExprKind::Ident("new".into()),
+                            }),
+                            args: Vec::new(),
+                        },
+                    });
                 };
                 let value = self.expression_from(24, target, mode)?;
                 Some(Expr {
                     span: Span::new(span.start, value.span.end),
-                    kind: ExprKind::Unary { op: token.text, value: Box::new(value) },
+                    kind: ExprKind::Unary {
+                        op: token.text,
+                        value: Box::new(value),
+                    },
                 })
             }
             TokenKind::Ident if token.text == "null" => Some(Expr {

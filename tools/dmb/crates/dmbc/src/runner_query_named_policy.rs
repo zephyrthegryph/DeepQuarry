@@ -50,6 +50,7 @@ impl SourceSnapshot {
         &self,
         tree: &dm_tree::SemanticTree,
     ) -> io::Result<&CapturedPolicyInputs> {
+        self.require_semantic_source_encoding()?;
         let capture = self
             .native_policy_inputs
             .as_ref()
@@ -129,9 +130,10 @@ impl SourceSnapshot {
     ) -> io::Result<()> {
         crate::daemon::control::checkpoint()?;
         let producer = match family {
-            "ambiguous_not_bitwise" | "ambiguous_in_lhs" | "invalid_set_value" => {
-                DiagnosticSeverity::Warning
-            }
+            "ambiguous_not_bitwise"
+            | "ambiguous_in_lhs"
+            | "invalid_set_value"
+            | "field_access_static_type" => DiagnosticSeverity::Warning,
             "control_condition_static"
             | "set_has_no_effect"
             | "unreachable_code"
@@ -139,7 +141,8 @@ impl SourceSnapshot {
             | "if_condition_determinate"
             | "proc_has_no_parent"
             | "undefined_proc"
-            | "undefined_variable" => DiagnosticSeverity::Error,
+            | "undefined_variable"
+            | "no_typehint_implicit_new" => DiagnosticSeverity::Error,
             _ => {
                 return Err(io::Error::other(
                     "unsupported native configured-checker family",
@@ -165,7 +168,7 @@ impl SourceSnapshot {
                 .parse(ordinal as usize)
                 .map_err(|error| io::Error::other(error.message))?;
             let found = match family {
-                "proc_has_no_parent" | "undefined_proc" | "undefined_variable" => {
+                "proc_has_no_parent" | "undefined_proc" | "undefined_variable" | "field_access_static_type" | "no_typehint_implicit_new" => {
                     let resolver = self.resolved.as_ref()
                         .ok_or_else(|| io::Error::other("semantic checker requires the retained successful compile/analysis EngineHost"))?
                         .checker_resolver(tree)?;
@@ -177,7 +180,9 @@ impl SourceSnapshot {
                         .map_err(io::Error::other)?;
                     if family == "proc_has_no_parent" { context.parent_archived(&body, Severity::Error) }
                     else if family == "undefined_proc" { context.undefined_archived(&body, true) }
-                    else { context.variables_archived(&body, true) }
+                    else if family == "undefined_variable" { context.variables_archived(&body, true) }
+                    else if family == "no_typehint_implicit_new" {context.implicit_new_archived(&body,Severity::Error)}
+                    else {context.fields_archived(&body,Severity::Warning)}
                 }
                 "ambiguous_not_bitwise" => {
                     dm_analysis::checks::archived_ambiguous_not_bitwise(&body, Severity::Error)
@@ -209,12 +214,12 @@ impl SourceSnapshot {
             .map_err(io::Error::other)?;
             for diagnostic in found {
                 crate::daemon::control::checkpoint()?;
-                let origin = body
-                    .location(diagnostic.span.start)
-                    .ok_or_else(|| io::Error::other("checker diagnostic origin unavailable"))?;
+                let origin = archive
+                    .original_note_origin(diagnostic.span.start)
+                    .map_err(io::Error::other)?;
                 rows.push(serde_json::json!({"family":diagnostic.family,"severity":severity(level),"file":origin.path,"line":origin.line,
                     "expanded_span":[diagnostic.span.start,diagnostic.span.end],"expression_span":[diagnostic.expression_span.start,diagnostic.expression_span.end],
-                    "message":diagnostic.message,"notes":diagnostic.notes.iter().map(|note|&note.message).collect::<Vec<_>>() }));
+                    "message":diagnostic.message,"notes":diagnostic.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>() }));
             }
         }
         serde_json::to_writer(&mut *output,&serde_json::json!({

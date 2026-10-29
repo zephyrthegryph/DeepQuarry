@@ -99,3 +99,18 @@ fn unsupported_later_context_does_not_certify_an_earlier_partial_result() {
     )
     .is_err());
 }
+
+#[test]
+fn explicit_global_missing_proc_preserves_reference_wording_and_skips_arguments() {
+    let actual = rows("/proc/probe()\n    ::missing(hidden_argument())\n", true).unwrap();
+    assert_eq!(
+        actual.len(),
+        1,
+        "a refused global callee must suppress its arguments"
+    );
+    assert_eq!(actual[0].0, 2);
+    assert_eq!(actual[0].2, "undefined global proc: \"missing\"");
+    let bare = rows("/proc/probe()\n    missing()\n", true).unwrap();
+    assert_eq!(bare.len(), 1);
+    assert_eq!(bare[0].2, "undefined proc: \"missing\" on (global)");
+}

@@ -31,7 +31,31 @@ impl<'a> CapturedDeclPolicy<'a> {
             inputs,
         })
     }
-    pub fn scan(
+    pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        BorrowedDeclPolicy::capture(&self.raw, self.inputs)?.scan(checkpoint)
+    }
+}
+/// Native declaration policy borrowing the same captured source/config owner.
+pub struct BorrowedDeclPolicy<'a> {
+    raw: &'a CapturedRawPolicy,
+    inputs: &'a PolicyInputs,
+}
+impl<'a> BorrowedDeclPolicy<'a> {
+    pub fn capture(raw: &'a CapturedRawPolicy, inputs: &'a PolicyInputs) -> Result<Self, String> {
+        raw.validate_current_raw_roster(inputs)?;
+        Ok(Self { raw, inputs })
+    }
+    pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        let previous = crate::dm::sys::take_recorded();
+        let result = catch_unwind(AssertUnwindSafe(|| self.scan_inner(checkpoint)));
+        let _ = crate::dm::sys::take_recorded();
+        crate::dm::sys::restore_recorded(previous);
+        match result {
+            Ok(result) => result,
+            Err(_) => Err("captured decl policy panicked; findings discarded".into()),
+        }
+    }
+    fn scan_inner(
         &self,
         mut checkpoint: impl FnMut() -> Result<(), String>,
     ) -> Result<RawRun, String> {

@@ -69,7 +69,10 @@ enum Records {
     Compact(Box<[Compact]>),
     Wide(Box<[Wide]>),
     /// Rows by region: a session holds one chunk per region, not one row per output line.
-    Chunked { chunks: Box<[Chunk]>, len: usize },
+    Chunked {
+        chunks: Box<[Chunk]>,
+        len: usize,
+    },
 }
 #[derive(Debug)]
 struct Inner {
@@ -81,7 +84,10 @@ struct Inner {
 }
 /// Clones share immutable records and the original exact path/trace allocations.
 #[derive(Clone)]
-pub struct ExpandedOriginArena(Arc<Inner>);
+pub struct ExpandedOriginArena(
+    Arc<Inner>,
+    Option<Arc<super::origin_byte_layout::ByteLayoutLedger>>,
+);
 impl std::fmt::Debug for ExpandedOriginArena {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list().entries(self.iter()).finish()
@@ -89,18 +95,26 @@ impl std::fmt::Debug for ExpandedOriginArena {
 }
 impl Default for ExpandedOriginArena {
     fn default() -> Self {
-        Self(Arc::new(Inner {
-            records: Records::Compact(Box::new([])),
-            paths: Box::new([]),
-            traces: Box::new([]),
-            hint: Default::default(),
-        }))
+        Self(
+            Arc::new(Inner {
+                records: Records::Compact(Box::new([])),
+                paths: Box::new([]),
+                traces: Box::new([]),
+                hint: Default::default(),
+            }),
+            None,
+        )
     }
 }
 impl ExpandedOriginArena {
     /// Physical immutable provenance owner, never a content hash shortcut.
     pub fn same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0, &other.0)
+            && match (&self.1, &other.1) {
+                (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+                (None, None) => true,
+                _ => false,
+            }
     }
     pub fn len(&self) -> usize {
         match &self.0.records {
@@ -268,6 +282,14 @@ impl ExpandedOriginArena {
         }
         boxed(&self.0.paths, &mut visit);
         boxed(&self.0.traces, &mut visit);
+        if let Some(layout) = &self.1 {
+            visit(
+                Arc::as_ptr(layout) as usize,
+                1,
+                std::mem::size_of_val(layout.as_ref()),
+            );
+            layout.visit_storage(&mut visit);
+        }
     }
 }
 /// One region's rows of an assembled arena (`ExpandedOriginArena::assembled`).
@@ -394,12 +416,15 @@ impl ExpandedOriginArena {
                 .filter_map(|(value, used)| used.then_some(value))
                 .collect();
         }
-        Some(Self(Arc::new(Inner {
-            records: Records::Compact(records.into_boxed_slice()),
-            paths: paths.into_boxed_slice(),
-            traces: traces.into_boxed_slice(),
-            hint: Default::default(),
-        })))
+        Some(Self(
+            Arc::new(Inner {
+                records: Records::Compact(records.into_boxed_slice()),
+                paths: paths.into_boxed_slice(),
+                traces: traces.into_boxed_slice(),
+                hint: Default::default(),
+            }),
+            None,
+        ))
     }
     /// `assembled` for a chunked arena: reused runs move whole chunks (they are region-aligned), fresh regions add theirs.
     fn assembled_chunks(&self, old: &[Chunk], parts: Vec<RowPart>) -> Option<Self> {
@@ -491,17 +516,24 @@ impl ExpandedOriginArena {
             for chunk in &mut chunks {
                 chunk.path = map[chunk.path as usize];
             }
-            paths = paths.into_iter().zip(&used).filter_map(|(value, used)| used.then_some(value)).collect();
+            paths = paths
+                .into_iter()
+                .zip(&used)
+                .filter_map(|(value, used)| used.then_some(value))
+                .collect();
         }
-        Some(Self(Arc::new(Inner {
-            records: Records::Chunked {
-                chunks: chunks.into_boxed_slice(),
-                len: rows,
-            },
-            paths: paths.into_boxed_slice(),
-            traces: Box::new([]),
-            hint: Default::default(),
-        })))
+        Some(Self(
+            Arc::new(Inner {
+                records: Records::Chunked {
+                    chunks: chunks.into_boxed_slice(),
+                    len: rows,
+                },
+                paths: paths.into_boxed_slice(),
+                traces: Box::new([]),
+                hint: Default::default(),
+            }),
+            None,
+        ))
     }
 }
 pub struct OriginIter<'a> {
@@ -622,10 +654,21 @@ impl OriginArenaBuilder {
         self.chunk_rows = 0;
         for chunk in chunks {
             let path = Arc::clone(&self.paths[chunk.path as usize]);
-            self.push_rows(&chunk.lines, chunk.output_base as usize, chunk.region as usize, &path);
+            self.push_rows(
+                &chunk.lines,
+                chunk.output_base as usize,
+                chunk.region as usize,
+                &path,
+            );
         }
     }
-    fn push_rows(&mut self, lines: &OutputLines, output_base: usize, region: usize, path: &Arc<PathBuf>) {
+    fn push_rows(
+        &mut self,
+        lines: &OutputLines,
+        output_base: usize,
+        region: usize,
+        path: &Arc<PathBuf>,
+    ) {
         for (relative, source_line, source_span, traces) in lines.iter() {
             let output_line = self.len() + 1;
             self.push(ExpandedOrigin {
@@ -692,19 +735,22 @@ impl OriginArenaBuilder {
         }
     }
     pub(super) fn finish(self) -> ExpandedOriginArena {
-        ExpandedOriginArena(Arc::new(Inner {
-            records: match self.wide {
-                Some(v) => Records::Wide(v.into_boxed_slice()),
-                None if !self.chunks.is_empty() => Records::Chunked {
-                    chunks: self.chunks.into_boxed_slice(),
-                    len: self.chunk_rows,
+        ExpandedOriginArena(
+            Arc::new(Inner {
+                records: match self.wide {
+                    Some(v) => Records::Wide(v.into_boxed_slice()),
+                    None if !self.chunks.is_empty() => Records::Chunked {
+                        chunks: self.chunks.into_boxed_slice(),
+                        len: self.chunk_rows,
+                    },
+                    None => Records::Compact(self.compact.into_boxed_slice()),
                 },
-                None => Records::Compact(self.compact.into_boxed_slice()),
-            },
-            paths: self.paths.into_boxed_slice(),
-            traces: self.traces.into_boxed_slice(),
-            hint: Default::default(),
-        }))
+                paths: self.paths.into_boxed_slice(),
+                traces: self.traces.into_boxed_slice(),
+                hint: Default::default(),
+            }),
+            None,
+        )
     }
 }
 #[cfg(test)]
@@ -793,3 +839,71 @@ mod tests {
 #[cfg(test)]
 #[path = "origin_arena_tests.rs"]
 mod boundary_tests;
+
+impl ExpandedOriginArena {
+    pub(super) fn with_byte_layout(
+        self,
+        layout: super::origin_byte_layout::ByteLayoutLedger,
+    ) -> Self {
+        assert_eq!(
+            self.len(),
+            layout.rows(),
+            "layout must bind every actual native origin row"
+        );
+        Self(self.0, Some(Arc::new(layout)))
+    }
+    pub fn byte_layout_regions(&self) -> Option<&Arc<[(usize, usize)]>> {
+        self.1.as_ref().map(|layout| layout.regions())
+    }
+    pub fn original_byte_cursor(
+        &self,
+        index: usize,
+        occurrence: usize,
+        lease: &crate::SourceAcquisitionLease,
+        offset: usize,
+    ) -> Result<super::origin_byte_layout::OriginalByteCursor, &'static str> {
+        let origin = self
+            .get(index)
+            .ok_or("native original layout row unavailable")?;
+        self.1
+            .as_ref()
+            .ok_or("native original byte layout was not issued")?
+            .locate(index, origin, occurrence, lease, offset)
+    }
+    pub(super) fn equivalent_byte_layout(&self, other: &Self) -> bool {
+        match (&self.1, &other.1) {
+            (Some(a), Some(b)) => a.equivalent(b),
+            (None, None) => true,
+            _ => false,
+        }
+    }
+}
+
+impl ExpandedOriginArena {
+    pub(super) fn single_physical_macro_line(&self, index: usize) -> bool {
+        match &self.0.records {
+            Records::Chunked { chunks, len } if index < *len => {
+                let chunk = &chunks[self.chunk_of(chunks, index)];
+                chunk
+                    .lines
+                    .single_physical_macro_line(index - chunk.first as usize)
+            }
+            _ => false,
+        }
+    }
+    pub fn original_policy_line(
+        &self,
+        index: usize,
+        occurrence: usize,
+        lease: &crate::SourceAcquisitionLease,
+        offset: usize,
+    ) -> Result<usize, &'static str> {
+        let origin = self
+            .get(index)
+            .ok_or("native policy-line row unavailable")?;
+        self.1
+            .as_ref()
+            .ok_or("native policy-line layout unavailable")?
+            .locate_macro_line(index, origin, occurrence, lease, offset)
+    }
+}

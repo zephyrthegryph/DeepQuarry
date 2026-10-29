@@ -95,6 +95,13 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         path: &Path,
         acquired: &AcquiredSource,
     ) -> bool {
+        self.validate_source_lease(path, acquired.lease())
+    }
+    pub(crate) fn validate_source_lease(
+        &self,
+        path: &Path,
+        acquired: &dm_preprocess::SourceAcquisitionLease,
+    ) -> bool {
         let path = canonical_path(path);
         let Some(receipt) = acquired.receipt::<RecordedSourceReceipt>() else {
             return false;
@@ -112,7 +119,10 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         self.source_acquisitions
             .lock()
             .ok()
-            .and_then(|m| m.get(&path).map(|current| current.same_binding(acquired)))
+            .and_then(|m| {
+                m.get(&path)
+                    .map(|current| current.lease().same_binding(acquired))
+            })
             .unwrap_or(false)
     }
     pub(super) fn current_source_acquisition(
@@ -130,3 +140,14 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
 #[cfg(test)]
 #[path = "input_source_acquisition_tests.rs"]
 mod tests;
+
+#[path = "input_source_semantic.rs"]
+mod semantic;
+pub(crate) use semantic::SemanticSourceEvidence;
+
+pub(crate) fn recorded_source_receipt_storage(
+    value: &(dyn std::any::Any + Send + Sync),
+) -> Option<(&PathBuf, &PathBuf, &Arc<()>)> {
+    let value = value.downcast_ref::<RecordedSourceReceipt>()?;
+    Some((&value.path, &value.fact.path, &value.issuer))
+}

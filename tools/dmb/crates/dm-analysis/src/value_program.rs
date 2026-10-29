@@ -438,7 +438,7 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
         let ExprKind::Call { callee, .. } = &node(call).kind else {
             return Err(Unsupported("expected native call".into()));
         };
-        let (owner, name, bare) = match &node(callee).kind {
+        let (owner, name, bare): (SymbolId, &str, bool) = match &node(callee).kind {
             ExprKind::Ident(name) if name == "." => return Ok(Targets::Source(vec![self.current])),
             ExprKind::Ident(name) if name == ".." => {
                 return Ok(Targets::Source(
@@ -449,6 +449,12 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
                 ))
             }
             ExprKind::Ident(name) => (self.scope.owner, name, true),
+            ExprKind::Unary { op, .. } if op == "::" => {
+                match dm_syntax::call_target(node(callee)) {
+                    dm_syntax::CallTarget::GlobalNamed(name) => (SymbolId::of("/"), name, true),
+                    _ => return Err(Unsupported("invalid explicit global call target".into())),
+                }
+            }
             ExprKind::Member {
                 object,
                 selector,
@@ -483,7 +489,7 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
         }
         if targets.is_empty() {
             Ok(Targets::Builtin(
-                name.clone(),
+                name.to_owned(),
                 bare || owner == SymbolId::of("/"),
             ))
         } else {

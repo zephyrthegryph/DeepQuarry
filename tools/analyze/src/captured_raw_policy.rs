@@ -11,6 +11,7 @@ use dm_analysis::policy_inputs::{PolicyInputs, PolicyRole, TextView};
 use std::{
     panic::{catch_unwind, AssertUnwindSafe},
     path::Path,
+    sync::Arc,
 };
 
 /// Explicit migration fixture admission; not lint ceilings or CPU/RSS guarantees.
@@ -19,10 +20,10 @@ pub const MAX_FIXTURE_TOTAL_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_FIXTURE_SITES: usize = 10_000;
 pub const RAW_FILE_LINTS: &[&str] = &crate::native_policy_roster::LINT_NAMES;
 pub(crate) fn registry() -> &'static Registry {
-    static REGISTRY:std::sync::OnceLock<Registry>=std::sync::OnceLock::new();
+    static REGISTRY: std::sync::OnceLock<Registry> = std::sync::OnceLock::new();
     REGISTRY.get_or_init(|| {
-        let mut reg=Registry::default();
-        include!(concat!(env!("OUT_DIR"),"/native_policy_registry_gen.rs"));
+        let mut reg = Registry::default();
+        include!(concat!(env!("OUT_DIR"), "/native_policy_registry_gen.rs"));
         reg
     })
 }
@@ -45,9 +46,39 @@ pub struct RawRun {
 }
 pub struct CapturedRawPolicy {
     pub(crate) tree: Tree,
-    pub(crate) scopes: Scopes,
+    pub(crate) scopes: Arc<Scopes>,
 }
 impl CapturedRawPolicy {
+    /// Validate current raw-view authority without demanding unrelated variable
+    /// classification or body facts. Content equality alone grants no ownership.
+    pub(crate) fn validate_current_raw_roster(&self, inputs: &PolicyInputs) -> Result<(), String> {
+        let expected = inputs
+            .files()
+            .filter(|file| file.role() == PolicyRole::DmSource)
+            .count();
+        if expected != self.tree.files.len() {
+            return Err("current raw policy source roster is incomplete".into());
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        for file in &self.tree.files {
+            if !seen.insert(file.abs.as_path()) {
+                return Err("current raw policy source roster has duplicate paths".into());
+            }
+            let current = inputs
+                .file(&file.abs)
+                .ok_or("raw policy source is not in the current capture")?;
+            if current.role() != PolicyRole::DmSource {
+                return Err("current raw policy source role differs".into());
+            }
+            let raw = current
+                .view(TextView::AnalyzeRaw)
+                .map_err(|error| error.to_string())?;
+            if !raw.same_view(&file.raw().text) {
+                return Err("raw policy view belongs to another source acquisition".into());
+            }
+        }
+        Ok(())
+    }
     pub fn capture(
         root: &Path,
         inputs: &PolicyInputs,
@@ -101,8 +132,71 @@ impl CapturedRawPolicy {
         };
         Ok(Self {
             tree: Tree::from_captured_files(root, files),
-            scopes,
+            scopes: Arc::new(scopes),
         })
+    }
+    /// Assemble a bounded cross-file owner from the existing RAW_FILE nodes.
+    /// Each current raw view comes from the native issued receipt; cached
+    /// projections are reused after exact byte/path validation, never as proof.
+    pub fn from_shared_files(
+        root: &Path,
+        inputs: &PolicyInputs,
+        config: &crate::captured_raw_file::Config,
+        shared: &[Arc<crate::captured_raw_file::File>],
+    ) -> Result<Self, String> {
+        if !root.is_absolute() {
+            return Err("policy root must be absolute".into());
+        }
+        let root = dm_preprocess::regions::canonical_path(root);
+        let expected = inputs
+            .files()
+            .filter(|file| file.role() == PolicyRole::DmSource)
+            .count();
+        if expected != shared.len() {
+            return Err("shared source roster is incomplete".into());
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        let mut files = Vec::with_capacity(shared.len());
+        let mut total = 0usize;
+        for cached in shared {
+            if cached.root() != root || !seen.insert(cached.path().to_path_buf()) {
+                return Err("shared source root or duplicate path differs".into());
+            }
+            let current = inputs
+                .file(cached.path())
+                .ok_or("cached source absent from capture")?;
+            if current.role() != PolicyRole::DmSource {
+                return Err("shared source role differs".into());
+            }
+            let raw = current
+                .view(TextView::AnalyzeRaw)
+                .map_err(|error| error.to_string())?;
+            if raw.len() > MAX_FIXTURE_FILE_BYTES {
+                return Err("shared source exceeds fixture admission".into());
+            }
+            total = total
+                .checked_add(raw.len())
+                .ok_or("shared source accounting overflow")?;
+            if total > MAX_FIXTURE_TOTAL_BYTES {
+                return Err("shared sources exceed fixture admission".into());
+            }
+            files.push(cached.rebound_source(cached.path(), raw.clone())?);
+        }
+        files.sort_by(|a, b| a.rel.cmp(&b.rel));
+        Ok(Self {
+            tree: Tree::from_captured_files(root, files),
+            scopes: config.shared_scopes(),
+        })
+    }
+    /// Shared sources are reported by their allocation identities, so owners
+    /// count once even when raw and typed policy nodes hold different wrappers.
+    pub fn visit_policy_storage(
+        &self,
+        mut visit: impl FnMut(crate::tree::PolicyStorageKey, usize),
+    ) {
+        for file in &self.tree.files {
+            file.visit_policy_storage(&mut visit);
+        }
     }
     /// These are raw findings and consumed ALLOW records only. The host retains
     /// baseline/ceiling judgment, unused-ALLOW aggregation and unique generators.

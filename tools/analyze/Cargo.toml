@@ -58,6 +58,10 @@ required-features = ["legacy-sem", "native-policy"]
 name = "unified_base_vars_policy"
 required-features = ["legacy-sem", "native-policy"]
 
+[[example]]
+name = "unified_legacy_typed_policies"
+required-features = ["unified-oracle"]
+
 [dependencies]
 dm-preprocess = { path = "../dmb/crates/dm-preprocess" }
 dm-analysis = { path = "../dmb/crates/dm-analysis", optional = true }
@@ -139,3 +143,7 @@ codegen-units = 256
 
 [profile.gate-test.package."*"]
 opt-level = 2
+
+[[example]]
+name = "unified_requirement_bool"
+required-features = ["legacy-sem", "native-policy"]

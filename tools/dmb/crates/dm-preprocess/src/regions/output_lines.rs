@@ -12,6 +12,7 @@ pub(in crate::regions) struct CompactLine {
     source_start: u32,
     source_end: u32,
     traces: Trace,
+    single_physical_macro_line: bool,
 }
 impl CompactLine {
     fn into_line(self) -> Line {
@@ -51,6 +52,14 @@ impl OutputLineBuilder {
         }
     }
     pub(in crate::regions) fn push(&mut self, line: Line) {
+        self.push_with_single_macro_line(line, false);
+    }
+    /// Issued only while held/joined state is live. Wide fallback declines.
+    pub(in crate::regions) fn push_with_single_macro_line(
+        &mut self,
+        line: Line,
+        single_physical_macro_line: bool,
+    ) {
         if let Self::Wide(lines) = self {
             lines.push(line);
             return;
@@ -68,6 +77,7 @@ impl OutputLineBuilder {
                     source_start,
                     source_end,
                     traces: line.3,
+                    single_physical_macro_line,
                 });
             }
         } else {
@@ -108,6 +118,14 @@ impl OutputLines {
             }
         }
     }
+    pub(in crate::regions) fn single_physical_macro_line(&self, index: usize) -> bool {
+        match self {
+            Self::Compact(lines) => lines
+                .get(index)
+                .is_some_and(|line| line.single_physical_macro_line),
+            Self::Wide(_) => false,
+        }
+    }
     /// The largest relative output end (0 when empty): what a region's output base must leave room for.
     pub(in crate::regions) fn output_end(&self) -> usize {
         self.iter().map(|(span, ..)| span.end).max().unwrap_or(0)
@@ -115,9 +133,18 @@ impl OutputLines {
     /// Equal rows, traces compared by content (shared trace allocations compare by pointer first).
     pub(in crate::regions) fn same_rows(&self, other: &Self) -> bool {
         self.len() == other.len()
-            && self.iter().zip(other.iter()).all(|(a, b)| {
-                a.0 == b.0 && a.1 == b.1 && a.2 == b.2 && (Arc::ptr_eq(a.3, b.3) || a.3 == b.3)
-            })
+            && self
+                .iter()
+                .zip(other.iter())
+                .enumerate()
+                .all(|(index, (a, b))| {
+                    if self.single_physical_macro_line(index)
+                        != other.single_physical_macro_line(index)
+                    {
+                        return false;
+                    }
+                    a.0 == b.0 && a.1 == b.1 && a.2 == b.2 && (Arc::ptr_eq(a.3, b.3) || a.3 == b.3)
+                })
     }
     pub(in crate::regions) fn iter(
         &self,

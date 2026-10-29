@@ -13,6 +13,13 @@ impl<P> GeneratedOutputInputs<P> {
     }
 }
 impl<P: SnapshotProvider> SnapshotProvider for GeneratedOutputInputs<P> {
+    fn source_alias(
+        &self,
+        path: &Path,
+        proof: &SourceAliasChallenge,
+    ) -> io::Result<Option<SourceAliasProof>> {
+        self.provider.source_alias(path, proof)
+    }
     fn generated_outputs(&self) -> Option<&BTreeSet<PathBuf>> {
         Some(&self.paths)
     }

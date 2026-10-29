@@ -276,7 +276,13 @@ impl TypedVisitor for Membership<'_> {
                             span,
                             expression_span: expression.span,
                             message,
-                            notes: notes.into_iter().map(|message| Note { message }).collect(),
+                            notes: notes
+                                .into_iter()
+                                .map(|message| Note {
+                                    message,
+                                    source: None,
+                                })
+                                .collect(),
                         }),
                         Err(error) => {
                             self.error = Some(error.into());

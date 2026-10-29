@@ -10,13 +10,14 @@ use std::{
     collections::BTreeMap,
     panic::{catch_unwind, AssertUnwindSafe},
     path::Path,
+    sync::Arc,
 };
 pub struct File {
     tree: Tree,
     charge: usize,
 }
 pub struct Config {
-    scopes: Scopes,
+    scopes: Arc<Scopes>,
     charge: usize,
 }
 pub struct Scope {
@@ -94,6 +95,29 @@ impl File {
     pub fn budget_charge(&self) -> usize {
         self.charge
     }
+    /// Equal cache fingerprints permit reuse only after exact current content
+    /// and path verification; this proves content reuse, not source issuance.
+    pub fn require_current_source(
+        &self,
+        path: &Path,
+        raw: &dm_preprocess::SourceText,
+    ) -> Result<(), String> {
+        let file = &self.tree.files[0];
+        if file.abs != path || file.raw().text.as_bytes() != raw.as_bytes() {
+            return Err("cached raw source path/bytes contradict current capture".into());
+        }
+        Ok(())
+    }
+    pub(crate) fn rebound_source(
+        &self,
+        path: &Path,
+        raw: dm_preprocess::SourceText,
+    ) -> Result<SourceFile, String> {
+        self.tree.files[0].rebind_captured(path, raw)
+    }
+    pub fn visit_policy_storage(&self, visit: impl FnMut(crate::tree::PolicyStorageKey, usize)) {
+        self.tree.files[0].visit_policy_storage(visit);
+    }
     pub fn scan(&self, scope: &Scope) -> Result<Findings, String> {
         let lint = captured_raw_policy::registry()
             .find(scope.name)
@@ -150,12 +174,15 @@ impl Config {
             }
         };
         Ok(Self {
-            scopes,
+            scopes: Arc::new(scopes),
             charge: bytes.saturating_mul(64).saturating_add(1024),
         })
     }
     pub fn budget_charge(&self) -> usize {
         self.charge
+    }
+    pub(crate) fn shared_scopes(&self) -> Arc<Scopes> {
+        Arc::clone(&self.scopes)
     }
     pub fn scope(&self, name: &str) -> Result<Scope, String> {
         let lint = captured_raw_policy::registry()

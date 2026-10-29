@@ -114,6 +114,46 @@ impl<'a, R: Resolver + ?Sized> CheckerContext<'a, R> {
             severity,
         )
     }
+    pub fn fields_archived(
+        &self,
+        body: &ArchivedBody<'_>,
+        severity: Severity,
+    ) -> Result<Vec<Diagnostic>, String> {
+        let Owner::Archive(archive) = self.owner else {
+            return Err("checker context is frontend-owned".into());
+        };
+        if !body.belongs_to(archive) {
+            return Err("checker body belongs to another compiler archive".into());
+        }
+        crate::checks_field_static::archived(archive, body, self.resolver, self.profile, severity)
+    }
+    pub fn implicit_new_live(
+        &self,
+        frontend: &ColdFrontend,
+        body: &ParsedBody<'_>,
+        severity: Severity,
+    ) -> Result<Vec<Diagnostic>, String> {
+        let Owner::Live(issued) = self.owner else {
+            return Err("checker context is archive-owned".into());
+        };
+        if !std::ptr::eq(issued, frontend) {
+            return Err("checker body belongs to another compiler frontend".into());
+        }
+        crate::checks_implicit_new::check(issued, body, self.resolver, self.profile, severity)
+    }
+    pub fn implicit_new_archived(
+        &self,
+        body: &ArchivedBody<'_>,
+        severity: Severity,
+    ) -> Result<Vec<Diagnostic>, String> {
+        let Owner::Archive(archive) = self.owner else {
+            return Err("checker context is frontend-owned".into());
+        };
+        if !body.belongs_to(archive) {
+            return Err("checker body belongs to another compiler archive".into());
+        }
+        crate::checks_implicit_new::archived(archive, body, self.resolver, self.profile, severity)
+    }
     pub fn variables_archived(
         &self,
         body: &ArchivedBody<'_>,

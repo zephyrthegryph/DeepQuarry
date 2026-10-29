@@ -22,6 +22,8 @@ struct Index {
     policy_binding_seen: bool,
     negative: BTreeSet<PathBuf>,
     folders: BTreeMap<PathBuf, FolderListing>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    acquired_source_alias_v1: BTreeMap<PathBuf, crate::input_snapshot::SourceAliasRecord>,
     // Versioned physical evidence is optional: old journals remain valid for
     // observed-only replay, but cannot license strict physical containment.
     #[serde(default)]
@@ -78,27 +80,42 @@ impl JournalAccessView<'_> {
     /// Returns the recorded root file identity for cross-demand consistency.
     pub fn physical_root_identity(&self, path: &Path, root: &Path) -> io::Result<u128> {
         let path = canonical_path(path);
-        let proof = self.index.physical_v1.get(&path).ok_or_else(||
-            io::Error::new(io::ErrorKind::Unsupported, "journal has no capture-time physical path authority"))?;
+        let proof = self.index.physical_v1.get(&path).ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Unsupported,
+                "journal has no capture-time physical path authority",
+            )
+        })?;
         for ancestor in proof.ancestors() {
             if let Some(other) = self.index.physical_v1.get(ancestor) {
                 if !proof.agrees_with(other) {
-                    return Err(invalid("journal physical ancestor identity changed during capture"));
+                    return Err(invalid(
+                        "journal physical ancestor identity changed during capture",
+                    ));
                 }
             }
         }
         proof.contained_root_identity(&path, root)
     }
     pub fn files(&self) -> impl Iterator<Item = JournalFileAccess<'_>> {
-        self.index.files.iter().map(|(path, (stamp, content))| JournalFileAccess {
-            path, stamp, content: *content, journal: self.journal,
-        })
+        self.index
+            .files
+            .iter()
+            .map(|(path, (stamp, content))| JournalFileAccess {
+                path,
+                stamp,
+                content: *content,
+                journal: self.journal,
+            })
     }
     pub fn negative_paths(&self) -> impl Iterator<Item = &Path> {
         self.index.negative.iter().map(PathBuf::as_path)
     }
     pub fn folders(&self) -> impl Iterator<Item = (&Path, &FolderListing)> {
-        self.index.folders.iter().map(|(path, listing)| (path.as_path(), listing))
+        self.index
+            .folders
+            .iter()
+            .map(|(path, listing)| (path.as_path(), listing))
     }
 }
 fn invalid(message: impl Into<String>) -> io::Error {
@@ -106,11 +123,22 @@ fn invalid(message: impl Into<String>) -> io::Error {
 }
 impl Inputs {
     /// Bind intent and bytes; old journals allow only absent policy requests.
-    pub fn bind_policy_request(&self, request: Option<&crate::policy_request::AdmittedPolicyRequest>) -> io::Result<()> {
-        let journal = match self { Self::Live => return Ok(()), Self::Recording(journal) | Self::Replay(journal) => journal };
-        let mut index = journal.index.lock().map_err(|_| invalid("verification mutex poisoned"))?;
+    pub fn bind_policy_request(
+        &self,
+        request: Option<&crate::policy_request::AdmittedPolicyRequest>,
+    ) -> io::Result<()> {
+        let journal = match self {
+            Self::Live => return Ok(()),
+            Self::Recording(journal) | Self::Replay(journal) => journal,
+        };
+        let mut index = journal
+            .index
+            .lock()
+            .map_err(|_| invalid("verification mutex poisoned"))?;
         if matches!(self, Self::Replay(_)) || index.policy_binding_seen {
-            if index.policy_request_v1.as_ref() != request { return Err(invalid("verification policy-input request mismatch")); }
+            if index.policy_request_v1.as_ref() != request {
+                return Err(invalid("verification policy-input request mismatch"));
+            }
         } else {
             index.policy_request_v1 = request.cloned();
             index.policy_binding_seen = true;
@@ -127,8 +155,15 @@ impl Inputs {
             Self::Live => return Ok(None),
             Self::Recording(journal) | Self::Replay(journal) => journal,
         };
-        let index = journal.index.lock().map_err(|_| invalid("verification mutex poisoned"))?;
-        visit(JournalAccessView { journal, index: &index }).map(Some)
+        let index = journal
+            .index
+            .lock()
+            .map_err(|_| invalid("verification mutex poisoned"))?;
+        visit(JournalAccessView {
+            journal,
+            index: &index,
+        })
+        .map(Some)
     }
     pub fn record(directory: &Path) -> io::Result<Self> {
         fs::create_dir(directory)?;
@@ -205,6 +240,54 @@ impl Journal {
     }
 }
 impl SnapshotProvider for Inputs {
+    fn source_alias(
+        &self,
+        path: &Path,
+        challenge: &crate::input_snapshot::SourceAliasChallenge,
+    ) -> io::Result<Option<crate::input_snapshot::SourceAliasProof>> {
+        let path = canonical_path(path);
+        if let Self::Replay(journal) = self {
+            let index = journal
+                .index
+                .lock()
+                .map_err(|_| invalid("verification mutex poisoned"))?;
+            return match index.acquired_source_alias_v1.get(&path) {
+                Some(record) => record.replay(&path, challenge).map(Some),
+                None => Ok(None), // old journals decline; they cannot mint alias authority
+            };
+        }
+        let proof = FileSystemInputs.source_alias(&path, challenge)?;
+        if let (Self::Recording(journal), Some(proof)) = (self, proof.as_ref()) {
+            let mut index = journal
+                .index
+                .lock()
+                .map_err(|_| invalid("verification mutex poisoned"))?;
+            let primary = proof.primary();
+            if index.files.get(&primary.path) != Some(&(primary.stamp.clone(), primary.content)) {
+                return Err(invalid("journal acquired alias primary was not recorded"));
+            }
+            if index.negative.contains(&path)
+                || index
+                    .files
+                    .get(&path)
+                    .is_some_and(|old| old != &(proof.alias().stamp.clone(), proof.alias().content))
+                || index
+                    .acquired_source_alias_v1
+                    .get(&path)
+                    .is_some_and(|old| old != &proof.record())
+            {
+                return Err(invalid(
+                    "journal acquired alias contradicts prior observation",
+                ));
+            }
+            index.files.insert(
+                path.clone(),
+                (proof.alias().stamp.clone(), proof.alias().content),
+            );
+            index.acquired_source_alias_v1.insert(path, proof.record());
+        }
+        Ok(proof)
+    }
     /// Live reads follow the call; a journal is not the watched file system.
     fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
         match self {
@@ -285,7 +368,9 @@ impl SnapshotProvider for Inputs {
                         if !payload.exists() {
                             fs::write(payload, bytes)?;
                         }
-                        if let Some(guard) = physical.filter(|guard| guard.proof().present() && !guard.proof().terminal_directory()) {
+                        if let Some(guard) = physical.filter(|guard| {
+                            guard.proof().present() && !guard.proof().terminal_directory()
+                        }) {
                             index.physical_v1.insert(path.clone(), guard.proof());
                         } else {
                             index.physical_v1.remove(&path);
@@ -297,7 +382,9 @@ impl SnapshotProvider for Inputs {
                         if index.files.contains_key(&path) {
                             return Err(invalid("verification input disappeared during capture"));
                         }
-                        if let Some(guard) = physical.filter(|guard| !guard.proof().present() || guard.proof().terminal_directory()) {
+                        if let Some(guard) = physical.filter(|guard| {
+                            !guard.proof().present() || guard.proof().terminal_directory()
+                        }) {
                             index.physical_v1.insert(path.clone(), guard.proof());
                         } else {
                             index.physical_v1.remove(&path);
@@ -343,7 +430,9 @@ impl SnapshotProvider for Inputs {
                 }
                 if let Some(guard) = physical.filter(|guard| match &listing {
                     FolderListing::Missing => !guard.proof().present(),
-                    FolderListing::Present(_) => guard.proof().present() && guard.proof().terminal_directory(),
+                    FolderListing::Present(_) => {
+                        guard.proof().present() && guard.proof().terminal_directory()
+                    }
                 }) {
                     index.physical_v1.insert(path.clone(), guard.proof());
                 } else {
@@ -513,13 +602,23 @@ impl<'a> ProofStampedInputs<'a> {
         }
     }
     /// Adopt the request's validation proofs (live mode only; first wins).
-    pub fn adopt(&self, proofs: Option<std::sync::Arc<crate::filesystem_proofs::BulkFileSystemProofs>>) {
+    pub fn adopt(
+        &self,
+        proofs: Option<std::sync::Arc<crate::filesystem_proofs::BulkFileSystemProofs>>,
+    ) {
         if let (Inputs::Live, Some(proofs)) = (self.inner, proofs) {
             let _ = self.proofs.set(proofs);
         }
     }
 }
 impl SnapshotProvider for ProofStampedInputs<'_> {
+    fn source_alias(
+        &self,
+        path: &Path,
+        challenge: &crate::input_snapshot::SourceAliasChallenge,
+    ) -> io::Result<Option<crate::input_snapshot::SourceAliasProof>> {
+        self.inner.source_alias(path, challenge)
+    }
     fn generated_outputs(&self) -> Option<&std::collections::BTreeSet<PathBuf>> {
         self.inner.generated_outputs()
     }

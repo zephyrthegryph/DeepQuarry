@@ -185,7 +185,7 @@ fn expand_regions_inner(
         }
         origins.push_region(output.lines, output_start, *index, path);
     }
-    result.origins = origins.finish();
+    result.origins = super::origin_byte_layout::bind_current_layout(plan, &text, origins.finish());
     debug_assert_eq!(output_offset, text.len());
     result.text = text;
     if retain_tokens {
@@ -331,18 +331,25 @@ pub(super) fn expand_region(
             // Traces survive through analysis and lowering. Release growth
             // slack before publishing immutable backing shared by emitted lines.
             let macro_expansions = trace_arena.freeze_expansions(macro_expansions);
+            let single_physical_macro_line = !joined
+                && meta.source_lines == 1
+                && !macro_expansions.is_empty()
+                && !text.strip_suffix('\n').unwrap_or(&text).contains('\n');
             // The terminal separator is not another emitted line. Interior
             // empty lines are source content, including inside block strings.
             for part in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
                 let start = text_buffer.len();
                 text_buffer.push_str(part);
                 text_buffer.push('\n');
-                lines.push((
-                    Span::new(start, text_buffer.len()),
-                    meta.source_line,
-                    meta.source_span,
-                    macro_expansions.clone(),
-                ));
+                lines.push_with_single_macro_line(
+                    (
+                        Span::new(start, text_buffer.len()),
+                        meta.source_line,
+                        meta.source_span,
+                        macro_expansions.clone(),
+                    ),
+                    single_physical_macro_line,
+                );
             }
         }
         flush_held(

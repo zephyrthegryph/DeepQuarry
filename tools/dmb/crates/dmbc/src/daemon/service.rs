@@ -19,13 +19,13 @@ mod admission_deadline;
 mod admission_limits;
 #[path = "service_generation_admission.rs"]
 mod generation_admission;
-#[path = "service_request_threads.rs"]
-mod request_threads;
 #[path = "service_housekeeping.rs"]
 mod housekeeping;
 #[cfg(test)]
 #[path = "service_queue_tests.rs"]
 mod queue_tests;
+#[path = "service_request_threads.rs"]
+mod request_threads;
 #[path = "soft_memory.rs"]
 mod soft_memory;
 /// Hosts are retained per manifest and semantic configuration. Supersession also
@@ -151,13 +151,12 @@ struct SessionKey {
     bootstrap: bool,
 }
 impl SessionKey {
-    fn of(
-        manifest: PathBuf,
-        config: Option<&crate::request::BuildRequest>,
-    ) -> Self {
+    fn of(manifest: PathBuf, config: Option<&crate::request::BuildRequest>) -> Self {
         Self {
             manifest: session_root(manifest),
-            engine: config.and_then(|request| request.engine_template.as_deref()).map(EngineIdentity::of),
+            engine: config
+                .and_then(|request| request.engine_template.as_deref())
+                .map(EngineIdentity::of),
             bootstrap: config.is_some_and(|request| request.bootstrap_catalog),
         }
     }
@@ -195,12 +194,26 @@ const COLD_GROWTH_DEFAULT: u64 = 12_000_000_000;
 /// What the last build of each (project, hot or cold) grew the process by, so admission asks for what a build really needs.
 static GROWTH: Mutex<BTreeMap<(PathBuf, bool), u64>> = Mutex::new(BTreeMap::new());
 fn expected_growth(key: &SessionKey, hot: bool) -> u64 {
-    let learned = GROWTH.lock().unwrap_or_else(|e| e.into_inner()).get(&(key.manifest.clone(), hot)).copied();
+    let learned = GROWTH
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&(key.manifest.clone(), hot))
+        .copied();
     // 15% over the last observation: growth varies a little build to build.
-    learned.map_or(if hot { HOT_GROWTH_DEFAULT } else { COLD_GROWTH_DEFAULT }, |bytes| bytes + bytes / 7)
+    learned.map_or(
+        if hot {
+            HOT_GROWTH_DEFAULT
+        } else {
+            COLD_GROWTH_DEFAULT
+        },
+        |bytes| bytes + bytes / 7,
+    )
 }
 fn note_growth(key: &SessionKey, hot: bool, growth: u64) {
-    GROWTH.lock().unwrap_or_else(|e| e.into_inner()).insert((key.manifest.clone(), hot), growth);
+    GROWTH
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert((key.manifest.clone(), hot), growth);
 }
 /// Samples the process's private bytes every 100 ms while a request runs and keeps the maximum.
 struct PeakSampler {
@@ -288,15 +301,19 @@ struct Shared {
 impl Shared {
     /// Soft pressure: the machine is running short of available memory (adaptive budget), or this process passed its fixed soft limit.
     fn under_memory_pressure(&self, bytes: u64) -> bool {
-        soft_memory::adaptive_pressure(bytes).map_or(bytes >= self.soft_private_bytes, |pressure| pressure.soft)
+        soft_memory::adaptive_pressure(bytes)
+            .map_or(bytes >= self.soft_private_bytes, |pressure| pressure.soft)
     }
     fn over_hard_ceiling(&self, bytes: u64) -> bool {
-        soft_memory::adaptive_pressure(bytes)
-            .map_or_else(|| bytes >= soft_memory::hard(self.soft_private_bytes).unwrap_or(u64::MAX), |pressure| pressure.hard)
+        soft_memory::adaptive_pressure(bytes).map_or_else(
+            || bytes >= soft_memory::hard(self.soft_private_bytes).unwrap_or(u64::MAX),
+            |pressure| pressure.hard,
+        )
     }
     /// True when available physical memory is below half the reserve: even the newest session may be degraded.
     fn memory_emergency(&self) -> bool {
-        soft_memory::adaptive_pressure(transport::private_bytes().unwrap_or(0)).is_some_and(|pressure| pressure.emergency)
+        soft_memory::adaptive_pressure(transport::private_bytes().unwrap_or(0))
+            .is_some_and(|pressure| pressure.emergency)
     }
     /// Admission by memory (adaptive budget only). A compile is expected to grow the process by `expected_growth` (what this
     /// session's last build of the same kind grew it, else a conservative default); it starts only while the machine would still
@@ -306,19 +323,31 @@ impl Shared {
     /// slows down instead of refusing every build.
     fn await_memory(&self, key: &SessionKey, hot: bool) -> io::Result<()> {
         // The daemon-wide budget applies to every mode: a build is admitted against what it is expected to add.
-        self.enforce_retained_budget(Some(key), expected_growth(key, hot).min(soft_memory::retained_budget() / 2));
-        let Some(reserve) = soft_memory::adaptive_reserve() else { return Ok(()) };
+        self.enforce_retained_budget(
+            Some(key),
+            expected_growth(key, hot).min(soft_memory::retained_budget() / 2),
+        );
+        let Some(reserve) = soft_memory::adaptive_reserve() else {
+            return Ok(());
+        };
         let need = expected_growth(key, hot);
         let started = Instant::now();
         loop {
-            let Some(available) = soft_memory::available() else { return Ok(()) };
+            let Some(available) = soft_memory::available() else {
+                return Ok(());
+            };
             if available >= reserve.saturating_add(need) {
                 return Ok(());
             }
             control::checkpoint()?;
             let private = transport::private_bytes().unwrap_or(0);
-            if soft_memory::admission_may_shed(available, need, reserve, private, soft_memory::retained_budget())
-                && self.shed_one_idle(key, available, need, reserve)
+            if soft_memory::admission_may_shed(
+                available,
+                need,
+                reserve,
+                private,
+                soft_memory::retained_budget(),
+            ) && self.shed_one_idle(key, available, need, reserve)
             {
                 continue;
             }
@@ -344,12 +373,16 @@ impl Shared {
             let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
             let key = slots
                 .iter()
-                .filter(|(other, slot)| *other != keep && Arc::strong_count(slot) == 1 && slot.host.try_lock().is_ok())
+                .filter(|(other, slot)| {
+                    *other != keep && Arc::strong_count(slot) == 1 && slot.host.try_lock().is_ok()
+                })
                 .min_by_key(|(_, slot)| *slot.last.lock().unwrap_or_else(|e| e.into_inner()))
                 .map(|(other, _)| other.clone());
             key.and_then(|key| slots.remove(&key).map(|slot| (key, slot)))
         };
-        let Some((key, slot)) = victim else { return false };
+        let Some((key, slot)) = victim else {
+            return false;
+        };
         note_eviction(&key, "memory-pressure");
         let before = transport::private_bytes();
         drop(slot);
@@ -372,7 +405,9 @@ impl Shared {
         let budget = soft_memory::retained_budget();
         let mut released = false;
         loop {
-            let Some(private) = transport::private_bytes() else { return released };
+            let Some(private) = transport::private_bytes() else {
+                return released;
+            };
             if private.saturating_add(reserve) <= budget {
                 return released;
             }
@@ -383,13 +418,20 @@ impl Shared {
                     .map(|(key, slot)| {
                         let idle = Arc::strong_count(slot) == 1 && slot.host.try_lock().is_ok();
                         // The session being admitted counts as the newest even before its use is recorded.
-                        let last = if keep == Some(key) { Instant::now() } else { *slot.last.lock().unwrap_or_else(|e| e.into_inner()) };
+                        let last = if keep == Some(key) {
+                            Instant::now()
+                        } else {
+                            *slot.last.lock().unwrap_or_else(|e| e.into_inner())
+                        };
                         (key.clone(), last, idle)
                     })
                     .collect();
-                soft_memory::budget_victim(&sessions).and_then(|key| slots.remove(&key).map(|slot| (key, slot)))
+                soft_memory::budget_victim(&sessions)
+                    .and_then(|key| slots.remove(&key).map(|slot| (key, slot)))
             };
-            let Some((key, slot)) = victim else { return released };
+            let Some((key, slot)) = victim else {
+                return released;
+            };
             note_eviction(&key, "memory-budget");
             drop(slot);
             let after = self.reclaim_allocator(transport::private_bytes());
@@ -473,24 +515,29 @@ impl Shared {
                 if tier >= 3 {
                     Some(format!("degraded-tier-{tier}"))
                 } else if !retained {
-                    Some(take_eviction(key).map_or_else(|| "no-patch-base".to_string(), |why| format!("evicted:{why}")))
+                    Some(take_eviction(key).map_or_else(
+                        || "no-patch-base".to_string(),
+                        |why| format!("evicted:{why}"),
+                    ))
                 } else {
                     None
                 }
             }
             None => Some(match take_eviction(key) {
                 Some(why) => format!("evicted:{why}"),
-                None if slots.keys().any(|other| other.manifest == key.manifest) => "variant-mismatch".to_string(),
+                None if slots.keys().any(|other| other.manifest == key.manifest) => {
+                    "variant-mismatch".to_string()
+                }
                 None => "no-session".to_string(),
             }),
         };
-        crate::compile_stats::SessionState { hot: miss.is_none(), miss, sessions }
+        crate::compile_stats::SessionState {
+            hot: miss.is_none(),
+            miss,
+            sessions,
+        }
     }
-    fn slot(
-        &self,
-        path: PathBuf,
-        config: Option<&crate::request::BuildRequest>,
-    ) -> Arc<Slot> {
+    fn slot(&self, path: PathBuf, config: Option<&crate::request::BuildRequest>) -> Arc<Slot> {
         let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
         let slot = slots
             .entry(SessionKey::of(path, config))
@@ -609,9 +656,13 @@ impl Shared {
             && !DIAG_RELEASED.swap(true, Ordering::AcqRel)
         {
             std::thread::sleep(Duration::from_secs(20));
-            let upto = std::env::var("DMB_ALLOC_SITES_RELEASE").ok().and_then(|text| text.parse::<usize>().ok());
+            let upto = std::env::var("DMB_ALLOC_SITES_RELEASE")
+                .ok()
+                .and_then(|text| text.parse::<usize>().ok());
             if match upto {
-                Some(tier) if (2..housekeeping::SESSION_RELEASE).contains(&tier) => self.diag_release_tiers(tier),
+                Some(tier) if (2..housekeeping::SESSION_RELEASE).contains(&tier) => {
+                    self.diag_release_tiers(tier)
+                }
                 Some(0) => false,
                 _ => self.release_for_retire(),
             } {
@@ -624,8 +675,8 @@ impl Shared {
         let hard = bytes.is_some_and(|bytes| self.over_hard_ceiling(bytes));
         // A running build's transient peak is not retained state: only the
         // hard ceiling may act during one.
-        let soft = hard
-            || running == 0 && bytes.is_some_and(|bytes| self.under_memory_pressure(bytes));
+        let soft =
+            hard || running == 0 && bytes.is_some_and(|bytes| self.under_memory_pressure(bytes));
         self.housekeep(Instant::now(), soft, hard);
         // Host releases above have finished; no slot/host lock is held here.
         self.engines.prune_idle();
@@ -664,7 +715,9 @@ impl Drop for SpillOnExit {
             .collect();
         for (key, slot) in slots {
             // A host that is building has nothing to store yet, and the exit conditions admit no running build.
-            let Ok(host) = slot.host.try_lock() else { continue };
+            let Ok(host) = slot.host.try_lock() else {
+                continue;
+            };
             let started = Instant::now();
             host.spill_patch_bases();
             super::emit_stderr(format_args!(
@@ -773,7 +826,10 @@ pub(super) fn serve() -> io::Result<()> {
             && *shared.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
             && shared.connections.load(Ordering::Acquire) == 0
         {
-            super::emit_stderr(format_args!("dmbd exiting pid={}: superseded and idle", std::process::id()));
+            super::emit_stderr(format_args!(
+                "dmbd exiting pid={}: superseded and idle",
+                std::process::id()
+            ));
             return Ok(());
         }
         if beat.elapsed() >= Duration::from_secs(5) || retiring != beat_retiring {
@@ -938,6 +994,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                             | super::query::SourceQuery::NativeCheckerFixture { .. }
                             | super::query::SourceQuery::NativeUntypedFixture { .. }
                             | super::query::SourceQuery::NativeRawPolicyFixture { .. }
+                            | super::query::SourceQuery::NativeAnalyzePolicyFixture { .. }
                             | super::query::SourceQuery::NativeNamedRule { .. }
                             | super::query::SourceQuery::NativeConfiguredChecker { .. }
                             | super::query::SourceQuery::NativeConfiguredControlBatch { .. }
@@ -988,7 +1045,10 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             let preparation_started = Instant::now();
             dm_profile::request_marks_begin();
             // A death during this build is quoted from here by the next daemon start of this namespace.
-            super::crash_trace::note_request(&format!("build project={}", request.project.display()));
+            super::crash_trace::note_request(&format!(
+                "build project={}",
+                request.project.display()
+            ));
             if discovery {
                 return protocol::send(
                     &mut stream,
@@ -1019,11 +1079,20 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     )),
                 );
             }
-            let preparation_deadline = match super::prepare_deadline::capture(request.command, request.timeout_seconds, preparation_started) {
+            let preparation_deadline = match super::prepare_deadline::capture(
+                request.command,
+                request.timeout_seconds,
+                preparation_started,
+            ) {
                 Ok(deadline) => deadline,
-                Err(error) => return protocol::send(&mut stream, &Reply::Rejected(
-                    crate::request_failure::RequestFailure::invalid_request(error.to_string()),
-                )),
+                Err(error) => {
+                    return protocol::send(
+                        &mut stream,
+                        &Reply::Rejected(crate::request_failure::RequestFailure::invalid_request(
+                            error.to_string(),
+                        )),
+                    )
+                }
             };
             transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
             let path = std::fs::canonicalize(&request.project)?;
@@ -1032,7 +1101,9 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 Err(error) => {
                     return protocol::send(
                         &mut stream,
-                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
+                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(
+                            &error,
+                        )),
                     );
                 }
             };
@@ -1043,7 +1114,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             let stats_context = (
                 request.command == crate::request::BuildCommand::Compile,
                 path.clone(),
-                path.file_name().map_or_else(String::new, |name| name.to_string_lossy().into_owned()),
+                path.file_name()
+                    .map_or_else(String::new, |name| name.to_string_lossy().into_owned()),
                 request.workers,
             );
             let slot = shared.slot(path, Some(&request));
@@ -1079,17 +1151,18 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
                 );
             }
-            let _permit = match shared.acquire_accepted_until(&accepted, request.workers, &admission) {
-                Ok(permit) => permit,
-                Err(error) => {
-                    return protocol::send(
-                        &mut *stream.lock().unwrap_or_else(|e| e.into_inner()),
-                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(
-                            &error,
-                        )),
-                    )
-                }
-            };
+            let _permit =
+                match shared.acquire_accepted_until(&accepted, request.workers, &admission) {
+                    Ok(permit) => permit,
+                    Err(error) => {
+                        return protocol::send(
+                            &mut *stream.lock().unwrap_or_else(|e| e.into_inner()),
+                            &Reply::Rejected(crate::request_failure::RequestFailure::from_error(
+                                &error,
+                            )),
+                        )
+                    }
+                };
             let mut host = match slot.lock_host_until(&admission) {
                 Ok(host) => host,
                 Err(error) => {
@@ -1266,7 +1339,8 @@ mod tests {
         let first = shared.slot(path.clone(), None);
         let second = shared.slot(path.clone(), None);
         assert!(Arc::ptr_eq(&first, &second));
-        *first.last.lock().unwrap() = Instant::now() - housekeeping::SESSION_IDLE - Duration::from_secs(1);
+        *first.last.lock().unwrap() =
+            Instant::now() - housekeeping::SESSION_IDLE - Duration::from_secs(1);
         shared.trim();
         assert_eq!(shared.slots.lock().unwrap().len(), 1);
         drop((first, second));
@@ -1445,8 +1519,14 @@ mod tests {
         let shared = shared();
         let path = PathBuf::from("E:/fixture/project.dme");
         let first = shared.slot(path.clone(), None);
-        assert!(Arc::ptr_eq(&first, &shared.slot(PathBuf::from("E:/fixture"), None)));
-        assert!(!Arc::ptr_eq(&first, &shared.slot(PathBuf::from("E:/other/project.dme"), None)));
+        assert!(Arc::ptr_eq(
+            &first,
+            &shared.slot(PathBuf::from("E:/fixture"), None)
+        ));
+        assert!(!Arc::ptr_eq(
+            &first,
+            &shared.slot(PathBuf::from("E:/other/project.dme"), None)
+        ));
         let args = vec!["compile".into(), path.to_string_lossy().into_owned()];
         let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else {
             panic!("build expected")
@@ -1455,18 +1535,20 @@ mod tests {
         let engine = shared.slot(path.clone(), Some(&request));
         assert!(!Arc::ptr_eq(&first, &engine));
         request.bootstrap_catalog = true;
-        assert!(!Arc::ptr_eq(
-            &engine,
-            &shared.slot(path, Some(&request))
-        ));
+        assert!(!Arc::ptr_eq(&engine, &shared.slot(path, Some(&request))));
     }
     #[test]
     fn engine_templates_are_keyed_by_content_not_by_checkout_path() {
         let shared = shared();
-        let directory = std::env::temp_dir().join(format!("dmbd-engine-key-{}", std::process::id()));
+        let directory =
+            std::env::temp_dir().join(format!("dmbd-engine-key-{}", std::process::id()));
         std::fs::create_dir_all(directory.join("a")).unwrap();
         std::fs::create_dir_all(directory.join("b")).unwrap();
-        let (a, b, other) = (directory.join("a/t.bin"), directory.join("b/t.bin"), directory.join("b/other.bin"));
+        let (a, b, other) = (
+            directory.join("a/t.bin"),
+            directory.join("b/t.bin"),
+            directory.join("b/other.bin"),
+        );
         std::fs::write(&a, b"template").unwrap();
         std::fs::write(&b, b"template").unwrap();
         std::fs::write(&other, b"different").unwrap();
@@ -1478,7 +1560,10 @@ mod tests {
         request.engine_template = Some(a);
         let first = shared.slot(path.clone(), Some(&request));
         request.engine_template = Some(b);
-        assert!(Arc::ptr_eq(&first, &shared.slot(path.clone(), Some(&request))));
+        assert!(Arc::ptr_eq(
+            &first,
+            &shared.slot(path.clone(), Some(&request))
+        ));
         request.engine_template = Some(other);
         assert!(!Arc::ptr_eq(&first, &shared.slot(path, Some(&request))));
         let _ = std::fs::remove_dir_all(&directory);
@@ -1487,12 +1572,17 @@ mod tests {
     #[test]
     fn execution_budget_does_not_partition_semantic_session_or_request_identity() {
         let args = vec!["compile".into(), "E:/fixture/project.dme".into()];
-        let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else { panic!("build expected") };
+        let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else {
+            panic!("build expected")
+        };
         let baseline_session = SessionKey::of(request.project.clone(), Some(&request));
         let baseline_request = RequestKey::of(&request, &request.project);
-        for seconds in [1,300] {
+        for seconds in [1, 300] {
             request.timeout_seconds = Some(seconds);
-            assert_eq!(SessionKey::of(request.project.clone(), Some(&request)), baseline_session);
+            assert_eq!(
+                SessionKey::of(request.project.clone(), Some(&request)),
+                baseline_session
+            );
             assert_eq!(RequestKey::of(&request, &request.project), baseline_request);
         }
     }

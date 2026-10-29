@@ -613,3 +613,61 @@ claim idle lexical-owner reclamation: the guard, retention census and lightweigh
 lease repair are the next cohort. Production tool defaults remain unchanged;
 full policy/generator migration, checker inference, combined cutover and actual
 cold/warm/edited performance proofs remain outstanding.
+
+### Shared policy queries, source leases and byte origins (2026-10-29)
+
+The native host now retains lightweight source-acquisition leases rather than
+prepared lexical owners in its mapping and policy snapshots. Original encoding
+and current-read authority are checked before semantic cache access, including
+requests with no checker-policy override. The immutable admission verdict is
+reused only with its exact issued mapping. Retention/census tests cover release
+of lexical owners, same-decoded-text/different-encoding sources and source/config
+hash collisions; this is not a measured RSS or performance claim.
+
+Init, Decl and full BaseVars fixtures use the existing compiler QueryDb through
+one cross-file policy node over its existing raw-file and configuration inputs.
+Current-view authority stays separate from shared derived source projections;
+query parameters keep weak captures to avoid retaining the owning graph.
+A real private-daemon test compares all three policies with a separately built,
+unchanged old Engine.scan oracle, including warm reuse, configuration edits,
+canonical ordering and stale-policy rejection. The boolean-requirement facade
+also reuses the original raw and typed matchers; its complete seeded union matches
+twelve sites, including macro calls and physical argument lines. It is not yet a
+fourth admitted cross-file host policy or a whole-workspace lint judgment.
+
+That integration test exposed Windows DOS/verbatim path aliases entering the
+raw roster twice. A private acquisition challenge now permits the filesystem
+producer to prove a safe alias using current file identity and metadata. Both
+observed provider keys remain in the ledger; one primary source payload/member
+feeds policy work. Default/custom providers decline. Replay reissues against the
+current challenge and stale, foreign and relabelled proofs refuse. Eight focused
+regressions cover these contracts; no byte equality or relative path alone grants
+authority.
+
+Checker notes and locations use authenticated original byte positions, including
+physical rows inside logical lines and a deliberately line-only single-row macro
+receipt. Held or unproved transforms still refuse atomically. The field-static
+and implicit-new cohorts share the existing evaluated visitor and original
+native body graph; configuration severity/disable behavior has actual-host tests.
+Primary explicit-global syntax, selected-reference export and code generation
+now distinguish authored root declarations, builtins and member shadows. A
+bounded native-versus-BYOND runtime fixture agrees on all six results, including
+named arguments and arglist expansion.
+
+Current selected proof: 344 distinct focused library tests, eleven shared-graph
+integration tests and both real daemon tests pass. Thirty-one independently
+compared checker fixtures contain 158 exactly matching diagnostics. This is the
+current selection, not a claim that it is a superset of every earlier checkpoint
+or that all checker families are implemented. Independent old-engine fixtures
+match Init17, Decl22, BaseVars12 and requirement_bool12 sites with annotation use
+and notes. All ratchets pass; all 382 checked generated-file hashes are unchanged.
+DM, map and checker-configuration inputs remain unchanged since the preceding
+zero-diagnostic DreamChecker run; that run was not repeated for Rust-only edits.
+Normal host dependencies still exclude dreammaker. No pins, full suite, native
+compiler publication or production default cutover occurred.
+
+Remaining work includes exact variable-declaration token provenance, further
+policy/checker families and inference, bounded full-workspace discovery and
+transactional reporting, generators, thin-client cutover and actual end-to-end
+cold/warm/edited performance proofs. DATA drafts for these are not implementation
+or verification evidence until applied and tested.

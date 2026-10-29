@@ -34,6 +34,7 @@ pub fn write_jsonl(
             .map(|reference| reference.path.as_slice())
             .collect(),
         nodes: HashMap::new(),
+        call_callee: None,
     };
     dm_syntax::visit_statements(&statements.parsed().statements, &mut index);
     for reference in &selections.references {
@@ -100,6 +101,7 @@ struct NodeLocation {
 #[derive(Clone, Copy)]
 enum NodeRole {
     Identifier,
+    GlobalProcedure,
     Property {
         safe: bool,
         static_property: bool,
@@ -112,6 +114,16 @@ enum NodeRole {
 impl NodeLocation {
     fn supports(&self, meaning: &SelectedMeaning) -> bool {
         use SelectedMeaning as M;
+        if matches!(self.role, NodeRole::GlobalProcedure) {
+            return match meaning {
+                M::ProcedureCall {
+                    reference: dm_ir::SymRef::Proc { owner, .. },
+                    safe: false,
+                } => *owner == SymbolId::of("/"),
+                M::IntrinsicCall(name) => *name == SymbolId::of(&self.name),
+                _ => false,
+            };
+        }
         match meaning {
             M::RuntimeProperty {
                 safe,
@@ -146,13 +158,26 @@ impl NodeLocation {
 struct NodeIndex<'a> {
     wanted: HashSet<&'a [NodeStep]>,
     nodes: HashMap<Vec<NodeStep>, NodeLocation>,
+    // The primary visitor enters a Call immediately before child-zero callee.
+    // This temporary address only classifies that exact borrowed callee; it is
+    // never serialized or retained outside this walk.
+    call_callee: Option<usize>,
 }
 impl TypedVisitor for NodeIndex<'_> {
     fn expression(&mut self, node: &Expr, path: &[NodeStep]) -> VisitDecision {
+        if let ExprKind::Call { callee, .. } = &node.kind {
+            self.call_callee = Some(callee.as_ref() as *const Expr as usize);
+        }
         if self.wanted.contains(path) {
             if let Some(name) = dm_syntax::reference_node_name(node) {
                 let role = match &node.kind {
                     ExprKind::Ident(_) => NodeRole::Identifier,
+                    ExprKind::Member { object, .. }
+                        if dm_syntax::is_global_receiver(object)
+                            && self.call_callee == Some(node as *const Expr as usize) =>
+                    {
+                        NodeRole::GlobalProcedure
+                    }
                     ExprKind::Member { .. } => NodeRole::Property {
                         safe: false,
                         static_property: false,
@@ -166,6 +191,7 @@ impl TypedVisitor for NodeIndex<'_> {
                         static_property: true,
                     },
                     _ => match dm_syntax::call_target(node) {
+                        dm_syntax::CallTarget::GlobalNamed(_) => NodeRole::GlobalProcedure,
                         dm_syntax::CallTarget::Dynamic {
                             dispatcher,
                             targets,

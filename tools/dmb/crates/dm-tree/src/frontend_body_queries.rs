@@ -19,6 +19,7 @@ pub struct BodySyntaxInput {
 pub struct BodySyntax {
     issuance: u64,
     pub(super) item: Item,
+    pub(super) opening_parenthesis: Option<dm_syntax::Span>,
     pub(super) statements: Arc<StatementBody>,
     input_bytes: usize,
 }
@@ -43,8 +44,8 @@ impl BodySyntaxInput {
         Ok(syntax)
     }
     pub fn parse(&self) -> Result<BodySyntax, Diagnostic> {
-        let mut item =
-            dm_syntax::parse_proc_at_span(&self.source, self.span).map_err(|error| Diagnostic {
+        let issued = dm_syntax::parse_proc_with_origins_at_span(&self.source, self.span).map_err(
+            |error| Diagnostic {
                 kind: syntax_kind(error.kind),
                 stage: DiagnosticStage::Syntax,
                 location: self
@@ -52,11 +53,14 @@ impl BodySyntaxInput {
                     .output(error.span.start)
                     .or_else(|| Some(self.location.clone())),
                 message: error.message,
-            })?;
+            },
+        )?;
+        let mut item = issued.item;
         let statements =
             body_archive::parse_statements(&mut item, &self.source, &self.syntax, |_| false);
         Ok(BodySyntax {
             issuance: self.id,
+            opening_parenthesis: issued.opening_parenthesis,
             item,
             statements,
             input_bytes: self.span.end.saturating_sub(self.span.start),

@@ -346,3 +346,16 @@ fn certified_explicit_parent_preserves_real_negative_dispatch_relation() {
     );
     assert!(!values["/obj/not_atom/result#0"]);
 }
+
+#[test]
+fn explicit_global_calls_use_root_value_and_parameter_equations() {
+    let values = returns("/proc/chosen(x)\n    return x\n/datum/proc/chosen(x)\n    return new /datum\n/datum/proc/use_global()\n    return ::chosen(1)\n/datum/proc/use_member()\n    return chosen(1)\n");
+    assert!(values["//chosen#0"]);
+    assert!(values["/datum/use_global#0"]);
+    assert!(!values["/datum/use_member#0"]);
+    let values = returns(
+        "/proc/chosen(x)\n    return x\n/proc/unsafe_argument()\n    return ::chosen(new /datum)\n",
+    );
+    assert!(!values["//chosen#0"]);
+    assert!(!values["//unsafe_argument#0"]);
+}

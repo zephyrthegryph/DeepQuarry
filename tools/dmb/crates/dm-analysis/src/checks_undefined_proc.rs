@@ -85,7 +85,13 @@ fn diagnostics(
             severity: Severity::Error,
             span: at,
             expression_span: expression.span,
-            message: format!("undefined proc: {name:?} on {owner}"),
+            message: if matches!(&expression.kind, dm_syntax::ExprKind::Call { callee, .. }
+                if matches!(dm_syntax::call_target(callee), dm_syntax::CallTarget::GlobalNamed(_)))
+            {
+                format!("undefined global proc: {name:?}")
+            } else {
+                format!("undefined proc: {name:?} on {owner}")
+            },
             notes: Vec::new(),
         });
     }

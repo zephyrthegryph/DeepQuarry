@@ -404,6 +404,23 @@ impl TypedVisitor for Binder {
                         frame.arglist_wrapper = dm_syntax::arglist_argument(args).is_some()
                             && !matches!(dm_syntax::call_target(callee),dm_syntax::CallTarget::Member {object,..} if dm_syntax::is_global_receiver(object));
                     }
+                    dm_syntax::CallTarget::GlobalNamed(name) => {
+                        let mut callee_path = path.to_vec();
+                        callee_path.push(NodeStep::Child(0));
+                        self.selectors.push(SelectorReference {
+                            selector: Arc::from(name),
+                            path: callee_path,
+                            span: callee.span,
+                            receiver_path: None,
+                            kind: SelectorKind::GlobalProcedure,
+                        });
+                        self.gap(
+                            path,
+                            node.span,
+                            "explicit global argument roles require compiler policy",
+                        );
+                        return VisitDecision::Skip;
+                    }
                     dm_syntax::CallTarget::Named(name) => {
                         let mut callee_path = path.to_vec();
                         callee_path.push(NodeStep::Child(0));

@@ -31,7 +31,7 @@ pub mod counters {
 }
 pub struct PreparedInputPayload {
     // None means an old/unproven payload, never inferred UTF8 from text.
-    acquisition:Option<dm_preprocess::AcquiredSource>,
+    acquisition: Option<dm_preprocess::AcquiredSource>,
     source: Arc<PreparedSource>,
     inputs: InputSnapshot,
     original_bytes: Option<dm_resources::SharedBytes>,
@@ -55,10 +55,15 @@ impl PreparedInputArtifacts {
     }
 }
 impl PreparedInputPayload {
+    pub(crate) fn source_acquisition(&self) -> Option<&dm_preprocess::AcquiredSource> {
+        self.acquisition.as_ref()
+    }
     pub fn source(&self) -> &Arc<PreparedSource> {
         &self.source
     }
-    pub fn exceptional_original_bytes(&self)->Option<&dm_resources::SharedBytes>{self.original_bytes.as_ref()}
+    pub fn exceptional_original_bytes(&self) -> Option<&dm_resources::SharedBytes> {
+        self.original_bytes.as_ref()
+    }
     pub fn inputs(&self) -> &InputSnapshot {
         &self.inputs
     }
@@ -118,7 +123,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .map_err(|_| invalid("prepared input roster poisoned"))?
             .push(Arc::clone(&key));
         static NOW: dm_profile::Accumulator = dm_profile::Accumulator::new("prepared.snapshot_now");
-        static VISIT: dm_profile::Accumulator = dm_profile::Accumulator::new("prepared.visit_validate");
+        static VISIT: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("prepared.visit_validate");
         static MERGE: dm_profile::Accumulator = dm_profile::Accumulator::new("prepared.merge");
         static INSERT: dm_profile::Accumulator = dm_profile::Accumulator::new("prepared.insert");
         let now_timer = NOW.time();
@@ -177,9 +183,12 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             drop(merge_timer);
             let _insert_timer = INSERT.time();
             let source = Arc::clone(&hit.source);
-            let acquisition=self.refresh_source_acquisition(&path,&source,hit.acquisition.as_ref())?;
-            let original_bytes=hit.original_bytes.clone();
-            if let Some(bytes)=&original_bytes{self.remember_exceptional_source(&path,bytes.clone())?;}
+            let acquisition =
+                self.refresh_source_acquisition(&path, &source, hit.acquisition.as_ref())?;
+            let original_bytes = hit.original_bytes.clone();
+            if let Some(bytes) = &original_bytes {
+                self.remember_exceptional_source(&path, bytes.clone())?;
+            }
             owner
                 .values
                 .insert_with(key, Vec::new(), 0, || PreparedInputPayload {
@@ -201,7 +210,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             std::sync::atomic::Ordering::Relaxed,
         );
         let prepare_started = std::time::Instant::now();
-        let acquisition=self.acquire_recorded_source(&path,bytes)?;
+        let acquisition = self.acquire_recorded_source(&path, bytes)?;
         let source = {
             let _stage = dm_profile::stage("input_scan.lexical_prepare");
             Arc::clone(acquisition.prepared())
@@ -218,14 +227,14 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .get(&path)
             .cloned()
             .ok_or_else(|| invalid("prepared input capture missing"))?;
-        let original_bytes=self.exceptional_source_bytes(&path)?;
+        let original_bytes = self.exceptional_source_bytes(&path)?;
         let mut inputs = InputSnapshot::new(now);
         inputs.files.insert(path, fact);
         owner
             .values
             .insert_with(key, Vec::new(), 0, || PreparedInputPayload {
                 source: Arc::clone(&source),
-                acquisition:Some(acquisition),
+                acquisition: Some(acquisition),
                 inputs,
                 original_bytes,
             });

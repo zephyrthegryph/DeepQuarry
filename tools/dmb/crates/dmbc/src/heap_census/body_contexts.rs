@@ -3,6 +3,7 @@ use super::*;
 impl HeapCensus {
     pub(crate) fn body_archive(&mut self, archive: &Arc<dm_tree::frontend::BodyArchive>) {
         if self.arc_object("query_snapshot.body_archive", archive) {
+            self.source_export_mapping(archive.source_mapping());
             let (callables, indices) = archive.binding_storage();
             self.callable_roster(callables);
             if self.arc_object("query_snapshot.body_archive.indices", indices) {
@@ -156,6 +157,11 @@ impl HeapCensus {
         let owner = "query_snapshot.source_mapping";
         if !self.arc_object(owner, mapping) {
             return;
+        }
+        let acquisitions = mapping.source_acquisition_storage();
+        self.slice("source_acquisition.occurrences", acquisitions, true);
+        for value in acquisitions.iter().flatten() {
+            self.source_acquisition(value);
         }
         let (region_count, include_count, location_count) = mapping.coordinate_counts();
         self.owner(owner).observed_items += (region_count + include_count + location_count) as u64;

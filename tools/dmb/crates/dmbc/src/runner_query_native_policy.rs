@@ -42,6 +42,7 @@ impl SourceSnapshot {
         output: &mut impl io::Write,
     ) -> io::Result<()> {
         crate::daemon::control::checkpoint()?;
+        self.require_semantic_source_encoding()?;
         let archive = self
             .body_archive
             .as_ref()
@@ -94,7 +95,9 @@ impl SourceSnapshot {
             "full_policy_parity":false,"raw_marker_scope":raw_marker_scope,
             "admission":"raw_findings","findings":rows,
         });
-        if let Some(policy) = self.policy_revision { row["policy_revision"] = format!("{policy:032x}").into(); }
+        if let Some(policy) = self.policy_revision {
+            row["policy_revision"] = format!("{policy:032x}").into();
+        }
         serde_json::to_writer(&mut *output, &row).map_err(io::Error::other)?;
         output.write_all(b"\n")
     }

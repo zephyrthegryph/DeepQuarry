@@ -89,6 +89,33 @@ fn missing_intrinsic_ancestry_is_unsupported_not_a_false_clean_result() {
     assert!(policy.scan(|| Ok(())).err().unwrap().contains("certified"));
 }
 #[test]
+fn borrowed_decl_reuses_current_source_owner_and_preserves_all_observations() {
+    let source = include_str!("../../dmb/fixtures/native_decl_policy/code/compiled.dm");
+    let (root, inputs) = capture(source.into(), true);
+    let raw = CapturedRawPolicy::capture(&root, &inputs, Configuration::ProvenMissing).unwrap();
+    let borrowed = BorrowedDeclPolicy::capture(&raw, &inputs).unwrap();
+    let actual = borrowed.scan(|| Ok(())).unwrap();
+    let repeated = borrowed.scan(|| Ok(())).unwrap();
+    let expected = CapturedDeclPolicy::capture(&root, &inputs, Configuration::ProvenMissing)
+        .unwrap()
+        .scan(|| Ok(()))
+        .unwrap();
+    assert!(!actual.run.sites.is_empty());
+    assert_eq!(actual.run.sites, expected.run.sites);
+    assert_eq!(actual.run.notes, expected.run.notes);
+    assert_eq!(actual.allow_used, expected.allow_used);
+    assert_eq!(repeated.run.sites, actual.run.sites);
+    assert_eq!(repeated.allow_used, actual.allow_used);
+}
+#[test]
+fn borrowed_decl_refuses_equal_bytes_from_another_current_raw_owner() {
+    let source = "/obj/device/Initialize()\n    after(src, 1, null)\n";
+    let (root, inputs) = capture(source.into(), true);
+    let raw = CapturedRawPolicy::capture(&root, &inputs, Configuration::ProvenMissing).unwrap();
+    let (_, foreign) = capture(source.into(), true);
+    assert!(BorrowedDeclPolicy::capture(&raw, &foreign).is_err());
+}
+#[test]
 fn every_decl_rule_reuses_existing_findings_and_allow_consumption() {
     let source = format!(
         "{}\n// own_set(src, \"dead_owned\", null)\n",

@@ -25,6 +25,8 @@ pub(crate) struct RequestedPolicyFile {
 /// `PolicyInputs::revision()` fingerprints text only; consumers must bind these
 /// complete captured facts as well when caching decisions about missing files.
 pub(crate) struct CapturedPolicyInputs {
+    semantic_sources: Arc<crate::input_snapshot::SemanticSourceEvidence>,
+    source_aliases: BTreeMap<PathBuf, Arc<crate::input_snapshot::AcquiredSourceAlias>>,
     policy: PolicyInputs,
     facts: InputSnapshot,
     missing: Vec<PathBuf>,
@@ -38,6 +40,11 @@ pub(crate) struct CapturedPolicyInputs {
 /// equal bytes. Metadata remains a conservative admission estimate.
 pub(crate) const MAX_POLICY_CAPTURE_CHARGE: usize = 64 * 1024 * 1024;
 impl CapturedPolicyInputs {
+    pub(crate) fn semantic_source_evidence(
+        &self,
+    ) -> &Arc<crate::input_snapshot::SemanticSourceEvidence> {
+        &self.semantic_sources
+    }
     pub(crate) fn bind_request(
         mut self,
         request: &crate::policy_request::AdmittedPolicyRequest,
@@ -54,7 +61,12 @@ impl CapturedPolicyInputs {
                 crate::policy_request::PolicyInputRole::DmSource => PolicyRole::DmSource,
                 crate::policy_request::PolicyInputRole::Configuration => PolicyRole::Configuration,
             };
-            match self.policy.file(&file.path) {
+            let resolved = self
+                .source_aliases
+                .get(&file.path)
+                .map(|alias| alias.primary_path())
+                .unwrap_or(file.path.as_path());
+            match self.policy.file(resolved) {
                 Some(captured) if captured.role() == role => (),
                 None if !file.required
                     && self.missing.contains(&file.path)
@@ -95,6 +107,18 @@ impl CapturedPolicyInputs {
                 ));
             }
         }
+        for (path, alias) in &self.source_aliases {
+            if alias.requested_path() != path
+                || !request.files().iter().any(|wanted| {
+                    wanted.path == *path
+                        && wanted.role == crate::policy_request::PolicyInputRole::DmSource
+                })
+            {
+                return Err(io::Error::other(
+                    "acquired source alias is outside admitted request",
+                ));
+            }
+        }
         for path in &self.missing {
             if !request
                 .files()
@@ -118,6 +142,17 @@ impl CapturedPolicyInputs {
             &self.facts,
             request,
         )?);
+        if !self.source_aliases.is_empty() {
+            let aliases = self
+                .source_aliases
+                .iter()
+                .map(|(path, alias)| (path, alias.primary_path()))
+                .collect::<Vec<_>>();
+            let bytes =
+                serde_json::to_vec(&("acquired-source-alias-v1", self.policy_revision, &aliases))
+                    .map_err(io::Error::other)?;
+            self.policy_revision = Some(xxhash_rust::xxh3::xxh3_128(&bytes));
+        }
         Ok(self)
     }
     pub(crate) fn policy_revision(&self) -> Option<u128> {
@@ -157,6 +192,26 @@ impl CapturedPolicyInputs {
             )),
         }
     }
+    /// Clone the SAME admitted raw-byte owner, or retain exact optional absence.
+    pub(crate) fn configuration_owner(
+        &self,
+        path: &Path,
+    ) -> io::Result<Option<dm_resources::SharedBytes>> {
+        self.configuration_bytes(path)?; // role/absence admission before lookup
+        Ok(self
+            .configuration_bytes
+            .get(&canonical_path(path))
+            .expect("validated config roster")
+            .clone())
+    }
+    pub(crate) fn visit_source_aliases(
+        &self,
+        mut visit: impl FnMut(&PathBuf, &Arc<crate::input_snapshot::AcquiredSourceAlias>),
+    ) {
+        for (path, alias) in &self.source_aliases {
+            visit(path, alias);
+        }
+    }
     pub(crate) fn visit_configuration_bytes(
         &self,
         mut visit: impl FnMut(&PathBuf, Option<&dm_resources::SharedBytes>),
@@ -188,15 +243,19 @@ impl CapturedPolicyInputs {
                 .saturating_add(file.path().as_os_str().as_encoded_bytes().len());
             for (_, text) in file.views() {
                 charge = charge.saturating_add(64);
-                if owners.text(text).is_err() { return usize::MAX; }
+                if owners.text(text).is_err() {
+                    return usize::MAX;
+                }
             }
         }
         for (path, bytes) in &self.configuration_bytes {
             charge = charge
                 .saturating_add(128)
                 .saturating_add(path.as_os_str().as_encoded_bytes().len());
-            if let Some(bytes)=bytes {
-                if owners.bytes(bytes).is_err() { return usize::MAX; }
+            if let Some(bytes) = bytes {
+                if owners.bytes(bytes).is_err() {
+                    return usize::MAX;
+                }
             }
         }
         self.facts
@@ -231,11 +290,18 @@ impl CapturedPolicyInputs {
                 .saturating_add(32)
                 .saturating_add(path.as_os_str().as_encoded_bytes().len());
         }
+        for (path, alias) in &self.source_aliases {
+            charge = charge
+                .saturating_add(128)
+                .saturating_add(path.capacity())
+                .saturating_add(alias.metadata_charge());
+        }
+        charge = charge.saturating_add(self.semantic_sources.budget_charge());
         charge.saturating_add(owners.totals().charge().unwrap_or(usize::MAX))
     }
 }
 
-#[path="policy_owner_charge.rs"]
+#[path = "policy_owner_charge.rs"]
 mod owner_charge;
 
 /// Call before completing the request's InputSnapshot, using the SAME
@@ -299,24 +365,65 @@ pub(crate) fn capture<P: SnapshotProvider>(
     let mut extra = Vec::new();
     let mut missing = Vec::new();
     let mut configuration_bytes = BTreeMap::new();
+    let mut source_aliases = BTreeMap::new();
     for (path, request) in requests {
-        if let Some((compiled, raw_content)) = sources.get(&path) {
-            let raw = if compiled.span_fingerprint(0..compiled.len())==Some(*raw_content) {
-                if compiled.as_bytes().contains(&b'\r'){analyze_raw(compiled.as_bytes())}else{SourceText::clone(compiled)}
+        let mut primary = path.clone();
+        if request.role == PolicyRole::DmSource && !sources.contains_key(&path) {
+            let candidates = sources
+                .iter()
+                .filter(|(key, _)| {
+                    dm_preprocess::regions::relative_filesystem_path(key, &path)
+                        .is_some_and(|rel| rel.as_os_str().is_empty())
+                })
+                .collect::<Vec<_>>();
+            if candidates.len() > 1 {
+                return Err(io::Error::other(
+                    "source alias has ambiguous acquired primaries",
+                ));
+            }
+            if let Some((key, (text, _))) = candidates.first() {
+                if let Some(alias) = inputs.acquire_source_alias(&path, key, text)? {
+                    primary = (*key).clone();
+                    source_aliases.insert(path.clone(), alias);
+                } else {
+                    return Err(io::Error::other(
+                        "provider cannot certify requested alias of acquired compiler source",
+                    ));
+                }
+            }
+        }
+        if let Some((compiled, raw_content)) = sources.get(&primary) {
+            let raw = if compiled.span_fingerprint(0..compiled.len()) == Some(*raw_content) {
+                if compiled.as_bytes().contains(&b'\r') {
+                    analyze_raw(compiled.as_bytes())
+                } else {
+                    SourceText::clone(compiled)
+                }
             } else {
-                let original=inputs.exceptional_source_bytes(&path)?.ok_or_else(||io::Error::other(
-                    "compiled source original byte view was not retained at acquisition"))?;
-                if xxhash_rust::xxh3::xxh3_128(original.as_slice())!=*raw_content
-                    ||dm_preprocess::decode_source_bytes(original.as_slice())!=compiled.as_str() {
-                    return Err(io::Error::other("exceptional original source contradicts compiler capture"));
+                let original = inputs.exceptional_source_bytes(&primary)?.ok_or_else(|| {
+                    io::Error::other(
+                        "compiled source original byte view was not retained at acquisition",
+                    )
+                })?;
+                if xxhash_rust::xxh3::xxh3_128(original.as_slice()) != *raw_content
+                    || dm_preprocess::decode_source_bytes(original.as_slice()) != compiled.as_str()
+                {
+                    return Err(io::Error::other(
+                        "exceptional original source contradicts compiler capture",
+                    ));
                 }
                 analyze_raw(original.as_slice())
             };
-            let parent=path.parent().ok_or_else(||io::Error::other("compiled policy source has no parent"))?;
+            let parent = path
+                .parent()
+                .ok_or_else(|| io::Error::other("compiled policy source has no parent"))?;
             inputs.record_search_folder(parent)?;
-            let path=Arc::new(path);
-            extra.push(HostCapture::compiler_decoded(Arc::clone(&path),SourceText::clone(compiled)));
-            extra.push(HostCapture::analyze_raw(path,PolicyRole::DmSource,raw));
+            let path = Arc::new(primary);
+            extra.push(HostCapture::compiler_decoded(
+                Arc::clone(&path),
+                SourceText::clone(compiled),
+            ));
+            extra.push(HostCapture::analyze_raw(path, PolicyRole::DmSource, raw));
             continue;
         }
         // Existing resource capture already records the parent listing AND a
@@ -362,6 +469,8 @@ pub(crate) fn capture<P: SnapshotProvider>(
     let policy = PolicyInputs::capture(frontend, extra).map_err(io::Error::other)?;
     let facts = inputs.snapshot()?;
     let captured = CapturedPolicyInputs {
+        semantic_sources: inputs.semantic_source_evidence(frontend)?,
+        source_aliases,
         policy,
         facts,
         missing,
@@ -391,3 +500,7 @@ fn analyze_raw(bytes: &[u8]) -> SourceText {
 #[cfg(test)]
 #[path = "policy_capture_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "policy_capture_alias_tests.rs"]
+mod acquired_alias_tests;

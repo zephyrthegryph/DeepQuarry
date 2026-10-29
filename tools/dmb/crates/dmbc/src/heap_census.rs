@@ -26,11 +26,11 @@ pub(crate) use resident_map_outputs::unit_weight as resident_map_unit_weight;
 pub(crate) use resident_map_outputs::weight as resident_map_outputs_weight;
 mod prepared;
 mod prepared_inputs;
-mod source_originals;
 mod relocation_metrics;
 #[cfg(test)]
 mod resident_abi;
 mod resident_initializer;
+mod source_originals;
 pub(crate) use prepared_inputs::inspect as prepared_input_census;
 mod resident_owner_projection;
 pub(crate) use resident_owner_projection::{
@@ -1025,3 +1025,6 @@ mod generation;
 mod initializer_inputs;
 
 mod receipts;
+
+#[path = "heap_census/acquisition.rs"]
+mod acquisition;

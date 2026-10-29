@@ -4,3 +4,4 @@ changes:
   - code_imp: "Share native compiler syntax and source revisions with migrated analysis checks."
   - bugfix: "Prevent native compiler daemons from keeping a caller's output pipes open on Windows."
   - bugfix: "Decode carriage returns consistently in native raw string literals."
+  - bugfix: "Resolve explicit global native calls without selecting a same-named member."

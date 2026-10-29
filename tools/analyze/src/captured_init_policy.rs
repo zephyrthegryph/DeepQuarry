@@ -31,14 +31,28 @@ impl<'a> CapturedInitPolicy<'a> {
             inputs,
         })
     }
-    pub fn scan(&self, checkpoint: impl FnMut() -> Result<(),String>) -> Result<RawRun,String> {
-        let previous=crate::dm::sys::take_recorded();
-        let result=catch_unwind(AssertUnwindSafe(||self.scan_inner(checkpoint)));
-        let _=crate::dm::sys::take_recorded();
+    pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        BorrowedInitPolicy::capture(&self.raw, self.inputs)?.scan(checkpoint)
+    }
+}
+/// Reuse the host's same cross-file owner without acquiring another model.
+pub struct BorrowedInitPolicy<'a> {
+    raw: &'a CapturedRawPolicy,
+    inputs: &'a PolicyInputs,
+}
+impl<'a> BorrowedInitPolicy<'a> {
+    pub fn capture(raw: &'a CapturedRawPolicy, inputs: &'a PolicyInputs) -> Result<Self, String> {
+        raw.validate_current_raw_roster(inputs)?;
+        Ok(Self { raw, inputs })
+    }
+    pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        let previous = crate::dm::sys::take_recorded();
+        let result = catch_unwind(AssertUnwindSafe(|| self.scan_inner(checkpoint)));
+        let _ = crate::dm::sys::take_recorded();
         crate::dm::sys::restore_recorded(previous);
         match result {
-            Ok(result)=>result,
-            Err(_)=>Err("captured init policy panicked; findings discarded".into()),
+            Ok(result) => result,
+            Err(_) => Err("captured init policy panicked; findings discarded".into()),
         }
     }
     fn scan_inner(

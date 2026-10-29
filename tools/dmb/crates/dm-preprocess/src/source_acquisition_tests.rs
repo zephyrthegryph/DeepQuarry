@@ -117,3 +117,26 @@ fn fresh_acquisition_cannot_inherit_reissued_authority() {
     assert!(!renewed.same_binding(&fresh));
     assert!(!renewed.same_original_acquisition(&fresh));
 }
+#[test]
+fn lightweight_lease_keeps_exact_source_and_receipt_but_releases_lexical_owner() {
+    let acquired = AcquiredSource::from_original_bytes(
+        b"/datum/light_only_lease_unique_38484\n".to_vec(),
+        77u64,
+    );
+    let prepared = Arc::downgrade(acquired.prepared());
+    let lease = acquired.lease().clone();
+    let original = lease.source_text().downgrade();
+    drop(acquired);
+    assert!(
+        prepared.upgrade().is_none(),
+        "lease cannot pin PreparedSource"
+    );
+    assert_eq!(lease.receipt::<u64>(), Some(&77));
+    assert!(original.upgrade().is_some());
+    assert_eq!(
+        lease.source_text().as_str(),
+        "/datum/light_only_lease_unique_38484\n"
+    );
+    drop(lease);
+    assert!(original.upgrade().is_none());
+}

@@ -40,11 +40,11 @@ impl SourceSnapshot {
             for finding in plan.archived(&body).map_err(io::Error::other)? {
                 crate::daemon::control::checkpoint()?;
                 let d = finding.diagnostic;
-                let origin = body
-                    .location(d.span.start)
-                    .ok_or_else(|| io::Error::other("checker origin unavailable"))?;
+                let origin = archive
+                    .original_note_origin(d.span.start)
+                    .map_err(io::Error::other)?;
                 diagnostics.push(serde_json::json!({"family":d.family,"severity":level(finding.severity),"file":origin.path,"line":origin.line,
-                    "expanded_span":[d.span.start,d.span.end],"expression_span":[d.expression_span.start,d.expression_span.end],"message":d.message,"notes":d.notes.iter().map(|n|&n.message).collect::<Vec<_>>()}));
+                    "expanded_span":[d.span.start,d.span.end],"expression_span":[d.expression_span.start,d.expression_span.end],"message":d.message,"notes":d.notes.iter().map(|n|n.legacy_text()).collect::<Vec<_>>()}));
             }
         }
         serde_json::to_writer(&mut *output,&serde_json::json!({

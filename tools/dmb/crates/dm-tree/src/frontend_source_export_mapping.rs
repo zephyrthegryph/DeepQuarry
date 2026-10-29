@@ -9,7 +9,7 @@ struct IncludeCoordinates {
     parent: Option<usize>,
 }
 pub struct SourceExportMapping {
-    acquisitions:Arc<[Option<dm_preprocess::AcquiredSource>]>,
+    acquisitions: Arc<[Option<dm_preprocess::SourceAcquisitionLease>]>,
     origins: dm_preprocess::regions::ExpandedOriginArena,
     arena: dm_preprocess::WeakSourceText,
     tree: Weak<crate::SemanticTree>,
@@ -58,7 +58,15 @@ pub(super) fn source_location(
     by_path: &HashMap<PathBuf, FileId>,
 ) -> Option<SourceLocation> {
     let file = *by_path.get(origin.origin.path.as_ref())?;
-    source_location_in(file, origin, path, semantic_path, encounter, occurrence, chain)
+    source_location_in(
+        file,
+        origin,
+        path,
+        semantic_path,
+        encounter,
+        occurrence,
+        chain,
+    )
 }
 /// `source_location` for a caller that already knows the row's file.
 pub(super) fn source_location_in(
@@ -82,6 +90,11 @@ pub(super) fn source_location_in(
     })
 }
 impl SourceExportMapping {
+    pub fn source_acquisition_storage(
+        &self,
+    ) -> &Arc<[Option<dm_preprocess::SourceAcquisitionLease>]> {
+        &self.acquisitions
+    }
     pub(super) fn capture(
         plan: &DirectivePlan,
         expanded: &ExpandedRegions,
@@ -90,11 +103,16 @@ impl SourceExportMapping {
         occurrences: &Arc<OccurrenceTable>,
         tree: &Arc<crate::SemanticTree>,
     ) -> Self {
-        let regions: Arc<[(usize, usize)]> = plan
-            .regions
-            .iter()
-            .map(|region| (region.occurrence, region.encounter_ordinal))
-            .collect();
+        let regions: Arc<[(usize, usize)]> = expanded
+            .origins
+            .byte_layout_regions()
+            .cloned()
+            .unwrap_or_else(|| {
+                plan.regions
+                    .iter()
+                    .map(|region| (region.occurrence, region.encounter_ordinal))
+                    .collect()
+            });
         let includes: Arc<[IncludeCoordinates]> = plan
             .occurrences
             .iter()
@@ -125,7 +143,13 @@ impl SourceExportMapping {
             );
         }
         Self {
-            acquisitions:plan.occurrences.iter().enumerate().map(|(id,_)|plan.source_acquisitions.get(&id).cloned()).collect::<Vec<_>>().into(),
+            acquisitions: plan
+                .occurrences
+                .iter()
+                .enumerate()
+                .map(|(id, _)| plan.source_acquisitions.get(&id).cloned())
+                .collect::<Vec<_>>()
+                .into(),
             origins: expanded.origins.clone(),
             arena: expanded.text.downgrade(),
             tree: Arc::downgrade(tree),
@@ -140,9 +164,13 @@ impl SourceExportMapping {
         }
     }
     fn admits(&self, current: &ColdFrontend) -> bool {
-        self.acquisitions.len()==current.plan.occurrences.len()
-            && self.acquisitions.iter().enumerate().all(|(id,old)|match(old,current.plan.source_acquisitions.get(&id)){
-                (None,None)=>true,(Some(old),Some(new))=>old.same_binding(new),_=>false,
+        self.acquisitions.len() == current.plan.occurrences.len()
+            && self.acquisitions.iter().enumerate().all(|(id, old)| {
+                match (old, current.plan.source_acquisitions.get(&id)) {
+                    (None, None) => true,
+                    (Some(old), Some(new)) => old.same_binding(new),
+                    _ => false,
+                }
             })
             && self.origins.same_owner(&current.expanded.origins)
             && self
@@ -172,7 +200,12 @@ impl SourceExportMapping {
     }
     /// Borrow only this authenticated mapping's per-occurrence binding. Missing
     /// producer evidence stays None; no synthetic proof from source contents.
-    pub fn source_acquisition(&self,occurrence:usize)->Option<&dm_preprocess::AcquiredSource>{self.acquisitions.get(occurrence)?.as_ref()}
+    pub fn source_acquisition(
+        &self,
+        occurrence: usize,
+    ) -> Option<&dm_preprocess::SourceAcquisitionLease> {
+        self.acquisitions.get(occurrence)?.as_ref()
+    }
     /// A join token only; exact current owner/coordinates separately admit capture.
     pub fn coordinate_fingerprint(&self) -> u128 {
         self.coordinate_fingerprint
@@ -418,4 +451,101 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
         hash.update(&digest.to_le_bytes());
     }
     hash.digest128()
+}
+
+// Scalar original-coordinate notes from compiler-issued compact layout evidence.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceNoteOrigin {
+    pub path: Arc<PathBuf>,
+    pub line: usize,
+    pub byte_column: usize,
+}
+impl SourceExportMapping {
+    /// Borrow the issued include/lease roster without allocating a second list.
+    /// Missing acquisition evidence remains visible, including empty DME inputs.
+    pub fn source_acquisitions(
+        &self,
+    ) -> impl Iterator<Item = (&Path, Option<&dm_preprocess::SourceAcquisitionLease>)> {
+        self.includes
+            .iter()
+            .enumerate()
+            .map(move |(index, include)| {
+                (
+                    include.path.as_path(),
+                    self.acquisitions.get(index).and_then(Option::as_ref),
+                )
+            })
+    }
+    pub fn original_note_origin(&self, offset: usize) -> Result<SourceNoteOrigin, String> {
+        let index = self
+            .origins
+            .partition_point(|origin| origin.output_span.end <= offset);
+        let origin = self
+            .origins
+            .get(index)
+            .ok_or("note has no native expanded origin")?;
+        let (include, _) = *self
+            .regions
+            .get(origin.region)
+            .ok_or("note region unavailable")?;
+        let acquired = self
+            .source_acquisition(include)
+            .ok_or("note original acquisition unavailable")?;
+        let cursor = self
+            .origins
+            .original_byte_cursor(index, include, acquired, offset)
+            .map_err(str::to_owned)?;
+        let coordinates = self
+            .includes
+            .get(include)
+            .ok_or("note include coordinates unavailable")?;
+        Ok(SourceNoteOrigin {
+            path: Arc::clone(&coordinates.path),
+            line: cursor.line,
+            byte_column: cursor.byte_column,
+        })
+    }
+}
+
+/// Intentionally has NO column: only the producer proved physical policy line.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourcePolicyLineOrigin {
+    pub path: Arc<PathBuf>,
+    pub line: usize,
+}
+impl SourceExportMapping {
+    pub fn original_policy_line(&self, offset: usize) -> Result<SourcePolicyLineOrigin, String> {
+        if let Ok(origin) = self.original_note_origin(offset) {
+            return Ok(SourcePolicyLineOrigin {
+                path: origin.path,
+                line: origin.line,
+            });
+        }
+        let index = self
+            .origins
+            .partition_point(|origin| origin.output_span.end <= offset);
+        let origin = self
+            .origins
+            .get(index)
+            .ok_or("policy point has no native expanded origin")?;
+        let (include, _) = *self
+            .regions
+            .get(origin.region)
+            .ok_or("policy point region unavailable")?;
+        let lease = self
+            .source_acquisition(include)
+            .ok_or("policy point acquisition unavailable")?;
+        let line = self
+            .origins
+            .original_policy_line(index, include, lease, offset)
+            .map_err(str::to_owned)?;
+        let coordinates = self
+            .includes
+            .get(include)
+            .ok_or("policy point include coordinates unavailable")?;
+        Ok(SourcePolicyLineOrigin {
+            path: Arc::clone(&coordinates.path),
+            line,
+        })
+    }
 }

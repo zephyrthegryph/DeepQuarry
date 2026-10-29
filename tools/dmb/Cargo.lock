@@ -231,6 +231,7 @@ dependencies = [
 name = "dm-analysis"
 version = "0.1.0"
 dependencies = [
+ "dm-codegen-byond",
  "dm-ir",
  "dm-preprocess",
  "dm-syntax",

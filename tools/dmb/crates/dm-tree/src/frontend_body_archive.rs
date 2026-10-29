@@ -20,8 +20,12 @@ pub struct ArchivedBody<'a> {
     occurrence: &'a BodyOccurrence,
     statements: Arc<StatementBody>,
     header: Item,
+    opening_parenthesis: Option<dm_syntax::Span>,
 }
 impl ArchivedBody<'_> {
+    pub fn signature_opening_parenthesis(&self) -> Option<dm_syntax::Span> {
+        self.opening_parenthesis
+    }
     /// Exact archive issuance, not equality of source bytes or semantic hashes.
     pub fn belongs_to(&self, archive: &BodyArchive) -> bool {
         std::ptr::eq(self.archive, archive)
@@ -69,8 +73,14 @@ impl ColdFrontend {
     }
 }
 impl BodyArchive {
+    pub fn source_mapping(&self) -> &Arc<SourceExportMapping> {
+        &self.mapping
+    }
     /// Acquisition provenance belongs to this exact issued source mapping.
-    pub fn source_acquisition(&self,include_occurrence:usize)->Option<&dm_preprocess::AcquiredSource>{
+    pub fn source_acquisition(
+        &self,
+        include_occurrence: usize,
+    ) -> Option<&dm_preprocess::SourceAcquisitionLease> {
         self.mapping.source_acquisition(include_occurrence)
     }
     /// Existing issued syntax inputs for dependency edges in the same graph.
@@ -157,24 +167,28 @@ impl BodyArchive {
                 archive: self,
                 occurrence,
                 statements: Arc::clone(&shared.statements),
+                opening_parenthesis: shared.opening_parenthesis,
                 header,
             });
         }
-        let mut item = dm_syntax::parse_proc_at_span(&self.source, occurrence.expanded_span)
-            .map_err(|error| Diagnostic {
-                kind: syntax_kind(error.kind),
-                stage: DiagnosticStage::Syntax,
-                location: self
-                    .mapping
-                    .output(error.span.start)
-                    .or_else(|| Some(occurrence.source.clone())),
-                message: error.message,
-            })?;
+        let issued =
+            dm_syntax::parse_proc_with_origins_at_span(&self.source, occurrence.expanded_span)
+                .map_err(|error| Diagnostic {
+                    kind: syntax_kind(error.kind),
+                    stage: DiagnosticStage::Syntax,
+                    location: self
+                        .mapping
+                        .output(error.span.start)
+                        .or_else(|| Some(occurrence.source.clone())),
+                    message: error.message,
+                })?;
+        let mut item = issued.item;
         let statements = parse_statements(&mut item, &self.source, &self.syntax, |_| true);
         Ok(ArchivedBody {
             archive: self,
             occurrence,
             statements,
+            opening_parenthesis: issued.opening_parenthesis,
             header: item,
         })
     }
@@ -230,5 +244,61 @@ pub(super) fn parse_statements(
 mod tests;
 
 #[cfg(test)]
-#[path="frontend_acquisition_tests.rs"]
+#[path = "frontend_acquisition_tests.rs"]
 mod acquisition_tests;
+
+impl BodyArchive {
+    pub fn original_note_origin(&self, offset: usize) -> Result<SourceNoteOrigin, String> {
+        self.mapping.original_note_origin(offset)
+    }
+    pub fn callable_note_origin(
+        &self,
+        identity: dm_ir::ProcedureIdentity,
+    ) -> Result<SourceNoteOrigin, String> {
+        if self.body_query_host().is_none() {
+            return Err("callable note needs original retained BodySyntax owner".into());
+        }
+        let mut selected = None;
+        for (ordinal, occurrence) in self.occurrences().iter().enumerate() {
+            let member = self
+                .tree()
+                .member(occurrence.member)
+                .ok_or("callable note member unavailable")?;
+            let issued = dm_ir::ProcedureIdentity {
+                owner: self
+                    .tree()
+                    .type_node(member.owner)
+                    .ok_or("callable note owner unavailable")?
+                    .path,
+                name: member.name,
+                verb: member.kind == crate::MemberKind::Verb,
+                occurrence: self
+                    .tree()
+                    .member_occurrence(occurrence.member)
+                    .ok_or("callable note source occurrence unavailable")?,
+            };
+            if issued == identity && selected.replace(ordinal).is_some() {
+                return Err("callable note identity ambiguous".into());
+            }
+        }
+        let body = self
+            .parse(selected.ok_or("callable note has no issued primary body")?)
+            .map_err(|e| e.message)?;
+        if !body.belongs_to(self) || !body.statement_body().syntax_complete() {
+            return Err("callable note primary source unavailable".into());
+        }
+        let opening = body
+            .signature_opening_parenthesis()
+            .ok_or("primary callable opening token unavailable")?;
+        self.original_note_origin(opening.start)
+    }
+}
+
+impl BodyArchive {
+    pub fn original_policy_line(
+        &self,
+        offset: usize,
+    ) -> Result<super::SourcePolicyLineOrigin, String> {
+        self.mapping.original_policy_line(offset)
+    }
+}

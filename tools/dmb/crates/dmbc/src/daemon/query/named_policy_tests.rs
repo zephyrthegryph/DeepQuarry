@@ -107,7 +107,13 @@ fn configured_checker_metadata_binds_autodetection_and_complete_schema_claim() {
 
 #[test]
 fn semantic_checker_admission_and_partial_reply_metadata_are_exact() {
-    for family in ["proc_has_no_parent", "undefined_proc", "undefined_variable"] {
+    for family in [
+        "proc_has_no_parent",
+        "undefined_proc",
+        "undefined_variable",
+        "field_access_static_type",
+        "no_typehint_implicit_new",
+    ] {
         let environment = root().join("p.dme");
         let question = SourceQuery::NativeConfiguredChecker {
             ordinal: 4,

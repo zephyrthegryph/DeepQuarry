@@ -147,16 +147,22 @@ pub trait SourceChanges {
 }
 
 pub mod source_acquisition;
-pub use source_acquisition::{AcquiredSource,SourceEncoding};
+pub use source_acquisition::{
+    AcquiredSource, SourceAcquisitionIdentity, SourceAcquisitionLease, SourceEncoding,
+};
 
 pub trait SourceProvider {
     fn read(&self, path: &Path) -> Result<String, String>;
     /// Optional primary read with original-byte provenance. Unknown providers
     /// retain existing compiler behavior; they grant no semantic parity proof.
-    fn acquired_source(&self,_path:&Path)->Result<Option<AcquiredSource>,String>{Ok(None)}
+    fn acquired_source(&self, _path: &Path) -> Result<Option<AcquiredSource>, String> {
+        Ok(None)
+    }
     /// Current already-authenticated lease for this exact source owner. Must
     /// never reread or fabricate provenance from decoded identity alone.
-    fn source_acquisition(&self,_path:&Path,_text:&SourceText)->Option<AcquiredSource>{None}
+    fn source_acquisition(&self, _path: &Path, _text: &SourceText) -> Option<AcquiredSource> {
+        None
+    }
 
     /// Refresh a provider-issued immutable nontext capture. A provider must
     /// validate its receipt against current input facts before returning it.

@@ -107,10 +107,14 @@ fn warm_queries_reuse_one_computation_and_source_view_owner() {
     assert!(census.derived_estimate > 0);
     assert!(census.input_and_param_estimate <= INPUT_BUDGET);
     assert!(census.derived_estimate <= RESULT_BUDGET);
-    let issued_path = input.files.iter().find(|path| {
-        dm_preprocess::regions::relative_filesystem_path(path, &input.root)
-            .is_some_and(|relative| relative == Path::new("code/a.dm"))
-    }).unwrap();
+    let issued_path = input
+        .files
+        .iter()
+        .find(|path| {
+            dm_preprocess::regions::relative_filesystem_path(path, &input.root)
+                .is_some_and(|relative| relative == Path::new("code/a.dm"))
+        })
+        .unwrap();
     let file_key = key(RAW_FILE, &(&input.root, issued_path));
     let held = db.db.input::<FileData>(file_key).unwrap();
     assert!(db
@@ -346,11 +350,17 @@ fn missing_to_present_configuration_retracts_and_back_without_losing_allow_rows(
     let removed = db.raw_findings(&present, &names()).unwrap();
     assert!(removed.runs[0].run.sites.is_empty());
     assert_eq!(removed.runs[0].allow_used, first.runs[0].allow_used);
-    assert_eq!(db.db.stats(RAW_FINDINGS).computed, initial + missing.files.len() as u64);
+    assert_eq!(
+        db.db.stats(RAW_FINDINGS).computed,
+        initial + missing.files.len() as u64
+    );
     let restored = db.raw_findings(&missing, &names()).unwrap();
     assert_eq!(restored.runs[0].run.sites, first.runs[0].run.sites);
     assert_eq!(restored.runs[0].allow_used, first.runs[0].allow_used);
-    assert_eq!(db.db.stats(RAW_FINDINGS).computed, initial + 2 * missing.files.len() as u64);
+    assert_eq!(
+        db.db.stats(RAW_FINDINGS).computed,
+        initial + 2 * missing.files.len() as u64
+    );
 }
 
 #[test]
@@ -421,10 +431,14 @@ fn concurrent_pinned_cohorts_are_serialized_without_cross_config_answers() {
 fn idle_raw_cache_release_drops_last_source_owner_after_capture_is_gone() {
     let db = Arc::new(QueryDb::default());
     let input = cohort(&db, BEFORE, None);
-    let issued_path = input.files.iter().find(|path| {
-        dm_preprocess::regions::relative_filesystem_path(path, &input.root)
-            .is_some_and(|relative| relative == Path::new("code/a.dm"))
-    }).unwrap();
+    let issued_path = input
+        .files
+        .iter()
+        .find(|path| {
+            dm_preprocess::regions::relative_filesystem_path(path, &input.root)
+                .is_some_and(|relative| relative == Path::new("code/a.dm"))
+        })
+        .unwrap();
     let weak = input
         .capture
         .policy()
@@ -449,4 +463,78 @@ fn idle_raw_cache_release_drops_last_source_owner_after_capture_is_gone() {
         2,
         "caller findings remain independently valid"
     );
+}
+
+#[test]
+fn forced_equal_config_hash_cannot_reuse_stale_parsed_scope_on_public_raw_path() {
+    let db = Arc::new(QueryDb::default());
+    let input = cohort(&db, BEFORE, Some(b"# actual current config\n"));
+    db.raw_findings(&input, &names()).unwrap();
+    let config_key = key(RAW_CONFIG, &(&input.root, &input.configuration));
+    let valid_hash = db.db.input::<ConfigData>(config_key).unwrap().hash;
+    db.db.remove(config_key);
+    db.db.set_input(
+        config_key,
+        ConfigData {
+            config: Arc::new(
+                Config::capture(Configuration::Captured(b"# foreign stale config\n")).unwrap(),
+            ),
+            hash: valid_hash,
+            original: Some(dm_resources::SharedBytes::from(
+                b"# foreign stale config\n".to_vec(),
+            )),
+        },
+        valid_hash,
+    );
+    let computations = db.db.stats(RAW_FINDINGS).computed;
+    let error = db
+        .raw_findings(&input, &names())
+        .err()
+        .expect("equal hash must not grant byte authority");
+    assert!(error
+        .to_string()
+        .contains("configuration bytes/absence contradict"));
+    assert_eq!(db.db.stats(RAW_FINDINGS).computed, computations);
+}
+
+#[test]
+fn forced_equal_source_hash_cannot_reuse_foreign_raw_findings() {
+    let db = Arc::new(QueryDb::default());
+    let input = cohort(&db, BEFORE, None);
+    db.raw_findings(&input, &names()).unwrap();
+    let path = input
+        .files
+        .iter()
+        .find(|path| {
+            dm_preprocess::regions::relative_filesystem_path(path, &input.root)
+                .is_some_and(|rel| rel == Path::new("code/a.dm"))
+        })
+        .unwrap();
+    let file_key = key(RAW_FILE, &(&input.root, path));
+    let valid_hash = db.db.input::<FileData>(file_key).unwrap().hash;
+    db.db.remove(file_key);
+    db.db.set_input(
+        file_key,
+        FileData {
+            file: Arc::new(
+                File::capture(
+                    &input.root,
+                    path,
+                    "/proc/foreign()\n    return\n".to_string().into(),
+                )
+                .unwrap(),
+            ),
+            hash: valid_hash,
+        },
+        valid_hash,
+    );
+    let computed = db.db.stats(RAW_FINDINGS).computed;
+    let error = db
+        .raw_findings(&input, &names())
+        .err()
+        .expect("hash alone must not authorize cached raw bytes");
+    assert!(error
+        .to_string()
+        .contains("cached raw source path/bytes contradict"));
+    assert_eq!(db.db.stats(RAW_FINDINGS).computed, computed);
 }

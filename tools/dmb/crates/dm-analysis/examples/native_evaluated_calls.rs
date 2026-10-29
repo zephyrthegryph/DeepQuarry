@@ -2,16 +2,11 @@
 use dm_analysis::{checker_order, checks_undefined_proc};
 use dm_tree::frontend::{build_with_config, BodyArena, FrontendConfig};
 use std::path::Path;
+#[path = "support/acquired_files.rs"]
+mod acquired_files;
 #[path = "support/reference_hierarchy.rs"]
 mod reference_hierarchy;
-struct Files;
-impl dm_preprocess::SourceProvider for Files {
-    fn read(&self, path: &Path) -> Result<String, String> {
-        std::fs::read(path)
-            .map(|b| dm_preprocess::decode_source_bytes(&b))
-            .map_err(|e| e.to_string())
-    }
-}
+use acquired_files::AcquiredFiles;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let project = std::env::args().nth(1).ok_or("expected .dme")?;
     let family = std::env::args()
@@ -21,9 +16,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("this bounded oracle supports only undefined_proc routing".into());
     }
     let seed = reference_hierarchy::seed();
+    let files = AcquiredFiles::default();
     let frontend = build_with_config(
         Path::new(&project),
-        &Files,
+        &files,
         &Default::default(),
         FrontendConfig {
             workers: 1,
@@ -37,16 +33,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .checker_builtin_profile()
         .ok_or("compiled hierarchy is incompatible with checker profile")?;
     let arena = BodyArena::new_typed(&frontend, |_| true);
+    let mut output = Vec::new();
     for (_, occurrence) in checker_order::bodies(&frontend)? {
         arena.with_parsed(occurrence,|body|->Result<(),String> {
             for row in checks_undefined_proc::check_evaluated(&frontend,body,resolver,profile,true)? {
-                let source=frontend.location(row.span.start).ok_or("diagnostic source missing")?;
-                println!("{}",serde_json::json!({"family":row.family,"severity":"error","file":source.path,"line":source.line,
-                    "expanded_column":frontend.expanded.text[..row.span.start].rsplit('\n').next().unwrap().chars().count()+1,
-                    "message":row.message,"notes":row.notes.iter().map(|n|&n.message).collect::<Vec<_>>()}));
+                let source=frontend.source_export_mapping().ok_or("original mapping unavailable")?.original_note_origin(row.span.start)?;
+                output.push(serde_json::json!({"family":row.family,"severity":"error","file":source.path,"line":source.line,
+                    "expanded_column":source.byte_column,
+                    "message":row.message,"notes":row.notes.iter().map(|n|n.legacy_text()).collect::<Vec<_>>()}));
             }
             Ok(())
         }).map_err(|e|e.message)??;
+    }
+    for row in output {
+        println!("{row}");
     }
     Ok(())
 }

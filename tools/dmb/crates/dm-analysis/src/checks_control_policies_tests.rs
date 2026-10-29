@@ -48,3 +48,6 @@ fn duplicate_policy_selection_is_rejected_before_traversal() {
     ])
     .is_ok());
 }
+
+#[path = "checks_original_byte_positions_tests.rs"]
+mod original_byte_positions;

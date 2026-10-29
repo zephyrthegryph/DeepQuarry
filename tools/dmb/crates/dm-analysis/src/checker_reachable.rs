@@ -643,7 +643,11 @@ fn as_term(expression: &Expr) -> Result<bool, String> {
         | ExprKind::ObjectInitializer { .. } => true,
         ExprKind::Unary { op, .. } if op == "new" || op == "new()" => true,
         ExprKind::Call { callee, .. }
-            if matches!(callee.kind, ExprKind::Ident(_) | ExprKind::TypePath(_)) =>
+            if matches!(callee.kind, ExprKind::Ident(_) | ExprKind::TypePath(_))
+                || matches!(
+                    dm_syntax::call_target(callee),
+                    dm_syntax::CallTarget::GlobalNamed(_)
+                ) =>
         {
             true
         }

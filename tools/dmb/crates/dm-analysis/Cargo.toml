@@ -17,3 +17,6 @@ toml_checker = { package = "toml", version = "=0.5.11" }
 # Same grammar as current tools/analyze scopes parser; not checker TOML.
 toml_analyze = { package = "toml", version = "0.8" }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+[dev-dependencies]
+dm-codegen-byond = { path = "../dm-codegen-byond" }

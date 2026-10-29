@@ -15,12 +15,12 @@ pub mod value_schemas;
 mod untyped_order;
 
 pub mod base_var_declarations;
+pub mod check_configuration;
 pub mod check_policy;
 pub mod checker_constant_shape;
 pub mod checker_order;
 pub mod checker_reachable;
 pub mod checks_control_static;
-pub mod check_configuration;
 pub mod checks_invalid_set;
 pub mod declaration_queries;
 pub mod lifecycle_declarations;
@@ -31,9 +31,9 @@ pub mod source_definitions;
 
 pub mod checks_flow;
 
-pub mod checks_set_no_effect;
-pub mod checks_control_policies;
 pub mod analyze_scope_config;
+pub mod checks_control_policies;
+pub mod checks_set_no_effect;
 
 pub mod checks_parent_call;
 
@@ -51,3 +51,9 @@ pub mod checker_variable_facts;
 pub mod checks_undefined_variable;
 
 pub mod checker_return_facts;
+
+pub mod analyze_call_sites;
+
+pub mod checks_field_static;
+
+pub mod checks_implicit_new;

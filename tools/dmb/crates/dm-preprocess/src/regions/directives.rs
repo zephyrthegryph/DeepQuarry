@@ -20,21 +20,28 @@ pub(super) fn plan_with_memo<P: SourceProvider>(
 ) -> (DirectivePlan, PlanReuse) {
     plan_incremental(project, provider, defines, memo, None)
 }
-pub(super) fn plan_incremental<P:SourceProvider>(
-    project:&Path,provider:&P,defines:&BTreeMap<String,String>,memo:Option<&dyn ExpansionMemo>,previous:Option<&DirectivePlan>,
-)->(DirectivePlan,PlanReuse){
-    let (mut plan,reuse)=plan_incremental_impl(project,provider,defines,memo,previous);
+pub(super) fn plan_incremental<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    memo: Option<&dyn ExpansionMemo>,
+    previous: Option<&DirectivePlan>,
+) -> (DirectivePlan, PlanReuse) {
+    let (mut plan, reuse) = plan_incremental_impl(project, provider, defines, memo, previous);
     plan.source_acquisitions.clear();
-    for (occurrence,include) in plan.occurrences.iter().enumerate(){
-        if let Some(text)=plan.source_texts.get(include.path.as_ref()){
-            if let Some(acquired)=provider.source_acquisition(include.path.as_ref(),text){
+    for (occurrence, include) in plan.occurrences.iter().enumerate() {
+        if let Some(text) = plan.source_texts.get(include.path.as_ref()) {
+            if let Some(acquired) = provider.source_acquisition(include.path.as_ref(), text) {
                 // This only checks producer pairing; original-byte authority is
                 // the opaque acquisition binding, not equal text or a hash.
-                if acquired.prepared().original().same_view(text){plan.source_acquisitions.insert(occurrence,acquired);}
+                if acquired.prepared().original().same_view(text) {
+                    plan.source_acquisitions
+                        .insert(occurrence, acquired.lease().clone());
+                }
             }
         }
     }
-    (plan,reuse)
+    (plan, reuse)
 }
 fn plan_incremental_impl<P: SourceProvider>(
     project: &Path,
@@ -262,20 +269,21 @@ fn plan_incremental_impl<P: SourceProvider>(
     // holds (the pass keeps the two in step, and the unit tests pin that).
     if pass.reuse.subtrees > 0 {
         let mut finals = BTreeMap::new();
-        pass.environment
-            .visit_storage(|name, _, _, definition, _| {
-                finals.insert(name.to_string(), (**definition).clone());
-            });
+        pass.environment.visit_storage(|name, _, _, definition, _| {
+            finals.insert(name.to_string(), (**definition).clone());
+        });
         pass.plan.final_macros = finals;
     }
     #[cfg(test)]
     {
         let mut finals = BTreeMap::new();
-        pass.environment
-            .visit_storage(|name, _, _, definition, _| {
-                finals.insert(name.to_string(), (**definition).clone());
-            });
-        assert_eq!(finals, pass.plan.final_macros, "the environment and the terminal macros differ");
+        pass.environment.visit_storage(|name, _, _, definition, _| {
+            finals.insert(name.to_string(), (**definition).clone());
+        });
+        assert_eq!(
+            finals, pass.plan.final_macros,
+            "the environment and the terminal macros differ"
+        );
     }
     if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1") {
         let d = &pass.detail;
@@ -437,7 +445,11 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
     fn tested(&self, name: &str) {
         self.tested_log.borrow_mut().push(Arc::from(name));
     }
-    fn finish_recording(&mut self, region: usize, pending: &mut super::segment_lines::PendingLines) {
+    fn finish_recording(
+        &mut self,
+        region: usize,
+        pending: &mut super::segment_lines::PendingLines,
+    ) {
         self.freeze_lines(region, pending);
         if let Some(recording) = self.recording.take() {
             if let Some(memo) = self.memo {
@@ -546,12 +558,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         {
             let path = self.push_file_dir(&definition);
             self.file_dir_origins.push(Some(origin.clone()));
-            Arc::make_mut(&mut self.plan.regions[region].effects).push(
-                MacroEffect::PushFileDir {
-                    path,
-                    definition: definition.clone(),
-                },
-            );
+            Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::PushFileDir {
+                path,
+                definition: definition.clone(),
+            });
         }
         self.tested(&name);
         Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::Define {
@@ -575,7 +585,8 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             _ => Arc::clone(path),
         };
         // The occurrence path is held with its entry, so its address names it for as long as the entry lives.
-        self.definition_paths.insert(key, (Arc::clone(path), Arc::clone(&relative)));
+        self.definition_paths
+            .insert(key, (Arc::clone(path), Arc::clone(&relative)));
         relative
     }
     fn apply_undef(&mut self, region: usize, name: &str) {
@@ -620,7 +631,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         directive_line: usize,
     ) -> usize {
         let index = self.plan.occurrences.len();
-        let counted = self.occurrence_counts.entry(canonical_path(path)).or_insert(0);
+        let counted = self
+            .occurrence_counts
+            .entry(canonical_path(path))
+            .or_insert(0);
         self.nth.push(*counted);
         *counted += 1;
         let semantic_path = if let Some(parent) = parent {
@@ -774,7 +788,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             if self.region_map[index].is_some() {
                 continue;
             }
-            let key = trace_key(self.plan.occurrences[occurrence].path.as_path(), self.nth[occurrence]);
+            let key = trace_key(
+                self.plan.occurrences[occurrence].path.as_path(),
+                self.nth[occurrence],
+            );
             let Some(&before) = previous_occurrence.get(&key) else {
                 continue;
             };
@@ -869,7 +886,11 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
     /// it is not (a subtree that ran again changed what differs). At most a few dozen bindings may differ.
     /// `environment` with the current delta applied, shared with every earlier rebase of the same environment.
     fn rebase(&mut self, environment: &MacroEnvironment) -> MacroEnvironment {
-        if let Some((_, rebased)) = self.rebased.iter().find(|(from, _)| from.shares_storage_with(environment)) {
+        if let Some((_, rebased)) = self
+            .rebased
+            .iter()
+            .find(|(from, _)| from.shares_storage_with(environment))
+        {
             return rebased.clone();
         }
         let rebased = environment.apply(&self.delta);
@@ -918,11 +939,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             return false;
         };
         let record = Arc::clone(&entry.record);
-        let context_matches = previous.occurrences.get(entry.occurrence).is_some_and(|before| {
-            before.path == path
-                && before.semantic_path == self.plan.occurrences[occurrence].semantic_path
-                && before.semantic_path == record.root_semantic_path
-        });
+        let context_matches = previous
+            .occurrences
+            .get(entry.occurrence)
+            .is_some_and(|before| {
+                before.path == path
+                    && before.semantic_path == self.plan.occurrences[occurrence].semantic_path
+                    && before.semantic_path == record.root_semantic_path
+            });
         if !context_matches {
             self.reuse.declined.context += 1;
             return false;
@@ -1048,7 +1072,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 );
                 self.reuse.rebased_regions.insert(
                     self.region_map.len(),
-                    (entry.region + offset, Arc::clone(delta_names.as_ref().expect("rebased"))),
+                    (
+                        entry.region + offset,
+                        Arc::clone(delta_names.as_ref().expect("rebased")),
+                    ),
                 );
                 self.region_map.push(None);
             } else {
@@ -1077,7 +1104,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             self.environment = self.rebase(&self.environment.clone());
             self.reuse.rebased_subtrees += 1;
         }
-        self.tested_log.borrow_mut().extend(record.tested.iter().cloned());
+        self.tested_log
+            .borrow_mut()
+            .extend(record.tested.iter().cloned());
         // Carry the subtree's records forward, renumbered, for the next pass.
         for carried in trace.within(entry.occurrence, record.occurrences) {
             // A rebased subtree's records describe its regions as copied: the carried bindings are theirs too.
@@ -1103,7 +1132,6 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         self.reuse.timings.copy += copy_started.elapsed();
         true
     }
-
 
     fn visit(&mut self, occurrence: usize) {
         let path = self.plan.occurrences[occurrence].path.clone();
@@ -1142,48 +1170,54 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         }
         self.depend(path.as_ref());
         let source_started = std::time::Instant::now();
-        let issued=self.provider.acquired_source(&path);
-        let prepared_result=issued.and_then(|acquired|match acquired{
-            Some(acquired)=>Ok(Arc::clone(acquired.prepared())),
-            None=>match self.provider.prepared_source(&path){Some(prepared)=>Ok(prepared),None=>self.provider.read(&path).map(|source|prepared_source::shared_prepared(source.into()))},
+        let issued = self.provider.acquired_source(&path);
+        let prepared_result = issued.and_then(|acquired| match acquired {
+            Some(acquired) => Ok(Arc::clone(acquired.prepared())),
+            None => match self.provider.prepared_source(&path) {
+                Some(prepared) => Ok(prepared),
+                None => self
+                    .provider
+                    .read(&path)
+                    .map(|source| prepared_source::shared_prepared(source.into())),
+            },
         });
-        let prepared=match prepared_result{
-            Ok(prepared)=>prepared,
-            Err(error)=>{
-                    // DreamMaker reports an unreadable include at its #include
-                    // directive, naming the authored operand.
-                    let current = &self.plan.occurrences[occurrence];
-                    match current.parent {
-                        Some(parent) => {
-                            let line = current.directive_line;
-                            let parent_dir =
-                                Path::new(self.plan.occurrences[parent].semantic_path.as_ref())
-                                    .parent()
-                                    .map(Path::to_path_buf)
-                                    .unwrap_or_default();
-                            let semantic = PathBuf::from(current.semantic_path.as_ref());
-                            let spelling = semantic
-                                .strip_prefix(&parent_dir)
-                                .unwrap_or(&semantic)
-                                .to_string_lossy()
-                                .into_owned();
-                            // DreamMaker prints the operand with the host separator.
-                            let spelling = if cfg!(windows) {
-                                spelling.replace('/', "\\")
-                            } else {
-                                spelling
-                            };
-                            self.error(
-                                parent,
-                                line,
-                                DiagnosticKind::Io,
-                                format!("unable to open \"{spelling}\"."),
-                            );
-                        }
-                        None => self.error(occurrence, 1, DiagnosticKind::Io, error),
+        let prepared = match prepared_result {
+            Ok(prepared) => prepared,
+            Err(error) => {
+                // DreamMaker reports an unreadable include at its #include
+                // directive, naming the authored operand.
+                let current = &self.plan.occurrences[occurrence];
+                match current.parent {
+                    Some(parent) => {
+                        let line = current.directive_line;
+                        let parent_dir =
+                            Path::new(self.plan.occurrences[parent].semantic_path.as_ref())
+                                .parent()
+                                .map(Path::to_path_buf)
+                                .unwrap_or_default();
+                        let semantic = PathBuf::from(current.semantic_path.as_ref());
+                        let spelling = semantic
+                            .strip_prefix(&parent_dir)
+                            .unwrap_or(&semantic)
+                            .to_string_lossy()
+                            .into_owned();
+                        // DreamMaker prints the operand with the host separator.
+                        let spelling = if cfg!(windows) {
+                            spelling.replace('/', "\\")
+                        } else {
+                            spelling
+                        };
+                        self.error(
+                            parent,
+                            line,
+                            DiagnosticKind::Io,
+                            format!("unable to open \"{spelling}\"."),
+                        );
                     }
-                    return;
-                },
+                    None => self.error(occurrence, 1, DiagnosticKind::Io, error),
+                }
+                return;
+            }
         };
         self.detail.provider += source_started.elapsed();
         self.plan

@@ -14,7 +14,7 @@
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -24,6 +24,18 @@ use crate::strip;
 use crate::util;
 
 pub type Hash = u128;
+/// Namespaced live-allocation keys; these are storage observations, never authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub enum PolicyStorageClass {
+    Record,
+    TextBacking,
+    OriginalPayload,
+    TransformedPayload,
+    FingerprintMemo,
+    LineStarts,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct PolicyStorageKey(pub PolicyStorageClass, pub usize);
 
 /// Text plus its line index. Lines are 1-based and follow Python's `text.split("\n")`: a text that
 /// ends in a newline has a final empty line.
@@ -94,11 +106,16 @@ impl View {
     }
 }
 
-struct Data {
-    raw: View,
+#[derive(Default)]
+struct DerivedViews {
     code: OnceLock<View>,
     clean: OnceLock<View>,
     marker: OnceLock<dm_preprocess::SourceText>,
+}
+struct Data {
+    // Current-capture authority and derived-content reuse have distinct owners.
+    raw: View,
+    views: Arc<DerivedViews>,
 }
 
 pub struct SourceFile {
@@ -144,9 +161,7 @@ impl SourceFile {
             }
             Data {
                 raw: View::new(read_text(&self.abs)),
-                code: OnceLock::new(),
-                clean: OnceLock::new(),
-marker: OnceLock::new(),
+                views: Arc::new(DerivedViews::default()),
             }
         })
     }
@@ -168,7 +183,7 @@ marker: OnceLock::new(),
     /// Comments and string contents removed (`state_schema_lint.code_only`).
     pub fn code(&self) -> &View {
         let d = self.data();
-        d.code.get_or_init(|| {
+        d.views.code.get_or_init(|| {
             text_probe();
             View::new(strip::code_only(&d.raw.text))
         })
@@ -177,13 +192,17 @@ marker: OnceLock::new(),
     /// Same-length sanitized text (`_dx_dm.sanitize_text`).
     pub fn clean(&self) -> &View {
         let d = self.data();
-        d.clean
+        d.views
+            .clean
             .get_or_init(|| View::new(strip::sanitize(&d.raw.text)))
     }
 
     /// Same-length comment-masked marker text, acquired once from captured raw.
-    pub(crate) fn marker(&self)->&dm_preprocess::SourceText{
-        let data=self.data();data.marker.get_or_init(||crate::raw_marker_policy::strip_comments_keep_strings(&data.raw.text).into())
+    pub(crate) fn marker(&self) -> &dm_preprocess::SourceText {
+        let data = self.data();
+        data.views.marker.get_or_init(|| {
+            crate::raw_marker_policy::strip_comments_keep_strings(&data.raw.text).into()
+        })
     }
 
     /// 1-based raw line.
@@ -207,9 +226,7 @@ marker: OnceLock::new(),
         let data = OnceLock::new();
         let _ = data.set(Data {
             raw: View::shared(text),
-            code: OnceLock::new(),
-            clean: OnceLock::new(),
-marker: OnceLock::new(),
+            views: Arc::new(DerivedViews::default()),
         });
         SourceFile {
             rel: rel.into(),
@@ -223,6 +240,99 @@ marker: OnceLock::new(),
         }
     }
 
+    /// Rebind an equal-content cache view to this capture's raw SourceText.
+    /// This is content reuse only; the private native host must authenticate the
+    /// current capture BEFORE calling this method. No hash grants authority.
+    pub(crate) fn rebind_captured(
+        &self,
+        path: &Path,
+        text: dm_preprocess::SourceText,
+    ) -> Result<SourceFile, String> {
+        if self.abs != path || self.raw().text.as_bytes() != text.as_bytes() {
+            return Err("cached source path/content contradicts current capture".into());
+        }
+        let data = OnceLock::new();
+        let _ = data.set(Data {
+            raw: View::shared(text),
+            views: Arc::clone(&self.data().views),
+        });
+        Ok(SourceFile {
+            rel: self.rel.clone(),
+            abs: self.abs.clone(),
+            size: self.size,
+            mtime_ns: self.mtime_ns,
+            hash: self.hash,
+            fkey: self.fkey,
+            hidden: self.hidden,
+            data,
+        })
+    }
+    /// Report actual retained storage identities/capacities after lazy use.
+    /// The native owner deduplicates IDs with the captured-source census. This
+    /// is not a heap/RSS measurement and must be paired with preflight limits.
+    pub(crate) fn visit_policy_storage(&self, mut visit: impl FnMut(PolicyStorageKey, usize)) {
+        use PolicyStorageClass as K;
+        fn text(
+            source: &dm_preprocess::SourceText,
+            visit: &mut impl FnMut(PolicyStorageKey, usize),
+        ) {
+            let mut backing = 0;
+            source.visit_storage(|id, header, storage| {
+                backing = id;
+                visit(
+                    PolicyStorageKey(K::TextBacking, id),
+                    header.saturating_add(2 * std::mem::size_of::<usize>()),
+                );
+                use dm_preprocess::SourceTextStorage;
+                match storage {
+                    SourceTextStorage::Original(value) => visit(
+                        PolicyStorageKey(K::OriginalPayload, value.as_ptr() as usize),
+                        value.len().saturating_add(2 * std::mem::size_of::<usize>()),
+                    ),
+                    SourceTextStorage::Transformed(value) if value.capacity() > 0 => visit(
+                        PolicyStorageKey(K::TransformedPayload, value.as_ptr() as usize),
+                        value.capacity(),
+                    ),
+                    SourceTextStorage::Transformed(_) => {}
+                }
+            });
+            // Memo data reallocates; charge its current maximum by stable Backing.
+            source.visit_fingerprint_storage(|_, _, capacity| {
+                visit(PolicyStorageKey(K::FingerprintMemo, backing), capacity)
+            });
+        }
+        fn view(view: &View, visit: &mut impl FnMut(PolicyStorageKey, usize)) {
+            text(&view.text, visit);
+            if view.starts.capacity() > 0 {
+                visit(
+                    PolicyStorageKey(K::LineStarts, view.starts.as_ptr() as usize),
+                    view.starts
+                        .capacity()
+                        .saturating_mul(std::mem::size_of::<u32>()),
+                );
+            }
+        }
+        let data = self.data();
+        visit(
+            PolicyStorageKey(K::Record, data as *const Data as usize),
+            std::mem::size_of::<Data>(),
+        );
+        view(&data.raw, &mut visit);
+        visit(
+            PolicyStorageKey(K::Record, Arc::as_ptr(&data.views) as usize),
+            std::mem::size_of::<DerivedViews>().saturating_add(2 * std::mem::size_of::<usize>()),
+        );
+        if let Some(code) = data.views.code.get() {
+            view(code, &mut visit);
+        }
+        if let Some(clean) = data.views.clean.get() {
+            view(clean, &mut visit);
+        }
+        if let Some(marker) = data.views.marker.get() {
+            text(marker, &mut visit);
+        }
+    }
+
     /// Builds an in-memory file (tests and fixtures): no disk access.
     pub fn from_text(rel: &str, text: &str) -> SourceFile {
         let text = util::universal_newlines(text.to_string());
@@ -230,9 +340,7 @@ marker: OnceLock::new(),
         let cell = OnceLock::new();
         let _ = cell.set(Data {
             raw: View::new(text),
-            code: OnceLock::new(),
-            clean: OnceLock::new(),
-marker: OnceLock::new(),
+            views: Arc::new(DerivedViews::default()),
         });
         let h = u128::from_le_bytes(hash.as_bytes()[..16].try_into().unwrap());
         SourceFile {
@@ -524,9 +632,7 @@ impl Tree {
                         let cell = OnceLock::new();
                         let _ = cell.set(Data {
                             raw: View::new(text),
-                            code: OnceLock::new(),
-                            clean: OnceLock::new(),
-marker: OnceLock::new(),
+                            views: Arc::new(DerivedViews::default()),
                         });
                         SourceFile {
                             fkey: file_key(&rel, hash),
@@ -877,3 +983,131 @@ pub fn text_probe() {
 
 pub static TEXT_PROBE: std::sync::Mutex<std::collections::BTreeMap<String, usize>> =
     std::sync::Mutex::new(std::collections::BTreeMap::new());
+
+#[cfg(test)]
+mod captured_owner_reuse_tests {
+    use super::*;
+    #[test]
+    fn current_raw_authority_is_distinct_from_derived_content_reuse() {
+        let path = PathBuf::from("captured-source.dm");
+        let old = SourceFile::from_shared_text(
+            "captured-source.dm",
+            path.clone(),
+            "/obj/foo // note\n".to_string().into(),
+        );
+        let current: dm_preprocess::SourceText = "/obj/foo // note\n".to_string().into();
+        assert!(!old.raw().text.same_view(&current));
+        let rebound = old.rebind_captured(&path, current.clone()).unwrap();
+        assert!(rebound.raw().text.same_view(&current));
+        assert!(Arc::ptr_eq(&old.data().views, &rebound.data().views));
+        assert!(old.data().views.code.get().is_none());
+        assert!(std::ptr::eq(old.code(), rebound.code()));
+        assert!(std::ptr::eq(old.clean(), rebound.clean()));
+        assert!(old.marker().same_view(rebound.marker()));
+    }
+    #[test]
+    fn contradictory_path_or_content_never_reuses_cached_projections() {
+        let path = PathBuf::from("a.dm");
+        let old = SourceFile::from_shared_text("a.dm", path.clone(), "/obj/a".to_string().into());
+        assert!(old
+            .rebind_captured(Path::new("b.dm"), old.raw().text.clone())
+            .is_err());
+        assert!(old
+            .rebind_captured(&path, "/obj/b".to_string().into())
+            .is_err());
+    }
+    #[test]
+    fn lazy_projection_storage_enters_census_once_by_identity() {
+        let path = PathBuf::from("a.dm");
+        let old = SourceFile::from_shared_text(
+            "a.dm",
+            path.clone(),
+            "/obj/a // comment\n".to_string().into(),
+        );
+        let rebound = old.rebind_captured(&path, old.raw().text.clone()).unwrap();
+        let census = |source: &SourceFile| {
+            let mut rows = std::collections::BTreeMap::new();
+            source.visit_policy_storage(|id, bytes| {
+                rows.insert(id, bytes);
+            });
+            rows
+        };
+        let before = census(&old);
+        old.code();
+        old.clean();
+        old.marker();
+        let after = census(&old);
+        assert!(after.values().sum::<usize>() > before.values().sum::<usize>());
+        let alias = census(&rebound);
+        let shared = after.keys().filter(|id| alias.contains_key(id)).count();
+        assert!(
+            shared >= 4,
+            "derived projections and raw backing must deduplicate"
+        );
+    }
+}
+
+#[cfg(test)]
+mod policy_storage_alias_tests {
+    use super::*;
+    fn observe(file: &SourceFile, into: &mut std::collections::BTreeMap<PolicyStorageKey, usize>) {
+        file.visit_policy_storage(|key, bytes| {
+            into.entry(key)
+                .and_modify(|old| *old = (*old).max(bytes))
+                .or_insert(bytes);
+        });
+    }
+    #[test]
+    fn distinct_backings_share_original_payload_but_not_memo_or_header() {
+        let payload: Arc<str> = Arc::from("/obj/alias // retained shared original payload\n");
+        let a = SourceFile::from_shared_text("a.dm", PathBuf::from("a.dm"), payload.clone().into());
+        let b = SourceFile::from_shared_text("b.dm", PathBuf::from("b.dm"), payload.clone().into());
+        assert!(!a.raw().text.same_view(&b.raw().text));
+        a.raw().text.span_fingerprint(0..1);
+        b.raw().text.span_fingerprint(0..2);
+        let mut rows = std::collections::BTreeMap::new();
+        observe(&a, &mut rows);
+        observe(&b, &mut rows);
+        let count = |class| rows.keys().filter(|key| key.0 == class).count();
+        assert_eq!(count(PolicyStorageClass::OriginalPayload), 1);
+        assert_eq!(count(PolicyStorageClass::TextBacking), 2);
+        assert_eq!(count(PolicyStorageClass::FingerprintMemo), 2);
+        assert_eq!(
+            rows[&PolicyStorageKey(
+                PolicyStorageClass::OriginalPayload,
+                payload.as_ptr() as usize
+            )],
+            payload.len() + 2 * std::mem::size_of::<usize>()
+        );
+    }
+    #[test]
+    fn memo_growth_reuses_stable_backing_key_without_counting_retired_buffer() {
+        let file = SourceFile::from_shared_text(
+            "a.dm",
+            PathBuf::from("a.dm"),
+            "abcdefghijklmnopqrstuvwxyz".to_string().into(),
+        );
+        file.raw().text.span_fingerprint(0..1);
+        let mut rows = std::collections::BTreeMap::new();
+        observe(&file, &mut rows);
+        let key = *rows
+            .keys()
+            .find(|key| key.0 == PolicyStorageClass::FingerprintMemo)
+            .unwrap();
+        let before = rows[&key];
+        for end in 2..=26 {
+            file.raw().text.span_fingerprint(0..end);
+        }
+        observe(&file, &mut rows);
+        assert_eq!(
+            rows.keys()
+                .filter(|key| key.0 == PolicyStorageClass::FingerprintMemo)
+                .count(),
+            1
+        );
+        assert!(rows[&key] > before);
+        file.raw()
+            .text
+            .visit_fingerprint_storage(|_, _, capacity| assert_eq!(rows[&key], capacity));
+    }
+}

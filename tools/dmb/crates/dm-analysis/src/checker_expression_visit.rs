@@ -22,6 +22,8 @@ pub enum TypeFact {
     Known(SymbolId),
     List(Option<SymbolId>),
     Unknown,
+    Unhinted,
+    ReturnHint(crate::checker_return_facts::ReturnFixHint, Span),
     Deferred(&'static str),
 }
 impl TypeFact {
@@ -36,13 +38,19 @@ impl TypeFact {
         match self {
             Self::Known(owner) => Ok(Some(owner)),
             Self::List(_) => Ok(Some(SymbolId::of("/list"))),
-            Self::Unknown => Ok(None),
+            Self::Unknown | Self::Unhinted | Self::ReturnHint(..) => Ok(None),
             Self::Deferred(reason) => Err(reason.into()),
         }
     }
 }
 #[derive(Clone, Debug)]
 pub enum Event<'a> {
+    FieldWithoutStaticType {
+        expression: &'a Expr,
+        at: Span,
+        name: &'a str,
+        hint: Option<(crate::checker_return_facts::ReturnFixHint, Span)>,
+    },
     MissingVariable {
         expression: &'a Expr,
         at: Span,
@@ -383,7 +391,11 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                                 .as_ref()
                                 .is_some_and(|p| !p.settings.is_empty())
                             {
-                                crate::checker_return_facts::validate_source_directives(self.tree,self.prefix_archive,*identity)?;
+                                crate::checker_return_facts::validate_source_directives(
+                                    self.tree,
+                                    self.prefix_archive,
+                                    *identity,
+                                )?;
                             }
                         }
                     }
@@ -398,8 +410,14 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 .as_ref()
                 .ok_or("callable signature unavailable")?;
             if !metadata.settings.is_empty() {
-                let CallableFact::Source{identity,..}=&fact else {return Err("unexpected source directive metadata provenance".into());};
-                crate::checker_return_facts::validate_source_directives(self.tree,self.prefix_archive,*identity)?;
+                let CallableFact::Source { identity, .. } = &fact else {
+                    return Err("unexpected source directive metadata provenance".into());
+                };
+                crate::checker_return_facts::validate_source_directives(
+                    self.tree,
+                    self.prefix_archive,
+                    *identity,
+                )?;
             }
         }
         self.events.push(Event::ResolvedCall {
@@ -409,49 +427,103 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             fact,
         });
         self.arguments(args)?;
-        let returned=crate::checker_return_facts::return_hint_with_prefix(self.tree,self.resolver,self.profile,receiver,SymbolId::of(name),self.prefix_archive)?;
-        checked_type(self.tree,self.resolver,returned.declared_type,returned.list_element_type)
+        let returned = crate::checker_return_facts::return_hint_with_prefix(
+            self.tree,
+            self.resolver,
+            self.profile,
+            receiver,
+            SymbolId::of(name),
+            self.prefix_archive,
+        )?;
+        let ty = checked_type(
+            self.tree,
+            self.resolver,
+            returned.declared_type,
+            returned.list_element_type,
+        )?;
+        if ty != TypeFact::Unknown {
+            return Ok(ty);
+        }
+        let hint = crate::checker_return_facts::return_fix_hint(
+            self.tree,
+            self.resolver,
+            self.profile,
+            receiver,
+            SymbolId::of(name),
+            self.prefix_archive,
+        )?;
+        Ok(match hint {
+            crate::checker_return_facts::ReturnFixHint::None => TypeFact::Unhinted,
+            crate::checker_return_facts::ReturnFixHint::UnissuedBuiltin => TypeFact::Unknown,
+            hint => TypeFact::ReturnHint(hint, at),
+        })
     }
-    fn construct(&mut self, expression:&'a Expr, form:dm_syntax::native_special_forms::Constructor<'a>, hint:Option<SymbolId>)->Result<TypeFact,String> {
+    fn construct(
+        &mut self,
+        expression: &'a Expr,
+        form: dm_syntax::native_special_forms::Constructor<'a>,
+        hint: Option<SymbolId>,
+    ) -> Result<TypeFact, String> {
         use dm_syntax::native_special_forms::Constructor;
-        let (owner,args)=match form {
-            Constructor::Dynamic=>return Ok(TypeFact::Unknown), // old NewMiniExpr TODO skips target/args
-            Constructor::Implicit{args}=>{
-                let Some(owner)=hint else {self.events.push(Event::MissingImplicitNewHint{expression});return Ok(TypeFact::Unknown);};
-                (owner,args)
+        let (owner, args) = match form {
+            Constructor::Dynamic => return Ok(TypeFact::Unknown), // old NewMiniExpr TODO skips target/args
+            Constructor::Implicit { args } => {
+                let Some(owner) = hint else {
+                    self.events
+                        .push(Event::MissingImplicitNewHint { expression });
+                    return Ok(TypeFact::Unknown);
+                };
+                (owner, args)
             }
-            Constructor::Static{path,args}=>{
-                if !path.starts_with('/') {return Err("relative constructor path needs primary navigation facts".into());}
-                (SymbolId::of(path),args)
+            Constructor::Static { path, args } => {
+                if !path.starts_with('/') {
+                    return Err("relative constructor path needs primary navigation facts".into());
+                }
+                (SymbolId::of(path), args)
             }
         };
-        let _=checked_type(self.tree,self.resolver,Some(owner),None)?;
-        let new=crate::checker_call_facts::callable_any(self.tree,self.resolver,self.profile,owner,SymbolId::of("New"))?;
-        if matches!(new,CallableFact::Missing) {
-            if ["/list","/alist","/vector","/pixloc"].iter().any(|name|owner==SymbolId::of(name)) {
+        let _ = checked_type(self.tree, self.resolver, Some(owner), None)?;
+        let new = crate::checker_call_facts::callable_any(
+            self.tree,
+            self.resolver,
+            self.profile,
+            owner,
+            SymbolId::of("New"),
+        )?;
+        if matches!(new, CallableFact::Missing) {
+            if ["/list", "/alist", "/vector", "/pixloc"]
+                .iter()
+                .any(|name| owner == SymbolId::of(name))
+            {
                 return Ok(TypeFact::Unknown); // intentionally does NOT visit args
             }
             return Err("constructor missing-New diagnostic is not yet implemented".into());
         }
-        self.ordinary_call(expression,expression.span,"New",owner,args,false)?;
+        self.ordinary_call(expression, expression.span, "New", owner, args, false)?;
         // visit_new's IsType assumption does NOT set Analysis.static_ty. Never
         // turn runtime construction provenance into a static receiver type.
-        Ok(TypeFact::Unknown)
+        Ok(TypeFact::Unhinted)
     }
     fn expression(
         &mut self,
         expression: &'a Expr,
         hint: Option<SymbolId>,
     ) -> Result<TypeFact, String> {
-        if let Some(form)=dm_syntax::native_special_forms::constructor(expression).map_err(str::to_owned)? {
-            return self.construct(expression,form,hint);
+        if let Some(form) =
+            dm_syntax::native_special_forms::constructor(expression).map_err(str::to_owned)?
+        {
+            return self.construct(expression, form, hint);
         }
-        if let Some(form)=dm_syntax::native_special_forms::locate(expression).map_err(str::to_owned)? {
+        if let Some(form) =
+            dm_syntax::native_special_forms::locate(expression).map_err(str::to_owned)?
+        {
             self.arguments(form.args)?;
-            if let Some(container)=form.in_list {self.expression(container,None)?;}
+            if let Some(container) = form.in_list {
+                self.expression(container, None)?;
+            }
             // Pinned locate's IsType assumption (even its 3-argument form)
             // leaves Analysis.static_ty unset. Do not invent receiver typing.
-            return Ok(TypeFact::Unknown);
+            return Ok(TypeFact::Unhinted);
         }
         match &expression.kind {
             ExprKind::Ident(name) => {
@@ -555,6 +627,19 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 )
             }
             ExprKind::Call { callee, args } => match &callee.kind {
+                ExprKind::Unary { op, value } if op == "::" => {
+                    let ExprKind::Ident(name) = &value.kind else {
+                        return Err("invalid primary global call target".into());
+                    };
+                    self.ordinary_call(
+                        expression,
+                        callee.span,
+                        name,
+                        SymbolId::of("/"),
+                        args,
+                        false,
+                    )
+                }
                 ExprKind::Ident(name) if name == ".." => {
                     let fact = checks_parent_call::parent_fact_in_profile(
                         self.tree,
@@ -600,7 +685,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                         "call"
                             | "call_ext"
                             | "input"
-                                | "pick"
+                            | "pick"
                             | "as"
                             | "null"
                             | "__PROC__"
@@ -666,10 +751,21 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                     return Ok(TypeFact::Unknown);
                 }
                 let Some(receiver) = base.receiver()? else {
-                    return Err(
-                        "unknown-receiver field access needs pinned fix-hint/declaration origins"
-                            .into(),
-                    );
+                    let hint=match base {
+                        TypeFact::Unhinted=>None,
+                        TypeFact::ReturnHint(hint,call)=>Some((hint,call)),
+                        _=>return Err("unknown-receiver field access needs pinned fix-hint/declaration origins".into()),
+                    };
+                    let at = member_origin(self.source, expression, object, selector, false)?;
+                    self.events.push(Event::FieldWithoutStaticType {
+                        expression,
+                        at,
+                        name: selector,
+                        hint,
+                    });
+                    // The old failed follow returns Analysis::empty: subsequent
+                    // fields have no inherited hint, while Index carries hints.
+                    return Ok(TypeFact::Unhinted);
                 };
                 if receiver == SymbolId::of("/callee") && selector == "proc" {
                     return Ok(TypeFact::Deferred(

@@ -45,6 +45,13 @@ pub trait SnapshotProvider {
     fn stamp(&self, path: &Path) -> io::Result<Stamp>;
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)>;
     fn list(&self, folder: &Path) -> io::Result<FolderListing>;
+    fn source_alias(
+        &self,
+        _: &Path,
+        _: &SourceAliasChallenge,
+    ) -> io::Result<Option<SourceAliasProof>> {
+        Ok(None)
+    }
     fn read_verified(&self, path: &Path) -> io::Result<CapturedInputRead> {
         let (stamp, bytes) = self.read(path)?;
         Ok(CapturedInputRead::new(stamp, bytes))
@@ -66,6 +73,13 @@ pub trait SnapshotProvider {
     }
 }
 impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
+    fn source_alias(
+        &self,
+        path: &Path,
+        proof: &SourceAliasChallenge,
+    ) -> io::Result<Option<SourceAliasProof>> {
+        (**self).source_alias(path, proof)
+    }
     fn generated_outputs(&self) -> Option<&BTreeSet<PathBuf>> {
         (**self).generated_outputs()
     }
@@ -92,6 +106,10 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
     }
 }
 
+#[path = "input_source_alias.rs"]
+mod source_alias;
+pub(crate) use source_alias::{AcquiredSourceAlias, SourceAliasRecord};
+pub use source_alias::{SourceAliasChallenge, SourceAliasProof};
 pub struct FileSystemInputs;
 #[path = "input_generated_outputs.rs"]
 mod generated;
@@ -99,6 +117,13 @@ pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;
 impl SnapshotProvider for FileSystemInputs {
+    fn source_alias(
+        &self,
+        path: &Path,
+        proof: &SourceAliasChallenge,
+    ) -> io::Result<Option<SourceAliasProof>> {
+        source_alias::filesystem_source_alias(path, proof)
+    }
     /// Live reads: every observation follows the call.
     fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
         crate::fs_watch::token()
@@ -114,10 +139,20 @@ impl SnapshotProvider for FileSystemInputs {
         std::thread::scope(|scope| {
             let handles: Vec<_> = paths
                 .chunks(chunk)
-                .map(|part| scope.spawn(move || part.iter().map(|path| self.digest(path)).collect::<Vec<_>>()))
+                .map(|part| {
+                    scope.spawn(move || {
+                        part.iter()
+                            .map(|path| self.digest(path))
+                            .collect::<Vec<_>>()
+                    })
+                })
                 .collect();
             for handle in handles {
-                results.extend(handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)));
+                results.extend(
+                    handle
+                        .join()
+                        .unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
+                );
             }
         });
         results
@@ -217,14 +252,16 @@ mod nontext;
 pub mod prepared;
 pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 
-#[path="input_source_original.rs"]
-mod source_original;
-#[path="input_source_acquisition.rs"]
+#[path = "input_source_acquisition.rs"]
 mod source_acquisition;
+#[path = "input_source_original.rs"]
+mod source_original;
+pub(crate) use source_acquisition::recorded_source_receipt_storage;
+pub(crate) use source_acquisition::SemanticSourceEvidence;
 pub struct RecordingInputs<P = FileSystemInputs> {
-    source_issuer:std::sync::Arc<()>,
-    source_acquisitions:Mutex<BTreeMap<PathBuf,dm_preprocess::AcquiredSource>>,
-    exceptional_originals: Mutex<BTreeMap<PathBuf,source_original::ExceptionalOriginal>>,
+    source_issuer: std::sync::Arc<()>,
+    source_acquisitions: Mutex<BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,
+    exceptional_originals: Mutex<BTreeMap<PathBuf, source_original::ExceptionalOriginal>>,
     provider: P,
     /// Watcher position at creation: every fact recorded later was observed after it.
     created: Option<crate::fs_watch::WatchToken>,
@@ -241,8 +278,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         // Merged retained parts narrow this (`InputSnapshot::merge`).
         snapshot.watch.replace(created);
         Self {
-            source_issuer:std::sync::Arc::new(()),
-            source_acquisitions:Mutex::new(BTreeMap::new()),
+            source_issuer: std::sync::Arc::new(()),
+            source_acquisitions: Mutex::new(BTreeMap::new()),
             created,
             provider,
             snapshot: Mutex::new(snapshot),
@@ -277,10 +314,13 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .snapshot
             .into_inner()
             .map_err(|_| invalid("input capture mutex poisoned"))?;
-        let mark = match (self.created, self.provider.watch_token(), snapshot.watch.get()) {
-            (Some(created), Some(now), Some(merged)) => {
-                crate::fs_watch::earlier(created, now).and_then(|token| crate::fs_watch::earlier(token, merged))
-            }
+        let mark = match (
+            self.created,
+            self.provider.watch_token(),
+            snapshot.watch.get(),
+        ) {
+            (Some(created), Some(now), Some(merged)) => crate::fs_watch::earlier(created, now)
+                .and_then(|token| crate::fs_watch::earlier(token, merged)),
             _ => None,
         };
         snapshot.watch.replace(mark);
@@ -290,10 +330,13 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     /// position (a provider that answers from earlier proofs reports theirs), so the earlier of the two proves them all.
     /// A merged retained part narrows it further (`InputSnapshot::merge`).
     fn mark(&self, snapshot: &InputSnapshot) {
-        let mark = match (self.created, self.provider.watch_token(), snapshot.watch.get()) {
-            (Some(created), Some(now), Some(merged)) => {
-                crate::fs_watch::earlier(created, now).and_then(|token| crate::fs_watch::earlier(token, merged))
-            }
+        let mark = match (
+            self.created,
+            self.provider.watch_token(),
+            snapshot.watch.get(),
+        ) {
+            (Some(created), Some(now), Some(merged)) => crate::fs_watch::earlier(created, now)
+                .and_then(|token| crate::fs_watch::earlier(token, merged)),
             _ => None,
         };
         snapshot.watch.replace(mark);
@@ -362,13 +405,25 @@ fn decode_owned_source(bytes: Vec<u8>) -> String {
     }
 }
 impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
-    fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{
-        if let Some(source)=self.prepared_impl(path).map_err(|e|e.to_string())?{
-            return Ok(self.current_source_acquisition(path,source.original()));
+    fn acquired_source(
+        &self,
+        path: &Path,
+    ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+        if let Some(source) = self.prepared_impl(path).map_err(|e| e.to_string())? {
+            return Ok(self.current_source_acquisition(path, source.original()));
         }
-        self.read_recorded(path).and_then(|bytes|self.acquire_recorded_source(path,bytes)).map(Some).map_err(|e|e.to_string())
+        self.read_recorded(path)
+            .and_then(|bytes| self.acquire_recorded_source(path, bytes))
+            .map(Some)
+            .map_err(|e| e.to_string())
     }
-    fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.current_source_acquisition(path,text)}
+    fn source_acquisition(
+        &self,
+        path: &Path,
+        text: &dm_preprocess::SourceText,
+    ) -> Option<dm_preprocess::AcquiredSource> {
+        self.current_source_acquisition(path, text)
+    }
     fn prepared_source(
         &self,
         path: &Path,
@@ -377,7 +432,7 @@ impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
     }
     fn read(&self, path: &Path) -> Result<String, String> {
         self.read_recorded(path)
-            .and_then(|bytes|self.decode_recorded_source(path,bytes))
+            .and_then(|bytes| self.decode_recorded_source(path, bytes))
             .map_err(|error| error.to_string())
     }
     fn retained_nontext(
@@ -479,7 +534,11 @@ impl InputSnapshot {
     /// Entry counts of the three recorded sets. Records only grow (a repeated
     /// read that differs is rejected), so equal counts mean an equal capture.
     pub(crate) fn shape(&self) -> (usize, usize, usize) {
-        (self.files.len(), self.folders.len(), self.negative_files.len())
+        (
+            self.files.len(),
+            self.folders.len(),
+            self.negative_files.len(),
+        )
     }
     /// Exact captured facts, independent of validation's refreshed scan time.
     /// Stamps and issued generated-output policy remain part of this proof.
@@ -549,7 +608,9 @@ impl InputSnapshot {
                             .generated_outputs
                             .contains(&canonical_path(&folder.join(name)));
                     }
-                    !leaves.iter().any(|leaf| *leaf == std::ffi::OsStr::new(name))
+                    !leaves
+                        .iter()
+                        .any(|leaf| *leaf == std::ffi::OsStr::new(name))
                 });
                 FolderListing::Present(names)
             }
@@ -610,7 +671,11 @@ impl InputSnapshot {
                     }
                 }
                 Some((other_path, _)) => {
-                    return Some(format!("{} / {} roster", path.display(), other_path.display()))
+                    return Some(format!(
+                        "{} / {} roster",
+                        path.display(),
+                        other_path.display()
+                    ))
                 }
                 None => return Some(format!("{} added", path.display())),
             }
@@ -701,7 +766,8 @@ impl InputSnapshot {
         if self.negative_files.is_empty() {
             self.negative_files = other.negative_files.clone();
         } else {
-            self.negative_files.extend(other.negative_files.iter().cloned());
+            self.negative_files
+                .extend(other.negative_files.iter().cloned());
         }
         drop(_timer);
         let _timer = dm_profile::detail_timer("snapshot.merge.folders");
@@ -962,10 +1028,18 @@ impl InputSnapshot {
             };
             digests.push(first);
             if !changed_first && to_hash.len() > 1 {
-                digests.extend(provider.digest_many(&to_hash[1..].iter().map(|(path, _)| *path).collect::<Vec<_>>()));
+                digests.extend(
+                    provider.digest_many(
+                        &to_hash[1..]
+                            .iter()
+                            .map(|(path, _)| *path)
+                            .collect::<Vec<_>>(),
+                    ),
+                );
             }
         } else {
-            digests = provider.digest_many(&to_hash.iter().map(|(path, _)| *path).collect::<Vec<_>>());
+            digests =
+                provider.digest_many(&to_hash.iter().map(|(path, _)| *path).collect::<Vec<_>>());
         }
         for ((path, old), digest) in to_hash.into_iter().zip(digests) {
             let (read_stamp, content) = digest?;
@@ -995,7 +1069,11 @@ impl InputSnapshot {
                 }
             }
         }
-        let negatives: Vec<&PathBuf> = self.negative_files.iter().filter(|path| !clean(path)).collect();
+        let negatives: Vec<&PathBuf> = self
+            .negative_files
+            .iter()
+            .filter(|path| !clean(path))
+            .collect();
         if stop_on_change {
             for path in negatives {
                 match provider.stamp(path) {

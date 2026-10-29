@@ -20,6 +20,16 @@ pub enum Severity {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Note {
     pub message: String,
+    pub source: Option<dm_tree::frontend::SourceNoteOrigin>,
+}
+impl Note {
+    /// Preserve old textual notes while projecting authentic original coordinates.
+    pub fn legacy_text(&self) -> String {
+        match &self.source {
+            Some(source) => format!("{}:{}: {}", source.line, source.byte_column, self.message),
+            None => self.message.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -178,7 +188,10 @@ impl TypedVisitor for NegatedBitwise<'_> {
                             format!("Did you mean `~x {op} y`?"),
                         ]
                         .into_iter()
-                        .map(|message| Note { message })
+                        .map(|message| Note {
+                            message,
+                            source: None,
+                        })
                         .collect(),
                     });
                 }

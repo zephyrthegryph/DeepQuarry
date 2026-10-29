@@ -11,10 +11,10 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 mod directive_memo;
-mod segment_lines;
-mod intern_wire;
 mod directives;
+mod intern_wire;
 mod plan_trace;
+mod segment_lines;
 pub use plan_trace::{PlanReuse, PlanTimings, PlanTrace};
 mod path_prefix;
 pub use directive_memo::{DirectiveRecord, DIRECTIVE_VERSION};
@@ -174,7 +174,7 @@ pub enum OrderedItem {
 #[derive(Clone, Debug, Default)]
 pub struct DirectivePlan {
     /// Per-current-include acquisition binding, separate from interned text.
-    pub source_acquisitions: BTreeMap<usize,crate::AcquiredSource>,
+    pub source_acquisitions: BTreeMap<usize, crate::SourceAcquisitionLease>,
     pub source_texts: BTreeMap<PathBuf, crate::SourceText>,
     pub occurrences: Vec<IncludeOccurrence>,
     pub regions: Vec<IncludeRegion>,
@@ -303,3 +303,6 @@ pub struct ExpandedOrigin {
     pub region: usize,
     pub macro_expansions: Arc<Vec<MacroExpansion>>,
 }
+
+mod origin_byte_layout;
+pub use origin_byte_layout::OriginalByteCursor;

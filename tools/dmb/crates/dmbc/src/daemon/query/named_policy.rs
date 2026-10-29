@@ -58,6 +58,8 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "proc_has_no_parent"
                             | "undefined_proc"
                             | "undefined_variable"
+                            | "field_access_static_type"
+                            | "no_typehint_implicit_new"
                     )
             }
             _ => false,

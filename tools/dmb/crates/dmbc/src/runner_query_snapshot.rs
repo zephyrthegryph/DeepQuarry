@@ -1,9 +1,9 @@
 //! Current source query projection: shared issued occurrences, paths, and revision only.
 //! Immutable issued source owners are shared; no full frontend revision is retained.
-#[path = "runner_query_named_policy.rs"]
-mod named_policy;
 #[path = "runner_query_control_batch.rs"]
 mod control_batch;
+#[path = "runner_query_named_policy.rs"]
+mod named_policy;
 #[path = "runner_query_native_policy.rs"]
 mod native_policy;
 #[path = "runner_query_occurrence_pages.rs"]
@@ -38,6 +38,7 @@ impl Default for QueryState {
     }
 }
 pub(crate) struct SourceSnapshot {
+    semantic_sources: Option<Arc<crate::input_snapshot::SemanticSourceEvidence>>,
     tree: Arc<dm_tree::SemanticTree>,
     pub(crate) source_revision: u128,
     pub(crate) policy_revision: Option<u128>,
@@ -75,6 +76,19 @@ impl ReplayProof {
     }
 }
 impl SourceSnapshot {
+    /// Always run before semantic findings/proof/cache access. Source revisions
+    /// and BodySyntax identities deliberately do not prove original decoding.
+    pub(crate) fn require_semantic_source_encoding(&self) -> std::io::Result<()> {
+        let evidence = self
+            .semantic_sources
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("semantic source original encoding unproven"))?;
+        let mapping = self
+            .source_mapping
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("current semantic source mapping unavailable"))?;
+        evidence.check(mapping)
+    }
     /// Partial migration endpoint: findings only, never a model round-trip.
     pub(crate) fn write_native_checker(
         &self,
@@ -86,6 +100,7 @@ impl SourceSnapshot {
         use dm_analysis::checks::Severity;
         use std::io;
         crate::daemon::control::checkpoint()?;
+        self.require_semantic_source_encoding()?;
         let archive = self
             .body_archive
             .as_ref()
@@ -114,15 +129,18 @@ impl SourceSnapshot {
                 let origin = body
                     .location(diagnostic.span.start)
                     .ok_or_else(|| io::Error::other("checker origin unavailable"))?;
+                let original = archive
+                    .original_note_origin(diagnostic.span.start)
+                    .map_err(io::Error::other)?;
                 rows.push(serde_json::json!({
                     "family": diagnostic.family, "severity": severity,
                     "expanded_span": [diagnostic.span.start, diagnostic.span.end],
                     "expression_span": [diagnostic.expression_span.start, diagnostic.expression_span.end],
-                    "file": origin.path, "line": origin.line,
+                    "file": original.path, "line": original.line,
                     "include_occurrence": origin.include_occurrence,
                     "include_chain": origin.include_chain,
                     "message": diagnostic.message,
-                    "notes": diagnostic.notes.iter().map(|note| &note.message).collect::<Vec<_>>(),
+                    "notes": diagnostic.notes.iter().map(|note| note.legacy_text()).collect::<Vec<_>>(),
                 }));
             }
         }
@@ -143,7 +161,9 @@ impl SourceSnapshot {
     /// Detach optional heavy source/selection owners under idle pressure.
     /// Existing request handles remain immutable; pinned lightweight rows survive.
     pub(crate) fn release_body_queries(&mut self) {
-        if let Some(queries)=self.native_raw_queries.take(){queries.release_raw_policy_cache();}
+        if let Some(queries) = self.native_raw_queries.take() {
+            queries.release_raw_policy_cache();
+        }
         self.body_archive = None;
         self.native_policy_inputs = None;
         self.native_value_input = None;
@@ -163,8 +183,11 @@ impl SourceSnapshot {
         if let Some(archive) = &self.body_archive {
             census.body_archive(archive);
         }
-        if let Some(queries)=&self.native_raw_queries {
-            let stats=queries.raw_policy_cache_stats();
+        if let Some(evidence) = &self.semantic_sources {
+            census.semantic_source_evidence(evidence);
+        }
+        if let Some(queries) = &self.native_raw_queries {
+            let stats = queries.raw_policy_cache_stats();
             census.unknown("query_snapshot.native_raw_query_cache",&format!(
                 "{} nodes; input/params estimate {} bytes; derived estimate {} bytes; cache admission estimates only, private common source-view/config/result allocations not counted exactly",
                 stats.nodes,stats.input_and_param_estimate,stats.derived_estimate));
@@ -295,6 +318,9 @@ impl SourceSnapshot {
             dm_analysis::value_query::ArchiveValueInput::new(Arc::clone(archive), &[])
         });
         Self {
+            semantic_sources: policy
+                .as_ref()
+                .map(|policy| Arc::clone(policy.semantic_source_evidence())),
             tree: Arc::clone(&frontend.snapshot.tree),
             source_revision,
             policy_revision: policy
@@ -430,6 +456,35 @@ impl QueryAttempt {
             configuration: None,
             enabled,
         }
+    }
+    pub(crate) fn capture_with_recorded_sources<P: crate::input_snapshot::SnapshotProvider>(
+        &mut self,
+        frontend: &ColdFrontend,
+        queries: Arc<crate::query_db::QueryDb>,
+        policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
+        inputs: &crate::input_snapshot::RecordingInputs<P>,
+    ) -> std::io::Result<()> {
+        if !self.enabled {
+            return self.capture_with_queries(frontend, queries, policy);
+        }
+        let evidence = inputs.semantic_source_evidence(frontend)?;
+        self.capture_with_queries(frontend, queries, policy)?;
+        if self.enabled {
+            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            let snapshot = state
+                .snapshot
+                .as_mut()
+                .ok_or_else(|| std::io::Error::other("semantic source capture unavailable"))?;
+            let mapping = snapshot
+                .source_mapping
+                .as_ref()
+                .ok_or_else(|| std::io::Error::other("semantic source mapping unavailable"))?;
+            // Bind exact mapping even if compatibility check will fail later;
+            // raw captures/Compile must remain usable for incompatible bytes.
+            evidence.require_mapping(mapping)?;
+            snapshot.semantic_sources = Some(evidence);
+        }
+        Ok(())
     }
     pub(crate) fn capture_with_queries(
         &mut self,
@@ -727,6 +782,13 @@ impl SourceSnapshot {
     }
 }
 
+#[path = "runner_query_analyze_policy.rs"]
+mod analyze_policy;
+
+#[cfg(test)]
+#[path = "runner_query_semantic_admission_tests.rs"]
+mod semantic_admission_tests;
+
 impl SourceSnapshot {
     pub(crate) fn write_resolved_queries(
         &self,
@@ -772,3 +834,7 @@ impl SourceSnapshot {
         output.write_all(b"\n")
     }
 }
+
+#[cfg(test)]
+#[path = "runner_query_acquisition_release_tests.rs"]
+mod acquisition_release_tests;

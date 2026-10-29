@@ -3,15 +3,9 @@ use dm_analysis::checks::{BodyView, Severity};
 use dm_tree::frontend::{build, BodyArena};
 use std::path::Path;
 
-struct Files;
-impl dm_preprocess::SourceProvider for Files {
-    fn read(&self, path: &Path) -> Result<String, String> {
-        std::fs::read(path)
-            .map(|bytes| dm_preprocess::decode_source_bytes(&bytes))
-            .map_err(|error| error.to_string())
-    }
-}
-
+#[path = "support/acquired_files.rs"]
+mod acquired_files;
+use acquired_files::AcquiredFiles;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let project = std::env::args().nth(1).ok_or("expected a .dme path")?;
     let family = std::env::args()
@@ -31,9 +25,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ) {
         return Err("unknown native checker family".into());
     }
-    let frontend = build(Path::new(&project), &Files, &Default::default(), 1)
+    let files = AcquiredFiles::default();
+    let frontend = build(Path::new(&project), &files, &Default::default(), 1)
         .map_err(|errors| format!("native frontend failed: {errors:?}"))?;
     let bodies = BodyArena::new_typed(&frontend, |_| true);
+    let mut output = Vec::new();
     for (_, occurrence) in dm_analysis::checker_order::bodies(&frontend)? {
         bodies.with_parsed(occurrence, |body| -> Result<(), String> {
             let view = BodyView::new(&frontend, body)?;
@@ -56,20 +52,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 _ => unreachable!(),
             };
             for diagnostic in diagnostics {
-                let source = view.location(&diagnostic).ok_or("diagnostic has no origin")?;
-                println!("{}", serde_json::json!({
+                let source=frontend.source_export_mapping().ok_or("original mapping unavailable")?.original_note_origin(diagnostic.span.start)?;
+                output.push( serde_json::json!({
                     "family": diagnostic.family, "severity": match diagnostic.severity { Severity::Warning => "warning", Severity::Error => "error", Severity::Disabled => return Err("disabled diagnostic was emitted".into()) },
                     "file": source.path, "line": source.line,
-                    // Expanded column is an explicit fixture observation, not
-                    // an inverse macro-substitution/source provenance claim.
-                    "expanded_column": frontend.expanded.text[..diagnostic.span.start]
-                        .rsplit('\n').next().unwrap().chars().count() + 1,
+                    // Historical key, authenticated ORIGINAL UTF8 byte column.
+                    "expanded_column": source.byte_column,
                     "message": diagnostic.message,
-                    "notes": diagnostic.notes.iter().map(|note| &note.message).collect::<Vec<_>>(),
+                    "notes": diagnostic.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>(),
                 }));
             }
             Ok(())
         }).map_err(|error| error.message)??;
+    }
+    for row in output {
+        println!("{row}");
     }
     Ok(())
 }

@@ -5,61 +5,68 @@
 //! ([`cache`]); every lint is a [`lint::Lint`] in `src/lints/`.
 
 pub mod allow;
+#[cfg(feature = "legacy-sem")]
+pub mod base_vars_dead;
 pub mod baseline;
-#[cfg(feature="legacy-sem")]
+#[cfg(feature = "legacy-sem")]
 pub mod cache;
-#[cfg(feature="legacy-sem")]
+#[cfg(feature = "legacy-sem")]
 pub mod codemod;
-#[cfg(feature="legacy-sem")]
+#[cfg(feature = "legacy-sem")]
 pub mod codemods;
 pub mod dm;
-#[cfg(feature="legacy-sem")]
+#[cfg(feature = "legacy-sem")]
 pub mod frontend;
-pub mod incr;
-#[cfg(feature="legacy-sem")]
+#[cfg(feature = "legacy-sem")]
 pub mod gens;
+pub mod incr;
 pub mod lint;
 pub mod lints;
-#[cfg(feature="legacy-sem")]
-pub mod base_vars_dead;
-pub mod parity_types;
-#[cfg(feature="legacy-sem")]
+#[cfg(feature = "legacy-sem")]
 pub mod parity;
-#[cfg(not(feature="legacy-sem"))]
+pub mod parity_types;
+#[cfg(not(feature = "legacy-sem"))]
 pub use parity_types as parity;
+#[cfg(feature = "native-policy")]
+pub mod captured_raw_file;
+#[cfg(feature = "native-policy")]
+pub mod captured_raw_policy;
 pub mod pat;
-#[cfg(feature="legacy-sem")]
+#[cfg(feature = "legacy-sem")]
 pub mod run;
-#[cfg(feature="legacy-sem")]
-pub mod sem;
 pub mod scopes;
-#[cfg(feature="legacy-sem")]
+#[cfg(feature = "legacy-sem")]
+pub mod sem;
+#[cfg(feature = "legacy-sem")]
 pub mod shared;
 pub mod strip;
 pub mod tree;
-#[cfg(feature="native-policy")]
-pub mod captured_raw_policy;
-#[cfg(feature="native-policy")]
-pub mod captured_raw_file;
 pub mod util;
 
 pub mod native_policy_roster;
-pub const LEGACY_SEMANTICS_ENABLED: bool = cfg!(feature="legacy-sem");
+pub const LEGACY_SEMANTICS_ENABLED: bool = cfg!(feature = "legacy-sem");
 
-pub mod lifecycle_source;
-#[cfg(feature="native-policy")]
+#[cfg(feature = "native-policy")]
 pub mod captured_decl_policy;
+pub mod lifecycle_source;
 
-#[cfg(feature="native-policy")]
-pub mod captured_init_policy;
+pub mod base_var_candidate_policy;
 pub mod base_var_hot_policy;
+#[cfg(feature = "native-policy")]
+pub mod captured_base_var_candidates;
+#[cfg(feature = "native-policy")]
+pub mod captured_base_var_hot_policy;
+#[cfg(feature = "native-policy")]
+pub mod captured_base_vars_policy;
+#[cfg(feature = "native-policy")]
+pub mod captured_init_policy;
 pub mod raw_declaration_policy;
 pub mod raw_marker_policy;
 pub mod value_schema_policy;
-pub mod base_var_candidate_policy;
-#[cfg(feature="native-policy")]
-pub mod captured_base_var_hot_policy;
-#[cfg(feature="native-policy")]
-pub mod captured_base_var_candidates;
-#[cfg(feature="native-policy")]
-pub mod captured_base_vars_policy;
+
+pub mod base_var_metadata;
+#[cfg(feature = "native-policy")]
+pub mod captured_policy_metadata;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_requirement_bool;
