@@ -237,7 +237,8 @@ sparse(/mob/living, body_effect_data, type = list)
 /// The names of the timed stacks of body effect `path`, soonest first (null when none). Each names a `body_effect` timer slot (body_effect_after());
 /// the slot owns the timer. The table is the sparse slot body_effect_timers: body effect type -> list of names.
 /mob/living/proc/body_effect_stack_names(path)
-	return sparse_get(src, body_effect_timers)?[path]
+	var/list/timers = sparse_get(src, body_effect_timers)
+	return timers?[path]
 
 /// Replaces the timed-stack names of `path` (null or empty drops the entry; the slot clears when no entry is left).
 /mob/living/proc/body_effect_stack_set(path, list/names)
