@@ -38,3 +38,11 @@ pub mod analyze_scope_config;
 pub mod checks_parent_call;
 
 pub mod checks_configured_control;
+
+pub mod checker_context;
+
+pub mod checker_evaluated_observer;
+
+pub mod checker_call_facts;
+pub mod checker_expression_visit;
+pub mod checks_undefined_proc;

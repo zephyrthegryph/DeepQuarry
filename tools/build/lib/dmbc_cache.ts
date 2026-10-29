@@ -14,7 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { storeVerdigris, dropVerdigris, type CacheKey } from './verdigris_cache';
 
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 // Everything tools/dmb/build.rs, Cargo and the `include_bytes!` of the engine template read.
 export const DMBC_CACHE_INPUTS = [
@@ -24,6 +24,11 @@ export const DMBC_CACHE_INPUTS = [
   'tools/dmb/src',
   'tools/dmb/crates',
   'tools/dmb/patches',
+  // Native Analyze policy is linked into dmbc. Its local path dependencies
+  // already live under crates; its own code/vendor inputs and shared Rust
+  // includes must participate in both committed identity and dirty detection.
+  'tools/analyze',
+  'tools/dmb/shared',
   'tools/dmb/fixtures/native_template.bin',
 ];
 

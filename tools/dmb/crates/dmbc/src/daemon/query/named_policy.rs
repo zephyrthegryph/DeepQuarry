@@ -55,6 +55,8 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "unreachable_code"
                             | "loop_condition_determinate"
                             | "if_condition_determinate"
+                            | "proc_has_no_parent"
+                            | "undefined_proc"
                     )
             }
             _ => false,

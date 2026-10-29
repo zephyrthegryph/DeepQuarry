@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex};
 
 mod body_syntax;
 mod value_proofs;
+mod raw_policy;
 
 const SOURCE: Kind = Kind(1);
 const PROJECT: Kind = Kind(2);
@@ -42,6 +43,7 @@ pub struct QueryDb {
     db: Db,
     body_charge: Arc<std::sync::atomic::AtomicUsize>,
     value_charge: Arc<std::sync::atomic::AtomicUsize>,
+    raw_policy: raw_policy::State,
     value_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_analysis::value_query::ArchiveValueInput>>>,
     body_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_tree::frontend::BodySyntaxInput>>>,
     /// Current answers of every query a stored unit read (see `answer` below).
@@ -70,6 +72,8 @@ impl Default for QueryDb {
         body_syntax::register(&db, Arc::clone(&body_charge));
         let value_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         value_proofs::register(&db, Arc::clone(&value_charge));
+        let raw_policy=raw_policy::State::default();
+        raw_policy::register(&db,Arc::clone(&raw_policy.charge));
         db.define_input(SOURCE, "source");
         db.define_input(PROJECT, "project");
         db.define(PROGRAM, "program", |ctx, params| {
@@ -89,6 +93,7 @@ impl Default for QueryDb {
         Self {
             body_charge,
             value_charge,
+            raw_policy,
             value_inputs: Mutex::new(BTreeMap::new()),
             body_inputs: Mutex::new(BTreeMap::new()),
             id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
@@ -1443,3 +1448,7 @@ mod tests {
 #[cfg(test)]
 #[path = "query_db/control_batch_tests.rs"]
 mod control_batch_tests;
+
+#[cfg(test)]
+#[path = "query_db/checker_context_tests.rs"]
+mod checker_context_tests;

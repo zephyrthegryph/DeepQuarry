@@ -154,7 +154,6 @@ pub struct SemanticTree {
     declaration_targets: Arc<[Target]>,
     identity: u128,
     inventory: Arc<resolver::ResolverInventory>,
-    checker_catalog: Option<Arc<checker_builtins::CheckerBuiltinCatalog>>,
     intrinsic_fields: Arc<HashMap<(SymbolId, SymbolId), dm_ir::OpaqueFieldBase>>,
 }
 /// One numeric default edit of a formal var (see `SemanticTree::default_edits`).
@@ -635,7 +634,6 @@ pub(crate) fn build_with_intrinsic_members_structural(
         declaration_targets: Arc::from([]),
         identity: 0,
         inventory: Arc::new(resolver::ResolverInventory::default()),
-        checker_catalog: None,
         intrinsic_fields: Arc::new(HashMap::new()),
     };
     let mut intrinsic_fields = HashMap::new();

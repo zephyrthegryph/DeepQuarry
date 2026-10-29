@@ -453,6 +453,16 @@ pub fn procedure_value_query(path: &str) -> Option<ResolveQuery> {
 /// The sole view of other declarations and resource search available to lowering.
 /// Implementations must answer from one immutable build snapshot.
 pub trait Resolver: Sync {
+    /// Exact compiler-issued semantic owner, when this implementation can prove
+    /// it. This opaque address is valid only during the immutable resolver
+    /// borrow: compare it, never dereference, persist, serialize or hash it.
+    /// It is neither answer equality nor an answer-world/cache-version token.
+    /// An unproven wrapper declines; only transparent original-owner delegates
+    /// may forward the provenance of their retained source owner.
+    fn source_owner(&self) -> Option<*const ()> {
+        None
+    }
+
     /// True unless this immutable host has no dependency/semantic read observer.
     /// Exact replay may bypass resolve only when false. Internal memo counters
     /// and issuer storage are not observers; custom wrappers

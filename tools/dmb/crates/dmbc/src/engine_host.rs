@@ -351,6 +351,10 @@ impl<R: Resolver> EngineResolverHost<R> {
     }
 }
 impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
+    fn source_owner(&self) -> Option<*const ()> {
+        self.tree.source_owner()
+    }
+
     fn observes_reads(&self) -> bool {
         self.tree.observes_reads()
     }

@@ -204,13 +204,7 @@ fn real_pinned_checker_catalog_proves_absence_without_runtime_inventory_claim() 
         },
     )
     .unwrap();
-    let resolver = frontend
-        .snapshot
-        .tree
-        .as_ref()
-        .clone()
-        .with_pinned_checker_builtins()
-        .unwrap();
+    let resolver = frontend.snapshot.tree.as_ref();
     assert!(!resolver.intrinsic_inventory_complete());
     let profile = resolver.checker_builtin_profile().unwrap();
     let arena = BodyArena::new_typed(&frontend, |_| true);
@@ -219,7 +213,7 @@ fn real_pinned_checker_catalog_proves_absence_without_runtime_inventory_claim() 
         arena
             .with_parsed(occurrence, |body| {
                 diagnostics.extend(
-                    check_in_profile(&frontend, body, &resolver, Some(profile), Severity::Error)
+                    check_in_profile(&frontend, body, resolver, Some(profile), Severity::Error)
                         .unwrap(),
                 );
             })
@@ -233,12 +227,12 @@ fn real_pinned_checker_catalog_proves_absence_without_runtime_inventory_claim() 
     assert!(parent_fact_in_profile(
         &frontend.snapshot.tree,
         member,
-        &resolver,
+        resolver,
         Some(PackedU128::new(profile.get() ^ 1))
     )
     .is_err());
     assert!(
-        parent_fact(&frontend.snapshot.tree, member, &resolver).is_err(),
+        parent_fact(&frontend.snapshot.tree, member, resolver).is_err(),
         "runtime partial inventory must still decline absence"
     );
 }
@@ -279,13 +273,7 @@ fn pinned_parent_search_includes_global_source_and_builtin_procs() {
         },
     )
     .unwrap();
-    let resolver = frontend
-        .snapshot
-        .tree
-        .as_ref()
-        .clone()
-        .with_pinned_checker_builtins()
-        .unwrap();
+    let resolver = frontend.snapshot.tree.as_ref();
     let profile = resolver.checker_builtin_profile().unwrap();
     let arena = BodyArena::new_typed(&frontend, |_| true);
     let mut rows = Vec::new();
@@ -293,7 +281,7 @@ fn pinned_parent_search_includes_global_source_and_builtin_procs() {
         arena
             .with_parsed(occurrence, |body| {
                 for diagnostic in
-                    check_in_profile(&frontend, body, &resolver, Some(profile), Severity::Error)
+                    check_in_profile(&frontend, body, resolver, Some(profile), Severity::Error)
                         .unwrap()
                 {
                     rows.push((

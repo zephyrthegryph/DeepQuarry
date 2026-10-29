@@ -104,3 +104,36 @@ fn configured_checker_metadata_binds_autodetection_and_complete_schema_claim() {
     bad["full_checker_parity"] = true.into();
     assert!(validate_requested(&reply(&bad), &[question]).is_err());
 }
+
+#[test]
+fn semantic_checker_admission_and_partial_reply_metadata_are_exact() {
+    for family in ["proc_has_no_parent", "undefined_proc"] {
+        let environment = root().join("p.dme");
+        let question = SourceQuery::NativeConfiguredChecker {
+            ordinal: 4,
+            family: family.into(),
+            environment: environment.clone(),
+            configuration: None,
+        };
+        let mut r = request();
+        r.source_queries = vec![question.clone()];
+        validate_request(&r).unwrap();
+        let good = json!({"row":"source_native_configured_checker","schema":"dm-session-source-query-v1",
+            "semantic_revision":"semantic","source_revision":"source","policy_revision":"policy",
+            "ordinal":4,"family":family,"environment":environment,"configuration":root().join("SpacemanDMM.toml"),
+            "configuration_explicit":false,"configuration_present":false,
+            "configuration_schema":"complete_pinned_checker_schema","full_checker_parity":false,
+            "diagnostics":[{"family":family,"severity":"error","file":"p.dm","line":2,
+                "expanded_span":[10,12],"expression_span":[10,14],"message":"specific refusal","notes":[]}]});
+        validate_requested(&reply(&good), std::slice::from_ref(&question)).unwrap();
+        for (key, value) in [
+            ("full_checker_parity", json!(true)),
+            ("ordinal", json!(3)),
+            ("family", json!("other")),
+        ] {
+            let mut bad = good.clone();
+            bad[key] = value;
+            assert!(validate_requested(&reply(&bad), std::slice::from_ref(&question)).is_err());
+        }
+    }
+}

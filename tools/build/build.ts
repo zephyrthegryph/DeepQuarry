@@ -19,6 +19,7 @@ import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
 import { bun, bunRoot } from './lib/bun';
 import { runAnalyzeTests } from './lib/analyze_test_cache';
+import { cargoSourceKey } from './lib/cargo_source_inputs';
 import { computeCompileHash } from './lib/compile_hash';
 import { pairIsByondOutput } from './lib/compiler_stamp';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
@@ -297,7 +298,7 @@ export const ValidateDmeTarget = new Juke.Target({
   inputs: ['code/**/*.dm', `${DME_NAME}.dme`],
   executes: async () => {
     // A .dm file is "compiled" if it is reachable from the .dme through the
-    // transitive #include graph — NOT just if it appears literally in the .dme.
+    // transitive #include graph â€” NOT just if it appears literally in the .dme.
     // Many files are pulled in by intermediate aggregators (e.g.
     // code/modules/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
     // includes __pragmas.dm). A naive "is it in the .dme" check false-positives
@@ -371,7 +372,7 @@ export const ValidateDmeTarget = new Juke.Target({
     }
 
     // Unit-test files are compiled only under a separate test .dme, never from
-    // deepquarry.dme — exclude them from the "is it wired into the build" check.
+    // deepquarry.dme â€” exclude them from the "is it wired into the build" check.
     const EXCLUDED_PREFIXES = [
       'code/modules/unit_tests/',
       'code/tests/unit_tests/',
@@ -414,7 +415,7 @@ export const ValidateDmeTarget = new Juke.Target({
 // artifact, so the build is responsible for producing it.
 //
 // onlyWhen gates on cargo being on PATH: DM-only contributors without rustup
-// can't build the lib (they warn-skip and run with whatever lib is present —
+// can't build the lib (they warn-skip and run with whatever lib is present â€”
 // atmos/cave-gen FFI simply isn't available without it). inputs/outputs
 // dirty-checks the ~minute cargo build against the Rust sources so untouched
 // rebuilds no-op. Source paths are enumerated rather than `verdigris/**` so
@@ -437,7 +438,7 @@ const verdigrisProvenanceMismatch = (): string | null =>
     ? checkVerdigrisProvenance(process.cwd(), VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, process.env.RUSTFLAGS || '')
     : null;
 
-// generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
+// generated DM bindings for verdigris (doc/rewrite/rust_core.md Â§9).
 // `verdigris-bindings` rewrites code/__defines/verdigris/_bindings.dm and
 // verdigris/ffi/src/abi.rs from the #[auxmacros::bind] functions. Every DM and
 // DLL build runs the check first and fails when either file is stale.
@@ -593,7 +594,7 @@ export const VerdigrisTarget = new Juke.Target({
         );
         throw new Juke.ExitCode(1);
       }
-      Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 — using existing ${VERDIGRIS_LIB}`);
+      Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 â€” using existing ${VERDIGRIS_LIB}`);
       // Warn now (before a long compile); DreamDaemon() refuses to boot on it.
       try {
         checkVerdigrisAbi();
@@ -618,12 +619,12 @@ export const VerdigrisTarget = new Juke.Target({
       }
       if (fs.existsSync(VERDIGRIS_LIB)) {
         Juke.logger.info(
-          `verdigris: cargo not found — using existing ${VERDIGRIS_LIB}`,
+          `verdigris: cargo not found â€” using existing ${VERDIGRIS_LIB}`,
         );
       } else {
         Juke.logger.warn(
           `verdigris: cargo not found and ${VERDIGRIS_LIB} is missing. `
-            + 'Atmos/cave-gen FFI will fail at runtime — install rustup '
+            + 'Atmos/cave-gen FFI will fail at runtime â€” install rustup '
             + `(see verdigris/README.md) or obtain a prebuilt ${VERDIGRIS_LIB}.`,
         );
       }
@@ -738,48 +739,11 @@ const analyzeSharedTargetDir = (): string | null => {
   if (!env || env === 'off' || env === '0') return null;
   return path.resolve(env);
 };
-const analyzeWalk = (dir: string): string[] => {
-  const out: string[] = [];
-  let entries: fs.Dirent[] = [];
-  try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return out;
-  }
-  for (const entry of entries) {
-    const full = `${dir}/${entry.name}`;
-    if (entry.isDirectory()) out.push(...analyzeWalk(full));
-    else out.push(full);
-  }
-  return out;
-};
-const analyzeSourceKey = (): string => {
-  const hash = createHash('sha256').update(`analyze-v2|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`);
-  const files = [
-    'tools/analyze/Cargo.toml',
-    'tools/analyze/Cargo.lock',
-    'tools/analyze/build.rs',
-    // Every file under src/ (not only .rs) and fixtures/ (include_str! embeds them), so no source change can reuse a stale binary.
-    ...analyzeWalk('tools/analyze/src'),
-    ...analyzeWalk('tools/analyze/fixtures'),
-    // The vendored parser (tools/analyze/vendor) is compiled into the binary too.
-    ...analyzeWalk('tools/analyze/vendor'),
-  ]
-    .map((f) => f.replace(/\\/g, '/'))
-    .sort();
-  for (const file of files) {
-    hash.update(file);
-    hash.update('|');
-    try {
-      // CRLF and LF checkouts of the same source share a binary.
-      hash.update(fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n'));
-    } catch {
-      hash.update('<missing>');
-    }
-    hash.update('|');
-  }
-  return hash.digest('hex').slice(0, 32);
-};
+const analyzeSourceKey = (): string => cargoSourceKey(
+  process.cwd(),
+  path.resolve('tools/analyze/Cargo.toml'),
+  `analyze-v3|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`,
+);
 let analyzePendingKey: string | null = null;
 
 export const AnalyzeBuildTarget = new Juke.Target({
@@ -1128,7 +1092,7 @@ export const DmTarget = new Juke.Target({
   },
   executes: async ({ get }) => {
     // Production build: no DEBUG (no runtime line numbers, ~56 MB less at world
-    // load; doc/rewrite/init_and_turfs.md §0.5). Pass -D DEBUG to get them back.
+    // load; doc/rewrite/init_and_turfs.md Â§0.5). Pass -D DEBUG to get them back.
     // DreamChecker lints the same tree while DreamMaker compiles it. Either failing fails the target, and a
     // DreamChecker failure deletes the fresh .dmb so the next run cannot skip this target as up to date.
     // SpacemanDMM's DreamChecker has no incremental mode: it always parses and checks the whole tree (2+ minutes, competing
@@ -1138,7 +1102,7 @@ export const DmTarget = new Juke.Target({
     if (!dreamCheckerWanted()) {
       Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); the merge gates, CI and `build.sh lint` run it, or set DQ_DREAMCHECKER=1');
     } else if (!checker) {
-      Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
+      Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM â€” skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
     }
     const compile = () =>
       DreamMaker(`${DME_NAME}.dme`, {
@@ -1944,7 +1908,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
 }
 
 // DEBUG (line numbers in runtimes) is off in the production .dmb: it costs
-// ~56 MB at world load (doc/rewrite/init_and_turfs.md §0.5). Test, bench and
+// ~56 MB at world load (doc/rewrite/init_and_turfs.md Â§0.5). Test, bench and
 // autowiki builds turn it back on here; a local dev build can pass -D DEBUG.
 const TEST_DEFINES = ['CBT', 'CIBUILDING', 'CITESTING', 'DEBUG'];
 
@@ -3139,7 +3103,7 @@ export const BenchTarget = new Juke.Target({
     for (const [scenario, metrics] of Object.entries(record.summary)) {
       console.log(`\n${scenario}`);
       for (const [name, stats] of Object.entries(metrics)) {
-        const spread = stats.n > 1 ? ` ±${formatNumber(stats.stdev)}` : '';
+        const spread = stats.n > 1 ? ` Â±${formatNumber(stats.stdev)}` : '';
         console.log(`  ${name.padEnd(40)} ${formatNumber(stats.median).padStart(10)} ${stats.unit}${spread}`);
       }
     }
@@ -3525,7 +3489,7 @@ const TGUI_WINDOW_MANIFEST = 'tgui/public/tgui-window-manifest.json';
 // are non-empty, the chunk manifest parses, and every interface chunk it references
 // is present and non-empty. The individual *.chunk.* files aren't tracked as Juke
 // outputs (they're content-hashed and numerous), so without this check an interrupted
-// or corrupt rspack emit — entry bundles written but some interface chunks missing —
+// or corrupt rspack emit â€” entry bundles written but some interface chunks missing â€”
 // passes the mtime dirty-check forever and silently serves blank/grey UI windows
 // (e.g. the lobby) until public/ is wiped by hand.
 const tguiBundleComplete = (): boolean => {
@@ -3587,14 +3551,14 @@ export const TguiTarget = new Juke.Target({
     // manifest maps interface name -> chunk file (consumed by SStgui). Tracking the
     // manifest as an output makes Juke rebuild if it's missing (e.g. a public/ wipe)
     // and keeps it in sync with rspack.config.ts changes. The individual *.chunk.*
-    // files are content-id'd and numerous, so they aren't listed literally — instead
+    // files are content-id'd and numerous, so they aren't listed literally â€” instead
     // tguiBundleComplete() validates them (see onlyWhen / executes below).
     'tgui/public/tgui-chunk-manifest.json',
     'tgui/public/tgui-window-manifest.json',
   ],
   // Runs before the mtime dirty-check. If the existing bundle is incomplete (a chunk
   // the manifest references is missing/empty), drop the tracked entry bundles so the
-  // mtime check treats the outputs as missing and forces a fresh rebuild — otherwise
+  // mtime check treats the outputs as missing and forces a fresh rebuild â€” otherwise
   // a half-written bundle is skipped indefinitely and serves broken UI.
   onlyWhen: () => {
     if (!tguiBundleComplete()) {
@@ -3682,7 +3646,7 @@ export const DreamCheckerTarget = new Juke.Target({
   onlyWhen: () => {
     if (!findDreamChecker()) {
       Juke.logger.info(
-        'dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)',
+        'dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM â€” skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)',
       );
       return false;
     }

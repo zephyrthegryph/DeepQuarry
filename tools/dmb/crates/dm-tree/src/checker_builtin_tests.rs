@@ -56,7 +56,7 @@ fn complete_means_pinned_checker_dsl_not_runtime_abi_inventory() {
     };
     let old = Resolver::resolve(&original, runtime);
     let old_world = original.answer_world();
-    let attached = original.with_pinned_checker_builtins().unwrap();
+    let attached = original;
     let profile = attached.checker_builtin_profile().unwrap();
     assert_eq!(
         Resolver::resolve(&attached, callable(profile, "/datum/example", "New")),
@@ -71,23 +71,15 @@ fn complete_means_pinned_checker_dsl_not_runtime_abi_inventory() {
     );
     assert_eq!(Resolver::resolve(&attached, runtime), old);
     assert!(!attached.intrinsic_inventory_complete());
-    assert_ne!(old_world, attached.answer_world());
-    assert_eq!(
-        attached
-            .clone()
-            .with_pinned_checker_builtins()
-            .unwrap()
-            .answer_world(),
-        attached.answer_world()
-    );
+    assert_eq!(old_world, attached.answer_world());
+    attached.validate_checker_builtin_profile(profile).unwrap();
 }
 #[test]
-fn wrong_or_absent_profile_and_unknown_owners_never_prove_absence() {
+fn wrong_profile_and_unknown_owners_never_prove_absence() {
     let tree = seeded("");
     let profile = pinned_catalog().unwrap().profile;
     let query = callable(profile, "/datum", "New");
-    assert_eq!(Resolver::resolve(&tree, query), M::Unsupported(query));
-    let tree = tree.with_pinned_checker_builtins().unwrap();
+    assert_eq!(Resolver::resolve(&tree, query), M::Presence(true));
     for query in [
         callable(PackedU128::new(profile.get() ^ 1), "/datum", "New"),
         callable(profile, "/missing", "New"),
@@ -97,7 +89,7 @@ fn wrong_or_absent_profile_and_unknown_owners_never_prove_absence() {
 }
 #[test]
 fn source_shadow_and_checker_root_lookup_are_preserved() {
-    let tree=seeded("/datum/example/New()\n    return 1\n/datum/example/proc/not_in_fixed_dsl()\n    return 1\n").with_pinned_checker_builtins().unwrap();
+    let tree=seeded("/datum/example/New()\n    return 1\n/datum/example/proc/not_in_fixed_dsl()\n    return 1\n");
     let profile = tree.checker_builtin_profile().unwrap();
     assert_eq!(
         Resolver::resolve(&tree, callable(profile, "/datum/example", "New")),
@@ -121,7 +113,7 @@ fn source_shadow_and_checker_root_lookup_are_preserved() {
 }
 #[test]
 fn field_types_flags_defaults_and_inherited_overrides_are_native_metadata() {
-    let tree = seeded("").with_pinned_checker_builtins().unwrap();
+    let tree = seeded("");
     let profile = tree.checker_builtin_profile().unwrap();
     let query = |owner, name| Q::CheckerBuiltinVar {
         profile,
@@ -190,53 +182,52 @@ fn incompatible_existing_hierarchy_is_rejected_without_alternative_tree() {
         .collect::<Vec<_>>();
     let source = crate::build(symbols, &rows).unwrap();
     assert!(
-        matches!(source.with_pinned_checker_builtins(),Err(CheckerBuiltinError::ParentMismatch(owner)) if owner==SymbolId::of("/image"))
+        matches!(source.validate_checker_builtin_profile(pinned_catalog().unwrap().profile),Err(CheckerBuiltinError::ParentMismatch(owner)) if owner==SymbolId::of("/image"))
     );
 }
 
 #[test]
-fn checker_attachment_shares_every_common_source_and_runtime_owner() {
+fn checker_queries_borrow_original_owner_without_cow_or_world_mutation() {
     let source = seeded("/datum/example/proc/probe()\n    return 1\n");
-    let attached = source.clone().with_pinned_checker_builtins().unwrap();
-    assert!(Arc::ptr_eq(&source.symbols, &attached.symbols));
-    assert!(Arc::ptr_eq(&source.inventory, &attached.inventory));
-    assert!(Arc::ptr_eq(
-        &source.intrinsic_fields,
-        &attached.intrinsic_fields
-    ));
-    assert!(Arc::ptr_eq(&source.types, &attached.types));
-    assert!(Arc::ptr_eq(&source.by_path, &attached.by_path));
-    assert!(Arc::ptr_eq(&source.direct, &attached.direct));
-    assert!(Arc::ptr_eq(
-        &source.declaration_targets,
-        &attached.declaration_targets
-    ));
-    assert!(Arc::ptr_eq(
-        source.members.chunk_offsets(),
-        attached.members.chunk_offsets()
-    ));
-    assert_eq!(
-        source.members.chunks().len(),
-        attached.members.chunks().len()
-    );
-    for (before, after) in source
+    let identity = source.identity();
+    let world = source.answer_world();
+    let symbols = Arc::as_ptr(&source.symbols);
+    let inventory = Arc::as_ptr(&source.inventory);
+    let members = source
         .members
         .chunks()
         .iter()
-        .zip(attached.members.chunks())
-    {
-        assert!(Arc::ptr_eq(before, after));
-    }
-    let profile = attached.checker_builtin_profile().unwrap();
+        .map(Arc::as_ptr)
+        .collect::<Vec<_>>();
+    let count = Arc::strong_count(&source.symbols);
     let builtin = SymbolId::of("arccos");
-    assert_eq!(source.symbols.text(builtin), attached.symbols.text(builtin));
+    let old_symbol = source.symbols.text(builtin).map(str::to_owned);
+    let profile = source.checker_builtin_profile().unwrap();
+    source.validate_checker_builtin_profile(profile).unwrap();
     assert_eq!(
-        attached.checker_builtin_spelling(profile, builtin),
+        source.checker_builtin_spelling(profile, builtin),
         Some("arccos")
     );
-    assert!(attached
+    assert_eq!(
+        Resolver::resolve(&source, callable(profile, "/datum/example", "New")),
+        M::Presence(true)
+    );
+    assert!(source
         .checker_builtin_spelling(PackedU128::new(profile.get() ^ 1), builtin)
         .is_none());
-    assert_ne!(source.identity(), attached.identity());
-    assert_ne!(source.answer_world(), attached.answer_world());
+    assert_eq!(source.identity(), identity);
+    assert_eq!(source.answer_world(), world);
+    assert_eq!(Arc::as_ptr(&source.symbols), symbols);
+    assert_eq!(Arc::as_ptr(&source.inventory), inventory);
+    assert_eq!(
+        source
+            .members
+            .chunks()
+            .iter()
+            .map(Arc::as_ptr)
+            .collect::<Vec<_>>(),
+        members
+    );
+    assert_eq!(Arc::strong_count(&source.symbols), count);
+    assert_eq!(source.symbols.text(builtin).map(str::to_owned), old_symbol);
 }

@@ -14,6 +14,7 @@
 //! Macro provenance is
 //! borrowed from the source mapping; this module never reverses expansion.
 
+use crate::checker_evaluated_observer::{EvaluatedObserver, ScopeKind};
 use crate::checks::BodyView;
 use dm_syntax::{
     numeric_form::{numeric_form, NumericForm},
@@ -127,13 +128,20 @@ pub fn analyze<'a>(view: &'a BodyView<'_>) -> Result<Walk<'a>, String> {
 pub fn archived<'a>(body: &'a ArchivedBody<'_>) -> Result<Walk<'a>, String> {
     walk(body.statement_body())
 }
-fn walk(syntax: &StatementBody) -> Result<Walk<'_>, String> {
+/// The SAME pinned reachability walk issues evaluated roots. No parallel CFG
+/// or procedure parser is created. Observers must stage output until success.
+pub fn analyze_with_observer<'a>(
+    view: &BodyView<'a>,
+    observer: &mut impl EvaluatedObserver<'a>,
+) -> Result<Walk<'a>, String> {
+    let syntax = view.syntax();
     if !syntax.syntax_complete() {
         return Err("checker traversal has incomplete native syntax".into());
     }
     let mut walker = Walker {
         syntax,
         events: Vec::new(),
+        observer: Some(observer),
     };
     let flow = walker.block(&syntax.parsed().statements, true)?;
     Ok(Walk {
@@ -141,11 +149,46 @@ fn walk(syntax: &StatementBody) -> Result<Walk<'_>, String> {
         events: walker.events,
     })
 }
-struct Walker<'a> {
+pub fn archived_with_observer<'a>(
+    body: &'a ArchivedBody<'_>,
+    observer: &mut impl EvaluatedObserver<'a>,
+) -> Result<Walk<'a>, String> {
+    let syntax = body.statement_body();
+    if !syntax.syntax_complete() {
+        return Err("checker traversal has incomplete native syntax".into());
+    }
+    let mut walker = Walker {
+        syntax,
+        events: Vec::new(),
+        observer: Some(observer),
+    };
+    let flow = walker.block(&syntax.parsed().statements, true)?;
+    Ok(Walk {
+        flow,
+        events: walker.events,
+    })
+}
+fn walk(syntax: &StatementBody) -> Result<Walk<'_>, String> {
+    if !syntax.syntax_complete() {
+        return Err("checker traversal has incomplete native syntax".into());
+    }
+    let mut walker = Walker {
+        syntax,
+        events: Vec::new(),
+        observer: None,
+    };
+    let flow = walker.block(&syntax.parsed().statements, true)?;
+    Ok(Walk {
+        flow,
+        events: walker.events,
+    })
+}
+struct Walker<'a, 'o> {
     syntax: &'a StatementBody,
     events: Vec<Event<'a>>,
+    observer: Option<&'o mut dyn EvaluatedObserver<'a>>,
 }
-impl<'a> Walker<'a> {
+impl<'a> Walker<'a, '_> {
     fn block(
         &mut self,
         statements: &'a [Statement],
@@ -181,38 +224,132 @@ impl<'a> Walker<'a> {
             at,
         });
     }
+    fn scoped<T>(
+        &mut self,
+        kind: ScopeKind,
+        run: impl FnOnce(&mut Self) -> Result<T, String>,
+    ) -> Result<T, String> {
+        if let Some(observer) = self.observer.as_deref_mut() {
+            observer.enter_scope(kind);
+        }
+        let result = run(self);
+        if let Some(observer) = self.observer.as_deref_mut() {
+            observer.leave_scope(kind);
+        }
+        result
+    }
+    fn evaluated(&mut self, expression: &'a Expr) -> Result<(), String> {
+        if let Some(observer) = self.observer.as_deref_mut() {
+            observer.expression(expression)?;
+        }
+        Ok(())
+    }
+    fn binding(
+        &mut self,
+        binding: &'a str,
+        value: Option<&'a Expr>,
+        always_untyped: bool,
+        at: Span,
+    ) -> Result<(), String> {
+        if let Some(observer) = self.observer.as_deref_mut() {
+            observer.binding(binding, value, always_untyped, at)?;
+        }
+        Ok(())
+    }
     fn statement(&mut self, statement: &'a Statement) -> Result<ControlFlow, String> {
+        if matches!(
+            &statement.kind,
+            StatementKind::Return(_)
+                | StatementKind::Throw(_)
+                | StatementKind::Var { .. }
+                | StatementKind::Assign { .. }
+                | StatementKind::Call(_)
+                | StatementKind::Expression(_)
+                | StatementKind::Set { .. }
+                | StatementKind::Goto(_)
+                | StatementKind::Break
+                | StatementKind::BreakLabel(_)
+                | StatementKind::Continue
+                | StatementKind::ContinueLabel(_)
+        ) {
+            if let Some(observer) = self.observer.as_deref_mut() {
+                observer.leaf(statement)?;
+            }
+        }
         match &statement.kind {
             StatementKind::Return(_) => Ok(ControlFlow {
                 returns: true,
                 ..Default::default()
             }),
             StatementKind::If { .. } => self.if_chain(statement),
-            StatementKind::While { body, .. } => {
-                self.block(body, false)?;
+            StatementKind::While { condition, body } => self.scoped(ScopeKind::While, |this| {
+                this.evaluated(condition)?;
+                this.block(body, false)?;
                 Ok(ControlFlow::default())
-            }
-            StatementKind::DoWhile { body, .. } => {
-                let state = self.block(body, false)?;
-                Ok(if state.terminates_loop() {
-                    state
-                } else {
-                    ControlFlow::default()
-                })
-            }
-            StatementKind::For { control, body } => {
-                if let ForControl::CStyle {
-                    condition: Some(condition),
-                    ..
-                } = control
-                {
-                    self.events.push(Event::LoopCondition {
-                        expression: condition,
-                        at: statement.span,
-                    });
-                    self.condition(ConditionKind::ForTest, condition, statement.span);
+            }),
+            StatementKind::DoWhile { body, condition } => self.scoped(ScopeKind::DoWhile, |this| {
+                let state = this.block(body, false)?;
+                if state.terminates_loop() {
+                    return Ok(state);
                 }
-                let state = self.block(body, false)?;
+                this.evaluated(condition)?;
+                Ok(ControlFlow::default())
+            }),
+            StatementKind::For { control, body } => self.scoped(ScopeKind::For, |this| {
+                match control {
+                    ForControl::CStyle {
+                        initializer,
+                        condition,
+                        step,
+                    } => {
+                        if let (Some(observer), Some(initializer)) =
+                            (this.observer.as_deref_mut(), initializer)
+                        {
+                            observer.initializer(initializer, statement.header_span)?;
+                        }
+                        if let Some(condition) = condition {
+                            this.events.push(Event::LoopCondition {
+                                expression: condition,
+                                at: statement.span,
+                            });
+                            this.condition(ConditionKind::ForTest, condition, statement.span);
+                            this.evaluated(condition)?;
+                        }
+                        // Pinned visitor evaluates inc BEFORE visiting the body.
+                        if let (Some(observer), Some(step)) = (this.observer.as_deref_mut(), step) {
+                            observer.statement_expression(step)?;
+                        }
+                    }
+                    ForControl::Each { binding, iterable } => {
+                        this.evaluated(iterable)?;
+                        this.binding(binding, None, false, statement.header_span)?;
+                    }
+                    ForControl::Pair {
+                        key_binding,
+                        value_binding,
+                        iterable,
+                    } => {
+                        this.evaluated(iterable)?;
+                        this.binding(key_binding, None, false, statement.header_span)?;
+                        this.binding(value_binding, None, true, statement.header_span)?;
+                    }
+                    ForControl::Range {
+                        binding,
+                        start,
+                        end,
+                        step,
+                    } => {
+                        this.evaluated(end)?;
+                        if let Some(step) = step {
+                            this.evaluated(step)?;
+                        }
+                        this.binding(binding, Some(start), false, statement.header_span)?;
+                    }
+                    ForControl::All { declaration } => {
+                        this.binding(declaration, None, false, statement.header_span)?;
+                    }
+                }
+                let state = this.block(body, false)?;
                 if let ForControl::Range {
                     start, end, step, ..
                 } = control
@@ -222,34 +359,68 @@ impl<'a> Walker<'a> {
                     }
                 }
                 Ok(ControlFlow::default())
-            }
+            }),
             StatementKind::Switch {
                 selector,
                 cases,
                 else_branch,
             } => {
                 self.condition(ConditionKind::Switch, selector, statement.span);
+                self.evaluated(selector)?;
                 let mut all = ControlFlow::all_true();
                 for case in cases {
-                    all.merge_false(self.block(&case.body, false)?);
+                    let state = self.scoped(ScopeKind::SwitchCase, |this| {
+                        for alternative in &case.alternatives {
+                            match alternative {
+                                dm_syntax::SwitchAlternative::Exact(value) => {
+                                    this.evaluated(value)?
+                                }
+                                dm_syntax::SwitchAlternative::Range(start, end) => {
+                                    this.evaluated(start)?;
+                                    this.evaluated(end)?;
+                                }
+                            }
+                        }
+                        this.block(&case.body, false)
+                    })?;
+                    all.merge_false(state);
                 }
                 if else_branch.is_empty() {
                     all.no_else();
                 } else {
-                    all.merge_false(self.block(else_branch, false)?);
+                    all.merge_false(self.scoped(ScopeKind::SwitchDefault, |this| {
+                        this.block(else_branch, false)
+                    })?);
                     all.finalize();
                 }
                 Ok(all)
             }
-            StatementKind::Spawn { body, .. } | StatementKind::Label { body, .. } => {
-                self.block(body, false)?;
+            StatementKind::Spawn { delay, body } => {
+                self.scoped(ScopeKind::Spawn, |this| {
+                    if let Some(delay) = delay {
+                        this.evaluated(delay)?;
+                    }
+                    this.block(body, false)
+                })?;
+                Ok(ControlFlow::default())
+            }
+            StatementKind::Label { body, .. } => {
+                self.scoped(ScopeKind::Label, |this| this.block(body, false))?;
                 Ok(ControlFlow::default())
             }
             StatementKind::Try {
-                body, catch_body, ..
+                body,
+                catch_binding,
+                catch_header_span,
+                catch_body,
             } => {
-                self.block(body, false)?;
-                self.block(catch_body, false)?;
+                self.scoped(ScopeKind::Try, |this| this.block(body, false))?;
+                self.scoped(ScopeKind::Catch, |this| {
+                    if let Some(observer) = this.observer.as_deref_mut() {
+                        observer.catch_binding(catch_binding.as_deref(), *catch_header_span)?;
+                    }
+                    this.block(catch_body, false)
+                })?;
                 Ok(ControlFlow::default())
             }
             StatementKind::Break | StatementKind::BreakLabel(_) => Ok(ControlFlow {
@@ -281,7 +452,6 @@ impl<'a> Walker<'a> {
             StatementKind::Unsupported => {
                 Err("unsupported native statement in checker traversal".into())
             }
-            // Pinned Throw and Goto intentionally do not terminate a block.
             StatementKind::Throw(_)
             | StatementKind::Goto(_)
             | StatementKind::Set { .. }
@@ -313,7 +483,10 @@ impl<'a> Walker<'a> {
                     at,
                 });
             }
-            let state = self.block(then_branch, false)?;
+            let state = self.scoped(ScopeKind::IfArm, |this| {
+                this.evaluated(condition)?;
+                this.block(then_branch, false)
+            })?;
             match truthy(condition)? {
                 Some(value) => {
                     self.events.push(Event::IfDeterminate {
@@ -347,7 +520,9 @@ impl<'a> Walker<'a> {
                         at: else_branch[0].header_span,
                     });
                 }
-                all.merge_false(self.block(else_branch, false)?);
+                all.merge_false(
+                    self.scoped(ScopeKind::ElseArm, |this| this.block(else_branch, false))?,
+                );
                 all.finalize();
             }
             return Ok(all);

@@ -5,8 +5,8 @@ use super::SourceSnapshot;
 // re-link the retired frontend into the native host.
 const _: () = assert!(!dq_analyze::LEGACY_SEMANTICS_ENABLED,
     "native compiler host requires dq-analyze without legacy-sem");
-use dq_analyze::captured_raw_policy::{CapturedRawPolicy, Configuration, RAW_FILE_LINTS};
-use std::{io, path::Path};
+use dq_analyze::captured_raw_policy::RAW_FILE_LINTS;
+use std::{io, path::Path, sync::Arc};
 impl SourceSnapshot {
     pub(crate) fn write_native_raw_policy_fixture(
         &self,
@@ -37,17 +37,11 @@ impl SourceSnapshot {
             return Err(io::Error::other("raw policy receipt differs from snapshot"));
         }
         let bytes = captured.configuration_bytes(configuration)?;
-        let config = match bytes {
-            Some(bytes) => Configuration::Captured(bytes),
-            None => Configuration::ProvenMissing,
-        };
-        let runner = CapturedRawPolicy::capture(root, captured.policy(), config)
-            .map_err(io::Error::other)?;
-        let results = runner
-            .scan(lints, || {
-                crate::daemon::control::checkpoint().map_err(|error| error.to_string())
-            })
-            .map_err(io::Error::other)?;
+        let queries=self.native_raw_queries.as_ref().ok_or_else(||io::Error::other("compiler raw-policy query graph unavailable"))?;
+        let input=queries.raw_cohort(Arc::clone(captured),root,configuration)?;
+        let results=queries.raw_findings(&input,lints)?;
+        results.validate_for(&input)?;
+        let results=results.runs;
         crate::daemon::control::checkpoint()?;
         let results=results.into_iter().map(|run|serde_json::json!({"name":run.name,"sites":run.run.sites,"allow_used":run.allow_used,"notes":run.run.notes})).collect::<Vec<_>>();
         // Write only after the complete admitted cohort succeeds; never emit

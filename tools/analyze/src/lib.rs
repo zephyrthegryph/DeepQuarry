@@ -39,6 +39,8 @@ pub mod strip;
 pub mod tree;
 #[cfg(feature="native-policy")]
 pub mod captured_raw_policy;
+#[cfg(feature="native-policy")]
+pub mod captured_raw_file;
 pub mod util;
 
 pub mod native_policy_roster;

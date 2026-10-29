@@ -305,6 +305,57 @@ class Smoke:
         assert len(control) == 1, pages
         return self.query(project, engine, pins, named_questions(project, first[0]["ordinal"], control[0]["ordinal"]))
 
+    def semantic_bodies(self, project: Path, engine: Path, pins: dict) -> dict:
+        pages = self.query(project, engine, pins, [{"BodyContextsPage": {"start": 0, "limit": 128}}])
+        assert len(pages) == 1 and pages[0]["next_cursor"] is None, pages
+        return {body["source"]["line"]: body["ordinal"] for body in pages[0]["items"]
+                if Path(body["source"]["path"]).name == "smoke_semantics.dm"}
+
+    def semantic_question(self, project: Path, ordinal: int, family: str) -> dict:
+        return {"NativeConfiguredChecker": {"ordinal": ordinal, "family": family,
+                "environment": str(project), "configuration": None}}
+
+    def observe_compiled_semantics(self, project: Path, engine: Path, pins: dict) -> list[dict]:
+        bodies = self.semantic_bodies(project, engine, pins)
+        assert set(bodies) == {1, 3, 5, 9}, bodies
+        questions = [self.semantic_question(project, bodies[3], "proc_has_no_parent"),
+                     self.semantic_question(project, bodies[5], "undefined_proc")]
+        rows = self.query(project, engine, pins, questions)
+        assert len(rows) == 2 and all(row["row"] == "source_native_configured_checker" for row in rows), rows
+        assert [row["family"] for row in rows] == ["proc_has_no_parent", "undefined_proc"], rows
+        assert all(row["diagnostics"] == [] and row["full_checker_parity"] is False for row in rows), rows
+        bad = self.query(project, engine, pins,
+                         [self.semantic_question(project, bodies[9], "undefined_proc")], success=False)
+        assert bad.returncode != 0 and "typed/stored/array" in bad.stderr, bad.stderr
+        return rows
+
+    def observe_prepared_semantic_errors(self, project: Path, engine: Path) -> dict:
+        source = project.parent / "smoke_semantics.dm"
+        original = source.read_bytes()
+        try:
+            # Missing callees are not falsely claimed to have compiled. The
+            # existing PrepareQuery path issues real current host/ABI owners
+            # without lowering bodies or publishing a DMB.
+            source.write_text("/datum/semantic_missing/proc/probe()\n"
+                              "    missing_outer(missing_hidden())\n"
+                              "    return ..(missing_parent_hidden())\n", encoding="utf-8")
+            pins = self.prepare(project, engine)
+            bodies = self.semantic_bodies(project, engine, pins)
+            assert set(bodies) == {1}, bodies
+            rows = self.query(project, engine, pins,
+                [self.semantic_question(project, bodies[1], "proc_has_no_parent"),
+                 self.semantic_question(project, bodies[1], "undefined_proc")])
+            assert [row["family"] for row in rows] == ["proc_has_no_parent", "undefined_proc"], rows
+            assert all(row["full_checker_parity"] is False and len(row["diagnostics"]) == 1 for row in rows), rows
+            assert rows[0]["diagnostics"][0]["message"] == "proc has no parent: /datum/semantic_missing/proc/probe", rows
+            assert rows[0]["diagnostics"][0]["severity"] == "error", rows
+            assert rows[1]["diagnostics"][0]["message"] == 'undefined proc: "missing_outer" on /datum/semantic_missing', rows
+            assert rows[1]["diagnostics"][0]["severity"] == "error", rows
+            assert rows[1]["diagnostics"][0]["line"] == 2, rows
+            return {"pins": pins, "rows": rows, "lowered_or_published": False}
+        finally:
+            source.write_bytes(original)
+
     def execute(self) -> None:
         fixture = self.repository / "tools/dmb/fixtures/unified_checks"
         # Keep request/result logs and published artifacts outside observed source
@@ -318,6 +369,12 @@ class Smoke:
         project.write_bytes(project.read_bytes() + b'#include "smoke_records.dm"\n')
         (source_root / "smoke_records.dm").write_text(
             "/datum/record\n    proc/rebuild()\n        return 1\n    proc/get_value()\n        return 1\n\n/proc/smoke_control()\n    if(1)\n        return 1\n    return 2\n", encoding="utf-8")
+        project.write_bytes(project.read_bytes() + b'#include "smoke_semantics.dm"\n')
+        (source_root / "smoke_semantics.dm").write_text(
+            "/datum/semantic_base/proc/read(value)\n    return value\n"
+            "/datum/semantic_base/child/read(value)\n    return ..(value)\n"
+            "/datum/semantic_base/proc/probe(value)\n    if(value)\n        read(value)\n    return 1\n"
+            "/datum/semantic_base/proc/unsupported()\n    var/datum/typed\n    return 1\n", encoding="utf-8")
         (source_root / "lint_scopes.toml").write_text(
             "[lint.base_vars.lists]\nrecord_accessor_prefixes=['get_']\n", encoding="utf-8")
         (source_root / "SpacemanDMM.toml").write_text(
@@ -355,6 +412,7 @@ class Smoke:
         assert_named_findings(named_compiled)
         assert_raw_findings(named_compiled)
         assert_control_batch(named_compiled)
+        compiled_semantics = self.observe_compiled_semantics(project, engine, compiled)
         # Still the same compiled owner: a discovery-less policy read may not
         # omit the exact capture pin merely because its source pin is current.
         no_policy = {key: value for key, value in compiled.items() if key != "policy_revision"}
@@ -392,8 +450,10 @@ class Smoke:
         (source_root / "first.dm").write_bytes(original)
         restored = self.prepare(project, engine)
         assert_findings(self.observe(project, engine, restored), True)
+        prepared_semantics = self.observe_prepared_semantic_errors(project, engine)
         (self.root / "evidence.json").write_text(json.dumps({
             "namespace": self.namespace, "compiler_identity": descriptor["compiler_identity"],
+            "compiled_semantic_rows": compiled_semantics, "prepared_semantic_errors": prepared_semantics,
             "compiled": compiled, "compiled_client_capture_seconds": self.compile_capture_seconds, "compiled_named_findings": named_compiled, "initial": first, "policy_only": policy_changed, "edited": edited, "restored": restored,
             "bounded_policy_only": True, "calls": self.calls,
         }, indent=2), encoding="utf-8")

@@ -502,3 +502,42 @@ Per-file raw-policy QueryDb caching and original-owner checker-context expansion
 are the next unverified cohort. Production tool defaults remain unchanged;
 full policy/generator migration, checker inference, combined cutover and actual
 cold/warm/edited performance proofs remain outstanding.
+
+### Original-owner checker and per-file policy graph checkpoint (2026-10-28)
+
+Configured parent-call and bounded undefined-call policies now borrow the
+original retained compiler EngineHost, immutable tree, primary BodyArchive and
+existing QueryDb. Default-declining resolver provenance rejects foreign or
+unproven owners even when bytes and answer worlds agree. No decorated tree,
+second symbol inventory or model serialization is used. Four original-owner
+context tests and four actual PrepareQuery semantic-policy tests pass.
+
+The existing QueryDb now owns per-file results for the 27 admitted raw policies,
+shared file views and interpreted scope dependencies. Eleven graph tests cover
+warm zero-recomputation/owner reuse, exact one-file invalidation, scope early
+cutoff, configuration absence/presence retraction, concurrent pinned cohorts,
+compiler-source revision safety, eviction, budgets and issuance. Four endpoint
+and five adapter tests pass. These remain explicit bounded fixture findings,
+not full-workspace baseline judgment or certified peak-memory bounds.
+
+The expanded real IPC test passes in 18.66 seconds, including successful compiled
+semantic queries and negative findings through the real PrepareQuery owner.
+The independent pinned checker comparisons add 40 exact undefined-call
+observations: 135 diagnostics across twenty fixtures are now covered. This
+still does not certify other checker inference or complete grammar coverage.
+
+Analyzer publication and ENGINE_HASH now account for local Cargo dependency
+sources and declared external inputs. Six Bun closure/parser tests and five
+Rust closure tests pass; malformed TOML and invalid UTF8 refuse identity. One
+strict Python TOML batch validates the captured documents; Bun's permissive
+parser is only provisional discovery. Missing Cargo config watches deliberately
+favor correctness over warm-build efficiency, which remains unmeasured.
+The compiler cache also includes its new Analyze dependency and shared Rust
+sources; four isolated Git-fixture tests pass without publishing a compiler.
+
+Earlier failing tests exposed invalid fixture engine/listing receipts and
+incorrectly reconstructed Windows query keys. Repairs use the actual retained
+engine and issued paths; admission/ownership guards were not weakened.
+Production tool defaults remain unchanged. Complete semantic policies,
+generators, inference/SCC coverage, thin-client cutover and end-to-end
+performance proofs remain outstanding.

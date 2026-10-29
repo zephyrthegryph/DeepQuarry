@@ -361,11 +361,17 @@ pub fn pinned_catalog() -> Result<Arc<CheckerBuiltinCatalog>, CheckerBuiltinErro
     CATALOG.get_or_init(|| import().map(Arc::new)).clone()
 }
 impl SemanticTree {
-    /// Attach fixed checker metadata to this same semantic owner. Source and
-    /// runtime intrinsic records are never replaced. Incompatible hierarchy is
-    /// unsupported rather than a request to create a second checker object tree.
-    pub fn with_pinned_checker_builtins(mut self) -> Result<Self, CheckerBuiltinError> {
+    /// Validate the fixed profile against this ORIGINAL compiler owner. The
+    /// provider is immutable and always available for its exact hash; there is
+    /// no absent-to-attached state and no source identity/world mutation.
+    pub fn validate_checker_builtin_profile(
+        &self,
+        profile: PackedU128,
+    ) -> Result<(), CheckerBuiltinError> {
         let catalog = pinned_catalog()?;
+        if profile != catalog.profile {
+            return Err(CheckerBuiltinError::Shape("foreign checker profile"));
+        }
         for &(owner, parent) in data::PARENTS {
             let owner = SymbolId::of(owner);
             let id = self
@@ -375,11 +381,6 @@ impl SemanticTree {
                 return Err(CheckerBuiltinError::ParentMismatch(owner));
             }
         }
-        if self.checker_builtin_profile() == Some(catalog.profile) {
-            return Ok(self);
-        }
-        // Reject collisions against existing source names, without interning
-        // fixed builtin names into or COW-copying the shared source dictionary.
         for (&id, &spelling) in &catalog.spellings {
             if self
                 .symbols
@@ -391,29 +392,21 @@ impl SemanticTree {
                 )));
             }
         }
-        let mut identity = b"dm-tree-checker-builtin-profile-v1\0".to_vec();
-        identity.extend_from_slice(&self.identity.to_le_bytes());
-        identity.extend_from_slice(&catalog.profile.to_le_bytes());
-        self.identity = xxhash_rust::xxh3::xxh3_128(&identity);
-        self.checker_catalog = Some(catalog);
-        Ok(self)
+        Ok(())
     }
     pub fn checker_builtin_profile(&self) -> Option<PackedU128> {
-        self.checker_catalog.as_ref().map(|c| c.profile)
+        let profile = pinned_catalog().ok()?.profile;
+        self.validate_checker_builtin_profile(profile).ok()?;
+        Some(profile)
     }
-    /// Fixed spelling projection, authorized only by its attached checker
-    /// profile. No source-symbol presence or compiler-runtime namespace changes.
+    /// Fixed spelling projection. No source symbol is interned or copied.
     pub fn checker_builtin_spelling(
         &self,
         profile: PackedU128,
         symbol: SymbolId,
     ) -> Option<&'static str> {
-        self.checker_catalog
-            .as_ref()
-            .filter(|c| c.profile == profile)?
-            .spellings
-            .get(&symbol)
-            .copied()
+        self.validate_checker_builtin_profile(profile).ok()?;
+        pinned_catalog().ok()?.spellings.get(&symbol).copied()
     }
     pub(crate) fn resolve_checker_builtin(
         &self,
@@ -424,22 +417,12 @@ impl SemanticTree {
         kind: MemberKind,
         presence: bool,
     ) -> M {
-        let Some(catalog) = self
-            .checker_catalog
-            .as_ref()
-            .filter(|c| c.profile == profile)
-        else {
+        if self.validate_checker_builtin_profile(profile).is_err() {
+            return M::Unsupported(query);
+        }
+        let Ok(catalog) = pinned_catalog() else {
             return M::Unsupported(query);
         };
-        // Retained/source hierarchy edits cannot keep an old compatibility proof.
-        for &(owner, parent) in data::PARENTS {
-            let Some(id) = self.lookup_type(SymbolId::of(owner)) else {
-                return M::Unsupported(query);
-            };
-            if self.parent(id).map(|id| self.types[id.index()].path) != parent.map(SymbolId::of) {
-                return M::Unsupported(query);
-            }
-        }
         let Some(mut current) = self.lookup_type(owner) else {
             return M::Unsupported(query);
         };

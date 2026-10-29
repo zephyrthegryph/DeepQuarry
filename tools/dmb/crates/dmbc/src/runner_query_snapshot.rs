@@ -55,6 +55,7 @@ pub(crate) struct SourceSnapshot {
     native_schema_markers: Result<dm_analysis::value_schemas::Schemas, String>,
     native_value_input: Option<Arc<dm_analysis::value_query::ArchiveValueInput>>,
     native_value_queries: Option<Arc<dyn dm_analysis::value_query::ArchiveValueQueries>>,
+    native_raw_queries: Option<Arc<crate::query_db::QueryDb>>,
 }
 struct ReplayProof {
     inputs: crate::input_snapshot::InputSnapshot,
@@ -142,6 +143,7 @@ impl SourceSnapshot {
     /// Detach optional heavy source/selection owners under idle pressure.
     /// Existing request handles remain immutable; pinned lightweight rows survive.
     pub(crate) fn release_body_queries(&mut self) {
+        if let Some(queries)=self.native_raw_queries.take(){queries.release_raw_policy_cache();}
         self.body_archive = None;
         self.native_policy_inputs = None;
         self.native_value_input = None;
@@ -160,6 +162,12 @@ impl SourceSnapshot {
         }
         if let Some(archive) = &self.body_archive {
             census.body_archive(archive);
+        }
+        if let Some(queries)=&self.native_raw_queries {
+            let stats=queries.raw_policy_cache_stats();
+            census.unknown("query_snapshot.native_raw_query_cache",&format!(
+                "{} nodes; input/params estimate {} bytes; derived estimate {} bytes; cache admission estimates only, private common source-view/config/result allocations not counted exactly",
+                stats.nodes,stats.input_and_param_estimate,stats.derived_estimate));
         }
         if let Some(policy) = &self.native_policy_inputs {
             census.policy_capture(policy);
@@ -300,6 +308,7 @@ impl SourceSnapshot {
             native_schema_markers,
             native_value_input,
             native_value_queries: None,
+            native_raw_queries: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             body_archive,
             native_policy_inputs: policy,
@@ -447,6 +456,7 @@ impl QueryAttempt {
             }
         }
         let mut snapshot = SourceSnapshot::capture_policy(frontend, policy);
+        snapshot.native_raw_queries = Some(Arc::clone(&queries));
         snapshot.native_value_queries = Some(queries);
         self.state
             .lock()

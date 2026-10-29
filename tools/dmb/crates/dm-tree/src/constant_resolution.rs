@@ -328,6 +328,13 @@ impl ScalarSnapshot {
 }
 
 impl Resolver for ScalarSnapshot {
+    fn source_owner(&self) -> Option<*const ()> {
+        // The retained native source tree is the origin, not the scalar overlay.
+        self.original_domain()
+            .then(|| Resolver::source_owner(self.issued_domain.source.as_ref()))
+            .flatten()
+    }
+
     fn observes_reads(&self) -> bool {
         false
     }

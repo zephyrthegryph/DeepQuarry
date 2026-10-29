@@ -1,0 +1,15 @@
+/datum/example/proc/known(value)
+    return value
+/datum/example/proc/probe(a, datum/typed)
+    missing_outer(missing_hidden_outer())
+    known(missing_visible())
+    a.not_known(missing_hidden_receiver())
+    typed.not_declared(missing_hidden_typed())
+    a:dynamic(missing_visible_dynamic())
+    var/local = missing_initializer()
+    known(value = missing_named())
+    list(text = missing_list_named())
+    var/message = "result [missing_in_string()]"
+    global.missing_global(missing_hidden_global())
+    missing_left() << missing_right()
+    return ..(missing_hidden_parent())

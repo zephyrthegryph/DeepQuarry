@@ -236,3 +236,183 @@ fn invalid_utf8_scopes_match_analyze_read_failure_default_without_lossy_repair()
     let row: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(row["findings"].as_array().unwrap().len(), 2);
 }
+
+// Same native compiler source owner, engine receipt and successful preparation.
+fn semantic_snapshot(source: &str, checker: Option<&[u8]>) -> SourceSnapshot {
+    let root = root();
+    let mut host = crate::runner_host::BuildHost::one_shot();
+    let engine = host
+        .engine(
+            root.join("project.dme"),
+            Default::default(),
+            true,
+            include_bytes!("../../../fixtures/native_template.bin").to_vec(),
+        )
+        .unwrap();
+    let mut files = BTreeMap::from([(root.join("project.dme"), source.as_bytes().to_vec())]);
+    if let Some(checker) = checker {
+        files.insert(root.join("SpacemanDMM.toml"), checker.to_vec());
+    }
+    let inputs = RecordingInputs::new(Memory(files), 1);
+    let db = Arc::new(crate::query_db::QueryDb::default());
+    let frontend = dm_tree::frontend::FrontendRevision::new(
+        dm_tree::frontend::build_with_config(
+            &root.join("project.dme"),
+            &inputs,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(engine.frontend_seed()),
+                observer: None,
+            },
+        )
+        .unwrap()
+        .with_body_queries(db.clone()),
+    );
+    let intent = PolicyInputRequest {
+        files: vec![PolicyInputFile {
+            path: root.join("SpacemanDMM.toml"),
+            role: PolicyInputRole::Configuration,
+            required: false,
+        }],
+        search_folders: vec![],
+    }
+    .admit()
+    .unwrap();
+    let captured = Arc::new(
+        policy_capture::capture(&frontend, &inputs, &intent.capture_files(), &[])
+            .unwrap()
+            .bind_request(&intent)
+            .unwrap(),
+    );
+    let state = Arc::new(Mutex::new(
+        crate::runner_host::query_snapshot::QueryState::default(),
+    ));
+    let mut attempt = crate::runner_host::query_snapshot::QueryAttempt::new(state.clone(), true);
+    attempt
+        .capture_with_queries(&frontend, db, Some(captured))
+        .unwrap();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let prepared = crate::request_runner::runner_analysis::prepare_query(
+        &frontend,
+        Some(&engine),
+        None,
+        &executor,
+        None,
+        987,
+        &mut attempt,
+        true,
+    )
+    .unwrap();
+    assert!(matches!(
+        prepared,
+        crate::request::BuildOutcome::QueryPrepared { .. }
+    ));
+    attempt.finish_analyzed();
+    drop(attempt);
+    drop(frontend);
+    let result = state.lock().unwrap().snapshot.take().unwrap();
+    result
+}
+fn semantic_row(
+    snapshot: &SourceSnapshot,
+    ordinal: u32,
+    family: &str,
+) -> io::Result<serde_json::Value> {
+    let mut bytes = Vec::new();
+    snapshot.write_native_configured_checker(
+        ordinal,
+        family,
+        &root().join("project.dme"),
+        None,
+        &snapshot.tree,
+        &mut bytes,
+    )?;
+    serde_json::from_slice(&bytes).map_err(io::Error::other)
+}
+#[test]
+fn retained_semantic_parent_and_undefined_policies_use_same_prepared_source_owner() {
+    let snapshot = semantic_snapshot("/datum/example/proc/probe()\n    missing_outer(missing_hidden())\n    return ..(missing_parent_hidden())\n", None);
+    let tree = Arc::as_ptr(&snapshot.tree);
+    let archive = snapshot.body_archive.as_ref().unwrap();
+    let before = archive.parse(0).unwrap();
+    let parent = semantic_row(&snapshot, 0, "proc_has_no_parent").unwrap();
+    let undefined = semantic_row(&snapshot, 0, "undefined_proc").unwrap();
+    let after = archive.parse(0).unwrap();
+    assert!(std::ptr::eq(
+        before.statement_body(),
+        after.statement_body()
+    ));
+    assert!(std::ptr::eq(archive.tree(), tree));
+    for row in [&parent, &undefined] {
+        assert_eq!(row["full_checker_parity"], false);
+        assert_eq!(
+            row["semantic_revision"],
+            format!("{:032x}", snapshot.tree.identity())
+        );
+        assert_eq!(
+            row["policy_revision"],
+            format!("{:032x}", snapshot.policy_revision.unwrap())
+        );
+        assert_eq!(row["diagnostics"].as_array().unwrap().len(), 1);
+        assert_eq!(row["diagnostics"][0]["severity"], "error");
+    }
+    assert_eq!(
+        parent["diagnostics"][0]["message"],
+        "proc has no parent: /datum/example/proc/probe"
+    );
+    assert_eq!(
+        undefined["diagnostics"][0]["message"],
+        "undefined proc: \"missing_outer\" on /datum/example"
+    );
+    assert_eq!(undefined["diagnostics"][0]["line"], 2);
+}
+#[test]
+fn semantic_policies_preserve_real_tag_override_and_untagged_error_default() {
+    let snapshot = semantic_snapshot(
+        "/datum/example/proc/probe()\n    missing()\n    return ..()\n",
+        Some(b"[diagnostics]\nproc_has_no_parent='hint'\nundefined_proc='off'\n"),
+    );
+    let parent = semantic_row(&snapshot, 0, "proc_has_no_parent").unwrap();
+    let undefined = semantic_row(&snapshot, 0, "undefined_proc").unwrap();
+    assert_eq!(parent["diagnostics"][0]["severity"], "hint");
+    assert_eq!(undefined["diagnostics"][0]["severity"], "error");
+    assert_eq!(undefined["diagnostics"].as_array().unwrap().len(), 1);
+}
+#[test]
+fn semantic_host_unavailable_or_unsupported_body_never_becomes_false_clean() {
+    let syntactic_only = snapshot(None);
+    assert!(semantic_row(&syntactic_only, 0, "undefined_proc").is_err());
+    let unsupported = semantic_snapshot("/datum/example/proc/probe()\n    missing_earlier()\n    var/datum/typed\n    missing_later()\n", None);
+    let mut bytes = Vec::new();
+    assert!(unsupported
+        .write_native_configured_checker(
+            0,
+            "undefined_proc",
+            &root().join("project.dme"),
+            None,
+            &unsupported.tree,
+            &mut bytes
+        )
+        .is_err());
+    assert!(
+        bytes.is_empty(),
+        "partial findings escaped unsupported body"
+    );
+}
+#[test]
+fn semantic_endpoint_refuses_equal_but_foreign_compiled_tree() {
+    let a = semantic_snapshot("/datum/example/proc/probe()\n    return ..()\n", None);
+    let b = semantic_snapshot("/datum/example/proc/probe()\n    return ..()\n", None);
+    assert_eq!(a.tree.identity(), b.tree.identity());
+    assert!(a
+        .write_native_configured_checker(
+            0,
+            "proc_has_no_parent",
+            &root().join("project.dme"),
+            None,
+            &b.tree,
+            &mut Vec::new()
+        )
+        .is_err());
+}

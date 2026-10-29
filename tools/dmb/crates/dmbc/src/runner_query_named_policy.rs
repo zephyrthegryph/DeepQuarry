@@ -136,7 +136,9 @@ impl SourceSnapshot {
             | "set_has_no_effect"
             | "unreachable_code"
             | "loop_condition_determinate"
-            | "if_condition_determinate" => DiagnosticSeverity::Error,
+            | "if_condition_determinate"
+            | "proc_has_no_parent"
+            | "undefined_proc" => DiagnosticSeverity::Error,
             _ => {
                 return Err(io::Error::other(
                     "unsupported native configured-checker family",
@@ -150,11 +152,31 @@ impl SourceSnapshot {
             return Err(io::Error::other("body ordinal unavailable"));
         }
         let mut rows = Vec::new();
-        if let Some(level) = loaded.policy.register(Some(family), producer) {
+        // The old undefined-proc producer is UNTAGGED: arbitrary diagnostic
+        // map keys named undefined_proc must not disable or re-severity it.
+        let tag = if family == "undefined_proc" {
+            None
+        } else {
+            Some(family)
+        };
+        if let Some(level) = loaded.policy.register(tag, producer) {
             let body = archive
                 .parse(ordinal as usize)
                 .map_err(|error| io::Error::other(error.message))?;
             let found = match family {
+                "proc_has_no_parent" | "undefined_proc" => {
+                    let resolver = self.resolved.as_ref()
+                        .ok_or_else(|| io::Error::other("semantic checker requires the retained successful compile/analysis EngineHost"))?
+                        .checker_resolver(tree)?;
+                    let host = archive.body_query_host()
+                        .ok_or_else(|| io::Error::other("semantic checker compiler query graph unavailable"))?;
+                    let profile = tree.checker_builtin_profile()
+                        .ok_or_else(|| io::Error::other("compiled hierarchy incompatible with pinned checker builtin profile"))?;
+                    let context = dm_analysis::checker_context::CheckerContext::archived(archive, host, resolver, profile)
+                        .map_err(io::Error::other)?;
+                    if family == "proc_has_no_parent" { context.parent_archived(&body, Severity::Error) }
+                    else { context.undefined_archived(&body, true) }
+                }
                 "ambiguous_not_bitwise" => {
                     dm_analysis::checks::archived_ambiguous_not_bitwise(&body, Severity::Error)
                 }

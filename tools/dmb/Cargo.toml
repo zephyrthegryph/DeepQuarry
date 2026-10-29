@@ -9,6 +9,14 @@ license = "GPL-3.0-only"
 members = [".", "crates/*"]
 resolver = "2"
 
+# Sources included from outside each member package's directory. The generic
+# source-closure walker consumes this declaration, not a fixed crate roster.
+# Source contract: production include macros/build scripts may consume local
+# files only inside a path package or these explicit inputs. Declare any new
+# external input here before using it; dynamic undeclared input is unsupported.
+[workspace.metadata.dq-source-key]
+inputs = ["shared/test_scratch.rs"]
+
 [dependencies]
 dm-exec = { path = "crates/dm-exec" }
 dm-profile = { path = "crates/dm-profile" }

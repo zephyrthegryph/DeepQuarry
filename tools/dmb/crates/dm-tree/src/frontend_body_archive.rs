@@ -82,6 +82,16 @@ impl BodyArchive {
             .as_ref()
             .is_some_and(|queries| std::ptr::addr_eq(queries.host.as_ref(), host))
     }
+    /// Borrow the existing compiler syntax-query host. Never constructs a DB.
+    pub fn body_query_host(&self) -> Option<&dyn BodySyntaxQueries> {
+        self.body_queries
+            .as_ref()
+            .map(|queries| queries.host.as_ref())
+    }
+    /// Existing expanded arena, used only for primary-issued selector origins.
+    pub fn expanded_source(&self) -> &str {
+        self.source.as_str()
+    }
     /// Borrow the same immutable semantic owner captured from the compiler.
     pub fn tree(&self) -> &SemanticTree {
         &self.tree

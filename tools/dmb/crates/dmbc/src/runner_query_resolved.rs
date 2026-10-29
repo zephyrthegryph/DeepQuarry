@@ -19,6 +19,13 @@ impl ResolverOwner {
     }
 }
 impl dm_ir::Resolver for ResolverOwner {
+    fn source_owner(&self) -> Option<*const ()> {
+        match self {
+            Self::Native(owner) => owner.source_owner(),
+            Self::Analysis(owner) => owner.source_owner(),
+        }
+    }
+
     fn observes_reads(&self) -> bool {
         match self {
             Self::Native(owner) => owner.observes_reads(),
@@ -76,6 +83,24 @@ impl ResolvedContext {
                 &self.resolver.host().shared_source().source.tree,
                 &frontend.snapshot.tree,
             )
+    }
+    /// Same successful compilation's EngineHost; never reconstruct a host from
+    /// exported declarations or accept an equal-but-foreign source owner.
+    pub(super) fn checker_resolver(
+        &self,
+        tree: &dm_tree::SemanticTree,
+    ) -> io::Result<&dyn Resolver> {
+        if !std::ptr::eq(self.startup.plan().source.tree.as_ref(), tree)
+            || !std::ptr::eq(
+                self.resolver.host().shared_source().source.tree.as_ref(),
+                tree,
+            )
+        {
+            return Err(io::Error::other(
+                "checker semantic resolver belongs to another compiled source owner",
+            ));
+        }
+        Ok(&self.resolver)
     }
     pub(super) fn write_queries(
         &self,

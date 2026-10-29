@@ -255,23 +255,41 @@ pub fn check_in_profile(
     severity: Severity,
 ) -> Result<Vec<Diagnostic>, String> {
     let view = BodyView::new(frontend, body)?;
+    check_issued_statement_body(
+        &frontend.snapshot.tree,
+        body.occurrence().member,
+        view.syntax(),
+        resolver,
+        profile,
+        severity,
+    )
+}
+
+/// Caller authenticates primary issuance before entering this common borrowed
+/// visitor; live and retained archive paths execute the exact same policy.
+pub(crate) fn check_issued_statement_body(
+    tree: &SemanticTree,
+    member: MemberId,
+    syntax: &dm_tree::frontend::StatementBody,
+    resolver: &(impl Resolver + ?Sized),
+    profile: Option<PackedU128>,
+    severity: Severity,
+) -> Result<Vec<Diagnostic>, String> {
+    if !syntax.syntax_complete() {
+        return Err("checker body contains unsupported primary syntax".into());
+    }
     if severity == Severity::Disabled {
         return Ok(Vec::new());
     }
     let mut out = Vec::new();
     let mut fact = None;
-    for statement in &view.syntax().parsed().statements {
+    for statement in &syntax.parsed().statements {
         let mut expression = |expression: &Expr| -> Result<(), String> {
             if !contains_parent(expression)? {
                 return Ok(());
             }
             if fact.is_none() {
-                fact = Some(parent_fact_in_profile(
-                    &frontend.snapshot.tree,
-                    body.occurrence().member,
-                    resolver,
-                    profile,
-                )?);
+                fact = Some(parent_fact_in_profile(tree, member, resolver, profile)?);
             }
             let fact = fact.as_ref().unwrap();
             // Every parent call in this body has the same availability. Once a

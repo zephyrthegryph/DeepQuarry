@@ -1,6 +1,10 @@
 use super::*;
 
 impl dm_ir::Resolver for SemanticTree {
+    fn source_owner(&self) -> Option<*const ()> {
+        Some(std::ptr::from_ref(self).cast())
+    }
+
     fn observes_reads(&self) -> bool {
         false
     }
@@ -10,10 +14,6 @@ impl dm_ir::Resolver for SemanticTree {
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
         hash.update(b"dm-tree-answer-domain-v1\0");
         hash.update(&self.identity.to_le_bytes());
-        if let Some(profile) = self.checker_builtin_profile() {
-            hash.update(b"checker-builtin-profile\0");
-            hash.update(&profile.to_le_bytes());
-        }
         Some(hash.digest128())
     }
 

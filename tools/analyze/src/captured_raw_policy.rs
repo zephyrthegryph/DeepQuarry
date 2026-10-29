@@ -18,7 +18,7 @@ pub const MAX_FIXTURE_FILE_BYTES: usize = 256 * 1024;
 pub const MAX_FIXTURE_TOTAL_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_FIXTURE_SITES: usize = 10_000;
 pub const RAW_FILE_LINTS: &[&str] = &crate::native_policy_roster::LINT_NAMES;
-fn registry() -> &'static Registry {
+pub(crate) fn registry() -> &'static Registry {
     static REGISTRY:std::sync::OnceLock<Registry>=std::sync::OnceLock::new();
     REGISTRY.get_or_init(|| {
         let mut reg=Registry::default();
