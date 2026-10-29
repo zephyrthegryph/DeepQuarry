@@ -22,13 +22,11 @@ CAPABILITIES(/obj/item/spell/spawner/darkness)
 		..()
 
 /obj/item/spell/spawner/darkness
-	light_on = TRUE
 
 /obj/effect/temporary_effect/darkness
 	name = "darkness"
 	time_to_die = 2 MINUTES
 	invisibility = INVISIBILITY_ABSTRACT
-	light_on = TRUE
 
 CAPABILITIES(/obj/effect/temporary_effect/darkness)
 	configure(light_glow(range = 6, power = -20))

@@ -29,6 +29,7 @@
 
 CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	op("supermatter_wall_robot", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_robot)))
 	op("supermatter_wall_silicon_examine", remote(), priority(OP_PRIORITY_DEFAULT - 2), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
 	op("supermatter_wall_ghost_examine", observer(), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
@@ -79,7 +80,10 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	return OP_OK
 
 
-/turf/unsimulated/wall/supermatter/Bumped(atom/AM as mob|obj)
+/// The bump notice: `AM` walked into it (was Bumped()).
+/turf/unsimulated/wall/supermatter/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/AM = N.bumper
 	if(isliving(AM))
 		var/mob/living/M = AM
 		AM.visible_message(span_warning("\The [AM] slams into \the [src] inducing a resonance... [M.p_Their()] body starts to glow and catch flame before flashing into ash."),\

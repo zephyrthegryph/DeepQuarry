@@ -9,7 +9,10 @@
 	/// Relation view: the far end (another portal or a ghost-only portal_target).
 	var/obj/target
 
-/obj/structure/portal_event/Bumped(mob/M as mob|obj)
+/// The bump notice: `M` walked into it (was Bumped()).
+/obj/structure/portal_event/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/mob/M = N.bumper
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(M)
@@ -20,6 +23,7 @@
 	teleport(AM)
 
 CAPABILITIES(/obj/structure/portal_event)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	configure(movable_motion(unacidable = TRUE))
 	ref_one(nameof(target), /obj)
 	op("portal_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
@@ -216,9 +220,16 @@ CAPABILITIES(/obj/structure/portal_event)
 	density = TRUE
 	anchored = TRUE
 
-/obj/structure/portal_gateway/Bumped(mob/M as mob|obj)
+/// The bump notice: `M` walked into it (was Bumped()).
+/obj/structure/portal_gateway/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/mob/M = N.bumper
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
+	send_through(M)
+
+/// Sends `M` to a random event destination; an abductor destination also strips their belongings and drops them in the away abductors' room.
+/obj/structure/portal_gateway/proc/send_through(mob/M)
 	var/obj/effect/landmark/dest = pick(GLOB.eventdestinations)
 	if(dest)
 		M << 'sound/effects/phasein.ogg'

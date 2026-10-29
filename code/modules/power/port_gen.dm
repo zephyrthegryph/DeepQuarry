@@ -997,7 +997,6 @@ CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
 	layer = ABOVE_MOB_LAYER
 
 /obj/machinery/power/rtg/antimatter_core
-	light_on = TRUE
 
 /obj/machinery/power/rtg/antimatter_core/proc/asplod()
 	visible_message(span_danger("\The [src] ruptures!"), span_danger("You hear a loud reverberating bang!"))

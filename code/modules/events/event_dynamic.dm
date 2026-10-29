@@ -65,6 +65,8 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 		possibleEvents[event_type] = max(possibleEvents[event_type] - weight_modifier, 0)
 
 	var/picked_event = pickweight(possibleEvents)
+	if(!picked_event)
+		return // every weight is 0: no crew make any event eligible
 	GLOB.event_last_fired[picked_event] = TIME_NOW(CLOCK_WORLD)
 
 	// Debug code below here, very useful for testing so don't delete please.

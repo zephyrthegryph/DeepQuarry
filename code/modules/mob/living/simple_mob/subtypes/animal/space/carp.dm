@@ -263,7 +263,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/large/huge/vorny)
 	icon_dead = "holo4"
 	alpha = 127
 	// Hologram lighting, lit from the start (applied when it materializes).
-	light_on = TRUE
 	icon_gib = null
 	vore_icons = FALSE
 
