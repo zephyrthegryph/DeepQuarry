@@ -12,7 +12,6 @@
 
 	has_hands = TRUE
 
-	faction = "turkey"
 
 	response_help  = "hugs"
 	response_disarm = "pushes"
@@ -69,6 +68,7 @@
 	look.state(state)
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
+	configure(mob_rules(faction = "turkey"))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/turkey))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 100))
 	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))

@@ -48,4 +48,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dino)
 	vore_icons = SA_ICON_LIVING
 
 /mob/living/simple_mob/vore/aggressive/dino/virgo3b
-	faction = FACTION_VIRGO3B
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dino/virgo3b)
+	configure(mob_rules(faction = FACTION_VIRGO3B))

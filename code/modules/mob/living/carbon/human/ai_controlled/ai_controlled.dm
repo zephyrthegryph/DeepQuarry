@@ -87,7 +87,6 @@ TYPE_TABLE(/mob/living/carbon/human/ai_controlled, initial_species_copy, TRUE)
 	generate_gender = TRUE
 	identifying_gender = NEUTER
 
-	faction = FACTION_XENO
 
 	to_wear_helmet = /obj/item/clothing/head/helmet/dermal
 	to_wear_glasses = /obj/item/clothing/glasses/goggles
@@ -108,6 +107,7 @@ TYPE_TABLE(/mob/living/carbon/human/ai_controlled, initial_species_copy, TRUE)
 	to_wear_r_hand = null
 
 CAPABILITIES(/mob/living/carbon/human/ai_controlled/replicant)
+	configure(mob_rules(faction = FACTION_XENO))
 	body_effect(/datum/body_effect/homeothermic)
 
 

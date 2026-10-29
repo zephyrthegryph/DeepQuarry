@@ -15,7 +15,6 @@
 	size_multiplier = 1.5
 	movement_cooldown = 4
 
-	faction = FACTION_SYNDICATE
 
 	specialattackprojectile = /obj/item/projectile/energy/merc_boss
 
@@ -29,6 +28,9 @@
 		/obj/item/stock_parts/matter_bin = 80,
 		/obj/item/prop/deconstructable/gigacell = 100,
 		)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler)
+	configure(mob_rules(faction = FACTION_SYNDICATE))
 
 
 /obj/item/projectile/energy/merc_boss

@@ -10,7 +10,6 @@
 	icon_living = "flytrap"
 	icon_state = "flytrap"
 	icon_rest = "flytrap"
-	faction = FACTION_PLANTS
 	harm_intent_damage = 0
 	melee_damage_lower = 0
 	melee_damage_upper = 0
@@ -38,6 +37,7 @@
 	var/list/eaten_mobs
 
 CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
+	configure(mob_rules(faction = FACTION_PLANTS))
 	configure(living_rules(vore_capacity = 1))
 	ref_many(nameof(eaten_mobs))
 
@@ -93,7 +93,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 	icon_living = "pitcher"
 	icon_state = "pitcher"
 	icon_rest = "pitcher"
-	faction = FACTION_PLANTS
 	movement_cooldown = 0
 	harm_intent_damage = 0
 	melee_damage_lower = 0
@@ -123,6 +122,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 	projectilesound = SFX_EFFECTS_SLIME_SQUISH
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher)
+	configure(mob_rules(faction = FACTION_PLANTS))
 	configure(living_rules(vore_capacity = 1, appendage_color = "#03a319"))
 	configure(mob_kind(attack_cooldown = 5 SECONDS))
 

@@ -35,7 +35,6 @@
 	icon_dead = "carp_dead"
 	icon_gib = "carp_gib"
 
-	faction = FACTION_CARP
 	endurance = 25
 	movement_cooldown = -2
 	density = FALSE
@@ -82,6 +81,7 @@
 	)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	configure(mob_rules(faction = FACTION_CARP))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat, meat_amount = 5))
 	setup(PROC_REF(prepare_carp_colour))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -358,11 +358,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
 	name = "distant space carp"
 	endurance = 50
 
-	faction = "station"
 
 	var/body_color
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/station)
+	configure(mob_rules(faction = "station"))
 	rolls(nameof(body_color), pick_one(list("green", "red", "orange", "yellow", "blue")))
 	rolls(nameof(color), PROC_REF(roll_station_colour), from = list(nameof(body_color)))
 

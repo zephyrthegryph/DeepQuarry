@@ -15,7 +15,6 @@
 	icon_rest = "woof_rest"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_DOG
 	endurance = 600
 	movement_cooldown = -1
 
@@ -51,6 +50,7 @@
 	swallowTime = 0.1 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/woof)
+	configure(mob_rules(faction = FACTION_DOG))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/softdog))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
@@ -159,7 +159,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof)
 	icon_rest = "cass_rest"
 	ic_revivable = 0
 
-	faction = FACTION_THEATRE
 	gender = PLURAL
 	vore_digest_chance = 0
 	vore_escape_chance = 25
@@ -203,6 +202,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof)
 	projectilesound = SFX_VOICE_LONG_AWOO
 
 CAPABILITIES(/mob/living/simple_mob/vore/woof/cass)
+	configure(mob_rules(faction = FACTION_THEATRE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 	op("cass_revive", hand(), ungated(), stance(I_HELP), label("Pet"), when(PROC_REF(playing_dead)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(cass/petting)), wait(30 SECONDS), then(PROC_REF(stops_playing_dead)), on_interrupt(PROC_REF(petting_interrupted)))
 	op("cass_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(cass_interaction_hand_help)))
@@ -239,7 +239,7 @@ MSG_DEF(cass/petting, null, "%U% pets %T%.")
 
 /mob/living/simple_mob/vore/woof/cass/proc/stops_playing_dead(datum/act/op/A)
 	var/mob/living/carbon/human/M = A.actor
-	faction = M.faction
+	set_faction(mob_rules_of(M).faction)
 	revive()
 	sight = initial(sight)
 	see_in_dark = initial(see_in_dark)

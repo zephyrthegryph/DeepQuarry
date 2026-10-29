@@ -31,7 +31,7 @@
 
 /datum/blob_type/fungal_bloom/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
 	var/mob/living/simple_mob/blob/spore/S = new spore_type(get_turf(B))
-	S.faction = user.faction
+	S.set_faction(mob_rules_of(user).faction)
 	rel_set(S, nameof(S.blob_type), src)
 	S.update_icons()
 	S.ai_brain.forget_everything()

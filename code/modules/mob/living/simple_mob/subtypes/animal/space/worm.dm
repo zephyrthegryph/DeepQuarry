@@ -13,7 +13,6 @@
 	endurance = 200
 	movement_cooldown = -1
 
-	faction = FACTION_WORM
 
 	status_flags = 0
 	universal_speak = 0
@@ -120,7 +119,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 			var/mob/living/simple_mob/animal/space/space_worm/newSegment = new segment_type(loc)
 			current.Attach(newSegment)
 			current = newSegment
-			current.faction = faction
+			current.set_faction(mob_rules_of(src).faction)
 
 /mob/living/simple_mob/animal/space/space_worm/head/verb/toggle_devour()
 	set name = "Toggle Feeding"
@@ -453,7 +452,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/update_body_faction()
 	if(next)	// Keep us on the same page, here.
-		faction = next.faction
+		set_faction(mob_rules_of(next).faction)
 	if(previous)
 		previous.update_body_faction()
 		return 1
@@ -463,6 +462,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
+	configure(mob_rules(faction = FACTION_WORM))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/worm, meat_amount = 10))
 	configure(mob_rules(universal_understand = 1))
 	ref_one(nameof(previous), /mob/living/simple_mob/animal/space/space_worm)

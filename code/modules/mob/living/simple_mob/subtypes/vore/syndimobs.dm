@@ -9,7 +9,6 @@
 	icon_living = "syndotie_std"
 	icon_dead = "syndotie_std-dead"
 	icon_rest = "syndotie_std_rest"
-	faction = "syndicate"
 	endurance = 200
 	minbodytemp = 200
 	melee_damage_lower = 15
@@ -49,6 +48,7 @@
 	In addition, you will do more damage to incapacitated opponents."
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate)
+	configure(mob_rules(faction = "syndicate"))
 	configure(living_rules(say_list_type = /datum/say_list/otie))
 	configure(butchery_rules(meat_amount = 6))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
@@ -130,7 +130,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/chubby)
 	desc = "A huge white furred wolfdog, wearing a blood red combat harness. They look ravenously hungry, too..."
 	tt_desc = "Canis maxdirus"
 	icon = 'icons/mob/vore64x32_ch.dmi'
-	faction = "syndicate"
 	icon_dead = "synddog_wht-dead"
 	icon_living = "synddog_wht"
 	icon_state = "synddog_wht"
@@ -155,6 +154,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/chubby)
 	armor_spec = "melee=40;bullet=20;laser=20;energy=15;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate)
+	configure(mob_rules(faction = "syndicate"))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 
 /mob/living/simple_mob/vore/wolf/direwolf/syndicate/black
@@ -162,18 +162,19 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate)
 	desc = "A huge black furred wolfdog, wearing a blood red combat harness. They look ravenously hungry, too..."
 	tt_desc = "Canis maxdirus"
 	icon = 'icons/mob/vore64x32_ch.dmi'
-	faction = "syndicate"
 	icon_dead = "synddog_blk-dead"
 	icon_living = "synddog_blk"
 	icon_state = "synddog_blk"
 	icon_rest = "synddog_blk_rest"
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate/black)
+	configure(mob_rules(faction = "syndicate"))
 
 
 /mob/living/simple_mob/vore/wolftaur/syndicate
 	name = "mercenary commando"
 	desc = "A tough looking armored canid creature armed with a battle rifle."
 	icon = 'icons/mob/vore64x32_ch.dmi'
-	faction = "syndicate"
 	icon_dead = "synditaur"
 	icon_living = "synditaur"
 	icon_state = "synditaur"
@@ -215,6 +216,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate)
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
+	configure(mob_rules(faction = "syndicate"))
 	configure(living_rules(say_list_type = /datum/say_list/merc))
 	configure(mob_kind(attack_cooldown = 8))
 
@@ -246,7 +248,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
 /mob/living/simple_mob/vore/wolftaur/syndicate/lmg
 	name = "mercenary commando heavy"
 	desc = "A tough looking armored canid creature armed with an LMG!"
-	faction = "syndicate"
 	icon_dead = "synditaur_lmg"
 	icon_living = "synditaur_lmg"
 	icon_state = "synditaur_lmg"
@@ -260,12 +261,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
 	reload_max = 50
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/lmg)
+	configure(mob_rules(faction = "syndicate"))
 	configure(mob_kind(attack_cooldown = 0.3))
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/smg
 	name = "mercenary commando"
 	desc = "A tough looking armored canid creature armed with an SMG!"
-	faction = "syndicate"
 	icon_dead = "synditaur_smg"
 	icon_living = "synditaur_smg"
 	icon_state = "synditaur_smg"
@@ -279,12 +280,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/lmg)
 	reload_max = 15
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/smg)
+	configure(mob_rules(faction = "syndicate"))
 	configure(mob_kind(attack_cooldown = 0.1))
 /*
 /mob/living/simple_mob/vore/wolftaur/syndicate/awp
 	name = "mercenary commando sniper"
 	desc = "A tough looking armored canid creature armed with a sniper rifle!"
-	faction = "syndicate"
 	icon_dead = "synditaur_awp"
 	icon_living = "synditaur_awp"
 	icon_state = "synditaur_awp"
@@ -299,6 +300,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/smg)
 	reload_max = 5
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/awp)
+	configure(mob_rules(faction = "syndicate"))
 	configure(mob_kind(attack_cooldown = 30))
 \*
 */

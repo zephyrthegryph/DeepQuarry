@@ -20,7 +20,6 @@
 	response_harm = "hits"
 
 	movement_cooldown = 1.5
-	faction = FACTION_WOLF // wolves hunt in packs (combat_ai/factions/factions.dm); the dogs below stay with the station's pets
 
 	harm_intent_damage = 5
 	melee_damage_lower = 5
@@ -36,6 +35,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf)
+	configure(mob_rules(faction = FACTION_WOLF))
 	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
@@ -123,11 +123,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
 	name = "large dog"
 	desc = "The biggest and goodest dog around."
 	tt_desc = "Canis maxdirus familiaris"
-	faction = FACTION_NEUTRAL
 	icon_dead = "diredog-dead"
 	icon_living = "diredog"
 	icon_state = "diredog"
 	icon_rest = "diredog_rest"
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/dog)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 
 /mob/living/simple_mob/vore/wolf/direwolf/dog/sec
 	name = "large guard dog"
@@ -140,11 +142,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
 /mob/living/simple_mob/vore/wolf/direwolf/sec
 	name = "dire guard wolf"
 	desc = "The biggest and baddest guard wolf around."
-	faction = FACTION_NEUTRAL
 	icon_dead = "direwolfs-dead"
 	icon_living = "direwolfs"
 	icon_state = "direwolfs"
 	icon_rest = "direwolfs_rest"
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/sec)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 
 /* disable unique user-related content
 /mob/living/simple_mob/vore/wolf/direwolf/rykka
@@ -156,7 +160,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
 	icon_living = "rykka"
 	icon_state = "rykka"
 	icon_rest = "rykka_rest"
-	faction = FACTION_UNDERDARK
 	has_eye_glow = TRUE
 
 	min_oxy = 0
@@ -180,6 +183,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
 	vore_pounce_maxhealth = 100
 	vore_stomach_name = "Gut"
 	vore_stomach_flavor = "A black-and-purple veined gut, pulsing warmly around you. Loud gurgles sound around you as the gut squishes inwards and attempts to crush you - Rykka seems intent on digesting you, like the meat you are."
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/rykka)
+	configure(mob_rules(faction = FACTION_UNDERDARK))
 */
 
 /mob/living/simple_mob/vore/wolf/direwolf/andrews

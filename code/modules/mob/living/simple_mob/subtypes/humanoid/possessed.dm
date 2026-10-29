@@ -8,7 +8,6 @@
 	icon = 'icons/mob/possessed.dmi'
 	icon_state = "eva-rig"
 
-	faction = "Possessed"
 	movement_cooldown = 10
 
 	endurance = 200

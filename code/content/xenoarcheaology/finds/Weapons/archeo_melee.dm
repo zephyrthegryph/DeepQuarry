@@ -97,7 +97,7 @@ DESTROY_EFFECTS(/obj/item/melee/artifact_blade, new /datum/destroy_effects_data(
 	/// OR
 	/// Check 2: (We're a cultist AND they're a cultist) OR (Our factions align)
 	/// If these are true, we get hurt.
-	if((!iscultist(user) && (ishuman(M) && !istype(M, /mob/living/carbon/human/ai_controlled))  || ((iscultist(user) && iscultist(M)) || M.faction == user.faction)))
+	if((!iscultist(user) && (ishuman(M) && !istype(M, /mob/living/carbon/human/ai_controlled))  || ((iscultist(user) && iscultist(M)) || mob_rules_of(M).faction == mob_rules_of(user).faction)))
 		act_message(user, null, others = span_cult("%U%'s arm is engulfed in dark flames!"))
 		to_chat(user, span_cult("An inexplicable force rips through your arm as it's engulfed in flames, tearing the sword from your grasp!"))
 		user.drop_from_inventory(src, user.loc)
@@ -125,7 +125,7 @@ DESTROY_EFFECTS(/obj/item/melee/artifact_blade, new /datum/destroy_effects_data(
 			stored_blood += blood_loss //We add the damage dealt to our owner to our stored blood.
 
 		/// If the thing we're hitting is dead, our faction, friendly, or synthetic, we get no blood.
-		if(M.stat < DEAD && M.faction != user.faction && !ispassive(M) && !issilicon(M) && !isbot(M) && !isslime(M))
+		if(M.stat < DEAD && mob_rules_of(M).faction != mob_rules_of(user).faction && !ispassive(M) && !issilicon(M) && !isbot(M) && !isslime(M))
 			stored_blood += combat_of(src).force
 
 	//If the user isn't 'worthy' they get a single swing before the sword THROWS itself away from them. Possibly even off-screen!

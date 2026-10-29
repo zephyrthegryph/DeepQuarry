@@ -9,7 +9,6 @@
 	icon_rest = null
 	icon = 'icons/mob/bigcat.dmi'
 
-	faction = FACTION_PANTHER
 	endurance = 150
 	movement_cooldown = -1
 
@@ -29,6 +28,7 @@
 	has_hands = 1
 
 CAPABILITIES(/mob/living/simple_mob/vore/weretiger)
+	configure(mob_rules(faction = FACTION_PANTHER))
 	configure(living_rules(say_list_type = /datum/say_list/weretiger))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 

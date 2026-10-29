@@ -24,7 +24,6 @@
 	icon = 'icons/mob/vore64x64.dmi'
 	vis_height = 64
 
-	faction = FACTION_XENO
 	endurance = 150
 	see_in_dark = 10
 
@@ -61,6 +60,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/xeno_defanged)
+	configure(mob_rules(faction = FACTION_XENO))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/xeno_defanged))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 

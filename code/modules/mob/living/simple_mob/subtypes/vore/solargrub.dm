@@ -33,7 +33,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 
 	// Don't leave that as null if you add solar moths.
 
-	faction = FACTION_GRUBS
 	endurance = 50
 
 	melee_damage_lower = 1
@@ -59,6 +58,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
+	configure(mob_rules(faction = FACTION_GRUBS))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/solargrub))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat, meat_amount = 6))
 	ref_one(nameof(attached), /obj/structure/cable)

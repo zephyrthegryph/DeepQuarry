@@ -8,7 +8,6 @@
 	icon_living = "devil"
 	icon_state = "devil"
 	icon_rest = "devil"
-	faction = FACTION_DEVIL
 	old_x = -16
 	old_y = 0
 	default_pixel_x = -16
@@ -41,6 +40,7 @@
 	vore_bump_emote = "pounces on"
 
 CAPABILITIES(/mob/living/simple_mob/vore/devil)
+	configure(mob_rules(faction = FACTION_DEVIL))
 	configure(living_rules(vore_capacity = 1))
 
 /mob/living/simple_mob/vore/devil/load_default_bellies()

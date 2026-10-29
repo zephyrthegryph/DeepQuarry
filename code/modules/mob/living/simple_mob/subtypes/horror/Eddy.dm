@@ -7,7 +7,6 @@
 	icon_living = "Eddy"
 	icon_dead = "e_head"
 	icon_rest = "Eddy"
-	faction = "horror"
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
@@ -32,6 +31,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/horror/Eddy)
+	configure(mob_rules(faction = "horror"))
 	configure(living_rules(say_list_type = /datum/say_list/Eddy))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
 

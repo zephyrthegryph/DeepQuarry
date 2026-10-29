@@ -8,7 +8,6 @@
 	icon_dead = "clown_dead"
 	icon_gib = "clown_gib"
 
-	faction = FACTION_CLOWN
 
 	loot_list = list(/obj/item/bikehorn = 100)
 
@@ -26,6 +25,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/clown)
+	configure(mob_rules(faction = FACTION_CLOWN))
 	configure(living_rules(say_list_type = /datum/say_list/clown))
 
 /datum/say_list/clown

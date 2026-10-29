@@ -15,7 +15,6 @@
 	var/cloak_cooldown = 10 SECONDS	// Amount of time needed to re-cloak after losing it.
 	COOLDOWN_DECLARE(uncloak_cooldown)			// world.time
 
-	faction = "demon"
 	endurance = 200
 	movement_cooldown = 0
 
@@ -156,6 +155,7 @@
 
 // Force uncloaking if attacked.
 CAPABILITIES(/mob/living/simple_mob/vore/demonAI)
+	configure(mob_rules(faction = "demon"))
 	configure(mob_nature(can_pain_emote = FALSE))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))

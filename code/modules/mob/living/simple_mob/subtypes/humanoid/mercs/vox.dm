@@ -20,7 +20,6 @@
 	icon_living = "voxpirate"
 	icon_dead = "voxpirate_dead"
 
-	faction = "voxpirate"
 	movement_cooldown = 4
 
 	status_flags = 0
@@ -52,6 +51,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate)
+	configure(mob_rules(faction = "voxpirate"))
 	configure(living_rules(say_list_type = /datum/say_list/merc/voxpirate))
 
 /mob/living/simple_mob/humanoid/merc/voxpirate/pirate

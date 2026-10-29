@@ -5,6 +5,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/clowns)
+	configure(mob_rules(faction = FACTION_CLOWN))
 	configure(living_rules(say_list_type = /datum/say_list/clown))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
@@ -357,10 +358,12 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 32
 
-	faction = FACTION_CLOWN
 
 	loot_list = list(/obj/item/bikehorn = 100)
 
 	response_help = "pokes"
 	response_disarm = "gently pushes aside"
 	response_harm = "hits"
+
+CAPABILITIES(/mob/living/simple_mob/clowns/normal)
+	configure(mob_rules(faction = FACTION_CLOWN))

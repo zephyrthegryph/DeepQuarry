@@ -4,7 +4,6 @@
 	icon = 'icons/mob/macrophage.dmi'
 	icon_state = "macrophage-1"
 
-	faction = FACTION_MACROBACTERIA
 	endurance = 20
 
 	minbodytemp = T0C-30
@@ -49,6 +48,7 @@
 	mob_size = MOB_TINY
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
+	configure(mob_rules(faction = FACTION_MACROBACTERIA))
 	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	every(3 MINUTES, then(PROC_REF(deathcheck)), when = nameof(deathwatch))

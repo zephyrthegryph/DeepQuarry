@@ -92,7 +92,6 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	icon_living = "open"
 	icon = 'icons/mob/mimic.dmi'
 
-	faction = FACTION_MIMIC
 
 	endurance = 125
 	movement_cooldown = 3
@@ -122,6 +121,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	var/knockdown_chance = 10 //Stubbing your toe on furniture hurts.
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
+	configure(mob_rules(faction = FACTION_MIMIC))
 	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	ref_one(nameof(real_crate), /obj/structure/closet/crate)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -398,7 +398,6 @@ CAPABILITIES(/obj/effect/floormimic)
 	icon_state = "wmimicopen"
 	icon_living = "wmimicopen"
 
-	faction = "mimic"
 
 	endurance = 100
 	movement_cooldown = 5
@@ -411,6 +410,7 @@ CAPABILITIES(/obj/effect/floormimic)
 	melee_damage_upper = 5
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor)
+	configure(mob_rules(faction = "mimic"))
 	configure(mob_kind(attack_cooldown = 5))
 
 /// Vanishes instead of dying.
@@ -444,7 +444,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor)
 	icon_state = "tmimicopen"
 	icon_living = "tmimicopen"
 
-	faction = "mimic"
 
 	endurance = 125
 	movement_cooldown = 7
@@ -457,6 +456,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor)
 	melee_damage_upper = 15
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/tile)
+	configure(mob_rules(faction = "mimic"))
 	configure(mob_kind(attack_cooldown = 10))
 
 /obj/effect/floormimic/plating
@@ -485,7 +485,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/tile)
 	icon_state = "pmimicopen"
 	icon_living = "pmimicopen"
 
-	faction = "mimic"
 
 	endurance = 150
 	movement_cooldown = 7
@@ -499,5 +498,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/tile)
 	attack_armor_pen = 50
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/plating)
+	configure(mob_rules(faction = "mimic"))
 	configure(mob_kind(attack_cooldown = 10))
 

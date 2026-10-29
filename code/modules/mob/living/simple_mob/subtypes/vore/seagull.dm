@@ -18,7 +18,6 @@
 	icon_rest = "seagull"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_SEAGULL
 	endurance = 25
 
 	response_help = "pats"
@@ -45,6 +44,7 @@
 	emote_see = list("pecks at the ground","looks around hungrily")
 
 CAPABILITIES(/mob/living/simple_mob/vore/seagull)
+	configure(mob_rules(faction = FACTION_SEAGULL))
 	configure(living_rules(vore_capacity = 5, say_list_type = /datum/say_list/seagull))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 2))
 	configure(mob_nature(belly_size = 2.5))

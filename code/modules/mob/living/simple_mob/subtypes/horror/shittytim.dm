@@ -7,7 +7,6 @@
 	icon_living = "shitty_tim"
 	icon_dead = "tst_head"
 	icon_rest = "shitty_tim"
-	faction = "horror"
 	icon = 'icons/mob/horror_show/tallhorror.dmi'
 	vis_height = 64
 	icon_gib = "generic_gib"
@@ -33,6 +32,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/horror/BigTim)
+	configure(mob_rules(faction = "horror"))
 	configure(living_rules(say_list_type = /datum/say_list/BigTim))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
 

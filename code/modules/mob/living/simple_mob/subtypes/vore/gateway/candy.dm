@@ -19,7 +19,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
 
-	faction = "candy"
 
 	endurance = 20
 	movement_cooldown = 2
@@ -32,6 +31,7 @@
 	damage_fatigue_mult = 0 //Candy creatures. They will fight to the bitter end unaffected by their wounds. Also they have 25 health, do they really need slowdown?
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy)
+	configure(mob_rules(faction = "candy"))
 	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
@@ -419,7 +419,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
 
-	faction = "candy"
 	icon_state = "ouroboros"
 	icon_living = "ouroboros"
 	icon_dead = "slainouroboros"
@@ -440,6 +439,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	special_attack_cooldown = 7 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
+	configure(mob_rules(faction = "candy"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shed_critter)))
@@ -620,11 +620,11 @@ CAPABILITIES(/obj/item/projectile/bullet/cherrypit)
 	icon_living = "peppermint"
 	icon_dead = "peppermint_dead"
 
-	faction = "candy"
 
 	endurance = 10
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
+	configure(mob_rules(faction = "candy"))
 	op("peppermint_interaction_item", item(/obj/item), then(PROC_REF(peppermint_interaction_item)))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
@@ -654,7 +654,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
 	icon_living = "worm"
 	icon_dead = "worm_dead"
 
-	faction = "candy"
 
 	endurance = 60
 
@@ -667,6 +666,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/worm)
+	configure(mob_rules(faction = "candy"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 

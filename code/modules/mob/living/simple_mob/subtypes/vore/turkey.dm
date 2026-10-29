@@ -9,7 +9,6 @@
 	icon_rest = "turkeyrest"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_TURKEY
 	endurance = 25
 
 
@@ -31,6 +30,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkey)
+	configure(mob_rules(faction = FACTION_TURKEY))
 	configure(living_rules(say_list_type = /datum/say_list/turkey))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/rawturkey, meat_amount = 1))
 	configure(mob_nature(name_the_meat = FALSE))

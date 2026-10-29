@@ -7,7 +7,6 @@
 	icon_living = "cryptdrake"
 	icon_state = "cryptdrake"
 	icon_rest = "cryptdrake"
-	faction = FACTION_DRAGON
 	old_x = -48
 	old_y = 0
 	vis_height = 92
@@ -56,6 +55,7 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/cryptdrake)
+	configure(mob_rules(faction = FACTION_DRAGON))
 	configure(living_rules(vore_capacity = 2))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

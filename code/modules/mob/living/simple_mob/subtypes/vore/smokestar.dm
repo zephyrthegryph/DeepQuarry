@@ -7,7 +7,6 @@
 	icon_dead = "drone0"
 
 
-	faction = "smokestar"
 
 	endurance = 200
 	movement_cooldown = 0
@@ -22,6 +21,7 @@
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 CAPABILITIES(/mob/living/simple_mob/vore/smokestar)
+	configure(mob_rules(faction = "smokestar"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))

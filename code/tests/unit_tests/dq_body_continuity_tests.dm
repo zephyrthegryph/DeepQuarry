@@ -379,7 +379,7 @@
 	TEST_ASSERT_EQUAL(fixed.looks.hair_style, "Skrell Short Tentacles", "the original skrell hair is set before appearance construction")
 	TEST_ASSERT_EQUAL(drone.species.name, SPECIES_XENO_DRONE, "canonical alien construction forces its original caste")
 	TEST_ASSERT_EQUAL(drone.looks.hair_style, "Bald", "canonical alien construction retains its original hair")
-	TEST_ASSERT_EQUAL(drone.faction, FACTION_XENO, "canonical alien construction retains its original faction")
+	TEST_ASSERT_EQUAL(mob_rules_of(drone).faction, FACTION_XENO, "canonical alien construction retains its original faction")
 	TEST_ASSERT(custom.body && fixed.body && drone.body, "all actual constructor paths create their bodies")
 	TEST_ASSERT_EQUAL(custom.body.owner, custom, "the generic body belongs to the original mob")
 	TEST_ASSERT_EQUAL(fixed.body.owner, fixed, "the canonical skrell body belongs to the original mob")

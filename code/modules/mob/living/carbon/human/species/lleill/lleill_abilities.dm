@@ -897,7 +897,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	set_glamour_shift(FALSE)
 	var/mob/living/new_mob = spawn_beast_mob(beast_type)
 	if(new_mob && isliving(new_mob))
-		new_mob.faction = faction
+		new_mob.set_faction(mob_rules_of(src).faction)
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.lleill_energy -= energy_cost
 		grant(new_mob, granted_verb(/mob/living/proc/revert_beast_form), new_mob)

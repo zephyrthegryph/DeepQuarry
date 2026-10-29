@@ -13,7 +13,6 @@
 	icon_living = "bhotie"
 	icon_dead = "bhotie-dead"
 	icon_rest = "bhotie-dead"
-	faction = FACTION_BLACKHOLE
 	endurance = 200
 	minbodytemp = 200
 	melee_damage_lower = 15
@@ -108,7 +107,6 @@
 	name = "Black Hole fanatic"
 	desc = "A tough looking armored feline creature. They wear various insignias identifying them as a member of Black Hole."
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "trooper-dead"
 	icon_living = "trooper"
 	icon_state = "trooper"
@@ -157,7 +155,6 @@
 	name = "Black Hole bulwark"
 	desc = "A tough looking armored feline creature armed with a shield and an energy lance. They wear various insignias identifying them as a member of Black Hole."
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "trooper-dead"
 	icon_living = "trooper_shield"
 	icon_state = "trooper_shield"
@@ -172,11 +169,13 @@
 	attack_sound = SFX_WEAPONS_BLADE1
 	armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100" // Values read by injury_armor()
 
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/shield)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
+
 /mob/living/simple_mob/vore/blackhole/grotesque
 	name = "grotesque"
 	desc = "A horribly mutated, pale creature, poorly morphed into some hyperaggressive feline abomination. This is what tends to happen to those that Black Hole take prisoner-- Cannonfodder."
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "grotesque-dead"
 	icon_living = "grotesque"
 	icon_state = "grotesque"
@@ -193,6 +192,7 @@
 	attack_sound = SFX_WEAPONS_SLICE
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/grotesque)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole/grotesque))
 
 /mob/living/simple_mob/vore/blackhole/grotesque/on_death(gibbed)
@@ -204,7 +204,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/grotesque)
 	name = "Black Hole trooper"
 	desc = "A tough looking armored feline creature armed with a pistol. They wear various insignias identifying them as a member of Black Hole."
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "trooper-dead"
 	icon_living = "trooper_pistol"
 	icon_state = "trooper_pistol"
@@ -217,13 +216,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/grotesque)
 	reload_max = 12
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_kind(attack_cooldown = 8 DECISECONDS))
 
 /mob/living/simple_mob/vore/blackhole/ranged/smg
 	name = "Black Hole gunner"
 	desc = "A tough looking armored feline creature armed with an SMG. They wear various insignias identifying them as a member of Black Hole."
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "trooper-dead"
 	icon_living = "trooper_smg"
 	icon_state = "trooper_smg"
@@ -236,13 +235,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged)
 	reload_max = 25
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/smg)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_kind(attack_cooldown = 2))
 
 /mob/living/simple_mob/vore/blackhole/ranged/rifle
 	name = "Black Hole rifleman"
 	desc = "A tough looking armored feline creature armed with a rifle. They wear various insignias identifying them as a member of Black Hole."
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "trooper-dead"
 	icon_living = "trooper_rifle"
 	icon_state = "trooper_rifle"
@@ -255,13 +254,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/smg)
 	reload_max = 30
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/rifle)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_kind(attack_cooldown = 8))
 
 /mob/living/simple_mob/vore/blackhole/ranged/lmg
 	name = "Black Hole machinegunner"
 	desc = "A tough looking armored feline creature armed with a light machinegun. They wear various insignias identifying them as a member of Black Hole."
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "trooper-dead"
 	icon_living = "trooper_lmg"
 	icon_state = "trooper_lmg"
@@ -274,6 +273,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/rifle)
 	reload_max = 50
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/lmg)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_kind(attack_cooldown = 0.1))
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
@@ -284,7 +284,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/lmg)
 	name = "Black Hole fanatic"
 	desc = "A tough looking armored feline taur. They wear various insignias identifying them as a member of Black Hole."
 	icon = 'icons/blackhole/blackhole64x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "heavytrooper-dead"
 	icon_living = "heavytrooper"
 	icon_state = "heavytrooper"
@@ -319,6 +318,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/lmg)
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole))
 
 /mob/living/simple_mob/vore/blackhole/taur/shield
@@ -341,7 +341,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur)
 	name = "Black Hole machinegunner"
 	desc = "A tough looking armored feline taur wielding a light machinegun. They wear various insignias identifying them as a member of Black Hole."
 	icon = 'icons/blackhole/blackhole64x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "heavytrooper-dead"
 	icon_living = "heavytrooper_lmg"
 	icon_state = "heavytrooper_lmg"
@@ -354,6 +353,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur)
 	reload_max = 50
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_kind(attack_cooldown = 0.1))
 
 /mob/living/simple_mob/vore/blackhole/taur/ranged/hmg
@@ -382,7 +382,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	icon_rest = "heavytrooper_sniper"
 	projectiletype = /obj/item/projectile/bullet/rifle/a145/highvel // Really scary bullet.
 	projectilesound = SFX_WEAPONS_SERDY_MOLNIYAB
-	faction = FACTION_BLACKHOLE
 	movement_cooldown = 0
 	harm_intent_damage = 5
 	melee_damage_lower = 15
@@ -460,7 +459,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	name = "Black Hole mechanized troopers"
 	desc = "A pair of armed Black Hole troops riding an armored motorcycle. Watch out!"
 	icon = 'icons/blackhole/blackhole64x64.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_dead = "bikeus"
 	icon_living = "bikeus"
 	icon_state = "bikeus"
@@ -514,7 +512,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	It also is armed with an array of next-generation weaponry."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_living = "mech2"
 	icon_state = "mech2"
 	icon_rest = "mech2"
@@ -530,6 +527,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	has_repair_droid = FALSE
 	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/blackhole)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
+
 /obj/structure/loot_pile/mecha/gygax/dark/adv/blackhole
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_state = "mech2_wreck"
@@ -539,7 +539,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	desc = "A robust, advanced exosuit of Black Hole design, utilizing highly dangerous tesla weaponry."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)
 	icon = 'icons/blackhole/blackhole32x32.dmi'
-	faction = FACTION_BLACKHOLE
 	icon_living = "mech1"
 	icon_state = "mech1"
 	icon_rest = "mech1"
@@ -560,6 +559,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	projectile_accuracy = -25
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand/blackhole)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_kind(attack_cooldown = 12))
 
 /obj/structure/loot_pile/mecha/durand/blackhole
@@ -592,7 +592,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	icon_living = "obelisk"
 	icon_dead = "obelisk-dead"
 	icon = 'icons/blackhole/blackhole64x64.dmi'
-	faction = FACTION_BLACKHOLE
 	combat_mode = TRUE
 	anchored = 1
 	endurance = 400
@@ -636,6 +635,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/datum/looping_sound/obelisk/loopy = 1
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 	owns_one(nameof(loopy), /datum/looping_sound/obelisk, starts = /datum/looping_sound/obelisk, starts_args = list(TRUE)) // started as it is made
 
@@ -731,10 +731,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole))
 	rolls(nameof(size_multiplier), range_of(0.9, 1.5, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole))
 	configure(mob_kind(attack_cooldown = 4))
 	after_init(0, then(PROC_REF(biker_rescale)))
@@ -743,12 +745,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 	resize(1) // Scale them back down
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/blackhole)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/otie))
 	configure(butchery_rules(meat_amount = 6))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole)
+	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole))
 	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
 

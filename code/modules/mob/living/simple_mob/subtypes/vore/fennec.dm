@@ -31,7 +31,6 @@
 	icon_rest = "fennec_rest"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_FENNEC
 	endurance = 30
 
 	response_help = "pats"
@@ -47,6 +46,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec)
+	configure(mob_rules(faction = FACTION_FENNEC))
 	configure(living_rules(species_sounds = "Vulpine"))
 	configure(living_rules(say_list_type = /datum/say_list/fennec))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox, meat_amount = 2))

@@ -70,7 +70,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 					//legacy ai_holder_type removed; modern brain has no
 					// equivalent of swapping AI subtype at runtime.
 					set_ai_type(null)
-					set_faction((L.faction ? L.faction : "neutral"))
+					set_faction((mob_rules_of(L).faction ? mob_rules_of(L).faction : "neutral"))
 					set_intent(L.combat_mode ? I_HURT : I_HELP) // the prototype's default posture (state; a fresh mob holds no variant)
 					set_new_path(FALSE)
 
@@ -182,7 +182,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 					if(isnum(spawn_melee_damage_upper))
 						S.set_melee_damage_upper(spawn_melee_damage_upper)
 				if(use_custom_ai)
-					L.faction = faction
+					L.set_faction(faction)
 					L.set_use_stance(intent)
 					L.initialize_ai_brain()
 					L.status_adjust(STAT_SLEEPING, -100)

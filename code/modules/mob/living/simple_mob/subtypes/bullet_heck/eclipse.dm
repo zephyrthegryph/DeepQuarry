@@ -68,13 +68,15 @@
 	icon_state = "UPshield_mecha"
 	icon_living = "UPshield_mecha"
 	desc = "A metallic flying saucer, a reflective barrier around it."
-	faction = FACTION_ECLIPSE
 	icon = 'icons/mob/eclipse.dmi'
 	endurance = 1500
 	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/metalsphere
 	projectiletype = /obj/item/projectile/energy/eclipse_boss/metalsphere
 	wreckage = /obj/item/prop/deconstructable/gigacell
 	pilot_type = /mob/living/simple_mob/humanoid/astral_collective/purity
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo)
+	configure(mob_rules(faction = FACTION_ECLIPSE))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo/do_special_attack(atom/A, stance)
 	switch(stance)

@@ -523,11 +523,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/set_safety(safe)
 	if (safe)
-		faction = FACTION_NEUTRAL
+		set_faction(FACTION_NEUTRAL)
 		set_melee_damage_lower(0)
 		set_melee_damage_upper(0)
 	else
-		faction = FACTION_CARP
+		set_faction(FACTION_CARP)
 		set_melee_damage_lower(initial(melee_damage_lower))
 		set_melee_damage_upper(initial(melee_damage_upper))
 

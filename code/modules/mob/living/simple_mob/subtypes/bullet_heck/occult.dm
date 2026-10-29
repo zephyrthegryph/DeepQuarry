@@ -8,7 +8,6 @@
 	pilot_type = /mob/living/simple_mob/humanoid/cultist/tesh
 	wreckage = /obj/item/cell/device/weapon/recharge/cult
 
-	faction = FACTION_CULT
 
 	icon_state = "bloodguardian"
 	icon_living = "bloodguardian"
@@ -29,6 +28,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/occult)
+	configure(mob_rules(faction = FACTION_CULT))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 

@@ -32,7 +32,6 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	faction = FACTION_BEE
 
 	var/poison_type = REAGENT_ID_SPIDERTOXIN	// The reagent that gets injected when it attacks, can be changed to different toxin.
 	var/poison_chance = 10			// Chance for injection to occur.
@@ -40,6 +39,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bee)
+	configure(mob_rules(faction = FACTION_BEE))
 	configure(living_rules(say_list_type = /datum/say_list/bee))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

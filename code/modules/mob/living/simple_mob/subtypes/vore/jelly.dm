@@ -17,7 +17,6 @@
 	vore_pounce_chance = 75
 	vore_pounce_maxhealth = 80
 
-	faction = FACTION_VIRGO2
 	endurance = 50
 
 	melee_damage_lower = 2
@@ -43,6 +42,7 @@
 	swallowTime = 2 SECONDS // Hungry little bastards.
 
 CAPABILITIES(/mob/living/simple_mob/vore/jelly)
+	configure(mob_rules(faction = FACTION_VIRGO2))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/jelly))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 

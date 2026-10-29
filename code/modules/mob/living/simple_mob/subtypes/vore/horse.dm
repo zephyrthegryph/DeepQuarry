@@ -9,7 +9,6 @@
 	icon_dead = "horse-dead"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_HORSE
 	endurance = 60
 
 	movement_cooldown = -2 //horses are fast mkay.
@@ -62,6 +61,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse/big)
 /mob/living/simple_mob/vore/horse/big
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse)
+	configure(mob_rules(faction = FACTION_HORSE))
 	configure(living_rules(say_list_type = /datum/say_list/horse))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

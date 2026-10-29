@@ -32,7 +32,6 @@
 	has_eye_glow = TRUE
 	custom_eye_color = "#00FFFF"
 
-	faction = FACTION_INSECTS
 	endurance = 90
 	see_in_dark = 8
 
@@ -76,6 +75,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
+	configure(mob_rules(faction = FACTION_INSECTS))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/sect_drone))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 4))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

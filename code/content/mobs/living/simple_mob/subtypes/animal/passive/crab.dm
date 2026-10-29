@@ -3,7 +3,6 @@
 	name = "crab"
 	desc = "A hard-shelled crustacean. Seems quite content to lounge around all the time."
 	tt_desc = "E Cancer bellianus"
-	faction = FACTION_CRABS
 
 	icon_state = "crab"
 	icon_living = "crab"
@@ -21,6 +20,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/crab)
+	configure(mob_rules(faction = FACTION_CRABS))
 	configure(living_rules(say_list_type = /datum/say_list/crab))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat, meat_amount = 3))
 

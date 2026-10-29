@@ -9,7 +9,6 @@
 	icon_rest = "wah_rest"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_REDPANDA
 	endurance = 30
 
 
@@ -24,6 +23,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/redpanda)
+	configure(mob_rules(faction = FACTION_REDPANDA))
 	configure(living_rules(say_list_type = /datum/say_list/redpanda))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

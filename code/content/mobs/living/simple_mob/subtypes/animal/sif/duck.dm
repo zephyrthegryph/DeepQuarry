@@ -19,7 +19,6 @@
 	tt_desc = "S Anatidae vitriae"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/crystalduck) // CHOMPEnable
 
-	faction = FACTION_DUCK
 
 	icon_state = "duck"
 	icon_living = "duck"
@@ -45,6 +44,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/duck)
+	configure(mob_rules(faction = FACTION_DUCK))
 	configure(living_rules(say_list_type = /datum/say_list/duck))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 4))
 	configure(mob_kind(attack_cooldown = 1 SECOND))

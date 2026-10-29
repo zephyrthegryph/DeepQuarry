@@ -25,7 +25,6 @@
 	icon_dead = "piratemelee_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/pirate)
 
-	faction = FACTION_PIRATE
 
 	response_help = "pushes"
 	response_disarm = "shoves"
@@ -47,6 +46,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/pirate)
+	configure(mob_rules(faction = FACTION_PIRATE))
 	configure(living_rules(say_list_type = /datum/say_list/pirate))
 
 /// Every pirate's loot table also holds pirate salvage (its per_type() table, built once per type).
@@ -481,7 +481,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
 	catalogue_data = list(/datum/category_item/catalogue/technology/ripley)
 	icon = 'icons/mob/pirates.dmi'
 	icon_state = "pirate"
-	faction = "pirate"
 	wreckage = /obj/structure/loot_pile/mecha/ripley/pirate
 
 	endurance = 250

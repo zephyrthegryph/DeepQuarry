@@ -9,7 +9,6 @@
 	icon_dead = "sheep-dead"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_SHEEP
 	endurance = 40
 
 	see_in_dark = 2
@@ -36,6 +35,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/sheep)
+	configure(mob_rules(faction = FACTION_SHEEP))
 	configure(living_rules(say_list_type = /datum/say_list/sheep))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

@@ -38,9 +38,9 @@
 	tt_desc = "NULL"
 	icon = 'icons/mob/cultists.dmi'
 	icon_state = "initiate"
-	faction = "cult"
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
+	configure(mob_rules(faction = "cult"))
 	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
 
 /datum/category_item/catalogue/fauna/cultist/human
@@ -229,7 +229,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	icon_living = "culttesh"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/tesh)
 
-	faction = "cult"
 
 	status_flags = 0
 
@@ -275,7 +274,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	endurance = 200
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/lizard)
 
-	faction = "cult"
 
 	status_flags = 0
 
@@ -323,7 +321,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	endurance = 150
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/caster)
 
-	faction = "cult"
 
 	status_flags = 0
 
@@ -368,7 +365,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	endurance = 150
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/initiate)
 
-	faction = "cult"
 
 	status_flags = 0
 
@@ -414,7 +410,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	icon_living = "castertesh"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/castertesh)
 
-	faction = "cult"
 
 	status_flags = 0
 
@@ -457,7 +452,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	desc = "A heavily armed cultist with a mirror shield that hurts to look at."
 	icon_state = "cult_elite"
 	icon_living = "cult_elite"
-	faction = "cult"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/elite)
 
 	status_flags = 0
@@ -474,6 +468,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "shatters into bone and blood like pieces like the now shattered mirror."))
 	op("cultist_elite_item", item(/obj/item), then(PROC_REF(cultist_elite_interaction_item)))
@@ -537,7 +532,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	icon_living = "magus"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/magus)
 
-	faction = "cult"
 
 	status_flags = 0
 
@@ -563,6 +557,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	ghostize()
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "let's out a dark laugh as it collapses into a puddle of blood."))
 	immune_to_incapacitation()
@@ -590,7 +585,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 	icon_living = "hunterb"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/hunter)
 
-	faction = "cult"
 
 	status_flags = 0
 
@@ -709,7 +703,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 	icon_living = "cobra-cultist"
 	endurance = 150 //Old 75
 
-	faction = "cult"
 
 	status_flags = 0
 
@@ -792,6 +785,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	immune_to_incapacitation()
@@ -833,6 +827,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(death_message = "let's out a shrill chirp as his body turns to dust."))
@@ -874,6 +869,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "burns away into nothing."))
@@ -913,18 +909,21 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "hisses as he collapses into a pile of bones."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "melts into a pile of blood and bones."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "lets out a horrified scream as his body crumbles away."))
 	immune_to_incapacitation()
@@ -933,6 +932,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)
+	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."))
 	immune_to_incapacitation()

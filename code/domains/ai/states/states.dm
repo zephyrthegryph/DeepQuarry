@@ -140,7 +140,7 @@ CAPABILITY_TYPE(ai_state_regroup, CAP_AI_STATE_REGROUP, /datum/capability/ai_sta
 
 /// The five states, by what they are called in the traces and tests: the brain's faction may supply its own set (faction_data.states).
 /datum/ai_brain/proc/state_set()
-	var/datum/faction_data/data = dq_faction_data_for(holder?.faction)
+	var/datum/faction_data/data = dq_faction_data_for(mob_rules_of(holder).faction)
 	if(data.states)
 		return data.states
 	return list(

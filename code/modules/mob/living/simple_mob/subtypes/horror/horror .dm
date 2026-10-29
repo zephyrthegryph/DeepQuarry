@@ -1,11 +1,11 @@
 /mob/living/simple_mob/horror
 	tt_desc = "Homo Horrificus"
-	faction = "horror"
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
 
 CAPABILITIES(/mob/living/simple_mob/horror)
+	configure(mob_rules(faction = "horror"))
 	configure(mob_nature(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 

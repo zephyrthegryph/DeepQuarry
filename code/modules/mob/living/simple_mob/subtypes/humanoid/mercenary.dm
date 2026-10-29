@@ -37,5 +37,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/ranged/suppressor)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc)
+	configure(mob_rules(faction = FACTION_SYNDICATE))
 	configure(living_rules(say_list_type = /datum/say_list/merc))
 	immune_to_incapacitation()

@@ -9,7 +9,6 @@
 	icon_dead = "slug-dead"
 	icon_living = "slug"
 	icon_state = "slug"
-	faction = "slug" //A faction other than neutral is necessary to get the slug to try eating station crew.
 	melee_damage_lower = 0
 	melee_damage_upper = 1 //Not intended to pose any sort of threat outside of vore. Other code should stop it from ever attacking but this is an extra safety check.
 	friendly = list("blinks at")
@@ -43,6 +42,7 @@
 	vore_default_mode = DM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/slug)
+	configure(mob_rules(faction = "slug"))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	ref_one(nameof(last_prey), /mob/living)
