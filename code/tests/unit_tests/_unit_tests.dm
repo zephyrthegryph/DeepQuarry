@@ -411,6 +411,7 @@
 #include "../../modules/unit_tests/dq_relation_entries_tests.dm"
 #include "../../modules/unit_tests/dq_tail_animation.dm"
 #include "../../modules/unit_tests/dq_profile_records.dm"
+#include "../../modules/unit_tests/dq_ui_capture.dm"
 #include "../../modules/unit_tests/dq_shuttle_tests.dm"
 #include "../../modules/unit_tests/dq_roundstart_regression_tests.dm"
 #include "../../modules/unit_tests/dq_state_tests.dm"

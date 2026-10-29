@@ -194,7 +194,6 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 /**********************Mineral processing unit**************************/
 
 /obj/machinery/mineral/processing_unit
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "material processor" //This isn't actually a goddamn furnace, we're in space and it's processing platinum and flammable phoron...
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "furnace"
@@ -275,7 +274,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 CAPABILITIES(/obj/machinery/mineral/processing_unit)
 	links(/obj/machinery/mineral/processing_unit::console, /obj/machinery/mineral/processing_unit_console::machine) // the machine and its console name each other (D3)
 	setup(PROC_REF(prepare_processing_ores_and_markers))
-	configure(light_glow(range = 3))
+	look_glow(GLOW(3, 1, null), when = nameof(active)) // the furnace glows while it smelts; switched off it is dark (no declared light)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = all_of(nameof(active), not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
 	ref_one(nameof(input))
 	ref_one(nameof(output))

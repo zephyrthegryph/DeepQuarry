@@ -68,7 +68,15 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/runechat_color/create_default_value()
-	return COLOR_BLACK
+	return COLOR_BLACK // the "unset" sentinel: chat_message.dm colours runechat from the speaker's name instead
+
+/// Black is not a colour here but "automatic"; the widget says so instead of drawing black on the dark theme.
+/datum/preference/color/human/runechat_color/get_widget_props(datum/preferences/preferences)
+	. = ..()
+	if(!islist(.))
+		. = list()
+	.["unset_value"] = COLOR_BLACK
+	.["unset_label"] = "Automatic (from name)"
 
 /datum/preference/color/human/runechat_color/apply_to_human(mob/living/carbon/human/target, value)
 	return

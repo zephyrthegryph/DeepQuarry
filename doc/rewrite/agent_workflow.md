@@ -961,3 +961,40 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
   a worktree with the same key copies them in instead of regenerating.
 - **DreamChecker stays whole-tree.** SpacemanDMM 1.11 is a prebuilt binary with no incremental or per-file mode, and a scoped run would
   not give a full run's diagnostics. Its verdict is reused only on identical inputs (`gate_dc_key`).
+- **DreamChecker is OFF in the train (`DQ_TRAIN_DREAMCHECKER=0`, the default since 28 October 2026, the user's decision).** No
+  precheck, DreamChecker batch, batch gate, fast-forward landing or train push runs DreamChecker or waits for its verdict: the prechecks
+  pass without `tpass`, `fast_land_pick` requires no DreamChecker verdict, and the train exports `DQ_PUSH_NO_DREAMCHECKER=1`, under which
+  `dq_push_master.sh` needs no `dreamchecker` stamp and its fallback `build.sh dm` compiles without it. The native compiler's own
+  diagnostics (var-before-def included) still gate every compile. `DQ_TRAIN_DREAMCHECKER=1` restores the previous behaviour, nothing
+  was deleted; CI and `build.sh lint` still run DreamChecker.
+- **More lanes per fast cycle (`precheck-merge`).** After the fast-forward, every other chosen lane that was prechecked on the same
+  master, shares no area with what landed since (the `select_prechecked` interaction rule, no global path) and merges cleanly lands as
+  `merge(new origin/master, its stamped precheck merge)`: `dq_push_stamp.sh` accepts it as a merge of master into one stamped parent,
+  and `dq_push_master.sh` compiles it and runs the ratchets before pushing (no test world). Anything else stays queued for a fresh
+  precheck. `DQ_TRAIN_FAST_LAND_MORE=0` turns it off.
+- **No compiler daemon in the train (user order, 28 October 2026).** `dq_train.sh`, `dq_merge_batch.sh`, `dq_merge_gates.sh`,
+  `dq_focused_test.sh`, `dq_push_master.sh` and `dq_land_batch.sh` export `DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0` whatever the
+  caller's environment, so no train process starts a dmbc daemon. Precheck workers keep a compile root each. The gate's own compiler
+  prebuild spares the test job its second compiler preparation (`DQ_FOCUSED_NO_TOOL_PREBUILD=1`, ~30 s). `dq_push_master.sh` computes
+  a commit's stamp verdict once per push (it ran `dq_push_stamp.sh` three times, ~10 s each).
+- **Status shows every step.** `cycle.txt` names the queue/tips step, batch selection, the disk floor check, the fast-forward check,
+  pushes and the gate with its log; `status` adds the gate's newest `== gate:` step. The `cycle:` line logs the preamble seconds.
+- **The disk floor no longer costs 24 minutes a cycle.** Below the floor the gate trims the cache synchronously (19:08-19:32Z on
+  28 October, freeing nothing that was not protected); after a refusal the train only re-reads the free space for
+  `DQ_TRAIN_FLOOR_RETRY_MIN` (30) minutes before trimming again.
+- **Smoke and gameplay sets run in every precheck** (`DQ_TRAIN_PRECHECK_SMOKE=1`, the default since 28 October 2026). At 20:40Z two
+  prechecked lanes took a 38-minute cycle (21 min of it the old disk-floor trim, then a full gate) because the sets were due at the
+  integrator's every-4th-landing cadence, which also blocked the fast-forward. A precheck now runs them in its already booted world
+  (~1 min), records `smoke=1` in its verdict, and such a lane never waits for `smoke_due`; its landing resets the cadence counter.
+  `DQ_TRAIN_PRECHECK_SMOKE=0` restores lane tests + boot only in the precheck and the cadence in the integrator.
+- **A lane whose master moved still lands on its precheck proof.** When no fast-forward applies, each chosen lane is checked against the
+  master its own precheck ran on: if master changed nothing heavy since (docs, tools, Rust: `tools/dq_light_paths.sh`), or nothing that
+  shares an area with the lane and no global path, it lands as `merge(new master, its stamped precheck merge)` with the push's compile
+  and ratchets (`precheck-merge`). 21:03Z: `fix/flavor-default`, prechecked before two tool lanes landed, took a full gate instead.
+  Whatever does not land this way goes through the gate in the same cycle.
+- **One test world per gate; leaner push.** The batch gate keeps its test union in one world up to 60 selectors
+  (`DQ_TRAIN_WORLD_SPLIT_AT`, was 8): the 85239fc051 gate ran 22 tests in 3 s of test time but booted two worlds at ~230 s each.
+  `dq_push_master.sh` skips its round-1 fetch when the strict check fetched seconds earlier, verifies the landing from the
+  remote-tracking ref the push updated (a fetch only when that does not hold the commit), computes the stamp verdict once, and logs
+  laps for setup/lock and the stamp verdict. The `pushed:` line reports `gate+push` seconds next to the whole cycle (which also counts
+  the preamble and the disk floor check).
