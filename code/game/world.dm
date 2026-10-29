@@ -491,6 +491,36 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 					samples += list(list("owner" = "[owner.type]", "loc" = "[owner.loc?.type]", "at" = "[at?.type] ([at?.x],[at?.y],[at?.z])", "assembly_k" = round(service.temperature(), 0.01), "air_k" = air ? round(air.return_temperature(), 0.01) : "no air", "store" = store, "ambient_link" = !!service.ambient_link, "ports" = length(service.port_links), "active" = service.active, "next_update" = service.next_update - world.time))
 		return json_encode(list("services" = total, "awake" = awake, "gap_k" = hist, "owner_types_over_0.5K" = over, "samples" = samples))
 
+	// Localhost-only: flips one power channel of the area with the most machines (or `area=<name>`) the way an APC report does (area.set_channels()), and back, timing
+	// the write itself (the inline settle) and the drain that follows: what one channel flip costs the tick. `channel=equip|light|environ` (default light).
+	if (diag == "powerflip")
+		var/list/flip_params = params2list(T)
+		var/area/target
+		for(var/area/A)
+			if(flip_params["area"] ? (A.name == flip_params["area"]) : (!target || length(A.power_machines) > length(target.power_machines)))
+				target = A
+		if(!target)
+			return "no area"
+		var/channel = flip_params["channel"] || "light"
+		var/list/rows = list()
+		for(var/round in 1 to 2)
+			var/equip = target.power_equip
+			var/light = target.power_light
+			var/environ = target.power_environ
+			if(channel == "equip")
+				equip = !equip
+			else if(channel == "environ")
+				environ = !environ
+			else
+				light = !light
+			var/start = TICK_USAGE_REAL
+			target.set_channels(equip, light, environ)
+			var/inline_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+			start = TICK_USAGE_REAL
+			refresh_flush()
+			rows += list(list("flip" = round, "channel" = channel, "to" = (channel == "equip" ? equip : (channel == "environ" ? environ : light)), "inline_ms" = round(inline_ms, 0.1), "drain_ms" = round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - start), 0.1)))
+		return json_encode(list("area" = target.name, "machines" = length(target.power_machines), "flips" = rows))
+
 	// Localhost-only census of timer callbacks and tracked writes (code/engine/time/census.dm): `census&on=1` starts it, `census` reads it,
 	// `census&reset=1` clears it, `census&on=0` stops it.
 	if (diag == "census")

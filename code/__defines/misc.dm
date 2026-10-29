@@ -533,7 +533,7 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 
 #define ANNOUNCER_NAME "Facility PA"
 
-//For custom species
+// Trait budget every species starts with (Custom Species overrides it); negatives buy more.
 #define STARTING_SPECIES_POINTS 1
 #define MAX_SPECIES_TRAITS 6 // Cap positive traits at 6, given negatives are unlimited.
 

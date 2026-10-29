@@ -3462,7 +3462,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/suppermatter)
 	configure(light_glow(range = 1.4, power = 2, color = "#FFFF00"))
 
 /obj/item/reagent_containers/food/snacks/sliceable/suppermatter
-	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
 	name = "suppermatter shard"
@@ -3476,7 +3475,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/suppermattershard)
 	configure(light_glow(range = 1.4, power = 1.4, color = "#FFFF00"))
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
-	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
 	name = "exciting suppermatter"
@@ -3494,7 +3492,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/excitingsupperma
 	configure(light_glow(range = 1.4, power = 2, color = "#FF0000"))
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
-	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
 	name = "exciting suppermatter shard"
@@ -3508,7 +3505,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/excitingsuppermattershard)
 	configure(light_glow(range = 1.4, power = 1.4, color = "#FF0000"))
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
-	light_on = TRUE
 
 /////////////////////////////////////////////////PIZZA/////////////////////////////////////////////////
 
@@ -4092,7 +4088,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/frostbelle)
 	configure(reagents(add = list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5)))
 
 /obj/item/reagent_containers/food/snacks/frostbelle
-	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/bellefritter
 	name = "frostbelle fritters"

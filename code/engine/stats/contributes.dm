@@ -565,6 +565,7 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 			index = list()
 			GLOB.stat_hop_index[hop.remote_var] = index
 		index += list(list(E.type, hop))
+		GLOB.stat_hop_applicable = list() // the per-reader-type hop lists were built from the index as it was
 		// The relation itself changing (the reader now names another entity) recomputes the reader too.
 		stat_register_input(E, I, hop.rel_var, stat_id, contrib)
 		return

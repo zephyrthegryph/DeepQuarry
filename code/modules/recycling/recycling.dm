@@ -8,6 +8,7 @@
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/recycling)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 5, active = 500))
 	started_work(step = PROC_REF(work_step))
@@ -67,7 +68,10 @@ MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
 	return OP_OK
 
 // Conveyors etc
-/obj/machinery/recycling/Bumped(atom/A)
+/// The bump notice: `A` walked into it (was Bumped()).
+/obj/machinery/recycling/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/A = N.bumper
 	if(!isitem(A))
 		return
 	var/refused = recycle_refusal(A)

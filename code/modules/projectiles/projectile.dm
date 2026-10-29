@@ -54,7 +54,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/impact_type
 
 	//Fancy hitscan lighting effects!
-	light_on = TRUE
 	var/hitscan_light_intensity = 1.5
 	var/hitscan_light_range = 0.75
 	var/hitscan_light_color_override

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Weighted random picks no longer choose entries whose weight is 0 (for example storm, blob or prison break events with no relevant crew online)."
+  - code_imp: "pickweight() no longer writes into the list it is given."

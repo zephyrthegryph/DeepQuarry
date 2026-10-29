@@ -5,8 +5,10 @@
 //! consume this library once their declaration/lowering contracts are complete.
 
 pub(crate) mod artifact_publication_store;
+pub mod cache_flush;
 pub mod cache_maintenance;
 mod callable_warnings;
+mod shared_pool;
 pub mod cli;
 pub mod compile_stats;
 pub mod debug_sources;
