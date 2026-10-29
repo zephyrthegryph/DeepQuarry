@@ -12,7 +12,6 @@
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
-	faction = FACTION_GLAMOUR
 	catalogue_data = list(/datum/category_item/catalogue/fauna/blaidd)
 
 	harm_intent_damage = 10
@@ -41,6 +40,7 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/blaidd)
+	configure(mob_rules(faction = FACTION_GLAMOUR))
 	configure(living_rules(vore_capacity = 1))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

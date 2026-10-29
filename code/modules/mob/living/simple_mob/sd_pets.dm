@@ -112,9 +112,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec/bridgette)
 /mob/living/simple_mob/vore/otie/red/chubby/cocoa
 	name = "Cocoa"
 	desc = "A good boi, eats the scraps when you're not looking."
-	faction = FACTION_BAR
 	catalogue_data = list(/datum/category_item/catalogue/fauna/otie/cocoa)
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/red/chubby/cocoa)
+	configure(mob_rules(faction = FACTION_BAR))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 	configure(mob_movement(bump = 32))

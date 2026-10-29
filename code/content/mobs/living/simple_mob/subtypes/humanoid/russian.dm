@@ -7,7 +7,6 @@
 	icon_dead = "russianmelee_dead"
 	icon_gib = "syndicate_gib"
 
-	faction = FACTION_RUSSIAN
 
 	response_help = "pokes"
 	response_disarm = "shoves"
@@ -23,6 +22,9 @@
 					/obj/item/salvage/loot/russian = 10)
 
 	corpse = /obj/effect/landmark/mobcorpse/russian
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/russian)
+	configure(mob_rules(faction = FACTION_RUSSIAN))
 
 /mob/living/simple_mob/humanoid/russian/ranged
 	icon_state = "russianranged"

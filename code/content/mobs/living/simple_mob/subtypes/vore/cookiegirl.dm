@@ -16,11 +16,11 @@
 
 
 
-	faction = FACTION_COOKIEGIRL
 
 	// Activate Noms!
 
 CAPABILITIES(/mob/living/simple_mob/vore/cookiegirl)
+	configure(mob_rules(faction = FACTION_COOKIEGIRL))
 	configure(living_rules(say_list_type = /datum/say_list/cookiegirl))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/cookie, meat_amount = 10))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

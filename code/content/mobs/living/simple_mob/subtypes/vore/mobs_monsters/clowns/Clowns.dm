@@ -1,10 +1,8 @@
 /mob/living/simple_mob/clowns/
 	tt_desc = "E Homo sapiens corydon" //this is a clown
-	faction = FACTION_CLOWN
 	movement_sound = SFX_EFFECTS_CLOWNSTEP2
 	attack_sound = SFX_EFFECTS_WHIPCRACK
 
-	faction = FACTION_CLOWN
 
 	endurance = 100
 	see_in_dark = 8

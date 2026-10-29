@@ -7,7 +7,6 @@
 	desc = "A big stompy mech!"
 	icon = 'icons/mecha/mecha.dmi'
 
-	faction = FACTION_SYNDICATE
 	movement_cooldown = 1.5
 	movement_sound = SFX_MECHSTEP // This gets fed into playsound(), which can also take strings as a 'group' of sound files.
 	turn_sound = SFX_MECHA_MECHTURN
@@ -45,7 +44,7 @@
 	// 'Eject' our pilot, if one exists.
 	if(pilot_type)
 		var/mob/living/L = new pilot_type(loc)
-		L.faction = src.faction
+		L.set_faction(mob_rules_of(src).faction)
 
 	if(wreckage)
 		new wreckage(loc) // Leave some wreckage.
@@ -99,6 +98,7 @@
 	set_deflecting(FALSE)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	configure(mob_rules(faction = FACTION_SYNDICATE))
 	configure(living_rules(say_list_type = /datum/say_list/malf_drone, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	configure(mob_kind(death_message = "explodes!"))

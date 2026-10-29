@@ -8,7 +8,6 @@
 	icon_dead = "fennix_dead"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_FENNEC // Will protec other fenfens
 	endurance = 60
 
 
@@ -23,6 +22,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennix)
+	configure(mob_rules(faction = FACTION_FENNEC))
 	configure(living_rules(say_list_type = /datum/say_list/fennix))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox, meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

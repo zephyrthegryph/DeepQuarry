@@ -8,7 +8,6 @@
 	icon_living = "scrubble"
 	icon_state = "scrubble"
 	icon_rest = "scrubble_rest"
-	faction = FACTION_SCRUBBLE
 	friendly = list("nudges", "sniffs on", "rumbles softly at", "nuzzles")
 	response_help = "bumps"
 	response_disarm = "shoves"

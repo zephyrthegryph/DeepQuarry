@@ -13,7 +13,6 @@
 	icon_gib = "syndicate_gib"
 	icon= 'icons/mob/mercenaries.dmi'
 
-	faction = FACTION_SYNDICATE
 	movement_cooldown = 1
 
 	status_flags = 0
@@ -52,7 +51,7 @@
 	var/mob_count = 0				// Are there enough mobs to consider grenading?
 	var/turf/T = get_turf(A)
 	for(var/mob/M in range(T, 2))
-		if(M.faction == faction) 	// Don't grenade our friends
+		if(mob_rules_of(M).faction == mob_rules_of(src).faction) 	// Don't grenade our friends
 			return FALSE
 		if(M!=src && can_see(M)) // And lets check if we can actually see at least two people before we throw a grenade // dear god
 			if(!M.stat)			// Dead things don't warrant a grenade

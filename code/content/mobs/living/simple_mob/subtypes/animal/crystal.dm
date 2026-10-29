@@ -1,5 +1,7 @@
 /mob/living/simple_mob/animal/crystalbeast
-	faction = "livingcrystal"
+
+CAPABILITIES(/mob/living/simple_mob/animal/crystalbeast)
+	configure(mob_rules(faction = "livingcrystal"))
 
 //simple gimmick boss
 /mob/living/simple_mob/animal/crystalbeast/snail

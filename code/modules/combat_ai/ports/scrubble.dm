@@ -23,6 +23,7 @@
 	ai_attack_on_sight = TRUE   // legacy holder was /hostile, so it does react
 
 CAPABILITIES(/mob/living/simple_mob/vore/scrubble)
+	configure(mob_rules(faction = FACTION_SCRUBBLE))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/scrubble, use_modern_ai = TRUE))
 
 /mob/living/simple_mob/vore/scrubble/initialize_ai_brain()

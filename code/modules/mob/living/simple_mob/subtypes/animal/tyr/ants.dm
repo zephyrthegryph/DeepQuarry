@@ -16,7 +16,6 @@
 	attack_injury_kind = INJURY_CUT
 
 
-	faction = FACTION_TYR_ANT
 
 
 	tame_items = list(
@@ -430,7 +429,7 @@ CAPABILITIES(/obj/effect/ant_structure)
 		return
 	if(anchored && isliving(source))
 		var/mob/living/L = source
-		if(L.faction == FACTION_TYR_ANT)
+		if(mob_rules_of(L).faction == FACTION_TYR_ANT)
 			return
 		else if(L.m_intent == I_RUN)
 			act_message(L, src, MSG_SELF(span_danger("You step in %T%!")), MSG_OTHERS(span_danger("%U% steps in %T%.")), MSG_BLIND(span_hear(span_bold("You hear a strange rustling!"))))
@@ -537,6 +536,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/antling, spiderling_grow_as, list(/mob/
 MSG_DEF(ant/building, null, span_notice("%U% begins to secrete a sticky substance."))
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants)
+	configure(mob_rules(faction = FACTION_TYR_ANT))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_shock, meat_amount = 7, butchery_loot = list( /obj/item/stack/material/steel = 6 )))
 	configure(movable_motion(unacidable = TRUE))

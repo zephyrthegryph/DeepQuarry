@@ -24,7 +24,6 @@
 	icon_rest = "pakkun-rest"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_PAKKUN
 
 	movement_cooldown = 2
 
@@ -87,6 +86,7 @@
 		ai_brain.go_wake()
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
+	configure(mob_rules(faction = FACTION_PAKKUN))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "allow_mind_transfer" = TRUE))
 	configure(mob_kind(attack_cooldown = 5 SECONDS))

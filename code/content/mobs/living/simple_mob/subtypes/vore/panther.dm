@@ -11,7 +11,6 @@
 	icon = 'icons/mob/vore64x64.dmi'
 	vis_height = 64
 
-	faction = FACTION_PANTHER
 	endurance = 200
 	movement_cooldown = 0.5
 	see_in_dark = 8
@@ -42,6 +41,7 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
+	configure(mob_rules(faction = FACTION_PANTHER))
 	configure(living_rules(species_sounds = "Feline"))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/panther))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 8))

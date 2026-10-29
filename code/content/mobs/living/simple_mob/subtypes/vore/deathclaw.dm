@@ -33,7 +33,6 @@
 
 	attacktext = list("mauled")
 
-	faction = FACTION_AWAYMISSION
 
 	endurance = 200
 	see_in_dark = 8
@@ -64,6 +63,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
+	configure(mob_rules(faction = FACTION_AWAYMISSION))
 	configure(living_rules(vore_capacity = 2))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 8))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
@@ -119,6 +119,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
 /mob/living/simple_mob/vore/aggressive/dragon/virgo3b //phoron dragon
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
+	configure(mob_rules(faction = FACTION_VIRGO3B))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat))
 	configure(mob_nature(vore_eyes = TRUE))
 

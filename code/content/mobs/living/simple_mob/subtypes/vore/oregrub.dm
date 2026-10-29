@@ -22,7 +22,6 @@
 	icon_living = "oregrub"
 	icon_dead = "oregrub-dead"
 
-	faction = FACTION_GRUBS
 	endurance = 50 //oregrubs are quite hardy
 
 	melee_damage_lower = 1
@@ -67,6 +66,7 @@
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
+	configure(mob_rules(faction = FACTION_GRUBS))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/oregrub))
 	configure(butchery_rules(meat_type = /obj/item/ore/coal))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

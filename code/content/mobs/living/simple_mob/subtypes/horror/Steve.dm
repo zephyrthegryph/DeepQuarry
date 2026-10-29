@@ -7,7 +7,6 @@
 	icon_living = "Steve"
 	icon_dead = "sg_head"
 	icon_rest = "Steve"
-	faction = "horror"
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
@@ -38,6 +37,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/horror/Steve)
+	configure(mob_rules(faction = "horror"))
 	configure(living_rules(say_list_type = /datum/say_list/Steve))
 	configure(mob_kind(attack_cooldown = 5))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))

@@ -1,6 +1,5 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse
 	endurance = 600
-	faction = FACTION_ECLIPSE
 	icon = 'icons/mob/eclipse.dmi'
 	has_repair_droid = TRUE
 	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=100;rad=100"

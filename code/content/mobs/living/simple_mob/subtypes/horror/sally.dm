@@ -7,7 +7,6 @@
 	icon_living = "Sally"
 	icon_dead = "ws_head"
 	icon_rest = "Sally"
-	faction = "horror"
 	icon = 'icons/mob/horror_show/widehorror.dmi'
 	icon_gib = "generic_gib"
 
@@ -32,6 +31,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/horror/Sally)
+	configure(mob_rules(faction = "horror"))
 	configure(living_rules(say_list_type = /datum/say_list/Sally))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
 

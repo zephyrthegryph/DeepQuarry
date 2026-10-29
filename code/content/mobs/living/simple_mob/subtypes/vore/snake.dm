@@ -31,7 +31,6 @@
 	icon = 'icons/mob/vore64x64.dmi'
 	vis_height = 64
 
-	faction = FACTION_SNAKE
 	endurance = 200
 
 	melee_damage_lower = 5
@@ -50,6 +49,7 @@
 	pixel_y = -16
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/giant_snake)
+	configure(mob_rules(faction = FACTION_SNAKE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 

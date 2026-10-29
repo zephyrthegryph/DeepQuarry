@@ -281,7 +281,7 @@ CAPABILITIES(/obj/effect/spider/spiderling)
 		if(amount_grown >= 100)
 			var/spawn_type = pick(TYPE_TABLE_GET(src, spiderling_grow_as))
 			var/mob/living/simple_mob/animal/giant_spider/GS = new spawn_type(src.loc, src)
-			GS.faction = faction
+			GS.set_faction(faction)
 			if(stunted)
 				after(GS, 0.2 SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
 			replace_with(src, GS)

@@ -9,7 +9,6 @@
 	icon = 'icons/mob/vore64x64.dmi'
 	vis_height = 64
 
-	faction = FACTION_DRAGON
 	endurance = 500 // Boss
 	see_in_dark = 8
 
@@ -96,7 +95,6 @@
 	tt_desc = "Phoron Draconinae"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/phoron_dragon)
 	endurance = 300
-	faction = FACTION_VIRGO3B
 	icon_dead = "phoron_dragon_dead"
 	icon_living = "phoron_dragon"
 	icon_state = "phoron_dragon"
@@ -105,6 +103,7 @@
 	has_eye_glow = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
+	configure(mob_rules(faction = FACTION_DRAGON))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/dragonboss))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
@@ -125,7 +124,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
 	name = "space dragon"
 	tt_desc = "Astra Draconinae"
 	endurance = 300
-	faction = FACTION_DRAGON
 	icon_dead = "space_dragon_dead"
 	icon_living = "space_dragon"
 	icon_state = "space_dragon"
@@ -134,6 +132,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
 	has_eye_glow = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/space)
+	configure(mob_rules(faction = FACTION_DRAGON))
 	configure(mob_nature(vore_eyes = TRUE))
 
 // A fluff sprite for an event mob created by grayscaledrake

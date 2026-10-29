@@ -14,7 +14,6 @@
 	icon_rest = "rabbit_brown_rest"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_RABBIT
 	endurance = 30
 
 	response_help = "pats"
@@ -46,6 +45,7 @@
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
 CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
+	configure(mob_rules(faction = FACTION_RABBIT))
 	configure(living_rules(say_list_type = /datum/say_list/rabbit))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 3))
 	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = not(nameof(body_color)))

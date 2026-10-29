@@ -269,7 +269,7 @@ CAPABILITIES(/obj/sc_away_spawner)
 		my_mob.set_low_priority(TRUE)
 
 		if(faction)
-			my_mob.faction = faction
+			my_mob.set_faction(faction)
 
 		if(atmos_comp)
 			var/turf/T = get_turf(src)

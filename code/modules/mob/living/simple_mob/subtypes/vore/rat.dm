@@ -29,7 +29,6 @@
 	icon_living = "rous"
 	icon_dead = "rous-dead"
 	icon_rest = "rous_rest"
-	faction = FACTION_MOUSE
 	icon = 'icons/mob/vore64x32.dmi'
 
 	endurance = 150
@@ -216,6 +215,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
+	configure(mob_rules(faction = FACTION_MOUSE))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/rat))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
@@ -319,8 +319,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/event)
 	icon_living = "labrat"
 	icon_dead = "labrat-dead"
 	icon_rest = "labrat_rest"
-	faction = "neutral"
 	icon = 'icons/mob/vore64x32.dmi'
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/labrat)
+	configure(mob_rules(faction = "neutral"))
 
 /mob/living/simple_mob/vore/aggressive/rat/labrat/genetics
 	name = "Nibbles"

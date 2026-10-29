@@ -5,15 +5,15 @@
 /// The disposition rule the brain used before standings: the faction table, player_disposition for a client, and a simple mob that attacks on sight
 /// turning a NEUTRAL stranger HOSTILE.
 /proc/dq_old_disposition(datum/ai_brain/B, mob/other)
-	var/datum/faction_data/data = dq_faction_data_for(B.get_owner().faction)
+	var/datum/faction_data/data = dq_faction_data_for(mob_rules_of(B.get_owner()).faction)
 	var/result
 	if(other.client)
 		result = data.player_disposition
 	else
-		result = data.disposition_to_faction(other.faction)
+		result = data.disposition_to_faction(mob_rules_of(other).faction)
 	if(result == DQ_DISPOSITION_NEUTRAL && istype(B.get_owner(), /mob/living/simple_mob))
 		var/mob/living/simple_mob/SM = B.get_owner()
-		if(SM.ai_attack_on_sight && B.get_owner().faction != other.faction)
+		if(SM.ai_attack_on_sight && mob_rules_of(B.get_owner()).faction != mob_rules_of(other).faction)
 			result = DQ_DISPOSITION_HOSTILE
 	return result
 
@@ -26,7 +26,7 @@
 	var/list/mobs = list()
 	for(var/faction in factions)
 		var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/combat_ai_tactics_subject, ai_floor(0))
-		S.faction = faction
+		S.set_faction(faction)
 		mobs += S
 	var/checked = 0
 	for(var/aggro in list(TRUE, FALSE))
@@ -39,7 +39,7 @@
 				var/want = dq_old_disposition(A.ai_brain, B)
 				var/got = A.ai_brain.disposition_to(B)
 				checked++
-				TEST_ASSERT_EQUAL(got, want, "[A.faction] toward [B.faction] (attack on sight [aggro]): standings gave [got], the old rule [want]")
+				TEST_ASSERT_EQUAL(got, want, "[mob_rules_of(A).faction] toward [mob_rules_of(B).faction] (attack on sight [aggro]): standings gave [got], the old rule [want]")
 	TEST_ASSERT(checked > 100, "the parity matrix did not run")
 
 /// Grudges (60) beat the pack and the faction, effects (80) beat grudges, admin rows (100) beat effects; a row goes with its source.

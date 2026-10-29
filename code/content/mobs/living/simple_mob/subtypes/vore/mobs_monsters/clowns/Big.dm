@@ -1,6 +1,5 @@
 /mob/living/simple_mob/clowns/big
 	tt_desc = "E Homo sapiens corydon horrificus" //this clown is stronk
-	faction = FACTION_CLOWN
 
 	endurance = 200
 	see_in_dark = 8
@@ -24,3 +23,6 @@
 	max_n2 = 500
 	minbodytemp = 0
 	maxbodytemp = 700
+
+CAPABILITIES(/mob/living/simple_mob/clowns/big)
+	configure(mob_rules(faction = FACTION_CLOWN))

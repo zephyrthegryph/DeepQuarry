@@ -25,7 +25,6 @@
 	icon_state = "corrupt-repairbot"
 	icon_living = "corrupt-repairbot"
 
-	faction = FACTION_UNDERDARK
 	endurance = 25
 	movement_cooldown = -1
 	movement_sound = SFX_EFFECTS_SERVOSTEP
@@ -43,6 +42,7 @@
 	var/poison_per_bite = 5			// Amount added per injection.
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/corrupt_maint_drone)
+	configure(mob_rules(faction = FACTION_UNDERDARK))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_movement(hovering = FALSE))
 	configure(mob_kind(attack_cooldown = 2.5, death_message = "is smashed into pieces!"))

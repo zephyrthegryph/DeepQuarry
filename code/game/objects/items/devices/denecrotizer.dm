@@ -205,7 +205,7 @@ CAPABILITIES(/obj/item/denecrotizer)
 	var/mob/living/user = A.actor
 	if(QDELETED(target))
 		return OP_REFUSED
-	target.faction = user.faction
+	target.set_faction(mob_rules_of(user).faction)
 	target.revivedby = user.name
 	target.set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, target)
@@ -225,7 +225,7 @@ CAPABILITIES(/obj/item/denecrotizer)
 	var/mob/living/user = A.actor
 	if(QDELETED(target))
 		return OP_REFUSED
-	target.faction = user.faction
+	target.set_faction(mob_rules_of(user).faction)
 	target.revivedby = user.name
 	target.revive()
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")

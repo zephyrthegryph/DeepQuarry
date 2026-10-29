@@ -15,7 +15,6 @@
 	icon_living = "glitch_boss"
 	icon_dead = "glitch_boss_dead"
 
-	faction = FACTION_MATH
 
 	endurance = 2000
 	evasion = -75		// Its hitbox is broken ;_;
@@ -116,7 +115,7 @@ CAPABILITIES(/obj/item/projectile/energy/slow_orb)
 /mob/living/simple_mob/glitch_boss/proc/make_ads(atom/A)
 	var/list/potential_targets = list()
 	for(var/mob/living/mob in view(7, src))
-		if(mob.client && mob.faction != faction)
+		if(mob.client && mob_rules_of(mob).faction != mob_rules_of(src).faction)
 			potential_targets += mob
 	if(potential_targets.len)
 		var/iteration = clamp(potential_targets.len, 1, 4)
@@ -262,7 +261,6 @@ CAPABILITIES(/obj/item/projectile/energy/slow_orb)
 	icon_state = "glitch_boss"
 	icon_living = "glitch_boss"
 	icon_dead = "glitch_boss_dead"
-	faction = FACTION_MATH
 
 	endurance = 20
 	evasion = -75

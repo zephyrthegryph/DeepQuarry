@@ -10,7 +10,6 @@
 	icon = 'icons/mob/vore64x32.dmi'
 	vis_height = 64
 
-	faction = FACTION_PANTHER
 	endurance = 200
 	movement_cooldown = 0
 	see_in_dark = 8
@@ -91,6 +90,7 @@
 
 // Force uncloaking if attacked.
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther/thor)
+	configure(mob_rules(faction = FACTION_PANTHER))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/panther))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))

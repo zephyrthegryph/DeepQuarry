@@ -6,7 +6,6 @@
 	name = "Priest"
 	real_name = "Priest"
 	construct_type = "Priest"
-	faction = "purity"
 	desc = "A medium sized construct of the purity worshippers mechanical followers, sturdy but lacking strength."
 	icon_state = "priest"
 	icon_living = "priest"
@@ -22,6 +21,9 @@
 	construct_spells = list(/datum/spell/targeted/purity_repair_aura,
 							/datum/spell/targeted/construct_advanced/mend_purity
 							)
+
+CAPABILITIES(/mob/living/simple_mob/construct/priest)
+	configure(mob_rules(faction = "purity"))
 
 
 /datum/decl/mob_organ_names/artificer

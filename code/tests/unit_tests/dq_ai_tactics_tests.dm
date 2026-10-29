@@ -11,7 +11,6 @@
 	icon_state = "tiger"
 	icon_living = "tiger"
 	icon_dead = "tiger-dead"
-	faction = FACTION_CREATURE
 	endurance = 90
 	melee_damage_lower = 8
 	melee_damage_upper = 14
@@ -21,6 +20,7 @@
 	var/test_vitality = 1
 
 CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
+	configure(mob_rules(faction = FACTION_CREATURE))
 	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	configure(mob_kind(attack_cooldown = 1.2 SECONDS))
@@ -587,7 +587,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/combat_ai_tactics_subject, ai_floor(0, 1))
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, ai_floor(1, 1))
 	var/datum/ai_brain/B = S.ai_brain
-	S.faction = "combat_ai_tactics_other"
+	S.set_faction("combat_ai_tactics_other")
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/maul_unconscious), "maul scored a conscious mob")
 	H.set_stat(UNCONSCIOUS)
 	TEST_ASSERT_EQUAL(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/maul_unconscious)), 50, "maul did not score 50 for a downed mob in reach")

@@ -24,9 +24,9 @@
 		var/mob/living/simple_mob/blob/spore/S = new spore_type(T)
 		if(istype(S))
 			rel_set(S, nameof(S.overmind), O)
-			S.faction = faction
+			S.set_faction(faction)
 		else
-			S.faction = faction
+			S.set_faction(faction)
 		S.update_icons()
 
 /datum/blob_type/fulminant_organism/on_death(obj/structure/blob/B)
@@ -35,15 +35,15 @@
 		B.visible_message(span_danger("\The [S] floats free from the [name]!"))
 		if(istype(S))
 			rel_set(S, nameof(S.overmind), B.overmind)
-			S.faction = faction
+			S.set_faction(faction)
 		else
-			S.faction = faction
+			S.set_faction(faction)
 		S.update_icons()
 
 /datum/blob_type/fulminant_organism/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
 	for(var/I = 1 to rand(3,4))
 		var/mob/living/simple_mob/blob/spore/S = new spore_type(get_turf(B))
-		S.faction = user.faction
+		S.set_faction(mob_rules_of(user).faction)
 		rel_set(S, nameof(S.blob_type), src)
 		S.update_icons()
 		S.ai_brain.forget_everything()

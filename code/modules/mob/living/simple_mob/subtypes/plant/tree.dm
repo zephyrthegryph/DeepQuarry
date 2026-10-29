@@ -9,7 +9,6 @@
 	icon_gib = "pine_1"
 
 
-	faction = FACTION_PLANTS
 	endurance = 250
 	poison_resist = 1.0
 
@@ -30,6 +29,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/tree)
+	configure(mob_rules(faction = FACTION_PLANTS))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat, meat_amount = 2))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))

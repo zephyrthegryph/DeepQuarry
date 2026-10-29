@@ -20,9 +20,9 @@
 	attacktext = list("bites","scratches")
 
 
-	faction = FACTION_VAMPIRE
 
 CAPABILITIES(/mob/living/simple_mob/vore/bat)
+	configure(mob_rules(faction = FACTION_VAMPIRE))
 	configure(living_rules(say_list_type = /datum/say_list/bat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 

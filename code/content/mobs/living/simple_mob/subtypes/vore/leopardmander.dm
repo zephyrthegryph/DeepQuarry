@@ -8,7 +8,6 @@
 	icon_living = "leopardmander"
 	icon_state = "leopardmander"
 	icon_rest = "leopardmander-rest"
-	faction = FACTION_NEUTRAL
 	old_x = -48
 	old_y = 0
 	vis_height = 92
@@ -55,6 +54,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 4))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))

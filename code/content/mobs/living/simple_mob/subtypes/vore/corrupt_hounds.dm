@@ -23,7 +23,6 @@
 	icon = 'icons/mob/vore64x32.dmi'
 	has_eye_glow = TRUE
 
-	faction = FACTION_CORRUPT
 
 	endurance = 200
 	movement_sound = SFX_EFFECTS_HOUNDSTEP
@@ -109,6 +108,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi)
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
+	configure(mob_rules(faction = FACTION_CORRUPT))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/corrupthound))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
@@ -265,7 +265,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	icon = 'icons/mob/vore64x32.dmi'
 	has_eye_glow = TRUE
 
-	faction = "corrupt"
 
 	endurance = 200
 	movement_sound = SFX_EFFECTS_HOUNDSTEP
@@ -350,6 +349,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	configure(mob_rules(faction = "corrupt"))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/corrupthound/janihound))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_kind(death_message = "shudders and collapses!"))

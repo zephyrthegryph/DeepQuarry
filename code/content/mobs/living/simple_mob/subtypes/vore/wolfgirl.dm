@@ -8,7 +8,6 @@
 	icon_dead = "wolfgirl-dead"
 	icon = 'icons/mob/vore.dmi'
 
-	faction = FACTION_WOLFGIRL
 	endurance = 30
 
 	response_help = "pats"
@@ -22,6 +21,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolfgirl)
+	configure(mob_rules(faction = FACTION_WOLFGIRL))
 	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(say_list_type = /datum/say_list/wolfgirl))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))

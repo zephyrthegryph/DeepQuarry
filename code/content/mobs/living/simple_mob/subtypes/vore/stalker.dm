@@ -8,7 +8,6 @@
 	icon_living = "stalker"
 	icon_state = "stalker"
 	icon_rest = "stalker_rest"
-	faction = FACTION_STALKER
 	old_x = -16
 	old_y = 0
 	default_pixel_x = -16
@@ -41,6 +40,7 @@
 	vore_bump_emote = "pounces on"
 
 CAPABILITIES(/mob/living/simple_mob/vore/stalker)
+	configure(mob_rules(faction = FACTION_STALKER))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/stalker))
 
 /mob/living/simple_mob/vore/stalker/load_default_bellies()

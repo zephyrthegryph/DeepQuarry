@@ -10,7 +10,6 @@
 	icon_living = "sonadile"
 	icon_state = "sonadile"
 	icon_rest = "sonadile"
-	faction = FACTION_SONADILE
 	old_x = -16
 	old_y = 0
 	default_pixel_x = -16
@@ -78,6 +77,7 @@
 		look.state("[icon_living]-2")
 
 CAPABILITIES(/mob/living/simple_mob/vore/sonadile)
+	configure(mob_rules(faction = FACTION_SONADILE))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/sonadile))
 	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))
 

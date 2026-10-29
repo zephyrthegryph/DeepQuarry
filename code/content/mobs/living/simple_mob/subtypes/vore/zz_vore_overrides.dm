@@ -219,7 +219,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mimic)
 // Override stuff for holodeck carp to make them not digest when set to safe!
 /mob/living/simple_mob/animal/space/carp/holographic/load_default_bellies()
 	. = ..()
-	var/safe = (faction == FACTION_NEUTRAL)
+	var/safe = (mob_rules_of(src).faction == FACTION_NEUTRAL)
 	for(var/obj/belly/B as anything in vore_organs)
 		B.set_digest_mode(safe ? DM_HOLD : vore_default_mode)
 
@@ -229,4 +229,3 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mimic)
 		B.set_digest_mode(safe ? DM_HOLD : vore_default_mode)
 
 /mob/living/simple_mob/animal/passive/mouse
-	faction = FACTION_MOUSE //Giving mice a faction so certain mobs can get along with them.

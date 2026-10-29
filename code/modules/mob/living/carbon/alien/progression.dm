@@ -35,8 +35,8 @@
 
 	transfer_languages(src, adult)
 
-	if(src.faction != "neutral")
-		adult.faction = src.faction
+	if(mob_rules_of(src).faction != "neutral")
+		adult.set_faction(mob_rules_of(src).faction)
 
 	if(move_player(src, adult, "grew into [adult]"))
 		if (can_namepick_as_adult)

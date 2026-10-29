@@ -297,7 +297,7 @@
 			var/mobchoice = pickweight(GLOB.rm_controller.mobs["tier[GLOB.rm_controller.diffstep]"])
 			GLOB.rm_controller.dbg("ZM(p): Picked [mobchoice] to spawn.")
 			var/mob/living/newmob = new mobchoice(get_turf(SP))
-			newmob.faction = FACTION_ASTEROID_BELT
+			newmob.set_faction(FACTION_ASTEROID_BELT)
 			rel_add(src, nameof(spawned_mobs), newmob)
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")

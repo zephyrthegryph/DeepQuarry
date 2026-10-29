@@ -34,9 +34,9 @@
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
-	faction = FACTION_WOLFTAUR
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur)
+	configure(mob_rules(faction = FACTION_WOLFTAUR))
 	configure(living_rules(say_list_type = /datum/say_list/wolftaur))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
 	look_from(nameof(icon_living), rest = "*_rest", dead = "*-dead", only_if = nameof(random_skin))

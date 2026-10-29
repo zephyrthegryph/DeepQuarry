@@ -26,9 +26,9 @@
 		"peasantmb"
 	)
 
-	faction = FACTION_PEASANT
 
 CAPABILITIES(/mob/living/simple_mob/vore/peasant)
+	configure(mob_rules(faction = FACTION_PEASANT))
 	configure(living_rules(say_list_type = /datum/say_list/peasant))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
 	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))

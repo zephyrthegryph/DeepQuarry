@@ -7,7 +7,6 @@
 	icon_state = "lizardman"
 	icon_living = "lizardman"
 	icon_dead = "lizardman-dead"
-	faction = "lizard"
 
 
 	endurance = 50
@@ -30,6 +29,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/lizardman)
+	configure(mob_rules(faction = "lizard"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/lizardman))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 

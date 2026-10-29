@@ -1521,7 +1521,7 @@ MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 	initialize_ai_brain()
 	if(!ai_brain)
 		return
-	faction = A.step_value("faction")
+	set_faction(A.step_value("faction"))
 	var/stance = A.step_value("stance")
 	if(stance)
 		set_use_stance(stance)

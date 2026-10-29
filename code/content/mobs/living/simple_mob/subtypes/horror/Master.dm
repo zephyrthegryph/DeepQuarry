@@ -7,7 +7,6 @@
 	icon_living = "Helix"
 	icon_dead = "m_dead"
 	icon_rest = "Helix"
-	faction = "horror"
 	icon = 'icons/mob/horror_show/master.dmi'
 	vis_height = 64
 	icon_gib = "generic_gib"
@@ -34,6 +33,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/horror/Master)
+	configure(mob_rules(faction = "horror"))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
 
 

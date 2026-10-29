@@ -3,7 +3,6 @@
 	desc = "A large, very important looking ai. It sparks as it moves to attacks."
 	icon_state = "powertower"
 	icon_living = "powertower"
-	faction = FACTION_TYR
 	movement_cooldown = 10
 	size_multiplier = 2
 	endurance = 500
@@ -26,6 +25,9 @@
 		/obj/item/prop/deconstructable/gigacell = 100,
 		)
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/tyr)
+	configure(mob_rules(faction = FACTION_TYR))
+
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/tyr/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
 	switch(attackcycle)
@@ -44,7 +46,6 @@
 	desc = "A large, very important looking ai."
 	icon_state = "bluetower"
 	icon_living = "bluetower"
-	faction = FACTION_HIVEBOT
 	movement_cooldown = 10
 	size_multiplier = 2
 	endurance = 600
@@ -67,6 +68,9 @@
 		/obj/item/perfect_tele/alien = 100,
 		/obj/item/prop/deconstructable/gigacell = 100
 			)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/nanoweavetower)
+	configure(mob_rules(faction = FACTION_HIVEBOT))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/nanoweavetower/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
