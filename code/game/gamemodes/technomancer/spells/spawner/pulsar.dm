@@ -17,7 +17,6 @@ CAPABILITIES(/obj/item/spell/spawner/pulsar)
 	configure(light_glow(range = 3, power = 2, color = "#2ECCFA"))
 
 /obj/item/spell/spawner/pulsar
-	light_on = TRUE
 
 /obj/item/spell/spawner/pulsar/on_ranged_cast(atom/hit_atom, mob/user)
 	if(within_range(hit_atom) && pay_energy(4000))

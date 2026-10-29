@@ -216,7 +216,6 @@ CAPABILITIES(/turf/simulated/shuttle)
 
 /turf/simulated/shuttle/floor/alien
 	icon_state = "alienpod1"
-	light_on = TRUE
 	block_tele = TRUE
 
 CAPABILITIES(/turf/simulated/shuttle/floor/alien)

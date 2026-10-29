@@ -123,8 +123,8 @@ export const VoreMessagesEditor = ({ data }: EditorProps) => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: '12px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 30em), 1fr))',
+        gap: '1em',
         alignItems: 'start',
       }}
     >

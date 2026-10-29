@@ -163,6 +163,7 @@
 
 CAPABILITIES(/obj/effect/shield)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	op("touch_shield", hand(), then(PROC_REF(interaction_touch_shield)))
 	op("hit_shield", item(/obj/item), then(PROC_REF(interaction_hit_shield)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_emp_drain)))
@@ -299,12 +300,15 @@ CAPABILITIES(/obj/effect/shield)
 	return OP_PASS
 
 // Special treatment for meteors because they would otherwise penetrate right through the shield.
-/obj/effect/shield/Bumped(atom/movable/mover)
+/// The bump notice: `mover` walked into it (was Bumped()).
+/obj/effect/shield/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/movable/mover = N.bumper
 	if(!gen())
 		consume(src)
 		return 0
 	mover.shield_impact(src)
-	return ..()
+	return
 
 // Meteors call this instad of Bumped for some reason
 /obj/effect/shield/handle_meteor_impact(obj/effect/meteor/meteor)

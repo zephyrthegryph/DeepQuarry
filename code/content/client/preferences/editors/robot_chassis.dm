@@ -23,6 +23,9 @@
 		"chassis" = preferences.read_preference(/datum/preference/text/human/robot_chassis),
 	)
 
+/datum/preference_editor/robot_chassis/static_cache_key(datum/preferences/preferences)
+	return preferences.read_preference(/datum/preference/text/human/play_mode) || "human"
+
 /datum/preference_editor/robot_chassis/build_ui_static_data(datum/preferences/preferences)
 	// Humans never see this editor (the middleware hides the chassis group in
 	// human mode). Return an empty stub so we don't iterate ~300 chassis

@@ -440,6 +440,7 @@ CAPABILITIES(/obj/structure/holostool)
 	init_from_table = TRUE
 
 CAPABILITIES(/obj/structure/portal_gateway)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	configure(movable_motion(unacidable = TRUE))
 
 /obj/structure/portal_target

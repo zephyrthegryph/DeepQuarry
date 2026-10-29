@@ -654,6 +654,8 @@ impl Drop for Permit {
 struct SpillOnExit(Arc<Shared>);
 impl Drop for SpillOnExit {
     fn drop(&mut self) {
+        // Retire, idle exit and supersession all end here: no cache batch is left unpublished.
+        crate::cache_flush::wait_all();
         let slots: Vec<(SessionKey, Arc<Slot>)> = self
             .0
             .slots

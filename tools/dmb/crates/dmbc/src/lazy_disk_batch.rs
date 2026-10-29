@@ -6,6 +6,11 @@ pub(super) enum State {
     Failed(String),
     Finished,
 }
+/// A closed batch: nothing to publish, or the spool to publish.
+pub enum TakenBatch {
+    Report(dm_cache::BatchReport),
+    Spool(dm_cache::BatchSpool),
+}
 pub struct Attempt<'a>(&'a LazyDisk);
 impl Drop for Attempt<'_> {
     fn drop(&mut self) {
@@ -70,6 +75,20 @@ impl LazyDisk {
         let state = self.batch.lock().unwrap_or_else(|error| error.into_inner());
         if let State::Open(spool) = &*state {
             spool.visit_storage(visitor);
+        }
+    }
+    /// As [`Self::finish_batch`] for a caller that publishes in the background: the batch is closed to producers here (so the
+    /// request's own end cannot invalidate it) and the spool, whose publication is the expensive part, is handed back.
+    pub fn take_batch(&self) -> Result<TakenBatch, String> {
+        let mut state = self
+            .batch
+            .lock()
+            .map_err(|_| "cache batch lock poisoned".to_owned())?;
+        match std::mem::replace(&mut *state, State::Finished) {
+            State::Dormant => Ok(TakenBatch::Report(dm_cache::BatchReport::default())),
+            State::Open(spool) => Ok(TakenBatch::Spool(spool)),
+            State::Failed(error) => Err(error),
+            State::Finished => Err("cache batch already finished".into()),
         }
     }
     /// The request coordinator alone calls this after successful output publication.

@@ -54,6 +54,31 @@ CAPABILITIES(/transformation/dq_spawn/frosty)
 CAPABILITIES(/transformation/dq_spawn/timed_pulse)
 	configure(transformation(takes = list(reagent(REAGENT_ID_NITROGEN, 1)), made = 1, effects = sets_off(kind = XFORM_FX_EMP, delay = 1 SECOND, ranges = list(1, 1, 1, 1))))
 
+/transformation/dq_spawn/shove
+
+CAPABILITIES(/transformation/dq_spawn/shove)
+	configure(transformation(takes = list(reagent(REAGENT_ID_RADIUM, 2)), made = 1, effects = sets_off(kind = XFORM_FX_GRAVITY, direction = GRAVITY_PUSH, range = 2)))
+
+/transformation/dq_spawn/soothe
+
+CAPABILITIES(/transformation/dq_spawn/soothe)
+	configure(transformation(takes = list(reagent(REAGENT_ID_PHORON, 1)), made = 1, effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_CALM)))
+
+/transformation/dq_spawn/rile
+
+CAPABILITIES(/transformation/dq_spawn/rile)
+	configure(transformation(takes = list(reagent(REAGENT_ID_HYDROGEN, 1)), made = 1, effects = sets_off(kind = XFORM_FX_MOOD, mood = MOOD_ENRAGE)))
+
+/transformation/dq_spawn/ignite
+
+CAPABILITIES(/transformation/dq_spawn/ignite)
+	configure(transformation(takes = list(reagent(REAGENT_ID_OXYGEN, 1)), made = 4, effects = sets_off(kind = XFORM_FX_BURN, gases = list(GAS_VOLATILE_FUEL = 1), scale_by_made = TRUE, temperature = 500, range = 0, floors_only = TRUE)))
+
+/transformation/dq_spawn/dose
+
+CAPABILITIES(/transformation/dq_spawn/dose)
+	configure(transformation(takes = list(reagent(REAGENT_ID_IRON, 1)), made = 1, effects = sets_off(kind = XFORM_FX_CONTAGION, edit = CONTAGION_PICKY, symptoms = list(/datum/viral_trait/sneeze))))
+
 /// An item that notes the pulse.
 /obj/item/dq_emp_probe
 	var/pulsed = 0
@@ -178,5 +203,114 @@ CAPABILITIES(/transformation/dq_spawn/timed_pulse)
 	test_time(2 SECONDS)
 	TEST_ASSERT(near.pulsed > 0, "and goes off after the delay with its fixed ranges")
 	test_driver_end()
+
+/datum/unit_test/dq_xform_sets_off_gravity_push
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_gravity_push/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/turf/side = locate(T.x + 1, T.y, T.z)
+	var/obj/item/dq_emp_probe/loose = allocate(/obj/item/dq_emp_probe, side)
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_RADIUM, 2, safety = 1)
+	xform_settle_reagents(H)
+	var/datum/thrownthing/flight = loose.throwing
+	TEST_ASSERT_NOTNULL(flight, "the rule threw the loose item")
+	var/steps = 0
+	while(!QDELETED(flight) && steps++ < 100)
+		// world.time is frozen inside a test; a throw's pace is measured from its start_time, so age it one server tick per slot.
+		flight.start_time -= world.tick_lag
+		test_time(1)
+	TEST_ASSERT(QDELETED(flight), "the throw never landed")
+	TEST_ASSERT(get_dist(loose, T) > get_dist(side, T), "the item landed further from the vessel than it started")
+	test_driver_end()
+
+/datum/unit_test/dq_xform_sets_off_mood
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_mood/Run()
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/slime/xenobio/calmed = allocate(/mob/living/simple_mob/slime/xenobio, T)
+	var/mob/living/simple_mob/slime/xenobio/riled = allocate(/mob/living/simple_mob/slime/xenobio, T)
+	calmed.apply_body_effect(/datum/body_effect/berserk, 5 MINUTES)
+	TEST_ASSERT(calmed.has_body_effect(/datum/body_effect/berserk), "the first slime starts berserk")
+	TEST_ASSERT(!riled.has_body_effect(/datum/body_effect/berserk), "the second slime starts calm")
+	var/saved_luminosity = T.luminosity
+	T.luminosity = 3 // view() sees only lit turfs
+	var/datum/reagents/dq_spawn_fixture/soothe = dq_spawn_holder(T)
+	soothe.add_reagent(REAGENT_ID_PHORON, 1, safety = 1)
+	xform_settle_reagents(soothe)
+	var/calm_took_it = !calmed.has_body_effect(/datum/body_effect/berserk)
+	var/calm_left_it_alone = !riled.has_body_effect(/datum/body_effect/berserk)
+	var/datum/reagents/dq_spawn_fixture/rile = dq_spawn_holder(T)
+	rile.add_reagent(REAGENT_ID_HYDROGEN, 1, safety = 1)
+	xform_settle_reagents(rile)
+	var/rile_gave_it = riled.has_body_effect(/datum/body_effect/berserk)
+	T.luminosity = saved_luminosity
+	TEST_ASSERT(calm_took_it, "a calm mood takes the berserk off a slime in view")
+	TEST_ASSERT(calm_left_it_alone, "and gives a calm one nothing")
+	TEST_ASSERT(rile_gave_it, "an enraged mood puts berserk on a slime in view")
+
+/// Berserk ends into an exhaustion (/datum/body_effect/berserk_exhaustion, 2 minutes) however it ends, including a calm wave taking it off, and berserk refuses
+/// to start on an exhausted mob: calming a slime and enraging it straight after puts no berserk back until the exhaustion is over. Designed: can_apply() of
+/// the effect ("You recently berserked, and cannot do so again while exhausted").
+/datum/unit_test/dq_xform_sets_off_mood_exhaustion
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_mood_exhaustion/Run()
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/slime/xenobio/slime = allocate(/mob/living/simple_mob/slime/xenobio, T)
+	slime.apply_body_effect(/datum/body_effect/berserk, 5 MINUTES)
+	var/saved_luminosity = T.luminosity
+	T.luminosity = 3 // view() sees only lit turfs
+	var/datum/reagents/dq_spawn_fixture/soothe = dq_spawn_holder(T)
+	soothe.add_reagent(REAGENT_ID_PHORON, 1, safety = 1)
+	xform_settle_reagents(soothe)
+	var/exhausted = slime.has_body_effect(/datum/body_effect/berserk_exhaustion)
+	var/datum/reagents/dq_spawn_fixture/rile = dq_spawn_holder(T)
+	rile.add_reagent(REAGENT_ID_HYDROGEN, 1, safety = 1)
+	xform_settle_reagents(rile)
+	var/refused = !slime.has_body_effect(/datum/body_effect/berserk)
+	slime.remove_body_effect(/datum/body_effect/berserk_exhaustion)
+	var/datum/reagents/dq_spawn_fixture/rile_again = dq_spawn_holder(T)
+	rile_again.add_reagent(REAGENT_ID_HYDROGEN, 1, safety = 1)
+	xform_settle_reagents(rile_again)
+	var/rested = slime.has_body_effect(/datum/body_effect/berserk)
+	T.luminosity = saved_luminosity
+	TEST_ASSERT(exhausted, "taking berserk off leaves the slime exhausted")
+	TEST_ASSERT(refused, "and berserk is refused while it is exhausted")
+	TEST_ASSERT(rested, "once the exhaustion is over, enraging puts berserk back")
+
+/datum/unit_test/dq_xform_sets_off_burn
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_burn/Run()
+	var/turf/T = dq_containment_floor()
+	TEST_ASSERT_NOTNULL(T, "a clean floor to burn on")
+	var/datum/gas_mixture/air = T.return_air()
+	var/before = air.get_moles(GAS_VOLATILE_FUEL)
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_OXYGEN, 1, safety = 1)
+	xform_settle_reagents(H)
+	TEST_ASSERT(T.return_air().get_moles(GAS_VOLATILE_FUEL) > before, "the burn rule put fuel on the vessel's tile, scaled by what the step made")
+
+/datum/unit_test/dq_xform_sets_off_contagion
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_sets_off_contagion/Run()
+	set_global(nameof(GLOB.archive_diseases), list())
+	var/turf/T = test_floor()
+	var/datum/affliction/contagion/engineered/strain = allocate(/datum/affliction/contagion/engineered, FALSE)
+	var/datum/viral_trait/sneeze/prototype = dq_proto(/datum/viral_trait/sneeze)
+	TEST_ASSERT(!strain.HasSymptom(prototype), "the strain starts without the symptom")
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_BLOOD, 5, safety = 1)
+	var/datum/reagent/blood/B = locate_in_list(H.reagent_list, /datum/reagent/blood)
+	TEST_ASSERT_NOTNULL(B, "the vessel holds blood")
+	B.data = list("viruses" = list(strain))
+	H.add_reagent(REAGENT_ID_IRON, 1, safety = 1)
+	xform_settle_reagents(H)
+	TEST_ASSERT(strain.HasSymptom(prototype), "the picky evolve added the one symptom it was given")
 
 #endif
