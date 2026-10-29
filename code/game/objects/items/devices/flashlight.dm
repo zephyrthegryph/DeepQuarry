@@ -14,6 +14,7 @@
 
 MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/flashlight
+	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "flashlight"
 	desc = "A hand-held emergency light."
 	icon = 'icons/obj/lighting.dmi'
@@ -74,9 +75,7 @@ CAPABILITIES(/obj/item/flashlight)
 		look.state("[initial(icon_state)]-on")
 
 /obj/item/flashlight/proc/update_brightness()
-	set_light_on(on)
-	if(atom_rules_of(src).light_system == STATIC_LIGHT)
-		update_light()
+	set_light_on(on) // the setter reconciles the light source
 
 /obj/item/flashlight/examine(mob/user)
 	. = ..()
@@ -452,7 +451,7 @@ CAPABILITIES(/obj/item/flashlight/flare)
 /obj/item/flashlight/flare/proc/turn_off()
 	set_on(0)
 	src.set_force(combat_of_type(src.type).force)
-	src.injury_kind = initial(src.injury_kind)
+	src.set_injury_kind(combat_of_type(src.type).injury_kind)
 	update_brightness()
 
 /obj/item/flashlight/flare/switch_light(mob/user)
@@ -467,13 +466,13 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	if(. == CAN_USE)
 		act_message(user, null, MSG_SELF(span_notice("You pull the cord on the flare, activating it!")), MSG_OTHERS(span_notice("%U% activates the flare.")))
 		set_force(on_damage)
-		injury_kind = INJURY_BURN
+		set_injury_kind(INJURY_BURN)
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	set_on(!on)
 	update_brightness()
 	set_force(on_damage)
-	injury_kind = INJURY_BURN
+	set_injury_kind(INJURY_BURN)
 	return 1
 
 /*

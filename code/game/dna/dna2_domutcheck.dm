@@ -19,7 +19,7 @@
 		if(!M || !M.dna)
 			return
 		if(gene.block)
-			if((gene.name in M.active_genes) || gene.flags & GENE_ALWAYS_ACTIVATE)
+			if((gene.name in sparse_get(M, active_genes)) || gene.flags & GENE_ALWAYS_ACTIVATE)
 				enabled_genes.Add(gene)
 			else
 				disabled_genes.Add(gene)
@@ -39,7 +39,7 @@
 			gene_active = M.dna.GetSEState(gene.block)
 
 		// Prior state
-		var/gene_prior_status = (gene.name in M.active_genes) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
+		var/gene_prior_status = (gene.name in sparse_get(M, active_genes)) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
 		var/changed = gene_active != gene_prior_status || (gene.flags & GENE_ALWAYS_ACTIVATE)
 
 		// If gene state has changed:
@@ -56,13 +56,11 @@
 						continue // The SE is on, but the gene is denied...
 				gene.activate(M,connected,flags)
 				if(M)
-					LAZYDISTINCTADD(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
-					M.update_icon = 1
+					gene.mark_active(M, TRUE)
 			// If Gene is NOT active:
 			else
 				gene.deactivate(M,connected,flags)
 				if(M)
-					LAZYREMOVE(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
-					M.update_icon = 1
+					gene.mark_active(M, FALSE)
 	// Inform anything attached of our mutation
 	PUBLISH_LEGACY(M, /datum/notice/mob_dna_mutation)

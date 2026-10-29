@@ -1,33 +1,22 @@
 /mob/living/carbon/human
 	name = "unknown"
 	real_name = "unknown"
-	voice_name = "unknown"
 	icon = 'icons/effects/effects.dmi'	//We have an ultra-complex update icons that overlays everything, don't load some stupid random male human
 	icon_state = "nothing"
 
 
-	vore_capacity = 3
-	vore_capacity_ex = list("stomach" = 3, "taur belly" = 3)
 	vore_fullness_ex = list("stomach" = 0, "taur belly" = 0)
-	vore_icon_bellies = list("stomach", "taur belly")
 	var/struggle_anim_stomach = FALSE
 	var/struggle_anim_taur = FALSE
 
 	var/embedded_flag					//To check if we've need to roll for damage on movement while an item is imbedded in us.
-	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
-
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 
-	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
-	var/list/teleporters = list() //Used for lleill abilities
-
 	var/rest_dir = 0					//To lay down in a specific direction
-	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
-	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
 
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
-/// A human is named by its species, for its gender (rolls(), after set_species() ran before its parents' init).
+/// A human is named by its species, for its gender (rolls(), after set_species() ran in phase 0, before the Initialize() chain).
 /mob/living/carbon/human/proc/roll_species_name(datum/roller/R, target)
 	if(target == "name")
 		return real_name
@@ -41,17 +30,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
 /// The species a human is made as (its constructor param, or a species subtype's own), or null for the default.
 /mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
-
-// ALLOW(init/INSTANCE_STATE): a human sets its species before its parents' init build the body and the name
-/mob/living/carbon/human/Initialize(mapload)
-	// its DNA exists already (an early starting occupant): set_species() writes into it
-	if(!species)
-		if(species_at_make)
-			set_species(species_at_make)
-		else
-			set_species()
-
-	return ..()
 
 /// Its setup hook (setup() in the human's CAPABILITIES): its DNA, blood and alternate look, once its parents' init is done.
 /mob/living/carbon/human/proc/finish_human_init()
@@ -123,7 +101,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 				if(SRM.CanUse())
 					L[++L.len] = list(SRM.module.interface_name,null,null,SRM.name,REF(SRM))
 		}
-		misc_tabs["Hardsuit Modules"] = L
+		misc_tab_set(src, "Hardsuit Modules", L)
 
 /mob/living/update_misc_tabs()
 	..()
@@ -145,9 +123,12 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		var/obj/item/rig/R = get_equipped_item(SLOT_ID_BELT)
 		RigPanel(R)
 
-/mob/living/carbon/human/ex_act(severity)
-	if(..())
-		return
+/// A blast on a human (the explosion hit hook): the severity ladder below.
+/mob/living/carbon/human/proc/human_blast(datum/act/hit/explosion/A)
+	human_blast_ladder(A.packet.severity)
+	return OP_OK
+
+/mob/living/carbon/human/proc/human_blast_ladder(severity)
 	if(is_incorporeal()) // Can't explode shadekin in phase
 		return
 
@@ -574,7 +555,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			text += span_bold("Religious Beliefs:") + " [R.fields["religion"]]"
 			text += span_bold("Known Languages:") + " [R.fields["languages"]]"
 	text += span_bold("Notes:") + " [R.fields["notes"]]"
-	text += "<a href='byond://?src=\ref[src];[kind[1]]recordComment=`'>\[View Comment Log\]</a>"
+	text += "<a href='byond://?src=[REF(src)];[kind[1]]recordComment=`'>\[View Comment Log\]</a>"
 	to_chat(user, span_filter_notice("[jointext(text, "<br>")]"))
 
 /// Print the comment log of the record `hud_type` reads.
@@ -590,7 +571,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		counter++
 	if(counter == 1)
 		to_chat(user, span_filter_notice("No comment found."))
-	to_chat(user, span_filter_notice("<a href='byond://?src=\ref[src];[kind[1]]recordadd=`'>\[Add comment\]</a>"))
+	to_chat(user, span_filter_notice("<a href='byond://?src=[REF(src)];[kind[1]]recordadd=`'>\[Add comment\]</a>"))
 
 /// Editing one flavor text part. Re-checked on the answer: it's your own.
 /datum/prompt/text/flavor_part
@@ -810,10 +791,10 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	return 0
 
 /mob/living/carbon/human/abiotic(full_body = 0)
-	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK) || get_equipped_item(SLOT_ID_HEAD) || get_equipped_item(SLOT_ID_SHOES) || get_equipped_item(SLOT_ID_UNIFORM) || get_equipped_item(SLOT_ID_SUIT) || get_equipped_item(SLOT_ID_EYES) || get_equipped_item(SLOT_ID_EAR_L) || get_equipped_item(SLOT_ID_EAR_R) || get_equipped_item(SLOT_ID_GLOVES))))
+	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK) || get_equipped_item(SLOT_ID_HEAD) || get_equipped_item(SLOT_ID_SHOES) || get_equipped_item(SLOT_ID_UNIFORM) || get_equipped_item(SLOT_ID_SUIT) || get_equipped_item(SLOT_ID_EYES) || get_equipped_item(SLOT_ID_EAR_L) || get_equipped_item(SLOT_ID_EAR_R) || get_equipped_item(SLOT_ID_GLOVES))))
 		return 1
 
-	if( (get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_L).abstract) || (get_equipped_item(SLOT_ID_HAND_R) && !get_equipped_item(SLOT_ID_HAND_R).abstract) )
+	if( (get_equipped_item(SLOT_ID_HAND_L) && !item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract) || (get_equipped_item(SLOT_ID_HAND_R) && !item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract) )
 		return 1
 
 	return 0
@@ -1209,9 +1190,9 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 	// Traitgenes Disable all traits currently active, before prefs.copy_to() is applied, as it refreshes the traits list!
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
-		if(gene.name in active_genes)
+		if(gene.name in sparse_get(src, active_genes))
 			gene.deactivate(src)
-			LAZYREMOVE(active_genes, gene.name)
+			gene.mark_active(src, FALSE)
 
 	// Reapply markings/appearance from prefs for player mobs
 	if(client) //just to be sure
@@ -1222,7 +1203,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 			sync_organ_dna()
 	initialize_vessel()
 
-	losebreath = 0
+	set_losebreath(0)
 
 	..()
 
@@ -1289,7 +1270,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/wash(clean_types)
 	. = ..()
 
-	LAZYCLEARLIST(body_writing)
+	sparse_set(src, body_writing, null)
 
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))
@@ -1595,7 +1576,13 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /// A species with a thick hide turns a needle away at times (a roll, by how hurt the limb is): TRUE when it does this time.
 /mob/living/carbon/human/proc/thick_skin_holds(obj/item/organ/external/affecting)
-	return (species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2))
+	return prob(thick_skin_hold_chance(affecting))
+
+/// The chance (0-100) that a thick hide turns a needle away at `affecting`: 0 for a species without one; wounds make it weaker.
+/mob/living/carbon/human/proc/thick_skin_hold_chance(obj/item/organ/external/affecting)
+	if(!affecting || !(species.flags & THICK_SKIN))
+		return 0
+	return clamp(70 - round(affecting.get_trauma() + affecting.get_burn() / 2), 0, 100)
 
 /// `roll` = FALSE leaves out the thick-hide roll of some species (the one who asks makes it later, with thick_skin_holds()).
 /mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)
@@ -1857,7 +1844,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		return ..()
 
 /mob/living/carbon/human/can_stand_overridden()
-	if(wearing_rig && wearing_rig.ai_can_move_suit(check_for_ai = 1))
+	if(wearing_rig()?.ai_can_move_suit(check_for_ai = 1))
 		// Actually missing a leg will screw you up. Everything else can be compensated for.
 		for(var/limbcheck in list(BP_L_LEG,BP_R_LEG))
 			var/obj/item/organ/affecting = get_organ(limbcheck)
@@ -1984,8 +1971,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/get_display_species()
 	//Shows species in tooltip
-	if(src.custom_species)
-		return custom_species
+	if(bio.custom_species)
+		return bio.custom_species
 	//Beepboops get special text if obviously beepboop
 	if(looksSynthetic())
 		if(gender == MALE)

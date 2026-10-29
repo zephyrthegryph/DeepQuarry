@@ -30,7 +30,6 @@
 	var/force_down //determines if the affecting mob will be pinned to the ground
 	var/dancing //determines if assailant and affecting keep looking at each other. Basically a wrestling position
 
-	abstract = 1
 	item_state = "nothing"
 	w_class = ITEMSIZE_HUGE
 
@@ -163,7 +162,7 @@
 		//affecting.apply_effect(STUTTER, 5) //would do this, but affecting isn't declared as mob/living for some stupid reason.
 		affecting.status_at_least(STAT_STUTTERING, 5) //It will hamper your voice, being choked and all.
 		affecting.status_at_least(STAT_WEAKENED, 5)	//Should keep you down unless you get help.
-		affecting.losebreath = max(affecting.losebreath + 2, 3)
+		affecting.set_losebreath(max(affecting.losebreath() + 2, 3))
 
 	adjust_position()
 
@@ -192,6 +191,7 @@
 
 
 CAPABILITIES(/obj/item/grab)
+	configure(item_rules(abstract = TRUE))
 	ref_one(nameof(victim_at_make), /mob)
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	op("tighten", in_hand(), label("Tighten grip"), then(PROC_REF(interaction_tighten)))
@@ -400,7 +400,7 @@ CAPABILITIES(/obj/item/grab)
 		if(GRAB_NECK)
 			grab_name = "headlock"
 			//If the you move when grabbing someone then it's easier for them to break free. Same if the affected mob is immune to stun.
-			if(ELAPSED_SINCE(src, assailant.l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(STAT_STUNNED))
+			if(ELAPSED(assailant, l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(STAT_STUNNED))
 				break_strength++
 			break_chance_table = list(3, 18, 45, 100)
 

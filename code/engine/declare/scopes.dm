@@ -26,8 +26,8 @@
 	type_every_arm(holder, T)
 	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		lifeform_init(holder, mapload) // contents, languages, starting state, derived values, registries, radio, adjacency, scopes
-	if(T.hook_flags & ENGINE_HOOK_AFTER_INIT)
-		after_init_note(holder, mapload)
+	if((T.hook_flags & ENGINE_HOOK_AFTER_INIT) && isatom(holder))
+		after_init_note(holder, mapload) // a plain datum's is armed by make() (code/engine/actions/after_init.dm)
 	if(isatom(holder))
 		verb_entries_init(holder)
 

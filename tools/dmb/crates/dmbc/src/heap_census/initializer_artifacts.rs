@@ -32,7 +32,6 @@ fn storage<T>(
         ArtifactStorageView::Entry {
             key,
             reads,
-            versions,
             value,
         } => {
             c.slice(prefix, key, true);
@@ -41,7 +40,6 @@ fn storage<T>(
                     super::resident_weight::answer(c, &read.answer);
                 }
             }
-            c.slice(prefix, versions, true);
             inspect(c, value);
         }
     }
@@ -84,14 +82,12 @@ pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassificat
 pub(crate) fn compact_allocations(
     key: &Arc<[u8]>,
     reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
-    versions: &Arc<[(dm_ir::ReadDomain, u128)]>,
     value: &Arc<SemanticClassification>,
     limit: usize,
 ) -> Option<Vec<dm_session::PressureAllocation>> {
     let mut census = HeapCensus::compact_pressure_allocations(limit);
     census.slice("compact.key", key, true);
     census.receipt("compact.reads", reads);
-    census.slice("compact.versions", versions, true);
     for read in reads.iter() {
         super::resident_weight::answer(&mut census, &read.answer);
     }
@@ -102,14 +98,12 @@ pub(crate) fn compact_allocations(
 pub(crate) fn compact_modifier_allocations(
     key: &Arc<[u8]>,
     reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
-    versions: &Arc<[(dm_ir::ReadDomain, u128)]>,
     value: &Arc<crate::initializer_policy::modifier_facts::ModifierArtifact>,
     limit: usize,
 ) -> Option<Vec<dm_session::PressureAllocation>> {
     let mut census = HeapCensus::compact_pressure_allocations(limit);
     census.slice("compact.key", key, true);
     census.receipt("compact.reads", reads);
-    census.slice("compact.versions", versions, true);
     for read in reads.iter() {
         super::resident_weight::answer(&mut census, &read.answer);
     }

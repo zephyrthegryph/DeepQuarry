@@ -77,7 +77,6 @@ pub enum LocalShapeStorageView<'a> {
     Entry {
         key: &'a Arc<[u8]>,
         reads: &'a dm_session::Receipt<SourceQuery, SourceAnswer, SourceDomain>,
-        versions: &'a Arc<[(SourceDomain, u128)]>,
         address: usize,
         size: usize,
     },
@@ -124,13 +123,11 @@ impl RetainedOwnerShapes {
             V::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 visit(LocalShapeStorageView::Entry {
                     key,
                     reads,
-                    versions,
                     address: Arc::as_ptr(value) as usize,
                     size: std::mem::size_of::<LocalOwner>(),
                 });
@@ -245,7 +242,6 @@ impl RetainedOwnerShapes {
             let payload = self.store.insert_with_owned(
                 key(*owner),
                 ledger.reads(),
-                ledger.domain_receipts(),
                 0,
                 || LocalOwner {
                     rows,

@@ -183,7 +183,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 		return
 	if(asked.value != "Yes")
 		if(ELAPSED(ghost, timeofdeath, CLOCK_WORLD) <= respawn) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
-			EXPIRY_SET(ghost, timeofdeath, -respawn, CLOCK_WORLD)
+			COOLDOWN_START(ghost, timeofdeath, -respawn)
 		return
 	//This keeps people from dying in round, clicking the autoresleever, then swapping savefiles and clicking 'yes'
 	if(slot != ghost.client.prefs.default_slot && (!equip_body || !ghost_spawns))

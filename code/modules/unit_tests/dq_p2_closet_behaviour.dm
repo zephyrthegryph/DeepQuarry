@@ -217,7 +217,7 @@
 	H.enable_godmode()
 	// A body nobody plays is put to sleep by its life (SSD): a controller keeps it awake for as long as the test runs.
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(0, 4))
-	rel_set(H, nameof(H.teleop), controller)
+	sparse_ref_set(H, teleop, controller)
 	if(access)
 		var/obj/item/card/id/card = allocate(/obj/item/card/id, H.loc)
 		card.set_access(access)

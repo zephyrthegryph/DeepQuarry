@@ -96,10 +96,10 @@
 		"routed_department" = EC.sales_department,
 		"item_type" = source.type,
 		"item_name" = source.name,
-		"physical_item_id" = REF(source),
+		"physical_item_id" = ref_token(source),
 		"quantity" = export_row["quantity"],
 		"in_crate" = in_crate,
-		"fact_id" = "export:[REF(source)]",
+		"fact_id" = "export:[ref_token(source)]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
 		"metrics" = list("value" = SSsupply.export_revenue(export_row["value"])),
@@ -121,7 +121,7 @@
 			contract_context["corrosion_resistance"] = batch.corrosion_resistance
 			contract_context["defect_fraction"] = batch.structure[MATERIAL_STRUCTURE_DEFECT]
 			contract_context["oxidation"] = batch.oxidation
-	emit_contract_event(CONTRACT_EVENT_ITEM_EXPORTED, contract_context, "item-exported:[REF(source)]", source)
+	emit_contract_event(CONTRACT_EVENT_ITEM_EXPORTED, contract_context, "item-exported:[ref_token(source)]", source)
 	return TRUE
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -265,6 +265,6 @@
 	if(!istype(source.loc, /obj/structure/closet/crate/freezer))
 		return "Error: Product was improperly packaged. Send contents in freezer crate to preserve contents for transport."
 	var/obj/item/organ/internal/organ_stuff = source
-	if(organ_stuff.health != initial(organ_stuff.health) )
+	if(organ_stuff.is_damaged())
 		return "Error: Product was damaged on arrival."
 	return null

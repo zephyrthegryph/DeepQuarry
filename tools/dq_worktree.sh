@@ -26,7 +26,8 @@ strip() {
 	done
 }
 # E:/dq-cache/worktree-keep.txt (DQ_WT_KEEP_FILE): one worktree name per line, # comments
-keep_file_names() { sed 's/#.*//' "${DQ_WT_KEEP_FILE:-E:/dq-cache/worktree-keep.txt}" 2>/dev/null | tr -d '' | xargs; }
+keep_file_names() { sed 's/#.*//' "${DQ_WT_KEEP_FILE:-E:/dq-cache/worktree-keep.txt}" 2>/dev/null | tr -d '
+' | xargs; }
 in_use() { # <dir>: a process names the worktree on its command line (dd.exe, dmbc, bun, node, cargo, bash), or the worktree wrote anything
 	local w m   # in the last 20 minutes (a running world or build holds its cwd there without naming it: cwd is not visible from here)
 	[ -n "$(find "$1/data" "$1" -maxdepth 2 -type f -mmin -20 2>/dev/null | head -n 1)" ] && return 0
@@ -36,7 +37,7 @@ in_use() { # <dir>: a process names the worktree on its command line (dd.exe, dm
 }
 merged_clean() { # <dir>
 	local d="$1" sha
-	[ -z "$(git -C "$d" status --porcelain --untracked-files=normal 2>/dev/null)" ] || return 1
+	[ -z "$(git --no-optional-locks -C "$d" status --porcelain --untracked-files=normal 2>/dev/null)" ] || return 1
 	sha="$(git -C "$d" rev-parse HEAD 2>/dev/null)" || return 1
 	git -C "$main" merge-base --is-ancestor "$sha" origin/master
 }
@@ -47,6 +48,7 @@ cmd_gc() {
 		n="$(basename "$d")"
 		[ "$(cd "$d" && pwd -P)" = "$(cd "$here" && pwd -P)" ] && continue
 		case "$n" in pool-[0-9]*) continue ;; esac  # pool slots are permanent: tools/dq_lane_pool.sh leases and releases them
+		case "$n" in train-pre[0-9]*|train-bisect|train-dc) echo "keep  $n (the batch train's precheck/bisect/DreamChecker worktree)"; continue ;; esac
 		# Never removed: the default keep list (the live game server and the merge worktree), DQ_WT_KEEP, the keep file, a detached HEAD
 		# (a server or a pool slot sits detached at a merged commit, which looks "merged and clean"), or a worktree a process is using.
 		case " play merge-base train-base ${DQ_WT_KEEP:-} $(keep_file_names) " in *" $n "*) echo "keep  $n (keep list)"; continue ;; esac

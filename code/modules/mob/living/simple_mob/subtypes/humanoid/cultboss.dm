@@ -19,7 +19,6 @@
 	icon_state = "void-magnus"
 	icon_living = "void-magnus"
 	vore_active = 1
-	vore_capacity = 6
 	vore_bump_chance = 20
 	size_multiplier = 1.10
 	faction = "demon"
@@ -125,7 +124,6 @@ CAPABILITIES(/obj/item/projectile/energy/plasma/vepr/inversion)
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift
 	vore_active = 1
-	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
 	vore_min_size = RESIZE_SMALL
 	vore_pounce_chance = 0 // Beat them into crit before eating.
@@ -133,6 +131,7 @@ CAPABILITIES(/obj/item/projectile/energy/plasma/vepr/inversion)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
+	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
@@ -207,9 +206,9 @@ CAPABILITIES(/obj/item/clothing/gloves/tactical/void)
 	w_class = ITEMSIZE_LARGE
 	defend_chance = 25
 	projectile_parry_chance = 25
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/voidblade)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_thrown(force = 20))
 	configure(item_combat(force = 40, armor_penetration = 25, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))

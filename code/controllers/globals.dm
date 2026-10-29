@@ -41,7 +41,6 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 		return FALSE
 	return ..()
 
-// ALLOW(init/FRAMEWORK): the global vars controller runs every global's init proc here
 /datum/controller/global_vars/Initialize()
 	gvars_datum_init_order = list()
 	gvars_datum_protected_varlist = list(NAMEOF(src, gvars_datum_protected_varlist) = TRUE)
@@ -105,6 +104,7 @@ CAPABILITIES(/datum/controller/global_vars)
 	ref_one(nameof(station_account))
 	ref_one(nameof(sdql2_vv_statobj))
 	ref_one(nameof(character_directory))
+	ref_one(nameof(projectile_hit_act))
 	ref_one(nameof(projectile_hit_packet))
 	ref_one(nameof(map_load_active))
 	ref_one(nameof(act_next_actor))
@@ -117,6 +117,6 @@ CAPABILITIES(/datum/controller/global_vars)
 	ref_many(nameof(affliction_triggers_all))
 	// Keyed many: an alist, key -> member (the ckey, or the level as text); a member that is deleted takes its keys with it.
 	ref_many(nameof(mannequins))
-	ref_many(nameof(tgs_flow_senders))
+	ref_many(nameof(tgs_waiting_senders))
 	ref_many(nameof(latency_sweep_holders))
 	ref_many(nameof(map_sectors))

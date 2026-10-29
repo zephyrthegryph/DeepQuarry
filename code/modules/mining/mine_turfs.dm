@@ -84,6 +84,7 @@
 	turf_resource_types = TURF_HAS_MINERALS
 
 CAPABILITIES(/turf/simulated/mineral)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	setup(PROC_REF(roll_ore_and_detail))
 	owns_one(nameof(artifact_find), /datum/artifact_find)
 	owns_one(nameof(geologic_data), /datum/geosample)
@@ -279,9 +280,11 @@ CAPABILITIES(/turf/simulated/mineral)
 		set_excavation_level(excavation_level + Proj.excavation_amount)
 		update_archeo_overlays(Proj.excavation_amount)
 
-/turf/simulated/mineral/Bumped(AM)
+/// The bump notice: `AM` walked into it (was Bumped()).
+/turf/simulated/mineral/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/movable/AM = N.bumper
 
-	. = ..()
 
 	if(!density)
 		return .
@@ -444,7 +447,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 
 			set_excavation_level(excavation_level + S.excavation_amount)
 			update_archeo_overlays(S.excavation_amount)
-			rel_set(src, nameof(geologic_data), new /datum/geosample(src))
+			rel_set(src, nameof(geologic_data), geosample_of(src))
 			//drop some rocks
 			next_rock += S.excavation_amount
 			while(next_rock > 50)
@@ -528,7 +531,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 
 	set_excavation_level(excavation_level + P.excavation_amount)
 	update_archeo_overlays(P.excavation_amount)
-	rel_set(src, nameof(geologic_data), new /datum/geosample(src))
+	rel_set(src, nameof(geologic_data), geosample_of(src))
 	//drop some rocks
 	next_rock += P.excavation_amount
 	while(next_rock > 50)
@@ -585,7 +588,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 	if(!mineral())
 		return
 	clear_ore_effects()
-	rel_set(src, nameof(geologic_data), new /datum/geosample(src))
+	rel_set(src, nameof(geologic_data), geosample_of(src))
 	var/new_ore_path = mineral().ore
 	var/obj/item/ore/O = new new_ore_path(src)
 	if(istype(O))
@@ -652,7 +655,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 /turf/simulated/mineral/proc/excavate_find(is_clean = 0, datum/find/F)
 	//with skill and luck, players can cleanly extract finds
 	//otherwise, they come out inside a chunk of rock
-	rel_set(src, nameof(geologic_data), new /datum/geosample(src))
+	rel_set(src, nameof(geologic_data), geosample_of(src))
 	var/obj/item/X
 	if(is_clean)
 		X = new /obj/item/archaeological_find(src, F.find_type)

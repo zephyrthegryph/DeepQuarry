@@ -101,7 +101,7 @@ CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 	var/area/A = get_area(get_location())
 
 	var/where = "[A.name] | [get_location().x], [get_location().y]"
-	var/whereLink = "<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[get_location().x];Y=[get_location().y];Z=[get_location().z]'>[where]</a>"
+	var/whereLink = "<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[get_location().x];Y=[get_location().y];Z=[get_location().z]'>[where]</a>"
 
 	if(show_log)
 		var/print_name = carry.my_atom.forensic_data?.get_lastprint()
@@ -109,7 +109,7 @@ CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 			var/mob/M = get_mob_by_key(print_name)
 			var/more = ""
 			if(M)
-				more = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[M]'>?</a>)"
+				more = "(<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(ref_token(M))]'>?</a>)"
 			message_admins("A chemical smoke reaction has taken place in ([whereLink]) [contained]. Last associated key is [print_name][more].", 0, 1)
 			log_game("A chemical smoke reaction has taken place in ([where]) [contained]. Last associated key is [print_name].")
 		else

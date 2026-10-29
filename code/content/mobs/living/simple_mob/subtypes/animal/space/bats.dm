@@ -1,0 +1,60 @@
+/mob/living/simple_mob/animal/space/bats
+	name = "space bat swarm"
+	desc = "A swarm of cute little blood sucking bats that looks pretty upset."
+	tt_desc = "N Bestia gregaria" //Nispean swarm bats, because of course Nisp has swarm bats
+	icon = 'icons/mob/bats.dmi'
+	icon_state = "bat"
+	icon_living = "bat"
+	icon_dead = "bat_dead"
+	icon_gib = "bat_dead"
+
+	faction = FACTION_SCARYBAT
+
+	endurance = 20
+
+	attacktext = list("bitten")
+	attack_sound = SFX_WEAPONS_BITE
+
+	response_help = "pets the"
+	response_disarm = "gently pushes aside the"
+	response_harm = "hits the"
+
+	organ_names = /datum/decl/mob_organ_names/smallflying
+
+	harm_intent_damage = 10
+
+	melee_damage_lower = 5
+	melee_damage_upper = 5
+	attack_injury_kind = INJURY_PIERCE
+
+
+	has_langs = list(LANGUAGE_MOUSE, LANGUAGE_ECHOSONG)		// Haha squeak
+
+
+
+	var/scare_chance = 15
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/bats)
+	configure(living_rules(say_list_type = /datum/say_list/mouse))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
+
+/mob/living/simple_mob/animal/space/bats/apply_melee_effects(atom/A)
+	if(isliving(A))
+		var/mob/living/L = A
+		if(prob(scare_chance))
+			L.status_at_least(STAT_STUNNED, 1)
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% scares %T%!")))
+
+// Spookiest of bats
+/mob/living/simple_mob/animal/space/bats/cult
+	faction = FACTION_CULT
+	supernatural = TRUE
+
+/mob/living/simple_mob/animal/space/bats/cult/cultify()
+	return
+
+/mob/living/simple_mob/animal/space/bats/cult/strong
+	endurance = 60
+	melee_damage_upper = 10

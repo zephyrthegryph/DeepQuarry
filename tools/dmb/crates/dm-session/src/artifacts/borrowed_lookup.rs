@@ -10,7 +10,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         digest: u128,
         matches_key: &dyn Fn(&[u8]) -> bool,
-        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &Arc<T>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<(Arc<[u8]>, ObservedArtifact<T, Q, A, D>)>, Option<Q>) {
         static LOOKUP: dm_profile::Accumulator = dm_profile::Accumulator::new("store.lookup_locked");
@@ -26,7 +26,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     (
                         Arc::clone(&entry.key),
                         entry.reads.clone(),
-                        Arc::clone(&entry.versions),
                         Arc::clone(&entry.value),
                         entry.weight,
                     )
@@ -34,11 +33,11 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 .collect::<Vec<_>>()
         };
         let mut changed = None;
-        for (key, reads, versions, value, weight) in candidates.into_iter().rev() {
+        for (key, reads, value, weight) in candidates.into_iter().rev() {
             if !matches_key(&key) {
                 continue;
             }
-            if let Some(query) = validate(&reads, &versions, &value) {
+            if let Some(query) = validate(&reads, &value) {
                 changed = Some(query);
             } else if accept(&value) {
                 return (
@@ -47,7 +46,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                         ObservedArtifact {
                             value,
                             reads,
-                            versions,
                             weight,
                         },
                     )),

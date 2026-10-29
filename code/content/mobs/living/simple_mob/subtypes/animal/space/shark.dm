@@ -1,0 +1,54 @@
+// Space carp show up as a random event to wreck hapless people in space or near windows.
+// They generally fit the archetype of 'fast but fragile'.
+// This is compensated by being in groups (usually).
+
+/datum/category_item/catalogue/fauna/shark
+	name = "Voidborne Fauna - Space Shark"
+	desc = "The space carp's bigger, highly territorial kin, space sharks are bigger, meaner, \
+	and generally bad news to be around for extended periods. If you see one, hope that it's \
+	the only one around, because if it isn't then that means it's probably a parent with their pups.	"
+	value = CATALOGUER_REWARD_HARD
+
+/mob/living/simple_mob/animal/space/shark
+	name = "space shark"
+	desc = "A regal and imposing interstellar creature, and one that poses a serious threat to the ill-prepared."
+	catalogue_data = list(/datum/category_item/catalogue/fauna/shark)
+	icon = 'icons/mob/mobs_monsters/animal.dmi'
+	icon_state = "shark"
+	icon_living = "shark"
+	icon_dead = "shark_dead"
+	icon_rest = "shark_rest"
+
+	faction = FACTION_SPACESHARK
+	endurance = 125
+	movement_cooldown = 0
+
+	response_help = "strokes the"
+	response_disarm = "casually rotates the"
+	response_harm = "hits the"
+
+	melee_damage_lower = 15
+	melee_damage_upper = 30 //don't mess with these critters!
+	attack_injury_kind = INJURY_PIERCE
+	attack_sound = SFX_WEAPONS_BITE
+	attacktext = list("lanced","bitten","impaled","gored")
+
+	organ_names = /datum/decl/mob_organ_names/fish
+
+
+
+	var/knockdown_chance = 10	//slightly reduced their knockdown prob compared to carp given their greater power
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/shark)
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/shark, meat_amount = 10))
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(attack_cooldown = 22))
+
+/mob/living/simple_mob/animal/space/shark/apply_melee_effects(atom/A)
+	if(isliving(A))
+		var/mob/living/L = A
+		if(prob(knockdown_chance))
+			L.apply_body_effect(/datum/body_effect/entangled, 4 SECONDS) // replacing weaken/slowdown with slow down
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
+
+/mob/living/simple_mob/animal/space/shark/event

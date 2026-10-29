@@ -13,7 +13,6 @@ use std::time::{Duration, Instant};
 mod diagnostic_continuation;
 mod initializer_factory;
 mod prepared;
-pub(crate) mod selected_lowering;
 pub use prepared::{PreparedCold, PreparedComposition};
 
 /// What the general path prepared: the whole program for composition, or an output it built
@@ -44,11 +43,15 @@ pub(crate) fn begin_answers<R: Resolver>(
 ) {
     if let Some(db) = memo.and_then(|memo| memo.query_db()) {
         match startup.resolver(frontend, resolver) {
-            Ok(statics) => db.begin_answers(
-                &frontend.snapshot.tree,
-                statics.domain_version(dm_ir::ReadDomain::Tree),
-                &|query| statics.resolve(*query),
-            ),
+            Ok(statics) => {
+                let world = dm_ir::Resolver::answer_world(&statics);
+                crate::daemon_eprintln!(
+                    "native answer world: tree={:032x} world={:032x}",
+                    frontend.snapshot.tree.declaration_identity(),
+                    world.unwrap_or(0)
+                );
+                db.begin_answers(&frontend.snapshot.tree, world, &|query| statics.resolve(*query))
+            }
             Err(_) => db.begin_answers(&frontend.snapshot.tree, None, &|query| {
                 resolver.resolve(*query)
             }),
@@ -496,12 +499,16 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
         ));
     }
     let contributions: Vec<_> = batch.units.into_iter().map(|unit| unit.value).collect();
+    let mut admitted = admitted;
+    if let Some(db) = db {
+        admitted.answered.settle(db);
+    }
     let lower_seconds = admit_started.elapsed().as_secs_f64() - admit_seconds;
     let patched = crate::retained_output::splice(
         retained,
         admitted,
         frontend,
-        &contributions,
+        contributions,
         (
             std::sync::Arc::clone(prepared.units_owner()),
             startup.facts(),

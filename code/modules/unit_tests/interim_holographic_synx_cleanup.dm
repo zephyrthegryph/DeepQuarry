@@ -15,7 +15,7 @@
 		holder = allocate(/obj/structure/closet, T)
 	var/mob/living/simple_mob/animal/synx/ai/pet/holo/source = allocate(/mob/living/simple_mob/animal/synx/ai/pet/holo, T)
 	TEST_ASSERT(source && !QDELETED(source) && source.stat == CONSCIOUS, "The actual canonical holographic synx constructor creates its conscious original source")
-	TEST_ASSERT(source.delete_on_death, "The actual canonical holographic synx retains its original deletion-on-death behavior")
+	TEST_ASSERT(living_rules_of(source).delete_on_death, "The actual canonical holographic synx retains its original deletion-on-death behavior")
 	if(contained)
 		TEST_ASSERT_EQUAL(holder.store_mobs(), 1, "Actual closet storage contains the exact original holographic synx")
 		TEST_ASSERT_EQUAL(source.loc, holder, "The original holographic synx genuinely occupies its real holder")

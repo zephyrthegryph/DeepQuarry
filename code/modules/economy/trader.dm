@@ -20,7 +20,7 @@
 	var/welcome_msg_finish = ". Would you like to browse the wares?"	//The final part of the welcome message.
 	var/list/interact_sound	//The sounds that may play when you click it. It will pick one at random from this list. It only thinks about this if there's anything in the list.
 	var/sound_cooldown = 0				//The sound can only play this often in deciseconds. Use '10 SECONDS' format to make it easier to read
-	EXPIRY_DECLARE(sound_lastplayed) //Automatically set when the sound is played.
+	var/sound_lastplayed = 0 //Automatically set when the sound is played.
 	var/pick_inventory = FALSE			//If true, when initialized the trader will randomly pick things from its start products list to set up
 	var/pick_inventory_quantity = 0		//This is how many things will be picked if pick_inventory is TRUE
 	var/move_trader = FALSE
@@ -181,10 +181,10 @@ CAPABILITIES(/datum/trader_review)
 		retire()
 		return
 	if(length(trader.interact_sound) > 0)
-		if(ELAPSED_SINCE(src, trader.sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
+		if(ELAPSED(trader, sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
 			var/sound = DEFAULTPICK(trader.interact_sound, null)
 			playsound(trader, sound, 25, FALSE, ignore_walls = FALSE)
-			EXPIRY_STAMP(trader, sound_lastplayed, CLOCK_WORLD)
+			STAMP(trader, sound_lastplayed, CLOCK_WORLD)
 	stage = "product"
 	open_request(src, /datum/prompt/choice/trader_review, PROC_REF(product_picked), answerer = actor, title = "Trader", question = "What would you like? You have [trader.get_value(trader.accepts)] banked with this trader.", choices = trader.products, timeout = 30 SECONDS)
 
@@ -400,7 +400,7 @@ CAPABILITIES(/datum/trader_review)
 		set_dir(dt.dir)
 		log_admin("[src] has been placed at [loc], [x],[y],[z]")
 	else
-		log_and_message_admins("[src] tried to move itself but its target pick list was empty, so it was not moved. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
+		log_and_message_admins("[src] tried to move itself but its target pick list was empty, so it was not moved. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
 /obj/move_trader_landmark //You need to place the trader somewhere in the world and enable the 'move_trader' var. When the trader initializes, it will make a list of these landmarks and then move itself.
 	name = "trader mover"

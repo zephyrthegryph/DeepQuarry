@@ -10,8 +10,8 @@
 	var/point_return = 0 //How many points the blob gets back when it removes a blob of that type. If less than 0, blob cannot be removed.
 	max_integrity = 30
 	var/health_regen = 2 //how much health this blob regens when pulsed
-	EXPIRY_DECLARE(pulse_timestamp) //we got pulsed when?
-	EXPIRY_DECLARE(heal_timestamp) //we got healed when?
+	var/pulsed_at = 0 //we got pulsed when?
+	var/healed_at = 0 //we got healed when?
 	var/mob/observer/blob/overmind = null
 	var/base_name = "blob" // The name that gets appended along with the blob_type's name.
 	var/faction = FACTION_BLOB
@@ -26,17 +26,20 @@ CAPABILITIES(/obj/structure/blob)
 	rolls(nameof(dir), pick_one(list(NORTH, SOUTH, EAST, WEST)))
 	ref_one(nameof(overmind))
 	param(nameof(overmind), pos = 1)
+	preset(nameof(faction), PROC_REF(faction_of_overmind), when = nameof(overmind))
+	setup(PROC_REF(settle_blob))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(blob_on_emp)))
 
-// ALLOW(init/INSTANCE_STATE): a blob takes its overmind's faction, faces a random way and consumes its tile before its parents' init
-/obj/structure/blob/Initialize(mapload)
-	if(overmind)
-		faction = overmind.blob_type.faction
+/// A blob takes its overmind's faction (preset, when it has one).
+/obj/structure/blob/proc/faction_of_overmind(target)
+	return overmind.blob_type.faction
+
+/// Once its init ran: the blob consumes its tile and takes the overmind's look.
+/obj/structure/blob/proc/settle_blob()
 	consume_tile()
 	sync_overmind_look()
-	. = ..()
 
 DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
@@ -104,15 +107,15 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	overmind.blob_type.on_emp(src, packet.severity)
 
 /obj/structure/blob/proc/pulsed()
-	if(!BEFORE(src, pulse_timestamp, CLOCK_WORLD))
+	if(ELAPSED(src, pulsed_at, CLOCK_WORLD) >= BLOB_PULSE_INTERVAL)
 		consume_tile()
-		if(!BEFORE(src, heal_timestamp, CLOCK_WORLD))
+		if(ELAPSED(src, healed_at, CLOCK_WORLD) >= BLOB_HEAL_INTERVAL)
 			adjust_integrity(health_regen)
-			EXPIRY_SET(src, heal_timestamp, 2 SECONDS, CLOCK_WORLD)
+			STAMP(src, healed_at, CLOCK_WORLD)
 		sync_overmind_look()
-		EXPIRY_SET(src, pulse_timestamp, 1 SECOND, CLOCK_WORLD)
+		STAMP(src, pulsed_at, CLOCK_WORLD)
 		if(overmind)
-			faction = overmind.blob_type.faction
+			set_faction(overmind.blob_type.faction)
 			overmind.blob_type.on_pulse(src)
 		return TRUE //we did it, we were pulsed!
 	return FALSE //oh no we failed
@@ -146,9 +149,9 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 
 		if(distance <= expand_range)
 			var/can_expand = TRUE
-			if(blobs_to_affect.len >= 120 && BEFORE(src, B.heal_timestamp, CLOCK_WORLD))
+			if(blobs_to_affect.len >= 120 && ELAPSED(B, healed_at, CLOCK_WORLD) < BLOB_HEAL_INTERVAL)
 				can_expand = FALSE
-			if(!expanded && can_expand && !BEFORE(src, B.pulse_timestamp, CLOCK_WORLD) && prob(expand_probablity))
+			if(!expanded && can_expand && ELAPSED(B, pulsed_at, CLOCK_WORLD) >= BLOB_PULSE_INTERVAL && prob(expand_probablity))
 				var/obj/structure/blob/newB = B.expand(null, null, !expanded) //expansion falls off with range but is faster near the blob causing the expansion
 				if(newB)
 					if(expanded)
@@ -199,7 +202,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 
 	if(make_blob) //well, can we?
 		var/obj/structure/blob/B = new /obj/structure/blob/normal(src.loc)
-		B.faction = faction
+		B.set_faction(faction)
 		if(controller)
 			rel_set(B, nameof(B.overmind), controller)
 		else
@@ -254,7 +257,10 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	replace_with(src, B)
 	return B
 
-/obj/structure/blob/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/blob/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	user.do_attack_animation(src)
@@ -267,6 +273,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 		damage = overmind.blob_type.on_received_damage(src, damage, BRUTE, user)
 
 	adjust_integrity(-damage)
+	return OP_OK
 
 /// Old attack_hand.
 /obj/structure/blob/proc/interaction_hand(datum/act/op/A)
@@ -428,13 +435,13 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 
 		if(B.faction != faction)
 			var/damage = rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper)
-			var/inc_damage_type = injury_kind_obj_damage_type(B.overmind.blob_type.injury_kind)
+			var/inc_damage_type = injury_kind_obj_damage_type(combat_of(B.overmind.blob_type).injury_kind)
 
 			if(overmind)
 				damage = overmind.blob_type.on_received_damage(src, damage, inc_damage_type, B)
 
 			else
-				faction = B.faction
+				set_faction(B.faction)
 				rel_set(src, nameof(overmind), B.overmind)
 				sync_overmind_look()
 				return

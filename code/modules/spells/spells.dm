@@ -113,7 +113,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	show_examine = FALSE
 	core = null
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Not used for everything we do
@@ -123,6 +122,7 @@
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
 CAPABILITIES(/obj/item/spell/unrestricted)
+	configure(obj_rules(show_examine = FALSE))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	setup(PROC_REF(find_owner), mapload = TRUE)
@@ -254,7 +254,6 @@ CAPABILITIES(/obj/item/spell/unrestricted)
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_on = TRUE
 
 CAPABILITIES(/obj/item/spell/unrestricted/mend)
 	configure(light_glow(color = "#FF5C5C", power = -2))

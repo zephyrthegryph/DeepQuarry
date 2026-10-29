@@ -491,9 +491,10 @@ function runDreamDaemonWithWatchdog(
   const graceMs = options.watchdogGraceMs ?? 30_000;
   // Once the world has stamped its clean marker (finished_run.lk, written after its logs and results are flushed)
   // only the process exit is left. The child 'exit' event resolves the run the moment the daemon really exits, so
-  // this is only the wait before a force-kill of a daemon that does not (the Windows zombie case). It was a fixed
-  // 5 s; 1.5 s still leaves the daemon time to close its handles. DQ_DD_CLEAN_GRACE_MS overrides it.
-  const cleanGraceMs = Math.min(graceMs, Number(process.env.DQ_DD_CLEAN_GRACE_MS) || 1_500);
+  // this is only the wait before a force-kill of a daemon that does not (the Windows zombie case). A healthy daemon
+  // takes 1.4-2.6 s to exit on a loaded machine (world delete joins the verdigris threads), so 1.5 s turned that race
+  // into "the world was not clean" on the train (2026-10-26); 10 s costs nothing when the daemon exits. DQ_DD_CLEAN_GRACE_MS overrides it.
+  const cleanGraceMs = Math.min(graceMs, Number(process.env.DQ_DD_CLEAN_GRACE_MS) || 10_000);
   let cleanSeenAt = 0;
   // The full normal tier is about 6700 s of summed DreamDaemon CPU (2026-10-04),
   // so one unsharded world can need well over an hour on a busy, contended
@@ -516,13 +517,17 @@ function runDreamDaemonWithWatchdog(
       options.onSpawn(child.pid);
     }
     const unregisterWorld = registerWorldProcess(child.pid, path.basename(exe));
-    // A test world runs at idle priority: the machine is also the user's desktop, and a world only needs the CPU nothing else wants.
-    // DQ_PRIORITY=normal keeps the old behaviour.
+    // A test world runs below normal priority, the same class as every build and lint we start. It used to run at IDLE: then any of our
+    // own below-normal work (an `analyze check` on 10+ cores) starved it, boots took 4-8 min and test phases hit their caps with no result
+    // (28 October; resources_maps 72.9 s in a gate against 5.7 s unloaded). DQ_WORLD_PRIORITY=idle restores that; DQ_PRIORITY=normal
+    // keeps the world at the build's priority.
     if (child.pid && process.env.DQ_PRIORITY !== 'normal') {
+      const idle = process.env.DQ_WORLD_PRIORITY === 'idle';
       try {
-        os.setPriority(child.pid, os.constants.priority.PRIORITY_LOW);
+        os.setPriority(child.pid, idle ? os.constants.priority.PRIORITY_LOW : os.constants.priority.PRIORITY_BELOW_NORMAL);
+        console.log(`world priority: ${idle ? 'idle' : 'below normal'} (pid ${child.pid}; DQ_WORLD_PRIORITY=idle for idle)`);
       } catch {
-        // best effort: the world runs at the build's priority
+        console.log(`world priority: could not be set (pid ${child.pid}); it runs at the build's priority`);
       }
     }
     let settled = false;

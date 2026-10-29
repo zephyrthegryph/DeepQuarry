@@ -52,11 +52,11 @@ impl CallableIndex {
         let value =
             Arc::new(driver_facts::unit_members(frontend).map_err(|error| error.to_string())?);
         let ledger = dm_session::observations::ObservationLedger::default();
-        ledger.record((), Arc::clone(&host.0), (), None);
+        ledger.record((), Arc::clone(&host.0), ());
         // One fixed key replaces the previous current roster; no edit history.
         self.values.retain_current_keys([key.as_ref()]);
         self.values
-            .insert_with_owned(key, ledger.reads(), ledger.domain_receipts(), 0, || {
+            .insert_with_owned(key, ledger.reads(), 0, || {
                 Arc::clone(&value)
             })
             .map(|owner| Arc::clone(owner.as_ref()))

@@ -154,7 +154,7 @@
 			var/obj/item/changed = new(run_loc_floor_bottom_left)
 			TEST_ASSERT(baseline.apply_material_construction(defaults, slots.type, slots_total), "Baseline [application]/[role] must construct")
 			TEST_ASSERT(changed.apply_material_construction(variant, slots.type, slots_total), "Variant [application]/[role] must construct")
-			var/changed_physics = baseline.max_integrity != changed.max_integrity || motion_of(baseline).throw_speed != motion_of(changed).throw_speed || baseline.throw_range != changed.throw_range || protection_of(baseline).siemens != protection_of(changed).siemens || material_build_view(baseline).effective_density != material_build_view(changed).effective_density
+			var/changed_physics = baseline.max_integrity != changed.max_integrity || motion_of(baseline).throw_speed != motion_of(changed).throw_speed || motion_of(baseline).throw_range != motion_of(changed).throw_range || protection_of(baseline).siemens != protection_of(changed).siemens || material_build_view(baseline).effective_density != material_build_view(changed).effective_density
 			TEST_ASSERT(changed_physics, "Changing [application]'s [role] must alter a live physical property")
 			qdel(baseline)
 			qdel(changed)
@@ -573,6 +573,20 @@
 	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 1 SECOND, "An accelerated environmental event must move the deadline earlier")
 	qdel(a)
 	TEST_ASSERT(!after_pending(a_service, "material_service"), "Deleting a queued assembly must leave no deadline")
+
+/datum/unit_test/dq_material_service_spread
+
+/datum/unit_test/dq_material_service_spread/Run()
+	// The steady resample delay is spread over the interval, so services a map makes in one tick do not all sample in one tick forever.
+	var/list/seen = list()
+	var/total = 0
+	for(var/i in 1 to 200)
+		var/delay = material_service_spread_interval()
+		TEST_ASSERT(delay >= MATERIAL_SERVICE_INTERVAL / 2 && delay <= MATERIAL_SERVICE_INTERVAL * 1.5, "A spread delay stays within half an interval of it ([delay])")
+		seen["[delay]"] = TRUE
+		total += delay
+	TEST_ASSERT(length(seen) >= 20, "Spread delays differ ([length(seen)] distinct of 200)")
+	TEST_ASSERT(abs(total / 200 - MATERIAL_SERVICE_INTERVAL) <= MATERIAL_SERVICE_INTERVAL * 0.15, "Spread delays average the interval")
 
 /datum/unit_test/dq_material_corrosion_interval_invariance
 

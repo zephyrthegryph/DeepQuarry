@@ -35,7 +35,7 @@ CAPABILITIES(/datum/autopsy_data_scanner)
 	var/pretend_weapon = null
 	var/damage = 0
 	var/hits = 0
-	EXPIRY_DECLARE(time_inflicted)
+	var/time_inflicted = 0
 
 /datum/autopsy_data/proc/copy()
 	var/datum/autopsy_data/W = new()

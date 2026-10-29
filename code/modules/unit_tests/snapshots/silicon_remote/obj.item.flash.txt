@@ -1,2 +1,0 @@
-@obj robot|none
-@obj ai|none

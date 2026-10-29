@@ -23,7 +23,7 @@
 	var/event_chance = 15 //Prob for event each tick.
 	var/atom/movable/target = null //Its target: a singularity beacon, or for Nar-Sie a mob. Moves towards the target if it has one.
 	var/last_failed_movement = 0 //Will not move in the same dir if it couldnt before, will help with the getting stuck on fields thing.
-	EXPIRY_DECLARE(last_warning)
+	var/last_warning = 0
 
 	var/chained = 0//Adminbus chain-grab
 
@@ -105,11 +105,11 @@ CAPABILITIES(/obj/singularity)
 			event()
 
 /obj/singularity/proc/admin_investigate_setup()
-	EXPIRY_STAMP(src, last_warning, CLOCK_WORLD)
+	STAMP(src, last_warning, CLOCK_WORLD)
 	var/count = locate_in_list(orange(30, src), /obj/machinery/containment_field)
 
 	if (!count)
-		message_admins("A singulo has been created without containment fields active ([x], [y], [z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>).")
+		message_admins("A singulo has been created without containment fields active ([x], [y], [z] - <A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>).")
 
 	investigate_log("was created. [count ? "" : span_red("No containment fields were active.")]", I_SINGULO)
 

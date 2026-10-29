@@ -4,6 +4,7 @@
 // (built by a constructor in this folder, interned by entry_make()) or a call the engine owns:
 //
 //	rolls(target, generator, when =, from =)             per-instance randomness rolled before init, seeded             rolls.dm
+//	preset(target, PROC_REF(x), from =, when =)          a value computed from the instance's place or params, before init  preset.dm
 //	param(var, schema, default =, required =, pos =)     a named constructor argument, set before init; make(type, at, ...)  params.dm
 //	built_from(var)                                      the construction parts a make(..., parts =) hands over          params.dm
 //	registry(REGISTRY_X, key =, by =)                    a keyed, re-keyed, auto-removed registry membership             registry.dm
@@ -15,7 +16,7 @@
 //	starts_as(STATE) · derives(target, PROC_REF, from =) an op's effects at creation; a tracked computed value           derives.dm
 //	lives_while(scope, watches =) · on_ending(PROC_REF)  a scoped lifetime; spent()/consumed()/destroyed()/dissolved()  lifetimes.dm
 //	click_on/drag_onto/hover(op) · tooltip(PROC_REF)     input with an actor bound to ops; with_actor(actor, CALLBACK)   input.dm
-//	keeps_if(PROC_REF(cond), warn =)                      an atom discarded at init (INITIALIZE_HINT_QDEL) unless cond holds keeps_if.dm
+//	keeps_if(PROC_REF(cond), warn =, instead =)           an atom discarded at init (INITIALIZE_HINT_QDEL) unless cond holds keeps_if.dm
 //
 // This file is the shared part: the per-type plan (which forms a type declares, in order, resolved once), the lifecycle dispatch the declaration
 // engine calls (preinit, init, destroy), and the change watch the forms that follow a var use (registry keys, radio frequencies, derives inputs,
@@ -36,6 +37,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 	var/owner_type
 	/// centry lists, by kind, in effective order (a later entry for the same target replaced an earlier one).
 	var/list/rolls
+	var/list/presets
 	var/list/params
 	var/list/built_from
 	var/list/registries
@@ -57,6 +59,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 	/// The setup() / name_prefix() hooks in declaration order, split by phase at build: lists of (handler, prefix) (handler, prefix, mapload) rows (setup_run() walks one, no entry reads).
 	var/list/setup_rows_plain
 	var/list/setup_rows_params
+	/// The setup(early = TRUE) handlers in declaration order (setup_early() runs them in phase 0, before the Initialize() chain).
+	var/list/setup_rows_early
 	var/datum/centry/tooltip
 	/// var name -> list of /datum/centry of the forms that follow that var (registry keys, radio frequencies, derives inputs, lives_while).
 	var/list/watch
@@ -64,6 +68,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 	var/list/param_pos
 	/// The params declared with apply =, in order: their setters run at init.
 	var/list/param_applies
+	/// The params declared with apply = and early = TRUE: their setters run in phase 0, before the Initialize() chain (params_early()).
+	var/list/param_early
 	/// The params declared keep = FALSE: dropped once the setters ran.
 	var/list/param_drops
 	/// TRUE when anything must run at preinit / init / destroy.
@@ -90,7 +96,7 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 /// to change it). A static, not a GLOB list: tables are built while the globals are still being made.
 /proc/lifeform_kinds()
 	var/static/list/kinds = list( // ALLOW(sys_static_getter): the declaration tables are built while the globals are still being made
-		ENTRY_ROLLS = "rolls", ENTRY_PARAM = "params", ENTRY_BUILT_FROM = "built_from", ENTRY_REGISTRY = "registries",
+		ENTRY_ROLLS = "rolls", ENTRY_PRESET = "presets", ENTRY_PARAM = "params", ENTRY_BUILT_FROM = "built_from", ENTRY_REGISTRY = "registries",
 		ENTRY_RADIO_LISTEN = "radios", ENTRY_ADJACENCY = "adjacencies", ENTRY_PER_TYPE = "per_types", ENTRY_VARIANTS = "variants", ENTRY_CONTAINS = "contains",
 		ENTRY_KNOWS = "knows", ENTRY_STARTS_AS = "starts_as", ENTRY_DERIVES = "derives", ENTRY_LIVES_WHILE = "lives_while",
 		ENTRY_ON_ENDING = "on_ending", ENTRY_INPUT = "inputs", ENTRY_KEEPS_IF = "keeps_if", ENTRY_SETUP = "setups")
@@ -132,12 +138,19 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 
 /// Works out what runs when, the watched vars and the positional params; validates against the first instance.
 /proc/lifeform_plan_finish(datum/lifeform_plan/P, datum/D)
-	P.pre = !!(P.rolls || P.params || P.per_types || P.built_from || P.variants)
+	P.pre = !!(P.rolls || P.presets || P.params || P.per_types || P.built_from || P.variants)
 	P.destroy = !!(P.registries || P.radios || P.adjacencies || P.on_ending || P.lives_while || P.derives)
 	for(var/datum/centry/C as anything in P.setups)
 		var/datum/entry/E = C.item
 		var/row = list(E.args["handler"], E.args["prefix"], E.args["mapload"])
-		if(E.args["with_params"])
+		if(E.args["early"])
+			if(!isatom(D))
+				declare_report("[C.origin]: setup([E.args["handler"]], early = TRUE) on [D.type]: only an atom has a phase 0 before its Initialize() chain")
+			else if(!hascall(D, E.args["handler"]))
+				declare_report("[C.origin]: setup([E.args["handler"]], early = TRUE) on [D.type]: no such proc")
+			else
+				LAZYADD(P.setup_rows_early, E.args["handler"])
+		else if(E.args["with_params"])
 			P.setup_with_params = TRUE
 			LAZYADD(P.setup_rows_params, list(row))
 		else
@@ -151,11 +164,20 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 		if(E.args["apply"])
 			if(!hascall(D, E.args["apply"]))
 				declare_report("[C.origin]: param(\"[E.args["var"]]\", apply = [E.args["apply"]]) on [D.type]: no such proc")
+			else if(E.args["early"])
+				if(!isatom(D))
+					declare_report("[C.origin]: param(\"[E.args["var"]]\", early = TRUE) on [D.type]: only an atom has a phase 0 before its Initialize() chain")
+				else
+					LAZYADD(P.param_early, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
 			else
 				LAZYADD(P.param_applies, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
 		if(E.args["keep"] == FALSE)
 			LAZYADD(P.param_drops, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
-	P.init = !!(P.setups || P.keeps_if || P.contains || P.knows || P.param_applies || P.param_drops || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
+	for(var/datum/centry/C as anything in P.keeps_if)
+		var/datum/entry/E = C.item
+		if(E.args["instead"] && !hascall(D, E.args["instead"]))
+			declare_report("[C.origin]: keeps_if(instead = [E.args["instead"]]) on [D.type]: no such proc")
+	P.init = !!(P.setup_rows_plain || P.setup_rows_params || P.keeps_if || P.contains || P.knows || P.param_applies || P.param_drops || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
 	for(var/kind_list in list(P.registries, P.radios, P.derives, P.lives_while, P.adjacencies))
 		for(var/datum/centry/C as anything in kind_list)
 			var/datum/entry/E = C.item
@@ -202,11 +224,16 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 	if(!P.pre)
 		return
 	if(P.params || P.built_from)
-		params_preinit(holder, P, mapload)
+		if(param_early_done?[holder])
+			param_early_done -= holder // phase 0 already checked and defaulted them (params_early())
+		else
+			params_preinit(holder, P, mapload)
 	if(P.per_types)
 		per_type_bind(holder, P)
 	if(P.variants)
 		variant_apply(holder) // before the rolls: a roll of a var the row sets still wins, as it did after the old apply_variant()
+	if(P.presets)
+		presets_run(holder, P, mapload)
 	if(P.rolls)
 		rolls_run(holder, P, mapload)
 
@@ -217,7 +244,7 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 		return
 	if(P.keeps_if)
 		keeps_if_init(holder, P)
-	if(P.setups && isatom(holder))
+	if((P.setup_rows_plain || P.setup_rows_params) && isatom(holder))
 		setup_note(holder, P)
 	if(P.contains)
 		roll_creator_push(holder) // what it creates rolls from its stream
@@ -300,10 +327,15 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 /datum/var/tmp/lifeform_declared = FALSE
 
 /proc/lifeform_datum_new(datum/D)
+	var/datum/make_args/made
 	if(length(GLOB?.make_pending))
-		make_pending_for(D) // a make() of this type: its params, before anything else
+		made = make_pending_for(D) // a make() of this type: its params, before anything else
 	lifecycle_initialize(D) // preinit (rolls, params) and owns_one/owns_many starts =
 	var/datum/type_table/T = table_of(D)
+	if((T.hook_flags & ENGINE_HOOK_AFTER_INIT) && !made)
+		// after_init() on a plain datum: its init is complete when the whole New() chain has returned, which only the creator sees. make()
+		// arms it then (make_build()); a bare new() never would, so it is refused here (and by the lifeforms lint where the type is literal).
+		declare_report("new [D.type]: the type declares after_init(), which a plain datum runs only when made with make([D.type]) (code/engine/actions/after_init.dm)")
 	if(T.hook_flags & ENGINE_HOOK_STATS)
 		stat_holder_init(D, FALSE) // a factors() entry's table lands on the entity its relation names once that relation is set
 	if(T.hook_flags & ENGINE_HOOK_MODES)

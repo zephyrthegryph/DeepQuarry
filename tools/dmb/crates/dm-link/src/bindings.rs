@@ -6,9 +6,12 @@ use super::*;
 #[derive(Clone, Debug)]
 pub struct BindingTables {
     inner: Arc<BindingData>,
+    /// Identity of this build. Equal tables of independent sessions share `inner` storage, but reuse admission keys on
+    /// the build that issued the tables, so two sessions never admit each other's cached plans by equal value.
+    issue: Arc<()>,
 }
 #[derive(Debug, PartialEq, Eq)]
-struct BindingData {
+pub(super) struct BindingData {
     indexes: BTreeMap<Key, u32>,
     slots: BTreeMap<SymbolId, (SymbolId, SymbolId)>,
 }
@@ -23,15 +26,18 @@ impl BindingTables {
         {
             return previous.clone();
         }
+        // A second session of the same inputs builds an equal table; hold one allocation for both.
+        let fingerprint = super::shared_pool::fingerprint(&indexes);
         Self {
-            inner: Arc::new(BindingData { indexes, slots }),
+            inner: super::shared_pool::bindings(fingerprint, BindingData { indexes, slots }),
+            issue: Arc::new(()),
         }
     }
     pub fn assignments(&self) -> &BTreeMap<Key, u32> {
         &self.inner.indexes
     }
     pub fn same_owner(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.inner, &other.inner)
+        Arc::ptr_eq(&self.issue, &other.issue)
     }
     /// Actual immutable owner descriptor and logical index counts for opt-in census.
     /// Private BTree nodes and Arc control blocks are deliberately not estimated.
@@ -161,7 +167,10 @@ impl RetainedBindings {
             true,
         )?;
         let recipe = match captured {
-            Some(recipe) => Arc::new(recipe),
+            Some(recipe) => {
+                let fingerprint = recipe.fingerprint();
+                super::shared_pool::recipe(fingerprint, recipe)
+            }
             None => {
                 self.assignment_reuses
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);

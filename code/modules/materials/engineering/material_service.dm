@@ -1,6 +1,7 @@
 // Operating condition is owned by the assembly, independently of a machine's
 // on/off processing roster. Stable assemblies retain watches but no timer.
-GLOBAL_VAR_INIT(next_material_assembly_id, 0)
+/// Material assembly numbers ("ME-3").
+SERIAL_DEF(material_assembly, 1, FALSE)
 
 /datum/gas
 	var/material_corrosivity = 0
@@ -195,7 +196,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/list/port_links
 	var/ambient_engine = FALSE
 	var/chemical_rate = 0
-	EXPIRY_DECLARE(chemical_last_update)
+	var/chemical_last_update = 0
 	var/input_joules = 0
 	var/output_joules = 0
 	var/loss_joules = 0
@@ -219,14 +220,16 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/has_sampled = FALSE
 	var/last_admission_event
 
+SCHEMA(/datum/material_service, electrical_reference_temperature, num())
+
 /datum/material_service/New(obj/holder)
 	..()
 	rel_set(src, nameof(owner), holder)
 	var/datum/material_assembly/assembly = material_assembly(holder)
 	if(!assembly.assembly_id)
-		assembly.assembly_id = "ME-[++GLOB.next_material_assembly_id]"
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
-	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
+		assembly.assembly_id = "ME-[next_serial(material_assembly)]"
+	STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, chemical_last_update, CLOCK_WORLD)
 	initialize_thermal_stock()
 	register_diagnostics()
 	// Not scheduled here: material_service_event(), the only creator, schedules the first
@@ -256,6 +259,12 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	unregister_diagnostics()
 	clear_watches()
 	..()
+
+/// The steady resample delay: MATERIAL_SERVICE_INTERVAL on average, drawn from half to one and a half of it. The services a map
+/// creates in one tick all sampled in the same instant every interval (about 258 at idle, one burst every 10 s); a spread delay
+/// scatters them over the interval within a sample or two. advance() measures the real elapsed time, so the physics is unchanged.
+/proc/material_service_spread_interval()
+	return rand(MATERIAL_SERVICE_INTERVAL / 2, MATERIAL_SERVICE_INTERVAL + MATERIAL_SERVICE_INTERVAL / 2)
 
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)
 	if(QDELETED(owner()))
@@ -301,10 +310,10 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	// Sleeping means the previous environment had no continuing effect. Do not
 	// charge minutes spent asleep against a newly hot or corrosive mixture.
 	if(!active && !timer)
-		EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+		STAMP(src, last_update, CLOCK_WORLD)
 	if(topology_changed)
 		watches_dirty = TRUE
-	schedule(active && !topology_changed ? MATERIAL_SERVICE_INTERVAL : 0)
+	schedule(active && !topology_changed ? material_service_spread_interval() : 0)
 
 /// Environmental assemblies care about thermal/composition changes. Pressure is
 /// relevant only to pressure-rated objects, so ordinary machine housings do not
@@ -415,7 +424,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 
 /datum/material_service/proc/settle_chemical()
 	var/elapsed = max(0, (world.time - chemical_last_update) / 10)
-	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
+	STAMP(src, chemical_last_update, CLOCK_WORLD)
 	if(chemical_rate && elapsed)
 		var/datum/material_assembly/wear = material_assembly(owner())
 		wear.liner_integrity = max(0, wear.liner_integrity - chemical_rate * elapsed)
@@ -545,14 +554,11 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/share = length(port_links) ? port_conductance() / length(port_links) : 0
 	for(var/id in port_links)
 		vg_heat_edge_set(id, HEAT_PARAM_CONDUCTANCE, share)
-	var/now = temperature()
-	if(ambient && abs(now - ambient.return_temperature()) >= MATERIAL_THERMAL_RESOLUTION)
-		return TRUE
-	if(length(port_links))
-		for(var/datum/gas_mixture/air as anything in owner().material_service_gases())
-			if(air.heat_capacity() > 0 && abs(air.return_temperature() - now) >= MATERIAL_THERMAL_RESOLUTION)
-				return TRUE
-	return FALSE
+	// Heat flows while it moves the assembly: awake only if the temperature moved since the last sample. A gap to the air alone is not flow: a cell on
+	// an airless floor or in CentCom (turfs with no heat simulation, a vacuum sink) sits 290 K off its air with a link that moves nothing, and used to
+	// be polled forever (265 of the 266 awake services of an idle station were such cells). A change in the surroundings wakes it through the gas
+	// watches and environment_changed(); retiring (settle_heat()) still needs the gap to be closed (material_service_can_retire()).
+	return abs(temperature() - last_environment_temperature) >= MATERIAL_THERMAL_RESOLUTION
 
 /// At its surroundings' temperature, before it retires: what it still holds over its air's temperature goes to the air.
 /datum/material_service/proc/settle_heat()
@@ -580,7 +586,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/elapsed = has_sampled ? clamp((world.time - last_update) / 10, 0, MATERIAL_SERVICE_MAX_ELAPSED) : 0
 	has_sampled = TRUE
 	settle_chemical()
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
 	if(QDELETED(owner()))
 		updating = FALSE
 		return
@@ -626,10 +632,10 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		owner().take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)
 		active = TRUE
 	updating = FALSE
-	last_environment_temperature = num_or_null(temperature())
+	last_environment_temperature = temperature()
 	active = sample_observation() || active
 	if(active)
-		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
+		schedule(monitor_tool ? 1 SECOND : material_service_spread_interval())
 	else if(owner().material_service_can_retire(src))
 		settle_heat()
 		spent(src)
@@ -707,3 +713,4 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /// The heat a material service's phase buffer holds, J.
 /proc/material_service_buffer(datum/material_service/service)
 	return service.buffer_energy()
+SCHEMA(/datum/material_service, last_environment_temperature, num())

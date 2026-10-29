@@ -229,7 +229,7 @@
 				img = icon2html(P.button, C, sourceonly = TRUE)
 				C.misc_cache[P.name] = img
 		L[++L.len] = list("[P.name]", P.name, img, P.button, REF(P.button))
-	H.misc_tabs["Protean"] = L
+	misc_tab_set(H, "Protean", L)
 
 // PAN Card
 /obj/item/clothing/accessory/permit/nanotech

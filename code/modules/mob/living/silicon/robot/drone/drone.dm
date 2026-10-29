@@ -216,13 +216,14 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 	return (can_pick_shell) ? null : /datum/msg/req_failed
 
 /// A drone is never named by its player.
-/mob/living/silicon/robot/drone/may_pick_name()
+/mob/living/silicon/robot/drone/may_pick_name(datum/act/A)
 	return FALSE
 
 /mob/living/silicon/robot/drone/pick_module()
 	return
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
+	configure(atom_rules(description_antag = "An Electromagnetic Sequencer can be used to subvert the drone to your cause."))
 	configure(mob_rules(universal_understand = 1))
 	setup(PROC_REF(prepare_drone_languages))
 	configure(mob_kind(can_be_antagged = FALSE))

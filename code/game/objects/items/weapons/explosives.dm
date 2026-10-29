@@ -109,7 +109,7 @@ CAPABILITIES(/obj/item/plastique)
 		add_attack_logs(user, target, "planted [name] on with [timer] second fuse")
 		act_message(user, target, others = span_danger("%U% finished planting an explosive on %T%!"))
 	else
-		message_admins("[key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) planted [src.name] on [target.name] at ([target.x],[target.y],[target.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[target.x];Y=[target.y];Z=[target.z]'>JMP</a>) with [timer] second fuse")
+		message_admins("[key_name(user, user.client)](<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(ref_token(user))]'>?</A>) planted [src.name] on [target.name] at ([target.x],[target.y],[target.z] - <A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[target.x];Y=[target.y];Z=[target.z]'>JMP</a>) with [timer] second fuse")
 		log_game("[key_name(user)] planted [src.name] on [target.name] at ([target.x],[target.y],[target.z]) with [timer] second fuse")
 
 	grant(target, /datum/capability/planted_charge, src)

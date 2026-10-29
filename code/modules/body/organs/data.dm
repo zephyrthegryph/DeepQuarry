@@ -8,7 +8,7 @@
 	// In the future, transforming species need to be refactored to not need this, as it's the only thing holding it back from proper isolation.
 
 	// Species
-	VAR_PRIVATE/cached_species_vars = list()
+	VAR_PRIVATE/list/cached_species_vars
 
 	// Dna
 	var/unique_enzymes
@@ -33,7 +33,7 @@
 	unique_enzymes = dna.unique_enzymes
 	set_body_gender(dna.GetUIState(DNA_UI_GENDER))
 	if(!isnull(dna.GetUIValue(DNA_UI_SKIN_TONE)))
-		skin_tone = num_or_null(dna.GetUIValue(DNA_UI_SKIN_TONE))
+		skin_tone = dna.GetUIValue(DNA_UI_SKIN_TONE)
 	skin_color = list(dna.GetUIValue(DNA_UI_SKIN_R), dna.GetUIValue(DNA_UI_SKIN_G), dna.GetUIValue(DNA_UI_SKIN_B))
 	hair_color = list(dna.GetUIValue(DNA_UI_HAIR_R), dna.GetUIValue(DNA_UI_HAIR_G), dna.GetUIValue(DNA_UI_HAIR_B))
 	digitigrade = dna.digitigrade
@@ -51,9 +51,9 @@
 #define SETUP_SPECIES_CHECK(p, x) \
 	var/datum/species/SP = species; \
 	if (SP) { \
-		cached_species_vars[p] = x; \
+		LAZYSET(cached_species_vars, p, x); \
 	} \
-	return cached_species_vars[p];
+	return cached_species_vars?[p];
 
 /datum/organ_data/proc/get_species_name()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -107,3 +107,4 @@
 
 CAPABILITIES(/datum/organ_data)
 	ref_one(nameof(species))
+SCHEMA(/datum/organ_data, skin_tone, num())

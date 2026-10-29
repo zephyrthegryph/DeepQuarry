@@ -2,7 +2,7 @@
 	// Person who started the vote
 	var/initiator = "the server"
 	// world.time the bote started at
-	EXPIRY_DECLARE(started_time)
+	var/started_time = 0
 	// The question being asked
 	var/question
 	// Vote type text, for showing in UIs and stuff
@@ -49,7 +49,7 @@
 		log_admin("[capitalize(vote_type_text)] vote started by [key_name(user)].")
 
 	log_vote(text)
-	EXPIRY_STAMP(src, started_time, CLOCK_WORLD)
+	STAMP(src, started_time, CLOCK_WORLD)
 	announce(text)
 
 /datum/vote/proc/remaining()
@@ -117,7 +117,7 @@
 	return null
 
 /datum/vote/proc/announce(start_text, time = vote_time)
-	to_chat(world, span_lightpurple("Type <b>vote</b> or click <a href='byond://?src=\ref[src];[HrefToken()];vote=open'>here</a> to place your vote. \
+	to_chat(world, span_lightpurple("Type <b>vote</b> or click <a href='byond://?src=[REF(src)];vote=open'>here</a> to place your vote. \
 		You have [time/10] seconds to vote."))
 	world << sound('sound/ambience/alarm4.ogg', repeat = 0, wait = 0, volume = 50, channel = 3)
 

@@ -77,11 +77,6 @@ CAPABILITIES(/datum/system/radio)
 	if(initialized)
 		return
 	initialized = TRUE
-	#ifdef UNIT_TESTS
-	if(unit_test_boot_skips(BOOT_NEED_RADIO))
-		unit_test_boot_skipped(BOOT_NEED_RADIO, "Radio (GLOB.autospeaker stays null)")
-		return
-	#endif
 	GLOB.autospeaker = new (null, FALSE, null, null, TRUE) //Set up Global Announcer
 	log_world("System [name] initialized: [length(frequencies)] frequencies in use.")
 
@@ -163,6 +158,8 @@ CAPABILITIES(/datum/system/radio)
 	var/encryption
 
 	var/frequency = ZERO_FREQ
+
+SCHEMA(/datum/signal, frequency, num())
 
 /datum/signal/proc/copy_from(datum/signal/model)
 	rel_set(src, nameof(source), model.source)

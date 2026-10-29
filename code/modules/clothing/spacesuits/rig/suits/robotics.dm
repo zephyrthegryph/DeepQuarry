@@ -5,7 +5,7 @@
 	desc = "A lightweight suit combining the utility of a RIG with the wearability of a voidsuit."
 	icon_state = "void_explorer2"
 	armor_spec = "melee=40;bullet=30;laser=20;energy=15;bomb=30;bio=100;rad=50"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	offline_slowdown = 1
 	offline_vision_restriction = 0
 	emp_protection = -20

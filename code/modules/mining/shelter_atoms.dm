@@ -157,8 +157,6 @@
 /obj/item/survivalcapsule/superpose
 	name = "superposed surfluid shelter capsule"
 	desc = "A proprietary hyperstructure of many three-dimensional spaces superposed around a supermatter nano crystal; right-click to reset the pod. There's a license for use printed on the bottom."
-	description_fluff = "The capsule contains pockets of compressed space in a super position stabilized by a miniscule supermatter crystal. \
-	NanoTrasen stresses the safety of this model over previous prototypes but assumes no liability for sub-kiloton explosions."
 	template_id = null
 	var/list/template_ids
 	var/pod_initialized = FALSE
@@ -197,6 +195,8 @@
 
 // Allows resetting the capsule if the wrong template is chosen.
 CAPABILITIES(/obj/item/survivalcapsule/superpose)
+	configure(atom_rules(description_fluff = "The capsule contains pockets of compressed space in a super position stabilized by a miniscule supermatter crystal. \
+	NanoTrasen stresses the safety of this model over previous prototypes but assumes no liability for sub-kiloton explosions."))
 	op("superpose_capsule_verb_reset", menu(), label("Reset Active Pod"), needs(carried()), then(PROC_REF(superpose_capsule_verb_reset)))
 
 /// Old Reset Active Pod verb: Resets the pod back to factory settings.
@@ -849,7 +849,6 @@ CAPABILITIES(/obj/item/gps/computer)
 	icon_base = "donkvendor"
 	icon_contents = null
 	icon = 'icons/obj/survival_pod_vend.dmi'
-	light_on = TRUE
 	pixel_y = -4
 	max_n_of_items = 100
 
@@ -919,7 +918,6 @@ CAPABILITIES(/obj/structure/fans)
 	icon_state = "hardlight"
 	buildstackamount = 2
 
-	light_on = TRUE
 
 CAPABILITIES(/obj/structure/fans/hardlight)
 	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))

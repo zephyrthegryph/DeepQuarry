@@ -92,7 +92,7 @@
 //begins the launch countdown and sets the amount of time left until launch
 /datum/system/emergency_shuttle/proc/set_launch_countdown(seconds)
 	wait_for_launch = TRUE
-	EXPIRY_SET(src, launch_time, (seconds * 10), CLOCK_WORLD)
+	COOLDOWN_START(src, launch_time, (seconds * 10))
 	PUBLISH(SSemergency_shuttle, shuttle_schedule_change)
 	demand()
 
@@ -208,7 +208,7 @@
 
 /// Nar'Sie's end-round path makes the launch deadline immediate, without recalling it.
 /datum/system/emergency_shuttle/proc/make_launch_irrevocable()
-	EXPIRY_CLEAR(src, launch_time)
+	COOLDOWN_RESET(src, launch_time)
 
 /datum/system/emergency_shuttle/proc/has_arrival_countdown()
 	return shuttle && shuttle.has_arrive_time()
@@ -224,7 +224,7 @@
 
 /// Editing an existing countdown does not arm it or alter automatic launch policy.
 /datum/system/emergency_shuttle/proc/edit_launch_countdown(seconds)
-	EXPIRY_SET(src, launch_time, (seconds SECONDS), CLOCK_WORLD)
+	COOLDOWN_START(src, launch_time, (seconds SECONDS))
 
 /datum/system/emergency_shuttle/proc/edit_arrival_countdown(seconds)
-	EXPIRY_SET(shuttle, arrive_time, (seconds SECONDS), CLOCK_WORLD)
+	COOLDOWN_START(shuttle, arrive_time, (seconds SECONDS))

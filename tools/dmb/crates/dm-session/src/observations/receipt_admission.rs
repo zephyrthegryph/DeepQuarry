@@ -2,7 +2,7 @@
 use super::{Observation, ObservationHost, Receipt, ReceiptStorageView};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex, OnceLock, RwLock},
+    sync::{Arc, Mutex},
 };
 
 struct Verdict<Q, A, D> {
@@ -14,14 +14,12 @@ struct Verdict<Q, A, D> {
 struct AdmittedLeaf<'a, Q, A, D, H> {
     host: &'a H,
     owner: &'a Arc<[Observation<Q, A, D>]>,
-    current_version: &'a dyn Fn(&D) -> Option<u128>,
 }
 impl<Q, A: Eq, D, H: ObservationHost<Q, A, D>> AdmittedLeaf<'_, Q, A, D, H> {
     fn deliver(self) {
         if self.host.supports_admitted_observation() {
             for read in self.owner.iter() {
-                self.host
-                    .observe_admitted(read, (self.current_version)(&read.domain));
+                self.host.observe_admitted(read);
             }
         }
     }
@@ -33,24 +31,16 @@ pub struct ReceiptAdmission<'host, Q, A, D, H> {
     host: &'host H,
     oracle: Option<&'host dyn super::AnswerOracle<Q, A>>,
     leaves: Mutex<BTreeMap<(usize, usize), Verdict<Q, A, D>>>,
-    /// Read-mostly: every receipt check reads here from all workers at once.
-    versions: RwLock<BTreeMap<D, Arc<OnceLock<Option<u128>>>>>,
-    /// Per-thread first-level copies of issued versions (shard = thread), so
-    /// workers do not contend on the shared map's lock word for hits.
-    local: Box<[Mutex<BTreeMap<D, Option<u128>>>]>,
 }
-const LOCAL_SHARDS: usize = 64;
-fn local_shard() -> usize {
-    use std::hash::{Hash, Hasher};
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    std::thread::current().id().hash(&mut hasher);
-    (hasher.finish() as usize) % LOCAL_SHARDS
-}
-impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
+impl<'host, Q: Clone, A: Eq, D, H: ObservationHost<Q, A, D>>
     ReceiptAdmission<'host, Q, A, D, H>
 {
     pub fn host(&self) -> &'host H {
         self.host
+    }
+    /// Whether receipts are proven by an answer table (`with_oracle`) rather than by replaying each answer.
+    pub fn has_oracle(&self) -> bool {
+        self.oracle.is_some() && self.allows_certificate_reuse()
     }
     pub fn allows_certificate_reuse(&self) -> bool {
         !self.host.observes_answers() || self.host.supports_admitted_observation()
@@ -58,7 +48,7 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     pub fn new(host: &'host H) -> Self {
         Self::with_oracle(host, None)
     }
-    /// Receipts are certified by `oracle`'s current answers instead of domain versions.
+    /// Receipts are proven by `oracle`'s current answers instead of replaying them through the host.
     pub fn with_oracle(
         host: &'host H,
         oracle: Option<&'host dyn super::AnswerOracle<Q, A>>,
@@ -67,156 +57,20 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
             host,
             oracle,
             leaves: Mutex::new(BTreeMap::new()),
-            versions: RwLock::new(BTreeMap::new()),
-            local: (0..LOCAL_SHARDS).map(|_| Mutex::new(BTreeMap::new())).collect(),
         }
     }
-    /// Memoize only the immutable host's current certificate, not a candidate's
-    /// accepted verdict. Unavailable certificates are equally request-local.
-    /// Host callbacks run outside the map lock; each domain's cell is initialized
-    /// once even when workers concurrently visit different artifact candidates.
-    pub fn certified_domains(&self, versions: &[(D, u128)]) -> std::collections::BTreeSet<D>
-    where
-        D: Clone,
-    {
-        super::certified_domains(versions, |domain| self.current_version(domain))
-    }
-    /// The same request-bound immutable issuer answer used by certificate admission.
-    pub fn current_version(&self, domain: &D) -> Option<u128>
-    where
-        D: Clone,
-    {
-        let local = &self.local[local_shard()];
-        if let Some(version) = local
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .get(domain)
-            .copied()
-        {
-            return version;
-        }
-        let known = self
-            .versions
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .get(domain)
-            .and_then(|cell| cell.get().copied());
-        if let Some(version) = known {
-            local
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .insert(domain.clone(), version);
-            return version;
-        }
-        let cell = self
-            .versions
-            .write()
-            .unwrap_or_else(|e| e.into_inner())
-            .entry(domain.clone())
-            .or_insert_with(|| Arc::new(OnceLock::new()))
-            .clone();
-        *cell.get_or_init(|| self.host.version_for_admission(domain))
-    }
-
-    /// One roster chunk: known cells are read under one shared lock, the missing
-    /// ones are asked of the immutable host outside any lock, and the answers are
-    /// published under one write lock. A cell another worker initialized first keeps
-    /// its answer (the host is immutable, so both agree).
-    fn chunk_versions(&self, part: &[D]) -> Vec<Option<u128>>
-    where
-        D: Clone,
-    {
-        let mut out: Vec<Option<Option<u128>>> = {
-            let versions = self.versions.read().unwrap_or_else(|e| e.into_inner());
-            part.iter()
-                .map(|domain| versions.get(domain).and_then(|cell| cell.get().copied()))
-                .collect()
-        };
-        let mut fresh = Vec::new();
-        for (index, slot) in out.iter_mut().enumerate() {
-            if slot.is_none() {
-                let version = self.host.version_for_admission(&part[index]);
-                *slot = Some(version);
-                fresh.push(index);
-            }
-        }
-        if !fresh.is_empty() {
-            let mut versions = self.versions.write().unwrap_or_else(|e| e.into_inner());
-            for index in fresh {
-                let cell = versions
-                    .entry(part[index].clone())
-                    .or_insert_with(|| Arc::new(OnceLock::new()));
-                let version = *cell.get_or_init(|| out[index].flatten());
-                out[index] = Some(version);
-            }
-        }
-        out.into_iter().map(|version| version.flatten()).collect()
-    }
-    /// [`Self::current_version`] for a whole roster, split across scoped threads.
-    /// Every answer still goes through the same per-domain once-cell; only the
-    /// order of host callbacks changes, and results keep the input order.
-    pub fn current_versions(&self, domains: Vec<D>) -> Vec<(D, Option<u128>)>
-    where
-        D: Clone + Send + Sync,
-        Self: Sync,
-    {
-        const MIN_CHUNK: usize = 4096;
-        let threads = std::thread::available_parallelism()
-            .map_or(1, |n| n.get())
-            .min(8)
-            .min(domains.len().div_ceil(MIN_CHUNK).max(1));
-        if threads <= 1 {
-            return domains
-                .into_iter()
-                .map(|domain| {
-                    let version = self.current_version(&domain);
-                    (domain, version)
-                })
-                .collect();
-        }
-        let chunk = domains.len().div_ceil(threads);
-        let versions: Vec<Vec<Option<u128>>> = std::thread::scope(|scope| {
-            let handles: Vec<_> = domains
-                .chunks(chunk)
-                .map(|part| {
-                    scope.spawn(move || self.chunk_versions(part))
-                })
-                .collect();
-            handles
-                .into_iter()
-                .map(|handle| handle.join().expect("domain version worker"))
-                .collect()
-        });
-        domains
-            .into_iter()
-            .zip(versions.into_iter().flatten())
-            .collect()
-    }
-
-    /// The ordinary artifact admission rule with request-shared certificate
-    /// checks. Every uncertified answer is replayed in canonical order, including
-    /// observable hosts. Partial or certificate-only success never seeds the
+    /// The ordinary artifact admission rule: every recorded answer is proven, by the oracle when the request has one
+    /// and holds it, else by replaying it through the host, in canonical order. A partial success never seeds the
     /// full-answer leaf verdict cache used by `first_changed`.
     pub fn first_changed_receipted(
         &self,
         receipt: &Receipt<Q, A, D>,
-        versions: &[(D, u128)],
         mut admitted: impl FnMut(&Arc<[Observation<Q, A, D>]>),
-    ) -> Option<Q>
-    where
-        D: Clone,
-    {
-        static CERTIFY: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.certify");
+    ) -> Option<Q> {
         static ITERATE: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.iterate");
         static DELIVER: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.deliver");
         // An observing host must see every answer it is asked for unless it accepts admitted leaves.
         let oracle = self.oracle.filter(|_| self.allows_certificate_reuse());
-        let certify_timer = CERTIFY.time();
-        let certified = match oracle {
-            Some(_) => Default::default(),
-            None => self.certified_domains(versions),
-        };
-        drop(certify_timer);
         let mut changed = None;
         receipt.visit_storage(|view| {
             if changed.is_some() {
@@ -229,24 +83,15 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
                         .iter()
                         .find(|read| match oracle.unchanged(&read.query, &read.answer) {
                             Some(unchanged) => !unchanged,
-                            // Not an answer the oracle holds (a producer input): its recorded
-                            // version certifies it, else its answer is compared.
-                            None => {
-                                let certified = versions.iter().any(|(domain, version)| {
-                                    *domain == read.domain
-                                        && self.current_version(domain) == Some(*version)
-                                });
-                                !certified
-                                    && !self.host.equivalent(
-                                        &self.host.answer_for_admission(&read.query),
-                                        &read.answer,
-                                    )
-                            }
+                            // Not an answer the oracle holds (a producer input): compare it.
+                            None => !self.host.equivalent(
+                                &self.host.answer_for_admission(&read.query),
+                                &read.answer,
+                            ),
                         })
                         .map(|read| read.query.clone()),
                     None => super::first_changed_iter(
                         leaf.iter(),
-                        &certified,
                         |query| self.host.answer_for_admission(query),
                         |current, previous| self.host.equivalent(current, previous),
                     )
@@ -258,7 +103,6 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
                     AdmittedLeaf {
                         host: self.host,
                         owner: leaf,
-                        current_version: &|domain| self.current_version(domain),
                     }
                     .deliver();
                     admitted(leaf);
@@ -287,7 +131,6 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
                     AdmittedLeaf {
                         host: self.host,
                         owner: leaf,
-                        current_version: &|domain| self.host.version_for_admission(domain),
                     }
                     .deliver();
                     admitted(leaf);
@@ -308,11 +151,8 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
                 return verdict.changed.clone();
             }
         }
-        // No domain shortcut: sharing an exact leaf does not prove two artifacts
-        // carried the same issuer-version roster. Resolve through the common core.
         let changed = super::first_changed_iter(
             leaf.iter(),
-            &Default::default(),
             |query| self.host.answer_for_admission(query),
             |current, previous| self.host.equivalent(current, previous),
         )
@@ -346,6 +186,3 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
 #[path = "receipt_admission_tests.rs"]
 mod tests;
 
-#[cfg(test)]
-#[path = "request_certificate_tests.rs"]
-mod request_certificate_tests;

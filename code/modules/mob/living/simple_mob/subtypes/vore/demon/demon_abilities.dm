@@ -85,7 +85,7 @@
 		to_chat(src,span_warning("You can't return to the physical world yet!"))
 		return FALSE
 
-	if(ELAPSED_SINCE(src, last_shift, CLOCK_WORLD) < 600)
+	if(ELAPSED(src, last_shift, CLOCK_WORLD) < 600)
 		to_chat(src,span_warning("You can't temporarily shift so soon! You need to wait [round(((last_shift+600)-world.time)/10)] second\s!"))
 		return FALSE
 
@@ -178,7 +178,7 @@
 
 	shift_state = AB_SHIFT_NONE
 	if(from_temporary)
-		EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)
+		STAMP(src, last_shift, CLOCK_WORLD)
 
 
 /mob/living/simple_mob/vore/demon/verb/blood_burst()
@@ -192,7 +192,7 @@
 		to_chat(src,span_warning("You must be in the physical world to create blood!"))
 		return FALSE
 
-	if(ELAPSED_SINCE(src, blood_spawn, CLOCK_WORLD) < 1500)
+	if(ELAPSED(src, blood_spawn, CLOCK_WORLD) < 1500)
 		to_chat(src,span_warning("You can't create blood so soon! You need to wait [round(((blood_spawn+1500)-world.time)/10)] second\s!"))
 		return FALSE
 
@@ -201,7 +201,7 @@
 
 	play_sfx(src.loc, SFX_EFFECTS_BLOBATTACK, volume = 50)
 
-	EXPIRY_STAMP(src, blood_spawn, CLOCK_WORLD)
+	STAMP(src, blood_spawn, CLOCK_WORLD)
 
 	return
 
@@ -350,4 +350,4 @@
 	// Do this after the potential vore, so we get the belly
 
 	shift_state = AB_SHIFT_NONE
-	EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)
+	STAMP(src, last_shift, CLOCK_WORLD)

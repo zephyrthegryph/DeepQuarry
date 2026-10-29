@@ -27,7 +27,7 @@
 		return FALSE
 	if(!(user.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_PAI)) // be_special migrated
 		return FALSE
-	if(check_is_delayed(REF(user)))
+	if(check_is_delayed(ref_token(user)))
 		return FALSE
 	if(check_is_already_pai(user.ckey))
 		return FALSE
@@ -49,15 +49,15 @@
 		return
 
 	// Time delay if the ghost cancels your invite.
-	var/ghost_key = REF(ghost) // keyed by ref text: a ghost-less timestamp table, not a relation
+	var/ghost_key = ref_token(ghost) // keyed by handle: a ghost-less timestamp table, not a relation
 	if(check_is_delayed(ghost_key))
 		to_chat(inquirer, span_notice("This pAI is responding to a request, but may become available again shortly..."))
 		return
-	asked[REF(ghost)] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	asked[ghost_key] = TIME_NOW(CLOCK_WORLD)
 
 	// Can't play, still respawning
 	var/time_till_respawn = ghost.time_till_respawn()
-	if(time_till_respawn == -1 || time_till_respawn)
+	if(time_till_respawn)
 		to_chat(inquirer, span_warning("This pAI is still downloading..."))
 		return
 
@@ -83,7 +83,7 @@
 		var/datum/pai_sprite/sprite_datum = SSpai.chassis_data(chassis)
 		var/css_class = sanitize_css_class_name("[sprite_datum.type]")
 		UNTYPED_LIST_ADD(data, list(
-				"ref" = REF(ghost),
+				"ref" = ref_token(ghost),
 				"name" = pref.read_preference(/datum/preference/text/pai_name),
 				"gender" = pref.read_preference(/datum/preference/choiced/gender/biological), // Cannot use identifying yet due to byond limits
 				"role" = TextPreview(pref.read_preference(/datum/preference/text/pai_role), 152),
@@ -140,7 +140,7 @@
 
 /datum/system/pai/proc/block_pai_invites(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	asked[ghost_ref] = EXPIRY_AT(null, CLOCK_WORLD, 0) + 99 HOURS // We never want to be asked again
+	asked[ghost_ref] = TIME_NOW(CLOCK_WORLD) + 99 HOURS // We never want to be asked again
 
 /datum/system/pai/proc/clear_pai_block_delay(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)

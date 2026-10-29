@@ -92,7 +92,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 
 /mob/living/carbon/human/proc/wounds_advance(cycles)
 	var/can_bleed = should_have_organ(O_HEART) && !(species.flags & NO_BLOOD)
-	var/moving = !lying && !buckled_to() && ELAPSED_SINCE(src, l_move_time, CLOCK_WORLD) < BODY_MOVING_WINDOW
+	var/moving = !lying && !buckled_to() && ELAPSED(src, l_move_time, CLOCK_WORLD) < BODY_MOVING_WINDOW
 	for(var/obj/item/organ/external/E as anything in organs)
 		var/list/wounds = E.get_wounds()
 		if(!length(wounds))

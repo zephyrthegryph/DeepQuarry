@@ -431,13 +431,18 @@
 /// `answerer` (PROC_REF(x), x(datum/act/op/A) returns a mob): this question goes to that mob, not to the actor (a kiosk asks the patient, a cryopod asks the
 /// sleeper). The answer lands in the op like any other. The op ends with the usual feedback to the actor if that mob declines, closes the prompt, is deleted,
 /// cannot act any more or moves out of reach of the actor while the question is open; the same holds if the actor goes. x returning no mob ends the op as failed.
+/// `answerer_bound` (default TRUE): the third party must stay conscious and within reach of the actor (a loc chain counts: a carrier holding the actor's card). FALSE
+/// leaves only the window check (a screen's owner confirming a change made on their own panel by someone else).
+/// `optional` + `default`: a cancel or a timeout does not end the op: the step is answered with `default` (a value, or computed(PROC_REF(x)), x(datum/act/op/A)) and the
+/// workflow goes on, with every requirement asked again as for a real answer (a cancelled sub-menu that still applies the mode). A.step_value("name") is the default
+/// then; the prompt's own `outcome` still says it was not answered. Anything that ends the question otherwise (the op's own checks failing) still ends the op.
 /// `keeps_answer`: the answer is a thing (an atom: the person a healing is aimed at) and the op keeps it from then on, as it keeps its target: the
 /// later waits end when it is deleted, when it moves away from where it was answered (TARGET_PRESENT) or out of the actor's reach (ADJACENT), and
 /// A.answer_target() is that thing in needs() and then(). Written keeps_answer = PROC_REF(x), x(datum/act/op/A) returns the atom the answer names (a
 /// prompt that lists texts: the limb whose name was picked); TRUE means the answer itself. An answer that names no atom ends the op as failed. Only the
 /// keeps the wait names apply.
-/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null, answerer = null, keeps_answer = FALSE)
-	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats, "answerer" = answerer, "keeps_answer" = keeps_answer))
+/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null, answerer = null, keeps_answer = FALSE, answerer_bound = TRUE, optional = FALSE, default = null)
+	return part_make(/datum/entry/part/asks, list("answerer_bound" = answerer_bound, "optional" = optional, "default" = default, "type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats, "answerer" = answerer, "keeps_answer" = keeps_answer))
 
 /datum/entry/part/asks
 	part_name = "asks"
@@ -590,11 +595,158 @@
 	part_name = "becomes"
 
 /// spawns(T, n): adds n of T where the holder is.
-/proc/spawns(spawn_type, n = 1)
-	return part_make(/datum/entry/part/effect/spawns, list("type" = spawn_type, "n" = n))
+/// A transformation also takes the rest (code/library/transformations/transformation_spawns.dm): `at`, `per`, `amount`, `scatter`, `inherit`, `tell` and
+/// `audit` are carried only when given, so an op's part is the same interned part as before.
+/proc/spawns(spawn_type, n = 1, at = null, per = null, amount = null, scatter = null, inherit = null, tell = null, audit = null,
+	sfx = null,
+	scatter_chance = null)
+	var/list/arguments = list("type" = spawn_type, "n" = n)
+	if(!isnull(at))
+		arguments["at"] = at
+	if(!isnull(per))
+		arguments["per"] = per
+	if(!isnull(amount))
+		arguments["amount"] = amount
+	if(!isnull(scatter))
+		arguments["scatter"] = scatter
+	if(!isnull(inherit))
+		arguments["inherit"] = inherit
+	if(!isnull(tell))
+		arguments["tell"] = tell
+	if(!isnull(audit))
+		arguments["audit"] = audit
+	if(!isnull(sfx))
+		arguments["sfx"] = sfx
+	if(!isnull(scatter_chance))
+		arguments["scatter_chance"] = scatter_chance
+	return part_make(/datum/entry/part/effect/spawns, arguments)
 
 /datum/entry/part/effect/spawns
 	part_name = "spawns"
+
+/// sets_off(kind = ..., ...): the stock effect a reagent step sets off (code/library/transformations/transformation_effects.dm): XFORM_FX_SMOKE, XFORM_FX_FOAM,
+/// XFORM_FX_EXPLOSION, XFORM_FX_EMP. Arguments are carried only when given. `clears` empties the holder after a smoke, foam or pulse unless it is a living thing
+/// (no powergaming a tiny amount); `tell` is what viewers within 5 see; `variant` is the foam kind; `divisor` scales an explosion (made / divisor) and
+/// `divisors` the four pulse ranges; `skip_in_tests` leaves the effect out of a test world; `amount` is a fixed size for smoke or foam in place of what the step made; XFORM_FX_AREA applies `body_effect` (a path or a list of them) for `lasts` to every mob within `range` of the subject. `chance` (percent) gates the whole row (rolled first); XFORM_FX_BLAST takes `blast` = list(devastation, heavy, light, flash), each a number or list(lo, hi) rolled with rand() in order; XFORM_FX_FROST uses `amount`; XFORM_FX_LATER calls the GLOBAL_PROC_REF `handler` on the subject after `delay`, after the `audit` line, the `tell` message and the `sfx` sound. XFORM_FX_LIGHTNING, XFORM_FX_RADIATION (`range`, `strength`) and XFORM_FX_EMP with fixed `ranges` = list(a, b, c, d) take the same `audit`, `tell`, `sfx` and an optional `delay`, then `fire_sfx` when they go. XFORM_FX_GRAVITY takes `direction`, `range`, `pulses` (pull) and `empties` (clear the holder whatever it is); XFORM_FX_BURN takes `gases` (gas = amount), `scale_by_made`, `temperature`, `hotspot` = list(temperature, volume), `range`, `line_of_sight`, `floors_only` and `consumes` (a reagent id removed from the holder); XFORM_FX_MOOD takes `mood`; `sfx_volume` is the volume multiplier of `sfx` and `fire_sfx` (play_sfx's volume_mult; null is 1). XFORM_FX_CONTAGION takes `edit` and, for evolving, `levels` = list(min, max) or `symptoms`.
+/proc/sets_off(kind, clears = null, tell = null, sfx = null, variant = null, divisor = null, divisors = null, skip_in_tests = null, amount = null, range = null, body_effect = null, lasts = null, chance = null, blast = null, delay = null, handler = null, audit = null,
+	strength = null,
+	fire_sfx = null,
+	ranges = null,
+	direction = null,
+	pulses = null,
+	empties = null,
+	gases = null,
+	scale_by_made = null,
+	temperature = null,
+	hotspot = null,
+	line_of_sight = null,
+	floors_only = null,
+	consumes = null,
+	mood = null,
+	edit = null,
+	levels = null,
+	symptoms = null,
+	sfx_volume = null)
+	var/list/arguments = list("kind" = kind)
+	if(!isnull(clears))
+		arguments["clears"] = clears
+	if(!isnull(tell))
+		arguments["tell"] = tell
+	if(!isnull(sfx))
+		arguments["sfx"] = sfx
+	if(!isnull(variant))
+		arguments["variant"] = variant
+	if(!isnull(divisor))
+		arguments["divisor"] = divisor
+	if(!isnull(divisors))
+		arguments["divisors"] = divisors
+	if(!isnull(skip_in_tests))
+		arguments["skip_in_tests"] = skip_in_tests
+	if(!isnull(amount))
+		arguments["amount"] = amount
+	if(!isnull(range))
+		arguments["range"] = range
+	if(!isnull(body_effect))
+		arguments["body_effect"] = body_effect
+	if(!isnull(lasts))
+		arguments["lasts"] = lasts
+	if(!isnull(chance))
+		arguments["chance"] = chance
+	if(!isnull(blast))
+		arguments["blast"] = blast
+	if(!isnull(delay))
+		arguments["delay"] = delay
+	if(!isnull(handler))
+		arguments["handler"] = handler
+	if(!isnull(audit))
+		arguments["audit"] = audit
+	if(!isnull(strength))
+		arguments["strength"] = strength
+	if(!isnull(fire_sfx))
+		arguments["fire_sfx"] = fire_sfx
+	if(!isnull(ranges))
+		arguments["ranges"] = ranges
+	if(!isnull(direction))
+		arguments["direction"] = direction
+	if(!isnull(pulses))
+		arguments["pulses"] = pulses
+	if(!isnull(empties))
+		arguments["empties"] = empties
+	if(!isnull(gases))
+		arguments["gases"] = gases
+	if(!isnull(scale_by_made))
+		arguments["scale_by_made"] = scale_by_made
+	if(!isnull(temperature))
+		arguments["temperature"] = temperature
+	if(!isnull(hotspot))
+		arguments["hotspot"] = hotspot
+	if(!isnull(line_of_sight))
+		arguments["line_of_sight"] = line_of_sight
+	if(!isnull(floors_only))
+		arguments["floors_only"] = floors_only
+	if(!isnull(consumes))
+		arguments["consumes"] = consumes
+	if(!isnull(mood))
+		arguments["mood"] = mood
+	if(!isnull(edit))
+		arguments["edit"] = edit
+	if(!isnull(levels))
+		arguments["levels"] = levels
+	if(!isnull(symptoms))
+		arguments["symptoms"] = symptoms
+	if(!isnull(sfx_volume))
+		arguments["sfx_volume"] = sfx_volume
+	return part_make(/datum/entry/part/effect/sets_off, arguments)
+
+/datum/entry/part/effect/sets_off
+	part_name = "sets_off"
+
+/// pick_from(choices = list(list(weight, source, amount), ...)): what a spawns() row makes, chosen in two steps. A table is picked by weight, then a type from
+/// the table by its own weights. `weight` is a number, length_of(nameof(GLOB.x)) (the length of that list: a one-in-(n+1) chance is weights 1 and length_of(x))
+/// or weight_sum_of(list(nameof(GLOB.x), ...)) (the sum of the weights in those lists). `source` is nameof(GLOB.x) for a list of types (weighted or not), a list of
+/// such names (their union), subtypes_of(path, except = list(paths)) or types_of(path, where = GLOBAL_PROC_REF(pred)). `amount` (optional) is the second
+/// constructor argument of what that choice makes. Every name must be a GLOB var: a typo fails at the boot gate. Name `choices` in the call.
+/proc/pick_from(list/choices)
+	return part_make(/datum/entry/part/pick_from, list("choices" = choices))
+
+/datum/entry/part/pick_from
+	part_name = "pick_from"
+
+/// subtypes_of(path, except = list(paths)): a pick_from() source: the subtypes of `path`, less the subtypes of each excepted path.
+/proc/subtypes_of(path, list/except = null)
+	return list("subtypes", path, except)
+
+/// types_of(path, where = GLOBAL_PROC_REF(pred)): a pick_from() source: `path` and its subtypes for which pred(type) is true.
+/proc/types_of(path, where = null)
+	return list("types", path, where)
+
+/// length_of(nameof(GLOB.x)): a pick_from() weight: how many entries that list has.
+/proc/length_of(list_name)
+	return list("length_of", list_name)
+
+/// weight_sum_of(list(nameof(GLOB.x), ...)): a pick_from() weight: the sum of the weights of the entries of those lists (an entry without a weight counts 1).
+/proc/weight_sum_of(list/list_names)
+	return list("weight_sum_of", list_names)
 
 /// opens_ui(): opens the holder's window for the actor.
 /proc/opens_ui()

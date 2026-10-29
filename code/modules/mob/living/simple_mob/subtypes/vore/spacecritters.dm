@@ -91,7 +91,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	copy = "/mob/living/simple_mob/vore/spacecritter/solarray"
 
 CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray)
-	configure(butchery_rules(meat_amount = 8, butchery_loot = list( /obj/item/stack/material/wisp = 3 )))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/raymeat, meat_amount = 8, butchery_loot = list( /obj/item/stack/material/wisp = 3 )))
 
 
 /mob/living/simple_mob/vore/spacecritter/solarray/life_type_post_due()
@@ -159,7 +160,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 	var/chilltemp = -20
 
 CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/livingice)
-	configure(butchery_rules(meat_amount = 18, butchery_loot = list( /obj/item/stack/material/frostscale = 3 )))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/stack/material/snow, meat_amount = 18, butchery_loot = list( /obj/item/stack/material/frostscale = 3 )))
 
 /mob/living/simple_mob/vore/spacecritter/livingice/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
@@ -201,7 +203,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/livingice)
 	copy = "/mob/living/simple_mob/vore/spacecritter/radcrab"
 
 CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/radcrab)
-	configure(butchery_rules(meat_amount = 8, butchery_loot = list( /obj/item/stack/material/crystalscale = 3 )))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat, meat_amount = 8, butchery_loot = list( /obj/item/stack/material/crystalscale = 3 )))
 
 /mob/living/simple_mob/vore/spacecritter/radcrab/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
@@ -242,7 +245,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/radcrab)
 	copy = "/mob/living/simple_mob/vore/spacecritter/dreameel"
 
 CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/dreameel)
-	configure(butchery_rules(meat_amount = 2, butchery_loot = list( /obj/item/stack/material/dreamscale = 3 )))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/eelmeat, meat_amount = 2, butchery_loot = list( /obj/item/stack/material/dreamscale = 3 )))
 
 /datum/artifact_master/dreameel
 	make_effects = list(
@@ -282,7 +286,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/dreameel)
 	copy = "/mob/living/simple_mob/vore/spacecritter/gravityshell"
 
 CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
-	configure(butchery_rules(meat_amount = 8, butchery_loot = list( /obj/item/stack/material/shellchitin = 3 )))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/gravityshell, meat_amount = 8, butchery_loot = list( /obj/item/stack/material/shellchitin = 3 )))
 
 /datum/artifact_master/gravity
 	make_effects = list(
@@ -307,7 +312,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 	vore_bump_chance = 80
 	vore_bump_emote = "devours"
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 0
 	vore_default_mode = DM_DIGEST
 
@@ -315,7 +319,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 	vore_bump_chance = 0
 	vore_bump_emote = "devours"
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 0
 	vore_default_mode = DM_DIGEST
 
@@ -323,7 +326,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 	vore_bump_chance = 40
 	vore_bump_emote = "devours"
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 0
 	vore_default_mode = DM_DIGEST
 
@@ -331,7 +333,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 	vore_bump_chance = 40
 	vore_bump_emote = "devours"
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 0
 	vore_default_mode = DM_DIGEST
 
@@ -339,13 +340,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 	vore_bump_chance = 40
 	vore_bump_emote = "devours"
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 0
 	vore_default_mode = DM_DIGEST
 
 
 /mob/living/simple_mob/vore/spacecritter/solarray
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/raymeat
 
 	tame_items = list(
 	/obj/item/stack/tile/grass = 50
@@ -362,7 +361,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 		)
 
 /mob/living/simple_mob/vore/spacecritter/livingice
-	meat_type = /obj/item/stack/material/snow
 
 	tame_items = list(
 	/obj/item/stack/material/snow = 10
@@ -379,7 +377,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 		)
 
 /mob/living/simple_mob/vore/spacecritter/radcrab
-	meat_type = /obj/item/reagent_containers/food/snacks/crabmeat
 
 	tame_items = list(
 	/obj/item/ore/uranium = 50
@@ -396,7 +393,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 		)
 
 /mob/living/simple_mob/vore/spacecritter/dreameel
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/eelmeat
 
 	tame_items = list(
 		/obj/item/reagent_containers/food/snacks/meat/gravityshell = 40
@@ -413,7 +409,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
 		)
 
 /mob/living/simple_mob/vore/spacecritter/gravityshell
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/gravityshell
 
 	tame_items = list(
 	/obj/item/reagent_containers/food/snacks/crabmeat = 50

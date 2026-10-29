@@ -96,7 +96,7 @@
 
 /datum/point/proc/debug_out()
 	var/turf/T = return_turf()
-	return "\ref[src] aX [x] aY [y] aZ [z] pX [return_px()] pY [return_py()] mX [T.x] mY [T.y] mZ [T.z]"
+	return "[REF(src)] aX [x] aY [y] aZ [z] pX [return_px()] pY [return_py()] mX [T.x] mY [T.y] mZ [T.z]"
 
 /datum/point/proc/move_atom_to_src(atom/movable/AM)
 	AM.forceMove(return_turf())
@@ -193,21 +193,21 @@
 	return
 
 /datum/point/vector/processed		//pixel_speed is per decisecond.
-	EXPIRY_DECLARE(last_process)
-	EXPIRY_DECLARE(last_move)
+	var/last_process = 0
+	var/last_move = 0
 	var/paused = FALSE
 
 /datum/point/vector/processed/proc/start()
-	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
-	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+	STAMP(src, last_process, CLOCK_WORLD)
+	STAMP(src, last_move, CLOCK_WORLD)
 	SSpoint_steps.kernel_join(src)
 
 /datum/point/vector/processed/proc/point_step()
 	if(paused)
 		last_move += world.time - last_process
-		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+		STAMP(src, last_process, CLOCK_WORLD)
 		return
 	var/needed_time = world.time - last_move
-	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
-	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+	STAMP(src, last_process, CLOCK_WORLD)
+	STAMP(src, last_move, CLOCK_WORLD)
 	increment(needed_time) // was needed_time / SSprojectiles.wait, and that wait was 1

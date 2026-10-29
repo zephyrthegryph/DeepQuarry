@@ -28,16 +28,16 @@ mod tests {
         let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
         let lease = store.lease();
         let known = lease
-            .insert_with_owned(Arc::from(b"known".as_slice()), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::from(b"known".as_slice()), vec![], 1, || {
                 vec![7; 90]
             })
             .unwrap();
         let unknown = lease
-            .insert_with_owned(Arc::from(b"unknown".as_slice()), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::from(b"unknown".as_slice()), vec![], 1, || {
                 vec![8]
             })
             .unwrap();
-        let report = store.prune_for_pressure(usize::MAX, |key, _, _, value| {
+        let report = store.prune_for_pressure(usize::MAX, |key, _, value| {
             let _ = store.admitted_bytes(); // callback must not hold the core lock
             (key.as_ref() == b"known").then_some(value.capacity())
         });
@@ -51,7 +51,7 @@ mod tests {
         assert_eq!(report.evicted_entries, 1);
         assert_eq!(store.admitted_bytes(), report.charged_bytes);
         assert_eq!(unknown.as_slice(), &[8]);
-        let rejected = store.prune_for_pressure(report.charged_bytes - 1, |_, _, _, value| {
+        let rejected = store.prune_for_pressure(report.charged_bytes - 1, |_, _, value| {
             Some(value.capacity())
         });
         assert_eq!(rejected.retained_entries, 0);
@@ -76,14 +76,14 @@ mod tests {
         for key in [b"first".as_slice(), b"second".as_slice()] {
             drop(
                 lease
-                    .insert_with_owned(Arc::from(key), vec![], vec![], 1, || {
+                    .insert_with_owned(Arc::from(key), vec![], 1, || {
                         Payload(Arc::clone(&drops))
                     })
                     .unwrap(),
             );
         }
         let mut calls = 0;
-        let report = store.prune_for_pressure(0, |_, _, _, _| {
+        let report = store.prune_for_pressure(0, |_, _, _| {
             assert_eq!(drops.load(Ordering::SeqCst), calls);
             calls += 1;
             None
@@ -99,19 +99,19 @@ mod tests {
         let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
         let first = store.lease();
         let escaped = first
-            .insert_with_owned(Arc::from(b"key".as_slice()), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::from(b"key".as_slice()), vec![], 1, || {
                 vec![1; 8]
             })
             .unwrap();
         let original =
-            store.prune_for_pressure(usize::MAX, |_, _, _, value| Some(value.capacity()));
+            store.prune_for_pressure(usize::MAX, |_, _, value| Some(value.capacity()));
         let second = store.lease();
         let rejected = store.prune_for_pressure_with_budget(
             original.charged_bytes,
-            |_, _, _, value, allowance| {
+            |_, _, value, allowance| {
                 assert_eq!(allowance, value.capacity());
                 let (accepted, changed) =
-                    second.visit_receipted_with(b"key", &mut |_, _| None, &mut |_| true);
+                    second.visit_receipted_with(b"key", &mut |_| None, &mut |_| true);
                 assert!(accepted.is_some());
                 assert!(changed.is_none());
                 Some(value.capacity())
@@ -133,7 +133,7 @@ mod tests {
         for index in 0u32..32 {
             drop(
                 lease
-                    .insert_with_owned(Arc::from(index.to_le_bytes()), vec![], vec![], 1, || {
+                    .insert_with_owned(Arc::from(index.to_le_bytes()), vec![], 1, || {
                         vec![1; 8]
                     })
                     .unwrap(),
@@ -145,7 +145,7 @@ mod tests {
             entry_index_charge(&state, hash, 0) + 8
         };
         let mut calls = 0;
-        let report = store.prune_for_pressure_with_budget(limit, |_, _, _, value, allowance| {
+        let report = store.prune_for_pressure_with_budget(limit, |_, _, value, allowance| {
             calls += 1;
             assert_eq!(allowance, 8);
             Some(value.capacity())
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(report.charged_bytes, limit);
         assert_eq!(store.admitted_bytes(), limit);
         let mut calls = 0;
-        let report = store.prune_for_pressure_with_budget(0, |_, _, _, _, _| {
+        let report = store.prune_for_pressure_with_budget(0, |_, _, _, _| {
             calls += 1;
             Some(0)
         });
@@ -174,7 +174,7 @@ mod tests {
         let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
         let lease = store.lease();
         let first = lease
-            .insert_with_owned(Arc::from(b"first".as_slice()), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::from(b"first".as_slice()), vec![], 1, || {
                 vec![1; 8]
             })
             .unwrap();
@@ -183,7 +183,7 @@ mod tests {
         // Simulate the unlocked interval after the streaming cursor passed:
         // this current row has never had its payload charged.
         let late = lease
-            .insert_with_owned(Arc::from(b"late".as_slice()), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::from(b"late".as_slice()), vec![], 1, || {
                 vec![2; 8]
             })
             .unwrap();
@@ -214,17 +214,17 @@ mod tests {
         let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
         let first = store.lease();
         let value = first
-            .insert_with_owned(Arc::from(b"key".as_slice()), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::from(b"key".as_slice()), vec![], 1, || {
                 vec![1; 8]
             })
             .unwrap();
         let original =
-            store.prune_for_pressure(usize::MAX, |_, _, _, value| Some(value.capacity()));
+            store.prune_for_pressure(usize::MAX, |_, _, value| Some(value.capacity()));
         let mut retained = BTreeMap::new();
         retained.insert(Arc::as_ptr(&value) as usize, value.capacity());
         let second = store.lease();
         let (accepted, changed) =
-            second.visit_receipted_with(b"key", &mut |_, _| None, &mut |_| true);
+            second.visit_receipted_with(b"key", &mut |_| None, &mut |_| true);
         assert!(accepted.is_some());
         assert!(changed.is_none());
         let detached = {
@@ -247,7 +247,6 @@ mod tests {
         let escaped = lease
             .insert_with_owned(
                 Arc::from(b"replacement".as_slice()),
-                vec![],
                 vec![],
                 1,
                 || vec![1],
@@ -274,7 +273,7 @@ mod tests {
         let mut retained = BTreeMap::new();
         for index in 0u32..128 {
             let value = lease
-                .insert_with_owned(Arc::from(index.to_le_bytes()), vec![], vec![], 1, || {
+                .insert_with_owned(Arc::from(index.to_le_bytes()), vec![], 1, || {
                     vec![1; 8]
                 })
                 .unwrap();
@@ -320,14 +319,13 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         mut charge: impl FnMut(
             &Arc<[u8]>,
             &Receipt<Q, A, D>,
-            &Arc<[(D, u128)]>,
             &Arc<T>,
         ) -> Option<usize>,
     ) -> PressurePrune {
         // Compatibility callbacks may perform bookkeeping even for rejected
         // rows. Preserve their invocation contract on the same pruning producer.
-        self.prune_with_budget(limit, false, |key, reads, versions, value, _| {
-            charge(key, reads, versions, value)
+        self.prune_with_budget(limit, false, |key, reads, value, _| {
+            charge(key, reads, value)
         })
     }
 
@@ -341,7 +339,6 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         charge: impl FnMut(
             &Arc<[u8]>,
             &Receipt<Q, A, D>,
-            &Arc<[(D, u128)]>,
             &Arc<T>,
             usize,
         ) -> Option<usize>,
@@ -356,7 +353,6 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         mut charge: impl FnMut(
             &Arc<[u8]>,
             &Receipt<Q, A, D>,
-            &Arc<[(D, u128)]>,
             &Arc<T>,
             usize,
         ) -> Option<usize>,
@@ -396,19 +392,18 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                         (
                             Arc::clone(&entry.key),
                             entry.reads.clone(),
-                            Arc::clone(&entry.versions),
                             Arc::clone(&entry.value),
                             remaining.checked_sub(entry_index_charge(&state, *hash, position)),
                         )
                     })
             };
-            let Some((key, reads, versions, value, allowance)) = candidate else {
+            let Some((key, reads, value, allowance)) = candidate else {
                 continue;
             };
             let payload = if skip_unchargeable && allowance.is_none() {
                 None
             } else {
-                charge(&key, &reads, &versions, &value, allowance.unwrap_or(0))
+                charge(&key, &reads, &value, allowance.unwrap_or(0))
             };
             let detached = {
                 let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
@@ -652,7 +647,7 @@ fn entry_index_charge<T, Q, A, D: Copy + Ord>(
     bucket
         .capacity()
         .saturating_mul(std::mem::size_of::<Variant<T, Q, A, D>>())
-        .saturating_add(scalar_slot::<u128, Vec<Variant<T, Q, A, D>>>())
+        .saturating_add(scalar_slot::<u128, Bucket<Variant<T, Q, A, D>>>())
 }
 
 fn detach<T, Q, A, D>(

@@ -224,7 +224,6 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             if let Some(mut input) = store.lookup(
                 &current_key,
                 &prepared_tail,
-                host,
                 request_admission,
                 candidates,
                 &recording,
@@ -593,7 +592,6 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         let mut admission = None;
         if let Ok(unit) = &result {
             let reads: Arc<[crate::lowering_memo::ResolverRead]> = recording.reads().into();
-            let versions: Arc<[(dm_ir::ReadDomain, u128)]> = recording.domain_receipts().into();
             let relative_debug = capture.borrow().debug.clone();
             if relative_debug.len() == unit.debug_origins.entries.len()
                 && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
@@ -609,7 +607,6 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                         memo,
                         Arc::from(key.as_slice()),
                         Arc::clone(&reads),
-                        Arc::clone(&versions),
                         relative_debug.clone(),
                         compact,
                         memo.dep_index()
@@ -624,9 +621,9 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     }
                     if selections_only {
-                        memo.queue_selections(&key, &reads, unit, &versions);
+                        memo.queue_selections(&key, &reads, unit);
                     } else {
-                        memo.queue_disk(&key, &reads, unit, &relative_debug, &versions);
+                        memo.queue_disk(&key, &reads, unit, &relative_debug);
                     }
                 }
                 // The completion producer retains the reusable symbolic artifact.
@@ -641,7 +638,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                         || Arc::from(key.as_slice()),
                         |admission| admission.shared_key(),
                     );
-                    memo.remember_shared(retained_key, reads, unit, relative_debug, versions);
+                    memo.remember_shared(retained_key, reads, unit, relative_debug);
                 }
             }
         } else if let Some(errors) = &capture.borrow().errors {
@@ -650,7 +647,6 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                 Some(identity),
                 &recording.reads(),
                 errors,
-                &recording.domain_receipts(),
             );
         }
         result.map(|unit| {

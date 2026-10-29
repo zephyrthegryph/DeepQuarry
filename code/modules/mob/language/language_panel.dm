@@ -3,7 +3,7 @@
 /proc/dq_open_languages_panel(mob/source, mob/user)
 	if(!istype(user))
 		return
-	var/key = "[REF(source)]"
+	var/key = ref_token(source)
 	var/datum/languages_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_languages_panels, key))
 	if(!panel)
 		panel = new(source)
@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 /datum/languages_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_languages_panels -= "[REF(host)]"
+		GLOB.dq_languages_panels -= ref_token(host)
 
 CAPABILITIES(/datum/languages_panel)
 	ref_one(nameof(host), /mob)

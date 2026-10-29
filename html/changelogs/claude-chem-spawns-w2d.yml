@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Slime extract radiation, lightning and EMP pulses, the emitters, the dangerous-mob spawn, and the berserk and cryogel distilling accidents declare what they do"
+  - bugfix: "The yellow extract's lightning and EMP reactions name the extract, not the reaction, when it begins to vibrate"

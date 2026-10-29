@@ -66,9 +66,9 @@ CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_blue)
 	speed = 2
 	icon_scale_x = 2 // It hits like a truck.
 	icon_scale_y = 2
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/projectile/icicle)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(armor_penetration = 30, sharp = TRUE))
 
 /obj/item/projectile/icicle/on_impact(atom/A)

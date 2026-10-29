@@ -54,7 +54,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/fish
 
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat
 
 
 	var/knockdown_chance = 15
@@ -83,7 +82,7 @@
 	)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
-	configure(butchery_rules(meat_amount = 5))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat, meat_amount = 5))
 	setup(PROC_REF(prepare_carp_colour))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
@@ -264,13 +263,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/large/huge/vorny)
 	icon_dead = "holo4"
 	alpha = 127
 	// Hologram lighting, lit from the start (applied when it materializes).
-	light_on = TRUE
 	icon_gib = null
-	meat_type = null
 	vore_icons = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
-	configure(butchery_rules(meat_amount = 0))
+	configure(butchery_rules(meat_type = TRAIT_NONE, meat_amount = 0))
 	configure(mob_kind(mob_class = MOB_CLASS_PHOTONIC))
 	configure(light_glow(range = 2))
 

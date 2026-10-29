@@ -67,51 +67,55 @@ CAPABILITIES(/mob/observer)
 	sight = SEE_TURFS | SEE_MOBS | SEE_OBJS | SEE_SELF
 	see_invisible = SEE_INVISIBLE_OBSERVER
 
-// ALLOW(init/INSTANCE_STATE): a ghost copies the look, name and place of the body it leaves (its loc) before its init
-/mob/observer/dead/Initialize(mapload)
+// A ghost takes the body it leaves as a param, not as its loc or a positional argument: the body is only read from (its look, name, mind and
+// place), never held, so the param is keep = FALSE and the ghost keeps no reference to it once it is placed.
+//	make(/mob/observer/dead, at = body, from_body = body)
+/mob/observer/dead
+	/// The body this ghost was made from: read by copy_from_body() and place_ghost(), then dropped (keep = FALSE).
+	var/mob/from_body
 
-	appearance = loc
-	invisibility = initial(invisibility)
-	layer = initial(layer)
-	plane = initial(plane)
-	alpha = initial(alpha)
+// Its CAPABILITIES entries param(from_body, apply = copy_from_body, early = TRUE) and setup(place_ghost, with_params = TRUE) are in code/modules/communicator/exonet_log_panel.dm.
+/// Its from_body param (apply, early: before the Initialize() chain, where the old override copied it): the ghost looks, is named and is gendered like the body it leaves, and keeps a reference to the body's mind
+/// (the mind is not transferred).
+/mob/observer/dead/proc/copy_from_body(mob/M)
+	if(!M)
+		return
+	appearance = M
+	set_invisibility(initial(invisibility))
+	set_layer(initial(layer))
+	set_plane(initial(plane))
+	set_alpha(initial(alpha))
+	set_gender(M.gender)
+	if(M.mind && M.mind.name)
+		name = M.mind.name
+	else if(M.real_name)
+		name = M.real_name
+	else if(gender == MALE)
+		name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
+	else
+		name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
+	rel_set(src, nameof(mind), M.mind)
+	set_default_pixel_x(M.default_pixel_x)
+	set_default_pixel_y(M.default_pixel_y)
 
+/// Its setup hook (with_params: the body is still held): the ghost is placed where its body is (else at a latejoin spot, else nullspace) and bobs.
+/mob/observer/dead/proc/place_ghost()
 	see_in_dark = world.view //I mean. I don't even know if byond has occlusion culling... but...
-
 	var/turf/T
-	if(ismob(loc))
-		var/mob/M = loc
-		T = get_turf(M)				//Where is the body located?
-		gender = M.gender
-		if(M.mind && M.mind.name)
-			name = M.mind.name
-		else
-			if(M.real_name)
-				name = M.real_name
-			else
-				if(gender == MALE)
-					name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
-				else
-					name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
-
-		rel_set(src, nameof(mind), M.mind) //we don't transfer the mind but we keep a reference to it.
-
-		default_pixel_x = M.default_pixel_x
-		default_pixel_y = M.default_pixel_y
+	if(from_body)
+		T = get_turf(from_body) //Where is the body located?
 	if(!T && REGISTRY_COUNT(REGISTRY_LATEJOIN))
-		T = get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN)))			//Safety in case we cannot find the body's position
+		T = get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))) //Safety in case we cannot find the body's position
 	if(T)
 		forceMove(T, just_spawned = TRUE)
 	else
 		moveToNullspace()
 		to_chat(src, span_danger("Could not locate an observer spawn point. Use the Teleport verb to jump to the station map."))
-
-	if(!name)							//To prevent nameless ghosts
+	if(!name) //To prevent nameless ghosts
 		name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 	set_real_name(name)
 	animate(src, pixel_y = 2, time = 10, loop = -1)
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
-	return ..()
 
 /// Its setup hook (setup() in the ghost's CAPABILITIES): it joins the ghost visibility net.
 /mob/observer/dead/proc/join_ghostnet()
@@ -202,10 +206,10 @@ Works together with spawning an observer, noted above.
 	if(key)
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			if(H.vr_holder && !can_reenter_corpse)
+			if(H.vr_holder() && !can_reenter_corpse)
 				H.exit_vr()
 				return 0
-		var/mob/observer/dead/ghost = new(src, aghost)	//Transfer safety to observer spawning proc.
+		var/mob/observer/dead/ghost = make(/mob/observer/dead, at = src, from_body = src, admin_ghosted = aghost)
 		ghost.set_can_reenter_corpse(can_reenter_corpse)
 		ghost.set_timeofdeath(src.timeofdeath)
 		bind_player(ghost, key)
@@ -251,12 +255,12 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	var/turf/location = get_turf(src)
 	var/special_role = check_special_role()
 	if(!istype(loc,/obj/machinery/cryopod))
-		log_and_message_admins("has ghosted outside cryo[special_role ? " as [special_role]" : ""]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
+		log_and_message_admins("has ghosted outside cryo[special_role ? " as [special_role]" : ""]. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
 	else if(special_role)
-		log_and_message_admins("has ghosted in cryo as [special_role]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
+		log_and_message_admins("has ghosted in cryo as [special_role]. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
 	var/mob/observer/dead/ghost = ghostize(0)	// 0 parameter is so we can never re-enter our body, "Charlie, you can never come baaaack~" :3
 	if(ghost)
-		EXPIRY_STAMP(ghost, timeofdeath, CLOCK_WORLD) 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.
+		STAMP(ghost, timeofdeath, CLOCK_WORLD) 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.
 		ghost.set_respawn_timer()
 		announce_ghost_joinleave(ghost)
 
@@ -295,7 +299,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			return
 	sparse_set(mind.current, ajourn, 0)
 	bind_player(mind.current, key)
-	rel_clear(mind.current, nameof(/mob::teleop))
+	sparse_ref_set(mind.current, teleop, null)
 	if(istype(mind.current.loc, /obj/structure/morgue))
 		var/obj/structure/morgue/M = mind.current.loc
 		M.update(1)
@@ -351,7 +355,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(!A.answer || !A.answer.value)
 		return
 	set_can_reenter_corpse(FALSE)
-	set_respawn_timer(-1) // Foreeeever
+	set_respawn_timer(RESPAWN_NEVER) // Foreeeever
 	toggle_antag_hud_now()
 
 /mob/observer/dead/proc/toggle_antag_hud_now()
@@ -685,7 +689,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!user || !A.over)
 		return TRUE
 	if(isobserver(user) && user.client && check_rights_for(user.client, R_HOLDER) && isliving(A.over))
-		if(user.client.holder.cmd_ghost_drag(src, A.over, user))
+		if(admin_holder_of(user.client).cmd_ghost_drag(src, A.over, user))
 			return TRUE
 	return INPUT_FALLTHROUGH
 
@@ -1013,17 +1017,17 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	if(isobserver(target))
 		var/mob/observer/dead/dead = target
 		if(dead.mind && dead.mind.current)
-			return "|<a href='byond://?src=\ref[ghost];track=\ref[dead.mind.current]'>body</a>"
+			return "|<a href='byond://?src=[REF(ghost)];track=[REF(dead.mind.current)]'>body</a>"
 		return
 	if(ismob(target))
 		var/mob/M = target
 		var/mob/observer/eye/eyeobj = M?.active_eye()
 		if(M.client && eyeobj)
-			return "|<a href='byond://?src=\ref[ghost];track=\ref[eyeobj]'>eye</a>"
+			return "|<a href='byond://?src=[REF(ghost)];track=[REF(eyeobj)]'>eye</a>"
 
 /proc/ghost_follow_link(atom/target, atom/ghost)
 	if((!target) || (!ghost)) return
-	. = "<a href='byond://?src=\ref[ghost];track=\ref[target]'>follow</a>"
+	. = "<a href='byond://?src=[REF(ghost)];track=[REF(target)]'>follow</a>"
 	. += extra_ghost_link(target, ghost)
 
 //Culted Ghosts
@@ -1169,8 +1173,9 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 	set desc = "Flash an indicator light on available blank pAI devices for a smidgen of hope."
 
 	var/time_till_respawn = time_till_respawn()
-	if(time_till_respawn == -1) // Special case, never allowed to respawn
+	if(time_till_respawn == RESPAWN_NEVER) // Special case, never allowed to respawn
 		to_chat(src, span_warning("Respawning is not allowed!"))
+		return
 	else if(time_till_respawn) // Nonzero time to respawn
 		to_chat(src, span_warning("You can't do that yet! You died too recently. You need to wait another [round(time_till_respawn/10/60, 0.1)] minutes."))
 		return
@@ -1218,7 +1223,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 	if(message)
 		to_chat(src, span_ghostalert(span_huge("[message]")))
 		if(source)
-			throw_alert("\ref[source]_notify_revive", /atom/movable/screen/alert/notify_cloning, new_master = source)
+			throw_alert("[ref_token(source)]_notify_revive", /atom/movable/screen/alert/notify_cloning, new_master = source)
 	to_chat(src, span_ghostalert("<a href='byond://?src=[REF(src)];reenter=1'>(Click to re-enter)</a>"))
 	if(sound)
 		SEND_SOUND(src, sound(sound))
@@ -1243,7 +1248,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 			if(ELAPSED(src, timeofdeath, CLOCK_WORLD) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
 				record.set_dead_state(MR_DEAD)				//Such as if you got scanned but didn't take an implant. It's a little funky, but I mean, you got scanned
 				db.notify(record)						//So you probably will want to let someone know if you die.
-				EXPIRY_STAMP(record, last_notification, CLOCK_WORLD)
+				STAMP(record, last_notification, CLOCK_WORLD)
 				to_chat(src, span_notice("New notification has been sent."))
 			else
 				to_chat(src, span_warning("Your backup is not past-due yet."))
@@ -1251,7 +1256,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 			to_chat(src, span_warning("Too little time has passed since your last notification."))
 		else
 			db.notify(record)
-			EXPIRY_STAMP(record, last_notification, CLOCK_WORLD)
+			STAMP(record, last_notification, CLOCK_WORLD)
 			to_chat(src, span_notice("New notification has been sent."))
 	else
 		to_chat(src,span_warning("No backup record could be found, sorry."))

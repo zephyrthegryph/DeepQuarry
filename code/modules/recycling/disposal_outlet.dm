@@ -12,7 +12,7 @@
 	var/active = FALSE // Code appendix.
 	var/tmp/turf/target	// this will be where the output objects are 'thrown' to.
 	var/mode = 0
-	EXPIRY_DECLARE(start_eject)
+	var/start_eject = 0
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?
 
 /obj/structure/disposaloutlet/proc/connect_disposal_outlet()
@@ -127,7 +127,7 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 
 	flick("outlet-open", src)
 	if(ELAPSED(src, start_eject, CLOCK_WORLD) > 3 SECONDS)
-		EXPIRY_STAMP(src, start_eject, CLOCK_WORLD)
+		STAMP(src, start_eject, CLOCK_WORLD)
 		play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 		after(src, 2 SECONDS, PROC_REF(expel_contents), with = list(received_items, gas, TRUE), keeps_dead = TRUE)
 	else

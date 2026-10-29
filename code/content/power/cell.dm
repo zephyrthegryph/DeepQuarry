@@ -2,6 +2,10 @@
 // charge from 0 to 100%
 // fits in APC to provide backup power
 
+/// Power cell numbers (the id a cell shows in nanoUI lists).
+SERIAL_DEF(power_cell, 1, FALSE)
+SCHEMA(/obj/item/cell, c_uid, num())
+
 /obj/item/cell
 	material_template = /datum/material_template/cell
 	material_total = 2 * SHEET_MATERIAL_AMOUNT
@@ -10,9 +14,7 @@
 	icon = 'icons/obj/power_cells.dmi' // swap to 'icons/obj/power_cells_.dmi' for new sprites. // Enable new sprites
 	icon_state = "b_st"
 	item_state = "cell"
-	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	var/static/cell_uid = 1		// Unique ID of this power cell. Used to reduce bunch of uglier code in nanoUI.
 	var/c_uid
 	var/charge = 1000	// maximum charge on spawn
 	var/maxcharge = 1000
@@ -27,7 +29,7 @@
 	/// Material-derived resistance to EMP charge loss, as a percentage.
 	var/material_emp_resistance = 0
 	var/material_discharge_credit
-	EXPIRY_DECLARE(material_discharge_updated)
+	var/material_discharge_updated = 0
 	/// Hysteretic physical state. A quenched conductor must cool meaningfully
 	/// below its transition before it can carry enhanced output again.
 	var/material_superconducting = FALSE
@@ -60,7 +62,7 @@ MSG_DEF_SELF(cell/needs_item, "needs an item")
 MSG_DEF_SELF(cell/not_in_hand, "not in your hand")
 
 CAPABILITIES(/obj/item/cell)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 5, throw_speed = 3))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
@@ -81,7 +83,7 @@ CAPABILITIES(/obj/item/cell)
 	// always need a service datum; it sleeps dependency-driven when stable.
 	apply_blueprint_effects()
 	enable_material_service()
-	c_uid = cell_uid++
+	c_uid = next_serial(power_cell)
 
 /obj/item/cell/get_cell()
 	return src
@@ -142,7 +144,7 @@ CAPABILITIES(/obj/item/cell)
 		material_discharge_credit = material_discharge_limit
 	else
 		material_discharge_credit = min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit)
-	EXPIRY_STAMP(src, material_discharge_updated, CLOCK_WORLD)
+	STAMP(src, material_discharge_updated, CLOCK_WORLD)
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
 	var/temperature = material_service_of(src)?.temperature() || T20C

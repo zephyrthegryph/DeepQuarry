@@ -14,7 +14,6 @@
 	max_transfer_amount = null
 	volume = 15
 	w_class = ITEMSIZE_TINY
-	injury_kind = INJURY_PIERCE
 	var/mode = NEEDLE_CAPPED
 	var/visible_name = "a syringe"
 	var/time = 30
@@ -42,6 +41,7 @@
 // (needle(), code/library/reagents/needle.dm). Its mode (capped, draw, inject, broken) is the `mode` var, changed in hand. The giant syringe and the
 // lethal injection syringe ask for more time and refuse blood and the stab.
 CAPABILITIES(/obj/item/reagent_containers/syringe)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(center_x = 16, center_y = 14))
 	configure(item_worn(slots = SLOT_EARS))
@@ -246,9 +246,9 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/steroid)
 	var/mob/living/carbon/human/user = loc
 	LAZYINITLIST(targets)
 
-	//We can't keep a mob reference, that's a bad idea, so instead name+ref should suffice.
+	//We can't keep a mob reference, that's a bad idea, so instead name+handle should suffice.
 	var/name_to_use = ismob(target) ? target.real_name : target.name
-	var/hash = md5(name_to_use + "\ref[target]")
+	var/hash = md5(name_to_use + "[ref_token(target)]")
 
 	//Just once!
 	targets |= hash

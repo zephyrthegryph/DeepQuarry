@@ -97,9 +97,7 @@
 
 	speak_emote = list("chitters")
 
-	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat
 
-	say_list_type = /datum/say_list/spider
 
 	tame_items = list(
 	/obj/item/reagent_containers/food/snacks/xenomeat = 10,
@@ -112,7 +110,6 @@
 	var/poison_per_bite = 5			// Amount added per injection.
 
 
-	species_sounds = "Spider"
 
 	var/warning_warmup = 2 SECONDS // How long the leap telegraphing is.
 	var/warning_sound = SFX_WEAPONS_SPIDERLUNGE
@@ -120,7 +117,9 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
-	configure(butchery_rules(meat_amount = 5, butchery_loot = list( /obj/item/stack/material/chitin = 1 )))
+	configure(living_rules(species_sounds = "Spider"))
+	configure(living_rules(say_list_type = /datum/say_list/spider))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 5, butchery_loot = list( /obj/item/stack/material/chitin = 1 )))
 	configure(mob_nature(pain_1p = list("chitter", "click"), pain_3p = list("chitters", "clicks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_movement(no_pull_when_living = TRUE))

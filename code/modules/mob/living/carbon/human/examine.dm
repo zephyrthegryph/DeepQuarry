@@ -37,10 +37,12 @@
 	if(applying_pressure)
 		msg += applying_pressure
 
-	if(pose)
-		if(!findtext(pose, regex("\[.?!]$"))) // Will be zero if the last character is not a member of [.?!]
-			pose = addtext(pose,".") //Makes sure all emotes end with a period.
-		msg += "<br>[p_They()] [pose]" //<br> intentional, extra gap.
+	var/current_pose = sparse_get(src, pose)
+	if(current_pose)
+		if(!findtext(current_pose, regex("\[.?!]$"))) // Will be zero if the last character is not a member of [.?!]
+			current_pose = addtext(current_pose,".") //Makes sure all emotes end with a period.
+			sparse_set(src, pose, current_pose)
+		msg += "<br>[p_They()] [current_pose]" //<br> intentional, extra gap.
 
 	return msg
 
@@ -107,8 +109,8 @@
 /mob/living/carbon/human/proc/examine_name_ender(skip_gear, skip_body, looks_synth)
 	if((skip_gear & EXAMINE_SKIPJUMPSUIT) && (skip_body & EXAMINE_SKIPFACE))
 		return ""
-	if(custom_species)
-		return ", a " + span_bold("[src.custom_species]")
+	if(bio.custom_species)
+		return ", a " + span_bold("[bio.custom_species]")
 	if(looks_synth)
 		var/use_gender = "a synthetic"
 		if(gender == MALE)
@@ -122,7 +124,7 @@
 
 /// One worn-item line: "<lead> <icon> <item><where>.<extra>", or a warning when the item is stained.
 /mob/living/carbon/human/proc/examine_worn_line(obj/item/I, mob/user, lead, where, extra = "")
-	var/link = "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>"
+	var/link = "<a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(I)]'>"
 	if(I.forensic_data?.has_blooddna())
 		var/stain = (dq_get_blood_color(I) != "#030303") ? "blood" : "oil"
 		return span_warning("[lead] [icon2html(I, user.client)] [I.gender == PLURAL ? "some" : "a"] [stain]-stained [link][I.name]</a>[where]![extra]")
@@ -135,10 +137,10 @@
 	var/list/accessory_descs = list()
 	for(var/obj/item/clothing/accessory/A in accessories)
 		if(skip_holsters)
-			if(A.show_examine && !istype(A, /obj/item/clothing/accessory/holster)) // If we're supposed to skip holsters, actually skip them
+			if(rules_of(A).show_examine && !istype(A, /obj/item/clothing/accessory/holster)) // If we're supposed to skip holsters, actually skip them
 				accessory_descs += "\a [A]"
-		else if(!linked || (A.concealed_holster == 0 && A.show_examine))
-			accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[A]'>\a [A]</a>"
+		else if(!linked || (A.concealed_holster == 0 && rules_of(A).show_examine))
+			accessory_descs += "<a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(A)]'>\a [A]</a>"
 	return ". Attached to it is [lowertext(english_list(accessory_descs))]."
 
 /// Lines for everything worn or held that isn't hidden.
@@ -147,7 +149,7 @@
 	var/obj/item/I
 
 	I = get_equipped_item(SLOT_ID_UNIFORM)
-	if(I && !(skip_gear & EXAMINE_SKIPJUMPSUIT) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPJUMPSUIT) && rules_of(I).show_examine)
 		var/tie_msg
 		if(istype(I, /obj/item/clothing/under) && !(skip_gear & EXAMINE_SKIPTIE))
 			var/obj/item/clothing/under/U = I
@@ -155,7 +157,7 @@
 		. += examine_worn_line(I, user, "[p_Theyre()] wearing", "", tie_msg)
 
 	I = get_equipped_item(SLOT_ID_HEAD)
-	if(I && !(skip_gear & EXAMINE_SKIPHELMET) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPHELMET) && rules_of(I).show_examine)
 		. += examine_worn_line(I, user, "[p_Theyre()] wearing", " on [p_their()] head")
 
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
@@ -166,23 +168,23 @@
 			tie_msg = examine_accessory_text(S.accessories, linked = FALSE)
 		. += examine_worn_line(suit, user, "[p_Theyre()] wearing", "", tie_msg)
 		I = get_equipped_item(SLOT_ID_SUIT_STORAGE)
-		if(I && !(skip_gear & EXAMINE_SKIPSUITSTORAGE) && I.show_examine)
+		if(I && !(skip_gear & EXAMINE_SKIPSUITSTORAGE) && rules_of(I).show_examine)
 			. += examine_worn_line(I, user, "[p_Theyre()] carrying", " on [p_their()] [suit.name]")
 
 	I = get_equipped_item(SLOT_ID_BACK)
-	if(I && !(skip_gear & EXAMINE_SKIPBACKPACK) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPBACKPACK) && rules_of(I).show_examine)
 		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " on [p_their()] back")
 
 	I = get_equipped_item(SLOT_ID_HAND_L)
-	if(I && I.show_examine)
+	if(I && rules_of(I).show_examine)
 		. += examine_worn_line(I, user, "[p_Theyre()] holding", " in [p_their()] left hand")
 
 	I = get_equipped_item(SLOT_ID_HAND_R)
-	if(I && I.show_examine)
+	if(I && rules_of(I).show_examine)
 		. += examine_worn_line(I, user, "[p_Theyre()] holding", " in [p_their()] right hand")
 
 	I = get_equipped_item(SLOT_ID_GLOVES)
-	if(I && !(skip_gear & EXAMINE_SKIPGLOVES) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPGLOVES) && rules_of(I).show_examine)
 		var/gloves_acc_msg
 		if(istype(I, /obj/item/clothing/gloves))
 			var/obj/item/clothing/gloves/G = I
@@ -192,7 +194,7 @@
 		. += span_warning("[p_They()] [p_have()] [(hand_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained hands!")
 
 	I = get_equipped_item(SLOT_ID_HANDCUFFED)
-	if(I && I.show_examine)
+	if(I && rules_of(I).show_examine)
 		if(istype(I, /obj/item/handcuffs/cable))
 			. += span_warning("[p_Theyre()] [icon2html(I, user.client)] restrained with cable!")
 		else
@@ -203,37 +205,37 @@
 		. += span_warning("[p_Theyre()] [icon2html(buckled_thing, user.client)] buckled to [buckled_thing]!")
 
 	I = get_equipped_item(SLOT_ID_BELT)
-	if(I && !(skip_gear & EXAMINE_SKIPBELT) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPBELT) && rules_of(I).show_examine)
 		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " about [p_their()] waist")
 
 	I = get_equipped_item(SLOT_ID_SHOES)
-	if(I && !(skip_gear & EXAMINE_SKIPSHOES) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPSHOES) && rules_of(I).show_examine)
 		. += examine_worn_line(I, user, "[p_Theyre()] wearing", " on [p_their()] feet")
 	else if(feet_blood_DNA && !(skip_body & EXAMINE_SKIPHANDS))
 		. += span_warning("[p_They()] [p_have()] [(feet_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained feet!")
 
 	I = get_equipped_item(SLOT_ID_MASK)
-	if(I && !(skip_gear & EXAMINE_SKIPMASK) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPMASK) && rules_of(I).show_examine)
 		var/descriptor = " on [p_their()] face"
 		if(istype(I, /obj/item/grenade) && check_has_mouth())
 			descriptor = " in [p_their()] mouth"
 		. += examine_worn_line(I, user, "[p_They()] [p_have()]", descriptor)
 
 	I = get_equipped_item(SLOT_ID_EYES)
-	if(I && !(skip_gear & EXAMINE_SKIPEYEWEAR) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPEYEWEAR) && rules_of(I).show_examine)
 		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " covering [p_their()] eyes")
 
 	I = get_equipped_item(SLOT_ID_EAR_L)
-	if(I && !(skip_gear & EXAMINE_SKIPEARS) && I.show_examine)
-		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a> on [p_their()] left ear."
+	if(I && !(skip_gear & EXAMINE_SKIPEARS) && rules_of(I).show_examine)
+		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(I)]'>\a [I]</a> on [p_their()] left ear."
 
 	I = get_equipped_item(SLOT_ID_EAR_R)
-	if(I && !(skip_gear & EXAMINE_SKIPEARS) && I.show_examine)
-		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a> on [p_their()] right ear."
+	if(I && !(skip_gear & EXAMINE_SKIPEARS) && rules_of(I).show_examine)
+		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(I)]'>\a [I]</a> on [p_their()] right ear."
 
 	I = get_equipped_item(SLOT_ID_ID)
-	if(I && I.show_examine)
-		. += "[p_Theyre()] wearing [icon2html(I, user.client)]<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a>."
+	if(I && rules_of(I).show_examine)
+		. += "[p_Theyre()] wearing [icon2html(I, user.client)]<a href='byond://?src=[REF(src)];lookitem_desc_only=[REF(I)]'>\a [I]</a>."
 
 /// Jitters, splints, vore and size lines, responsiveness, fire and SSD.
 /mob/living/carbon/human/proc/examine_status_lines(mob/user, list/hidden)
@@ -274,7 +276,7 @@
 	if(src.stat || (status_flags & FAKEDEATH))
 		. += span_warning("[p_Theyre()] not responding to anything around [p_them()] and seems to be asleep.")
 		var/obj/item/organ/internal/lungs/L = organ_in(O_LUNGS)
-		if(((stat == DEAD || losebreath || !L || (status_flags & FAKEDEATH)) && get_dist(user, src) <= 3))
+		if(((stat == DEAD || losebreath() || !L || (status_flags & FAKEDEATH)) && get_dist(user, src) <= 3))
 			. += span_warning("[p_They()] [user.p_do()] not appear to be breathing.")
 		if(ishuman(user) && !user.stat && Adjacent(user))
 			act_message(user, src, MSG_SELF(span_infoplain("You check %T%'s pulse.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " checks %T%'s pulse.")))
@@ -398,8 +400,8 @@
 		for(var/datum/data/record/R in GLOB.data_core.security)
 			if(R.fields["name"] == perpname)
 				criminal = R.fields["criminal"]
-		. += "Criminal status: <a href='byond://?src=\ref[src];criminal=1'>\[[criminal]\]</a>"
-		. += "Security records: <a href='byond://?src=\ref[src];secrecord=`'>\[View\]</a>  <a href='byond://?src=\ref[src];secrecordadd=`'>\[Add comment\]</a>"
+		. += "Criminal status: <a href='byond://?src=[REF(src)];criminal=1'>\[[criminal]\]</a>"
+		. += "Security records: <a href='byond://?src=[REF(src)];secrecord=`'>\[View\]</a>  <a href='byond://?src=[REF(src)];secrecordadd=`'>\[Add comment\]</a>"
 
 	if(hasHUD(user,"medical"))
 		var/perpname = examine_record_name()
@@ -407,11 +409,11 @@
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if(R.fields["name"] == perpname)
 				medical = R.fields["p_stat"]
-		. += "Physical status: <a href='byond://?src=\ref[src];medical=1'>\[[medical]\]</a>"
-		. += "Medical records: <a href='byond://?src=\ref[src];medrecord=`'>\[View\]</a> <a href='byond://?src=\ref[src];medrecordadd=`'>\[Add comment\]</a>"
+		. += "Physical status: <a href='byond://?src=[REF(src)];medical=1'>\[[medical]\]</a>"
+		. += "Medical records: <a href='byond://?src=[REF(src)];medrecord=`'>\[View\]</a> <a href='byond://?src=[REF(src)];medrecordadd=`'>\[Add comment\]</a>"
 
 	if(hasHUD(user,"best"))
-		. += "Employment records: <a href='byond://?src=\ref[src];emprecord=`'>\[View\]</a> <a href='byond://?src=\ref[src];emprecordadd=`'>\[Add comment\]</a>"
+		. += "Employment records: <a href='byond://?src=[REF(src)];emprecord=`'>\[View\]</a> <a href='byond://?src=[REF(src)];emprecordadd=`'>\[Add comment\]</a>"
 
 /// Flavour text, custom link, OOC notes and vore preference links.
 /mob/living/carbon/human/proc/examine_profile_lines()
@@ -423,8 +425,8 @@
 	if(sparse_get(src, custom_link))
 		. += "Custom link: " + span_linkify("[sparse_get(src, custom_link)]")
 	if(identity().ooc_notes)
-		. += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
-	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
+		. += "OOC Notes: <a href='byond://?src=[REF(src)];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=[REF(src)];print_ooc_notes_chat=1'>\[Print\]</a>"
+	. += "<a href='byond://?src=[REF(src)];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
 //Helper procedure. Called by /mob/living/carbon/human/examine() and /mob/living/carbon/human/Topic() to determine HUD access to security and medical records.
 /proc/hasHUD(mob/M as mob, hudtype)
@@ -435,7 +437,7 @@
 	if(!show_pudge() || !vore_prefs.weight_message_visible) //Some clothing or equipment can hide this.
 		return ""
 	var/message = ""
-	var/weight_examine = round(weight)
+	var/weight_examine = round(sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT))
 	switch(weight_examine)
 		if(0 to 74)
 			message = vore_prefs.weight_messages[1]
@@ -577,16 +579,19 @@
 /mob/living/carbon/human/proc/examine_body_writing(list/hidden)
 	. = list()
 
+	var/list/written = sparse_get(src, body_writing)
 	for(var/bodypart in hidden)
 		var/is_hidden = hidden[bodypart]
 		if(is_hidden)
 			continue
 
-		var/writing = LAZYACCESS(body_writing, bodypart)
+		var/writing = LAZYACCESS(written, bodypart)
 		if(writing)
 			var/obj/item/organ/external/affecting = get_organ(bodypart)
 			if(!affecting || affecting.is_stump())
-				LAZYREMOVE(body_writing, bodypart)
+				written -= bodypart
+				if(!length(written))
+					sparse_set(src, body_writing, null)
 				continue
 
 			. += span_notice("[p_They()] [p_have()] \"[writing]\" written on [p_their()] [parse_zone(bodypart)].")

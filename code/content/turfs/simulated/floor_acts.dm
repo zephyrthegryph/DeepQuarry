@@ -92,10 +92,11 @@ CAPABILITIES(/turf/simulated/floor)
 	if(uses_integrity)
 		repair_damage(max_integrity)
 
-/// Flame contact on a simulated turf: its declared heat damage (floor tiles
-/// scorch and lift, walls melt). The one turf fire_act.
-/turf/simulated/fire_act(exposed_temperature, exposed_volume)
-	burn(exposed_temperature)
+/// Flame contact on a simulated turf (the atom_fire_act notice): its declared heat damage (floor tiles
+/// scorch and lift, walls melt).
+/turf/simulated/proc/scorch_on_fire(datum/act/A)
+	var/datum/notice/atom_fire_act/N = A
+	burn(N.exposed_temperature)
 
 /// Heat damage from flame contact at `exposed_temperature`; none by default.
 /turf/simulated/proc/burn(exposed_temperature)

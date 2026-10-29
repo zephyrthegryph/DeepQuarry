@@ -9,7 +9,6 @@
 
 /datum/unit_test/dq_decl_remaining/proc/scope_fixture()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 /obj/item/dq_decl_hidden_item
 	init_hide_identity = TRUE

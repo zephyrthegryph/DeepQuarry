@@ -15,6 +15,8 @@ pub struct ClassProjections {
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+    /// The session's query database: owner receipts are proven by its answer table and record no domain versions.
+    answers: Option<Arc<crate::query_db::QueryDb>>,
 }
 pub(super) type ProjectionAttempt = dm_session::ArtifactAttempt<ProjectionLeases>;
 pub(super) struct ProjectionLeases {
@@ -82,6 +84,7 @@ impl Default for ClassProjections {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            answers: None,
         }
     }
 }
@@ -137,11 +140,11 @@ impl MethodRequest<'_> {
     pub(super) fn finish(self) -> Arc<super::method_roster::MethodRoster> {
         let roster = match (self.previous, self.replacement) {
             (Some(previous), None) if previous.len() == self.next => previous,
-            (Some(previous), None) => Arc::new(super::method_roster::MethodRoster::produce(
-                previous.input_prefix(self.next),
-            )),
-            (_, Some(inputs)) => Arc::new(super::method_roster::MethodRoster::produce(inputs)),
-            (None, None) => Arc::new(super::method_roster::MethodRoster::produce(Vec::new())),
+            (Some(previous), None) => {
+                super::method_roster::MethodRoster::shared(previous.input_prefix(self.next))
+            }
+            (_, Some(inputs)) => super::method_roster::MethodRoster::shared(inputs),
+            (None, None) => super::method_roster::MethodRoster::shared(Vec::new()),
         };
         self.store.attempt.with_pending(|leases| {
             *leases.methods.lock().unwrap_or_else(|e| e.into_inner()) = Some(roster.clone());
@@ -171,7 +174,13 @@ impl ClassProjections {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            answers: self.answers.clone(),
         }
+    }
+    /// Prove owner receipts by `db`'s answer table instead of domain versions (a session with a query database).
+    pub(crate) fn with_answers(mut self, db: Option<Arc<crate::query_db::QueryDb>>) -> Self {
+        self.answers = db;
+        self
     }
     pub fn publish_successful(&self) -> bool {
         self.attempt.publish_successful()
@@ -276,6 +285,21 @@ impl ClassProjections {
             self.declined.fetch_add(1, Ordering::Relaxed);
             return None;
         };
+        // With a query database, a stored owner's reads are proven by the session's answer table (one answer per query,
+        // shared with every stage of the request; `DMB_QUERY_VERIFY=1` checks the tree gives the same answers) and its
+        // receipts carry no domain versions. Without one, the tree's domain versions certify them as before.
+        let answer = |query: &ResolveQuery| Resolver::resolve(tree, *query);
+        let answers = self
+            .answers
+            .as_deref()
+            .filter(|db| db.answers_bound_to(tree))
+            .map(|db| db.request_answers(&answer));
+        let admission = dm_session::ReceiptAdmission::with_oracle(
+            tree,
+            answers.as_ref().map(|answers| {
+                answers as &dyn dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning>
+            }),
+        );
         // Owners are independent: compare each with its retained projection in parallel (43k owners).
         use rayon::prelude::*;
         let keys: Vec<_> = keys.into_iter().collect();
@@ -292,7 +316,12 @@ impl ClassProjections {
                             .with_pending(|leases| {
                                 leases
                                     .values
-                                    .visit_explained(&key, tree, &mut |value| {
+                                    .visit_receipted_with(
+                                        &key,
+                                        &mut |reads| {
+                                            admission.first_changed_receipted(reads, |_| {})
+                                        },
+                                        &mut |value| {
                                         let matches = value.inputs.len() == inputs.len()
                                             && value.values.len() == value.inputs.len()
                                             && inputs.iter().zip(&value.inputs).all(
@@ -300,8 +329,10 @@ impl ClassProjections {
                                             );
                                         rejected_local_input |= !matches;
                                         matches
-                                    })
+                                    },
+                                    )
                                     .0
+                                    .map(|accepted| accepted.value)
                             })
                             .flatten();
                     if hit.is_some() {
@@ -452,13 +483,11 @@ impl Request<'_> {
                 continue;
             }
             let reads = owner.recorder.reads();
-            let versions = owner.recorder.domain_receipts();
             let Some(weight) = crate::heap_census::resident_owner_projection_weight(
                 &owner.produced,
                 &owner.inputs,
                 &owner.key,
                 &reads,
-                &versions,
             ) else {
                 self.store.declined.fetch_add(1, Ordering::Relaxed);
                 continue;
@@ -472,7 +501,6 @@ impl Request<'_> {
                     return leases.values.insert_fresh_with_qualified_receipt(
                         owner.key.into(),
                         reads.into(),
-                        versions.into(),
                         weight,
                         || OwnerProjection {
                             inputs: owner.inputs,
@@ -483,7 +511,7 @@ impl Request<'_> {
                 }
                 leases
                     .values
-                    .insert_with(owner.key.into(), reads, versions, weight, || {
+                    .insert_with(owner.key.into(), reads, weight, || {
                         OwnerProjection {
                             inputs: owner.inputs,
                             values: owner.produced,

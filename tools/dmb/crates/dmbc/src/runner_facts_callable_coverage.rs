@@ -86,16 +86,13 @@ impl RetainedHostFacts {
             ledger.record(
                 query.clone(),
                 host.answer(&query),
-                Domain::ExactOwners,
-                None,
-            );
+                Domain::ExactOwners);
         }
         let owner = self
             .values
             .insert_with_owned(
                 Arc::from(KEY),
                 ledger.reads(),
-                ledger.domain_receipts(),
                 std::mem::size_of::<Artifact>(),
                 || {
                     Artifact::CallableCoverage(

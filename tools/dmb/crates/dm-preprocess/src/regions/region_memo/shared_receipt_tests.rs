@@ -43,35 +43,45 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
         }]),
         locations: Arc::new(vec![(0, false, "12".into())]),
         lines: Arc::new(vec![Line {
-            output: Span::new(0, 2),
+            output_start: 0,
+            output_end: 2,
             input: 0,
-            traces: vec![Trace {
-                name: "X".into(),
-                invocation_span: Span::new(0, 1),
-                replacement_chain: Arc::from([Arc::from("X")]),
-            }],
+            trace_set: 1,
         }]),
+        trace_tables: TraceTables {
+            names: Box::new([Arc::from("X")]),
+            chains: Box::new([Arc::from([Arc::from("X")])]),
+            sets: Box::new([Box::new([Trace {
+                name: 0,
+                chain: 0,
+                start: 0,
+                end: 1,
+            }])]),
+        },
         diagnostics: Arc::new(vec![Error {
             input: 0,
             kind: DiagnosticKind::UserError,
             message: "fixture".into(),
         }]),
         fragments: vec![],
+        rows: Default::default(),
     };
     let legacy_lines = value
         .lines
         .iter()
         .map(|line| LegacyLine {
-            output: line.output,
-            input: line.input,
-            traces: line
-                .traces
+            output: line.output(),
+            input: line.input(),
+            traces: value
+                .trace_tables
+                .set(line)
                 .iter()
                 .map(|trace| LegacyTrace {
-                    name: trace.name.to_string(),
-                    invocation_span: trace.invocation_span,
-                    replacement_chain: trace
-                        .replacement_chain
+                    name: value.trace_tables.name(trace).to_string(),
+                    invocation_span: TraceTables::span(trace),
+                    replacement_chain: value
+                        .trace_tables
+                        .chain(trace)
                         .iter()
                         .map(ToString::to_string)
                         .collect(),
@@ -107,7 +117,7 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
     );
     assert!(value.same_expansion(&enriched));
     // The existing storage visitor reports the same immutable nested allocations.
-    let backing = value.lines[0].traces[0].replacement_chain[0].as_ptr() as usize;
+    let backing = value.trace_tables.chains[0][0].as_ptr() as usize;
     let mut seen = 0;
     for record in [&value, &enriched] {
         record.visit_storage(|view| {
@@ -168,16 +178,15 @@ fn retained_trace_owners_share_capture_and_rebind_current_definition_origin() {
         .find(|line| !line.macro_expansions.is_empty())
         .unwrap()
         .macro_expansions;
-    let stored = recorded
+    let (stored_record, stored) = recorded
         .iter()
-        .flat_map(|record| record.lines.iter())
-        .find(|line| !line.traces.is_empty())
+        .flat_map(|record| record.lines.iter().map(move |line| (record, line)))
+        .find(|(record, line)| !record.trace_tables.set(line).is_empty())
         .unwrap();
-    assert!(Arc::ptr_eq(&traces[0].name, &stored.traces[0].name));
-    assert!(Arc::ptr_eq(
-        &traces[0].replacement_chain,
-        &stored.traces[0].replacement_chain
-    ));
+    let stored_name = stored_record.trace_tables.name(&stored_record.trace_tables.set(stored)[0]);
+    let stored_chain = stored_record.trace_tables.chain(&stored_record.trace_tables.set(stored)[0]);
+    assert!(Arc::ptr_eq(&traces[0].name, stored_name));
+    assert!(Arc::ptr_eq(&traces[0].replacement_chain, stored_chain));
     // The observed definitions move; the reused body region's exact bytes do not.
     let current = plan_regions(Path::new("probe.dme"), &sources("\n\n"), &BTreeMap::new());
     let reused = expand_regions_text_with_memo(&current, 1, &memo);
@@ -194,11 +203,8 @@ fn retained_trace_owners_share_capture_and_rebind_current_definition_origin() {
         .find(|line| !line.macro_expansions.is_empty())
         .unwrap()
         .macro_expansions;
-    assert!(Arc::ptr_eq(&stored.traces[0].name, &hydrated[0].name));
-    assert!(Arc::ptr_eq(
-        &stored.traces[0].replacement_chain,
-        &hydrated[0].replacement_chain
-    ));
+    assert!(Arc::ptr_eq(stored_name, &hydrated[0].name));
+    assert!(Arc::ptr_eq(stored_chain, &hydrated[0].replacement_chain));
     // Origin path is issued by the current segment definition, never by Trace.
     assert_eq!(
         hydrated[0].definition.as_ref().unwrap().path.as_ref(),

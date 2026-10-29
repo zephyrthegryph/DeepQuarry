@@ -11,7 +11,14 @@
 #   [worktree.<name>]                a growth path inside every worktree under E:/projects/dq-wt (DQ_WT_ROOT)
 # Keys of a table:
 #   policy        children-lru  the unit is each immediate child (a directory or file); evict the least recently modified whole unit
-#                 files-lru     the unit is each file (to `depth` levels, only names matching `glob`); evict the least recently modified file
+#                 files-lru     the unit is each file (to `depth` levels, only names matching `glob`); evict the least recently modified file.
+#                               ONLY for a table whose owning tool tolerates a missing file: a memo that is recomputed on a miss, a log, a
+#                               fingerprint. Never for a directory a build tool treats as one consistent tree.
+#                 cargo-units   a cargo target: the unit is a whole profile directory (the one that holds .fingerprint) or, once it holds none, the
+#                               whole owner directory; NEVER a single file inside (cargo's fingerprints would call a deleted rlib fresh and the
+#                               next build fails with "extern location for <crate> does not exist"). A unit goes only when its owner is not a
+#                               permanent worktree, not a leased pool slot, not excluded, holds no machine slot, and the unit was idle for
+#                               min_idle_min and can be renamed away (a running cargo/rustc has files open there).
 #                 state         never evicted (small coordination state); only its `*.log`/`*.jsonl` files are tail-truncated past `log_max_mb`
 #   cap_gb|cap_mb size cap of the table's directory (a worktree table: per worktree). The cache-wide total cap is [settings] total_gb.
 #   age_days      a unit untouched this long goes whatever the size (0 = no age cap)
@@ -20,9 +27,9 @@
 #   glob          files-lru: `|`-separated find -name patterns to count (default: every file)
 #   protect_glob  files-lru: `|`-separated names never evicted (a final binary, a key file)
 #   depth         files-lru: how deep to look (default 1 for a worktree table, 8 for a cache table)
-#   sub_cap_gb    children-lru: a child over this size is cut down by its least recently modified files (cargo targets of one worktree);
-#                 sub_cap_mb is the same in MB
-#   protect       `,`-separated: leased-slot (a child named after a leased pool slot is never evicted or trimmed),
+#   sub_cap_gb    cargo-units: an owner (one worktree) over this size loses its least recently modified whole idle profile directories;
+#                 sub_cap_mb is the same in MB (a worktree table of cargo-units uses its own cap_* per worktree)
+#   protect       `,`-separated: leased-slot (a child named after a leased pool slot is never evicted),
 #                 analyze-keys (a key a live worktree's analyzer binary was built from), dmb-current (the compiler version in dmb-bin/current)
 #   subdir        children-lru: the units are the children of this subdirectory (dmb-bin/v/<id>)
 #   mtime_file    children-lru: a file inside the unit whose mtime says when it was last used (analyze-cache's .used)
@@ -35,11 +42,13 @@ total_gb = 60
 floor_gb = 50
 # Under the floor every cap is scaled to this percentage and min_idle_min drops to 5.
 aggressive_pct = 50
+# Free space the housekeeping keeps: under it the (detached, throttled) enforcement runs aggressive, long before the floor refuses work.
+target_free_gb = 80
 min_idle_min = 30
 # A directory size walked within this many minutes is reused instead of walked again.
 index_ttl_min = 30
 # Worktrees that are permanent (their cargo targets are never evicted whole, only trimmed inside).
-permanent_worktrees = merge-base train-base
+permanent_worktrees = merge-base train-base train-pre1 train-pre2 train-bisect train-dc
 
 # ---------------------------------------------------------------------------------------------------------------------------------
 # E:/dq-cache: one table per directory the tools create. Caps below add up to more than total_gb on purpose: the total cap evicts the
@@ -60,12 +69,13 @@ age_days = 14
 mtime_file = .used
 
 [cache.cargo-targets]
-# One directory per worktree, each holding that worktree's cargo targets (tools/dmb, analyze, light checks).
-policy = children-lru
+# One directory per worktree, each holding that worktree's cargo targets (<worktree>/<name>/<profile>). Whole profile directories only, never
+# a file inside one, and never a permanent worktree's (permanent_worktrees), a leased slot's or a machine-slot holder's.
+policy = cargo-units
 cap_gb = 18
 sub_cap_gb = 6
 age_days = 10
-protect = leased-slot
+min_idle_min = 120
 
 [cache.dmb-bin]
 # Published compilers: dmb-bin/v/<id>; `current` and the newest other one are kept.
@@ -83,22 +93,26 @@ keep = 6
 age_days = 14
 
 [cache.dmbd]
-# The compiler's per-file lowering cache (*.seg/*.grp segments of 1-3 GB), pair stores and publication leases.
+# The compiler's per-file lowering cache (*.seg/*.grp segments of 1-3 GB), pair stores and publication leases. This pass evicts only the
+# segments (glob_cap_gb); the pair stores (up to DMB_PAIR_BUDGET_GB, 8) are the compiler's own and bounded by its --cache-gc, so the
+# directory as a whole is bounded by cap_gb = segments + pair stores (status and the total cap count the whole directory).
 policy = files-lru
 tool = dmbc-cache-gc
 glob = *.seg|*.grp
 depth = 3
-cap_gb = 16
+glob_cap_gb = 16
+cap_gb = 24
 age_days = 14
 keep = 1
 
 [cache.dmb-roots]
-# The compiler's per-checkout output copies (.dmbc/: prepared output, stats, input-session records).
-policy = files-lru
-depth = 6
+# The compiler's per-checkout output copies (.dmbc/: prepared output, stats, input-session records). A checkout's copy is one consistent tree
+# (prepared output plus the records that describe it), so the unit is the whole checkout directory, never a file inside.
+policy = children-lru
 cap_gb = 6
 age_days = 14
-protect_glob = *.lock|*.last-run.json|build.lock
+min_idle_min = 120
+protect = leased-slot
 
 [cache.dmb-build]
 policy = children-lru
@@ -137,6 +151,13 @@ policy = children-lru
 cap_gb = 2
 keep = 4
 age_days = 30
+
+[cache.vg-bindings]
+# Generated verdigris bindings by check key (tools/build/build.ts VerdigrisBindingsCheckTarget, DQ_VG_BINDINGS_CACHE): a few KB each.
+policy = children-lru
+cap_gb = 1
+keep = 20
+age_days = 7
 
 [cache.dmb-daemon]
 policy = state
@@ -179,6 +200,7 @@ keep = 2
 age_days = 14
 
 [cache.tree-proofs]
+# File level is safe: each .proof/.tests.json stands alone and a missing one means "not proven yet" (re-proved).
 policy = files-lru
 glob = *.proof|*.tests.json
 depth = 1
@@ -186,8 +208,8 @@ cap_mb = 64
 keep = 400
 
 [cache.dqp-cache]
-policy = files-lru
-depth = 6
+# Owner unknown to this repo's tools: whole children only, until an owner that tolerates a missing file is documented.
+policy = children-lru
 cap_gb = 2
 age_days = 7
 
@@ -362,29 +384,23 @@ cap_mb = 200
 age_days = 1
 
 [worktree.analyze-target]
-# The analyzer's cargo target: stale deps (pdb/rlib/rmeta of older sources) are the garbage; the built binary and its key stay.
+# A worktree's cargo targets: whole profile directories only (cargo-units), never in a permanent, leased or slot-holding worktree.
 path = tools/analyze/target
-policy = files-lru
-depth = 8
+policy = cargo-units
 cap_gb = 3
 age_days = 7
-protect_glob = analyze|analyze.exe|*.key
 min_idle_min = 120
 
 [worktree.dmb-target]
 path = tools/dmb/target
-policy = files-lru
-depth = 8
+policy = cargo-units
 cap_gb = 3
 age_days = 7
-protect_glob = dmbc|dmbc.exe|dmbd|dmbd.exe
 min_idle_min = 120
 
 [worktree.verdigris-target]
 path = verdigris/target
-policy = files-lru
-depth = 8
+policy = cargo-units
 cap_gb = 3
 age_days = 7
-protect_glob = verdigris.dll|libverdigris.so|*.key
 min_idle_min = 120

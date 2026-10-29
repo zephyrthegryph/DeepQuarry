@@ -13,7 +13,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 /datum/attacks_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_attacks_panels -= "[REF(host)]"
+		GLOB.dq_attacks_panels -= ref_token(host)
 
 CAPABILITIES(/datum/attacks_panel)
 	ref_one(nameof(host), /mob/living/carbon/human)
@@ -31,13 +31,13 @@ CAPABILITIES(/datum/attacks_panel)
 	var/list/data = list()
 	if(!host || !host.species)
 		return data
-	data["default_name"] = host.default_attack ? host.default_attack.attack_name : null
+	data["default_name"] = host.default_attack()?.attack_name
 	var/list/rows = list()
 	for(var/datum/unarmed_attack/u_attack in host.species.unarmed_attacks)
 		rows += list(list(
 			"ref" = ref_token(u_attack),
 			"name" = u_attack.attack_name,
-			"is_default" = (u_attack == host.default_attack),
+			"is_default" = (u_attack == host.default_attack()),
 		))
 	data["attacks"] = rows
 	return data
@@ -77,7 +77,7 @@ CAPABILITIES(/datum/attacks_panel)
 	set name = "Check Attacks"
 	set category = VERB_CAT_IC_GAME
 	set src = usr
-	var/key = "[REF(src)]"
+	var/key = ref_token(src)
 	var/datum/attacks_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_attacks_panels, key))
 	if(!panel)
 		panel = new(src)

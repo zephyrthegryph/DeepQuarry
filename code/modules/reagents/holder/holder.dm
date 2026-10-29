@@ -22,6 +22,8 @@
 	/// A removal happened inside the current batch.
 	var/tmp/batch_changed = FALSE
 
+SCHEMA(/datum/reagents, maximum_volume, num())
+
 CAPABILITIES(/datum/reagents)
 	owns_many(nameof(reagent_list), on_lost = PROC_REF(reagent_lost))
 	ref_one(nameof(my_atom))
@@ -201,7 +203,7 @@ CAPABILITIES(/datum/reagents)
 			my_atom.on_reagent_change()
 		return 1
 	else
-		stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
+		stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist.")
 	return 0
 
 /// Start a run of removals (metabolism) that should react and notify once.

@@ -44,7 +44,6 @@
 	item_state = "gun"
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	w_class = ITEMSIZE_NORMAL
-	throw_range = 5
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the
@@ -108,7 +107,7 @@
 	var/datum/gun_firemode_selector/firemode_selector = null
 
 CAPABILITIES(/obj/item/gun)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 5, throw_speed = 4))
 	configure(item_handling(zoom_name = "scope"))
 	configure(item_handling(preserve = 1))
 	setup(PROC_REF(item_gun_setup))
@@ -466,7 +465,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 				if(one_handed_penalty >= 20)
 					to_chat(user, span_warning("You struggle to keep \the [src] pointed at the correct position with just one hand!"))
 
-			if(!zoom) //If we're not zoomed, reset our accuracy to our initial accuracy.
+			if(!sparse_get_or(src, zoom, FALSE)) //If we're not zoomed, reset our accuracy to our initial accuracy.
 				accuracy = initial(accuracy) //Reset our accuracy
 			note_shot()
 			user.hud_used?.update_ammo_hud(user, src)
@@ -769,7 +768,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 		else
 			in_chamber.on_hit(M)
-			var/suicide_kind = in_chamber.injury_kind == INJURY_BLUNT ? INJURY_PIERCE : in_chamber.injury_kind
+			var/suicide_kind = combat_of(in_chamber).injury_kind == INJURY_BLUNT ? INJURY_PIERCE : combat_of(in_chamber).injury_kind
 			if(suicide_kind != INJURY_PAIN && !in_chamber.nodamage)
 				log_and_message_admins("commited suicide using \a [src]", user)
 				user.injure(suicide_kind, in_chamber.damage*2.5, BP_HEAD, src, 0, null, INJURE_PROJECTILE)
@@ -799,7 +798,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 	var/scoped_accuracy_mod = zoom_offset
 
 	zoom(user, zoom_offset, view_size)
-	if(zoom)
+	if(sparse_get_or(src, zoom, FALSE))
 		accuracy = scoped_accuracy + scoped_accuracy_mod
 		if(recoil)
 			recoil = round(recoil*zoom_amount+1) //recoil is worse when looking through a scope
@@ -807,7 +806,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 //make sure accuracy and recoil are reset regardless of how the item is unzoomed.
 /obj/item/gun/zoom(mob/living/M, tileoffset = 14, viewsize = 9)
 	..()
-	if(!zoom)
+	if(!sparse_get_or(src, zoom, FALSE))
 		accuracy = initial(accuracy)
 		recoil = initial(recoil)
 

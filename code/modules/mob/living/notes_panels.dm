@@ -18,7 +18,7 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 /datum/private_notes_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_private_notes_panels -= "[REF(host)]"
+		GLOB.dq_private_notes_panels -= ref_token(host)
 
 CAPABILITIES(/datum/private_notes_panel)
 	ref_one(nameof(host), /mob/living)
@@ -65,7 +65,7 @@ CAPABILITIES(/datum/private_notes_panel)
 	if(!private_notes)
 		set_private_notes(" ")
 		return
-	var/key = "[REF(src)]"
+	var/key = ref_token(src)
 	var/datum/private_notes_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_private_notes_panels, key))
 	if(!panel)
 		panel = new(src)
@@ -84,7 +84,7 @@ CAPABILITIES(/datum/private_notes_panel)
 /datum/ooc_notes_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_ooc_notes_panels -= "[REF(host)]"
+		GLOB.dq_ooc_notes_panels -= ref_token(host)
 
 CAPABILITIES(/datum/ooc_notes_panel)
 	ref_one(nameof(host), /mob/living)
@@ -193,7 +193,7 @@ CAPABILITIES(/datum/ooc_notes_panel)
 /mob/living/proc/ooc_notes_window(mob/user)
 	if(!identity().ooc_notes)
 		return
-	var/key = "[REF(src)]"
+	var/key = ref_token(src)
 	var/datum/ooc_notes_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_ooc_notes_panels, key))
 	if(!panel)
 		panel = new(src)

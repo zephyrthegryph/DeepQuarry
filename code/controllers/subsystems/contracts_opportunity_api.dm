@@ -74,17 +74,16 @@
 			return
 	if(!rule.is_ready(signal_snapshots))
 		return
-	var/cooldown_until = opportunity_cooldowns[window_key] || 0
-	if(BEFORE(src, cooldown_until, CLOCK_WORLD))
+	if(contract_cooldown_running(opportunity_cooldowns, window_key))
 		opportunities_suppressed++
 		return
 	if(!rule.trigger(src, window, event, signal_snapshots))
 		// Avoid retrying a definition with exhausted demand on every event.
-		opportunity_cooldowns[window_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + 2 MINUTES
+		contract_cooldown_start(nameof(opportunity_cooldowns), window_key, 2 MINUTES)
 		opportunities_suppressed++
 		return
 	window.latched = TRUE
-	opportunity_cooldowns[window_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + rule.cooldown
+	contract_cooldown_start(nameof(opportunity_cooldowns), window_key, rule.cooldown)
 	opportunities_triggered++
 	var/datum/contract_opportunity_history_entry/history_entry = new(rule, window, event, signal_snapshots)
 	rel_add(src, nameof(opportunity_history), history_entry)

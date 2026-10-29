@@ -6,14 +6,13 @@
 	pass_flags = PASSTABLE
 	endurance = 100
 	mob_size = 4
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
 
 	var/adult_form
 	var/dead_icon
 	var/amount_grown = 0
 	var/max_grown = 200
-	EXPIRY_DECLARE(time_of_birth)
+	var/time_of_birth = 0
 	var/language
 	var/can_namepick_as_adult = 0
 	var/adult_name
@@ -26,7 +25,7 @@
 
 /// Its age counts from now (setup()).
 /mob/living/carbon/alien/proc/stamp_birth()
-	EXPIRY_STAMP(src, time_of_birth, CLOCK_WORLD)
+	STAMP(src, time_of_birth, CLOCK_WORLD)
 
 /mob/living/carbon/alien/restrained()
 	return 0

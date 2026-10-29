@@ -1,0 +1,153 @@
+// Bracketed at file-header rather than per-hunk because the
+// edits are mechanical and span the whole file; the commit SHA
+// is the source of truth for per-line diff context.
+
+/datum/category_item/catalogue/fauna/spacewhale
+	name = "Alien Wildlife - Space Whale"
+	desc = "A massive space creature! These are typically peaceful to anything smaller than themselves, with exception given to space carp, which it eats.\
+	It is known to ravage and devour other large space dwelling species.\
+	It occasionally gets restless and moves around erratically, which may affect the local space weather.\
+	This creature shows no real interest in or aversion to spacecraft."
+	value = CATALOGUER_REWARD_SUPERHARD
+
+/mob/living/simple_mob/vore/overmap/spacewhale
+	name = "space whale"
+	desc = "It's a space whale. I don't know what more you expected."
+	scanner_desc = "An absolutely massive space-born creature. A layer of radical energy around its body prevents detailed scanning, though, the energy along with its movements seem to be what propels it through space. A series of bio-luminescent lights ripple rhythmically across its surface. It is difficult to spot at range except for the wake of energy that swirls around it."
+	catalogue_data = list(/datum/category_item/catalogue/fauna/spacewhale)
+
+	icon = 'icons/mob/alienanimals_x32.dmi'
+	icon_state = "space_whale"
+	icon_living = "space_whale"
+	icon_dead = "space_ghost_dead"
+
+	om_child_type = /obj/effect/overmap/visitable/simplemob/spacewhale
+
+	response_help  = "pets"
+	response_disarm = "gently pushes aside"
+	response_harm   = "punches"
+	attacktext = list("chomped", "bashed", "monched", "bumped")
+
+
+	speak_emote = list("rumbles")
+
+
+	var/hazard_pickup_chance = 35
+	var/hazard_drop_chance = 35
+	var/held_hazard
+	var/restless = FALSE
+	var/post_restless_tired = 0
+
+	vore_active = 1
+	vore_bump_chance = 99
+	vore_pounce_chance = 99
+	vore_ignores_undigestable = 0
+	vore_default_mode = DM_DIGEST
+	vore_icons = SA_ICON_LIVING
+	vore_stomach_name = "stomach"
+	vore_default_contamination_flavor = "Wet"
+	vore_default_contamination_color = "grey"
+	vore_default_item_mode = IM_DIGEST
+
+/datum/say_list/spacewhale
+	emote_see = list("ripples and flows", "flashes rhythmically","glows faintly","investigates something")
+
+/mob/living/simple_mob/vore/overmap/spacewhale/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "It's warm and wet, makes sense, considering it's inside of a space whale. You should take a moment to reflect upon how you got here, and how you might avoid situations like this in the future, while this whale attempts to mercilessly destroy you through various gastric processes."
+	B.set_mode_flags(DM_FLAG_THICKBELLY | DM_FLAG_NUMBING)
+	B.set_digest_brute(50)
+	B.set_digest_burn(50)
+	B.set_escapechance(0)
+
+/mob/living/simple_mob/vore/overmap/spacewhale/proc/spacewhale_restless_ready(datum/act/timer/A)
+	handle_restless()
+
+/mob/living/simple_mob/vore/overmap/spacewhale/Moved()
+	. = ..()
+	if(restless && prob(5))
+		handle_restless()
+
+	for(var/obj/effect/decal/cleanable/C in contents_of(loc))
+		consumed(C, src)
+	for(var/obj/item/organ/O in contents_of(loc))
+		consumed(O, src)
+	var/detected = FALSE
+	for(var/obj/effect/overmap/event/E in contents_of(loc))
+		detected = TRUE
+		if(istype(E, /obj/effect/overmap/event/carp))
+			consumed(E, src)
+			continue
+		else if(!held_hazard && prob(hazard_pickup_chance))
+			held_hazard = E.type
+			consumed(E, src)
+			return
+	if(held_hazard && !detected && prob(hazard_drop_chance))
+		if(!(locate_within(loc, /obj/effect/overmap/visitable/sector)))
+			new held_hazard(loc)
+			held_hazard = null
+
+/mob/living/simple_mob/vore/overmap/spacewhale/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/vore/overmap/spacewhale/life_type_post(datum/seq_frame/life/F)
+	..()
+	if(src.post_restless_tired)
+		src.post_restless_tired--
+		return
+	if(prob(0.5))
+		src.handle_restless()
+
+/mob/living/simple_mob/vore/overmap/spacewhale/proc/handle_restless()
+	if(restless)
+		set_restless(FALSE)
+		hazard_pickup_chance = initial(hazard_pickup_chance)
+		hazard_drop_chance = initial(hazard_drop_chance)
+		movement_cooldown = initial(movement_cooldown)
+		if(ai_brain)
+			ai_brain.wander = FALSE
+		post_restless_tired = 250
+	else
+		set_restless(TRUE)
+		hazard_pickup_chance *= 1.5
+		hazard_drop_chance *= 1.5
+		movement_cooldown = -1
+		if(ai_brain)
+			ai_brain.wander = TRUE
+
+
+CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
+	configure(living_rules(vore_capacity = 99, say_list_type = /datum/say_list/spacewhale))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	after_init(0, then(PROC_REF(spacewhale_restless_ready)))
+	on_change(nameof(restless), ANY, then(PROC_REF(restless_changed)))
+
+/// Its overmap marker shows whether it is restless (once the marker is known).
+/mob/living/simple_mob/vore/overmap/spacewhale/proc/restless_changed(datum/act/A)
+	if(child_om_marker?.known == TRUE)
+		if(restless)
+			child_om_marker.icon_state = "space_whale_restless"
+			visible_message(span_notice("\The [child_om_marker.name] ripples excitedly."))
+		else
+			child_om_marker.icon_state = "space_whale"
+			visible_message(span_notice("\The [child_om_marker.name] settles down."))
+
+/mob/living/simple_mob/vore/overmap/spacewhale/apply_melee_effects(atom/A)
+	. = ..()
+	if(isliving(A))
+		var/mob/living/L = A
+		if(L.stat == DEAD && !L.vore_prefs.allowmobvore)
+			L.gib()
+		else
+			return .
+
+/obj/effect/overmap/visitable/simplemob/spacewhale
+	skybox_icon = 'icons/skybox/anomaly.dmi'
+	skybox_icon_state = "space_whale"
+	skybox_pixel_x = 0
+	skybox_pixel_y = 0
+	glide_size = 0.384
+	parent_mob_type = /mob/living/simple_mob/vore/overmap/spacewhale
+	scanner_desc = "An absolutely massive space-born creature. A layer of radical energy around its body prevents detailed scanning, though, the energy along with its movements seem to be what propels it through space. A series of bio-luminescent lights ripple rhythmically across its surface. It is difficult to spot at range except for the wake of energy that swirls around it."

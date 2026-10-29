@@ -1,15 +1,17 @@
-/mob/living/carbon/human
-	var/datum/unarmed_attack/default_attack
+/// The unarmed attack the human chose to use by default (LK_DEFAULT_ATTACK), or null.
+/mob/living/carbon/human/proc/default_attack()
+	RETURN_TYPE(/datum/unarmed_attack)
+	return link_get(src, LK_DEFAULT_ATTACK)
 
 /mob/living/carbon/human/proc/get_unarmed_attack(mob/living/carbon/human/target, hit_zone)
 	if(nif && nif.flag_check(NIF_C_HARDCLAWS,NIF_FLAGS_COMBAT))
 		return GLOB.unarmed_hardclaws
-	if(src.default_attack && src.default_attack.is_usable(src, target, hit_zone))
+	if(src.default_attack() && src.default_attack().is_usable(src, target, hit_zone))
 		if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
-			var/datum/unarmed_attack/soft_type = src.default_attack.get_sparring_variant()
+			var/datum/unarmed_attack/soft_type = src.default_attack().get_sparring_variant()
 			if(soft_type)
 				return soft_type
-		return src.default_attack
+		return src.default_attack()
 	if(get_equipped_item(SLOT_ID_GLOVES))
 		var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES)
 		if(istype(G) && G.special_attack && G.special_attack.is_usable(src, target, hit_zone))
@@ -18,12 +20,12 @@
 				if(soft_type)
 					return soft_type
 			return G.special_attack
-	if(src.default_attack && src.default_attack.is_usable(src, target, hit_zone))
+	if(src.default_attack() && src.default_attack().is_usable(src, target, hit_zone))
 		if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
-			var/datum/unarmed_attack/soft_type = src.default_attack.get_sparring_variant()
+			var/datum/unarmed_attack/soft_type = src.default_attack().get_sparring_variant()
 			if(soft_type)
 				return soft_type
-		return src.default_attack
+		return src.default_attack()
 	for(var/datum/unarmed_attack/u_attack in species.unarmed_attacks)
 		if(u_attack.is_usable(src, target, hit_zone))
 			if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
@@ -427,7 +429,10 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 /mob/living/carbon/human/proc/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, inrange, params)
 	return
 
-/mob/living/carbon/human/attack_generic(mob/user, damage, attack_message)
+/mob/living/carbon/human/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb
 	if(istype(user,/mob/living))
 		var/mob/living/L = user
 		if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
@@ -437,7 +442,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 					MSG_OTHERS(span_warning("%U% is hurt by sharp body parts when touching %T%!")))
 
 	if(!damage)
-		return
+		return OP_OK
 
 	add_attack_logs(user,src,"Melee attacked with fists (miss/block)",admin_notify = FALSE) //No admin notice since this is usually fighting simple animals
 	act_message(user, src, others = span_danger("%U% has [attack_message] %T%!"))
@@ -446,7 +451,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 	var/dam_zone = pick(organs_by_name)
 	var/obj/item/organ/external/affecting = get_organ(ran_zone(dam_zone))
 	receive_generic_attack(user, damage, affecting?.organ_tag, armored = TRUE)
-	return TRUE
+	return OP_OK
 
 //Used to attack a joint through grabbing
 /mob/living/carbon/human/proc/grab_joint(mob/living/user, def_zone)
@@ -563,7 +568,7 @@ MSG_DEF_SELF(human/pressure_taken, span_warning("Someone is already applying pre
 
 
 /mob/living/carbon/human/proc/set_default_attack(datum/unarmed_attack/u_attack)
-	rel_set(src, nameof(default_attack), u_attack) // an attack the species owns
+	link_set_one(src, LK_DEFAULT_ATTACK, u_attack) // an attack the species owns
 
 /mob/living/carbon/human/proc/perform_cpr(mob/living/carbon/human/reviver)
 	// Check for sanity

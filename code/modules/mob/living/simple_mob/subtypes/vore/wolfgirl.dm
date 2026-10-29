@@ -20,10 +20,10 @@
 	melee_damage_upper = 7
 	attacktext = list("slashed")
 
-	say_list_type = /datum/say_list/wolfgirl
-	species_sounds = "Canine"
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolfgirl)
+	configure(living_rules(species_sounds = "Canine"))
+	configure(living_rules(say_list_type = /datum/say_list/wolfgirl))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 // Activate Noms!

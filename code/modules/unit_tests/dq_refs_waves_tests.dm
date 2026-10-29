@@ -266,16 +266,16 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT_NULL(panel.host, "deleting the host clears the panel's host")
 	qdel(panel)
 
-/// A VR avatar and its body name each other (vr_holder / vr_link are one linked pair): writing one end sets the other, deleting either clears both.
+/// A VR avatar and its body name each other (vr_holder / vr_link are one sparse link pair): writing one end sets the other, deleting either clears both.
 /datum/unit_test/dq_refs_vr_pair_links_and_clears
 
 /datum/unit_test/dq_refs_vr_pair_links_and_clears/Run()
 	var/mob/living/carbon/human/body = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/avatar = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	rel_set(avatar, nameof(avatar.vr_holder), body)
-	TEST_ASSERT_EQUAL(body.vr_link, avatar, "the body names the avatar once the avatar names the body")
+	link_make(avatar, LK_VR_HOLDER, body)
+	TEST_ASSERT_EQUAL(body.vr_link(), avatar, "the body names the avatar once the avatar names the body")
 	qdel(avatar)
-	TEST_ASSERT_NULL(body.vr_link, "deleting the avatar clears the body's link")
+	TEST_ASSERT_NULL(body.vr_link(), "deleting the avatar clears the body's link")
 
 /// A borg module's matter reserve is a relation: deleting the synth clears the decompiler's pointer to it.
 /datum/unit_test/dq_refs_decompiler_synth_clears_when_deleted
@@ -377,17 +377,16 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT_NULL(scanner.linked_account, "deleting the account unlinks the scanner")
 	own_turf_contents(run_loc_floor_bottom_left) // the account's setup left a receipt and its parcel on the block: the test owns them
 
-/// W6B: a genetic side effect names the human suffering it as a relation: deleting the human clears the pointer.
+/// W6B: a genetic side effect names the human suffering it as a sparse link: deleting the human deletes the effect with it.
 /datum/unit_test/dq_refs_w6b_side_effect_host_clears_when_deleted
 
 /datum/unit_test/dq_refs_w6b_side_effect_host_clears_when_deleted/Run()
 	var/mob/living/carbon/human/host = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/genetics/side_effect/effect = new
-	rel_set(effect, nameof(effect.host), host)
-	TEST_ASSERT_EQUAL(effect.host, host, "the side effect names its host")
+	link_make(host, LK_GENETIC_EFFECTS, effect)
+	TEST_ASSERT_EQUAL(effect.host(), host, "the side effect names its host")
 	qdel(host)
-	TEST_ASSERT_NULL(effect.host, "deleting the host clears the side effect's pointer")
-	qdel(effect)
+	TEST_ASSERT(QDELETED(effect), "deleting the host deletes the side effect with it")
 
 /// W6B: a book's barcode scanner names its associated computer as a relation.
 /datum/unit_test/dq_refs_w6b_barcode_scanner_book_clears_when_deleted

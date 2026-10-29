@@ -26,12 +26,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/log_holder)
 	var/list/data_cache
 
 	/// Last time the ui_data was updated
-	EXPIRY_DECLARE(last_data_update)
+	var/last_data_update = 0
 
 	var/initialized = FALSE
 	var/shutdown = FALSE
 
-	/// Log file path -> world.time it was last confirmed to exist. Saves an fexists() per entry (Q8).
+	/// Log file path -> the /datum/verified_log_file that says when it was last confirmed to exist. Saves an fexists() per entry (Q8).
 	var/list/verified_log_files
 
 GENERAL_PROTECT_DATUM(/datum/log_holder)
@@ -67,7 +67,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 /// /datum/log_holder's window data.
 /datum/log_holder/ui_data(datum/act/eval/A)
-	if(!last_data_update || ELAPSED_SINCE(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
+	if(!last_data_update || ELAPSED(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()
 	return data_cache || list()
 
@@ -83,12 +83,13 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 		category_map[category.category] = category_data
 
 	clear_data_cache()
-	EXPIRY_STAMP(src, last_data_update, CLOCK_WORLD)
+	STAMP(src, last_data_update, CLOCK_WORLD)
 
 	set_data_cache_at("categories", category_map)
 	set_data_cache_at("last_data_update", last_data_update)
 
 CAPABILITIES(/datum/log_holder)
+	owns_many(nameof(verified_log_files), /datum/verified_log_file)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_log_refresh)))
 	interface("LogViewer", title = "Log Viewer", rights = R_ADMIN|R_MOD|R_DEBUG)
 	ui_shape()
@@ -318,7 +319,7 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 			// A datum is logged as its saved state (code/datums/state/schema.dm), or
 			// as its type and ref when its state does not serialize.
 			var/datum/logged = data
-			var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = REF(logged))
+			var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = ref_token(logged))
 			semvers[logged.type] = "[logged.state_version].0.0"
 			data = recursive_jsonify(serialization_data, semvers)
 

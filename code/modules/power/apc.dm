@@ -54,7 +54,6 @@
 	anchored = TRUE
 	use_power = USE_POWER_OFF
 	req_access = list(ACCESS_ENGINE_EQUIP)
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	integrity_failure = 0.5
@@ -95,6 +94,9 @@
 
 	/// The power alarm is raised (as Rust last reported).
 	var/power_alarm_raised = FALSE
+	/// APC_REPORT lines for charging-only reports: when the next may be written, and how many were folded into it since the last line.
+	COOLDOWN_DECLARE(report_log_cooldown)
+	var/report_log_skipped = 0
 	/// Power events applied (tests check that a settled APC hears none).
 	var/power_event_count = 0
 	/// The reference text of the cell whose charge became Rust's Apc.charge last (push_to_rust() reconciles a newly seated cell once).
@@ -153,7 +155,10 @@ MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.",
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
 CAPABILITIES(/obj/machinery/power/apc)
-	configure(movable_motion(unacidable = TRUE))
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(apc_broken)))
+	configure(atom_rules(description_antag = "This can be emagged to unlock it.  It will cause the APC to have a blue error screen. \
+	Wires can be pulsed remotely with a signaler attached to it.  A powersink will also drain any APCs connected to the same wire the powersink is on."))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE, unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_SWITCH))
 	blast_contents()
 	after_init(0, then(PROC_REF(apply_power_after_init)))
@@ -580,7 +585,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(cell && pushed_cell_ref == REF(cell))
 		cell.set_charge(clamp(charge, 0, cell.maxcharge))
 	var/channels_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ
-	var/shown_changed = channels_changed || new_charging != charging || new_status != main_status || !!alarm != power_alarm_raised
+	var/structural_changed = channels_changed || new_status != main_status || !!alarm != power_alarm_raised
+	var/shown_changed = structural_changed || new_charging != charging
 	set_equipment(new_equipment)
 	set_lighting(new_lighting)
 	set_environ(new_environ)
@@ -595,7 +601,14 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		else
 			GLOB.power_alarm.clearAlarm(loc, src)
 	if(shown_changed)
-		log_world("APC_REPORT: [src] ([area]) channels [equipment]/[lighting]/[environ] charging [charging] status [main_status] alarm [alarm] charge [charge]")
+		// A channel, status or alarm change is always logged. The charging lamp flips back and forth on a settled station (about 18 reports a second over
+		// 310 APCs), so a charging-only report is logged once per APC_REPORT_LOG_INTERVAL and the line says how many it stands for.
+		if(structural_changed || COOLDOWN_FINISHED(src, report_log_cooldown))
+			log_world("APC_REPORT: [src] ([area]) channels [equipment]/[lighting]/[environ] charging [charging] status [main_status] alarm [alarm] charge [charge][report_log_skipped ? " ([report_log_skipped] charging-only reports since the last line)" : ""]")
+			report_log_skipped = 0
+			COOLDOWN_START(src, report_log_cooldown, APC_REPORT_LOG_INTERVAL)
+		else
+			report_log_skipped++
 	if(channels_changed)
 		apply_area_power()
 
@@ -804,9 +817,9 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_POWER_SERVICE_CHANGED, list(
 			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "power-service:[REF(src)]",
+			"fact_id" = "power-service:[ref_token(src)]",
 			"fact_revision" = contract_power_revision,
-			"service_id" = REF(src),
+			"service_id" = ref_token(src),
 			"operational" = powered_channels == 3,
 			"metrics" = list(
 				"powered_channels" = powered_channels,
@@ -814,7 +827,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 				"load" = channel_load_total(),
 			),
 			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
-		), "power-service:[REF(src)]:[contract_power_revision]", src)
+		), "power-service:[ref_token(src)]:[contract_power_revision]", src)
 
 /obj/machinery/power/apc/surplus()
 	if(terminal)
@@ -871,10 +884,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 // Damage / destruction
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/atom_break(damage_flag)
-	. = ..()
-	if(!.)
-		return
+/obj/machinery/power/apc/proc/apc_broken(datum/act/A)
 	visible_message(span_warning("[src]'s screen flickers suddenly, then explodes in a rain of sparks and small debris!"))
 	set_operating(0)
 

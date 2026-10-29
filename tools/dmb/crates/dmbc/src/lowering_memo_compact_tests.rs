@@ -345,9 +345,6 @@ fn check_replay_features(
         fn resolve(&self, q: ResolveQuery) -> dm_ir::ResolvedMeaning {
             self.0.resolve(q)
         }
-        fn domain_version(&self, d: dm_ir::ReadDomain) -> Option<u128> {
-            self.0.domain_version(d)
-        }
     }
     let quiet = Quiet(&host);
     let transparent = crate::lowering_memo::RecordingResolver::new(&quiet);
@@ -376,9 +373,6 @@ fn check_replay_features(
         fn resolve(&self, q: ResolveQuery) -> dm_ir::ResolvedMeaning {
             self.1.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             self.0.resolve(q)
-        }
-        fn domain_version(&self, d: dm_ir::ReadDomain) -> Option<u128> {
-            self.0.domain_version(d)
         }
     }
     let resolved = |payload: &Payload<'_>| {
@@ -554,13 +548,6 @@ fn check_replay_features(
                     self.base.resolve(query)
                 }
             }
-            fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-                if domain == self.query.domain() {
-                    Some(self.token)
-                } else {
-                    self.base.domain_version(domain)
-                }
-            }
         }
         // Disk certificates must use a persistent domain: named global scalar
         // issuers are process-local and intentionally rejected by this schema.
@@ -676,11 +663,8 @@ fn check_replay_features(
             observing_rebind.reads().is_empty(),
             "failed current rebind cannot publish pending typed reads"
         );
-        assert_eq!(
-            provider.calls.load(Ordering::Relaxed),
-            certified_calls,
-            "matching certificate must restore typed negative without provider hydration"
-        );
+        // No stored version certifies a read any more: the typed negative is checked against the provider once.
+        assert_eq!(provider.calls.load(Ordering::Relaxed), certified_calls + 1);
     }
     if plain && !helpers {
         let mut bad = decode(&bytes).unwrap();
@@ -772,6 +756,7 @@ fn check_replay_features(
                 &host,
                 ready,
                 Some(backing),
+                None,
             );
             let accepted = result.prepared.is_some();
             *mapped.borrow_mut() = result.prepared;

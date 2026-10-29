@@ -5,7 +5,7 @@ mod control;
 pub(super) mod retained_size;
 #[cfg(test)]
 mod retained_size_tests;
-mod source_wire;
+pub(super) mod source_wire;
 #[path = "expansion_storage.rs"]
 pub(super) mod storage;
 use super::{DirectivePlan, MacroEnvironment, MacroExpansion};
@@ -216,8 +216,9 @@ pub struct MacroRead {
     #[serde(deserialize_with = "super::intern_wire::shared_definition")]
     pub definition: Option<Arc<Macro>>,
 }
+/// Wire form of one macro trace of an emitted line; unchanged since the record format was introduced.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-struct Trace {
+struct TraceWire {
     #[serde(deserialize_with = "super::intern_wire::shared_name")]
     name: Arc<str>,
     #[serde(with = "span_wire")]
@@ -225,12 +226,153 @@ struct Trace {
     #[serde(deserialize_with = "super::intern_wire::shared_chain")]
     replacement_chain: Arc<[Arc<str>]>,
 }
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+/// In-memory macro trace of an emitted line: ids into the record's [`TraceTables`] and a u32 invocation span, 16 bytes
+/// instead of two fat `Arc`s and a usize span (48). A record keeps one per expansion step of every output line.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Trace {
+    name: u32,
+    chain: u32,
+    start: u32,
+    end: u32,
+}
+/// The distinct macro names and replacement chains the traces of one record refer to.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct TraceTables {
+    names: Box<[Arc<str>]>,
+    chains: Box<[Arc<[Arc<str>]>]>,
+    /// The macro traces of the lines that have any; a line names its set by 1-based index, 0 meaning none. Most lines
+    /// expand nothing, so they carry no per-line slice.
+    sets: Box<[Box<[Trace]>]>,
+}
+impl TraceTables {
+    fn name(&self, trace: &Trace) -> &Arc<str> {
+        &self.names[trace.name as usize]
+    }
+    fn chain(&self, trace: &Trace) -> &Arc<[Arc<str>]> {
+        &self.chains[trace.chain as usize]
+    }
+    fn span(trace: &Trace) -> Span {
+        Span::new(trace.start as usize, trace.end as usize)
+    }
+    fn set(&self, line: &Line) -> &[Trace] {
+        match line.trace_set.checked_sub(1) {
+            Some(index) => &self.sets[index as usize],
+            None => &[],
+        }
+    }
+}
+/// Builds [`TraceTables`] in first-seen order, so equal logical records get equal tables.
+#[derive(Default)]
+struct TraceInterner {
+    names: Vec<Arc<str>>,
+    name_ids: std::collections::HashMap<Arc<str>, u32>,
+    chains: Vec<Arc<[Arc<str>]>>,
+    chain_ids: std::collections::HashMap<Arc<[Arc<str>]>, u32>,
+    sets: Vec<Box<[Trace]>>,
+}
+impl TraceInterner {
+    /// `None` when an id or offset does not fit in u32; the caller then records nothing for this expansion.
+    fn trace(&mut self, name: &Arc<str>, span: Span, chain: &Arc<[Arc<str>]>) -> Option<Trace> {
+        let name = match self.name_ids.get(name) {
+            Some(id) => *id,
+            None => {
+                let id = u32::try_from(self.names.len()).ok()?;
+                self.names.push(Arc::clone(name));
+                self.name_ids.insert(Arc::clone(name), id);
+                id
+            }
+        };
+        let chain = match self.chain_ids.get(chain) {
+            Some(id) => *id,
+            None => {
+                let id = u32::try_from(self.chains.len()).ok()?;
+                self.chains.push(Arc::clone(chain));
+                self.chain_ids.insert(Arc::clone(chain), id);
+                id
+            }
+        };
+        Some(Trace {
+            name,
+            chain,
+            start: u32::try_from(span.start).ok()?,
+            end: u32::try_from(span.end).ok()?,
+        })
+    }
+    /// The 1-based id of a line's trace set, 0 for a line without traces; `None` when the ids run out.
+    fn set(&mut self, traces: Box<[Trace]>) -> Option<u32> {
+        if traces.is_empty() {
+            return Some(0);
+        }
+        self.sets.push(traces);
+        u32::try_from(self.sets.len()).ok()
+    }
+    fn finish(self) -> TraceTables {
+        TraceTables {
+            names: self.names.into_boxed_slice(),
+            chains: self.chains.into_boxed_slice(),
+            sets: self.sets.into_boxed_slice(),
+        }
+    }
+}
+/// One emitted line of a record. Offsets are u32 and an untraced line holds no allocation: records keep one per output
+/// line, so the struct is the dominant cost of a large expansion record. The wire form is [`LineWire`], unchanged.
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct Line {
+    output_start: u32,
+    output_end: u32,
+    input: u32,
+    /// 1-based index into [`TraceTables::sets`]; 0 for a line without macro traces.
+    trace_set: u32,
+}
+impl Line {
+    fn output(&self) -> Span {
+        Span::new(self.output_start as usize, self.output_end as usize)
+    }
+    fn input(&self) -> usize {
+        self.input as usize
+    }
+    fn to_wire(&self, tables: &TraceTables) -> LineWire {
+        LineWire {
+            output: self.output(),
+            input: self.input(),
+            traces: tables
+                .set(self)
+                .iter()
+                .map(|trace| TraceWire {
+                    name: Arc::clone(tables.name(trace)),
+                    invocation_span: TraceTables::span(trace),
+                    replacement_chain: Arc::clone(tables.chain(trace)),
+                })
+                .collect(),
+        }
+    }
+    fn from_wire(line: LineWire, interner: &mut TraceInterner) -> Result<Self, &'static str> {
+        let narrow = |value: usize| u32::try_from(value).map_err(|_| "expansion line offset exceeds u32");
+        Ok(Self {
+            output_start: narrow(line.output.start)?,
+            output_end: narrow(line.output.end)?,
+            input: narrow(line.input)?,
+            trace_set: {
+                let traces = line
+                    .traces
+                    .iter()
+                    .map(|trace| {
+                        interner
+                            .trace(&trace.name, trace.invocation_span, &trace.replacement_chain)
+                            .ok_or("expansion trace offset exceeds u32")
+                    })
+                    .collect::<Result<Box<[Trace]>, _>>()?;
+                interner.set(traces).ok_or("expansion trace set count exceeds u32")?
+            },
+        })
+    }
+}
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+struct LineWire {
     #[serde(with = "span_wire")]
     output: Span,
     input: usize,
-    traces: Vec<Trace>,
+    traces: Vec<TraceWire>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Error {
@@ -240,21 +382,131 @@ struct Error {
 }
 /// Private fields keep records issued from actual expansion; accessors support
 /// analysis and storage adapters without exposing mutable reusable output.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ExpansionRecord {
+    key: u128,
+    source: crate::SourceText,
+    /// Digest of the comment-stripped line text the expansion was proven against; the bytes are not kept.
+    control: u128,
+    text: crate::SourceText,
+    reads: Arc<Vec<MacroRead>>,
+    locations: Arc<Vec<(usize, bool, String)>>,
+    lines: Arc<Vec<Line>>,
+    /// The names and chains `lines`' traces index into.
+    trace_tables: TraceTables,
+    diagnostics: Arc<Vec<Error>>,
+    fragments: Vec<ParseFragment>,
+    /// Output rows sessions hydrated from this record, one per distinct set of rows (see [`RowsPool`]). Not part of
+    /// the record's identity or wire form.
+    rows: RowsPool,
+}
+/// The stored form of [`ExpansionRecord`]: lines carry their traces inline, so the format does not depend on how the
+/// in-memory record shares names and chains.
+#[derive(Serialize, Deserialize)]
+struct ExpansionRecordWire {
     key: u128,
     #[serde(with = "source_wire")]
     source: crate::SourceText,
-    /// Digest of the comment-stripped line text the expansion was proven against; the bytes are not kept.
     control: u128,
     #[serde(with = "source_wire")]
     text: crate::SourceText,
     reads: Arc<Vec<MacroRead>>,
     locations: Arc<Vec<(usize, bool, String)>>,
-    lines: Arc<Vec<Line>>,
+    lines: Vec<LineWire>,
     diagnostics: Arc<Vec<Error>>,
     #[serde(default)]
     fragments: Vec<ParseFragment>,
+}
+impl Serialize for ExpansionRecord {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        #[derive(Serialize)]
+        struct Borrowed<'a> {
+            key: u128,
+            #[serde(with = "source_wire")]
+            source: &'a crate::SourceText,
+            control: u128,
+            #[serde(with = "source_wire")]
+            text: &'a crate::SourceText,
+            reads: &'a Arc<Vec<MacroRead>>,
+            locations: &'a Arc<Vec<(usize, bool, String)>>,
+            lines: Vec<LineWire>,
+            diagnostics: &'a Arc<Vec<Error>>,
+            fragments: &'a Vec<ParseFragment>,
+        }
+        Borrowed {
+            key: self.key,
+            source: &self.source,
+            control: self.control,
+            text: &self.text,
+            reads: &self.reads,
+            locations: &self.locations,
+            lines: self.lines.iter().map(|line| line.to_wire(&self.trace_tables)).collect(),
+            diagnostics: &self.diagnostics,
+            fragments: &self.fragments,
+        }
+        .serialize(serializer)
+    }
+}
+impl<'de> Deserialize<'de> for ExpansionRecord {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let wire = ExpansionRecordWire::deserialize(deserializer)?;
+        let mut interner = TraceInterner::default();
+        let lines = wire
+            .lines
+            .into_iter()
+            .map(|line| Line::from_wire(line, &mut interner))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(serde::de::Error::custom)?;
+        Ok(Self {
+            key: wire.key,
+            source: wire.source,
+            control: wire.control,
+            text: wire.text,
+            reads: wire.reads,
+            locations: wire.locations,
+            lines: Arc::new(lines),
+            trace_tables: interner.finish(),
+            diagnostics: wire.diagnostics,
+            fragments: wire.fragments,
+            rows: Default::default(),
+        })
+    }
+}
+/// The hydrated output rows of one record, shared by every session, variant and worktree whose rows are equal (the same
+/// source lines and the same macro definition origins in their traces): an origin arena holds a region's rows by
+/// pointer instead of a private copy. Weak, so rows live only while some arena holds them; a clone of the record (a
+/// fragment-enriched copy) starts empty.
+#[derive(Default)]
+pub(super) struct RowsPool(std::sync::Mutex<Vec<std::sync::Weak<super::expansion::output_lines::OutputLines>>>);
+impl RowsPool {
+    pub(super) fn intern(
+        &self,
+        lines: Arc<super::expansion::output_lines::OutputLines>,
+    ) -> Arc<super::expansion::output_lines::OutputLines> {
+        let mut pooled = self.0.lock().unwrap_or_else(|error| error.into_inner());
+        pooled.retain(|held| held.strong_count() > 0);
+        if let Some(held) = pooled.iter().filter_map(std::sync::Weak::upgrade).find(|held| held.same_rows(&lines)) {
+            return held;
+        }
+        pooled.push(Arc::downgrade(&lines));
+        lines
+    }
+}
+impl Clone for RowsPool {
+    fn clone(&self) -> Self {
+        Self::default()
+    }
+}
+impl PartialEq for RowsPool {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+impl Eq for RowsPool {}
+impl std::fmt::Debug for RowsPool {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("RowsPool")
+    }
 }
 impl ExpansionRecord {
     /// Includes record Arc, owned capacities and all nested Arc backing storage.
@@ -275,16 +527,24 @@ impl ExpansionRecord {
                 )
             }))
             .saturating_add(vector(&self.locations, |(_, _, name)| name.capacity()))
-            .saturating_add(vector(&self.lines, |line| {
-                vector(&line.traces, |trace| {
-                    slice::<u8>(trace.name.len())
-                        .saturating_add(slice::<Arc<str>>(trace.replacement_chain.len()))
-                        .saturating_add(
-                            trace.replacement_chain.iter().fold(0usize, |bytes, name| {
-                                bytes.saturating_add(slice::<u8>(name.len()))
-                            }),
-                        )
-                })
+            .saturating_add(vector(&self.lines, |_| 0))
+            .saturating_add(slice::<Box<[Trace]>>(self.trace_tables.sets.len()))
+            .saturating_add(
+                self.trace_tables
+                    .sets
+                    .iter()
+                    .fold(0usize, |bytes, set| bytes.saturating_add(slice::<Trace>(set.len()))),
+            )
+            .saturating_add(slice::<Arc<str>>(self.trace_tables.names.len()))
+            .saturating_add(
+                self.trace_tables
+                    .names
+                    .iter()
+                    .fold(0usize, |bytes, name| bytes.saturating_add(slice::<u8>(name.len()))),
+            )
+            .saturating_add(slice::<Arc<[Arc<str>]>>(self.trace_tables.chains.len()))
+            .saturating_add(self.trace_tables.chains.iter().fold(0usize, |bytes, chain| {
+                bytes.saturating_add(slice::<Arc<str>>(chain.len()))
             }))
             .saturating_add(vector(&self.diagnostics, |error| error.message.capacity()))
             .saturating_add(vector(&self.fragments, |fragment| {
@@ -343,10 +603,10 @@ impl ExpansionRecord {
             return Err("expansion record key mismatch".into());
         }
         if record.lines.iter().any(|line| {
-            line.output.start > line.output.end
-                || line.output.end > record.text.len()
-                || !record.text.is_char_boundary(line.output.start)
-                || !record.text.is_char_boundary(line.output.end)
+            line.output().start > line.output().end
+                || line.output().end > record.text.len()
+                || !record.text.is_char_boundary(line.output().start)
+                || !record.text.is_char_boundary(line.output().end)
         }) {
             return Err("expansion record output span invalid".into());
         }
@@ -473,7 +733,7 @@ pub(super) fn expand(
         }) {
             return false;
         }
-        if record.lines.iter().any(|line| line.input >= input.len())
+        if record.lines.iter().any(|line| line.input() >= input.len())
             || record
                 .diagnostics
                 .iter()
@@ -506,6 +766,7 @@ pub(super) fn expand(
             )
         })
         .collect();
+    let mut interner = TraceInterner::default();
     let lines = output
         .lines
         .iter()
@@ -514,19 +775,25 @@ pub(super) fn expand(
                 .get(&(line, source_span.start, source_span.end))
                 .copied()?;
             Some(Line {
-                output: span,
-                input: ordinal,
-                traces: traces
-                    .iter()
-                    .map(|trace| Trace {
-                        name: Arc::clone(&trace.name),
-                        invocation_span: trace.invocation_span,
-                        replacement_chain: Arc::clone(&trace.replacement_chain),
-                    })
-                    .collect(),
+                output_start: u32::try_from(span.start).ok()?,
+                output_end: u32::try_from(span.end).ok()?,
+                input: u32::try_from(ordinal).ok()?,
+                trace_set: {
+                    let set = traces
+                        .iter()
+                        .map(|trace| {
+                            interner.trace(&trace.name, trace.invocation_span, &trace.replacement_chain)
+                        })
+                        .collect::<Option<Box<[Trace]>>>()?;
+                    interner.set(set)?
+                },
             })
         })
-        .collect::<Option<Vec<_>>>();
+        .collect::<Option<Vec<_>>>()
+        .map(|mut lines| {
+            lines.shrink_to_fit();
+            lines
+        });
     let Some(lines) = lines else {
         return output;
     };
@@ -566,7 +833,7 @@ pub(super) fn expand(
         .into_iter()
         .map(|((segment, name), definition)| MacroRead {
             segment,
-            name: Arc::from(name),
+            name: super::intern_wire::name(&name),
             definition,
         })
         .collect();
@@ -578,8 +845,10 @@ pub(super) fn expand(
         reads: Arc::new(reads),
         locations: Arc::new(locations),
         lines: Arc::new(lines),
+        trace_tables: interner.finish(),
         diagnostics: Arc::new(diagnostics),
         fragments: Vec::new(),
+        rows: Default::default(),
     });
     if let Some(admissions) = memo.input_admissions() {
         admissions.insert(plan, index, Arc::clone(&record));
@@ -587,6 +856,7 @@ pub(super) fn expand(
     memo.insert(Arc::clone(&record));
     let mut output = output;
     output.text = record.text.clone();
+    output.lines = record.rows.intern(output.lines);
     output.receipt = Some(record);
     output
 }
@@ -608,28 +878,32 @@ fn hydrate(
     let mut lines =
         super::expansion::output_lines::OutputLineBuilder::with_capacity(record.lines.len());
     for line in record.lines.iter() {
-        let (segment, current) = input[line.input];
-        let traces = line
-            .traces
+        let (segment, current) = input[line.input()];
+        let traces = record
+            .trace_tables
+            .set(line)
             .iter()
-            .map(|trace| MacroExpansion {
-                name: Arc::clone(&trace.name),
-                invocation_span: trace.invocation_span,
-                replacement_chain: Arc::clone(&trace.replacement_chain),
-                definition: region.segments[segment]
-                    .macros
-                    .definition_origin(&trace.name)
-                    .cloned(),
+            .map(|trace| {
+                let name = record.trace_tables.name(trace);
+                MacroExpansion {
+                    name: Arc::clone(name),
+                    invocation_span: TraceTables::span(trace),
+                    replacement_chain: Arc::clone(record.trace_tables.chain(trace)),
+                    definition: region.segments[segment]
+                        .macros
+                        .definition_origin(name)
+                        .cloned(),
+                }
             })
             .collect();
         lines.push((
-            line.output,
+            line.output(),
             current.source_line,
             current.source_span,
             trace_arena.freeze_expansions(traces),
         ));
     }
-    output.lines = lines.finish();
+    output.lines = record.rows.intern(Arc::new(lines.finish()));
     for error in record.diagnostics.iter() {
         output.diagnostics.push(Diagnostic {
             path: path.clone(),
@@ -767,6 +1041,8 @@ mod tests {
             assert!(output.text.same_view(&record.text));
         }
         assert_eq!(fresh.lines.len(), reused.lines.len());
+        // Equal rows of one record are one allocation, whichever session hydrated them.
+        assert!(Arc::ptr_eq(&fresh.lines, &reused.lines));
         for ((span, line, input, traces), (other_span, other_line, other_input, other_traces)) in
             fresh.lines.iter().zip(reused.lines.iter())
         {

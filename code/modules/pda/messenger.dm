@@ -40,10 +40,10 @@
 
 			if(!PM || !P.owner || PM.toff || P == pda() || PM.m_hidden)
 				continue
-			if(LAZYFIND(conversations, "\ref[P]"))
-				convopdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "1")))
+			if(LAZYFIND(conversations, ref_token(P)))
+				convopdas.Add(list(list("Name" = "[P]", "Reference" = ref_token(P), "Detonate" = "[P.detonate]", "inconvo" = "1")))
 			else
-				pdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "0")))
+				pdas.Add(list(list("Name" = "[P]", "Reference" = ref_token(P), "Detonate" = "[P.detonate]", "inconvo" = "0")))
 		for(var/fakeRef in fakepdas)
 			convopdas.Add(list(list("Name" = "[LAZYACCESS(fakepdas, fakeRef)]", "Reference" = "[fakeRef]", "Detonate" = "0", "inconvo" = "1")))
 
@@ -154,7 +154,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	unnotify()
 	var/obj/item/pda/P = href_target
 	create_message(user, P)
-	var/target_ref = "\ref[P]"
+	var/target_ref = ref_token(P)
 	if(target_ref in conversations)            // Need to make sure the message went through, if not welp.
 		active_conversation = target_ref
 	return TRUE
@@ -235,8 +235,8 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 		useMS.send_pda_message("[P.owner]","[pda().owner]","[t]")
 		pda().investigate_log(span_game(span_say("PDA Message - " + span_name("[U.key] - [pda().owner]") + " -> " + span_name("[P.owner]") + ": " + span_message("[t]"))), "pda")
 
-		receive_message(list("sent" = 1, "owner" = "[P.owner]", "job" = "[P.ownjob]", "message" = "[t]", "target" = "\ref[P]"), "\ref[P]")
-		PM.receive_message(list("sent" = 0, "owner" = "[pda().owner]", "job" = "[pda().ownjob]", "message" = "[t]", "target" = "\ref[pda()]"), "\ref[pda()]")
+		receive_message(list("sent" = 1, "owner" = "[P.owner]", "job" = "[P.ownjob]", "message" = "[t]", "target" = ref_token(P)), ref_token(P))
+		PM.receive_message(list("sent" = 0, "owner" = "[pda().owner]", "job" = "[pda().ownjob]", "message" = "[t]", "target" = ref_token(pda())), ref_token(pda()))
 
 		SStgui.update_user_uis(U, P) // Update the sending user's PDA UI so that they can see the new message
 		U.log_message("(PDA: [src.name] | [U.real_name]) sent \"[t]\" to [P.name]", LOG_PDA, color="#00ff00")
@@ -256,7 +256,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 		var/owner = data["owner"]
 		var/job = data["job"]
 		var/message = data["message"]
-		notify(span_bold("Message from [owner] ([job]), ") + "\"[message]\" (<a href='byond://?src=\ref[src];choice=Message;target=[ref]'>Reply</a>)")
+		notify(span_bold("Message from [owner] ([job]), ") + "\"[message]\" (<a href='byond://?src=[REF(src)];choice=Message;target=[ref]'>Reply</a>)")
 
 /datum/data/pda/app/messenger/multicast
 /datum/data/pda/app/messenger/multicast/receive_message(list/data, ref)
@@ -268,7 +268,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 
 	var/list/modified_message = data.Copy()
 	modified_message["owner"] = modified_message["owner"] + " \[Relayed]"
-	modified_message["target"] = "\ref[M]"
+	modified_message["target"] = ref_token(M)
 
 	var/list/targets = list()
 	for(var/obj/item/pda/pda in REGISTRY_MEMBERS(REGISTRY_PDAS))
@@ -278,7 +278,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 		for(var/obj/item/pda/target in targets)
 			var/datum/data/pda/app/messenger/P = target.find_program(/datum/data/pda/app/messenger)
 			if(P)
-				P.receive_message(modified_message, "\ref[M]")
+				P.receive_message(modified_message, ref_token(M))
 
 /*
 Generalized proc to handle GM fake prop messages, or future fake prop messages from mapping landmarks.

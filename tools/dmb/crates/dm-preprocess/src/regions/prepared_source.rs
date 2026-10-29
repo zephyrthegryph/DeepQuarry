@@ -64,11 +64,25 @@ impl PreparedSource {
                 .enumerate()
                 .filter_map(|(offset, byte)| (byte == b'\n').then_some(offset + 1)),
         );
-        let uncommented = match strip_source_comments(&original) {
-            std::borrow::Cow::Borrowed(_) => original.clone(),
-            std::borrow::Cow::Owned(text) => SourceText::from(text),
-        };
-        let logical = crate::logical_arena::plan(&uncommented);
+        // The comment-blanked copy is planning scratch: a line that comments do not touch is viewed from `original`, and
+        // only lines that changed are copied into `changed`, so no per-file copy outlives the plan.
+        let stripped = strip_source_comments(&original);
+        let uncommented: &str = &stripped;
+        let logical = crate::logical_arena::plan(uncommented);
+        // Pass one copies the lines comments touched; pass two builds views over the finished arenas.
+        let mut changed = String::new();
+        let mut changed_ranges: Vec<Option<std::ops::Range<usize>>> =
+            Vec::with_capacity(logical.lines.len());
+        for line in &logical.lines {
+            let touched = !line.transformed && uncommented[line.range.clone()] != original[line.range.clone()];
+            changed_ranges.push(touched.then(|| {
+                let start = changed.len();
+                changed.push_str(&uncommented[line.range.clone()]);
+                start..changed.len()
+            }));
+        }
+        let changed = (!changed.is_empty()).then(|| SourceText::from(changed));
+        let mut changed_ranges = changed_ranges.into_iter();
         let transformed =
             (!logical.transformed.is_empty()).then(|| SourceText::from(logical.transformed));
         let mut source_line = 0;
@@ -76,6 +90,7 @@ impl PreparedSource {
             prepared_lines::LineStorage::from_lines(logical.lines.into_iter().map(|logical| {
                 let first = source_line;
                 source_line += logical.source_lines;
+                let changed_range = changed_ranges.next().expect("one entry per logical line");
                 PreparedLine {
                     source_span: Span::new(
                         starts[first],
@@ -89,7 +104,13 @@ impl PreparedSource {
                             .expect("transformed logical line has arena bytes")
                             .view(logical.range)
                     } else {
-                        uncommented.view(logical.range)
+                        match changed_range {
+                            Some(range) => changed
+                                .as_ref()
+                                .expect("changed lines have arena bytes")
+                                .view(range),
+                            None => original.view(logical.range),
+                        }
                     },
                 }
             }));

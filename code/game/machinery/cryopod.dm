@@ -173,7 +173,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 	var/list/disallow_occupant_types
 
 	var/time_till_despawn = 60 // Down to 1 minute to reflect respawn times. //Now 6 seconds. Mind the deciseconds.
-	EXPIRY_DECLARE(time_entered) // Used to keep track of the safe period.
+	var/time_entered = 0 // Used to keep track of the safe period.
 	var/obj/item/radio/intercom/announce //
 
 	var/obj/machinery/computer/cryopod/control_computer
@@ -512,7 +512,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	// begin: Dont delete mobs-in-mobs
 	if(to_despawn.client && to_despawn.stat<2)
 		var/mob/observer/dead/newghost = to_despawn.ghostize()
-		EXPIRY_STAMP(newghost, timeofdeath, CLOCK_WORLD)
+		STAMP(newghost, timeofdeath, CLOCK_WORLD)
 	// end: Dont delete mobs-in-mobs
 
 	//This should guarantee that ghosts don't spawn.
@@ -598,7 +598,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	to_chat(user, span_notice("[on_enter_occupant_message]"))
 	to_chat(user, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
 
-	EXPIRY_STAMP(src, time_entered, CLOCK_WORLD)
+	STAMP(src, time_entered, CLOCK_WORLD)
 
 	add_fingerprint(user)
 
@@ -666,7 +666,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	to_chat(M, span_notice("[on_enter_occupant_message]"))
 	to_chat(M, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
 	set_occupant(M)
-	EXPIRY_STAMP(src, time_entered, CLOCK_WORLD)
+	STAMP(src, time_entered, CLOCK_WORLD)
 	if(isliving(M) && applies_stasis)
 		var/mob/living/L = M
 		L.set_stasis(/datum/body_effect/stasis/total, src)
@@ -676,7 +676,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 
 	// Book keeping!
 	var/turf/location = get_turf(src)
-	log_admin("[key_name_admin(M)] has entered a stasis pod. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)")
+	log_admin("[key_name_admin(M)] has entered a stasis pod. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)")
 	message_admins(span_notice("[key_name_admin(M)] has entered a stasis pod."))
 
 	//Despawning occurs when process() is called with an occupant without a client.

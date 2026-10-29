@@ -19,9 +19,7 @@
 	icon = 'icons/obj/doors/doorint.dmi'
 	icon_state = "door_closed"
 
-	explosion_resistance = 10
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC // Not quite as nice as /tg/'s custom masks. We should make those sometime
 
 	/// If 1, will not beep on a failed closing attempt. Resets when the door closes.
 	var/has_beeped = 0
@@ -130,6 +128,8 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
+	configure(obj_rules(explosion_resistance = 10))
 	setup(PROC_REF(secure_admin_wires))
 	configure(atom_shielding(rad_material = MAT_STEEL, rad_thickness_mm = RAD_AIRLOCK_THICKNESS_MM))
 	setup(PROC_REF(join_close_group))
@@ -752,10 +752,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// If we are not on a planet don't bother checking again. We physically cannot be outdoors. Except shuttles...
-	var/area/our_area = get_area(src)
-	var/turf/our_turf = get_turf(src)
-	if(!our_turf || (!istype(our_area, /area/shuttle) && (!SSplanets.planet_at_z(our_turf.z))))
+	if(!airlock_weather_exposed(src))
 		return
+	var/turf/our_turf = get_turf(src)
 	if(operating)
 		return
 	// Door must be facing the outdoors and the temp of the air must be low enough
@@ -774,6 +773,13 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	else if(planet_temp > T0C) // Above 0 to have any chance at unfreezing
 		if(frozen && prob(20))
 			set_frozen(FALSE)
+
+/// Whether weather can reach `door`: it is on a planet's level, or in a shuttle (which may land on one).
+/proc/airlock_weather_exposed(obj/machinery/door/airlock/door)
+	var/turf/our_turf = get_turf(door)
+	if(!our_turf)
+		return FALSE
+	return istype(get_area(door), /area/shuttle) || !!SSplanets.planet_at_z(our_turf.z)
 
 /// Most airlocks don't freeze, subtypes set this
 /obj/machinery/door/airlock/proc/can_freeze(datum/act/A)
@@ -872,15 +878,15 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		return FALSE
 	if(electrified)
 		if(!COOLDOWN_FINISHED(src, bump_zap_cooldown))
-			STAMP(user, last_bumped, CLOCK_WORLD)
+			stamp_now(user, last_bumped, CLOCK_WORLD)
 			return TRUE // the shock just fired: the bump does nothing
 		if(shock(user, 100))
-			STAMP(user, last_bumped, CLOCK_WORLD)
+			stamp_now(user, last_bumped, CLOCK_WORLD)
 			COOLDOWN_START(src, bump_zap_cooldown, 1 SECOND)
 			return TRUE
 		return FALSE
 	if(user.status_units(STAT_HALLUCINATING) > 50 && prob(10) && operating == 0)
-		STAMP(user, last_bumped, CLOCK_WORLD)
+		stamp_now(user, last_bumped, CLOCK_WORLD)
 		to_chat(user, span_danger("You feel a powerful shock course through your body!"))
 		user.playsound_local(get_turf(user), get_sfx(SFX_SPARKS), vol = 75)
 		user.injure(INJURY_PAIN, 10, null, src)
@@ -964,7 +970,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/can_remove_electronics(datum/act/A)
 	return !frozen && panel_open(src) && (operating < 0 || (!operating && weld_shut_welded(src) && !power_systems_on() && density && (!bolted || (broken_now()))))
 
-/obj/machinery/door/airlock/on_broken()
+/obj/machinery/door/airlock/on_broken(datum/act/A)
 	key_set(src, PANEL_OPEN, TRUE)
 	if(secured_wires)
 		drop_bolts(TRUE)

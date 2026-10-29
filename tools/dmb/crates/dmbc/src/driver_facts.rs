@@ -799,7 +799,6 @@ fn prepare_source_abi_mode_on_executor(
                 abi_artifacts::batch::remember(
                     store,
                     inputs,
-                    evaluator.resolver,
                     capture,
                     prepared.units_owner(),
                 );

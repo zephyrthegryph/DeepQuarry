@@ -17,7 +17,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 /datum/event/supply_demand/setup()
 	my_department = "[using_map.company_name] Supply Division" // Can't have company name in initial value (not const)
-	EXPIRY_SET(src, end_time, 1 HOUR + (severity * 30 MINUTES), CLOCK_WORLD)
+	COOLDOWN_START(src, end_time, 1 HOUR + (severity * 30 MINUTES))
 	registry_join(REGISTRY_DEMAND_EVENTS, src)
 	// Decide what items are requried!
 	// We base this on what departmets are most active, excluding departments we don't have
@@ -43,11 +43,11 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 	for(var/datum/supply_demand_order/order in required_items)
 		total_quantity += order.qty_orig
 	emit_contract_event(CONTRACT_EVENT_SUPPLY_SHORTAGE_DECLARED, list(
-		"shortage_id" = REF(src),
+		"shortage_id" = ref_token(src),
 		"quantity_target" = max(4, total_quantity),
 		"variety_target" = max(2, min(length(required_items), 6)),
 		"detail" = "A live supply-shortage request opened for [total_quantity] units across [length(required_items)] categories.",
-	), "supply-shortage-declared:[REF(src)]")
+	), "supply-shortage-declared:[ref_token(src)]")
 
 /datum/event/supply_demand/announce()
 	var/message = "[using_map.company_short] is comparing accounts and the bean counters found our division "
@@ -98,7 +98,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		post_comm_message("'[my_department] Mission Summary'", message)
 
 /**
- * Event handler for when the shuttle emits /datum/definition_event/world_supply_shuttle_depart
+ * Event handler for when the shuttle emits /datum/notice/world_supply_shuttle_depart
  */
 /datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -146,12 +146,12 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 			var/delivered_quantity = max(1, quantity_before - meta.qty_need)
 			emit_contract_event(CONTRACT_EVENT_SUPPLY_SHORTAGE_DELIVERY, list(
 				"department" = DEPARTMENT_CARGO,
-				"shortage_id" = REF(src),
+				"shortage_id" = ref_token(src),
 				"item_type" = meta.type,
 				"item_name" = meta.name,
 				"metrics" = list("quantity" = delivered_quantity),
 				"detail" = "Delivered [delivered_quantity] [meta.name] toward the live shortage response.",
-			), "supply-shortage-delivery:[REF(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
+			), "supply-shortage-delivery:[ref_token(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
 			if(meta.qty_need <= 0)
 				own_take_member(src, nameof(required_items), meta)
 			return 1

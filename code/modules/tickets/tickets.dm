@@ -87,9 +87,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/tickets)
 	if(!title)
 		return
 	var/list/dat = list("<html><head><title>[title]</title></head>")
-	dat += "<A href='byond://?_src_=holder;[HrefToken()];ahelp_tickets=[state]'>Refresh</A><br><br>"
+	dat += "<A href='byond://?_src_=holder;[HrefToken(user)];tickets=[state]'>Refresh</A><br><br>"
 	for(var/datum/ticket/T as anything in l2b)
-		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ahelp=\ref[T];[HrefToken()];ahelp_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
+		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ticket=[ref_token(T)];[HrefToken(user)];ticket_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
 	dat += "</html>"
 	// structured TGUI AdminReport (fallback path; primary tickets
 	// UI is the dedicated TGUI module).
@@ -236,8 +236,8 @@ CAPABILITIES(/obj/effect/statclick/ticket_list)
 	var/list/tags
 	var/state = AHELP_ACTIVE
 
-	EXPIRY_DECLARE(opened_at)
-	EXPIRY_DECLARE(closed_at)
+	var/opened_at = 0
+	var/closed_at = 0
 
 	var/tmp/client/initiator	//semi-misnomer, it's the person who ahelped/was bwoinked
 	/// The handling admin's ckey (a client is not a datum, so it is held by key); read with handler_client().
@@ -280,7 +280,7 @@ CAPABILITIES(/datum/ticket)
 		return
 
 	id = ++ticket_counter
-	EXPIRY_STAMP(src, opened_at, CLOCK_WORLD)
+	STAMP(src, opened_at, CLOCK_WORLD)
 
 	name = msg
 
@@ -349,7 +349,7 @@ CAPABILITIES(/datum/ticket)
 //private
 /datum/ticket/proc/FullMonty(ref_src, admin_commands = FALSE)
 	if(!ref_src)
-		ref_src = "\ref[src]"
+		ref_src = ref_token(src)
 	if(initiator() && initiator().mob)
 		if(admin_commands)
 			. = ADMIN_FULLMONTY_NONAME(initiator().mob)
@@ -361,38 +361,38 @@ CAPABILITIES(/datum/ticket)
 //private
 /datum/ticket/proc/ClosureLinks(ref_src)
 	if(!ref_src)
-		ref_src = "\ref[src]"
+		ref_src = ref_token(src)
 
 	if(level == 1)
-		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=reject'>REJT</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=icissue'>IC</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=close'>CLOSE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=resolve'>RSLVE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=handleissue'>HANDLE</A>)"
+		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=reject'>REJT</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=icissue'>IC</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=close'>CLOSE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=handleissue'>HANDLE</A>)"
 	else
-		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=resolve'>RSLVE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=escalate'>ESCALATE</A>)"
+		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>)"
 
 //private
 /datum/ticket/proc/LinkedReplyName(ref_src)
 	if(!ref_src)
-		ref_src = "\ref[src]"
-	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=reply'>[initiator_key_name]</A>"
+		ref_src = ref_token(src)
+	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=reply'>[initiator_key_name]</A>"
 
 //private
 /datum/ticket/proc/TicketHref(msg, ref_src, action = "ticket")
 	if(!ref_src)
-		ref_src = "\ref[src]"
-	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HrefToken(TRUE)];ticket_action=[action]'>[msg]</A>"
+		ref_src = ref_token(src)
+	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=[action]'>[msg]</A>"
 
 /*
-	var/chat_msg = span_notice("(<A href='byond://?_src_=holder;ahelp=[ref_src];[HrefToken()];ahelp_action=escalate'>ESCALATE</A>) Ticket [TicketHref("#[id]", ref_src)]" + span_bold(": [LinkedReplyName(ref_src)]:") + " [msg]")
+	var/chat_msg = span_notice("(<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>) Ticket [TicketHref("#[id]", ref_src)]" + span_bold(": [LinkedReplyName(ref_src)]:") + " [msg]")
 	 */
 
 //message from the initiator without a target, all admins will see this
 //won't bug irc
 /datum/ticket/proc/MessageNoRecipient(msg)
-	var/ref_src = "\ref[src]"
+	var/ref_src = ref_token(src)
 
 	AddInteraction(span_red("[LinkedReplyName(ref_src)]: [msg]"))
 	//send this msg to all admins
@@ -451,7 +451,7 @@ CAPABILITIES(/datum/ticket)
 /datum/ticket/proc/RemoveActive()
 	if(state != AHELP_ACTIVE)
 		return
-	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
+	STAMP(src, closed_at, CLOCK_WORLD)
 	rel_clear(src, nameof(statclick))
 	own_take_member(GLOB.tickets, nameof(/datum/tickets::active_tickets), src) // Close()/Resolve() re-adopt it via ListInsert()
 	if(initiator() && initiator().current_ticket() == src)
@@ -726,7 +726,7 @@ CAPABILITIES(/obj/effect/statclick/ticket)
 			.["noflags"] += X
 		else if(X.is_afk())
 			.["afk"] += X
-		else if(X.holder.fakekey)
+		else if(admin_fakekey(X))
 			.["stealth"] += X
 		else
 			.["present"] += X
@@ -791,7 +791,7 @@ CAPABILITIES(/obj/effect/statclick/ticket)
 							if(found.mind && found.mind.special_role)
 								is_antag = 1
 							founds += "Name: [found.name]([found.real_name]) Ckey: [found.ckey] [is_antag ? "(Antag)" : null] "
-							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefToken()];adminmoreinfo=\ref[found]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefToken()];adminplayerobservefollow=\ref[found]'>F</A> "
+							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(ref_token(found))]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HREF_TOKEN_PLACEHOLDER];adminplayerobservefollow=[url_encode(ref_token(found))]'>F</A> "
 							msg += "[original_word]" + span_small((is_antag ? span_red(textentry) : span_black(textentry)))
 							continue
 		msg += "[original_word] "

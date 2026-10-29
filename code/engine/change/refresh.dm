@@ -67,9 +67,24 @@
 	if(!E || QDELING(E))
 		return
 	OP_PURE_GUARD("[E.type][var_name ? ".[var_name]" : ""] was written")
+	if(GLOB.census_on)
+		census_state_note(E, var_name, caller)
 	if(GLOB.state_batch_depth)
 		state_batch_queue(E, channel, var_name)
 		return
+	// An atom that is not initialized yet (a map load holds every init until the Atoms system runs): its init queues its first full
+	// refresh and attaches its derived values (caps_init()), and no observer, reaction or relation is enrolled on it before then. Its
+	// writes publish nothing but the stat layer's recompute and a draw hop to an initialized holder: map load made 884 k of these calls
+	// (server_bench_20261027.md, boot).
+	if(isatom(E))
+		var/atom/pending = E
+		if(!(pending.flags & ATOM_INITIALIZED))
+			if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
+				stat_inputs_changed(E, var_name)
+			if(var_name && draw_hop_reads_var(var_name))
+				draw_hop_published(E, var_name)
+			GLOB.state_changed_preinit_skipped++
+			return
 	op_changed(E) // a cached menu or reach read of the op engine is stale now
 	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
 	if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
@@ -137,15 +152,40 @@
 /// periodic work and no open window. The same rule entity_raise_change() applies, so a setter on such an atom costs no
 /// queue entry and no refresh.
 /proc/refresh_wanted(datum/E)
-	if(!isatom(E) || ismob(E) || E.refresh_queued || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+	if(E.refresh_queued || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+		return TRUE
+	if(!isatom(E))
+		return datum_refresh_wanted(E)
+	if(ismob(E))
 		return TRUE
 	return GLOB.type_derives_cache[E.type] != 0
 
 /// refresh_wanted() for an entity already in the queue (its refresh_queued is set, so it is not a reason to run).
 /proc/refresh_wanted_queued(datum/E)
-	if(!isatom(E) || ismob(E) || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+	if(E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+		return TRUE
+	if(!isatom(E))
+		return datum_refresh_wanted(E)
+	if(ismob(E))
 		return TRUE
 	return GLOB.type_derives_cache[E.type] != 0
+
+/// A refresh of a datum that is not an atom has no look and no verbs: it re-derives its derived() values (TYPE_DERIVES_DEPS) and runs the side
+/// effects (push_to_rust(), on_state_changed()) a type overrides (TYPE_DERIVES_SIDE, found by the first refresh's probe), and its windows and
+/// periodic gate, which refresh_wanted() checks per instance. A type with none of them (a kernel histogram counting every tick, a system's
+/// bookkeeping) costs no queue entry and no refresh for its tracked writes. Unknown types (TYPE_DERIVES_PENDING) refresh once and are probed.
+/proc/datum_refresh_wanted(datum/D)
+	return !!(datum_derive_flags(D) & (TYPE_DERIVES_PENDING | TYPE_DERIVES_DEPS | TYPE_DERIVES_SIDE))
+
+/// The TYPE_DERIVES_* known for a datum's (not an atom's) type, in the same per-type memo as the atoms' (type_derive_flags()).
+/proc/datum_derive_flags(datum/D)
+	var/known = GLOB.type_derives_cache[D.type]
+	if(!isnull(known))
+		return known
+	. = TYPE_DERIVES_PENDING
+	if(derived_table_of(D))
+		. |= TYPE_DERIVES_DEPS
+	GLOB.type_derives_cache[D.type] = .
 
 /// E itself has nothing to refresh, but an owner whose capability draws it still redraws (refresh_mark()'s owner rule).
 /proc/refresh_mark_owner(datum/E, mask, channel)
@@ -160,16 +200,26 @@
 /// no OM channel is raised. Nothing a dispatch can change is unannounced: what it writes through setters raises
 /// its own channels. A blanket CHANGE_EXPLICIT here woke every pipeline that wakes on it (each life frame of a mob
 /// and each machine frame) once per timer, for nothing it reads.
-/proc/refresh_dispatched(datum/E)
+///
+/// `spare_draw` (a timer's fire): the look and verbs of an atom (not a mob) are not re-run. Every var a draw or a verb output reads is
+/// TRACKED (declared, or added by read-driven tracking, auto_tracked.dm), and a timer that wrote one already marked exactly that through
+/// its setter; a plain var the call wrote is read by no draw. A redraw after every fire repainted turrets, power monitors and sensors
+/// on each interval at idle (doc/rewrite/server_bench_20261027.md). The other outputs (values, periodic gate, windows, the Rust push,
+/// on_state_changed) still re-run.
+/proc/refresh_dispatched(datum/E, spare_draw = FALSE)
 	if(!E || QDELING(E) || E == GLOB.refresh_applying)
 		return
 	refresh_trace_note(E, CHANGE_EXPLICIT)
 	if(E.rel_watchers && !E.refresh_queued)
 		rel_notify_watchers(E)
+	var/mask = DEP_ALL
+	if(spare_draw && isatom(E) && !ismob(E))
+		mask = DEP_ALL & ~DEP_DRAW
+		GLOB.refresh_dispatched_draws_spared++
 	if(!refresh_wanted(E))
-		refresh_mark_owner(E, DEP_ALL, CHANGE_EXPLICIT)
+		refresh_mark_owner(E, mask, CHANGE_EXPLICIT)
 		return
-	refresh_mark(E, DEP_ALL, CHANGE_EXPLICIT)
+	refresh_mark(E, mask, CHANGE_EXPLICIT)
 
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
@@ -196,6 +246,10 @@
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// Timer fires whose owner's look was not re-run (refresh_dispatched(spare_draw)).
+GLOBAL_VAR_INIT(refresh_dispatched_draws_spared, 0)
+/// state_changed() calls on atoms still waiting for their init during a map load, answered without publishing (the boot bench reads it).
+GLOBAL_VAR_INIT(state_changed_preinit_skipped, 0)
 /// The number of the last refresh_drain() pass (the stamp of datum/refresh_pass).
 GLOBAL_VAR_INIT(refresh_drain_pass, 0)
 /// A type whose marks are counted by where they came from (the draw-queue test's re-queue census, or an admin's question); null: off.
@@ -232,14 +286,14 @@ GLOBAL_LIST_EMPTY(refresh_self_marks)
 
 // ---- "why did this redraw?" (M10): the last marks of each entity, with where they came from ----
 
-/// Ref text of entities whose marks are being traced (the admin verb turns one on); refs, so a
+/// Handles (ref_token()) of entities whose marks are being traced (the admin verb turns one on), so a
 /// forgotten trace keeps nothing alive. Empty: tracing costs one check.
 GLOBAL_LIST_EMPTY(refresh_traced)
 
 /proc/refresh_trace_note(datum/E, channel)
 	if(!length(GLOB.refresh_traced))
 		return
-	var/ref_text = REF(E)
+	var/ref_text = ref_token(E)
 	if(!(ref_text in GLOB.refresh_traced))
 		return
 	var/list/lines = GLOB.refresh_traced[ref_text]
@@ -470,6 +524,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			GLOB.derive_probing = FALSE
 			probe_found = GLOB.derive_probe_found
 		refresh_sweep_track(A)
+	else if(!isatom(D))
+		// A datum's first refresh probes whether its type overrides the side effects (datum_refresh_wanted()).
+		probing = datum_derive_flags(D) & TYPE_DERIVES_PENDING
 	if(mask & DEP_UI)
 		refresh_ui(D)
 	// The side effects. While the type is probed, the base procs report whether the engine reached them directly: a type
@@ -502,6 +559,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		side = TRUE
 	if(probing)
 		GLOB.derive_side_probing = FALSE
+		GLOB.derive_side_base_reached = FALSE // the probe's scratch flag: read above, never left set between refreshes
 		// Type-pure: the type overrides draw()/hidden_verbs()/granted_verbs()/the side effects or it doesn't, whatever
 		// this instance's state drew or hid (review: never record a negative from one result).
 		type_derive_record(D, probe_found & TYPE_DERIVES_LOOK, probe_found & TYPE_DERIVES_VERBS, side)

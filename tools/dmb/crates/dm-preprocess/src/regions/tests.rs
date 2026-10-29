@@ -660,3 +660,22 @@ fn open_macro_call_never_closed_still_reports_per_line_in_regions() {
     assert_eq!(expanded.diagnostics.len(), 1, "{:?}", expanded.diagnostics);
     assert!(expanded.diagnostics[0].message.contains("missing )"));
 }
+
+#[test]
+fn definition_sites_are_reported_relative_to_the_project_directory() {
+    let provider = Memory(BTreeMap::from([
+        (PathBuf::from("root/project.dme"), "#include \"code/defs.dm\"\nVALUE\n".to_string()),
+        (PathBuf::from("root/code/defs.dm"), "#define VALUE 1\n".to_string()),
+    ]));
+    let plan = plan_regions(Path::new("root/project.dme"), &provider, &BTreeMap::new());
+    let segment = plan
+        .regions
+        .iter()
+        .flat_map(|region| region.segments.iter())
+        .last()
+        .expect("the manifest's text after the include");
+    let origin = segment.macros.definition_origin("VALUE").expect("VALUE is defined");
+    // The same file in another worktree reports the same site, so traces and region rows are equal across roots.
+    assert_eq!(origin.path.as_path(), Path::new("code/defs.dm"));
+    assert_eq!(plan.project_dir.join(origin.path.as_ref()), *plan.occurrences[1].path);
+}

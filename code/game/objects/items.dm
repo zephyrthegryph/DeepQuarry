@@ -1,20 +1,10 @@
-
-
-// Rock-climbing speed of the item (default 1; lower is better): sparse slot climbing_delay.
-sparse(/obj/item, climbing_delay, type = num)
-
 /obj/item
 	name = "item"
 	icon = 'icons/obj/weapons.dmi' //'icons/obj/items.dmi' //It was accidentally set to weapons.dmi 11 months ago...leaving it as is until further analysis
 	w_class = ITEMSIZE_NORMAL
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
-	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
-	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
-	var/burning = null
-	var/storage_cost = null
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
@@ -27,12 +17,8 @@ sparse(/obj/item, climbing_delay, type = num)
 	//It should be used purely for appearance. For gameplay effects caused by items covering body parts, use body_parts_covered.
 
 
-	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
-	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
-
-	var/embed_chance = -1	//0 won't embed, and 100 will always embed
 
 	var/icon_override = null  //Used to override hardcoded clothing dmis in human clothing proc.
 
@@ -66,15 +52,11 @@ sparse(/obj/item, climbing_delay, type = num)
 
 
 
-	// climbing_delay (default 1; if rock_climbing, lower better) is the sparse slot declared above this block.
-	var/digestable = TRUE
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
 
 	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
 	var/list/tool_qualities
-	/// Used to reference the object's host organ.
-	var/tmp/obj/item/organ/internal/augment/my_augment
 	var/datum/identification/identity = null // owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
@@ -95,11 +77,11 @@ sparse(/obj/item, climbing_delay, type = num)
 
 /// An item left on the default embed chance (-1) takes it from its weight and edge.
 /obj/item/proc/roll_embed_chance()
-	if(embed_chance < 0)
+	if(combat_of(src).embed_chance < 0)
 		if(combat_of(src).sharp)
-			embed_chance = max(5, round(combat_of(src).force/w_class))
+			set_embed_chance(max(5, round(combat_of(src).force/w_class)))
 		else
-			embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
+			set_embed_chance(max(5, round(combat_of(src).force/(w_class*3))))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component
@@ -590,14 +572,14 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 
 /obj/item/proc/showoff(mob/user)
 	for (var/mob/M in view(user))
-		M.show_message(span_filter_notice("[user] holds up [src]. <a HREF='byond://?src=\ref[M];lookitem=\ref[src]'>Take a closer look.</a>"),1)
+		M.show_message(span_filter_notice("[user] holds up [src]. <a HREF='byond://?src=[REF(M)];lookitem=[REF(src)]'>Take a closer look.</a>"),1)
 
 /mob/living/carbon/verb/showoff()
 	set name = "Show Held Item"
 	set category = VERB_CAT_OBJECT
 
 	var/obj/item/I = get_active_hand()
-	if(I && !I.abstract)
+	if(I && !item_rules_of(I).abstract)
 		I.showoff(src)
 
 /// The shared remote-view gate for optical device interactions.
@@ -623,17 +605,17 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		devicename = src.name
 
 	var/can_zoom = TRUE
-	if((M.stat && !zoom) || !(ishuman(M)))
+	if((M.stat && !sparse_get_or(src, zoom, FALSE)) || !(ishuman(M)))
 		to_chat(M, span_filter_notice("You are unable to focus through the [devicename]."))
 		can_zoom = FALSE
-	else if(!zoom && (GLOB.global_hud.darkMask[1] in M.client.screen))
+	else if(!sparse_get_or(src, zoom, FALSE) && (GLOB.global_hud.darkMask[1] in M.client.screen))
 		to_chat(M, span_filter_notice("Your visor gets in the way of looking through the [devicename]."))
 		can_zoom = FALSE
-	else if(!zoom && M.get_active_hand() != src)
+	else if(!sparse_get_or(src, zoom, FALSE) && M.get_active_hand() != src)
 		to_chat(M, span_filter_notice("You are too distracted to look through the [devicename], perhaps if it was in your active hand this might work better."))
 		can_zoom = FALSE
 
-	if(!zoom && can_zoom)
+	if(!sparse_get_or(src, zoom, FALSE) && can_zoom)
 		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
 	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
@@ -840,7 +822,7 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 	return standing
 
 /obj/item/proc/apply_overlays(image/standing)
-	if(!blocks_emissive)
+	if(!motion_of(src).blocks_emissive)
 		return standing
 
 	var/mutable_appearance/blocker_overlay = mutable_appearance(standing.icon, standing.icon_state, plane = PLANE_EMISSIVE, appearance_flags = KEEP_APART)
@@ -938,8 +920,8 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 
 /obj/item/proc/toggle_digestable_effect(datum/act/op/A)
 	var/mob/user = A.actor
-	digestable = !digestable
-	if(!digestable)
+	set_digestable(!item_rules_of(src).digestable)
+	if(!item_rules_of(src).digestable)
 		to_chat(user, span_notice("[src] is now protected from digestion."))
 	return OP_OK
 
@@ -1057,7 +1039,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
-	return I?.my_augment
+	return link_get(I, LK_AUGMENT_HOST)
 
 // An item's master is the thing holding it (an assembly's valve, a chair's kit): a sparse link (LK_ITEM_MASTER).
 /proc/item_master(obj/item/I) as /obj/item

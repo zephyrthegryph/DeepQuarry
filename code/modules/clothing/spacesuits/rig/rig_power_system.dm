@@ -149,17 +149,17 @@ CAPABILITIES(/datum/rig_power_system)
 			offline = 1
 	else if(offline)
 		offline = 0
-		if(istype(W) && !W.wearing_rig)
-			rel_set(W, nameof(W.wearing_rig), holder())
+		if(istype(W) && !W.wearing_rig())
+			link_make(W, LK_WEARING_RIG, holder())
 		if(!istype(holder(), /obj/item/rig/protean))
-			holder().slowdown = initial(holder().slowdown)
+			holder().set_worn_factor(STAT_ITEM_ENCUMBRANCE, holder().default_worn_factor(STAT_ITEM_ENCUMBRANCE))
 
 	if(offline)
 		if(offline == 1)
 			for(var/obj/item/rig_module/module in holder().installed_modules)
 				module.deactivate()
 			offline = 2
-			holder().slowdown = offline_slowdown
+			holder().set_worn_factor(STAT_ITEM_ENCUMBRANCE, offline_slowdown)
 		return TRUE
 
 	return FALSE

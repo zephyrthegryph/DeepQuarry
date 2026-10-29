@@ -56,7 +56,7 @@
 	TEST_ASSERT(R.canremove, "a dormant cluster is unsealed")
 	for(var/obj/item/rig_module/module in R.installed_modules)
 		TEST_ASSERT(!module.active, "a dormant cluster runs no modules ([module])")
-	TEST_ASSERT_EQUAL(R.slowdown, PROTEAN_RIG_INERT_SLOWDOWN, "a dormant cluster is a heavy dead weight")
+	TEST_ASSERT_EQUAL(R.worn_factor(STAT_ITEM_ENCUMBRANCE), PROTEAN_RIG_INERT_SLOWDOWN, "a dormant cluster is a heavy dead weight")
 
 	// Worn by someone, it soaks nothing for them.
 	var/mob/living/carbon/human/wearer = allocate(/mob/living/carbon/human, test_floor())

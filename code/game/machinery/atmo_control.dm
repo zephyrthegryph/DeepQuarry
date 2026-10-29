@@ -101,7 +101,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
 	signal.data["tag"] = id_tag
-	signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+	signal.data["timestamp"] = TIME_NOW(CLOCK_WORLD)
 	var/list/readings = sensor_readings(return_air())
 	for(var/key in readings)
 		signal.data[key] = readings[key]

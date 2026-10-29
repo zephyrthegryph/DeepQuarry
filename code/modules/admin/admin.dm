@@ -10,7 +10,7 @@ GLOBAL_VAR_INIT(floorIsLava, 0)
 		if(check_rights_for(C, (R_ADMIN|R_MOD|R_SERVER)))
 			to_chat(C,
 					type = MESSAGE_TYPE_ADMINLOG,
-					html = msg,
+					html = msg, // its links carry HREF_TOKEN_PLACEHOLDER, which the chat system fills with each admin's own token
 					confidential = TRUE)
 
 /proc/msg_admin_attack(text) //Toggleable Attack Messages
@@ -47,7 +47,7 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(show_player_panel, R_HOLDER, "Show Player Panel", m
 	if(!player)
 		to_chat(user, "You seem to be selecting a mob that doesn't exist anymore.")
 		return
-	user.holder?.dq_open_edit_player_panel(player)
+	admin_holder_of(user)?.dq_open_edit_player_panel(player)
 	feedback_add_details("admin_verb","SPP")
 
 
@@ -57,7 +57,7 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(show_player_panel, R_HOLDER, "Show Player Panel", m
 /datum/player_info/var/timestamp // Because this is bloody annoying
 
 ADMIN_VERB(PlayerNotes, R_ADMIN|R_MOD|R_EVENT|R_DEBUG, "Player Notes", "Access the player notes.", ADMIN_CATEGORY_INVESTIGATE)
-	user.holder.PlayerNotesPage(user.mob, 1)
+	admin_holder_of(user).PlayerNotesPage(user.mob, 1)
 
 /datum/admins/proc/PlayerNotesPage(mob/user, page)
 	var/savefile/S=new("data/player_notes.sav")
@@ -88,7 +88,7 @@ ADMIN_VERB(show_player_info, R_ADMIN|R_MOD|R_EVENT|R_DEBUG, "Show Player Info", 
 // in /datum/admins.Topic still own state transitions, and the panel
 // refreshes after each click via SStgui.update_uis().
 ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "Allows you to view, add and edit news feeds.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	user.holder?.dq_open_newscaster_panel()
+	admin_holder_of(user)?.dq_open_newscaster_panel()
 
 
 /datum/admins/proc/Jobbans() // rights (R_BAN) are declared by the jobbans ADMIN_VERB
@@ -97,7 +97,7 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 		var/r = t
 		if( findtext(r,"##") )
 			r = copytext( r, 1, findtext(r,"##") )//removes the description
-		dat += text("<tr><td>[t] (<a href='byond://?src=[REF(src)];[HrefToken()];removejobban=[r]'>unban</a>)</td></tr>")
+		dat += text("<tr><td>[t] (<a href='byond://?src=[REF(src)];[HrefToken(owner())];removejobban=[r]'>unban</a>)</td></tr>")
 	dat += "</table>"
 
 	// structured TGUI AdminReport; byond:// links forwarded to host.
@@ -166,12 +166,12 @@ ADMIN_VERB(restart, R_SERVER, "Reboot World", "Restarts the world immediately.",
 	if(GLOB.blackbox)
 		GLOB.blackbox.save_all_data_to_sql()
 
-	var/init_by = "Initiated by [user.holder.fakekey ? "Admin" : user.key]."
+	var/init_by = "Initiated by [admin_fakekey(user) ? "Admin" : user.key]."
 	switch(result)
 		if(REGULAR_RESTART)
-			SSticker.Reboot(init_by, "admin reboot - by [user.key] [user.holder.fakekey ? "(stealth)" : ""]", 10, user)
+			SSticker.Reboot(init_by, "admin reboot - by [user.key] [admin_fakekey(user) ? "(stealth)" : ""]", 10, user)
 		if(REGULAR_RESTART_DELAYED)
-			SSticker.Reboot(init_by, "admin reboot - by [user.key] [user.holder.fakekey ? "(stealth)" : ""]", delay * 10, user)
+			SSticker.Reboot(init_by, "admin reboot - by [user.key] [admin_fakekey(user) ? "(stealth)" : ""]", delay * 10, user)
 		if(HARD_RESTART)
 			to_chat(world, "World reboot - [init_by]")
 			world.Reboot()
@@ -214,7 +214,7 @@ ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desire
 	if(!check_rights_for(user, R_SERVER))
 		message = sanitize(message, 500, extra = 0)
 	message = replacetext(message, "\n", "<br>") // required since we're putting it in a <p> tag
-	send_ooc_announcement(message, "From [user.holder.fakekey ? "Administrator" : user.key]")
+	send_ooc_announcement(message, "From [admin_fakekey(user) ? "Administrator" : user.key]")
 	log_admin("Announce: [key_name(user)] : [message]")
 	feedback_add_details("admin_verb","A") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -693,7 +693,7 @@ ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATE
 			chosen_path = matches[1]
 
 	if(!chosen_path)
-		var/datum/spawn_menu/menu = user.holder.spawn_menu
+		var/datum/spawn_menu/menu = admin_holder_of(user).spawn_menu
 		if(!menu)
 			menu = rel_set(user.admin_datum(), nameof(/datum/admins::spawn_menu), new /datum/spawn_menu())
 		menu.init_value = object
@@ -783,19 +783,19 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 			return span_bold("[key_name(C, link, name, highlight_special)]")
 
 		if(1)	//Private Messages
-			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=[REF(M)]'>?</a>)")
+			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[REF(M)]'>?</a>)")
 
 		if(2)	//Admins
 			var/ref_mob = "[REF(M)]"
-			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=[ref_mob]'>?</a>) (<a href='byond://?_src_=holder;[HrefToken()];adminplayeropts=[ref_mob]'>PP</a>) (<a href='byond://?_src_=vars;[HrefToken()];Vars=[ref_mob]'>VV</a>) (<a href='byond://?_src_=holder;[HrefToken()];subtlemessage=[ref_mob]'>SM</a>) ([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HrefToken()];check_antagonist=1'>CA</a>) (<a href='byond://?_src_=holder;[HrefToken()];take_question=[REF(M)]'>TAKE</a>)")
+			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[ref_mob]'>?</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayeropts=[ref_mob]'>PP</a>) (<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[ref_mob]'>VV</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];subtlemessage=[ref_mob]'>SM</a>) ([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];check_antagonist=1'>CA</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];take_question=[REF(M)]'>TAKE</a>)")
 
 		if(3)	//Devs
 			var/ref_mob = "[REF(M)]"
-			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=vars;[HrefToken()];Vars=[ref_mob]'>VV</a>)([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HrefToken()];take_question=[REF(M)]'>TAKE</a>)")
+			return span_bold("[key_name(C, link, name, highlight_special)](<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[ref_mob]'>VV</a>)([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];take_question=[REF(M)]'>TAKE</a>)")
 
 		if(4)	//Event Managers
 			var/ref_mob = "[REF(M)]"
-			return span_bold("[key_name(C, link, name, highlight_special)] (<a href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=[REF(M)]'>?</a>) (<a href='byond://?_src_=holder;[HrefToken()];adminplayeropts=[ref_mob]'>PP</a>) (<a href='byond://?_src_=vars;[HrefToken()];Vars=[ref_mob]'>VV</a>) (<a href='byond://?_src_=holder;[HrefToken()];subtlemessage=[ref_mob]'>SM</a>) ([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HrefToken()];take_question=[REF(M)]'>TAKE</a>)")
+			return span_bold("[key_name(C, link, name, highlight_special)] (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[REF(M)]'>?</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayeropts=[ref_mob]'>PP</a>) (<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[ref_mob]'>VV</a>) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];subtlemessage=[ref_mob]'>SM</a>) ([admin_jump_link(M)]) (<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];take_question=[REF(M)]'>TAKE</a>)")
 
 
 /proc/ishost(whom)
@@ -864,8 +864,8 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	if(frommob.mind && frommob.mind.current) //Preserve teleop for original body when adminghosting.
 		var/mob/body = frommob.mind.current
 		if(body)
-			if(body.teleop)
-				body.teleop = tomob
+			if(body.teleop())
+				sparse_ref_set(body, teleop, tomob)
 	message_admins(span_adminnotice("[key_name_admin(admin)] has put [frommob.ckey] in control of [tomob.name]."))
 	log_admin("[key_name(admin)] stuffed [frommob.ckey] into [tomob.name].")
 	feedback_add_details("admin_verb","CGD")
@@ -1129,12 +1129,12 @@ CAPABILITIES(/datum/prompt/choice/fax_stamp)
 			log_admin("[key_name(src.owner())] replied to a fax message from [key_name(P.sender())]")
 			for(var/client/C in GLOB.admins)
 				if(check_rights_for(C, (R_ADMIN | R_MOD | R_EVENT)))
-					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner())] replied to a fax message from [key_name_admin(P.sender())] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
+					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner())] replied to a fax message from [key_name_admin(P.sender())] (<a href='byond://?_src_=holder;[HrefToken(C)];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
 		else
 			log_admin("[key_name(src.owner())] has sent a fax message to [destination.department]")
 			for(var/client/C in GLOB.admins)
 				if(check_rights_for(C, (R_ADMIN | R_MOD | R_EVENT)))
-					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner())] has sent a fax message to [destination.department] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
+					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner())] has sent a fax message to [destination.department] (<a href='byond://?_src_=holder;[HrefToken(C)];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
 
 		var/plaintext_title = P.sender() ? "replied to [key_name(P.sender())]'s fax" : "sent a fax message to [destination.department]"
 		var/fax_text = paper_html_to_plaintext(P.info)

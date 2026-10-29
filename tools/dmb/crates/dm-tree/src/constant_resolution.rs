@@ -85,7 +85,6 @@ pub struct ScalarSnapshot {
 }
 #[derive(Clone, Debug)]
 struct ScalarDomain {
-    certificates: Arc<BTreeMap<ScalarQuery, u64>>,
     source: Arc<crate::SemanticTree>,
     outcomes: Arc<BTreeMap<ScalarQuery, ScalarOutcome>>,
     identity: u128,
@@ -106,10 +105,6 @@ mod retained;
 pub use retained::ScalarFacts;
 
 impl ScalarSnapshot {
-    /// Borrow the issued process-local certificate roster for owner accounting.
-    pub fn certificates(&self) -> &Arc<BTreeMap<ScalarQuery, u64>> {
-        &self.issued_domain.certificates
-    }
     pub fn outcome(&self, query: ScalarQuery) -> Option<&ScalarOutcome> {
         self.outcomes.get(&query)
     }
@@ -300,12 +295,6 @@ fn resolve_with_artifacts(
     let predefined_reads = Arc::new(memo.predefined);
     ScalarSnapshot {
         issued_domain: ScalarDomain {
-            certificates: Arc::new(
-                memo.certificates
-                    .into_iter()
-                    .filter(|(query, _)| !memo.cyclic.contains(query))
-                    .collect(),
-            ),
             source: Arc::clone(&snapshot.tree),
             outcomes: Arc::clone(&outcomes),
             identity,
@@ -336,66 +325,6 @@ impl ScalarSnapshot {
             && issued.identity == self.identity
             && issued.backend == self.backend_identity
     }
-    /// A non-constant variable's scalar answer is the source tree's own member
-    /// answer (`resolve` delegates it unchanged). Its owner-variable demand token
-    /// certifies the declaring chain, selection and metadata; the member content
-    /// is the only other input of that answer's fingerprint, so it is hashed in.
-    /// The top bit keeps these disjoint from issued constant certificates.
-    pub(crate) fn source_variable_certificate(
-        tree: &crate::SemanticTree,
-        owner: SymbolId,
-        name: SymbolId,
-        member: &crate::MemberNode,
-    ) -> Option<u64> {
-        let token = Resolver::domain_version(
-            tree,
-            dm_ir::ReadDomain::OwnerVariable(ResolveQuery::HasMemberVar { owner, name }),
-        )?;
-        let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dm-scalar-source-variable-v1\0");
-        hash.update(&token.to_le_bytes());
-        hash.update(&member.content.to_le_bytes());
-        hash.update(&crate::metadata_fingerprint(&member.metadata).to_le_bytes());
-        Some(hash.digest() | (1 << 63))
-    }
-    fn scalar_certificate(&self, query: ResolveQuery) -> Option<u64> {
-        if !self.original_domain() {
-            return None;
-        }
-        let (owner, name) = match query {
-            ResolveQuery::Constant { owner, name } | ResolveQuery::Var { owner, name } => {
-                (owner, name)
-            }
-            ResolveQuery::GlobalVar(name) => (SymbolId::of("/"), name),
-            _ => return None,
-        };
-        let tree = &self.source.tree;
-        let member =
-            tree.member(tree.resolve(tree.lookup_type(owner)?, name, MemberKind::Var)?)?;
-        if member.metadata.inherited_opaque.is_some() {
-            return None;
-        }
-        if member.metadata.flags & 2 == 0 {
-            return Self::source_variable_certificate(tree, owner, name, member);
-        }
-        let actual_owner = tree.type_node(member.owner)?.path;
-        let requested = ScalarQuery::Const { owner, name };
-        let actual = ScalarQuery::Const {
-            owner: actual_owner,
-            name,
-        };
-        // Match the same first-present selection used by resolve, including an
-        // unsupported requested outcome that must not fall through to an ancestor.
-        let selected = if self.outcomes.contains_key(&requested) {
-            requested
-        } else {
-            actual
-        };
-        if !matches!(self.outcomes.get(&selected), Some(ScalarOutcome::Value(_))) {
-            return None;
-        }
-        self.issued_domain.certificates.get(&selected).copied()
-    }
 }
 
 impl Resolver for ScalarSnapshot {
@@ -403,31 +332,10 @@ impl Resolver for ScalarSnapshot {
         false
     }
 
-    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
-        if let dm_ir::ReadDomain::OwnerScalar(query) = domain {
-            return self.scalar_certificate(query).map(u128::from);
-        }
-        if matches!(
-            domain,
-            dm_ir::ReadDomain::OwnerHierarchy(_)
-                | dm_ir::ReadDomain::OwnerCallable(_)
-                | dm_ir::ReadDomain::OwnerVariable(_)
-        ) {
-            // Scalar enrichment only changes Var/Constant/GlobalVar, never
-            // Type/Parent/Ancestry or callable queries. Bind to the CURRENT source tree certificate.
-            return self.source.tree.domain_version(domain);
-        }
-        if domain != dm_ir::ReadDomain::Tree {
-            return self.source.tree.domain_version(domain);
-        }
-        let issued = &self.issued_domain;
-        // Public analysis projections can be replaced. Only the originally
-        // issued immutable tables retain authority for replay shortcuts.
-        if self.original_domain() {
-            Some(issued.version)
-        } else {
-            None
-        }
+    /// The scalar layer's issued tables. Public analysis projections can be replaced; only the originally issued
+    /// immutable tables name a world.
+    fn answer_world(&self) -> Option<u128> {
+        self.original_domain().then_some(self.issued_domain.version)
     }
 
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
@@ -475,7 +383,7 @@ impl Resolver for ScalarSnapshot {
         ResolvedMeaning::Member {
             owner: actual_owner,
             name,
-            fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes),
+            fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes).into(),
             data: Arc::new(data),
         }
     }
@@ -497,9 +405,9 @@ mod tests {
                 nameof: &|_| None,
             },
         );
-        assert!(resolved.domain_version(dm_ir::ReadDomain::Tree).is_some());
+        assert!(dm_ir::Resolver::answer_world(&resolved).is_some());
         resolved.outcomes = Arc::new(BTreeMap::new());
-        assert_eq!(resolved.domain_version(dm_ir::ReadDomain::Tree), None);
+        assert_eq!(dm_ir::Resolver::answer_world(&resolved), None);
     }
     pub(super) fn snapshot(source: &str) -> TreeSnapshot {
         crate::from_ast(

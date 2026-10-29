@@ -242,7 +242,6 @@ impl HeaderRecipes {
                     query: (),
                     answer: Arc::clone(parent),
                 }],
-                Vec::new(),
                 0,
                 || value,
             )
@@ -291,7 +290,7 @@ impl HeaderRecipes {
         let mut value = Some(value);
         let owner = self
             .defaults
-            .insert_with_owned(key.clone().into(), Vec::new(), Vec::new(), 0, || {
+            .insert_with_owned(key.clone().into(), Vec::new(), 0, || {
                 value.take().expect("one admitted selector producer")
             })
             .unwrap_or_else(|| Arc::new(value.expect("declined selector retains input")));

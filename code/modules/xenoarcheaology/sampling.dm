@@ -4,11 +4,11 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "sliver1"
 	w_class = ITEMSIZE_TINY
-	injury_kind = INJURY_PIERCE
 	/// The sliver's own geosample (a private copy of the sampled one; owned).
 	var/tmp/datum/geosample/geological_data_static
 
 CAPABILITIES(/obj/item/rocksliver)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_handling(randpixel = 8))
 	configure(item_combat(sharp = TRUE))
 	owns_one(nameof(geological_data_static), /datum/geosample)
@@ -29,13 +29,16 @@ CAPABILITIES(/obj/item/rocksliver)
 	var/source_mineral = REAGENT_ID_CHLORINE
 	var/list/find_presence
 
-/datum/geosample/New(turf/simulated/mineral/container)
-	UpdateTurf(container)
+/// A geosample of `container` (a mine turf): its ages, mineral and nearby finds.
+/proc/geosample_of(turf/simulated/mineral/container)
+	var/datum/geosample/G = new /datum/geosample
+	G.UpdateTurf(container)
+	return G
 
 /// A private copy: a mine turf, each ore dug from it and each sample own their own geosample
 /// (never one shared owned instance).
 /datum/geosample/proc/copy()
-	var/datum/geosample/G = new /datum/geosample(null)
+	var/datum/geosample/G = new /datum/geosample
 	G.age = age
 	G.age_thousand = age_thousand
 	G.age_million = age_million

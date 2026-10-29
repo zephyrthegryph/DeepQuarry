@@ -49,7 +49,6 @@ impl Resources {
                 answer: configuration,
                 domain: (),
             }],
-            Vec::new(),
             std::mem::size_of::<Hint>() + KEY.len(),
             || hint,
         );
@@ -82,12 +81,10 @@ impl Resources {
             dm_session::ObservedArtifactStorageView::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 c.slice("resources.key", key, true);
                 c.receipt("resources.reads", reads);
-                c.slice("resources.versions", versions, true);
                 for read in reads.iter() {
                     let a = &read.answer;
                     c.path("resources.configuration", &a.project);

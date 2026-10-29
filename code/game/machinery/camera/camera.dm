@@ -33,7 +33,7 @@
 	var/on_open_network = 0
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
-	EXPIRY_DECLARE(affected_by_emp_until)
+	COOLDOWN_DECLARE(affected_by_emp_until)
 	/// The deadline the `camera_timer_token` timer slot was last set for (next_camera_deadline()).
 	var/tmp/camera_timer_at = 0
 
@@ -45,6 +45,7 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(camera_broken)))
 	setup(PROC_REF(validate_network))
 	configure(atom_shielding(deflection = 5))
 	setup(PROC_REF(install_viewer_hud))
@@ -159,7 +160,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_at = 0
-	if(affected_by_emp_until && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
+	if(affected_by_emp_until && COOLDOWN_LAPSED(src, affected_by_emp_until))
 		affected_by_emp_until = 0
 		release(src, STAT_OPERABLE, SRC_EMP)
 		cancelCameraAlarm()
@@ -189,7 +190,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /obj/machinery/camera/proc/camera_disrupt(severity)
 	if(isEmpProof())
 		return
-	if(!affected_by_emp_until || EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
+	if(!affected_by_emp_until || COOLDOWN_LAPSED(src, affected_by_emp_until))
 		affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
 		hold(src, STAT_OPERABLE, FALSE, SRC_EMP, max(affected_by_emp_until - world.time, 1))
 		set_glow(src, GLOW(0, null, null))
@@ -318,7 +319,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		assembly.forceMove(loc)
 		assembly.set_anchored(TRUE)
 		assembly.camera_name = c_tag
-		assembly.camera_network = text_or_null(english_list(network, NETWORK_DEFAULT, ",", ","))
+		assembly.camera_network = english_list(network, NETWORK_DEFAULT, ",", ",")
 		assembly.set_dir(dir)
 		if(broken_now())
 			assembly.set_state(2)
@@ -358,7 +359,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		if(U.name == "Unknown")
 			to_chat(O, span_infoplain(span_bold("[U]") + " holds \a [itemname] up to one of your cameras ..."))
 		else
-			to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
+			to_chat(O, span_infoplain(span_bold("<a href='byond://?src=[REF(O)];track2=[REF(O)];track=[REF(U)];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
 
 		// structured TGUI AdminReport.
 		dq_admin_report_html(O, itemname, "<TT>[info]</TT>")
@@ -425,10 +426,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		play_sfx(src, SFX_ITEMS_WIRECUTTER)
 		set_icon_state(initial(icon_state))
 
-/obj/machinery/camera/atom_break(damage_flag)
-	. = ..()
-	if(!.)
-		return
+/obj/machinery/camera/proc/camera_broken(datum/act/A)
 	wires_cut_all(src)
 
 	triggerCameraAlarm()

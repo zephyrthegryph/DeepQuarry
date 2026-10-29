@@ -53,7 +53,7 @@
 	/// TRUE from start() until stop(): the loop is waiting to start, looping or dormant.
 	var/tmp/running = FALSE
 	/// world.time of the first loop, so max_loops counts from the real start.
-	EXPIRY_TMP_DECLARE(loop_started_at)
+	var/tmp/loop_started_at = 0
 	/// Player chunk tokens while nobody can hear the loop; null while it is looping (Q5).
 	var/tmp/list/dormant_chunk_tokens
 
@@ -142,7 +142,7 @@
 	if(QDELETED(src) || !running)
 		return
 	if(!loop_started_at)
-		EXPIRY_STAMP(src, loop_started_at, CLOCK_WORLD)
+		STAMP(src, loop_started_at, CLOCK_WORLD)
 	if(max_loops && ELAPSED(src, loop_started_at, CLOCK_WORLD) >= mid_length * max_loops)
 		stop()
 		return

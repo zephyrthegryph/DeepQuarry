@@ -155,6 +155,7 @@
 	look.overlay(coating_look, when = !!coating_look)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(item_handling(center_x = 16, center_y = 16))
 	configure(item_combat(force = 0))
 	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
@@ -335,9 +336,10 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 ////////////////////////////////////////////////////////////////////////////////
 /// FOOD END
 ////////////////////////////////////////////////////////////////////////////////
-/obj/item/reagent_containers/food/snacks/attack_generic(mob/living/user)
+/obj/item/reagent_containers/food/snacks/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/user = A.attacker
 	if(!isanimal(user) && !isalien(user))
-		return
+		return OP_OK
 	act_message(user, src, MSG_SELF(span_info("You nibble away at %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " nibbles away at %T%.")))
 	user.balloon_alert_visible("nibbles away at \the [src].","nibbled away at \the [src].")
 	set_bitecount(bitecount + 1)
@@ -346,6 +348,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
 	after(user, 0.5 SECONDS, GLOBAL_PROC_REF(food_finished_emote), with = list(user, !reagents?.total_volume))
 	On_Consume(user)
+	return OP_OK
 
 //////////////////////////////////////////////////
 ////////////////////////////////////////////Snacks
@@ -402,7 +405,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/donor)
 /obj/item/reagent_containers/food/snacks/candy_corn
 	name = "candy corn"
 	desc = "It's a handful of candy corn. Cannot be stored in a detective's hat, alas."
-	description_fluff = "Nobody knows why Nanotrasen keeps making these waxy pieces of sugar and bone glue, but a handful of people swear by them. Purportedly popular with Skrell children, dubiously enough."
 	icon_state = "candy_corn"
 	filling_color = "#FFFCB0"
 	nutriment_amt = 4
@@ -410,6 +412,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/donor)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy_corn)
+	configure(atom_rules(price_tag = 1, description_fluff = "Nobody knows why Nanotrasen keeps making these waxy pieces of sugar and bone glue, but a handful of people swear by them. Purportedly popular with Skrell children, dubiously enough."))
 	configure(item_handling(center_x = 14, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
@@ -423,6 +426,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy_corn)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolatebar)
+	configure(atom_rules(price_tag = 1))
 	configure(item_handling(center_x = 15, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2, REAGENT_ID_COCO = 2)))
 
@@ -461,13 +465,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolatepiece)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolateegg)
+	configure(atom_rules(price_tag = 1))
 	configure(item_handling(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2, REAGENT_ID_COCO = 2)))
 
 /obj/item/reagent_containers/food/snacks/donut
 	name = "donut"
 	desc = "Goes great with Robust Coffee."
-	description_fluff = "These donuts claim to be made fresh daily in a boutique bakery in New Reykjavik and delivered to Nanotrasen's hardworking asset protection crew. They're probably synthesized."
 	icon = 'icons/obj/food_donuts.dmi'
 	icon_state = "donut"
 	filling_color = "#D9C386"
@@ -475,6 +479,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolateegg)
 	nutriment_amt = 3
 	bitesize = 4
 	var/overlay_state = "donut_inbox"
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut)
+	configure(atom_rules(price_tag = 1, description_fluff = "These donuts claim to be made fresh daily in a boutique bakery in New Reykjavik and delivered to Nanotrasen's hardworking asset protection crew. They're probably synthesized."))
 
 /obj/item/reagent_containers/food/snacks/donut/plain
 	nutriment_amt = 4.5
@@ -718,6 +725,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/laugh/jelly)
 	overlay_state = "donut_chaos_inbox"
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/chaos)
+	configure(atom_rules(price_tag = 5))
 	rolls(nameof(chaos_filling), pick_one(list(REAGENT_ID_NUTRIMENT, REAGENT_ID_CAPSAICIN, REAGENT_ID_FROSTOIL, REAGENT_ID_SPRINKLES, REAGENT_ID_PHORON, REAGENT_ID_COCO, REAGENT_ID_SLIMEJELLY, REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_TRICORDRAZINE)))
 	configure(reagents(contents_from = PROC_REF(chaos_filling_contents)))
 	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 1)))
@@ -819,6 +827,7 @@ MSG_DEF_SELF(snack/egg_refuses, "The egg refuses to take on this color!")
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/friedegg)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 14))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_BLACKPEPPER = 1)))
 
@@ -829,6 +838,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/friedegg)
 	filling_color = "#FFFFFF"
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledegg)
+	configure(atom_rules(price_tag = 2))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/organ
@@ -894,6 +904,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/stuffing)
 	var/toxin_amount = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/carpmeat)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 17, center_y = 13))
 	configure(reagents(contents_from = PROC_REF(toxin_contents)))
 	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 3)))
@@ -942,6 +953,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/crab_legs)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishfingers)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 4)))
 
@@ -1024,13 +1036,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatball)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/donkpocket
 	name = "\improper Donk-pocket"
 	desc = "The food of choice for the seasoned traitor."
-	description_fluff = "DONKpockets were originally a Nanotrasen product, an attempt to break into the food market controlled by Centauri Provisions. Somehow, Centauri wound up with the rights to the DONK brand, ending Nanotrasen's ambitions. They taste pretty okay."
 	icon_state = "donkpocket"
 	filling_color = "#DEDEAB"
 	nutriment_amt = 2
@@ -1040,6 +1052,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage)
 TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/donkpocket, donkpocket_heated_reagents, list(REAGENT_ID_TRICORDRAZINE = 5))
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket)
+	configure(atom_rules(price_tag = 1, description_fluff = "DONKpockets were originally a Nanotrasen product, an attempt to break into the food market controlled by Centauri Provisions. Somehow, Centauri wound up with the rights to the DONK brand, ending Nanotrasen's ambitions. They taste pretty okay."))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
@@ -1141,6 +1154,7 @@ MSG_DEF_SELF(snack/heat_spent, "The heating chemicals have already been spent.")
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/brainburger)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_ALKYSINE = 6)))
 
@@ -1173,6 +1187,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/brainburger)
 	nutriment_desc = list(REAGENT_ID_CHEESE = 2, "bun" = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheeseburger)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
@@ -1194,6 +1209,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheeseburger)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishburger)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
@@ -1231,6 +1247,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishburger)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenoburger)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
@@ -1245,6 +1262,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenoburger)
 
 // begin - honkwork infection
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownburger)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 17, center_y = 12))
 	configure(reagents(add = list("protein" = 2)))
 
@@ -1273,6 +1291,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownburger)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/omelette)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
@@ -1288,7 +1307,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/omelette)
 /obj/item/reagent_containers/food/snacks/pie
 	name = "Banana Cream Pie"
 	desc = "Just like back home, on clown planet! HONK!"
-	description_fluff = "One of the more esoteric terms of the Nanotrasen-Centauri Noncompetition Agreement of 2545 was a requirement that Nanotrasen stock these pies on all their stations. They're calibrated for comedic value, not taste."
 	icon_state = "pie"
 	trash = /obj/item/trash/plate
 	filling_color = "#FBFFB8"
@@ -1297,6 +1315,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/omelette)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pie)
+	configure(atom_rules(price_tag = 4, description_fluff = "One of the more esoteric terms of the Nanotrasen-Centauri Noncompetition Agreement of 2545 was a requirement that Nanotrasen stock these pies on all their stations. They're calibrated for comedic value, not taste."))
 	configure(item_handling(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_BANANA = 5)))
 
@@ -1349,6 +1368,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylentgreen)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
@@ -1371,6 +1391,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylentgreen)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatpie)
+	configure(atom_rules(price_tag = 4))
 	configure(item_handling(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
@@ -1407,6 +1428,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanita_pie)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
+	configure(atom_rules(price_tag = 4))
 	configure(item_handling(center_x = 17, center_y = 9))
 	rolls(nameof(name), pick_one(list("exceptional plump pie")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump pie!")), when = nameof(exceptional), from = list(nameof(exceptional)))
@@ -1430,6 +1452,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/xemeatpie)
+	configure(atom_rules(price_tag = 4))
 	configure(item_handling(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
@@ -1442,6 +1465,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/xemeatpie)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/wingfangchu)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 17, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
@@ -1466,6 +1490,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/kabob)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeykabob)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 17, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
@@ -1490,6 +1515,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeykabob)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cubancarp)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 12, center_y = 5))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3)))
 
@@ -1506,6 +1532,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cubancarp)
 	bitesize = 0.1 //This snack is supposed to be eaten for a long time.
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/popcorn)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 8))
 	rolls(nameof(unpopped), range_of(1, 10))
 
@@ -1526,6 +1553,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/popcorn)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fries)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_OIL = 1.2)))
 
@@ -1578,6 +1606,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ovenfries)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/carrotfries)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_IMIDAZOLINE = 3, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
@@ -1592,6 +1621,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/carrotfries)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesyfries)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
@@ -1841,6 +1871,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bigbiteburger)
+	configure(atom_rules(price_tag = 4))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
@@ -1855,6 +1886,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bigbiteburger)
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/enchiladas)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_CAPSAICIN = 6)))
 
@@ -1867,6 +1899,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/enchiladas)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeysdelight)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10, REAGENT_ID_BANANA = 5, REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
@@ -1880,6 +1913,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeysdelight)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/baguette)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 18, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
@@ -1893,6 +1927,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/baguette)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishandchips)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
@@ -1907,6 +1942,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishandchips)
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/rofflewaffles)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 8)))
 
@@ -2040,6 +2076,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/kudzudonburi)
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pastatomato)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_TOMATOJUICE = 10)))
 
@@ -2054,6 +2091,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pastatomato)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballspagetti)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
@@ -2067,6 +2105,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballspagetti)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/spesslaw)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
@@ -2080,6 +2119,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/spesslaw)
 	bitesize = 10
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
+	configure(atom_rules(price_tag = 8))
 	configure(item_handling(center_x = 16, center_y = 3))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 25)))
 
@@ -2127,7 +2167,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/caramelapple)
 /obj/item/reagent_containers/food/snacks/twobread
 	name = "Two Bread"
 	desc = "It is very bitter and winy."
-	description_fluff = "The most popular recipe from the Morpheus Cyberkinetics cookbook 'Calories for Organics'"
 	icon_state = "twobread"
 	filling_color = "#DBCC9A"
 	nutriment_amt = 2
@@ -2146,6 +2185,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/caramelapple)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sandwich)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 4))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
@@ -2168,6 +2208,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sandwich)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/toastedsandwich)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 4))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CARBON = 2)))
 
@@ -2181,6 +2222,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/toastedsandwich)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grilledcheese)
+	configure(atom_rules(price_tag = 3))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/jellysandwich
@@ -2232,6 +2274,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledslimecore)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
+	configure(atom_rules(price_tag = 1))
 	configure(item_handling(center_x = 16, center_y = 13))
 	rolls(nameof(name), pick_one(list("exceptional plump helmet biscuit")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!")), when = nameof(exceptional), from = list(nameof(exceptional)))
@@ -2255,6 +2298,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chawanmushi)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 17, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
@@ -2279,6 +2323,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chawanmushi)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/validsalad)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 17, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
@@ -2293,6 +2338,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/validsalad)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/appletart)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 18))
 	configure(reagents(add = list(REAGENT_ID_GOLD = 5)))
 
@@ -2310,6 +2356,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/appletart)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballsoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_WATER = 5)))
 
@@ -2322,6 +2369,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballsoup)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/slimesoup)
+	configure(atom_rules(price_tag = 3))
 	configure(reagents(add = list(REAGENT_ID_SLIMEJELLY = 5, REAGENT_ID_WATER = 10)))
 
 /obj/item/reagent_containers/food/snacks/bloodsoup
@@ -2333,6 +2381,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/slimesoup)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bloodsoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_BLOOD = 10, REAGENT_ID_WATER = 5)))
 
@@ -2347,6 +2396,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bloodsoup)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownstears)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_BANANA = 5, REAGENT_ID_WATER = 10, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
@@ -2361,6 +2411,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownstears)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/vegetablesoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_VEGETABLESOUP = 10)))
 
@@ -2376,6 +2427,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/vegetablesoup)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/nettlesoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5)))
 
@@ -2395,6 +2447,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/nettlesoup)
 	var/mystery_recipe = 0
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/mysterysoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 6))
 	rolls(nameof(mystery_recipe), range_of(1, 10))
 	configure(reagents(contents_from = PROC_REF(mystery_contents)))
@@ -2425,6 +2478,7 @@ TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/mysterysoup, mystery
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/wishsoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 11))
 	rolls(nameof(wished), chance(25))
 	rolls(nameof(desc), PROC_REF(roll_wish_desc), from = list(nameof(wished)))
@@ -2450,6 +2504,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/wishsoup)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tomatosoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_TOMATOSOUP = 10)))
 
@@ -2463,6 +2518,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tomatosoup)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomsoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 17, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_MUSHROOMSOUP = 10)))
 
@@ -2477,6 +2533,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomsoup)
 
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/beetsoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 15, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_BEETSOUP = 10)))
 	rolls(nameof(name), pick_one(list("borsch","bortsch","borstch","borsh","borshch","borscht")))
@@ -2516,6 +2573,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickennoodlesoup)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/stew)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 5))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL, pickup = SFX_ITEMS_PICKUP_SHOVEL))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5, REAGENT_ID_FUNGI = 1)))
@@ -2547,6 +2605,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearstew)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotchili)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2)))
 
@@ -2562,6 +2621,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotchili)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/coldchili)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2)))
 
@@ -2632,6 +2692,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearchili)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/meatbread)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 19, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 20)))
 
@@ -2659,6 +2720,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/meatbread)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 20)))
 
@@ -2685,6 +2747,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_BANANA = 20)))
 
@@ -2743,6 +2806,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 15)))
 
@@ -2769,6 +2833,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/carrotcake)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_IMIDAZOLINE = 10)))
 
@@ -2796,6 +2861,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/carrotcake)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/braincake)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 25, REAGENT_ID_ALKYSINE = 10)))
 
@@ -2823,6 +2889,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/braincake)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesecake)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 15)))
 
@@ -3015,6 +3082,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesewedge)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 10)))
 
@@ -3104,6 +3172,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/watermelonslice)
 	nutriment_amt = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cracker)
+	configure(atom_rules(price_tag = 1))
 	configure(item_handling(center_x = 16, center_y = 6))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
@@ -3393,7 +3462,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/suppermatter)
 	configure(light_glow(range = 1.4, power = 2, color = "#FFFF00"))
 
 /obj/item/reagent_containers/food/snacks/sliceable/suppermatter
-	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
 	name = "suppermatter shard"
@@ -3407,7 +3475,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/suppermattershard)
 	configure(light_glow(range = 1.4, power = 1.4, color = "#FFFF00"))
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
-	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
 	name = "exciting suppermatter"
@@ -3425,7 +3492,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/excitingsupperma
 	configure(light_glow(range = 1.4, power = 2, color = "#FF0000"))
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
-	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
 	name = "exciting suppermatter shard"
@@ -3439,7 +3505,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/excitingsuppermattershard)
 	configure(light_glow(range = 1.4, power = 1.4, color = "#FF0000"))
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
-	light_on = TRUE
 
 /////////////////////////////////////////////////PIZZA/////////////////////////////////////////////////
 
@@ -3818,6 +3883,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/dionaroast)
+	configure(atom_rules(price_tag = 25))
 	configure(item_handling(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_RADIUM = 2)))
 
@@ -3877,6 +3943,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/doughslice)
 
 // Burger + cheese wedge = cheeseburger
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeyburger)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 	op("add_cheese", item(/obj/item/reagent_containers/food/snacks/cheesewedge), priority(OP_PRIORITY_PART + 1), label("Add the cheese"), then(PROC_REF(cheese_added)))
@@ -3886,6 +3953,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeyburger)
 
 // Human Burger + cheese wedge = cheeseburger
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/burger)
+	configure(atom_rules(price_tag = 2))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 	op("add_cheese", item(/obj/item/reagent_containers/food/snacks/cheesewedge), priority(OP_PRIORITY_PART + 1), label("Add the cheese"), then(PROC_REF(cheese_added)))
@@ -3913,6 +3981,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bunbun)
 	nutriment_desc = list(REAGENT_ID_CHEESE = 2,"taco shell" = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/taco)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 21, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
@@ -4019,7 +4088,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/frostbelle)
 	configure(reagents(add = list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5)))
 
 /obj/item/reagent_containers/food/snacks/frostbelle
-	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/bellefritter
 	name = "frostbelle fritters"
@@ -4062,7 +4130,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedpeanuts)
 /obj/item/reagent_containers/food/snacks/liquidfood
 	name = "\improper LiquidFood Ration"
 	desc = "A prepackaged grey slurry of all the essential nutrients for a spacefarer on the go. Should this be crunchy?"
-	description_fluff = "A survival food commonly packed onto short-distance bluespace shuttles and similar vessels. Tastes like chalk, but is packed full of nutrients and will keep you alive."
 	icon_state = "liquidfood"
 	trash = /obj/item/trash/liquidfood
 	filling_color = "#A8A8A8"
@@ -4073,6 +4140,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedpeanuts)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidfood)
+	configure(atom_rules(description_fluff = "A survival food commonly packed onto short-distance bluespace shuttles and similar vessels. Tastes like chalk, but is packed full of nutrients and will keep you alive."))
 	configure(item_handling(center_x = 16, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_IRON = 3)))
 
@@ -4118,7 +4186,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatcube)
 /obj/item/reagent_containers/food/snacks/skrellsnacks
 	name = "\improper SkrellSnax"
 	desc = "Cured fungus shipped all the way from Qerr'balak, almost like jerky! Almost."
-	description_fluff = "Despite the packaging, most SkrellSnax sold in Vir are produced using locally-grown, Qerr'Balak-native Go'moa fungi in controversial Skrell-owned biodomes on the suface of Sif. SkrellSnax were originally a product of Natuna, designed to welcome Ue-Katish refugees to their colony. The brand was recreated by Centauri Provisions after Natuna and SolGov broke off diplomatic relations."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "skrellsnacks"
 	trash = /obj/item/trash/skrellsnax
@@ -4128,6 +4195,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatcube)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/skrellsnacks)
+	configure(atom_rules(price_tag = 4, description_fluff = "Despite the packaging, most SkrellSnax sold in Vir are produced using locally-grown, Qerr'Balak-native Go'moa fungi in controversial Skrell-owned biodomes on the suface of Sif. SkrellSnax were originally a product of Natuna, designed to welcome Ue-Katish refugees to their colony. The brand was recreated by Centauri Provisions after Natuna and SolGov broke off diplomatic relations."))
 	configure(item_handling(center_x = 15, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_FUNGI = 1)))
 
@@ -4890,6 +4958,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mashedpotato)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/loadedbakedpotato)
+	configure(atom_rules(price_tag = 5))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
@@ -5717,7 +5786,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 /obj/item/storage/box/admints
 	name = "Ad-mints"
 	desc = "A pack of air fresheners for your mouth."
-	description_fluff = "Ad-mints earned their name, and reputation when a Major Bill's senior executive attended a meeting at a large a marketing firm and was so astounded by the quality of their complimentary mints, that he immediately bought the company - the mints company, not the ad agency - and began providing 'Ad-mints' on every MBT flight."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "admint_pack"
 	item_state = "candy"
@@ -5730,6 +5798,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 
 
 CAPABILITIES(/obj/item/storage/box/admints)
+	configure(atom_rules(description_fluff = "Ad-mints earned their name, and reputation when a Major Bill's senior executive attended a meeting at a large a marketing firm and was so astounded by the quality of their complimentary mints, that he immediately bought the company - the mints company, not the ad agency - and began providing 'Ad-mints' on every MBT flight."))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints)))
@@ -5737,7 +5806,6 @@ CAPABILITIES(/obj/item/storage/box/admints)
 /obj/item/reagent_containers/food/snacks/candy
 	name = "\improper Grandma Ellen's Candy Bar"
 	desc = "Now without nuts!"
-	description_fluff = "Hard candies were banned from many early human colony ships due to the tendency for brittle, sticky chunks to find their way inside vital equipment in zero-G conditions. This only made them all the more popular to new arrivees, and the Grandpa Elliot's brand was Tau Ceti's answer to that demand."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "candy"
 	trash = /obj/item/trash/candy
@@ -5747,6 +5815,7 @@ CAPABILITIES(/obj/item/storage/box/admints)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy)
+	configure(atom_rules(price_tag = 1, description_fluff = "Hard candies were banned from many early human colony ships due to the tendency for brittle, sticky chunks to find their way inside vital equipment in zero-G conditions. This only made them all the more popular to new arrivees, and the Grandpa Elliot's brand was Tau Ceti's answer to that demand."))
 	configure(item_handling(center_x = 15, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 3)))
 
@@ -5768,7 +5837,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/namagashi)
 /obj/item/reagent_containers/food/snacks/candy/proteinbar
 	name = "\improper SwoleMAX protein bar"
 	desc = "Guaranteed to get you feeling perfectly overconfident."
-	description_fluff = "NanoMed's SwoleMAX boasts the highest density of protein mush per square inch among leading protein bar brands. While formulated for strength training, this high nutrient density in a mostly-solid form makes SwoleMAX a popular alternative for spacers looking to mix up their usual diet of pastes and gooes."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "proteinbar"
 	trash = /obj/item/trash/candy/proteinbar
@@ -5777,12 +5845,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/namagashi)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/proteinbar)
+	configure(atom_rules(description_fluff = "NanoMed's SwoleMAX boasts the highest density of protein mush per square inch among leading protein bar brands. While formulated for strength training, this high nutrient density in a mostly-solid form makes SwoleMAX a popular alternative for spacers looking to mix up their usual diet of pastes and gooes."))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SUGAR = 4)))
 
 /obj/item/reagent_containers/food/snacks/candy/gummy
 	name = "\improper AlliCo Gummies"
 	desc = "Somehow, there's never enough cola bottles."
-	description_fluff = "AlliCo's grab-bags of gummy candies come in over a thousand novelty shapes and dozens of flavours. Shoes, astronauts, bunny rabbits and singularities all make an appearance."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "candy_gums"
 	trash = /obj/item/trash/candy/gums
@@ -5791,12 +5859,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/proteinbar)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/gummy)
+	configure(atom_rules(description_fluff = "AlliCo's grab-bags of gummy candies come in over a thousand novelty shapes and dozens of flavours. Shoes, astronauts, bunny rabbits and singularities all make an appearance."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/snacks/cookiesnack
 	name = "Carps Ahoy! miniature cookies"
 	desc = "Now 100% carpotoxin free!"
-	description_fluff = "Carps Ahoy! cookies are required to sell under the 'Cap'n Choco' name in certain markets, out of concerns that children will become desensitized to the very real dangers of Space Carp."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cookiesnack"
 	trash = /obj/item/trash/cookiesnack
@@ -5805,10 +5873,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/gummy)
 	nutriment_desc = list("sweetness" = 1, "stale cookie" = 2)
 	bitesize = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cookiesnack)
+	configure(atom_rules(description_fluff = "Carps Ahoy! cookies are required to sell under the 'Cap'n Choco' name in certain markets, out of concerns that children will become desensitized to the very real dangers of Space Carp."))
+
 /obj/item/reagent_containers/food/snacks/fruitbar
 	name = "\improper ChewMAX fruit bar"
 	desc = "Guaranteed to get you feeling comfortably superior."
-	description_fluff = "NanoMed's ChewMAX is the low-carb alternative to the SwoleMAX range! Want short-term energy but not really interested in sustaining it? Hate fat but don't entirely understand nutrition? Just really like fruit? ChewMAX is for you!"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "fruitbar"
 	trash = /obj/item/trash/candy/fruitbar
@@ -5817,6 +5887,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/gummy)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruitbar)
+	configure(atom_rules(description_fluff = "NanoMed's ChewMAX is the low-carb alternative to the SwoleMAX range! Want short-term energy but not really interested in sustaining it? Hate fat but don't entirely understand nutrition? Just really like fruit? ChewMAX is for you!"))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 4)))
 
 /////////////////////////////////////////////////////////////////////////////
@@ -5826,7 +5897,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruitbar)
 /obj/item/reagent_containers/food/snacks/cb01
 	name = "\improper Tau Ceti Bar"
 	desc = "A dark chocolate caramel and nougat bar made famous on Binma."
-	description_fluff = "Binma's signature chocolate bar, the Tau Ceti Bar was originally made with cheap, heavily preserved ingredients available to Sol's first colonists. The modern recipe attempts to recreate this, baffling many not accustomed to its slightly stale taste."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb01"
@@ -5837,12 +5907,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruitbar)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb01)
+	configure(atom_rules(description_fluff = "Binma's signature chocolate bar, the Tau Ceti Bar was originally made with cheap, heavily preserved ingredients available to Sol's first colonists. The modern recipe attempts to recreate this, baffling many not accustomed to its slightly stale taste."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb02
 	name = "\improper Hundred-Thousand Thaler Bar"
 	desc = "An ironically cheap puffed rice caramel milk chocolate bar."
-	description_fluff = "The Hundred-Thousand Thaler bar has been the focal point of dozens of exonet and radio giveaway pranks over its long history. In 2500 the company got in on the action, offering a prize of one-hundred thousand one-hundred thousand thaler bars to one lucky entrant, who reportedly turned down the prize in favour of a 250 Thaler cash prize."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb02"
@@ -5853,12 +5923,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb01)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb02)
+	configure(atom_rules(description_fluff = "The Hundred-Thousand Thaler bar has been the focal point of dozens of exonet and radio giveaway pranks over its long history. In 2500 the company got in on the action, offering a prize of one-hundred thousand one-hundred thousand thaler bars to one lucky entrant, who reportedly turned down the prize in favour of a 250 Thaler cash prize."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb03
 	name = "\improper Aerostat Bar"
 	desc = "Bubbly milk chocolate."
-	description_fluff = "An early slogan claimed the chocolate's bubbles where made with 'real Venusian gases', which is thought to have seriously harmed sales. The claim remains true, since the main production plant remains on Venus, but the company tries to avoid association with toxic air."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb03"
@@ -5869,12 +5939,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb02)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb03)
+	configure(atom_rules(description_fluff = "An early slogan claimed the chocolate's bubbles where made with 'real Venusian gases', which is thought to have seriously harmed sales. The claim remains true, since the main production plant remains on Venus, but the company tries to avoid association with toxic air."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb04
 	name = "\improper Lars' Saltlakris"
 	desc = "Milk chocolate embedded with chunks of salty licorice."
-	description_fluff = "Produced exclusively in Kalmar for sale in Vir, Lars' Saltlakris is one of the system's most popular home-grown confectionaries."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb04"
@@ -5885,12 +5955,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb03)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb04)
+	configure(atom_rules(description_fluff = "Produced exclusively in Kalmar for sale in Vir, Lars' Saltlakris is one of the system's most popular home-grown confectionaries."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb05
 	name = "\improper Andromeda Bar"
 	desc = "A cheap milk chocolate bar loaded with sugar."
-	description_fluff = "The galaxy's top-selling chocolate brand for almost 400 years. Also comes in dozens of varieties, including caramel, cookie, fruit and nut, and almond. This is just the basic stuff, though."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb05"
@@ -5901,12 +5971,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb04)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb05)
+	configure(atom_rules(description_fluff = "The galaxy's top-selling chocolate brand for almost 400 years. Also comes in dozens of varieties, including caramel, cookie, fruit and nut, and almond. This is just the basic stuff, though."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 3)))
 
 /obj/item/reagent_containers/food/snacks/cb06
 	name = "\improper Mocha Crunch"
 	desc = "A large latte flavored wafer chocolate bar."
-	description_fluff = "Lightly caffeinated, the Mocha Crunch is often considered to be more of an authentic coffee taste than most vending machine coffees."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb06"
@@ -5917,12 +5987,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb05)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb06)
+	configure(atom_rules(description_fluff = "Lightly caffeinated, the Mocha Crunch is often considered to be more of an authentic coffee taste than most vending machine coffees."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 1, REAGENT_ID_COFFEE = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb07
 	name = "\improper TaroMilk Bar"
 	desc = "A light milk chocolate shell with a Taro paste filling. Chewy!"
-	description_fluff = "The best-selling Kishari snack finally made its way to the galactic stage in 2562. Whether it is here to stay remains to be seen, though it has found some popularity with the Skrell.."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb07"
@@ -5933,12 +6003,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb06)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb07)
+	configure(atom_rules(description_fluff = "The best-selling Kishari snack finally made its way to the galactic stage in 2562. Whether it is here to stay remains to be seen, though it has found some popularity with the Skrell.."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb08
 	name = "\improper Cronk Bar"
 	desc = "A large puffed malt milk chocolate bar."
-	description_fluff = "The Cronk Bar proudly 'Comes in one flavour, so you'll never pick the wrong one!'. Its enduring popularity may be in part due to a longstanding deal with the SCG Fleet to include Cronk in standard military rations."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb08"
@@ -5949,12 +6019,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb07)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb08)
+	configure(atom_rules(description_fluff = "The Cronk Bar proudly 'Comes in one flavour, so you'll never pick the wrong one!'. Its enduring popularity may be in part due to a longstanding deal with the SCG Fleet to include Cronk in standard military rations."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/reagent_containers/food/snacks/cb09
 	name = "\improper Kaju Mamma! Bar"
 	desc = "A massive cluster of cashews and peanuts covered in a condensed milk solid."
-	description_fluff = "Based on traditional South Asian desserts, the Kaju Mamma! is a deceptively soft, sweet bar voted 'Most allergenic candy' nineteen years running."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb09"
@@ -5965,12 +6035,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb08)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb09)
+	configure(atom_rules(description_fluff = "Based on traditional South Asian desserts, the Kaju Mamma! is a deceptively soft, sweet bar voted 'Most allergenic candy' nineteen years running."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 1, REAGENT_ID_MILK = 1, REAGENT_ID_PEANUTOIL = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb10
 	name = "\improper Shantak Bar"
 	desc = "Nuts, nougat, peanuts, and caramel covered in chocolate."
-	description_fluff = "Despite being often mistaken for a regional favourite, the Shantak Bar is sold under different 'localized' names in almost every human system in the galaxy, and adds up to being the third best selling confection produced by Centauri Provisions."
 	filling_color = "#552200"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cb10"
@@ -5981,6 +6051,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb09)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb10)
+	configure(atom_rules(description_fluff = "Despite being often mistaken for a regional favourite, the Shantak Bar is sold under different 'localized' names in almost every human system in the galaxy, and adds up to being the third best selling confection produced by Centauri Provisions."))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 1, REAGENT_ID_PROTEIN = 1, REAGENT_ID_PEANUTOIL = 1)))
 
 ////////////////////Misc Vend Items////////////////////////////////////////////////////////////////
@@ -5988,7 +6059,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb10)
 /obj/item/reagent_containers/food/snacks/chips
 	name = "\improper What-The-Crisps"
 	desc = "Commander Riker's What-The-Crisps, lightly salted."
-	description_fluff = "What-The-Crisps' retro-styled starship commander has been a marketing staple for almost 200 years. Actual potatos haven't been used in potato chips for centuries. They're mostly a denatured nutrient slurry pressed into a chip-shaped mold and salted. Still tastes the same."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "chips"
 	trash = /obj/item/trash/chips
@@ -5998,33 +6068,37 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb10)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips)
+	configure(atom_rules(price_tag = 1, description_fluff = "What-The-Crisps' retro-styled starship commander has been a marketing staple for almost 200 years. Actual potatos haven't been used in potato chips for centuries. They're mostly a denatured nutrient slurry pressed into a chip-shaped mold and salted. Still tastes the same."))
 	configure(item_handling(center_x = 15, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/chips/bbq
 	name = "\improper Legendary BBQ Chips"
 	desc = "You know I can't grab your ghost chips!"
-	description_fluff = "A local brand, Legendary Chips have proudly sponsored Vir's anti-drink-piloting campaign since 2558."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "chips_bbq"
 	trash = /obj/item/trash/chips/bbq
 	nutriment_amt = 3
 	nutriment_desc = list("salt" = 1, "barbeque sauce" = 2)
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips/bbq)
+	configure(atom_rules(description_fluff = "A local brand, Legendary Chips have proudly sponsored Vir's anti-drink-piloting campaign since 2558."))
+
 /obj/item/reagent_containers/food/snacks/chips/snv
 	name = "\improper Mike's Salt & Vinegar Chips"
 	desc = "Painful to eat yet you just can't stop!"
-	description_fluff = "Mike's Salt & Vinegar chips have been a staple of parties and events for decades, the chosen secondary dish to ordinary chips."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "chips_snv"
 	trash = /obj/item/trash/chips/snv
 	nutriment_amt = 3
 	nutriment_desc = list("salt" = 1, REAGENT_ID_VINEGAR = 2)
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips/snv)
+	configure(atom_rules(description_fluff = "Mike's Salt & Vinegar chips have been a staple of parties and events for decades, the chosen secondary dish to ordinary chips."))
+
 /obj/item/reagent_containers/food/snacks/tastybread
 	name = "bread tube"
 	desc = "Bread in a tube. Chewy...and surprisingly tasty."
-	description_fluff = "This is the product that brought Centauri Provisions into the limelight. A product of the earliest extrasolar colony of Heaven, the Bread Tube, while bland, contains all the nutrients a spacer needs to get through the day and is decidedly edible when compared to some of its competitors. Due to the high-fructose corn syrup content of NanoTrasen's own-brand bread tubes, many jurisdictions classify them as a confectionary."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "tastybread"
 	trash = /obj/item/trash/tastybread
@@ -6038,12 +6112,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "sosjerky"
 	desc = "Beef jerky made from the finest space-reared cows."
-	description_fluff = "Raising cows in low-gravity environments has the natural result of particularly tender meat. The jerking process largely undoes this apparent benefit, but it's just too damn efficient to ship not to."
 	trash = /obj/item/trash/sosjerky
 	filling_color = "#631212"
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sosjerky)
+	configure(atom_rules(price_tag = 2, description_fluff = "Raising cows in low-gravity environments has the natural result of particularly tender meat. The jerking process largely undoes this apparent benefit, but it's just too damn efficient to ship not to."))
 	configure(item_handling(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
@@ -6052,12 +6126,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sosjerky)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "unathitinred"
 	desc = "An incredibly well made jerky, shipped in all the way from Moghes."
-	description_fluff = "The exact meat and spices used in the curing of Sissalik Jerky are a well-kept secret, and thought to not exist at all outside of Hegemony space. Many have tried to replicate the flavour, but none have come close, so the brand remains a highly prized import. "
 	trash = /obj/item/trash/unajerky
 	filling_color = "#631212"
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
+	configure(atom_rules(price_tag = 12, description_fluff = "The exact meat and spices used in the curing of Sissalik Jerky are a well-kept secret, and thought to not exist at all outside of Hegemony space. Many have tried to replicate the flavour, but none have come close, so the brand remains a highly prized import. "))
 	configure(item_handling(center_x = 15, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_CAPSAICIN = 2)))
@@ -6067,7 +6141,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "tuna"
 	desc = "A packaged dried fish snack, guaranteed to do not contain space carp. Actual fish content may vary."
-	description_fluff = "Launched by Centuari Provisions to target the Tajaran immigrant market, Tuna Snax also found a surprising niche among Vir's sizable Scandinavian population. Elsewhere, the dried fish flakes are widely considered disgusting."
 	trash = /obj/item/trash/tuna
 	filling_color = "#FFDEFE"
 	nutriment_amt = 3
@@ -6075,6 +6148,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tuna)
+	configure(atom_rules(description_fluff = "Launched by Centuari Provisions to target the Tajaran immigrant market, Tuna Snax also found a surprising niche among Vir's sizable Scandinavian population. Elsewhere, the dried fish flakes are widely considered disgusting."))
 	configure(item_handling(center_x = 17, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
@@ -6174,7 +6248,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "4no_raisins"
 	desc = "Best raisins in the universe. Not sure why."
-	description_fluff = "Originally Raisin Blend no. 4, 4noraisins obtained their current name in the Skadi Positronic Exclusion Crisis of 2442, where they were rebranded as part of the protests. The exclusion crisis, so the story goes, involved positronic immigration being banned for no raisin."
 	trash = /obj/item/trash/raisins
 	filling_color = "#343834"
 	nutriment_desc = list("dried raisins" = 6)
@@ -6185,7 +6258,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cheesie_honkers"
 	desc = "Bite sized cheesie snacks that will honk all over your mouth."
-	description_fluff = "The origins of the flourescent orange dust produced by Cheesie Honkers is considered a trade secret, despite having been leaked on the exonet decades ago. It's the cheese."
 	trash = /obj/item/trash/cheesie
 	filling_color = "#FFA305"
 	nutriment_amt = 4
@@ -6197,7 +6269,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "syndi_cakes"
 	desc = "An extremely moist snack cake that tastes just as good after being nuked."
-	description_fluff = "Spacer Snack Cakes' meaner, tastier cousin. The Syndi-Cakes brand was at risk of dissolution in 2429 when it was revealed that the entire production chain was a Nos Amis joint. The brand was quickly aquired by Centauri Provisions and some mild hallucinogenic 'add-ins' were axed from the recipe."
 	trash = /obj/item/trash/syndi_cakes
 	filling_color = "#FF5D05"
 	nutriment_desc = list("sweetness" = 3, "cake" = 1)
@@ -6205,6 +6276,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/syndicake)
+	configure(atom_rules(description_fluff = "Spacer Snack Cakes' meaner, tastier cousin. The Syndi-Cakes brand was at risk of dissolution in 2429 when it was revealed that the entire production chain was a Nos Amis joint. The brand was quickly aquired by Centauri Provisions and some mild hallucinogenic 'add-ins' were axed from the recipe."))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_DOCTORSDELIGHT = 5)))
 
@@ -6347,13 +6419,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pretzels)
 	icon_state = "hakarl"
 	trash = /obj/item/trash/hakarl
 	desc = "Fermented space shark, like chewing a urine soaked mattress."
-	description_fluff = "A form of fermented shark that originated on Earth as far back as the 17th century. Modern Hakarl is made from vat-made fermented shark and is distributed across the galaxy as a delicacy. However, few are able to stand the smell or taste of the meat."
 	filling_color = "#916E36"
 	nutriment_desc = list("fish" = 2, "salt" = 2, REAGENT_ID_AMMONIA = 1)
 	nutriment_amt = 4
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/hakarl)
+	configure(atom_rules(description_fluff = "A form of fermented shark that originated on Earth as far back as the 17th century. Modern Hakarl is made from vat-made fermented shark and is distributed across the galaxy as a delicacy. However, few are able to stand the smell or taste of the meat."))
 	configure(item_handling(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
@@ -6441,10 +6513,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocobanana)
 	icon_state = "hanami_dango"
 	trash = /obj/item/trash/stick
 	desc = "Three rice balls, each with a unique flavoring, served on a skewer. A traditional Japanese treat."
-	description_fluff = "Hanami dango is a traditional Japanese treat that is normally served during Hanami, a tradition dated back as early as the 8th century. Hanami, or cherry blossom viewing, is a spring time celebration that celebrates the cherry blossoms turning of color. It is a time of renewal, of life, and of beauty."
 	nutriment_desc = list(REAGENT_ID_RICE = 4, "earthy flavor" = 1)
 	nutriment_amt = 5
 	bitesize = 2
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/hanami_dango)
+	configure(atom_rules(description_fluff = "Hanami dango is a traditional Japanese treat that is normally served during Hanami, a tradition dated back as early as the 8th century. Hanami, or cherry blossom viewing, is a spring time celebration that celebrates the cherry blossoms turning of color. It is a time of renewal, of life, and of beauty."))
 
 ////////////////////ancient_vend (Hot Food - Old)////////////////////////////////////////////////////
 
@@ -6635,9 +6709,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/ntbeans)
 	name = "\improper BrainzSnax"
 	icon_state = "brainzsnax"
 	desc = "A can of grey matter marketed for xenochimeras."
-	description_fluff = "As the cartoon brain with limbs proudly proclaims, \"It's meat. Eat it!\" On the can is printed \"Rich in limbic system\" and \
-	under that in infinitely small letters, \"Warning, product must be eaten within two hours of opening. May contain prion disease. \
-	GrubCo LTD is not liable for any brain damage occurring after consumption of product.\""
 	trash = /obj/item/trash/brainzsnax
 	canned_open_state = "brainzsnax-open"
 	filling_color = "#caa3c9"
@@ -6649,6 +6720,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/ntbeans)
 	return brainmeat ? list("[brainmeat]" = 10) : null
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
+	configure(atom_rules(description_fluff = "As the cartoon brain with limbs proudly proclaims, \"It's meat. Eat it!\" On the can is printed \"Rich in limbic system\" and \
+	under that in infinitely small letters, \"Warning, product must be eaten within two hours of opening. May contain prion disease. \
+	GrubCo LTD is not liable for any brain damage occurring after consumption of product.\""))
 	configure(item_handling(center_x = 15, center_y = 9))
 	configure(reagents(contents_from = PROC_REF(brain_contents)))
 
@@ -6656,9 +6730,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
 	name = "\improper BrainzSnax RED"
 	icon_state = "brainzsnaxred"
 	desc = "A can of grey matter marketed for xenochimeras. This one has added tomato sauce."
-	description_fluff = "As the cartoonish brain with limbs proudly proclaims, \"It's meat. Eat it!\" On the can is printed \"Yummy red stuff!\" and \
-	under that in infinitely small letters, \"Warning, product must be eaten within two hours of opening. May contain prion disease. \
-	GrubCo LTD is not liable for any brain damage occurring after consumption of product.\""
 	trash = /obj/item/trash/brainzsnaxred
 	canned_open_state = "brainzsnaxred-open"
 	filling_color = "#a6898d"
@@ -6666,6 +6737,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
 	brainmeat = REAGENT_ID_REDBRAINPROTEIN
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax/red)
+	configure(atom_rules(description_fluff = "As the cartoonish brain with limbs proudly proclaims, \"It's meat. Eat it!\" On the can is printed \"Yummy red stuff!\" and \
+	under that in infinitely small letters, \"Warning, product must be eaten within two hours of opening. May contain prion disease. \
+	GrubCo LTD is not liable for any brain damage occurring after consumption of product.\""))
 	configure(item_handling(center_x = 15, center_y = 9))
 
 //////////////Packaged Food - break open and eat//////////////
@@ -6727,9 +6801,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/mochicake)
 	name = "\improper Spacer Snack Cake"
 	icon_state = "spacercake"
 	desc = "Guaranteed to survive longer than you will."
-	description_fluff = "Despite Spacer advertisements consistently portraying their snack cakes as life-saving, \
-	tear-jerking survival food for spacers in all kinds of dramatic scenarios, the Spacer Snack Cake has been \
-	statistically proven to lower survival rates on all missions where it is present."
 	package_trash = /obj/item/trash/spacer_cake_wrap
 	package_open_state = "spacercake_open"
 	filling_color = "#FFE591"
@@ -6738,6 +6809,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/mochicake)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie)
+	configure(atom_rules(price_tag = 1, description_fluff = "Despite Spacer advertisements consistently portraying their snack cakes as life-saving, \
+	tear-jerking survival food for spacers in all kinds of dramatic scenarios, the Spacer Snack Cake has been \
+	statistically proven to lower survival rates on all missions where it is present."))
 	configure(item_handling(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 4)))
 
@@ -7661,6 +7735,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesenachos)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/milosoup)
+	configure(atom_rules(price_tag = 3))
 	configure(item_handling(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_WATER = 5)))
 
@@ -8355,5 +8430,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice)
 	setup(PROC_REF(fill_from_whole_food))
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tastybread)
+	configure(atom_rules(price_tag = 2, description_fluff = "This is the product that brought Centauri Provisions into the limelight. A product of the earliest extrasolar colony of Heaven, the Bread Tube, while bland, contains all the nutrients a spacer needs to get through the day and is decidedly edible when compared to some of its competitors. Due to the high-fructose corn syrup content of NanoTrasen's own-brand bread tubes, many jurisdictions classify them as a confectionary."))
 	configure(item_handling(center_x = 17, center_y = 16))
 	setup(PROC_REF(roll_bread_sequel))

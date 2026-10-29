@@ -20,11 +20,9 @@
 
 
 /obj/item/clothing/shoes/magboots/proc/set_slowdown()
-	slowdown = shoes? max(SHOES_SLOWDOWN, shoes.slowdown): SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
-	tracked_changed(src, nameof(slowdown))
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, shoes? max(SHOES_SLOWDOWN, shoes.worn_factor(STAT_ITEM_ENCUMBRANCE)): SHOES_SLOWDOWN)	//So you can't put on magboots to make you walk faster.
 	if (magpulse)
-		slowdown += 3
-		tracked_changed(src, nameof(slowdown))
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, worn_factor(STAT_ITEM_ENCUMBRANCE) + (3))
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_magboots)))

@@ -73,7 +73,6 @@ impl AuthoredLease {
                                 domain: (),
                                 answer: Some(Arc::clone(&candidate.rows)),
                             }],
-                            vec![],
                             0,
                             || candidate.as_ref().clone(),
                         )

@@ -1,0 +1,2 @@
+# Ad-hoc entity ids: counters minted as ids and REF() text list keys (doc/rewrite/proposals/relations.md D9). rule<TAB>file<TAB>normalized line.
+# Shrink-only: after a sweep run `analyze baseline --update --lint entity_ids`; it drops fixed sites and never adds one.

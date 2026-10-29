@@ -41,7 +41,6 @@
 	speak_emote = list("chirps")
 	friendly = list("pokes")
 
-	say_list_type = /datum/say_list/metroid
 
 	harm_intent_damage = 5 //When someone uses fists. Default is 3
 
@@ -52,10 +51,8 @@
 	var/evo_point = 0
 	var/evo_limit = 0
 	var/next
-	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
 
 
-	species_sounds = "Metroid"
 
 /// The screech it gives as it appears (after_init()), or null for a quiet kind.
 /mob/living/simple_mob/metroid/var/arrival_sound = null
@@ -65,8 +62,9 @@
 		play_sfx(src, arrival_sound)
 
 CAPABILITIES(/mob/living/simple_mob/metroid)
-	configure(butchery_rules(meat_amount = 6))
-	configure(living_rules(max_nutrition = 2200))
+	configure(living_rules(species_sounds = "Metroid"))
+	configure(living_rules(say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat, meat_amount = 6))
 	configure(mob_nature(can_pain_emote = TRUE, pain_1p = list("skree"), pain_3p = list("skrees")))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 10))
 	configure(mob_movement(makes_dirt = FALSE))

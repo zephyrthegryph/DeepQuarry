@@ -51,7 +51,7 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		return FALSE
 	return TRUE
 
-/// One step of `X` in `holder`: the reactants go, the product comes, the rule's energy, gas and tail run, the product is audited. Returns how far it went in
+/// One step of `X` in `holder`: the reactants go, the product comes, the rule's gas, energy, spawns and tail run, the product is audited. Returns how far it went in
 /// reaction units (0: nothing happened). `belly_reagent` is the belly-reagent state the product inherits.
 /proc/xform_step(datum/xform/X, datum/reagents/holder, belly_reagent, list/ledger)
 	//determine how far the reaction can proceed
@@ -66,7 +66,10 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 
 	//need to obtain the new reagent's data before anything is altered
 	var/datum/owner = X.owner_of()
-	var/data = X.data_proc ? call(owner, X.data_proc)(holder, reaction_progress) : null
+	var/data = X.data_proc ? call(owner, X.data_proc)(holder, reaction_progress) : X.data_const
+	if(X.data_from)
+		var/list/source = holder.get_data(X.data_from[1])
+		data = (source && source[X.data_from[2]]) || X.data_from[3]
 
 	//remove the reactants
 	for(var/reactant in X.reagent_takes)
@@ -100,7 +103,7 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		log_world("XFORM: [X.rule_type] stepped [reaction_progress] in [holder.my_atom] ([holder.my_atom?.type]); made [amt_produced] of [X.result || "nothing"]")
 	return reaction_progress
 
-/// What a step does besides moving reagents, in the order the old on_reaction() ran it: the gas taken from the air, the energy booked, the rule's tail.
+/// What a step does besides moving reagents, in the order the old on_reaction() ran it: the gas taken from the air, the energy booked, what it spawns, the rule's tail.
 /proc/xform_effects(datum/xform/X, datum/reagents/holder, datum/owner, amt_produced)
 	if(length(X.takes_ambient))
 		var/datum/gas_mixture/air = holder.my_atom?.return_air()
@@ -109,6 +112,10 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 				air.adjust_gas(gas_id, -X.takes_ambient[gas_id])
 	if(X.energy)
 		xform_book_energy(X, holder)
+	if(X.spawn_rows)
+		xform_run_spawns(X, holder, amt_produced)
+	if(X.effect_rows)
+		xform_run_effects(X, holder, amt_produced, owner)
 	if(X.then_proc)
 		call(owner, X.then_proc)(holder, amt_produced)
 

@@ -57,7 +57,6 @@ CAPABILITIES(/obj/item/storage/backpack)
 	desc = "A backpack that opens into a localized pocket of Blue Space."
 	icon_state = "holdingpack"
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14 // 56
-	storage_cost = INVENTORY_STANDARD_SPACE + 1
 
 
 /obj/item/storage/backpack/holding/duffle
@@ -89,6 +88,7 @@ CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
 	return OP_OK
 
 CAPABILITIES(/obj/item/storage/backpack/holding)
+	configure(item_rules(storage_cost = INVENTORY_STANDARD_SPACE + 1))
 	configure(storage(refuses = list(/obj/item/storage/backpack/holding)))
 	op("conflict", item(/obj/item/storage/backpack/holding), label("Put in"), then(PROC_REF(bluespace_conflict)))
 
@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/storage/backpack/holding)
 	name = "dufflebag"
 	desc = "A large dufflebag for holding extra things."
 	icon_state = "duffle"
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	var/tilted = 0
 	var/can_tilt = 1
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
@@ -211,7 +211,7 @@ CAPABILITIES(/obj/item/storage/backpack/dufflebag)
 	name = "black dufflebag"
 	desc = "A large dufflebag for holding extra tactical supplies. This one appears to be made out of lighter material than usual."
 	icon_state = "duffle_syndie"
-	slowdown = 0
+	worn_factors = null
 
 /obj/item/storage/backpack/dufflebag/syndie/med
 	name = "medical dufflebag"
@@ -553,7 +553,7 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	item_state = "saddlebag"
 	icon_state = "saddlebag"
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE //Saddlebags can hold more, like dufflebags
-	slowdown = 0.5 //And are slower, too...
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5) //And are slower, too...
 	var/taurtype = /datum/sprite_accessory/tail/taur/horse //Acceptable taur type to be wearing this
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
@@ -577,7 +577,7 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	icon_state = "saddlebag"
 	var/icon_base = "saddlebag"
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE //Saddlebags can hold more, like dufflebags
-	slowdown = 0.5 //And are slower, too...
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5) //And are slower, too...
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
 
@@ -605,7 +605,7 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	icon_state = "taurvest"
 	icon_base = "taurvest"
 	max_storage_space = INVENTORY_STANDARD_SPACE
-	slowdown = 0
+	worn_factors = null
 
 /obj/item/storage/backpack/dufflebag/fluff //Black dufflebag without syndie buffs.
 	name = "plain black dufflebag"
@@ -706,19 +706,19 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	name = "Taur Saddlebags (Light)"
 	desc = "A saddle that holds items. Lighter than its heavier cousin, as the cost of storage space."
 	max_storage_space = INVENTORY_STANDARD_SPACE
-	slowdown = 0
+	worn_factors = null
 
 /obj/item/storage/backpack/saddlebag_common/robust/lightweight
 	name = "Lightweight Saddlebags"
 	desc = "A saddle that holds items. Lighter than it's robust cousin, at the cost of storage space.."
 	max_storage_space = INVENTORY_STANDARD_SPACE
-	slowdown = 0
+	worn_factors = null
 
 /obj/item/storage/backpack/saddlebag_common/vest/heavy
 	name = "Taur Duty Vest (Heavy)"
 	desc = "An armored vest with the armor modules replaced with various handy compartments with decent storage capacity. Useless for protection though. Holds more than its lighter cousin.."
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 
 CAPABILITIES(/obj/item/storage/backpack/saddlebag)

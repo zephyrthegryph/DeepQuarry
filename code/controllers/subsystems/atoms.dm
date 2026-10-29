@@ -43,16 +43,17 @@ SYSTEM_DEF(atoms)
 	/// TRUE while the boot map loads (initialize()): its settling drain is the first kernel tick's.
 	var/booting = FALSE
 
-	EXPIRY_DECLARE(init_start_time)
+	var/init_start_time = 0
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	var/list/mapload_init_times = list()
+	var/list/mapload_init_counts = list()
 	#endif
 
 	atom_initialized = INITIALIZATION_INSSATOMS
 
 /datum/system/atoms/initialize()
-	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
+	STAMP(src, init_start_time, CLOCK_WORLD)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	booting = TRUE
@@ -166,6 +167,7 @@ SYSTEM_DEF(atoms)
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	rustg_file_write(json_encode(mapload_init_times), "[GLOB.log_directory]/init_times.json")
+	rustg_file_write(json_encode(mapload_init_counts), "[GLOB.log_directory]/init_counts.json")
 	#endif
 
 /// Binds every power machine node the batch queued in one Rust call (after the cables, so the

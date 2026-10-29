@@ -101,14 +101,14 @@
 		prefs.update_preference_by_type(/datum/preference/choiced/living/spawnpoint, initial(new_spawn_point_type.display_name))
 	if(ishuman(occupant) && occupant.stat != DEAD)
 		var/mob/living/carbon/human/H = occupant
-		testing("Persist (PID): Saving stuff from [H] to [prefs] (\ref[prefs]).")
+		testing("Persist (PID): Saving stuff from [H] to [prefs] ([REF(prefs)]).")
 		if(prefs.read_preference(/datum/preference/numeric/human/persistence_settings) & PERSIST_ORGANS)
 			apply_organs_to_prefs(H, prefs)
 		if(prefs.read_preference(/datum/preference/numeric/human/persistence_settings) & PERSIST_MARKINGS)
 			apply_markings_to_prefs(H, prefs)
 		if(prefs.read_preference(/datum/preference/numeric/human/persistence_settings) & PERSIST_WEIGHT)
 			resolve_excess_nutrition(H)
-			prefs.update_preference_by_type(/datum/preference/numeric/human/weight_vr, H.weight)
+			prefs.update_preference_by_type(/datum/preference/numeric/human/weight_vr, sparse_get_or(H, weight, DEFAULT_MOB_WEIGHT))
 		if(prefs.read_preference(/datum/preference/numeric/human/persistence_settings) & PERSIST_SIZE)
 			prefs.update_preference_by_type(/datum/preference/numeric/human/size_multiplier, H.size_multiplier)
 
@@ -156,7 +156,7 @@
 	prefs.update_preference_by_type(/datum/preference/color/human/wing_color3, character.looks.wing_color3)
 	prefs.update_preference_by_type(/datum/preference/numeric/human/wing_alpha, character.looks.wing_alpha)
 
-	prefs.update_preference_by_type(/datum/preference/text/human/custom_species, character.custom_species) // migrated pref
+	prefs.update_preference_by_type(/datum/preference/text/human/custom_species, character.bio.custom_species) // migrated pref
 	prefs.update_preference_by_type(/datum/preference/toggle/human/digitigrade, character.looks.digitigrade) // migrated pref
 
 // Saves mob's current organ state to prefs.
@@ -209,19 +209,19 @@
 /proc/resolve_excess_nutrition(mob/living/carbon/C)
 	if(C.stat == DEAD)
 		return // You don't metabolize if dead
-	if(!C.metabolism || !C.species || !C.species.hunger_factor)
-		return // You don't metabolize if you have no metabolism or your species doesn't eat!
+	if(!C.species || !C.species.hunger_factor)
+		return // You don't metabolize if your species doesn't eat!
 	// Each Life() tick, you gain/lose weight proportional to your metabolism, and lose species.hunger_factor nutrition
-	var/weight_per_nutrition = C.metabolism / C.species.hunger_factor
+	var/weight_per_nutrition = MOB_WEIGHT_METABOLISM / C.species.hunger_factor
 
-	if(nutrition_of(C) > MIN_NUTRITION_TO_GAIN && C.weight < MAX_MOB_WEIGHT && sparse_get_or(C, weight_gain, 1))
+	if(nutrition_of(C) > MIN_NUTRITION_TO_GAIN && sparse_get_or(C, weight, DEFAULT_MOB_WEIGHT) < MAX_MOB_WEIGHT && sparse_get_or(C, weight_gain, 1))
 		// Weight Gain!
 		var/gain = (nutrition_of(C) - MIN_NUTRITION_TO_GAIN) * weight_per_nutrition * sparse_get_or(C, weight_gain, 1)/100
-		C.weight = min(MAX_MOB_WEIGHT, C.weight + gain)
-	else if(nutrition_of(C) <= MAX_NUTRITION_TO_LOSE && C.weight > MIN_MOB_WEIGHT && sparse_get_or(C, weight_loss, 0.5))
+		sparse_set_or(C, weight, min(MAX_MOB_WEIGHT, sparse_get_or(C, weight, DEFAULT_MOB_WEIGHT) + gain), DEFAULT_MOB_WEIGHT)
+	else if(nutrition_of(C) <= MAX_NUTRITION_TO_LOSE && sparse_get_or(C, weight, DEFAULT_MOB_WEIGHT) > MIN_MOB_WEIGHT && sparse_get_or(C, weight_loss, 0.5))
 		// Weight Loss!
 		var/loss = (MAX_NUTRITION_TO_LOSE - nutrition_of(C)) * weight_per_nutrition * sparse_get_or(C, weight_loss, 0.5)/100
-		C.weight = max(MIN_MOB_WEIGHT, C.weight - loss)
+		sparse_set_or(C, weight, max(MIN_MOB_WEIGHT, sparse_get_or(C, weight, DEFAULT_MOB_WEIGHT) - loss), DEFAULT_MOB_WEIGHT)
 
 /**
 * Persist any NIF data that needs to be persisted. It's stored in a list to make it more malleable

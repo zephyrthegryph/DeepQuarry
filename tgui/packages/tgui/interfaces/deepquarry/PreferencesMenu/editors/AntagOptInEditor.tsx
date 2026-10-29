@@ -17,8 +17,9 @@ export const AntagOptInEditor = ({ data, staticData }: EditorProps) => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '4px',
+        gridTemplateColumns:
+          'repeat(auto-fit, minmax(min(100%, 18.333em), 1fr))',
+        gap: '0.333em',
       }}
     >
       {keys.map((flag) => {

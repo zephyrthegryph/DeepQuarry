@@ -41,9 +41,9 @@ MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
 
-	EXPIRY_DECLARE(last_scan_time)
+	var/last_scan_time = 0
 	var/scan_delay = 25
-	EXPIRY_DECLARE(last_repopulation_time)
+	var/last_repopulation_time = 0
 	var/repopulation_delay = 600 //Anti spam.
 
 CAPABILITIES(/obj/item/ano_scanner)
@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/ano_scanner)
 
 /obj/item/ano_scanner/interact(mob/user)
 	if(ELAPSED(src, last_scan_time, CLOCK_WORLD) >= scan_delay)
-		EXPIRY_STAMP(src, last_scan_time, CLOCK_WORLD)
+		STAMP(src, last_scan_time, CLOCK_WORLD)
 
 		var/nearestTargetDist = -1
 		var/nearestTargetId
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/ano_scanner)
 
 		if(SSxenoarch && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.
-				EXPIRY_STAMP(src, last_repopulation_time, CLOCK_WORLD)
+				STAMP(src, last_repopulation_time, CLOCK_WORLD)
 				to_chat(user, "The [src] beeps and buzzes, a warning popping up on screen stating 'No artifacts detected on current wavelength. Swapping to different wavelength. Please try scanning momentarily.'")
 				SSxenoarch.continual_generation(user)
 

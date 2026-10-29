@@ -49,14 +49,14 @@
 ///   1. Armour for the hit part and kind (only for hits from outside the body,
 ///      INJURE_ARMORED). `armor_pen` points of it are ignored. Armour can turn
 ///      the edge of a cut or pierce, landing it as blunt trauma.
-///   2. Energy shields (/datum/definition_event/living_shield_injury: shields drain a cell for
+///   2. Energy shields (/datum/notice/living_shield_injury: shields drain a cell for
 ///      what they absorb).
 ///   3. Resistance factors: the overall incoming stat x the category's (modifiers,
 ///      forms, species baselines, traits, reagents).
 ///   4. The body's species / part multiplier (immunities, prosthetics).
 /// INJURE_IGNORE_RESISTANCE skips stages 2-4. Every stage is recorded when
 /// the mob's injury trace is on or something listens to
-/// /datum/definition_event/living_injury_explained (see explain_injury_stages()).
+/// /datum/notice/living_injury_explained (see explain_injury_stages()).
 /// Hot path: allocates nothing unless a listener or the trace needs it, and
 /// only marks the vitals dirty instead of recomputing them.
 /mob/living/proc/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
@@ -138,7 +138,7 @@
 		return 0
 	if(isnull(armor_pen))
 		armor_pen = combat_of(weapon).armor_penetration
-	return injure_split(weapon.injury_kind, weapon.injury_kinds, amount, zone, weapon, armor_pen, flags | INJURE_ARMORED)
+	return injure_split(combat_of(weapon).injury_kind, combat_of(weapon).injury_kinds, amount, zone, weapon, armor_pen, flags | INJURE_ARMORED)
 
 /// `amount` as `kind`, or shared out over `kinds` (INJURY_* -> share) for a
 /// mixed hit. Returns the amount applied.
@@ -150,7 +150,7 @@
 		. += injure(split_kind, amount * kinds[split_kind], zone, source, armor_pen, null, flags)
 
 /// Records one injure() call's mitigation stages: sends
-/// /datum/definition_event/living_injury_explained and, while the injury trace is on, logs the
+/// /datum/notice/living_injury_explained and, while the injury trace is on, logs the
 /// breakdown and shows it to the admins tracing this mob.
 /// `stages` is a list of list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /mob/living/proc/explain_injury_stages(incoming_kind, kind, list/stages, zone, atom/source, flags)
@@ -261,11 +261,11 @@ sparse(/mob/living, injury_trace, type = list)
 /// dose and accumulated dose together (anti-radiation treatment, restoration).
 /// Returns the acute dose removed.
 /mob/proc/purge_radiation(amount)
-	if(amount <= 0 || (!radiation && !accumulated_rads))
+	if(amount <= 0 || (!radiation && !accumulated_rads()))
 		return 0
 	var/before = radiation
 	set_radiation(max(radiation - amount, 0))
-	accumulated_rads = max(accumulated_rads - amount, 0)
+	set_accumulated_rads(max(accumulated_rads() - amount, 0))
 	radiation_changed()
 	return before - radiation
 
@@ -284,15 +284,15 @@ sparse(/mob/living, injury_trace, type = list)
 /// `amount` and `to_accumulated` of it settles into the long-term dose.
 /mob/proc/decay_radiation(amount, to_accumulated = 0)
 	set_radiation(max(radiation - amount, 0))
-	accumulated_rads = clamp(accumulated_rads + to_accumulated, 0, RADIATION_CAP)
+	set_accumulated_rads(clamp(accumulated_rads() + to_accumulated, 0, RADIATION_CAP))
 	radiation_changed()
 
 /// P2-S12: clear all radiation (restoration, rejuvenate, changeling panacea).
 /mob/proc/clear_radiation()
-	if(!radiation && !accumulated_rads)
+	if(!radiation && !accumulated_rads())
 		return
 	set_radiation(0)
-	accumulated_rads = 0
+	set_accumulated_rads(0)
 	radiation_changed()
 
 /// The dose changed (every radiation writer above calls it): the radiation step and the medical metric triggers hear it.
@@ -354,14 +354,6 @@ sparse(/mob/living, injury_trace, type = list)
 
 // --- Weapon vocabulary ------------------------------------------------------------------
 
-/obj/item
-	/// INJURY_* this item inflicts as a weapon (or projectile, or thrown).
-	/// Its object damage (obj_integrity) is derived from it (injury_kind_obj_damage_type()).
-	var/injury_kind = INJURY_BLUNT
-	/// Mixed hits: INJURY_* -> share of the damage, e.g. a searing blade
-	/// alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3). Null = all `injury_kind`.
-	var/alist/injury_kinds
-
 /// The obj_integrity damage type (BRUTE / BURN) an injury kind does to
 /// objects and structures, or null when it can't harm them (pain, toxins,
 /// electricity, radiation...). The one place object damage is derived.
@@ -376,4 +368,4 @@ sparse(/mob/living, injury_trace, type = list)
 
 /// The obj_integrity damage type this item does to objects (see injury_kind_obj_damage_type()).
 /obj/item/proc/obj_damage_type()
-	return injury_kind_obj_damage_type(injury_kind)
+	return injury_kind_obj_damage_type(combat_of(src).injury_kind)

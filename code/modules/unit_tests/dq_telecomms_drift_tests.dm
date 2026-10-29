@@ -18,7 +18,6 @@
 /datum/unit_test/dq_telecomms_drift_measure
 
 /datum/unit_test/dq_telecomms_drift_measure/Run()
-	restore_ambient_after() // the frames below advance world time: the map freezer pumps meanwhile
 	var/list/freezers = list()
 	for(var/obj/machinery/atmospherics/unary/freezer/Z in world)
 		freezers += Z

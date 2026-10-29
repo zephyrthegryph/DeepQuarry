@@ -11,7 +11,7 @@
 			return say_dead(message)
 
 		if(copytext(message,1,2) == "*")
-			return emote(copytext(message,2))
+			return emote(copytext(message,2), typed = TRUE)
 
 		if(copytext(message,1,2) == ";")
 			var/datum/language/L = GLOB.all_languages[LANGUAGE_DRONE_TALK]

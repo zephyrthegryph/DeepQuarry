@@ -9,7 +9,7 @@
 //     listener. The tracked var `frequency_var`'s setter is the one place the frequency changes; the capability retunes after it.
 //   - its commands: a table of packet keys and the holder procs they run, in the order they apply. A command runs when its key carries a value;
 //     the handler is x(value, key). "init" (the name the alarm gives) and "status" (report now) are the capability's own.
-//   - its status: the common fields (area, tag, device, power, timestamp) and the holder's own (`status`, a proc returning a list), kept by the area
+//   - its status: the common fields (area, tag, device, power) and the holder's own (`status`, a proc returning a list), kept by the area
 //     for the alarms' windows and posted to them, 0.2 seconds after a command.
 //
 //   area_air_device(AREA_AIR_VENT, commands = list("power" = PROC_REF(cmd_power), "direction" = PROC_REF(cmd_direction)), status = PROC_REF(status_fields))
@@ -148,7 +148,6 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	fields["tag"] = tag
 	fields["device"] = def.kind
 	fields["power"] = holder.use_power
-	fields["timestamp"] = EXPIRY_AT(holder, CLOCK_WORLD, 0)
 	fields["sigtype"] = "status"
 	data.area?.air_device_report(def.kind, tag, fields)
 	var/datum/radio_frequency/radio = SSradio.return_frequency(holder.vars[def.frequency_var])
@@ -166,7 +165,7 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	/// The air devices of each kind (AREA_AIR_VENT, AREA_AIR_SCRUBBER) the area knows: tag -> name. Lazy: most areas have none.
 	var/list/air_vent_names
 	var/list/air_scrub_names
-	/// Their last status: tag -> the status packet's fields.
+	/// Their last status: tag -> the /datum/air_device_status the area owns (the packet's fields and when they came).
 	var/list/air_vent_info
 	var/list/air_scrub_info
 	/// The last number given to a device of each kind (kind -> number): names are numbered from it and never reused.
@@ -174,10 +173,15 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	/// The area's key on the air alarms' radio (its filters): made once.
 	var/tmp/air_uid_text
 
+/// What an area keeps of one device's last status report: the packet's fields, and when they came.
+/datum/air_device_status
+	var/list/fields
+	var/reported_at = 0
+
 /// The area's key on the air alarms' radio.
 /area/proc/air_uid()
 	if(!air_uid_text)
-		air_uid_text = REF(src)
+		air_uid_text = ref_token(src)
 	return air_uid_text
 
 /// What a device of `kind` is called in the area's names ("Vent Pump", "Air Scrubber").
@@ -213,12 +217,15 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 
 /// Forgets the device `tag` of `kind`.
 /area/proc/air_device_unregister(kind, tag)
+	var/datum/air_device_status/status = LAZYACCESS(air_device_info(kind), tag)
 	if(kind == AREA_AIR_SCRUBBER)
 		remove_air_scrub_names(tag)
-		remove_air_scrub_info(tag)
+		if(status)
+			rel_remove(src, nameof(air_scrub_info), status)
 	else
 		remove_air_vent_names(tag)
-		remove_air_vent_info(tag)
+		if(status)
+			rel_remove(src, nameof(air_vent_info), status)
 
 /// The device `old_tag` of `kind` is now `new_tag`: its name moves with it; its status waits for its next report.
 /area/proc/air_device_rekey(kind, old_tag, new_tag)
@@ -236,10 +243,10 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 /area/proc/air_device_report(kind, tag, list/fields)
 	if(!LAZYACCESS(air_device_names(kind), tag))
 		return
-	if(kind == AREA_AIR_SCRUBBER)
-		set_air_scrub_info_at(tag, fields)
-	else
-		set_air_vent_info_at(tag, fields)
+	var/datum/air_device_status/status = new
+	status.fields = fields
+	STAMP(status, reported_at, CLOCK_WORLD)
+	rel_add(src, kind == AREA_AIR_SCRUBBER ? nameof(air_scrub_info) : nameof(air_vent_info), status, key = tag)
 
 /// The area was renamed from `oldtitle` to `title` (the blueprints): the names it keeps for its devices follow.
 /area/proc/air_devices_retitled(oldtitle, title)

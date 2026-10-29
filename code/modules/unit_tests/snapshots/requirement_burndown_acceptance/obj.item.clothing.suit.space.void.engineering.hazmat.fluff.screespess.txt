@@ -1,2 +1,0 @@
-equip wearer=Human: it only has three fingers, and room for extra limbs
-

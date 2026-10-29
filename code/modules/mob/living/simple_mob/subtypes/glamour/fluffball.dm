@@ -20,7 +20,6 @@
 	attacktext = list("tail whips")
 	see_in_dark = 8
 	minbodytemp = 0
-	say_list_type = /datum/say_list/fluffball
 
 	faction = FACTION_GLAMOUR
 
@@ -31,7 +30,6 @@
 	vore_active = 1
 	vore_icons = 1
 	vore_icons = SA_ICON_LIVING
-	vore_capacity = 1
 	swallowTime = 50
 	vore_ignores_undigestable = FALSE
 	vore_default_mode = DM_SELECT
@@ -115,7 +113,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 /mob/living/simple_mob/vore/fluffball/PounceTarget(mob/living/M, successrate = 100)
-	EXPIRY_SET(src, vore_pounce_cooldown, 20 SECONDS, CLOCK_WORLD) // don't attempt another pounce for a while
+	COOLDOWN_START(src, vore_pounce_cooldown, 20 SECONDS) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
 		M.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% pounces on %T%!</span>!"))
@@ -129,6 +127,7 @@
 		return //just leave them
 
 CAPABILITIES(/mob/living/simple_mob/vore/fluffball)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/fluffball))
 	op("fluffball_item", item(/obj/item), then(PROC_REF(fluffball_interaction_item)))
 
 /// Old attackby: the normal attack, then it steals food into its fluff.

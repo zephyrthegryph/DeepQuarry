@@ -28,8 +28,8 @@ use crate::util::{is_py_space, py_lstrip, py_rstrip, py_strip};
 use crate::{pat, pat_match};
 
 const LINT: &str = "derived_reads";
-const SKIP_SITE_DIRS: &[&str] = &["code/modules/unit_tests/"];
-const GENERATED_SKIP_DIRS: &[&str] = &["code/modules/unit_tests/", "code/modules/benchmarks/"];
+const SKIP_SITE_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/unit_tests/"];
+const GENERATED_SKIP_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/"];
 pub(crate) const GENERATED_REL: &str = "code/_generated/reads.dm";
 const EXEMPT_VARS: &[&str] = &["cap_state", "cap_data"];
 const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
@@ -119,7 +119,7 @@ const REACTION_OUTPUTS: &[(&str, &str, &[&str], &[&str])] = &[
         &["life_hud", "life_hud_health_icons", "life_hud_darksight"],
         &[
             "dsoverlay", "health_doll_key", "healths", "damageoverlaytemp", "global_hud_claims", "alerts", "screens", "hud_list",
-            "hud_used", "belly_overlay_tgui", "card", "borer_chem_display", "pai_fold_display",
+            "hud_used", "card", "borer_chem_display", "pai_fold_display",
         ],
     ),
     ("vision", "life_vision_changed", &["life_vision"], &["plane_holder", "global_hud_claims", "hud_used", "seer"]),

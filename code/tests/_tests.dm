@@ -32,4 +32,5 @@
 #include "engine\eg2_fixtures.dm"
 #include "domains\heat_fixtures.dm"
 #include "engine\req_protocol_fixtures.dm"
+#include "engine\km_synthetic.dm"
 #endif

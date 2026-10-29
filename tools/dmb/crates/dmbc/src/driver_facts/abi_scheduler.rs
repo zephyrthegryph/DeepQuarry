@@ -11,8 +11,10 @@ use std::{collections::BTreeSet, sync::Mutex};
 #[derive(Clone)]
 struct Candidate {
     unit: Arc<abi_artifacts::UnitArtifact>,
+    /// The stored variant the unit belongs to, claimed by the session once the scheduler accepts the row (a batch recipe
+    /// row has none: recipes only exist in private stores).
+    value: Option<Arc<Artifact>>,
     reads: Receipt<Query, Answer, Domain>,
-    versions: Arc<[(Domain, u128)]>,
 }
 /// No verdict survives this request. Missing certificates use ordinary exact
 /// replay; local Inputs and the actual current predecessor are never certified
@@ -52,7 +54,7 @@ pub(super) fn admitted(
         .collect();
     store
         .store
-        .visit_key_storage(std::iter::once(abi_artifacts::batch::KEY), |view| {
+        .visit_candidates(std::iter::once(abi_artifacts::batch::KEY), |view, _| {
             if let ObservedArtifactStorageView::Entry { value, .. } = view {
                 if let Artifact::Batch(recipe) = value.as_ref() {
                     for row in recipe.rows.iter() {
@@ -62,8 +64,8 @@ pub(super) fn admitted(
                                 key,
                                 Candidate {
                                     unit: row.unit.clone(),
+                                    value: None,
                                     reads: row.reads.clone(),
-                                    versions: row.versions.clone(),
                                 },
                             );
                             store
@@ -79,16 +81,17 @@ pub(super) fn admitted(
         .filter(|key| !candidates.contains_key(*key))
         .cloned()
         .collect();
+    let mut claimed: BTreeSet<Arc<[u8]>> = BTreeSet::new();
     // Snapshot only actual current callable candidates, using the existing exact
     // key bucket index. No other artifact/batch/output owner is cloned or scanned.
     store
         .store
-        .visit_key_storage(missing.iter().map(|key| key.as_ref()), |view| {
+        .visit_candidates(missing.iter().map(|key| key.as_ref()), |view, held| {
             if let ObservedArtifactStorageView::Entry {
                 key,
                 reads,
-                versions,
                 value,
+                ..
             } = view
             {
                 let Artifact::Unit(unit) = value.as_ref() else {
@@ -97,16 +100,22 @@ pub(super) fn admitted(
                 store
                     .candidate_rows_collected
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                // AbiArtifacts uses current_revision: one variant per exact key.
-                // If history is enabled later, this selection is only a hint:
-                // current Inputs and the complete semantic receipt below still
-                // authorize reuse; a nonmatching selected variant merely misses.
+                // A private store holds one variant per exact key; a shared core also holds the
+                // variants of sibling sessions, and this session's own claim is the better guess.
+                // The selection is only a hint: current Inputs and the complete semantic
+                // receipt below still authorize reuse; a nonmatching selected variant merely misses.
+                if !held && claimed.contains(key) {
+                    return;
+                }
+                if held {
+                    claimed.insert(key.clone());
+                }
                 candidates.insert(
                     key.clone(),
                     Candidate {
                         unit: unit.clone(),
+                        value: Some(Arc::clone(value)),
                         reads: reads.clone(),
-                        versions: versions.clone(),
                     },
                 );
             }
@@ -184,7 +193,6 @@ pub(super) fn admitted(
             let _changed_stage = dm_profile::stage("abi.sched.changed");
             if abi_artifacts::admission::changed(
                 &candidate.reads,
-                &candidate.versions,
                 &current,
                 admission,
             )
@@ -321,9 +329,11 @@ fn finish(
     candidate: &Candidate,
 ) -> crate::procedure_policy::PreparedUnit {
     let unit = &candidate.unit;
-    keys.lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .push(abi_artifacts::observations::locator(identity));
+    let key = abi_artifacts::observations::locator(identity);
+    if let Some(value) = &candidate.value {
+        store.store.claim(&key, value);
+    }
+    keys.lock().unwrap_or_else(|e| e.into_inner()).push(key);
     abi_artifacts::batch::record(capture, identity, unit, &candidate.reads);
     store
         .scheduled_reused

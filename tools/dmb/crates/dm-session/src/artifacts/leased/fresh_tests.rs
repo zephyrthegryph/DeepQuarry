@@ -26,7 +26,6 @@ fn failed_fresh_same_ledger_input_keeps_previous_publication_and_escaped_arc() {
             lease.insert_with_qualified_receipt(
                 Arc::from(b"key".as_slice()),
                 reads(),
-                Arc::from([(0, 9)]),
                 1,
                 || 11,
             )
@@ -40,7 +39,6 @@ fn failed_fresh_same_ledger_input_keeps_previous_publication_and_escaped_arc() {
             lease.insert_fresh_with_qualified_receipt(
                 Arc::from(b"key".as_slice()),
                 reads(),
-                Arc::from([(0, 9)]),
                 1,
                 || 22,
             )
@@ -50,7 +48,7 @@ fn failed_fresh_same_ledger_input_keeps_previous_publication_and_escaped_arc() {
     assert_eq!(*fresh, 22);
     assert!(!Arc::ptr_eq(&old, &fresh));
     let pressure =
-        store.prune_for_pressure(usize::MAX, |_, _, _, _| Some(std::mem::size_of::<u32>()));
+        store.prune_for_pressure(usize::MAX, |_, _, _| Some(std::mem::size_of::<u32>()));
     assert_eq!(pressure.retained_entries, 2);
     assert_eq!(pressure.payload_bytes, 2 * std::mem::size_of::<u32>());
     let weak = Arc::downgrade(&fresh);
@@ -75,7 +73,6 @@ fn successful_fresh_publication_selects_new_input_without_mutating_old_reader() 
             lease.insert_with_qualified_receipt(
                 Arc::from(b"key".as_slice()),
                 reads(),
-                Arc::from([(0, 9)]),
                 1,
                 || 11,
             )
@@ -89,7 +86,6 @@ fn successful_fresh_publication_selects_new_input_without_mutating_old_reader() 
             lease.insert_fresh_with_qualified_receipt(
                 Arc::from(b"key".as_slice()),
                 reads(),
-                Arc::from([(0, 9)]),
                 1,
                 || 22,
             )

@@ -10,6 +10,20 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	configure(atom_rules(description_fluff = "As a concept, a device that allows long-distance communication has existed for over five hundred years.  A device that can accomplish \
+	that while in space, across star systems, and that the consumer can afford and use without training, is much more recent, and is thanks to the backbone \
+	that is the Exonet.<br>\
+	<br>\
+	The Exonet is the predominant interstellar telecomm system, servicing trillions of devices across a large portion of human-controlled space.  \
+	It is distributed by a massive network of telecommunication satellites, some privately owned and others owned by the systems' local governments, \
+	that utilize FTL technologies to bounce data between satellites at speeds that would not be possible at sub-light technology.  This communicator \
+	uses a protocol called Exonet Protocol Version 2, generally shortened to EPv2.<br>\
+	<br>\
+	EPv2 is the most common communications protocol in the Exonet, and was specifically designed for it.  It was designed to facilitate communication \
+	between any device in a star system, and have the ability to forward interstellar requests at the root node of that system's Exonet.  \
+	It is also built to cope with the reality that the numerous nodes in a system will likely have frequent outages.  The protocol allows for \
+	up to 18,446,744,073,709,551,616 unique addresses, one of which is assigned to this device.", description_antag = "Electromagnetic pulses will cause the device to disconnect all linked communicators.  Turning off the Exonet node at the Telecomms \
+	satellite will also accomplish this, but for all communicators on and near the station.  This may be needed to allow for a quiet kill or capture."))
 	configure(obj_rules(show_messages = 1))
 	drag_onto(PROC_REF(communicator_dropped))
 	setup(PROC_REF(prepare_camera_connection))
@@ -485,7 +499,7 @@ CAPABILITIES(/obj/item/communicator)
 	add_im_list(list(list("address" = exonet.address, "to_address" = their_address, "im" = text)))
 	user.log_talk("(COMM: [src]) sent \"[text]\" to [exonet.get_atom_from_address(their_address)]", LOG_PDA)
 	var/obj/item/communicator/comm = exonet.get_atom_from_address(their_address)
-	to_chat(user, span_notice("[icon2html(src, user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
+	to_chat(user, span_notice("[icon2html(src, user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[text]\"</b> (<a href='byond://?src=[REF(src)];action=Reply;target=[REF(exonet.get_atom_from_address(comm.exonet.address))]'>Reply</a>)"))
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 			if(isnewplayer(M) || sparse_get_or(M, forbid_seeing_deadchat, FALSE))

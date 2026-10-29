@@ -35,21 +35,18 @@
 	can_buckle = TRUE
 	mount_offset_y = 10
 
-	say_list_type = /datum/say_list/otie
 
 	var/mob/living/carbon/human/friend
 	var/tamed = 0
 	var/tame_chance = 50 //It's a fiddy-fiddy default you may get a buddy pal or you may get mauled and ate. Win-win!
 
 
-	species_sounds = "Canine"
 
 // Activate Noms!
 
 /mob/living/simple_mob/vore/otie
 	drag_buckle = FALSE
 	vore_active = 1
-	vore_capacity = 1
 	vore_pounce_chance = 20
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 	vore_stomach_name = "Grut"
@@ -230,6 +227,8 @@
 	icon_rest = "hotiesc_rest"
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie)
+	configure(living_rules(species_sounds = "Canine"))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/otie))
 	configure(butchery_rules(meat_amount = 6))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))

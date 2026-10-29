@@ -3,9 +3,10 @@
 	desc = "An arcane weapon wielded by the followers of Nar-Sie."
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/cultblade)
+	configure(item_combat(injury_kind = INJURY_CUT))
+	configure(atom_rules(description_antag = "This sword is a powerful weapon, capable of severing limbs easily, if they are targeted.  Nonbelievers are unable to use this weapon."))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
@@ -112,7 +113,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/cult)
 	icon_state = "cult_armour"
 	desc = "A bulky suit of armour, bristling with spikes. It looks space-worthy."
 	w_class = ITEMSIZE_NORMAL
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/cult)

@@ -215,7 +215,7 @@ CAPABILITIES(/obj/structure/disposalpipe/junction)
 /obj/structure/disposalpipe/sortjunction/bodies/transfer(obj/structure/disposalholder/H)
 	if(H.destinationTag == "")
 		// If the package isn't mail and we're a body sorter, check if it has a body/ID, and divert it if so.
-		H.destinationTag = text_or_null(check_for_corpse_or_id(H))
+		H.destinationTag = check_for_corpse_or_id(H)
 	. = ..()
 
 /obj/structure/disposalpipe/sortjunction/bodies/divert_check(checkTag)

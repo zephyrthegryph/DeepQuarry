@@ -4,7 +4,8 @@
 	icon_state = "implant"
 	w_class = ITEMSIZE_TINY
 
-	var/implanted = null
+	/// Whether it has been implanted (the host is imp_in).
+	var/implanted = FALSE
 	var/mob/imp_in
 	var/obj/item/organ/external/part = null
 	var/implant_color = "b"
@@ -265,7 +266,7 @@ Implant Specifics:<BR>"}
 
 	if(istype(imp_in(), /mob/))
 		var/mob/T = imp_in()
-		message_admins("Explosive implant triggered in [T] ([T.key]). (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>) ")
+		message_admins("Explosive implant triggered in [T] ([T.key]). (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>) ")
 		log_game("Explosive implant triggered in [T] ([T.key]).")
 
 		if(ishuman(imp_in()))
@@ -843,12 +844,6 @@ CAPABILITIES(/obj/item/implanter/sizecontrol)
 	name = "compliance implant"
 	desc = "Implant which allows for implanting 'laws' or 'commands' in the host. Has a miniature keyboard for typing laws into."
 
-	description_fluff = "Due to the illegality of these types of implants, they are often made in clandestine facilities with a complete lack of quality control \
-	and as such, may malfunction or simply not work whatsoever. After loyalty implants were outlawed in many civilized areas of space, an abundance of readily \
-	available implanters and implants became available for purchase on the black market, with some deciding to modify them. Now, they are often used by illegal \
-	entities to perform espionage and in some parts of space are used off the books for interrogation. Most of the makers of these modified implants have put in \
-	safeties to prevent lethal or actively harmful commands from being input to lessen the severity of the crime if they are caught. This one has a golden stamp \
-	with the shape of a star on it, the letters 'KE' in black text on it."
 	special_handling = TRUE
 
 
@@ -897,6 +892,12 @@ CAPABILITIES(/datum/prompt/text/compliance_laws)
 	return OP_OK
 
 CAPABILITIES(/obj/item/implanter/compliance)
+	configure(atom_rules(description_fluff = "Due to the illegality of these types of implants, they are often made in clandestine facilities with a complete lack of quality control \
+	and as such, may malfunction or simply not work whatsoever. After loyalty implants were outlawed in many civilized areas of space, an abundance of readily \
+	available implanters and implants became available for purchase on the black market, with some deciding to modify them. Now, they are often used by illegal \
+	entities to perform espionage and in some parts of space are used off the books for interrogation. Most of the makers of these modified implants have put in \
+	safeties to prevent lethal or actively harmful commands from being input to lessen the severity of the crime if they are caught. This one has a golden stamp \
+	with the shape of a star on it, the letters 'KE' in black text on it."))
 	without("toggle")
 	op("compliance_implanter_self", in_hand(), label("Set laws"),
 		asks(/datum/prompt/text/compliance_laws, fields = list("implant" = computed(PROC_REF(compliance_implant))), step = "laws", when = PROC_REF(has_compliance_implant)),

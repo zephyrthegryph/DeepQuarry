@@ -125,9 +125,9 @@ MSG_DEF_SELF(accessory/slot_taken, "Something is already attached there.")
 	worn_protection_changed()
 
 /obj/item/clothing/proc/update_accessory_slowdown()
-	slowdown = initial(slowdown)
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
 	for(var/obj/item/clothing/accessory/A in accessories)
-		slowdown += A.slowdown
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, worn_factor(STAT_ITEM_ENCUMBRANCE) + (A.worn_factor(STAT_ITEM_ENCUMBRANCE)))
 
 /obj/item/clothing/proc/removetie_verb()
 	set name = "Remove Accessory"
@@ -153,11 +153,6 @@ MSG_DEF_SELF(accessory/slot_taken, "Something is already attached there.")
 		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			to_chat(C, span_warning("You cannot remove accessories while handcuffed!"))
 			return
-		else if(istype(C, /mob/living/carbon/human))
-			var/mob/living/carbon/human/H = C
-			if(H.ability_flags & 0x1)
-				to_chat(H, span_warning("You cannot remove accessories while phase shifted!"))
-				return
 	// end
 
 	var/obj/item/clothing/accessory/A

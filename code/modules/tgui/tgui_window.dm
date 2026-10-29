@@ -34,7 +34,7 @@
 	var/document_id
 	/// world.time at which a prewarm initialize() was issued, so an idle shell that
 	/// never reports `ready` can be timed out and replaced.
-	EXPIRY_DECLARE(prewarm_started_at)
+	var/prewarm_started_at = 0
 	/// Ends the current one-second payload chunk budget window.
 	COOLDOWN_DECLARE(payload_chunk_window_cooldown)
 	/// payloadChunk topics accepted during the current accounting window.
@@ -380,7 +380,12 @@
 /datum/tgui_window/proc/send_message(type, payload, force)
 	if(!client())
 		return
-	var/message = TGUI_CREATE_MESSAGE(type, payload)
+	// The one point every tgui push to a client goes through: the HREF_TOKEN_PLACEHOLDER of an admin link in the payload (ui_data text that
+	// holds an ADMIN_* or VV_* macro) is filled for this client, or stripped for a player (href_deliver()). The JSON is scanned once.
+	var/payload_json = json_encode(payload)
+	if(findtext(payload_json, HREF_TOKEN_PLACEHOLDER))
+		payload_json = href_deliver(client(), payload_json)
+	var/message = "%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(payload_json)]%7d" // TGUI_CREATE_MESSAGE's format
 	// Place into queue if window is still loading
 	if(!force && status != TGUI_WINDOW_READY)
 		if(!message_queue)

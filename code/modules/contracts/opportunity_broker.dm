@@ -9,10 +9,12 @@
 /datum/contract_opportunity_observation
 	var/fact_key
 	var/revision = 0
-	EXPIRY_DECLARE(occurred_at)
+	var/occurred_at = 0
 	var/value = 0
 	var/actor_key
 	var/list/diversity_values
+
+SCHEMA(/datum/contract_opportunity_observation, value, num())
 
 /datum/contract_opportunity_observation/New(_fact_key, datum/contract_event/event, datum/contract_opportunity_signal/signal)
 	. = ..()
@@ -105,8 +107,8 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 /datum/contract_opportunity_window
 	var/key
 	var/bucket
-	EXPIRY_DECLARE(created_at)
-	EXPIRY_DECLARE(last_event_at)
+	var/created_at = 0
+	var/last_event_at = 0
 	var/latched = FALSE
 	var/list/facts_by_signal
 	/// Owns the records indexed by facts_by_signal; the nested maps retain their lookup order.
@@ -122,8 +124,8 @@ CAPABILITIES(/datum/contract_opportunity_window)
 	. = ..()
 	key = _key
 	bucket = _bucket
-	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
-	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
+	STAMP(src, created_at, CLOCK_WORLD)
+	STAMP(src, last_event_at, CLOCK_WORLD)
 	facts_by_signal = list()
 	for(var/datum/contract_opportunity_signal/signal in rule.signals)
 		facts_by_signal[signal.id] = list()
@@ -161,7 +163,7 @@ CAPABILITIES(/datum/contract_opportunity_window)
 			return FALSE
 		facts -= fact_key
 		rel_remove(src, nameof(observations), previous)
-	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
+	STAMP(src, last_event_at, CLOCK_WORLD)
 	if(!event.fact_active || !signal.event_matches(event))
 		return TRUE
 	facts[fact_key] = rel_add(src, nameof(observations), new /datum/contract_opportunity_observation(fact_key, event, signal))
@@ -301,7 +303,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 		"offer_kind" = CONTRACT_OFFER_OPPORTUNITY,
 		"opportunity_rule" = id,
 		"opportunity_bucket" = window.bucket,
-		"opportunity_triggered_at" = EXPIRY_AT(null, CLOCK_WORLD, 0),
+		"opportunity_triggered_at" = TIME_NOW(CLOCK_WORLD),
 		"trigger_event_id" = event.id,
 		"trigger_area" = event.area_name,
 		"trigger_signals" = deepCopyList(signal_snapshots),
@@ -322,7 +324,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 	return !!queued || !!controller.find_live_offer(offer_key) || !!controller.find_candidate(offer_key)
 
 /datum/contract_opportunity_history_entry
-	EXPIRY_DECLARE(time)
+	var/time = 0
 	var/rule_id
 	var/bucket
 	var/event_id
@@ -331,7 +333,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 
 /datum/contract_opportunity_history_entry/New(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, datum/contract_event/event, list/_snapshots)
 	. = ..()
-	EXPIRY_STAMP(src, time, CLOCK_WORLD)
+	STAMP(src, time, CLOCK_WORLD)
 	rule_id = rule.id
 	bucket = window.bucket
 	event_id = event.id

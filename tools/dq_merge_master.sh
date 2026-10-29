@@ -16,6 +16,7 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_stale_includes.sh"
 # In the shared merge worktree only the batch that holds the merge lock may merge; and a merge never starts on a tree with staged or
 # modified tracked files (another batch's half-finished merge, or work a merge would have to set aside).
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
@@ -56,6 +57,13 @@ if [ "$merge_rc" -ne 0 ]; then
 		mapfile -t conflicted < <(printf '%s
 ' "${conflicted[@]}" | grep -vE '^code/modules/unit_tests/snapshots/(look_keys\.txt|looks/|look_states/|look_trees/)' || true)
 	fi
+	# deepquarry.dme is generated: a conflict on it (a merge without the dq-dme driver) resolves by regeneration from the merged files.
+	for f in "${conflicted[@]}"; do
+		if [ "$f" = "deepquarry.dme" ]; then
+			echo "dq_merge_master: resolving deepquarry.dme by regeneration (tools/build/gen_dme.py)"
+			python3 tools/build/gen_dme.py >/dev/null && git add -- deepquarry.dme
+		fi
+	done
 	gen=()
 	for f in "${conflicted[@]}"; do
 		if [[ "$f" =~ $GEN_RE ]]; then gen+=("$f"); fi
@@ -73,6 +81,13 @@ if [ ${#tracked[@]} -gt 0 ]; then
 	git rm -r -q --cached -- "${tracked[@]}"
 fi
 
+# Includes of files the merge deleted (a union merge of an include list brings them back): dropped from the merge and reported.
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 && [ -z "$(git diff --name-only --diff-filter=U -- code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm deepquarry.dme)" ]; then
+	for ut in code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm; do
+		[ -f "$ut" ] && dq_drop_stale_includes "$ut" "$(dirname "$ut")" "dq_merge_master"
+	done
+	dq_drop_stale_includes deepquarry.dme . "dq_merge_master"
+fi
 mapfile -t remaining < <(git diff --name-only --diff-filter=U)
 if [ ${#remaining[@]} -gt 0 ]; then
 	echo
@@ -86,6 +101,9 @@ if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
 	echo "dq_merge_master: merged $ref; regenerating"
 	tools/build/build.sh gen || exit 1
 bash tools/ci/gen_verdigris_bindings.sh || exit 1
+	# The build regenerated deepquarry.dme from the merged files (a lane that still edits it by hand merges by union or by the dq-dme
+	# driver; this is the list the merged tree gives): it goes into the merge commit.
+	git add -- deepquarry.dme
 	git commit -q --no-edit || { echo "dq_merge_master: commit failed" >&2; exit 1; }
 	exit 0
 fi
@@ -96,3 +114,8 @@ fi
 echo "dq_merge_master: merged $ref (fast-forward or up to date); regenerating"
 tools/build/build.sh gen || exit 1
 bash tools/ci/gen_verdigris_bindings.sh || exit 1
+if ! git diff --quiet -- deepquarry.dme; then
+	git add -- deepquarry.dme
+	git commit -q -m "Regenerate deepquarry.dme (tools/build/gen_dme.py)" || exit 1
+	echo "dq_merge_master: committed the regenerated deepquarry.dme"
+fi

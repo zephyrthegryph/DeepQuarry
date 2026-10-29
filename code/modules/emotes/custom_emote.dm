@@ -1,8 +1,9 @@
 
 /// This is the custom_emote that you'll want to use if you want the mob to be able to input their emote.
-/mob/proc/custom_emote(m_type = VISIBLE_MESSAGE, message, range = world.view, check_stat = TRUE)
+/// `typed`: the player typed this emote (a say or me entry, or the answer to its prompt), as against the game making the mob emote.
+/mob/proc/custom_emote(m_type = VISIBLE_MESSAGE, message, range = world.view, check_stat = TRUE, typed = FALSE)
 
-	if((check_stat && (src && stat)) || is_paralyzed() || (!kind_of(src).use_me && usr == src))
+	if((check_stat && (src && stat)) || is_paralyzed() || (!kind_of(src).use_me && typed))
 		to_chat(src, "You are unable to emote.")
 		return
 
@@ -25,7 +26,7 @@
 	var/datum/prompt/text/custom_emote/asked = A.answer
 	if(!asked || isnull(asked.value))
 		return
-	custom_emote(asked.m_type, asked.value, asked.range, asked.check_stat)
+	custom_emote(asked.m_type, asked.value, asked.range, asked.check_stat, typed = TRUE)
 
 /// This is the custom_emote that you'll want to use if you're forcing something to custom emote with no input from the mob.
 /// By default, we have a visible message, our range is world.view, and we do NOT check the stat.
@@ -103,7 +104,7 @@
 			if(EMOTE_SOUND_VOICE_FREQ)
 				playsound(T, SFX_TALKSOUNDS_EMOTE, 75, TRUE, falloff = 1 , is_global = TRUE, frequency = sparse_get_or(src, voice_freq, 42500), ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 			if(EMOTE_SOUND_VOICE_LIST)
-				playsound(T, pick(voice_sounds_list), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = sparse_get_or(src, voice_freq, 42500), ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
+				playsound(T, pick(sparse_get(src, voice_sounds_list)), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = sparse_get_or(src, voice_freq, 42500), ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 
 	var/list/in_range = get_mobs_and_objs_in_view_fast(T,range,2,remote_ghosts = client ? TRUE : FALSE)
 	var/list/m_viewers = in_range["mobs"]

@@ -1,6 +1,6 @@
 /datum/admins/proc/CheckAdminHref(href, href_list, mob/user)
 	var/auth = href_list["admin_token"]
-	. = auth && (auth == href_token || auth == GLOB.href_token)
+	. = auth && auth == href_token
 	if(.)
 		return
 	var/msg = !auth ? "no" : "a bad"
@@ -48,21 +48,21 @@
 	if(isobserver(target))
 		var/mob/observer/dead/ghost = target
 		if(ghost.mind && ghost.mind.current)
-			return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[ghost.mind.current]'>BDY</A>"
+			return "|<A href='byond://?[source];[HREF_TOKEN_PLACEHOLDER];adminplayerobservejump=[url_encode(ref_token(ghost.mind.current))]'>BDY</A>"
 		return
 	if(ismob(target))
 		var/mob/M = target
 		var/mob/observer/eye/eyeobj = M?.active_eye()
 		if(M.client && eyeobj)
-			return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[eyeobj]'>EYE</A>"
+			return "|<A href='byond://?[source];[HREF_TOKEN_PLACEHOLDER];adminplayerobservejump=[url_encode(ref_token(eyeobj))]'>EYE</A>"
 
 /proc/admin_jump_link(atom/target, source)
 	if(!target) return
 	// The way admin jump links handle their src is weirdly inconsistent...
 	if(istype(source, /datum/admins))
-		source = "src=\ref[source]"
+		source = "src=[REF(source)]"
 	else
 		source = "_src_=holder"
 
-	. = "<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[target]'>JMP</A>"
+	. = "<A href='byond://?[source];[HREF_TOKEN_PLACEHOLDER];adminplayerobservejump=[url_encode(ref_token(target))]'>JMP</A>"
 	. += extra_admin_link(target, source)

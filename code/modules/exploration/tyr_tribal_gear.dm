@@ -158,7 +158,7 @@ CAPABILITIES(/obj/item/melee/agate_hammer)
 /obj/item/clothing/suit/armor/tyrtribalcloak
 	name = "leaf cloak"
 	desc = "A strange cloak made of leaves and fiber. A strange residue resides upon the equipment"
-	slowdown = 0.2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.2)
 	icon = 'icons/mob/tribal_gear.dmi'
 	icon_override = 'icons/mob/tribal_gear.dmi'
 	icon_state = "lilly_cloak"
@@ -224,11 +224,11 @@ CAPABILITIES(/obj/item/pickaxe/diamonddrill/alien)
 	active_throwforce = 40
 	icon_state = "dualsaber"
 	item_state = "dualsaber"
-	injury_kind = INJURY_CUT
 	colorable = TRUE
 	defend_chance = 65
 
 CAPABILITIES(/obj/item/melee/energy/sword/dualsaber)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(sharp = TRUE, edge = TRUE, can_cleave = TRUE))
 
 
@@ -262,8 +262,7 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 	active_force = 10
 	active_armourpen = 60
 	active_throwforce = 40
-	throw_range = 7
-	slowdown = 2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	defend_chance = 70
 	projectile_parry_chance = 70
 	active_w_class = ITEMSIZE_HUGE
@@ -274,7 +273,7 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 		)
 
 CAPABILITIES(/obj/item/melee/energy/sword/top_shield)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 7, throw_speed = 1))
 
 //E sword has 30 damage, 50 AP, and 65% projectile block
 //Axe is 60 damage, 65 AP, no guard

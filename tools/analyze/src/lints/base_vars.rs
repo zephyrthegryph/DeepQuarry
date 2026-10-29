@@ -13,7 +13,8 @@
 //! A base var with a home is not counted (doc/rewrite/proposals/base_vars.md): one named by a
 //! `TRACKED(T, v)`/`STAT(T, v, ...)` line or another `base_var_home_macros` declaration on its own
 //! type, or one whose declared type is under a `base_var_home_types` path (the HUD datum, the profile
-//! records, the sparse and cooldown stores). Trait blocks declare no var at all.
+//! records, the sparse and cooldown stores), or one declared as a relation on its own type (a `base_var_home_relations` entry in its
+//! `CAPABILITIES` block, or an end of `links()`: references live in relations). Trait blocks declare no var at all.
 //!
 //! A hot per-tick base var that has no better home is listed in `[lint.base_vars.tables.base_var_home_hot]` of
 //! `tools/ci/lint_scopes.toml` as `"<type>/<var>" = "<justification>"`: a listed var is homed. The justification is at
@@ -87,7 +88,7 @@ static META: Meta = Meta {
         },
     ],
     allow: &["base_vars", "instance_list"],
-    lists: &["list_init_exempt_prefixes", "list_init_exempt_files", "base_var_home_macros", "base_var_home_types", "record_accessor_prefixes", "hot_ceiling"],
+    lists: &["list_init_exempt_prefixes", "list_init_exempt_files", "base_var_home_macros", "base_var_home_relations", "base_var_home_types", "record_accessor_prefixes", "hot_ceiling"],
 };
 
 pub const BASE_TYPES: &[&str] = &[
@@ -134,22 +135,53 @@ struct Facts {
     homes: Vec<(String, String)>,
 }
 
-/// The `(type, var)` pairs the home macros name in `text`.
-fn homes_in(text: &str, macros: &[String]) -> Vec<(String, String)> {
+/// The `(type, var)` pairs the home macros name in `text`, and the vars declared as relations: an entry of a
+/// `base_var_home_relations` kind (`ref_one(nameof(v))`, `owns_many(nameof(/T::v))`) in the `CAPABILITIES(T)` block of the
+/// var's own type, or either end of a `links(/A::a, /B::b)` (doc/rewrite/proposals/base_vars.md: references live in relations).
+fn homes_in(text: &str, macros: &[String], relations: &[String]) -> Vec<(String, String)> {
     let mut out = Vec::new();
     for m in pat!(r"(?m)^[ 	]*([A-Z_]+)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures_iter(text) {
         if macros.iter().any(|x| x == m.s(1)) {
             out.push((m.s(2).to_string(), m.s(3).to_string()));
         }
     }
+    if relations.is_empty() {
+        return out;
+    }
+    let block = pat!(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)");
+    let entry = pat!(r"\b([a-z_]+)\(\s*nameof\(\s*(?:(/[\w/]+)::|(?:src|[A-Za-z_]\w*)\.)?(\w+)\s*\)");
+    let link_end = pat!(r"(/[\w/]+)::(\w+)");
+    let mut owner: Option<String> = None;
+    for line in text.lines() {
+        if !line.starts_with('\t') && !line.starts_with(' ') && !line.trim().is_empty() {
+            owner = block.captures(line).map(|c| c.s(1).to_string());
+        }
+        for c in entry.captures_iter(line) {
+            if !relations.iter().any(|x| x == c.s(1)) {
+                continue;
+            }
+            if let Some(explicit) = c.get(2) {
+                out.push((explicit.to_string(), c.s(3).to_string()));
+            } else if let Some(o) = &owner {
+                out.push((o.clone(), c.s(3).to_string()));
+            }
+        }
+        if relations.iter().any(|x| x == "links") && line.contains("links(") {
+            if let Some(i) = line.find("links(") {
+                for c in link_end.captures_iter(&line[i..]) {
+                    out.push((c.s(1).to_string(), c.s(2).to_string()));
+                }
+            }
+        }
+    }
     out
 }
 
-fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String], macros: &[String]) -> Facts {
+fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String], macros: &[String], relations: &[String]) -> Facts {
     let mut out = Facts::default();
     if f.rel.starts_with("code/") {
         let text = f.raw().text.as_str();
-        out.homes = homes_in(f.code().text.as_str(), macros);
+        out.homes = homes_in(f.code().text.as_str(), macros, relations);
         if text.contains("GLOBAL_DATUM_INIT") {
             // The trailing `\x08` is the Python's literal backspace (see dm/singletons.rs).
             let mut set: BTreeSet<String> = BTreeSet::new();
@@ -291,7 +323,7 @@ fn hot_problems(hot: &std::collections::BTreeMap<String, String>, declared: Opti
             continue;
         };
         if homed.contains(&(owner.to_string(), name.to_string())) {
-            out.push((key.clone(), format!("`{}` is already homed by a TRACKED/STAT/SETTER declaration: drop the entry", key)));
+            out.push((key.clone(), format!("`{}` is already homed by a TRACKED/STAT/SETTER declaration or a relation: drop the entry", key)));
         }
         if !BASE_TYPES.contains(&owner) {
             out.push((key.clone(), format!("`{}`: {} is not a base type", key, owner)));
@@ -365,10 +397,11 @@ impl Lint for BaseVars {
         let exempt_prefixes = cx.list("list_init_exempt_prefixes");
         let exempt_files = cx.list("list_init_exempt_files");
         let macros = cx.list("base_var_home_macros");
+        let relations = cx.list("base_var_home_relations");
         let hot = cx.table(HOT_TABLE);
         out.note(format!("base_vars: {} hot base vars homed by base_var_home_hot", hot.len()));
-        let ctx = incr::ctx_key(&(exempt_prefixes, exempt_files, macros));
-        let facts = recorded_into(out, || incr::keyed("base_vars-facts3", ctx, &all, |f| facts_of(f, exempt_prefixes, exempt_files, macros)));
+        let ctx = incr::ctx_key(&(exempt_prefixes, exempt_files, macros, relations));
+        let facts = recorded_into(out, || incr::keyed("base_vars-facts4", ctx, &all, |f| facts_of(f, exempt_prefixes, exempt_files, macros, relations)));
         let homes: HashSet<(String, String)> = facts.iter().flat_map(|fa| fa.homes.iter().cloned()).collect();
 
         // `singleton_types()`: the union, minus bare `/datum`.
@@ -380,13 +413,21 @@ impl Lint for BaseVars {
         // On the typed tree: the vars each type declares, wherever and however they are written (a multi-var line, a nested
         // block, a macro that declares them), at their real line. The text parse is the fallback without a model.
         if let Some(sites) = recorded_into(out, || typed_sites(cx, &global_set, exempt_prefixes, exempt_files, &homes, &hot)) {
+            // A base var that carries a value schema (`SCHEMA(T, v, schema_path(...))`) is a typed value: its home is the trait field or sparse
+            // slot the schema types (doc/rewrite/proposals/typed_values.md section 5, step 4). The schema alone is no home (it saves no memory),
+            // so the site stays; the message names the schema so the conversion has its type.
+            let schemas = crate::sem::value_schema::ValueSchemas::build(&crate::sem::decls::Decls::get(cx.tree));
             for (rule, rel, line, ident) in sites {
                 if rule == "hot_home" {
                     let (key, msg) = ident.split_once('\t').unwrap_or((ident.as_str(), ""));
                     out.site_decl(rule, &rel, line as usize, msg.to_string(), format!("hot::{}", key));
                     continue;
                 }
-                out.site_decl(rule, &rel, line as usize, String::new(), ident);
+                let msg = match ident.split_once("::") {
+                    Some((o, v)) if rule == "base_var" && schemas.declared_on(o, v).is_some() => format!("{} carries a value schema: move it to the trait field or sparse slot that schema types", ident),
+                    _ => String::new(),
+                };
+                out.site_decl(rule, &rel, line as usize, msg, ident);
             }
             return;
         }
@@ -482,7 +523,7 @@ mod tests {
 	var/list/stuff = list()
 ");
         let none: Vec<String> = Vec::new();
-        let facts = vec![facts_of(&f, &none, &none, &none)];
+        let facts = vec![facts_of(&f, &none, &none, &none, &none)];
         let mut out = Sink::new();
         text_sites(&[&f], &facts, &BTreeSet::new(), &HashSet::new(), &Default::default(), &mut out);
         let base: Vec<&str> = out.sites.iter().filter(|s| s.rule == "base_var").map(|s| s.ident.as_str()).collect();
@@ -557,7 +598,7 @@ mod tests {
     fn listed_var_is_not_a_site_and_unlisted_is() {
         let f = SourceFile::from_text("code/a.dm", "/atom\n\tvar/tmp/flags_9 = 0\n\tvar/tmp/hot_one = 0\n");
         let none: Vec<String> = Vec::new();
-        let facts = vec![facts_of(&f, &none, &none, &none)];
+        let facts = vec![facts_of(&f, &none, &none, &none, &none)];
         let mut out = Sink::new();
         text_sites(&[&f], &facts, &BTreeSet::new(), &HashSet::new(), &hot(&[("/atom/hot_one", GOOD)]), &mut out);
         let base: Vec<&str> = out.sites.iter().filter(|s| s.rule == "base_var").map(|s| s.ident.as_str()).collect();

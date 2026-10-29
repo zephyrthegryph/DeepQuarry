@@ -61,8 +61,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	/// Check specs gating roster membership (re-checked only when their
 	/// depends_on channels change).
 	var/list/requires
-	/// Event types handled (subtypes included).
-	var/list/handles
 	/// Output channel. Behaviours waking on it are ordered after this one.
 	var/produces = 0
 	/// Deciseconds. on_wake runs at most this often per entity: wakes in between are
@@ -93,6 +91,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	var/interest = 0
 	/// Index of the measurement system (km_bind_behaviours()); 0 until the registry binds it.
 	var/system_idx = 0
+
+SCHEMA(/datum/scheduled_behaviour, system_key, schema_text())
 
 /datum/scheduled_behaviour/proc/tick(datum/E, dt)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -131,17 +131,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/// Fallback for events whose type defines no typed handler.
-/datum/scheduled_behaviour/proc/on_event(datum/E, datum/definition_event/event)
-	SHOULD_NOT_SLEEP(TRUE)
-	return
-
 /// Rust-owned watch delivery (native.dm).
 /datum/scheduled_behaviour/proc/on_native(datum/E, native_bits)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/// A behaviour synthesised from a decl's reacts/ticks/events row: calls a
+/// A behaviour synthesised from a decl's reacts/ticks row: calls a
 /// proc on the entity itself (src is the entity, typed).
 /datum/scheduled_behaviour/inline
 	abstract_type = /datum/scheduled_behaviour/inline
@@ -156,45 +151,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 
 /datum/scheduled_behaviour/inline/on_deadline(datum/E)
 	call(E, call_path)()
-
-/datum/scheduled_behaviour/inline/on_event(datum/E, datum/definition_event/event)
-	call(E, call_path)(event)
-
-// ===================================================================== events
-
-/datum/definition_event
-	parent_type = /datum/core_definition
-	abstract_type = /datum/definition_event
-	/// before_* events are synchronous and may return EVENT_VETO.
-	var/before = FALSE
-	/// Re-entrant emits of the same type to the same entity keep only the latest. Off by default: an event is an
-	/// occurrence (something happened, once), so every one is delivered, in order. Only a state-like event whose
-	/// latest value is all that matters opts in.
-	var/coalesce = FALSE
-	/// Dropped inside bulk_begin()/bulk_end(). Off by default: occurrences are never suppressed in bulk; only a
-	/// cosmetic event opts in.
-	var/skip_in_bulk = FALSE
-	/// Delivered at once even inside another delivery (never queued), like a direct call.
-	/// Cross-entity events are sync so their listeners see the state the sender is in.
-	var/sync = FALSE
-	/// before/ events only: every handler runs and their numeric returns are ORed into
-	/// `result` (the event's documented result bits), instead of stopping at the first
-	/// EVENT_VETO. Such events may nest on one entity.
-	var/accumulate = FALSE
-	/// Numeric handler returns, ORed. om_emit() returns it for sync and accumulate events.
-	var/result = 0
-	/// Set by om_emit().
-	var/datum/entity
-
-/// Double dispatch: typed events override this to call their own
-/// /datum/scheduled_behaviour/proc/on_<event>(E, event), declared next to the event.
-/datum/definition_event/proc/dispatch(datum/scheduled_behaviour/B, datum/E)
-	return B.on_event(E, src)
-
-/datum/definition_event/before
-	abstract_type = /datum/definition_event/before
-	before = TRUE
-	coalesce = FALSE
 
 // ===================================================================== relations
 
@@ -383,3 +339,4 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/service_definition)
 
 /datum/scheduled_behaviour/internal
 	abstract_type = /datum/scheduled_behaviour/internal
+SCHEMA(/datum/scheduled_behaviour, system_idx, num())

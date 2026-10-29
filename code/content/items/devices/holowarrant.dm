@@ -5,7 +5,6 @@
 	icon_state = "holowarrant"
 	item_state = "flashtool"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 	var/datum/data/record/warrant/active
 
 //look at it

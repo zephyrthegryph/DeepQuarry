@@ -59,10 +59,9 @@ impl HeapCensus {
                     dm_session::ObservedArtifactStorageView::Bucket { address, len, capacity, element_size } => {
                         self.buffer("cold_boundary.fragment_buckets", address, len.saturating_mul(element_size), capacity.saturating_mul(element_size));
                     }
-                    dm_session::ObservedArtifactStorageView::Entry { key, reads, versions, value } => {
+                    dm_session::ObservedArtifactStorageView::Entry { key, reads, value } => {
                         self.slice("cold_boundary.fragment_keys", key, true);
                         self.receipt("cold_boundary.fragment_reads", reads);
-                        self.slice("cold_boundary.fragment_versions", versions, true);
                         for read in reads.iter() {
                             match &read.answer {
                                 crate::initializer_lowering::receipts::Answer::Semantic(answer) => super::resident_weight::answer(self, answer),
@@ -133,9 +132,9 @@ impl HeapCensus {
                 dm_session::ArtifactStorageView::Bucket { address, len, capacity, element_size } => {
                     self.buffer("cold_boundary.rich_buckets", address, len.saturating_mul(element_size), capacity.saturating_mul(element_size));
                 }
-                dm_session::ArtifactStorageView::Entry { key, reads, versions, value } => {
+                dm_session::ArtifactStorageView::Entry { key, reads, value } => {
                     self.slice("cold_boundary.rich_keys", key, true);
-                    self.retained_symbolic_ledger(reads, versions);
+                    self.retained_symbolic_ledger(reads);
                     if self.arc_object("cold_boundary.rich_values", value) {
                         self.lowered_unit(&value.unit);
                         self.vec_payload("cold_boundary.rich_debug_offsets", &value.relative_debug);

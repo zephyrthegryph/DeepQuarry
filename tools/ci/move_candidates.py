@@ -20,7 +20,7 @@ OLD_FORMS = [
     ("Topic", re.compile(r"^\s*(?:[\w/]+/)?Topic\(")),
     ("New() override", re.compile(r"^\s*(?:[\w/]+/)?New\(")),
     ("verb", re.compile(r"/verb/|^\s*verb/")),
-    ("flow_ask", re.compile(r"\bflow_ask\b|\bprompt_flow\b")),
+    ("flow_ask", re.compile(r"\bflow_ask\b")),
     ("CHANGE_", re.compile(r"\bCHANGE_\w+")),
 ]
 ALLOW = re.compile(r"\bALLOW\(")
@@ -61,6 +61,8 @@ def target_of(rel):
     if parts[0] != "code" or len(parts) < 3 or rel.startswith(NEW_TREE):
         return None
     top = parts[1]
+    if top == "game" and parts[2] == "objects" and len(parts) > 4:
+        return "code/content/" + "/".join(parts[3:])  # doc section 22 M07: objects/{items,structures,effects} -> content/{items,structures,effects}
     if top in ("modules", "game", "datums") and len(parts) > 3:
         name = parts[2]
         layer = DOMAINS.get(name, "content/" + name)

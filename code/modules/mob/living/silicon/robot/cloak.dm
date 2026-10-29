@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	///How many times we have been hit in a short succession.
 	var/times_hit = 0
 	///When we were last hit.
-	EXPIRY_DECLARE(last_hit_time)
+	var/last_hit_time = 0
 	///If our cloak is currently up or not
 	var/cloaked = TRUE
 	///Body factors while the cloak is up (built once from the module's strength).
@@ -123,12 +123,12 @@ CAPABILITIES(/obj/item/borg/cloak)
 	L.set_body_effect_state(type, state)
 	L.set_body_effect_factors(type, state.cloaked_factors)
 	L.set_alpha_source(SRC_ALPHA_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
-	observe(L, /datum/notice/mob_apply_damage, src, then(PROC_REF(damage_inflicted)))
+	observe(L, /datum/notice/living_injured, src, then(PROC_REF(damage_inflicted)))
 	observe(L, /datum/notice/robot_item_attack, src, then(PROC_REF(attacked_in_cloak)))
 
 /datum/body_effect/robot_cloak/on_end(mob/living/L, expired)
 	L.clear_alpha_source(SRC_ALPHA_ROBOT_CLOAK)
-	unobserve(L, /datum/notice/mob_apply_damage, src)
+	unobserve(L, /datum/notice/living_injured, src)
 	unobserve(L, /datum/notice/robot_item_attack, src)
 	robot_cloak_remove_wibble(L, TRUE)
 
@@ -137,7 +137,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	if(L.stat == DEAD || !state)
 		L.end_body_effect(type, TRUE)
 		return
-	if(state.times_hit && ELAPSED_SINCE(src, state.last_hit_time, CLOCK_WORLD) > hit_dissipation) //If we have been hit, but the time has passed, reset the hit counter.
+	if(state.times_hit && ELAPSED(state, last_hit_time, CLOCK_WORLD) > hit_dissipation) //If we have been hit, but the time has passed, reset the hit counter.
 		if(!state.cloaked)
 			to_chat(L, span_warning("Your cloak whirrs back to life!"))
 		reset_cloak(L, state)
@@ -147,16 +147,16 @@ CAPABILITIES(/obj/item/borg/cloak)
 
 /datum/body_effect/robot_cloak/proc/damage_inflicted(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
-	var/mob/living/source = A.target
-	var/datum/notice/mob_apply_damage/event = A
-	var/damage = event.damage
+	var/mob/living/source = A.source // a legacy publish: the injured mob is the notice's source
+	var/datum/notice/living_injured/event = A
+	var/damage = event.applied
 	var/datum/robot_cloak_state/state = source.body_effect_state(type)
 	if(!state || damage < 5) //weak, don't do anything.
 		return
 	state.times_hit++
 	var/alpha_to_show = CLAMP((source.alpha+(damage*10)), source.alpha, 255) //The more damage we take, the more visible we become.
 	flick_cloak(source, alpha_to_show)
-	EXPIRY_STAMP(state, last_hit_time, CLOCK_WORLD)
+	STAMP(state, last_hit_time, CLOCK_WORLD)
 	if(damage >= 50 || state.times_hit >= cloak_durability)
 		to_chat(source, span_warning("Your cloak buzzes and fails after sustaining too much damage!!"))
 		drop_cloak(source, state)

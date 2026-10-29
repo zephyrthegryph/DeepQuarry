@@ -184,6 +184,7 @@
 
 /proc/echo_ref_user()
 	var/handler = "echo_ref"
+	call(src, handler)()
 	return echo_ref(6)
 
 /datum/passer

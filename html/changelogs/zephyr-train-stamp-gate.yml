@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The merge gates no longer refuse unstamped lanes in a --no-tests (DreamChecker-only) batch, and the refusal no longer names the retired dq_lane_ready.sh"

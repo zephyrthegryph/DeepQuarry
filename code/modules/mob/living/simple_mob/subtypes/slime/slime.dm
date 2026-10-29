@@ -65,7 +65,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	speak_emote = list("chirps")
 	friendly = list("pokes")
 
-	say_list_type = /datum/say_list/slime
 
 	var/cores = 1 // How many cores you get when placed in a Processor.
 	var/obj/item/clothing/head/hat = null // The hat the slime may be wearing.
@@ -77,7 +76,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	var/mood = ":3" // Icon to use to display 'mood', as an overlay.
 
 
-	species_sounds = "Slime"
 
 /mob/living/simple_mob/slime/get_available_emotes()
 	return GLOB.slime_default_emotes.Copy()
@@ -88,8 +86,9 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
+	configure(living_rules(species_sounds = "Slime"))
+	configure(living_rules(say_list_type = /datum/say_list/slime, use_modern_ai = TRUE, composition_reagent = REAGENT_ID_SLIMEJELLY))
 	setup(PROC_REF(start_glowing))
-	configure(living_rules(use_modern_ai = TRUE, composition_reagent = REAGENT_ID_SLIMEJELLY))
 	configure(mob_nature(pain_1p = list("squish", "squelch"), pain_3p = list("squishes", "squelches")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))

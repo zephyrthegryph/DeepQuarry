@@ -7,11 +7,10 @@
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
 	var/tmp/move_speed = 10
-	EXPIRY_TMP_DECLARE(l_move_time)
+	var/tmp/l_move_time = 0
 	l_move_time = 1
 	var/datum/thrownthing/throwing // running: set only mid-throw
-	var/tmp/datum/throw_source
-	var/throw_range = 7
+	// throw_source lives in code/datums/sparse_vars/movable_misc.dm
 	// moved_recently lives in code/datums/sparse_vars/movable_misc.dm
 	var/item_state = null // Used to specify the item state for the on-mob overlays.
 	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
@@ -30,7 +29,6 @@
 	// recursive_listeners lives in code/datums/sparse_vars/movable_misc.dm
 	// listening_recursive lives in code/datums/sparse_vars/movable_misc.dm
 
-// ALLOW(init/FRAMEWORK): the movable base of the init chain runs its per-instance setup
 /atom/movable/Initialize(mapload)
 	. = ..()
 	movable_instance_setup()
@@ -144,7 +142,7 @@
 		pulledby.stop_pulling()
 
 	stop_orbit()
-	rel_clear(src, nameof(throw_source))
+	sparse_ref_set(src, throw_source, null)
 	rel_clear(src, nameof(riding_datum))
 	set_recursive_listening(NON_LISTENING_ATOM)
 
@@ -292,7 +290,7 @@
 
 	// Update timers/cooldown stuff
 	move_speed = world.time - l_move_time
-	EXPIRY_STAMP(src, l_move_time, CLOCK_WORLD)
+	STAMP(src, l_move_time, CLOCK_WORLD)
 	last_move = direct // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary
 
@@ -393,7 +391,7 @@
 	if(QDELETED(A))
 		return
 	A.Bumped(src)
-	STAMP(A, last_bumped, CLOCK_WORLD)
+	stamp_now(A, last_bumped, CLOCK_WORLD)
 
 /atom/movable/proc/forceMove(atom/destination, direction, movetime)
 	. = FALSE

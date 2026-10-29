@@ -58,7 +58,6 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         mut footprint: impl FnMut(
             &Arc<[u8]>,
             &Receipt<Q, A, D>,
-            &Arc<[(D, u128)]>,
             &Arc<T>,
             usize,
         ) -> Option<Vec<PressureAllocation>>,
@@ -99,7 +98,6 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                         (
                             entry.key.clone(),
                             entry.reads.clone(),
-                            entry.versions.clone(),
                             entry.value.clone(),
                             total
                                 .checked_add(shared_index_charge(
@@ -112,11 +110,11 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                         )
                     })
             };
-            let Some((key, reads, versions, value, index_fits)) = candidate else {
+            let Some((key, reads, value, index_fits)) = candidate else {
                 continue;
             };
             let allocations = if index_fits {
-                footprint(&key, &reads, &versions, &value, limit)
+                footprint(&key, &reads, &value, limit)
             } else {
                 None
             };
@@ -291,7 +289,7 @@ fn shared_index_charge<T, Q, A, D: Copy + Ord>(
     let envelope = bucket
         .capacity()
         .saturating_mul(std::mem::size_of::<Variant<T, Q, A, D>>())
-        .saturating_add(scalar_slot::<u128, Vec<Variant<T, Q, A, D>>>());
+        .saturating_add(scalar_slot::<u128, Bucket<Variant<T, Q, A, D>>>());
     full.saturating_sub(envelope)
 }
 #[cfg(test)]

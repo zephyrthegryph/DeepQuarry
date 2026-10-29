@@ -108,7 +108,6 @@ impl Payload<'_> {
         crate::lowering_memo_wire::ResidentPromotion {
             current: None,
             queries: self.reads.0.iter().map(|read| read.query).collect(),
-            versions: self.versions.0.clone(),
             relative_debug: Vec::new(),
         }
     }
@@ -124,11 +123,8 @@ impl Payload<'_> {
         matches_key(self.key.as_ref()) && self.identity == identity
     }
     pub(crate) fn changed_read<R: Resolver>(&self, host: &R) -> Option<ResolveQuery> {
-        let matching = crate::lowering_memo::matching_domains(&self.versions.0, host);
         self.reads.0.iter().find_map(|r| {
-            (!matching.contains(&r.query.domain())
-                && host.resolve(r.query).canonical_bytes() != r.answer.as_ref())
-            .then_some(r.query)
+            (host.resolve(r.query).canonical_bytes() != r.answer.as_ref()).then_some(r.query)
         })
     }
     pub(crate) fn bind(

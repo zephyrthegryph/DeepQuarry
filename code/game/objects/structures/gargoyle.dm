@@ -15,7 +15,7 @@
 	// Damage taken below this is transferred back to the mob on release; this is NOT
 	// max_integrity, because a wounded mob petrifies into an already-weakened statue.
 	var/original_int = 100
-	var/stored_examine
+	var/list/stored_examine
 	var/identifier = "statue"
 	var/material = "stone"
 	var/adjective = "hardens"
@@ -62,7 +62,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
 	var/tint = "#FFFFFF"
 	if(comp)
-		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
+		COOLDOWN_START(comp, cooldown, (15 SECONDS))
 		rel_set(comp, nameof(comp.statue), src)
 		comp.transformed = TRUE
 		comp.paused = FALSE
@@ -97,7 +97,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	name = "[identifier] of [H.name]"
 	desc = "A very lifelike [identifier] made of [material]."
 	stored_examine = H.examine(H)
-	description_fluff = H.get_description_fluff()
+	set_description_fluff(H.get_description_fluff())
 
 	if(H?.buckled_to())
 		var/atom/movable/_tmp_buck_10 = H?.buckled_to()
@@ -214,7 +214,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		return
 	var/datum/trait_state/gargoyle/comp = gargoyle.get_trait_state(/datum/trait_state/gargoyle)
 	if(comp)
-		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
+		COOLDOWN_START(comp, cooldown, (15 SECONDS))
 		rel_clear(comp, nameof(comp.statue))
 		comp.transformed = FALSE
 	else
@@ -265,10 +265,14 @@ CAPABILITIES(/obj/structure/gargoyle)
 		return //gargoyle quick regenerates, the others don't, so let's not have them getting too damaged
 	take_damage(amount, BRUTE, MELEE, sound_effect = FALSE)
 
-/obj/structure/gargoyle/attack_generic(mob/user, damage, attack_message = "hits")
+/obj/structure/gargoyle/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb || "hits"
 	user.do_attack_animation(src)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	damage(damage)
+	return OP_OK
 
 /// Old attackby with a wrench: anchor or free the statue (not over open space).
 /// A statue is not anchored over space.

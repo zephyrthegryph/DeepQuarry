@@ -1,10 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_review.py (doc/rewrite/systems.md); shrink-only, target 0
-effect_refusal	code/library/machine/fabricator.dm	return OP_REFUSED
-effect_refusal	code/library/reagents/injector.dm	return OP_REFUSED
-effect_refusal	code/library/reagents/needle.dm	return OP_REFUSED
-request_in_effect	code/modules/mob/living/silicon/pai/software_modules.dm	var/datum/prompt/yes_no/pai_dna_sample/sample = open_request(src, /datum/prompt/yes_no/pai_dna_sample, PROC_REF(dna_sample_answered), answerer = M, title = "[P] Check DNA", question = "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", timeout = 0)
-request_in_effect	code/modules/modular_computers/file_system/programs/generic/nttransfer.dm	open_request(src, /datum/prompt/text, PROC_REF(download_password_entered), valid = PROC_REF(request_usable), answerer = user, question = "Code 401 Unauthorized. Please enter password:", title = "Password required", timeout = 0)
-request_in_effect	code/modules/modular_computers/file_system/programs/generic/nttransfer.dm	open_request(src, /datum/prompt/text, PROC_REF(prg_setpassword_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none", timeout = 0)
 manual_push	code/modules/power/apc.dm	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Robot Sprites have not been initialized yet. How are you choosing a sprite? Harass a coder."))
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Your module appears to have no sprite options. Harass a coder."))

@@ -19,6 +19,7 @@
 	return camo_net ? 50 : alpha
 
 CAPABILITIES(/obj/effect/mine)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	setup(PROC_REF(register_dangerous_to_step))
 	owns_one(nameof(trap), starts = nameof(trap))
 	space(SPACE_PANEL, door = nameof(panel_open))
@@ -52,7 +53,8 @@ CAPABILITIES(/obj/effect/mine)
 /// The delay wire pulsed sets it off in two seconds.
 /obj/effect/mine/proc/delay_wire_pulsed(datum/act/A)
 	wire_beep("*BEEPBEEPBEEP*")
-	after(src, 2 SECONDS, PROC_REF(explode), key = "mine_explode")
+	if(!after_pending(src, "mine_explode")) // the earliest countdown stands: a re-pulse must not push the blast back
+		after(src, 2 SECONDS, PROC_REF(explode), key = "mine_explode")
 
 /// The disarm wire, cut: the mine comes up as its item (with its trap), the signalers on it fall off.
 /obj/effect/mine/proc/disarm_wire_cut(datum/act/A)
@@ -68,7 +70,8 @@ CAPABILITIES(/obj/effect/mine)
 /// The bad disarm wire, cut: it goes off in two seconds.
 /obj/effect/mine/proc/bad_disarm_wire_cut(datum/act/A)
 	wire_beep("*BEEPBEEPBEEP*")
-	after(src, 2 SECONDS, PROC_REF(explode), key = "mine_explode")
+	if(!after_pending(src, "mine_explode")) // the earliest countdown stands: a re-pulse must not push the blast back
+		after(src, 2 SECONDS, PROC_REF(explode), key = "mine_explode")
 
 /obj/effect/mine/proc/ping_wire_pulsed(datum/act/A)
 	wire_beep("*ping*")
@@ -139,9 +142,15 @@ CAPABILITIES(/obj/effect/mine)
 /obj/effect/mine/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
 		return
-	Bumped(AM)
+	touched_by(AM)
 
-/obj/effect/mine/Bumped(mob/M as mob|obj)
+/// The bump notice (was Bumped()).
+/obj/effect/mine/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	touched_by(N.bumper)
+
+/// Something walked into or over the mine: a vehicle, a mech or a living thing heavy enough on the ground sets it off.
+/obj/effect/mine/proc/touched_by(mob/M)
 
 	if(triggered)
 		return

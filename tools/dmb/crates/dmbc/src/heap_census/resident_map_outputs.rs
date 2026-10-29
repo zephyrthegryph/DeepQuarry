@@ -6,7 +6,6 @@ use crate::{
     map_output::DescriptorPlan,
     map_projection::Projection,
 };
-use dm_ir::ReadDomain;
 use dm_tree::maps::MapPlan;
 
 /// Charge actual descriptor backing in addition to the existing common code,
@@ -15,7 +14,6 @@ pub(crate) fn unit_weight<T>(
     code: &crate::InitializerCode,
     key: &[u8],
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
     recipes: &Vec<crate::modified_initializers::ExpressionRecipe>,
     references: &Vec<dm_ir::SymRef>,
     sites: &Vec<T>,
@@ -26,7 +24,6 @@ pub(crate) fn unit_weight<T>(
             code.as_ref(),
             key,
             reads,
-            versions,
             recipes,
             references,
         )?
@@ -54,7 +51,6 @@ pub(crate) fn weight(
     artifacts: &Arc<[InitializationArtifact]>,
     key: &Arc<[u8]>,
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
     unit_keys: &Vec<Arc<[u8]>>,
 ) -> Option<usize> {
     let mut census = HeapCensus::new("resident_map_outputs");
@@ -109,7 +105,6 @@ pub(crate) fn weight(
                     &Vec::new(),
                     &Vec::new(),
                     &Vec::new(),
-                    &Vec::new(),
                 )?);
             }
             if census.arc_object("retained_maps.debug", debug_origins) {
@@ -134,7 +129,6 @@ pub(crate) fn weight(
         }
     }
     census.vec_payload("retained_maps.reads", reads);
-    census.vec_payload("retained_maps.versions", versions);
     for read in reads {
         super::resident_weight::answer(&mut census, &read.answer);
     }

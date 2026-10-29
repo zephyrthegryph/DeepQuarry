@@ -127,7 +127,7 @@
 		"citizenship" = list("bio", "citizenship"), "religion" = list("bio", "religion"), "med_record" = list("bio", "med_record"),
 		"sec_record" = list("bio", "sec_record"), "gen_record" = list("bio", "gen_record"), "custom_say" = list("bio", "custom_say"),
 		"custom_whisper" = list("bio", "custom_whisper"), "custom_ask" = list("bio", "custom_ask"), "custom_exclaim" = list("bio", "custom_exclaim"),
-		"nickname" = list("bio", "nickname"),
+		"nickname" = list("bio", "nickname"), "custom_speech_bubble" = list("bio", "custom_speech_bubble"),
 	)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/list/applied = list()
@@ -227,3 +227,49 @@
 	TEST_ASSERT(!H.vore_prefs.can_be_drop_prey, "or the next one")
 
 #undef DQ_PROFILE_SAVES
+
+/// Writes the fixture save with character1's keys overridden, to a scratch path; returns the path.
+/proc/dq_test_write_character_save(list/overrides)
+	var/list/save = json_decode(file2text("code/modules/unit_tests/data/profile_saves/headless_preferences.json"))
+	var/list/character = save["character1"]
+	for(var/key in overrides)
+		character[key] = overrides[key]
+	var/path = "data/dq_profile_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
+	text2file(json_encode(save), path)
+	return path
+
+/// A loaded character keeps its saved name, age and birthday even when the prefs datum has no client (a disconnected
+/// player's prefs, a headless load): the save data comes from the savefile, not from client().
+/datum/unit_test/dq_pref_load_keeps_saved_name
+
+/datum/unit_test/dq_pref_load_keeps_saved_name/Run()
+	var/path = dq_test_write_character_save(list("real_name" = "Tsim Che", "age" = 19, "bday_month" = 3, "bday_day" = 5))
+	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
+	P.load_and_save = TRUE
+	P.path = path
+	P.load_savefile()
+	TEST_ASSERT(P.load_character(1), "the save loads")
+	TEST_ASSERT_NULL(P.client(), "the stub has no client")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/name/real_name), "Tsim Che", "the saved name is kept, not re-randomized")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/age), 19, "the saved age is kept")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/bday_month), 3, "the saved birthday month is kept")
+	fdel(path)
+
+/// A character whose saved trait budget is the old default of 0 still gets its species' points, so a positive trait is affordable.
+/datum/unit_test/dq_pref_trait_budget_from_species
+
+/datum/unit_test/dq_pref_trait_budget_from_species/Run()
+	var/path = dq_test_write_character_save(list("starting_trait_points" = 0, "species" = SPECIES_HUMAN, "traits_cheating" = 0))
+	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
+	P.load_and_save = TRUE
+	P.path = path
+	P.load_savefile()
+	TEST_ASSERT(P.load_character(1), "the save loads")
+	var/datum/species/human = GLOB.all_species[SPECIES_HUMAN]
+	TEST_ASSERT(human.trait_points > 0, "humans have a trait budget")
+	TEST_ASSERT_EQUAL(P.trait_point_budget(), human.trait_points, "the budget is the species' points, not the stale saved 0")
+	var/datum/preference_editor/trait_picker/picker = GLOB.preference_editors_by_key?["trait_picker"]
+	if(picker)
+		var/list/data = picker.build_ui_data(P)
+		TEST_ASSERT(data["starting_trait_points"] > 0, "the trait picker shows a non-zero budget")
+	fdel(path)

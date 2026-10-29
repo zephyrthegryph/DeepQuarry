@@ -58,8 +58,10 @@ impl ExpansionRecord {
             reads: _,
             locations: _,
             lines: _,
+            trace_tables: _,
             diagnostics: _,
             fragments: _,
+            rows: _,
         } = self;
         visit(ExpansionStorageView::Source(&self.source));
         visit(ExpansionStorageView::Source(&self.text));
@@ -79,13 +81,27 @@ impl ExpansionRecord {
         visit(arc_storage(&self.lines));
         visit(vector_storage(&self.lines));
         for line in self.lines.iter() {
-            visit(vector_storage(&line.traces));
-            for trace in &line.traces {
-                visit(ExpansionStorageView::Text(&trace.name));
-                visit(slice_storage(&trace.replacement_chain));
-                for name in trace.replacement_chain.iter() {
-                    visit(ExpansionStorageView::Text(name));
-                }
+        }
+        // Names and chains are shared by the traces of every line, so each distinct one is visited once.
+        visit(ExpansionStorageView::Buffer {
+            address: self.trace_tables.sets.as_ptr() as usize,
+            payload_bytes: self.trace_tables.sets.len().saturating_mul(size_of::<Box<[Trace]>>()),
+            capacity_bytes: self.trace_tables.sets.len().saturating_mul(size_of::<Box<[Trace]>>()),
+        });
+        for set in self.trace_tables.sets.iter() {
+            visit(ExpansionStorageView::Buffer {
+                address: set.as_ptr() as usize,
+                payload_bytes: set.len().saturating_mul(size_of::<Trace>()),
+                capacity_bytes: set.len().saturating_mul(size_of::<Trace>()),
+            });
+        }
+        for name in self.trace_tables.names.iter() {
+            visit(ExpansionStorageView::Text(name));
+        }
+        for chain in self.trace_tables.chains.iter() {
+            visit(slice_storage(chain));
+            for name in chain.iter() {
+                visit(ExpansionStorageView::Text(name));
             }
         }
         visit(arc_storage(&self.diagnostics));
@@ -122,14 +138,21 @@ mod tests {
             reads: Arc::new(vec![]),
             locations: Arc::new(vec![(0, false, String::from("location"))]),
             lines: Arc::new(vec![Line {
-                output: Span::new(0, 6),
+                output_start: 0,
+                output_end: 6,
                 input: 0,
-                traces: vec![Trace {
-                    name: Arc::from("macro"),
-                    invocation_span: Span::new(0, 1),
-                    replacement_chain: chain,
-                }],
+                trace_set: 1,
             }]),
+            trace_tables: TraceTables {
+                names: Box::new([Arc::from("macro")]),
+                chains: Box::new([chain]),
+                sets: Box::new([Box::new([Trace {
+                    name: 0,
+                    chain: 0,
+                    start: 0,
+                    end: 1,
+                }])]),
+            },
             diagnostics: Arc::new(vec![Error {
                 input: 0,
                 kind: DiagnosticKind::UserError,
@@ -140,6 +163,7 @@ mod tests {
                 span: Span::new(0, 1),
                 payload: fragment,
             }],
+            rows: Default::default(),
         };
         let mut message_seen = false;
         let mut chain_seen = false;

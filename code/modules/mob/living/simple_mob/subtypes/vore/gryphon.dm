@@ -15,7 +15,6 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 30
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pats"
 	response_disarm = "tries to shove"
@@ -44,7 +43,6 @@
 	special_attack_cooldown = 30 SECONDS
 
 
-	say_list_type = /datum/say_list/gryphon
 
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
@@ -58,15 +56,12 @@
 	vore_pounce_falloff = 0
 	vore_active = TRUE
 	vore_icons = 0
-	vore_capacity = 2
 	swallowTime = 20
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_DIGEST
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to gulp down"
-	vore_capacity_ex = list("stomach" = 1, "throat" = 1)
 	vore_fullness_ex = list("stomach" = 0, "throat" = 0)
-	vore_icon_bellies = list("stomach", "throat")
 
 /mob/living/simple_mob/vore/gryphon/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/gryphon/beak(src)
@@ -134,7 +129,8 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
-	configure(butchery_rules(meat_amount = 15))
+	configure(living_rules(vore_icon_bellies = list("stomach", "throat"), vore_capacity_ex = list("stomach" = 1, "throat" = 1), vore_capacity = 2, say_list_type = /datum/say_list/gryphon))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	ref_one(nameof(dq_maybe_eating), /mob/living)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "can_be_drop_prey" = FALSE))

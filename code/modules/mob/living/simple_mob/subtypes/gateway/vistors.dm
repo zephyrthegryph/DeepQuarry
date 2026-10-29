@@ -19,7 +19,7 @@
 	var/reflectchance = 100
 	if(prob(reflectchance))
 		var/damage_mod = rand(2,4)
-		var/projectile_kind = P.injury_kind
+		var/projectile_kind = combat_of(P).injury_kind
 		var/incoming_damage = (round(P.damage / damage_mod) - (round((P.damage / damage_mod) * 0.3)))
 		if(!(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam)))
 			act_message(src, null, \
@@ -110,7 +110,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistorblue)
 	ai_busy_begin()
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
-		G.throw_at(A, G.throw_range, motion_of(G).throw_speed, src)
+		G.throw_at(A, motion_of(G).throw_range, motion_of(G).throw_speed, src)
 		G.set_det_time(grenade_timer)
 		G.activate(src)
 		special_attack_charges = max(special_attack_charges-1, 0)
@@ -267,7 +267,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange)
 	spread_range = 5
 
 /mob/living/simple_mob/mechanical/mecha/vistor
-	delete_on_death = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor)
+	configure(living_rules(delete_on_death = TRUE))
 
 /mob/living/simple_mob/mechanical/mecha/vistor/on_death(gibbed)
 	..()

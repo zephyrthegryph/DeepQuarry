@@ -287,7 +287,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 
 	TEST_ASSERT_NULL(B.partner, "destroying A nulled B's side of the pair too (phase 4)")
 
-/// A destroyed inside B's own transaction (B's /datum/definition_event/qdeleting handler
+/// A destroyed inside B's own transaction (B's /datum/notice/qdeleting handler
 /// qdels its partner) -- the relation teardown must not double-clear or crash when
 /// the reciprocal side is already gone by the time phase 4 reaches it.
 /datum/dq_destroy_transaction_reentrant_pair

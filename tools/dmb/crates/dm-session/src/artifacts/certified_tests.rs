@@ -11,9 +11,6 @@ impl ObservationHost<u8, bool, u8> for Host {
         self.calls.fetch_add(1, Ordering::Relaxed);
         self.version != Some(7) || self.observing
     }
-    fn version(&self, _: &u8) -> Option<u128> {
-        self.version
-    }
     fn observes_answers(&self) -> bool {
         self.observing
     }
@@ -29,9 +26,9 @@ fn reads() -> Receipt<u8, bool, u8> {
 #[test]
 fn request_roster_consumes_exact_keys_once_and_keeps_variant_precedence() {
     let store = Store::with_limit(8);
-    store.insert_with_receipt(Arc::from([1]), reads(), Arc::from([(2, 7)]), 1, || 11);
-    store.insert_with_receipt(Arc::from([1]), reads(), Arc::from([(2, 7)]), 1, || 12);
-    store.insert_with_receipt(Arc::from([3]), reads(), Arc::from([(2, 7)]), 1, || 33);
+    store.insert_with_receipt(Arc::from([1]), reads(),1, || 11);
+    store.insert_with_receipt(Arc::from([1]), reads(),1, || 12);
+    store.insert_with_receipt(Arc::from([3]), reads(),1, || 33);
     let host = Host {
         version: Some(7),
         observing: false,
@@ -62,9 +59,9 @@ fn request_roster_consumes_exact_keys_once_and_keeps_variant_precedence() {
 #[test]
 fn prefix_dispatch_never_substitutes_for_complete_local_inputs() {
     let store = Store::current_revision();
-    store.insert_with_receipt(Arc::from([1, 0]), reads(), Arc::from([(2, 7)]), 1, || 11);
-    store.insert_with_receipt(Arc::from([1, 1]), reads(), Arc::from([(2, 7)]), 1, || 12);
-    store.insert_with_receipt(Arc::from([2, 0]), reads(), Arc::from([(2, 7)]), 1, || 22);
+    store.insert_with_receipt(Arc::from([1, 0]), reads(),1, || 11);
+    store.insert_with_receipt(Arc::from([1, 1]), reads(),1, || 12);
+    store.insert_with_receipt(Arc::from([2, 0]), reads(),1, || 22);
     let host = Host {
         version: Some(7),
         observing: false,

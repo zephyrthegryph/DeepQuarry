@@ -3,7 +3,6 @@
 	desc = "A painted holy figure of a plain looking human man in a robe."
 	icon = 'icons/obj/chaplain.dmi'
 	icon_state = "mrobe"
-	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 
 
@@ -39,7 +38,6 @@
 	options["Sun Gem"] = "sun"
 	options["Moon Gem"] = "moon"
 	options["Tajaran Figure"] = "catrobe"
-
 	return options
 
 /// The icon the question was answered with.
@@ -130,7 +128,7 @@
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/godfig)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 	op("resprite_figure_effect", menu(), label("Customize Figure"), needs(carried()),

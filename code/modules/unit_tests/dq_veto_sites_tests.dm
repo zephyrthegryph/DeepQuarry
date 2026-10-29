@@ -161,7 +161,7 @@
 
 /datum/unit_test/dq_veto_site_disposal_connection/Run()
 	var/obj/structure/toilet/toilet = allocate(/obj/structure/toilet, test_floor())
-	var/datum/disposal_system_connection/original = toilet.disposal_connection
+	var/datum/disposal_system_connection/original = toilet.disposal_connection()
 	TEST_ASSERT_NOTNULL(original, "the real toilet constructor creates its original disposal connection")
 	TEST_ASSERT(!QDELETED(original), "the original constructor-created connection is alive before replacement")
 	var/datum/disposal_system_connection/connection = toilet.add_disposal_connection()

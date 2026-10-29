@@ -13,15 +13,15 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 
 	//0: Normal, 1: Might be dead, 2: Definitely dead, show on console
 	var/dead_state = 0
-	EXPIRY_DECLARE(last_update)
-	EXPIRY_DECLARE(last_notification)
+	var/last_update = 0
+	var/last_notification = 0
 	var/do_notify = TRUE
 
 	//Backend
 	var/ckey = ""
 	var/id_gender = MALE
 	var/datum/mind/mind_ref
-	EXPIRY_DECLARE(cryo_at)
+	var/cryo_at = 0
 	var/nif_path
 	var/nif_durability
 	var/list/nif_software
@@ -59,7 +59,7 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 	if(istype(M,/mob) && !M.read_preference(/datum/preference/toggle/autotranscore))
 		do_notify = FALSE
 
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+	STAMP(src, last_update, CLOCK_WORLD)
 
 	if(add_to_db)
 		SStranscore.add_backup(src, database_key = database_key)
@@ -96,6 +96,8 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 	var/weight
 	var/aflags
 	var/breath_type = GAS_O2
+
+SCHEMA(/datum/transhuman/body_record, weight, num(min = WEIGHT_MIN, max = WEIGHT_MAX, default = DEFAULT_MOB_WEIGHT))
 
 CAPABILITIES(/datum/transhuman/body_record)
 	owns_one(nameof(mydna), /datum/dna2/record)
@@ -138,10 +140,10 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 	//General stuff about them
 	set_synthetic(HAS_SYNTHETIC_BIOLOGY(M))
-	set_speciesname(M.custom_species ? M.custom_species : null)
+	set_speciesname(M.bio.custom_species ? M.bio.custom_species : null)
 	set_bodygender(M.gender)
 	sizemult = M.size_multiplier
-	weight = M.weight
+	weight = sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT)
 	aflags = M.appearance_flags
 	breath_type = M.species.breath_type
 
@@ -257,7 +259,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	H.set_real_name(mydna.dna.real_name)
 	H.name = H.real_name
 	sparse_set(H, suiciding, 0)
-	H.losebreath = 0
+	H.set_losebreath(0)
 	rel_clear(H, nameof(H.mind))
 
 	return H
@@ -337,9 +339,9 @@ CAPABILITIES(/datum/transhuman/body_record)
 	PRIVATE_PROC(TRUE)
 	H.resize(sizemult, FALSE)
 	H.set_appearance_flags(aflags)
-	H.weight = weight
+	sparse_set_or(H, weight, weight, DEFAULT_MOB_WEIGHT)
 	if(speciesname)
-		H.custom_species = speciesname
+		H.bio.custom_species = speciesname
 
 /**
  * Specialty revival procs. Uses the BR for data, but needs to handle some weird logic for xenochi/slimes
@@ -371,9 +373,9 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 	// Traitgenes Disable all traits currently active, before species.produceCopy() applies them during updatednastate(). Relevant here as genetraits may not match prior dna!
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
-		if(gene.name in H.active_genes)
+		if(gene.name in sparse_get(H, active_genes))
 			gene.deactivate(H)
-			LAZYREMOVE(H.active_genes, gene.name)
+			gene.mark_active(H, FALSE)
 
 	internal_producebody_updatednastate(H,FALSE)
 	internal_producebody_misc(H)

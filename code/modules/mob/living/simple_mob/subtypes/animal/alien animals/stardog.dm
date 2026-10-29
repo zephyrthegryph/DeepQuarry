@@ -37,7 +37,6 @@
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
-	say_list_type = /datum/say_list/softdog
 	swallowTime = 0.1 SECONDS
 
 	loot_list = list(/obj/random/underdark/uncertain)
@@ -55,6 +54,7 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	configure(living_rules(say_list_type = /datum/say_list/softdog))
 	after_init(0, then(PROC_REF(stardog_light_ready)))
 	links(/mob/living/simple_mob/vore/overmap/stardog::control_node, /obj/structure/control_pod::host)
 	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
@@ -1083,6 +1083,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/dog_teleporter, REGISTRY_DOG_TELEPORTERS)
 	lets_go(AM)
 
 CAPABILITIES(/obj/effect/dog_teleporter)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	ref_one(nameof(target), /obj/effect/dog_teleporter)
 	op("dog_teleport", hand(), then(PROC_REF(interaction_dog_teleport)))
 
@@ -1092,9 +1093,9 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	lets_go(user)
 	return TRUE
 
-/obj/effect/dog_teleporter/attack_generic(mob/user)
-	. = ..()
-	lets_go(user)
+/obj/effect/dog_teleporter/proc/smashed_by(datum/act/hit/generic/A)
+	lets_go(A.attacker)
+	return HOOK_DECLINE
 
 /obj/effect/dog_teleporter/proc/lets_go(atom/movable/AM as mob|obj)	//Wahoo! Here we go!
 	if(reciever)
@@ -1193,7 +1194,6 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	id = "mouth_b"
 
 /obj/effect/dog_teleporter/exit
-	light_on = TRUE
 	name = "exit"
 	desc = "You can see the light at the end of the tunnel!"
 	icon_state = "exit_b"
@@ -1207,7 +1207,6 @@ CAPABILITIES(/obj/effect/dog_teleporter/exit)
 	configure(light_glow(range = 5, power = 1, color = "#ffffff"))
 
 /obj/effect/dog_teleporter/mouth_return
-	light_on = TRUE
 	name = "light"
 	desc = "You can see the light shining in from above!"
 	icon_state = "exit_b"
@@ -1437,11 +1436,12 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 				if(prob(5))
 					to_chat(L, span_warning("\The [src] throbs heavily around you..."))
 
-/obj/structure/auto_flesh_door/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/auto_flesh_door/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	. = ..()
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!Adjacent(user))
-		return
+		return OP_OK
 	else if(user.faction == faction)
 		SwitchState()
 	else if(!user.combat_mode)
@@ -1452,6 +1452,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% hammers on %T%!")), MSG_BLIND(span_warning("Someone hammers loudly on %T%!")))
 		playsound(src, knock_sound, 50, 0, 3)
 		set_countdown(countdown - 25)
+	return OP_OK
 
 /// Old attack_hand.
 /obj/structure/auto_flesh_door/proc/interaction_hand(datum/act/op/A, stance)

@@ -494,7 +494,7 @@
 		if (!length(shorttype))
 			shorttype = "/"
 
-		.["[D]([shorttype])[REF(D)]#[i]"] = D
+		.["[D]([shorttype])[ref_token(D)]#[i]"] = D
 
 // ---------------------------------------------------------------- the tools' own sequences
 

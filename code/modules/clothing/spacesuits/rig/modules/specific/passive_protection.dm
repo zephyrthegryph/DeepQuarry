@@ -37,7 +37,7 @@
 	var/list/items_to_update = list()
 
 	to_chat(H, span_boldnotice("You activate your suit's powered radiation shielding."))
-	stored_rad_armor = num_or_null(holder.get_armor().value("rad"))
+	stored_rad_armor = holder.get_armor().value("rad")
 	if(boots)
 		boots.set_armor_value("rad", 100)
 		items_to_update += boots
@@ -277,3 +277,4 @@
 	on the underside of the casing."
 	use_power_cost = 5
 	active_power_cost = 5
+SCHEMA(/obj/item/rig_module/rad_shield, stored_rad_armor, num())

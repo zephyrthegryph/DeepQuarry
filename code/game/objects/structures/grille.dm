@@ -7,7 +7,6 @@
 	anchored = TRUE
 	pressure_resistance = 5*ONE_ATMOSPHERE
 	layer = TABLE_LAYER
-	explosion_resistance = 1
 	// 16 integrity with a 6-point "broken" buffer: 10 damage to break it into a passable
 	// stub (integrity_failure), then 6 more to clear it entirely (atom_destruction).
 	max_integrity = 16
@@ -20,6 +19,8 @@
 	look.state("[initial(icon_state)][destroyed ? "-b" : ""]")
 
 CAPABILITIES(/obj/structure/grille)
+	on_notice(/datum/notice/atom_broken, then(PROC_REF(grille_broken)))
+	configure(obj_rules(explosion_resistance = 1))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_destroys))))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
@@ -136,7 +137,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 
 	if(damage > 0)
 		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, combat_of(Proj).armor_penetration, Proj.dir)
-		receive_split(packet, Proj.injury_kind, Proj.injury_kinds, damage * 0.2)
+		receive_split(packet, combat_of(Proj).injury_kind, combat_of(Proj).injury_kinds, damage * 0.2)
 
 /obj/structure/grille/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -173,8 +174,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	to_chat(user, span_notice("You place the [WD] on [src]."))
 
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
-/obj/structure/grille/atom_break(damage_flag)
-	. = ..()
+/obj/structure/grille/proc/grille_broken(datum/act/A)
 	if(!destroyed)
 		set_density(FALSE)
 		set_destroyed(TRUE)
@@ -229,11 +229,14 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	return 0
 
 
-/obj/structure/grille/attack_generic(mob/user, damage, attack_verb)
+/obj/structure/grille/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_verb = A.attack_verb
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
-	return 1
+	return OP_OK
 
 // Used in mapping to avoid
 /obj/structure/grille/broken

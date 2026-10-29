@@ -120,7 +120,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	appearance_flags = PIXEL_SCALE
 	active = TRUE
 	var/charge_cooldown = 1 SECOND  //time between it can fire at different targets
-	EXPIRY_DECLARE(last_shot)
+	var/last_shot = 0
 	var/kill_range = 18
 	var/rotation_speed = 4.5 SECONDS  //How quickly we turn to face threats
 	var/obj/effect/meteor/engaging = null // The meteor we're shooting at (a relation view)
@@ -186,7 +186,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	if(PC && M)
 		rel_remove(PC, nameof(PC.targets), M)
 
-	EXPIRY_STAMP(src, last_shot, CLOCK_WORLD)
+	STAMP(src, last_shot, CLOCK_WORLD)
 	if(!istype(M))
 		return
 	//We throw a laser but it doesnt have to hit for meteor to explode

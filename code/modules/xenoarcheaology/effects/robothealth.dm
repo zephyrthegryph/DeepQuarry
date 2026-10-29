@@ -3,7 +3,7 @@
 #define ROBO_HARM 2
 /datum/artifact_effect/robohealth
 	name = "Robotic Healing"
-	EXPIRY_DECLARE(last_message)
+	var/last_message = 0
 	effect_type = EFFECT_ROBOT_HEALTH
 	effect_color = "#3879ad"
 	var/health_type = ROBO_HEAL
@@ -38,13 +38,13 @@
 			if(health_type == ROBO_HEAL)
 				if(ELAPSED(src, last_message, CLOCK_WORLD) > 20 SECONDS)
 					to_chat(M, span_blue("SYSTEM ALERT: Beneficial energy field detected!"))
-					EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+					STAMP(src, last_message, CLOCK_WORLD)
 				M.mend(TREAT_PLATING_REPAIR, 1)
 				M.mend(TREAT_WIRING_REPAIR, 1)
 			else
 				if(ELAPSED(src, last_message, CLOCK_WORLD) > 20 SECONDS)
 					to_chat(M, span_red("SYSTEM ALERT: Harmful energy field detected!"))
-					EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+					STAMP(src, last_message, CLOCK_WORLD)
 				M.injure(INJURY_BLUNT, 1, null, null, 0, null, INJURE_SILENT)
 				M.injure(INJURY_ELECTRIC, 1, null, null, 0, null, INJURE_SILENT)
 		return 1
@@ -57,13 +57,13 @@
 			if(health_type == ROBO_HEAL)
 				if(ELAPSED(src, last_message, CLOCK_WORLD) > 20 SECONDS)
 					to_chat(M, span_blue("SYSTEM ALERT: Structural damage has been repaired by energy pulse!"))
-					EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+					STAMP(src, last_message, CLOCK_WORLD)
 				M.mend(TREAT_PLATING_REPAIR, 10)
 				M.mend(TREAT_WIRING_REPAIR, 10)
 			else
 				if(ELAPSED(src, last_message, CLOCK_WORLD) > 20 SECONDS)
 					to_chat(M, span_red("SYSTEM ALERT: Structural damage inflicted by energy pulse!"))
-					EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+					STAMP(src, last_message, CLOCK_WORLD)
 				M.injure(INJURY_BLUNT, 10, null, null, 0, null, INJURE_SILENT)
 				M.injure(INJURY_ELECTRIC, 10, null, null, 0, null, INJURE_SILENT)
 		return 1

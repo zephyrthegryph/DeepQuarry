@@ -514,15 +514,14 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 /// Gets a dummy savefile for usage in icon generation.
 /// Savefiles generated from this proc will be empty.
 /proc/get_dummy_savefile(from_failure = FALSE)
-	var/static/next_id = 0
-	if(next_id++ > 9)
-		next_id = 0
+	var/static/slot = 0 // one of ten rotating scratch files, not an entity id
+	slot = (slot + 1) % 10
 	// dq_scratch_tag makes this path unique per DreamDaemon process: two
 	// worlds that happen to share a working directory (a sharded dm-test run
 	// boots N worlds in the same worktree) would otherwise round-robin
 	// through the SAME tmp/dummy-save-N.sav paths and race each other for
 	// the file (observed as "cannot open savefile buffer dummy for write").
-	var/savefile_path = "tmp/dummy-save-[GLOB.dq_scratch_tag]-[next_id].sav"
+	var/savefile_path = "tmp/dummy-save-[GLOB.dq_scratch_tag]-[slot].sav"
 	try
 		if(fexists(savefile_path))
 			fdel(savefile_path)
@@ -584,8 +583,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	if(isicon(icon) && isfile(icon))
 		//icons compiled in from 'icons/path/to/dmi_file.dmi' at compile time are weird and arent really /icon objects,
 		///but they pass both isicon() and isfile() checks. theyre the easiest case since stringifying them gives us the path we want
-		var/icon_ref = "\ref[icon]"
-		var/locate_icon_string = "[locate(icon_ref)]"
+		var/locate_icon_string = "[locate(REF(icon))]"
 
 		icon_path = locate_icon_string
 
@@ -595,9 +593,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 		// the rsc reference returned by fcopy_rsc() will be stringifiable to "icons/path/to/dmi_file.dmi"
 		var/rsc_ref = fcopy_rsc(icon)
 
-		var/icon_ref = "\ref[rsc_ref]"
-
-		var/icon_path_string = "[locate(icon_ref)]"
+		var/icon_path_string = "[locate(REF(rsc_ref))]"
 
 		icon_path = icon_path_string
 
@@ -605,8 +601,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 		var/rsc_ref = fcopy_rsc(icon)
 		//if its the text path of an existing dmi file, the rsc reference returned by fcopy_rsc() will be stringifiable to a dmi path
 
-		var/rsc_ref_ref = "\ref[rsc_ref]"
-		var/rsc_ref_string = "[locate(rsc_ref_ref)]"
+		var/rsc_ref_string = "[locate(REF(rsc_ref))]"
 
 		icon_path = rsc_ref_string
 

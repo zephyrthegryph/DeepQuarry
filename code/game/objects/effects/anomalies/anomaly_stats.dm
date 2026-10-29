@@ -15,7 +15,7 @@
 	/// The harvester draining this anomaly (a relation view, written by /obj/machinery/anomaly_harvester).
 	var/obj/machinery/anomaly_harvester/attached_harvester
 
-	EXPIRY_DECLARE(next_activation)
+	COOLDOWN_DECLARE(next_activation)
 	// Total of points we'll get once the anomaly does a pulse
 	var/points
 	var/curr_health

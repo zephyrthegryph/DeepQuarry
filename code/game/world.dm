@@ -199,7 +199,7 @@ GLOBAL_VAR(restart_counter)
 #endif
 
 	GLOB.world_startup_time = world.timeofday
-	GLOB.rollover_safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
+	wall_clock().safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
 
 	var/savefile/F = new(NEWSFILE)
 	if(F)
@@ -292,41 +292,12 @@ GLOBAL_VAR(restart_counter)
 
 /// Runs after the call to Kernel.boot_systems, but before the delay kicks in. Used to turn the world execution into some single function then exit
 /world/proc/RunUnattendedFunctions()
-	#ifdef UNIT_TESTS
-	HandleTestRun()
-	#endif
 
 	#ifdef AUTOWIKI
 	setup_autowiki()
 	#endif
 
 
-/world/proc/HandleTestRun()
-	//trigger things to run the whole process
-	Kernel.sleep_offline_after_initializations = FALSE
-	SSticker.request_immediate_start(TRUE)
-	CONFIG_SET(number/round_end_countdown, 0)
-	var/after_start
-#ifdef UNIT_TESTS
-	dq_test_shard_init()
-	after_start = GLOBAL_PROC_REF(start_unit_tests)
-#else
-	after_start = GLOBAL_PROC_REF(force_end_round)
-#endif
-	var/start_delay = 10 SECONDS
-#ifdef UNIT_TESTS
-	// The full suite keeps upstream's 10 s round-start settle so CI and local
-	// full runs see the same world. Focused runs are for iteration and start
-	// after 2 s; a test that only passes after the longer settle should wait
-	// for what it needs itself (see doc/testing.md).
-	if(unit_test_is_focused_run())
-		start_delay = 1 SECONDS
-		// --boot (only dq_boot_gate): the gate reads what the boot logged, so there is nothing to settle.
-		if(unit_test_is_boot_only_run())
-			start_delay = 0
-		log_world("Unit tests: round-start settle [start_delay / (1 SECONDS)] s ([unit_test_is_boot_only_run() ? "boot-only" : "focused"] run).")
-#endif
-	SSticker.OnRoundstart(null, after_start, delay = start_delay)
 
 /// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
@@ -337,7 +308,7 @@ GLOBAL_VAR(restart_counter)
 	var/data = list()
 	data["tick_usage"] = world.tick_usage
 	data["tick_lag"] = world.tick_lag
-	data["time"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+	data["time"] = TIME_NOW(CLOCK_WORLD)
 	data["timestamp"] = rustg_unix_timestamp()
 	return data
 
@@ -371,8 +342,10 @@ GLOBAL_VAR(restart_counter)
 #ifndef USE_CUSTOM_ERROR_HANDLER
 	world.log = file("[GLOB.log_directory]/dd.log")
 #else
-	if (TgsAvailable()) // why
-		world.log = file("[GLOB.log_directory]/dd.log") //not all runtimes trigger world/Error, so this is the only way to ensure we can see all of them.
+	// Under TGS, and on a headless server (`-params dd_log=1`, the `server` build target: -invisible shows no console), world.log
+	// goes to the round's dd.log: runtimes are written to world.log, and not all of them trigger world/Error.
+	if (TgsAvailable() || params["dd_log"])
+		world.log = file("[GLOB.log_directory]/dd.log")
 #endif
 
 GLOBAL_VAR_INIT(world_topic_spam_protect_ip, "0.0.0.0")
@@ -485,6 +458,152 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			top.Cut(41)
 		return json_encode(top)
 
+	// Localhost-only: how far from its air the awake material services are (MATERIAL_THERMAL_RESOLUTION decides when one may sleep): a histogram of
+	// |assembly temperature - ambient temperature| in K, and the owner types of the services that stay above the candidate sleep threshold.
+	if (diag == "matheat")
+		var/static/list/edges = list(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 20)
+		var/list/hist = list()
+		var/list/over = list()
+		var/list/samples = list()
+		var/awake = 0
+		var/total = 0
+		for(var/datum/material_service/service)
+			total++
+			var/obj/owner = service.owner()
+			if(QDELETED(owner))
+				continue
+			if(!service.timer)
+				continue
+			awake++
+			var/turf/at = get_turf(owner)
+			var/datum/gas_mixture/air = at?.return_air()
+			var/gap = abs(service.temperature() - (air?.return_temperature() || T20C))
+			var/label = "inf"
+			for(var/edge in edges)
+				if(gap < edge)
+					label = "<[edge]"
+					break
+			hist[label]++
+			if(gap >= 0.5)
+				over["[owner.type]"]++
+				if(length(samples) < 8)
+					var/list/store = heat_store_state(service.heat_store)
+					samples += list(list("owner" = "[owner.type]", "loc" = "[owner.loc?.type]", "at" = "[at?.type] ([at?.x],[at?.y],[at?.z])", "assembly_k" = round(service.temperature(), 0.01), "air_k" = air ? round(air.return_temperature(), 0.01) : "no air", "store" = store, "ambient_link" = !!service.ambient_link, "ports" = length(service.port_links), "active" = service.active, "next_update" = service.next_update - world.time))
+		return json_encode(list("services" = total, "awake" = awake, "gap_k" = hist, "owner_types_over_0.5K" = over, "samples" = samples))
+
+	// Localhost-only: flips one power channel of the area with the most machines (or `area=<name>`) the way an APC report does (area.set_channels()), and back, timing
+	// the write itself (the inline settle) and the drain that follows: what one channel flip costs the tick. `channel=equip|light|environ` (default light).
+	if (diag == "powerflip")
+		var/list/flip_params = params2list(T)
+		var/area/target
+		for(var/area/A)
+			if(flip_params["area"] ? (A.name == flip_params["area"]) : (!target || length(A.power_machines) > length(target.power_machines)))
+				target = A
+		if(!target)
+			return "no area"
+		var/channel = flip_params["channel"] || "light"
+		var/list/rows = list()
+		for(var/round in 1 to 2)
+			var/equip = target.power_equip
+			var/light = target.power_light
+			var/environ = target.power_environ
+			if(channel == "equip")
+				equip = !equip
+			else if(channel == "environ")
+				environ = !environ
+			else
+				light = !light
+			var/start = TICK_USAGE_REAL
+			target.set_channels(equip, light, environ)
+			var/inline_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+			start = TICK_USAGE_REAL
+			refresh_flush()
+			rows += list(list("flip" = round, "channel" = channel, "to" = (channel == "equip" ? equip : (channel == "environ" ? environ : light)), "inline_ms" = round(inline_ms, 0.1), "drain_ms" = round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - start), 0.1)))
+		return json_encode(list("area" = target.name, "machines" = length(target.power_machines), "flips" = rows))
+
+	// Localhost-only census of timer callbacks and tracked writes (code/engine/time/census.dm): `census&on=1` starts it, `census` reads it,
+	// `census&reset=1` clears it, `census&on=0` stops it.
+	if (diag == "census")
+		var/list/census_params = params2list(T)
+		if(!isnull(census_params["on"]))
+			GLOB.census_on = !!text2num(census_params["on"])
+		return census_report(!!text2num(census_params["reset"]))
+
+	// Localhost-only flight recorder read for live benchmarking (tools/ci/server_bench_sample.py): every recorded tick after
+	// tick `since` (usage and maptick %, the ring holds the last KM_RING_LEN ticks), so a poller that asks more often than
+	// the ring wraps sees every tick of a live server.
+	if (diag == "kmticks")
+		var/datum/tick_meter/meter = km_meter()
+		var/since = text2num(params2list(T)["since"]) || 0
+		var/list/tick_ids = list()
+		var/list/usage = list()
+		var/list/maptick = list()
+		for(var/n in 1 to meter.ring_count)
+			var/at = meter.ring_index(n)
+			if(meter.fr_tick[at] <= since)
+				continue
+			tick_ids += meter.fr_tick[at]
+			usage += round(meter.fr_usage[at], 0.1)
+			maptick += round(meter.fr_maptick[at], 0.1)
+		return json_encode(list("world_time_ds" = TIME_NOW(CLOCK_WORLD), "players" = length(GLOB.clients), "state" = round_game_state(),
+			"cpu" = world.cpu, "map_cpu" = world.map_cpu, "ticks" = tick_ids, "usage" = usage, "maptick" = maptick))
+	// Localhost-only per-system kernel accounting of the live stats set (the stat panel's Kernel view), the 40 costliest rows;
+	// `reset=1` clears the set afterwards so the next read covers one benchmark phase.
+	if (diag == "kmsystems")
+		var/datum/tick_meter/meter = km_meter()
+		var/list/report = km_diagnostics(GLOB.om_live_sched)
+		var/list/rows = report["systems"]
+		if(length(rows) > 40)
+			rows.Cut(41)
+		report -= "unrolled_behaviours"
+		report["elapsed_s"] = meter.live.elapsed_seconds()
+		if(params2list(T)["reset"])
+			meter.live.reset()
+		return json_encode(report)
+
+	// Localhost-only read of the churn census (code/engine/state/churn_census.dm): draws, timers, signals, lights and power edits
+	// counted since the last take, the 40 busiest keys of each kind. Starts the next window, like the churn metrics source.
+	if (diag == "churn")
+		var/list/kinds = GLOB.churn_census.take()
+		var/list/out = list("world_time_ds" = TIME_NOW(CLOCK_WORLD))
+		for(var/kind in kinds)
+			var/list/rows = sortTim(kinds[kind], GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+			var/total = 0
+			for(var/row_key in rows)
+				total += rows[row_key]
+			var/list/top = list()
+			for(var/row_key in rows)
+				top["[row_key]"] = rows[row_key]
+				if(length(top) >= 40)
+					break
+			out[kind] = list("total" = total, "keys" = length(rows), "top" = top)
+		return json_encode(out)
+
+	// Localhost-only: the Rust frame's cumulative phase counters (frame.us.*) and the slow-frame count, for per-phase deltas between two calls.
+	if (diag == "vgframe")
+		var/list/rust = verdigris_metrics_list()
+		var/list/out = list("slow_frames" = native_system().slow_frames, "frames" = native_system().frames)
+		for(var/name in rust)
+			if(findtext(name, "frame.us.") == 1 || findtext(name, "frame.slow") == 1 || findtext(name, "world.awake.") == 1)
+				out[name] = rust[name]
+		return json_encode(out)
+
+	// Localhost-only "why does this type redraw": `markprobe&type=/obj/x` counts where the marks of /obj/x come from (refresh_mark_probe_note(),
+	// the four callers above the mark) from now on; `markprobe` alone returns the 40 busiest sources and stops.
+	if (diag == "markprobe")
+		var/probe_type = text2path(params2list(T)["type"])
+		if(probe_type)
+			GLOB.refresh_mark_probe_sources = list()
+			GLOB.refresh_mark_probe_type = probe_type
+			return "probing [probe_type]"
+		var/list/sources = sortTim(GLOB.refresh_mark_probe_sources.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+		if(length(sources) > 40)
+			sources.Cut(41)
+		var/probed = "[GLOB.refresh_mark_probe_type]"
+		GLOB.refresh_mark_probe_type = null
+		GLOB.refresh_mark_probe_sources = list()
+		return json_encode(list("type" = probed, "sources" = sources))
+
 	if (T == "ping")
 		var/x = 1
 		for (var/client/C)
@@ -522,10 +641,10 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			var/list/admins = list()
 
 			for(var/client/C in GLOB.clients)
-				if(C.holder)
-					if(C.holder.fakekey)
+				if(admin_can(C, 0))
+					if(admin_fakekey(C))
 						continue
-					admins[C.key] = C.holder.rank_names()
+					admins[C.key] = admin_rank_names(C)
 				players += C.key
 				if(isliving(C.mob))
 					active++
@@ -543,8 +662,8 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			var/admins = 0
 
 			for(var/client/C in GLOB.clients)
-				if(C.holder)
-					if(C.holder.fakekey)
+				if(admin_can(C, 0))
+					if(admin_fakekey(C))
 						continue	//so stealthmins aren't revealed by the hub
 					admins++
 				s["player[n]"] = C.key
@@ -661,39 +780,6 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				text2file("[++GLOB.restart_counter]", RESTART_COUNTER_PATH)
 				return FALSE
 
-/world/proc/FinishTestRun()
-	var/list/fail_reasons
-	if(GLOB)
-		if(GLOB.total_runtimes != 0)
-			fail_reasons = list("Total runtimes: [GLOB.total_runtimes]")
-#ifdef UNIT_TESTS
-		if(GLOB.failed_any_test)
-			LAZYADD(fail_reasons, "Unit Tests failed!")
-		if(GLOB.boot_unclean)
-			LAZYADD(fail_reasons, GLOB.boot_unclean)
-#endif
-		if(!GLOB.log_directory)
-			LAZYADD(fail_reasons, "Missing GLOB.log_directory!")
-	else
-		fail_reasons = list("Missing GLOB!")
-	log_world("Finishing the test run: writing the result markers ([fail_reasons ? "failed" : "clean"]).")
-	if(!fail_reasons)
-		text2file("Success!", "[GLOB.log_directory]/clean_run.lk")
-	else
-		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
-	// The marker the build's watchdog waits for (tools/build/lib/byond.ts, watchdogCleanFile): written for a failed run too, so a
-	// daemon that lingers after the world is done is killed within seconds, while a world still writing its logs on a busy machine
-	// is given time to finish before it is declared unclean.
-	if(GLOB && GLOB.log_directory)
-		text2file(fail_reasons ? "Failed" : "Finished", "[GLOB.log_directory]/finished_run.lk")
-		log_world("Result markers written (finished_run.lk).")
-	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
-	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
-	world_next_tick(GLOBAL_PROC_REF(world_finish_test_shutdown))
-
-/proc/world_finish_test_shutdown()
-	log_world("Test world: shutting down the world.")
-	spent(world) //shut it down
 
 /// Callbacks run at the start of the next world tick (/world/Tick()), in order. For world procs
 /// whose follow-up must run after they return, including after the MC has shut down.

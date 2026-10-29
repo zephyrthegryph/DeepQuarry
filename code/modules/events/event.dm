@@ -65,8 +65,8 @@
 	var/severity			= 0 //Severity. Lower means less severe, higher means more severe. Does not have to be supported. Is set on New().
 	var/activeFor			= 0	//How long the event has existed. You don't need to change this.
 	var/isRunning			= TRUE //If this event is currently running. You should not change this.
-	EXPIRY_DECLARE(startedAt) //When this event started.
-	EXPIRY_DECLARE(endedAt) //When this event ended.
+	var/startedAt = 0 //When this event started.
+	var/endedAt = 0 //When this event ended.
 	var/processing_active 	= TRUE
 	/// Relation view: the event_meta this event was started from.
 	var/tmp/datum/event_meta/event_meta
@@ -161,7 +161,7 @@
 		isRunning = 0
 		end()
 
-	EXPIRY_STAMP(src, endedAt, CLOCK_WORLD)
+	STAMP(src, endedAt, CLOCK_WORLD)
 	if(!external_use)
 		SSevents.event_complete(src)
 
@@ -191,7 +191,7 @@ CAPABILITIES(/datum/event)
 		if(severity < EVENT_LEVEL_MUNDANE) severity = EVENT_LEVEL_MUNDANE
 		if(severity > EVENT_LEVEL_MAJOR) severity = EVENT_LEVEL_MAJOR
 
-	EXPIRY_STAMP(src, startedAt, CLOCK_WORLD)
+	STAMP(src, startedAt, CLOCK_WORLD)
 
 	if(!affecting_z)
 		affecting_z = using_map.station_levels.Copy()
@@ -213,3 +213,5 @@ CAPABILITIES(/datum/event)
 /datum/event/proc/victim() as /obj/effect/overmap/visitable/ship
 	return victim
 
+
+SCHEMA(/datum/event_meta, event_type, schema_path(/datum/event))

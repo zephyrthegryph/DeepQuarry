@@ -83,7 +83,7 @@ ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the opt
 			log_and_message_admins("[key_name(user)] admin-ghosted.", usr) // Add logging.
 		user.init_verbs()
 		if(body)
-			body.teleop = ghost
+			sparse_ref_set(body, teleop, ghost)
 			if(!body.key)
 				bind_player(body, "@[user.key]")	//Haaaaaaaack. But the people have spoken. If it breaks; blame adminbus
 		feedback_add_details("admin_verb","O") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -105,46 +105,46 @@ ADMIN_VERB(invisimin, R_ADMIN|R_MOD|R_EVENT, "Invisimin", "Toggles ghost-like in
 	mob.alpha = max(mob.alpha - 100, 0)
 
 ADMIN_VERB(list_bombers, R_ADMIN, "List Bombers", "Look at all bombs and their likely culprit.", ADMIN_CATEGORY_GAME)
-	user.holder.list_bombers(user.mob)
+	admin_holder_of(user).list_bombers(user.mob)
 
 ADMIN_VERB(list_signalers, R_ADMIN, "List Signalers", "View all signalers.", ADMIN_CATEGORY_GAME)
-	user.holder.list_signalers(user.mob)
+	admin_holder_of(user).list_signalers(user.mob)
 
 ADMIN_VERB(list_law_changes, R_ADMIN, "List Law Changes", "View all AI law changes.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	user.holder.list_law_changes(user.mob)
+	admin_holder_of(user).list_law_changes(user.mob)
 
 ADMIN_VERB(show_manifest, R_ADMIN, "Show Manifest", "View the shift's Manifest.", ADMIN_CATEGORY_DEBUG_GAME)
-	user.holder.show_manifest(user.mob)
+	admin_holder_of(user).show_manifest(user.mob)
 
 ADMIN_VERB(player_panel, R_HOLDER, "Player Panel", "Open the player panel.", ADMIN_CATEGORY_GAME)
-	user.holder.player_panel_old(user)
+	admin_holder_of(user).player_panel_old(user)
 	feedback_add_details("admin_verb","PP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(player_panel_new, R_HOLDER, "Player Panel New", "Open the player panel.", ADMIN_CATEGORY_GAME)
-	user.holder.player_panel_new(user)
+	admin_holder_of(user).player_panel_new(user)
 	feedback_add_details("admin_verb","PPN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(check_antagonists, R_HOLDER, "Check Antagonists", "Open the antagonist panel.", ADMIN_CATEGORY_INVESTIGATE)
-	user.holder.check_antagonists(user)
+	admin_holder_of(user).check_antagonists(user)
 	log_admin("[key_name(user)] checked antagonists.")	//for tsar~
 	feedback_add_details("admin_verb","CHA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(jobbans, R_BAN, "Display Job bans", "View job bans here.", ADMIN_CATEGORY_INVESTIGATE)
 	if(CONFIG_GET(flag/ban_legacy_system))
-		user.holder.Jobbans()
+		admin_holder_of(user).Jobbans()
 	else
-		user.holder.DB_ban_panel(user)
+		admin_holder_of(user).DB_ban_panel(user)
 	feedback_add_details("admin_verb","VJB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(unban_panel, R_BAN, "Unbanning Panel", "Unban players here.", ADMIN_CATEGORY_GAME)
 	if(CONFIG_GET(flag/ban_legacy_system))
-		user.holder.unbanpanel()
+		admin_holder_of(user).unbanpanel()
 	else
-		user.holder.DB_ban_panel(user)
+		admin_holder_of(user).DB_ban_panel(user)
 	feedback_add_details("admin_verb","UBP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(game_panel, R_ADMIN|R_SERVER|R_FUN, "Game Panel", "Look at the state of the game.", ADMIN_CATEGORY_GAME)
-	user.holder.Game()
+	admin_holder_of(user).Game()
 	feedback_add_details("admin_verb","GP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /// Returns this client's stealthed ckey
@@ -179,8 +179,8 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 	toggle_stealth(A.request.answerer.client, A.request.value, TRUE)
 
 /datum/admin_verb/stealth/proc/toggle_stealth(client/user, _answer_a2 = null, answered = FALSE)
-	if(user.holder.fakekey)
-		user.holder.fakekey = null
+	if(admin_fakekey(user))
+		admin_set_fakekey(user, null)
 		if(isnewplayer(user.mob))
 			user.mob.name = capitalize(user.ckey)
 	else
@@ -197,11 +197,11 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 			return
 		if(length(new_key) >= 26)
 			new_key = copytext(new_key, 1, 26)
-		user.holder.fakekey = text_or_null(new_key)
+		admin_set_fakekey(user, text_or_null(new_key))
 		user.createStealthKey()
 		if(isnewplayer(user.mob))
 			user.mob.name = new_key
-	log_and_message_admins("has turned stealth mode [user.holder.fakekey ? "ON" : "OFF"]", user)
+	log_and_message_admins("has turned stealth mode [admin_fakekey(user) ? "ON" : "OFF"]", user)
 	feedback_add_details("admin_verb","SM") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 #define MAX_WARNS 3
@@ -465,13 +465,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(togglebuildmodeself, R_BUILDMODE, "Toggle Build Mode
 
 ADMIN_VERB(object_talk, R_FUN, "oSay", "Display a message to everyone who can hear the target.", ADMIN_CATEGORY_FUN_NARRATE, msg as text)
 	var/mob/user_mob = user.mob
-	if(!user_mob.control_object)
+	var/obj/possessed = possessed_obj_of(user_mob)
+	if(!possessed)
 		return
 
 	if(!msg)
 		return
-	for(var/mob/V in hearers(user_mob.control_object))
-		V.show_message(span_filter_say(span_bold("[user_mob.control_object.name]") + " says: \"[msg]\""), 2)
+	for(var/mob/V in hearers(possessed))
+		V.show_message(span_filter_say(span_bold("[possessed.name]") + " says: \"[msg]\""), 2)
 	feedback_add_details("admin_verb","OT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(kill_air, R_SERVER, "Kill Air", "Toggle Air Processing.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
@@ -481,7 +482,7 @@ ADMIN_VERB(kill_air, R_SERVER, "Kill Air", "Toggle Air Processing.", ADMIN_CATEG
 	log_and_message_admins("used 'kill air'.", user)
 
 ADMIN_VERB(deadmin, R_NONE, "DeAdmin", "Shed your admin powers.", ADMIN_CATEGORY_MISC)
-	user.holder.deactivate()
+	admin_holder_of(user).deactivate()
 	to_chat(user, span_interface("You are now a normal player."))
 	log_admin("[key_name(user)] deadminned themselves.")
 	message_admins("[key_name_admin(user)] deadminned themselves.")
@@ -498,7 +499,7 @@ ADMIN_VERB(toggle_log_hrefs, R_SERVER, "Toggle href logging", "Allows to toggle 
 	message_admins(span_bold("[key_name_admin(user)] [CONFIG_GET(flag/log_hrefs) ? "started" : "stopped"] logging hrefs"))
 
 ADMIN_VERB(check_ai_laws, R_ADMIN|R_FUN|R_EVENT, "Check AI Laws", "Display the current AI laws.", ADMIN_CATEGORY_SILICON)
-	user.holder.output_ai_laws(user.mob)
+	admin_holder_of(user).output_ai_laws(user.mob)
 
 ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a silicon mob.", ADMIN_CATEGORY_SILICON)
 	var/mob/answerer = user.mob
@@ -878,7 +879,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 /// The datum the admin has marked, or null.
 /datum/admin_verb/adminorbit/proc/orbit_marked(datum/ask_sequence/admin_verb/asked)
 	var/client/user = asked.actor()?.client
-	return user?.holder?.marked_datum()
+	return admin_holder_of(user)?.marked_datum()
 
 /// The center and the orbiter so far: the marked datum in the role the admin gave it, the rest from the answers. list(center, orbiter).
 /datum/admin_verb/adminorbit/proc/orbit_pair(datum/ask_sequence/admin_verb/asked)

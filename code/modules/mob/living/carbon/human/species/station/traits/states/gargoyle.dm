@@ -2,7 +2,7 @@
 	var/energy = 100
 	var/transformed = FALSE
 	var/paused = FALSE
-	EXPIRY_DECLARE(cooldown)
+	COOLDOWN_DECLARE(cooldown)
 
 	var/obj/structure/gargoyle/statue	//another easy ref
 

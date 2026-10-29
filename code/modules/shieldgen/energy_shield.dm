@@ -122,11 +122,12 @@
 	update_nearby_tiles() //Force ZAS update
 	update_explosion_resistance()
 
-/obj/effect/shield/attack_generic(source, damage, emote)
-	take_damage(damage, SHIELD_DAMTYPE_PHYSICAL)
+/obj/effect/shield/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/source = A.attacker
+	take_damage(A.damage, SHIELD_DAMTYPE_PHYSICAL)
 	if(gen().check_flag(MODEFLAG_OVERCHARGE) && istype(source, /mob/living/))
 		overcharge_shock(source)
-	..(source, damage, emote)
+	return HOOK_DECLINE
 
 // Fails shield segments in specific range. Range of 1 affects the shielded turf only.
 /obj/effect/shield/proc/fail_adjacent_segments(range, hitby = null)
@@ -161,6 +162,8 @@
 	animate(src, alpha = initial(alpha), time = 1 SECOND)
 
 CAPABILITIES(/obj/effect/shield)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	op("touch_shield", hand(), then(PROC_REF(interaction_touch_shield)))
 	op("hit_shield", item(/obj/item), then(PROC_REF(interaction_hit_shield)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_emp_drain)))
@@ -297,12 +300,15 @@ CAPABILITIES(/obj/effect/shield)
 	return OP_PASS
 
 // Special treatment for meteors because they would otherwise penetrate right through the shield.
-/obj/effect/shield/Bumped(atom/movable/mover)
+/// The bump notice: `mover` walked into it (was Bumped()).
+/obj/effect/shield/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/movable/mover = N.bumper
 	if(!gen())
 		consume(src)
 		return 0
 	mover.shield_impact(src)
-	return ..()
+	return
 
 // Meteors call this instad of Bumped for some reason
 /obj/effect/shield/handle_meteor_impact(obj/effect/meteor/meteor)
@@ -328,9 +334,9 @@ CAPABILITIES(/obj/effect/shield)
 
 /obj/effect/shield/proc/update_explosion_resistance()
 	if(gen() && gen().check_flag(MODEFLAG_HYPERKINETIC))
-		explosion_resistance = INFINITY
+		set_explosion_resistance(INFINITY)
 	else
-		explosion_resistance = 0
+		set_explosion_resistance(0)
 
 //
 // Visual effect of shield taking impact

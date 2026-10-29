@@ -19,7 +19,7 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 		return TRUE
 	if(nutrition_of(user) < 70) // Set minimum nutrition_of(src) to be the same as in fitness_machines_vr.dm
 		to_chat(user, span_warning("You need more energy to use the punching bag. Go eat something."))
-	else if(user.weight < 70) // Add weight loss to old fitness equipment
+	else if(sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT) < 70) // Add weight loss to old fitness equipment
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
 	else
 		user.setClickCooldown(user.get_attack_speed())
@@ -27,7 +27,7 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 		play_sfx(src, SFX_EFFECTS_WOODHIT)
 		user.do_attack_animation(src)
 		user.adjust_nutrition(-10) // Set nutrition drain to be the same as in fitness_machines_vr.dm
-		user.weight -= 0.25 * weightloss_power * (0.01 * sparse_get_or(user, weight_loss, 0.5))
+		sparse_set_or(user, weight, sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT) - (0.25 * weightloss_power * (0.01 * sparse_get_or(user, weight_loss, 0.5))), DEFAULT_MOB_WEIGHT)
 		to_chat(user, span_warning("You [pick(hit_message)] \the [src]."))
 	return TRUE
 
@@ -35,11 +35,11 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 	name = "weightlifting machine"
 	desc = "A machine used to lift weights."
 	icon_state = "weightlifter"
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	var/weight = 1
 	var/static/list/qualifiers = list("with ease", "without any trouble", "with great effort")
 
 CAPABILITIES(/obj/structure/fitness/weightlifter)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("lift", hand(), label("Lift"), when(req_actor_kind(/mob/living/carbon/human)), needs(req(PROC_REF(can_lift))), claims(), begins(PROC_REF(lift_begins)), wait(PROC_REF(lift_time)), on_interrupt(PROC_REF(lift_interrupted)), then(PROC_REF(lifted)))
 
@@ -61,7 +61,7 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 		return "You must be on the weight machine to use it."
 	if(nutrition_of(user) < 70) // Set minimum nutrition_of(src) to be the same as in fitness_machines_vr.dm
 		return "You need more energy to lift weights, go eat something."
-	if(user.weight < 70) // Add weight loss to old fitness equipment
+	if(sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT) < 70) // Add weight loss to old fitness equipment
 		return "You're too skinny to risk losing any more weight."
 	return null
 
@@ -82,7 +82,7 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 	play_sfx(src, SFX_EFFECTS_WEIGHTDROP)
 	user.adjust_nutrition(weight * -10)
 	var/weightloss_enhanced = weightloss_power * (weight * 0.5)
-	user.weight -= 0.25 * weightloss_enhanced * (0.01 * sparse_get_or(user, weight_loss, 0.5))
+	sparse_set_or(user, weight, sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT) - (0.25 * weightloss_enhanced * (0.01 * sparse_get_or(user, weight_loss, 0.5))), DEFAULT_MOB_WEIGHT)
 	to_chat(user, span_notice("You lift the weights [qualifiers[weight]]."))
 
 /obj/structure/fitness/weightlifter/proc/lift_interrupted(datum/act/op/A)

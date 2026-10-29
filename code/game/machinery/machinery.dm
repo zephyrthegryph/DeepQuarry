@@ -1,3 +1,7 @@
+/// Machine uid numbers (and the supermatter's, which shares the sequence).
+SERIAL_DEF(machinery, 1, FALSE)
+SCHEMA(/obj/machinery, uid, num())
+
 /*
 Overview:
 	Used to create objects that need a per step proc call.  Default definition of 'New()'
@@ -38,8 +42,8 @@ Class Variables:
 	uid (num)
 		Unique id of machine across all machines.
 
-	gl_uid (global num)
-		Next uid value in sequence
+	next_serial(machinery)
+		Next uid value in sequence (the machinery serial kind)
 
 	stat (bitflag)
 		Machine status bit flags.
@@ -111,16 +115,15 @@ Class Procs:
 	/// null until then. The circuit board is not in this list; see `circuit`.
 	var/list/component_parts = null
 	var/tmp/uid
-	var/global/gl_uid = 1
 	var/obj/item/circuitboard/circuit = null
 
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 SETTER(/obj/machinery, use_power)
 
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	machine_rules(maintenance_flags = NONE)
 	machine_usage(click_volume = 40, interact_offline = 0, wrench_time = 0, weld_time = 2 SECONDS) // how it is used and serviced: a type trait (code/game/machinery/machine_usage.dm)
 	uses_power(channel = EQUIP, idle = 0, active = 0) // what it draws: a type trait (machinery_power.dm); a subtype configure()s what it changes
@@ -296,11 +299,7 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 	// compile-time default per instance) -- qdel'ing the probe could run
 	// Destroy() cleanup that clears that list in place and corrupt it for
 	// every real instance of the type, not just this throwaway one.
-	var/static/list/probes = list()
-	var/atom/instance = probes[path]
-	if(!instance)
-		instance = new path
-		probes[path] = instance
+	var/atom/instance = dq_proto(path)
 	var/value = instance.vars[var_name]
 	cache[cache_key] = value
 	return value
@@ -462,8 +461,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		. += span_notice("Installed material parts: [jointext(manifest, "; ")].")
 
 /obj/machinery/proc/assign_uid()
-	set_uid(gl_uid)
-	gl_uid++
+	set_uid(next_serial(machinery))
 
 /obj/machinery/proc/state(msg)
 	for(var/mob/O in hearers(src, null))

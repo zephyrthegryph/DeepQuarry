@@ -57,7 +57,7 @@ GLOBAL_VAR_INIT(next_station_date_change, 1 DAY)
 
 /proc/gameTimestamp(format = "hh:mm:ss", wtime=null)
 	if(!wtime)
-		wtime = EXPIRY_AT(world, CLOCK_WORLD, 0)
+		wtime = TIME_NOW(CLOCK_WORLD)
 	return time2text(wtime - GLOB.timezoneOffset, format)
 
 /* Returns 1 if it is the selected month and day */
@@ -93,20 +93,39 @@ GLOBAL_VAR_INIT(round_start_time, 0)
 	COOLDOWN_START(GLOB, next_duration_update, 1 MINUTES)
 	return GLOB.last_round_duration
 
-GLOBAL_VAR_INIT(midnight_rollovers, 0)
-GLOBAL_VAR_INIT(rollovercheck_last_timeofday, 0)
-GLOBAL_VAR_INIT(rollover_safety_date, 0) // set in world/New to the server startup day-of-month
+/// The real-time clock's own state: how many midnights the server has crossed and what it last read. It lives on the clock, not in
+/// scalar GLOB vars: only update_midnight_rollover() writes it, so the unit-test state guard sees no test-owned value change when a
+/// test runs across midnight (28 October: dq_boot_gate was failed for the clock's own increment). Never restore it to an earlier
+/// count: REALTIMEOFDAY would move back a whole day.
+/datum/wall_clock
+	/// midnights crossed since boot
+	var/rollovers = 0
+	/// world.timeofday at the last check
+	var/last_timeofday = 0
+	/// world.realtime of the last accepted rollover (world/New sets the start of the boot day)
+	var/safety_date = 0
+
+/// The one wall clock, made on first use: the time macros run during global init (the metrics system's preinit reads
+/// REALTIMEOFDAY), before GLOB's managed datums exist.
+/proc/wall_clock()
+	RETURN_TYPE(/datum/wall_clock)
+	var/static/datum/wall_clock/clock
+	if(!clock)
+		clock = new
+	return clock
+
 /proc/update_midnight_rollover()
+	var/datum/wall_clock/clock = wall_clock()
 	// Day has wrapped (world.timeofday drops to 0 at the start of each real day)
-	if (world.timeofday < GLOB.rollovercheck_last_timeofday)
+	if (world.timeofday < clock.last_timeofday)
 		// If the day started/last wrap was < 12 hours ago, this is spurious
-		if(GLOB.rollover_safety_date < world.realtime - (12 HOURS))
-			GLOB.midnight_rollovers++
-			GLOB.rollover_safety_date = world.realtime
+		if(clock.safety_date < world.realtime - (12 HOURS))
+			clock.rollovers++
+			clock.safety_date = world.realtime
 		else
 			warning("Time rollover error: world.timeofday decreased from previous check, but the day or last rollover is less than 12 hours old. System clock?")
-	GLOB.rollovercheck_last_timeofday = world.timeofday
-	return GLOB.midnight_rollovers
+	clock.last_timeofday = world.timeofday
+	return clock.rollovers
 
 ///Increases delay as the server gets more overloaded, as sleeps aren't cheap and sleeping only to wake up and sleep again is wasteful
 #define DELTA_CALC max(((max(TICK_USAGE, world.cpu) / 100) * max(Kernel.sleep_delta-1,1)), 1)

@@ -84,21 +84,21 @@
 
 /mob/proc/time_till_respawn()
 	if(!ckey)
-		return -1 // What?
+		return RESPAWN_NEVER // What?
 
-	var/respawn_at = GLOB.respawn_timers[ckey]
+	var/datum/respawn_timer/timer = LAZYACCESS(SSmobs.respawn_timers, ckey)
 	// No timer at all
-	if(!respawn_at)
+	if(!timer)
 		return 0
-	// Special case, infinite timer
-	if(respawn_at == -1)
-		return -1
+	if(timer.forbidden)
+		return RESPAWN_NEVER
 	// Timer expired
-	if(!BEFORE(src, respawn_at, CLOCK_WORLD))
-		GLOB.respawn_timers -= ckey
+	var/waited = ELAPSED(timer, started_at, CLOCK_WORLD)
+	if(waited >= timer.duration)
+		SSmobs.clear_respawn_wait(ckey)
 		return 0
 	// Timer still going
-	return respawn_at - world.time
+	return timer.duration - waited
 
 MSG_DEF_SELF(join/no_such_job, "There is no such job.")
 MSG_DEF_SELF(join/job_full, "That job has no open positions.")
@@ -246,11 +246,11 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	ticker_mode().latespawn(character)
 
 	if(rank == JOB_OUTSIDER)
-		log_and_message_admins("has joined the round as non-crew. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
+		log_and_message_admins("has joined the round as non-crew. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
 		if(!(J.mob_type & JOB_SILICON))
 			SSticker.remember_mind(character.mind)
 	else if(rank == JOB_ANOMALY)
-		log_and_message_admins("has joined the round as anomaly. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
+		log_and_message_admins("has joined the round as anomaly. (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
 		if(!(J.mob_type & JOB_SILICON))
 			SSticker.remember_mind(character.mind)
 	else if(J.mob_type & JOB_SILICON)
@@ -511,7 +511,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	var/list/_neu_traits = client.prefs.read_preference(/datum/preference/typed_list/traits/neu_traits)
 	var/list/_neg_traits = client.prefs.read_preference(/datum/preference/typed_list/traits/neg_traits)
 	var/list/megalist = _pos_traits + _neu_traits + _neg_traits
-	var/points_left = client.prefs.read_preference(/datum/preference/numeric/human/starting_trait_points)
+	var/points_left = client.prefs.trait_point_budget()
 	var/traits_left = client.prefs.read_preference(/datum/preference/numeric/human/max_traits)
 	var/pref_synth = client.prefs.read_preference(/datum/preference/toggle/human/dirty_synth) // migrated
 	var/pref_meat = client.prefs.read_preference(/datum/preference/toggle/human/gross_meatbag) // migrated

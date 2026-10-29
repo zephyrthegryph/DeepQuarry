@@ -23,6 +23,10 @@
 //! features, inventory, strings aside, debug paths, instances, helpers, required types, no
 //! modified instances), and none may be the first root procedure (its literals register strings
 //! with the declarations). New string literals are appended to the retained string table.
+//!
+//! Two declaration edits are admitted although the text outside bodies changed: a pure numeric default edit
+//! (its Variables records are rewritten) and an edit that only appended procs, verbs or plain vars
+//! (`retained_output_append.rs`: new procedures and records take the next free table indexes).
 use crate::initializer_policy::warnings::InitializerWarning;
 use crate::lowering::UnitIdentity;
 use std::collections::{BTreeMap, HashMap};
@@ -31,6 +35,8 @@ use xxhash_rust::xxh3::Xxh3;
 
 #[path = "retained_output_wire.rs"]
 mod wire;
+#[path = "retained_output_append.rs"]
+mod append;
 pub(crate) use wire::BaseParts;
 
 /// At most this many relowered bodies are spliced; more compose the whole program.
@@ -679,6 +685,9 @@ pub(crate) struct Admitted {
     pub lines: LineMap,
     /// Variables-table records `(record, kind, value)` whose numeric default this request edited.
     pub variable_values: Vec<(u32, u8, u32)>,
+    /// An edit that only appended callables or plain vars (`retained_output_append.rs`); `changed` then
+    /// lists the aligned bodies to relower followed by the appended ones.
+    appended: Option<append::AppendAdmission>,
 }
 /// The answer table's facts at the point an output is retained (see `OutputBase`).
 #[derive(Clone, Debug, Default)]
@@ -686,8 +695,30 @@ pub(crate) struct Answered {
     pub version: Option<u128>,
     pub context: Option<u128>,
     pub marks: Option<u64>,
+    /// Mark the table for this output once the request has asked everything it builds from (`settle`).
+    pub mark: bool,
     pub facts: Option<Arc<crate::query_db::AnswerFacts>>,
     pub restored: bool,
+}
+
+impl Answered {
+    /// After the request lowered what it relowers: the answers' version, context and facts as the output is built
+    /// from them (lowering may ask answers and resource searches admission did not), and the mark the next request
+    /// proves its answers against. Marking after lowering also marks the answers the relowered units asked first.
+    pub(crate) fn settle(&mut self, db: &crate::query_db::QueryDb) {
+        if let Some(version) = db.answers_version() {
+            self.version = Some(version);
+        }
+        if let Some(context) = db.answers_context() {
+            self.context = Some(context);
+        }
+        if let Some(facts) = db.answer_facts() {
+            self.facts = Some(Arc::new(facts));
+        }
+        if self.mark {
+            self.marks = Some(db.mark_published());
+        }
+    }
 }
 
 /// This request's answers: the table, the request's view of it and the worker count its proof
@@ -718,16 +749,19 @@ pub(crate) fn admit(
     proof: Option<AnswerProof<'_>>,
 ) -> Result<Admitted, String> {
     let shape = retained.shape;
-    // A variant whose base was spilled to disk gets it back here, when the file describes this program text.
-    if retained.generation.restore_patch_base(shape.text_key()) {
-        crate::daemon_eprintln!("native incremental output: restored the stored patch base");
-    }
-    // Prefer a retained output of this build's program text (another lane's tree may be current).
-    if retained
-        .generation
-        .select_patch_base(|base| base.text_key() == shape.text_key())
-    {
-        crate::daemon_eprintln!("native incremental output: switched to the retained output with this program text");
+    // A live base of other program text is swapped for the stored base of this text (the variant's stored base, or the
+    // one a full build of another tree replaced), when there is one.
+    // A live base the edit is relative to (an appended-callable or numeric default edit proved against its tree) stays.
+    let tree = &frontend.snapshot.tree;
+    let edited_from = tree
+        .appended_callables()
+        .map(|appended| appended.from_identity)
+        .or_else(|| tree.default_edits().map(|edits| edits.from_identity));
+    let keeps_live = retained.generation.patch_base().is_some_and(|(live, _, _)| {
+        live.text_key() == shape.text_key() || Some(live.shape.tree_identity) == edited_from
+    });
+    if !keeps_live && retained.generation.restore_patch_base(shape.text_key()) {
+        crate::daemon_eprintln!("native incremental output: restored the stored patch base of this program text");
     }
     let (base, link, image) = retained
         .generation
@@ -747,6 +781,49 @@ pub(crate) fn admit(
         .tree
         .default_edits()
         .filter(|edits| edits.from_identity == base.shape.tree_identity);
+    let appended = frontend
+        .snapshot
+        .tree
+        .appended_callables()
+        .filter(|appended| appended.from_identity == base.shape.tree_identity)
+        .filter(|_| base.shape.text_key() != shape.text_key());
+    if let Some(appended) = appended {
+        if let Some(difference) = retained
+            .inputs
+            .non_text_difference_with(&base.inputs, retained.archive != base.archive)
+        {
+            return Err(format!("non-text input changed: {difference}"));
+        }
+        if retained.archive != base.archive {
+            return Err("resource archive changed".into());
+        }
+        let admission = append::admit_appended(frontend, shape, &base, appended)?;
+        crate::daemon_eprintln!(
+            "native incremental output: {} callables and {} vars appended, answers not compared",
+            appended.members.len(),
+            appended.fields.len()
+        );
+        // The table holds what the output is built from: answers this request asks under the new tree, and the
+        // retained ones every other unit was built from. Marked like any admitted output (`settle`), so the next
+        // request proves its answers against them (a body edit after an append builds on it).
+        return Ok(Admitted {
+            answered: Answered {
+                version: Some(answers),
+                context,
+                marks: None,
+                mark: proof.is_some() && !base.restored,
+                facts: None,
+                restored: base.restored,
+            },
+            changed: admission.selected(),
+            base,
+            link,
+            image,
+            lines: LineMap::identity(),
+            variable_values: Vec::new(),
+            appended: Some(admission),
+        });
+    }
     let mut variable_values = Vec::new();
     if let Some(edits) = default_edits.filter(|_| base.shape.text_key() != shape.text_key()) {
         if base.shape.bodies.len() != shape.bodies.len() {
@@ -787,6 +864,7 @@ pub(crate) fn admit(
         version: Some(answers),
         context,
         marks: None,
+        mark: false,
         facts: proof.as_ref().and_then(|proof| proof.db.answer_facts()).map(Arc::new),
         restored: base.restored,
     };
@@ -798,8 +876,12 @@ pub(crate) fn admit(
             "native incremental output: {} numeric defaults edited, answers not compared",
             variable_values.len()
         );
-    } else if base.answers != Some(answers) && base.restored && base.marks.is_none() {
-        // An output restored from storage has no marked table to ask again; it kept the facts its version
+    } else if base.answers != Some(answers)
+        && base.facts.is_some()
+        && base.marks.map_or(base.restored, |marks| !proof.as_ref().is_some_and(|proof| proof.db.marks_stand(marks)))
+    {
+        // An output restored from storage, or one whose marked table was dropped since it was published (a switch to
+        // another define set clears the table), has no marked table to ask again; it kept the facts its version
         // hashes. The declarations and the answer world equal its own prove every answer they determine, and
         // each resource search it read is asked again.
         let (Some(proof), Some(stored)) = (proof.as_ref(), base.facts.as_ref()) else {
@@ -822,7 +904,20 @@ pub(crate) fn admit(
             format!(" ({})", proof.db.answer_diff().summary())
         });
         if context.is_none() || base.answers_context != context {
-            return Err(format!("answer world or resource searches changed{detail}"));
+            let parts = match (base.facts.as_deref(), proof.as_ref().and_then(|proof| proof.db.answer_facts())) {
+                (Some(old), Some(new)) => format!(
+                    "; world {}, {} of {} resource searches as retained (retained output held {}, this request {}; {} of this request's queries are in the retained output with another answer; sample {:?})",
+                    if old.world == new.world { "equal" } else { "differs" },
+                    new.searches.iter().filter(|search| old.searches.contains(search)).count(),
+                    new.searches.len().max(old.searches.len()),
+                    old.searches.len(),
+                    new.searches.len(),
+                    new.searches.iter().filter(|(query, hash)| old.searches.iter().any(|(q, h)| q == query && h != hash)).count(),
+                    new.searches.iter().find(|search| !old.searches.contains(search)),
+                ),
+                _ => String::new(),
+            };
+            return Err(format!("answer world or resource searches changed{detail}{parts}"));
         }
         let (Some(proof), Some(marks)) = (proof.as_ref(), base.marks) else {
             return Err(format!("answers changed, none marked for the retained output{detail}"));
@@ -835,9 +930,7 @@ pub(crate) fn admit(
             "native incremental output: {held} published answers asked again, none differ (tree identity only)"
         );
     }
-    if let Some(proof) = proof.as_ref().filter(|_| !answered.restored) {
-        answered.marks = Some(proof.db.mark_published());
-    }
+    answered.mark = proof.is_some() && !answered.restored;
     Ok(Admitted {
         answered,
         base,
@@ -846,6 +939,7 @@ pub(crate) fn admit(
         changed,
         lines,
         variable_values,
+        appended: None,
     })
 }
 
@@ -986,7 +1080,7 @@ pub(crate) fn splice(
     retained: RetainedOutput<'_>,
     admitted: Admitted,
     frontend: &dm_tree::frontend::ColdFrontend,
-    contributions: &[crate::symbolic::PreparedContribution],
+    contributions: Vec<crate::symbolic::PreparedContribution>,
     query: (
         Arc<crate::driver_facts::PreparedAbiUnits>,
         Arc<crate::startup::StartupFacts>,
@@ -1001,7 +1095,23 @@ pub(crate) fn splice(
         changed,
         lines,
         variable_values,
+        appended,
     } = admitted;
+    if let Some(admission) = appended {
+        return append::splice_appended(
+            retained,
+            admission,
+            answered,
+            &base,
+            &link,
+            &image,
+            frontend,
+            contributions,
+            query,
+            executor,
+        );
+    }
+    let contributions = contributions.as_slice();
     let shape = retained.shape;
     let symbols = frontend.snapshot.tree.symbols();
     // Bodies whose text is unchanged and merely moved, by current position.
@@ -1252,12 +1362,6 @@ pub(crate) fn applied(project: &std::path::Path) -> u64 {
         .get(project)
         .copied()
         .unwrap_or(0)
-}
-
-/// Incremental outputs plus declaration patches of a project (tests).
-#[cfg(test)]
-pub(crate) fn applied_with_declaration_patches(project: &std::path::Path) -> u64 {
-    applied(project) + crate::declaration_patch::applied(project)
 }
 
 #[cfg(test)]

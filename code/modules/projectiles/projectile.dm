@@ -15,7 +15,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
 	var/hitsound_wall = null // Played when something hits a wall, or anything else that isn't a mob.
 
@@ -26,8 +25,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	//Fired processing vars
 	var/fired = FALSE	//Have we been fired yet
-	EXPIRY_DECLARE(last_projectile_move)
-	EXPIRY_DECLARE(last_process)
+	var/last_projectile_move = 0
+	var/last_process = 0
 	var/time_offset = 0
 	var/datum/point/vector/trajectory
 	var/trajectory_ignore_forcemove = FALSE	//instructs forceMove to NOT reset our trajectory to the new location!
@@ -55,7 +54,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/impact_type
 
 	//Fancy hitscan lighting effects!
-	light_on = TRUE
 	var/hitscan_light_intensity = 1.5
 	var/hitscan_light_range = 0.75
 	var/hitscan_light_color_override
@@ -130,7 +128,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/modifier_duration = null // How long the above modifier should last for. Leave null to be permanent.
 	var/excavation_amount = 0 // How much, if anything, it drills from a mineral turf.
 
-	embed_chance = 0	//Base chance for a projectile to embed
 
 	var/fire_sound = SFX_WEAPONS_GUNSHOT_OLD // Can be overriden in gun.dm's fire_sound var. It can also be null but I don't know why you'd ever want to do that. -Ace
 
@@ -157,8 +154,11 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
+SCHEMA(/obj/item/projectile, def_zone, schema_text())
+
 CAPABILITIES(/obj/item/projectile)
-	configure(movable_motion(unacidable = TRUE))
+	configure(item_combat(embed_chance = 0))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = TRUE))
 	setup(PROC_REF(item_projectile_setup))
 	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
 	owns_one(nameof(trajectory), /datum/point/vector)
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/projectile)
 /obj/item/projectile/proc/pixel_move(trajectory_multiplier, hitscanning = FALSE)
 	if(!loc || !trajectory)
 		return
-	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
+	STAMP(src, last_projectile_move, CLOCK_WORLD)
 	if(homing)
 		process_homing()
 	var/forcemoved = FALSE
@@ -299,7 +299,7 @@ CAPABILITIES(/obj/item/projectile)
 		homing_offset_y = -homing_offset_y
 
 /obj/item/projectile/proc/projectile_step()
-	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+	STAMP(src, last_process, CLOCK_WORLD)
 	if(!loc || !fired || !trajectory)
 		fired = FALSE
 		return PROCESS_KILL
@@ -388,7 +388,7 @@ CAPABILITIES(/obj/item/projectile)
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
 	rel_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
-	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
+	STAMP(src, last_projectile_move, CLOCK_WORLD)
 	rel_clear(src, nameof(permutated))
 	originalRange = range
 	fired = TRUE
@@ -535,7 +535,7 @@ CAPABILITIES(/obj/item/projectile)
 	// dying projectile adopts nothing): the cache is made detached and handed to the timer.
 	var/datum/beam_components_cache/drawn = new
 	if(tracer_type)
-		var/tempref = "\ref[src]"
+		var/tempref = ref_token(src)
 		for(var/i in 1 to length(points) - 1)
 			generate_tracer_between_points(points[i], points[i + 1], drawn, tracer_type, color, duration, hitscan_light_range, hitscan_light_color_override, hitscan_light_intensity, tempref)
 	if(muzzle_type && duration > 0)
@@ -708,7 +708,7 @@ CAPABILITIES(/obj/item/projectile)
 		return 0
 	if(emp_on_hit)
 		target.react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, src, firer)
-		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, combat_of(src).armor_penetration)) / 100)
+		target.receive_ionic(damage * (100 - target.armor_against(combat_of(src).injury_kind, def_zone, combat_of(src).armor_penetration)) / 100)
 		return 0
 	return target.receive_projectile(src, def_zone)
 
@@ -731,7 +731,7 @@ CAPABILITIES(/obj/item/projectile)
 //Checks if the projectile is eligible for embedding. Not that it necessarily will.
 /obj/item/projectile/proc/can_embed()
 	//embed must be enabled and the round must do physical harm
-	if(embed_chance == 0 || injury_category(injury_kind) != INJURY_CATEGORY_PHYSICAL)
+	if(combat_of(src).embed_chance == 0 || injury_category(combat_of(src).injury_kind) != INJURY_CATEGORY_PHYSICAL)
 		return 0
 	return 1
 
@@ -955,10 +955,12 @@ CAPABILITIES(/obj/item/projectile)
 	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_SHOTGUNSHOT
 	damage = 10
 	mob_bonus_damage = 16 // Potential 156 Damage against demons at point blank.
-	embed_chance = -1
 	pellets = 6
 	range_step = 1
 	spread_step = 20
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/shotgun/silver)
+	configure(item_combat(embed_chance = -1))
 
 // === merged from projectile_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/item/projectile

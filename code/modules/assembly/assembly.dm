@@ -5,7 +5,6 @@
 	icon_state = ""
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 100)
-	throw_range = 10
 
 	var/tmp/obj/item/assembly_holder/holder
 	var/cooldown = FALSE //To prevent spam
@@ -73,7 +72,7 @@
 		return TRUE
 
 CAPABILITIES(/obj/item/assembly)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 10, throw_speed = 3))
 	ref_one(nameof(holder), /obj/item) // an assembly_holder, or a transfer_valve (it answers process_activation() the same way)
 	configure(item_thrown(force = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))

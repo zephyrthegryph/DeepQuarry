@@ -122,7 +122,7 @@ fn pinned_receiver_methods_lower_dynamically_without_fabricated_abi() {
             declaring_owner: icon,
             name: icon_states,
             verb: false,
-            engine_identity: engine.identity(),
+            engine_identity: engine.identity().into(),
             wire_proc: 7
         }
     );
@@ -501,11 +501,13 @@ fn pinned_authored_variable_absence_preserves_global_and_field_shadow_domains() 
         host.resolve(Q::PredefinedConstant(SymbolId::of("NORTH"))),
         M::Value(_)
     ));
+    // The pinned coverage proves the absence of a name no source declares on a covered owner: the source the
+    // coverage was captured from and the current tree give the same ancestry and presence answers.
     let query = Q::Var {
         owner,
         name: SymbolId::of("never_captured_variable"),
     };
-    assert_eq!(host.resolve(query), M::Unsupported(query));
+    assert_eq!(host.resolve(query), M::Missing);
     let unknown_owner = Q::Var {
         owner: SymbolId::of("/never_captured_owner"),
         name: global,

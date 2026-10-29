@@ -99,14 +99,13 @@ CAPABILITIES(/obj/item/surgical/surgicaldrill)
 	name = "scalpel"
 	desc = "Cut, cut, and once more cut."
 	icon_state = "scalpel"
-	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_TINY
-	throw_range = 5
 	material_total = 10000 + 5000
 	var/clamp_chance = 0 // chance that the scalpel will perform cautery on its own
 
 CAPABILITIES(/obj/item/surgical/scalpel)
-	configure(movable_motion(throw_speed = 3))
+	configure(item_combat(injury_kind = INJURY_CUT))
+	configure(movable_motion(throw_range = 5, throw_speed = 3))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 10.0, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
@@ -119,20 +118,20 @@ CAPABILITIES(/obj/item/surgical/scalpel)
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks basic and could be improved."
 	icon_state = "scalpel_laser1"
-	injury_kind = INJURY_BURN
 	clamp_chance = 75
 
 CAPABILITIES(/obj/item/surgical/scalpel/laser1)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADE1))
 
 /obj/item/surgical/scalpel/laser2
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks somewhat advanced."
 	icon_state = "scalpel_laser2"
-	injury_kind = INJURY_BURN
 	clamp_chance = 85
 
 CAPABILITIES(/obj/item/surgical/scalpel/laser2)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(item_combat(force = 12.0))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADE1))
 
@@ -140,10 +139,10 @@ CAPABILITIES(/obj/item/surgical/scalpel/laser2)
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks to be the pinnacle of precision energy cutlery!"
 	icon_state = "scalpel_laser3"
-	injury_kind = INJURY_BURN
 	clamp_chance = 95
 
 CAPABILITIES(/obj/item/surgical/scalpel/laser3)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(item_combat(force = 15.0))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADE1))
 
@@ -174,12 +173,11 @@ CAPABILITIES(/obj/item/surgical/scalpel/ripper)
 	desc = "For heavy duty cutting."
 	icon_state = "saw"
 	w_class = ITEMSIZE_NORMAL
-	throw_range = 5
 	material_total = 20000 + 10000
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/surgical/circular_saw)
-	configure(movable_motion(throw_speed = 3))
+	configure(item_combat(injury_kind = INJURY_CUT))
+	configure(movable_motion(throw_range = 5, throw_speed = 3))
 	configure(item_thrown(force = 9.0))
 	configure(item_combat(force = 15.0, attack_verbs = list("attacked", "slashed", "sawed", "cut"), sharp = TRUE, edge = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_CIRCSAWHIT, drop = SFX_ITEMS_DROP_ACCESSORY))
@@ -189,12 +187,11 @@ CAPABILITIES(/obj/item/surgical/circular_saw)
 	desc = "For heavy duty cutting (and sealing), with science!"
 	icon_state = "adv_saw"
 	item_state = "saw3"
-	injury_kind = INJURY_CUT
-	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 	w_class = ITEMSIZE_NORMAL
 	material_total = 25000 + 20000
 
 CAPABILITIES(/obj/item/surgical/circular_saw/manager)
+	configure(item_combat(injury_kind = INJURY_CUT, injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)))
 	configure(item_tooling(speed = 0.75))
 	configure(item_combat(attack_verbs = list("attacked", "slashed", "seared", "cut")))
 	configure(item_sounds(hit = SFX_WEAPONS_EMITTER2))
@@ -226,10 +223,9 @@ CAPABILITIES(/obj/item/surgical/FixOVein)
 	name = "bone setter"
 	desc = "Put them in their place."
 	icon_state = "bone_setter"
-	throw_range = 5
 
 CAPABILITIES(/obj/item/surgical/bonesetter)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 5, throw_speed = 3))
 	configure(item_thrown(force = 9.0))
 	configure(item_combat(force = 8.0, attack_verbs = list("attacked", "hit", "bludgeoned")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SCRAP))
@@ -238,10 +234,9 @@ CAPABILITIES(/obj/item/surgical/bonesetter)
 	name = "bone clamp"
 	desc = "The best way to get a bone fixed fast."
 	icon_state = "bone_clamp"
-	throw_range = 5
 
 CAPABILITIES(/obj/item/surgical/bone_clamp)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 5, throw_speed = 3))
 	configure(item_thrown(force = 9))
 	configure(item_combat(force = 8, attack_verbs = list("attacked", "hit", "bludgeoned")))
 

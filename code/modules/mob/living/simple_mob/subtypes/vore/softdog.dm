@@ -48,10 +48,10 @@
 	mob_size = MOB_SMALL
 
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
-	say_list_type = /datum/say_list/softdog
 	swallowTime = 0.1 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/woof)
+	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/softdog))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 
@@ -65,7 +65,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof)
 // Activate Noms!
 /mob/living/simple_mob/vore/woof
 	vore_active = 1
-	vore_capacity = 3
 	vore_bump_chance = 5
 	vore_bump_emote	= "greedily homms at"
 	vore_digest_chance = 1
@@ -270,7 +269,6 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	..()
 
 /mob/living/simple_mob/vore/woof/hostile/aweful
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/woof/hostile/aweful/on_death(gibbed)
 	. = ..()
@@ -296,4 +294,5 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	projectilesound = SFX_VOICE_LONG_AWOO
 
 CAPABILITIES(/mob/living/simple_mob/vore/woof/hostile/aweful)
+	configure(living_rules(delete_on_death = TRUE))
 	setup(PROC_REF(join_woof_population))

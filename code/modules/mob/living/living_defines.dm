@@ -31,7 +31,7 @@
 
 
 
-	var/datum/inventory_panel/inventory_panel
+	// The inventory panel window datum is the LK_INVENTORY_PANEL link (inventory_panel()).
 
 	var/static/list/fear_message_self = list(
 									"Your heart is racing, it feels like it's going burst from your chest.",
@@ -68,8 +68,6 @@
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
 	var/private_notes = null
 
-/mob
-	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
 
 // The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
 /// The mob an AI's follow-camera mode is tracking (camera/tracking.dm declares the follow loop on it). A relation view (ref_one in

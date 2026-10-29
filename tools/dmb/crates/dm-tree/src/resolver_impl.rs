@@ -1,23 +1,16 @@
 use super::*;
 
-/// Process-wide tree domain-version issue counters (calls, nanoseconds) for
-/// DMB_TIMINGS_DETAIL request lines; the host reports and resets them.
-pub static TREE_DOMAIN_VERSION_CALLS: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(0);
-pub static TREE_DOMAIN_VERSION_NANOS: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(0);
 impl dm_ir::Resolver for SemanticTree {
     fn observes_reads(&self) -> bool {
         false
     }
 
-    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
-        use std::sync::atomic::Ordering::Relaxed;
-        let started = std::time::Instant::now();
-        let version = self.issue_domain_version(domain);
-        TREE_DOMAIN_VERSION_CALLS.fetch_add(1, Relaxed);
-        TREE_DOMAIN_VERSION_NANOS.fetch_add(started.elapsed().as_nanos() as u64, Relaxed);
-        version
+    /// The declarations' identity: every answer of the tree is a function of it.
+    fn answer_world(&self) -> Option<u128> {
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-tree-answer-domain-v1\0");
+        hash.update(&self.identity.to_le_bytes());
+        Some(hash.digest128())
     }
 
     fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
@@ -41,7 +34,7 @@ impl dm_ir::Resolver for SemanticTree {
                         owner: self.types[node.owner.index()].path,
                         name: node.name,
                         data: Arc::clone(&node.metadata),
-                        fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes),
+                        fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes).into(),
                     }
                 })
                 .unwrap_or(M::Missing)
@@ -240,7 +233,7 @@ impl dm_ir::Resolver for SemanticTree {
                                         }
                                     },
                                     previous: match node.previous {
-                                        Some(previous) => Some(identity(previous)?),
+                                        Some(previous) => Some(Box::new(identity(previous)?)),
                                         None => None,
                                     },
                                     data: Arc::clone(&node.metadata),
@@ -275,7 +268,7 @@ impl dm_ir::Resolver for SemanticTree {
                                         owner: self.types[node.owner.index()].path,
                                         name: node.name,
                                         data: Arc::clone(&node.metadata),
-                                        fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes),
+                                        fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes).into(),
                                     }
                                 })
                                 .collect(),
@@ -305,7 +298,7 @@ impl dm_ir::Resolver for SemanticTree {
                                 data: Arc::clone(&node.metadata),
                                 fingerprint: xxhash_rust::xxh3::xxh3_128(
                                     &bytes.signature.canonical_bytes(),
-                                ),
+                                ).into(),
                             },
                             None => M::Unsupported(query),
                         }
@@ -325,7 +318,7 @@ impl dm_ir::Resolver for SemanticTree {
                             owner: self.types[node.owner.index()].path,
                             name: node.name,
                             data: Arc::clone(&node.metadata),
-                            fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes.canonical_bytes()),
+                            fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes.canonical_bytes()).into(),
                         },
                         None => M::Unsupported(query),
                     }
@@ -372,107 +365,3 @@ impl SemanticTree {
     }
 }
 
-impl SemanticTree {
-    fn issue_domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
-        if let dm_ir::ReadDomain::OwnerHierarchy(owner) = domain {
-            let base = self.owner_hierarchy.get(&owner)?;
-            // Two states of the current completeness gate are disjoint, while
-            // the exact retained ancestor receipt owns the process-local token.
-            return Some((base << 1) | u128::from(self.inventory.hierarchy_certified));
-        }
-        if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
-            let selection = match query {
-                dm_ir::ResolveQuery::MemberCallableVerbName(name) => {
-                    return self
-                        .owner_certificate_issuer
-                        .as_ref()?
-                        .demanded_member_selector(self, name)
-                }
-                dm_ir::ResolveQuery::MemberCallableName(name) => {
-                    return self
-                        .owner_certificate_issuer
-                        .as_ref()?
-                        .demanded_member_name(self, name)
-                }
-                dm_ir::ResolveQuery::Signature(path) => {
-                    if matches!(
-                        dm_ir::Resolver::resolve(self, query),
-                        dm_ir::ResolvedMeaning::Unsupported(_)
-                    ) {
-                        return None;
-                    }
-                    self.signature_selection(path)?
-                }
-                dm_ir::ResolveQuery::HasMemberProc { owner, name } => {
-                    return self
-                        .owner_certificate_issuer
-                        .as_ref()
-                        .and_then(|issuer| issuer.demanded_presence(self, owner, name));
-                }
-                dm_ir::ResolveQuery::Proc { owner, name, verb }
-                | dm_ir::ResolveQuery::ProcedureValue {
-                    owner, name, verb, ..
-                }
-                | dm_ir::ResolveQuery::MethodProcedureValue { owner, name, verb }
-                | dm_ir::ResolveQuery::DeclarationChain { owner, name, verb } => {
-                    (owner, name, verb)
-                }
-                dm_ir::ResolveQuery::GlobalProc(name) => (SymbolId::of("/"), name, false),
-                dm_ir::ResolveQuery::OverrideChain { owner, name, verb } => {
-                    // A sibling callable cannot change this named chain answer.
-                    // Keep content-sensitive inputs distinct from declarations.
-                    return self.owner_certificate_issuer.as_ref().and_then(|issuer| {
-                        issuer.demanded_override_chain(self, owner, name, verb)
-                    });
-                }
-                _ => return None,
-            };
-            // Root-local name receipts already have no ancestor dependency.
-            if selection.0 == SymbolId::of("/") {
-                if let Some(token) = self.owner_callable_selections.get(&selection) {
-                    return Some(*token);
-                }
-            }
-            if let Some(issuer) = &self.owner_certificate_issuer {
-                // Demand-owned revisions may read old issued tokens, but an
-                // unqueried old snapshot cannot substitute a whole-owner token.
-                return issuer.demanded_selection(self, selection);
-            }
-            return self
-                .owner_callable_selections
-                .get(&selection)
-                .copied()
-                .or_else(|| self.owner_callable_certificates().get(&selection.0).copied());
-        }
-        if let dm_ir::ReadDomain::OwnerVariable(query) = domain {
-            if let dm_ir::ResolveQuery::UniqueStaticVar(name) = query {
-                return self
-                    .inventory
-                    .unique_certificates
-                    .get(&name)
-                    .copied();
-            }
-            let (owner, name) = match query {
-                dm_ir::ResolveQuery::HasMemberVar { owner, name }
-                | dm_ir::ResolveQuery::DeclaredVarType { owner, name }
-                | dm_ir::ResolveQuery::VarStorage { owner, name }
-                | dm_ir::ResolveQuery::StaticVar { owner, name } => (owner, name),
-                _ => return None,
-            };
-            if let Some(token) = self.owner_variable_selections.get(&(owner, name)) {
-                return Some(*token);
-            }
-            return self
-                .owner_certificate_issuer
-                .as_ref()
-                .and_then(|issuer| issuer.demanded_variable(self, owner, name));
-        }
-        if domain != dm_ir::ReadDomain::Tree {
-            return None;
-        }
-        let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dm-tree-answer-domain-v1\0");
-        hash.update(&self.identity.to_le_bytes());
-        Some(hash.digest128())
-    }
-}

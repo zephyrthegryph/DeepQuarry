@@ -84,23 +84,18 @@ impl ScalarArtifacts for CurrentScalars<'_> {
         ledger.record(
             Query::Engine,
             Answer::Engine(Arc::clone(self.engine)),
-            Domain::ExactOwners,
-            None,
-        );
+            Domain::ExactOwners);
         for (query, answer) in reads {
             ledger.record(
                 Query::Scalar(query),
                 Answer::Scalar(answer),
-                Domain::ExactOwners,
-                None,
-            );
+                Domain::ExactOwners);
         }
         let key = key(query);
         let charge = std::mem::size_of::<Artifact>().saturating_add(key.len());
         let admitted = self.owner.values.insert_with_owned(
             Arc::from(key),
             ledger.reads(),
-            ledger.domain_receipts(),
             charge,
             || Artifact::Scalar(Arc::new(value)),
         )?;
@@ -110,8 +105,7 @@ impl ScalarArtifacts for CurrentScalars<'_> {
         }
     }
     fn finish(&self, queries: &[ScalarQuery]) {
-        let mut keys: Vec<_> = queries.iter().copied().map(key).collect();
-        keys.extend(self.owner.fallback_keys());
+        let keys: Vec<_> = queries.iter().copied().map(key).collect();
         self.owner
             .values
             .retain_current_keys(keys.iter().map(Vec::as_slice).chain([

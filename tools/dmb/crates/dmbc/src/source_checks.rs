@@ -38,7 +38,11 @@ pub fn check(frontend: &ColdFrontend) -> Vec<Diagnostic> {
     let mut errors = Vec::new();
     for (body, found) in bodies.iter().zip(found) {
         for (offset, message, location) in found {
-            let location = location.or_else(|| frontend.location(body.expanded_span.start + offset));
+            let location = if offset == NO_LOCATION {
+                None
+            } else {
+                location.or_else(|| frontend.location(body.expanded_span.start + offset))
+            };
             errors.push(source_error(message, location));
         }
     }
@@ -156,6 +160,9 @@ fn source_error(message: String, location: Option<SourceLocation>) -> Diagnostic
 }
 
 type Token<'a> = (TokenKind, &'a str, usize);
+
+/// A body error DreamMaker prints with no file or line (`error: invalid variable`).
+const NO_LOCATION: usize = usize::MAX;
 
 fn line_text<'a>(source: &'a str, line: &Line<'a>) -> &'a str {
     let Some(first) = line.tokens.first() else {
@@ -394,6 +401,11 @@ fn body_errors(
     let locals = locals(&lines);
     let parameters = parameters(header);
     let mut errors = Vec::new();
+    // A local used before its `var/` line in an enclosing block: DreamMaker warns (local_warnings) and
+    // code generation then fails with no location (fixtures/diagnostics/cases/var_before_def_*).
+    for _ in crate::local_warnings::uses_before_definition(&lines) {
+        errors.push((NO_LOCATION, "invalid variable".to_string(), None));
+    }
     keyword_argument_errors(&lines, &mut errors);
     keyword_local_errors(&lines, &mut errors);
     typesof_errors(tree, &lines, &mut errors);

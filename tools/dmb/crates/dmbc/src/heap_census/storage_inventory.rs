@@ -5,7 +5,6 @@ use dm_tree::{frontend::RetainedSemanticTree, StorageAnswer, StorageInput, Stora
 
 fn answer(census: &mut HeapCensus, value: &StorageAnswer) {
     match value {
-        StorageAnswer::Unique(_) => (),
         StorageAnswer::Owner(Some(rows)) => {
             census.slice("retained_storage.inputs", rows, true);
             for row in rows.iter() {
@@ -60,12 +59,11 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         View::Bucket { address, len, capacity, element_size } => {
             census.buffer("retained_storage.buckets", address, len.saturating_mul(element_size), capacity.saturating_mul(element_size));
         }
-        View::Entry { key, reads, versions, value } => {
+        View::Entry { key, reads, value } => {
             census.slice("retained_storage.keys", key, true);
             census.receipt("retained_storage.reads", reads);
-            census.slice("retained_storage.versions", versions, true);
             if census.arc_object("retained_storage.values", value) {
-                let StorageOwner { facts, unique_token: _ } = value.as_ref();
+                let StorageOwner { facts } = value.as_ref();
                 census.slice("retained_storage.facts", facts, true);
             }
             for read in reads.iter() { answer(census, &read.answer); }

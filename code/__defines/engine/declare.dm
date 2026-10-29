@@ -148,9 +148,11 @@
 #define SCHEMA_TEXT "text"
 #define SCHEMA_REF "ref"
 #define SCHEMA_PATH "path"
+#define SCHEMA_MSG "msg"
 #define SCHEMA_LIST "list_of"
 #define SCHEMA_MAP "map_of"
 #define SCHEMA_ROW "row"
+#define SCHEMA_ANY "any"
 
 /// A closed list of rules for sanitize =: naming one is the declaration, not a call to remember.
 #define SANITIZE_NONE 0

@@ -43,7 +43,7 @@ fn compile(host: &mut BuildHost) -> Vec<u8> {
     let (resolver, _scalar) =
         crate::request_runner::runner_facts::prepare_retained(&frontend, &engine, facts.as_deref())
             .unwrap();
-    let memo = host.procedure_memo(17, None, true);
+    let memo = host.procedure_memo(17, 17, None, true);
     crate::compile_driver::compile_observed_with_memo(
         &frontend,
         &resolver,
@@ -68,7 +68,7 @@ fn compiler_pressure_tier_preserves_semantic_owner_and_regenerates_fresh_equal_o
     let mut host = BuildHost::default();
     let before = compile(&mut host);
     let tree = Arc::clone(host.semantic.as_ref().unwrap().snapshot_tree().unwrap());
-    let old = host.procedure_memo(17, None, true).unwrap();
+    let old = host.procedure_memo(17, 17, None, true).unwrap();
     let old_facts = host.host_facts().unwrap();
     let symbolic_owner = Arc::clone(&host.symbolic.as_ref().unwrap().1);
     host.release_idle_compiler_artifacts();
@@ -120,7 +120,7 @@ fn compiler_pressure_tier_preserves_semantic_owner_and_regenerates_fresh_equal_o
             .any(|row| row.owner.starts_with("host.scalar.")),
         "pressure must drop full prepared scalar graphs"
     );
-    let regenerated = host.procedure_memo(17, None, true).unwrap();
+    let regenerated = host.procedure_memo(17, 17, None, true).unwrap();
     assert!(!Arc::ptr_eq(&old.values, &regenerated.values));
     assert!(!Arc::ptr_eq(
         old.symbolic.as_ref().unwrap(),

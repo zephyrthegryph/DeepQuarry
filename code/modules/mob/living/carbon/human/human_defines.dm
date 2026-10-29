@@ -29,10 +29,8 @@
 
 
 
-	// Used by mobs in virtual reality to point back to the "real" mob the client belongs to.
-	var/mob/living/carbon/human/vr_holder = null
-	// Used by "real" mobs after they leave a VR session
-	var/mob/living/carbon/human/vr_link = null
+	// vr_holder (the "real" mob a VR avatar's client belongs to) and vr_link (the avatar a real mob entered or left) are one sparse link
+	// pair (LK_VR_HOLDER / LK_VR_LINK, code/library/mob/hands.dm).
 
 
 
@@ -54,7 +52,6 @@
 	var/flapping = 0
 
 	// Custom Species Name
-	var/custom_species
 
 	var/block_hud
 
@@ -67,12 +64,10 @@
 
 /mob/living/carbon/human
 	var/vantag_pref = VANTAG_NONE //What's my status?
-	var/ability_flags = 0	//Shadekin abilities/potentially other species-based?
-	var/sensorpref = 5		//Suit sensor loadout pref
 	var/wings_hidden = FALSE
 	var/tail_hidden = FALSE
 
-	var/list/body_writing // assoc list by BP_ key
+	// body_writing (what is written on each body part, by BP_ key) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 
 
 

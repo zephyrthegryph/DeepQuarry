@@ -11,14 +11,14 @@
 	length_lower_bound = 30 MINUTES
 	length_upper_bound = 1 HOUR
 	var/spam_debug = FALSE // If true, notices of the event sending spam go to `log_game()`.
-	EXPIRY_DECLARE(last_spam_time) // world.time of most recent spam.
+	var/last_spam_time = 0 // world.time of most recent spam.
 	var/next_spam_attempt_time = 0 // world.time of next attempt to try to spam.
 	var/give_up_after = 5 MINUTES
 	var/tmp/obj/machinery/message_server/MS
 	var/tmp/obj/machinery/exonet_node/node
 
 /datum/event2/event/pda_spam/set_up()
-	EXPIRY_STAMP(src, last_spam_time, CLOCK_WORLD)// So it won't immediately give up.
+	STAMP(src, last_spam_time, CLOCK_WORLD)// So it won't immediately give up.
 	rel_set(src, nameof(MS), pick_message_server())
 	rel_set(src, nameof(node), get_exonet_node())
 
@@ -59,7 +59,7 @@
 	. = ..()
 	if(!.)
 		// Give up if nobody was reachable for five minutes.
-		if(ELAPSED_SINCE(src, last_spam_time + give_up_after, CLOCK_WORLD) > 0)
+		if(ELAPSED(src, last_spam_time, CLOCK_WORLD) > give_up_after)
 			log_game("PDA Spam event giving up after not being able to spam for awhile.")
 			return TRUE
 
@@ -130,7 +130,7 @@
 	return list(sender, message)
 
 /datum/event2/event/pda_spam/proc/send_spam(obj/item/pda/P, sender, message)
-	EXPIRY_STAMP(src, last_spam_time, CLOCK_WORLD)
+	STAMP(src, last_spam_time, CLOCK_WORLD)
 	var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 	PM.notify(span_bold("Message from [sender] (Unknown / spam?), ") + "\"[message]\" (Unable to Reply)", 0)
 	if(spam_debug)

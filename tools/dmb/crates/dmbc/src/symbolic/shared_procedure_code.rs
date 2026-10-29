@@ -26,7 +26,7 @@ impl Default for SharedProcedureCode {
 impl SharedProcedureCode {
     /// Optional physical-sharing index; surviving artifacts own their code.
     pub(crate) fn release_for_pressure(&self) -> dm_session::PressurePrune {
-        self.0.prune_for_pressure(0, |_, _, _, _| None)
+        self.0.prune_for_pressure(0, |_, _, _| None)
     }
     pub(crate) fn receipt_groups(
         &self,
@@ -104,7 +104,6 @@ pub(crate) fn share(
                     answer: current.0.clone(),
                     domain: (),
                 }],
-                vec![],
                 1,
                 || current.0.clone(),
             )
@@ -149,7 +148,6 @@ pub(crate) fn census(
         View::Entry {
             key,
             reads,
-            versions,
             value,
         } => {
             census.slice("shared_procedure_code.keys", key, true);
@@ -158,7 +156,6 @@ pub(crate) fn census(
                     census.shared_frozen_code(&read.answer.0);
                 }
             }
-            census.slice("shared_procedure_code.versions", versions, true);
             if census.arc_object("shared_procedure_code.value", value) {
                 census.shared_frozen_code(&value.0);
             }

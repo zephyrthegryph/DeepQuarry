@@ -1,3 +1,0 @@
-/obj/machinery/material_furnace vol=120 holder=/datum/reagents 
-/obj/machinery/material_furnace/unpowered_test vol=120 holder=/datum/reagents 
-

@@ -62,7 +62,6 @@ impl HeapCensus {
             dm_session::ObservedArtifactStorageView::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 self.slice("prepared_abi.artifact_keys", key, true);
@@ -105,7 +104,6 @@ impl HeapCensus {
                         }
                     }
                 }
-                self.slice("prepared_abi.versions", versions, true);
                 if self.arc_object("prepared_abi.artifact_payload", value) {
                     match value.as_ref() {
                         crate::driver_facts::abi_artifacts::Artifact::Unit(unit) => self.abi_unit_artifact(unit),
@@ -118,7 +116,6 @@ impl HeapCensus {
                                     for row in recipe.rows.iter() {
                                         self.abi_unit_artifact(&row.unit);
                                         self.receipt("prepared_abi.batch_row_reads", &row.reads);
-                                        self.slice("prepared_abi.batch_row_versions", &row.versions, true);
                                     }
                                 }
                                 if let Some(binding) = recipe.binding.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {

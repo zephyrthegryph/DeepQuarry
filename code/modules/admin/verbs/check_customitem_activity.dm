@@ -16,11 +16,11 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 		dat += "<hr>"
 		dat += "This system was implemented on March 1 2013, and the database a few days before that. Root server access is required to add or disable access to specific custom items.<br>"
 	else
-		dat += "<a href='byond://?src=\ref[user];_src_=holder;[HrefToken()];populate_inactive_customitems=1'>Populate list (requires an active database connection)</a><br>"
+		dat += "<a href='byond://?src=[REF(user)];_src_=holder;[HrefToken(user)];populate_inactive_customitems=1'>Populate list (requires an active database connection)</a><br>"
 
 	// structured TGUI AdminReport; populate_inactive link forwards
 	// through dispatch_forwarded_topic to the admin holder Topic.
-	dq_admin_report_html(user.mob, "Inactive Custom Items", dat, user.holder)
+	dq_admin_report_html(user.mob, "Inactive Custom Items", dat, admin_holder_of(user))
 
 /proc/populate_inactive_customitems_list(client/C)
 

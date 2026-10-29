@@ -7,7 +7,6 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	item_state = "cleaner"
 	flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 10 //Set to null instead of list, if there is only one.
 	var/spray_size = 3
@@ -18,7 +17,7 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 // the one who sprays), after a click cooldown. A closed tank fills it by the tank's own amount. It leaves alone what it is put on or in: a table, a
 // closet, a sink, a janitor's cart, storage and other containers. The Empty verb pours it out over the floor. Its amount is fixed.
 CAPABILITIES(/obj/item/reagent_containers/spray)
-	configure(movable_motion(throw_speed = 2, unacidable = TRUE))
+	configure(movable_motion(throw_range = 10, throw_speed = 2, unacidable = TRUE))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))

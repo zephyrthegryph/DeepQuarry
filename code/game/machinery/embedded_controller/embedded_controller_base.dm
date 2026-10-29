@@ -20,10 +20,6 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	op("program_command", ui_act("*"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 	op("embedded_controller_open_ui", hand(), ungated(), then(PROC_REF(interaction_open_ui_impl)))
 
-/obj/machinery/embedded_controller/Initialize(mapload)
-	return ..()
-
-
 /obj/machinery/embedded_controller/examine(mob/user, infix, suffix)
 	. = ..()
 	if(in_range(src, user))
@@ -91,10 +87,7 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio)
 	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(channel = ENVIRON))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
-
-/obj/machinery/embedded_controller/radio/Initialize(mapload)
-	set_frequency(frequency) // Set it before parent instantiates program
-	. = ..()
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // tuned from init (a program reads no radio at construction)
 
 /// The state names of the controller's display ("<base>_off", "_standby", "_process").
 /obj/machinery/embedded_controller/radio/var/display_base = "airlock_control"

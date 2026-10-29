@@ -183,18 +183,33 @@ mod frontend_timing_tests {
         assert_eq!(value["scope"], "existing_frontend_stage_elapsed_wall");
     }
 }
+/// The per-procedure memo explanations as compact JSON text (an array). They are made before the compilation and only written
+/// to the stats file after publication; one `serde_json::Value` object per procedure held across the compilation was about
+/// 60 MB at the request's peak, the text is a fraction of that. `explanations_value` turns it back into the same value.
 pub(super) fn explanations(
     frontend: &dm_tree::frontend::ColdFrontend,
     memo: Option<&dmbc::lowering_memo::ProcedureMemo>,
-) -> Vec<serde_json::Value> {
+) -> String {
     let symbols = frontend.snapshot.tree.symbols();
-    memo.map(|memo| memo.explain()).unwrap_or_default().into_iter().map(|entry| {
+    let mut out = String::from("[");
+    for entry in memo.map(|memo| memo.explain()).unwrap_or_default() {
         let owner = symbols.text(entry.identity.owner).unwrap_or("<unknown>");
         let name = symbols.text(entry.identity.name).unwrap_or("<unknown>");
         let namespace = if entry.identity.verb { "verb" } else { "proc" };
         let path = format!("{}/{namespace}/{name}", owner.trim_end_matches('/'));
-        serde_json::json!({"path":path,"occurrence":entry.identity.occurrence,"outcome":format!("{:?}",entry.outcome),"reason":entry.reason.map(|reason|format!("{reason:?}")),"changed_query":entry.changed_query.map(explained_query)})
-    }).collect()
+        let value = serde_json::json!({"path":path,"occurrence":entry.identity.occurrence,"outcome":format!("{:?}",entry.outcome),"reason":entry.reason.map(|reason|format!("{reason:?}")),"changed_query":entry.changed_query.map(explained_query)});
+        if out.len() > 1 {
+            out.push(',');
+        }
+        out.push_str(&value.to_string());
+    }
+    out.push(']');
+    out.shrink_to_fit();
+    out
+}
+/// The explanations text of [`explanations`] as the JSON array the stats file carries.
+pub(super) fn explanations_value(text: &str) -> serde_json::Value {
+    serde_json::from_str(text).expect("explanations are JSON made by `explanations`")
 }
 
 /// Resource search identities are full 128-bit values. JSON's numeric value
@@ -215,11 +230,21 @@ fn explained_query(query: dm_ir::ResolveQuery) -> serde_json::Value {
 #[cfg(test)]
 mod resource_explanation_tests {
     #[test]
+    fn explanation_text_reads_back_as_the_array_it_was_made_from() {
+        let entries = vec![
+            serde_json::json!({"path":"/proc/a","occurrence":0,"outcome":"DiskHit","reason":null,"changed_query":null}),
+            serde_json::json!({"path":"/obj/proc/b","occurrence":2,"outcome":"Recomputed","reason":"Changed","changed_query":{"ResourceIn":{"path":7,"search_context":"ff"}}}),
+        ];
+        let text = format!("[{}]", entries.iter().map(|value| value.to_string()).collect::<Vec<_>>().join(","));
+        assert_eq!(super::explanations_value(&text), serde_json::Value::Array(entries));
+        assert_eq!(super::explanations_value("[]"), serde_json::json!([]));
+    }
+    #[test]
     fn resource_search_identity_is_lossless_above_json_integer_range() {
         let path = dm_ir::SymbolId::of("contract-resource.txt");
         let value = super::explained_query(dm_ir::ResolveQuery::ResourceIn {
             path,
-            search_context: u128::MAX,
+            search_context: u128::MAX.into(),
         });
         assert_eq!(
             value["ResourceIn"]["search_context"],

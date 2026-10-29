@@ -14,7 +14,7 @@
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLUDGEON
 
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 
 	default_material = MAT_CLOTH
@@ -108,10 +108,10 @@ CAPABILITIES(/obj/item/material/fishing_net)
 
 /obj/item/material/fishing_net/proc/update_weight()
 	if(holds_creature())
-		slowdown = initial(slowdown) * 2
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE) * 2)
 		set_reach(1)
 	else
-		slowdown = initial(slowdown)
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
 		set_reach(combat_of_type(type).reach)
 
 /obj/item/material/fishing_net/butterfly_net

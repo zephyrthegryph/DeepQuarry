@@ -295,6 +295,36 @@ are unchanged stays green without a certificate check. Revalidation must be para
    lines 4.0-4.7 s, added type 11.4-12.8 s (was 14.5-15.3 s); dmb-equiv equivalent against a
    fresh compile for all three.)
 7. **Resources as queries.** Deletes the resource order and demand memos.
+   (2026-10-27, compiler/resource-queries-1: tried memoizing resource literal discovery per expanded-text piece by its
+   text digest; a hot body edit's `resources_maps` stage stayed 0.50-0.66 s against 0.53 s, so literal lexing is not
+   where that stage goes, and the memo was taken out. Profiled (compiler/resource-queries-2, `DMB_TIMINGS_DETAIL=1`, now
+   in the request log): of the 0.53 s, `InputValidation` is 0.35 s: every request re-proves the resource input snapshot,
+   3858 files, 1705 folder listings and 13889 negative probes, through the directory proofs. Next: make those inputs
+   `source(path)` queries of the watcher's directory proofs, so a directory whose cached proof is the one the snapshot was
+   proven with is not walked again; demand admission (0.02 s) and archive authentication are already cheap.)
+   (2026-10-27, compiler/resource-queries-3: **input snapshots are proven by watcher events.** The directory watcher
+   (`fs_watch.rs`) keeps an ordered change log: every event appends the changed entry and its directory under one sequence
+   number, a `WatchToken` (epoch, sequence) names a position in it, a loss (overflow, read error, sync timeout, a full log
+   of 200k entries) starts a new epoch, and a newly armed root is logged as one changed subtree once its watcher is
+   proven. A `SnapshotProvider` reports the position of its first observation (`watch_token`: the live file system at the
+   call, `BulkFileSystemProofs` at its capture, a journal none), and an `InputSnapshot` remembers the position at which its
+   facts were last proven entry for entry (`WatchMark`, private, absent from the wire and from equality). Validation then
+   carries every file, folder listing and negative probe whose directory no event named since that position (and no
+   subtree event above it, and that is watched by a healthy root and not behind a link), and asks the provider only about
+   the rest; racy and identity-less entries and exact mode are proven as before. Marks travel with the facts: a capture is
+   marked at its start (or its provider's proof position), a merge keeps the earlier mark of its parts (none if either has
+   none), `select_files` keeps it, and a session record takes its stored snapshot's mark back after the decode (by
+   record id). The first access of an entry in a while updates its last-access time, which the watcher reports as a
+   change of the directory: such a directory is proven once more, never skipped. Measured, production tree (`rootA`
+   copy), 4 workers, hot private daemons per arm, three unique edits per arm (an added proc, then body edits), arms
+   interleaved pub/new/pub/new on a machine shared with a server benchmark: `native resource InputValidation` 0.33-0.95 s
+   (published) against 0.058-0.109 s from the second edit on (the first edit after a cold build still proves everything,
+   0.32-0.43 s); `resources_maps` stage 1.03-2.45 s against 0.50-0.66 s; 9758 of 9794 session-record files carried; edit
+   wall median 8.4 s (6.97-17.4) against 7.7 s (6.74-8.99). `dmb-equiv --all --ignore-debug` of the daemon output after
+   body edits and a new file in a resource search folder against a fresh `--no-daemon --no-cache` compile: EQUIVALENT.
+   Cargo tests `input_snapshot::watch_tests` (carried directories, changed file, appeared negative, new listing entry,
+   removed directory, exact mode, unwatched paths, capture and merge marks). The demand and order memos the step names
+   were already gone; nothing else re-scans the snapshot on an unchanged request.)
 
 Measured 2026-10-18 before step 1: the general path today on a hot body edit (`DMB_BODY_PATCH=0`)
 is recorded below with the patch for comparison.
@@ -381,7 +411,45 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
    `try_default_patch`, `DMB_DEFAULT_PATCH`, `disable_default_patch` and the patch-count test are deleted; `reads_initial`
    stays in `retained_output` (the admission proof uses it), as does `DefaultEdits` in `dm-tree` (the frontend's proof).
 4. Same for appended callables (new link entries append), then delete `declaration_patch*.rs`.
+   **Landed 2026-10-26 (compiler/one-path-decl).** `retained_output::admit` takes an edit that only appended procs, verbs
+   or plain vars relative to the retained output's own tree (`tree.appended_callables()`): `retained_output_append.rs`
+   (the former append patch, split into `admit_appended` and `splice_appended`) proves the alignment, the mentions and the
+   line map; `cold::incremental_output` lowers the changed and appended bodies through the same selected-body lowering as a
+   body edit, and `splice` appends the new procedures, records and list entries to the retained model. No answers are
+   compared (every text naming an appended name is a relowered body or its own declaration) and no marking is made, as
+   before. Deleted: `declaration_patch.rs`, `declaration_patch_append.rs` (moved), `cold/selected_lowering.rs`
+   (`lower_selected`), the request runner's declaration-patch attempt, `RetainedGeneration::patch_variable_values` (dead
+   since the default patch went) and `applied_with_declaration_patches`. Measured, production tree, 4 workers, hot daemon
+   per arm, three edits per round (added proc, added proc, added `/datum/var` with a numeric default), arms interleaved six
+   times on a machine shared with other lanes: published compiler (patch) 5.2-8.8 s wall, compilation stage 1.47-2.26 s;
+   this branch 4.8-9.2 s, compilation 1.47-3.03 s (first edit of a session the slowest); the quietest pair: patch 5.24-5.56 s,
+   general path 4.83-5.22 s. `dmb-equiv --all --ignore-debug --ignore-order` of the general path's output after the edits
+   against a fresh `--no-daemon --no-cache` compile of the same tree: EQUIVALENT. Cargo tests `structural_change`,
+   `six_session`, `revert_rebase`, `variant_spill`, `retained_output` pass.
 5. Frontend queries (`file_decls`, `type_node`) and resources as queries lower the shared 9-11 s floor.
+6. **Alternate bases and model recovery deleted (2026-10-26, compiler/one-path-state).** The retained model is now a
+   function of the patch base's image: `RetainedGeneration::model_of` keeps the composed model when it encodes the base's
+   image and otherwise decodes the image (accepted only when it re-encodes to the same bytes; 0.12 s decode + 0.12 s
+   re-encode on the production image). That one rule replaces the model recovery after a release, the body-patch row
+   ledger (`model_rows`/`model_anchor`/`rows_synced`) and the per-alternate models. Alternate patch bases
+   (`DMB_PATCH_ALTERNATES`, `select_patch_base`) are replaced by the persisted state: when a full build replaces a base of
+   other program text, the replaced base is written on a background thread to a spill file keyed by the variant and that
+   text (`variant_spill::text_key`), and `admit` restores the stored base of the request's text (swapping out, and storing,
+   a live base of other text) unless the edit is relative to the live base. Needs the compiler cache (`no_cache` off), as
+   the daemon runs. Test `variant_spill_tests::lanes_with_different_declarations_build_on_their_own_stored_base` (each lane
+   switch builds on that lane's base). Measured, production tree, interleaved hot daemons, per round body edit, string
+   edit, appended proc, body edit, string edit: patch-path steps 4.2-9.1 s (step 1 compiler) against 4.6-8.4 s (this
+   branch) apart from one loaded round; `dmb-equiv` of the chain's output against a fresh `--no-daemon --no-cache` compile:
+   EQUIVALENT.
+7. **Answers settled after lowering (2026-10-26, compiler/one-path-marks).** An admitted output's answer version, context,
+   facts and mark are taken after the request lowered what it relowers (`Answered::settle`), not at admission: the
+   answers and resource searches the relowered and appended units asked first are now part of the published mark, so the
+   next request proves them too (before, a slot first asked after the mark was never compared). Appended-callable outputs
+   are marked like any other (they were retained without marks). A decline on the answer world now says whether the
+   world or the resource searches differ, and each request logs `native answer world: tree=... world=...`.
+   A body edit after an append builds on it. (A measurement script that re-appended an edited proc at the end of its
+   file moved that declaration after the appended one: the declaration order changed, the tree identity and answer
+   world with it, and the edit correctly compiled whole.)
 
 
 ## Persisted dependency index, step 2 (2026-10-24, lane `compiler/dep-index`)
@@ -486,7 +554,7 @@ The next request of the variant attaches the file (`attach_spill`, header only) 
 (`restore_patch_base`) when the header's program text matches the request. Nothing is trusted: the admission compares the restored
 source half with the request exactly as it compares a live one. What is not stored and how admission copes:
 - unit symbolic records: a patch compares footprints only, so units are stored as footprint digests (`UnitBase::Digest`);
-- the retained model: recovered from the image when a string patch needs it (`recover_model`);
+- the retained model: decoded from the image when an edit needs one (`RetainedGeneration::model_of`);
 - the expanded program text: row source lines are stored (`RowLines`), numeric default edits are not admitted on a restored output;
 - the answer marks: a restored output proves its answers from `AnswerFacts` (declarations identity, answer world, every resource
   search with its answer hash; `QueryDb::answer_facts`, `prove_facts`). Its version and facts are retaken after the proof, and
@@ -704,3 +772,497 @@ daemon-wide pool (`dmbc/src/output_pool.rs`, installed through `byond_dmb::dmb::
 pool before any holder (`Generation`, the list-row encoding, the patch base) clones it, the digest is the one the writer
 already computed, and a hit is decided by the bytes. Two sessions that publish equal outputs (a second worktree at the same
 commit) retain one image; unequal outputs (the test variant) share nothing.
+
+
+## Test variant as an increment over the game build (design, 2026-10-26)
+
+**Today.** The unit-test world is a define set (`-DCBT -DCIBUILDING -DCITESTING -DDEBUG`; `CIBUILDING` defines `UNIT_TESTS`) on the
+same `deepquarry.dme`. `runner_host::switch_variant` stashes the define-dependent state and the test build retains its own copy of
+nearly everything: about +3.5 GB over the game session (audit 2026-10-26: link relocations 100-300 MB, codec output buffers 75,
+`OutputBase` 145, lowering leases 160-440, lowering rebinding 150, directive plan 137, initializer classification 119, ABI artifacts
+81, `RequestAnswers` 67-80, preprocessor plan items 119, joined text 60). Two things make it a near-duplicate rather than an
+increment: (1) every per-unit record is admitted under the answer world, which is keyed by the whole `Tree` domain version, and the
+test tree differs from the game tree (about 11k extra test bodies, 109 files with `#ifdef UNIT_TESTS` guards), so no game record's
+world certificate holds and every answer is asked again; (2) initializer, map and modified-instance lowering branch on `DEBUG`
+(`modified_initializers.rs` `source.ops`, `map_artifacts.rs` `ops`), so their records differ even where the source is equal.
+Procedure lowering is already `DEBUG`-independent: the memo key carries `facts_policy` without the `DEBUG` byte and debug ops are
+selected at link.
+
+**Target.** A test build after a game build of the same tree costs at most 1 GB more and compiles as an edit of the game build:
+every unit whose reads are equal in both worlds is the game unit (one record, two leases), and only units that read something the
+defines change (guarded bodies, the extra test types, answers that name them) are computed for the test variant.
+
+**Steps** (each lands alone, proven by `dmb-equiv` against a fresh `--no-daemon` compile of both variants and the six-session
+interleaving; memory by `bench/shared_store_probe.sh` game then test):
+
+1. *Answers keyed by what they read.* An `answer(read)` already hashes its value; admission of a stored unit should compare the
+   unit's recorded answers (per-answer, as `prove_against_base` does for the retained output) instead of requiring its world
+   certificate to equal the request's `Tree` version. With content-digest domain tokens (shared store part 4) two sessions on
+   different trees that give equal answers to a unit's reads hold equal tokens, so the record is admitted and claimed by both.
+   The dep index's world key (`dep_index.rs`) becomes a hint: a record whose world differs is checked by its answers, not
+   replayed from scratch.
+2. *`DEBUG`-independent initializer, map and modified-instance lowering.* Lower them without `DbgFile`/`DbgLine` and add the
+   debug ops at link from the positioned code (`PositionedCode` already carries origins), as procedure bodies do; the memo and
+   classification keys then use `facts_policy`. The test variant reuses every game initializer whose reads are equal.
+3. *Shared per-variant indexes by content.* The directive plan, preprocessor plan items and joined text are per-file
+   functions of (file bytes, start state); key them by that pair in the shared store so the two variants share every file whose
+   start state is equal (the files before the first `#ifdef UNIT_TESTS` that matters, and every file whose guards do not change
+   its state). `OutputBase`, link relocations and output buffers are per output and stay per variant, but the test variant's can
+   be stored as a delta over the game variant's (chunked image, roster delta; see retained_frontend.md "What is left").
+4. *Measure*: test-variant extra (target <= 1 GB) and the warm test build after a game build (target: the time of a
+   declaration edit of the size of the define's effect, not a full compile).
+
+**Coordination.** A DM-side lane reduces `#ifdef UNIT_TESTS` guards in engine code so fewer game bodies differ; it records its
+progress here. The compiler side does not depend on it: steps 1-3 share whatever is equal.
+
+
+## Domain versions to answer hashes (step 4's last deletion; started 2026-10-26)
+
+Where versions are still issued, measured with a sampled caller probe (production tree, 4 workers): a hot body edit in a
+session issues about 250 (ABI admission); a fresh-session full compile issued 909k domain versions (`issue_s` 8-10 CPU-s)
+plus 1.30M tree version calls (`tree_s` 17-19 CPU-s). By caller, the full compile's issues were: stored lowering records
+from disk (`lowering_memo_wire::current_reads` computing the current version of every read domain, and `transparent_reads`
+covering reads by those versions), about 60 percent; the ABI and initializer receipts' recording resolvers
+(`dm_session::reads` recording a version with every read: initializer classification, the ABI evaluator, non-text capture),
+most of the rest; dependency-index replays a little.
+
+**Slice 1 (2026-10-26, compiler/answer-hashes-1): lowering records under the answer table.** In a session with a query
+database every stored lowering record is proven by the answer table instead of domain versions: `lookup_record` asks the
+`RequestAdmission` oracle only (`ReceiptAdmission::has_oracle`; no `matching_domains`), and a compact record from disk is
+admitted by `answered_reads` (each recorded answer's hash must be the table's current one; the typed answer is then taken
+from the record without resolving) with no `CurrentReads::versions`, no version in the observer's record and an empty
+version list in the promoted resident record (`CurrentReads::answered`). Records keep their stored versions on disk for
+processes without a table. Measured, fresh daemon per build, the published compiler against this branch, interleaved:
+full compile 30.6 / 35.6 / 36.0 s (compilation stage 17.5 / 21.3 / 20.6 s) against 27.1 / 32.9 s (15.3 / 19.1 s; a third,
+loaded, 58.7 s); versions issued 909k -> 345k, `issue_s` 8.2-9.9 -> 2.6-3.8 CPU-s, tree version calls 1.30M -> 0.74M; hot
+body edits unchanged (250 issued, 3.9-4.7 s). `dmb-equiv --all --ignore-debug` of the daemon output after the edits against a
+fresh `--no-daemon --no-cache` compile: EQUIVALENT (two rounds).
+
+**Slice 2 (2026-10-26, compiler/answer-hashes-2): ABI and classification receipts record no versions under the table.**
+`dm_session::RecordingResolver::with_versions(resolver, false)` records reads with no domain version; the ABI evaluator's
+recorder (`abi_artifacts::prepare`) and the initializer classification recorder use it when the session has a query
+database (their admission already takes the answer table as oracle). Measured as slice 1, slice 1 against this branch:
+versions issued on a fresh-session full compile 345k -> 112k (`issue_s` 3.4-4.5 -> 0.9-1.2 CPU-s), on a hot body edit
+250 -> 1; tree version calls 739k -> 458k, but their CPU time rose (14-16 -> 24-26 CPU-s: the answers are now resolved
+through the tree's own certificates), so the compile is unchanged within noise (compilation stage 19.4 / 22.1 s against
+18.6 / 23.8 s; body edits 1.6-1.9 s against 1.4-1.8 s). `dmb-equiv` against a fresh compile: EQUIVALENT, three rounds.
+
+Remaining issuers on a fresh-session full compile after slice 2 (caller probe, 1/64 sampled): the engine host's own
+issuance (`issued_domain_version` through the scalar snapshot) for the receipts that still record versions, and the class
+projection's retained owners (`class_projection::retained`, a `RecordingResolver` over the `SemanticTree` whose receipts are
+admitted by `visit_explained` against the tree with their versions: about 340k tree version calls). The class projection
+reads the tree, not the engine host the answer table answers for, so it needs a tree-level answer table (or to read
+through the request's table) before its versions can go.
+
+**Slice 3 (2026-10-27, compiler/answer-world-1): class projection owners proven by the answer table.** `ClassProjections`
+takes the session's query database (`with_answers`, set by the build host); when the request's answers are bound to the
+projection's own tree (`QueryDb::answers_bound_to`, pointer equality with the tree `begin_answers` bound), each owner's
+stored receipt is admitted through a `ReceiptAdmission` with the table as oracle and its reads are recorded with no
+domain version (`RecordingResolver::with_versions(tree, false)`). The projection resolves through the tree, every other
+stage through the static resolver, and the table holds one answer per query for all of them: `DMB_QUERY_VERIFY=1`
+re-resolves every shared answer through the asking stage's resolver and found 0 mismatches over a fresh compile and two
+added-type edits. Measured, production tree (`rootA`), 4 workers, fresh private daemon per arm with a warm disk cache,
+then three added-type edits (each runs the projection: the program text outside bodies changed): fresh-session full
+compile 63.9 s against 34.4 and 36.5 s, `initialization` 8.6 s against 3.4-3.5 s, tree version calls 474k against
+111-122k (`tree_s` 38.9 against 0.8 CPU-s); added-type edits 16.6-26.4 s (initialization 2.2-4.3 s) against
+14.2-18.1 s (1.9-2.2 s). `dmb-equiv --all --ignore-debug` of the daemon output after the edits against a fresh
+`--no-daemon --no-cache` compile: EQUIVALENT. What still issues versions (caller probe, 1/64 sampled, fresh daemon): the
+first request of a fresh daemon runs on the one-shot memo, which has no query database (about 112k issues: the lowering
+records' resident promotion computing current versions, the ABI recorder of the initializer binding, the initializer
+assembly and resource recorders); on an edit about 166 (`startup_allocation::authored_call_availability`, modified
+instances). A trial with every recorder unversioned (all receipts proven by the table or by exact replay) issued 1 version
+per request at equal speed, so the next slice removes the versioned path instead of converting recorders one by one.
+
+**Slice 4 (2026-10-27, compiler/domain-version-out): domain versions deleted.** `Resolver::domain_version` is gone,
+and with it every issuer and every consumer of a version:
+
+- *Recording and admission.* `RecordingResolver` and `ObservationLedger` record answers only (no version argument, no
+  `domain_receipts`, no versioned mode); `ObservationHost` has no `version`/`version_for_admission`;
+  `ReceiptAdmission` keeps no version cache and proves a receipt by the request's answer table when it has one (`with_oracle`)
+  and otherwise by exact replay; `certified_domains`, `matching_domains`, `CertificateDelta` and the version branch of every
+  consumer (ABI admission and scheduler, lowering resident/disk/partial admission, compact and wire records,
+  `CurrentReads`) are deleted. Store APIs still carry an always-empty version list (removed in the next lane).
+- *One identity remains.* `Resolver::answer_world` is the old `Tree` domain version under its own name, computed exactly as
+  before at each layer (tree: declarations identity; scalar snapshot: its issued tables; engine host: configuration, runtime
+  policy, pinned source trees, callable exclusions; static resolver: the underlying world and the static inventory; memo,
+  resource and recording resolvers forward it). It keys answer carrying (`QueryDb::begin_answers`) and the dependency index.
+- *Every request has an answer table.* The one-shot memo of a fresh daemon's first request (and of `--no-daemon`) gets a
+  request-local `QueryDb` (`ProcedureMemo::answers`), shared by its ABI and initializer stores.
+- *Issuers deleted.* dm-tree: owner hierarchy/callable/variable selection certificates, demanded selections and the
+  demand-token carry (the change set is still classified for `change_since`), storage-uniqueness certificates, scalar
+  certificates, procedure-static layout tokens and `token_digest`. dmbc: the engine host's catalog, callable, scalar-owner,
+  negative-variable and captured-declaration issuers, its domain memo, the callable-fallback receipt store
+  (`runner_facts_callable_fallback.rs`) and the provider/catalog issuer counters.
+- *One behavioural rewrite.* The engine host's pinned variable-absence proof compared the coverage source's demanded-name
+  token with the current tree's; it now requires the two trees to give the same `Ancestry` and `HasMemberVar` answers. A
+  tree without the old token issuer (a test-only construction) used to answer `Unsupported` for an uncaptured name on a
+  covered owner and now answers `Missing`, as every production tree already did.
+
+Measured, production tree at this lane's base (the lane's worktree as compile root), 4 workers, fresh private daemon per
+arm, both binaries warmed once so their disk caches are hot; base = this lane's merge base, built the same way. Fresh
+daemon first compile 38.9 s (base) against 32.7 s; added-type edits (full in-session path, 8 per arm over two rounds and a
+warm-up) median 16.97 s against 16.91 s; body edits (12 per arm, three interleaved rounds) median 5.64 s against 5.87 s
+(+4.1 %; the per-round medians alternate: 5.04 / 5.27, 6.10 / 5.95). Versions issued per request: about 112k on a fresh
+daemon's first compile and 166 per edit before, none after (the counter is gone with the issuers). 6.9k lines deleted.
+`dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile: EQUIVALENT after body edits plus a new
+file in a resource search folder, and after two added-type edits and a default edit under `DMB_QUERY_VERIFY=1` (0 answer
+mismatches). `cargo test` over the workspace passes; tests whose subject was a version or certificate are deleted or
+rewritten to assert answers.
+
+**Slice 5 (2026-10-27, compiler/version-plumbing): the empty version lists removed.** Every store API that still carried
+an always-empty `(domain, version)` list loses it: dm-session variants, observed artifacts, storage views, `insert_*`,
+`rebind_with_qualified_receipt`, validate/charge callbacks; dmbc publication/ABI/initializer/map/lowering stores, symbolic
+records and admissions, `ResidentPromotion`, and every heap-census charge. Persisted wire records keep their `versions`
+field and are written with an empty list at the encoder (`queue_disk`, `queue_selections`, `queue_compact`,
+`remember_executable`, `remember_failure`), so the disk format is unchanged. 125 files, -351 lines net. Speed (production
+tree, own daemon per arm, two interleaved rounds against compiler/memory-1, busy machine): body edits median 6.14 s against
+6.43 s. `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile: EQUIVALENT (body edits + a
+resource-folder change). This lane also carries compiler/memory-1 (bounced by the train on a census test that expected the
+old relocation HashMap's unknown bytes; the test now asserts the dense slice is fully known).
+
+## Design option: the include spec as the project input (2026-10-27, lane `tools/generated-dme`)
+
+Not built; recorded for the query-core work. `deepquarry.dme` is generated now (`tools/build/gen_dme.py` from the files on disk and the
+ordering spec `tools/build/dme_spec.txt`: `scan` roots, `skip`s, `first`/`last` groups, `before` rules, each with its reason; the
+order dependences were found by compiling the generated order against the old hand order and comparing with dmb-equiv,
+`tools/ci/dme_order_equiv.sh`). The `.dme` stays on disk because DreamMaker, DreamChecker, the analyzer and CI read it.
+
+dmbc could take the spec directly instead of parsing the generated manifest: the `project` input row would be the spec text plus the
+directory listings of the scan roots (names only), and the manifest order a query over them (`manifest_order(spec, listing)`, the
+same stable topological sort). What it would buy:
+
+* A file added or removed changes one listing entry, not a 5,900-line manifest whose text the frontend diffs region by region today
+  (`program text outside bodies changed` declines incremental output on any manifest edit, which is why a lane that only adds a file
+  pays a structural change).
+* The order rules become typed edges the frontend can check: a macro use before its `#define` (what `gen_dme.py --check` reports
+  heuristically) is visible exactly in the preprocessor's expansion facts, so the spec could be verified by the compiler instead of a
+  token scan.
+* The include position of a file stops being an input of every file after it: today's `.dme` order is a total order, while the spec
+  only orders what genuinely depends on order (macros, the definition precedence of a proc defined twice on one type, global
+  initializer order); everything else could compile in any order, which the per-file queries already assume.
+
+What it costs: dmbc must reproduce `gen_dme.py`'s sort byte for byte (or call it) so DreamMaker, which still reads the `.dme`, sees
+the same order; a disagreement would be a native-vs-DreamMaker difference the CI cross-check (`tools/ci/dm_equiv.sh`) catches. Keep
+the `.dme` either way.
+
+
+## `#define` edits: re-plan only the include subtrees that read the changed macros (step 5, started 2026-10-26)
+
+An include subtree's directive interpretation depends on the macros its directives read (`#if`, `#ifdef`, `defined()`,
+directive-memo hits) and write (`#define`, `#undef`), not on the whole incoming environment. Each `SubtreeRecord` now keeps
+those names (`tested`); the ordered pass tracks how its macro environment differs from the previous pass's at the same
+point (`EnvDelta`, at most 64 bindings, by content and definition site) and adopts a subtree whose other incoming state is
+equal and whose tested names are outside the delta, with the delta applied to the environment of every copied segment,
+to its outgoing state and to its carried records (`DirectivePass::carried_delta`, `MacroEnvironment::apply` /
+`delta_from`). A rebased region is not mapped to the previous one, so its expansion is proven again by the macros it
+reads (the expansion memo). Tests: `manifest_changes_renumber_adopted_subtrees_or_decline_them` (a manifest `#define` edit
+now adopts the three subtrees that do not read it) and `a_define_edit_reruns_only_the_subtrees_whose_directives_read_it`,
+both comparing every plan and expansion with a full pass.
+
+Measured, production tree, `BAD_INIT_SLEPT` (defined in `code/__defines/_atoms.dm`, read only in two bodies) edited twice
+per round, interleaved against the published compiler: subtrees adopted 10 -> 5872 (state declines 5944 -> 0); the
+request was already a body-level patch on both (4.6-7.9 s against 5.3-6.3 s, frontend 0.9-1.5 s on both): 5917 regions
+are still expanded again (memo-verified), which is where the frontend time of such an edit goes. `dmb-equiv` of the
+output after the edits against a fresh compile: EQUIVALENT, two rounds.
+
+**Rebased regions keep their expansion (compiler/test-increment-2).** `PlanReuse::rebased_regions` names, for every region
+of a rebased subtree, the previous region and the macro names whose bindings differ; `expand_regions_reusing` copies the
+previous expansion when its recorded macro reads (`ExpansionRecord::reads`, which include names read while absent) name
+none of them. Same measurement: regions expanded again 5917 -> 30-32 (13174 reused); frontend of the edit 1.0-1.1 s in the
+quieter round against 2.1-2.3 s for the previous slice (the other round was loaded on both sides). Test
+`a_new_macro_used_in_adopted_text_expands_that_text_again`. `dmb-equiv` against a fresh compile: EQUIVALENT, two rounds.
+
+**Tried and taken out: starting a new define variant from the active variant's frontend.** `switch_variant` seeded the
+test world's semantic state with the game world's last frontend, and the ordered pass adopted 4660 of its include subtrees
+(rebased) with 11572 regions' expansions reused. Measured (production tree, game then test world in one daemon, interleaved
+against the published compiler, `dmb-equiv` EQUIVALENT against a fresh test-world compile): the test world's frontend took
+7.4 s against 6.0 s (14.0 against 9.5 in a loaded round) and the memory probe showed +3.18 GB for the test world against
++3.04 GB: the rebased segment environments cost 226 MB (+182) where the shared regions saved about 150 MB, and the disk
+expansion memo already answers a fresh test world's regions. Kept from it: `DirectivePlan::defines` (a plan of other
+defines is never a base for the changed-files patch) and the per-pass cache of rebased environments (consecutive segments
+share one), which `#define` edits use. Seeding needs environments rebased as an overlay (a binding delta over a shared
+map) instead of materialized maps before it pays.
+
+**Initializer, map and modified-instance code is `DEBUG`-independent (same lane).** Their lowering always emits
+`DbgFile`/`DbgLine` (`initializer_lowering`, `map_artifacts`, `modified_initializers`: `ops: true`) and a build without
+`DEBUG` strips them when the words are wired (`symbolic::debug_strip`, as for procedure bodies); the initializer disk
+transport is keyed by the facts policy (`BuildHost::procedure_memo` takes it), so the game and test worlds share those
+records. Checked against the compiler before the change: 416 fixture compiles (`fixtures/*.dme`, `lowering/`, `native/`,
+`native_compiler/`, each with and without `-DDEBUG`, `--no-daemon --no-cache`) produced identical `.dmb` bytes.
+
+Next: measure the test variant with both changes (memory probe, warm test build after a game build) and share the
+per-variant owners the probe names by content.
+
+## Memory toward the 1 GB targets (2026-10-27, lane `compiler/memory-1`)
+
+Probe `bench/shared_store_probe.sh` (allocation-sites release build, requested live GB; root A = production tree, then the A test
+variant `-DCBT -DCIBUILDING -DCITESTING -DDEBUG`, then root B = A with two comment lines). After domain versions were deleted
+(compiler/domain-version-out): A 5.63, test +2.97, B +1.49 (the doc's last figures were 6.80 / +3.06 / +1.58; the deleted
+certificate maps, demand tokens and domain memo account for most of root A's drop). This lane:
+
+- *Dense relocation answers.* `LatestImage` kept each procedure's relocation answers as `Arc<HashMap<SymRef, u32>>` (329 MB
+  over two variants). They are compared only for the same frozen code, so `BindingAnswers` is now `Arc<[u32]>` in
+  first-occurrence order of the code's distinct references.
+- *Exact-size images.* The encoded image was retained in the writer's doubled buffer (a 69 MB image in a 128 MB block; the
+  allocator does not shrink a large block in place). `CanonicalHash::finish` copies it into an exact allocation when the slack
+  exceeds 1/16.
+
+Result: A 5.38 (-0.25), test +2.80 (-0.17), B +1.50 (unchanged); private bytes A 6.90 (was 7.19), after test 10.16 (was 10.68).
+Speed (interleaved, own daemon per arm, lane base vs this lane): body edits per-round medians 4.92/4.93 and 4.14/4.04 s;
+added-type edits median 17.05 vs 16.38 s. `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile:
+EQUIVALENT (body edits + resource-folder change; added types under `DMB_QUERY_VERIFY=1`).
+
+Targets not met. Largest remaining growth: test variant `query_db::AnswerValues` 168, preprocessor (expansion 117, region memo
+116, joined text 80, directives 72, environment 46) about 430, `RequestAnswers` 98, `LeafProofs` 79, receipt pool 72;
+root B: startup capture 66, `RequestAnswers` 65, joined text 61, classification 57, frame contribution 56, preprocessor
+about 230. The preprocessor family needs per-file sharing keyed by (bytes, start state), step 3 of the test-variant plan.
+
+**compiler/memory-2 (2026-10-27).** The probe now runs on a fresh disk cache (`DMB_CACHE_DIR`; a warm cache made root B a
+whole-output hit). Base: A 5.36, test +2.78, B +1.52. Two owners went: the required-type field-request store keyed every
+field by its position, so the test variant (other positions) re-stored nearly every entry (107 MB) to save a few pushes per
+field; requests are now computed. The answer-value pool keys on the low 64 bits of the query id and checks the pooled
+query (pool 62 -> 35 MB). Result: A 5.27, test +2.66, B +1.49. Speed (three interleaved rounds, own daemon per arm): body
+edits median 5.94 s against 6.03 s, added types 17.80 s against 18.44 s. `dmb-equiv --all --ignore-debug` against a fresh
+`--no-daemon --no-cache` compile: EQUIVALENT.
+
+## Shared per-file preprocessing, answer queries and output images (design, 2026-10-27)
+
+Measured with `bench/shared_store_probe.sh` (cold disk cache through `DMB_CACHE_DIR`, compiler/memory-2): root A 5.27 GB,
+test variant +2.66 GB, root B +1.49 GB. The 1 GB targets need about 1.7 GB off the test variant and 0.5 GB off root B. The
+three largest families that are copies of something another session or variant already holds:
+
+| family | test variant | root B |
+|---|---|---|
+| preprocessor (plan, environments, hydrated rows, traces, origin rows, joined text) | about 450 MB | about 240 MB |
+| answer tables (`AnswerValues`, `RequestAnswers`, `LeafProofs`) | about 315 MB | about 95 MB |
+| retained DMB image and row lists | about 140 MB | about 60 MB |
+
+### 1. Preprocessing as per-file results keyed by what they read (step 3 of the test-variant plan)
+
+**What is per session today.** Expansion records (`ExpansionRecord`, keyed by region source and control digest, validated
+by the macro definitions they read) and expansion-input admissions are already daemon-wide. Everything derived from them
+is rebuilt per session: the directive plan's regions and segment environments (`directives`, `environment`), the hydrated
+output rows of every region (`region_memo::hydrate`), their macro traces (`trace_arena`), the flat origin arena (one 32-byte
+row per output line), and the joined text. A start state that differs anywhere (the test variant defines `UNIT_TESTS`
+before almost every file) makes a whole-environment key useless: no file after `_compile_options.dm` would be shared. So
+the key is the file's bytes plus the answers to the macros it reads, exactly as expansion records already work, not the
+start environment's fingerprint.
+
+**The unit.** A region (the text between two include directives of one file) is the unit; a file's result is the list of
+its regions' results. Each region result is an immutable shared object reached from its expansion record:
+
+- *Region rows* (slice P1): the region's provenance rows relative to the region (output offsets from the region start,
+  source span, source line, local trace index) and its trace table. Built once per record and per set of macro definition
+  origins the traces name (a macro defined at the same place in both variants gives equal rows), held by the record
+  (weakly pooled), so two sessions that hydrate the same record share one row table. The session's origin arena becomes a
+  list of `(rows, first output line, output base, region, path)` chunks, one per region (about 14k instead of 1.5M rows),
+  found by a galloping search from the last chunk asked.
+- *Region plan* (slice P2): the region's segments and effects, with segment environments replaced by what expansion and
+  validation actually use: the definitions the region reads (already in the record) and a shared persistent environment
+  only where a later directive in the same region needs the whole state. A variant's plan adopts a region result whose
+  read definitions are equal instead of re-interpreting and rebasing its environment (the earlier attempt to seed the
+  test plan from the game plan rebased whole environments and cost +0.14 GB).
+- *Joined text* stays one contiguous string per variant (the lexer and every span consumer need it); it is the only
+  per-variant copy of the program text. Region record texts are not duplicated into it twice: a session keeps the joined
+  text, records keep their own text, and nothing else holds a third copy.
+
+**Slices.** P1 region rows (hydrate, traces, origin arena; expected test -110 MB, root B -100 MB). *P1 landed (compiler/preproc-rows):* test variant
++2.66 -> +2.57 GB, root A unchanged (5.29), root B unchanged (+1.49): a trace's definition origin carries the absolute path
+of the defining file, so root B's rows never equal root A's (next slice: project-relative definition paths). Body edits
+(three interleaved rounds, busy machine): stage times equal (frontend 0.37-0.44 s both arms, row assembly 0 vs 15 ms), wall
+medians of the calm round 5.76 vs 5.55 s. `dmb-equiv`: EQUIVALENT for the game variant (body edits + resource-folder
+change) and for the test variant built in the same daemon after the game variant plus a body edit (`eqtest.sh`). P2 region plans shared
+across variants and roots (directives, environments, directive memo; expected test -150 MB, root B -100 MB). Each slice is
+proven by `dmb-equiv --all --ignore-debug` against a fresh `--no-daemon --no-cache` compile of both variants, the six-session
+contract tests, and a warm-speed A/B within 5 percent.
+
+### 2. Smaller answer queries
+
+`dm_ir::ResolveQuery` is 48 bytes with 16-byte alignment because `ResourceIn::search_context` is a `u128`. Every answer slot
+value, receipt observation and query-keyed map pays for it. `search_context` becomes `SearchContext([u64; 2])` (same
+`Serialize`/`Deserialize` as `u128`, so no persisted format changes), which makes the query 40 bytes with 8-byte alignment;
+the answer value stores its hash as `[u64; 2]` for the same reason. A codemod updates the construction and match sites.
+Expected: `AnswerValues` 96-byte allocations to 64, observations in receipts 16 bytes smaller each.
+
+### 3. One DMB image for two variants
+
+The retained encoded image (`RetainedGeneration`'s current `EncodedDmb`, about 105 MB) and its row lists are kept per
+variant. The test variant's image differs from the game image in a minority of rows. The retained image becomes a chunked
+image: fixed-size chunks (64 KiB) interned by content in a daemon-wide weak pool, the image a list of chunk handles plus
+length. Writing the output file and hashing stream over the chunks; the exact-hit path returns the chunk list. Two
+variants whose images agree on most chunks hold those chunks once. Expected: test -60..90 MB, root B -50..90 MB (root B's
+image equals root A's except for line-number debug rows).
+
+### Measured: packed queries (2) and project-relative traces (P1 follow-up) (2026-10-27, lanes `compiler/packed-queries`, `compiler/relative-traces`)
+
+Probe `bench/shared_store_probe.sh` (allocation-sites release build, fresh `DMB_CACHE_DIR`, requested live GB; root A, the A
+test variant, root B = a copy at another path with two comment lines), one run per lane. The reference figures are those of
+compiler/memory-2 above (A 5.27, test +2.66, B +1.49); they were not re-measured on the lane base.
+
+| lane | A | test variant | root B |
+|---|---|---|---|
+| memory-2 (reference) | 5.27 | +2.66 | +1.49 |
+| packed-queries | 5.14 | +2.61 | +1.47 |
+| relative-traces | 5.28 | +2.58 | +1.41 |
+
+- *Packed queries.* `ResolveQuery` 48 -> 32 bytes and `ResolvedMeaning` 80 -> 64 (`dm_ir::PackedU128`, two `u64` words, the
+  serde, hash, order and canonical bytes of the `u128` it replaces; a unit test pins the sizes). The output is byte-identical to
+  the previous compiler's (`.dmb` and `.rsc`, game and test), and `shared_store_equiv.sh` (six interleaved builds in one daemon
+  against cold references) is EQUIVALENT. Warm body edits on a quiet machine, four edits per arm, interleaved by pair:
+  4.74 s before / 5.08 s after in the first pair, 5.53 s before / 4.97 s after with the arms swapped (the second arm of a pair
+  is slower in both): equal within the noise.
+- *Relative traces.* A trace's definition origin is relative to the project directory, so root B's region rows equal root A's:
+  in the root B growth `region_memo` fell from 65 to 24 MB and `directives` from 38 to 22 MB.
+- *What the sites say is left.* Test variant (MB): `AnswerValues` 137, `region_memo` 116, `expansion` 113, `writing` (the
+  retained image) 112, `LeafProofs` 112, `RequestAnswers` 109, `directives` 88, `joined_text` 81, `leased` 69, `receipt_pool`
+  65. Root B: `RequestAnswers` 65, `joined_text` 60, `MetadataDependencies` 54, `environment` 54,
+  `assemble_procedure_rows` 49, `classification` 49, `frame_contribution` 46, `BoundRelocations` 40, `word_lists` 36.
+- *Findings that change the plan.* (a) The expansion records are already one allocation per content in `SharedRecords`
+  (`runner_host_memo.rs`); the preprocessor growth of the test variant is the per-session structures built from them (plan,
+  hydrated rows, joined text), not the records. (b) The macro environment is already a persistent map (`im::OrdMap`, segments
+  clone it), so "stop copying environments" is not a copy to remove: the cost is that the test plan builds its own maps from a
+  different start state, and the earlier seeding experiment measured that rebasing them costs more than it saves. P2 as
+  designed above (region results keyed by the definitions they read, adopted by a variant's plan without re-interpreting the
+  region) is a rewrite of plan adoption, not a patch, and is not started. (c) A slot of the answer table
+  (`RequestAnswers`: `HashMap<u128, AnswerSlot>`, 48 bytes per entry) is per session and about 65 MB per extra session; a
+  `[u64; 2]` key does not shrink it (the slot is 32 bytes), only dropping `base` (8 bytes) from the slot would, and that
+  needs the published-base set kept elsewhere.
+- *Joined text, design.* Every consumer of `ExpandedRegions::text` takes `&str` with absolute offsets (`frontend_parse.rs`
+  chunking, `frontend_grammar_roster.rs` span checks, `debug_sources.rs`, `argument_sources.rs`, `issued_arena`/`same_view`
+  as the authority of every span). A chunked text is `ChunkedText { pieces: Arc<[Piece]>, starts: Arc<[usize]> }` with
+  `slice(range) -> Cow<str>` (borrowed when the range lies in one piece, which holds for every declaration chunk that does
+  not cross an include boundary, copied otherwise), `find`, `is_char_boundary` and `same_view` over piece identity, and
+  a piece is the region output text the expansion record already holds, so the joined copy (60 to 80 MB per session) is not
+  held at all. The lexer keeps running per declaration chunk, which is already how large cold frontends lex. It touches
+  about 40 call sites and the issued-arena authority, so it lands as its own lane with the six-session contract tests; until
+  then identical joined texts of two roots can be interned like output images (saves 60 MB only for a second worktree at the
+  same commit, nothing for the test variant or for the probe's edited root B).
+
+### Receipt ledgers: measured shape and the compaction/spill design (2026-10-27, lane `compiler/receipt-design`)
+
+**Where the bytes are.** In the game session (root A, 5.28 GB requested) the read ledgers are the largest family:
+`observations::receipt_pool` 380 MB (the interned leaves, `Arc<[Observation<Q, A, D>]>`), `observations::receipt` 75 MB, and the
+receipt conversions inside `artifacts::leased` (`insert_with_owned`, `insert_qualified`: about 300 MB of the 459 attributed to
+it; the rest of `leased` is the `Arc<T>` boxes of stored values and the per-hash bucket vectors, not rosters). An
+`Observation<ResolveQuery, ResolvedMeaning, ReadDomain>` is now 88 bytes (32 query + 48 answer + domain, 8-aligned), so the
+pool holds about 4 million observations.
+
+**Facts that bound the design.**
+1. Equality of receipts is by value (`entry.reads == reads`, `ReceiptGroupPool::intern`), and the replay oracle
+   (`AnswerOracle::unchanged`) hashes the recorded answer (`answer_hash`) before comparing; the stored answer is otherwise
+   read by about 160 sites (`.answer`) in dm-codegen-byond, dm-tree and dmbc (ABI admission, driver facts, dependency index, the
+   portable disk form). So a hash-only observation is not a drop-in: those sites need the meaning.
+2. Distinct answers are far fewer than observations (most are `Missing`, `Presence`, `DeclaredType`, `Symbol`, and the same
+   `Member` rows asked by many units), but nothing shares them today: each observation owns its `ResolvedMeaning` inline.
+3. `JoinedText` cannot be freed after the parse: its `SourceText` is the same allocation `ExpandedRegions::text` holds (the pool
+   stores a clone of the view, not a copy), and the frontend keeps that text for warm re-parse, the diagnostic cursor and as the
+   authority of every span (`issued_arena`). Dropping the pool entry frees nothing.
+
+**Slice 1, compaction (answer by shared handle).** `Observation::answer` becomes a handle to an interned immutable answer:
+`Arc<ResolvedMeaning>` taken from a daemon-wide weak pool keyed by `answer_hash` and verified by value (the pattern of
+`output_pool.rs` and `AnswerValues`, which already interns the answer value per query id). An observation is then 32 + 8 + 1,
+48 bytes with padding, 40 bytes smaller, and equal answers are one allocation across ledgers. `Arc<T: Eq>` compares by pointer
+first, so receipt equality gets faster. Sites that read `.answer` keep working through `Deref` for method calls; pattern
+matches take `&*answer`. Interning happens where observations are recorded (`reads.rs` ledger `record`), which already
+computes the answer's hash for the answer table, so the cost is one pool lookup per recorded read. Expected: receipt_pool
+380 -> about 220 MB (the pool holds 40 bytes less per observation) plus the sharing of repeated `Member` and `Declaration`
+answers; measured before landing with a census of observations by answer variant and distinct count (diagnostic in
+`heap_census`), because the gain is the distinct-to-total ratio and I have not measured it.
+
+**Slice 2, spill (ledgers of idle units to disk).** A memoized unit's ledger is read only to validate that unit on a later
+request. Ledgers of units untouched for N requests are written to the existing content-addressed disk cache as one record
+(keyed by the ledger digest, payload = `portable_answer` encoding, which is already the on-disk form of these answers) and the
+resident `Receipt` is replaced by a stub of (digest, length). Rehydrate path: a validation that finds a stub reads the record
+back (the cache snapshot is memory-mapped, so a rehydrate is one lookup and decode, no I/O in the common case) and interns the
+decoded leaves again. Cost bound for a warm edit: a body edit validates the few units whose reads it can reach plus the
+carried ones by answer hash; only units whose recorded answers must be compared one by one rehydrate, so the bound is the
+number of units the edit invalidates (hundreds) times one decode of a few KB, under 20 ms, against a 5 s edit. Not started:
+it needs slice 1's census to size the stub threshold, and the equivalence run to prove a spilled unit validates exactly as a
+resident one.
+
+## Frontend memory proposals (2026-10-27, lane `perf/dmb-frontend-mem*`)
+
+Measured with the allocation-sites build run from its own target directory (the `.pdb` must sit next to the executable, or every
+site reads as unattributed). Owner shares move by about 40 MB between two probes of the same tree, so a change under that size is
+not visible in the owner table; compare `requested-live`.
+
+Landed: directive text runs, shared directive-record source, walk vector slack, expansion `Line` packing (game -234 MB, test extra
+-71 MB), then `prepared_source` viewing the original text for lines comments do not touch and releasing expansion text slack
+(game -61 MB, test extra -30 MB). Cold `.dmb` output byte-identical in both.
+
+Proposals that need a design decision, not a local edit:
+
+* **Adapter `canonical` bytes (about 60 MB, `adapter.rs` var initializers).** `MemberMetadata.canonical` is the serialized token
+  stream of the member header or initializer, kept next to the `SymbolicExpression` tokens that carry the same text. It is part of
+  the metadata's identity (`dm-ir` `declarations.rs` writes it into the canonical form, `adapter.rs` hashes it into `content`), so
+  it cannot simply be dropped. Option: derive it on demand from the tokens and the symbol table, and keep only the 128-bit
+  `content` hash; every reader of `.canonical` (dm-ir identity, `modified_instance`, `portable_meaning`) then needs the symbol
+  table at hand. Needs the owners of the metadata identity to agree on a derive-not-store rule.
+* **`MacroExpansion` repack (`trace_arena`, about 49 MB).** Each emitted line with expansions holds an `Arc<Vec<MacroExpansion>>`
+  of name `Arc`, invocation span, chain `Arc` and an optional definition origin `Arc` (about 48 bytes per trace plus the vector).
+  Replace by u32 name and chain ids into the region's `TraceArena` plus u32 spans, with the arena kept alive by the output rows.
+  Changes the `MacroExpansion` type every origin reader uses.
+* **Parse fragment payloads (about 247 MB, the largest unattributed site: `frontend_parse.rs` `Arc::from(bytes)` of the
+  `parserwire` encoding).** One `Arc<[u8]>` per declaration chunk is shared by the `FragmentRecord` and the declaration state
+  (`new_shared_source`), so compressing it in one holder saves nothing. Option: store it deflated in both with one decode in
+  `decode_with_facts`; the serialized AST is highly repetitive. Needs a warm-edit measurement before adopting (a decode per
+  reparse), and a `FRAGMENT_VERSION` bump.
+* **`joined_text` (about 60 MB)** is the memoized ordered join of every expansion output, kept deliberately so an unchanged
+  emission skips the join; it is not leaked. Dropping it trades the memory for a 60 MB copy per warm build.
+### Content-addressed sharing across sessions: plan (2026-10-27, lane `compiler/key-pool`)
+
+**Finding.** A second worktree with byte-identical files (other path only) still adds +1.39 GB (game session 4.81, test variant
++2.42). Only the memoized expansion records, answer values, artifact cores and output images are shared today, and they are
+shared because each was given a pool by hand. Everything built around them is rebuilt per session from equal inputs: the answer
+table slots (`RequestAnswers` 67 MB), `MetadataDependencies` 54, procedure rows 49, classification keys and rosters 49,
+`frame_contribution` 46, macro environments 36, word lists 36, link tables 33, member arena 32.
+
+**Rule.** A value a session builds from inputs that hash equal is one allocation, found through a process-wide weak pool keyed by
+the content digest and decided by the bytes (the pattern of `output_pool.rs`, `RecordPool` below). Nothing path-bearing is part
+of the identity: definition origins are project-relative (landed), and a value that still names an absolute path is relativized
+when it is built, or kept per session.
+
+**Layers, in order.**
+1. *Keys and leaves* (tried, **taken out**): a weak content pool for the artifact key bytes (classification, lowering, symbolic
+   shared keys). Same-session A/B on the identical-worktree probe (master with the other lanes' savings: game 4.82 GB, test
+   +1.29, second worktree +1.24): the second worktree -40 MB, the test variant +14 MB, but the game session +75 MB, because the
+   pool's own table (a digest and a weak handle per key, about a million keys) costs more than the shared bytes save. A pool
+   per key is the wrong grain; share the table that holds the keys (layers 2 and 3) instead.
+2. *Answer table*: split `AnswerSlot` into the immutable `(id -> Arc<AnswerValue>)` part, shared per tree digest (equal trees give
+   equal answers; the tree identity is already a content digest) and a per-session overlay of the mutable request, stamp,
+   born/changed and base fields. A session at the same tree digest as another starts from the shared map and copies on first
+   write. Expected: `RequestAnswers` 67 -> about 15 MB per extra identical session.
+3. *Derived tables* (`MetadataDependencies`, procedure rows, member arena, frame contribution, link tables): each is a pure
+   function of the tree digest plus its inputs, so they are built once per digest and held by `Arc`, with the per-session
+   difference (the dirty set) kept beside them. Each is its own slice, measured on the identical-worktree probe first.
+4. *Test variant*: the same pools apply with the variant's own digest; only values whose inputs differ are new.
+
+**Proof per slice.** Cold output byte-identical to the previous binary, `shared_store_equiv.sh` EQUIVALENT, identical-worktree
+probe (A, test, B0) for the second-worktree extra, warm-edit speed on a quiet machine.
+
+### Answer table across define variants: measured (2026-10-27, lane `compiler/answer-replace`)
+
+`BuildHost` holds one `QueryDb` and `switch_variant` does not stash it. Counters printed at each request start
+(`DMB_MEM_MARKS=1`: resolved, carried, replaced slots, slot count, answer-value pool outcomes) on game, test, game, test, game in
+one daemon: a request replaces at most 145 slots, so the test request does not overwrite the game's answers; the answer-value pool
+(one instance) finds almost nothing for the test variant when the table is shared (`same` ~70 of 1.26M interns).
+Stashing the table per variant (tried): the pool then finds the game's values for the test request (`same` 110k) and the
+second test visit is a `patch` (37 s) instead of `full` (38-61 s), but steady-state memory after the five requests is +0.5 GB
+(7.06 against 6.53 GB requested), so it is not taken. Warm switches cost 25-60 s in every arrangement measured (patch
+sessions of 25-37 s, not the 5 s of a body edit), so the variant switch has a cost that is not the answer table; it needs a
+per-stage profile of a game -> test -> game sequence before anything else is changed.
+
+### Game -> test switch patches again (2026-10-28, lane `compiler/switch-decline`)
+
+Diagnosis: a switch of define set clears the answer table (project key changed), and `patch` then required either valid marks
+(dropped by the clear) or `base.restored`. The retained test output held 3838 resource searches in its facts while the cleared
+table held none ("world equal, 0 of 3838 resource searches as retained (retained output held 3838, this request 0)"), so the
+patch was declined and the whole program rebuilt (initializers 1.8 s, lowering 2.2, symbolic linking 2.9, composition 2.6).
+Test -> game did not decline because the game output's facts hold no searches. The facts path (`prove_facts`: same declarations,
+same answer world, each stored search asked again) that proves an output restored from storage is exactly what an output whose
+marks were dropped needs, so it now also runs when the base kept facts and its marks no longer stand (`QueryDb::marks_stand`).
+Matched, back to back, same machine (game/test alternating, 7 requests; walls of the game -> test switches): before 14.7 s and
+24.9 s (both declined), after 8.1 s and 9.7 s (patch, "3838 resource searches asked again, none differ"); test -> game
+10.1/6.9/9.2 s before, 7.7/6.1/12.0 s after (unchanged within noise); private bytes equal (about 8.0 GB). Proof:
+`shared_store_equiv.sh` EQUIVALENT for the standard run and for game/test alternating three times on one root; `cargo test -p dmbc
+--lib` 1107 passed.

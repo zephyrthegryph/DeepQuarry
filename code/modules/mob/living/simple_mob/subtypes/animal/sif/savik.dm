@@ -51,7 +51,9 @@
 	/obj/item/reagent_containers/food/snacks/meat = 20
 	)
 
-	say_list_type = /datum/say_list/savik
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/savik)
+	configure(living_rules(say_list_type = /datum/say_list/savik))
 
 /datum/say_list/savik
 	speak = list("Hruuugh!","Hrunnph")

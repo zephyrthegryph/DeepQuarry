@@ -1,10 +1,13 @@
+// Contract record numbers (the "DQ-12" a player reads): one counter per kind, round-scoped.
+SERIAL_DEF(contract, 1, FALSE)
+SERIAL_DEF(contract_event, 1, FALSE)
+SERIAL_DEF(contract_subject, 1, FALSE)
+SERIAL_DEF(contract_evidence, 1, FALSE)
+SERIAL_DEF(contract_candidate, 1, FALSE)
+
 SYSTEM_DEF(contracts)
 	name = "Contracts"
 	init_stage = INITSTAGE_MAIN
-	var/next_contract_id = 1
-	var/next_subject_id = 1
-	var/next_evidence_id = 1
-	var/next_event_id = 1
 	/// Contract id -> the contract; the system owns every registered contract (a deleted one leaves it).
 	var/list/datum/contract/contracts_by_id
 	var/list/datum/contract/offered_contracts
@@ -14,7 +17,6 @@ SYSTEM_DEF(contracts)
 	var/list/datum/contract_offer_candidate/offer_candidates
 	var/list/offer_cooldowns
 	var/list/datum/contract_lifecycle_entry/lifecycle_history
-	var/next_candidate_id = 1
 	var/suppress_offer_reconcile = FALSE
 	var/offers_materialized = 0
 	var/offers_declined = 0
@@ -40,7 +42,6 @@ SYSTEM_DEF(contracts)
 	var/list/payout_by_definition
 	var/list/custody_started_by_subject
 	var/list/custody_last_duration_by_subject
-	var/list/custody_last_ended_at_by_subject
 	/// Stable record-to-mob bindings established only from an unambiguous live identity.
 	var/list/security_record_subject_ids
 	var/list/infrastructure_fact_revisions
@@ -78,7 +79,6 @@ SYSTEM_DEF(contracts)
 	payout_by_definition = list()
 	custody_started_by_subject = list()
 	custody_last_duration_by_subject = list()
-	custody_last_ended_at_by_subject = list()
 	security_record_subject_ids = list()
 	infrastructure_fact_revisions = list()
 	observe(OM_WORLD, /datum/notice/world_mob_created, src, then(PROC_REF(on_mob_created)))
@@ -102,7 +102,7 @@ SYSTEM_DEF(contracts)
 	GLOB.alldepartments |= CONTRACT_FAX_ENGINEERING
 
 /datum/system/contracts/proc/next_infrastructure_revision(atom/source)
-	var/key = REF(source)
+	var/key = ref_token(source)
 	var/revision = (infrastructure_fact_revisions[key] || 0) + 1
 	infrastructure_fact_revisions[key] = revision
 	return revision
@@ -157,7 +157,7 @@ SYSTEM_DEF(contracts)
 	var/active = is_physically_custodied(subject)
 	if(active && !started_at)
 		var/start_revision = next_custody_revision++
-		custody_started_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		custody_started_by_subject[key] = TIME_NOW(CLOCK_WORLD)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -172,7 +172,7 @@ SYSTEM_DEF(contracts)
 		var/duration = max(0, world.time - started_at)
 		custody_started_by_subject -= key
 		custody_last_duration_by_subject[key] = duration
-		custody_last_ended_at_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		STAMP(identity, custody_ended_at, CLOCK_WORLD)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -216,10 +216,9 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	var/datum/contract_subject_identity/identity = subject_identity(subject)
 	var/started_at = custody_started_by_subject[identity.id] || 0
 	var/duration = started_at ? max(0, world.time - started_at) : (custody_last_duration_by_subject[identity.id] || 0)
-	var/ended_at = custody_last_ended_at_by_subject[identity.id] || 0
 	var/turf/current_location = get_turf(subject)
 	var/released_alive_outside_brig = subject.stat != DEAD && !istype(current_location?.loc, /area/security/brig)
-	var/recently_released = released_alive_outside_brig && ended_at && ELAPSED_SINCE(src, ended_at, CLOCK_WORLD) <= 2 MINUTES
+	var/recently_released = released_alive_outside_brig && identity.custody_ended_at && ELAPSED(identity, custody_ended_at, CLOCK_WORLD) <= 2 MINUTES
 	return list(
 		"verified" = !!started_at || recently_released,
 		"active" = !!started_at,
@@ -287,7 +286,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	queue_medical_subject_reconciliation(subject)
 
 /datum/system/contracts/proc/queue_medical_subject_reconciliation(mob/living/carbon/human/subject)
-	var/key = subject ? REF(subject) : "global"
+	var/key = subject ? ref_token(subject) : "global"
 	if(pending_subject_reconciliations[key])
 		return
 	pending_subject_reconciliations[key] = TRUE
@@ -298,7 +297,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 
 /datum/system/contracts/proc/reconcile_subject_availability(key)
 	pending_subject_reconciliations -= key
-	var/mob/living/carbon/human/subject = key == "global" ? null : locate(key)
+	var/mob/living/carbon/human/subject = key == "global" ? null : resolve_token(key)
 	if(!istype(subject))
 		subject = null
 	if(QDELETED(subject))
@@ -408,7 +407,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 /datum/system/contracts/proc/register_contract(datum/contract/contract)
 	if(!contract || contract.id)
 		return FALSE
-	contract.id = "DQ-[next_contract_id++]"
+	contract.id = "DQ-[next_serial(contract)]"
 	rel_add(src, nameof(contracts_by_id), contract, contract.id)
 	rel_add(src, nameof(offered_contracts), contract)
 	return TRUE
@@ -482,8 +481,8 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 			var/expired_key = event_occurrence_order[1]
 			event_occurrence_order.Cut(1, 2)
 			seen_event_occurrences -= expired_key
-	event.id = "DQ-CE-[next_event_id++]"
-	EXPIRY_STAMP(event, occurred_at, CLOCK_WORLD)
+	event.id = "DQ-CE-[next_serial(contract_event)]"
+	STAMP(event, occurred_at, CLOCK_WORLD)
 	events_published++
 	rel_add(src, nameof(recent_events), event)
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
@@ -564,7 +563,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	var/list/rows = list()
 	for(var/datum/contract_requirement/requirement in contract.requirements)
 		rows.Add(list(list(
-			"id" = REF(requirement),
+			"id" = ref_token(requirement),
 			"name" = requirement.name,
 			"description" = requirement.description,
 			"state" = requirement.state,
@@ -662,14 +661,14 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		"negotiation_clauses" = negotiation_rows(contract),
 		"deadline" = contract.deadline,
 		"offer_expires_at" = contract.offer_expires_at,
-		"offer_time_remaining" = EXPIRY_ACTIVE(contract, offer_expires_at, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, offer_expires_at, CLOCK_WORLD), 1) : null,
+		"offer_time_remaining" = COOLDOWN_RUNNING(contract, offer_expires_at) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, offer_expires_at), 1) : null,
 		"accepted_at" = contract.accepted_at,
-		"deadline_remaining" = EXPIRY_ACTIVE(contract, deadline, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, deadline, CLOCK_WORLD), 1) : null,
+		"deadline_remaining" = COOLDOWN_RUNNING(contract, deadline) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, deadline), 1) : null,
 		"can_accept" = can_accept && contract.state == CONTRACT_OFFERED,
 		"can_decline" = can_accept && contract.state == CONTRACT_OFFERED,
 		"offer_kind" = contract.offer_kind,
 		"closure_code" = contract.closure_code,
-		"grace_time_remaining" = EXPIRY_ACTIVE(contract, grace_until, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, grace_until, CLOCK_WORLD), 1) : null,
+		"grace_time_remaining" = COOLDOWN_RUNNING(contract, grace_until) ? DisplayTimeText(COOLDOWN_TIMELEFT(contract, grace_until), 1) : null,
 		"requirements" = requirement_rows(contract),
 		"contributor_count" = length(contract.contributions),
 	)

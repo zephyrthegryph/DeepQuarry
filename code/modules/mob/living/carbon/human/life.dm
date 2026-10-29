@@ -88,12 +88,12 @@
 		return FALSE
 	if(B.dirty & BODY_DIRTY_CONDITIONS)
 		return TRUE
-	if(LAZYLEN(src.side_effects))
+	if(link_count(src, LK_SIDE_EFFECTS))
 		return TRUE
 	if(src.allergy > 0)
 		return TRUE
 	// A metric past its trigger: the affliction's severity follows the value continuously, so it is re-read every cycle.
-	if(src.radiation || src.accumulated_rads >= 100)
+	if(src.radiation || src.accumulated_rads() >= 100)
 		return TRUE
 	var/normal = src.dq_normal_body_temperature()
 	var/body_temp = src.body_temperature()
@@ -307,7 +307,7 @@
 
 /// MED-6: no dose and nothing accumulated to dissipate.
 /mob/living/carbon/human/life_radiation_due()
-	return src.radiation || src.accumulated_rads || act_wanted(src, /datum/act/live_radiation)
+	return src.radiation || src.accumulated_rads() || act_wanted(src, /datum/act/live_radiation)
 
 /// The dose is written only through the radiation writers, which publish MOB_KEY_RADIATION. This is the fallback.
 /mob/living/carbon/human/life_radiation_rewake()
@@ -325,7 +325,7 @@
 		src.purge_radiation(antirad * DQ_ANTIRAD_RADS_PER_LEVEL)
 	if(!src.radiation)
 		src.clear_alert("irradiated")
-		if(src.accumulated_rads)
+		if(src.accumulated_rads())
 			src.decay_radiation(0, -RADIATION_SPEED_COEFFICIENT) //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
 	//Radiation is a slow, insidious killer. Unless you get a massive dose, then the onset is sudden!
 	else if((src.life_tick % 5 == 0) || (src.radiation > 600))
@@ -502,11 +502,11 @@
 /// Loss of taste at 100 (2 Gy) is handled in taste.dm. Effects stack by threshold. Only
 /// organic bodies have them, and never while a live dose is still being taken.
 /mob/living/carbon/human/proc/life_radiation_chronic_radiation()
-	if(src.radiation || src.accumulated_rads < 100 || src.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE))
+	if(src.radiation || src.accumulated_rads() < 100 || src.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE))
 		return
 	if(!(src.biology() & BIOLOGY_ORGANIC))
 		return
-	var/rads = src.accumulated_rads
+	var/rads = src.accumulated_rads()
 	if(src.organ_in(O_EYES))
 		if(prob(5) && prob(rads * RADIATION_SPEED_COEFFICIENT))
 			to_chat(src, span_warning("Your eyes water."))
@@ -1226,7 +1226,7 @@
 		return TRUE
 	if((src.sdisabilities & (BLIND | DEAF)) || src.ear_damage)
 		return TRUE
-	if(src.species.get_ssd(src) && !src.client && !src.teleop)
+	if(src.species.get_ssd(src) && !src.client && !src.teleop())
 		return TRUE
 	if(src.species.vision_organ)
 		var/obj/item/organ/vision = src.organ_in(src.species.vision_organ)
@@ -1245,7 +1245,7 @@
 		return 0	// Cancelled by a component
 
 	//SSD check, if a logged player is awake put them back to sleep!
-	if(src.species.get_ssd(src) && !src.client && !src.teleop)
+	if(src.species.get_ssd(src) && !src.client && !src.teleop())
 		src.status_at_least(STAT_SLEEPING, 2)
 	if(src.stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
 		life_status_dead_senses()
@@ -1465,9 +1465,9 @@
 		life_hud_condition_overlays()
 		life_hud_nutrition_alert()
 		life_hud_sight_overlays()
-		if(!src.surrounding_belly() && !src.previewing_belly) // Belly fullscreens safety
+		if(!src.surrounding_belly() && !vore_previewing_of(src)) // Belly fullscreens safety
 			src.clear_fullscreen("belly")
-			src.belly_overlay_tgui?.hide() // hide TGUI belly overlay
+			src.belly_overlay_window()?.hide() // hide TGUI belly overlay
 		if(CONFIG_GET(flag/welder_vision) && life_hud_welder_vision())
 			src.claim_global_hud(GLOB.global_hud.darkMask)
 
@@ -1624,7 +1624,7 @@
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
 		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
-		key += "|\ref[limb_image][limb_image.color]"
+		key += "|[ref_token(E)][limb_image.color]" // a limb's hud image is made once and kept, so the limb names it
 	var/show_pain = trauma_val && src.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
 	if(key == sparse_get(src, health_doll_key))
@@ -1847,7 +1847,7 @@
 
 /// MED-6: no traumatic shock building and none to recover from.
 /mob/living/carbon/human/proc/life_shock_due()
-	return src.shock_stage > 0 || src.traumatic_shock >= 80
+	return src.shock_stage > 0 || src.current_pain() >= 80
 
 /// Pain and shock come through injure/mend and the body (MOB_KEY_HEALTH). This is the fallback.
 /mob/living/carbon/human/proc/life_shock_rewake()
@@ -1855,10 +1855,9 @@
 
 /// Traumatic shock stages from pain.
 /mob/living/carbon/human/proc/life_shock(datum/seq_frame/life/F)
-	src.updateshock()
 	if(in_godmode(src))
 		return 0	// Cancelled by a component
-	if(src.traumatic_shock >= 80 && src.can_feel_pain())
+	if(src.current_pain() >= 80 && src.can_feel_pain())
 		src.adjust_shock(1, "traumatic pain")
 	else
 		src.adjust_shock(-1, "recovery")
@@ -1868,32 +1867,32 @@
 		return 0
 
 	if(src.shock_stage == 10)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			src.custom_pain("[pick("It hurts so much", "You really need some painkillers", "Dear god, the pain")]!", 40)
 
 	if(src.shock_stage >= 30)
 		if(src.shock_stage == 30 && !isbelly(src.loc))
 			src.automatic_custom_emote(VISIBLE_MESSAGE, "is having trouble keeping their eyes open.", check_stat = TRUE)
 		src.status_at_least(STAT_BLURRY, 2)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			src.status_at_least(STAT_STUTTERING, 5)
 
 
 	if(src.shock_stage == 40)
-		if(src.traumatic_shock >= 80)
+		if(src.current_pain() >= 80)
 			to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 
 	if (src.shock_stage >= 60)
 		if(src.shock_stage == 60 && !isbelly(src.loc))
 			src.automatic_custom_emote(VISIBLE_MESSAGE, "'s body becomes limp.", check_stat = TRUE)
 		if (prob(2))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 			src.status_at_least(STAT_WEAKENED, 20)
 
 	if(src.shock_stage >= 80)
 		if (prob(5))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 				if(prob(20) && !isbelly(src.loc))
 					src.emote("pain")
@@ -1901,7 +1900,7 @@
 
 	if(src.shock_stage >= 120)
 		if (prob(2))
-			if(src.traumatic_shock >= 80)
+			if(src.current_pain() >= 80)
 				to_chat(src, span_danger("[pick("You black out", "You feel like you could die any moment now", "You are about to lose consciousness")]!"))
 				if(prob(40) && !isbelly(src.loc))
 					src.emote("pain")
@@ -2232,7 +2231,6 @@
 /mob/living/carbon/human/rejuvenate()
 	restore_blood()
 	set_shock(0, "rejuvenate")
-	traumatic_shock = 0
 	..()
 
 // The defibrillation window needs no Life stage: the brain charges it on the body clock when
@@ -2254,8 +2252,8 @@
 // === merged from life_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /// MED-6: neither gaining (well fed, gain on, under the cap) nor losing (starving, loss on).
 /mob/living/carbon/human/proc/life_weight_due()
-	var/gaining = sparse_get_or(src, weight_gain, 1) && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT
-	var/losing = sparse_get_or(src, weight_loss, 0.5) && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
+	var/gaining = sparse_get_or(src, weight_gain, 1) && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) < MAX_MOB_WEIGHT
+	var/losing = sparse_get_or(src, weight_loss, 0.5) && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) > MIN_MOB_WEIGHT
 	return gaining || losing
 
 /// Nutrition is written through set_nutrition() (MOB_KEY_NUTRITION). This is the fallback (weight preferences).
@@ -2265,11 +2263,11 @@
 /// Weight gain and loss from nutrition.
 /mob/living/carbon/human/proc/life_weight(datum/seq_frame/life/F)
 	if (nutrition_of(src) >= 0 && src.stat != 2)
-		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT && sparse_get_or(src, weight_gain, 1))
-			src.weight += src.species.metabolism*(0.01*sparse_get_or(src, weight_gain, 1))
+		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) < MAX_MOB_WEIGHT && sparse_get_or(src, weight_gain, 1))
+			sparse_set_or(src, weight, sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) + (src.species.metabolism*(0.01*sparse_get_or(src, weight_gain, 1))), DEFAULT_MOB_WEIGHT)
 
-		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && src.weight > MIN_MOB_WEIGHT && sparse_get_or(src, weight_loss, 0.5))
-			src.weight -= src.species.metabolism*(0.01*sparse_get_or(src, weight_loss, 0.5)) // starvation weight loss
+		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) > MIN_MOB_WEIGHT && sparse_get_or(src, weight_loss, 0.5))
+			sparse_set_or(src, weight, sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) - (src.species.metabolism*(0.01*sparse_get_or(src, weight_loss, 0.5))), DEFAULT_MOB_WEIGHT) // starvation weight loss
 
 //Our call for the NIF to do whatever
 /// MED-6: no NIF, nothing to run.

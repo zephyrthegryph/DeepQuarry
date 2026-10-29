@@ -59,7 +59,6 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 	req_one_access = list(ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
-	blocks_emissive = NONE
 	flags = WALL_ITEM
 	circuit = /obj/item/circuitboard/airalarm
 	mode = AALARM_MODE_SCRUBBING
@@ -121,7 +120,7 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
-	configure(movable_motion(unacidable = TRUE))
+	configure(movable_motion(blocks_emissive = NONE, unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 30))
 	rolls(nameof(name), PROC_REF(roll_alarm_name))
 	setup(PROC_REF(register_initial_alarm))
@@ -404,16 +403,16 @@ CAPABILITIES(/obj/machinery/alarm)
 		contract_atmos_revision++
 		emit_contract_event(CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, list(
 			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "atmos-service:[REF(src)]",
+			"fact_id" = "atmos-service:[ref_token(src)]",
 			"fact_revision" = contract_atmos_revision,
-			"service_id" = REF(src),
+			"service_id" = ref_token(src),
 			"danger_level" = danger_level,
 			"metrics" = list(
 				"pressure" = S.pressure,
 				"temperature" = S.temperature,
 			),
 			"detail" = "[alarm_area] atmospheric service reports danger level [danger_level], [round(S.pressure, 0.1)] kPa, and [round(S.temperature, 0.1)] K.",
-		), "atmos-service:[REF(src)]:[contract_atmos_revision]", src)
+		), "atmos-service:[ref_token(src)]:[contract_atmos_revision]", src)
 	if(mode == AALARM_MODE_CYCLE && S.pressure < ONE_ATMOSPHERE * 0.05)
 		set_mode(AALARM_MODE_FILL)
 		apply_mode()
@@ -540,8 +539,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	for(var/kind in list(AREA_AIR_VENT, AREA_AIR_SCRUBBER))
 		var/list/info = alarm_area.air_device_info(kind)
 		for(var/id_tag in alarm_area.air_device_names(kind))
-			var/list/I = LAZYACCESS(info, id_tag)
-			if(I && ELAPSED_SINCE(src, I["timestamp"], CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
+			var/datum/air_device_status/status = LAZYACCESS(info, id_tag)
+			if(status && ELAPSED(status, reported_at, CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
 				continue
 			send_signal(id_tag, list("status" = TRUE))
 
@@ -678,7 +677,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	data["vents"] = vents
 	var/list/vent_info = alarm_area?.air_device_info(AREA_AIR_VENT)
 	for(var/id_tag in alarm_area?.air_device_names(AREA_AIR_VENT))
-		var/list/info = LAZYACCESS(vent_info, id_tag)
+		var/datum/air_device_status/status = LAZYACCESS(vent_info, id_tag)
+		var/list/info = status?.fields
 		if(!info)
 			continue
 		vents.Add(list(list(
@@ -698,7 +698,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	data["scrubbers"] = scrubbers
 	var/list/scrub_info = alarm_area?.air_device_info(AREA_AIR_SCRUBBER)
 	for(var/id_tag in alarm_area?.air_device_names(AREA_AIR_SCRUBBER))
-		var/list/info = LAZYACCESS(scrub_info, id_tag)
+		var/datum/air_device_status/status = LAZYACCESS(scrub_info, id_tag)
+		var/list/info = status?.fields
 		if(!info)
 			continue
 		scrubbers += list(list(

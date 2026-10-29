@@ -177,6 +177,106 @@ fn embeds(text: &str, name: &str) -> bool {
     })
 }
 
+/// DreamMaker's `var_before_def` in a procedure body: a bare name used before the `var/` line that
+/// declares it, in the block that line belongs to (or a block nested in it). DreamMaker scopes a local
+/// over its whole enclosing block, so the earlier use names the local; it warns twice (the use, the
+/// definition) and code generation then fails with a bare `invalid variable` that has no location.
+/// A use that a declaration of the same name precedes (a `for(var/x ...)` header, an earlier `var/x`),
+/// a member access (`src.x`), a call (`x()`), a path segment, a named argument or a parameter is not one.
+/// Returns (name, use offset, definition offset), one per definition, in authored order.
+pub(crate) fn uses_before_definition(lines: &[Line<'_>]) -> Vec<(String, usize, usize)> {
+    let Some(header) = lines.first() else {
+        return Vec::new();
+    };
+    let open = header.tokens.iter().position(|token| token.1 == "(");
+    let parameters: Vec<&str> = header
+        .tokens
+        .iter()
+        .skip(open.map_or(header.tokens.len(), |at| at + 1))
+        .filter(|token| token.0 == TokenKind::Ident)
+        .map(|token| token.1)
+        .collect();
+    let mut found = Vec::new();
+    for (at, line) in lines.iter().enumerate().skip(1) {
+        if line.continuation || line.tokens.is_empty() {
+            continue;
+        }
+        let Some(declaration) = local_declaration(line) else {
+            continue;
+        };
+        if parameters.contains(&declaration.name) {
+            continue;
+        }
+        // The block the declaration belongs to starts after the nearest shallower statement line.
+        let start = (1..at)
+            .rev()
+            .find(|&k| !lines[k].continuation && !lines[k].tokens.is_empty() && lines[k].indent < line.indent)
+            .map_or(1, |k| k + 1);
+        // An earlier declaration of the name: the uses below it are its own.
+        let declared_before = lines[1..at].iter().position(|earlier| declares(earlier, declaration.name));
+        let mut depth = 0usize;
+        let mut first_use = None;
+        for (index, earlier) in lines.iter().enumerate().take(at).skip(1) {
+            if !earlier.continuation {
+                depth = 0;
+            }
+            for (position, token) in earlier.tokens.iter().enumerate() {
+                match token.1 {
+                    "(" | "[" => depth += 1,
+                    ")" | "]" => depth = depth.saturating_sub(1),
+                    _ => {}
+                }
+                if index < start || token.0 != TokenKind::Ident || token.1 != declaration.name {
+                    continue;
+                }
+                if declared_before.is_some_and(|k| k + 1 <= index) {
+                    continue;
+                }
+                let previous = position.checked_sub(1).map(|k| earlier.tokens[k].1);
+                let next = earlier.tokens.get(position + 1).map(|next| next.1);
+                let after = earlier.tokens.get(position + 2).map(|next| next.1);
+                if matches!(previous, Some("." | ":" | "/")) || next == Some("(") {
+                    continue;
+                }
+                if depth > 0 && next == Some("=") && after != Some("=") {
+                    continue; // a named argument
+                }
+                first_use = Some(token.2);
+                break;
+            }
+            if first_use.is_some() {
+                break;
+            }
+        }
+        if let Some(use_offset) = first_use {
+            found.push((declaration.name.to_string(), use_offset, declaration.offset));
+        }
+    }
+    found
+}
+
+/// Whether `line` declares `name` anywhere (`var/.../name` at its start or in a `for(` header).
+fn declares(line: &Line<'_>, name: &str) -> bool {
+    let tokens = &line.tokens;
+    tokens.iter().enumerate().any(|(index, token)| {
+        token.1 == "var"
+            && tokens.get(index + 1).is_some_and(|slash| slash.1 == "/")
+            && {
+                let mut at = index + 2;
+                let mut last = None;
+                while let Some((TokenKind::Ident, text, _)) = tokens.get(at) {
+                    last = Some(*text);
+                    if tokens.get(at + 1).is_some_and(|slash| slash.1 == "/") {
+                        at += 2;
+                    } else {
+                        break;
+                    }
+                }
+                last == Some(name)
+            }
+    })
+}
+
 /// Offsets (in body text) of locals declared but never read.
 pub(crate) fn unused_locals(source: &str, shared_field: &SharedField<'_>) -> Vec<(String, usize)> {
     unused_locals_typed(source, shared_field, &|_| true)
@@ -304,6 +404,10 @@ pub(crate) fn capture(
                         .into_iter()
                         .map(|offset| (WarningCode::AccidentalAssign, None, offset))
                         .collect();
+                    for (name, use_offset, definition_offset) in uses_before_definition(&significant_lines(source)) {
+                        found.push((WarningCode::VarBeforeDef, Some(name.clone()), use_offset));
+                        found.push((WarningCode::VarBeforeDefDefinition, Some(name), definition_offset));
+                    }
                     found.extend(
                         unused_locals_typed(source, &shared_field, &|path| {
                             crate::source_checks::known_type(tree, path)
@@ -409,6 +513,31 @@ mod tests {
 	return k
 ";
         assert!(names(source).is_empty());
+    }
+    fn before_definition(source: &str) -> Vec<(String, usize, usize)> {
+        super::uses_before_definition(&super::significant_lines(source))
+    }
+    #[test]
+    fn use_before_definition_follows_dreammaker() {
+        // Pinned against DreamMaker 516.1687 (fixtures/diagnostics/cases/var_before_def_*).
+        let source = "/datum/e/proc/r(x)\n\tif(x)\n\t\tanswered = 1\n\t\treturn null\n\tvar/datum/answered = new\n\treturn answered\n";
+        let found = before_definition(source);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].0, "answered");
+        assert_eq!(&source[found[0].1..found[0].1 + 8], "answered");
+        assert!(source[..found[0].2].ends_with("var/datum/"));
+        assert_eq!(before_definition("/proc/r()\n\tcount = 1\n\tvar/count = 2\n\treturn count\n").len(), 1);
+        for clean in [
+            "/datum/e/proc/inner(x)\n\tanswered = 1\n\tif(x)\n\t\tvar/answered = 2\n\t\treturn answered\n",
+            "/datum/e/proc/dotted()\n\tsrc.answered = 1\n\tvar/answered = 2\n\treturn answered\n",
+            "/datum/e/proc/looped(list/x)\n\tanswered = 1\n\tfor(var/answered in x)\n\t\treturn answered\n",
+            "/datum/e/proc/called()\n\tfoo()\n\tvar/foo = 2\n\treturn foo\n",
+            "/datum/e/proc/after_loop(list/x)\n\tfor(var/item in x)\n\t\treturn item\n\tvar/item = 1\n\treturn item\n",
+            "/proc/named()\n\tworld.log << list(count = 1)\n\tvar/count = 2\n\treturn count\n",
+            "/proc/param(count)\n\tcount = 1\n\tvar/count = 2\n\treturn count\n",
+        ] {
+            assert!(before_definition(clean).is_empty(), "{clean}");
+        }
     }
     #[test]
     fn nested_scope_ends_at_dedent() {

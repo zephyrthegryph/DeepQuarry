@@ -112,7 +112,7 @@
 		return 0
 	return 1
 
-/mob/living/silicon/ai/emote(act, m_type, message)
+/mob/living/silicon/ai/emote(act, m_type, message, typed = FALSE)
 	var/obj/machinery/hologram/holopad/T = holo
 	if(T && LAZYACCESS(T.masters, src)) //Is the AI using a holopad?
 		. = holopad_emote(message)

@@ -105,7 +105,13 @@ The "dust" will damage the hull of the station causin minor hull breaches.
 			return
 	return
 
-/obj/effect/space_dust/Bumped(atom/A)
+/// The bump notice: `A` walked into it (was Bumped()).
+/obj/effect/space_dust/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/A = N.bumper
 	Bump(A)
 	return
+
+CAPABILITIES(/obj/effect/space_dust)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 

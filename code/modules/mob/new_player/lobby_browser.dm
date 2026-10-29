@@ -91,8 +91,9 @@
 		return TRUE
 
 	var/time_till_respawn = time_till_respawn()
-	if(time_till_respawn == -1) // Special case, never allowed to respawn
+	if(time_till_respawn == RESPAWN_NEVER) // Special case, never allowed to respawn
 		to_chat(user, span_warning("Respawning is not allowed!"))
+		return TRUE
 	else if(time_till_respawn) // Nonzero time to respawn
 		to_chat(user, span_warning("You can't respawn yet! You need to wait another [round(time_till_respawn/10/60, 0.1)] minutes."))
 		return TRUE
@@ -194,7 +195,7 @@
 		replaced_by(src)
 
 		// pAI notify if we have be pAI invite on
-		SSpai.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round
+		SSpai.clear_pai_block_delay(ref_token(observer)) // Reset invite cooldown if we cancelled all invites for the round
 		if(SSpai.invite_valid(observer))
 			observer.pai_card_ping()
 

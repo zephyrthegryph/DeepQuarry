@@ -112,7 +112,7 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	// The flame heats the body; read where it is now.
 	var/previous_temp = bunsen_last_temp || get_temperature()
 	var/current_temp = get_temperature()
-	bunsen_last_temp = num_or_null(current_temp)
+	bunsen_last_temp = current_temp
 
 	// Slosh and toss. We use an internal distilling container, react it in there, then pass it back.
 	held_container.reagents.trans_to_obj(src, held_container.reagents.total_volume)
@@ -181,3 +181,4 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 		drop_held_container()
 		if(heating)
 			end_boil()
+SCHEMA(/obj/machinery/bunsen_burner, bunsen_last_temp, num())

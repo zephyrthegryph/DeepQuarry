@@ -91,7 +91,7 @@
 		return
 	new /obj/effect/effect/teleport_greyscale(src.loc)
 	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps
-	// when the mob's stat changes via its /datum/definition_event/mob_statchange handler.
+	// when the mob's stat changes via its /datum/notice/mob_statchange handler.
 	return_player_to_tf_holder("reverted mob transform")
 	rel_set(src, nameof(tf_mob_holder), null)
 	var/turf/get_dat_turf = get_turf(src)
@@ -143,10 +143,10 @@
 	sparse_set_or(new_mob, appendage_alt_setting, sparse_get_or(src, appendage_alt_setting, FALSE), FALSE)
 
 	record_copy(new_mob.vore_prefs, vore_prefs)
-	rel_set(new_mob, nameof(spont_belly_rear), spont_belly_rear)
-	rel_set(new_mob, nameof(spont_belly_left), spont_belly_left)
-	rel_set(new_mob, nameof(spont_belly_front), spont_belly_front)
-	rel_set(new_mob, nameof(spont_belly_right), spont_belly_right)
+	sparse_set(new_mob, spont_belly_rear, sparse_get(src, spont_belly_rear))
+	sparse_set(new_mob, spont_belly_left, sparse_get(src, spont_belly_left))
+	sparse_set(new_mob, spont_belly_front, sparse_get(src, spont_belly_front))
+	sparse_set(new_mob, spont_belly_right, sparse_get(src, spont_belly_right))
 	sparse_set_or(new_mob, autotransferable, sparse_get_or(src, autotransferable, TRUE), TRUE)
 
 // Requires a /mob/living type path for transformation. Returns the new mob on success, null in all other cases.

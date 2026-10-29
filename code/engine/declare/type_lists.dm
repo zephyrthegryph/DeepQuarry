@@ -98,33 +98,6 @@ GLOBAL_LIST_EMPTY(type_list_impure)
 /// Set by the fixture test around a deliberate impurity: record it without a runtime.
 GLOBAL_VAR_INIT(type_list_expect_impure, FALSE)
 
-#ifdef UNIT_TESTS
-/// The first time a second, different instance of a type asks for a list, rebuild it on that
-/// instance and compare: a per-type list that reads instance state fails the run.
-/proc/type_list_purity_check(datum/D, proc_ref, list/cached, post)
-	// A table built during global init (a GLOB datum's New() writing an owned var reads its type's
-	// declared entries) runs before these globals exist: that type is checked on a later instance.
-	if(!islist(GLOB.type_list_purity))
-		return
-	var/key = "[D.type]|[proc_ref]"
-	var/seen = GLOB.type_list_purity[key]
-	if(seen == TRUE)
-		return
-	var/my_ref = ref(D)
-	if(isnull(seen))
-		GLOB.type_list_purity[key] = my_ref
-		return
-	if(seen == my_ref)
-		return
-	GLOB.type_list_purity[key] = TRUE
-	var/list/again = build_type_list(D, proc_ref, post)
-	if(!type_list_same(cached, again, 0))
-		var/msg = TYPE_LIST_IMPURE(D.type, proc_ref)
-		GLOB.type_list_impure += msg
-		if(!GLOB.type_list_expect_impure)
-			stack_trace(msg)
-#endif
-
 /// Structural equality for per-type list results: lists element by element (keys and values),
 /// datums by type and by every non-tmp var that differs from its initial value, anything else by ==.
 /proc/type_list_same(a, b, depth)

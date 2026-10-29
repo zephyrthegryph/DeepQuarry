@@ -310,7 +310,6 @@ impl InitializerFragments {
                     self.values.insert_with(
                         Arc::clone(&key.key),
                         receipts::reads(key, semantic_reads),
-                        Vec::new(),
                         std::mem::size_of::<RetainedFragment>(),
                         || RetainedFragment {
                             code: RetainedCode::Assignment(code),
@@ -389,7 +388,6 @@ impl InitializerFragments {
             );
         }
         let reads = receipts::reads(key, semantic_reads);
-        let versions = receipts::versions(recorder.domain_receipts());
         let (stripped, captures) = fragment.clone().split_modified();
         let recipes = captures
             .iter()
@@ -405,7 +403,7 @@ impl InitializerFragments {
         if let Some(recipes) = recipes {
             let weight = std::mem::size_of::<RetainedFragment>();
             self.values
-                .insert_with(Arc::clone(&key.key), reads, versions, weight, || {
+                .insert_with(Arc::clone(&key.key), reads, weight, || {
                     RetainedFragment {
                         references: Vec::new(),
                         root_indexes: Vec::new(),

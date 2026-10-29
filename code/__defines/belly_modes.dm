@@ -45,6 +45,10 @@
 #define BELLY_TURBO_TICK		(2 SECONDS)
 
 // Defines for weight system
+/// The weight a mob has until something sets it (the sparse slot weight).
+#define DEFAULT_MOB_WEIGHT		137
+/// How fast a mob's weight follows its nutrition in the persistence tick (persist.dm).
+#define MOB_WEIGHT_METABOLISM	0.0015
 #define MIN_MOB_WEIGHT			70
 #define MAX_MOB_WEIGHT			500
 #define MIN_NUTRITION_TO_GAIN	450	// Above this amount you will gain weight

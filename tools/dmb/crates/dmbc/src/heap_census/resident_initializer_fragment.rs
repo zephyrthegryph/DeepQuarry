@@ -3,7 +3,6 @@ use super::*;
 use crate::lowering_memo::ResolverRead;
 use crate::modified_initializers::ExpressionRecipe;
 use dm_codegen_byond::lower_resolver::ResolverProc;
-use dm_ir::ReadDomain;
 
 impl HeapCensus {
     pub(crate) fn initializer_fragment_recipes(
@@ -26,7 +25,6 @@ pub(crate) fn weight(
     code: &ResolverProc,
     key: &[u8],
     reads: &Vec<ResolverRead>,
-    versions: &Vec<(ReadDomain, u128)>,
     recipes: &Vec<ExpressionRecipe>,
     references: &Vec<dm_ir::SymRef>,
 ) -> Option<usize> {
@@ -34,7 +32,6 @@ pub(crate) fn weight(
     let private = super::resident_weight::resolver_code_charge(&mut census, code);
     census.initializer_fragment_recipes(recipes, references);
     census.vec_payload("resident_initializer_fragment.reads", reads);
-    census.vec_payload("resident_initializer_fragment.versions", versions);
     for read in reads {
         super::resident_weight::answer(&mut census, &read.answer);
     }
@@ -71,22 +68,20 @@ mod tests {
             modified_instances: Default::default(),
         };
         let reads = Vec::new();
-        let versions = Vec::new();
         let recipes = Vec::new();
         let mut references = Vec::new();
-        let base = weight(&code, b"key", &reads, &versions, &recipes, &references).unwrap();
+        let base = weight(&code, b"key", &reads, &recipes, &references).unwrap();
         code.procedure
             .local_names
             .push(String::with_capacity(10000));
         code.resources.insert(dm_ir::SymbolId::of("resource"), 123);
-        let after = weight(&code, b"key", &reads, &versions, &recipes, &references).unwrap();
+        let after = weight(&code, b"key", &reads, &recipes, &references).unwrap();
         assert!(after >= base + 10000);
         assert_eq!(
             weight(
                 &code,
                 b"longer-key",
                 &reads,
-                &versions,
                 &recipes,
                 &references
             )
@@ -113,11 +108,11 @@ mod tests {
                 source_span: None,
             },
         );
-        assert!(weight(&code, b"key", &reads, &versions, &recipes, &references).unwrap() > after);
+        assert!(weight(&code, b"key", &reads, &recipes, &references).unwrap() > after);
         code.modified_instances.clear();
         references.reserve_exact(1000);
         assert!(
-            weight(&code, b"key", &reads, &versions, &recipes, &references).unwrap()
+            weight(&code, b"key", &reads, &recipes, &references).unwrap()
                 >= after + 1000 * size_of::<dm_ir::SymRef>()
         );
     }

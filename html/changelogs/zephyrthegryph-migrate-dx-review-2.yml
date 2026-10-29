@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Converted open_request prompts in op effects to asks() steps, and effect refusals to needs() requirements (dx_review wave 2)"

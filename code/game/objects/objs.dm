@@ -6,12 +6,6 @@
 	var/w_class // Size of the object.
 	animate_movement = 2
 	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
-	var/can_speak = 0 //For MMIs and admin trickery. If an object has a brainmob in its contents, set this to 1 to allow it to speak.
-
-	var/show_examine = TRUE	// Does this pop up on a mob when the mob is examined?
-
-	var/explosion_resistance
-
 	uses_integrity = TRUE
 
 /// Behaviour flags of an object (sparse slot obj_flags, default CAN_BE_HIT).
@@ -25,15 +19,15 @@ sparse(/obj, obj_flags, type = num)
 		"actor_account" = producer_account,
 		"department" = department,
 		"origin_department" = department,
-		"physical_item_id" = REF(src),
+		"physical_item_id" = ref_token(src),
 		"item_type" = type,
 		"item_name" = name,
-		"fact_id" = "production:[REF(src)]",
+		"fact_id" = "production:[ref_token(src)]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
 		"metrics" = list("value" = sparse_get_or(src, economic_export_value, 0)),
 		"detail" = "Fabricated [name] for [department].",
-	), "item-produced:[REF(src)]", src)
+	), "item-produced:[ref_token(src)]", src)
 	// Preserve specialized export valuation and never count an object twice.
 	make_sellable(/datum/sellable/manufactured)
 
@@ -153,8 +147,9 @@ sparse(/obj, obj_flags, type = num)
 	return 0
 
 /obj/proc/hear_talk(mob/M, list/message_pieces, verb)
-	if(talking_atom)
-		talking_atom.catchMessage(multilingual_to_message(message_pieces), M)
+	var/datum/talking_atom/talker = talking_atom()
+	if(talker)
+		talker.catchMessage(multilingual_to_message(message_pieces), M)
 /*
 	var/mob/mo = locate(/mob) in src
 	if(mo)

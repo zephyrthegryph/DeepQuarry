@@ -25,7 +25,7 @@ fn anonymous_executable_roundtrips_and_rechecks_negative_reads() {
     let bytes = encode_executable(
         b"exact typed initializer",
         &recorder.reads(),
-        &recorder.domain_receipts(),
+        &Vec::new(),
         &code,
     )
     .unwrap();
@@ -95,7 +95,7 @@ fn binary_failure_wire_preserves_optional_spans_and_rechecks_answers() {
         b"failure",
         None,
         &recorder.reads(),
-        &recorder.domain_receipts(),
+        &Vec::new(),
         &errors,
     )
     .unwrap();
@@ -108,82 +108,6 @@ fn binary_failure_wire_preserves_optional_spans_and_rechecks_answers() {
     let mut invalid = bytes;
     *invalid.last_mut().unwrap() ^= 1;
     assert!(validate(&invalid).is_err());
-}
-#[test]
-fn domain_receipts_apply_to_anonymous_success_and_failure_wire() {
-    struct Versioned {
-        version: Option<u128>,
-        calls: std::sync::atomic::AtomicUsize,
-        changed: bool,
-    }
-    impl Resolver for Versioned {
-        fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-            self.version
-        }
-        fn resolve(&self, _: ResolveQuery) -> dm_ir::ResolvedMeaning {
-            self.calls
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            if self.changed {
-                dm_ir::ResolvedMeaning::Symbol(SymbolId::of("changed"))
-            } else {
-                dm_ir::ResolvedMeaning::Missing
-            }
-        }
-    }
-    let host = |version, changed| Versioned {
-        version,
-        changed,
-        calls: Default::default(),
-    };
-    let original = host(Some(9), false);
-    let recorder = crate::lowering_memo::RecordingResolver::new(&original);
-    // A persistent domain: global vars now live in the process-local owner scalar domain (9eb5b8f1d5), whose
-    // receipts never reach disk.
-    recorder.resolve(ResolveQuery::Resource(SymbolId::of("absent.asset")));
-    let ast = dm_syntax::parse("/proc/p()\n    return 7\n");
-    let code = dm_codegen_byond::compile_simple_proc_with_resolver(
-        &ast.items[0].children,
-        &Default::default(),
-        &Default::default(),
-        &recorder,
-    )
-    .unwrap();
-    let success = encode_executable(
-        b"versioned",
-        &recorder.reads(),
-        &recorder.domain_receipts(),
-        &code,
-    )
-    .unwrap();
-    let failure = encode_failure(
-        b"versioned",
-        None,
-        &recorder.reads(),
-        &recorder.domain_receipts(),
-        &[dm_codegen_byond::LowerError {
-            primary_anchor: None,
-            related: Vec::new(),
-            statement: "bad".into(),
-            reason: "unsupported".into(),
-            span: None,
-            kind: dm_codegen_byond::LowerErrorKind::UnsupportedModel,
-        }],
-    )
-    .unwrap();
-    let same = host(Some(9), false);
-    assert!(decode_executable(&success, b"versioned", &same, 0).is_some());
-    assert!(decode_failure(&failure, b"versioned", None, &same).is_some());
-    assert_eq!(same.calls.load(std::sync::atomic::Ordering::Relaxed), 0);
-    let unknown = host(None, false);
-    assert!(decode_executable(&success, b"versioned", &unknown, 0).is_some());
-    assert!(decode_failure(&failure, b"versioned", None, &unknown).is_some());
-    assert!(unknown.calls.load(std::sync::atomic::Ordering::Relaxed) >= 2);
-    let changed = host(Some(10), true);
-    assert!(decode_executable(&success, b"versioned", &changed, 0).is_none());
-    assert!(decode_failure(&failure, b"versioned", None, &changed).is_none());
-    assert!(
-        validate_versions(&[(dm_ir::ReadDomain::Tree, 1), (dm_ir::ReadDomain::Tree, 2)]).is_err()
-    );
 }
 #[test]
 fn unified_anonymous_lookup_preserves_failure_priority_and_exact_read_invalidation() {
@@ -200,7 +124,7 @@ fn unified_anonymous_lookup_preserves_failure_priority_and_exact_read_invalidati
     let success = encode_executable(
         b"anonymous",
         &recorder.reads(),
-        &recorder.domain_receipts(),
+        &Vec::new(),
         &code,
     )
     .unwrap();
@@ -219,7 +143,7 @@ fn unified_anonymous_lookup_preserves_failure_priority_and_exact_read_invalidati
         b"anonymous",
         None,
         &recorder.reads(),
-        &recorder.domain_receipts(),
+        &Vec::new(),
         &errors,
     )
     .unwrap();

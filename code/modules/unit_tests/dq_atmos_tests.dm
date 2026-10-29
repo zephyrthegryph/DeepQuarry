@@ -1162,34 +1162,38 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 /// own clean substrate rather than trusting the generic adjacency finder.
 /proc/dq_atmos_test_find_clear_pipe_run(count)
 	dq_atmos_test_restore_walls()
-	for(var/turf/simulated/floor/cand in world)
-		if(!cand.air || cand.blocks_air)
-			continue
-		if(locate_within(cand, /obj/machinery/atmospherics))
-			continue
-		for(var/direction in GLOB.cardinal)
-			var/list/run = list(cand)
-			var/turf/cur = cand
-			var/ok = TRUE
-			for(var/i in 2 to count)
-				var/turf/nxt = get_step(cur, direction)
-				if(!istype(nxt, /turf/simulated/floor))
-					ok = FALSE
-					break
-				var/turf/simulated/floor/nf = nxt
-				if(!nf.air || nf.blocks_air || (locate_on(nf, /obj/machinery/atmospherics)))
-					ok = FALSE
-					break
-				run += nf
-				cur = nf
-			if(ok && run.len == count)
-				for(var/turf/open/T as anything in run)
-					dq_atmos_test_snapshot_air_around(T)
-					// What stands on the floor (the bridge's grille and windows) takes the heat of any hot air the test makes and keeps it, then warms
-					// the air of every later test that takes this floor: it is put back at the end.
-					GLOB.current_test?.restore_occupant_heat_after(T)
-				log_test("PIPE RUN: [count] clear floor(s) from ([cand.x],[cand.y],[cand.z]) heading [direction] in [get_area(cand)]")
-				return run
+	// A room the map regulates (vents, scrubbers, freezers, heaters, air alarms) drifts as world time passes: the first pass keeps to quiet rooms, the second takes what is left.
+	for(var/pass in 1 to 2)
+		for(var/turf/simulated/floor/cand in world)
+			if(!cand.air || cand.blocks_air)
+				continue
+			if(pass == 1 && unit_test_regulated_room(cand))
+				continue
+			if(locate_within(cand, /obj/machinery/atmospherics))
+				continue
+			for(var/direction in GLOB.cardinal)
+				var/list/run = list(cand)
+				var/turf/cur = cand
+				var/ok = TRUE
+				for(var/i in 2 to count)
+					var/turf/nxt = get_step(cur, direction)
+					if(!istype(nxt, /turf/simulated/floor))
+						ok = FALSE
+						break
+					var/turf/simulated/floor/nf = nxt
+					if(!nf.air || nf.blocks_air || (locate_on(nf, /obj/machinery/atmospherics)))
+						ok = FALSE
+						break
+					run += nf
+					cur = nf
+				if(ok && run.len == count)
+					for(var/turf/open/T as anything in run)
+						dq_atmos_test_snapshot_air_around(T)
+						// What stands on the floor (the bridge's grille and windows) takes the heat of any hot air the test makes and keeps it, then warms
+						// the air of every later test that takes this floor: it is put back at the end.
+						GLOB.current_test?.restore_occupant_heat_after(T)
+					log_test("PIPE RUN: [count] clear floor(s) from ([cand.x],[cand.y],[cand.z]) heading [direction] in [get_area(cand)]")
+					return run
 	return null
 
 /// Globally tracks turfs converted to walls for test isolation. We restore
@@ -1230,6 +1234,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /proc/dq_atmos_test_snapshot_air(turf/open/T)
 	if(!istype(T) || !T.air)
 		return
+	GLOB.current_test?.capture_ambient() // before the first floor is declared: the put-back covers every floor the test claims
 	GLOB.dq_atmos_test_declared[T] = TRUE
 	if(T in GLOB.dq_atmos_test_air_snapshots)
 		return
@@ -2362,7 +2367,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_vent_pump_pushes_to_turf
 
 /datum/unit_test/dq_vent_pump_pushes_to_turf/Run()
-	restore_ambient_after() // the frames below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for vent_pump test")
 	var/turf/simulated/floor/T = run[1]
@@ -2459,7 +2463,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_dp_vent_pump_releases_to_turf
 
 /datum/unit_test/dq_dp_vent_pump_releases_to_turf/Run()
-	restore_ambient_after() // the frames below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for the dual-port vent test")
 	var/turf/simulated/floor/T = run[2]
@@ -3386,6 +3389,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_passive_gate_one_way_flow
 
 /datum/unit_test/dq_passive_gate_one_way_flow/Run()
+	restore_ambient_after() // the frames below advance world time: the Telecomms floor this finds cools by design
 	var/turf/simulated/floor/T = null
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
@@ -3596,7 +3600,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_pipeline_port_coupling_heats_the_pipeline
 
 /datum/unit_test/dq_pipeline_port_coupling_heats_the_pipeline/Run()
-	restore_ambient_after() // the frames below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(run, "no clear pipe run for the port coupling test")
 	var/turf/simulated/floor/T = run[1]
@@ -3711,6 +3714,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/A = pair[1]
 	var/turf/simulated/floor/other = pair[2]
 
+	// The real gas frames below step the whole world's heat field, not only this room's (the telecomms plating cools on them), and the breach bleeds the
+	// plating around it into space: every tracked floor's solid temperature is put back at the end.
+	var/list/solid_turfs = unit_test_air_tracked()
+	var/list/solid_temperatures = vg_heat_turf_temperatures(solid_turfs)
+
 	dq_atmos_test_isolate_pair(A, other)
 
 	var/turf/space/S = dq_atmos_test_open_to_space(A)
@@ -3761,6 +3769,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// to their original turf types so later tests see a clean sealed room.
 	A.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	dq_atmos_test_restore_walls()
+	var/list/solid_now = vg_heat_turf_temperatures(solid_turfs)
+	for(var/i in 1 to length(solid_turfs))
+		var/turf/near = solid_turfs[i]
+		if(solid_now[i] != solid_temperatures[i] && solid_temperatures[i] >= 0 && !QDELETED(near))
+			heat_set_solid(near, solid_temperatures[i])
 
 	TEST_ASSERT(final_pressure < initial_pressure, \
 		"pressurised floor adjacent to space didn't depressurize: [initial_pressure] → [final_pressure]")
@@ -3776,7 +3789,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_full_atmos_cycle_vent_then_scrubber
 
 /datum/unit_test/dq_full_atmos_cycle_vent_then_scrubber/Run()
-	restore_ambient_after() // the frames below advance world time: the cryogenic rooms warm and the map thermostats act
 	var/turf/simulated/floor/T = null
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
@@ -4072,7 +4084,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the air alarm chain test")
 	restore_area_machines_after(T) // the room's own map alarm answers the plasma: it switches its thermostat
-	restore_ambient_after() // and the vents it commands pump gas into rooms the test never names
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
 	T.air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
@@ -4109,7 +4120,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_air_alarm_second_alarm_follows_own_air/Run()
 	var/turf/simulated/floor/T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the second air alarm test")
-	restore_ambient_after() // the alarm's area vents pump gas into rooms the test never names
 	var/turf/simulated/floor/T2
 	for(var/turf/simulated/floor/candidate in range(3, T))
 		if(candidate != T && candidate.air && !candidate.blocks_air && get_area(candidate) == get_area(T))
@@ -4175,14 +4185,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"area" = A.area_uid,
 		"sigtype" = "status",
 		"device" = "AVP",
-		"timestamp" = world.time,
 	)
 	A.receive_signal(status)
-	TEST_ASSERT_EQUAL(LAZYACCESS(A.alarm_area_ref().air_vent_info, tag), status.data, \
+	var/datum/air_device_status/kept = LAZYACCESS(A.alarm_area_ref().air_vent_info, tag)
+	TEST_ASSERT_EQUAL(kept?.fields, status.data, \
 		"air alarm discarded a matching vent status packet")
 	TEST_ASSERT(tag in A.alarm_area_ref().air_vent_names, \
 		"air alarm did not register the matching vent status tag")
-	LAZYREMOVE(A.alarm_area_ref().air_vent_info, tag)
+	var/area/room = A.alarm_area_ref()
+	if(kept)
+		rel_remove(room, nameof(room.air_vent_info), kept)
 	LAZYREMOVE(A.alarm_area_ref().air_vent_names, tag)
 	qdel(status)
 	qdel(A)
@@ -5583,7 +5595,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_shared_pipenet_vent_and_scrubber_loop
 
 /datum/unit_test/dq_shared_pipenet_vent_and_scrubber_loop/Run()
-	restore_ambient_after() // the frames below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/turf/simulated/floor/T = null
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)

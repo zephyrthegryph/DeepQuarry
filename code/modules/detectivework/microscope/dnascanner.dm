@@ -11,7 +11,7 @@
 	var/tmp/obj/item/forensics/swab/bloodsamp
 	var/scanner_progress = 0
 	var/scanner_rate = 5
-	EXPIRY_DECLARE(last_process_worldtime)
+	var/last_process_worldtime = 0
 	var/report_num = 0
 
 /obj/machinery/dnaforensics/var/scanning = FALSE
@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		if(bloodsamp())
 			set_scanner_progress(0)
 			set_scanning(TRUE)
-			EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
+			STAMP(src, last_process_worldtime, CLOCK_WORLD)
 			to_chat(user, span_notice("Scan initiated."))
 		else
 			to_chat(user, span_warning("Insert an item to scan."))
@@ -117,7 +117,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		//calculate time difference
 		var/deltaT = (world.time - last_process_worldtime) * 0.1
 		set_scanner_progress(min(100, scanner_progress + scanner_rate * deltaT))
-	EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
+	STAMP(src, last_process_worldtime, CLOCK_WORLD)
 
 /obj/machinery/dnaforensics/proc/complete_scan()
 	visible_message(span_notice("[icon2html(src,viewers(src))] makes an insistent chime."), 2)

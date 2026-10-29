@@ -5,7 +5,7 @@
 	var/details
 	var/source_department_id
 	var/confidence = 0
-	EXPIRY_DECLARE(created_at)
+	var/created_at = 0
 	var/expires_at = 0
 	/// Relation view: the atom (or turf) this report is about.
 	var/atom/target
@@ -13,7 +13,7 @@
 CAPABILITIES(/datum/generated_station_knowledge_report)
 	ref_one(nameof(target), /atom)
 
-/datum/generated_station_knowledge_report/proc/is_expired(at_time = EXPIRY_AT(null, CLOCK_WORLD, 0))
+/datum/generated_station_knowledge_report/proc/is_expired(at_time = TIME_NOW(CLOCK_WORLD))
 	return expires_at > 0 && at_time >= expires_at
 
 /datum/generated_station_squad
@@ -39,10 +39,15 @@ CAPABILITIES(/datum/generated_station_knowledge_report)
 	var/kind
 	var/global_coordination = FALSE
 	var/state = GENERATED_STATION_ORDER_PENDING
-	EXPIRY_DECLARE(created_at)
+	var/created_at = 0
 
 /// Event-driven strategic state for one station. Producers submit observations
 /// and capability changes directly; this layer never discovers state by polling mobs.
+/// Report, squad and order numbers of a generated station: each director counts its own (keyed by the director's handle).
+SERIAL_DEF(station_report, 1, FALSE)
+SERIAL_DEF(station_squad, 1, FALSE)
+SERIAL_DEF(station_order, 1, FALSE)
+
 /datum/generated_station_director
 	var/tmp/datum/generated_station_simulation/simulation
 	var/alert_level = GENERATED_STATION_ALERT_GREEN
@@ -57,9 +62,6 @@ CAPABILITIES(/datum/generated_station_knowledge_report)
 	var/list/dirty_departments
 	var/strategic_dirty = TRUE
 	var/strategic_online = FALSE
-	var/next_report_id = 1
-	var/next_squad_id = 1
-	var/next_order_id = 1
 	var/tmp/datum/generated_station_defense_runtime/defense_runtime
 
 CAPABILITIES(/datum/generated_station_director)
@@ -144,13 +146,13 @@ CAPABILITIES(/datum/generated_station_director)
 		if(existing_report && !existing_report.is_expired() && existing_report.subject_id == subject_id && existing_report.category == category)
 			return existing_report
 	var/datum/generated_station_knowledge_report/report = new
-	report.id = "report-[next_report_id++]"
+	report.id = "report-[next_serial_keyed(station_report, ref_token(src))]"
 	report.subject_id = subject_id
 	report.category = category
 	report.details = details
 	report.source_department_id = source_department_id
 	report.confidence = clamp(confidence, 0, 100)
-	EXPIRY_STAMP(report, created_at, CLOCK_WORLD)
+	STAMP(report, created_at, CLOCK_WORLD)
 	report.expires_at = lifetime > 0 ? world.time + lifetime : 0
 	rel_add(src, nameof(reports), report, report.id)
 	source_knowledge[report.id] = report
@@ -213,7 +215,7 @@ CAPABILITIES(/datum/generated_station_director)
 	if(!(department_id in local_knowledge) || length(squads) >= GENERATED_STATION_MAX_SQUADS)
 		return null
 	var/datum/generated_station_squad/squad = new
-	squad.id = "squad-[next_squad_id++]"
+	squad.id = "squad-[next_serial_keyed(station_squad, ref_token(src))]"
 	squad.department_id = department_id
 	rel_add(src, nameof(squads), squad, squad.id)
 	return squad
@@ -229,12 +231,12 @@ CAPABILITIES(/datum/generated_station_director)
 	else if(!department_knows(squad.department_id, report_id))
 		return null
 	var/datum/generated_station_order/order = new
-	order.id = "order-[next_order_id++]"
+	order.id = "order-[next_serial_keyed(station_order, ref_token(src))]"
 	order.squad_id = squad.id
 	order.report_id = report_id
 	order.kind = kind
 	order.global_coordination = global_coordination
-	EXPIRY_STAMP(order, created_at, CLOCK_WORLD)
+	STAMP(order, created_at, CLOCK_WORLD)
 	order.state = GENERATED_STATION_ORDER_ACTIVE
 	rel_add(src, nameof(orders), order, order.id)
 	squad.active_order_id = order.id

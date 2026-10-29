@@ -71,7 +71,7 @@ SYSTEM_DEF(tgui)
 	var/list/autoupdating = list()
 	/// A list of all open UIs
 	var/list/all_uis = list()
-	/// The current modal of each host datum, keyed by REF(host) (code/modules/tgui/modal.dm): owned here, a deleted modal leaves it.
+	/// The current modal of each host datum, keyed by ref_token(host) (code/modules/tgui/modal.dm): owned here, a deleted modal leaves it.
 	var/list/modals
 	/// The HTML base used for all UIs.
 	var/basehtml
@@ -334,7 +334,7 @@ CAPABILITIES(/datum/system/tgui)
 	if(window.locked || window.status != TGUI_WINDOW_CLOSED)
 		return
 	window.prewarmed = TRUE
-	EXPIRY_STAMP(window, prewarm_started_at, CLOCK_WORLD)
+	STAMP(window, prewarm_started_at, CLOCK_WORLD)
 	window.initialize(
 		strict_mode = TRUE,
 		fancy = client.prefs?.read_preference(/datum/preference/toggle/tgui_fancy),
@@ -618,7 +618,8 @@ CAPABILITIES(/datum/system/tgui)
  * required ui datum/tgui The UI to be added.
  */
 /datum/system/tgui/proc/on_open(datum/tgui/ui)
-	ui.user?.tgui_open_uis |= ui
+	if(ui.user)
+		LAZYOR(ui.user.tgui_open_uis, ui)
 	LAZYOR(ui.src_object().open_tguis, ui)
 	rel_add(src, nameof(all_uis), ui)
 	sync_autoupdate(ui)
@@ -638,7 +639,7 @@ CAPABILITIES(/datum/system/tgui)
 	rel_remove(src, nameof(autoupdating), ui)
 	// If the user exists, remove it from them too.
 	if(ui.user)
-		ui.user.tgui_open_uis -= ui
+		LAZYREMOVE(ui.user.tgui_open_uis, ui)
 	if(ui.src_object())
 		LAZYREMOVE(ui.src_object().open_tguis, ui)
 	return TRUE
@@ -732,12 +733,12 @@ CAPABILITIES(/datum/system/tgui)
 /// The modal `host` shows now, or null.
 /proc/tgui_modal_current(datum/host)
 	RETURN_TYPE(/datum/tgui_modal)
-	return LAZYACCESS(SStgui.modals, REF(host))
+	return LAZYACCESS(SStgui.modals, entity_handle_of(host))
 
 /// Takes `host`'s modal out of SStgui without disposing of it.
 /proc/tgui_modal_detach(datum/host)
-	return rel_take(SStgui, nameof(SStgui.modals), key = REF(host))
+	return rel_take(SStgui, nameof(SStgui.modals), key = entity_handle_of(host))
 
 /// Makes `modal` the one `host` shows; SStgui owns it from here.
 /proc/tgui_modal_attach(datum/host, datum/tgui_modal/modal)
-	return rel_add(SStgui, nameof(SStgui.modals), modal, REF(host))
+	return rel_add(SStgui, nameof(SStgui.modals), modal, ref_token(host))

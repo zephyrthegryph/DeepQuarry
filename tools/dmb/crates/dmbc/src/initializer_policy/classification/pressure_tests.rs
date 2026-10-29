@@ -39,14 +39,12 @@ fn compact_classification_retains_exact_receipts_and_rebinds_current_ordinal() {
         if let dm_session::ArtifactStorageView::Entry {
             key,
             reads,
-            versions,
             value,
         } = view
         {
             let allocations = crate::heap_census::initializer_artifacts::compact_allocations(
                 key,
                 reads,
-                versions,
                 value,
                 usize::MAX,
             )
@@ -57,7 +55,6 @@ fn compact_classification_retains_exact_receipts_and_rebinds_current_ordinal() {
                 crate::heap_census::initializer_artifacts::compact_allocations(
                     key,
                     reads,
-                    versions,
                     value,
                     payload - 1
                 )

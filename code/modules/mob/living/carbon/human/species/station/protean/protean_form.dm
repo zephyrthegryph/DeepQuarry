@@ -7,7 +7,7 @@
 	/// There is only ever the one: if it is destroyed, it is gone.
 	var/obj/item/rig/protean/rig
 	/// world.time of the last form change (form strain).
-	EXPIRY_DECLARE(last_switch_time)
+	var/last_switch_time = 0
 
 CAPABILITIES(/datum/forms/protean)
 	ref_one(nameof(rig), /obj/item/rig/protean)
@@ -101,12 +101,12 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 
 /// Changing shape quickly strains the swarm (form_strain).
 /datum/forms/protean/set_form(form_type, silent = FALSE)
-	var/previous_switch = last_switch_time
+	var/since_switch = last_switch_time ? ELAPSED(src, last_switch_time, CLOCK_WORLD) : null
 	. = ..()
 	if(!.)
 		return
-	EXPIRY_STAMP(src, last_switch_time, CLOCK_WORLD)
-	if(previous_switch && ELAPSED_SINCE(src, previous_switch, CLOCK_WORLD) < NANITE_FORM_SWITCH_GRACE)
+	STAMP(src, last_switch_time, CLOCK_WORLD)
+	if(!isnull(since_switch) && since_switch < NANITE_FORM_SWITCH_GRACE)
 		var/mob/living/carbon/human/H = owner
 		H.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_FAST_SWITCH)
 		log_game("FORMS: [key_name(H)] changed form again within [NANITE_FORM_SWITCH_GRACE / 10] seconds; form strain.")
@@ -118,7 +118,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 		return
 	rig?.recharge_from(source)
 	var/shapeless = !is_form(/datum/form/human) || in_rig()
-	if(shapeless && ELAPSED_SINCE(src, last_switch_time, CLOCK_WORLD) > NANITE_FORM_HOLD_LIMIT)
+	if(shapeless && ELAPSED(src, last_switch_time, CLOCK_WORLD) > NANITE_FORM_HOLD_LIMIT)
 		source.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_HELD_TICK)
 
 /// The orchestrator coordinates a change of shape. A damaged one may fail to:
@@ -163,13 +163,13 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	release_everything(H)
 	..()
 	H.set_item_state(style_id)
-	H.vore_capacity = get_style().vore_capacity
+	H.set_vore_capacity(get_style().vore_capacity)
 
 /datum/form/protean_blob/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(hiding)
 		set_hiding(H, FALSE)
 	H.set_item_state(null)
-	H.vore_capacity = initial(H.vore_capacity)
+	H.set_vore_capacity(living_rules_of_type(H.type).vore_capacity)
 	..()
 	to_chat(H, span_notice("You rapidly reassemble your form."))
 
@@ -187,7 +187,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	if(!GLOBAL_TABLE_GET(protean_blob_styles)[new_style_id])
 		return FALSE
 	style_id = new_style_id
-	H.vore_capacity = get_style().vore_capacity
+	H.set_vore_capacity(get_style().vore_capacity)
 	H.set_item_state(style_id)
 	if(istype(H.loc, /obj/item/holder/protoblob))
 		var/obj/item/holder/protoblob/PB = H.loc

@@ -676,9 +676,7 @@ impl PaceLaps {
     fn lap(&mut self, part: &'static str) {
         let now = std::time::Instant::now();
         #[allow(clippy::cast_possible_truncation)]
-        crate::metrics::registry()
-            .counter(&format!("frame.us.{part}"))
-            .add((now - self.0).as_micros() as u64);
+        crate::frame::trace_lap(part, (now - self.0).as_micros() as u64);
         self.0 = now;
     }
 }
@@ -757,6 +755,7 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
 #[auxmacros::bind("/proc/world_run_steps")]
 fn world_run_steps(steps: ByondValue) -> Result<ByondValue> {
     let n = whole(&steps, "steps")?.min(100_000);
+    crate::frame::note_steps(n as u64);
     for _ in 0..n {
         let probes = crate::heat::mixture_probes();
         with_world(|w| {

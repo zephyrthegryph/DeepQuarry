@@ -42,7 +42,7 @@
 	var/datum/matter_synth/water = null
 	var/digest_brute = 2
 	/// world.time of the last digestion pass (0: none yet).
-	EXPIRY_TMP_DECLARE(last_digest_time)
+	var/tmp/last_digest_time = 0
 	var/digest_burn = 3
 	var/digest_multiplier = 1
 	var/recycles = FALSE
@@ -176,7 +176,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	set_working(TRUE)
 	act_message(user, src, MSG_SELF(span_notice("Your %T% lights up as [H] slips inside. Life support functions engaged.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside.")))
-	log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
+	log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 	return OP_OK
 
@@ -207,7 +207,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	set_working(TRUE)
 	act_message(user, trashman, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as %T% slips inside.")))
-	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
+	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
@@ -534,7 +534,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
 		// continuous harm for the time since the last digestion pass.
 		var/delta_factor = last_digest_time ? clamp((world.time - last_digest_time) / BELLY_BASELINE_TICK, 0, DOGBORG_DIGEST_MAX_CATCHUP) : 1
-		EXPIRY_STAMP(src, last_digest_time, CLOCK_WORLD)
+		STAMP(src, last_digest_time, CLOCK_WORLD)
 
 		//Burn all the mobs or add them to the exclusion list
 		for(var/mob/living/T in (touchable_items))
@@ -571,7 +571,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /// A digested occupant: release its prey and belongings, bank its volume, delete it.
 /obj/item/dogborg/sleeper/proc/dissolve_occupant(mob/living/T)
 	if(ishuman(T))
-		log_admin("[key_name(hound)] has digested [key_name(T)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
+		log_admin("[key_name(hound)] has digested [key_name(T)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 	to_chat(hound, span_notice("You feel your belly slowly churn around [T], breaking them down into a soft slurry to be used as power for your systems."))
 	to_chat(T, span_notice("You feel [hound]'s belly slowly churn around your form, breaking you down into a soft slurry to be used as power for [hound]'s systems."))
 	var/deathsound = SFX_CLASSIC_DEATH_SOUNDS
@@ -595,7 +595,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	var/volume = 0
 	if(ishuman(T))
 		var/mob/living/carbon/human/Prey = T
-		volume = (Prey.bloodstr.total_volume + Prey.ingested.total_volume + Prey.touching.total_volume + Prey.weight) * Prey.size_multiplier
+		volume = (Prey.bloodstr.total_volume + Prey.ingested.total_volume + Prey.touching.total_volume + sparse_get_or(Prey, weight, DEFAULT_MOB_WEIGHT)) * Prey.size_multiplier
 	if(water)
 		water.add_charge(volume)
 	if(T.reagents)

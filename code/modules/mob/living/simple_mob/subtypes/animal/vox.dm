@@ -8,9 +8,9 @@
 	min_n2 = 0 //breathe N2
 	max_n2 = 0
 
-	species_sounds = "Vox"
 
 CAPABILITIES(/mob/living/simple_mob/vox)
+	configure(living_rules(species_sounds = "Vox"))
 	configure(mob_nature(pain_1p = list("shriek"), pain_3p = list("shrieks")))
 
 /mob/living/simple_mob/vox/armalis
@@ -36,7 +36,6 @@ CAPABILITIES(/mob/living/simple_mob/vox)
 	var/quills = 3
 
 /mob/living/simple_mob/vox/armalis
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vox/armalis/on_death(gibbed)
 	. = ..()
@@ -158,6 +157,7 @@ CAPABILITIES(/datum/armalis_commune_review)
 	set desc = "Give voice to a psychic shriek."
 
 CAPABILITIES(/mob/living/simple_mob/vox/armalis)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = DEATHGASP_NO_MESSAGE))
 	op("armalis_item", item(/obj/item), then(PROC_REF(armalis_interaction_item)))
 	immune_to_incapacitation()
@@ -184,9 +184,9 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 	if(combat_of(O).force)
 		if(combat_of(O).force >= 25)
 			var/damage = combat_of(O).force
-			if (O.injury_kind == INJURY_PAIN)
+			if (combat_of(O).injury_kind == INJURY_PAIN)
 				damage = 0
-			injure(O.injury_kind, damage, null, O)
+			injure(combat_of(O).injury_kind, damage, null, O)
 			for(var/mob/M in viewers(src, null))
 				if ((M.client && !( M.blinded )))
 					M.show_message(span_danger("[src] has been attacked with the [O] by [user]. "))

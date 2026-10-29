@@ -33,6 +33,8 @@
 # Logs: data/push-check/<sha>.{dm,ratchets,analyze}.log. It never runs checkout, reset, restore, stash or cherry-pick.
 # tools/hooks/pre-push refuses a push to master that did not come from here (install: tools/hooks/install_pre_push.sh).
 set -uo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 cd "$(git rev-parse --show-toplevel)"
 # The analyzer is the local dev-fast build unless DQ_ANALYZE_PROFILE says otherwise: release and dev-fast are the same source
 # (the findings are identical; CI builds release), and a release build is a 2-4 minute non-incremental compile.
@@ -51,6 +53,7 @@ lap() { echo "== dq_push_master: $1 $(( $(date +%s) - _lap_t ))s"; _lap_t=$(date
 merge_lock_require || exit 1
 merge_lock_busy begin
 trap 'merge_lock_busy end' EXIT
+lap "setup and merge lock"
 # The batch ends with the push wherever it ran from: a lane that restamps and pushes from its own worktree after a refused push still frees
 # the lock it holds (the old check only released from inside the merge worktree, which leaked the lock on that path).
 release_batch() { merge_lock_busy end; if merge_lock_holder_check 2>/dev/null; then merge_lock_release; fi; }
@@ -104,8 +107,10 @@ if [ -n "$start_lane_tips" ]; then
 fi
 strict=0
 if [ "${DQ_PUSH_STRICT:-}" = "1" ] || { [ "${DQ_PUSH_STRICT:-}" != "0" ] && [ "$(git rev-parse --abbrev-ref HEAD)" = "rewrite/integ-current" ]; }; then strict=1; fi
+fetched_at=0
 if [ "$strict" -eq 1 ] && [ -n "$start_base" ]; then
 	git fetch -q origin || die "git fetch failed"
+	fetched_at=$(date +%s)
 	now_master="$(git rev-parse origin/master)"
 	[ "$now_master" = "$start_base" ] || die "origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}): re-run tools/dq_merge_worktree.sh, the merges and tools/dq_merge_gates.sh, then push again"
 fi
@@ -113,7 +118,8 @@ fi
 # After a push: origin/master must contain what was pushed and every expected lane tip. A no-op push exits 0 in git; this does not.
 verify_landed() { # <sha>
 	local t miss=()
-	git fetch -q origin || die "git fetch failed after the push; cannot confirm it landed"
+	# a successful push updated refs/remotes/origin/master to what the remote accepted; fetch only when it does not hold the commit
+	git merge-base --is-ancestor "$1" origin/master 2>/dev/null || git fetch -q origin || die "git fetch failed after the push; cannot confirm it landed"
 	git merge-base --is-ancestor "$1" origin/master || die "after the push origin/master ($(git rev-parse --short=12 origin/master)) does not contain ${1:0:12}"
 	for t in "${expected_tips[@]-}"; do
 		[ -n "$t" ] || continue
@@ -123,11 +129,19 @@ verify_landed() { # <sha>
 }
 
 mkdir -p data/push-check
+# The stamp verdict of one commit, computed once (28 October: dq_push_stamp.sh ran three times on the same commit per push, ~10 s each on
+# a loaded machine; nothing it reads changes between the calls). Prints the verdict; exit status as dq_push_stamp.sh.
+_stamp_sha=""; _stamp_out=""; _stamp_rc=1
+stamp_of() {
+	if [ "$1" != "$_stamp_sha" ]; then _stamp_out="$(bash tools/dq_push_stamp.sh "$1" 2>&1)"; _stamp_rc=$?; _stamp_sha="$1"; fi
+	printf '%s\n' "$_stamp_out"; return "$_stamp_rc"
+}
 for round in 1 2 3; do
 	if why="$(dirty)"; then die "$why: commit (or remove) them first"; fi
 	echo "== dq_push_master: round $round: merging origin/master"
 	lap "start"
-	git fetch -q origin || die "git fetch failed"
+	# the strict check fetched seconds ago: round 1 needs no second fetch (~4 s each on this machine); later rounds always fetch
+	if [ "$round" -gt 1 ] || [ $(( $(date +%s) - fetched_at )) -gt 20 ]; then git fetch -q origin || die "git fetch failed"; fi
 	if [ "$light" -eq 1 ] && ! git merge-base --is-ancestor origin/master HEAD; then
 		die "--light: origin/master moved since the batch was merged ($(git rev-parse --short=12 origin/master) is not in HEAD): run the light batch again"
 	elif git merge-base --is-ancestor origin/master HEAD; then
@@ -148,10 +162,11 @@ for round in 1 2 3; do
 	# very tree. If HEAD contains origin/master (a fast-forward) nothing changed since; if master moved and HEAD is the clean re-merge of a stamped
 	# lane, the compile and checks rerun only when master's changes since the lane's base touch DM code (tools/dq_light_paths.sh heavy paths).
 	fast_skip=""
+	stamp_of "$sha" >/dev/null; lap "stamp verdict"
 	if [ "$light" -eq 0 ] && [ "${DQ_PUSH_FULL:-0}" != "1" ]; then
 		if git notes --ref=lane-ready show "$sha" 2>/dev/null | grep -q '"ok":true' && git merge-base --is-ancestor origin/master "$sha"; then
 			fast_skip="a lane-ready stamp is on exactly this commit and it contains origin/master (fast-forward): the gates already ran on this tree"
-		elif bash tools/dq_push_stamp.sh "$sha" >/dev/null 2>&1; then
+		elif stamp_of "$sha" >/dev/null 2>&1; then
 			read -r -a _par <<<"$(git rev-list --parents -n 1 "$sha" | cut -d' ' -f2-)"
 			if [ "${#_par[@]}" -eq 2 ]; then
 				_lane=""; _mp=""
@@ -173,7 +188,8 @@ for round in 1 2 3; do
 	# Re-proof: the lane's (or batch's) stamp went stale only because master moved while it was being gated, and its own commits are
 	# unchanged (a stamp on exactly its tip). Instead of refusing and sending it round another 30 minute lap that master can outrun
 	# again, the gates run its full stamped test list on this merged tree; that run is the fresh stamp, and it records reproof_of.
-	if ! pre_stamp="$(bash tools/dq_push_stamp.sh "$sha" 2>&1)" && [ "${DQ_PUSH_NO_REPROOF:-0}" != "1" ] && bash tools/dq_reproof_source.sh "$sha" >/dev/null 2>&1; then
+	stamp_of "$sha" >/dev/null; pre_stamp="$_stamp_out"
+	if [ "$_stamp_rc" -ne 0 ] && [ "${DQ_PUSH_NO_REPROOF:-0}" != "1" ] && bash tools/dq_reproof_source.sh "$sha" >/dev/null 2>&1; then
 		echo "== re-proof: ${pre_stamp:0:300}"
 		echo "== re-proof: running the stamped test list on the merged tree ${sha:0:12} (tools/dq_merge_gates.sh --reproof)"
 		reproof_lanes="${expected_tips[*]-}"
@@ -189,7 +205,7 @@ for round in 1 2 3; do
 		[ "${DQ_PUSH_FULL:-0}" != "1" ] && [ -f "data/merge-gates/${sha:0:12}.$1.ok" ] && [ "$(cat "data/merge-gates/${sha:0:12}.$1.ok")" = "$sha" ]
 	}
 	gate_sha_ok() { [ -f "data/merge-gates/${sha:0:12}.ok" ] && [ "$(sed -n 's/^sha=//p' "data/merge-gates/${sha:0:12}.ok" | tail -n 1)" = "$sha" ]; }
-	if ! stamped dm && [ "${DQ_PUSH_TRUST_GATE_DM:-0}" = "1" ] && [ "${DQ_PUSH_FULL:-0}" != "1" ] && stamped ratchets && stamped dreamchecker && gate_sha_ok; then
+	if ! stamped dm && [ "${DQ_PUSH_TRUST_GATE_DM:-0}" = "1" ] && [ "${DQ_PUSH_FULL:-0}" != "1" ] && stamped ratchets && { stamped dreamchecker || [ "${DQ_PUSH_NO_DREAMCHECKER:-0}" = 1 ]; } && gate_sha_ok; then
 		# The train gates run --no-dm on purpose: the test build compile proved the code compiles on this exact tree, so a second full
 		# native compile here only repeats it. DreamChecker is NOT trusted without its own stamp: the gate's dreamchecker job stamps the exact
 		# HEAD (data/merge-gates/<sha>.dreamchecker.ok); a gate without it falls through to the full build below. CI keeps the DreamMaker compile.
@@ -199,9 +215,15 @@ for round in 1 2 3; do
 	else
 		echo "== build.sh dm on ${sha:0:12} (log $log.dm.log)"
 		rm -f deepquarry.dmb # never "up to date": DreamChecker runs inside the dm target
+		# DQ_PUSH_NO_DREAMCHECKER=1 (the train with DQ_TRAIN_DREAMCHECKER=0): the compile only; DreamChecker neither runs nor is required
+		if [ "${DQ_PUSH_NO_DREAMCHECKER:-0}" = 1 ]; then
+			echo "== DreamChecker: off (DQ_PUSH_NO_DREAMCHECKER=1); the compiler's own diagnostics gate"
+			DQ_DREAMCHECKER=0 tools/build/build.sh dm >"$log.dm.log" 2>&1 || { tail -40 "$log.dm.log"; die "build.sh dm failed"; }
+		else
 		DQ_DREAMCHECKER=1 tools/build/build.sh dm >"$log.dm.log" 2>&1 || { tail -40 "$log.dm.log"; die "build.sh dm failed"; }
 		grep -q "dream-checker: passed" "$log.dm.log" || die "DreamChecker did not run (install it: tools/ci/install_spaceman_dmm.sh); see $log.dm.log"
 		grep -q "Found 0 diagnostics" "$log.dm.log" || { grep -iE "error|warning" "$log.dm.log" | head -30; die "DreamChecker reported diagnostics; see $log.dm.log"; }
+		fi
 		grep -qE "deepquarry\.dmb - 0 errors" "$log.dm.log" || die "the compiler did not report 0 errors; see $log.dm.log"
 	fi
 
@@ -224,7 +246,7 @@ for round in 1 2 3; do
 	if why="$(dirty)"; then die "the tree changed during the checks: $why"; fi
 	# The tests: HEAD (or each parent of a merge, docs/data-only commits on top excepted) must carry a passing lane-ready or
 	# merge-gates stamp (tools/dq_push_stamp.sh, agent_workflow.md section 14). The pre-push hook checks the same.
-	stamp_verdict="$(bash tools/dq_push_stamp.sh "$sha")" || die "$stamp_verdict"
+	stamp_of "$sha" >/dev/null; stamp_verdict="$_stamp_out"; [ "$_stamp_rc" -eq 0 ] || die "$stamp_verdict"
 	echo "== test stamp: $stamp_verdict"
 
 	for t in "${expected_tips[@]-}"; do
@@ -255,9 +277,22 @@ for round in 1 2 3; do
 		if [ -n "$pre_push_master" ]; then
 			bash tools/dq_prebuild_tools.sh "$pre_push_master" "$sha" || echo "dq_push_master: tool prebuild not started (non-fatal)"
 		fi
-		# Reclaim disk: every other worktree that is now clean and merged goes (build targets deleted first). Best effort.
-		bash tools/dq_worktree.sh gc || echo "dq_push_master: worktree cleanup failed (non-fatal); run tools/dq_worktree.sh gc"
-		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"
+		# Reclaim disk: every other worktree that is now clean and merged goes (build targets deleted first). Best effort, and DETACHED:
+		# it walks every worktree and its processes (minutes on a loaded machine) and the train's next cycle waited for it (27 October: a
+		# light landing spent ~3 of its 4.6 post-check minutes here). DQ_PUSH_GC=sync runs it in the foreground, DQ_PUSH_GC=0 skips it.
+		case "${DQ_PUSH_GC:-detach}" in
+			0) echo "== dq_push_master: worktree gc skipped (DQ_PUSH_GC=0)" ;;
+			sync) bash tools/dq_worktree.sh gc || echo "dq_push_master: worktree cleanup failed (non-fatal); run tools/dq_worktree.sh gc" ;;
+			*)
+				gc_log="data/push-gc-$(date +%Y%m%dT%H%M%S).log"; mkdir -p data
+				( nohup bash tools/dq_worktree.sh gc >"$gc_log" 2>&1 </dev/null & ) >/dev/null 2>&1
+				echo "== dq_push_master: worktree gc started detached (log $gc_log)"
+				;;
+		esac
+		lap "post-push (tool prebuild, gc start)"
+		if [ "$light" -eq 1 ]; then checked="light batch: tools/dq_light_checks.sh cheap checks; no DM build, DreamChecker, ratchets or analyze"
+		else checked="dm, DreamChecker, ratchets, analyze"; fi
+		echo "dq_push_master: pushed ${sha:0:12} (checked: $checked); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"
 		exit 0
 	fi
 	echo "dq_push_master: push rejected (master moved?); merging again"

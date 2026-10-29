@@ -130,13 +130,16 @@
 	return
 
 /client/proc/Move_object(direct)
-	if(mob && mob.control_object)
-		if(mob.control_object.density)
-			step(mob.control_object,direct)
-			if(!mob.control_object)	return
-			mob.control_object.dir = direct
+	var/obj/possessed = mob ? possessed_obj_of(mob) : null
+	if(possessed)
+		if(possessed.density)
+			step(possessed, direct)
+			possessed = possessed_obj_of(mob)
+			if(!possessed)
+				return
+			possessed.set_dir(direct)
 		else
-			mob.control_object.forceMove(get_step(mob.control_object,direct))
+			possessed.forceMove(get_step(possessed, direct))
 	return
 
 // NB: This is called for 'self movement', not for being pulled or things like that, which COULD be the case for /mob/Move
@@ -158,7 +161,7 @@
 		return FALSE //This is sorta the goto stop mobs from moving trait
 
 	// We're controlling an object which is when admins possess an object.
-	if(my_mob.control_object)
+	if(possessed_obj_of(my_mob))
 		Move_object(direct)
 
 	// Ghosty mob movement
@@ -326,7 +329,7 @@
 		total_delay *= SQRT_2
 
 	//total_delay = DS2NEARESTTICK(total_delay) //Rounded to the next tick in equivalent ds
-	if(STAMP_ELAPSED(mob, last_move_time, CLOCK_WORLD) < total_delay * 1.25)
+	if(stamp_elapsed(mob, last_move_time, CLOCK_WORLD) < total_delay * 1.25)
 		cooldown_set_end(mob, next_move, DS2NEARESTTICK(old_delay + total_delay))
 	else
 		cooldown_set_end(mob, next_move, DS2NEARESTTICK(world.time + total_delay))
@@ -369,7 +372,7 @@
 
 	// We're not in the middle of a move anymore
 	moving = 0
-	STAMP(mob, last_move_time, CLOCK_WORLD)
+	stamp_now(mob, last_move_time, CLOCK_WORLD)
 
 /mob/proc/SelfMove(turf/n, direct, movetime)
 	return Move(n, direct, movetime)
@@ -532,7 +535,7 @@
 
 	if(restrained()) //Check to see if we can do things
 		return 0
-	inertia_dir = 0
+	sparse_set_or(src, inertia_dir, 0, 0)
 	return 1
 
 /mob/proc/Check_Dense_Object() //checks for anything to push off in the vicinity. also handles magboots on gravity-less floors tiles

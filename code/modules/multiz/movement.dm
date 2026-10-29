@@ -610,7 +610,7 @@
 /mob/living/carbon/human/fall_impact(atom/hit_atom, damage_min, damage_max, silent, planetary)
 	if(!species?.handle_falling(src, hit_atom, damage_min, damage_max, silent, planetary))
 		..()
-		if(weight > 325 || size_multiplier > 1.75)
+		if(sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) > 325 || size_multiplier > 1.75)
 			explosion(get_turf(hit_atom), -1, 0, 0)
 			var/turf/simulated/floor/hit_turf = get_turf(hit_atom)
 			if(istype(hit_turf))
@@ -795,7 +795,7 @@
 /// The climb of the Climb Wall verb. The questions in front of it (an unequipped climb, a scug's spear) are requests whose answers come back
 /// here with `confirmed` (the climber said "Bring it!") and `spear_answer` ("Yes!" / "No") set; every check is made again with each answer.
 /turf/simulated/proc/climb_wall_attempt(mob/living/L, confirmed = FALSE, spear_answer = null)
-	var/climbing_delay_min = L.climbing_delay
+	var/climbing_delay_min = living_rules_of(L).climbing_delay
 	var/fall_chance = 0
 	var/drop_our_held = FALSE
 	var/nutrition_cost = 50 //Climbing up is harder!
@@ -828,7 +828,7 @@
 	if(ishuman(L))
 		var/permit_human = FALSE
 		var/mob/living/carbon/human/H = L
-		if(H.species.climbing_delay < H.climbing_delay)
+		if(H.species.climbing_delay < living_rules_of(H).climbing_delay)
 			climbing_delay_min = H.species.climbing_delay
 		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
@@ -837,9 +837,8 @@
 		for(var/obj/item/I in gear)
 			if(tooling_of(I).climbing)
 				permit_human = TRUE
-				var/item_climbing_delay = sparse_get_or(I, climbing_delay, 1)
-				if(item_climbing_delay > climbing_delay_min)
-					climbing_delay_min = item_climbing_delay //We get the maximum possible speedup out of worn equipment
+				if(item_rules_of(I).climbing_delay > climbing_delay_min)
+					climbing_delay_min = item_rules_of(I).climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
 			if(!confirmed)
 				climb_ask_confirm(src, L, PROC_REF(climb_wall_confirmed))
@@ -897,7 +896,8 @@
 		blind = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	perform_op(L, L, "climb_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = src, "time" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
+	stamp_now(L, climb_started, CLOCK_WORLD)
+	perform_op(L, L, "climb_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = src, "time" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_grace" = grace_time))
 
 /// Asks the climber whether to try without tools; `answered` is the callback that goes on with the climb.
 /proc/climb_ask_confirm(datum/owner, mob/living/L, answered)
@@ -948,8 +948,8 @@
 /mob/living/proc/climb_wall_interrupted(datum/act/op/A)
 	var/turf/simulated/wall = A.arg("wall")
 	var/turf/above_mob = A.arg("above_mob")
-	var/fall_at = A.arg("fall_at")
-	if(QDELETED(wall) || ELAPSED_SINCE(wall, fall_at, CLOCK_WORLD) <= 0)
+	var/fall_grace = A.arg("fall_grace")
+	if(QDELETED(wall) || stamp_elapsed(src, climb_started, CLOCK_WORLD) <= fall_grace)
 		return
 	forceMove(above_mob)
 	act_message(src, wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
@@ -966,7 +966,7 @@
 /mob/living/proc/climb_down_attempt(confirmed = FALSE)
 	var/fall_chance = 0	//Increased if we can't actually climb
 	var/turf/our_turf = get_turf(src) //floor we're standing on
-	var/climbing_delay_min = src.climbing_delay //We take the lowest climbing delay between mob, species and gear.
+	var/climbing_delay_min = living_rules_of(src).climbing_delay //We take the lowest climbing delay between mob, species and gear.
 	var/nutrition_cost = 25	//Descending is easier!
 
 
@@ -998,7 +998,7 @@
 	if(ishuman(src))
 		var/permit_human = FALSE
 		var/mob/living/carbon/human/H = src
-		if(H.species.climbing_delay < H.climbing_delay)
+		if(H.species.climbing_delay < living_rules_of(H).climbing_delay)
 			climbing_delay_min = H.species.climbing_delay
 		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
@@ -1007,9 +1007,8 @@
 		for(var/obj/item/I in gear)
 			if(tooling_of(I).climbing)
 				permit_human = TRUE
-				var/item_climbing_delay = sparse_get_or(I, climbing_delay, 1)
-				if(item_climbing_delay > climbing_delay_min)
-					climbing_delay_min = item_climbing_delay //We get the maximum possible speedup out of worn equipment
+				if(item_rules_of(I).climbing_delay > climbing_delay_min)
+					climbing_delay_min = item_rules_of(I).climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
 			if(!confirmed)
 				climb_ask_confirm(src, src, PROC_REF(climb_down_confirmed))
@@ -1065,7 +1064,8 @@
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	perform_op(src, src, "climb_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
+	stamp_now(src, climb_started, CLOCK_WORLD)
+	perform_op(src, src, "climb_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_grace" = grace_time))
 
 /// "Bring it!" goes on with the climb; anything else (or no answer) ends it.
 /mob/living/proc/climb_down_confirmed(datum/act/request/A)
@@ -1095,8 +1095,8 @@
 /mob/living/proc/climb_down_interrupted(datum/act/op/A)
 	var/turf/front_of_us = A.arg("front_of_us")
 	var/turf/below_wall = A.arg("below_wall")
-	var/fall_at = A.arg("fall_at")
-	if(ELAPSED_SINCE(src, fall_at, CLOCK_WORLD) <= 0)
+	var/fall_grace = A.arg("fall_grace")
+	if(stamp_elapsed(src, climb_started, CLOCK_WORLD) <= fall_grace)
 		return
 	src.forceMove(front_of_us)
 	act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), \

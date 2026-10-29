@@ -52,11 +52,6 @@ MSG_DEF_SELF(holster/not_holsterable, "it isn't made for a holster")
 			if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 				to_chat(C, span_warning("You cannot draw \the [holstered] while handcuffed!"))
 				return
-			else if(istype(C, /mob/living/carbon/human))
-				var/mob/living/carbon/human/H = C
-				if(H.ability_flags & 0x1)
-					to_chat(H, span_warning("You cannot draw \the [holstered] while phase shifted!"))
-					return
 		// end
 		var/sound_vol = 25
 		if(stance == I_HURT)

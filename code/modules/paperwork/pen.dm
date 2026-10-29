@@ -22,7 +22,6 @@
 	icon_state = "pen"
 	item_state = "pen"
 	w_class = ITEMSIZE_TINY
-	throw_range = 15
 	MATERIAL_BULK(MAT_STEEL, 10)
 	var/colour = "black"	//what colour the ink is!
 	pressure_resistance = 2
@@ -32,7 +31,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pen)
-	configure(movable_motion(throw_speed = 7))
+	configure(movable_motion(throw_range = 15, throw_speed = 7))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
 	configure(item_thrown(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
@@ -173,14 +172,11 @@ CAPABILITIES(/obj/item/pen/reagent)
  */
 /obj/item/pen/blade
 	desc = "It's a normal black ink pen."
-	description_antag = "This pen can be transformed into a dangerous melee and thrown assassination weapon with an Alt-Click.\
-	When active, it cannot be caught safely."
 	name = "pen"
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "pen"
 	item_state = "pen"
 	w_class = ITEMSIZE_TINY
-	throw_range = 15
 
 	var/active = 0
 	var/active_embed_chance = 0
@@ -192,7 +188,9 @@ CAPABILITIES(/obj/item/pen/reagent)
 
 // Its alt-click comes before the pen's own (the old EXTEND listed the child's specs first).
 CAPABILITIES(/obj/item/pen/blade)
-	configure(movable_motion(throw_speed = 7))
+	configure(atom_rules(description_antag = "This pen can be transformed into a dangerous melee and thrown assassination weapon with an Alt-Click.\
+	When active, it cannot be caught safely."))
+	configure(movable_motion(throw_range = 15, throw_speed = 7))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
 	configure(item_thrown(force = 3))
 	configure(item_combat(armor_penetration = 20))
@@ -220,15 +218,15 @@ CAPABILITIES(/obj/item/pen/blade)
 		return
 	active = 1
 	set_icon_state(active_icon_state)
-	embed_chance = active_embed_chance
+	set_embed_chance(active_embed_chance)
 	set_force(active_force)
 	set_throwforce(active_throwforce)
 	set_sharp(TRUE)
 	set_edge(TRUE)
 	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON, 0.3)
-	injury_kind = INJURY_CUT
-	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
+	set_injury_kind(INJURY_CUT)
+	set_injury_kinds(alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3))
 	set_catchable(FALSE)
 
 	set_attack_verb(combat_of(src).attack_verbs | list("slashed", "cut", "shredded", "stabbed"))
@@ -239,14 +237,14 @@ CAPABILITIES(/obj/item/pen/blade)
 	play_sfx(src, SFX_WEAPONS_SABEROFF, 0.3)
 	active = 0
 	set_icon_state(default_icon_state)
-	embed_chance = initial(embed_chance)
+	set_embed_chance(combat_of_type(type).embed_chance)
 	set_force(combat_of_type(type).force)
 	set_throwforce(thrown_of_type(type).force)
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
 	set_w_class(initial(w_class))
-	injury_kind = initial(injury_kind)
-	injury_kinds = null
+	set_injury_kind(combat_of_type(type).injury_kind)
+	set_injury_kinds(null)
 	set_catchable(TRUE)
 
 /obj/item/pen/blade/blue

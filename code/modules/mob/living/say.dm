@@ -98,7 +98,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		if(S.speaking && (S.speaking.flags & NO_STUTTER || S.speaking.flags & SIGNLANG))
 			continue
 
-		if(disabilities & CENSORED)
+		if(disabilities() & CENSORED)
 			S.message = text_or_null(censor_swears(S.message)) // Googlybonkers
 			. = 1
 
@@ -119,7 +119,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			verb = pick("muffles")
 			whispering = 1
 			. = 1
-		if(disabilities & WINGDINGS)
+		if(disabilities() & WINGDINGS)
 			verb = pick("gibbers","gabbers","gahoos","gazonks") // Yeah lets just be stupid
 			S.message = Gibberish(S.message, 100) // Googlybonkers
 			S.message = span_wingdings((S.message))
@@ -168,8 +168,8 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		return
 	//Maybe they are using say/whisper to do a quick emote, so do those
 	switch(copytext(message, 1, 2))
-		if("*") return emote(copytext(message, 2))
-		if("^") return custom_emote(VISIBLE_MESSAGE, copytext(message, 2))
+		if("*") return emote(copytext(message, 2), typed = TRUE)
+		if("^") return custom_emote(VISIBLE_MESSAGE, copytext(message, 2), typed = TRUE)
 	direct_say(message, speaking, whispering)
 
 /mob/living/direct_say(message, datum/language/speaking = null, whispering = 0)
@@ -276,7 +276,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	var/message_range = world.view
 	var/italics = 0
 	var/do_sound = TRUE
-	if(!voice_sounds_list || !voice_sounds_list.len)
+	if(!length(sparse_get(src, voice_sounds_list)))
 		do_sound = FALSE
 
 	//Speaking into radios
@@ -353,7 +353,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	//The 'post-say' static speech bubble
 	var/speech_bubble_test = say_test(message)
-	var/speech_type = custom_speech_bubble
+	var/speech_type = bio.custom_speech_bubble
 	if(!speech_type || speech_type == "default")
 		speech_type = speech_bubble_appearance()
 	var/image/speech_bubble = generate_speech_bubble(src, "[speech_type][speech_bubble_test]")
@@ -440,7 +440,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /mob/living/proc/blooper(extrarange = 0, volume, sound_preference = /datum/preference/toggle/bloop_sounds)
 	playsound(\
 		src,\
-		pick(voice_sounds_list),\
+		pick(sparse_get(src, voice_sounds_list)),\
 		volume,\
 		vary = TRUE,\
 		extrarange = extrarange,\
@@ -454,7 +454,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /mob/living/proc/blooploop(message, extrarange = 0, volume, sound_preference = /datum/preference/toggle/say_sounds, bloop_preference = /datum/preference/toggle/bloop_sounds)
 	var/bloopers = min(round((LAZYLEN(message) / BLOOPER_SPEED)) + 1, BLOOPER_MAX_BLOOPERS)
 	var/total_delay
-	playsound(src, pick(voice_sounds_list), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = sparse_get_or(src, voice_freq, 42500) > 0 ? sparse_get_or(src, voice_freq, 42500) : null, ignore_walls = FALSE, preference = sound_preference)
+	playsound(src, pick(sparse_get(src, voice_sounds_list)), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = sparse_get_or(src, voice_freq, 42500) > 0 ? sparse_get_or(src, voice_freq, 42500) : null, ignore_walls = FALSE, preference = sound_preference)
 	for(var/i in 1 to bloopers)
 		if(total_delay > BLOOPER_MAX_TIME)
 			break

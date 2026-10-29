@@ -69,6 +69,9 @@ CAPABILITIES(/datum/n_Interpreter)
 	Constructor: New
 	Calls <Load()> with the given parameters.
 */
+// The value of the last return statement: a script value (number, text, list or null).
+SCHEMA(/datum/n_Interpreter, returnVal, schema_any())
+
 /datum/n_Interpreter/New(datum/node/BlockDefinition/GlobalBlock/program=null)
 	.=..()
 	rel_set(src, nameof(scopes), new /datum/stack)

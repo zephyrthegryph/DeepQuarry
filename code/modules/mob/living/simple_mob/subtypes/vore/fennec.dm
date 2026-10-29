@@ -38,19 +38,18 @@
 	response_disarm = "gently pushes aside"
 	response_harm = "hits"
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox
 
 	harm_intent_damage = 5
 	melee_damage_lower = 1
 	melee_damage_upper = 3
 	attacktext = list("bapped")
 
-	say_list_type = /datum/say_list/fennec
 
-	species_sounds = "Vulpine"
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(species_sounds = "Vulpine"))
+	configure(living_rules(say_list_type = /datum/say_list/fennec))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox, meat_amount = 2))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
@@ -112,7 +111,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec)
 	// Handled in apply_attack
 	vore_pounce_successrate = 100
 	vore_pounce_chance = 0
-	vore_capacity = 5
 	vore_bump_emote	= "quickly snatches up"
 
 	attacktext = list("stomped","kicked")
@@ -124,6 +122,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec)
 	var/autodoom = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec/huge)
+	configure(living_rules(vore_capacity = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID))
 	configure(mob_movement(bump = HEAVY))

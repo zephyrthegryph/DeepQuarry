@@ -76,7 +76,6 @@
 	pixel_y = 0
 	vis_height = 64
 
-	vore_capacity = 3
 	vore_pounce_chance = 75
 
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian
@@ -123,21 +122,25 @@
 /mob/living/simple_mob/hostile/creature/vore
 	vore_active = 1
 	// NO VORE SPRITES
-	vore_capacity = 0
 	vore_pounce_chance = 0	// Only pounces if you're crit.
 	vore_escape_chance = 0	// As such, if you're a dibshit who feeds yourself to it, you're staying down.
 	// Overrides to non-vore version
 	speed = 4			// Slow it down a bit
 	endurance = 80
+
+CAPABILITIES(/mob/living/simple_mob/hostile/creature/vore)
+	configure(living_rules(vore_capacity = 0))
 */
 /*
 /mob/living/simple_mob/animal/space/mimic
 	vore_active = 1
 	// NO VORE SPRITES
-	vore_capacity = 0
 	vore_pounce_chance = 33
 	// Overrides to non-vore version
 	endurance = 60
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/mimic)
+	configure(living_rules(vore_capacity = 0))
 */
 /mob/living/simple_mob/animal/passive/cat
 	vore_active = 1

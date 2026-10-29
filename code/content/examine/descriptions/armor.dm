@@ -22,7 +22,7 @@
 				return "You would be immune to [descriptive_attack_type] if you wore this."
 
 /obj/item/clothing/proc/describe_slowdown()
-	switch(slowdown)
+	switch(worn_factor(STAT_ITEM_ENCUMBRANCE))
 		if(-INFINITY to -0.1)
 			return "It looks like it might actually make you faster!"
 		if(null)

@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Voice sounds became a sparse slot; species sounds a living_rules trait"

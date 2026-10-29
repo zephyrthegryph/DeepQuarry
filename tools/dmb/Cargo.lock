@@ -309,6 +309,7 @@ dependencies = [
  "dm-session",
  "dm-syntax",
  "dm-wire",
+ "flate2",
  "serde",
  "serde_json",
  "xxhash-rust",

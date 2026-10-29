@@ -35,8 +35,8 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 	if(!site() || shuttle != site().assigned_shuttle())
 		return
 	site().status = EXP_STATUS_ACTIVE
-	EXPIRY_STAMP(site(), deployed_at, CLOCK_WORLD)
-	EXPIRY_STAMP(site(), last_occupied, CLOCK_WORLD)
+	STAMP(site(), deployed_at, CLOCK_WORLD)
+	STAMP(site(), last_occupied, CLOCK_WORLD)
 	for(var/area/A in shuttle.shuttle_area)
 		for(var/mob/living/L in contents_of(A))
 			rel_add(site(), nameof(/datum/expedition_site::participants), L)
@@ -44,7 +44,7 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 /obj/machinery/computer/shuttle_control/explore
 	/// Site currently assigned to this craft.
 	var/tmp/datum/expedition_site/active_expedition
-	EXPIRY_DECLARE(next_expedition_plot)
+	COOLDOWN_DECLARE(next_expedition_plot)
 
 
 /obj/machinery/computer/shuttle_control/explore/proc/expedition_data()
@@ -66,7 +66,7 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 	var/datum/expedition_site/site = SSexpedition.plot_for_vessel(user, vessel, src, contract, threat_band)
 	if(site)
 		rel_set(src, nameof(active_expedition), site)
-		EXPIRY_SET(src, next_expedition_plot, EXP_LAUNCH_COOLDOWN, CLOCK_WORLD)
+		COOLDOWN_START(src, next_expedition_plot, EXP_LAUNCH_COOLDOWN)
 
 /// The site this landing zone belongs to (a relation view).
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/proc/site() as /datum/expedition_site

@@ -26,7 +26,7 @@
 	var/ai_interface_path = "RIGSuit"
 	var/interface_title = "Hardsuit Controller"
 	var/interface_intro = "NT"
-	EXPIRY_DECLARE(wearer_move_delay) //Used for AI moving.
+	var/wearer_move_delay = 0 //Used for AI moving.
 	var/ai_controlled_move_delay = 10
 
 	// Keeps track of what this rig should spawn with.
@@ -49,7 +49,6 @@
 	var/obj/item/rig_module/selected_module = null            // Primary system (used with middle-click)
 	var/obj/item/rig_module/vision/visor                      // Kinda shitty to have a var for a module, but saves time.
 	var/obj/item/rig_module/voice/speech                      // As above.
-	var/tmp/mob/living/carbon/human/wearer	// The person currently wearing the rig.
 	var/list/installed_modules                       // Power consumption/use bookkeeping.
 
 	// Cooling system vars.
@@ -97,6 +96,8 @@
 	var/obj/item/storage/backpack/rig_storage
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+SCHEMA(/obj/item/rig, offline_slowdown, num())
+
 CAPABILITIES(/obj/item/rig)
 	configure(item_rules(actions_types = list(/datum/action/item_action/hardsuit_interface, /datum/action/item_action/toggle_heatsink)))
 	configure(movable_motion(unacidable = TRUE))
@@ -115,7 +116,7 @@ CAPABILITIES(/obj/item/rig)
 	ref_one(nameof(selected_module), /obj/item/rig_module)
 	ref_one(nameof(visor), /obj/item/rig_module/vision)
 	ref_one(nameof(speech), /obj/item/rig_module/voice)
-	ref_one(nameof(wearer), /mob/living/carbon/human)
+	drag_onto(PROC_REF(rig_dragged))
 	// We only care about processing when we're on a mob
 	every(2 SECONDS, then(PROC_REF(rig_step)), when = nameof(carried_by_mob))
 	space(SPACE_PANEL, door = nameof(open))
@@ -212,10 +213,11 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	component_registry?.destroy_pieces(src)
 	..()
 
-/obj/item/rig/MouseDrop(obj/over_object)
+/// An unremovable suit cannot be dragged off; any other drag is the item's own.
+/obj/item/rig/proc/rig_dragged(datum/act/input/A)
 	if(unremovable)
-		return
-	..()
+		return TRUE
+	return INPUT_FALLTHROUGH
 
 /obj/item/rig/examine(mob/user)
 	. = ..()
@@ -256,9 +258,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		if(!canremove)
 			reset()
 		// Off a mob the slow step no longer runs (carried_by_mob), so let go of the wearer here.
-		if(wearer()?.wearing_rig == src)
-			rel_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
-		rel_clear(src, nameof(wearer))
+		link_break(src, LK_RIG_WEARER)
 
 	// If we've lost any parts, grab them back.
 	var/mob/living/M
@@ -734,8 +734,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 /obj/item/rig/proc/put_on_done(mob/living/carbon/human/M)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		act_message(M, src, MSG_SELF(span_boldnotice("You struggle into %T%.")), MSG_OTHERS(span_boldnotice("%U% struggles into %T%.")))
-		rel_set(src, nameof(wearer), M)
-		rel_set(wearer(), nameof(/mob/living/carbon/human::wearing_rig), src)
+		link_make(M, LK_WEARING_RIG, src)
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)
 
@@ -844,9 +843,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	tgui_shared_states?.Cut()
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
 	// that also catches forceMove); here we just drop the wearer back-references.
-	if(wearer() && wearer().wearing_rig == src)
-		rel_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
-	rel_clear(src, nameof(wearer))
+	link_break(src, LK_RIG_WEARER)
 
 //Todo
 /obj/item/rig/proc/malfunction()
@@ -1027,7 +1024,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	if(istype(wearer()?.buckled_to(), /obj/vehicle))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
-		EXPIRY_STAMP(src, wearer_move_delay, CLOCK_WORLD)
+		STAMP(src, wearer_move_delay, CLOCK_WORLD)
 		var/atom/movable/_tmp_buck_13 = wearer()?.buckled_to()
 		return _tmp_buck_13.relaymove(wearer(), direction)
 
@@ -1103,9 +1100,13 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	consume(booting_R, M)
 
 
-/// The person currently wearing the rig. (a relation view: null once it is deleted).
+/// The person currently wearing the rig: a sparse link (LK_RIG_WEARER), null while it is not worn or once they are gone.
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human
-	return wearer
+	return link_get(src, LK_RIG_WEARER)
+
+/// The rig this human is wearing (the other end of the rig's wearer()): a sparse link (LK_WEARING_RIG), null when none.
+/mob/living/carbon/human/proc/wearing_rig() as /obj/item/rig
+	return link_get(src, LK_WEARING_RIG)
 
 /// Online, offline or cut: a wearer's sight under the helmet (offline_vision_restriction) follows it, so the wearer's
 /// equipment key is published (the human status step re-reads its rig visor).

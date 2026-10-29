@@ -182,7 +182,7 @@ CAPABILITIES(/datum/contract/medical_trial)
 	participant.dose += amount
 	subject.record_clinical_exposure(id, profile.code_name, "coded trial medication", amount)
 	if(!participant.exposure_time)
-		EXPIRY_STAMP(participant, exposure_time, CLOCK_WORLD)
+		STAMP(participant, exposure_time, CLOCK_WORLD)
 
 /datum/contract/medical_trial/proc/record_challenge(mob/living/carbon/human/subject, amount)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
@@ -420,8 +420,8 @@ CAPABILITIES(/datum/contract/medical_trial)
 	var/corpse_contract_offered = FALSE
 	var/dose = 0
 	var/challenge_dose = 0
-	EXPIRY_DECLARE(exposure_time)
-	EXPIRY_DECLARE(consent_time)
+	var/exposure_time = 0
+	var/consent_time = 0
 	var/completed = FALSE
 	var/faxed = FALSE
 
@@ -465,6 +465,8 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 	var/contract_eligibility_initialized = FALSE
 	var/contract_eligibility_qualifying = FALSE
 	var/contract_rare_eligibility_qualifying = FALSE
+
+SCHEMA(/datum/affliction, contract_rare_eligibility_qualifying, bool())
 
 /// Does this affliction's severity describe a clinical outcome? Wounds,
 /// lesions and injury load mirror physical integrity (autoheal, bandaging,
@@ -616,14 +618,14 @@ sparse(/mob/living/carbon/human, clinical_exposure_history, type = list)
 			"contract_id" = contract_id,
 			"study_code" = study_code,
 			"agent" = agent_name,
-			"first_exposure" = EXPIRY_AT(null, CLOCK_WORLD, 0),
+			"first_exposure" = TIME_NOW(CLOCK_WORLD),
 			"dose" = 0,
 		)
 		history = history || list()
 		history += list(existing)
 		sparse_set(src, clinical_exposure_history, history)
 	existing["dose"] += amount
-	existing["last_exposure"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	existing["last_exposure"] = TIME_NOW(CLOCK_WORLD)
 
 /mob/living/carbon/human/proc/clinical_exposure_printout()
 	var/list/history = sparse_get(src, clinical_exposure_history)

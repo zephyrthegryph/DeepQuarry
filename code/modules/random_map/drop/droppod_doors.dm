@@ -26,13 +26,12 @@
 	return TRUE
 
 CAPABILITIES(/obj/structure/droppod_door)
-	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	param(nameof(autoopen), pos = 1, apply = PROC_REF(arm_autoopen))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("droppod_door_silicon_use", remote(), label("Open"), then(PROC_REF(droppod_door_silicon_use)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
-/obj/structure/droppod_door/proc/smashed_by(datum/act/hit/generic/A)
+/obj/structure/droppod_door/smashed_by(datum/act/hit/generic/A)
 	var/mob/user = A.attacker
 	attack_hand(user)
 	return OP_OK

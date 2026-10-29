@@ -207,6 +207,58 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
     pub fn visit_storage(&self, visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>)) {
         self.store.visit_storage(visit);
     }
+    /// Visit the stored variants of the exact `keys`, in caller order, with whether THIS lease claims each. Sibling leases'
+    /// variants of the same key are included: a caller choosing one candidate prefers its own claim.
+    pub fn visit_key_storage<K: AsRef<[u8]>>(
+        &self,
+        keys: impl IntoIterator<Item = K>,
+        mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>, bool),
+    ) {
+        let state = self
+            .store
+            .state
+            .read()
+            .unwrap_or_else(|error| error.into_inner());
+        for key in keys {
+            let key = key.as_ref();
+            let hash = xxhash_rust::xxh3::xxh3_128(key);
+            if let Some(bucket) = state.buckets.get(&hash) {
+                for entry in bucket.iter().filter(|entry| entry.key.as_ref() == key) {
+                    visit(
+                        ObservedArtifactStorageView::Entry {
+                            key: &entry.key,
+                            reads: &entry.reads,
+                            value: &entry.value,
+                        },
+                        entry.holders.has(self.slot),
+                    );
+                }
+            }
+        }
+    }
+    /// Make the stored variant `value` of `key` this lease's claim for the key (releasing its previous claim of the key).
+    /// False when no such variant is stored any more (a candidate the caller already validated was released meanwhile).
+    pub fn claim_stored(&self, key: &[u8], value: &Arc<T>) -> bool {
+        let hash = xxhash_rust::xxh3::xxh3_128(key);
+        let mut state = self
+            .store
+            .state
+            .write()
+            .unwrap_or_else(|error| error.into_inner());
+        let stored = state
+            .buckets
+            .get(&hash)
+            .into_iter()
+            .flatten()
+            .any(|entry| Arc::ptr_eq(&entry.value, value) && entry.key.as_ref() == key);
+        if !stored {
+            return false;
+        }
+        let detached = assign(&mut state, self.slot, key, hash, Arc::as_ptr(value) as usize);
+        drop(state);
+        drop(detached);
+        true
+    }
     /// Whole shared-core accounting, including sibling leases. This is neither
     /// this lease's private byte charge nor complete heap coverage.
     pub fn storage_accounting(&self) -> ArtifactStorageAccounting {
@@ -285,11 +337,10 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
             let bucket = state
                 .buckets
                 .entry(hash)
-                .or_insert_with(|| Vec::with_capacity(1));
+                .or_default();
             bucket.push(Variant {
                 key: Arc::clone(&key),
                 reads: receipt.reads,
-                versions: receipt.versions,
                 value: Arc::clone(&receipt.value),
                 weight: receipt.weight,
                 holders: Default::default(),
@@ -370,7 +421,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             let claim = ObservedArtifact {
                 value: Arc::clone(&receipt.value),
                 reads: receipt.reads.clone(),
-                versions: Arc::clone(&receipt.versions),
                 weight: receipt.weight,
             };
             self.claim(key, claim)?;
@@ -384,12 +434,12 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     pub fn visit_receipted_with(
         &self,
         key: &[u8],
-        validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>, &[(D, u128)]) -> Option<Q>,
+        validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         self.visit_receipted_with_value(
             key,
-            &mut |reads, versions, _| validate(reads, versions),
+            &mut |reads, _| validate(reads),
             accept,
         )
     }
@@ -398,7 +448,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     pub fn visit_receipted_with_value(
         &self,
         key: &[u8],
-        validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
+        validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>, &Arc<T>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let (receipt, changed) = self.store.visit_receipted_with_value(key, validate, accept);
@@ -408,7 +458,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 ObservedArtifact {
                     value: Arc::clone(&receipt.value),
                     reads: receipt.reads.clone(),
-                    versions: Arc::clone(&receipt.versions),
                     weight: receipt.weight,
                 },
             )?;
@@ -420,18 +469,16 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         key: Arc<[u8]>,
         reads: Vec<Observation<Q, A, D>>,
-        versions: Vec<(D, u128)>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> bool {
-        self.insert_with_owned(key, reads, versions, weight, create)
+        self.insert_with_owned(key, reads, weight, create)
             .is_some()
     }
     pub fn insert_with_owned(
         &self,
         key: Arc<[u8]>,
         reads: Vec<Observation<Q, A, D>>,
-        _versions: Vec<(D, u128)>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
@@ -445,7 +492,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_with_qualified_receipt(key, reads, Arc::from([]), weight, create)
+        self.insert_with_qualified_receipt(key, reads, weight, create)
     }
     /// Versions must be qualified for the actual immutable answer provider.
     /// Ordinary cross-host visit_explained still replays exact answers.
@@ -453,11 +500,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         key: Arc<[u8]>,
         reads: crate::Receipt<Q, A, D>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_qualified(key, reads, versions, weight, None, false, create)
+        self.insert_qualified(key, reads, weight, None, false, create)
     }
     /// Publish a freshly computed result after consumer input admission missed.
     /// Equal locator/read ledgers alone do not certify equal producer inputs.
@@ -467,11 +513,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         key: Arc<[u8]>,
         reads: crate::Receipt<Q, A, D>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_qualified(key, reads, versions, weight, None, true, create)
+        self.insert_qualified(key, reads, weight, None, true, create)
     }
     /// Republish a current immutable producer value only for this exact already
     /// admitted payload and ledger. Previous publication claims remain live;
@@ -481,17 +526,15 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         previous: &Arc<T>,
         key: Arc<[u8]>,
         reads: crate::Receipt<Q, A, D>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_qualified(key, reads, versions, weight, Some(previous), false, create)
+        self.insert_qualified(key, reads, weight, Some(previous), false, create)
     }
     fn insert_qualified(
         &self,
         key: Arc<[u8]>,
         reads: crate::Receipt<Q, A, D>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         previous: Option<&Arc<T>>,
         fresh: bool,
@@ -501,7 +544,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         // Keep producer capture on the stack; admission/budget checks in the
         // shared body happen before taking it, under the same lock as before.
         let mut create = Some(create);
-        self.insert_qualified_produced(key, reads, versions, weight, previous, fresh, &mut || {
+        self.insert_qualified_produced(key, reads, weight, previous, fresh, &mut || {
             create
                 .take()
                 .expect("artifact producer invoked more than once")()
@@ -513,7 +556,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         key: Arc<[u8]>,
         reads: crate::Receipt<Q, A, D>,
-        versions: Arc<[(D, u128)]>,
         weight: usize,
         previous: Option<&Arc<T>>,
         fresh: bool,
@@ -529,7 +571,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             if !state.buckets.get(&hash).into_iter().flatten().any(|entry| {
                 entry.key == key
                     && entry.reads == reads
-                    && entry.versions == versions
                     && Arc::ptr_eq(&entry.value, previous)
             }) {
                 return None;
@@ -545,7 +586,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     && previous.is_none()
                     && entry.key == key
                     && entry.reads == reads
-                    && entry.versions == versions
             })
             .map(|entry| (Arc::clone(&entry.value), Arc::clone(&entry.key)));
         if existing.is_none() && !self.permits_charge(state.bytes, weight) {
@@ -554,7 +594,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         let bucket = state
             .buckets
             .entry(hash)
-            .or_insert_with(|| Vec::with_capacity(1));
+            .or_default();
         let (value, key) = if let Some(existing) = existing {
             existing
         } else {
@@ -562,7 +602,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             bucket.push(Variant {
                 key: Arc::clone(&key),
                 reads,
-                versions,
                 value: Arc::clone(&value),
                 weight,
                 holders: Default::default(),
@@ -585,7 +624,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         digest: u128,
         matches_key: &dyn Fn(&[u8]) -> bool,
-        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &Arc<T>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let (accepted, changed) =
@@ -597,7 +636,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 ObservedArtifact {
                     value: Arc::clone(&receipt.value),
                     reads: receipt.reads.clone(),
-                    versions: Arc::clone(&receipt.versions),
                     weight: receipt.weight,
                 },
             )?;

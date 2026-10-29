@@ -16,15 +16,16 @@
 
 
 CAPABILITIES(/mob/living)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	setup(PROC_REF(prime_hud_list))
 	setup(PROC_REF(start_ai_brain))
-	living_rules(use_modern_ai = FALSE, has_huds = FALSE, max_nutrition = MAX_NUTRITION, fire_reaction = FIRE_REACTION_BURN, fire_trigger_verb = "ignited", fire_heats_body = FALSE, force_max_speed = 0, adminbus_trash = FALSE, parasitic = FALSE, appendage_color = "#e03997", vore_shred_time = 45 SECONDS, low_sorting_priority = FALSE)
+	living_rules(vore_icon_bellies = list("stomach"), use_modern_ai = FALSE, has_huds = FALSE, max_nutrition = MAX_NUTRITION, fire_reaction = FIRE_REACTION_BURN, fire_trigger_verb = "ignited", fire_heats_body = FALSE, force_max_speed = 0, adminbus_trash = FALSE, parasitic = FALSE, appendage_color = "#e03997", vore_shred_time = 45 SECONDS, low_sorting_priority = FALSE)
 	butchery_rules(meat_amount = 0)
 	footstep_rules(footstep_volume = 0.1, footstep_e_range = -8)
 	ref_one(nameof(own_identity))
 	ref_one(nameof(tf_mob_holder))
 	ref_one(nameof(identity))
-	drag_onto(PROC_REF(scoop_drop))
+	stamps(last_breath_at, climb_started) // last_breath_at: the last scheduled breath on its own (bio) clock, so a breathing step woken from sleep breathes when one is due; climb_started: when the climb op in flight began
 	cooldowns(next_preyloop, hud_full_refresh_at, last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping, venom_milking_cd)
 	links(LINK_END(/mob/living, LK_TF_FORM), LINK_END(/mob/living, LK_TF_ORIGIN), sparse = TRUE, b_many = TRUE)
 	links(LINK_END(/mob/living, LK_TF_FORM_MIND), LINK_END(/datum/mind, LK_TF_FORM_MIND_OF), sparse = TRUE, b_many = TRUE)
@@ -51,7 +52,7 @@ CAPABILITIES(/mob/living)
 	ref_many(nameof(organs), /obj/item/organ/external)
 	// Equipped or pump-supplied breathing tank; custody belongs to its actual slot.
 	ref_one(nameof(internal))
-	ref_one(nameof(faction_reputation), /datum/faction_reputation_ledger)
+	links(LINK_END(/mob/living, LK_FACTION_LEDGER), LINK_END(/datum/faction_reputation_ledger, LK_FACTION_LEDGER_OF), sparse = TRUE, b_many = TRUE) // the faction reputation ledger it reads and writes (faction_reputation())
 	owns_one(nameof(ai_brain), /datum/ai_brain)
 	on_change(STAT_AI_AUTHORITY, ANY, then(PROC_REF(ai_authority_changed)))
 	on_change(STAT_RELEVANCE, ANY, then(PROC_REF(ai_relevance_changed)))
@@ -66,14 +67,13 @@ CAPABILITIES(/mob/living)
 	// a human builds its body in set_species(), before init, so its organs have part slots to attach into; the var then holds it and nothing is made here
 	owns_one(nameof(body), /datum/body, starts = nameof(body_type))
 	owns_one(nameof(changeling_state), /datum/changeling)
-	owns_one(nameof(character_setup_button), /datum/character_setup_button)
+	links(LINK_END(/mob/living, LK_SETUP_BUTTON), LINK_END(/datum/character_setup_button, LK_SETUP_BUTTON_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the character setup HUD button, gone with the mob (character_setup_button())
 	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened, starts = /datum/looping_sound/mob/deafened, starts_args = list(FALSE))
-	owns_one(nameof(firesoundloop), /datum/looping_sound/mob/on_fire, starts = PROC_REF(start_fire_loop))
-	owns_one(nameof(inventory_panel), /datum/inventory_panel)
+	links(LINK_END(/mob/living, LK_INVENTORY_PANEL), LINK_END(/datum/inventory_panel, LK_INVENTORY_PANEL_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the inventory window datum, gone with the mob (inventory_panel())
 	owns_one(nameof(say_list), /datum/say_list, starts = PROC_REF(make_say_list))
 	owns_one(nameof(shadekin), /datum/shadekin)
-	owns_one(nameof(turfslip), /datum/turfslip)
-	owns_one(nameof(vore_panel_button), /datum/vore_panel_button)
+	links(LINK_END(/mob/living, LK_TURFSLIP), LINK_END(/datum/turfslip, LK_TURFSLIP_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the slide the mob is on, gone with it (current_turfslip())
+	links(LINK_END(/mob/living, LK_VORE_BUTTON), LINK_END(/datum/vore_panel_button, LK_VORE_BUTTON_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the vore panel HUD button, gone with the mob (vore_panel_button())
 	owns_many(nameof(owned_soul_links), /datum/soul_link)
 	owns_many(nameof(status_effects))
 	owns_many(nameof(trait_states))
@@ -82,10 +82,8 @@ CAPABILITIES(/mob/living)
 	owns_many(nameof(stasis_sources))
 	// What holds the biological clock rate down (a sleeper, a stasis bed) is the body's stasis (code/modules/medical/stabilisation/stasis.dm).
 	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
-	drag_onto(PROC_REF(mousedrop_input))
 	drag_onto(PROC_REF(drop_input))
-	ref_one(nameof(autofire_gun))
-	ref_one(nameof(autofire_target))
+	links(LINK_END(/mob/living, LK_AUTOFIRE_GUN), LINK_END(/obj/item/gun, LK_AUTOFIRE_USERS), sparse = TRUE, b_many = TRUE) // the gun a held trigger fires (autofire_gun())
 
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as
@@ -111,8 +109,9 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 /// The starting say list (owns_one(starts =)): only a mob that overrides the default type gets one.
 /// Most mobs inherit /datum/say_list (empty bark tables) and allocate nothing; idle_speak and hear_say handle null.
 /mob/living/proc/make_say_list(current)
-	if(say_list_type && say_list_type != /datum/say_list)
-		return say_list_type
+	var/say_type = living_rules_of(src).say_list_type
+	if(say_type && say_type != /datum/say_list)
+		return say_type
 
 /mob/living/proc/initialize_ai_brain()
 	if(!living_rules_of(src).use_modern_ai)

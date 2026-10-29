@@ -77,7 +77,7 @@ impl<R: Resolver> Resolver for ResourceProofHost<'_, R> {
             Q::ResourceIn {
                 path,
                 search_context,
-            } if self.descriptor.resource_context() == Some(search_context) => Some(path),
+            } if self.descriptor.resource_context() == Some(search_context.get()) => Some(path),
             Q::ResourceIn { .. } => return M::Unsupported(query),
             _ => None,
         };
@@ -340,7 +340,8 @@ fn finish_collection<R: Resolver>(
         artifacts: Vec::new(),
     };
     while let Some((symbol, captured, mut source)) = pending.pop_front() {
-        source.ops = frontend.is_none_or(|frontend| frontend.plan.final_macros.contains_key("DEBUG"));
+        // Always emitted; stripped at link without DEBUG (`symbolic::debug_strip`).
+        source.ops = true;
         let descriptor = &captured.descriptor;
         let lowered = retained::lower(
             symbol,
@@ -585,10 +586,10 @@ mod resource_tests {
                 }
                 Q::ResourceIn {
                     path,
-                    search_context: 7,
-                } if path == SymbolId::of("asset.txt") => M::Resource {
+                    search_context,
+                } if search_context == 7 && path == SymbolId::of("asset.txt") => M::Resource {
                     path,
-                    content: self.content,
+                    content: self.content.into(),
                 },
                 other => M::Unsupported(other),
             }

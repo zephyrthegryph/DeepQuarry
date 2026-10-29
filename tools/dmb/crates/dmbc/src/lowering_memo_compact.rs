@@ -387,14 +387,13 @@ impl Payload<'_> {
     pub(crate) fn certify_world(&mut self) {
         self.world_certified = true;
     }
-    fn covered(&self, matching: &std::collections::BTreeSet<ReadDomain>, domain: ReadDomain) -> bool {
-        matching.contains(&domain)
-            || (self.world_certified && crate::dep_index::world_determines(domain))
+    /// A read the dependency index certified under the current world needs no resolve.
+    fn covered(&self, domain: ReadDomain) -> bool {
+        self.world_certified && crate::dep_index::world_determines(domain)
     }
     pub(crate) fn changed_read<R: Resolver>(&self, host: &R) -> Option<ResolveQuery> {
-        let matching = crate::lowering_memo::matching_domains(&self.versions.0, host);
         self.reads.0.iter().find_map(|r| {
-            (!self.covered(&matching, r.query.domain())
+            (!self.covered(r.query.domain())
                 && host.resolve(r.query).canonical_bytes() != r.answer.as_ref())
             .then_some(r.query)
         })
@@ -413,15 +412,51 @@ impl Payload<'_> {
             None => return self.changed_read(host).map_or(Ok(None), Err),
         };
         let mut pending = Vec::with_capacity(self.reads.0.len());
-        let matching = dm_session::observations::certified_domains(&self.versions.0, |d| {
-            provider.domain_version(*d)
-        });
         for (index, read) in self.reads.0.iter().enumerate() {
             let answer = self.verified_answers.hydrate(
                 index,
                 read.query,
                 &read.answer,
-                self.covered(&matching, read.query.domain()),
+                self.covered(read.query.domain()),
+                &self.typed_answers.0,
+                provider,
+            );
+            if answer.canonical() != read.answer.as_ref() {
+                return Err(read.query);
+            }
+            pending.push(ResolverRead {
+                query: read.query,
+                domain: read.query.domain(),
+                answer: answer.into_parts().0,
+            });
+        }
+        Ok(Some(pending))
+    }
+    /// `transparent_reads` proven by the session's answer table instead of domain versions: a read whose recorded
+    /// answer the table holds is taken from the record (typed, not resolved again), any other is a changed read.
+    pub(crate) fn answered_reads<R: Resolver>(
+        &self,
+        host: &R,
+        answers: &crate::query_db::RequestAnswers<'_>,
+    ) -> Result<Option<Vec<ResolverRead>>, ResolveQuery> {
+        let observer = host.transparent_receipt_observer();
+        let provider: &dyn Resolver = match observer.as_ref() {
+            Some(observer) => observer.provider(),
+            None if !host.observes_reads() => host,
+            None => return self.changed_read(host).map_or(Ok(None), Err),
+        };
+        let mut pending = Vec::with_capacity(self.reads.0.len());
+        for (index, read) in self.reads.0.iter().enumerate() {
+            let held = (self.world_certified && crate::dep_index::world_determines(read.query.domain()))
+                || answers.unchanged_hash(&read.query, dm_query::hash_bytes(&read.answer));
+            if !held {
+                return Err(read.query);
+            }
+            let answer = self.verified_answers.hydrate(
+                index,
+                read.query,
+                &read.answer,
+                true,
                 &self.typed_answers.0,
                 provider,
             );
@@ -440,7 +475,6 @@ impl Payload<'_> {
         crate::lowering_memo_wire::ResidentPromotion {
             current: None,
             queries: self.reads.0.iter().map(|r| r.query).collect(),
-            versions: self.versions.0.clone(),
             relative_debug: self.debug.0.clone(),
         }
     }

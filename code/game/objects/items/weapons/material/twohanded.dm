@@ -46,9 +46,9 @@ CAPABILITIES(/obj/item/material/twohanded)
 /obj/item/material/twohanded/update_force()
 	base_name = name
 	if(combat_of(src).sharp || combat_of(src).edge)
-		force_wielded = num_or_null(material.edge_damage())
+		force_wielded = material.edge_damage()
 	else
-		force_wielded = num_or_null(material.blunt_damage())
+		force_wielded = material.blunt_damage()
 	force_wielded = round(force_wielded*force_divisor)
 	force_unwielded = round(force_wielded*unwielded_force_divisor)
 	set_force(force_unwielded)
@@ -90,12 +90,12 @@ CAPABILITIES(/obj/item/material/twohanded)
 	unwielded_force_divisor = 0.25
 	force_divisor = 0.7 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
 	dulled_divisor = 0.75	//Still metal on a stick
-	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_LARGE
 	force_wielded = 30
 	applies_material_colour = 0
 
 CAPABILITIES(/obj/item/material/twohanded/fireaxe)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), can_cleave = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
@@ -150,12 +150,12 @@ CAPABILITIES(/obj/item/material/twohanded/fireaxe/scythe)
 	force_divisor = 0.5 			// 15 when wielded with hardness 30 (glass)
 	unwielded_force_divisor = 0.375
 	thrown_force_divisor = 1.5 		// 22.5 when thrown with weight 15 (glass)
-	injury_kind = INJURY_PIERCE
 	default_material = MAT_GLASS
 	applies_material_colour = 0
 	fragile = 1	//It's a haphazard thing of glass, wire, and steel
 
 CAPABILITIES(/obj/item/material/twohanded/spear)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(movable_motion(throw_speed = 3))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10, edge = FALSE, sharp = TRUE, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored"), reach = 2, attack_speed = 14))
@@ -211,7 +211,7 @@ CAPABILITIES(/obj/item/material/twohanded/riding_crop)
 	force_divisor = 0.9 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
 	icon = 'icons/obj/hammer_sprites_ch.dmi'
 	w_class = ITEMSIZE_HUGE
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	dulled_divisor = 0.95	//Still metal on a stick
 	force_wielded = 23 //A fair bit less than the fireaxe.
 	applies_material_colour = 0
@@ -264,7 +264,7 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
 	desc = "A long, heavy hammer. This weapons crackles with barely contained energy."
 	force_divisor = 2
 	force_wielded = 75
-	slowdown = 0
+	worn_factors = null
 
 CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
 	configure(item_thrown(force = 15))
@@ -318,9 +318,9 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
 	item_state = "saber"
 	unwielded_force_divisor = 0.1
 	force_divisor = 0.3
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/material/twohanded/longsword)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 
 /obj/item/material/twohanded/saber/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")

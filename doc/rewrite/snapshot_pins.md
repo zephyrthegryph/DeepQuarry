@@ -1,129 +1,19 @@
-# Snapshot pins: when a generated snapshot is enough
+# Snapshot pins: what is left
 
-A conversion (legacy forms to `CAPABILITIES` ops) must not change what a player can do. Two tools prove it:
+A snapshot pin stores a golden table and fails when the code no longer produces it; its only fix is to re-bless it, so it records change instead of
+guarding behaviour. Most were deleted: the generated conversion pins (`dq_conversion_pin` and the i7, machinery, requirement and silicon subclasses with
+`snapshots/pins/` and its factored `op_bases/`), the hit pins (`dq_hit_pin`), the loot, chem-math, factor, reagents-start, matter and compiler-behaviour
+goldens. Write a test that drives public inputs and asserts the effect (`test_click()`, `test_ui()`, `test_time()`, state through adapters); one direct
+assertion beats a stored table.
 
-- **Generated pins** (`tools/dq_pin.sh`, test `dq_conversion_pin`): a recorded table of what each actor can do
-  with the type, written before the conversion and checked after it. Cheap: one command, no test code.
-- **Hand-written pins** (`dq_p2_*_behaviour.dm`): tests that drive public inputs and read the effects
-  (`test_click()`, `test_ui()`, `test_time()`, state through adapters). Expensive, and the only way to
-  pin effects.
-
-## The routine
-
-```sh
-bash tools/dq_pin.sh /obj/machinery/foo /obj/machinery/foo/bar   # 1. before converting: record (empty files, then one run)
-# 2. convert the types
-bash tools/dq_focused_test.sh dq_conversion_pin                   # 3. every row that changed, "new or changed" / "missing"
-bash tools/dq_focused_test.sh --bless dq_conversion_pin           # 4. only if each change is intended: rewrite the pins
-git add code/modules/unit_tests/snapshots/pins/                   # 5. commit the pins with the conversion
-```
-
-Each type is one file, `code/modules/unit_tests/snapshots/pins/<type with / as .>.txt`. An empty file is a
-type not recorded yet: the next run records it instead of failing. `bash tools/dq_pin.sh --rm /type` drops one.
-The files are read at run time, so recording or blessing never recompiles.
-
-## What a pin records
-
-For a human, a cyborg, an AI and a ghost with an empty hand, and for the human holding each common tool
-(screwdriver, crowbar, wrench, wirecutters, multitool, a lit welder, cable, steel, an ID) and each item a
-legacy interaction of the type asks for:
-
-| Row | Meaning |
-|---|---|
-| `human\|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)` | the menu entry, greyed out, with its refusal |
-| `human\|none menu: Eject Recharger` | an entry the menu offers |
-| `human\|/obj/item/multitool click: Click: Rcon tag` | what a plain click with that hand does (`click: nothing`) |
-| `wires: Failsafes, Grounding, Input, Output, RCon` | the wires behind the panel (duds left out) |
-| `keys: add_cable, cut_terminal, ...` | the op keys and legacy interaction ids |
-
-Rows are keyed by what the player sees (labels and refusal text), not by ids, so a faithful conversion keeps
-them. `keys:` is the exception: it changes on every conversion by design; check that each legacy id has
-an op, then bless. A label that changes wording (`Open maintenance panel` to `Open panel`) is a visible change:
-keep the old wording in the op's `label()` or say why in the commit.
-
-## When a generated pin is enough
-
-All of these hold:
-
-- The conversion moves declarations: the same actions, offered to the same actors with the same tools, refused
-  for the same reasons. Typical: a machine's panel, deconstruct, anchor, part replacement, a window-open op, a
-  multitool setting, a tool swap.
-- The effects are the library's (`panel()`, `anchor()`, `machine_basics()`, `wires()`, `part_replacement()`),
-  which have their own tests, or are a one-line `then()` into the proc the legacy form already called.
-- Nothing about the type is timed, random, or reached through a sequence (a construction ladder, a cycle).
-
-## When hand-written pins are still needed
-
-- **Effects.** A pin shows that "Eject" is offered, not that it ejects the right thing to the right place.
-  Anything with its own state change (charge, gas, contents, access) needs a test that reads it.
-- **Windows.** A pin sees the op that opens a window, not its buttons, data or the checks on each action:
-  pin `ui_act` ops with `test_ui()` and the data with the window's adapter.
-- **Time.** Waits (`wait()`), cooldowns, autoclose, periodic work: drive `test_time()`.
-- **Sequences and states.** Construction ladders, panel-open-then-cut-a-wire, broken or unpowered states,
-  emag, EMP: a pin records one fresh, powered instance only.
-- **Other inputs.** Bumps, drags, alt/ctrl/shift clicks other than the plain click, radio, signals, remote
-  (AI) control beyond what the menu shows.
-- **Anything a pin row already disagreed on.** If the conversion changes a row on purpose, a test that says
-  what the new behaviour is beats a blessed row nobody reads.
-
-Rule of thumb: a generated pin is the floor for every converted type; add hand-written pins for each effect
-the type owns (not the library's) and for each row of the table above that applies.
-
-## The i7 interaction snapshots
-
-`dq_interaction_domain_snapshot/i7_bulk`, `i7_items_bulk` and `i7_structures_bulk` use the same file layout
-(`code/modules/unit_tests/snapshots/<name>/`). Each is a native pin capture (`dq_conversion_pin`'s rows: menus, refusals,
-clicks, wires, op keys); the legacy resolver they once recorded is retired (ix-r2). Re-record after an
-intended change with `bash tools/dq_focused_test.sh --bless 'dq_interaction_domain_snapshot/*'`; add a type by
-adding an empty file for it. On a mismatch the current rows are written to `data/test-snapshots/<name>/`. A type's file there is removed when the type matches again, is blessed or is recorded, so the directory only ever holds rows that differ now (the loot pins do the same for `data/test-snapshots/loot/<pin>.txt`).
-
-## Factored op pins
-
-The op pins (`pins/`, `i7_bulk/`, `i7_items_bulk/`, `i7_structures_bulk/`, `last_timed_1008/`, `machinery_timed_1008/`,
-`requirements_protocol_1008/`) record the rows a type inherits once, not in every file. A group is the rows of one
-`actor|held item` (`human|/obj/item/tool/crowbar`); `snapshots/op_bases/<base type>.txt` holds one block per group for a base
-type (a type-path prefix such as `/obj/item`), and a type file refers to the nearest recorded ancestor's block and writes only
-what differs:
-
-```
-@obj.item human|none          the rows of /obj/item's human|none block
--menu: Pick up                minus `human|none menu: Pick up`
-+2 menu: Use                  plus `human|none menu: Use`, at index 2 of the group
-keys: activate, ...           any other line is a literal row
-```
-
-Expanded (`dq_snapshot_file_rows()`, `python3 tools/dq_pin_factor.py --expand DIR`) a file is exactly the rows it was made
-from, so a test compares the same rows as before. A mismatch is reported once per row with the types it differs for: a
-changed inherited row is one line (`(412 types: ...)`), a per-type divergence names its type. An unfactored file (plain rows) is
-still read as before.
-
-- **Bless and record as before.** The world writes plain rows; `dq_focused_test.sh` then runs `python3 tools/dq_pin_factor.py`,
-  which re-encodes every op pin against the bases (refreshing a block only when fewer than half of its users still match it,
-  so a renamed inherited op changes the base file once instead of every type file). Commit `op_bases/` with the pins.
-- **`--rebase`** derives every block from scratch; **`--check`** exits 1 when a file is not in canonical factored form.
-- **A merge conflict in a pin file**: take master's version of the file, then re-bless the type
-  (`bash tools/dq_focused_test.sh --bless <test>`), or, for a conflict that is only the encoding, keep either side's rows
-  expanded and run `python3 tools/dq_pin_factor.py`. Never hand-merge `@`/`-`/`+` lines.
+What remains, with the file layout of `dq_snapshot_files.dm` (one text file per type under `snapshots/<name>/`, `--bless` rewrites the rows):
+the xform pins (`snapshots/xform/`), the physiology factors (`snapshots/factors/physiology.txt`) and the window data pins below.
 
 ## Look pins (deleted)
 
 There are no look pins. `dq_look_pin`, `dq_look_tree_pin`, `dq_look_state_pin`, the human and profile look hashes and their snapshot files were deleted
 on 2026-10-17: they cost too much time per merge, the rendering migration is mostly done and playtesting finds visual issues. Snapshot look pins are
 never re-added. Test a draw's behaviour (`dq_fresh_look_default`, `dq_human_draw_deterministic`, a hand-written test of the one thing a conversion must keep).
-
-## Hit pins
-
-A pin of what a thing does when it is hit or emagged, for the hit-reaction and emag conversions (`DAMAGE_REACTION`, `DAMAGE_REACTION_AFTER`,
-`DECLARE_EMAG` to a hit hook, an `emag()` op; `code/modules/unit_tests/dq_hit_pins.dm`). `bash tools/dq_pin.sh --hit /T` records one type
-(`snapshots/hit_pins/`, test `dq_hit_pin`). Each trigger gets a fresh instance on the test floor: an EMP (severity 1 and 2), an explosion
-(1, 2, 3), a projectile, a blob hit, a thrown crowbar (the public entries `emp_act`, `ex_act`, `bullet_act`, `blob_act`, `hitby`) and an emag card
-clicked by a human. The rows are what changed: `<trigger> | <var>: <old> -> <new>` for each var of the target, `deleted`, `turf: +<type> xN` /
-`-<type> xN` for what appeared on or left its tile, `runtime: <message>` when the entry threw, `nothing`. Randomness is reseeded per trigger; a var that
-holds a clock reading (cooldown, ready, time, next, last, delay, timer) is written as `<set>` or `0`, `atom_integrity` as `up` or `down`, and a blob
-hit as `survives` or `destroyed` (a blob rolls its damage). A bitmask the engine keeps is written by flag name: `refresh_queued` as `DEP_*` (`DEP_ALL`, `DEP_DRAW|DEP_UI`), `refresh_bits` as `CHANGE_*` (bits no flag names stay a number; `dq_pin_bitmask_flags()` in `dq_hit_pins.dm` lists them). Mobs and turfs are not hit-pinned (the harness cannot make them behave). A pin sees the
-state at the end of the call and one drain later, not a timer seconds on, and not a hit hook that runs after the hit instead of before it unless that
-changes the end state: hand-written tests cover those. A type whose entry throws on a bare instance (the rig's shock wire without a wearer) is a
-finding, not a pin: leave it out and say so.
 
 ## Window data pins
 

@@ -19,6 +19,9 @@ pub(crate) struct UnitArtifact {
 }
 #[path = "abi_batch.rs"]
 pub(super) mod batch;
+#[path = "abi_store.rs"]
+mod store;
+use store::AbiStore;
 #[path = "abi_disk.rs"]
 mod disk;
 pub(crate) use disk::{admit_initializer_engine_bucket, initializer_engine_record};
@@ -30,7 +33,7 @@ pub(crate) enum Artifact {
 pub(crate) struct AbiDiskLease(#[allow(dead_code)] Arc<disk::Transport>);
 
 pub struct AbiArtifacts {
-    pub(super) store: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
+    pub(super) store: AbiStore,
     engine_owner: Option<Arc<crate::runner_host::EnginePayload>>,
     /// Disk transport of the current request. Weak: the request's `AbiDiskLease` owns it, so a retained
     /// store never keeps a cache snapshot alive between requests.
@@ -58,8 +61,12 @@ pub struct AbiArtifacts {
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
+        let batch_replay = std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1");
+        let batch_recipes = batch_replay
+            || std::env::var_os("DMB_ABI_BATCH_RECIPES").is_some_and(|value| value == "1");
         Self {
-            store: dm_session::ObservedArtifactStore::current_revision(),
+            // Recipes bind to one session's frontend: a store that builds them stays private.
+            store: AbiStore::new(batch_recipes),
             engine_owner: None,
             disk: std::sync::RwLock::new(std::sync::Weak::new()),
             pinned_disk: None,
@@ -67,9 +74,8 @@ impl Default for AbiArtifacts {
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
             provisional_reused: AtomicUsize::new(0),
-            batch_replay: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1"),
-            batch_recipes: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1")
-                || std::env::var_os("DMB_ABI_BATCH_RECIPES").is_some_and(|value| value == "1"),
+            batch_replay,
+            batch_recipes,
             batch_reused: AtomicUsize::new(0),
             scheduled_reused: AtomicUsize::new(0),
             batch_rows_selected: AtomicUsize::new(0),
@@ -207,8 +213,8 @@ impl Resolver for BorrowedResolver<'_> {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.0.resolve(query)
     }
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.0.domain_version(domain)
+    fn answer_world(&self) -> Option<u128> {
+        self.0.answer_world()
     }
 }
 #[allow(clippy::too_many_arguments)] // This is the single optional artifact adapter around current ABI preparation.
@@ -302,7 +308,7 @@ pub(super) fn prepare(
             .store
             .visit_receipted_with(
                 &key,
-                &mut |reads, versions| admission::changed(reads, versions, current, admission),
+                &mut |reads| admission::changed(reads, current, admission),
                 &mut |value| matches!(value.as_ref(), Artifact::Unit(_)),
             )
             .0
@@ -324,6 +330,7 @@ pub(super) fn prepare(
         }
     }
     drop(stage);
+    // A session's answer table proves ABI receipts: their reads carry no domain version.
     let recording = dm_session::RecordingResolver::new(&base);
     let issued_identity = dm_ir::ProcedureIdentity {
         owner: context.identity.owner,
@@ -424,11 +431,6 @@ pub(super) fn prepare(
                 ) && a.domain == b.domain
             })
             .map_err(AbiError::invariant)?;
-        let versions: Vec<_> = recording
-            .domain_receipts()
-            .into_iter()
-            .map(|(domain, version)| (Domain::Semantic(domain), version))
-            .collect();
         // Current-roster mode has no byte admission budget. This is an inline
         // accounting charge only; opt-in census separately walks actual owners.
         let charge = std::mem::size_of::<Artifact>()
@@ -438,7 +440,6 @@ pub(super) fn prepare(
         if let Some(accepted) = store.store.insert_with_receipt(
             Arc::clone(&key),
             reads,
-            versions.into(),
             charge,
             || {
                 Artifact::Unit(Arc::new(UnitArtifact {

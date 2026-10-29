@@ -65,7 +65,19 @@ export function rootKeyFor(dme: string, worktree: string, env: NodeJS.ProcessEnv
   const norm = (p: string) => path.resolve(p).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
   const merge = env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base';
   const train = env.DQ_TRAIN_WT ?? 'E:/projects/dq-wt/train-base';
-  return norm(worktree) === norm(merge) || norm(worktree) === norm(train) ? `${rootKey(dme)}-merge` : rootKey(dme);
+  const wt = norm(worktree);
+  // The train's gate may compile in the root of a precheck worker (DQ_TRAIN_ROOT_KEY=pre<N>, set by tools/dq_train.sh to the train root
+  // that compiled last): the dmbc daemon's memory budget keeps about one session, the most recently used one, so the root a precheck
+  // just compiled master + a lane in is the warm one, and the batch (master + its lanes) is a patch from it instead of a cold compile.
+  if (wt === norm(train) && /^(merge|pre[0-9]+)$/.test(env.DQ_TRAIN_ROOT_KEY ?? '')) return `${rootKey(dme)}-${env.DQ_TRAIN_ROOT_KEY}`;
+  if (wt === norm(merge) || wt === norm(train)) return `${rootKey(dme)}-merge`;
+  // The train's precheck workers (DQ_TRAIN_PRE_WT<N>) and its parallel-bisect worktree (DQ_TRAIN_WT2) each compile in a root of their
+  // own: they run beside the train's gate and each other, and each only ever holds master plus one lane (a worker's next precheck patches
+  // from its previous one) or master plus part of a batch. In the shared lane root they would queue behind every lane's focused run.
+  const pre = norm(env.DQ_TRAIN_PRE_WT ?? 'E:/projects/dq-wt/train-pre');
+  if (wt.startsWith(pre) && /^[0-9]+$/.test(wt.slice(pre.length))) return `${rootKey(dme)}-pre${wt.slice(pre.length)}`;
+  if (wt === norm(env.DQ_TRAIN_WT2 ?? 'E:/projects/dq-wt/train-bisect')) return `${rootKey(dme)}-bisect`;
+  return rootKey(dme);
 }
 
 function normalizeTarget(target: string): string {

@@ -265,6 +265,8 @@ fn run_build_attempt(
         }
         dm_profile::request_mark("session.watch_synced");
     }
+    // Daemon sessions retain artifacts; only they outlive the request and may publish the cache batch afterwards.
+    let defer_cache_batch = host.retains_artifacts();
     let compiler = if executable && (!no_cache || host.retains_artifacts()) {
         let compiler = dmbc::daemon::compiler_identity()?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
@@ -476,7 +478,7 @@ fn run_build_attempt(
                 as Arc<dmbc::lowering_memo::CachePublisher>
         });
     let procedure_memo = host
-        .procedure_memo(memo_policy, cache_snapshot.clone(), publishable_artifacts)
+        .procedure_memo(memo_policy, facts_policy, cache_snapshot.clone(), publishable_artifacts)
         .map(|memo| {
             let memo = memo.with_explanation_limit(131072).with_facts_policy(facts_policy);
             match &cache_publisher {
@@ -905,93 +907,14 @@ fn run_build_attempt(
             }
         };
         dm_profile::request_mark("patch.early_admission_started");
-        // Declaration patches (appended callables, numeric defaults) for edits the general path
-        // has not absorbed yet. Any unproven condition declines (logged) and the general path runs.
-        let tree = &frontend.snapshot.tree;
-        let patched = match (&generation, &patch_shape) {
-            (Some(generation), Some(shape))
-                if tree.appended_callables().is_some() || tree.default_edits().is_some() =>
-            {
-                let patch_started = Instant::now();
-                let attempt = (|| {
-                    let inputs = snapshot_memo
-                        .get(&inputs_capture, nontext.retained_resource_inputs())
-                        .map_err(|error| format!("input admission: {error}"))?;
-                    dm_profile::request_mark("patch.inputs_snapshot");
-                    dmbc::declaration_patch::try_patch(dmbc::declaration_patch::PatchRequest {
-                        generation,
-                        shape,
-                        frontend: &frontend,
-                        resolver: &nontext.resolver,
-                        engine,
-                        engine_bytes: bytes,
-                        references: &links.references,
-                        spellings: &links.inventory.spellings,
-                        resource_search_context: Some(nontext.resource_search_context),
-                        inputs,
-                        archive: nontext.archive_identity(),
-                        executor,
-                        memo: procedure_memo.as_ref(),
-                        workers,
-                        project: &project,
-                    })
-                })();
-                match attempt {
-                    Ok(patched) => {
-                        dmbc::compile_stats::note_patch(patched.changed_bodies);
-                        dmbc::declaration_patch::note_applied(&project);
-                        dmbc::daemon_eprintln!(
-                            "native declaration patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
-                            patched.changed_bodies,
-                            patched.shifted_initializers,
-                            patched.patched_rows,
-                            patch_started.elapsed().as_secs_f64()
-                        );
-                        Some(patched)
-                    }
-                    Err(reason) => {
-                        dmbc::daemon_eprintln!(
-                            "native declaration patch: declined after {:.3}s: {reason}",
-                            patch_started.elapsed().as_secs_f64()
-                        );
-                        None
-                    }
-                }
-            }
-            _ => None,
-        };
         if generation.is_none() {
             dmbc::compile_stats::note_full("no retained generation (cold session)");
         }
         dm_profile::request_mark("patch.attempted");
-        // A patch or an incremental output claims nothing it reused in the procedure memo;
+        // An incremental output claims nothing it reused in the procedure memo;
         // publishing its request lease would replace (evict) every resident record.
-        let declaration_patched = patched.is_some();
         let incremental = std::cell::Cell::new(false);
-        let compile_result = if let Some(patched) = patched {
-            let (resolver, _stage, publication) = nontext.into_composition_parts();
-            let (abi, startup) = patched.query;
-            query_attempt
-                .capture_resolved_host(&frontend, resolver, abi, startup)
-                .map_err(|error| {
-                    dmbc::request_failure::RequestFailure::internal(format!(
-                        "native internal: query host capture: {error}"
-                    ))
-                })?;
-            let explanations = runner_report::explanations(&frontend, None);
-            drop(frontend);
-            Ok::<_, dmbc::cold::ColdError>((
-                dmbc::cold::ColdOutput {
-                    dmb: patched.dmb,
-                    timings: Default::default(),
-                    warnings: patched.warnings,
-                    startup: None,
-                },
-                publication,
-                explanations,
-                None,
-            ))
-        } else { (|| {
+        let compile_result = { (|| {
             let values = dmbc::type_values::CapturedTypeValues::pinned(&frontend, engine)
                 .map_err(dmbc::cold::ColdError::RuntimeTypeValues)?;
             let values = dmbc::resource_values::CapturedResourceValues::new(
@@ -1110,7 +1033,7 @@ fn run_build_attempt(
                 linking_inputs_seconds, compilation_started.elapsed().as_secs_f64(),
                 total.elapsed().as_secs_f64());
         }
-        let built_on_retained = declaration_patched || incremental.get();
+        let built_on_retained = incremental.get();
         let (output, publication, explanations, patch_records) = match compile_result {
             Ok(output) => output,
             Err(dmbc::cold::ColdError::Lowering(diagnostics)) => {
@@ -1181,7 +1104,6 @@ fn run_build_attempt(
                 memo.counts.local_attempts.load(Relaxed), memo.counts.local_hits.load(Relaxed),
                 memo.counts.local_ns.load(Relaxed) as f64 / 1e9, memo.counts.keyed_ns.load(Relaxed) as f64 / 1e9,
                 dmbc::lowering::local_decline_stats());
-            dmbc::daemon_eprintln!("native domain memo: {}", dmbc::engine_host::take_domain_memo_counts());
             match memo.dep_index() {
                 Some(index) => dmbc::daemon_eprintln!("native dependency index: {}", index.summary()),
                 None => dmbc::daemon_eprintln!("native dependency index: off"),
@@ -1388,7 +1310,43 @@ fn run_build_attempt(
             memo.publish_successful();
         }
         dm_profile::request_mark("finalization.memo_published");
-        let cache_batch_stats = memo_cache.as_ref().map(|cache| match cache.finish_batch() {
+        // A daemon replies once the output is installed and publishes the cache batch in the background (`cache_flush`); a
+        // one-shot compile exits when the request ends, so it publishes here.
+        let cache_batch_stats = memo_cache.as_ref().map(|cache| {
+            if defer_cache_batch {
+                if let Some(root) = cache.root().map(std::path::Path::to_path_buf) {
+                    return match cache.take_batch() {
+                        Ok(dmbc::runner_disk::TakenBatch::Spool(spool)) => {
+                            dmbc::cache_flush::defer(root, "request batch", move || {
+                                spool.finish().map_err(|error| error.to_string()).map(|report| {
+                                    format!(
+                                        "segment {} records={} variants={}",
+                                        report.segment.map_or_else(|| "none".to_owned(), |id| format!("{id:032x}")),
+                                        report.records,
+                                        report.variants
+                                    )
+                                })
+                            });
+                            serde_json::json!({"segment":null,"committed_records":0,"committed_variants":0,
+                                "status":"deferred","scope":"one_request_completed_batch"})
+                        }
+                        Ok(dmbc::runner_disk::TakenBatch::Report(report)) => serde_json::json!({
+                            "segment": report.segment.map(|id| format!("{id:032x}")),
+                            "committed_records": report.records,
+                            "committed_variants": report.variants,
+                            "status": "completed",
+                            "scope": "one_request_completed_batch",
+                        }),
+                        Err(error) => {
+                            dmbc::daemon_eprintln!("native cache publication skipped: {error}");
+                            serde_json::json!({"segment":null,"committed_records":0,
+                                "committed_variants":0,"status":"failed","error":error,
+                                "scope":"one_request_completed_batch"})
+                        }
+                    };
+                }
+            }
+            match cache.finish_batch() {
             Ok(report) => serde_json::json!({
                 "segment": report.segment.map(|id| format!("{id:032x}")),
                 "committed_records": report.records,
@@ -1401,6 +1359,7 @@ fn run_build_attempt(
                 serde_json::json!({"segment":null,"committed_records":0,
                     "committed_variants":0,"status":"failed","error":error,
                     "scope":"one_request_completed_batch"})
+            }
             }
         });
         dm_profile::request_mark("finalization.cache_batch");
@@ -1416,7 +1375,7 @@ fn run_build_attempt(
         });
         let declaration_stats = frontend_report.declaration_reuse;
         dmbc::daemon_eprintln!("native declaration reuse: {declaration_stats}");
-        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"frontend_stage_wall_seconds":frontend_report.frontend_stage_wall_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"cache_batch":cache_batch_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
+        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"frontend_stage_wall_seconds":frontend_report.frontend_stage_wall_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"cache_batch":cache_batch_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":runner_report::explanations_value(&explanations)});
         let mut stats = stats;
         stats["metadata_resolution"] = frontend_report.metadata_resolution;
         dm_profile::request_mark("finalization.stats_built");

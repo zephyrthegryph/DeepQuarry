@@ -9,14 +9,14 @@ known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets"
 
 [lint.sys]
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose; code/engine/_generated/ is written by `analyze gen`.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/engine/_generated/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/engine/_generated/"]
 
 # A sys module with an own section of path exemptions replaces [lint.sys] for that module (the section is found
 # by lint name first), so it repeats the sys_lint.py EXEMPT prefixes above and adds the module's own.
 [lint."sys/sync_sql"]
 # sync_sql.py EXEMPT_FILES: the database layer itself (boot and shutdown queries, the flow wrapper, the local
 # SQLite database, world/IsBanned) may block.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/"]
 exempt_files = [
   "code/controllers/subsystems/dbcore.dm",
   "code/controllers/subsystems/sqlite.dm",
@@ -28,7 +28,7 @@ exempt_files = [
 # The files that are the overlay engine: look parts compile to overlays here and nowhere else. The look builder applies them; the
 # overlay subsystem is the queue under add_overlay(); the emissive blocker is the one priority overlay a movable keeps; the limit macro
 # is the overflow guard every overlay write runs. Anything else draws through look.overlay()/look.live_image()/look.mimic()/look_flash().
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/engine/_generated/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/engine/_generated/"]
 exempt_files = [
   "code/engine/present/appearance_builder.dm",
   "code/modules/lighting/emissive_blocker_overlays.dm",
@@ -39,22 +39,22 @@ exempt_files = [
 [lint."sys/usr_use"]
 # usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context. code/engine/ is the engine's one reader and
 # writer of usr: the generated native input overrides and with_actor() (code/engine/lifeforms/input.dm).
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/__defines/", "code/engine/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/__defines/", "code/engine/"]
 
 [lint.ui_actions]
 # ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/"]
 [lint.cap_bits.lists]
 # cap_bits_lint.py: REGISTRY, WRITERS and the unit-test prefix. These files are still scanned for bit
 # definitions; the lists only decide where a cap_state write is legal.
 registry = ["code/__defines/cap_bits.dm"]
 writers = ["code/datums/capabilities/capabilities.dm", "code/engine/declare/capability_tables.dm"]
-write_exempt_prefixes = ["code/modules/unit_tests/"]
+write_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
 
 [lint.pool.lists]
 # pool_lint.py EXEMPT_PREFIX: `new` and unreleased take() are not counted here (the files still
 # declare pooled types and release).
-exempt_prefixes = ["code/modules/unit_tests/", "code/engine/state/pool.dm"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/engine/state/pool.dm"]
 
 [lint.om_internal]
 # om_internal_lint.py SKIP: the scheduler core and the macros that map the public API onto it.
@@ -73,7 +73,8 @@ input_stance_readers = [
     "code/modules/mob/living/living_movement.dm",
     "code/modules/vore/eating/belly_obj_resist.dm",
     "code/modules/combat_ai/",
-    "code/modules/unit_tests/",
+    "code/domains/ai/",
+    "code/modules/unit_tests/", "code/tests/unit_tests/",
 ]
 
 [lint.leftovers.lists]
@@ -88,7 +89,7 @@ radial_impl_prefixes = ["code/_onclick/hud/radial"]
 # ownership_lint.py: the index, the usage map, unknown_var, kinds, matrix and contradiction still read these
 # files; string_name, removed, callback, handle and raw_write skip them.
 # tracked_lists.dm is build output: the tracked-list mutators it writes (add_<v>, set_<v>_at, ...) are judged where the list is declared.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm", "code/engine/_generated/tracked_lists.dm"]
 
 # E5 semantic lints (tools/analyze/src/lints/sem_*.rs; tools/analyze/README.md, "Semantic layer").
@@ -99,7 +100,7 @@ exempt_files = ["code/__defines/tgs.dm", "code/engine/_generated/tracked_lists.d
 # E1's tests name unknown keys and text sources on purpose (the build errors they prove), its fixtures stand in for op() with entry_of("op", ...),
 # and code/engine/_generated/ holds copies of declarations the lints already read at their source.
 [lint."sem/keys"]
-exempt_files = ["code/modules/unit_tests/dq_e0_proofs_tests.dm", "code/modules/unit_tests/dx_op_resolution_tests.dm", "code/modules/unit_tests/dq_e1_declare_tests.dm", "code/tests/engine/e1_fixtures.dm"]
+exempt_files = ["code/tests/unit_tests/dq_e0_proofs_tests.dm", "code/modules/unit_tests/dx_op_resolution_tests.dm", "code/tests/unit_tests/dq_e1_declare_tests.dm", "code/tests/engine/e1_fixtures.dm"]
 exempt_prefixes = ["code/engine/_generated/"]
 
 [lint."sem/handlers".lists]
@@ -107,22 +108,23 @@ try_calls = []
 
 [lint.scheduler]
 # scheduler_lints.py exempt_path()
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
 [lint.tracked]
 # tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
 # are not counted. code/engine/_generated/ is build output: its source lines are judged where they are declared (a
 # ui_shape(registered_name = ...) row is a named argument there, not a write).
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/engine/_generated/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/engine/_generated/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
 [lint.auto_tracked.lists]
 # Vars the read-driven inference (tools/analyze/src/gens/auto_tracked.rs) never gives a generated setter: `var` for any type, `/type::var` for
 # one. Engine lifecycle state whose writes are on the qdel and bridge hot paths and which reactive code reads only through QDELETED() and
 # its siblings; the destroy itself publishes through on_destroy().
-exclude = ["gc_destroyed", "vg_entity", "datum_flags"]
+exclude = ["gc_destroyed", "vg_entity", "datum_flags", "/datum/km_hist::count", "/datum/km_depth_hist::count"]
 # (datum_flags: lifecycle bits the engine sets inside a refresh (cadence_start) and during destroy; a setter would mark the holder from its own refresh.)
+# (km_hist/km_depth_hist count: the kernel meter bumps it for every sample of every system each tick, ~11k writes in 133 s idle; only the report reads it, so a tracked write was pure overhead.)
 # Vars the inference tracks although no reactive code reads them in a way it can see, or no `set_v()` call is typed to their type: their callers reach the
 # machine through an accessor the call scan cannot type (`connected().set_locked(...)`, `machine().set_active(...)`) while another type owns a
 # hand-written `set_v`; or a base-type var a `when(nameof(v))` gate reads that only subtypes' defaults ever set (base_vars wants it housed).
@@ -137,31 +139,34 @@ exclude_fixtures = ["/obj/gdeps_probe::raw_ok", "/obj/dq_small_look_composer::dr
 
 [lint.untracked_inputs]
 # Test fixtures read untracked state on purpose (dq_generated_deps_tests.dm proves an untracked stat is never cached).
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
 
 [lint.cooldown]
-# cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
-exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]
+# cooldown_lint.py SKIP_DIRS.
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/controllers/", "code/datums/om/"]
 [lint.system_boundary]
 # system_boundary_lint.py SKIP_DIRS (unit tests read private state through system_debug()) and
 # GENERATED_DIRS (the generated verdigris bindings are emitted for every system, so a new binding must
 # not raise a ceiling). code/engine/_generated/ is where `analyze gen system_accessors` writes each SYSTEM_ACCESSOR proc:
 # the generated accessor is the one place that reads the system's var.
-exempt_prefixes = ["code/modules/unit_tests/", "code/__defines/verdigris/", "code/engine/_generated/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/__defines/verdigris/", "code/engine/_generated/"]
 
 [lint.base_vars.lists]
 # base_vars_lint.py: `list_init` takes allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES: unit
 # tests and benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept
 # verbatim). `base_var` counts every path, so these are lists the rule reads, not whole-lint exemptions.
-list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 list_init_exempt_files = ["code/__defines/tgs.dm"]
 # Homes for base-type vars (doc/rewrite/proposals/base_vars.md). A var a home macro names on its own type
 # (`TRACKED(/mob, stat)`), or whose declared type is under a home type path (the HUD datum, the profile records,
 # the sparse and cooldown stores), is not a `base_var` site. A lane that lands a new home adds it here.
 base_var_home_macros = ["TRACKED", "TRACKED_SCHEMA", "TRACKED_DATA", "SETTER", "STAT"]
 base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/datum/cooldown_table"]
+# A var declared as a relation on its own type is homed (base_vars.md: references live in relations): an entry of one of these
+# kinds naming it in the CAPABILITIES block of the type that declares it, or an end of links(/A::a, /B::b).
+base_var_home_relations = ["ref_one", "ref_many", "owns_one", "owns_many", "links", "slot"]
 # The most hot-var rows `[lint.base_vars.tables.base_var_home_hot]` may hold (one number). It only falls.
-hot_ceiling = ["14"]
+hot_ceiling = ["11"]
 # records_data_only: the procs a /datum/record may define (accessors).
 record_accessor_prefixes = ["set_", "get_"]
 
@@ -178,9 +183,6 @@ record_accessor_prefixes = ["set_", "get_"]
 "/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/game/turfs/turf.dm:335)"
 "/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/game/atoms_movable.dm:232-250), held by all movables"
 "/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/game/atoms_movable.dm:294), held by all movables"
-"/atom/movable/throwing" = "read on every footstep and bump: footstep.dm throw check (code/datums/behaviours/footstep.dm:70), Bump finalize (code/game/atoms_movable.dm:376)"
-"/atom/light_sources" = "read on every Moved(): the loop that updates each light source on the mover (code/game/atoms_movable.dm:322), walked for all movers"
-"/atom/movable/blocks_emissive" = "read on every overlay update of an atom: the emissive blocker build (code/modules/lighting/emissive_blocker_overlays.dm:13)"
 "/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/modules/mob/living/living_movement.dm:20) and mob_movement.dm:21"
 "/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/modules/mob/living/living_movement.dm:51) and carbon.dm:382"
 "/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"
@@ -188,22 +190,33 @@ record_accessor_prefixes = ["set_", "get_"]
 [lint.decl]
 # decl_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose. (No TGS exemption here:
 # decl_lint.py never read exempt_path().) owned_vars() still reads these files (cx.all_files()).
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/"]
 
 [lint.init]
 # init_lint.py EXEMPT_PREFIXES: unit tests, the engine's test fixtures and benchmarks build worlds on purpose. This only exempts the
 # per-file rules (initialize, late_initialize, world_reads, turf_on_materialize): table_init_overrides
 # reads every file (cx.all_files()), as init_lint.py's table pass did. (No TGS exemption: init_lint.py never
 # read exempt_path().)
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/", "code/modules/benchmarks/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/", "code/modules/benchmarks/"]
 # The codes an ALLOW(init/CODE) keep may carry (the lint holds the same list: tools/analyze/src/lints/init.rs REASON_CODES).
 reason_codes = ["INSTANCE_STATE", "CTOR_ARGS", "FRAMEWORK"]
+
+[lint.init.lists]
+# The closed list of types that ARE the Initialize() chain (doc/rewrite/proposals/init_phase0.md D1): no form runs before the chain they define, so
+# their Initialize() has no init_lines or world_reads sites and takes no ALLOW(init/...). Each entry is "/type = why". Adding one is a design change.
+init_roots = [
+  "/atom = the root of every Initialize() chain: it runs the double-init guard and calls the lifecycle forms (lifecycle_decls_init, caps_init) that every other type's forms depend on",
+  "/atom/movable = the movable layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom's Initialize()",
+  "/obj = the obj layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom/movable's Initialize()",
+  "/turf = the turf layer of the chain: its instance setup is shared with the table_initialize() path and runs under /atom's Initialize()",
+  "/datum/controller/global_vars = the boot step that makes GLOB: it runs before any type table exists, so no declared form can run first",
+]
 
 [lint.instance_list]
 # instance_list_lint.py: allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES): unit tests and
 # benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept verbatim.
 # The GLOBAL_DATUM_INIT singleton scan still reads these files (cx.all_files()).
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
 [lint.latent]
@@ -214,7 +227,7 @@ exempt_contains = ["/unit_tests/"]
 # lifecycle_counts_lint.py: a path listed here has its qdel( sites uncounted but is still checked for
 # Destroy() overrides (banned everywhere), so these are lists, not exempt_* keys. exempt_path() (unit tests,
 # benchmarks, the vendored TGS DMAPI), the lifecycle engine itself, and the macro definitions.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
 exempt_files = [
     "code/__defines/tgs.dm",
     "code/controllers/subsystems/garbage.dm",
@@ -227,12 +240,12 @@ exempt_files = [
 
 [lint.lifeforms]
 # The lifecycle forms' checks (tools/analyze/src/lints/lifeforms.rs): the tests make bad make() calls on purpose to see them reported.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/"]
 
 [lint.qdel_src]
 # qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
 # (it calls qdel(src) as its mechanism) and the macro definitions.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
 exempt_files = [
     "code/__defines/tgs.dm",
     "code/controllers/subsystems/garbage.dm",
@@ -245,7 +258,7 @@ exempt_files = [
 
 [lint.spatial]
 # spatial_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) is skipped before the scan.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 [lint.spatial.lists]
 # spatial_lint.py API_DIRS / API_FILES: the files that implement the ledger and spatial API. They are scanned
@@ -257,16 +270,16 @@ api_files = ["code/__defines/containment.dm"]
 # pollers_lint.py EXEMPT_PREFIXES / EXEMPT_FILES: the MC and subsystem framework, the object-model core, the
 # defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
 # This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
-exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/modules/unit_tests/"]
+exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/modules/unit_tests/", "code/tests/unit_tests/"]
 exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm", "code/engine/kernel/cadences.dm"]
 [lint.pollers.lists]
 # check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
 # file (the exempt ones above included) is checked.
-step_exempt_prefixes = ["code/modules/unit_tests/"]
+step_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
 
 [lint.silent_catch]
 # silent_catch_lint.py: exempt_path() (unit tests catch on purpose; benchmarks; the vendored TGS DMAPI).
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 [lint.silent_catch.lists]
 # silent_catch_lint.py STRICT_DIRS: the object-model core, lifecycle, the controllers and the error handler (everything
@@ -275,7 +288,7 @@ strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/",
 
 [lint.cache]
 # cache_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) and the framework itself.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm", "code/__defines/shared_cache.dm", "code/datums/shared_cache/shared_cache.dm"]
 
 [lint.registry]
@@ -288,18 +301,17 @@ exempt_contains = ["/unit_tests/"]
 
 [lint.verb_category]
 # verb_category_lint.py: unit tests build raw categories on purpose.
-exempt_prefixes = ["code/modules/unit_tests/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
 
 [lint.i7_handler]
 # i7_handler_lint.py: test fixtures record calls to the dispatchers themselves.
-exempt_prefixes = ["code/modules/unit_tests/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
 [lint.i7_handler.lists]
 # The dispatchers, and the client's activate-held-item verb (which calls attack_self).
 allowed = [
   "/atom/proc/attackby",
   "/atom/proc/attack_hand",
   "/atom/proc/click_alt",
-  "/atom/proc/MouseDrop_T",
   "/obj/item/proc/attack_self",
   "/client/verb/attack_self",
 ]
@@ -352,7 +364,7 @@ ui_push_converted = [
   "code/game/machinery/suit_storage/suit_storage.dm",
   "code/content/mecha/equipment/tools/cable_layer.dm",
   "code/game/objects/structures/crates_lockers/closets/statue.dm",
-  "code/modules/mining/mineral_effect.dm",
+  "code/content/mining/mineral_effect.dm",
   "code/modules/power/fusion/fuel_assembly/fuel_assembly.dm",
   "code/content/power/fusion_coil.dm",
   "code/modules/power/port_gen.dm",
@@ -393,7 +405,6 @@ legacy_forms_converted = [
   "code/datums/native/",
   "code/datums/observation/",
   "code/datums/om/",
-  "code/datums/om_events/",
   "code/datums/operations/",
   "code/datums/outfits/",
   "code/content/outfits/",
@@ -470,10 +481,12 @@ legacy_forms_converted = [
   "code/game/mecha/working/",
   "code/content/mecha/",
   "code/game/objects/effects/",
+  "code/content/effects/",
   "code/game/objects/items/",
   "code/content/items/",
   "code/game/objects/random/",
   "code/game/objects/structures/",
+  "code/content/structures/",
   "code/game/turfs/flooring/",
   "code/content/turfs/flooring/",
   "code/game/turfs/initialization/",
@@ -507,8 +520,10 @@ legacy_forms_converted = [
   "code/modules/blob2/",
   "code/content/blob2/",
   "code/modules/body/",
+  "code/domains/body/",
   "code/modules/busy_space/",
   "code/modules/casino/",
+  "code/content/casino/",
   "code/modules/catalogue/",
   "code/modules/client/",
   "code/content/client/",
@@ -518,11 +533,14 @@ legacy_forms_converted = [
   "code/modules/compass/",
   "code/modules/contracts/",
   "code/modules/crafting/",
+  "code/content/crafting/",
   "code/modules/customitems/",
   "code/modules/datums/",
   "code/modules/debugging/",
   "code/modules/detectivework/",
+  "code/content/detectivework/",
   "code/modules/economy/",
+  "code/content/economy/",
   "code/modules/emotes/",
   "code/content/emotes/",
   "code/modules/entopics/",
@@ -532,6 +550,7 @@ legacy_forms_converted = [
   "code/modules/event/",
   "code/modules/eventkit/",
   "code/modules/events/",
+  "code/content/events/",
   "code/modules/examine/",
   "code/content/examine/",
   "code/modules/expedition/",
@@ -546,6 +565,7 @@ legacy_forms_converted = [
   "code/modules/gamemaster/",
   "code/content/gamemaster/",
   "code/modules/games/",
+  "code/content/games/",
   "code/modules/generated_station/",
   "code/modules/genetics/",
   "code/modules/ghosttrap/",
@@ -555,10 +575,12 @@ legacy_forms_converted = [
   "code/modules/holomap/",
   "code/modules/hydro/",
   "code/modules/hydroponics/",
+  "code/content/hydroponics/",
   "code/modules/identification/",
   "code/modules/instruments/",
   "code/content/instruments/",
   "code/modules/integrated_electronics/",
+  "code/content/integrated_electronics/",
   "code/modules/keybindings/",
   "code/modules/library/",
   "code/content/library/",
@@ -568,6 +590,7 @@ legacy_forms_converted = [
   "code/modules/looking_glass/",
   "code/modules/lootpanel/",
   "code/modules/lore_codex/",
+  "code/content/lore_codex/",
   "code/modules/maint_recycler/",
   "code/content/maint_recycler/",
   "code/modules/maintenance_panels/",
@@ -575,6 +598,7 @@ legacy_forms_converted = [
   "code/modules/map_stubs/",
   "code/modules/maps/",
   "code/modules/materials/",
+  "code/content/materials/",
   "code/modules/media/",
   "code/modules/medical/",
   "code/content/medical/",
@@ -583,6 +607,7 @@ legacy_forms_converted = [
   "code/modules/metrics/",
   "code/modules/mind_body/",
   "code/modules/mining/",
+  "code/content/mining/",
   "code/modules/mob/_modifiers/",
   "code/modules/mob/dead/",
   "code/modules/mob/freelook/",
@@ -607,13 +632,21 @@ legacy_forms_converted = [
   "code/modules/mob/living/silicon/robot/sprites/",
   "code/modules/mob/living/silicon/robot/subtypes/exploration/",
   "code/modules/mob/living/simple_mob/subtypes/animal/borer/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/borer/",
   "code/modules/mob/living/simple_mob/subtypes/animal/farm animals/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/farm animals/",
   "code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/giant_spider/",
   "code/modules/mob/living/simple_mob/subtypes/animal/hyena/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/hyena/",
   "code/modules/mob/living/simple_mob/subtypes/animal/passive/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/passive/",
   "code/modules/mob/living/simple_mob/subtypes/animal/sif/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/sif/",
   "code/modules/mob/living/simple_mob/subtypes/animal/space/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/space/",
   "code/modules/mob/living/simple_mob/subtypes/animal/tyr/",
+  "code/content/mobs/living/simple_mob/subtypes/animal/tyr/",
   "code/modules/mob/living/simple_mob/subtypes/blob/",
   "code/modules/mob/living/simple_mob/subtypes/bullet_heck/",
   "code/modules/mob/living/simple_mob/subtypes/gateway/",
@@ -622,8 +655,10 @@ legacy_forms_converted = [
   "code/modules/mob/living/simple_mob/subtypes/humanoid/",
   "code/modules/mob/living/simple_mob/subtypes/illusion/",
   "code/modules/mob/living/simple_mob/subtypes/mechanical/",
+  "code/content/mobs/living/simple_mob/subtypes/mechanical/",
   "code/modules/mob/living/simple_mob/subtypes/metroid/",
   "code/modules/mob/living/simple_mob/subtypes/occult/",
+  "code/content/mobs/living/simple_mob/subtypes/occult/",
   "code/modules/mob/living/simple_mob/subtypes/plant/",
   "code/modules/mob/living/simple_mob/subtypes/slime/feral/",
   "code/modules/mob/living/simple_mob/subtypes/slimess/",
@@ -637,7 +672,9 @@ legacy_forms_converted = [
   "code/modules/news/",
   "code/modules/nifsoft/",
   "code/modules/overmap/",
+  "code/content/overmap/",
   "code/modules/pda/",
+  "code/content/pda/",
   "code/modules/persistence/",
   "code/modules/planet/",
   "code/modules/player_tips/",
@@ -648,11 +685,17 @@ legacy_forms_converted = [
   "code/modules/radiation/",
   "code/modules/random_map/",
   "code/modules/reagents/holder/",
+  "code/content/reagents/holder/",
   "code/modules/reagents/hose/",
+  "code/content/reagents/hose/",
   "code/modules/reagents/machinery/",
+  "code/content/reagents/machinery/",
   "code/modules/reagents/reactions/",
+  "code/content/reagents/reactions/",
   "code/modules/reagents/reagent_containers/",
+  "code/content/reagents/reagent_containers/",
   "code/modules/reagents/reagents/",
+  "code/content/reagents/reagents/",
   "code/modules/recycling/",
   "code/modules/refinery/",
   "code/content/refinery/",
@@ -667,8 +710,10 @@ legacy_forms_converted = [
   "code/modules/shieldgen/",
   "code/modules/shuttles/",
   "code/modules/spells/",
+  "code/content/spells/",
   "code/modules/stockmarket/",
   "code/modules/surgery/",
+  "code/content/surgery/",
   "code/modules/tables/",
   "code/modules/telesci/",
   "code/modules/tension/",
@@ -680,15 +725,22 @@ legacy_forms_converted = [
   "code/modules/tickets/",
   "code/modules/tooltip/",
   "code/modules/turbolift/",
+  "code/content/turbolift/",
   "code/modules/vehicles/",
+  "code/content/vehicles/",
   "code/modules/ventcrawl/",
   "code/modules/vore/",
+  "code/content/vore/",
   "code/modules/vote/",
   "code/modules/weapons/",
   "code/modules/xenoarcheaology/artifacts/predefined/",
+  "code/content/xenoarcheaology/artifacts/predefined/",
   "code/modules/xenoarcheaology/effects/",
+  "code/content/xenoarcheaology/effects/",
   "code/modules/xenoarcheaology/finds/",
+  "code/content/xenoarcheaology/finds/",
   "code/modules/xenoarcheaology/tools/",
+  "code/content/xenoarcheaology/tools/",
   "code/modules/xenobio/",
 ]
 call_ext_allow = [
@@ -700,12 +752,12 @@ call_ext_allow = [
 verdigris_defines_allow = ["code/__defines/verdigris/"]
 bindings_file_allow = ["code/__defines/verdigris/_bindings.dm"]
 # only the core pipeline runner and the kernel work engine change idle/park state
-pipelines_allow = ["code/datums/om/", "code/controllers/kernel/", "code/engine/kernel/sequence.dm", "code/engine/time/pipelines.dm", "code/modules/unit_tests/"]
+pipelines_allow = ["code/datums/om/", "code/controllers/kernel/", "code/engine/kernel/sequence.dm", "code/engine/time/pipelines.dm", "code/modules/unit_tests/", "code/tests/unit_tests/"]
 relation_fields_allow = ["code/datums/om/", "code/engine/refs/edges.dm", "code/engine/_generated/actions.dm"]
 timer_handles_allow = ["code/datums/om/", "code/engine/time/handles.dm", "code/engine/time/timers.dm"]
 # creation/deletion bookkeeping for the one revive path
 revive_allow = [
-  "code/modules/unit_tests/", "code/modules/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
+  "code/modules/unit_tests/", "code/tests/unit_tests/", "code/domains/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
   "code/_helpers/unsorted.dm", "code/modules/mob/living/carbon/human/human_species.dm",
   "code/modules/mob/living/silicon/ai/ai.dm", "code/content/items/weapons/autopsy.dm",
 ]
@@ -716,7 +768,7 @@ input_ladder_allow = ["code/modules/keybindings/router.dm", "code/engine/parts/i
 # the act context's .holder is the entity an op runs on, not an admin holder: engine and library code read it by design
 admin_holder_allow = ["code/engine/", "code/datums/interactions/native_resolution_adapter.dm", "code/tests/engine/", "code/library/", "code/tests/library/", "code/domains/power/powered.dm"]
 # the compiled-table golden is a raw string whose lines are indented two spaces by explain_type()
-space_indent_allow = ["code/modules/unit_tests/dq_e1_declare_tests.dm"]
+space_indent_allow = ["code/tests/unit_tests/dq_e1_declare_tests.dm"]
 # type-specific tool checks and domains converted later (mecha: I5; surgery and medical machines)
 tool_istype_allow = [
   "code/datums/wires/wires.dm", "code/content/behaviours/omen.dm", "code/game/machinery/recharger.dm",
@@ -725,7 +777,7 @@ tool_istype_allow = [
 ]
 # verbs that are really a mob's own abilities, run through an item they carry
 i7_verb_allow = [
-  "code/modules/unit_tests/", "code/game/mecha/equipment/tools/passenger.dm", "code/game/mecha/equipment/tools/sleeper.dm",
+  "code/modules/unit_tests/", "code/tests/unit_tests/", "code/game/mecha/equipment/tools/passenger.dm", "code/game/mecha/equipment/tools/sleeper.dm",
   "code/game/objects/items/devices/communicator/integrated.dm", "code/modules/assembly/holder.dm",
   "code/modules/clothing/spacesuits/rig/modules/specific/ai_container.dm",
   "code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_module.dm", "code/modules/pda/ai.dm",
@@ -744,36 +796,38 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
-admin_rights_shrink_only_baseline_one_mechanism_admin_can = 2
-admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 104
-admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 1
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 3
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 0
 objects_ratchet_on_legacy_interactions = 0
 objects_ratchet_on_tool_act_overrides = 0
 tools_use_tool_banned = 0
 objects_ratchet_on_damage_reactions = 0
 objects_ratchet_on_declare_emag = 0
 objects_ratchet_on_periodic = 0
-heat_ratchet_on_fire_act_overrides_h3 = 6
-damage_ratchet_on_non_turf_ex_act_overrides_d5 = 10
-damage_ratchet_on_atom_break_set_broken_overrides_d4 = 17
+heat_ratchet_on_fire_act_overrides_h3 = 0
+damage_ratchet_on_non_turf_ex_act_overrides_d5 = 0
+damage_ratchet_on_atom_break_set_broken_overrides_d4 = 0
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 0
-bump_ratchet_on_bumped_overrides = 17
-transform_ratchet_on_bespoke_then_tails = 132
-transform_ratchet_on_bespoke_data_procs = 42
-generic_hit_ratchet_on_attack_generic_overrides = 38
+bump_ratchet_on_bumped_overrides = 2
+transform_ratchet_on_bespoke_then_tails = 14
+generic_hit_ratchet_on_attack_generic_overrides = 0
+
+# Kept at the end of this table, away from the then-tails ceiling that every chemistry landing lowers, so the two never share a merge hunk.
+transform_ratchet_on_bespoke_data_procs = 0
 
 [lint.op_order]
 # fixtures and tests pin the relative-priority mechanism itself
-exempt_prefixes = ["code/tests/", "code/modules/unit_tests/"]
+exempt_prefixes = ["code/tests/", "code/modules/unit_tests/", "code/tests/unit_tests/"]
 
 [lint.silicon_entry]
 # tests pin the legacy forms they drive (a probe declaring an INTERACT_SILICON entry)
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/"]
 
 [lint.reactions_table_proc]
 # the unit tests that drive the reaction engine itself declare fixtures with a reactions() table
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/"]
 
 [lint.legacy_forms]
 # The engine's own accessors (_own_set / _own_add / _own_put) are called only by the declaration engine and the ownership store.
@@ -782,18 +836,39 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
-  "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/datums/properties/equip_slots.dm;code/modules/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
+  "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/datums/properties/equip_slots.dm;code/content/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
   "TRACKED @ code/engine/_generated/;code/__defines/ = tracking is automatic: a var that reactive code reads (or that is written through set_<v>()) gets its setter from `analyze gen auto_tracked`. Declare nothing; write the var through set_<v>() (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written set_<v>() plus SETTER(T, v) (doc/rewrite/read_driven_tracking.md)",
   "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
-  "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/modules/benchmarks/;code/__defines/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
+  "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/tests/unit_tests/;code/modules/benchmarks/;code/__defines/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
   "CHANGE_EXPLICIT @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a plain mark: a write publishes through its tracked var, relation, stat or hold, and a key that is not one var is PUBLISH_CHANGE(E, key)",
   "CHANGE_RELATED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a forwarded change: watch the key of the thing that changed",
   "CHANGE_RELATION_ADDED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
   "CHANGE_RELATION_REMOVED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
-  "OM_DERIVE_FIELD @ code/datums/om/;code/__defines/om.dm;code/modules/unit_tests/;code/tests/;code/modules/benchmarks/;code/controllers/measure/ = a tracked read; only the sys periodic gate tests still derive a field",
+  "OM_DERIVE_FIELD @ code/datums/om/;code/__defines/om.dm;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/;code/modules/benchmarks/;code/controllers/measure/ = a tracked read; only the sys periodic gate tests still derive a field",
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "ELAPSED_SINCE = ELAPSED(D, var, clock) on a declared var; a time kept per row is a small /datum record the holder owns (owns_many/owns_one) whose var is STAMPed (code/__defines/time_now.dm)",
+  "BEFORE = ELAPSED(D, var, clock) < duration: keep the start with STAMP and the length beside it, or use COOLDOWN_* for a rate limit (code/__defines/time_now.dm)",
+  "LEFT_UNTIL = COOLDOWN_TIMELEFT(D, var) reads the time left on a deadline var (COOLDOWN_TIMELEFT_OWN on the datum's own clock; code/__defines/cooldowns.dm)",
+  "EXPIRY_STAMP = STAMP(D, var, clock) records now in a var (code/__defines/time_now.dm); a base type stamps with stamp_now(D, name, clock)",
+  "EXPIRY_DECLARE = COOLDOWN_DECLARE(var) for an end time; a start time (a STAMP var) is a plain var, and a base type uses cooldowns()/stamps() names (code/__defines/cooldowns.dm)",
+  "EXPIRY_TMP_DECLARE = a plain var/tmp for a stamp; a base type uses stamps() (code/__defines/engine/sparse_slots.dm)",
+  "STATIC_EXPIRY_DECLARE = STATIC_COOLDOWN_DECLARE(var) (code/__defines/cooldowns.dm)",
+  "EXPIRY_SET = COOLDOWN_START(D, var, delay), or COOLDOWN_START_OWN on the datum's own clock (code/__defines/cooldowns.dm)",
+  "EXPIRY_EXTEND = COOLDOWN_EXTEND(D, var, delay), or COOLDOWN_EXTEND_OWN (code/__defines/cooldowns.dm)",
+  "EXPIRY_CLEAR = COOLDOWN_RESET(D, var) (code/__defines/cooldowns.dm)",
+  "EXPIRY_ACTIVE = COOLDOWN_RUNNING(D, var), or COOLDOWN_RUNNING_OWN (code/__defines/cooldowns.dm)",
+  "EXPIRY_EXPIRED = COOLDOWN_LAPSED(D, var), or COOLDOWN_LAPSED_OWN (code/__defines/cooldowns.dm)",
+  "EXPIRY_ON_LAPSE = after(owner, delay, PROC_REF(x), key =) armed where the deadline starts, or hold(lasts =) when a stat holds the state (code/engine/time/)",
+  "EXPIRY_AT = TIME_NOW(CLOCK_WORLD) for a world-clock \"now\" (add the delay yourself); TIME_NOW(CLOCK_OWN, owner) on a datum's own clock (code/__defines/time_now.dm)",
+  "EXPIRY_NOW = TIME_NOW(clock, owner), the one clock read (code/__defines/time_now.dm)",
+  "STAMP_ELAPSED = ELAPSED(D, var, clock) reads a var stamp; a base type's table stamp is stamp_elapsed(D, name, clock) (code/__defines/engine/sparse_slots.dm)",
+  "STAMP_AT = stamp_set(D, name, point) (code/__defines/engine/sparse_slots.dm)",
+  "STAMP_POINT = stamp_point(D, name) (code/__defines/engine/sparse_slots.dm)",
+  "STAMPED = stamp_has(D, name) (code/__defines/engine/sparse_slots.dm)",
+  "STAMP_CLEAR = stamp_clear(D, name) (code/__defines/engine/sparse_slots.dm)",
+  "definition_event = the om events (code/datums/om_events/) are deleted: an occurrence is a /datum/notice published with PUBLISH_LEGACY(E, /datum/notice/x, fields...) or an ACTION() notice, heard with on_notice(/datum/notice/x, ...) in CAPABILITIES or observe(source, /datum/notice/x, listener, then(...)); a veto is before_op(GUARD_X, ...) asked with guard() (doc/rewrite/reactions.md section 3)",
   "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
   "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
   "datum/gas_reaction = a gas reaction is a transformation: a type under /transformation/gas with a transformation(medium = MEDIUM_GAS, takes = list(gas(type, moles)), holds = temperature_in(lo, hi)) entry (code/ATMOSPHERICS/gasmixtures/reactions.dm)",
@@ -821,7 +896,7 @@ banned = [
   "build_kitchen_items = kitchen_acceptable_items()",
   "build_kitchen_reagents = kitchen_acceptable_reagents()",
 
-  "datum/alloy = an alloy is a transformation: a type under /transformation/smelting with a transformation(takes = ore_term(...), makes = stack_term(...)) entry (code/modules/mining/alloys.dm)",
+  "datum/alloy = an alloy is a transformation: a type under /transformation/smelting with a transformation(takes = ore_term(...), makes = stack_term(...)) entry (code/content/mining/alloys.dm)",
   "alloy_data = xform_rules_in(MEDIUM_ORE_STOCK, REGIME_SMELTING): the compiled smelting transformations",
   "datum/decl/chemical_reaction = a chemical reaction is a transformation: a type under /transformation/chem with a transformation(...) entry in its CAPABILITIES block (code/library/transformations/transformation_entry.dm, doc/rewrite/proposals/transformations.md)",
   "required_reagents = takes = list(reagent(id, amount), ...) in the transformation() entry; a compiled rule reads reagent_takes",
@@ -944,7 +1019,7 @@ banned = [
   "APPEARANCE_SLOT = a draw(datum/look/look) override: look.overlay()",
   "DECLARE_APPEARANCE_PROC = a draw(datum/look/look) override: look.state(), look.variant(), look.overlay(), look.glow() (a light is look.glow(range, power, color)); a draw writes no state (doc/rewrite/final_api.html section 13)",
   "appearance_overlays = a draw(datum/look/look) override; the provider form is gone",
-  "datum/om = /datum/om/* is gone, use the engine type it aliased (/datum/time_scheduler, /datum/scheduled_behaviour, /datum/definition_event, /datum/relation_definition/slot, /datum/work_pipeline, ...); code/datums/om/ is gone (doc/rewrite/proposals/om_carriers.md)",
+  "datum/om = /datum/om/* is gone, use the engine type it aliased (/datum/time_scheduler, /datum/scheduled_behaviour, /datum/relation_definition/slot, /datum/work_pipeline, ...); code/datums/om/ is gone (doc/rewrite/proposals/om_carriers.md)",
   "task_timed = an op with wait(t) (begins(MSG(x)), claims(), then(PROC_REF(x))); doc/rewrite/conversion_guide.md section 12",
   "task_start = an op with wait(t) and takes()/A.arg() for the state the task carried; doc/rewrite/conversion_guide.md section 12",
   "task_busy = op_claimed(thing) for an op's claim, work_busy(thing) for a held busy",
@@ -1167,6 +1242,10 @@ banned = [
   "client_ask = open_request(src, /datum/prompt/x, PROC_REF(entered), answerer = mob, ...) in the client proc, the answer handled in the handler",
   "cast_ask = target_questions(user) returning question_step() specs on the spell, the answers read in targets_from_answers(user, asked)",
   "flow_ask = a question sequence (code/datums/prompts/sequence.dm): ask_admin(/datum/ask_sequence/admin/x, subject, steps, PROC_REF(done)) with question_step() specs, or ask_child() for a shared picker; an op asks with asks() steps",
+  "prompt_flow = a read that carries on from its answer: sql_ask(owner, sql, params, PROC_REF(next), context...) and sql_answer_rows() (code/engine/io/db.dm); a question is a question sequence or asks()",
+  "flow_select = sql_ask(owner, sql, params, PROC_REF(next), context...), the rows read with sql_answer_rows(result, error, what) in the callback (code/engine/io/db.dm)",
+  "flow_sql = sql_ask(owner, sql, params, PROC_REF(next)) when the callback reads the outcome, sql_write(sql, params) when nobody does",
+  "flow_http_get = http_ask(owner, url, PROC_REF(next), context...) (code/engine/io/db.dm); the response is null when the request failed",
   "rerun_ask_on = asks(/datum/prompt/kind, fields = list(...), step = \"name\", answerer = PROC_REF(x)) on the op",
   "topic_rerun_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the topic op; read the answer with A.step_value(\"name\")",
   "ban_topic_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the op; repeat a step with repeats = PROC_REF(x)",
@@ -1724,13 +1803,14 @@ retired_macros = [
 # exempt_types: types an instance never qdel()s, so a reference to one cannot pin a deleted object: the kernel's systems and
 # controllers (world singletons), and registries/flyweights (the ownership index adds REGISTRY_TYPE()s itself).
 [lint.stored_refs]
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/controllers/kernel/", "code/controllers/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/controllers/kernel/", "code/controllers/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
 exempt_files = ["code/__defines/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
 [lint.stored_refs.lists]
 # /datum/gear_tweak: a loadout tweak is a stateless flyweight (a colour, a name prompt): a reference to one names behaviour, not a world entity.
-exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/xform_group", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def", "/datum/gear_tweak", "/datum/gas_mixture", "/datum/debugger", "/datum/tracy", "/datum/admins", "/datum/persistent_client", "/datum/player_tips", "/datum/announcement", "/mob/dview", "/mob/proccall_handler", "/datum/look", "/datum/dispatch_context", "/datum/materialize_batch"]
+exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/xform_group", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def", "/datum/gear_tweak", "/datum/gas_mixture", "/datum/debugger", "/datum/tracy", "/datum/admins", "/datum/persistent_client", "/datum/player_tips", "/datum/announcement", "/mob/dview", "/mob/proccall_handler", "/datum/look", "/datum/dispatch_context", "/datum/materialize_batch", "/datum/counter"]
 # Reviewed non-entity and singleton types (a reference to one cannot pin a deleted world entity; none is ever qdel()led, grep qdel across code/):
 # /datum/gas_mixture: an opaque handle to the native arena (meter::watched_air, the air system's mix caches).
+# /datum/counter: a diagnostic count (code/engine/state/counter.dm) holds one number and no reference.
 # /datum/debugger, /datum/tracy: tooling singletons behind the Debugger and Tracy globals. /datum/admins, /datum/persistent_client: per-player records held for the process
 # lifetime (client::holder, client::persistent_client, admin_datums). /datum/player_tips: the stateless tip picker. /datum/announcement: message flyweights
 # (priority_announcement, command_announcement). /mob/dview, /mob/proccall_handler: the single dview and admin proc-call helper mobs behind their globals.
@@ -1748,7 +1828,7 @@ exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/d
 # wiki spoiler entries (type paths), virusDB / archive_diseases (disease records and copies), department_accounts, mob_chunks, belly overlay asset items, construction frame flyweights, signal and reagent `data` payload lists, asset/simple::assets.
 # Hot reverse indexes where a declared relation would add a write per change: /datum::open_tguis (every ui open and close) and /datum/lighting_corner::affecting (every light update); both are cleared by their owner's own teardown.
 work_queues = ["/datum/system/lighting::sources_queue", "/datum/system/radiation::dirty_turfs", "/datum/system/atoms::after_init_pending", "/datum/system/atoms::after_init_loose", "/datum/system/shuttles::sectors_to_initialize", "/datum/system/air::planetary", "/datum/system/assets::cache", "/datum/system/tgui::asset_generations", "/datum/system/internal_wiki::spoiler_entries", "/datum/system/contracts::subject_identities", "/datum/system/contracts::opportunity_rules", "/datum/system/contracts::opportunity_windows", "/datum/system/proximity::cells", "/datum/system/proximity::eyes", "/datum/controller/global_vars::virusDB", "/datum/controller/global_vars::department_accounts", "/datum/controller/global_vars::archive_diseases", "/datum/controller/global_vars::mob_chunks", "/datum/controller/global_vars::dq_belly_overlay_aci_by_name", "/datum/controller/global_vars::construction_frame_wall", "/datum/controller/global_vars::construction_frame_floor", "/datum/signal::data", "/datum/reagent::data", "/datum/asset/simple::assets", "/datum::open_tguis", "/datum/lighting_corner::affecting"] # each pinned by relations_work_queue_* (enqueue, delete, drain)
-transient_types = ["/datum/definition_event", "/datum/look", "/datum/io/sql", "/datum/relation_edge", "/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context", "/datum/centry"] # /datum/centry: compiled once from the declarations and never deleted; its item is an entry or capability definition (both exempt types), so the var cannot pin a deleted object
+transient_types = ["/datum/look", "/datum/io/sql", "/datum/relation_edge", "/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context", "/datum/centry"] # /datum/centry: compiled once from the declarations and never deleted; its item is an entry or capability definition (both exempt types), so the var cannot pin a deleted object
 
 # rel_write_undeclared (tools/analyze/src/lints/rel_write_undeclared.rs; doc/rewrite/proposals/relations.md D1): a hard ban. Generated scaffolding is derived output.
 [lint.rel_write_undeclared]
@@ -1756,20 +1836,26 @@ exempt_prefixes = ["code/engine/_generated/"]
 
 # ref_text (doc/rewrite/proposals/relations.md D9): a stored REF() / \ref[] text. The engine's own staleness keys and relation machinery key by REF text by design; tests are exempt.
 [lint.ref_text]
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/", "code/datums/ownership/", "code/datums/om/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/", "code/datums/ownership/", "code/datums/om/"]
 
 [lint.saved_handle]
 exempt_prefixes = ["code/engine/_generated/"]
 
 # untyped (doc/rewrite/proposals/relations.md D8): the same scope as stored_refs.
 [lint.untyped]
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/engine/_generated/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/engine/_generated/"]
 [lint.untyped.lists]
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability"]
 
 # untyped_member (doc/rewrite/native_compiler_issues.md, untyped receiver): a hard ban with no baseline. The vendored TGS DMAPI and generated output are exempt.
 [lint.untyped_member]
 exempt_prefixes = ["code/modules/tgs/", "code/engine/_generated/"]
+
+# mouse_override (doc/rewrite/final_api.html section 2): a hard ban with no baseline. BYOND's mouse and click procs are overridden only in the engine's entry file;
+# what a type does with its input is declared (click_on(), drag_onto(), hover(), ...) and found by the resolver.
+[lint.mouse_override]
+exempt_prefixes = ["code/engine/_generated/"]
+exempt_files = ["code/engine/kernel/entry.dm"]
 
 # player_link (doc/rewrite/proposals/relations.md D13): mob.key / mob.ckey are written only by bind_player().
 [lint.player_link]
@@ -1778,8 +1864,17 @@ exempt_files = ["code/modules/mob/bind_player.dm"]
 
 # native_ref_write (doc/rewrite/proposals/relations.md D11): the engine's own presentation code and tests are exempt; the rest is a ratchet.
 [lint.native_ref_write]
-exempt_prefixes = ["code/engine/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
+exempt_prefixes = ["code/engine/", "code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
 
 # weak_raw_read (tools/analyze/src/lints/weak_raw_read.rs; doc/rewrite/proposals/relations.md D5): a hard ban. The weak-reference store reads the handle by design; tests read it to prove the handle stays.
 [lint.weak_raw_read]
-exempt_prefixes = ["code/engine/refs/weak.dm", "code/engine/_generated/", "code/modules/unit_tests/", "code/tests/"]
+exempt_prefixes = ["code/engine/refs/weak.dm", "code/engine/_generated/", "code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/"]
+
+# duplicate_input_key: a hard ban with no baseline. A type's table holds one entry per input key, so a second click_on()/drag_onto()/... of the same type replaces the first.
+[lint.duplicate_input_key]
+exempt_prefixes = ["code/engine/_generated/"]
+
+# entity_ids (tools/analyze/src/lints/entity_ids.rs; doc/rewrite/proposals/relations.md D9, "One handle"): ad-hoc entity ids, counters minted as
+# ids and REF() text list keys; ref_token() is the one handle. The engine implements the handles and keeps ordering serials; tests and generated output are exempt.
+[lint.entity_ids]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/"]

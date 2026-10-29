@@ -1,13 +1,7 @@
-/mob/living/var/traumatic_shock = 0
 /mob/living/carbon/var/shock_stage = 0
 
-// How much pain the mob is in right now. The body computes pain once per
-// tick (afflictions + wound load - analgesia, scaled by species trauma_mod);
-// traumatic_shock mirrors it for the shock-stage / feral / HUD consumers.
-/mob/living/carbon/proc/updateshock()
-	traumatic_shock = current_pain()
-	return traumatic_shock
-
+// How much pain the mob is in right now is current_pain(): the body computes it (afflictions + wound load - analgesia,
+// scaled by species trauma_mod) and the shock-stage / feral / HUD consumers read it from there.
 
 /// Maximum traumatic shock stage the shock system tracks.
 #define SHOCK_STAGE_MAX 160

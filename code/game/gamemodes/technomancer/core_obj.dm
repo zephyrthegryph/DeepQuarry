@@ -154,6 +154,7 @@ CAPABILITIES(/obj/spellbutton)
 	// a spell button is an interface object, not a body
 	without("melee_hit")
 	click_on(PROC_REF(click_input))
+	double_click_on(PROC_REF(click_input))
 	param(nameof(spellpath), pos = 1)
 	param(nameof(name), pos = 2)
 	param(nameof(ability_icon_state), pos = 3, apply = PROC_REF(join_core))
@@ -167,9 +168,6 @@ CAPABILITIES(/obj/spellbutton)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		H.place_spell_in_hand(spellpath)
-
-/obj/spellbutton/DblClick()
-	return Click()
 
 /mob/living/carbon/human/get_status_tab_items()
 	. = ..()
@@ -264,7 +262,7 @@ CAPABILITIES(/obj/spellbutton)
 	energy = 7000
 	max_energy = 7000
 	regen_rate = 70 //100 seconds to full
-	slowdown = -0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)
 	instability_modifier = 0.9
 	cooldown_modifier = 0.9
 
@@ -278,7 +276,7 @@ CAPABILITIES(/obj/spellbutton)
 	energy = 20000
 	max_energy = 20000
 	regen_rate = 25 //800 seconds to full
-	slowdown = 0.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	instability_modifier = 1.0
 	spell_power_modifier = 1.4
 

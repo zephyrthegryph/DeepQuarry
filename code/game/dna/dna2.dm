@@ -70,6 +70,8 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	var/species = SPECIES_HUMAN
 	var/list/body_markings
 
+SCHEMA(/datum/dna, base_species, schema_text())
+
 // Make a copy of this strand.
 // USE THIS WHEN COPYING STUFF OR YOU'LL GET CORRUPTION!
 // Can you imagine, this used to be done manually, var by var?
@@ -162,14 +164,14 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 			break
 
 	// Technically custom_species is not part of the UI, but this place avoids merge problems.
-	src.custom_species = character.custom_species
+	src.custom_species = character.bio.custom_species
 	src.base_species = character.species.base_species
 	src.blood_color = character.species.blood_color
 	src.blood_reagents = character.species.blood_reagents
 	src.scale_appearance = character.fuzzy
 	src.offset_override = character.offset_override
 	src.synth_markings = character.looks.synth_markings
-	src.custom_speech_bubble = character.custom_speech_bubble
+	src.custom_speech_bubble = character.bio.custom_speech_bubble
 	src.species_sounds = character.species.species_sounds
 	src.gender_specific_species_sounds = character.species.gender_specific_species_sounds
 	src.species_sounds_male = character.species.species_sounds_male
@@ -182,7 +184,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	src.custom_heat = sparse_get(character, custom_heat)
 	src.custom_cold = sparse_get(character, custom_cold)
 	src.digitigrade = character.looks.digitigrade
-	src.custom_footstep = character.custom_footstep
+	src.custom_footstep = footstep_of(character).custom_footstep
 
 	// +1 to account for the none-of-the-above possibility
 	SetUIValueRange(DNA_UI_EAR_STYLE,             ear_style + 1,               GLOB.ear_styles_list.len  + 1,  1)
@@ -360,15 +362,15 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Custom species and other cosmetic vars
-	H.custom_species = custom_species
+	H.bio.custom_species = custom_species
 	H.bio.custom_say = custom_say
 	H.bio.custom_ask = custom_ask
 	H.bio.custom_whisper = custom_whisper
 	H.bio.custom_exclaim = custom_exclaim
-	H.custom_speech_bubble = custom_speech_bubble
+	H.bio.custom_speech_bubble = custom_speech_bubble
 	sparse_set(H, custom_heat, custom_heat)
 	sparse_set(H, custom_cold, custom_cold)
-	H.custom_footstep = custom_footstep
+	H.set_custom_footstep(custom_footstep)
 	H.looks.set_digitigrade(digitigrade)
 
 	// If synths have character markings

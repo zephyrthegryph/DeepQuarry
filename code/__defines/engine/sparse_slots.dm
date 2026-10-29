@@ -10,6 +10,12 @@
 #define sparse_set(D, name, value) _sparse_set(D, #name, value)
 /// Writes the slot; a value equal to `default` clears it (a counter back at 0).
 #define sparse_set_or(D, name, value, default) _sparse_set(D, #name, value, default)
+/// The value kind of a weak slot: sparse(T, name, type = weak).
+#define SPARSE_KIND_WEAK "weak"
+/// A weak slot (declared `type = weak`): the live datum it names, or null (code/engine/declare/sparse_slots.dm).
+#define sparse_ref(D, name) _sparse_ref(D, #name)
+/// Points a weak slot at a datum (the holder itself is allowed); null clears it.
+#define sparse_ref_set(D, name, target) _sparse_ref_set(D, #name, target)
 #define sparse_has(D, name) (!isnull((D).sparse_slots?[#name]))
 #define cooldown_start(D, name, duration) _cooldown_start(D, #name, duration)
 #define cooldown_ready(D, name) ((D).cooldown_table?[#name] < world.time)
@@ -25,12 +31,12 @@
 /// Declares stamp names on the type whose CAPABILITIES block holds it.
 #define stamps(names...)
 /// Records "now" on `clock` (CLOCK_WORLD or CLOCK_OWN) as the stamp `name` of D.
-#define STAMP(D, name, clock) _stamp_set(D, #name, EXPIRY_NOW(D, clock))
+#define stamp_now(D, name, clock) _stamp_set(D, #name, TIME_NOW(clock, D))
 /// Records a raw point on D's clock as the stamp (tests, a stamp moved by a computed amount).
-#define STAMP_AT(D, name, point) _stamp_set(D, #name, point)
+#define stamp_set(D, name, point) _stamp_set(D, #name, point)
 /// Deciseconds since the stamp on `clock`. A never-stamped name reads as a stamp at 0, as the var it replaces did.
-#define STAMP_ELAPSED(D, name, clock) (EXPIRY_NOW(D, clock) - ((D).cooldown_table?[#name] || 0))
+#define stamp_elapsed(D, name, clock) (TIME_NOW(clock, D) - ((D).cooldown_table?[#name] || 0))
 /// The stored point, or null when never stamped.
-#define STAMP_POINT(D, name) ((D).cooldown_table?[#name])
-#define STAMPED(D, name) (!isnull((D).cooldown_table?[#name]))
-#define STAMP_CLEAR(D, name) _stamp_clear(D, #name)
+#define stamp_point(D, name) ((D).cooldown_table?[#name])
+#define stamp_has(D, name) (!isnull((D).cooldown_table?[#name]))
+#define stamp_clear(D, name) _stamp_clear(D, #name)

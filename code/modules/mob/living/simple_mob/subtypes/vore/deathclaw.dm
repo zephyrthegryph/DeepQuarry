@@ -41,7 +41,6 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 30
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	old_x = -16
 	old_y = 0
@@ -58,7 +57,6 @@
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/deathclaw
 	vore_active = 1
-	vore_capacity = 2
 	vore_max_size = RESIZE_HUGE
 	vore_min_size = RESIZE_SMALL
 	vore_pounce_chance = 0 // Beat them into crit before eating.
@@ -66,7 +64,8 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
-	configure(butchery_rules(meat_amount = 8))
+	configure(living_rules(vore_capacity = 2))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 8))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
@@ -116,19 +115,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
 // sets, so every override stays after its base definition (resolution preserved). ===
 //I don't know how to add more material currently so uhhh, that will be for late, did have some halffinished un commented code but that seemed to be causing issues?
 /mob/living/simple_mob/vore/bigdragon
-	meat_type = /obj/item/reagent_containers/food/snacks/dragonmeat
 
 /mob/living/simple_mob/vore/aggressive/dragon/virgo3b //phoron dragon
-	meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat))
 	configure(mob_nature(vore_eyes = TRUE))
 
 /mob/living/simple_mob/vore/aggressive/deathclaw
-	meat_type = /obj/item/reagent_containers/food/snacks/deathclawmeat
 
 /mob/living/simple_mob/metroid
-	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
 
 /mob/living/simple_mob/metroid/can_butcher(mob/user, obj/item/I)	// Override for special butchering checks.
 	. = ..()

@@ -41,6 +41,6 @@
 	var/datum/controller/kernel/K = new
 	var/datum/test_work_owner/O = new
 	var/datum/work_item/test_fixture/W = K.register_work(/datum/test_work_owner, test_work_item(O, interval = 20))
-	for(var/now in list(0, 10, 20, 30, 40, 50))
-		K.run_item(W, WORK_TEST_LIMIT, now)
+	for(var/tick in 0 to 5)
+		K.run_item(W, WORK_TEST_LIMIT, tick * 10)
 	TEST_ASSERT_EQUAL(length(O.calls), 3, "a 20 ds work item runs at 0, 20 and 40 of 0..50")

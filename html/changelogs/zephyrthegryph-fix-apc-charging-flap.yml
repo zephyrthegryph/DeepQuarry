@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dq_power_wakes_apc_report waits for the APC's charging lamp to settle before it asserts a settled APC is reported nothing (the lamp comes on after 10 steps of surplus, so the 5-step window landed on the flip whenever earlier steps shifted)"

@@ -3,7 +3,7 @@
 GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area
-	var/fire = null
+	var/fire = 0
 	var/atmos = 1
 	var/atmosalm = 0
 	var/poweralm = 1
@@ -61,11 +61,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	// their turfs have been reassigned during map teardown.
 	if(GLOB.areas_by_type[type] == src)
 		GLOB.areas_by_type -= type
-
-// ALLOW(init/FRAMEWORK): the area base of the init chain sets its ceiling before its parents' init
-/area/Initialize(mapload)
-	apply_ceiling()
-	return ..()
 
 /// An area with dynamic lighting is dark of its own (a setup() hook, once its init chain has returned).
 /area/proc/set_ambient_luminosity()
@@ -579,6 +574,7 @@ SETTER(/area, flags)
 	if(exit_message && isliving(AM))
 		to_chat(AM, exit_message)
 
+/// The open turfs above an area with a ceiling_type become that ceiling (a setup() hook, once its init chain has returned).
 /area/proc/apply_ceiling()
 	if(!ceiling_type)
 		return
@@ -626,6 +622,7 @@ SETTER(/area, flags)
 /// dying APC lets go. The APC also feeds the area's lights_nightshift and lights_emergency_off (its contributes_to entries).
 /// A new APC (or none) serves the area: its Rust node takes the area's static loads.
 CAPABILITIES(/area)
+	setup(PROC_REF(apply_ceiling))
 	setup(PROC_REF(set_ambient_luminosity))
 	after_init(0, then(PROC_REF(area_after_init)))
 	ref_one(nameof(main_air_alarm), /obj/machinery/alarm)
@@ -636,6 +633,8 @@ CAPABILITIES(/area)
 	ref_many(nameof(valid_spawn_turfs))
 	ref_one(nameof(media_source))
 	ref_many(nameof(all_doors), /obj/machinery/door/firedoor)
+	owns_many(nameof(air_vent_info), /datum/air_device_status)
+	owns_many(nameof(air_scrub_info), /datum/air_device_status)
 
 /area/proc/apc_changed(datum/act/A)
 	power_loads_changed()

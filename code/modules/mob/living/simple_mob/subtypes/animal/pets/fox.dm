@@ -23,15 +23,14 @@
 	minbodytemp = 223		//Below -50 Degrees Celcius
 	maxbodytemp = 323		//Above 50 Degrees Celcius
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox
 
-	say_list_type = /datum/say_list/fox
 	holder_type = /obj/item/holder/fox
 
 	var/turns_since_scan = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(say_list_type = /datum/say_list/fox))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox, meat_amount = 2))
 
 /datum/say_list/fox
 	speak = list("Ack-Ack","Ack-Ack-Ack-Ackawoooo","Awoo","Tchoff")
@@ -73,15 +72,16 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
 	else
 		..()
 
-/mob/living/simple_mob/animal/passive/fox/MouseDrop(atom/over_object)
-	var/mob/living/carbon/H = over_object
-	if(!istype(H) || !Adjacent(H)) return ..()
+/// A fox dragged onto a human who is not in combat mode is scooped up; any other drop is the mob's own (drop_input()).
+/mob/living/simple_mob/animal/passive/fox/drop_input(datum/act/input/A)
+	var/mob/living/carbon/H = A.over
+	if(!istype(H) || !Adjacent(H))
+		return ..()
 
 	if(!H.combat_mode)
 		get_scooped(H)
-		return
-	else
-		return ..()
+		return TRUE
+	return ..()
 
 /mob/living/simple_mob/animal/passive/fox/get_scooped(mob/living/carbon/grabber)
 	if (stat >= DEAD)

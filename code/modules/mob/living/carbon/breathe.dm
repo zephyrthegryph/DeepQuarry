@@ -14,11 +14,11 @@
 /mob/living/carbon/life_breathing(datum/seq_frame/life/F)
 	sparse_set(src, breath_cycle, (sparse_get_or(src, breath_cycle, 0) + 1) % BREATH_CYCLE_PERIOD)
 	var/datum/physiology/P = src.body?.physiology
-	var/breath_due = !sparse_get_or(src, breath_cycle, 0) || (P && ELAPSED_SINCE(src, P.last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
+	var/breath_due = !sparse_get_or(src, breath_cycle, 0) || (P && stamp_elapsed(src, last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
 	// A hazardous breath (poison, N2O) is taken every frame: what it carries acts at once, not one breath in four.
 	if(breath_due || P?.air_stale || P?.breath_hazard || sparse_get_or(src, failed_last_breath, 0) || src.is_critical()) // First, resolve location and get a breath
 		if(P)
-			P.last_breath_at = EXPIRY_NOW(src, CLOCK_OWN)
+			stamp_now(src, last_breath_at, CLOCK_OWN)
 			P.air_stale = FALSE
 		life_breathing_breathe()
 	src.air_watch_arm()
@@ -34,7 +34,7 @@
 /mob/living/carbon/life_breathing_due()
 	if(!src.breathes())
 		return FALSE
-	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath || sparse_get_or(src, failed_last_breath, 0) || src.internal || !src.air_watched())
+	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath() || sparse_get_or(src, failed_last_breath, 0) || src.internal || !src.air_watched())
 		return TRUE
 	if(src.alerts?["oxy"] || src.alerts?["tox_in_air"] || src.alerts?["methane_in_air"])
 		return TRUE
@@ -60,7 +60,7 @@
 	if(src.is_critical() && !src.stabilization) //crit aka circulatory shock
 		src.AdjustLosebreath(1)
 
-	if(src.losebreath>0) //Suffocating so do not take a breath
+	if(src.losebreath()>0) //Suffocating so do not take a breath
 		src.AdjustLosebreath(-1)
 		if (prob(10) && !isbelly(src.loc)) //Gasp per 10 ticks? Sounds about right.
 			src.emote("gasp")

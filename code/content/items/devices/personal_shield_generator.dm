@@ -32,6 +32,12 @@
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
 CAPABILITIES(/obj/item/personal_shield_generator)
+	configure(atom_rules(description_fluff = "A relatively new invention, made in a collaboration between Hephaestus Industries and a startup known as Kuznetsova Enterprise in the year \
+	2322. Numerous variants of the device have been made for specific tasks, ranging from riot control, mining, biohazard containment, and search and rescue, among \
+	others. Most of the devices share the flaw that electrical attacks can easily overload the device and cause a shield failure, encouraging combatants to swap to \
+	the use of stun-based electric weaponry when shield generators are in use. Most shield devices are self-charging, running off a micro-nuclear reactor built into \
+	the chassis itself, although some variants exist without this capability and can have normal cells inserted into them. Larger units boast the capability of \
+	storing a weapon, although without upgraded batteries the usage of said weapon is ill-advised."))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_shield)))
 	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = 1))

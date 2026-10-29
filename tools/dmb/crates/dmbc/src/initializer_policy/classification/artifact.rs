@@ -6,7 +6,7 @@ use super::*;
 mod receipts;
 #[path = "shared_expression.rs"]
 mod shared_expression;
-use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 pub(super) use receipts::ReceiptPool;
 use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(test)]
@@ -313,8 +313,8 @@ impl Resolver for ResolverView<'_> {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.0.resolve(query)
     }
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.0.domain_version(domain)
+    fn answer_world(&self) -> Option<u128> {
+        self.0.answer_world()
     }
 }
 pub(super) fn key(
@@ -323,16 +323,22 @@ pub(super) fn key(
     reuse: InitializerReuse<'_>,
     factory_policy: u128,
 ) -> Vec<u8> {
-    let mut key = b"dmbc-initializer-classification-v6-folded-features\0".to_vec();
-    key.extend_from_slice(&reuse.policy.to_le_bytes());
-    key.extend_from_slice(&factory_policy.to_le_bytes());
+    // The version tag, both policies and the resource context are identical for every write of one classification, so
+    // the key carries their 128-bit digest instead of the roughly 100 bytes themselves (one key per initializer write
+    // is retained several times over).
+    let mut context = b"dmbc-initializer-classification-v7-context-digest\0".to_vec();
+    context.extend_from_slice(&reuse.policy.to_le_bytes());
+    context.extend_from_slice(&factory_policy.to_le_bytes());
     match reuse.resource_search_context {
-        Some(context) => {
-            key.push(1);
-            key.extend_from_slice(&context.to_le_bytes());
+        Some(value) => {
+            context.push(1);
+            context.extend_from_slice(&value.to_le_bytes());
         }
-        None => key.push(0),
+        None => context.push(0),
     }
+    let mut key = Vec::with_capacity(64);
+    key.push(7);
+    key.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(&context).to_le_bytes());
     match fact {
         ModifierFact::Known(flags) => {
             key.push(0);
@@ -650,7 +656,9 @@ pub(super) fn classify_one_keyed_grouped_in(
     }
     drop(input_timer);
     let host = ResolverView(reuse.resolver);
-    let recorder = crate::lowering_memo::RecordingResolver::new(&host);
+    // A session's answer table proves classification receipts: their reads carry no domain version.
+    let recorder =
+        crate::lowering_memo::RecordingResolver::new(&host);
     let mut result = None;
     let mut hit = false;
     let captured =
@@ -741,7 +749,6 @@ pub(super) fn classify_one_keyed_grouped_in(
         };
         value.input = Some(input);
         let reads = recorder.reads();
-        let versions = recorder.domain_receipts();
         let dimensions = match &value.runtime {
             Some(
                 RuntimeRecipe::SizedArray(dimensions)
@@ -758,13 +765,11 @@ pub(super) fn classify_one_keyed_grouped_in(
                 value.key.as_ref(),
                 key,
                 &reads,
-                &versions,
             )
             .and_then(|weight| {
                 crate::heap_census::resident_modifier_weight(
                     value.input_write()?,
                     &[],
-                    &Vec::new(),
                     &Vec::new(),
                 )
                 .and_then(|input_weight| weight.checked_add(input_weight))
@@ -796,7 +801,6 @@ pub(super) fn classify_one_keyed_grouped_in(
             reuse.store.values.insert_current_qualified_with(
                 Arc::clone(key),
                 receipt,
-                versions.into(),
                 weight,
                 || value,
             )

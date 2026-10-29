@@ -9,7 +9,7 @@
 #   bash tools/dq_focused_test.sh --some-flag=x name                       # any other --flag goes to dm-test
 #   bash tools/dq_focused_test.sh --profile-tests name                     # per-test proc profile (data/logs/runN/profile/)
 #   bash tools/dq_focused_test.sh --boot                                   # boot only: fails on any boot runtime or warning
-#   bash tools/dq_focused_test.sh --bless dq_conversion_pin                # snapshot tests rewrite their recorded rows (doc/rewrite/snapshot_pins.md)
+#   bash tools/dq_focused_test.sh --bless dq_xform_pin                      # snapshot tests rewrite their recorded rows (doc/rewrite/snapshot_pins.md)
 #   bash tools/dq_focused_test.sh --split-slow <slow-test> dq_boot_gate    # DQ_SLOW_TESTS in a second world, at the same time
 #   bash tools/dq_focused_test.sh --detach <tests>                         # start in the background; prints a run id
 #   bash tools/dq_focused_test.sh --status <runid>                         # poll a detached run (exit 0 passed, 1 failed, 3 running)
@@ -62,6 +62,8 @@
 # directory and results file (data/runs/runN), and is killed after
 # DQ_FOCUS_TIMEOUT_MINUTES (default 15) with the last log lines printed.
 set -euo pipefail
+# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 
 cd "$(dirname "$0")/.."
 . tools/dq_below_normal.sh
@@ -266,13 +268,13 @@ usage() {
 	exit 2
 }
 
-# The .dm files the unit-test build compiles: deepquarry.dme's includes plus code/modules/unit_tests/_unit_tests.dm's (relative to that
+# The .dm files the unit-test build compiles: deepquarry.dme's includes plus code/tests/unit_tests/_unit_tests.dm's (relative to that
 # folder), as repo paths, one per line. A test type in a file nothing includes is not in the .dmb: focusing it names a test the world
 # doesn't have, which fails the run (and the boot gate) for no reason.
 included_files() {
 	{
 		awk -F'"' '/^#include "code.*\.dm"/ { print $2 }' deepquarry.dme
-		awk -F'"' '/^#include ".*\.dm"/ { print "code/modules/unit_tests/" $2 }' code/modules/unit_tests/_unit_tests.dm
+		awk -F'"' '/^#include ".*\.dm"/ { print "code/tests/unit_tests/" $2 }' code/tests/unit_tests/_unit_tests.dm
 	} | tr -d '\015' | tr '\134' '/' |
 		awk '{ n = split($0, a, "/"); k = 0; for (i = 1; i <= n; i++) { if (a[i] == "..") k--; else if (a[i] != ".") b[++k] = a[i] } o = b[1]; for (i = 2; i <= k; i++) o = o "/" b[i]; print o }'
 }
@@ -488,9 +490,12 @@ start_run_guard() {
 	command -v cygpath >/dev/null 2>&1 && WORLD_REGISTRY="$(cygpath -m "$WORLD_REGISTRY")"
 	mkdir -p "$WORLD_REGISTRY"
 	export DQ_WORLD_REGISTRY="$WORLD_REGISTRY"
-	nohup node tools/dq_run_guard.js --root "$root" --cap-s "$cap_sec" --queue-max-s "${DQ_FOCUSED_QUEUE_MAX_SEC:-5400}" --registry "$WORLD_REGISTRY" --marker "$CAP_MARKER" --poll-ms "${DQ_FOCUSED_GUARD_POLL_MS:-3000}" --on-kill "bash tools/dq_machine_slots.sh reap" >"$GUARD_LOG" 2>&1 </dev/null &
+	# compile + boot get their own cap (DQ_FOCUSED_BOOT_CAP_MIN, default 15); an explicit DQ_FOCUSED_MAX_SEC (the self-tests) caps both
+	local boot_cap_s=$(( ${DQ_FOCUSED_BOOT_CAP_MIN:-15} * 60 ))
+	case "${DQ_FOCUSED_MAX_SEC:-}" in '' | *[!0-9]* | 0) ;; *) boot_cap_s="$cap_sec" ;; esac
+	nohup node tools/dq_run_guard.js --root "$root" --cap-s "$cap_sec" --queue-max-s "${DQ_FOCUSED_QUEUE_MAX_SEC:-5400}" --registry "$WORLD_REGISTRY" --marker "$CAP_MARKER" --poll-ms "${DQ_FOCUSED_GUARD_POLL_MS:-3000}" --boot-dir "${DQ_FOCUSED_BOOT_DIR:-data/logs}" --boot-cap-s "$boot_cap_s" --on-kill "bash tools/dq_machine_slots.sh reap" >"$GUARD_LOG" 2>&1 </dev/null &
 	disown $! 2>/dev/null || true
-	echo "dq_focused_test: hard cap $CAP_MIN min for the whole run (DQ_FOCUSED_MAX_MIN); worlds die with this shell (guard log $GUARD_LOG)"
+	echo "dq_focused_test: hard cap $CAP_MIN min for the tests, counted from the boot gate (DQ_FOCUSED_MAX_MIN); compile + boot may take $(( boot_cap_s / 60 )) min (DQ_FOCUSED_BOOT_CAP_MIN); worlds die with this shell (guard log $GUARD_LOG)"
 }
 start_run_guard
 
@@ -536,19 +541,19 @@ focus="$FOCUS_ARG"
 #   main   the tests that are not slow
 #   slow   slow tests (DQ_SLOW_TESTS names them), together in one world
 #   sweep  whole-type sweep pins, sharded (below)
-# Whole-type sweep pins too long for one world (dq_fresh_look_default: two fresh instances of every creatable obj and mob type; dq_loot_roll_pin: 306 declarations x 1000 spawns and qdels, about 45 minutes in one world, past
+# Whole-type sweep pins too long for one world (dq_fresh_look_default: two fresh instances of every creatable obj and mob type; a sweep test past
 # the 15 minute focused timeout): they run as DQ_SWEEP_SHARDS (default 4; --sweep-shards=N) worlds, each rolling its slice of the declarations
 # (DQ_FOCUS_SHARD=i/N; the test slices through sweep_types()) and comparing the rows it made. Not used with --bless or --repeat (a record is
 # whole), nor with --no-split-slow or DQ_FOCUS_SPLIT=0 (one world, as before).
 # sweep_notice <pins> <requested shards> <actual shards> <world cap> <timeout minutes>: the one line that says what a sweep run costs. A sweep pin
-# is a long test (dq_loot_roll_pin is about 45 minutes in one world), not a hang: a cap below the requested shard count makes each slice longer, and
+# is a long test (a sweep can take tens of minutes in one world), not a hang: a cap below the requested shard count makes each slice longer, and
 # a loaded machine longer still; the world prints nothing while a slice runs, and only the watchdog ends it.
 sweep_notice() {
 	local note="== sweep: $1 runs as $3 shard world(s), one slice each, silent until it ends (watchdog $5 min)"
 	if [ "$3" -lt "$2" ]; then note+="; $2 were asked for but the machine has $4 test-world slot(s), so each slice is $2/$3 times longer"; fi
 	echo "$note"
 }
-sweep_pins=" dq_loot_roll_pin dq_fresh_look_default dq_stat_index_oracle dq_change_reader_plan_oracle "
+sweep_pins=" dq_fresh_look_default dq_stat_index_oracle dq_change_reader_plan_oracle "
 sweep_on=0
 if [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [ "$sweep_shards" -gt 1 ]; then sweep_on=1; fi
 main_group=()
@@ -593,16 +598,7 @@ status_write running "tests=${#tests[@]}" "split=$do_split"
 
 # The one-line verdict every run ends with, parsed from dm-test's "Unit-test summary: N passed, M failed, K skipped ...
 # (saved data/test-runs/X.json)" line(s). $1 = the combined log; $2 = exit code; $3 = json (split runs pass their merged one).
-# A run that blessed or recorded op pins wrote them as plain rows: factor them back against the shared base blocks
-# (code/modules/unit_tests/snapshots/op_bases/, tools/dq_pin_factor.py; doc/rewrite/snapshot_pins.md "Factored op pins").
-pin_factor_after_run() {
-	if [ -n "$(git status --porcelain -- code/modules/unit_tests/snapshots 2>/dev/null)" ]; then
-		"${PYTHON:-python3}" tools/dq_pin_factor.py || echo "dq_pin_factor failed: run python3 tools/dq_pin_factor.py before committing the pins" >&2
-	fi
-}
-
 print_result() {
-	pin_factor_after_run
 	if [ -f "${WORLD_REGISTRY:-/nonexistent}/.running" ]; then
 		local ran_at
 		ran_at="$(tr -cd '0-9' <"$WORLD_REGISTRY/.running")"
@@ -704,7 +700,17 @@ start_world() { # index
 			if [ -n "${W_SHARD[$i]}" ]; then export DQ_FOCUS_SHARD="${W_SHARD[$i]}"; fi
 			if [ -n "${W_PARAMS[$i]}" ]; then export DQ_WORLD_PARAMS="${W_PARAMS[$i]}"; fi
 			staleness_world_param
-			exec tools/build/build.sh dm-test "--focus=${W_FOCUS[$i]}" "--label=focused-${W_LABEL[$i]}" ${args[@]+"${args[@]}"}
+			# compile once per run: world 0 writes an explicit capture of the pair it compiled (build.ts runIsolatedTestWorld), the later
+			# worlds replay it (--focused-compiled-output) while the tree is unchanged (checked before each start, run_worlds)
+			local replay=()
+			if [ -n "${RUN_COMPILE_KEY:-}" ]; then
+				if [ "$i" = 0 ]; then export DQ_FOCUSED_CAPTURE_OUT="$RUN_CAPTURE"
+				elif [ -s "$RUN_CAPTURE" ] && [ -s "$RUN_CAPTURE.sha256" ]; then
+					replay=("--focused-compiled-output=$RUN_CAPTURE" "--focused-compiled-output-sha256=$(tr -d '[:space:]' <"$RUN_CAPTURE.sha256")")
+					echo "== world ${W_LABEL[$i]}: replays world 0's compile ($RUN_CAPTURE)"
+				fi
+			fi
+			exec tools/build/build.sh dm-test "--focus=${W_FOCUS[$i]}" "--label=focused-${W_LABEL[$i]}" ${args[@]+"${args[@]}"} ${replay[@]+"${replay[@]}"}
 		)
 		echo $? >"$log.rc.tmp" && mv -f "$log.rc.tmp" "$log.rc"
 	) >"$log" 2>&1 &
@@ -729,6 +735,9 @@ world_status() {
 	fi
 	return "$rec"
 }
+focused_compile_key() { # what the test .dmb depends on in this run: HEAD's tree, the uncommitted diff, untracked files, the run's arguments
+	{ git rev-parse 'HEAD^{tree}'; git diff HEAD 2>/dev/null; git status --porcelain=v1 -uall 2>/dev/null; printf '%s\n' "${args[@]-}" "${DQ_DEFINES:-}"; } | git hash-object --stdin
+}
 run_worlds() {
 	local began n i waited=0 running jsons=() rc=0 j shard W_DONE
 	began="$(date +%s)"
@@ -752,6 +761,12 @@ run_worlds() {
 		if [ -z "${DQ_FOCUS_TIMEOUT_MINUTES:-}" ]; then export DQ_FOCUS_TIMEOUT_MINUTES=45; fi
 		if [ ${#sweep_group[@]} -gt 0 ]; then sweep_notice "${sweep_group[*]}" "$sweep_requested" "$sweep_shards" "${world_cap:-?}" "$DQ_FOCUS_TIMEOUT_MINUTES"; fi
 	fi
+	# The compile key of this run: the tree, its uncommitted changes and the run's arguments. Later worlds reuse world 0's compile
+	# only while the key still holds when they start (checked again below). DQ_FOCUS_COMPILE_ONCE=0 compiles in every world.
+	RUN_COMPILE_KEY=""; RUN_CAPTURE="$(pwd -W 2>/dev/null || pwd)/data/focused-runs/capture.$$.json"; rm -f "$RUN_CAPTURE" "$RUN_CAPTURE.sha256" "$RUN_CAPTURE.receipt.json"
+	# a replay is a pinned single-world run of the same backend and defines: not with compiler-policy arguments (--dm-version, --warning, -D)
+	if [ "${DQ_FOCUS_COMPILE_ONCE:-1}" = 1 ] && [ ${#W_LABEL[@]} -gt 1 ] && ! printf '%s\n' "${args[@]-}" | grep -qE '^--(dm-version|warning|no-warning|define)|^-D'; then RUN_COMPILE_KEY="$(focused_compile_key)"; fi
+	[ -z "$RUN_COMPILE_KEY" ] || echo "== worlds: compile once (key ${RUN_COMPILE_KEY:0:12}): world 0 compiles, the other worlds replay its pair while the tree is unchanged"
 	start_world 0
 	# Wait for world 0 to finish compiling (it logs "Test world runN" when it launches), or to die.
 	while ! grep -q 'Test world run' "${W_LOG[0]}" 2>/dev/null; do
@@ -804,6 +819,10 @@ run_worlds() {
 				[ "$in_use" -ge "$gsize" ] && break
 			fi
 			if [ "$limited" -eq 1 ]; then export DQ_SLOTS_PREHELD=test_world; fi
+			if [ -n "$RUN_COMPILE_KEY" ] && [ "$(focused_compile_key)" != "$RUN_COMPILE_KEY" ]; then
+				echo "== worlds: the tree changed since world 0 compiled; world ${W_LABEL[$next]} compiles its own"
+				RUN_COMPILE_KEY=""
+			fi
 			start_world "$next"
 			unset DQ_SLOTS_PREHELD
 			next=$((next + 1))
@@ -816,6 +835,7 @@ run_worlds() {
 	done
 	slots_group_release 2>/dev/null || true
 	unset DQ_KEEP_DERIVED_DME
+	[ -z "${RUN_CAPTURE:-}" ] || rm -f "$RUN_CAPTURE" "$RUN_CAPTURE.sha256" "$RUN_CAPTURE.receipt.json"
 	: >"$combined_log"
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
 		world_status "$i"

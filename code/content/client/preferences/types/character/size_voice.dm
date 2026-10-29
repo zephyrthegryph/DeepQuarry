@@ -33,7 +33,7 @@
 	return 137
 
 /datum/preference/numeric/human/weight_vr/apply_to_human(mob/living/carbon/human/target, value)
-	target.weight = value
+	sparse_set_or(target, weight, value, DEFAULT_MOB_WEIGHT)
 
 
 /datum/preference/numeric/human/weight_gain
@@ -125,9 +125,9 @@
 
 /datum/preference/text/human/voice_sound/apply_to_human(mob/living/carbon/human/target, value)
 	if(!value)
-		target.voice_sounds_list = DEFAULT_TALK_SOUNDS
+		sparse_set(target, voice_sounds_list, DEFAULT_TALK_SOUNDS)
 	else
-		target.voice_sounds_list = get_talk_sound(value)
+		sparse_set(target, voice_sounds_list, get_talk_sound(value))
 
 
 /datum/preference/text/human/custom_speech_bubble
@@ -144,7 +144,7 @@
 	return GLOB.selectable_speech_bubbles
 
 /datum/preference/text/human/custom_speech_bubble/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_speech_bubble = text_or_null(value)
+	target.bio.custom_speech_bubble = text_or_null(value)
 
 
 /datum/preference/text/human/custom_footstep
@@ -163,7 +163,7 @@
 	return GLOB.selectable_footstep ? assoc_to_keys(GLOB.selectable_footstep) : null
 
 /datum/preference/text/human/custom_footstep/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_footstep = GLOB.selectable_footstep[value] || FOOTSTEP_MOB_HUMAN
+	target.set_custom_footstep(GLOB.selectable_footstep[value] || FOOTSTEP_MOB_HUMAN)
 
 
 /datum/preference/text/human/species_sound

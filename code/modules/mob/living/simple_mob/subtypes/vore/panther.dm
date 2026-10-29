@@ -16,7 +16,6 @@
 	movement_cooldown = 0.5
 	see_in_dark = 8
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
@@ -35,18 +34,17 @@
 	can_buckle = TRUE
 	mount_offset_y = 12
 
-	say_list_type = /datum/say_list/panther
 
-	species_sounds = "Feline"
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/panther
 	vore_active = 1
-	vore_capacity = 2
 	vore_pounce_chance = 10
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
-	configure(butchery_rules(meat_amount = 8))
+	configure(living_rules(species_sounds = "Feline"))
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/panther))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 8))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(pain_1p = list("yowl", "growl"), pain_3p = list("yowls", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))

@@ -30,12 +30,10 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         View::Entry {
             key,
             reads,
-            versions,
             value,
         } => {
             census.slice("retained_type_paths.keys", key, true);
             census.receipt("retained_type_paths.reads", reads);
-            census.slice("retained_type_paths.versions", versions, true);
             if census.arc_object("retained_type_paths.values", value) {
                 let dm_tree::type_paths::LexicalPath { parent } = value.as_ref();
                 if let Some(parent) = parent {
@@ -69,12 +67,10 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         View::Entry {
             key,
             reads,
-            versions,
             value,
         } => {
             census.slice("retained_callable.keys", key, true);
             census.receipt("retained_callable.reads", reads);
-            census.slice("retained_callable.versions", versions, true);
             if census.arc_object("retained_callable.values", value) {
                 let dm_tree::owner_callable::CallableOwner {
                     anchors,

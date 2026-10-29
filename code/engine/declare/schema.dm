@@ -7,7 +7,7 @@
 // requests, and the UI-type generator, which prints schema_range_text().
 //
 // The kinds are written bool(), int(min, max), num(min, max, step), enum(list), flags(list), schema_text(max_len, sanitize =), schema_ref(type),
-// schema_path(type), list_of(schema), map_of(key, value) and row(type). BYOND owns the names text() and path(), so those two are spelled
+// schema_path(type), schema_msg(), list_of(schema), map_of(key, value) and row(type). BYOND owns the names text() and path(), so those two are spelled
 // schema_text() and schema_path().
 
 
@@ -123,6 +123,25 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/schema)
 	var/datum/schema/S = new
 	S.kind = SCHEMA_PATH
 	S.type_of = type
+	S.on_invalid = ON_INVALID_REJECT
+	schema_default(S, default)
+	return S
+
+/// A refusal reason: null, or a /datum/msg type path (MSG(cover/closed)), or a msg_text() list for text only known at run time.
+/proc/schema_msg()
+	var/datum/schema/S = new
+	S.kind = SCHEMA_MSG
+	S.type_of = /datum/msg
+	S.on_invalid = ON_INVALID_REJECT
+	return S
+
+/// Any value at all, entities included: the declaration of a var that carries whatever its producer hands it (a hook's reply, a config entry's
+/// number, text or list, a script's result, an asset's file until it is registered). It is the one honest spelling of "no single kind" for a var
+/// that is not a long-lived holder of entities (a var that keeps an entity is a relation: ref_one(), owns_one()). The `untyped` lint accepts it
+/// for a call's result and still reports an atom or datum assigned to it.
+/proc/schema_any(default = null)
+	var/datum/schema/S = new
+	S.kind = SCHEMA_ANY
 	S.on_invalid = ON_INVALID_REJECT
 	schema_default(S, default)
 	return S
@@ -318,6 +337,16 @@ PROC_SUMMARY(/proc/schema_check) // vars[] / call() dispatcher: the walk cannot 
 			if(ispath(value) && (!S.type_of || ispath(value, S.type_of)))
 				return list(value, null)
 			return list(SCHEMA_REJECT, "[value] is not a path under [S.type_of]")
+		if(SCHEMA_MSG)
+			if(isnull(value) || (ispath(value) && ispath(value, /datum/msg)))
+				return list(value, null)
+			if(islist(value))
+				var/list/text_msg = value
+				if(length(text_msg) && text_msg[1] == "msg_text")
+					return list(value, null)
+			return list(SCHEMA_REJECT, "[value] is not a message path under /datum/msg")
+		if(SCHEMA_ANY)
+			return list(value, null)
 		if(SCHEMA_ROW)
 			if(isdatum(value) && (!S.type_of || istype(value, S.type_of)))
 				return list(value, null)
@@ -473,6 +502,8 @@ GLOBAL_VAR(schema_log_capture)
 			return "text[S.max_len ? " max [S.max_len]" : ""]"
 		if(SCHEMA_ENUM)
 			return "enum"
+		if(SCHEMA_ANY)
+			return "any value"
 	return S.kind
 
 /// The top-level arguments of a declaration's source text "num(0, MAX, step = 1)": a list of trimmed argument texts, or null.

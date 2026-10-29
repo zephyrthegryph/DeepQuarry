@@ -29,7 +29,7 @@
 	TEST_ASSERT_EQUAL(editor.src_object(), helm, "Actual UI constructor binds the original real console")
 	TEST_ASSERT_EQUAL(helm.tgui_status(user, editor.state()), STATUS_CLOSE, "Actual default state rejects the real clientless actor")
 	var/original_waypoints = length(REGISTRY_MEMBERS(REGISTRY_WAYPOINTS))
-	var/original_uid = GLOB.file_uid
+	var/original_files = round2_count_computer_files()
 	var/original_entries = length(helm.known_sectors)
 	input_submit(new /datum/input_event/ui_act(user, editor, "add", list("add" = "new"), editor.state()))
 	// The button is the add op: its first question is the entry's name.
@@ -37,7 +37,7 @@
 	TEST_ASSERT(istype(question) && question.answerer == user, "Actual public UI action opens the navigation name question")
 	TEST_ASSERT_EQUAL(question.question, "Input navigation entry name", "The name is asked first")
 	TEST_ASSERT_EQUAL(length(REGISTRY_MEMBERS(REGISTRY_WAYPOINTS)), original_waypoints, "Opening the real name question does not register an abandoned waypoint")
-	TEST_ASSERT_EQUAL(GLOB.file_uid, original_uid, "Opening the real name question does not allocate an abandoned file identity")
+	TEST_ASSERT_EQUAL(round2_count_computer_files(), original_files, "Opening the real name question does not allocate an abandoned file identity")
 	if(navigation_case == "cancelled")
 		test_answer(user, null, REQ_CANCELLED)
 	else if(navigation_case == "deleted_window")
@@ -53,10 +53,17 @@
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "Actual cancel or denial retires without opening a coordinate question")
 	TEST_ASSERT_EQUAL(length(helm.known_sectors), original_entries, "Actual cancel or denial preserves real navigation entries")
 	TEST_ASSERT_EQUAL(length(REGISTRY_MEMBERS(REGISTRY_WAYPOINTS)), original_waypoints, "Actual cancel or denial leaves no provisional waypoint registered")
-	TEST_ASSERT_EQUAL(GLOB.file_uid, original_uid, "Actual cancel or denial leaves no abandoned file identity")
+	TEST_ASSERT_EQUAL(round2_count_computer_files(), original_files, "Actual cancel or denial leaves no abandoned file identity")
 
 /datum/unit_test/round2_helm_navigation_entry/cancelled
 	navigation_case = "cancelled"
 
 /datum/unit_test/round2_helm_navigation_entry/deleted_window
 	navigation_case = "deleted_window"
+
+/// How many computer files exist (a file's id is its handle now, so "no file was made" is a count, not a counter).
+/proc/round2_count_computer_files()
+	. = 0
+	for(var/datum/computer_file/F)
+		if(!QDELETED(F))
+			.++

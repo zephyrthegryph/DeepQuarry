@@ -3,7 +3,6 @@ use super::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 pub(crate) struct RetainedHostFacts {
     values: Arc<dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>>,
-    fallback_scope: fallback::ScopeOwner,
     hits: AtomicU64,
     recomputed: AtomicU64,
     constant_hits: AtomicU64,
@@ -23,8 +22,6 @@ mod callable_coverage;
 mod catalogs;
 #[path = "runner_facts_engine_providers.rs"]
 mod engine_providers;
-#[path = "runner_facts_callable_fallback.rs"]
-mod fallback;
 #[path = "runner_facts_pressure.rs"]
 mod pressure;
 #[path = "runner_facts_scalars.rs"]
@@ -37,7 +34,6 @@ enum Artifact {
     Prepared(Entry),
     EngineProviders(Arc<crate::engine_host::PinnedEngineProviders>),
     Scalar(Arc<dm_tree::constant_resolution::ScalarArtifact>),
-    CallableFallback(u64),
     CallableCoverage(Arc<std::collections::HashSet<dm_ir::SymbolId>>),
     VariableCoverage(Arc<crate::engine_host::VariableCoverage>),
 }
@@ -49,7 +45,6 @@ enum Query {
     TypePaths,
     Scalar(dm_tree::constant_resolution::ScalarReadQuery),
     CallableProvider,
-    CallableExclusion(dm_ir::SymbolId),
     CallableRoster,
     VariableRoster,
     ConstantOwner,
@@ -65,7 +60,6 @@ enum Answer {
     TypePaths(Arc<Vec<dm_ir::SymbolId>>),
     Scalar(dm_tree::constant_resolution::ScalarReadAnswer),
     CallableProvider(Arc<crate::engine_host::PinnedEngineProviders>),
-    CallableExclusion(bool),
     CallableRoster(callable_coverage::Roster),
     VariableRoster(variable_coverage::Roster),
     ConstantOwner(Arc<catalogs::Constants>),
@@ -78,7 +72,6 @@ impl PartialEq for Answer {
             (Self::TypePaths(a), Self::TypePaths(b)) => a == b,
             (Self::Scalar(a), Self::Scalar(b)) => a == b,
             (Self::CallableProvider(a), Self::CallableProvider(b)) => Arc::ptr_eq(a, b),
-            (Self::CallableExclusion(a), Self::CallableExclusion(b)) => a == b,
             (Self::CallableRoster(a), Self::CallableRoster(b)) => a == b,
             (Self::VariableRoster(a), Self::VariableRoster(b)) => a == b,
             (Self::ConstantOwner(a), Self::ConstantOwner(b)) => Arc::ptr_eq(a, b),
@@ -117,7 +110,6 @@ impl dm_session::ObservationHost<Query, Answer, Domain> for Current<'_> {
             Query::TypePaths => Answer::TypePaths(Arc::clone(self.type_paths())),
             Query::Scalar(_) => unreachable!("scalar reads require current evaluator host"),
             Query::CallableProvider
-            | Query::CallableExclusion(_)
             | Query::CallableRoster
             | Query::VariableRoster
             | Query::ConstantOwner => {
@@ -130,7 +122,6 @@ impl Default for RetainedHostFacts {
     fn default() -> Self {
         Self {
             values: Arc::new(dm_session::ObservedArtifactStore::current_revision()),
-            fallback_scope: Default::default(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             constant_hits: AtomicU64::new(0),
@@ -166,8 +157,8 @@ impl RetainedHostFacts {
                         Arc::clone(&previous.pinned),
                     )?;
                     self.hits.fetch_add(1, Ordering::Relaxed);
-                    let providers = self.engine_providers(&current)?;
-                    return Ok((self.attach_fallback(host, &providers), scalar));
+                    self.engine_providers(&current)?;
+                    return Ok((host, scalar));
                 }
             }
         }
@@ -214,7 +205,7 @@ impl RetainedHostFacts {
             );
         }
         self.recomputed.fetch_add(1, Ordering::Relaxed);
-        Ok((self.attach_fallback(host, &engine_providers), scalar))
+        Ok((host, scalar))
     }
     fn insert_stage(&self, key: &[u8], current: &Current<'_>, queries: &[Query], value: Artifact) {
         use dm_session::ObservationHost;
@@ -223,16 +214,13 @@ impl RetainedHostFacts {
             ledger.record(
                 query.clone(),
                 current.answer(query),
-                Domain::ExactOwners,
-                None,
-            );
+                Domain::ExactOwners);
         }
         // Inline charge only; current-stage retention has no byte admission budget.
         let charge = std::mem::size_of::<Artifact>().saturating_add(key.len());
         self.values.insert_with(
             Arc::from(key),
             ledger.reads(),
-            ledger.domain_receipts(),
             charge,
             || value,
         );
@@ -265,7 +253,6 @@ impl RetainedHostFacts {
             dm_session::ObservedArtifactStorageView::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 census.slice("host.facts.keys", key, true);
@@ -292,7 +279,6 @@ impl RetainedHostFacts {
                         }
                     }
                 }
-                census.slice("host.facts.versions", versions, true);
                 if census.arc_object("host.facts.value", value) {
                     match value.as_ref() {
                         Artifact::Prepared(entry) => inspect_entry(entry, &mut census),
@@ -305,7 +291,6 @@ impl RetainedHostFacts {
                                 "shared catalog and spelling-map backing/control layout excluded",
                             );
                         }
-                        Artifact::CallableFallback(_) => (),
                         Artifact::VariableCoverage(coverage) => coverage.census(&mut census),
                         Artifact::CallableCoverage(names) => {
                             callable_coverage::inspect_names(names, &mut census)
@@ -318,7 +303,6 @@ impl RetainedHostFacts {
                 }
             }
         });
-        self.census_fallback(&mut census);
         census.finish()
     }
 }
@@ -327,13 +311,6 @@ fn inspect_entry(entry: &Entry, census: &mut crate::heap_census::HeapCensus) {
     entry.source.census(census);
     let facts = &entry.scalar;
     census.slice("host.scalar.requested", facts.requested(), true);
-    if census.arc_object("host.scalar.certificates", facts.certificates()) {
-        census.collection_entries::<(ScalarQuery, u64)>(
-            "host.scalar.certificates",
-            facts.certificates().as_ref() as *const _ as usize,
-            facts.certificates().len(),
-        );
-    }
     if census.arc_object("host.scalar.outcomes", facts.outcomes()) {
         census.collection_entries::<(ScalarQuery, ScalarOutcome)>(
             "host.scalar.outcomes",

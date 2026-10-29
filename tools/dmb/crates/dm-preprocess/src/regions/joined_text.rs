@@ -75,6 +75,29 @@ fn join<'a>(pieces: impl Iterator<Item = &'a SourceText> + Clone) -> SourceText 
     }
     text.into()
 }
+/// Joined texts by content, shared by the sessions of a daemon (a second worktree at the same commit joins byte-equal
+/// text, about 60 MB each). Weak: it keeps no text alive. Used only where expansion inputs are shared (a daemon).
+static POOL: std::sync::Mutex<Option<std::collections::HashMap<u128, crate::source_text::WeakSourceText>>> =
+    std::sync::Mutex::new(None);
+fn interned(text: SourceText) -> SourceText {
+    if !super::expansion_input::sharing() {
+        return text;
+    }
+    let digest = xxhash_rust::xxh3::xxh3_128(text.as_bytes());
+    let mut pool = POOL.lock().unwrap_or_else(|error| error.into_inner());
+    let pool = pool.get_or_insert_with(Default::default);
+    if let Some(held) = pool.get(&digest).and_then(|weak| weak.upgrade()) {
+        if held.as_bytes() == text.as_bytes() {
+            return held;
+        }
+        return text;
+    }
+    pool.insert(digest, text.downgrade());
+    if pool.len() > 16 {
+        pool.retain(|_, weak| weak.upgrade().is_some());
+    }
+    text
+}
 pub(super) fn assemble(plan: &DirectivePlan, outputs: &[RegionOutput]) -> SourceText {
     join(plan.items.iter().filter_map(|item| match item {
         OrderedItem::Text(index) => Some(&outputs[*index].text),
@@ -87,11 +110,11 @@ impl JoinedText {
         if let Some(owner) = self.values.lookup(KEY, &host) {
             return owner.as_ref().clone();
         }
-        let text = host.0.assemble();
+        let text = interned(host.0.assemble());
         let ledger = ObservationLedger::default();
-        ledger.record(Query::OrderedEmission, host.0.clone(), (), None);
+        ledger.record(Query::OrderedEmission, host.0.clone(), ());
         self.values
-            .insert_with(Arc::from(KEY), ledger.reads(), Vec::new(), 0, || {
+            .insert_with(Arc::from(KEY), ledger.reads(), 0, || {
                 text.clone()
             });
         text
@@ -115,7 +138,6 @@ impl JoinedText {
             Store::Entry {
                 key,
                 reads,
-                versions,
                 value,
             } => {
                 visit(slice_storage(key));
@@ -123,7 +145,6 @@ impl JoinedText {
                     dm_session::ReceiptStorageView::Flat(values) => visit(slice_storage(values)),
                     dm_session::ReceiptStorageView::Groups(groups) => visit(slice_storage(groups)),
                 });
-                visit(slice_storage(versions));
                 visit(arc_storage(value));
                 visit(View::Source(value));
                 for read in reads.iter() {

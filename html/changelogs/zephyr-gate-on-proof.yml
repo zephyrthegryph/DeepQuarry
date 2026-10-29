@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Merge train: prechecked, non-interacting batches land on their precheck proof (compile + boot; smoke/gameplay every 4th proof landing or on 5+ lanes), heavy cycles gather every prechecked lane, analyze_tests reuses the precheck verdict, a no-result test phase retries then defers instead of bouncing, and the push no longer waits for worktree gc."

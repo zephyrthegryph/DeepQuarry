@@ -3,7 +3,6 @@ use crate::{Observation, Receipt, ReceiptAdmission};
 use std::sync::atomic::{AtomicUsize, Ordering};
 struct Provider {
     calls: AtomicUsize,
-    version: Option<u128>,
     changed: bool,
 }
 fn negative() -> ResolveQuery {
@@ -15,9 +14,6 @@ fn opaque() -> ResolveQuery {
 impl Resolver for Provider {
     fn observes_reads(&self) -> bool {
         false
-    }
-    fn domain_version(&self, _: ReadDomain) -> Option<u128> {
-        self.version
     }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.calls.fetch_add(1, Ordering::Relaxed);
@@ -32,10 +28,9 @@ impl Resolver for Provider {
         }
     }
 }
-fn provider(version: Option<u128>, changed: bool) -> Provider {
+fn provider(changed: bool) -> Provider {
     Provider {
         calls: AtomicUsize::new(0),
-        version,
         changed,
     }
 }
@@ -54,18 +49,6 @@ fn receipt() -> Receipt<ResolveQuery, ResolvedMeaning, ReadDomain> {
     ]
     .into()
 }
-fn versions(
-    receipt: &Receipt<ResolveQuery, ResolvedMeaning, ReadDomain>,
-    version: u128,
-) -> Vec<(ReadDomain, u128)> {
-    receipt
-        .iter()
-        .map(|read| read.domain)
-        .collect::<std::collections::BTreeSet<_>>()
-        .into_iter()
-        .map(|domain| (domain, version))
-        .collect()
-}
 fn assert_reads(
     recording: &RecordingResolver<'_, impl Resolver>,
     receipt: &Receipt<ResolveQuery, ResolvedMeaning, ReadDomain>,
@@ -75,25 +58,22 @@ fn assert_reads(
     assert_eq!(recording.reads(), expected);
 }
 #[test]
-fn qualified_leaf_delivery_preserves_nested_negative_and_opaque_reads_without_resolve() {
-    let host = provider(Some(7), false);
+fn admitted_leaf_delivery_preserves_nested_negative_and_opaque_reads() {
+    let host = provider(false);
     let inner = RecordingResolver::new(&host);
     let outer = RecordingResolver::new(&inner);
     let admission = ReceiptAdmission::new(&outer);
     let receipt = receipt();
     assert!(admission.allows_certificate_reuse());
-    assert_eq!(
-        admission.first_changed_receipted(&receipt, &versions(&receipt, 7), |_| {}),
-        None
-    );
+    assert_eq!(admission.first_changed_receipted(&receipt, |_| {}), None);
     assert_reads(&inner, &receipt);
     assert_reads(&outer, &receipt);
-    assert_eq!(host.calls.load(Ordering::Relaxed), 0);
-    assert_eq!(outer.domain_receipts(), versions(&receipt, 7));
+    // Each read was replayed once against the provider; the recorders took the admitted answers.
+    assert_eq!(host.calls.load(Ordering::Relaxed), 2);
 }
 #[test]
 fn exact_leaf_delivery_and_cached_verdict_do_not_repeat_provider_evaluation() {
-    let host = provider(None, false);
+    let host = provider(false);
     let recorder = RecordingResolver::new(&host);
     let admission = ReceiptAdmission::new(&recorder);
     let receipt = receipt();
@@ -104,22 +84,18 @@ fn exact_leaf_delivery_and_cached_verdict_do_not_repeat_provider_evaluation() {
     assert_reads(&recorder, &receipt);
 }
 #[test]
-fn stale_certificates_replay_current_provider_and_changed_leaf_cannot_import_old_answers() {
+fn receipts_replay_the_current_provider_and_a_changed_leaf_cannot_import_old_answers() {
     let receipt = receipt();
-    let host = provider(Some(8), false);
+    let host = provider(false);
     let recorder = RecordingResolver::new(&host);
     let admission = ReceiptAdmission::new(&recorder);
-    assert_eq!(
-        admission.first_changed_receipted(&receipt, &versions(&receipt, 7), |_| {}),
-        None
-    );
+    assert_eq!(admission.first_changed_receipted(&receipt, |_| {}), None);
     assert_eq!(host.calls.load(Ordering::Relaxed), 2);
-    assert_eq!(recorder.domain_receipts(), versions(&receipt, 8));
-    let changed = provider(Some(9), true);
+    let changed = provider(true);
     let new = RecordingResolver::new(&changed);
     let admission = ReceiptAdmission::new(&new);
     assert_eq!(
-        admission.first_changed_receipted(&receipt, &versions(&receipt, 7), |_| {}),
+        admission.first_changed_receipted(&receipt, |_| {}),
         Some(negative())
     );
     assert!(
@@ -143,43 +119,18 @@ fn differing_duplicate_answers_remain_independent_admission_obligations() {
         },
     ]
     .into();
-    let host = provider(None, false);
+    let host = provider(false);
     let recorder = RecordingResolver::new(&host);
     let admission = ReceiptAdmission::new(&recorder);
-    assert_eq!(
-        admission.first_changed_receipted(&receipt, &[], |_| {}),
-        Some(query)
-    );
+    assert_eq!(admission.first_changed_receipted(&receipt, |_| {}), Some(query));
     assert_eq!(host.calls.load(Ordering::Relaxed), 2);
     assert!(recorder.reads().is_empty());
-}
-#[test]
-fn admitted_delivery_preserves_prior_conflicting_version_decline() {
-    let host = provider(Some(7), false);
-    let recorder = RecordingResolver::new(&host);
-    let receipt = receipt();
-    // Seed the SAME ledger's conflict rule, without creating any cache authority.
-    for read in receipt.iter() {
-        recorder
-            .ledger
-            .record(read.query, read.answer.clone(), read.domain, Some(6));
-    }
-    let admission = ReceiptAdmission::new(&recorder);
-    assert_eq!(
-        admission.first_changed_receipted(&receipt, &versions(&receipt, 7), |_| {}),
-        None
-    );
-    assert!(recorder.domain_receipts().is_empty());
-    assert_reads(&recorder, &receipt);
 }
 struct Nontransparent<'a> {
     host: &'a Provider,
     observed: AtomicUsize,
 }
 impl Resolver for Nontransparent<'_> {
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.host.domain_version(domain)
-    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.observed.fetch_add(1, Ordering::Relaxed);
         self.host.resolve(query)
@@ -187,7 +138,7 @@ impl Resolver for Nontransparent<'_> {
 }
 #[test]
 fn nontransparent_custom_observer_keeps_ordinary_resolve_callbacks() {
-    let host = provider(Some(7), false);
+    let host = provider(false);
     let custom = Nontransparent {
         host: &host,
         observed: AtomicUsize::new(0),
@@ -196,10 +147,7 @@ fn nontransparent_custom_observer_keeps_ordinary_resolve_callbacks() {
     let admission = ReceiptAdmission::new(&recorder);
     let receipt = receipt();
     assert!(!admission.allows_certificate_reuse());
-    assert_eq!(
-        admission.first_changed_receipted(&receipt, &[], |_| {}),
-        None
-    );
+    assert_eq!(admission.first_changed_receipted(&receipt, |_| {}), None);
     assert_reads(&recorder, &receipt);
     assert_eq!(custom.observed.load(Ordering::Relaxed), 2);
     assert!(dm_ir::TransparentReceiptObserver::new(&custom, &recorder).is_none());

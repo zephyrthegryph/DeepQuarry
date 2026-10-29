@@ -2,8 +2,8 @@
 	var/list/icon_bellies = list() //Clear any belly options that may not exist now
 	var/list/capacity = list()
 	var/list/fullness = list()
-	vore_icon_bellies = icon_bellies
-	vore_capacity_ex = capacity
+	set_vore_icon_bellies(icon_bellies)
+	set_vore_capacity_ex(capacity)
 	set_vore_fullness_ex(fullness)
 	if(!sprite_datum) // A22
 		set_vore_light_states(null) // A22: no stale light keys from the previous sprite
@@ -19,8 +19,8 @@
 		icon_bellies = list("sleeper")
 		if(sprite_datum.has_sleeper_light_indicator)
 			sprite_datum.belly_light_list = list("sleeper")
-	vore_icon_bellies = icon_bellies
-	vore_capacity_ex = capacity
+	set_vore_icon_bellies(icon_bellies)
+	set_vore_capacity_ex(capacity)
 	set_vore_fullness_ex(fullness)
 	PUBLISH(src, belly_change) //Set how full the newly defined bellies are, if they're already full; the belly lights follow it
 

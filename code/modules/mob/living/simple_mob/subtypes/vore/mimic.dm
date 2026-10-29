@@ -122,6 +122,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	var/knockdown_chance = 10 //Stubbing your toe on furniture hurts.
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
+	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	ref_one(nameof(real_crate), /obj/structure/closet/crate)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
@@ -132,7 +133,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	vore_active = 1
 	vore_pounce_chance = 10
 	swallowTime = 3 SECONDS
-	vore_capacity = 1
 	vore_default_mode = DM_DIGEST
 
 /mob/living/simple_mob/vore/aggressive/mimic/apply_melee_effects(atom/A)
@@ -146,7 +146,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	return FALSE
 
 /mob/living/simple_mob/vore/aggressive/mimic
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/aggressive/mimic/on_death(gibbed)
 	..()
@@ -313,7 +312,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	return FALSE
 
 /mob/living/simple_mob/vore/aggressive/mimic/closet
-	delete_on_death = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/closet)
+	configure(living_rules(delete_on_death = TRUE))
 
 /mob/living/simple_mob/vore/aggressive/mimic/closet/on_death(gibbed)
 	..()
@@ -338,8 +339,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	. = ..()
 	tryTrigger(AM)
 
-/obj/effect/floormimic/Bumped(atom/movable/AM)
-	. = ..()
+/// The bump notice: `AM` walked into it (was Bumped()).
+/obj/effect/floormimic/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/movable/AM = N.bumper
 	tryTrigger(AM)
 
 /obj/effect/floormimic/proc/tryTrigger(atom/movable/victim)
@@ -371,6 +374,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/effect/floormimic)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
 	op("floormimic_awaken_item", item(/obj/item), then(PROC_REF(floormimic_awaken_item)))
 

@@ -249,6 +249,16 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 	user.client.cmd_admin_toggle_block(H, href_block)
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, H)
 
+/// The tag menu's UNTAG: the datum leaves this admin's tagged list.
+/datum/admins/proc/topic_del_tag(datum/act/op/A, href_del_tag)
+	log_admin("[key_name(A.actor)] untagged [href_del_tag]")
+	remove_tagged_datum(href_del_tag)
+
+/// The tag menu's MARK: the datum becomes this admin's marked datum.
+/datum/admins/proc/topic_mark_datum(datum/act/op/A, href_mark_datum)
+	log_admin("[key_name(A.actor)] marked [href_mark_datum]")
+	mark_datum_for(href_mark_datum)
+
 /datum/admins/proc/topic_adminplayeropts(datum/act/op/A, href_adminplayeropts)
 	var/mob/user = A.actor
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, href_adminplayeropts)
@@ -341,8 +351,8 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 						Name = <b>[M.name]</b>; Real_name = [M.real_name]; Mind_name = [M.mind?"[M.mind.name]":""]; Key = <b>[M.key]</b>;<br>\
 						Location = [location_description];<br>\
 						[special_role_description]<br>\
-						(<a href='byond://?src=\ref[user];[HrefToken()];priv_msg=\ref[M]'>PM</a>) (<A href='byond://?src=\ref[src];[HrefToken()];adminplayeropts=\ref[M]'>PP</A>) (<A href='byond://?_src_=vars;[HrefToken()];Vars=\ref[M]'>VV</A>) \
-						(<A href='byond://?src=\ref[src];[HrefToken()];subtlemessage=\ref[M]'>SM</A>) ([admin_jump_link(M, src)]) (<A href='byond://?src=\ref[src];[HrefToken()];secretsadmin=check_antagonist'>CA</A>)</span>")
+						(<a href='byond://?src=[REF(user)];[HrefToken(user)];priv_msg=[url_encode(ref_token(M))]'>PM</a>) (<A href='byond://?src=[REF(src)];[HrefToken(user)];adminplayeropts=[url_encode(ref_token(M))]'>PP</A>) (<A href='byond://?_src_=vars;[HrefToken(user)];Vars=[REF(M)]'>VV</A>) \
+						(<A href='byond://?src=[REF(src)];[HrefToken(user)];subtlemessage=[url_encode(ref_token(M))]'>SM</A>) ([admin_jump_link(M, src)]) (<A href='byond://?src=[REF(src)];[HrefToken(user)];secretsadmin=check_antagonist'>CA</A>)</span>")
 
 /datum/admins/proc/topic_adminspawncookie(datum/act/op/A, href_adminspawncookie)
 	var/mob/living/carbon/human/H = href_adminspawncookie

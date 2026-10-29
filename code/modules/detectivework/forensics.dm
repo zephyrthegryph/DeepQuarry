@@ -132,7 +132,7 @@
 	fields["fprints"] = A.forensic_data?.get_prints().Copy()
 	fields["fibers"] = A.forensic_data?.get_fibres().Copy()
 	fields["blood"] = A.forensic_data?.get_blooddna().Copy()
-	fields["time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	fields["time"] = TIME_NOW(CLOCK_WORLD)
 
 /datum/data/record/forensic/proc/merge(datum/data/record/other)
 	var/list/prints = fields["fprints"]

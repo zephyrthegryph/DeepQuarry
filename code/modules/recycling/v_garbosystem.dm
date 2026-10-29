@@ -148,9 +148,10 @@ CAPABILITIES(/obj/machinery/button/garbosystem)
 						break
 					if(L.stat == DEAD)
 						play_sfx(src, SFX_EFFECTS_SPLAT)
-						if(butchery_of(L).meat_amount && L.meat_type) // Get all the goobs outta this goober
+						if(butchery_of(L).meat_amount && butchery_of(L).meat_type) // Get all the goobs outta this goober
 							while(butchery_of(L).meat_amount > 0)
-								var/obj/item/meat = new L.meat_type(src)
+								var/meat_type = butchery_of(L).meat_type
+								var/obj/item/meat = new meat_type(src)
 								if(meat.reagents) // Reagents are set on init, might be randomized per meat chunk too so it needs to be done on a per case basis
 									transfer_reagent_to_tank(meat.reagents,1)
 								consumed(meat, src)

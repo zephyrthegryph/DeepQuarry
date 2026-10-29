@@ -5,7 +5,6 @@
 	icon_state = "signmaker"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 7
 	var/list/signs
 	var/max_signs = 10
 	var/creation_time = 0 //time to create a holosign in deciseconds.
@@ -43,7 +42,7 @@
 			to_chat(user, span_notice("[src] is projecting at max capacity!"))
 
 CAPABILITIES(/obj/item/holosign_creator)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 7, throw_speed = 3))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	// Projecting a sign takes creation_time and claims the creator; afterattack() starts it with the turf.

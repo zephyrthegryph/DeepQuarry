@@ -1,0 +1,59 @@
+/mob/living/simple_mob/mechanical/hivebot
+	name = "hivebot"
+	desc = "A robot. It appears to be somewhat resilient, but lacks a true weapon."
+	icon = 'icons/mob/hivebot.dmi'
+	icon_state = "basic"
+	icon_living = "basic"
+
+	faction = FACTION_HIVEBOT
+
+	endurance = 3 LASERS_TO_KILL
+	water_resist = 0.5
+	movement_sound = SFX_EFFECTS_SERVOSTEP
+
+	attacktext = list("clawed")
+	projectilesound = SFX_WEAPONS_GUNSHOT_OLD
+
+	organ_names = /datum/decl/mob_organ_names/hivebot
+
+
+
+/mob/living/simple_mob/mechanical/hivebot
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot)
+	configure(living_rules(say_list_type = /datum/say_list/hivebot, delete_on_death = TRUE))
+
+/mob/living/simple_mob/mechanical/hivebot/on_death(gibbed)
+	..()
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% blows apart!")))
+	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
+	fx_sparks(src, 3)
+
+// The hivebot's default projectile.
+/obj/item/projectile/bullet/hivebot
+	damage = 10
+
+CAPABILITIES(/obj/item/projectile/bullet/hivebot)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
+	configure(item_combat(sharp = FALSE, edge = FALSE))
+
+/mob/living/simple_mob/mechanical/hivebot/swarm
+	name = "swarm hivebot"
+	desc = "A robot. It looks fragile and weak."
+	endurance = 1 LASERS_TO_KILL
+	melee_damage_lower = 8
+	melee_damage_upper = 8
+	attack_armor_pen = 5
+
+/datum/decl/mob_organ_names/hivebot
+TYPE_TABLE(/datum/decl/mob_organ_names/hivebot, mob_organ_hit_zones, list("central chassis", "positioning servo", "head", "sensor suite", "manipulator arm", "shoulder weapon mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg"))
+
+
+// === merged from hivebot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/category_item/catalogue/technology/drone/hivebot // Hivebot Scanner Data - This is for Generic Hivebots
+	name = "Drone - Hivebot"
+	desc = "A drone that walks on several legs, with yellow/gold armor plating. It appears to lack a specific weapon, \
+	but uses a regular bullet-type weapon, firing a single projectile with a delay. Once upon a time, these bots may \
+	have been used to be some sort of... security, or defensive machinery, at a guess, but their original/true purpose is \
+	unclear. Whatever the matter, they're hostile and will engage anything they see, shooting to kill."
+	value = CATALOGUER_REWARD_HARD

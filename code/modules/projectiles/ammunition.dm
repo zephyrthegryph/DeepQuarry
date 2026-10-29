@@ -140,7 +140,6 @@ CAPABILITIES(/obj/item/ammo_casing)
 	item_state = "syringe_kit"
 	MATERIAL_BULK(MAT_STEEL, 500)
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 
 	var/list/stored_ammo = list() // ALLOW(instance_list): d: magazines are filled with rounds on creation
 	var/mag_type = SPEEDLOADER //ammo_magazines can only be used with compatible guns. This is not a bitflag, the load_method var on guns is.
@@ -163,7 +162,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 
 
 CAPABILITIES(/obj/item/ammo_magazine)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 10, throw_speed = 4))
 	configure(item_handling(preserve = 1))
 	setup(PROC_REF(item_ammo_magazine_setup))
 	configure(item_worn(slots = SLOT_BELT))
@@ -364,11 +363,10 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	icon_state = "pistol"
 	item_state = "paper"
 	MATERIAL_NONE
-	throw_range = 12
 	caliber = ".357"
 
 CAPABILITIES(/obj/item/ammo_magazine/ammo_box)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 12, throw_speed = 5))
 	configure(item_handling(preserve = 1))
 	configure(item_worn(slots = TRAIT_NONE))
 	configure(item_thrown(force = 3))

@@ -8,7 +8,6 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	vital = TRUE
 	icon_state = "brain2"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 5
 	var/clone_source = FALSE
 	var/can_assist = TRUE
 	/// Biological time the defibrillation window has run down, deciseconds (audit D10). Read it
@@ -22,7 +21,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	var/tmp/defib_decaying = FALSE
 
 CAPABILITIES(/obj/item/organ/internal/brain)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 5, throw_speed = 3))
 	setup(PROC_REF(prepare_brain_host))
 	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 1.0, attack_verbs = list("attacked", "slapped", "whacked")))

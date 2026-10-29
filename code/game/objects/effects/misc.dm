@@ -74,10 +74,9 @@ CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
 	desc = "Tell a coder if you're seeing this."
 	icon_state = "nothing"
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	light_on = TRUE
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 CAPABILITIES(/obj/effect/dummy/lighting_obj)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	configure(atom_rules(light_system = MOVABLE_LIGHT))
 	configure(light_glow(range = MINIMUM_USEFUL_LIGHT_RANGE, color = COLOR_WHITE))
 	param(nameof(glow_range), pos = 1)
@@ -136,9 +135,6 @@ CAPABILITIES(/obj/effect/dummy/lighting_obj/moblight/fire)
 CAPABILITIES(/obj/effect/abstract/directional_lighting)
 	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)
 	owns_one(nameof(light_spot), /obj/effect/abstract/light_spot, starts = /obj/effect/abstract/light_spot, starts_args = NO_LOC)
-
-/obj/effect/abstract/directional_lighting/Initialize(mapload)
-	. = ..()
 
 /obj/effect/abstract/directional_lighting/proc/face_light(atom/movable/source, angle, distance)
 	if(!loc) // We're in nullspace

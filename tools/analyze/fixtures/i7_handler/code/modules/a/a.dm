@@ -2,7 +2,7 @@
 /obj/machinery/foo/proc/attack_hand(mob/user)
 /obj/item/bar/attack_self(mob/user)
 /mob/living/click_alt(mob/user)
-/obj/structure/MouseDrop_T(atom/dropping, mob/user)
+/obj/structure/other_input(atom/dropping, mob/user)
 /obj/machinery/foo/attackby (obj/item/I)
 /obj/machinery/foo/attackbyx(obj/item/I)
 /obj/machinery/foo/attack_hand_extra(mob/user)

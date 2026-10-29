@@ -16,7 +16,7 @@
 	var/last_heat_capacity = 0
 	var/last_temperature = 0
 	var/last_pressure_delta = 0
-	EXPIRY_DECLARE(last_worldtime_transfer)
+	var/last_worldtime_transfer = 0
 	var/last_stored_energy_transferred = 0
 	var/volume_capacity_used = 0
 	var/stored_energy = 0
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/circulator)
 				//Update the gas networks.
 				gas_touched(air1)
 
-				EXPIRY_STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
+				STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
 				// The "running" overlay times out 5 s after the last transfer: one keyed timer, re-armed per transfer.
 				after(src, 5 SECONDS, PROC_REF(expire_transfer_display), key = "transfer_display")
 		else

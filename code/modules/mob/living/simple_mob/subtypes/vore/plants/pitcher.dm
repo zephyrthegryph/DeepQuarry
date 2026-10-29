@@ -37,7 +37,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	min_n2 = 0
 	max_n2 = 0
 	minbodytemp = 0
-	meat_type = /obj/item/reagent_containers/food/snacks/pitcher_fruit // Allows pitcher plants to be chopped up and replanted. Probably.
 
 	melee_damage_upper = 0 //This shouldn't attack people but if it does (admemes) no damage can be dealt.
 	melee_damage_lower = 0
@@ -56,7 +55,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	vore_bump_emote = "slurps up" //Not really a good way to make the grammar work with a passive vore plant.
 	vore_active = 1
 	vore_icons = 1
-	vore_capacity = 1
 	vore_pounce_chance = 5 // Either this makes mobs sometimes get eaten for attacking it or nothing happens and I don't know which it is.
 	swallowTime = 3 //3 deciseconds. This is intended to be nearly instant, e.g. victim trips and falls in.
 	vore_ignores_undigestable = 0
@@ -173,7 +171,8 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				adjust_nutrition(-NUTRITION_PITCHER)
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
-	configure(butchery_rules(meat_amount = 1))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/pitcher_fruit, meat_amount = 1))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("pitcher_interaction_hand", hand(), ungated(), stance(I_HELP), label("Pick fruit"), then(PROC_REF(pitcher_interaction_hand)))
 	op("pitcher_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(pitcher_interaction_item)))

@@ -1,6 +1,5 @@
 /mob/living/silicon
 	gender = NEUTER
-	voice_name = "synthesized voice"
 	var/syndicate = 0
 	var/const/MAIN_CHANNEL = "Main Frequency"
 	var/lawchannel = MAIN_CHANNEL // Default channel on which to state laws
@@ -31,13 +30,14 @@
 	var/hudmode = null
 	var/idcard_type = /obj/item/card/id/synthetic
 	// footsteps (footstep() in its CAPABILITIES)
-	footstep_type = FOOTSTEP_MOB_SHOE
 
 /mob/living/silicon/fire_stack_decay_rate()
 	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
-	configure(footstep_rules(footstep_volume = 1, footstep_e_range = -6))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(silicon_blast))))
+	configure(mob_kind(voice_name = "synthesized voice"))
+	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
 	configure(living_rules(has_huds = TRUE))
 	ref_one(nameof(common_radio), /obj/item/radio)
 	immune_to(STAT_DIZZY)
@@ -154,7 +154,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /mob/living/silicon/bullet_act(obj/item/projectile/Proj)
 
 	// Hardware takes located harm (impacts, burns, current); the synthetic body decides what each kind does.
-	if(!Proj.nodamage && injury_is_located(Proj.injury_kind))
+	if(!Proj.nodamage && injury_is_located(combat_of(Proj).injury_kind))
 		Proj.inflict_injury(src, null)
 
 	Proj.on_hit(src,2)
@@ -297,9 +297,12 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /mob/living/silicon/binarycheck()
 	return 1
 
-/mob/living/silicon/ex_act(severity)
-	if(..())
-		return
+/// A blast on a silicon (the explosion hit hook): the severity ladder below.
+/mob/living/silicon/proc/silicon_blast(datum/act/hit/explosion/A)
+	silicon_blast_ladder(A.packet.severity)
+	return OP_OK
+
+/mob/living/silicon/proc/silicon_blast_ladder(severity)
 	if(!blinded)
 		flash_eyes()
 
@@ -376,7 +379,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 				to_chat(src, "\The [A.alarm_name()].")
 
 		if(alarm_raised)
-			to_chat(src, span_filter_notice("<A HREF='byond://?src=\ref[src];showalerts=1'>\[Show Alerts\]</A>"))
+			to_chat(src, span_filter_notice("<A HREF='byond://?src=[REF(src)];showalerts=1'>\[Show Alerts\]</A>"))
 
 		for(var/key in queued_alarms)
 			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
@@ -404,7 +407,7 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 /mob/living/silicon/ai/raised_alarm(datum/alarm/A)
 	var/cameratext = ""
 	for(var/obj/machinery/camera/C in A.cameras())
-		cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=\ref[src];switchcamera=\ref[C]'>[C.c_tag]</A>"
+		cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=[REF(src)];switchcamera=[REF(C)]'>[C.c_tag]</A>"
 	to_chat(src, span_filter_warning("[A.alarm_name()]! ([(cameratext)? cameratext : "No Camera"])"))
 
 /mob/living/silicon/proc/is_traitor()

@@ -44,16 +44,24 @@
 ## Force tab indents on dm files
 *.dm whitespace=indent-with-non-tab
 
-## Include lists: parallel branches each append #include lines at the same spot. A union merge keeps
-## both sides' lines instead of conflicting (a resurrected include of a deleted file fails the compile,
-## and a duplicate #include is harmless). doc/rewrite/agent_workflow.md.
-deepquarry.dme merge=union
+## deepquarry.dme is generated (tools/build/gen_dme.py): a merge never resolves its text. The dq-dme driver (tools/build/dme_merge_driver.sh,
+## supplied by tools/dq_git_safe.sh like dq-baseline) merges the three include sets and writes them in the spec's order; the merge tools
+## then regenerate it from the merged files. A plain `git merge` without the driver: git config merge.dq-dme.driver
+## "bash tools/build/dme_merge_driver.sh %O %A %B %P". doc/rewrite/agent_workflow.md section 3.
+deepquarry.dme merge=dq-dme
+## The unit-test include list is still kept by hand: parallel branches each append #include lines at the same spot, and a union merge
+## keeps both sides' lines instead of conflicting (a duplicate #include is harmless).
 code/modules/unit_tests/_unit_tests.dm merge=union
 
-## Shrink-only ratchet baselines: both sides only drop rows / lower ceilings, so merge to the intersection (tools/ci/baseline_merge_driver.sh;
+## Shrink-only ratchet baselines (tools/ci/*_baseline.txt and tools/ci/sys_baseline/*.txt): both sides only drop rows / lower ceilings, so merge to the intersection (tools/ci/baseline_merge_driver.sh;
 ## the driver is supplied by tools/dq_git_safe.sh, which every merge tool sources; `git merge` by hand: git config merge.dq-baseline.driver "bash tools/ci/baseline_merge_driver.sh %O %A %B %P").
 tools/ci/*_baseline.txt merge=dq-baseline
+tools/ci/sys_baseline/*.txt merge=dq-baseline
 
 # Diagnostics corpus case whose bytes are the point: a backslash before CRLF inside a string.
 tools/dmb/fixtures/diagnostics/cases/string_backslash_crlf.dm -text
 tools/dmb/fixtures/diagnostics/cases/string_backslash_crlf_block.dm -text
+## tools/ci/lint_scopes.toml: ceilings only go down, and adjacent lowered ceilings must not conflict (tools/ci/lint_scopes_merge_driver.sh,
+## supplied by tools/dq_git_safe.sh like dq-baseline; by hand: git config merge.dq-lint-scopes.driver "bash tools/ci/lint_scopes_merge_driver.sh %O %A %B %P").
+tools/ci/lint_scopes.toml merge=dq-lint-scopes
+tools/build/dme_moves.txt merge=union

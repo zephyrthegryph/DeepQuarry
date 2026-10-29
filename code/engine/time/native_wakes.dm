@@ -50,10 +50,6 @@
 	var/world_last_ms = 0
 	/// Wakes by owner type, bounded at OM_MAX_STAT_TYPES types (the rest under "other").
 	var/list/world_wakes_by_type = list() // ALLOW(instance_list): d: one live scheduler (plus test ones); counted on every world wake
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	/// Tests: owner -> wakes delivered + 1 (world_wake_trace()).
-	var/list/world_traced
-#endif
 
 /// Opens the world side of the native frame for wheel tick `tick`: the lane queues, the step ticks tests read
 /// and the wake count. FALSE when this tick already had its frame (exactly one frame per tick) or the scheduler

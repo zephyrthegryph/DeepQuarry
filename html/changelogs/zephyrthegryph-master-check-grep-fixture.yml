@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "check_grep revive fixture lives under unit_tests/ so file moves cannot break it; analyze tests re-run when lint_scopes.toml changes"

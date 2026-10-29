@@ -242,7 +242,7 @@
 	var/steps = 0
 	while(SSmotiontracker.draw_echoes(0) != STEP_DONE && steps++ < 50)
 		continue
-	TEST_ASSERT(!SSmotiontracker.queued_echo_turfs[REF(run_loc_floor_top_right)], "the motion tracker step left the echo queued")
+	TEST_ASSERT(!SSmotiontracker.queued_echo_turfs[ref_token(run_loc_floor_top_right)], "the motion tracker step left the echo queued")
 	var/pings = SSmotiontracker.all_pings_round
 	var/hidden = SSmotiontracker.hide_all
 	SSmotiontracker.hide_all = TRUE
@@ -388,3 +388,16 @@
 	TEST_ASSERT(islist(SSflight.plans), "the plan table exists")
 
 #endif
+
+/// Preference metadata: the tagged categories survive global init order, so every character tab is listed.
+/datum/unit_test/dq_pref_metadata_tags_survive
+
+/datum/unit_test/dq_pref_metadata_tags_survive/Run()
+	var/list/untagged = list()
+	for(var/pref_type in GLOB.pref_metadata_table)
+		var/list/entry = GLOB.pref_metadata_table[pref_type]
+		var/datum/preference/pref = GLOB.preference_entries[pref_type]
+		if(pref && entry["category"] && pref.category != entry["category"])
+			untagged += "[pref_type]"
+	TEST_ASSERT(!length(untagged), "tagged prefs lost their category: [jointext(untagged, ", ")]")
+	TEST_ASSERT("size_voice" in dq_character_category_index("human"), "the size_voice tab is missing from the character index")

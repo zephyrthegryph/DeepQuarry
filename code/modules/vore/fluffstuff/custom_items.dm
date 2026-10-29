@@ -177,9 +177,9 @@ MSG_DEF_SELF(custom_items/these_dont_look_like_they, "these don't look like they
 	icon_state = "joanaria"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "joanariamob"
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/sword/fluff/joanaria)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
@@ -398,9 +398,9 @@ CAPABILITIES(/obj/item/radio/headset/fluff/zodiacshadow)
 
 	flags = NOBLOODY
 	w_class = ITEMSIZE_NORMAL
-	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluff/holochain)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
 	configure(item_combat(force = 10, attack_verbs = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")))
@@ -1045,7 +1045,7 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	if(active)
 		return
 	active = 1
-	embed_chance = active_embed_chance
+	set_embed_chance(active_embed_chance)
 	set_force(active_force)
 	set_throwforce(active_throwforce)
 	set_sharp(TRUE)
@@ -1058,7 +1058,7 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 		return
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	active = 0
-	embed_chance = initial(embed_chance)
+	set_embed_chance(combat_of_type(type).embed_chance)
 	set_force(combat_of_type(type).force)
 	set_throwforce(thrown_of_type(type).force)
 	set_sharp(combat_of_type(type).sharp)
@@ -1094,14 +1094,13 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	active_force = 15
 	active_throwforce = 7
 	active_w_class = ITEMSIZE_LARGE
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/active_state = "wolfgirlsword"
-	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
-	configure(movable_motion(throw_speed = 1))
+	configure(item_combat(injury_kind = INJURY_PAIN))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	suit_storage(list(/obj/item/shield/fluff/wolfgirlshield))
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 1))
@@ -1122,7 +1121,7 @@ CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
 	set_sharp(TRUE)
 	set_edge(TRUE)
 	set_icon_state("[active_state]_sharp")
-	injury_kind = INJURY_CUT
+	set_injury_kind(INJURY_CUT)
 
 /obj/item/melee/fluffstuff/wolfgirlsword/deactivate(mob/living/user)
 	if(active)
@@ -1130,7 +1129,7 @@ CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
 	..()
 	set_attack_verb(list("bapped", "thwapped", "bonked", "whacked"))
 	set_icon_state(initial(icon_state))
-	injury_kind = initial(injury_kind)
+	set_injury_kind(combat_of_type(type).injury_kind)
 
 //SilencedMP5A5 - Serdykov Antoz
 /obj/item/modkit_conversion/hasd
@@ -1218,7 +1217,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
 	armor_spec = "" // this isn't armor, it's a dorky frickin cape
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 	chest_type = /obj/item/clothing/suit/fluff/nikki
@@ -1453,9 +1452,9 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 	icon_state = "revclaymore"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "revclaymoremob"
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/sword/fluff/revolver)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(force = 1, sharp = TRUE, edge = TRUE))
 
 //YeCrowbarMan - Lemon Yellow
@@ -1555,7 +1554,7 @@ CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
 		set_icon_state("pandorba_d")
 		play_sfx(src, SFX_ITEMS_DROP_PLUSHIE, 0.5, vary = FALSE)
 		visible_message("[src] says, \"[pokephrase]\"")
-	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+	STAMP(src, last_message, CLOCK_WORLD)
 	return OP_OK
 
 //Yeehawguvnah - Cephyra

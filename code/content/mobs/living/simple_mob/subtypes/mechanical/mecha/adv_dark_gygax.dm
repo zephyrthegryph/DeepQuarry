@@ -1,0 +1,257 @@
+// Stronger than a regular Dark Gygax, this one has three special attacks, based on intents.
+// First special attack launches three arcing rockets at the current target.
+// Second special attack fires a projectile that creates a short-lived microsingularity that pulls in everything nearby. Magboots can protect from this.
+// Third special attack creates a dangerous electric field that causes escalating electric damage, before emitting a tesla shock and blinding anyone looking at the mecha.
+// The AI will choose one every ten seconds.
+
+/datum/category_item/catalogue/technology/adv_dark_gygax
+	name = "Exosuit - Advanced Dark Gygax"
+	desc = "This exosuit is an experimental prototype, descended from the Dark Gygax. It retains the \
+	speed that is characteristic of the other models, yet outclasses all of them in durability, \
+	to the point of having a comparable amount of protection to models that placed a higher emphesis \
+	on armor, like the Durand and even the Marauder. It is also much larger in scale, and significantly \
+	heavier than most other exosuits developed by humans, which often causes shockwaves to be felt \
+	whenever it moves. This has been observed to have a demoralizing effect on hostile forces.\
+	<br><br>\
+	<b>Weapons & Power System</b><br>\
+	Attached to the exosuit's chassis are several newly invented mounted weapons, each unique in purpose and capability. \
+	These weapons are integral to the chassis as opposed to the modular equipment that more traditional exosuits utilize. \
+	It is unknown if that is due to simply being an early prototype, or if discarding the modular design is benefitial \
+	to the design of the model.\
+	<br><br>\
+	All the weapons utilize energy, as opposed to consumable projectiles. This appears to have been a conscious decision to \
+	allow for more staying power, by only being limited by availablity of electricity. \
+	In order to supply the needed energy for combat, the ADG contains a miniturized fusion reactor, which is also \
+	considered experimental due to its size. The reactor is powerful enough to power the actuators, electronics, \
+	and the primary weapon. The supplementary weapons, however, cannot be continiously fired and instead draw from \
+	a electrical buffer that is constantly replenished by the reactor.\
+	<br><br>\
+	<b>Homing Energy Bolts</b><br>\
+	The primary weapon is a projector that fires somewhat slow moving blue bolts of energy. The ADG is able to \
+	passively redirect the trajectory of the blue bolts towards the initial target, essentially acting as a \
+	homing projectile. The blue bolt itself is otherwise not very powerful compared to conventional photonic \
+	weaponry or ballistic shells, however the power required to fire the main gun is significantly less \
+	than the other available weapons, and so the ADG uses it as the main weapon.\
+	<br><br>\
+	<b>Self-Supplying Missile Launcher</b><br>\
+	The first supplementary weapon would appear to not be an energy weapon, as it is a missile launcher. \
+	What is not obvious is that the missiles are fabricated inside the exosuit, with the physical \
+	materials also being created from energy, similar to the newer models of Rapid Construction Devices. \
+	Therefore, the ADG does not need to concern itself with running out of missiles. The missiles themselves \
+	are optimized towards harming hard targets, such as other exosuits, but are also still dangerous to soft \
+	targets like infantry.\
+	<br><br>\
+	<b>Electric Defense</b><br>\
+	The second supplementary weapon is not a conventional gun. Instead, the ADG weaponizes its electrical \
+	systems by redirecting power output from its fusion reactor to its exterior shell, becoming a walking \
+	tesla coil. This generates a strong electric field that harms anything unprotected nearby. \
+	The electric field grows in power, until reaching a critical point, after which a blinding flash \
+	of light and arcs of lightning fly out from the exosuit towards its surroundings.\
+	<br><br>\
+	<b>Microsingularity Projector</b><br>\
+	Finally, the third supplementary weapon utilizes gravitation as a weapon, by firing a blue energetic orb \
+	that, upon hitting the ground, collapses and causes a 'microsingularity' to emerge briefly, pulling in \
+	anything unsecured, such as personnel or weapons. The microsingularity lacks the means to gain any energy, meaning it \
+	will dissipate in a few seconds, and so it is <u>probably</u> safe to use on a planetary body.\
+	<br><br>\
+	<b>Flaws</b><br>\
+	It would appear the ADG is poised to take the place of other exosuits like the Marauder, however several \
+	massive flaws exist to make that unlikely. Firstly, this exosuit is almost an order of magnitude more \
+	costly to produce than comparable alternatives, even accounting for being a prototype. \
+	Secondly, a number of weapons integrated into the ADG are dangerous both to enemies and \
+	allies, limiting the ability for a massed assault using ADGs. \
+	Finally, the nature of several weapons used could invoke technological fear, or otherwise \
+	be considered a war crime to utilize, primarily the electrical field and microsingularity \
+	projector.\
+	<br><br>\
+	All of these flaws appear to doom the ADG to becoming another technological marvel that was \
+	overly ambitious and unconstrained to the demands of reality. They will likely be really rare, \
+	and terrifying."
+	value = CATALOGUER_REWARD_SUPERHARD
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced
+	name = "advanced dark gygax"
+	desc = "An experimental exosuit that utilizes advanced materials to allow for greater protection while still being lightweight and fast. \
+	It also is armed with an array of next-generation weaponry."
+	catalogue_data = list(/datum/category_item/catalogue/technology/adv_dark_gygax)
+	icon_state = "darkgygax_adv"
+	wreckage = /obj/structure/loot_pile/mecha/gygax/dark/adv
+	icon_scale_x = 1.5
+	icon_scale_y = 1.5
+	movement_shake_radius = 14
+
+	endurance = 450
+	deflect_chance = 25
+	has_repair_droid = TRUE
+	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
+
+	special_attack_min_range = 1
+	special_attack_max_range = 7
+	special_attack_cooldown = 10 SECONDS
+	projectiletype = /obj/item/projectile/energy/homing_bolt // We're now a bullet hell game.
+	projectilesound = SFX_WEAPONS_WAVE
+	var/obj/effect/overlay/energy_ball/energy_ball = null
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
+	owns_one(nameof(energy_ball), /obj/effect/overlay/energy_ball)
+
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/do_special_attack(atom/A, stance)
+	. = TRUE // So we don't fire a bolt as well.
+	switch(stance)
+		if(I_DISARM) // Side gun
+			electric_defense(A)
+		if(I_HURT) // Rockets
+			launch_rockets(A)
+		if(I_GRAB) // Micro-singulo
+			launch_microsingularity(A)
+
+/obj/item/projectile/energy/homing_bolt
+	name = "homing bolt"
+	icon_state = "force_missile"
+	damage = 20
+
+/obj/item/projectile/energy/homing_bolt/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
+	..()
+	if(target)
+		set_homing_target(target)
+
+/obj/item/projectile/energy/homing_bolt/fire(angle, atom/direct_target)
+	..()
+	set_pixel_speed(0.5)
+
+#define ELECTRIC_ZAP_POWER 15000
+
+// Charges a tesla shot, while emitting a dangerous electric field. The exosuit is immune to electric damage while this is ongoing.
+// It also briefly blinds anyone looking directly at the mech without flash protection.
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/electric_defense(atom/target)
+	if(energy_ball || after_pending(src, "energy_ball"))
+		log_game("[key_name(src)] electric defense ignored: a charge is already running")
+		return // one charge at a time: a second would restart the countdown and keep the first one's saved shock resist as the shield
+
+	// Temporary immunity to shock to avoid killing themselves with their own attack.
+	var/old_shock_resist = shock_resist
+	shock_resist = 1
+
+	// Make the energy ball. This is purely visual since the tesla ball is hyper-deadly.
+	rel_set(src, nameof(energy_ball), new /obj/effect/overlay/energy_ball(loc))
+	energy_ball.adjust_scale(0.5)
+	energy_ball.orbit(src, 32, TRUE, 1 SECOND)
+
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% creates \an [energy_ball] around itself!")))
+
+	play_sfx(src, SFX_EFFECTS_LIGHTNING_CHARGEUP)
+
+	// Shock nearby things that aren't ourselves.
+	energy_ball_pulse(1, old_shock_resist)
+
+/// One second of the charging energy ball (10 pulses), then the discharge.
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_pulse(i, old_shock_resist)
+	energy_ball.adjust_scale(0.5 + (i/10))
+	set_glow(energy_ball, GLOW(i/2, i/2, "#0000FF"))
+	for(var/thing in range(3, src))
+		// This is stupid because mechs are stupid and not mobs.
+		if(isliving(thing))
+			var/mob/living/L = thing
+
+			if(L == src)
+				continue
+			if(L.stat)
+				continue // Otherwise it can get pretty laggy if there's loads of corpses around.
+			L.inflict_shock_damage(i * 2)
+			if(L && (L.ai_brain != null)) // Some mobs delete themselves when dying.
+				L.ai_brain.react_to_attack(src)
+
+		else if(istype(thing, /obj/mecha))
+			var/obj/mecha/M = thing
+			M.take_damage(i * 2, "energy") // Mechs don't have a concept for siemens so energy armor check is the best alternative.
+
+	if(i < 10)
+		after(src, 1 SECOND, PROC_REF(energy_ball_pulse), key = "energy_ball", with = list(i + 1, old_shock_resist))
+		return
+	after(src, 1 SECOND, PROC_REF(energy_ball_discharge), key = "energy_ball", with = list(old_shock_resist))
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_discharge(old_shock_resist)
+
+	// Shoot a tesla bolt, and flashes people who are looking at the mecha without sufficent eye protection.
+	visible_message(span_warning("\The [energy_ball] explodes in a flash of light, sending a shock everywhere!"))
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGBOLT, extrarange = 30)
+	tesla_zap(src.loc, 5, ELECTRIC_ZAP_POWER, FALSE, current_jumps = 1)
+	for(var/mob/living/L in viewers(src))
+		if(L == src)
+			continue
+		var/dir_towards_us = get_dir(L, src)
+		if(L.dir && L.dir & dir_towards_us)
+			to_chat(L, span_danger("The flash of light blinds you briefly."))
+			L.flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = TRUE)
+
+	// Get rid of our energy ball.
+	energy_ball.stop_orbit()
+	rel_clear(src, nameof(energy_ball))
+
+	after(src, 1 SECOND, PROC_REF(energy_ball_done), with = list(old_shock_resist))
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_done(old_shock_resist)
+	// Resist resistance to old value.
+	shock_resist = old_shock_resist // Not using initial() in case the value gets modified by an admin or something.
+
+#undef ELECTRIC_ZAP_POWER
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/launch_rockets(atom/target)
+
+	// Telegraph our next move.
+	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% deploys a missile rack!")))
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE1)
+	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
+
+// Arcing rocket projectile that produces a weak explosion when it lands.
+// Shouldn't punch holes in the floor, but will still hurt.
+/obj/item/projectile/arc/explosive_rocket
+	name = "rocket"
+	icon_state = "mortar"
+
+/obj/item/projectile/arc/explosive_rocket/on_impact(turf/T)
+	new /obj/effect/explosion(T) // Weak explosions don't produce this on their own, apparently.
+	explosion(T, 0, 0, 2, adminlog = FALSE)
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/launch_microsingularity(atom/target)
+	var/turf/T = get_turf(target)
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% fires an energetic sphere into the air!")))
+	play_sfx(src, SFX_WEAPONS_LASER)
+	face_atom(T)
+	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)
+	sphere.old_style_target(T, src)
+	sphere.fire()
+
+/obj/item/projectile/arc/microsingulo
+	name = "micro singularity"
+	icon_state = "bluespace"
+
+/obj/item/projectile/arc/microsingulo/on_impact(turf/T)
+	new /obj/effect/temporary_effect/pulse/microsingulo(T)
+
+/obj/effect/temporary_effect/pulse/microsingulo
+	name = "micro singularity"
+	desc = "It's sucking everything in!"
+	icon = 'icons/obj/objects.dmi'
+	icon_state = "bhole3"
+	pulses_remaining = 10
+	pulse_delay = 0.5 SECONDS
+	var/pull_radius = 3
+	var/pull_strength = STAGE_THREE
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/microsingulo)
+	configure(light_glow(range = 4, power = 5, color = "#2ECCFA"))
+
+/obj/effect/temporary_effect/pulse/microsingulo/on_pulse()
+	for(var/atom/A in range(pull_radius, src))
+		A.singularity_pull(src, pull_strength)
+
+// The Advanced Dark Gygax's AI.
+// The mob has three special attacks, based on the current intent.
+// This AI choose the appropiate intent for the situation, and tries to ensure it doesn't kill itself by firing missiles at its feet.
+// Used to control the mob's positioning based on which special attack it has done.
+// Note that the intent will not change again until the next special attack is about to happen.
+// Changes the mob's intent, which controls which special attack is used.
+// I_DISARM causes Electric Defense, I_GRAB causes Micro-Singularity, and I_HURT causes Missile Barrage.

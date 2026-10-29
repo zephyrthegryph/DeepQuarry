@@ -49,11 +49,13 @@
 	combat_mode = new_mode
 	tracked_changed(src, nameof(combat_mode))
 	update_combat_mode_hud()
+SETTER(/mob, combat_mode)
 
 /// Sets the attack variant (an ATTACK_VARIANT_* or null).
 /mob/proc/set_attack_variant(variant)
 	attack_variant = variant
 	tracked_changed(src, nameof(attack_variant))
+SETTER(/mob, attack_variant)
 
 /**
  * Sets combat mode and the variant from one of the four outcomes. For AI brains,
@@ -62,14 +64,14 @@
 /mob/proc/set_use_stance(stance)
 	switch(stance)
 		if(I_HURT)
-			attack_variant = null
+			set_attack_variant(null)
 			set_combat_mode(TRUE)
 		if(I_DISARM)
 			set_attack_variant(ATTACK_VARIANT_DISARM)
 		if(I_GRAB)
 			set_attack_variant(ATTACK_VARIANT_GRAB)
 		else
-			attack_variant = null
+			set_attack_variant(null)
 			set_combat_mode(FALSE)
 
 /**

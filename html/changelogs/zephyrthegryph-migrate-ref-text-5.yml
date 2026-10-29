@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Contract, bot, sales-lot, circuit, service and PDA conversation ids, cloning record mind/implant handles and log_holder refs are ref_token() handles instead of stored REF() text"

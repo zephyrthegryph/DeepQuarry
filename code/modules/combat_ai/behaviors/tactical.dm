@@ -23,7 +23,7 @@
 	// Only relevant immediately after a melee strike.
 	if(!brain.primary_target())
 		return null
-	if(!brain.last_attack_at || ELAPSED_SINCE(src, brain.last_attack_at + 4, CLOCK_WORLD) > 0)
+	if(!brain.last_attack_at || ELAPSED(brain, last_attack_at, CLOCK_WORLD) > 4)
 		return null
 	if(brain.last_juke_at == brain.last_attack_at)
 		return null
@@ -97,7 +97,7 @@
 	var/mob/threat = brain.primary_target()
 	if(!threat || !ismob(threat))
 		return null
-	if(!brain.last_attack_at || ELAPSED_SINCE(src, brain.last_attack_at + 6, CLOCK_WORLD) > 0)
+	if(!brain.last_attack_at || ELAPSED(brain, last_attack_at, CLOCK_WORLD) > 6)
 		return null
 	var/mob/living/owner = brain.get_owner()
 	if(!owner)

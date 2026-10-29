@@ -1,3 +1,11 @@
+/// The object an admin mob possesses, or null: a sparse link (LK_POSSESSING), not a var on /mob.
+/proc/possessed_obj_of(mob/M) as /obj
+	return link_get(M, LK_POSSESSING)
+
+/// Possesses object O, or releases it with null.
+/proc/set_possessed_obj(mob/M, obj/O)
+	return link_set_one(M, LK_POSSESSING, O)
+
 ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an object.", ADMIN_CATEGORY_OBJECT, obj/O as obj in world)
 	if(istype(O,/obj/singularity))
 		if(CONFIG_GET(flag/forbid_singulo_possession))
@@ -13,18 +21,18 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 		log_admin("[key_name(user)] has possessed [O] ([O.type]) at an unknown location")
 		message_admins("[key_name(user)] has possessed [O] ([O.type]) at an unknown location", 1)
 
-	if(!user.mob.control_object) //If you're not already possessing something...
+	if(!possessed_obj_of(user.mob)) //If you're not already possessing something...
 		sparse_set(user.mob, name_archive, user.mob.real_name)
 
 	user.mob.forceMove(O)
 	user.mob.set_real_name(O.name)
 	user.mob.name = O.name
 	user.eye = O
-	user.mob.control_object = O
+	set_possessed_obj(user.mob, O)
 	feedback_add_details("admin_verb","PO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(release, R_POSSESS, "Release Object", "Stop possessing an object.", ADMIN_CATEGORY_OBJECT, obj/O as obj in world)
-	if(user.mob.control_object && sparse_get(user.mob, name_archive)) //if you have a name archived and if you are actually relassing an object
+	if(possessed_obj_of(user.mob) && sparse_get(user.mob, name_archive)) //if you have a name archived and if you are actually relassing an object
 		user.mob.set_real_name(sparse_get(user.mob, name_archive))
 		user.mob.name = user.mob.real_name
 		if(ishuman(user))
@@ -33,5 +41,5 @@ ADMIN_VERB_AND_CONTEXT_MENU(release, R_POSSESS, "Release Object", "Stop possessi
 
 	user.mob.forceMove(O.loc) // Appear where the object you were controlling is -- TLE
 	user.eye = user
-	user.mob.control_object = null
+	set_possessed_obj(user.mob, null)
 	feedback_add_details("admin_verb","RO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

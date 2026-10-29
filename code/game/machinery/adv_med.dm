@@ -118,7 +118,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 			"subject_ref" = identity.id,
 			"subject_id" = identity.id,
 			"subject_name" = scanned_human.real_name,
-			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
+			"scan_time" = TIME_NOW(CLOCK_WORLD),
 			"snapshot" = medical_trial_snapshot(scanned_human),
 			"trial_markers" = scanned_human.medical_trial_marker_snapshot(),
 			"operator_account" = operator_account?.account_number,
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 			"actor_account" = operator_account?.account_number,
 			"department" = DEPARTMENT_MEDICAL,
 			"evidence_ids" = list(evidence_id),
-			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
+			"scan_time" = TIME_NOW(CLOCK_WORLD),
 			"detail" = "Authenticated body scan printed",
 		), "medical-scan:[evidence_id]", src, A.actor, scanned_human)
 	return OP_OK
@@ -143,11 +143,11 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	if(!istype(occupant))
 		return span_blue(span_bold("Occupant Statistics:")) + "<br>\The [src] is empty."
 	var/list/dat = list(span_blue(span_bold("Occupant Statistics:")))
-	if(occupant.custom_species)
+	if(occupant.bio.custom_species)
 		if(occupant.species.name == SPECIES_CUSTOM)
-			dat += span_blue("Sapient Species: [occupant.custom_species]")
+			dat += span_blue("Sapient Species: [occupant.bio.custom_species]")
 		else
-			dat += span_blue("Sapient Species: [occupant.custom_species] \[Similar biology to [occupant.species.name]\]")
+			dat += span_blue("Sapient Species: [occupant.bio.custom_species] \[Similar biology to [occupant.species.name]\]")
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/body_scanner, src, TRUE) // D9: a printed scan is an explicit scan
 	dat += D.render_chat()
 	spent(D)
@@ -216,7 +216,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	incoming["livingPrey"] = livingprey
 	incoming["humanPrey"] = humanprey
 	incoming["objectPrey"] = objectprey
-	incoming["weight"] = H.weight
+	incoming["weight"] = sparse_get_or(H, weight, DEFAULT_MOB_WEIGHT)
 
 	return incoming
 

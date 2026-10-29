@@ -320,17 +320,10 @@ pub(crate) fn validate_versions(versions: &[(dm_ir::ReadDomain, u128)]) -> Resul
     }
     Ok(())
 }
-fn read_mismatch<R: Resolver, T: CanonicalRead>(
-    reads: &[T],
-    versions: &[(dm_ir::ReadDomain, u128)],
-    host: &R,
-) -> Option<ResolveQuery> {
-    let matching = crate::lowering_memo::matching_domains(versions, host);
+fn read_mismatch<R: Resolver, T: CanonicalRead>(reads: &[T], host: &R) -> Option<ResolveQuery> {
     reads.iter().find_map(|read| {
         let query = read.query();
-        (!matching.contains(&query.domain())
-            && host.resolve(query).canonical_bytes().as_slice() != read.answer())
-        .then_some(query)
+        (host.resolve(query).canonical_bytes().as_slice() != read.answer()).then_some(query)
     })
 }
 pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
@@ -451,7 +444,7 @@ pub(crate) fn decode_failure<R: Resolver>(
 
     (payload.key.as_ref() == key
         && payload.identity == identity
-        && read_mismatch(&payload.reads, &payload.versions, host).is_none())
+        && read_mismatch(&payload.reads, host).is_none())
     .then(|| {
         payload
             .errors
@@ -503,7 +496,7 @@ pub(crate) fn decode_executable<R: Resolver>(
         || !payload.helpers.is_empty()
         || payload.selected_references.is_some()
         || payload.key != key
-        || read_mismatch(&payload.reads, &payload.versions, host).is_some()
+        || read_mismatch(&payload.reads, host).is_some()
     {
         return None;
     }
@@ -767,7 +760,7 @@ impl Candidates<'_> {
         host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
     ) -> ProcedureLookup<'host> {
-        self.procedure_matching_backed(matches_key, identity, context, host, prepared, None)
+        self.procedure_matching_backed(matches_key, identity, context, host, prepared, None, None)
     }
     pub(crate) fn procedure_matching_backed<'host, R: Resolver>(
         self,
@@ -777,6 +770,7 @@ impl Candidates<'_> {
         host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
         backing: Option<&dm_cache::MappedPayload>,
+        answers: Option<&crate::query_db::RequestAnswers<'_>>,
     ) -> ProcedureLookup<'host> {
         static READS: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_reads_check");
         static REBIND: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_rebind");
@@ -838,12 +832,13 @@ impl Candidates<'_> {
                 let mut promotion = v.promotion();
                 // A certified record's receipt names the world, not one version per read
                 // domain: issuing those resolves every domain's query again.
-                let current_versions = if certified_world.is_some() {
-                    Vec::new()
-                } else {
-                    CurrentReads::versions(host, &promotion.queries)
+                // Under the session's answer table the reads are proven by its answers: no version is issued.
+                let answered = answers.filter(|_| certified_world.is_none());
+                let checked = match answered {
+                    Some(answers) => v.answered_reads(host, answers),
+                    None => v.transparent_reads(host),
                 };
-                let pending_reads = match v.transparent_reads(host) {
+                let pending_reads = match checked {
                     Ok(reads) => reads,
                     Err(query) => {
                         if let (Some(index), Some(crate::dep_index::Adoption::Certified { .. })) =
@@ -882,21 +877,17 @@ impl Candidates<'_> {
                             (pending_reads.as_ref(), host.transparent_receipt_observer())
                         {
                             for read in reads {
-                                let version = match certified_world {
-                                    Some(_) => None,
-                                    None => observer.provider().domain_version(read.domain),
-                                };
                                 observer.record_answer(
                                     read.query,
                                     &read.answer,
                                     read.domain,
-                                    version,
                                 );
                             }
                         }
-                        promotion.current = pending_reads.and_then(|reads| match certified_world {
-                            Some(world) => CurrentReads::certified(host, reads, world),
-                            None => CurrentReads::accepted(host, reads, current_versions),
+                        promotion.current = pending_reads.and_then(|reads| match (certified_world, answered) {
+                            (Some(world), _) => CurrentReads::certified(host, reads, world),
+                            (None, Some(_)) => CurrentReads::answered(host, reads),
+                            (None, None) => CurrentReads::accepted(host, reads),
                         });
                         result.verification_reads = verification_reads;
                         result.prepared = Some(value);
@@ -922,8 +913,8 @@ impl Candidates<'_> {
             result.miss = Some(crate::lowering_memo::MemoMissReason::NoExactVariant);
             let reads_timer = READS.time();
             let changed = match &value {
-                Candidate::Executable(v) => read_mismatch(&v.reads, &v.versions, host),
-                Candidate::Failure(v) => read_mismatch(&v.reads, &v.versions, host),
+                Candidate::Executable(v) => read_mismatch(&v.reads, host),
+                Candidate::Failure(v) => read_mismatch(&v.reads, host),
                 Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
             };
             drop(reads_timer);
@@ -949,7 +940,6 @@ impl Candidates<'_> {
                     let promotion = ResidentPromotion {
                         current: None,
                         queries: v.reads.iter().map(|(query, _)| *query).collect(),
-                        versions: v.versions.clone(),
                         relative_debug: v.relative_debug.clone(),
                     };
                     match rebind(

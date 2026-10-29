@@ -3,10 +3,6 @@
 /obj/item/gun/energy/netgun
 	name = "energy net gun"
 	desc = "Specially made-to-order by Xenonomix, the  \"Varmint Catcher\" is designed to trap even the most unruly of creatures for safe transport."
-	description_fluff = "The Xenonomix Brand XX-1 Energy Net Cannon is a marvel of technology that is used heavily by several departments within NanoTrasen. \
-	Whether by scientific departments when capturing specimens on alien worlds to study or by security forces to detain unruly crew, NanoTrasen is deeply \
-	appreciative of the \"Varmint Catcher\" Netgun System. WARNING!: Xenonomix and NanoTrasen are not responsible for any injuries caused by the device \
-	in any aspect, thank you for understanding."
 	icon_state = "netgun"
 	item_state = "gun" // Placeholder
 
@@ -14,6 +10,12 @@
 	projectile_type = /obj/item/projectile/beam/energy_net
 	charge_cost = 800
 	fire_delay = 50
+
+CAPABILITIES(/obj/item/gun/energy/netgun)
+	configure(atom_rules(description_fluff = "The Xenonomix Brand XX-1 Energy Net Cannon is a marvel of technology that is used heavily by several departments within NanoTrasen. \
+	Whether by scientific departments when capturing specimens on alien worlds to study or by security forces to detain unruly crew, NanoTrasen is deeply \
+	appreciative of the \"Varmint Catcher\" Netgun System. WARNING!: Xenonomix and NanoTrasen are not responsible for any injuries caused by the device \
+	in any aspect, thank you for understanding."))
 
 /obj/item/gun/energy/netgun/shrink
 	name = "compactor energy net gun"

@@ -1,13 +1,24 @@
 ///////////////////// Mob Living /////////////////////
 /mob/living
-	var/list/temp_languages		// Absorbs add languages to the pred. Lazy.
-	var/weight = 137					// Weight for mobs for weightgain system
-	var/metabolism = 0.0015
+	// temp_languages (languages absorbed prey add to the pred) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// weight (the weightgain system's body weight, DEFAULT_MOB_WEIGHT until set) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	var/vis_height = 32					// Sprite height used for resize features.
-	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
 
 
+/// The reagents a type's venom bite may inject from creation (a trait adds to the mob's own slot instead).
+TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
+
+/// The reagents this mob's venom bite may inject: its sparse slot (trait_injection_reagents), else its type's table; null when it has none.
+/mob/living/proc/injection_reagent_choices()
+	return sparse_get(src, trait_injection_reagents) || TYPE_TABLE_GET(src, injection_reagent_table)
+
+/// Lets the venom bite inject `reagent_id`.
+/mob/living/proc/add_injection_reagent(reagent_id)
+	var/list/held = sparse_get(src, trait_injection_reagents)
+	if(!held)
+		held = sparse_set(src, trait_injection_reagents, list())
+	held |= reagent_id
 
 /mob/living/proc/handle_special_unlocks()
 	return
@@ -268,7 +279,10 @@
 		return
 	add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
 
-	LAZYSET(canvas_user.body_writing, affecting.organ_tag, message)
+	var/list/writing = sparse_get(canvas_user, body_writing)
+	if(!writing)
+		writing = sparse_set(canvas_user, body_writing, list())
+	writing[affecting.organ_tag] = message
 
 	act_message(attacker, canvas_user, MSG_SELF(span_notice("You finish writing on %T%'s [affecting.name].")), \
 		MSG_OTHERS(span_notice("%U% finishes writing on %T%'s [affecting.name].")))
@@ -304,10 +318,10 @@
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_export(vore_prefs, P)
-	P.spont_belly_rear = spont_belly_rear
-	P.spont_belly_left = spont_belly_left
-	P.spont_belly_front = spont_belly_front
-	P.spont_belly_right = spont_belly_right
+	P.spont_belly_rear = vore_spont_name(src, "rear")
+	P.spont_belly_left = vore_spont_name(src, "left")
+	P.spont_belly_front = vore_spont_name(src, "front")
+	P.spont_belly_right = vore_spont_name(src, "right")
 	P.autotransferable = !!sparse_get_or(src, autotransferable, TRUE)
 
 	var/list/serialized = list()
@@ -340,10 +354,10 @@
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_import(vore_prefs, P)
-	rel_set(src, nameof(spont_belly_rear), P.spont_belly_rear)
-	rel_set(src, nameof(spont_belly_left), P.spont_belly_left)
-	rel_set(src, nameof(spont_belly_front), P.spont_belly_front)
-	rel_set(src, nameof(spont_belly_right), P.spont_belly_right)
+	sparse_set(src, spont_belly_rear, P.spont_belly_rear)
+	sparse_set(src, spont_belly_left, P.spont_belly_left)
+	sparse_set(src, spont_belly_front, P.spont_belly_front)
+	sparse_set(src, spont_belly_right, P.spont_belly_right)
 	sparse_set_or(src, autotransferable, P.autotransferable, TRUE)
 
 	if(bellies)
@@ -567,7 +581,7 @@
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			taste_message += "a normal [H.custom_species ? H.custom_species : H.species.name]"
+			taste_message += "a normal [H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 		else
 			taste_message += "a plain old normal [src]"
 
@@ -616,7 +630,7 @@
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			smell_message += "a normal [H.custom_species ? H.custom_species : H.species.name]"
+			smell_message += "a normal [H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 		else
 			smell_message += "a plain old normal [src]"
 
@@ -656,7 +670,7 @@
 		status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
 		for(var/mob/living/simple_mob/SA in range(10))
 			rel_add(SA, nameof(SA.prey_excludes), src)
-		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
+		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
 
 		PUBLISH(B.owner, belly_change) //This is run whenever a belly's contents are changed.
 
@@ -674,7 +688,7 @@
 		if(confirm != "Okay" || loc != belly)
 			return
 		//Actual escaping
-		log_and_message_admins("used the OOC escape button to get out of [key_name(pred)] (BORG) ([pred ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[pred.x];Y=[pred.y];Z=[pred.z]'>JMP</a>" : "null"])", src)
+		log_and_message_admins("used the OOC escape button to get out of [key_name(pred)] (BORG) ([pred ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[pred.x];Y=[pred.y];Z=[pred.z]'>JMP</a>" : "null"])", src)
 		belly.go_out(src) //Just force-ejects from the borg as if they'd clicked the eject button.
 
 	//You're in a capture crystal! ((It's not vore but close enough!))
@@ -923,17 +937,13 @@
 	var/spont_belly_name
 	switch(direction_diff)
 		if(NORTH)
-			if(spont_belly_front)
-				spont_belly_name = spont_belly_front
+			spont_belly_name = sparse_get(src, spont_belly_front)
 		if(SOUTH)
-			if(spont_belly_rear)
-				spont_belly_name = spont_belly_rear
+			spont_belly_name = sparse_get(src, spont_belly_rear)
 		if(EAST)
-			if(spont_belly_right)
-				spont_belly_name = spont_belly_right
+			spont_belly_name = sparse_get(src, spont_belly_right)
 		if(WEST)
-			if(spont_belly_left)
-				spont_belly_name = spont_belly_left
+			spont_belly_name = sparse_get(src, spont_belly_left)
 	for(var/obj/belly/lookup_belly in vore_organs)
 		if(lookup_belly.name == spont_belly_name)
 			return lookup_belly
@@ -1190,8 +1200,8 @@
 	if(sparse_get(src, custom_link))
 		. += "Custom link: " + span_linkify("[sparse_get(src, custom_link)]")
 	if(identity().ooc_notes)
-		. += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
-	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
+		. += "OOC Notes: <a href='byond://?src=[REF(src)];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=[REF(src)];print_ooc_notes_chat=1'>\[Print\]</a>"
+	. += "<a href='byond://?src=[REF(src)];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
 
 
@@ -1427,13 +1437,16 @@
 
 /**
  * Small helper datum to manage the vore panel HUD icon.
- * Owned by the mob's `vore_panel_button` var.
+ * Linked to its mob by LK_VORE_BUTTON (gone with it).
  */
 /datum/vore_panel_button
 	var/mob/living/owner
 	var/atom/movable/screen/vore_panel/screen_icon
 
-/mob/living/var/datum/vore_panel_button/vore_panel_button
+/// The mob's vore panel button datum (LK_VORE_BUTTON), or null.
+/mob/living/proc/vore_panel_button()
+	RETURN_TYPE(/datum/vore_panel_button)
+	return link_get(src, LK_VORE_BUTTON)
 
 /datum/vore_panel_button/New(mob/living/M)
 	..()
@@ -1442,8 +1455,8 @@
 	if(owner.client)
 		create_mob_button(owner)
 	grant(owner, granted_verb(/mob/proc/insidePanel), src)
-	if(!owner.vorePanel)
-		rel_set(owner, nameof(owner.vorePanel), new /datum/vore_look(owner))
+	if(!owner.vore_panel())
+		link_make(owner, LK_VORE_PANEL, new /datum/vore_look(owner))
 
 // takes the panel back from its owner (the panel verb is granted with this button as
 // source, so its deletion revokes it). Hooks, the screen icon
@@ -1457,14 +1470,16 @@
 		if(HUD)
 			own_remove(HUD, nameof(HUD.other_important), screen_icon)
 	if(M)
-		own_clear(M, nameof(M.vorePanel), OWN_DELETE)
+		spent(M.vore_panel())
 	..()
 
 /// Gives the mob its vore panel HUD button if it has none.
 /mob/living/proc/add_vore_panel_button()
-	if(!vore_panel_button)
-		rel_set(src, nameof(vore_panel_button), new /datum/vore_panel_button(src))
-	return vore_panel_button
+	var/datum/vore_panel_button/button = vore_panel_button()
+	if(!button)
+		button = new /datum/vore_panel_button(src)
+		link_make(src, LK_VORE_BUTTON, button)
+	return button
 
 /datum/vore_panel_button/proc/on_client_login(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -1494,7 +1509,7 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/click/event = A
 	var/mob/living/clicker = event.user
-	if(istype(clicker) && clicker.vorePanel)
+	if(istype(clicker) && clicker.vore_panel())
 		INVOKE_ASYNC(clicker, TYPE_PROC_REF(/mob/living, insidePanel), clicker) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 /**
  * Screen object for vore panel
@@ -1867,7 +1882,7 @@
 		set_absorbed(FALSE)
 		sparse_set_or(src, muffled, FALSE, FALSE)
 		clear_fullscreen("belly")
-		belly_overlay_tgui?.hide() // hide TGUI belly overlay
+		belly_overlay_window()?.hide() // hide TGUI belly overlay
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 		stop_sound_channel(CHANNEL_PREYLOOP)
 

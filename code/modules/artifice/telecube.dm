@@ -28,7 +28,6 @@
 
 	// slowdown = 2.5 // Removes slowdown in exchange for being impossible to store in backpacks.
 
-	throw_range = 2
 
 	var/tmp/obj/item/telecube/mate
 
@@ -215,6 +214,7 @@
 	. = ..()
 
 CAPABILITIES(/obj/item/telecube)
+	configure(movable_motion(throw_range = 2))
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	ref_one(nameof(mate), /obj/item/telecube)
 	setup(PROC_REF(create_initial_pair))

@@ -1,0 +1,478 @@
+GLOBAL_LIST_INIT(digest_modes, list())
+/// The process_mob() result asking for a vore panel update. Shared, read-only.
+GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
+
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
+/datum/digest_mode
+	var/id = DM_HOLD
+	var/noise_chance = 0
+
+/**
+ * This proc has all the behavior for the given digestion mode.
+ * It returns either null, or an associative list in the following format:
+ * list("to_update" = TRUE/FALSE, "soundToPlay" = sound())
+ * where to_update is whether or not a updateVorePanel() call is necessary,
+ * and soundToPlay will play the given sound at the end of the process tick.
+ */
+/datum/digest_mode/proc/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	return null
+
+/datum/digest_mode/proc/handle_atoms(obj/belly/B, list/touchable_atoms)
+	return FALSE
+
+/datum/digest_mode/digest
+	id = DM_DIGEST
+	noise_chance = 50
+
+/datum/digest_mode/digest/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	var/oldstat = L.stat
+	//Pref protection! (vore_consent.dm)
+	if(consent_refusal(B, L))
+		return null
+
+	//Person just died in guts!
+	if(L.stat == DEAD)
+		if(!sparse_get_or(L, digestion_in_progress, FALSE))
+			if(L.check_sound_preference(/datum/preference/toggle/digestion_noises))
+				if(!B.fancy_vore)
+					SEND_SOUND(L, sound(get_sfx(SFX_CLASSIC_DEATH_SOUNDS)))
+				else
+					SEND_SOUND(L, sound(get_sfx(SFX_FANCY_DEATH_PREY)))
+			B.handle_digestion_death(L)
+			if(!B.fancy_vore)
+				return list("to_update" = TRUE, "soundToPlay" = sound(get_sfx(SFX_CLASSIC_DEATH_SOUNDS)))
+			return list("to_update" = TRUE, "soundToPlay" = sound(get_sfx(SFX_FANCY_DEATH_PRED)))
+		else
+			B.handle_digestion_death(L)
+		if(!L)
+			PUBLISH(B.owner, belly_change)
+			return GLOB.digest_result_update
+	if(!L)
+		return
+
+		//Parasitic digestion immunity hook, used to be a synx istype check but this is more optimized.
+	if(living_rules_of(L).parasitic)
+		if(isliving(L))
+			var/paratox = (B.digest_brute+B.digest_burn) * delta_factor
+			B.owner.adjust_nutrition(-paratox)
+			L.adjust_nutrition(paratox)
+			L.mend(TREAT_TISSUE_REPAIR, paratox*2)
+			L.mend(TREAT_BURN_CARE, paratox*2)
+			L.mend(TREAT_PLATING_REPAIR, paratox*2)
+			L.mend(TREAT_WIRING_REPAIR, paratox*2)
+			if(B.health_impacts_size) //Health probably changed so...
+				PUBLISH(B.owner, belly_change) //Only rebuilds the icon when a fullness bucket actually crosses a boundary.
+			return
+
+	// Deal digestion damage (and feed the pred)
+	// The digest_* belly settings are saved player prefs; each maps onto the injury that describes it.
+	// They are rates per BELLY_BASELINE_TICK: continuous harm, so turbo and normal cycles land the same totals.
+	var/old_vitality = L.vitality()
+	var/was_critical = L.is_critical()
+	var/actual_brute = B.digest_brute > 0 ? L.injure(INJURY_DIGESTION, B.digest_brute * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
+	var/actual_burn = B.digest_burn > 0 ? L.injure(INJURY_CORROSIVE, B.digest_burn * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
+	// digest_oxy is not harm dealt here: it makes the belly's air stale, and
+	// the prey's own breathing reports that as breath quality
+	// (/obj/belly/breath_quality_for()).
+	var/actual_tox = B.digest_tox > 0 ? L.injure(INJURY_TOXIN, B.digest_tox * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
+	var/actual_clone = B.digest_clone > 0 ? L.injure(INJURY_CELLULAR, B.digest_clone * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
+	L.attempt_multishock(SHOCKFLAG_DIGESTION)
+	// Send a message when a prey-thing goes down (crit, or knocked out of consciousness).
+	if(iscarbon(L) && L.stat != DEAD && ((!was_critical && L.is_critical()) || (oldstat == CONSCIOUS && L.stat == UNCONSCIOUS)))
+		to_chat(B.owner, span_notice("You feel [L] go still within your [lowertext(B.name)]."))
+	var/damage_gain = (actual_brute + actual_burn + actual_tox + actual_clone*2)*(B.nutrition_percent / 100)
+	if(B.slow_digestion)
+		damage_gain = damage_gain * 0.5
+	var/offset = (1 + ((sparse_get_or(L, weight, DEFAULT_MOB_WEIGHT) - 137) / 137)) // 130 pounds = .95 140 pounds = 1.02
+	var/difference = B.owner.size_multiplier / L.size_multiplier
+
+	if(B.health_impacts_size)
+		PUBLISH(B.owner, belly_change)
+
+	consider_healthbar(L, old_vitality, B.owner)
+	if(offset && damage_gain > 0) // If any different than default weight, multiply the % of offset.
+		if(B.show_liquids && B.reagent_mode_flags & DM_FLAG_REAGENTSDIGEST && B.reagents.total_volume < B.reagents.maximum_volume) //digestion producing reagents
+			B.owner_adjust_nutrition(offset * (3 * damage_gain / difference) * L.get_digestion_nutrition_modifier() * B.owner.get_digestion_efficiency_modifier()) //Uncertain if balanced fairly, can adjust by multiplier for the cost of reagent, dont go below 1 or else it will result in more nutrition than normal - Jack
+			B.digest_nutri_gain += offset * (1.5 * damage_gain / difference) * L.get_digestion_nutrition_modifier() * B.owner.get_digestion_efficiency_modifier() //for transfering nutrition value over to GenerateBellyReagents_digesting()
+			B.GenerateBellyReagents_digesting()
+		else
+			B.owner_adjust_nutrition(offset * (4.5 * damage_gain / difference) * L.get_digestion_nutrition_modifier() * B.owner.get_digestion_efficiency_modifier()) //4.5 nutrition points per health point. Normal same size 100+100 health prey with average weight would give 900 points if the digestion was instant. With all the size/weight offset taxes plus over time oxyloss+hunger taxes deducted with non-instant digestion, this should be enough to not leave the pred starved.
+	else
+		B.owner_adjust_nutrition(offset * (4.5 * damage_gain / difference) * L.get_digestion_nutrition_modifier() * B.owner.get_digestion_efficiency_modifier())
+	if(L.stat != oldstat)
+		return GLOB.digest_result_update
+
+/datum/digest_mode/absorb
+	id = DM_ABSORB
+	noise_chance = 10
+
+/datum/digest_mode/absorb/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	if(consent_refusal(B, L))
+		return null
+
+	var/old_nutrition = nutrition_of(L)
+	B.steal_nutrition(L, delta_factor)
+	if(nutrition_of(L) < 100)
+		B.absorb_living(L)
+		if(B.show_liquids && B.reagent_mode_flags & DM_FLAG_REAGENTSABSORB && B.reagents.total_volume < B.reagents.maximum_volume) //absorption reagent production
+			B.GenerateBellyReagents_absorbed() //A bonus for pred, I know for a fact prey is usually at zero nutrition when absorption finally happens
+		consider_healthbar(L, old_nutrition, B.owner)
+		return GLOB.digest_result_update
+	else
+		consider_healthbar(L, old_nutrition, B.owner)
+
+/datum/digest_mode/unabsorb
+	id = DM_UNABSORB
+
+/datum/digest_mode/unabsorb/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	if(L.absorbed)
+		if(nutrition_of(B.owner) >= 100)
+			B.owner.adjust_nutrition(-100)
+			B.unabsorb_living(L)
+			return GLOB.digest_result_update
+		else if(isrobot(B.owner))
+			var/mob/living/silicon/robot/robot_owner = B.owner
+			if(robot_owner.draw_power(100 * CYBORG_POWER_USAGE_MULTIPLIER, B))
+				B.unabsorb_living(L)
+				return GLOB.digest_result_update
+
+/datum/digest_mode/drain
+	id = DM_DRAIN
+	noise_chance = 10
+
+/datum/digest_mode/drain/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	var/old_nutrition = nutrition_of(L)
+	B.steal_nutrition(L, delta_factor)
+	consider_healthbar(L, old_nutrition, B.owner)
+
+/datum/digest_mode/drain/shrink
+	id = DM_SHRINK
+
+/datum/digest_mode/drain/shrink/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	if(L.size_multiplier > B.shrink_grow_size)
+		L.resize(L.size_multiplier - (0.01 * delta_factor)) // Shrink by 1% per baseline tick
+		if(L.size_multiplier <= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped shrinking.
+			to_chat(B.owner, span_vnotice("You feel [L] get as small as you would like within your [lowertext(B.name)]."))
+		PUBLISH(B.owner, belly_change)
+		. = ..()
+
+/datum/digest_mode/grow
+	id = DM_GROW
+	noise_chance = 10
+
+/datum/digest_mode/grow/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	if(L.size_multiplier < B.shrink_grow_size)
+		L.resize(L.size_multiplier + (0.01 * delta_factor)) // Grow by 1% per baseline tick
+		if(L.size_multiplier >= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped growing.
+			to_chat(B.owner, span_vnotice("You feel [L] get as big as you would like within your [lowertext(B.name)]."))
+	PUBLISH(B.owner, belly_change)
+
+/datum/digest_mode/drain/sizesteal
+	id = DM_SIZE_STEAL
+
+/datum/digest_mode/drain/sizesteal/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	if(L.size_multiplier > B.shrink_grow_size && B.owner.size_multiplier < RESIZE_MAXIMUM) //Grow until either pred is large or prey is small.
+		B.owner.resize(B.owner.size_multiplier + (0.01 * delta_factor)) //Grow by 1% per baseline tick.
+		if(B.owner.size_multiplier >= RESIZE_MAXIMUM) // Adds some feedback so the pred knows they can't grow anymore.
+			to_chat(B.owner, span_vnotice("You feel you have grown as much as you can."))
+		L.resize(L.size_multiplier - (0.01 * delta_factor)) //Shrink by 1% per baseline tick
+		if(L.size_multiplier <= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped shrinking.
+			to_chat(B.owner, span_vnotice("You feel [L] get as small as you would like within your [lowertext(B.name)]."))
+		PUBLISH(B.owner, belly_change)
+		. = ..()
+
+/datum/digest_mode/heal
+	id = DM_HEAL
+	noise_chance = 50 //Wet heals! The secret is you can leave this on for gurgle noises for fun.
+
+/datum/digest_mode/heal/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	var/oldstat = L.stat
+	if(consent_refusal(B, L)) //healpref check; can't heal the dead with healbelly
+		return null
+	var/old_vitality = L.vitality()
+	if(nutrition_of(B.owner) > 90 && L.is_injured())
+		// Organic tissue: the body resolves which afflictions each mechanism can reach.
+		var/organic_mended = 0
+		organic_mended += L.mend(TREAT_TISSUE_REPAIR, 2.5 * delta_factor)
+		organic_mended += L.mend(TREAT_BURN_CARE, 2.5 * delta_factor)
+		organic_mended += L.mend(TREAT_ANTITOXIN, 5 * delta_factor)
+		organic_mended += L.mend(TREAT_OXYGENATION, 5 * delta_factor)
+		organic_mended += L.mend(TREAT_GENETIC_REPAIR, 1.25 * delta_factor)
+		// Synthetic parts (prosthetics, FBPs, drones): less effective, costlier for the pred since metals and stuff.
+		var/synthetic_mended = 0
+		synthetic_mended += L.mend(TREAT_PLATING_REPAIR, 0.5 * delta_factor)
+		synthetic_mended += L.mend(TREAT_WIRING_REPAIR, 0.5 * delta_factor)
+		synthetic_mended += L.mend(TREAT_SYSTEM_RESTORE, 2 * delta_factor)
+		if(organic_mended > 0)
+			B.owner.adjust_nutrition(-2 * delta_factor)
+		if(synthetic_mended > 0)
+			B.owner.adjust_nutrition(-5 * delta_factor)
+		if(B.health_impacts_size)
+			PUBLISH(B.owner, belly_change)
+		consider_healthbar(L, old_vitality, B.owner)
+		if(organic_mended > 0 && nutrition_of(L) <= 400)
+			L.adjust_nutrition(1 * delta_factor)
+	else if(nutrition_of(B.owner) > 90 && (nutrition_of(L) <= 400))
+		B.owner.adjust_nutrition(-1 * delta_factor)
+		L.adjust_nutrition(1 * delta_factor)
+	if(L.stat != oldstat)
+		return GLOB.digest_result_update
+
+// E G G
+/datum/digest_mode/egg
+	id = DM_EGG
+/*
+/datum/digest_mode/egg/process_mob(obj/belly/B, mob/living/carbon/human/H)
+	if(!istype(H) || H.stat == DEAD || H.absorbed)
+		return null
+	B.put_in_egg(H, 1)*/
+
+/datum/digest_mode/egg/handle_atoms(obj/belly/B, list/touchable_atoms)
+	if(B.egg_cycles < 10)
+		B.egg_cycles ++
+		return
+	B.egg_cycles = 0
+	var/list/egg_contents = list()
+	for(var/E in touchable_atoms)
+		if(istype(E, /mob/observer))
+			continue
+		if(istype(E, /obj/item/storage/vore_egg)) // Don't egg other eggs.
+			var/obj/item/storage/vore_egg/EG = E
+			if(EG.egg_name != B.egg_name)
+				if(!B.egg_name)
+					EG.set_egg_name(null)
+					EG.name = initial(EG.name)
+				else
+					EG.set_egg_name(B.egg_name)
+					EG.name = B.egg_name
+			continue
+		if(isliving(E))
+			var/mob/living/L = E
+			if(L.absorbed)
+				continue
+			egg_contents += L
+		if(isitem(E))
+			egg_contents += E
+	if(egg_contents.len)
+		if(!B.ownegg())
+			if(B.egg_type in GLOB.tf_vore_egg_types)
+				B.egg_path = GLOB.tf_vore_egg_types[B.egg_type]
+			rel_set(B, nameof(B.ownegg), new B.egg_path(B))
+			if(B.ownegg() && B.egg_name)
+				B.ownegg().egg_name = B.egg_name
+				B.ownegg().name = B.egg_name
+		var/scale_clamp = 1
+		for(var/atom/movable/C in egg_contents)
+			if(isitem(C) && egg_contents.len == 1) //Only egging one item
+				var/obj/item/I = C
+				B.ownegg().set_w_class(I.w_class)
+				B.ownegg().max_storage_space = B.ownegg().w_class
+				B.slot_remove(I, B.ownegg())
+				if(B.egg_size)
+					B.ownegg().icon_scale_x = B.egg_size
+					B.ownegg().icon_scale_y = B.egg_size
+				else
+					B.ownegg().icon_scale_x = 0.2 * B.ownegg().w_class
+					B.ownegg().icon_scale_y = 0.2 * B.ownegg().w_class
+				B.ownegg().update_transform()
+				egg_contents -= I
+				rel_clear(B, nameof(B.ownegg))
+				return GLOB.digest_result_update
+			if(isitem(C))
+				var/obj/item/I = C
+				B.ownegg().set_w_class(B.ownegg().w_class + I.w_class) //Let's assume a regular outfit can reach total w_class of 16.
+				B.slot_remove(I, B.ownegg())
+			if(isliving(C))
+				var/mob/living/M = C
+				var/mob_holder_type = M.holder_type || /obj/item/holder
+				B.ownegg().set_w_class(B.ownegg().w_class + M.size_multiplier * 4) //Egg size and weight scaled to match occupant.
+				if(M.size_multiplier > scale_clamp)
+					scale_clamp = M.size_multiplier
+				var/obj/item/holder/H = new mob_holder_type(B.ownegg(), M)
+				B.ownegg().max_storage_space = H.w_class
+				egg_contents -= M
+		B.ownegg().calibrate_size()
+		B.ownegg().orient2hud()
+		B.ownegg().set_w_class(clamp(B.ownegg().w_class * 0.25, 1, 8)) //A total w_class of 16 will result in a backpack sized egg.
+		if(B.egg_size)
+			B.ownegg().icon_scale_x = B.egg_size
+			B.ownegg().icon_scale_y = B.egg_size
+		else
+			B.ownegg().icon_scale_x = clamp(0.25 * B.ownegg().w_class, 0.25, scale_clamp)
+			B.ownegg().icon_scale_y = clamp(0.25 * B.ownegg().w_class, 0.25, scale_clamp)
+		B.ownegg().update_transform()
+		if(B.ownegg().w_class > 4)
+			B.ownegg().set_worn_factor(STAT_ITEM_ENCUMBRANCE, 4)
+		rel_clear(B, nameof(B.ownegg))
+		return GLOB.digest_result_update
+	return
+
+/datum/digest_mode/selective //unselectable, "smart" digestion mode for mobs only
+	id = DM_SELECT
+	noise_chance = 50
+
+
+/datum/digest_mode/selective/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
+	var/datum/digest_mode/tempmode = GLOB.digest_modes[DM_HOLD]			// Default to Hold in case of big oof fallback
+	//if not absorbed, see if they're food
+	switch(L.vore_prefs.selective_preference)										// First, we respect prey prefs
+		if(DM_DIGEST)
+			if(L.vore_prefs.digestable)
+				tempmode = GLOB.digest_modes[DM_DIGEST]					// They want to be digested and can be, Digest
+			else
+				tempmode = GLOB.digest_modes[DM_DRAIN]					// They want to be digested but can't be! Drain.
+		if(DM_ABSORB)
+			if(L.vore_prefs.absorbable)
+				tempmode = GLOB.digest_modes[DM_ABSORB]					// They want to be absorbed and can be. Absorb.
+			else
+				tempmode = GLOB.digest_modes[DM_DRAIN]					// They want to be absorbed but can't be! Drain.
+		if(DM_DRAIN)
+			tempmode = GLOB.digest_modes[DM_DRAIN]						// They want to be drained. Drain.
+		if(DM_DEFAULT)
+			switch(B.selective_preference)								// They don't actually care? Time for our own preference.
+				if(DM_DIGEST)
+					if(L.vore_prefs.digestable)
+						tempmode = GLOB.digest_modes[DM_DIGEST]			// We prefer digestion and they're digestible? Digest
+					else if(L.vore_prefs.absorbable)
+						tempmode = GLOB.digest_modes[DM_ABSORB]			// If not digestible, are they absorbable? Then absorb.
+					else
+						tempmode = GLOB.digest_modes[DM_DRAIN]			// Otherwise drain.
+				if(DM_ABSORB)
+					if(L.vore_prefs.absorbable)
+						tempmode = GLOB.digest_modes[DM_ABSORB]			// We prefer absorption and they're absorbable? Absorb.
+					else if(L.vore_prefs.digestable)
+						tempmode = GLOB.digest_modes[DM_DIGEST]			// If not absorbable, are they digestible? Then digest.
+					else
+						tempmode = GLOB.digest_modes[DM_DRAIN]			// Otherwise drain.
+	return tempmode.process_mob(B, L, delta_factor)
+
+/datum/digest_mode/selective/proc/get_selective_mode(obj/belly/B, mob/living/L)
+	var/tempmode = DM_HOLD			// Default to Hold in case of big oof fallback
+	//if not absorbed, see if they're food
+	switch(L.vore_prefs.selective_preference)										// First, we respect prey prefs
+		if(DM_DIGEST)
+			if(L.vore_prefs.digestable)
+				tempmode = DM_DIGEST					// They want to be digested and can be, Digest
+			else
+				tempmode = DM_DRAIN					// They want to be digested but can't be! Drain.
+		if(DM_ABSORB)
+			if(L.vore_prefs.absorbable)
+				tempmode = DM_ABSORB					// They want to be absorbed and can be. Absorb.
+			else
+				tempmode = DM_DRAIN					// They want to be absorbed but can't be! Drain.
+		if(DM_DRAIN)
+			tempmode = DM_DRAIN						// They want to be drained. Drain.
+		if(DM_DEFAULT)
+			switch(B.selective_preference)								// They don't actually care? Time for our own preference.
+				if(DM_DIGEST)
+					if(L.vore_prefs.digestable)
+						tempmode = DM_DIGEST			// We prefer digestion and they're digestible? Digest
+					else if(L.vore_prefs.absorbable)
+						tempmode = DM_ABSORB			// If not digestible, are they absorbable? Then absorb.
+					else
+						tempmode = DM_DRAIN			// Otherwise drain.
+				if(DM_ABSORB)
+					if(L.vore_prefs.absorbable)
+						tempmode = DM_ABSORB			// We prefer absorption and they're absorbable? Absorb.
+					else if(L.vore_prefs.digestable)
+						tempmode = DM_DIGEST			// If not absorbable, are they digestible? Then digest.
+					else
+						tempmode = DM_DRAIN			// Otherwise drain.
+	return tempmode
+
+/datum/digest_mode/proc/consider_healthbar()
+	return
+
+/datum/digest_mode/digest/consider_healthbar(mob/living/L, old_vitality, mob/living/reciever)
+	var/new_vitality = L.vitality()
+	if(old_vitality <= new_vitality)
+		return
+
+	var/old_percent = old_vitality * 100
+	var/new_percent = new_vitality * 100
+
+	var/lets_announce = FALSE
+	if(new_percent <= 95 && old_percent > 95)
+		lets_announce = TRUE
+	else if(new_percent <= 75 && old_percent > 75)
+		lets_announce = TRUE
+	else if(new_percent <= 50 && old_percent > 50)
+		lets_announce = TRUE
+	else if(new_percent <= 25 && old_percent > 25)
+		lets_announce = TRUE
+	else if(new_percent <= 0 && old_percent > 0)
+		lets_announce = TRUE
+
+	if(lets_announce)
+		L.chat_healthbar(reciever)
+		L.chat_healthbar(L)
+
+/datum/digest_mode/heal/consider_healthbar(mob/living/L, old_vitality, mob/living/reciever)
+	var/new_vitality = L.vitality()
+	if(old_vitality >= new_vitality)
+		return
+
+	var/old_percent = old_vitality * 100
+	var/new_percent = new_vitality * 100
+
+	var/lets_announce = FALSE
+	if(new_percent >= 100 && old_percent < 100)
+		lets_announce = TRUE
+	else if(new_percent >= 75 && old_percent < 75)
+		lets_announce = TRUE
+	else if(new_percent >= 50 && old_percent < 50)
+		lets_announce = TRUE
+	else if(new_percent >= 25 && old_percent < 25)
+		lets_announce = TRUE
+	else if(new_percent >= 5 && old_percent < 5)
+		lets_announce = TRUE
+
+	if(lets_announce)
+		L.chat_healthbar(reciever)
+		L.chat_healthbar(L)
+
+/datum/digest_mode/absorb/consider_healthbar(mob/living/L, old_nutrition, mob/living/reciever)
+	if(old_nutrition <= nutrition_of(L))
+		return
+
+	var/old_percent = ((old_nutrition - 100) / 500) * 100
+	var/new_percent = ((nutrition_of(L) - 100) / 500) * 100
+	var/lets_announce = FALSE
+	if(new_percent <= 95 && old_percent > 95)
+		lets_announce = TRUE
+	else if(new_percent <= 75 && old_percent > 75)
+		lets_announce = TRUE
+	else if(new_percent <= 50 && old_percent > 50)
+		lets_announce = TRUE
+	else if(new_percent <= 25 && old_percent > 25)
+		lets_announce = TRUE
+	else if(new_percent <= 0 && old_percent > 0)
+		lets_announce = TRUE
+
+	if(lets_announce)
+		L.chat_healthbar(reciever)
+		L.chat_healthbar(L)
+
+/datum/digest_mode/drain/consider_healthbar(mob/living/L, old_nutrition, mob/living/reciever)
+
+	if(old_nutrition <= nutrition_of(L))
+		return
+
+	var/old_percent = ((old_nutrition - 100) / 500) * 100
+	var/new_percent = ((nutrition_of(L) - 100) / 500) * 100
+
+	var/lets_announce = FALSE
+	if(new_percent <= 95 && old_percent > 95)
+		lets_announce = TRUE
+	else if(new_percent <= 75 && old_percent > 75)
+		lets_announce = TRUE
+	else if(new_percent <= 50 && old_percent > 50)
+		lets_announce = TRUE
+	else if(new_percent <= 25 && old_percent > 25)
+		lets_announce = TRUE
+	else if(new_percent <= 0 && old_percent > 0)
+		lets_announce = TRUE
+
+	if(lets_announce)
+		L.chat_healthbar(reciever)
+		L.chat_healthbar(L)

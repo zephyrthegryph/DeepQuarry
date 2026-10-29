@@ -89,6 +89,7 @@
 
 // Each construct is numbered.
 CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	setup(PROC_REF(prepare_construct_spells))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
@@ -104,14 +105,14 @@ CAPABILITIES(/mob/living/simple_mob/construct)
 		src.add_spell(new spell, "const_spell_ready")
 
 /mob/living/simple_mob/construct
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/construct/on_death(gibbed)
 	new /obj/item/ectoplasm (src.loc)
 	..()
 	ghostize()
 
-/mob/living/simple_mob/construct/attack_generic(mob/user)
+/mob/living/simple_mob/construct/smashed_by(datum/act/hit/generic/G)
+	var/mob/user = G.attacker
 	if(istype(user, /mob/living/simple_mob/construct/artificer))
 		var/mob/living/simple_mob/construct/artificer/A = user
 		if(is_injured())
@@ -120,7 +121,7 @@ CAPABILITIES(/mob/living/simple_mob/construct)
 			act_message(user, src, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " mends some of %T%'s wounds.")))
 		else
 			to_chat(user, span_notice("\The [src] is undamaged."))
-		return
+		return OP_OK
 	return ..()
 
 /mob/living/simple_mob/construct/examine(mob/user)

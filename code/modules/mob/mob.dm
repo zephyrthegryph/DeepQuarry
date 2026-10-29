@@ -46,25 +46,25 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
 
-/mob/Initialize(mapload)
-	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
-	lastarea = get_area(src)
-	set_focus(src) // Key Handling
-	return ..()
+/// The area it starts in (preset): what the gravity checks read before it ever enters an area.
+/mob/proc/start_lastarea(target)
+	return get_area(src)
 
-/// Its size, mob chunk and creation log, once its Initialize() chain has returned (a setup() hook of /mob): a rolled size_multiplier or icon scale (rolls()) is in place by then.
+/// Its own keyboard input to start with (the focus relation's starting occupant).
+/mob/proc/start_focus(current, mapload)
+	return src
+
+/// The world hears of it, then its size, mob chunk and creation log, once its Initialize() chain has returned (a setup() hook of /mob): a rolled size_multiplier or icon scale (rolls()) is in place by then.
 /mob/proc/finish_mob_setup()
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
 /mob/show_message(msg, type, alt, alt_type)
-#ifdef UNIT_TESTS
-	test_chat_note(src, msg) // a test mob has no client: the driver keeps what it would have been shown
-#endif
 
-	if(!client && !teleop)	return
+	if(!client && !teleop())	return
 
 	if (type)
 		if((type & VISIBLE_MESSAGE) && (is_blind() || has_status(STAT_PARALYZED)) )//Vision related
@@ -85,8 +85,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(stat == UNCONSCIOUS || has_status(STAT_SLEEPING))
 		to_chat(src, span_filter_notice(span_italics("... You can almost hear someone talking ...")))
 	else
-		if(teleop)
-			to_chat(teleop, create_text_tag("body", "BODY:", teleop.client) + "[msg]")
+		if(teleop())
+			to_chat(teleop(), create_text_tag("body", "BODY:", teleop().client) + "[msg]")
 		else
 			to_chat(src,msg)
 	return
@@ -158,12 +158,21 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(runemessage != -1)
 			M.create_chat_message(src, "[runemessage || message]", FALSE, list("emote"), audible = FALSE)
 
-/// `who` was the last to push, drag or grab this mob: remembered when it is a carbon, else the old assailant is forgotten (LAssailant is a carbon relation).
+/// `who` was the last to push, drag or grab this mob: remembered when it is a carbon, else the old assailant is forgotten (LAssailant is a weak slot).
 /mob/proc/note_assailant(mob/living/who)
 	if(iscarbon(who))
-		rel_set(src, nameof(LAssailant), who)
+		sparse_ref_set(src, LAssailant, who)
 	else
-		rel_clear(src, nameof(LAssailant))
+		sparse_ref_set(src, LAssailant, null)
+
+/// The last mob/living/carbon to push, drag or grab this mob (slimes recognise a friend by it): a weak sparse slot, null once it is gone.
+/mob/proc/assailant() as /mob/living
+	return sparse_ref(src, LAssailant)
+
+/// The mob this clientless mob's player is controlling remotely (an aghost, an AI's eye, a VR avatar), so it is not treated as SSD even though its client is
+/// null: a weak sparse slot, null once that mob is gone. The controller may be the mob itself.
+/mob/proc/teleop() as /mob
+	return sparse_ref(src, teleop)
 
 /mob/proc/findname(msg)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -355,7 +364,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/warn_flavor_changed()
 	if(bio.flavor_text && bio.flavor_text != "") // don't spam people that don't use it!
 		to_chat(src, span_filter_notice("<h2 class='alert'>OOC Warning:</h2>"))
-		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=\ref[src];flavor_change=1'>Change</a>")))
+		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=[REF(src)];flavor_change=1'>Change</a>")))
 
 /mob/proc/print_flavor_text()
 	if (bio.flavor_text && bio.flavor_text != "")
@@ -363,18 +372,16 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(length(msg) <= 40)
 			return span_notice("[msg]")
 		else
-			return span_notice("[copytext_preserve_html(msg, 1, 37)]... <a href='byond://?src=\ref[src];flavor_more=1'>More...</a>")
+			return span_notice("[copytext_preserve_html(msg, 1, 37)]... <a href='byond://?src=[REF(src)];flavor_more=1'>More...</a>")
 
 /mob/proc/set_respawn_timer(time)
 	// Try to figure out what time to use
 
 	// Special cases, can never respawn
-	if(ticker_mode()?.deny_respawn)
-		time = -1
-	else if(!CONFIG_GET(flag/abandon_allowed))
-		time = -1
-	else if(!CONFIG_GET(flag/respawn))
-		time = -1
+	var/forbidden = FALSE
+	if(time == RESPAWN_NEVER || ticker_mode()?.deny_respawn || !CONFIG_GET(flag/abandon_allowed) || !CONFIG_GET(flag/respawn))
+		forbidden = TRUE
+		time = 0
 
 	// Special case for observing before game start
 	else if(round_game_state() <= GAME_STATE_SETTING_UP)
@@ -391,11 +398,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	else if(!keytouse && mind?.key)
 		keytouse = ckey(mind.key)
 
-	GLOB.respawn_timers[keytouse] = EXPIRY_AT(null, CLOCK_WORLD, 0) + time
+	SSmobs.set_respawn_wait(keytouse, time, forbidden)
 
 /mob/observer/dead/set_respawn_timer()
 	if(CONFIG_GET(flag/antag_hud_restricted) && has_enabled_antagHUD)
-		..(-1)
+		..(RESPAWN_NEVER)
 	else
 		return // Don't set it, no need
 
@@ -718,7 +725,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			hud_of(M)?.pullin?.icon_state = "pull1"
 	if(ismob(AM))
 		var/mob/pulled = AM
-		pulled.inertia_dir = 0
+		sparse_set_or(pulled, inertia_dir, 0, 0)
 	return TRUE
 
 /// links(holds_while) of the pull pair: it stands while the two are within a tile of each other.
@@ -748,7 +755,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	pull_link(AM)
 	if(ismob(AM))
 		var/mob/pulled = AM
-		pulled.inertia_dir = 0
+		sparse_set_or(pulled, inertia_dir, 0, 0)
 
 /mob/proc/can_use_hands()
 	return
@@ -756,7 +763,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/is_active()
 	return (0 >= stat)
 
-/// Vital-state predicate: is this mob dead (stat)? See code/modules/body/vital_state.dm.
+/// Vital-state predicate: is this mob dead (stat)? See code/domains/body/vital_state.dm.
 /mob/proc/is_dead()
 	return stat == DEAD
 
@@ -795,7 +802,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	//. += get_spells_for_statpanel(mob_spell_list)
 
 /mob/proc/update_misc_tabs()
-	misc_tabs = list() //Reset misc_tabs every Stat() to prevent old shit sticking around
+	sparse_set(src, misc_tabs, null) //Reset misc_tabs every Stat() to prevent old shit sticking around
 
 // facing verbs
 /mob/proc/canface()
@@ -860,10 +867,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return
 
 /mob/proc/AdjustLosebreath(amount)
-	losebreath = CLAMP(losebreath + amount, 0, 25)
+	set_losebreath(CLAMP(losebreath() + amount, 0, 25))
 
 /mob/proc/SetLosebreath(amount)
-	losebreath = CLAMP(amount, 0, 25)
+	set_losebreath(CLAMP(amount, 0, 25))
 
 /mob/proc/get_species()
 	return ""
@@ -1255,27 +1262,29 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 // Manages a global list of mobs with clients attached, indexed by z-level.
 /mob/proc/update_client_z(new_z) // +1 to register, null to unregister.
-	if(registered_z != new_z)
-		if(registered_z)
-			GLOB.players_by_zlevel[registered_z] -= src
+	var/was_z = sparse_get(src, registered_z)
+	if(was_z != new_z)
+		if(was_z)
+			GLOB.players_by_zlevel[was_z] -= src
 		if(client)
 			if(new_z)
 				GLOB.players_by_zlevel[new_z] += src
-			registered_z = new_z
+			sparse_set(src, registered_z, new_z)
 		else
-			registered_z = null
+			sparse_set(src, registered_z, null)
 
 GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/living/update_client_z(new_z)
-	var/precall_reg_z = registered_z
+	var/precall_reg_z = sparse_get(src, registered_z)
 	. = ..() // will update registered_z if necessary
-	if(precall_reg_z != registered_z) // parent did work, let's do work too
+	var/now_reg_z = sparse_get(src, registered_z)
+	if(precall_reg_z != now_reg_z) // parent did work, let's do work too
 		if(precall_reg_z)
 			GLOB.living_players_by_zlevel[precall_reg_z] -= src
 			life_z_occupancy_changed(precall_reg_z)
-		if(registered_z)
-			GLOB.living_players_by_zlevel[registered_z] += src
-			life_z_occupancy_changed(registered_z)
+		if(now_reg_z)
+			GLOB.living_players_by_zlevel[now_reg_z] += src
+			life_z_occupancy_changed(now_reg_z)
 
 /mob/onTransitZ(old_z, new_z)
 	..()
@@ -1503,7 +1512,7 @@ MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 
 /// Requirement: nobody drives the mob by remote control (its teleop is a relation view: null once that is gone).
 /mob/proc/vv_not_remote_driven(datum/act/op/A)
-	return (!teleop) ? null : MSG(vv/player_mob)
+	return (!teleop()) ? null : MSG(vv/player_mob)
 
 /// A VV AI brain setup, after the faction, the combat mode and the wake question have all been answered.
 /mob/living/proc/vv_topic_give_ai(datum/act/op/A)

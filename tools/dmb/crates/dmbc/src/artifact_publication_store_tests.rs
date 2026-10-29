@@ -4,9 +4,6 @@ impl ObservationHost<u8, u8, u8> for Host {
     fn answer(&self, _: &u8) -> u8 {
         self.0
     }
-    fn version(&self, _: &u8) -> Option<u128> {
-        None
-    }
 }
 fn insert(store: &Store<Vec<u8>, u8, u8, u8>, name: &[u8], value: u8) -> Arc<Vec<u8>> {
     store
@@ -17,7 +14,6 @@ fn insert(store: &Store<Vec<u8>, u8, u8, u8>, name: &[u8], value: u8) -> Arc<Vec
                 answer: value,
                 domain: 1,
             }],
-            vec![],
             1,
             || vec![value],
         )
@@ -95,7 +91,6 @@ fn bounded_failed_and_ephemeral_claims_preserve_published_variant_and_budget() {
                 answer: 4,
                 domain: 1
             }],
-            vec![],
             2,
             || panic!("over-budget producer"),
         )

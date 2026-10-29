@@ -259,7 +259,7 @@
 	var/tmp/list/belly_surrounding		// Lazy. A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
 	var/bellytemperature = T20C				// Temperature applied to humans in the belly.
 	var/temperature_damage = FALSE			// Does temperature damage prey?
-	EXPIRY_TMP_DECLARE(last_transfer_log)				// Prevent server message spam!
+	var/tmp/last_transfer_log = 0				// Prevent server message spam!
 	var/tmp/next_transfer_log = 0				// Prevent server message spam!
 	var/tmp/entrance_log_count = 0				// Entrance count before spawm
 	flags = NOREACT							// We dont want bellies to start bubling nonstop due to people mixing when transfering and making different reagents
@@ -280,11 +280,14 @@
 			. += var_name
 
 CAPABILITIES(/obj/belly)
+	setup(PROC_REF(belly_share_lists), early = TRUE) // the shared list vars are swapped in before the chain reads them
 	configure(atom_rules(emp_protection = EMP_PROTECT_ALL))
 	setup(PROC_REF(bind_to_owner))
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	// The mob's selected belly: a sparse link, not a var on /mob (vore_selected_of()).
 	links(LINK_END(/mob, LK_VORE_SELECTED), LINK_END(/obj/belly, LK_VORE_SELECTED_BY), sparse = TRUE, b_many = TRUE)
+	// The belly the mob is previewing the vore FX of: a sparse link, not a var on /mob (vore_previewing_of()).
+	links(LINK_END(/mob, LK_VORE_PREVIEW), LINK_END(/obj/belly, LK_VORE_PREVIEWED_BY), sparse = TRUE, b_many = TRUE)
 	// a belly is an organ of its owner, never a thing on the floor to hit
 	without("melee_hit")
 	reagents(300) // So we can have some liquids in bellies
@@ -296,11 +299,6 @@ CAPABILITIES(/obj/belly)
 	ref_many(nameof(items_preserved))
 	ref_one(nameof(ownegg))
 	ref_one(nameof(owner))
-
-// ALLOW(init/INSTANCE_STATE): the shared list vars must be swapped in before the parent initializer reads them
-/obj/belly/Initialize(mapload)
-	belly_share_lists() // before anything reads the list vars
-	return ..()
 
 /// A belly made inside a mob binds to it (setup()); made anywhere else it is probably just in a prefs list.
 // The static option tables, read through a typed receiver: a static read through a local does not evaluate the local, and an untyped receiver
@@ -386,14 +384,14 @@ CAPABILITIES(/obj/belly)
 	if(!sparse_get_or(owner, mute_entry, FALSE) && entrance_logs)
 		if(!istype(thing, /mob/observer))	//Don't have ghosts announce they're reentering the belly on death
 			if(ELAPSED(src, last_transfer_log, CLOCK_WORLD) > ENTRY_MESSAGE_INTERVAL)
-				EXPIRY_STAMP(src, last_transfer_log, CLOCK_WORLD)
+				STAMP(src, last_transfer_log, CLOCK_WORLD)
 				entrance_log_count = 0
 			if(COOLDOWN_FINISHED(src, next_transfer_log))
 				to_chat(owner,span_vnotice("[thing] slides into your [lowertext(name)]."))
 				entrance_log_count++
 				if(entrance_log_count >= MAX_ENTRY_MESSAAGES)
 					COOLDOWN_START(src, next_transfer_log, ENTRY_MESSAGE_INTERVAL)
-					EXPIRY_STAMP(src, last_transfer_log, CLOCK_WORLD)
+					STAMP(src, last_transfer_log, CLOCK_WORLD)
 
 	//Sound w/ antispam flag setting
 	if(vore_sound && !recent_sound && !istype(thing, /mob/observer))
@@ -441,7 +439,7 @@ CAPABILITIES(/obj/belly)
 		if(can_taste && living_mob.loc == src && (taste = living_mob.get_taste_message(FALSE))) // Prevent indirect tasting
 			to_chat(owner, span_vnotice("[living_mob] tastes of [taste]."))
 		vore_fx(living_mob)
-		if(owner.previewing_belly == src)
+		if(vore_previewing_of(owner) == src)
 			vore_fx(owner)
 		//Stop AI processing in bellies
 		if(living_mob.ai_brain)
@@ -481,7 +479,7 @@ CAPABILITIES(/obj/belly)
 		for(var/mob/living/L in endfx)
 			if(L.surrounding_belly()) continue
 			L.clear_fullscreen("belly")
-			L.belly_overlay_tgui?.hide() // hide TGUI belly overlay
+			L.belly_overlay_window()?.hide() // hide TGUI belly overlay
 			if(L.hud_used)
 				if(!L.hud_used.hud_shown)
 					L.toggle_hud_vis()
@@ -900,7 +898,7 @@ CAPABILITIES(/obj/belly)
 		return owner.drop_location()
 	//Sketchy fallback for safety, put them somewhere safe.
 	else
-		log_runtime("[src] (\ref[src]) doesn't have an owner, and dropped someone at a latespawn point!")
+		log_runtime("[src] ([REF(src)]) doesn't have an owner, and dropped someone at a latespawn point!")
 		var/fallback = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
 		return get_turf(fallback)
 

@@ -35,7 +35,7 @@
 	var/list/valid_moves
 	var/list/selected_figure
 	var/list/possible_jumps
-	EXPIRY_DECLARE(turn_start_time)
+	var/turn_start_time = 0
 	var/winner
 
 CAPABILITIES(/datum/board_game/checkers)
@@ -118,7 +118,7 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 		return FALSE
 	set_current_board(get_defaultboard())
 	set_game_state(GAME_PLAYER_ONE)
-	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
 /datum/board_game/checkers/proc/ui_act_play_again(datum/act/op/A)
@@ -127,7 +127,7 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 	if(!player_one || !player_two)
 		return FALSE
 	reset()
-	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
 /datum/board_game/checkers/proc/ui_act_play_again_swapped(datum/act/op/A)
@@ -139,7 +139,7 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 	var/mob/temp_player = player_one
 	rel_set(src, nameof(player_one), player_two)
 	rel_set(src, nameof(player_two), temp_player)
-	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
 /datum/board_game/checkers/proc/ui_act_game_action(datum/act/op/A, action_arg, data)
@@ -151,14 +151,14 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 				set_game_state(GAME_PLAYER_TWO)
-				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+				STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 	if(user == player_two && game_state == GAME_PLAYER_TWO)
 		var/game_action = game_subaction(action_arg, data, user, "b")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 				set_game_state(GAME_PLAYER_ONE)
-				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+				STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 	return FALSE
 

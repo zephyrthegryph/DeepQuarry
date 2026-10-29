@@ -63,7 +63,7 @@
 
 	// Armour on the struck part scales the secondary effects; the harm itself
 	// is armoured inside injure().
-	var/absorb = armor_against(P.injury_kind, def_zone, combat_of(P).armor_penetration)
+	var/absorb = armor_against(combat_of(P).injury_kind, def_zone, combat_of(P).armor_penetration)
 
 	//Stun Beams
 	if(P.taser_effect)
@@ -175,11 +175,11 @@
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
 
-	var/blocked = armor_against(I.injury_kind, hit_zone, combat_of(I).armor_penetration)
+	var/blocked = armor_against(combat_of(I).injury_kind, hit_zone, combat_of(I).armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
-	if(injury_category(I.injury_kind) == INJURY_CATEGORY_PHYSICAL && prob(33)) // Added blood for whacking non-humans too
+	if(injury_category(combat_of(I).injury_kind) == INJURY_CATEGORY_PHYSICAL && prob(33)) // Added blood for whacking non-humans too
 		var/turf/simulated/location = get_turf(src)
 		if(istype(location)) location.add_blood_floor(src)
 
@@ -210,8 +210,8 @@
 	if(isitem(source))
 		var/obj/item/O = source
 		/*var/miss_chance = 15
-		if (O.throw_source)
-			var/distance = get_dist(O.throw_source, loc)
+		if (movable_throw_source(O))
+			var/distance = get_dist(movable_throw_source(O), loc)
 			miss_chance = max(15*(distance-2), 0)
 
 		if (prob(miss_chance))
@@ -285,7 +285,10 @@
 
 // End BS12 momentum-transfer code.
 
-/mob/living/attack_generic(mob/user, damage, attack_message)
+/mob/living/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb
 	if(istype(user,/mob/living))
 		var/mob/living/L = user
 		if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
@@ -296,7 +299,7 @@
 
 	if(!damage)
 		react_to_entry(DAMAGE_ENTRY_GENERIC, 0, user, user)
-		return
+		return OP_OK
 
 	receive_generic_attack(user, damage)
 	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_mob attacks
@@ -304,7 +307,7 @@
 		ai_brain.react_to_attack(user)
 	act_message(user, src, others = span_danger("%U% has [attack_message] %T%!"))
 	user.do_attack_animation(src)
-	return 1
+	return OP_OK
 
 /// What kind of wound a generic (usually animal) attack from `user` leaves:
 /// simple mobs declare their melee kind; anything else is a blunt blow.

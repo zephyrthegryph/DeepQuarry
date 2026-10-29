@@ -9,7 +9,7 @@
 	var/bitset
 	// Bitfield as it was when the window opened, for the "Cancel" path.
 	var/initial_value
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	var/timeout
 	var/submitted = FALSE
 	var/closed = FALSE
@@ -22,7 +22,7 @@
 	src.allowed_edit_field = allowed_edit_field
 	if(timeout)
 		src.timeout = timeout
-		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+		STAMP(src, start_time, CLOCK_WORLD)
 		expire(timeout)
 
 /datum/tgui_bitfield_input/proc/wait()

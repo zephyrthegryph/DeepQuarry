@@ -28,9 +28,6 @@ impl Resolver for Host {
             _ => ResolvedMeaning::Missing,
         }
     }
-    fn domain_version(&self, _: ReadDomain) -> Option<u128> {
-        Some(self.version.load(Ordering::Relaxed).into())
-    }
 }
 fn write(source: &str, symbols: &mut SymbolTable) -> InitializerWrite {
     let owner = symbols.intern("/").unwrap();

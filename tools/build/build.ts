@@ -77,7 +77,7 @@ import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } fr
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
-import { loadFocusedCompiledOutput, type CapturedCompiledRun } from './lib/focused_compiled_run';
+import { captureFocusedCompiledOutput, loadFocusedCompiledOutput, type CapturedCompiledRun } from './lib/focused_compiled_run';
 import { copyWritableRuntimePair } from './lib/runtime_pair_copy';
 
 import {
@@ -92,6 +92,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
+import { cargoIncrementalEnv, cargoTargetDir, clearIncremental, compilerPanicSignature } from './lib/cargo_ice';
 import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
@@ -111,7 +112,23 @@ export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 /** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a
  * time on the machine, the merge worktree first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
 const cargoExec = (args: string[], options?: any) =>
-  withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => Juke.exec('cargo', args, options), (m) => Juke.logger.info(m));
+  withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => cargoWithIceRetry(args, options), (m) => Juke.logger.info(m));
+
+/** One cargo run, non-incremental unless DQ_CARGO_INCREMENTAL=1 (lib/cargo_ice.ts). If rustc panics ("the compiler unexpectedly
+ * panicked", the corrupt incremental cache ICE) the panic is logged, the target's incremental directories are deleted and the build runs once
+ * more without RUSTC_WRAPPER. Any other failure throws as Juke.exec would. */
+async function cargoWithIceRetry(args: string[], options?: any): Promise<void> {
+  const env = { ...process.env, ...cargoIncrementalEnv(), ...(options?.env ?? {}) };
+  const run = (e: NodeJS.ProcessEnv) => Juke.exec('cargo', args, { ...options, env: e, throw: false });
+  let result = await run(env);
+  if (result.code !== 0 && compilerPanicSignature(result.combined ?? '')) {
+    const target = cargoTargetDir(args, env, path.resolve(options?.cwd ?? '.'));
+    const removed = clearIncremental(target);
+    Juke.logger.warn(`cargo ${args[0]}: rustc panicked; removed ${removed.length} incremental dir(s) under ${target} and retrying once`);
+    result = await run({ ...env, RUSTC_WRAPPER: '', CARGO_BUILD_RUSTC_WRAPPER: '' });
+  }
+  if (result.code !== 0) throw new Error(`cargo ${args[0]} failed (exit ${result.code})`);
+}
 
 export const DME_NAME = 'deepquarry';
 
@@ -225,6 +242,9 @@ export const IconRepackTarget = new Juke.Target({
   // declaring an 'icons/gen/**/*.dmi' output makes Juke try to touch outputs
   // that may not exist yet, crashing the build. Let the python step gate itself.
   executes: async () => {
+    // The wall time is logged beside the repack's own figure: a gap between them is time outside the repack (27 October: 231 s against a
+    // 9.7 s repack, from a synchronous target beside it blocking the event loop; see VerdigrisBindingsCheckTarget).
+    const t0 = Date.now();
     await Juke.exec('python3', [
       '-m', 'tools.dq_icons.build_step',
       '--output', 'icons/gen',
@@ -234,6 +254,7 @@ export const IconRepackTarget = new Juke.Target({
       // dies; Windows does not kill child processes with their parent.
       env: { ...process.env, DQ_BUILD_PID: String(process.pid) },
     });
+    Juke.logger.info(`icon-repack: wall ${((Date.now() - t0) / 1000).toFixed(1)}s (process start to exit)`);
   },
 });
 
@@ -353,6 +374,7 @@ export const ValidateDmeTarget = new Juke.Target({
     // deepquarry.dme — exclude them from the "is it wired into the build" check.
     const EXCLUDED_PREFIXES = [
       'code/modules/unit_tests/',
+      'code/tests/unit_tests/',
     ];
 
     const missing: string[] = [];
@@ -458,9 +480,62 @@ const verdigrisBindingsCheckKey = (): string => {
   return hash.digest('hex');
 };
 const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
+// The shared store of generated bindings by check key (DQ_VG_BINDINGS_CACHE, default E:/dq-cache/vg-bindings; `off` disables it).
+// An entry is the generator's output files for that key; a worktree with the same key copies them in instead of regenerating.
+const VG_BINDINGS_OUTPUTS = [
+  'code/__defines/verdigris/_bindings.dm',
+  'code/__defines/verdigris/_bindings_types.dm',
+  'code/__defines/verdigris/_component_schemas.dm',
+  'verdigris/ffi/src/abi.rs',
+];
+const sharedBindingsRoot = (): string | null => {
+  const env = process.env.DQ_VG_BINDINGS_CACHE;
+  if (env === 'off') return null;
+  if (env) return env;
+  return fs.existsSync('E:/dq-cache') ? 'E:/dq-cache/vg-bindings' : null;
+};
+const sharedBindingsDir = (key: string): string | null => {
+  const root = sharedBindingsRoot();
+  return root ? `${root}/${key.slice(0, 32)}` : null;
+};
+const restoreSharedBindings = (key: string): boolean => {
+  const dir = sharedBindingsDir(key);
+  if (!dir || !fs.existsSync(`${dir}/complete`)) return false;
+  try {
+    for (const rel of VG_BINDINGS_OUTPUTS) {
+      const src = `${dir}/${rel.replace(/\//g, '__')}`;
+      if (!fs.existsSync(src)) continue; // optional output (component schemas) absent for this key
+      const want = fs.readFileSync(src);
+      if (fs.existsSync(rel) && fs.readFileSync(rel).equals(want)) continue;
+      fs.mkdirSync(rel.slice(0, rel.lastIndexOf('/')), { recursive: true });
+      fs.writeFileSync(rel, want);
+      Juke.logger.info(`verdigris bindings: restored ${rel} from the shared store`);
+    }
+    fs.utimesSync(`${dir}/complete`, new Date(), new Date());
+    Juke.logger.info(`verdigris bindings: inputs match a shared check (${dir}); not regenerated`);
+    return true;
+  } catch (e) {
+    Juke.logger.warn(`verdigris bindings: shared store entry ${dir} unusable (${e}); regenerating`);
+    return false;
+  }
+};
+const storeSharedBindings = (key: string): void => {
+  const dir = sharedBindingsDir(key);
+  if (!dir) return;
+  try {
+    const tmp = `${dir}.tmp-${process.pid}`;
+    fs.mkdirSync(tmp, { recursive: true });
+    for (const rel of VG_BINDINGS_OUTPUTS) if (fs.existsSync(rel)) fs.copyFileSync(rel, `${tmp}/${rel.replace(/\//g, '__')}`);
+    fs.writeFileSync(`${tmp}/complete`, new Date().toISOString());
+    if (fs.existsSync(dir)) fs.rmSync(tmp, { recursive: true, force: true });
+    else fs.renameSync(tmp, dir);
+  } catch (e) {
+    Juke.logger.warn(`verdigris bindings: could not store the shared entry (${e})`);
+  }
+};
 
 export const VerdigrisBindingsCheckTarget = new Juke.Target({
-  executes: () => {
+  executes: async () => {
     const full = !!process.env.CI || process.env.DQ_FULL_CHECKS === '1';
     const key = full ? null : verdigrisBindingsCheckKey();
     if (key) {
@@ -475,13 +550,35 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
       } catch {
         // no record yet
       }
+      // Shared across worktrees by the same key (28 October: each train worktree regenerated the same bindings, ~49 s on the
+      // precheck's and the DreamChecker batch's critical path, at every master that added or removed a .dm file).
+      if (restoreSharedBindings(key)) {
+        fs.mkdirSync('data', { recursive: true });
+        fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString(), sharedFrom: sharedBindingsDir(key) }));
+        return;
+      }
     }
-    // The bindings are build output, not committed: write whatever is missing or out of date.
-    const written = generateVerdigrisBindings(process.cwd(), false);
-    if (written.length) Juke.logger.info(`verdigris bindings: wrote ${written.join(', ')}`);
+    // The bindings are build output, not committed: write whatever is missing or out of date. The generator reads every DM file
+    // (minutes on a loaded machine) synchronously; run in this process it blocked Bun's event loop, so the targets beside it (icon-repack:
+    // "231 s" for a 10 s repack on 27 October) could not even see their children exit. A child process keeps them running in parallel.
+    // DQ_VG_BINDINGS_INPROC=1 runs it in this process as before.
+    const t0 = Date.now();
+    if (process.env.DQ_VG_BINDINGS_INPROC === '1') {
+      const written = generateVerdigrisBindings(process.cwd(), false);
+      if (written.length) Juke.logger.info(`verdigris bindings: wrote ${written.join(', ')}`);
+    } else {
+      Juke.logger.info('verdigris bindings: inputs changed; regenerating in a child process');
+      await Juke.exec(process.execPath, ['tools/build/lib/verdigris_bindings.ts']);
+    }
+    Juke.logger.info(`verdigris bindings: regenerated in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
     if (key) {
       fs.mkdirSync('data', { recursive: true });
-      fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString() }));
+      // The generator writes verdigris/ffi/src/abi.rs, one of the key's own inputs: the key after it ran is the one the next run
+      // computes, so it is the one recorded (the key before it ran made the next run regenerate again), and both are shared.
+      const after = verdigrisBindingsCheckKey();
+      fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key: after, checkedAt: new Date().toISOString() }));
+      storeSharedBindings(key);
+      if (after !== key) storeSharedBindings(after);
     }
   },
 });
@@ -819,8 +916,30 @@ export const AnalyzeBuildTarget = new Juke.Target({
 // tree keeps its mtimes and the .dmb caches hold) and caches its parse per file in data/analyze-cache:
 // about 3 s warm, 18 s cold. It fails on a generator diagnostic (a bad declaration) or a generated
 // file missing from deepquarry.dme. DQ_SKIP_GEN=1 skips it (the files must already exist).
+// deepquarry.dme is generated (tools/build/gen_dme.py, from the .dm files on disk and the ordering spec tools/build/dme_spec.txt): every
+// target that compiles or lints DM writes it first, so adding, moving or deleting a file never needs a hand edit of the manifest.
+// The file stays committed (DreamMaker, DreamChecker and CI read it); `gen_dme.py --check` (tools/ci/check_ratchets.sh) fails when the
+// committed one is stale. DQ_DME_GEN=0 leaves the manifest alone (tools/ci/dme_order_equiv.sh compiles a reference order with it).
+export const DmeTarget = new Juke.Target({
+  executes: async () => {
+    if (process.env.DQ_DME_GEN === '0') {
+      Juke.logger.warn(`dme: DQ_DME_GEN=0, not regenerating ${DME_NAME}.dme`);
+      return;
+    }
+    const python = process.platform === 'win32' ? 'python' : 'python3';
+    const result = spawnSync(python, ['tools/build/gen_dme.py'], { encoding: 'utf-8' });
+    const out = `${result.stdout || ''}${result.stderr || ''}`.trim();
+    if (result.error || result.status !== 0) {
+      if (out) console.log(out);
+      Juke.logger.error(`dme: tools/build/gen_dme.py failed${result.error ? ` (${result.error.message})` : ''}; fix tools/build/dme_spec.txt`);
+      throw new Juke.ExitCode(1);
+    }
+    if (out) Juke.logger.info(out);
+  },
+});
+
 export const GenTarget = new Juke.Target({
-  dependsOn: [AnalyzeBuildTarget],
+  dependsOn: [AnalyzeBuildTarget, DmeTarget],
   executes: async () => {
     if (process.env.DQ_SKIP_GEN === '1') {
       Juke.logger.warn('gen: DQ_SKIP_GEN=1, not regenerating code/engine/_generated');
@@ -1545,6 +1664,25 @@ async function runIsolatedTestWorld(
     fs.writeFileSync(`${compilerReceipt.file}.captured-output.json`, `${JSON.stringify(options.capturedRun.evidence, null, 2)}\n`, { flag: 'wx' });
   }
   Juke.logger.info(`Compiler attempt evidence: ${compilerReceipt.file}`);
+  // Compile once per focused run (tools/dq_focused_test.sh): world 0 issues an explicit capture of the pair it just compiled
+  // (lib/focused_compiled_run.ts) to DQ_FOCUSED_CAPTURE_OUT, with its SHA256 beside it; the later worlds of the same run replay it
+  // with --focused-compiled-output instead of a second full native compile (28 October: the daemon's sessions were evicted by its
+  // memory budget in 49 of 64 runs, so every extra world paid 50-111 s for a byte-identical pair).
+  const captureOut = process.env.DQ_FOCUSED_CAPTURE_OUT;
+  if (captureOut && !options.capturedRun && compiled.kind !== 'conventional') {
+    try {
+      // pin a frozen copy of the compile receipt: world 0 finalizes its own receipt when its world ends, which would break the pin
+      const frozenReceipt = path.resolve(`${captureOut}.receipt.json`);
+      fs.copyFileSync(compilerReceipt.file, frozenReceipt, fs.constants.COPYFILE_EXCL);
+      const capture = captureFocusedCompiledOutput(frozenReceipt, compiled, path.resolve(dmbFile), path.resolve(dmbFile.replace(/\.dmb$/, '.rsc')));
+      const text = `${JSON.stringify(capture, null, 2)}\n`;
+      fs.writeFileSync(captureOut, text, { flag: 'wx' });
+      fs.writeFileSync(`${captureOut}.sha256`, `${createHash('sha256').update(text).digest('hex')}\n`, { flag: 'wx' });
+      Juke.logger.info(`focused capture: wrote ${captureOut} for the run's other worlds`);
+    } catch (error) {
+      Juke.logger.warn(`focused capture: not written (${error instanceof Error ? error.message : error}); the other worlds compile their own`);
+    }
+  }
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
   // The copy is named for this process as well as the slot. Slot names are reused, and a previous occupant's file can still be
@@ -1917,10 +2055,10 @@ function classifyDomain(filePath: string): string {
 }
 
 /** The unit-test source files the build includes (`#include`d from
- * code/modules/unit_tests/_unit_tests.dm). A file left out of it declares
+ * code/tests/unit_tests/_unit_tests.dm). A file left out of it declares
  * types the world doesn't have, so the source scans below skip it. */
 function includedUnitTestFiles(): string[] {
-  const dir = 'code/modules/unit_tests';
+  const dir = 'code/tests/unit_tests';
   const text = fs.readFileSync(`${dir}/_unit_tests.dm`, 'utf-8');
   const files: string[] = [];
   for (const match of text.matchAll(/^\s*#include\s+"([^"]+\.dm)"/gm)) {
@@ -3572,12 +3710,39 @@ export const TguiLintTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeCheckTarget, TguiTscTarget],
 });
 
+// DreamChecker needs several GB and aborts ("memory allocation of N bytes failed") when the machine runs short (28 October: OOM with
+// 4.4 GB available). Every run waits until DQ_DC_MIN_AVAIL_GB (default 10) is available (os.freemem() is the OS's available memory,
+// standby cache included), logging the wait each minute; after DQ_DC_MEM_WAIT_MIN (default 30) it runs anyway and says so. 0 = no wait.
+async function waitForDreamCheckerMemory(): Promise<void> {
+  const needGb = Number(process.env.DQ_DC_MIN_AVAIL_GB ?? '10');
+  if (!(needGb > 0)) return;
+  const maxMs = Number(process.env.DQ_DC_MEM_WAIT_MIN ?? '30') * 60_000;
+  const t0 = Date.now();
+  let lastLog = 0;
+  for (;;) {
+    const availGb = os.freemem() / 2 ** 30;
+    if (availGb >= needGb) {
+      if (Date.now() - t0 > 1000) Juke.logger.info(`dream-checker: ${availGb.toFixed(1)} GB available after waiting ${Math.round((Date.now() - t0) / 1000)}s`);
+      return;
+    }
+    if (Date.now() - t0 >= maxMs) {
+      Juke.logger.warn(`dream-checker: still only ${availGb.toFixed(1)} GB available (< ${needGb} GB) after ${Math.round(maxMs / 60_000)} min; running anyway`);
+      return;
+    }
+    if (Date.now() - lastLog >= 60_000) {
+      Juke.logger.info(`dream-checker: waiting for memory: ${availGb.toFixed(1)} GB available, needs ${needGb} GB (DQ_DC_MIN_AVAIL_GB)`);
+      lastLog = Date.now();
+    }
+    await new Promise((r) => setTimeout(r, 5000));
+  }
+}
+
 // run SpacemanDMM dreamchecker before the DM compile if the
 // binary is available. Best-effort: if dreamchecker is not on PATH the target
 // no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
 // local dev can skip it without consequence.
 export const DreamCheckerTarget = new Juke.Target({
-  dependsOn: [GenTarget], // it lints the generated DM too
+  dependsOn: [GenTarget, VerdigrisBindingsCheckTarget], // it lints the generated DM too, and the gitignored verdigris bindings (a stale copy gave a false 'undefined proc vg_world_steps_run')
   inputs: ['code/**/*.dm', 'deepquarry.dme'],
   onlyWhen: () => {
     if (!findDreamChecker()) {
@@ -3589,6 +3754,7 @@ export const DreamCheckerTarget = new Juke.Target({
     return true;
   },
   executes: async () => {
+    await waitForDreamCheckerMemory();
     await runDreamChecker();
     Juke.logger.info('dream-checker: passed'); // the merge gates read this line (tools/dq_merge_gates.sh, job dreamchecker)
   },
@@ -3659,7 +3825,9 @@ export const ServerTarget = new Juke.Target({
         ddSecurityFlag(),
         '-invisible',
         '-params',
-        'config-directory=config/example',
+        // dd_log=1: an -invisible world has no console, so the world writes world.log (every runtime) to the round's dd.log.
+        // DQ_SERVER_CONFIG_DIR picks another config folder (a local copy with AUTO_PROFILE on profiles the boot, for example).
+        `config-directory=${process.env.DQ_SERVER_CONFIG_DIR || 'config/example'}&dd_log=1`,
       );
     } finally {
       webroot.kill();

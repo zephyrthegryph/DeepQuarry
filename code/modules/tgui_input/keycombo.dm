@@ -14,7 +14,7 @@
 	/// The prompt's body, if any, of the TGUI window.
 	var/message
 	/// The time at which the number input was created, for displaying timeout progress.
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	/// The lifespan of the number input, after which the window will close and delete itself.
 	var/timeout
 	/// The title of the TGUI window
@@ -29,7 +29,7 @@
 	src.state_static = ui_state
 	if (timeout)
 		src.timeout = timeout
-		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+		STAMP(src, start_time, CLOCK_WORLD)
 		expire(timeout)
 
 /**

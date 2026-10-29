@@ -33,7 +33,6 @@
 	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier
 	loot_list = list(/obj/item/material/knife/tacknife = 100)	// Might as well give it the knife
 
-	say_list_type = /datum/say_list/merc
 
 	// Grenade special attack vars
 	var/grenade_type = /obj/item/grenade/concussion
@@ -68,7 +67,7 @@
 	ai_busy_begin()
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
-		G.throw_at(A, G.throw_range, motion_of(G).throw_speed, src)
+		G.throw_at(A, motion_of(G).throw_range, motion_of(G).throw_speed, src)
 		G.set_det_time(grenade_timer)
 		G.activate(src)
 		special_attack_charges = max(special_attack_charges-1, 0)
@@ -332,7 +331,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag)
 			shoot(A) //Perform the shoot action
 			if(casingtype) //If the mob is designated to leave casings...
 				new casingtype(loc) //... leave the casing.
-			EXPIRY_SET(src, ranged_cooldown, ranged_cooldown_time + ((injury_level / 2) SECONDS), CLOCK_WORLD) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
+			COOLDOWN_START(src, ranged_cooldown, ranged_cooldown_time + ((injury_level / 2) SECONDS)) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
 		return TRUE	//End these commands here.
 	// ition End
 
@@ -505,7 +504,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/tommylas)
 	icon_state = "syndi-ranged-space-sup"
 	icon_living = "syndi-ranged-space-sup"
 	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=100" // this is the merc rig's stats
-	say_list_type = /datum/say_list/merc/elite
 	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor // it's high velocity
 	projectilesound = SFX_WEAPONS_DOOMPISTOL // converted from .wavs extracted from doom 2
 	reload_max = 30 // extended mags
@@ -526,6 +524,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/tommylas)
 
 // being Actual Professionals, they have better (read: player-level) blocking chances
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor)
+	configure(living_rules(say_list_type = /datum/say_list/merc/elite))
 	configure(mob_kind(attack_cooldown = 3))
 	op("suppressor_item", item(/obj/item), then(PROC_REF(suppressor_interaction_item)))
 

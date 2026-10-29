@@ -3,7 +3,6 @@
 
 GLOBAL_LIST_INIT(admin_departments, list("[using_map.boss_name]", "Solar Central Government", "Central Command Job Boards", "Supply"))
 GLOBAL_LIST_EMPTY(alldepartments)
-GLOBAL_VAR(last_fax_role_request)
 
 // The links in the admin message point at these copies, so the cache keeps them (bounded by admin_fax_keep()).
 GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
@@ -80,8 +79,7 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 
 /// The staff request is open: the global relays are not recalibrating after the last request.
 /obj/machinery/photocopier/faxmachine/proc/role_request_ready(datum/act/op/A)
-	var/last_request = read_once(GLOB.last_fax_role_request)
-	return (!last_request || ELAPSED_SINCE(src, last_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
+	return read_once(SSjob.role_request_cooling_down()) ? MSG(fax/relays_recalibrating) : null
 
 /// The jobs a fax may request (the talon's offmap crew on its own fax).
 /obj/machinery/photocopier/faxmachine/proc/requestable_jobs(datum/act/A)
@@ -162,7 +160,7 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 	message_color = ping_dept.color
 
 	message_chat_rolerequest(message_color, ping_name, reason, role)
-	GLOB.last_fax_role_request = EXPIRY_AT(src, CLOCK_WORLD, 0)
+	SSjob.note_role_request()
 	to_chat(L, span_notice("Your request was transmitted."))
 	return OP_OK
 
@@ -531,14 +529,14 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 
 /obj/machinery/photocopier/faxmachine/proc/message_admins(mob/sender, faxname, obj/item/sent, reply_type, font_colour="#006100")
 	var/msg = "<font color='[font_colour]'>[faxname]: </font>[get_options_bar(sender, 2,1,1)]"
-	msg += "(<a href='byond://?_src_=holder;[HrefToken()];FaxReply=\ref[sender];originfax=\ref[src];replyorigin=[reply_type]'>REPLY</a>)"
+	msg += "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];FaxReply=[REF(sender)];originfax=[REF(src)];replyorigin=[reply_type]'>REPLY</a>)"
 	msg = span_bold(msg) + ": "
-	msg += "Receiving '[sent.name]' via secure connection ... <a href='byond://?_src_=holder;[HrefToken(TRUE)];AdminFaxView=\ref[sent]'>view message</a>"
+	msg += "Receiving '[sent.name]' via secure connection ... <a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];AdminFaxView=[REF(sent)]'>view message</a>"
 	msg = span_notice(msg)
 
 	for(var/client/C in GLOB.admins)
 		if(check_rights_for(C, (R_ADMIN|R_MOD|R_EVENT)))
-			to_chat(C,msg)
+			to_chat(C, msg) // its links carry HREF_TOKEN_PLACEHOLDER, which the chat system fills with each admin's own token
 			C << 'sound/machines/printer.ogg'
 	sender.client << 'sound/machines/printer.ogg' // The pain must be felt
 

@@ -7,7 +7,7 @@
 //	/mob/living/life_steps()
 //		. = ..()
 //		. += seq_step(PROC_REF(life_breathing), after = LIFE_INPUT, when = list("placed", "alive"),
-//			reads = list(MOB_KEY_LOC, nameof(losebreath)), should_run = PROC_REF(life_breathing_due))
+//			reads = list(MOB_KEY_LOC, nameof(stat)), should_run = PROC_REF(life_breathing_due))
 //
 // A subtype changes a step by overriding its proc (with ..() for the parent's code): that is what the pipeline
 // runner's families, variants and plans did. An entity's composed table is its type's table proc, plus the same

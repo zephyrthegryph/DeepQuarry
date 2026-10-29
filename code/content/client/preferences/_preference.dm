@@ -42,8 +42,9 @@
 /// For instance, hair color being supplemental to hair.
 #define SUPPLEMENTAL_FEATURE_KEY "supplemental_feature"
 
-/// An assoc list list of types to instantiated `/datum/preference` instances
-GLOBAL_LIST_INIT(preference_entries, init_preference_entries())
+/// An assoc list list of types to instantiated `/datum/preference` instances.
+/// Keeps the singletons if pref_metadata_table initialized first and already tagged them.
+GLOBAL_LIST_INIT(preference_entries, preference_entries || init_preference_entries())
 
 /// An assoc list of preference entries by their `savefile_key`
 GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
@@ -255,10 +256,14 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 /datum/preferences/proc/get_save_data_for_savefile_identifier(savefile_identifier)
 	RETURN_TYPE(/list)
 
-	if(!client())
-		return null
+	// Keyed on the savefile, not on client(): a prefs datum outlives its client (disconnects,
+	// round-end persistence on GLOB.preferences_datums, headless loads), and gating on client()
+	// made load_character() fill the cache with defaults (a random real_name, age 18, unset
+	// birthday) while the save on disk still held the character.
 	if(!savefile)
-		CRASH("Attempted to get the savedata for [savefile_identifier] of [client()] without a savefile. This should have been handled by load_preferences()")
+		if(client())
+			CRASH("Attempted to get the savedata for [savefile_identifier] of [client()] without a savefile. This should have been handled by load_preferences()")
+		return null
 
 	// Both of these will cache savefiles, but only for a tick.
 	// This is because storing a savefile will lock it, causing later issues down the line.

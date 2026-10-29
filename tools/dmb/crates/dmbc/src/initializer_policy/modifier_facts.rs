@@ -218,8 +218,8 @@ impl Resolver for Host<'_> {
     fn resolve(&self, q: ResolveQuery) -> dm_ir::ResolvedMeaning {
         self.0.resolve(q)
     }
-    fn domain_version(&self, d: dm_ir::ReadDomain) -> Option<u128> {
-        self.0.domain_version(d)
+    fn answer_world(&self) -> Option<u128> {
+        self.0.answer_world()
     }
 }
 pub(super) fn keys(
@@ -244,33 +244,40 @@ pub(super) fn keys_in(
     };
     let produce = || {
         let mut duplicates = std::collections::HashMap::<Vec<u8>, usize>::new();
+        let context_digest = {
+            let mut context = b"dmbc-modifier-fact-v3-context-digest\0".to_vec();
+            context.extend_from_slice(&reuse.policy.to_le_bytes());
+            context.extend_from_slice(&policy.to_le_bytes());
+            match reuse.resource_search_context {
+                Some(value) => {
+                    context.push(1);
+                    context.extend_from_slice(&value.to_le_bytes());
+                }
+                None => context.push(0),
+            }
+            match factory.engine {
+                Some(engine) => {
+                    context.push(1);
+                    context.extend_from_slice(&engine.identity().to_le_bytes());
+                }
+                None => context.push(0),
+            }
+            xxhash_rust::xxh3::xxh3_128(&context)
+        };
         let keys = writes
             .iter()
             .map(|write| {
-                let mut key = b"dmbc-modifier-fact-v2-exact-input\0".to_vec();
-                key.extend_from_slice(&reuse.policy.to_le_bytes());
-                key.extend_from_slice(&policy.to_le_bytes());
-                match reuse.resource_search_context {
-                    Some(context) => {
-                        key.push(1);
-                        key.extend_from_slice(&context.to_le_bytes());
-                    }
-                    None => key.push(0),
-                }
-                match factory.engine {
-                    Some(engine) => {
-                        key.push(1);
-                        key.extend_from_slice(&engine.identity().to_le_bytes());
-                    }
-                    None => key.push(0),
-                }
+                // Digest of the parts every write of this classification shares; see `classification::artifact::key`.
+                let mut key = Vec::with_capacity(64);
+                key.push(3);
+                key.extend_from_slice(&context_digest.to_le_bytes());
                 // The existing certified evaluator may inspect any write field. Full exact
                 // inputs avoid inventing a weaker modifier-only policy contract.
                 key.extend_from_slice(&crate::initializer_lowering::receipts::fragment_locator(
                     write,
                 ));
                 let duplicate = duplicates.entry(key.clone()).or_default();
-                key.extend_from_slice(&(*duplicate as u128).to_le_bytes());
+                key.extend_from_slice(&(*duplicate as u32).to_le_bytes());
                 *duplicate += 1;
                 classification::token_roster::preparation::shared_locator(key, write)
             })
@@ -372,17 +379,14 @@ pub(super) fn modifier_facts_reused_in<'a>(
         if captured {
             let _ = keys[ordinal].admitted.set(Arc::clone(&keys[ordinal].input));
             let reads = recording.reads();
-            let versions = recording.domain_receipts();
             if let Some(weight) = crate::heap_census::resident_modifier_weight(
                 &keys[ordinal].input,
                 &keys[ordinal].bytes,
                 &reads,
-                &versions,
             ) {
                 reuse.store.modifiers.values.insert_current_qualified_with(
                     keys[ordinal].bytes.clone().into(),
                     reads.into(),
-                    versions.into(),
                     weight,
                     || ModifierArtifact {
                         input: Arc::clone(&keys[ordinal].input),

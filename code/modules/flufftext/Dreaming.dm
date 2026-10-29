@@ -49,16 +49,14 @@
 	var/datum/dream/chosen_dream = pick_weight(GLOB.dreams)
 
 	add_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
-	shared_set(src, nameof(current_dream), chosen_dream)
+	sparse_set(src, current_dream, chosen_dream)
 	sparse_set_or(src, dream_wait, 0, 0)
 	set_dream_fragments(chosen_dream.GenerateDream(src))
 
 /// The dream fragments still to show, in order. dream_sequence() shows one every `dream_wait` while set (its every() in
 /// CAPABILITIES(/mob/living/carbon)).
 /mob/living/carbon/var/tmp/list/dream_fragments = null // ALLOW(base_vars): was a declared field on this type; moved, not added
-/// The dream datum of the current dream.
-/mob/living/carbon/var/tmp/datum/dream/current_dream
-/// Dreams are GLOB.dreams singletons: a mob's current_dream is shared, never owned.
+/// Dreams are GLOB.dreams singletons: a mob's current_dream (a sparse slot, code/datums/sparse_vars/mob_state.dm) is shared, never owned.
 REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 
 /proc/registry_dream(datum/D)
@@ -90,7 +88,8 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 
 	if(LAZYLEN(dream_fragments))
 		sparse_set_or(src, dream_wait, rand(10, 30), 0)
-		if(current_dream?.sleep_until_finished)
+		var/datum/dream/active_dream = sparse_get(src, current_dream)
+		if(active_dream?.sleep_until_finished)
 			status_adjust(STAT_SLEEPING, sparse_get_or(src, dream_wait, 0))
 	else
 		end_dream()
@@ -99,8 +98,8 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 /// Ends the current dream: the trait goes and the dream datum is told.
 /mob/living/carbon/proc/end_dream()
 	remove_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
-	var/datum/dream/ended = current_dream
-	shared_set(src, nameof(current_dream), null)
+	var/datum/dream/ended = sparse_get(src, current_dream)
+	sparse_set(src, current_dream, null)
 	set_dream_fragments(null)
 	ended?.OnDreamEnd(src)
 

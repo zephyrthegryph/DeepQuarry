@@ -10,7 +10,7 @@
 	icon_state = "nanomachine_rig"
 	interface_intro = "Protean"
 	armor_spec = "bio=100;rad=100"
-	slowdown = 0
+	worn_factors = null
 	offline_slowdown = 0
 	seal_delay = 0
 	/// The protean character this cluster belongs to. While folded, it is inside us.
@@ -71,18 +71,19 @@
 /// through the protean's injure(), aimed at the core, like every other hit on
 /// the cluster (take_damage()). The cluster's own integrity never moves. An
 /// orphaned cluster is just an object.
-/obj/item/rig/protean/ex_act(severity)
-	if(!myprotean || QDELETED(src))
-		return ..()
-	var/band = round(severity)
+/obj/item/rig/protean/proc/rig_has_protean(datum/act/A)
+	return myprotean && !QDELETED(src)
+
+/obj/item/rig/protean/proc/rig_blast(datum/act/hit/explosion/A)
+	var/band = round(A.packet.severity)
 	var/static/list/blast_blunt = list(120, 60, 25)
 	var/static/list/blast_burn = list(60, 30, 10)
 	if(band < 1 || band > length(blast_blunt))
-		return
+		return OP_OK
 	var/taken = myprotean.injure(INJURY_BLUNT, blast_blunt[band], BP_TORSO, src)
 	taken += myprotean.injure(INJURY_BURN, blast_burn[band], BP_TORSO, src)
 	log_attack("PROTEAN RIG: [src] caught a severity [band] explosion; [key_name(myprotean)] took [taken].")
-	return taken
+	return OP_OK
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The rig becomes that protean's control cluster.
 /obj/item/rig/protean/proc/bind_protean(mob/living/carbon/human/P)
@@ -146,6 +147,7 @@ MSG_DEF_SELF(protean_rig/module_class, "The hardsuit already has a module of tha
 MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
 
 CAPABILITIES(/obj/item/rig/protean)
+	extend(/datum/act/hit/explosion, instead(when(PROC_REF(rig_has_protean)), then(PROC_REF(rig_blast))))
 	ref_one(nameof(soaking_wearer), /mob/living/carbon/human)
 	ref_one(nameof(assimilated_rig), /obj/item/rig)
 	configure(item_worn(flags = NOSTRIP))
@@ -515,7 +517,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 	set_armor(dq_armor_none())
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
 		piece.set_armor(dq_armor_none())
-	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, PROTEAN_RIG_INERT_SLOWDOWN)
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	wearer()?.worn_protection_changed()
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
@@ -532,10 +534,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 		piece.set_armor(restored)
 	wearer()?.worn_protection_changed()
 	if(istype(R))
-		slowdown = initial(R.slowdown) * 0.5
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, R.default_worn_factor(STAT_ITEM_ENCUMBRANCE) * 0.5)
 	else
-		slowdown = initial(slowdown)
-	offline_slowdown = slowdown
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
+	offline_slowdown = worn_factor(STAT_ITEM_ENCUMBRANCE)
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] woke at [AREACOORD(src)].")
 
 /// The unconfigured cluster's armour.
@@ -658,8 +660,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 	user.drop_item(R)
 	R.forceMove(src)
 	rel_set(src, nameof(assimilated_rig), R)
-	slowdown = (initial(R.slowdown) *0.5)
-	offline_slowdown = slowdown
+	set_worn_factor(STAT_ITEM_ENCUMBRANCE, (R.default_worn_factor(STAT_ITEM_ENCUMBRANCE) *0.5))
+	offline_slowdown = worn_factor(STAT_ITEM_ENCUMBRANCE)
 
 /// Old verb "Remove Assimilated Rig".
 /obj/item/rig/protean/proc/protean_removerig_verb(datum/act/op/A)
@@ -686,7 +688,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 		boots.set_sprite_sheets_obj(tempRig.boots.sprite_sheets.Copy())
 		chest.set_sprite_sheets(tempRig.chest.sprite_sheets.Copy())
 		chest.set_sprite_sheets_obj(tempRig.chest.sprite_sheets.Copy())
-		slowdown = initial(slowdown)
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
 		name = tempRig.name
 		set_icon(tempRig.icon) // Reset the icon back to its original
 		set_icon_state(tempRig.icon_state)

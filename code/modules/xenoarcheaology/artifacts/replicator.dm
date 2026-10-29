@@ -9,7 +9,7 @@
 
 	var/spawn_progress_time = 0
 	var/max_spawn_time = 50
-	EXPIRY_DECLARE(last_process_time)
+	var/last_process_time = 0
 
 	var/list/construction
 	var/list/spawning_types = list() // ALLOW(instance_list): d: filled in New() with the replicator's output table
@@ -116,7 +116,7 @@
 		last_process_time = 0
 		return work_wait_for_power(src)
 	if(!last_process_time)
-		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
+		STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)
@@ -145,7 +145,7 @@
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
 
-	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
+	STAMP(src, last_process_time, CLOCK_WORLD)
 
 CAPABILITIES(/obj/machinery/replicator)
 	rolls(nameof(construction), PROC_REF(roll_construction))
@@ -255,7 +255,7 @@ CAPABILITIES(/obj/machinery/replicator)
 		last_process_time = 0
 		return work_wait_for_power(src)
 	if(!last_process_time)
-		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
+		STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)
@@ -299,7 +299,7 @@ CAPABILITIES(/obj/machinery/replicator)
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
 
-	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
+	STAMP(src, last_process_time, CLOCK_WORLD)
 
 
 /// Requirement: also no possessed or vore-blacklisted items.
@@ -484,7 +484,7 @@ CAPABILITIES(/obj/machinery/replicator)
 		last_process_time = 0
 		return work_wait_for_power(src)
 	if(!last_process_time)
-		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
+		STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)
@@ -522,7 +522,7 @@ CAPABILITIES(/obj/machinery/replicator)
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
 
-	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
+	STAMP(src, last_process_time, CLOCK_WORLD)
 
 /// Requirement: also no possessed or vore-blacklisted items.
 /obj/machinery/replicator/clothing/insert_refusal(datum/act/op/A)

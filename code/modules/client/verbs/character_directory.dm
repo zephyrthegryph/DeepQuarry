@@ -57,11 +57,14 @@ CAPABILITIES(/datum/character_directory)
 
 GLOBAL_LIST_EMPTY(chardirectory_photos)
 /mob/proc/set_chardirectory_photo(base64)
-	LAZYSET(GLOB.chardirectory_photos, REF(src), base64)
+	var/key = ref_token(src)
+	if(key)
+		LAZYSET(GLOB.chardirectory_photos, key, base64)
 
 /mob/proc/get_chardirectory_photo()
-	if(LAZYACCESS(GLOB.chardirectory_photos, REF(src)))
-		return LAZYACCESS(GLOB.chardirectory_photos, REF(src))
+	var/cached = LAZYACCESS(GLOB.chardirectory_photos, ref_token(src))
+	if(cached)
+		return cached
 
 	var/icon/F = getFlatIcon(src, defdir = SOUTH, no_anim = TRUE)
 	var/new_base64 = "'data:image/png;base64,[icon2base64(F)]'"
@@ -120,7 +123,7 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 					if(!find_record("name", H.real_name, GLOB.data_core.hidden_general))
 						strangername = "unknown"
 			name = strangername
-			species = "[H.custom_species ? H.custom_species : H.species.name]"
+			species = "[H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 			ooc_notes = H.identity().ooc_notes
 			if(H.identity().ooc_notes_style && (H.identity().ooc_notes_favs || H.identity().ooc_notes_likes || H.identity().ooc_notes_maybes || H.identity().ooc_notes_dislikes))
 				ooc_notes = H.identity().ooc_notes + "\n\n"

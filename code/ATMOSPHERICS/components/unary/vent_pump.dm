@@ -16,7 +16,6 @@
 	power_rating = 30000 // 7500 W ~ 10 HP // 30000 W
 
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY //connects to regular and supply pipes
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 	level = 1
 	/// Its radio tag (area_air_device()): a map gives it, else it is made unique.
@@ -42,6 +41,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(prepare_vent_renderer))
 	configure(uses_power(idle = 150))
 	area_air_device(AREA_AIR_VENT, status = PROC_REF(status_fields), commands = list(
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 	rust_set_device_flow(0, RUST_FLOW_VOLUME, vent_volume * 50, RUST_DIR_FORCED, stop_side, stop_cmp, stop_kpa, RUST_SIDE_B, limit_cmp, limit_kpa) // ALLOW(derived_reads): vent_volume is fixed by the type; use_power and operability bump rust_device_rev
 
 /obj/machinery/atmospherics/unary/vent_pump/rust_device_stepped(moles, power_w, target_reached)
-	set_last_flow_rate(abs(moles))
+	atmos_note_flow_rate(src, abs(moles))
 
 /// The Rust law is pushed (once per frame) when any of these change: rust_device_rev is bumped by a power change, a port bind and a disconnect.
 /obj/machinery/atmospherics/unary/vent_pump/derived()

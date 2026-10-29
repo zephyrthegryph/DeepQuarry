@@ -82,13 +82,13 @@ fn answer(symbols: &SymbolTable, meaning: &ResolvedMeaning) -> Result<Value, Exp
                 &M::Member {
                     owner: identity.owner,
                     name: identity.name,
-                    fingerprint: 0,
+                    fingerprint: 0.into(),
                     data: data.clone(),
                 },
             )?;
             metadata.as_object_mut().unwrap().remove("fingerprint");
             metadata["kind"] = json!("declaration_metadata");
-            json!({"status":"known","kind":"declaration","owner":symbol(symbols,identity.owner),"name":symbol(symbols,identity.name),"verb":identity.verb,"occurrence":identity.occurrence,"definition":format!("{definition:?}"),"previous":previous.map(|id|json!({"owner":symbol(symbols,id.owner),"name":symbol(symbols,id.name),"verb":id.verb,"occurrence":id.occurrence})),"metadata":metadata})
+            json!({"status":"known","kind":"declaration","owner":symbol(symbols,identity.owner),"name":symbol(symbols,identity.name),"verb":identity.verb,"occurrence":identity.occurrence,"definition":format!("{definition:?}"),"previous":previous.as_deref().map(|id|json!({"owner":symbol(symbols,id.owner),"name":symbol(symbols,id.name),"verb":id.verb,"occurrence":id.occurrence})),"metadata":metadata})
         }
         M::Resource { path, content } => {
             json!({"status":"known","kind":"resource","path":symbol(symbols,*path),"content":format!("{content:032x}")})
@@ -125,14 +125,6 @@ pub fn write_queries_jsonl<'a>(
     let mut count = 0;
     for query in queries {
         let meaning = resolver.resolve(query.query);
-        let domain_version = resolver.domain_version(query.query.domain());
-        let domain_version_scope = domain_version.map(|_| {
-            if query.query.domain().persistent_version() {
-                "persistent"
-            } else {
-                "process_local"
-            }
-        });
         let domain = match query.query.domain() {
             ReadDomain::Tree => "tree",
             ReadDomain::ResourceSearch => "resource_search",
@@ -148,7 +140,7 @@ pub fn write_queries_jsonl<'a>(
             writer,
             json!({"row":"resolved_query","schema":"dm-resolved-query-v1","subject":query.subject,
             "query_wire":serde_json::to_string(&query.query).map_err(ExportError::Json)?,
-            "domain":domain,"domain_qualification":serde_json::to_value(query.query.domain()).map_err(ExportError::Json)?,"domain_version":domain_version.map(|version|format!("{version:032x}")),"domain_version_scope":domain_version_scope,
+            "domain":domain,"domain_qualification":serde_json::to_value(query.query.domain()).map_err(ExportError::Json)?,
             "meaning_fingerprint":format!("{:032x}",xxhash_rust::xxh3::xxh3_128(&meaning.canonical_bytes())),
             "answer":answer(symbols,&meaning)?}),
         )?;

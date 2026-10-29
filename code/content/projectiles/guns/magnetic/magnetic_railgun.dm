@@ -1,13 +1,11 @@
 /obj/item/gun/magnetic/railgun
 	name = "railgun"
 	desc = "The Mars Military Industries MI-76 Thunderclap. A man-portable mass driver for squad support anti-armour and destruction of fortifications and emplacements."
-	description_fluff = "Mars Military Industries is a Hephaestus Industries subsidiary focused on the development of new energy-ballistic hybrid weapons for use against heavy targets. \
-	The distribution of MMI weapons is understandably tightly tracked and controlled."
 	gun_unreliable = 0
 	icon_state = "railgun"
 	power_cost = 300
 	w_class = ITEMSIZE_HUGE
-	slowdown = 1	// Slowdown equals slowdown_worn, until we decide to import the system to differentiate between held and worn items
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1) // Slowdown equals slowdown_worn, until we decide to import the system to differentiate between held and worn items
 	fire_delay = 1
 
 	load_type = /obj/item/rcd_ammo
@@ -23,6 +21,8 @@
 	var/empty_sound = SFX_MACHINES_TWOBEEP
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun)
+	configure(atom_rules(description_fluff = "Mars Military Industries is a Hephaestus Industries subsidiary focused on the development of new energy-ballistic hybrid weapons for use against heavy targets. \
+	The distribution of MMI weapons is understandably tightly tracked and controlled."))
 	setup(PROC_REF(magnetic_railgun_setup))
 	configure(item_worn(slots = SLOT_BELT))
 
@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun)
 	capacitor = /obj/item/stock_parts/capacitor
 	fire_delay = 0.1
 
-	slowdown = 2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	slowdown_held = 3
 	slowdown_worn = 2
 
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/automatic)
 
 	w_class = ITEMSIZE_HUGE //.
 
-	slowdown = 0
+	worn_factors = null
 	slowdown_held = 0
 	slowdown_worn = 0
 
@@ -116,8 +116,6 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
 /obj/item/gun/magnetic/railgun/flechette/pistol
 	name = "flechette pistol"
 	desc = "The MI-6a Ullr is a small-form-factor railgun that fires flechette rounds at high velocity. Deadly against armour, but much less effective against soft targets."
-	description_fluff = "Mars Military Industries is a Hephaestus Industries subsidiary focused on the development of new energy-ballistic hybrid weapons for use against heavy targets. \
-	The distribution of MMI weapons is understandably tightly tracked and controlled."
 	icon_state = "railpistol"
 	item_state = "combatrevolver"
 	w_class = ITEMSIZE_SMALL
@@ -130,7 +128,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
 	move_delay = 0 // Pistols have move_delay of 0
 
 
-	slowdown = 0
+	worn_factors = null
 	slowdown_held = 0
 	slowdown_worn = 0
 
@@ -146,13 +144,13 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
 	)
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
+	configure(atom_rules(description_fluff = "Mars Military Industries is a Hephaestus Industries subsidiary focused on the development of new energy-ballistic hybrid weapons for use against heavy targets. \
+	The distribution of MMI weapons is understandably tightly tracked and controlled."))
 	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/gun/magnetic/railgun/heater
 	name = "coil rifle"
 	desc = "A large rifle designed and produced after the Grey Hour."
-	description_fluff = "The Hephaestus MI-51B is a weapon designed by Mars Military Industries - a Hephaestus subsidiary - in the days after the Grey Hour, in preparation for the need for updated equipment by Solar forces.<br>\
-		The design is based upon a larger rail-type weapon design."
 	icon_state = "railgun_sec"
 	item_state = "cshotgun"
 
@@ -164,7 +162,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
 
 	w_class = ITEMSIZE_HUGE //.
 
-	slowdown = 0
+	worn_factors = null
 	slowdown_held = 0.3
 	slowdown_worn = 0
 
@@ -179,13 +177,13 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
 		)
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun/heater)
+	configure(atom_rules(description_fluff = "The Hephaestus MI-51B is a weapon designed by Mars Military Industries - a Hephaestus subsidiary - in the days after the Grey Hour, in preparation for the need for updated equipment by Solar forces.<br>\
+		The design is based upon a larger rail-type weapon design."))
 	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/magnetic/railgun/heater/pistol
 	name = "coil pistol"
 	desc = "A large pistol designed and produced after the Grey Hour."
-	description_fluff = "The MI-60D `Peacemaker` is a weapon designed by Mars Military Industries - a Hephaestus subsidiary - in the days after the Grey Hour, in preparation for the need for updated equipment by Solar forces.<br>\
-		The design is based upon a larger rail-type hybrid weapon design, though much smaller in scale."
 	icon_state = "peacemaker"
 	item_state = "revolver"
 
@@ -205,6 +203,8 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/heater)
 		)
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun/heater/pistol)
+	configure(atom_rules(description_fluff = "The MI-60D `Peacemaker` is a weapon designed by Mars Military Industries - a Hephaestus subsidiary - in the days after the Grey Hour, in preparation for the need for updated equipment by Solar forces.<br>\
+		The design is based upon a larger rail-type hybrid weapon design, though much smaller in scale."))
 	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 
 /obj/item/gun/magnetic/railgun/heater/pistol/hos
@@ -212,17 +212,18 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/heater/pistol)
 
 	dna_lock = TRUE
 
-	description_antag = "This weapon starts with a DNA locking chip attached. Using an EMAG on the weapon will disarm it, and allow you to use the chip as your own."
 
 	firemodes = list(
 		list(mode_name="lethal", power_cost = 400, projectile_type = /obj/item/projectile/bullet/magnetic/heated, burst=1, fire_delay=8, move_delay=null, one_handed_penalty=0),
 		list(mode_name="stun", power_cost = 300, projectile_type = /obj/item/projectile/energy/electrode/strong, burst=1, fire_delay=5, move_delay=null, one_handed_penalty=0),
 		)
 
+CAPABILITIES(/obj/item/gun/magnetic/railgun/heater/pistol/hos)
+	configure(atom_rules(description_antag = "This weapon starts with a DNA locking chip attached. Using an EMAG on the weapon will disarm it, and allow you to use the chip as your own."))
+
 /obj/item/gun/magnetic/railgun/flechette/sif
 	name = "shredder rifle"
 	desc = "The MI-12B Kaldr is a burst fire capable coilgun that fires modified slugs intended for damaging soft targets."
-	description_fluff = "The Lawson Kaldr is a weapon recently deployed to various outposts on Sif, as well as local hunting guilds for the rapid dispatching of invasive wildlife."
 	icon_state = "railgun_sifguard"
 	item_state = "z8carbine"
 
@@ -243,13 +244,13 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/heater/pistol)
 		)
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/sif)
+	configure(atom_rules(description_fluff = "The Lawson Kaldr is a weapon recently deployed to various outposts on Sif, as well as local hunting guilds for the rapid dispatching of invasive wildlife."))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 
 /obj/item/gun/magnetic/railgun
 	name = "WKHM 'Strzyga' railgun"
 	desc = "A devastatingly powerful, and very expensive railgun built for long range engagements, and anti vehicle applications. Possibly one of the most powerful handheld weapons to date. Capable of punching a hole clean through a durasteel wall. The last thing the enemy will never see. 'DO NOT TOUCH THE RAILS' is stickered on the receiver. Chambers 16.5x122mm slugs. "
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "railgun-e"
 	icon_expected_width = 64

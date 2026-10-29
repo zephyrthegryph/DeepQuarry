@@ -91,7 +91,7 @@ Candidate next landing: **118 rows**, **60 files**. The three machinery.dm remot
 | code/modules/mining/resonator.dm | 1 | `resonance_allowed` |
 | code/modules/reagents/machinery/chem_master.dm | 4 | `makes_drugs` |
 | code/modules/reagents/machinery/dispenser/dispenser2.dm | 2 | `not_broken` |
-| code/modules/reagents/machinery/pump.dm | 1 | `battery_panel_open`, `no_cell` |
+| code/content/reagents/machinery/pump.dm | 1 | `battery_panel_open`, `no_cell` |
 | code/modules/reagents/reagent_containers/glass.dm | 1 | `/obj/item/reagent_containers, blood_test_fits` |
 | code/modules/reagents/reagent_containers/syringes.dm | 1 | `may_stab` |
 | code/modules/refinery/core/industrial_reagent_filter.dm | 2 | `dq_actor_can_act_holds` |

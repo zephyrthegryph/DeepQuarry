@@ -1,0 +1,93 @@
+/datum/category_item/catalogue/fauna/dustjumper
+	name = "Alien Wildlife - Dust Jumper"
+	desc = "A small, quick creature, the dust jumper is a rare space creature.\
+			They have striking similarities to the common mouse, but these creatures are actually most commonly found in space.\
+			They are known to make their homes in asteroids, and leap from one to another when food is scarce.\
+			Dust jumpers are omnivorous, eating what scraps of organic material they can get their little paws on.\
+			They hybernate during long floats through space."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/mob/living/simple_mob/vore/alienanimals/dustjumper
+	name = "dust jumper"
+	desc = "A small, unassuming mammal. It looks quite soft and fluffy, and has bright blue eyes."
+	catalogue_data = list(/datum/category_item/catalogue/fauna/dustjumper)
+
+	icon = 'icons/mob/alienanimals_x32.dmi'
+	icon_state = "space_mouse"
+	icon_living = "space_mouse"
+	icon_dead = "space_mouse_dead"
+
+	faction = FACTION_SPACE_MOUSE
+	endurance = 20
+	movement_cooldown = -1
+
+	see_in_dark = 10
+
+	response_help  = "pets"
+	response_disarm = "pushes"
+	response_harm   = "punches"
+
+	has_langs = list(LANGUAGE_MOUSE)
+
+	melee_damage_lower = 1
+	melee_damage_upper = 2
+	attacktext = list("nipped", "squeaked at", "hopped on", "kicked")
+
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+	maxbodytemp = 900
+
+	speak_emote = list("squeaks")
+
+
+	vore_active = 1
+	vore_bump_chance = 0
+	vore_ignores_undigestable = 0
+	vore_default_mode = DM_DRAIN
+	vore_icons = SA_ICON_LIVING
+	vore_stomach_name = "stomach"
+	vore_default_contamination_flavor = "Wet"
+	vore_default_contamination_color = "grey"
+	vore_default_item_mode = IM_DIGEST
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/dustjumper)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/mouse))
+	configure(mob_rules(universal_understand = 1))
+
+/mob/living/simple_mob/vore/alienanimals/dustjumper/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "You've been packed into the impossibly tight stomach of the dust jumper!!! The broiling heat seeps into you while the walls churn in powerfully, forcing you to curl up in the darkness."
+	B.set_mode_flags(DM_FLAG_THICKBELLY | DM_FLAG_NUMBING)
+	B.set_digest_brute(0.5)
+	B.set_digest_burn(0.5)
+	B.set_digestchance(10)
+	B.set_absorbchance(0)
+	B.set_escapechance(25)
+
+/mob/living/simple_mob/vore/alienanimals/dustjumper/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/vore/alienanimals/dustjumper/life_type_post(datum/seq_frame/life/F)
+	..()
+	if(!F.alive())
+		return
+	if(src.vore_fullness == 0 && src.movement_cooldown == 10)
+		src.movement_cooldown = initial(src.movement_cooldown)
+
+/mob/living/simple_mob/vore/alienanimals/dustjumper/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
+	. = ..()
+	movement_cooldown = 10
+
+/mob/living/simple_mob/vore/alienanimals/dustjumper/begin_instant_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly)
+	. = ..()
+	movement_cooldown = 10

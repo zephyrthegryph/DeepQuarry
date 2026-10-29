@@ -1,6 +1,5 @@
 /// Actual folding preserves the cryobag injector through refusals and a full construction roundtrip.
 /datum/unit_test/interim_bodybag_fold_actor/Run()
-	restore_ambient_after() // test_time() below lets the world run: the telecomms freezer's pump dumps its heat into its own tile meanwhile
 	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)

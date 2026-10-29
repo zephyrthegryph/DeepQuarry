@@ -66,10 +66,12 @@
 	charge_cost = 120
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30
-	description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
-	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
-	ineffective at stunning non-slimy lifeforms such as humanoids."
 	recharge_time = 3
+
+CAPABILITIES(/obj/item/gun/energy/robotic/taser/xeno)
+	configure(atom_rules(description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
+	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
+	ineffective at stunning non-slimy lifeforms such as humanoids."))
 
 /obj/item/gun/energy/robotic/taser/swarm
 	name = "disabler"
@@ -93,7 +95,6 @@
 	name = "Mounted Laser Rifle"
 	desc = "A Hephaestus Industries G40E rifle, designed to kill with concentrated energy blasts.  This variant has the ability to \
 	switch between standard fire and a more efficent but weaker 'suppressive' fire."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	icon_state = "laser"
 	item_state = "laser"
 	wielded_item_state = "laser-wielded"
@@ -106,6 +107,7 @@
 	one_handed_penalty = 0
 
 CAPABILITIES(/obj/item/gun/energy/robotic/laser/rifle)
+	configure(atom_rules(description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."))
 	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/robotic/laser/heavy
@@ -155,10 +157,10 @@ CAPABILITIES(/obj/item/gun/energy/robotic/laser/rifle)
 /obj/item/melee/robotic/jaws
 	icon = 'icons/mob/dogborg_vr.dmi'
 	w_class = ITEMSIZE_NORMAL
-	injury_kind = INJURY_CUT
 	tool_qualities = list(TOOL_CROWBAR)
 
 CAPABILITIES(/obj/item/melee/robotic/jaws)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_tooling(pry = 1))
 	configure(item_thrown(force = 0))
 	configure(item_combat(edge = TRUE, sharp = TRUE))
@@ -302,13 +304,13 @@ CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE | COUNTS_AS_ROBOT_BLADE
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "swordtail"
-	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_NORMAL
 	var/active_force = 35
 	var/active = 0 //Off by default.
 	var/lcolor = "#38e541"
 
 CAPABILITIES(/obj/item/melee/robotic/blade)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0, armor_penetration = 70, sharp = TRUE, edge = TRUE, attack_verbs = list("slashed", "stabbed", "jabbed", "mauled", "sliced")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADE1))

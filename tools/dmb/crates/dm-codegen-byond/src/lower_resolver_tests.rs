@@ -98,7 +98,7 @@ fn method_native_dispatch_requires_exact_certified_name_and_namespace() {
                 } if found == owner && selector == name => M::Member {
                     owner,
                     name,
-                    fingerprint: 1,
+                    fingerprint: 1.into(),
                     data: Arc::new(Default::default()),
                 },
                 Q::MethodProcedureValue {
@@ -114,7 +114,7 @@ fn method_native_dispatch_requires_exact_certified_name_and_namespace() {
                         declaring_owner: owner,
                         name,
                         verb: false,
-                        engine_identity: 1,
+                        engine_identity: 1.into(),
                         wire_proc: 3,
                     },
                     2 => M::IntrinsicProc {
@@ -125,7 +125,7 @@ fn method_native_dispatch_requires_exact_certified_name_and_namespace() {
                         declaring_owner: owner,
                         name,
                         verb: true,
-                        engine_identity: 1,
+                        engine_identity: 1.into(),
                         wire_proc: 3,
                     },
                     _ => M::Unsupported(query),
@@ -368,10 +368,10 @@ fn captured_resource_context_is_demanded_without_filesystem_reads() {
         answer: |query| match query {
             Q::ResourceIn {
                 path,
-                search_context: 77,
-            } if path == SymbolId::of("icon.dmi") => M::Resource {
+                search_context,
+            } if search_context == 77 && path == SymbolId::of("icon.dmi") => M::Resource {
                 path: SymbolId::of("assets/icon.dmi"),
-                content: 123,
+                content: 123.into(),
             },
             _ => M::Unsupported(query),
         },
@@ -652,9 +652,11 @@ fn modified_resource_aliases_share_descriptor_content_after_recorded_queries() {
             Q::RuntimeType(id) if id == SymbolId::of("/obj/base") => M::Symbol(id),
             Q::ResourceIn {
                 path,
-                search_context: 7,
-            } if path == SymbolId::of("one.txt") || path == SymbolId::of("two.txt") => {
-                M::Resource { path, content: 99 }
+                search_context,
+            } if search_context == 7
+                && (path == SymbolId::of("one.txt") || path == SymbolId::of("two.txt")) =>
+            {
+                M::Resource { path, content: 99.into() }
             }
             other => M::Unsupported(other),
         },
@@ -681,7 +683,7 @@ fn modified_resource_aliases_share_descriptor_content_after_recorded_queries() {
     for path in [SymbolId::of("one.txt"), SymbolId::of("two.txt")] {
         assert!(reads.contains(&Q::ResourceIn {
             path,
-            search_context: 7
+            search_context: 7.into()
         }));
     }
 }

@@ -6,6 +6,9 @@
 #define PLAYER_NOT_READY 0
 #define PLAYER_READY_TO_PLAY 1
 
+/// What time_till_respawn() returns for a player who may never respawn (their /datum/respawn_timer is forbidden).
+#define RESPAWN_NEVER -1
+
 // /mob/var/stat things.
 #define CONSCIOUS   0
 #define UNCONSCIOUS 1

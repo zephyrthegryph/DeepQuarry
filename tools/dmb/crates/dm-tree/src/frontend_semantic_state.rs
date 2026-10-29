@@ -257,12 +257,9 @@ impl RetainedSemanticTree {
     pub fn splices(&self) -> u64 {
         self.splices
     }
-    /// The request-local owner of a one-shot compile: nothing outlives the request to read name-demand receipts, so
-    /// tokens are issued without storing them.
+    /// The request-local owner of a one-shot compile.
     pub fn one_shot() -> Self {
-        let mut state = Self::default();
-        state.normalization = std::mem::take(&mut state.normalization).without_name_receipts();
-        state
+        Self::default()
     }
     pub fn with_shared_normalized(
         owner: Arc<crate::owner_normalization::SharedNormalizedDeclarations>,
@@ -365,11 +362,6 @@ impl RetainedSemanticTree {
                 on_error(&error, &adapted.skeletons.to_vec(), &[]);
                 error
             })?;
-            // A failed newer candidate may have replaced the issuer's Weak
-            // current owner. Bind only after current occurrence validation.
-            if let Some(issuer) = tree.owner_certificate_issuer() {
-                issuer.bind_selection_owner(&tree);
-            }
             self.hits += 1;
             tick!("occurrences");
             report!("reuse");
@@ -476,7 +468,6 @@ impl RetainedSemanticTree {
             .is_none()
             .then(|| dm_profile::detail_timer("tree.full_resolution_total"));
         if let Some(mut tree) = updated {
-            tree.selection_publication_deferred = true;
             let identity_timer = dm_profile::detail_timer("tree.update.identity_refresh");
             if !unchanged_declarations {
                 let (identity, hierarchy) = crate::adapter::projected_identity_indexed(
@@ -514,7 +505,7 @@ impl RetainedSemanticTree {
             tick!("occurrences");
             let _carry_timer = dm_profile::detail_timer("tree.update.carry_and_publish");
             if !unchanged_declarations {
-                carry_demands(
+                record_change_since(
                     &prior_index.tree,
                     &prior_index.index,
                     &mut tree,
@@ -527,11 +518,7 @@ impl RetainedSemanticTree {
                     set: Default::default(),
                 }));
             }
-            tick!("carry_demands");
-            let publish_timer = dm_profile::detail_timer("tree.update.publish_selection_owner");
-            tree.publish_selection_owner();
-            drop(publish_timer);
-            tick!("publish_selection_owner");
+            tick!("change_since");
             let tree = Arc::new(tree);
             let entry = self
                 .entry
@@ -618,7 +605,7 @@ impl RetainedSemanticTree {
         match (self.entry.as_ref(), index.as_ref()) {
             (Some(entry), Some(current)) if same_engine(entry.engine.as_ref(), engine) => {
                 match Arc::get_mut(&mut snapshot.tree) {
-                    Some(tree) => carry_demands(&entry.tree, &entry.index, tree, current, "rebuild"),
+                    Some(tree) => record_change_since(&entry.tree, &entry.index, tree, current, "rebuild"),
                     None => crate::change_set::record_outcome(
                         "demand tokens full (rebuilt tree already shared)".into(),
                     ),
@@ -660,8 +647,8 @@ impl RetainedSemanticTree {
         Ok(snapshot)
     }
 }
-/// Carry clean demand certificates from the retained tree into the new one.
-fn carry_demands(
+/// Classify the declaration change from the retained tree; the answer table carries answers across it.
+fn record_change_since(
     previous_tree: &crate::SemanticTree,
     previous: &crate::declaration_contributions::KeyedDeclarations,
     current_tree: &mut crate::SemanticTree,
@@ -669,21 +656,15 @@ fn carry_demands(
     path: &str,
 ) {
     let timer = std::time::Instant::now();
-    let _detail = dm_profile::detail_timer("tree.update.carry_demands");
+    let _detail = dm_profile::detail_timer("tree.update.change_since");
     let change = crate::change_set::StructuralChangeSet::between(
         previous_tree,
         previous,
         current_tree,
         current,
     );
-    let outcome = match current_tree.inherit_demand_tokens(previous_tree, &change) {
-        Ok((carried, dropped)) => {
-            format!("demand tokens carried={carried} dropped={dropped} ({path})")
-        }
-        Err(reason) => format!("demand tokens full ({reason}) ({path})"),
-    };
     crate::change_set::record_outcome(format!(
-        "{outcome}; {} in {:.3}s",
+        "declaration change ({path}): {} in {:.3}s",
         change.summary(),
         timer.elapsed().as_secs_f64()
     ));

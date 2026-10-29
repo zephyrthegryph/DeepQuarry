@@ -18,7 +18,7 @@
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
 
 	var/simulating = 0
-	EXPIRY_DECLARE(simulation_started)
+	var/simulation_started = 0
 	/// after() timer that ends the running simulation, or 0.
 	var/simulation_delay = 20 SECONDS
 
@@ -208,7 +208,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 		return
 	set_simulating(1)
 	set_use_power(USE_POWER_ACTIVE)
-	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
+	STAMP(src, simulation_started, CLOCK_WORLD)
 	after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
 	switch(sim_mode)
 		if(BOMB_TESTER_MODE_SINGLE)

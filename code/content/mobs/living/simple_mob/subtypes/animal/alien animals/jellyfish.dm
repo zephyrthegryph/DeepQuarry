@@ -1,0 +1,180 @@
+GLOBAL_VAR_CONST(max_jellyfish, 50)
+GLOBAL_VAR_INIT(jellyfish_count, 0)
+
+/datum/category_item/catalogue/fauna/space_jellyfish
+	name = "Alien Wildlife - Space Jellyfish"
+	desc = "A hostile space predator. \
+			This space jellyfish uses hypnotic patterns to lure in prey, which it then wraps in tentacles to leech energy from.\
+			It is somewhat weak, but uses unknown means to stun prey. It uses the energy of its prey to replicate itself. \
+			These creatures can quickly grow out of control if left to feed and reproduce unchecked. \
+			Notable weakness to rapid cooling from ice based weaponry.\
+			The flesh is typically non-toxic and quite delicious. Their cores are considered a delicacy in many regions."
+	value = CATALOGUER_REWARD_EASY
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish
+	name = "space jellyfish"
+	desc = "A semi-translucent space creature, possessing of tentacles and a hypnotizing, flashing bio-luminescent display."
+	tt_desc = "Semaeostomeae Stellarus"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/space_jellyfish)
+
+	icon = 'icons/mob/alienanimals_x32.dmi'
+	icon_state = "space_jellyfish"
+	icon_living = "space_jellyfish"
+	icon_dead = "space_jellyfish_dead"
+	has_eye_glow = TRUE
+	density = FALSE
+
+	faction = FACTION_JELLYFISH
+	endurance = 100
+	pass_flags = PASSTABLE
+	movement_cooldown = 1
+
+	see_in_dark = 10
+
+	response_help  = "pets"
+	response_disarm = "gently pushes aside"
+	response_harm   = "punches"
+
+	harm_intent_damage = 1
+	melee_damage_lower = 1
+	melee_damage_upper = 2
+	attack_sound = SFX_WEAPONS_TAP
+	attacktext = list("drained", "bludgeoned", "wraped", "tentacle whipped")
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+	maxbodytemp = 900
+
+	speak_emote = list("thrumms")
+
+
+
+	vore_active = 1
+	vore_bump_chance = 25
+	vore_ignores_undigestable = 0
+	vore_default_mode = DM_DRAIN
+	vore_icons = SA_ICON_LIVING
+	vore_stomach_name = "internal chamber"
+	vore_default_contamination_flavor = "Wet"
+	vore_default_contamination_color = "grey"
+	vore_default_item_mode = IM_DIGEST
+
+	/// world.time before which it can't reproduce again.
+	var/reproduce_after = 0
+
+// Allows this mob to swarm
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/CanPass(atom/movable/mover, turf/target)
+	if(isliving(mover) && !istype(mover, /mob/living/simple_mob/vore/alienanimals/space_jellyfish) && mover.density == TRUE)
+		return FALSE
+	return ..()
+
+/datum/say_list/jellyfish
+	emote_see = list("flickers", "flashes", "looms","pulses","sways","shimmers hypnotically")
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "internal chamber"
+	B.desc = "It's smooth and translucent. You can see the world around you distort and wobble with the movement of the space jellyfish. It floats casually, while the delicate flesh seems to form to you. It's surprisingly cool, and flickers with its own light. You're on display for all to see, trapped within the confines of this strange space alien!"
+	B.set_mode_flags(40)
+	B.set_digest_brute(0.5)
+	B.set_digest_burn(0.5)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(15)
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/apply_melee_effects(atom/A)
+	if(isliving(A))
+		var/mob/living/L = A
+		var/leech = rand(1,100)
+		if(nutrition_of(L))
+			L.adjust_nutrition(-leech)
+			adjust_nutrition(leech)
+		if(prob(25))
+			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/jellyfish, delete_on_death = TRUE))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/jellyfishcore, meat_amount = 0))
+	ref_one(nameof(budded_from), /mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
+	param(nameof(budded_from), pos = 1, apply = PROC_REF(join_swarm), keep = FALSE)
+
+/// The jellyfish this one budded from (its constructor param).
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/var/tmp/mob/living/simple_mob/vore/alienanimals/space_jellyfish/budded_from
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/proc/join_swarm(mob/living/simple_mob/vore/alienanimals/space_jellyfish/parent)
+	enable_swarming()
+	GLOB.jellyfish_count++
+	if(parent)
+		parent.faction = faction
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
+	. = ..()
+	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition_of(src))
+
+// the population cap counts it out.
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/lifecycle_dematerialize()
+	GLOB.jellyfish_count --
+	..()
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post(datum/seq_frame/life/F)
+	..()
+	if(src.client)
+		return
+	src.reproduce()
+
+/// Idle with a client (Login and Logout wake it) and through the reproduction cooldown, which ends
+/// by rewake instead of being counted down every frame.
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post_due()
+	return !src.client && COOLDOWN_FINISHED(src, reproduce_after)
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post_rewake()
+	return max(src.reproduce_after - world.time, 0)
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/proc/reproduce()
+	if(!COOLDOWN_FINISHED(src, reproduce_after))
+		return
+	if(GLOB.jellyfish_count >= GLOB.max_jellyfish)
+		return
+	if(nutrition_of(src) < 500)
+		return
+	if(prob(10))
+		new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc, src)
+		adjust_nutrition(-400)
+		COOLDOWN_START(src, reproduce_after, 60 * LIFE_CYCLE)
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/Process_Spacemove(check_drift = 0)
+	return TRUE
+
+/obj/item/reagent_containers/food/snacks/jellyfishcore
+	name = "jellyfish core"
+	icon = 'icons/obj/food.dmi'
+	icon_state = "jellyfish_core"
+	desc = "The pulsing core of a space jellyfish! ... It smells delicious."
+	nutriment_amt = 50
+	bitesize = 1000
+	nutriment_desc = list("heavenly space meat" = 100)
+
+	var/inherited_nutriment = 0
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyfishcore)
+	param(nameof(inherited_nutriment), pos = 1)
+
+/// A core also holds the nutriment of the jellyfish it came from (its snack nutriment, declared on every snack, plus that much again).
+/obj/item/reagent_containers/food/snacks/jellyfishcore/nutriment_units()
+	return ..() + nutriment_amt + inherited_nutriment
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/starting_nutrition()
+	return 150

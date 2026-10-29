@@ -1,3 +1,7 @@
+/// Rust budget group numbers: the devices of one filter or mixer share a group.
+SERIAL_DEF(rust_budget_group, 1, FALSE)
+SCHEMA(/obj/machinery/atmospherics, rust_budget_group, num())
+
 /datum/system/air
 	/// Pipe region gas handle -> its /datum/pipe_network wrapper (numeric keys).
 	var/alist/rust_pipe_region_networks = alist()
@@ -433,8 +437,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	if(!rust_set_device_n(slot, port_index_a, port_index_b))
 		return FALSE
 	if(!rust_budget_group)
-		var/static/serial = 0
-		rust_budget_group = ++serial
+		rust_budget_group = next_serial(rust_budget_group)
 	return rust_set_device_flow_n(slot, gases, rate_kind, rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0, RUST_SIDE_A, RUST_STOP_NONE, 0, rust_budget_group, role, ratio, power_w, efficiency)
 
 /// `rust_unregister_device()`'s N-edge counterpart: removes just `slot`.
@@ -460,15 +463,6 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /// implementation does nothing; devices with a UI/events override it.
 /obj/machinery/atmospherics/proc/rust_device_stepped(moles, power_w, target_reached)
 	return
-
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-/// Test hook: steps every pipe device now, as a frame does once a period, and delivers their reports.
-/datum/system/air/proc/rust_step_pipe_devices()
-	if(!rust_pipe_device_count)
-		return
-	vg_frame_force_devices()
-	native_system().drain()
-#endif
 
 /// Publish the complete map topology once, then materialize all compatibility
 /// `/datum/pipe_network` wrappers from Rust's atomic connected-region result.

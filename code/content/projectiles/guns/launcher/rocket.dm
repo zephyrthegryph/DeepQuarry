@@ -4,7 +4,6 @@
 	icon_state = "rocket"
 	item_state = "rocket"
 	w_class = ITEMSIZE_HUGE //.
-	throw_range = 10
 	fire_sound = SFX_WEAPONS_RPG
 
 	release_force = 15
@@ -13,7 +12,7 @@
 	var/list/rockets
 
 CAPABILITIES(/obj/item/gun/launcher/rocket)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 10, throw_speed = 2))
 	configure(item_worn(slots = 0))
 	configure(item_combat(force = 5.0))
 	owns_many(nameof(rockets), on_destroy = ON_DESTROY_CONTAINED)

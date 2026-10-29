@@ -22,7 +22,7 @@
 	TEST_ASSERT(record && !QDELETED(record), "The created lending record is live")
 	TEST_ASSERT_EQUAL(record.bookname, "Interim lending book", "The lending record retains the selected book")
 	TEST_ASSERT_EQUAL(record.mobname, "Interim borrower", "The lending record retains the selected borrower")
-	TEST_ASSERT_EQUAL(EXPIRY_LEFT(record, duedate, CLOCK_WORLD), 1 MINUTES, "The real record expires after the selected one-minute lending period")
+	TEST_ASSERT_EQUAL(COOLDOWN_TIMELEFT(record, duedate), 1 MINUTES, "The real record expires after the selected one-minute lending period")
 	qdel(console)
 	TEST_ASSERT(QDELETED(record), "Deleting the actual console deletes its owned lending record")
 	test_driver_end()

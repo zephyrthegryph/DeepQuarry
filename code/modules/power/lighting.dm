@@ -4,7 +4,6 @@
 
 // status values shared between lighting fixtures and items
 #define LIGHT_BULB_TEMPERATURE 400 //K - used value for a 60W bulb
-#define LIGHTING_POWER_FACTOR 2		//2W per luminosity * range
 #define LIGHT_EMERGENCY_POWER_USE 0.2 //How much power emergency lights will consume per tick
 
 DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_instance), SC_NEVER)
@@ -72,7 +71,7 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/auto_flicker = FALSE // If true, will constantly flicker, so long as someone is around to see it (otherwise its a waste of CPU).
 	var/obj/item/cell/emergency_light/cell
 	/// World time the emergency discharge was last settled (0 for none).
-	EXPIRY_DECLARE(emergency_discharge_started)
+	var/emergency_discharge_started = 0
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
 	var/no_emergency = FALSE	// if true, this light cannot ever have an emergency mode
@@ -92,7 +91,9 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 
 
 CAPABILITIES(/obj/machinery/light)
-	configure(uses_power(idle = 2, active = 10, channel = LIGHT))
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(light_broken)))
+	configure(light_glow(range = 6, power = 1, color = "#E0EFF0")) // the starting tube's glow and draw (lighting_fixture_glow.dm says why)
+	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)
 	owns_one(nameof(installed_light), /obj/item/light)
@@ -274,7 +275,7 @@ CAPABILITIES(/obj/machinery/light)
 	var/charge = cell ? cell.charge : latent_cell_charge
 	var/maxcharge = cell ? cell.maxcharge : initial(/obj/item/cell/emergency_light::maxcharge)
 	if(cell && emergency_discharge_started)
-		charge = max(0, charge - LIGHT_EMERGENCY_POWER_USE * (max(0, EXPIRY_NOW(src, CLOCK_WORLD) - emergency_discharge_started) / (2 SECONDS)))
+		charge = max(0, charge - LIGHT_EMERGENCY_POWER_USE * (max(0, TIME_NOW(CLOCK_WORLD) - emergency_discharge_started) / (2 SECONDS)))
 	return "Its backup power charge meter reads [round((charge / maxcharge) * 100, 0.1)]%."
 
 // ---- alerts ----
@@ -365,7 +366,6 @@ CAPABILITIES(/obj/machinery/light)
 	else
 		set_use_power(USE_POWER_IDLE)
 		set_glow(src, GLOW(0, null, null))
-	update_light()
 	update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
@@ -773,14 +773,14 @@ CAPABILITIES(/obj/machinery/light)
 	// Set the initial emergency appearance immediately, then account for charge in one batch when the light next has to change
 	// (emergency_discharge_wait()).
 	use_emergency_power(0)
-	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
+	STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	after(src, emergency_discharge_wait(), PROC_REF(continue_emergency_discharge), key = "discharge", clock = CLOCK_WORLD)
 
 /obj/machinery/light/proc/settle_emergency_discharge()
 	if(!emergency_discharge_started || !has_cell())
 		return
 	var/elapsed = max(0, world.time - emergency_discharge_started)
-	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
+	STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
 		// A sustained draw over `elapsed`, settled in one batch: the cell sees its rate, not one surge.
@@ -862,8 +862,7 @@ CAPABILITIES(/obj/machinery/light)
 		installed_light.set_status(status)
 	refresh_light()
 
-/obj/machinery/light/atom_break(damage_flag)
-	. = ..()
+/obj/machinery/light/proc/light_broken(datum/act/A)
 	broken()
 
 /obj/machinery/light/atom_fix()
@@ -1201,7 +1200,6 @@ CAPABILITIES(/obj/item/light)
 	w_class = ITEMSIZE_TINY
 
 #undef LIGHT_BULB_TEMPERATURE
-#undef LIGHTING_POWER_FACTOR
 #undef LIGHT_EMERGENCY_POWER_USE
 
 // I hate the way macros look stupid standing near lights. I don't care how absurd this looks.
@@ -1210,11 +1208,6 @@ CAPABILITIES(/obj/item/light)
 	layer = BELOW_MOB_LAYER
 
 // ition, to override the New() proc further below, since this is a lamp.
-// ALLOW(init/INSTANCE_STATE): a floor lamp starts at its type's layer whatever the map set, before the light's own facing rule may raise it
-/obj/machinery/light/flamp/Initialize(mapload)
-	layer = initial(layer)
-	return ..()
-
 /// A floor lamp built from a frame starts without a cell or shade; a mapped one may get an emergency cell.
 /obj/machinery/light/flamp/proc/start_up_lamp()
 	if(construct_at_make)
@@ -1386,6 +1379,8 @@ CAPABILITIES(/obj/item/light)
 
 /// A wall torch is no socket to smash or fill.
 CAPABILITIES(/obj/machinery/light/small/torch)
+	configure(light_glow(range = 6, power = 1, color = "#fabf87"))
+	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
 	// a wall torch is no socket to smash
 	without("melee_hit")
 	without("insert")
@@ -1408,6 +1403,8 @@ CAPABILITIES(/obj/machinery/light/small/torch)
 /// A floor lamp: a shade turns the switch into a hand toggle, the wrench bolts it down, the screwdriver takes the shade off. A silicon touch toggles
 /// it too (it has no emergency lighting of its own to toggle).
 CAPABILITIES(/obj/machinery/light/flamp)
+	configure(light_glow(range = 6, power = 1, color = "#FFFEB8"))
+	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
 	setup(PROC_REF(start_up_lamp))
 	click_order(BIND_HAND, "toggle", "remove")
 	click_order(TOOL_SCREWDRIVER, "remove_shade", "open_casing")

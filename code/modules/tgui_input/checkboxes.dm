@@ -9,7 +9,7 @@
 	/// List of selected items
 	var/list/choices
 	/// Time when the input was created
-	EXPIRY_DECLARE(start_time)
+	var/start_time = 0
 	/// Timeout for the input
 	var/timeout
 	/// Whether the input was closed
@@ -31,7 +31,7 @@
 
 	if (timeout)
 		src.timeout = timeout
-		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+		STAMP(src, start_time, CLOCK_WORLD)
 		expire(timeout)
 
 /datum/tgui_checkbox_input/proc/wait()

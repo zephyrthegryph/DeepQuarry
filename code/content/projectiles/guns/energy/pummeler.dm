@@ -7,8 +7,6 @@
 	desc = "For when you want to get that pesky marketing guy out of your face ASAP. The PML9 'Pummeler' fires one HUGE \
 	sonic blast in the direction of fire, throwing the target away from you at high speed. Now you can REALLY \
 	turn up the bass to max."
-	description_fluff = ""
-	description_antag = ""
 
 	icon = 'icons/vore/custom_guns_vr.dmi'
 	icon_state = "pum"
@@ -25,6 +23,7 @@
 	w_class = ITEMSIZE_HUGE //.
 
 CAPABILITIES(/obj/item/gun/energy/pummeler)
+	configure(atom_rules(description_fluff = "", description_antag = ""))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 //Projectile
@@ -32,9 +31,11 @@ CAPABILITIES(/obj/item/gun/energy/pummeler)
 	name = "sonic blast"
 	icon_state = "sound"
 	damage = 5
-	embed_chance = 0
 	vacuum_traversal = 0
 	range = 6 //Scary name, but just deletes the projectile after this range
+
+CAPABILITIES(/obj/item/projectile/pummel)
+	configure(item_combat(embed_chance = 0))
 
 /obj/item/projectile/pummel/on_hit(atom/movable/target, blocked = 0)
 	if(isliving(target))

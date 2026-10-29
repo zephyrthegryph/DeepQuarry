@@ -67,7 +67,6 @@ struct Record {
     recipe: Option<crate::lowering_memo::key_recipe::KeyRecipe>,
     key: SharedKey,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
-    versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     value: RecordValue,
     /// Shared by every session's record of the same body: a rebound record keeps its predecessor's allocation.
     relative_debug: Arc<[crate::debug_sources::RelativeDebugAnchor]>,
@@ -89,7 +88,6 @@ pub(crate) struct Admission {
     disk: Option<crate::lowering_memo::DiskWriter>,
     key: SharedKey,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
-    versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Arc<[crate::debug_sources::RelativeDebugAnchor]>,
     /// The dependency-index world the reads were computed under (a freshly lowered unit only).
     world: Option<u128>,
@@ -279,7 +277,6 @@ impl CompletedInput {
                 writer.queue_compact(
                     &admission.key,
                     &admission.reads,
-                    &admission.versions,
                     &value,
                     &admission.relative_debug,
                     admission.world,
@@ -297,7 +294,6 @@ impl CompletedInput {
                         }),
                         key: admission.key,
                         reads: admission.reads,
-                        versions: admission.versions,
                         value: RecordValue::Executable(value.shared_artifact()),
                         relative_debug: admission.relative_debug,
                         required_types: Arc::clone(value.required_types_owner()),
@@ -414,7 +410,6 @@ impl SessionSymbolicMemo {
         &self,
         key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
         prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
-        host: &R,
         request_admission: Option<&RequestAdmission<'_, R>>,
         candidates: Option<&RequestCandidates<'_, '_, R>>,
         observer: &crate::lowering_memo::RecordingResolver<'_, R>,
@@ -442,7 +437,6 @@ impl SessionSymbolicMemo {
                                         record,
                                         key,
                                         prepared_tail,
-                                        host,
                                         request_admission,
                                         observer,
                                         frontend,
@@ -475,7 +469,6 @@ impl SessionSymbolicMemo {
                     record,
                     key,
                     prepared_tail,
-                    host,
                     request_admission,
                     observer,
                     frontend,
@@ -498,14 +491,13 @@ impl SessionSymbolicMemo {
                         .visit_borrowed_receipted_with_value(
                             digest,
                             &|candidate| locator.matches(candidate),
-                            &mut |reads, _, record| {
+                            &mut |reads, _| {
                                 // The private publication producer stages a clone
                                 // of this SAME record.reads owner and qualified
                                 // record.versions owner. Ordinary cross-host
                                 // lease lookup still requires exact replay.
                                 validate_published_record(
                                     reads,
-                                    record,
                                     request_admission,
                                     observer,
                                 )
@@ -535,7 +527,6 @@ impl SessionSymbolicMemo {
             &record,
             key,
             prepared_tail,
-            host,
             request_admission,
             observer,
             frontend,
@@ -554,7 +545,6 @@ impl SessionSymbolicMemo {
         record: &Arc<Record>,
         key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
         prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
-        host: &R,
         request_admission: Option<&RequestAdmission<'_, R>>,
         observer: &crate::lowering_memo::RecordingResolver<'_, R>,
         frontend: &ColdFrontend,
@@ -572,34 +562,14 @@ impl SessionSymbolicMemo {
         }
         let changed = if reads_validated {
             false
+        } else if let Some(admission) = request_admission {
+            // Every recorded answer is proven: by the session's answer table, else by replay.
+            partial_admission::changed(admission, &record.reads, observer).is_some()
         } else {
-            let matching =
-                partial_admission::matching_domains(&record.versions, host, request_admission);
-            let fully_certified = !host.observes_reads()
-                && record.reads.iter().all(|read| {
-                    read.domain == read.query.domain() && matching.contains(&read.domain)
-                });
-            if fully_certified {
-                // Candidate-specific complete certificates do not populate a shared
-                // leaf verdict. Each accepted leaf still reaches the observer.
-                record.reads.visit_storage(|view| {
-                    if let dm_session::ReceiptStorageView::Flat(leaf) = view {
-                        observer.record_admitted(leaf);
-                    }
-                });
-                false
-            } else if let Some(admission) = request_admission {
-                // Preserve this candidate's exact matching issuer domains;
-                // unknown/changed domains still replay every positive/negative
-                // edge. Partial admission never seeds a full-leaf verdict.
-                partial_admission::changed(admission, &record.reads, &record.versions, observer)
-                    .is_some()
-            } else {
-                record
-                    .reads
-                    .iter()
-                    .any(|read| !same_meaning(&observer.resolve(read.query), &read.answer))
-            }
+            record
+                .reads
+                .iter()
+                .any(|read| !same_meaning(&observer.resolve(read.query), &read.answer))
         };
         if changed {
             self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
@@ -644,15 +614,6 @@ impl SessionSymbolicMemo {
                         record.reads.clone()
                     } else {
                         receipt_groups::grouped(&self.receipt_groups, current)
-                    }
-                },
-                versions: {
-                    // Equal domain receipts are the predecessor's allocation, not a copy per session.
-                    let current = observer.domain_receipts();
-                    if record.versions[..] == current[..] {
-                        Arc::clone(&record.versions)
-                    } else {
-                        current.into()
                     }
                 },
                 relative_debug: Arc::clone(&record.relative_debug),
@@ -762,12 +723,11 @@ impl SessionSymbolicMemo {
 
 fn validate_published_record<R: Resolver>(
     reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
-    record: &Record,
     admission: Option<&RequestAdmission<'_, R>>,
     observer: &crate::lowering_memo::RecordingResolver<'_, R>,
 ) -> Option<dm_ir::ResolveQuery> {
     if let Some(admission) = admission {
-        admission.first_changed_receipted(reads, &record.versions, |leaf| {
+        admission.first_changed_receipted(reads, |leaf| {
             observer.record_admitted(leaf)
         })
     } else {
@@ -786,7 +746,6 @@ pub(super) fn admission(
     memo: &crate::lowering_memo::ProcedureMemo,
     key: Arc<[u8]>,
     reads: Arc<[ResolverRead]>,
-    versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
     write_compact: bool,
     world: Option<u128>,
@@ -808,7 +767,6 @@ pub(super) fn admission(
         disk,
         key: key.into(),
         reads,
-        versions,
         relative_debug: relative_debug.into(),
         world,
     })
@@ -820,7 +778,7 @@ pub(super) fn disk_admission<R: Resolver>(
     promotion: &crate::lowering_memo_wire::ResidentPromotion<'_>,
 ) -> Option<Admission> {
     let store = Arc::clone(memo.symbolic.as_ref()?);
-    let (reads, versions) = promotion.current_observations(host);
+    let reads = promotion.current_observations(host);
     let reads = receipt_groups::grouped(&store.receipt_groups, reads);
     Some(Admission {
         previous: None,
@@ -830,7 +788,6 @@ pub(super) fn disk_admission<R: Resolver>(
         disk: None,
         key: key.into(),
         reads,
-        versions: versions.into(),
         relative_debug: promotion.relative_debug.as_slice().into(),
         world: None,
     })
@@ -858,7 +815,6 @@ pub(super) fn remember_selections<R: Resolver>(
         recipe: None,
         key: admission.key,
         reads: admission.reads,
-        versions: admission.versions,
         value: RecordValue::Selections {
             facts: Arc::clone(facts),
             abi: abi.canonical_bytes(),
@@ -887,7 +843,6 @@ pub(super) fn accepted_admission<R: Resolver>(
         disk: None,
         key: key.into(),
         reads,
-        versions: current.domain_receipts().into(),
         relative_debug: accepted.value.relative_debug.as_slice().into(),
         world: None,
     })

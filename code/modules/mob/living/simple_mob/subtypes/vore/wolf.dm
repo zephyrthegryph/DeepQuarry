@@ -26,20 +26,19 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 12
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	minbodytemp = 200
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/wolf)
 
 	vore_active = TRUE
-	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING
 
-	species_sounds = "Canine"
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf)
-	configure(butchery_rules(meat_amount = 5))
+	configure(living_rules(species_sounds = "Canine"))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 

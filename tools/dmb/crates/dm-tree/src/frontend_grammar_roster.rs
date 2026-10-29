@@ -174,14 +174,11 @@ impl RetainedGrammar {
             ledger.record(
                 GrammarQuery::OrderedPieces,
                 host.answer(&GrammarQuery::OrderedPieces),
-                (),
-                None,
-            );
+                ());
             self.lease.retain_current_keys([key.as_slice()]);
             self.lease.insert_with(
                 key.clone().into(),
                 ledger.reads(),
-                ledger.domain_receipts(),
                 0,
                 || descriptors,
             );

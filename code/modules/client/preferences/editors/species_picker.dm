@@ -120,6 +120,10 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 	GLOB.dq_species_preview_cache[S.name] = result
 	return result
 
+/// The list hides species the player is not whitelisted for: per player.
+/datum/preference_editor/species_picker/static_cache_key(datum/preferences/preferences)
+	return null
+
 /datum/preference_editor/species_picker/build_ui_static_data(datum/preferences/preferences)
 	var/list/all_species = list()
 	var/client/C = preferences.client()

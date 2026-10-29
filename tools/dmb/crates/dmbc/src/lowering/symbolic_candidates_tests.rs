@@ -8,10 +8,6 @@ impl Resolver for AnswerHost {
     fn resolve(&self, _: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
         dm_ir::ResolvedMeaning::Presence(self.present)
     }
-    fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-        self.versions.fetch_add(1, Ordering::Relaxed);
-        Some(1)
-    }
     fn observes_reads(&self) -> bool {
         false
     }
@@ -40,7 +36,6 @@ fn query_database_proves_stored_units_by_their_recorded_answers() {
                 answer: dm_ir::ResolvedMeaning::Presence(true)
             }]
             .into(),
-            versions: Arc::from([(query.domain(), 1)]),
             value: RecordValue::Selections {
                 facts: Arc::new(Default::default()),
                 abi: vec![1]

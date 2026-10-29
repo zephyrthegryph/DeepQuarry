@@ -133,6 +133,9 @@ pub struct ProcedureMemo {
     explanation_limit: usize,
     /// Owner of this request's ABI disk transport on a retained store (detaches when the request ends).
     pub(crate) abi_disk: Option<crate::driver_facts::AbiDiskLease>,
+    /// A request-local answer table for a memo without a session store (a one-shot compile): its stored disk records
+    /// and stage receipts are proven by answers too, so no domain version is issued for them.
+    pub(crate) answers: Option<Arc<crate::query_db::QueryDb>>,
 }
 pub type CachePublisher = dyn Fn(Vec<dm_cache::Record>) -> Result<(), String> + Send + Sync;
 #[derive(Clone)]
@@ -212,7 +215,10 @@ impl ProcedureMemo {
         self.dep_index = std::sync::OnceLock::from(index);
     }
     pub(crate) fn query_db(&self) -> Option<&Arc<crate::query_db::QueryDb>> {
-        self.symbolic.as_ref()?.query_db()
+        match self.symbolic.as_ref() {
+            Some(symbolic) => symbolic.query_db(),
+            None => self.answers.as_ref(),
+        }
     }
     /// This request reuses the retained initializer stage output; the stores that output claims
     /// from keep their published claims instead of publishing this request's (see
@@ -297,6 +303,7 @@ impl ProcedureMemo {
             publishable: true,
             values: Arc::new(LoweringMemo::default()),
             symbolic: None,
+            answers: None,
             initializers: None,
             startup: None,
             abi: None,
@@ -356,6 +363,7 @@ impl ProcedureMemo {
             publishable: true,
             values: Arc::new(LoweringMemo::with_limit(limits.resident_bytes)),
             symbolic: None,
+            answers: None,
             initializers: None,
             startup: None,
             abi: None,
@@ -414,6 +422,16 @@ impl ProcedureMemo {
             };
         };
         let certificates = self.dep_index().map(|index| &**index);
+        // Stored reads are proven by the session's answer table when there is one (no domain version is issued).
+        let provider: &dyn Resolver = match host.transparent_receipt_observer() {
+            Some(observer) => observer.provider(),
+            None => host,
+        };
+        let answer = |query: &dm_ir::ResolveQuery| provider.resolve(*query);
+        let answers = self
+            .query_db()
+            .filter(|_| !host.observes_reads() || host.transparent_receipt_observer().is_some())
+            .map(|db| db.request_answers(&answer));
         let replay = std::cell::RefCell::new(None);
         let view =
             snapshot.get_candidate_backed(key.record_key(tail), |bytes, _symbols, backing| {
@@ -445,6 +463,7 @@ impl ProcedureMemo {
                         host,
                         prepared,
                         Some(backing),
+                        answers.as_ref(),
                     )
                 };
                 let admitted = result.unit.is_some()
@@ -488,7 +507,6 @@ impl ProcedureMemo {
                     reads,
                     unit,
                     promotion.relative_debug.clone(),
-                    promotion.versions.clone(),
                 );
             }
         }
@@ -499,7 +517,6 @@ impl ProcedureMemo {
         key: &[u8],
         reads: &[ResolverRead],
         unit: &crate::lowering::LoweredUnit,
-        versions: &[(ReadDomain, u128)],
     ) {
         if self.read_only_disk || self.disk.is_none() {
             return;
@@ -507,7 +524,7 @@ impl ProcedureMemo {
         let start = std::time::Instant::now();
         let bytes = {
             let _profile = dm_profile::item("lowering.population_encode");
-            crate::lowering_memo_selection::encode(key, reads, versions, unit)
+            crate::lowering_memo_selection::encode(key, reads, &[], unit)
         };
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
@@ -529,7 +546,6 @@ impl ProcedureMemo {
         reads: &[ResolverRead],
         unit: &crate::lowering::LoweredUnit,
         relative_debug: &[crate::debug_sources::RelativeDebugAnchor],
-        versions: &[(ReadDomain, u128)],
     ) {
         if self.read_only_disk || self.disk.is_none() {
             return;
@@ -537,7 +553,7 @@ impl ProcedureMemo {
         let start = std::time::Instant::now();
         let payload = {
             let _profile = dm_profile::item("lowering.population_encode");
-            crate::lowering_memo_wire::encode(key, reads, versions, unit, relative_debug)
+            crate::lowering_memo_wire::encode(key, reads, &[], unit, relative_debug)
         };
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
@@ -591,14 +607,13 @@ impl ProcedureMemo {
         identity: Option<dm_ir::ProcedureIdentity>,
         reads: &[ResolverRead],
         errors: &[dm_codegen_byond::LowerError],
-        versions: &[(ReadDomain, u128)],
     ) {
         if self.read_only_disk || self.disk.is_none() {
             return;
         }
         let payload = {
             let _profile = dm_profile::item("lowering.population_encode");
-            crate::lowering_memo_wire::encode_failure(key, identity, reads, versions, errors)
+            crate::lowering_memo_wire::encode_failure(key, identity, reads, &[], errors)
         };
         if let Some(payload) = payload {
             self.queue_payload(key, payload);
@@ -614,7 +629,6 @@ impl ProcedureMemo {
         key: &[u8],
         reads: &[ResolverRead],
         code: &dm_codegen_byond::lower_resolver::ResolverProc,
-        versions: &[(ReadDomain, u128)],
     ) {
         self.counts.recomputed.fetch_add(1, Ordering::Relaxed);
         if self.read_only_disk || self.disk.is_none() {
@@ -623,7 +637,7 @@ impl ProcedureMemo {
         let start = std::time::Instant::now();
         let payload = {
             let _profile = dm_profile::item("lowering.population_encode");
-            crate::lowering_memo_wire::encode_executable(key, reads, versions, code)
+            crate::lowering_memo_wire::encode_executable(key, reads, &[], code)
         };
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
@@ -667,7 +681,6 @@ impl ProcedureMemo {
         reads: Vec<ResolverRead>,
         unit: &crate::lowering::LoweredUnit,
         relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
-        versions: Vec<(ReadDomain, u128)>,
     ) {
         if self.resident_retention == ResidentRetention::DiskOnly {
             return;
@@ -677,7 +690,6 @@ impl ProcedureMemo {
             reads.into(),
             unit,
             relative_debug,
-            versions.into(),
         );
     }
     pub(crate) fn remember_shared(
@@ -686,7 +698,6 @@ impl ProcedureMemo {
         reads: Arc<[ResolverRead]>,
         unit: &crate::lowering::LoweredUnit,
         relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
-        versions: Arc<[(ReadDomain, u128)]>,
     ) {
         if self.resident_retention == ResidentRetention::DiskOnly {
             // Avoid weight serialization and RichIR clone for a request-local
@@ -699,7 +710,6 @@ impl ProcedureMemo {
             &relative_debug,
             &key,
             &reads,
-            &versions,
         ) else {
             self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
             return;
@@ -715,7 +725,7 @@ impl ProcedureMemo {
                 .flatten()
         } else {
             self.values
-                .insert_with_shared(key, reads, versions, weight, || CachedProcedure {
+                .insert_with_shared(key, reads, weight, || CachedProcedure {
                     unit: unit.clone(),
                     relative_debug,
                 })
@@ -826,7 +836,6 @@ pub(crate) fn key(
 }
 
 // Compatibility names preserve all existing procedure memo and wire consumers.
-pub(crate) use dm_session::matching_domains;
 pub use dm_session::{ArtifactStore as LoweringMemo, RecordingResolver, ResolverRead};
 
 #[cfg(test)]

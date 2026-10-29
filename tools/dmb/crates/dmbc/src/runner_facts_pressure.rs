@@ -5,10 +5,6 @@ impl RetainedHostFacts {
     pub(crate) fn release_prepared_for_pressure(&self) {
         // No source tree, scalar graph, provider or negative-query scope survives
         // through this owner. Escaped immutable hosts may retain their own Arcs.
-        self.fallback_scope
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .take();
         // Existing records include the exact engine owner and, for runtime types,
         // complete type-path vector. Ordinary catalogs() replays those receipts;
         // keeping their issuers never licenses a changed dependency.
@@ -56,7 +52,7 @@ mod tests {
         let first = build("/datum/catalog_probe\n/proc/p()\n    return 7\n");
         let (host, _) = prepare_retained(&first, &engine, Some(&owner)).unwrap();
         let query = dm_ir::ResolveQuery::RuntimeType(dm_ir::SymbolId::of("/datum/catalog_probe"));
-        let original_version = host.domain_version(query.domain()).unwrap();
+        let original_answer = dm_ir::Resolver::resolve(&host, query);
         let mut prepared = None;
         owner.values.visit_storage(|view| {
             if let dm_session::ObservedArtifactStorageView::Entry { value, .. } = view {
@@ -80,20 +76,17 @@ mod tests {
         });
         assert_eq!(remaining, 2);
         let (same, _) = prepare_retained(&first, &engine, Some(&owner)).unwrap();
-        assert_eq!(same.domain_version(query.domain()), Some(original_version));
+        assert_eq!(dm_ir::Resolver::resolve(&same, query), original_answer);
         owner.release_prepared_for_pressure();
         let changed = build("/datum/catalog_probe\n/datum/new_type\n/proc/p()\n    return 7\n");
         let (changed_host, _) = prepare_retained(&changed, &engine, Some(&owner)).unwrap();
-        // A member's runtime-catalog version names its own membership: another type joining the
-        // catalog leaves it alone, while the joining type's own domain changes.
-        assert_eq!(
-            changed_host.domain_version(query.domain()),
-            Some(original_version)
-        );
+        // A member's runtime-catalog answer names its own membership: another type joining the
+        // catalog leaves it alone, while the joining type's own answer changes.
+        assert_eq!(dm_ir::Resolver::resolve(&changed_host, query), original_answer);
         let joined = dm_ir::ResolveQuery::RuntimeType(dm_ir::SymbolId::of("/datum/new_type"));
         assert_ne!(
-            changed_host.domain_version(joined.domain()),
-            host_before_join_version(&first, &engine, &owner, joined)
+            dm_ir::Resolver::resolve(&changed_host, joined),
+            host_before_join_answer(&first, &engine, &owner, joined)
         );
         owner.release_prepared_for_pressure();
         let other_engine = session
@@ -105,21 +98,20 @@ mod tests {
             )
             .unwrap();
         let (other, _) = prepare_retained(&changed, &other_engine, Some(&owner)).unwrap();
-        // The same template gives the same catalog schema and membership, so the same answer and
-        // version; owner-specific facts keep their own process-local certificates.
+        // The same template gives the same catalog schema and membership, so the same answer.
         assert_eq!(
-            other.domain_version(query.domain()),
-            changed_host.domain_version(query.domain())
+            dm_ir::Resolver::resolve(&other, query),
+            dm_ir::Resolver::resolve(&changed_host, query)
         );
     }
 
-    fn host_before_join_version(
+    fn host_before_join_answer(
         frontend: &ColdFrontend,
         engine: &Arc<crate::runner_host::RetainedEngine>,
         owner: &RetainedHostFacts,
         query: dm_ir::ResolveQuery,
-    ) -> Option<u128> {
+    ) -> dm_ir::ResolvedMeaning {
         let (host, _) = prepare_retained(frontend, engine, Some(owner)).unwrap();
-        host.domain_version(query.domain())
+        dm_ir::Resolver::resolve(&host, query)
     }
 }

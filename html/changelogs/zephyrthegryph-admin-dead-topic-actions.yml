@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The admin tag menu's untag, mark, player panel and follow buttons, and the ticket list links, now do something"

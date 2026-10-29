@@ -192,7 +192,7 @@
 
 		var/slowdownUncapped = (material_slowdown_multiplier * slowdownModified) - material_slowdown_modifier
 
-		slowdown = max(slowdownUncapped, 0)
+		set_worn_factor(STAT_ITEM_ENCUMBRANCE, max(slowdownUncapped, 0))
 
 /obj/item/clothing/suit/armor/material
 	name = "armor"

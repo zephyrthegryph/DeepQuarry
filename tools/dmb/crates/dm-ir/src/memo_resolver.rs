@@ -135,8 +135,8 @@ impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
         self.host.observes_reads()
     }
 
-    fn domain_version(&self, domain: crate::ReadDomain) -> Option<u128> {
-        self.host.domain_version(domain)
+    fn answer_world(&self) -> Option<u128> {
+        self.host.answer_world()
     }
     fn resolve_with_canonical(&self, query: ResolveQuery) -> crate::CanonicalResolvedAnswer {
         let answer = self.resolve(query);
@@ -215,25 +215,21 @@ mod tests {
     use super::*;
     use crate::{ProcedureIdentity, SymbolId};
     #[test]
-    fn memo_forwards_domain_issuer_without_certifying_custom_hosts() {
+    fn memo_forwards_the_answer_world_without_naming_custom_hosts() {
         struct Issued;
         impl Resolver for Issued {
             fn resolve(&self, q: ResolveQuery) -> ResolvedMeaning {
                 ResolvedMeaning::Unsupported(q)
             }
-            fn domain_version(&self, d: crate::ReadDomain) -> Option<u128> {
-                (d == crate::ReadDomain::Tree).then_some(42)
+            fn answer_world(&self) -> Option<u128> {
+                Some(42)
             }
         }
         let host = Issued;
         let memo = MemoResolver::new(&host, 0);
-        assert_eq!(memo.domain_version(crate::ReadDomain::Tree), Some(42));
-        assert_eq!(memo.domain_version(crate::ReadDomain::ResourceSearch), None);
+        assert_eq!(memo.answer_world(), Some(42));
         let custom = Host(Mutex::new(Vec::new()));
-        assert_eq!(
-            MemoResolver::new(&custom, 1).domain_version(crate::ReadDomain::Tree),
-            None
-        );
+        assert_eq!(MemoResolver::new(&custom, 1).answer_world(), None);
     }
     #[test]
     fn shared_override_sequence_survives_memo_hits_without_backing_copies() {
@@ -279,7 +275,7 @@ mod tests {
             declaring_owner: id,
             name: SymbolId::of("work"),
             verb: true,
-            engine_identity: 123,
+            engine_identity: 123.into(),
             wire_proc: 9,
         };
         let mut deep = ResolvedMeaning::Missing;
@@ -361,11 +357,11 @@ mod tests {
         let queries = [
             ResolveQuery::ResourceIn {
                 path: name,
-                search_context: 1,
+                search_context: 1.into(),
             },
             ResolveQuery::ResourceIn {
                 path: name,
-                search_context: 2,
+                search_context: 2.into(),
             },
             ResolveQuery::Proc {
                 owner,

@@ -99,12 +99,12 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		if(isnum(armorvalue))
 			LAZYSET(armor_settings, armor_chosen, armorvalue)
 			set_interface_desc(initial(interface_desc))
-			slowdown = 0
+			set_worn_factor(STAT_ITEM_ENCUMBRANCE, 0)
 			for(var/entry in TYPE_TABLE_GET(src, armor_types))	//This is dumb and ugly but I dont feel like rewriting rig TGUI just to make this a pretty list
 				var/value = LAZYACCESS(armor_settings, entry) || 0
 				set_interface_desc(interface_desc + (" [entry]: [value]"))
-				slowdown += value*armor_weight_ratio
-			set_interface_desc(interface_desc + (" Slowdown: [slowdown]"))
+				set_worn_factor(STAT_ITEM_ENCUMBRANCE, worn_factor(STAT_ITEM_ENCUMBRANCE) + (value*armor_weight_ratio))
+			set_interface_desc(interface_desc + (" Slowdown: [worn_factor(STAT_ITEM_ENCUMBRANCE)]"))
 
 /obj/item/rig_module/protean/armor/proc/armor_type_answered(datum/act/request/context)
 	if(!context.answer)
@@ -140,7 +140,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		holder.set_armor(dq_armor(temparmor))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
 			piece.set_armor(dq_armor(temparmor))
-		holder.slowdown = slowdown
+		holder.set_worn_factor(STAT_ITEM_ENCUMBRANCE, worn_factor(STAT_ITEM_ENCUMBRANCE))
 		set_active(1)
 		H.worn_protection_changed()
 	else
@@ -153,7 +153,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		holder.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
 			piece.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
-		holder.slowdown = initial(slowdown)
+		holder.set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
 		set_active(0)
 		holder.wearer()?.worn_protection_changed()
 		return
@@ -164,7 +164,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		holder.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
 			piece.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
-		holder.slowdown = initial(slowdown)
+		holder.set_worn_factor(STAT_ITEM_ENCUMBRANCE, default_worn_factor(STAT_ITEM_ENCUMBRANCE))
 		set_active(0)
 		H.worn_protection_changed()
 	else

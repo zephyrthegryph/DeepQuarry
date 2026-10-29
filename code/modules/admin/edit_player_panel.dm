@@ -11,7 +11,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 /datum/admins/proc/dq_open_edit_player_panel(mob/player)
 	if(!owner()?.mob || !player)
 		return
-	var/key = "[REF(src)]-[REF(player)]"
+	var/key = "[ref_token(src)]-[ref_token(player)]"
 	var/datum/edit_player_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_edit_player_panels, key))
 	if(!panel)
 		panel = new(src, player)
@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 /datum/edit_player_panel/lifecycle_dematerialize()
 	..()
 	if(holder() && target())
-		GLOB.dq_edit_player_panels -= "[REF(holder())]-[REF(target())]"
+		GLOB.dq_edit_player_panels -= "[ref_token(holder())]-[ref_token(target())]"
 
 CAPABILITIES(/datum/edit_player_panel)
 	ref_one(nameof(holder), /datum/admins)
@@ -108,7 +108,7 @@ CAPABILITIES(/datum/edit_player_panel)
 		data["account_join_date"] = target().client.account_join_date
 		data["account_age"] = target().client.account_age
 		data["inactivity_minutes"] = round(target().client.inactivity / 600)
-		data["rank_names"] = target().client.holder ? target().client.holder.rank_names() : "Player"
+		data["rank_names"] = admin_holder_of(target().client) ? admin_rank_names(target().client) : "Player"
 		data["editrights_mode"] = (GLOB.admin_datums[target().client.ckey] || GLOB.deadmins[target().client.ckey]) ? "rank" : "add"
 		data["muted"] = target().client.prefs.muted
 	else
@@ -144,7 +144,7 @@ CAPABILITIES(/datum/edit_player_panel)
 				if(istype(gene, /datum/gene/trait))
 					var/datum/gene/trait/T = gene
 					tname = T.get_name()
-				if(bname in target().active_genes)
+				if(bname in sparse_get(target(), active_genes))
 					cell_state = "active"
 				else if(target().dna.GetSEState(block))
 					cell_state = "blocked"

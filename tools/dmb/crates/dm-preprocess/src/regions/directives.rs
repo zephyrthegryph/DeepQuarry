@@ -28,8 +28,8 @@ pub(super) fn plan_incremental<P: SourceProvider>(
     previous: Option<&DirectivePlan>,
 ) -> (DirectivePlan, PlanReuse) {
     let previous = previous.filter(|previous| previous.trace.is_some());
-    // Only the include subtrees whose files changed run again, when the provider can say which.
-    if let Some(previous) = previous {
+    // Only the include subtrees whose files changed run again, when the provider can say which (same defines only).
+    if let Some(previous) = previous.filter(|previous| &previous.defines == defines) {
         if let Some(patched) = patch::patch(provider, memo, previous) {
             return patched;
         }
@@ -40,6 +40,7 @@ pub(super) fn plan_incremental<P: SourceProvider>(
         previous,
         canonical_path(project.parent().unwrap_or(Path::new(""))),
     );
+    pass.plan.defines = defines.clone();
     for (name, replacement) in [
         ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
         ("REGEX_QUOTE", "regex(message, 1)"),
@@ -328,6 +329,14 @@ struct DirectivePass<'a, P> {
     occurrence_counts: HashMap<PathBuf, u32>,
     journal: Vec<VisitEntry>,
     dependency_log: Vec<PathBuf>,
+    /// Macro names the directives read or wrote, in order (subtree records take their slice).
+    tested_log: std::cell::RefCell<Vec<Arc<str>>>,
+    /// How the current macro environment differs from the previous pass's at the same point: the bindings a subtree
+    /// adopted from that pass must take on (`adopt_previous_inner`). Empty while the two agree.
+    delta: super::environment::EnvDelta,
+    /// Environments rebased under the current delta, by the environment they were made from: consecutive segments
+    /// share one environment, and so do their rebased copies (a persistent map per segment would cost a path copy each).
+    rebased: Vec<(MacroEnvironment, MacroEnvironment)>,
     trace: Vec<TraceEntry>,
     /// For every region created so far: the previous plan's region it copies, if any.
     region_map: Vec<Option<usize>>,
@@ -339,6 +348,9 @@ struct DirectivePass<'a, P> {
     file_dir_definitions: Vec<Macro>,
     environment: MacroEnvironment,
     file_dir_origins: Vec<Option<DefinitionOrigin>>,
+    /// Definition-site path of each file by its occurrence path's allocation: relative to the project directory, so
+    /// macro traces (and the region rows that hold them) are equal in every worktree of one project.
+    definition_paths: HashMap<usize, (Arc<PathBuf>, Arc<PathBuf>)>,
     // Includes splice their directives into the same encounter stream.
     conditionals: Vec<Conditional>,
     detail: PassDetail,
@@ -359,6 +371,9 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
             occurrence_counts: HashMap::new(),
             journal: Vec::new(),
             dependency_log: Vec::new(),
+            tested_log: std::cell::RefCell::new(Vec::new()),
+            delta: Default::default(),
+            rebased: Vec::new(),
             trace: Vec::new(),
             region_map: Vec::new(),
             reuse: PlanReuse::default(),
@@ -374,6 +389,7 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
             file_dir_origins: Vec::new(),
             conditionals: Vec::new(),
             detail: PassDetail::default(),
+            definition_paths: HashMap::new(),
         }
     }
 }
@@ -383,14 +399,27 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             evaluate(
                 word,
                 rest,
-                &directive_memo::Lookup {
-                    environment: &self.environment,
-                    recording,
+                &Tested {
+                    inner: &directive_memo::Lookup {
+                        environment: &self.environment,
+                        recording,
+                    },
+                    log: &self.tested_log,
                 },
             )
         } else {
-            evaluate(word, rest, &self.environment)
+            evaluate(
+                word,
+                rest,
+                &Tested {
+                    inner: &self.environment,
+                    log: &self.tested_log,
+                },
+            )
         }
+    }
+    fn tested(&self, name: &str) {
+        self.tested_log.borrow_mut().push(Arc::from(name));
     }
     fn finish_recording(&mut self, region: usize, pending: &mut super::segment_lines::PendingLines) {
         self.freeze_lines(region, pending);
@@ -415,12 +444,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     let line = lines.get(*input).expect("checked recovery directive index");
                     recoveries.insert(line.source_span.start);
                 }
-                directive_memo::Action::Text(input) => {
-                    let line = lines
-                        .get(*input)
-                        .expect("recorded directive input outside range");
-                    let _ = line;
-                    pending.push(lines.offset() + *input);
+                directive_memo::Action::Text { first, count } => {
+                    assert!(
+                        lines.get(*first + *count - 1).is_some(),
+                        "recorded directive input outside range"
+                    );
+                    for input in *first..*first + *count {
+                        pending.push(lines.offset() + input);
+                    }
                 }
                 directive_memo::Action::Freeze => self.freeze_lines(region, pending),
                 directive_memo::Action::Multiple => {
@@ -479,7 +510,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         name: String,
         definition: Macro,
     ) {
-        let path = self.plan.occurrences[occurrence].path.clone();
+        let path = self.definition_path(occurrence);
         if let Some(recording) = self.recording.as_mut() {
             recording.actions.push(directive_memo::Action::Define {
                 input: recording.current,
@@ -506,6 +537,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 },
             );
         }
+        self.tested(&name);
         Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::Define {
             name: name.clone(),
             definition: definition.clone(),
@@ -513,6 +545,22 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         self.environment
             .insert(&name, definition.clone(), Some(origin));
         self.plan.final_macros.insert(name, definition);
+    }
+    /// Where a definition in `occurrence`'s file is reported: the file's path relative to the project directory (the
+    /// absolute path when the file lies outside it). Consumers resolve it against `DirectivePlan::project_dir`.
+    fn definition_path(&mut self, occurrence: usize) -> Arc<PathBuf> {
+        let path = &self.plan.occurrences[occurrence].path;
+        let key = Arc::as_ptr(path) as usize;
+        if let Some((_, relative)) = self.definition_paths.get(&key) {
+            return Arc::clone(relative);
+        }
+        let relative = match path.strip_prefix(&self.plan.project_dir) {
+            Ok(relative) if !relative.as_os_str().is_empty() => Arc::new(relative.to_path_buf()),
+            _ => Arc::clone(path),
+        };
+        // The occurrence path is held with its entry, so its address names it for as long as the entry lives.
+        self.definition_paths.insert(key, (Arc::clone(path), Arc::clone(&relative)));
+        relative
     }
     fn apply_undef(&mut self, region: usize, name: &str) {
         if let Some(recording) = self.recording.as_mut() {
@@ -525,6 +573,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 recording.directory_read();
             }
         }
+        self.tested(name);
         Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::Undef {
             name: name.to_owned(),
         });
@@ -755,6 +804,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         let item = self.plan.items.len();
         let journal = self.journal.len();
         let dependencies = self.dependency_log.len();
+        let tested = self.tested_log.borrow().len();
         let diagnostics = self.plan.diagnostics.len();
         let warnings = self.plan.warnings.len();
         let state_in = self.snapshot();
@@ -783,6 +833,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             visits,
             reads,
             dependencies: self.dependency_log[dependencies..].to_vec(),
+            tested: {
+                let mut names = self.tested_log.borrow()[tested..].to_vec();
+                names.sort();
+                names.dedup();
+                names.into()
+            },
         };
         self.trace.push(TraceEntry {
             key: trace_key(entry.path.as_ref(), self.nth[occurrence]),
@@ -793,6 +849,37 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         });
     }
 
+    /// Whether the current environment is the previous pass's `before` plus the carried delta, updating the delta when
+    /// it is not (a subtree that ran again changed what differs). At most a few dozen bindings may differ.
+    /// `environment` with the current delta applied, shared with every earlier rebase of the same environment.
+    fn rebase(&mut self, environment: &MacroEnvironment) -> MacroEnvironment {
+        if let Some((_, rebased)) = self.rebased.iter().find(|(from, _)| from.shares_storage_with(environment)) {
+            return rebased.clone();
+        }
+        let rebased = environment.apply(&self.delta);
+        if self.rebased.len() >= 16 {
+            self.rebased.remove(0);
+        }
+        self.rebased.push((environment.clone(), rebased.clone()));
+        rebased
+    }
+    fn carried_delta(&mut self, current: &MacroEnvironment, before: &MacroEnvironment) -> bool {
+        const LIMIT: usize = 64;
+        if self.delta.is_empty() && current.same_bindings(before) {
+            return true;
+        }
+        if !self.delta.is_empty() && before.apply(&self.delta).same_bindings(current) {
+            return true;
+        }
+        match current.delta_from(before, LIMIT) {
+            Some(delta) => {
+                self.delta = delta;
+                self.rebased.clear();
+                true
+            }
+            None => false,
+        }
+    }
     /// Adopt the previous plan's subtree for this include when everything it depends on is
     /// unchanged: the same files with the same text, the same incoming state, the same include
     /// context and the same include-once decisions. Returns whether it did.
@@ -838,12 +925,17 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             ancestor = self.plan.occurrences[parent].parent;
         }
         let state_started = std::time::Instant::now();
-        let state_same = self.snapshot().same(&record.state_in);
+        let current = self.snapshot();
+        let state_same = current.same_apart_from_macros(&record.state_in)
+            && self.carried_delta(&current.environment, &record.state_in.environment)
+            && !record.tested.iter().any(|name| self.delta.contains(name));
         self.reuse.timings.state += state_started.elapsed();
         if !state_same {
             self.reuse.declined.state += 1;
             return false;
         }
+        let rebase = !self.delta.is_empty();
+        let delta_names = rebase.then(|| self.delta.names());
         let mut seen = BTreeSet::new();
         for visit in &record.visits {
             if seen.insert(visit.path.as_ref())
@@ -926,8 +1018,27 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             let mut copy = old.clone();
             copy.occurrence = shift(copy.occurrence, occ_delta);
             copy.encounter_ordinal = shift(copy.encounter_ordinal, item_delta);
+            if rebase {
+                // The subtree never read the bindings that differ: its segments see the current ones. Its expansion
+                // is then proven again by the macros it reads (the expansion memo), not copied.
+                copy.segments = Arc::new(
+                    copy.segments
+                        .iter()
+                        .map(|segment| ExpansionSegment {
+                            lines: segment.lines.clone(),
+                            macros: self.rebase(&segment.macros),
+                        })
+                        .collect(),
+                );
+                self.reuse.rebased_regions.insert(
+                    self.region_map.len(),
+                    (entry.region + offset, Arc::clone(delta_names.as_ref().expect("rebased"))),
+                );
+                self.region_map.push(None);
+            } else {
+                self.region_map.push(Some(entry.region + offset));
+            }
             self.plan.regions.push(copy);
-            self.region_map.push(Some(entry.region + offset));
         }
         for old in &previous.items[entry.item..entry.item + record.items] {
             self.plan.items.push(match old {
@@ -946,14 +1057,28 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             self.journal.push(visit.clone());
         }
         self.restore(&record.state_out);
+        if rebase {
+            self.environment = self.rebase(&self.environment.clone());
+            self.reuse.rebased_subtrees += 1;
+        }
+        self.tested_log.borrow_mut().extend(record.tested.iter().cloned());
         // Carry the subtree's records forward, renumbered, for the next pass.
         for carried in trace.within(entry.occurrence, record.occurrences) {
+            // A rebased subtree's records describe its regions as copied: the carried bindings are theirs too.
+            let carried_record = if rebase {
+                let mut rebased = (*carried.record).clone();
+                rebased.state_in.environment = self.rebase(&rebased.state_in.environment);
+                rebased.state_out.environment = self.rebase(&rebased.state_out.environment);
+                Arc::new(rebased)
+            } else {
+                Arc::clone(&carried.record)
+            };
             self.trace.push(TraceEntry {
                 key: carried.key,
                 occurrence: shift(carried.occurrence, occ_delta),
                 region: shift(carried.region, region_delta),
                 item: shift(carried.item, item_delta),
-                record: Arc::clone(&carried.record),
+                record: carried_record,
             });
         }
         self.reuse.subtrees += 1;
@@ -1081,7 +1206,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         let mut hit = None;
                         memo.visit_directive_candidates(context.2, &mut |record| {
                             let accepted = record.matches(
-                                context.0,
+                                context.0.as_str(),
                                 context.1,
                                 end - cursor,
                                 &self.environment,
@@ -1096,6 +1221,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         self.detail.matching += matching_started.elapsed();
                         if let Some(record) = hit {
                             self.detail.hits += 1;
+                            for name in record.read_names() {
+                                self.tested_log.borrow_mut().push(Arc::clone(name));
+                            }
                             let replay_started = std::time::Instant::now();
                             self.replay_directives(
                                 occurrence,
@@ -1117,7 +1245,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         self.recording = Some(directive_memo::Recording::new(
                             cursor,
                             end,
-                            context,
+                            (&context.0, context.1, context.2),
                             &self.conditionals,
                             &self.plan.file_dirs,
                             &self.file_dir_definitions,
@@ -1139,9 +1267,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             let Some(syntax) = prepared.directive(cursor - 1) else {
                 if active {
                     if let Some(recording) = self.recording.as_mut() {
-                        recording
-                            .actions
-                            .push(directive_memo::Action::Text(recording.current));
+                        recording.push_text();
                     }
                     pending.push(cursor - 1);
                 }
@@ -1444,6 +1570,25 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             }
             _ => unreachable!(),
         }
+    }
+}
+
+/// A macro lookup that logs every name it is asked for (the directives' reads of the environment).
+struct Tested<'a> {
+    inner: &'a dyn crate::MacroLookup,
+    log: &'a std::cell::RefCell<Vec<Arc<str>>>,
+}
+impl crate::MacroLookup for Tested<'_> {
+    fn get_key_value(&self, name: &str) -> Option<(&str, &Macro)> {
+        self.log.borrow_mut().push(Arc::from(name));
+        self.inner.get_key_value(name)
+    }
+    fn location_read(&self, file: bool) {
+        self.inner.location_read(file);
+    }
+    fn contains_key(&self, name: &str) -> bool {
+        self.log.borrow_mut().push(Arc::from(name));
+        self.inner.contains_key(name)
     }
 }
 

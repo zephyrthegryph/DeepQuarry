@@ -264,9 +264,9 @@ CAPABILITIES(/obj/item/inducer)
 	maxcharge = 100
 
 	var/mob/living/carbon/human/hume
-	lifecycle_lifetime = 20 SECONDS
 
 CAPABILITIES(/obj/item/cell/standin)
+	configure(movable_motion(lifecycle_lifetime = 20 SECONDS))
 	keeps_if(PROC_REF(has_human_source))
 	configure(item_worn(flags = ABSTRACT))
 	param(nameof(hume), pos = 1)

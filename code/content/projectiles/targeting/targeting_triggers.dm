@@ -29,4 +29,4 @@
 	if(istype(G))
 		G.Fire(aiming_at, owner(), reflex = 1)
 		set_locked(0)
-		EXPIRY_SET(src, lock_time, 10, CLOCK_WORLD)
+		COOLDOWN_START(src, lock_time, 1 SECOND)

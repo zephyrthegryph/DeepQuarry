@@ -52,6 +52,8 @@ SYSTEM_DEF(internal_wiki)
 	VAR_PRIVATE/list/dono_list = list()
 	VAR_PRIVATE/highest_cached_donator = null
 
+SCHEMA(/datum/system/internal_wiki, highest_cached_donator, schema_text())
+
 /datum/system/internal_wiki/stat_entry(msg)
 	msg = "P: [length(pages)] | O: [length(ores)] | M: [length(materials)] | S: [length(smashers)] | F: [length(foodrecipe)]  | D: [length(drinkreact)]  | C: [length(chemreact)]  | B: [length(botseeds)] | V: [length(viruses)] | G: [length(genes)] "
 	return ..()
@@ -611,7 +613,7 @@ SYSTEM_DEF(internal_wiki)
 						"Appliance" = R.cooks_in,
 						"Allergens" = 0,
 						"Medallergens" = 0,
-						"Price" = initial(res.price_tag),
+						"Price" = atom_rules_of_type(res).price_tag,
 						"Flags" = R.wiki
 						)
 	// basically condiments, tofu, cheese, soysauce, etc

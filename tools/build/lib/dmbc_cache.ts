@@ -154,7 +154,7 @@ export function dmbcCacheKey(root: string): CacheKey {
 
 /** A cargo failure that stale shared-target state (not the source) explains; see DmbcTarget in build.ts. */
 export const staleCargoArtifactSignature = (output: string): boolean =>
-  /error\[E0599\]|error\[E04(32|33)\]|error\[E0425\]|internal compiler error|incremental compilation|failed to (?:load|read) (?:dep-info|fingerprint)/i.test(output);
+  /error\[E0599\]|error\[E04(32|33)\]|error\[E0425\]|internal compiler error|the compiler unexpectedly panicked|incremental compilation|failed to (?:load|read) (?:dep-info|fingerprint)/i.test(output);
 
 export function dmbcPairId(dir: string): string {
   const h = createHash('sha256');

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "fire_act() overrides are atom_fire_act notice reactions; the override ratchet is a hard ban"

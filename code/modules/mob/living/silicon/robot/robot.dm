@@ -11,7 +11,6 @@
 	endurance = 200
 
 
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
 	var/lights_on = FALSE // Is our integrated light on?
 	var/grabbable = FALSE //disables/enables pick-up mechanics.
@@ -98,6 +97,8 @@
 	// ALLOW(instance_list): d: per-mob req_access with starting entries, edited at runtime; mobs are few
 	var/list/req_access = list(ACCESS_ROBOTICS) // Interned per subtype in Initialize().
 	var/ident = 0
+	/// FALSE until finish_robot_setup() has run: the build's part and cell installs are not part changes to react to.
+	var/tmp/build_done = FALSE
 	var/viewalerts = 0
 	var/modtype = "Default"
 	var/sprite_type = null
@@ -133,28 +134,13 @@
 
 	var/list/vore_light_states	//Robot exclusive. Lazy.
 	var/list/active_module_types // The types of the active modules (module_slots_changed()). Lazy.
-	vore_capacity_ex = list()
 	vore_fullness_ex = list()
-	vore_icon_bellies = list()
 
 // --- Lifecycle ------------------------------------------------------------------------------
 
-/mob/living/silicon/robot/Initialize(mapload)
-	ident = rand(1, 999)
-	updatename(modtype)
-
-	setup_radio()
-	setup_camera()
-	setup_brain()
-	setup_laws()
-	setup_module()
-	initialize_components()
-	setup_cell()
-
-	if(may_pick_name())
-		grant(src, robot_naming(), src)
-
-	. = ..()
+// A robot has no Initialize() of its own. Its number is a roll; its build steps are the setup() hooks of its CAPABILITIES block (code/library/mob/hands.dm),
+// in this order, each a virtual proc a chassis overrides: updatename (the name from the number, and its PDA and communicator), setup_radio, setup_camera,
+// setup_brain, setup_laws, setup_module, initialize_components, setup_cell, then finish_robot_setup. A step reads what the one before it made.
 
 /// Its verbs, HUD images, sprite datum, power demand and senses, once its Initialize() chain has returned (setup()).
 /mob/living/silicon/robot/proc/finish_robot_setup()
@@ -163,6 +149,7 @@
 	resolve_sprite_datum()
 	recompute_power_demand()
 	update_senses()
+	build_done = TRUE
 
 /mob/living/silicon/robot/proc/setup_radio()
 	rel_set(src, nameof(radio), new /obj/item/radio/borg(src))
@@ -437,8 +424,8 @@
 /// A part was installed, removed, destroyed, toggled or its integrity
 /// changed. Everything derived from parts updates here, once.
 /mob/living/silicon/robot/proc/on_part_changed(datum/robot_component/C)
-	if(!body || QDELETED(src))
-		return
+	if(!build_done || !body || QDELETED(src))
+		return // its build steps install parts one by one (the cell last): finish_robot_setup() takes the demand and senses once they are all in
 	recompute_power_demand()
 	update_power_state()
 	update_canmove()
@@ -1072,7 +1059,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	updatename("Default")
 	set_has_recoloured(FALSE)
 	robotact?.update_static_data_for_all_viewers()
-	vore_capacity_ex = list()
+	set_vore_capacity_ex(list())
 	set_vore_fullness_ex(list())
 	set_vore_light_states(list())
 
@@ -1172,8 +1159,9 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 				H.feed_self_to_grabbed(H, src)
 
 //Robots take half damage from basic attacks.
-/mob/living/silicon/robot/attack_generic(mob/user, damage, attack_message)
-	return ..(user,FLOOR(damage/2, 1),attack_message)
+/mob/living/silicon/robot/smashed_by(datum/act/hit/generic/A)
+	A.damage = FLOOR(A.damage / 2, 1)
+	return ..()
 
 /mob/living/silicon/robot/proc/allowed(mob/M)
 	//check if it doesn't require any access at all
@@ -1325,7 +1313,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		return // No point annoying the AI/s about renames and module resets for shells.
 	switch(notifytype)
 		if(ROBOT_NOTIFICATION_NEW_UNIT) //New Robot
-			to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - New [lowertext(braintype)] connection detected: <a href='byond://?src=\ref[connected_ai];track2=\ref[connected_ai];track=\ref[src]'>[name]</a>") + "<br>"))
+			to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - New [lowertext(braintype)] connection detected: <a href='byond://?src=[REF(connected_ai)];track2=[REF(connected_ai)];track=[REF(src)]'>[name]</a>") + "<br>"))
 		if(ROBOT_NOTIFICATION_NEW_MODULE) //New Module
 			to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - [braintype] module change detected: [name] has loaded the [first_arg].") + "<br>"))
 		if(ROBOT_NOTIFICATION_MODULE_RESET)

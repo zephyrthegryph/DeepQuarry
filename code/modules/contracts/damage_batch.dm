@@ -16,7 +16,7 @@
 
 /datum/system/contracts
 	var/contract_batch_depth = 0
-	/// REF(atom) -> /datum/contract_damage_report, in first-hit order.
+	/// ref_token(atom) -> /datum/contract_damage_report, in first-hit order.
 	var/list/pending_damage_reports
 	/// window key -> TRUE when the batch revised it (the event is the window's batch_event).
 	var/list/pending_opportunity_windows
@@ -27,6 +27,8 @@ CAPABILITIES(/datum/system/contracts)
 	owns_many(nameof(pending_damage_reports))
 	owns_many(nameof(contracts_by_id), /datum/contract)
 	owns_many(nameof(evidence_by_id), /datum/contract_evidence)
+	owns_many(nameof(offer_cooldowns), /datum/contract_cooldown)
+	owns_many(nameof(opportunity_cooldowns), /datum/contract_cooldown)
 	ref_many(nameof(offered_contracts), /datum/contract)
 	ref_many(nameof(active_contracts), /datum/contract)
 	ref_many(nameof(grace_contracts), /datum/contract)
@@ -53,13 +55,13 @@ CAPABILITIES(/datum/system/contracts)
 
 /datum/contract_damage_report/New(atom/source)
 	. = ..()
-	source_ref = REF(source)
+	source_ref = ref_token(source)
 	source_type = source.type
 	name = source.name
 	max_integrity = source.max_integrity
 	var/turf/source_turf = get_turf(source)
 	if(source_turf)
-		location_ref = REF(source_turf)
+		location_ref = ref_token(source_turf)
 		x = source_turf.x
 		y = source_turf.y
 		z = source_turf.z

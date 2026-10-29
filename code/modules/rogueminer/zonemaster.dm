@@ -9,7 +9,7 @@
 	var/tmp/obj/effect/shuttle_landmark/myshuttle_landmark
 
 	//world.time
-	EXPIRY_DECLARE(prepared_at)
+	var/prepared_at = 0
 
 	//accepting shuttles
 	var/ready = 0
@@ -183,7 +183,7 @@
 		return
 
 	if(isnull(M.geologic_data))
-		rel_set(M, nameof(M.geologic_data), new /datum/geosample(M))
+		rel_set(M, nameof(M.geologic_data), geosample_of(M))
 
 	if(!prob(XENOARCH_SPAWN_CHANCE))
 		return
@@ -302,7 +302,7 @@
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
 	log_world("RM(stats): PREP [myarea()] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
-	EXPIRY_STAMP(src, prepared_at, CLOCK_WORLD)
+	STAMP(src, prepared_at, CLOCK_WORLD)
 	GLOB.rm_controller.mark_ready(src)
 	return myarea()
 

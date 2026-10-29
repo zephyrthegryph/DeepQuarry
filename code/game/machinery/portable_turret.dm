@@ -54,7 +54,6 @@
 	density = FALSE
 	use_power = TRUE				//this turret uses and requires power
 	req_one_access = list(ACCESS_SECURITY, ACCESS_HEADS)
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
 	max_integrity = 80			//the turret's integrity
 	var/auto_repair = FALSE		//if 1 the turret slowly repairs itself (while armed).
@@ -117,6 +116,9 @@ MSG_DEF_SELF(porta_turret/wrecked, "It is wrecked: pry it apart instead.")
 MSG_DEF(porta_turret/haywire, "You short out %T%'s threat assessment circuits.", "")
 
 CAPABILITIES(/obj/machinery/porta_turret)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	configure(atom_rules(description_antag = "Turrets can be emagged to target anyone and everyone, on lethals, and cannot be turned off if emagged."))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	ref_one(nameof(last_target), /mob/living)
 	configure(uses_power(idle = 50, active = 300, channel = EQUIP))
 	machine_basics(repair = NONE)
@@ -295,7 +297,9 @@ CAPABILITIES(/obj/machinery/porta_turret)
 		return
 	play_sfx(src, SFX_MACHINES_BUZZBEEP, 3)
 
-/obj/machinery/porta_turret/attack_generic(mob/living/L, damage)
+/obj/machinery/porta_turret/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/L = A.attacker
+	var/damage = A.damage
 	if(isanimal(L))
 		var/mob/living/simple_mob/S = L
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
@@ -304,9 +308,9 @@ CAPABILITIES(/obj/machinery/porta_turret)
 			receive_generic_attack(S, incoming_damage)
 			S.do_attack_animation(src)
 			attempt_retaliate(incoming_damage)
-			return 1
+			return OP_OK
 		visible_message(span_infoplain(span_bold("\The [L]") + " bonks \the [src]'s casing!"))
-	return ..()
+	return HOOK_DECLINE
 
 // While the cover is down the turret is heavily armored: incoming damage is
 // cut to an eighth, and anything that small is shrugged off entirely.
@@ -399,9 +403,21 @@ CAPABILITIES(/obj/machinery/porta_turret)
 /obj/machinery/porta_turret/proc/scan_candidates()
 	return mobs_in_view(world.view, src)
 
+/// TRUE when some mob (in a container or buckled to something too: its turf counts) is within `range` tiles of the turret in both axes. The cheap test
+/// before scan() asks view() what it sees, which walks every movable in the area (0.5 ms a look, on 15 turrets, all round, with nobody about).
+/obj/machinery/porta_turret/proc/mob_nearby(range)
+	var/turf/here = get_turf(src)
+	if(!here)
+		return FALSE
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		var/turf/there = get_turf(M)
+		if(there && there.z == here.z && abs(there.x - here.x) <= range && abs(there.y - here.y) <= range)
+			return TRUE
+	return FALSE
+
 /// One look around while armed: it fires at the best target it sees (the cover comes down `timeout` frames after its last shot).
 /obj/machinery/porta_turret/proc/scan(datum/act/timer/A)
-	if(!last_fired) // We cannot fire anyway until our cooldown ends.
+	if(!last_fired && mob_nearby(world.view + 1)) // We cannot fire anyway until our cooldown ends, and there is nothing to look at with no mob near.
 		var/list/targets = list()			//list of primary targets
 		var/list/secondarytargets = list()	//targets that are least important
 		for(var/mob/M in scan_candidates())

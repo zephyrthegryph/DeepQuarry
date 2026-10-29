@@ -116,9 +116,9 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
 	w_class = 4.0
 	force_wielded = 22 // Was 13, Buffed - RR
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/oldtwohanded/spear)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(movable_motion(throw_speed = 3))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 20))

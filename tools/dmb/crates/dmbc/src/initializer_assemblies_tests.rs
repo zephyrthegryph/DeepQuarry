@@ -3,9 +3,6 @@ use dm_codegen_byond::initializer::{lower_assignment_views, AssignmentView, Init
 use dm_ir::{InitializerTarget, ResolveQuery, ResolvedMeaning, SymbolId};
 struct Host(u128);
 impl Resolver for Host {
-    fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-        Some(self.0)
-    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         match query {
             ResolveQuery::Ancestry(owner) => ResolvedMeaning::Symbols(vec![owner].into()),
@@ -17,14 +14,14 @@ impl Resolver for Host {
             ResolveQuery::GlobalVar(name) => ResolvedMeaning::Member {
                 owner: SymbolId::of("/"),
                 name,
-                fingerprint: 1,
+                fingerprint: 1.into(),
                 data: std::sync::Arc::new(dm_ir::DeclarationMeaning::default()),
             },
             ResolveQuery::DeclaredVarType { .. } => ResolvedMeaning::DeclaredType(None),
             ResolveQuery::RuntimeType(path) => ResolvedMeaning::Symbol(path),
             ResolveQuery::Resource(path) => ResolvedMeaning::Resource {
                 path,
-                content: self.0,
+                content: self.0.into(),
             },
             _ => ResolvedMeaning::Unsupported(query),
         }
@@ -116,7 +113,6 @@ fn nested_certified_admission_records_transitive_reads_in_assembly_ledger() {
             query,
             answer: host.resolve(query),
         }],
-        vec![(query.domain(), 7)],
         1,
         || (),
     );
@@ -222,7 +218,6 @@ fn earlier_unrelated_receiver_preserves_assembly_locator_and_admission() {
     store.insert_with(
         std::sync::Arc::clone(&old.key),
         receipts::reads(&old, Vec::new()),
-        Vec::new(),
         1,
         || (),
     );
@@ -426,7 +421,6 @@ fn verified_assembly_hit_uses_original_receipt_and_fails_closed_on_changed_outpu
     corrupt_store.values.insert_with(
         Arc::clone(&key.key),
         accepted.reads.iter().cloned().collect(),
-        Vec::new(),
         std::mem::size_of::<RetainedAssembly>(),
         || RetainedAssembly {
             code: Arc::clone(&changed_code),

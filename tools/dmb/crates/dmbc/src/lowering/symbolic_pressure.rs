@@ -22,7 +22,7 @@ impl SessionSymbolicMemo {
         };
         let report = owner
             .values
-            .prune_for_pressure_shared(limit, |key, _, _, record, allowance| {
+            .prune_for_pressure_shared(limit, |key, _, record, allowance| {
                 shared_charge(key, record, allowance)
             });
         // Core eviction has detached/dropped rejected strong receipt owners.

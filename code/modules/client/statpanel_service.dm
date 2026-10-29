@@ -9,7 +9,7 @@ SYSTEM_DEF(statpanels)
 	var/list/global_data
 	var/list/mc_data
 	var/list/mc_metrics
-	EXPIRY_DECLARE(mc_metrics_generated_at)
+	var/mc_metrics_generated_at = 0
 	mc_metrics_generated_at = -INFINITY
 
 	///how many subsystem fires between most tab updates
@@ -72,15 +72,15 @@ SYSTEM_DEF(statpanels)
 		if(target.stat_tab == "Status" && num_fires % status_wait == 0)
 			set_status_tab(target)
 
-		if(!target.holder)
+		if(!admin_can(target, 0))
 			target.stat_panel.send_message("remove_admin_tabs")
 		else
 			target.stat_panel.send_message("update_split_admin_tabs", FALSE)
 
 			if(check_rights_for(target, R_MENTOR))
-				target.stat_panel.send_message("add_tickets_tabs", target.holder.href_token)
+				target.stat_panel.send_message("add_tickets_tabs", admin_href_token(target))
 			if(check_rights_for(target, R_HOLDER) && (!("MC" in target.panel_tabs) || !("Tickets" in target.panel_tabs)))
-				target.stat_panel.send_message("add_admin_tabs", target.holder.href_token)
+				target.stat_panel.send_message("add_admin_tabs", admin_href_token(target))
 
 			if(target.stat_tab == "MC" && ((num_fires % mc_wait == 0)))
 				set_MC_tab(target)
@@ -121,22 +121,23 @@ SYSTEM_DEF(statpanels)
 
 /datum/system/statpanels/proc/update_misc_tabs(client/target,mob/target_mob)
 	target_mob.update_misc_tabs()
-	for(var/tab in target_mob.misc_tabs)
-		if(length(target_mob.misc_tabs[tab]) == 0 && (tab in target.misc_tabs))
+	var/list/mob_tabs = sparse_get(target_mob, misc_tabs)
+	for(var/tab in mob_tabs)
+		if(length(mob_tabs[tab]) == 0 && (tab in target.misc_tabs))
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
 
-		if(length(target_mob.misc_tabs[tab]) > 0)
+		if(length(mob_tabs[tab]) > 0)
 			if(!(tab in target.misc_tabs))
 				target.misc_tabs += tab
 				target.stat_panel.send_message("create_misc",tab)
 			target.stat_panel.send_message("update_misc",list(
 				TN = tab, \
-				TC = target_mob.misc_tabs[tab], \
+				TC = mob_tabs[tab], \
 			))
 
 	for(var/tab in target.misc_tabs)
-		if(!(tab in target_mob.misc_tabs))
+		if(!(tab in mob_tabs))
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
 
@@ -155,9 +156,9 @@ SYSTEM_DEF(statpanels)
 	var/coord_entry = COORD(eye_turf)
 	if(!mc_data)
 		generate_mc_data()
-	if(!mc_metrics || !BEFORE(src, mc_metrics_generated_at + 5 SECONDS, CLOCK_WORLD))
+	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 5 SECONDS)
 		mc_metrics = generate_mc_metrics()
-		EXPIRY_STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
+		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
 	target.stat_panel.send_message("update_mc", list(
 		"mc_data" = mc_data,
 		"mc_metrics" = mc_metrics,
@@ -181,7 +182,7 @@ SYSTEM_DEF(statpanels)
 			"overrun" = S.tick_overrun,
 			"cost" = S.fire_cost,
 			"fires" = S.times_fired,
-			"ref" = REF(S),
+			"ref" = ref_token(S),
 		))
 	return list(
 		"tick_budget_ms" = world.tick_lag * 100,
@@ -267,8 +268,8 @@ SYSTEM_DEF(statpanels)
 		mc_data.Insert(2, list(list("byond-tracy:", "[tracy_dll] not present")))
 #endif
 	for(var/datum/system/system as anything in kernel_pure_systems())
-		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), "\ref[system]")
-	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", "\ref[GLOB.cameranet]")
+		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), REF(system))
+	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", REF(GLOB.cameranet))
 
 /// Stat panel window declaration
 /client/var/datum/tgui_window/stat_panel

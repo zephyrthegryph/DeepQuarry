@@ -30,7 +30,11 @@ MSG_DEF_SELF(needle/target_empty, "It is empty.")
 MSG_DEF_SELF(needle/target_full, "It is full.")
 MSG_DEF_SELF(needle/cannot_remove, "You cannot directly remove reagents from this object.")
 MSG_DEF_SELF(needle/cannot_fill, "You cannot directly fill this object.")
+/datum/msg/needle/thick_hide
+	self = "Your needle fails to penetrate %LIMB%'s thick hide..."
+	span_class = "warning"
 MSG_DEF_SELF(needle/blood_present, "There is already a blood sample in this syringe.")
+MSG_DEF_SELF(needle/full, "The syringe is full.")
 MSG_DEF_SELF(needle/no_dna, "You are unable to locate any blood. (To be specific, your target seems to be missing their DNA datum).")
 MSG_DEF_SELF(needle/no_blood, "You are unable to locate any blood.")
 MSG_DEF_SELF(needle/synthetic, "You can't draw blood from a synthetic!")
@@ -55,12 +59,12 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 			needs(req(CAP_PROC(target_takes)), req(CAP_PROC(target_has_room))),
 			then(CAP_PROC(put_in_done))),
 		modes ? op("draw_blood", at_target(/mob/living/carbon), when(CAP_PROC(target_bleeds_at_once)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Draw blood"),
-			needs(req(CAP_PROC(blood_absent)), req(CAP_PROC(target_has_dna)),
+			needs(req(CAP_PROC(blood_absent)), req(CAP_PROC(room_for_blood)), req(CAP_PROC(target_has_dna)),
 				req(CAP_PROC(target_not_noclone)), req(CAP_PROC(target_not_synthetic))),
 			then(CAP_PROC(blood_drawn))) : null,
 		modes ? op("take_blood", at_target(/mob/living/carbon), when(CAP_PROC(target_bleeds_after_a_wait)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART + 1), label("Take blood"),
 			wait(CAP_PROC(blood_wait)),
-			needs(req(CAP_PROC(blood_absent)), req(CAP_PROC(target_has_dna)),
+			needs(req(CAP_PROC(blood_absent)), req(CAP_PROC(room_for_blood)), req(CAP_PROC(target_has_dna)),
 				req(CAP_PROC(target_not_noclone)), req(CAP_PROC(target_not_synthetic))),
 			then(CAP_PROC(blood_drawn))) : null,
 		modes ? op("inject", at_target(/mob/living), when(CAP_PROC(target_injectable_person)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Inject"),
@@ -68,6 +72,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 			needs(req(CAP_PROC(target_has_room)), req(CAP_PROC(belly_free)),
 				req(CAP_PROC(limb_there)), req(CAP_PROC(limb_not_robotic)),
 				req(CAP_PROC(limb_not_lifelike)), req(CAP_PROC(skin_open))),
+			chance(CAP_PROC(needle_gets_through), otherwise = list(says(MSG(needle/thick_hide)))),
 			then(CAP_PROC(injected))) : null)
 
 // ---- the mode ----
@@ -184,6 +189,11 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	var/atom/target = A.target
 	return (!!target?.reagents && target.reagents.get_free_space() > 0) ? null : /datum/msg/needle/target_full
 
+/// The syringe has room to draw into.
+/datum/capability/lib/needle/proc/room_for_blood(datum/act/op/A)
+	var/atom/holder = A.holder
+	return (holder.reagents.get_free_space() > 0) ? null : /datum/msg/needle/full
+
 /datum/capability/lib/needle/proc/blood_absent(datum/act/op/A)
 	var/atom/holder = A.holder
 	return (!holder.reagents.has_reagent(REAGENT_ID_BLOOD)) ? null : /datum/msg/needle/blood_present
@@ -212,6 +222,13 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	if(!ishuman(target) || target == user || !hud_of(user)?.zone_sel)
 		return null
 	return target.get_organ(hud_of(user)?.zone_sel?.selecting)
+
+/// The chance (percent) the needle goes in: a thick hide at the limb aimed at may turn it away (chance(): a failed roll says so and does nothing).
+/datum/capability/lib/needle/proc/needle_gets_through(datum/act/op/A)
+	if(!aimed_at_a_human(A))
+		return 100
+	var/mob/living/carbon/human/H = A.target
+	return 100 - H.thick_skin_hold_chance(H.get_organ(hud_of(A.actor)?.zone_sel?.selecting))
 
 /datum/capability/lib/needle/proc/aimed_at_a_human(datum/act/op/A)
 	var/mob/living/target = A.target
@@ -320,9 +337,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	var/atom/holder = A.holder
 	var/mob/living/carbon/target = A.target
 	var/mob/user = A.actor
-	var/amount = holder.reagents.get_free_space()
-	if(amount <= 0)
-		return OP_REFUSED
+	var/amount = holder.reagents.get_free_space() // room_for_blood() held at commit
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
 		if(H.species && !H.should_have_organ(O_HEART))
@@ -344,18 +359,12 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 		mode_set(holder, NEEDLE_INJECT)
 	return OP_OK
 
-/// The needle goes in: the thick hide of some species turns it away (a roll, as the injector's old check made, for somebody else), else the first transfer
+/// The needle went in (the thick-hide roll is the op's chance(), needle_gets_through()): the first transfer
 /// goes into the blood now and the rest follow, one every third of the time, as long as both stand where they stood and the container is in the hand.
 /datum/capability/lib/needle/proc/injected(datum/act/op/A)
 	var/atom/holder = A.holder
 	var/mob/living/target = A.target
 	var/mob/user = A.actor
-	if(aimed_at_a_human(A))
-		var/mob/living/carbon/human/H = target
-		var/obj/item/organ/external/affected = H.get_organ(hud_of(user)?.zone_sel?.selecting)
-		if(affected && H.thick_skin_holds(affected))
-			to_chat(user, span_warning("Your needle fails to penetrate \the [affected]'s thick hide..."))
-			return OP_REFUSED
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	var/contained = holder.reagents.get_reagents()
 	var/trans = holder.reagents.trans_to_mob(target, reagent_transfer_amount(holder), CHEM_BLOOD) || 0

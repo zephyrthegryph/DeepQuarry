@@ -57,6 +57,8 @@
 	adjust_strength(-Proj.get_structure_damage() / 10)
 
 CAPABILITIES(/obj/effect/energy_field)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	op("hit_energy_field", item(/obj/item), then(PROC_REF(interaction_hit_energy_field)))
 	op("touch_energy_field", hand(), then(PROC_REF(interaction_touch_energy_field)))
 	param(nameof(my_gen), pos = 1, apply = PROC_REF(raise_field))
@@ -73,19 +75,22 @@ CAPABILITIES(/obj/effect/energy_field)
 		user.setClickCooldown(user.get_attack_speed(held))
 	return OP_DECLINE
 
-/obj/effect/energy_field/attack_generic(mob/user, damage)
+/obj/effect/energy_field/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	if(damage)
 		adjust_strength(-damage / 20)
 		user.do_attack_animation(src)
 		user.setClickCooldown(user.get_attack_speed())
+	return OP_OK
 
 /// Old attack_hand: harmless, but still produces the 'impact' effect; the touch carries on.
 /obj/effect/energy_field/proc/interaction_touch_energy_field(datum/act/op/A)
 	impact_effect(3)
 	return OP_DECLINE
 
-/obj/effect/energy_field/Bumped(atom/A)
-	..(A)
+/// The bump notice: something walked into it (was Bumped()).
+/obj/effect/energy_field/proc/bumped_by(datum/act/bump_act)
 	impact_effect(2)
 
 /obj/effect/energy_field/handle_meteor_impact(obj/effect/meteor/meteor)

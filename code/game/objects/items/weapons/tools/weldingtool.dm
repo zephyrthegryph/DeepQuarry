@@ -10,7 +10,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	item_state = "welder"
 
 	//Amount of OUCH when it's thrown
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 
 	//Cost to make in the autolathe
@@ -159,7 +158,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
 CAPABILITIES(/obj/item/weldingtool)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_tooling(speed = 1))
 	configure(item_worn(slots = SLOT_BELT))
@@ -279,7 +278,7 @@ CAPABILITIES(/obj/item/weldingtool)
 				T.visible_message(span_danger("\The [src] turns on."))
 			playsound(src, acti_sound, 50, 1)
 			src.set_force(15)
-			src.injury_kind = INJURY_BURN
+			src.set_injury_kind(INJURY_BURN)
 			src.set_w_class(ITEMSIZE_LARGE)
 			src.set_hitsound('sound/items/Welder.ogg')
 			set_welding(1)
@@ -296,7 +295,7 @@ CAPABILITIES(/obj/item/weldingtool)
 			T.visible_message(span_warning("\The [src] turns off."))
 		playsound(src, deac_sound, 50, 1)
 		src.set_force(3)
-		src.injury_kind = initial(src.injury_kind)
+		src.set_injury_kind(combat_of_type(src.type).injury_kind)
 		src.set_w_class(initial(src.w_class))
 		set_welding(0)
 		src.set_hitsound(sounds_of_type(src.type).hit)

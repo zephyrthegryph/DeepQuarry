@@ -10,7 +10,6 @@
 	icon_state = "paper"
 	item_state = "paper"
 	w_class = ITEMSIZE_TINY
-	throw_range = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
 	pressure_resistance = 1
@@ -64,7 +63,7 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/paper)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 1, throw_speed = 1))
 	setup(PROC_REF(encode_text), mapload = TRUE)
 	configure(item_worn(slots = SLOT_HEAD, covers = HEAD))
 	configure(item_thrown(force = 0))
@@ -234,7 +233,7 @@ CAPABILITIES(/obj/item/paper/card)
 	var/close = "</span>"
 	var/close_len = length(close)
 	var/cursor = 1
-	var/field_id = 0
+	var/field_number = 0
 	var/total = length(info)
 	while(cursor <= total)
 		var/istart = findtext(info, marker, cursor)
@@ -248,10 +247,10 @@ CAPABILITIES(/obj/item/paper/card)
 			// Malformed; treat the rest as text.
 			segs += list(list("type" = "text", "text" = copytext(info, cursor)))
 			break
-		field_id++
+		field_number++
 		var/content_start = istart + marker_len
 		var/field_text = copytext(info, content_start, iend)
-		segs += list(list("type" = "field", "id" = field_id, "text" = field_text))
+		segs += list(list("type" = "field", "id" = field_number, "text" = field_text))
 		cursor = iend + close_len
 	return segs
 
@@ -482,8 +481,8 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 	info_links = info
 	var/i = 0
 	for(i=1,i<=fields,i++)
-		addtofield(i, "<font face=\"[deffont]\"><A href='byond://?src=\ref[src];write=[i]'>write</A></font>", 1)
-	info_links = info_links + "<font face=\"[deffont]\"><A href='byond://?src=\ref[src];write=end'>write</A></font>"
+		addtofield(i, "<font face=\"[deffont]\"><A href='byond://?src=[REF(src)];write=[i]'>write</A></font>", 1)
+	info_links = info_links + "<font face=\"[deffont]\"><A href='byond://?src=[REF(src)];write=end'>write</A></font>"
 
 
 /obj/item/paper/proc/clearpaper()
@@ -904,11 +903,11 @@ CAPABILITIES(/obj/item/paper/manifest)
 		t = replacetext(t, "\[/row\]", "")
 		t = replacetext(t, "\[cell\]", "<td>")
 		t = replacetext(t, "\[/cell\]", "")
-		t = replacetext(t, "\[logo\]", "<img src=\ref['html/images/ntlogo.png']>")
-		t = replacetext(t, "\[talogo\]", "<img src=\ref['html/images/talonlogo.png']>")
-		t = replacetext(t, "\[sglogo\]", "<img src=\ref['html/images/sglogo.png']>")
-		t = replacetext(t, "\[trlogo\]", "<img src=\ref['html/images/trader.png']>")
-		t = replacetext(t, "\[pclogo\]", "<img src=\ref['html/images/pclogo.png']>") // Not available on virgo // CHOMPEnable
+		t = replacetext(t, "\[logo\]", "<img src=[REF('html/images/ntlogo.png')]>")
+		t = replacetext(t, "\[talogo\]", "<img src=[REF('html/images/talonlogo.png')]>")
+		t = replacetext(t, "\[sglogo\]", "<img src=[REF('html/images/sglogo.png')]>")
+		t = replacetext(t, "\[trlogo\]", "<img src=[REF('html/images/trader.png')]>")
+		t = replacetext(t, "\[pclogo\]", "<img src=[REF('html/images/pclogo.png')]>") // Not available on virgo // CHOMPEnable
 
 		t = "<font face=\"[/obj/item/paper::deffont]\" color=[P ? P.colour : "black"]>[t]</font>"
 	else // If it is a crayon, and he still tries to use these, make them empty!

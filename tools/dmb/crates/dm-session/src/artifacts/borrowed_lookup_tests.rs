@@ -12,11 +12,11 @@ fn borrowed_locator_exact_match_claims_the_same_owner_and_replays_changed_reads(
     let initial = store.lease();
     let key: Arc<[u8]> = Arc::from(b"identity:exact-body".as_slice());
     let value = initial
-        .insert_with_owned(Arc::clone(&key), ledger(1), vec![], 3, || 17)
+        .insert_with_owned(Arc::clone(&key), ledger(1), 3, || 17)
         .unwrap();
     let digest = xxhash_rust::xxh3::xxh3_128(&key);
     let current = store.lease();
-    let mut changed = |reads: &Receipt<u8, u32, u8>, _: &[(u8, u128)], _: &Arc<u32>| {
+    let mut changed = |reads: &Receipt<u8, u32, u8>, _: &Arc<u32>| {
         reads
             .iter()
             .find(|read| read.answer != 2)
@@ -37,7 +37,7 @@ fn borrowed_locator_exact_match_claims_the_same_owner_and_replays_changed_reads(
                 assert!(!store.is_empty()); // key callback must be outside the core lock
                 candidate == key.as_ref()
             },
-            &mut |_, _, _| None,
+            &mut |_, _| None,
             &mut |_| true,
         )
         .0
@@ -53,7 +53,7 @@ fn colliding_or_forged_locator_never_validates_or_claims_an_inexact_key() {
     let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
     let seed = store.lease();
     let key: Arc<[u8]> = Arc::from(b"identity:exact-body".as_slice());
-    seed.insert_with_owned(Arc::clone(&key), ledger(1), vec![], 1, || 11)
+    seed.insert_with_owned(Arc::clone(&key), ledger(1), 1, || 11)
         .unwrap();
     let digest = xxhash_rust::xxh3::xxh3_128(&key);
     // Deliberately construct a collision bucket: digest is only a locator and
@@ -68,7 +68,6 @@ fn colliding_or_forged_locator_never_validates_or_claims_an_inexact_key() {
         .push(Variant {
             key: Arc::from(b"forged:exact-body".as_slice()),
             reads: ledger(9).into(),
-            versions: Arc::from([]),
             value: Arc::new(99),
             weight: 0,
             holders: Default::default(),
@@ -79,7 +78,7 @@ fn colliding_or_forged_locator_never_validates_or_claims_an_inexact_key() {
         .visit_borrowed_receipted_with_value(
             digest,
             &|candidate| candidate == key.as_ref(),
-            &mut |_, _, value| {
+            &mut |_, value| {
                 visits += 1;
                 assert_eq!(**value, 11);
                 None
@@ -93,7 +92,7 @@ fn colliding_or_forged_locator_never_validates_or_claims_an_inexact_key() {
     let result = current.visit_borrowed_receipted_with_value(
         digest,
         &|candidate| candidate == b"identity:changed-body",
-        &mut |_, _, _| panic!("wrong key cannot replay reads"),
+        &mut |_, _| panic!("wrong key cannot replay reads"),
         &mut |_| panic!("wrong key cannot acquire a claim"),
     );
     assert!(result.0.is_none());
@@ -108,7 +107,7 @@ fn borrowed_claim_reattaches_the_same_stored_key_after_origin_lease_drops() {
     let value = original
         .as_ref()
         .unwrap()
-        .insert_with_owned(Arc::clone(&key), ledger(1), vec![], 5, || 21)
+        .insert_with_owned(Arc::clone(&key), ledger(1), 5, || 21)
         .unwrap();
     let current = store.lease();
     let digest = xxhash_rust::xxh3::xxh3_128(&key);
@@ -116,7 +115,7 @@ fn borrowed_claim_reattaches_the_same_stored_key_after_origin_lease_drops() {
         .visit_borrowed_receipted_with_value(
             digest,
             &|candidate| candidate == key.as_ref(),
-            &mut |reads, _, _| {
+            &mut |reads, _| {
                 assert!(reads.iter().all(|read| read.answer == 1));
                 None
             },

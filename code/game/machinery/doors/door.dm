@@ -15,7 +15,6 @@
 	density = TRUE
 	can_atmos_pass = ATMOS_PASS_PROC
 	layer = DOOR_OPEN_LAYER
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	var/open_layer = DOOR_OPEN_LAYER
 	var/closed_layer = DOOR_CLOSED_LAYER
 
@@ -60,6 +59,8 @@ MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
 CAPABILITIES(/obj/machinery/door)
+	on_notice(/datum/notice/machinery_broken, then(PROC_REF(on_broken)))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(atom_shielding(announce_bands = TRUE))
 	setup(PROC_REF(settle_door_state))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
@@ -100,11 +101,11 @@ CAPABILITIES(/obj/machinery/door)
 	apply_rad_shield_material()
 	if(density)
 		layer = closed_layer
-		explosion_resistance = initial(explosion_resistance)
+		set_explosion_resistance(rules_of_type(type).explosion_resistance)
 		update_heat_protection(get_turf(src))
 	else
 		layer = open_layer
-		explosion_resistance = 0
+		set_explosion_resistance(0)
 
 	if(width > 1)
 		if(dir in list(EAST, WEST))
@@ -184,16 +185,16 @@ CAPABILITIES(/obj/machinery/door)
 /obj/machinery/door/proc/bump_reaches(mob/M)
 	if(panel_is_open(src) || operating)
 		return FALSE
-	if(STAMP_ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
+	if(stamp_elapsed(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
 		return FALSE //Can bump-open one airlock per second. This is to prevent shock spam.
-	STAMP(M, last_bumped, CLOCK_WORLD)
+	stamp_now(M, last_bumped, CLOCK_WORLD)
 	return bump_allowed(M)
 
 /// bump_reaches() without the stamp: what a takeover asks before it answers the bump itself (the airlock's shock).
 /obj/machinery/door/proc/bump_reaches_without_stamp(mob/M)
 	if(panel_is_open(src) || operating)
 		return FALSE
-	if(STAMP_ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
+	if(stamp_elapsed(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
 		return FALSE
 	return bump_allowed(M)
 
@@ -393,13 +394,8 @@ CAPABILITIES(/obj/machinery/door)
 /obj/machinery/door/on_update_integrity(old_value, new_value)
 	. = ..()
 
-/obj/machinery/door/atom_break(damage_flag)
-	. = ..()
-	if(.)
-		on_broken()
-
 /// What a door does when it breaks, after the base machinery break.
-/obj/machinery/door/proc/on_broken()
+/obj/machinery/door/proc/on_broken(datum/act/A)
 	visible_message("[name] breaks!")
 
 /// The look: a shut door shows "door1", an open one "door0" (density is tracked, so a swing redraws it). Subtypes draw their own.
@@ -469,7 +465,7 @@ CAPABILITIES(/obj/machinery/door)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set_layer(open_layer)
-	explosion_resistance = 0
+	set_explosion_resistance(0)
 	set_opacity(0)
 	set_operating(0)
 
@@ -512,7 +508,7 @@ CAPABILITIES(/obj/machinery/door)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set_density(TRUE)
-	explosion_resistance = initial(explosion_resistance)
+	set_explosion_resistance(rules_of_type(type).explosion_resistance)
 	set_layer(closed_layer)
 	update_nearby_tiles()
 	after(src, anim_length_before_finalize, PROC_REF(close_internalfinish), with = list(forced))

@@ -166,6 +166,21 @@ test('no-fail-fast executes later harnesses and rejects any failure, even on a h
   expect(cargoBuilds).toBe(1);
 });
 
+test('a path dependency\'s doc attributes and untagged fences do not bypass the cache (its doctests never run)', async () => {
+  localDependency = path.join(root, 'tools/analyze/vendor/dep');
+  fs.mkdirSync(path.join(localDependency, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(localDependency, 'Cargo.toml'), '[package]\nname="dep"\n');
+  fs.writeFileSync(path.join(localDependency, 'src/lib.rs'), '#[doc(hidden)]\npub fn x() {}\n/// ```\n/// let a = 1;\n/// ```\npub fn y() {}\n');
+  await run();
+  await run();
+  expect(cargoBuilds).toBe(1);
+  expect(calls.some((c) => c.command === 'cargo' && c.args[0] === 'test' && !c.args.includes('--no-run'))).toBe(false);
+  // a change in the dependency still invalidates the compiled harnesses
+  fs.appendFileSync(path.join(localDependency, 'src/lib.rs'), '\n// dep-v2');
+  await run();
+  expect(cargoBuilds).toBe(2);
+});
+
 test('executable doctests use original Cargo and preserve harness arguments', async () => {
   fs.appendFileSync(path.join(root, 'tools/analyze/src/lib.rs'), '\n/// ```\n/// assert!(true);\n/// ```\n');
   await run({ testArgs: ['sample', '--exact'] });

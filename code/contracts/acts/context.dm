@@ -157,3 +157,10 @@ CAPABILITIES(/datum/act/timer)
 /// Borrow the current member only for this trigger; deletion clears the link before a later part reads it.
 /datum/act/timer/proc/set_member_target(datum/member)
 	rel_set(src, nameof(target), member)
+
+SCHEMA(/datum/act/action, reason, schema_msg())
+
+// What the taking hook answered: its handler's return value, whatever it is (a veto payload, an ITEM_INTERACT_* result, a name).
+SCHEMA(/datum/act/action, reply, schema_any())
+
+SCHEMA(/datum/op_result, reason, schema_msg())

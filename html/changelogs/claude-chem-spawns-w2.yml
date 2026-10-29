@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Chemical smoke, foam, explosion and EMP reactions declare the effect they set off"

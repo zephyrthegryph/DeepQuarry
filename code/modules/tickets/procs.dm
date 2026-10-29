@@ -308,7 +308,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	else if(isclient(whom))
 		C = whom
 	if(!C)
-		if(src.holder)
+		if(admin_can(src, 0))
 			to_chat(src, span_admin_pm_warning("Error: Mentor-PM: Client not found."))
 		return
 
@@ -450,7 +450,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 		return
 
 	//Has mentor powers but the recipient no longer has an open ticket
-	if(src.holder && !recipient.current_ticket())
+	if(admin_can(src, 0) && !recipient.current_ticket())
 		to_chat(src, span_mentor_warning("You can no longer reply to this ticket."))
 		to_chat(src, span_mentor_notice("Message: [msg]"))
 		return
@@ -460,19 +460,19 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 
 	var/interaction_message = span_mentor_notice("Mentor-PM from-" + span_bold("[src]") + " to-" + span_bold("[recipient]") + ": [msg]")
 
-	if (recipient.current_ticket() && !recipient.holder && recipient.current_ticket().level == 0)
+	if (recipient.current_ticket() && !admin_can(recipient, 0) && recipient.current_ticket().level == 0)
 		recipient.current_ticket().AddInteraction(interaction_message)
-	if (src.current_ticket() && !src.holder && src.current_ticket().level == 0)
+	if (src.current_ticket() && !admin_can(src, 0) && src.current_ticket().level == 0)
 		src.current_ticket().AddInteraction(interaction_message)
 
 	// It's a little fucky if they're both mentors, but while admins may need to adminhelp I don't really see any reason a mentor would have to mentorhelp since you can literally just ask any other mentors online
-	if (recipient.holder && src.holder)
+	if (admin_can(recipient, 0) && admin_can(src, 0))
 		if (recipient.current_ticket() && recipient != src && recipient.current_ticket().level == 0)
 			recipient.current_ticket().AddInteraction(interaction_message)
 		if (src.current_ticket() && src.current_ticket().level == 0)
 			src.current_ticket().AddInteraction(interaction_message)
 
-	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=\ref[src]'>[src]</a>") + ": [msg]")))
+	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=[url_encode(ref_token(src))]'>[src]</a>") + ": [msg]")))
 	to_chat(src, span_mentor(span_italics("Mentor-PM to-" + span_bold("[recipient]") + ": [msg]")))
 
 	log_admin("[key_name(src)]->[key_name(recipient)]: [msg]")

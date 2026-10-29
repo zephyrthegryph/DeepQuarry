@@ -10,18 +10,30 @@
 /// Puts the blocker on a movable that is being initialized: nothing for a type that blocks none, the shared generic overlay for
 /// EMISSIVE_BLOCK_GENERIC, an owned blocker object (watched, so a blocker deleted from outside is dropped) for EMISSIVE_BLOCK_UNIQUE.
 /atom/movable/proc/emissive_blocker_attach()
-	if(blocks_emissive)
-		if(blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
+	if(motion_of(src).blocks_emissive)
+		if(motion_of(src).blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
 			render_target = ref(src)
 			rel_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
 			add_overlay(list(em_block), TRUE)
 			observe(em_block, /datum/notice/qdeleting, src, then(PROC_REF(emblocker_gc)))
 	else
-		var/mutable_appearance/gen_emissive_blocker = mutable_appearance(icon, icon_state, plane = PLANE_EMISSIVE, alpha = src.alpha)
-		gen_emissive_blocker.color = GLOB.em_block_color
-		gen_emissive_blocker.dir = dir
-		gen_emissive_blocker.appearance_flags |= appearance_flags
-		add_overlay(list(gen_emissive_blocker), TRUE)
+		add_overlay(list(emissive_blocker_generic(icon, icon_state, alpha, dir, appearance_flags)), TRUE)
+
+/// The generic blocker for a look, one appearance per (icon file, state, alpha, dir, flags): about 91 k movables take one at boot, and
+/// they share a few hundred looks, so most attach without building a mutable appearance. An icon object (not a file) is built every time.
+/proc/emissive_blocker_generic(icon, icon_state, alpha, dir, appearance_flags)
+	if(isnull(icon) || isfile(icon))
+		return CACHED_KEY(emissive_blocker_generic, "[icon]|[icon_state]|[alpha]|[dir]|[appearance_flags]", icon, icon_state, alpha, dir, appearance_flags)
+	return emissive_blocker_generic_build(icon, icon_state, alpha, dir, appearance_flags)
+
+DECLARE_SHARED_CACHE(emissive_blocker_generic, GLOBAL_PROC_REF(emissive_blocker_generic_build), SC_NEVER)
+
+/proc/emissive_blocker_generic_build(icon, icon_state, alpha, dir, appearance_flags)
+	var/mutable_appearance/gen_emissive_blocker = mutable_appearance(icon, icon_state, plane = PLANE_EMISSIVE, alpha = alpha)
+	gen_emissive_blocker.color = GLOB.em_block_color
+	gen_emissive_blocker.dir = dir
+	gen_emissive_blocker.appearance_flags |= appearance_flags
+	return gen_emissive_blocker.appearance
 
 /// Takes the unique blocker off in the destroy transaction (the generic overlay dies with the movable).
 /atom/movable/proc/emissive_blocker_detach()

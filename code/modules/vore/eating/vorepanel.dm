@@ -9,8 +9,10 @@
 #define GENERAL_TAB 3
 #define PREFERENCE_TAB 4
 
-/mob
-	var/tmp/datum/vore_look/vorePanel
+/// The mob's vore panel (LK_VORE_PANEL, gone with the mob), or null.
+/mob/proc/vore_panel()
+	RETURN_TYPE(/datum/vore_look)
+	return link_get(src, LK_VORE_PANEL)
 
 /mob/proc/insidePanel()
 	set name = "Vore Panel"
@@ -22,16 +24,19 @@
 	if(!isliving(src))
 		init_vore(TRUE)
 
-	if(!vorePanel)
+	var/datum/vore_look/panel = vore_panel()
+	if(!panel)
 		if(!isnewplayer(src))
-			log_vore("[src] ([type], \ref[src]) didn't have a vorePanel and tried to use the verb.")
-		rel_set(src, nameof(vorePanel), new /datum/vore_look(src))
+			log_vore("[src] ([type], [REF(src)]) didn't have a vorePanel and tried to use the verb.")
+		panel = new /datum/vore_look(src)
+		link_make(src, LK_VORE_PANEL, panel)
 
-	vorePanel.tgui_interact(src)
+	panel.tgui_interact(src)
 
 /mob/proc/updateVRPanel() //Panel popup update call from belly events.
-	if(vorePanel)
-		SStgui.update_uis(vorePanel)
+	var/datum/vore_look/panel = vore_panel()
+	if(panel)
+		SStgui.update_uis(panel)
 
 //
 // Callback Handler for the Inside form
@@ -207,7 +212,7 @@ CAPABILITIES(/datum/vore_look)
 			var/mob/living/simple_mob/S = M
 			key = "[S.icon_living]"
 		else
-			key = "\ref[target][M.real_name]"
+			key = "[ref_token(target)][M.real_name]"
 	if(nom_icons[key])
 		. = nom_icons[key]
 	else
@@ -677,7 +682,7 @@ CAPABILITIES(/datum/vore_look)
 		B.vore_fx(host())
 	else
 		host().clear_fullscreen("belly")
-		host().belly_overlay_tgui?.hide() // hide TGUI belly overlay
+		host().belly_overlay_window()?.hide() // hide TGUI belly overlay
 	if(!host().hud_used.hud_shown)
 		host().toggle_hud_vis()
 	set_unsaved_changes(TRUE)
@@ -823,7 +828,7 @@ CAPABILITIES(/datum/vore_look)
 
 /datum/vore_look/proc/ui_act_set_vs_color(datum/act/op/A, attribute, val)
 	var/belly_choice = attribute
-	if(!(belly_choice in host().vore_icon_bellies))
+	if(!(belly_choice in living_rules_of(host()).vore_icon_bellies))
 		return FALSE
 	var/newcolor = sanitize_hexcolor(lowertext(val))
 	if(!newcolor)
@@ -836,7 +841,7 @@ CAPABILITIES(/datum/vore_look)
 
 /datum/vore_look/proc/ui_act_toggle_vs_multiply(datum/act/op/A, attribute)
 	var/belly_choice = attribute
-	if(!(belly_choice in host().vore_icon_bellies))
+	if(!(belly_choice in living_rules_of(host()).vore_icon_bellies))
 		return FALSE
 	var/datum/record/vore_prefs/prefs = host().vore_prefs
 	if(!prefs.vore_sprite_multiply[belly_choice])
@@ -1592,7 +1597,7 @@ CAPABILITIES(/datum/vore_look)
 		release(body_backup, STAT_SUSPENDED, body_backup)
 		sparse_set(body_backup, ajourn, 0)
 		transfer_mind(T.mind, body_backup, "reformed in [host()]", force = TRUE)
-		rel_clear(body_backup, nameof(body_backup.teleop))
+		sparse_ref_set(body_backup, teleop, null)
 		rel_take(T, nameof(T.body_backup))
 		vore_selected_of(host()).release_specific_contents(T, TRUE)
 		if(istype(body_backup, /mob/living/simple_mob))
@@ -1633,7 +1638,7 @@ CAPABILITIES(/datum/vore_look)
 		release(body_backup, STAT_SUSPENDED, body_backup)
 		body_backup.forceMove(MMI.loc)
 		sparse_set(body_backup, ajourn, 0)
-		rel_clear(body_backup, nameof(body_backup.teleop))
+		sparse_ref_set(body_backup, teleop, null)
 		//And now installing the MMI into the body...
 		if(isrobot(body_backup)) //Just do the reverse of getting the MMI pulled out in /obj/belly/proc/digestion_death
 			var/mob/living/silicon/robot/R = body_backup
@@ -1752,41 +1757,41 @@ CAPABILITIES(/datum/vore_look)
 		if("rear")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_rear = null
+				sparse_set(host(), spont_belly_rear, null)
 			else
-				host().spont_belly_rear = spont_target
+				sparse_set(host(), spont_belly_rear, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_rear = host().spont_belly_rear
+				host().client.prefs_vr.spont_belly_rear = vore_spont_name(host(), "rear")
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("front")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_front = null
+				sparse_set(host(), spont_belly_front, null)
 			else
-				host().spont_belly_front = spont_target
+				sparse_set(host(), spont_belly_front, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_front = host().spont_belly_front
+				host().client.prefs_vr.spont_belly_front = vore_spont_name(host(), "front")
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("left")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_left = null
+				sparse_set(host(), spont_belly_left, null)
 			else
-				host().spont_belly_left = spont_target
+				sparse_set(host(), spont_belly_left, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_left = host().spont_belly_left
+				host().client.prefs_vr.spont_belly_left = vore_spont_name(host(), "left")
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("right")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_right = null
+				sparse_set(host(), spont_belly_right, null)
 			else
-				host().spont_belly_right = spont_target
+				sparse_set(host(), spont_belly_right, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_right = host().spont_belly_right
+				host().client.prefs_vr.spont_belly_right = vore_spont_name(host(), "right")
 			set_unsaved_changes(TRUE)
 			return TRUE
 	return FALSE

@@ -29,7 +29,7 @@
 	/// If the UI has been initialized yet.
 	var/initialized = FALSE
 	/// Time of opening the window.
-	EXPIRY_DECLARE(opened_at)
+	var/opened_at = 0
 	/// Stops further updates when close() was called.
 	var/closing = FALSE
 	/// The status/visibility of the UI.
@@ -124,7 +124,7 @@
 	#endif
 	if(!window())
 		return FALSE
-	EXPIRY_STAMP(src, opened_at, CLOCK_WORLD)
+	STAMP(src, opened_at, CLOCK_WORLD)
 	var/list/default_geometry = SStgui.get_default_geometry(interface)
 	window().acquire_lock(src, default_geometry)
 	if(!window().is_ready() && !preinitialized)

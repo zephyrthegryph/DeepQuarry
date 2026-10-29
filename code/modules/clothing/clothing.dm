@@ -438,6 +438,7 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 
 
 /obj/item/clothing/head
+	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = DEVELOPER_WARNING_NAME // "Head"
 	icon = 'icons/inventory/head/item.dmi'
 	item_icons = list(
@@ -457,6 +458,7 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
 	configure(movable_motion(cone_y = 11))
 	configure(item_worn(covers = HEAD, slots = SLOT_HEAD))
@@ -483,10 +485,7 @@ CAPABILITIES(/obj/item/clothing/head)
 	return OP_DECLINE
 
 /obj/item/clothing/head/proc/update_flashlight(mob/user = null)
-	set_light_on(!light_on)
-
-	if(atom_rules_of(src).light_system == STATIC_LIGHT)
-		update_light()
+	set_light_on(!light_on) // the setter reconciles the light source
 
 	user.update_mob_action_buttons()
 
@@ -495,9 +494,10 @@ CAPABILITIES(/obj/item/clothing/head)
 	var/mob/user = A.actor
 	return mob_wear_hat(user) ? OP_OK : OP_DECLINE
 
-/obj/item/clothing/head/attack_generic(mob/user)
-	if(!mob_wear_hat(user))
-		return ..()
+/obj/item/clothing/head/proc/smashed_by(datum/act/hit/generic/A)
+	if(!mob_wear_hat(A.attacker))
+		return HOOK_DECLINE
+	return OP_OK
 
 /obj/item/clothing/head/proc/mob_wear_hat(mob/user)
 	if(!Adjacent(user))
@@ -587,7 +587,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
-	slowdown = SHOES_SLOWDOWN
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN)
 	var/overshoes = 0
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/feet/mob_teshari.dmi',
@@ -646,14 +646,6 @@ CAPABILITIES(/obj/item/clothing/shoes)
 /obj/item/clothing/shoes/proc/draw_knife(mob/living/user)
 	if(user.stat || user.restrained() || user.incapacitated())
 		return
-
-	// begin
-	if(istype(user, /mob/living/carbon/human))
-		var/mob/living/carbon/human/H = user
-		if(H.ability_flags & 0x1)
-			to_chat(user, span_warning("You cannot do that while phase shifted."))
-			return
-	// end
 
 	holding.forceMove(get_turf(user))
 
@@ -902,15 +894,10 @@ CAPABILITIES(/obj/item/clothing/suit)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
-	owns_one(nameof(hood), /obj/item/clothing/head)
+	owns_one(nameof(hood), /obj/item/clothing/head, starts = PROC_REF(start_hood), early = TRUE) // made before the init chain reads the actions (the action buttons come from actions_types)
 	setup(PROC_REF(take_toggle_icon))
 
 
-
-/// The hood is made before the item's parent init reads its actions (the action buttons come from actions_types).
-/obj/item/clothing/suit/Initialize(mapload)
-	MakeHood()
-	return ..()
 
 /// The sprite name its hood toggle shows follows the type's own icon state.
 /obj/item/clothing/suit/proc/take_toggle_icon()
@@ -936,13 +923,13 @@ CAPABILITIES(/obj/item/clothing/suit)
 	ToggleHood()
 
 /// HOOD STUFF BELOW HERE.
-/obj/item/clothing/suit/proc/MakeHood()
+/// The starting hood (owns_one starts, phase 0): the type its hoodtype names, and the toggle action it brings when the suit has no special one.
+/obj/item/clothing/suit/proc/start_hood(current, mapload)
 	if(!hoodtype)
-		return
-	var/obj/item/clothing/head/hood/H = new hoodtype(src)
-	rel_set(src, nameof(hood), H)
+		return null
 	if(!item_rules_of(src).actions_types.len) //If we don't already have a special action type, let's add it.
 		set_actions_types(item_rules_of(src).actions_types | (/datum/action/item_action/toggle_hood))
+	return hoodtype
 
 /obj/item/clothing/suit/proc/RemoveHood()
 	set_hood_up(FALSE)
@@ -1135,7 +1122,7 @@ CAPABILITIES(/obj/item/clothing/under)
 		return
 
 	var/mob/living/carbon/human/H = loc
-	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.sensorpref : 1)
+	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.bio.sensorpref : 1)
 	switch(sensorpref)
 		if(1) sensor_mode = SUIT_SENSOR_OFF			//Sensors off
 		if(2) sensor_mode = SUIT_SENSOR_BINARY		//Sensors on binary

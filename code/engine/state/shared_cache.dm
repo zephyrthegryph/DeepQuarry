@@ -48,12 +48,6 @@ SHARED_CACHE_GLOBAL(shared_cache_uid_counter = 0)
 	/// SC_INTERN caches: signature -> the one shared list with that content. Dropped with the
 	/// entries (invalidate(), and a bounded cache's generation turn), so it stays bounded too.
 	var/list/interned
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	/// key -> copy of the value as built, for the mutation guard.
-	var/list/snapshots
-	/// Mutations caught (tests assert zero).
-	var/mutations = 0
-#endif
 
 /datum/shared_cache/New(name, builder, policy, max_entries, flags)
 	src.name = name
@@ -203,96 +197,6 @@ PROC_SUMMARY(/datum/shared_cache/proc/miss) // vars[] / call() dispatcher: the w
 	if(isdatum(value) || istype(value, /image) || istype(value, /mutable_appearance))
 		return 64
 	return 8
-
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-/// Test-build CACHED(): a miss as usual, a hit verified against the build-time snapshot.
-/datum/shared_cache/proc/guarded(key, ...)
-	if(!store)
-		resolve_store()
-	if(!istext(key) && !ispath(key))
-		if(isnum(key))
-			CRASH("shared cache [name]: numeric key [key] (use CACHED_INT or a text key)")
-		if(!shared_cache_stable_datum(key))
-			CRASH("shared cache [name]: key [key] is an object without a stable identity; key by its registry id, type path or SHARED_CACHE_UID() instead")
-	else if(istext(key) && findtext(key, "\[0x"))
-		CRASH("shared cache [name]: key \"[key]\" embeds a ref, which is recycled when its datum is deleted; use a registry id, type path or SHARED_CACHE_UID()")
-	guard_lookups++
-	var/value = store[key]
-	if(!value)
-		return (length(args) > 1) ? miss(arglist(args)) : miss(key)
-	verify(key, value)
-	return value
-
-/datum/shared_cache/proc/guarded_int(index)
-	if(!store)
-		resolve_store()
-	guard_lookups++
-	if(isnum(index) && index >= 1 && index <= length(store) && !isnull(store[index]))
-		var/value = store[index]
-		verify("[index]", value)
-		return value
-	return miss_int(index)
-
-/// Runtimes when a caller wrote into a shared list (or a list nested one level inside it),
-/// then restores the entry so later callers still see the built value.
-/datum/shared_cache/proc/verify(key, value)
-	if(!islist(value))
-		return
-	var/list/snap = snapshots?[key]
-	if(!snap || shared_cache_snapshot_matches(value, snap))
-		return
-	mutations++
-	shared_cache_snapshot_restore(value, snap)
-	CRASH("shared cache [name]: a caller mutated the shared list for key [key]; Copy() a cached value before writing")
-
-/// Verifies every stored list (the unit-test sweep at the end of a run).
-/datum/shared_cache/proc/verify_all()
-	. = 0
-	for(var/key in snapshots)
-		var/list/L = (flags & SC_INT_KEYS) ? store[text2num(key)] : store[key]
-		if(islist(L) && !shared_cache_snapshot_matches(L, snapshots[key]))
-			.++
-
-/// A snapshot of L: list(copy of L, list(nested list, its copy, ...)) for lists that are
-/// elements or assoc values of L (one level deep).
-/proc/shared_cache_snapshot(list/L)
-	var/list/nested
-	for(var/k in L)
-		if(islist(k))
-			var/list/sub_key = k
-			LAZYADD(nested, list(sub_key, sub_key.Copy()))
-		if(isnum(k))
-			continue
-		var/v = L[k]
-		if(islist(v))
-			var/list/sub_value = v
-			LAZYADD(nested, list(sub_value, sub_value.Copy()))
-	return list(L.Copy(), nested)
-
-/proc/shared_cache_snapshot_matches(list/L, list/snap)
-	if(!(L ~= snap[1]))
-		return FALSE
-	var/list/nested = snap[2]
-	for(var/i in 1 to length(nested) step 2)
-		var/list/sub = nested[i]
-		if(!(sub ~= nested[i + 1]))
-			return FALSE
-	return TRUE
-
-/proc/shared_cache_snapshot_restore(list/L, list/snap)
-	shared_cache_list_restore(L, snap[1])
-	var/list/nested = snap[2]
-	for(var/i in 1 to length(nested) step 2)
-		shared_cache_list_restore(nested[i], nested[i + 1])
-
-/proc/shared_cache_list_restore(list/L, list/copy)
-	L.Cut()
-	for(var/i in 1 to length(copy))
-		var/k = copy[i]
-		L += list(k)
-		if(!isnum(k) && !isnull(copy[k]))
-			L[k] = copy[k]
-#endif
 
 /// The interned instance of list L in this cache: an earlier built list with the same content,
 /// or L itself. Nested lists are interned first and then compared by identity.

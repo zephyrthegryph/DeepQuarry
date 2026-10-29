@@ -36,7 +36,7 @@
 	// Mechanical concerns.
 	var/health = 0             // Plant health.
 	var/lastproduce = 0        // Last time tray was harvested
-	EXPIRY_DECLARE(lastcycle) // Cycle timing/tracking var.
+	var/lastcycle = 0 // Cycle timing/tracking var.
 	var/cycledelay = 150       // Delay per cycle.
 	var/closed_system          // If set, the tray will attempt to take atmos from a pipe.
 	var/force_update           // Set this to bypass the cycle time check.
@@ -137,13 +137,14 @@ MSG_DEF_SELF(hydroponics/not_by_this, "You can't do that.")
 // A tray grows while it is not cryogenically frozen: started work whose step runs each machine interval while there is something to grow or
 // soak in, and parks on its growth timer between cycles (schedule_growth_wake()); planting, reagents and the freezer start it again.
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(movable_motion(unacidable = TRUE))
 	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	setup(PROC_REF(prepare_tray_scratch_and_connection))
 	reagents(200)
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(temp_chem_holder), /obj, starts = /obj, starts_args = NO_LOC)
-	started_work(step = PROC_REF(work_step), starts = PROC_REF(has_seed), gate = PROC_REF(not_frozen), wakes_on = list(nameof(frozen)))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(has_seed), gate = PROC_REF(not_frozen), wakes_on = list(nameof(frozen)), gate_waits = TRUE)
 	op("use_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("tend", hand(), ungated(), label("Use"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(req_silent))), then(PROC_REF(interaction_hand)))
 	op("tk_harvest", tk(), label("Harvest"), then(PROC_REF(hydroponics_tk_harvest)))
@@ -194,14 +195,15 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 		SStgui.update_uis(src)
 	return OP_OK
 
-/obj/machinery/portable_atmospherics/hydroponics/attack_generic(mob/user)
+/obj/machinery/portable_atmospherics/hydroponics/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 
 	// Why did I ever think this was a good idea. TODO: move this onto the nymph mob.
 	if(istype(user,/mob/living/carbon/alien/diona))
 		var/mob/living/carbon/alien/diona/nymph = user
 
 		if(nymph.stat == DEAD || nymph.has_status(STAT_PARALYZED) || nymph.has_status(STAT_WEAKENED) || nymph.has_status(STAT_STUNNED) || nymph.restrained())
-			return
+			return OP_OK
 
 		if(weedlevel > 0)
 			nymph.reagents.add_reagent(REAGENT_ID_GLUCOSE, weedlevel)
@@ -216,7 +218,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 		else
 			act_message(nymph, src, MSG_SELF(span_notice("You roll around in %T% for a bit.")), \
 				MSG_OTHERS(span_notice(span_bold("%U%") + " rolls around in %T% for a bit.")))
-		return
+		return OP_OK
 
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 /obj/machinery/portable_atmospherics/hydroponics/var/frozen = 0
@@ -260,7 +262,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	set_age(1)
 	//Snowflakey, maybe move this to the seed datum
 	set_health((istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE)))
-	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
+	STAMP(src, lastcycle, CLOCK_WORLD)
 	work_start(src)
 
 	consumed(S, src)
@@ -459,7 +461,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	set_age(0)
 	age_mod = 0
 	set_health(seed.get_trait(TRAIT_ENDURANCE))
-	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
+	STAMP(src, lastcycle, CLOCK_WORLD)
 	set_harvest(0)
 	set_weedlevel(0)
 	set_pestlevel(0)
@@ -534,7 +536,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	mutate(1)
 	set_age(0)
 	set_health(seed.get_trait(TRAIT_ENDURANCE))
-	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
+	STAMP(src, lastcycle, CLOCK_WORLD)
 	set_harvest(0)
 	set_weedlevel(0)
 

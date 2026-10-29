@@ -426,7 +426,6 @@ CAPABILITIES(/obj/effect/forcefield/cult)
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	show_examine = FALSE
 	core = null
 	coreless = TRUE // a construct spell never needs a technomancer core (coreless is a constructor param now, not Initialize's second argument)
 	cast_methods = null			// Controls how the spell is casted.
@@ -437,6 +436,7 @@ CAPABILITIES(/obj/effect/forcefield/cult)
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
 CAPABILITIES(/obj/item/spell/construct)
+	configure(obj_rules(show_examine = FALSE))
 	setup(PROC_REF(require_owner), mapload = TRUE)
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
@@ -637,7 +637,6 @@ CAPABILITIES(/obj/item/projectile/energy/inversion)
 	desc = "A portal to some hellish place. Its screams wrack your body with pain.."
 	icon_state = "red_static_sphere"
 	time_to_die = null
-	light_on = TRUE
 	pulses_remaining = 10
 	pulse_delay = 1 SECOND
 
@@ -660,7 +659,6 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/agonizing_sphere)
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_on = TRUE
 
 CAPABILITIES(/obj/item/spell/construct/mend_occult)
 	configure(light_glow(color = "#FF5C5C", power = -2))
@@ -678,7 +676,6 @@ CAPABILITIES(/obj/item/spell/construct/mend_occult)
 	icon_state = "toggled_old"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_on = TRUE
 	cooldown = 15
 
 /obj/item/spell/construct/slam/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
@@ -862,13 +859,13 @@ CAPABILITIES(/obj/item/projectile/beam/banishment)
 	icon_state = "invert"
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 5
-	injury_kind = INJURY_BLUNT
 
 	muzzle_type = /obj/effect/projectile/muzzle/tungsten
 	tracer_type = /obj/effect/projectile/tracer/tungsten
 	impact_type = /obj/effect/projectile/impact/tungsten
 
 CAPABILITIES(/obj/item/projectile/beam/force_beam)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
 	configure(item_combat(armor_penetration = 60))
 
@@ -912,7 +909,6 @@ CAPABILITIES(/obj/item/projectile/beam/force_beam)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "blue_static_sphere"
 	time_to_die = null
-	light_on = TRUE
 	pulses_remaining = 10
 	pulse_delay = 1 SECOND
 
@@ -964,7 +960,6 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/soothing_sphere)
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_on = TRUE
 
 CAPABILITIES(/obj/item/spell/construct/mend_purity)
 	configure(light_glow(color = "#64B4E6", power = -2))

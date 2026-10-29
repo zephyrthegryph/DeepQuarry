@@ -326,6 +326,7 @@ fn assemble(
             project_dir: previous.project_dir.clone(),
             trace: Some(Arc::new(PlanTrace::new(entries))),
             input_revision: None,
+            defines: previous.defines.clone(),
         },
         reuse,
     ))

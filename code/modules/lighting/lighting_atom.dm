@@ -1,7 +1,10 @@
 /atom
 	// The light's range, power and colour are the light_glow() type trait (code/modules/lighting/glow.dm): glow_of(src).range.
-	///Boolean variable for toggleable lights. Has no effect without the proper light_system, light_range and light_power values.
-	var/light_on = FALSE
+	/// The light switch: FALSE only while the atom's light is switched off on purpose (a lamp that starts off declares `light_on = FALSE`).
+	/// Whether the atom casts is derived: light_on and a glow range and power above 0 (atom_casts_light()). A declared glow is cast
+	/// without any write at init; every writer of the switch or the glow goes through a setter below, and each setter reconciles the
+	/// light source (light_changed()), so no caller can leave the source out of step with what the atom casts.
+	var/light_on = TRUE
 	///Bitflags to determine lighting-related atom properties.
 	var/light_flags = NONE
 	///Our light source. Don't fuck with this directly unless you have a good reason!
@@ -13,16 +16,17 @@
 	///Highest-intensity light affecting us, which determines our visibility.
 	///Lazylist to keep track on the sources of illumination.
 	// affected_dynamic_lights lives in code/datums/sparse_vars/movable_misc.dm
-	///Either FALSE, [EMISSIVE_BLOCK_GENERIC], or [EMISSIVE_BLOCK_UNIQUE]
-	var/blocks_emissive = EMISSIVE_BLOCK_NONE
-	///Internal holder for emissive blocker object, do not use directly use blocks_emissive
+	// blocks_emissive (EMISSIVE_BLOCK_NONE, _GENERIC or _UNIQUE) is the movable_motion type trait: motion_of(A).blocks_emissive
+	///Internal holder for emissive blocker object, do not use directly use motion_of(A).blocks_emissive
 	var/tmp/atom/movable/emissive_blocker/em_block
 
 CAPABILITIES(/atom/movable)
+	cooldowns(latent_refused_until)
 	buckle_rules(movable = 0, dir = 0, lying = -1, require_restraints = 0, max_mobs = 1)
 	movable_motion(throw_speed = 2, icon_height = 32, does_spin = TRUE, unacidable = TRUE)
 	ref_many(nameof(swarm_members))
 	stamps(latent_touched_at) // the latency sweep's idle clock (code/engine/refs/containment/latency_policy.dm)
+	cooldowns(latent_refused_until) // when the sweep may offer this atom again after a refusal (latency_policy.dm)
 	ref_one(nameof(heat_fire_turf), /turf)
 	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
 	owns_one(nameof(experiment_handler), /datum/experiment_handler)
@@ -41,7 +45,6 @@ CAPABILITIES(/atom/movable)
 	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(all_of(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
 	op("vv_get_movable", topic_in(VV_TOPIC, VV_HK_GET_MOVABLE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_get_movable)))
 	op("vv_edit_particles", topic_in(VV_TOPIC, VV_HK_EDIT_PARTICLES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_particles)))
-	ref_one(nameof(throw_source))
 	ref_one(nameof(throwing))
 
 
@@ -54,7 +57,7 @@ CAPABILITIES(/atom/movable)
 	if(atom_rules_of(src).light_system != STATIC_LIGHT)
 		CRASH("update_light() for [src] with following light_system value: [atom_rules_of(src).light_system]")
 
-	if (!light_on || !glow_of(src).power || !glow_of(src).range) // We won't emit light anyways, destroy the light source.
+	if (!atom_casts_light(src)) // We won't emit light anyways, destroy the light source.
 		rel_clear(src, nameof(light))
 	else
 		if (!ismovable(loc)) // We choose what atom should be the top atom of the light here.
@@ -128,6 +131,22 @@ SETTER(/atom, opacity)
 	var/obj/effect/dummy/lighting_obj/moblight/mob_light_obj = new (src, _range, _power, _color, _duration)
 	return mob_light_obj
 
+/// Whether `A` casts light now: its switch is on and its glow has a range and a power. The one definition update_light() and the tests use.
+/proc/atom_casts_light(atom/A)
+	if(!A.light_on)
+		return FALSE
+	var/datum/type_trait/light_glow/glow = glow_of(A)
+	return glow.range && glow.power
+
+/// A light input (the switch, the range, the power or the colour) changed: a static light's source follows it now. A movable not yet in the
+/// world is skipped (on_materialize() makes its source), as is anything before its Initialize(); overlay lights follow the notices.
+/atom/proc/light_changed()
+	if(atom_rules_of(src).light_system != STATIC_LIGHT || !(flags & ATOM_INITIALIZED))
+		return
+	if(ismovable(src) && !(flags & ATOM_MATERIALIZED))
+		return
+	update_light()
+
 /// Setter for the light power of this atom.
 /atom/proc/set_light_power(new_power)
 	if(new_power == glow_of(src).power)
@@ -135,6 +154,7 @@ SETTER(/atom, opacity)
 	. = glow_of(src).power
 	set_trait(src, ENTRY_LIGHT_GLOW, "power", new_power)
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_power, .)
+	light_changed()
 
 /// Setter for the light range of this atom.
 /atom/proc/set_light_range(new_range)
@@ -143,6 +163,7 @@ SETTER(/atom, opacity)
 	. = glow_of(src).range
 	set_trait(src, ENTRY_LIGHT_GLOW, "range", new_range)
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_range, .)
+	light_changed()
 
 /// Setter for the light color of this atom.
 /atom/proc/set_light_color(new_color)
@@ -151,6 +172,7 @@ SETTER(/atom, opacity)
 	. = glow_of(src).color
 	set_trait(src, ENTRY_LIGHT_GLOW, "color", new_color)
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_color, .)
+	light_changed()
 
 /// Setter for whether or not this atom's light is on.
 /atom/proc/set_light_on(new_value)
@@ -160,6 +182,7 @@ SETTER(/atom, opacity)
 	light_on = new_value
 	tracked_changed(src, nameof(light_on)) // a drawn thing that shows its lamp redraws
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_on, .)
+	light_changed()
 SETTER(/atom, light_on)
 
 /// Setter for the light flags of this atom.

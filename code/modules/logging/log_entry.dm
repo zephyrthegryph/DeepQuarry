@@ -4,11 +4,12 @@
 // Current Schema: 1.0.0
 // [timestamp, category, message, data, world_state, semver_store, id, schema_version]
 
+/// Log entry ids (the first is 0).
+SERIAL_DEF(log_entry, 0, FALSE)
+SCHEMA(/datum/log_entry, id, num())
+
 /// A datum which contains log information.
 /datum/log_entry
-	/// Next id to assign to a log entry.
-	var/static/next_id = 0
-
 	/// Unique id of the log entry.
 	var/id
 
@@ -39,7 +40,7 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 /datum/log_entry/New(timestamp, category, message, flags, list/data, list/semver_store)
 	..()
 
-	src.id = next_id++
+	src.id = next_serial(log_entry)
 	src.timestamp = timestamp
 	src.category = category
 	src.flags = flags
@@ -95,15 +96,21 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 
 #undef MANUAL_JSON_ENTRY
 
+/// When a log file was last confirmed to exist; the logger owns one per file (verified_log_files).
+/datum/verified_log_file
+	var/verified_at = 0
+
 /// How long a log file is trusted to still exist before fexists() is checked again.
 #define LOG_FILE_RECHECK_INTERVAL (10 SECONDS)
 
 #define CHECK_AND_TRY_FILE_ERROR_RECOVERY(file) \
 	var/static/in_error_recovery = FALSE; \
-	var/last_verified = LAZYACCESS(logger.verified_log_files, ##file); \
-	if(isnull(last_verified) || ELAPSED_SINCE(src, last_verified, CLOCK_WORLD) >= LOG_FILE_RECHECK_INTERVAL) { \
+	var/datum/verified_log_file/verified = LAZYACCESS(logger.verified_log_files, ##file); \
+	if(!verified || ELAPSED(verified, verified_at, CLOCK_WORLD) >= LOG_FILE_RECHECK_INTERVAL) { \
 		if(!fexists(##file)) { \
-			LAZYREMOVE(logger.verified_log_files, ##file); \
+			if(verified) { \
+				rel_remove(logger, nameof(/datum/log_holder::verified_log_files), verified); \
+			}; \
 			if(in_error_recovery) { \
 				in_error_recovery = FALSE; \
 				CRASH("Failed to error recover log file: [file]"); \
@@ -114,7 +121,13 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 			call(src, __PROC__)(arglist(args)); \
 			return; \
 		}; \
-		LAZYSET(logger.verified_log_files, ##file, world.time); \
+		if(verified) { \
+			STAMP(verified, verified_at, CLOCK_WORLD); \
+		} else { \
+			verified = new; \
+			STAMP(verified, verified_at, CLOCK_WORLD); \
+			rel_add(logger, nameof(/datum/log_holder::verified_log_files), verified, key = ##file); \
+		}; \
 	}; \
 	in_error_recovery = FALSE;
 

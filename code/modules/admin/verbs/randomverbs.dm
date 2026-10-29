@@ -343,18 +343,18 @@ Ccomp's first proc.
 ADMIN_VERB(allow_character_respawn, R_ADMIN|R_MOD|R_FUN, "Allow player to respawn", "Let a player bypass the wait to respawn or allow them to re-enter their corpse.", ADMIN_CATEGORY_GAME)
 	if(!user.mob || QDELETED(user.mob))
 		return
-	open_request(src, /datum/prompt/choice/allow_respawn_target, PROC_REF(target_picked), answerer = user.mob, title = "Allow Respawn Selector", question = "Select a ckey to allow to rejoin", choices = GLOB.respawn_timers)
+	open_request(src, /datum/prompt/choice/allow_respawn_target, PROC_REF(target_picked), answerer = user.mob, title = "Allow Respawn Selector", question = "Select a ckey to allow to rejoin", choices = SSmobs.respawn_waiters())
 
 /datum/admin_verb/allow_character_respawn/proc/target_picked(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/selected = context.answer.value
-	if(GLOB.respawn_timers[selected] == -1) // Their respawn timer is set to -1, which is 'not allowed to respawn'
+	if(SSmobs.respawn_forbidden(selected)) // They would normally never be able to: confirm first
 		open_request(src, /datum/prompt/choice/allow_impossible_respawn, PROC_REF(impossible_confirmed), answerer = context.request.answerer, target = selected)
 		return
 	respawn_allowed(context.request.answerer.client, selected)
 
-/// Allowing a respawn that is normally not allowed (its timer is -1).
+/// Allowing a respawn that is normally not allowed (its respawn record is forbidden).
 /datum/prompt/choice/allow_impossible_respawn
 	title = "Allow impossible respawn?"
 	question = "Are you sure you wish to allow this individual to respawn? They would normally not be able to."
@@ -373,7 +373,7 @@ ADMIN_VERB(allow_character_respawn, R_ADMIN|R_MOD|R_FUN, "Allow player to respaw
 	respawn_allowed(context.request.answerer.client, ask.target)
 
 /datum/admin_verb/allow_character_respawn/proc/respawn_allowed(client/user, target)
-	GLOB.respawn_timers -= target
+	SSmobs.clear_respawn_wait(target)
 
 	var/found_client = FALSE
 	for(var/client/current_client as anything in GLOB.clients)

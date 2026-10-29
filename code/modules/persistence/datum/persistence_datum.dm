@@ -137,7 +137,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/persistent)
 
 /datum/persistent/proc/GetAdminDataStringFor(thing, can_modify, mob/user)
 	if(can_modify)
-		. = "<td colspan = 3>[thing]</td><td><a href='byond://?src=\ref[src];[HrefToken()];caller=\ref[user];remove_entry=\ref[thing]'>Destroy</a></td>"
+		. = "<td colspan = 3>[thing]</td><td><a href='byond://?src=[REF(src)];[HrefToken(user)];caller=[REF(user)];remove_entry=[REF(thing)]'>Destroy</a></td>"
 	else
 		. = "<td colspan = 4>[thing]</td>"
 

@@ -18,7 +18,7 @@ GLOBAL_VAR_INIT(act_depth, 0)
 /// How many times the kernel backstop had to reset a leaked depth.
 GLOBAL_VAR_INIT(act_backstops, 0)
 /// Counters (metrics, and what a test reads): contexts taken, notices taken, notices queued past the depth cap, actions refused for depth.
-GLOBAL_VAR_INIT(act_taken, 0)
+GLOBAL_COUNTER(act_taken)
 GLOBAL_VAR_INIT(notice_taken, 0)
 GLOBAL_VAR_INIT(notice_late, 0)
 GLOBAL_VAR_INIT(act_too_deep, 0)
@@ -77,7 +77,7 @@ GLOBAL_VAR(act_next_authority)
 		act_report(RULE_ACT_DEPTH, "[act_type] on [holder?.type] ended ACT_REFUSED (too deeply nested; the depth cap is [ACT_MAX_DEPTH]): [chain]")
 		return null
 	var/datum/act/action/A = act_context(act_type, holder, holder, GLOB.act_next_actor)
-	GLOB.act_taken++
+	GLOB.act_taken.n++
 	A.authority = GLOB.act_next_authority
 	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	GLOB.act_next_authority = null

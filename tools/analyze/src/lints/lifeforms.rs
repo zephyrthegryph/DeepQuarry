@@ -7,6 +7,8 @@
 //!     not one of make()'s own `at`, `by`, `parts`).
 //!   * `make_missing_required`: a `make(/T, ...)` that leaves out a `param(..., required = TRUE)` of `/T` or an ancestor.
 //!   * `make_parts_without_built_from`: `make(/T, parts = ...)` where `/T` declares no `built_from()`.
+//!   * `after_init_bare_new`: `new /T` (or `var/T/x = new`) of a plain datum type that declares `after_init()` (or whose ancestor does).
+//!     A plain datum's after_init() is armed only by make() (code/engine/actions/after_init.dm); a bare new never runs it.
 //!   * `per_type_write`: a write to a `per_type(nameof(v), ...)` var (`v[...] =`, `v +=`, `v -=`, `v |=`, `v &=`, `v.Add(`, `v.Remove(`,
 //!     `v.Cut(`, `v.Insert(`, `v.Swap(`, `v = `) in a proc of the declaring type or a subtype, other than its build proc.
 //!   * `allow_matches_form`: an `ALLOW(init/...)`, `ALLOW(lifecycle)` or `ALLOW(sys_usr_outside_verb)` whose reason describes what a form
@@ -35,6 +37,7 @@ static META: Meta = Meta {
         RuleMeta { name: "make_unknown_param", hint: "declare it on the made type: param(nameof(var), schema) in its CAPABILITIES block (code/engine/lifeforms/params.dm)" },
         RuleMeta { name: "make_missing_required", hint: "pass every required param: make(/T, at = loc, name = value)" },
         RuleMeta { name: "make_parts_without_built_from", hint: "declare built_from(nameof(var)) on the made type, or drop parts =" },
+        RuleMeta { name: "after_init_bare_new", hint: "the type declares after_init(), which a plain datum runs only when made by make(/T, ...): make it with make()" },
         RuleMeta { name: "per_type_write", hint: "a per_type() table is read-only and shared by every instance of the type: build it in its build proc, copy it to change it" },
         RuleMeta { name: "ctor_dead_arg", hint: "no param(nameof(v), pos = N) of the type takes the argument and no New()/Initialize() reads it: drop it (python3 tools/dx/codemods/ctor_args.py --apply), or declare the param it was meant for" },
         RuleMeta { name: "ctor_forward_only", hint: "the override only hands these parameters to ..(), which passes the caller's arguments by itself: drop them (python3 tools/dx/codemods/ctor_args.py --apply)" },
@@ -96,6 +99,7 @@ const ENGINE_PREFIXES: &[&str] = &[
     "code/library/",
     "code/datums/lifecycle/",
     "code/controllers/subsystems/garbage.dm",
+    "code/controllers/kernel/", // the Kernel is the engine's one loop (its target home is code/engine/kernel): its boot step and watchdog clear usr
     "code/__defines/",
     "code/modules/unit_tests/",
     "code/modules/benchmarks/",
@@ -133,6 +137,8 @@ struct Declared {
     built_from: BTreeSet<String>,
     /// type -> (var, build proc)
     per_type: HashMap<String, Vec<(String, String)>>,
+    /// Plain datum types whose block declares after_init().
+    after_init: BTreeSet<String>,
     /// type -> constructor position -> (var, overrides = TRUE, file, line of the CAPABILITIES block)
     positions: HashMap<String, BTreeMap<usize, (String, bool, String, u32)>>,
 }
@@ -160,6 +166,9 @@ impl Declared {
                         }
                         "built_from" => {
                             d.built_from.insert(ty.clone());
+                        }
+                        "after_init" if ty.starts_with("/datum") => {
+                            d.after_init.insert(ty.clone());
                         }
                         "per_type" => {
                             let var = args.first().and_then(|x| nameof_inner(x));
@@ -198,6 +207,25 @@ impl Declared {
 
     fn builds_from(&self, ty: &str) -> bool {
         Self::lineage(ty).iter().any(|t| self.built_from.contains(t))
+    }
+
+    /// `ty` or an ancestor is a plain datum that declares after_init().
+    fn after_init_of(&self, ty: &str) -> Option<String> {
+        Self::lineage(ty).into_iter().find(|t| self.after_init.contains(t))
+    }
+
+    /// A line (comments and strings cleaned) that makes a plain datum declaring after_init() with a bare new: `new /T(...)` or
+    /// `var/T/x = new` / `new()`. (made type, declaring type). `new some_var` is a type in a var: /datum/New() reports it at run time.
+    fn after_init_bare_new(&self, line: &str) -> Option<(String, String)> {
+        let bare_new = crate::pat!(r"\bnew\s*(/datum/[\w/]+)");
+        let typed_new = crate::pat!(r"\bvar/(datum/[\w/]+)/\w+\s*=\s*new\s*(?:\(|$)");
+        let ty = bare_new
+            .captures(line)
+            .and_then(|c| c.get(1).map(str::to_string))
+            .or_else(|| typed_new.captures(line).and_then(|c| c.get(1).map(|t| format!("/{}", t))))?;
+        let ty = ty.trim_end_matches('/').to_string();
+        let decl = self.after_init_of(&ty)?;
+        Some((ty, decl))
     }
 }
 
@@ -257,6 +285,16 @@ impl Lint for Lifeforms {
                 continue;
             }
             let clean = f.clean();
+            if !d.after_init.is_empty() && !is_engine(&f.rel) && f.text().contains("new") {
+                for (number, line) in clean.numbered() {
+                    if !line.contains("new") {
+                        continue;
+                    }
+                    if let Some((ty, decl)) = d.after_init_bare_new(line) {
+                        out.site_in_msg("after_init_bare_new", &f.rel, number, format!("new {}: {} declares after_init(), which runs only for make({})", ty, decl, ty));
+                    }
+                }
+            }
             if f.text().contains("make(") {
                 for (number, line) in clean.numbered() {
                     if !line.contains("make(") {
@@ -512,6 +550,18 @@ mod tests {
         let names: Vec<&str> = c.iter().map(|(n, _)| n.as_str()).collect();
         assert_eq!(names, vec!["make", "foo"]);
         assert_eq!(c[0].1, vec!["/obj/item/paper", "at = src", "info = foo(bar)"]);
+    }
+
+    #[test]
+    fn after_init_bare_new_finds_literal_and_typed_news() {
+        let mut d = Declared::default();
+        d.after_init.insert("/datum/seed".to_string());
+        assert_eq!(d.after_init_bare_new("\tvar/datum/seed/S = new /datum/seed/apple"), Some(("/datum/seed/apple".to_string(), "/datum/seed".to_string())));
+        assert_eq!(d.after_init_bare_new("\tvar/datum/seed/S = new"), Some(("/datum/seed".to_string(), "/datum/seed".to_string())));
+        assert_eq!(d.after_init_bare_new("\tvar/datum/seed/S = new()"), Some(("/datum/seed".to_string(), "/datum/seed".to_string())));
+        assert_eq!(d.after_init_bare_new("\tvar/datum/seed/S = make(/datum/seed)"), None);
+        assert_eq!(d.after_init_bare_new("\tvar/datum/seed/S = new type"), None, "a type in a var is the run-time report's");
+        assert_eq!(d.after_init_bare_new("\tvar/datum/seed_pile/P = new /datum/seed_pile(O, 1)"), None, "a sibling path is not a subtype");
     }
 
     #[test]

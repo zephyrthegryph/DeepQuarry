@@ -107,8 +107,8 @@ SYSTEM_DEF(transcore)
 		if(H == imp.imp_in() && H.stat < DEAD)
 			if(H.mind)
 				db.m_backup(H.mind,H.nif)
-			else if(H.vr_link && H.vr_link.mind)
-				db.m_backup(H.vr_link.mind,H.nif)
+			else if(H.vr_link()?.mind)
+				db.m_backup(H.vr_link().mind,H.nif)
 
 		if(KERNEL_OVER_BUDGET)
 			return FALSE
@@ -190,7 +190,7 @@ CAPABILITIES(/datum/transcore_db)
 
 	if(mind.name in backed_up)
 		MR = backed_up[mind.name]
-		EXPIRY_STAMP(MR, last_update, CLOCK_WORLD)
+		STAMP(MR, last_update, CLOCK_WORLD)
 		MR.one_time = one_time
 
 		//Pass a 0 to not change NIF status (because the elseif is checking for null)
@@ -235,7 +235,7 @@ CAPABILITIES(/datum/transcore_db)
 /datum/transcore_db/proc/stop_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
 	rel_move(src, nameof(backed_up), src, nameof(has_left), "[MR.mindname]", "[MR.mindname]")
-	EXPIRY_STAMP(MR, cryo_at, CLOCK_WORLD)
+	STAMP(MR, cryo_at, CLOCK_WORLD)
 
 // Called from body_record to add itself to the transcore.
 /datum/transcore_db/proc/add_body(datum/transhuman/body_record/BR)

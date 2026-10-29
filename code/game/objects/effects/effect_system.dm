@@ -5,7 +5,6 @@ it needs to create more trails.A beaker could have a steam_trail_follow system s
 would spawn and follow the beaker, even if it is carried or thrown.
 */
 /obj/effect
-	light_on = TRUE
 	uses_integrity = FALSE
 
 /obj/effect/effect
@@ -13,12 +12,10 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	icon = 'icons/effects/effects.dmi'
 	mouse_opacity = 0
 	pass_flags = PASSTABLE | PASSGRILLE
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
-	light_on = TRUE
 	plane = ABOVE_OBJ_PLANE
 
 CAPABILITIES(/obj/effect/effect)
-	configure(movable_motion(unacidable = TRUE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = TRUE))
 
 /datum/effect/effect/system
 	var/number = 3
@@ -120,7 +117,6 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	var/amount = 6.0
 	anchored = TRUE
 	mouse_opacity = 0
-	lifecycle_lifetime = 5 SECONDS
 
 // the pool counts a spark from when it exists until on_destroy().
 /obj/effect/effect/sparks/on_materialize()
@@ -128,6 +124,7 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	GLOB.fx_live_sparks++
 
 CAPABILITIES(/obj/effect/effect/sparks)
+	configure(movable_motion(lifecycle_lifetime = 5 SECONDS))
 	setup(PROC_REF(spark_start))
 
 /obj/effect/effect/sparks/proc/spark_start()
@@ -590,7 +587,6 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
 			)
 
 /obj/effect/effect/teleport_greyscale
-	lifecycle_lifetime = 2 SECONDS
 	name = "teleportation"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "teleport_greyscale"
@@ -598,6 +594,9 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
 	mouse_opacity = 0
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
+
+CAPABILITIES(/obj/effect/effect/teleport_greyscale)
+	configure(movable_motion(lifecycle_lifetime = 2 SECONDS))
 
 /datum/effect/effect/system/teleport_greyscale
 	var/color = "#FFFFFF"

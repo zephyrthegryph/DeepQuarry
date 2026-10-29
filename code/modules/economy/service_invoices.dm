@@ -342,12 +342,12 @@ CAPABILITIES(/datum/economic_adoption)
 	customer_department = _customer_department
 	provider_department = _provider_department
 	value = _value
-	observe(parent, /datum/notice/attack_self, src, then(PROC_REF(on_attack_self)))
+	observe(parent, /datum/notice/self_attacked, src, then(PROC_REF(on_attack_self)))
 	observe(parent, /datum/notice/item_attack, src, then(PROC_REF(on_attack)))
 
 /datum/economic_adoption/proc/on_attack_self(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/notice/attack_self/event = N
+	var/datum/notice/self_attacked/event = N
 	record_use(event.user)
 
 /datum/economic_adoption/proc/on_attack(datum/act/notice/A)
@@ -373,15 +373,15 @@ CAPABILITIES(/datum/economic_adoption)
 		"department" = provider_department,
 		"customer_department" = customer_department,
 		"invoice_id" = invoice_id,
-		"physical_item_id" = REF(item),
+		"physical_item_id" = ref_token(item),
 		"item_type" = item.type,
 		"item_name" = item.name,
-		"fact_id" = "equipment-adoption:[REF(item)]",
+		"fact_id" = "equipment-adoption:[ref_token(item)]",
 		"fact_revision" = active ? 1 : 2,
 		"fact_active" = active,
 		"metrics" = list("value" = active ? value : 0),
 		"detail" = active ? "[item.name] entered operational use in [customer_department]." : "[item.name]'s sale was reversed before settlement.",
-	), "equipment-adoption:[REF(item)]:[active ? 1 : 2]", item, user)
+	), "equipment-adoption:[ref_token(item)]:[active ? 1 : 2]", item, user)
 
 /datum/system/supply/proc/service_invoice_summary(department, accounting_period = 0)
 	var/list/summary = list(

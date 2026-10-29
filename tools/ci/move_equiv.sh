@@ -58,7 +58,7 @@ out=$(cd "$out" && pwd)
 
 # 1. dmb-equiv from the worktree.
 equiv_target="$(bash tools/dq_cargo_target.sh dmb-equiv)"
-CARGO_TARGET_DIR="$equiv_target" bash tools/dq_machine_slots.sh run cargo -- cargo build --release --manifest-path tools/dmb/Cargo.toml -p dmb-equiv || exit 2
+CARGO_INCREMENTAL=0 CARGO_TARGET_DIR="$equiv_target" bash tools/dq_machine_slots.sh run cargo -- cargo build --release --manifest-path tools/dmb/Cargo.toml -p dmb-equiv || exit 2
 equiv_src="$equiv_target/release/dmb-equiv"
 [ -x "$equiv_src" ] || equiv_src="$equiv_target/release/dmb-equiv.exe"
 [ -x "$equiv_src" ] || { echo "move_equiv: no dmb-equiv binary" >&2; exit 2; }
@@ -72,7 +72,11 @@ others="$out/non_move_changes.txt"
 : > "$others"
 while IFS=$'\t' read -r status old new; do
   case "$status" in
-    R100) echo "$old=$new" >> "$maps" ;;
+    R100)
+      echo "$old=$new" >> "$maps"
+      # A test file still under code/modules/unit_tests is included from code/tests/unit_tests/_unit_tests.dm by a relative path, so the
+      # world carries its path as code/tests/unit_tests/../../modules/unit_tests/x.dm (what __FILE__ and TEST_ASSERT print).
+      case "$old" in code/modules/unit_tests/*) echo "code/tests/unit_tests/../../modules/unit_tests/${old#code/modules/unit_tests/}=$new" >> "$maps" ;; esac ;;
     "") ;;
     *) printf '%s\t%s\t%s\n' "$status" "$old" "$new" >> "$others" ;;
   esac

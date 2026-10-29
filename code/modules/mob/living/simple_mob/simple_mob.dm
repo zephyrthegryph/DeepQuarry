@@ -4,7 +4,6 @@
 
 /mob/living/simple_mob
 	// footsteps (footstep() in its CAPABILITIES)
-	footstep_type = FOOTSTEP_MOB_SHOE
 	name = "animal"
 	desc = ""
 	icon = 'icons/mob/animal.dmi'
@@ -106,7 +105,7 @@
 	var/melee_attack_delay = 2			// If set, the mob will do a windup animation and can miss if the target moves out of the way.
 	var/ranged_attack_delay = null
 	var/special_attack_delay = null
-	EXPIRY_DECLARE(ranged_cooldown)
+	COOLDOWN_DECLARE(ranged_cooldown)
 	var/ranged_cooldown_time = 0
 	var/picked_color = FALSE
 	var/picked_size = FALSE
@@ -161,14 +160,12 @@
 
 	var/obj/movement_target //Used by some mobs to hunt down food. Mainly noodle and Ian.
 
-	//no stripping of simplemobs
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
-
 
 CAPABILITIES(/mob/living/simple_mob)
-	configure(footstep_rules(footstep_volume = 1, footstep_e_range = -6))
-	configure(living_rules(use_modern_ai = TRUE, has_huds = TRUE))
-	configure(movable_motion(does_spin = FALSE))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(simple_mob_blast))))
+	configure(living_rules(vore_capacity = 1, use_modern_ai = TRUE, has_huds = TRUE))
+	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
+	configure(movable_motion(does_spin = FALSE, blocks_emissive = EMISSIVE_BLOCK_UNIQUE)) // no stripping of simplemobs; note, this should be refactored to drop priority overlays
 	configure(mob_nature(gib_on_butchery = TRUE, drops_organs = FALSE))
 	ref_one(nameof(movement_target), /obj)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
@@ -482,13 +479,12 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	var/vore_active = 0					// If vore behavior is enabled for this mob
 
-	vore_capacity = 1					// The capacity (in people) this person can hold
 	var/vore_max_size = RESIZE_HUGE		// The max size this mob will consider eating
 	var/vore_min_size = RESIZE_TINY 	// The min size this mob will consider eating
 	var/vore_bump_chance = 0			// Chance of trying to eat anyone that bumps into them, regardless of hostility
 	var/vore_bump_emote	= "grabs hold of"				// Allow messages for bumpnom mobs to have a flavorful bumpnom
 	var/vore_pounce_chance = 5			// Chance of this mob knocking down an opponent
-	EXPIRY_DECLARE(vore_pounce_cooldown) // Cooldown timer - if it fails a pounce it won't pounce again for a while
+	COOLDOWN_DECLARE(vore_pounce_cooldown) // Cooldown timer - if it fails a pounce it won't pounce again for a while
 	var/vore_pounce_successrate	= 100	// Chance of a pounce succeeding against a theoretical 0-health opponent
 	var/vore_pounce_falloff = 1			// Success rate falloff per %health of target mob.
 	var/vore_pounce_maxhealth = 80		// Mob will not attempt to pounce targets above this %health
@@ -559,7 +555,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(M.size_multiplier < vore_min_size || M.size_multiplier > vore_max_size)
 		// ai_log("vr/wont eat [M] because they too small or too big", 3) // AI TEMPORARY REMOVAL
 		return 0
-	if(vore_capacity != 0 && (vore_fullness >= vore_capacity)) // We're too full to fit them
+	if(living_rules_of(src).vore_capacity != 0 && (vore_fullness >= living_rules_of(src).vore_capacity)) // We're too full to fit them
 		// ai_log("vr/wont eat [M] because I am too full", 3) // AI TEMPORARY REMOVAL
 		return 0
 	return 1

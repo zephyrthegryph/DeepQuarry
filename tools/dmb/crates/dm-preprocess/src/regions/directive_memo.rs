@@ -9,10 +9,15 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const DIRECTIVE_VERSION: u32 = 7;
+pub const DIRECTIVE_VERSION: u32 = 8;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(super) enum Action {
-    Text(usize),
+    /// `count` consecutive text lines starting at interval input `first`. A recording merges adjacent lines into one run, so
+    /// a mostly-text interval costs one action instead of one per line.
+    Text {
+        first: usize,
+        count: usize,
+    },
     Freeze,
     Define {
         input: usize,
@@ -50,7 +55,8 @@ struct Read {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DirectiveRecord {
     key: u128,
-    source: Arc<str>,
+    #[serde(with = "super::region_memo::source_wire")]
+    source: crate::SourceText,
     /// Digest of the interval's line shape and comment-stripped text; the bytes are not kept.
     control: u128,
     incoming: Vec<Conditional>,
@@ -61,6 +67,10 @@ pub struct DirectiveRecord {
     inputs: usize,
 }
 impl DirectiveRecord {
+    /// The macro names whose definition or presence the interval's directives read.
+    pub(super) fn read_names(&self) -> impl Iterator<Item = &Arc<str>> {
+        self.reads.iter().map(|read| &read.name)
+    }
     /// Includes record Arc, owned capacities and every nested shared allocation;
     /// duplicate Arc identities are conservatively charged per occurrence.
     pub fn retained_size_bytes(&self) -> usize {
@@ -87,7 +97,7 @@ impl DirectiveRecord {
                 Action::Error { message, .. } | Action::Warning { message, .. } => {
                     message.capacity()
                 }
-                Action::Text(_)
+                Action::Text { .. }
                 | Action::Freeze
                 | Action::Multiple
                 | Action::RecoveryDirective { .. } => 0,
@@ -108,10 +118,12 @@ impl DirectiveRecord {
     }
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
         let value: Self = dm_wire::decode(DIRECTIVE_VERSION, bytes, bytes.len())?;
-        if key(&value.source, value.control) != value.key
+        if key(value.source.as_str(), value.control) != value.key
             || value.actions.iter().any(|action| match action {
-                Action::Text(input)
-                | Action::Define { input, .. }
+                Action::Text { first, count } => {
+                    *count == 0 || first.checked_add(*count).is_none_or(|end| end > value.inputs)
+                }
+                Action::Define { input, .. }
                 | Action::Undef { input, .. }
                 | Action::Error { input, .. }
                 | Action::Warning { input, .. }
@@ -133,7 +145,7 @@ impl DirectiveRecord {
         file_dirs: (&[std::path::PathBuf], &[Macro]),
     ) -> bool {
         self.inputs == inputs
-            && self.source.as_ref() == source
+            && self.source.as_str() == source
             && self.control == control
             && self.incoming == conditionals
             && self.reads.iter().all(|read| {
@@ -163,13 +175,14 @@ fn key(source: &str, control: u128) -> u128 {
     hash.update(&control.to_le_bytes());
     hash.digest128()
 }
-pub(super) fn context<'a>(
-    original: &'a str,
+pub(super) fn context(
+    original: &crate::SourceText,
     lines: PreparedLines<'_>,
-) -> Option<(&'a str, u128, u128)> {
+) -> Option<(crate::SourceText, u128, u128)> {
     let first = lines.first()?;
     let end = lines.last()?.source_span.end;
-    let source = original.get(first.source_span.start..end)?;
+    original.get(first.source_span.start..end)?;
+    let source = original.view(first.source_span.start..end);
     let mut control = Xxh3::new();
     control.update(&DIRECTIVE_VERSION.to_le_bytes());
     for line in lines.iter() {
@@ -185,7 +198,7 @@ pub(super) fn context<'a>(
         control.update(line.text.as_bytes());
     }
     let control = control.digest128();
-    let identity = key(source, control);
+    let identity = key(&source, control);
     Some((source, control, identity))
 }
 pub(super) struct Recording {
@@ -195,7 +208,7 @@ pub(super) struct Recording {
     pub actions: Vec<Action>,
     pub local: BTreeSet<String>,
     reads: RefCell<BTreeMap<String, Read>>,
-    source: Arc<str>,
+    source: crate::SourceText,
     control: u128,
     key: u128,
     incoming: Vec<Conditional>,
@@ -206,7 +219,7 @@ impl Recording {
     pub fn new(
         start: usize,
         end: usize,
-        context: (&str, u128, u128),
+        context: (&crate::SourceText, u128, u128),
         conditionals: &[Conditional],
         dirs: &[std::path::PathBuf],
         definitions: &[Macro],
@@ -218,7 +231,7 @@ impl Recording {
             actions: Vec::new(),
             local: BTreeSet::new(),
             reads: RefCell::new(BTreeMap::new()),
-            source: Arc::from(context.0),
+            source: context.0.clone(),
             control: context.1,
             key: context.2,
             incoming: conditionals.to_vec(),
@@ -229,7 +242,19 @@ impl Recording {
     pub fn directory_read(&mut self) {
         self.file_dirs = Some(self.entry_dirs.clone());
     }
-    pub fn finish(self, outgoing: &[Conditional]) -> DirectiveRecord {
+    /// Records one text line, extending the previous run when the line follows it directly.
+    pub fn push_text(&mut self) {
+        let line = self.current;
+        if let Some(Action::Text { first, count }) = self.actions.last_mut() {
+            if *first + *count == line {
+                *count += 1;
+                return;
+            }
+        }
+        self.actions.push(Action::Text { first: line, count: 1 });
+    }
+    pub fn finish(mut self, outgoing: &[Conditional]) -> DirectiveRecord {
+        self.actions.shrink_to_fit();
         DirectiveRecord {
             key: self.key,
             source: self.source,
@@ -291,7 +316,7 @@ mod tests {
     fn retained_directive_records_charge_reserved_nested_capacities() {
         let mut value = DirectiveRecord {
             key: 0,
-            source: Arc::from(""),
+            source: Arc::<str>::from("").into(),
             control: 0,
             incoming: Vec::new(),
             outgoing: Vec::new(),

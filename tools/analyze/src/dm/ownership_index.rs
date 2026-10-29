@@ -84,6 +84,7 @@ pub const HANDLE_OK: &[&str] = &[
     "code/engine/refs/containment/",
     "code/datums/containment/stock.dm",
     "code/modules/unit_tests/",
+    "code/tests/unit_tests/",
 ];
 
 pub const ENTITY_ROOTS: &[&str] = &["/datum", "/atom", "/obj", "/mob", "/turf"];
@@ -754,7 +755,7 @@ pub fn creates_entity(rhs: &str) -> bool {
 /// registry list, which `main()` assigns before any check).
 pub fn puts_object(rhs: &str, local_types: &LocalTypes, registry_roots: &[String]) -> bool {
     let mut text = rhs.split("//").next().unwrap_or("").to_string();
-    // A proc call's arguments are not the written value: EXPIRY_AT(src, ...) writes a number.
+    // A proc call's arguments are not the written value: TIME_NOW(src, ...) writes a number.
     loop {
         let next = CALL_ARGS.replace_all(&text, "0");
         if next == text {

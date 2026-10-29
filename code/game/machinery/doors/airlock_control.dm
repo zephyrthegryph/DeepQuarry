@@ -120,7 +120,7 @@
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		signal.data["timestamp"] = TIME_NOW(CLOCK_WORLD)
 
 		signal.data["door_status"] = density?("closed"):("open")
 		signal.data["lock_status"] = is_bolted(src) ? "locked" : "unlocked"
@@ -130,7 +130,7 @@
 
 		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 		last_reported_density = density
-		last_reported_locked = num_or_null(is_bolted(src))
+		last_reported_locked = is_bolted(src)
 
 /obj/machinery/door/airlock/open(surpress_send)
 	. = ..()
@@ -246,7 +246,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		signal.data["timestamp"] = TIME_NOW(CLOCK_WORLD)
 		signal.data["pressure"] = num2text(pressure)
 
 		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
@@ -400,3 +400,4 @@ CAPABILITIES(/obj/machinery/access_button)
 	return radio_connection
 
 // Remote door buttons find airlocks by id_tag (REL_KEYED sources).
+SCHEMA(/obj/machinery/door/airlock, last_reported_locked, num())

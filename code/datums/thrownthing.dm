@@ -55,7 +55,7 @@
 	///How long an object has been paused for, to be added to the travel time.
 	var/delayed_time = 0
 	///The last world.time value stored when the thrownthing was moving.
-	EXPIRY_DECLARE(last_move)
+	var/last_move = 0
 	/// If our thrownthing has been blocked
 	var/blocked = FALSE
 
@@ -74,7 +74,6 @@ CAPABILITIES(/datum/thrownthing)
 /datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, then, datum/then_owner, list/then_with, target_zone)
 	. = ..()
 	rel_set(src, nameof(subject), thrownthing)
-	observe(thrownthing, /datum/notice/living_turf_collision, src, then(PROC_REF(hit_atom)))
 	rel_set(src, nameof(starting_turf), get_turf(thrownthing))
 	var/turf/target_turf = get_turf(target)
 	rel_set(src, nameof(target_turf), target_turf)
@@ -114,14 +113,12 @@ CAPABILITIES(/datum/thrownthing)
 
 	diagonal_error = dist_x/2 - dist_y
 
-	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
+	STAMP(src, start_time, CLOCK_WORLD)
 
 
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
 /datum/thrownthing/lifecycle_dematerialize()
 	. = ..()
-	if(!QDELETED(subject))
-		unobserve(subject, /datum/notice/living_turf_collision, src)
 	SSthrow_steps.kernel_leave(src)
 
 /// One server tick of flight on the throwing lane (was SSthrowing.fire()).
@@ -150,7 +147,7 @@ CAPABILITIES(/datum/thrownthing)
 		finalize()
 		return
 
-	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+	STAMP(src, last_move, CLOCK_WORLD)
 
 	var/area/A = get_area(AM.loc)
 	var/atom/step
@@ -217,7 +214,7 @@ CAPABILITIES(/datum/thrownthing)
 
 	if(ismob(thrownthing))
 		var/mob/M = thrownthing
-		M.inertia_dir = init_dir
+		sparse_set_or(M, inertia_dir, init_dir, 0)
 
 	if(t_target && !QDELETED(thrownthing))
 		thrownthing.throw_impact(t_target, src)
@@ -229,12 +226,6 @@ CAPABILITIES(/datum/thrownthing)
 		thrownthing.fall()
 
 	spent(src)
-
-/datum/thrownthing/proc/hit_atom(datum/act/notice/N)
-	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/source = N.target
-	var/atom/A = source
-	finalize(hit=TRUE, t_target=A)
 
 /datum/thrownthing/proc/hitcheck(turf/T)
 	var/atom/movable/hit_thing
@@ -256,6 +247,6 @@ CAPABILITIES(/datum/thrownthing)
 #undef MAX_THROWING_DIST
 #undef MAX_TICKS_TO_MAKE_UP
 
-/// Throw source (a relation view). A global helper keeps the proc off the base type.
+/// Where a thrown movable was thrown from (the weak throw_source slot: a bottle thrown in anger). A global helper keeps the proc off the base type.
 /proc/movable_throw_source(atom/movable/AM) as /turf
-	return AM?.throw_source
+	return sparse_ref(AM, throw_source)

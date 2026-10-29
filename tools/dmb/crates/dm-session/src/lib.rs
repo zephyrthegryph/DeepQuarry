@@ -12,11 +12,11 @@ pub use artifacts::{
 pub use publication::{
     release_replaced_in_background, ArtifactAttempt, ArtifactGeneration, ArtifactPublication,
 };
-pub use reads::{matching_domains, RecordingResolver, ResolverRead};
+pub use reads::{RecordingResolver, ResolverRead};
 
 pub mod observations;
 pub use observations::{
-    CertificateDelta, CertificateState, DependencyCoverage, InputDelta, Observation,
+    DependencyCoverage, InputDelta, Observation,
     ObservationHost, ObservationLedger, Receipt, ReceiptAdmission, ReceiptGroupPool,
     ReceiptStorageView, AnswerOracle,
 };

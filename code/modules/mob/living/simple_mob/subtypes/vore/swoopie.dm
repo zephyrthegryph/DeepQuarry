@@ -30,15 +30,12 @@
 	has_eye_glow = TRUE
 	custom_eye_color = "#00CC00"
 	mount_offset_y = 30
-	vore_capacity_ex = list("stomach" = 1, "neck1" = 1, "neck2" = 1, "neck3" = 1, "neck4" = 1)
 	vore_fullness_ex = list("stomach" = 0, "neck1" = 0, "neck2" = 0, "neck3" = 0, "neck4" = 0)
-	vore_icon_bellies = list("stomach", "neck1", "neck2", "neck3", "neck4")
 	vore_icons = 0
 	vore_pounce_chance = 100
 	vore_pounce_maxhealth = 200
 	has_hands = TRUE
 	faction = "neutral"
-	say_list_type = /datum/say_list/swoopie
 	player_msg = "You are a SWOOPIE XL cleaning bot! Use DISARM intent on yourself to change your integrated Vac-Pack settings, or GRAB intent to swoop stuff up! Turning off the Vac-Pack will make your grab clicks function as normal grab intent clicks."
 
 	var/obj/item/vac_attachment/swoopie/Vac
@@ -259,7 +256,7 @@
 	return FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
-	configure(living_rules(adminbus_trash = TRUE))
+	configure(living_rules(vore_icon_bellies = list("stomach", "neck1", "neck2", "neck3", "neck4"), vore_capacity_ex = list("stomach" = 1, "neck1" = 1, "neck2" = 1, "neck3" = 1, "neck4" = 1), say_list_type = /datum/say_list/swoopie, adminbus_trash = TRUE))
 	configure(mob_movement(bump = 0))
 	op("swoopie_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Toggle Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_disarm)))
 	op("swoopie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_grab)))

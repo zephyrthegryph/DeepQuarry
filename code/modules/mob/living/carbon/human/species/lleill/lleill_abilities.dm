@@ -224,9 +224,13 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 /mob/living/carbon/human/proc/lleill_ring_interrupted(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to form white rings on the ground."))
 
+/// The glamour rings this lleill has placed, oldest first (a fresh list).
+/mob/living/carbon/human/proc/glamour_rings()
+	return link_list(src, LK_GLAMOUR_RINGS)
+
 /// What a new ring costs: 25 energy for every ring already placed.
 /mob/living/carbon/human/proc/lleill_ring_spawn_cost()
-	return 25 * length(teleporters)
+	return 25 * link_count(src, LK_GLAMOUR_RINGS)
 
 /mob/living/carbon/human/proc/lleill_ring_spawn_done(datum/act/op/A)
 	lleill_ring_placed(lleill_ring_spawn_cost())
@@ -238,7 +242,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	var/spawnloc = get_turf(src)
 	var/obj/structure/glamour_ring/R = new(spawnloc)
 	rel_set(R, nameof(R.connected_mob), src)
-	rel_add(src, nameof(teleporters), R)
+	link_make(src, LK_GLAMOUR_RINGS, R)
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost_spawn
 	species.update_lleill_hud(src)
@@ -248,7 +252,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	set desc = "Place or teleport to a glamour ring."
 	set category = VERB_CAT_ABILITIES_LLEILL
 
-	var/energy_cost_multi = src.teleporters.len
+	var/energy_cost_multi = link_count(src, LK_GLAMOUR_RINGS)
 	var/energy_cost_spawn = (25 * energy_cost_multi)
 	var/energy_cost_tele = 50
 
@@ -286,7 +290,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 		var/obj/structure/glamour_ring/R = value
 		if(!istype(R) || QDELETED(R))
 			return "gone"
-		if(!(value in H.teleporters))
+		if(!link_has(H, LK_GLAMOUR_RINGS, value))
 			return "ring gone"
 	return H.species.lleill_energy < energy_cost ? "no energy" : null
 
@@ -309,10 +313,10 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 		if(species.lleill_energy < energy_cost_tele)
 			to_chat(src, span_warning("You do not have enough energy to do that!"))
 			return
-		if(!src.teleporters.len)
+		if(!link_count(src, LK_GLAMOUR_RINGS))
 			to_chat(src, span_warning("You need to place rings to teleport to them."))
 			return
-		open_request(src, /datum/prompt/choice/lleill_ring_teleport, PROC_REF(lleill_ring_teleport_chosen), answerer = src, choices = src.teleporters, energy_cost = energy_cost_tele)
+		open_request(src, /datum/prompt/choice/lleill_ring_teleport, PROC_REF(lleill_ring_teleport_chosen), answerer = src, choices = glamour_rings(), energy_cost = energy_cost_tele)
 
 /mob/living/carbon/human/proc/lleill_ring_teleport_chosen(datum/act/request/A)
 	var/datum/prompt/choice/lleill_ring_teleport/ask = A.request
@@ -775,7 +779,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 	var/mob/living/ourmob = tf_mob_holder
 	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps on
-	// stat change via its /datum/definition_event/mob_statchange handler.
+	// stat change via its /datum/notice/mob_statchange handler.
 	return_player_to_tf_holder("reverted beast form")
 	rel_set(src, nameof(tf_mob_holder), null)
 	var/turf/beast_loc = src.loc

@@ -68,8 +68,8 @@
 // ---------------------------------------------------------------------------
 // Behavior trigger keys. The brain dispatches these to behaviors that list them
 // in eval_triggers, so they re-evaluate only when relevant. The brain also emits
-// the matching OM events on the mob (/datum/definition_event/dqai_damage_taken,
-// dqai_target_lost, dqai_target_changed, dqai_ally_distress) for other listeners.
+// /datum/notice/dqai_damage_taken on the mob for other listeners (the target and
+// distress keys are behaviour triggers only; no notice carries them).
 // ---------------------------------------------------------------------------
 #define DQAI_TRIGGER_DAMAGE_TAKEN     "dqai_damage_taken"      // (amount, injury_kind, source_mob)
 #define DQAI_TRIGGER_TARGET_LOST      "dqai_target_lost"       // (old_target)

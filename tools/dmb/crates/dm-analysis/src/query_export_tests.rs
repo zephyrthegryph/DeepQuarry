@@ -25,7 +25,7 @@ fn resolver_negatives_and_unknowns_remain_distinct_and_wide_keys_roundtrip() {
         ResolveQuery::Var { owner, name },
         ResolveQuery::ResourceIn {
             path: name,
-            search_context: u128::MAX,
+            search_context: u128::MAX.into(),
         },
     ];
     let mut bytes = Vec::new();
@@ -47,7 +47,7 @@ fn resolver_negatives_and_unknowns_remain_distinct_and_wide_keys_roundtrip() {
     assert_eq!(exported[0]["answer"]["value"], false);
     assert_eq!(exported[1]["answer"]["status"], "missing");
     assert_eq!(exported[2]["answer"]["status"], "unsupported");
-    assert!(exported.iter().all(|row| row["domain_version"].is_null()));
+    assert!(exported.iter().all(|row| row.get("domain_version").is_none()));
     let decoded: ResolveQuery =
         serde_json::from_str(exported[2]["query_wire"].as_str().unwrap()).unwrap();
     assert_eq!(decoded, queries[2]);
@@ -95,7 +95,6 @@ fn canonical_member_ids_follow_normalized_occurrences_and_queries_use_same_subje
         .find(|row| row["row"] == "resolved_query" && row["answer"]["kind"] == "shared_slot")
         .unwrap();
     assert_eq!(storage["answer"]["name"]["text"], "value");
-    assert_eq!(storage["domain_version"].as_str().unwrap().len(), 32);
 }
 
 #[test]
@@ -118,7 +117,7 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
         &ResolvedMeaning::Member {
             owner,
             name,
-            fingerprint: 1,
+            fingerprint: 1.into(),
             data: Arc::new(data.clone()),
         },
     )
@@ -135,7 +134,7 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
         &ResolvedMeaning::Member {
             owner,
             name,
-            fingerprint: 2,
+            fingerprint: 2.into(),
             data: Arc::new(data),
         },
     )

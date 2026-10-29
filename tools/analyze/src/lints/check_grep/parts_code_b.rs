@@ -86,10 +86,12 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "heat_ratchet_on_fire_act_overrides_h3",
             "heat: ratchet on fire_act() overrides (H3)",
-            "fire_act() overrides over the ratchet. Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold instead.",
+            "fire_act() overrides are banned. Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold, or react with on_notice(/datum/notice/atom_fire_act, then(PROC_REF(x))).",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/fire_act\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, mob/living) are where fire exposure lands and is published; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/modules/mob/living/living_fire.dm")]),
         // Hard ban (temperature and energy writes outside code/domains): DM outside the gas and heat domains never writes a gas's or a solid's temperature or energy.
         Part::new(
             "heat_raw_temperature_writes",
@@ -103,24 +105,29 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "damage_ratchet_on_non_turf_ex_act_overrides_d5",
             "damage: ratchet on non-turf ex_act() overrides (D5)",
-            "non-turf ex_act() overrides over the ratchet. Let the blast packet land (max_integrity, armour, BOMB_PROOF); keep only orthogonal effects and chain to ..().",
+            "non-turf ex_act() overrides are banned. Let the blast packet land (max_integrity, armour, BOMB_PROOF), or take the blast with extend(/datum/act/hit/explosion, instead(then(PROC_REF(x)))) in the type's CAPABILITIES (x(datum/act/hit/explosion/A) reads A.packet.severity).",
             Files::Code,
             line(r"^/(atom|obj|mob|area)[A-Za-z0-9_/]*/ex_act\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, mob/living) start the explosion action and deliver the packet; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/modules/mob/living/living_defense.dm")]),
         Part::new(
             "damage_ratchet_on_atom_break_set_broken_overrides_d4",
             "damage: ratchet on atom_break()/set_broken() overrides (D4)",
-            "atom_break()/set_broken() overrides over the ratchet. Declare integrity_failure / broken_icon_state instead.",
+            "atom_break()/set_broken() overrides are banned. Declare integrity_failure / broken_icon_state, and react with on_notice(/datum/notice/machinery_broken | /datum/notice/atom_broken, then(PROC_REF(x))) in the type's CAPABILITIES.",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/(atom_break|set_broken)\("),
-        ),
+        )
+        // The entry-point adapters (atom, obj, machinery) are the one place the break is written and published; they are not overrides.
+        .flt(vec![Flt::DropLit("code/game/atom/atom_defense.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/game/machinery/machinery.dm")]),
         Part::new(
             "generic_hit_ratchet_on_attack_generic_overrides",
             "generic hit: ratchet on attack_generic() overrides",
-            "attack_generic() overrides over the ratchet. Take the generic hit over: extend(/datum/act/hit/generic, instead(then(PROC_REF(x)))) in the type's CAPABILITIES; HOOK_DECLINE lets the default attack land.",
+            "attack_generic() overrides are gone (banned; the /atom default stays). Take the generic hit over: extend(/datum/act/hit/generic, instead(then(PROC_REF(x)))) in the type's CAPABILITIES; HOOK_DECLINE lets the default attack land.",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/attack_generic\("),
-        ),
+        )
+        .flt(vec![drop(r"^[^:]+:\d+:/atom/proc/attack_generic\(")]),
         // Items, structures, effects and turfs (code/game/objects, code/game/turfs): the legacy forms of the items/structures
         // wave, shrink-only until each reaches zero and becomes a hard ban (tools/codemods/run_items_wave.sh, exclusions.txt).
         Part::new(
@@ -260,7 +267,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "transform_ratchet_on_bespoke_data_procs",
             "transform: ratchet on bespoke data procs",
-            "a chemical transformation with a bespoke data = TYPE_PROC_REF(...) over the ratchet. Product data is a pure function of the settle; the count only falls (doc/rewrite/proposals/transformations.md section 6).",
+            "a chemical transformation with a data = TYPE_PROC_REF(...) is gone (banned). Declare the product's data: with_data = constant, or data_from = data_from_reagent(id, key, default) (doc/rewrite/proposals/transformations.md section 6).",
             Files::Code,
             line(r"\bdata = TYPE_PROC_REF\(/transformation/chem/"),
         ),

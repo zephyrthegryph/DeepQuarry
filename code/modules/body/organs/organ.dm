@@ -111,8 +111,8 @@
 				set_meat_type(H?.species?.meat_type)
 
 			if(!meat_type)
-				if(owner.meat_type)
-					set_meat_type(owner.meat_type)
+				if(butchery_of(owner).meat_type)
+					set_meat_type(butchery_of(owner).meat_type)
 				else
 					set_meat_type(/obj/item/reagent_containers/food/snacks/meat)
 
@@ -396,7 +396,7 @@
 
 	W.hits += 1
 	W.damage += damage
-	EXPIRY_STAMP(W, time_inflicted, CLOCK_WORLD)
+	STAMP(W, time_inflicted, CLOCK_WORLD)
 
 /// Organs are anatomy, not item integrity: /atom/take_damage() does nothing
 /// to them. A patient's organs are harmed through injure() (internal organs:

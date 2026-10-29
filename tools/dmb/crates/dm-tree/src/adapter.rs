@@ -114,8 +114,12 @@ fn from_ast_with_cursor(
         symbols: &mut symbols,
         result: &mut result,
         errors: &mut errors,
+        no_expansion: Arc::from([]),
     };
     walk(&normalized, owner, &mut context);
+    // The walk grows both vectors by doubling; the result is retained per region, so release the slack.
+    result.skeletons.shrink_to_fit();
+    result.origins.shrink_to_fit();
     result.symbols = symbols;
     if errors.is_empty() {
         Ok(result)
@@ -177,6 +181,8 @@ fn canonical(text: &str) -> Result<Arc<[u8]>, String> {
     Ok(bytes.into())
 }
 struct AdapterContext<'a> {
+    /// The one empty expansion stack every origin of this walk shares.
+    no_expansion: Arc<[Span]>,
     source: Option<&'a str>,
     file: FileId,
     include_occurrence: u32,
@@ -539,7 +545,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         },
                         include_occurrence,
                         region,
-                        expansion_stack: Arc::from([]),
+                        expansion_stack: Arc::clone(&context.no_expansion),
                     });
                 }
                 context.result.skeletons.push(skeleton);
@@ -547,7 +553,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     span,
                     include_occurrence,
                     region,
-                    expansion_stack: Arc::from([]),
+                    expansion_stack: Arc::clone(&context.no_expansion),
                 });
                 if item.kind == ItemKind::Type {
                     if let Ok(path) = absolute(owner, header) {
@@ -748,7 +754,6 @@ impl SharedAdaptedDeclarations {
             intrinsics,
             seed.is_none(),
             normalization,
-            normalization.is_some(),
             structural,
         )
         .map_err(|error| {
@@ -823,9 +828,6 @@ impl SharedAdaptedDeclarations {
             },
         )?);
         drop(_occurrence_timer);
-        let publish_timer = dm_profile::detail_timer("tree.publish_selection_owner");
-        tree.publish_selection_owner();
-        drop(publish_timer);
         let tree = Arc::new(tree);
         Ok(TreeSnapshot { tree, occurrences })
     }

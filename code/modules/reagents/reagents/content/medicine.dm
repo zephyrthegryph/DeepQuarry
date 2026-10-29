@@ -930,13 +930,13 @@ TYPE_TABLE(/datum/reagent/respirodaxon, daxon_organs, list(O_LUNGS, O_VOICE, O_G
 TYPE_TABLE(/datum/reagent/respirodaxon, daxon_partners, list(REAGENT_ID_GASTIRODAXON, REAGENT_ID_PERIDAXON))
 
 /datum/reagent/respirodaxon/daxon_clash(mob/living/carbon/human/H, removed)
-	if(H.losebreath >= 15 && prob(H.losebreath))
+	if(H.losebreath() >= 15 && prob(H.losebreath()))
 		H.status_at_least(STAT_STUNNED, 2)
 	else
-		H.losebreath = CLAMP(H.losebreath + 3, 0, 20)
+		H.set_losebreath(CLAMP(H.losebreath() + 3, 0, 20))
 
 /datum/reagent/respirodaxon/daxon_alone(mob/living/carbon/human/H, removed)
-	H.losebreath = max(H.losebreath - 4, 0)
+	H.set_losebreath(max(H.losebreath() - 4, 0))
 
 /datum/reagent/gastirodaxon
 	treatment_tags = list(TREAT_DIGESTIVE = 1.0, TREAT_ANTITOXIN = 0.6)
@@ -1013,7 +1013,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_organs, list(O_HEART, O_SPLEEN, O_R
 TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN, REAGENT_ID_PERIDAXON))
 
 /datum/reagent/cordradaxon/daxon_clash(mob/living/carbon/human/H, removed)
-	H.losebreath = CLAMP(H.losebreath + 1, 0, 10)
+	H.set_losebreath(CLAMP(H.losebreath() + 1, 0, 10))
 
 /datum/reagent/immunosuprizine
 	name = REAGENT_IMMUNOSUPRIZINE
@@ -1247,7 +1247,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	mrate_static = TRUE
 	overdose = REAGENTS_OVERDOSE
 	scannable = SCANNABLE_BENEFICIAL
-	data = 0
+	var/last_message_at = 0 // when the last status message was sent (-1: the effect ended)
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_SPACACIL
@@ -1255,13 +1255,13 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 /datum/reagent/spaceacillin/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		if(volume <= 0.1 && data != -1)
-			data = -1
+		if(volume <= 0.1 && last_message_at != -1)
+			last_message_at = -1
 			to_chat(M, span_notice("You regain focus..."))
 		else
 			var/delay = (5 MINUTES)
-			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
-				data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
+			if(ELAPSED(src, last_message_at, CLOCK_WORLD) > delay)
+				STAMP(src, last_message_at, CLOCK_WORLD)
 				to_chat(M, span_warning("Your senses feel unfocused, and divided."))
 
 /datum/reagent/spaceacillin/affect_touch(mob/living/carbon/M, alien, removed)
@@ -1281,7 +1281,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	overdose = 10
 	overdose_mod = 1.5
 	scannable = SCANNABLE_BENEFICIAL
-	data = 0
+	var/last_message_at = 0 // when the last status message was sent (-1: the effect ended)
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
@@ -1291,13 +1291,13 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	var/mob/living/carbon/human/H = M
 
 	if(ishuman(M) && alien == IS_SLIME) //Everything about them is treated like a targetted organism. Widespread bodily function begins to fail.
-		if(volume <= 0.1 && data != -1)
-			data = -1
+		if(volume <= 0.1 && last_message_at != -1)
+			last_message_at = -1
 			to_chat(M, span_notice("Your body ceases its revolt."))
 		else
 			var/delay = (3 MINUTES)
-			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
-				data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
+			if(ELAPSED(src, last_message_at, CLOCK_WORLD) > delay)
+				STAMP(src, last_message_at, CLOCK_WORLD)
 				to_chat(M, span_critical("It feels like your body is revolting!"))
 		M.status_at_least(STAT_CONFUSED, 7)
 		M.injure(INJURY_BURN, removed * 2, source = src)
@@ -1354,7 +1354,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	mrate_static = TRUE
 	overdose = REAGENTS_OVERDOSE
 	scannable = SCANNABLE_BENEFICIAL
-	data = 0
+	var/last_message_at = 0 // when the last status message was sent (-1: the effect ended)
 	can_overdose_touch = TRUE
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
@@ -1367,13 +1367,13 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/spacomycaze/affect_touch(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME)
-		if(volume <= 0.1 && data != -1)
-			data = -1
+		if(volume <= 0.1 && last_message_at != -1)
+			last_message_at = -1
 			to_chat(M, span_notice("The itching fades..."))
 		else
 			var/delay = (2 MINUTES)
-			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
-				data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
+			if(ELAPSED(src, last_message_at, CLOCK_WORLD) > delay)
+				STAMP(src, last_message_at, CLOCK_WORLD)
 				to_chat(M, span_warning("Your skin itches."))
 
 /datum/reagent/spacomycaze/touch_obj(obj/O)
@@ -1792,7 +1792,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			dq_reagent_close_wounds(O, wound_heal, internal = FALSE)
 		M.injure(INJURY_BLUNT, 3 * removed, source = src)
-		if(M.losebreath < 15)
+		if(M.losebreath() < 15)
 			M.AdjustLosebreath(1)
 		H.custom_pain("It feels as if your veins are fusing shut!",60)
 
@@ -1933,9 +1933,9 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 			H.status_adjust(STAT_WEAKENED, 5) //Fall onto the floor for a few moments.
 			H.status_at_least(STAT_CONFUSED, 15) //Be unable to walk correctly for a bit longer.
 		if(prob(1))
-			if(H.losebreath <= 1 && H.oxygen_debt() <= 20) //Let's not suffocate them to the point that they pass out.
+			if(H.losebreath() <= 1 && H.oxygen_debt() <= 20) //Let's not suffocate them to the point that they pass out.
 				to_chat(H,span_warning("You feel a sharp stabbing pain in your chest and quickly realize that your lungs have stopped functioning!")) //Let's scare them a bit.
-				H.losebreath = 10
+				H.set_losebreath(10)
 		if(prob(2))
 			to_chat(H,span_warning("You feel a dull pain behind your eyes and at the back of your head..."))
 			H.status_adjust(STAT_HALLUCINATING, 20) //It messes with your mind for some reason.
@@ -2019,8 +2019,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/lipozilase/affect_blood(mob/living/carbon/M, alien, removed)
 	M.adjust_nutrition(-20 * removed)
-	if(M.weight > 50)
-		M.weight = max(50, M.weight - 1.5 * removed) // B23: 0.3 a tick at REM, scaled by what was metabolised
+	if(sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) > 50)
+		sparse_set_or(M, weight, max(50, sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) - 1.5 * removed), DEFAULT_MOB_WEIGHT) // B23: 0.3 a tick at REM, scaled by what was metabolised
 
 /datum/reagent/lipostipo // The drug that rapidly increases weight.
 	name = REAGENT_LIPOSTIPO
@@ -2038,8 +2038,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 /datum/reagent/lipostipo/affect_blood(mob/living/carbon/M, alien, removed)
 	// B23: the weight-gain drug feeds (it was a copy of lipozilase and starved you).
 	M.adjust_nutrition(20 * removed)
-	if(M.weight < 500)
-		M.weight = min(500, M.weight + 1.5 * removed)
+	if(sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) < 500)
+		sparse_set_or(M, weight, min(500, sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) + 1.5 * removed), DEFAULT_MOB_WEIGHT)
 
 /datum/reagent/polymorph
 	name = REAGENT_POLYMORPH

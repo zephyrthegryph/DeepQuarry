@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Mouse input has one path: BYOND's click, drag and hover procs are overridden only by the engine, and a queued input resolves through the same code as one handled at once."
+  - refactor: "Removed the generated click, drop, drag-over and hover overrides and every hand-written one (HUD buttons, build mode, leash alerts, rig drag, fox and diona drops); they are declared click_on, double_click_on, drag_onto and hover entries."
+  - code_imp: "A mouse_override lint rejects any native mouse proc override outside code/engine/kernel/entry.dm."
+  - code_imp: "Input inboxes have a hard cap and a rate limit that refuse the newest input with a message and an admin log once per burst, inputs expire after a per-kind wait, and a server metrics source reports inbox depth, coalesced drops, refusals and expiries."

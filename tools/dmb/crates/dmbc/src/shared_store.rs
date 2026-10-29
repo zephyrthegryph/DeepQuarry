@@ -103,6 +103,15 @@ impl SharedStore {
     pub(crate) fn report(&self) -> String {
         let (record_bytes, records) = self.records.usage();
         let mut line = format!("dmbd shared store: memo records={records} ({record_bytes} B)");
+        let o = &self.answer_values.outcomes;
+        let o = |i: usize| o[i].load(std::sync::atomic::Ordering::Relaxed);
+        line.push_str(&format!(
+            "; answer values: same={} other_answer={} other_query={} new={}",
+            o(0),
+            o(1),
+            o(2),
+            o(3)
+        ));
         let cores = self.cores.lock().unwrap_or_else(|e| e.into_inner());
         let mut rows: Vec<_> = cores
             .iter()
@@ -186,6 +195,19 @@ where
         None => Arc::default(),
     }
 }
+/// The daemon-wide core of this purpose, or `None` when the store is inactive (tests, one-shot compiles) or the purpose is
+/// kept private: for owners whose private form is a different kind of store.
+pub(crate) fn shared_core<T, Q, A, D>(name: &'static str) -> Option<Arc<ObservedArtifactStore<T, Q, A, D>>>
+where
+    T: Send + Sync + 'static,
+    Q: Send + Sync + 'static,
+    A: Send + Sync + 'static,
+    D: Send + Sync + 'static,
+{
+    active()
+        .filter(|_| !private(name))
+        .map(|store| store.core(name, None))
+}
 /// The core an artifact owner of this purpose uses: the daemon-wide one, else a private one.
 pub(crate) fn artifact_core<T, Q, A, D>(
     name: &'static str,
@@ -240,7 +262,6 @@ mod tests {
             .insert_with_owned(
                 Arc::clone(&key),
                 vec![Observation { query: (), answer: 7, domain: () }],
-                vec![],
                 8,
                 || 41,
             )

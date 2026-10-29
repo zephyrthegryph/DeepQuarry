@@ -15,7 +15,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
 	desc = "A bulky, heavy-duty piece of exclusive corporate armor. YOU are in charge!"
 	icon_state = "caparmor"
 	w_class = ITEMSIZE_HUGE
-	slowdown = 1.5
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/captain)
@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/santahat)
 	name = "Santa's suit"
 	desc = "Festive!"
 	icon_state = "santa"
-	slowdown = 0
+	worn_factors = null
 
 CAPABILITIES(/obj/item/clothing/suit/space/santa)
 	suit_storage(list(/obj/item))
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
 	desc = "Yarr."
 	icon_state = "pirate"
 	w_class = ITEMSIZE_NORMAL
-	slowdown = 0
+	worn_factors = null
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/pirate)
@@ -107,4 +107,4 @@ CAPABILITIES(/obj/item/clothing/suit/space/pirate)
 	name = "emergency softsuit"
 	icon_state = "syndicate-orange"
 	desc = "A thin, ungainly softsuit colored in blaze orange for rescuers to easily locate, looks pretty fragile."
-	slowdown = 2
+	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)

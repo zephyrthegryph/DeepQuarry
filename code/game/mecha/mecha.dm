@@ -26,7 +26,7 @@
 	/// Passengers in the compartments, kept by the compartments' slot changes (mecha_passenger_changed()); the tracked mirror a requirement reads.
 	var/passenger_count = 0
 	var/list/log = list() // ALLOW(instance_list): d: mech log (generic name, too many ambiguous call sites)
-	EXPIRY_DECLARE(last_message)
+	var/last_message = 0
 	var/add_req_access = 1
 	var/maint_access = 1
 	var/dna								//Dna-locking the mech
@@ -184,6 +184,7 @@
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
 CAPABILITIES(/obj/mecha)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(assemble_mecha))
 	// The climb in and the brain install are the actor's four seconds; the held item may change (IGNORE_HELD_ITEM).
@@ -812,7 +813,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(istype(user,/mob/living/carbon/brain))
 			if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 				to_chat(user, span_warning("You try to move, but you are not the pilot! The exosuit doesn't respond."))
-				EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+				STAMP(src, last_message, CLOCK_WORLD)
 			return 0
 		user.forceMove(get_turf(src))
 		to_chat(user, "You climb out from [src]")
@@ -822,24 +823,24 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(!HC)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			occupant_message(span_notice("You can't operate an exosuit that doesn't have a hull!"))
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return
 
 	if(connected_port)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message(span_warning("Unable to move while connected to the air system port"))
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 	if(state)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			occupant_message(span_warning("Unable to move whilst in maintenance mode"))
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 /*
 	if(zoom)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while in zoom mode.")
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 */
 	return domove(direction)
@@ -912,13 +913,13 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(defence_mode)//Check if we are currently locked down
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message(span_red("Unable to move while in defence mode"))
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 
 	if(zoom)//:eyes:
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while in zoom mode.")
-			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+			STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 
 	if(!thrusters && (current_processes & MECHA_PROC_MOVEMENT)) //I think this mean 'if you try to move in space without thruster, u no move'
@@ -1304,7 +1305,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		rel_add(Test, nameof(Test.hit), occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
 		return
 
-	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)
+	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(combat_of(Proj).injury_kind)]).",1)
 	if(!negate_projectile(Proj))
 		mech_body_plan().receive_projectile(src, Proj)
 	..()
@@ -2578,11 +2579,14 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	return 0
 
 //This is for mobs mostly.
-/obj/mecha/attack_generic(mob/user, damage, attack_message)
+/obj/mecha/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb
 
 	user.setClickCooldown(user.get_attack_speed())
 	if(!damage)
-		return 0
+		return OP_OK
 
 	src.mecha_log_message("Attacked. Attacker - [user].",1)
 	user.do_attack_animation(src)
@@ -2599,7 +2603,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		act_message(user, src, others = "%U%'s attack doesn't dent %T% armor")
 		src.log_append_to_last("Armor saved.")
 		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
-		return
+		return OP_OK
 
 	else
 		mech_body_plan().injure(src, damage, MELEE)
@@ -2608,7 +2612,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 		add_attack_logs(user, src, "attacked")
 
-	return 1
+	return OP_OK
 
 /////////////////////////////////////////
 //////// Mecha process() helpers ////////

@@ -1,0 +1,183 @@
+/datum/category_item/catalogue/fauna/space_ghost
+	name = "Alien Wildlife - Space Ghost"
+	desc = "A mysterious and unknown creature made of radical energy.\
+	This creature's energy interferes the nervous system in many kinds of creatures, which may result in hallucinations.\
+	This creature's lack of a physical form leaves it quite resistant to physical damage.\
+	Smaller variants of this creature seem to be vulnerable to bright light.\
+	While both variants are quite vulnerable to laser and energy weapons."
+	value = CATALOGUER_REWARD_EASY
+
+
+/mob/living/simple_mob/vore/alienanimals/space_ghost
+	name = "space ghost"
+	desc = "A pulsing mass of darkness that seems to have gained sentience."
+	tt_desc = "?????"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)
+
+	icon = 'icons/mob/alienanimals_x32.dmi'
+	icon_state = "space_ghost"
+	icon_living = "space_ghost"
+	icon_dead = "space_ghost_dead"
+	has_eye_glow = TRUE
+	pass_flags = PASSTABLE
+
+	faction = FACTION_SPACE_GHOST
+	endurance = 50
+	movement_cooldown = 0
+
+	see_in_dark = 10
+
+	response_help  = "pets"
+	response_disarm = "gently pushes aside"
+	response_harm   = "punches"
+
+	harm_intent_damage = 0
+	melee_damage_lower = 1
+	melee_damage_upper = 1
+	attacktext = list("spooked", "startled", "jumpscared", "screamed at")
+
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+	maxbodytemp = 999999
+
+	armor_spec = "melee=100;bullet=100;rad=100"
+
+	loot_list = list(/obj/item/ore/diamond = 100, /obj/item/ectoplasm = 3)
+
+	speak_emote = list("rumbles")
+
+	vore_active = 0
+
+	projectiletype = /mob/living/simple_mob/vore/alienanimals/spooky_ghost
+	projectilesound = null
+	projectile_accuracy = 0
+	projectile_dispersion = 0
+
+	needs_reload = TRUE
+	reload_max = 1
+	reload_count = 0
+	reload_time = 7 SECONDS
+
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
+	configure(living_rules(delete_on_death = TRUE))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(death_message = "fades away!"))
+
+
+/mob/living/simple_mob/vore/alienanimals/space_ghost/apply_melee_effects(atom/A)
+	var/mob/living/L = A
+	if(L.status_units(STAT_HALLUCINATING) <= 100)
+		L.status_adjust(STAT_HALLUCINATING, rand(1,10))
+
+/mob/living/simple_mob/vore/alienanimals/space_ghost/shoot(atom/A) //We're shooting ghosts at people and need them to have the same faction as their parent, okay?
+	if(!projectiletype)
+		return
+	if(A == get_turf(src))
+		return
+	face_atom(A)
+	if(reload_count >= reload_max)
+		return
+	var/mob/living/simple_mob/P = new projectiletype(loc, src)
+
+	if(!P)
+		return
+	if(needs_reload)
+		reload_count++
+
+	P.faction = faction
+	playsound(src, projectilesound, 80, 1)
+
+/mob/living/simple_mob/vore/alienanimals/space_ghost
+
+/mob/living/simple_mob/vore/alienanimals/space_ghost/on_death(gibbed)
+	. = ..()
+
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost
+	name = "space ghost"
+	desc = "A pulsing mass of darkness that seems to have gained sentience."
+	tt_desc = "?????"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)
+
+	icon = 'icons/mob/alienanimals_x32.dmi'
+	icon_state = "spookyghost-1"
+	icon_living = "spookyghost-1"
+	icon_dead = "space_ghost_dead"
+	pass_flags = PASSTABLE
+
+	faction = FACTION_SPACE_GHOST
+	endurance = 5
+	movement_cooldown = -1
+
+	see_in_dark = 10
+	alpha = 128
+
+	response_help  = "pets"
+	response_disarm = "gently pushes aside"
+	response_harm   = "punches"
+
+	harm_intent_damage = 0
+	melee_damage_lower = 1
+	melee_damage_upper = 1
+	attacktext = list("spooked", "startled", "jumpscared", "screamed at")
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+	maxbodytemp = 999999
+
+	armor_spec = "melee=100;bullet=100;rad=100"
+
+	speak_emote = list("rumbles")
+
+	vore_active = 0
+
+
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost
+
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/on_death(gibbed)
+	. = ..()
+
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/apply_melee_effects(atom/A)
+	var/mob/living/L = A
+	if(L && istype(L))
+		if(L.status_units(STAT_HALLUCINATING) <= 100)
+			L.status_adjust(STAT_HALLUCINATING, rand(1,10))
+
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/life_type_post(datum/seq_frame/life/F)
+	..()
+	var/turf/T = get_turf(src)
+	if(!T)
+		return
+	if(T.get_lumcount() >= 0.5)
+		src.injure(INJURY_BURN, 1, source = T) // Light sears it.
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
+	configure(living_rules(delete_on_death = TRUE))
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(death_message = "fades away!"))
+	after_init(35 SECONDS, then(PROC_REF(fade_out)))
+	rolls(nameof(icon_living), pick_one(list("spookyghost-1", "spookyghost-2")))
+	look_from(nameof(icon_living), state = "*")
+
+/// A summoned ghost lasts 35 seconds.
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/proc/fade_out(datum/act/A)
+	death()
