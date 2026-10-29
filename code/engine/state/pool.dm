@@ -105,6 +105,7 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 		var/datum/pooled/probe = new /datum/pooled
 		for(var/name in probe.vars)
 			base_vars[name] = TRUE
+	var/list/initials = list()
 	for(var/name in D.vars)
 		if(base_vars[name])
 			continue
@@ -114,11 +115,16 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 			GLOB.pool_list_templates["[D.type]:[name]"] = pool_deep_copy(current)
 		else
 			plan[name] = POOL_RESET_VALUE
+			initials[name] = initial(D.vars[name])
+	GLOB.pool_initial_values[D.type] = initials
 	plans[D.type] = plan
 	return plan
 
 /// type:var -> the list contents a fresh instance had (pool_reset_plan()).
 GLOBAL_LIST_EMPTY(pool_list_templates)
+/// type -> var name -> the declared initial value of each POOL_RESET_VALUE var (pool_reset_plan()): a release writes these back
+/// without asking the type for initial() once per var per release (170 k releases a boot, 70 a second at idle).
+GLOBAL_LIST_EMPTY(pool_initial_values)
 
 /// A copy of `source` with nested lists copied too.
 /proc/pool_deep_copy(list/source)
@@ -146,6 +152,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 	var/list/transient
 	/// From pool_reset_plan(), for a /datum/pooled type.
 	var/list/plan
+	/// The declared initial value of each POOL_RESET_VALUE var of `plan` (GLOB.pool_initial_values).
+	var/list/initials
 	var/max_free = POOL_DEFAULT_MAX_FREE
 	var/dropped = 0
 	var/created = 0
@@ -197,6 +205,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 			if(istype(D, /datum/pooled))
 				var/datum/pooled/P = D
 				pool.plan = pool_reset_plan(P)
+				pool.initials = GLOB.pool_initial_values[D.type]
 				pool.max_free = P.pool_max_free
 	D.pool_state = POOL_STATE_TAKEN
 	pool.taken++
@@ -218,14 +227,18 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 	for(var/name in pool.transient)
 		D.vars[name] = initial(D.vars[name]) // ALLOW(api): pool_release(): resets the DECLARE_REF(..., TRANSIENT) vars named by the declaration
 	if(pool.plan)
-		for(var/name in pool.plan)
-			if(pool.plan[name] == POOL_RESET_LIST)
-				var/list/kept = D.vars[name]
+		var/list/plan = pool.plan
+		var/list/initials = pool.initials
+		// One vars list for the whole release: D.vars builds a fresh list object per evaluation.
+		var/list/fields = D.vars
+		for(var/name in plan)
+			if(plan[name] == POOL_RESET_LIST)
+				var/list/kept = fields[name]
 				if(kept)
 					kept.Cut()
 					kept += pool_deep_copy(GLOB.pool_list_templates["[D.type]:[name]"])
 			else
-				D.vars[name] = initial(D.vars[name]) // ALLOW(api): pool_release(): a /datum/pooled goes back to its declared initial values
+				fields[name] = initials[name]
 		var/datum/pooled/P = D
 		P.reset()
 	pool.released++
