@@ -397,7 +397,7 @@ precheck_ensure() { # start the prechecker when prechecks are on, lanes are queu
 	# It runs the integrator's snapshot, never a lane's checkout: installing a snapshot here would replace the code a running integrator
 	# runs (an enqueue from a lane's worktree did that once). cmd_ensure installs it before it starts both; the integrator calls this.
 	[ -f "$STATE/self/dq_train.sh" ] || return 0
-	start_detached "$STATE/self/dq_train.sh" "$LOGS/prechecker.out" precheck-run
+	( unset DQ_SLOT_PRIORITY; start_detached "$STATE/self/dq_train.sh" "$LOGS/prechecker.out" precheck-run ) # prechecks keep priority 1 (the integrator exports 0)
 	tlog "prechecker started (detached; lock $STATE/precheck.lock)"
 }
 cmd_ensure() {
@@ -1766,7 +1766,11 @@ cmd_run() {
 		lock_take || { echo "dq_train: an integrator is already running (pid $(integrator_pid))"; exit 0; }
 	fi
 	trap 'lock_release; phase "idle"' EXIT
-	tlog "integrator started (pid $$, script $SELF, state $STATE, worktree $WT)"
+	# The integrator's gates (test-build compile, test worlds, cargo) take machine slots at the front of every queue, like the merge worktree
+	# (dq_machine_slots.sh priority 0; machine_slots.ts reads the same variable). train-base is priority 1 by its path, so a landing batch
+	# queued 91-140 s behind prechecks and lane runs for slots in every cycle (28 October). Prechecks stay priority 1: they run in train-preN.
+	export DQ_SLOT_PRIORITY="${DQ_TRAIN_SLOT_PRIORITY:-0}"
+	tlog "integrator started (pid $$, script $SELF, state $STATE, worktree $WT; machine-slot priority $DQ_SLOT_PRIORITY)"
 	local idle=0 rc stalls=0
 	while :; do
 		if ! lock_owned; then LOCK_HELD=0; tlog "the run lock is held by pid $(integrator_pid), not this integrator: exiting without a cycle"; exit 0; fi
