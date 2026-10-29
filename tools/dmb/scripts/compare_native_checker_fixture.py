@@ -51,7 +51,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--native", type=Path, required=True)
-    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent", "undefined_proc"), default="ambiguous_not_bitwise")
+    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent", "undefined_proc", "undefined_variable"), default="ambiguous_not_bitwise")
     parser.add_argument("fixture", type=Path)
     args = parser.parse_args()
     if hashlib.sha256(args.reference.read_bytes()).hexdigest() != PINNED_CHECKER_SHA256:

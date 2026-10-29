@@ -138,7 +138,8 @@ impl SourceSnapshot {
             | "loop_condition_determinate"
             | "if_condition_determinate"
             | "proc_has_no_parent"
-            | "undefined_proc" => DiagnosticSeverity::Error,
+            | "undefined_proc"
+            | "undefined_variable" => DiagnosticSeverity::Error,
             _ => {
                 return Err(io::Error::other(
                     "unsupported native configured-checker family",
@@ -154,7 +155,7 @@ impl SourceSnapshot {
         let mut rows = Vec::new();
         // The old undefined-proc producer is UNTAGGED: arbitrary diagnostic
         // map keys named undefined_proc must not disable or re-severity it.
-        let tag = if family == "undefined_proc" {
+        let tag = if matches!(family, "undefined_proc" | "undefined_variable") {
             None
         } else {
             Some(family)
@@ -164,7 +165,7 @@ impl SourceSnapshot {
                 .parse(ordinal as usize)
                 .map_err(|error| io::Error::other(error.message))?;
             let found = match family {
-                "proc_has_no_parent" | "undefined_proc" => {
+                "proc_has_no_parent" | "undefined_proc" | "undefined_variable" => {
                     let resolver = self.resolved.as_ref()
                         .ok_or_else(|| io::Error::other("semantic checker requires the retained successful compile/analysis EngineHost"))?
                         .checker_resolver(tree)?;
@@ -175,7 +176,8 @@ impl SourceSnapshot {
                     let context = dm_analysis::checker_context::CheckerContext::archived(archive, host, resolver, profile)
                         .map_err(io::Error::other)?;
                     if family == "proc_has_no_parent" { context.parent_archived(&body, Severity::Error) }
-                    else { context.undefined_archived(&body, true) }
+                    else if family == "undefined_proc" { context.undefined_archived(&body, true) }
+                    else { context.variables_archived(&body, true) }
                 }
                 "ambiguous_not_bitwise" => {
                     dm_analysis::checks::archived_ambiguous_not_bitwise(&body, Severity::Error)

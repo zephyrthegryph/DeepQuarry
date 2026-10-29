@@ -34,7 +34,8 @@ pub(crate) struct CapturedPolicyInputs {
 }
 /// Retention admission for this bounded migration capture, not a process-RSS
 /// or peak-read-allocation guarantee. SourceText owners can be shared, so the
-/// conservative view charge deliberately may count one owner more than once.
+/// storage payload charge deduplicates immutable owners by identity, never by
+/// equal bytes. Metadata remains a conservative admission estimate.
 pub(crate) const MAX_POLICY_CAPTURE_CHARGE: usize = 64 * 1024 * 1024;
 impl CapturedPolicyInputs {
     pub(crate) fn bind_request(
@@ -171,6 +172,7 @@ impl CapturedPolicyInputs {
         combined.merge(&self.facts).is_ok() && combined.same_recorded_facts(complete)
     }
     pub fn budget_charge(&self) -> usize {
+        let mut owners = owner_charge::Owners::default();
         let mut charge = 4096usize;
         charge = charge.saturating_add(
             self.explicit_search_folders
@@ -185,18 +187,17 @@ impl CapturedPolicyInputs {
                 .saturating_add(256)
                 .saturating_add(file.path().as_os_str().as_encoded_bytes().len());
             for (_, text) in file.views() {
-                charge = charge.saturating_add(64).saturating_add(text.len());
+                charge = charge.saturating_add(64);
+                if owners.text(text).is_err() { return usize::MAX; }
             }
         }
         for (path, bytes) in &self.configuration_bytes {
             charge = charge
                 .saturating_add(128)
-                .saturating_add(path.as_os_str().as_encoded_bytes().len())
-                .saturating_add(
-                    bytes
-                        .as_ref()
-                        .map_or(0, dm_resources::SharedBytes::capacity),
-                );
+                .saturating_add(path.as_os_str().as_encoded_bytes().len());
+            if let Some(bytes)=bytes {
+                if owners.bytes(bytes).is_err() { return usize::MAX; }
+            }
         }
         self.facts
             .visit_recorded_storage(|files, folders, negative, generated| {
@@ -230,9 +231,12 @@ impl CapturedPolicyInputs {
                 .saturating_add(32)
                 .saturating_add(path.as_os_str().as_encoded_bytes().len());
         }
-        charge
+        charge.saturating_add(owners.totals().charge().unwrap_or(usize::MAX))
     }
 }
+
+#[path="policy_owner_charge.rs"]
+mod owner_charge;
 
 /// Call before completing the request's InputSnapshot, using the SAME
 /// RecordingInputs that supplied the compiler frontend. This reads bytes but

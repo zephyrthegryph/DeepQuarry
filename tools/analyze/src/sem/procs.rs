@@ -29,15 +29,28 @@ pub struct ProcDef {
 pub fn proc_defs(sem: &Sem, names: &[&str]) -> Vec<ProcDef> {
     let mut out = Vec::new();
     for ty in sem.objtree.iter_types() {
-        let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
+        let owner = if ty.get().path.is_empty() {
+            "/".to_string()
+        } else {
+            ty.get().path.clone()
+        };
         for name in names {
-            let Some(tp) = ty.get().procs.get(*name) else { continue };
+            let Some(tp) = ty.get().procs.get(*name) else {
+                continue;
+            };
             for v in tp.value.iter() {
                 if !v.code.has_body() {
                     continue;
                 }
-                let Some(rel) = sem.file_of(v.location) else { continue };
-                out.push(ProcDef { rel: rel.to_string(), header: engine_line(&sem.root, rel, v.location.line), owner: owner.clone(), name: name.to_string() });
+                let Some(rel) = sem.file_of(v.location) else {
+                    continue;
+                };
+                out.push(ProcDef {
+                    rel: rel.to_string(),
+                    header: engine_line(&sem.root, rel, v.location.line),
+                    owner: owner.clone(),
+                    name: name.to_string(),
+                });
             }
         }
     }
@@ -77,7 +90,9 @@ pub fn call_sites(sem: &Sem, names: &[&str]) -> Vec<(String, u32, String)> {
     for ty in sem.objtree.iter_types() {
         for (_, tp) in ty.get().procs.iter() {
             for v in tp.value.iter() {
-                let Some(code) = v.code.as_ref() else { continue };
+                let Some(code) = v.code.as_ref() else {
+                    continue;
+                };
                 walk_calls(code, &mut |e| {
                     if let Expression::Base { term, .. } = e {
                         let n = match &term.elem {
@@ -86,7 +101,11 @@ pub fn call_sites(sem: &Sem, names: &[&str]) -> Vec<(String, u32, String)> {
                         };
                         if names.contains(&n) {
                             if let Some(rel) = sem.file_of(term.location) {
-                                out.insert((rel.to_string(), engine_line(&sem.root, rel, term.location.line), n.to_string()));
+                                out.insert((
+                                    rel.to_string(),
+                                    engine_line(&sem.root, rel, term.location.line),
+                                    n.to_string(),
+                                ));
                             }
                         }
                     }
@@ -106,7 +125,9 @@ pub fn engine_line(root: &std::path::Path, rel: &str, model_line: u32) -> u32 {
     let mut guard = LONE_CR.lock().unwrap();
     let map = guard.get_or_insert_with(HashMap::new);
     let lines = map.entry(rel.to_string()).or_insert_with(|| {
-        let Ok(bytes) = std::fs::read(root.join(rel)) else { return Vec::new() };
+        let Ok(bytes) = std::fs::read(root.join(rel)) else {
+            return Vec::new();
+        };
         let mut out = Vec::new();
         let mut line = 1u32;
         for (i, b) in bytes.iter().enumerate() {
@@ -121,34 +142,7 @@ pub fn engine_line(root: &std::path::Path, rel: &str, model_line: u32) -> u32 {
     model_line + lines.iter().filter(|l| **l < model_line).count() as u32
 }
 
-fn indent(line: &str) -> Option<usize> {
-    let line = line.trim_end_matches('\r');
-    let t = line.trim_start_matches([' ', '\t']);
-    if t.is_empty() || t.starts_with("//") {
-        return None;
-    }
-    Some(line.len() - t.len())
-}
-
-/// The 1-based body lines of the definition whose header is line `header` of `lines`: every following line until the first
-/// non-blank, non-comment line indented no deeper than the header (the next definition, or the end of the block).
-pub fn body_lines(lines: &[&str], header: u32) -> std::ops::Range<usize> {
-    let h = header as usize;
-    if h == 0 || h > lines.len() {
-        return h..h;
-    }
-    let base = indent(lines[h - 1]).unwrap_or(0);
-    let mut end = h + 1;
-    while end <= lines.len() {
-        if let Some(i) = indent(lines[end - 1]) {
-            if i <= base {
-                break;
-            }
-        }
-        end += 1;
-    }
-    (h + 1)..end
-}
+pub use crate::lifecycle_source::body_lines;
 
 #[cfg(test)]
 mod tests {
@@ -165,7 +159,17 @@ mod tests {
 
     #[test]
     fn a_body_ends_at_the_next_line_as_shallow_as_its_header() {
-        let lines = ["/obj/a/Initialize()", "\t. = ..()", "", "\t// note", "\tx = 1", "/obj/b", "\tInitialize()", "\t\ty = 2", "\tvar/z"];
+        let lines = [
+            "/obj/a/Initialize()",
+            "\t. = ..()",
+            "",
+            "\t// note",
+            "\tx = 1",
+            "/obj/b",
+            "\tInitialize()",
+            "\t\ty = 2",
+            "\tvar/z",
+        ];
         assert_eq!(body_lines(&lines, 1), 2..6);
         assert_eq!(body_lines(&lines, 7), 8..9);
     }

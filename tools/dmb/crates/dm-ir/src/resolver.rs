@@ -158,7 +158,7 @@ pub enum ResolveQuery {
     /// procedures never count, and root global builtins are not methods.
     IntrinsicCallableName(SymbolId),
     /// Fixed checker-DSL provenance, distinct from runtime intrinsic inventory.
-    /// A mismatched/unattached profile is Unsupported, never negative proof.
+    /// A mismatched/incompatible profile is Unsupported, never negative proof.
     CheckerIntrinsicCallable {
         profile: crate::PackedU128,
         owner: SymbolId,
@@ -176,6 +176,9 @@ pub enum ResolveQuery {
         name: SymbolId,
         verb: bool,
     },
+    /// Captured authored formal variable declaration, excluding runtime-only
+    /// fields and default-value overrides. Missing says SOURCE absence only.
+    SourceVarDeclaration { owner: SymbolId, name: SymbolId },
 }
 
 /// Source declaration form is independent of its executable implementation.
@@ -197,7 +200,7 @@ impl ResolveQuery {
             | Self::IntrinsicCallableName(_)
             | Self::CheckerIntrinsicCallable { .. }
             | Self::CheckerBuiltinVar { .. }
-            | Self::CheckerBuiltinProc { .. } => ReadDomain::Tree,
+            | Self::CheckerBuiltinProc { .. } | Self::SourceVarDeclaration { .. } => ReadDomain::Tree,
             Self::SourceDeclarationChain { .. }
             | Self::MemberCallableVerbName(_)
             | Self::MemberCallableName(_) => ReadDomain::OwnerCallable(self),

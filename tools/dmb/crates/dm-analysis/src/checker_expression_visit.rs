@@ -43,6 +43,17 @@ impl TypeFact {
 }
 #[derive(Clone, Debug)]
 pub enum Event<'a> {
+    MissingVariable {
+        expression: &'a Expr,
+        at: Span,
+        name: &'a str,
+    },
+    MissingField {
+        expression: &'a Expr,
+        at: Span,
+        name: &'a str,
+        receiver: SymbolId,
+    },
     MissingCall {
         expression: &'a Expr,
         at: Span,
@@ -197,7 +208,12 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             }
             locals.insert(
                 parameter.name,
-                TypeFact::declared(parameter.declared_type, parameter.list_element_type),
+                checked_type(
+                    tree,
+                    resolver,
+                    parameter.declared_type,
+                    parameter.list_element_type,
+                )?,
             );
         }
         Ok(Walker {
@@ -216,19 +232,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         match &statement.kind {
             StatementKind::Set { .. } => (),
             StatementKind::Var { declaration, value } => {
-                let name = dm_syntax::local_name(declaration)
-                    .ok_or("checker local declaration needs native binding facts")?;
-                if declaration != &format!("var/{name}") && declaration != &format!("var {name}") {
-                    return Err(
-                        "typed/stored/array locals need issued pinned declaration context".into(),
-                    );
-                }
-                if let Some(value) = value {
-                    self.expression(value, None)?;
-                }
-                // Pinned visit_var replaces inferred initializer static type
-                // with the declared type, including untyped/None.
-                self.locals.insert(SymbolId::of(name), TypeFact::Unknown);
+                self.declaration(declaration, value.as_ref())?
             }
             StatementKind::Assign { target, value, .. } => {
                 let hint = self.expression(target, None)?.receiver()?;
@@ -269,6 +273,46 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         }
 
         Ok(false)
+    }
+    fn declaration(&mut self, declaration: &'a str, value: Option<&'a Expr>) -> Result<(), String> {
+        let projection =
+            dm_syntax::project_local_declaration(declaration).map_err(str::to_owned)?;
+        let ty = if let Some(declared) = projection.declared_type {
+            checked_type(
+                self.tree,
+                self.resolver,
+                Some(SymbolId::of(&format!(
+                    "/{}",
+                    declared.runtime_path.trim_start_matches('/')
+                ))),
+                declared
+                    .list_element_path
+                    .map(|path| SymbolId::of(&format!("/{}", path.trim_start_matches('/')))),
+            )?
+        } else {
+            TypeFact::Unknown
+        };
+        // Pinned visit_var supplies the declaration hint to the initializer,
+        // then discards initializer inference in favor of its declared type.
+        if let Some(value) = value {
+            self.expression(value, ty.receiver()?)?;
+        }
+        self.locals.insert(SymbolId::of(projection.name), ty);
+        Ok(())
+    }
+    fn variable_type(
+        &self,
+        fact: &crate::checker_variable_facts::VariableFact,
+    ) -> Result<TypeFact, String> {
+        if fact.metadata.flags & !15 != 0 || fact.metadata.array.is_some() {
+            return Err("field modifiers/arrays need complete native declaration context".into());
+        }
+        checked_type(
+            self.tree,
+            self.resolver,
+            fact.metadata.declared_type,
+            fact.metadata.list_element_type,
+        )
     }
     fn arguments(&mut self, args: &'a [Expr]) -> Result<(), String> {
         for argument in args {
@@ -375,73 +419,300 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         hint: Option<SymbolId>,
     ) -> Result<TypeFact, String> {
         match &expression.kind {
-            ExprKind::Ident(name)=>self.locals.get(&SymbolId::of(name)).copied().or_else(||matches!(name.as_str(),"TRUE"|"FALSE"|"null").then_some(TypeFact::Unknown)).ok_or_else(||"unscoped field/global variable static type needs source-qualified variable facts".into()),
-            ExprKind::Literal(text)=>{
-                if let Some(parts)=text.parts().map_err(str::to_owned)? {
-                    parts.lexical.map_err(|e|format!("checker literal context unsupported: {e:?}"))?;
-                    for child in &parts.expressions {self.expression(child,None)?;}
+            ExprKind::Ident(name) => {
+                if let Some(ty) = self.locals.get(&SymbolId::of(name)) {
+                    return Ok(*ty);
+                }
+                // Pinned `type` is a prefab/value fact, not a field declaration.
+                if matches!(name.as_str(), "type" | "null") {
+                    return Ok(TypeFact::Unknown);
+                }
+                match crate::checker_variable_facts::variable(
+                    self.tree,
+                    self.resolver,
+                    self.profile,
+                    self.owner,
+                    SymbolId::of(name),
+                )? {
+                    Some(fact) => self.variable_type(&fact),
+                    None => {
+                        self.events.push(Event::MissingVariable {
+                            expression,
+                            at: expression.span,
+                            name,
+                        });
+                        Ok(TypeFact::Unknown)
+                    }
+                }
+            }
+            ExprKind::Literal(text) => {
+                if let Some(parts) = text.parts().map_err(str::to_owned)? {
+                    parts
+                        .lexical
+                        .map_err(|e| format!("checker literal context unsupported: {e:?}"))?;
+                    for child in &parts.expressions {
+                        self.expression(child, None)?;
+                    }
                 }
                 Ok(TypeFact::Unknown)
             }
-            ExprKind::TypePath(_)=>Ok(TypeFact::Unknown),
-            ExprKind::Group(value)=>self.expression(value,hint),
-            ExprKind::Conditional {condition,then_value,else_value}=>{self.expression(condition,None)?;let first=self.expression(then_value,hint)?;self.expression(else_value,hint)?;Ok(first)}
-            ExprKind::Binary {op,lhs,rhs}=>{
-                if !matches!(op.as_str(),"="|"+"|"-"|"*"|"/"|"%"|"%%"|"**"|"|"|"&"|"^"|"<<"|">>"|"&&"|"||"|"=="|"!="|"<>"|"<"|">"|"<="|">="|"~="|"~!"|"in") {
-                    return Err("compound/unsupported operator needs shared pinned assignment context".into());
+            ExprKind::TypePath(_) => Ok(TypeFact::Unknown),
+            ExprKind::Group(value) => self.expression(value, hint),
+            ExprKind::Conditional {
+                condition,
+                then_value,
+                else_value,
+            } => {
+                self.expression(condition, None)?;
+                let first = self.expression(then_value, hint)?;
+                self.expression(else_value, hint)?;
+                Ok(first)
+            }
+            ExprKind::Binary { op, lhs, rhs } => {
+                if !matches!(
+                    op.as_str(),
+                    "=" | "+"
+                        | "-"
+                        | "*"
+                        | "/"
+                        | "%"
+                        | "%%"
+                        | "**"
+                        | "|"
+                        | "&"
+                        | "^"
+                        | "<<"
+                        | ">>"
+                        | "&&"
+                        | "||"
+                        | "=="
+                        | "!="
+                        | "<>"
+                        | "<"
+                        | ">"
+                        | "<="
+                        | ">="
+                        | "~="
+                        | "~!"
+                        | "in"
+                ) {
+                    return Err(
+                        "compound/unsupported operator needs shared pinned assignment context"
+                            .into(),
+                    );
                 }
-                let left=self.expression(lhs,None)?;
-                let right=self.expression(rhs,if op=="=" {left.receiver()?} else {None})?;
-                if op=="=" {return Ok(right);}
+                let left = self.expression(lhs, None)?;
+                let right =
+                    self.expression(rhs, if op == "=" { left.receiver()? } else { None })?;
+                if op == "=" {
+                    return Ok(right);
+                }
                 // Exact pinned visit_binary: only these LHS-list operations
                 // retain a static list type. Every other binary is empty.
-                Ok(if matches!(left,TypeFact::List(_)) && matches!(op.as_str(),"+"|"-"|"|"|"&"|"^") {left} else {TypeFact::Unknown})
+                Ok(
+                    if matches!(left, TypeFact::List(_))
+                        && matches!(op.as_str(), "+" | "-" | "|" | "&" | "^")
+                    {
+                        left
+                    } else {
+                        TypeFact::Unknown
+                    },
+                )
             }
-            ExprKind::Call {callee,args}=>match &callee.kind {
-                ExprKind::Ident(name) if name=="new"=>{
-                    if hint.is_some() {return Err("implicit new with hint needs constructor call context".into());}
-                    self.events.push(Event::MissingImplicitNewHint {expression});
+            ExprKind::Call { callee, args } => match &callee.kind {
+                ExprKind::Ident(name) if name == "new" => {
+                    if hint.is_some() {
+                        return Err("implicit new with hint needs constructor call context".into());
+                    }
+                    self.events
+                        .push(Event::MissingImplicitNewHint { expression });
                     Ok(TypeFact::Unknown)
                 }
-                ExprKind::Ident(name) if name==".."=>{
-                    let fact=checks_parent_call::parent_fact_in_profile(self.tree,self.member,self.resolver,Some(self.profile))?;
-                    if !fact.has_parent {self.events.push(Event::MissingParent {expression,at:callee.span,display:fact.display});return Ok(TypeFact::Unknown);}
-                    self.arguments(args)?;Ok(TypeFact::Deferred("parent return/directive context not yet projected"))
+                ExprKind::Ident(name) if name == ".." => {
+                    let fact = checks_parent_call::parent_fact_in_profile(
+                        self.tree,
+                        self.member,
+                        self.resolver,
+                        Some(self.profile),
+                    )?;
+                    if !fact.has_parent {
+                        self.events.push(Event::MissingParent {
+                            expression,
+                            at: callee.span,
+                            display: fact.display,
+                        });
+                        return Ok(TypeFact::Unknown);
+                    }
+                    self.arguments(args)?;
+                    Ok(TypeFact::Deferred(
+                        "parent return/directive context not yet projected",
+                    ))
                 }
-                ExprKind::Ident(name) if name=="."=>{self.arguments(args)?;Ok(TypeFact::Deferred("self-call return/directive context not yet projected"))}
+                ExprKind::Ident(name) if name == "." => {
+                    self.arguments(args)?;
+                    Ok(TypeFact::Deferred(
+                        "self-call return/directive context not yet projected",
+                    ))
+                }
                 // These are syntax primitives in the pinned grammar, not names
                 // admitted from a diagnostic-only builtin spelling table.
-                ExprKind::Ident(name) if matches!(name.as_str(),"list"|"alist")=>{self.arguments(args)?;Ok(TypeFact::List(None))}
-                ExprKind::Ident(name) if name=="CRASH"=>{if args.len()>1 {return Err("CRASH accepts at most one expression".into());}self.arguments(args)?;Ok(TypeFact::Unknown)}
-                ExprKind::Ident(name) if matches!(name.as_str(),"call"|"call_ext"|"input"|"locate"|"pick"|"as"|"null"|"__PROC__"|"__TYPE__"|"__IMPLIED_TYPE__"|"SpacemanDMM_unlint"|"SpacemanDMM_debug")=>Err("call needs a primary syntax-primitive context, not ordinary proc lookup".into()),
-                ExprKind::Ident(name)=>self.ordinary_call(expression,callee.span,name,self.owner,args,false),
-                ExprKind::Member {object,selector,via_colon}|ExprKind::SafeMember {object,selector,via_colon}=>{
-                    let base=self.expression(object,None)?;
-                    let at=member_origin(self.source,callee,object,selector,*via_colon)?;
-                    if *via_colon {self.events.push(Event::DynamicMemberCall {expression,at,name:selector});self.arguments(args)?;return Ok(TypeFact::Unknown);}
-                    let Some(receiver)=base.receiver()? else {self.events.push(Event::UnknownReceiverCall {expression,at,name:selector});return Ok(TypeFact::Unknown);};
-                    self.ordinary_call(expression,at,selector,receiver,args,true)
+                ExprKind::Ident(name) if matches!(name.as_str(), "list" | "alist") => {
+                    self.arguments(args)?;
+                    Ok(TypeFact::List(None))
                 }
-                _=>Err("call target requires pinned follow/selector origin context".into()),
+                ExprKind::Ident(name) if name == "CRASH" => {
+                    if args.len() > 1 {
+                        return Err("CRASH accepts at most one expression".into());
+                    }
+                    self.arguments(args)?;
+                    Ok(TypeFact::Unknown)
+                }
+                ExprKind::Ident(name)
+                    if matches!(
+                        name.as_str(),
+                        "call"
+                            | "call_ext"
+                            | "input"
+                            | "locate"
+                            | "pick"
+                            | "as"
+                            | "null"
+                            | "__PROC__"
+                            | "__TYPE__"
+                            | "__IMPLIED_TYPE__"
+                            | "SpacemanDMM_unlint"
+                            | "SpacemanDMM_debug"
+                    ) =>
+                {
+                    Err(
+                        "call needs a primary syntax-primitive context, not ordinary proc lookup"
+                            .into(),
+                    )
+                }
+                ExprKind::Ident(name) => {
+                    self.ordinary_call(expression, callee.span, name, self.owner, args, false)
+                }
+                ExprKind::Member {
+                    object,
+                    selector,
+                    via_colon,
+                }
+                | ExprKind::SafeMember {
+                    object,
+                    selector,
+                    via_colon,
+                } => {
+                    let base = self.expression(object, None)?;
+                    let at = member_origin(self.source, callee, object, selector, *via_colon)?;
+                    if *via_colon {
+                        self.events.push(Event::DynamicMemberCall {
+                            expression,
+                            at,
+                            name: selector,
+                        });
+                        self.arguments(args)?;
+                        return Ok(TypeFact::Unknown);
+                    }
+                    let Some(receiver) = base.receiver()? else {
+                        self.events.push(Event::UnknownReceiverCall {
+                            expression,
+                            at,
+                            name: selector,
+                        });
+                        return Ok(TypeFact::Unknown);
+                    };
+                    self.ordinary_call(expression, at, selector, receiver, args, true)
+                }
+                _ => Err("call target requires pinned follow/selector origin context".into()),
             },
-            ExprKind::Member {object,via_colon,..}|ExprKind::SafeMember {object,via_colon,..}=>{
-                let base=self.expression(object,None)?;
-                if *via_colon || base==TypeFact::Unknown {Ok(TypeFact::Unknown)} else {Err("checker field static type needs source-qualified variable declaration facts".into())}
+            ExprKind::Member {
+                object,
+                selector,
+                via_colon,
             }
-            ExprKind::Index {object,index}|ExprKind::SafeIndex {object,index}=>{let base=self.expression(object,None)?;self.expression(index,None)?;Ok(match base {TypeFact::List(element)=>TypeFact::declared(element,None),other=>other})}
-            ExprKind::Unary {op,value} if op=="new"||op=="new()"=>{
-                if op=="new()" {if hint.is_some() {return Err("implicit new with hint needs constructor call context".into());}self.events.push(Event::MissingImplicitNewHint {expression});return Ok(TypeFact::Unknown);}
-                let target=match &value.kind {ExprKind::Call {callee,..}=>callee.as_ref(),_=>value.as_ref()};
+            | ExprKind::SafeMember {
+                object,
+                selector,
+                via_colon,
+            } => {
+                let base = self.expression(object, None)?;
+                if *via_colon {
+                    return Ok(TypeFact::Unknown);
+                }
+                let Some(receiver) = base.receiver()? else {
+                    return Err(
+                        "unknown-receiver field access needs pinned fix-hint/declaration origins"
+                            .into(),
+                    );
+                };
+                if receiver == SymbolId::of("/callee") && selector == "proc" {
+                    return Ok(TypeFact::Deferred(
+                        "call-frame procpath field needs native procpath static context",
+                    ));
+                }
+                let at = member_origin(self.source, expression, object, selector, false)?;
+                match crate::checker_variable_facts::variable(
+                    self.tree,
+                    self.resolver,
+                    self.profile,
+                    receiver,
+                    SymbolId::of(selector),
+                )? {
+                    Some(fact) => self.variable_type(&fact),
+                    None => {
+                        self.events.push(Event::MissingField {
+                            expression,
+                            at,
+                            name: selector,
+                            receiver,
+                        });
+                        Ok(TypeFact::Unknown)
+                    }
+                }
+            }
+            ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
+                let base = self.expression(object, None)?;
+                self.expression(index, None)?;
+                match base {
+                    TypeFact::List(element) => {
+                        checked_type(self.tree, self.resolver, element, None)
+                    }
+                    other => Ok(other),
+                }
+            }
+            ExprKind::Unary { op, value } if op == "new" || op == "new()" => {
+                if op == "new()" {
+                    if hint.is_some() {
+                        return Err("implicit new with hint needs constructor call context".into());
+                    }
+                    self.events
+                        .push(Event::MissingImplicitNewHint { expression });
+                    return Ok(TypeFact::Unknown);
+                }
+                let target = match &value.kind {
+                    ExprKind::Call { callee, .. } => callee.as_ref(),
+                    _ => value.as_ref(),
+                };
                 match &target.kind {
                     // Pinned NewMiniExpr is TODO and visits neither target nor args.
-                    ExprKind::Ident(_)|ExprKind::Member {..}=>Ok(TypeFact::Unknown),
-                    _=>Err("static constructor needs pinned New call/type/argument context".into()),
+                    ExprKind::Ident(_) | ExprKind::Member { .. } => Ok(TypeFact::Unknown),
+                    _ => {
+                        Err("static constructor needs pinned New call/type/argument context".into())
+                    }
                 }
             }
-            ExprKind::Unary {..}=>Err("unary expression needs exact primary term-origin projection".into()),
-            ExprKind::ObjectInitializer {object,..} if matches!(object.kind,ExprKind::TypePath(_))=>Ok(TypeFact::Unknown), // pinned Prefab fields are not evaluated
-            ExprKind::ObjectInitializer {..}=>Err("non-prefab modification needs primary constructor context".into()),
-            _=>Err("unsupported pinned expression evaluation form".into()),
+            ExprKind::Unary { .. } => {
+                Err("unary expression needs exact primary term-origin projection".into())
+            }
+            ExprKind::ObjectInitializer { object, .. }
+                if matches!(object.kind, ExprKind::TypePath(_)) =>
+            {
+                Ok(TypeFact::Unknown)
+            } // pinned Prefab fields are not evaluated
+            ExprKind::ObjectInitializer { .. } => {
+                Err("non-prefab modification needs primary constructor context".into())
+            }
+            _ => Err("unsupported pinned expression evaluation form".into()),
         }
     }
 }
@@ -481,26 +752,19 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         always_untyped: bool,
         _: Span,
     ) -> Result<(), String> {
-        let name = if let Some(name) = dm_syntax::local_name(binding) {
-            if binding != format!("var/{name}") && binding != format!("var {name}") {
-                return Err(
-                    "typed/stored/array loop locals need issued pinned declaration context".into(),
-                );
-            }
-            name
-        } else if always_untyped {
-            if binding.is_empty() || !binding.chars().all(|c| c.is_alphanumeric() || c == '_') {
-                return Err("pair value binding lacks native simple-name projection".into());
-            }
-            binding
-        } else {
-            // Pinned existing range binding deliberately skips its start.
-            return Ok(());
-        };
-        if let Some(value) = value {
-            Walker::expression(self, value, None)?;
+        if dm_syntax::local_name(binding).is_some() {
+            return self.declaration(binding, value);
         }
-        self.locals.insert(SymbolId::of(name), TypeFact::Unknown);
+        if always_untyped {
+            if binding.is_empty() || !binding.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                return Err("pair/catch binding lacks native simple-name projection".into());
+            }
+            if let Some(value) = value {
+                Walker::expression(self, value, None)?;
+            }
+            self.locals.insert(SymbolId::of(binding), TypeFact::Unknown);
+        }
+        // Existing (nondeclared) range bindings deliberately skip their start.
         Ok(())
     }
     fn catch_binding(&mut self, binding: Option<&'a str>, at: Span) -> Result<(), String> {
@@ -509,6 +773,49 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         }
         Ok(())
     }
+}
+fn checked_type(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    owner: Option<SymbolId>,
+    element: Option<SymbolId>,
+) -> Result<TypeFact, String> {
+    for ty in owner.into_iter().chain(element) {
+        let spelling = tree
+            .symbols()
+            .text(ty)
+            .ok_or("declared type lacks native symbol spelling")?;
+        if spelling.split('/').any(|part| {
+            matches!(
+                part,
+                "final" | "SpacemanDMM_final" | "SpacemanDMM_private" | "SpacemanDMM_protected"
+            )
+        }) {
+            return Err(
+                "checker-specific declaration flags require primary compiler metadata".into(),
+            );
+        }
+        let query = Q::Type(ty);
+        let expected = Resolver::resolve(tree, query);
+        if resolver.resolve(query) != expected || expected != M::Symbol(ty) {
+            return Err("declared checker type needs existing compiler type fact".into());
+        }
+    }
+    if owner == Some(SymbolId::of("/list")) {
+        if let Some(element) = element {
+            let spelling = tree
+                .symbols()
+                .text(element)
+                .ok_or("list element lacks native spelling")?;
+            if spelling == "/list" || spelling.starts_with("/list/") {
+                return Err(
+                    "nested-list static type requires recursive native declaration projection"
+                        .into(),
+                );
+            }
+        }
+    }
+    Ok(TypeFact::declared(owner, element))
 }
 fn kwarg_key(expression: &Expr) -> Result<bool, String> {
     Ok(match &expression.kind {

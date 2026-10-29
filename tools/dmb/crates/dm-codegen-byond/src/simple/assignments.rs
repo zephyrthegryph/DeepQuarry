@@ -723,10 +723,7 @@ impl Compiler<'_> {
         if matches!(&expr.kind, ExprKind::Call { callee, args }
             if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(name) if name == "locate"))
         {
-            let type_name = declaration
-                .strip_prefix("var/")
-                .and_then(|raw| raw.rsplit_once('/'))
-                .map(|(path, _)| path)
+            let type_name = dm_syntax::local_type_path(declaration)
                 .filter(|path| !path.is_empty())
                 .ok_or_else(|| error(statement, "locate() requires a typed assignment"))?;
             let path = runtime_declaration_path(type_name);
@@ -751,10 +748,7 @@ impl Compiler<'_> {
                 && matches!(&lhs.kind, ExprKind::Call { callee, args }
                     if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(name) if name == "locate"))
             {
-                let type_name = declaration
-                    .strip_prefix("var/")
-                    .and_then(|raw| raw.rsplit_once('/'))
-                    .map(|(path, _)| path)
+                let type_name = dm_syntax::local_type_path(declaration)
                     .filter(|path| !path.is_empty())
                     .ok_or_else(|| error(statement, "locate() requires a typed assignment"))?;
                 let path = runtime_declaration_path(type_name);
@@ -844,10 +838,7 @@ impl Compiler<'_> {
             _ => None,
         };
         if let Some(args) = inferred_new_args.or(implied_args) {
-            let type_name = declaration
-                .strip_prefix("var/")
-                .and_then(|raw| raw.rsplit_once('/'))
-                .map(|(path, _)| path)
+            let type_name = dm_syntax::local_type_path(declaration)
                 .filter(|path| !path.is_empty())
                 .or_else(|| declaration.trim_end().ends_with("[]").then_some("list"))
                 .ok_or_else(|| error(statement, "inferred new requires a typed local"))?;
@@ -924,7 +915,9 @@ fn path_like_target(statement: &str) -> bool {
 /// so a shared (`global`) variable behind it can be read or written without evaluating it.
 pub(super) fn is_reference_chain(expr: &Expr) -> bool {
     match &expr.kind {
-        ExprKind::Literal(text) => text.parts().is_ok_and(|parts| parts.is_none_or(|parts| parts.expressions.is_empty())),
+        ExprKind::Literal(text) => text
+            .parts()
+            .is_ok_and(|parts| parts.is_none_or(|parts| parts.expressions.is_empty())),
         ExprKind::Ident(_) | ExprKind::TypePath(_) => true,
         ExprKind::Group(inner) => is_reference_chain(inner),
         ExprKind::Member { object, .. } => is_reference_chain(object),

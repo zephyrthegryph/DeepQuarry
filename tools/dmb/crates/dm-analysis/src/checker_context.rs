@@ -114,6 +114,25 @@ impl<'a, R: Resolver + ?Sized> CheckerContext<'a, R> {
             severity,
         )
     }
+    pub fn variables_archived(
+        &self,
+        body: &ArchivedBody<'_>,
+        enabled: bool,
+    ) -> Result<Vec<Diagnostic>, String> {
+        let Owner::Archive(archive) = self.owner else {
+            return Err("checker context is frontend-owned".into());
+        };
+        if !body.belongs_to(archive) {
+            return Err("checker body belongs to another compiler archive".into());
+        }
+        crate::checks_undefined_variable::archived(
+            archive,
+            body,
+            self.resolver,
+            self.profile,
+            enabled,
+        )
+    }
     pub fn undefined_archived(
         &self,
         body: &ArchivedBody<'_>,

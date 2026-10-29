@@ -712,6 +712,7 @@ fn query_subject(query: Q) -> &'static str {
         }
         Q::CheckerIntrinsicCallable { .. } => "checker-qualified intrinsic procedure provenance",
         Q::CheckerBuiltinVar { .. } => "checker-qualified builtin variable metadata",
+        Q::SourceVarDeclaration { .. } => "source formal variable declaration",
         Q::CheckerBuiltinProc { .. } => "checker-qualified builtin procedure metadata",
         Q::Signature(_) => "procedure signature",
         Q::ProcedureStatic { .. } => "procedure static variable",

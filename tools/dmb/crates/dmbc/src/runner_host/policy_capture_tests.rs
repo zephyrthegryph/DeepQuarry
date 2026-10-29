@@ -666,3 +666,70 @@ fn binding_requires_exact_explicit_search_scope_not_incidental_folder_proofs() {
         expected.search_folders()
     );
 }
+#[test]
+fn unique_owner_capture_counts_shared_views_and_independent_noncompiled_equal_files() {
+    let (memory, inputs, frontend) = setup();
+    let extra = "/datum/extra\n".to_owned() + &"// retained source bytes\n".repeat(1024);
+    memory.put("policy-root/extra1.dm", extra.as_bytes());
+    memory.put("policy-root/extra2.dm", extra.as_bytes());
+    let captured = Arc::new(
+        capture(
+            &frontend,
+            &inputs,
+            &[
+                request("policy-root/extra1.dm", PolicyRole::DmSource, true),
+                request("policy-root/extra2.dm", PolicyRole::DmSource, true),
+            ],
+            &[],
+        )
+        .unwrap(),
+    );
+    let mut owners = owner_charge::Owners::default();
+    for file in captured.policy().files() {
+        assert!(file
+            .view(TextView::CompilerDecoded)
+            .unwrap()
+            .same_view(file.view(TextView::AnalyzeRaw).unwrap()));
+        for (_, text) in file.views() {
+            owners.text(text).unwrap();
+        }
+    }
+    assert_eq!(owners.totals().text_backings, 3);
+    assert_eq!(owners.totals().text_payloads, 3);
+    assert!(owners.totals().payload_capacity >= 2 * extra.len());
+    assert!(captured.budget_charge() < MAX_POLICY_CAPTURE_CHARGE);
+}
+#[test]
+fn capture_census_deduplicates_owner_aliases_and_does_not_retain_extra_source() {
+    let (memory, inputs, frontend) = setup();
+    memory.put("policy-root/extra.dm", b"/datum/extra\n");
+    let captured = Arc::new(
+        capture(
+            &frontend,
+            &inputs,
+            &[request("policy-root/extra.dm", PolicyRole::DmSource, true)],
+            &[],
+        )
+        .unwrap(),
+    );
+    let weak = captured
+        .policy()
+        .file(Path::new("policy-root/extra.dm"))
+        .unwrap()
+        .view(TextView::AnalyzeRaw)
+        .unwrap()
+        .downgrade();
+    let mut once = crate::heap_census::HeapCensus::new("once");
+    once.policy_capture(&captured);
+    let once = once.finish();
+    let mut twice = crate::heap_census::HeapCensus::new("twice");
+    twice.policy_capture(&captured);
+    twice.policy_capture(&captured);
+    let twice = twice.finish();
+    assert_eq!(
+        once.unique_known_capacity_bytes,
+        twice.unique_known_capacity_bytes
+    );
+    drop(captured);
+    assert!(weak.upgrade().is_none());
+}

@@ -44,8 +44,8 @@ pub struct RawRun {
     pub allow_used: Vec<AllowUse>,
 }
 pub struct CapturedRawPolicy {
-    tree: Tree,
-    scopes: Scopes,
+    pub(crate) tree: Tree,
+    pub(crate) scopes: Scopes,
 }
 impl CapturedRawPolicy {
     pub fn capture(

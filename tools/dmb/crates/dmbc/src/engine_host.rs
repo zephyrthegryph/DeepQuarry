@@ -398,7 +398,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
             // Checker-qualified catalogs never fall back to runtime providers.
             Q::CheckerIntrinsicCallable { .. }
             | Q::CheckerBuiltinVar { .. }
-            | Q::CheckerBuiltinProc { .. } => self.tree.resolve(query),
+            | Q::CheckerBuiltinProc { .. } | Q::SourceVarDeclaration { .. } => self.tree.resolve(query),
             Q::MemberCallableVerbName(_) => self
                 .intrinsic_methods
                 .as_ref()

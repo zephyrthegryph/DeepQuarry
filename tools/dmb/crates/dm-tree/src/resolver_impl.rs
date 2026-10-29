@@ -122,6 +122,9 @@ impl dm_ir::Resolver for SemanticTree {
                 }
                 M::Symbols(paths.into())
             }
+            Q::SourceVarDeclaration { owner, name } => {
+                return self.source_var_declaration(owner, name, query)
+            }
             Q::Var { owner, name } => member(owner, name, MemberKind::Var),
             Q::Proc { owner, name, verb } => member(
                 owner,
@@ -432,3 +435,57 @@ impl SemanticTree {
         ))
     }
 }
+impl SemanticTree {
+    /// Exact captured source formals; runtime-only fields and default-value
+    /// overrides never fabricate an authored declaration or declared type.
+    fn source_var_declaration(
+        &self,
+        owner: SymbolId,
+        name: SymbolId,
+        query: dm_ir::ResolveQuery,
+    ) -> dm_ir::ResolvedMeaning {
+        use dm_ir::ResolvedMeaning as M;
+        let Some(ty) = self.lookup_type(owner) else {
+            return M::Unsupported(query);
+        };
+        let Some(mut id) = self.resolve(ty, name, MemberKind::Var) else {
+            return M::Missing;
+        };
+        loop {
+            let Some(node) = self.member(id) else {
+                return M::Unsupported(query);
+            };
+            if node.kind != MemberKind::Var {
+                return M::Unsupported(query);
+            }
+            match node.definition {
+                DefinitionMode::Declare => {
+                    // Occurrence issuance proves this is captured authored
+                    // source, never an intrinsic catalog row or fabricated AST.
+                    if self.member_occurrence(id).is_none()
+                        || node.metadata.inherited_opaque.is_some()
+                    {
+                        return M::Unsupported(query);
+                    }
+                    let data = std::sync::Arc::clone(&node.metadata);
+                    return M::Member {
+                        owner: self.types[node.owner.index()].path,
+                        name,
+                        fingerprint: xxhash_rust::xxh3::xxh3_128(&data.canonical_bytes()).into(),
+                        data,
+                    };
+                }
+                DefinitionMode::Override => (), // value-only override is not a declaration
+                _ => return M::Unsupported(query),
+            }
+            let Some(previous) = node.previous else {
+                return M::Missing;
+            };
+            id = previous;
+        }
+    }
+}
+
+#[cfg(test)]
+#[path = "source_var_declaration_tests.rs"]
+mod source_var_declaration_tests;

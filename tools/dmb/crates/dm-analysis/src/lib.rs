@@ -46,3 +46,6 @@ pub mod checker_evaluated_observer;
 pub mod checker_call_facts;
 pub mod checker_expression_visit;
 pub mod checks_undefined_proc;
+
+pub mod checker_variable_facts;
+pub mod checks_undefined_variable;

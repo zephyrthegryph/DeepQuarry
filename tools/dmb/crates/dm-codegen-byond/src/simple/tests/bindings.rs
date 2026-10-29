@@ -501,6 +501,24 @@ fn typed_local_declarations_bind_leaf_names() {
 }
 
 #[test]
+fn shared_local_projection_keeps_runtime_typed_list_and_array_admission() {
+    let ast = dm_syntax::parse(
+        "/proc/locals()\n    var/datum/item/typed = new()\n    var/list/datum/item/items = list(typed)\n    var/array[2]\n    return items\n",
+    );
+    assert!(ast.diagnostics.is_empty());
+    let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
+    assert_eq!(compiled.local_names, ["typed", "items", "array"]);
+    assert!(compiled.class_paths.contains(&SymbolId::of("/datum/item")));
+    // The conservative checker projection rejects array context, while the
+    // runtime's existing sized-array continuation must remain admitted.
+    assert!(dm_syntax::project_local_declaration("var/array[2]").is_err());
+    assert_eq!(
+        dm_syntax::local_type_path("var/list/datum/item/items"),
+        Some("list/datum/item")
+    );
+}
+
+#[test]
 fn catch_without_binding_matches_native_fixture() {
     let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
         "../../../../../fixtures/translation/try_empty.native.bin"

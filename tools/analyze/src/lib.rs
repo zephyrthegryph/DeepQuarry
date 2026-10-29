@@ -45,3 +45,7 @@ pub mod util;
 
 pub mod native_policy_roster;
 pub const LEGACY_SEMANTICS_ENABLED: bool = cfg!(feature="legacy-sem");
+
+pub mod lifecycle_source;
+#[cfg(feature="native-policy")]
+pub mod captured_decl_policy;

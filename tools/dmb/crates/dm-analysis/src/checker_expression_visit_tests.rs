@@ -42,6 +42,8 @@ fn observe_mode(
                 };
                 for event in walk.events {
                     let (kind, name, at) = match event {
+                        Event::MissingVariable { name, at, .. } => ("missing_var", name, at),
+                        Event::MissingField { name, at, .. } => ("missing_field", name, at),
                         Event::MissingCall { name, at, .. } => ("missing", name, at),
                         Event::ResolvedCall { name, at, .. } => ("resolved", name, at),
                         Event::MissingParent { at, .. } => ("parent", "..", at),
@@ -140,9 +142,9 @@ fn unsupported_origins_types_and_control_discard_the_entire_contribution() {
     for body in [
         "    first()\n    if(1)\n        second()\n",
         "    first()\n    return !second()\n",
-        "    var/datum/typed\n    return visible()\n",
+        "    var/datum/typed[side_effect()]\n    return visible()\n",
         "    first()\n    return input(hidden())\n",
-        "    first()\n    return src.field.absent(hidden())\n",
+        "    first()\n    return src.field.deep_field\n",
     ] {
         assert!(
             observe(&format!("/datum/example/proc/probe()\n{body}")).is_err(),
@@ -210,7 +212,7 @@ fn shared_control_walk_skips_semantically_dead_siblings_and_do_condition() {
     assert_eq!(missing, ["missing_return"]);
 }
 #[test]
-fn unsupported_typed_binding_discards_all_earlier_control_events() {
-    let error = observe_mode("/datum/example/proc/probe(a)\n    missing_earlier()\n    for(var/datum/item in list())\n        missing_later()\n", true).unwrap_err();
-    assert!(error.contains("typed/stored/array loop"));
+fn unsupported_array_binding_discards_all_earlier_control_events() {
+    let error = observe_mode("/datum/example/proc/probe(a)\n    missing_earlier()\n    for(var/datum/item[1] in list())\n        missing_later()\n", true).unwrap_err();
+    assert!(error.contains("array"));
 }

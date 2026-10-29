@@ -57,6 +57,7 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "if_condition_determinate"
                             | "proc_has_no_parent"
                             | "undefined_proc"
+                            | "undefined_variable"
                     )
             }
             _ => false,

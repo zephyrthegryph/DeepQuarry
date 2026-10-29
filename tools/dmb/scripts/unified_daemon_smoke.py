@@ -326,7 +326,7 @@ class Smoke:
         assert all(row["diagnostics"] == [] and row["full_checker_parity"] is False for row in rows), rows
         bad = self.query(project, engine, pins,
                          [self.semantic_question(project, bodies[9], "undefined_proc")], success=False)
-        assert bad.returncode != 0 and "typed/stored/array" in bad.stderr, bad.stderr
+        assert bad.returncode != 0 and "local array" in bad.stderr, bad.stderr
         return rows
 
     def observe_prepared_semantic_errors(self, project: Path, engine: Path) -> dict:
@@ -374,7 +374,7 @@ class Smoke:
             "/datum/semantic_base/proc/read(value)\n    return value\n"
             "/datum/semantic_base/child/read(value)\n    return ..(value)\n"
             "/datum/semantic_base/proc/probe(value)\n    if(value)\n        read(value)\n    return 1\n"
-            "/datum/semantic_base/proc/unsupported()\n    var/datum/typed\n    return 1\n", encoding="utf-8")
+            "/datum/semantic_base/proc/unsupported()\n    var/datum/typed[1]\n    return 1\n", encoding="utf-8")
         (source_root / "lint_scopes.toml").write_text(
             "[lint.base_vars.lists]\nrecord_accessor_prefixes=['get_']\n", encoding="utf-8")
         (source_root / "SpacemanDMM.toml").write_text(

@@ -541,3 +541,38 @@ engine and issued paths; admission/ownership guards were not weakened.
 Production tool defaults remain unchanged. Complete semantic policies,
 generators, inference/SCC coverage, thin-client cutover and end-to-end
 performance proofs remain outstanding.
+
+### Typed variables, owner accounting and declaration-policy checkpoint
+
+The typed-variable cohort passes 102 focused Rust library tests across syntax,
+tree, analysis, codegen, host capture and policy components. The real daemon
+Compile/Prepare/query/edit/retraction smoke passes in 22.96 seconds. Independent
+pinned checker comparison matches ten additional variable/typed-field errors;
+covered checker fixtures now total 145 diagnostics across 21 fixtures, still partial.
+The source-only formal-var query excludes runtime value/default overlays. Runtime
+and checker share the same borrowed local-type-path projection without imposing
+checker coverage restrictions on runtime arrays/stored locals.
+
+The 64 MiB capture-admission limit is unchanged. Its exposed source/config payload
+charge now deduplicates actual live backing owners rather than counting identical
+views twice; separately acquired equal storage is never ownership authority.
+Metadata remains conservatively estimated; this is not a process-RSS or
+acquisition-peak bound. Focused tests cover separate wrappers, subranges, memo
+capacity, exceptional encodings, independent equal config buffers and cache release.
+
+The native Decl backend reuses all 14 existing rule matchers over captured raw
+views and authenticated native lifecycle headers. Certified atom ancestry keeps
+manual datum Initialize callbacks excluded; missing ancestry is Unsupported.
+Four native tests and the existing legacy classification regression pass.
+Independent actual Engine.scan comparison matches 22 sites plus exact consumed
+annotations and notes across the 14 seeded rule families. This is complete rule
+logic over an explicit fixture, not full-workspace/baseline admission. No new
+Decl IPC endpoint or production default cutover is claimed.
+
+The user manually cleared the verified obsolete private incremental-cache files;
+read-only checks found zero pre-plan non-lock payloads remaining. Resumed builds
+recreate some of those paths, so the old cleanup script now refuses reused
+variants/files. No current binaries or lock files were deleted by the agent.
+Production Analyze/checker defaults remain unchanged; subsequent acquisition
+certificate, remaining semantic policies/generators and full inference work are
+not yet certified, and end-to-end performance targets remain unmeasured.

@@ -38,6 +38,10 @@ required-features = ["legacy-sem"]
 name = "unified_raw_policy"
 required-features = ["legacy-sem", "native-policy"]
 
+[[example]]
+name = "unified_decl_policy"
+required-features = ["legacy-sem", "native-policy"]
+
 [dependencies]
 dm-preprocess = { path = "../dmb/crates/dm-preprocess" }
 dm-analysis = { path = "../dmb/crates/dm-analysis", optional = true }

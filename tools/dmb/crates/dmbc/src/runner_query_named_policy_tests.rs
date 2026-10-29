@@ -383,7 +383,7 @@ fn semantic_policies_preserve_real_tag_override_and_untagged_error_default() {
 fn semantic_host_unavailable_or_unsupported_body_never_becomes_false_clean() {
     let syntactic_only = snapshot(None);
     assert!(semantic_row(&syntactic_only, 0, "undefined_proc").is_err());
-    let unsupported = semantic_snapshot("/datum/example/proc/probe()\n    missing_earlier()\n    var/datum/typed\n    missing_later()\n", None);
+    let unsupported = semantic_snapshot("/datum/example/proc/probe()\n    missing_earlier()\n    var/datum/typed[1]\n    missing_later()\n", None);
     let mut bytes = Vec::new();
     assert!(unsupported
         .write_native_configured_checker(
@@ -415,4 +415,38 @@ fn semantic_endpoint_refuses_equal_but_foreign_compiled_tree() {
             &mut Vec::new()
         )
         .is_err());
+}
+
+#[test]
+fn untagged_variable_errors_use_exact_retained_host_and_ignore_fake_named_override() {
+    let snapshot = semantic_snapshot(
+        "/datum/example/proc/probe()\n    missing_variable\n",
+        Some(b"[diagnostics]\nundefined_variable='off'\n"),
+    );
+    let row = semantic_row(&snapshot, 0, "undefined_variable").unwrap();
+    assert_eq!(row["full_checker_parity"], false);
+    assert_eq!(row["diagnostics"].as_array().unwrap().len(), 1);
+    assert_eq!(row["diagnostics"][0]["severity"], "error");
+    assert_eq!(
+        row["diagnostics"][0]["message"],
+        "undefined var: \"missing_variable\""
+    );
+    assert_eq!(row["diagnostics"][0]["line"], 2);
+}
+
+#[test]
+fn checker_storage_gap_does_not_narrow_native_stored_local_lowering() {
+    let snapshot = semantic_snapshot(
+        "/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    return shared\n",
+        None,
+    );
+    let declaration = snapshot.body_archive.as_ref().unwrap().occurrences()[0]
+        .declaration
+        .0;
+    let mut selected = Vec::new();
+    snapshot.write_selected(declaration, &mut selected).unwrap();
+    assert!(String::from_utf8(selected).unwrap().contains("shared"));
+    // The ordinary runtime still lowers its issued static inventory. The
+    // checker must honestly refuse its not-yet-implemented local storage view.
+    assert!(semantic_row(&snapshot, 0, "undefined_variable").is_err());
 }

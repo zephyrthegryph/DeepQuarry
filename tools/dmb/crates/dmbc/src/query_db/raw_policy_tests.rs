@@ -417,3 +417,36 @@ fn concurrent_pinned_cohorts_are_serialized_without_cross_config_answers() {
         b.join().unwrap();
     });
 }
+#[test]
+fn idle_raw_cache_release_drops_last_source_owner_after_capture_is_gone() {
+    let db = Arc::new(QueryDb::default());
+    let input = cohort(&db, BEFORE, None);
+    let issued_path = input.files.iter().find(|path| {
+        dm_preprocess::regions::relative_filesystem_path(path, &input.root)
+            .is_some_and(|relative| relative == Path::new("code/a.dm"))
+    }).unwrap();
+    let weak = input
+        .capture
+        .policy()
+        .file(issued_path)
+        .unwrap()
+        .view(TextView::AnalyzeRaw)
+        .unwrap()
+        .downgrade();
+    let rows = db.raw_findings(&input, &names()).unwrap();
+    drop(input);
+    assert!(
+        weak.upgrade().is_some(),
+        "graph File retains issued source storage"
+    );
+    db.release_raw_policy_cache();
+    assert!(
+        weak.upgrade().is_none(),
+        "release drops graph's last immutable source owner"
+    );
+    assert_eq!(
+        rows.runs[0].run.sites.len(),
+        2,
+        "caller findings remain independently valid"
+    );
+}

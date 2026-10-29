@@ -7,10 +7,7 @@ impl Compiler<'_> {
         name: &str,
         declaration: &str,
     ) {
-        if let Some((path, _)) = declaration
-            .strip_prefix("var/")
-            .and_then(|raw| raw.rsplit_once('/'))
-        {
+        if let Some(path) = dm_syntax::local_type_path(declaration) {
             self.local_types
                 .insert(name.into(), runtime_declaration_path(path));
         } else if declaration.trim_end().ends_with("[]") {

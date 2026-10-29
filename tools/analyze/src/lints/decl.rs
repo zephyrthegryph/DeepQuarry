@@ -99,13 +99,40 @@ impl Decl {
     fn new() -> Decl {
         Decl {
             init_rules: vec![
-                ("init_reagents", Pat::new(r"\bcreate_reagents\s*\(|\breagents\.add_reagent\s*\(")),
-                ("init_gas", Pat::new(r"\bair_contents\s*=\s*new\b|\.adjust_gas\s*\(")),
-                ("init_registry", Pat::new(r"\bregistry_join\s*\([^)]*\bsrc\b|\bGLOB\.\w+\[[^\]]*\]\s*=\s*src\b")),
-                ("init_service", Pat::new(r"\bGLOB\.\w+_service\.\w+\(\s*src\b")),
-                ("init_bind", Pat::new(r"\bconnect_to_network\s*\(\s*\)|\bvg_\w*bind\w*\s*\(|\bheat_body_create\s*\(")),
-                ("init_scheduling", Pat::new(r"\bom_task_periodic\s*\(\s*src\s*,|\bom_attach\s*\(\s*src\s*,|\b(?:om_after|after)\s*\(\s*src\s*,")),
-                ("init_visuals", Pat::new(r"\badd_overlay\s*\(|\bcut_overlays\s*\(|^\s*(?:src\.)?icon_state\s*=")),
+                (
+                    "init_reagents",
+                    Pat::new(r"\bcreate_reagents\s*\(|\breagents\.add_reagent\s*\("),
+                ),
+                (
+                    "init_gas",
+                    Pat::new(r"\bair_contents\s*=\s*new\b|\.adjust_gas\s*\("),
+                ),
+                (
+                    "init_registry",
+                    Pat::new(r"\bregistry_join\s*\([^)]*\bsrc\b|\bGLOB\.\w+\[[^\]]*\]\s*=\s*src\b"),
+                ),
+                (
+                    "init_service",
+                    Pat::new(r"\bGLOB\.\w+_service\.\w+\(\s*src\b"),
+                ),
+                (
+                    "init_bind",
+                    Pat::new(
+                        r"\bconnect_to_network\s*\(\s*\)|\bvg_\w*bind\w*\s*\(|\bheat_body_create\s*\(",
+                    ),
+                ),
+                (
+                    "init_scheduling",
+                    Pat::new(
+                        r"\bom_task_periodic\s*\(\s*src\s*,|\bom_attach\s*\(\s*src\s*,|\b(?:om_after|after)\s*\(\s*src\s*,",
+                    ),
+                ),
+                (
+                    "init_visuals",
+                    Pat::new(
+                        r"\badd_overlay\s*\(|\bcut_overlays\s*\(|^\s*(?:src\.)?icon_state\s*=",
+                    ),
+                ),
             ],
             destroy_rules: vec![
                 (
@@ -114,9 +141,18 @@ impl Decl {
                         r"\bdump_contents\s*\(|\bfor\s*\(\s*var/[\w/]+\s+in\s+(?:src\.)?contents\b.*|\bfor\s*\(\s*var/[\w/]+\s+in\s+contents_of\(\s*src\s*\)",
                     ),
                 ),
-                ("destroy_registry", Pat::new(r"\bregistry_leave\s*\(|\bGLOB\.\w+\s*-=\s*src\b")),
-                ("destroy_scheduling", Pat::new(r"\bom_task_periodic_stop\s*\(|\bSTOP_PROCESSING\s*\(")),
-                ("destroy_unbind", Pat::new(r"\bdisconnect_from_network\s*\(|\bvg_\w*unbind\w*\s*\(")),
+                (
+                    "destroy_registry",
+                    Pat::new(r"\bregistry_leave\s*\(|\bGLOB\.\w+\s*-=\s*src\b"),
+                ),
+                (
+                    "destroy_scheduling",
+                    Pat::new(r"\bom_task_periodic_stop\s*\(|\bSTOP_PROCESSING\s*\("),
+                ),
+                (
+                    "destroy_unbind",
+                    Pat::new(r"\bdisconnect_from_network\s*\(|\bvg_\w*unbind\w*\s*\("),
+                ),
                 (
                     "destroy_effects",
                     Pat::new(
@@ -162,45 +198,56 @@ impl Decl {
 
 /// The text rule's bodies: from a `/type/proc(` header to the next column-0 line.
 fn text_spans(f: &SourceFile) -> Vec<(&'static str, std::ops::Range<usize>)> {
-        let header = pat_match!(r"^(/[\w/]+)/(Initialize|on_materialize|on_destroy)\s*\(");
-        let mut spans: Vec<(&'static str, std::ops::Range<usize>)> = Vec::new();
-        let mut open: Option<(&'static str, usize)> = None;
-        let mut last = 0;
-        for (number, line) in f.raw().numbered() {
-            last = number;
-            if let Some(m) = header.captures(line) {
-                if let Some((p, start)) = open.take() {
-                    spans.push((p, start..number));
-                }
-                open = Some((proc_kind(m.s(2)), number + 1));
-                continue;
+    let header = pat_match!(r"^(/[\w/]+)/(Initialize|on_materialize|on_destroy)\s*\(");
+    let mut spans: Vec<(&'static str, std::ops::Range<usize>)> = Vec::new();
+    let mut open: Option<(&'static str, usize)> = None;
+    let mut last = 0;
+    for (number, line) in f.raw().numbered() {
+        last = number;
+        if let Some(m) = header.captures(line) {
+            if let Some((p, start)) = open.take() {
+                spans.push((p, start..number));
             }
-            if col0(line) {
-                if let Some((p, start)) = open.take() {
-                    spans.push((p, start..number));
-                }
+            open = Some((proc_kind(m.s(2)), number + 1));
+            continue;
+        }
+        if col0(line) {
+            if let Some((p, start)) = open.take() {
+                spans.push((p, start..number));
             }
         }
-        if let Some((p, start)) = open.take() {
-            spans.push((p, start..last + 1));
-        }
-        spans
+    }
+    if let Some((p, start)) = open.take() {
+        spans.push((p, start..last + 1));
+    }
+    spans
 }
 
 impl Decl {
     /// The sites of the given bodies (`(proc, 1-based line range)`), in line order.
-    fn judge_spans(&self, f: &SourceFile, refs: &BTreeSet<String>, spans: &[(&'static str, std::ops::Range<usize>)]) -> Vec<(u8, u32)> {
-        let new_into = pat_match!(r#"^\s*(?:own|rel)_(?:set|add)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))\s*,\s*new\b"#);
+    fn judge_spans(
+        &self,
+        f: &SourceFile,
+        refs: &BTreeSet<String>,
+        spans: &[(&'static str, std::ops::Range<usize>)],
+    ) -> Vec<(u8, u32)> {
+        let new_into = pat_match!(
+            r#"^\s*(?:own|rel)_(?:set|add)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))\s*,\s*new\b"#
+        );
         let qdel_var = crate::pat!(
             r#"\b(?:own_(?:clear|take|take_all)|rel_clear)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))|\bqdel\s*\(\s*(?:src\.)?(\w+)\s*\)"#
         );
         // MATERIALIZE_RULES: the INIT_RULES that also apply to on_materialize(), in INIT_RULES order.
         let materialize = ["init_registry", "init_service", "init_scheduling"];
-        let rule_index = |name: &str| META.rules.iter().position(|r| r.name == name).unwrap_or(0) as u8;
+        let rule_index =
+            |name: &str| META.rules.iter().position(|r| r.name == name).unwrap_or(0) as u8;
 
         let mut out: Vec<(u8, u32)> = Vec::new();
         let raw = f.raw();
-        let mut lines: Vec<(usize, &'static str)> = spans.iter().flat_map(|(p, r)| r.clone().map(move |n| (n, *p))).collect();
+        let mut lines: Vec<(usize, &'static str)> = spans
+            .iter()
+            .flat_map(|(p, r)| r.clone().map(move |n| (n, *p)))
+            .collect();
         lines.sort();
         lines.dedup_by_key(|(n, _)| *n);
         for (number, proc) in lines {
@@ -218,16 +265,31 @@ impl Decl {
             let mut hit: Vec<&'static str> = Vec::new();
             match proc {
                 "Initialize" => {
-                    hit.extend(self.init_rules.iter().filter(|(_, rx)| rx.is_match(code)).map(|(r, _)| *r));
+                    hit.extend(
+                        self.init_rules
+                            .iter()
+                            .filter(|(_, rx)| rx.is_match(code))
+                            .map(|(r, _)| *r),
+                    );
                     if new_into.is_match(code) {
                         hit.push("init_new_child");
                     }
                 }
                 "on_materialize" => {
-                    hit.extend(self.init_rules.iter().filter(|(r, rx)| materialize.contains(r) && rx.is_match(code)).map(|(r, _)| *r));
+                    hit.extend(
+                        self.init_rules
+                            .iter()
+                            .filter(|(r, rx)| materialize.contains(r) && rx.is_match(code))
+                            .map(|(r, _)| *r),
+                    );
                 }
                 _ => {
-                    hit.extend(self.destroy_rules.iter().filter(|(_, rx)| rx.is_match(code)).map(|(r, _)| *r));
+                    hit.extend(
+                        self.destroy_rules
+                            .iter()
+                            .filter(|(_, rx)| rx.is_match(code))
+                            .map(|(r, _)| *r),
+                    );
                     for qm in qdel_var.captures_iter(code) {
                         if qm.matched(1) || (qm.matched(2) && refs.contains(qm.s(2))) {
                             hit.push("destroy_qdel_owned");
@@ -258,6 +320,7 @@ fn proc_kind(name: &str) -> &'static str {
 /// Initialize is an atom lifecycle only. Plain datum callbacks with that name are
 /// called by their owners (including repeated business initialization), not InitAtom.
 /// Preserve all definitions so the text fallback cannot reintroduce an excluded body.
+#[cfg(feature = "legacy-sem")]
 fn typed_lifecycle_defs(sem: &crate::sem::Sem) -> Vec<(String, u32, String, bool)> {
     crate::sem::procs::proc_defs(sem, &["Initialize", "on_materialize", "on_destroy"])
         .into_iter()
@@ -274,52 +337,24 @@ impl Lint for Decl {
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let all = cx.all_files();
-        let owned = incr::facts("decl-owned", &all, |f| Owned { names: owned_vars_of(f) });
-        let refs: BTreeSet<String> = owned.into_iter().flat_map(|o| o.names).collect();
-        let files = cx.files();
-        // The bodies come from the typed tree (`sem::procs::proc_defs`: every definition, whatever its syntax), bounded by
-        // indentation; the text rule's headers when the model is unavailable.
-        let tree_key = incr::ctx_key(&all.iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
-        let typed: Option<Vec<(String, u32, String, bool)>> = incr::cached("decl-typed-defs-lifecycle-v2", tree_key, || {
-            cx.sem().map(|sem| {
-                typed_lifecycle_defs(&sem)
-            })
-        });
-        let mut by_rel: std::collections::HashMap<&str, Vec<(u32, &'static str)>> = std::collections::HashMap::new();
-        let mut manual_initialize: std::collections::HashMap<&str, BTreeSet<usize>> = std::collections::HashMap::new();
-        if let Some(defs) = &typed {
-            for (rel, header, name, lifecycle) in defs {
-                if *lifecycle {
-                    by_rel.entry(rel.as_str()).or_default().push((*header, proc_kind(name)));
-                } else {
-                    manual_initialize.entry(rel.as_str()).or_default().insert(*header as usize + 1);
-                }
-            }
+        #[cfg(feature = "legacy-sem")]
+        {
+            let all = cx.all_files();
+            let tree_key = incr::ctx_key(
+                &all.iter()
+                    .map(|f| (f.rel.as_str(), f.fkey))
+                    .collect::<Vec<_>>(),
+            );
+            let typed: Option<Vec<(String, u32, String, bool)>> =
+                incr::cached("decl-typed-defs-lifecycle-v2", tree_key, || {
+                    cx.sem().map(|sem| typed_lifecycle_defs(&sem))
+                });
+            self.scan_headers(cx, out, typed.as_deref(), false);
         }
-        // A typed body depends on the model (macros from other files), so any change re-judges every file (cheap: lines only).
-        let key = incr::ctx_key(&(&refs, typed.is_some().then_some(tree_key)));
-        let results = recorded_into(out, || {
-            incr::keyed("decl-judge", key, &files, |f| {
-                if typed.is_none() {
-                    return self.judge(f, &refs);
-                }
-                let no_defs = Vec::new();
-                let defs = by_rel.get(f.rel.as_str()).unwrap_or(&no_defs);
-                let raw = f.raw();
-                let lines: Vec<&str> = (1..=raw.num_lines()).map(|n| raw.line(n)).collect();
-                // The model's bodies, and the text rule's too: a file the model does not compile still counts as it did.
-                let mut spans: Vec<(&'static str, std::ops::Range<usize>)> = defs.iter().map(|(h, p)| (*p, crate::sem::procs::body_lines(&lines, *h))).collect();
-                spans.extend(text_spans(f).into_iter().filter(|(proc, range)| {
-                    *proc != "Initialize" || !manual_initialize.get(f.rel.as_str()).is_some_and(|headers| headers.contains(&range.start))
-                }));
-                self.judge_spans(f, &refs, &spans)
-            })
-        });
-        for (f, res) in files.iter().zip(results) {
-            for (rule, line) in res {
-                out.site_in(META.rules[rule as usize].name, &f.rel, line as usize);
-            }
+        #[cfg(not(feature = "legacy-sem"))]
+        {
+            let _ = (cx, out);
+            panic!("decl requires explicitly injected native lifecycle facts");
         }
     }
 
@@ -333,11 +368,100 @@ impl Lint for Decl {
     }
 }
 
+pub(crate) fn captured_metadata() -> &'static Meta {
+    &META
+}
+pub(crate) fn scan_captured(cx: &Cx, out: &mut Sink, headers: &[(String, u32, String, bool)]) {
+    Decl::new().scan_headers(cx, out, Some(headers), true);
+}
+impl Decl {
+    fn scan_headers(
+        &self,
+        cx: &Cx,
+        out: &mut Sink,
+        typed: Option<&[(String, u32, String, bool)]>,
+        captured: bool,
+    ) {
+        let all = cx.all_files();
+        // Captured native policy never enters the legacy on-disk cache path.
+        let owned = if captured {
+            all.iter()
+                .map(|f| Owned {
+                    names: owned_vars_of(f),
+                })
+                .collect()
+        } else {
+            incr::facts("decl-owned", &all, |f| Owned {
+                names: owned_vars_of(f),
+            })
+        };
+        let refs: BTreeSet<String> = owned.into_iter().flat_map(|o| o.names).collect();
+        let files = cx.files();
+        let tree_key = incr::ctx_key(
+            &all.iter()
+                .map(|f| (f.rel.as_str(), f.fkey))
+                .collect::<Vec<_>>(),
+        );
+        let mut by_rel: std::collections::HashMap<&str, Vec<(u32, &'static str)>> =
+            std::collections::HashMap::new();
+        let mut manual_initialize: std::collections::HashMap<&str, BTreeSet<usize>> =
+            std::collections::HashMap::new();
+        if let Some(defs) = typed {
+            for (rel, header, name, lifecycle) in defs {
+                if *lifecycle {
+                    by_rel
+                        .entry(rel.as_str())
+                        .or_default()
+                        .push((*header, proc_kind(name)));
+                } else {
+                    manual_initialize
+                        .entry(rel.as_str())
+                        .or_default()
+                        .insert(*header as usize + 1);
+                }
+            }
+        }
+        let judge = |f: &SourceFile| {
+            if typed.is_none() {
+                return self.judge(f, &refs);
+            }
+            let no_defs = Vec::new();
+            let defs = by_rel.get(f.rel.as_str()).unwrap_or(&no_defs);
+            let raw = f.raw();
+            let lines: Vec<&str> = (1..=raw.num_lines()).map(|n| raw.line(n)).collect();
+            let mut spans: Vec<(&'static str, std::ops::Range<usize>)> = defs
+                .iter()
+                .map(|(h, p)| (*p, crate::lifecycle_source::body_lines(&lines, *h)))
+                .collect();
+            spans.extend(text_spans(f).into_iter().filter(|(proc, range)| {
+                *proc != "Initialize"
+                    || !manual_initialize
+                        .get(f.rel.as_str())
+                        .is_some_and(|headers| headers.contains(&range.start))
+            }));
+            self.judge_spans(f, &refs, &spans)
+        };
+        let key = incr::ctx_key(&(&refs, typed.is_some().then_some(tree_key)));
+        let results = recorded_into(out, || {
+            if captured {
+                files.iter().map(|f| judge(f)).collect()
+            } else {
+                incr::keyed("decl-judge", key, &files, judge)
+            }
+        });
+        for (f, res) in files.iter().zip(results) {
+            for (rule, line) in res {
+                out.site_in(META.rules[rule as usize].name, &f.rel, line as usize);
+            }
+        }
+    }
+}
+
 pub fn register(reg: &mut Registry) {
     reg.add(Decl::new());
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-sem"))]
 mod lifecycle_classification_tests {
     use super::*;
     use crate::tree::{SourceFile, Tree};
@@ -352,11 +476,27 @@ mod lifecycle_classification_tests {
         let tree = Tree::from_files(vec![SourceFile::from_text("code/probe.dm", source)]);
         let sem = crate::sem::Sem::build(root.path(), &tree).unwrap();
         let defs = typed_lifecycle_defs(&sem);
-        let excluded: BTreeSet<usize> = defs.iter().filter(|d| !d.3).map(|d| d.1 as usize + 1).collect();
-        let spans: Vec<_> = text_spans(&file).into_iter().filter(|(name, span)| *name != "Initialize" || !excluded.contains(&span.start)).collect();
+        let excluded: BTreeSet<usize> = defs
+            .iter()
+            .filter(|d| !d.3)
+            .map(|d| d.1 as usize + 1)
+            .collect();
+        let spans: Vec<_> = text_spans(&file)
+            .into_iter()
+            .filter(|(name, span)| *name != "Initialize" || !excluded.contains(&span.start))
+            .collect();
         let findings = Decl::new().judge_spans(&file, &BTreeSet::new(), &spans);
-        assert_eq!(findings.iter().map(|site| site.1).collect::<Vec<_>>(), vec![4, 8]);
-        assert!(defs.iter().any(|d| d.1 == 1 && !d.3), "the actual manual callback is classified");
-        assert!(defs.iter().any(|d| d.1 == 7 && d.3), "semantic atom ancestry wins over the textual datum prefix");
+        assert_eq!(
+            findings.iter().map(|site| site.1).collect::<Vec<_>>(),
+            vec![4, 8]
+        );
+        assert!(
+            defs.iter().any(|d| d.1 == 1 && !d.3),
+            "the actual manual callback is classified"
+        );
+        assert!(
+            defs.iter().any(|d| d.1 == 7 && d.3),
+            "semantic atom ancestry wins over the textual datum prefix"
+        );
     }
 }
