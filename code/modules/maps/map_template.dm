@@ -214,8 +214,15 @@ CAPABILITIES(/datum/map_template)
 //❤ - Cyberboss
 /proc/load_new_z_level(file, name)
 	var/datum/map_template/template = new(file, name, TRUE)
-	if(!template.parsed_map || template.parsed_map.check_for_errors())
+	if(!template.parsed_map)
+		log_world("load_new_z_level([file]): the map did not parse")
 		return FALSE
+	// A report with warnings only (unknown object paths, which the loader skips) still loads; one that is not loadable does not.
+	var/datum/map_report/report = template.parsed_map.check_for_errors()
+	if(report)
+		log_world("load_new_z_level([file]): [length(report.bad_paths)] unknown path(s), [length(report.bad_keys)] bad key(s), loadable=[report.loadable]")
+		if(!report.loadable)
+			return FALSE
 	template.load_new_z()
 	return TRUE
 

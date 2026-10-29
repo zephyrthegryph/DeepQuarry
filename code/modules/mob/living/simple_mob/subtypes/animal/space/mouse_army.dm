@@ -47,9 +47,9 @@
 
 	var/rank //pyro, operative, ammo, stealth. more to come. Do not leave blank.
 
-	species_sounds = "Mouse"
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	configure(living_rules(species_sounds = "Mouse"))
 	configure(living_rules(say_list_type = /datum/say_list/mouse))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(mob_rules(universal_understand = 1))

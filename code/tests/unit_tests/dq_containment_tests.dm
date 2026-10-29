@@ -80,16 +80,20 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 /datum/unit_test/proc/dq_containment_floor()
 	// Earlier tests leave litter; a closet made closed takes in whatever lies on
 	// its turf, so look for a clean pair every time.
-	for(var/turf/simulated/floor/T in world)
-		var/turf/east = get_step(T, EAST)
-		if(T.density || !istype(east, /turf/simulated/floor) || east.density)
-			continue
-		if((locate_within(T, /obj/item)) || (locate_within(T, /obj/structure)) || (locate_within(T, /mob)))
-			continue
-		if((locate_on(east, /obj/item)) || (locate_on(east, /obj/structure)) || (locate_on(east, /mob)))
-			continue
-		dq_atmos_test_snapshot_air_around(T) // a shared world floor: restore_atmos() puts its air back after the test
-		return T
+	// The first pass keeps to rooms the map does not regulate (their thermostats and vents drift while world time passes); the second takes what is left.
+	for(var/pass in 1 to 2)
+		for(var/turf/simulated/floor/T in world)
+			var/turf/east = get_step(T, EAST)
+			if(T.density || !istype(east, /turf/simulated/floor) || east.density)
+				continue
+			if(pass == 1 && unit_test_regulated_room(T))
+				continue
+			if((locate_within(T, /obj/item)) || (locate_within(T, /obj/structure)) || (locate_within(T, /mob)))
+				continue
+			if((locate_on(east, /obj/item)) || (locate_on(east, /obj/structure)) || (locate_on(east, /mob)))
+				continue
+			dq_atmos_test_snapshot_air_around(T) // a shared world floor: restore_atmos() puts its air back after the test
+			return T
 	return null
 
 /// Fails with every mismatch the ledger's own verification finds.

@@ -81,12 +81,12 @@ before code/content/integrated_electronics/core/special_pins/list_pin.dm code/co
 
 # The test trees are compiled through their aggregators (their own include lists, under UNIT_TESTS).
 skip code/modules/unit_tests/**
-file code/modules/unit_tests/_unit_tests.dm
+file code/tests/unit_tests/_unit_tests.dm
 skip code/tests/**
 file code/tests/_tests.dm
 optional code/tests/engine/test_only_defs.dm                 # included directly, after the game (see the `last` rules)
 optional code/modules/unit_tests/_test_build_overrides.dm    # likewise
-skip code/modules/benchmarks/**   # code/modules/unit_tests/_unit_tests.dm includes them
+skip code/modules/benchmarks/**   # code/tests/unit_tests/_unit_tests.dm includes them
 skip code/modules/balance/**      # likewise
 
 # Generated files (gitignored, so the scan never includes them; analyze gen and the Verdigris bindings step write them before every
@@ -145,7 +145,7 @@ before code/modules/generated_station/generated_station_tile_plan.dm code/module
 # The test trees (compiled only under UNIT_TESTS) after the game, the cross-cutting test code (fixtures, driver: macros the unit tests
 # use) before the unit tests.
 last code/tests/_tests.dm
-last code/modules/unit_tests/_unit_tests.dm
+last code/tests/unit_tests/_unit_tests.dm
 
 # The generated files last: they read macros of every file (CRYO_OCCUPANT_CONDUCTANCE, SLOT_ECHAIR_KIT, ...), and declare.dm writes
 # per-type facts over the types' own definitions.

@@ -46,16 +46,17 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
             output_start: 0,
             output_end: 2,
             input: 0,
-            traces: Box::new([Trace {
-                name: 0,
-                chain: 0,
-                start: 0,
-                end: 1,
-            }]),
+            trace_set: 1,
         }]),
         trace_tables: TraceTables {
             names: Box::new([Arc::from("X")]),
             chains: Box::new([Arc::from([Arc::from("X")])]),
+            sets: Box::new([Box::new([Trace {
+                name: 0,
+                chain: 0,
+                start: 0,
+                end: 1,
+            }])]),
         },
         diagnostics: Arc::new(vec![Error {
             input: 0,
@@ -71,8 +72,9 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
         .map(|line| LegacyLine {
             output: line.output(),
             input: line.input(),
-            traces: line
-                .traces
+            traces: value
+                .trace_tables
+                .set(line)
                 .iter()
                 .map(|trace| LegacyTrace {
                     name: value.trace_tables.name(trace).to_string(),
@@ -179,10 +181,10 @@ fn retained_trace_owners_share_capture_and_rebind_current_definition_origin() {
     let (stored_record, stored) = recorded
         .iter()
         .flat_map(|record| record.lines.iter().map(move |line| (record, line)))
-        .find(|(_, line)| !line.traces.is_empty())
+        .find(|(record, line)| !record.trace_tables.set(line).is_empty())
         .unwrap();
-    let stored_name = stored_record.trace_tables.name(&stored.traces[0]);
-    let stored_chain = stored_record.trace_tables.chain(&stored.traces[0]);
+    let stored_name = stored_record.trace_tables.name(&stored_record.trace_tables.set(stored)[0]);
+    let stored_chain = stored_record.trace_tables.chain(&stored_record.trace_tables.set(stored)[0]);
     assert!(Arc::ptr_eq(&traces[0].name, stored_name));
     assert!(Arc::ptr_eq(&traces[0].replacement_chain, stored_chain));
     // The observed definitions move; the reused body region's exact bytes do not.

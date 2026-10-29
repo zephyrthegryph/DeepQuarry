@@ -828,7 +828,7 @@ CAPABILITIES(/datum/vore_look)
 
 /datum/vore_look/proc/ui_act_set_vs_color(datum/act/op/A, attribute, val)
 	var/belly_choice = attribute
-	if(!(belly_choice in host().vore_icon_bellies))
+	if(!(belly_choice in living_rules_of(host()).vore_icon_bellies))
 		return FALSE
 	var/newcolor = sanitize_hexcolor(lowertext(val))
 	if(!newcolor)
@@ -841,7 +841,7 @@ CAPABILITIES(/datum/vore_look)
 
 /datum/vore_look/proc/ui_act_toggle_vs_multiply(datum/act/op/A, attribute)
 	var/belly_choice = attribute
-	if(!(belly_choice in host().vore_icon_bellies))
+	if(!(belly_choice in living_rules_of(host()).vore_icon_bellies))
 		return FALSE
 	var/datum/record/vore_prefs/prefs = host().vore_prefs
 	if(!prefs.vore_sprite_multiply[belly_choice])

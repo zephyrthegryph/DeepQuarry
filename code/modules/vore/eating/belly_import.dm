@@ -742,7 +742,7 @@ CAPABILITIES(/datum/vore_look/import_panel)
 		if(istext(belly_data["belly_sprite_to_affect"]))
 			var/new_belly_sprite_to_affect = sanitize(belly_data["belly_sprite_to_affect"],MAX_MESSAGE_LEN,0,0,0)
 			if(new_belly_sprite_to_affect)
-				if (new_belly_sprite_to_affect in host.vore_icon_bellies)
+				if (new_belly_sprite_to_affect in living_rules_of(host).vore_icon_bellies)
 					new_belly.set_belly_sprite_to_affect(new_belly_sprite_to_affect)
 
 		if(istext(belly_data["undergarment_chosen"]))

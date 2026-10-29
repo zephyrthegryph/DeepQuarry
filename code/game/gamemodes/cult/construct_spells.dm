@@ -637,7 +637,6 @@ CAPABILITIES(/obj/item/projectile/energy/inversion)
 	desc = "A portal to some hellish place. Its screams wrack your body with pain.."
 	icon_state = "red_static_sphere"
 	time_to_die = null
-	light_on = TRUE
 	pulses_remaining = 10
 	pulse_delay = 1 SECOND
 
@@ -660,7 +659,6 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/agonizing_sphere)
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_on = TRUE
 
 CAPABILITIES(/obj/item/spell/construct/mend_occult)
 	configure(light_glow(color = "#FF5C5C", power = -2))
@@ -678,7 +676,6 @@ CAPABILITIES(/obj/item/spell/construct/mend_occult)
 	icon_state = "toggled_old"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_on = TRUE
 	cooldown = 15
 
 /obj/item/spell/construct/slam/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
@@ -912,7 +909,6 @@ CAPABILITIES(/obj/item/projectile/beam/force_beam)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "blue_static_sphere"
 	time_to_die = null
-	light_on = TRUE
 	pulses_remaining = 10
 	pulse_delay = 1 SECOND
 
@@ -964,7 +960,6 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/soothing_sphere)
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_on = TRUE
 
 CAPABILITIES(/obj/item/spell/construct/mend_purity)
 	configure(light_glow(color = "#64B4E6", power = -2))

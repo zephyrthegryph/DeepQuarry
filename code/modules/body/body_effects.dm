@@ -120,9 +120,6 @@
 	return def
 
 /mob/living
-	/// Body effect type -> list of timed-stack names, one per timed stack, soonest first. Each
-	/// names a `body_effect` timer slot (body_effect_after()); the slot owns the timer. Lazy.
-	var/list/body_effect_timers
 	/// Next timed-stack serial (names only, never a timer id).
 	/// Body effect type -> an owned /datum/body_effect_origin naming whoever applied it. Lazy.
 	var/list/body_effect_origins
@@ -237,10 +234,38 @@ sparse(/mob/living, body_effect_data, type = list)
 		return
 	call(L, proc_ref)(path)
 
+/// The names of the timed stacks of body effect `path`, soonest first (null when none). Each names a `body_effect` timer slot (body_effect_after());
+/// the slot owns the timer. The table is the sparse slot body_effect_timers: body effect type -> list of names.
+/mob/living/proc/body_effect_stack_names(path)
+	return sparse_get(src, body_effect_timers)?[path]
+
+/// Replaces the timed-stack names of `path` (null or empty drops the entry; the slot clears when no entry is left).
+/mob/living/proc/body_effect_stack_set(path, list/names)
+	var/list/table = sparse_get(src, body_effect_timers)
+	if(!length(names))
+		if(table)
+			table -= path
+			if(!length(table))
+				sparse_set(src, body_effect_timers, null)
+		return
+	if(!table)
+		table = list()
+		sparse_set(src, body_effect_timers, table)
+	table[path] = names
+
+/// Adds one timed-stack name to `path`.
+/mob/living/proc/body_effect_stack_add(path, name)
+	var/list/names = body_effect_stack_names(path)
+	if(!names)
+		names = list()
+		body_effect_stack_set(path, list(name))
+		return
+	names += name
+
 /// Deciseconds until the last timed stack of `path` ends; 0 when none.
 /mob/living/proc/body_effect_remaining(path)
 	. = 0
-	var/list/timers = body_effect_timers?[path]
+	var/list/timers = body_effect_stack_names(path)
 	if(!length(timers))
 		return
 	var/datum/body_effect/def = body_effect_def(path)
@@ -255,7 +280,7 @@ sparse(/mob/living, body_effect_data, type = list)
 	if(QDELETED(src))
 		return FALSE
 	var/current = body_effect_stacks(path)
-	var/list/timers = body_effect_timers?[path]
+	var/list/timers = body_effect_stack_names(path)
 	if(current)
 		switch(def.stacks)
 			if(MODIFIER_STACK_FORBID)
@@ -267,13 +292,13 @@ sparse(/mob/living, body_effect_data, type = list)
 					// A held application replaces the countdown.
 					for(var/name in timers)
 						body_effect_cancel(def, name)
-					body_effect_timers -= path
+					body_effect_stack_set(path, null)
 					return TRUE
 				if(body_effect_remaining(path) >= duration)
 					return TRUE
 				for(var/name in timers)
 					body_effect_cancel(def, name)
-				body_effect_timers[path] = list(body_effect_new_stack(def, path, duration))
+				body_effect_stack_set(path, list(body_effect_new_stack(def, path, duration)))
 				return TRUE
 	else
 		// The origin is readable from can_apply() and on_start().
@@ -286,8 +311,7 @@ sparse(/mob/living, body_effect_data, type = list)
 	hold(src, STAT_BODY_EFFECT_COUNTS, stacks, src, key = path)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(duration)
-		LAZYINITLIST(body_effect_timers)
-		LAZYADD(body_effect_timers[path], body_effect_new_stack(def, path, duration))
+		body_effect_stack_add(path, body_effect_new_stack(def, path, duration))
 	if(!current)
 		if(def.on_created_text)
 			to_chat(src, def.on_created_text)
@@ -327,12 +351,11 @@ sparse(/mob/living, body_effect_data, type = list)
 
 /// One timed stack of `path` ran out.
 /mob/living/proc/body_effect_expired(path)
-	var/list/timers = body_effect_timers?[path]
+	var/list/timers = body_effect_stack_names(path)
 	if(length(timers))
 		timers.Cut(1, 2)
 		if(!length(timers))
-			body_effect_timers -= path
-			UNSETEMPTY(body_effect_timers)
+			body_effect_stack_set(path, null)
 	var/current = body_effect_stacks(path)
 	if(current > 1 && length(timers))
 		hold(src, STAT_BODY_EFFECT_COUNTS, current - 1, src, key = path)
@@ -356,7 +379,7 @@ sparse(/mob/living, body_effect_data, type = list)
 	if(current <= 1)
 		end_body_effect(key, silent)
 		return TRUE
-	var/list/timers = body_effect_timers?[key]
+	var/list/timers = body_effect_stack_names(key)
 	if(length(timers))
 		body_effect_cancel(body_effect_def(key), timers[1])
 		timers.Cut(1, 2)
@@ -366,11 +389,9 @@ sparse(/mob/living, body_effect_data, type = list)
 /// `expired`: the last timed stack ran out (as opposed to removal or a cure).
 /mob/living/proc/end_body_effect(path, silent, expired = FALSE)
 	var/datum/body_effect/def = body_effect_def(path)
-	for(var/name in body_effect_timers?[path])
+	for(var/name in body_effect_stack_names(path))
 		body_effect_cancel(def, name)
-	if(body_effect_timers)
-		body_effect_timers -= path
-		UNSETEMPTY(body_effect_timers)
+	body_effect_stack_set(path, null)
 	body_effect_cancel(def, "[path]#tick")
 	if(!release(src, STAT_BODY_EFFECT_COUNTS, src, path))
 		return
@@ -397,7 +418,7 @@ sparse(/mob/living, body_effect_data, type = list)
 /mob/living/proc/clear_body_effects(silent = FALSE)
 	for(var/key in body_effects().Copy())
 		end_body_effect(key, silent)
-	body_effect_timers = null
+	sparse_set(src, body_effect_timers, null)
 
 /// Ends the effects that don't outlast death (end_on_death). Called from death().
 /mob/living/proc/end_body_effects_on_death()

@@ -63,7 +63,6 @@
 /datum/unit_test/dq_construction_wall_reinforced
 
 /datum/unit_test/dq_construction_wall_reinforced/Run()
-	restore_ambient_after() // dq_use() waits 30 s of test time per tool use
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/wall_turf = get_step(T, NORTH) || get_step(T, SOUTH)
@@ -108,7 +107,6 @@
 /datum/unit_test/dq_construction_wall_plain
 
 /datum/unit_test/dq_construction_wall_plain/Run()
-	restore_ambient_after() // dq_use() waits 30 s of test time per tool use
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/wall_turf = get_step(T, NORTH) || get_step(T, SOUTH)
@@ -139,7 +137,6 @@
 /datum/unit_test/dq_construction_wall_welder_work
 
 /datum/unit_test/dq_construction_wall_welder_work/Run()
-	restore_ambient_after() // dq_use() waits 30 s of test time per tool use
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/wall_turf = get_step(T, NORTH) || get_step(T, SOUTH)
@@ -175,7 +172,6 @@
 /datum/unit_test/dq_construction_floor
 
 /datum/unit_test/dq_construction_floor/Run()
-	restore_ambient_after() // dq_use() waits 30 s of test time per tool use
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/simulated/floor/floor = get_step(T, NORTH) || get_step(T, SOUTH)
@@ -210,7 +206,6 @@
 /datum/unit_test/dq_construction_mecha_maintenance
 
 /datum/unit_test/dq_construction_mecha_maintenance/Run()
-	restore_ambient_after() // dq_use() waits 30 s of test time per tool use
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
@@ -269,7 +264,6 @@
 /datum/unit_test/dq_construction_wreckage
 
 /datum/unit_test/dq_construction_wreckage/Run()
-	restore_ambient_after() // dq_use() waits 30 s of test time per tool use
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
@@ -299,7 +293,6 @@
 /datum/unit_test/dq_construction_girder
 
 /datum/unit_test/dq_construction_girder/Run()
-	restore_ambient_after() // dq_use() waits 30 s of test time per tool use
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
@@ -343,7 +336,6 @@
 /datum/unit_test/dq_construction_window
 
 /datum/unit_test/dq_construction_window/Run()
-	restore_ambient_after() // dq_use() waits 30 s of test time per tool use
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)

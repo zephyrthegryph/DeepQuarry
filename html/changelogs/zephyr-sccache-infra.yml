@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Merge gates: a gate step that fails because sccache's server dropped the connection is retried without sccache, and a second such failure is retried later instead of bouncing the lane."

@@ -23,6 +23,13 @@ The spec (one directive per line, `#` comments; paths use `/`, globs `*` (one se
     ifdef NAME PATH          `#ifdef NAME` / `#include PATH` / `#endif` before the `last` group (an optional, generated file)
     optional PATH            include PATH when it is on disk (a file a `skip` would drop, or one a queued lane adds)
 
+Compile order is pinned. deepquarry.dme is the record of every file's compile slot: a file already in it keeps its slot (so editing the
+tree never reorders the world), a new file goes where path order would put it (right after its path-order predecessor), a deleted file
+leaves its slot, and a MOVED file keeps the slot of its old path. A move is recorded in tools/build/dme_moves.txt (`OLD<TAB>NEW`, appended
+by `gen_dme.py --moved MAPFILE` in the move's follow-up commit; the file merges by union). `--repin` ignores the record and sorts by path
+order and the spec again (a deliberate reorder, compared with dmb-equiv like any change). Order-neutral moves are what
+tools/ci/move_equiv.sh needs to find a move EQUIVALENT.
+
 The header (genesis call, FILE_DIR) is fixed text below.
 """
 from __future__ import annotations
@@ -35,6 +42,7 @@ import heapq
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 SPEC = "tools/build/dme_spec.txt"
+MOVES = "tools/build/dme_moves.txt"
 INCLUDE = re.compile(r'^[ \t]*#include\s+"([^"]+)"', re.M)
 DME = "deepquarry.dme"
 REGEN = "python3 tools/build/gen_dme.py"
@@ -304,9 +312,66 @@ def macro_violations(spec: Spec, root: str, ordered: list[str]) -> list[str]:
     return sorted(out)
 
 
-def order(spec: Spec, files: list[str], root: str | None = None) -> list[str]:
-    """The `first` groups, then the rest in path order, then the `last` groups; then the `before` rules applied as a stable topological
-    sort: a file moves only as far as a rule needs, everything else keeps its place."""
+def read_moves(root: str) -> dict[str, str]:
+    """old path -> where that file is now, from the move log (a chain A -> B -> C resolves to C). Tab-separated: paths may contain spaces."""
+    path = os.path.join(root, MOVES)
+    moves: dict[str, str] = {}
+    if not os.path.isfile(path):
+        return moves
+    with open(path, encoding="utf-8") as fh:
+        for raw in fh:
+            raw = raw.rstrip("\n")
+            if not raw or raw.startswith("#") or "\t" not in raw:
+                continue
+            old, new = raw.split("\t", 1)
+            moves[old.strip()] = new.strip()
+    resolved: dict[str, str] = {}
+    for old in moves:
+        cur, seen = old, {old}
+        while cur in moves and moves[cur] not in seen:
+            cur = moves[cur]
+            seen.add(cur)
+        resolved[old] = cur
+    return resolved
+
+
+def pin(natural: list[str], recorded: list[str], moves: dict[str, str], hints: list[list[str]] | None = None) -> list[str]:
+    """`natural` (path order and the spec's groups) re-sorted to the recorded slots: a recorded file that still exists keeps its place
+    (a moved one at its old path's place), the files the record does not know go right after their predecessor in `natural` (or in a
+    `hints` order: the other side of a merge), the files that are gone drop out."""
+    present = set(natural)
+    result: list[str] = []
+    seen: set[str] = set()
+    for p in recorded:
+        q = moves.get(p, p)
+        if q in present and q not in seen:
+            result.append(q)
+            seen.add(q)
+    where = {f: i for i, f in enumerate(result)}
+    orders = [natural] + list(hints or [])
+    positions = [{f: i for i, f in enumerate(o)} for o in orders]
+
+    def predecessor(f: str) -> str | None:
+        for o, pos in zip(orders, positions):
+            i = pos.get(f)
+            while i:
+                i -= 1
+                if o[i] in where:
+                    return o[i]
+        return None
+
+    for f in [f for f in natural if f not in seen]:
+        after = predecessor(f)
+        at = 0 if after is None else where[after] + 1
+        result.insert(at, f)
+        where = {g: i for i, g in enumerate(result)}
+    return result
+
+
+def order(spec: Spec, files: list[str], root: str | None = None, recorded: list[str] | None = None, hints: list[list[str]] | None = None) -> list[str]:
+    """The `first` groups, then the rest in path order, then the `last` groups; then (with a record of slots) every file at its recorded
+    slot; then the `before` rules applied as a stable topological sort: a file moves only as far as a rule needs, everything else keeps
+    its place."""
     placed: set[str] = set()
     head: list[str] = []
     for pattern in spec.first:
@@ -321,6 +386,8 @@ def order(spec: Spec, files: list[str], root: str | None = None) -> list[str]:
                 tail.append(f)
                 placed.add(f)
     base = head + [f for f in files if f not in placed] + tail
+    if recorded is not None:
+        base = pin(base, recorded, read_moves(root) if root else {}, hints)
     rank = {f: i for i, f in enumerate(base)}
     preds: dict[str, set[str]] = {f: set() for f in base}
     why: dict[tuple[str, str], str] = {}
@@ -371,13 +438,26 @@ def render(spec: Spec, ordered: list[str]) -> str:
     return "".join(out)
 
 
-def generate(root: str = ROOT, spec_text: str | None = None) -> str:
+def recorded_order(root: str) -> list[str] | None:
+    """The compile order deepquarry.dme records, or None when there is no manifest yet."""
+    path = os.path.join(root, DME)
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
+    out = [p.replace("\\", "/") for p in INCLUDE.findall(text)]
+    return [p for p in out if p != "code/genesis_call.dme"]
+
+
+def generate(root: str = ROOT, spec_text: str | None = None, repin: bool = False, recorded: list[str] | None = None) -> str:
     if spec_text is None:
         with open(os.path.join(root, SPEC), encoding="utf-8") as fh:
             spec_text = fh.read()
     spec = Spec(spec_text)
     files = collect(spec, root)
-    ordered = order(spec, files, root)
+    if recorded is None and not repin:
+        recorded = recorded_order(root)
+    ordered = order(spec, files, root, None if repin else recorded)
 
     def matches(kind: str, g: str) -> bool:
         pool = spec.scanned if kind == "skip" else files
@@ -413,7 +493,23 @@ def merge(base: str, ours: str, theirs: str, root: str = ROOT, spec_text: str | 
     kept -= {p for _, p in spec.ifdef}
     kept.discard("code/genesis_call.dme")
     files = sorted(kept, key=path_key)
-    return render(spec, order(spec, files, root))
+    ours_order = [p.replace("\\", "/") for p in INCLUDE.findall(ours) if p.replace("\\", "/") != "code/genesis_call.dme"]
+    theirs_order = [p.replace("\\", "/") for p in INCLUDE.findall(theirs) if p.replace("\\", "/") != "code/genesis_call.dme"]
+    return render(spec, order(spec, files, root, ours_order, [theirs_order]))
+
+
+def record_moves(root: str, map_path: str) -> None:
+    """Appends a move wave's `OLD<TAB>NEW` lines (a file of them, or `-` for stdin) to the move log, skipping lines already there."""
+    text = sys.stdin.read() if map_path == "-" else open(map_path, encoding="utf-8").read()
+    path = os.path.join(root, MOVES)
+    have = set(open(path, encoding="utf-8").read().splitlines()) if os.path.isfile(path) else set()
+    fresh = [ln for ln in text.splitlines() if "\t" in ln and ln not in have]
+    if not have:
+        fresh = ["# Files moved in the tree: OLD<TAB>NEW. gen_dme.py gives a moved file the compile slot of its old path (deepquarry.dme records the slots).",
+                 "# Appended by `gen_dme.py --moved MAPFILE` in a move wave's follow-up commit; merges by union."] + fresh
+    if fresh:
+        with open(path, "a", encoding="utf-8", newline="\n") as fh:
+            fh.write("\n".join(fresh) + "\n")
 
 
 def main(argv: list[str]) -> int:
@@ -440,8 +536,10 @@ def main(argv: list[str]) -> int:
     out_path = os.path.join(root, DME)
     if "--out" in argv:
         out_path = os.path.abspath(argv[argv.index("--out") + 1])
+    if "--moved" in argv:
+        record_moves(root, argv[argv.index("--moved") + 1])
     try:
-        text = generate(root)
+        text = generate(root, repin="--repin" in argv)
     except SpecError as e:
         print(f"gen_dme: {e}", file=sys.stderr)
         return 2
@@ -567,6 +665,44 @@ ifdef DOC code/doc.dm
         check("code\\game\\sub\\x.dm" in merged, "what ours added since the base is kept")
         check(merged.index("code\\mid\\needs.dm") < merged.index("code\\new\\lane.dm"), "ordered by the spec, not by the side's text")
         check(merged.count("code\\engine\\_generated\\gen.dm") == 1 and merged[0] == "code\\genesis_call.dme", "generated and genesis once")
+    # Pinned order: a file keeps its slot when the tree changes, a moved file keeps its old path's slot, a new file goes after its path-order
+    # predecessor, a deleted file leaves.
+    with tempfile.TemporaryDirectory() as tmp:
+        def put(rel: str) -> None:
+            p = os.path.join(tmp, rel)
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            open(p, "w").close()
+
+        def listing(text: str) -> list[str]:
+            return [p.replace("\\", "/") for p in INCLUDE.findall(text)][1:]
+
+        for rel in ["code/a/one.dm", "code/b/two.dm", "code/c/three.dm", "code/d/four.dm"]:
+            put(rel)
+        pspec = "scan code\n"
+        t0 = generate(tmp, pspec)
+        with open(os.path.join(tmp, DME), "w") as fh:
+            fh.write(t0)
+        check(listing(t0) == ["code/a/one.dm", "code/b/two.dm", "code/c/three.dm", "code/d/four.dm"], f"seed order: {listing(t0)}")
+        put("code/z/two.dm")
+        os.remove(os.path.join(tmp, "code/b/two.dm"))
+        check(listing(generate(tmp, pspec, repin=True))[-1] == "code/z/two.dm", "repin sorts a moved file by its new path")
+        check(listing(generate(tmp, pspec))[-1] == "code/z/two.dm", "a move with no log entry is a new file at its path-order place")
+        os.makedirs(os.path.join(tmp, "tools/build"), exist_ok=True)
+        with open(os.path.join(tmp, MOVES), "w") as fh:
+            fh.write("code/b/two.dm\tcode/z/two.dm\n")
+        moved = listing(generate(tmp, pspec))
+        check(moved == ["code/a/one.dm", "code/z/two.dm", "code/c/three.dm", "code/d/four.dm"], f"a moved file keeps its old slot: {moved}")
+        put("code/d/zz.dm")
+        os.remove(os.path.join(tmp, "code/a/one.dm"))
+        mixed = listing(generate(tmp, pspec))
+        check(mixed == ["code/z/two.dm", "code/c/three.dm", "code/d/four.dm", "code/d/zz.dm"], f"new file after its path-order predecessor, deleted file gone: {mixed}")
+        # a merge: ours moved a file (keeps its slot); theirs added a file and removed one: both stay, slots held
+        base_text = t0
+        ours_text = generate(tmp, pspec)
+        theirs_text = t0.replace('#include "code\\d\\four.dm"\n', '#include "code\\d\\four.dm"\n#include "code\\e\\five.dm"\n')
+        put("code/e/five.dm")
+        merged = listing(merge(base_text, ours_text, theirs_text, tmp, pspec))
+        check(merged.index("code/z/two.dm") < merged.index("code/c/three.dm") and merged[-1] == "code/e/five.dm", f"merge keeps ours' slots and theirs' addition: {merged}")
     for f in failures:
         print(f"gen_dme selftest FAILED: {f}", file=sys.stderr)
     if not failures:

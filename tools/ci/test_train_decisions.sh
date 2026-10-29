@@ -44,7 +44,7 @@ r="$tmp/mb"; git init -q --bare "$r/origin.git"; git clone -q "$r/origin.git" "$
 	cd "$r/w" || exit 1
 	git config user.email t@t; git config user.name t
 	mkdir -p tools lanes
-	cp "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_dme_resolve.sh" tools/
+	cp "$here/tools/dq_merge_batch.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_dme_resolve.sh" "$here/tools/dq_stale_includes.sh" tools/
 	echo ': ; merge_lock_require() { return 0; }' >tools/dq_machine_slots.sh
 	cat >tools/dq_merge_gates.sh <<'STUB'
 #!/usr/bin/env bash
@@ -60,7 +60,7 @@ STUB
 	for l in g1 c1 c2 g2; do
 		git switch -q -c "$l" origin/master
 		mkdir -p lanes; case "$l" in c*) echo "$l" >shared.txt ;; *) echo "$l" >"lanes/$l.txt" ;; esac
-		if [ "$l" = g1 ]; then mkdir -p code/modules/unit_tests; echo x >code/modules/unit_tests/here.dm; printf '#include "here.dm"\n#include "gone.dm"\n' >code/modules/unit_tests/_unit_tests.dm; fi
+		if [ "$l" = g1 ]; then mkdir -p code/tests/unit_tests; echo x >code/tests/unit_tests/here.dm; printf '#include "here.dm"\n#include "gone.dm"\n' >code/tests/unit_tests/_unit_tests.dm; fi
 		git add -A; git commit -q -m "$l"; git push -q origin "$l"
 	done
 	git switch -q --detach origin/master
@@ -74,5 +74,126 @@ check "a lane-vs-lane conflict holds back only that lane; the clean lanes and th
 check "a merged include of a file that no longer exists is dropped and reported" 'grep -q "STALE INCLUDE dropped .*gone.dm" "$r/out.txt"'
 check "a 2-lane attempt with no test result defers both lanes and bisects nobody (03:04: move/effects-wave was blamed)" '! grep -q "^BATCH_BOUNCED: ." "$r/noresult.txt" && grep -q "^BATCH_DEFERRED: .*g1" "$r/noresult.txt" && grep -q "^BATCH_DEFERRED: .*g2" "$r/noresult.txt"'
 [ "$fail" -eq 0 ] || { echo "---- merge_batch output:"; tail -n 30 "$r/out.txt"; }
+
+# dq_light_checks.sh: a light lane merged onto an older master, checked against a newer origin/master, is judged by its own changes only
+# (28 October: tools/analyze-dreamchecker, docs only, was bounced for master's own .dm landings).
+lc="$tmp/lc"; git init -q --bare "$lc/origin.git"; git clone -q "$lc/origin.git" "$lc/w" 2>/dev/null
+(
+	cd "$lc/w" || exit 1
+	git config user.email t@t; git config user.name t
+	mkdir -p tools doc code; cp "$here/tools/dq_light_checks.sh" "$here/tools/dq_light_paths.sh" tools/
+	echo a >doc/a.md; echo x >code/x.dm; git add -A; git commit -q -m init; git branch -M master; git push -q origin master
+	git switch -q -c lane; echo b >doc/b.md; git add -A; git commit -q -m lane
+	git switch -q --detach origin/master; git merge -q --no-ff --no-edit lane      # the precheck's merge, on the old master
+	git switch -q -c newer origin/master; echo y >>code/x.dm; git add -A; git commit -q -m "master moves (heavy)"; git push -q origin HEAD:master
+	git switch -q --detach "HEAD@{2}" 2>/dev/null || git switch -q --detach "$(git rev-list -n1 --merges --all)"
+	git fetch -q origin
+	DQ_LIGHT_CARGO=0 bash tools/dq_light_checks.sh origin/master HEAD >"$lc/out.txt" 2>&1
+) >/dev/null 2>&1
+check "light checks count only the lane's changes when master moved since its merge" '! grep -q "heavy paths in a light batch" "$lc/out.txt" && grep -q "1 changed file" "$lc/out.txt"'
+
+# dc_disjoint (the batch keeps its lanes' DreamChecker verdicts): a seeded cross-lane diagnostic. Lane A removes a var, lane B's
+# other file reads it; each passed DreamChecker alone, together they fail. Disjoint files must not keep the verdicts: the batch runs
+# DreamChecker and so catches it. One DM lane plus a docs-only lane keeps them.
+dd="$tmp/dd"; git init -q --bare "$dd/origin.git"; git clone -q "$dd/origin.git" "$dd/w" 2>/dev/null
+(
+	cd "$dd/w" || exit 1
+	git config user.email t@t; git config user.name t
+	mkdir -p code doc
+	printf '/obj/thing\n\tvar/power = 1\n' >code/a.dm; printf '/obj/thing/proc/use()\n\treturn 0\n' >code/b.dm; echo d >doc/x.md
+	git add -A; git commit -q -m init; git branch -M master; git push -q origin master
+	git switch -q -c lane/a origin/master; printf '/obj/thing\n' >code/a.dm; git commit -qam "a: drop power"; git push -q origin lane/a
+	git switch -q -c lane/b origin/master; printf '/obj/thing/proc/use()\n\treturn power\n' >code/b.dm; git commit -qam "b: read power"; git push -q origin lane/b
+	git switch -q -c lane/d origin/master; echo e >>doc/x.md; git commit -qam "docs"; git push -q origin lane/d
+	git switch -q --detach origin/master
+) >/dev/null 2>&1
+dd_run() { # <lanes...>: prints "keep" or "run"
+	(
+		set +u
+		unset DQ_TRAIN_DC_DISJOINT
+		export DQ_TRAIN_STATE="$dd/state" DQ_TRAIN_WT="$dd/no-wt" DQ_TRAIN_ORIGIN_REPO="$dd/w" DQ_TRAIN_NO_START=1
+		cd "$dd/w" || exit 1
+		. "$here/tools/dq_train.sh" __lib
+		init_state
+		m="$(git rev-parse origin/master)"
+		for b in "$@"; do
+			t="$(git rev-parse "$b")"
+			printf 'seq=1\nbranch=%s\ntip=%s\ntests=\nlight=0\n' "$b" "$t" >"$(qfile "$b")"
+			printf 'branch=%s\ntip=%s\nmaster=%s\nverdict=pass\n' "$b" "$t" "$m" >"$PRE/v/$(pre_key "$b" "$t")@${m:0:12}"
+			printf 'branch=%s\ntip=%s\nmaster=%s\nverdict=pass\n' "$b" "$t" "$m" >"$PRE/dc/v/$(pre_key "$b" "$t")@${m:0:12}"
+		done
+		if dc_disjoint "$@"; then echo keep; else echo "run ($DC_DISJOINT_WHY_NOT)"; fi
+	) 2>/dev/null
+}
+dd_ab="$(dd_run lane/a lane/b)"; dd_ad="$(dd_run lane/a lane/d)"
+check "a seeded cross-lane DreamChecker break (disjoint files) makes the batch run DreamChecker" '[ "$dd_ab" = "run (two lanes change DreamChecker inputs)" ]'
+check "one DM lane plus a docs-only lane keeps the precheck DreamChecker verdict" '[ "$dd_ad" = keep ]'
+
+# lint_scopes.toml merge driver: adjacent lowered ceilings merge (the lower wins on the same key); a real disagreement still conflicts.
+ls_d="$tmp/lsd"; mkdir -p "$ls_d"
+printf '[lint.check_grep.ceilings]\nalpha = 10\nbeta = 20\ngamma = 30\n' >"$ls_d/O"
+printf '[lint.check_grep.ceilings]\nalpha = 9\nbeta = 18\ngamma = 30\n' >"$ls_d/A"
+printf '[lint.check_grep.ceilings]\nalpha = 10\nbeta = 17\ngamma = 25\n' >"$ls_d/B"
+(cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O" "$ls_d/A" "$ls_d/B" lint_scopes.toml) >/dev/null 2>&1; ls_rc=$?
+check "lint_scopes driver: adjacent and same-key lowered ceilings merge to the lower values" '[ "$ls_rc" = 0 ] && [ "$(cat "$ls_d/A")" = "$(printf "[lint.check_grep.ceilings]\nalpha = 9\nbeta = 17\ngamma = 25")" ]'
+# the 09:52 case: adjacent ceilings lowered on each side, and theirs also adds a line elsewhere (line counts differ)
+printf 'a = 1\nimproper = 2\nbump = 17\ntransform = 46\ndata = 42\n\n[l]\n# c1\nx = 1\n' >"$ls_d/O3"
+printf 'a = 1\nimproper = 2\nbump = 2\ntransform = 46\ndata = 42\n\n[l]\n# c1\nx = 1\n' >"$ls_d/A3"
+printf 'a = 1\nimproper = 2\nbump = 17\ntransform = 37\ndata = 42\n\n[l]\n# c1\n# c2 added\nx = 1\n' >"$ls_d/B3"
+(cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O3" "$ls_d/A3" "$ls_d/B3" lint_scopes.toml) >/dev/null 2>&1; ls_rc3=$?
+check "lint_scopes driver: adjacent lowered ceilings merge although the other side added a line elsewhere (gr/bumped-notices 09:52)" '[ "$ls_rc3" = 0 ] && grep -qx "bump = 2" "$ls_d/A3" && grep -qx "transform = 37" "$ls_d/A3" && grep -qx "# c2 added" "$ls_d/A3" && ! grep -q "<<<<" "$ls_d/A3"'
+# the 12:00 case: theirs MOVED a ceiling out of the block (the block's sides differ in length); ours lowered a neighbour
+printf 'bump = 17\ntails = 46\nprocs = 42\nhit = 0\n\n# end\n' >"$ls_d/O4"
+printf 'bump = 2\ntails = 46\nprocs = 42\nhit = 0\n\n# end\n' >"$ls_d/A4"
+printf 'bump = 17\ntails = 37\nhit = 0\n\n# end\nprocs = 0\n' >"$ls_d/B4"
+(cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O4" "$ls_d/A4" "$ls_d/B4" lint_scopes.toml) >/dev/null 2>&1; ls_rc4=$?
+check "lint_scopes driver: a ceiling block whose sides differ in length (a key moved) merges by key (gr/bumped-notices 12:00)" '[ "$ls_rc4" = 0 ] && [ "$(grep -c "^procs" "$ls_d/A4")" = 1 ] && grep -qx "procs = 0" "$ls_d/A4" && grep -qx "bump = 2" "$ls_d/A4" && grep -qx "tails = 37" "$ls_d/A4"'
+printf '[x]\nname = "one"\n' >"$ls_d/O2"; printf '[x]\nname = "two"\n' >"$ls_d/A2"; printf '[x]\nname = "three"\n' >"$ls_d/B2"
+(cd "$here" && bash tools/ci/lint_scopes_merge_driver.sh "$ls_d/O2" "$ls_d/A2" "$ls_d/B2" lint_scopes.toml) >/dev/null 2>&1; ls_rc2=$?
+check "lint_scopes driver: a text disagreement is still a conflict" '[ "$ls_rc2" != 0 ] && grep -q "<<<<<<<" "$ls_d/A2"'
+
+# dq_drop_stale_includes (dq_merge_master.sh and the batch merge): includes of files that no longer exist are dropped, staged and reported,
+# in _unit_tests.dm (relative to its folder) and in deepquarry.dme (root-relative, backslashes); the includes that exist stay.
+si="$tmp/si"; mkdir -p "$si"; (
+	cd "$si" && git init -q && git config user.email t@t && git config user.name t
+	mkdir -p code/modules/unit_tests code/game; echo x >code/modules/unit_tests/here.dm; echo y >code/game/kept.dm
+	printf '#include "here.dm"\n#include "moved_away.dm"\n' >code/modules/unit_tests/_unit_tests.dm
+	printf '#include "code\\game\\kept.dm"\n#include "code\\modules\\unit_tests\\gone.dm"\n' >deepquarry.dme
+	git add -A; git commit -q -m init
+	. "$here/tools/dq_stale_includes.sh"
+	dq_drop_stale_includes code/modules/unit_tests/_unit_tests.dm code/modules/unit_tests test
+	dq_drop_stale_includes deepquarry.dme . test
+) >"$si.out" 2>&1
+check "stale includes are dropped and reported in _unit_tests.dm and deepquarry.dme; existing ones stay" 'grep -q "moved_away.dm" "$si.out" && grep -q "gone.dm" "$si.out" && ! grep -q moved_away "$si/code/modules/unit_tests/_unit_tests.dm" && grep -q "here.dm" "$si/code/modules/unit_tests/_unit_tests.dm" && grep -q "kept.dm" "$si/deepquarry.dme" && ! grep -q "gone.dm" "$si/deepquarry.dme" && [ -n "$(git -C "$si" diff --cached --name-only)" ]'
+check "dq_merge_master.sh drops stale includes during a merge" 'grep -q "code/tests/unit_tests/_unit_tests.dm" "$here/tools/dq_merge_master.sh" && grep -q "dq_drop_stale_includes" "$here/tools/dq_merge_master.sh"'
+
+# gates: an sccache server drop is infra (retried without sccache, then exit 95); a real compile error is not
+eval "$(sed -n '/^gate_sccache_failure() {/p' "$here/tools/dq_merge_gates.sh")"
+printf 'error: failed to compile vg-ffi\nsccache: error reading compile response from server\nCaused by: An existing connection was forcibly closed by the remote host. (os error 10054)\n' >"$tmp/sc1.log"
+printf 'error[E0425]: cannot find value `x` in this scope\n  --> src/lib.rs:3:5\nwarning: build used sccache at C:/sccache\n' >"$tmp/sc2.log"
+check "an sccache connection failure is classified as infra" 'gate_sccache_failure "$tmp/sc1.log"'
+check "a real Rust compile error is not classified as sccache infra" '! gate_sccache_failure "$tmp/sc2.log"'
+check "the gate retries without sccache and exits 95 on a second sccache failure" 'grep -q "RUSTC_WRAPPER= SCCACHE_DISABLE=1" "$here/tools/dq_merge_gates.sh" && grep -q "failed on sccache twice" "$here/tools/dq_merge_gates.sh"'
+
+# light checks: the verdigris crates test for the 32-bit target BYOND loads (byondapi-sys refuses the 64-bit host); other crates use the host
+lc_v="$(bash "$here/tools/dq_light_checks.sh" --target-args verdigris/ffi/Cargo.toml)"; lc_t="$(bash "$here/tools/dq_light_checks.sh" --target-args tools/dmb/crates/dmbc/Cargo.toml)"
+check "light checks test the verdigris crates for i686 and other crates for the host" '{ [ "$lc_v" = "--target i686-pc-windows-msvc" ] || ! uname -s | grep -qE "MINGW|MSYS|CYGWIN"; } && [ -z "$lc_t" ]'
+
+# light checks: a changed crate's workspace dependents run their tests too (28 October: a dm-link change shipped a dmbc bug)
+rd="$tmp/rd"; mkdir -p "$rd/ws/crates/base/src" "$rd/ws/crates/user/src" "$rd/ws/crates/other/src"
+printf '[workspace]\nmembers = ["crates/*"]\nresolver = "2"\n' >"$rd/ws/Cargo.toml"
+printf '[package]\nname = "base"\nversion = "0.1.0"\nedition = "2021"\n' >"$rd/ws/crates/base/Cargo.toml"
+printf '[package]\nname = "user"\nversion = "0.1.0"\nedition = "2021"\n[dependencies]\nbase = { path = "../base" }\n' >"$rd/ws/crates/user/Cargo.toml"
+printf '[package]\nname = "other"\nversion = "0.1.0"\nedition = "2021"\n' >"$rd/ws/crates/other/Cargo.toml"
+for c in base user other; do echo "" >"$rd/ws/crates/$c/src/lib.rs"; done
+rd_out="$(cd "$rd" && python3 "$here/tools/light_cargo_rdeps.py" ws/crates/base/Cargo.toml)"
+check "a changed crate's workspace dependents are added to the light cargo tests (and unrelated crates are not)" '[ "$rd_out" = "ws/crates/user/Cargo.toml" ] && grep -q "light_cargo_rdeps.py" "$here/tools/dq_light_checks.sh"'
+
+# self-update hashing must not depend on the cwd: a process started from a lane checkout that was later released (broken gitdir) hashed
+# every snapshot file as "" and re-exec'd every ~85 s for 11 hours (28-29 October). fhash runs from $STATE.
+fh_d="$tmp/fh"; mkdir -p "$fh_d/state" "$fh_d/badcwd"; printf 'gitdir: %s/missing\n' "$fh_d" >"$fh_d/badcwd/.git"; printf 'x\n' >"$fh_d/f"
+fh_want="$(git hash-object --no-filters "$fh_d/f")"
+fh_got="$( cd "$fh_d/badcwd" && DQ_TRAIN_STATE="$fh_d/state" DQ_TRAIN_NO_START=1 bash -c '. "$1" __lib; fhash "$2"' _ "$here/tools/dq_train.sh" "$fh_d/f" 2>/dev/null )"
+check "the self-update file hash works from a working directory with a broken gitdir" '[ -n "$fh_want" ] && [ "$fh_got" = "$fh_want" ]'
 
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }

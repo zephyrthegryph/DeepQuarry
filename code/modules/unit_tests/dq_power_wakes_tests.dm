@@ -59,18 +59,18 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 	refresh_flush()
 	TEST_ASSERT(probe.rx?.look_key != looks[probe], "the probe redrew dark")
 	TEST_ASSERT(alarm.rx?.look_key != looks[alarm], "the air alarm redrew dark")
-	var/parks_before = GLOB.every_activation_parks
+	var/parks_before = GLOB.every_activation_parks.n
 	test_time(2 SECONDS) // the probe's next interval comes due once, finds its gate false and parks
 	var/datum/activation/work = dq_power_wake_activation(probe)
 	TEST_ASSERT(length(work?.every_parked), "the probe's gated work parked behind its false gate")
-	TEST_ASSERT(GLOB.every_activation_parks > parks_before, "the park was counted")
+	TEST_ASSERT(GLOB.every_activation_parks.n > parks_before, "the park was counted")
 	var/steps_unpowered = probe.steps
-	var/parks_unpowered = GLOB.every_activation_parks
-	var/runs_unpowered = GLOB.every_activation_runs
+	var/parks_unpowered = GLOB.every_activation_parks.n
+	var/runs_unpowered = GLOB.every_activation_runs.n
 	test_time(20 SECONDS)
 	TEST_ASSERT_EQUAL(probe.steps, steps_unpowered, "no step while unpowered")
-	TEST_ASSERT_EQUAL(GLOB.every_activation_parks, parks_unpowered, "a parked every() holds no timer: it is not re-checked while unpowered")
-	TEST_NOTICE(src, "activation every() runs on the whole map over 20 unpowered seconds: [GLOB.every_activation_runs - runs_unpowered]")
+	TEST_ASSERT_EQUAL(GLOB.every_activation_parks.n, parks_unpowered, "a parked every() holds no timer: it is not re-checked while unpowered")
+	TEST_NOTICE(src, "activation every() runs on the whole map over 20 unpowered seconds: [GLOB.every_activation_runs.n - runs_unpowered]")
 
 	// Restore: the reverse, and the parked work wakes by itself.
 	A.set_channels(TRUE, TRUE, TRUE)
@@ -90,6 +90,10 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 
 /// The APC is not polled: Rust's ApcTick reports a channel change (a manual override written straight into Rust here), the frame's outbox
 /// delivers it, the area's channel follows and the machine on it flips. A settled APC is reported nothing.
+/// Steps an APC under its charge ceiling must see surplus before its charging lamp comes on (the chargecount threshold in laws.rs), and how many steps the test gives the lamp to settle.
+#define APC_CHARGE_START_STEPS 10
+#define APC_CHARGE_SETTLE_STEPS 60
+
 /datum/unit_test/dq_power_wakes_apc_report
 
 /datum/unit_test/dq_power_wakes_apc_report/Run()
@@ -105,13 +109,27 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 	TEST_ASSERT(apc.area.power_environ, "the APC powers its area's environment channel: [dq_power_door_state(door)]; rust channels [apc.get_channels(0)]/[apc.get_channels(1)]/[apc.get_channels(2)] reported [apc.get_reported()] heard [apc.power_event_count]")
 	TEST_ASSERT(!door.power_lost(), "the airlock has power")
 
-	// Settled: Rust reports nothing, whatever steps run.
+	// Settled: Rust reports nothing, whatever steps run. An APC under its charge ceiling starts charging only after APC_CHARGE_START_STEPS steps of surplus (its
+	// chargecount, verdigris/domains/power/src/laws.rs), so where in that count the world happens to be when this test begins moves with how many steps ran
+	// before it (the boot, the tests ahead): step until the lamp has held for longer than the count, then the quiet is the APC's, not luck.
+	var/held = 0
+	var/last_charging = apc.charging
+	for(var/i in 1 to APC_CHARGE_SETTLE_STEPS)
+		dq_power_test_step()
+		held = (apc.charging == last_charging) ? held + 1 : 0
+		last_charging = apc.charging
+		if(held > APC_CHARGE_START_STEPS)
+			break
+	test_drain()
+	TEST_ASSERT(held > APC_CHARGE_START_STEPS, "the APC's charging lamp settled within [APC_CHARGE_SETTLE_STEPS] steps (held [held], lamp [apc.charging])")
 	var/heard = apc.power_event_count
 	var/charge = apc.get_charge()
+	var/charging_before = apc.charging
+	var/status_before = apc.main_status
 	for(var/i in 1 to 5)
 		dq_power_test_step()
 	if(round(apc.get_charge() * 100 / max(apc.cell.maxcharge, 1)) == round(charge * 100 / max(apc.cell.maxcharge, 1)))
-		TEST_ASSERT_EQUAL(apc.power_event_count, heard, "a settled APC is reported nothing")
+		TEST_ASSERT_EQUAL(apc.power_event_count, heard, "a settled APC is reported nothing (charge [charge] -> [apc.get_charge()] of [apc.cell.maxcharge], charging [charging_before] -> [apc.charging], external status [status_before] -> [apc.main_status], channels [apc.equipment]/[apc.lighting]/[apc.environ], alarm [apc.power_alarm_raised])")
 
 	// Rust turns the environment channel off: the report brings it to DM and the airlock goes dark.
 	native_write(apc, NATIVE_APC_CHANNELS, POWERCHAN_OFF, POWER_CHANNEL_ENVIRON)

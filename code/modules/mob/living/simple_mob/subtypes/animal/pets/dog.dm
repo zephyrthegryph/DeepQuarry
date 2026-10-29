@@ -22,9 +22,9 @@
 
 	var/obj/item/inventory_head
 	var/obj/item/inventory_back
-	species_sounds = "Canine"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
+	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(say_list_type = /datum/say_list/dog))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/corgi, meat_amount = 3))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))

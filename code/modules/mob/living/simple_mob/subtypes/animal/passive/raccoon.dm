@@ -28,9 +28,9 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 	center_offset = 0
 
-	species_sounds = "Raccoon"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/raccoon)
+	configure(living_rules(species_sounds = "Raccoon"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/raccoon))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 1))
 	configure(mob_nature(pain_1p = list("chitter"), pain_3p = list("chitters")))

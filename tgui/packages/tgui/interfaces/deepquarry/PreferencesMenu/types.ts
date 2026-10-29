@@ -13,6 +13,7 @@ export type PrefWidgetKind =
   | 'radio'
   | 'thumbgrid'
   | 'multi'
+  | 'palette'
   | 'editor'
   | 'hidden';
 
@@ -59,13 +60,18 @@ export type CharacterPreviewAssets = {
 export type CharacterSetupData = {
   dq_categories?: PrefCategory[];
   dq_category_index?: string[];
+  /// Rarely-changed categories the tab strip folds under one "More" tab (GLOB.dq_more_categories).
+  dq_more_categories?: string[];
   dq_category_patch?: Record<string, PrefCategory>;
   dq_active_category?: string;
   dq_cache_key?: string;
   dq_structure_version?: number;
   dq_values?: Record<string, unknown>;
   dq_editor_data?: Record<string, Record<string, unknown>>;
-  dq_editor_versions?: Record<string, number>;
+  /// A shared catalog is versioned by its cache key (string), a per-player one by a counter.
+  dq_editor_versions?: Record<string, number | string>;
+  /// Bumped server-side when the preview changes; the frames ship only when this window's copy is older.
+  character_preview_version?: number;
   dq_editor_static_patch?: Record<string, Record<string, unknown>>;
   dq_editor_static?: Record<string, Record<string, unknown>>;
   /// Server-rendered base64 PNGs of the mannequin (one per cardinal

@@ -122,7 +122,6 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	abstract_type = /datum/unit_test/dq_body_heat
 
 /datum/unit_test/dq_body_heat/Run()
-	restore_ambient_after() // the frames below advance world time: the cryogenic rooms warm and the map thermostats act, whatever this test does
 	test_driver_begin()
 	test_rng(1)
 	run_body_heat()

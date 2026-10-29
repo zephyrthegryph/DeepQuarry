@@ -79,11 +79,13 @@ struct Clock {
     /// The next frame steps the world once, whatever the pacer owes ([`frame_force_devices`]).
     force_step: bool,
     frames: u64,
+    /// World steps run by hand ([`note_steps`], `vg_world_run_steps`): time the native world passed outside the frame.
+    steps: u64,
 }
 
 thread_local! {
     static CLOCK: RefCell<Clock> = const {
-        RefCell::new(Clock { tick_seconds: 0.05, now: 0, force_step: false, frames: 0 })
+        RefCell::new(Clock { tick_seconds: 0.05, now: 0, force_step: false, frames: 0, steps: 0 })
     };
 }
 
@@ -104,6 +106,19 @@ fn frame_set_tick_lag(tick_lag: ByondValue) -> Result<ByondValue> {
 fn frame_count() -> Result<ByondValue> {
     #[allow(clippy::cast_precision_loss)]
     Ok(ByondValue::from(CLOCK.with_borrow(|c| c.frames) as f32))
+}
+
+/// Counts `n` world steps run outside the frame (tests and admin tools step the world directly): `vg_world_steps_run()` reads the total, so a harness can tell that
+/// native world time passed even though no frame ran.
+pub(crate) fn note_steps(n: u64) {
+    CLOCK.with_borrow_mut(|c| c.steps += n);
+}
+
+/// The world steps run by hand since boot (tests: whether native world time passed during one).
+#[auxmacros::bind("/proc/world_steps_run")]
+fn world_steps_run() -> Result<ByondValue> {
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(CLOCK.with_borrow(|c| c.steps) as f32))
 }
 
 /// Test hook: makes the next frame step the world once, so the pipe devices' law

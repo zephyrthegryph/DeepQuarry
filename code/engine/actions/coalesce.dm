@@ -30,7 +30,7 @@
 
 /// How many coalesce windows opened, and how many triggers one absorbed (what a test and the trace read).
 GLOBAL_VAR_INIT(coalesce_windows, 0)
-GLOBAL_VAR_INIT(coalesce_absorbed, 0)
+GLOBAL_COUNTER(coalesce_absorbed)
 GLOBAL_VAR_INIT(coalesce_runs, 0)
 
 /// Set to TRUE (VV, or a test) to log mode changes, coalesce windows and standing cache invalidations with log_world().
@@ -50,7 +50,7 @@ GLOBAL_VAR_INIT(forms_trace, FALSE)
 	if(!holder || QDELETED(holder) || H.detached)
 		return
 	if(coalesce_pending(holder, H))
-		GLOB.coalesce_absorbed++
+		GLOB.coalesce_absorbed.n++
 		if(part.args["leading"])
 			LAZYSET(rx_of(holder).coalesce_held, "[H.serial]", TRUE)
 		forms_trace("coalesce", "trigger on [holder.type] absorbed by the open window of hook [H.serial]")

@@ -6,8 +6,7 @@
 
 CAPABILITIES(/mob/living/carbon/human)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(human_blast))))
-	configure(living_rules(vore_capacity_ex = list("stomach" = 3, "taur belly" = 3), vore_capacity = 3, has_huds = TRUE, vore_shred_time = 10 SECONDS))
-	configure(butchery_rules(butchery_loot = list(/obj/item/stack/animalhide/human = 1)))
+	configure(living_rules(vore_icon_bellies = list("stomach", "taur belly"), vore_capacity_ex = list("stomach" = 3, "taur belly" = 3), vore_capacity = 3, has_huds = TRUE, vore_shred_time = 10 SECONDS))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	setup(PROC_REF(finish_human_init))
 	links(LINK_END(/mob/living/carbon/human, LK_WEARING_RIG), LINK_END(/obj/item/rig, LK_RIG_WEARER), sparse = TRUE) // the rig a human wears and the human in it (wearing_rig() / wearer())
@@ -119,7 +118,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
-	configure(living_rules(vore_capacity_ex = list(), fire_reaction = FIRE_REACTION_IGNITE))
+	configure(living_rules(vore_icon_bellies = list(), vore_capacity_ex = list(), fire_reaction = FIRE_REACTION_IGNITE))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE, does_spin = FALSE))
 	rolls(nameof(ident), range_of(1, 999))
 	// Its build steps, in the order each reads the one before (robot.dm "Lifecycle"): the name from the number first, the cell and parts last, its verbs and HUD after them.

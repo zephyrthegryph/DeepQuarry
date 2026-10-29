@@ -199,7 +199,7 @@ GLOBAL_VAR(restart_counter)
 #endif
 
 	GLOB.world_startup_time = world.timeofday
-	GLOB.rollover_safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
+	wall_clock().safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
 
 	var/savefile/F = new(NEWSFILE)
 	if(F)

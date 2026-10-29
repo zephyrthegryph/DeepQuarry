@@ -62,7 +62,6 @@
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to gulp down"
 	vore_fullness_ex = list("stomach" = 0, "throat" = 0)
-	vore_icon_bellies = list("stomach", "throat")
 
 /mob/living/simple_mob/vore/gryphon/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/gryphon/beak(src)
@@ -130,7 +129,7 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
-	configure(living_rules(vore_capacity_ex = list("stomach" = 1, "throat" = 1), vore_capacity = 2, say_list_type = /datum/say_list/gryphon))
+	configure(living_rules(vore_icon_bellies = list("stomach", "throat"), vore_capacity_ex = list("stomach" = 1, "throat" = 1), vore_capacity = 2, say_list_type = /datum/say_list/gryphon))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	ref_one(nameof(dq_maybe_eating), /mob/living)
