@@ -7,6 +7,10 @@
 /// Called from the lifecycle's init step for a type whose table has any (own_table.engine_init).
 /proc/engine_holder_init(datum/holder, mapload)
 	var/datum/type_table/T = table_of(holder)
+	var/datum/init_plan/P = GLOB.init_plan_off ? null : init_plan_of(holder, T)
+	if(P)
+		engine_holder_init_planned(holder, mapload, T, P)
+		return
 	if(T.hook_flags & ENGINE_HOOK_SLOT_STARTS)
 		slot_starts_init(holder, T) // starting contents first: on_holder_init sees them
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
@@ -36,10 +40,41 @@
 	var/datum/type_table/T = table_of(holder)
 	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		lifeform_preinit(holder, mapload) // params, per_type tables, rolls: before the parent's init code reads them
+	var/datum/init_plan/P = GLOB?.init_plan_off ? null : init_plan_of(holder, T)
+	if(P)
+		for(var/datum/capability/def as anything in P.preinit_caps)
+			def.run_holder_hook(holder, mapload, HOLDER_HOOK_PREINIT)
+		return
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
 		var/datum/capability/def = C.item
 		if(def.holder_hooks & HOLDER_HOOK_PREINIT)
 			def.run_holder_hook(holder, mapload, HOLDER_HOOK_PREINIT)
+
+/// engine_holder_init() replayed from the type's compiled plan (init_plan.dm): the same steps in the same order, nothing discovered per instance.
+/proc/engine_holder_init_planned(datum/holder, mapload, datum/type_table/T, datum/init_plan/P)
+	var/flags = P.hook_flags
+	if(flags & ENGINE_HOOK_SLOT_STARTS)
+		slot_starts_init(holder, T)
+	for(var/datum/capability/def as anything in P.init_caps)
+		def.run_holder_hook(holder, mapload, HOLDER_HOOK_INIT)
+	for(var/var_name in P.rel_grant_vars)
+		activations_relation_changed(holder, var_name, TRUE)
+	if(flags & ENGINE_HOOK_STATS)
+		stat_holder_init(holder, mapload)
+	if(flags & ENGINE_HOOK_MODES)
+		modes_init(holder, T)
+	if(P.change_baseline)
+		hooks_change_baseline(holder)
+	if(flags & ENGINE_HOOK_COND_SCOPED)
+		activations_cond_init(holder, T)
+	if(P.every_arm)
+		type_every_arm(holder, T)
+	if(flags & ENGINE_HOOK_LIFEFORMS)
+		lifeform_init(holder, mapload)
+	if((flags & ENGINE_HOOK_AFTER_INIT) && isatom(holder))
+		after_init_note(holder, mapload)
+	if(P.verb_entries)
+		verb_entries_init(holder)
 
 /// The destroy transaction: on_holder_destroy of each capability, then every activation ends (activations_teardown).
 /proc/engine_holder_destroy(datum/holder)

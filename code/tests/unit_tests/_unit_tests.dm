@@ -207,6 +207,7 @@
 #include "../../modules/unit_tests/dq_idle_cost_tests.dm"
 #include "../../modules/unit_tests/dq_idle_cost2_tests.dm"
 #include "../../modules/unit_tests/dq_global_guard_tests.dm"
+#include "../../modules/unit_tests/dq_init_plan_tests.dm"
 #include "../../modules/unit_tests/dq_stat_hop_tests.dm"
 #include "../../modules/unit_tests/dq_init_sweep_6_tests.dm"
 #include "../../modules/unit_tests/dq_init_wave_4_tests.dm"
