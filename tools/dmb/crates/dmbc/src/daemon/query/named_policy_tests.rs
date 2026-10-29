@@ -113,6 +113,7 @@ fn semantic_checker_admission_and_partial_reply_metadata_are_exact() {
         "undefined_variable",
         "field_access_static_type",
         "no_typehint_implicit_new",
+        "proc_call_static_type",
     ] {
         let environment = root().join("p.dme");
         let question = SourceQuery::NativeConfiguredChecker {

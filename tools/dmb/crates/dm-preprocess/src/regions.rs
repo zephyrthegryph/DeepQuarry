@@ -85,7 +85,28 @@ impl IncludeReturnCursor {
         self.directive_anchor_line
     }
 }
+/// Completed logical reader EOF, not a physical source byte point.
+#[derive(Clone, Copy, Debug)]
+pub struct LogicalEofCursor {
+    line: usize,
+    encounter: usize,
+}
+impl LogicalEofCursor {
+    pub fn line(self) -> usize {
+        self.line
+    }
+    pub fn encounter(self) -> usize {
+        self.encounter
+    }
+}
 impl IncludeOccurrence {
+    pub fn logical_eof_cursor(&self) -> Option<LogicalEofCursor> {
+        Some(LogicalEofCursor {
+            line: self.eof_cursor_line?,
+            encounter: self.eof_cursor_encounter?,
+        })
+    }
+
     pub fn return_cursor(&self) -> Option<IncludeReturnCursor> {
         self.return_cursor
     }

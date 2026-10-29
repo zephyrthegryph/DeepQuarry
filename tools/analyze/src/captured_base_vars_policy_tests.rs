@@ -1,10 +1,41 @@
 use super::*;
 use dm_analysis::policy_inputs::{HostCapture, PolicyRole};
 use std::{collections::BTreeSet, path::PathBuf, sync::Arc};
-struct Source(&'static str);
+struct Source(
+    &'static str,
+    std::cell::RefCell<std::collections::BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,
+);
+impl Source {
+    fn new(text: &'static str) -> Self {
+        Self(text, Default::default())
+    }
+}
 impl dm_preprocess::SourceProvider for Source {
     fn read(&self, _: &Path) -> Result<String, String> {
-        Ok(self.0.into())
+        Err("actual primary bytes required".into())
+    }
+    fn acquired_source(
+        &self,
+        path: &Path,
+    ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+        if !self.1.borrow().contains_key(path) {
+            self.1.borrow_mut().insert(
+                path.into(),
+                dm_preprocess::AcquiredSource::from_original_bytes(self.0.as_bytes().to_vec(), ()),
+            );
+        }
+        Ok(self.1.borrow().get(path).cloned())
+    }
+    fn source_acquisition(
+        &self,
+        path: &Path,
+        text: &dm_preprocess::SourceText,
+    ) -> Option<dm_preprocess::AcquiredSource> {
+        self.1
+            .borrow()
+            .get(path)
+            .filter(|source| source.lease().source_text().same_view(text))
+            .cloned()
     }
 }
 fn fixture() -> (PathBuf, PolicyInputs) {
@@ -12,11 +43,20 @@ fn fixture() -> (PathBuf, PolicyInputs) {
         .unwrap()
         .join("base-vars-composition-unit");
     let source="/atom\n    var/plain\n    var/list/items = list()\n    var/kept // ALLOW(base_vars): fixture keeps this base field deliberately for its owner\n    var/list/list_kept = list() // ALLOW(instance_list): fixture keeps this list allocation deliberately for its owner\n/datum/record/probe/proc/business()\n    return\n/datum/record/probe/proc/set_value()\n    return\n";
-    let frontend = dm_tree::frontend::build(
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let frontend = dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
         &root.join("code/probe.dm"),
-        &Source(source),
+        &Source::new(source),
         &Default::default(),
-        1,
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+        None,
+        &executor,
+        None,
+        true,
     )
     .unwrap();
     let extra = frontend
@@ -94,7 +134,7 @@ fn missing_analyze_raw_is_an_error_before_any_findings() {
         .join("base-vars-no-raw-unit");
     let frontend = dm_tree::frontend::build(
         &root.join("code/probe.dm"),
-        &Source("/atom\n    var/one\n"),
+        &Source::new("/atom\n    var/one\n"),
         &Default::default(),
         1,
     )
@@ -126,4 +166,195 @@ fn cancellation_after_candidate_work_does_not_issue_partial_results() {
     });
     assert_eq!(result.err().as_deref(), Some("after candidates"));
     assert!(crate::dm::sys::take_recorded().is_empty());
+}
+
+#[test]
+fn include_eof_policy_cursor_does_not_rewrite_base_var_provenance_or_create_a_code_site() {
+    struct Files {
+        source: String,
+        acquired:
+            std::cell::RefCell<std::collections::BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,
+    }
+    impl dm_preprocess::SourceProvider for Files {
+        fn acquired_source(
+            &self,
+            path: &Path,
+        ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+            if !self.acquired.borrow().contains_key(path) {
+                let original = self.read(path)?;
+                self.acquired.borrow_mut().insert(
+                    path.into(),
+                    dm_preprocess::AcquiredSource::from_original_bytes(original.into_bytes(), ()),
+                );
+            }
+            Ok(self.acquired.borrow().get(path).cloned())
+        }
+        fn source_acquisition(
+            &self,
+            path: &Path,
+            text: &dm_preprocess::SourceText,
+        ) -> Option<dm_preprocess::AcquiredSource> {
+            self.acquired
+                .borrow()
+                .get(path)
+                .filter(|source| source.lease().source_text().same_view(text))
+                .cloned()
+        }
+        fn read(&self, path: &Path) -> Result<String, String> {
+            Ok(if path.extension().is_some_and(|e| e == "dme") {
+                "#include \"code/probe.dm\"\n".into()
+            } else {
+                self.source.clone()
+            })
+        }
+    }
+    let root = std::env::current_dir()
+        .unwrap()
+        .join("base-var-eof-policy-unit");
+    for source in [
+        "/atom\n    var/eof_value",
+        "/atom\n    var/eof_value[3]",
+        "#define FINAL var/eof_value\n/atom\n    FINAL\n",
+    ] {
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let frontend = dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
+            &root.join("deepquarry.dme"),
+            &Files {
+                source: source.into(),
+                acquired: Default::default(),
+            },
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: None,
+                observer: None,
+            },
+            None,
+            &executor,
+            None,
+            true,
+        )
+        .unwrap();
+        for capture_manifest in [false, true] {
+            let extra = frontend
+                .files
+                .iter()
+                .filter(|f| {
+                    f.captured
+                        && (capture_manifest || !f.path.extension().is_some_and(|e| e == "dme"))
+                })
+                .map(|f| {
+                    HostCapture::analyze_raw(
+                        Arc::clone(&f.path),
+                        PolicyRole::DmSource,
+                        f.text.clone(),
+                    )
+                })
+                .collect::<Vec<_>>();
+            let inputs = PolicyInputs::capture(&frontend, extra).unwrap();
+            // Match the real host's RAW_FILE owner assembly: only files
+            // explicitly captured as raw enter the shared roster. In the
+            // targetless branch the compiled DME has no fabricated raw view.
+            if !capture_manifest {
+                assert!(
+                    CapturedRawPolicy::capture(&root, &inputs, Configuration::ProvenMissing)
+                        .is_err(),
+                    "standalone all-source capture must remain strict"
+                );
+            }
+            let shared = inputs
+                .files()
+                .filter(|file| {
+                    file.role() == PolicyRole::DmSource
+                        && (capture_manifest
+                            || file.path().as_path() != root.join("deepquarry.dme").as_path())
+                })
+                .map(|file| {
+                    Arc::new(
+                        crate::captured_raw_file::File::capture(
+                            &root,
+                            file.path(),
+                            file.view(dm_analysis::policy_inputs::TextView::AnalyzeRaw)
+                                .unwrap()
+                                .clone(),
+                        )
+                        .unwrap(),
+                    )
+                })
+                .collect::<Vec<_>>();
+            let make_raw = |configuration| {
+                let config = crate::captured_raw_file::Config::capture(configuration).unwrap();
+                CapturedRawPolicy::from_shared_files(&root, &inputs, &config, &shared)
+            };
+            if !capture_manifest {
+                let error = make_raw(Configuration::ProvenMissing)
+                    .err()
+                    .expect("an incomplete shared roster must not issue a raw owner");
+                assert!(error.contains("shared source roster is incomplete"));
+                continue;
+            }
+            let raw = make_raw(Configuration::ProvenMissing).unwrap();
+            let facts =
+                crate::captured_base_var_hot_policy::NativeBaseVarFacts::capture(&raw, &inputs)
+                    .unwrap();
+            let rows = facts
+                .declarations(crate::base_var_hot_policy::BASE_TYPES)
+                .unwrap();
+            assert_eq!(rows.len(), 1);
+            assert!(
+                rows[0].native.source.path.ends_with("code/probe.dm"),
+                "native source must remain original"
+            );
+            assert_eq!(
+                (rows[0].relative.as_ref(), rows[0].line),
+                ("deepquarry.dme", 2)
+            );
+            assert_eq!(
+                rows[0].name, "eof_value",
+                "the hot-home declared set must retain the row"
+            );
+            let result = BorrowedBaseVarsPolicy::capture(&raw, &inputs)
+                .unwrap()
+                .scan(|| Ok(()))
+                .unwrap();
+            assert!(
+                result.run.sites.is_empty(),
+                "original code-file selection omits a DME cursor"
+            );
+            assert!(result.allow_used.is_empty());
+            let hot=b"[lint.base_vars.tables.base_var_home_hot]\n'/atom/eof_value'='code/reader.dm /atom/proc/read reads this field on every frame'\n";
+            let raw_hot = make_raw(Configuration::Captured(hot)).unwrap();
+            let with_hot = BorrowedBaseVarsPolicy::capture(&raw_hot, &inputs)
+                .unwrap()
+                .scan(|| Ok(()))
+                .unwrap();
+            assert!(with_hot.run.sites.is_empty(),"the original typed_vars declared set includes this DME cursor; hot_home must not call it stale");
+        }
+    }
+}
+#[test]
+fn base_var_policy_does_not_fallback_to_headers_without_compatibility_issuance() {
+    let root = std::env::current_dir()
+        .unwrap()
+        .join("base-var-unissued-policy-unit");
+    let frontend = dm_tree::frontend::build(
+        &root.join("code/probe.dm"),
+        &Source::new("/atom\n    var/one\n"),
+        &Default::default(),
+        1,
+    )
+    .unwrap();
+    let extra = frontend
+        .files
+        .iter()
+        .filter(|f| f.captured)
+        .map(|f| {
+            HostCapture::analyze_raw(Arc::clone(&f.path), PolicyRole::DmSource, f.text.clone())
+        })
+        .collect::<Vec<_>>();
+    let inputs = PolicyInputs::capture(&frontend, extra).unwrap();
+    let result = CapturedBaseVarsPolicy::capture(&root, &inputs, Configuration::ProvenMissing)
+        .unwrap()
+        .scan(|| Ok(()));
+    assert!(result.err().unwrap().contains("producer was not requested"));
 }

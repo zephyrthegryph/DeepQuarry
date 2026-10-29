@@ -11,6 +11,73 @@ enum CapturedCursor {
     },
 }
 impl ColdFrontend {
+    /// Factory issuance over original primary newline cursors and the existing
+    /// checked diagnostic continuation resolver. No source text is reparsed.
+    pub(super) fn issue_declaration_compatibility(&mut self) {
+        use super::source_export_mapping::DeclarationCompatibility;
+        let mut rows = Vec::new();
+        for (ordinal, cursor) in self.source_export_mapping.primary_declaration_cursors() {
+            if self.expanded.text.as_bytes().get(cursor) != Some(&10u8) {
+                continue;
+            }
+            let before = self.location(cursor);
+            let next = dm_syntax::next_significant_token(&self.expanded.text, cursor + 1)
+                .and_then(|token| self.location(token.span.start));
+            if before
+                .as_ref()
+                .zip(next.as_ref())
+                .is_some_and(|(a, b)| a.include_occurrence == b.include_occurrence)
+            {
+                continue;
+            }
+            let mut row = DeclarationCompatibility {
+                ordinal,
+                occurrence: None,
+                line: 0,
+                column: 0,
+                source_len: 0,
+            };
+            if let Some(CapturedCursor::Boundary {
+                location: Some(location),
+                ..
+            }) = self.diagnostic_cursor_kind(cursor + 1, true)
+            {
+                if let Some(included) = self.plan.occurrences.get(location.include_occurrence) {
+                    if let Some(eof) = included.logical_eof_cursor() {
+                        if let (Some(file), Some(acquired)) = (
+                            self.files
+                                .iter()
+                                .find(|file| file.path == included.path && file.captured),
+                            self.plan
+                                .source_acquisitions
+                                .get(&location.include_occurrence),
+                        ) {
+                            if included.parent.is_none()&&location.line==eof.line()
+                                &&location.encounter_ordinal==eof.encounter()
+                                &&location.span.start as usize==file.text.len()
+                                &&location.span.start==location.span.end
+                                &&acquired.source_text().same_view(&file.text)
+                                // Pinned LocationTracker.next() advances after a real LF;
+                                // Lexer.next() then emits its final newline at column1.
+                                // Without real LF the planner has not proved that column.
+                                &&file.text.ends_with('\n')
+                            {
+                                row.occurrence = Some(location.include_occurrence);
+                                row.line = eof.line();
+                                row.column = 1;
+                                row.source_len = file.text.len();
+                            }
+                        }
+                    }
+                }
+            }
+            rows.push(row);
+        }
+        Arc::get_mut(&mut self.source_export_mapping)
+            .expect("unpublished mapping")
+            .bind_declaration_compatibility(rows.into_boxed_slice());
+    }
+
     /// Resolve a lexer cursor after a current expanded body offset. Include
     /// returns use the directive planner's checked decoded resume position.
     pub fn diagnostic_cursor_after(&self, end: usize) -> Option<(Arc<str>, usize)> {
@@ -28,6 +95,9 @@ impl ColdFrontend {
         }
     }
     fn diagnostic_cursor(&self, end: usize) -> Option<CapturedCursor> {
+        self.diagnostic_cursor_kind(end, false)
+    }
+    fn diagnostic_cursor_kind(&self, end: usize, declaration_eof: bool) -> Option<CapturedCursor> {
         let text = self.expanded.text.as_ref();
         if end == 0 || end > text.len() || !text.is_char_boundary(end) {
             return None;
@@ -60,6 +130,16 @@ impl ColdFrontend {
                     if next.include_occurrence == cursor.parent_occurrence() {
                         return Some(CapturedCursor::Token(next.clone()));
                     }
+                }
+                // Declarations at terminal separators use the completed reader's
+                // real EOF progression, not error-recovery directive anchors.
+                // No remaining expanded language token plus each privately
+                // issued child EOF/return receipt proves omitted directives and
+                // empty repeated includes were actually consumed by this plan.
+                if declaration_eof && next.is_none() {
+                    included.logical_eof_cursor()?;
+                    occurrence = cursor.parent_occurrence();
+                    continue;
                 }
                 if let Some(line) = cursor.directive_anchor_line() {
                     return self.return_cursor_boundary(

@@ -1,7 +1,11 @@
 //! Immutable relative declaration syntax and checked current offset bindings.
 //! Exact source-key admission remains the responsibility of the owning store.
 use dm_syntax::{Item, ItemKind, Span};
-use std::sync::Arc;
+#[cfg(test)]
+#[path = "../../../shared/test_scratch.rs"]
+mod header_test_scratch;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, OnceLock};
 #[path = "frontend_relative_arena.rs"]
 mod arena;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -16,6 +20,9 @@ pub struct RelativeSyntax {
     source_len: usize,
     max_end: usize,
     bodies: Vec<RelativeBody>,
+    // Source-code facts only. Original-file authority remains per issued mapping.
+    primary_headers: OnceLock<Result<Arc<[(usize, Option<usize>, u8)]>, BindingError>>,
+    primary_header_reissues: AtomicUsize,
 }
 /// Exact source-capture capability. Only this parser-owned producer can mint it.
 #[derive(Debug)]
@@ -122,17 +129,101 @@ impl RelativeSyntax {
                 }
                 max_end = max_end.max(span.end);
             }
+            if let Some(at) = item.declaration_cursor {
+                source
+                    .as_bytes()
+                    .get(at)
+                    .ok_or(BindingError::InvalidRelativeSpan)?;
+                if !source.is_char_boundary(at) {
+                    return Err(BindingError::InvalidRelativeSpan);
+                }
+                max_end = max_end.max(at + 1);
+            }
             pending.extend(&item.children);
         }
         let mut bodies = Vec::new();
         capture_bodies(&items, &source, &mut Vec::new(), &mut bodies, owners);
         let source_len = source.len();
+        let primary_headers = OnceLock::new();
+        fn issued(items: &[Item], parent: Option<u8>, out: &mut Vec<(usize, Option<usize>, u8)>) {
+            for item in items {
+                if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
+                    continue;
+                }
+                let (flags, context) =
+                    dm_syntax::inherit_header_qualifiers(item.checker_qualifiers, parent);
+                out.push((item.header_span.start, item.declaration_cursor, flags));
+                issued(&item.children, context, out);
+            }
+        }
+        let mut headers = Vec::new();
+        issued(&items, None, &mut headers);
+        // Portable decoding deliberately clears every cursor. A genuine primary
+        // parse that produced a cursor can seed the complete native roster.
+        if headers.iter().any(|row| row.1.is_some()) {
+            headers.sort_unstable();
+            headers.dedup();
+            let _ = primary_headers.set(Ok(headers.into()));
+        }
         Ok(Self {
             items: arena::Arena::capture(items, source),
             source_len,
             max_end,
             bodies,
+            primary_headers,
+            primary_header_reissues: AtomicUsize::new(0),
         })
+    }
+    fn primary_headers(&self, reissue: bool) -> Option<&Arc<[(usize, Option<usize>, u8)]>> {
+        if reissue {
+            self.primary_headers.get_or_init(|| {
+                self.primary_header_reissues.fetch_add(1, Ordering::Relaxed);
+                let source = self
+                    .shared_source()
+                    .ok_or(BindingError::InvalidRelativeSpan)?;
+                fn headers(
+                    item: ItemView<'_>,
+                    parent: Option<usize>,
+                    out: &mut Vec<dm_syntax::PrimaryHeaderInput>,
+                ) {
+                    if matches!(item.kind(), ItemKind::Proc | ItemKind::Verb) {
+                        return;
+                    }
+                    let index = out.len();
+                    out.push(dm_syntax::PrimaryHeaderInput {
+                        span: item.header_span(),
+                        parent,
+                        has_children: item.children().len() != 0,
+                    });
+                    for child in item.children() {
+                        headers(child, Some(index), out);
+                    }
+                }
+                let mut spans = Vec::new();
+                for item in self.items.roots() {
+                    headers(ItemView { item, offset: 0 }, None, &mut spans);
+                }
+                let mut rows = dm_syntax::primary_header_facts(source, &spans)
+                    .map_err(|_| BindingError::InvalidRelativeSpan)?;
+                rows.sort_unstable();
+                rows.dedup();
+                if rows.windows(2).any(|pair| {
+                    pair[0].0 == pair[1].0 && (pair[0].1 != pair[1].1 || pair[0].2 != pair[1].2)
+                }) {
+                    return Err(BindingError::InvalidRelativeSpan);
+                }
+                Ok(rows.into())
+            });
+        }
+        self.primary_headers.get()?.as_ref().ok()
+    }
+    pub(super) fn adopt_primary_headers(&self, other: &Self) {
+        if self.shared_source().is_none() || self.shared_source() != other.shared_source() {
+            return;
+        }
+        if let Some(Ok(rows)) = other.primary_headers.get() {
+            let _ = self.primary_headers.set(Ok(Arc::clone(rows)));
+        }
     }
     /// Compatibility materialization for a demanded standalone consumer.
     pub fn materialize_relative_items(&self) -> Vec<Item> {
@@ -159,6 +250,10 @@ impl RelativeSyntax {
         self.items.visit_storage(visit);
     }
     pub fn visit_body_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        if let Some(Ok(rows)) = self.primary_headers.get() {
+            let bytes = std::mem::size_of_val(rows.as_ref());
+            visit(rows.as_ptr() as usize, bytes, bytes);
+        }
         visit(
             self.bodies.as_ptr() as usize,
             self.bodies.len() * std::mem::size_of::<RelativeBody>(),
@@ -277,6 +372,9 @@ impl<'a> ItemView<'a> {
         let span = self.item.span();
         Span::new(span.start + self.offset, span.end + self.offset)
     }
+    pub fn declaration_cursor(self) -> Option<usize> {
+        self.item.declaration_cursor()?.checked_add(self.offset)
+    }
     pub fn header_span(self) -> Span {
         let span = self.item.header_span();
         Span::new(span.start + self.offset, span.end + self.offset)
@@ -300,6 +398,8 @@ impl<'a> ItemView<'a> {
             header: self.header().to_owned(),
             span: self.span(),
             header_span: self.header_span(),
+            declaration_cursor: self.declaration_cursor(),
+            checker_qualifiers: self.item.checker_qualifiers(),
             indent: self.item.indent(),
             children: self.children().map(Self::materialize).collect(),
         }
@@ -367,6 +467,51 @@ impl DeclarationSyntax {
             return None;
         }
         search(chunk.len(), &|index| chunk.item(index), offset)
+    }
+    pub fn declaration_cursor_at(&self, offset: usize) -> Option<usize> {
+        self.declaration_cursor(offset, false)
+    }
+    /// Rich policy preparation may request this EXISTING native token query
+    /// once after portable restore. Ordinary compilation never triggers it.
+    pub fn declaration_cursor_at_for_policy(&self, offset: usize) -> Option<usize> {
+        self.declaration_cursor(offset, true)
+    }
+    fn declaration_cursor(&self, offset: usize, reissue: bool) -> Option<usize> {
+        if !self.ordered_chunks {
+            return None;
+        }
+        let index = self
+            .chunks
+            .partition_point(|chunk| chunk.offset <= offset)
+            .checked_sub(1)?;
+        let chunk = &self.chunks[index];
+        let relative = offset.checked_sub(chunk.offset)?;
+        if relative >= chunk.relative.source_len {
+            return None;
+        }
+        let rows = chunk.relative.primary_headers(reissue)?;
+        let row = rows.get(rows.partition_point(|row| row.0 < relative))?;
+        if row.0 != relative {
+            return None;
+        }
+        row.1?.checked_add(chunk.offset)
+    }
+    pub fn declaration_checker_qualifiers_at_for_policy(&self, offset: usize) -> Option<u8> {
+        if !self.ordered_chunks {
+            return None;
+        }
+        let index = self
+            .chunks
+            .partition_point(|chunk| chunk.offset <= offset)
+            .checked_sub(1)?;
+        let chunk = &self.chunks[index];
+        let relative = offset.checked_sub(chunk.offset)?;
+        if relative >= chunk.relative.source_len {
+            return None;
+        }
+        let rows = chunk.relative.primary_headers(true)?;
+        let row = rows.get(rows.partition_point(|row| row.0 < relative))?;
+        (row.0 == relative && row.2 != dm_syntax::UNKNOWN_HEADER_QUALIFIERS).then_some(row.2)
     }
     pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {
         self.chunks
@@ -703,5 +848,144 @@ mod header_lookup_tests {
                 assert_eq!(syntax.declaration_header_at(offset), None);
             }
         }
+    }
+    #[test]
+    fn native_primary_headers_private_warm_queries_do_not_relex() {
+        let source = "/datum/header\n    var/value = 1\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        let relative = Arc::new(RelativeSyntax::capture(parsed.items, source).unwrap());
+        let syntax = DeclarationSyntax::new(vec![relative.bind(source.len(), 0).unwrap()]).unwrap();
+        let at = source.find("var/value").unwrap();
+        assert_eq!(syntax.declaration_cursor_at(at), source.find('='));
+        assert_eq!(
+            syntax.declaration_cursor_at_for_policy(at),
+            source.find('=')
+        );
+        assert_eq!(relative.primary_header_reissues.load(Ordering::Relaxed), 0);
+    }
+    #[test]
+    fn portable_primary_headers_cold_process_reissue_once_then_share() {
+        const CHILD: &str = "DMB_PRIMARY_HEADER_REISSUE_CHILD";
+        const SOURCE: &str = "/datum/header\n    var/value =\n        list(1,2)\n";
+        if let Some(path) = std::env::var_os(CHILD) {
+            // This fresh process has NEVER called the native declaration parser.
+            let bytes = std::fs::read(path).unwrap();
+            let (items, errors, _) =
+                super::super::parserwire::decode_with_facts(&bytes, SOURCE).unwrap();
+            assert!(errors.is_empty());
+            let relative = Arc::new(RelativeSyntax::capture(items, SOURCE).unwrap());
+            let syntax =
+                DeclarationSyntax::new(vec![relative.bind(SOURCE.len(), 0).unwrap()]).unwrap();
+            let at = SOURCE.find("var/value").unwrap();
+            assert_eq!(
+                syntax.declaration_cursor_at(at),
+                None,
+                "portable hints cannot self-certify"
+            );
+            assert_eq!(
+                relative.primary_header_reissues.load(Ordering::Relaxed),
+                0,
+                "ordinary compile is unchanged"
+            );
+            assert_eq!(
+                syntax.declaration_cursor_at_for_policy(at),
+                SOURCE.find('=')
+            );
+            assert_eq!(relative.primary_header_reissues.load(Ordering::Relaxed), 1);
+            let shifted =
+                DeclarationSyntax::new(vec![relative.bind(SOURCE.len(), 91).unwrap()]).unwrap();
+            assert_eq!(
+                shifted.declaration_cursor_at_for_policy(at + 91),
+                SOURCE.find('=').map(|at| at + 91)
+            );
+            assert_eq!(
+                syntax.declaration_cursor_at(at),
+                SOURCE.find('='),
+                "subsequent compile shares the same native fact"
+            );
+            assert_eq!(
+                relative.primary_header_reissues.load(Ordering::Relaxed),
+                1,
+                "no second primary token pass"
+            );
+            let headers = relative.primary_headers(false).unwrap();
+            let pointer = headers.as_ptr() as usize;
+            let bytes = std::mem::size_of_val(headers.as_ref());
+            let mut charged = false;
+            relative.visit_body_storage(|p, _, capacity| {
+                if p == pointer {
+                    assert_eq!(capacity, bytes);
+                    charged = true;
+                }
+            });
+            assert!(charged, "lazy source fact backing is included in census");
+            return;
+        }
+        let path = header_test_scratch::dir("primary-header-cold-process").join("declarations.bin");
+        let parsed = dm_syntax::parse_declaration_skeleton(SOURCE);
+        assert!(parsed.diagnostics.is_empty());
+        let encoded =
+            super::super::parserwire::encode_with_facts(&parsed.items, &[], 0, None).unwrap();
+        std::fs::write(&path, encoded).unwrap();
+        drop(parsed);
+        let status=std::process::Command::new(std::env::current_exe().unwrap())
+            .arg("--exact").arg("frontend::relative_declarations::tests::portable_primary_headers_cold_process_reissue_once_then_share")
+            .arg("--nocapture").env(CHILD,&path).status().unwrap();
+        assert!(status.success());
+    }
+}
+
+#[cfg(test)]
+mod primary_qualifier_roundtrip_tests {
+    use super::*;
+    #[test]
+    fn cold_and_portable_shared_header_facts_preserve_scoped_qualifiers() {
+        let source = "/datum/owner\n    var/SpacemanDMM_private/\n        datum/value = null\n        plain\n    var/SpacemanDMM_protected/other\n    var/SpacemanDMM_private\n";
+        let parsed = dm_syntax::parse(source);
+        assert!(parsed.diagnostics.is_empty());
+        let encoded =
+            super::super::parserwire::encode_with_facts(&parsed.items, &[], 0, None).unwrap();
+        let cold = Arc::new(RelativeSyntax::capture(parsed.items, source).unwrap());
+        let (portable, errors, _) =
+            super::super::parserwire::decode_with_facts(&encoded, source).unwrap();
+        assert!(errors.is_empty());
+        let warm = Arc::new(RelativeSyntax::capture(portable, source).unwrap());
+        assert!(
+            warm.primary_headers(false).is_none(),
+            "portable qualifier/cursor hints cannot seed an issued roster"
+        );
+        assert_eq!(warm.primary_header_reissues.load(Ordering::Relaxed), 0);
+
+        let cold_syntax =
+            DeclarationSyntax::new(vec![cold.bind(source.len(), 0).unwrap()]).unwrap();
+        let warm_syntax =
+            DeclarationSyntax::new(vec![warm.bind(source.len(), 0).unwrap()]).unwrap();
+        for (header, flags) in [
+            ("datum/value", dm_syntax::CHECKER_VAR_PRIVATE),
+            ("plain", dm_syntax::CHECKER_VAR_PRIVATE),
+            (
+                "var/SpacemanDMM_protected/other",
+                dm_syntax::CHECKER_VAR_PROTECTED,
+            ),
+            ("var/SpacemanDMM_private\n", 0),
+        ] {
+            let at = source.find(header).unwrap();
+            assert_eq!(
+                cold_syntax.declaration_checker_qualifiers_at_for_policy(at),
+                Some(flags)
+            );
+            assert_eq!(
+                warm_syntax.declaration_checker_qualifiers_at_for_policy(at),
+                Some(flags)
+            );
+        }
+        assert_eq!(cold.primary_header_reissues.load(Ordering::Relaxed), 0);
+        assert_eq!(warm.primary_header_reissues.load(Ordering::Relaxed), 1);
+        let (_, count, bytes) = (
+            0usize,
+            warm.primary_headers(true).unwrap().len(),
+            std::mem::size_of_val(warm.primary_headers(true).unwrap().as_ref()),
+        );
+        assert!(count > 0 && bytes > 0);
     }
 }

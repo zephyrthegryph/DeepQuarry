@@ -3,6 +3,7 @@ use super::*;
 use dm_preprocess::{AcquiredSource, SourceText};
 use std::sync::Arc;
 struct RecordedSourceReceipt {
+    original_bytes: Option<dm_resources::SharedBytes>,
     issuer: Arc<()>,
     path: PathBuf,
     fact: FileInput,
@@ -27,7 +28,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         if fact.content != xxhash_rust::xxh3::xxh3_128(&bytes) {
             return Err(invalid("source acquisition contradicts actual read"));
         }
-        let receipt = RecordedSourceReceipt {
+        let mut receipt = RecordedSourceReceipt {
+            original_bytes: None,
             issuer: Arc::clone(&self.source_issuer),
             path: path.clone(),
             fact,
@@ -36,6 +38,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         {
             let bytes = dm_resources::SharedBytes::from(bytes);
             self.remember_exceptional_source(&path, bytes.clone())?;
+            receipt.original_bytes = Some(bytes.clone());
             AcquiredSource::from_original_slice(bytes.as_slice(), receipt)
         } else {
             AcquiredSource::from_original_bytes(bytes, receipt)
@@ -80,6 +83,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             return Err(invalid("prepared proof changed original acquisition"));
         }
         let current = old.reissued(RecordedSourceReceipt {
+            original_bytes: previous.original_bytes.clone(),
             issuer: Arc::clone(&self.source_issuer),
             path: path.clone(),
             fact,
@@ -150,4 +154,34 @@ pub(crate) fn recorded_source_receipt_storage(
 ) -> Option<(&PathBuf, &PathBuf, &Arc<()>)> {
     let value = value.downcast_ref::<RecordedSourceReceipt>()?;
     Some((&value.path, &value.fact.path, &value.issuer))
+}
+
+/// Borrow a private original-byte representation issued by the SAME primary read.
+/// Normal UTF8 has no additional raw buffer. Exceptional bytes share the existing
+/// SharedBytes acquisition; no decoded hash/pointer reconstructs raw authority.
+pub(crate) enum RecordedSourceOriginal<'a> {
+    Utf8(&'a dm_preprocess::SourceText),
+    Bytes(&'a dm_resources::SharedBytes),
+}
+pub(crate) fn recorded_source_original(
+    lease: &dm_preprocess::SourceAcquisitionLease,
+) -> io::Result<RecordedSourceOriginal<'_>> {
+    let receipt = lease
+        .receipt::<RecordedSourceReceipt>()
+        .ok_or_else(|| invalid("original source bytes have no recorded acquisition receipt"))?;
+    if let Some(bytes) = &receipt.original_bytes {
+        return Ok(RecordedSourceOriginal::Bytes(bytes));
+    }
+    if lease.encoding() != dm_preprocess::SourceEncoding::Utf8 {
+        return Err(invalid("exceptional source original bytes unavailable"));
+    }
+    Ok(RecordedSourceOriginal::Utf8(lease.source_text()))
+}
+pub(crate) fn recorded_source_receipt_original(
+    value: &(dyn std::any::Any + Send + Sync),
+) -> Option<&dm_resources::SharedBytes> {
+    value
+        .downcast_ref::<RecordedSourceReceipt>()?
+        .original_bytes
+        .as_ref()
 }

@@ -176,7 +176,7 @@ fn evidence<'a, R: Resolver + ?Sized>(
             let Some((owner, name, metadata)) = self.scope.place(target)? else {
                 return Ok(());
             };
-            if metadata.declared_type.is_some() || metadata.flags & 2 != 0 {
+            if self.scope.field_is_typed(owner, name, &metadata)? || metadata.flags & 2 != 0 {
                 return Ok(());
             }
             let rhs = node(rhs);
@@ -308,12 +308,17 @@ pub fn findings<'a>(
             .map_err(|error| Unsupported(error.message))??;
     }
     render(tree, grouped, root, &exempt_file, |declaration| {
-        let occurrence = *frontend
+        let Some(&occurrence) = frontend
             .snapshot
             .occurrences
             .for_target(dm_tree::Target::Member(declaration))
-            .first()?;
-        frontend.source_export_mapping()?.location_of(occurrence)
+            .first()
+        else {
+            return Ok(None);
+        };
+        Ok(frontend
+            .source_export_mapping()
+            .and_then(|mapping| mapping.location_of(occurrence)))
     })
 }
 
@@ -371,6 +376,11 @@ fn ordered_bodies<'a>(
 
 /// Same policy, report order and aggregation over the retained compiler archive.
 /// The archive owns source mappings; no current filesystem reads are performed.
+#[derive(Clone, Copy, Debug)]
+pub enum PolicyAnchor {
+    Assignment(Span),
+    Declaration(dm_tree::MemberId),
+}
 pub fn archived_findings<'a>(
     archive: &'a BodyArchive,
     values: &Values<'a>,
@@ -378,6 +388,28 @@ pub fn archived_findings<'a>(
     root: &std::path::Path,
     exempt_types: &'a [String],
     exempt_file: impl Fn(&str) -> bool,
+) -> Result<Vec<Finding>, Unsupported> {
+    archived_findings_projected(
+        archive,
+        values,
+        schemas,
+        root,
+        exempt_types,
+        exempt_file,
+        |_, source| Ok(source),
+    )
+}
+/// Same original policy/rendering with host-projected source coordinates.
+/// The callback may normalize only coordinates of this issued source location;
+/// encoding/capture authority remains the host's prerequisite.
+pub fn archived_findings_projected<'a>(
+    archive: &'a BodyArchive,
+    values: &Values<'a>,
+    schemas: &Schemas,
+    root: &std::path::Path,
+    exempt_types: &'a [String],
+    exempt_file: impl Fn(&str) -> bool,
+    project: impl Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>,
 ) -> Result<Vec<Finding>, Unsupported> {
     values.validate_archive(archive)?;
     values.validate_exempt_types(exempt_types)?;
@@ -392,11 +424,15 @@ pub fn archived_findings<'a>(
             let source = archive
                 .location(evidence.at.start)
                 .ok_or_else(|| Unsupported("assignment has no native source origin".into()))?;
+            let source = project(PolicyAnchor::Assignment(evidence.at), source)?;
             record(&mut grouped, evidence, root, source);
         }
     }
     render(tree, grouped, root, &exempt_file, |member| {
-        archive.member_location(member)
+        archive
+            .member_location(member)
+            .map(|source| project(PolicyAnchor::Declaration(member), source))
+            .transpose()
     })
 }
 
@@ -426,7 +462,7 @@ fn render(
     grouped: Groups,
     root: &std::path::Path,
     exempt_file: &impl Fn(&str) -> bool,
-    member_location: impl Fn(dm_tree::MemberId) -> Option<SourceLocation>,
+    member_location: impl Fn(dm_tree::MemberId) -> Result<Option<SourceLocation>, Unsupported>,
 ) -> Result<Vec<Finding>, Unsupported> {
     let symbols = tree.symbols();
     let mut findings = Vec::new();
@@ -446,7 +482,7 @@ fn render(
                 })
             })
             .unwrap_or(selected);
-        let source = member_location(declaration)
+        let source = member_location(declaration)?
             .ok_or_else(|| Unsupported("finding declaration origin missing".into()))?;
         let file = relative(root, &source.path);
         if !file.starts_with("code/") || exempt_file(&file) {

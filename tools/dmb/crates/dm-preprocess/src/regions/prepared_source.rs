@@ -74,7 +74,8 @@ impl PreparedSource {
         let mut changed_ranges: Vec<Option<std::ops::Range<usize>>> =
             Vec::with_capacity(logical.lines.len());
         for line in &logical.lines {
-            let touched = !line.transformed && uncommented[line.range.clone()] != original[line.range.clone()];
+            let touched = !line.transformed
+                && uncommented[line.range.clone()] != original[line.range.clone()];
             changed_ranges.push(touched.then(|| {
                 let start = changed.len();
                 changed.push_str(&uncommented[line.range.clone()]);
@@ -156,16 +157,11 @@ impl PreparedSource {
 /// line tables. The pool is weak: it keeps nothing alive, and a source dies with its last session.
 pub fn shared_prepared(text: SourceText) -> Arc<PreparedSource> {
     const SHARDS: usize = 64;
-    struct Shard {
-        sources: std::collections::HashMap<u128, std::sync::Weak<PreparedSource>>,
-        /// Length at which the shard next drops its dead entries.
-        prune_at: usize,
-    }
-    static POOL: std::sync::OnceLock<Box<[Mutex<Shard>]>> = std::sync::OnceLock::new();
+    static POOL: std::sync::OnceLock<Box<[Mutex<PreparedShard>]>> = std::sync::OnceLock::new();
     let pool = POOL.get_or_init(|| {
         (0..SHARDS)
             .map(|_| {
-                Mutex::new(Shard {
+                Mutex::new(PreparedShard {
                     sources: Default::default(),
                     prune_at: 4096,
                 })
@@ -188,7 +184,35 @@ pub fn shared_prepared(text: SourceText) -> Arc<PreparedSource> {
         return Arc::new(PreparedSource::from_text(text));
     }
     let prepared = Arc::new(PreparedSource::from_text(text));
+    publish_prepared(shard, digest, prepared)
+}
+
+struct PreparedShard {
+    sources: std::collections::HashMap<u128, std::sync::Weak<PreparedSource>>,
+    /// Length at which the shard next drops its dead entries.
+    prune_at: usize,
+}
+/// Preparation is outside the mutex; another reader may have published after
+/// our initial miss. Publish under the SAME shard lock and reuse that winner
+/// only after comparing the complete original text. Neither pointer nor digest
+/// becomes an acquisition/source authority.
+fn publish_prepared(
+    shard: &Mutex<PreparedShard>,
+    digest: u128,
+    prepared: Arc<PreparedSource>,
+) -> Arc<PreparedSource> {
     let mut shard = shard.lock().unwrap_or_else(|error| error.into_inner());
+    if let Some(held) = shard
+        .sources
+        .get(&digest)
+        .and_then(std::sync::Weak::upgrade)
+    {
+        return if held.original().as_str() == prepared.original().as_str() {
+            held
+        } else {
+            prepared
+        };
+    }
     shard.sources.insert(digest, Arc::downgrade(&prepared));
     if shard.sources.len() >= shard.prune_at {
         shard.sources.retain(|_, source| source.strong_count() > 0);
@@ -343,13 +367,15 @@ impl<'a, P> PreparedSourceProvider<'a, P> {
     }
 }
 impl<P: crate::SourceProvider> crate::SourceProvider for PreparedSourceProvider<'_, P> {
-    fn acquired_source(&self,path:&Path)->Result<Option<crate::AcquiredSource>,String>{
-        if let Some(source)=self.captures.get(path){
-            Ok(self.fallback.source_acquisition(path,source.original()))
-        }else{self.fallback.acquired_source(path)}
+    fn acquired_source(&self, path: &Path) -> Result<Option<crate::AcquiredSource>, String> {
+        if let Some(source) = self.captures.get(path) {
+            Ok(self.fallback.source_acquisition(path, source.original()))
+        } else {
+            self.fallback.acquired_source(path)
+        }
     }
-    fn source_acquisition(&self,path:&Path,text:&SourceText)->Option<crate::AcquiredSource>{
-        self.fallback.source_acquisition(path,text)
+    fn source_acquisition(&self, path: &Path, text: &SourceText) -> Option<crate::AcquiredSource> {
+        self.fallback.source_acquisition(path, text)
     }
     fn read(&self, path: &Path) -> Result<String, String> {
         match self.captures.get(path) {
@@ -570,7 +596,10 @@ mod tests {
         // Nothing is kept alive by the pool: the text is prepared again, to the same result.
         let again = shared_prepared(String::from(text).into());
         assert_eq!(again.original().as_str(), text);
-        assert_eq!(again.lines().len(), PreparedSource::new(Arc::from(text)).lines().len());
+        assert_eq!(
+            again.lines().len(),
+            PreparedSource::new(Arc::from(text)).lines().len()
+        );
     }
     #[test]
     fn issued_preparations_reuse_bytes_and_exact_access_path_policy() {
@@ -718,13 +747,75 @@ fn prepare_phase_bench() {
     let nfiles = files.len();
     let bytes: usize = files.iter().map(String::len).sum();
     let t = std::time::Instant::now();
-    let uncommented: Vec<_> = files.iter().map(|f| strip_source_comments(f).into_owned()).collect();
+    let uncommented: Vec<_> = files
+        .iter()
+        .map(|f| strip_source_comments(f).into_owned())
+        .collect();
     let strip = t.elapsed();
     let t = std::time::Instant::now();
-    let planned = uncommented.iter().map(|u| crate::logical_arena::plan(u).lines.len()).sum::<usize>();
+    let planned = uncommented
+        .iter()
+        .map(|u| crate::logical_arena::plan(u).lines.len())
+        .sum::<usize>();
     let plan = t.elapsed();
     let t = std::time::Instant::now();
-    let total: usize = files.iter().map(|f| PreparedSource::from_text(SourceText::from(f.clone())).lines().len()).sum();
+    let total: usize = files
+        .iter()
+        .map(|f| {
+            PreparedSource::from_text(SourceText::from(f.clone()))
+                .lines()
+                .len()
+        })
+        .sum();
     let all = t.elapsed();
     eprintln!("files={nfiles} bytes={bytes} strip={strip:?} plan={plan:?} ({planned} lines) from_text total={all:?} ({total} lines)");
+}
+
+#[cfg(test)]
+mod prepared_publish_tests {
+    use super::*;
+    fn empty() -> Mutex<PreparedShard> {
+        Mutex::new(PreparedShard {
+            sources: Default::default(),
+            prune_at: 4096,
+        })
+    }
+    #[test]
+    fn staged_concurrent_misses_reuse_the_first_complete_text_winner() {
+        // Both readers already completed their initial miss and preparation.
+        // Explicit staging, not timing, exercises the second publisher race.
+        let shard = empty();
+        let a = Arc::new(PreparedSource::from_text(
+            "/datum/staged_preparation\n".to_owned().into(),
+        ));
+        let b = Arc::new(PreparedSource::from_text(
+            "/datum/staged_preparation\n".to_owned().into(),
+        ));
+        assert!(!Arc::ptr_eq(&a, &b));
+        let first = publish_prepared(&shard, 17, a);
+        let second = publish_prepared(&shard, 17, b);
+        assert!(Arc::ptr_eq(&first, &second));
+        assert!(Arc::ptr_eq(
+            &shard.lock().unwrap().sources[&17].upgrade().unwrap(),
+            &first
+        ));
+    }
+    #[test]
+    fn late_digest_collision_never_reuses_or_displaces_another_text() {
+        let shard = empty();
+        let a = Arc::new(PreparedSource::from_text(
+            "/datum/first_preparation\n".to_owned().into(),
+        ));
+        let b = Arc::new(PreparedSource::from_text(
+            "/datum/foreign_preparation\n".to_owned().into(),
+        ));
+        let first = publish_prepared(&shard, 17, a);
+        let second = publish_prepared(&shard, 17, b);
+        assert!(!Arc::ptr_eq(&first, &second));
+        assert_eq!(second.original().as_str(), "/datum/foreign_preparation\n");
+        assert!(Arc::ptr_eq(
+            &shard.lock().unwrap().sources[&17].upgrade().unwrap(),
+            &first
+        ));
+    }
 }

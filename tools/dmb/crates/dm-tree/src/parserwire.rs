@@ -11,13 +11,14 @@ use serde::{Deserialize, Serialize};
 // Revision 12 distinguishes safe dot and safe colon expression selectors.
 // Revision 13 stores the payload deflated: it is retained once per declaration chunk by the fragment memo and the
 // expansion record, and the encoded AST is highly repetitive.
-pub(super) const VERSION: u32 = 13;
+pub(super) const VERSION: u32 = 14;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
     header: String,
     span: [usize; 2],
     header_span: [usize; 2],
+    declaration_cursor: Option<usize>,
     indent: usize,
     children: Vec<Node>,
 }
@@ -42,6 +43,7 @@ struct BorrowedNode<'a> {
     header: &'a str,
     span: [usize; 2],
     header_span: [usize; 2],
+    declaration_cursor: Option<usize>,
     indent: usize,
     children: Vec<BorrowedNode<'a>>,
 }
@@ -81,6 +83,7 @@ fn encode_item(item: &Item, offset: usize) -> BorrowedNode<'_> {
             item.header_span.start - offset,
             item.header_span.end - offset,
         ],
+        declaration_cursor: item.declaration_cursor.map(|at| at - offset),
         indent: item.indent,
         children: item
             .children
@@ -90,6 +93,7 @@ fn encode_item(item: &Item, offset: usize) -> BorrowedNode<'_> {
     }
 }
 fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
+    let _untrusted_portable_cursor_hint = node.declaration_cursor;
     if depth > 256 {
         return None;
     }
@@ -114,6 +118,10 @@ fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
         header: node.header,
         span: item_span,
         header_span,
+        // Disk descriptors are not primary-token issuance. A current native
+        // parse/private retained owner must mint authority; no silent fallback.
+        declaration_cursor: None,
+        checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
         indent: node.indent,
         children: node
             .children
@@ -141,7 +149,9 @@ fn inflate(bytes: &[u8]) -> Option<Vec<u8>> {
     use std::io::Read;
     let _timed = INFLATE.time();
     let mut raw = Vec::with_capacity(bytes.len().saturating_mul(3));
-    flate2::read::DeflateDecoder::new(bytes).read_to_end(&mut raw).ok()?;
+    flate2::read::DeflateDecoder::new(bytes)
+        .read_to_end(&mut raw)
+        .ok()?;
     Some(raw)
 }
 pub(super) fn encode_with_facts(
@@ -237,7 +247,28 @@ mod tests {
         let owned: Payload = dm_wire::decode(VERSION, &raw, raw.len()).unwrap();
         assert_eq!(raw, dm_wire::encode(VERSION, &owned).unwrap());
         let (decoded, diagnostics, facts) = decode_with_facts(&bytes, source).unwrap();
-        assert_eq!(decoded, items);
+        fn unissue(items: &mut [Item]) {
+            for item in items {
+                item.declaration_cursor = None;
+                item.checker_qualifiers = dm_syntax::UNKNOWN_HEADER_QUALIFIERS;
+                unissue(&mut item.children);
+            }
+        }
+        let mut descriptors = items.clone();
+        unissue(&mut descriptors);
+        fn portable_is_unissued(items: &[Item]) {
+            for item in items {
+                assert_eq!(
+                    item.checker_qualifiers,
+                    dm_syntax::UNKNOWN_HEADER_QUALIFIERS
+                );
+                assert!(item.declaration_cursor.is_none());
+                portable_is_unissued(&item.children);
+            }
+        }
+        portable_is_unissued(&decoded);
+        assert_eq!(decoded, descriptors);
+        assert!(decoded.iter().all(|item| item.declaration_cursor.is_none()));
         assert_eq!(diagnostics, errors);
         assert_eq!(facts, Some(vec![1, 2, 3]));
     }

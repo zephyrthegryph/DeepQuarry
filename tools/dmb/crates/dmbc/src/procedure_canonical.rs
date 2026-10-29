@@ -85,6 +85,8 @@ mod tests {
             header: String::new(),
             span: Default::default(),
             header_span: Default::default(),
+            declaration_cursor: None,
+            checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
             indent: 0,
             children: Vec::new(),
         };
@@ -142,6 +144,8 @@ mod tests {
             header: "p(x)".into(),
             span: Default::default(),
             header_span: Default::default(),
+            declaration_cursor: None,
+            checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
             indent: 0,
             children: Vec::new(),
         };

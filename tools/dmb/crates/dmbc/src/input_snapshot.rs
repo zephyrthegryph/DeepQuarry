@@ -45,6 +45,9 @@ pub trait SnapshotProvider {
     fn stamp(&self, path: &Path) -> io::Result<Stamp>;
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)>;
     fn list(&self, folder: &Path) -> io::Result<FolderListing>;
+    fn read_policy_bounded(&self, _: &Path, _: usize) -> io::Result<Option<CapturedInputRead>> {
+        Ok(None)
+    }
     fn source_alias(
         &self,
         _: &Path,
@@ -73,6 +76,13 @@ pub trait SnapshotProvider {
     }
 }
 impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
+    fn read_policy_bounded(
+        &self,
+        path: &Path,
+        limit: usize,
+    ) -> io::Result<Option<CapturedInputRead>> {
+        (**self).read_policy_bounded(path, limit)
+    }
     fn source_alias(
         &self,
         path: &Path,
@@ -110,6 +120,8 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
 mod source_alias;
 pub(crate) use source_alias::{AcquiredSourceAlias, SourceAliasRecord};
 pub use source_alias::{SourceAliasChallenge, SourceAliasProof};
+#[path = "input_policy_read.rs"]
+mod policy_read;
 pub struct FileSystemInputs;
 #[path = "input_generated_outputs.rs"]
 mod generated;
@@ -117,6 +129,13 @@ pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;
 impl SnapshotProvider for FileSystemInputs {
+    fn read_policy_bounded(
+        &self,
+        path: &Path,
+        limit: usize,
+    ) -> io::Result<Option<CapturedInputRead>> {
+        policy_read::filesystem_bounded_read(path, limit).map(Some)
+    }
     fn source_alias(
         &self,
         path: &Path,
@@ -258,6 +277,9 @@ mod source_acquisition;
 mod source_original;
 pub(crate) use source_acquisition::recorded_source_receipt_storage;
 pub(crate) use source_acquisition::SemanticSourceEvidence;
+pub(crate) use source_acquisition::{
+    recorded_source_original, recorded_source_receipt_original, RecordedSourceOriginal,
+};
 pub struct RecordingInputs<P = FileSystemInputs> {
     source_issuer: std::sync::Arc<()>,
     source_acquisitions: Mutex<BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,

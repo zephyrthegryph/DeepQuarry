@@ -671,3 +671,33 @@ policy/checker families and inference, bounded full-workspace discovery and
 transactional reporting, generators, thin-client cutover and actual end-to-end
 cold/warm/edited performance proofs. DATA drafts for these are not implementation
 or verification evidence until applied and tested.
+
+### Primary variable provenance and typed policy expansion (2026-10-29)
+
+The retained primary tokens now issue variable-name cursors and qualifier facts.
+Private warm queries reuse those facts; restored portable headers must have them
+reissued by the existing native lexer, rather than trusting serialized authority.
+Original field metadata feeds the same borrowed value equations and policy walk.
+This adds the complete untyped and untyped-member policy facades, not general
+return-type inference. The admitted host roster is now Init, Decl, BaseVars,
+requirement_bool and untyped_member in the same existing QueryDb.
+
+Independent comparisons exposed an important source-location distinction:
+legacy declaration locations at an included file's EOF can name the parent DME.
+The native producer now issues that compatibility cursor separately from the
+physical original-byte cursor. BaseVars uses it for legacy reporting and filtering
+without losing the actual declaration source. CRLF original-byte positions,
+continued declarations, token rebasing and qualifier/list defaults have focused
+regressions. Unproved macro columns and transforms still refuse explicitly.
+Concurrent preparation also preserves the already-published matching lexical
+owner instead of replacing it at the second publication lock.
+
+Current proof includes 81 selected core cases, 21 independent source/untyped
+oracle cases, four BaseVars oracle cases, six qualifier checker fixtures with
+24 exact diagnostics, and the real five-policy private-daemon comparison.
+All known failures from this cohort were diagnosed and repaired; failure-only
+reruns passed. The normal native host dependency graph excludes dreammaker and
+dreamchecker. All ratchets pass and all 382 generated hashes remain unchanged.
+These are selected proofs, not complete-toolchain coverage or a performance
+claim. Complete workspace discovery/paging, more checker families and generators,
+inference, production client cutover and end-to-end performance proof remain.

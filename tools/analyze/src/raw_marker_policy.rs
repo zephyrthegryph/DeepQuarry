@@ -134,12 +134,62 @@ pub fn matching_paren(s: &str, open: usize) -> Option<usize> {
     None
 }
 
-pub(crate) struct StatementMarker<'a>{pub name:&'a str,pub open:usize,pub close:usize}
-pub(crate) fn statement_marker<'a>(text:&str,line_offset:usize,line:&'a str,names:&[&str])->Option<StatementMarker<'a>>{
-    let t=line.trim_start();if t.starts_with('#')||t.is_empty(){return None}
-    let name_end=t.find(|c:char|!(c.is_alphanumeric()||c=='_')).unwrap_or(t.len());
-    let name=&t[..name_end];
-    if !names.contains(&name)||!t[name_end..].trim_start().starts_with('('){return None}
-    let open=line_offset+line.len()-t.len()+name_end+t[name_end..].find('(')?;
-    Some(StatementMarker{name,open,close:matching_paren(text,open)?})
+pub(crate) struct StatementMarker<'a> {
+    pub name: &'a str,
+    pub open: usize,
+    pub close: usize,
+}
+pub(crate) fn statement_marker<'a>(
+    text: &str,
+    line_offset: usize,
+    line: &'a str,
+    names: &[&str],
+) -> Option<StatementMarker<'a>> {
+    let t = line.trim_start();
+    if t.starts_with('#') || t.is_empty() {
+        return None;
+    }
+    let name_end = t
+        .find(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .unwrap_or(t.len());
+    let name = &t[..name_end];
+    if !names.contains(&name) || !t[name_end..].trim_start().starts_with('(') {
+        return None;
+    }
+    let open = line_offset + line.len() - t.len() + name_end + t[name_end..].find('(')?;
+    Some(StatementMarker {
+        name,
+        open,
+        close: matching_paren(text, open)?,
+    })
+}
+
+/// Original strict UTF8 read_to_string include-order policy.
+pub fn dme_include_order(text: &str) -> std::collections::HashMap<String, usize> {
+    dme_include_order_view(text, false)
+}
+/// Acquisition may strip exactly the initial UTF8 BOM; do not copy a source
+/// buffer to put it back. Old trim() leaves BOM, so only first line is skipped.
+pub fn dme_include_order_view(
+    text: &str,
+    had_bom: bool,
+) -> std::collections::HashMap<String, usize> {
+    let mut out = std::collections::HashMap::new();
+    for (index, line) in text.lines().enumerate() {
+        if index == 0 && had_bom {
+            continue;
+        }
+        let line = line.trim();
+        let Some(rest) = line.strip_prefix("#include") else {
+            continue;
+        };
+        let rest = rest.trim();
+        let Some(path) = rest.strip_prefix('"').and_then(|r| r.split('"').next()) else {
+            continue;
+        };
+        let rel = path.replace('\\', "/");
+        let n = out.len();
+        out.entry(rel).or_insert(n);
+    }
+    out
 }

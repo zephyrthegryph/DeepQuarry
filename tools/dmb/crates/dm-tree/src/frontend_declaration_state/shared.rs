@@ -95,6 +95,9 @@ impl DeclarationValues {
         {
             return None;
         }
+        // The same native source owner can be upgraded by a fresh primary parse.
+        // Share only source-code facts; original acquisition receipts stay current.
+        value.syntax.adopt_primary_headers(&current.value.syntax);
         current.value = value;
         current.stored = true;
         Some(())
@@ -117,15 +120,13 @@ impl DeclarationValues {
                         capacity,
                         element_size,
                     }),
-                    ObservedArtifactStorageView::Entry {
-                        key,
-                        reads,
-                        value,
-                    } => visit(DeclarationStorageView::SharedEntry {
-                        key,
-                        reads,
-                        contribution: value.view(),
-                    }),
+                    ObservedArtifactStorageView::Entry { key, reads, value } => {
+                        visit(DeclarationStorageView::SharedEntry {
+                            key,
+                            reads,
+                            contribution: value.view(),
+                        })
+                    }
                 })
             }
         }

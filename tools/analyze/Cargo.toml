@@ -18,7 +18,7 @@ path = "src/lib.rs"
 [features]
 default = ["legacy-sem"]
 legacy-sem = ["dep:dreammaker"]
-native-policy = ["dep:dm-analysis", "dep:dm-tree"]
+native-policy = ["dep:dm-analysis", "dep:dm-tree", "dep:dm-ir"]
 # Explicit independent migration oracle; never enabled by production defaults.
 unified-oracle = ["legacy-sem"]
 
@@ -66,6 +66,7 @@ required-features = ["unified-oracle"]
 dm-preprocess = { path = "../dmb/crates/dm-preprocess" }
 dm-analysis = { path = "../dmb/crates/dm-analysis", optional = true }
 dm-tree = { path = "../dmb/crates/dm-tree", optional = true }
+dm-ir = { path = "../dmb/crates/dm-ir", optional = true }
 # The model, the walk store and every walk allocate millions of small values: a faster allocator is most of a warm run's CPU.
 mimalloc = { version = "0.1", default-features = false }
 # Parse-aware frontend: SpacemanDMM suite-1.11 dreammaker, vendored (vendor/README.md) to add model persistence.
@@ -86,6 +87,8 @@ sha1 = "0.10"
 toml = "0.8"
 
 [dev-dependencies]
+# Only explicit native comparison examples/tests create this existing executor.
+dm-exec = { path = "../dmb/crates/dm-exec" }
 tempfile = "3"
 
 # One standalone crate, not a member of the verdigris workspace.
@@ -147,3 +150,60 @@ opt-level = 2
 [[example]]
 name = "unified_requirement_bool"
 required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name = "unified_var_origins"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name = "unified_untyped_member"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name = "unified_untyped_policy"
+required-features = ["legacy-sem", "native-policy"]
+
+[[test]]
+name = "cache_truth"
+path = "tests/cache_truth.rs"
+required-features = ["legacy-sem"]
+
+[[test]]
+name = "codemods"
+path = "tests/codemods.rs"
+required-features = ["legacy-sem"]
+
+[[test]]
+name = "fixtures"
+path = "tests/fixtures.rs"
+required-features = ["legacy-sem"]
+
+[[test]]
+name = "gen_fixpoint"
+path = "tests/gen_fixpoint.rs"
+required-features = ["legacy-sem"]
+
+[[test]]
+name = "gen_memo"
+path = "tests/gen_memo.rs"
+required-features = ["legacy-sem"]
+
+[[test]]
+name = "model_store_appears"
+path = "tests/model_store_appears.rs"
+required-features = ["legacy-sem"]
+
+[[test]]
+name = "oracle"
+path = "tests/oracle.rs"
+required-features = ["legacy-sem"]
+
+[[test]]
+name = "semantic"
+path = "tests/semantic.rs"
+required-features = ["legacy-sem"]
+
+[[test]]
+name = "write_index_owner"
+path = "tests/write_index_owner.rs"
+required-features = ["legacy-sem"]

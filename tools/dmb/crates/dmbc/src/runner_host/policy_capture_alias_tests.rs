@@ -58,7 +58,11 @@ fn setup(
     std::fs::create_dir_all(root.join("code")).unwrap();
     let source = root.join("code/compiled.dm");
     let config = root.join("scopes.toml");
-    std::fs::write(&source, b"/atom\n    var/native_alias_value\n").unwrap();
+    std::fs::write(
+        &source,
+        b"/atom\n    var/native_alias_value\n/proc/alias_fixture_tail()\n    return\n",
+    )
+    .unwrap();
     std::fs::write(root.join("project.dme"), b"#include \"code/compiled.dm\"\n").unwrap();
     std::fs::write(&config, b"# captured config\n").unwrap();
     let reads = Arc::new(AtomicUsize::new(0));
@@ -70,11 +74,20 @@ fn setup(
         4_000_000_000,
     );
     let db = Arc::new(crate::query_db::QueryDb::default());
-    let frontend = dm_tree::frontend::build(
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let frontend = dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
         &std::fs::canonicalize(root.join("project.dme")).unwrap(),
         &inputs,
         &Default::default(),
-        1,
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+        None,
+        &executor,
+        None,
+        true,
     )
     .unwrap()
     .with_body_queries(db.clone());

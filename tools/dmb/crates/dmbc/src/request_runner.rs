@@ -645,7 +645,7 @@ fn run_build_attempt(
         drop(source_context_profile);
         dm_profile::detail_mark("source_context", total);
         let _frontend_profile = dm_profile::stage("frontend");
-        dm_tree::frontend::build_with_executor_and_semantic_state(
+        dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
             &project,
             &provider,
             &defines,
@@ -659,6 +659,7 @@ fn run_build_attempt(
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             executor,
             Some(&mut *semantic_state),
+            policy_inputs.is_some() || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
         )
     };
     dm_profile::detail_mark("frontend", total);

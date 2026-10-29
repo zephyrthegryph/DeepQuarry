@@ -165,6 +165,26 @@ impl HeapCensus {
         }
         let (region_count, include_count, location_count) = mapping.coordinate_counts();
         self.owner(owner).observed_items += (region_count + include_count + location_count) as u64;
+        let (compatibility, bytes) = mapping.declaration_compatibility_storage();
+        self.buffer(
+            "query_snapshot.declaration_compatibility",
+            compatibility,
+            bytes,
+            bytes,
+        );
+        let (anchors, count, bytes) = mapping.declaration_anchor_storage();
+        self.owner("query_snapshot.declaration_anchors")
+            .observed_items += count as u64;
+        self.buffer("query_snapshot.declaration_anchors", anchors, bytes, bytes);
+        let (qualifiers, count, bytes) = mapping.declaration_qualifier_storage();
+        self.owner("query_snapshot.declaration_qualifiers")
+            .observed_items += count as u64;
+        self.buffer(
+            "query_snapshot.declaration_qualifiers",
+            qualifiers,
+            bytes,
+            bytes,
+        );
         let (regions, region_bytes, includes, include_bytes) = mapping.coordinate_storage();
         self.buffer(owner, regions, region_bytes, region_bytes);
         self.buffer(owner, includes, include_bytes, include_bytes);

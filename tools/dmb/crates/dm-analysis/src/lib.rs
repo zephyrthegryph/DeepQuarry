@@ -57,3 +57,7 @@ pub mod analyze_call_sites;
 pub mod checks_field_static;
 
 pub mod checks_implicit_new;
+
+pub mod checker_static_type_notes;
+pub mod checks_proc_static;
+pub mod untyped_member_native;

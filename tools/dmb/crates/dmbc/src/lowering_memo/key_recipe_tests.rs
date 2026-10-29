@@ -36,6 +36,8 @@ fn resident_recipe_exact_inputs_and_issued_tail_match_legacy_bytes() {
             header: "run()".into(),
             span: dm_syntax::Span { start: 0, end: 0 },
             header_span: dm_syntax::Span { start: 0, end: 0 },
+            declaration_cursor: None,
+            checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
             indent: 0,
             children: Vec::new(),
         },

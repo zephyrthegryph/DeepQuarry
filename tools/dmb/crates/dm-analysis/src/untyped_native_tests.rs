@@ -369,8 +369,15 @@ fn dos_root_reports_real_verbatim_archive_finding_without_rewriting_origin() {
     let frontend = build(authored, &Source(source), &Default::default(), 1).unwrap();
     let archive = frontend.body_archive().unwrap();
     let values = Values::build_archive(&archive, archive.tree(), &[]).unwrap();
-    let rows = archived_findings(&archive, &values, &Schemas::default(),
-        Path::new(r"E:\native-policy-fixture"), &[], |_| false).unwrap();
+    let rows = archived_findings(
+        &archive,
+        &values,
+        &Schemas::default(),
+        Path::new(r"E:\native-policy-fixture"),
+        &[],
+        |_| false,
+    )
+    .unwrap();
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].file, "code/probe.dm");
     assert!(rows[0].message.ends_with("code/probe.dm:4"));
@@ -381,8 +388,105 @@ fn dos_root_reports_real_verbatim_archive_finding_without_rewriting_origin() {
 #[test]
 fn report_projection_unifies_only_safe_drive_verbatim_spelling() {
     let root = Path::new(r"E:\native-policy-fixture");
-    assert_eq!(relative(root, Path::new(r"\\?\E:\native-policy-fixture\code\x.dm")), "code/x.dm");
-    assert_ne!(relative(root, Path::new(r"\\.\E:\native-policy-fixture\code\x.dm")), "code/x.dm");
-    assert_ne!(relative(root, Path::new(r"\\?\UNC\server\share\native-policy-fixture\code\x.dm")), "code/x.dm");
-    assert_ne!(relative(root, Path::new(r"E:\native-policy-fixture-other\code\x.dm")), "code/x.dm");
+    assert_eq!(
+        relative(root, Path::new(r"\\?\E:\native-policy-fixture\code\x.dm")),
+        "code/x.dm"
+    );
+    assert_ne!(
+        relative(root, Path::new(r"\\.\E:\native-policy-fixture\code\x.dm")),
+        "code/x.dm"
+    );
+    assert_ne!(
+        relative(
+            root,
+            Path::new(r"\\?\UNC\server\share\native-policy-fixture\code\x.dm")
+        ),
+        "code/x.dm"
+    );
+    assert_ne!(
+        relative(root, Path::new(r"E:\native-policy-fixture-other\code\x.dm")),
+        "code/x.dm"
+    );
+}
+
+#[test]
+fn qualified_untyped_assignment_targets_and_locals_refuse_before_typed_skip() {
+    for source in [
+        "/datum/holder\n    var/SpacemanDMM_private/saved\n    proc/check()\n        saved = new /datum\n",
+        "/datum/holder\n    var/saved\n    proc/check()\n        var/SpacemanDMM_private/local = new /datum\n        saved = local\n",
+        "/datum/holder\n    var/saved\n    proc/check(SpacemanDMM_protected/local)\n        saved = local\n",
+    ]{
+        assert!(scan(source).is_err());
+    }
+}
+
+#[test]
+fn qualified_fields_use_original_archive_hints_in_value_equations_and_policy_targets() {
+    let source="/datum/holder\n    var/SpacemanDMM_private/saved\n    var/SpacemanDMM_private/call_value\n    var/SpacemanDMM_private/scalar\n    var/SpacemanDMM_private/missing_type/typed\n    proc/entity()\n        return new /datum\n    proc/number()\n        return 7\n    proc/use(datum/arg)\n        saved = arg\n        call_value = entity()\n        scalar = number()\n        typed = arg\n";
+    struct Acquired(&'static str);
+    impl dm_preprocess::SourceProvider for Acquired {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Err("must use actual acquired original bytes".into())
+        }
+        fn acquired_source(
+            &self,
+            _: &Path,
+        ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+            Ok(Some(dm_preprocess::AcquiredSource::from_original_bytes(
+                self.0.as_bytes().to_vec(),
+                (),
+            )))
+        }
+    }
+    let seed = reference_hierarchy::seed();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let make = |primary| {
+        dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
+            Path::new("code/owned_fields.dm"),
+            &Acquired(source),
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+            None,
+            &executor,
+            None,
+            primary,
+        )
+        .unwrap()
+        .body_archive()
+        .unwrap()
+    };
+    let ordinary = make(false);
+    assert!(
+        Values::build_archive(&ordinary, ordinary.tree(), &[]).is_err(),
+        "unissued raw qualifier spelling is not an untyped proof"
+    );
+    let archive = make(true);
+    let body = archive.parse(0).unwrap();
+    assert!(std::ptr::eq(body.archive_owner(), archive.as_ref()));
+    let values = Values::build_archive(&archive, archive.tree(), &[]).unwrap();
+    let rows = archived_findings(
+        &archive,
+        &values,
+        &Schemas::default(),
+        Path::new("."),
+        &[],
+        |_| false,
+    )
+    .unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|r| (r.identity.as_str(), r.rule))
+            .collect::<Vec<_>>(),
+        [
+            ("/datum/holder::saved", Rule::Typed),
+            ("/datum/holder::call_value", Rule::Call)
+        ]
+    );
+    assert!(rows
+        .iter()
+        .all(|r| !r.identity.ends_with("::typed") && !r.identity.ends_with("::scalar")));
 }

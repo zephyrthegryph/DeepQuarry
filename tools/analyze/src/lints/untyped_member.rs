@@ -16,29 +16,13 @@ use std::collections::{BTreeSet, HashMap};
 
 use dreammaker::ast::{Expression, Follow, Term, VarTypeFlags};
 
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::lint::{Cx, Lint, Meta, Registry, Sink};
 use crate::lints::stored_refs::{collect_locals, path_of, Place, ProcScope};
 use crate::sem::ast::{strip_parens, walk_block};
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
-use crate::tree::CODE_DM;
 
-const HINT: &str = "the receiver has no static type and the member name is declared static/global on some type, so DreamMaker may bind the static. Give the receiver \
-its type: a typed local (`var/obj/belly/B = x`, assigned after `istype`) or a typed parameter. A proc's RETURN_TYPE does not type its result for DreamMaker. \
-doc/rewrite/native_compiler_issues.md, untyped receiver";
-
-static META: Meta = Meta {
-    name: "untyped_member",
-    group: "",
-    label: "untyped_member",
-    legacy: "",
-    select: CODE_DM,
-    scan: ScanKind::Tree,
-    policy: Policy::Hard,
-    rules: &[RuleMeta { name: "static_member", hint: HINT }],
-    allow: &[],
-    lists: &[],
-};
+use crate::untyped_member_policy::META;
 
 struct UntypedMember;
 
@@ -58,7 +42,13 @@ pub(crate) fn static_names(sem: &Sem) -> BTreeSet<String> {
 }
 
 fn declared(sem: &Sem, ty: &str, name: &str) -> Option<String> {
-    sem.var_decl(ty, name).and_then(|v| if v.declared.is_empty() { None } else { Some(v.declared) })
+    sem.var_decl(ty, name).and_then(|v| {
+        if v.declared.is_empty() {
+            None
+        } else {
+            Some(v.declared)
+        }
+    })
 }
 
 /// The declared type of an identifier in a proc, or None when DreamMaker has none for it.
@@ -75,7 +65,11 @@ fn ident_type(sem: &Sem, sc: &ProcScope, n: &str) -> Option<String> {
             }
             if sc.owner != "/" {
                 if let Some(v) = sem.var_decl(sc.owner, n) {
-                    return if v.declared.is_empty() { None } else { Some(v.declared) };
+                    return if v.declared.is_empty() {
+                        None
+                    } else {
+                        Some(v.declared)
+                    };
                 }
             }
             declared(sem, "/", n)
@@ -89,7 +83,13 @@ fn head_type(sem: &Sem, sc: &ProcScope, term: &Term) -> Option<String> {
     match term {
         Term::Ident(n) => ident_type(sem, sc, n),
         Term::GlobalIdent(n) => declared(sem, "/", n),
-        Term::NewPrefab { prefab, .. } => Some(path_of(&prefab.path.iter().map(|(_, n)| n.to_string()).collect::<Vec<_>>())),
+        Term::NewPrefab { prefab, .. } => Some(path_of(
+            &prefab
+                .path
+                .iter()
+                .map(|(_, n)| n.to_string())
+                .collect::<Vec<_>>(),
+        )),
         Term::Expr(inner) => match strip_parens(inner) {
             Expression::Base { term, follow } => {
                 let mut cur = head_type(sem, sc, &term.elem);
@@ -122,11 +122,19 @@ impl Lint for UntypedMember {
         let root = &cx.tree.root;
         let mut rows: Vec<(String, u32, String)> = Vec::new();
         for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
+            let owner = if ty.get().path.is_empty() {
+                "/".to_string()
+            } else {
+                ty.get().path.clone()
+            };
             for (_, tp) in ty.get().procs.iter() {
                 for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
+                    let Some(code) = v.code.as_ref() else {
+                        continue;
+                    };
+                    let Some(rel) = sem.file_of(v.location) else {
+                        continue;
+                    };
                     if !rel.starts_with("code/") || cx.exempt(rel) {
                         continue;
                     }
@@ -135,9 +143,14 @@ impl Lint for UntypedMember {
                         locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
                     }
                     collect_locals(code, rel, &mut locals);
-                    let sc = ProcScope { owner: &owner, locals };
+                    let sc = ProcScope {
+                        owner: &owner,
+                        locals,
+                    };
                     walk_block(code, &mut |e, line| {
-                        let Expression::Base { term, follow } = e else { return };
+                        let Expression::Base { term, follow } = e else {
+                            return;
+                        };
                         let mut cur = head_type(sem, &sc, &term.elem);
                         for fo in follow.iter() {
                             match &fo.elem {
@@ -161,7 +174,7 @@ impl Lint for UntypedMember {
                 "static_member",
                 &rel,
                 engine_line(root, &rel, line) as usize,
-                format!("`.{}` is read through a receiver with no static type, and `{}` is declared static on some type", name, name),
+                crate::untyped_member_policy::message(&name),
             );
         }
     }

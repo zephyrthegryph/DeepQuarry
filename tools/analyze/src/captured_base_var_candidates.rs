@@ -131,12 +131,12 @@ impl<'a> BorrowedBaseVarCandidates<'a> {
             let mut sites = Vec::new();
             for row in &declarations {
                 checkpoint()?;
-                let Some(file) = by_rel.get(row.relative) else {
+                let Some(file) = by_rel.get(row.relative.as_ref()) else {
                     continue;
                 };
                 let vtype = row.native.declared_type_text().map_err(|e| e.0)?;
                 let view = VarView {
-                    rel: row.relative,
+                    rel: row.relative.as_ref(),
                     line: row.line,
                     owner: row.owner,
                     name: row.name,
@@ -163,10 +163,22 @@ impl<'a> BorrowedBaseVarCandidates<'a> {
                     } else {
                         String::new()
                     };
-                    sites.push(("base_var", row.relative, row.line, msg, ident.clone()));
+                    sites.push((
+                        "base_var",
+                        row.relative.as_ref(),
+                        row.line,
+                        msg,
+                        ident.clone(),
+                    ));
                 }
                 if checked.list {
-                    sites.push(("list_init", row.relative, row.line, String::new(), ident));
+                    sites.push((
+                        "list_init",
+                        row.relative.as_ref(),
+                        row.line,
+                        String::new(),
+                        ident,
+                    ));
                 }
             }
             Ok::<_, String>(sites)

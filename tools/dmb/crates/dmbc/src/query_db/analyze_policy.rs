@@ -4,6 +4,8 @@ use super::*;
 use dq_analyze::{
     captured_base_vars_policy::BorrowedBaseVarsPolicy, captured_decl_policy::BorrowedDeclPolicy,
     captured_init_policy::BorrowedInitPolicy, captured_raw_policy::CapturedRawPolicy,
+    captured_requirement_bool::BorrowedRequirementBool,
+    captured_untyped_member::BorrowedUntypedMember,
 };
 pub(super) const ANALYZE_FINDINGS: Kind = Kind(10);
 pub(crate) const ANALYZE_FIXTURE_LINTS: &[&str] = dq_analyze::captured_policy_metadata::LINTS;
@@ -90,16 +92,23 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>) {
                 for name in &p.ordered {
                     let checkpoint =
                         || crate::daemon::control::checkpoint().map_err(|e| e.to_string());
-                    let run =
-                        match name.as_str() {
-                            "init" => BorrowedInitPolicy::capture(&raw, capture.policy())?
-                                .scan(checkpoint)?,
-                            "decl" => BorrowedDeclPolicy::capture(&raw, capture.policy())?
-                                .scan(checkpoint)?,
-                            "base_vars" => BorrowedBaseVarsPolicy::capture(&raw, capture.policy())?
-                                .scan(checkpoint)?,
-                            _ => return Err("typed policy whitelist differs".into()),
-                        };
+                    let run = match name.as_str() {
+                        "init" => {
+                            BorrowedInitPolicy::capture(&raw, capture.policy())?.scan(checkpoint)?
+                        }
+                        "decl" => {
+                            BorrowedDeclPolicy::capture(&raw, capture.policy())?.scan(checkpoint)?
+                        }
+                        "base_vars" => BorrowedBaseVarsPolicy::capture(&raw, capture.policy())?
+                            .scan(checkpoint)?,
+                        "requirement_bool" => {
+                            BorrowedRequirementBool::capture(&raw, capture.policy())?
+                                .scan(checkpoint)?
+                        }
+                        "untyped_member" => BorrowedUntypedMember::capture(&raw, capture.policy())?
+                            .scan(checkpoint)?,
+                        _ => return Err("typed policy whitelist differs".into()),
+                    };
                     sites = sites
                         .checked_add(run.run.sites.len())
                         .filter(|n| *n <= MAX_FIXTURE_SITES)
@@ -235,5 +244,40 @@ impl QueryDb {
             input: Arc::downgrade(cohort),
             runs,
         })
+    }
+}
+
+#[cfg(test)]
+mod extended_roster_tests {
+    use super::*;
+    #[test]
+    fn original_three_order_is_preserved_and_complete_extended_roster_is_canonical() {
+        let old = ["base_vars", "decl", "init"].map(str::to_owned);
+        assert_eq!(ordered_names(&old).unwrap(), ["init", "decl", "base_vars"]);
+        let all = [
+            "untyped_member",
+            "base_vars",
+            "requirement_bool",
+            "init",
+            "decl",
+        ]
+        .map(str::to_owned);
+        assert_eq!(
+            ordered_names(&all).unwrap(),
+            [
+                "init",
+                "decl",
+                "base_vars",
+                "requirement_bool",
+                "untyped_member"
+            ]
+        );
+        assert!(
+            ordered_names(&["untyped".to_owned()]).is_err(),
+            "full untyped is NOT admitted by this cohort"
+        );
+        assert!(
+            ordered_names(&["requirement_bool".to_owned(), "requirement_bool".to_owned()]).is_err()
+        );
     }
 }

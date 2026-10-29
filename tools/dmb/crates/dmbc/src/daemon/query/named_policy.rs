@@ -60,6 +60,7 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "undefined_variable"
                             | "field_access_static_type"
                             | "no_typehint_implicit_new"
+                            | "proc_call_static_type"
                     )
             }
             _ => false,

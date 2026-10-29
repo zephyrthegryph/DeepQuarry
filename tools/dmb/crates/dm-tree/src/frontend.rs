@@ -526,7 +526,7 @@ mod body_queries;
 pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};
 #[path = "frontend_body_archive.rs"]
 mod body_archive;
-pub use body_archive::{ArchivedBody, BodyArchive};
+pub use body_archive::{ArchivedBody, BodyArchive, CheckerVariableProperties};
 pub use relative_declarations::BodyCodeIdentity;
 pub use relative_declarations::{CurrentSyntaxChunk, DeclarationSyntax, ItemView, RelativeSyntax};
 #[path = "body_arena.rs"]
@@ -742,7 +742,7 @@ mod ast_capacity;
 mod pipeline;
 pub use pipeline::{
     build, build_with_config, build_with_executor, build_with_executor_and_semantic_state,
-    build_with_expansion_memo,
+    build_with_executor_and_semantic_state_for_policy, build_with_expansion_memo,
 };
 #[path = "frontend_semantic_state.rs"]
 mod semantic_state;
@@ -792,6 +792,9 @@ fn shift_items(items: &mut [Item], offset: usize) {
         item.span.end += offset;
         item.header_span.start += offset;
         item.header_span.end += offset;
+        item.declaration_cursor = item
+            .declaration_cursor
+            .and_then(|at| at.checked_add(offset));
         shift_items(&mut item.children, offset);
     }
 }
@@ -804,6 +807,9 @@ fn compact_declarations(items: Vec<Item>, offset: usize) -> Vec<Item> {
             item.span.end += offset;
             item.header_span.start += offset;
             item.header_span.end += offset;
+            item.declaration_cursor = item
+                .declaration_cursor
+                .and_then(|at| at.checked_add(offset));
             if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
                 item.children = crate::settings::compact_setting_items(item.children);
             }
@@ -823,7 +829,9 @@ fn source_span(file: FileId, span: dm_syntax::Span) -> Result<Span, Vec<Diagnost
 
 #[path = "frontend_source_export_mapping.rs"]
 mod source_export_mapping;
-pub use source_export_mapping::{SourceExportMapping, SourceNoteOrigin, SourcePolicyLineOrigin};
+pub use source_export_mapping::{
+    SourceDeclarationPolicyCursor, SourceExportMapping, SourceNoteOrigin, SourcePolicyLineOrigin,
+};
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
 struct Mapping<'a> {
@@ -1138,3 +1146,41 @@ mod settings_receipt_tests;
 #[path = "frontend_initial_setting_prefix.rs"]
 mod initial_setting_prefix;
 pub use initial_setting_prefix::InitialSettingPrefix;
+
+#[cfg(test)]
+mod primary_cursor_rebase_tests {
+    use super::*;
+    #[test]
+    fn cold_compaction_and_warm_rebase_shift_the_same_primary_cursor() {
+        let source = "/datum/probe\n    var/item = 1\n    var/other\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty());
+        let mut shifted = parsed.items.clone();
+        shift_items(&mut shifted, 117);
+        let compacted = compact_declarations(parsed.items, 117);
+        for (cold, warm) in compacted[0].children.iter().zip(&shifted[0].children) {
+            assert_eq!(cold.declaration_cursor, warm.declaration_cursor);
+            assert!(cold.declaration_cursor.unwrap() >= 117);
+        }
+        assert_eq!(
+            compacted[0].children[0].declaration_cursor,
+            source.find('=').map(|at| at + 117)
+        );
+    }
+    #[test]
+    fn later_top_level_type_chunks_do_not_fail_relative_cursor_binding() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("/datum/first\n    var/value\n/datum/second\n    var/other\n".into())
+            }
+        }
+        build(
+            Path::new("primary-offset.dm"),
+            &Source,
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+    }
+}

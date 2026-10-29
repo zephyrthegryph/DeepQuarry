@@ -83,6 +83,10 @@ pub enum Event<'a> {
         expression: &'a Expr,
         at: Span,
         name: &'a str,
+        // Unknown variables/parameters may need a declaration fix note that
+        // current primary metadata has not issued. Other families can still
+        // consume the same evaluation walk without inventing that note.
+        hint: Result<Option<(crate::checker_return_facts::ReturnFixHint, Span)>, &'static str>,
     },
     DynamicMemberCall {
         expression: &'a Expr,
@@ -725,12 +729,22 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                         return Ok(TypeFact::Unknown);
                     }
                     let Some(receiver) = base.receiver()? else {
+                        let hint = match base {
+                            TypeFact::Unhinted => Ok(None),
+                            TypeFact::ReturnHint(hint, call) => Ok(Some((hint, call))),
+                            _ => Err(
+                                "unknown-receiver call needs pinned fix-hint/declaration origins",
+                            ),
+                        };
                         self.events.push(Event::UnknownReceiverCall {
                             expression,
                             at,
                             name: selector,
+                            hint,
                         });
-                        return Ok(TypeFact::Unknown);
+                        // Exact failed Follow::Call returns Analysis::empty:
+                        // later follows do not inherit the lhs fix hint.
+                        return Ok(TypeFact::Unhinted);
                     };
                     self.ordinary_call(expression, at, selector, receiver, args, true)
                 }
@@ -886,12 +900,7 @@ fn checked_type(
             .symbols()
             .text(ty)
             .ok_or("declared type lacks native symbol spelling")?;
-        if spelling.split('/').any(|part| {
-            matches!(
-                part,
-                "final" | "SpacemanDMM_final" | "SpacemanDMM_private" | "SpacemanDMM_protected"
-            )
-        }) {
+        if dm_syntax::has_checker_qualifiers(spelling) {
             return Err(
                 "checker-specific declaration flags require primary compiler metadata".into(),
             );

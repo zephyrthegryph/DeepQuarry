@@ -13,6 +13,13 @@ impl<P> GeneratedOutputInputs<P> {
     }
 }
 impl<P: SnapshotProvider> SnapshotProvider for GeneratedOutputInputs<P> {
+    fn read_policy_bounded(
+        &self,
+        path: &Path,
+        limit: usize,
+    ) -> io::Result<Option<CapturedInputRead>> {
+        self.provider.read_policy_bounded(path, limit)
+    }
     fn source_alias(
         &self,
         path: &Path,

@@ -11,13 +11,13 @@ use dm_analysis::{
     base_var_declarations::{base_var_declarations, BaseVarDeclaration},
     policy_inputs::{PolicyInputs, PolicyRole, TextView},
 };
-use std::{collections::HashSet, path::Path};
+use std::{borrow::Cow, collections::HashSet, path::Path};
 
 /// A view of one issued variable; declaration metadata and initializer tokens
 /// stay borrowed from their compiler owner. Only report coordinates are added.
 pub struct NativeBaseVar<'a> {
     pub native: BaseVarDeclaration<'a>,
-    pub relative: &'a str,
+    pub relative: Cow<'a, str>,
     pub owner: &'a str,
     pub name: &'a str,
     pub line: u32,
@@ -70,35 +70,85 @@ impl<'a> NativeBaseVarFacts<'a> {
         for native in
             base_var_declarations(archive, base_types, &policy.tree.root).map_err(|e| e.0)?
         {
-            let captured = inputs
+            // Preserve original source authority and provenance. A diagnostic
+            // include-return cursor is an independent projection, not another
+            // compiled source or a replacement of native.source.
+            let original = inputs
                 .file(native.source.path.as_path())
                 .ok_or("base-var declaration origin has no captured policy source")?;
-            if !captured.is_compiled() {
+            if !original.is_compiled() {
                 return Err("base-var declaration is not an issued compiled source".into());
             }
-            let relative = dm_preprocess::regions::relative_filesystem_path(
+            let original_rel = dm_preprocess::regions::relative_filesystem_path(
                 native.source.path.as_path(),
                 &policy.tree.root,
             )
             .ok_or("base-var declaration lies outside policy root")?
             .to_string_lossy()
             .replace('\\', "/");
-            let source = policy
+            let original_raw = policy
                 .tree
-                .get(&relative)
+                .get(&original_rel)
                 .ok_or("base-var declaration lacks captured raw source")?;
-            let raw = captured
-                .view(TextView::AnalyzeRaw)
-                .map_err(|e| e.to_string())?;
-            if !source.raw().text.same_view(raw) {
+            if !original_raw.raw().text.same_view(
+                original
+                    .view(TextView::AnalyzeRaw)
+                    .map_err(|e| e.to_string())?,
+            ) {
                 return Err("base-var raw source owner belongs to another policy capture".into());
             }
-            let line = captured
-                .analyze_display_line(native.source.line)
-                .map_err(|e| e.to_string())?;
-            if line == 0 || line > source.raw().num_lines() {
-                return Err("base-var declaration source line cannot be projected".into());
-            }
+            let cursor = archive
+                .member_policy_compatibility_cursor(native.declaration)
+                .map_err(|error| {
+                    format!(
+                        "base-var cursor {}::{} original {}:{}: {error}",
+                        tree.symbols().text(native.owner).unwrap_or("<unknown>"),
+                        tree.symbols().text(native.name).unwrap_or("<unknown>"),
+                        native.source.path.display(),
+                        native.source.line
+                    )
+                })?;
+            let relative = dm_preprocess::regions::relative_filesystem_path(
+                cursor.path.as_path(),
+                &policy.tree.root,
+            )
+            .ok_or("base-var policy cursor lies outside root")?
+            .to_string_lossy()
+            .replace('\\', "/");
+            let (relative, line) = if relative.starts_with("code/") {
+                let captured = inputs
+                    .file(cursor.path.as_path())
+                    .ok_or("base-var code cursor lacks captured policy source")?;
+                if !captured.is_compiled() {
+                    return Err("base-var code cursor is not compiled source".into());
+                }
+                let source = policy
+                    .tree
+                    .get(&relative)
+                    .ok_or("base-var code cursor lacks captured raw source")?;
+                if !source.raw().text.same_view(
+                    captured
+                        .view(TextView::AnalyzeRaw)
+                        .map_err(|e| e.to_string())?,
+                ) {
+                    return Err("base-var code cursor has a foreign raw source".into());
+                }
+                // engine_line is applied even to a certified logical EOF. It
+                // accepts an actual trailing-LF line head beyond raw.num_lines.
+                let line = captured
+                    .analyze_display_line(cursor.line)
+                    .map_err(|e| e.to_string())?;
+                if line == 0 || (!cursor.logical_boundary && line > source.raw().num_lines()) {
+                    return Err("base-var code cursor line cannot be projected".into());
+                }
+                (Cow::Borrowed(source.rel.as_str()), line)
+            } else {
+                // The old typed_vars keeps this row for hot_home's declared
+                // set, then the original by_rel code-file selector omits it.
+                // The current mapping issued this target and EOF progression;
+                // no raw DME payload/read or fabricated HostCapture is needed.
+                (Cow::Owned(relative), cursor.line)
+            };
             let owner = tree
                 .symbols()
                 .text(native.owner)
@@ -109,12 +159,15 @@ impl<'a> NativeBaseVarFacts<'a> {
                 .ok_or("base-var member spelling is unavailable")?;
             result.push(NativeBaseVar {
                 native,
-                relative: &source.rel,
+                relative,
                 owner,
                 name,
                 line: u32::try_from(line).map_err(|_| "base-var line overflow")?,
             });
         }
+        result.sort_by(|a, b| {
+            (a.relative.as_ref(), a.line, a.owner).cmp(&(b.relative.as_ref(), b.line, b.owner))
+        });
         Ok(result)
     }
 }

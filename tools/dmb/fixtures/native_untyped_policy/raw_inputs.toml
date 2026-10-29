@@ -1,0 +1,2 @@
+sources=["code/raw_schema.dm"]
+required_rules=["typed","call","schema"]

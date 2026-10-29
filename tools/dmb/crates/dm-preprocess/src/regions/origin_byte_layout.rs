@@ -21,6 +21,8 @@ struct SparseLayout {
     line_delta: usize,
     width: usize,
     terminator: bool,
+    /// Exact CURRENT raw CRLF: expanded LF points to its LF, not preceding CR.
+    crlf_terminator: bool,
 }
 pub struct ByteLayoutLedger {
     bindings: Box<[Option<SourceAcquisitionIdentity>]>,
@@ -149,6 +151,7 @@ impl ByteLayoutBuilder {
                             line_delta: 0,
                             width,
                             terminator: false,
+                            crlf_terminator: false,
                         })
                 })
             });
@@ -251,7 +254,15 @@ impl ByteLayoutBuilder {
                     source_delta,
                     line_delta: index,
                     width: part.len(),
-                    terminator: raw.as_bytes().get(source_delta + part.len()) == Some(&b'\n'),
+                    terminator: raw.as_bytes().get(source_delta + part.len()) == Some(&b'\n')
+                        || raw
+                            .as_bytes()
+                            .get(source_delta + part.len()..source_delta + part.len() + 2)
+                            == Some(b"\r\n"),
+                    crlf_terminator: raw
+                        .as_bytes()
+                        .get(source_delta + part.len()..source_delta + part.len() + 2)
+                        == Some(b"\r\n"),
                 });
             }
             source_delta = source_delta.checked_add(raw_part.len())?.checked_add(1)?;
@@ -338,7 +349,11 @@ impl ByteLayoutBuilder {
         // Authority is current native input issuance; these width checks prove
         // only its supported transform. PreparedSource blanks comments one
         // BYTE at a time. Equal text/width never substitutes for a source lease.
-        if raw.ends_with('\n') && !raw.ends_with("\r\n") {
+        if raw.ends_with("\r\n") {
+            // Class1 conflates no-LF source with CRLF. A real CRLF needs the
+            // sparse producer's terminator byte evidence; never widen class1.
+            0
+        } else if raw.ends_with('\n') {
             2
         } else {
             1
@@ -424,11 +439,16 @@ impl ByteLayoutLedger {
         if !within_layout || delta > body_len {
             return Err("original terminator coordinate is not certified");
         }
+        let original_delta = delta
+            .checked_add(usize::from(layout.is_some_and(|layout| {
+                delta == layout.width && layout.crlf_terminator
+            })))
+            .ok_or("original CRLF terminator offset overflow")?;
         let source_offset = origin
             .source_span
             .start
             .checked_add(layout.map_or(0, |layout| layout.source_delta))
-            .and_then(|start| start.checked_add(delta))
+            .and_then(|start| start.checked_add(original_delta))
             .ok_or("original offset overflow")?;
         if source_offset >= origin.source_span.end
             || !expected.source_text().is_char_boundary(source_offset)
@@ -441,7 +461,7 @@ impl ByteLayoutLedger {
                 .source_line
                 .checked_add(layout.map_or(0, |layout| layout.line_delta))
                 .ok_or("original source line overflow")?,
-            byte_column: delta + 1,
+            byte_column: original_delta + 1,
             source_offset,
         })
     }
@@ -1034,5 +1054,78 @@ mod macro_line_receipt_tests {
         let warm = crate::regions::expand_regions_text_with_memo(&plan, 1, &memo);
         assert_eq!(query(&warm, &plan, current.0.lease()).unwrap(), 3);
         assert!(query(&warm, &plan, old.0.lease()).is_err());
+    }
+}
+
+#[cfg(test)]
+mod crlf_terminator_tests {
+    use super::*;
+    use crate::AcquiredSource;
+    use std::path::PathBuf;
+    fn point(raw: &str, at: usize) -> Result<OriginalByteCursor, &'static str> {
+        let heavy = AcquiredSource::from_original_bytes(raw.as_bytes().to_vec(), ());
+        let line = heavy.prepared().lines().iter().next().unwrap();
+        let part = body_without_line_ending(line.text.as_ref());
+        let mut builder =
+            ByteLayoutBuilder::from_bindings(vec![Some(heavy.lease().clone())].into());
+        builder.record(
+            0,
+            Some(line),
+            line.source_line,
+            line.source_span,
+            part,
+            false,
+        );
+        let ledger = builder.finish();
+        let path = Arc::new(PathBuf::from("crlf.dm"));
+        let traces = Arc::new(Vec::new());
+        let origin = ExpandedOriginView {
+            origin: super::super::origin_arena::OriginView {
+                output_line: 1,
+                path: &path,
+                source_line: 1,
+            },
+            output_span: Span::new(0, part.len() + 1),
+            source_span: line.source_span,
+            region: 0,
+            macro_expansions: &traces,
+        };
+        ledger.locate(0, origin, 0, heavy.lease(), at)
+    }
+    #[test]
+    fn real_crlf_terminator_maps_to_original_lf_with_pinned_byte_column() {
+        let body = "\tvar/SpacemanDMM_private/value";
+        assert_eq!(body.len(), 30);
+        let raw = format!("{body}\r\n");
+        let at = point(&raw, body.len()).unwrap();
+        assert_eq!((at.line, at.byte_column, at.source_offset), (1, 32, 31));
+        assert_eq!(raw.as_bytes()[at.source_offset], b'\n');
+        let before = point(&raw, body.len() - 1).unwrap();
+        assert_eq!(
+            (before.byte_column, before.source_offset),
+            (body.len(), body.len() - 1)
+        );
+    }
+    #[test]
+    fn no_lf_and_lone_cr_never_gain_synthetic_terminator_authority() {
+        let body = "var/grouped";
+        assert!(point(body, body.len()).is_err());
+        assert!(point(&format!("{body}\r"), body.len()).is_err());
+        let lf = point(&format!("{body}\n"), body.len()).unwrap();
+        assert_eq!(
+            (lf.byte_column, lf.source_offset),
+            (body.len() + 1, body.len())
+        );
+    }
+    #[test]
+    fn utf8_comment_mask_and_tabs_keep_body_width_before_real_crlf() {
+        let body = "\tvar/value /* é漢 */";
+        let raw = format!("{body}\r\n");
+        let at = point(&raw, body.len()).unwrap();
+        assert_eq!(
+            (at.byte_column, at.source_offset),
+            (body.len() + 2, body.len() + 1)
+        );
+        assert_eq!(raw.as_bytes()[at.source_offset], b'\n');
     }
 }

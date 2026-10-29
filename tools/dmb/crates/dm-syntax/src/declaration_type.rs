@@ -64,3 +64,38 @@ mod tests {
         );
     }
 }
+
+/// Classify the spelling of an ALREADY parsed native type path for conservative
+/// policy refusal. This does not parse declarations or strip qualifiers. A false
+/// result is NOT proof that source annotations/macros were absent.
+pub fn has_checker_qualifiers(path: &str) -> bool {
+    path.split('/').any(|part| {
+        matches!(
+            part,
+            "final" | "SpacemanDMM_final" | "SpacemanDMM_private" | "SpacemanDMM_protected"
+        )
+    })
+}
+#[cfg(test)]
+mod checker_qualifier_classification_tests {
+    use super::*;
+    #[test]
+    fn classify_exact_owned_path_segments_without_inferring_a_type() {
+        for path in [
+            "/SpacemanDMM_private",
+            "/list/SpacemanDMM_protected/datum",
+            "/datum/final",
+            "SpacemanDMM_final/datum",
+        ] {
+            assert!(has_checker_qualifiers(path), "{path}");
+        }
+        for path in [
+            "/datum",
+            "/datum/private",
+            "/datum/SpacemanDMM_private_suffix",
+            "/list/datum/finality",
+        ] {
+            assert!(!has_checker_qualifiers(path), "{path}");
+        }
+    }
+}

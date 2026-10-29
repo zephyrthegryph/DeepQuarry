@@ -1,0 +1,19 @@
+var/implicit_root
+var/global/explicit_global
+var/static/explicit_static
+var/const/constant = 1
+var/tmp/temporary
+/datum/holder
+    var/global/member_global
+    var/static/member_static
+    var/ordinary
+/proc/check(holder)
+    holder.implicit_root
+    holder.explicit_global
+    holder.explicit_static
+    holder.constant
+    holder.temporary
+    holder.member_global
+    holder.member_static
+    holder.ordinary
+    holder.world

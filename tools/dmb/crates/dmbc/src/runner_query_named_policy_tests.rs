@@ -587,3 +587,145 @@ fn implicit_new_unsupported_later_context_does_not_emit_partial_row() {
         .is_err());
     assert!(bytes.is_empty());
 }
+
+#[test]
+fn proc_static_seed_matches_exact_independent_notes_bytes_order_and_argument_suppression() {
+    let source = include_str!("../../../fixtures/unified_checks/proc_static/probe.dm");
+    let snapshot = semantic_snapshot(source, None);
+    let row = semantic_row(&snapshot, 2, "proc_call_static_type").unwrap();
+    let rows = row["diagnostics"].as_array().unwrap();
+    let expected = [
+        (7, 9),
+        (8, 8),
+        (9, 16),
+        (10, 16),
+        (11, 12),
+        (12, 9),
+        (12, 18),
+    ];
+    assert_eq!(rows.len(), expected.len());
+    let archive = snapshot.body_archive.as_ref().unwrap();
+    for (index, (actual, (line, column))) in rows.iter().zip(expected).enumerate() {
+        assert_eq!(actual["severity"], "warning");
+        assert_eq!(
+            actual["message"],
+            if index == 6 {
+                "proc call requires static type: \"again\""
+            } else {
+                "proc call requires static type: \"invoke\""
+            }
+        );
+        let offset = actual["expanded_span"][0].as_u64().unwrap() as usize;
+        let origin = archive.original_note_origin(offset).unwrap();
+        assert_eq!((origin.line, origin.byte_column), (line, column));
+    }
+    assert_eq!(
+        rows[0]["notes"],
+        serde_json::json!(["1:12: add a return type annotation to /proc/plain"])
+    );
+    assert_eq!(
+        rows[1]["notes"],
+        serde_json::json!(["8:2: return type evaluated to None"])
+    );
+    for index in [2, 3, 6] {
+        assert_eq!(rows[index]["notes"], serde_json::json!([]));
+    }
+    for index in [4, 5] {
+        assert_eq!(rows[index]["notes"], rows[0]["notes"]);
+    }
+    assert!(
+        semantic_row(&snapshot, 2, "undefined_proc").unwrap()["diagnostics"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+}
+#[test]
+fn proc_static_real_tag_override_and_disabled_are_preserved() {
+    let source =
+        "/proc/plain()\n    return null\n/proc/probe()\n    plain().invoke(hidden_missing())\n";
+    let raised = semantic_snapshot(
+        source,
+        Some(b"[diagnostics]\nproc_call_static_type='error'\n"),
+    );
+    assert_eq!(
+        semantic_row(&raised, 1, "proc_call_static_type").unwrap()["diagnostics"][0]["severity"],
+        "error"
+    );
+    let disabled = semantic_snapshot(
+        source,
+        Some(b"[diagnostics]\nproc_call_static_type='off'\n"),
+    );
+    assert!(
+        semantic_row(&disabled, 1, "proc_call_static_type").unwrap()["diagnostics"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+}
+#[test]
+fn proc_static_unknown_parameter_note_is_unsupported_not_silently_dropped() {
+    let snapshot = semantic_snapshot("/proc/p(value)\n    value.invoke(hidden_missing())\n", None);
+    let mut bytes = Vec::new();
+    assert!(snapshot
+        .write_native_configured_checker(
+            0,
+            "proc_call_static_type",
+            &root().join("project.dme"),
+            None,
+            &snapshot.tree,
+            &mut bytes
+        )
+        .is_err());
+    assert!(bytes.is_empty());
+}
+
+#[test]
+fn proc_static_utf8_tab_warning_and_definition_notes_are_original_bytes() {
+    let snapshot = semantic_snapshot(
+        include_str!("../../../fixtures/unified_checks/proc_static_bytes/probe.dm"),
+        None,
+    );
+    let row = semantic_row(&snapshot, 2, "proc_call_static_type").unwrap();
+    let rows = row["diagnostics"].as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    let archive = snapshot.body_archive.as_ref().unwrap();
+    for (actual, expected) in rows.iter().zip([(6, 26), (7, 10)]) {
+        let origin = archive
+            .original_note_origin(actual["expanded_span"][0].as_u64().unwrap() as usize)
+            .unwrap();
+        assert_eq!((origin.line, origin.byte_column), expected);
+    }
+    assert_eq!(
+        rows[0]["notes"],
+        serde_json::json!(["1:27: add a return type annotation to /proc/unicode"])
+    );
+    assert_eq!(
+        rows[1]["notes"],
+        serde_json::json!(["3:14: add a return type annotation to /proc/tabbed"])
+    );
+}
+#[test]
+fn proc_static_inherited_override_and_explicit_null_notes_select_actual_callable() {
+    let snapshot = semantic_snapshot(
+        include_str!("../../../fixtures/unified_checks/proc_static_inherited/probe.dm"),
+        None,
+    );
+    let row = semantic_row(&snapshot, 5, "proc_call_static_type").unwrap();
+    let rows = row["diagnostics"].as_array().unwrap();
+    assert_eq!(rows.len(), 3);
+    assert_eq!(
+        rows[0]["notes"],
+        serde_json::json!(["1:27: add a return type annotation to /datum/base/proc/inherited"])
+    );
+    assert_eq!(
+        rows[1]["notes"],
+        serde_json::json!([
+            "7:29: add a return type annotation to /datum/base/child/proc/overridden"
+        ])
+    );
+    assert_eq!(
+        rows[2]["notes"],
+        serde_json::json!(["15:6: return type evaluated to None"])
+    );
+}

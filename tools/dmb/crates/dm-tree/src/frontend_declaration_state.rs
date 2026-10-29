@@ -283,6 +283,17 @@ fn items_spans(items: &mut [Item], text: &str, from: usize, to: usize) -> Option
     for item in items {
         item.span = span(item.span, text, from, to)?;
         item.header_span = span(item.header_span, text, from, to)?;
+        item.declaration_cursor = match item.declaration_cursor {
+            Some(at) => {
+                let relative = at.checked_sub(from)?;
+                text.as_bytes().get(relative)?;
+                if !text.is_char_boundary(relative) {
+                    return None;
+                }
+                Some(relative.checked_add(to)?)
+            }
+            None => None,
+        };
         items_spans(&mut item.children, text, from, to)?;
     }
     Some(())
@@ -361,7 +372,10 @@ mod tests {
             "/obj/beta\n    var/shared = 1\n    proc/run()\n        return 2\n",
             "/obj/epsilon\n    var/fresh_name = 5\n",
         ];
-        let all: Vec<_> = texts.iter().map(|text| symbols_contribution(text)).collect();
+        let all: Vec<_> = texts
+            .iter()
+            .map(|text| symbols_contribution(text))
+            .collect();
         let mut active = ActiveSymbols::default();
         active.update(&all[..4]).unwrap();
         let ordered = |table: &SymbolTable| {
@@ -401,7 +415,10 @@ mod tests {
             assert_eq!(ordered(&delta), ordered(&expected), "step {index}");
             assert_eq!(active.counts, fresh.counts, "step {index}");
             if index == 0 {
-                assert!(Arc::ptr_eq(&before, &delta), "equal spellings keep the table");
+                assert!(
+                    Arc::ptr_eq(&before, &delta),
+                    "equal spellings keep the table"
+                );
             }
         }
     }

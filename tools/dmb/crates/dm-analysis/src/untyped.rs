@@ -93,6 +93,9 @@ fn declared_local(text: &str) -> Option<(String, String)> {
     if text.contains('[') && !under(&ty, "/list") {
         ty = format!("/list{ty}");
     }
+    if dm_syntax::has_checker_qualifiers(&ty) {
+        return None;
+    }
     Some((name, ty))
 }
 
@@ -142,7 +145,8 @@ pub(crate) fn archived_scope<'a, R: Resolver + ?Sized>(
         body.statement_body(),
         resolver,
         exempt_types,
-    )
+    )?
+    .with_archive(body.archive_owner())
 }
 
 /// Called only after the live-body issuance check, or with archive-owned parts.
@@ -190,6 +194,7 @@ pub(crate) fn scope_from<'a, R: Resolver + ?Sized>(
     }
     Ok(Walker {
         tree,
+        archive: None,
         resolver,
         owner,
         locals: locals.types,
@@ -199,11 +204,30 @@ pub(crate) fn scope_from<'a, R: Resolver + ?Sized>(
     })
 }
 
+fn guard_declaration_type(
+    tree: &dm_tree::SemanticTree,
+    ty: Option<SymbolId>,
+    element: Option<SymbolId>,
+) -> Result<(), Unsupported> {
+    for symbol in [ty, element].into_iter().flatten() {
+        let path = tree
+            .symbols()
+            .text(symbol)
+            .ok_or_else(|| Unsupported("unknown declaration type symbol".into()))?;
+        if dm_syntax::has_checker_qualifiers(path) {
+            return Err(Unsupported(
+                "declaration needs native checker qualifier facts".into(),
+            ));
+        }
+    }
+    Ok(())
+}
 fn declaration_type(
     tree: &dm_tree::SemanticTree,
     ty: Option<SymbolId>,
     element: Option<SymbolId>,
 ) -> Result<String, Unsupported> {
+    guard_declaration_type(tree, ty, element)?;
     let Some(ty) = ty else {
         return Ok(String::new());
     };
@@ -221,6 +245,70 @@ fn declaration_type(
         }
     }
     Ok(path.to_owned())
+}
+
+fn has_field_qualifiers(
+    tree: &dm_tree::SemanticTree,
+    ty: Option<SymbolId>,
+    element: Option<SymbolId>,
+) -> Result<bool, Unsupported> {
+    let mut any = false;
+    for symbol in ty.into_iter().chain(element) {
+        let path = tree
+            .symbols()
+            .text(symbol)
+            .ok_or_else(|| Unsupported("unknown field type symbol".into()))?;
+        any |= dm_syntax::has_checker_qualifiers(path);
+    }
+    Ok(any)
+}
+/// Native metadata is never rewritten. Only the ORIGINAL archive's proved
+/// formal supplies the checker hint for a qualified source declaration.
+pub(crate) fn field_declared_hint<R: Resolver + ?Sized>(
+    tree: &dm_tree::SemanticTree,
+    resolver: &R,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    owner: SymbolId,
+    name: SymbolId,
+    data: &DeclarationMeaning,
+) -> Result<Option<String>, Unsupported> {
+    if !has_field_qualifiers(tree, data.declared_type, data.list_element_type)? {
+        let hint = declaration_type(tree, data.declared_type, data.list_element_type)?;
+        return Ok((!hint.is_empty()).then_some(hint));
+    }
+    let archive = archive.ok_or_else(|| {
+        Unsupported("qualified field needs its original archive hint provider".into())
+    })?;
+    if !std::ptr::eq(tree, archive.tree()) {
+        return Err(Unsupported(
+            "qualified field archive has another semantic owner".into(),
+        ));
+    }
+    let profile = tree
+        .checker_builtin_profile()
+        .ok_or_else(|| Unsupported("qualified field checker profile unavailable".into()))?;
+    let fact = crate::checker_variable_facts::variable(tree, resolver, profile, owner, name)
+        .map_err(Unsupported)?
+        .ok_or_else(|| Unsupported("qualified source formal unavailable".into()))?;
+    if fact.metadata.declared_type != data.declared_type
+        || fact.metadata.list_element_type != data.list_element_type
+    {
+        return Err(Unsupported(
+            "qualified target metadata differs from selected original formal".into(),
+        ));
+    }
+    let formal = fact
+        .formal
+        .ok_or_else(|| Unsupported("qualified hint has no authored primary formal".into()))?;
+    let view = archive
+        .checker_variable_properties(formal, profile)
+        .map_err(Unsupported)?;
+    if !std::ptr::eq(view.metadata, fact.metadata.as_ref()) {
+        return Err(Unsupported(
+            "qualified hint lost original metadata backing".into(),
+        ));
+    }
+    Ok(view.declared_hint().map(str::to_owned))
 }
 
 #[derive(Default)]
@@ -289,6 +377,7 @@ impl TypedVisitor for Locals {
 
 pub(crate) struct Walker<'a, R: ?Sized> {
     tree: &'a dm_tree::SemanticTree,
+    archive: Option<&'a dm_tree::frontend::BodyArchive>,
     resolver: &'a R,
     pub(crate) owner: SymbolId,
     pub(crate) locals: HashMap<String, String>,
@@ -296,7 +385,36 @@ pub(crate) struct Walker<'a, R: ?Sized> {
     found: BTreeMap<(SymbolId, SymbolId), Contribution>,
     error: Option<Unsupported>,
 }
-impl<R: Resolver + ?Sized> Walker<'_, R> {
+impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
+    pub(crate) fn with_archive(
+        mut self,
+        archive: &'a dm_tree::frontend::BodyArchive,
+    ) -> Result<Self, Unsupported> {
+        if !std::ptr::eq(self.tree, archive.tree()) {
+            return Err(Unsupported(
+                "untyped source hints belong to another original semantic owner".into(),
+            ));
+        }
+        self.archive = Some(archive);
+        Ok(self)
+    }
+    pub(crate) fn field_is_typed(
+        &self,
+        owner: SymbolId,
+        name: SymbolId,
+        metadata: &DeclarationMeaning,
+    ) -> Result<bool, Unsupported> {
+        field_declared_hint(
+            self.tree,
+            self.resolver,
+            self.archive,
+            owner,
+            name,
+            metadata,
+        )
+        .map(|hint| hint.is_some())
+    }
+
     pub(crate) fn field(
         &self,
         owner: SymbolId,
@@ -308,6 +426,17 @@ impl<R: Resolver + ?Sized> Walker<'_, R> {
         };
         match self.resolver.resolve(query) {
             M::Member { data, .. } if data.inherited_opaque.is_none() => {
+                // Refuse BEFORE callers can skip an apparently typed target.
+                // These reserved type segments carry checker qualifiers, not a
+                // proven declared type; do not strip or guess their meaning.
+                field_declared_hint(
+                    self.tree,
+                    self.resolver,
+                    self.archive,
+                    owner,
+                    SymbolId::of(name),
+                    &data,
+                )?;
                 // An inherited default override does not declare another slot.
                 // The compiler's storage query supplies its formal owner.
                 let storage = Q::VarStorage {
@@ -394,6 +523,33 @@ impl<R: Resolver + ?Sized> Walker<'_, R> {
         } else {
             None
         };
+        if has_field_qualifiers(self.tree, declared, element)? {
+            let data = match self.resolver.resolve(Q::Var {
+                owner,
+                name: SymbolId::of(name),
+            }) {
+                M::Member { data, .. } if data.inherited_opaque.is_none() => data,
+                _ => {
+                    return Err(Unsupported(
+                        "qualified field type has no original source metadata".into(),
+                    ))
+                }
+            };
+            if data.declared_type != declared || data.list_element_type != element {
+                return Err(Unsupported(
+                    "qualified receiver type differs from original field metadata".into(),
+                ));
+            }
+            return field_declared_hint(
+                self.tree,
+                self.resolver,
+                self.archive,
+                owner,
+                SymbolId::of(name),
+                &data,
+            )
+            .map(|hint| Some(hint.unwrap_or_default()));
+        }
         Ok(Some(declaration_type(self.tree, declared, element)?))
     }
     fn return_type(&self, owner: SymbolId, name: &str) -> Result<Option<String>, Unsupported> {
@@ -557,7 +713,7 @@ impl<R: Resolver + ?Sized> Walker<'_, R> {
         let Some((owner, name, metadata)) = self.place(lhs)? else {
             return Ok(());
         };
-        if metadata.declared_type.is_some() || metadata.flags & CONST_FLAG != 0 {
+        if self.field_is_typed(owner, name, &metadata)? || metadata.flags & CONST_FLAG != 0 {
             return Ok(());
         }
         let rhs = ungroup(rhs);

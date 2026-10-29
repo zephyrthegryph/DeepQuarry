@@ -1,6 +1,8 @@
 //! One validation-pass directory proofs. Never retain this view across publication
 //! restats: payload reads and digests always use live FileSystemInputs.
-use crate::input_snapshot::{FileSystemInputs, FolderListing, SnapshotProvider, Stamp};
+use crate::input_snapshot::{
+    CapturedInputRead, FileSystemInputs, FolderListing, SnapshotProvider, Stamp,
+};
 use dm_preprocess::regions::canonical_path;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
@@ -301,6 +303,13 @@ fn ordinary_negative_name(name: &str) -> bool {
         && matches!(stem.as_bytes()[3], b'1'..=b'9'))
 }
 impl SnapshotProvider for BulkFileSystemProofs {
+    fn read_policy_bounded(
+        &self,
+        path: &Path,
+        limit: usize,
+    ) -> io::Result<Option<CapturedInputRead>> {
+        crate::input_snapshot::FileSystemInputs.read_policy_bounded(path, limit)
+    }
     fn source_alias(
         &self,
         path: &Path,

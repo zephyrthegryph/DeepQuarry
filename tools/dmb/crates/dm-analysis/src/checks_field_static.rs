@@ -2,8 +2,7 @@
 //! SpacemanDMM0290db5c752fa292f9824521515b603a2afd11dc, GPL-3.0.
 use crate::{
     checker_expression_visit::{Event, Walk},
-    checker_return_facts::ReturnFixHint,
-    checks::{Diagnostic, Note, Severity},
+    checks::{Diagnostic, Severity},
 };
 use dm_tree::frontend::{ArchivedBody, BodyArchive};
 pub fn archived(
@@ -38,53 +37,7 @@ pub fn rows(
         else {
             continue;
         };
-        // The warning point needs exact original byte provenance too, including
-        // unhinted constructor/locate cases with no definition note.
-        let warning_source = archive.original_note_origin(at.start)?;
-        let mut notes = Vec::new();
-        if let Some((fix, call)) = hint {
-            let (source, message) = match fix {
-                ReturnFixHint::UnannotatedSource(identity) => {
-                    let owner = archive
-                        .tree()
-                        .symbols()
-                        .text(identity.owner)
-                        .ok_or("return note owner unavailable")?;
-                    let name = archive
-                        .tree()
-                        .symbols()
-                        .text(identity.name)
-                        .ok_or("return note name unavailable")?;
-                    let kind = if identity.verb { "verb" } else { "proc" };
-                    (
-                        archive.callable_note_origin(identity)?,
-                        format!(
-                            "add a return type annotation to {}/{kind}/{name}",
-                            owner.trim_end_matches('/')
-                        ),
-                    )
-                }
-                ReturnFixHint::EvaluatedNone => (
-                    archive.original_note_origin(call.start)?,
-                    "return type evaluated to None".into(),
-                ),
-                ReturnFixHint::None => {
-                    return Err("empty return hint must not produce a source note".into())
-                }
-                ReturnFixHint::UnissuedBuiltin => {
-                    return Err("builtin return note provenance is not issued".into())
-                }
-            };
-            // Old one-file fixture note projection is proven. Cross-file source
-            // formatting must be captured separately before admitting it.
-            if source.path != warning_source.path {
-                return Err("cross-file checker note formatting is not yet admitted".into());
-            }
-            notes.push(Note {
-                message,
-                source: Some(source),
-            });
-        }
+        let notes = crate::checker_static_type_notes::notes(archive, at, hint)?;
         rows.push(Diagnostic {
             family: "field_access_static_type",
             severity,

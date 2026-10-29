@@ -11,16 +11,57 @@ use dm_syntax::{
     StatementKind, SwitchAlternative,
 };
 
+trait Observer {
+    fn expression(&mut self, _: &Expr, _: Span) {}
+    fn assignment(&mut self, _: &Expr, _: &Expr, _: Span) {}
+}
+struct Assignments<'a, F>(&'a mut F);
+impl<F: FnMut(&Expr, &Expr, Span)> Observer for Assignments<'_, F> {
+    fn assignment(&mut self, a: &Expr, b: &Expr, at: Span) {
+        self.0(a, b, at);
+    }
+}
+struct Expressions<'a, F>(&'a mut F);
+impl<F: FnMut(&Expr, Span)> Observer for Expressions<'_, F> {
+    fn expression(&mut self, node: &Expr, at: Span) {
+        self.0(node, at);
+    }
+}
 pub(crate) fn assignments(statements: &[Statement], emit: &mut impl FnMut(&Expr, &Expr, Span)) {
+    walk(statements, &mut Assignments(emit));
+}
+pub(crate) fn expressions(statements: &[Statement], emit: &mut impl FnMut(&Expr, Span)) {
+    walk(statements, &mut Expressions(emit));
+}
+fn walk(statements: &[Statement], emit: &mut impl Observer) {
     for statement in statements {
-        statement_assignments(statement, emit);
+        statement_walk(statement, emit);
     }
 }
 
-fn expression(node: &Expr, at: Span, emit: &mut impl FnMut(&Expr, &Expr, Span)) {
+fn expression(node: &Expr, at: Span, emit: &mut impl Observer) {
+    emit.expression(node, at);
     if let ExprKind::Binary { op, lhs, rhs } = &node.kind {
         if op == "=" {
-            emit(lhs, rhs, at);
+            emit.assignment(lhs, rhs, at);
+        }
+    }
+    if let ExprKind::Call { callee, .. } = &node.kind {
+        if matches!(&callee.kind, ExprKind::StaticMember { .. }) {
+            // Pinned Follow::ProcReference discards its parsed argument list.
+            expression(callee, at, emit);
+            return;
+        }
+    }
+    if let ExprKind::Unary { op, value } = &node.kind {
+        if op == "new" {
+            // Legacy New* walk visits arguments, never target mini-expressions.
+            if let ExprKind::Call { args, .. } = &value.kind {
+                for arg in args {
+                    expression(arg, at, emit);
+                }
+            }
+            return;
         }
     }
     for_each_expression_child(node, |_, child| expression(child, at, emit));
@@ -35,7 +76,7 @@ fn next_arm(else_branch: &[Statement]) -> Option<&Statement> {
         .then_some(next)
 }
 
-fn statement_assignments(statement: &Statement, emit: &mut impl FnMut(&Expr, &Expr, Span)) {
+fn statement_walk(statement: &Statement, emit: &mut impl Observer) {
     let at = statement.span;
     match &statement.kind {
         StatementKind::If { .. } => {
@@ -67,11 +108,11 @@ fn statement_assignments(statement: &Statement, emit: &mut impl FnMut(&Expr, &Ex
                 else {
                     unreachable!("if-arm chain is checked above")
                 };
-                assignments(then_branch, emit);
+                walk(then_branch, emit);
                 match next_arm(else_branch) {
                     Some(next) => arm = next,
                     None => {
-                        assignments(else_branch, emit);
+                        walk(else_branch, emit);
                         break;
                     }
                 }
@@ -79,13 +120,13 @@ fn statement_assignments(statement: &Statement, emit: &mut impl FnMut(&Expr, &Ex
         }
         StatementKind::While { condition, body } | StatementKind::DoWhile { condition, body } => {
             expression(condition, at, emit);
-            assignments(body, emit);
+            walk(body, emit);
         }
         StatementKind::Spawn { delay, body } => {
             if let Some(delay) = delay {
                 expression(delay, at, emit);
             }
-            assignments(body, emit);
+            walk(body, emit);
         }
         StatementKind::Set { value, .. } => expression(value, at, emit),
         StatementKind::For { control, body } => {
@@ -125,7 +166,7 @@ fn statement_assignments(statement: &Statement, emit: &mut impl FnMut(&Expr, &Ex
                     }
                 }
             }
-            assignments(body, emit);
+            walk(body, emit);
         }
         StatementKind::Switch {
             selector,
@@ -145,15 +186,15 @@ fn statement_assignments(statement: &Statement, emit: &mut impl FnMut(&Expr, &Ex
                 }
             }
             for case in cases {
-                assignments(&case.body, emit);
+                walk(&case.body, emit);
             }
-            assignments(else_branch, emit);
+            walk(else_branch, emit);
         }
         StatementKind::Try {
             body, catch_body, ..
         } => {
-            assignments(body, emit);
-            assignments(catch_body, emit);
+            walk(body, emit);
+            walk(catch_body, emit);
         }
         StatementKind::Throw(value)
         | StatementKind::Call(value)
@@ -166,12 +207,12 @@ fn statement_assignments(statement: &Statement, emit: &mut impl FnMut(&Expr, &Ex
         }
         StatementKind::Assign { target, op, value } => {
             if op == "=" {
-                emit(target, value, at);
+                emit.assignment(target, value, at);
             }
             expression(target, at, emit);
             expression(value, at, emit);
         }
-        StatementKind::Label { body, .. } => assignments(body, emit),
+        StatementKind::Label { body, .. } => walk(body, emit),
         StatementKind::Goto(_)
         | StatementKind::Return(None)
         | StatementKind::Var { value: None, .. }

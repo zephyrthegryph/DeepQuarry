@@ -12,7 +12,9 @@ mod stable_chunks;
 pub use boundary_scan::{scan_top_level_boundaries, BoundaryCheckpoint, BoundaryScanError};
 pub use stable_chunks::scan_stable_source_chunks_from;
 mod declaration_type;
-pub use declaration_type::{normalize_declaration_type, project_declaration_type, DeclarationType};
+pub use declaration_type::{
+    has_checker_qualifiers, normalize_declaration_type, project_declaration_type, DeclarationType,
+};
 pub mod map;
 mod pending_body;
 mod scope_map;
@@ -154,6 +156,11 @@ pub struct Item {
     pub header: String,
     pub span: Span,
     pub header_span: Span,
+    /// Optional primary-token cursor: top-level assignment or suffix/terminator.
+    /// Captured before declaration normalization, never a guessed header offset.
+    pub declaration_cursor: Option<usize>,
+    /// Local lexical qualifier fact; portable decoding never issues it.
+    pub checker_qualifiers: u8,
     pub indent: usize,
     pub children: Vec<Item>,
 }
@@ -243,8 +250,14 @@ pub use expression_continuation::splice_expression_continuations;
 
 mod declaration_parser;
 use declaration_parser::*;
+mod declaration_qualifiers;
 pub use declaration_parser::{
-    parse, parse_declaration_skeleton, top_level_assignment_index, DeclarationSkeleton,
+    parse, parse_declaration_skeleton, primary_header_cursors, primary_header_facts,
+    top_level_assignment_index, DeclarationSkeleton, PrimaryHeaderInput,
+};
+pub use declaration_qualifiers::{
+    inherit_header_qualifiers, CHECKER_VAR_FINAL, CHECKER_VAR_MASK, CHECKER_VAR_PRIVATE,
+    CHECKER_VAR_PROTECTED, UNKNOWN_HEADER_QUALIFIERS,
 };
 
 #[cfg(test)]

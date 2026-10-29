@@ -13,9 +13,9 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
+pub use crate::raw_marker_policy::{matching_paren, split_args, strip_comments_keep_strings};
 use crate::tree::{SourceFile, Tree, CODE_DM};
 use crate::{pat, pat_match};
-pub use crate::raw_marker_policy::{strip_comments_keep_strings,split_args,matching_paren};
 
 /// Marker names the engine reads at the start of a statement.
 pub const MARKERS: &[&str] = &[
@@ -55,7 +55,16 @@ pub const CAP_ENTRIES: &str = "CAP_ENTRIES";
 pub const RUNTIME_OBSERVE: &str = "RUNTIME_OBSERVE";
 
 /// Calls that make a returned list a list of declaration entries.
-const ENTRY_CALLS: &[&str] = &["op(", "extend(", "interface(", "ui_shape(", "on_notice(", "on_change(", "without(", "configure("];
+const ENTRY_CALLS: &[&str] = &[
+    "op(",
+    "extend(",
+    "interface(",
+    "ui_shape(",
+    "on_notice(",
+    "on_change(",
+    "without(",
+    "configure(",
+];
 
 /// The end offset (exclusive, trailing blanks trimmed) of the indented block that follows the marker whose `)` is at `close`,
 /// or None when no indented line follows it (the legacy single-macro form, or a header with no entries).
@@ -202,26 +211,33 @@ pub struct KeyRef {
 }
 
 /// Calls whose string-literal arguments are op keys, and those whose first literal is a capability key.
-pub const OP_KEY_CALLS: &[&str] = &["extend", "without", "on_op", "shares_effects", "above", "perform_op", "e0_perform_op"];
+pub const OP_KEY_CALLS: &[&str] = &[
+    "extend",
+    "without",
+    "on_op",
+    "shares_effects",
+    "above",
+    "perform_op",
+    "e0_perform_op",
+];
 pub const CAP_KEY_CALLS: &[&str] = &["configure"];
 /// Calls whose `source =` argument must be a datum or SRC_*, never text or null.
-pub const SOURCE_CALLS: &[&str] = &["hold", "hold_until", "hold_override", "grant", "release", "status_end"];
+pub const SOURCE_CALLS: &[&str] = &[
+    "hold",
+    "hold_until",
+    "hold_override",
+    "grant",
+    "release",
+    "status_end",
+];
 
 /// The position of each `#include`d file of `deepquarry.dme` (repo-relative, forward slashes). A file the dme does not include (generated
 /// output) has no entry and sorts after every included file.
 pub fn dme_include_order(root: &std::path::Path) -> HashMap<String, usize> {
-    let mut out = HashMap::new();
-    let Ok(text) = std::fs::read_to_string(root.join("deepquarry.dme")) else { return out };
-    for line in text.lines() {
-        let line = line.trim();
-        let Some(rest) = line.strip_prefix("#include") else { continue };
-        let rest = rest.trim();
-        let Some(path) = rest.strip_prefix('"').and_then(|r| r.split('"').next()) else { continue };
-        let rel = path.replace('\\', "/");
-        let n = out.len();
-        out.entry(rel).or_insert(n);
-    }
-    out
+    let Ok(text) = std::fs::read_to_string(root.join("deepquarry.dme")) else {
+        return HashMap::new();
+    };
+    crate::raw_marker_policy::dme_include_order(&text)
 }
 
 impl Decls {
@@ -291,7 +307,10 @@ impl Decls {
     }
 
     pub fn is_relation(&self, ty: &str, var: &str) -> bool {
-        self.relations.get(ty).map(|s| s.contains(var)).unwrap_or(false)
+        self.relations
+            .get(ty)
+            .map(|s| s.contains(var))
+            .unwrap_or(false)
     }
 }
 
@@ -312,11 +331,31 @@ struct Stored {
 
 impl From<FileDecls> for Stored {
     fn from(f: FileDecls) -> Stored {
-        let line_starts = f.markers.first().map(|m| m.line_starts.as_ref().clone()).unwrap_or_default();
+        let line_starts = f
+            .markers
+            .first()
+            .map(|m| m.line_starts.as_ref().clone())
+            .unwrap_or_default();
         Stored {
-            key_refs: f.key_refs.into_iter().map(|k| (matches!(k.kind, KeyKind::Capability) as u8, k.key, k.call, k.rel, k.line)).collect(),
+            key_refs: f
+                .key_refs
+                .into_iter()
+                .map(|k| {
+                    (
+                        matches!(k.kind, KeyKind::Capability) as u8,
+                        k.key,
+                        k.call,
+                        k.rel,
+                        k.line,
+                    )
+                })
+                .collect(),
             bad_sources: f.bad_sources,
-            markers: f.markers.into_iter().map(|m| (m.name, m.rel, m.line, m.body, m.args, m.body_offset)).collect(),
+            markers: f
+                .markers
+                .into_iter()
+                .map(|m| (m.name, m.rel, m.line, m.body, m.args, m.body_offset))
+                .collect(),
             line_starts,
             relations: f.relations,
             tracked: f.tracked,
@@ -331,9 +370,35 @@ impl From<Stored> for FileDecls {
     fn from(s: Stored) -> FileDecls {
         let starts = Arc::new(s.line_starts);
         FileDecls {
-            key_refs: s.key_refs.into_iter().map(|(k, key, call, rel, line)| KeyRef { kind: if k == 1 { KeyKind::Capability } else { KeyKind::Op }, key, call, rel, line }).collect(),
+            key_refs: s
+                .key_refs
+                .into_iter()
+                .map(|(k, key, call, rel, line)| KeyRef {
+                    kind: if k == 1 {
+                        KeyKind::Capability
+                    } else {
+                        KeyKind::Op
+                    },
+                    key,
+                    call,
+                    rel,
+                    line,
+                })
+                .collect(),
             bad_sources: s.bad_sources,
-            markers: s.markers.into_iter().map(|(name, rel, line, body, args, body_offset)| Marker { name, rel, line, body, args, body_offset, line_starts: starts.clone() }).collect(),
+            markers: s
+                .markers
+                .into_iter()
+                .map(|(name, rel, line, body, args, body_offset)| Marker {
+                    name,
+                    rel,
+                    line,
+                    body,
+                    args,
+                    body_offset,
+                    line_starts: starts.clone(),
+                })
+                .collect(),
             relations: s.relations,
             tracked: s.tracked,
             defines: s.defines,
@@ -360,29 +425,56 @@ struct FileDecls {
 /// the `nameof(...)` of VAR. Readers of op declarations (the op keys, op_order) treat a stages() call as these ops.
 pub fn stages_op_args(stages_args: &str) -> Vec<String> {
     let args = split_args(stages_args);
-    let Some(var) = args.first() else { return Vec::new() };
+    let Some(var) = args.first() else {
+        return Vec::new();
+    };
     let var = var.trim();
-    let var_name = var.strip_prefix("nameof(").and_then(|v| v.strip_suffix(')')).unwrap_or(var).trim().trim_matches('"');
-    let var_name = var_name.rsplit(|c| c == ':' || c == '.' || c == '/').next().unwrap_or(var_name).to_string();
+    let var_name = var
+        .strip_prefix("nameof(")
+        .and_then(|v| v.strip_suffix(')'))
+        .unwrap_or(var)
+        .trim()
+        .trim_matches('"');
+    let var_name = var_name
+        .rsplit(|c| c == ':' || c == '.' || c == '/')
+        .next()
+        .unwrap_or(var_name)
+        .to_string();
     let mut out = Vec::new();
     for step in &args[1..] {
         let step = step.trim();
-        let Some(inner) = step.strip_prefix("stage_step(").and_then(|s| s.strip_suffix(')')) else { continue };
+        let Some(inner) = step
+            .strip_prefix("stage_step(")
+            .and_then(|s| s.strip_suffix(')'))
+        else {
+            continue;
+        };
         let parts = split_args(inner);
         if parts.len() < 2 {
             continue;
         }
         let (from, to) = (parts[0].trim(), parts[1].trim());
-        let mut key = format!("\"{}_{}_{}\"", var_name, from.trim_matches('"'), to.trim_matches('"'));
+        let mut key = format!(
+            "\"{}_{}_{}\"",
+            var_name,
+            from.trim_matches('"'),
+            to.trim_matches('"')
+        );
         let mut rest = Vec::new();
         for p in &parts[2..] {
             let p = p.trim();
             match p.split_once('=') {
-                Some((name, value)) if name.trim() == "key" && !p.contains('(') => key = value.trim().to_string(),
+                Some((name, value)) if name.trim() == "key" && !p.contains('(') => {
+                    key = value.trim().to_string()
+                }
                 _ => rest.push(p.to_string()),
             }
         }
-        let mut op = vec![key, format!("when(req_stage({}, {}))", var, from), format!("sets({}, {})", var, to)];
+        let mut op = vec![
+            key,
+            format!("when(req_stage({}, {}))", var, from),
+            format!("sets({}, {})", var, to),
+        ];
         op.extend(rest);
         out.push(op.join(", "));
     }
@@ -393,39 +485,87 @@ pub fn stages_op_args(stages_args: &str) -> Vec<String> {
 /// Index of the `)` matching the `(` at `open` in `s`, or None.
 /// The ENTRY_PROC marker of a global proc whose first statement (`t`, on `line`) is `return list(...)` holding declaration entries.
 #[allow(clippy::too_many_arguments)]
-fn entry_proc(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t: &str, name: String, head_line: u32, rel: &str, out: &mut Vec<Marker>) {
-    let Some(rest) = t.strip_prefix("return") else { return };
+fn entry_proc(
+    stripped: &str,
+    starts: &Arc<Vec<u32>>,
+    ln0: usize,
+    line: &str,
+    t: &str,
+    name: String,
+    head_line: u32,
+    rel: &str,
+    out: &mut Vec<Marker>,
+) {
+    let Some(rest) = t.strip_prefix("return") else {
+        return;
+    };
     let rest = rest.trim_start();
-    let Some(after) = rest.strip_prefix("list") else { return };
+    let Some(after) = rest.strip_prefix("list") else {
+        return;
+    };
     if !after.trim_start().starts_with('(') {
         return;
     }
     let open = starts[ln0] as usize + (line.len() - rest.len()) + rest.find('(').unwrap();
-    let Some(close) = matching_paren(stripped, open) else { return };
+    let Some(close) = matching_paren(stripped, open) else {
+        return;
+    };
     let body = stripped[open + 1..close].to_string();
     if !ENTRY_CALLS.iter().any(|c| body.contains(c)) {
         return;
     }
     let mut args = vec![name];
     args.extend(split_args(&body));
-    out.push(Marker { name: ENTRY_PROC.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
+    out.push(Marker {
+        name: ENTRY_PROC.to_string(),
+        rel: rel.to_string(),
+        line: head_line,
+        args,
+        body,
+        body_offset: open + 1,
+        line_starts: starts.clone(),
+    });
 }
 
 /// The CAP_ENTRIES marker of a capability datum's `entries()` whose first statement is `return list(...)`.
 #[allow(clippy::too_many_arguments)]
-fn cap_entries(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t: &str, ty: String, head_line: u32, rel: &str, out: &mut Vec<Marker>) {
-    let Some(rest) = t.strip_prefix("return") else { return };
+fn cap_entries(
+    stripped: &str,
+    starts: &Arc<Vec<u32>>,
+    ln0: usize,
+    line: &str,
+    t: &str,
+    ty: String,
+    head_line: u32,
+    rel: &str,
+    out: &mut Vec<Marker>,
+) {
+    let Some(rest) = t.strip_prefix("return") else {
+        return;
+    };
     let rest = rest.trim_start();
-    let Some(after) = rest.strip_prefix("list") else { return };
+    let Some(after) = rest.strip_prefix("list") else {
+        return;
+    };
     if !after.trim_start().starts_with('(') {
         return;
     }
     let open = starts[ln0] as usize + (line.len() - rest.len()) + rest.find('(').unwrap();
-    let Some(close) = matching_paren(stripped, open) else { return };
+    let Some(close) = matching_paren(stripped, open) else {
+        return;
+    };
     let body = stripped[open + 1..close].to_string();
     let mut args = vec![ty];
     args.extend(split_args(&body));
-    out.push(Marker { name: CAP_ENTRIES.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
+    out.push(Marker {
+        name: CAP_ENTRIES.to_string(),
+        rel: rel.to_string(),
+        line: head_line,
+        args,
+        body,
+        body_offset: open + 1,
+        line_starts: starts.clone(),
+    });
 }
 
 fn scan_file(f: &SourceFile) -> FileDecls {
@@ -437,7 +577,16 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         }
     }
     let starts = Arc::new(starts);
-    let mut fd = FileDecls { key_refs: Vec::new(), bad_sources: Vec::new(), markers: Vec::new(), relations: Vec::new(), tracked: Vec::new(), defines: Vec::new(), publishers: Vec::new(), entry_ops: Vec::new() };
+    let mut fd = FileDecls {
+        key_refs: Vec::new(),
+        bad_sources: Vec::new(),
+        markers: Vec::new(),
+        relations: Vec::new(),
+        tracked: Vec::new(),
+        defines: Vec::new(),
+        publishers: Vec::new(),
+        entry_ops: Vec::new(),
+    };
     // The datum whose `entries()` body the scan is inside (the proc is declared at column 0 as `/datum/x/entries()`).
     let mut entries_of: Option<String> = None;
     // A global proc (name, header line) whose first statement has not been seen yet: an entry proc when it is `return list(entries)`.
@@ -448,18 +597,44 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         let ln = ln0 as u32 + 1;
         let t = line.trim_start();
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
-            proc_head = pat_match!(r"^/proc/(\w+)\([^)]*\)\s*$").captures(line).map(|m| (m.s(1).to_string(), ln));
-            cap_head = pat_match!(r"^(/datum/capability/[\w/]+?)/(?:proc/)?entries\(\)\s*$").captures(line).map(|m| (m.s(1).to_string(), ln));
+            proc_head = pat_match!(r"^/proc/(\w+)\([^)]*\)\s*$")
+                .captures(line)
+                .map(|m| (m.s(1).to_string(), ln));
+            cap_head = pat_match!(r"^(/datum/capability/[\w/]+?)/(?:proc/)?entries\(\)\s*$")
+                .captures(line)
+                .map(|m| (m.s(1).to_string(), ln));
         } else if !t.is_empty() && !t.starts_with('#') {
             if let Some((name, head_line)) = proc_head.take() {
-                entry_proc(&stripped, &starts, ln0, line, t, name, head_line, &f.rel, &mut fd.markers);
+                entry_proc(
+                    &stripped,
+                    &starts,
+                    ln0,
+                    line,
+                    t,
+                    name,
+                    head_line,
+                    &f.rel,
+                    &mut fd.markers,
+                );
             }
             if let Some((ty, head_line)) = cap_head.take() {
-                cap_entries(&stripped, &starts, ln0, line, t, ty, head_line, &f.rel, &mut fd.markers);
+                cap_entries(
+                    &stripped,
+                    &starts,
+                    ln0,
+                    line,
+                    t,
+                    ty,
+                    head_line,
+                    &f.rel,
+                    &mut fd.markers,
+                );
             }
         }
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
-            entries_of = pat_match!(r"^(/datum/[\w/]+)/entries\(\)").captures(line).map(|m| m.s(1).to_string());
+            entries_of = pat_match!(r"^(/datum/[\w/]+)/entries\(\)")
+                .captures(line)
+                .map(|m| m.s(1).to_string());
         } else if let Some(ty) = &entries_of {
             for m in pat!(r#"(?<![\w./])op\(\s*"([^"]+)""#).captures_iter(line) {
                 fd.entry_ops.push((ty.clone(), m.s(1).to_string()));
@@ -475,14 +650,38 @@ fn scan_file(f: &SourceFile) -> FileDecls {
             continue;
         }
         // Same borrowed statement-marker policy used by schema hint queries.
-        if let Some(marker)=crate::raw_marker_policy::statement_marker(&stripped,starts[ln0] as usize,line,MARKERS) {
-            let name=marker.name;let open=marker.open;let close=marker.close;
-            let at_col0=line.len()==t.len();
-            let block_end=if at_col0&&BLOCK_MARKERS.contains(&name){block_extent(&stripped,close)}else{None};
-            let body=match block_end{Some(end)=>block_body(&stripped,open+1,close,end),None=>stripped[open+1..close].to_string()};
-            fd.markers.push(Marker{name:name.to_string(),rel:f.rel.clone(),line:ln,args:split_args(&body),body,body_offset:open+1,line_starts:starts.clone()});
+        if let Some(marker) = crate::raw_marker_policy::statement_marker(
+            &stripped,
+            starts[ln0] as usize,
+            line,
+            MARKERS,
+        ) {
+            let name = marker.name;
+            let open = marker.open;
+            let close = marker.close;
+            let at_col0 = line.len() == t.len();
+            let block_end = if at_col0 && BLOCK_MARKERS.contains(&name) {
+                block_extent(&stripped, close)
+            } else {
+                None
+            };
+            let body = match block_end {
+                Some(end) => block_body(&stripped, open + 1, close, end),
+                None => stripped[open + 1..close].to_string(),
+            };
+            fd.markers.push(Marker {
+                name: name.to_string(),
+                rel: f.rel.clone(),
+                line: ln,
+                args: split_args(&body),
+                body,
+                body_offset: open + 1,
+                line_starts: starts.clone(),
+            });
         }
-        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
+        if let Some(m) =
+            pat_match!(r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t)
+        {
             fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
         }
         if let Some(m) = pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
@@ -496,7 +695,10 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         }
         if t.contains("PUBLISH_CHANGE(") {
             for m in pat!(r"PUBLISH_CHANGE\(\s*[^,()]+,\s*([\w#]+)\s*\)").captures_iter(t) {
-                fd.publishers.push((m.s(1).trim_start_matches('#').to_string(), (f.rel.clone(), ln)));
+                fd.publishers.push((
+                    m.s(1).trim_start_matches('#').to_string(),
+                    (f.rel.clone(), ln),
+                ));
             }
         }
     }
@@ -514,33 +716,71 @@ fn scan_runtime_observers(f: &SourceFile, text: &str, starts: &Arc<Vec<u32>>, fd
         if bytes[i] == b'"' {
             i += 1;
             while i < bytes.len() {
-                if bytes[i] == b'\\' { i += 2; continue; }
-                if bytes[i] == b'"' { i += 1; break; }
+                if bytes[i] == b'\\' {
+                    i += 2;
+                    continue;
+                }
+                if bytes[i] == b'"' {
+                    i += 1;
+                    break;
+                }
                 i += 1;
             }
             continue;
         }
         let start = i;
-        if !bytes[i].is_ascii_alphabetic() && bytes[i] != b'_' { i += 1; continue; }
-        while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') { i += 1; }
-        if &text[start..i] != "observe" || (start > 0 && (bytes[start - 1].is_ascii_alphanumeric() || matches!(bytes[start - 1], b'_' | b'.' | b'/' | b':'))) { continue; }
+        if !bytes[i].is_ascii_alphabetic() && bytes[i] != b'_' {
+            i += 1;
+            continue;
+        }
+        while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') {
+            i += 1;
+        }
+        if &text[start..i] != "observe"
+            || (start > 0
+                && (bytes[start - 1].is_ascii_alphanumeric()
+                    || matches!(bytes[start - 1], b'_' | b'.' | b'/' | b':')))
+        {
+            continue;
+        }
         let mut open = i;
-        while open < bytes.len() && bytes[open].is_ascii_whitespace() { open += 1; }
-        if bytes.get(open) != Some(&b'(') { continue; }
-        let Some(close) = matching_paren(text, open) else { continue };
+        while open < bytes.len() && bytes[open].is_ascii_whitespace() {
+            open += 1;
+        }
+        if bytes.get(open) != Some(&b'(') {
+            continue;
+        }
+        let Some(close) = matching_paren(text, open) else {
+            continue;
+        };
         let body = text[open + 1..close].to_string();
         let args = split_args(&body);
-        if args.len() < 4 { continue; }
-        let line = match starts.binary_search(&(start as u32)) { Ok(n) => n as u32 + 1, Err(n) => n as u32 };
-        fd.markers.push(Marker { name: RUNTIME_OBSERVE.to_string(), rel: f.rel.clone(), line,
-            args, body, body_offset: open + 1, line_starts: starts.clone() });
+        if args.len() < 4 {
+            continue;
+        }
+        let line = match starts.binary_search(&(start as u32)) {
+            Ok(n) => n as u32 + 1,
+            Err(n) => n as u32,
+        };
+        fd.markers.push(Marker {
+            name: RUNTIME_OBSERVE.to_string(),
+            rel: f.rel.clone(),
+            line,
+            args,
+            body,
+            body_offset: open + 1,
+            line_starts: starts.clone(),
+        });
     }
 }
 
 /// Finds `name(...)` calls of the key/source families in comment-stripped text.
 fn scan_calls(f: &SourceFile, stripped: &str, starts: &[u32], fd: &mut FileDecls) {
-    static RE: std::sync::LazyLock<crate::pat::Pat> =
-        std::sync::LazyLock::new(|| crate::pat::Pat::new(r"(?<![\w./])(extend|without|on_op|shares_effects|above|perform_op|e0_perform_op|configure|hold|hold_until|hold_override|grant|release|status_end)\s*\("));
+    static RE: std::sync::LazyLock<crate::pat::Pat> = std::sync::LazyLock::new(|| {
+        crate::pat::Pat::new(
+            r"(?<![\w./])(extend|without|on_op|shares_effects|above|perform_op|e0_perform_op|configure|hold|hold_until|hold_override|grant|release|status_end)\s*\(",
+        )
+    });
     let line_of = |off: usize| -> u32 {
         match starts.binary_search(&(off as u32)) {
             Ok(i) => i as u32 + 1,
@@ -550,7 +790,9 @@ fn scan_calls(f: &SourceFile, stripped: &str, starts: &[u32], fd: &mut FileDecls
     for m in RE.captures_iter(stripped) {
         let name = m.s(1);
         let open = m.end(0) - 1;
-        let Some(close) = matching_paren(stripped, open) else { continue };
+        let Some(close) = matching_paren(stripped, open) else {
+            continue;
+        };
         let body = &stripped[open + 1..close];
         let line = line_of(m.start(1));
         let args = split_args(body);
@@ -559,15 +801,31 @@ fn scan_calls(f: &SourceFile, stripped: &str, starts: &[u32], fd: &mut FileDecls
                 if let Some(s) = a.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
                     // `[x]` interpolation makes it a runtime value, not a key.
                     if !s.is_empty() && !s.contains('[') && !s.contains(' ') {
-                        fd.key_refs.push(KeyRef { kind: KeyKind::Op, key: s.to_string(), call: name.to_string(), rel: f.rel.clone(), line });
+                        fd.key_refs.push(KeyRef {
+                            kind: KeyKind::Op,
+                            key: s.to_string(),
+                            call: name.to_string(),
+                            rel: f.rel.clone(),
+                            line,
+                        });
                     }
                 }
             }
         }
         if CAP_KEY_CALLS.contains(&name) {
-            if let Some(s) = args.first().and_then(|a| a.strip_prefix('"')).and_then(|s| s.strip_suffix('"')) {
+            if let Some(s) = args
+                .first()
+                .and_then(|a| a.strip_prefix('"'))
+                .and_then(|s| s.strip_suffix('"'))
+            {
                 if !s.is_empty() && !s.contains('[') {
-                    fd.key_refs.push(KeyRef { kind: KeyKind::Capability, key: s.to_string(), call: name.to_string(), rel: f.rel.clone(), line });
+                    fd.key_refs.push(KeyRef {
+                        kind: KeyKind::Capability,
+                        key: s.to_string(),
+                        call: name.to_string(),
+                        rel: f.rel.clone(),
+                        line,
+                    });
                 }
             }
         }
@@ -598,7 +856,10 @@ mod tests {
 
     #[test]
     fn splits_top_level_commas_only() {
-        assert_eq!(split_args("a, f(b, c), \"x,y\", [1,2]"), vec!["a", "f(b, c)", "\"x,y\"", "[1,2]"]);
+        assert_eq!(
+            split_args("a, f(b, c), \"x,y\", [1,2]"),
+            vec!["a", "f(b, c)", "\"x,y\"", "[1,2]"]
+        );
     }
 
     #[test]
@@ -626,8 +887,20 @@ mod tests {
         );
         let d = scan_file(&f);
         let procs: Vec<&Marker> = d.markers.iter().filter(|m| m.name == ENTRY_PROC).collect();
-        assert_eq!(procs.len(), 1, "only a first-statement list of entries: {:?}", procs.iter().map(|m| &m.args).collect::<Vec<_>>());
-        assert_eq!(procs[0].args, vec!["door_controls", "op(\"bolt\", ui_act())", "extend(\"open\", needs(x()))"]);
+        assert_eq!(
+            procs.len(),
+            1,
+            "only a first-statement list of entries: {:?}",
+            procs.iter().map(|m| &m.args).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            procs[0].args,
+            vec![
+                "door_controls",
+                "op(\"bolt\", ui_act())",
+                "extend(\"open\", needs(x()))"
+            ]
+        );
         assert_eq!(procs[0].line, 1);
         assert_eq!(procs[0].line_at(procs[0].body.find("extend").unwrap()), 4);
     }
@@ -650,7 +923,14 @@ mod block_tests {
         assert_eq!(l.markers.len(), 1);
         assert_eq!(b.markers.len(), 1);
         assert_eq!(b.markers[0].line, 1);
-        let strip = |a: &[String]| -> Vec<String> { a.iter().map(|s| s.trim_start_matches(|c: char| c == char::from(92u8) || c.is_whitespace()).to_string()).collect() };
+        let strip = |a: &[String]| -> Vec<String> {
+            a.iter()
+                .map(|s| {
+                    s.trim_start_matches(|c: char| c == char::from(92u8) || c.is_whitespace())
+                        .to_string()
+                })
+                .collect()
+        };
         assert_eq!(strip(&l.markers[0].args), strip(&b.markers[0].args));
         assert_eq!(b.markers[0].args.len(), 3, "{:?}", b.markers[0].args);
         // Offsets still map to the real lines: the third entry starts on line 3.
@@ -674,7 +954,14 @@ mod block_tests {
     fn a_block_ends_at_the_next_column_zero_line() {
         let f = SourceFile::from_text("code/a.dm", "STATE_GRAPH(GRAPH_X)\n\tstart(STAGE_A)\n\n\tstage(STAGE_B, then(PROC_REF(y)))\n/obj/thing/proc/x()\n\treturn 1\n");
         let d = scan_file(&f);
-        assert_eq!(d.markers[0].args, vec!["GRAPH_X", "start(STAGE_A)", "stage(STAGE_B, then(PROC_REF(y)))"]);
+        assert_eq!(
+            d.markers[0].args,
+            vec![
+                "GRAPH_X",
+                "start(STAGE_A)",
+                "stage(STAGE_B, then(PROC_REF(y)))"
+            ]
+        );
     }
 }
 

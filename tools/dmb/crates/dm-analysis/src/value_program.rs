@@ -319,9 +319,21 @@ impl<'a> Index<'a> {
                 (None, Some(value)) => literal_default(tree, Some(value)),
                 _ => false,
             };
-            let candidate = data.metadata.declared_type.is_none()
-                && init_ok
-                && data.metadata.inherited_opaque.is_none();
+            let archive = match origin {
+                Origin::Archive(archive) => Some(archive),
+                Origin::Live(_) => None,
+            };
+            let untyped = data.metadata.inherited_opaque.is_none()
+                && untyped::field_declared_hint(
+                    tree,
+                    resolver,
+                    archive,
+                    owner,
+                    data.name,
+                    &data.metadata,
+                )?
+                .is_none();
+            let candidate = untyped && init_ok && data.metadata.inherited_opaque.is_none();
             *fields.entry((owner, data.name)).or_insert(true) &= candidate;
         }
         let mut field_names: BTreeMap<_, Vec<_>> = BTreeMap::new();
@@ -1208,6 +1220,10 @@ impl<'a> Values<'a> {
             origin.with_body(arena, ordinal, |syntax, occurrence| {
                 let scope =
                     untyped::scope_from(tree, occurrence.member, syntax, resolver, exempt_types)?;
+                let scope = match origin {
+                    Origin::Archive(archive) => scope.with_archive(archive)?,
+                    Origin::Live(_) => scope,
+                };
                 let id = origin
                     .roster()?
                     .identity_for_member(occurrence.member)

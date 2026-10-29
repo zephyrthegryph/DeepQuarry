@@ -4,6 +4,13 @@
 #[path = "../../../shared/test_scratch.rs"]
 mod test_scratch;
 
+// Native Windows canonicalize produces verbatim backslash paths. These
+// arguments cross the Git Bash slot wrapper before Python/CreateProcess; keep
+// every path in slash form so that boundary cannot consume its separators.
+fn bash_path(path: impl AsRef<std::path::Path>) -> String {
+    path.as_ref().to_string_lossy().replace('\\', "/")
+}
+
 #[test]
 #[ignore = "starts one private namespace; run explicitly after the private dmbc build"]
 fn unified_daemon_ipc_edit_and_retraction() {
@@ -25,14 +32,14 @@ fn unified_daemon_ipc_edit_and_retraction() {
     let output = std::process::Command::new(bash)
         .arg(slot_script)
         .args(["run", "dm_compile", "--label", "unified-analysis-ipc", "--"])
-        .arg(python)
-        .arg(script)
+        .arg(bash_path(std::path::Path::new(&python)))
+        .arg(bash_path(&script))
         .arg("--binary")
-        .arg(env!("CARGO_BIN_EXE_dmbc"))
+        .arg(bash_path(env!("CARGO_BIN_EXE_dmbc")))
         .arg("--scratch-root")
-        .arg(&scratch)
+        .arg(bash_path(&scratch))
         .arg("--repository")
-        .arg(repository)
+        .arg(bash_path(&repository))
         .output()
         .expect("start bounded private-daemon smoke");
     assert!(

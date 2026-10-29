@@ -1,21 +1,61 @@
 use super::*;
 use dm_analysis::policy_inputs::{HostCapture, PolicyRole};
 use std::{path::PathBuf, sync::Arc};
-struct Source(&'static str);
+struct Source(
+    &'static str,
+    std::cell::RefCell<std::collections::BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,
+);
+impl Source {
+    fn new(text: &'static str) -> Self {
+        Self(text, Default::default())
+    }
+}
 impl dm_preprocess::SourceProvider for Source {
     fn read(&self, _: &Path) -> Result<String, String> {
-        Ok(self.0.into())
+        Err("actual primary bytes required".into())
+    }
+    fn acquired_source(
+        &self,
+        path: &Path,
+    ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+        if !self.1.borrow().contains_key(path) {
+            self.1.borrow_mut().insert(
+                path.into(),
+                dm_preprocess::AcquiredSource::from_original_bytes(self.0.as_bytes().to_vec(), ()),
+            );
+        }
+        Ok(self.1.borrow().get(path).cloned())
+    }
+    fn source_acquisition(
+        &self,
+        path: &Path,
+        text: &dm_preprocess::SourceText,
+    ) -> Option<dm_preprocess::AcquiredSource> {
+        self.1
+            .borrow()
+            .get(path)
+            .filter(|source| source.lease().source_text().same_view(text))
+            .cloned()
     }
 }
 fn inputs(source: &'static str, raw: Option<&'static str>) -> (PathBuf, PolicyInputs) {
     let root = std::env::current_dir()
         .unwrap()
         .join("base-var-candidate-unit");
-    let frontend = dm_tree::frontend::build(
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let frontend = dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
         &root.join("code/probe.dm"),
-        &Source(source),
+        &Source::new(source),
         &Default::default(),
-        1,
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+        None,
+        &executor,
+        None,
+        true,
     )
     .unwrap();
     let mut extra = frontend

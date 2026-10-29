@@ -13,7 +13,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         std::env::current_dir()?.join(root)
     };
-    let names = ["init", "decl", "base_vars"];
+    let requested = std::env::args().skip(2).collect::<Vec<_>>();
+    let names = if requested.is_empty() {
+        vec!["init", "decl", "base_vars"]
+    } else {
+        requested.iter().map(String::as_str).collect()
+    };
+    if names.iter().any(|name| {
+        ![
+            "init",
+            "decl",
+            "base_vars",
+            "requirement_bool",
+            "untyped_member",
+        ]
+        .contains(name)
+    }) {
+        return Err("unsupported explicit legacy oracle policy".into());
+    }
     let engine = Engine::new(
         registry(),
         Options {

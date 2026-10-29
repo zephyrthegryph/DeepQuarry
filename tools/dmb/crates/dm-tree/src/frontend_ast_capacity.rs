@@ -61,6 +61,8 @@ mod tests {
             header,
             span: Span::new(10, 34),
             header_span: Span::new(10, 21),
+            declaration_cursor: None,
+            checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
             indent: 17,
             children: Vec::with_capacity(32),
         };

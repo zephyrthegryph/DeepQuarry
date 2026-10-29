@@ -70,3 +70,11 @@ pub mod captured_policy_metadata;
 
 #[cfg(feature = "native-policy")]
 pub mod captured_requirement_bool;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_untyped_member;
+pub mod untyped_member_policy;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_untyped;
+pub mod untyped_policy_metadata;

@@ -13,6 +13,19 @@ impl HeapCensus {
                 value,
             } => {
                 if self.buffer("source_acquisition.metadata", address, bytes, bytes) {
+                    if let Some(original) =
+                        crate::input_snapshot::recorded_source_receipt_original(value)
+                    {
+                        if self.arc_object(
+                            "source_acquisition.original_bytes",
+                            original.shared_owner(),
+                        ) {
+                            self.vec_payload(
+                                "source_acquisition.original_bytes",
+                                original.shared_owner().bytes(),
+                            );
+                        }
+                    }
                     if let Some((path, fact_path, issuer)) =
                         crate::input_snapshot::recorded_source_receipt_storage(value)
                     {

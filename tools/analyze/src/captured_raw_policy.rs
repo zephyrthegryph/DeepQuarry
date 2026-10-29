@@ -48,6 +48,18 @@ pub struct CapturedRawPolicy {
     pub(crate) tree: Tree,
     pub(crate) scopes: Arc<Scopes>,
 }
+fn require_distinct_report_paths(files: &[SourceFile]) -> Result<(), String> {
+    let mut names = std::collections::BTreeSet::new();
+    for file in files {
+        if !names.insert(file.rel.as_str()) {
+            return Err(format!(
+                "distinct captured provider keys collide in report path: {}",
+                file.rel
+            ));
+        }
+    }
+    Ok(())
+}
 impl CapturedRawPolicy {
     /// Validate current raw-view authority without demanding unrelated variable
     /// classification or body facts. Content equality alone grants no ownership.
@@ -130,6 +142,7 @@ impl CapturedRawPolicy {
             },
             Configuration::ProvenMissing => Scopes::default(),
         };
+        require_distinct_report_paths(&files)?;
         Ok(Self {
             tree: Tree::from_captured_files(root, files),
             scopes: Arc::new(scopes),
@@ -183,6 +196,7 @@ impl CapturedRawPolicy {
             files.push(cached.rebound_source(cached.path(), raw.clone())?);
         }
         files.sort_by(|a, b| a.rel.cmp(&b.rel));
+        require_distinct_report_paths(&files)?;
         Ok(Self {
             tree: Tree::from_captured_files(root, files),
             scopes: config.shared_scopes(),
@@ -281,3 +295,25 @@ impl CapturedRawPolicy {
 #[cfg(test)]
 #[path = "captured_raw_policy_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod report_collision_tests {
+    use super::*;
+    #[test]
+    fn distinct_provider_keys_cannot_last_win_the_same_report_path() {
+        let files = vec![
+            SourceFile::from_shared_text(
+                "code/a.dm",
+                std::path::PathBuf::from("/provider-one/code/a.dm"),
+                "var/a".into(),
+            ),
+            SourceFile::from_shared_text(
+                "code/a.dm",
+                std::path::PathBuf::from("/provider-two/code/a.dm"),
+                "var/b".into(),
+            ),
+        ];
+        assert!(require_distinct_report_paths(&files).is_err());
+        assert!(require_distinct_report_paths(&files[..1]).is_ok());
+    }
+}

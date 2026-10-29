@@ -7,6 +7,8 @@ use dm_tree::SemanticTree;
 use std::sync::Arc;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VariableFact {
+    /// Exact source formal selected by the ORIGINAL owner, never a name guess.
+    pub formal: Option<dm_tree::MemberId>,
     pub owner: SymbolId,
     pub name: SymbolId,
     pub metadata: Arc<DeclarationMeaning>,
@@ -44,7 +46,21 @@ pub fn variable(
                 data,
                 ..
             } if actual == name && data.inherited_opaque.is_none() && data.procedure.is_none() => {
+                let formal = tree
+                    .source_formal_variable_member(owner, name)
+                    .map_err(str::to_owned)?
+                    .ok_or("issued source formal unavailable")?;
+                if !Arc::ptr_eq(
+                    &tree
+                        .member(formal)
+                        .ok_or("issued source formal disappeared")?
+                        .metadata,
+                    &data,
+                ) {
+                    return Err("source formal does not borrow selected original metadata".into());
+                }
                 Ok(Some(VariableFact {
+                    formal: Some(formal),
                     owner,
                     name,
                     metadata: data,
@@ -73,6 +89,7 @@ pub fn variable(
             ..
         } if actual == name && data.inherited_opaque.is_none() && data.procedure.is_none() => {
             Some(VariableFact {
+                formal: None,
                 owner,
                 name,
                 metadata: data,

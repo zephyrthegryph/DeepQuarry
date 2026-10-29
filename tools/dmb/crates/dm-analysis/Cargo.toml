@@ -19,4 +19,5 @@ toml_analyze = { package = "toml", version = "0.8" }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
 [dev-dependencies]
+dm-exec = { path = "../dm-exec" }
 dm-codegen-byond = { path = "../dm-codegen-byond" }

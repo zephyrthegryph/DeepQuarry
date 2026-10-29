@@ -8,6 +8,22 @@ struct IncludeCoordinates {
     semantic_path: Arc<str>,
     parent: Option<usize>,
 }
+#[derive(Clone, Copy)]
+pub(super) struct DeclarationCompatibility {
+    pub ordinal: OccurrenceId,
+    pub occurrence: Option<usize>,
+    pub line: usize,
+    pub column: usize,
+    pub source_len: usize,
+}
+/// Policy diagnostic cursor: logical boundary and physical byte point remain
+/// distinct. No column is claimed from a macro LINE-only receipt.
+pub struct SourceDeclarationPolicyCursor {
+    pub path: Arc<PathBuf>,
+    pub line: usize,
+    pub byte_column: Option<usize>,
+    pub logical_boundary: bool,
+}
 pub struct SourceExportMapping {
     acquisitions: Arc<[Option<dm_preprocess::SourceAcquisitionLease>]>,
     origins: dm_preprocess::regions::ExpandedOriginArena,
@@ -19,6 +35,9 @@ pub struct SourceExportMapping {
     by_path: Arc<HashMap<PathBuf, FileId>>,
     files: Weak<[SourceFile]>,
     occurrences: Arc<OccurrenceTable>,
+    declaration_cursors: Box<[u32]>,
+    declaration_compatibility: Option<Box<[DeclarationCompatibility]>>,
+    declaration_qualifiers: Box<[u8]>,
     locations: OnceLock<Arc<[Option<SourceLocation>]>>,
     coordinate_fingerprint: u128,
 }
@@ -102,7 +121,11 @@ impl SourceExportMapping {
         by_path: &Arc<HashMap<PathBuf, FileId>>,
         occurrences: &Arc<OccurrenceTable>,
         tree: &Arc<crate::SemanticTree>,
+        declaration_cursors: Box<[u32]>,
+        declaration_qualifiers: Box<[u8]>,
     ) -> Self {
+        assert_eq!(declaration_cursors.len(), occurrences.source_order().len());
+        assert_eq!(declaration_qualifiers.len(), declaration_cursors.len());
         let regions: Arc<[(usize, usize)]> = expanded
             .origins
             .byte_layout_regions()
@@ -123,7 +146,11 @@ impl SourceExportMapping {
             })
             .collect();
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dm-source-export-coordinates-v1\0");
+        hash.update(b"dm-source-export-coordinates-v3\0");
+        hash.update(&declaration_qualifiers);
+        for cursor in declaration_cursors.iter() {
+            hash.update(&cursor.to_le_bytes());
+        }
         for &(occurrence, encounter) in regions.iter() {
             hash.update(&(occurrence as u64).to_le_bytes());
             hash.update(&(encounter as u64).to_le_bytes());
@@ -159,6 +186,9 @@ impl SourceExportMapping {
             by_path: Arc::clone(by_path),
             files: Arc::downgrade(files),
             occurrences: Arc::clone(occurrences),
+            declaration_cursors,
+            declaration_compatibility: None,
+            declaration_qualifiers,
             locations: OnceLock::new(),
             coordinate_fingerprint: hash.digest128(),
         }
@@ -547,5 +577,159 @@ impl SourceExportMapping {
             path: Arc::clone(&coordinates.path),
             line,
         })
+    }
+}
+
+impl SourceExportMapping {
+    pub fn declaration_anchor_storage(&self) -> (usize, usize, usize) {
+        (
+            self.declaration_cursors.as_ptr() as usize,
+            self.declaration_cursors.len(),
+            std::mem::size_of_val(self.declaration_cursors.as_ref()),
+        )
+    }
+    pub fn declaration_qualifier_storage(&self) -> (usize, usize, usize) {
+        (
+            self.declaration_qualifiers.as_ptr() as usize,
+            self.declaration_qualifiers.len(),
+            self.declaration_qualifiers.len(),
+        )
+    }
+    pub fn declaration_checker_qualifiers(&self, ordinal: OccurrenceId) -> Result<u8, String> {
+        // Same bound occurrence/cursor check; macro LINE proof supplies no flag authority.
+        self.declaration_policy_cursor(ordinal)?;
+        let flags = *self
+            .declaration_qualifiers
+            .get(ordinal.0 as usize)
+            .ok_or("declaration qualifier roster unavailable")?;
+        if flags == dm_syntax::UNKNOWN_HEADER_QUALIFIERS
+            || flags & !dm_syntax::CHECKER_VAR_MASK != 0
+        {
+            return Err("original primary declaration qualifier context was not issued".into());
+        }
+        Ok(flags)
+    }
+    pub(super) fn primary_declaration_cursors(
+        &self,
+    ) -> impl Iterator<Item = (OccurrenceId, usize)> + '_ {
+        self.declaration_cursors
+            .iter()
+            .enumerate()
+            .filter_map(|(ordinal, &cursor)| {
+                (cursor != u32::MAX).then_some((OccurrenceId(ordinal as u32), cursor as usize))
+            })
+    }
+    pub(super) fn bind_declaration_compatibility(&mut self, rows: Box<[DeclarationCompatibility]>) {
+        assert!(
+            self.revision.get().is_none(),
+            "compatibility facts must precede publication"
+        );
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(&self.coordinate_fingerprint.to_le_bytes());
+        hash.update(b"native-declaration-policy-continuation-v1");
+        for row in rows.iter() {
+            hash.update(&row.ordinal.0.to_le_bytes());
+            for value in [
+                row.occurrence.unwrap_or(usize::MAX),
+                row.line,
+                row.column,
+                row.source_len,
+            ] {
+                hash.update(&(value as u64).to_le_bytes());
+            }
+        }
+        self.coordinate_fingerprint = hash.digest128();
+        self.declaration_compatibility = Some(rows);
+    }
+    pub fn declaration_compatibility_storage(&self) -> (usize, usize) {
+        self.declaration_compatibility
+            .as_ref()
+            .map_or((0, 0), |rows| {
+                (rows.as_ptr() as usize, std::mem::size_of_val(rows.as_ref()))
+            })
+    }
+    pub fn declaration_policy_compatibility_cursor(
+        &self,
+        ordinal: OccurrenceId,
+    ) -> Result<SourceDeclarationPolicyCursor, String> {
+        let rows = self
+            .declaration_compatibility
+            .as_ref()
+            .ok_or("declaration compatibility producer was not requested")?;
+        if let Ok(index) = rows.binary_search_by_key(&ordinal.0, |row| row.ordinal.0) {
+            let row = rows[index];
+            let occurrence = row
+                .occurrence
+                .ok_or("declaration continuation has no issued compatibility cursor")?;
+            let include = self
+                .includes
+                .get(occurrence)
+                .ok_or("compatibility include absent")?;
+            let acquired = self
+                .source_acquisition(occurrence)
+                .ok_or("compatibility acquisition absent")?;
+            if acquired.source_text().len() != row.source_len {
+                return Err("compatibility acquisition differs".into());
+            }
+            return Ok(SourceDeclarationPolicyCursor {
+                path: Arc::clone(&include.path),
+                line: row.line,
+                byte_column: Some(row.column),
+                logical_boundary: true,
+            });
+        }
+        match self.declaration_policy_point(ordinal) {
+            Ok(point) => Ok(SourceDeclarationPolicyCursor {
+                path: point.path,
+                line: point.line,
+                byte_column: Some(point.byte_column),
+                logical_boundary: false,
+            }),
+            Err(_) => {
+                self.declaration_policy_line(ordinal)
+                    .map(|line| SourceDeclarationPolicyCursor {
+                        path: line.path,
+                        line: line.line,
+                        byte_column: None,
+                        logical_boundary: false,
+                    })
+            }
+        }
+    }
+    fn declaration_policy_cursor(&self, ordinal: OccurrenceId) -> Result<usize, String> {
+        let occurrence = self
+            .occurrences
+            .get(ordinal)
+            .ok_or("declaration occurrence unavailable")?;
+        let cursor = *self
+            .declaration_cursors
+            .get(ordinal.0 as usize)
+            .ok_or("declaration token roster unavailable")?;
+        if cursor == u32::MAX {
+            return Err("original primary declaration token was not issued".into());
+        }
+        let source = self
+            .output(cursor as usize)
+            .ok_or("declaration token origin unavailable")?;
+        if source.span.file != occurrence.provenance.span.file
+            || source.include_occurrence != occurrence.provenance.include_occurrence as usize
+        {
+            return Err("declaration token belongs to another issued occurrence".into());
+        }
+        Ok(cursor as usize)
+    }
+    pub fn declaration_policy_line(
+        &self,
+        ordinal: OccurrenceId,
+    ) -> Result<SourcePolicyLineOrigin, String> {
+        self.original_policy_line(self.declaration_policy_cursor(ordinal)?)
+    }
+    /// Same primary cursor/occurrence proof as the line API, but requires an
+    /// actual byte point. A LINE-only macro receipt must NEVER invent a column.
+    pub fn declaration_policy_point(
+        &self,
+        ordinal: OccurrenceId,
+    ) -> Result<SourceNoteOrigin, String> {
+        self.original_note_origin(self.declaration_policy_cursor(ordinal)?)
     }
 }

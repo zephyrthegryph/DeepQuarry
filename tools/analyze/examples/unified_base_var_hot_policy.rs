@@ -14,7 +14,10 @@ use std::{
     sync::Arc,
 };
 #[derive(Default)]
-struct Files(RefCell<BTreeMap<PathBuf, Vec<u8>>>);
+struct Files(
+    RefCell<BTreeMap<PathBuf, Vec<u8>>>,
+    RefCell<BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,
+);
 impl Files {
     fn bytes(&self, path: &Path) -> Result<Vec<u8>, String> {
         if !self.0.borrow().contains_key(path) {
@@ -37,8 +40,32 @@ impl Files {
     }
 }
 impl SourceProvider for Files {
-    fn read(&self, path: &Path) -> Result<String, String> {
-        Ok(dm_preprocess::decode_source_bytes(&self.bytes(path)?))
+    fn read(&self, _: &Path) -> Result<String, String> {
+        Err("oracle requires original acquired bytes".into())
+    }
+    fn acquired_source(
+        &self,
+        path: &Path,
+    ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+        if let Some(source) = self.1.borrow().get(path) {
+            return Ok(Some(source.clone()));
+        }
+        // The same FIRST cached byte read serves native preprocessing and raw
+        // Analyze projection. Decoded/re-encoded text never mints authority.
+        let source = dm_preprocess::AcquiredSource::from_original_bytes(self.bytes(path)?, ());
+        self.1.borrow_mut().insert(path.into(), source.clone());
+        Ok(Some(source))
+    }
+    fn source_acquisition(
+        &self,
+        path: &Path,
+        text: &SourceText,
+    ) -> Option<dm_preprocess::AcquiredSource> {
+        self.1
+            .borrow()
+            .get(path)
+            .filter(|source| source.lease().source_text().same_view(text))
+            .cloned()
     }
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -110,7 +137,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let parent = parent.map(|path| seed.symbols.intern(path)).transpose()?;
         seed.hierarchy.parents.push((child, parent));
     }
-    let frontend = dm_tree::frontend::build_with_config(
+    let executor = dm_exec::BuildExecutor::new(1).map_err(|e| format!("native executor: {e:?}"))?;
+    let frontend = dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
         &root.join("deepquarry.dme"),
         &files,
         &Default::default(),
@@ -119,6 +147,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             engine: Some(&seed),
             observer: None,
         },
+        None,
+        &executor,
+        None,
+        true,
     )
     .map_err(|e| format!("native fixture failed: {e:?}"))?;
     let mut captures = Vec::new();

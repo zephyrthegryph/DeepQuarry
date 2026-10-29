@@ -34,7 +34,8 @@ fn warm_prepared_reissues_actual_original_lease_without_a_read() {
     let p = P::new(b"/datum/acquired_source_warm\n");
     let store = Arc::new(PreparedInputArtifacts::default());
     let path = Path::new("x.dm");
-    let first = RecordingInputs::new(p.clone(), 4_000_000_000).with_prepared_sources(Some(store.clone()));
+    let first =
+        RecordingInputs::new(p.clone(), 4_000_000_000).with_prepared_sources(Some(store.clone()));
     let old = SourceProvider::acquired_source(&first, path)
         .unwrap()
         .unwrap();
@@ -62,13 +63,105 @@ fn foreign_normal_lease_rejects_even_with_equal_interned_source() {
 }
 
 #[test]
-fn racy_timestamp_rechecks_original_and_reissues_only_authenticated_lease(){
- let p=P::new(b"/datum/acquired_source_racy\n");let store=Arc::new(PreparedInputArtifacts::default());let path=Path::new("x.dm");
- let first=RecordingInputs::new(p.clone(),1).with_prepared_sources(Some(store.clone()));
- let old=SourceProvider::acquired_source(&first,path).unwrap().unwrap();let before=p.reads.load(std::sync::atomic::Ordering::SeqCst);
- let next=RecordingInputs::new(p.clone(),2).with_prepared_sources(Some(store));
- let current=SourceProvider::acquired_source(&next,path).unwrap().unwrap();
- assert!(p.reads.load(std::sync::atomic::Ordering::SeqCst)>before,"racy source metadata cannot suppress original-byte validation");
- assert!(old.same_original_acquisition(&current));assert!(!old.same_binding(&current));
- assert!(next.validate_source_acquisition(path,&current));assert!(!next.validate_source_acquisition(path,&old));
+fn racy_timestamp_rechecks_original_and_reissues_only_authenticated_lease() {
+    let p = P::new(b"/datum/acquired_source_racy\n");
+    let store = Arc::new(PreparedInputArtifacts::default());
+    let path = Path::new("x.dm");
+    let first = RecordingInputs::new(p.clone(), 1).with_prepared_sources(Some(store.clone()));
+    let old = SourceProvider::acquired_source(&first, path)
+        .unwrap()
+        .unwrap();
+    let before = p.reads.load(std::sync::atomic::Ordering::SeqCst);
+    let next = RecordingInputs::new(p.clone(), 2).with_prepared_sources(Some(store));
+    let current = SourceProvider::acquired_source(&next, path)
+        .unwrap()
+        .unwrap();
+    assert!(
+        p.reads.load(std::sync::atomic::Ordering::SeqCst) > before,
+        "racy source metadata cannot suppress original-byte validation"
+    );
+    assert!(old.same_original_acquisition(&current));
+    assert!(!old.same_binding(&current));
+    assert!(next.validate_source_acquisition(path, &current));
+    assert!(!next.validate_source_acquisition(path, &old));
+}
+
+#[test]
+fn normal_original_view_has_no_second_raw_buffer() {
+    let inputs = RecordingInputs::new(P::new(b"/datum/workspace_normal_original\n"), 4_000_000_000);
+    let acquired = SourceProvider::acquired_source(&inputs, Path::new("x.dm"))
+        .unwrap()
+        .unwrap();
+    match recorded_source_original(acquired.lease()).unwrap() {
+        RecordedSourceOriginal::Utf8(text) => {
+            assert!(text.same_view(acquired.prepared().original()))
+        }
+        RecordedSourceOriginal::Bytes(_) => {
+            panic!("ordinary UTF8 must not retain another original buffer")
+        }
+    }
+}
+#[test]
+fn exceptional_original_survives_recorder_drop_without_prepared_owner_or_buffer_copy() {
+    let bytes = b"// \x80\n/datum/workspace_exceptional_original\n";
+    let inputs = RecordingInputs::new(P::new(bytes), 4_000_000_000);
+    let acquired = SourceProvider::acquired_source(&inputs, Path::new("x.dm"))
+        .unwrap()
+        .unwrap();
+    let lexical = Arc::downgrade(acquired.prepared());
+    let lease = acquired.lease().clone();
+    let original = inputs
+        .exceptional_source_bytes(Path::new("x.dm"))
+        .unwrap()
+        .unwrap();
+    let owner = Arc::downgrade(original.shared_owner());
+    match recorded_source_original(&lease).unwrap() {
+        RecordedSourceOriginal::Bytes(value) => assert!(value.ptr_eq(&original)),
+        _ => panic!("invalid original cannot be reconstructed from decoded text"),
+    }
+    drop(original);
+    drop(acquired);
+    drop(inputs);
+    assert!(lexical.upgrade().is_none());
+    assert!(owner.upgrade().is_some());
+    match recorded_source_original(&lease).unwrap() {
+        RecordedSourceOriginal::Bytes(value) => assert_eq!(value.as_slice(), bytes),
+        _ => panic!("original bytes lost"),
+    }
+    drop(lease);
+    assert!(owner.upgrade().is_none());
+}
+#[test]
+fn warm_exceptional_original_reissues_same_acquired_byte_owner_without_read() {
+    let provider = P::new(b"// \x80\n/datum/workspace_warm_original\n");
+    let store = Arc::new(PreparedInputArtifacts::default());
+    let first = RecordingInputs::new(provider.clone(), 4_000_000_000)
+        .with_prepared_sources(Some(store.clone()));
+    let old = SourceProvider::acquired_source(&first, Path::new("x.dm"))
+        .unwrap()
+        .unwrap();
+    let before = provider.reads.load(std::sync::atomic::Ordering::SeqCst);
+    let next =
+        RecordingInputs::new(provider.clone(), 5_000_000_000).with_prepared_sources(Some(store));
+    let current = SourceProvider::acquired_source(&next, Path::new("x.dm"))
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        provider.reads.load(std::sync::atomic::Ordering::SeqCst),
+        before
+    );
+    match (
+        recorded_source_original(old.lease()).unwrap(),
+        recorded_source_original(current.lease()).unwrap(),
+    ) {
+        (RecordedSourceOriginal::Bytes(a), RecordedSourceOriginal::Bytes(b)) => {
+            assert!(a.ptr_eq(b))
+        }
+        _ => panic!("warm exceptional owner changed"),
+    }
+}
+#[test]
+fn public_synthetic_lease_cannot_fabricate_recorded_original_view() {
+    let fake = dm_preprocess::AcquiredSource::synthetic_utf8("/datum/fake_original\n".into(), ());
+    assert!(recorded_source_original(fake.lease()).is_err());
 }

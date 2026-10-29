@@ -67,12 +67,19 @@ pub fn kind_of(expression: &str) -> Option<Kind> {
     }
 }
 impl Schemas {
+    /// Existing policy lexer/classifier may supply its interpreted schema kind.
+    /// This proves neither raw capture authority nor workspace completeness.
+    pub fn insert_policy_kind(&mut self, owner: SymbolId, name: SymbolId, kind: Kind) {
+        self.values.insert((owner, name), kind);
+    }
     /// Borrow unique raw-marker policy storage for host memory accounting.
     pub fn visit_storage(&self, visit: impl FnOnce(&BTreeMap<(SymbolId, SymbolId), Kind>)) {
         visit(&self.values);
     }
     pub fn read_source(&mut self, source: &str) -> Result<(), String> {
-        if !source.contains("SCHEMA") { return Ok(()); }
+        if !source.contains("SCHEMA") {
+            return Ok(());
+        }
         let lexed = dm_syntax::lex_spans(source);
         // Preserve source positions while removing comments, like the existing
         // raw declaration scanner. Strings remain lexer-owned tokens.

@@ -56,6 +56,20 @@ impl File {
         path: &Path,
         text: dm_preprocess::SourceText,
     ) -> Result<Self, String> {
+        if text.len() > captured_raw_policy::MAX_FIXTURE_FILE_BYTES {
+            return Err("raw source exceeds per-file fixture admission".into());
+        }
+        Self::capture_budgeted(root, path, text, usize::MAX)
+    }
+    /// Production source batches derive admission from the host's existing
+    /// input-family resource budget. The fixture constructor keeps its limit.
+    /// This estimate precedes line-index/lazy-view allocation; it is not RSS.
+    pub fn capture_budgeted(
+        root: &Path,
+        path: &Path,
+        text: dm_preprocess::SourceText,
+        available: usize,
+    ) -> Result<Self, String> {
         if !root.is_absolute() || !path.is_absolute() {
             return Err("raw file/root must be absolute".into());
         }
@@ -64,16 +78,21 @@ impl File {
         let path = path.to_path_buf();
         let relative = dm_preprocess::regions::relative_filesystem_path(&path, &root)
             .ok_or("captured raw source lies outside policy root")?;
-        if text.len() > captured_raw_policy::MAX_FIXTURE_FILE_BYTES {
-            return Err("raw source exceeds per-file fixture admission".into());
-        }
         let rel = relative.to_string_lossy().replace('\\', "/");
-        let charge = text.len().saturating_mul(32).saturating_add(
-            4 * (rel.len()
-                + path.as_os_str().as_encoded_bytes().len()
-                + root.as_os_str().as_encoded_bytes().len())
-                + 2048,
-        );
+        let paths = rel
+            .len()
+            .checked_add(path.as_os_str().as_encoded_bytes().len())
+            .and_then(|n| n.checked_add(root.as_os_str().as_encoded_bytes().len()))
+            .ok_or("raw file path accounting overflow")?;
+        let charge = text
+            .len()
+            .checked_mul(32)
+            .and_then(|n| paths.checked_mul(4).and_then(|paths| n.checked_add(paths)))
+            .and_then(|n| n.checked_add(2048))
+            .ok_or("raw file retention accounting overflow")?;
+        if charge > available {
+            return Err("raw source exceeds remaining input-family resource budget".into());
+        }
         Ok(Self {
             tree: Tree::from_captured_files(
                 root,
@@ -264,3 +283,74 @@ impl Findings {
 #[cfg(test)]
 #[path = "captured_raw_file_tests.rs"]
 mod tests;
+
+/// Exact byte length of Analyze's lossy UTF8 + universal-newline view, without
+/// allocating a transformed source. No DM tokenization/parser is performed.
+pub fn analyze_raw_len(bytes: &[u8]) -> Result<usize, String> {
+    fn valid(bytes: &[u8], total: &mut usize, prior_cr: &mut bool) -> Result<(), String> {
+        for byte in bytes {
+            if !(*byte == b'\n' && *prior_cr) {
+                *total = total.checked_add(1).ok_or("raw length overflow")?;
+            }
+            *prior_cr = *byte == b'\r';
+        }
+        Ok(())
+    }
+    let mut rest = bytes;
+    let mut total = 0usize;
+    let mut cr = false;
+    loop {
+        match std::str::from_utf8(rest) {
+            Ok(_) => {
+                valid(rest, &mut total, &mut cr)?;
+                return Ok(total);
+            }
+            Err(error) => {
+                let good = error.valid_up_to();
+                valid(&rest[..good], &mut total, &mut cr)?;
+                total = total.checked_add(3).ok_or("raw length overflow")?;
+                cr = false;
+                match error.error_len() {
+                    Some(bad) => rest = &rest[good + bad..],
+                    None => return Ok(total),
+                }
+            }
+        }
+    }
+}
+#[cfg(test)]
+mod workspace_budget_tests {
+    use super::*;
+    #[test]
+    fn fixture_limit_stays_while_resource_constructor_can_admit_borrowed_oversized_file() {
+        let root = std::env::current_dir().unwrap();
+        let path = root.join("code/large.dm");
+        let text: dm_preprocess::SourceText = "x"
+            .repeat(captured_raw_policy::MAX_FIXTURE_FILE_BYTES + 1)
+            .into();
+        assert!(File::capture(&root, &path, text.clone()).is_err());
+        assert!(File::capture_budgeted(&root, &path, text.clone(), 256 * 1024 * 1024).is_ok());
+        assert!(File::capture_budgeted(&root, &path, text, 1024).is_err());
+    }
+    #[test]
+    fn normalization_preflight_matches_unchanged_reference_transform_on_encoding_edges() {
+        for bytes in [
+            b"".as_slice(),
+            b"a\r\nb\rc\n",
+            b"\xef\xbb\xbf/atom\n",
+            b"\x80\xff",
+            b"x\xe2\x82",
+            b"\r\xc3\xa9\r\n",
+            b"\xe2\x28\xa1",
+            b"\xf0\x90\x80\x80",
+        ] {
+            assert_eq!(
+                analyze_raw_len(bytes).unwrap(),
+                String::from_utf8_lossy(bytes)
+                    .replace("\r\n", "\n")
+                    .replace('\r', "\n")
+                    .len()
+            );
+        }
+    }
+}

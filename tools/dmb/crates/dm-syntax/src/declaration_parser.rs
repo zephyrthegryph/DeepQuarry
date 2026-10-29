@@ -179,6 +179,7 @@ pub(super) fn parse_with_body_mode(source: &str, skeleton: bool) -> DeclarationS
         ParseContext {
             in_body: false,
             skeleton,
+            tokens: &lexed.tokens,
         },
         &mut diagnostics,
     );
@@ -434,10 +435,138 @@ fn push_inline_segment(
     });
 }
 
+/// Only borrowed tokens from THIS primary lex pass participate. Normalized
+/// header strings and offsets from another source are never consulted.
+/// Reissue only lexical header facts over an existing native declaration roster.
+/// This is the SAME primary lexer and cursor rule used during initial parsing;
+/// no declaration/body parser, adapter, or semantic model is reconstructed.
+pub fn primary_header_cursors(
+    source: &str,
+    headers: impl IntoIterator<Item = Span>,
+) -> Result<Vec<(usize, Option<usize>)>, Vec<Diagnostic>> {
+    let lexed = lex_spans(source);
+    if !lexed.diagnostics.is_empty() {
+        return Err(lexed.diagnostics);
+    }
+    Ok(headers
+        .into_iter()
+        .map(|header| {
+            (
+                header.start,
+                source
+                    .get(header.range())
+                    .and_then(|_| primary_declaration_cursor(source, &lexed.tokens, header)),
+            )
+        })
+        .collect())
+}
+/// Existing native roster plus its ORIGINAL parent links; no new syntax tree.
 #[derive(Clone, Copy)]
-struct ParseContext {
+pub struct PrimaryHeaderInput {
+    pub span: Span,
+    pub parent: Option<usize>,
+    pub has_children: bool,
+}
+/// One shared primary lexical query issues cursor AND scoped qualifier facts.
+/// Parent indices must refer strictly backward to the borrowed roster.
+pub fn primary_header_facts(
+    source: &str,
+    headers: &[PrimaryHeaderInput],
+) -> Result<Vec<(usize, Option<usize>, u8)>, Vec<Diagnostic>> {
+    let lexed = lex_spans(source);
+    if !lexed.diagnostics.is_empty() {
+        return Err(lexed.diagnostics);
+    }
+    let mut rows = Vec::with_capacity(headers.len());
+    let mut contexts = Vec::with_capacity(headers.len());
+    for (index, header) in headers.iter().enumerate() {
+        let parent = match header.parent {
+            Some(parent) if parent < index => contexts[parent],
+            Some(_) => None,
+            None => None,
+        };
+        let local = if header.parent.is_some_and(|parent| parent >= index) {
+            crate::UNKNOWN_HEADER_QUALIFIERS
+        } else {
+            crate::declaration_qualifiers::primary_header_qualifiers(
+                source,
+                &lexed.tokens,
+                header.span,
+                header.has_children,
+            )
+        };
+        let (flags, context) = crate::inherit_header_qualifiers(local, parent);
+        contexts.push(context);
+        rows.push((
+            header.span.start,
+            primary_declaration_cursor(source, &lexed.tokens, header.span),
+            flags,
+        ));
+    }
+    Ok(rows)
+}
+fn primary_declaration_cursor(source: &str, tokens: &[SpanToken], header: Span) -> Option<usize> {
+    let first = tokens.partition_point(|token| token.span.end <= header.start);
+    let end = tokens.partition_point(|token| token.span.start < header.end);
+    let mut depth = 0usize;
+    let mut last = None;
+    let mut last_end = None;
+    for token in tokens.get(first..end)? {
+        if matches!(
+            token.kind,
+            TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+        ) {
+            continue;
+        }
+        // Raw preprocessing syntax (notably backslash continuation) has no
+        // primary declaration meaning before the existing preprocess pass.
+        // Never turn its following newline into an invented declaration token.
+        if token.kind == TokenKind::Unknown {
+            return None;
+        }
+        match token.text(source) {
+            "=" if depth == 0 => return Some(token.span.start),
+            "(" | "[" | "{" => depth += 1,
+            ")" | "]" | "}" => depth = depth.checked_sub(1)?,
+            _ => (),
+        }
+        last = Some(token.span.start);
+        last_end = Some(token.span.end);
+    }
+    if depth != 0 {
+        return None;
+    }
+    // Pinned declarations without an initializer observe their terminator.
+    // A multiline comment/doc cursor remains unsupported, rather than guessed.
+    for token in tokens.iter().skip(end) {
+        match token.kind {
+            TokenKind::Whitespace => continue,
+            TokenKind::Comment => {
+                if token.text(source).contains(['\r', '\n']) {
+                    return None;
+                }
+                continue;
+            }
+            TokenKind::Newline => return Some(token.span.start),
+            _ if matches!(token.text(source), ";" | "}") => return Some(token.span.start),
+            _ => return None,
+        }
+    }
+    // Pinned IndentProcessor's final synthetic semicolon uses last_input_loc,
+    // not EOF end. A final significant token proves that cursor only if it
+    // reaches EOF; trailing whitespace/comments have another token policy.
+    if last_end == Some(source.len()) {
+        last
+    } else {
+        None
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ParseContext<'a> {
     in_body: bool,
     skeleton: bool,
+    tokens: &'a [SpanToken],
 }
 
 fn body_keyword(header: &str, keyword: &str) -> bool {
@@ -484,7 +613,7 @@ fn parse_level(
     lines: &[Line],
     mut index: usize,
     indent: usize,
-    context: ParseContext,
+    context: ParseContext<'_>,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> (Vec<Item>, usize) {
     let mut items = Vec::new();
@@ -531,6 +660,7 @@ fn parse_level(
                 ParseContext {
                     in_body: context.in_body
                         || matches!(kind, ItemKind::Proc | ItemKind::Verb | ItemKind::Statement),
+                    tokens: context.tokens,
                     skeleton: context.skeleton
                         && (context.in_body || !matches!(kind, ItemKind::Statement)),
                 },
@@ -565,6 +695,8 @@ fn parse_level(
                     header: String::new(),
                     span: Span::new(line.header_start, end),
                     header_span: Span::new(line.header_start, line.header_end),
+                    declaration_cursor: None,
+                    checker_qualifiers: crate::UNKNOWN_HEADER_QUALIFIERS,
                     indent: line.indent,
                     children,
                 });
@@ -576,6 +708,28 @@ fn parse_level(
             header: header.to_owned(),
             span: Span::new(line.header_start, end),
             header_span: Span::new(line.header_start, line.header_end),
+            declaration_cursor: (!context.in_body
+                && !matches!(kind, ItemKind::Proc | ItemKind::Verb))
+            .then(|| {
+                primary_declaration_cursor(
+                    source,
+                    context.tokens,
+                    Span::new(line.header_start, line.header_end),
+                )
+            })
+            .flatten(),
+            checker_qualifiers: if !context.in_body
+                && !matches!(kind, ItemKind::Proc | ItemKind::Verb)
+            {
+                crate::declaration_qualifiers::primary_header_qualifiers(
+                    source,
+                    context.tokens,
+                    Span::new(line.header_start, line.header_end),
+                    has_children,
+                )
+            } else {
+                crate::UNKNOWN_HEADER_QUALIFIERS
+            },
             indent: line.indent,
             children,
         });
@@ -584,5 +738,90 @@ fn parse_level(
         (retain_setting_chains(items), index)
     } else {
         (items, index)
+    }
+}
+
+#[cfg(test)]
+mod primary_declaration_cursor_tests {
+    use super::*;
+    fn vars(items: &[Item], out: &mut Vec<usize>) {
+        for item in items {
+            if item.kind == ItemKind::Var && !item.header.trim_end().ends_with('/') {
+                if let Some(at) = item.declaration_cursor {
+                    out.push(at);
+                }
+            }
+            vars(&item.children, out);
+        }
+    }
+    #[test]
+    fn assignment_cursor_is_the_original_primary_equal_before_normalization() {
+        let source = "/datum/probe\n    var/item = list(\n        1)\n";
+        let parsed = parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty(), "{parsed:?}");
+        let mut cursors = Vec::new();
+        vars(&parsed.items, &mut cursors);
+        assert_eq!(cursors, [source.find('=').unwrap()]);
+        assert_ne!(cursors[0], parsed.items[0].children[0].header_span.start);
+    }
+    #[test]
+    fn semicolon_and_eof_are_real_primary_terminator_cursors() {
+        let source = "var/first;var/second";
+        let parsed = parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty(), "{parsed:?}");
+        assert_eq!(
+            parsed.items[0].declaration_cursor,
+            Some(source.find(';').unwrap())
+        );
+        assert_eq!(
+            parsed.items[1].declaration_cursor,
+            Some(source.find("second").unwrap())
+        );
+    }
+    #[test]
+    fn raw_preprocessor_continuation_has_no_primary_cursor_before_preprocessing() {
+        let source = "/datum/probe\n    var/item \\\n        = 1\n";
+        let parsed = parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty(), "{parsed:?}");
+        assert_eq!(parsed.items[0].children[0].declaration_cursor, None);
+    }
+
+    #[test]
+    fn balanced_multiline_array_suffix_uses_actual_equal_on_later_line() {
+        let source = "/datum/probe\n    var/items[\n        3] = 1\n";
+        let parsed = parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty(), "{parsed:?}");
+        assert_eq!(
+            parsed.items[0].children[0].declaration_cursor,
+            Some(source.find('=').unwrap())
+        );
+        assert_eq!(parsed.items[0].children.len(), 1);
+    }
+    #[test]
+    fn unknown_multiline_trailing_comment_never_invents_a_suffix_cursor() {
+        let source = "var/item /* comment\n remaining */\n";
+        let parsed = parse_declaration_skeleton(source);
+        assert!(parsed
+            .items
+            .iter()
+            .all(|item| item.declaration_cursor.is_none()));
+    }
+}
+
+#[cfg(test)]
+mod declaration_eof_policy_tests {
+    use super::*;
+    #[test]
+    fn bare_and_array_eof_use_actual_last_token_but_unproved_tail_refuses() {
+        for (source, expected) in [
+            ("var/value", Some(4)),
+            ("var/items[3]", Some(11)),
+            ("var/value ", None),
+            ("var/value // tail", None),
+        ] {
+            let parsed = parse_declaration_skeleton(source);
+            assert!(parsed.diagnostics.is_empty());
+            assert_eq!(parsed.items[0].declaration_cursor, expected, "{source:?}");
+        }
     }
 }

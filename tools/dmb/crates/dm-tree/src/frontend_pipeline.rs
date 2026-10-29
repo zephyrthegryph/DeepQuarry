@@ -74,7 +74,30 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
     executor: &dm_exec::BuildExecutor,
+    semantic_state: Option<&mut RetainedSemanticTree>,
+) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    build_with_executor_and_semantic_state_for_policy(
+        project,
+        provider,
+        defines,
+        config,
+        memo,
+        executor,
+        semantic_state,
+        false,
+    )
+}
+/// Rich policy preparation shares the existing primary token query after a
+/// portable declaration restore. No additional work for ordinary compilation.
+pub fn build_with_executor_and_semantic_state_for_policy<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
     mut semantic_state: Option<&mut RetainedSemanticTree>,
+    require_primary_headers: bool,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
     let declaration_request = semantic_state
         .as_ref()
@@ -298,7 +321,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     };
     crate::change_set::record_outcome(format!(
         "frontend source index {}: {:.3}s",
-        if source_index_reused { "reused" } else { "built" },
+        if source_index_reused {
+            "reused"
+        } else {
+            "built"
+        },
         index_started.elapsed().as_secs_f64()
     ));
     let mapping = Mapping {
@@ -315,7 +342,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         .iter()
         .flat_map(|diagnostic| {
             if diagnostic.kind == dm_preprocess::DiagnosticKind::Macro
-                && diagnostic.message.starts_with("unterminated text expression")
+                && diagnostic
+                    .message
+                    .starts_with("unterminated text expression")
             {
                 // The expression runs to the end of the file, so only the first one is read.
                 return if text_expression_files.insert(diagnostic.path.clone()) {
@@ -325,23 +354,23 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 };
             }
             vec![Diagnostic {
-            kind: match diagnostic.kind {
-                dm_preprocess::DiagnosticKind::Unsupported => DiagnosticKind::UnsupportedModel,
-                dm_preprocess::DiagnosticKind::Io
-                | dm_preprocess::DiagnosticKind::Include
-                | dm_preprocess::DiagnosticKind::Conditional
-                | dm_preprocess::DiagnosticKind::Macro
-                | dm_preprocess::DiagnosticKind::Directive
-                | dm_preprocess::DiagnosticKind::UserError => DiagnosticKind::SourceError,
-            },
-            stage: DiagnosticStage::Preprocess,
-            // DreamMaker echoes the directive with the author's text.
-            message: if diagnostic.kind == dm_preprocess::DiagnosticKind::UserError {
-                format!("#error {}", diagnostic.message.trim())
-            } else {
-                diagnostic.message.clone()
-            },
-            location: mapping.line(&diagnostic.path, diagnostic.line),
+                kind: match diagnostic.kind {
+                    dm_preprocess::DiagnosticKind::Unsupported => DiagnosticKind::UnsupportedModel,
+                    dm_preprocess::DiagnosticKind::Io
+                    | dm_preprocess::DiagnosticKind::Include
+                    | dm_preprocess::DiagnosticKind::Conditional
+                    | dm_preprocess::DiagnosticKind::Macro
+                    | dm_preprocess::DiagnosticKind::Directive
+                    | dm_preprocess::DiagnosticKind::UserError => DiagnosticKind::SourceError,
+                },
+                stage: DiagnosticStage::Preprocess,
+                // DreamMaker echoes the directive with the author's text.
+                message: if diagnostic.kind == dm_preprocess::DiagnosticKind::UserError {
+                    format!("#error {}", diagnostic.message.trim())
+                } else {
+                    diagnostic.message.clone()
+                },
+                location: mapping.line(&diagnostic.path, diagnostic.line),
             }]
         })
         .collect();
@@ -394,7 +423,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             })
             // The preprocessor already reported an unterminated text expression, which consumes the rest of its file.
             .filter(|diagnostic| {
-                !(diagnostic.message.starts_with("unterminated text expression")
+                !(diagnostic
+                    .message
+                    .starts_with("unterminated text expression")
                     && diagnostic.location.as_ref().is_some_and(|location| {
                         text_expression_files.contains(location.path.as_path())
                     }))
@@ -623,6 +654,50 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         .collect();
     let files: Arc<[SourceFile]> = files.into();
     let source_by_path = by_path;
+    let declaration_qualifiers = expanded_spans
+        .iter()
+        .enumerate()
+        .map(|(index, span)| match snapshot.tree.declarations()[index] {
+            Target::Member(member)
+                if snapshot
+                    .tree
+                    .member(member)
+                    .is_some_and(|node| node.kind == MemberKind::Var) =>
+            {
+                if require_primary_headers {
+                    syntax
+                        .declaration_checker_qualifiers_at_for_policy(span.start as usize)
+                        .unwrap_or(dm_syntax::UNKNOWN_HEADER_QUALIFIERS)
+                } else {
+                    dm_syntax::UNKNOWN_HEADER_QUALIFIERS
+                }
+            }
+            _ => dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let declaration_cursors = expanded_spans
+        .into_iter()
+        .enumerate()
+        .map(|(index, span)| match snapshot.tree.declarations()[index] {
+            Target::Member(member)
+                if snapshot
+                    .tree
+                    .member(member)
+                    .is_some_and(|node| node.kind == MemberKind::Var) =>
+            {
+                (if require_primary_headers {
+                    syntax.declaration_cursor_at_for_policy(span.start as usize)
+                } else {
+                    syntax.declaration_cursor_at(span.start as usize)
+                })
+                .and_then(|at| u32::try_from(at).ok())
+                .unwrap_or(u32::MAX)
+            }
+            _ => u32::MAX,
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
     let source_export_mapping = Arc::new(source_export_mapping::SourceExportMapping::capture(
         &plan,
         &expanded,
@@ -630,8 +705,10 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         &source_by_path,
         &snapshot.occurrences,
         &snapshot.tree,
+        declaration_cursors,
+        declaration_qualifiers,
     ));
-    Ok(ColdFrontend {
+    let mut frontend = ColdFrontend {
         body_queries: None,
         source_export_mapping,
         callable_roster,
@@ -666,7 +743,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         issued_settings: issued_settings.into(),
         bodies,
         emission_order: emission_order.into(),
-    })
+    };
+    if require_primary_headers {
+        frontend.issue_declaration_compatibility();
+    }
+    Ok(frontend)
 }
 
 /// Every distinct file of the plan, in the order its first occurrence appears, with the text the

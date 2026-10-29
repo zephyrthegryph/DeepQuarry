@@ -240,6 +240,69 @@ impl Journal {
     }
 }
 impl SnapshotProvider for Inputs {
+    fn read_policy_bounded(
+        &self,
+        path: &Path,
+        limit: usize,
+    ) -> io::Result<Option<CapturedInputRead>> {
+        let path = canonical_path(path);
+        if let Self::Replay(journal) = self {
+            let (stamp, hash) = {
+                let index = journal
+                    .index
+                    .lock()
+                    .map_err(|_| invalid("verification mutex poisoned"))?;
+                match index.files.get(&path) {
+                    Some(v) => v.clone(),
+                    None if index.negative.contains(&path) => return Err(Journal::missing(&path)),
+                    None => return Err(Journal::unknown(&path)),
+                }
+            };
+            if stamp.size > limit as u64 {
+                return Err(invalid("recorded original exceeds bounded read admission"));
+            }
+            let read = FileSystemInputs
+                .read_policy_bounded(&journal.payload(hash), limit)?
+                .ok_or_else(|| invalid("bounded journal payload reader unavailable"))?;
+            let (_, bytes, actual) = read.into_parts();
+            if bytes.len() as u64 != stamp.size || actual != hash {
+                return Err(invalid("bounded journal payload checksum mismatch"));
+            }
+            return Ok(Some(CapturedInputRead::from_verified(stamp, bytes, hash)));
+        }
+        let result = FileSystemInputs.read_policy_bounded(&path, limit);
+        let Self::Recording(journal) = self else {
+            return result;
+        };
+        let mut index = journal
+            .index
+            .lock()
+            .map_err(|_| invalid("verification mutex poisoned"))?;
+        match result {
+            Ok(Some(read)) => {
+                let fact = (read.stamp().clone(), read.content());
+                if index.negative.contains(&path)
+                    || index.files.get(&path).is_some_and(|old| old != &fact)
+                {
+                    return Err(invalid("bounded journal input changed during capture"));
+                }
+                let payload = journal.payload(read.content());
+                if !payload.exists() {
+                    std::fs::write(&payload, read.bytes())?;
+                }
+                index.files.insert(path, fact);
+                Ok(Some(read))
+            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                if index.files.contains_key(&path) {
+                    return Err(invalid("bounded journal input disappeared"));
+                }
+                index.negative.insert(path);
+                Err(error)
+            }
+            other => other,
+        }
+    }
     fn source_alias(
         &self,
         path: &Path,
@@ -612,6 +675,13 @@ impl<'a> ProofStampedInputs<'a> {
     }
 }
 impl SnapshotProvider for ProofStampedInputs<'_> {
+    fn read_policy_bounded(
+        &self,
+        path: &Path,
+        limit: usize,
+    ) -> io::Result<Option<CapturedInputRead>> {
+        self.inner.read_policy_bounded(path, limit)
+    }
     fn source_alias(
         &self,
         path: &Path,

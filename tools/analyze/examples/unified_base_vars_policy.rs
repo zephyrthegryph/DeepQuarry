@@ -14,7 +14,10 @@ use std::{
     sync::Arc,
 };
 #[derive(Default)]
-struct Files(RefCell<BTreeMap<PathBuf, Vec<u8>>>);
+struct Files(
+    RefCell<BTreeMap<PathBuf, Vec<u8>>>,
+    RefCell<BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,
+);
 impl Files {
     fn bytes(&self, path: &Path) -> Result<Vec<u8>, String> {
         if !self.0.borrow().contains_key(path) {
@@ -37,8 +40,32 @@ impl Files {
     }
 }
 impl SourceProvider for Files {
-    fn read(&self, path: &Path) -> Result<String, String> {
-        Ok(dm_preprocess::decode_source_bytes(&self.bytes(path)?))
+    fn read(&self, _: &Path) -> Result<String, String> {
+        Err("oracle requires original acquired bytes".into())
+    }
+    fn acquired_source(
+        &self,
+        path: &Path,
+    ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+        if let Some(source) = self.1.borrow().get(path) {
+            return Ok(Some(source.clone()));
+        }
+        // The same FIRST cached byte read serves native preprocessing and raw
+        // Analyze projection. Decoded/re-encoded text never mints authority.
+        let source = dm_preprocess::AcquiredSource::from_original_bytes(self.bytes(path)?, ());
+        self.1.borrow_mut().insert(path.into(), source.clone());
+        Ok(Some(source))
+    }
+    fn source_acquisition(
+        &self,
+        path: &Path,
+        text: &SourceText,
+    ) -> Option<dm_preprocess::AcquiredSource> {
+        self.1
+            .borrow()
+            .get(path)
+            .filter(|source| source.lease().source_text().same_view(text))
+            .cloned()
     }
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -103,7 +130,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let parent = parent.map(|path| seed.symbols.intern(path)).transpose()?;
         seed.hierarchy.parents.push((child, parent));
     }
-    let frontend = dm_tree::frontend::build_with_config(
+    let executor = dm_exec::BuildExecutor::new(1).map_err(|e| format!("native executor: {e:?}"))?;
+    let frontend = dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
         &root.join("deepquarry.dme"),
         &files,
         &Default::default(),
@@ -112,6 +140,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             engine: Some(&seed),
             observer: None,
         },
+        None,
+        &executor,
+        None,
+        true,
     )
     .map_err(|e| format!("native fixture failed: {e:?}"))?;
     let mut captures = Vec::new();
@@ -164,6 +196,51 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|run| run["sites"].as_array().unwrap().len())
         .sum::<usize>();
     let findings = expected["base_vars"]["sites"].as_array().unwrap();
+    if std::env::args().any(|arg| arg == "--expect-eof-omission") {
+        // Explicit negative regression, not a generic permission for empty
+        // oracles: the unchanged old model MUST carry this authored field at
+        // the parent DME cursor, and the independent native producer must issue
+        // the same logical boundary while retaining its original code source.
+        let sem = dq_analyze::sem::sem_for(&old.tree)
+            .ok_or("old EOF oracle semantic owner unavailable")?;
+        let decl = sem
+            .var_decl_unrecorded("/atom", "eof_value")
+            .ok_or("old EOF fixture has no actual authored field")?;
+        if decl.file != "deepquarry.dme" || decl.line != 2 || !findings.is_empty() {
+            return Err("EOF omission fixture did not exercise the actual old parent-DME declaration cursor".into());
+        }
+        let archive = inputs.archive();
+        let tree = archive.tree();
+        let owner = tree
+            .lookup_type(dm_ir::SymbolId::of("/atom"))
+            .ok_or("native EOF owner absent")?;
+        let member = tree
+            .resolve(
+                owner,
+                dm_ir::SymbolId::of("eof_value"),
+                dm_tree::MemberKind::Var,
+            )
+            .ok_or("native EOF field absent")?;
+        let original = archive
+            .member_location(member)
+            .ok_or("native original declaration origin absent")?;
+        let cursor = archive.member_policy_compatibility_cursor(member)?;
+        if !original.path.ends_with("code/probe.dm")
+            || !cursor.path.ends_with("deepquarry.dme")
+            || cursor.line != 2
+            || cursor.byte_column != Some(1)
+            || !cursor.logical_boundary
+        {
+            return Err(
+                "native EOF compatibility proof changed or overwrote original provenance".into(),
+            );
+        }
+        println!(
+            "{}",
+            serde_json::json!({"scope":"base_vars/include-eof-declaration-omission","matched":true,"sites":0,"independent_authored_field":"/atom::eof_value","old_file":decl.file,"old_line":decl.line,"native_logical_column":1,"full_policy_parity":false,"baseline_applied":false})
+        );
+        return Ok(());
+    }
     let rules = findings
         .iter()
         .filter_map(|site| site["rule"].as_str())

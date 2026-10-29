@@ -7,6 +7,8 @@ pub(super) struct Node {
     indent: u32,
     span: [u32; 2],
     header_span: [u32; 2],
+    declaration_cursor: u32,
+    checker_qualifiers: u8,
     text: [u32; 2],
     children: [u32; 2],
 }
@@ -34,6 +36,9 @@ impl Arena {
                     ]
                     .into_iter()
                     .all(|v| v <= u32::MAX as usize)
+                    && item
+                        .declaration_cursor
+                        .is_none_or(|at| at < u32::MAX as usize)
                     && fits(&item.children)
             })
         }
@@ -74,6 +79,8 @@ impl Arena {
                     indent: item.indent as u32,
                     span: [item.span.start as u32, item.span.end as u32],
                     header_span: [span.start as u32, span.end as u32],
+                    declaration_cursor: item.declaration_cursor.map_or(u32::MAX, |at| at as u32),
+                    checker_qualifiers: item.checker_qualifiers,
                     text,
                     children: [0, 0],
                 });
@@ -201,6 +208,26 @@ impl Ref<'_> {
                 _ => unreachable!(),
             },
             |n| Span::new(n.span[0] as usize, n.span[1] as usize),
+        )
+    }
+    pub(super) fn checker_qualifiers(self) -> u8 {
+        self.node().map_or_else(
+            || match self {
+                Self::Wide(item) => item.checker_qualifiers,
+                _ => unreachable!(),
+            },
+            |node| node.checker_qualifiers,
+        )
+    }
+    pub(super) fn declaration_cursor(self) -> Option<usize> {
+        self.node().map_or_else(
+            || match self {
+                Self::Wide(item) => item.declaration_cursor,
+                _ => unreachable!(),
+            },
+            |node| {
+                (node.declaration_cursor != u32::MAX).then_some(node.declaration_cursor as usize)
+            },
         )
     }
     pub(super) fn header_span(self) -> Span {
@@ -380,6 +407,8 @@ mod tests {
             header: "/qualified/relative".into(),
             span: Span::new(0, 8),
             header_span: Span::new(0, 8),
+            declaration_cursor: None,
+            checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
             indent: 0,
             children: vec![],
         };

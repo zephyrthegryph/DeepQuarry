@@ -133,7 +133,8 @@ impl SourceSnapshot {
             "ambiguous_not_bitwise"
             | "ambiguous_in_lhs"
             | "invalid_set_value"
-            | "field_access_static_type" => DiagnosticSeverity::Warning,
+            | "field_access_static_type"
+            | "proc_call_static_type" => DiagnosticSeverity::Warning,
             "control_condition_static"
             | "set_has_no_effect"
             | "unreachable_code"
@@ -168,7 +169,7 @@ impl SourceSnapshot {
                 .parse(ordinal as usize)
                 .map_err(|error| io::Error::other(error.message))?;
             let found = match family {
-                "proc_has_no_parent" | "undefined_proc" | "undefined_variable" | "field_access_static_type" | "no_typehint_implicit_new" => {
+                "proc_has_no_parent" | "undefined_proc" | "undefined_variable" | "field_access_static_type" | "no_typehint_implicit_new" | "proc_call_static_type" => {
                     let resolver = self.resolved.as_ref()
                         .ok_or_else(|| io::Error::other("semantic checker requires the retained successful compile/analysis EngineHost"))?
                         .checker_resolver(tree)?;
@@ -182,6 +183,7 @@ impl SourceSnapshot {
                     else if family == "undefined_proc" { context.undefined_archived(&body, true) }
                     else if family == "undefined_variable" { context.variables_archived(&body, true) }
                     else if family == "no_typehint_implicit_new" {context.implicit_new_archived(&body,Severity::Error)}
+                    else if family == "proc_call_static_type" {context.proc_static_archived(&body,Severity::Warning)}
                     else {context.fields_archived(&body,Severity::Warning)}
                 }
                 "ambiguous_not_bitwise" => {

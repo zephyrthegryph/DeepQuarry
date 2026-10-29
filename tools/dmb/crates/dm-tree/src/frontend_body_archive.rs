@@ -33,6 +33,10 @@ impl ArchivedBody<'_> {
     pub fn occurrence(&self) -> &BodyOccurrence {
         self.occurrence
     }
+    /// Borrow the ORIGINAL archive that issued this body; no caller can rebind it.
+    pub fn archive_owner(&self) -> &BodyArchive {
+        self.archive
+    }
     pub fn statement_body(&self) -> &StatementBody {
         &self.statements
     }
@@ -302,3 +306,38 @@ impl BodyArchive {
         self.mapping.original_policy_line(offset)
     }
 }
+
+impl BodyArchive {
+    fn member_policy_occurrence(&self, member: crate::MemberId) -> Result<OccurrenceId, String> {
+        if self.tree.member(member).ok_or("member unavailable")?.kind != MemberKind::Var {
+            return Err("member is not a source variable".into());
+        }
+        self.declarations
+            .for_target(crate::Target::Member(member))
+            .first()
+            .copied()
+            .ok_or_else(|| "member has no authored occurrence".into())
+    }
+    pub fn member_policy_compatibility_cursor(
+        &self,
+        member: crate::MemberId,
+    ) -> Result<super::SourceDeclarationPolicyCursor, String> {
+        self.mapping
+            .declaration_policy_compatibility_cursor(self.member_policy_occurrence(member)?)
+    }
+    pub fn member_policy_line(
+        &self,
+        member: crate::MemberId,
+    ) -> Result<SourcePolicyLineOrigin, String> {
+        self.mapping
+            .declaration_policy_line(self.member_policy_occurrence(member)?)
+    }
+    pub fn member_policy_point(&self, member: crate::MemberId) -> Result<SourceNoteOrigin, String> {
+        self.mapping
+            .declaration_policy_point(self.member_policy_occurrence(member)?)
+    }
+}
+
+#[path = "frontend_checker_variable_properties.rs"]
+mod checker_variable_properties;
+pub use checker_variable_properties::CheckerVariableProperties;
