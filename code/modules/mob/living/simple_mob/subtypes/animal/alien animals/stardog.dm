@@ -54,8 +54,8 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
-	op("eat_space_weather", menu(), label("Eat Space Weather"), needs(req_self(), req_capable()), then(PROC_REF(eat_space_weather_op)))
-	op("eject", menu(), label("Eject"), needs(req_self(), req_capable()), then(PROC_REF(eject_op)))
+	op("eat_space_weather", menu(), label("Eat Space Weather"), needs(req_self()), then(PROC_REF(eat_space_weather_op)))
+	op("eject", menu(), label("Eject"), needs(req_self()), then(PROC_REF(eject_op)))
 	configure(living_rules(say_list_type = /datum/say_list/softdog))
 	after_init(0, then(PROC_REF(stardog_light_ready)))
 	links(/mob/living/simple_mob/vore/overmap/stardog::control_node, /obj/structure/control_pod::host)

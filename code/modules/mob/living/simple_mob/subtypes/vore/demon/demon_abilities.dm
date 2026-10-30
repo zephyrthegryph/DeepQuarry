@@ -1,20 +1,16 @@
-/mob/living/simple_mob/vore/demon/proc/blood_crawl()
+/mob/living/simple_mob/vore/demon/proc/blood_crawl_ready(datum/act/op/A)
 	var/turf/T = get_turf(src)
 	if(!T.CanPass(src,T) || loc != T)
-		to_chat(src,span_warning("You can't use that here!"))
-		return FALSE
-
+		return span_warning("You can't use that here!")
 	if((get_area(src).flags & PHASE_SHIELDED))
-		to_chat(src,span_warning("This area is preventing you from phasing!"))
-		return FALSE
-
+		return span_warning("This area is preventing you from phasing!")
 	if(shift_state && shift_state == AB_SHIFT_ACTIVE)
-		to_chat(src,span_warning("You can't do a shift while actively shifting!"))
-		return FALSE
-
+		return span_warning("You can't do a shift while actively shifting!")
 	if(!(locate_within(src.loc, /obj/effect/decal/cleanable/blood)))
-		to_chat(src,span_warning("You need blood to shift between realities!"))
-		return FALSE
+		return span_warning("You need blood to shift between realities!")
+
+/mob/living/simple_mob/vore/demon/proc/blood_crawl()
+	var/turf/T = get_turf(src)
 
 	forceMove(T)
 	var/original_canmove = canmove
@@ -32,7 +28,7 @@
 
 	//Shifting in
 	if(shifted_out)
-		shifted_out = FALSE
+		set_shifted_out(FALSE)
 		name = real_name
 		for(var/obj/belly/B as anything in vore_organs)
 			B.set_escapable(initial(B.escapable))
@@ -52,8 +48,8 @@
 
 	//Shifting out
 	else
-		shifted_out = TRUE
-		shift_state = AB_SHIFT_PASSIVE
+		set_shifted_out(TRUE)
+		set_shift_state(AB_SHIFT_PASSIVE)
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
 		set_real_name(name)
 		name = "Something"
@@ -68,23 +64,18 @@
 /mob/living/simple_mob/vore/demon/proc/blood_crawl_op(datum/act/op/A)
 	blood_crawl()
 
-/mob/living/simple_mob/vore/demon/proc/demonic_phase_shift()
+/mob/living/simple_mob/vore/demon/proc/demonic_phase_shift_ready(datum/act/op/A)
+	if(shift_state && shift_state == AB_SHIFT_PASSIVE)
+		return span_warning("You can't do a shift while passively shifting!")
+	if(shifted_out)
+		return span_warning("You can't return to the physical world yet!")
+	if(ELAPSED(src, last_shift, CLOCK_WORLD) < 600)
+		return span_warning("You can't temporarily shift so soon! You need to wait [round(((last_shift+600)-world.time)/10)] second\s!")
 
+/mob/living/simple_mob/vore/demon/proc/demonic_phase_shift()
 	var/turf/T = get_turf(src)
 
-	if(shift_state && shift_state == AB_SHIFT_PASSIVE)
-		to_chat(src,span_warning("You can't do a shift while passively shifting!"))
-		return FALSE
-
-	if(shifted_out)
-		to_chat(src,span_warning("You can't return to the physical world yet!"))
-		return FALSE
-
-	if(ELAPSED(src, last_shift, CLOCK_WORLD) < 600)
-		to_chat(src,span_warning("You can't temporarily shift so soon! You need to wait [round(((last_shift+600)-world.time)/10)] second\s!"))
-		return FALSE
-
-	shift_state = AB_SHIFT_ACTIVE
+	set_shift_state(AB_SHIFT_ACTIVE)
 	forceMove(T)
 	var/original_canmove = canmove
 	status_set(STAT_STUNNED, 0)
@@ -99,7 +90,7 @@
 	set_canmove(FALSE)
 	set_is_shifting(TRUE)
 
-	shifted_out = TRUE
+	set_shifted_out(TRUE)
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
 	set_real_name(name)
 	name = "Something"
@@ -116,7 +107,7 @@
 
 /// The temporary phase shift runs out: back into reality.
 /mob/living/simple_mob/vore/demon/proc/demon_shift_return()
-	shifted_out = FALSE
+	set_shifted_out(FALSE)
 	name = real_name
 	for(var/obj/belly/B as anything in vore_organs)
 		B.set_escapable(initial(B.escapable))
@@ -174,22 +165,19 @@
 
 	// Do this after the potential vore, so we get the belly
 
-	shift_state = AB_SHIFT_NONE
+	set_shift_state(AB_SHIFT_NONE)
 	if(from_temporary)
 		STAMP(src, last_shift, CLOCK_WORLD)
 
 
+/mob/living/simple_mob/vore/demon/proc/blood_burst_ready(datum/act/op/A)
+	if(shifted_out)
+		return span_warning("You must be in the physical world to create blood!")
+	if(ELAPSED(src, blood_spawn, CLOCK_WORLD) < 1500)
+		return span_warning("You can't create blood so soon! You need to wait [round(((blood_spawn+1500)-world.time)/10)] second\s!")
+
 /mob/living/simple_mob/vore/demon/proc/blood_burst()
 	var/turf/T = get_turf(src)
-
-	if(shifted_out)
-		to_chat(src,span_warning("You must be in the physical world to create blood!"))
-		return FALSE
-
-	if(ELAPSED(src, blood_spawn, CLOCK_WORLD) < 1500)
-		to_chat(src,span_warning("You can't create blood so soon! You need to wait [round(((blood_spawn+1500)-world.time)/10)] second\s!"))
-		return FALSE
-
 
 	gibs(T)
 
@@ -297,7 +285,7 @@
 	act_message(src, T, MSG_SELF(span_notice("You bite %T%.")), MSG_OTHERS(span_warning("%U% bites %T%!")))
 
 /mob/living/simple_mob/vore/demon/proc/phase_shift_wears_off()
-	shifted_out = FALSE
+	set_shifted_out(FALSE)
 	name = real_name
 	for(var/obj/belly/B as anything in vore_organs)
 		B.set_escapable(initial(B.escapable))
@@ -343,5 +331,5 @@
 
 	// Do this after the potential vore, so we get the belly
 
-	shift_state = AB_SHIFT_NONE
+	set_shift_state(AB_SHIFT_NONE)
 	STAMP(src, last_shift, CLOCK_WORLD)

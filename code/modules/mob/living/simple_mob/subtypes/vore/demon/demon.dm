@@ -126,12 +126,13 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/demon)
-	op("toggle_sizespell", menu(), label("Shrink/Grow Amount"), needs(req_self(), req_capable()), then(PROC_REF(toggle_sizespell_op)))
-	op("manual_laugh", menu(), label("Laugh"), needs(req_self(), req_capable()), then(PROC_REF(manual_laugh_op)))
-	op("toggle_laugh", menu(), label("Toggle Auto Laugh"), needs(req_self(), req_capable()), then(PROC_REF(toggle_laugh_op)))
-	op("blood_burst", menu(), label("Blood burst"), needs(req_self(), req_capable()), then(PROC_REF(blood_burst_op)))
-	op("demonic_phase_shift", menu(), label("Phase Shift"), needs(req_self(), req_capable()), then(PROC_REF(demonic_phase_shift_op)))
-	op("blood_crawl", menu(), label("Bloodcrawl"), needs(req_self(), req_capable()), then(PROC_REF(blood_crawl_op)))
+	op("alt_appearance", menu(), label("Toggle Alernate Appearance"), needs(req_self(), req(PROC_REF(alt_appearance_ready))), then(PROC_REF(alt_appearance_op)))
+	op("toggle_sizespell", menu(), label("Shrink/Grow Amount"), needs(req_self()), then(PROC_REF(toggle_sizespell_op)))
+	op("manual_laugh", menu(), label("Laugh"), needs(req_self()), then(PROC_REF(manual_laugh_op)))
+	op("toggle_laugh", menu(), label("Toggle Auto Laugh"), needs(req_self()), then(PROC_REF(toggle_laugh_op)))
+	op("blood_burst", menu(), label("Blood burst"), needs(req_self(), req(PROC_REF(blood_burst_ready))), then(PROC_REF(blood_burst_op)))
+	op("demonic_phase_shift", menu(), label("Phase Shift"), needs(req_self(), req(PROC_REF(demonic_phase_shift_ready))), then(PROC_REF(demonic_phase_shift_op)))
+	op("blood_crawl", menu(), label("Bloodcrawl"), needs(req_self(), req(PROC_REF(blood_crawl_ready))), then(PROC_REF(blood_crawl_op)))
 	configure(mob_rules(faction = FACTION_DEMON))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
 	on_notice(/datum/notice/hit, then(PROC_REF(laugh_at_thrown)))
@@ -169,16 +170,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	return 0
 
 
-/mob/living/simple_mob/vore/demon/verb/alt_appearance()
-	set name = "Toggle Alernate Appearance"
-	set desc = "Change your sprite to an alternative one."
-	set category = VERB_CAT_ABILITIES_DEMON
+/mob/living/simple_mob/vore/demon/proc/alt_appearance_ready(datum/act/op/A)
+	return LAZYLEN(alt_demon_appearances) ? null : span_warning("There are no alternative apperances selectable!")
 
-	if(!LAZYLEN(alt_demon_appearances))
-		to_chat(src, span_warning("There are no alternative apperances selectable!"))
-		return
-
+/mob/living/simple_mob/vore/demon/proc/alt_appearance()
 	open_request(src, /datum/prompt/choice, PROC_REF(alt_appearance_chosen), answerer = src, title = "Variant Sprite", question = "Please select which alternate appearance you want to swap to.", choices = alt_demon_appearances, timeout = 0)
+
+/mob/living/simple_mob/vore/demon/proc/alt_appearance_op(datum/act/op/A)
+	alt_appearance()
 
 /mob/living/simple_mob/vore/demon/proc/alt_appearance_chosen(datum/act/request/A)
 	if(!A.answer)

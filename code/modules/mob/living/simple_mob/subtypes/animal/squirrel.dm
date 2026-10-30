@@ -146,7 +146,7 @@
 // A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
-	op("squirrel_color", menu(), label("Pick Color"), needs(req_self(), req_capable()), then(PROC_REF(squirrel_color_op)))
+	op("squirrel_color", menu(), label("Pick Color"), needs(req_self(), req(PROC_REF(squirrel_color_ready))), then(PROC_REF(squirrel_color_op)))
 	configure(mob_rules(faction = FACTION_ANIMAL))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/squirrel))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 1))
@@ -205,10 +205,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 	set_vore_bump_chance(5)
 	set_mob_size(MOB_LARGE)
 
+/mob/living/simple_mob/vore/squirrel/proc/squirrel_color_ready(datum/act/op/A)
+	return picked_color ? span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0.") : null
+
 /mob/living/simple_mob/vore/squirrel/proc/squirrel_color()
-	if(picked_color)
-		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
-		return
 	open_request(src, /datum/prompt/color, PROC_REF(squirrel_color_picked), answerer = src, question = "Choose a color.", default = color, timeout = 0)
 
 /mob/living/simple_mob/vore/squirrel/proc/squirrel_color_op(datum/act/op/A)
@@ -221,7 +221,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 		return
 	if(A.answer.value)
 		set_color(A.answer.value)
-	picked_color = TRUE
+	set_picked_color(TRUE)
 
 /mob/living/simple_mob/vore/squirrel/small
 	do_seasons = FALSE

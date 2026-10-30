@@ -25,7 +25,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/goose)
-	op("berserk", menu(), label("Berserk"), needs(req_self(), req_capable()), then(PROC_REF(berserk_op)))
+	op("berserk", menu(), label("Berserk"), needs(req_self()), then(PROC_REF(berserk_op)))
 	configure(mob_rules(faction = FACTION_GEESE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 3))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
