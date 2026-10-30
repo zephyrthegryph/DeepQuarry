@@ -66,6 +66,11 @@ def non_client_verb(lines):
     return False
 
 
+# lint_scopes.toml exempts these by path (unit tests, benchmarks, the vendored TGS DMAPI: they build and wait on the old forms
+# on purpose), so a text match there is not an old form. Admin commands are verbs by design (final_api section 17).
+OLDFORM_EXEMPT = ("code/tests/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/")
+VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
+
 ALLOW = re.compile(r"\bALLOW\(")
 TYPE_DEF = re.compile(r"^(/[A-Za-z_][\w/]*)\s*(?:\(|$)")
 TYPE_REF = re.compile(r"/(?:obj|mob|turf|area|datum|atom)(?:/[A-Za-z_]\w*)+")
@@ -222,12 +227,13 @@ def main(argv):
         if ALLOW.search(text):
             why.append("allow")
         lines = strip_comments(text)
-        for label, rx in OLD_FORMS:
+        exempt = f.startswith(OLDFORM_EXEMPT)
+        for label, rx in ([] if exempt else OLD_FORMS):
             if any(rx.search(ln) for ln in lines):
                 why.append("oldform:" + label)
-        if non_client_verb(lines):
+        if not exempt and not any(v in f for v in VERB_EXEMPT) and non_client_verb(lines):
             why.append("oldform:verb")
-        if atom_new_override(lines):
+        if not exempt and atom_new_override(lines):
             why.append("oldform:New() override")
         if "/__defines/" in f:
             why.append("defines")
