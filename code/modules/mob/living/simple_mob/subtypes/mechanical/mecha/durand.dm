@@ -49,12 +49,11 @@
 	return ..()
 
 // So players can toggle it too.
-/mob/living/simple_mob/mechanical/mecha/combat/durand/verb/toggle_defense_mode()
-	set name = "Toggle Defense Mode"
-	set desc = "Toggles a special mode which makes you immobile and much more resilient."
-	set category = VERB_CAT_ABILITIES_DURAND
-
+/mob/living/simple_mob/mechanical/mecha/combat/durand/proc/toggle_defense_mode()
 	set_defense_mode(!defense_mode)
+
+/mob/living/simple_mob/mechanical/mecha/combat/durand/proc/toggle_defense_mode_op(datum/act/op/A)
+	toggle_defense_mode()
 
 // Variant that starts in defense mode, perhaps for PoIs: what set_defense_mode(TRUE) sets.
 /mob/living/simple_mob/mechanical/mecha/combat/durand/defensive

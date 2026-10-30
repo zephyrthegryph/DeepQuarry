@@ -509,6 +509,7 @@
 #include "../../modules/unit_tests/dx_click_order_conversion.dm"
 #include "../../modules/unit_tests/dx_click_order_golden.dm"
 #include "dq_ability_tests.dm"
+#include "dq_simple_mob_ability_ops_tests.dm"
 #include "dq_pickweight_tests.dm"
 #include "dq_living_ability_tests.dm"
 #include "../../modules/unit_tests/dq_sys_sfx_tests.dm"

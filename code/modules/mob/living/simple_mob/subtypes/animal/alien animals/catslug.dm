@@ -263,7 +263,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 		return
 	if(A.answer.value && !picked_color)
 		set_color(A.answer.value)
-		picked_color = TRUE
+		set_picked_color(TRUE)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/horrible
 

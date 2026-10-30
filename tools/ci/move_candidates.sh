@@ -24,4 +24,7 @@
 #
 #   --summary   one line per directory (clean/dirty counts) instead of one per file
 #   --root DIR  check the tree under DIR instead of the repository (the self-test fixture)
-exec python -I "$(dirname "$0")/move_candidates.py" "$@"
+# python is a Windows binary under Git Bash: hand it a native path even where MSYS path conversion is off (the merge gates).
+here="$(cd "$(dirname "$0")" && pwd)"
+if command -v cygpath >/dev/null 2>&1; then here="$(cygpath -m "$here")"; fi
+exec python -I "$here/move_candidates.py" "$@"

@@ -88,6 +88,8 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	op("do_strike", menu(), label("Rending Strike"), needs(req_self(), req(PROC_REF(do_strike_ready))), then(PROC_REF(do_strike_op)))
+	op("do_flash", menu(), label("Tail Blind"), needs(req_self(), req(PROC_REF(do_flash_ready))), then(PROC_REF(do_flash_op)))
 	configure(mob_rules(faction = FACTION_KURUAK))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/kururak, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_amount = 5))
@@ -140,17 +142,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 			ai_busy_end()
 	return ..()
 
-/mob/living/simple_mob/animal/sif/kururak/verb/do_flash()
-	set category = VERB_CAT_ABILITIES_KURURAK
-	set name = "Tail Blind"
-	set desc = "Disorient a creature within range."
+/mob/living/simple_mob/animal/sif/kururak/proc/do_flash_ready(datum/act/op/A)
+	return COOLDOWN_FINISHED(src, flash_cooldown) ? null : span_warning("You do not have the focus to do this so soon..")
 
-	if(!COOLDOWN_FINISHED(src, flash_cooldown))
-		to_chat(src, span_warning("You do not have the focus to do this so soon.."))
-		return
-
+/mob/living/simple_mob/animal/sif/kururak/proc/do_flash()
 	COOLDOWN_START(src, flash_cooldown, special_attack_cooldown)
 	tail_flash()
+
+/mob/living/simple_mob/animal/sif/kururak/proc/do_flash_op(datum/act/op/A)
+	do_flash()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash(atom/A)
 	if(stat)
@@ -239,17 +239,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 						continue
 			R.flash_eyes()
 
-/mob/living/simple_mob/animal/sif/kururak/verb/do_strike()
-	set category = VERB_CAT_ABILITIES_KURURAK
-	set name = "Rending Strike"
-	set desc = "Strike viciously at an entity within range."
+/mob/living/simple_mob/animal/sif/kururak/proc/do_strike_ready(datum/act/op/A)
+	return COOLDOWN_FINISHED(src, strike_cooldown) ? null : span_warning("Your claws cannot take that much stress in so short a time..")
 
-	if(!COOLDOWN_FINISHED(src, strike_cooldown))
-		to_chat(src, span_warning("Your claws cannot take that much stress in so short a time.."))
-		return
-
+/mob/living/simple_mob/animal/sif/kururak/proc/do_strike()
 	COOLDOWN_START(src, strike_cooldown, special_attack_cooldown)
 	rending_strike()
+
+/mob/living/simple_mob/animal/sif/kururak/proc/do_strike_op(datum/act/op/A)
+	do_strike()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(datum/act/request/A)
 	if(!A.answer)
