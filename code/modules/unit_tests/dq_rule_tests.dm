@@ -195,6 +195,8 @@
 
 /datum/unit_test/dq_rule_thresholds/proc/check_case(datum/rule/rule, root, datum/rule_trigger/trigger, atom/thing)
 	var/label = "[rule.type] on [root]: [trigger.describe()]"
+	// A rule that deletes its object (melting) leaves ref_token() null for it, so the count is read through the token taken while it lived.
+	var/token = ref_token(thing)
 	var/level = trigger.level_for(thing)
 	if(isnull(level))
 		TEST_FAIL("[label]: has no level")
@@ -231,9 +233,9 @@
 	// cause of "did not subscribe", now fixed at the write site instead).
 	// Heat-only rules subscribe when the object first gets a heat body.
 	if(!dq_rule_binding_of(thing))
-		TEST_FAIL("[label]: did not subscribe (diag del=[QDELETED(thing)] mat=[thing.flags & ATOM_MATERIALIZED] body=[thing.heat_body] t=[thing.get_temperature()] fired=[dq_rule_fire_count(thing, rule)])")
+		TEST_FAIL("[label]: did not subscribe (diag del=[QDELETED(thing)] mat=[thing.flags & ATOM_MATERIALIZED] body=[thing.heat_body] t=[thing.get_temperature()] fired=[dq_rule_fire_count_of(token, rule)])")
 		return FALSE
-	if(dq_rule_fire_count(thing, rule) != 0)
+	if(dq_rule_fire_count_of(token, rule) != 0)
 		TEST_FAIL("[label]: fired at [quiet], on the quiet side of [level]")
 		return FALSE
 	dq_rule_test_write(thing, trigger.property, across)
@@ -243,18 +245,18 @@
 	else
 		dq_rx_flush_until(thing, rule, 1)
 	if(rule.hold_for && !QDELETED(thing))
-		if(dq_rule_fire_count(thing, rule) != 0)
+		if(dq_rule_fire_count_of(token, rule) != 0)
 			TEST_FAIL("[label]: fired before holding [rule.hold_for / 10] s")
 			return FALSE
 		dq_rx_test_advance(rule.hold_for + 1 SECONDS)
-	if(dq_rule_fire_count(thing, rule) != 1)
+	if(dq_rule_fire_count_of(token, rule) != 1)
 		var/datum/rule_binding/diag = dq_rule_binding_of(thing)
-		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag?.holding] live=[diag?.live] keys=[diag?.key_subs ? json_encode(diag.key_subs) : "-"] kinds=[diag ? jointext(diag.table.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
+		TEST_FAIL("[label]: fired [dq_rule_fire_count_of(token, rule)] times at [across], expected once (diag binding=[diag] holding=[diag?.holding] live=[diag?.live] keys=[diag?.key_subs ? json_encode(diag.key_subs) : "-"] kinds=[diag ? jointext(diag.table.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
 		return FALSE
 	if(!QDELETED(thing))
 		// dq_rule_test_write() flushes deterministically itself now.
 		dq_rule_test_write(thing, trigger.property, further)
-		if(dq_rule_fire_count(thing, rule) != 1)
+		if(dq_rule_fire_count_of(token, rule) != 1)
 			TEST_FAIL("[label]: fired again at [further]")
 			return FALSE
 		thing.extinguish()
