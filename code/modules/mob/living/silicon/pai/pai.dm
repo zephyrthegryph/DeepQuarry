@@ -96,6 +96,16 @@
 
 
 CAPABILITIES(/mob/living/silicon/pai)
+	op("paiInterface", menu(), label("Software Interface"), needs(req_self()), then(PROC_REF(paiInterface_op)))
+	op("pick_eye_color", menu(), label("Pick Eye Color"), needs(req_self(), req(PROC_REF(pick_eye_color_ready))), then(PROC_REF(pick_eye_color_op)))
+	op("toggle_eyeglow", menu(), label("Toggle Eye Glow"), needs(req_self(), req(PROC_REF(toggle_eyeglow_ready))), then(PROC_REF(toggle_eyeglow_op)))
+	op("pai_hide", menu(), label("Hide"), needs(req_self()), then(PROC_REF(pai_hide_op)))
+	op("toggle_gender_identity_vr", menu(), label("Set Gender Identity"), needs(req_self()), then(PROC_REF(toggle_gender_identity_vr_op)))
+	op("allowmodification", menu(), label("Change Access Modifcation Permission"), needs(req_self()), then(PROC_REF(allowmodification_op)))
+	op("reset_record_view", menu(), label("Reset Records Software"), needs(req_self()), then(PROC_REF(reset_record_view_op)))
+	op("wipe_software", menu(), label("Enter Storage"), needs(req_self()), then(PROC_REF(wipe_software_op)))
+	op("fold_up", menu(), label("Collapse Chassis"), needs(req_self(), req(PROC_REF(fold_up_ready))), then(PROC_REF(fold_up_op)))
+	op("fold_out", menu(), label("Unfold Chassis"), needs(req_self(), req(PROC_REF(fold_out_ready))), then(PROC_REF(fold_out_op)))
 	configure(living_rules(vore_capacity_ex = list("stomach" = 1), vore_capacity = 1))
 	setup(PROC_REF(setup_card))
 	ref_one(nameof(current), /obj/machinery/camera)

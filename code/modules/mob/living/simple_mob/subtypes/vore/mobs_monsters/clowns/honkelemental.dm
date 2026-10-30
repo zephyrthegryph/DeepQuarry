@@ -18,6 +18,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/clowns/big/c_shift/honkelemental)
+	op("spawn_egg", menu(), label("Spawn Clown Egg"), needs(req_self(), req(PROC_REF(spawn_egg_ready))), then(PROC_REF(spawn_egg_op)))
 	configure(mob_rules(faction = FACTION_CLOWN))
 	configure(living_rules(say_list_type = /datum/say_list/clown))
 
@@ -25,13 +26,14 @@ CAPABILITIES(/mob/living/simple_mob/clowns/big/c_shift/honkelemental)
 	speak = list("HONK", "Honk!", "Henk!")
 	emote_see = list("honks")
 
-/mob/living/simple_mob/clowns/big/c_shift/honkelemental/verb/spawn_egg()
-	set category = VERB_CAT_ABILITIES_CLOWN
-	set name = "Spawn Clown Egg"
-	set desc = "Spawns an egg that a player can touch, which will call on ghosts to spawn as clowns."
-
+/mob/living/simple_mob/clowns/big/c_shift/honkelemental/proc/spawn_egg_ready(datum/act/op/A)
 	if(is_dead())
-		return
+		return MSG(req_silent)
+	return null
 
+/mob/living/simple_mob/clowns/big/c_shift/honkelemental/proc/spawn_egg()
 	new /obj/structure/ghost_pod/manual/clegg(get_turf(src))
 	flick("he_lay",src)
+
+/mob/living/simple_mob/clowns/big/c_shift/honkelemental/proc/spawn_egg_op(datum/act/op/A)
+	spawn_egg()

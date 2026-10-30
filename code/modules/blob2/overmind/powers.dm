@@ -5,13 +5,12 @@
 	add_points(-cost)
 	return TRUE
 
-/mob/observer/blob/verb/transport_core()
-	set category = VERB_CAT_BLOB
-	set name = "Jump to Core"
-	set desc = "Move your camera to your core."
-
+/mob/observer/blob/proc/transport_core()
 	if(blob_core())
 		forceMove(blob_core().loc)
+
+/mob/observer/blob/proc/transport_core_op(datum/act/op/A)
+	transport_core()
 
 /mob/observer/blob/proc/createSpecial(price, blobType, nearEquals, needsNode, turf/T)
 	if(!T)
@@ -42,33 +41,32 @@
 	var/obj/structure/blob/N = B.change_to(blobType, src)
 	return N
 
-/mob/observer/blob/verb/create_shield_power()
-	set category = VERB_CAT_BLOB
-	set name = "Create Shield Blob (15)"
-	set desc = "Create a shield blob, which is hard to kill."
+/mob/observer/blob/proc/create_shield_power()
 	create_shield()
+
+/mob/observer/blob/proc/create_shield_power_op(datum/act/op/A)
+	create_shield_power()
 
 /mob/observer/blob/proc/create_shield(turf/T)
 	createSpecial(15, blob_type.shield_type, 0, 0, T)
 
-/mob/observer/blob/verb/create_resource()
-	set category = VERB_CAT_BLOB
-	set name = "Create Resource Blob (40)"
-	set desc = "Create a resource tower which will generate resources for you."
-
+/mob/observer/blob/proc/create_resource_ready(datum/act/op/A)
 	if(!blob_type.can_build_resources)
-		return FALSE
+		return MSG(req_silent)
+	return null
 
+/mob/observer/blob/proc/create_resource()
 	createSpecial(40, blob_type.resource_type, 4, 1)
 
-/mob/observer/blob/verb/auto_resource()
-	set category = VERB_CAT_BLOB
-	set name = "Auto Resource Blob (40)"
-	set desc = "Automatically places a resource tower near a node or your core, at a sufficent distance."
+/mob/observer/blob/proc/create_resource_op(datum/act/op/A)
+	create_resource()
 
+/mob/observer/blob/proc/auto_resource_ready(datum/act/op/A)
 	if(!blob_type.can_build_resources)
-		return FALSE
+		return MSG(req_silent)
+	return null
 
+/mob/observer/blob/proc/auto_resource()
 	var/obj/structure/blob/B = null
 	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
@@ -93,25 +91,26 @@
 		forceMove(B.loc)
 		return createSpecial(40, blob_type.resource_type, 4, 1, B.loc)
 
+/mob/observer/blob/proc/auto_resource_op(datum/act/op/A)
+	auto_resource()
 
-/mob/observer/blob/verb/create_factory()
-	set category = VERB_CAT_BLOB
-	set name = "Create Factory Blob (60)"
-	set desc = "Create a spore tower that will spawn spores to harass your enemies."
-
+/mob/observer/blob/proc/create_factory_ready(datum/act/op/A)
 	if(!blob_type.can_build_factories)
-		return FALSE
+		return MSG(req_silent)
+	return null
 
+/mob/observer/blob/proc/create_factory()
 	createSpecial(60, blob_type.factory_type, 7, 1)
 
-/mob/observer/blob/verb/auto_factory()
-	set category = VERB_CAT_BLOB
-	set name = "Auto Factory Blob (60)"
-	set desc = "Automatically places a resource tower near a node or your core, at a sufficent distance."
+/mob/observer/blob/proc/create_factory_op(datum/act/op/A)
+	create_factory()
 
+/mob/observer/blob/proc/auto_factory_ready(datum/act/op/A)
 	if(!blob_type.can_build_factories)
-		return FALSE
+		return MSG(req_silent)
+	return null
 
+/mob/observer/blob/proc/auto_factory()
 	var/obj/structure/blob/B = null
 	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
@@ -136,26 +135,26 @@
 		forceMove(B.loc)
 		return createSpecial(60, blob_type.factory_type, 7, 1, B.loc)
 
+/mob/observer/blob/proc/auto_factory_op(datum/act/op/A)
+	auto_factory()
 
-
-/mob/observer/blob/verb/create_node()
-	set category = VERB_CAT_BLOB
-	set name = "Create Node Blob (100)"
-	set desc = "Create a node, which will expand blobs around it, and power nearby factory and resource blobs."
-
+/mob/observer/blob/proc/create_node_ready(datum/act/op/A)
 	if(!blob_type.can_build_nodes)
-		return FALSE
+		return MSG(req_silent)
+	return null
 
+/mob/observer/blob/proc/create_node()
 	createSpecial(100, blob_type.node_type, 5, 0)
 
-/mob/observer/blob/verb/auto_node()
-	set category = VERB_CAT_BLOB
-	set name = "Auto Node Blob (100)"
-	set desc = "Automatically places a node blob at a sufficent distance."
+/mob/observer/blob/proc/create_node_op(datum/act/op/A)
+	create_node()
 
+/mob/observer/blob/proc/auto_node_ready(datum/act/op/A)
 	if(!blob_type.can_build_nodes)
-		return FALSE
+		return MSG(req_silent)
+	return null
 
+/mob/observer/blob/proc/auto_node()
 	var/obj/structure/blob/B = null
 	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
@@ -178,14 +177,15 @@
 		forceMove(B.loc)
 		return createSpecial(100, blob_type.node_type, 5, 0, B.loc)
 
+/mob/observer/blob/proc/auto_node_op(datum/act/op/A)
+	auto_node()
 
-
-/mob/observer/blob/verb/expand_blob_power()
-	set category = VERB_CAT_BLOB
-	set name = "Expand/Attack Blob (4)"
-	set desc = "Attempts to create a new blob in this tile. If the tile isn't clear, instead attacks it, damaging mobs and objects."
+/mob/observer/blob/proc/expand_blob_power()
 	var/turf/T = get_turf(src)
 	expand_blob(T)
+
+/mob/observer/blob/proc/expand_blob_power_op(datum/act/op/A)
+	expand_blob_power()
 
 /mob/observer/blob/proc/expand_blob(turf/T)
 	var/obj/structure/blob/B = null
@@ -206,11 +206,7 @@
 
 	B.expand(T)
 
-/mob/observer/blob/verb/auto_attack()
-	set category = VERB_CAT_BLOB
-	set name = "Auto Attack (4)"
-	set desc = "Automatically tries to kill whatever's attacking you."
-
+/mob/observer/blob/proc/auto_attack()
 	transport_core() // In-case the overmind wandered off somewhere else.
 
 	var/list/potential_targets = list()
@@ -230,6 +226,9 @@
 		var/mob/living/victim = pick(potential_targets)
 		var/turf/T = get_turf(victim)
 		expand_blob(T)
+
+/mob/observer/blob/proc/auto_attack_op(datum/act/op/A)
+	auto_attack()
 
 /mob/observer/blob/proc/can_attack(mob/living/L)
 	if(!istype(L))

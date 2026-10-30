@@ -1,13 +1,11 @@
-/mob/living/silicon/pai/verb/fold_out()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Unfold Chassis"
-
+/mob/living/silicon/pai/proc/fold_out_ready(datum/act/op/A)
 	if(stat || has_status(STAT_SLEEPING) || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED))
-		return
-
+		return MSG(req_silent)
 	if(loc != card)
-		return
+		return MSG(req_silent)
+	return null
 
+/mob/living/silicon/pai/proc/fold_out()
 	// Lets not trap the pai forever. These are special cases we want to escape out of when in our card
 	if(istype(loc.loc, /obj/item/pda))
 		var/obj/item/pda/ourpda = loc.loc
@@ -72,21 +70,25 @@
 	grant(src, granted_verb(/mob/living/silicon/pai/proc/pai_nom), src)
 	grant(src, granted_verb(/mob/living/proc/vertical_nom), src)
 
-/mob/living/silicon/pai/verb/fold_up()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Collapse Chassis"
+/mob/living/silicon/pai/proc/fold_out_op(datum/act/op/A)
+	fold_out()
 
+/mob/living/silicon/pai/proc/fold_up_ready(datum/act/op/A)
 	if(stat || has_status(STAT_SLEEPING) || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED))
-		return
-
+		return MSG(req_silent)
 	if(src.loc == card)
-		return
+		return MSG(req_silent)
+	return null
 
+/mob/living/silicon/pai/proc/fold_up()
+	// The last-special cooldown is a click-clock read, which no requirement may track, so it stays the effect's own check.
 	if(!cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't fold up yet."))
 		return
-
 	close_up()
+
+/mob/living/silicon/pai/proc/fold_up_op(datum/act/op/A)
+	fold_up()
 
 //I'm not sure how much of this is necessary, but I would rather avoid issues.
 /mob/living/silicon/pai/proc/close_up(silent= FALSE)

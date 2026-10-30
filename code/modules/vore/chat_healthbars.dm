@@ -109,10 +109,7 @@
 	else
 		to_chat(reciever,span_vnotice("[ourbar]"))
 
-/mob/living/verb/print_healthbars()
-	set name = "Print Prey Healthbars"
-	set category = VERB_CAT_ABILITIES_VORE
-
+/mob/living/proc/print_healthbars()
 	var/nuffin = TRUE
 
 	var/obj/belly/amprey = src.loc
@@ -141,3 +138,6 @@
 			nuffin = FALSE
 	if(nuffin)
 		to_chat(src, span_warning("There are no mobs within any of your bellies to print health bars for, and you are not in a belly yourself."))
+
+/mob/living/proc/print_healthbars_op(datum/act/op/A)
+	print_healthbars()

@@ -16,6 +16,7 @@
 
 
 CAPABILITIES(/mob/living)
+	op("print_healthbars", menu(), label("Print Prey Healthbars"), needs(req_self()), then(PROC_REF(print_healthbars_op)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	setup(PROC_REF(prime_hud_list))
 	setup(PROC_REF(start_ai_brain))
