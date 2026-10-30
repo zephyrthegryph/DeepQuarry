@@ -43,7 +43,7 @@
 		if(QDELETED(A))
 			return TRUE
 
-	BOOT_PHASE_END(bp_early, "InitAtom: early starts, params, setup_early")
+	BOOT_PHASE_END(bp_early, "InitAtom: early starts, params, setup_early" + BOOT_KIND(A))
 	// Type-table fast path (atom_type_table.dm): an Initialize-free type skips the proc chain.
 	// A mapper-set colour needs /atom/Initialize()'s colour handling, and extra New() args an override.
 	BOOT_PHASE_BEGIN(bp_init)
@@ -53,7 +53,7 @@
 		result = INITIALIZE_HINT_NORMAL
 	else
 		result = A.Initialize(arglist(arguments))
-	BOOT_PHASE_END(bp_init, "InitAtom: Initialize (includes decls, caps_init, nested inits)")
+	BOOT_PHASE_END(bp_init, "InitAtom: Initialize (includes decls, caps_init, nested inits)" + BOOT_KIND(A))
 	// Opt-in constructor completion needs the settled parent state and transient params.
 	// Never run it for an Initialize/keeps_if rejection; the ordinary setup phase stays below.
 	if(length(setup_pending) && setup_pending[A] == SETUP_PENDING_WITH_PARAMS && result == INITIALIZE_HINT_NORMAL && !(length(init_discard_pending) && init_discard_pending[A]))
@@ -78,7 +78,7 @@
 				result = INITIALIZE_HINT_QDEL
 		else
 			setup_pending -= A
-	BOOT_PHASE_END(bp_setup, "InitAtom: setup_run")
+	BOOT_PHASE_END(bp_setup, "InitAtom: setup_run" + BOOT_KIND(A))
 
 	// param(keep = FALSE) values are for Initialize() and the type's setup() (a statue's setup reads the mob it copies); they go once both ran
 	// (code/engine/lifeforms/params.dm).
@@ -110,7 +110,7 @@
 	BOOT_PHASE_BEGIN(bp_after)
 	if(after_init_pending?[A])
 		after_init_initialized(A, arguments[1])
-	BOOT_PHASE_END(bp_after, "InitAtom: after_init_initialized")
+	BOOT_PHASE_END(bp_after, "InitAtom: after_init_initialized" + BOOT_KIND(A))
 
 	if(!A) //possible harddel
 		qdeleted = TRUE
@@ -129,7 +129,7 @@
 			else
 				BOOT_PHASE_BEGIN(bp_mat)
 				A.materialize()
-				BOOT_PHASE_END(bp_mat, "InitAtom: materialize")
+				BOOT_PHASE_END(bp_mat, "InitAtom: materialize" + BOOT_KIND(A))
 		var/atom/location = A.loc
 		if(location)
 			/// Emits that the new atom `src`, has been created at `loc`

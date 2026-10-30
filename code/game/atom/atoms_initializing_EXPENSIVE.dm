@@ -89,11 +89,11 @@
 	// appearance. Here, at the root of the chain, so a subtype's code after `. = ..()` sees it.
 	BOOT_PHASE_BEGIN(bp_decls)
 	lifecycle_decls_init(src, mapload)
-	BOOT_PHASE_END(bp_decls, "lifecycle_decls_init")
+	BOOT_PHASE_END(bp_decls, "lifecycle_decls_init" + BOOT_KIND(src))
 	// Capabilities' per-instance state, then the first look (code/datums/capabilities/).
 	BOOT_PHASE_BEGIN(bp_caps)
 	caps_init(src, mapload)
-	BOOT_PHASE_END(bp_caps, "caps_init")
+	BOOT_PHASE_END(bp_caps, "caps_init" + BOOT_KIND(src))
 
 	/*
 	if (atom_rules_of(src).light_system == COMPLEX_LIGHT && glow_of(src).power && glow_of(src).range)

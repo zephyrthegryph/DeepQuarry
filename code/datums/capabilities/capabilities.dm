@@ -93,7 +93,7 @@
 	if(own_table_of(holder).engine_hooks & ENGINE_HOOK_INIT)
 		BOOT_PHASE_BEGIN(bp_engine)
 		engine_holder_init(holder, mapload)
-		BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init")
+		BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init" + BOOT_KIND(holder))
 	var/flags = type_derive_flags(holder)
 	if(flags & TYPE_DERIVES_TYPE_VERBS)
 		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)
