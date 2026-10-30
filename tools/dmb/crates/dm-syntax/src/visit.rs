@@ -52,6 +52,7 @@ pub fn visit_statement_view(
     let mut walk = Walk {
         visitor,
         mask: view.mask(),
+        locals: view.local_variables(),
         path: Vec::new(),
         report: VisitReport::default(),
     };
@@ -62,6 +63,7 @@ pub fn visit_expression(expression: &Expr, visitor: &mut impl TypedVisitor) -> V
     let mut walk = Walk {
         visitor,
         mask: None,
+        locals: None,
         path: Vec::new(),
         report: VisitReport::default(),
     };
@@ -73,7 +75,9 @@ pub fn for_each_expression_child<'a>(node: &'a Expr, mut visit: impl FnMut(usize
     match &node.kind {
         ExprKind::Literal(text) => {
             if let Ok(Some(parts)) = text.parts() {
-                for (index, expression) in parts.expressions.iter().enumerate() { visit(index, expression); }
+                for (index, expression) in parts.expressions.iter().enumerate() {
+                    visit(index, expression);
+                }
             }
         }
         ExprKind::Ident(_) | ExprKind::TypePath(_) => {}
@@ -117,6 +121,7 @@ pub fn for_each_expression_child<'a>(node: &'a Expr, mut visit: impl FnMut(usize
 struct Walk<'a, V> {
     visitor: &'a mut V,
     mask: Option<&'a StatementMask>,
+    locals: Option<&'a crate::LocalVariableLedger>,
     path: Vec<NodeStep>,
     report: VisitReport,
 }
@@ -193,6 +198,22 @@ impl<V: TypedVisitor> Walk<'_, V> {
             }
             VisitDecision::Descend => {}
         }
+        if let Some(locals) = self.locals {
+            if let Ok(facts) = locals.entries() {
+                let mut root = 4;
+                for fact in facts.iter().filter(|fact| {
+                    fact.name.start >= statement.header_span.start
+                        && fact.name.end <= statement.header_span.end
+                }) {
+                    if let Some(array) = &fact.array_syntax {
+                        for dimension in array.root.dimensions.iter() {
+                            self.root_expression(root, dimension);
+                            root += 1;
+                        }
+                    }
+                }
+            }
+        }
         match &statement.kind {
             StatementKind::If {
                 condition,
@@ -223,6 +244,12 @@ impl<V: TypedVisitor> Walk<'_, V> {
                     ForControl::All { .. } => {}
                     ForControl::Each { iterable, .. } | ForControl::Pair { iterable, .. } => {
                         self.root_expression(0, iterable)
+                    }
+                    ForControl::RangeImplicitArray { end, step, .. } => {
+                        self.root_expression(1, end);
+                        if let Some(step) = step {
+                            self.root_expression(2, step);
+                        }
                     }
                     ForControl::Range {
                         start, end, step, ..

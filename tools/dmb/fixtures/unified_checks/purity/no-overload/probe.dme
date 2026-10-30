@@ -1,0 +1,3 @@
+/proc/probe(datum/D)
+    D++
+    --D

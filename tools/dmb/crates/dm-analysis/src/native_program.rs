@@ -52,7 +52,12 @@ impl<'a> Origin<'a> {
         self,
         arena: Option<&BodyArena<'a>>,
         ordinal: usize,
-        consume: impl FnOnce(&StatementBody, &BodyOccurrence) -> Result<T, Unsupported>,
+        consume: impl FnOnce(
+            &StatementBody,
+            &BodyOccurrence,
+            dm_tree::frontend::SourceParameterView<'_>,
+            dm_tree::frontend::SourceLocalView<'_>,
+        ) -> Result<T, Unsupported>,
     ) -> Result<T, Unsupported> {
         match self {
             Self::Live(frontend) => {
@@ -64,7 +69,14 @@ impl<'a> Origin<'a> {
                     .ok_or_else(|| Unsupported("compiler body arena absent".into()))?
                     .with_parsed(occurrence, |body| {
                         let view = BodyView::new(frontend, body).map_err(Unsupported)?;
-                        consume(view.syntax(), body.occurrence())
+                        let locals = body.source_locals().map_err(Unsupported)?;
+                        crate::untyped::require_local_source_projection(locals)?;
+                        consume(
+                            view.syntax(),
+                            body.occurrence(),
+                            body.source_parameters().map_err(Unsupported)?,
+                            locals,
+                        )
                     })
                     .map_err(|error| Unsupported(error.message))?
             }
@@ -77,7 +89,14 @@ impl<'a> Origin<'a> {
                         "archive has unsupported or malformed native syntax".into(),
                     ));
                 }
-                consume(body.statement_body(), body.occurrence())
+                let locals = body.source_locals().map_err(Unsupported)?;
+                crate::untyped::require_local_source_projection(locals)?;
+                consume(
+                    body.statement_body(),
+                    body.occurrence(),
+                    body.source_parameters().map_err(Unsupported)?,
+                    locals,
+                )
             }
         }
     }

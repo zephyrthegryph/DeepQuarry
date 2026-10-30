@@ -2,7 +2,7 @@
 //! on its already tokenized path fragment; never a checker parser or source scan.
 //! Pinned grammar provenance: SpacemanDMM0290db5c752fa292f9824521515b603a2afd11dc,
 //! parser.rs simple_statement; ast.rs VarTypeBuilder::from_iter (GPL-3.0).
-use crate::{Span, SpanToken, TokenKind};
+use crate::{Expr, Span, SpanToken, TokenKind};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LocalSourceKind {
@@ -17,6 +17,7 @@ pub enum LocalSourceKind {
 pub struct LocalVariableLedger {
     entries: Vec<LocalVariableSyntax>,
     refusal: Option<&'static str>,
+    source_ordered: bool,
 }
 impl LocalVariableLedger {
     pub fn entries(&self) -> Result<&[LocalVariableSyntax], &'static str> {
@@ -25,6 +26,30 @@ impl LocalVariableLedger {
         } else {
             Ok(&self.entries)
         }
+    }
+    /// Grammar-issued rows are monotonically ordered by original name point.
+    /// Borrow a header subrange without building a second lookup table.
+    pub fn in_span(&self, span: Span) -> Result<&[LocalVariableSyntax], &'static str> {
+        if !self.source_ordered {
+            return Err("native local ledger source order was not finalized");
+        }
+        let entries = self.entries()?;
+        let start = entries.partition_point(|f| f.name.start < span.start);
+        let end = start + entries[start..].partition_point(|f| f.name.start < span.end);
+        Ok(&entries[start..end])
+    }
+    pub(crate) fn finish_source_order(&mut self) {
+        // Catch facts are issued before their preceding try body is parsed.
+        // Finalize the SAME owner once, before any body receipt is published.
+        self.entries.sort_unstable_by_key(|f| f.name.start);
+        if self
+            .entries
+            .windows(2)
+            .any(|pair| pair[0].name.start == pair[1].name.start)
+        {
+            self.decline("native local declarations have duplicate original points");
+        }
+        self.source_ordered = true;
     }
     pub fn storage(&self) -> &Vec<LocalVariableSyntax> {
         &self.entries
@@ -64,6 +89,21 @@ impl LocalVariableLedger {
             for span in fact.type_components.iter_mut() {
                 shift(span, base)?;
             }
+            if let Some(array) = &mut fact.array_syntax {
+                let initializer = &mut array.root;
+                for dimension in initializer.dimensions.iter_mut() {
+                    crate::shift_expression(dimension, base);
+                }
+                for bracket in initializer.brackets.iter_mut() {
+                    shift(bracket, base)?;
+                }
+            }
+            if kind == LocalSourceKind::CatchBinding && fact.array_suffix {
+                return Err("catch parameter tree-path grammar does not admit array suffix");
+            }
+            if kind == LocalSourceKind::ForBinding && fact.implicit_list_initializer().is_some() {
+                return Err("nonempty array initializer is not an old for-in/all binding");
+            }
             fact.source_kind = kind;
             Ok(fact)
         });
@@ -87,8 +127,37 @@ pub struct LocalVariableSyntax {
     /// Source grammar bits, NOT runtime DeclarationMeaning.flags encoding.
     pub source_modifiers: u8,
     pub array_suffix: bool,
+    pub array_syntax: Option<LocalArraySyntax>,
+}
+/// The pinned primary grammar synthesizes a constructor, not a written `new`
+/// expression. Only this suffix producer issues this origin; an unissued source
+/// cursor never falls back to an unknown position.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ImplicitListOrigin {
+    ParserSynthetic,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LocalArraySyntax {
+    /// Runtime compilation may still need original dimension effects even
+    /// when the old checker skips its synthetic initializer under explicit '='.
+    pub root: ImplicitListInitializer,
+    pub explicit_initializer: bool,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ImplicitListInitializer {
+    pub origin: ImplicitListOrigin,
+    pub brackets: Box<[Span]>,
+    /// None is an actual empty suffix; Some indexes the single owned Expr root.
+    pub dimension_slots: Box<[Option<usize>]>,
+    pub dimensions: Box<[Expr]>,
 }
 impl LocalVariableSyntax {
+    pub fn implicit_list_initializer(&self) -> Option<&ImplicitListInitializer> {
+        self.array_syntax
+            .as_ref()
+            .filter(|array| !array.explicit_initializer && !array.root.dimensions.is_empty())
+            .map(|array| &array.root)
+    }
     /// Project already-issued component spans; no lexing/splitting or inference.
     pub fn type_path(&self, source: &str) -> Result<Option<String>, &'static str> {
         let mut path = if self.array_suffix {
@@ -107,7 +176,7 @@ impl LocalVariableSyntax {
         Ok((!path.is_empty()).then_some(path))
     }
 }
-fn source_modifier(name: &str) -> Option<u8> {
+pub(crate) fn source_modifier(name: &str) -> Option<u8> {
     Some(match name {
         "static" | "global" => 1,
         "const" => 4,
@@ -126,6 +195,7 @@ pub(crate) fn issue_local_variable(
     tokens: &[SpanToken],
     first: bool,
 ) -> Result<LocalVariableSyntax, &'static str> {
+    let original_tokens = tokens;
     let significant = tokens.iter().filter(|token| {
         !matches!(
             token.kind,
@@ -191,7 +261,113 @@ pub(crate) fn issue_local_variable(
         type_components: path[prefix..].into(),
         source_modifiers: modifiers,
         array_suffix,
+        array_syntax: issue_array_initializer(source, original_tokens, name)?,
     })
+}
+
+/// Assignment delimiter in the existing primary declaration grammar. Nested
+/// assignments inside a dimension are expressions, never the local initializer.
+pub(crate) fn top_level_local_assignment(source: &str) -> Option<usize> {
+    let mut nesting = 0usize;
+    for token in crate::lex_spans(source).tokens {
+        match token.text(source) {
+            "[" | "(" | "{" => nesting += 1,
+            "]" | ")" | "}" => nesting = nesting.saturating_sub(1),
+            "=" if nesting == 0 => return Some(token.span.start),
+            _ => (),
+        }
+    }
+    None
+}
+
+fn issue_array_initializer(
+    source: &str,
+    tokens: &[SpanToken],
+    name: Span,
+) -> Result<Option<LocalArraySyntax>, &'static str> {
+    let sig: Vec<usize> = tokens
+        .iter()
+        .enumerate()
+        .filter_map(|(i, t)| {
+            (!matches!(
+                t.kind,
+                TokenKind::Whitespace | TokenKind::Comment | TokenKind::Newline
+            ) && t.span.start >= name.end)
+                .then_some(i)
+        })
+        .collect();
+    let mut i = 0;
+    let mut brackets = Vec::new();
+    let mut dimensions = Vec::new();
+    let mut dimension_slots = Vec::new();
+    while i < sig.len() && tokens[sig[i]].text(source) == "[" {
+        let open = tokens[sig[i]].span;
+        let begin = sig[i] + 1;
+        let mut stack = vec!["]"];
+        i += 1;
+        while i < sig.len() && !stack.is_empty() {
+            match tokens[sig[i]].text(source) {
+                "[" => stack.push("]"),
+                "(" => stack.push(")"),
+                "{" => stack.push("}"),
+                close @ ("]" | ")" | "}") => {
+                    if stack.pop() != Some(close) {
+                        return Err("array dimension delimiter mismatch");
+                    }
+                }
+                _ => (),
+            }
+            if !stack.is_empty() {
+                i += 1;
+            }
+        }
+        if i >= sig.len() || !stack.is_empty() {
+            return Err("array dimension closing token unavailable");
+        }
+        let end = sig[i];
+        brackets.push(Span::new(open.start, tokens[end].span.end));
+        if tokens[begin..end].iter().any(|t| {
+            !matches!(
+                t.kind,
+                TokenKind::Whitespace | TokenKind::Comment | TokenKind::Newline
+            )
+        }) {
+            let parsed =
+                crate::expression_parser::parse_expression_span_tokens(source, &tokens[begin..end]);
+            if !parsed.diagnostics.is_empty() {
+                return Err("array dimension primary expression unsupported");
+            }
+            dimension_slots.push(Some(dimensions.len()));
+            dimensions.push(
+                parsed
+                    .expr
+                    .ok_or("array dimension primary expression missing")?,
+            );
+        } else {
+            dimension_slots.push(None);
+        }
+        i += 1;
+    }
+    // Preserve original roots for native runtime lowering. The checker borrows
+    // them only when no explicitly written initializer replaces its constructor.
+    if brackets.is_empty() {
+        return Ok(None);
+    }
+    if sig
+        .get(i)
+        .is_some_and(|&n| !matches!(tokens[n].text(source), "=" | "as" | "in" | ";" | ")" | ","))
+    {
+        return Err("array suffix has an unsupported trailing primary token");
+    }
+    Ok(Some(LocalArraySyntax {
+        explicit_initializer: sig.get(i).is_some_and(|&n| tokens[n].text(source) == "="),
+        root: ImplicitListInitializer {
+            origin: ImplicitListOrigin::ParserSynthetic,
+            brackets: brackets.into(),
+            dimension_slots: dimension_slots.into(),
+            dimensions: dimensions.into(),
+        },
+    }))
 }
 
 #[cfg(test)]
@@ -393,5 +569,98 @@ mod tests {
             64,
             "current primary grammar reissues metadata; no decoded/cached flags certify it"
         );
+    }
+}
+
+#[cfg(test)]
+mod array_tests {
+    use super::*;
+    fn body(source: &str) -> crate::ParsedBody {
+        let parsed = crate::parse(source);
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        let body = crate::parse_proc_body(&parsed.items[0]);
+        assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+        body
+    }
+    #[test]
+    fn native_suffix_owns_real_dimension_roots_once_and_keeps_synthetic_constructor_origin() {
+        let source = "/proc/probe()\n    var/datum/value[first()][][second(1)]\n";
+        let parsed = body(source);
+        let fact = &parsed.local_variables.entries().unwrap()[0];
+        assert_eq!(
+            fact.type_path(source).unwrap().as_deref(),
+            Some("/list/datum")
+        );
+        let init = fact.implicit_list_initializer().unwrap();
+        assert_eq!(init.origin, ImplicitListOrigin::ParserSynthetic);
+        assert_eq!(init.brackets.len(), 3);
+        assert_eq!(init.dimensions.len(), 2);
+        assert_eq!(&source[init.dimensions[0].span.range()], "first()");
+        assert_eq!(&source[init.dimensions[1].span.range()], "second(1)");
+        assert!(
+            matches!(
+                &parsed.statements[0].kind,
+                crate::StatementKind::Var { value: None, .. }
+            ),
+            "implicit constructor is a dedicated root, never a fabricated written-new Expr"
+        );
+    }
+    #[test]
+    fn explicit_initializer_drops_dimensions_while_empty_suffix_has_no_constructor() {
+        for source in [
+            "/proc/p()\n    var/x[ignored()] = kept()\n",
+            "/proc/p()\n    var/x[][]\n",
+        ] {
+            let parsed = body(source);
+            let fact = &parsed.local_variables.entries().unwrap()[0];
+            assert!(fact.array_suffix);
+            assert!(fact.implicit_list_initializer().is_none());
+        }
+    }
+    #[test]
+    fn named_assignment_inside_dimension_is_not_a_written_local_initializer() {
+        let source = "/proc/p()\n    var/x[n=missing()]\n";
+        let parsed = body(source);
+        let fact = &parsed.local_variables.entries().unwrap()[0];
+        assert!(fact.implicit_list_initializer().is_some());
+        assert!(matches!(
+            &parsed.statements[0].kind,
+            crate::StatementKind::Var { value: None, .. }
+        ));
+        assert_eq!(
+            top_level_local_assignment("var/x[n=missing()] = kept()"),
+            Some(19)
+        );
+    }
+    #[test]
+    fn initializer_dimensions_reissue_current_points_after_prefix_shift() {
+        let old = "/proc/p()\n    var/x[first()][][second()]\n";
+        let prefix = "// shifted original input\n";
+        let shifted = format!("{prefix}{old}");
+        let one = body(old);
+        let two = body(&shifted);
+        let a = one.local_variables.entries().unwrap()[0]
+            .implicit_list_initializer()
+            .unwrap();
+        let b = two.local_variables.entries().unwrap()[0]
+            .implicit_list_initializer()
+            .unwrap();
+        for (left, right) in a.dimensions.iter().zip(b.dimensions.iter()) {
+            assert_eq!(right.span.start, left.span.start + prefix.len());
+            assert_eq!(&old[left.span.range()], &shifted[right.span.range()]);
+        }
+        for (left, right) in a.brackets.iter().zip(b.brackets.iter()) {
+            assert_eq!(right.start, left.start + prefix.len());
+        }
+    }
+    #[test]
+    fn nonempty_for_binding_refuses_old_parse_shape_but_empty_suffix_is_a_real_binding() {
+        let nonempty = body("/proc/p()\n    for(var/x[missing()] in list())\n        return\n");
+        assert_eq!(
+            nonempty.local_variables.entries().unwrap_err(),
+            "nonempty array initializer is not an old for-in/all binding"
+        );
+        let empty = body("/proc/p()\n    for(var/x[] in list())\n        return\n");
+        assert!(empty.local_variables.entries().unwrap()[0].array_suffix);
     }
 }

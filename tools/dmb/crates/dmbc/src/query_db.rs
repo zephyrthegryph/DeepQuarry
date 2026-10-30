@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 mod body_syntax;
+mod purity;
 mod raw_policy;
 pub use raw_policy::workspace::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};
 mod value_proofs;
@@ -57,6 +58,7 @@ pub struct QueryDb {
     body_charge: Arc<std::sync::atomic::AtomicUsize>,
     value_charge: Arc<std::sync::atomic::AtomicUsize>,
     raw_policy: raw_policy::State,
+    purity: purity::State,
     value_inputs:
         Mutex<BTreeMap<Key, std::sync::Weak<dm_analysis::value_query::ArchiveValueInput>>>,
     body_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_tree::frontend::BodySyntaxInput>>>,
@@ -66,7 +68,7 @@ pub struct QueryDb {
     unit_proofs: UnitProofs,
     /// Sources of the previous revision by path: key, the prepared owner (held, so an unchanged
     /// capture is recognised by identity without rehashing) and its content hash.
-    sources: Mutex<BTreeMap<PathBuf, (Key, Arc<PreparedSource>, u128)>>,
+    sources: Arc<Mutex<BTreeMap<PathBuf, (Key, Arc<PreparedSource>, u128)>>>,
     /// What each recent revision changed, so a consumer that last saw revision `r` can ask which
     /// sources differ now (`SourceChanges::changes_since`).
     changes: Mutex<std::collections::VecDeque<RevisionChange>>,
@@ -92,6 +94,9 @@ impl Default for QueryDb {
             Arc::clone(&raw_policy.charge),
             Arc::clone(&raw_policy.admission),
         );
+        let purity = purity::State::default();
+        let sources = Arc::new(Mutex::new(BTreeMap::new()));
+        purity::register(&db, Arc::clone(&purity.ledger), Arc::clone(&sources));
         db.define_input(SOURCE, "source");
         db.define_input(PROJECT, "project");
         db.define(PROGRAM, "program", |ctx, params| {
@@ -112,13 +117,14 @@ impl Default for QueryDb {
             body_charge,
             value_charge,
             raw_policy,
+            purity,
             value_inputs: Mutex::new(BTreeMap::new()),
             body_inputs: Mutex::new(BTreeMap::new()),
             id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             db,
             answers: Answers::default(),
             unit_proofs: UnitProofs::default(),
-            sources: Mutex::new(BTreeMap::new()),
+            sources,
             changes: Mutex::new(std::collections::VecDeque::new()),
         }
     }
@@ -1807,3 +1813,7 @@ mod control_batch_tests;
 #[cfg(test)]
 #[path = "query_db/checker_context_tests.rs"]
 mod checker_context_tests;
+
+#[cfg(test)]
+#[path = "query_db/source_runtime_answer_tests.rs"]
+mod source_runtime_answer_tests;

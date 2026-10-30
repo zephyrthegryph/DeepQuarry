@@ -74,31 +74,6 @@ fn ungroup(mut expression: &Expr) -> &Expr {
     }
     expression
 }
-fn declared_local(text: &str) -> Option<(String, String)> {
-    let name = dm_syntax::local_name(text)?.to_owned();
-    let prefix = text
-        .trim_start_matches("var/")
-        .trim_start_matches("var ")
-        .trim();
-    let before_name = prefix.rsplit_once('/').map_or("", |(prefix, _)| prefix);
-    let parts: Vec<_> = before_name
-        .split('/')
-        .filter(|part| !matches!(*part, "static" | "const" | "global" | "tmp" | ""))
-        .collect();
-    let mut ty = if parts.is_empty() {
-        String::new()
-    } else {
-        format!("/{}", parts.join("/"))
-    };
-    if text.contains('[') && !under(&ty, "/list") {
-        ty = format!("/list{ty}");
-    }
-    if dm_syntax::has_checker_qualifiers(&ty) {
-        return None;
-    }
-    Some((name, ty))
-}
-
 /// `resolver` is the SAME immutable native host used by lowering. A host with a
 /// read observer records positive and negative lookups here in the normal way.
 pub fn contributions(
@@ -109,7 +84,14 @@ pub fn contributions(
 ) -> Result<Vec<Contribution>, Unsupported> {
     let view = BodyView::new(frontend, body).map_err(Unsupported)?;
     let mut walker = scope(frontend, body, resolver, exempt_types)?;
-    dm_syntax::visit_statements(&view.syntax().parsed().statements, &mut walker);
+    crate::untyped_order::assignments(view.syntax().view(), &mut |lhs, rhs, _| {
+        if walker.error.is_none() {
+            if let Err(error) = walker.assignment(lhs, rhs) {
+                walker.error = Some(error);
+            }
+        }
+    })
+    .map_err(|e| Unsupported(e.into()))?;
     if let Some(error) = walker.error {
         return Err(error);
     }
@@ -123,12 +105,16 @@ pub(crate) fn scope<'a, R: Resolver + ?Sized>(
     exempt_types: &'a [String],
 ) -> Result<Walker<'a, R>, Unsupported> {
     let view = BodyView::new(frontend, body).map_err(Unsupported)?;
-    scope_from(
+    let locals = body.source_locals().map_err(Unsupported)?;
+    require_local_source_projection(locals)?;
+    scope_from_parameters(
         &frontend.snapshot.tree,
-        body.occurrence().member,
+        body.occurrence(),
         view.syntax(),
         resolver,
         exempt_types,
+        Some(body.source_parameters().map_err(Unsupported)?),
+        Some(locals),
     )
 }
 
@@ -139,57 +125,153 @@ pub(crate) fn archived_scope<'a, R: Resolver + ?Sized>(
     resolver: &'a R,
     exempt_types: &'a [String],
 ) -> Result<Walker<'a, R>, Unsupported> {
-    scope_from(
+    let locals = body.source_locals().map_err(Unsupported)?;
+    require_local_source_projection(locals)?;
+    scope_from_parameters(
         body.tree(),
-        body.occurrence().member,
+        body.occurrence(),
         body.statement_body(),
         resolver,
         exempt_types,
+        Some(body.source_parameters().map_err(Unsupported)?),
+        Some(locals),
     )?
     .with_archive(body.archive_owner())
 }
 
+/// Validate the existing ORIGINAL ledger. No normalized declaration spelling
+/// can stand in for these facts. Unsupported grammar remains an atomic refusal.
+pub(crate) fn require_local_source_projection(
+    view: dm_tree::frontend::SourceLocalView<'_>,
+) -> Result<(), Unsupported> {
+    if view.scope_admission().map_err(Unsupported)? > 64 * 1024 * 1024 {
+        return Err(Unsupported(
+            "original local scope exceeds bounded policy admission before allocation".into(),
+        ));
+    }
+    Ok(())
+}
+
 /// Called only after the live-body issuance check, or with archive-owned parts.
 /// This borrows declarations and syntax; it constructs only policy-local facts.
+#[cfg(test)]
 pub(crate) fn scope_from<'a, R: Resolver + ?Sized>(
     tree: &'a dm_tree::SemanticTree,
-    member: dm_tree::MemberId,
+    occurrence: &dm_tree::frontend::BodyOccurrence,
     syntax: &StatementBody,
     resolver: &'a R,
     exempt_types: &'a [String],
 ) -> Result<Walker<'a, R>, Unsupported> {
+    scope_from_parameters(tree, occurrence, syntax, resolver, exempt_types, None, None)
+}
+/// Only a sealed ORIGINAL body view can supply parameter path authority.
+pub(crate) fn scope_from_parameters<'a, R: Resolver + ?Sized>(
+    tree: &'a dm_tree::SemanticTree,
+    occurrence: &dm_tree::frontend::BodyOccurrence,
+    syntax: &StatementBody,
+    resolver: &'a R,
+    exempt_types: &'a [String],
+    parameters: Option<dm_tree::frontend::SourceParameterView<'_>>,
+    local_source: Option<dm_tree::frontend::SourceLocalView<'_>>,
+) -> Result<Walker<'a, R>, Unsupported> {
+    if let Some(parameters) = parameters {
+        parameters
+            .require_for(tree, occurrence)
+            .map_err(Unsupported)?;
+    }
+    if let Some(source) = local_source {
+        source
+            .require_for(tree, occurrence, syntax)
+            .map_err(Unsupported)?;
+        require_local_source_projection(source)?;
+    }
     if !syntax.syntax_complete() {
         return Err(Unsupported(
             "body has unsupported or malformed native syntax".into(),
         ));
     }
     let member = tree
-        .member(member)
+        .member(occurrence.member)
         .ok_or_else(|| Unsupported("missing issued member".into()))?;
     let owner = tree
         .type_node(member.owner)
         .ok_or_else(|| Unsupported("missing issued owner".into()))?
         .path;
-    let mut locals = Locals::default();
+    // Reserve the whole original source-derived type map BEFORE strings or
+    // hash buckets are built. This is the existing bounded policy cohort, not
+    // a new cache or permission to emit a partial proof.
+    let mut scope_admission = local_source
+        .map(|v| v.scope_admission())
+        .transpose()
+        .map_err(Unsupported)?
+        .unwrap_or(4096);
+    if let Some(parameters) = parameters {
+        for entry in parameters.entries().map_err(Unsupported)? {
+            let width = entry
+                .type_components()
+                .iter()
+                .try_fold(5usize, |sum, span| {
+                    sum.checked_add(span.end.checked_sub(span.start)?)
+                        .and_then(|n| n.checked_add(1))
+                })
+                .ok_or_else(|| Unsupported("original parameter scope width overflow".into()))?;
+            scope_admission = scope_admission
+                .checked_add(
+                    parameters
+                        .name(entry)
+                        .map_err(Unsupported)?
+                        .len()
+                        .saturating_add(width)
+                        .saturating_mul(4)
+                        .saturating_add(256),
+                )
+                .ok_or_else(|| Unsupported("original parameter scope admission overflow".into()))?;
+        }
+    }
+    if scope_admission > 64 * 1024 * 1024 {
+        return Err(Unsupported(
+            "original local/parameter scope exceeds bounded policy admission before allocation"
+                .into(),
+        ));
+    }
+    let mut local_types = HashMap::new();
     let procedure = member
         .metadata
         .procedure
         .as_ref()
         .ok_or_else(|| Unsupported("missing native procedure signature".into()))?;
-    for parameter in procedure.signature.parameters.iter() {
-        let name = tree
-            .symbols()
-            .text(parameter.name)
-            .ok_or_else(|| Unsupported("unknown parameter symbol".into()))?;
-        locals.types.insert(
-            name.to_owned(),
-            declaration_type(tree, parameter.declared_type, parameter.list_element_type)?,
-        );
+    if let Some(parameters) = parameters {
+        for parameter in parameters.entries().map_err(Unsupported)? {
+            let name = parameters.name(parameter).map_err(Unsupported)?;
+            let ty = parameters
+                .type_path(parameter)
+                .map_err(Unsupported)?
+                .unwrap_or_default();
+            local_types.insert(name.to_owned(), ty);
+        }
+    } else if !procedure.signature.parameters.is_empty() || procedure.signature.variadic {
+        return Err(Unsupported("unissued parameters require an original primary signature receipt; zero runtime flags are not source proof".into()));
     }
-    dm_syntax::visit_statements(&syntax.parsed().statements, &mut locals);
-    if locals.unsupported {
+    if let Some(source) = local_source {
+        let mut locals = Locals {
+            source,
+            types: local_types,
+            error: None,
+        };
+        dm_syntax::visit_statements(&syntax.parsed().statements, &mut locals);
+        if let Some(error) = locals.error {
+            return Err(error);
+        }
+        local_types = locals.types;
+    } else if !syntax
+        .parsed()
+        .local_variables
+        .entries()
+        .map_err(|e| Unsupported(e.into()))?
+        .is_empty()
+    {
         return Err(Unsupported(
-            "native local declaration coverage is incomplete".into(),
+            "unissued local source ledger cannot authorize normalized scope".into(),
         ));
     }
     Ok(Walker {
@@ -197,7 +279,7 @@ pub(crate) fn scope_from<'a, R: Resolver + ?Sized>(
         archive: None,
         resolver,
         owner,
-        locals: locals.types,
+        locals: local_types,
         exempt_types,
         found: BTreeMap::new(),
         error: None,
@@ -311,67 +393,119 @@ pub(crate) fn field_declared_hint<R: Resolver + ?Sized>(
     Ok(view.declared_hint().map(str::to_owned))
 }
 
-#[derive(Default)]
-struct Locals {
+/// Original pinned collect_locals policy: Var/Vars overwrite, ForList only
+/// inserts absent names, pair bindings are untyped, singleton CStyle inserts.
+/// ForRange and catch bindings are deliberately NOT collected by that policy.
+struct Locals<'a> {
+    source: dm_tree::frontend::SourceLocalView<'a>,
     types: HashMap<String, String>,
-    unsupported: bool,
+    error: Option<Unsupported>,
 }
-impl Locals {
-    fn insert_if_absent(&mut self, declaration: &str) {
-        match declared_local(declaration) {
-            Some((name, ty)) => {
-                self.types.entry(name).or_insert(ty);
-            }
-            None => self.unsupported = true,
-        }
+pub(crate) fn original_local_in_header<'a>(
+    view: &dm_tree::frontend::SourceLocalView<'a>,
+    span: Span,
+) -> Result<Option<&'a dm_syntax::LocalVariableSyntax>, Unsupported> {
+    let mut found = view.in_span(span).map_err(Unsupported)?.iter();
+    let first = found.next();
+    if found.next().is_some() {
+        return Err(Unsupported(
+            "original local header has multiple unprojected declarations".into(),
+        ));
     }
-    fn insert(&mut self, declaration: &str) {
-        // Static locals also shadow fields in the reference rule. They are not
-        // candidates for this lint (stored_refs has its own static-list rule).
-        let normalized = declaration
-            .replace("var/static/", "var/")
-            .replace("var/global/", "var/");
-        match declared_local(&normalized) {
-            Some((name, ty)) => {
-                self.types.insert(name, ty);
-            }
-            None => self.unsupported = true,
+    Ok(first)
+}
+impl Locals<'_> {
+    fn declared(&mut self, span: Span, absent: bool) -> Result<(), Unsupported> {
+        let fact = original_local_in_header(&self.source, span)?
+            .ok_or_else(|| Unsupported("original local declaration occurrence missing".into()))?;
+        let name = self.source.name(fact).map_err(Unsupported)?;
+        if absent && self.types.contains_key(name) {
+            return Ok(());
         }
+        let ty = self
+            .source
+            .type_path(fact)
+            .map_err(Unsupported)?
+            .unwrap_or_default();
+        self.types.insert(name.to_owned(), ty);
+        Ok(())
+    }
+    fn bare(&mut self, name: &str) -> Result<(), Unsupported> {
+        let mut chars = name.chars();
+        if !chars.next().is_some_and(|c| c == '_' || c.is_alphabetic())
+            || !chars.all(|c| c == '_' || c.is_alphanumeric())
+        {
+            return Err(Unsupported(
+                "implicit loop binding lacks original bare-name authority".into(),
+            ));
+        }
+        self.types.entry(name.to_owned()).or_default();
+        Ok(())
     }
 }
-impl TypedVisitor for Locals {
-    fn statement(&mut self, statement: &Statement, _: &[NodeStep]) -> VisitDecision {
-        match &statement.kind {
-            StatementKind::Var { declaration, .. } => self.insert(declaration),
-            StatementKind::For { control, .. } => match control {
-                ForControl::All { declaration } => self.insert_if_absent(declaration),
-                ForControl::Each { binding, .. } | ForControl::Range { binding, .. } => {
-                    if binding.starts_with("var/") {
-                        self.insert_if_absent(binding.split(" as ").next().unwrap());
-                    } else {
-                        self.types.entry(binding.clone()).or_default();
+impl TypedVisitor for Locals<'_> {
+    fn statement(&mut self, st: &Statement, _: &[NodeStep]) -> VisitDecision {
+        if self.error.is_some() {
+            return VisitDecision::Skip;
+        }
+        let result = (|| -> Result<(), Unsupported> {
+            match &st.kind {
+                StatementKind::Var { .. } => self.declared(st.header_span, false)?,
+                StatementKind::For { control, .. } => match control {
+                    ForControl::All { .. } => self.declared(st.header_span, true)?,
+                    ForControl::Each { binding, .. } => {
+                        if original_local_in_header(&self.source, st.header_span)?.is_some() {
+                            self.declared(st.header_span, true)?;
+                        } else {
+                            self.bare(binding)?;
+                        }
                     }
-                }
-                ForControl::Pair {
-                    key_binding,
-                    value_binding,
-                    ..
-                } => {
-                    for binding in [key_binding, value_binding] {
-                        self.types
-                            .entry(dm_syntax::local_name(binding).unwrap_or(binding).to_owned())
-                            .or_default();
+                    ForControl::Pair {
+                        key_binding,
+                        value_binding,
+                        ..
+                    } => {
+                        let mut names = self
+                            .source
+                            .in_span(st.header_span)
+                            .map_err(Unsupported)?
+                            .iter();
+                        if let Some(first) = names.next() {
+                            let second = names.next().ok_or_else(|| {
+                                Unsupported("original pair binding roster incomplete".into())
+                            })?;
+                            if names.next().is_some() {
+                                return Err(Unsupported(
+                                    "original pair binding roster ambiguous".into(),
+                                ));
+                            }
+                            let a = self.source.name(first).map_err(Unsupported)?.to_owned();
+                            let b = self.source.name(second).map_err(Unsupported)?.to_owned();
+                            self.bare(&a)?;
+                            self.bare(&b)?;
+                        } else {
+                            self.bare(key_binding)?;
+                            self.bare(value_binding)?;
+                        }
                     }
-                }
-                ForControl::CStyle {
-                    initializer: Some(ForInitializer::Declare { declaration, .. }),
-                    ..
-                } => self.insert(declaration),
+                    ForControl::CStyle {
+                        initializer: Some(ForInitializer::Declare { .. }),
+                        ..
+                    } => self.declared(st.header_span, false)?,
+                    ForControl::Range { .. }
+                    | ForControl::RangeImplicitArray { .. }
+                    | ForControl::CStyle { .. } => (),
+                },
                 _ => (),
-            },
-            _ => (),
+            }
+            Ok(())
+        })();
+        if let Err(error) = result {
+            self.error = Some(error);
+            VisitDecision::Skip
+        } else {
+            VisitDecision::Descend
         }
-        VisitDecision::Descend
     }
 }
 
@@ -479,6 +613,15 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
             .any(|root| ty.starts_with(root))
         {
             return Ok(true);
+        }
+        if let Some(profile) = self.tree.checker_builtin_profile() {
+            if !self
+                .tree
+                .checker_source_type_presence(profile, ty)
+                .map_err(|e| Unsupported(format!("{e:?}")))?
+            {
+                return Ok(false);
+            }
         }
         match self.resolver.resolve(Q::Ancestry(SymbolId::of(ty))) {
             M::Missing => Ok(false),
@@ -778,3 +921,22 @@ mod tests;
 
 #[path = "untyped_player_link_receiver.rs"]
 mod player_link_receiver;
+
+#[cfg(test)]
+#[path = "untyped_parameter_guard_tests.rs"]
+mod parameter_guard_tests;
+
+#[cfg(test)]
+#[path = "untyped_local_source_gate_tests.rs"]
+mod local_source_gate_tests;
+
+#[cfg(test)]
+#[path = "untyped_original_local_scope_tests.rs"]
+mod original_local_scope_tests;
+
+#[path = "untyped_stored_refs_scope.rs"]
+mod stored_refs_scope;
+pub(crate) use stored_refs_scope::archived_stored_scope;
+#[path = "untyped_stored_refs.rs"]
+mod stored_refs;
+pub use stored_refs::{stored_findings, StoredFinding, StoredPolicy};

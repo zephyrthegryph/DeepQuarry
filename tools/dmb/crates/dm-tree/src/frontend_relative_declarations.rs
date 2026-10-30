@@ -13,9 +13,11 @@ pub enum BindingError {
     InvalidRelativeSpan,
     OffsetOverflow,
     SourceLengthMismatch,
+    ForeignOriginalHeaderOwner,
 }
 #[derive(Debug)]
 pub struct RelativeSyntax {
+    original_headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
     items: arena::Arena,
     source_len: usize,
     max_end: usize,
@@ -120,6 +122,20 @@ impl RelativeSyntax {
         source: dm_preprocess::SourceText,
         owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
     ) -> Result<Self, BindingError> {
+        Self::capture_with_settings_headers(items, source, owners, None)
+    }
+    pub(crate) fn capture_with_settings_headers(
+        items: Vec<Item>,
+        source: dm_preprocess::SourceText,
+        owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
+        original_headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
+    ) -> Result<Self, BindingError> {
+        if original_headers
+            .as_ref()
+            .is_some_and(|h| !h.same_source(&source))
+        {
+            return Err(BindingError::ForeignOriginalHeaderOwner);
+        }
         let mut max_end = 0;
         let mut pending: Vec<_> = items.iter().collect();
         while let Some(item) = pending.pop() {
@@ -166,6 +182,7 @@ impl RelativeSyntax {
             let _ = primary_headers.set(Ok(headers.into()));
         }
         Ok(Self {
+            original_headers,
             items: arena::Arena::capture(items, source),
             source_len,
             max_end,
@@ -250,6 +267,7 @@ impl RelativeSyntax {
         self.items.visit_storage(visit);
     }
     pub fn visit_body_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        self.visit_original_header_storage(&mut visit);
         if let Some(Ok(rows)) = self.primary_headers.get() {
             let bytes = std::mem::size_of_val(rows.as_ref());
             visit(rows.as_ptr() as usize, bytes, bytes);
@@ -276,6 +294,20 @@ impl RelativeSyntax {
                 std::mem::size_of_val(body.settings.as_ref()),
                 std::mem::size_of_val(body.settings.as_ref()),
             );
+        }
+    }
+    /// New input payload only; source bytes share this RelativeSyntax's existing
+    /// SourceText owner. Pointer dedup is the caller's live-owner census job.
+    pub fn visit_original_header_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        if let Some(headers) = &self.original_headers {
+            headers.visit_storage(&mut visit);
+        }
+    }
+    /// Wide arena fallback can have no shared_source; this still exposes the
+    /// SAME original recipe source to the existing pointer-deduplicated census.
+    pub fn visit_original_header_source(&self, mut visit: impl FnMut(&dm_preprocess::SourceText)) {
+        if let Some(headers) = &self.original_headers {
+            headers.visit_source(&mut visit);
         }
     }
     /// The caller has already checked the immutable exact source key. This is

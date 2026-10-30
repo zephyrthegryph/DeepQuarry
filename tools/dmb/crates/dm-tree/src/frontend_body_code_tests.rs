@@ -68,19 +68,19 @@ fn p_body(front: &ColdFrontend) -> &BodyOccurrence {
 /// Editing this text therefore never touches the following chunk, which only moves.
 fn q_chunk(prefix: &str, last: u32) -> &'static str {
     let closes_chunk = |header: &str| {
-        header
-            .bytes()
-            .fold(0xcbf29ce484222325u64, |hash, byte| {
-                (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
-            })
-            & 15
+        header.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
+            (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
+        }) & 15
             == 0
     };
     let tail = (0..)
         .map(|index| format!("/proc/q_tail{index}()"))
         .find(|header| closes_chunk(header))
         .unwrap();
-    Box::leak(format!("{prefix}/proc/q()\n    return {last}\n{tail}\n    return {last}\n").into_boxed_str())
+    Box::leak(
+        format!("{prefix}/proc/q()\n    return {last}\n{tail}\n    return {last}\n")
+            .into_boxed_str(),
+    )
 }
 #[test]
 fn body_code_owner_reuses_unchanged_chunks_with_current_shifted_origins() {
@@ -152,4 +152,38 @@ fn current_body_code_boundary_distinguishes_eof_and_following_declaration() {
             );
         }
     }
+}
+
+#[test]
+fn archive_borrows_original_code_and_callable_roster_after_frontend_drops() {
+    let mut state = RetainedSemanticTree::default();
+    let front = build(&mut state, "/proc/p(value=1)\n    return value\n");
+    let archive = front.body_archive().unwrap();
+    assert!(Arc::ptr_eq(
+        archive.callables(),
+        front.callable_roster().unwrap()
+    ));
+    let canonical = &archive.occurrences()[0];
+    let code = archive.body_code(canonical).unwrap();
+    let original = front.body_code(&front.bodies[0]).unwrap();
+    assert!(Arc::ptr_eq(code.identity(), original.identity()));
+    assert_eq!(code.termination(), original.termination());
+    assert!(
+        archive.body_code(&canonical.clone()).is_err(),
+        "copied descriptors do not issue a scoped receipt"
+    );
+    let identity = Arc::clone(code.identity());
+    let mut census = Vec::new();
+    archive.visit_body_code_storage(|a, l, c| census.push((a, l, c)));
+    assert!(census
+        .iter()
+        .any(|(a, _, _)| *a == Arc::as_ptr(&identity) as usize));
+    drop(front);
+    assert!(Arc::ptr_eq(
+        archive
+            .body_code(&archive.occurrences()[0])
+            .unwrap()
+            .identity(),
+        &identity
+    ));
 }

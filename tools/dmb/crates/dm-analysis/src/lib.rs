@@ -66,3 +66,7 @@ pub mod untyped_member_native;
 pub mod player_link_native;
 
 pub mod weak_raw_read_native;
+
+pub mod checker_effects;
+
+pub mod rel_write_native;

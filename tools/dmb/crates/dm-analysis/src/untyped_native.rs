@@ -245,13 +245,14 @@ fn evidence<'a, R: Resolver + ?Sized>(
         evidence: Vec::new(),
         error: None,
     };
-    crate::untyped_order::assignments(&syntax.parsed().statements, &mut |target, rhs, at| {
+    crate::untyped_order::assignments(syntax.view(), &mut |target, rhs, at| {
         if scan.error.is_none() {
             if let Err(error) = scan.assign(target, rhs, at) {
                 scan.error = Some(error);
             }
         }
-    });
+    })
+    .map_err(|e| Unsupported(e.into()))?;
     if let Some(error) = scan.error {
         Err(error)
     } else {

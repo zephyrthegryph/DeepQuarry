@@ -75,6 +75,10 @@ pub enum Event<'a> {
         name: &'a str,
         receiver: SymbolId,
     },
+    ResolvedImplicitListConstructor {
+        initializer: &'a dm_syntax::ImplicitListInitializer,
+        fact: CallableFact,
+    },
     ResolvedCall {
         expression: &'a Expr,
         at: Span,
@@ -104,6 +108,11 @@ pub enum Event<'a> {
         expression: &'a Expr,
     },
 }
+#[derive(Clone, Copy)]
+enum EvaluationCallSite<'a> {
+    Written(&'a Expr),
+    ImplicitList(&'a dm_syntax::ImplicitListInitializer),
+}
 #[derive(Debug)]
 pub struct Walk<'a> {
     pub events: Vec<Event<'a>>,
@@ -120,9 +129,11 @@ pub fn linear<'a>(
         None,
         &view.syntax().parsed().local_variables,
         &frontend.expanded.text,
-        body.occurrence().member,
+        body.occurrence(),
+        body.checker_parameters(profile)?,
         resolver,
         profile,
+        None,
     )?;
     for statement in &view.syntax().parsed().statements {
         if walker.leaf_statement(statement)? {
@@ -147,9 +158,11 @@ pub fn evaluated<'a>(
         None,
         &view.syntax().parsed().local_variables,
         &frontend.expanded.text,
-        body.occurrence().member,
+        body.occurrence(),
+        body.checker_parameters(profile)?,
         resolver,
         profile,
+        None,
     )?;
     crate::checker_reachable::analyze_with_observer(&view, &mut walker)?;
     Ok(Walk {
@@ -171,9 +184,11 @@ pub fn archived<'a>(
         Some(archive),
         &body.statement_body().parsed().local_variables,
         archive.expanded_source(),
-        body.occurrence().member,
+        body.occurrence(),
+        body.checker_parameters(profile)?,
         resolver,
         profile,
+        None,
     )?;
     crate::checker_reachable::archived_with_observer(body, &mut walker)?;
     Ok(Walk {
@@ -188,6 +203,7 @@ struct LocalFact {
     ty: TypeFact,
     declaration: Option<Span>,
     mutation_pure: bool,
+    impurity: Option<bool>,
 }
 impl LocalFact {
     fn unproved(ty: TypeFact) -> Self {
@@ -195,6 +211,7 @@ impl LocalFact {
             ty,
             declaration: None,
             mutation_pure: false,
+            impurity: None,
         }
     }
 }
@@ -211,6 +228,12 @@ struct Walker<'a, 'r, R: ?Sized> {
     events: Vec<Event<'a>>,
     scopes: Vec<BTreeMap<SymbolId, LocalFact>>,
     in_arguments: bool,
+    effects: Option<crate::checker_effects::Draft>,
+    last_impurity: Option<bool>,
+    new_context: usize,
+    evaluation_anchor: Option<crate::checker_effects::CallOrigin>,
+    statement_root: Option<&'a Expr>,
+    scope_denied_depth: usize,
 }
 impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
     fn new(
@@ -218,10 +241,15 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         prefix_archive: Option<&'a BodyArchive>,
         local_syntax: &'a dm_syntax::LocalVariableLedger,
         source: &'a str,
-        member: MemberId,
+        occurrence: &dm_tree::frontend::BodyOccurrence,
+        parameters: dm_tree::frontend::SourceParameterView<'_>,
         resolver: &'r R,
         profile: PackedU128,
+        budget: Option<&crate::checker_effects::output::ReportBudget>,
     ) -> Result<Self, String> {
+        parameters.require_for(tree, occurrence)?;
+        let entries = parameters.entries()?;
+        let member = occurrence.member;
         let node = tree
             .member(member)
             .ok_or("missing issued callable member")?;
@@ -229,11 +257,12 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             .type_node(node.owner)
             .ok_or("missing issued callable owner")?
             .path;
-        let metadata = node
-            .metadata
-            .procedure
-            .as_ref()
-            .ok_or("missing issued procedure signature")?;
+        // Map storage and every temporary source type String are admitted
+        // before allocation. Normalized runtime signatures are not checker
+        // type-path authority (qualifiers and suffix arrays may differ).
+        if let Some(budget) = budget {
+            budget.charge(Self::local_map_bound(entries.len().saturating_add(7)))?;
+        }
         let mut locals = BTreeMap::new();
         for (name, ty) in [
             (".", TypeFact::Unknown),
@@ -243,7 +272,11 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             ("caller", TypeFact::Known(SymbolId::of("/callee"))),
             ("global", TypeFact::Known(SymbolId::of("/"))),
         ] {
-            locals.insert(SymbolId::of(name), LocalFact::unproved(ty));
+            let mut fact = LocalFact::unproved(ty);
+            if matches!(name, "args" | "global") {
+                fact.impurity = Some(true);
+            }
+            locals.insert(SymbolId::of(name), fact);
         }
         if owner != SymbolId::of("/") {
             locals.insert(
@@ -251,21 +284,27 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 LocalFact::unproved(TypeFact::Known(owner)),
             );
         }
-        for parameter in metadata.signature.parameters.iter() {
-            if parameter.array.is_some() {
-                return Err(
-                    "checker parameter array context needs issued pinned projection".into(),
-                );
+        for parameter in entries {
+            if parameter.variadic() {
+                continue;
             }
-            locals.insert(
-                parameter.name,
-                LocalFact::unproved(checked_type(
-                    tree,
-                    resolver,
-                    parameter.declared_type,
-                    parameter.list_element_type,
-                )?),
-            );
+            if let Some(budget) = budget {
+                let bytes = parameter
+                    .type_components()
+                    .iter()
+                    .fold(5usize, |sum, span| {
+                        sum.saturating_add(span.end.saturating_sub(span.start))
+                            .saturating_add(1)
+                    });
+                // String growth may overlap old/new allocations; do not credit
+                // freed temporaries. Four times final bound covers both owners.
+                budget.charge(bytes.saturating_mul(4).saturating_add(128))?;
+            }
+            let path = parameters.type_path(parameter)?;
+            let ty = checked_parameter_type(tree, resolver, profile, path.as_deref())?;
+            let mut fact = LocalFact::unproved(ty);
+            fact.impurity = Some(true); // Pinned checker: every parameter is impure.
+            locals.insert(SymbolId::of(parameters.name(parameter)?), fact);
         }
         Ok(Walker {
             tree,
@@ -280,32 +319,100 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             events: Vec::new(),
             scopes: Vec::new(),
             in_arguments: false,
+            effects: None,
+            last_impurity: None,
+            new_context: 0,
+            evaluation_anchor: None,
+            statement_root: None,
+            scope_denied_depth: 0,
         })
     }
+    fn local_entry_bound() -> usize {
+        1024usize.saturating_add(std::mem::size_of::<(SymbolId, LocalFact)>().saturating_mul(2))
+    }
+    fn local_map_bound(entries: usize) -> usize {
+        entries
+            .saturating_mul(Self::local_entry_bound())
+            .saturating_add(std::mem::size_of::<BTreeMap<SymbolId, LocalFact>>())
+            .saturating_add(64)
+    }
+    fn check_effect_admission(&self) -> Result<(), String> {
+        if let Some(effects) = &self.effects {
+            effects.transient.charge(0)?
+        }
+        Ok(())
+    }
+    fn insert_local(&mut self, name: SymbolId, fact: LocalFact) -> Result<(), String> {
+        if let Some(effects) = &self.effects {
+            effects.transient.charge(Self::local_entry_bound())?
+        }
+        self.locals.insert(name, fact);
+        Ok(())
+    }
+    fn event(&mut self, event: Event<'a>) -> Result<(), String> {
+        if let Some(effects) = &self.effects {
+            effects.transient.push(&mut self.events, event)?
+        } else {
+            self.events.push(event)
+        }
+        Ok(())
+    }
     fn leaf_statement(&mut self, statement: &'a Statement) -> Result<bool, String> {
+        self.check_effect_admission()?;
+        let previous = self
+            .evaluation_anchor
+            .replace(crate::checker_effects::CallOrigin::Source(
+                statement.header_span,
+            ));
+        let result = self.leaf_statement_inner(statement);
+        self.evaluation_anchor = previous;
+        result
+    }
+    fn leaf_statement_inner(&mut self, statement: &'a Statement) -> Result<bool, String> {
         match &statement.kind {
-            StatementKind::Set { .. } => (),
+            StatementKind::Set {
+                attribute,
+                relation,
+                value,
+            } => {
+                if let Some(effects) = &mut self.effects {
+                    if attribute == "waitfor"
+                        && relation == "="
+                        && (matches!(&value.kind,ExprKind::Literal(n) if n=="0")
+                            || matches!(&value.kind,ExprKind::Ident(n) if n=="FALSE"))
+                    {
+                        effects.waitfor_disabled = true;
+                    }
+                }
+            }
             StatementKind::Var { declaration, value } => {
                 self.declaration(declaration, value.as_ref(), statement.header_span)?
             }
             StatementKind::Assign { target, value, .. } => {
                 let hint = self.expression(target, None)?.receiver()?;
+                if self.last_impurity == Some(true) {
+                    self.direct_effect("Assignment on purity breaking expression", None)?;
+                }
                 self.expression(value, hint)?;
                 self.invalidate_local_target(target);
             }
             StatementKind::Expression(value) | StatementKind::Call(value) => {
-                if let ExprKind::Binary { op, lhs, .. } = &value.kind {
-                    if op == "<<" {
-                        self.expression(lhs, None)?;
-                    }
-                }
-                self.expression(value, None)?;
-                if matches!(&value.kind,ExprKind::Call {callee,..} if matches!(&callee.kind,ExprKind::Ident(name) if name=="CRASH"))
+                self.statement_expression(value)?;
+                if matches!(&value.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH"))
                 {
                     return Ok(true);
                 }
             }
             StatementKind::Return(value) => {
+                if self.effects.is_some() && self.new_context > 0 && value.is_some() {
+                    self.immediate_effect(
+                        "spawn_return",
+                        crate::checks::Severity::Warning,
+                        statement.header_span,
+                        format_args!("returning a value in a spawn has no effect"),
+                        Vec::new(),
+                    )?;
+                }
                 if let Some(value) = value {
                     self.expression(value, None)?;
                 }
@@ -335,92 +442,60 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         value: Option<&'a Expr>,
         at: Span,
     ) -> Result<(), String> {
-        let expected_name = dm_syntax::local_name(declaration);
-        let matches = self
-            .local_syntax
-            .entries()
-            .map_err(str::to_owned)?
-            .iter()
-            .filter(|fact| {
-                fact.anchor.start >= at.start
-                    && fact.anchor.start < at.end
-                    && expected_name
-                        .is_none_or(|name| self.source.get(fact.name.range()) == Some(name))
-            })
-            .collect::<Vec<_>>();
-        if matches.len() > 1 {
-            return Err("native local declaration fact is ambiguous".into());
-        }
-        if let Some(fact) = matches.first() {
-            // The local fact currently proves the suffix's type container only.
-            // Old var_suffix can synthesize new /list(dimensions), whose argument
-            // traversal depends on the actual /list/New; nonempty for bindings
-            // also change parser shape. Do not turn absent dimension roots into
-            // a falsely clean evaluated contribution.
-            if fact.array_suffix {
-                return Err(
-                    "local array suffix needs primary dimension/constructor and for-shape proof"
-                        .into(),
-                );
-            }
-
-            let name = self
-                .source
-                .get(fact.name.range())
-                .ok_or("native local name span unavailable")?;
-            let ty = match fact.type_path(self.source).map_err(str::to_owned)? {
-                None => TypeFact::Unknown,
-                Some(path) => {
-                    let projected = dm_syntax::project_declaration_type(&path);
-                    checked_issued_type(
-                        self.tree,
-                        self.resolver,
-                        Some(SymbolId::of(projected.runtime_path)),
-                        projected
-                            .list_element_path
-                            .map(|tail| SymbolId::of(&format!("/{tail}"))),
-                    )?
+        let matches = self.local_syntax.in_span(at).map_err(str::to_owned)?;
+        let fact = match matches {
+            [fact] => fact,
+            [] => return Err("native local declaration has no original source receipt".into()),
+            _ => {
+                // A pair header can own two issued simple bindings. The
+                // primary declaration spelling selects only between those
+                // original facts; it cannot create a missing fact/type.
+                let expected_name = dm_syntax::local_name(declaration)
+                    .ok_or("native local declaration receipt is ambiguous")?;
+                let mut selected = matches
+                    .iter()
+                    .filter(|fact| self.source.get(fact.name.range()) == Some(expected_name));
+                let fact = selected
+                    .next()
+                    .ok_or("native local declaration has no matching source receipt")?;
+                if selected.next().is_some() {
+                    return Err("native local declaration fact is ambiguous".into());
                 }
-            };
-            if let Some(value) = value {
-                self.expression(value, ty.receiver()?)?;
+                fact
             }
-            self.locals.insert(
-                SymbolId::of(name),
-                LocalFact {
-                    ty,
-                    declaration: Some(fact.name),
-                    mutation_pure: literal_mutation_origin(value)?,
-                },
-            );
-            return Ok(());
-        }
-        // Catch/plain legacy projection remains conservative. A missing primary
-        // receipt never authorizes stripping a checker-looking type component.
-        let projection =
-            dm_syntax::project_local_declaration(declaration).map_err(str::to_owned)?;
-        let ty = if let Some(declared) = projection.declared_type {
-            checked_type(
-                self.tree,
-                self.resolver,
-                Some(SymbolId::of(&format!(
-                    "/{}",
-                    declared.runtime_path.trim_start_matches('/')
-                ))),
-                declared
-                    .list_element_path
-                    .map(|path| SymbolId::of(&format!("/{}", path.trim_start_matches('/')))),
-            )?
-        } else {
-            TypeFact::Unknown
         };
-        // Pinned visit_var supplies the declaration hint to the initializer,
-        // then discards initializer inference in favor of its declared type.
+        let name = self
+            .source
+            .get(fact.name.range())
+            .ok_or("native local name span unavailable")?;
+        // The ledger already applied the ORIGINAL leading-only modifier and
+        // one-list suffix rules. Never normalize that source path a second time.
+        let source_type = fact.type_path(self.source).map_err(str::to_owned)?;
+        let ty = checked_parameter_type(
+            self.tree,
+            self.resolver,
+            self.profile,
+            source_type.as_deref(),
+        )?;
         if let Some(value) = value {
             self.expression(value, ty.receiver()?)?;
+        } else if let Some(initializer) = fact.implicit_list_initializer() {
+            self.implicit_list_constructor(initializer)?;
         }
-        self.locals
-            .insert(SymbolId::of(projection.name), LocalFact::unproved(ty));
+        let impurity = if value.is_some() {
+            self.last_impurity
+        } else {
+            None
+        };
+        self.insert_local(
+            SymbolId::of(name),
+            LocalFact {
+                ty,
+                declaration: Some(fact.name),
+                mutation_pure: literal_mutation_origin(value)?,
+                impurity,
+            },
+        )?;
         Ok(())
     }
     fn variable_type(
@@ -502,6 +577,70 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             _ => (),
         }
     }
+    fn direct_effect(&mut self, reason: &'static str, at: Option<Span>) -> Result<(), String> {
+        if self.effects.is_none() {
+            return Ok(());
+        }
+        let origin = at
+            .map(crate::checker_effects::CallOrigin::Source)
+            .or(self.evaluation_anchor)
+            .ok_or("mutation effect needs original enclosing evaluation anchor")?;
+        let effects = self.effects.as_mut().unwrap();
+        if effects.direct.len() >= crate::checker_effects::MAX_EVENTS {
+            return Err("native direct effects exceed bounded admission".into());
+        }
+        effects.transient.push(
+            &mut effects.direct,
+            crate::checker_effects::DirectEffect { reason, origin },
+        )?;
+        Ok(())
+    }
+    fn immediate_effect(
+        &mut self,
+        family: &'static str,
+        severity: crate::checks::Severity,
+        at: Span,
+        message: std::fmt::Arguments<'_>,
+        notes: Vec<crate::checks::Note>,
+    ) -> Result<(), String> {
+        if let Some(effects) = &mut self.effects {
+            if effects.immediate.len() >= crate::checker_effects::MAX_EVENTS {
+                return Err("native immediate effects exceed bounded admission".into());
+            }
+            let message = effects.transient.format(message)?;
+            effects.transient.charge(
+                notes
+                    .capacity()
+                    .saturating_mul(std::mem::size_of::<crate::checks::Note>())
+                    .saturating_add(64),
+            )?;
+            for note in &notes {
+                effects
+                    .transient
+                    .charge(note.message.capacity().saturating_add(64))?
+            }
+            effects.transient.push(
+                &mut effects.immediate,
+                crate::checks::Diagnostic {
+                    family,
+                    severity,
+                    span: at,
+                    expression_span: at,
+                    message,
+                    notes,
+                },
+            )?;
+        }
+        Ok(())
+    }
+    fn arguments_at(&mut self, args: &'a [Expr], at: Span) -> Result<(), String> {
+        let previous = self
+            .evaluation_anchor
+            .replace(crate::checker_effects::CallOrigin::Source(at));
+        let result = self.arguments(args);
+        self.evaluation_anchor = previous;
+        result
+    }
     fn ordinary_call(
         &mut self,
         expression: &'a Expr,
@@ -511,6 +650,38 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         args: &'a [Expr],
         member_follow: bool,
     ) -> Result<TypeFact, String> {
+        self.ordinary_call_with_dispatch(expression, at, name, receiver, args, member_follow, false)
+    }
+    fn ordinary_call_with_dispatch(
+        &mut self,
+        expression: &'a Expr,
+        at: Span,
+        name: &'a str,
+        receiver: SymbolId,
+        args: &'a [Expr],
+        member_follow: bool,
+        exact: bool,
+    ) -> Result<TypeFact, String> {
+        self.call_with_origin(
+            EvaluationCallSite::Written(expression),
+            at,
+            name,
+            receiver,
+            args,
+            member_follow,
+            exact,
+        )
+    }
+    fn call_with_origin(
+        &mut self,
+        site: EvaluationCallSite<'a>,
+        at: Span,
+        name: &'a str,
+        receiver: SymbolId,
+        args: &'a [Expr],
+        member_follow: bool,
+        exact: bool,
+    ) -> Result<TypeFact, String> {
         let fact = checker_call_facts::callable_any(
             self.tree,
             self.resolver,
@@ -519,12 +690,14 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             SymbolId::of(name),
         )?;
         if matches!(fact, CallableFact::Missing) {
-            self.events.push(Event::MissingCall {
-                expression,
-                at,
-                name,
-                receiver,
-            });
+            if let EvaluationCallSite::Written(expression) = site {
+                self.event(Event::MissingCall {
+                    expression,
+                    at,
+                    name,
+                    receiver,
+                })?;
+            }
             // Exact old missing-callee branch never evaluates arguments.
             return Ok(TypeFact::Unknown);
         }
@@ -555,11 +728,24 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                                 .as_ref()
                                 .is_some_and(|p| !p.settings.is_empty())
                             {
-                                crate::checker_return_facts::validate_source_directives(
-                                    self.tree,
-                                    self.prefix_archive,
-                                    *identity,
-                                )?;
+                                if self.effects.is_some() {
+                                    let archive = self
+                                        .prefix_archive
+                                        .ok_or("purity needs original archive")?;
+                                    let permit =
+                                        crate::checker_return_facts::PuritySettingsPermit::issue(
+                                            archive,
+                                            self.profile,
+                                            *identity,
+                                        )?;
+                                    crate::checker_return_facts::validate_source_directives_for_purity(self.tree,self.prefix_archive,*identity,&permit)?;
+                                } else {
+                                    crate::checker_return_facts::validate_source_directives(
+                                        self.tree,
+                                        self.prefix_archive,
+                                        *identity,
+                                    )?;
+                                }
                             }
                         }
                     }
@@ -577,28 +763,171 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 let CallableFact::Source { identity, .. } = &fact else {
                     return Err("unexpected source directive metadata provenance".into());
                 };
-                crate::checker_return_facts::validate_source_directives(
-                    self.tree,
-                    self.prefix_archive,
-                    *identity,
-                )?;
+                if self.effects.is_some() {
+                    let archive = self.prefix_archive.ok_or("purity needs original archive")?;
+                    let permit = crate::checker_return_facts::PuritySettingsPermit::issue(
+                        archive,
+                        self.profile,
+                        *identity,
+                    )?;
+                    crate::checker_return_facts::validate_source_directives_for_purity(
+                        self.tree,
+                        self.prefix_archive,
+                        *identity,
+                        &permit,
+                    )?;
+                } else {
+                    crate::checker_return_facts::validate_source_directives(
+                        self.tree,
+                        self.prefix_archive,
+                        *identity,
+                    )?;
+                }
             }
         }
-        self.events.push(Event::ResolvedCall {
-            expression,
-            at,
-            name,
-            fact,
-        });
-        self.arguments(args)?;
-        let returned = crate::checker_return_facts::return_hint_with_prefix(
-            self.tree,
-            self.resolver,
-            self.profile,
-            receiver,
-            SymbolId::of(name),
-            self.prefix_archive,
-        )?;
+        if self.effects.is_some() {
+            let target = crate::checker_effects::callable_target(self.tree, self.profile, &fact)?;
+            if let (Some(root), EvaluationCallSite::Written(expression)) =
+                (self.statement_root, site)
+            {
+                if pure_discard_term(root, expression) {
+                    let annotation = purity_annotation(
+                        self.prefix_archive.ok_or("purity source archive absent")?,
+                        self.resolver,
+                        self.profile,
+                        target,
+                    )?;
+                    if let Some(annotation) = annotation {
+                        let statement_at = self.evaluation_anchor.ok_or(
+                            "discarded pure return needs original statement evaluation anchor",
+                        )?;
+                        self.immediate_effect(
+                            "pure_discard",
+                            crate::checks::Severity::Error,
+                            statement_at.source_span()?,
+                            format_args!("call to pure proc {name} discards return value"),
+                            vec![crate::checks::Note {
+                                message: "prohibited by this must_be_pure annotation".into(),
+                                source: Some(
+                                    self.prefix_archive
+                                        .unwrap()
+                                        .source_note_point(annotation.start)?,
+                                ),
+                            }],
+                        )?;
+                    }
+                }
+            }
+            let effects = self.effects.as_mut().unwrap();
+            if effects.calls.len() >= crate::checker_effects::MAX_EVENTS {
+                return Err("effect call event admission exceeded".into());
+            }
+            effects.transient.push(
+                &mut effects.calls,
+                crate::checker_effects::CallEdge {
+                    callee: target,
+                    origin: match site {
+                        EvaluationCallSite::Written(_) => {
+                            crate::checker_effects::CallOrigin::Source(at)
+                        }
+                        EvaluationCallSite::ImplicitList(initializer) => {
+                            crate::checker_effects::CallOrigin::ImplicitList(initializer.origin)
+                        }
+                    },
+                    exact,
+                    new_context: self.new_context > 0,
+                },
+            )?;
+            if let EvaluationCallSite::Written(expression) = site {
+                if self.new_context == 0 {
+                    if let Some(reason) = blocking_call_reason(
+                        self.tree,
+                        self.profile,
+                        self.source,
+                        expression,
+                        receiver,
+                        &fact,
+                    )? {
+                        let effects = self.effects.as_mut().unwrap();
+                        if effects.blocking.len() >= crate::checker_effects::MAX_EVENTS {
+                            return Err("blocking event admission exceeded".into());
+                        }
+                        effects.transient.push(
+                            &mut effects.blocking,
+                            crate::checker_effects::DirectEffect {
+                                origin: crate::checker_effects::CallOrigin::Source(at),
+                                reason,
+                            },
+                        )?;
+                    }
+                }
+            }
+        }
+        match site {
+            EvaluationCallSite::Written(expression) => self.event(Event::ResolvedCall {
+                expression,
+                at,
+                name,
+                fact: fact.clone(),
+            })?,
+            EvaluationCallSite::ImplicitList(initializer) => {
+                self.event(Event::ResolvedImplicitListConstructor {
+                    initializer,
+                    fact: fact.clone(),
+                })?
+            }
+        }
+        match site {
+            EvaluationCallSite::Written(_) => self.arguments_at(args, at)?,
+            EvaluationCallSite::ImplicitList(initializer) => {
+                let saved = self.evaluation_anchor.replace(
+                    crate::checker_effects::CallOrigin::ImplicitList(initializer.origin),
+                );
+                let result = self.arguments(args);
+                self.evaluation_anchor = saved;
+                result?;
+            }
+        }
+        self.last_impurity = None;
+        if matches!(site, EvaluationCallSite::ImplicitList(_)) {
+            // Old visit_new returns its own IsType assumption, not the New
+            // procedure's return analysis. Its synthetic origin is not a
+            // source cursor for a return-hint diagnostic.
+            return Ok(TypeFact::Unhinted);
+        }
+        let purity_permit =
+            if self.effects.is_some() && matches!(&fact, CallableFact::Source { .. }) {
+                let CallableFact::Source { identity, .. } = &fact else {
+                    unreachable!()
+                };
+                Some(crate::checker_return_facts::PuritySettingsPermit::issue(
+                    self.prefix_archive.unwrap(),
+                    self.profile,
+                    *identity,
+                )?)
+            } else {
+                None
+            };
+        let returned = if let Some(permit) = &purity_permit {
+            crate::checker_return_facts::return_hint_with_prefix_for_purity(
+                self.tree,
+                self.resolver,
+                self.profile,
+                receiver,
+                SymbolId::of(name),
+                self.prefix_archive,
+                permit,
+            )?
+        } else {
+            crate::checker_return_facts::return_hint_with_prefix(
+                self.tree,
+                self.resolver,
+                self.profile,
+                receiver,
+                SymbolId::of(name),
+                self.prefix_archive,
+            )?
+        };
         let ty = checked_type(
             self.tree,
             self.resolver,
@@ -608,19 +937,58 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         if ty != TypeFact::Unknown {
             return Ok(ty);
         }
-        let hint = crate::checker_return_facts::return_fix_hint(
-            self.tree,
-            self.resolver,
-            self.profile,
-            receiver,
-            SymbolId::of(name),
-            self.prefix_archive,
-        )?;
+        let hint = if let Some(permit) = &purity_permit {
+            crate::checker_return_facts::return_fix_hint_for_purity(
+                self.tree,
+                self.resolver,
+                self.profile,
+                receiver,
+                SymbolId::of(name),
+                self.prefix_archive,
+                permit,
+            )?
+        } else {
+            crate::checker_return_facts::return_fix_hint(
+                self.tree,
+                self.resolver,
+                self.profile,
+                receiver,
+                SymbolId::of(name),
+                self.prefix_archive,
+            )?
+        };
         Ok(match hint {
             crate::checker_return_facts::ReturnFixHint::None => TypeFact::Unhinted,
             crate::checker_return_facts::ReturnFixHint::UnissuedBuiltin => TypeFact::Unknown,
             hint => TypeFact::ReturnHint(hint, at),
         })
+    }
+    fn implicit_list_constructor(
+        &mut self,
+        initializer: &'a dm_syntax::ImplicitListInitializer,
+    ) -> Result<TypeFact, String> {
+        let owner = SymbolId::of("/list");
+        let _ = checked_type(self.tree, self.resolver, Some(owner), None)?;
+        let fact = checker_call_facts::callable_any(
+            self.tree,
+            self.resolver,
+            self.profile,
+            owner,
+            SymbolId::of("New"),
+        )?;
+        if matches!(fact, CallableFact::Missing) {
+            return Ok(TypeFact::Unknown); // pinned constructor skips every dimension without /list/New
+        }
+        self.call_with_origin(
+            EvaluationCallSite::ImplicitList(initializer),
+            initializer.brackets[0],
+            "New",
+            owner,
+            &initializer.dimensions,
+            false,
+            true,
+        )?;
+        Ok(TypeFact::Unhinted)
     }
     fn construct(
         &mut self,
@@ -633,8 +1001,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             Constructor::Dynamic => return Ok(TypeFact::Unknown), // old NewMiniExpr TODO skips target/args
             Constructor::Implicit { args } => {
                 let Some(owner) = hint else {
-                    self.events
-                        .push(Event::MissingImplicitNewHint { expression });
+                    self.event(Event::MissingImplicitNewHint { expression })?;
                     return Ok(TypeFact::Unknown);
                 };
                 (owner, args)
@@ -663,12 +1030,36 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             }
             return Err("constructor missing-New diagnostic is not yet implemented".into());
         }
-        self.ordinary_call(expression, expression.span, "New", owner, args, false)?;
+        self.ordinary_call_with_dispatch(
+            expression,
+            expression.span,
+            "New",
+            owner,
+            args,
+            false,
+            true,
+        )?;
+        self.last_impurity = None;
         // visit_new's IsType assumption does NOT set Analysis.static_ty. Never
         // turn runtime construction provenance into a static receiver type.
         Ok(TypeFact::Unhinted)
     }
     fn expression(
+        &mut self,
+        expression: &'a Expr,
+        hint: Option<SymbolId>,
+    ) -> Result<TypeFact, String> {
+        self.check_effect_admission()?;
+        self.last_impurity = None;
+        let result = self.expression_inner(expression, hint)?;
+        if self.effects.is_some() {
+            if let TypeFact::Deferred(reason) = result {
+                return Err(reason.into());
+            }
+        }
+        Ok(result)
+    }
+    fn expression_inner(
         &mut self,
         expression: &'a Expr,
         hint: Option<SymbolId>,
@@ -679,11 +1070,45 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             return self.construct(expression, form, hint);
         }
         if let Some(form) =
+            dm_syntax::native_special_forms::input(expression).map_err(str::to_owned)?
+        {
+            if self.effects.is_some() && self.new_context == 0 {
+                let effects = self.effects.as_mut().unwrap();
+                if effects.blocking.len() >= crate::checker_effects::MAX_EVENTS {
+                    return Err("input blocking event admission exceeded".into());
+                }
+                effects.transient.push(
+                    &mut effects.blocking,
+                    crate::checker_effects::DirectEffect {
+                        origin: crate::checker_effects::CallOrigin::Source(form.at),
+                        reason: "input",
+                    },
+                )?;
+            }
+            self.arguments_at(form.args, form.at)?;
+            if let Some(container) = form.in_list {
+                let old = self
+                    .evaluation_anchor
+                    .replace(crate::checker_effects::CallOrigin::Source(form.at));
+                let result = self.expression(container, None);
+                self.evaluation_anchor = old;
+                result?;
+            }
+            self.last_impurity = None;
+            // The old InputType produces assumptions, NOT Analysis.static_ty.
+            return Ok(TypeFact::Unhinted);
+        }
+        if let Some(form) =
             dm_syntax::native_special_forms::locate(expression).map_err(str::to_owned)?
         {
-            self.arguments(form.args)?;
+            self.arguments_at(form.args, form.at)?;
             if let Some(container) = form.in_list {
-                self.expression(container, None)?;
+                let old = self
+                    .evaluation_anchor
+                    .replace(crate::checker_effects::CallOrigin::Source(form.at));
+                let result = self.expression(container, None);
+                self.evaluation_anchor = old;
+                result?;
             }
             // Pinned locate's IsType assumption (even its 3-argument form)
             // leaves Analysis.static_ty unset. Do not invent receiver typing.
@@ -691,7 +1116,9 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         }
         match &expression.kind {
             ExprKind::Ident(name) => {
-                if let Some(ty) = self.locals.get(&SymbolId::of(name)).map(|fact| fact.ty) {
+                if let Some(local) = self.locals.get(&SymbolId::of(name)).copied() {
+                    let ty = local.ty;
+                    self.last_impurity = local.impurity;
                     if self.in_arguments {
                         self.invalidate_local_name(SymbolId::of(name));
                     }
@@ -708,13 +1135,17 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                     self.owner,
                     SymbolId::of(name),
                 )? {
-                    Some(fact) => self.variable_type(&fact),
+                    Some(fact) => {
+                        let ty = self.variable_type(&fact)?;
+                        self.last_impurity = Some(true);
+                        Ok(ty)
+                    }
                     None => {
-                        self.events.push(Event::MissingVariable {
+                        self.event(Event::MissingVariable {
                             expression,
                             at: expression.span,
                             name,
-                        });
+                        })?;
                         Ok(TypeFact::Unknown)
                     }
                 }
@@ -728,10 +1159,31 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                         self.expression(child, None)?;
                     }
                 }
+                self.last_impurity = None;
                 Ok(TypeFact::Unknown)
             }
             ExprKind::TypePath(_) => Ok(TypeFact::Unknown),
-            ExprKind::Group(value) => self.expression(value, hint),
+            ExprKind::Group(value) => {
+                let old = self.evaluation_anchor;
+                if self.effects.is_some() {
+                    let end = expression
+                        .span
+                        .start
+                        .checked_add(1)
+                        .ok_or("group origin overflow")?;
+                    if self.source.get(expression.span.start..end) != Some("(") {
+                        return Err("group lacks original opening-parenthesis token".into());
+                    }
+                    self.evaluation_anchor =
+                        Some(crate::checker_effects::CallOrigin::Source(Span {
+                            start: expression.span.start,
+                            end,
+                        }));
+                }
+                let result = self.expression(value, hint);
+                self.evaluation_anchor = old;
+                result
+            }
             ExprKind::Conditional {
                 condition,
                 then_value,
@@ -739,7 +1191,9 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             } => {
                 self.expression(condition, None)?;
                 let first = self.expression(then_value, hint)?;
+                let impurity = self.last_impurity;
                 self.expression(else_value, hint)?;
+                self.last_impurity = impurity;
                 Ok(first)
             }
             ExprKind::Binary { op, lhs, rhs } => {
@@ -776,12 +1230,33 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                     );
                 }
                 let left = self.expression(lhs, None)?;
+                let left_impurity = self.last_impurity;
+                if op == "=" && left_impurity == Some(true) {
+                    self.direct_effect("Assignment on purity breaking expression", None)?;
+                }
+                if op == "<<" {
+                    let reason = if left == TypeFact::Known(SymbolId::of("/mob")) {
+                        Some("LShift onto mob")
+                    } else if left == TypeFact::Known(SymbolId::of("/savefile")) {
+                        Some("LShift onto savefile")
+                    } else if left == TypeFact::Known(SymbolId::of("/list")) {
+                        Some("LShift onto list")
+                    } else {
+                        None
+                    };
+                    if let Some(reason) = reason {
+                        self.direct_effect(reason, None)?;
+                    }
+                }
                 let right =
                     self.expression(rhs, if op == "=" { left.receiver()? } else { None })?;
                 if op == "=" {
                     self.invalidate_local_target(lhs);
                     return Ok(right);
                 }
+                // Pinned visit_binary retains a list STATIC TYPE, not the
+                // lhs Analysis. Conversion from StaticType resets impurity.
+                self.last_impurity = None;
                 // Exact pinned visit_binary: only these LHS-list operations
                 // retain a static list type. Every other binary is empty.
                 Ok(
@@ -816,11 +1291,11 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                         Some(self.profile),
                     )?;
                     if !fact.has_parent {
-                        self.events.push(Event::MissingParent {
+                        self.event(Event::MissingParent {
                             expression,
                             at: callee.span,
                             display: fact.display,
-                        });
+                        })?;
                         return Ok(TypeFact::Unknown);
                     }
                     self.arguments(args)?;
@@ -837,10 +1312,16 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 // These are syntax primitives in the pinned grammar, not names
                 // admitted from a diagnostic-only builtin spelling table.
                 ExprKind::Ident(name) if matches!(name.as_str(), "list" | "alist") => {
-                    self.arguments(args)?;
+                    self.arguments_at(args, expression.span)?;
+                    self.last_impurity = None;
                     Ok(TypeFact::List(None))
                 }
                 ExprKind::Ident(name) if name == "CRASH" => {
+                    if self.effects.is_some() {
+                        return Err(
+                            "CRASH effect primitive needs pinned source effect context".into()
+                        );
+                    }
                     if args.len() > 1 {
                         return Err("CRASH accepts at most one expression".into());
                     }
@@ -884,12 +1365,13 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                     let base = self.expression(object, None)?;
                     let at = member_origin(self.source, callee, object, selector, *via_colon)?;
                     if *via_colon {
-                        self.events.push(Event::DynamicMemberCall {
+                        self.event(Event::DynamicMemberCall {
                             expression,
                             at,
                             name: selector,
-                        });
-                        self.arguments(args)?;
+                        })?;
+                        self.arguments_at(args, at)?;
+                        self.last_impurity = None;
                         return Ok(TypeFact::Unknown);
                     }
                     let Some(receiver) = base.receiver()? else {
@@ -900,12 +1382,12 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                                 "unknown-receiver call needs pinned fix-hint/declaration origins",
                             ),
                         };
-                        self.events.push(Event::UnknownReceiverCall {
+                        self.event(Event::UnknownReceiverCall {
                             expression,
                             at,
                             name: selector,
                             hint,
-                        });
+                        })?;
                         // Exact failed Follow::Call returns Analysis::empty:
                         // later follows do not inherit the lhs fix hint.
                         return Ok(TypeFact::Unhinted);
@@ -925,6 +1407,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 via_colon,
             } => {
                 let base = self.expression(object, None)?;
+                self.last_impurity = None;
                 if *via_colon {
                     return Ok(TypeFact::Unknown);
                 }
@@ -935,12 +1418,12 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                         _=>return Err("unknown-receiver field access needs pinned fix-hint/declaration origins".into()),
                     };
                     let at = member_origin(self.source, expression, object, selector, false)?;
-                    self.events.push(Event::FieldWithoutStaticType {
+                    self.event(Event::FieldWithoutStaticType {
                         expression,
                         at,
                         name: selector,
                         hint,
-                    });
+                    })?;
                     // The old failed follow returns Analysis::empty: subsequent
                     // fields have no inherited hint, while Index carries hints.
                     return Ok(TypeFact::Unhinted);
@@ -960,29 +1443,35 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 )? {
                     Some(fact) => {
                         let ty = self.variable_type(&fact)?;
-                        self.events.push(Event::ResolvedField {
+                        self.event(Event::ResolvedField {
                             expression,
                             at,
                             name: selector,
                             receiver,
                             fact,
-                        });
+                        })?;
                         Ok(ty)
                     }
                     None => {
-                        self.events.push(Event::MissingField {
+                        self.event(Event::MissingField {
                             expression,
                             at,
                             name: selector,
                             receiver,
-                        });
+                        })?;
                         Ok(TypeFact::Unknown)
                     }
                 }
             }
             ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
                 let base = self.expression(object, None)?;
+                let impurity = self.last_impurity;
                 self.expression(index, None)?;
+                self.last_impurity = if matches!(base, TypeFact::List(_)) {
+                    None
+                } else {
+                    impurity
+                };
                 match base {
                     TypeFact::List(element) => {
                         checked_type(self.tree, self.resolver, element, None)
@@ -996,6 +1485,66 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 // The original parser issued this operator + operand shape.
                 // Verify its primary token bytes before evaluating the operand.
                 let _at = increment_origin(self.source, expression, value, op)?;
+                if self.effects.is_some() {
+                    let operand = self.expression(value, None)?;
+                    let operator = if op.ends_with("++") {
+                        "operator++"
+                    } else {
+                        "operator--"
+                    };
+                    if self.last_impurity == Some(true) {
+                        self.direct_effect(
+                            if operator == "operator++" {
+                                "operator++ done on non-local var"
+                            } else {
+                                "operator-- done on non-local var"
+                            },
+                            Some(_at),
+                        )?;
+                    }
+                    self.last_impurity = None;
+                    return match operand {
+                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) => {
+                            Ok(TypeFact::Unhinted)
+                        }
+                        TypeFact::Known(owner) => {
+                            match checker_call_facts::callable_any(
+                                self.tree,
+                                self.resolver,
+                                self.profile,
+                                owner,
+                                SymbolId::of(operator),
+                            )? {
+                                CallableFact::Missing => {
+                                    let name = self
+                                        .tree
+                                        .symbols()
+                                        .text(owner)
+                                        .ok_or("operator type spelling absent")?;
+                                    self.immediate_effect("operator_overload",crate::checks::Severity::Error,_at,
+                                        format_args!("Attempting {operator} on a {name} which does not overload {operator}"),Vec::new())?;
+                                    Ok(TypeFact::Unhinted)
+                                }
+                                _ => self.ordinary_call_with_dispatch(
+                                    expression,
+                                    _at,
+                                    operator,
+                                    owner,
+                                    &[],
+                                    false,
+                                    true,
+                                ),
+                            }
+                        }
+                        TypeFact::List(_) => {
+                            self.immediate_effect("operator_overload",crate::checks::Severity::Error,_at,
+                            format_args!("Attempting {operator} on a list which does not overload {operator}"),Vec::new())?;
+                            Ok(TypeFact::Unhinted)
+                        }
+                        TypeFact::Deferred(reason) => Err(reason.into()),
+                    };
+                }
+
                 let ExprKind::Ident(name) = &value.kind else {
                     return Err(
                         "increment target needs native non-local/overload purity facts".into(),
@@ -1042,10 +1591,50 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
     }
 }
 impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
-    fn enter_scope(&mut self, _: ScopeKind) {
+    fn admit_storage(&mut self, bytes: usize) -> Result<bool, String> {
+        if let Some(effects) = &self.effects {
+            effects.transient.charge(bytes)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+    fn storage_allocation_failed(&mut self) {
+        if let Some(effects) = &self.effects {
+            effects.transient.deny()
+        }
+    }
+    fn enter_scope(&mut self, kind: ScopeKind) {
+        if kind == ScopeKind::Spawn {
+            self.new_context += 1
+        }
+        if self.scope_denied_depth > 0 {
+            self.scope_denied_depth = self.scope_denied_depth.saturating_add(1);
+            return;
+        }
+        if let Some(effects) = &self.effects {
+            let admitted = (|| {
+                effects
+                    .transient
+                    .charge(Self::local_map_bound(self.locals.len()))?;
+                effects.transient.reserve_slot(&mut self.scopes)
+            })();
+            if admitted.is_err() {
+                effects.transient.deny();
+                self.scope_denied_depth = 1;
+                return;
+            }
+        }
         self.scopes.push(self.locals.clone());
     }
-    fn leave_scope(&mut self, _: ScopeKind) {
+    fn leave_scope(&mut self, kind: ScopeKind) {
+        if kind == ScopeKind::Spawn {
+            self.new_context -= 1;
+        }
+        if self.scope_denied_depth > 0 {
+            self.scope_denied_depth -= 1;
+            return;
+        }
         let mut previous = self.scopes.pop().expect("paired pinned traversal scope");
         for (name, older) in previous.iter_mut() {
             if self.locals.get(name).is_some_and(|current| {
@@ -1063,19 +1652,40 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         Walker::expression(self, expression, None).map(|_| ())
     }
     fn statement_expression(&mut self, expression: &'a Expr) -> Result<(), String> {
-        if let ExprKind::Binary { op, lhs, .. } = &expression.kind {
-            if op == "<<" {
-                Walker::expression(self, lhs, None)?;
-            }
+        let old_root = self.statement_root.replace(expression);
+        let old_anchor = self.evaluation_anchor;
+        if self.evaluation_anchor.is_none() && self.effects.is_none() {
+            self.evaluation_anchor =
+                Some(crate::checker_effects::CallOrigin::Source(expression.span));
         }
-        Walker::expression(self, expression, None).map(|_| ())
+        let result = (|| {
+            if let ExprKind::Binary { op, lhs, .. } = &expression.kind {
+                if op == "<<" {
+                    Walker::expression(self, lhs, None)?;
+                    if self.last_impurity == Some(true) {
+                        self.direct_effect("purity breaking << on expression", None)?;
+                    }
+                }
+            }
+            Walker::expression(self, expression, None).map(|_| ())
+        })();
+        self.statement_root = old_root;
+        self.evaluation_anchor = old_anchor;
+        result
     }
     fn initializer(&mut self, initializer: &'a ForInitializer, at: Span) -> Result<(), String> {
         match initializer {
             ForInitializer::Declare { declaration, value } => {
                 self.binding(declaration, value.as_ref(), false, at)
             }
-            ForInitializer::Expr(value) => self.statement_expression(value),
+            ForInitializer::Expr(value) => {
+                let previous = self
+                    .evaluation_anchor
+                    .replace(crate::checker_effects::CallOrigin::Source(at));
+                let result = self.statement_expression(value);
+                self.evaluation_anchor = previous;
+                result
+            }
         }
     }
     fn binding(
@@ -1095,10 +1705,10 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
             if let Some(value) = value {
                 Walker::expression(self, value, None)?;
             }
-            self.locals.insert(
+            self.insert_local(
                 SymbolId::of(binding),
                 LocalFact::unproved(TypeFact::Unknown),
-            );
+            )?;
         }
         // Existing (nondeclared) range bindings deliberately skip their start.
         Ok(())
@@ -1126,6 +1736,50 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         }
         Ok(())
     }
+}
+/// Reuse the privately issued ORIGINAL parameter path, then authenticate every
+/// resolved type against both the certified checker source roster and current
+/// native resolver. Missing checker types require diagnostics not yet produced
+/// by this family, so refuse the whole report instead of erasing the hint.
+fn checked_parameter_type(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    path: Option<&str>,
+) -> Result<TypeFact, String> {
+    let Some(path) = path else {
+        return Ok(TypeFact::Unknown);
+    };
+    let (owner, element) = if path == "/list" {
+        ("/list", None)
+    } else if let Some(element) = path.strip_prefix("/list/") {
+        // Borrow the slash already present in the original projected String.
+        let _ = element;
+        ("/list", Some(&path[5..]))
+    } else {
+        (path, None)
+    };
+    for spelling in std::iter::once(owner).chain(element) {
+        if !tree
+            .checker_source_type_presence(profile, spelling)
+            .map_err(|e| format!("parameter checker source type proof: {e:?}"))?
+        {
+            return Err("parameter checker type needs undefined-type diagnostic projection".into());
+        }
+        let id = SymbolId::of(spelling);
+        let query = Q::Type(id);
+        let expected = Resolver::resolve(tree, query);
+        if expected != M::Symbol(id) || resolver.resolve(query) != expected {
+            return Err("parameter checker type differs from current native resolver".into());
+        }
+    }
+    if element.is_some_and(|v| v == "/list" || v.starts_with("/list/")) {
+        return Err("nested-list parameter needs recursive native type projection".into());
+    }
+    Ok(TypeFact::declared(
+        Some(SymbolId::of(owner)),
+        element.map(SymbolId::of),
+    ))
 }
 fn checked_type(
     tree: &SemanticTree,
@@ -1196,6 +1850,83 @@ fn kwarg_key(expression: &Expr) -> Result<bool, String> {
         },
         _ => false,
     })
+}
+fn pure_discard_term(mut root: &Expr, call: &Expr) -> bool {
+    loop {
+        if std::ptr::eq(root, call) {
+            return matches!(&call.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(_)));
+        }
+        root = match &root.kind {
+            ExprKind::Member { object, .. }
+            | ExprKind::SafeMember { object, .. }
+            | ExprKind::Index { object, .. }
+            | ExprKind::SafeIndex { object, .. } => object,
+            ExprKind::Unary { op, value }
+                if matches!(
+                    op.as_str(),
+                    "pre++" | "post++" | "pre--" | "post--" | "!" | "-" | "~"
+                ) =>
+            {
+                value
+            }
+            _ => return false,
+        };
+    }
+}
+fn purity_annotation(
+    archive: &BodyArchive,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    target: crate::checker_effects::EffectTarget,
+) -> Result<Option<Span>, String> {
+    let mut at = Some(target);
+    let mut seen = std::collections::BTreeSet::new();
+    while let Some(target) = at {
+        if !seen.insert(target) {
+            return Err("purity directive predecessor cycle".into());
+        }
+        if let crate::checker_effects::EffectTarget::Source(id) = target {
+            let permit =
+                crate::checker_return_facts::PuritySettingsPermit::issue(archive, profile, id)?;
+            if let Some(at) = permit.own_pure() {
+                return Ok(Some(at));
+            }
+        }
+        at = crate::checker_effects::original_target_parent(archive, profile, resolver, target)?;
+    }
+    Ok(None)
+}
+/// Same original Walker, original reachable observer and current resolver. No
+/// body job asks for another body's EFFECT contribution (only syntax/settings).
+pub(crate) fn effects_archived<'a>(
+    archive: &'a BodyArchive,
+    body: &'a ArchivedBody<'_>,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    admission: &crate::checker_effects::ExecutionAdmission,
+) -> Result<crate::checker_effects::Draft, String> {
+    if !body.belongs_to(archive) {
+        return Err("effect body belongs to another archive".into());
+    }
+    let draft = crate::checker_effects::Draft {
+        transient: crate::checker_effects::output::ReportBudget::for_operation(admission),
+        ..Default::default()
+    };
+    let mut walker = Walker::new(
+        archive.tree(),
+        Some(archive),
+        &body.statement_body().parsed().local_variables,
+        archive.expanded_source(),
+        body.occurrence(),
+        body.checker_parameters(profile)?,
+        resolver,
+        profile,
+        Some(&draft.transient),
+    )?;
+    walker.effects = Some(draft);
+    crate::checker_reachable::archived_with_observer(body, &mut walker)?;
+    walker.check_effect_admission()?;
+    Ok(walker.effects.take().unwrap())
 }
 /// Native primary literal shape only. No inferred alias purity or evaluation
 /// of an initializer a second time. Unsupported forms stay unproved.
@@ -1308,3 +2039,109 @@ fn member_origin(
 #[cfg(test)]
 #[path = "checker_expression_visit_tests.rs"]
 mod tests;
+
+// The name policy is pinned old checker behavior, but callable identity must
+// first come from the certified native profile/original declaration resolver.
+fn certified_builtin_effect_contract(
+    tree: &SemanticTree,
+    profile: PackedU128,
+    fact: &CallableFact,
+) -> Result<bool, String> {
+    match crate::checker_effects::callable_target(tree, profile, fact)? {
+        crate::checker_effects::EffectTarget::Builtin(id) => tree
+            .with_checker_builtin_procedure(id, |row| {
+                // The fixed DSL owns DECLARATIONS with no executable DM body.
+                // Old checker contributes no direct effects for code=None; virtual
+                // source descendants remain explicit targets in the SAME plan.
+                row.metadata.procedure.is_some()
+            })
+            .map_err(|e| format!("{e:?}")),
+        crate::checker_effects::EffectTarget::Source(_) => Ok(false),
+    }
+}
+
+fn blocking_call_reason(
+    tree: &SemanticTree,
+    profile: PackedU128,
+    source: &str,
+    expression: &Expr,
+    receiver: SymbolId,
+    fact: &CallableFact,
+) -> Result<Option<&'static str>, String> {
+    tree.validate_checker_builtin_profile(profile)
+        .map_err(|e| format!("blocking call profile: {e:?}"))?;
+    let (identity_name, source_callable) = match fact {
+        CallableFact::Source { identity, .. } => (identity.name, true),
+        CallableFact::CheckerBuiltin { name, .. } => (*name, false),
+        CallableFact::Missing => return Ok(None),
+    };
+    // Pinned check_operator_overload and visit_new call visit_call directly;
+    // neither adds an unscoped direct blocker. Their real call edge remains in
+    // the SAME plan, so a sleeping overload/New still propagates normally.
+    if let Some(form) =
+        dm_syntax::native_special_forms::constructor(expression).map_err(str::to_owned)?
+    {
+        if matches!(form, dm_syntax::native_special_forms::Constructor::Dynamic)
+            || identity_name != SymbolId::of("New")
+        {
+            return Err("blocking constructor differs from original callable grammar".into());
+        }
+        return Ok(None);
+    }
+    if let ExprKind::Unary { op, value } = &expression.kind {
+        if matches!(op.as_str(), "pre++" | "post++" | "pre--" | "post--") {
+            increment_origin(source, expression, value, op)?;
+            let operator = if op.ends_with("++") {
+                "operator++"
+            } else {
+                "operator--"
+            };
+            if identity_name != SymbolId::of(operator) {
+                return Err("blocking overload differs from original operator grammar".into());
+            }
+            return Ok(None);
+        }
+    }
+    let ExprKind::Call { callee, .. } = &expression.kind else {
+        return Err("blocking call lacks original call grammar".into());
+    };
+    // Term::GlobalCall intentionally does NOT record an unscoped blocker in
+    // the old checker. Only the actual primary Ident call shape does so.
+    if let ExprKind::Ident(name) = &callee.kind {
+        if identity_name != SymbolId::of(name) {
+            return Err("blocking name differs from original callable identity".into());
+        }
+        if let Some(reason) = ["sleep", "alert", "shell", "winexists", "winget"]
+            .into_iter()
+            .find(|n| *n == name)
+        {
+            if source_callable || certified_builtin_effect_contract(tree, profile, fact)? {
+                return Ok(Some(reason));
+            }
+        }
+    }
+    // Source implementations on these exact static receiver types are real
+    // graph edges. Virtual builtin implementations remain unsupported until
+    // the original override-closure provider is available; never pure-clean.
+    let names = if receiver == SymbolId::of("/client") {
+        Some([
+            ("SoundQuery", "client.SoundQuery"),
+            ("MeasureText", "client.MeasureText"),
+        ])
+    } else if receiver == SymbolId::of("/world") {
+        Some([("Import", "world.Import"), ("Export", "world.Export")])
+    } else {
+        None
+    };
+    if let Some(names) = names {
+        for (name, reason) in names {
+            if identity_name == SymbolId::of(name) {
+                if !source_callable && !certified_builtin_effect_contract(tree, profile, fact)? {
+                    return Err("blocking builtin contract unavailable".into());
+                }
+                return Ok(Some(reason));
+            }
+        }
+    }
+    Ok(None)
+}

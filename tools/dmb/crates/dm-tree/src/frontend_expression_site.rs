@@ -26,6 +26,26 @@ impl ParsedBody<'_> {
                 }
             }
         });
+        for fact in body
+            .parsed()
+            .local_variables
+            .entries()
+            .map_err(str::to_owned)?
+        {
+            if let Some(array) = &fact.array_syntax {
+                for dimension in array.root.dimensions.iter() {
+                    expression(dimension, &mut |expr| {
+                        if expr.span == span
+                            && matches!(&expr.kind, ExprKind::ObjectInitializer { .. })
+                        {
+                            if found.replace(expr).is_some() {
+                                duplicate = true;
+                            }
+                        }
+                    });
+                }
+            }
+        }
         Ok(if duplicate { None } else { found })
     }
 }
@@ -68,6 +88,10 @@ fn statements<'a>(body: &'a [Statement], visit: &mut impl FnMut(&'a Expr)) {
                     ForControl::All { .. } => {}
                     ForControl::Each { iterable, .. } | ForControl::Pair { iterable, .. } => {
                         expression(iterable, visit)
+                    }
+                    ForControl::RangeImplicitArray { end, step, .. } => {
+                        expression(end, visit);
+                        optional(step, visit);
                     }
                     ForControl::Range {
                         start, end, step, ..

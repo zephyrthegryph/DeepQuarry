@@ -1,0 +1,4 @@
+/list/proc/New(a,b)
+    return
+/datum/example/proc/probe()
+    var/datum/value[ignored_dimension()] = actual_initializer()

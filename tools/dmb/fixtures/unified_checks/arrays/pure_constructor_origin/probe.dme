@@ -1,0 +1,6 @@
+/var/g=0
+/list/proc/New(a)
+    g=1
+/proc/p()
+    set SpacemanDMM_should_be_pure=1
+    var/x[1]

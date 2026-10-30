@@ -1,0 +1,6 @@
+/var/global/counter
+/datum/box/proc/work()
+    counter = 1
+/proc/check(tmp/datum/box/x)
+    set SpacemanDMM_should_be_pure = 1
+    x.work()

@@ -1,0 +1,5 @@
+/list/proc/New(a)
+    return
+/proc/p()
+    for(var/x[dimension()] to end_bound())
+        missing_body()

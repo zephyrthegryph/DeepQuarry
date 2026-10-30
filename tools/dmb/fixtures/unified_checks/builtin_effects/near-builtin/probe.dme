@@ -1,0 +1,9 @@
+/proc/Move()
+    return
+/mob/child
+    var/value=0
+    Move()
+        value=1
+/proc/check(mob/M)
+    set SpacemanDMM_should_be_pure=1
+    M.Move()

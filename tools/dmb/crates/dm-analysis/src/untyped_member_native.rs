@@ -202,64 +202,61 @@ pub fn findings(
             locals: &scope.locals,
         };
         let mut error = None;
-        crate::untyped_order::expressions(
-            &body.statement_body().parsed().statements,
-            &mut |expr, at| {
-                if error.is_some() {
-                    return;
+        crate::untyped_order::expressions(body.statement_body().view(), &mut |expr, at| {
+            if error.is_some() {
+                return;
+            }
+            let result = (|| -> Result<(), Unsupported> {
+                if let ExprKind::Literal(text) = &expr.kind {
+                    if let Some(parts) = text.parts().map_err(|e| Unsupported(e.into()))? {
+                        parts.lexical.map_err(|e| Unsupported(format!("{e:?}")))?;
+                    }
                 }
-                let result = (|| -> Result<(), Unsupported> {
-                    if let ExprKind::Literal(text) = &expr.kind {
-                        if let Some(parts) = text.parts().map_err(|e| Unsupported(e.into()))? {
-                            parts.lexical.map_err(|e| Unsupported(format!("{e:?}")))?;
-                        }
-                    }
-                    let (ExprKind::Member {
-                        object, selector, ..
-                    }
-                    | ExprKind::SafeMember {
-                        object, selector, ..
-                    }) = &expr.kind
-                    else {
-                        return Ok(());
-                    };
-                    if statics.contains(selector) && receiver.of(object)?.is_none() {
-                        let source = archive
-                            .original_policy_line(at.start)
-                            .map_err(Unsupported)?;
-                        let captured = inputs
-                            .file(&source.path)
-                            .ok_or_else(|| Unsupported("member origin is not captured".into()))?;
-                        if !captured.is_compiled()
-                            || captured.role() != crate::policy_inputs::PolicyRole::DmSource
-                        {
-                            return Err(Unsupported(
-                                "member origin is not compiled DM source".into(),
-                            ));
-                        }
-                        let line = captured
-                            .analyze_display_line(source.line)
-                            .map_err(|e| Unsupported(e.to_string()))?;
-                        let rel =
-                            dm_preprocess::regions::relative_filesystem_path(&source.path, root)
-                                .as_deref()
-                                .unwrap_or(source.path.as_path())
-                                .to_string_lossy()
-                                .replace('\\', "/");
-                        rows.insert((
-                            rel,
-                            u32::try_from(line)
-                                .map_err(|_| Unsupported("member line overflow".into()))?,
-                            selector.clone(),
+                let (ExprKind::Member {
+                    object, selector, ..
+                }
+                | ExprKind::SafeMember {
+                    object, selector, ..
+                }) = &expr.kind
+                else {
+                    return Ok(());
+                };
+                if statics.contains(selector) && receiver.of(object)?.is_none() {
+                    let source = archive
+                        .original_policy_line(at.start)
+                        .map_err(Unsupported)?;
+                    let captured = inputs
+                        .file(&source.path)
+                        .ok_or_else(|| Unsupported("member origin is not captured".into()))?;
+                    if !captured.is_compiled()
+                        || captured.role() != crate::policy_inputs::PolicyRole::DmSource
+                    {
+                        return Err(Unsupported(
+                            "member origin is not compiled DM source".into(),
                         ));
                     }
-                    Ok(())
-                })();
-                if let Err(e) = result {
-                    error = Some(e);
+                    let line = captured
+                        .analyze_display_line(source.line)
+                        .map_err(|e| Unsupported(e.to_string()))?;
+                    let rel = dm_preprocess::regions::relative_filesystem_path(&source.path, root)
+                        .as_deref()
+                        .unwrap_or(source.path.as_path())
+                        .to_string_lossy()
+                        .replace('\\', "/");
+                    rows.insert((
+                        rel,
+                        u32::try_from(line)
+                            .map_err(|_| Unsupported("member line overflow".into()))?,
+                        selector.clone(),
+                    ));
                 }
-            },
-        );
+                Ok(())
+            })();
+            if let Err(e) = result {
+                error = Some(e);
+            }
+        })
+        .map_err(|e| Unsupported(e.into()))?;
         if let Some(error) = error {
             return Err(error);
         }

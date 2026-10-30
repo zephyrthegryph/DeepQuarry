@@ -363,26 +363,29 @@ impl ColdFrontend {
                 statement_attempted: false,
                 static_receipt: std::sync::OnceLock::new(),
                 item: shared.item.clone(),
+                parameters: Arc::clone(&shared.parameters),
                 shared_syntax: Some(shared),
                 issuer: self,
                 occurrence: issued,
             });
         }
-        let item = dm_syntax::parse_proc_at_span(&self.issued_arena, issued.expanded_span)
-            .map_err(|error| Diagnostic {
-                kind: syntax_kind(error.kind),
-                stage: DiagnosticStage::Syntax,
-                location: self
-                    .location(error.span.start)
-                    .or_else(|| Some(occurrence.source.clone())),
-                message: error.message,
-            })?;
+        let original =
+            dm_syntax::parse_proc_with_origins_at_span(&self.issued_arena, issued.expanded_span)
+                .map_err(|error| Diagnostic {
+                    kind: syntax_kind(error.kind),
+                    stage: DiagnosticStage::Syntax,
+                    location: self
+                        .location(error.span.start)
+                        .or_else(|| Some(occurrence.source.clone())),
+                    message: error.message,
+                })?;
         Ok(ParsedBody {
             statements: None,
             shared_syntax: None,
             statement_attempted: false,
             static_receipt: std::sync::OnceLock::new(),
-            item,
+            item: original.item,
+            parameters: Arc::new(original.parameters),
             issuer: self,
             occurrence: issued,
         })
@@ -527,7 +530,10 @@ mod body_queries;
 pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};
 #[path = "frontend_body_archive.rs"]
 mod body_archive;
-pub use body_archive::{ArchivedBody, BodyArchive, CheckerVariableProperties};
+pub use body_archive::{
+    AnnotationCandidateRoster, ArchivedBody, BodyArchive, CheckerVariableProperties,
+    SourceLocalView, SourceParameterView,
+};
 pub use relative_declarations::BodyCodeIdentity;
 pub use relative_declarations::{CurrentSyntaxChunk, DeclarationSyntax, ItemView, RelativeSyntax};
 #[path = "body_arena.rs"]
@@ -543,6 +549,7 @@ mod expression_site;
 pub struct ParsedBody<'a> {
     static_receipt: std::sync::OnceLock<Result<Arc<IssuedStaticPlan>, String>>,
     item: Item,
+    parameters: Arc<dm_syntax::ParameterSignature>,
     shared_syntax: Option<Arc<body_queries::BodySyntax>>,
     statements: Option<Arc<StatementBody>>,
     statement_attempted: bool,
@@ -630,10 +637,52 @@ impl StatementBody {
         &self.declaration_headers
     }
     pub fn view(&self) -> dm_syntax::StatementView<'_> {
-        dm_syntax::StatementView::all(&self.parsed.statements)
+        dm_syntax::StatementView::from_parsed(&self.parsed)
     }
 }
 impl ParsedBody<'_> {
+    pub fn source_locals(&self) -> Result<SourceLocalView<'_>, String> {
+        self.issuer
+            .validate_parsed_body(self, self.occurrence)
+            .map_err(|e| e.message)?;
+        let syntax = self
+            .statements
+            .as_deref()
+            .ok_or("local source body syntax was not issued")?;
+        body_archive::checked_source_locals(
+            &self.issuer.snapshot.tree,
+            self.occurrence,
+            syntax,
+            &self.issuer.issued_arena,
+        )
+    }
+
+    pub fn source_parameters(&self) -> Result<SourceParameterView<'_>, String> {
+        self.issuer
+            .validate_parsed_body(self, self.occurrence)
+            .map_err(|e| e.message)?;
+        body_archive::checked_source_parameters(
+            &self.issuer.snapshot.tree,
+            self.occurrence,
+            &self.item,
+            &self.parameters,
+            &self.issuer.issued_arena,
+        )
+    }
+    pub fn checker_parameters(
+        &self,
+        profile: dm_ir::PackedU128,
+    ) -> Result<SourceParameterView<'_>, String> {
+        self.issuer
+            .snapshot
+            .tree
+            .validate_checker_builtin_profile(profile)
+            .map_err(|e| format!("parameter checker profile: {e:?}"))?;
+        self.source_parameters()
+    }
+    pub fn parameter_storage(&self) -> &Arc<dm_syntax::ParameterSignature> {
+        &self.parameters
+    }
     pub fn item(&self) -> &Item {
         &self.item
     }

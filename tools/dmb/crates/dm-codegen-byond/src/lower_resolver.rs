@@ -717,6 +717,7 @@ fn query_subject(query: Q) -> &'static str {
         Q::Signature(_) => "procedure signature",
         Q::ProcedureStatic { .. } => "procedure static variable",
         Q::Type(_) | Q::Parent(_) | Q::Ancestry(_) => "type hierarchy",
+        Q::CertifiedHierarchy { .. } => "certified original type hierarchy",
         Q::RuntimeType(_) => "runtime type",
         Q::Resource(_) | Q::ResourceIn { .. } => "resource",
     }

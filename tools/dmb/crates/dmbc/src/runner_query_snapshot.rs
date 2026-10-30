@@ -14,6 +14,8 @@ mod occurrence_pages;
 #[cfg(test)]
 #[path = "runner_query_policy_capture_tests.rs"]
 mod policy_capture_tests;
+#[path = "runner_query_purity.rs"]
+mod purity;
 #[path = "runner_query_raw_policy.rs"]
 mod raw_policy;
 #[path = "runner_query_resolved.rs"]
@@ -23,6 +25,7 @@ mod selected;
 #[path = "runner_query_variable_visibility.rs"]
 mod variable_visibility;
 use dm_tree::frontend::ColdFrontend;
+pub(crate) use purity::PurityScope;
 use std::{
     collections::BTreeMap,
     path::PathBuf,
@@ -209,6 +212,7 @@ impl SourceSnapshot {
             census.semantic_source_evidence(evidence);
         }
         if let Some(queries) = &self.native_raw_queries {
+            queries.purity_census(census);
             let stats = queries.raw_policy_cache_stats();
             census.unknown("query_snapshot.native_raw_query_cache",&format!(
                 "{} nodes; input/params estimate {} bytes; derived estimate {} bytes; cache admission estimates only, private common source-view/config/result allocations not counted exactly",

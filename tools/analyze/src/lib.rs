@@ -90,3 +90,20 @@ pub mod sparse_slots_policy;
 #[cfg(feature = "native-policy")]
 pub mod captured_weak_raw_read;
 pub mod weak_relation_policy;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_system_accessors;
+pub mod generator_test_scope;
+pub mod raw_type_vars_policy;
+pub mod system_accessors_policy;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_rel_write;
+pub mod rel_write_policy;
+pub mod relation_decl_policy;
+
+pub mod raw_ownership_policy;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_stored_refs;
+pub mod stored_refs_policy;

@@ -4,11 +4,32 @@ use super::*;
 /// Invalid or unsupported syntax returns a diagnostic instead of a guessed expression.
 pub fn parse_expression(source: &str) -> ParsedExpr {
     let lexical = lex(source);
+    finish_expression(lexical.tokens, lexical.diagnostics)
+}
+/// Existing primary expression parser over already-issued primary body tokens.
+/// No lexer/source scan and no second expression tree is involved.
+pub(crate) fn parse_expression_span_tokens(source: &str, tokens: &[SpanToken]) -> ParsedExpr {
+    let owned = tokens
+        .iter()
+        .map(|token| Token {
+            kind: token.kind,
+            span: token.span,
+            text: token.text(source).to_owned(),
+        })
+        .collect();
+    finish_expression(owned, Vec::new())
+}
+/// Existing primary parser over the original owned-token producer. Tokens are
+/// temporary parser input, not another semantic/AST owner or a source reparse.
+pub(crate) fn parse_expression_tokens(tokens: &[Token]) -> ParsedExpr {
+    finish_expression(tokens.to_vec(), Vec::new())
+}
+fn finish_expression(tokens: Vec<Token>, diagnostics: Vec<Diagnostic>) -> ParsedExpr {
     let mut parser = ExprParser {
-        tokens: expression_tokens(lexical.tokens),
+        tokens: expression_tokens(tokens),
         index: 0,
         ternary_then_depth: 0,
-        diagnostics: lexical.diagnostics,
+        diagnostics,
     };
     let expr = parser.expression(0);
     if let Some(token) = parser.peek() {

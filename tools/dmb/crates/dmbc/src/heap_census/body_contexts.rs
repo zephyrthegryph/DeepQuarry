@@ -17,6 +17,19 @@ impl HeapCensus {
                     "private HashMap backing and Arc control block",
                 );
             }
+            archive.visit_body_code_storage(|address, len, capacity| {
+                self.buffer(
+                    "query_snapshot.body_archive.code_identities",
+                    address,
+                    len,
+                    capacity,
+                );
+            });
+            let settings = archive.settings_owner_storage();
+            self.slice("query_snapshot.body_archive.settings", settings, true);
+            for metadata in settings.iter().flatten() {
+                self.procedure_metadata("query_snapshot.body_archive.settings", metadata);
+            }
             archive.visit_storage(|source, syntax, bodies| {
                 self.source_text("query_snapshot.body_archive.text", source);
                 self.declaration_syntax("query_snapshot.body_archive.syntax", syntax);

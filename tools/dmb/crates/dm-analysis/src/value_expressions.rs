@@ -129,7 +129,8 @@ pub fn returns<K: Ord, H: ValueHost<K>>(
         proof: constant(true),
         error: None,
     };
-    dm_syntax::visit_statements(&body.parsed().statements, &mut visitor);
+    crate::untyped_order::visit_value_policy(body.view(), &mut visitor)
+        .map_err(|_| ProofError::UnsupportedSyntax)?;
     if let Some(error) = visitor.error {
         Err(ProofError::Host(error))
     } else {

@@ -1,6 +1,12 @@
 //! Assignments lowering over the shared compiler context.
 use super::*;
 
+#[cfg(test)]
+std::thread_local! { static TEXT_PARSE_CALLS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+#[cfg(test)]
+pub(super) fn text_parse_calls() -> usize {
+    TEXT_PARSE_CALLS.with(|count| count.get())
+}
 impl Compiler<'_> {
     pub(super) fn assign_expr(
         &mut self,
@@ -287,6 +293,8 @@ impl Compiler<'_> {
         expression: &str,
         statement: &str,
     ) -> Result<(), LowerError> {
+        #[cfg(test)]
+        TEXT_PARSE_CALLS.with(|count| count.set(count.get() + 1));
         let parsed = parse_expression(expression);
         if !parsed.diagnostics.is_empty() {
             return Err(syntax_failure(statement, &parsed.diagnostics));

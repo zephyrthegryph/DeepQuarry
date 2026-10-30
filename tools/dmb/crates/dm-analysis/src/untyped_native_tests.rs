@@ -410,13 +410,19 @@ fn report_projection_unifies_only_safe_drive_verbatim_spelling() {
 }
 
 #[test]
-fn qualified_untyped_assignment_targets_and_locals_refuse_before_typed_skip() {
+fn qualified_assignment_fields_without_primary_view_refuse() {
+    // The ordinary field path still lacks its original primary property view.
+    assert!(scan("/datum/holder\n    var/SpacemanDMM_private/saved\n    proc/check()\n        saved = new /datum\n").is_err());
+}
+#[test]
+fn original_qualified_locals_and_parameters_match_independent_old_empty_policy() {
+    // Exact former negatives. Actual old Engine comparisons are retained in
+    // array-qualifier-policy-oracles; these local hints have no finding.
     for source in [
-        "/datum/holder\n    var/SpacemanDMM_private/saved\n    proc/check()\n        saved = new /datum\n",
         "/datum/holder\n    var/saved\n    proc/check()\n        var/SpacemanDMM_private/local = new /datum\n        saved = local\n",
         "/datum/holder\n    var/saved\n    proc/check(SpacemanDMM_protected/local)\n        saved = local\n",
-    ]{
-        assert!(scan(source).is_err());
+    ] {
+        assert!(scan(source).unwrap().is_empty(),"{source}");
     }
 }
 

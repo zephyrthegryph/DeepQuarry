@@ -1,0 +1,3 @@
+/proc/probe(i)
+    set SpacemanDMM_should_be_pure = 1
+    i++

@@ -1,0 +1,6 @@
+@FIXTURE@, line 2, column 6:
+error: Attempting operator++ on a /datum which does not overload operator++
+
+@FIXTURE@, line 3, column 5:
+error: Attempting operator-- on a /datum which does not overload operator--
+

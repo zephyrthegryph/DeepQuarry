@@ -8,6 +8,8 @@ pub(super) struct LexedHeader<'a> {
 }
 impl<'a> LexedHeader<'a> {
     pub(super) fn new(source: &'a str) -> Self {
+        #[cfg(test)]
+        LEXICAL_HEADER_CALLS.with(|n| n.set(n.get() + 1));
         let lexed = dm_syntax::lex_spans(source);
         Self {
             source,
@@ -33,6 +35,28 @@ pub(super) struct HeaderView<'a> {
     range: Span,
 }
 impl<'a> HeaderView<'a> {
+    // Only the sibling original-input producer calls this constructor. A view
+    // never claims filesystem/current-frame authority by itself.
+    pub(super) fn original(
+        source: &'a str,
+        tokens: &'a [SpanToken],
+        range: Span,
+    ) -> Result<Self, String> {
+        source
+            .get(range.range())
+            .ok_or("original header range unavailable")?;
+        if tokens
+            .iter()
+            .any(|t| t.span.start < range.start || t.span.end > range.end)
+        {
+            return Err("original header token escaped its issued range".into());
+        }
+        Ok(Self {
+            source,
+            tokens,
+            range,
+        })
+    }
     pub(super) fn text(self) -> &'a str {
         &self.source[self.range.range()]
     }
@@ -102,4 +126,11 @@ impl<'a> HeaderView<'a> {
             && self.tokens[0].span.start == self.range.start
             && self.tokens[0].span.end == self.range.end
     }
+}
+
+#[cfg(test)]
+thread_local! { static LEXICAL_HEADER_CALLS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+#[cfg(test)]
+pub(super) fn lexical_header_calls() -> usize {
+    LEXICAL_HEADER_CALLS.with(std::cell::Cell::get)
 }

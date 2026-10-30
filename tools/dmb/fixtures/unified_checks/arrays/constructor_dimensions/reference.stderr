@@ -1,0 +1,6 @@
+@FIXTURE@, line 4, column 21:
+error: undefined proc: "first_dimension" on /datum/example
+
+@FIXTURE@, line 4, column 42:
+error: undefined proc: "second_dimension" on /datum/example
+

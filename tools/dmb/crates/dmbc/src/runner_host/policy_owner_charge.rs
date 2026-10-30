@@ -98,6 +98,12 @@ impl Owners {
         }
         Ok(())
     }
+    pub fn original_header_storage(&mut self, address: usize, capacity: usize) -> io::Result<()> {
+        if capacity != 0 && self.seen.insert((5, address)) {
+            add(&mut self.totals.payload_capacity, capacity)?;
+        }
+        Ok(())
+    }
     pub fn totals(&self) -> Totals {
         self.totals
     }

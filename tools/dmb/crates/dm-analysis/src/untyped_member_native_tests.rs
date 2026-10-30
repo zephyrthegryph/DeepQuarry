@@ -185,14 +185,21 @@ fn authored_formal_replaces_builtin_flag_but_value_override_preserves_formal() {
 }
 
 #[test]
-fn qualifier_only_field_and_local_receivers_refuse_not_false_clean() {
-    for source in [
-        "/datum/static_owner\n    var/static/danger\n/datum/holder\n    var/SpacemanDMM_private/untyped\n    proc/check()\n        untyped.danger\n",
-        "/datum/static_owner\n    var/static/danger\n/proc/check()\n    var/SpacemanDMM_private/untyped\n    untyped.danger\n",
-        "/datum/static_owner\n    var/static/danger\n/proc/check(SpacemanDMM_protected/untyped)\n    untyped.danger\n",
-    ]{
+fn qualifier_only_fields_without_primary_view_refuse() {
+    let source="/datum/static_owner\n    var/static/danger\n/datum/holder\n    var/SpacemanDMM_private/untyped\n    proc/check()\n        untyped.danger\n";
+    let (root, inputs) = input(source, true);
+    assert!(findings(&inputs, &root, |_| false, || Ok(())).is_err());
+}
+#[test]
+fn original_qualified_local_receivers_preserve_independent_old_static_member_findings() {
+    for (source,line) in [
+        ("/datum/static_owner\n    var/static/danger\n/proc/check()\n    var/SpacemanDMM_private/untyped\n    untyped.danger\n",5),
+        ("/datum/static_owner\n    var/static/danger\n/proc/check(SpacemanDMM_protected/untyped)\n    untyped.danger\n",4),
+    ] {
         let(root,inputs)=input(source,true);
-        assert!(findings(&inputs,&root,|_|false,||Ok(())).is_err());
+        let rows=findings(&inputs,&root,|_|false,||Ok(())).unwrap();
+        assert_eq!(rows.len(),1,"{source}");
+        assert_eq!((rows[0].line,rows[0].name.as_str()),(line,"danger"));
     }
 }
 

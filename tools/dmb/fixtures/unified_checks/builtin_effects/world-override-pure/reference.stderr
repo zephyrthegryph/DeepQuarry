@@ -1,0 +1,6 @@
+@FIXTURE@, line 5, column 12:
+error: /proc/probe calls /world/proc/Export which has override child proc that does impure operations /world/child/proc/Export
+- 6:5: SpacemanDMM_should_not_pure set here
+- 7:6: /world/proc/Export() called here
+- 4:5: Assignment on purity breaking expression() called here
+

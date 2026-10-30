@@ -767,3 +767,52 @@ neither dreammaker nor dreamchecker. The main-workspace proof coordinator and it
 bounded-evidence tests are tracked, so its integration entry point does not rely
 on ignored working-data scripts. No production defaults or compiler publication
 changed, and no pins, full suite or benchmarks were run.
+
+### Original headers, local arrays and effect queries
+
+The next verified cohort retains original procedure header tokens on the existing
+declaration syntax owner. Native signature interpretation and the allocation
+ledger borrow that owner instead of separately lexing each parameter. This is
+not yet a one-parse claim: body and default-expression reparses remain work for
+the following cohort.
+
+The original local-variable ledger now owns array-dimension expression roots.
+Native ordinary and C-style local-array lowering, checker evaluation and the
+ported policy visitors borrow those same roots. Explicit list construction and
+implicit array construction retain distinct provenance; unknown source points
+are not manufactured into physical positions. Unsupported range-array runtime
+lowering and unissued or foreign source receipts still refuse.
+
+Internal QueryDb nodes now cover evaluated body effects, their plan and SCCs,
+purity, resolver observations and sleep checks. They use the original callable
+and body owners, preserve the old evaluated expression order and distinguish
+operational cancellation from a semantic refusal. Their current admitted domain
+is bounded; these nodes do not enable the complete checker by default.
+
+Native original-view producers also cover system-accessor generation,
+undeclared relation writes and stored references. Independent old-engine
+comparisons cover their admitted policies, including constant declaration flags,
+parameter qualifiers, implicit construction and exact empty-result controls.
+Generator query-graph integration and whole-workspace semantic coverage are
+separate remaining steps.
+
+A qualified hierarchy query family delegates to the certified original tree.
+Nine admitted type/parent/ancestry observations match the real runtime host.
+The evidence separately retains two intentional differences in ordinary
+uncertified queries; it does not relabel Unsupported as Missing or false.
+
+Verification for this cohort includes 170 distinct selected core tests, ten host
+tests and nineteen native-policy tests passing after diagnosed repairs. The
+original-owner, diagnostic-profile and bounded workspace IPC proofs pass. A fresh
+optimized main-DME proof again matches all 27 raw policies: 7,273 sources, 226
+records, two pages and an exact warm first page. Preparation took 27.141 seconds,
+the first query 117.375 seconds, and subsequent requests 0.063 and 0.078 seconds.
+These are correctness-run observations, not benchmark or speedup claims. An
+initial debug-binary run exhausted the unchanged request deadline; it is recorded
+as a failed run, not used as evidence for the optimized result.
+
+Ratchets pass, all 382 compared generated files remain byte-identical, and fresh
+DreamChecker reports zero diagnostics (362.326 seconds). All checks are headless.
+Production defaults remain unchanged. Full shared inference, the remaining
+policy and generator clients, resource admission and end-to-end cutover still
+need implementation and proof.

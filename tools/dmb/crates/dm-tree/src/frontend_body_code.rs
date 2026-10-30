@@ -20,17 +20,26 @@ impl<'a> IssuedBodyCode<'a> {
         self.owner.termination
     }
 }
+pub(super) fn issue_archived_code<'a>(
+    occurrence: &'a BodyOccurrence,
+    owner: &'a BodyCodeOwner,
+) -> IssuedBodyCode<'a> {
+    IssuedBodyCode { occurrence, owner }
+}
+pub(super) fn visit_issued_code_storage(
+    owners: &Arc<[BodyCodeOwner]>,
+    mut visit: impl FnMut(usize, usize, usize),
+) {
+    let size = std::mem::size_of_val(owners.as_ref());
+    visit(owners.as_ptr() as usize, size, size);
+    for owner in owners.iter() {
+        let size = std::mem::size_of::<BodyCodeIdentity>();
+        visit(Arc::as_ptr(&owner.identity) as usize, size, size);
+    }
+}
 impl ColdFrontend {
-    pub fn visit_body_code_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
-        let size = std::mem::size_of_val(self.issued_body_codes.as_ref());
-        visit(self.issued_body_codes.as_ptr() as usize, size, size);
-        for owner in self.issued_body_codes.iter() {
-            visit(
-                Arc::as_ptr(&owner.identity) as usize,
-                std::mem::size_of::<BodyCodeIdentity>(),
-                std::mem::size_of::<BodyCodeIdentity>(),
-            );
-        }
+    pub fn visit_body_code_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        visit_issued_code_storage(&self.issued_body_codes, visit)
     }
 
     /// Capability is bound only to the current private syntax, source and body arena.

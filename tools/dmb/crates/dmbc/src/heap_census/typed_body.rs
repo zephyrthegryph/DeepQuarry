@@ -65,10 +65,18 @@ impl HeapCensus {
         self.typed_parsed_body(owner, body.parsed());
     }
     fn typed_parsed_body(&mut self, owner: &str, parsed: &dm_syntax::ParsedBody) {
+        let mut pending = Vec::new();
         self.vec_payload(owner, &parsed.control_origins);
         if self.vec_payload(owner, parsed.local_variables.storage()) {
             for local in parsed.local_variables.storage() {
                 self.slice(owner, &local.type_components, true);
+                if let Some(array) = &local.array_syntax {
+                    self.slice(owner, &array.root.brackets, true);
+                    self.slice(owner, &array.root.dimension_slots, true);
+                    if self.slice(owner, &array.root.dimensions, true) {
+                        pending.extend(array.root.dimensions.iter().map(Node::Expr));
+                    }
+                }
             }
         }
         self.vec_payload(owner, &parsed.pending_bodies);
@@ -77,7 +85,6 @@ impl HeapCensus {
                 self.string(owner, &diagnostic.message);
             }
         }
-        let mut pending = Vec::new();
         statements(self, owner, &parsed.statements, &mut pending);
         self.typed_nodes(owner, pending);
     }
@@ -134,6 +141,11 @@ impl HeapCensus {
                                     self.string(owner, key_binding);
                                     self.string(owner, value_binding);
                                     pending.push(Node::Expr(iterable));
+                                }
+                                ForControl::RangeImplicitArray { binding, end, step } => {
+                                    self.string(owner, binding);
+                                    pending.push(Node::Expr(end));
+                                    pending.extend(step.iter().map(Node::Expr));
                                 }
                                 ForControl::Range {
                                     binding,
@@ -353,6 +365,26 @@ mod local_fact_census_tests {
             + facts
                 .iter()
                 .map(|f| f.type_components.len() * size_of::<dm_syntax::Span>())
+                .sum::<usize>();
+        let expected = expected
+            + facts
+                .iter()
+                .filter_map(|f| f.array_syntax.as_ref())
+                .map(|array| {
+                    let mut bytes = std::mem::size_of_val(array.root.brackets.as_ref())
+                        + std::mem::size_of_val(array.root.dimension_slots.as_ref())
+                        + std::mem::size_of_val(array.root.dimensions.as_ref());
+                    for e in array.root.dimensions.iter() {
+                        let ExprKind::Literal(text) = &e.kind else {
+                            panic!("census fixture expects literal dimensions")
+                        };
+                        bytes += text.raw_storage().capacity();
+                        if let Some((_, n)) = text.shared_storage() {
+                            bytes += n;
+                        }
+                    }
+                    bytes
+                })
                 .sum::<usize>();
         let mut before = HeapCensus::new("with_locals");
         before.typed_parsed_body("typed", &parsed);

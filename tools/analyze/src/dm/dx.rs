@@ -17,21 +17,89 @@ use std::sync::Arc;
 
 use crate::pat;
 use crate::tree::{SourceFile, Tree};
-use crate::util::{py_lstrip, py_rstrip, py_strip};
+use crate::util::{py_rstrip, py_strip};
 
 /// DM's builtin vars (datum, atom, movable, mob, obj, turf, area, client-facing), never declared in code.
 pub const BUILTIN_VARS: &[&str] = &[
-    "type", "parent_type", "tag", "vars", "name", "desc", "suffix", "text", "icon", "icon_state",
-    "icon_w", "icon_h", "dir", "layer", "plane", "alpha", "color", "blend_mode", "appearance",
-    "appearance_flags", "density", "opacity", "anchored", "loc", "locs", "x", "y", "z",
-    "contents", "overlays", "underlays", "vis_contents", "vis_locs", "vis_flags", "verbs",
-    "luminosity", "invisibility", "infra_luminosity", "mouse_opacity", "mouse_over_pointer",
-    "mouse_drag_pointer", "mouse_drop_pointer", "mouse_drop_zone", "pixel_x", "pixel_y", "pixel_w",
-    "pixel_z", "step_x", "step_y", "step_size", "bound_x", "bound_y", "bound_width", "bound_height",
-    "glide_size", "gender", "maptext", "maptext_width", "maptext_height", "maptext_x", "maptext_y",
-    "transform", "filters", "render_source", "render_target", "screen_loc", "animate_movement",
-    "override", "ckey", "key", "client", "sight", "see_in_dark", "see_invisible", "see_infrared",
-    "group", "particles", "areas", "world",
+    "type",
+    "parent_type",
+    "tag",
+    "vars",
+    "name",
+    "desc",
+    "suffix",
+    "text",
+    "icon",
+    "icon_state",
+    "icon_w",
+    "icon_h",
+    "dir",
+    "layer",
+    "plane",
+    "alpha",
+    "color",
+    "blend_mode",
+    "appearance",
+    "appearance_flags",
+    "density",
+    "opacity",
+    "anchored",
+    "loc",
+    "locs",
+    "x",
+    "y",
+    "z",
+    "contents",
+    "overlays",
+    "underlays",
+    "vis_contents",
+    "vis_locs",
+    "vis_flags",
+    "verbs",
+    "luminosity",
+    "invisibility",
+    "infra_luminosity",
+    "mouse_opacity",
+    "mouse_over_pointer",
+    "mouse_drag_pointer",
+    "mouse_drop_pointer",
+    "mouse_drop_zone",
+    "pixel_x",
+    "pixel_y",
+    "pixel_w",
+    "pixel_z",
+    "step_x",
+    "step_y",
+    "step_size",
+    "bound_x",
+    "bound_y",
+    "bound_width",
+    "bound_height",
+    "glide_size",
+    "gender",
+    "maptext",
+    "maptext_width",
+    "maptext_height",
+    "maptext_x",
+    "maptext_y",
+    "transform",
+    "filters",
+    "render_source",
+    "render_target",
+    "screen_loc",
+    "animate_movement",
+    "override",
+    "ckey",
+    "key",
+    "client",
+    "sight",
+    "see_in_dark",
+    "see_invisible",
+    "see_infrared",
+    "group",
+    "particles",
+    "areas",
+    "world",
 ];
 
 // ---- small parsing helpers --------------------------------------------------------------------
@@ -108,7 +176,9 @@ impl Proc {
         match tree.get(&self.rel) {
             Some(f) => {
                 let clean = f.clean();
-                (0..self.body_len).map(|k| (self.body_start + k, clean.line(self.body_start + k))).collect()
+                (0..self.body_len)
+                    .map(|k| (self.body_start + k, clean.line(self.body_start + k)))
+                    .collect()
             }
             None => Vec::new(),
         }
@@ -122,14 +192,18 @@ impl Proc {
     /// The raw (comment-bearing) body lines.
     pub fn raw_body<'t>(&self, tree: &'t Tree) -> Vec<&'t str> {
         match tree.get(&self.rel) {
-            Some(f) => (0..self.body_len).map(|k| f.line(self.body_start + k)).collect(),
+            Some(f) => (0..self.body_len)
+                .map(|k| f.line(self.body_start + k))
+                .collect(),
             None => Vec::new(),
         }
     }
 
     /// The sanitized head line.
     pub fn head<'t>(&self, tree: &'t Tree) -> &'t str {
-        tree.get(&self.rel).map(|f| f.clean().line(self.line)).unwrap_or("")
+        tree.get(&self.rel)
+            .map(|f| f.clean().line(self.line))
+            .unwrap_or("")
     }
 }
 
@@ -161,7 +235,9 @@ pub fn procs_in(f: &SourceFile) -> Vec<Proc> {
                 last = k;
             }
         }
-        let Some(m) = pat!(r"^(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\((.*)\)\s*(?:as\s+[\w/|]+\s*)?$").captures(&head) else {
+        let Some(m) = pat!(r"^(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\((.*)\)\s*(?:as\s+[\w/|]+\s*)?$")
+            .captures(&head)
+        else {
             i += 1;
             continue;
         };
@@ -169,7 +245,11 @@ pub fn procs_in(f: &SourceFile) -> Vec<Proc> {
             i += 1;
             continue;
         }
-        let mut path = if m.s(1).is_empty() { "/".to_string() } else { m.s(1).to_string() };
+        let mut path = if m.s(1).is_empty() {
+            "/".to_string()
+        } else {
+            m.s(1).to_string()
+        };
         if path == "/proc" || path == "/verb" {
             path = "/".to_string();
         }
@@ -203,34 +283,43 @@ fn count(s: &str, c: char) -> usize {
 
 /// [`type_vars`] of every `.dm` file of the tree, each file's table cached by content (`incr::facts`) and built once per run: only an
 /// edited file is scanned again.
-pub fn type_vars_by_file(tree: &crate::tree::Tree) -> std::sync::Arc<HashMap<String, Vec<(String, Vec<String>)>>> {
+pub fn type_vars_by_file(
+    tree: &crate::tree::Tree,
+) -> std::sync::Arc<HashMap<String, Vec<(String, Vec<String>)>>> {
     tree.memo("dx/type-vars-by-file", || {
         let files = tree.select(&crate::tree::CODE_DM);
-        let per: Vec<Vec<(String, Vec<String>)>> = crate::incr::facts("dx-type-vars", &files, |f| {
-            let mut v: Vec<(String, Vec<String>)> = type_vars(&[f])
-                .into_iter()
-                .map(|(k, s)| {
-                    let mut s: Vec<String> = s.into_iter().collect();
-                    s.sort();
-                    (k, s)
-                })
-                .collect();
-            v.sort();
-            v
-        });
+        let per: Vec<Vec<(String, Vec<String>)>> =
+            crate::incr::facts("dx-type-vars", &files, |f| {
+                let mut v: Vec<(String, Vec<String>)> = type_vars(&[f])
+                    .into_iter()
+                    .map(|(k, s)| {
+                        let mut s: Vec<String> = s.into_iter().collect();
+                        s.sort();
+                        (k, s)
+                    })
+                    .collect();
+                v.sort();
+                v
+            });
         files.iter().map(|f| f.rel.clone()).zip(per).collect()
     })
 }
 
 /// [`type_vars`] of `files` (files of `tree`), from [`type_vars_by_file`].
-pub fn type_vars_in(tree: &crate::tree::Tree, files: &[&SourceFile]) -> HashMap<String, HashSet<String>> {
+pub fn type_vars_in(
+    tree: &crate::tree::Tree,
+    files: &[&SourceFile],
+) -> HashMap<String, HashSet<String>> {
     let by = type_vars_by_file(tree);
     let mut table: HashMap<String, HashSet<String>> = HashMap::new();
     for f in files {
         match by.get(&f.rel) {
             Some(rows) => {
                 for (t, vs) in rows {
-                    table.entry(t.clone()).or_default().extend(vs.iter().cloned());
+                    table
+                        .entry(t.clone())
+                        .or_default()
+                        .extend(vs.iter().cloned());
                 }
             }
             None => {
@@ -247,56 +336,13 @@ pub fn type_vars_in(tree: &crate::tree::Tree, files: &[&SourceFile]) -> HashMap<
 /// inside a `/T` block, and grouped `var` blocks).
 pub fn type_vars(files: &[&SourceFile]) -> HashMap<String, HashSet<String>> {
     let mut table: HashMap<String, HashSet<String>> = HashMap::new();
-    for f in files {
-        let clean = f.clean();
-        let mut current: Option<String> = None;
-        let mut group_indent: Option<usize> = None;
-        for line in clean.lines() {
-            if let Some(m) = pat!(r"^(/[\w/]+?)/var/(?:(?:global|static|tmp|const|final)/)*(?:[\w/]+/)?(\w+)\b").captures(line) {
-                table.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
-                current = None;
-                continue;
-            }
-            if let Some(h) = pat!(r"^(/[\w/]+)\s*$").captures(py_rstrip(line)) {
-                current = Some(h.s(1).to_string());
-                group_indent = None;
-                continue;
-            }
-            // SYSTEM_DEF(x) declares /datum/system/x through a macro: its indented body is that type's block.
-            if let Some(h) = pat!(r"^SYSTEM_DEF\((\w+)\)\s*$").captures(py_rstrip(line)) {
-                current = Some(format!("/datum/system/{}", h.s(1)));
-                group_indent = None;
-                continue;
-            }
-            if !line.is_empty() && !line.starts_with([' ', '\t']) {
-                current = None;
-                continue;
-            }
-            let Some(cur) = &current else { continue };
-            if let Some(gi) = group_indent {
-                let indent = line.len() - py_lstrip(line).len();
-                if !py_strip(line).is_empty() && indent > gi {
-                    let t = py_strip(line);
-                    let last = if !line.contains('=') {
-                        t.rsplit('/').next().unwrap_or("")
-                    } else {
-                        py_strip(line.split('=').next().unwrap_or("")).rsplit('/').next().unwrap_or("")
-                    };
-                    if let Some(name) = pat!(r"\A[A-Za-z_]\w*").find(last) {
-                        table.entry(cur.clone()).or_default().insert(name.as_str().to_string());
-                    }
-                    continue;
-                }
-                group_indent = None;
-            }
-            if let Some(g) = pat!(r"^(\s+)var\s*$").captures(line) {
-                group_indent = Some(g.s(1).len());
-                continue;
-            }
-            if let Some(v) = pat!(r"^\s+var/(?:[\w/]+/)?(\w+)\s*(?:=|$|\bas\b)").captures(line) {
-                table.entry(cur.clone()).or_default().insert(v.s(1).to_string());
-            }
-        }
+    for file in files {
+        crate::raw_type_vars_policy::visit(&file.clean().text, |owner, name| {
+            table
+                .entry(owner.to_string())
+                .or_default()
+                .insert(name.to_string());
+        });
     }
     table
 }
@@ -320,7 +366,10 @@ fn file_dx(f: &SourceFile) -> FileDx {
         })
         .collect();
     vars.sort();
-    FileDx { procs: procs_in(f), vars }
+    FileDx {
+        procs: procs_in(f),
+        vars,
+    }
 }
 
 /// The cached [`FileDx`] of every `.dm` file under `code/` and `maps/` (dot-files included), looked
@@ -335,7 +384,10 @@ impl DxFacts {
     /// The facts of the whole tree, built once per run.
     pub fn all(tree: &Tree) -> Arc<DxFacts> {
         tree.memo("dx-facts-all", || {
-            let sel = crate::tree::Select { roots: &[("code", "dm"), ("maps", "dm")], hidden: true };
+            let sel = crate::tree::Select {
+                roots: &[("code", "dm"), ("maps", "dm")],
+                hidden: true,
+            };
             let files = tree.select(&sel);
             let mut facts = crate::incr::facts("dx-file-facts", &files, file_dx);
             for (fd, f) in facts.iter_mut().zip(&files) {
@@ -343,7 +395,11 @@ impl DxFacts {
                     p.rel.clone_from(&f.rel);
                 }
             }
-            let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
+            let index = files
+                .iter()
+                .enumerate()
+                .map(|(i, f)| (f.rel.clone(), i))
+                .collect();
             DxFacts { facts, index }
         })
     }
@@ -381,19 +437,29 @@ impl DxIndex {
                 let fd = facts.of(f);
                 procs.extend(fd.procs.iter().cloned());
                 for (t, vs) in &fd.vars {
-                    table.entry(t.clone()).or_default().extend(vs.iter().cloned());
+                    table
+                        .entry(t.clone())
+                        .or_default()
+                        .extend(vs.iter().cloned());
                 }
             }
             let mut by_name: HashMap<String, Vec<usize>> = HashMap::new();
             for (i, p) in procs.iter().enumerate() {
                 by_name.entry(p.name.clone()).or_default().push(i);
             }
-            DxIndex { type_vars: table, procs, by_name }
+            DxIndex {
+                type_vars: table,
+                procs,
+                by_name,
+            }
         })
     }
 
     pub fn procs_named(&self, name: &str) -> Vec<&Proc> {
-        self.by_name.get(name).map(|v| v.iter().map(|&i| &self.procs[i]).collect()).unwrap_or_default()
+        self.by_name
+            .get(name)
+            .map(|v| v.iter().map(|&i| &self.procs[i]).collect())
+            .unwrap_or_default()
     }
 }
 
@@ -431,8 +497,22 @@ pub fn lineage(path: &str) -> Vec<String> {
         }
     }
     const NON_DATUM: &[&str] = &[
-        "/client", "/world", "/list", "/savefile", "/regex", "/icon", "/image", "/sound", "/matrix", "/database",
-        "/exception", "/generator", "/mutable_appearance", "/particles", "/dm_filter", "/callee",
+        "/client",
+        "/world",
+        "/list",
+        "/savefile",
+        "/regex",
+        "/icon",
+        "/image",
+        "/sound",
+        "/matrix",
+        "/database",
+        "/exception",
+        "/generator",
+        "/mutable_appearance",
+        "/particles",
+        "/dm_filter",
+        "/callee",
     ];
     if let Some(last) = out.last() {
         if last != "/datum" && !NON_DATUM.contains(&last.as_str()) {
@@ -452,8 +532,16 @@ pub fn related(a: &str, b: &str) -> bool {
 }
 
 /// The vars of `path` and its lineage, plus DM's builtin atom vars when `builtins`.
-pub fn vars_of(table: &HashMap<String, HashSet<String>>, path: &str, builtins: bool) -> HashSet<String> {
-    let mut out: HashSet<String> = if builtins { BUILTIN_VARS.iter().map(|s| s.to_string()).collect() } else { HashSet::new() };
+pub fn vars_of(
+    table: &HashMap<String, HashSet<String>>,
+    path: &str,
+    builtins: bool,
+) -> HashSet<String> {
+    let mut out: HashSet<String> = if builtins {
+        BUILTIN_VARS.iter().map(|s| s.to_string()).collect()
+    } else {
+        HashSet::new()
+    };
     for anc in lineage(path) {
         if let Some(v) = table.get(&anc) {
             out.extend(v.iter().cloned());
@@ -484,7 +572,12 @@ pub fn match_paren(text: &str, i: usize) -> Option<usize> {
 /// The argument strings (trimmed) of the call whose `(` is at `text[i]`.
 pub fn call_args(text: &str, i: usize) -> Option<Vec<String>> {
     let end = match_paren(text, i)?;
-    Some(split_top(&text[i + 1..end], ',').iter().map(|a| py_strip(a).to_string()).collect())
+    Some(
+        split_top(&text[i + 1..end], ',')
+            .iter()
+            .map(|a| py_strip(a).to_string())
+            .collect(),
+    )
 }
 
 /// `(start, end)` byte offsets of each argument of the call whose `(` is at `text[i]`.
@@ -567,7 +660,9 @@ pub fn enclosing_call(text: &str, i: usize) -> Option<Enclosing> {
                         _ => {}
                     }
                 }
-                let key = pat!(r"\A\s*([A-Za-z_]\w*)\s*=(?!=)").captures(&text[seg_start..i]).map(|k| k.s(1).to_string());
+                let key = pat!(r"\A\s*([A-Za-z_]\w*)\s*=(?!=)")
+                    .captures(&text[seg_start..i])
+                    .map(|k| k.s(1).to_string());
                 let head = py_rstrip(&text[..m.start(0)]);
                 return Some(Enclosing {
                     name: m.s(1).to_string(),
@@ -613,7 +708,10 @@ mod tests {
 
     #[test]
     fn split_top_respects_nesting() {
-        assert_eq!(split_top("a, f(b, c), [d, e], \"x,y\"", ','), vec!["a", " f(b, c)", " [d, e]", " \"x,y\""]);
+        assert_eq!(
+            split_top("a, f(b, c), [d, e], \"x,y\"", ','),
+            vec!["a", " f(b, c)", " [d, e]", " \"x,y\""]
+        );
     }
 
     #[test]
@@ -633,7 +731,10 @@ mod tests {
 
     #[test]
     fn lineage_adds_implicit_parents() {
-        assert_eq!(lineage("/obj/item"), vec!["/obj/item", "/obj", "/atom/movable", "/atom", "/datum"]);
+        assert_eq!(
+            lineage("/obj/item"),
+            vec!["/obj/item", "/obj", "/atom/movable", "/atom", "/datum"]
+        );
         assert_eq!(lineage("/datum/foo"), vec!["/datum/foo", "/datum"]);
         assert!(lineage("/").is_empty());
         assert_eq!(lineage("/client"), vec!["/client"]);
@@ -651,7 +752,10 @@ mod tests {
 
     #[test]
     fn type_vars_collects_blocks() {
-        let f = SourceFile::from_text("code/a.dm", "/obj/thing\n\tvar/a = 1\n\tvar\n\t\tb\n\t\tc = 2\n/obj/thing/var/d\n");
+        let f = SourceFile::from_text(
+            "code/a.dm",
+            "/obj/thing\n\tvar/a = 1\n\tvar\n\t\tb\n\t\tc = 2\n/obj/thing/var/d\n",
+        );
         let t = type_vars(&[&f]);
         let v = &t["/obj/thing"];
         assert!(v.contains("a") && v.contains("b") && v.contains("c") && v.contains("d"));

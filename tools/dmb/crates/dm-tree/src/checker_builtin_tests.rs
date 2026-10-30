@@ -317,3 +317,45 @@ fn checker_source_type_presence_excludes_engine_only_types_but_includes_authored
         .checker_source_type_presence(PackedU128::from(0u128), "/mob")
         .is_err());
 }
+
+#[test]
+fn builtin_effect_identity_borrows_exact_original_metadata_and_rejects_equal_copy() {
+    let tree = seeded("");
+    let profile = tree.checker_builtin_profile().unwrap();
+    let M::Member {
+        owner, name, data, ..
+    } = Resolver::resolve(
+        &tree,
+        Q::CheckerBuiltinProc {
+            profile,
+            owner: SymbolId::of("/client"),
+            name: SymbolId::of("MeasureText"),
+            verb: false,
+        },
+    )
+    else {
+        panic!("builtin")
+    };
+    let id = tree
+        .checker_builtin_procedure_identity(profile, owner, name, false, &data)
+        .unwrap();
+    tree.with_checker_builtin_procedure(id, |row| {
+        assert_eq!(row.owner, owner);
+        assert_eq!(row.name, name);
+        assert!(Arc::ptr_eq(&row.metadata, &data));
+    })
+    .unwrap();
+    let copied = Arc::new(data.as_ref().clone());
+    assert!(tree
+        .checker_builtin_procedure_identity(profile, owner, name, false, &copied)
+        .is_err());
+    assert!(tree
+        .checker_builtin_procedure_identity(
+            PackedU128::new(profile.get() ^ 1),
+            owner,
+            name,
+            false,
+            &data
+        )
+        .is_err());
+}

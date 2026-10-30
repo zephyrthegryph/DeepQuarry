@@ -151,6 +151,13 @@ impl DeclarationClaims {
         key.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(text.as_bytes()).to_le_bytes());
         key
     }
+    /// Input-capability schema: old fixture contributions with no original
+    /// header input cannot satisfy a native header-owning declaration request.
+    pub(super) fn original_header_key(text: &str) -> Vec<u8> {
+        let mut key = Self::key(text);
+        key.extend_from_slice(b"\0original-header-input-v1");
+        key
+    }
     pub(super) fn retain(&self, keys: &[Vec<u8>]) {
         self.values.retain(keys);
         self.keys.store(keys.len(), Ordering::Relaxed);
@@ -185,7 +192,19 @@ impl DeclarationClaims {
         facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
     ) -> Option<CurrentContribution> {
-        let value = Contribution::capture_source(source, offset, items, facts, ledger)?;
+        self.capture_source_headers(key, source, offset, items, facts, ledger, None)
+    }
+    pub(super) fn capture_source_headers(
+        &self,
+        key: &[u8],
+        source: dm_preprocess::SourceText,
+        offset: usize,
+        items: Vec<Item>,
+        facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+        headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
+    ) -> Option<CurrentContribution> {
+        let value = Contribution::capture_source(source, offset, items, facts, ledger, headers)?;
         let text = value.source.clone();
         let mut current = CurrentContribution::bind(Arc::new(value), &text, offset)?;
         if !self.values.is_shared() {
@@ -684,10 +703,20 @@ impl CurrentContribution {
         facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
     ) -> Option<Self> {
+        Self::fresh_source_headers(source, offset, items, facts, ledger, None)
+    }
+    pub(super) fn fresh_source_headers(
+        source: dm_preprocess::SourceText,
+        offset: usize,
+        items: Vec<Item>,
+        facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+        headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
+    ) -> Option<Self> {
         let text = source.clone();
         Self::bind(
             Arc::new(Contribution::capture_source(
-                source, offset, items, facts, ledger,
+                source, offset, items, facts, ledger, headers,
             )?),
             &text,
             offset,
@@ -720,6 +749,7 @@ impl Contribution {
         mut items: Vec<Item>,
         mut facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
+        headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
     ) -> Option<Self> {
         let text = source.as_ref();
         items_spans(&mut items, text, offset, 0)?;
@@ -738,8 +768,15 @@ impl Contribution {
                     .map(|owner| (origin.span.start as usize, Arc::clone(owner)))
             })
             .collect();
-        let syntax =
-            Arc::new(RelativeSyntax::capture_with_settings(items, source.clone(), &settings).ok()?);
+        let syntax = Arc::new(
+            RelativeSyntax::capture_with_settings_headers(
+                items,
+                source.clone(),
+                &settings,
+                headers,
+            )
+            .ok()?,
+        );
         let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
         let event_leaf = crate::allocation_ledger::ValidatedEventLeaf::new(ledger.events.clone());
         let origin_max = facts
@@ -772,6 +809,7 @@ impl Contribution {
             items.to_vec(),
             facts.clone(),
             ledger.clone(),
+            None,
         )
     }
     #[cfg(test)]

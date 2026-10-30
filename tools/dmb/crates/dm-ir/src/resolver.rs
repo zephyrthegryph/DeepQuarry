@@ -178,7 +178,27 @@ pub enum ResolveQuery {
     },
     /// Captured authored formal variable declaration, excluding runtime-only
     /// fields and default-value overrides. Missing says SOURCE absence only.
-    SourceVarDeclaration { owner: SymbolId, name: SymbolId },
+    SourceVarDeclaration {
+        owner: SymbolId,
+        name: SymbolId,
+    },
+    /// Append-only wire identity. This is NOT ordinary Type/Parent/Ancestry;
+    /// its answer requires the original tree's sealed complete hierarchy view.
+    CertifiedHierarchy {
+        kind: HierarchyQuestion,
+        path: SymbolId,
+    },
+}
+
+/// Qualified ORIGINAL hierarchy question. Member inventory completeness is a
+/// different contract and cannot turn a certified hierarchy's absence unknown.
+#[derive(
+    Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, serde::Serialize, serde::Deserialize,
+)]
+pub enum HierarchyQuestion {
+    Type,
+    Parent,
+    Ancestry,
 }
 
 /// Source declaration form is independent of its executable implementation.
@@ -200,15 +220,17 @@ impl ResolveQuery {
             | Self::IntrinsicCallableName(_)
             | Self::CheckerIntrinsicCallable { .. }
             | Self::CheckerBuiltinVar { .. }
-            | Self::CheckerBuiltinProc { .. } | Self::SourceVarDeclaration { .. } => ReadDomain::Tree,
+            | Self::CheckerBuiltinProc { .. }
+            | Self::SourceVarDeclaration { .. } => ReadDomain::Tree,
             Self::SourceDeclarationChain { .. }
             | Self::MemberCallableVerbName(_)
             | Self::MemberCallableName(_) => ReadDomain::OwnerCallable(self),
             Self::ProcedureStatic { procedure, .. } => ReadDomain::OwnerProcedureStatic(procedure),
             Self::Resource(_) | Self::ResourceIn { .. } => ReadDomain::ResourceSearch,
-            Self::Type(owner) | Self::Parent(owner) | Self::Ancestry(owner) => {
-                ReadDomain::OwnerHierarchy(owner)
-            }
+            Self::Type(owner)
+            | Self::Parent(owner)
+            | Self::Ancestry(owner)
+            | Self::CertifiedHierarchy { path: owner, .. } => ReadDomain::OwnerHierarchy(owner),
             Self::HasMemberVar { .. }
             | Self::DeclaredVarType { .. }
             | Self::VarStorage { .. }
@@ -569,3 +591,32 @@ mod tests {
 #[cfg(test)]
 #[path = "resolver_sequence_tests.rs"]
 mod sequence_tests;
+
+#[cfg(test)]
+mod hierarchy_wire_tests {
+    use super::*;
+    #[test]
+    fn qualified_hierarchy_wire_tag_is_distinct_and_old_query_json_stays_exact() {
+        let path = SymbolId::of("/datum/wire");
+        let ordinary = serde_json::to_value(ResolveQuery::Type(path)).unwrap();
+        assert_eq!(ordinary, serde_json::json!({"Type":path}));
+        for kind in [
+            HierarchyQuestion::Type,
+            HierarchyQuestion::Parent,
+            HierarchyQuestion::Ancestry,
+        ] {
+            let question = ResolveQuery::CertifiedHierarchy { kind, path };
+            let wire = serde_json::to_value(question).unwrap();
+            assert_eq!(
+                wire,
+                serde_json::json!({"CertifiedHierarchy":{"kind":kind,"path":path}})
+            );
+            assert_ne!(wire, ordinary);
+            assert_eq!(
+                serde_json::from_value::<ResolveQuery>(wire).unwrap(),
+                question
+            );
+            assert_eq!(question.domain(), ReadDomain::OwnerHierarchy(path));
+        }
+    }
+}

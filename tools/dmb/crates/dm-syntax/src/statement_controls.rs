@@ -66,9 +66,10 @@ pub(super) fn parse_for(
             declaration: clause.trim().into(),
         });
     }
-    if let Some(at) = clause.find(" in ") {
-        let binding = clause[..at].trim();
-        let iterable = clause[at + 4..].trim();
+    if let Some((binding_source, iterable_source)) = split_top_level_keyword(clause, "in") {
+        let at = binding_source.len();
+        let binding = binding_source.trim();
+        let iterable = iterable_source.trim();
         if binding.is_empty() {
             diagnostics.push(Diagnostic {
                 span: item.header_span,
@@ -96,6 +97,23 @@ pub(super) fn parse_for(
             return None;
         }
         if pair.len() == 2 {
+            // Pinned checker ForKeyValue requires a var/key declaration with
+            // no initializer, and a bare value name. Keep compiler syntax
+            // acceptance unchanged, but do not issue checker-local authority
+            // for a broader native pair-loop shape.
+            let value = pair[1].trim();
+            let mut chars = value.chars();
+            let bare_value = chars.next().is_some_and(|c| c == '_' || c.is_alphabetic())
+                && chars.all(|c| c == '_' || c.is_alphanumeric());
+            if !(binding.starts_with("var/") || starts_keyword(binding, "var"))
+                || crate::local_variable_syntax::top_level_local_assignment(pair[0]).is_some()
+                || split_top_level_keyword(pair[0], "as").is_some()
+                || !bare_value
+            {
+                origins
+                    .locals
+                    .decline("pair-loop shape has no original checker declaration receipt");
+            }
             return parse_expr(
                 iterable,
                 base + clause.find(iterable).unwrap_or(at + 4),
@@ -128,7 +146,41 @@ pub(super) fn parse_for(
         });
     }
     if let Some((begin, remainder)) = split_top_level_keyword(clause, "to") {
-        let Some((binding, start_source)) = begin.split_once('=') else {
+        if crate::local_variable_syntax::top_level_local_assignment(begin).is_none()
+            && (begin.starts_with("var/") || starts_keyword(begin, "var"))
+        {
+            origins.local_binding(
+                clause,
+                &lexical,
+                clause_base,
+                begin.trim(),
+                crate::LocalSourceKind::ForInitializer,
+            );
+            let array = origins
+                .locals
+                .entries()
+                .ok()
+                .and_then(|entries| entries.last())
+                .and_then(|fact| fact.implicit_list_initializer());
+            if array.is_none() {
+                diagnostics.push(Diagnostic {
+                    span: item.header_span,
+                    kind: DiagnosticKind::Unsupported,
+                    message: "range start has no primary implicit array constructor".into(),
+                });
+                return None;
+            }
+            let (end, step) = parse_range_tail(remainder, clause, base, diagnostics)?;
+            return Some(ForControl::RangeImplicitArray {
+                binding: begin.trim().into(),
+                end,
+                step,
+            });
+        }
+        let Some((binding, start_source)) =
+            crate::local_variable_syntax::top_level_local_assignment(begin)
+                .map(|at| (&begin[..at], &begin[at + 1..]))
+        else {
             diagnostics.push(Diagnostic {
                 span: item.header_span,
                 kind: DiagnosticKind::Statement,
@@ -149,7 +201,7 @@ pub(super) fn parse_for(
             clause,
             &lexical,
             clause_base,
-            binding,
+            begin,
             crate::LocalSourceKind::ForBinding,
         );
         return parse_range_control(binding, start_source, remainder, clause, base, diagnostics);
@@ -166,15 +218,15 @@ pub(super) fn parse_for(
         let initializer = if initial.is_empty() {
             None
         } else if initial.starts_with("var/") || starts_keyword(initial, "var") {
-            let (declaration, value) = initial
-                .split_once('=')
-                .map_or((initial, None), |(name, value)| {
-                    (name.trim(), Some(value.trim()))
-                });
+            let (declaration, value) =
+                crate::local_variable_syntax::top_level_local_assignment(initial)
+                    .map_or((initial, None), |at| {
+                        (initial[..at].trim(), Some(initial[at + 1..].trim()))
+                    });
             let value = if let Some(value) = value {
                 Some(parse_expr(
                     value,
-                    base + clause.find(value).unwrap_or(0),
+                    clause_base + (value.as_ptr() as usize - clause.as_ptr() as usize),
                     diagnostics,
                 )?)
             } else {
@@ -184,7 +236,7 @@ pub(super) fn parse_for(
                 clause,
                 &lexical,
                 clause_base,
-                declaration,
+                initial,
                 crate::LocalSourceKind::ForInitializer,
             );
             Some(ForInitializer::Declare {
@@ -238,37 +290,47 @@ fn parse_range_control(
     base: usize,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<ForControl> {
-    let (end_source, step_source) = remainder
-        .split_once(" step ")
-        .map_or((remainder, None), |(end, step)| (end, Some(step)));
     let start_source = start_source.trim();
-    let end_source = end_source.trim();
     let start = parse_expr(
         start_source,
-        base + clause.find(start_source).unwrap_or(0),
+        base + (start_source.as_ptr() as usize - clause.as_ptr() as usize),
         diagnostics,
     )?;
-    let end = parse_expr(
-        end_source,
-        base + clause.find(end_source).unwrap_or(0),
-        diagnostics,
-    )?;
-    let step = if let Some(source) = step_source {
-        let source = source.trim();
-        Some(parse_expr(
-            source,
-            base + clause.rfind(source).unwrap_or(0),
-            diagnostics,
-        )?)
-    } else {
-        None
-    };
+    let (end, step) = parse_range_tail(remainder, clause, base, diagnostics)?;
     Some(ForControl::Range {
         binding: binding.into(),
         start,
         end,
         step,
     })
+}
+
+fn parse_range_tail(
+    remainder: &str,
+    clause: &str,
+    base: usize,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<(Expr, Option<Expr>)> {
+    let (end_source, step_source) = remainder
+        .split_once(" step ")
+        .map_or((remainder, None), |(end, step)| (end, Some(step)));
+    let end_source = end_source.trim();
+    let end = parse_expr(
+        end_source,
+        base + (end_source.as_ptr() as usize - clause.as_ptr() as usize),
+        diagnostics,
+    )?;
+    let step = if let Some(source) = step_source {
+        let source = source.trim();
+        Some(parse_expr(
+            source,
+            base + (source.as_ptr() as usize - clause.as_ptr() as usize),
+            diagnostics,
+        )?)
+    } else {
+        None
+    };
+    Some((end, step))
 }
 
 fn control_close(rest: &str) -> Option<usize> {

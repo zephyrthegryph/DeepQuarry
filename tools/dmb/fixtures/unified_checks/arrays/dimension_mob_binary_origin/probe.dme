@@ -1,0 +1,5 @@
+/list/proc/New(a)
+    return
+/proc/p(mob/M)
+    set SpacemanDMM_should_be_pure=1
+    var/x[M << 1]

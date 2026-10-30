@@ -1,0 +1,6 @@
+@FIXTURE@, line 5, column 12:
+error: /proc/probe calls /client/proc/MeasureText which has override child proc that does impure operations /client/child/proc/MeasureText
+- 6:5: SpacemanDMM_should_not_pure set here
+- 7:6: /client/proc/MeasureText() called here
+- 4:5: Assignment on purity breaking expression() called here
+

@@ -1,0 +1,7 @@
+/datum/base/proc/blocking()
+    return null
+/datum/base/child/blocking()
+    sleep(1)
+/proc/probe(datum/base/B)
+    set SpacemanDMM_should_not_sleep=1
+    B.blocking()

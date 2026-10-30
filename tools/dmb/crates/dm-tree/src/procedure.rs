@@ -5,7 +5,9 @@ use dm_ir::{
 };
 use dm_syntax::{Span, TokenKind};
 mod header;
+pub(crate) mod header_input;
 use header::{HeaderView, LexedHeader};
+pub(crate) use header_input::{HeaderAllocationReceipt, OriginalProcedureHeaders};
 fn intern(symbols: &mut SymbolTable, text: &str) -> Result<SymbolId, String> {
     symbols.intern(text).map_err(|error| error.to_string())
 }
@@ -93,15 +95,11 @@ impl From<SignatureError> for String {
     }
 }
 fn parameter(
-    text: &str,
+    view: HeaderView<'_>,
     start: usize,
     symbols: &mut SymbolTable,
 ) -> Result<Parameter, SignatureError> {
-    let lexed = LexedHeader::new(text);
-    if !lexed.valid() {
-        return Err("invalid procedure argument tokens".into());
-    }
-    let view = lexed.view();
+    let text = view.text();
     let top = view.top_level();
     let equal = view.assignment();
     let annotation = top
@@ -215,12 +213,8 @@ fn parameter(
                     after_header: false,
                 });
             }
-            expression_view(
-                view.slice(index + 1, limit)
-                    .trim(),
-                symbols,
-            )
-            .map_err(SignatureError::from)
+            expression_view(view.slice(index + 1, limit).trim(), symbols)
+                .map_err(SignatureError::from)
         })
         .transpose()?;
     let input_annotation = annotation
@@ -278,13 +272,32 @@ pub(crate) fn parse_signature_declarations(
     trailing: &str,
     symbols: &mut SymbolTable,
 ) -> Result<ParsedSignature, SignatureError> {
+    // Standalone compatibility entry. The native frontend calls the original
+    // issued token-view route below and never enters this lexical adapter.
+    let args = LexedHeader::new(arguments);
+    let tail = LexedHeader::new(trailing);
+    if !args.valid() || !tail.valid() {
+        return Err("invalid procedure header tokens".into());
+    }
+    parse_signature_views(args.view(), tail.view(), symbols)
+}
+fn parse_signature_views(
+    arguments_view: HeaderView<'_>,
+    trailing_view: HeaderView<'_>,
+    symbols: &mut SymbolTable,
+) -> Result<ParsedSignature, SignatureError> {
+    #[cfg(test)]
+    SIGNATURE_INTERPRETATIONS.with(|n| n.set(n.get() + 1));
+    let arguments = arguments_view.text();
+    let trailing = trailing_view.text();
     let mut parameters = Vec::new();
     let mut declarations = Vec::new();
     let mut variadic = false;
     let mut start = 0;
-    let mut stops: Vec<_> = top_level_tokens(arguments)
+    let mut stops: Vec<_> = arguments_view
+        .top_level()
         .into_iter()
-        .filter(|(token, _)| token == ",")
+        .filter(|(token, _)| *token == ",")
         .map(|(_, span)| span.start)
         .collect();
     stops.push(arguments.len());
@@ -314,14 +327,12 @@ pub(crate) fn parse_signature_declarations(
                 dm_ir::TypePath::parse(text).map_err(|_| {
                     "unsupported absolute declaration in procedure argument list".to_string()
                 })?;
-                let lexed = LexedHeader::new(text);
-                if !lexed.valid()
-                    || text.trim_matches('/').split('/').any(|part| {
-                        let offset = part.as_ptr() as usize - text.as_ptr() as usize;
-                        matches!(part, "var" | "proc" | "verb")
-                            || !lexed.view().slice(offset, offset + part.len()).ident()
-                    })
-                {
+                let view = arguments_view.slice(start + leading, start + leading + text.len());
+                if text.trim_matches('/').split('/').any(|part| {
+                    let offset = part.as_ptr() as usize - text.as_ptr() as usize;
+                    matches!(part, "var" | "proc" | "verb")
+                        || !view.slice(offset, offset + part.len()).ident()
+                }) {
                     return Err(
                         "unsupported absolute declaration in procedure argument list".into(),
                     );
@@ -331,7 +342,11 @@ pub(crate) fn parse_signature_declarations(
                     relative_span: Span::new(start + leading, start + leading + text.len()),
                 });
             } else {
-                parameters.push(parameter(text, start + leading, symbols)?);
+                parameters.push(parameter(
+                    arguments_view.slice(start + leading, start + leading + text.len()),
+                    start + leading,
+                    symbols,
+                )?);
             }
         }
         start = stop + 1;
@@ -340,10 +355,12 @@ pub(crate) fn parse_signature_declarations(
     let return_annotation = if trailing.is_empty() {
         None
     } else {
-        Some(expression(
-            trailing
-                .strip_prefix("as ")
-                .ok_or("unsupported procedure return annotation")?,
+        let annotation = trailing
+            .strip_prefix("as ")
+            .ok_or("unsupported procedure return annotation")?;
+        let trimmed = trailing_view.trim();
+        Some(expression_view(
+            trimmed.slice(3, 3 + annotation.len()),
             symbols,
         )?)
     };
@@ -392,19 +409,21 @@ pub(crate) fn parse_setting(
         && checker_name.valid()
         && matches!(checker_tokens.tokens(), [token] if token.kind == TokenKind::Ident
             && checker_tokens.spelling(token) == name);
-    if !checker_setting && !matches!(
-        name,
-        "name"
-            | "desc"
-            | "category"
-            | "src"
-            | "invisibility"
-            | "waitfor"
-            | "hidden"
-            | "background"
-            | "instant"
-            | "popup_menu"
-    ) {
+    if !checker_setting
+        && !matches!(
+            name,
+            "name"
+                | "desc"
+                | "category"
+                | "src"
+                | "invisibility"
+                | "waitfor"
+                | "hidden"
+                | "background"
+                | "instant"
+                | "popup_menu"
+        )
+    {
         return Err(format!("unknown procedure setting: {name}"));
     }
     Ok(ProcedureSetting {
@@ -694,12 +713,26 @@ mod tests {
     #[test]
     fn checker_prefix_settings_preserve_native_symbolic_metadata() {
         let mut symbols = SymbolTable::default();
-        let setting = parse_setting("set SpacemanDMM_should_be_pure = candidate", &mut symbols).unwrap();
-        assert_eq!(symbols.text(setting.name), Some("SpacemanDMM_should_be_pure"));
+        let setting =
+            parse_setting("set SpacemanDMM_should_be_pure = candidate", &mut symbols).unwrap();
+        assert_eq!(
+            symbols.text(setting.name),
+            Some("SpacemanDMM_should_be_pure")
+        );
         assert_eq!(setting.operation, SettingOperation::Assign);
-        assert_eq!(symbols.text(setting.value.tokens[0].text), Some("candidate"));
-        for malformed in ["set SpacemanDMM_x.y = 1", "set SpacemanDMM_x y = 1", "set SpacemanDMM_x ="] {
-            assert!(parse_setting(malformed, &mut symbols).is_err(), "{malformed}");
+        assert_eq!(
+            symbols.text(setting.value.tokens[0].text),
+            Some("candidate")
+        );
+        for malformed in [
+            "set SpacemanDMM_x.y = 1",
+            "set SpacemanDMM_x y = 1",
+            "set SpacemanDMM_x =",
+        ] {
+            assert!(
+                parse_setting(malformed, &mut symbols).is_err(),
+                "{malformed}"
+            );
         }
     }
     #[test]
@@ -746,7 +779,7 @@ mod tests {
                     .into(),
             }
         }
-        let arguments = "  tmp/datum/item/values[ 2 + length(list(1, 2)) ][ ] = list(\"as\", \"in\", call(1, 2)) as anything | null in world.contents , resource = 'icons/é.dmi' , ...";
+        let arguments = "  tmp/datum/item/values[ 2 + length(list(1, 2)) ][ ] = list(\"as\", \"in\", call(1, 2)) as anything | null in world.contents , resource = 'icons/Ã©.dmi' , ...";
         let mut symbols = SymbolTable::default();
         let signature = parse_signature(arguments, "as num | null", &mut symbols).unwrap();
         assert_eq!(signature.parameters.len(), 2);
@@ -783,11 +816,18 @@ mod tests {
         assert_eq!(first.relative_span, Span::new(2, first_end));
         assert_eq!(
             signature.parameters[1].default,
-            Some(owned_expression("'icons/é.dmi'", &mut symbols))
+            Some(owned_expression("'icons/Ã©.dmi'", &mut symbols))
         );
         assert_eq!(
             signature.return_annotation,
             Some(owned_expression("num | null", &mut symbols))
         );
     }
+}
+
+#[cfg(test)]
+thread_local! { static SIGNATURE_INTERPRETATIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+#[cfg(test)]
+fn signature_interpretations() -> usize {
+    SIGNATURE_INTERPRETATIONS.with(std::cell::Cell::get)
 }

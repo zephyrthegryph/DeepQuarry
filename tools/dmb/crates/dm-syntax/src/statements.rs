@@ -31,6 +31,11 @@ pub enum ForControl {
         end: Expr,
         step: Option<Expr>,
     },
+    RangeImplicitArray {
+        binding: String,
+        end: Expr,
+        step: Option<Expr>,
+    },
     CStyle {
         initializer: Option<ForInitializer>,
         condition: Option<Expr>,
@@ -176,6 +181,7 @@ pub fn parse_body_items(items: &[Item]) -> ParsedBody {
         locals: &mut result.local_variables,
     };
     result.statements = parse_sequence(items, &mut result.diagnostics, &mut origins);
+    result.local_variables.finish_source_order();
     result
 }
 
@@ -850,9 +856,7 @@ fn parse_var_header(
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<StatementKind> {
     let header = item.header.trim();
-    let assignment = header
-        .find('=')
-        .filter(|&at| !header[at + 1..].starts_with('='));
+    let assignment = crate::local_variable_syntax::top_level_local_assignment(header);
     let declaration = format!(
         "{prefix}{}",
         header[..assignment.unwrap_or(header.len())].trim()
@@ -872,7 +876,8 @@ fn parse_var_header(
     }
     let value = if let Some(at) = assignment {
         let source = header[at + 1..].trim();
-        let offset = item.header_span.start + item.header.find(source).unwrap_or(at + 1);
+        let offset =
+            item.header_span.start + (source.as_ptr() as usize - item.header.as_ptr() as usize);
         let parsed = parse_expr(source, offset, diagnostics)?;
         // `in` binds looser than `=` in DreamMaker, so `var/x = a in L` is `(var/x = a) in L`: the local gets `a`, and a
         // membership test whose result nobody reads (and that has no effect) is dropped.

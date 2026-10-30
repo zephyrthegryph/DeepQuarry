@@ -416,6 +416,17 @@ impl CapturedPolicyInputs {
     fn budget_charge_base(&self) -> usize {
         let mut owners = owner_charge::Owners::default();
         let mut charge = 4096usize;
+        let mut header_charge = Ok(());
+        self.policy
+            .archive()
+            .visit_original_header_storage(|address, _, capacity| {
+                if header_charge.is_ok() {
+                    header_charge = owners.original_header_storage(address, capacity);
+                }
+            });
+        if header_charge.is_err() {
+            return usize::MAX;
+        }
         charge = charge.saturating_add(
             self.explicit_search_folders
                 .capacity()

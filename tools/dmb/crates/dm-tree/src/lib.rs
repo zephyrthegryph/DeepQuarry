@@ -34,12 +34,14 @@ pub use member_arena::MemberArena;
 pub use owner_normalization::{
     NormalizationStorageView, ResolvedMember, SharedNormalizedDeclarations,
 };
+mod certified_hierarchy;
 pub mod checker_builtins;
 pub mod non_text;
 mod normalize;
 mod procedure;
 pub mod procedure_statics;
 mod resolver;
+pub use certified_hierarchy::HierarchyView;
 pub mod settings;
 pub mod type_paths;
 mod variable_facts;

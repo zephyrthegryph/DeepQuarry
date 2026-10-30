@@ -509,3 +509,86 @@ impl SemanticTree {
 #[cfg(test)]
 #[path = "checker_builtin_tests.rs"]
 mod tests;
+
+/// Scalar identity in the ORIGINAL hash-certified fixed DSL. This proves
+/// checker declaration provenance, not a runtime effect/purity contract.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct CheckerBuiltinProcedureIdentity {
+    profile: PackedU128,
+    ordinal: u32,
+}
+impl CheckerBuiltinProcedureIdentity {
+    pub fn profile(self) -> PackedU128 {
+        self.profile
+    }
+    pub fn ordinal(self) -> u32 {
+        self.ordinal
+    }
+}
+impl SemanticTree {
+    pub fn checker_builtin_procedure_identity(
+        &self,
+        profile: PackedU128,
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+        metadata: &Arc<DeclarationMeaning>,
+    ) -> Result<CheckerBuiltinProcedureIdentity, CheckerBuiltinError> {
+        self.validate_checker_builtin_profile(profile)?;
+        let catalog = pinned_catalog()?;
+        let kind = if verb {
+            MemberKind::Verb
+        } else {
+            MemberKind::Proc
+        };
+        let index = *catalog
+            .members
+            .get(&(owner, name, kind))
+            .ok_or(CheckerBuiltinError::Shape("builtin procedure absent"))?;
+        let row = &catalog.declarations[index];
+        if !Arc::ptr_eq(&row.metadata, metadata)
+            || row.metadata.procedure.is_none()
+            || row.metadata.inherited_opaque.is_some()
+        {
+            return Err(CheckerBuiltinError::Shape(
+                "builtin procedure is not original catalog metadata",
+            ));
+        }
+        Ok(CheckerBuiltinProcedureIdentity {
+            profile,
+            ordinal: row.ordinal,
+        })
+    }
+    /// Borrow the original declaration; no projected builtin table or AST.
+    pub fn with_checker_builtin_procedure<R>(
+        &self,
+        identity: CheckerBuiltinProcedureIdentity,
+        read: impl FnOnce(&CheckerBuiltinDeclaration) -> R,
+    ) -> Result<R, CheckerBuiltinError> {
+        self.validate_checker_builtin_profile(identity.profile)?;
+        let catalog = pinned_catalog()?;
+        let row = catalog
+            .declarations
+            .iter()
+            .find(|row| row.ordinal == identity.ordinal)
+            .ok_or(CheckerBuiltinError::Shape("builtin ordinal absent"))?;
+        if !matches!(row.kind, MemberKind::Proc | MemberKind::Verb)
+            || row.metadata.procedure.is_none()
+        {
+            return Err(CheckerBuiltinError::Shape(
+                "builtin identity is not a callable",
+            ));
+        }
+        if catalog
+            .members
+            .get(&(row.owner, row.name, row.kind))
+            .map(|i| catalog.declarations[*i].ordinal)
+            != Some(identity.ordinal)
+        {
+            return Err(CheckerBuiltinError::Shape(
+                "builtin identity is not selected declaration",
+            ));
+        }
+        Ok(read(row))
+    }
+}

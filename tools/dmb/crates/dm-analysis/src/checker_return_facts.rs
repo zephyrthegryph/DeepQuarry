@@ -49,6 +49,37 @@ pub fn return_hint_with_prefix(
     name: SymbolId,
     archive: Option<&dm_tree::frontend::BodyArchive>,
 ) -> Result<ReturnHint, String> {
+    return_hint_mode(tree, resolver, profile, receiver, name, archive, None)
+}
+pub fn return_hint_with_prefix_for_purity(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    permit: &PuritySettingsPermit<'_>,
+) -> Result<ReturnHint, String> {
+    permit.require(tree, archive, profile, permit.identity)?;
+    return_hint_mode(
+        tree,
+        resolver,
+        profile,
+        receiver,
+        name,
+        archive,
+        Some(permit),
+    )
+}
+fn return_hint_mode(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    permit: Option<&PuritySettingsPermit<'_>>,
+) -> Result<ReturnHint, String> {
     if resolver.source_owner() != Resolver::source_owner(tree) {
         return Err("return context lacks original compiled owner provenance".into());
     }
@@ -60,6 +91,9 @@ pub fn return_hint_with_prefix(
         CallableFact::CheckerBuiltin {
             declaring_owner, ..
         } => {
+            if permit.is_some() {
+                return Err("purity source permit cannot certify a builtin callable".into());
+            }
             // Gate every name by genuine hash-qualified declaration provenance;
             // this table never proves callable presence or runtime ABI metadata.
             if declaring_owner != SymbolId::of("/") {
@@ -98,6 +132,9 @@ pub fn return_hint_with_prefix(
             })
         }
         CallableFact::Source { identity, metadata } => {
+            if let Some(permit) = permit {
+                permit.require(tree, archive, profile, identity)?;
+            }
             if identity.owner == SymbolId::of("/") && identity.name == SymbolId::of("astype") {
                 return Err("pinned astype needs shared argument typepath/value facts".into());
             }
@@ -110,8 +147,8 @@ pub fn return_hint_with_prefix(
             {
                 None
             } else {
-                validate_source_directives(tree, archive, identity)?;
-                prefix_return_override(tree, archive, identity)?
+                validate_source_directives_mode(tree, archive, identity, permit)?;
+                prefix_return_override_mode(tree, archive, identity, permit)?
             };
             let query = Q::SourceDeclarationChain {
                 owner: identity.owner,
@@ -188,6 +225,172 @@ pub fn return_hint_with_prefix(
 #[path = "checker_return_facts_tests.rs"]
 mod tests;
 
+/// Narrow source-setting admission for the effect producer only. Fields are
+/// sealed and borrow the ORIGINAL archive (therefore its tree, mapping and
+/// BodySyntax host). A permit cannot authorize an equal-but-foreign revision.
+pub struct PuritySettingsPermit<'a> {
+    archive: &'a dm_tree::frontend::BodyArchive,
+    profile: PackedU128,
+    identity: dm_ir::ProcedureIdentity,
+    own_pure: Option<dm_syntax::Span>,
+    own_no_sleep: Option<dm_syntax::Span>,
+    own_sleep_exempt: Option<dm_syntax::Span>,
+}
+impl<'a> PuritySettingsPermit<'a> {
+    pub fn issue(
+        archive: &'a dm_tree::frontend::BodyArchive,
+        profile: PackedU128,
+        identity: dm_ir::ProcedureIdentity,
+    ) -> Result<Self, String> {
+        let tree = archive.tree();
+        tree.validate_checker_builtin_profile(profile)
+            .map_err(|e| format!("purity settings profile unavailable: {e:?}"))?;
+        let (own_pure, own_no_sleep, own_sleep_exempt) =
+            archive.with_initial_setting_prefix(identity, |prefix| -> Result<_, String> {
+                let mut pure = None;
+                let mut no_sleep = None;
+                let mut exempt = None;
+                for statement in prefix.settings() {
+                    let dm_syntax::StatementKind::Set {
+                        attribute, value, ..
+                    } = &statement.kind
+                    else {
+                        unreachable!()
+                    };
+                    if !attribute.starts_with("SpacemanDMM_")
+                        || attribute == "SpacemanDMM_return_type"
+                    {
+                        continue;
+                    }
+                    if !matches!(
+                        attribute.as_str(),
+                        "SpacemanDMM_should_be_pure"
+                            | "SpacemanDMM_should_not_sleep"
+                            | "SpacemanDMM_allowed_to_sleep"
+                    ) {
+                        return Err(
+                            "effect mode has no exact policy for this source directive".into()
+                        );
+                    }
+                    let entry = match attribute.as_str() {
+                        "SpacemanDMM_should_be_pure" => &mut pure,
+                        "SpacemanDMM_should_not_sleep" => &mut no_sleep,
+                        _ => &mut exempt,
+                    };
+                    if entry.is_some() {
+                        return Err(
+                            "duplicate effect directive needs the pinned warning contribution"
+                                .into(),
+                        );
+                    }
+                    // Pinned directive_value_to_truthy accepts a SINGLE Int1 or
+                    // TRUE term. False cannot disable this directive; invalid and
+                    // grouped/nonliteral forms need their separate warning policy.
+                    let enabled = matches!(&value.kind,dm_syntax::ExprKind::Literal(s) if s=="1")
+                        || matches!(&value.kind,dm_syntax::ExprKind::Ident(s) if s=="TRUE");
+                    if !enabled {
+                        return Err(
+                            "purity prefix value is disabled or lacks admitted exact literal truth"
+                                .into(),
+                        );
+                    }
+                    let end = statement
+                        .header_span
+                        .start
+                        .checked_add(3)
+                        .ok_or("purity set span overflow")?;
+                    if end > statement.header_span.end {
+                        return Err("purity set token span unavailable".into());
+                    }
+                    *entry = Some(dm_syntax::Span {
+                        start: statement.header_span.start,
+                        end,
+                    });
+                }
+                Ok((pure, no_sleep, exempt))
+            })??;
+        if own_pure.is_some() || own_no_sleep.is_some() || own_sleep_exempt.is_some() {
+            // Pinned set_at_definition=true: a formal declaration, when present,
+            // must name this exact implementation occurrence. An inherited or
+            // later override may not quietly acquire its own annotation.
+            let chain = Resolver::resolve(
+                tree,
+                Q::SourceDeclarationChain {
+                    owner: identity.owner,
+                    name: identity.name,
+                    verb: identity.verb,
+                },
+            );
+            let M::Members(rows) = chain else {
+                return Err("purity initial declaration chain unavailable".into());
+            };
+            for row in rows.iter() {
+                let M::Declaration {
+                    identity: decl,
+                    definition,
+                    ..
+                } = row
+                else {
+                    return Err("purity declaration chain malformed".into());
+                };
+                if *definition == ProcedureDefinition::Declare {
+                    if *decl != identity {
+                        return Err(
+                            "purity annotation outside initial formal definition is not admitted"
+                                .into(),
+                        );
+                    }
+                    break;
+                }
+            }
+        }
+        let permit = Self {
+            archive,
+            profile,
+            identity,
+            own_pure,
+            own_no_sleep,
+            own_sleep_exempt,
+        };
+        // Reuse the existing return-setting evaluator; allowing purity must not
+        // hide an unsupported return directive in the same prefix.
+        prefix_return_override_mode(tree, Some(archive), identity, Some(&permit))?;
+        Ok(permit)
+    }
+    pub fn own_pure(&self) -> Option<dm_syntax::Span> {
+        self.own_pure
+    }
+    pub fn own_no_sleep(&self) -> Option<dm_syntax::Span> {
+        self.own_no_sleep
+    }
+    pub fn own_sleep_exempt(&self) -> Option<dm_syntax::Span> {
+        self.own_sleep_exempt
+    }
+    pub fn identity(&self) -> dm_ir::ProcedureIdentity {
+        self.identity
+    }
+    fn require(
+        &self,
+        tree: &SemanticTree,
+        archive: Option<&dm_tree::frontend::BodyArchive>,
+        profile: PackedU128,
+        identity: dm_ir::ProcedureIdentity,
+    ) -> Result<(), String> {
+        if !std::ptr::eq(tree, self.archive.tree())
+            || archive.is_none_or(|a| !std::ptr::eq(a, self.archive))
+            || self.profile != profile
+            || self.identity != identity
+        {
+            return Err(
+                "purity setting permit belongs to another archive/profile/callable issuance".into(),
+            );
+        }
+        tree.validate_checker_builtin_profile(profile)
+            .map_err(|e| format!("purity setting profile changed: {e:?}"))?;
+        Ok(())
+    }
+}
+
 fn require_prefix<'a>(
     tree: &SemanticTree,
     archive: Option<&'a dm_tree::frontend::BodyArchive>,
@@ -203,6 +406,23 @@ pub fn validate_source_directives(
     archive: Option<&dm_tree::frontend::BodyArchive>,
     identity: dm_ir::ProcedureIdentity,
 ) -> Result<(), String> {
+    validate_source_directives_mode(tree, archive, identity, None)
+}
+pub fn validate_source_directives_for_purity(
+    tree: &SemanticTree,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    identity: dm_ir::ProcedureIdentity,
+    permit: &PuritySettingsPermit<'_>,
+) -> Result<(), String> {
+    permit.require(tree, archive, permit.profile, identity)?;
+    validate_source_directives_mode(tree, archive, identity, Some(permit))
+}
+fn validate_source_directives_mode(
+    tree: &SemanticTree,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    identity: dm_ir::ProcedureIdentity,
+    permit: Option<&PuritySettingsPermit<'_>>,
+) -> Result<(), String> {
     require_prefix(tree, archive)?.with_initial_setting_prefix(
         identity,
         |prefix| -> Result<(), String> {
@@ -210,7 +430,15 @@ pub fn validate_source_directives(
                 let dm_syntax::StatementKind::Set { attribute, .. } = &statement.kind else {
                     unreachable!();
                 };
-                if attribute.starts_with("SpacemanDMM_") && attribute != "SpacemanDMM_return_type" {
+                if attribute.starts_with("SpacemanDMM_")
+                    && attribute != "SpacemanDMM_return_type"
+                    && !(matches!(
+                        attribute.as_str(),
+                        "SpacemanDMM_should_be_pure"
+                            | "SpacemanDMM_should_not_sleep"
+                            | "SpacemanDMM_allowed_to_sleep"
+                    ) && permit.is_some())
+                {
                     return Err(
                         "source directive prefix is issued but its exact policy is not implemented"
                             .into(),
@@ -221,11 +449,15 @@ pub fn validate_source_directives(
         },
     )?
 }
-fn prefix_return_override(
+fn prefix_return_override_mode(
     tree: &SemanticTree,
     archive: Option<&dm_tree::frontend::BodyArchive>,
     identity: dm_ir::ProcedureIdentity,
+    permit: Option<&PuritySettingsPermit<'_>>,
 ) -> Result<Option<ReturnHint>, String> {
+    if let Some(permit) = permit {
+        permit.require(tree, archive, permit.profile, identity)?;
+    }
     let archive = require_prefix(tree, archive)?;
     archive.with_initial_setting_prefix(
         identity,
@@ -238,7 +470,15 @@ fn prefix_return_override(
                 else {
                     unreachable!();
                 };
-                if attribute.starts_with("SpacemanDMM_") && attribute != "SpacemanDMM_return_type" {
+                if attribute.starts_with("SpacemanDMM_")
+                    && attribute != "SpacemanDMM_return_type"
+                    && !(matches!(
+                        attribute.as_str(),
+                        "SpacemanDMM_should_be_pure"
+                            | "SpacemanDMM_should_not_sleep"
+                            | "SpacemanDMM_allowed_to_sleep"
+                    ) && permit.is_some())
+                {
                     return Err(
                         "source directive prefix requires an unimplemented exact policy".into(),
                     );
@@ -292,7 +532,38 @@ pub fn return_fix_hint(
     name: SymbolId,
     archive: Option<&dm_tree::frontend::BodyArchive>,
 ) -> Result<ReturnFixHint, String> {
-    let hint = return_hint_with_prefix(tree, resolver, profile, receiver, name, archive)?;
+    return_fix_hint_mode(tree, resolver, profile, receiver, name, archive, None)
+}
+pub fn return_fix_hint_for_purity(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    permit: &PuritySettingsPermit<'_>,
+) -> Result<ReturnFixHint, String> {
+    permit.require(tree, archive, profile, permit.identity)?;
+    return_fix_hint_mode(
+        tree,
+        resolver,
+        profile,
+        receiver,
+        name,
+        archive,
+        Some(permit),
+    )
+}
+fn return_fix_hint_mode(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    permit: Option<&PuritySettingsPermit<'_>>,
+) -> Result<ReturnFixHint, String> {
+    let hint = return_hint_mode(tree, resolver, profile, receiver, name, archive, permit)?;
     if hint.declared_type.is_some() {
         return Ok(ReturnFixHint::None);
     }
@@ -304,7 +575,7 @@ pub fn return_fix_hint(
                 .ok_or("return hint source signature unavailable")?
                 .settings
                 .is_empty()
-                && prefix_return_override(tree, archive, identity)?.is_some()
+                && prefix_return_override_mode(tree, archive, identity, permit)?.is_some()
             {
                 return Ok(ReturnFixHint::EvaluatedNone);
             }
@@ -322,3 +593,7 @@ pub fn return_fix_hint(
         CallableFact::Missing => Err("return fix-hint callable is missing".into()),
     }
 }
+
+#[cfg(test)]
+#[path = "checker_purity_settings_tests.rs"]
+mod purity_settings_tests;

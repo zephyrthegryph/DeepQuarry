@@ -43,6 +43,7 @@ enum Family {
     CheckerBuiltinVar,
     CheckerBuiltinProc,
     SourceVarDeclaration,
+    CertifiedHierarchy,
 }
 fn family(query: ResolveQuery) -> (Family, Option<SymbolId>) {
     use ResolveQuery::*;
@@ -66,6 +67,7 @@ fn family(query: ResolveQuery) -> (Family, Option<SymbolId>) {
         CheckerBuiltinVar { owner, .. } => (Family::CheckerBuiltinVar, Some(owner)),
         CheckerBuiltinProc { owner, .. } => (Family::CheckerBuiltinProc, Some(owner)),
         SourceVarDeclaration { owner, .. } => (Family::SourceVarDeclaration, Some(owner)),
+        CertifiedHierarchy { path, .. } => (Family::CertifiedHierarchy, Some(path)),
         Signature(_) => (Family::Signature, None),
         GlobalVar(_) => (Family::GlobalVar, None),
         MemberCallableVerbName(_) => (Family::MemberCallableVerbName, None),

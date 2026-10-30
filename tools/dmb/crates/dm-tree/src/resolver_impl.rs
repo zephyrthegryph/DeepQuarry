@@ -96,6 +96,12 @@ impl dm_ir::Resolver for SemanticTree {
                     false,
                 )
             }
+            Q::CertifiedHierarchy { kind, path } => {
+                return self
+                    .certified_hierarchy()
+                    .map(|view| view.answer(kind, path))
+                    .unwrap_or(M::Unsupported(query));
+            }
             Q::Type(path) => self
                 .lookup_type(path)
                 .map(|_| M::Symbol(path))

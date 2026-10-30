@@ -324,10 +324,13 @@ class Smoke:
         assert len(rows) == 2 and all(row["row"] == "source_native_configured_checker" for row in rows), rows
         assert [row["family"] for row in rows] == ["proc_has_no_parent", "undefined_proc"], rows
         assert all(row["diagnostics"] == [] and row["full_checker_parity"] is False for row in rows), rows
-        bad = self.query(project, engine, pins,
-                         [self.semantic_question(project, bodies[9], "undefined_proc")], success=False)
-        assert bad.returncode != 0 and "local array" in bad.stderr, bad.stderr
-        return rows
+        # Keep the EXACT formerly negative compiled source. Original array
+        # dimensions are now issued; this successful compiled query is empty.
+        array_rows = self.query(project, engine, pins,
+                         [self.semantic_question(project, bodies[9], "undefined_proc")])
+        assert len(array_rows) == 1 and array_rows[0]["diagnostics"] == [], array_rows
+        assert array_rows[0]["full_checker_parity"] is False, array_rows
+        return rows + array_rows
 
     def observe_prepared_semantic_errors(self, project: Path, engine: Path) -> dict:
         source = project.parent / "smoke_semantics.dm"
@@ -352,7 +355,24 @@ class Smoke:
             assert rows[1]["diagnostics"][0]["message"] == 'undefined proc: "missing_outer" on /datum/semantic_missing', rows
             assert rows[1]["diagnostics"][0]["severity"] == "error", rows
             assert rows[1]["diagnostics"][0]["line"] == 2, rows
-            return {"pins": pins, "rows": rows, "lowered_or_published": False}
+            # Distinct native-parseable but genuinely unissued checker input:
+            # the original parser rejects nonempty for-in array bindings.
+            source.write_text("/datum/semantic_missing/proc/probe()\n"
+                              "    missing_earlier()\n"
+                              "    for(var/datum/item[1] in list())\n"
+                              "        missing_later()\n", encoding="utf-8")
+            unsupported_pins = self.prepare(project, engine)
+            unsupported_bodies = self.semantic_bodies(project, engine, unsupported_pins)
+            assert set(unsupported_bodies) == {1}, unsupported_bodies
+            bad = self.query(project, engine, unsupported_pins,
+                [self.semantic_question(project, unsupported_bodies[1], "undefined_proc")], success=False)
+            assert bad.returncode != 0, bad
+            assert "nonempty array initializer is not an old for-in/all binding" in bad.stderr, bad.stderr
+            assert not bad.stdout.strip(), "partial checker rows escaped genuinely unissued body"
+            return {"pins": pins, "rows": rows, "lowered_or_published": False,
+                    "unissued_for_binding": {"pins": unsupported_pins,
+                    "rejected": True, "partial_rows_emitted": False}}
+
         finally:
             source.write_bytes(original)
 

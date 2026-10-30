@@ -114,7 +114,29 @@ impl Compiler<'_> {
         dimensions: &[&str],
         statement: &str,
     ) -> Result<(), LowerError> {
-        if dimensions.len() > 1 {
+        self.local_array_prefix(dimensions.len());
+        for size in dimensions {
+            self.expression_text(size, statement)?;
+        }
+        self.local_array_suffix(dimensions.len());
+        Ok(())
+    }
+
+    pub(super) fn local_array_primary(
+        &mut self,
+        dimensions: &[Expr],
+        statement: &str,
+    ) -> Result<(), LowerError> {
+        self.local_array_prefix(dimensions.len());
+        for size in dimensions {
+            self.expression(size, statement)?;
+        }
+        self.local_array_suffix(dimensions.len());
+        Ok(())
+    }
+
+    fn local_array_prefix(&mut self, count: usize) {
+        if count > 1 {
             let path = "/list".to_owned();
             if self.seen_classes.insert(SymbolId::of(&path)) {
                 self.result.class_paths.push(SymbolId::of(&path));
@@ -127,22 +149,20 @@ impl Compiler<'_> {
                 })],
             );
         }
-        for size in dimensions {
-            self.expression_text(size, statement)?;
-        }
+    }
+    fn local_array_suffix(&mut self, count: usize) {
         self.emit(
-            if dimensions.len() == 1 {
+            if count == 1 {
                 opcode::EMPTY_LIST
             } else {
                 opcode::NEW
             },
-            if dimensions.len() == 1 {
+            if count == 1 {
                 vec![]
             } else {
-                vec![Word::Immediate(dimensions.len() as u32)]
+                vec![Word::Immediate(count as u32)]
             },
         );
-        Ok(())
     }
 
     pub(super) fn named_arguments(

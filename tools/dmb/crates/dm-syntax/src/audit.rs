@@ -157,6 +157,7 @@ pub fn for_each_stable_source_chunk(
 pub struct ProcedureWithOrigins {
     pub item: Item,
     pub opening_parenthesis: Option<Span>,
+    pub parameters: crate::ParameterSignature,
 }
 /// Compatibility wrapper retains the existing parser/runtime interface.
 pub fn parse_proc_at_span(source: &str, span: Span) -> Result<Item, Diagnostic> {
@@ -199,10 +200,13 @@ pub fn parse_proc_with_origins_at_span(
                 && token.text == "("
         })
         .map(|token| Span::new(token.span.start + span.start, token.span.end + span.start));
+    let parameters =
+        crate::parameter_syntax::issue(slice, &ast.tokens, item.header_span, span.start);
     rebase_item(&mut item, span.start);
     Ok(ProcedureWithOrigins {
         item,
         opening_parenthesis,
+        parameters,
     })
 }
 

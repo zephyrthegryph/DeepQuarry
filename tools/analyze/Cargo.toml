@@ -223,3 +223,15 @@ required-features = ["legacy-sem", "native-policy"]
 [[example]]
 name="unified_weak_raw_read"
 required-features=["legacy-sem","native-policy"]
+
+[[example]]
+name = "unified_system_accessors"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name = "unified_rel_write"
+required-features = ["unified-oracle", "native-policy"]
+
+[[example]]
+name = "unified_stored_refs"
+required-features = ["unified-oracle", "native-policy"]

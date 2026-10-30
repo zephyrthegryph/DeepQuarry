@@ -403,7 +403,21 @@ fn semantic_policies_preserve_real_tag_override_and_untagged_error_default() {
 fn semantic_host_unavailable_or_unsupported_body_never_becomes_false_clean() {
     let syntactic_only = snapshot(None);
     assert!(semantic_row(&syntactic_only, 0, "undefined_proc").is_err());
-    let unsupported = semantic_snapshot("/datum/example/proc/probe()\n    missing_earlier()\n    var/datum/typed[1]\n    missing_later()\n", None);
+    let supported=semantic_snapshot("/datum/example/proc/probe()\n    missing_earlier()\n    var/datum/typed[1]\n    missing_later()\n",None);
+    let rows = semantic_row(&supported, 0, "undefined_proc").unwrap();
+    let diagnostics = rows["diagnostics"].as_array().unwrap();
+    assert_eq!(diagnostics.len(), 2);
+    assert_eq!(
+        diagnostics[0]["message"],
+        "undefined proc: \"missing_earlier\" on /datum/example"
+    );
+    assert_eq!(diagnostics[0]["line"], 2);
+    assert_eq!(
+        diagnostics[1]["message"],
+        "undefined proc: \"missing_later\" on /datum/example"
+    );
+    assert_eq!(diagnostics[1]["line"], 4);
+    let unsupported = semantic_snapshot("/datum/example/proc/probe()\n    missing_earlier()\n    for(var/datum/item[1] in list())\n        missing_later()\n", None);
     let mut bytes = Vec::new();
     assert!(unsupported
         .write_native_configured_checker(
@@ -498,9 +512,18 @@ fn checker_storage_gap_does_not_narrow_native_stored_local_lowering() {
     let mut selected = Vec::new();
     runtime.write_selected(declaration, &mut selected).unwrap();
     assert!(String::from_utf8(selected).unwrap().contains("shared"));
-    // Runtime static lowering remains supported. The later actual primary
-    // array suffix still lacks checker dimension/constructor traversal proof.
-    let snapshot=semantic_snapshot("/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    missing_earlier\n    var/datum/typed[1]\n    return shared\n",None);
+    // Preserve the exact former array-negative source as a proved positive.
+    let supported=semantic_snapshot("/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    missing_earlier\n    var/datum/typed[1]\n    return shared\n",None);
+    let row = semantic_row(&supported, 0, "undefined_variable").unwrap();
+    let diagnostics = row["diagnostics"].as_array().unwrap();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(
+        diagnostics[0]["message"],
+        "undefined var: \"missing_earlier\""
+    );
+    assert_eq!(diagnostics[0]["line"], 4);
+    // A nonempty for-in binding is still outside the original checker grammar.
+    let snapshot=semantic_snapshot("/datum/example/proc/probe()\n    var/static/shared = 1\n    shared += 1\n    missing_earlier\n    for(var/datum/item[1] in list())\n        return shared\n",None);
     let mut bytes = Vec::new();
     let error = snapshot
         .write_native_configured_checker(
@@ -512,7 +535,12 @@ fn checker_storage_gap_does_not_narrow_native_stored_local_lowering() {
             &mut bytes,
         )
         .unwrap_err();
-    assert!(error.to_string().contains("local array suffix"), "{error}");
+    assert!(
+        error
+            .to_string()
+            .contains("nonempty array initializer is not an old for-in/all binding"),
+        "{error}"
+    );
     assert!(
         bytes.is_empty(),
         "earlier undefined-variable row escaped later array refusal"
@@ -722,9 +750,20 @@ fn implicit_new_static_local_source_matches_exact_pinned_diagnostic() {
 }
 #[test]
 fn implicit_new_unsupported_later_context_does_not_emit_partial_row() {
-    let snapshot = semantic_snapshot(
+    let supported = semantic_snapshot(
         "/proc/p()\n    new()\n    var/static/datum/kept\n    var/datum/typed[1]\n",
         None,
+    );
+    let row = semantic_row(&supported, 0, "no_typehint_implicit_new").unwrap();
+    let diagnostics = row["diagnostics"].as_array().unwrap();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(
+        diagnostics[0]["message"],
+        "no type hint available on implicit new()"
+    );
+    assert_eq!(diagnostics[0]["line"], 2);
+    let snapshot = semantic_snapshot(
+        "/proc/p()\n    new()\n    var/static/datum/kept\n    for(var/datum/item[1] in list())\n        return\n", None,
     );
     let mut bytes = Vec::new();
     let error = snapshot
@@ -737,10 +776,15 @@ fn implicit_new_unsupported_later_context_does_not_emit_partial_row() {
             &mut bytes,
         )
         .unwrap_err();
-    assert!(error.to_string().contains("local array suffix"), "{error}");
+    assert!(
+        error
+            .to_string()
+            .contains("nonempty array initializer is not an old for-in/all binding"),
+        "{error}"
+    );
     assert!(
         bytes.is_empty(),
-        "earlier implicit-new error escaped unsupported primary array context"
+        "earlier implicit-new error escaped genuinely unissued for-binding context"
     );
 }
 

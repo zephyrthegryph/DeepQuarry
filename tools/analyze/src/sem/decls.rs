@@ -68,79 +68,9 @@ const ENTRY_CALLS: &[&str] = &[
 
 /// The end offset (exclusive, trailing blanks trimmed) of the indented block that follows the marker whose `)` is at `close`,
 /// or None when no indented line follows it (the legacy single-macro form, or a header with no entries).
-pub fn block_extent(text: &str, close: usize) -> Option<usize> {
-    let rest = &text[close + 1..];
-    let eol = rest.find('\n').unwrap_or(rest.len());
-    if !rest[..eol].trim().is_empty() {
-        return None;
-    }
-    let mut pos = close + 1 + eol;
-    let mut end: Option<usize> = None;
-    while pos < text.len() {
-        // `pos` is at a newline; the next line starts after it.
-        let ls = pos + 1;
-        if ls > text.len() {
-            break;
-        }
-        let le = text[ls..].find('\n').map(|i| ls + i).unwrap_or(text.len());
-        let line = &text[ls..le];
-        if line.trim().is_empty() {
-            pos = le;
-            continue;
-        }
-        if !line.starts_with(|c: char| c.is_whitespace()) {
-            break;
-        }
-        end = Some(ls + line.trim_end().len());
-        pos = le;
-    }
-    end
-}
-
-/// The marker body of a block: `text[from..end]` with the header's `)` and each top-level entry-ending newline replaced by a comma
-/// (same length, so offsets and lines are unchanged). The engine then reads one argument list in either form.
-pub fn block_body(text: &str, from: usize, close: usize, end: usize) -> String {
-    let b = text.as_bytes();
-    let mut out: Vec<u8> = b[from..end].to_vec();
-    out[close - from] = b',';
-    let mut depth = 0i32;
-    let mut in_str = false;
-    let mut pending: Option<usize> = None; // the last depth-0 newline since the previous entry's text
-    let mut seen_entry = false;
-    let mut i = close + 1;
-    while i < end {
-        let c = b[i];
-        if in_str {
-            if c == b'\\' {
-                i += 1;
-            } else if c == b'"' {
-                in_str = false;
-            }
-            i += 1;
-            continue;
-        }
-        if depth == 0 && !c.is_ascii_whitespace() {
-            // An entry starts here: the newline before it ended the previous one.
-            if let Some(nl) = pending.take() {
-                if seen_entry {
-                    out[nl - from] = b',';
-                }
-            }
-            seen_entry = true;
-        }
-        match c {
-            b'"' => in_str = true,
-            b'(' | b'[' | b'{' => depth += 1,
-            b')' | b']' | b'}' => depth -= 1,
-            b'\n' if depth == 0 => pending = Some(i),
-            _ => {}
-        }
-        i += 1;
-    }
-    String::from_utf8(out).unwrap_or_default()
-}
-
+pub use crate::raw_marker_policy::{block_body, block_extent};
 /// One marker call: its name, raw argument text and top-level arguments, and where it starts.
+
 #[derive(Clone, Debug)]
 pub struct Marker {
     pub name: String,
@@ -246,15 +176,31 @@ impl Decls {
             let t_decls = std::time::Instant::now();
             let files = tree.select(&CODE_DM);
             // Per file, cached on disk by content: a one-file edit rescans one file.
-            let stored: Vec<Stored> = crate::incr::facts("sem-decls", &files, |f| Stored::from(scan_file(f)));
+            let stored: Vec<Stored> =
+                crate::incr::facts("sem-decls", &files, |f| Stored::from(scan_file(f)));
             let default = Stored::default();
-            let nonempty: Vec<(&str, &Stored)> = files.iter().zip(stored.iter()).filter(|(_, s)| **s != default).map(|(f, s)| (f.rel.as_str(), s)).collect();
+            let nonempty: Vec<(&str, &Stored)> = files
+                .iter()
+                .zip(stored.iter())
+                .filter(|(_, s)| **s != default)
+                .map(|(f, s)| (f.rel.as_str(), s))
+                .collect();
             // Generated declarations follow `deepquarry.dme` include order, not file path: moving a file leaves the include in its
             // place, so it must not move the types and procs generated from its markers (typesof() and proc-table order follow them).
             let include_order = dme_include_order(&tree.root);
-            let key = crate::incr::mix(&[crate::incr::ctx_key(&nonempty), crate::incr::ctx_key(&include_order.iter().collect::<std::collections::BTreeMap<_, _>>())]);
+            let key = crate::incr::mix(&[
+                crate::incr::ctx_key(&nonempty),
+                crate::incr::ctx_key(
+                    &include_order
+                        .iter()
+                        .collect::<std::collections::BTreeMap<_, _>>(),
+                ),
+            ]);
             let parts: Vec<FileDecls> = stored.into_iter().map(FileDecls::from).collect();
-            let mut d = Decls { key, ..Decls::default() };
+            let mut d = Decls {
+                key,
+                ..Decls::default()
+            };
             for (f, p) in files.iter().zip(parts) {
                 d.markers.extend(p.markers);
                 for (t, v) in p.relations {
@@ -262,7 +208,10 @@ impl Decls {
                 }
                 for (t, v) in p.tracked {
                     if f.rel != crate::gens::auto_tracked::AUTO_REL {
-                        d.tracked_explicit.entry(t.clone()).or_default().insert(v.clone());
+                        d.tracked_explicit
+                            .entry(t.clone())
+                            .or_default()
+                            .insert(v.clone());
                     }
                     d.tracked.entry(t).or_default().insert(v);
                 }
@@ -275,28 +224,25 @@ impl Decls {
                 }
             }
             let at = |rel: &str| include_order.get(rel).copied().unwrap_or(usize::MAX);
-            d.markers.sort_by(|a, b| (at(&a.rel), a.rel.as_str(), a.line).cmp(&(at(&b.rel), b.rel.as_str(), b.line)));
+            d.markers.sort_by(|a, b| {
+                (at(&a.rel), a.rel.as_str(), a.line).cmp(&(at(&b.rel), b.rel.as_str(), b.line))
+            });
             // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
             // declares `a` on /A and `b` on /B.
-            let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
-            let link = regex::Regex::new(r"\blinks?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").expect("link entry pattern");
-            let mut found: Vec<(String, String)> = Vec::new();
             for m in d.markers.iter().filter(|m| m.name == "CAPABILITIES") {
                 if let Some(ty) = m.args.first() {
-                    for c in own.captures_iter(&m.body) {
-                        found.push((ty.clone(), c[1].to_string()));
+                    for (owner, var) in crate::relation_decl_policy::capability_pairs(ty, &m.body) {
+                        d.relations.entry(owner).or_default().insert(var);
                     }
                 }
-                for c in link.captures_iter(&m.body) {
-                    found.push((c[1].to_string(), c[2].to_string()));
-                    found.push((c[3].to_string(), c[4].to_string()));
-                }
-            }
-            for (t, v) in found {
-                d.relations.entry(t).or_default().insert(v);
             }
             if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
-                eprintln!("analyze: Decls built in {:.0?} ({} markers, {} defines)", t_decls.elapsed(), d.markers.len(), d.defines.len());
+                eprintln!(
+                    "analyze: Decls built in {:.0?} ({} markers, {} defines)",
+                    t_decls.elapsed(),
+                    d.markers.len(),
+                    d.defines.len()
+                );
             }
             d
         })
@@ -684,8 +630,8 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         {
             fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
         }
-        if let Some(m) = pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
-            fd.relations.push((m.s(1).to_string(), m.s(2).to_string()));
+        if let Some(pair) = crate::relation_decl_policy::legacy_line(t) {
+            fd.relations.push(pair);
         }
         let om = pat_match!(r"(?:OM_FIELD|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)")
             .captures(t)

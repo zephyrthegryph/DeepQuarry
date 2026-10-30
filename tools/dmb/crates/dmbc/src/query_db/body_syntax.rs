@@ -49,6 +49,7 @@ impl std::fmt::Debug for QueryDb {
 impl BodySyntaxQueries for QueryDb {
     fn begin_revision(&self) {
         self.prune_value_proofs();
+        self.prune_purity();
         self.prune_raw_policy();
         let mut inputs = self.body_inputs.lock().unwrap_or_else(|e| e.into_inner());
         inputs.retain(|key, input| {

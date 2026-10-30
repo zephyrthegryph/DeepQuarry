@@ -228,8 +228,8 @@ fn literal_default(tree: &SemanticTree, value: Option<&SymbolicExpression>) -> b
         _ => tree.symbols().text(token.text) == Some("null"),
     }
 }
-fn parameter_candidate(tree: &SemanticTree, parameter: &Parameter) -> bool {
-    parameter.declared_type.is_none()
+fn parameter_candidate(tree: &SemanticTree, parameter: &Parameter, source_untyped: bool) -> bool {
+    source_untyped
         && parameter.source_expression.is_none()
         && parameter
             .input_annotation
@@ -773,12 +773,13 @@ impl Updates {
     }
 }
 
-struct BodyScan<'a, 'b, 'h, R: ?Sized> {
+struct BodyScan<'a, 'b, 'h, 's, R: ?Sized> {
     host: &'h Host<'a, 'b, R>,
     updates: Updates,
     error: Option<Unsupported>,
+    local_source: dm_tree::frontend::SourceLocalView<'s>,
 }
-impl<R: Resolver + ?Sized> BodyScan<'_, '_, '_, R> {
+impl<R: Resolver + ?Sized> BodyScan<'_, '_, '_, '_, R> {
     fn add(&mut self, key: Key, proof: Proof) {
         self.updates.equations.push((key, proof));
     }
@@ -815,11 +816,25 @@ impl<R: Resolver + ?Sized> BodyScan<'_, '_, '_, R> {
         }
         Ok(())
     }
-    fn local(&mut self, declaration: &str, initializer: Option<&Expr>) -> Result<(), Unsupported> {
-        let name = dm_syntax::local_name(declaration)
-            .ok_or_else(|| Unsupported("unparsed native local".into()))?;
-        let ty = self.host.scope.locals.get(name).map_or("", String::as_str);
-        let mut proof = yes(!self.host.scope.is_ref(ty)?);
+    fn local(
+        &mut self,
+        header: dm_syntax::Span,
+        initializer: Option<&Expr>,
+    ) -> Result<(), Unsupported> {
+        let fact = crate::untyped::original_local_in_header(&self.local_source, header)?
+            .ok_or_else(|| Unsupported("original local value declaration missing".into()))?;
+        let name = self.local_source.name(fact).map_err(Unsupported)?;
+        let ty = self
+            .local_source
+            .type_path(fact)
+            .map_err(Unsupported)?
+            .unwrap_or_default();
+        let mut proof = yes(!self.host.scope.is_ref(&ty)?);
+        // Exact old NewPrefab/list initializer is not a value. No written
+        // expression is forged to represent this grammar-issued constructor.
+        if fact.implicit_list_initializer().is_some() {
+            merge(&mut proof, yes(false));
+        }
         if let Some(value) = initializer {
             merge(&mut proof, self.rhs(value)?);
         }
@@ -994,10 +1009,10 @@ impl<R: Resolver + ?Sized> BodyScan<'_, '_, '_, R> {
         }
     }
 }
-impl<R: Resolver + ?Sized> TypedVisitor for BodyScan<'_, '_, '_, R> {
+impl<R: Resolver + ?Sized> TypedVisitor for BodyScan<'_, '_, '_, '_, R> {
     fn statement(&mut self, statement: &Statement, _: &[NodeStep]) -> VisitDecision {
         let result = match &statement.kind {
-            StatementKind::Var { declaration, value } => self.local(declaration, value.as_ref()),
+            StatementKind::Var { value, .. } => self.local(statement.header_span, value.as_ref()),
             StatementKind::Assign { target, op, value } => self.assignment(target, op, value),
             StatementKind::For { control, .. } => {
                 match control {
@@ -1007,6 +1022,10 @@ impl<R: Resolver + ?Sized> TypedVisitor for BodyScan<'_, '_, '_, R> {
                         ..
                     }
                     | ForControl::Range {
+                        binding: declaration,
+                        ..
+                    }
+                    | ForControl::RangeImplicitArray {
                         binding: declaration,
                         ..
                     } => {
@@ -1032,10 +1051,10 @@ impl<R: Resolver + ?Sized> TypedVisitor for BodyScan<'_, '_, '_, R> {
                         }
                     }
                     ForControl::CStyle {
-                        initializer: Some(ForInitializer::Declare { declaration, value }),
+                        initializer: Some(ForInitializer::Declare { value, .. }),
                         ..
                     } => {
-                        if let Err(error) = self.local(declaration, value.as_ref()) {
+                        if let Err(error) = self.local(statement.header_span, value.as_ref()) {
                             self.error = Some(error);
                             return VisitDecision::Stop;
                         }
@@ -1140,9 +1159,10 @@ impl<'a> Values<'a> {
             if !index.subtype(resolver, id.owner, SymbolId::of("/datum/config_entry"))? {
                 continue;
             }
-            origin.with_body(arena, ordinal, |syntax, _| {
+            origin.with_body(arena, ordinal, |syntax, _, _, _| {
                 let mut writes = ConfigWrites(false);
-                dm_syntax::visit_statements(&syntax.parsed().statements, &mut writes);
+                crate::untyped_order::visit_value_policy(syntax.view(), &mut writes)
+                    .map_err(|e| Unsupported(e.into()))?;
                 if writes.0 {
                     index.config_writers.insert(id.owner);
                 }
@@ -1189,10 +1209,7 @@ impl<'a> Values<'a> {
             let external = id.verb
                 || id.owner != SymbolId::of("/") && dm_ir::builtin_names::is_builtin_proc(spelling);
             for (i, parameter) in procedure.metadata.signature.parameters.iter().enumerate() {
-                equations.insert(
-                    Key::Parameter(id, i),
-                    yes(!external && parameter_candidate(tree, parameter)),
-                );
+                equations.insert(Key::Parameter(id, i), yes(!external));
                 equations.insert(
                     Key::Local(id, parameter.name),
                     depends(Key::Parameter(id, i)),
@@ -1217,66 +1234,108 @@ impl<'a> Values<'a> {
             }
         }
         for ordinal in 0..origin.bodies().len() {
-            origin.with_body(arena, ordinal, |syntax, occurrence| {
-                let scope =
-                    untyped::scope_from(tree, occurrence.member, syntax, resolver, exempt_types)?;
-                let scope = match origin {
-                    Origin::Archive(archive) => scope.with_archive(archive)?,
-                    Origin::Live(_) => scope,
-                };
-                let id = origin
-                    .roster()?
-                    .identity_for_member(occurrence.member)
-                    .ok_or_else(|| Unsupported("missing current procedure".into()))?;
-                let host = Host {
-                    index: &index,
-                    scope: &scope,
-                    resolver,
-                    current: id,
-                    local_values: true,
-                };
-                for name in scope.locals.keys() {
-                    let key = Key::Local(id, SymbolId::of(name));
-                    let shadow = tree
-                        .lookup_type(scope.owner)
-                        .and_then(|owner| tree.resolve(owner, SymbolId::of(name), MemberKind::Var))
-                        .is_some()
-                        || tree
-                            .lookup_type(SymbolId::of("/"))
+            origin.with_body(
+                arena,
+                ordinal,
+                |syntax, occurrence, parameters, local_source| {
+                    let scope = untyped::scope_from_parameters(
+                        tree,
+                        occurrence,
+                        syntax,
+                        resolver,
+                        exempt_types,
+                        Some(parameters),
+                        Some(local_source),
+                    )?;
+                    let scope = match origin {
+                        Origin::Archive(archive) => scope.with_archive(archive)?,
+                        Origin::Live(_) => scope,
+                    };
+                    let id = origin
+                        .roster()?
+                        .identity_for_member(occurrence.member)
+                        .ok_or_else(|| Unsupported("missing current procedure".into()))?;
+                    // CallableRoster is issued one-to-one from ORIGINAL body
+                    // occurrences. Fill type admissibility only from that body's
+                    // sealed parameter receipt, preserving prior call constraints.
+                    let procedure = &index.procedures[&id];
+                    let mut native = procedure.metadata.signature.parameters.iter().enumerate();
+                    for entry in parameters
+                        .entries()
+                        .map_err(Unsupported)?
+                        .iter()
+                        .filter(|p| !p.variadic())
+                    {
+                        let (i, parameter) = native.next().ok_or_else(|| {
+                            Unsupported("original parameter inference ordinal missing".into())
+                        })?;
+                        let untyped =
+                            entry.type_components().is_empty() && entry.array_brackets().is_empty();
+                        merge(
+                            equations.get_mut(&Key::Parameter(id, i)).unwrap(),
+                            yes(parameter_candidate(tree, parameter, untyped)),
+                        );
+                    }
+                    if native.next().is_some() {
+                        return Err(Unsupported(
+                            "original parameter inference roster differs".into(),
+                        ));
+                    }
+
+                    let host = Host {
+                        index: &index,
+                        scope: &scope,
+                        resolver,
+                        current: id,
+                        local_values: true,
+                    };
+                    for name in scope.locals.keys() {
+                        let key = Key::Local(id, SymbolId::of(name));
+                        let shadow = tree
+                            .lookup_type(scope.owner)
                             .and_then(|owner| {
                                 tree.resolve(owner, SymbolId::of(name), MemberKind::Var)
                             })
-                            .is_some();
-                    let entry = equations.entry(key).or_insert_with(|| yes(true));
-                    entry.admissible &= !shadow;
-                }
-                let proof = value_expressions::returns(syntax, &host).map_err(|error| {
-                    Unsupported(format!("native return proof incomplete: {error:?}"))
-                })?;
-                if !index.procedures[&id].scalar_return {
-                    merge(equations.get_mut(&Key::Return(id)).unwrap(), proof);
-                }
-                let mut scan = BodyScan {
-                    host: &host,
-                    updates: Updates::new(),
-                    error: None,
-                };
-                dm_syntax::visit_statements(&syntax.parsed().statements, &mut scan);
-                if let Some(error) = scan.error {
-                    return Err(error);
-                }
-                for (key, proof) in scan.updates.equations {
-                    merge(equations.entry(key).or_insert_with(|| yes(true)), proof);
-                }
-                for (name, origin) in scan.updates.call_origins {
-                    call_origins.insert((id, name), origin);
-                }
-                texts.extend(scan.updates.texts);
-                dynamic.extend(scan.updates.dynamic_vars);
-                escaped_names.extend(scan.updates.escaped_names);
-                references.extend(scan.updates.references);
-                Ok(())
-            })?;
+                            .is_some()
+                            || tree
+                                .lookup_type(SymbolId::of("/"))
+                                .and_then(|owner| {
+                                    tree.resolve(owner, SymbolId::of(name), MemberKind::Var)
+                                })
+                                .is_some();
+                        let entry = equations.entry(key).or_insert_with(|| yes(true));
+                        entry.admissible &= !shadow;
+                    }
+                    let proof = value_expressions::returns(syntax, &host).map_err(|error| {
+                        Unsupported(format!("native return proof incomplete: {error:?}"))
+                    })?;
+                    if !index.procedures[&id].scalar_return {
+                        merge(equations.get_mut(&Key::Return(id)).unwrap(), proof);
+                    }
+                    let mut scan = BodyScan {
+                        host: &host,
+                        local_source,
+                        updates: Updates::new(),
+                        error: None,
+                    };
+                    crate::untyped_order::visit_value_policy(syntax.view(), &mut scan)
+                        .map_err(|e| Unsupported(e.into()))?;
+                    if let Some(error) = scan.error {
+                        return Err(error);
+                    }
+                    for (key, proof) in scan.updates.equations {
+                        merge(equations.entry(key).or_insert_with(|| yes(true)), proof);
+                    }
+                    for (name, origin) in scan.updates.call_origins {
+                        call_origins.insert((id, name), origin);
+                    }
+                    texts.extend(scan.updates.texts);
+                    dynamic.extend(scan.updates.dynamic_vars);
+                    escaped_names.extend(scan.updates.escaped_names);
+                    references.extend(scan.updates.references);
+                    Ok(())
+                },
+            )?;
         }
         for (variable, value) in texts {
             if dynamic.contains(&variable) {

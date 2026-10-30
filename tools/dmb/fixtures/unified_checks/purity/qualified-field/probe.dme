@@ -1,0 +1,5 @@
+/datum/box
+    var/value=0
+    proc/probe()
+        set SpacemanDMM_should_be_pure=1
+        src.value=1

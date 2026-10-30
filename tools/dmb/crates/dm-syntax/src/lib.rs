@@ -276,8 +276,12 @@ pub mod numeric_form;
 #[cfg(test)]
 mod constructor_boundary_tests;
 
+mod local_variable_storage;
 mod local_variable_syntax;
-pub use local_variable_syntax::{LocalSourceKind, LocalVariableLedger, LocalVariableSyntax};
+pub use local_variable_syntax::{
+    ImplicitListInitializer, ImplicitListOrigin, LocalArraySyntax, LocalSourceKind,
+    LocalVariableLedger, LocalVariableSyntax,
+};
 mod local_declaration;
 pub use local_declaration::{local_type_path, project_local_declaration, LocalDeclaration};
 
@@ -285,3 +289,6 @@ pub mod native_special_forms;
 
 #[cfg(test)]
 mod procedure_origin_tests;
+
+mod parameter_syntax;
+pub use parameter_syntax::{ParameterSignature, ParameterSyntax};

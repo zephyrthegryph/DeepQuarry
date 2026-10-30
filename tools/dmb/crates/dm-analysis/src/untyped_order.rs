@@ -12,7 +12,18 @@ use dm_syntax::{
 };
 
 trait Observer {
+    fn list_write_assignment(&mut self, _: &Expr, _: &str, _: &Expr, _: Span) {}
+    fn statement(&mut self, _: &Statement) -> bool {
+        true
+    }
+    fn stopped(&self) -> bool {
+        false
+    }
+    fn descend_expression(&self) -> bool {
+        true
+    }
     fn expression(&mut self, _: &Expr, _: Span) {}
+    fn implicit_list(&mut self, _: &dm_syntax::ImplicitListInitializer, _: Span) {}
     fn assignment(&mut self, _: &Expr, _: &Expr, _: Span) {}
     fn statement_assignment(&mut self, _: &Expr, _: &Expr, _: Span) {}
 }
@@ -35,20 +46,140 @@ impl<F: FnMut(&Expr, &Expr, Span)> Observer for StatementAssignments<'_, F> {
     }
 }
 pub(crate) fn statement_assignments(
-    statements: &[Statement],
+    view: dm_syntax::StatementView<'_>,
     emit: &mut impl FnMut(&Expr, &Expr, Span),
-) {
-    walk(statements, &mut StatementAssignments(emit));
+) -> Result<(), &'static str> {
+    observe(view, &mut StatementAssignments(emit))
 }
-pub(crate) fn assignments(statements: &[Statement], emit: &mut impl FnMut(&Expr, &Expr, Span)) {
-    walk(statements, &mut Assignments(emit));
+pub(crate) fn assignments(
+    view: dm_syntax::StatementView<'_>,
+    emit: &mut impl FnMut(&Expr, &Expr, Span),
+) -> Result<(), &'static str> {
+    observe(view, &mut Assignments(emit))
 }
-pub(crate) fn expressions(statements: &[Statement], emit: &mut impl FnMut(&Expr, Span)) {
-    walk(statements, &mut Expressions(emit));
+pub(crate) fn expressions(
+    view: dm_syntax::StatementView<'_>,
+    emit: &mut impl FnMut(&Expr, Span),
+) -> Result<(), &'static str> {
+    observe(view, &mut Expressions(emit))
 }
-fn walk(statements: &[Statement], emit: &mut impl Observer) {
-    for statement in statements {
-        statement_walk(statement, emit);
+pub(crate) struct StoredEvents<'a, E, A> {
+    pub expression: &'a mut E,
+    pub assignment: &'a mut A,
+}
+impl<E: FnMut(&Expr, Span), A: FnMut(&Expr, &str, &Expr, Span)> Observer
+    for StoredEvents<'_, E, A>
+{
+    fn expression(&mut self, node: &Expr, at: Span) {
+        (self.expression)(node, at)
+    }
+    fn list_write_assignment(&mut self, a: &Expr, op: &str, b: &Expr, at: Span) {
+        (self.assignment)(a, op, b, at)
+    }
+}
+pub(crate) fn stored_events(
+    view: dm_syntax::StatementView<'_>,
+    expression: &mut impl FnMut(&Expr, Span),
+    assignment: &mut impl FnMut(&Expr, &str, &Expr, Span),
+) -> Result<(), &'static str> {
+    observe(
+        view,
+        &mut StoredEvents {
+            expression,
+            assignment,
+        },
+    )
+}
+
+/// The three existing value-policy visitors use only statement/expression
+/// hooks (no lexical paths or branch hooks). Preserve those exact hooks over
+/// original old-policy observation order, including implicit array children.
+pub(crate) fn visit_value_policy(
+    view: dm_syntax::StatementView<'_>,
+    visitor: &mut impl dm_syntax::TypedVisitor,
+) -> Result<(), &'static str> {
+    struct Adapter<'a, V> {
+        visitor: &'a mut V,
+        stopped: bool,
+        descend: bool,
+    }
+    impl<V: dm_syntax::TypedVisitor> Observer for Adapter<'_, V> {
+        fn statement(&mut self, s: &Statement) -> bool {
+            let decision = self.visitor.statement(s, &[]);
+            self.stopped |= decision == dm_syntax::VisitDecision::Stop;
+            decision == dm_syntax::VisitDecision::Descend
+        }
+        fn expression(&mut self, e: &Expr, _: Span) {
+            let decision = self.visitor.expression(e, &[]);
+            self.stopped |= decision == dm_syntax::VisitDecision::Stop;
+            self.descend = decision == dm_syntax::VisitDecision::Descend;
+        }
+        fn stopped(&self) -> bool {
+            self.stopped
+        }
+        fn descend_expression(&self) -> bool {
+            self.descend
+        }
+    }
+    observe(
+        view,
+        &mut Adapter {
+            visitor,
+            stopped: false,
+            descend: true,
+        },
+    )
+}
+fn observe(
+    view: dm_syntax::StatementView<'_>,
+    emit: &mut impl Observer,
+) -> Result<(), &'static str> {
+    let ledger = view
+        .local_variables()
+        .ok_or("policy observation requires original local ledger")?;
+    ledger.entries()?;
+    let mut walk = PolicyWalk {
+        ledger,
+        error: None,
+    };
+    walk.walk(view.statements(), emit);
+    walk.error.map_or(Ok(()), Err)
+}
+struct PolicyWalk<'a> {
+    ledger: &'a dm_syntax::LocalVariableLedger,
+    error: Option<&'static str>,
+}
+impl PolicyWalk<'_> {
+    fn walk(&mut self, statements: &[Statement], emit: &mut impl Observer) {
+        for statement in statements {
+            if self.error.is_some() || emit.stopped() {
+                return;
+            }
+            self.statement_walk(statement, emit);
+        }
+    }
+    fn implicit(&mut self, statement: &Statement, at: Span, emit: &mut impl Observer) {
+        let Ok(entries) = self.ledger.in_span(statement.header_span) else {
+            self.error = Some("original local ledger unavailable");
+            return;
+        };
+        let mut facts = entries.iter();
+        let Some(fact) = facts.next() else {
+            self.error = Some("original implicit initializer declaration missing");
+            return;
+        };
+        if facts.next().is_some() {
+            self.error = Some("original implicit initializer declaration ambiguous");
+            return;
+        }
+        if let Some(root) = fact.implicit_list_initializer() {
+            emit.implicit_list(root, at);
+            // Old stmt_exprs holds a synthetic New/list ROOT; dimensions are
+            // nested arguments, never fabricated top-level assignments.
+            for dimension in root.dimensions.iter() {
+                expression_tree(dimension, at, emit);
+            }
+        }
     }
 }
 
@@ -61,7 +192,18 @@ fn expression(node: &Expr, at: Span, emit: &mut impl Observer) {
     expression_tree(node, at, emit);
 }
 fn expression_tree(node: &Expr, at: Span, emit: &mut impl Observer) {
+    if emit.stopped() {
+        return;
+    }
     emit.expression(node, at);
+    if emit.stopped() || !emit.descend_expression() {
+        return;
+    }
+    if let ExprKind::Binary { op, lhs, rhs } = &node.kind {
+        if matches!(op.as_str(), "=" | "+=" | "|=" | "||=") {
+            emit.list_write_assignment(lhs, op, rhs, at);
+        }
+    }
     if let ExprKind::Binary { op, lhs, rhs } = &node.kind {
         if op == "=" {
             emit.assignment(lhs, rhs, at);
@@ -97,152 +239,171 @@ fn next_arm(else_branch: &[Statement]) -> Option<&Statement> {
         .then_some(next)
 }
 
-fn statement_walk(statement: &Statement, emit: &mut impl Observer) {
-    let at = statement.span;
-    match &statement.kind {
-        StatementKind::If { .. } => {
-            // All conditions of one legacy If share its first statement's
-            // location, including conditions authored on later else-if lines.
-            let mut arm = statement;
-            loop {
-                let StatementKind::If {
-                    condition,
-                    else_branch,
-                    ..
-                } = &arm.kind
-                else {
-                    unreachable!("if-arm chain is checked above")
-                };
-                expression(condition, at, emit);
-                match next_arm(else_branch) {
-                    Some(next) => arm = next,
-                    None => break,
-                }
-            }
-            let mut arm = statement;
-            loop {
-                let StatementKind::If {
-                    then_branch,
-                    else_branch,
-                    ..
-                } = &arm.kind
-                else {
-                    unreachable!("if-arm chain is checked above")
-                };
-                walk(then_branch, emit);
-                match next_arm(else_branch) {
-                    Some(next) => arm = next,
-                    None => {
-                        walk(else_branch, emit);
-                        break;
-                    }
-                }
-            }
+impl PolicyWalk<'_> {
+    fn statement_walk(&mut self, statement: &Statement, emit: &mut impl Observer) {
+        if emit.stopped() || !emit.statement(statement) {
+            return;
         }
-        StatementKind::While { condition, body } | StatementKind::DoWhile { condition, body } => {
-            expression(condition, at, emit);
-            walk(body, emit);
-        }
-        StatementKind::Spawn { delay, body } => {
-            if let Some(delay) = delay {
-                expression(delay, at, emit);
-            }
-            walk(body, emit);
-        }
-        StatementKind::Set { value, .. } => expression(value, at, emit),
-        StatementKind::For { control, body } => {
-            match control {
-                ForControl::All { .. } => {}
-                ForControl::Each { iterable, .. } | ForControl::Pair { iterable, .. } => {
-                    expression(iterable, at, emit);
-                }
-                ForControl::Range {
-                    start, end, step, ..
-                } => {
-                    expression(start, at, emit);
-                    expression(end, at, emit);
-                    if let Some(step) = step {
-                        expression(step, at, emit);
+        let at = statement.span;
+        match &statement.kind {
+            StatementKind::If { .. } => {
+                // All conditions of one legacy If share its first statement's
+                // location, including conditions authored on later else-if lines.
+                let mut arm = statement;
+                loop {
+                    let StatementKind::If {
+                        condition,
+                        else_branch,
+                        ..
+                    } = &arm.kind
+                    else {
+                        unreachable!("if-arm chain is checked above")
+                    };
+                    expression(condition, at, emit);
+                    match next_arm(else_branch) {
+                        Some(next) => arm = next,
+                        None => break,
                     }
                 }
-                ForControl::CStyle {
-                    initializer,
-                    condition,
-                    step,
-                } => {
-                    // Legacy stmt_exprs(ForLoop) visits test; walk_block then
-                    // visits init and inc, in that order, at the For's location.
-                    if let Some(condition) = condition {
-                        expression(condition, at, emit);
-                    }
-                    match initializer {
-                        Some(ForInitializer::Declare {
-                            value: Some(value), ..
-                        })
-                        | Some(ForInitializer::Expr(value)) => expression(value, at, emit),
-                        _ => {}
-                    }
-                    if let Some(step) = step {
-                        expression(step, at, emit);
-                    }
-                }
-            }
-            walk(body, emit);
-        }
-        StatementKind::Switch {
-            selector,
-            cases,
-            else_branch,
-        } => {
-            expression(selector, at, emit);
-            for case in cases {
-                for alternative in &case.alternatives {
-                    match alternative {
-                        SwitchAlternative::Exact(value) => expression(value, at, emit),
-                        SwitchAlternative::Range(start, end) => {
-                            expression(start, at, emit);
-                            expression(end, at, emit);
+                let mut arm = statement;
+                loop {
+                    let StatementKind::If {
+                        then_branch,
+                        else_branch,
+                        ..
+                    } = &arm.kind
+                    else {
+                        unreachable!("if-arm chain is checked above")
+                    };
+                    self.walk(then_branch, emit);
+                    match next_arm(else_branch) {
+                        Some(next) => arm = next,
+                        None => {
+                            self.walk(else_branch, emit);
+                            break;
                         }
                     }
                 }
             }
-            for case in cases {
-                walk(&case.body, emit);
+            StatementKind::While { condition, body }
+            | StatementKind::DoWhile { condition, body } => {
+                expression(condition, at, emit);
+                self.walk(body, emit);
             }
-            walk(else_branch, emit);
-        }
-        StatementKind::Try {
-            body, catch_body, ..
-        } => {
-            walk(body, emit);
-            walk(catch_body, emit);
-        }
-        StatementKind::Throw(value)
-        | StatementKind::Call(value)
-        | StatementKind::Expression(value) => expression(value, at, emit),
-        StatementKind::Return(Some(value))
-        | StatementKind::Var {
-            value: Some(value), ..
-        } => {
-            expression(value, at, emit);
-        }
-        StatementKind::Assign { target, op, value } => {
-            if op == "=" {
-                emit.statement_assignment(target, value, at);
-                emit.assignment(target, value, at);
+            StatementKind::Spawn { delay, body } => {
+                if let Some(delay) = delay {
+                    expression(delay, at, emit);
+                }
+                self.walk(body, emit);
             }
-            expression_tree(target, at, emit);
-            expression_tree(value, at, emit);
+            StatementKind::Set { value, .. } => expression(value, at, emit),
+            StatementKind::For { control, body } => {
+                match control {
+                    ForControl::All { .. } => {}
+                    ForControl::Each { iterable, .. } | ForControl::Pair { iterable, .. } => {
+                        expression(iterable, at, emit);
+                    }
+                    ForControl::RangeImplicitArray { end, step, .. } => {
+                        // Analyze's original stmt_exprs order differs from the
+                        // checker evaluator: synthetic start FIRST, then end/step.
+                        self.implicit(statement, at, emit);
+                        expression(end, at, emit);
+                        if let Some(step) = step {
+                            expression(step, at, emit);
+                        }
+                    }
+                    ForControl::Range {
+                        start, end, step, ..
+                    } => {
+                        expression(start, at, emit);
+                        expression(end, at, emit);
+                        if let Some(step) = step {
+                            expression(step, at, emit);
+                        }
+                    }
+                    ForControl::CStyle {
+                        initializer,
+                        condition,
+                        step,
+                    } => {
+                        // Legacy stmt_exprs(ForLoop) visits test; walk_block then
+                        // visits init and inc, in that order, at the For's location.
+                        if let Some(condition) = condition {
+                            expression(condition, at, emit);
+                        }
+                        match initializer {
+                            Some(ForInitializer::Declare {
+                                value: Some(value), ..
+                            })
+                            | Some(ForInitializer::Expr(value)) => expression(value, at, emit),
+                            Some(ForInitializer::Declare { value: None, .. }) => {
+                                self.implicit(statement, at, emit)
+                            }
+                            _ => {}
+                        }
+                        if let Some(step) = step {
+                            expression(step, at, emit);
+                        }
+                    }
+                }
+                self.walk(body, emit);
+            }
+            StatementKind::Switch {
+                selector,
+                cases,
+                else_branch,
+            } => {
+                expression(selector, at, emit);
+                for case in cases {
+                    for alternative in &case.alternatives {
+                        match alternative {
+                            SwitchAlternative::Exact(value) => expression(value, at, emit),
+                            SwitchAlternative::Range(start, end) => {
+                                expression(start, at, emit);
+                                expression(end, at, emit);
+                            }
+                        }
+                    }
+                }
+                for case in cases {
+                    self.walk(&case.body, emit);
+                }
+                self.walk(else_branch, emit);
+            }
+            StatementKind::Try {
+                body, catch_body, ..
+            } => {
+                self.walk(body, emit);
+                self.walk(catch_body, emit);
+            }
+            StatementKind::Throw(value)
+            | StatementKind::Call(value)
+            | StatementKind::Expression(value) => expression(value, at, emit),
+            StatementKind::Return(Some(value))
+            | StatementKind::Var {
+                value: Some(value), ..
+            } => {
+                expression(value, at, emit);
+            }
+            StatementKind::Assign { target, op, value } => {
+                emit.list_write_assignment(target, op, value, at);
+                if op == "=" {
+                    emit.statement_assignment(target, value, at);
+                    emit.assignment(target, value, at);
+                }
+                expression_tree(target, at, emit);
+                expression_tree(value, at, emit);
+            }
+            StatementKind::Label { body, .. } => self.walk(body, emit),
+            StatementKind::Var { value: None, .. } => self.implicit(statement, at, emit),
+            StatementKind::Goto(_)
+            | StatementKind::Return(None)
+            | StatementKind::Break
+            | StatementKind::BreakLabel(_)
+            | StatementKind::Continue
+            | StatementKind::ContinueLabel(_)
+            | StatementKind::Unsupported => {}
         }
-        StatementKind::Label { body, .. } => walk(body, emit),
-        StatementKind::Goto(_)
-        | StatementKind::Return(None)
-        | StatementKind::Var { value: None, .. }
-        | StatementKind::Break
-        | StatementKind::BreakLabel(_)
-        | StatementKind::Continue
-        | StatementKind::ContinueLabel(_)
-        | StatementKind::Unsupported => {}
     }
 }
 
@@ -256,17 +417,21 @@ mod tests {
         let body = dm_syntax::parse_proc_body(&ast.items[0]);
         assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
         let mut found = Vec::new();
-        assignments(&body.statements, &mut |lhs, _, at| {
-            let ExprKind::Ident(name) = &lhs.kind else {
-                panic!("expected test identifier")
-            };
-            let line = source[..at.start]
-                .bytes()
-                .filter(|byte| *byte == b'\n')
-                .count()
-                + 1;
-            found.push((name.clone(), line));
-        });
+        assignments(
+            dm_syntax::StatementView::from_parsed(&body),
+            &mut |lhs, _, at| {
+                let ExprKind::Ident(name) = &lhs.kind else {
+                    panic!("expected test identifier")
+                };
+                let line = source[..at.start]
+                    .bytes()
+                    .filter(|byte| *byte == b'\n')
+                    .count()
+                    + 1;
+                found.push((name.clone(), line));
+            },
+        )
+        .unwrap();
         found
     }
 
@@ -317,6 +482,46 @@ mod tests {
              ("inner".into(), 4), ("last".into(), 5)]
         );
     }
+
+    #[test]
+    fn original_array_dimensions_are_nested_and_explicit_initializers_suppress_them() {
+        assert_eq!(
+            observed("/proc/test()\n    var/sized[first = 1]\n    var/suppressed[ignored = 2] = (written = 3)\n"),
+            [("first".into(),2),("written".into(),3)]
+        );
+    }
+
+    #[test]
+    fn original_implicit_range_syntax_order_is_start_then_end_then_step() {
+        assert_eq!(
+            observed("/proc/test()\n    for(var/sized[start = 1] to (end = 2) step (step = 3))\n        body = 4\n"),
+            [("start".into(),2),("end".into(),2),("step".into(),2),("body".into(),3)]
+        );
+    }
+
+    #[test]
+    fn original_cstyle_array_initializer_follows_test_and_precedes_increment() {
+        assert_eq!(
+            observed("/proc/test()\n    for(var/sized[init = 1]; (test = 2); (inc = 3))\n        body = 4\n"),
+            [("test".into(),2),("init".into(),2),("inc".into(),2),("body".into(),3)]
+        );
+    }
+
+    #[test]
+    fn a_bare_statement_slice_cannot_silently_omit_an_array_initializer() {
+        let ast = dm_syntax::parse("/proc/test()\n    before = 1\n    var/sized[hidden = 2]\n");
+        let body = dm_syntax::parse_proc_body(&ast.items[0]);
+        let mut calls = 0;
+        assert!(assignments(
+            dm_syntax::StatementView::all(&body.statements),
+            &mut |_, _, _| calls += 1
+        )
+        .is_err());
+        assert_eq!(
+            calls, 0,
+            "missing original ledger refuses before any callback"
+        );
+    }
 }
 
 #[cfg(test)]
@@ -329,11 +534,15 @@ mod statement_root_tests {
         let body = dm_syntax::parse_proc_body(&syntax.items[0]);
         assert!(body.diagnostics.is_empty());
         let mut found = Vec::new();
-        super::statement_assignments(&body.statements, &mut |target, _, _| {
-            if let dm_syntax::ExprKind::Ident(n) = &target.kind {
-                found.push(n.clone());
-            }
-        });
+        super::statement_assignments(
+            dm_syntax::StatementView::from_parsed(&body),
+            &mut |target, _, _| {
+                if let dm_syntax::ExprKind::Ident(n) = &target.kind {
+                    found.push(n.clone());
+                }
+            },
+        )
+        .unwrap();
         assert_eq!(found, ["outer", "condition", "body"]);
     }
 }

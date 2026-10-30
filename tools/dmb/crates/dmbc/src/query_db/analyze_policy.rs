@@ -4,7 +4,8 @@ use super::*;
 use dq_analyze::{
     captured_base_vars_policy::BorrowedBaseVarsPolicy, captured_decl_policy::BorrowedDeclPolicy,
     captured_init_policy::BorrowedInitPolicy, captured_player_link::BorrowedPlayerLink,
-    captured_raw_policy::CapturedRawPolicy, captured_requirement_bool::BorrowedRequirementBool,
+    captured_raw_policy::CapturedRawPolicy, captured_rel_write::BorrowedRelWrite,
+    captured_requirement_bool::BorrowedRequirementBool, captured_stored_refs::BorrowedStoredRefs,
     captured_untyped::BorrowedUntyped, captured_untyped_member::BorrowedUntypedMember,
     captured_weak_raw_read::BorrowedWeakRawRead,
 };
@@ -109,6 +110,12 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                         }
                         "untyped_member" => BorrowedUntypedMember::capture(&raw, capture.policy())?
                             .scan(checkpoint)?,
+                        "stored_refs" => {
+                            BorrowedStoredRefs::capture(&raw, capture.policy())?.scan(checkpoint)?
+                        }
+                        "rel_write_undeclared" => {
+                            BorrowedRelWrite::capture(&raw, capture.policy())?.scan(checkpoint)?
+                        }
                         "weak_raw_read" => BorrowedWeakRawRead::capture(&raw, capture.policy())?
                             .scan(checkpoint)?,
                         "untyped" => {
@@ -318,6 +325,7 @@ mod extended_roster_tests {
                 "player_link"
             ]
         );
+        assert!(ordered_names(&["rel_write_undeclared".to_owned()]).is_ok());
         assert!(
             ordered_names(&["untyped".to_owned()]).is_ok(),
             "full untyped uses host manifest and same-Db value proof admission"
@@ -331,3 +339,7 @@ mod extended_roster_tests {
 #[cfg(test)]
 #[path = "analyze_policy_untyped_tests.rs"]
 mod untyped_tests;
+
+#[cfg(test)]
+#[path = "analyze_policy_rel_write_tests.rs"]
+mod rel_write_tests;

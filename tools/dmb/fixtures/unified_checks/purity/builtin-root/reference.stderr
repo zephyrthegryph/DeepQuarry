@@ -1,0 +1,6 @@
+@FIXTURE@, line 5, column 12:
+error: /proc/check calls /proc/sleep which has override child proc that does impure operations /datum/box/proc/sleep
+- 6:5: SpacemanDMM_should_not_pure set here
+- 7:5: /proc/sleep() called here
+- 4:9: Assignment on purity breaking expression() called here
+

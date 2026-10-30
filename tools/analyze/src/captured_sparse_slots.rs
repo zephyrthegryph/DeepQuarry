@@ -29,7 +29,7 @@ impl<'a> CapturedSparseSlots<'a> {
             _archive: archive,
         })
     }
-    fn include_order(&self) -> Result<HashMap<String, usize>, String> {
+    pub(crate) fn include_order(&self) -> Result<HashMap<String, usize>, String> {
         let path = self.root.join("deepquarry.dme");
         let mut chosen = None;
         for (actual, lease) in self.inputs.mapping().source_acquisitions() {

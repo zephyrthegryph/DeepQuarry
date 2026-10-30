@@ -47,29 +47,27 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
         underlying: &'a R,
         inventory: Arc<StaticInventory>,
     ) -> Result<Self, String> {
-        let answer_world = underlying
-            .answer_world()
-            .map(|base| {
-                let mut hash = xxhash_rust::xxh3::Xxh3::new();
-                hash.update(b"dm-procedure-static-domain-v1\0");
-                hash.update(&base.to_le_bytes());
-                let mut captured: Vec<_> = inventory.procedures.iter().collect();
-                captured.sort();
-                hash.update(&(captured.len() as u64).to_le_bytes());
-                for procedure in captured {
-                    hash.update(&procedure.owner.bits().to_le_bytes());
-                    hash.update(&procedure.name.bits().to_le_bytes());
-                    hash.update(&[u8::from(procedure.verb)]);
-                    hash.update(&procedure.occurrence.to_le_bytes());
-                }
-                hash.update(&(inventory.declarations.len() as u64).to_le_bytes());
-                for declaration in inventory.declarations.values() {
-                    let bytes = declaration.canonical_bytes();
-                    hash.update(&(bytes.len() as u64).to_le_bytes());
-                    hash.update(&bytes);
-                }
-                hash.digest128()
-            });
+        let answer_world = underlying.answer_world().map(|base| {
+            let mut hash = xxhash_rust::xxh3::Xxh3::new();
+            hash.update(b"dm-procedure-static-domain-v1\0");
+            hash.update(&base.to_le_bytes());
+            let mut captured: Vec<_> = inventory.procedures.iter().collect();
+            captured.sort();
+            hash.update(&(captured.len() as u64).to_le_bytes());
+            for procedure in captured {
+                hash.update(&procedure.owner.bits().to_le_bytes());
+                hash.update(&procedure.name.bits().to_le_bytes());
+                hash.update(&[u8::from(procedure.verb)]);
+                hash.update(&procedure.occurrence.to_le_bytes());
+            }
+            hash.update(&(inventory.declarations.len() as u64).to_le_bytes());
+            for declaration in inventory.declarations.values() {
+                let bytes = declaration.canonical_bytes();
+                hash.update(&(bytes.len() as u64).to_le_bytes());
+                hash.update(&bytes);
+            }
+            hash.digest128()
+        });
         Ok(Self {
             answer_world,
             underlying,
@@ -378,7 +376,8 @@ fn walk(
                 let declarations: Vec<&str> = match control {
                     dm_syntax::ForControl::All { declaration } => vec![declaration],
                     dm_syntax::ForControl::Each { binding, .. }
-                    | dm_syntax::ForControl::Range { binding, .. } => vec![binding],
+                    | dm_syntax::ForControl::Range { binding, .. }
+                    | dm_syntax::ForControl::RangeImplicitArray { binding, .. } => vec![binding],
                     dm_syntax::ForControl::Pair {
                         key_binding,
                         value_binding,
@@ -475,10 +474,7 @@ mod tests {
         let parsed = dm_syntax::parse("var/static/value = 1\n");
         let changed = capture(id, &parsed.items).unwrap();
         let new = StaticResolver::new(&base, &[(id, changed)]).unwrap();
-        assert_ne!(
-            old.answer_world(),
-            new.answer_world()
-        );
+        assert_ne!(old.answer_world(), new.answer_world());
         let query = dm_ir::ResolveQuery::ProcedureStatic {
             procedure: id,
             name: dm_ir::SymbolId::of("value"),

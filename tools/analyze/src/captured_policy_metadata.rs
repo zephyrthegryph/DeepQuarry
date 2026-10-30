@@ -7,6 +7,8 @@ pub const LINTS: &[&str] = &[
     "untyped_member",
     "player_link",
     "weak_raw_read",
+    "rel_write_undeclared",
+    "stored_refs",
     "untyped",
 ];
 pub fn metadata(name: &str) -> Option<&'static crate::lint::Meta> {
@@ -16,6 +18,8 @@ pub fn metadata(name: &str) -> Option<&'static crate::lint::Meta> {
         "base_vars" => Some(&crate::base_var_metadata::META),
         "requirement_bool" => Some(crate::lints::requirement_bool::captured_metadata()),
         "untyped_member" => Some(&crate::untyped_member_policy::META),
+        "stored_refs" => Some(crate::stored_refs_policy::metadata()),
+        "rel_write_undeclared" => Some(crate::rel_write_policy::metadata()),
         "weak_raw_read" => Some(crate::weak_relation_policy::metadata()),
         "untyped" => Some(&crate::untyped_policy_metadata::META),
         "player_link" => Some(crate::player_link_policy::metadata()),

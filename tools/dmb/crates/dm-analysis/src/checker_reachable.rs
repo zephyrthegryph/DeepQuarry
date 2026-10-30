@@ -189,54 +189,107 @@ struct Walker<'a, 'o> {
     observer: Option<&'o mut dyn EvaluatedObserver<'a>>,
 }
 impl<'a> Walker<'a, '_> {
+    fn check_observer_admission(&mut self) -> Result<(), String> {
+        if let Some(observer) = self.observer.as_deref_mut() {
+            observer.admit_storage(0)?;
+        }
+        Ok(())
+    }
+    fn event(&mut self, event: Event<'a>) -> Result<(), String> {
+        self.check_observer_admission()?;
+        if self.events.len() == self.events.capacity() {
+            let cap = self
+                .events
+                .capacity()
+                .checked_mul(2)
+                .unwrap_or(usize::MAX)
+                .max(4);
+            let bytes = cap
+                .saturating_mul(std::mem::size_of::<Event<'a>>())
+                .saturating_add(64);
+            let bounded = if let Some(observer) = self.observer.as_deref_mut() {
+                observer.admit_storage(bytes)?
+            } else {
+                false
+            };
+            if bounded
+                && self
+                    .events
+                    .try_reserve_exact(cap.saturating_sub(self.events.len()))
+                    .is_err()
+            {
+                if let Some(observer) = self.observer.as_deref_mut() {
+                    observer.storage_allocation_failed()
+                }
+                return Err("bounded control-observer event allocation refused".into());
+            }
+        }
+        self.events.push(event);
+        Ok(())
+    }
     fn block(
         &mut self,
         statements: &'a [Statement],
         mut setting_allowed: bool,
     ) -> Result<ControlFlow, String> {
+        self.check_observer_admission()?;
         let mut flow = ControlFlow::default();
         for statement in statements {
+            self.check_observer_admission()?;
             if flow.terminates() {
-                self.events.push(Event::Unreachable {
+                self.event(Event::Unreachable {
                     kind: UnreachableKind::Sibling,
                     at: statement.header_span,
-                });
+                })?;
                 break;
             }
             if let StatementKind::Set { attribute, .. } = &statement.kind {
                 if !setting_allowed && attribute.starts_with("SpacemanDMM_") {
-                    self.events.push(Event::SettingOutsidePrefix {
+                    self.event(Event::SettingOutsidePrefix {
                         statement,
                         attribute,
-                    });
+                    })?;
                 }
             } else {
                 setting_allowed = false;
             }
             flow.merge(self.statement(statement)?);
         }
+        self.check_observer_admission()?;
         Ok(flow)
     }
-    fn condition(&mut self, kind: ConditionKind, expression: &'a Expr, at: Span) {
-        self.events.push(Event::ControlCondition {
+    fn condition(
+        &mut self,
+        kind: ConditionKind,
+        expression: &'a Expr,
+        at: Span,
+    ) -> Result<(), String> {
+        self.event(Event::ControlCondition {
             kind,
             expression,
             at,
-        });
+        })?;
+        Ok(())
     }
     fn scoped<T>(
         &mut self,
         kind: ScopeKind,
         run: impl FnOnce(&mut Self) -> Result<T, String>,
     ) -> Result<T, String> {
-        if let Some(observer) = self.observer.as_deref_mut() {
+        let entered = if let Some(observer) = self.observer.as_deref_mut() {
             observer.enter_scope(kind);
-        }
-        let result = run(self);
-        if let Some(observer) = self.observer.as_deref_mut() {
+            observer.admit_storage(0).map(|_| ())
+        } else {
+            Ok(())
+        };
+        let result = entered.and_then(|_| run(self));
+        let exited = if let Some(observer) = self.observer.as_deref_mut() {
             observer.leave_scope(kind);
-        }
-        result
+            observer.admit_storage(0).map(|_| ())
+        } else {
+            Ok(())
+        };
+        result.and_then(|value| exited.map(|_| value))
     }
     fn evaluated(&mut self, expression: &'a Expr) -> Result<(), String> {
         if let Some(observer) = self.observer.as_deref_mut() {
@@ -308,11 +361,11 @@ impl<'a> Walker<'a, '_> {
                             observer.initializer(initializer, statement.header_span)?;
                         }
                         if let Some(condition) = condition {
-                            this.events.push(Event::LoopCondition {
+                            this.event(Event::LoopCondition {
                                 expression: condition,
                                 at: statement.span,
-                            });
-                            this.condition(ConditionKind::ForTest, condition, statement.span);
+                            })?;
+                            this.condition(ConditionKind::ForTest, condition, statement.span)?;
                             this.evaluated(condition)?;
                         }
                         // Pinned visitor evaluates inc BEFORE visiting the body.
@@ -332,6 +385,13 @@ impl<'a> Walker<'a, '_> {
                         this.evaluated(iterable)?;
                         this.binding(key_binding, None, false, statement.header_span)?;
                         this.binding(value_binding, None, true, statement.header_span)?;
+                    }
+                    ForControl::RangeImplicitArray { binding, end, step } => {
+                        this.evaluated(end)?;
+                        if let Some(step) = step {
+                            this.evaluated(step)?;
+                        }
+                        this.binding(binding, None, false, statement.header_span)?;
                     }
                     ForControl::Range {
                         binding,
@@ -365,7 +425,7 @@ impl<'a> Walker<'a, '_> {
                 cases,
                 else_branch,
             } => {
-                self.condition(ConditionKind::Switch, selector, statement.span);
+                self.condition(ConditionKind::Switch, selector, statement.span)?;
                 self.evaluated(selector)?;
                 let mut all = ControlFlow::all_true();
                 for case in cases {
@@ -476,12 +536,12 @@ impl<'a> Walker<'a, '_> {
                 .parsed()
                 .control_origin(condition.span)
                 .ok_or("missing primary if origin")?;
-            self.condition(ConditionKind::If, condition, at);
+            self.condition(ConditionKind::If, condition, at)?;
             if always_true {
-                self.events.push(Event::Unreachable {
+                self.event(Event::Unreachable {
                     kind: UnreachableKind::IfArm,
                     at,
-                });
+                })?;
             }
             let state = self.scoped(ScopeKind::IfArm, |this| {
                 this.evaluated(condition)?;
@@ -489,11 +549,11 @@ impl<'a> Walker<'a, '_> {
             })?;
             match truthy(condition)? {
                 Some(value) => {
-                    self.events.push(Event::IfDeterminate {
+                    self.event(Event::IfDeterminate {
                         expression: condition,
                         at,
                         value,
-                    });
+                    })?;
                     if value {
                         all.merge_false(state);
                         always_true = true;
@@ -515,10 +575,10 @@ impl<'a> Walker<'a, '_> {
                 all.no_else();
             } else {
                 if always_true {
-                    self.events.push(Event::Unreachable {
+                    self.event(Event::Unreachable {
                         kind: UnreachableKind::ElseArm,
                         at: else_branch[0].header_span,
-                    });
+                    })?;
                 }
                 all.merge_false(
                     self.scoped(ScopeKind::ElseArm, |this| this.block(else_branch, false))?,
@@ -678,3 +738,7 @@ fn valid_range(start: &Expr, end: &Expr, step: Option<&Expr>) -> Result<Option<b
 #[cfg(test)]
 #[path = "checker_reachable_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "checker_reachable_storage_tests.rs"]
+mod storage_tests;

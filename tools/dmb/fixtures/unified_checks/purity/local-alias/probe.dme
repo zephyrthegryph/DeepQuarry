@@ -1,0 +1,6 @@
+/datum/base
+    var/value=0
+/datum/base/proc/probe()
+    set SpacemanDMM_should_be_pure = 1
+    var/local=value
+    local++

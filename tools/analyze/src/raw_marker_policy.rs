@@ -193,3 +193,75 @@ pub fn dme_include_order_view(
     }
     out
 }
+
+pub fn block_extent(text: &str, close: usize) -> Option<usize> {
+    let rest = &text[close + 1..];
+    let eol = rest.find('\n').unwrap_or(rest.len());
+    if !rest[..eol].trim().is_empty() {
+        return None;
+    }
+    let mut pos = close + 1 + eol;
+    let mut end: Option<usize> = None;
+    while pos < text.len() {
+        // `pos` is at a newline; the next line starts after it.
+        let ls = pos + 1;
+        if ls > text.len() {
+            break;
+        }
+        let le = text[ls..].find('\n').map(|i| ls + i).unwrap_or(text.len());
+        let line = &text[ls..le];
+        if line.trim().is_empty() {
+            pos = le;
+            continue;
+        }
+        if !line.starts_with(|c: char| c.is_whitespace()) {
+            break;
+        }
+        end = Some(ls + line.trim_end().len());
+        pos = le;
+    }
+    end
+}
+
+/// The marker body of a block: `text[from..end]` with the header's `)` and each top-level entry-ending newline replaced by a comma
+/// (same length, so offsets and lines are unchanged). The engine then reads one argument list in either form.
+pub fn block_body(text: &str, from: usize, close: usize, end: usize) -> String {
+    let b = text.as_bytes();
+    let mut out: Vec<u8> = b[from..end].to_vec();
+    out[close - from] = b',';
+    let mut depth = 0i32;
+    let mut in_str = false;
+    let mut pending: Option<usize> = None; // the last depth-0 newline since the previous entry's text
+    let mut seen_entry = false;
+    let mut i = close + 1;
+    while i < end {
+        let c = b[i];
+        if in_str {
+            if c == b'\\' {
+                i += 1;
+            } else if c == b'"' {
+                in_str = false;
+            }
+            i += 1;
+            continue;
+        }
+        if depth == 0 && !c.is_ascii_whitespace() {
+            // An entry starts here: the newline before it ended the previous one.
+            if let Some(nl) = pending.take() {
+                if seen_entry {
+                    out[nl - from] = b',';
+                }
+            }
+            seen_entry = true;
+        }
+        match c {
+            b'"' => in_str = true,
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' => depth -= 1,
+            b'\n' if depth == 0 => pending = Some(i),
+            _ => {}
+        }
+        i += 1;
+    }
+    String::from_utf8(out).unwrap_or_default()
+}

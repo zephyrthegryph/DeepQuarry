@@ -27,9 +27,9 @@ impl Compiler<'_> {
             if let StatementKind::For { control, .. } = &statement.kind {
                 let declarations: &[&str] = match control {
                     ForControl::All { declaration } => &[declaration],
-                    ForControl::Each { binding, .. } | ForControl::Range { binding, .. } => {
-                        &[binding]
-                    }
+                    ForControl::Each { binding, .. }
+                    | ForControl::Range { binding, .. }
+                    | ForControl::RangeImplicitArray { binding, .. } => &[binding],
                     ForControl::Pair {
                         key_binding,
                         value_binding,
@@ -256,9 +256,12 @@ impl Compiler<'_> {
                     self.assign_expr(target, op, value, &statement.raw_header)?;
                 }
                 StatementKind::Var { declaration, value } => {
-                    let name = local_name(declaration).ok_or_else(|| {
-                        error(&statement.raw_header, "unsupported local declaration")
-                    })?;
+                    let name = self
+                        .primary_local_name(statement)
+                        .or_else(|| local_name(declaration))
+                        .ok_or_else(|| {
+                            error(&statement.raw_header, "unsupported local declaration")
+                        })?;
                     if name.is_empty() {
                         return Err(error(
                             &statement.raw_header,
@@ -277,21 +280,13 @@ impl Compiler<'_> {
                     self.locals.push(name.into());
                     self.local_slots.insert(name.into(), slot);
                     self.record_local_header(slot, statement.header_span);
-                    if let Some(dimensions) = local_array_dimensions(declaration) {
-                        self.local_array_declaration(
-                            &dimensions,
-                            slot,
-                            &statement.raw_header,
-                            value.as_ref().map(|value| {
-                                |compiler: &mut Self| {
-                                    compiler.local_declaration_initializer(
-                                        value,
-                                        declaration,
-                                        &statement.raw_header,
-                                    )
-                                }
-                            }),
-                        )?;
+                    if self.primary_or_legacy_array(
+                        statement.header_span,
+                        slot,
+                        declaration,
+                        value.as_ref(),
+                        &statement.raw_header,
+                    )? {
                         continue;
                     }
                     self.register_local_declaration_type(name, declaration);
@@ -378,9 +373,12 @@ impl Compiler<'_> {
                     control: ForControl::All { declaration },
                     body,
                 } => {
-                    let name = local_name(declaration).ok_or_else(|| {
-                        error(&statement.raw_header, "world iterator must declare a local")
-                    })?;
+                    let name = self
+                        .primary_local_name(statement)
+                        .or_else(|| local_name(declaration))
+                        .ok_or_else(|| {
+                            error(&statement.raw_header, "world iterator must declare a local")
+                        })?;
                     let type_name = dm_syntax::local_type_path(declaration).ok_or_else(|| {
                         error(&statement.raw_header, "world iterator requires a type")
                     })?;
@@ -722,6 +720,15 @@ impl Compiler<'_> {
                     }
                 }
                 StatementKind::For {
+                    control: ForControl::RangeImplicitArray { .. },
+                    ..
+                } => {
+                    return Err(error(
+                        &statement.raw_header,
+                        "implicit array range start has no native runtime lowering",
+                    ));
+                }
+                StatementKind::For {
                     control:
                         ForControl::Range {
                             binding,
@@ -804,12 +811,26 @@ impl Compiler<'_> {
                     if let Some(initializer) = initializer {
                         match initializer {
                             ForInitializer::Declare { declaration, value } => {
-                                let name = local_name(declaration).ok_or_else(|| {
-                                    error(
-                                        &statement.raw_header,
-                                        "unsupported for initializer declaration",
-                                    )
-                                })?;
+                                let name = self
+                                    .primary_local_name(statement)
+                                    .or_else(|| local_name(declaration))
+                                    .ok_or_else(|| {
+                                        error(
+                                            &statement.raw_header,
+                                            "unsupported for initializer declaration",
+                                        )
+                                    })?;
+                                // The original name can be available even when
+                                // dimension operators defeat legacy text projection.
+                                // Apply the SAME parameter/local collision rule.
+                                self.check_local_declaration(
+                                    name,
+                                    &statement.raw_header,
+                                    LowerSpan {
+                                        start: statement.header_span.start,
+                                        end: statement.header_span.end,
+                                    },
+                                )?;
                                 if self.local_slots.contains_key(name) {
                                     return Err(error(
                                         &statement.raw_header,
@@ -820,8 +841,17 @@ impl Compiler<'_> {
                                 self.locals.push(name.into());
                                 self.local_slots.insert(name.into(), slot);
                                 self.record_local_header(slot, statement.header_span);
-                                self.register_local_declaration_type(name, declaration);
-                                if let Some(value) = value {
+                                let array = self.primary_or_legacy_array(
+                                    statement.header_span,
+                                    slot,
+                                    declaration,
+                                    value.as_ref(),
+                                    &statement.raw_header,
+                                )?;
+                                if !array {
+                                    self.register_local_declaration_type(name, declaration);
+                                }
+                                if let Some(value) = value.as_ref().filter(|_| !array) {
                                     self.local_declaration_initializer(
                                         value,
                                         declaration,

@@ -1,0 +1,8 @@
+[lint.untyped.lists]
+exempt_types=[]
+[lint.untyped_member.lists]
+exempt_types=[]
+[lint.stored_refs.lists]
+exempt_types=[]
+transient_types=[]
+work_queues=[]

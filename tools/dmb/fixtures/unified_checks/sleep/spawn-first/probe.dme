@@ -1,0 +1,7 @@
+/proc/blocking()
+    sleep(1)
+/proc/probe()
+    set SpacemanDMM_should_not_sleep=1
+    spawn(0)
+        blocking()
+    blocking()

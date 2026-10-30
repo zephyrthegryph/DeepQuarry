@@ -1,0 +1,3 @@
+@FIXTURE@, line 4, column 44:
+error: undefined proc: "actual_initializer" on /datum/example
+

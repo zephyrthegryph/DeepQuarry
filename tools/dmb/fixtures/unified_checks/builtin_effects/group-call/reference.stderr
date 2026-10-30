@@ -1,0 +1,5 @@
+@FIXTURE@, line 4, column 12:
+error: /proc/probe does impure operations
+- 5:5: SpacemanDMM_should_be_pure set here
+- 6:12: Assignment on purity breaking expression happens here
+

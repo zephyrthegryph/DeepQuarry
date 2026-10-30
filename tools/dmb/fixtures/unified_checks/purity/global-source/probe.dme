@@ -1,0 +1,9 @@
+/proc/write()
+    return
+/datum/box
+    var/value=0
+    proc/write()
+        value=1
+/proc/check()
+    set SpacemanDMM_should_be_pure=1
+    write()

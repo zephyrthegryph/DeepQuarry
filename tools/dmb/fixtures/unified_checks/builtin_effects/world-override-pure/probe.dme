@@ -1,0 +1,7 @@
+/world/child
+    var/value=0
+/world/child/Export(Addr,File,Persistence)
+    value=1
+/proc/probe(world/W)
+    set SpacemanDMM_should_be_pure=1
+    W.Export("x")

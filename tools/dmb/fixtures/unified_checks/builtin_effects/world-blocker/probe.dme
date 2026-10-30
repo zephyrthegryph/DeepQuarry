@@ -1,0 +1,3 @@
+/proc/probe(world/W)
+    set SpacemanDMM_should_not_sleep=1
+    W.Export("x")

@@ -23,6 +23,15 @@ fn subtype(tree: &dm_tree::SemanticTree, child: &str, parent: &str) -> Result<bo
     if child == parent {
         return Ok(true);
     }
+    let profile = tree.checker_builtin_profile().ok_or_else(|| {
+        Unsupported("weak-relation source type roster lacks certified checker hierarchy".into())
+    })?;
+    if !tree
+        .checker_source_type_presence(profile, child)
+        .map_err(|e| Unsupported(format!("{e:?}")))?
+    {
+        return Ok(false);
+    }
     match Resolver::resolve(tree, Q::Ancestry(SymbolId::of(child))) {
         M::Symbols(ancestors) => Ok(ancestors.contains(&SymbolId::of(parent))),
         M::Missing => Ok(false),
@@ -97,7 +106,7 @@ pub fn findings(
         let mut callees = HashSet::new();
         let mut error = None;
         crate::untyped_order::expressions(
-            &body.statement_body().parsed().statements,
+            body.statement_body().view(),
             &mut |e, at: Span| {
                 if error.is_some() {
                     return;
@@ -176,7 +185,7 @@ pub fn findings(
                     error = Some(e);
                 }
             },
-        );
+        ).map_err(|e|Unsupported(e.into()))?;
         if let Some(error) = error {
             return Err(error);
         }

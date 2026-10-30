@@ -1,0 +1,3 @@
+/proc/probe()
+    set SpacemanDMM_should_not_sleep=1
+    return input("x") as text

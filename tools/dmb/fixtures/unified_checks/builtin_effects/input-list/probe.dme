@@ -1,0 +1,5 @@
+/proc/choices()
+    return list()
+/proc/probe()
+    set SpacemanDMM_should_not_sleep=1
+    input("x") as null|mob in choices()

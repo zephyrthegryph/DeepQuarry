@@ -396,9 +396,11 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
     fn resolve_current(&self, query: Q) -> M {
         match query {
             // Checker-qualified catalogs never fall back to runtime providers.
-            Q::CheckerIntrinsicCallable { .. }
+            Q::CertifiedHierarchy { .. }
+            | Q::CheckerIntrinsicCallable { .. }
             | Q::CheckerBuiltinVar { .. }
-            | Q::CheckerBuiltinProc { .. } | Q::SourceVarDeclaration { .. } => self.tree.resolve(query),
+            | Q::CheckerBuiltinProc { .. }
+            | Q::SourceVarDeclaration { .. } => self.tree.resolve(query),
             Q::MemberCallableVerbName(_) => self
                 .intrinsic_methods
                 .as_ref()

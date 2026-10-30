@@ -89,7 +89,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "--project" => {
                 project = Some(args.next().ok_or("--project requires a manifest")?);
             }
-            "--expect-unsupported" => (),
+            "--expect-unsupported" | "--expect-empty" => (),
             _ if !arg.starts_with('-') && project.is_none() => project = Some(arg),
             _ => return Err(format!("unknown fixture option {arg}").into()),
         }
@@ -186,7 +186,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         ManifestRead::ProvenUnavailable
     };
-    let result = captured.scan(&input, proof, manifest, || Ok(()));
+    let original_body_count = input.archive().occurrences().len();
+    let source_variable_count = input
+        .archive()
+        .tree()
+        .members()
+        .iter()
+        .filter(|member| {
+            member.kind == dm_tree::MemberKind::Var
+                && member.definition == dm_tree::DefinitionMode::Declare
+        })
+        .count();
+    let compiled_source_count = inputs
+        .files()
+        .filter(|file| file.is_compiled() && file.role() == PolicyRole::DmSource)
+        .count();
+    let mut native_checkpoints = 0usize;
+    let result = captured.scan(&input, proof, manifest, || {
+        native_checkpoints += 1;
+        Ok(())
+    });
     if std::env::args().any(|arg| arg == "--expect-unsupported") {
         let reference_sites = expected
             .values()
@@ -228,7 +247,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .filter_map(|site| site["rule"].as_str())
         .collect::<std::collections::BTreeSet<_>>();
-    if sites == 0 {
+    let expect_empty = std::env::args().any(|arg| arg == "--expect-empty");
+    if expect_empty {
+        if sites != 0
+            || original_body_count == 0
+            || source_variable_count == 0
+            || compiled_source_count == 0
+            || native_checkpoints == 0
+        {
+            return Err("empty oracle requires exact old/native zero after genuine original body/source/value work".into());
+        }
+        // An empty comparison is not an exemption escape hatch. Allow only
+        // absent or explicitly empty list configuration for this lint.
+        let settings: toml::Value = std::str::from_utf8(&config)?.parse()?;
+        if let Some(section) = settings.get("lint").and_then(|v| v.get("untyped")) {
+            let table = section
+                .as_table()
+                .ok_or("empty oracle requires untyped table configuration")?;
+            for (key, value) in table {
+                if key != "lists" {
+                    return Err(
+                        "empty oracle disallows non-list untyped scope configuration".into(),
+                    );
+                }
+                for value in value
+                    .as_table()
+                    .ok_or("empty oracle requires list table")?
+                    .values()
+                {
+                    if !value.as_array().is_some_and(|values| values.is_empty()) {
+                        return Err("empty oracle disallows nonempty exemption/schema lists".into());
+                    }
+                }
+            }
+        }
+    } else if sites == 0 {
         return Err("positive fixture requires actual independent old findings".into());
     }
     if let Some(required) = roster.get("required_rules").and_then(toml::Value::as_array) {
@@ -245,7 +298,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!(
         "{}",
-        serde_json::json!({"scope":"untyped/explicit-seeded-fixture","lints":expected.len(),"sites":sites,"matched":true,"full_policy_parity":false,"baseline_applied":false})
+        serde_json::json!({"scope":"untyped/explicit-seeded-fixture","lints":expected.len(),"sites":sites,"matched":true,"expected_empty":expect_empty,"original_body_count":original_body_count,"source_variable_count":source_variable_count,"compiled_source_count":compiled_source_count,"native_checkpoints":native_checkpoints,"native_value_proof_computed":true,"full_policy_parity":false,"baseline_applied":false})
     );
     Ok(())
 }

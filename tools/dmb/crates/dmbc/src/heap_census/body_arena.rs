@@ -12,6 +12,12 @@ impl HeapCensus {
                         self.static_plan(receipt.plan());
                     }
                 }
+                let parameters = parsed.parameter_storage();
+                if self.arc_object(owner, parameters) {
+                    parameters.visit_storage(|pointer, bytes| {
+                        self.buffer(owner, pointer, bytes, bytes);
+                    });
+                }
                 self.string(owner, &parsed.item().header);
                 self.items(owner, &parsed.item().children);
                 if let Some(body) = parsed.shared_statement_body() {

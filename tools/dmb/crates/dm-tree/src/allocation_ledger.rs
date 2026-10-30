@@ -186,12 +186,32 @@ pub fn capture(
     owner: &str,
     symbols: &mut SymbolTable,
 ) -> Result<AllocationLedger, Error> {
+    capture_internal(items, owner, symbols, None)
+}
+pub(crate) fn capture_with_header_receipt(
+    items: &[Item],
+    owner: &str,
+    symbols: &mut SymbolTable,
+    headers: &crate::procedure::HeaderAllocationReceipt<'_>,
+) -> Result<AllocationLedger, Error> {
+    headers.require_items(items).map_err(|message| Error {
+        span: Span::new(0, 0),
+        message,
+    })?;
+    capture_internal(items, owner, symbols, Some(headers))
+}
+fn capture_internal(
+    items: &[Item],
+    owner: &str,
+    symbols: &mut SymbolTable,
+    headers: Option<&crate::procedure::HeaderAllocationReceipt<'_>>,
+) -> Result<AllocationLedger, Error> {
     TypePath::parse(owner).map_err(|message| Error {
         span: Span::new(0, 0),
         message: message.into(),
     })?;
     let mut events = EventBuilder::new();
-    walk(items, owner, None, symbols, &mut events)?;
+    walk(items, owner, None, symbols, &mut events, headers)?;
     Ok(AllocationLedger {
         events: events.finish(),
     })
@@ -202,35 +222,52 @@ fn walk(
     namespace: Option<&Namespace>,
     symbols: &mut SymbolTable,
     events: &mut EventBuilder,
+    headers: Option<&crate::procedure::HeaderAllocationReceipt<'_>>,
 ) -> Result<(), Error> {
     for item in items {
         let header = item.header.trim();
-        let assignment = dm_syntax::top_level_assignment_index(header);
+        let issued = headers.filter(|h| h.has(item.header_span));
+        let assignment = if issued.is_some() {
+            None
+        } else {
+            dm_syntax::top_level_assignment_index(header)
+        };
         let target = assignment.map_or(header, |index| header[..index].trim_end());
         let declaration = target
             .split_once('(')
             .map_or(target, |(head, _)| head)
             .trim();
-        let lexical = dm_syntax::lex_spans(declaration);
-        if let Some(error) = lexical.diagnostics.first() {
-            return Err(Error {
-                span: item.header_span,
-                message: error.message.clone(),
-            });
-        }
-        let normalized = lexical
-            .tokens
-            .iter()
-            .filter(|token| {
-                !matches!(
-                    token.kind,
-                    dm_syntax::TokenKind::Whitespace
-                        | dm_syntax::TokenKind::Newline
-                        | dm_syntax::TokenKind::Comment
-                )
-            })
-            .map(|token| token.text(declaration))
-            .collect::<String>();
+        let normalized = if let Some(issued) = issued {
+            issued
+                .inputs
+                .prefix(item.header_span, issued.offset)
+                .map_err(|message| Error {
+                    span: item.header_span,
+                    message,
+                })?
+                .collect::<String>()
+        } else {
+            let lexical = dm_syntax::lex_spans(declaration);
+            if let Some(error) = lexical.diagnostics.first() {
+                return Err(Error {
+                    span: item.header_span,
+                    message: error.message.clone(),
+                });
+            }
+            lexical
+                .tokens
+                .iter()
+                .filter(|token| {
+                    !matches!(
+                        token.kind,
+                        dm_syntax::TokenKind::Whitespace
+                            | dm_syntax::TokenKind::Newline
+                            | dm_syntax::TokenKind::Comment
+                    )
+                })
+                .map(|token| token.text(declaration))
+                .collect::<String>()
+        };
         // Match the declaration adapter's optional signature separator so the
         // allocation owner excludes the procedure name itself.
         let normalized = if target.contains('(') {
@@ -303,11 +340,19 @@ fn walk(
                 Some(&context),
                 symbols,
                 events,
+                headers,
             )?;
             continue;
         }
         if namespace.is_some() && !callable && assignment.is_none() && !item.children.is_empty() {
-            walk(&item.children, effective_owner, namespace, symbols, events)?;
+            walk(
+                &item.children,
+                effective_owner,
+                namespace,
+                symbols,
+                events,
+                headers,
+            )?;
             continue;
         }
         if callable
@@ -326,19 +371,31 @@ fn walk(
             if explicit.is_none() && namespace.is_none() && parts.len() > 1 {
                 member_owner = path(owner, &normalized[..normalized.rfind('/').unwrap()]);
             }
-            let (_, arguments, trailing) =
-                crate::adapter::signature_parts(header).map_err(|message| Error {
+            let compatibility;
+            let (declarations, argument_offset) = if let Some(headers) = headers {
+                let row = headers.row(item.header_span).map_err(|message| Error {
                     span: item.header_span,
                     message,
                 })?;
-            let parsed =
-                crate::procedure::parse_signature_declarations(arguments, trailing, symbols)
-                    .map_err(|error| Error {
+                (&row.declarations, row.argument_offset)
+            } else {
+                let (_, arguments, trailing) =
+                    crate::adapter::signature_parts(header).map_err(|message| Error {
                         span: item.header_span,
-                        message: error.message,
+                        message,
                     })?;
-            let argument_offset = arguments.as_ptr() as usize - item.header.as_ptr() as usize;
-            for declaration in parsed.declarations {
+                compatibility =
+                    crate::procedure::parse_signature_declarations(arguments, trailing, symbols)
+                        .map_err(|e| Error {
+                            span: item.header_span,
+                            message: e.message,
+                        })?;
+                (
+                    &compatibility.declarations,
+                    arguments.as_ptr() as usize - item.header.as_ptr() as usize,
+                )
+            };
+            for declaration in declarations {
                 let start = item
                     .header_span
                     .start
@@ -460,7 +517,7 @@ fn walk(
                     absolute: normalized.starts_with('/'),
                 },
             );
-            walk(&item.children, &full, None, symbols, events)?;
+            walk(&item.children, &full, None, symbols, events, headers)?;
             continue;
         }
         return Err(Error {

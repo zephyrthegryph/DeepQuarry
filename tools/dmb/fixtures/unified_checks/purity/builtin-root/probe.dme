@@ -1,0 +1,7 @@
+/datum/box
+    var/value=0
+    proc/sleep()
+        value=1
+/proc/check()
+    set SpacemanDMM_should_be_pure=1
+    sleep(1)

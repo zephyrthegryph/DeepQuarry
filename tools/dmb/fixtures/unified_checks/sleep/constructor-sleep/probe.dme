@@ -1,0 +1,5 @@
+/datum/box/New()
+    sleep(1)
+/proc/probe()
+    set SpacemanDMM_should_not_sleep = 1
+    var/datum/box/B = new /datum/box()

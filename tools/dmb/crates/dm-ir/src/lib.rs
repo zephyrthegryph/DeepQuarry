@@ -7,11 +7,11 @@ use std::fmt;
 
 mod portable_answer;
 mod portable_meaning;
-pub use portable_meaning::{Names as PortableNames, PortableMeaning};
 pub use portable_answer::PortableResolvedAnswer;
-mod warnings;
+pub use portable_meaning::{Names as PortableNames, PortableMeaning};
 pub mod builtin_names;
 pub mod header_compat;
+mod warnings;
 pub use warnings::WarningCode;
 
 mod packed_u128;
@@ -50,7 +50,8 @@ pub use canonical_answer::CanonicalResolvedAnswer;
 mod resolver;
 mod selected_references;
 pub use resolver::{
-    procedure_value_query, ProcedureDefinition, ReadDomain, ResolveQuery, ResolvedMeaning, Resolver,
+    procedure_value_query, HierarchyQuestion, ProcedureDefinition, ReadDomain, ResolveQuery,
+    ResolvedMeaning, Resolver,
 };
 pub use selected_references::{
     SelectedBuiltin, SelectedMeaning, SelectedReference, SelectedReferences,

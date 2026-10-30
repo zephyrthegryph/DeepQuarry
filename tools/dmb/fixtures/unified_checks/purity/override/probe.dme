@@ -1,0 +1,9 @@
+/datum/base/proc/write()
+    return
+/datum/base/child
+    var/value=0
+    write()
+        value=1
+/proc/probe(datum/base/B)
+    set SpacemanDMM_should_be_pure=1
+    B.write()

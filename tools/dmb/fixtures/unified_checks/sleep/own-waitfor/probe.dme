@@ -1,0 +1,4 @@
+/proc/probe()
+    set SpacemanDMM_should_not_sleep=1
+    set waitfor=0
+    sleep(1)

@@ -1,0 +1,108 @@
+use super::*;
+fn signature(source: &str) -> ParameterSignature {
+    crate::parse_proc_with_origins_at_span(source, Span::new(0, source.len()))
+        .unwrap()
+        .parameters
+}
+#[test]
+fn primary_parameter_receipt_strips_only_old_leading_modifiers() {
+    let source="/proc/p(var/static/const/datum/A, datum/static/B, SpacemanDMM_private/SpacemanDMM_protected/datum/C, final/D)\n    return\n";
+    let signature = signature(source);
+    let rows = signature.entries().unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|p| p.source_modifiers())
+            .collect::<Vec<_>>(),
+        [5, 0, 96, 16]
+    );
+    assert_eq!(
+        rows.iter()
+            .map(|p| p.type_path(source).unwrap())
+            .collect::<Vec<_>>(),
+        [
+            Some("/datum".into()),
+            Some("/datum/static".into()),
+            Some("/datum".into()),
+            None
+        ]
+    );
+    assert_eq!(
+        rows.iter()
+            .map(|p| &source[p.name().range()])
+            .collect::<Vec<_>>(),
+        ["A", "B", "C", "D"]
+    );
+}
+#[test]
+fn primary_parameter_suffix_adds_one_list_without_reparsing_dimensions() {
+    let source = "/proc/p(datum/D[2][length(list(1,2))], list/datum/L[], tmp/X[])\n    return\n";
+    let signature = signature(source);
+    let rows = signature.entries().unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|p| p.type_path(source).unwrap().unwrap())
+            .collect::<Vec<_>>(),
+        ["/list/datum", "/list/list/datum", "/list"]
+    );
+    assert_eq!(rows[0].array_brackets().len(), 2);
+    assert_eq!(rows[2].source_modifiers(), 8);
+}
+#[test]
+fn primary_parameter_original_tokens_survive_unicode_comments_defaults_annotations_and_rebase() {
+    let prefix = "// outside é漢\n";
+    let source=format!("{prefix}/proc/p(var/* é漢 */ /datum/D = list(1, list(2,3)) as anything in list(1,2), text/T=\"(,as)\", ...)\n    return\n");
+    let issued =
+        crate::parse_proc_with_origins_at_span(&source, Span::new(prefix.len(), source.len()))
+            .unwrap();
+    let entries = issued.parameters.entries().unwrap();
+    assert_eq!(entries.len(), 3);
+    assert_eq!(&source[entries[0].name().range()], "D");
+    assert_eq!(
+        entries[0].type_path(&source).unwrap().as_deref(),
+        Some("/datum")
+    );
+    assert!(entries[2].variadic());
+    assert_eq!(&source[entries[2].name().range()], "...");
+    assert_eq!(issued.parameters.header(), issued.item.header_span);
+}
+#[test]
+fn primary_parameter_receipt_refuses_unsupported_or_ambiguous_source_not_empty_clean() {
+    for source in [
+        "/proc/p(/datum/D)\n    return\n",
+        "/proc/p(x,,y)\n    return\n",
+    ] {
+        match crate::parse_proc_with_origins_at_span(source, Span::new(0, source.len())) {
+            Ok(p) => assert!(p.parameters.entries().is_err(), "{source}"),
+            Err(_) => (),
+        }
+    }
+}
+#[test]
+fn primary_parameter_receipt_storage_is_in_original_header_only_admission() {
+    for count in [0, 1, 16, 256] {
+        let args = (0..count)
+            .map(|i| format!("static/datum/A{i}[]"))
+            .collect::<Vec<_>>()
+            .join(",");
+        let source = format!("/proc/p({args})\n    return\n");
+        let signature = signature(&source);
+        signature.entries().unwrap();
+        let bound = (signature.header().end - signature.header().start) * 64 + 128;
+        assert!(signature.retained_bytes() <= bound);
+        let mut exact =
+            std::mem::size_of::<ParameterSignature>() + 2 * std::mem::size_of::<usize>();
+        signature.visit_storage(|_, n| exact += n);
+        assert_eq!(exact, signature.retained_bytes());
+    }
+}
+
+#[test]
+fn type_path_receipt_does_not_claim_default_or_dimension_expression_admission() {
+    let source = "/proc/p(datum/D[bad ???] = bad ???)\n    return\n";
+    let signature = signature(source);
+    let entries = signature.entries().unwrap();
+    assert_eq!(
+        entries[0].type_path(source).unwrap().as_deref(),
+        Some("/list/datum")
+    );
+}

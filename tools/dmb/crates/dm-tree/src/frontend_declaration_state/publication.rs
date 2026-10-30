@@ -119,6 +119,9 @@ impl RetainedDeclarations {
     pub(in crate::frontend) fn key(text: &str) -> Vec<u8> {
         DeclarationClaims::key(text)
     }
+    pub(in crate::frontend) fn original_header_key(text: &str) -> Vec<u8> {
+        DeclarationClaims::original_header_key(text)
+    }
     pub(in crate::frontend) fn compatibility_request(&self) -> Option<DeclarationRequest> {
         let external = self
             .access
@@ -186,6 +189,22 @@ impl RetainedDeclarations {
     ) -> Option<CurrentContribution> {
         self.access
             .with_pending(|claims| claims.capture_source(key, source, offset, items, facts, ledger))
+            .flatten()
+    }
+    pub(in crate::frontend) fn capture_source_headers(
+        &self,
+        key: &[u8],
+        source: dm_preprocess::SourceText,
+        offset: usize,
+        items: Vec<Item>,
+        facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+        headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
+    ) -> Option<CurrentContribution> {
+        self.access
+            .with_pending(|claims| {
+                claims.capture_source_headers(key, source, offset, items, facts, ledger, headers)
+            })
             .flatten()
     }
     pub(in crate::frontend) fn current_catalog(

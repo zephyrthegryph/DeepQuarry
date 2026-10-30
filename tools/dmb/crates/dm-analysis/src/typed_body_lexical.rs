@@ -306,7 +306,10 @@ impl TypedVisitor for Binder {
                         }
                     }
                 }
-                ForControl::Range { binding, .. } => self.iterator(binding, node, path),
+                ForControl::Range { binding, .. }
+                | ForControl::RangeImplicitArray { binding, .. } => {
+                    self.iterator(binding, node, path)
+                }
                 ForControl::CStyle {
                     initializer: Some(ForInitializer::Declare { declaration, .. }),
                     ..

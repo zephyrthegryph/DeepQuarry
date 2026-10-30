@@ -18,10 +18,16 @@ use rayon::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use crate::raw_ownership_policy::{decl_ev, member_parts};
+pub use crate::raw_ownership_policy::{
+    file_events, visit_file_events, IdxEv, ABS_MEMBER, DECLARE_CALL, DECLARE_HEAD, FLYWEIGHT_TYPES,
+    GLOBAL_DECL, MEMBER, MODIFIERS, OM_FIELD_DECL, REGISTRY, TYPE_LINE,
+};
+
 use crate::incr;
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree, View};
-use crate::util::{is_py_space, py_rstrip, py_strip, under};
+use crate::util::{is_py_space, under};
 
 macro_rules! re {
     ($name:ident, $p:expr) => {
@@ -88,50 +94,71 @@ pub const HANDLE_OK: &[&str] = &[
 ];
 
 pub const ENTITY_ROOTS: &[&str] = &["/datum", "/atom", "/obj", "/mob", "/turf"];
-/// Flyweights (code/datums/ownership/flyweight.dm, GLOB.flyweight_types; keep in step).
-pub const FLYWEIGHT_TYPES: &[&str] = &[
-    "/datum/capability",
-    "/datum/reaction",
-    "/datum/stack_recipe",
-    "/datum/stack_recipe_list",
-    "/datum/own_entry",
-    "/datum/derived_entry",
-    "/datum/op_def",
-    "/datum/material",
-];
-pub const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
 /// The Python defines `VALUE_TYPES` twice (`("/datum/gas_mixture/__never__",)` first, then this
 /// list); the later one is the one in force.
-pub const VALUE_TYPES: &[&str] =
-    &["/image", "/mutable_appearance", "/icon", "/matrix", "/regex", "/list", "/sound", "/savefile", "/database", "/generator", "/particles", "/filter", "/alist"];
+pub const VALUE_TYPES: &[&str] = &[
+    "/image",
+    "/mutable_appearance",
+    "/icon",
+    "/matrix",
+    "/regex",
+    "/list",
+    "/sound",
+    "/savefile",
+    "/database",
+    "/generator",
+    "/particles",
+    "/filter",
+    "/alist",
+];
 
-pub const OWN_FUNCS: &[&str] = &["own_set", "own_take", "own_add", "own_remove", "own_put", "own_take_member", "own_clear", "own_transfer"];
-pub const REL_FUNCS: &[&str] = &["rel_set", "rel_add", "rel_remove", "rel_clear", "rel_link", "rel_unlink"];
+pub const OWN_FUNCS: &[&str] = &[
+    "own_set",
+    "own_take",
+    "own_add",
+    "own_remove",
+    "own_put",
+    "own_take_member",
+    "own_clear",
+    "own_transfer",
+];
+pub const REL_FUNCS: &[&str] = &[
+    "rel_set",
+    "rel_add",
+    "rel_remove",
+    "rel_clear",
+    "rel_link",
+    "rel_unlink",
+];
 /// The `rel_*` writers that replace `own_*` (the rest of `REL_FUNCS` write a true relation).
 pub const REL_WRITERS: &[&str] = &["rel_set", "rel_add", "rel_remove", "rel_clear"];
 pub const PROTO_FUNCS: &[&str] = &["proto_set", "proto_private"];
-pub const OBJLIST_WRITES: &[&str] = &["+=", "|=", "[]=", "LAZYADD", "LAZYOR", "LAZYSET", "LAZYDISTINCTADD", "LAZYINSERT", ".Add", ".Insert"];
+pub const OBJLIST_WRITES: &[&str] = &[
+    "+=",
+    "|=",
+    "[]=",
+    "LAZYADD",
+    "LAZYOR",
+    "LAZYSET",
+    "LAZYDISTINCTADD",
+    "LAZYINSERT",
+    ".Add",
+    ".Insert",
+];
 
 re_m!(PROC_DEF, r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$");
-re_m!(TYPE_LINE, r"^(/[\w/]+)\s*(?:\{.*)?$");
-re_m!(MEMBER, r"^\s+(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b");
-re_m!(
-    OM_FIELD_DECL,
-    r"^OM_FIELD(?:(?:_TYPED|_VIEW)\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,|\(\s*(/[\w/]+)\s*,())\s*(\w+)\s*,"
-);
-re_m!(ABS_MEMBER, r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b");
+
 re!(TYPED_NAME, r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b");
-re_m!(DECLARE_HEAD, r"^(/[\w/]+)/(?:ownership|relations)\(\)");
-re_m!(DECLARE_CALL, r"^\s+\.\s*\+=\s*(owns|shares|proto|rel_one|rel_many)\(\s*nameof\((\w+)\)\s*(?:,\s*(.*?))?\)\s*(?://.*)?$");
+
 /// An accessor's var-name argument: a string literal (banned, `string_name`) or `nameof(v)` /
 /// `nameof(x.v)` / `nameof(/type::v)`. Group: the var name.
 pub const VAR_ARG: &str = r#"(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))"#;
 // A global declared through a `GLOBAL_*` macro (code/__defines/__globals.dm): `GLOBAL_DATUM(x, /type)`, `GLOBAL_LIST_EMPTY(x)`, ... Groups: 1 = macro
 // suffix, 2 = the var name, 3 = the type argument of the typed forms.
-re_m!(GLOBAL_DECL, r"^GLOBAL_(DATUM_INIT|DATUM|LIST_INIT_TYPED|LIST_EMPTY_TYPED|LIST_INIT|LIST_EMPTY|LIST|ALIST_INIT|ALIST_EMPTY|ALIST|VAR_INIT|VAR_CONST|VAR)\(\s*(\w+)\s*(?:,\s*(/[\w/]+))?");
+
 /// The type `GLOB` has; the vars of every `GLOBAL_*` macro are its globals ([`Index::globals`]).
 pub const GLOB_TYPE: &str = "/datum/controller/global_vars";
-re_m!(REGISTRY, r"^REGISTRY_TYPE\(\s*(/[\w/]+)\s*,");
+
 pub static ACCESSOR: LazyLock<Pat> = LazyLock::new(|| {
     Pat::new(&format!(
         r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*{}",
@@ -152,22 +179,40 @@ re!(
     r#"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_take_all|own_clear|own_values|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|rel_targets|rel_names|proto_set|proto_private|proto_replace|proto_is_private|shared_set|keyed_set_id)\((?:[^,()"]|\([^()]*\))*,\s*"\w+"|\b(own_move)\((?:[^,()"]|\([^()]*\))*,(?:[^,()"]|\([^()]*\))*,\s*"\w+""#
 );
 // A name after a `/` is a path component (`/datum/capability/wires = /datum/...` is an assoc key), not a var.
-re!(WRITE_ASSIGN, r"(?<![\w./])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)");
-re!(WRITE_INDEX, r"(?<![\w.])((?:\w+\??\.)*)(\w+)\[[^\]\n]*\]\s*=(?!=)");
-re!(WRITE_METHOD, r"(?<![\w.])((?:\w+\??\.)*)(\w+)\??\.(Cut|Add|Remove|Insert|Swap|RemoveAll)\(");
+re!(
+    WRITE_ASSIGN,
+    r"(?<![\w./])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)"
+);
+re!(
+    WRITE_INDEX,
+    r"(?<![\w.])((?:\w+\??\.)*)(\w+)\[[^\]\n]*\]\s*=(?!=)"
+);
+re!(
+    WRITE_METHOD,
+    r"(?<![\w.])((?:\w+\??\.)*)(\w+)\??\.(Cut|Add|Remove|Insert|Swap|RemoveAll)\("
+);
 re!(
     WRITE_MACRO,
     r"\b(QDEL_NULL|QDEL_LIST|QDEL_LIST_ASSOC|QDEL_LIST_ASSOC_VAL|QDEL_LAZYLIST|LAZYADD|LAZYREMOVE|LAZYSET|LAZYOR|LAZYINITLIST|LAZYCLEARLIST|LAZYNULL|UNSETEMPTY|LAZYADDASSOC|LAZYREMOVEASSOC|LAZYADDASSOCLIST|LAZYDISTINCTADD|LAZYINSERT)\(\s*((?:\w+\??\.)*)(\w+)\b"
 );
 re!(CALLBACK, r"\bCALLBACK\(");
-re!(HANDLE_CALL, r"\bom_(handle|resolve|handle_of|handle_is|resolve_all)\(");
-re!(HANDLE_VAR, r"^\s*var/(?:[\w]+/)*(\w+_handle)\b|^(/[\w/]+?)/var/(?:[\w]+/)*(\w+_handle)\b");
+re!(
+    HANDLE_CALL,
+    r"\bom_(handle|resolve|handle_of|handle_is|resolve_all)\("
+);
+re!(
+    HANDLE_VAR,
+    r"^\s*var/(?:[\w]+/)*(\w+_handle)\b|^(/[\w/]+?)/var/(?:[\w]+/)*(\w+_handle)\b"
+);
 re!(
     REMOVED,
     r"\b(DECLARE_REF|OM_STATIC_TYPE|REFKIND_\w+|link_set|link_clear|link_backlist_add|link_backlist_remove|WEAK_LIST_ADD|WEAK_LIST_REMOVE|WEAK_LIST_HAS|weak_list_live|DuplicateObject|dq_lifecycle_link_table|declared_refs|declared_ownership|own_declare|keyed_target_var|declared_keep_vars|declared_pool_reset|declared_forward_vars|declare_ownership)\b|\b(?:OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEYED_TARGET|KEEP_AFTER_DESTROY|POOL_RESET|FORWARD_STATE)(?=\()"
 );
 re!(LOCAL_DECL, r"\bvar/(?:[\w]+/)*(\w+)");
-re!(OBJ_TOKEN, r#"(?<![\w."])(src|new|[A-Za-z_]\w*)(?![\w.\[(?:])"#);
+re!(
+    OBJ_TOKEN,
+    r#"(?<![\w."])(src|new|[A-Za-z_]\w*)(?![\w.\[(?:])"#
+);
 re_m!(NEW_VALUE, r"^\s*new\s*(/[\w/]+)?");
 re!(PARAM_NAME, r"(?:^|,)\s*(\w+)\s*(?:=|,|\)|$)");
 re!(CALL_ARGS, r"\b(?!new\b)[A-Za-z_]\w*\s*\([^()]*\)");
@@ -224,7 +269,10 @@ impl<V> Default for OrdMap<V> {
 
 impl<V> OrdMap<V> {
     pub fn new() -> OrdMap<V> {
-        OrdMap { idx: HashMap::new(), items: Vec::new() }
+        OrdMap {
+            idx: HashMap::new(),
+            items: Vec::new(),
+        }
     }
 
     pub fn get(&self, k: &str) -> Option<&V> {
@@ -322,7 +370,12 @@ fn shard_of(rel: &str) -> usize {
 /// [`incr::keyed`] over [`SHARDS`] stores, by path hash. One edit rewrites one small store instead of
 /// the whole set, and the stores load in parallel. Results are in `files` order. ALLOW uses recorded
 /// through `sys::kept_recorded` are carried back to the calling thread.
-pub fn sharded_keyed<R>(name: &str, ctx: u128, files: &[&SourceFile], f: impl Fn(&SourceFile) -> R + Sync) -> Vec<R>
+pub fn sharded_keyed<R>(
+    name: &str,
+    ctx: u128,
+    files: &[&SourceFile],
+    f: impl Fn(&SourceFile) -> R + Sync,
+) -> Vec<R>
 where
     R: Serialize + DeserializeOwned + Default + PartialEq + Send,
 {
@@ -356,7 +409,11 @@ where
 }
 
 /// [`incr::facts`], sharded (see [`sharded_keyed`]).
-pub fn sharded_facts<F>(name: &str, files: &[&SourceFile], f: impl Fn(&SourceFile) -> F + Sync) -> Vec<F>
+pub fn sharded_facts<F>(
+    name: &str,
+    files: &[&SourceFile],
+    f: impl Fn(&SourceFile) -> F + Sync,
+) -> Vec<F>
 where
     F: Serialize + DeserializeOwned + Default + PartialEq + Send,
 {
@@ -381,75 +438,46 @@ fn file_idx(f: &SourceFile) -> FileIdx {
     let mut structure: Vec<(u8, &str, &str, &str, bool)> = Vec::new();
     for ev in &events {
         match ev {
-            IdxEv::Member { owner, vtype, is_list, name } => {
+            IdxEv::Member {
+                owner,
+                vtype,
+                is_list,
+                name,
+            } => {
                 members.push((owner, name, vtype, *is_list));
                 structure.push((0, owner, name, vtype, *is_list));
             }
-            IdxEv::Decl { owner, name, macro_name, .. } => structure.push((1, owner, name, macro_name, false)),
+            IdxEv::Decl {
+                owner,
+                name,
+                macro_name,
+                ..
+            } => structure.push((1, owner, name, macro_name, false)),
             IdxEv::Registry(t) => structure.push((2, t, "", "", false)),
-            IdxEv::Global { name, vtype, is_list } => {
+            IdxEv::Global {
+                name,
+                vtype,
+                is_list,
+            } => {
                 members.push(("GLOBAL", name, vtype, *is_list));
                 structure.push((3, name, vtype, "", *is_list));
             }
         }
     }
     let (h_members, h_struct) = (incr::ctx_key(&members), incr::ctx_key(&structure));
-    FileIdx { events, h_members, h_struct }
-}
-
-/// One structural fact a file contributes to the [`Index`], in file order. Replaying every file's
-/// events in path order rebuilds the index exactly as walking the files did.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum IdxEv {
-    Member { owner: String, vtype: String, is_list: bool, name: String },
-    Decl { owner: String, name: String, macro_name: String, opts: String, rel: String, line: u32 },
-    Registry(String),
-    /// A var of `GLOB` declared through a `GLOBAL_*` macro.
-    Global { name: String, vtype: String, is_list: bool },
-}
-
-/// `(vtype, is_list)` of a member declared with the path segments `segs`.
-fn member_parts(segs: &str) -> (String, bool) {
-    let mut parts: Vec<&str> = segs.split('/').filter(|p| !p.is_empty() && !MODIFIERS.contains(p)).collect();
-    let is_list = !parts.is_empty() && parts[0] == "list";
-    if is_list {
-        parts.remove(0);
-    }
-    let vtype = if parts.is_empty() { String::new() } else { format!("/{}", parts.join("/")) };
-    (vtype, is_list)
-}
-
-/// The kind a declaration entry is recorded under (its old macro name).
-fn decl_macro(func: &str, opts: &str) -> String {
-    let own_private = pat_search(r"\bpolicy\s*=\s*OWN_PRIVATE_COPY\b", opts);
-    if func == "owns" && own_private {
-        "PROTO".into()
-    } else if func == "owns" {
-        if opts.contains("policy_proc") {
-            "OWN_POLICY".into()
-        } else if opts.contains("if_var") {
-            "OWN_IF".into()
-        } else if pat_search(r"\bpolicy\s*=\s*OWN_NONE\b", opts) {
-            "ANNOTATE".into()
-        } else {
-            "OWN".into()
-        }
-    } else if func == "shares" {
-        "SHARED".into()
-    } else if func == "rel_one" || func == "rel_many" {
-        if pat_search(r"\bkind\s*=\s*RELK_OWNED\b", opts) {
-            if own_private { "PROTO".into() } else { "OWN".into() }
-        } else {
-            "REL".into()
-        }
-    } else {
-        func.to_uppercase()
+    FileIdx {
+        events,
+        h_members,
+        h_struct,
     }
 }
 
 impl Index {
     pub fn new() -> Index {
-        Index { registry: FLYWEIGHT_TYPES.iter().map(|s| s.to_string()).collect(), ..Index::default() }
+        Index {
+            registry: FLYWEIGHT_TYPES.iter().map(|s| s.to_string()).collect(),
+            ..Index::default()
+        }
     }
 
     /// The index over exactly `files` (path-sorted), built once per run and shared.
@@ -491,7 +519,12 @@ impl Index {
 
     fn apply_owned(&mut self, ev: IdxEv) {
         match ev {
-            IdxEv::Member { owner, vtype, is_list, name } => {
+            IdxEv::Member {
+                owner,
+                vtype,
+                is_list,
+                name,
+            } => {
                 match self.members.get_mut(&owner) {
                     Some(m) => {
                         m.insert(name.clone(), (vtype.clone(), is_list));
@@ -509,12 +542,31 @@ impl Index {
                     }
                 }
             }
-            IdxEv::Decl { owner, name, macro_name, opts, rel, line } => {
+            IdxEv::Decl {
+                owner,
+                name,
+                macro_name,
+                opts,
+                rel,
+                line,
+            } => {
                 let inner = self.decls.entry_or_insert_with(&owner, OrdMap::new);
-                inner.insert(&name, Decl { macro_name, opts, rel, line: line as usize });
+                inner.insert(
+                    &name,
+                    Decl {
+                        macro_name,
+                        opts,
+                        rel,
+                        line: line as usize,
+                    },
+                );
             }
             IdxEv::Registry(t) => self.registry.push(t),
-            IdxEv::Global { name, vtype, is_list } => {
+            IdxEv::Global {
+                name,
+                vtype,
+                is_list,
+            } => {
                 self.globals.insert(name, (vtype, is_list));
             }
         }
@@ -522,12 +574,25 @@ impl Index {
 
     pub fn add_member(&mut self, owner: &str, segs: &str, name: &str) {
         let (vtype, is_list) = member_parts(segs);
-        self.apply(&IdxEv::Member { owner: owner.to_string(), vtype, is_list, name: name.to_string() });
+        self.apply(&IdxEv::Member {
+            owner: owner.to_string(),
+            vtype,
+            is_list,
+            name: name.to_string(),
+        });
     }
 
     /// One entry in `owner`'s ownership()/relations() list, recorded under the kind's old macro
     /// name. An `owns()` with no policy only annotates (`ANNOTATE`).
-    pub fn add_decl(&mut self, owner: &str, func: &str, name: &str, opts: &str, rel: &str, no: usize) {
+    pub fn add_decl(
+        &mut self,
+        owner: &str,
+        func: &str,
+        name: &str,
+        opts: &str,
+        rel: &str,
+        no: usize,
+    ) {
         self.apply(&decl_ev(owner, func, name, opts, rel, no));
     }
 
@@ -541,7 +606,11 @@ impl Index {
     pub fn member(&self, owner: &str, name: &str) -> Option<Member> {
         for p in parents(owner) {
             if let Some((vtype, is_list)) = self.members.get(&p).and_then(|m| m.get(name)) {
-                return Some(Member { declared_on: p, vtype: vtype.clone(), is_list: *is_list });
+                return Some(Member {
+                    declared_on: p,
+                    vtype: vtype.clone(),
+                    is_list: *is_list,
+                });
             }
         }
         None
@@ -564,110 +633,6 @@ impl Index {
     pub fn is_entity(&self, vtype: &str) -> bool {
         under(vtype, ENTITY_ROOTS) && !self.is_registry(vtype)
     }
-}
-
-/// Every structural fact `code`/`raw` (one file) contributes to the index, in order.
-pub fn file_events(rel: &str, raw: &View, code: &View) -> Vec<IdxEv> {
-    let mut ev: Vec<IdxEv> = Vec::new();
-    let mut current: Option<String> = None;
-    let mut declaring: Option<String> = None;
-    for (no, line) in code.numbered() {
-        let first = line.chars().next();
-        if matches!(first, Some('"') | Some('\'')) {
-            continue; // the tail of a multi-line string, not a new top-level line
-        }
-        if declaring.is_some() && first.map(is_py_space).unwrap_or(false) {
-            if let Some(m) = DECLARE_CALL.captures(raw.line(no)) {
-                let owner = declaring.clone().unwrap();
-                ev.push(decl_ev(&owner, m.s(1), m.s(2), m.s(3), rel, no));
-            }
-            continue;
-        }
-        declaring = None;
-        if first.map(|c| !is_py_space(c)).unwrap_or(false) {
-            if let Some(m) = DECLARE_HEAD.captures(line) {
-                declaring = Some(m.s(1).to_string());
-                current = None;
-                continue;
-            }
-            if let Some(m) = REGISTRY.captures(py_strip(raw.line(no))) {
-                ev.push(IdxEv::Registry(m.s(1).to_string()));
-                continue;
-            }
-            if let Some(m) = ABS_MEMBER.captures(line) {
-                ev.push(member_ev(m.s(1), m.s(2), m.s(3)));
-                current = None;
-                continue;
-            }
-            if let Some(m) = OM_FIELD_DECL.captures(line) {
-                // OM_FIELD(T, F, ...) / OM_FIELD_TYPED|_VIEW(T, VT, F, ...) declare T/var/F
-                let vt = if m.matched(2) && !m.s(2).is_empty() { format!("{}/", m.s(2).trim_matches('/')) } else { String::new() };
-                let owner = if !m.s(1).is_empty() { m.s(1) } else { m.s(3) };
-                ev.push(member_ev(owner, &vt, m.s(5)));
-                current = None;
-                continue;
-            }
-            // GLOBAL_*(x, ...) declares a var of /datum/controller/global_vars through a macro.
-            if let Some(m) = GLOBAL_DECL.captures(line) {
-                let (kind, name) = (m.s(1), m.s(2));
-                let ty = if m.matched(3) { m.s(3).trim_matches('/') } else { "" };
-                let segs = match kind {
-                    "DATUM" | "DATUM_INIT" if !ty.is_empty() => format!("{}/", ty),
-                    "LIST_INIT_TYPED" | "LIST_EMPTY_TYPED" if !ty.is_empty() => format!("list/{}/", ty),
-                    k if k.starts_with("LIST") => "list/".to_string(),
-                    k if k.starts_with("ALIST") => "alist/".to_string(),
-                    _ => String::new(),
-                };
-                let (vtype, is_list) = member_parts(&segs);
-                ev.push(IdxEv::Global { name: name.to_string(), vtype, is_list });
-                current = None;
-                continue;
-            }
-            // SYSTEM_DEF(x) declares /datum/system/x through a macro: its indented body is that type's block.
-            if let Some(m) = crate::pat!(r"^SYSTEM_DEF\((\w+)\)\s*$").captures(py_rstrip(line)) {
-                current = Some(format!("/datum/system/{}", m.s(1)));
-                continue;
-            }
-            let m = TYPE_LINE.captures(py_rstrip(line));
-            current = match m {
-                Some(m) if !line.contains('(') => Some(m.s(1).to_string()),
-                _ => None,
-            };
-            continue;
-        }
-        if let Some(cur) = current.clone() {
-            if let Some(m) = MEMBER.captures(line) {
-                ev.push(member_ev(&cur, m.s(1), m.s(2)));
-            }
-        }
-    }
-    ev
-}
-
-fn member_ev(owner: &str, segs: &str, name: &str) -> IdxEv {
-    let (vtype, is_list) = member_parts(segs);
-    IdxEv::Member { owner: owner.to_string(), vtype, is_list, name: name.to_string() }
-}
-
-fn decl_ev(owner: &str, func: &str, name: &str, opts: &str, rel: &str, no: usize) -> IdxEv {
-    IdxEv::Decl {
-        owner: owner.to_string(),
-        name: name.to_string(),
-        macro_name: decl_macro(func, opts),
-        opts: opts.to_string(),
-        rel: rel.to_string(),
-        line: no as u32,
-    }
-}
-
-fn pat_search(p: &str, hay: &str) -> bool {
-    // Compiled once per call site string; these four are tiny.
-    static CACHE: LazyLock<std::sync::Mutex<HashMap<String, Arc<Pat>>>> = LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
-    let pat = {
-        let mut g = CACHE.lock().unwrap();
-        g.entry(p.to_string()).or_insert_with(|| Arc::new(Pat::new(p))).clone()
-    };
-    pat.is_match(hay)
 }
 
 /// A local variable's declared type: `Some(Some(path))` typed, `Some(None)` declared without a
@@ -693,7 +658,10 @@ pub fn proc_scopes(code: &View, mut f: impl FnMut(usize, &str, &str, &str, &Loca
                     local_types = HashMap::new();
                     let params = m.s(3);
                     for tm in TYPED_NAME.captures_iter(params) {
-                        local_types.insert(tm.s(2).to_string(), Some(format!("/{}", tm.s(1).trim_start_matches('/'))));
+                        local_types.insert(
+                            tm.s(2).to_string(),
+                            Some(format!("/{}", tm.s(1).trim_start_matches('/'))),
+                        );
                     }
                     for am in PARAM_NAME.captures_iter(params) {
                         local_types.entry(am.s(1).to_string()).or_insert(None);
@@ -706,11 +674,16 @@ pub fn proc_scopes(code: &View, mut f: impl FnMut(usize, &str, &str, &str, &Loca
             }
             continue;
         }
-        let Some(own) = owner.as_deref() else { continue };
+        let Some(own) = owner.as_deref() else {
+            continue;
+        };
         for tm in TYPED_NAME.captures_iter(line) {
             let start = tm.start(0);
             if line[..start].ends_with("var/") || line[start..].starts_with("var/") {
-                local_types.insert(tm.s(2).to_string(), Some(format!("/{}", tm.s(1).trim_start_matches('/'))));
+                local_types.insert(
+                    tm.s(2).to_string(),
+                    Some(format!("/{}", tm.s(1).trim_start_matches('/'))),
+                );
             }
         }
         for lm in LOCAL_DECL.captures_iter(line) {
@@ -722,11 +695,20 @@ pub fn proc_scopes(code: &View, mut f: impl FnMut(usize, &str, &str, &str, &Loca
 
 /// The static type of a `a.b.` receiver chain ("" chain = a bare write -> the owner), or None
 /// when unknown.
-pub fn receiver_type(idx: &Index, chain: &str, owner: &str, local_types: &LocalTypes) -> Option<String> {
+pub fn receiver_type(
+    idx: &Index,
+    chain: &str,
+    owner: &str,
+    local_types: &LocalTypes,
+) -> Option<String> {
     if chain.is_empty() {
         return Some(owner.to_string());
     }
-    let segs: Vec<&str> = chain.trim_end_matches('.').split('.').map(|s| s.trim_end_matches('?')).collect();
+    let segs: Vec<&str> = chain
+        .trim_end_matches('.')
+        .split('.')
+        .map(|s| s.trim_end_matches('?'))
+        .collect();
     if segs == ["src"] {
         return Some(owner.to_string());
     }
@@ -743,7 +725,9 @@ pub fn receiver_type(idx: &Index, chain: &str, owner: &str, local_types: &LocalT
 /// True when the assigned value is `new /entity/type(...)` (not a value type such as an image).
 pub fn creates_entity(rhs: &str) -> bool {
     let head = rhs.split("//").next().unwrap_or("");
-    let Some(m) = NEW_VALUE.captures(head) else { return false };
+    let Some(m) = NEW_VALUE.captures(head) else {
+        return false;
+    };
     if !m.matched(1) {
         return false; // implicit type: the declared type decides (already handled)
     }
@@ -783,7 +767,10 @@ mod tests {
 
     #[test]
     fn parents_include_implicit_roots() {
-        assert_eq!(parents("/obj/item"), ["/obj/item", "/obj", "/atom/movable", "/atom", "/datum"]);
+        assert_eq!(
+            parents("/obj/item"),
+            ["/obj/item", "/obj", "/atom/movable", "/atom", "/datum"]
+        );
         assert_eq!(parents("/datum/x/y"), ["/datum/x/y", "/datum/x", "/datum"]);
         assert_eq!(parents("/area"), ["/area", "/atom", "/datum"]);
         assert!(parents("nothing").is_empty());
@@ -817,7 +804,12 @@ GLOBAL_ALIST_EMPTY(map)
 ",
         );
         let idx = Index::build(&[&f]);
-        let m = |n: &str| idx.globals.get(n).cloned().unwrap_or_else(|| panic!("no global {}", n));
+        let m = |n: &str| {
+            idx.globals
+                .get(n)
+                .cloned()
+                .unwrap_or_else(|| panic!("no global {}", n))
+        };
         assert_eq!(m("box"), ("/obj/thing".to_string(), false));
         assert_eq!(m("made").0, "/datum/foo");
         assert_eq!(m("pool"), (String::new(), true));
@@ -827,5 +819,28 @@ GLOBAL_ALIST_EMPTY(map)
         assert!(!idx.globals.contains_key("absent"));
         // They are globals, not members of any type: the write checks do not see them.
         assert!(idx.member(GLOB_TYPE, "box").is_none() && !idx.name_decls.contains_key("box"));
+    }
+}
+
+#[cfg(test)]
+mod streaming_relation_projection_tests {
+    use super::*;
+    #[test]
+    fn event_visitor_refusal_stops_before_later_events_and_vec_compatibility_is_exact() {
+        let file=SourceFile::from_text("code/stream.dm","/datum/holder\n    var/a\n    var/b\n/datum/holder/relations()\n    . += rel_one(nameof(link))\n");
+        let mut visits = 0;
+        let denied = visit_file_events(&file.rel, file.raw(), file.code(), |_| {
+            visits += 1;
+            Err("admission denied".into())
+        });
+        assert_eq!(visits, 1);
+        assert_eq!(denied.unwrap_err(), "admission denied");
+        let mut observed = Vec::new();
+        visit_file_events(&file.rel, file.raw(), file.code(), |e| {
+            observed.push(e);
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(observed, file_events(&file.rel, file.raw(), file.code()));
     }
 }

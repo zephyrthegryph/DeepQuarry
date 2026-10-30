@@ -286,7 +286,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     let executable_view = statements
         .as_ref()
         .zip(executable_mask.as_ref())
-        .map(|(body, mask)| dm_syntax::StatementView::masked(&body.parsed().statements, mask));
+        .map(|(body, mask)| body.view().with_mask(mask));
     let typed_ready = typed_valid
         && executable_view.is_some_and(dm_codegen_byond::typed_statement_view_supported);
 
@@ -372,23 +372,21 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     let code = {
         let _profile = dm_profile::item("lowering.fresh_codegen");
         match executable_view {
-            Some(view) if typed_ready && capture_references => {
-                super::compile_selected_view(
-                    view,
-                    &inputs,
-                    symbols,
-                    host,
-                    Some(&debug),
-                    dm_syntax::Span {
-                        start: body.expanded_span.start,
-                        end: body.expanded_span.end,
-                    },
-                )
-                .map(|(code, references)| {
-                    selected_references = Some(Arc::new(references));
-                    code
-                })
-            }
+            Some(view) if typed_ready && capture_references => super::compile_selected_view(
+                view,
+                &inputs,
+                symbols,
+                host,
+                Some(&debug),
+                dm_syntax::Span {
+                    start: body.expanded_span.start,
+                    end: body.expanded_span.end,
+                },
+            )
+            .map(|(code, references)| {
+                selected_references = Some(Arc::new(references));
+                code
+            }),
             Some(view) if typed_ready => dm_codegen_byond::compile_statement_view_with_resolver(
                 view,
                 &inputs,
@@ -492,7 +490,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                         .unwrap_or_else(|| body.source.clone()),
                 };
                 let (kind, message) = super::wording::present(frontend, &origin, &e);
-                let (origin, message, mut placed) = super::wording::place(frontend, origin, message);
+                let (origin, message, mut placed) =
+                    super::wording::place(frontend, origin, message);
                 placed.extend(related);
                 LoweringDiagnostic {
                     related: placed,

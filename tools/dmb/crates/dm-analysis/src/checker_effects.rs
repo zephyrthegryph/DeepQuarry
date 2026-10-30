@@ -1,0 +1,871 @@
+//! Native source purity over the ORIGINAL archive/semantic IDs.
+//! Pinned source: SpacemanDMM0290db5c752fa292f9824521515b603a2afd11dc.
+//! Contributions/SCCs are unique checker work, never another Type/Proc model.
+//! All unsupported syntax, source, dispatch or effect contexts refuse atomically.
+use crate::{
+    check_policy::{CheckerPolicy, DiagnosticSeverity},
+    checks::{Diagnostic, Note, Severity},
+};
+use dm_ir::{
+    PackedU128, ProcedureIdentity, ResolveQuery as Q, ResolvedMeaning as M, Resolver, SymbolId,
+};
+use dm_syntax::Span;
+use dm_tree::{
+    frontend::{BodyArchive, BodySyntaxQueries, SourceNoteOrigin},
+    MemberKind,
+};
+use std::{
+    collections::{BTreeMap, BTreeSet, VecDeque},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Weak,
+    },
+};
+pub const MAX_EVENTS: usize = 10_000;
+pub const RESULT_BUDGET: usize = 64 * 1024 * 1024;
+#[path = "checker_effects_output.rs"]
+pub(crate) mod output;
+pub use output::ExecutionAdmission;
+use output::ReportBudget;
+#[derive(Clone, Debug)]
+pub(crate) struct DirectEffect {
+    pub origin: CallOrigin,
+    pub reason: &'static str,
+}
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum CallOrigin {
+    Source(Span),
+    ImplicitList(dm_syntax::ImplicitListOrigin),
+}
+#[derive(Clone, Debug)]
+pub(crate) struct CallEdge {
+    pub callee: EffectTarget,
+    pub origin: CallOrigin,
+    pub exact: bool,
+    pub new_context: bool,
+}
+#[derive(Default)]
+pub(crate) struct Draft {
+    pub direct: Vec<DirectEffect>,
+    pub calls: Vec<CallEdge>,
+    pub immediate: Vec<Diagnostic>,
+    pub blocking: Vec<DirectEffect>,
+    pub waitfor_disabled: bool,
+    pub transient: ReportBudget,
+}
+/// Factory-issued source context. Params/results keep this weak, not a graph
+/// clone. A caller must present this same current archive/Db BEFORE cache hits.
+pub struct EffectInput {
+    key: u64,
+    archive: Arc<BodyArchive>,
+    profile: PackedU128,
+    order: Box<[(usize, ProcedureIdentity)]>,
+}
+impl EffectInput {
+    pub fn new(archive: Arc<BodyArchive>, profile: PackedU128) -> Result<Arc<Self>, String> {
+        archive
+            .tree()
+            .validate_checker_builtin_profile(profile)
+            .map_err(|e| format!("purity builtin profile: {e:?}"))?;
+        if archive.syntax_inputs().is_none() || archive.body_query_host().is_none() {
+            return Err("purity requires original compiler body-query graph".into());
+        }
+        if archive.len() > MAX_EVENTS {
+            return Err("purity original callable roster exceeds bounded admission".into());
+        }
+        let order = crate::checker_order::archived_bodies(&archive)?
+            .into_iter()
+            .map(|(i, _)| Ok((i, identity(&archive, i)?)))
+            .collect::<Result<Vec<_>, String>>()?;
+        static NEXT: AtomicU64 = AtomicU64::new(1);
+        let key = NEXT
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| v.checked_add(1))
+            .map_err(|_| "purity issuance exhausted")?;
+        Ok(Arc::new(Self {
+            key,
+            archive,
+            profile,
+            order: order.into(),
+        }))
+    }
+    pub fn key(&self) -> u64 {
+        self.key
+    }
+    pub fn archive(&self) -> &Arc<BodyArchive> {
+        &self.archive
+    }
+    pub fn profile(&self) -> PackedU128 {
+        self.profile
+    }
+    pub fn order(&self) -> &[(usize, ProcedureIdentity)] {
+        &self.order
+    }
+    pub fn ordinal_for(&self, procedure: ProcedureIdentity) -> Option<usize> {
+        self.order
+            .iter()
+            .find_map(|&(i, p)| (p == procedure).then_some(i))
+    }
+    pub fn validate_current(
+        &self,
+        current: &Arc<BodyArchive>,
+        host: &dyn BodySyntaxQueries,
+    ) -> Result<(), String> {
+        if !Arc::ptr_eq(&self.archive, current) || !current.uses_body_queries(host) {
+            return Err("purity input is not the current original archive/Db".into());
+        }
+        self.archive
+            .tree()
+            .validate_checker_builtin_profile(self.profile)
+            .map_err(|e| format!("purity profile changed: {e:?}"))?;
+        Ok(())
+    }
+    pub fn compute_body(
+        self: &Arc<Self>,
+        ordinal: usize,
+        resolver: &(impl Resolver + ?Sized),
+        admission: &ExecutionAdmission,
+    ) -> Result<Arc<BodyEffects>, String> {
+        let procedure = identity(&self.archive, ordinal)?;
+        if !self
+            .order
+            .iter()
+            .any(|&(i, p)| i == ordinal && p == procedure)
+        {
+            return Err("purity body has no issued procedure occurrence".into());
+        }
+        if resolver.source_owner() != Resolver::source_owner(self.archive.tree()) {
+            return Err("purity resolver is not the original graph".into());
+        }
+        let settings = crate::checker_return_facts::PuritySettingsPermit::issue(
+            &self.archive,
+            self.profile,
+            procedure,
+        )?;
+        let pure = settings.own_pure();
+        let body = self.archive.parse(ordinal).map_err(|e| e.message)?;
+        let draft = crate::checker_expression_visit::effects_archived(
+            &self.archive,
+            &body,
+            resolver,
+            self.profile,
+            admission,
+        )?;
+        if draft
+            .direct
+            .len()
+            .checked_add(draft.calls.len())
+            .and_then(|n| n.checked_add(draft.blocking.len()))
+            .and_then(|n| n.checked_add(draft.immediate.len()))
+            .is_none_or(|n| n > MAX_EVENTS)
+        {
+            return Err("purity body exceeds bounded event admission".into());
+        }
+        let parent = source_parent(
+            &self.archive,
+            resolver,
+            self.profile,
+            self.archive
+                .occurrences()
+                .get(ordinal)
+                .ok_or("effect ordinal absent")?
+                .member,
+            procedure,
+        )?;
+        Ok(Arc::new(BodyEffects {
+            input: Arc::downgrade(self),
+            ordinal,
+            procedure,
+            pure,
+            sleep: SleepSettings {
+                no_sleep: settings.own_no_sleep(),
+                exempt: settings.own_sleep_exempt(),
+                waitfor_disabled: draft.waitfor_disabled,
+            },
+            blocking: draft.blocking.into(),
+            parent,
+            direct: draft.direct.into(),
+            calls: draft.calls.into(),
+            immediate: draft.immediate.into(),
+        }))
+    }
+    pub fn plan(
+        self: &Arc<Self>,
+        bodies: Vec<Arc<BodyEffects>>,
+        resolver: &(impl Resolver + ?Sized),
+        admission: &ExecutionAdmission,
+    ) -> Result<Arc<EffectPlan>, String> {
+        if resolver.source_owner() != Resolver::source_owner(self.archive.tree()) {
+            return Err("effect plan resolver foreign".into());
+        }
+        if bodies.len() != self.order.len() {
+            return Err("purity plan omits an original callable".into());
+        }
+        let events = bodies
+            .iter()
+            .try_fold(0usize, |n, b| {
+                n.checked_add(b.direct.len())
+                    .and_then(|n| n.checked_add(b.calls.len()))
+                    .and_then(|n| n.checked_add(b.blocking.len()))
+                    .and_then(|n| n.checked_add(b.immediate.len()))
+            })
+            .ok_or("purity graph event admission overflow")?;
+        if events > MAX_EVENTS {
+            return Err("purity graph exceeds bounded event admission".into());
+        }
+        output::plan_admission(self, &bodies, admission)?;
+        let mut index = BTreeMap::new();
+        for (i, (body, &(ordinal, procedure))) in bodies.iter().zip(self.order.iter()).enumerate() {
+            body.validate(self)?;
+            if body.ordinal != ordinal
+                || body.procedure != procedure
+                || index.insert(procedure, i).is_some()
+            {
+                return Err("purity plan order/identity mismatch".into());
+            }
+        }
+        let mut adjacency = vec![Vec::new(); bodies.len()];
+        for (i, body) in bodies.iter().enumerate() {
+            for call in body.calls.iter() {
+                if let EffectTarget::Source(callee) = call.callee {
+                    adjacency[i].push(
+                        *index
+                            .get(&callee)
+                            .ok_or("effect call has no original source contribution")?,
+                    );
+                }
+            }
+        }
+        let mut overrides = vec![Vec::new(); bodies.len()];
+        for (child, body) in bodies.iter().enumerate() {
+            if body.direct.is_empty() || body.procedure.name == SymbolId::of("New") {
+                continue;
+            }
+            let mut parent = body.parent;
+            let mut seen = BTreeSet::new();
+            while let Some(p) = parent {
+                if !seen.insert(p) {
+                    return Err("purity original predecessor cycle".into());
+                }
+                if let EffectTarget::Source(id) = p {
+                    let at = *index
+                        .get(&id)
+                        .ok_or("purity predecessor has no source contribution")?;
+                    overrides[at].push(child);
+                }
+                parent = target_parent_parts(self, resolver, p, &bodies, &index)?;
+            }
+        }
+        let mut graph = adjacency.clone();
+        for (i, children) in overrides.iter().enumerate() {
+            graph[i].extend(children.iter().copied())
+        }
+        let components = scc(&graph)?;
+        let plan = EffectPlan {
+            input: Arc::downgrade(self),
+            bodies: bodies.into(),
+            index,
+            adjacency,
+            overrides,
+            components,
+        };
+        if plan.charge() > RESULT_BUDGET {
+            return Err("purity plan exceeds bounded result admission".into());
+        }
+        Ok(Arc::new(plan))
+    }
+}
+impl std::fmt::Debug for EffectInput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EffectInput")
+            .field("key", &self.key)
+            .field("bodies", &self.order.len())
+            .finish()
+    }
+}
+pub struct BodyEffects {
+    input: Weak<EffectInput>,
+    ordinal: usize,
+    procedure: ProcedureIdentity,
+    pure: Option<Span>,
+    sleep: SleepSettings,
+    blocking: Box<[DirectEffect]>,
+    parent: Option<EffectTarget>,
+    direct: Box<[DirectEffect]>,
+    calls: Box<[CallEdge]>,
+    immediate: Box<[Diagnostic]>,
+}
+impl BodyEffects {
+    fn validate(&self, input: &Arc<EffectInput>) -> Result<(), String> {
+        if !self.input.ptr_eq(&Arc::downgrade(input)) {
+            return Err("purity body belongs to another source issuance".into());
+        }
+        Ok(())
+    }
+    pub fn charge(&self) -> usize {
+        storage::body_capacity_bound(self)
+    }
+}
+/// A DAG plan over source-owned procedure IDs. Callee bodies are never requested
+/// while a body contribution is computing; recursive procedures cannot create
+/// recursive dm_query calls or wait cycles.
+pub struct EffectPlan {
+    input: Weak<EffectInput>,
+    bodies: Box<[Arc<BodyEffects>]>,
+    index: BTreeMap<ProcedureIdentity, usize>,
+    adjacency: Vec<Vec<usize>>,
+    overrides: Vec<Vec<usize>>,
+    components: Vec<usize>,
+}
+impl EffectPlan {
+    pub fn validate(&self, input: &Arc<EffectInput>) -> Result<(), String> {
+        if !self.input.ptr_eq(&Arc::downgrade(input)) {
+            return Err("purity plan belongs to another original input".into());
+        }
+        Ok(())
+    }
+    pub fn charge(&self) -> usize {
+        storage::plan_capacity_bound(self)
+    }
+    pub fn summarize(
+        self: &Arc<Self>,
+        input: &Arc<EffectInput>,
+    ) -> Result<Arc<SccSummary>, String> {
+        self.validate(input)?;
+        let count = self.components.iter().copied().max().map_or(0, |c| c + 1);
+        let mut effect = vec![false; count];
+        let mut dag = vec![BTreeSet::new(); count];
+        for (i, b) in self.bodies.iter().enumerate() {
+            let c = self.components[i];
+            effect[c] |= !b.direct.is_empty()
+                || b.calls
+                    .iter()
+                    .any(|e| matches!(e.callee, EffectTarget::Builtin(_)));
+            for &to in self.adjacency[i].iter().chain(self.overrides[i].iter()) {
+                let d = self.components[to];
+                if c != d {
+                    dag[c].insert(d);
+                }
+            }
+        }
+        // Explicit SCC job, not recursive Db queries: one reverse-topological pass.
+        let mut pending = dag.iter().map(BTreeSet::len).collect::<Vec<_>>();
+        let mut parents = vec![Vec::new(); count];
+        for (c, children) in dag.iter().enumerate() {
+            for &d in children {
+                parents[d].push(c)
+            }
+        }
+        let mut ready = (0..count)
+            .filter(|&c| pending[c] == 0)
+            .collect::<VecDeque<_>>();
+        let mut completed = 0;
+        while let Some(c) = ready.pop_front() {
+            completed += 1;
+            for &p in &parents[c] {
+                effect[p] |= effect[c];
+                pending[p] -= 1;
+                if pending[p] == 0 {
+                    ready.push_back(p)
+                }
+            }
+        }
+        if completed != count {
+            return Err("purity SCC condensation is cyclic".into());
+        }
+        Ok(Arc::new(SccSummary {
+            input: Arc::downgrade(input),
+            plan: Arc::clone(self),
+            has_effect: effect.into(),
+        }))
+    }
+}
+pub struct SccSummary {
+    input: Weak<EffectInput>,
+    plan: Arc<EffectPlan>,
+    has_effect: Box<[bool]>,
+}
+impl SccSummary {
+    pub fn validate(&self, input: &Arc<EffectInput>) -> Result<(), String> {
+        if !self.input.ptr_eq(&Arc::downgrade(input)) {
+            return Err("purity SCC belongs to another current source input".into());
+        }
+        self.plan.validate(input)
+    }
+    pub fn charge(&self) -> usize {
+        storage::summary_capacity_bound(self)
+    }
+    pub fn report(
+        &self,
+        input: &Arc<EffectInput>,
+        resolver: &(impl Resolver + ?Sized),
+        policy: &CheckerPolicy,
+        admission: &ExecutionAdmission,
+        mut checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<Vec<Produced>, String> {
+        self.validate(input)?;
+        if resolver.source_owner() != Resolver::source_owner(input.archive.tree()) {
+            return Err("purity report original resolver mismatch".into());
+        }
+        let budget = ReportBudget::for_operation(admission);
+        let p = &self.plan;
+        let mut output = Vec::new();
+        let mut targets = Vec::new();
+        for (i, body) in p.bodies.iter().enumerate() {
+            checkpoint()?;
+            for row in body.immediate.iter() {
+                emit(
+                    &mut output,
+                    input,
+                    None,
+                    budget.diagnostic(row)?,
+                    input.archive.source_note_point(row.span.start)?,
+                    policy,
+                    &budget,
+                )?;
+            }
+            let mut at = Some(EffectTarget::Source(body.procedure));
+            let mut visited = BTreeSet::new();
+            while let Some(target) = at {
+                if !budget.insert(&mut visited, target)? {
+                    return Err("purity directive predecessor cycle".into());
+                }
+                if let EffectTarget::Source(id) = target {
+                    let j = *p
+                        .index
+                        .get(&id)
+                        .ok_or("purity annotation source contribution absent")?;
+                    if let Some(annotation) = p.bodies[j].pure {
+                        budget.push(&mut targets, (i, annotation))?;
+                        break;
+                    }
+                }
+                at = target_parent_parts(input, resolver, target, &p.bodies, &p.index)?;
+            }
+        }
+        // Actual pinned CLI varies top-level target groups across identical runs.
+        // Initial cohort refuses this boundary rather than sorting/filtering rows.
+        if targets.len() > 1 {
+            return Err(
+                "purity multi-target report order needs documented group-order normalization"
+                    .into(),
+            );
+        }
+        for (target, annotation) in targets {
+            checkpoint()?;
+            let body = &p.bodies[target];
+            let origin = input.archive.callable_note_origin(body.procedure)?;
+            let header = input
+                .archive
+                .parse(body.ordinal)
+                .map_err(|e| e.message)?
+                .signature_opening_parenthesis()
+                .ok_or("purity primary callable point absent")?;
+            let target_display = display(input, body.procedure, &budget)?;
+            let annotation_note = Note {
+                message: budget.format(format_args!("SpacemanDMM_should_be_pure set here"))?,
+                source: Some(input.archive.source_note_point(annotation.start)?),
+            };
+            if !body.direct.is_empty() {
+                let mut notes = budget.annotation(&annotation_note)?;
+                effect_notes(input, &body.direct, false, &mut notes, &budget)?;
+                emit(
+                    &mut output,
+                    input,
+                    Some("must_be_pure"),
+                    diagnostic(
+                        header,
+                        budget.format(format_args!("{target_display} does impure operations"))?,
+                        notes,
+                    ),
+                    origin.clone(),
+                    policy,
+                    &budget,
+                )?;
+            }
+            if !self
+                .has_effect
+                .get(p.components[target])
+                .copied()
+                .unwrap_or(false)
+            {
+                continue;
+            }
+            let mut queue = output::initial_queue(&body.calls, &budget)?;
+            let mut queued_edges = body.calls.len();
+            let mut visited = BTreeSet::new();
+            while let Some((id, path)) = queue.pop_front() {
+                queued_edges = queued_edges.saturating_sub(path.len());
+                checkpoint()?;
+                if !budget.insert(&mut visited, id)? {
+                    continue;
+                }
+                let target = id;
+                if let EffectTarget::Builtin(_) = target {
+                    let called = display_target(input, target, &budget)?;
+                    let owner = target_owner(input, target)?;
+                    for child in p.bodies.iter() {
+                        checkpoint()?;
+                        if child.direct.is_empty()
+                            || child.procedure.name == SymbolId::of("New")
+                            || !source_child_overrides_target(
+                                p, input, resolver, child, target, &budget,
+                            )?
+                        {
+                            continue;
+                        }
+                        if is_subtype(resolver, body.procedure.owner, owner)?
+                            && !is_subtype(resolver, child.procedure.owner, body.procedure.owner)?
+                        {
+                            continue;
+                        }
+                        let mut notes = budget.annotation(&Note {
+                            message: budget
+                                .format(format_args!("SpacemanDMM_should_not_pure set here"))?,
+                            source: annotation_note.source.clone(),
+                        })?;
+                        call_notes(input, &path, &mut notes, &budget)?;
+                        effect_notes(input, &child.direct, true, &mut notes, &budget)?;
+                        emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget)?))?,notes),origin.clone(),policy, &budget)?;
+                    }
+                    continue;
+                }
+                let EffectTarget::Source(id) = target else {
+                    unreachable!()
+                };
+                let index = *p.index.get(&id).ok_or("purity edge target absent")?;
+                let callee = &p.bodies[index];
+                let called = display(input, id, &budget)?;
+                if !callee.direct.is_empty() {
+                    let mut notes = budget.annotation(&annotation_note)?;
+                    call_notes(input, &path, &mut notes, &budget)?;
+                    effect_notes(input, &callee.direct, false, &mut notes, &budget)?;
+                    emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} sets SpacemanDMM_should_be_pure but calls a {called} that does impure operations"))?,notes),origin.clone(),policy, &budget)?;
+                } else {
+                    for &child in &p.overrides[index] {
+                        let child = &p.bodies[child];
+                        if is_subtype(resolver, body.procedure.owner, id.owner)?
+                            && !is_subtype(resolver, child.procedure.owner, body.procedure.owner)?
+                        {
+                            continue;
+                        }
+                        let mut notes = budget.annotation(&Note {
+                            message: budget
+                                .format(format_args!("SpacemanDMM_should_not_pure set here"))?,
+                            source: annotation_note.source.clone(),
+                        })?;
+                        call_notes(input, &path, &mut notes, &budget)?;
+                        effect_notes(input, &child.direct, true, &mut notes, &budget)?;
+                        emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget)?))?,notes),origin.clone(),policy, &budget)?;
+                    }
+                }
+                for edge in callee.calls.iter() {
+                    let next_len = path
+                        .len()
+                        .checked_add(1)
+                        .ok_or("purity callstack admission overflow")?;
+                    queued_edges = queued_edges
+                        .checked_add(next_len)
+                        .filter(|n| *n <= MAX_EVENTS)
+                        .ok_or("purity BFS retained paths exceed bounded admission")?;
+                    let next = budget.path(&path, edge)?;
+                    budget.queue(&mut queue, (edge.callee, next))?;
+                }
+            }
+        }
+        Ok(output)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct Produced {
+    pub registration_tag: Option<&'static str>,
+    pub severity: DiagnosticSeverity,
+    pub diagnostic: Diagnostic,
+    pub origin: SourceNoteOrigin,
+}
+fn diagnostic(at: Span, message: String, notes: Vec<Note>) -> Diagnostic {
+    Diagnostic {
+        family: "must_be_pure",
+        severity: Severity::Error,
+        span: at,
+        expression_span: at,
+        message,
+        notes,
+    }
+}
+fn emit(
+    out: &mut Vec<Produced>,
+    _input: &EffectInput,
+    tag: Option<&'static str>,
+    diagnostic: Diagnostic,
+    origin: SourceNoteOrigin,
+    policy: &CheckerPolicy,
+    budget: &ReportBudget,
+) -> Result<(), String> {
+    let default = match diagnostic.severity {
+        Severity::Error => DiagnosticSeverity::Error,
+        Severity::Warning => DiagnosticSeverity::Warning,
+        Severity::Disabled => return Err("disabled native effect diagnostic escaped".into()),
+    };
+    if let Some(severity) = policy.register(tag, default) {
+        if out.len() >= MAX_EVENTS {
+            return Err("purity report exceeds existing finding admission".into());
+        }
+        budget.push(
+            out,
+            Produced {
+                registration_tag: tag,
+                severity,
+                diagnostic,
+                origin,
+            },
+        )?
+    }
+    Ok(())
+}
+impl CallOrigin {
+    pub(crate) fn source_span(self) -> Result<Span, String> {
+        match self {
+            Self::Source(at) => Ok(at),
+            Self::ImplicitList(_) => {
+                Err("synthetic list initializer has no written source span".into())
+            }
+        }
+    }
+    fn note_point(
+        self,
+        input: &EffectInput,
+        budget: &ReportBudget,
+    ) -> Result<SourceNoteOrigin, String> {
+        match self {
+            Self::Source(at) => input.archive.source_note_point(at.start),
+            Self::ImplicitList(dm_syntax::ImplicitListOrigin::ParserSynthetic) => {
+                // A small independent virtual point allocation, not a source
+                // cursor fallback. Admit before allocating its PathBuf/Arc.
+                budget.charge(4096)?;
+                Ok(SourceNoteOrigin {
+                    path: Arc::new(std::path::PathBuf::from("(unknown)")),
+                    line: 0,
+                    byte_column: 0,
+                })
+            }
+        }
+    }
+}
+fn effect_notes(
+    input: &EffectInput,
+    effects: &[DirectEffect],
+    blocking: bool,
+    out: &mut Vec<Note>,
+    budget: &ReportBudget,
+) -> Result<(), String> {
+    for e in effects {
+        budget.push(
+            out,
+            Note {
+                message: if blocking {
+                    budget.format(format_args!("{}() called here", e.reason))?
+                } else {
+                    budget.format(format_args!("{} happens here", e.reason))?
+                },
+                source: Some(e.origin.note_point(input, budget)?),
+            },
+        )?
+    }
+    Ok(())
+}
+fn call_notes(
+    input: &EffectInput,
+    path: &[CallEdge],
+    out: &mut Vec<Note>,
+    budget: &ReportBudget,
+) -> Result<(), String> {
+    for edge in path {
+        budget.push(
+            out,
+            Note {
+                message: budget.format(format_args!(
+                    "{}() called here",
+                    display_target(input, edge.callee, &budget)?
+                ))?,
+                source: Some(edge.origin.note_point(input, budget)?),
+            },
+        )?
+    }
+    Ok(())
+}
+fn is_subtype(
+    resolver: &(impl Resolver + ?Sized),
+    child: SymbolId,
+    parent: SymbolId,
+) -> Result<bool, String> {
+    match resolver.resolve(Q::Ancestry(child)) {
+        M::Symbols(rows) => Ok(rows.contains(&parent)),
+        _ => Err("purity subtype needs native ancestry proof".into()),
+    }
+}
+fn identity(archive: &BodyArchive, ordinal: usize) -> Result<ProcedureIdentity, String> {
+    let body = archive
+        .occurrences()
+        .get(ordinal)
+        .ok_or("purity body ordinal unavailable")?;
+    let tree = archive.tree();
+    let m = tree
+        .member(body.member)
+        .ok_or("purity source member absent")?;
+    Ok(ProcedureIdentity {
+        owner: tree
+            .type_node(m.owner)
+            .ok_or("purity source owner absent")?
+            .path,
+        name: m.name,
+        verb: m.kind == MemberKind::Verb,
+        occurrence: tree
+            .member_occurrence(body.member)
+            .ok_or("purity original source version absent")?,
+    })
+}
+pub(crate) fn source_parent(
+    archive: &BodyArchive,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    member: dm_tree::MemberId,
+    id: ProcedureIdentity,
+) -> Result<Option<EffectTarget>, String> {
+    use crate::checks_parent_call::SourcePredecessorProjection;
+    match crate::checks_parent_call::source_predecessor_in_profile(
+        archive.tree(),
+        member,
+        resolver,
+        profile,
+    )? {
+        SourcePredecessorProjection::Source(p) => Ok(Some(EffectTarget::Source(p))),
+        SourcePredecessorProjection::NoParent => Ok(None),
+        SourcePredecessorProjection::BuiltinBoundary => {
+            builtin_parent_after_sources(archive, profile, resolver, id)?
+                .map(Some)
+                .ok_or_else(|| "old parent exists but native builtin identity is unissued".into())
+        }
+    }
+}
+
+fn display(
+    input: &EffectInput,
+    id: ProcedureIdentity,
+    budget: &ReportBudget,
+) -> Result<String, String> {
+    let tree = input.archive.tree();
+    let owner = tree
+        .symbols()
+        .text(id.owner)
+        .ok_or("purity owner spelling absent")?;
+    let name = tree
+        .symbols()
+        .text(id.name)
+        .ok_or("purity callable spelling absent")?;
+    // Borrow the original owner-local declaration roster. The native builder
+    // publishes each member into this roster and declaration_targets together;
+    // unlike a previous-chain walk, it retains every proc/verb implementation.
+    let owner_id = tree
+        .lookup_type(id.owner)
+        .ok_or("effect display owner index absent")?;
+    let roster = &tree
+        .type_node(owner_id)
+        .ok_or("effect display owner absent")?
+        .members;
+    budget.charge(roster.len())?; // bound the actual local scan, not all project rows
+    let mut count = 0usize;
+    for member in roster.iter() {
+        let member = tree
+            .member(*member)
+            .ok_or("effect display indexed member absent")?;
+        if member.owner != owner_id {
+            return Err("effect display original owner roster mismatch".into());
+        }
+        if member.name == id.name && matches!(member.kind, MemberKind::Proc | MemberKind::Verb) {
+            count += 1
+        }
+    }
+    if count > 1 {
+        budget.format(format_args!(
+            "{}/proc/{name}[{}/{}]",
+            if owner == "/" { "" } else { owner },
+            id.occurrence,
+            count
+        ))
+    } else {
+        budget.format(format_args!(
+            "{}/proc/{name}",
+            if owner == "/" { "" } else { owner }
+        ))
+    }
+}
+/// Iterative Kosaraju over the unique effect graph. No Rust recursion or Db
+/// callee recursion, even for deep or mutually recursive source programs.
+fn scc(edges: &[Vec<usize>]) -> Result<Vec<usize>, String> {
+    let n = edges.len();
+    let mut reverse = vec![Vec::new(); n];
+    for (i, row) in edges.iter().enumerate() {
+        for &to in row {
+            if to >= n {
+                return Err("purity graph endpoint outside roster".into());
+            }
+            reverse[to].push(i)
+        }
+    }
+    let mut seen = vec![false; n];
+    let mut order = Vec::with_capacity(n);
+    for start in 0..n {
+        if seen[start] {
+            continue;
+        }
+        seen[start] = true;
+        let mut stack = vec![(start, 0)];
+        while let Some((node, next)) = stack.last_mut() {
+            if *next < edges[*node].len() {
+                let child = edges[*node][*next];
+                *next += 1;
+                if !seen[child] {
+                    seen[child] = true;
+                    stack.push((child, 0));
+                }
+            } else {
+                order.push(*node);
+                stack.pop();
+            }
+        }
+    }
+    let mut component = vec![usize::MAX; n];
+    let mut next = 0;
+    for &start in order.iter().rev() {
+        if component[start] != usize::MAX {
+            continue;
+        }
+        component[start] = next;
+        let mut stack = vec![start];
+        while let Some(node) = stack.pop() {
+            for &parent in &reverse[node] {
+                if component[parent] == usize::MAX {
+                    component[parent] = next;
+                    stack.push(parent)
+                }
+            }
+        }
+        next += 1;
+    }
+    Ok(component)
+}
+
+#[path = "checker_effects_storage.rs"]
+mod storage;
+pub use storage::{report_capacity_bound, visit_report, Storage};
+
+#[path = "checker_effects_sleep.rs"]
+mod sleep;
+use sleep::SleepSettings;
+
+#[path = "checker_effect_targets.rs"]
+mod targets;
+pub(crate) use targets::{
+    builtin_parent_after_sources, callable_target, display_target, original_target_parent,
+    source_child_overrides_target, target_owner, target_parent_parts, EffectTarget,
+};

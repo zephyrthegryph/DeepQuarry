@@ -1,0 +1,7 @@
+/client/child
+    var/value=0
+/client/child/MeasureText(Text,Font,Width)
+    value=1
+/proc/probe(client/C)
+    set SpacemanDMM_should_be_pure=1
+    C.MeasureText("x")

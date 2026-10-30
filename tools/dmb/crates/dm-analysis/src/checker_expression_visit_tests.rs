@@ -44,7 +44,8 @@ fn observe_mode(
                     let (kind, name, at) = match event {
                         // Resolved fields are an observation for visibility;
                         // this fixture asserts the existing call-event stream.
-                        Event::ResolvedField { .. } => continue,
+                        Event::ResolvedField { .. }
+                        | Event::ResolvedImplicitListConstructor { .. } => continue,
                         Event::FieldWithoutStaticType { name, at, .. } => {
                             ("field_static", name, at)
                         }
@@ -148,8 +149,8 @@ fn unsupported_origins_types_and_control_discard_the_entire_contribution() {
     for body in [
         "    first()\n    if(1)\n        second()\n",
         "    first()\n    return !second()\n",
-        "    var/datum/typed[side_effect()]\n    return visible()\n",
-        "    first()\n    return input(hidden())\n",
+        "    first()\n    return src.unissued_array_receiver.deep_field\n",
+        "    first()\n    return src.unissued.deep_field\n",
         "    first()\n    return src.field.deep_field\n",
     ] {
         assert!(
@@ -257,16 +258,29 @@ fn unresolved_live_settings_and_parameter_local_origins_remain_atomic_unsupporte
 }
 
 #[test]
-fn issued_array_type_container_does_not_certify_dimension_evaluation_or_for_shape() {
+fn formerly_unissued_array_suffixes_preserve_complete_original_call_events() {
     for suffix in [
         "[]",
         "[1]",
         "[missing_dimension()]",
         "[1][][missing_dimension()]",
     ] {
+        // Keep every exact former negative source. The original checker skips
+        // implicit dimensions when this source has no actual /list/New target.
         let source=format!("/datum/example/proc/probe()\n    missing_earlier()\n    var/datum/value{suffix}\n    missing_later()\n");
-        let error = observe_mode(&source, true).unwrap_err();
-        assert!(error.contains("array"), "{suffix}: {error}");
+        let rows = observe_mode(&source, true).unwrap();
+        let missing = rows
+            .into_iter()
+            .filter(|r| r.0 == "missing")
+            .collect::<Vec<_>>();
+        assert_eq!(
+            missing,
+            [
+                ("missing".into(), "missing_earlier".into(), 2, 5),
+                ("missing".into(), "missing_later".into(), 4, 5),
+            ],
+            "{suffix}"
+        );
     }
 }
 
@@ -355,4 +369,263 @@ fn inner_shadow_does_not_replace_the_exact_outer_literal_proof() {
         rows.iter().map(|r| r.1.as_str()).collect::<Vec<_>>(),
         ["visible_tail"]
     );
+}
+
+#[test]
+fn supported_primary_input_preserves_the_original_former_negative_and_full_old_errors() {
+    let source =
+        include_str!("../../../fixtures/unified_checks/input_negative_migration/probe.dme");
+    assert_eq!(
+        observe(source)
+            .unwrap()
+            .iter()
+            .map(|(kind, name, line, column)| (kind.as_str(), name.as_str(), *line, *column))
+            .collect::<Vec<_>>(),
+        [("missing", "first", 2, 5), ("missing", "hidden", 3, 18)]
+    );
+    let seed = reference_hierarchy::seed();
+    let frontend = build_with_config(
+        Path::new("evaluated_calls.dme"),
+        &Source(source.into()),
+        &Default::default(),
+        FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let resolver = frontend.snapshot.tree.as_ref();
+    let profile = resolver.checker_builtin_profile().unwrap();
+    let mut arena = BodyArena::new_typed(&frontend, |_| true);
+    let mut actual = String::new();
+    for (_, occurrence) in crate::checker_order::bodies(&frontend).unwrap() {
+        arena
+            .with_parsed(occurrence, |body| {
+                let diagnostics =
+                    crate::checks_undefined_proc::check(&frontend, body, resolver, profile, true)
+                        .unwrap();
+                for diagnostic in diagnostics {
+                    assert_eq!(diagnostic.severity, crate::checks::Severity::Error);
+                    let line = frontend.location(diagnostic.span.start).unwrap().line;
+                    let column = frontend.expanded.text[..diagnostic.span.start]
+                        .rsplit('\n')
+                        .next()
+                        .unwrap()
+                        .len()
+                        + 1;
+                    actual.push_str(&format!(
+                        "@FIXTURE@, line {line}, column {column}:\nerror: {}\n\n",
+                        diagnostic.message
+                    ));
+                }
+            })
+            .unwrap();
+    }
+    assert_eq!(
+        actual,
+        include_str!("../../../fixtures/unified_checks/input_negative_migration/reference.stderr"),
+        "actual native diagnostics preserve the complete independent old transcript"
+    );
+}
+
+#[test]
+fn primary_array_constructor_gates_dimensions_and_preserves_exact_old_call_order() {
+    assert_eq!(observe("/datum/example/proc/probe()\n    var/datum/typed[side_effect()]\n    return visible()\n").unwrap(),
+        [("missing".into(),"visible".into(),3,12)]);
+    for (source, expected) in [
+        (
+            include_str!(
+                "../../../fixtures/unified_checks/arrays/constructor_dimensions/probe.dme"
+            ),
+            vec![("first_dimension", 4, 21), ("second_dimension", 4, 42)],
+        ),
+        (
+            include_str!("../../../fixtures/unified_checks/arrays/explicit_initializer/probe.dme"),
+            vec![("actual_initializer", 4, 44)],
+        ),
+        (
+            include_str!("../../../fixtures/unified_checks/arrays/implicit_range/probe.dme"),
+            vec![
+                ("end_bound", 4, 31),
+                ("dimension", 4, 15),
+                ("missing_body", 5, 9),
+            ],
+        ),
+    ] {
+        let actual = observe_mode(source, true)
+            .unwrap()
+            .into_iter()
+            .filter(|row| row.0 == "missing")
+            .map(|row| (row.1, row.2, row.3))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            actual,
+            expected
+                .into_iter()
+                .map(|(name, line, col)| (name.to_owned(), line, col))
+                .collect::<Vec<_>>()
+        );
+    }
+}
+
+fn native_array_undefined_stderr(source: &str) -> String {
+    let seed = reference_hierarchy::seed();
+    let frontend = build_with_config(
+        Path::new("evaluated_calls.dme"),
+        &Source(source.into()),
+        &Default::default(),
+        FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let resolver = frontend.snapshot.tree.as_ref();
+    let profile = resolver.checker_builtin_profile().unwrap();
+    let mut arena = BodyArena::new_typed(&frontend, |_| true);
+    let mut actual = String::new();
+    for (_, occurrence) in crate::checker_order::bodies(&frontend).unwrap() {
+        arena
+            .with_parsed(occurrence, |body| {
+                let diagnostics = crate::checks_undefined_proc::check_evaluated(
+                    &frontend, body, resolver, profile, true,
+                )
+                .unwrap();
+                for diagnostic in diagnostics {
+                    assert_eq!(diagnostic.severity, crate::checks::Severity::Error);
+                    let line = frontend.location(diagnostic.span.start).unwrap().line;
+                    let column = frontend.expanded.text[..diagnostic.span.start]
+                        .rsplit('\n')
+                        .next()
+                        .unwrap()
+                        .len()
+                        + 1;
+                    actual.push_str(&format!(
+                        "@FIXTURE@, line {line}, column {column}:\nerror: {}\n\n",
+                        diagnostic.message
+                    ));
+                }
+            })
+            .unwrap();
+    }
+    actual
+}
+#[test]
+fn complete_original_array_call_diagnostics_match_independent_old_executable_transcripts() {
+    for (source, reference) in [
+        (
+            include_str!(
+                "../../../fixtures/unified_checks/arrays/constructor_dimensions/probe.dme"
+            ),
+            include_str!(
+                "../../../fixtures/unified_checks/arrays/constructor_dimensions/reference.stderr"
+            ),
+        ),
+        (
+            include_str!("../../../fixtures/unified_checks/arrays/explicit_initializer/probe.dme"),
+            include_str!(
+                "../../../fixtures/unified_checks/arrays/explicit_initializer/reference.stderr"
+            ),
+        ),
+        (
+            include_str!("../../../fixtures/unified_checks/arrays/implicit_range/probe.dme"),
+            include_str!("../../../fixtures/unified_checks/arrays/implicit_range/reference.stderr"),
+        ),
+    ] {
+        assert_eq!(native_array_undefined_stderr(source), reference);
+    }
+}
+
+#[test]
+fn blocking_operator_grammar_requires_real_primary_token_and_exact_native_callable() {
+    let source="/datum/counter/proc/operator++()\n    return\n/datum/counter/proc/sleep()\n    return\n/proc/probe(datum/counter/C)\n    C++\n";
+    let seed = reference_hierarchy::seed();
+    let frontend = build_with_config(
+        Path::new("blocking-operator.dme"),
+        &Source(source.into()),
+        &Default::default(),
+        FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let archive = frontend.body_archive().unwrap();
+    let tree = archive.tree();
+    let profile = tree.checker_builtin_profile().unwrap();
+    let index = archive
+        .occurrences()
+        .iter()
+        .position(|o| tree.member(o.member).unwrap().name == SymbolId::of("probe"))
+        .unwrap();
+    let body = archive.parse(index).unwrap();
+    let statement = &body.statement_body().parsed().statements[0];
+    let expression = match &statement.kind {
+        StatementKind::Expression(e) | StatementKind::Call(e) => e,
+        other => panic!("{other:?}"),
+    };
+    let receiver = SymbolId::of("/datum/counter");
+    let overload =
+        checker_call_facts::callable_any(tree, tree, profile, receiver, SymbolId::of("operator++"))
+            .unwrap();
+    assert_eq!(
+        blocking_call_reason(
+            tree,
+            profile,
+            archive.expanded_source(),
+            expression,
+            receiver,
+            &overload
+        )
+        .unwrap(),
+        None
+    );
+    let unrelated =
+        checker_call_facts::callable_any(tree, tree, profile, receiver, SymbolId::of("sleep"))
+            .unwrap();
+    assert!(blocking_call_reason(
+        tree,
+        profile,
+        archive.expanded_source(),
+        expression,
+        receiver,
+        &unrelated
+    )
+    .unwrap_err()
+    .contains("original operator grammar"));
+    let changed = archive.expanded_source().replace("C++", "C--");
+    assert!(
+        blocking_call_reason(tree, profile, &changed, expression, receiver, &overload).is_err(),
+        "original issued ++ shape cannot license changed operator bytes"
+    );
+}
+
+#[test]
+fn original_local_paths_are_not_normalized_a_second_time() {
+    let normal =
+        "/datum/T\n    var/member\n/proc/check()\n    var/datum/T/P\n    return P.member\n";
+    assert!(observe_mode(normal, true).is_ok());
+    let repeated =
+        "/datum/T\n    var/member\n/proc/check()\n    var/var/datum/T/P\n    return P.member\n";
+    let error = observe_mode(repeated, true).unwrap_err();
+    assert!(
+        error.contains("undefined-type diagnostic projection"),
+        "{error}"
+    );
+    let embedded =
+        "/datum/T\n    var/member\n/proc/check()\n    var/datum/static/T/P\n    return P.member\n";
+    let error = observe_mode(embedded, true).unwrap_err();
+    assert!(
+        error.contains("undefined-type diagnostic projection"),
+        "{error}"
+    );
+}
+
+#[test]
+fn original_dimension_division_cannot_change_the_local_binding_name() {
+    let source="/datum/T\n    var/member\n/proc/check()\n    var/datum/T/P[6 / 2]\n    return P[1].member\n";
+    assert!(observe_mode(source, true).is_ok());
 }

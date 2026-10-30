@@ -536,6 +536,10 @@ fn compile_with_lookup_mode(
         None
     };
     compiler.debug = debug;
+    compiler.local_variables = match typed {
+        Some(TypedInput::Statements(view)) => view.local_variables(),
+        _ => None,
+    };
     compiler.statement_mask = match typed {
         Some(TypedInput::Statements(view)) => view.mask(),
         _ => None,
@@ -713,19 +717,25 @@ fn compile_with_lookup_mode(
 
 /// Eligibility for an already filtered executable typed body.
 pub fn typed_statements_supported(statements: &[Statement]) -> bool {
-    supported_statements(statements, false, None)
+    supported_statements(statements, false, None, None)
 }
 /// Eligibility before authoritative stored declarations are removed.
 pub fn typed_statements_supported_for_capture(statements: &[Statement]) -> bool {
-    supported_statements(statements, true, None)
+    supported_statements(statements, true, None, None)
 }
 pub fn typed_statement_view_supported(view: dm_syntax::StatementView<'_>) -> bool {
-    supported_statements(view.statements(), false, view.mask())
+    supported_statements(
+        view.statements(),
+        false,
+        view.mask(),
+        view.local_variables(),
+    )
 }
 fn supported_statements(
     statements: &[Statement],
     stored_declarations: bool,
     mask: Option<&dm_syntax::StatementMask>,
+    locals: Option<&dm_syntax::LocalVariableLedger>,
 ) -> bool {
     statements
         .iter()
@@ -742,10 +752,19 @@ fn supported_statements(
             | StatementKind::Throw(_)
             | StatementKind::Goto(_) => true,
             StatementKind::Label { body, .. } => {
-                supported_statements(body, stored_declarations, mask)
+                supported_statements(body, stored_declarations, mask, locals)
             }
             StatementKind::Var { declaration, .. } => {
                 local_name(declaration).is_some()
+                    || locals.is_some_and(|ledger| {
+                        // Exact original array facts can prove a name that the
+                        // legacy slash-based spelling helper cannot see (e.g.
+                        // a division operator inside a dimension). No receipt
+                        // means the unchanged compatibility eligibility applies.
+                        matches!(ledger.in_span(statement.header_span), Ok([fact])
+                            if fact.source_modifiers & 1 == 0
+                                && fact.array_syntax.is_some())
+                    })
                     || (stored_declarations
                         && declaration
                             .split('/')
@@ -756,14 +775,14 @@ fn supported_statements(
             StatementKind::While { body, .. }
             | StatementKind::DoWhile { body, .. }
             | StatementKind::Spawn { body, .. } => {
-                supported_statements(body, stored_declarations, mask)
+                supported_statements(body, stored_declarations, mask, locals)
             }
             StatementKind::For {
                 control: ForControl::All { declaration },
                 body,
             } => {
                 local_name(declaration).is_some()
-                    && supported_statements(body, stored_declarations, mask)
+                    && supported_statements(body, stored_declarations, mask, locals)
             }
             StatementKind::For {
                 control: ForControl::Each { binding, .. },
@@ -775,7 +794,7 @@ fn supported_statements(
                 (local_name(binding).is_some()
                     || (!binding.is_empty()
                         && binding.chars().all(|ch| ch.is_alphanumeric() || ch == '_')))
-                    && supported_statements(body, stored_declarations, mask)
+                    && supported_statements(body, stored_declarations, mask, locals)
             }
             StatementKind::For {
                 control:
@@ -790,23 +809,23 @@ fn supported_statements(
                     local_name(binding).is_some()
                         || (!binding.is_empty()
                             && binding.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
-                }) && supported_statements(body, stored_declarations, mask)
+                }) && supported_statements(body, stored_declarations, mask, locals)
             }
             StatementKind::For {
                 control: ForControl::Range { .. },
                 body,
-            } => supported_statements(body, stored_declarations, mask),
+            } => supported_statements(body, stored_declarations, mask, locals),
             StatementKind::For {
                 control: ForControl::CStyle { .. },
                 body,
-            } => supported_statements(body, stored_declarations, mask),
+            } => supported_statements(body, stored_declarations, mask, locals),
             StatementKind::Switch {
                 cases, else_branch, ..
             } => {
                 cases
                     .iter()
-                    .all(|case| supported_statements(&case.body, stored_declarations, mask))
-                    && supported_statements(else_branch, stored_declarations, mask)
+                    .all(|case| supported_statements(&case.body, stored_declarations, mask, locals))
+                    && supported_statements(else_branch, stored_declarations, mask, locals)
             }
             StatementKind::Try {
                 body,
@@ -817,16 +836,16 @@ fn supported_statements(
                 catch_binding
                     .as_ref()
                     .is_none_or(|binding| local_name(binding).is_some())
-                    && supported_statements(body, stored_declarations, mask)
-                    && supported_statements(catch_body, stored_declarations, mask)
+                    && supported_statements(body, stored_declarations, mask, locals)
+                    && supported_statements(catch_body, stored_declarations, mask, locals)
             }
             StatementKind::If {
                 then_branch,
                 else_branch,
                 ..
             } => {
-                supported_statements(then_branch, stored_declarations, mask)
-                    && supported_statements(else_branch, stored_declarations, mask)
+                supported_statements(then_branch, stored_declarations, mask, locals)
+                    && supported_statements(else_branch, stored_declarations, mask, locals)
             }
             _ => false,
         })
@@ -882,6 +901,7 @@ struct Compiler<'a> {
     statement_span: Option<LowerSpan>,
     diagnostic_expression_coordinates: bool,
     statement_mask: Option<&'a dm_syntax::StatementMask>,
+    local_variables: Option<&'a dm_syntax::LocalVariableLedger>,
     // Exact AST node identity, not source-span equality: synthesized expressions
     // can share spans. Only an immediate statement call may discard its result.
     discarded_call_root: Option<*const Expr>,
@@ -966,13 +986,13 @@ mod statements;
 mod typed_statements;
 #[path = "simple/typed_switch.rs"]
 mod typed_switch;
-use helpers::{
-    class_tag, error, family_tag, ATOM_ROOT_TAG, fold_literal_string_expression, fold_number, is_output_target,
-    member_proc_selector, parenthesized,
-    parse_text_template, source_error, syntax_failure,
-};
 #[cfg(test)]
 use helpers::parse_interpolated_string;
+use helpers::{
+    class_tag, error, family_tag, fold_literal_string_expression, fold_number, is_output_target,
+    member_proc_selector, parenthesized, parse_text_template, source_error, syntax_failure,
+    ATOM_ROOT_TAG,
+};
 pub use helpers::{
     decode_constant_string_literal, decode_native_constant_string_literal, nameof_reference,
     visit_constant_string_literals, visit_native_constant_string_literals,

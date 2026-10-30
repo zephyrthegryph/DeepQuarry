@@ -1,0 +1,5 @@
+/client/child/MeasureText(Text,Font,Width)
+    sleep(1)
+/proc/probe(client/C)
+    set SpacemanDMM_should_not_sleep=1
+    C.MeasureText("x")

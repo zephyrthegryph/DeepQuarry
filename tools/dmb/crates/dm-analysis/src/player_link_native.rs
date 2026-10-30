@@ -20,6 +20,15 @@ fn is_mob(tree: &dm_tree::SemanticTree, ty: &str) -> Result<bool, Unsupported> {
     if ty.is_empty() {
         return Ok(false);
     }
+    let profile = tree.checker_builtin_profile().ok_or_else(|| {
+        Unsupported("player-link source type roster lacks certified checker hierarchy".into())
+    })?;
+    if !tree
+        .checker_source_type_presence(profile, ty)
+        .map_err(|e| Unsupported(format!("{e:?}")))?
+    {
+        return Ok(false);
+    }
     match Resolver::resolve(tree, Q::Ancestry(SymbolId::of(ty))) {
         M::Symbols(rows) => Ok(rows.contains(&SymbolId::of("/mob"))),
         M::Missing => Ok(false),
@@ -58,7 +67,7 @@ pub fn findings(
         let owner_is_mob = is_mob(tree, owner)?;
         let mut error = None;
         crate::untyped_order::statement_assignments(
-            &body.statement_body().parsed().statements,
+            body.statement_body().view(),
             &mut |target, _, at: Span| {
                 if error.is_some() {
                     return;
@@ -114,7 +123,7 @@ pub fn findings(
                     }
                 }
             },
-        );
+        ).map_err(|e|Unsupported(e.into()))?;
         if let Some(error) = error {
             return Err(error);
         }

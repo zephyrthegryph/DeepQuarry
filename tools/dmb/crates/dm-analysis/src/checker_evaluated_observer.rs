@@ -19,6 +19,15 @@ pub enum ScopeKind {
 /// succeeds. Scope exit is delivered even when a nested hook returns Err.
 /// Binding strings are already issued by primary syntax, never reparsed bodies.
 pub trait EvaluatedObserver<'a> {
+    /// Optional operation-scoped storage admission. Existing observers keep
+    /// their original allocation behavior; only an explicitly bounded observer
+    /// returns true. A zero-byte call also checks a sticky void-hook refusal.
+    fn admit_storage(&mut self, _bytes: usize) -> Result<bool, String> {
+        Ok(false)
+    }
+    /// Relay a failed allocator reservation through an opted-in denial channel.
+    fn storage_allocation_failed(&mut self) {}
+
     fn enter_scope(&mut self, kind: ScopeKind);
     fn leave_scope(&mut self, kind: ScopeKind);
     fn leaf(&mut self, statement: &'a Statement) -> Result<(), String>;

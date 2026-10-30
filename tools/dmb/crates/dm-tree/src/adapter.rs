@@ -79,7 +79,72 @@ pub(crate) fn from_ast_with_source(
         Some(source),
     )
 }
+/// Native-only route. The header input was issued from the SAME original
+/// declaration tokens/source owner; the returned temporary receipt lets the
+/// allocation ledger consume existing signature results instead of parsing twice.
+pub(crate) fn from_ast_with_source_headers<'a>(
+    ast: &'a AstFile,
+    symbols: SymbolTable,
+    file: FileId,
+    include_occurrence: u32,
+    region: u128,
+    source: &str,
+    headers: &'a crate::procedure::OriginalProcedureHeaders,
+    offset: usize,
+) -> Result<
+    (
+        AdaptedDeclarations,
+        crate::procedure::HeaderAllocationReceipt<'a>,
+    ),
+    Vec<AdapterError>,
+> {
+    let (facts, rows) = from_ast_with_cursor_issued(
+        ast,
+        symbols,
+        file,
+        include_occurrence,
+        region,
+        "/",
+        Some(source),
+        Some((headers, offset)),
+    )?;
+    let receipt =
+        crate::procedure::HeaderAllocationReceipt::from_rows(&ast.items, headers, offset, rows)
+            .map_err(|message| {
+                vec![AdapterError {
+                    kind: dm_syntax::DiagnosticKind::Unsupported,
+                    span: Span {
+                        file,
+                        start: 0,
+                        end: 0,
+                    },
+                    message,
+                }]
+            })?;
+    Ok((facts, receipt))
+}
 fn from_ast_with_cursor(
+    ast: &AstFile,
+    symbols: SymbolTable,
+    file: FileId,
+    include_occurrence: u32,
+    region: u128,
+    owner: &str,
+    source: Option<&str>,
+) -> Result<AdaptedDeclarations, Vec<AdapterError>> {
+    from_ast_with_cursor_issued(
+        ast,
+        symbols,
+        file,
+        include_occurrence,
+        region,
+        owner,
+        source,
+        None,
+    )
+    .map(|(facts, _)| facts)
+}
+fn from_ast_with_cursor_issued(
     ast: &AstFile,
     mut symbols: SymbolTable,
     file: FileId,
@@ -87,7 +152,15 @@ fn from_ast_with_cursor(
     region: u128,
     owner: &str,
     source: Option<&str>,
-) -> Result<AdaptedDeclarations, Vec<AdapterError>> {
+    headers: Option<(&crate::procedure::OriginalProcedureHeaders, usize)>,
+) -> Result<
+    (
+        AdaptedDeclarations,
+        Vec<crate::procedure::header_input::HeaderAllocationRow>,
+    ),
+    Vec<AdapterError>,
+> {
+    let mut header_rows = Vec::new();
     let mut result = AdaptedDeclarations {
         symbols: SymbolTable::default(),
         skeletons: Vec::new(),
@@ -108,6 +181,8 @@ fn from_ast_with_cursor(
     let normalized = crate::normalize::declarations_in_scope(&ast.items, owner);
     let mut context = AdapterContext {
         source,
+        headers,
+        header_rows: &mut header_rows,
         file,
         include_occurrence,
         region,
@@ -122,7 +197,7 @@ fn from_ast_with_cursor(
     result.origins.shrink_to_fit();
     result.symbols = symbols;
     if errors.is_empty() {
-        Ok(result)
+        Ok((result, header_rows))
     } else {
         Err(errors)
     }
@@ -184,6 +259,8 @@ struct AdapterContext<'a> {
     /// The one empty expansion stack every origin of this walk shares.
     no_expansion: Arc<[Span]>,
     source: Option<&'a str>,
+    headers: Option<(&'a crate::procedure::OriginalProcedureHeaders, usize)>,
+    header_rows: &'a mut Vec<crate::procedure::header_input::HeaderAllocationRow>,
     file: FileId,
     include_occurrence: u32,
     region: u128,
@@ -205,6 +282,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
         };
         let header = item.header.trim();
         let mut header_declarations = Vec::new();
+        let mut header_argument_offset = None;
         let mut source_argument_span = None;
         let adapted = (|| -> Result<Option<Skeleton>, String> {
             match item.kind {
@@ -352,7 +430,26 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     }))
                 }
                 ItemKind::Proc | ItemKind::Verb => {
-                    let (raw, arguments, trailing) = signature_parts(header)?;
+                    let issued = context
+                        .headers
+                        .map(|(headers, offset)| headers.parts(item.header_span, offset, header))
+                        .transpose()?;
+                    let legacy = if issued.is_none() {
+                        Some(signature_parts(header)?)
+                    } else {
+                        None
+                    };
+                    let raw = issued
+                        .as_ref()
+                        .map(|p| p.prefix)
+                        .unwrap_or_else(|| legacy.as_ref().expect("compatibility header").0);
+                    let (arguments, trailing) =
+                        legacy.as_ref().map(|v| (v.1, v.2)).unwrap_or(("", ""));
+                    header_argument_offset = Some(if let Some(parts) = issued.as_ref() {
+                        parts.argument_offset
+                    } else {
+                        arguments.as_ptr() as usize - item.header.as_ptr() as usize
+                    });
                     // DM accepts an optional path separator before the formal
                     // argument list: receive_signal/(datum/signal/signal).
                     let raw = raw.trim().trim_end_matches('/');
@@ -395,11 +492,15 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                             }
                         }
                     }
-                    let parsed_signature = crate::procedure::parse_signature_declarations(
-                        arguments,
-                        trailing,
-                        context.symbols,
-                    )
+                    let parsed_signature = if let Some(parts) = issued.as_ref() {
+                        parts.parse(context.symbols)
+                    } else {
+                        crate::procedure::parse_signature_declarations(
+                            arguments,
+                            trailing,
+                            context.symbols,
+                        )
+                    }
                     .map_err(|error| {
                         source_argument_span =
                             if error.after_header {
@@ -426,8 +527,8 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                                 })
                             } else {
                                 error.source_span.map(|argument| {
-                                    let offset =
-                                        arguments.as_ptr() as usize - item.header.as_ptr() as usize;
+                                    let offset = header_argument_offset
+                                        .expect("current signature argument offset");
                                     Span {
                                         file,
                                         start: (item.header_span.start + offset + argument.start)
@@ -524,11 +625,9 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
         })();
         match adapted {
             Ok(Some(skeleton)) => {
-                for declaration in header_declarations {
-                    let (_, arguments, _) =
-                        signature_parts(header).expect("validated procedure signature");
+                for declaration in &header_declarations {
                     let argument_offset =
-                        arguments.as_ptr() as usize - item.header.as_ptr() as usize;
+                        header_argument_offset.expect("validated signature argument offset");
                     let start =
                         item.header_span.start + argument_offset + declaration.relative_span.start;
                     let end =
@@ -547,6 +646,24 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         region,
                         expansion_stack: Arc::clone(&context.no_expansion),
                     });
+                }
+                if context.headers.is_some() && matches!(item.kind, ItemKind::Proc | ItemKind::Verb)
+                {
+                    if context.header_rows.try_reserve_exact(1).is_err() {
+                        context.errors.push(AdapterError {
+                            kind: dm_syntax::DiagnosticKind::Unsupported,
+                            span,
+                            message: "original header allocation receipt capacity refused".into(),
+                        });
+                        continue;
+                    }
+                    context
+                        .header_rows
+                        .push(crate::procedure::header_input::HeaderAllocationRow {
+                            header: item.header_span,
+                            argument_offset: header_argument_offset.expect("issued signature"),
+                            declarations: header_declarations,
+                        });
                 }
                 context.result.skeletons.push(skeleton);
                 context.result.origins.push(Provenance {
@@ -581,6 +698,8 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
 mod tests;
 
 pub(crate) fn signature_parts(header: &str) -> Result<(&str, &str, &str), String> {
+    #[cfg(test)]
+    SIGNATURE_PART_LEXES.with(|n| n.set(n.get() + 1));
     let tokens = dm_syntax::lex(header);
     let mut open = None;
     let mut depth = 0;
@@ -948,4 +1067,11 @@ pub(crate) fn projected_identity_indexed(
         seed.map_or(&[][..], |seed| seed.fields.as_ref()),
     );
     Ok((identity, hierarchy))
+}
+
+#[cfg(test)]
+thread_local! { static SIGNATURE_PART_LEXES: std::cell::Cell<usize> = const {std::cell::Cell::new(0)}; }
+#[cfg(test)]
+pub(crate) fn signature_part_lexes() -> usize {
+    SIGNATURE_PART_LEXES.with(std::cell::Cell::get)
 }

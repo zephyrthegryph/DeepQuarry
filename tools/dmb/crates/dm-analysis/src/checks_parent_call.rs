@@ -12,6 +12,7 @@ use dm_tree::{
     frontend::{ColdFrontend, ParsedBody},
     MemberId, MemberKind, SemanticTree,
 };
+use std::sync::Arc;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParentFact {
@@ -430,3 +431,161 @@ mod context_tests;
 #[cfg(test)]
 #[path = "checks_parent_call_tests.rs"]
 mod tests;
+
+/// Exact SOURCE predecessor in the pinned checker's unified/global namespace.
+/// A builtin boundary is deliberately NOT a fabricated builtin identity: only
+/// the separate original-catalog producer may issue that target.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum SourcePredecessorProjection {
+    Source(ProcedureIdentity),
+    NoParent,
+    BuiltinBoundary,
+}
+pub(crate) fn source_predecessor_in_profile(
+    tree: &SemanticTree,
+    member: MemberId,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+) -> Result<SourcePredecessorProjection, String> {
+    tree.validate_checker_builtin_profile(profile)
+        .map_err(|e| format!("source-parent checker profile unavailable: {e:?}"))?;
+    let presence = parent_fact_in_profile(tree, member, resolver, Some(profile))?;
+    let expected = parent_fact_in_profile(tree, member, tree, Some(profile))?;
+    if presence != expected {
+        return Err("source-parent resolver differs from original profile-qualified facts".into());
+    }
+    let id = presence.identity;
+    fn chain(
+        tree: &SemanticTree,
+        resolver: &(impl Resolver + ?Sized),
+        owner: dm_ir::SymbolId,
+        id: ProcedureIdentity,
+        verb: bool,
+    ) -> Result<Option<Arc<[M]>>, String> {
+        let q = Q::SourceDeclarationChain {
+            owner,
+            name: id.name,
+            verb,
+        };
+        let answer = resolver.resolve(q);
+        if answer != Resolver::resolve(tree, q) {
+            return Err("source-parent chain differs from original current owner".into());
+        }
+        match answer {
+            M::Members(rows) if !rows.is_empty() => Ok(Some(rows)),
+            M::Missing => Ok(None),
+            _ => Err("source-parent source chain is malformed/unissued".into()),
+        }
+    }
+    // The runtime has distinct proc and verb maps. Until original unified
+    // chronology is issued, do not select an old parent from those two maps by
+    // name, declaration position, or an assumed preferred kind.
+    if chain(tree, resolver, id.owner, id, !id.verb)?.is_some() {
+        return Err("exact source-parent needs issued unified proc/verb ordering".into());
+    }
+    let rows = chain(tree, resolver, id.owner, id, id.verb)?
+        .ok_or("source-parent original callable chain absent")?;
+    let native = rows
+        .iter()
+        .find_map(|row| match row {
+            M::Declaration {
+                identity, previous, ..
+            } if *identity == id => Some(previous.as_ref().map(|p| **p)),
+            _ => None,
+        })
+        .ok_or("source-parent chain omits original procedure occurrence")?;
+    let mut source = native;
+    if source.is_none() && id.owner != dm_ir::SymbolId::of("/") {
+        let root = dm_ir::SymbolId::of("/");
+        if chain(tree, resolver, root, id, !id.verb)?.is_some() {
+            return Err(
+                "exact global source-parent needs issued unified proc/verb ordering".into(),
+            );
+        }
+        if let Some(rows) = chain(tree, resolver, root, id, id.verb)? {
+            let Some(M::Declaration { identity, .. }) = rows.first() else {
+                return Err("global source-parent declaration is unissued".into());
+            };
+            if identity.owner != root || identity.name != id.name || identity.verb != id.verb {
+                return Err("global source-parent identity mismatch".into());
+            }
+            source = Some(*identity);
+        }
+    }
+    let query = Q::Ancestry(id.owner);
+    let ancestry = resolver.resolve(query);
+    if ancestry != Resolver::resolve(tree, query) {
+        return Err("source-parent ancestry differs from original owner".into());
+    }
+    let M::Symbols(ancestors) = ancestry else {
+        return Err("source-parent ancestry is unissued".into());
+    };
+    let depth = |owner| {
+        ancestors
+            .iter()
+            .position(|p| *p == owner)
+            .ok_or("source/builtin predecessor lies outside original checker ancestry")
+    };
+    // Native SourceDeclarationChain omits fixed-DSL implementations, so even
+    // its positive predecessor can be farther than an intervening builtin.
+    // Ask the ORIGINAL profile for both kinds BEFORE selecting any source.
+    let mut builtin_depth = None;
+    for verb in [false, true] {
+        let q = Q::CheckerBuiltinProc {
+            profile,
+            owner: id.owner,
+            name: id.name,
+            verb,
+        };
+        let builtin = resolver.resolve(q);
+        if builtin != Resolver::resolve(tree, q) {
+            return Err("source-parent builtin dependency differs from original profile".into());
+        }
+        match builtin {
+            M::Missing => (),
+            M::Member {
+                owner, name, data, ..
+            } => {
+                if name != id.name || data.procedure.is_none() || data.inherited_opaque.is_some() {
+                    return Err("source-parent builtin metadata is unissued".into());
+                }
+                if owner == id.owner {
+                    return Err(
+                        "same-owner builtin/source declaration chronology is not issued".into(),
+                    );
+                }
+                let at = depth(owner)?;
+                if builtin_depth == Some(at) {
+                    return Err("source-parent builtin proc/verb chronology is not issued".into());
+                }
+                builtin_depth = Some(builtin_depth.map_or(at, |old: usize| old.min(at)));
+            }
+            _ => {
+                return Err(
+                    "source-parent requires original profile-qualified builtin facts".into(),
+                )
+            }
+        }
+    }
+    if let Some(source) = source {
+        if !presence.has_parent {
+            return Err("original source predecessor contradicts parent presence".into());
+        }
+        let source_depth = depth(source.owner)?;
+        if builtin_depth.is_some_and(|at| at < source_depth) {
+            return Ok(SourcePredecessorProjection::BuiltinBoundary);
+        }
+        return Ok(SourcePredecessorProjection::Source(source));
+    }
+    if builtin_depth.is_some() && !presence.has_parent {
+        return Err("original builtin predecessor contradicts parent presence".into());
+    }
+    Ok(if presence.has_parent {
+        SourcePredecessorProjection::BuiltinBoundary
+    } else {
+        SourcePredecessorProjection::NoParent
+    })
+}
+#[cfg(test)]
+#[path = "checks_parent_source_projection_tests.rs"]
+mod source_projection_tests;
