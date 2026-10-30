@@ -7,7 +7,7 @@ set -uo pipefail
 cd "$(dirname "$0")/../.."
 fail=0
 check() { if eval "$2"; then echo "ok   $1"; else echo "FAIL $1"; fail=1; fi; }
-T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+T="$(mktemp -d)"; T="$(cygpath -m "$T" 2>/dev/null || echo "$T")"; trap 'rm -rf "$T"' EXIT
 export DQ_CACHE_ROOT="$T/cache" DQ_WT_ROOT="$T/wt" DQ_DISK_MANIFEST="$T/m.toml" DQ_DISK_TOOLS=0 DQ_DISK_FREE_GB=500
 mkdir -p "$DQ_CACHE_ROOT/lane-pool" "$DQ_CACHE_ROOT/logs" "$DQ_WT_ROOT"
 cat >"$T/m.toml" <<'TOML'
