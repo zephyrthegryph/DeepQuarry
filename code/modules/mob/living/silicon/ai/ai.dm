@@ -103,6 +103,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	canmove = 0
 
 CAPABILITIES(/mob/living/silicon/ai)
+	op("store_core", menu(), label("Store Core"), needs(req_self(), req(PROC_REF(store_core_ready))), then(PROC_REF(store_core_op)))
 	// Local HUD questions are operations on the AI itself, independent of its wireless link.
 	op("hud_camera_list", menu(), label("Show Camera List"), authority(AUTH_REMOTE_ACCESS), by(0), ungated(), when(req(/atom/movable/screen, of = ON_HELD)), needs(req_self()),
 		asks(/datum/prompt/choice, fields = list("question" = "Pick Camera:", "title" = "Camera Choice", "choices" = computed(PROC_REF(hud_camera_choices)), "timeout" = 0), ends_on_no = TRUE, keeps = 0), then(PROC_REF(hud_camera_chosen)))

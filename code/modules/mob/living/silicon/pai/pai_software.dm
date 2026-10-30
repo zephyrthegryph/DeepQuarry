@@ -59,13 +59,12 @@
 			else
 				button.set_icon_state("[button.base_state]_o")
 
-/mob/living/silicon/pai/verb/wipe_software()
-	set name = "Enter Storage"
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set desc = "Upload your personality to the cloud and wipe your software from the card. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."
-
+/mob/living/silicon/pai/proc/wipe_software()
 	// Make sure people don't kill themselves accidentally
 	open_request(src, /datum/prompt/yes_no, PROC_REF(wipe_software_confirmed), answerer = src, title = "Wipe Software", question = "WARNING: This will immediately wipe your software and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", timeout = 0)
+
+/mob/living/silicon/pai/proc/wipe_software_op(datum/act/op/A)
+	wipe_software()
 
 /mob/living/silicon/pai/proc/wipe_software_confirmed(datum/act/request/A)
 	if(!A.answer || !A.answer.value)

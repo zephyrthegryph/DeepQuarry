@@ -4,11 +4,11 @@
 	for(var/id in GLOB.default_pai_software)
 		.[id] = TRUE
 
-/mob/living/silicon/pai/verb/paiInterface()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Software Interface"
-
+/mob/living/silicon/pai/proc/paiInterface()
 	tgui_interact(src)
+
+/mob/living/silicon/pai/proc/paiInterface_op(datum/act/op/A)
+	paiInterface()
 
 /mob/living/silicon/pai/ui_data(datum/act/eval/A)
 	var/list/data = list()

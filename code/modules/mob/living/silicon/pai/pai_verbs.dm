@@ -19,10 +19,7 @@
 	. = ..()
 	rel_clear(src, nameof(current))
 
-/mob/living/silicon/pai/verb/reset_record_view()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Reset Records Software"
-
+/mob/living/silicon/pai/proc/reset_record_view()
 	rel_clear(src, nameof(securityActive1))
 	rel_clear(src, nameof(securityActive2))
 	set_security_cannotfind(0)
@@ -31,6 +28,9 @@
 	set_medical_cannotfind(0)
 	SStgui.update_uis(src)
 	to_chat(src, span_notice("You reset your record-viewing software."))
+
+/mob/living/silicon/pai/proc/reset_record_view_op(datum/act/op/A)
+	reset_record_view()
 
 /mob/living/silicon/pai/proc/choose_verbs()
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
@@ -46,11 +46,7 @@
 	speak_exclamation = sayverbs[(sayverbs.len>1 ? 2 : sayverbs.len)]
 	speak_query = sayverbs[(sayverbs.len>2 ? 3 : sayverbs.len)]
 
-/mob/living/silicon/pai/verb/allowmodification()
-	set name = "Change Access Modifcation Permission"
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set desc = "Allows people to modify your access or block people from modifying your access."
-
+/mob/living/silicon/pai/proc/allowmodification()
 	if(idaccessible == 0)
 		set_idaccessible(1)
 		act_message(src, null, MSG_SELF(span_notice("You allow access modifications.")), MSG_OTHERS(span_notice("%U% clicks as their access modification slot opens.")), runemessage = "click")
@@ -58,25 +54,27 @@
 		set_idaccessible(0)
 		act_message(src, null, MSG_SELF(span_notice("You block access modfications.")), MSG_OTHERS(span_notice("%U% clicks as their access modification slot closes.")), runemessage = "click")
 
-/mob/living/silicon/pai/verb/toggle_gender_identity_vr()
-	set name = "Set Gender Identity"
-	set desc = "Sets the pronouns when examined and performing an emote."
-	set category = VERB_CAT_IC_SETTINGS
+/mob/living/silicon/pai/proc/allowmodification_op(datum/act/op/A)
+	allowmodification()
+
+/mob/living/silicon/pai/proc/toggle_gender_identity_vr()
 	open_request(src, /datum/prompt/choice, PROC_REF(pai_gender_chosen), answerer = src, title = "Set Gender Identity", question = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM), timeout = 0)
 	return 1
+
+/mob/living/silicon/pai/proc/toggle_gender_identity_vr_op(datum/act/op/A)
+	toggle_gender_identity_vr()
 
 /mob/living/silicon/pai/proc/pai_gender_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
 	set_gender(A.answer.value)
 
-/mob/living/silicon/pai/verb/pai_hide()
-	set name = "Hide"
-	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
-	set category = VERB_CAT_ABILITIES_PAI
-
+/mob/living/silicon/pai/proc/pai_hide()
 	hide()
 	set_hide_glow(!!(status_flags & HIDING))
+
+/mob/living/silicon/pai/proc/pai_hide_op(datum/act/op/A)
+	pai_hide()
 
 /mob/living/silicon/pai/verb/screen_message(message as text|null)
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
@@ -152,29 +150,31 @@
 		return
 	return feed_grabbed_to_self(src,T)
 
-/mob/living/silicon/pai/verb/toggle_eyeglow()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Toggle Eye Glow"
-
+/mob/living/silicon/pai/proc/toggle_eyeglow_ready(datum/act/op/A)
 	if(!SSpai.chassis_data(chassis_name).has_eye_sprites)
-		to_chat(src, span_filter_notice("Your selected chassis cannot modify its eye glow!"))
-		return
+		return span_filter_notice("Your selected chassis cannot modify its eye glow!")
+	return null
 
+/mob/living/silicon/pai/proc/toggle_eyeglow()
 	if(eye_glow && !hide_glow)
 		set_eye_glow(FALSE)
 	else
 		set_eye_glow(TRUE)
 		set_hide_glow(FALSE)
 
-/mob/living/silicon/pai/verb/pick_eye_color()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Pick Eye Color"
+/mob/living/silicon/pai/proc/toggle_eyeglow_op(datum/act/op/A)
+	toggle_eyeglow()
 
+/mob/living/silicon/pai/proc/pick_eye_color_ready(datum/act/op/A)
 	if(!SSpai.chassis_data(chassis_name).has_eye_sprites)
-		to_chat(src, span_warning("Your selected chassis eye color can not be modified. The color you pick will only apply to supporting chassis and your card screen."))
-		return
+		return span_warning("Your selected chassis eye color can not be modified. The color you pick will only apply to supporting chassis and your card screen.")
+	return null
 
+/mob/living/silicon/pai/proc/pick_eye_color()
 	open_request(src, /datum/prompt/color, PROC_REF(pai_eye_color_chosen), answerer = src, title = "Eye Color", question = "Choose your character's eye color:", timeout = 0)
+
+/mob/living/silicon/pai/proc/pick_eye_color_op(datum/act/op/A)
+	pick_eye_color()
 
 /mob/living/silicon/pai/proc/pai_eye_color_chosen(datum/act/request/A)
 	if(!A.answer)
