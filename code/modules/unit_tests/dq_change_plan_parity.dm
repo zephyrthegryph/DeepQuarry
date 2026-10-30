@@ -81,3 +81,22 @@
 	TEST_ASSERT(!isnull(presented), "the floodlight's layers and capabilities have known reads")
 	TEST_ASSERT(!plan_spares_draw(M, "stat") || !("stat" in presented), "a var the layers read is never spared")
 	TEST_ASSERT(plan_spares_draw(M, nameof(/atom::desc)), "a var nothing drawn reads is spared")
+
+/// The per-type presentation reads the spares cache shares across vars are the reads a fresh walk finds, for every atom type with an instance.
+/datum/unit_test/dq_change_plan_presented_cache_parity
+
+/datum/unit_test/dq_change_plan_presented_cache_parity/Run()
+	var/list/seen = list()
+	var/checked = 0
+	for(var/atom/A in world)
+		if(seen[A.type] || QDELETED(A) || ismob(A) || length(A.rx?.activations))
+			continue
+		seen[A.type] = TRUE
+		var/list/fresh = plan_presentation_reads(A)
+		var/list/cached = plan_presented_for(A, "[A.type]")
+		TEST_ASSERT_EQUAL(isnull(fresh), isnull(cached), "[A.type]: the cache and a fresh walk disagree on whether the reads are known")
+		TEST_ASSERT_EQUAL(json_encode(fresh), json_encode(cached), "[A.type]: cached presentation reads differ from a fresh walk")
+		checked++
+		if(checked >= 300)
+			break
+	TEST_ASSERT(checked > 20, "atom types checked ([checked])")

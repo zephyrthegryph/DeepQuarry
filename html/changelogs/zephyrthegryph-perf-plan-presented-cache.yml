@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The draw-spare check builds a type's presentation reads once instead of once per written var"
