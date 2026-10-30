@@ -442,6 +442,86 @@
 	for(var/obj/effect/decal/cleanable/molten_item/goo in turf_contents_of_type(T, /obj/effect/decal/cleanable/molten_item))
 		qdel(goo)
 
+// ---- Deferred heat rules on mixed bindings ----
+
+/// A binding with integrity (key) rules and heat rules holds the heat rules back until the owner's first heat body, and every integrity
+/// threshold behaves exactly as in a binding that subscribed everything at load.
+/datum/unit_test/dq_rule_heat_deferred_mixed
+
+/// A window bound the old way (every rule subscribed at load), as the reference.
+/datum/unit_test/dq_rule_heat_deferred_mixed/proc/eager_window(turf/T)
+	var/obj/structure/window/basic/eager = allocate(/obj/structure/window/basic, T)
+	eager.dematerialize()
+	TEST_ASSERT(!dq_rule_binding_of(eager), "dematerializing drops the binding")
+	var/datum/rule_binding/binding = dq_rules_on_materialize(eager, TRUE)
+	TEST_ASSERT(binding, "a forced bind subscribes at once")
+	TEST_ASSERT_EQUAL(binding.deferred, 0, "and holds nothing back")
+	return eager
+
+/datum/unit_test/dq_rule_heat_deferred_mixed/Run()
+	var/turf/T = test_floor()
+	var/obj/structure/window/basic/lazy = allocate(/obj/structure/window/basic, T)
+	var/obj/structure/window/basic/eager = eager_window(T)
+	var/datum/rule_binding/lazy_binding = dq_rule_binding_of(lazy)
+	var/datum/rule_binding/eager_binding = dq_rule_binding_of(eager)
+	TEST_ASSERT(lazy_binding, "a window binds its integrity rules at load")
+	TEST_ASSERT(lazy_binding.deferred, "its heat rules wait for a heat body")
+	TEST_ASSERT_NULL(lazy_binding.nodes, "no heat node was made at load")
+	TEST_ASSERT_EQUAL(lazy_binding.live | lazy_binding.deferred, eager_binding.live, "held back plus live is what the eager binding subscribed")
+	TEST_ASSERT(dq_rules_binding_replacing(lazy, RULE_REPLACES_INTEGRITY_DESTRUCTION), "the rule path still replaces the legacy destruction check")
+	TEST_ASSERT(dq_rules_binding_replacing(eager, RULE_REPLACES_INTEGRITY_DESTRUCTION), "as it does when bound eagerly")
+
+	// Damage straight after load, hit by hit: identical bands, integrity, held conditions and fires.
+	var/key_bits = lazy_binding.live
+	var/list/rules = lazy_binding.rule_list()
+	GLOB.dq_rule_recording = TRUE
+	GLOB.dq_rule_fire_log = list()
+	for(var/hit in list(2, 2, 3, 2, 1, 5))
+		lazy.take_damage(hit, BRUTE, MELEE, FALSE)
+		eager.take_damage(hit, BRUTE, MELEE, FALSE)
+		dq_rx_flush()
+		TEST_ASSERT_EQUAL(sparse_get_or(lazy, damage_band, DAMAGE_BAND_NONE), sparse_get_or(eager, damage_band, DAMAGE_BAND_NONE), "damage band after a hit of [hit]")
+		TEST_ASSERT_EQUAL(lazy.get_integrity(), eager.get_integrity(), "integrity after a hit of [hit]")
+		TEST_ASSERT_EQUAL(QDELETED(lazy), QDELETED(eager), "destroyed state after a hit of [hit]")
+		for(var/datum/rule/rule as anything in rules)
+			TEST_ASSERT_EQUAL(dq_rule_fire_count(lazy, rule), dq_rule_fire_count(eager, rule), "fires of [rule.type] after a hit of [hit]")
+		if(QDELETED(lazy) || QDELETED(eager))
+			break
+		TEST_ASSERT_EQUAL(lazy_binding.holding & key_bits, eager_binding.holding & key_bits, "held conditions after a hit of [hit]")
+	GLOB.dq_rule_recording = FALSE
+	GLOB.dq_rule_fire_log = list()
+	TEST_ASSERT(QDELETED(lazy) && QDELETED(eager), "both windows end destroyed")
+	own_turf_contents(T) // the shards the windows left
+
+/// A heat body arms the held-back rules: the watches exist and the integrity state is untouched.
+/datum/unit_test/dq_rule_heat_deferred_arming
+
+/datum/unit_test/dq_rule_heat_deferred_arming/Run()
+	dq_h3_cool_floor(test_floor())
+	var/turf/T = test_floor()
+	var/obj/structure/window/basic/lazy = allocate(/obj/structure/window/basic, T)
+	var/datum/rule_binding/binding = dq_rule_binding_of(lazy)
+	TEST_ASSERT(binding?.deferred, "heat rules are held back at load")
+	lazy.take_damage(7, BRUTE, MELEE, FALSE)
+	dq_rx_flush()
+	var/band = sparse_get_or(lazy, damage_band, DAMAGE_BAND_NONE)
+	var/holding = binding.holding
+	var/live_before = binding.live
+	TEST_ASSERT(lazy.create_heat_body(), "the window gets a heat body")
+	TEST_ASSERT_EQUAL(binding.deferred, 0, "arming takes every held-back rule")
+	TEST_ASSERT(binding.live != live_before, "and subscribes the ones this window can have")
+	TEST_ASSERT(!isnull(binding.nodes?[PROP_TEMPERATURE]), "with a heat node")
+	TEST_ASSERT(dq_rx_node_live(binding.nodes[PROP_TEMPERATURE]), "watching the new body")
+	TEST_ASSERT_EQUAL(sparse_get_or(lazy, damage_band, DAMAGE_BAND_NONE), band, "arming leaves the damage band alone")
+	TEST_ASSERT_EQUAL(binding.holding & live_before, holding & live_before, "and the integrity rules' held conditions")
+	TEST_ASSERT(!QDELETED(lazy), "and does not destroy it")
+
+	// Damage after arming still fires the thresholds.
+	lazy.take_damage(10, BRUTE, MELEE, FALSE)
+	dq_rx_flush()
+	TEST_ASSERT(QDELETED(lazy), "destruction still fires from damage after arming")
+	own_turf_contents(T)
+
 // ---- Parity: grille breaking point ----
 
 /datum/unit_test/dq_rule_grille_parity

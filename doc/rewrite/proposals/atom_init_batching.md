@@ -118,6 +118,14 @@ No cheaper per-instance form exists without changing what a binding is: each thr
 per object. A design change would be one shared watch per (type, property, level) that fans out to its owners, or deferring thresholds
 the way heat rules already defer (`dq_rules_heat_deferred`) until the object's first touch. Neither is done here.
 
+**Done (deferred heat rules).** The measured cost is the heat rules, not the integrity ones: integrity triggers are DM-owned key
+subscriptions (cheap); the 15k node and `dq_rx_when_threshold` calls are the ignition/overheating/melting threshold watches that
+mixed bindings (integrity rules plus heat rules: windows, firedoors, lights) made at load for an owner that had no heat body, which at
+rest cannot cross anything. A binding now holds those rules back (`deferred` bits, no node, no watch, no baseline check) and
+`arm_deferred()` subscribes them from `dq_rules_heat_body_created()`, then evaluates only the armed rules (a condition already
+holding fires, as for heat-only types). Integrity rules subscribe at load as before, so damage right after load behaves identically
+(`dq_rule_heat_deferred_mixed`, `dq_rule_heat_deferred_arming`).
+
 ### 4.2 `own_field_changed` full path on init
 
 `ofc stat_relation_changed: power_area` is 8.3 s over 22k writes (375 us), almost all of it `stat_ct_update` (three channel entries per

@@ -23,7 +23,7 @@ CAPABILITIES(/datum)
 		return
 	if(dq_rule_binding_of(A))
 		return
-	var/datum/rule_binding/binding = new(A, rules)
+	var/datum/rule_binding/binding = new(A, rules, !force)
 	if(!binding.active_count())
 		own_clear(A, nameof(/datum::rule_binding), OWN_DELETE)
 		return
@@ -34,8 +34,10 @@ CAPABILITIES(/datum)
 /proc/dq_rules_heat_body_created(atom/A)
 	if(QDELETED(A) || !(A.flags & ATOM_MATERIALIZED))
 		return
-	// Existing bindings' node watches follow the body themselves.
-	if(dq_rule_binding_of(A))
+	// A binding that held its heat rules back arms them now; its other node watches follow the body themselves.
+	var/datum/rule_binding/existing = dq_rule_binding_of(A)
+	if(existing)
+		existing.arm_deferred()
 		return
 	// At rest the object followed its surroundings, unwatched: a rule whose
 	// condition holds now crossed while nothing watched it, so it fires.
@@ -84,6 +86,7 @@ CAPABILITIES(/datum)
 /// DM bitwise math is exact to 24 bits.
 #define RULE_BINDING_MAX_RULES 24
 #define RULE_BIT(i) (1 << ((i) - 1))
+#define RULE_ALL_BITS ((1 << RULE_BINDING_MAX_RULES) - 1)
 
 /// The shared binding table for a rule list. dq_rules_for_type() returns one
 /// cached list per type, so every object of a type shares one table.
@@ -133,6 +136,9 @@ CAPABILITIES(/datum)
 	var/live = 0
 	/// Bit per rule: fired at least once.
 	var/fired = 0
+	/// Bit per rule: a heat rule waiting for the owner's first heat body (arm_deferred()). Nothing is subscribed or checked for it: at rest
+	/// the owner follows its surroundings and cannot cross anything. Like `live`, it keeps the binding alive.
+	var/deferred = 0
 	/// Flat [rule index, token, rule index, token, ...] for every live subscription.
 	var/list/tokens
 	/// Per rule, for a hold_for rule: the deciseconds of holding still to go while its count is paused (null before it first holds), or RULE_HOLD_SPENT once it
@@ -153,7 +159,7 @@ CAPABILITIES(/datum/rule_binding)
 	ref_one(nameof(owner))
 	ref_many(nameof(world_watches))
 
-/datum/rule_binding/New(atom/owner, list/rules)
+/datum/rule_binding/New(atom/owner, list/rules, defer_heat = FALSE)
 	..()
 	BOOT_PHASE_BEGIN(bp_links)
 	rel_set(src, nameof(owner), owner)
@@ -162,8 +168,13 @@ CAPABILITIES(/datum/rule_binding)
 	BOOT_PHASE_END(bp_links, "rule binding: owner links and table", owner)
 	var/count = table.count
 	BOOT_PHASE_BEGIN(bp_sub)
+	// An owner without a heat body at load holds its heat rules back: each one costs a node and a watch that can only fire once a body exists.
+	defer_heat = defer_heat && isnull(owner.heat_body)
 	for(var/i in 1 to count)
-		if(subscribe(i, rules[i]))
+		var/datum/rule/rule = rules[i]
+		if(defer_heat && rule.heat_only && possible(rule))
+			deferred |= RULE_BIT(i)
+		else if(subscribe(i, rule))
 			live |= RULE_BIT(i)
 	BOOT_PHASE_END(bp_sub, "rule binding: subscribe", owner)
 	// Baseline: a rule fires on crossing, not because it already holds.
@@ -204,8 +215,39 @@ CAPABILITIES(/datum/rule_binding)
 /datum/rule_binding/proc/active_count()
 	. = 0
 	for(var/i in 1 to table.count)
-		if(live & RULE_BIT(i))
+		if((live | deferred) & RULE_BIT(i))
 			.++
+
+/// Whether subscribe() would take `rule` on this owner (a threshold level it has).
+/datum/rule_binding/proc/possible(datum/rule/rule)
+	for(var/datum/rule_trigger/trigger as anything in rule.triggers)
+		if(trigger.kind == RULE_TRIGGER_THRESHOLD && isnull(trigger.level_for(owner)))
+			return FALSE
+	return TRUE
+
+/// The owner just got its first heat body: subscribe the heat rules held back at load, then look at them alone. A rule whose condition holds
+/// now crossed while nothing watched it, so it fires (the rest of the binding is as the last wake left it; its pending wakes keep their own order).
+/datum/rule_binding/proc/arm_deferred()
+	if(!deferred)
+		return
+	var/pending = deferred
+	deferred = 0
+	var/armed = 0
+	var/list/rules = table.rules
+	for(var/i in 1 to table.count)
+		var/bit = RULE_BIT(i)
+		if(!(pending & bit))
+			continue
+		if(subscribe(i, rules[i]))
+			live |= bit
+			armed |= bit
+	if(!armed)
+		if(!live)
+			spent(src)
+		return
+	holding &= ~armed
+	if(resolve())
+		evaluate_rules(armed)
 
 /// Subscribe rule i's triggers, adding its tokens to `tokens`. Returns FALSE,
 /// subscribing nothing, if the owner can't have this rule (a threshold level
@@ -257,6 +299,7 @@ CAPABILITIES(/datum/rule_binding)
 
 /// Drop rule i's subscriptions and hold model.
 /datum/rule_binding/proc/drop(i)
+	deferred &= ~RULE_BIT(i)
 	if(live & RULE_BIT(i))
 		live &= ~RULE_BIT(i)
 		for(var/pos = length(tokens) - 1, pos >= 1, pos -= 2)
@@ -307,13 +350,13 @@ CAPABILITIES(/datum/rule_binding)
 		return
 	evaluate_rules()
 
-/datum/rule_binding/proc/evaluate_rules()
+/datum/rule_binding/proc/evaluate_rules(mask = RULE_ALL_BITS)
 	var/list/rules = table.rules
 	for(var/i in 1 to table.count)
 		if(QDELETED(owner) || QDELETED(src))
 			return
 		var/bit = RULE_BIT(i)
-		if(!(live & bit))
+		if(!(live & bit & mask))
 			continue
 		var/datum/rule/rule = rules[i]
 		var/now = check(rule)
@@ -372,10 +415,11 @@ CAPABILITIES(/datum/rule_binding)
 	if(rule.once)
 		drop(i)
 	rule.fire(owner)
-	if(!QDELETED(src) && !live)
+	if(!QDELETED(src) && !live && !deferred)
 		spent(src)
 
 #undef RULE_BIT
+#undef RULE_ALL_BITS
 #undef RULE_BINDING_MAX_RULES
 
 /// A small step past `level`, for strict comparisons and test inputs.

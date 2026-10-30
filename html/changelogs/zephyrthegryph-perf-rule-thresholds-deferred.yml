@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Rule bindings hold heat rules back until the object gets a heat body, cutting round-start work"
