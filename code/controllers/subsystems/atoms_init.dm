@@ -23,6 +23,7 @@
 	var/bench_depth = benchmark_init_frame_begin()
 	#endif
 
+	BOOT_PHASE_BEGIN(bp_early)
 	// Phase 0 of the init contract: the starting occupants a type's code before `..()` reads (owns_*(early = TRUE)), before the chain runs.
 	var/datum/own_table/early_table = own_table_of(A)
 	if(early_table.early_vars)
@@ -42,14 +43,17 @@
 		if(QDELETED(A))
 			return TRUE
 
+	BOOT_PHASE_END(bp_early, "InitAtom: early starts, params, setup_early")
 	// Type-table fast path (atom_type_table.dm): an Initialize-free type skips the proc chain.
 	// A mapper-set colour needs /atom/Initialize()'s colour handling, and extra New() args an override.
+	BOOT_PHASE_BEGIN(bp_init)
 	var/result
 	if(A.init_from_table && length(arguments) == 1 && !A.color)
 		A.table_initialize()
 		result = INITIALIZE_HINT_NORMAL
 	else
 		result = A.Initialize(arglist(arguments))
+	BOOT_PHASE_END(bp_init, "InitAtom: Initialize (includes decls, caps_init, nested inits)")
 	// Opt-in constructor completion needs the settled parent state and transient params.
 	// Never run it for an Initialize/keeps_if rejection; the ordinary setup phase stays below.
 	if(length(setup_pending) && setup_pending[A] == SETUP_PENDING_WITH_PARAMS && result == INITIALIZE_HINT_NORMAL && !(length(init_discard_pending) && init_discard_pending[A]))
@@ -66,6 +70,7 @@
 	if(length(init_discard_pending) && init_discard_pending[A] && keeps_if_discarded(A) && result == INITIALIZE_HINT_NORMAL)
 		result = INITIALIZE_HINT_QDEL
 	// setup() and name_prefix() (code/engine/lifeforms/setup.dm): the type's own setup, once its Initialize() chain has returned.
+	BOOT_PHASE_BEGIN(bp_setup)
 	if(length(setup_pending) && setup_pending[A])
 		if(result == INITIALIZE_HINT_NORMAL)
 			// A setup(PROC_REF(x), mapload = TRUE) hook may return INITIALIZE_HINT_QDEL: handled below as an Initialize() return.
@@ -73,6 +78,7 @@
 				result = INITIALIZE_HINT_QDEL
 		else
 			setup_pending -= A
+	BOOT_PHASE_END(bp_setup, "InitAtom: setup_run")
 
 	// param(keep = FALSE) values are for Initialize() and the type's setup() (a statue's setup reads the mob it copies); they go once both ran
 	// (code/engine/lifeforms/params.dm).
@@ -101,8 +107,10 @@
 
 	// after_init() entries (code/engine/actions/after_init.dm): Initialize() has returned, so they run now (made at runtime) or when the
 	// map-load frame closes (atoms_batch.dm rule 2). A deleted atom is only dropped from the waiting list.
+	BOOT_PHASE_BEGIN(bp_after)
 	if(after_init_pending?[A])
 		after_init_initialized(A, arguments[1])
+	BOOT_PHASE_END(bp_after, "InitAtom: after_init_initialized")
 
 	if(!A) //possible harddel
 		qdeleted = TRUE
@@ -119,7 +127,9 @@
 			if(isturf(A) && !A.containment_ledger() && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
 				A.flags |= ATOM_MATERIALIZED
 			else
+				BOOT_PHASE_BEGIN(bp_mat)
 				A.materialize()
+				BOOT_PHASE_END(bp_mat, "InitAtom: materialize")
 		var/atom/location = A.loc
 		if(location)
 			/// Emits that the new atom `src`, has been created at `loc`

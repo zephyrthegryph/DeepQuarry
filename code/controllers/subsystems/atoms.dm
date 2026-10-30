@@ -60,6 +60,7 @@ SYSTEM_DEF(atoms)
 	var/atoms_phase_start = REALTIMEOFDAY
 	InitializeAtoms()
 	log_world("Atoms boot: InitializeAtoms (map atoms) took [(REALTIMEOFDAY - atoms_phase_start) / 10]s.")
+	boot_phase_report("map atoms")
 	log_world("Atoms boot: hook capabilities: [length(GLOB.hook_caps_interned)] built, [GLOB.hook_caps_reused] reused from the pool (each reuse skipped a datum_signature() walk).")
 	booting = FALSE
 	atom_initialized = INITIALIZATION_INNEW_REGULAR

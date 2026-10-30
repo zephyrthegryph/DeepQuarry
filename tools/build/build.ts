@@ -3826,8 +3826,9 @@ export const ServerTarget = new Juke.Target({
         '-invisible',
         '-params',
         // dd_log=1: an -invisible world has no console, so the world writes world.log (every runtime) to the round's dd.log.
-        // DQ_SERVER_CONFIG_DIR picks another config folder (a local copy with AUTO_PROFILE on profiles the boot, for example).
-        `config-directory=${process.env.DQ_SERVER_CONFIG_DIR || 'config/example'}&dd_log=1`,
+        // DQ_SERVER_CONFIG_DIR picks another config folder (a local copy with AUTO_PROFILE on profiles the boot, for example);
+        // DQ_WORLD_PARAMS=key=value&key=value adds world params (boot_phase_timers=1 prints the per-phase atom init times).
+        `config-directory=${process.env.DQ_SERVER_CONFIG_DIR || 'config/example'}&dd_log=1${process.env.DQ_WORLD_PARAMS ? `&${process.env.DQ_WORLD_PARAMS}` : ''}`,
       );
     } finally {
       webroot.kill();

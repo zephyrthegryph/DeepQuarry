@@ -91,7 +91,9 @@
 /// the first instance of each type is always queued, and its refresh records what the type derives.
 /proc/caps_init(atom/holder, mapload)
 	if(own_table_of(holder).engine_hooks & ENGINE_HOOK_INIT)
+		BOOT_PHASE_BEGIN(bp_engine)
 		engine_holder_init(holder, mapload)
+		BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init")
 	var/flags = type_derive_flags(holder)
 	if(flags & TYPE_DERIVES_TYPE_VERBS)
 		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)

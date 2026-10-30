@@ -68,5 +68,9 @@
 	flags_1 |= INITIALIZED_1
 	if(uses_integrity)
 		atom_integrity = max_integrity
+	BOOT_PHASE_BEGIN(bp_decls)
 	lifecycle_decls_init(src, TRUE)
+	BOOT_PHASE_END(bp_decls, "lifecycle_decls_init")
+	BOOT_PHASE_BEGIN(bp_caps)
 	caps_init(src, TRUE)
+	BOOT_PHASE_END(bp_caps, "caps_init")
