@@ -588,13 +588,19 @@ impl Staging {
 /// turf edges (a vent pump/scrubber) with the turf read through `crate::gas`'s accessors (this module's own docs).
 /// Devices on one region or turf share its side. [`apply_devices`] takes the result after the step.
 pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
+    // Sub-laps of the frame's `pace_stage` (counters `frame.us.stage_*`, which overlap it): the idle profile put most of the
+    // native frame's cost in this function, and these name which part of it.
+    let mut lap = StageLaps::start();
     let mut staging = Staging::default();
     let mut jobs = Vec::new();
     let devices: Vec<EntityId> = w
         .network::<Pipes>()
         .map(|h| h.devices().map(|(_, e)| e).collect())
         .unwrap_or_default();
+    lap.lap("stage_devices_list");
     let (laws, groups) = device_law_index(w);
+    lap.lap("stage_law_index");
+    crate::metrics::registry().counter("stage.devices").add(devices.len() as u64);
     // A budget leg's device: its entity and the regions across its edge.
     let mut legs: HashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)> = HashMap::new();
     for e in devices {
@@ -659,14 +665,37 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
             });
         }
     }
+    lap.lap("stage_device_loop");
     let mut budgets = Vec::new();
     for rows in groups.values() {
         budgets.extend(stage_budget(w, &mut staging, rows, &legs));
     }
+    lap.lap("stage_budgets");
     let Staging { sides, owners, .. } = staging;
+    crate::metrics::registry().counter("stage.jobs").add(jobs.len() as u64);
+    crate::metrics::registry().counter("stage.sides").add(sides.len() as u64);
     STAGED.with_borrow_mut(|s| *s = owners);
-    w.set_global(DeviceJobs { sides, jobs, budgets })
-        .map_err(|e| eyre!("{e}"))
+    let set = w
+        .set_global(DeviceJobs { sides, jobs, budgets })
+        .map_err(|e| eyre!("{e}"));
+    lap.lap("stage_set_global");
+    set
+}
+
+/// Cumulative wall time of the parts of [`stage_devices`] (`frame.us.stage_*`).
+struct StageLaps(std::time::Instant);
+
+impl StageLaps {
+    fn start() -> Self {
+        Self(std::time::Instant::now())
+    }
+
+    fn lap(&mut self, part: &'static str) {
+        let now = std::time::Instant::now();
+        #[allow(clippy::cast_possible_truncation)]
+        crate::frame::trace_lap(part, (now - self.0).as_micros() as u64);
+        self.0 = now;
+    }
 }
 
 /// One budget group (a filter's or mixer's legs) as a [`BudgetJob`]: the hub is the region the legs share (a filter's source

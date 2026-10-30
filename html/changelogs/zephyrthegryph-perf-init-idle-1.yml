@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Pooled objects (act contexts, damage packets) reset their fields from cached initial values on release, one vars list per release"
+  - code_imp: "Verdigris frame counters for each part of pipe-device staging (frame.us.stage_*, stage.devices/jobs/sides)"

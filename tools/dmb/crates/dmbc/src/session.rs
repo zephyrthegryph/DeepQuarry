@@ -536,7 +536,7 @@ impl SessionRecords {
         generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
         observer: impl FnOnce(&Record),
     ) -> io::Result<Option<ValidatedRecord>> {
-        self.validate_filesystem_shared(id, exact, now_ns, generated_outputs, observer, &mut None)
+        self.validate_filesystem_shared(id, exact, now_ns, generated_outputs, observer, &mut None, &mut Vec::new())
     }
     /// As above, sharing one directory-proof capture across the records of a
     /// request: the first record's capture answers later records (paths outside
@@ -550,6 +550,7 @@ impl SessionRecords {
         generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
         observer: impl FnOnce(&Record),
         shared: &mut Option<std::sync::Arc<crate::filesystem_proofs::BulkFileSystemProofs>>,
+        rejected: &mut Vec<(PathBuf, u128)>,
     ) -> io::Result<Option<ValidatedRecord>> {
         let started = std::time::Instant::now();
         let Some(mut record) = self.prior(id)? else {
@@ -561,6 +562,16 @@ impl SessionRecords {
         };
         observer(&record);
         dm_profile::request_mark("session.record_loaded");
+        // An earlier record of this request was rejected because a file's content differs from the disk. A record that
+        // recorded that file with the same content differs from the disk there too, so its whole input proof (a stamp pass over
+        // every input, about 0.1 s) cannot succeed: skip it. A record that recorded another content still gets its full proof.
+        if rejected
+            .iter()
+            .any(|(path, content)| record.inputs.recorded_content(path) == Some(*content))
+        {
+            dm_profile::request_mark("session.record_skipped");
+            return Ok(None);
+        }
         let started = std::time::Instant::now();
         let proofs = match shared {
             Some(proofs) => std::sync::Arc::clone(proofs),
@@ -582,15 +593,20 @@ impl SessionRecords {
             proofs,
             generated_outputs.iter().cloned(),
         );
-        let validated = record
+        let (validation, inputs) = record
             .inputs
-            .validate_for_reuse(&generated, exact, now_ns)?;
+            .validate_for_reuse_reporting(&generated, exact, now_ns)?;
         timings.input_validate = started.elapsed();
         dm_profile::request_mark("session.inputs_validated");
         timings.proofs = proofs.counts();
-        let Some((validation, inputs)) = validated else {
+        if !validation.unchanged() {
+            for path in &validation.changed {
+                if let Some(content) = record.inputs.recorded_content(path) {
+                    rejected.push((path.clone(), content));
+                }
+            }
             return Ok(None);
-        };
+        }
         record.inputs = inputs;
         Ok(Some(ValidatedRecord {
             record,

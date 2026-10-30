@@ -28,6 +28,20 @@
 	parent_type = /datum/act/notice
 	/// op_done's op key, which the on_op() filter reads (null on every other notice).
 	var/op_key
+	/// op_done's entity the op was done to (the op's target; its holder is the publisher), for a listener that tells onlookers what happened.
+	var/datum/op_subject
+	/// op_done's actor, the mob that did the op.
+	var/mob/op_actor
+
+CAPABILITIES(/datum/notice)
+	ref_one(nameof(op_subject))
+	ref_one(nameof(op_actor))
+
+/// A released notice must not keep the entity its op was done to alive when its pool resets the fields.
+/datum/notice/release()
+	rel_set(src, nameof(op_subject), null)
+	rel_set(src, nameof(op_actor), null)
+	return ..()
 
 /// The notices waiting for the next drain point: list(holder handle, notice, outcome, chain) in the order they were queued. The holder is a handle
 /// (ref_token()), never a reference; the notice's target is cleared while it waits.
