@@ -124,6 +124,8 @@ policy = children-lru
 cap_gb = 2
 age_days = 2
 min_idle_min = 60
+# a run directory a running DreamDaemon was started from (its .dmb/.rsc) is never evicted, however long the server idles
+protect = live-world
 
 [cache.dmb-dev]
 policy = children-lru

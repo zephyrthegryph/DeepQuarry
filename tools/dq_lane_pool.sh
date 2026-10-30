@@ -204,6 +204,8 @@ retire_daemon() { # <wt>: ask the dmbc daemon registered for this worktree to re
 
 drop_outputs() { # <wt>: build outputs only; icons/gen, node_modules, tools/analyze/target and data/analyze-cache stay
 	local wt="$1" f n=0 cand=() ign=()
+	# a running game server's world directory is this worktree (-cd): its round logs live in data/logs, so nothing is dropped under it
+	if bash "$REPO/tools/dq_live_world.sh" worktree "$wt"; then say "kept build outputs in $wt: a running DreamDaemon uses it as its world directory"; return 0; fi
 	for f in "$wt"/deepquarry.*; do
 		[ -e "$f" ] || continue
 		case "$f" in *.dme|*.dm|*.md) continue ;; esac
@@ -511,6 +513,7 @@ reclaim_finished() { # called under the lock: drop leases whose lane is done
 			continue   # a recently touched lease whose branch exists is active: no git status of a worktree that could be 15 GB
 		fi
 		wt_clean "$wt" || continue
+		bash "$REPO/tools/dq_live_world.sh" worktree "$wt" && continue   # a running game server uses the slot: never reclaimed from under it
 		if [ -z "$tip" ]; then
 			RECLAIMED=1; release_slot "$i" 0 0; say "reclaimed pool-$i (branch $branch is gone)"; continue
 		fi
