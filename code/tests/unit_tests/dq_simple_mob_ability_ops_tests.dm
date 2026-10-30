@@ -55,3 +55,23 @@
 	D.set_shifted_out(TRUE)
 	var/datum/op_result/shifted = dq_ability_menu_op(D, "demonic_phase_shift")
 	TEST_ASSERT_EQUAL(shifted?.outcome, ACT_REFUSED, "a shifted-out demon cannot phase-shift again")
+
+/// The demon's grab abilities are refused with nothing grabbed in the active hand.
+/datum/unit_test/dq_ability_ops_demon_grab_requires_grab
+
+/datum/unit_test/dq_ability_ops_demon_grab_requires_grab/Run()
+	var/mob/living/simple_mob/vore/demon/D = allocate(/mob/living/simple_mob/vore/demon, test_floor())
+	for(var/key in list("sizespell", "demon_bite"))
+		var/datum/op_result/R = dq_ability_menu_op(D, key)
+		TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "[key] is refused when nothing is grabbed")
+
+/// Only an ace kururak can rally a pack, and a shantak leader always can.
+/datum/unit_test/dq_ability_ops_rally_pack_requirements
+
+/datum/unit_test/dq_ability_ops_rally_pack_requirements/Run()
+	var/mob/living/simple_mob/animal/sif/kururak/K = allocate(/mob/living/simple_mob/animal/sif/kururak, test_floor())
+	var/datum/op_result/plain = dq_ability_menu_op(K, "rally_pack")
+	TEST_ASSERT_EQUAL(plain?.outcome, ACT_REFUSED, "a kururak without the ace effect cannot rally")
+	var/mob/living/simple_mob/animal/sif/shantak/leader/S = allocate(/mob/living/simple_mob/animal/sif/shantak/leader, test_floor())
+	var/datum/op_result/led = dq_ability_menu_op(S, "rally_pack")
+	TEST_ASSERT(test_op_committed(led), "a shantak leader's rally op commits")

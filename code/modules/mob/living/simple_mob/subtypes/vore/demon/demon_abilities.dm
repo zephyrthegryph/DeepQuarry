@@ -212,26 +212,22 @@
 /mob/living/simple_mob/vore/demon/proc/manual_laugh_op(datum/act/op/A)
 	manual_laugh()
 
-/mob/living/simple_mob/vore/demon/verb/sizespell()
-	set name = "Shrink/Grow Prey"
-	set category = VERB_CAT_ABILITIES_DEMON
-	set desc = "Shrink/Grow someone nearby! (60 second cooldown)"
-	set popup_menu = FALSE // Stop licking by accident! //Yes this is from lick code, sue me.
-
+/mob/living/simple_mob/vore/demon/proc/grabbed_prey_ready(datum/act/op/A)
 	var/obj/item/grab/G = src.get_active_hand()
-
 	if(!istype(G))
-		to_chat(src, span_warning("You must be grabbing a creature in your active hand to affect them."))
-		return
+		return span_warning("You must be grabbing a creature in your active hand to affect them.")
 	var/mob/living/carbon/human/T = G?.grab_target()
 	if(!istype(T))
-		to_chat(src, span_warning("\The [T] is not able to be affected."))
-		return
-
+		return span_warning("\The [T] is not able to be affected.")
 	if(G.state != GRAB_NECK)
-		to_chat(src, span_warning("You must have a tighter grip to affect this creature."))
-		return
+		return span_warning("You must have a tighter grip to affect this creature.")
+	return null
 
+/mob/living/simple_mob/vore/demon/proc/sizespell()
+	var/obj/item/grab/G = src.get_active_hand()
+	var/mob/living/carbon/human/T = G.grab_target()
+
+	// The click cooldown and incapacitation are the old verb's silent rate limit: they read the click clock, which no requirement may track.
 	if(!checkClickCooldown() || incapacitated(INCAPACITATION_ALL))
 		return
 
@@ -257,26 +253,11 @@
 	size_amount = (size_select/100)
 	to_chat(src,span_notice("Size spell set to [size_select]%")) //Telling the user the new amount
 
-/mob/living/simple_mob/vore/demon/verb/demon_bite()
-	set name = "Mindbreaker Bite"
-	set category = VERB_CAT_ABILITIES_DEMON
-	set desc = "Inject mindbreaker into your grabbed prey!"
-	set popup_menu = FALSE // Stop licking by accident! //Yes this is from lick code, sue me.
-
+/mob/living/simple_mob/vore/demon/proc/demon_bite()
 	var/obj/item/grab/G = src.get_active_hand()
+	var/mob/living/carbon/human/T = G.grab_target()
 
-	if(!istype(G))
-		to_chat(src, span_warning("You must be grabbing a creature in your active hand to affect them."))
-		return
-	var/mob/living/carbon/human/T = G?.grab_target()
-	if(!istype(T))
-		to_chat(src, span_warning("\The [T] is not able to be affected."))
-		return
-
-	if(G.state != GRAB_NECK)
-		to_chat(src, span_warning("You must have a tighter grip to affect this creature."))
-		return
-
+	// The click cooldown and incapacitation are the old verb's silent rate limit: they read the click clock, which no requirement may track.
 	if(!checkClickCooldown() || incapacitated(INCAPACITATION_ALL))
 		return
 
@@ -333,3 +314,9 @@
 
 	set_shift_state(AB_SHIFT_NONE)
 	STAMP(src, last_shift, CLOCK_WORLD)
+
+/mob/living/simple_mob/vore/demon/proc/sizespell_op(datum/act/op/A)
+	sizespell()
+
+/mob/living/simple_mob/vore/demon/proc/demon_bite_op(datum/act/op/A)
+	demon_bite()
