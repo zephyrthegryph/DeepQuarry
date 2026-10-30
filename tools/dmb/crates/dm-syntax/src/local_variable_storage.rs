@@ -6,7 +6,7 @@ use std::mem::size_of;
 fn vec_bytes<T>(v: &Vec<T>) -> usize {
     v.capacity().saturating_mul(size_of::<T>())
 }
-fn expression(e: &Expr, depth: usize) -> usize {
+pub(crate) fn expression(e: &Expr, depth: usize) -> usize {
     // Do not create a resource walk's own unbounded recursive stack. Unknown
     // deeper capacity refuses admission rather than claiming missing bytes.
     if depth > 256 {

@@ -132,16 +132,39 @@ pub fn parse_declaration_skeleton(source: &str) -> DeclarationSkeleton {
     parse_with_body_mode(source, true)
 }
 
+#[cfg(test)]
+thread_local! {static WHOLE_LEX_CALLS:std::cell::Cell<usize>=const {std::cell::Cell::new(0)};}
 pub(super) fn parse_with_body_mode(source: &str, skeleton: bool) -> DeclarationSkeleton {
+    #[cfg(test)]
+    WHOLE_LEX_CALLS.with(|n| n.set(n.get() + 1));
     let lexed = lex_spans(source);
+    let (items, mut diagnostics) =
+        parse_original_span_range(source, Span::new(0, source.len()), &lexed.tokens, skeleton);
+    let mut lexical = lexed.diagnostics;
+    lexical.append(&mut diagnostics);
+    DeclarationSkeleton {
+        items,
+        tokens: lexed.tokens,
+        diagnostics: lexical,
+    }
+}
+/// Internal grammar over borrowed ORIGINAL primary spans. Does not certify a
+/// source acquisition, current semantic owner, or completeness on its own.
+pub(super) fn parse_original_span_range(
+    source: &str,
+    range: Span,
+    tokens: &[SpanToken],
+    skeleton: bool,
+) -> (Vec<Item>, Vec<Diagnostic>) {
     // Comments remain in `tokens`, but cannot introduce declarations or alter indentation.
     // A byte-for-byte mask keeps the original source spans valid, including UTF-8 offsets.
-    let mut visible = source.as_bytes().to_vec();
-    for token in &lexed.tokens {
+    let range_source = &source[range.range()];
+    let mut visible = range_source.as_bytes().to_vec();
+    for token in tokens {
         if token.kind == TokenKind::Comment
             || (token.kind == TokenKind::String && token.text(source).contains('\n'))
         {
-            for byte in &mut visible[token.span.range()] {
+            for byte in &mut visible[token.span.start - range.start..token.span.end - range.start] {
                 if !matches!(*byte, b'\r' | b'\n') {
                     *byte = b' ';
                 }
@@ -150,27 +173,33 @@ pub(super) fn parse_with_body_mode(source: &str, skeleton: bool) -> DeclarationS
     }
     let visible = String::from_utf8(visible).expect("comment mask preserves UTF-8");
     let mut delimiters = visible.as_bytes().to_vec();
-    for token in &lexed.tokens {
+    for token in tokens {
         if matches!(token.kind, TokenKind::String | TokenKind::Resource) {
-            for byte in &mut delimiters[token.span.range()] {
+            for byte in
+                &mut delimiters[token.span.start - range.start..token.span.end - range.start]
+            {
                 if !matches!(*byte, b'\r' | b'\n') {
                     *byte = b' ';
                 }
             }
         }
     }
-    let multiline_literals: Vec<Span> = lexed
-        .tokens
+    let multiline_literals: Vec<Span> = tokens
         .iter()
         .filter(|token| token.kind == TokenKind::String && token.text(source).contains('\n'))
-        .map(|token| token.span)
+        .map(|token| Span::new(token.span.start - range.start, token.span.end - range.start))
         .collect();
-    let lines = split_inline_blocks(
-        source,
+    let mut lines = split_inline_blocks(
+        range_source,
         &structural_lines(&visible, &delimiters, &multiline_literals),
         &delimiters,
     );
-    let mut diagnostics = lexed.diagnostics;
+    for line in &mut lines {
+        line.header_start += range.start;
+        line.header_end += range.start;
+        line.end += range.start;
+    }
+    let mut diagnostics = Vec::new();
     let (items, _) = parse_level(
         source,
         &lines,
@@ -179,15 +208,11 @@ pub(super) fn parse_with_body_mode(source: &str, skeleton: bool) -> DeclarationS
         ParseContext {
             in_body: false,
             skeleton,
-            tokens: &lexed.tokens,
+            tokens,
         },
         &mut diagnostics,
     );
-    DeclarationSkeleton {
-        items,
-        tokens: lexed.tokens,
-        diagnostics,
-    }
+    (items, diagnostics)
 }
 
 fn structural_lines(visible: &str, delimiters: &[u8], multiline_literals: &[Span]) -> Vec<Line> {
@@ -823,5 +848,65 @@ mod declaration_eof_policy_tests {
             assert!(parsed.diagnostics.is_empty());
             assert_eq!(parsed.items[0].declaration_cursor, expected, "{source:?}");
         }
+    }
+}
+
+#[cfg(test)]
+mod shared_original_body_tests {
+    use super::*;
+    fn proc(items: &[Item]) -> &Item {
+        for i in items {
+            if matches!(i.kind, ItemKind::Proc | ItemKind::Verb) {
+                return i;
+            }
+            if !i.children.is_empty() {
+                return proc(&i.children);
+            }
+        }
+        panic!("original procedure")
+    }
+    #[test]
+    fn cold_tokens_feed_body_and_formal_grammar_without_another_whole_lex() {
+        for source in [
+            "/datum/prefix\n/proc/p(obj/item/x = list(1,2))\n    var/y[6 / 2]\n    return x\n",
+            "/datum/holder\n    proc/check(datum/x)\n        if(x) { return x; }\n",
+            "/proc/p(value=\"é,()\")\r\n    // comment ([])\r\n    return \"text\"\r\n",
+        ] {
+            let cold = parse_declaration_skeleton(source);
+            assert!(cold.diagnostics.is_empty(), "{:?}", cold.diagnostics);
+            let span = proc(&cold.items).span;
+            let before = WHOLE_LEX_CALLS.with(|n| n.get());
+            let shared =
+                crate::parse_proc_with_origins_from_spans(source, span, &cold.tokens, 0).unwrap();
+            assert_eq!(
+                WHOLE_LEX_CALLS.with(|n| n.get()),
+                before,
+                "shared body/formal grammar cannot lex full procedure again"
+            );
+            let old = crate::parse_proc_with_origins_at_span(source, span).unwrap();
+            assert_eq!(
+                WHOLE_LEX_CALLS.with(|n| n.get()),
+                before + 1,
+                "compatibility path independently exercises original lexical entry"
+            );
+            assert_eq!(shared.item, old.item);
+            assert_eq!(shared.opening_parenthesis, old.opening_parenthesis);
+            assert_eq!(shared.parameters, old.parameters);
+        }
+    }
+    #[test]
+    fn original_body_error_locations_and_foreign_range_denial_are_not_empty_success() {
+        let source = "/datum/prefix\n/proc/p()\n    return\n        broken()\n";
+        let cold = parse_declaration_skeleton(source);
+        let span = proc(&cold.items).span;
+        let old = crate::parse_proc_with_origins_at_span(source, span)
+            .err()
+            .unwrap();
+        let current = crate::parse_proc_with_origins_from_spans(source, span, &cold.tokens, 0)
+            .err()
+            .unwrap();
+        assert_eq!(current, old);
+        let wrong = Span::new(span.start + 1, span.end);
+        assert!(crate::parse_proc_with_origins_from_spans(source, wrong, &cold.tokens, 0).is_err());
     }
 }

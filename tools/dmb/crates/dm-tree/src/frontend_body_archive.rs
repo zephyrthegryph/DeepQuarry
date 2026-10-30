@@ -556,17 +556,25 @@ impl BodyArchive {
                 header,
             });
         }
-        let issued =
-            dm_syntax::parse_proc_with_origins_at_span(&self.source, occurrence.expanded_span)
-                .map_err(|error| Diagnostic {
-                    kind: syntax_kind(error.kind),
-                    stage: DiagnosticStage::Syntax,
-                    location: self
-                        .mapping
-                        .output(error.span.start)
-                        .or_else(|| Some(occurrence.source.clone())),
-                    message: error.message,
-                })?;
+        let issued = self
+            .syntax
+            .parse_original_procedure(
+                occurrence.expanded_span,
+                &self
+                    .body_codes
+                    .get(ordinal)
+                    .ok_or_else(|| internal("original archive body code missing"))?
+                    .identity,
+            )
+            .map_err(|error| Diagnostic {
+                kind: syntax_kind(error.kind),
+                stage: DiagnosticStage::Syntax,
+                location: self
+                    .mapping
+                    .output(error.span.start)
+                    .or_else(|| Some(occurrence.source.clone())),
+                message: error.message,
+            })?;
         let mut item = issued.item;
         let statements = parse_statements(&mut item, &self.source, &self.syntax, |_| true);
         Ok(ArchivedBody {

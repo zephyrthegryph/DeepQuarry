@@ -44,16 +44,19 @@ fn original_tokens_remove_runtime_and_ledger_duplicate_signature_lexing() {
     }
 }
 #[test]
-fn only_original_header_tokens_survive_and_foreign_equal_source_is_not_an_owner() {
+fn original_body_and_header_tokens_share_one_owner_and_foreign_equal_source_is_not_an_owner() {
     let source = "/proc/check(datum/x)\n    x = list(1,2,3,4,5)\n    return x\n";
     let lexed = dm_syntax::parse_declaration_skeleton(source);
     let original_tokens = lexed.tokens.len();
     let (ast, headers) = original(source);
-    assert!(headers.tokens.len() < original_tokens);
-    assert!(headers
-        .tokens
-        .iter()
-        .all(|t| t.span.end <= ast.items[0].header_span.end));
+    assert_eq!(headers.tokens.len(), original_tokens);
+    assert!(
+        headers
+            .tokens
+            .iter()
+            .any(|t| t.span.start >= ast.items[0].header_span.end),
+        "original body tokens must survive for the one shared parser input"
+    );
     let mut nodes = 0;
     let mut bytes = 0;
     headers.visit_storage(|_, _, capacity| {
@@ -167,4 +170,52 @@ fn cold_warm_and_body_only_edit_keep_one_original_header_owner_per_current_chunk
     let b = current.parse(0).unwrap();
     let view = a.source_parameters().unwrap();
     assert!(view.require_for(current.tree(), b.occurrence()).is_err());
+}
+
+#[test]
+fn current_body_code_authenticates_shared_token_ranges_for_live_and_archived_parse() {
+    let source = "/proc/a(x)\n    return x\n/proc/b(y)\n    return y\n";
+    let acquired =
+        dm_preprocess::AcquiredSource::from_original_bytes(source.as_bytes().to_vec(), ());
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let front = build_with_executor_and_semantic_state(
+        Path::new("body-token-authority.dme"),
+        &Source(acquired),
+        &Default::default(),
+        FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+        None,
+        &executor,
+        None,
+    )
+    .unwrap();
+    let a = &front.bodies[0];
+    let b = &front.bodies[1];
+    assert!(front
+        .syntax
+        .parse_original_procedure(a.expanded_span, front.body_code(a).unwrap().identity())
+        .is_ok());
+    assert!(
+        front
+            .syntax
+            .parse_original_procedure(a.expanded_span, front.body_code(b).unwrap().identity())
+            .is_err(),
+        "another real original body code cannot authorize this range"
+    );
+    let archive = front.body_archive().unwrap();
+    assert_eq!(
+        front.parse_body(a).unwrap().item().header,
+        archive.parse(0).unwrap().header().header
+    );
+    let forged = Span::new(a.expanded_span.start, a.expanded_span.end + 1);
+    assert!(
+        front
+            .syntax
+            .parse_original_procedure(forged, front.body_code(a).unwrap().identity())
+            .is_err(),
+        "nearby equal-prefix span must not bypass exact original envelope"
+    );
 }

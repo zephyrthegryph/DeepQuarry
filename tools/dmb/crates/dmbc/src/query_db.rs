@@ -11,9 +11,24 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+mod answer_storage;
+#[cfg(test)]
+mod answer_storage_tests;
+mod answer_value_owner;
+#[cfg(test)]
+mod answer_value_owner_tests;
 mod body_syntax;
+mod native_arc_allocation;
+mod no_weak_arc_owner;
 mod purity;
 mod raw_policy;
+mod source_allocation;
+use answer_value_owner::{PooledOwner, ValueOwner};
+use source_allocation::{SourceAllocator, SourceLedger};
+use std::collections::hash_map::RandomState;
+const SOURCE_ANSWERS_BUDGET: usize = 64 * 1024 * 1024;
+type AnswerMap<K, V> = hashbrown::HashMap<K, V, RandomState, SourceAllocator>;
+type AnswerStamps = allocator_api2::vec::Vec<(u128, u128), SourceAllocator>;
 pub use raw_policy::workspace::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};
 mod value_proofs;
 pub(crate) use raw_policy::workspace::{
@@ -263,6 +278,7 @@ pub(crate) struct AnswerValue {
     hash: u128,
     positive: bool,
     query: dm_ir::ResolveQuery,
+    source_retention: std::sync::OnceLock<answer_value_owner::SharedSourceLease>,
 }
 const VALUE_SHARDS: usize = 64;
 /// The intern pool of answer values by the low half of the query id (an entry is 16 bytes, not the 32 a `u128` key
@@ -271,15 +287,27 @@ const VALUE_SHARDS: usize = 64;
 pub(crate) struct AnswerValues {
     /// Interning outcomes (diagnostic, `DMB_MEM_MARKS`): found equal, found with another answer, found for another query, new.
     pub(crate) outcomes: [std::sync::atomic::AtomicU64; 4],
-    shards: Box<[Mutex<std::collections::HashMap<u64, std::sync::Weak<AnswerValue>>>]>,
+    source_ledger: Arc<SourceLedger>,
+    shards: Box<[Mutex<AnswerMap<u64, PooledOwner>>]>,
 }
 impl Default for AnswerValues {
     fn default() -> Self {
+        Self::with_source_ledger(SourceLedger::new(SOURCE_ANSWERS_BUDGET))
+    }
+}
+impl AnswerValues {
+    fn with_source_ledger(source_ledger: Arc<SourceLedger>) -> Self {
         Self {
             outcomes: Default::default(),
             shards: (0..VALUE_SHARDS)
-                .map(|_| Mutex::new(Default::default()))
+                .map(|_| {
+                    Mutex::new(AnswerMap::with_hasher_in(
+                        RandomState::new(),
+                        SourceAllocator::new(Arc::clone(&source_ledger)),
+                    ))
+                })
                 .collect(),
+            source_ledger,
         }
     }
 }
@@ -289,13 +317,13 @@ impl AnswerValues {
         id: u128,
         query: &dm_ir::ResolveQuery,
         meaning: &dm_ir::ResolvedMeaning,
-    ) -> Arc<AnswerValue> {
+    ) -> ValueOwner {
         let hash = answer_hash(meaning);
         let mut pooled = self.shards[(id as usize) % VALUE_SHARDS]
             .lock()
             .unwrap_or_else(|error| error.into_inner());
         use std::sync::atomic::Ordering::Relaxed;
-        if let Some(held) = pooled.get(&(id as u64)).and_then(std::sync::Weak::upgrade) {
+        if let Some(held) = pooled.get(&(id as u64)).and_then(PooledOwner::upgrade) {
             if held.hash == hash && held.query == *query {
                 self.outcomes[0].fetch_add(1, Relaxed);
                 return held;
@@ -306,12 +334,8 @@ impl AnswerValues {
         } else {
             self.outcomes[3].fetch_add(1, Relaxed);
         }
-        let value = Arc::new(AnswerValue {
-            hash,
-            positive: positive_answer(meaning),
-            query: *query,
-        });
-        pooled.insert(id as u64, Arc::downgrade(&value));
+        let value = ValueOwner::new_runtime(hash, positive_answer(meaning), *query);
+        pooled.insert(id as u64, PooledOwner::from_owner(&value));
         value
     }
     /// Drop entries whose last slot is gone (a weak entry would otherwise keep its allocation).
@@ -341,10 +365,10 @@ struct AnswerSlot {
     /// `AnswerRequest::stamps` (identity 0: unknown, never carried; world 0: never carried by world). A table holds a
     /// handful of distinct pairs, so a slot does not carry the 32 bytes itself.
     stamp: u32,
-    value: Arc<AnswerValue>,
+    value: ValueOwner,
     /// The value this slot had when the retained output was last published (None: the slot did not
     /// exist then, or no output is published). See [`QueryDb::mark_published`].
-    base: Option<Arc<AnswerValue>>,
+    base: Option<ValueOwner>,
 }
 impl AnswerSlot {
     /// The slot `proved` becomes when it replaces `self`: the same id, so `born` is kept and
@@ -376,16 +400,23 @@ struct AnswerRequest {
     stamp: u32,
     /// Every (declaration identity, world) pair a slot of the table may name; index 0 is (0, 0). Only grows, except
     /// when the table is cleared.
-    stamps: Vec<(u128, u128)>,
+    stamps: AnswerStamps,
 }
 impl Default for AnswerRequest {
     fn default() -> Self {
+        Self::with_source_ledger(SourceLedger::new(SOURCE_ANSWERS_BUDGET))
+    }
+}
+impl AnswerRequest {
+    fn with_source_ledger(ledger: Arc<SourceLedger>) -> Self {
+        let mut stamps = AnswerStamps::new_in(SourceAllocator::new(ledger));
+        stamps.push((0, 0));
         Self {
             request: 0,
             tree: None,
             world: 0,
             stamp: 0,
-            stamps: vec![(0, 0)],
+            stamps,
         }
     }
 }
@@ -411,7 +442,7 @@ impl AnswerRequest {
 }
 struct Answers {
     values: Arc<AnswerValues>,
-    shards: Box<[Mutex<std::collections::HashMap<u128, AnswerSlot>>]>,
+    shards: Box<[Mutex<AnswerMap<u128, AnswerSlot>>]>,
     current: std::sync::RwLock<AnswerRequest>,
     requests: std::sync::atomic::AtomicU64,
     resolved: std::sync::atomic::AtomicUsize,
@@ -435,12 +466,24 @@ struct Answers {
 }
 impl Default for Answers {
     fn default() -> Self {
+        Self::with_values(crate::shared_store::answer_values())
+    }
+}
+impl Answers {
+    fn with_values(values: Arc<AnswerValues>) -> Self {
         Self {
-            values: crate::shared_store::answer_values(),
             shards: (0..ANSWER_SHARDS)
-                .map(|_| Mutex::new(Default::default()))
+                .map(|_| {
+                    Mutex::new(AnswerMap::with_hasher_in(
+                        RandomState::new(),
+                        SourceAllocator::new(Arc::clone(&values.source_ledger)),
+                    ))
+                })
                 .collect(),
-            current: Default::default(),
+            current: std::sync::RwLock::new(AnswerRequest::with_source_ledger(Arc::clone(
+                &values.source_ledger,
+            ))),
+            values,
             requests: std::sync::atomic::AtomicU64::new(0),
             resolved: Default::default(),
             replaced: Default::default(),
@@ -510,7 +553,9 @@ impl Answers {
                 .write()
                 .unwrap_or_else(|error| error.into_inner());
             let open = current.stamps[current.stamp as usize];
-            current.stamps = vec![(0, 0)];
+            let mut stamps = AnswerStamps::new_in(current.stamps.allocator().clone());
+            stamps.push((0, 0));
+            current.stamps = stamps;
             if open != (0, 0) {
                 current.stamps.push(open);
                 current.stamp = 1;
@@ -1092,7 +1137,7 @@ impl QueryDb {
                 .unwrap_or_else(|error| error.into_inner())
                 .values_mut()
             {
-                slot.base = Some(Arc::clone(&slot.value));
+                slot.base = Some(slot.value.clone());
             }
         }
         self.answers.values.prune();

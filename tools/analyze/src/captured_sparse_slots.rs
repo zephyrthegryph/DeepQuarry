@@ -169,3 +169,165 @@ impl<'a> CapturedSparseSlots<'a> {
 #[cfg(test)]
 #[path = "captured_sparse_slots_tests.rs"]
 mod tests;
+
+/// Existing RAW_FILE lazies, borrowed under the caller's current family gate.
+/// No generated file installation or implicit source capture occurs here.
+pub struct BorrowedSparseSlots<'a> {
+    raw: &'a crate::captured_raw_policy::CapturedRawPolicy,
+    inputs: &'a PolicyInputs,
+    order: HashMap<String, usize>,
+    budget: std::sync::Arc<crate::captured_generator_budget::Budget>,
+}
+fn current_violation(raw: &crate::captured_raw_policy::CapturedRawPolicy) -> Result<(), String> {
+    match raw.tree.captured_violation() {
+        Some(e) => Err(e),
+        None => Ok(()),
+    }
+}
+pub(crate) fn captured_order(
+    raw: &crate::captured_raw_policy::CapturedRawPolicy,
+    inputs: &PolicyInputs,
+    budget: &crate::captured_generator_budget::Budget,
+) -> Result<HashMap<String, usize>, String> {
+    raw.validate_current_raw_roster(inputs)?;
+    current_violation(raw)?;
+    let metadata = inputs
+        .mapping()
+        .source_acquisitions()
+        .try_fold(
+            raw.tree
+                .root
+                .as_os_str()
+                .as_encoded_bytes()
+                .len()
+                .saturating_mul(16)
+                .saturating_add(4096),
+            |sum, (path, _)| {
+                sum.checked_add(
+                    path.as_os_str()
+                        .as_encoded_bytes()
+                        .len()
+                        .saturating_mul(16)
+                        .saturating_add(256),
+                )
+            },
+        )
+        .ok_or("generator manifest metadata overflow")?;
+    budget.charge(metadata)?;
+    let original = CapturedSparseSlots::capture(&raw.tree.root, inputs.archive(), inputs)?;
+    let mut width = 0usize;
+    for (path, lease) in inputs.mapping().source_acquisitions() {
+        if dm_preprocess::regions::canonical_path(path)
+            == dm_preprocess::regions::canonical_path(&raw.tree.root.join("deepquarry.dme"))
+        {
+            width = width.max(
+                lease
+                    .ok_or("generator manifest original unissued")?
+                    .source_text()
+                    .len(),
+            )
+        }
+    }
+    budget.charge(
+        width
+            .checked_mul(64)
+            .and_then(|n| n.checked_add(4096))
+            .ok_or("generator manifest admission overflow")?,
+    )?;
+    original.include_order()
+}
+impl<'a> BorrowedSparseSlots<'a> {
+    pub fn capture(
+        raw: &'a crate::captured_raw_policy::CapturedRawPolicy,
+        inputs: &'a PolicyInputs,
+        budget: std::sync::Arc<crate::captured_generator_budget::Budget>,
+    ) -> Result<Self, String> {
+        let order = captured_order(raw, inputs, &budget)?;
+        Ok(Self {
+            raw,
+            inputs,
+            order,
+            budget,
+        })
+    }
+    pub fn generate(
+        &self,
+        mut checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<Output, String> {
+        checkpoint()?;
+        self.budget.require()?;
+        self.raw.validate_current_raw_roster(self.inputs)?;
+        self.budget.charge(
+            self.raw
+                .tree
+                .files
+                .len()
+                .saturating_mul(256)
+                .saturating_add(4096),
+        )?;
+        let mut files = self.raw.tree.select(&crate::tree::CODE_DM);
+        files.sort_by(|a, b| {
+            (
+                self.order.get(&a.rel).copied().unwrap_or(usize::MAX),
+                &a.rel,
+            )
+                .cmp(&(
+                    self.order.get(&b.rel).copied().unwrap_or(usize::MAX),
+                    &b.rel,
+                ))
+        });
+        let mut builder = Builder::captured(self.budget.clone());
+        let mut count = 0;
+        for file in files {
+            checkpoint()?;
+            current_violation(self.raw)?;
+            self.budget.require()?;
+            let marker = file.marker();
+            current_violation(self.raw)?;
+            let mut offset = 0usize;
+            for (ln, line) in marker.as_str().split('\n').enumerate() {
+                checkpoint()?;
+                self.budget.require()?;
+                if let Some(row) = crate::raw_marker_policy::statement_marker(
+                    marker.as_str(),
+                    offset,
+                    line,
+                    &["sparse"],
+                ) {
+                    count += 1;
+                    if count > crate::captured_raw_policy::MAX_FIXTURE_SITES {
+                        return Err("generator marker count exceeds captured scope budget".into());
+                    }
+                    self.budget.charge(
+                        (row.close - row.open)
+                            .checked_mul(16)
+                            .and_then(|n| n.checked_add(file.rel.len().saturating_mul(8)))
+                            .and_then(|n| n.checked_add(2048))
+                            .ok_or("generator row admission overflow")?,
+                    )?;
+                    self.budget.split_args(row.close - row.open)?;
+                    let args = crate::raw_marker_policy::split_args(
+                        &marker.as_str()[row.open + 1..row.close],
+                    );
+                    builder.push(
+                        &file.rel,
+                        u32::try_from(ln + 1).map_err(|_| "generator line overflow")?,
+                        &args,
+                    );
+                    self.budget.require()?;
+                }
+                offset = offset
+                    .checked_add(line.len() + 1)
+                    .ok_or("generator offset overflow")?;
+            }
+            current_violation(self.raw)?;
+        }
+        checkpoint()?;
+        self.budget.require()?;
+        let out = builder.finish();
+        self.budget.require()?;
+        current_violation(self.raw)?;
+        checkpoint()?;
+        Ok(out)
+    }
+}

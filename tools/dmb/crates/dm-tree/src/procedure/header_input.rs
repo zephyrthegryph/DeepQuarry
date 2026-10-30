@@ -42,13 +42,13 @@ fn spans(items: &[Item], offset: usize, source: &str, out: &mut Vec<Span>) -> Re
     Ok(())
 }
 impl OriginalProcedureHeaders {
-    /// Move/filter the ORIGINAL cold lexer Vec. There is one compact token
-    /// owner per declaration chunk, never a whole-text copy for each header.
+    /// Move the ORIGINAL cold lexer Vec into the EXISTING declaration input.
+    /// Header and body consumers borrow ranges; no separate per-body token owner.
     pub(crate) fn from_primary(
         source: SourceText,
         items: &[Item],
         offset: usize,
-        mut tokens: Vec<SpanToken>,
+        tokens: Vec<SpanToken>,
     ) -> Result<Arc<Self>, String> {
         let mut headers = Vec::new();
         spans(items, offset, &source, &mut headers)?;
@@ -56,54 +56,36 @@ impl OriginalProcedureHeaders {
         if headers.windows(2).any(|p| p[0].end > p[1].start) {
             return Err("original procedure header ranges overlap".into());
         }
-        tokens.retain(|token| {
-            let next = headers.partition_point(|s| s.end <= token.span.start);
-            headers
-                .get(next)
-                .is_some_and(|s| token.span.start >= s.start && token.span.end <= s.end)
-        });
-        let mut compact = Vec::new();
-        reserve(&mut compact, tokens.len())?;
-        compact.append(&mut tokens);
-        drop(tokens);
+        if tokens.iter().any(|t| source.get(t.span.range()).is_none())
+            || tokens.windows(2).any(|p| p[0].span.end > p[1].span.start)
+        {
+            return Err("original declaration token ranges differ".into());
+        }
         Ok(Arc::new(Self {
             source,
             headers,
-            tokens: compact,
+            tokens,
         }))
     }
-    /// Portable syntax is NOT token authority. Reissue through the SAME native
-    /// primary lexer on CURRENT captured header slices; never reread disk or
-    /// deserialize a token/AST/model receipt. Shared in-memory hits skip this.
+    /// Portable facts never carry token authority. Reissue ONE current original
+    /// token stream through the SAME primary lexer, without rereading source.
     pub(crate) fn reissue(
         source: SourceText,
         items: &[Item],
         offset: usize,
     ) -> Result<Arc<Self>, String> {
-        let mut headers = Vec::new();
-        spans(items, offset, &source, &mut headers)?;
-        let mut tokens = Vec::new();
-        for span in headers {
-            let parsed = dm_syntax::lex_spans(&source[span.range()]);
-            if !parsed.diagnostics.is_empty() {
-                return Err("original cached header token reissue failed".into());
-            }
-            reserve(&mut tokens, parsed.tokens.len())?;
-            for mut token in parsed.tokens {
-                token.span.start = token
-                    .span
-                    .start
-                    .checked_add(span.start)
-                    .ok_or("header token rebase overflow")?;
-                token.span.end = token
-                    .span
-                    .end
-                    .checked_add(span.start)
-                    .ok_or("header token rebase overflow")?;
-                tokens.push(token);
-            }
+        let parsed = dm_syntax::lex_spans(&source);
+        if !parsed.diagnostics.is_empty() {
+            return Err("original cached declaration token reissue failed".into());
         }
-        Self::from_primary(source, items, offset, tokens)
+        Self::from_primary(source, items, offset, parsed.tokens)
+    }
+    pub(crate) fn parse_body(
+        &self,
+        span: Span,
+        offset: usize,
+    ) -> Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic> {
+        dm_syntax::parse_proc_with_origins_from_spans(&self.source, span, &self.tokens, offset)
     }
     pub(crate) fn visit_source(&self, mut visit: impl FnMut(&SourceText)) {
         visit(&self.source)

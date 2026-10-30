@@ -155,6 +155,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let inputs = PolicyInputs::capture(&frontend, extra)?;
     let generated =
         CapturedSystemAccessors::capture(&root, inputs.archive(), &inputs)?.generate(|| Ok(()))?;
+    let shared_raw = dq_analyze::captured_raw_policy::CapturedRawPolicy::capture(
+        &root,
+        &inputs,
+        dq_analyze::captured_raw_policy::Configuration::ProvenMissing,
+    )?;
+    let budget = dq_analyze::captured_generator_budget::Budget::new(64 * 1024 * 1024)?;
+    let borrowed = dq_analyze::captured_system_accessors::BorrowedSystemAccessors::capture(
+        &shared_raw,
+        &inputs,
+        budget.clone(),
+    )?
+    .generate(|| Ok(()))?;
+    let borrowed_text = borrowed.captured_file_text(&budget)?;
+    let borrowed_diags = borrowed
+        .diags
+        .iter()
+        .map(|d| (d.rel.clone(), d.line, d.msg.clone()))
+        .collect::<Vec<_>>();
+    if borrowed_text != expected_text || borrowed_diags != expected_diags {
+        return Err(
+            "borrowed shared-file generator differs from independent original Engine oracle".into(),
+        );
+    }
     let actual_diags = generated
         .diags
         .iter()

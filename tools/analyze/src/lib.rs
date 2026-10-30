@@ -107,3 +107,5 @@ pub mod raw_ownership_policy;
 #[cfg(feature = "native-policy")]
 pub mod captured_stored_refs;
 pub mod stored_refs_policy;
+
+pub mod captured_generator_budget;

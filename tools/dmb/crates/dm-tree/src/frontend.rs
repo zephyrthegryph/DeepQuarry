@@ -369,16 +369,17 @@ impl ColdFrontend {
                 occurrence: issued,
             });
         }
-        let original =
-            dm_syntax::parse_proc_with_origins_at_span(&self.issued_arena, issued.expanded_span)
-                .map_err(|error| Diagnostic {
-                    kind: syntax_kind(error.kind),
-                    stage: DiagnosticStage::Syntax,
-                    location: self
-                        .location(error.span.start)
-                        .or_else(|| Some(occurrence.source.clone())),
-                    message: error.message,
-                })?;
+        let original = self
+            .issued_syntax
+            .parse_original_procedure(issued.expanded_span, self.body_code(issued)?.identity())
+            .map_err(|error| Diagnostic {
+                kind: syntax_kind(error.kind),
+                stage: DiagnosticStage::Syntax,
+                location: self
+                    .location(error.span.start)
+                    .or_else(|| Some(occurrence.source.clone())),
+                message: error.message,
+            })?;
         Ok(ParsedBody {
             statements: None,
             shared_syntax: None,

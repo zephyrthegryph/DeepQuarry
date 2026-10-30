@@ -100,16 +100,7 @@ fn parameter(
     symbols: &mut SymbolTable,
 ) -> Result<Parameter, SignatureError> {
     let text = view.text();
-    let top = view.top_level();
-    let equal = view.assignment();
-    let annotation = top
-        .iter()
-        .find(|(token, _)| *token == "as")
-        .map(|(_, span)| *span);
-    let source = top
-        .iter()
-        .find(|(token, _)| *token == "in")
-        .map(|(_, span)| *span);
+    let (equal, annotation, source) = view.parameter_markers()?;
     let positions = [
         equal,
         annotation.map(|span| span.start),

@@ -210,6 +210,65 @@ pub fn parse_proc_with_origins_at_span(
     })
 }
 
+/// Grammar adapter over a captured declaration owner's ORIGINAL span tokens.
+/// This lower-level syntax API is not source/current-frame authority. Native
+/// callers must first authenticate their exact original chunk/body recipe.
+pub fn parse_proc_with_origins_from_spans(
+    source: &str,
+    span: Span,
+    tokens: &[crate::SpanToken],
+    base: usize,
+) -> Result<ProcedureWithOrigins, Diagnostic> {
+    let failure = |message: &str| Diagnostic {
+        span,
+        kind: DiagnosticKind::Unsupported,
+        message: message.into(),
+    };
+    if source.get(span.range()).is_none() || span.end.checked_add(base).is_none() {
+        return Err(failure("original procedure token range is outside source"));
+    }
+    let first = tokens.partition_point(|t| t.span.end <= span.start);
+    let end = tokens.partition_point(|t| t.span.start < span.end);
+    let tokens = tokens
+        .get(first..end)
+        .ok_or_else(|| failure("original procedure token range differs"))?;
+    if tokens.iter().any(|t| {
+        t.span.start < span.start || t.span.end > span.end || source.get(t.span.range()).is_none()
+    }) || tokens.windows(2).any(|p| p[0].span.end > p[1].span.start)
+    {
+        return Err(failure("original procedure token boundaries differ"));
+    }
+    let (mut items, diagnostics) =
+        crate::declaration_parser::parse_original_span_range(source, span, tokens, false);
+    if let Some(mut diagnostic) = diagnostics.into_iter().next() {
+        diagnostic.span.start += base;
+        diagnostic.span.end += base;
+        return Err(diagnostic);
+    }
+    if items.len() != 1 || !matches!(items[0].kind, ItemKind::Proc | ItemKind::Verb) {
+        return Err(failure(
+            "original token span does not contain one procedure",
+        ));
+    }
+    let mut item = items.remove(0);
+    let opening_parenthesis = tokens
+        .iter()
+        .find(|t| {
+            t.span.start >= item.header_span.start
+                && t.span.end <= item.header_span.end
+                && t.kind == crate::TokenKind::Punctuation
+                && t.text(source) == "("
+        })
+        .map(|t| Span::new(t.span.start + base, t.span.end + base));
+    let parameters = crate::parameter_syntax::issue_spans(source, tokens, item.header_span, base);
+    rebase_item(&mut item, base);
+    Ok(ProcedureWithOrigins {
+        item,
+        opening_parenthesis,
+        parameters,
+    })
+}
+
 fn rebase_item(item: &mut Item, offset: usize) {
     item.span.start += offset;
     item.span.end += offset;

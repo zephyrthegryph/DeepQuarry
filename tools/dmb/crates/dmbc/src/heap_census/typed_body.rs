@@ -88,6 +88,15 @@ impl HeapCensus {
         statements(self, owner, &parsed.statements, &mut pending);
         self.typed_nodes(owner, pending);
     }
+    pub(crate) fn parameter_expressions(
+        &mut self,
+        owner: &str,
+        signature: &dm_syntax::ParameterSignature,
+    ) {
+        let mut pending = Vec::new();
+        signature.visit_expression_roots(|expr| pending.push(Node::Expr(expr)));
+        self.typed_nodes(owner, pending);
+    }
     pub(crate) fn typed_expression(&mut self, owner: &str, expression: &Expr) {
         // The root is inline in its containing owner; only nested allocations count.
         self.typed_nodes(owner, vec![Node::Expr(expression)]);
@@ -396,5 +405,47 @@ mod local_fact_census_tests {
         assert!(expected > 0);
         assert_eq!(before - after, expected as u64);
         assert_eq!(retained.entries().unwrap().len(), 2);
+    }
+}
+
+#[cfg(test)]
+mod parameter_expression_census_tests {
+    use super::*;
+    #[test]
+    fn original_formal_root_children_are_in_actual_heap_census() {
+        let source = "/proc/p(x[dimension()] = make(1) as mob|obj in choose(2))\n    return x\n";
+        let syntax = dm_syntax::parse_declaration_skeleton(source);
+        let issued = dm_syntax::parse_proc_with_origins_from_spans(
+            source,
+            syntax.items[0].span,
+            &syntax.tokens,
+            0,
+        )
+        .unwrap();
+        let parameters = issued.parameters;
+        let mut base = HeapCensus::new("parameter_without_children");
+        parameters.visit_storage(|pointer, n| {
+            base.buffer("parameters", pointer, n, n);
+        });
+        let base = base.finish().unique_known_capacity_bytes;
+        let mut complete = HeapCensus::new("parameter_with_children");
+        parameters.visit_storage(|pointer, n| {
+            complete.buffer("parameters", pointer, n, n);
+        });
+        complete.parameter_expressions("parameters", &parameters);
+        let complete = complete.finish().unique_known_capacity_bytes;
+        assert!(
+            complete > base,
+            "real nested call callee/argument owners must be visited"
+        );
+        assert_eq!(
+            parameters.entries().unwrap()[0]
+                .expressions()
+                .unwrap()
+                .unwrap()
+                .dimensions()
+                .len(),
+            1
+        );
     }
 }

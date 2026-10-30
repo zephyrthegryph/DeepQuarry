@@ -10,6 +10,9 @@ allocation-counting = ["dm-profile/allocation-counting"]
 allocation-sites = ["allocation-counting", "dm-profile/allocation-sites"]
 
 [dependencies]
+# Original Answers storage can opt into actual pre-allocation source admission.
+hashbrown = { version = "=0.17.1", default-features = false, features = ["allocator-api2"] }
+allocator-api2 = { version = "=0.2.21", default-features = false, features = ["alloc"] }
 dq-analyze = { path = "../../../analyze", default-features = false, features = ["native-policy"] }
 mimalloc = "0.1.52"
 rayon = "1.12"
@@ -41,3 +44,6 @@ dm-resources = { path = "../dm-resources" }
 # Semantic retained-vs-fresh oracle: incremental output may assign IDs stably
 # instead of reproducing fresh table order byte for byte.
 dmb-equiv = { path = "../dmb-equiv" }
+
+[build-dependencies]
+sha2 = "0.10"

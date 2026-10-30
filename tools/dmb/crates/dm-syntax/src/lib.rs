@@ -35,7 +35,8 @@ mod visit;
 pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
     for_each_source_chunk_with_limits, for_each_stable_source_chunk, parse_proc_at_span,
-    parse_proc_with_origins_at_span, ChunkReport, ProcedureWithOrigins, StreamingAudit,
+    parse_proc_with_origins_at_span, parse_proc_with_origins_from_spans, ChunkReport,
+    ProcedureWithOrigins, StreamingAudit,
 };
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
@@ -292,3 +293,8 @@ mod procedure_origin_tests;
 
 mod parameter_syntax;
 pub use parameter_syntax::{ParameterSignature, ParameterSyntax};
+
+mod parameter_clauses;
+pub use parameter_clauses::{parameter_clause_spans, ParameterClauseSpans};
+mod parameter_expressions;
+pub use parameter_expressions::{ParameterExpressions, ParameterInputSyntax};

@@ -3,6 +3,9 @@
 use super::*;
 #[path = "analyze_policy.rs"]
 mod analyze_policy;
+#[path = "generator_policy.rs"]
+mod generator_policy;
+pub(crate) use generator_policy::{Artifact as GeneratorArtifact, GeneratorName};
 #[path = "workspace_raw.rs"]
 pub(super) mod workspace;
 use crate::runner_host::policy_capture::CapturedPolicyInputs;
@@ -39,6 +42,7 @@ pub(super) struct Admission {
     abort: OperationalAbort,
     limit: AtomicUsize,
     denied: std::sync::atomic::AtomicBool,
+    view_denied: std::sync::atomic::AtomicBool,
 }
 impl Default for Admission {
     fn default() -> Self {
@@ -46,6 +50,7 @@ impl Default for Admission {
             abort: OperationalAbort::default(),
             limit: AtomicUsize::new(RESULT_BUDGET),
             denied: std::sync::atomic::AtomicBool::new(false),
+            view_denied: std::sync::atomic::AtomicBool::new(false),
         }
     }
 }
@@ -192,6 +197,7 @@ fn error_hash(error: &str) -> u128 {
 pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admission>) {
     workspace::register_with_admission(db, Arc::clone(&admission));
     analyze_policy::register_analyze(db, Arc::clone(&charge), Arc::clone(&admission));
+    generator_policy::register(db, Arc::clone(&charge), Arc::clone(&admission));
     db.define_input(RAW_FILE, "native-raw-shared-file");
     db.define_input(RAW_CONFIG, "native-raw-captured-config");
     let scope_charge = Arc::clone(&charge);
@@ -273,6 +279,10 @@ impl QueryDb {
         self.raw_policy
             .admission
             .denied
+            .store(false, Ordering::Relaxed);
+        self.raw_policy
+            .admission
+            .view_denied
             .store(false, Ordering::Relaxed);
         Ok(())
     }
@@ -473,7 +483,10 @@ impl QueryDb {
                 self.db.remove(*key);
                 if matches!(
                     key.kind,
-                    RAW_FINDINGS | RAW_SCOPE | analyze_policy::ANALYZE_FINDINGS
+                    RAW_FINDINGS
+                        | RAW_SCOPE
+                        | analyze_policy::ANALYZE_FINDINGS
+                        | generator_policy::GENERATOR_RESULT
                 ) {
                     let _ = self.raw_policy.charge.fetch_update(
                         Ordering::Relaxed,
@@ -494,7 +507,10 @@ impl QueryDb {
             .filter(|key| {
                 matches!(
                     key.kind,
-                    RAW_FINDINGS | RAW_SCOPE | analyze_policy::ANALYZE_FINDINGS
+                    RAW_FINDINGS
+                        | RAW_SCOPE
+                        | analyze_policy::ANALYZE_FINDINGS
+                        | generator_policy::GENERATOR_RESULT
                 )
             })
             .fold(0usize, |n, key| {
@@ -555,7 +571,10 @@ impl QueryDb {
                 self.db.remove(key);
                 if matches!(
                     key.kind,
-                    RAW_FINDINGS | RAW_SCOPE | analyze_policy::ANALYZE_FINDINGS
+                    RAW_FINDINGS
+                        | RAW_SCOPE
+                        | analyze_policy::ANALYZE_FINDINGS
+                        | generator_policy::GENERATOR_RESULT
                 ) {
                     let _ = self.raw_policy.charge.fetch_update(
                         Ordering::Relaxed,

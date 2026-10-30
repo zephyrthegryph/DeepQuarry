@@ -816,3 +816,57 @@ DreamChecker reports zero diagnostics (362.326 seconds). All checks are headless
 Production defaults remain unchanged. Full shared inference, the remaining
 policy and generator clients, resource admission and end-to-end cutover still
 need implementation and proof.
+
+### Shared cold tokens and bounded native generator queries
+
+Native demanded bodies now borrow the original cold token buffer retained by
+the existing declaration owner. The formal-path parser consumes the same token
+representation without building another owned token-text array. Tests exercise
+original code identity, foreign ranges, warm reuse, Unicode, comments and error
+locations, and verify that this route adds no whole-procedure lexer call. Body
+grammar interpretation and further expression sublexes are separate remaining
+work; this does not claim complete one-parse convergence.
+
+The existing parameter signature owner also retains optional default, in-source
+and dimension expression roots, with a typed input annotation rather than a
+fabricated annotation expression. Unsupported or excessive optional work records
+an expression-specific refusal. It preserves the independent type-path receipt
+and existing body admission; aggregate optional storage must fit the unchanged
+header allowance. Actual body-query tests cover that boundary. Production default
+and helper emission have not switched to these roots in this checkpoint.
+
+Internal Kind 11 generator nodes use the existing compiler Db and original raw
+file/configuration inputs. Sparse-slot and system-accessor outputs are borrowed
+under the existing family gate, so result owners cannot escape eviction and
+accounting. Legacy and captured producers share the same output templates.
+Captured formatting writes through an admitted sink instead of constructing an
+unbounded intermediate formatting string. This remains the explicit bounded
+capture interface, not a main-workspace generator installation or public cutover.
+Four independent old-producer comparisons match complete output and diagnostics.
+
+Original answer-slot, pooled-weak and binding-history storage now has an
+allocator that charges its actual backing Layout before source allocation and
+releases it after the actual free. Private wrappers preserve the existing
+canonical answer Arc and the lifetime of late resource attachments, including
+old runtime aliases, marked bases and weak-only retention. Runtime storage keeps
+its existing uncapped behavior. Source-scope publication is still held pending
+the full final-fence and resource transaction.
+
+A narrowly qualified std Arc allocation contract records Cargo's actual
+compiler, target, installed source and liballoc artifact. A headless standalone
+probe matched all nine cases, including weak-only allocation lifetime and the
+shared lease's physical free before quota return. That evidence does not itself
+enable a source endpoint: profile approval remains false in this checkpoint.
+Unknown toolchains must not gain an allocation permit from an address or client
+option. Requested Layout accounting is not an allocator RSS claim.
+
+Current focused selections contain 262 distinct passing Rust tests after
+diagnosed test-fixture repairs. The generator poison test uses a genuine
+preexisting lazy-view denial; an in-producer allocator failure is statically
+reviewed but has not been dynamically injected. Ratchets pass and all 382
+compared generated files remain byte-identical. Another optimized main-DME run
+matches all 27 raw policies, with 226 records over two pages and an exact warm
+repeat. Preparation took 21.390 seconds, the first query 137.266 seconds, and
+later requests 0.125 and 0.109 seconds under shared-machine load. These remain
+correctness observations, not a benchmark or speedup claim. Production defaults
+are unchanged, and full unification is not complete.

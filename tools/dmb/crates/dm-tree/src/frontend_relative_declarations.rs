@@ -545,6 +545,52 @@ impl DeclarationSyntax {
         let row = rows.get(rows.partition_point(|row| row.0 < relative))?;
         (row.0 == relative && row.2 != dm_syntax::UNKNOWN_HEADER_QUALIFIERS).then_some(row.2)
     }
+    /// Native captured-body path: exact current chunk/body/code before borrowing
+    /// any original token range. Matching bytes or member IDs are insufficient.
+    pub(crate) fn parse_original_procedure(
+        &self,
+        span: Span,
+        code: &Arc<BodyCodeIdentity>,
+    ) -> Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic> {
+        let fail = |message: &str| dm_syntax::Diagnostic {
+            span,
+            kind: dm_syntax::DiagnosticKind::Unsupported,
+            message: message.into(),
+        };
+        if !self.ordered_chunks {
+            return Err(fail("original body token chunks are unordered"));
+        }
+        let index = self
+            .chunks
+            .partition_point(|c| c.offset <= span.start)
+            .checked_sub(1)
+            .ok_or_else(|| fail("original body token chunk missing"))?;
+        let chunk = &self.chunks[index];
+        let relative = Span::new(
+            span.start
+                .checked_sub(chunk.offset)
+                .ok_or_else(|| fail("original body before chunk"))?,
+            span.end
+                .checked_sub(chunk.offset)
+                .ok_or_else(|| fail("original body before chunk"))?,
+        );
+        let n = chunk
+            .relative
+            .bodies
+            .partition_point(|b| b.span.start < relative.start);
+        let body = chunk
+            .relative
+            .bodies
+            .get(n)
+            .filter(|b| b.span == relative && Arc::ptr_eq(&b.code, code))
+            .ok_or_else(|| fail("original body token range/code owner differs"))?;
+        let input = chunk
+            .relative
+            .original_headers
+            .as_ref()
+            .ok_or_else(|| fail("original declaration token input is unissued"))?;
+        input.parse_body(body.span, chunk.offset)
+    }
     pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {
         self.chunks
             .iter()

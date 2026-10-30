@@ -17,6 +17,7 @@ impl HeapCensus {
                     parameters.visit_storage(|pointer, bytes| {
                         self.buffer(owner, pointer, bytes, bytes);
                     });
+                    self.parameter_expressions(owner, parameters);
                 }
                 self.string(owner, &parsed.item().header);
                 self.items(owner, &parsed.item().children);

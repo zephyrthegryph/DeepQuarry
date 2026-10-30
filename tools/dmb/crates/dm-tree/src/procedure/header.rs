@@ -57,6 +57,19 @@ impl<'a> HeaderView<'a> {
             range,
         })
     }
+    pub(super) fn parameter_markers(
+        self,
+    ) -> Result<(Option<usize>, Option<Span>, Option<Span>), String> {
+        let parts = dm_syntax::parameter_clause_spans(self.source, self.tokens, self.range)
+            .map_err(str::to_owned)?;
+        let relative =
+            |span: Span| Span::new(span.start - self.range.start, span.end - self.range.start);
+        Ok((
+            parts.assignment.map(|s| s.start - self.range.start),
+            parts.annotation.map(relative),
+            parts.source.map(relative),
+        ))
+    }
     pub(super) fn text(self) -> &'a str {
         &self.source[self.range.range()]
     }
@@ -133,4 +146,36 @@ thread_local! { static LEXICAL_HEADER_CALLS: std::cell::Cell<usize> = const { st
 #[cfg(test)]
 pub(super) fn lexical_header_calls() -> usize {
     LEXICAL_HEADER_CALLS.with(std::cell::Cell::get)
+}
+
+#[cfg(test)]
+mod parameter_clause_tests {
+    use super::*;
+    #[test]
+    fn shared_parameter_markers_match_existing_native_metadata_partition_without_lex() {
+        for source in [
+            "x = list(1,2) as text in choices(\"é,in\")",
+            "x in list(1) as obj|null",
+            "datum/x[2] = null",
+            "x = world.vars[\"as\"]",
+            "x = F(/* as */1) as text",
+        ] {
+            let input = LexedHeader::new(source);
+            assert!(input.valid());
+            let view = input.view();
+            let before = lexical_header_calls();
+            let top = view.top_level();
+            let expected = (
+                view.assignment(),
+                top.iter().find(|(t, _)| *t == "as").map(|(_, s)| *s),
+                top.iter().find(|(t, _)| *t == "in").map(|(_, s)| *s),
+            );
+            assert_eq!(view.parameter_markers().unwrap(), expected, "{source}");
+            assert_eq!(
+                lexical_header_calls(),
+                before,
+                "borrow original tokens; no header relex"
+            );
+        }
+    }
 }

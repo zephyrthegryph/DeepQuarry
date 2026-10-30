@@ -1,13 +1,19 @@
 //! Run the actual repository proof from this built ignored test, outside Cargo.
 //! No build/publication or fixture substitution is performed by the script.
+//! Use --release: the unchanged cold-main request deadline is not a debug-build
+//! performance allowance. Small IPC/ownership proofs remain usable in debug.
 #[path = "../../../shared/test_scratch.rs"]
 mod test_scratch;
 fn slash(path: impl AsRef<std::path::Path>) -> String {
     path.as_ref().to_string_lossy().replace('\\', "/")
 }
 #[test]
-#[ignore = "requires current private dmbc and independently built old workspace oracle"]
+#[ignore = "requires --release current private dmbc and independently built old workspace oracle"]
 fn actual_workspace_raw_pages_match_independent_old_engine() {
+    assert!(
+        !cfg!(debug_assertions),
+        "run this cold-main proof with --release; use the small workspace IPC test for debug builds"
+    );
     let oracle = std::path::PathBuf::from(
         std::env::var_os("DQ_LEGACY_WORKSPACE_RAW_ORACLE").expect("build old oracle separately"),
     );
