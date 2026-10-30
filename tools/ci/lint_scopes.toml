@@ -950,7 +950,7 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
-  "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/datums/properties/equip_slots.dm;code/content/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
+  "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/content/properties/equip_slots.dm;code/content/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
   "TRACKED @ code/engine/_generated/;code/__defines/ = tracking is automatic: a var that reactive code reads (or that is written through set_<v>()) gets its setter from `analyze gen auto_tracked`. Declare nothing; write the var through set_<v>() (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written set_<v>() plus SETTER(T, v) (doc/rewrite/read_driven_tracking.md)",
   "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
   "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/tests/unit_tests/;code/modules/benchmarks/;code/__defines/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
@@ -1806,8 +1806,8 @@ banned = [
   "loot_merge_specs = configure(loot(...)) merges in the entry engine (code/library/loot/loot_entries.dm)",
   "MAP_RESOLVER = map_resolver(GLOBAL_PROC_REF(x), vars = list(...)) in the type's CAPABILITIES block (code/library/maps/map_resolver_entry.dm)",
   "MAP_RESOLVER_VARS = vars = list(...) of the map_resolver() entry (configure(map_resolver(vars = ...)) in a subtype)",
-  "BF_* = a body factor is a stat now (code/contracts/ids/body_stats.dm): a source's table is keyed by its STAT_ id (alist(STAT_SLOWDOWN = 1)) and a read is the var of the stat on the mob (L.slowdown); doc/rewrite/proposals/stat_layer.md",
-  "factor(* = read the factor as the var of its stat on the holder (L.slowdown, code/contracts/ids/body_stats.dm); the call is gone (doc/rewrite/proposals/stat_layer.md)",
+  "BF_* = a body factor is a stat now (code/content/contracts/ids/body_stats.dm): a source's table is keyed by its STAT_ id (alist(STAT_SLOWDOWN = 1)) and a read is the var of the stat on the mob (L.slowdown); doc/rewrite/proposals/stat_layer.md",
+  "factor(* = read the factor as the var of its stat on the holder (L.slowdown, code/content/contracts/ids/body_stats.dm); the call is gone (doc/rewrite/proposals/stat_layer.md)",
   "body_factor_accumulate = the stat engine composes a source's table: hold_table() (code/engine/stats/tables.dm)",
   "body_factor_finalize = a factor stat's bounds are declared with the STAT (bounds = list(lo, hi))",
   "body_factor_baseline = a factor's baseline is the base of its STAT",
@@ -1825,9 +1825,9 @@ banned = [
   "dq_rules_settle = no rule watches integrity: take_damage() runs settle_integrity_crossings() natively (code/game/atom/atom_defense.dm)",
   "integrity_breaks = breaking at integrity_failure is settle_integrity_crossings() in take_damage(), not a rule",
   "integrity_destroyed = destruction at zero is settle_integrity_crossings() in take_damage(), not a rule",
-  "damage_flavour = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/game/atom/damage_flavour.dm)",
-  "rule_enter_damage_band = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/game/atom/damage_flavour.dm)",
-  "rule_leave_damage_band = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/game/atom/damage_flavour.dm)",
+  "damage_flavour = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/content/atom/damage_flavour.dm)",
+  "rule_enter_damage_band = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/content/atom/damage_flavour.dm)",
+  "rule_leave_damage_band = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/content/atom/damage_flavour.dm)",
 ]
 
 # Generated scaffolding is derived build output; source dependencies remain checked.

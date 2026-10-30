@@ -62,6 +62,8 @@ before code/defines/obj/weapon.dm code/content/materials/material_stock_parts.dm
 before code/ATMOSPHERICS/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/content/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/domains/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/content/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/modules/overmap/ships/computers/helm.dm code/modules/flight_operations/flight_console.dm   # navigation ui_redirect()
 before code/content/observation/turf_enterexit.dm code/content/turfs/simulated/outdoors/sky_effect.dm   # /turf/Entered()
 
@@ -127,12 +129,15 @@ first code/__defines/**
 first code/engine/_generated/ids.dm      # the ids the declaration markers declare (analyze gen declare_ids): before everything that names one
 first code/contracts/**                  # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first code/content/contracts/**   # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
+first code/content/contracts/**   # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first **/*_defines.dm                    # a module's own macro file (combat_ai, integrated_electronics, flight_operations, expedition, ...)
 first code/game/machinery/machinery_fields.dm   # declares the machine families' state vars (on, active, locked, mode) their files set
 
 # Macros defined in an ordinary file and used by others: the definer before its users.
 before code/modules/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
 before code/domains/heat/heat_bind_batch.dm code/ATMOSPHERICS/**   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/content/atmos/**   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/**   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/content/atmos/**   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/**   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/datums/rules/world_adapter.dm
