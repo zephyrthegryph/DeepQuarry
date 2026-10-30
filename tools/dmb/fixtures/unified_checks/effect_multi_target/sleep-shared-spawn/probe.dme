@@ -1,0 +1,10 @@
+/proc/shared()
+    sleep(1)
+/proc/first()
+    set SpacemanDMM_should_not_sleep=1
+    spawn(0)
+        shared()
+    shared()
+/proc/second()
+    set SpacemanDMM_should_not_sleep=1
+    shared()

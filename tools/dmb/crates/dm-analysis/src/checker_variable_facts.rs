@@ -70,13 +70,7 @@ pub fn variable(
             _ => Err("checker source-variable declaration is unavailable or opaque".into()),
         }
     };
-    let mut source = source_candidate(owner)?;
-    if source.as_ref().is_some_and(|fact| fact.owner == owner) {
-        return Ok(source);
-    }
-    if source.is_none() && owner != SymbolId::of("/") {
-        source = source_candidate(SymbolId::of("/"))?;
-    }
+    select(owner,|target|Ok(ancestors.iter().position(|&p|p==target)),source_candidate,||{
     let builtin = match resolver.resolve(Q::CheckerBuiltinVar {
         profile,
         owner,
@@ -98,21 +92,79 @@ pub fn variable(
         M::Missing => None,
         _ => return Err("checker variable needs exact hash-qualified builtin facts".into()),
     };
+    Ok(builtin)
+    })
+}
+fn select(
+    owner:SymbolId,mut rank:impl FnMut(SymbolId)->Result<Option<usize>,String>,
+    mut source_candidate:impl FnMut(SymbolId)->Result<Option<VariableFact>,String>,
+    mut builtin_candidate:impl FnMut()->Result<Option<VariableFact>,String>,
+)->Result<Option<VariableFact>,String>{
+    let mut source = source_candidate(owner)?;
+    if source.as_ref().is_some_and(|fact| fact.owner == owner) {
+        return Ok(source);
+    }
+    if source.is_none() && owner != SymbolId::of("/") {
+        source = source_candidate(SymbolId::of("/"))?;
+    }
+    let builtin=builtin_candidate()?;
     match (source, builtin) {
         (Some(source), Some(builtin)) => {
-            let a = ancestors
-                .iter()
-                .position(|&p| p == source.owner)
+            let a = rank(source.owner)?
                 .ok_or("source variable outside issued ancestry")?;
-            let b = ancestors
-                .iter()
-                .position(|&p| p == builtin.owner)
+            let b = rank(builtin.owner)?
                 .ok_or("builtin variable outside issued ancestry")?;
             Ok(Some(if a <= b { source } else { builtin }))
         }
         (Some(fact), None) | (None, Some(fact)) => Ok(Some(fact)),
         (None, None) => Ok(None),
     }
+}
+
+/// Borrowed ORIGINAL-only entry for consumers already guarded by their current
+/// capture. It shares selection precedence with the recording-resolver entry,
+/// but does not serialize unused initializer values merely to hash an answer.
+/// This is not a replacement for resolver dependency recording in other jobs.
+pub fn variable_original(tree:&SemanticTree,profile:PackedU128,owner:SymbolId,name:SymbolId)
+    ->Result<Option<VariableFact>,String>{
+    tree.validate_checker_builtin_profile(profile).map_err(|e|format!("checker variable profile: {e:?}"))?;
+    tree.lookup_type(owner).ok_or("checker variable original owner unavailable")?;
+    let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("checker catalog: {e:?}"))?;
+    select(owner,|target|original_ancestor_depth(tree,owner,target),|receiver|{
+        let Some(formal)=tree.source_formal_variable_member(receiver,name).map_err(str::to_owned)? else{return Ok(None)};
+        let node=tree.member(formal).ok_or("checker original formal unavailable")?;
+        let owner=tree.type_node(node.owner).ok_or("checker original formal owner unavailable")?.path;
+        if node.metadata.inherited_opaque.is_some()||node.metadata.procedure.is_some(){return Err("checker original variable metadata opaque".into());}
+        Ok(Some(VariableFact{formal:Some(formal),owner,name,metadata:Arc::clone(&node.metadata)}))
+    },||{
+        // Same native ancestry and original hash-qualified catalog as
+        // resolve_checker_builtin; scalar rows are borrowed, never copied.
+        let mut current=tree.lookup_type(owner).ok_or("checker variable original owner unavailable")?;
+        for _ in 0..=tree.types().len(){
+            let owner=tree.type_node(current).ok_or("checker original ancestor unavailable")?.path;
+            if let Some(row)=catalog.declarations.iter().find(|r|r.owner==owner&&r.name==name&&r.kind==dm_tree::MemberKind::Var){
+                if row.metadata.inherited_opaque.is_some()||row.metadata.procedure.is_some(){return Err("checker original builtin variable opaque".into());}
+                return Ok(Some(VariableFact{formal:None,owner,name,metadata:Arc::clone(&row.metadata)}));
+            }
+            let Some(parent)=tree.parent(current) else{return Ok(None)};
+            current=parent;
+        }
+        Err("checker original hierarchy cycle".into())
+    })
+}
+
+/// Allocation-free traversal of the SAME native parent graph used by the
+/// original resolver's ancestry fallback. A retained ancestry cache is optional,
+/// not additional semantic authority. Missing nodes/cycles are never absence.
+pub fn original_ancestor_depth(tree:&SemanticTree,owner:SymbolId,target:SymbolId)->Result<Option<usize>,String>{
+    let mut current=tree.lookup_type(owner).ok_or("original ancestry owner unavailable")?;
+    for depth in 0..=tree.types().len(){
+        let node=tree.type_node(current).ok_or("original ancestry node unavailable")?;
+        if node.path==target{return Ok(Some(depth));}
+        let Some(parent)=tree.parent(current) else{return Ok(None)};
+        current=parent;
+    }
+    Err("original ancestry cycle".into())
 }
 
 #[cfg(test)]

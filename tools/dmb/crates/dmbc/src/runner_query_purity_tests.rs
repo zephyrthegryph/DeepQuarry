@@ -344,8 +344,20 @@ fn foreign_archive_and_unissued_or_changed_policy_refuse_before_any_cached_job()
     dm_tree::frontend::BodySyntaxQueries::begin_revision(db.as_ref());
 }
 #[test]
-fn unsupported_effect_contexts_are_not_clean_reports_and_multi_target_is_explicit() {
-    for(source,needle)in[("/proc/probe()\n    set SpacemanDMM_should_be_pure=1\n    CRASH(\"bad\")\n","effect"),("/proc/a()\n    set SpacemanDMM_should_be_pure=1\n    return 1\n/proc/b()\n    set SpacemanDMM_should_be_pure=1\n    return 2\n","multi-target")]{let(snapshot,_)=fixture(source,None);let input=snapshot.native_purity_input(&snapshot.tree).unwrap();let error=snapshot.native_purity_report(&input,&env(),None,&snapshot.tree).unwrap_err();assert!(error.to_string().contains(needle),"{error}");}
+fn unsupported_effect_contexts_are_not_clean_reports() {
+    let (snapshot, _) = fixture("/proc/probe()\n    set SpacemanDMM_should_be_pure=1\n    CRASH(\"bad\")\n", None);
+    let input = snapshot.native_purity_input(&snapshot.tree).unwrap();
+    let error = snapshot.native_purity_report(&input, &env(), None, &snapshot.tree).unwrap_err();
+    assert!(error.to_string().contains("effect"), "{error}");
+}
+#[test]
+fn multiple_effect_targets_with_no_violations_are_valid_shared_plan_reports() {
+    let source="/proc/a()\n    set SpacemanDMM_should_be_pure=1\n    return 1\n/proc/b()\n    set SpacemanDMM_should_be_pure=1\n    return 2\n";
+    let(snapshot,reads)=fixture(source,None);let input=snapshot.native_purity_input(&snapshot.tree).unwrap();
+    let first=snapshot.native_purity_report(&input,&env(),None,&snapshot.tree).unwrap();
+    assert!(first.is_empty());let before=reads.load(Ordering::Relaxed);
+    let warm=snapshot.native_purity_report(&input,&env(),None,&snapshot.tree).unwrap();
+    assert!(Arc::ptr_eq(&first,&warm));assert_eq!(reads.load(Ordering::Relaxed),before);
 }
 
 #[test]
@@ -998,3 +1010,6 @@ fn callable_note_transport_requires_exact_selected_original_occurrence() {
         (actual.line, actual.byte_column)
     );
 }
+
+#[path = "runner_query_effect_multi_target_tests.rs"]
+mod multi_target_tests;

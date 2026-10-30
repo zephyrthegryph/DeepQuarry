@@ -35,6 +35,8 @@ macro_rules! native {
             $source.as_bytes().to_vec(),
             (),
         ));
+        let queries = Arc::new(crate::query_db::QueryDb::default());
+        let settings = Arc::clone(&queries) as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
         let $front = dm_tree::frontend::build_with_config(
             Path::new("original-callers.dme"),
             &source,
@@ -46,7 +48,9 @@ macro_rules! native {
             },
         )
         .unwrap()
-        .with_body_queries(Arc::new(crate::query_db::QueryDb::default()));
+        .with_setting_expression_queries(&settings)
+        .unwrap()
+        .with_body_queries(queries);
         let ($host, _) = crate::request_runner::runner_facts::prepare(&$front, &engine).unwrap();
         let $startup = crate::startup::capture(&$front).unwrap();
         let executor = dm_exec::BuildExecutor::new(1).unwrap();
@@ -350,4 +354,55 @@ fn actual_lower_one_absolute_header_type_declaration_preserves_heal_formal_slots
             assert!(unit.abi.is_some());
         }
     });
+}
+
+#[test]
+fn actual_lower_one_return_annotation_preserves_words_and_prepared_default_abi_across_modes() {
+    let mut expected: Option<LoweredUnit> = None;
+    for annotation in ["", " as /datum"] {
+        let source = format!("/proc/p(x=1){annotation}\n    return x\n");
+        native!(source, |front, host, startup, policy| {
+            assert_eq!(front.bodies.len(), 1);
+            let occurrence = &front.bodies[0];
+            for typed in [false, true] {
+                for _warm in 0..2 {
+                    let arena = if typed {
+                        dm_tree::frontend::BodyArena::new_typed(
+                            &front,
+                            dm_codegen_byond::typed_statements_supported_for_capture,
+                        )
+                    } else {
+                        dm_tree::frontend::BodyArena::new(&front)
+                    };
+                    let actual = lower_one(
+                        &front,
+                        occurrence,
+                        &host,
+                        &policy,
+                        Some(&startup),
+                        &arena,
+                        false,
+                        None,
+                    )
+                    .unwrap_or_else(|errors| {
+                        panic!("actual return annotation/default caller: {errors:?}")
+                    });
+                    let abi = actual.abi.as_ref().expect("actual original prepared ABI");
+                    if let Some(old) = &expected {
+                        assert_eq!(
+                            actual.code.procedure, old.code.procedure,
+                            "annotation has no return coercion or runtime body effect"
+                        );
+                        let old_abi = old.abi.as_ref().unwrap();
+                        assert_eq!(abi.layout, old_abi.layout);
+                        assert_eq!(abi.argument_sources, old_abi.argument_sources);
+                        assert_eq!(abi.source_helpers, old_abi.source_helpers);
+                        assert_eq!(actual.source_helpers.len(), old.source_helpers.len());
+                    } else {
+                        expected = Some(actual);
+                    }
+                }
+            }
+        });
+    }
 }

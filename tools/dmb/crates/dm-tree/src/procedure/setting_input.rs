@@ -19,6 +19,7 @@ pub(super) struct OriginalSettingsBody {
     owner: Arc<ProcedureMetadata>,
     footprints: Arc<[SettingFootprint]>,
     roots: dm_syntax::SettingExpressionSlots,
+    return_roots: dm_syntax::SettingExpressionSlots,
 }
 impl OriginalSettingsBody {
     pub(super) fn owner(&self) -> &Arc<ProcedureMetadata> {
@@ -75,6 +76,7 @@ fn checked_row(
         owner,
         footprints: rows.into(),
         roots: Default::default(),
+        return_roots: Default::default(),
     })
 }
 fn push(out: &mut Vec<OriginalSettingsBody>, row: OriginalSettingsBody) -> Result<(), String> {
@@ -114,7 +116,7 @@ impl OriginalProcedureHeaders {
                 .settings_owner
                 .as_ref()
                 .ok_or("original proc metadata owner is missing")?;
-            if owner.settings.is_empty() {
+            if owner.settings.is_empty() && owner.signature.return_annotation.is_none() {
                 if !row.settings_footprints.is_empty() {
                     return Err("empty original settings have footprints".into());
                 }
@@ -181,7 +183,8 @@ impl OriginalProcedureHeaders {
                             .binary_search_by_key(&item.span.start, |r| r.body.start)
                             .ok()
                             .and_then(|i| issued.get(i));
-                        if owner.settings.is_empty() {
+                        if owner.settings.is_empty() && owner.signature.return_annotation.is_none()
+                        {
                             if row.is_some() {
                                 return Err(
                                     "current empty settings differ from original nonempty body"
@@ -189,7 +192,7 @@ impl OriginalProcedureHeaders {
                                 );
                             }
                         } else {
-                            input.settings_footprints(item.span, owner)?;
+                            input.expression_row(item.span, owner)?;
                             *count = count.checked_add(1).ok_or("setting body count overflow")?;
                         }
                     } else {
@@ -230,7 +233,7 @@ impl OriginalProcedureHeaders {
                             "portable settings differ from original current metadata".into()
                         );
                     }
-                    if !nodes.is_empty() {
+                    if !nodes.is_empty() || owner.signature.return_annotation.is_some() {
                         push(
                             out,
                             checked_row(item.span, Arc::clone(owner), footprints, &input.source)?,
@@ -245,6 +248,139 @@ impl OriginalProcedureHeaders {
         let mut rows = Vec::new();
         walk(self, items, owners, &mut rows)?;
         self.finish_settings(rows)
+    }
+    fn expression_row(
+        &self,
+        body: Span,
+        owner: &Arc<ProcedureMetadata>,
+    ) -> Result<&OriginalSettingsBody, String> {
+        let rows = self
+            .settings
+            .get()
+            .ok_or("original expression metadata input is unissued")?;
+        let row = rows
+            .binary_search_by_key(&body.start, |r| r.body.start)
+            .ok()
+            .and_then(|i| rows.get(i))
+            .ok_or("original expression body is unissued")?;
+        if row.body != body || !Arc::ptr_eq(&row.owner, owner) {
+            return Err("original expression body or metadata owner differs".into());
+        }
+        Ok(row)
+    }
+    /// Source-coordinate projection of ONE original annotation fragment. No Expr
+    /// grammar is demanded here. Exact tokens/offsets are checked against the
+    /// same original primary header, not reconstructed or normalized text.
+    pub(crate) fn return_fragment<'a>(
+        &'a self,
+        body: Span,
+        owner: &Arc<ProcedureMetadata>,
+        fragment: &dm_ir::SymbolicExpression,
+        symbols: &dm_ir::SymbolTable,
+    ) -> Result<
+        (
+            &'a str,
+            &'a [dm_syntax::SpanToken],
+            Span,
+            usize,
+            usize,
+            &'a dm_syntax::SettingExpressionSlots,
+        ),
+        String,
+    > {
+        let row = self.expression_row(body, owner)?;
+        let annotation = owner
+            .signature
+            .return_annotation
+            .as_ref()
+            .ok_or("original return annotation absent")?;
+        let mut ordinal = None;
+        let mut count = 0usize;
+        for (i, part) in annotation
+            .tokens
+            .split(|t| symbols.text(t.text) == Some("|"))
+            .enumerate()
+        {
+            count = count
+                .checked_add(1)
+                .ok_or("return fragment count overflow")?;
+            if part == fragment.tokens.as_ref() {
+                if ordinal.replace(i).is_some() {
+                    return Err("original return fragment is ambiguous".into());
+                }
+            }
+        }
+        let ordinal =
+            ordinal.ok_or("return fragment is not the original annotation token projection")?;
+        let header = self
+            .headers
+            .binary_search_by_key(&body.start, |s| s.start)
+            .ok()
+            .and_then(|i| self.headers.get(i))
+            .copied()
+            .ok_or("original return procedure header unavailable")?;
+        let view = self.original(header, 0)?;
+        let parts = self.parts(header, 0, view.text())?;
+        let trailing = parts.trailing.trim();
+        let text = trailing
+            .text()
+            .strip_prefix("as ")
+            .ok_or("unsupported procedure return annotation")?;
+        let annotation_view = trailing.slice(3, 3 + text.len());
+        let base = annotation_view.span().start;
+        let mut expected = annotation.tokens.iter();
+        for token in annotation_view.tokens().iter().filter(|t| {
+            !matches!(
+                t.kind,
+                dm_syntax::TokenKind::Whitespace
+                    | dm_syntax::TokenKind::Newline
+                    | dm_syntax::TokenKind::Comment
+            )
+        }) {
+            let actual = expected
+                .next()
+                .ok_or("return annotation primary token count differs")?;
+            if actual.kind != token.kind
+                || actual.relative_span != annotation_view.relative_span(token)
+                || symbols.text(actual.text) != Some(annotation_view.spelling(token))
+            {
+                return Err("return annotation differs from original primary tokens".into());
+            }
+        }
+        if expected.next().is_some() {
+            return Err("return annotation primary token count differs".into());
+        }
+        let first = fragment
+            .tokens
+            .first()
+            .ok_or("empty return annotation fragment")?;
+        let last = fragment
+            .tokens
+            .last()
+            .ok_or("empty return annotation fragment")?;
+        let value = Span::new(
+            base.checked_add(first.relative_span.start)
+                .ok_or("return annotation span overflow")?,
+            base.checked_add(last.relative_span.end)
+                .ok_or("return annotation span overflow")?,
+        );
+        if value.end > annotation_view.span().end || value.start > value.end {
+            return Err("return annotation fragment escapes original header".into());
+        }
+        let begin = self.tokens.partition_point(|t| t.span.start < value.start);
+        let end = self.tokens.partition_point(|t| t.span.start < value.end);
+        let tokens = &self.tokens[begin..end];
+        if tokens.iter().any(|t| t.span.end > value.end) {
+            return Err("return annotation token escapes original fragment".into());
+        }
+        Ok((
+            &self.source,
+            tokens,
+            value,
+            ordinal,
+            count,
+            &row.return_roots,
+        ))
     }
     pub(crate) fn settings_footprints(
         &self,
@@ -350,6 +486,7 @@ impl OriginalProcedureHeaders {
         if let Some(rows) = self.settings.get() {
             for row in rows {
                 row.roots.visit_storage(|_, _, _| {}, &mut visit);
+                row.return_roots.visit_storage(|_, _, _| {}, &mut visit);
             }
         }
     }
@@ -364,6 +501,7 @@ impl OriginalProcedureHeaders {
             }
             for row in rows {
                 row.roots.visit_storage(&mut *visit, |_| {});
+                row.return_roots.visit_storage(&mut *visit, |_| {});
                 let bytes = std::mem::size_of_val(row.footprints.as_ref())
                     + 2 * std::mem::size_of::<usize>();
                 visit(row.footprints.as_ptr() as usize, bytes, bytes);

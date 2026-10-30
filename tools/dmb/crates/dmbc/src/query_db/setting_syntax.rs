@@ -42,6 +42,13 @@ impl QueryDb {
 }
 
 impl SettingExpressionQueries for QueryDb {
+    fn return_annotation(
+        &self,
+        input: &dm_tree::frontend::ReturnAnnotationInput<'_>,
+    ) -> Result<dm_syntax::SettingExpression, BodySyntaxFailure> {
+        self.with_setting_admission(|admission| input.prepare(admission))
+    }
+
     fn statements(
         &self,
         input: &mut dm_tree::frontend::SettingStatementsInput<'_, '_>,

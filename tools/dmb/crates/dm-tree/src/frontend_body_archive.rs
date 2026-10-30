@@ -1034,6 +1034,19 @@ impl BodyArchive {
     pub fn source_note_point(&self, offset: usize) -> Result<SourceNoteOrigin, String> {
         self.mapping.source_note_point(offset)
     }
+    /// Original callable opening-token origin without demanding executable body
+    /// grammar. Uses the SAME private current code/header recipe as BodySyntax.
+    pub fn callable_header_policy_origin(&self,member:crate::MemberId)->Result<SourceNoteOrigin,String>{
+        if !matches!(self.tree.member(member).ok_or("callable header member unavailable")?.kind,crate::MemberKind::Proc|crate::MemberKind::Verb){
+            return Err("callable header requires source procedure/verb".into());
+        }
+        let ordinal=self.callables.ordinal(member).ok_or("callable header member not in original roster")?;
+        let occurrence=self.bodies.get(ordinal).ok_or("callable header original occurrence absent")?;
+        if occurrence.member!=member{return Err("callable header roster occurrence differs".into());}
+        let code=self.body_codes.get(ordinal).ok_or("callable header original code absent")?;
+        let opening=self.syntax.original_callable_opening(occurrence.expanded_span,&code.identity)?;
+        self.source_note_point(opening)
+    }
     pub fn callable_note_origin(
         &self,
         identity: dm_ir::ProcedureIdentity,

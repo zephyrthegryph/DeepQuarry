@@ -726,17 +726,148 @@ fn abi_expression_site_adapter_preserves_unique_policy_order_and_skipped_token_s
         ]
     );
     assert_eq!(tagged.layout, compatibility.layout);
-    assert_eq!(tagged.inputs.procedure_identity, compatibility.inputs.procedure_identity);
-    assert_eq!(tagged.inputs.current_proc_path, compatibility.inputs.current_proc_path);
-    assert_eq!(tagged.inputs.current_type_path, compatibility.inputs.current_type_path);
+    assert_eq!(
+        tagged.inputs.procedure_identity,
+        compatibility.inputs.procedure_identity
+    );
+    assert_eq!(
+        tagged.inputs.current_proc_path,
+        compatibility.inputs.current_proc_path
+    );
+    assert_eq!(
+        tagged.inputs.current_type_path,
+        compatibility.inputs.current_type_path
+    );
     assert_eq!(tagged.inputs.parameters, compatibility.inputs.parameters);
-    assert_eq!(tagged.inputs.parameter_type_flags, compatibility.inputs.parameter_type_flags);
-    assert_eq!(tagged.inputs.parameter_value_sources, compatibility.inputs.parameter_value_sources);
-    assert_eq!(tagged.inputs.parameter_defaults, compatibility.inputs.parameter_defaults);
-    assert_eq!(tagged.inputs.parameter_types, compatibility.inputs.parameter_types);
-    assert_eq!(tagged.inputs.readonly_parameters, compatibility.inputs.readonly_parameters);
-    assert_eq!(tagged.inputs.resource_search_context, compatibility.inputs.resource_search_context);
+    assert_eq!(
+        tagged.inputs.parameter_type_flags,
+        compatibility.inputs.parameter_type_flags
+    );
+    assert_eq!(
+        tagged.inputs.parameter_value_sources,
+        compatibility.inputs.parameter_value_sources
+    );
+    assert_eq!(
+        tagged.inputs.parameter_defaults,
+        compatibility.inputs.parameter_defaults
+    );
+    assert_eq!(
+        tagged.inputs.parameter_types,
+        compatibility.inputs.parameter_types
+    );
+    assert_eq!(
+        tagged.inputs.readonly_parameters,
+        compatibility.inputs.readonly_parameters
+    );
+    assert_eq!(
+        tagged.inputs.resource_search_context,
+        compatibility.inputs.resource_search_context
+    );
     assert_eq!(tagged.argument_sources, compatibility.argument_sources);
     assert_eq!(tagged.source_helpers, compatibility.source_helpers);
     assert_eq!(tagged.executable_body, compatibility.executable_body);
+}
+
+#[test]
+fn original_return_annotation_policy_uses_original_tokens_without_relex_and_preserves_errors() {
+    for text in [
+        "num",
+        "/datum/known",
+        " /datum/known | text | /datum/other ",
+        "n um",
+        "/da tum",
+        "wrong+1",
+        "",
+    ] {
+        let mut symbols = SymbolTable::default();
+        let mut value = metadata(&[], &mut symbols);
+        value.signature.return_annotation = Some(expression(text, &mut symbols));
+        let run = |native: bool| {
+            let evaluate = |expression: &SymbolicExpression| {
+                let spelling = expression.source_text(&symbols).unwrap();
+                if spelling.starts_with("/datum/") {
+                    Ok(SemanticValue::Type(dm_ir::SymbolId::of(spelling.trim())))
+                } else {
+                    Err(AbiError::unsupported("actual unchanged scalar refusal"))
+                }
+            };
+            if native {
+                prepare_verified_procedure_original_tokens(
+                    &value,
+                    &symbols,
+                    &[],
+                    ProcedureInputs::default(),
+                    InheritedAbi::Fresh,
+                    evaluate,
+                )
+            } else {
+                prepare_verified_procedure(
+                    &value,
+                    &symbols,
+                    &[],
+                    ProcedureInputs::default(),
+                    InheritedAbi::Fresh,
+                    evaluate,
+                )
+            }
+        };
+        FORMAL_RELEX_CALLS.with(|n| n.set(0));
+        let native = run(true);
+        assert_eq!(
+            FORMAL_RELEX_CALLS.with(|n| n.get()),
+            0,
+            "native original return tokens never render/relex"
+        );
+        let old = run(false);
+        assert!(
+            FORMAL_RELEX_CALLS.with(|n| n.get()) > 0,
+            "independent compatibility classifier remains real"
+        );
+        match (native, old) {
+            (Ok(native), Ok(old)) => {
+                assert_eq!(
+                    native.inputs.procedure_identity,
+                    old.inputs.procedure_identity
+                );
+                assert_eq!(
+                    native.inputs.current_proc_path,
+                    old.inputs.current_proc_path
+                );
+                assert_eq!(
+                    native.inputs.current_type_path,
+                    old.inputs.current_type_path
+                );
+                assert_eq!(native.inputs.parameters, old.inputs.parameters);
+                assert_eq!(
+                    native.inputs.parameter_type_flags,
+                    old.inputs.parameter_type_flags
+                );
+                assert_eq!(
+                    native.inputs.parameter_value_sources,
+                    old.inputs.parameter_value_sources
+                );
+                assert_eq!(
+                    native.inputs.parameter_defaults,
+                    old.inputs.parameter_defaults
+                );
+                assert_eq!(native.inputs.parameter_types, old.inputs.parameter_types);
+                assert_eq!(
+                    native.inputs.readonly_parameters,
+                    old.inputs.readonly_parameters
+                );
+                assert_eq!(
+                    native.inputs.resource_search_context,
+                    old.inputs.resource_search_context
+                );
+                assert_eq!(native.layout, old.layout);
+                assert_eq!(native.argument_sources, old.argument_sources);
+                assert_eq!(native.source_helpers, old.source_helpers);
+            }
+            (Err(native), Err(old)) => {
+                assert_eq!(native.kind, old.kind);
+                assert_eq!(native.message, old.message);
+            }
+            _ => panic!("original/compat annotation acceptance mismatch for {text:?}"),
+        }
+    }
 }

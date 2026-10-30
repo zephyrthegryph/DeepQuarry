@@ -564,9 +564,9 @@ impl DriverEvaluator<'_> {
         })
     }
 }
-/// Native setting-only adapter over the SAME existing scalar evaluator and
-/// resolver (including artifact recording). Other expression domains deliberately
-/// keep their explicit compatibility entry until their own original issuer lands.
+/// Native original setting/return adapter over the SAME scalar evaluator and
+/// resolver (including artifact recording). Transitive initializer/constant
+/// expressions retain their separately inventoried owner path.
 pub(super) struct OriginalSettingEvaluator<'source, 'e, 'resolver> {
     pub(super) frontend: &'source ColdFrontend,
     pub(super) body: &'source dm_tree::frontend::BodyOccurrence,
@@ -604,6 +604,29 @@ impl OriginalSettingEvaluator<'_, '_, '_> {
         Ok(())
     }
 }
+impl OriginalSettingEvaluator<'_, '_, '_> {
+    fn evaluate_original_root(
+        &self,
+        root: &dm_syntax::SettingExpression,
+        context: &AbiContext<'_>,
+    ) -> Result<SemanticValue, AbiError> {
+        let procedure = self.lexical.then(|| dm_ir::ProcedureIdentity {
+            owner: context.identity.owner,
+            name: context.identity.name,
+            verb: context.identity.namespace == Namespace::Verb,
+            occurrence: context.identity.occurrence,
+        });
+        self.evaluator
+            .scalar_ast_in(
+                context.identity.owner,
+                root.original_expression(),
+                procedure,
+                &RefCell::new(std::collections::HashSet::new()),
+            )
+            .map_err(AbiError::unsupported)?
+            .ok_or_else(|| AbiError::unsupported("ABI setting is not a captured scalar"))
+    }
+}
 impl CapturedConstantEvaluator for OriginalSettingEvaluator<'_, '_, '_> {
     fn evaluate_in_site(
         &self,
@@ -616,11 +639,18 @@ impl CapturedConstantEvaluator for OriginalSettingEvaluator<'_, '_, '_> {
         match site {
             Site::Setting => self.evaluate(expression, context),
             Site::ReturnAnnotation => {
-                if self.lexical {
-                    LexicalAbiEvaluator(self.evaluator).evaluate(expression, context)
-                } else {
-                    CapturedConstantEvaluator::evaluate(self.evaluator, expression, context)
-                }
+                let root = self
+                    .frontend
+                    .return_annotation_expression(self.body, self.metadata, expression)
+                    .map_err(|error| match error {
+                        dm_tree::frontend::BodySyntaxFailure::Operational(error) => {
+                            AbiError::operational(error)
+                        }
+                        dm_tree::frontend::BodySyntaxFailure::Syntax(_) => {
+                            AbiError::unsupported("captured scalar expression failed parsing")
+                        }
+                    })?;
+                self.evaluate_original_root(&root, context)
             }
             Site::SettingCondition => Err(AbiError::unsupported(
                 "native conditional setting metadata has no original source issuer",
@@ -645,21 +675,7 @@ impl CapturedConstantEvaluator for OriginalSettingEvaluator<'_, '_, '_> {
                     AbiError::unsupported("captured scalar expression failed parsing")
                 }
             })?;
-        let procedure = self.lexical.then(|| dm_ir::ProcedureIdentity {
-            owner: context.identity.owner,
-            name: context.identity.name,
-            verb: context.identity.namespace == Namespace::Verb,
-            occurrence: context.identity.occurrence,
-        });
-        self.evaluator
-            .scalar_ast_in(
-                context.identity.owner,
-                root.original_expression(),
-                procedure,
-                &RefCell::new(std::collections::HashSet::new()),
-            )
-            .map_err(AbiError::unsupported)?
-            .ok_or_else(|| AbiError::unsupported("ABI setting is not a captured scalar"))
+        self.evaluate_original_root(&root, context)
     }
 }
 impl CapturedConstantEvaluator for DriverEvaluator<'_> {
@@ -1162,7 +1178,8 @@ mod original_setting_tests {
                 .unwrap();
             let from_body = first_body.unwrap_or_else(|| body_root(&front));
             assert!(original.same_root(&from_body));
-            let compatible = CapturedConstantEvaluator::evaluate(&driver, expression, &context).unwrap();
+            let compatible =
+                CapturedConstantEvaluator::evaluate(&driver, expression, &context).unwrap();
             assert_eq!(value, compatible);
             assert_eq!(
                 SCALAR_TEXT_PARSES.with(|n| n.get()),
@@ -1492,5 +1509,304 @@ mod original_setting_tests {
                 .setting_expression(body, metadata, expression)
                 .unwrap()
         ));
+    }
+    fn annotation_fragment(
+        metadata: &dm_ir::ProcedureMetadata,
+        symbols: &dm_ir::SymbolTable,
+        ordinal: usize,
+    ) -> SymbolicExpression {
+        SymbolicExpression {
+            tokens: metadata
+                .signature
+                .return_annotation
+                .as_ref()
+                .unwrap()
+                .tokens
+                .split(|token| symbols.text(token.text) == Some("|"))
+                .nth(ordinal)
+                .unwrap()
+                .to_vec()
+                .into(),
+        }
+    }
+    #[test]
+    fn original_return_annotation_shared_roots_keep_actual_abi_and_scalar_errors_without_body_demand(
+    ) {
+        use dm_codegen_byond::{
+            lower_resolver::ProcedureInputs,
+            procedure_abi::{self, InheritedAbi},
+        };
+        for annotation in [
+            "num",
+            "/datum/known",
+            "/datum/known | text | /datum/other",
+            "/datum/missing",
+            "/da tum",
+            "wrong+1",
+        ] {
+            let db = Arc::new(crate::query_db::QueryDb::default());
+            let source=format!("/datum/known\n/datum/other\n/proc/p() as {annotation}\n    set SpacemanDMM_should_be_pure = ignored\n    return 1\n");
+            let front = front(&source, &db);
+            let (body, metadata, _) = selected(&front);
+            let context = context(&front, body);
+            let driver = DriverEvaluator {
+                pure_calls: None,
+                resource_search_context: None,
+                resolver: front.snapshot.tree.as_ref(),
+                symbols: front.snapshot.tree.symbols(),
+            };
+            let native = OriginalSettingEvaluator {
+                frontend: &front,
+                body,
+                metadata,
+                evaluator: &driver,
+                lexical: false,
+            };
+            SCALAR_TEXT_PARSES.with(|n| n.set(0));
+            let actual = procedure_abi::prepare_verified_procedure_original_tokens_with_sites(
+                metadata,
+                context.symbols,
+                &[],
+                ProcedureInputs::default(),
+                InheritedAbi::Fresh,
+                |site, expression| native.evaluate_in_site(site, expression, &context),
+            );
+            assert_eq!(
+                SCALAR_TEXT_PARSES.with(|n| n.get()),
+                0,
+                "native path fragment uses borrowed original Expr"
+            );
+            assert_eq!(
+                db.db().stats(dm_query::Kind(4)).computed,
+                0,
+                "return ABI must not demand whole body grammar"
+            );
+            let expected = procedure_abi::prepare_verified_procedure(
+                metadata,
+                context.symbols,
+                &[],
+                ProcedureInputs::default(),
+                InheritedAbi::Fresh,
+                |expression| CapturedConstantEvaluator::evaluate(&driver, expression, &context),
+            );
+            match (actual, expected) {
+                (Ok(actual), Ok(expected)) => {
+                    assert_eq!(
+                        actual.inputs.procedure_identity,
+                        expected.inputs.procedure_identity
+                    );
+                    assert_eq!(
+                        actual.inputs.current_proc_path,
+                        expected.inputs.current_proc_path
+                    );
+                    assert_eq!(
+                        actual.inputs.current_type_path,
+                        expected.inputs.current_type_path
+                    );
+                    assert_eq!(actual.inputs.parameters, expected.inputs.parameters);
+                    assert_eq!(
+                        actual.inputs.parameter_type_flags,
+                        expected.inputs.parameter_type_flags
+                    );
+                    assert_eq!(
+                        actual.inputs.parameter_value_sources,
+                        expected.inputs.parameter_value_sources
+                    );
+                    assert_eq!(
+                        actual.inputs.parameter_defaults,
+                        expected.inputs.parameter_defaults
+                    );
+                    assert_eq!(
+                        actual.inputs.parameter_types,
+                        expected.inputs.parameter_types
+                    );
+                    assert_eq!(
+                        actual.inputs.readonly_parameters,
+                        expected.inputs.readonly_parameters
+                    );
+                    assert_eq!(
+                        actual.inputs.resource_search_context,
+                        expected.inputs.resource_search_context
+                    );
+                    assert_eq!(actual.layout, expected.layout);
+                    assert_eq!(actual.source_helpers, expected.source_helpers);
+                }
+                (Err(actual), Err(expected)) => {
+                    assert_eq!(actual.kind, expected.kind);
+                    assert_eq!(actual.message, expected.message);
+                }
+                _ => panic!("actual original/compat ABI differs for {annotation:?}"),
+            }
+            if annotation == "/datum/known" {
+                let fragment = annotation_fragment(metadata, context.symbols, 0);
+                let root = front
+                    .return_annotation_expression(body, metadata, &fragment)
+                    .unwrap();
+                let warm = front
+                    .return_annotation_expression(body, metadata, &fragment)
+                    .unwrap();
+                assert!(root.same_root(&warm));
+                assert_eq!(
+                    &front.expanded.text[root.current_span().range()],
+                    "/datum/known"
+                );
+                assert!(front
+                    .return_annotation_expression(&body.clone(), metadata, &fragment)
+                    .is_err());
+                assert!(front
+                    .return_annotation_expression(body, &metadata.clone(), &fragment)
+                    .is_err());
+                let mut forged = fragment.clone();
+                let mut tokens = forged.tokens.to_vec();
+                tokens[0].relative_span.start += 1;
+                forged.tokens = tokens.into();
+                assert!(
+                    front
+                        .return_annotation_expression(body, metadata, &forged)
+                        .is_err(),
+                    "token source geometry cannot be forged by equal spelling"
+                );
+            }
+        }
+    }
+    #[test]
+    fn original_return_annotation_without_settings_uses_same_provider_and_cancellation_is_retryable(
+    ) {
+        let db = Arc::new(crate::query_db::QueryDb::default());
+        let source = "/datum/known\n/proc/p() as /datum/known\n    return 1\n";
+        let bare = dm_tree::frontend::build(
+            Path::new("original-settings.dme"),
+            &Source(source),
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let body = &bare.bodies[0];
+        let metadata = bare
+            .snapshot
+            .tree
+            .member(body.member)
+            .unwrap()
+            .metadata
+            .procedure
+            .as_deref()
+            .unwrap();
+        let fragment = annotation_fragment(metadata, bare.snapshot.tree.symbols(), 0);
+        assert!(
+            matches!(bare.return_annotation_expression(body,metadata,&fragment),Err(dm_tree::frontend::BodySyntaxFailure::Operational(ref e)) if e.kind()==std::io::ErrorKind::NotConnected)
+        );
+        let front = attach(bare, &db);
+        let body = &front.bodies[0];
+        let metadata = front
+            .snapshot
+            .tree
+            .member(body.member)
+            .unwrap()
+            .metadata
+            .procedure
+            .as_deref()
+            .unwrap();
+        let fragment = annotation_fragment(metadata, front.snapshot.tree.symbols(), 0);
+        let token = crate::daemon::control::Cancellation::default();
+        let binding = crate::daemon::control::bind_with_deadline(
+            token.clone(),
+            std::time::Instant::now() + std::time::Duration::from_secs(300),
+        );
+        let schedule = db.cancel_settings_after_checkpoints_for_test(0, token);
+        let error = front
+            .return_annotation_expression(body, metadata, &fragment)
+            .err()
+            .expect("actual cancellation before original root completion");
+        let dm_tree::frontend::BodySyntaxFailure::Operational(error) = error else {
+            panic!("actual IO cannot become syntax")
+        };
+        assert_eq!(error.kind(), std::io::ErrorKind::Interrupted);
+        drop(schedule);
+        drop(binding);
+        let root = front
+            .return_annotation_expression(body, metadata, &fragment)
+            .unwrap();
+        assert!(root.same_root(
+            &front
+                .return_annotation_expression(body, metadata, &fragment)
+                .unwrap()
+        ));
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0);
+    }
+    fn return_included(
+        state: &mut dm_tree::frontend::RetainedSemanticTree,
+        db: &Arc<crate::query_db::QueryDb>,
+        q: String,
+    ) -> ColdFrontend {
+        let source = Includes {
+            p: "/proc/p() as /datum\n    set SpacemanDMM_should_be_pure = ignored\n    return 1\n"
+                .into(),
+            q,
+        };
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        attach(
+            dm_tree::frontend::build_with_executor_and_semantic_state(
+                Path::new("return-offset.dme"),
+                &source,
+                &Default::default(),
+                dm_tree::frontend::FrontendConfig {
+                    workers: 1,
+                    engine: None,
+                    observer: None,
+                },
+                None,
+                &executor,
+                Some(state),
+            )
+            .unwrap(),
+            db,
+        )
+    }
+    #[test]
+    fn return_original_root_reuses_same_header_owner_after_warm_include_offset_and_rejects_foreign_budget(
+    ) {
+        let db = Arc::new(crate::query_db::QueryDb::default());
+        let mut state = dm_tree::frontend::RetainedSemanticTree::default();
+        let old = return_included(&mut state, &db, q_chunk("", 1));
+        let (old_body, old_metadata, _) = selected(&old);
+        let fragment = annotation_fragment(old_metadata, old.snapshot.tree.symbols(), 0);
+        let first = old
+            .return_annotation_expression(old_body, old_metadata, &fragment)
+            .unwrap();
+        let current = return_included(
+            &mut state,
+            &db,
+            q_chunk("// changed earlier include\n\n", 333),
+        );
+        let (body, metadata, _) = selected(&current);
+        let fragment = annotation_fragment(metadata, current.snapshot.tree.symbols(), 0);
+        let warm = current
+            .return_annotation_expression(body, metadata, &fragment)
+            .unwrap();
+        assert!(first.same_root(&warm));
+        assert_ne!(first.current_offset(), warm.current_offset());
+        assert!(std::ptr::eq(
+            first.original_expression(),
+            warm.original_expression()
+        ));
+        assert_eq!(
+            &current.expanded.text[warm.current_span().range()],
+            "/datum"
+        );
+        let other = Arc::new(crate::query_db::QueryDb::default());
+        let foreign = return_included(
+            &mut state,
+            &other,
+            q_chunk("// changed earlier include\n\n", 333),
+        );
+        let (body, metadata, _) = selected(&foreign);
+        let fragment = annotation_fragment(metadata, foreign.snapshot.tree.symbols(), 0);
+        let error = foreign
+            .return_annotation_expression(body, metadata, &fragment)
+            .err()
+            .expect("same original root cannot migrate budget domains");
+        assert!(
+            matches!(error,dm_tree::frontend::BodySyntaxFailure::Operational(ref e) if e.kind()==std::io::ErrorKind::InvalidInput)
+        );
     }
 }

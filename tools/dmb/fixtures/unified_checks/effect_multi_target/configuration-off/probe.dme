@@ -1,0 +1,9 @@
+var/global_value=0
+/proc/shared()
+    global_value=1
+/proc/first()
+    set SpacemanDMM_should_be_pure=1
+    shared()
+/proc/second()
+    set SpacemanDMM_should_be_pure=1
+    shared()

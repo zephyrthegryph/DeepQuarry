@@ -17,10 +17,12 @@ pub(crate) enum GeneratorName {
     DeclareIds,
     Declare,
     UiTypes,
+    TrackedLists,
 }
 impl GeneratorName {
     pub(crate) fn name(self) -> &'static str {
         match self {
+            Self::TrackedLists => "tracked_lists",
             Self::SparseSlots => "sparse_slots",
             Self::SystemAccessors => "system_accessors",
             Self::Stats => "stats",
@@ -32,6 +34,7 @@ impl GeneratorName {
     }
     pub(crate) fn path(self) -> &'static str {
         match self {
+            Self::TrackedLists => "code/engine/_generated/tracked_lists.dm",
             Self::SparseSlots => "code/engine/_generated/sparse_slots.dm",
             Self::SystemAccessors => "code/engine/_generated/system_accessors.dm",
             Self::Stats => "code/engine/_generated/stats.dm",
@@ -310,6 +313,11 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                             diags: out.diags,
                         })
                     }
+                    GeneratorName::TrackedLists => {
+                        let out=dq_analyze::captured_tracked_lists::BorrowedTrackedLists::capture(&raw,capture.policy(),budget.clone())?.generate(checkpoint)?;
+                        let text=out.captured_named_file_text("tracked_lists","tracked_lists.dm",&budget)?;
+                        Ok(Artifact{name:p.name,text,files:Vec::new(),diags:out.diags})
+                    }
                     GeneratorName::Stats => {
                         let out = BorrowedStats::capture(&raw, capture.policy(), budget.clone())?
                             .generate(checkpoint)?;
@@ -556,3 +564,6 @@ impl QueryDb {
 #[cfg(test)]
 #[path = "generator_policy_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path="generator_policy_tracked_tests.rs"]mod tracked_tests;

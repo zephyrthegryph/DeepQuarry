@@ -1027,3 +1027,32 @@ passes. The last full production compile and DreamChecker results remain the
 previous checkpoint; a fresh combined verification is still required. Analyze
 and checker production defaults have not switched, no compiler was published,
 and full toolchain convergence remains in progress.
+
+### Return roots, multiple effect targets and tracked-list generation
+
+Native return-annotation path fragments now reuse lazy roots on the original
+header owner, without rendering/relexing the fragment or demanding a complete
+body before ABI preparation. Five focused tests cover original token/error
+parity, actual lowered words/default helpers, warm offsets, cancellation and
+foreign-budget refusal. Transitive initializer scalar parsing remains separate.
+
+Effect reports support multiple targets on the existing plan and graph. The
+pinned checker prints targets in hash-map order, so independent repeated runs
+produce different whole target-group permutations. The documented comparison
+preserves family phases and every within-group row, note and source order; it
+permutes only complete groups. Four focused tests pass against all 24 captured
+old-checker runs, including negative controls for the normalizer.
+
+Tracked-list generation shares the original raw matchers and exact emitter,
+using the native tree for declared list types, inheritance and collisions.
+An independent frozen generator matches all 12,523 output bytes and three
+diagnostics. Native tests cover warm reuse, quota/cancellation recovery and
+lexically aliased paths. Verification exposed and fixed two real assumptions:
+a retained ancestry index is optional, and a procedure must use an issued
+callable header origin rather than the variable-only source cursor. The alias
+control also requires zero executable body queries. These generator interfaces
+remain bounded; main-workspace installation is still pending.
+
+The source remains on the existing production Analyze/checker defaults. No
+compiler publication, game window, full suite, pins or benchmark was used.
+Full production verification and complete client convergence remain required.

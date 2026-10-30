@@ -177,6 +177,7 @@ fn validate_return_annotation(
     annotation: &SymbolicExpression,
     symbols: &SymbolTable,
     evaluate: &mut impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+    spelling: fn(&SymbolicExpression, &SymbolTable) -> Result<String, AbiError>,
 ) -> Result<(), AbiError> {
     for tokens in annotation
         .tokens
@@ -185,7 +186,7 @@ fn validate_return_annotation(
         let fragment = SymbolicExpression {
             tokens: tokens.to_vec().into(),
         };
-        let part = compact(&expression_text(&fragment, symbols)?)?;
+        let part = spelling(&fragment, symbols)?;
         let part = part.as_str();
         let path = part.strip_prefix('/').is_some_and(|tail| {
             !tail.is_empty()
@@ -498,9 +499,12 @@ fn prepare_verified_procedure_with_spelling(
     let mut selected = Vec::new();
     select(&metadata.settings, &mut selected, &mut evaluate)?;
     if let Some(annotation) = &metadata.signature.return_annotation {
-        validate_return_annotation(annotation, symbols, &mut |expression| {
-            evaluate(AbiExpressionSite::ReturnAnnotation, expression)
-        })?;
+        validate_return_annotation(
+            annotation,
+            symbols,
+            &mut |expression| evaluate(AbiExpressionSite::ReturnAnnotation, expression),
+            formal_spelling,
+        )?;
     }
     let mut layout = match inherited {
         InheritedAbi::Fresh => ProcLayout::default(),

@@ -80,13 +80,8 @@ impl EffectPlan {
                 at = target_parent_parts(input, resolver, target, &self.bodies, &self.index)?;
             }
         }
-        // The old HashMap groups have no stable inter-target order. Refuse the
-        // boundary until a documented normalizer exists; never sort old rows.
-        if targets.len() > 1 {
-            return Err(
-                "sleep multi-target report order needs documented group-order normalization".into(),
-            );
-        }
+        // Same TARGET_GROUP_ORDER_CONTRACT as purity: only whole target-group
+        // permutation is unspecified; each target gets a fresh visited/BFS below.
         let mut output = Vec::new();
         for (target, annotation) in targets {
             checkpoint()?;

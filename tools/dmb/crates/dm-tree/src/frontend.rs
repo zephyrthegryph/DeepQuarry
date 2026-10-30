@@ -549,7 +549,7 @@ pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};
 #[path = "frontend_setting_queries.rs"]
 mod setting_queries;
 pub use setting_queries::{
-    SettingExpressionInput, SettingExpressionQueries, SettingStatementsInput,
+    ReturnAnnotationInput, SettingExpressionInput, SettingExpressionQueries, SettingStatementsInput,
 };
 #[path = "frontend_body_failure.rs"]
 mod body_failure;

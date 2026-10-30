@@ -1,0 +1,27 @@
+E:\projects\dq-wt\pool-c2\data\unified-analysis\effect-multi-target-oracles\sleep-waitfor-exempt\probe.dme, line 22, column 18:
+error: /proc/own_waitfor sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)
+- 23:5: SpacemanDMM_should_not_sleep set here
+- 25:5: sleep() called here
+
+E:\projects\dq-wt\pool-c2\data\unified-analysis\effect-multi-target-oracles\sleep-waitfor-exempt\probe.dme, line 9, column 12:
+error: /proc/first sets SpacemanDMM_should_not_sleep but calls blocking proc /proc/shared
+- 10:5: SpacemanDMM_should_not_sleep set here
+- 13:5: /proc/shared() called here
+- 2:5: sleep() called here
+
+E:\projects\dq-wt\pool-c2\data\unified-analysis\effect-multi-target-oracles\sleep-waitfor-exempt\probe.dme, line 18, column 17:
+error: /proc/own_exempt sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)
+- 19:5: SpacemanDMM_should_not_sleep set here
+- 21:5: sleep() called here
+
+E:\projects\dq-wt\pool-c2\data\unified-analysis\effect-multi-target-oracles\sleep-waitfor-exempt\probe.dme, line 14, column 13:
+error: /proc/second sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)
+- 15:5: SpacemanDMM_should_not_sleep set here
+- 16:5: sleep() called here
+
+E:\projects\dq-wt\pool-c2\data\unified-analysis\effect-multi-target-oracles\sleep-waitfor-exempt\probe.dme, line 14, column 13:
+error: /proc/second sets SpacemanDMM_should_not_sleep but calls blocking proc /proc/shared
+- 15:5: SpacemanDMM_should_not_sleep set here
+- 17:5: /proc/shared() called here
+- 2:5: sleep() called here
+

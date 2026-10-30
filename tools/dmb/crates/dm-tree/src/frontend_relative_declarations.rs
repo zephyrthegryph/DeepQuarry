@@ -514,6 +514,15 @@ pub(crate) struct OriginalSettingTokenInput<'a> {
     pub(crate) slots: &'a dm_syntax::SettingExpressionSlots,
     pub(crate) original_value: Span,
 }
+pub(crate) struct OriginalReturnTokenInput<'a> {
+    pub(crate) source: &'a str,
+    pub(crate) tokens: &'a [dm_syntax::SpanToken],
+    pub(crate) original_value: Span,
+    pub(crate) ordinal: usize,
+    pub(crate) count: usize,
+    pub(crate) offset: usize,
+    pub(crate) slots: &'a dm_syntax::SettingExpressionSlots,
+}
 #[derive(Clone, Debug)]
 pub struct DeclarationSyntax {
     chunks: Arc<[CurrentSyntaxChunk]>,
@@ -664,6 +673,11 @@ impl DeclarationSyntax {
             headers: chunk.relative.original_headers.as_ref(),
         })
     }
+    pub(crate) fn original_callable_opening(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<usize,String>{
+        let recipe=self.original_body_recipe(span,code).map_err(|e|e.message)?;
+        let input=recipe.headers.ok_or("callable header original token input unissued")?;
+        input.callable_opening(recipe.relative.span,recipe.offset)
+    }
     pub(crate) fn parse_original_procedure(
         &self,
         span: Span,
@@ -730,6 +744,46 @@ impl DeclarationSyntax {
             offset: recipe.offset,
             slots,
             original_value: footprint.value,
+        })
+    }
+    pub(crate) fn return_annotation_token_input<'a>(
+        &'a self,
+        span: Span,
+        code: &Arc<BodyCodeIdentity>,
+        fragment: &dm_ir::SymbolicExpression,
+        selected: &dm_ir::ProcedureMetadata,
+        symbols: &dm_ir::SymbolTable,
+    ) -> Result<OriginalReturnTokenInput<'a>, dm_syntax::Diagnostic> {
+        let recipe = self.original_body_recipe(span, code)?;
+        let fail = |message: String| dm_syntax::Diagnostic {
+            span,
+            kind: dm_syntax::DiagnosticKind::Unsupported,
+            message,
+        };
+        let headers = recipe
+            .headers
+            .ok_or_else(|| fail("original return token owner unavailable".into()))?;
+        let owner = recipe
+            .relative
+            .settings_owner
+            .as_ref()
+            .ok_or_else(|| fail("original return metadata owner unavailable".into()))?;
+        if owner.signature.return_annotation != selected.signature.return_annotation {
+            return Err(fail(
+                "selected return annotation differs from original metadata".into(),
+            ));
+        }
+        let (source, tokens, value, ordinal, count, slots) = headers
+            .return_fragment(recipe.relative.span, owner, fragment, symbols)
+            .map_err(fail)?;
+        Ok(OriginalReturnTokenInput {
+            source,
+            tokens,
+            original_value: value,
+            ordinal,
+            count,
+            slots,
+            offset: recipe.offset,
         })
     }
     /// Called only by the original native body parser under its SAME stack

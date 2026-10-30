@@ -99,3 +99,16 @@ fn equal_source_foreign_owner_or_profile_never_proves_variable_absence() {
     )
     .is_err());
 }
+
+#[test]
+fn borrowed_original_variable_selection_matches_recorded_source_global_builtin_and_absence(){
+    let front=build("var/list/global_list\n/datum/owner\n    var/list/local_list=list()\n/datum/owner/child\n    local_list=null\n");
+    let tree=front.snapshot.tree.as_ref();let profile=tree.checker_builtin_profile().unwrap();
+    for (owner,name) in [("/datum/owner","local_list"),("/datum/owner/child","local_list"),("/datum/owner","global_list"),("/mob","contents"),("/obj","name"),("/datum/owner","missing")]{
+        let a=variable(tree,tree,profile,SymbolId::of(owner),SymbolId::of(name)).unwrap();
+        let b=variable_original(tree,profile,SymbolId::of(owner),SymbolId::of(name)).unwrap();
+        assert_eq!(a,b,"{owner}::{name}");
+        if let (Some(a),Some(b))=(a,b){assert!(Arc::ptr_eq(&a.metadata,&b.metadata));}
+    }
+    assert!(variable_original(tree,0u128.into(),SymbolId::of("/datum/owner"),SymbolId::of("missing")).is_err());
+}

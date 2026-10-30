@@ -23,6 +23,19 @@ use std::{
 };
 pub const MAX_EVENTS: usize = 10_000;
 pub const RESULT_BUDGET: usize = 64 * 1024 * 1024;
+/// External parity contract of the pinned checker call-tree diagnostics.
+/// Directive HashMap iteration makes COMPLETE target-group permutations
+/// unspecified. Native reports choose authored target order. Within each group,
+/// every row, BFS first-encounter choice, source point, note and suppression is
+/// order-significant. Oracle comparison may permute ONLY whole target groups;
+/// it must never flatten/sort rows or notes. A combined checker renderer keeps
+/// original phase order: body-time diagnostics, must_not_sleep, must_be_pure.
+/// There is currently no public native effect-report writer; a future writer
+/// must expose this contract rather than claim exact sampled transcript order.
+pub const TARGET_GROUP_ORDER_CONTRACT: &str =
+    "unspecified_whole_target_group_permutation;native_authored_order;exact_within_target_order";
+pub const EFFECT_PHASE_ORDER: [&str; 3] = ["body_immediate", "must_not_sleep", "must_be_pure"];
+
 #[path = "checker_effects_output.rs"]
 pub(crate) mod output;
 pub use output::ExecutionAdmission;
@@ -486,14 +499,9 @@ impl SccSummary {
                 at = target_parent_parts(input, resolver, target, &p.bodies, &p.index)?;
             }
         }
-        // Actual pinned CLI varies top-level target groups across identical runs.
-        // Initial cohort refuses this boundary rather than sorting/filtering rows.
-        if targets.len() > 1 {
-            return Err(
-                "purity multi-target report order needs documented group-order normalization"
-                    .into(),
-            );
-        }
+        // The pinned checker iterates HashMap directive groups and prints
+        // immediately: only inter-target permutations are unspecified. Keep
+        // deterministic authored target order here, never sort rows or notes.
         for (target, annotation) in targets {
             checkpoint()?;
             let body = &p.bodies[target];

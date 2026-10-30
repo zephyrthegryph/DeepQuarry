@@ -158,6 +158,17 @@ impl OriginalProcedureHeaders {
         let end = self.tokens.partition_point(|t| t.span.start < span.end);
         HeaderView::original(&self.source, &self.tokens[first..end], span)
     }
+    /// Select the retained primary opening token. No lexer/parser, parameter
+    /// expressions or statement grammar is invoked by this source projection.
+    pub(crate) fn callable_opening(&self,body:Span,offset:usize)->Result<usize,String>{
+        let header=self.headers.binary_search_by_key(&body.start,|h|h.start).ok()
+            .and_then(|i|self.headers.get(i)).copied().ok_or("callable original header absent")?;
+        if header.end>body.end{return Err("callable header escapes original body".into());}
+        let view=self.original(header,0)?;
+        let token=view.tokens().iter().find(|token|view.spelling(token)=="(")
+            .ok_or("callable original opening token absent")?;
+        token.span.start.checked_add(offset).ok_or_else(||"callable current header projection overflow".into())
+    }
     pub(crate) fn parts<'a, 'n>(
         &'a self,
         header: Span,

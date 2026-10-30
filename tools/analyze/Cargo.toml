@@ -259,3 +259,7 @@ required-features=["legacy-sem","native-policy"]
 [[example]]
 name="unified_ui_types"
 required-features=["legacy-sem","native-policy"]
+
+[[example]]
+name="unified_tracked_lists"
+required-features=["legacy-sem","native-policy"]

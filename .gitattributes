@@ -86,3 +86,13 @@ tools/analyze/fixtures/declare-whole/** -text whitespace=cr-at-eol
 # Original ui_types oracle/encoding probes retain their exact bytes.
 tools/analyze/examples/support/ui_types_original.rs -text whitespace=cr-at-eol
 tools/analyze/fixtures/ui-types-whole/** -text whitespace=cr-at-eol
+
+# Exact independently captured multi-target checker fixture/oracle bytes.
+tools/dmb/fixtures/unified_checks/effect_multi_target/**/probe.dme -text
+tools/dmb/fixtures/unified_checks/effect_multi_target/**/checker.toml -text
+tools/dmb/fixtures/unified_checks/effect_multi_target/**/reference-*.stderr -text whitespace=-blank-at-eof
+
+# Frozen independent tracked-list generator oracle.
+tools/analyze/examples/support/tracked_lists_original.rs -text whitespace=cr-at-eol
+# Leading spaces exercise the original nested-proc lookalike matcher.
+tools/analyze/fixtures/native_tracked_lists/code/probe.dm whitespace=-indent-with-non-tab

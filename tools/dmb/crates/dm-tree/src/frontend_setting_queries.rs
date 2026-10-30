@@ -120,6 +120,15 @@ pub trait SettingExpressionQueries: std::fmt::Debug + Send + Sync {
         &self,
         input: &SettingExpressionInput<'_>,
     ) -> Result<dm_syntax::SettingExpression, BodySyntaxFailure>;
+    fn return_annotation(
+        &self,
+        _: &ReturnAnnotationInput<'_>,
+    ) -> Result<dm_syntax::SettingExpression, BodySyntaxFailure> {
+        Err(BodySyntaxFailure::Operational(std::io::Error::new(
+            std::io::ErrorKind::NotConnected,
+            "existing original expression provider does not admit return annotations",
+        )))
+    }
     /// Custom source-root providers must opt into checked statement admission
     /// explicitly. This default is a typed refusal, never a compatibility parse.
     fn statements(
@@ -214,6 +223,149 @@ impl ColdFrontend {
             .source
             .require_expression(&root)
             .map_err(BodySyntaxFailure::Operational)?;
+        Ok(root)
+    }
+}
+
+/// Opaque exact current-source annotation projection. No detached constructor,
+/// semantic clone or whole-body parser is exposed by this request.
+pub struct ReturnAnnotationInput<'a> {
+    frontend: &'a ColdFrontend,
+    input: relative_declarations::OriginalReturnTokenInput<'a>,
+}
+impl std::fmt::Debug for ReturnAnnotationInput<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ReturnAnnotationInput")
+    }
+}
+impl ReturnAnnotationInput<'_> {
+    pub fn prepare(
+        &self,
+        a: &dm_syntax::SettingAdmission<'_>,
+    ) -> Result<dm_syntax::SettingExpression, BodySyntaxFailure> {
+        let input = &self.input;
+        let result = input
+            .slots
+            .obtain(input.ordinal, input.count, a, || {
+                dm_syntax::prepare_setting_expression(
+                    input.source,
+                    input.tokens,
+                    input.original_value,
+                    a,
+                )
+            })
+            .and_then(|root| {
+                root.project_current(input.offset, input.source.len())
+                    .map_err(dm_syntax::SettingSyntaxFailure::Operational)
+            });
+        if let Some(actual) = a.take_operational_error() {
+            return Err(BodySyntaxFailure::Operational(actual));
+        }
+        result.map_err(|error| match error {
+            dm_syntax::SettingSyntaxFailure::Operational(error) => {
+                BodySyntaxFailure::Operational(error)
+            }
+            dm_syntax::SettingSyntaxFailure::Syntax(error) => {
+                let Some(at) = error.span.start.checked_add(input.offset) else {
+                    return BodySyntaxFailure::Operational(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "return annotation diagnostic projection overflow",
+                    ));
+                };
+                BodySyntaxFailure::Syntax(Diagnostic {
+                    kind: syntax_kind(error.kind),
+                    stage: DiagnosticStage::Syntax,
+                    location: self.frontend.location(at),
+                    message: error.message,
+                })
+            }
+        })
+    }
+}
+impl ColdFrontend {
+    pub fn return_annotation_expression(
+        &self,
+        occurrence: &BodyOccurrence,
+        metadata: &dm_ir::ProcedureMetadata,
+        fragment: &dm_ir::SymbolicExpression,
+    ) -> Result<dm_syntax::SettingExpression, BodySyntaxFailure> {
+        self.compact_body(occurrence)
+            .map_err(BodySyntaxFailure::Syntax)?;
+        let index = *self
+            .body_by_declaration
+            .get(&occurrence.declaration)
+            .ok_or_else(|| internal("original return occurrence unavailable"))?;
+        if !self
+            .issued_bodies
+            .get(index)
+            .is_some_and(|row| std::ptr::eq(row, occurrence))
+        {
+            return Err(BodySyntaxFailure::Syntax(internal(
+                "original return occurrence copied or foreign",
+            )));
+        }
+        let selected = self
+            .snapshot
+            .tree
+            .member(occurrence.member)
+            .and_then(|m| m.metadata.procedure.as_deref())
+            .ok_or_else(|| internal("original return metadata unavailable"))?;
+        let bound = self
+            .issued_settings
+            .get(index)
+            .and_then(Option::as_deref)
+            .ok_or_else(|| internal("original return metadata binding unavailable"))?;
+        if !std::ptr::eq(selected, metadata) || !std::ptr::eq(bound, metadata) {
+            return Err(BodySyntaxFailure::Syntax(internal(
+                "original return metadata copied or foreign",
+            )));
+        }
+        let code = self
+            .body_code(occurrence)
+            .map_err(BodySyntaxFailure::Syntax)?;
+        let input = self
+            .issued_syntax
+            .return_annotation_token_input(
+                occurrence.expanded_span,
+                code.identity(),
+                fragment,
+                metadata,
+                self.snapshot.tree.symbols(),
+            )
+            .map_err(|error| {
+                BodySyntaxFailure::Syntax(Diagnostic {
+                    kind: syntax_kind(error.kind),
+                    stage: DiagnosticStage::Syntax,
+                    location: self.location(error.span.start),
+                    message: error.message,
+                })
+            })?;
+        let provider = self
+            .setting_expression_queries
+            .as_ref()
+            .and_then(std::sync::Weak::upgrade)
+            .ok_or_else(|| {
+                BodySyntaxFailure::Operational(std::io::Error::new(
+                    std::io::ErrorKind::NotConnected,
+                    "original return annotation requires the existing native host provider",
+                ))
+            })?;
+        let request = ReturnAnnotationInput {
+            frontend: self,
+            input,
+        };
+        let root = provider.return_annotation(&request)?;
+        if root.current_offset() != request.input.offset
+            || !request
+                .input
+                .slots
+                .contains_original(request.input.ordinal, &root)
+        {
+            return Err(BodySyntaxFailure::Operational(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "return annotation provider returned foreign root or projection",
+            )));
+        }
         Ok(root)
     }
 }
