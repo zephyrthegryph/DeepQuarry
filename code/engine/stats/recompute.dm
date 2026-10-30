@@ -655,9 +655,10 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 /proc/stat_ct_update(datum/E, datum/stat_contrib/ct, datum/act/op/gate_ctx = null)
 	if(QDELETED(E))
 		return
-	var/datum/stat_record/rec = stat_record_of(E)
+	// The record is made when this entry first holds something: an entity whose gate never opens (a pipe's idle draws) keeps none.
+	var/datum/stat_record/rec = E.rx?.stats
 	var/ct_key = "[ct.serial]"
-	var/datum/old_target = rec.ct_targets?[ct_key]
+	var/datum/old_target = rec?.ct_targets?[ct_key]
 	var/datum/target = (ct.rel in E.vars) ? E.vars[ct.rel] : null
 	if(old_target && old_target != target)
 		stat_ct_release(old_target, E, ct)
@@ -666,7 +667,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	if(!isdatum(target) || QDELETED(target))
 		return
 	if(ct.table_kind)
-		stat_ct_hold_table(E, target, rec, ct_key, ct)
+		stat_ct_hold_table(E, target, rec || stat_record_of(E), ct_key, ct)
 		return
 	var/datum/stat_def/def = stat_def_of(ct.stat_id)
 	if(!def || !stat_declared_on(target.type, def))
@@ -686,6 +687,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	if(stat_rule_is_boolean(def.rule) && ((def.rule == STAT_RULE_ALL && value) || (def.rule == STAT_RULE_ANY && !value)))
 		stat_ct_release(target, E, ct) // the neutral direction can never change anything: no row
 		return
+	rec ||= stat_record_of(E)
 	if(!rec.ct_targets)
 		rec.ct_targets = list()
 	rec.ct_targets[ct_key] = target
