@@ -205,7 +205,7 @@
 /// A condition of section 5 evaluated now on `holder`: nameof(v) (a truthy var), a stat or key id, not()/all_of()/any_of(), PROC_REF, a requirement.
 /// One evaluator (admission.md wave 8): this is op_cond() in a pooled context whose holder is `holder`. A null condition does not hold.
 PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
-/proc/condition_holds(datum/holder, cond)
+/proc/condition_holds(datum/holder, cond, datum/act/op/ctx = null)
 	if(isnull(cond))
 		return FALSE
 	// The two leaf forms that need no context answer directly: they are the hot ones (stat and activation gates), and they run before the
@@ -214,6 +214,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		return !!holder.vars[cond]
 	if(isnum(cond))
 		return condition_id_holds(holder, cond)
+	if(ctx) // the caller's context for this holder: it keeps and releases it, a run of gates shares one
+		return op_cond(ctx, cond)
 	var/datum/act/op/A = pooled_op_context(holder)
 	try
 		. = op_cond(A, cond)
