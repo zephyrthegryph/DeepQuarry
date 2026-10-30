@@ -173,7 +173,7 @@
 
 /datum/unit_test/dq_diagnosis_no_legacy_readouts/Run()
 	var/static/list/readouts = list(
-		"code/game/objects/items/devices/scanners/health.dm",
+		"code/content/items/devices/scanners/health.dm",
 		"code/game/objects/items/devices/scanners/guide.dm",
 		"code/game/machinery/adv_med.dm",
 		"code/content/medical/bodyscanner/data.dm",
