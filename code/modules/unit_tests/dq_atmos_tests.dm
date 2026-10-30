@@ -4236,6 +4236,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(sparse_get_or(V, gas_dependency_wake_count, 0), vent_wakes, "a gas change woke a vent pump, which has no DM work")
 	TEST_ASSERT(!machine_stepping(V), "a vent pump has no work")
 
+	var/area/alarm_room = T.loc
+	var/alarm_saved = alarm_room.atmosalm
 	var/obj/machinery/alarm/A = new(T)
 	A.set_grid_power(TRUE)
 	A.set_broken_condition(FALSE)
@@ -4261,6 +4263,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		stoplag()
 	TEST_ASSERT(S.last_broadcast != sensor_reading_before, "temperature change did not reach the air sensor's gas watch")
 
+	// The plasma raised the shared room's alarm and closed its firedoors; put them back.
+	alarm_room.atmosalert(alarm_saved, A)
 	qdel(V)
 	qdel(A)
 	qdel(S)
