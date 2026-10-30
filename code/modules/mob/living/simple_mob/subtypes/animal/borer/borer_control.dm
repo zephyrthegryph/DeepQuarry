@@ -1,22 +1,21 @@
 /**
  * Assume control of a borer's host, putting the borer's client in control, and putting the other into a dominated brain.
  */
-/mob/living/simple_mob/animal/borer/verb/bond_brain()
+/mob/living/simple_mob/animal/borer/proc/bond_brain_ready(datum/act/op/A)
 	var/mob/living/carbon/human/host = src?.borer_host()
-	set category = VERB_CAT_ABILITIES_BORER
-	set name = "Assume Control"
-	set desc = "Fully connect to the brain of your host."
+	var/refusal = power_in_host_refusal() || power_docile_refusal()
+	if(refusal)
+		return refusal
+	return host.stat == DEAD ? span_warning("Your host is in no condition to do that.") : null
 
-	if(!can_use_power_in_host())
-		return
-	if(!can_use_power_docile())
-		return
-	if(host.stat == DEAD)
-		to_chat(src, span_warning("Your host is in no condition to do that."))
-		return
+/mob/living/simple_mob/animal/borer/proc/bond_brain()
+	var/mob/living/carbon/human/host = src?.borer_host()
 
 	to_chat(src, span_alien("You begin delicately adjusting your connection to the host brain..."))
 	after(src, 10 SECONDS + (host.injury_load(INJURY_CATEGORY_NEURAL) * (0.5 SECONDS)), PROC_REF(finish_bond_brain))
+
+/mob/living/simple_mob/animal/borer/proc/bond_brain_op(datum/act/op/A)
+	bond_brain()
 
 // This entire section is awful and a relic of ancient times. It needs to be replaced
 /mob/living/simple_mob/animal/borer/proc/finish_bond_brain()
@@ -64,7 +63,7 @@
 		sparse_set(host, computer_id, s2h_id)
 	if(!sparse_get(host, lastKnownIP))
 		sparse_set(host, lastKnownIP, s2h_ip)
-	controlling = TRUE
+	set_controlling(TRUE)
 
 	grant(host, granted_verb(/mob/living/carbon/proc/release_control), src)
 	grant(host, granted_verb(/mob/living/carbon/proc/punish_host), src)
@@ -75,26 +74,24 @@
 /**
  * Releases manual control of the borer from a mind-dominated host. Returning control to the original mind.
  */
-/mob/living/simple_mob/animal/borer/verb/release_host()
-	var/mob/living/carbon/human/host = src?.borer_host()
-	set category = VERB_CAT_ABILITIES_BORER
-	set name = "Release Host"
-	set desc = "Slither out of your host."
-
-	if(!host)
-		to_chat(src, span_warning("You are not inside a host body."))
-		return
+/mob/living/simple_mob/animal/borer/proc/release_host_ready(datum/act/op/A)
+	if(!src?.borer_host())
+		return span_warning("You are not inside a host body.")
 	if(stat)
-		to_chat(src, span_warning("You cannot leave your host in your current state."))
-		return
-	if(!can_use_power_docile())
-		return
+		return span_warning("You cannot leave your host in your current state.")
+	return power_docile_refusal()
+
+/mob/living/simple_mob/animal/borer/proc/release_host()
+	var/mob/living/carbon/human/host = src?.borer_host()
 
 	to_chat(src, span_alien("You begin disconnecting from [host]'s synapses and prodding at their internal ear canal."))
 	if(!host.stat)
 		to_chat(host, span_danger("An odd, uncomfortable pressure begins to build inside your skull, behind your ear..."))
 
 	after(src, 10 SECONDS, PROC_REF(finish_release_host))
+
+/mob/living/simple_mob/animal/borer/proc/release_host_op(datum/act/op/A)
+	release_host()
 
 /mob/living/simple_mob/animal/borer/proc/finish_release_host()
 	PRIVATE_PROC(TRUE)

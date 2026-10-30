@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Borer powers and the AI hardlight nom are menu ops with their guards as requirements"

@@ -13,19 +13,19 @@
 
 
 // stops its walk loop.
-/mob/living/silicon/ai/verb/holo_nom()
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set name = "Hardlight Nom"
-	set category = VERB_CAT_AI_VORE
-	set desc = "Wrap up a person in hardlight holograms."
-
-	// Wrong state
-	if (!eyeobj || !holo)
-		to_chat(src, span_vwarning("You can only use this when holo-projecting!"))
-		return
-
+/// Why the AI cannot start a hardlight nom now, or null: it must be holo-projecting and not inside a belly. (Its eye is looked up by a relation walk, which a
+/// requirement may not do, so holo_nom() keeps that one check.)
+/mob/living/silicon/ai/proc/holo_nom_menu_ready(datum/act/op/A)
+	if(!holo)
+		return span_vwarning("You can only use this when holo-projecting!")
 	if(isbelly(loc))
-		to_chat(src, span_vwarning("For safety reasons, you cannot consume people with holograms while you are inside someone else."))
+		return span_vwarning("For safety reasons, you cannot consume people with holograms while you are inside someone else.")
+	return null
+
+/mob/living/silicon/ai/proc/holo_nom()
+	var/mob/observer/eye/eyeobj = src?.active_eye()
+	if(!eyeobj)
+		to_chat(src, span_vwarning("You can only use this when holo-projecting!"))
 		return
 
 	//Holopads have this 'masters' list where the keys are AI names and the values are the hologram effects
@@ -44,6 +44,9 @@
 		return
 
 	open_request(src, /datum/prompt/choice, PROC_REF(holo_nom_answered), answerer = src, question = "Select a mob to eat", title = "Holonoms", choices = possible_prey, timeout = 0)
+
+/mob/living/silicon/ai/proc/holo_nom_menu_op(datum/act/op/A)
+	holo_nom()
 
 /// The AI picked a mob for its hologram to eat: the checks that follow the question, then the op.
 /mob/living/silicon/ai/proc/holo_nom_answered(datum/act/request/A)

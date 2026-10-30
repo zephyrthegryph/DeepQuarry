@@ -87,3 +87,21 @@
 	P.forceMove(test_floor())
 	var/datum/op_result/loose_fold_out = dq_ability_menu_op(P, "fold_out")
 	TEST_ASSERT_EQUAL(loose_fold_out?.outcome, ACT_REFUSED, "a pAI outside its card cannot fold out")
+
+/// A borer outside a host can only infest or knock out; every power that needs a host is refused with the host-less reason, and infest is
+/// refused once it has one.
+/datum/unit_test/dq_ability_ops_borer_requirements
+
+/datum/unit_test/dq_ability_ops_borer_requirements/Run()
+	var/mob/living/simple_mob/animal/borer/B = allocate(/mob/living/simple_mob/animal/borer, test_floor())
+	for(var/key in list("bond_brain", "release_host", "secrete_chemicals"))
+		var/datum/op_result/R = dq_ability_menu_op(B, key)
+		TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "[key] is refused with no host")
+	var/datum/op_result/loose = dq_ability_menu_op(B, "infest_host")
+	TEST_ASSERT(test_op_committed(loose), "a hostless borer may start to infest")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	TEST_ASSERT(B.take_host(H), "the borer takes a host")
+	var/datum/op_result/hosted = dq_ability_menu_op(B, "infest_host")
+	TEST_ASSERT_EQUAL(hosted?.outcome, ACT_REFUSED, "a borer that already has a host cannot infest")
+	var/datum/op_result/knock = dq_ability_menu_op(B, "knockout_victim")
+	TEST_ASSERT_EQUAL(knock?.outcome, ACT_REFUSED, "a borer inside a host cannot knock anyone out")
