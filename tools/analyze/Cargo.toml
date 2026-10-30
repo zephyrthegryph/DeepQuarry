@@ -263,3 +263,7 @@ required-features=["legacy-sem","native-policy"]
 [[example]]
 name="unified_tracked_lists"
 required-features=["legacy-sem","native-policy"]
+
+[[example]]
+name = "unified_raw_cohort9"
+required-features = ["legacy-sem", "native-policy"]

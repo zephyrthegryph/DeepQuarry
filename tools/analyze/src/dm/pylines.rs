@@ -53,9 +53,7 @@ pub fn allowed_in(out: &mut Sink, f: &SourceFile, lines: &[&str], number: usize,
     match hit {
         Some((at, code)) => {
             let u = AllowUse { rel: f.rel.clone(), line: at as u32, name: lint.to_string(), code: code.unwrap_or_default() };
-            if !out.allow_used.contains(&u) {
-                out.allow_used.push(u);
-            }
+            out.replay_allow(u);
             true
         }
         None => false,
@@ -77,14 +75,23 @@ pub fn allowed_in_recorded(f: &SourceFile, lines: &[&str], number: usize, lint: 
 /// Runs `run` (which may record ALLOW uses through `sys::kept_recorded` / [`allowed_in_recorded`],
 /// directly or through `incr` caches that replay them) and moves what it recorded into `out`.
 pub fn recorded_into<T>(out: &mut Sink, run: impl FnOnce() -> T) -> T {
-    let before = crate::dm::sys::take_recorded();
-    let result = run();
-    for u in crate::dm::sys::take_recorded() {
-        if !out.allow_used.contains(&u) {
-            out.allow_used.push(u);
+    // Unwind restores exactly the caller's preexisting trace, discarding only
+    // this failed operation's annotations; success keeps the old replay order.
+    struct Restore(Option<Vec<crate::lint::AllowUse>>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            if let Some(before) = self.0.take() {
+                let _ = crate::dm::sys::take_recorded();
+                crate::dm::sys::restore_recorded(before);
+            }
         }
     }
-    crate::dm::sys::restore_recorded(before);
+    let restore = Restore(Some(crate::dm::sys::take_recorded()));
+    let result = run();
+    for u in crate::dm::sys::take_recorded() {
+        out.replay_allow(u);
+    }
+    drop(restore);
     result
 }
 
@@ -92,6 +99,28 @@ pub fn recorded_into<T>(out: &mut Sink, run: impl FnOnce() -> T) -> T {
 mod tests {
     use super::*;
 
+    #[test]
+    fn recorded_scope_restores_caller_trace_after_actual_unwind() {
+        use crate::lint::AllowUse;
+        let saved = crate::dm::sys::take_recorded();
+        let caller = AllowUse { rel: "code/caller.dm".into(), line: 1,
+            name: "latent".into(), code: "CALLER".into() };
+        let failed = AllowUse { rel: "code/failed.dm".into(), line: 2,
+            name: "latent".into(), code: "FAILED".into() };
+        crate::dm::sys::restore_recorded(vec![caller.clone()]);
+        let mut sink = Sink::bounded(4, 16384);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            recorded_into(&mut sink, || {
+                crate::dm::sys::replay_recorded(vec![failed]);
+                panic!("real failed policy callback");
+            });
+        }));
+        assert!(result.is_err());
+        assert!(sink.allow_used.is_empty());
+        let restored = crate::dm::sys::take_recorded();
+        crate::dm::sys::restore_recorded(saved);
+        assert_eq!(restored, vec![caller]);
+    }
     #[test]
     fn splitlines_matches_python() {
         assert_eq!(py_splitlines("a\nb\n"), ["a", "b"]);

@@ -5,13 +5,16 @@ use dq_analyze::{
     captured_base_vars_policy::BorrowedBaseVarsPolicy, captured_decl_policy::BorrowedDeclPolicy,
     captured_generator_budget::Budget, captured_init_policy::BorrowedInitPolicy,
     captured_player_link::BorrowedPlayerLink, captured_pool::BorrowedPool,
-    captured_raw_policy::CapturedRawPolicy, captured_rel_write::BorrowedRelWrite,
+    captured_raw_policy::CapturedRawPolicy, captured_raw_cohort::BorrowedRawCohort, captured_rel_write::BorrowedRelWrite,
     captured_requirement_bool::BorrowedRequirementBool, captured_stored_refs::BorrowedStoredRefs,
     captured_untyped::BorrowedUntyped, captured_untyped_member::BorrowedUntypedMember,
     captured_weak_raw_read::BorrowedWeakRawRead,
 };
 pub(super) const ANALYZE_FINDINGS: Kind = Kind(10);
 pub(crate) const ANALYZE_FIXTURE_LINTS: &[&str] = dq_analyze::captured_policy_metadata::LINTS;
+fn bounded_only(name: &str) -> bool {
+    name == "pool" || dq_analyze::captured_raw_cohort::LINTS.contains(&name)
+}
 #[derive(Clone)]
 struct Params {
     capture: Weak<CapturedPolicyInputs>,
@@ -109,7 +112,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                 .iter()
                 .map(|key| ctx.input::<FileData>(*key))
                 .collect::<Result<Vec<_>, _>>()?;
-            let mut pool_budget = None;
+            let mut bounded_budget = None;
             let result = (|| -> Result<Vec<RawRun>, AnalyzeReadFailure> {
                 evidence_admission?;
                 config
@@ -135,7 +138,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                 for name in &p.ordered {
                     let checkpoint = || admission.abort.scan_checkpoint();
                     let run = match name.as_str() {
-                        "pool" => {
+                        "pool" | "cooldown" | "declaration_block" | "duplicate_input_key" | "entry_slots" | "interactions" | "latent" | "pollers" | "read_back" | "cap_bits" => {
                             // Joint remaining result-family admission includes all
                             // cached outcomes AND prior runs still under construction.
                             let prior = runs
@@ -157,12 +160,16 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                                 admission.denied.store(true, Ordering::Relaxed);
                                 e
                             })?;
-                            pool_budget = Some(budget.clone());
-                            BorrowedPool::capture(&raw, capture.policy())?.scan(
-                                budget,
-                                MAX_FIXTURE_SITES - sites,
-                                checkpoint,
-                            )?
+                            bounded_budget = Some(budget.clone());
+                            if name == "pool" {
+                                BorrowedPool::capture(&raw, capture.policy())?.scan(
+                                    budget, MAX_FIXTURE_SITES - sites, checkpoint,
+                                )?
+                            } else {
+                                BorrowedRawCohort::capture(&raw, capture.policy()).scan(
+                                    name, budget, remaining, MAX_FIXTURE_SITES - sites, checkpoint,
+                                )?
+                            }
                         }
                         "init" => {
                             BorrowedInitPolicy::capture(&raw, capture.policy())?.scan(checkpoint)?
@@ -228,7 +235,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                 // pointer-deduplicated across source and transient wrapper owners.
                 // No claim of allocator/RSS cap. Shared raw source arena is charged
                 // by native capture's existing <=64MiB retained budget separately.
-                if let Some(budget) = pool_budget.as_ref() {
+                if let Some(budget) = bounded_budget.as_ref() {
                     // Two wrappers per original file, each currently visits at
                     // most17 source/view/record keys;64 covers both plus slack.
                     //256/key+4096 bounds original BTree census coordination,
@@ -274,7 +281,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                     return Err(QueryError::operational(p.result, error))
                 }
             };
-            if p.ordered.iter().any(|name| name == "pool") {
+            if p.ordered.iter().any(|name| bounded_only(name)) {
                 let view_denied = sources
                     .iter()
                     .any(|source| source.file.require_view_budget().is_err());
@@ -285,7 +292,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                 admission.abort.before_outcome(p.result)?;
                 if view_denied
                     || admission.denied.load(Ordering::Relaxed)
-                    || pool_budget
+                    || bounded_budget
                         .as_ref()
                         .is_some_and(|budget: &Arc<Budget>| budget.denied())
                 {
@@ -324,9 +331,9 @@ impl QueryDb {
         cohort: &Arc<Cohort>,
         names: &[String],
     ) -> io::Result<Results> {
-        if names.iter().any(|name| name == "pool") {
+        if names.iter().any(|name| bounded_only(name)) {
             return Err(invalid(
-                "pool findings require the bounded borrowed result callback",
+                "whole-cohort findings require the bounded borrowed result callback",
             ));
         }
         self.with_analyze_fixture_findings(cohort, names, |rows| {
@@ -405,7 +412,7 @@ impl QueryDb {
         let prepared = match self.raw_prepare_locked(cohort, &[], now) {
             Ok(v) => v,
             Err(e) => {
-                if ordered.iter().any(|name| name == "pool") {
+                if ordered.iter().any(|name| bounded_only(name)) {
                     self.discard_poisoned_generator_files_locked(cohort);
                 }
                 return Err(e);
@@ -469,7 +476,7 @@ impl QueryDb {
         let result = match result {
             Ok(v) => v,
             Err(e) => {
-                if names.iter().any(|name| name == "pool") {
+                if names.iter().any(|name| bounded_only(name)) {
                     if self
                         .raw_policy
                         .admission
@@ -570,3 +577,7 @@ mod rel_write_tests;
 #[cfg(test)]
 #[path = "analyze_policy_pool_tests.rs"]
 mod pool_tests;
+
+#[cfg(test)]
+#[path = "analyze_policy_raw_cohort_tests.rs"]
+mod raw_cohort_tests;

@@ -1,0 +1,4 @@
+[lint.pollers]
+exempt_files=["code/b.dm"]
+[lint.pollers.lists]
+step_exempt_prefixes=["code/unit_probe/"]

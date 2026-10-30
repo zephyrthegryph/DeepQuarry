@@ -31,7 +31,10 @@ pub use parity_types as parity;
 pub mod captured_raw_file;
 #[cfg(feature = "native-policy")]
 pub mod captured_raw_policy;
+#[cfg(feature = "native-policy")]
+pub mod captured_raw_cohort;
 pub mod pat;
+mod raw_name_match;
 #[cfg(feature = "legacy-sem")]
 pub mod run;
 pub mod scopes;

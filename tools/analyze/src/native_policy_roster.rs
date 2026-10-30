@@ -1,6 +1,7 @@
 //! One parser-free roster shared by build module admission and policy dispatch.
 //! The policies themselves remain their existing modules; no scanner is copied.
-pub const MODULES: [(&str, &str); 27] = [
+pub const RAW_FILE_COUNT: usize = 27;
+pub const MODULES: [(&str, &str); 36] = [
     ("actor_forwarding", "actor_forwarding"),
     ("breakpoint", "breakpoint"),
     ("containment", "containment"),
@@ -28,14 +29,37 @@ pub const MODULES: [(&str, &str); 27] = [
     ("subsystem_fire", "subsystem_fire"),
     ("verb_category", "verb_category"),
     ("sys_sync_sql", "sys/sync_sql"),
+    ("cooldown", "cooldown"),
+    ("declaration_block", "declaration_block"),
+    ("duplicate_input_key", "duplicate_input_key"),
+    ("entry_slots", "entry_slots"),
+    ("interactions", "interactions"),
+    ("latent", "latent"),
+    ("pollers", "pollers"),
+    ("read_back", "read_back"),
+    ("cap_bits", "cap_bits"),
 ];
-pub const LINT_NAMES: [&str; 27] = {
-    let mut names = [""; 27];
+pub const LINT_NAMES: [&str; 36] = {
+    let mut names = [""; 36];
     let mut index = 0;
     while index < MODULES.len() {
         names[index] = MODULES[index].1;
         index += 1;
     }
+    names
+};
+/// Per-file/workspace admission remains exactly the original 27 policies.
+pub const RAW_FILE_LINT_NAMES: [&str; RAW_FILE_COUNT] = {
+    let mut names = [""; RAW_FILE_COUNT];
+    let mut index = 0;
+    while index < RAW_FILE_COUNT { names[index] = MODULES[index].1; index += 1; }
+    names
+};
+/// Whole-cohort Kind10 policies; these never acquire File/RAW27 semantics.
+pub const RAW_COHORT_LINT_NAMES: [&str; 9] = {
+    let mut names = [""; 9];
+    let mut index = 0;
+    while index < names.len() { names[index] = MODULES[RAW_FILE_COUNT + index].1; index += 1; }
     names
 };
 #[cfg(test)]
@@ -49,7 +73,7 @@ mod tests {
                 .map(|(module, _)| *module)
                 .collect::<BTreeSet<_>>()
                 .len(),
-            27
+            36
         );
         assert_eq!(
             super::LINT_NAMES
@@ -57,8 +81,12 @@ mod tests {
                 .copied()
                 .collect::<BTreeSet<_>>()
                 .len(),
-            27
+            36
         );
         assert_eq!(super::LINT_NAMES[26], "sys/sync_sql");
+        assert_eq!(super::RAW_FILE_LINT_NAMES.as_slice(), &super::LINT_NAMES[..27]);
+        assert_eq!(super::RAW_COHORT_LINT_NAMES.as_slice(), &super::LINT_NAMES[27..]);
+        assert_eq!(super::RAW_COHORT_LINT_NAMES[0], "cooldown");
+        assert_eq!(super::RAW_COHORT_LINT_NAMES[8], "cap_bits");
     }
 }

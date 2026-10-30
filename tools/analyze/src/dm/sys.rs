@@ -155,9 +155,7 @@ pub fn replay_recorded(v: Vec<crate::lint::AllowUse>) {
 fn drain_extra(out: &mut Sink) {
     EXTRA_USED.with(|e| {
         for u in e.borrow_mut().drain(..) {
-            if !out.allow_used.contains(&u) {
-                out.allow_used.push(u);
-            }
+            out.replay_allow(u);
         }
     });
 }

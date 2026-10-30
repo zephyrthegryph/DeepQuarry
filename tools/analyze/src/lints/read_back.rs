@@ -51,11 +51,7 @@ impl ReadBack {
 }
 
 fn writes(line: &str, name: &str, field: bool) -> bool {
-    let n = regex::escape(name);
-    let target = if field { format!(r"\b{}\.\w+", n) } else { format!(r"(?:^|[^.\w]){}", n) };
-    let assign = regex::Regex::new(&format!(r"{}\s*(?:\[[^\]]*\])?\s*(?:\+=|-=|\|=|\*=|/=|&=|=[^=])", target)).unwrap();
-    let call = regex::Regex::new(&format!(r"{}\.(?:Add|Insert|Cut|Remove|Swap)\(", target)).unwrap();
-    assign.is_match(line) || call.is_match(line)
+    crate::raw_name_match::writes(line, name, field)
 }
 
 fn declared(types: &BTreeSet<String>, t: &str) -> bool {

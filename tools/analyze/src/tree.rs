@@ -116,6 +116,8 @@ struct DerivedViews {
     marker: OnceLock<dm_preprocess::SourceText>,
 }
 struct Data {
+    // Cache-I/O policy only; never native source/capture authority.
+    captured_input: bool,
     captured_budget: Option<Arc<captured_budget::Budget>>,
     // Current-capture authority and derived-content reuse have distinct owners.
     raw: View,
@@ -152,6 +154,12 @@ fn read_text(path: &Path) -> String {
 }
 
 impl SourceFile {
+    /// Disable old global/disk incremental caches for captured input work.
+    /// This observes only a prefilled constructor tag: no lazy read, path probe,
+    /// ownership receipt or permission to use this source is issued here.
+    pub(crate) fn is_captured_input(&self) -> bool {
+        self.data.get().is_some_and(|data| data.captured_input)
+    }
     fn data(&self) -> &Data {
         self.data.get_or_init(|| {
             if std::env::var("DQ_ANALYZE_TRACE_LOAD").is_ok() {
@@ -164,6 +172,7 @@ impl SourceFile {
                 }
             }
             Data {
+                captured_input: false,
                 captured_budget: None,
                 raw: View::new(read_text(&self.abs)),
                 views: Arc::new(DerivedViews::default()),
@@ -275,6 +284,7 @@ impl SourceFile {
         let size = text.len() as u64;
         let data = OnceLock::new();
         let _ = data.set(Data {
+            captured_input: true,
             captured_budget: None,
             raw: View::shared(text),
             views: Arc::new(DerivedViews::default()),
@@ -329,6 +339,7 @@ impl SourceFile {
         }
         let data = OnceLock::new();
         let _ = data.set(Data {
+            captured_input: true,
             captured_budget: Some(budget),
             raw,
             views: Arc::new(DerivedViews::default()),
@@ -379,6 +390,7 @@ impl SourceFile {
         }
         let data = OnceLock::new();
         let _ = data.set(Data {
+            captured_input: true,
             captured_budget: self.data().captured_budget.clone(),
             raw: View::shared(text),
             views: Arc::clone(&self.data().views),
@@ -426,6 +438,7 @@ impl SourceFile {
         let hash = blake3::hash(text.as_bytes());
         let cell = OnceLock::new();
         let _ = cell.set(Data {
+            captured_input: false,
             captured_budget: None,
             raw: View::new(text),
             views: Arc::new(DerivedViews::default()),
@@ -725,6 +738,7 @@ impl Tree {
                             util::universal_newlines(String::from_utf8_lossy(&bytes).into_owned());
                         let cell = OnceLock::new();
                         let _ = cell.set(Data {
+                            captured_input: false,
                             captured_budget: None,
                             raw: View::new(text),
                             views: Arc::new(DerivedViews::default()),
@@ -1204,5 +1218,24 @@ mod policy_storage_alias_tests {
         file.raw()
             .text
             .visit_fingerprint_storage(|_, _, capacity| assert_eq!(rows[&key], capacity));
+    }
+}
+
+#[cfg(test)]
+mod captured_input_tag_tests {
+    use super::*;
+    #[test]
+    fn captured_cache_policy_tag_never_loads_source_or_grants_identity() {
+        let ordinary=SourceFile{rel:"code/unread.dm".into(),abs:PathBuf::from("unread-only-tag-control.dm"),
+            size:0,mtime_ns:0,hash:0,fkey:0,hidden:false,data:OnceLock::new()};
+        assert!(!ordinary.is_captured_input());
+        assert!(ordinary.data.get().is_none(),"predicate cannot trigger disk/lazy data access");
+        let path=PathBuf::from("shared-tag.dm");
+        let captured=SourceFile::from_shared_text("code/shared-tag.dm",path.clone(),"/datum/a\n".into());
+        assert!(captured.is_captured_input());
+        let rebound=captured.rebind_captured(&path,"/datum/a\n".into()).unwrap();
+        assert!(rebound.is_captured_input());
+        assert!(!SourceFile::from_text("code/ordinary-memory.dm","/datum/a\n").is_captured_input(),
+            "ordinary fixture/cache behavior is unchanged; populated data alone is not the tag");
     }
 }

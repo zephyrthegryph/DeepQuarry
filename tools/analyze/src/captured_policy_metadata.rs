@@ -1,4 +1,4 @@
-//! Explicit typed fixture-policy roster; does not expand raw27 admission.
+//! Explicit bounded Kind10 policy roster; does not expand RAW_FILE27 admission.
 pub const LINTS: &[&str] = &[
     "init",
     "decl",
@@ -11,6 +11,15 @@ pub const LINTS: &[&str] = &[
     "stored_refs",
     "untyped",
     "pool",
+    "cooldown",
+    "declaration_block",
+    "duplicate_input_key",
+    "entry_slots",
+    "interactions",
+    "latent",
+    "pollers",
+    "read_back",
+    "cap_bits",
 ];
 pub fn metadata(name: &str) -> Option<&'static crate::lint::Meta> {
     match name {
@@ -25,6 +34,7 @@ pub fn metadata(name: &str) -> Option<&'static crate::lint::Meta> {
         "untyped" => Some(&crate::untyped_policy_metadata::META),
         "player_link" => Some(crate::player_link_policy::metadata()),
         "pool" => Some(&crate::pool_policy::META),
+        name if crate::captured_raw_cohort::LINTS.contains(&name) => crate::captured_raw_policy::metadata(name),
         _ => None,
     }
 }

@@ -23,7 +23,7 @@ impl SnapshotProvider for Counted {
 const MANIFEST: &str =
     "#if 0\n#include \"code/probe.dm\"\n#include \"code/extra.dm\"\n#endif\n/datum\n";
 const PROBE:&str="/datum/system/power\n    var/own\nSYSTEM_DEF(power)\nSYSTEM_ACCESSOR(power, power_own, nameof(own))\nsparse(/obj/probe, a, type = num)\n";
-fn capture(db: &Arc<QueryDb>, root: &Path, reads: Arc<AtomicUsize>) -> Arc<Cohort> {
+pub(super) fn capture(db: &Arc<QueryDb>, root: &Path, reads: Arc<AtomicUsize>) -> Arc<Cohort> {
     let provider = Counted(reads);
     let inputs = RecordingInputs::new(provider, 123);
     let executor = dm_exec::BuildExecutor::new(1).unwrap();

@@ -9,6 +9,7 @@ pub(super) struct Bound {
     used: usize,
     records: usize,
     pub(super) error: Option<String>,
+    pub(super) allow_start: usize,
 }
 impl Bound {
     pub(super) fn new(rows: usize, bytes: usize) -> Self {
@@ -18,6 +19,7 @@ impl Bound {
             used: 1024,
             records: 0,
             error: None,
+            allow_start: 0,
         }
     }
     fn admit(&mut self, strings: usize, slots: usize) -> bool {
@@ -67,6 +69,13 @@ impl Sink {
             bound: Some(Bound::new(rows, bytes)),
             ..Self::default()
         }
+    }
+    /// Equivalent to a fresh legacy Sink for annotation dedup, while retaining
+    /// all preceding output in the same admitted vectors and row/byte family.
+    pub(crate) fn begin_captured_phase(&mut self, rel: &str) {
+        let bound = self.bound.as_mut().expect("captured phase requires bounded sink");
+        bound.allow_start = self.allow_used.len();
+        self.set_current(rel);
     }
     pub(crate) fn set_current(&mut self, rel: &str) {
         if let Some(bound) = &mut self.bound {
@@ -211,6 +220,24 @@ mod tests {
         bytes.note("x".repeat(1000));
         assert!(bytes.admission_error().is_some());
         assert!(bytes.notes.is_empty());
+    }
+    #[test]
+    fn captured_phases_preserve_fresh_sink_allow_duplicates_and_global_budget() {
+        let row = AllowUse { rel: "code/test.dm".into(), line: 3,
+            name: "pollers".into(), code: "".into() };
+        let mut sink = Sink::bounded(3, 16384);
+        sink.begin_captured_phase("code/test.dm");
+        sink.replay_allow(row.clone()); sink.replay_allow(row.clone());
+        sink.site("file", 3);
+        assert_eq!(sink.allow_used.len(), 1);
+        sink.begin_captured_phase("");
+        sink.replay_allow(row.clone()); sink.replay_allow(row);
+        assert_eq!(sink.allow_used.len(), 2);
+        assert_eq!(sink.sites[0].rel, "code/test.dm");
+        assert!(sink.admission_error().is_none());
+        sink.note("fourth record must fail across phases");
+        assert!(sink.admission_error().is_some());
+        assert!(sink.notes.is_empty());
     }
     #[test]
     fn ordinary_sink_keeps_its_existing_unlimited_protocol() {

@@ -11,7 +11,7 @@
 //! an ALLOW line skips the whole line, header bookkeeping included; the `typed` variable names are
 //! matched with a regex per name.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +19,6 @@ use crate::dm::pylines::{allowed_in_recorded, py_splitlines, recorded_into};
 use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::Parity;
-use crate::pat::Pat;
 use crate::tree::{SourceFile, Select};
 use crate::util::is_py_space;
 
@@ -123,7 +122,6 @@ fn judge(f: &SourceFile, holders: &HashSet<String>, eager: &HashSet<String>) -> 
         r"\bin\s+(?:src\.)?contents\b|\bin\s+src\s*\)|(?<![\w.])contents\.len\b|length\(\s*(?:src\.)?contents\s*\)"
     );
     let typed_var = crate::pat!(r"var/([\w/]+)/(\w+)");
-    let mut dynamic: HashMap<String, Pat> = HashMap::new();
     let lines = py_splitlines(f.text());
     let mut sites: Vec<u32> = Vec::new();
     let mut owner: Option<String> = None;
@@ -154,8 +152,7 @@ fn judge(f: &SourceFile, holders: &HashSet<String>, eager: &HashSet<String>) -> 
             }
         }
         for name in &typed {
-            let p = dynamic.entry(name.clone()).or_insert_with(|| Pat::new(&format!(r"\b{0}\.contents\b|\bin\s+{0}\s*\)", name)));
-            if p.is_match(code) {
+            if crate::raw_name_match::contents_walk(code, name) {
                 sites.push(number as u32);
                 break;
             }

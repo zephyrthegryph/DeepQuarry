@@ -53,7 +53,7 @@ impl Lint for Interactions {
         // type path -> (rel, line, allowed)
         let mut sites: BTreeMap<String, (String, usize, bool)> = BTreeMap::new();
         let files = cx.files();
-        let facts: Vec<Facts> = crate::dm::ownership_index::sharded_facts("interactions-facts", &files, |f| {
+        let facts: Vec<Facts> = crate::incr::sharded_facts("interactions-facts", &files, |f| {
             let mut sink = Sink::new();
             let mut x = Facts::default();
             for (number, line) in f.raw().numbered() {
@@ -70,9 +70,7 @@ impl Lint for Interactions {
         });
         for (f, x) in files.iter().zip(facts) {
             for u in x.uses {
-                if !out.allow_used.contains(&u) {
-                    out.allow_used.push(u);
-                }
+                out.replay_allow(u);
             }
             for (path, number, ok) in x.decls {
                 sites.insert(path, (f.rel.clone(), number as usize, ok));

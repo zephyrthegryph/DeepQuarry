@@ -1,0 +1,1 @@
+CAPABILITIES(/obj/repeated)

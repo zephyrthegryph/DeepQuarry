@@ -14,7 +14,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, LazyLock};
 
-use rayon::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -356,69 +355,8 @@ pub struct Index {
     pub key_struct: u128,
 }
 
-/// How many stores a sharded cache is split into.
-const SHARDS: usize = 16;
-
-fn shard_of(rel: &str) -> usize {
-    let mut h: u32 = 0x811c_9dc5;
-    for b in rel.bytes() {
-        h = (h ^ b as u32).wrapping_mul(0x0100_0193);
-    }
-    h as usize % SHARDS
-}
-
-/// [`incr::keyed`] over [`SHARDS`] stores, by path hash. One edit rewrites one small store instead of
-/// the whole set, and the stores load in parallel. Results are in `files` order. ALLOW uses recorded
-/// through `sys::kept_recorded` are carried back to the calling thread.
-pub fn sharded_keyed<R>(
-    name: &str,
-    ctx: u128,
-    files: &[&SourceFile],
-    f: impl Fn(&SourceFile) -> R + Sync,
-) -> Vec<R>
-where
-    R: Serialize + DeserializeOwned + Default + PartialEq + Send,
-{
-    let mut groups: Vec<Vec<usize>> = vec![Vec::new(); SHARDS];
-    for (i, file) in files.iter().enumerate() {
-        groups[shard_of(&file.rel)].push(i);
-    }
-    let outs: Vec<(Vec<R>, Vec<crate::lint::AllowUse>)> = groups
-        .par_iter()
-        .enumerate()
-        .map(|(s, idxs)| {
-            let part: Vec<&SourceFile> = idxs.iter().map(|&i| files[i]).collect();
-            let before = crate::dm::sys::take_recorded();
-            let r = incr::keyed(&format!("{}-{}", name, s), ctx, &part, &f);
-            let uses = crate::dm::sys::take_recorded();
-            crate::dm::sys::restore_recorded(before);
-            (r, uses)
-        })
-        .collect();
-    let mut slots: Vec<Option<R>> = Vec::with_capacity(files.len());
-    slots.resize_with(files.len(), || None);
-    let mut all_uses = Vec::new();
-    for (idxs, (rs, uses)) in groups.iter().zip(outs) {
-        for (&i, r) in idxs.iter().zip(rs) {
-            slots[i] = Some(r);
-        }
-        all_uses.extend(uses);
-    }
-    crate::dm::sys::replay_recorded(all_uses);
-    slots.into_iter().map(|r| r.unwrap_or_default()).collect()
-}
-
-/// [`incr::facts`], sharded (see [`sharded_keyed`]).
-pub fn sharded_facts<F>(
-    name: &str,
-    files: &[&SourceFile],
-    f: impl Fn(&SourceFile) -> F + Sync,
-) -> Vec<F>
-where
-    F: Serialize + DeserializeOwned + Default + PartialEq + Send,
-{
-    sharded_keyed(name, 0, files, f)
-}
+// Unique cache plumbing lives outside the legacy semantic Index/model.
+pub use crate::incr::{sharded_facts,sharded_keyed};
 
 /// One file's index facts and the keys of what a judgement reads of them (0 when it has none).
 #[derive(Serialize, Deserialize, Default, PartialEq)]

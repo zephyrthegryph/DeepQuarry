@@ -131,6 +131,12 @@ impl Scopes {
         LintScope::default()
     }
 
+    /// Borrow the same selection used by for_lint without cloning captured
+    /// configuration tables before the operation's temporary admission.
+    pub(crate) fn borrowed_for_lint(&self, name: &str, group: &str) -> Option<&LintScope> {
+        self.lints.get(name).or_else(|| if group.is_empty() { None } else { self.lints.get(group) })
+    }
+
     pub fn has(&self, name: &str) -> bool {
         self.lints.contains_key(name)
     }

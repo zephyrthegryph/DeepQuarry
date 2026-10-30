@@ -1075,3 +1075,25 @@ separate evidence recorded above. No generated output was hand-edited.
 Analyze and checker CLI defaults remain on their old production paths. Full
 client cutover, remaining generators and initializer first-owner convergence
 are still required; no compiler publication or game window was performed.
+
+### Nine complete raw policy families on captured source owners
+
+The existing policies for cooldown, declaration blocks, duplicate input keys,
+entry slots, interactions, latent state, pollers, read-back and capability bits
+now run over the same admitted captured source owners. The original per-file
+27-policy roster remains separate: tree and mixed scans retain file phases
+followed by their whole-tree phase, including phase-local annotation handling.
+Operation-local direct computation prevents these captured calls from consulting
+the old disk caches; that mode grants no source authority and adds no cache.
+
+Eight Analyze tests and three native-host tests pass. Independent full old-policy
+runs match all nine complete finding lists, messages, ordering, notes and
+annotation-use rows. Frozen original latent/read-back policies also validate the
+shared literal-name matcher against their old per-input regular expressions.
+Warm same-database reuse, changed source/config, foreign databases, operational
+denial, quota/cancellation and recovery have direct tests.
+
+This remains explicit bounded capture coverage. The conservative temporary
+reservations admit these complete small fixtures; larger input needs native
+per-file facts and count-based reservation, not a raised cap. No workspace
+coverage, affected-closure performance, default client or full cutover is claimed.

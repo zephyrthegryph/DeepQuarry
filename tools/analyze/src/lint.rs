@@ -189,9 +189,14 @@ impl Sink {
             name: lint.to_string(),
             code: code.unwrap_or_default(),
         };
-        if !self.allow_used.contains(&u) {
-            self.push_allow(u);
-        }
+        self.replay_allow(u);
+    }
+
+    /// Replay the unchanged policy's annotation trace through retained admission.
+    /// Captured phases have exactly the fresh-Sink dedup scope of Engine::scan.
+    pub(crate) fn replay_allow(&mut self, u: AllowUse) {
+        let start = self.bound.as_ref().map_or(0, |b| b.allow_start);
+        if !self.allow_used[start..].contains(&u) { self.push_allow(u); }
     }
 }
 
