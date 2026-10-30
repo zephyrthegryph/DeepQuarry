@@ -23,7 +23,7 @@ const RULES: &[RuleMeta] = &[
 
 const CORE: &[&str] = &["on", "active", "state", "mode", "locked", "emagged", "stat", "anchored", "density", "use_power"];
 const STAT_ROOTS: &[&str] = &["/obj/machinery", "/obj/vehicle"];
-const RUNTIME: &[&str] = &["code/game/machinery/machinery_fields.dm", "code/__defines/om.dm", "code/datums/om/fields.dm"];
+const RUNTIME: &[&str] = &["code/game/machinery/machinery_fields.dm", "code/defines/engine/om.dm", "code/datums/om/fields.dm"];
 /// (file, proc name) of the owners allowed to write the owned bits.
 const OWNED_WRITERS: &[(&str, &str)] = &[
     ("code/game/machinery/machinery_power.dm", "set_powered"),

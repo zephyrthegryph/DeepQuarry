@@ -14,7 +14,7 @@ use crate::parity::{ParseKind, Parity};
 use crate::tree::{Select, SourceFile};
 use crate::util::before_slashes;
 
-const HINT: &str = "declare REGISTRY_MEMBERSHIP() instead (code/__defines/registries.dm)";
+const HINT: &str = "declare REGISTRY_MEMBERSHIP() instead (code/defines/engine/registries.dm)";
 
 static META: Meta = Meta {
     name: "registry",

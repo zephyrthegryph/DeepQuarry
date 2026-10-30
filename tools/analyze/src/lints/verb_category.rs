@@ -1,6 +1,6 @@
 //! Port of `tools/ci/verb_category_lint.py` (doc/rewrite unified plan 2.12).
 //!
-//! A verb's tab is a `VERB_CAT_*` define (code/__defines/verb_categories.dm), never a raw string:
+//! A verb's tab is a `VERB_CAT_*` define (code/defines/host/verb_categories.dm), never a raw string:
 //! `set category = "X"` and the category argument of `DEBUG_VERB` / `ADMIN_VERB` /
 //! `ADMIN_VERB_AND_CONTEXT_MENU` are counted, and so is a define in verb_categories.dm that repeats
 //! another define's string. `#define` lines (outside the ADMIN_VERB/DEBUG_VERB ones),
@@ -19,8 +19,8 @@ use crate::tree::{Select, SourceFile};
 use crate::util::py_lstrip;
 
 const BASELINE: &str = "tools/ci/verb_category_baseline.txt";
-const DEFINES: &str = "code/__defines/verb_categories.dm";
-const HINT: &str = "use a VERB_CAT_* define from code/__defines/verb_categories.dm";
+const DEFINES: &str = "code/defines/host/verb_categories.dm";
+const HINT: &str = "use a VERB_CAT_* define from code/defines/host/verb_categories.dm";
 
 static META: Meta = Meta {
     name: "verb_category",

@@ -40,7 +40,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta {
         name: "raw_compare",
-        hint: "use COOLDOWN_START/COOLDOWN_FINISHED (code/__defines/cooldowns.dm) or om_after()",
+        hint: "use COOLDOWN_START/COOLDOWN_FINISHED (code/defines/engine/cooldowns.dm) or om_after()",
     }],
     allow: &["cooldown"],
     lists: &[],

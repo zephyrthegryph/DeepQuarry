@@ -171,7 +171,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "accessories_species_list_banned",
             "accessories: species list banned",
-            "A sprite accessory names its species set, species_allowed = ACCESSORY_X (code/__defines/clothing.dm); only the base default in sprite_accessories.dm lists species (doc/rewrite/proposals/admission.md wave 3).",
+            "A sprite accessory names its species set, species_allowed = ACCESSORY_X (code/defines/library/clothing.dm); only the base default in sprite_accessories.dm lists species (doc/rewrite/proposals/admission.md wave 3).",
             Files::Code,
             line(r"^\s+species_allowed = list\("),
         )

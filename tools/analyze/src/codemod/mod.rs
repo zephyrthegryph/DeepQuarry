@@ -191,7 +191,7 @@ pub trait Codemod: Send + Sync {
 
 /// The directories the count method leaves out: the engine, the legacy object model, defines, unit tests
 /// and benchmarks, the vendored TGS DMAPI.
-pub const FRAMEWORK_PREFIXES: &[&str] = &["code/engine/", "code/datums/om/", "code/__defines/", "code/tests/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"];
+pub const FRAMEWORK_PREFIXES: &[&str] = &["code/engine/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/tests/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"];
 
 pub fn default_excluded(rel: &str) -> bool {
     FRAMEWORK_PREFIXES.iter().any(|p| rel.starts_with(p))

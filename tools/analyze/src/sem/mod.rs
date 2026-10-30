@@ -144,7 +144,7 @@ impl Sem {
             match only {
                 None => list.extend(tree.select(&CODE_DM).iter().map(|f| f.rel.clone())),
                 Some(files) => {
-                    list.extend(tree.select(&CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| f.rel.clone()));
+                    list.extend(tree.select(&CODE_DM).iter().filter(|f| crate::scopes::is_defines(&f.rel)).map(|f| f.rel.clone()));
                     for f in files {
                         if !list.contains(f) {
                             list.push(f.clone());
