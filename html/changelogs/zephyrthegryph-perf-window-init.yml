@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Faster production startup: windows no longer grant and revoke their rotation verbs at map load, door gas levels without air make no record until air arrives, and the boot phase timers read per setup handler, per materialize hook and per relation write"

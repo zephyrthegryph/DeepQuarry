@@ -341,11 +341,17 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			L[target] = TRUE
 		else
 			L += target
+		BOOT_PHASE_BEGIN(bp_src)
 		own_field_changed(source, var_name) // a member added is a write: what draws or reads the list follows
+		BOOT_PHASE_END(bp_src, "rel_attach: own_field_changed(source) [source.type]/[var_name]", null)
 	else
 		source.vars[var_name] = target // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
+		BOOT_PHASE_BEGIN(bp_src1)
 		own_field_changed(source, var_name)
+		BOOT_PHASE_END(bp_src1, "rel_attach: own_field_changed(source) [source.type]/[var_name]", null)
+	BOOT_PHASE_BEGIN(bp_idx)
 	_rel_index(target, source, var_name)
+	BOOT_PHASE_END(bp_idx, "rel_attach: _rel_index(target) [target.type]/[var_name]", null)
 	if(entry[OWNE_WATCH])
 		_rel_watch(target, source)
 	var/partner_var = entry[OWNE_PARTNER]
@@ -370,8 +376,12 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			TL[source] = TRUE
 		else
 			TL += source // absent (checked above): a pipeline's thousands of members stay linear
+		BOOT_PHASE_BEGIN(bp_part)
 		own_field_changed(target, partner_var)
+		BOOT_PHASE_END(bp_part, "rel_attach: own_field_changed(partner) [target.type]/[partner_var]", null)
+		BOOT_PHASE_BEGIN(bp_pidx)
 		_rel_index(source, target, partner_var)
+		BOOT_PHASE_END(bp_pidx, "rel_attach: _rel_index(partner) [source.type]/[partner_var]", null)
 		if(pentry[OWNE_WATCH])
 			_rel_watch(source, target)
 		return

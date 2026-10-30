@@ -6,6 +6,8 @@ GLOBAL_LIST_EMPTY(boot_phase_calls)
 
 /// phase -> type -> microseconds: the same rows split by the type of the atom that ran the phase.
 GLOBAL_LIST_EMPTY(boot_phase_type_us)
+/// phase -> microseconds spent by the first instance of each type that ran it: the once-per-type warm-up (a table built on first use), not per-instance work.
+GLOBAL_LIST_EMPTY(boot_phase_first_us)
 
 /// Adds one timed phase of `A` (an atom, or null).
 /proc/boot_phase_add(phase, us, atom/A)
@@ -16,6 +18,8 @@ GLOBAL_LIST_EMPTY(boot_phase_type_us)
 		if(!by_type)
 			by_type = list()
 			GLOB.boot_phase_type_us[phase] = by_type
+		if(isnull(by_type[A.type]))
+			GLOB.boot_phase_first_us[phase] += us
 		by_type[A.type] += us
 
 /// phase -> calls, for what is counted and not timed (the report's "counted" rows).
@@ -28,12 +32,14 @@ GLOBAL_LIST_EMPTY(boot_phase_counts)
 	var/list/totals = GLOB.boot_phase_us.Copy()
 	totals = sortTim(totals, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 	for(var/phase in totals)
+		if(totals[phase] < 50000) // under 0.05 s: the rows are many (a relation row per type and var) and these are timer noise
+			break
 		var/calls = GLOB.boot_phase_calls[phase]
-		log_world("Atoms boot phase ([label]): [phase] [round(totals[phase] / 1000000, 0.01)]s over [calls] calls ([round(totals[phase] / max(calls, 1), 0.1)] us each)")
-	// The types that spend the most in each of the ten longest phases.
+		log_world("Atoms boot phase ([label]): [phase] [round(totals[phase] / 1000000, 0.01)]s over [calls] calls ([round(totals[phase] / max(calls, 1), 0.1)] us each, [round(GLOB.boot_phase_first_us[phase] / 1000000, 0.01)]s of it the first call of each type)")
+	// The types that spend the most in each of the forty longest phases.
 	var/shown = 0
 	for(var/phase in totals)
-		if(++shown > 10)
+		if(++shown > 40)
 			break
 		var/list/by_type = GLOB.boot_phase_type_us[phase]
 		if(!length(by_type))
