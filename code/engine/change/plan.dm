@@ -178,7 +178,7 @@ DECLARE_SHARED_CACHE(change_plan_keys, GLOBAL_PROC_REF(plan_keys_build), SC_NEVE
 				. |= read
 
 /// Builds plan_spares_draw()'s entry for (E's type, var_name): PLAN_SPARE when nothing that refreshes on DEP_DRAW reads the var.
-/proc/plan_spares_build(atom/E, var_name)
+/proc/plan_spares_build(atom/E, var_name, base_key)
 	if(plan_type_fallback(E.type))
 		return PLAN_KEEP // D5: the walk could not resolve an output; every write redraws it
 	var/list/plan = plan_of(E.type)
@@ -190,12 +190,23 @@ DECLARE_SHARED_CACHE(change_plan_keys, GLOBAL_PROC_REF(plan_keys_build), SC_NEVE
 	var/list/granted = plan_nearest_row(GLOB.generated_plan_granted_verbs, E.type)
 	if(granted && (var_name in granted))
 		return PLAN_KEEP
-	var/list/presented = plan_presentation_reads(E)
+	var/list/presented = plan_presented_for(E, base_key)
 	if(isnull(presented) || (var_name in presented))
 		return PLAN_KEEP
 	return PLAN_SPARE
 
 DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_NEVER)
+
+/// plan_presentation_reads(E) for the type and activation set `base_key` names, built once for all the vars of that type (the spares cache asks per var).
+/// A hit wraps the answer in a list because a shared cache treats a null value as a miss and "the walk gave up" is null.
+/proc/plan_presented_for(atom/E, base_key)
+	var/list/wrapped = CACHED_KEY(change_plan_presented, base_key, E)
+	return wrapped[1]
+
+/proc/plan_presented_build(atom/E)
+	return list(plan_presentation_reads(E))
+
+DECLARE_SHARED_CACHE(change_plan_presented, GLOBAL_PROC_REF(plan_presented_build), SC_NEVER)
 
 /// TRUE when a write of `var_name` on E needs no redraw (look and verbs, DEP_DRAW): E is an atom (not a mob: species and traits grant verbs no
 /// plan sees) with no activations, and neither its type's generated plans (its draw, its verb outputs) nor its look layers and capability draws
@@ -209,7 +220,7 @@ DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_
 	if(IS_LOOKUP_READ_KEY(var_name))
 		return FALSE
 	// The answer depends on the type and on the activations the holder carries (they bring look layers): both are in the key.
-	var/key = "[E.type]|[var_name]"
+	var/base_key = "[E.type]"
 	var/list/activations = E.rx?.activations
 	if(length(activations))
 		var/list/defs = list()
@@ -217,8 +228,8 @@ DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_
 			if(!A.dead && A.runs)
 				defs |= "[A.def.key]"
 		if(length(defs))
-			key += "|[jointext(sortList(defs), ",")]"
-	return CACHED_KEY(change_plan_spares, key, E, var_name) == PLAN_SPARE
+			base_key += "||[jointext(sortList(defs), ",")]"
+	return CACHED_KEY(change_plan_spares, "[base_key]|[var_name]", E, var_name, base_key) == PLAN_SPARE
 
 #undef PLAN_SPARE
 #undef PLAN_KEEP
