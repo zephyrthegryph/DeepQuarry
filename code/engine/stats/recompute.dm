@@ -246,9 +246,9 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 	return value
 
 /// TRUE when every when() block around a contribution holds on E (a contribution gated by a condition is an input of the stat).
-/proc/stat_contrib_active(datum/E, datum/stat_contrib/C)
+/proc/stat_contrib_active(datum/E, datum/stat_contrib/C, datum/act/op/ctx = null)
 	for(var/datum/entry/W as anything in C.whens)
-		if(!condition_holds(E, W.args["cond"]))
+		if(!condition_holds(E, W.args["cond"], ctx))
 			return FALSE
 	return TRUE
 
@@ -652,7 +652,7 @@ GLOBAL_LIST_EMPTY(stat_hop_applicable)
  * (source E, untimed, so E's deletion releases it); it moves when the relation changes and goes when the gate stops holding.
  */
 PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
-/proc/stat_ct_update(datum/E, datum/stat_contrib/ct)
+/proc/stat_ct_update(datum/E, datum/stat_contrib/ct, datum/act/op/gate_ctx = null)
 	if(QDELETED(E))
 		return
 	var/datum/stat_record/rec = stat_record_of(E)
@@ -672,10 +672,17 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	if(!def || !stat_declared_on(target.type, def))
 		declare_report("[ct.origin]: [declare_rule(RULE_STAT)] [E.type]: contributes_to([ct.rel], [def ? def.name : ct.stat_id]) names a stat the related [target.type] does not declare")
 		return
-	if(!stat_contrib_active(E, ct))
+	BOOT_PHASE_BEGIN(bp_active)
+	var/gate_holds = stat_contrib_active(E, ct, gate_ctx)
+	BOOT_PHASE_END(bp_active, "stat_ct_update: gate [ct.rel]", E)
+	if(!gate_holds)
+		BOOT_PHASE_BEGIN(bp_release)
 		stat_ct_release(target, E, ct)
+		BOOT_PHASE_END(bp_release, "stat_ct_update: release [ct.rel]", E)
 		return
+	BOOT_PHASE_BEGIN(bp_value)
 	var/value = stat_contrib_value(E, def, ct)
+	BOOT_PHASE_END(bp_value, "stat_ct_update: value [ct.rel]", E)
 	if(stat_rule_is_boolean(def.rule) && ((def.rule == STAT_RULE_ALL && value) || (def.rule == STAT_RULE_ANY && !value)))
 		stat_ct_release(target, E, ct) // the neutral direction can never change anything: no row
 		return
@@ -769,7 +776,9 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 /// Places (or updates) an untimed keyed row without the hold() checks: the contribution engine's own writes. Settles the stat inline.
 /proc/stat_row_set(datum/target, datum/stat_def/def, source, value, priority, key)
 	var/datum/stat_record/rec = stat_record_of(target)
+	BOOT_PHASE_BEGIN(bp_find)
 	var/list/row = stat_hold_find(rec, def.id, source, key)
+	BOOT_PHASE_END(bp_find, "stat_row_set: hold_find [def.name]", target)
 	if(row)
 		if(stat_values_equal(row[H_VALUE], value) && row[H_PRIORITY] == priority)
 			return
@@ -781,7 +790,9 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, target)
+	BOOT_PHASE_BEGIN(bp_settle)
 	stat_settle_def(target, def)
+	BOOT_PHASE_END(bp_settle, "stat_row_set: settle [def.name]", target)
 
 /// A contributes_to entity's relation var was written: its contribution moves to the new target and leaves the old one.
 /proc/stat_relation_changed(datum/E, var_name)
@@ -789,10 +800,23 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	if(!I)
 		return
 	if(I.hop_rels && (var_name in I.hop_rels))
+		BOOT_PHASE_BEGIN(bp_hop)
 		stat_hop_attach(E, var_name)
-	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
-		if(ct.rel == var_name)
-			stat_ct_update(E, ct)
+		BOOT_PHASE_END(bp_hop, "stat_relation_changed: hop_attach [var_name]", E)
+	// The entries on one relation (a machine's three channel draws) are gated one after another: one evaluation context serves them all.
+	var/datum/act/op/gate_ctx = null
+	try
+		for(var/datum/stat_contrib/ct as anything in I.ct_entries)
+			if(ct.rel == var_name)
+				if(!gate_ctx && length(ct.whens))
+					gate_ctx = pooled_op_context(E)
+				BOOT_PHASE_BEGIN(bp_ct)
+				stat_ct_update(E, ct, gate_ctx)
+				BOOT_PHASE_END(bp_ct, "stat_relation_changed: ct_update [var_name]", E)
+	catch(var/exception/fault)
+		gate_ctx?.release()
+		throw fault
+	gate_ctx?.release()
 
 // ---- the marked queue ----
 

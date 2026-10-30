@@ -154,6 +154,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 	var/list/plan
 	/// The declared initial value of each POOL_RESET_VALUE var of `plan` (GLOB.pool_initial_values).
 	var/list/initials
+	/// name -> the list contents a fresh instance had, for each POOL_RESET_LIST var of `plan` (pool_list_templates, read once: a release looks a var up by name).
+	var/list/templates
 	var/max_free = POOL_DEFAULT_MAX_FREE
 	var/dropped = 0
 	var/created = 0
@@ -206,6 +208,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 				var/datum/pooled/P = D
 				pool.plan = pool_reset_plan(P)
 				pool.initials = GLOB.pool_initial_values[D.type]
+				pool.templates = list()
+				for(var/name in pool.plan)
+					if(pool.plan[name] == POOL_RESET_LIST)
+						pool.templates[name] = GLOB.pool_list_templates["[D.type]:[name]"]
 				pool.max_free = P.pool_max_free
 	D.pool_state = POOL_STATE_TAKEN
 	pool.taken++
@@ -235,8 +241,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 			if(plan[name] == POOL_RESET_LIST)
 				var/list/kept = fields[name]
 				if(kept)
-					kept.Cut()
-					kept += pool_deep_copy(GLOB.pool_list_templates["[D.type]:[name]"])
+					var/list/template = pool.templates[name]
+					if(length(kept) || length(template)) // an empty list that should be empty is already reset
+						kept.Cut()
+						if(length(template))
+							kept += pool_deep_copy(template)
 			else
 				fields[name] = initials[name]
 		var/datum/pooled/P = D
