@@ -84,8 +84,8 @@
 
 	var/output_file = "[output.Join("\n")]\n"
 	rustg_file_write(output_file, "data/font_awesome_icons.dm")
-	var/current = file2text('code/__DEFINES/font_awesome_icons.dm')
+	var/current = file2text('code/defines/host/font_awesome_icons.dm')
 	if(current == output_file)
 		return
 
-	TEST_FAIL("Font Awesome helper file is out of date. Run locally by enabling unit tests, (see _compile_options.dm) and copy 'data/font_awesome_icons.dm' to 'code/__DEFINES/font_awesome_icons.dm'")
+	TEST_FAIL("Font Awesome helper file is out of date. Run locally by enabling unit tests, (see _compile_options.dm) and copy 'data/font_awesome_icons.dm' to 'code/defines/host/font_awesome_icons.dm'")
