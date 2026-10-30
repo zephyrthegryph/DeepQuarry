@@ -410,7 +410,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	BOOT_PHASE_COUNT("ofc full path: [var_name]")
 	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
 	if(GLOB?.derived_read_vars?[var_name])
+		BOOT_PHASE_BEGIN(bp_derived)
 		derived_var_touched(holder, var_name)
+		BOOT_PHASE_END(bp_derived, "ofc derived_var_touched: [var_name]", holder)
 	// A relation var some stat reads through, or contributes to a stat across: the stat layer follows it.
 	if(holder && GLOB?.stat_input_keys?[var_name])
 		BOOT_PHASE_BEGIN(bp_rel)
@@ -420,22 +422,33 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		stat_inputs_changed(holder, var_name)
 		BOOT_PHASE_END(bp_inputs, "ofc stat_inputs_changed: [var_name]", holder)
 	// A relation write publishes each end it touches (both ends of a paired view call this).
-	if(holder && READERS(holder, var_name))
+	BOOT_PHASE_BEGIN(bp_readers)
+	var/has_readers = holder && READERS(holder, var_name)
+	BOOT_PHASE_END(bp_readers, "ofc READERS: [var_name]", holder)
+	if(has_readers)
+		BOOT_PHASE_BEGIN(bp_publish)
 		publish_change(holder, var_name)
+		BOOT_PHASE_END(bp_publish, "ofc publish_change: [var_name]", holder)
 		// A type with no derived() table has nothing to route a read to (derived_var_touched found none): the old rule holds, a change
 		// that something reads re-derives everything. Its draw()'s reads are generated (generated_reads()), so READERS knows them.
 		if(!QDELING(holder) && !derived_is_exact(holder))
+			BOOT_PHASE_BEGIN(bp_state)
 			state_changed(holder)
+			BOOT_PHASE_END(bp_state, "ofc state_changed(all): [var_name]", holder)
 	// A draw one container, turf or area hop away reads it: it redraws (refs/hops.dm).
 	if(holder && draw_hop_reads_var(var_name))
+		BOOT_PHASE_BEGIN(bp_hop)
 		draw_hop_published(holder, var_name)
+		BOOT_PHASE_END(bp_hop, "ofc draw_hop_published: [var_name]", holder)
 	var/datum/definition_registry/R = GLOB?.om_reg
 	if(!R || !holder)
 		return
 	var/list/fields = R.fields_by_type[holder.type] || R.fields_of(holder.type)
 	var/channel = fields[var_name]
 	if(channel)
+		BOOT_PHASE_BEGIN(bp_chan)
 		state_changed(holder, channel)
+		BOOT_PHASE_END(bp_chan, "ofc state_changed(channel): [var_name]", holder)
 
 /// TRUE runs own_field_changed()'s full path for every write (the parity test, debugging).
 GLOBAL_VAR_INIT(own_field_memo_off, FALSE)

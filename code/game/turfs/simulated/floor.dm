@@ -45,7 +45,9 @@
 /turf/simulated/floor/proc/floor_start()
 	var/floortype = floortype_at_make || initial_flooring
 	if(floortype)
+		BOOT_PHASE_BEGIN(bp_lay)
 		install_flooring(get_flooring_data(floortype), TRUE) // the first draw after init shows it
+		BOOT_PHASE_END(bp_lay, "floor_start: install_flooring", src)
 	if(can_dirty && can_start_dirty)
 		if(prob(dirty_prob))
 			dirt += rand(50,100)
@@ -71,14 +73,20 @@
 /turf/simulated/floor/proc/install_flooring(datum/decl/flooring/newflooring, initializing)
 	if(is_plating() && !initializing) // Plating -> Flooring
 		swap_with_old_decals()
+	BOOT_PHASE_BEGIN(bp_rel)
 	rel_set(src, nameof(flooring), newflooring)
+	BOOT_PHASE_END(bp_rel, "install_flooring: rel_set flooring", src)
+	BOOT_PHASE_BEGIN(bp_set)
 	set_plating_exposed(FALSE)
 	set_scorch_state(null)
+	BOOT_PHASE_END(bp_set, "install_flooring: plating and scorch setters", src)
 	if(flooring?.has_base_range && !flooring_override)
 		set_flooring_override(rolled_flooring_state()) // rolled once here, not on every draw
 	if(!initializing)
 		restore_floor_integrity()
+	BOOT_PHASE_BEGIN(bp_lvl)
 	levelupdate()
+	BOOT_PHASE_END(bp_lvl, "install_flooring: levelupdate", src)
 
 //This proc will set the flooring to its plating (or to nothing) and the draw shows the result.
 //The edges of the grass tiles around follow through the adjacency index.
