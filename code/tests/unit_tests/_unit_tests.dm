@@ -622,6 +622,7 @@
 #include "dq_kernel_measure_tests.dm"
 #include "dq_e0_proofs_tests.dm"
 #include "dq_e1_declare_tests.dm"
+#include "../../modules/unit_tests/dq_boot_phase_tests.dm"
 #include "../../modules/unit_tests/dq_table_cache_tests.dm"
 #include "dq_e3_stats_tests.dm"
 #include "dq_stat_layer_tests.dm"
