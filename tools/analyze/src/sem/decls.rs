@@ -47,7 +47,7 @@ pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GR
 /// entries (`op(`, `extend(`, `interface(`, ...). It is the plain-proc form of reuse (doc section 11): a CAPABILITIES block that names
 /// `name()` gets those entries, so what reads a block (op keys, handlers, UI types, op order) reads the proc's entries the same way.
 /// `args[0]` is the proc's name, the rest are the list's entries; `body` is the text inside `list(...)`.
-pub const ENTRY_PROC: &str = "ENTRY_PROC";
+pub use crate::raw_marker_policy::ENTRY_PROC;
 /// A capability datum's `entries()` whose first statement is `return list(...)`: the entries a capability gives its holder. Only handler
 /// discovery reads it (`sem::hooks`), so a `TYPE_PROC_REF(/holder, x)` a capability names is analyzed like one a CAPABILITIES block names.
 pub const CAP_ENTRIES: &str = "CAP_ENTRIES";
@@ -113,44 +113,7 @@ pub struct Decls {
     pub key: u128,
 }
 
-/// What a key literal names, by the call it sits in (doc/rewrite/final_api.html section 4,
-/// "Three kinds of key").
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum KeyKind {
-    Op,
-    Capability,
-}
-
-#[derive(Clone, Debug)]
-pub struct KeyRef {
-    pub kind: KeyKind,
-    pub key: String,
-    /// The call it sits in.
-    pub call: String,
-    pub rel: String,
-    pub line: u32,
-}
-
-/// Calls whose string-literal arguments are op keys, and those whose first literal is a capability key.
-pub const OP_KEY_CALLS: &[&str] = &[
-    "extend",
-    "without",
-    "on_op",
-    "shares_effects",
-    "above",
-    "perform_op",
-    "e0_perform_op",
-];
-pub const CAP_KEY_CALLS: &[&str] = &["configure"];
-/// Calls whose `source =` argument must be a datum or SRC_*, never text or null.
-pub const SOURCE_CALLS: &[&str] = &[
-    "hold",
-    "hold_until",
-    "hold_override",
-    "grant",
-    "release",
-    "status_end",
-];
+pub use crate::raw_key_calls_policy::{KeyKind,KeyRef,OP_KEY_CALLS,CAP_KEY_CALLS,SOURCE_CALLS};
 
 /// The position of each `#include`d file of `deepquarry.dme` (repo-relative, forward slashes). A file the dme does not include (generated
 /// output) has no entry and sorts after every included file.
@@ -360,63 +323,7 @@ struct FileDecls {
 /// The ops a `stages(VAR, stage_step(from, to, parts..., key = "k"), ...)` call's arguments stand for (code/library/structures/stages.dm), as
 /// `op(...)` argument lists: `"key", when(req_stage(VAR, from)), sets(VAR, to), parts...`. The key is `k`, else `<var>_<from>_<to>` with the var
 /// the `nameof(...)` of VAR. Readers of op declarations (the op keys, op_order) treat a stages() call as these ops.
-pub fn stages_op_args(stages_args: &str) -> Vec<String> {
-    let args = split_args(stages_args);
-    let Some(var) = args.first() else {
-        return Vec::new();
-    };
-    let var = var.trim();
-    let var_name = var
-        .strip_prefix("nameof(")
-        .and_then(|v| v.strip_suffix(')'))
-        .unwrap_or(var)
-        .trim()
-        .trim_matches('"');
-    let var_name = var_name
-        .rsplit(|c| c == ':' || c == '.' || c == '/')
-        .next()
-        .unwrap_or(var_name)
-        .to_string();
-    let mut out = Vec::new();
-    for step in &args[1..] {
-        let step = step.trim();
-        let Some(inner) = step
-            .strip_prefix("stage_step(")
-            .and_then(|s| s.strip_suffix(')'))
-        else {
-            continue;
-        };
-        let parts = split_args(inner);
-        if parts.len() < 2 {
-            continue;
-        }
-        let (from, to) = (parts[0].trim(), parts[1].trim());
-        let mut key = format!(
-            "\"{}_{}_{}\"",
-            var_name,
-            from.trim_matches('"'),
-            to.trim_matches('"')
-        );
-        let mut rest = Vec::new();
-        for p in &parts[2..] {
-            let p = p.trim();
-            match p.split_once('=') {
-                Some((name, value)) if name.trim() == "key" && !p.contains('(') => {
-                    key = value.trim().to_string()
-                }
-                _ => rest.push(p.to_string()),
-            }
-        }
-        let mut op = vec![
-            key,
-            format!("when(req_stage({}, {}))", var, from),
-            format!("sets({}, {})", var, to),
-        ];
-        op.extend(rest);
-        out.push(op.join(", "));
-    }
-    out
-}
+pub use crate::raw_marker_policy::stages_op_args;
 
 /// Splits `s` at top-level commas (not inside (), [], {} or strings), trimming each piece.
 /// Index of the `)` matching the `(` at `open` in `s`, or None.
@@ -695,70 +602,9 @@ fn scan_runtime_observers(f: &SourceFile, text: &str, starts: &Arc<Vec<u32>>, fd
 
 /// Finds `name(...)` calls of the key/source families in comment-stripped text.
 fn scan_calls(f: &SourceFile, stripped: &str, starts: &[u32], fd: &mut FileDecls) {
-    static RE: std::sync::LazyLock<crate::pat::Pat> = std::sync::LazyLock::new(|| {
-        crate::pat::Pat::new(
-            r"(?<![\w./])(extend|without|on_op|shares_effects|above|perform_op|e0_perform_op|configure|hold|hold_until|hold_override|grant|release|status_end)\s*\(",
-        )
-    });
-    let line_of = |off: usize| -> u32 {
-        match starts.binary_search(&(off as u32)) {
-            Ok(i) => i as u32 + 1,
-            Err(i) => i as u32,
-        }
-    };
-    for m in RE.captures_iter(stripped) {
-        let name = m.s(1);
-        let open = m.end(0) - 1;
-        let Some(close) = matching_paren(stripped, open) else {
-            continue;
-        };
-        let body = &stripped[open + 1..close];
-        let line = line_of(m.start(1));
-        let args = split_args(body);
-        if OP_KEY_CALLS.contains(&name) {
-            for a in &args {
-                if let Some(s) = a.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
-                    // `[x]` interpolation makes it a runtime value, not a key.
-                    if !s.is_empty() && !s.contains('[') && !s.contains(' ') {
-                        fd.key_refs.push(KeyRef {
-                            kind: KeyKind::Op,
-                            key: s.to_string(),
-                            call: name.to_string(),
-                            rel: f.rel.clone(),
-                            line,
-                        });
-                    }
-                }
-            }
-        }
-        if CAP_KEY_CALLS.contains(&name) {
-            if let Some(s) = args
-                .first()
-                .and_then(|a| a.strip_prefix('"'))
-                .and_then(|s| s.strip_suffix('"'))
-            {
-                if !s.is_empty() && !s.contains('[') {
-                    fd.key_refs.push(KeyRef {
-                        kind: KeyKind::Capability,
-                        key: s.to_string(),
-                        call: name.to_string(),
-                        rel: f.rel.clone(),
-                        line,
-                    });
-                }
-            }
-        }
-        if SOURCE_CALLS.contains(&name) {
-            for a in &args {
-                let compact = a.replace(' ', "");
-                if let Some(v) = compact.strip_prefix("source=") {
-                    if v == "null" || v.starts_with('"') {
-                        fd.bad_sources.push((f.rel.clone(), line, v.to_string()));
-                    }
-                }
-            }
-        }
-    }
+    let refs=&mut fd.key_refs;
+    let sources=&mut fd.bad_sources;
+    crate::raw_key_calls_policy::visit_calls(&f.rel,stripped,starts,|row|refs.push(row),|row|sources.push(row));
 }
 
 #[cfg(test)]

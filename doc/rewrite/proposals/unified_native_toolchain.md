@@ -1127,3 +1127,18 @@ Two test-module paths were also corrected after the first compile. All nine
 complete raw-policy oracle comparisons still match through the shared report
 wrapper. Logs retain failed attempts and repair evidence separately. No production
 client default, compiler publication or game window changed.
+
+### Shared marker-key policy before native admission
+
+The key-index and key/source-call policies are extracted from the legacy
+Decls consumer into parser-free routines over borrowed marker rows and the
+original raw source view. The legacy wrappers project their existing rows and
+reuse those routines; no general DM declaration model was moved into the native
+host. The stage-op desugaring is the same shared unique declaration policy.
+
+Both original unit tests pass without the legacy semantic feature. A frozen
+independent original key-index and full key lint match all table fields,
+duplicate/source order, 16 complete findings across all six rules, annotation
+usage and complete report text. This verifies the extraction, not native
+whole-lint admission: the remaining authenticated raw-call, entry-op and system
+field joins still need their native query adapter and bounded admission.

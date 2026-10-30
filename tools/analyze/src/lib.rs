@@ -9,6 +9,8 @@ pub mod allow;
 pub mod base_vars_dead;
 pub mod baseline;
 pub mod policy_judge;
+pub mod keys_policy;
+pub mod raw_key_calls_policy;
 #[cfg(feature = "legacy-sem")]
 pub mod cache;
 #[cfg(feature = "legacy-sem")]

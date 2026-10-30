@@ -267,3 +267,7 @@ required-features=["legacy-sem","native-policy"]
 [[example]]
 name = "unified_raw_cohort9"
 required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name="unified_keys_policy"
+required-features=["legacy-sem","native-policy"]

@@ -265,3 +265,64 @@ pub fn block_body(text: &str, from: usize, close: usize, end: usize) -> String {
     }
     String::from_utf8(out).unwrap_or_default()
 }
+
+/// Original unique declaration DSL marker, not a compiler type/procedure model.
+pub const ENTRY_PROC:&str="ENTRY_PROC";
+
+pub fn stages_op_args(stages_args: &str) -> Vec<String> {
+    let args = split_args(stages_args);
+    let Some(var) = args.first() else {
+        return Vec::new();
+    };
+    let var = var.trim();
+    let var_name = var
+        .strip_prefix("nameof(")
+        .and_then(|v| v.strip_suffix(')'))
+        .unwrap_or(var)
+        .trim()
+        .trim_matches('"');
+    let var_name = var_name
+        .rsplit(|c| c == ':' || c == '.' || c == '/')
+        .next()
+        .unwrap_or(var_name)
+        .to_string();
+    let mut out = Vec::new();
+    for step in &args[1..] {
+        let step = step.trim();
+        let Some(inner) = step
+            .strip_prefix("stage_step(")
+            .and_then(|s| s.strip_suffix(')'))
+        else {
+            continue;
+        };
+        let parts = split_args(inner);
+        if parts.len() < 2 {
+            continue;
+        }
+        let (from, to) = (parts[0].trim(), parts[1].trim());
+        let mut key = format!(
+            "\"{}_{}_{}\"",
+            var_name,
+            from.trim_matches('"'),
+            to.trim_matches('"')
+        );
+        let mut rest = Vec::new();
+        for p in &parts[2..] {
+            let p = p.trim();
+            match p.split_once('=') {
+                Some((name, value)) if name.trim() == "key" && !p.contains('(') => {
+                    key = value.trim().to_string()
+                }
+                _ => rest.push(p.to_string()),
+            }
+        }
+        let mut op = vec![
+            key,
+            format!("when(req_stage({}, {}))", var, from),
+            format!("sets({}, {})", var, to),
+        ];
+        op.extend(rest);
+        out.push(op.join(", "));
+    }
+    out
+}
