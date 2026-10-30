@@ -4,6 +4,6 @@
 // the phases and the nested atom inits it triggers, so the rows overlap and do not add up to the total.
 #define BOOT_PHASE_CLOCK "boot_phase_clock"
 #define BOOT_PHASE_BEGIN(v) var/v = GLOB.boot_phase_on ? rustg_time_microseconds(BOOT_PHASE_CLOCK) : null
-#define BOOT_PHASE_END(v, phase) if(!isnull(v)) boot_phase_add(phase, rustg_time_microseconds(BOOT_PHASE_CLOCK) - v)
+#define BOOT_PHASE_END(v, phase, A) if(!isnull(v)) boot_phase_add(phase, rustg_time_microseconds(BOOT_PHASE_CLOCK) - v, A)
 /// " (turf)", " (mob)" or " (obj)": a phase row per kind of atom, for the steps that run on every atom.
 #define BOOT_KIND(A) (isturf(A) ? " (turf)" : (ismob(A) ? " (mob)" : " (obj)"))
