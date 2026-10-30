@@ -27,6 +27,10 @@ GLOBAL_LIST_EMPTY(boot_phase_counts)
 
 /// Prints every phase, longest first, and the write counters the map load ran up, to the world log. Does nothing while the timers are off.
 /proc/boot_phase_report(label)
+	// `-params boot_profile_dump=1` with AUTO_PROFILE in the config: the BYOND proc profile of the boot so far is written to <log dir>/profiler/ here, without the timers.
+	if(text2num(world.params?["boot_profile_dump"] || "0") && CONFIG_GET(flag/auto_profile))
+		SSprofiler.DumpFile(allow_yield = FALSE)
+		log_world("Atoms boot phase ([label]): proc profile dumped to [GLOB.log_directory]/profiler")
 	if(!GLOB.boot_phase_on)
 		return
 	var/list/totals = GLOB.boot_phase_us.Copy()

@@ -19,6 +19,7 @@ GLOBAL_VAR_INIT(stat_settle_depth, 0)
 GLOBAL_LIST_EMPTY(stat_marked) // list(entity, stat def, contribution or null) rows waiting for a marked drain
 GLOBAL_LIST_EMPTY(stat_hop_index) // remote var name -> list(list(reader type, /datum/stat_hop))
 GLOBAL_LIST_EMPTY(stat_sys_index) // "system.var" -> assoc: entity -> TRUE (readers through a SYSTEM_ACCESSOR)
+GLOBAL_LIST_EMPTY(stat_sys_vars) // var name -> TRUE: the var half of every "system.var" key of stat_sys_index, so a write to any other var skips the key walk
 GLOBAL_VAR(stat_writing) // the stat var the engine is publishing: state_changed() does not feed it back to the stat layer
 GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 spike forces every hop one way; null in play
 GLOBAL_VAR_INIT(stat_spills, 0)
@@ -119,6 +120,51 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 		value = stat_compute_fast(E, def, I, rec)
 		if(def.clamps)
 			value = stat_clamp(def, value)
+	else if(def.rule == STAT_RULE_SUM)
+		// The same rows in the same order as the general path below, added as they are met: no row list and no second pass (an area's
+		// demand stat holds a row per machine in it, and every machine's write re-sums them all).
+		var/sum = 0
+		var/count = 0
+		var/has_var_sum = I ? I.has_var[def.skey] : (def.name in E.vars)
+		if(has_var_sum)
+			var/constant_sum = I ? I.consts[def.skey] : initial(E.vars[def.name])
+			if(rec?.constants && (def.skey in rec.constants))
+				constant_sum = rec.constants[def.skey]
+			if(!isnull(constant_sum))
+				sum += stat_boolean_normal(def, constant_sum)
+				count++
+		if(I)
+			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+				if(!stat_contrib_active(E, C))
+					continue
+				sum += stat_contrib_value(E, def, C)
+				count++
+		var/override_priority_sum = null
+		var/override_serial_sum = 0
+		for(var/list/row as anything in rec?.by_stat?[def.skey])
+			var/row_value = row[H_VALUE]
+			var/list/spec = row[H_SPEC]
+			if(spec)
+				var/datum/stat_contrib/dyn = spec[1]
+				if(!stat_contrib_active(E, dyn))
+					continue
+				row_value = stat_contrib_value(E, def, dyn)
+			else if(def.boolean)
+				row_value = !!row_value
+			if(row[H_FLAGS] & HF_OVERRIDE)
+				if(isnull(override_priority_sum) || row[H_PRIORITY] > override_priority_sum || (row[H_PRIORITY] == override_priority_sum && row[H_SERIAL] >= override_serial_sum))
+					override_priority_sum = row[H_PRIORITY]
+					override_serial_sum = row[H_SERIAL]
+					override_set = TRUE
+					override_value = row_value
+				continue
+			sum += row_value
+			count++
+		value = count ? sum : def.base
+		if(def.clamps)
+			value = stat_clamp(def, value)
+		if(override_set)
+			value = override_value
 	else
 		var/list/rows = list()
 		var/has_var = I ? I.has_var[def.skey] : (def.name in E.vars)
@@ -376,6 +422,9 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 		if(!readers)
 			readers = list()
 			GLOB.stat_sys_index[sys.system] = readers
+			var/sys_dot = findtext(sys.system, ".")
+			if(sys_dot)
+				GLOB.stat_sys_vars[copytext(sys.system, sys_dot + 1)] = TRUE
 		readers[E] = TRUE
 	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
 		stat_ct_update(E, ct)
@@ -428,7 +477,7 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 			else
 				if(GLOB.stat_hop_index[def.name])
 					stat_notify_hops(E, def.name)
-				if(length(GLOB.stat_sys_index))
+				if(GLOB.stat_sys_vars[def.name])
 					stat_notify_system(E, def.name)
 	catch(var/exception/fault)
 		GLOB.stat_settle_depth--
@@ -471,7 +520,7 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 			stat_dep_run(E, I, dep, queue)
 	if(GLOB.stat_hop_index[def.name])
 		stat_notify_hops(E, def.name)
-	if(length(GLOB.stat_sys_index))
+	if(GLOB.stat_sys_vars[def.name])
 		stat_notify_system(E, def.name)
 
 /// One dependent of a changed input: a contributes_to entry re-evaluates, a stat joins the settle queue.
@@ -498,7 +547,7 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 /proc/stat_inputs_changed(datum/E, key)
 	GLOB.stat_input_queries++
 	var/datum/stat_type_info/I = stat_type_of(E)
-	if(!(I && I.inputs[key]) && !GLOB.stat_hop_index[key] && !length(GLOB.stat_sys_index))
+	if(!(I && I.inputs[key]) && !GLOB.stat_hop_index[key] && !GLOB.stat_sys_vars[key])
 		GLOB.stat_input_noops++
 	if(I)
 		var/list/deps = I.inputs[key]
@@ -514,7 +563,7 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 			if(length(defs))
 				stat_settle(E, defs)
 	stat_notify_hops(E, key)
-	if(length(GLOB.stat_sys_index))
+	if(GLOB.stat_sys_vars[key])
 		stat_notify_system(E, key)
 
 /// A write to `key` on E reaches the entities whose stats read E.key through a relation (a hop), however many relations away. A single-valued edge
@@ -656,10 +705,12 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	if(QDELETED(E))
 		return
 	// The record is made when this entry first holds something: an entity whose gate never opens (a pipe's idle draws) keeps none.
+	BOOT_PHASE_BEGIN(bp_pre)
 	var/datum/stat_record/rec = E.rx?.stats
-	var/ct_key = "[ct.serial]"
+	var/ct_key = ct.serial_text
 	var/datum/old_target = rec?.ct_targets?[ct_key]
 	var/datum/target = (ct.rel in E.vars) ? E.vars[ct.rel] : null
+	BOOT_PHASE_END(bp_pre, "stat_ct_update: prelude [ct.rel]", E)
 	if(old_target && old_target != target)
 		stat_ct_release(old_target, E, ct)
 		if(rec.ct_targets)
@@ -669,8 +720,11 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	if(ct.table_kind)
 		stat_ct_hold_table(E, target, rec || stat_record_of(E), ct_key, ct)
 		return
+	BOOT_PHASE_BEGIN(bp_defs)
 	var/datum/stat_def/def = stat_def_of(ct.stat_id)
-	if(!def || !stat_declared_on(target.type, def))
+	var/declared_ok = def && stat_declared_on(target.type, def)
+	BOOT_PHASE_END(bp_defs, "stat_ct_update: def lookup [ct.rel]", E)
+	if(!declared_ok)
 		declare_report("[ct.origin]: [declare_rule(RULE_STAT)] [E.type]: contributes_to([ct.rel], [def ? def.name : ct.stat_id]) names a stat the related [target.type] does not declare")
 		return
 	BOOT_PHASE_BEGIN(bp_active)
@@ -691,7 +745,9 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	if(!rec.ct_targets)
 		rec.ct_targets = list()
 	rec.ct_targets[ct_key] = target
-	stat_row_set(target, def, E, value, ct.priority, "ct:[ct.serial]")
+	BOOT_PHASE_BEGIN(bp_set)
+	stat_row_set(target, def, E, value, ct.priority, ct.row_key)
+	BOOT_PHASE_END(bp_set, "stat_ct_update: row_set [def.name]", E)
 
 /// A factors() entry of E: the table it names, at its scale and stacks now, held on `target` as rows of E (part = the entry's), or released while its
 /// when() conditions do not hold. The exact current values every time: nothing is banded. The target hears which of its stats moved (factors_held()).
@@ -768,7 +824,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	var/datum/stat_record/trec = target.rx?.stats
 	if(!trec?.holds)
 		return
-	var/list/row = stat_hold_find(trec, ct.stat_id, E, "ct:[ct.serial]")
+	var/list/row = stat_hold_find(trec, ct.stat_id, E, ct.row_key)
 	if(!row)
 		return
 	var/datum/stat_def/def = stat_def_of(ct.stat_id)
@@ -807,18 +863,24 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		BOOT_PHASE_END(bp_hop, "stat_relation_changed: hop_attach [var_name]", E)
 	// The entries on one relation (a machine's three channel draws) are gated one after another: one evaluation context serves them all.
 	var/datum/act/op/gate_ctx = null
+	BOOT_PHASE_BEGIN(bp_loop)
 	try
 		for(var/datum/stat_contrib/ct as anything in I.ct_entries)
 			if(ct.rel == var_name)
 				if(!gate_ctx && length(ct.whens))
+					BOOT_PHASE_BEGIN(bp_ctx)
 					gate_ctx = pooled_op_context(E)
+					BOOT_PHASE_END(bp_ctx, "stat_relation_changed: pooled ctx take [var_name]", E)
 				BOOT_PHASE_BEGIN(bp_ct)
 				stat_ct_update(E, ct, gate_ctx)
 				BOOT_PHASE_END(bp_ct, "stat_relation_changed: ct_update [var_name]", E)
 	catch(var/exception/fault)
 		gate_ctx?.release()
 		throw fault
+	BOOT_PHASE_BEGIN(bp_rel_ctx)
 	gate_ctx?.release()
+	BOOT_PHASE_END(bp_rel_ctx, "stat_relation_changed: pooled ctx release [var_name]", E)
+	BOOT_PHASE_END(bp_loop, "stat_relation_changed: ct loop [var_name]", E)
 
 // ---- the marked queue ----
 
@@ -837,7 +899,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	var/datum/stat_record/rec = stat_record_of(E)
 	if(!rec.marked)
 		rec.marked = list()
-	var/mark_key = "ct:[ct.serial]"
+	var/mark_key = ct.row_key
 	if(rec.marked[mark_key])
 		return
 	rec.marked[mark_key] = TRUE
@@ -887,7 +949,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 				return
 			var/datum/stat_record/rec = E.rx?.stats
 			if(rec?.marked)
-				rec.marked -= def ? def.skey : "ct:[ct.serial]"
+				rec.marked -= def ? def.skey : ct.row_key
 			var/started = stat_charge_begin()
 			if(ct)
 				stat_ct_update(E, ct)

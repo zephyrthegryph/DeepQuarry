@@ -355,18 +355,27 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	// Nothing changes (a New() linking null into an empty view): no table needed, which also keeps datums made during global init off it.
 	if(E.vars[var_name] == value)
 		return value
-	switch(rel_kind(E, var_name))
+	BOOT_PHASE_BEGIN(bp_kind)
+	var/kind = rel_kind(E, var_name)
+	BOOT_PHASE_END(bp_kind, "rel_set: rel_kind [var_name]", E)
+	switch(kind)
 		if(OWNK_OWN)
 			return _own_set(E, var_name, value)
 		if(OWNK_PROTO)
 			return proto_set(E, var_name, value)
 		if(OWNK_WEAK)
 			return weak_set(E, var_name, value)
+	BOOT_PHASE_BEGIN(bp_ls)
 	var/list_state = list_state_of(E, var_name)
+	BOOT_PHASE_END(bp_ls, "rel_set: list_state_of [var_name]", E)
 	if(list_state)
 		return list_state_set(E, var_name, value, list_state)
+	BOOT_PHASE_BEGIN(bp_view)
 	. = rel_view_set(E, var_name, value)
+	BOOT_PHASE_END(bp_view, "rel_set: rel_view_set [var_name]", E)
+	BOOT_PHASE_BEGIN(bp_act)
 	activations_relation_changed(E, var_name)
+	BOOT_PHASE_END(bp_act, "rel_set: activations [var_name]", E)
 
 /// Adds one member. `key` puts it under a key in a keyed many (owns_many or ref_many): a text key in a plain list, or a number or text in an alist
 /// (a number is an index in a plain list, so a numeric key makes an alist). A null `value` with a key empties that key. A member may sit under

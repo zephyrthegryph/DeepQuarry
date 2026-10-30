@@ -179,9 +179,11 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	// keeps datums made during global init (before the shared caches exist) off the table.
 	if(source.vars[var_name] == target)
 		return target
+	BOOT_PHASE_BEGIN(bp_head)
 	if(target && !own_guard(source, target, "rel_set([var_name])")) // the one teardown guard (guard.dm)
 		return null
 	var/list/entry = _rel_entry(source, var_name)
+	BOOT_PHASE_END(bp_head, "rel_view_set: guard and entry [var_name]", source)
 	if(!entry)
 		source.vars[var_name] = target // ALLOW(api): an undeclared view is reported by _rel_entry() above and still written, so a live round keeps the value
 		own_field_changed(source, var_name)
@@ -200,9 +202,13 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	// Paired links and unlink callbacks keep their existing notification contract.
 	var/defer_source = entry[OWNE_ARG] == RELS_PLAIN && !entry[OWNE_ON_UNLINK]
 	if(old)
+		BOOT_PHASE_BEGIN(bp_detach)
 		_rel_detach(source, var_name, old, entry, notify_source = !defer_source)
+		BOOT_PHASE_END(bp_detach, "rel_view_set: detach [var_name]", source)
 	if(target)
+		BOOT_PHASE_BEGIN(bp_attach)
 		_rel_attach(source, var_name, target, entry)
+		BOOT_PHASE_END(bp_attach, "rel_view_set: attach [var_name]", source)
 	else if(old && defer_source)
 		own_field_changed(source, var_name)
 	return target
