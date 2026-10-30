@@ -54,6 +54,8 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	op("eat_space_weather", menu(), label("Eat Space Weather"), needs(req_self()), then(PROC_REF(eat_space_weather_op)))
+	op("eject", menu(), label("Eject"), needs(req_self()), then(PROC_REF(eject_op)))
 	configure(living_rules(say_list_type = /datum/say_list/softdog))
 	after_init(0, then(PROC_REF(stardog_light_ready)))
 	links(/mob/living/simple_mob/vore/overmap/stardog::control_node, /obj/structure/control_pod::host)
@@ -201,18 +203,13 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	if(affinity > 1000)
 		affinity = 1000
 
-/mob/living/simple_mob/vore/overmap/stardog/verb/eject()
-	set name = "Eject"
-	set desc = "Stop controlling the dog and return to your own body."
-	set category = VERB_CAT_ABILITIES_STARDOG
-
+/mob/living/simple_mob/vore/overmap/stardog/proc/eject()
 	control_node.eject()
 
-/mob/living/simple_mob/vore/overmap/stardog/verb/eat_space_weather()
-	set name = "Eat Space Weather"
-	set desc = "Eat carp or rocks!"
-	set category = VERB_CAT_ABILITIES_STARDOG
+/mob/living/simple_mob/vore/overmap/stardog/proc/eject_op(datum/act/op/A)
+	eject()
 
+/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather()
 	var/obj/effect/overmap/event/E
 	var/nut = 0
 	var/aff = 0
@@ -281,6 +278,9 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 
 	perform_op(src, src, "eat_weather", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("event" = E, "nut" = nut, "aff" = aff, "monster" = mob, "ore" = ore, "tre" = tre, "msg" = msg, "heal" = heal, "delet" = delet))
 	return TRUE
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_op(datum/act/op/A)
+	eat_space_weather()
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(datum/act/op/A)
 	var/obj/effect/overmap/event/E = A.arg("event")

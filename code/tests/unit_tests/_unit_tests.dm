@@ -509,6 +509,7 @@
 #include "../../modules/unit_tests/dx_click_order_conversion.dm"
 #include "../../modules/unit_tests/dx_click_order_golden.dm"
 #include "dq_ability_tests.dm"
+#include "dq_simple_mob_ability_ops_tests.dm"
 #include "dq_pickweight_tests.dm"
 #include "dq_living_ability_tests.dm"
 #include "../../modules/unit_tests/dq_sys_sfx_tests.dm"
@@ -576,7 +577,7 @@
 #include "../../modules/unit_tests/dq_vital_lifecycle_tests.dm"
 #include "../../modules/balance/_balance_harness.dm"
 #include "dq_balance_scenario_declaration.dm"
-#include "../../modules/balance/balance_scenarios.dm"
+#include "../../content/balance/balance_scenarios.dm"
 #include "dq_balance_harness_tests.dm"
 #include "dq_part_lifecycle_tests.dm"
 #include "dq_organ_slot_tests.dm"
@@ -1226,7 +1227,7 @@
 #include "../../modules/benchmarks/mapload_init.dm"
 #include "../../modules/benchmarks/soak.dm"
 #include "../../modules/benchmarks/kernel_metrics.dm"
-#include "../../modules/balance/balance_benchmark.dm"
+#include "../../content/balance/balance_benchmark.dm"
 #endif
 #include "../../modules/unit_tests/find_reference_fixtures.dm"
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

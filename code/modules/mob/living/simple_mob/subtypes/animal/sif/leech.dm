@@ -96,6 +96,11 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
+	op("feed_on_organ", menu(), label("Feed on Organ"), needs(req_self(), req(PROC_REF(awake_ready))), then(PROC_REF(feed_on_organ_op)))
+	op("medicate_host", menu(), label("Produce Chemicals (50)"), needs(req_self(), req(PROC_REF(medicate_host_ready))), then(PROC_REF(medicate_host_op)))
+	op("inject_victim", menu(), label("Incapacitate Potential Host"), needs(req_self(), req(PROC_REF(awake_ready))), then(PROC_REF(inject_victim_op)))
+	op("uninfest", menu(), label("Uninfest"), needs(req_self(), req(PROC_REF(awake_ready))), then(PROC_REF(uninfest_op)))
+	op("infest_host", menu(), label("Infest"), needs(req_self(), req(PROC_REF(awake_ready))), then(PROC_REF(infest_op)))
 	configure(mob_rules(faction = FACTION_LEECH))
 	configure(living_rules(say_list_type = /datum/say_list/leech, use_modern_ai = TRUE))
 	configure(mob_rules(universal_understand = 1))
@@ -137,7 +142,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	if(istype(T, /turf/simulated/floor/water) && src.loc == T && !src.stat)	// Are we sitting in water, and alive?
 		set_alpha(max(5, src.alpha - 10))
 		if(src.chemicals + 1 < src.max_chemicals / 3)
-			src.chemicals++
+			set_chemicals(src.chemicals + 1)
 	else
 		set_alpha(min(255, src.alpha + 20))
 
@@ -152,51 +157,51 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 		if(src.host.reagents.has_reagent(REAGENT_ID_CORDRADAXON) && !src.docile)	// Overwhelms the leech with food.
 			var/message = "We feel the rush of cardiac pluripotent cells in your host's blood, lulling us into docility."
 			to_chat(src, span_warning(message))
-			src.docile = TRUE
+			set_docile(TRUE)
 			if(src.chemicals + 5 <= src.max_chemicals)
-				src.chemicals += 5
+				set_chemicals(src.chemicals + 5)
 
 		else if(src.docile)
 			var/message = "We shake off our lethargy as the pluripotent cell count declines in our host's blood."
 			to_chat(src, span_notice(message))
-			src.docile = FALSE
+			set_docile(FALSE)
 
 		if(!src.host.reagents.has_reagent(src.passive_reagent))
 			src.host.reagents.add_reagent(src.passive_reagent, 5)
-			src.chemicals -= 3
+			set_chemicals(src.chemicals - 3)
 
 		if(!src.docile && ishuman(src.host) && src.chemicals < src.max_chemicals)
 			var/mob/living/carbon/human/H = src.host
 			H.remove_blood(1)
 			if(!H.reagents.has_reagent(REAGENT_ID_INAPROVALINE))
 				H.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 1)
-			src.chemicals += 2
+			set_chemicals(src.chemicals + 2)
 
 		if(!src.client && !src.docile)	// Automatic 'AI' to manage damage levels.
 			// The leech lives in its host: it senses every affliction (no profile).
 			var/list/demand = src.host.treatment_demand()
 			if(demand_urgency(demand, list(TREAT_TISSUE_REPAIR, TREAT_HEMOSTATIC)) >= LEECH_TREAT_URGENCY && src.chemicals > 50)
 				src.host.reagents.add_reagent(REAGENT_ID_BICARIDINE, 5)
-				src.chemicals -= 30
+				set_chemicals(src.chemicals - 30)
 
 			if(demand_urgency(demand, list(TREAT_ANTITOXIN)) >= LEECH_TREAT_URGENCY && src.chemicals > 50)
 				var/randomchem = pickweight(list(REAGENT_ID_TRAMADOL = 7, REAGENT_ID_ANTITOXIN = 15, REAGENT_ID_FROSTOIL = 3))
 				src.host.reagents.add_reagent(randomchem, 5)
-				src.chemicals -= 50
+				set_chemicals(src.chemicals - 50)
 
 			if(demand_urgency(demand, list(TREAT_BURN_CARE)) >= LEECH_TREAT_URGENCY && src.chemicals > 50)
 				src.host.reagents.add_reagent(REAGENT_ID_KELOTANE, 5)
 				src.host.reagents.add_reagent(REAGENT_ID_LEPORAZINE, 2)
-				src.chemicals -= 50
+				set_chemicals(src.chemicals - 50)
 
 			if(demand_urgency(demand, list(TREAT_OXYGENATION)) >= LEECH_TREAT_URGENCY && src.chemicals > 50)
 				src.host.reagents.add_reagent(REAGENT_ID_IRON, 10)
-				src.chemicals -= 40
+				set_chemicals(src.chemicals - 40)
 
 			if(demand?[TREAT_NEURAL_REPAIR] && src.chemicals > 100)
 				src.host.reagents.add_reagent(REAGENT_ID_ALKYSINE, 5)
 				src.host.reagents.add_reagent(REAGENT_ID_TRAMADOL, 3)
-				src.chemicals -= 100
+				set_chemicals(src.chemicals - 100)
 
 			if(prob(30) && src.chemicals > 50)
 				src.inject_meds(src.randomized_reagent)
@@ -213,16 +218,20 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	if(src.host && src.host.stat == DEAD && istype(get_turf(src.host), /turf/simulated/floor/water))
 		src.leave_host()
 
-/mob/living/simple_mob/animal/sif/leech/verb/infest()
-	set category = VERB_CAT_ABILITIES_LEECH
-	set name = "Infest"
-	set desc = "Infest a suitable humanoid host."
+/// The leech is too tired for its menu abilities while docile.
+/mob/living/simple_mob/animal/sif/leech/proc/awake_ready(datum/act/op/A)
+	return docile ? span_alium("We are too tired to do this...") : null
 
+/mob/living/simple_mob/animal/sif/leech/proc/medicate_host_ready(datum/act/op/A)
 	if(docile)
-		to_chat(src, span_alium("We are too tired to do this..."))
-		return
+		return span_alium("We are too tired to do this...")
+	return (!host || chemicals <= 50) ? span_alien("We cannot produce any chemicals right now.") : null
 
+/mob/living/simple_mob/animal/sif/leech/proc/infest()
 	do_infest(src)
+
+/mob/living/simple_mob/animal/sif/leech/proc/infest_op(datum/act/op/A)
+	infest()
 
 /mob/living/simple_mob/animal/sif/leech/proc/do_infest(mob/living/user, mob/living/target = null)
 	if(host)
@@ -316,16 +325,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	to_chat(src, span_notice("As [A.target] moves away, we are dislodged and fall to the ground."))
 	return
 
-/mob/living/simple_mob/animal/sif/leech/verb/uninfest()
-	set category = VERB_CAT_ABILITIES_LEECH
-	set name = "Uninfest"
-	set desc = "Leave your current host."
-
-	if(docile)
-		to_chat(src, span_alium("We are too tired to do this..."))
-		return
-
+/mob/living/simple_mob/animal/sif/leech/proc/uninfest()
 	leave_host()
+
+/mob/living/simple_mob/animal/sif/leech/proc/uninfest_op(datum/act/op/A)
+	uninfest()
 
 /mob/living/simple_mob/animal/sif/leech/proc/leave_host()
 	if(!host)
@@ -339,15 +343,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 
 	rel_clear(src, nameof(host))
 
-/mob/living/simple_mob/animal/sif/leech/verb/inject_victim()
-	set category = VERB_CAT_ABILITIES_LEECH
-	set name = "Incapacitate Potential Host"
-	set desc = "Inject an organic host with an incredibly painful mixture of chemicals."
-
-	if(docile)
-		to_chat(src, span_alium("We are too tired to do this..."))
-		return
-
+/mob/living/simple_mob/animal/sif/leech/proc/inject_victim()
 	var/mob/living/carbon/M
 	if(src.client)
 		var/list/choices = list()
@@ -366,6 +362,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 		return
 
 	poison_inject(src, M)
+
+/mob/living/simple_mob/animal/sif/leech/proc/inject_victim_op(datum/act/op/A)
+	inject_victim()
 
 /mob/living/simple_mob/animal/sif/leech/proc/poison_inject_answered(datum/act/request/A)
 	if(!A.answer)
@@ -394,21 +393,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	H.lingering_poison(0.75, 15 SECONDS, src, TRUE)
 	H.status_at_least(STAT_PARALYZED, 4)
 
-/mob/living/simple_mob/animal/sif/leech/verb/medicate_host()
-	set category = VERB_CAT_ABILITIES_LEECH
-	set name = "Produce Chemicals (50)"
-	set desc = "Inject your host with possibly beneficial chemicals, to keep the blood flowing."
-
-	if(docile)
-		to_chat(src, span_alium("We are too tired to do this..."))
-		return
-
-	if(!host || chemicals <= 50)
-		to_chat(src, span_alien("We cannot produce any chemicals right now."))
-		return
-
+/mob/living/simple_mob/animal/sif/leech/proc/medicate_host()
 	if(host)
 		open_request(src, /datum/prompt/choice, PROC_REF(meds_chosen), answerer = src, title = "Chemicals", question = "Select a chemical to produce.", choices = produceable_chemicals, timeout = 0)
+
+/mob/living/simple_mob/animal/sif/leech/proc/medicate_host_op(datum/act/op/A)
+	medicate_host()
 
 /mob/living/simple_mob/animal/sif/leech/proc/meds_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -419,19 +409,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 
 /mob/living/simple_mob/animal/sif/leech/proc/inject_meds(chem)
 	if(host)
-		chemicals = max(1, chemicals - 50)
+		set_chemicals(max(1, chemicals - 50))
 		host.reagents.add_reagent(chem, 5)
 		to_chat(src, span_alien("We injected \the [host] with five units of [chem]."))
 
-/mob/living/simple_mob/animal/sif/leech/verb/feed_on_organ()
-	set category = VERB_CAT_ABILITIES_LEECH
-	set name = "Feed on Organ"
-	set desc = "Extend probosci to feed on a piece of your host's organs."
-
-	if(docile)
-		to_chat(src, span_alium("We are too tired to do this..."))
-		return
-
+/mob/living/simple_mob/animal/sif/leech/proc/feed_on_organ()
 	if(host && COOLDOWN_FINISHED(src, feeding_cooldown))
 		var/list/host_internal_organs = host.internal_organ_list()
 
@@ -450,6 +432,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 
 	else
 		to_chat(src, span_warning("We cannot feed now."))
+
+/mob/living/simple_mob/animal/sif/leech/proc/feed_on_organ_op(datum/act/op/A)
+	feed_on_organ()
 
 /datum/prompt/choice/leech_feed_organ
 	timeout = 0
@@ -485,7 +470,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	if(O)
 		to_chat(src, span_alien("We feed on [O]."))
 		O.owner?.injure(INJURY_PIERCE, 2, O, src, flags = prob(10) ? INJURE_SILENT : NONE)
-		chemicals = min(max_chemicals, chemicals + 60)
+		set_chemicals(min(max_chemicals, chemicals + 60))
 		host.apply_body_effect(/datum/body_effect/grievous_wounds, 60 SECONDS)
 		mend(TREAT_TISSUE_REPAIR, rand(10,60))
 		mend(TREAT_BURN_CARE, rand(10,60))

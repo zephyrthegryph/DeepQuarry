@@ -282,7 +282,7 @@ CAPABILITIES(/mob/living/simple_mob)
 		return
 	if(!picked_color)
 		set_color(A.answer.value)
-	picked_color = TRUE
+	set_picked_color(TRUE)
 
 /mob/living/simple_mob/SelfMove(turf/n, direct, movetime)
 	var/turf/old_turf = get_turf(src)

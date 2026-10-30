@@ -88,6 +88,9 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	op("do_strike", menu(), label("Rending Strike"), needs(req_self(), req(PROC_REF(do_strike_ready))), then(PROC_REF(do_strike_op)))
+	op("rally_pack", menu(), label("Rally Pack"), needs(req_self(), req(PROC_REF(rally_pack_ready))), then(PROC_REF(rally_pack_op)))
+	op("do_flash", menu(), label("Tail Blind"), needs(req_self(), req(PROC_REF(do_flash_ready))), then(PROC_REF(do_flash_op)))
 	configure(mob_rules(faction = FACTION_KURUAK))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/kururak, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_amount = 5))
@@ -140,17 +143,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 			ai_busy_end()
 	return ..()
 
-/mob/living/simple_mob/animal/sif/kururak/verb/do_flash()
-	set category = VERB_CAT_ABILITIES_KURURAK
-	set name = "Tail Blind"
-	set desc = "Disorient a creature within range."
+/mob/living/simple_mob/animal/sif/kururak/proc/do_flash_ready(datum/act/op/A)
+	return COOLDOWN_FINISHED(src, flash_cooldown) ? null : span_warning("You do not have the focus to do this so soon..")
 
-	if(!COOLDOWN_FINISHED(src, flash_cooldown))
-		to_chat(src, span_warning("You do not have the focus to do this so soon.."))
-		return
-
+/mob/living/simple_mob/animal/sif/kururak/proc/do_flash()
 	COOLDOWN_START(src, flash_cooldown, special_attack_cooldown)
 	tail_flash()
+
+/mob/living/simple_mob/animal/sif/kururak/proc/do_flash_op(datum/act/op/A)
+	do_flash()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash(atom/A)
 	if(stat)
@@ -239,17 +240,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 						continue
 			R.flash_eyes()
 
-/mob/living/simple_mob/animal/sif/kururak/verb/do_strike()
-	set category = VERB_CAT_ABILITIES_KURURAK
-	set name = "Rending Strike"
-	set desc = "Strike viciously at an entity within range."
+/mob/living/simple_mob/animal/sif/kururak/proc/do_strike_ready(datum/act/op/A)
+	return COOLDOWN_FINISHED(src, strike_cooldown) ? null : span_warning("Your claws cannot take that much stress in so short a time..")
 
-	if(!COOLDOWN_FINISHED(src, strike_cooldown))
-		to_chat(src, span_warning("Your claws cannot take that much stress in so short a time.."))
-		return
-
+/mob/living/simple_mob/animal/sif/kururak/proc/do_strike()
 	COOLDOWN_START(src, strike_cooldown, special_attack_cooldown)
 	rending_strike()
+
+/mob/living/simple_mob/animal/sif/kururak/proc/do_strike_op(datum/act/op/A)
+	do_strike()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -316,22 +315,24 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 	act_message(src, M, null, MSG_OTHERS(span_critical("%U% rips %T%'s access hatch open, dragging [M?.slot_item(MECHA_SLOT_PILOT)] out!")))
 	M.go_out()
 
-/mob/living/simple_mob/animal/sif/kururak/verb/rally_pack()	// Mostly for telling other players to follow you. AI Kururaks will auto-follow, if set to.
-	set name = "Rally Pack"
-	set desc = "Tries to command your fellow pack members to follow you."
-	set category = VERB_CAT_ABILITIES_KURURAK
+/// Only an ace can rally a pack; anyone else gets nothing, as the old verb did.
+/mob/living/simple_mob/animal/sif/kururak/proc/rally_pack_ready(datum/act/op/A)
+	return has_body_effect(/datum/body_effect/ace) ? null : MSG(req_silent)
 
-	if(has_body_effect(/datum/body_effect/ace))
-		for(var/mob/living/simple_mob/animal/sif/kururak/K in hearers(7, src))
-			if(K == src)
-				continue
-			if(!K.ai_brain)
-				continue
-			if(mob_rules_of(K).faction != mob_rules_of(src).faction)
-				continue
-			var/datum/ai_brain/AI = K.ai_brain
-			to_chat(K, span_notice("The pack leader wishes for you to follow them."))
-			AI.set_follow(src)
+/mob/living/simple_mob/animal/sif/kururak/proc/rally_pack()	// Mostly for telling other players to follow you. AI Kururaks will auto-follow, if set to.
+	for(var/mob/living/simple_mob/animal/sif/kururak/K in hearers(7, src))
+		if(K == src)
+			continue
+		if(!K.ai_brain)
+			continue
+		if(mob_rules_of(K).faction != mob_rules_of(src).faction)
+			continue
+		var/datum/ai_brain/AI = K.ai_brain
+		to_chat(K, span_notice("The pack leader wishes for you to follow them."))
+		AI.set_follow(src)
+
+/mob/living/simple_mob/animal/sif/kururak/proc/rally_pack_op(datum/act/op/A)
+	rally_pack()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/detect_instinct()	// Will return the Kururak within 10 tiles that has the highest instinct.
 	var/mob/living/simple_mob/animal/sif/kururak/A

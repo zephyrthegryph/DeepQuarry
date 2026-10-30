@@ -129,3 +129,35 @@ the full sum. Parity tests: `dq_stat_sum_running_total_parity` (600 random steps
 `ofc stat_relation_changed: power_area` is 8.3 s over 22k writes (375 us), almost all of it `stat_ct_update` (three channel entries per
 machine, 67k updates, `gate` 2.0 s, `release` 0.5 s) on pipes, firedoors and lights. `flooring` writes cost 100 us in `own_field_changed`
 (`draw_hop_published` 0.9 s, `publish_change` 0.7 s) of 217 us for the whole `rel_set`.
+
+## 5. Measurements 2026-10-30: the once-per-type table warm-up (test map, timers on)
+
+New rows (`own_table build: ...`, `table_build: ...`, `table_compile: ...`, `table_validate: op_validate_table`, `shared_cache build: <cache>`)
+split the warm-up. Test map, 36 k atoms, `InitializeAtoms` 27.5 to 29 s on an idle machine (a loaded one gave 33 to 41 s: compare rows, not seconds):
+
+| Row | Time | Calls | Each |
+|---|---|---|---|
+| `own_table build: table_of` | 2.25 s | 2,663 | 844 us |
+| of it `table_build: table_compile (block)` | 1.67 s | 607 | 2.7 ms |
+| of that `table_validate: op_validate_table` | 0.92 to 0.96 s | 607 | 1.5 ms |
+| of that `table_compile: apply entries` / `hook flags` | 0.34 s / 0.21 s | 607 | 560 / 340 us |
+| of it `table_build: declared_entries chain` | 0.68 s | 2,674 | 255 us |
+| `own_table build:` `own_validate_table` / `link_entries_for` / `caps_of and owned()` | 0.19 / 0.17 / 0.06 s | 2,663 | 70 / 62 / 23 us |
+| `shared_cache build: type_lists` | 0.34 s | 9,909 | 35 us |
+| `shared_cache build: change_reader_types` / `change_plan_spares` | 0.54 / 0.32 s | 1,157 / 2,828 | 465 / 112 us |
+
+What this says about the three ideas (a), (b), (c):
+
+- (a) Share by block content: already so. `type_blocks_cache` compiles one table per CAPABILITIES block (607), and the 2,674 instance types only
+  pick among them. A type whose block adds nothing already shares its parent's table. Own tables (2,663) cost 0.4 s beyond the table work, and a
+  shared `own_table` is not safe: link and keyed-target patches (`link_patch_table`) are per `owner_type`, and `link_register` patches built tables in place.
+- (b) Lazy per instantiated type: already so (`table_of` builds on first use; `table_precompute.md` B1). Nothing sweeps uninstantiated types at boot.
+- (c) Generated data: rejected in `table_precompute.md` and unchanged by these numbers. The 1.67 s is real work (5.3 k op plans built at about 170 us,
+  entry constructors with interning for the 607 blocks), not lookups.
+- The op clash walk (restricting `op_validate_table` to pairs that include a plan built for the table) was tried: parity test green, boot rows
+  unchanged (`op_validate_table` 0.96 to 0.92 s), so the cost is the plan builds and not the pairs. Not landed.
+- Walking from the nearest compiled block instead of the whole `declared_entries` chain was tried (generated early return): parity test green,
+  `declared_entries chain` 0.68 to 0.75 s (noise). The cost is the constructors of the 607 uncompiled blocks, not the ancestor walk. Not landed.
+
+So the table warm-up is 2.3 s of 27 s (8 %) on the test map and nearly all of it is the real build of 607 blocks. The remaining first-call time
+in `Initialize` (obj) is nested: `setup_run` first calls (`item_integrated_circuit_setup`, `gear_tweaks`), starting contents and `on_holder_init`.

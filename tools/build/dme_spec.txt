@@ -18,6 +18,8 @@ file interface/skin.dmf
 
 # A module's closing file #undefs its macros: every file of the module before it.
 before code/modules/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
 
 # Definition precedence. A type's var or proc defined in two files is the later file's (a proc's ..() calls the earlier one): these
 # pairs are the files that redefine what another file defines (mostly the former modular override files under code/content,
@@ -25,7 +27,7 @@ before code/modules/integrated_electronics/** code/content/integrated_electronic
 before code/modules/emotes/definitions/audible.dm code/content/emotes/definitions/audiable.dm   # /datum/decl/emote/audible/gwah
 before code/modules/emotes/definitions/audible.dm code/content/emotes/definitions/audible_furry.dm   # .../audible/hiss
 before code/content/food/drinkingglass/metaglass.dm code/content/food/drinkgglass/metaglass.dm   # tequila_sunrise glass_icon_state
-before code/content/hydroponics/seedtypes/flowers.dm code/modules/hydro/plants.dm   # /datum/seed/flower/sunflower
+before code/content/hydroponics/seedtypes/flowers.dm code/content/hydro/plants.dm   # /datum/seed/flower/sunflower
 before code/modules/mob/new_player/sprite_accessories_ear.dm code/content/vore/appearance/sprite_accessories.dm   # ear sprite accessories
 before code/modules/materials/engineering/material_machines.dm code/content/research/tg/techwebs/nodes/mining_nodes.dm   # techweb material_processing
 before code/modules/mob/living/silicon/robot/drone/drone.dm code/modules/mob/living/silicon/drone/unify_drone.dm   # /mob/living/silicon/robot/drone
@@ -39,14 +41,16 @@ before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/durand.dm co
 before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/marauder.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm
 before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm
 before code/modules/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
+before code/content/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
+before code/content/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/modules/projectiles/projectile/beams.dm code/content/projectiles/guns/beam.dm   # phasers
 before code/modules/projectiles/projectile/bullets.dm code/content/projectiles/guns/bullet.dm   # bullets
 before code/content/projectiles/projectile/magnetic.dm code/content/projectiles/guns/magnetic.dm   # hunting flechette
 before code/modules/projectiles/guns/projectile/shotgun.dm code/content/projectiles/projectile/scatter.dm   # shotgun scatter
-before code/modules/food/food/snacks.dm code/modules/exploration/tyr_tribal_gear.dm   # honey ant snack
+before code/modules/food/food/snacks.dm code/content/exploration/tyr_tribal_gear.dm   # honey ant snack
 before code/modules/pda/pda.dm code/content/pda/pda_subtypes.dm   # /obj/item/storage/box/PDAs
 before code/content/items/weapons/storage/boxes.dm code/content/casino/boxes_casino.dm   # casino boxes
-before code/content/hydroponics/seed_storage.dm code/modules/hydro/plantsstorage.dm   # seed storage machines
+before code/content/hydroponics/seed_storage.dm code/content/hydro/plantsstorage.dm   # seed storage machines
 before code/game/objects/structures/flora/flora.dm code/content/structures/flora.dm   # /obj/structure/flora/bush
 before code/game/area/Away?Mission?areas.dm code/content/turfs/initialization/init.dm   # /area/area_after_init()
 before code/modules/mob/living/living_movement.dm code/content/vore/eating/stumblevore.dm   # /mob/living/Bump(), Crossed()
@@ -75,7 +79,7 @@ before code/game/objects/items/weapons/id?cards/cards.dm code/content/items/weap
 before code/modules/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm      # change_win_count()
 before code/content/mobs/living/simple_mob/subtypes/animal/passive/possum.dm code/domains/ai/ports/possum.dm  # respond_to_damage()
 before code/modules/reagents/reagents/content/food.dm code/content/reagents/reagents/content/alcohol.dm      # nutriment_factor
-before code/modules/refinery/core/industrial_reagent_machines.dm code/content/refinery/core/industrial_reagent_pump.dm   # minimum_reagents_for_transfer
+before code/content/refinery/core/industrial_reagent_machines.dm code/content/refinery/core/industrial_reagent_pump.dm   # minimum_reagents_for_transfer
 before code/modules/stockmarket/stocks.dm code/modules/admin/admin_report_panel.dm     # displayValues()
 before code/content/integrated_electronics/core/special_pins/list_pin.dm code/content/integrated_electronics/list_pin_panel.dm   # interact()
 
@@ -88,6 +92,8 @@ optional code/tests/engine/test_only_defs.dm                 # included directly
 optional code/modules/unit_tests/_test_build_overrides.dm    # likewise
 skip code/modules/benchmarks/**   # code/tests/unit_tests/_unit_tests.dm includes them
 skip code/modules/balance/**      # likewise
+skip code/content/balance/**   # likewise
+skip code/content/balance/**   # likewise
 
 # Generated files (gitignored, so the scan never includes them; analyze gen and the Verdigris bindings step write them before every
 # compile, and a clean checkout lacks them: `file` includes them anyway).
@@ -128,10 +134,10 @@ first code/game/machinery/machinery_fields.dm   # declares the machine families'
 
 # Macros defined in an ordinary file and used by others: the definer before its users.
 before code/modules/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
-before code/modules/heat/heat_bind_batch.dm code/ATMOSPHERICS/**              # HEAT_BODY_RESOLVE
-before code/modules/heat/heat_bind_batch.dm code/datums/rules/world_adapter.dm
-before code/modules/heat/heat_bind_batch.dm code/domains/heat/**
-before code/modules/heat/heat_bind_batch.dm code/modules/heat/heat.dm
+before code/domains/heat/heat_bind_batch.dm code/ATMOSPHERICS/**   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/datums/rules/world_adapter.dm
+before code/domains/heat/heat_bind_batch.dm code/domains/heat/**
+before code/domains/heat/heat_bind_batch.dm code/modules/heat/heat.dm
 before code/game/atom/atom_type_table.dm code/controllers/subsystems/atoms_init.dm   # TYPE_TABLE_*
 before code/game/atom/atom_type_table.dm code/game/atom/atom_materialize.dm
 before code/engine/declare/entries.dm code/engine/actions/**                  # ENTRY_SLOTS, ENTRY_SLOT_LIST

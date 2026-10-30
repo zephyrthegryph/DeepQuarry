@@ -1,24 +1,16 @@
-/mob/living/simple_mob/vore/demon/verb/blood_crawl()
-	set name = "Bloodcrawl"
-	set desc = "Shift out of reality using blood as your gateway"
-	set category = VERB_CAT_ABILITIES_DEMON
-
+/mob/living/simple_mob/vore/demon/proc/blood_crawl_ready(datum/act/op/A)
 	var/turf/T = get_turf(src)
 	if(!T.CanPass(src,T) || loc != T)
-		to_chat(src,span_warning("You can't use that here!"))
-		return FALSE
-
+		return span_warning("You can't use that here!")
 	if((get_area(src).flags & PHASE_SHIELDED))
-		to_chat(src,span_warning("This area is preventing you from phasing!"))
-		return FALSE
-
+		return span_warning("This area is preventing you from phasing!")
 	if(shift_state && shift_state == AB_SHIFT_ACTIVE)
-		to_chat(src,span_warning("You can't do a shift while actively shifting!"))
-		return FALSE
-
+		return span_warning("You can't do a shift while actively shifting!")
 	if(!(locate_within(src.loc, /obj/effect/decal/cleanable/blood)))
-		to_chat(src,span_warning("You need blood to shift between realities!"))
-		return FALSE
+		return span_warning("You need blood to shift between realities!")
+
+/mob/living/simple_mob/vore/demon/proc/blood_crawl()
+	var/turf/T = get_turf(src)
 
 	forceMove(T)
 	var/original_canmove = canmove
@@ -36,7 +28,7 @@
 
 	//Shifting in
 	if(shifted_out)
-		shifted_out = FALSE
+		set_shifted_out(FALSE)
 		name = real_name
 		for(var/obj/belly/B as anything in vore_organs)
 			B.set_escapable(initial(B.escapable))
@@ -56,8 +48,8 @@
 
 	//Shifting out
 	else
-		shifted_out = TRUE
-		shift_state = AB_SHIFT_PASSIVE
+		set_shifted_out(TRUE)
+		set_shift_state(AB_SHIFT_PASSIVE)
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
 		set_real_name(name)
 		name = "Something"
@@ -69,27 +61,21 @@
 		flick("phaseout",src)
 		after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 
-/mob/living/simple_mob/vore/demon/verb/demonic_phase_shift()
-	set name = "Phase Shift"
-	set desc = "Shift out of reality temporarily"
-	set category = VERB_CAT_ABILITIES_DEMON
+/mob/living/simple_mob/vore/demon/proc/blood_crawl_op(datum/act/op/A)
+	blood_crawl()
 
+/mob/living/simple_mob/vore/demon/proc/demonic_phase_shift_ready(datum/act/op/A)
+	if(shift_state && shift_state == AB_SHIFT_PASSIVE)
+		return span_warning("You can't do a shift while passively shifting!")
+	if(shifted_out)
+		return span_warning("You can't return to the physical world yet!")
+	if(ELAPSED(src, last_shift, CLOCK_WORLD) < 600)
+		return span_warning("You can't temporarily shift so soon! You need to wait [round(((last_shift+600)-world.time)/10)] second\s!")
 
+/mob/living/simple_mob/vore/demon/proc/demonic_phase_shift()
 	var/turf/T = get_turf(src)
 
-	if(shift_state && shift_state == AB_SHIFT_PASSIVE)
-		to_chat(src,span_warning("You can't do a shift while passively shifting!"))
-		return FALSE
-
-	if(shifted_out)
-		to_chat(src,span_warning("You can't return to the physical world yet!"))
-		return FALSE
-
-	if(ELAPSED(src, last_shift, CLOCK_WORLD) < 600)
-		to_chat(src,span_warning("You can't temporarily shift so soon! You need to wait [round(((last_shift+600)-world.time)/10)] second\s!"))
-		return FALSE
-
-	shift_state = AB_SHIFT_ACTIVE
+	set_shift_state(AB_SHIFT_ACTIVE)
 	forceMove(T)
 	var/original_canmove = canmove
 	status_set(STAT_STUNNED, 0)
@@ -104,7 +90,7 @@
 	set_canmove(FALSE)
 	set_is_shifting(TRUE)
 
-	shifted_out = TRUE
+	set_shifted_out(TRUE)
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
 	set_real_name(name)
 	name = "Something"
@@ -116,9 +102,12 @@
 	after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 	after(src, 33 SECONDS, PROC_REF(demon_shift_return))
 
+/mob/living/simple_mob/vore/demon/proc/demonic_phase_shift_op(datum/act/op/A)
+	demonic_phase_shift()
+
 /// The temporary phase shift runs out: back into reality.
 /mob/living/simple_mob/vore/demon/proc/demon_shift_return()
-	shifted_out = FALSE
+	set_shifted_out(FALSE)
 	name = real_name
 	for(var/obj/belly/B as anything in vore_organs)
 		B.set_escapable(initial(B.escapable))
@@ -176,26 +165,19 @@
 
 	// Do this after the potential vore, so we get the belly
 
-	shift_state = AB_SHIFT_NONE
+	set_shift_state(AB_SHIFT_NONE)
 	if(from_temporary)
 		STAMP(src, last_shift, CLOCK_WORLD)
 
 
-/mob/living/simple_mob/vore/demon/verb/blood_burst()
-	set name = "Blood burst"
-	set desc = "Spawn bloody remains from your past hunts."
-	set category = VERB_CAT_ABILITIES_DEMON
-
-	var/turf/T = get_turf(src)
-
+/mob/living/simple_mob/vore/demon/proc/blood_burst_ready(datum/act/op/A)
 	if(shifted_out)
-		to_chat(src,span_warning("You must be in the physical world to create blood!"))
-		return FALSE
-
+		return span_warning("You must be in the physical world to create blood!")
 	if(ELAPSED(src, blood_spawn, CLOCK_WORLD) < 1500)
-		to_chat(src,span_warning("You can't create blood so soon! You need to wait [round(((blood_spawn+1500)-world.time)/10)] second\s!"))
-		return FALSE
+		return span_warning("You can't create blood so soon! You need to wait [round(((blood_spawn+1500)-world.time)/10)] second\s!")
 
+/mob/living/simple_mob/vore/demon/proc/blood_burst()
+	var/turf/T = get_turf(src)
 
 	gibs(T)
 
@@ -205,22 +187,20 @@
 
 	return
 
-/mob/living/simple_mob/vore/demon/verb/toggle_laugh()
-	set name = "Toggle Auto Laugh"
-	set desc = "Toggles whether the demon will automatically laugh when interacted with."
-	set category = VERB_CAT_ABILITIES_DEMON
+/mob/living/simple_mob/vore/demon/proc/blood_burst_op(datum/act/op/A)
+	blood_burst()
 
+/mob/living/simple_mob/vore/demon/proc/toggle_laugh()
 	enable_autolaugh = !enable_autolaugh
 	if(enable_autolaugh)
 		to_chat(src,span_warning("Autolaugh has been toggled on"))
 	else
 		to_chat(src,span_warning("Autolaugh has been toggled off"))
 
-/mob/living/simple_mob/vore/demon/verb/manual_laugh()
-	set name = "Laugh"
-	set desc = "Plays the laugh track."
-	set category = VERB_CAT_ABILITIES_DEMON
+/mob/living/simple_mob/vore/demon/proc/toggle_laugh_op(datum/act/op/A)
+	toggle_laugh()
 
+/mob/living/simple_mob/vore/demon/proc/manual_laugh()
 	if(!enable_autolaugh) //yeah this is kinda sorta dirty but id rather use a bool over something else here to control this.
 		enable_autolaugh = !enable_autolaugh
 		laugh()
@@ -229,26 +209,25 @@
 		laugh()
 	to_chat(src,span_warning("You laugh!")) //lets add some fluff response for clicking the feel good button.
 
-/mob/living/simple_mob/vore/demon/verb/sizespell()
-	set name = "Shrink/Grow Prey"
-	set category = VERB_CAT_ABILITIES_DEMON
-	set desc = "Shrink/Grow someone nearby! (60 second cooldown)"
-	set popup_menu = FALSE // Stop licking by accident! //Yes this is from lick code, sue me.
+/mob/living/simple_mob/vore/demon/proc/manual_laugh_op(datum/act/op/A)
+	manual_laugh()
 
+/mob/living/simple_mob/vore/demon/proc/grabbed_prey_ready(datum/act/op/A)
 	var/obj/item/grab/G = src.get_active_hand()
-
 	if(!istype(G))
-		to_chat(src, span_warning("You must be grabbing a creature in your active hand to affect them."))
-		return
+		return span_warning("You must be grabbing a creature in your active hand to affect them.")
 	var/mob/living/carbon/human/T = G?.grab_target()
 	if(!istype(T))
-		to_chat(src, span_warning("\The [T] is not able to be affected."))
-		return
-
+		return span_warning("\The [T] is not able to be affected.")
 	if(G.state != GRAB_NECK)
-		to_chat(src, span_warning("You must have a tighter grip to affect this creature."))
-		return
+		return span_warning("You must have a tighter grip to affect this creature.")
+	return null
 
+/mob/living/simple_mob/vore/demon/proc/sizespell()
+	var/obj/item/grab/G = src.get_active_hand()
+	var/mob/living/carbon/human/T = G.grab_target()
+
+	// The click cooldown and incapacitation are the old verb's silent rate limit: they read the click clock, which no requirement may track.
 	if(!checkClickCooldown() || incapacitated(INCAPACITATION_ALL))
 		return
 
@@ -259,12 +238,11 @@
 /mob/living/simple_mob/vore/demon
 	var/size_amount = RESIZE_TINY //Adding a var to keep track of sizespell setting
 
-/mob/living/simple_mob/vore/demon/verb/toggle_sizespell()
-	set name = "Shrink/Grow Amount"
-	set desc = "Changes the amount you grow/shrink people."
-	set category = VERB_CAT_ABILITIES_DEMON
-
+/mob/living/simple_mob/vore/demon/proc/toggle_sizespell()
 	open_request(src, /datum/prompt/number, PROC_REF(sizespell_chosen), answerer = src, title = "Set Size", question = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", default = size_amount * 100, max_value = RESIZE_MAXIMUM * 100, min_value = RESIZE_MINIMUM * 100, timeout = 0) //Stolen from sizegun code
+
+/mob/living/simple_mob/vore/demon/proc/toggle_sizespell_op(datum/act/op/A)
+	toggle_sizespell()
 
 /mob/living/simple_mob/vore/demon/proc/sizespell_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -275,26 +253,11 @@
 	size_amount = (size_select/100)
 	to_chat(src,span_notice("Size spell set to [size_select]%")) //Telling the user the new amount
 
-/mob/living/simple_mob/vore/demon/verb/demon_bite()
-	set name = "Mindbreaker Bite"
-	set category = VERB_CAT_ABILITIES_DEMON
-	set desc = "Inject mindbreaker into your grabbed prey!"
-	set popup_menu = FALSE // Stop licking by accident! //Yes this is from lick code, sue me.
-
+/mob/living/simple_mob/vore/demon/proc/demon_bite()
 	var/obj/item/grab/G = src.get_active_hand()
+	var/mob/living/carbon/human/T = G.grab_target()
 
-	if(!istype(G))
-		to_chat(src, span_warning("You must be grabbing a creature in your active hand to affect them."))
-		return
-	var/mob/living/carbon/human/T = G?.grab_target()
-	if(!istype(T))
-		to_chat(src, span_warning("\The [T] is not able to be affected."))
-		return
-
-	if(G.state != GRAB_NECK)
-		to_chat(src, span_warning("You must have a tighter grip to affect this creature."))
-		return
-
+	// The click cooldown and incapacitation are the old verb's silent rate limit: they read the click clock, which no requirement may track.
 	if(!checkClickCooldown() || incapacitated(INCAPACITATION_ALL))
 		return
 
@@ -303,7 +266,7 @@
 	act_message(src, T, MSG_SELF(span_notice("You bite %T%.")), MSG_OTHERS(span_warning("%U% bites %T%!")))
 
 /mob/living/simple_mob/vore/demon/proc/phase_shift_wears_off()
-	shifted_out = FALSE
+	set_shifted_out(FALSE)
 	name = real_name
 	for(var/obj/belly/B as anything in vore_organs)
 		B.set_escapable(initial(B.escapable))
@@ -349,5 +312,11 @@
 
 	// Do this after the potential vore, so we get the belly
 
-	shift_state = AB_SHIFT_NONE
+	set_shift_state(AB_SHIFT_NONE)
 	STAMP(src, last_shift, CLOCK_WORLD)
+
+/mob/living/simple_mob/vore/demon/proc/sizespell_op(datum/act/op/A)
+	sizespell()
+
+/mob/living/simple_mob/vore/demon/proc/demon_bite_op(datum/act/op/A)
+	demon_bite()
