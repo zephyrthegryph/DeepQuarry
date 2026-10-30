@@ -80,7 +80,9 @@ mk tools/dm-health/baseline.json '["large-proc:code/modules/widgets/spawny.dm:18
 mk tools/analyze/src/lints/x.rs 'Files::Under(&["code/modules/widgets/tooled/rig"])'
 mk tools/ci/lint_scopes.toml 'x = ["code/modules/widgets/clean.dm"]'
 
-out="$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp")"
+tmpn="$tmp"
+if command -v cygpath >/dev/null 2>&1; then tmpn="$(cygpath -m "$tmp")"; fi
+out="$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn")"
 state() { printf '%s\n' "$out" | awk -F'\t' -v f="$1" '$2 == f { print $1 }'; }
 why() { printf '%s\n' "$out" | awk -F'\t' -v f="$1" '$2 == f { print $4 }'; }
 target() { printf '%s\n' "$out" | awk -F'\t' -v f="$1" '$2 == f { print $3 }'; }
@@ -123,8 +125,8 @@ expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 16 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
-bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --clean | wc -l)" -eq 16 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"
 exit $fail
