@@ -459,6 +459,32 @@ pub(crate) fn turf_device_probe(w: &World, cell: u32) -> Option<(PipeGas, f64)> 
     ))
 }
 
+/// Everything [`turf_device_probe`] reads of a turf, unconverted: equal stamps mean equal probes, so a device whose last
+/// step left both its sides as they were can tell they are unchanged without building the mixture.
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) struct TurfStamp {
+    cell: u32,
+    gas: GasCell,
+    capacity: f32,
+}
+
+impl TurfStamp {
+    /// The turf cell.
+    pub(crate) const fn cell(&self) -> u32 {
+        self.cell
+    }
+}
+
+/// The [`TurfStamp`] of turf `cell` (`None` where [`turf_device_probe`] has nothing).
+pub(crate) fn turf_device_stamp(w: &World, cell: u32) -> Option<TurfStamp> {
+    let (gas, geom) = turf_read(w, turf_key().ok()?, cell)?;
+    Some(TurfStamp {
+        cell,
+        gas,
+        capacity: geom.capacity,
+    })
+}
+
 /// Applies a device step's result to turf `cell`: the difference from what
 /// [`turf_device_probe`] read, as one command.
 pub(crate) fn turf_device_apply(w: &mut World, cell: u32, before: &PipeGas, after: &PipeGas) {

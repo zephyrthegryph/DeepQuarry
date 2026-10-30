@@ -37,7 +37,8 @@
 // `::byondapi::bind`'s own macro expansion).
 #![allow(clippy::too_many_arguments)]
 
-use std::cell::RefCell;
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
 use crate::gas::mix::{self, MixRef};
@@ -488,30 +489,57 @@ fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
 struct DeviceLaws {
     flows: Vec<Flow>,
     valve_open: bool,
+    /// What the device's flow and valve rows were, as their write stamps (`World::row_stamp`): any write to any of
+    /// them, or a row coming or going, changes it.
+    flow_sig: Sig,
+    valve_sig: Sig,
     /// The device has a leg of a budget group (filters and mixers), stepped as that group and not as a plain flow.
     in_group: bool,
 }
 
-/// Every budget leg of the world, by group: `(device entity index, row)`.
-type BudgetGroups = HashMap<u32, Vec<(u32, DeviceFlow)>>;
+/// A set of rows' write stamps, folded: a stamp is never reused and a rewrite takes a new, larger one, so the count,
+/// the largest and the sum together differ whenever a row was written, added or removed.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct Sig {
+    n: u32,
+    max: u64,
+    sum: u64,
+}
 
-fn device_law_index(w: &World) -> (HashMap<u32, DeviceLaws>, BudgetGroups) {
-    let mut index: HashMap<u32, DeviceLaws> = HashMap::new();
-    let mut groups = BudgetGroups::new();
+impl Sig {
+    fn add(&mut self, stamp: u64) {
+        self.n += 1;
+        self.max = self.max.max(stamp);
+        self.sum = self.sum.wrapping_add(stamp);
+    }
+}
+
+/// Every budget leg of the world, by group: `(device entity index, row)`.
+type BudgetGroups = FxHashMap<u32, Vec<(u32, DeviceFlow)>>;
+
+fn device_law_index(w: &World) -> (FxHashMap<u32, DeviceLaws>, BudgetGroups) {
+    let mut index: FxHashMap<u32, DeviceLaws> = FxHashMap::default();
+    let mut groups = BudgetGroups::default();
     for e in w.entities_with::<DeviceFlow>() {
         if let Some(row) = w.read::<DeviceFlow>(e) {
+            let stamp = w.row_stamp::<DeviceFlow>(e).unwrap_or(0);
+            let law = index.entry(row.device).or_default();
+            law.flow_sig.add(stamp);
             if row.is_budget() {
-                index.entry(row.device).or_default().in_group = true;
+                law.in_group = true;
                 groups.entry(row.group).or_default().push((row.device, row));
             } else {
-                index.entry(row.device).or_default().flows.push(row.flow());
+                law.flows.push(row.flow());
             }
         }
     }
     for e in w.entities_with::<DeviceValve>() {
         if let Some(v) = w.read::<DeviceValve>(e) {
+            let law = index.entry(v.device).or_default();
+            law.valve_sig
+                .add(w.row_stamp::<DeviceValve>(e).unwrap_or(0));
             if v.open {
-                index.entry(v.device).or_default().valve_open = true;
+                law.valve_open = true;
             }
         }
     }
@@ -538,6 +566,56 @@ enum SideOwner {
 thread_local! {
     /// The owners of the sides last staged, in side order.
     static STAGED: RefCell<Vec<SideOwner>> = const { RefCell::new(Vec::new()) };
+    /// The devices whose last step changed nothing, by device entity index, with everything that step's result depended on.
+    static SETTLED: RefCell<FxHashMap<u32, Settled>> = RefCell::new(FxHashMap::default());
+    /// The inputs of each staged job (in job order; `None`: not a candidate for settling), for [`apply_devices`] to file
+    /// under [`SETTLED`] when the job turns out settled.
+    static STAGED_KEYS: RefCell<Vec<Option<(u32, SettleKey)>>> = const { RefCell::new(Vec::new()) };
+    /// The staging pass count, to drop [`SETTLED`] entries of devices that were not seen.
+    static STAGE_PASS: Cell<u64> = const { Cell::new(0) };
+}
+
+/// One side of a device edge as the settle cache knows it, without reading its gas: a region by id and revision (the
+/// host bumps a region's revision on every payload write and every membership change), a turf by everything its probe
+/// reads.
+#[derive(Clone, Copy, PartialEq)]
+enum SideKey {
+    Region { id: u32, rev: u64 },
+    Turf(crate::gas::TurfStamp),
+}
+
+/// Which gas a side is, for deciding whether an earlier job in the step could have changed it.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum SideId {
+    Region(u32),
+    Turf(u32),
+}
+
+/// Everything one device's job in a step is a function of, short of the step length (fixed by `WorldConfig::dt`): its
+/// flow and valve rows (write stamps), its edge (device handle and what each end resolves to) and both sides' gas.
+/// Equal keys give an equal job on an equal start, so a job that changed nothing from this key changes nothing again.
+#[derive(Clone, Copy, PartialEq)]
+struct SettleKey {
+    flows: Sig,
+    valve: Sig,
+    device: u32,
+    a: SideKey,
+    b: SideKey,
+}
+
+impl SettleKey {
+    fn side_ids(&self) -> (SideId, SideId) {
+        let id = |s: &SideKey| match s {
+            SideKey::Region { id, .. } => SideId::Region(*id),
+            SideKey::Turf(t) => SideId::Turf(t.cell()),
+        };
+        (id(&self.a), id(&self.b))
+    }
+}
+
+struct Settled {
+    key: SettleKey,
+    seen: u64,
 }
 
 /// The sides staged so far, looked up by what they are (a region, a turf cell), so devices that meet on one share it.
@@ -545,8 +623,8 @@ thread_local! {
 struct Staging {
     sides: Vec<DeviceSide>,
     owners: Vec<SideOwner>,
-    regions: HashMap<u32, usize>,
-    turfs: HashMap<u32, usize>,
+    regions: FxHashMap<u32, usize>,
+    turfs: FxHashMap<u32, usize>,
 }
 
 impl Staging {
@@ -563,6 +641,7 @@ impl Staging {
         self.sides.push(DeviceSide {
             gas,
             volume: *region.summary(),
+            touched: false,
         });
         self.owners.push(SideOwner::Region { id, before: gas });
         self.regions.insert(key, at);
@@ -576,7 +655,11 @@ impl Staging {
         }
         let (gas, volume) = crate::gas::turf_device_probe(w, cell)?;
         let at = self.sides.len();
-        self.sides.push(DeviceSide { gas, volume });
+        self.sides.push(DeviceSide {
+            gas,
+            volume,
+            touched: false,
+        });
         self.owners.push(SideOwner::Turf { cell, before: gas });
         self.turfs.insert(cell, at);
         Some(at)
@@ -602,7 +685,17 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
     lap.lap("stage_law_index");
     crate::metrics::registry().counter("stage.devices").add(devices.len() as u64);
     // A budget leg's device: its entity and the regions across its edge.
-    let mut legs: HashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)> = HashMap::new();
+    let mut legs: FxHashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)> =
+        FxHashMap::default();
+    let pass = STAGE_PASS.with(|p| {
+        p.set(p.get() + 1);
+        p.get()
+    });
+    let mut keys: Vec<Option<(u32, SettleKey)>> = Vec::new();
+    // Sides a job that will run could change before a later job's turn: a settled job on neither is skipped.
+    let mut touched: FxHashSet<SideId> = FxHashSet::default();
+    let mut skipped = 0_u64;
+    let mut settled = SETTLED.take();
     for e in devices {
         let Some(law) = laws.get(&e.index()) else {
             continue;
@@ -624,6 +717,10 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
             Side::Region(r) => Some(r),
             _ => None,
         };
+        let region_key = |r: RegionId<Pipes>| SideKey::Region {
+            id: r.raw().bits(),
+            rev: host.region_revision(r),
+        };
         // A turf device's flow treats the turf as side `a` (vent pump, scrubber), wherever the graph stores the
         // cell.
         let ends = match (ea, eb) {
@@ -635,10 +732,38 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
             | (node @ Endpoint::Node(_), Endpoint::Cell(cell)) => resolve(node).map(|r| (Ok(cell), r)),
             _ => None,
         };
+        let key = ends.as_ref().and_then(|&(first, region_b)| {
+            let a = match first {
+                Ok(cell) => SideKey::Turf(crate::gas::turf_device_stamp(w, cell)?),
+                Err(r) => region_key(r),
+            };
+            Some(SettleKey {
+                flows: law.flow_sig,
+                valve: law.valve_sig,
+                device: dev_id.raw().bits(),
+                a,
+                b: region_key(region_b),
+            })
+        });
         drop(host);
         let Some((first, region_b)) = ends else {
             continue;
         };
+        // A settled device (its last step changed nothing, and nothing it depends on has changed since) is skipped,
+        // unless a job running earlier in this step could have changed a side of it first.
+        let keyed = key.filter(|_| !law.in_group).map(|k| (e.index(), k));
+        if let Some((idx, k)) = &keyed {
+            if let Some(entry) = settled.get_mut(idx) {
+                entry.seen = pass;
+                if entry.key == *k {
+                    let (a, b) = k.side_ids();
+                    if !touched.contains(&a) && !touched.contains(&b) {
+                        skipped += 1;
+                        continue;
+                    }
+                }
+            }
+        }
         if law.in_group
             && let Err(region_a) = first
         {
@@ -653,6 +778,12 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
         };
         let b = staging.region(w, region_b);
         if let (Some(a), Some(b)) = (a, b) {
+            if let Some(k) = &key {
+                let (ia, ib) = k.side_ids();
+                touched.insert(ia);
+                touched.insert(ib);
+            }
+            keys.push(keyed);
             jobs.push(DeviceJob {
                 entity: entity::entity_value(e),
                 flows: law.flows.clone(),
@@ -662,6 +793,7 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
                 moles: 0.0,
                 power_w: 0.0,
                 target_reached: false,
+                settled: true,
             });
         }
     }
@@ -672,7 +804,11 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
     }
     lap.lap("stage_budgets");
     let Staging { sides, owners, .. } = staging;
+    settled.retain(|_, s| s.seen == pass);
+    SETTLED.set(settled);
+    STAGED_KEYS.set(keys);
     crate::metrics::registry().counter("stage.jobs").add(jobs.len() as u64);
+    crate::metrics::registry().counter("stage.skipped").add(skipped);
     crate::metrics::registry().counter("stage.sides").add(sides.len() as u64);
     STAGED.with_borrow_mut(|s| *s = owners);
     let set = w
@@ -704,7 +840,7 @@ fn stage_budget(
     w: &World,
     staging: &mut Staging,
     rows: &[(u32, DeviceFlow)],
-    legs: &HashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)>,
+    legs: &FxHashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)>,
 ) -> Option<BudgetJob> {
     let (_, first) = rows.first()?;
     let kind = if first.rate_kind == rate_kind::MIX {
@@ -763,6 +899,18 @@ pub(crate) fn apply_devices(w: &mut World) -> Vec<f32> {
         .map(|j| j.clone())
         .unwrap_or_default();
     let owners = STAGED.with_borrow_mut(std::mem::take);
+    let keys = STAGED_KEYS.take();
+    let pass = STAGE_PASS.with(Cell::get);
+    SETTLED.with_borrow_mut(|settled| {
+        for (job, key) in done.jobs.iter().zip(keys) {
+            let Some((idx, key)) = key else { continue };
+            if job.settled {
+                settled.insert(idx, Settled { key, seen: pass });
+            } else {
+                settled.remove(&idx);
+            }
+        }
+    });
     let _ = w.set_global(DeviceJobs::default());
     for (side, owner) in done.sides.iter().zip(owners) {
         match owner {
@@ -830,5 +978,502 @@ mod handle_tests {
     fn an_empty_gas_source_is_a_vacuum_port() {
         let gas = gas_from_ref(None);
         assert_eq!(gas, PipeGas::default());
+    }
+}
+
+#[cfg(test)]
+mod settle_tests {
+    use super::*;
+    use vg_core::component::Component;
+    use vg_gas::cell::{GasCell, N, Q};
+    use vg_gas::gas::ids::GAS_OXYGEN;
+    use vg_gas::kind::device::{direction, stop_cmp, stop_side};
+
+    fn gas(moles: f32, kelvin: f32) -> PipeGas {
+        let mut amounts = [0.0_f32; Q];
+        amounts[GAS_OXYGEN] = moles;
+        amounts[N] = moles * 20.0 * kelvin;
+        PipeGas::from_amounts(&amounts, kelvin)
+    }
+
+    fn flow_row(device: EntityId, rate_kind: u8, rate: f32) -> DeviceFlow {
+        DeviceFlow {
+            device: device.index(),
+            rate_kind,
+            rate,
+            ..DeviceFlow::default()
+        }
+    }
+
+    /// Every flow shape the stager handles, on a small network of eight one-node regions and a 4x4 room: a power pump
+    /// that reaches its target, a downhill gate that equalizes, a volume pump with a stop, a valve, a masked fraction, a
+    /// flow with a limit, a regulator, and two vents on one turf.
+    struct Rig {
+        ports: Vec<EntityId>,
+        gate_row: EntityId,
+        valve_row: EntityId,
+    }
+
+    fn build_rig(w: &mut World) -> Rig {
+        let key = crate::gas::turf_key().unwrap();
+        let mut air = [0.0; N];
+        air[0] = 82.0;
+        air[1] = 21.8;
+        for cell in 0..16 {
+            crate::gas::register_cell(
+                w,
+                key,
+                cell,
+                GasCell::new(air, 293.15),
+                2500.0,
+                false,
+                Some(0),
+            );
+        }
+        build_copy(w, 3)
+    }
+
+    /// One copy of the rig on room cell `cell` (the room must be registered).
+    fn build_copy(w: &mut World, cell: u32) -> Rig {
+        let ports: Vec<EntityId> = (0..8).map(|_| w.spawn().unwrap()).collect();
+        let moles = [40.0, 5.0, 10.0, 0.0, 20.0, 2.0, 30.0, 1.0];
+        w.edit_network::<Pipes>({
+            let ports = ports.clone();
+            move |host| {
+                for (i, &p) in ports.iter().enumerate() {
+                    let _ = host.bind_node(p, 0, 0, 100.0 + 25.0 * i as f32);
+                }
+            }
+        })
+        .unwrap();
+        w.commit_network::<Pipes>();
+        w.edit_network::<Pipes>({
+            let ports = ports.clone();
+            move |host| {
+                for (i, &p) in ports.iter().enumerate() {
+                    let region = host.region_of(p).unwrap();
+                    *host.payload_mut(region).unwrap() = gas(moles[i], 290.0 + 5.0 * i as f32);
+                }
+            }
+        })
+        .unwrap();
+        let device = |w: &mut World, a: usize, b: Option<usize>, cell: u32| {
+            let d = w.spawn().unwrap();
+            let ports = ports.clone();
+            w.edit_network::<Pipes>(move |host| {
+                let _ = match b {
+                    Some(b) => host.bind_device(d, ports[a], ports[b], 0, ()),
+                    None => host.bind_cell_device(d, ports[a], cell, 0, ()),
+                };
+            })
+            .unwrap();
+            d
+        };
+        let pump = device(w, 0, Some(1), 0);
+        let gate = device(w, 1, Some(2), 0);
+        let vpump = device(w, 2, Some(3), 0);
+        let valve = device(w, 3, Some(4), 0);
+        let split = device(w, 4, Some(5), 0);
+        let limited = device(w, 5, Some(6), 0);
+        let regulator = device(w, 6, Some(7), 0);
+        let vent = device(w, 2, None, cell);
+        let scrubber = device(w, 6, None, cell);
+        let bind = |w: &mut World, row: DeviceFlow| w.bind_value(None, row).unwrap();
+        bind(
+            w,
+            DeviceFlow {
+                stop_side: stop_side::B,
+                stop_cmp: stop_cmp::AT_LEAST,
+                stop_kpa: 150.0,
+                ..flow_row(pump, rate_kind::POWER, 7500.0)
+            },
+        );
+        let gate_row = bind(
+            w,
+            DeviceFlow {
+                direction: direction::DOWNHILL,
+                ..flow_row(gate, rate_kind::VOLUME, 200.0)
+            },
+        );
+        bind(
+            w,
+            DeviceFlow {
+                stop_side: stop_side::B,
+                stop_cmp: stop_cmp::AT_LEAST,
+                stop_kpa: 300.0,
+                ..flow_row(vpump, rate_kind::VOLUME, 100.0)
+            },
+        );
+        bind(
+            w,
+            DeviceFlow {
+                gases: 1 << GAS_OXYGEN,
+                ..flow_row(split, rate_kind::FRACTION, 0.5)
+            },
+        );
+        bind(
+            w,
+            DeviceFlow {
+                stop_side: stop_side::B,
+                stop_cmp: stop_cmp::AT_LEAST,
+                stop_kpa: 200.0,
+                limit_side: stop_side::A,
+                limit_cmp: stop_cmp::AT_LEAST,
+                limit_kpa: 20.0,
+                ..flow_row(limited, rate_kind::VOLUME, 80.0)
+            },
+        );
+        bind(
+            w,
+            DeviceFlow {
+                stop_side: stop_side::B,
+                stop_cmp: stop_cmp::AT_LEAST,
+                stop_kpa: 120.0,
+                ..flow_row(regulator, rate_kind::UNLIMITED, 0.0)
+            },
+        );
+        // The vent releases into the room up to a target; the scrubber siphons the same turf.
+        bind(
+            w,
+            DeviceFlow {
+                stop_side: stop_side::A,
+                stop_cmp: stop_cmp::AT_LEAST,
+                stop_kpa: 110.0,
+                ..flow_row(vent, rate_kind::VOLUME, 40.0)
+            },
+        );
+        bind(w, flow_row(scrubber, rate_kind::VOLUME, 30.0));
+        let valve_row = w
+            .bind_value(
+                None,
+                DeviceValve {
+                    device: valve.index(),
+                    open: true,
+                },
+            )
+            .unwrap();
+        Rig {
+            ports,
+            gate_row,
+            valve_row,
+        }
+    }
+
+    struct Outcome {
+        reports: Vec<Vec<f32>>,
+        jobs: Vec<usize>,
+        regions: Vec<PipeGas>,
+        turfs: Vec<Option<(PipeGas, f64)>>,
+    }
+
+    fn set_rate(w: &mut World, row: EntityId, rate: f64) {
+        let kind = w.kind_of::<DeviceFlow>().unwrap();
+        let field = DeviceFlow::field_id("rate").unwrap();
+        w.set(row, kind, field, None, rate).unwrap();
+    }
+
+    /// Runs the rig `steps` steps, staging and applying as `pace` does, poking it from outside at fixed steps. With
+    /// `cache` off the settled cache is emptied before each stage, which is exactly a stager that never skips.
+    fn run(cache: bool, steps: usize) -> Outcome {
+        crate::world::configure_for_test(4, 4, 1).unwrap();
+        let rig = with_world(|w| Ok(build_rig(w))).unwrap();
+        let (mut reports, mut jobs) = (Vec::new(), Vec::new());
+        for step in 0..steps {
+            let staged = with_world(|w| {
+                match step {
+                    // DM changes a setting: the gate rate.
+                    30 => set_rate(w, rig.gate_row, 350.0),
+                    // DM writes a setting it already had: nothing may change.
+                    45 => set_rate(w, rig.gate_row, 350.0),
+                    // Gas arrives in a region from outside (a canister, a reaction).
+                    60 => {
+                        let port = rig.ports[4];
+                        w.edit_network::<Pipes>(move |host| {
+                            let region = host.region_of(port).unwrap();
+                            *host.payload_mut(region).unwrap() = gas(90.0, 320.0);
+                        })
+                        .unwrap();
+                    }
+                    // The valve closes.
+                    75 => {
+                        let kind = w.kind_of::<DeviceValve>().unwrap();
+                        let field = DeviceValve::field_id("open").unwrap();
+                        w.set(rig.valve_row, kind, field, None, 0.0).unwrap();
+                    }
+                    _ => {}
+                }
+                if !cache {
+                    SETTLED.take();
+                }
+                stage_devices(w)?;
+                let staged = w
+                    .global::<DeviceJobs>()
+                    .map_err(|e| eyre!("{e}"))?
+                    .jobs
+                    .len();
+                w.step_blocking();
+                Ok((staged, apply_devices(w)))
+            })
+            .unwrap();
+            jobs.push(staged.0);
+            reports.push(staged.1);
+        }
+        with_world(|w| {
+            let regions = {
+                let host = w.network::<Pipes>().unwrap();
+                rig.ports
+                    .iter()
+                    .map(|&p| *host.payload(host.region_of(p).unwrap()).unwrap())
+                    .collect()
+            };
+            let turfs = (0..16)
+                .map(|c| crate::gas::turf_device_probe(w, c))
+                .collect();
+            Ok(Outcome {
+                reports,
+                jobs,
+                regions,
+                turfs,
+            })
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn the_settle_cache_changes_no_gas_and_no_report_and_skips_work() {
+        let count = |name: &str| crate::metrics::registry().counter(name).get();
+        let probe = || {
+            (
+                count("stage.jobs"),
+                count("stage.skipped"),
+                count("frame.us.stage_device_loop"),
+                count("frame.us.stage_law_index"),
+            )
+        };
+        let t0 = probe();
+        let off = run(false, 90);
+        let t1 = probe();
+        let on = run(true, 90);
+        let t2 = probe();
+        eprintln!(
+            "counters over 90 steps (jobs, skipped, device_loop us, law_index us): cache off {:?}, cache on {:?}",
+            (t1.0 - t0.0, t1.1 - t0.1, t1.2 - t0.2, t1.3 - t0.3),
+            (t2.0 - t1.0, t2.1 - t1.1, t2.2 - t1.2, t2.3 - t1.3)
+        );
+        assert_eq!(
+            on.reports, off.reports,
+            "every step reports the same device movement"
+        );
+        assert_eq!(
+            on.regions, off.regions,
+            "every region ends with the same gas"
+        );
+        assert!(on.turfs == off.turfs, "the room ends with the same gas");
+        assert!(
+            on.jobs.iter().zip(&off.jobs).all(|(a, b)| a <= b),
+            "the cache never stages a job the plain stager would not"
+        );
+        let (cached, plain): (usize, usize) = (on.jobs.iter().sum(), off.jobs.iter().sum());
+        assert!(
+            cached < plain,
+            "a settling network stages fewer jobs: {cached} vs {plain}"
+        );
+        eprintln!(
+            "settle cache: jobs staged over 90 steps {cached} (cache) vs {plain} (none); last step {} vs {}",
+            on.jobs[89], off.jobs[89]
+        );
+    }
+
+    #[test]
+    fn every_writer_of_a_device_row_moves_its_stamp_and_a_rewrite_of_the_same_value_does_not() {
+        crate::world::configure_for_test(2, 2, 1).unwrap();
+        with_world(|w| {
+            let kind = w.kind_of::<DeviceFlow>().unwrap();
+            let device = w.spawn().unwrap();
+            // bind
+            let row = w
+                .bind_value(None, flow_row(device, rate_kind::VOLUME, 10.0))
+                .unwrap();
+            let bound = w.row_stamp::<DeviceFlow>(row).unwrap();
+            assert!(bound > 0, "a bound row has a stamp");
+            // set (the DM write path): a new value moves it, the same value does not
+            set_rate(w, row, 20.0);
+            let set = w.row_stamp::<DeviceFlow>(row).unwrap();
+            assert!(set > bound, "set moves the stamp");
+            set_rate(w, row, 20.0);
+            assert_eq!(
+                w.row_stamp::<DeviceFlow>(row),
+                Some(set),
+                "the same value is no change"
+            );
+            // put (a whole-row transfer): likewise
+            w.put(row, flow_row(device, rate_kind::VOLUME, 30.0))
+                .unwrap();
+            let put = w.row_stamp::<DeviceFlow>(row).unwrap();
+            assert!(put > set, "put moves the stamp");
+            w.put(row, flow_row(device, rate_kind::VOLUME, 30.0))
+                .unwrap();
+            assert_eq!(
+                w.row_stamp::<DeviceFlow>(row),
+                Some(put),
+                "the same row is no change"
+            );
+            // another row's writes never move this one
+            let other = w
+                .bind_value(None, flow_row(device, rate_kind::VOLUME, 1.0))
+                .unwrap();
+            set_rate(w, other, 2.0);
+            assert_eq!(w.row_stamp::<DeviceFlow>(row), Some(put));
+            // detach and bind again: a fresh, larger stamp, never a repeat
+            w.detach(row, kind).unwrap();
+            assert_eq!(w.row_stamp::<DeviceFlow>(row), None, "no row, no stamp");
+            let again = w
+                .bind_value(Some(row), flow_row(device, rate_kind::VOLUME, 30.0))
+                .unwrap();
+            assert!(
+                w.row_stamp::<DeviceFlow>(again).unwrap() > put,
+                "a re-bound row never reuses a stamp"
+            );
+            // the valve kind stamps too
+            let valve = w
+                .bind_value(
+                    None,
+                    DeviceValve {
+                        device: device.index(),
+                        open: false,
+                    },
+                )
+                .unwrap();
+            let before = w.row_stamp::<DeviceValve>(valve).unwrap();
+            let vkind = w.kind_of::<DeviceValve>().unwrap();
+            w.set(
+                valve,
+                vkind,
+                DeviceValve::field_id("open").unwrap(),
+                None,
+                1.0,
+            )
+            .unwrap();
+            assert!(w.row_stamp::<DeviceValve>(valve).unwrap() > before);
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    /// The idle server in miniature, at its real device count: `COPIES` rigs (about 2700 devices) left to settle, then the
+    /// stage counters per step. Run with `cargo test --release -- --ignored --nocapture idle_stage_counters`.
+    #[test]
+    #[ignore = "a counter measurement, not a check"]
+    fn idle_stage_counters() {
+        const COPIES: u32 = 300;
+        const STEPS: usize = 120;
+        let count = |name: &str| crate::metrics::registry().counter(name).get();
+        for cache in [false, true] {
+            crate::world::configure_for_test(4, 4, 1).unwrap();
+            with_world(|w| {
+                let key = crate::gas::turf_key().unwrap();
+                let mut air = [0.0; N];
+                air[0] = 82.0;
+                air[1] = 21.8;
+                for cell in 0..16 {
+                    crate::gas::register_cell(
+                        w,
+                        key,
+                        cell,
+                        GasCell::new(air, 293.15),
+                        2500.0,
+                        false,
+                        Some(0),
+                    );
+                }
+                for i in 0..COPIES {
+                    build_copy(w, i % 16);
+                }
+                Ok(())
+            })
+            .unwrap();
+            let mut last = (0, 0, 0, 0);
+            let mut tail = (0_u64, 0_u64, 0_u64, 0_u64, 0_u64);
+            for step in 0..STEPS {
+                let before = (
+                    count("stage.jobs"),
+                    count("stage.skipped"),
+                    count("frame.us.stage_device_loop"),
+                    count("frame.us.stage_law_index"),
+                    count("frame.us.stage_set_global"),
+                );
+                with_world(|w| {
+                    if !cache {
+                        SETTLED.take();
+                    }
+                    stage_devices(w)?;
+                    w.step_blocking();
+                    let _ = apply_devices(w);
+                    Ok(())
+                })
+                .unwrap();
+                let after = (
+                    count("stage.jobs"),
+                    count("stage.skipped"),
+                    count("frame.us.stage_device_loop"),
+                    count("frame.us.stage_law_index"),
+                    count("frame.us.stage_set_global"),
+                );
+                last = (
+                    after.0 - before.0,
+                    after.1 - before.1,
+                    after.2 - before.2,
+                    after.3 - before.3,
+                );
+                if step >= STEPS - 20 {
+                    tail.0 += after.0 - before.0;
+                    tail.1 += after.1 - before.1;
+                    tail.2 += after.2 - before.2;
+                    tail.3 += after.3 - before.3;
+                    tail.4 += after.4 - before.4;
+                }
+            }
+            eprintln!(
+                "cache {}: devices {} | last step: jobs {}, skipped {}, device_loop {} us, law_index {} us | mean of last 20 steps: jobs {}, skipped {}, device_loop {} us, law_index {} us, set_global {} us",
+                if cache { "on " } else { "off" },
+                COPIES * 9,
+                last.0,
+                last.1,
+                last.2,
+                last.3,
+                tail.0 / 20,
+                tail.1 / 20,
+                tail.2 / 20,
+                tail.3 / 20,
+                tail.4 / 20
+            );
+        }
+    }
+
+    #[test]
+    fn a_settled_network_stages_fewer_jobs_and_a_changed_row_wakes_its_device() {
+        crate::world::configure_for_test(4, 4, 1).unwrap();
+        let rig = with_world(|w| Ok(build_rig(w))).unwrap();
+        let staged = |w: &mut World| {
+            stage_devices(w).unwrap();
+            let n = w.global::<DeviceJobs>().unwrap().jobs.len();
+            w.step_blocking();
+            let _ = apply_devices(w);
+            n
+        };
+        let counts: Vec<usize> = (0..80)
+            .map(|_| with_world(|w| Ok(staged(w))).unwrap())
+            .collect();
+        let quiet = counts[79];
+        assert!(quiet < counts[0], "the network settles: {counts:?}");
+        let after_write = with_world(|w| {
+            set_rate(w, rig.gate_row, 999.0);
+            Ok(staged(w))
+        })
+        .unwrap();
+        assert!(
+            after_write > quiet,
+            "a changed row is staged again: {quiet} -> {after_write}"
+        );
     }
 }

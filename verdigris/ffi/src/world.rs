@@ -94,8 +94,8 @@ fn register(b: &mut WorldBuilder) -> Fields {
     // form. Registered here (additive; nothing reads or writes them yet --
     // that's `ffi/src/pipes.rs`'s own device stepping, still on the old
     // encoding pending the DM-side device file rewrite).
-    b.add_component::<vg_gas::kind::device::DeviceFlow>();
-    b.add_component::<vg_gas::kind::device::DeviceValve>();
+    b.add_stamped_component::<vg_gas::kind::device::DeviceFlow>();
+    b.add_stamped_component::<vg_gas::kind::device::DeviceValve>();
 
     // Heat (`rust_architecture.md` §6, §8.5, step 4): the turf solid field
     // plus HeatBody/its coupling components and laws. `crate::heat` is the

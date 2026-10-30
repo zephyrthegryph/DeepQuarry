@@ -22,6 +22,9 @@ GLOBAL_LIST_EMPTY(boot_phase_first_us)
 			GLOB.boot_phase_first_us[phase] += us
 		by_type[A.type] += us
 
+/// phase -> calls, for what is counted and not timed (the report's "counted" rows).
+GLOBAL_LIST_EMPTY(boot_phase_counts)
+
 /// Prints every phase, longest first, and the write counters the map load ran up, to the world log. Does nothing while the timers are off.
 /proc/boot_phase_report(label)
 	if(!GLOB.boot_phase_on)
@@ -46,4 +49,9 @@ GLOBAL_LIST_EMPTY(boot_phase_first_us)
 		for(var/i in 1 to min(8, length(by_type)))
 			line += " [by_type[i]]=[round(by_type[by_type[i]] / 1000000, 0.01)]s"
 		log_world("Atoms boot phase ([label]): top types of [phase]:[line]")
+	var/list/counted = sortTim(GLOB.boot_phase_counts.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	var/count_line = ""
+	for(var/i in 1 to min(25, length(counted)))
+		count_line += " [counted[i]]=[counted[counted[i]]]"
+	log_world("Atoms boot phase ([label]): counted:[count_line]")
 	log_world("Atoms boot phase ([label]): counters: state_changed pre-init skips [GLOB.state_changed_preinit_skipped], own_field_changed memo spared [GLOB.own_field_memo_spared], reader probes [GLOB.plan_reader_probes]")
