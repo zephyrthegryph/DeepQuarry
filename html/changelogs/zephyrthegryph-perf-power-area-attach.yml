@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Building an ownership table skips the links that name neither of its owner type's ends before patching them (faster first use of each type)"
