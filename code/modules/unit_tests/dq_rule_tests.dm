@@ -98,14 +98,6 @@
 	TEST_ASSERT_EQUAL(ignite.value_property, PROP_IGNITION_POINT, "its level is the ignition point")
 	TEST_ASSERT(ignite.fires_above(), "it fires above the level")
 
-	var/datum/rule/grille = rules[/datum/rule/integrity_breaks]
-	var/list/grille_thresholds = grille.thresholds()
-	TEST_ASSERT_EQUAL(length(grille_thresholds), 1, "the grille rule has one threshold")
-	var/datum/rule_trigger/breaks = grille_thresholds[1]
-	TEST_ASSERT_EQUAL(breaks.kind, RULE_TRIGGER_KEY, "integrity is DM-owned: a key trigger")
-	TEST_ASSERT_EQUAL(breaks.key_kind, RULE_KEY_INTEGRITY, "on the integrity key")
-	TEST_ASSERT(!breaks.fires_above(), "it fires at or below the breaking point")
-
 	var/datum/rule/band = dq_rule_fixture(/datum/rule/dq_test_band)
 	var/datum/rule_trigger/band_trigger = band.triggers[1]
 	TEST_ASSERT_EQUAL(band_trigger.kind, RULE_TRIGGER_BAND, "Native temperature band is a Band watch")
@@ -119,7 +111,7 @@
 	TEST_ASSERT(paper in dq_rules_for_type(/obj/item/paper/card), "paper subtypes inherit the rule")
 	TEST_ASSERT_NULL(dq_rules_for_type(/turf/simulated/floor), "a type without rules has none")
 	TEST_ASSERT(dq_rules_heat_deferred(/obj/item/paper), "paper's rules all wait for a heat body")
-	TEST_ASSERT(!dq_rules_heat_deferred(/obj/structure/grille), "a grille's integrity rule subscribes at once")
+	TEST_ASSERT_NULL(dq_rules_for_type(/obj/structure/grille), "a grille's breaking point is the native default, not a rule")
 	TEST_ASSERT(!rules[/datum/rule/heat_behaviour], "an abstract rule base is not registered")
 
 // ---- Generated threshold tests ----
@@ -131,7 +123,7 @@
 	tier = TEST_TIER_EXHAUSTIVE
 
 /// Normal tier: the generated threshold tests for a fixed set of rules -- one
-/// per trigger shape (heat above, integrity below, a flavour band). The hold
+/// per trigger shape (heat above, a behaviour effect). The hold
 /// rules (cooking holds 30 s of real reactor time) are left to the exhaustive
 /// run; dq_rule_hold_and_band covers the hold path on every merge.
 /datum/unit_test/dq_rule_thresholds/representative
@@ -141,8 +133,6 @@
 	return list(
 		/datum/rule/ignition,
 		/datum/rule/melting,
-		/datum/rule/integrity_breaks,
-		/datum/rule/damage_flavour/light,
 		/datum/rule/heat_behaviour/light_breaks,
 		/datum/rule/heat_behaviour/rag_ignites,
 	)
@@ -442,14 +432,14 @@
 	for(var/obj/effect/decal/cleanable/molten_item/goo in turf_contents_of_type(T, /obj/effect/decal/cleanable/molten_item))
 		qdel(goo)
 
-// ---- Parity: grille breaking point ----
+// ---- Parity: grille breaking point (the native default, no binding) ----
 
 /datum/unit_test/dq_rule_grille_parity
 
 /datum/unit_test/dq_rule_grille_parity/Run()
 	var/turf/T = test_floor()
 	var/obj/structure/grille/grille = allocate(/obj/structure/grille, T)
-	TEST_ASSERT(dq_rule_binding_of(grille), "grilles subscribe their breaking point")
+	TEST_ASSERT_NULL(dq_rule_binding_of(grille), "grilles need no binding for their breaking point")
 	var/rods_before = count_rods(T)
 	// Old behaviour: 10 damage crosses integrity_failure (0.375 of 16) and breaks it at once.
 	grille.take_damage(10, BRUTE, MELEE, FALSE)
@@ -469,13 +459,11 @@
 	// Repair above the breaking point re-arms the rule (atom_fix), and it breaks again.
 	var/obj/structure/grille/third = allocate(/obj/structure/grille, T)
 	third.take_damage(10, BRUTE, MELEE, FALSE)
-	var/datum/rule_binding/binding = dq_rule_binding_of(third)
-	var/list/bound_rules = binding.rule_list()
-	var/break_index = bound_rules.Find(GLOBAL_TABLE_GET(dq_rules)[/datum/rule/integrity_breaks])
-	TEST_ASSERT(break_index, "grilles have the breaking-point rule")
-	TEST_ASSERT(binding.is_holding(break_index), "broken: the rule holds")
+	TEST_ASSERT(third.destroyed, "10 damage breaks it")
 	third.repair_damage(10)
-	TEST_ASSERT(!binding.is_holding(break_index), "repaired above the breaking point: the rule is re-armed")
+	var/rods_third = count_rods(T)
+	third.take_damage(10, BRUTE, MELEE, FALSE)
+	TEST_ASSERT_EQUAL(count_rods(T) - rods_third, 1, "repaired above the breaking point it is armed again and breaks again")
 	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		qdel(R)
 

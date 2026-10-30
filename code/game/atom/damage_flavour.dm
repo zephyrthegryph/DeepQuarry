@@ -1,6 +1,5 @@
-// Generated damage flavour text (damage.md §6). The damage-flavour rules in
-// code/datums/rules/declarations.dm keep each object's damage_band; examine()
-// shows the band's line. This replaces the hand-written per-type lines.
+// Generated damage flavour text (damage.md §6). A band is derived from the
+// atom's integrity ratio (no rule, no stored state); examine() shows its line. This replaces the hand-written per-type lines.
 
 /// The examine line for `band` (DAMAGE_BAND_*), or null for none.
 /atom/proc/damage_flavour_text(band)
@@ -36,31 +35,39 @@
 	if(new_band > dq_damage_band_at(old_value / max_integrity))
 		visible_message(damage_band_announcement(new_band))
 
-/// The damage band (DAMAGE_BAND_*) for an integrity ratio, read against the
-/// declared flavour rules' levels.
+/// The damage band (DAMAGE_BAND_*) for an integrity ratio: below 3/4 light, below 1/2 moderate, below 1/4 heavy.
 /proc/dq_damage_band_at(ratio)
+	var/static/list/levels = list(0.75, 0.5, 0.25)
 	. = DAMAGE_BAND_NONE
-	for(var/datum/rule/rule as anything in GLOBAL_TABLE_GET(damage_flavour_rules))
-		var/datum/rule_trigger/trigger = rule.triggers[1]
-		if(ratio < trigger.value && rule.band > .)
-			. = rule.band
+	for(var/band in 1 to length(levels))
+		if(ratio < levels[band])
+			. = band
 
-/// The damage band `A` is in, read against the declared flavour rules' levels.
-/// For atoms no rule binding keeps (turfs, objects that never materialized).
+/// The damage band `A` is in, derived from its integrity: nothing is stored or bound.
 /proc/dq_damage_band_for(atom/A)
 	if(!A.uses_integrity || A.max_integrity <= 0)
 		return DAMAGE_BAND_NONE
-	if(sparse_get_or(A, damage_band, DAMAGE_BAND_NONE))
-		return sparse_get_or(A, damage_band, DAMAGE_BAND_NONE)
 	return dq_damage_band_at(A.get_integrity() / A.max_integrity)
 
-/// The compiled damage-flavour rules.
-GLOBAL_TABLE(damage_flavour_rules, GLOBAL_PROC_REF(build_damage_flavour_rules))
+/// Whether examine shows a damage band for objects of `path`: the types that declare damage flavour.
+/proc/dq_damage_flavour_declared(path)
+	return CACHED(damage_flavour_declared, path)
 
-/proc/build_damage_flavour_rules()
-	var/list/found = list()
-	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
-	for(var/path in subtypesof(/datum/rule/damage_flavour))
-		if(rules[path])
-			found += rules[path]
-	return found
+DECLARE_SHARED_CACHE(damage_flavour_declared, GLOBAL_PROC_REF(build_damage_flavour_declared), SC_NEVER)
+
+/proc/build_damage_flavour_declared(path)
+	var/atom/A = path
+	if(!initial(A.uses_integrity) || initial(A.max_integrity) <= 0)
+		return FALSE
+	var/static/list/roots = list(
+		/obj/structure/window,
+		/obj/structure/railing,
+		/obj/structure/low_wall,
+		/obj/structure/table,
+		/obj/machinery/door,
+		/obj/structure/expedition_demo_target,
+	)
+	for(var/root in roots)
+		if(ispath(path, root))
+			return TRUE
+	return FALSE

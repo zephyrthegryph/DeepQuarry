@@ -48,22 +48,6 @@ CAPABILITIES(/datum)
 	if(dq_rule_binding_of(A))
 		own_clear(A, nameof(/datum::rule_binding), OWN_DELETE)
 
-/// Evaluate `thing`'s rules now instead of at the next dispatch. For code about
-/// to destroy the object (take_damage before atom_destruction), so every rule
-/// that the change triggered runs first, in the order the old code ran it.
-/proc/dq_rules_settle(datum/thing)
-	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
-	binding?.evaluate()
-
-/// The live binding of `thing` if one of its rules replaces the legacy path `flag`.
-/// Objects of a rule-driven type that never materialized (sandboxed, latent)
-/// have none, and keep the legacy path.
-/proc/dq_rules_binding_replacing(atom/thing, flag)
-	if(!RULES_REPLACE(thing.type, flag))
-		return null
-	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
-	return binding?.replaces(flag) ? binding : null
-
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
 	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
@@ -191,15 +175,6 @@ CAPABILITIES(/datum/rule_binding)
 /// Whether rule i held at the last look (tests and diagnostics).
 /datum/rule_binding/proc/is_holding(i)
 	return (holding & RULE_BIT(i)) ? TRUE : FALSE
-
-/// Whether a live rule on this binding replaces the RULE_REPLACES_* `flag`.
-/datum/rule_binding/proc/replaces(flag)
-	var/list/rules = table.rules
-	for(var/i in 1 to table.count)
-		var/datum/rule/rule = rules[i]
-		if((rule.replaces & flag) && (live & RULE_BIT(i)))
-			return TRUE
-	return FALSE
 
 /datum/rule_binding/proc/active_count()
 	. = 0

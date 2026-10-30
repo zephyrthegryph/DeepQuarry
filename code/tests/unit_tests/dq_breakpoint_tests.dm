@@ -29,35 +29,63 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 	heard++
 	last_flag = event.damage_flag
 
-// ---- The rules are declared and picked up by the generator ----
+// ---- One path: the break/destroy default is native and binds nothing ----
 
-/datum/unit_test/dq_breakpoint_rules_declared
+/datum/unit_test/dq_breakpoint_single_path
 
-/datum/unit_test/dq_breakpoint_rules_declared/Run()
-	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
-	var/datum/rule/breaks = rules[/datum/rule/integrity_breaks]
-	var/datum/rule/destroyed = rules[/datum/rule/integrity_destroyed]
-	TEST_ASSERT(breaks, "the breaking-point rule is registered")
-	TEST_ASSERT(destroyed, "the destroyed rule is registered")
-	for(var/path in list(/datum/rule/damage_flavour/light, /datum/rule/damage_flavour/moderate, /datum/rule/damage_flavour/heavy))
-		var/datum/rule/flavour = rules[path]
-		TEST_ASSERT(flavour, "[path] is registered")
-		TEST_ASSERT_EQUAL(length(flavour.thresholds()), 1, "[path] declares one threshold")
-	TEST_ASSERT_EQUAL(length(GLOBAL_TABLE_GET(damage_flavour_rules)), 3, "three flavour bands")
-
-	// Only types that declare a breakpoint get the rules; plain objects cost nothing.
-	TEST_ASSERT(breaks in dq_rules_for_type(/obj/machinery/computer), "computers break by rule")
-	TEST_ASSERT(breaks in dq_rules_for_type(/obj/structure/grille), "grilles break by rule")
-	TEST_ASSERT(!(breaks in dq_rules_for_type(/obj/structure/window)), "windows declare no breaking point")
-	TEST_ASSERT(destroyed in dq_rules_for_type(/obj/structure/window), "windows have damage flavour, so their destruction is a rule too")
+/datum/unit_test/dq_breakpoint_single_path/Run()
+	// No rule declares a breakpoint or a damage band, so these types carry no rules and no per-object binding.
+	for(var/path in list(/obj/machinery/computer, /obj/structure/grille, /obj/structure/window, /obj/structure/railing, /obj/machinery/door/airlock))
+		TEST_ASSERT_NULL(dq_rules_for_type(path), "[path] declares no rules: its break and destroy are the native default")
 	TEST_ASSERT_NULL(dq_rules_for_type(/obj/item/dq_rule_test), "an object without breakpoints has no rules")
+	TEST_ASSERT(dq_damage_flavour_declared(/obj/structure/window), "windows declare damage flavour")
+	TEST_ASSERT(!dq_damage_flavour_declared(/obj/machinery/computer), "computers do not")
+	var/turf/T = dq_containment_floor()
+	var/obj/machinery/dq_breakpoint_probe/probe = allocate(/obj/machinery/dq_breakpoint_probe, T)
+	TEST_ASSERT_NULL(dq_rule_binding_of(probe), "a machine with a breaking point needs no binding")
+	var/obj/structure/grille/grille = allocate(/obj/structure/grille, T)
+	TEST_ASSERT_NULL(dq_rule_binding_of(grille), "nor does a grille")
+	// A materialized and a sandboxed object take the same path with the same outcome.
+	var/obj/machinery/dq_breakpoint_probe/sandboxed = new_unmaterialized(/obj/machinery/dq_breakpoint_probe, T)
+	for(var/obj/machinery/dq_breakpoint_probe/subject in list(probe, sandboxed))
+		subject.take_damage(60, BRUTE, MELEE, FALSE)
+		TEST_ASSERT_EQUAL(subject.break_calls, 1, "[subject.type] crossing its breaking point breaks once, bound or not")
+		TEST_ASSERT(!QDELETED(subject), "and does not destroy")
+	qdel(sandboxed)
+	own_turf_contents(T) // breaking throws sparks
 
-	// The generator instantiates each type that declares a breakpoint.
-	var/list/declaring = dq_rule_declaring_types(breaks, /obj)
-	TEST_ASSERT(/obj/machinery/dq_breakpoint_probe in declaring, "the generator covers the probe machine")
-	TEST_ASSERT(/obj/machinery/computer in declaring, "and computers")
-	TEST_ASSERT(!(/obj/machinery/computer/pandemic in declaring), "but not subtypes that inherit the level")
-	TEST_ASSERT(/obj/structure/window in dq_rule_declaring_types(rules[/datum/rule/damage_flavour/light], /obj/structure/window), "flavour covers its roots")
+/// A sample of formerly-legacy and formerly-rule types: break at the declared fraction (when declared), destroy at zero, each exactly on the crossing.
+/datum/unit_test/dq_breakpoint_sweep_outcomes
+
+/datum/unit_test/dq_breakpoint_sweep_outcomes/Run()
+	var/turf/T = dq_containment_floor()
+	var/list/sample = list(/obj/structure/window, /obj/structure/railing, /obj/structure/table, /obj/structure/grille, /obj/machinery/computer, /obj/machinery/door/airlock, /obj/machinery/dq_breakpoint_probe)
+	for(var/path in sample)
+		var/obj/subject = allocate(path, T)
+		if(!subject.uses_integrity)
+			continue
+		var/failure_amount = subject.integrity_failure * subject.max_integrity
+		var/expect_breaks = subject.integrity_failure > 0 ? 1 : 0
+		var/datum/dq_breakpoint_counter/counter = new
+		observe(subject, /datum/notice/atom_broken, counter, then(TYPE_PROC_REF(/datum/dq_breakpoint_counter, on_broken)))
+		if(expect_breaks)
+			var/to_above = subject.max_integrity - failure_amount - 1
+			if(to_above > 0)
+				subject.take_damage(to_above, BRUTE, "", FALSE)
+				TEST_ASSERT_EQUAL(counter.heard, 0, "[path]: above the breaking point nothing breaks")
+		TEST_ASSERT(!QDELETED(subject), "[path]: not destroyed above zero")
+		subject.take_damage(subject.max_integrity * 2, BRUTE, "", FALSE)
+		TEST_ASSERT(QDELETED(subject), "[path]: destroyed once integrity reaches zero")
+		TEST_ASSERT_EQUAL(counter.heard, expect_breaks, "[path]: the break fires exactly once over the whole fall, when declared")
+		qdel(counter)
+		own_turf_contents(T)
+
+/datum/dq_breakpoint_counter
+	var/heard = 0
+
+/datum/dq_breakpoint_counter/proc/on_broken(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	heard++
 
 // ---- Parity: machines breaking and being fixed ----
 
@@ -68,7 +96,7 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 	var/datum/dq_breakpoint_listener/listener = new
 	var/obj/machinery/dq_breakpoint_probe/probe = allocate(/obj/machinery/dq_breakpoint_probe, T)
 	observe(probe, /datum/notice/machinery_broken, listener, then(TYPE_PROC_REF(/datum/dq_breakpoint_listener, on_broken)))
-	TEST_ASSERT(dq_rule_binding_of(probe), "a machine with a breaking point subscribes its rules")
+	TEST_ASSERT_NULL(dq_rule_binding_of(probe), "a machine with a breaking point needs no binding")
 
 	probe.take_damage(40, BRUTE, MELEE, FALSE)
 	TEST_ASSERT(!probe.broken_now(), "above the breaking point it is not broken")
@@ -98,7 +126,7 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 	TEST_ASSERT_EQUAL(second.break_calls, 1, "a destroying hit still breaks first")
 	TEST_ASSERT(QDELETED(second), "and then destroys it")
 
-	// A sandboxed machine has no binding and keeps the legacy crossing.
+	// A sandboxed machine takes the same path.
 	var/obj/machinery/dq_breakpoint_probe/sandboxed = new_unmaterialized(/obj/machinery/dq_breakpoint_probe, T)
 	TEST_ASSERT_NULL(dq_rule_binding_of(sandboxed), "an unmaterialized machine has no binding")
 	sandboxed.take_damage(60, BRUTE, MELEE, FALSE)
@@ -136,16 +164,14 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/railing/railing = allocate(/obj/structure/railing, T)
-	TEST_ASSERT(dq_rule_binding_of(railing), "railings subscribe their damage flavour")
+	TEST_ASSERT_NULL(dq_rule_binding_of(railing), "railings need no binding for their damage flavour")
 	var/list/steps = list(1, 0.7, 0.45, 0.2, 0.6, 0.9, 0.1)
 	var/list/bands = list(DAMAGE_BAND_NONE, DAMAGE_BAND_LIGHT, DAMAGE_BAND_MODERATE, DAMAGE_BAND_HEAVY, DAMAGE_BAND_LIGHT, DAMAGE_BAND_NONE, DAMAGE_BAND_HEAVY)
 	for(var/i in 1 to length(steps))
 		var/ratio = steps[i]
 		var/band = bands[i]
 		railing.update_integrity(ratio * railing.max_integrity)
-		dq_rx_flush()
-		dq_rules_settle(railing)
-		TEST_ASSERT_EQUAL(sparse_get_or(railing, damage_band, DAMAGE_BAND_NONE), band, "at [ratio] integrity the band is [band]")
+		TEST_ASSERT_EQUAL(dq_damage_band_for(railing), band, "at [ratio] integrity the band is [band]")
 		var/text = jointext(railing.examine(viewer), "\n")
 		var/line = railing.damage_flavour_text(band)
 		if(line)
@@ -154,7 +180,7 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 			if(other != band)
 				TEST_ASSERT(!findtext(text, railing.damage_flavour_text(other)), "at [ratio] examine shows no other band's line")
 
-	// Unbound atoms (walls, sandboxed objects) read the same declared levels.
+	// Sandboxed objects read the same levels.
 	var/obj/structure/railing/sandboxed = new_unmaterialized(/obj/structure/railing, T)
 	for(var/i in 1 to length(steps))
 		sandboxed.update_integrity(steps[i] * sandboxed.max_integrity)

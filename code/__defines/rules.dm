@@ -32,12 +32,6 @@
 /// A DM-owned key (dq_rx_on_key): re-evaluate when the key is published.
 #define RULE_TRIGGER_KEY "Key"
 
-// ---- Legacy paths a rule replaces. The old code checks these and stands down. ----
-/// take_damage()/repair_damage()'s integrity_failure crossing -> atom_break()/atom_fix().
-#define RULE_REPLACES_INTEGRITY_BREAK (1<<1)
-/// take_damage()'s zero-integrity crossing -> atom_destruction().
-#define RULE_REPLACES_INTEGRITY_DESTRUCTION (1<<2)
-
 // ---- Damage flavour bands (damage.md §6). Set by the damage-flavour rules. ----
 #define DAMAGE_BAND_NONE 0
 /// Below 3/4 integrity.
@@ -60,8 +54,6 @@
 
 /// The rules that apply to `path`: a shared list, or null.
 #define RULES_FOR_TYPE(path) dq_rules_for_type(path)
-/// RULE_REPLACES_* flags of the rules on `path`.
-#define RULES_REPLACE(path, flag) (dq_rules_replace_flags(path) & (flag))
 
 // ---- World adapter (code/datums/rules/world_adapter.dm) ----
 // Wake reasons passed to rule_wake(): the Rust world's reason classes.
