@@ -50,6 +50,10 @@ mk code/controllers/globals.dm '/datum/controller/global_vars/Destroy(force)
 	return QDEL_HINT_IWILLGC'
 mk code/controllers/other.dm '/datum/controller/other/Destroy(force)
 	return ..()'
+mk code/modules/mob/say_old.dm '/mob/verb/say_verb_old(message as text)
+	set name = "Say"'
+mk code/modules/mob/say_new.dm '/mob/verb/say_verb_new(message as text)
+	set name = "Say"'
 mk code/modules/widgets/allowed.dm '/proc/b()
 	return 1 // ALLOW(scheduler): a reason long enough to count'
 mk code/modules/widgets/baselined.dm '/obj/item/widget/baselined'
@@ -102,6 +106,8 @@ expect code/modules/unit_tests/waits.dm clean ""
 expect code/modules/admin/verbs/poke.dm clean ""
 expect code/controllers/globals.dm clean ""
 expect code/controllers/other.dm dirty "oldform:Destroy()"
+expect code/modules/mob/say_old.dm clean ""
+expect code/modules/mob/say_new.dm dirty "oldform:verb"
 expect code/modules/widgets/allowed.dm clean ""
 expect code/modules/widgets/allow_init.dm dirty "allow"
 expect code/modules/widgets/allow_mixed.dm dirty "allow"
@@ -117,7 +123,7 @@ expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 15 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 16 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
 bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"

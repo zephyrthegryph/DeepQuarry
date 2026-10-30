@@ -72,6 +72,14 @@ OLDFORM_EXEMPT = ("code/tests/", "code/modules/unit_tests/", "code/modules/bench
 # The controller base and the GLOB holder run before the kernel exists: Initialize() is their boot hook, and the holder's
 # Destroy() deliberately never runs the parent chain (admin var-edit exploit). Neither has a declared replacement.
 BOOT_HOLDERS = ("code/controllers/controller.dm", "code/controllers/globals.dm")
+# Chat, OOC and input verbs a player types by name or binds to a key are the final form (final_api section 17, "client, OOC and
+# admin commands"). An explicit list of files, never a pattern: a new verb file has to be added here on purpose.
+OOC_VERB_FILES = (
+    "code/modules/mob/say_old.dm", "code/modules/mob/typing_indicator.dm", "code/modules/examine/examine.dm",
+    "code/modules/point/point.dm", "code/modules/mob/language/language_panel.dm", "code/modules/client/verbs/suicide.dm",
+    "code/modules/mob/combat_mode.dm", "code/modules/mob/autowhisper.dm", "code/game/skincmd.dm",
+    "code/modules/player_tips/player_tips_controller.dm",
+)
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
 
 ALLOW = re.compile(r"\bALLOW\(([^)]*)\)")
@@ -245,7 +253,7 @@ def main(argv):
         for label, rx in ([] if exempt else OLD_FORMS):
             if any(rx.search(ln) for ln in lines):
                 why.append("oldform:" + label)
-        if not exempt and not any(v in f for v in VERB_EXEMPT) and non_client_verb(lines):
+        if not exempt and f not in OOC_VERB_FILES and not any(v in f for v in VERB_EXEMPT) and non_client_verb(lines):
             why.append("oldform:verb")
         if not exempt and atom_new_override(lines):
             why.append("oldform:New() override")
