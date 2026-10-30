@@ -1075,10 +1075,6 @@ code/modules/holomap/holomap_datum.dm	code/content/holomap/holomap_datum.dm
 code/modules/holowarrant_panel.dm	code/content/modules/holowarrant_panel.dm
 code/modules/hydro/plants.dm	code/content/hydro/plants.dm
 code/modules/hydro/plantsstorage.dm	code/content/hydro/plantsstorage.dm
-code/modules/hydroponics/fruit_spawner.dm	code/content/hydroponics/fruit_spawner.dm
-code/modules/hydroponics/seed_packets.dm	code/content/hydroponics/seed_packets.dm
-code/modules/hydroponics/trays/tray_reagents.dm	code/content/hydroponics/trays/tray_reagents.dm
-code/modules/hydroponics/trays/tray_update_icons.dm	code/content/hydroponics/trays/tray_update_icons.dm
 code/modules/identification/item_procs.dm	code/content/identification/item_procs.dm
 code/modules/integrated_electronics/core/integrated_circuit.dm	code/content/integrated_electronics/core/integrated_circuit.dm
 code/modules/integrated_electronics/subtypes/converters.dm	code/content/integrated_electronics/subtypes/converters.dm
@@ -1192,11 +1188,6 @@ code/modules/recycling/disposal_junctions.dm	code/content/recycling/disposal_jun
 code/modules/recycling/disposal_tagger.dm	code/content/recycling/disposal_tagger.dm
 code/modules/recycling/disposal_trunk.dm	code/content/recycling/disposal_trunk.dm
 code/modules/refinery/core/industrial_reagent_machines.dm	code/content/refinery/core/industrial_reagent_machines.dm
-code/modules/research/tg/disks.dm	code/content/research/tg/disks.dm
-code/modules/research/tg/machinery/_production.dm	code/content/research/tg/machinery/_production.dm
-code/modules/research/tg/rdconsole.dm	code/content/research/tg/rdconsole.dm
-code/modules/research/tg/techwebs/__techweb_helpers.dm	code/content/research/tg/techwebs/__techweb_helpers.dm
-code/modules/research/tg/techwebs/_techweb_node.dm	code/content/research/tg/techwebs/_techweb_node.dm
 code/modules/resleeving/circuitboards.dm	code/content/resleeving/circuitboards.dm
 code/modules/resleeving/designer.dm	code/content/resleeving/designer.dm
 code/modules/resleeving/documents.dm	code/content/resleeving/documents.dm
@@ -1288,8 +1279,6 @@ code/modules/vote/vote_api.dm	code/content/vote/vote_api.dm
 code/modules/vote/vote_service.dm	code/content/vote/vote_service.dm
 code/modules/weapons/melee.dm	code/content/weapons/melee.dm
 code/modules/weapons/staves.dm	code/content/weapons/staves.dm
-code/modules/xenoarcheaology/tools/ano_device_battery.dm	code/content/xenoarcheaology/tools/ano_device_battery.dm
-code/modules/xenoarcheaology/tools/tools.dm	code/content/xenoarcheaology/tools/tools.dm
 code/modules/xenobio/machinery/monkey_processor.dm	code/content/xenobio/machinery/monkey_processor.dm
 code/ATMOSPHERICS/_atmos_setup.dm	code/domains/atmos/_atmos_setup.dm
 code/ATMOSPHERICS/_atmospherics_helpers.dm	code/content/atmos/_atmospherics_helpers.dm
@@ -1346,7 +1335,6 @@ code/_global_vars/time_vars.dm	code/content/_global_vars/time_vars.dm
 code/_global_vars/traits.dm	code/content/_global_vars/traits.dm
 code/_global_vars/traits/_traits.dm	code/content/_global_vars/traits/_traits.dm
 code/_onclick/_defines.dm	code/content/_onclick/_defines.dm
-code/_onclick/adjacent.dm	code/content/_onclick/adjacent.dm
 code/_onclick/ai.dm	code/content/_onclick/ai.dm
 code/_onclick/click.dm	code/content/_onclick/click.dm
 code/_onclick/click_alt.dm	code/content/_onclick/click_alt.dm
@@ -1384,7 +1372,6 @@ code/contracts/ids/sources_tags.dm	code/content/contracts/ids/sources_tags.dm
 code/contracts/ids/stages.dm	code/content/contracts/ids/stages.dm
 code/contracts/ids/stats.dm	code/content/contracts/ids/stats.dm
 code/core/atom/Transform.dm	code/content/core/atom/Transform.dm
-code/core/datum/IsAbstract.dm	code/content/core/datum/IsAbstract.dm
 code/core/image/Transform.dm	code/content/core/image/Transform.dm
 code/core/matrix/Transform.dm	code/content/core/matrix/Transform.dm
 code/datums/EPv2.dm	code/content/datums/EPv2.dm
@@ -1453,7 +1440,6 @@ code/datums/loot/tables/surface.dm	code/content/loot/tables/surface.dm
 code/datums/loot/tables/trash.dm	code/content/loot/tables/trash.dm
 code/datums/managed_browsers/_managed_browser.dm	code/content/managed_browsers/_managed_browser.dm
 code/datums/native/cadence.dm	code/content/native/cadence.dm
-code/datums/native/gas_events.dm	code/content/native/gas_events.dm
 code/datums/observation/moved.dm	code/content/observation/moved.dm
 code/datums/observation/power_change.dm	code/content/observation/power_change.dm
 code/datums/observation/stat_set.dm	code/content/observation/stat_set.dm
@@ -1640,7 +1626,6 @@ code/game/objects/items/weapons/tape.dm	code/content/items/weapons/tape.dm
 code/game/objects/items/weapons/teleportation.dm	code/content/items/weapons/teleportation.dm
 code/game/objects/items/weapons/tools/weldingtool.dm	code/content/items/weapons/tools/weldingtool.dm
 code/game/objects/items/weapons/wiki_manuals.dm	code/content/items/weapons/wiki_manuals.dm
-code/game/objects/mail_service.dm	code/content/objects/mail_service.dm
 code/game/objects/map_bs.dm	code/content/objects/map_bs.dm
 code/game/objects/melee_hit.dm	code/content/objects/melee_hit.dm
 code/game/objects/micro_event.dm	code/content/objects/micro_event.dm
