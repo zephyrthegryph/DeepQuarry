@@ -899,9 +899,7 @@ code/modules/assembly/igniter.dm	code/content/assembly/igniter.dm
 code/modules/assembly/mousetrap.dm	code/content/assembly/mousetrap.dm
 code/modules/assembly/signaler.dm	code/content/assembly/signaler.dm
 code/modules/assembly/voice.dm	code/content/assembly/voice.dm
-code/modules/asset_cache/api.dm	code/content/asset_cache/api.dm
 code/modules/asset_cache/asset_cache_client.dm	code/content/asset_cache/asset_cache_client.dm
-code/modules/asset_cache/asset_loading_service.dm	code/content/asset_cache/asset_loading_service.dm
 code/modules/asset_cache/assets/belly_assets.dm	code/content/asset_cache/assets/belly_assets.dm
 code/modules/asset_cache/assets/browser.dm	code/content/asset_cache/assets/browser.dm
 code/modules/asset_cache/assets/circuits.dm	code/content/asset_cache/assets/circuits.dm
@@ -1027,7 +1025,6 @@ code/modules/datums/supplypacks/munitions.dm	code/content/datums/supplypacks/mun
 code/modules/datums/supplypacks/science.dm	code/content/datums/supplypacks/science.dm
 code/modules/datums/supplypacks/security.dm	code/content/datums/supplypacks/security.dm
 code/modules/detectivework/tools/swabs.dm	code/content/detectivework/tools/swabs.dm
-code/modules/economy/Accounts.dm	code/content/economy/Accounts.dm
 code/modules/economy/price_list.dm	code/content/economy/price_list.dm
 code/modules/emotes/custom_emote.dm	code/content/emotes/custom_emote.dm
 code/modules/emotes/emote_define.dm	code/content/emotes/emote_define.dm
@@ -1079,8 +1076,6 @@ code/modules/holowarrant_panel.dm	code/content/modules/holowarrant_panel.dm
 code/modules/hydro/plants.dm	code/content/hydro/plants.dm
 code/modules/hydro/plantsstorage.dm	code/content/hydro/plantsstorage.dm
 code/modules/hydroponics/fruit_spawner.dm	code/content/hydroponics/fruit_spawner.dm
-code/modules/hydroponics/plant_api.dm	code/content/hydroponics/plant_api.dm
-code/modules/hydroponics/plant_service.dm	code/content/hydroponics/plant_service.dm
 code/modules/hydroponics/seed_packets.dm	code/content/hydroponics/seed_packets.dm
 code/modules/hydroponics/trays/tray_reagents.dm	code/content/hydroponics/trays/tray_reagents.dm
 code/modules/hydroponics/trays/tray_update_icons.dm	code/content/hydroponics/trays/tray_update_icons.dm
@@ -1129,14 +1124,11 @@ code/modules/materials/sheets/organic/wood.dm	code/content/materials/sheets/orga
 code/modules/media/juke_remote.dm	code/content/media/juke_remote.dm
 code/modules/media/media_machinery.dm	code/content/media/media_machinery.dm
 code/modules/media/walkpod.dm	code/content/media/walkpod.dm
-code/modules/messages/act_message.dm	code/content/messages/act_message.dm
 code/modules/metric/activity.dm	code/content/metric/activity.dm
 code/modules/metric/count.dm	code/content/metric/count.dm
 code/modules/metric/department.dm	code/content/metric/department.dm
-code/modules/metrics/metrics_api.dm	code/content/metrics/metrics_api.dm
 code/modules/metrics/metrics_churn.dm	code/content/metrics/metrics_churn.dm
 code/modules/metrics/metrics_hooks.dm	code/content/metrics/metrics_hooks.dm
-code/modules/metrics/metrics_service.dm	code/content/metrics/metrics_service.dm
 code/modules/metrics/metrics_sources.dm	code/content/metrics/metrics_sources.dm
 code/modules/metrics/metrics_viewer.dm	code/content/metrics/metrics_viewer.dm
 code/modules/mind_body/_defines.dm	code/content/mind_body/_defines.dm
@@ -1172,8 +1164,6 @@ code/modules/persistence/paintings.dm	code/content/persistence/paintings.dm
 code/modules/persistence/pto_service.dm	code/content/persistence/pto_service.dm
 code/modules/persistence/serialize.dm	code/content/persistence/serialize.dm
 code/modules/persistence/storage/storage.dm	code/content/persistence/storage/storage.dm
-code/modules/planet/planet_api.dm	code/content/planet/planet_api.dm
-code/modules/planet/planet_service.dm	code/content/planet/planet_service.dm
 code/modules/planet/smokestar/turf.dm	code/content/planet/smokestar/turf.dm
 code/modules/player_tips/player_tips_list.dm	code/content/player_tips/player_tips_list.dm
 code/modules/player_tips/player_tips_service.dm	code/content/player_tips/player_tips_service.dm
@@ -1202,8 +1192,6 @@ code/modules/recycling/disposal_junctions.dm	code/content/recycling/disposal_jun
 code/modules/recycling/disposal_tagger.dm	code/content/recycling/disposal_tagger.dm
 code/modules/recycling/disposal_trunk.dm	code/content/recycling/disposal_trunk.dm
 code/modules/refinery/core/industrial_reagent_machines.dm	code/content/refinery/core/industrial_reagent_machines.dm
-code/modules/research/research_api.dm	code/content/research/research_api.dm
-code/modules/research/research_service.dm	code/content/research/research_service.dm
 code/modules/research/tg/disks.dm	code/content/research/tg/disks.dm
 code/modules/research/tg/machinery/_production.dm	code/content/research/tg/machinery/_production.dm
 code/modules/research/tg/rdconsole.dm	code/content/research/tg/rdconsole.dm
@@ -1232,8 +1220,6 @@ code/modules/shieldgen/shield_gen_external.dm	code/content/shieldgen/shield_gen_
 code/modules/shieldgen/shield_modes.dm	code/content/shieldgen/shield_modes.dm
 code/modules/shuttles/antagonist.dm	code/content/shuttles/antagonist.dm
 code/modules/shuttles/departmental.dm	code/content/shuttles/departmental.dm
-code/modules/shuttles/emergency_shuttle_api.dm	code/content/shuttles/emergency_shuttle_api.dm
-code/modules/shuttles/emergency_shuttle_service.dm	code/content/shuttles/emergency_shuttle_service.dm
 code/modules/shuttles/landmarks.dm	code/content/shuttles/landmarks.dm
 code/modules/shuttles/shuttle_arrivals.dm	code/content/shuttles/shuttle_arrivals.dm
 code/modules/shuttles/shuttle_console.dm	code/content/shuttles/shuttle_console.dm
@@ -1304,6 +1290,4 @@ code/modules/weapons/melee.dm	code/content/weapons/melee.dm
 code/modules/weapons/staves.dm	code/content/weapons/staves.dm
 code/modules/xenoarcheaology/tools/ano_device_battery.dm	code/content/xenoarcheaology/tools/ano_device_battery.dm
 code/modules/xenoarcheaology/tools/tools.dm	code/content/xenoarcheaology/tools/tools.dm
-code/modules/xenoarcheaology/xenoarch_api.dm	code/content/xenoarcheaology/xenoarch_api.dm
-code/modules/xenoarcheaology/xenoarch_service.dm	code/content/xenoarcheaology/xenoarch_service.dm
 code/modules/xenobio/machinery/monkey_processor.dm	code/content/xenobio/machinery/monkey_processor.dm
